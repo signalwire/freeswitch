@@ -1000,15 +1000,25 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 
 							if (id && user_cidr) {
 								char *token = switch_mprintf("%s@%s", id, domain);
-								switch_assert(token);
+								char *argv[100] = { 0 };
+								char *dup_cidr = strdup(user_cidr);
+								int argc, i = 0;
 								
-								if (switch_network_list_add_cidr_token(list, user_cidr, ok, token) == SWITCH_STATUS_SUCCESS) {
-									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) [%s] to list %s\n", 
-													  user_cidr, ok ? "allow" : "deny", switch_str_nil(token), name);
-								} else {
-									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding %s (%s) [%s] to list %s\n",
-													  user_cidr, ok ? "allow" : "deny", switch_str_nil(token), name);
+								switch_assert(token);
+								switch_assert(dup_cidr);
+
+								if ((argc = switch_separate_string(dup_cidr, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+									for (i = 0; i < argc; i++) {
+										if (switch_network_list_add_cidr_token(list, argv[i], ok, token) == SWITCH_STATUS_SUCCESS) {
+											switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) [%s] to list %s\n", 
+															  argv[i], ok ? "allow" : "deny", switch_str_nil(token), name);
+										} else {
+											switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding %s (%s) [%s] to list %s\n",
+															  argv[i], ok ? "allow" : "deny", switch_str_nil(token), name);
+										}
+									}
 								}
+								free(dup_cidr);
 								free(token);
 							}
 						}
@@ -1022,22 +1032,32 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 										
 										if (id && user_cidr) {
 											char *token = switch_mprintf("%s@%s", id, domain);
-											switch_assert(token);
+											char *argv[100] = { 0 };
+											char *dup_cidr = strdup(user_cidr);
+											int argc, i = 0;
 											
-											if (switch_network_list_add_cidr_token(list, user_cidr, ok, token) == SWITCH_STATUS_SUCCESS) {
-												switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) [%s] to list %s\n", 
-																  user_cidr, ok ? "allow" : "deny", switch_str_nil(token), name);
-											} else {
-												switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding %s (%s) [%s] to list %s\n",
-																  user_cidr, ok ? "allow" : "deny", switch_str_nil(token), name);
+											switch_assert(token);
+											switch_assert(dup_cidr);
+
+											if ((argc = switch_separate_string(dup_cidr, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+												for (i = 0; i < argc; i++) {
+													if (switch_network_list_add_cidr_token(list, argv[i], ok, token) == SWITCH_STATUS_SUCCESS) {
+														switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) [%s] to list %s\n", 
+																		  argv[i], ok ? "allow" : "deny", switch_str_nil(token), name);
+													} else {
+														switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding %s (%s) [%s] to list %s\n",
+																		  argv[i], ok ? "allow" : "deny", switch_str_nil(token), name);
+													}
+												}
 											}
+											free(dup_cidr);
 											free(token);
 										}
 									}
 								}
 							}
 						}
-
+						
 						switch_xml_free(xml_root);
 					} else if (cidr) {
 						if (switch_network_list_add_cidr(list, cidr, ok) == SWITCH_STATUS_SUCCESS) {
