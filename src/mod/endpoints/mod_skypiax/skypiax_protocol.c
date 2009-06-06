@@ -381,10 +381,11 @@ int skypiax_signaling_read(private_t * tech_pvt)
                 tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
                 tech_pvt->interface_state = SKYPIAX_STATE_UP;
                 start_audio_threads(tech_pvt);
-                skypiax_sleep(1000);
+                skypiax_sleep(1000); //FIXME
                 sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id,
                         tech_pvt->tcp_cli_port);
                 skypiax_signaling_write(tech_pvt, msg_to_skype);
+                skypiax_sleep(1000); //FIXME
                 sprintf(msg_to_skype, "#output ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id,
                         tech_pvt->tcp_srv_port);
                 skypiax_signaling_write(tech_pvt, msg_to_skype);
@@ -1469,6 +1470,8 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 
         buf[i] = '\0';
 
+        DEBUGA_SKYPE ("BUF=|||%s|||\n", SKYPIAX_P_LOG, buf);
+
 	if(an_event.xclient.message_type == atom_begin){
 
 		if(strlen(buffer)){
@@ -1482,9 +1485,12 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 	if(an_event.xclient.message_type == atom_continue){
 
 		if(!strlen(buffer)){
-			WARNINGA("Got a 'continue' XAtom without a previous 'begin'. It's value (between vertical bars) is=|||%s|||. Let's introduce a 1 second delay.\n", SKYPIAX_P_LOG, buf);
+			DEBUGA_SKYPE("Got a 'continue' XAtom without a previous 'begin'. It's value (between vertical bars) is=|||%s|||\n", SKYPIAX_P_LOG, buf);
 			continue_is_broken=1;
-			skypiax_sleep(1000000); //1 sec
+			if(!strncmp(buf, "ognised identity", 15)) {
+				WARNINGA("Got a 'continue' XAtom without a previous 'begin'. It's value (between vertical bars) is=|||%s|||. Let's introduce a 1 second delay.\n", SKYPIAX_P_LOG, buf);
+				skypiax_sleep(1000000); //1 sec
+			}
 			break;
 		}
 	}
