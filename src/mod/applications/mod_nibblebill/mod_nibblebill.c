@@ -413,7 +413,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	/* Get caller profile info from channel */
 	profile = switch_channel_get_caller_profile(channel);
 
-	if (!profile) {
+	if (!profile || !profile->times) {
 		/* No caller profile (why would this happen?) */
 		return SWITCH_STATUS_SUCCESS;
 	}
