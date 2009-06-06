@@ -1174,14 +1174,20 @@ int dtmf_received(private_t * tech_pvt, char *value)
   channel = switch_core_session_get_channel(session);
 
   if (channel) {
-    switch_dtmf_t dtmf = { (char) value[0], switch_core_default_dtmf_duration(0) };
-    DEBUGA_SKYPE("received DTMF %c on channel %s\n", SKYPIAX_P_LOG, dtmf.digit,
-                 switch_channel_get_name(channel));
-    switch_mutex_lock(tech_pvt->flag_mutex);
-    //FIXME: why sometimes DTMFs from here do not seems to be get by FS?
-    switch_channel_queue_dtmf(channel, &dtmf);
-    switch_set_flag(tech_pvt, TFLAG_DTMF);
-    switch_mutex_unlock(tech_pvt->flag_mutex);
+
+	  if (! switch_channel_test_flag(channel, CF_BRIDGED)) {
+
+		  switch_dtmf_t dtmf = { (char) value[0], switch_core_default_dtmf_duration(0) };
+		  DEBUGA_SKYPE("received DTMF %c on channel %s\n", SKYPIAX_P_LOG, dtmf.digit,
+				  switch_channel_get_name(channel));
+		  switch_mutex_lock(tech_pvt->flag_mutex);
+		  //FIXME: why sometimes DTMFs from here do not seems to be get by FS?
+		  switch_channel_queue_dtmf(channel, &dtmf);
+		  switch_set_flag(tech_pvt, TFLAG_DTMF);
+		  switch_mutex_unlock(tech_pvt->flag_mutex);
+	  } else {
+		  DEBUGA_SKYPE("received a DTMF on channel %s, but we're BRIDGED, so let's NOT relay it out of band\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
+	  }
   } else {
     WARNINGA("received %c DTMF, but no channel?\n", SKYPIAX_P_LOG, value[0]);
   }
