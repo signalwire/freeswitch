@@ -1448,6 +1448,9 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
     char buffer[17000];
     char *b;
     int i;
+    int continue_is_broken=0;
+    Atom atom_begin = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
+    Atom atom_continue = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE", False);
 
     b = buffer;
 
@@ -1466,15 +1469,38 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 
         buf[i] = '\0';
 
+	if(an_event.xclient.message_type == atom_begin){
+
+		if(strlen(buffer)){
+			unsigned int howmany;
+			howmany = strlen(b) + 1;
+			howmany = write(SkypiaxHandles->fdesc[1], b, howmany);
+			DEBUGA_SKYPE ("RECEIVED2=|||%s|||\n", SKYPIAX_P_LOG, buffer);
+			memset(buffer, '\0', 17000);
+		}
+	}
+	if(an_event.xclient.message_type == atom_continue){
+
+		if(!strlen(buffer)){
+			WARNINGA("Got a 'continue' XAtom without a previous 'begin'. It's value (between vertical bars) is=|||%s|||. Let's introduce a 1 second delay.\n", SKYPIAX_P_LOG, buf);
+			continue_is_broken=1;
+			skypiax_sleep(1000000); //1 sec
+			break;
+		}
+	}
+        
         strcat(buffer, buf);
 
-        if (i < 20) {           /* last fragment */
+        if (i < 20 || continue_is_broken) {           /* last fragment */
           unsigned int howmany;
 
           howmany = strlen(b) + 1;
 
           howmany = write(SkypiaxHandles->fdesc[1], b, howmany);
+          DEBUGA_SKYPE ("RECEIVED=|||%s|||\n", SKYPIAX_P_LOG, buffer);
           memset(buffer, '\0', 17000);
+          XFlush(disp);
+          continue_is_broken=0;
         }
 
         break;
