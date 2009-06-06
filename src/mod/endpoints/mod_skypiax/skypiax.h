@@ -126,6 +126,7 @@ typedef enum {
 #define 	SKYPIAX_STATE_HANGUP_REQUESTED   200
   //FIXME CALLFLOW_INCOMING_CALLID to be removed
 #define 	CALLFLOW_INCOMING_CALLID   1019
+#define 	CALLFLOW_STATUS_REMOTEHOLD   201
 
 /*********************************/
 

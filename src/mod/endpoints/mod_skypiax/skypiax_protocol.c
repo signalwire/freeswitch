@@ -369,40 +369,50 @@ int skypiax_signaling_read(private_t * tech_pvt)
             skypiax_strncpy(tech_pvt->skype_call_id, id,
                             sizeof(tech_pvt->skype_call_id) - 1);
             DEBUGA_SKYPE("skype_call: %s is now UNPLACED\n", SKYPIAX_P_LOG, id);
-          } else if (!strcasecmp(value, "INPROGRESS")) {
-            char msg_to_skype[1024];
+	  } else if (!strcasecmp(value, "INPROGRESS")) {
+		  char msg_to_skype[1024];
 
-            if (!strlen(tech_pvt->session_uuid_str) || !strlen(tech_pvt->skype_call_id)
-                || !strcasecmp(tech_pvt->skype_call_id, id)) {
-              skypiax_strncpy(tech_pvt->skype_call_id, id,
-                              sizeof(tech_pvt->skype_call_id) - 1);
-              DEBUGA_SKYPE("skype_call: %s is now active\n", SKYPIAX_P_LOG, id);
-              if (tech_pvt->skype_callflow != CALLFLOW_STATUS_EARLYMEDIA) {
-                tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
-                tech_pvt->interface_state = SKYPIAX_STATE_UP;
-                start_audio_threads(tech_pvt);
-                skypiax_sleep(1000); //FIXME
-                sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id,
-                        tech_pvt->tcp_cli_port);
-                skypiax_signaling_write(tech_pvt, msg_to_skype);
-                skypiax_sleep(1000); //FIXME
-                sprintf(msg_to_skype, "#output ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id,
-                        tech_pvt->tcp_srv_port);
-                skypiax_signaling_write(tech_pvt, msg_to_skype);
-              }
-              tech_pvt->skype_callflow = SKYPIAX_STATE_UP;
-              if (!strlen(tech_pvt->session_uuid_str)) {
-                DEBUGA_SKYPE("New Inbound Channel!\n", SKYPIAX_P_LOG);
-                new_inbound_channel(tech_pvt);
-              } else {
-                DEBUGA_SKYPE("Outbound Channel Answered!\n", SKYPIAX_P_LOG);
-                outbound_channel_answered(tech_pvt);
-              }
-            } else {
-              DEBUGA_SKYPE("I'm on %s, skype_call %s is NOT MY call, ignoring\n",
-                           SKYPIAX_P_LOG, tech_pvt->skype_call_id, id);
-            }
-          } else {
+		  if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
+			  if (!strlen(tech_pvt->session_uuid_str) || !strlen(tech_pvt->skype_call_id)
+					  || !strcasecmp(tech_pvt->skype_call_id, id)) {
+				  skypiax_strncpy(tech_pvt->skype_call_id, id,
+						  sizeof(tech_pvt->skype_call_id) - 1);
+				  DEBUGA_SKYPE("skype_call: %s is now active\n", SKYPIAX_P_LOG, id);
+
+				  if (tech_pvt->skype_callflow != CALLFLOW_STATUS_EARLYMEDIA) {
+					  tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
+					  tech_pvt->interface_state = SKYPIAX_STATE_UP;
+					  start_audio_threads(tech_pvt);
+					  skypiax_sleep(1000); //FIXME
+					  sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id,
+							  tech_pvt->tcp_cli_port);
+					  skypiax_signaling_write(tech_pvt, msg_to_skype);
+					  skypiax_sleep(1000); //FIXME
+					  sprintf(msg_to_skype, "#output ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id,
+							  tech_pvt->tcp_srv_port);
+					  skypiax_signaling_write(tech_pvt, msg_to_skype);
+				  }
+				  tech_pvt->skype_callflow = SKYPIAX_STATE_UP;
+				  if (!strlen(tech_pvt->session_uuid_str)) {
+					  DEBUGA_SKYPE("New Inbound Channel!\n", SKYPIAX_P_LOG);
+					  new_inbound_channel(tech_pvt);
+				  } else {
+					  DEBUGA_SKYPE("Outbound Channel Answered!\n", SKYPIAX_P_LOG);
+					  outbound_channel_answered(tech_pvt);
+				  }
+			  } else {
+				  DEBUGA_SKYPE("I'm on %s, skype_call %s is NOT MY call, ignoring\n",
+						  SKYPIAX_P_LOG, tech_pvt->skype_call_id, id);
+			  }
+		  } else {
+			  tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
+			  WARNINGA("Back from REMOTEHOLD!\n", SKYPIAX_P_LOG);
+		  }
+
+	  } else if (!strcasecmp(value, "REMOTEHOLD")) {
+		  tech_pvt->skype_callflow = CALLFLOW_STATUS_REMOTEHOLD;
+		  WARNINGA("skype_call: %s is now REMOTEHOLD\n", SKYPIAX_P_LOG, id);
+	  } else {
             WARNINGA("skype_call: %s, STATUS: %s is not recognized\n", SKYPIAX_P_LOG, id,
                      value);
           }
@@ -485,6 +495,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
     while (tech_pvt->interface_state != SKYPIAX_STATE_DOWN
            && (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
                || tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
+               || tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD
                || tech_pvt->skype_callflow == SKYPIAX_STATE_UP)) {
 
       unsigned int fdselect;
@@ -506,61 +517,65 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
       if (rt > 0) {
 
 #ifdef FARMING
-        switch_sleep(500);      //seems that reconnecting through a proxy leads to half the packet size, bizarrely, 158-162, never 160 :-)
+	      switch_sleep(500);      //seems that reconnecting through a proxy leads to half the packet size, bizarrely, 158-162, never 160 :-)
 #endif // FARMING
-        len = recv(fd, (char *) srv_in, 320, 0);    //seems that Skype only sends 320 bytes at time
+	      if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
+		      len = recv(fd, (char *) srv_in, 320, 0);    //seems that Skype only sends 320 bytes at time
+	      } else {
+		      len = 0;
+	      }
 
-        if (len == 320) {
-          unsigned int howmany;
+	      if (len == 320) {
+		      unsigned int howmany;
 
-          if (samplerate_skypiax == 8000) {
-            /* we're downsampling from 16khz to 8khz, srv_out will contain each other sample from srv_in */
-            a = 0;
-            for (i = 0; i < len / sizeof(short); i++) {
-              srv_out[a] = srv_in[i];
-              i++;
-              a++;
-            }
-          } else if (samplerate_skypiax == 16000) {
-            /* we're NOT downsampling, srv_out will contain ALL samples from srv_in */
-            for (i = 0; i < len / sizeof(short); i++) {
-              srv_out[i] = srv_in[i];
-            }
-          } else {
-            ERRORA("SAMPLERATE_SKYPIAX can only be 8000 or 16000\n", SKYPIAX_P_LOG);
-          }
-          /* if not yet done, let's store the half incoming frame */
-          if (!tech_pvt->audiobuf_is_loaded) {
-            for (i = 0; i < SAMPLES_PER_FRAME / 2; i++) {
-              tech_pvt->audiobuf[i] = srv_out[i];
-            }
-            tech_pvt->audiobuf_is_loaded = 1;
-          } else {
-            /* we got a stored half frame, build a complete frame in totalbuf using the stored half frame and the current half frame */
-            for (i = 0; i < SAMPLES_PER_FRAME / 2; i++) {
-              totalbuf[i] = tech_pvt->audiobuf[i];
-            }
-            for (a = 0; a < SAMPLES_PER_FRAME / 2; a++) {
-              totalbuf[i] = srv_out[a];
-              i++;
-            }
-            /* send the complete frame through the pipe to our code waiting for incoming audio */
-            howmany =
-              skypiax_pipe_write(tech_pvt->audiopipe[1], totalbuf,
-                                 SAMPLES_PER_FRAME * sizeof(short));
-            if (howmany != SAMPLES_PER_FRAME * sizeof(short)) {
-              ERRORA("howmany is %d, but was expected to be %d\n", SKYPIAX_P_LOG, howmany,
-                     (int) (SAMPLES_PER_FRAME * sizeof(short)));
-            }
-            /* done with the stored half frame */
-            tech_pvt->audiobuf_is_loaded = 0;
-          }
+		      if (samplerate_skypiax == 8000) {
+			      /* we're downsampling from 16khz to 8khz, srv_out will contain each other sample from srv_in */
+			      a = 0;
+			      for (i = 0; i < len / sizeof(short); i++) {
+				      srv_out[a] = srv_in[i];
+				      i++;
+				      a++;
+			      }
+		      } else if (samplerate_skypiax == 16000) {
+			      /* we're NOT downsampling, srv_out will contain ALL samples from srv_in */
+			      for (i = 0; i < len / sizeof(short); i++) {
+				      srv_out[i] = srv_in[i];
+			      }
+		      } else {
+			      ERRORA("SAMPLERATE_SKYPIAX can only be 8000 or 16000\n", SKYPIAX_P_LOG);
+		      }
+		      /* if not yet done, let's store the half incoming frame */
+		      if (!tech_pvt->audiobuf_is_loaded) {
+			      for (i = 0; i < SAMPLES_PER_FRAME / 2; i++) {
+				      tech_pvt->audiobuf[i] = srv_out[i];
+			      }
+			      tech_pvt->audiobuf_is_loaded = 1;
+		      } else {
+			      /* we got a stored half frame, build a complete frame in totalbuf using the stored half frame and the current half frame */
+			      for (i = 0; i < SAMPLES_PER_FRAME / 2; i++) {
+				      totalbuf[i] = tech_pvt->audiobuf[i];
+			      }
+			      for (a = 0; a < SAMPLES_PER_FRAME / 2; a++) {
+				      totalbuf[i] = srv_out[a];
+				      i++;
+			      }
+			      /* send the complete frame through the pipe to our code waiting for incoming audio */
+			      howmany =
+				      skypiax_pipe_write(tech_pvt->audiopipe[1], totalbuf,
+						      SAMPLES_PER_FRAME * sizeof(short));
+			      if (howmany != SAMPLES_PER_FRAME * sizeof(short)) {
+				      ERRORA("howmany is %d, but was expected to be %d\n", SKYPIAX_P_LOG, howmany,
+						      (int) (SAMPLES_PER_FRAME * sizeof(short)));
+			      }
+			      /* done with the stored half frame */
+			      tech_pvt->audiobuf_is_loaded = 0;
+		      }
 
-        } else if (len == 0) {
-          skypiax_sleep(1000);
-        } else {
-          ERRORA("len=%d, expected 320\n", SKYPIAX_P_LOG, len);
-        }
+	      } else if (len == 0) {
+		      skypiax_sleep(1000);
+	      } else {
+		      ERRORA("len=%d, expected 320\n", SKYPIAX_P_LOG, len);
+	      }
 
       } else {
         if (rt)
@@ -642,6 +657,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
     while (tech_pvt->interface_state != SKYPIAX_STATE_DOWN
            && (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
                || tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
+               || tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD
                || tech_pvt->skype_callflow == SKYPIAX_STATE_UP)) {
       unsigned int fdselect;
       int rt;
@@ -699,16 +715,18 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
           }
 
           /* send the 16khz frame to the Skype client waiting for incoming audio to be sent to the remote party */
-          len = send(fd, (char *) cli_out, got, 0);
-          skypiax_sleep(5000);  //5 msec
+	  if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
+		  len = send(fd, (char *) cli_out, got, 0);
+		  skypiax_sleep(5000);  //5 msec
 
-          if (len == -1) {
-            break;
-          } else if (len != got) {
-            ERRORA("len=%d\n", SKYPIAX_P_LOG, len);
-            skypiax_sleep(1000);
-            break;
-          }
+		  if (len == -1) {
+			  break;
+		  } else if (len != got) {
+			  ERRORA("len=%d\n", SKYPIAX_P_LOG, len);
+			  skypiax_sleep(1000);
+			  break;
+		  }
+	  }
 
         } else {
 
@@ -719,9 +737,17 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
         if (rt)
           ERRORA("CLI rt=%d\n", SKYPIAX_P_LOG, rt);
         memset(cli_out, 0, sizeof(cli_out));
-        len = send(fd, (char *) cli_out, sizeof(cli_out), 0);
-        len = send(fd, (char *) cli_out, sizeof(cli_out) / 2, 0);
-        //DEBUGA_SKYPE("sent %d of zeros to keep the Skype client socket busy\n", SKYPIAX_P_LOG, sizeof(cli_out) + sizeof(cli_out)/2);
+	if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
+		len = send(fd, (char *) cli_out, sizeof(cli_out), 0);
+		len = send(fd, (char *) cli_out, sizeof(cli_out) / 2, 0);
+		//WARNINGA("sent %d of zeros to keep the Skype client socket busy\n", SKYPIAX_P_LOG, sizeof(cli_out) + sizeof(cli_out)/2);
+	} else {
+		/*
+		   XXX do nothing 
+		 */
+		//WARNINGA("we don't send it\n", SKYPIAX_P_LOG);
+	}
+            skypiax_sleep(1000);
       }
 
     }
