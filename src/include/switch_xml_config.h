@@ -98,10 +98,31 @@ struct switch_xml_config_item {
 	char *helptext;							/*< Optional documentation text for this setting */
 };
 
-#define SWITCH_CONFIG_ITEM(_key, _type, _flags, _ptr, _defaultvalue, _data, _syntax, _helptext)	{ _key, _type, _flags, _ptr, _defaultvalue, _data, NULL, _syntax, _helptext }
-#define SWITCH_CONFIG_ITEM_STRING_STRDUP(_key, _flags, _ptr, _defaultvalue, _syntax, _helptext)	{ _key, SWITCH_CONFIG_STRING, _flags, _ptr, _defaultvalue, &switch_config_string_strdup, NULL, _helptext}
-#define SWITCH_CONFIG_ITEM_CALLBACK(_key, _type, _flags, _ptr, _defaultvalue, _data, _functiondata, _syntax, _helptext)	{ _key, _type, _flags, _ptr, _defaultvalue, _functiondata, _data, _syntax, _helptext }
+#define SWITCH_CONFIG_ITEM(_key, _type, _flags, _ptr, _defaultvalue, _data, _syntax, _helptext)	{ _key, _type, _flags, _ptr, (void*)_defaultvalue, (void*)_data, NULL, _syntax, _helptext }
+#define SWITCH_CONFIG_ITEM_STRING_STRDUP(_key, _flags, _ptr, _defaultvalue, _syntax, _helptext)	{ _key, SWITCH_CONFIG_STRING, _flags, _ptr, (void*)_defaultvalue, &switch_config_string_strdup, NULL, _syntax, _helptext }
+#define SWITCH_CONFIG_ITEM_CALLBACK(_key, _type, _flags, _ptr, _defaultvalue, _function, _functiondata, _syntax, _helptext)	{ _key, _type, _flags, _ptr, (void*)_defaultvalue, _functiondata, _function, _syntax, _helptext }
 #define SWITCH_CONFIG_ITEM_END() { NULL, SWITCH_CONFIG_LAST, 0, NULL, NULL, NULL, NULL, NULL, NULL }
+
+#define SWITCH_CONFIG_SET_ITEM(_item, _key, _type, _flags, _ptr, _defaultvalue, _data, _syntax, _helptext)  \
+	_item.key = _key; \
+	_item.type = _type; \
+	_item.flags = _flags; \
+	_item.ptr = _ptr; \
+	_item.defaultvalue = (void*)_defaultvalue; \
+	_item.data = (void*)_data; \
+	_item.syntax = _syntax; \
+	_item.helptext = _helptext
+
+#define SWITCH_CONFIG_SET_ITEM_CALLBACK(_item, _key, _type, _flags, _ptr, _defaultvalue, _function, _syntax, _helptext)  \
+	_item.key = _key; \
+	_item.type = _type; \
+	_item.flags = _flags; \
+	_item.ptr = ptr; \
+	_item.defaultvalue = (void*)_defaultvalue; \
+	_item.data = (void*)_data; \
+	_item.function = _function \
+	_item.syntax = _syntax; \
+	_item.helptext = _helptext
 
 /*! 
  * \brief Gets the int representation of an enum
