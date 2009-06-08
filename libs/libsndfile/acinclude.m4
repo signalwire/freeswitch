@@ -5,6 +5,12 @@ dnl http://www.sas.com/standards/large.file/x_open.20Mar96.html
 
 dnl Written by Paul Eggert <eggert@twinsun.com>.
 
+
+m4_include([M4/gcc_version.m4])
+m4_include([M4/octave.m4])
+m4_include([M4/mkoctfile_version.m4])
+
+
 dnl Internal subroutine of AC_SYS_EXTRA_LARGEFILE.
 dnl AC_SYS_EXTRA_LARGEFILE_FLAGS(FLAGSNAME)
 AC_DEFUN([AC_SYS_EXTRA_LARGEFILE_FLAGS],
