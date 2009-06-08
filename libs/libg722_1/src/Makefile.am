@@ -42,8 +42,7 @@ INCLUDES = -I$(top_builddir)
 
 lib_LTLIBRARIES = libg722_1.la
 
-libg722_1_la_SOURCES = basop32.c \
-                       bitstream.c \
+libg722_1_la_SOURCES = bitstream.c \
                        coef2sam.c \
                        common.c \
                        commonf.c \
@@ -58,6 +57,9 @@ libg722_1_la_SOURCES = basop32.c \
                        sam2coef.c \
                        tables.c
 
+if COND_FIXED
+libg722_1_la_SOURCES += basop32.c
+endif
 libg722_1_la_LDFLAGS = -version-info @G722_1_LT_CURRENT@:@G722_1_LT_REVISION@:@G722_1_LT_AGE@ $(COMP_VENDOR_LDFLAGS)
 
 nobase_include_HEADERS = g722_1/g722_1.h \

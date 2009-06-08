@@ -289,14 +289,20 @@ AM_CONDITIONAL([COND_SSE5], [test "$enable_sse5" = yes])
 if test "$enable_fixed_point" = "yes" ; then
     AC_DEFINE([G722_1_USE_FIXED_POINT], [1], [Enable fixed point processing, where possible, instead of floating point])
     G722_1_USE_FIXED_POINT="#define G722_1_USE_FIXED_POINT 1"
+    fixed = "yes"
     G722_1_VECTORS_FOR_TESTS="fixed"
 else
     AX_FIXED_POINT_MACHINE([$host],
-        [AC_DEFINE([G722_1_USE_FIXED_POINT], [1], [Enable fixed point processing, where possible, instead of floating point])
-        G722_1_USE_FIXED_POINT="#define G722_1_USE_FIXED_POINT 1"],
+        [
+	AC_DEFINE([G722_1_USE_FIXED_POINT], [1], [Enable fixed point processing, where possible, instead of floating point])
+        G722_1_USE_FIXED_POINT="#define G722_1_USE_FIXED_POINT 1"
+	fixed = "yes"
+	],
         [G722_1_USE_FIXED_POINT="#undef G722_1_USE_FIXED_POINT"])
     G722_1_VECTORS_FOR_TESTS="floating"
 fi
+AM_CONDITIONAL([COND_FIXED], [test "$fixed" = "yes"])
+
 AX_MISALIGNED_ACCESS_FAILS([$host],
     [AC_DEFINE([G722_1_MISALIGNED_ACCESS_FAILS], [1], [Do not expect a misaligned memory access to work correctly])
     G722_1_MISALIGNED_ACCESS_FAILS="#define G722_1_MISALIGNED_ACCESS_FAILS 1"],
