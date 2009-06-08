@@ -1,4 +1,6 @@
-// Copyright (c) 2005, Google Inc.
+// -*- coding: utf-8 -*-
+//
+// Copyright (c) 2005 - 2006, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -31,10 +33,13 @@
 //
 // TODO: Test extractions for PartialMatch/Consume
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <cassert>
 #include <vector>
-#include "config.h"
 #include "pcrecpp.h"
 
 using pcrecpp::StringPiece;
@@ -105,8 +110,8 @@ static void LeakTest() {
       initial_size = VirtualProcessSize();
       printf("Size after 50000: %llu\n", initial_size);
     }
-    char buf[100];
-    snprintf(buf, sizeof(buf), "pat%09d", i);
+    char buf[100];  // definitely big enough
+    sprintf(buf, "pat%09d", i);
     RE newre(buf);
   }
   uint64 final_size = VirtualProcessSize();
@@ -208,87 +213,103 @@ static void TestReplace() {
     const char *original;
     const char *single;
     const char *global;
+    int global_count;         // the expected return value from ReplaceAll
   };
   static const ReplaceTest tests[] = {
     { "(qu|[b-df-hj-np-tv-z]*)([a-z]+)",
       "\\2\\1ay",
       "the quick brown fox jumps over the lazy dogs.",
       "ethay quick brown fox jumps over the lazy dogs.",
-      "ethay ickquay ownbray oxfay umpsjay overay ethay azylay ogsday." },
+      "ethay ickquay ownbray oxfay umpsjay overay ethay azylay ogsday.",
+      9 },
     { "\\w+",
       "\\0-NOSPAM",
       "paul.haahr@google.com",
       "paul-NOSPAM.haahr@google.com",
-      "paul-NOSPAM.haahr-NOSPAM@google-NOSPAM.com-NOSPAM" },
+      "paul-NOSPAM.haahr-NOSPAM@google-NOSPAM.com-NOSPAM",
+      4 },
     { "^",
       "(START)",
       "foo",
       "(START)foo",
-      "(START)foo" },
+      "(START)foo",
+      1 },
     { "^",
       "(START)",
       "",
       "(START)",
-      "(START)" },
+      "(START)",
+      1 },
     { "$",
       "(END)",
       "",
       "(END)",
-      "(END)" },
+      "(END)",
+      1 },
     { "b",
       "bb",
       "ababababab",
       "abbabababab",
-      "abbabbabbabbabb" },
+      "abbabbabbabbabb",
+       5 },
     { "b",
       "bb",
       "bbbbbb",
       "bbbbbbb",
-      "bbbbbbbbbbbb" },
+      "bbbbbbbbbbbb",
+      6 },
     { "b+",
       "bb",
       "bbbbbb",
       "bb",
-      "bb" },
+      "bb",
+      1 },
     { "b*",
       "bb",
       "bbbbbb",
       "bb",
-      "bb" },
+      "bb",
+      1 },
     { "b*",
       "bb",
       "aaaaa",
       "bbaaaaa",
-      "bbabbabbabbabbabb" },
+      "bbabbabbabbabbabb",
+      6 },
     { "b*",
       "bb",
       "aa\naa\n",
       "bbaa\naa\n",
-      "bbabbabb\nbbabbabb\nbb" },
+      "bbabbabb\nbbabbabb\nbb",
+      7 },
     { "b*",
       "bb",
       "aa\raa\r",
       "bbaa\raa\r",
-      "bbabbabb\rbbabbabb\rbb" },
+      "bbabbabb\rbbabbabb\rbb",
+      7 },
     { "b*",
       "bb",
       "aa\r\naa\r\n",
       "bbaa\r\naa\r\n",
-      "bbabbabb\r\nbbabbabb\r\nbb" },
+      "bbabbabb\r\nbbabbabb\r\nbb",
+      7 },
 #ifdef SUPPORT_UTF8
     { "b*",
       "bb",
       "\xE3\x83\x9B\xE3\x83\xBC\xE3\x83\xA0\xE3\x81\xB8",   // utf8
       "bb\xE3\x83\x9B\xE3\x83\xBC\xE3\x83\xA0\xE3\x81\xB8",
-      "bb\xE3\x83\x9B""bb""\xE3\x83\xBC""bb""\xE3\x83\xA0""bb""\xE3\x81\xB8""bb" },
+      "bb\xE3\x83\x9B""bb""\xE3\x83\xBC""bb""\xE3\x83\xA0""bb""\xE3\x81\xB8""bb",
+      5 },
     { "b*",
       "bb",
       "\xE3\x83\x9B\r\n\xE3\x83\xBC\r\xE3\x83\xA0\n\xE3\x81\xB8\r\n",   // utf8
       "bb\xE3\x83\x9B\r\n\xE3\x83\xBC\r\xE3\x83\xA0\n\xE3\x81\xB8\r\n",
       ("bb\xE3\x83\x9B""bb\r\nbb""\xE3\x83\xBC""bb\rbb""\xE3\x83\xA0"
-       "bb\nbb""\xE3\x81\xB8""bb\r\nbb") },
+       "bb\nbb""\xE3\x81\xB8""bb\r\nbb"),
+      9 },
 #endif
-    { "", NULL, NULL, NULL, NULL }
+    { "", NULL, NULL, NULL, NULL, 0 }
   };
 
 #ifdef SUPPORT_UTF8
@@ -304,8 +325,9 @@ static void TestReplace() {
     CHECK(re.Replace(t->rewrite, &one));
     CHECK_EQ(one, t->single);
     string all(t->original);
-    CHECK(re.GlobalReplace(t->rewrite, &all) > 0);
+    const int replace_count = re.GlobalReplace(t->rewrite, &all);
     CHECK_EQ(all, t->global);
+    CHECK_EQ(replace_count, t->global_count);
   }
 
   // One final test: test \r\n replacement when we're not in CRLF mode
@@ -313,14 +335,14 @@ static void TestReplace() {
     RE re("b*", RE_Options(PCRE_NEWLINE_CR).set_utf8(support_utf8));
     assert(re.error().empty());
     string all("aa\r\naa\r\n");
-    CHECK(re.GlobalReplace("bb", &all) > 0);
+    CHECK_EQ(re.GlobalReplace("bb", &all), 9);
     CHECK_EQ(all, string("bbabbabb\rbb\nbbabbabb\rbb\nbb"));
   }
   {
     RE re("b*", RE_Options(PCRE_NEWLINE_LF).set_utf8(support_utf8));
     assert(re.error().empty());
     string all("aa\r\naa\r\n");
-    CHECK(re.GlobalReplace("bb", &all) > 0);
+    CHECK_EQ(re.GlobalReplace("bb", &all), 9);
     CHECK_EQ(all, string("bbabbabb\rbb\nbbabbabb\rbb\nbb"));
   }
   // TODO: test what happens when no PCRE_NEWLINE_* flag is set.
@@ -443,6 +465,81 @@ static void TestRecursion() {
   CHECK(re4.PartialMatch(text_bad) == false);
   CHECK(re4.FullMatch(text_good) == false);
   CHECK(re4.FullMatch(text_bad) == false);
+}
+
+// A meta-quoted string, interpreted as a pattern, should always match
+// the original unquoted string.
+static void TestQuoteMeta(string unquoted, RE_Options options = RE_Options()) {
+  string quoted = RE::QuoteMeta(unquoted);
+  RE re(quoted, options);
+  CHECK(re.FullMatch(unquoted));
+}
+
+// A string containing meaningful regexp characters, which is then meta-
+// quoted, should not generally match a string the unquoted string does.
+static void NegativeTestQuoteMeta(string unquoted, string should_not_match,
+                                  RE_Options options = RE_Options()) {
+  string quoted = RE::QuoteMeta(unquoted);
+  RE re(quoted, options);
+  CHECK(!re.FullMatch(should_not_match));
+}
+
+// Tests that quoted meta characters match their original strings,
+// and that a few things that shouldn't match indeed do not.
+static void TestQuotaMetaSimple() {
+  TestQuoteMeta("foo");
+  TestQuoteMeta("foo.bar");
+  TestQuoteMeta("foo\\.bar");
+  TestQuoteMeta("[1-9]");
+  TestQuoteMeta("1.5-2.0?");
+  TestQuoteMeta("\\d");
+  TestQuoteMeta("Who doesn't like ice cream?");
+  TestQuoteMeta("((a|b)c?d*e+[f-h]i)");
+  TestQuoteMeta("((?!)xxx).*yyy");
+  TestQuoteMeta("([");
+  TestQuoteMeta(string("foo\0bar", 7));
+}
+
+static void TestQuoteMetaSimpleNegative() {
+  NegativeTestQuoteMeta("foo", "bar");
+  NegativeTestQuoteMeta("...", "bar");
+  NegativeTestQuoteMeta("\\.", ".");
+  NegativeTestQuoteMeta("\\.", "..");
+  NegativeTestQuoteMeta("(a)", "a");
+  NegativeTestQuoteMeta("(a|b)", "a");
+  NegativeTestQuoteMeta("(a|b)", "(a)");
+  NegativeTestQuoteMeta("(a|b)", "a|b");
+  NegativeTestQuoteMeta("[0-9]", "0");
+  NegativeTestQuoteMeta("[0-9]", "0-9");
+  NegativeTestQuoteMeta("[0-9]", "[9]");
+  NegativeTestQuoteMeta("((?!)xxx)", "xxx");
+}
+
+static void TestQuoteMetaLatin1() {
+  TestQuoteMeta("3\xb2 = 9");
+}
+
+static void TestQuoteMetaUtf8() {
+#ifdef SUPPORT_UTF8
+  TestQuoteMeta("Pl\xc3\xa1\x63ido Domingo", pcrecpp::UTF8());
+  TestQuoteMeta("xyz", pcrecpp::UTF8());            // No fancy utf8
+  TestQuoteMeta("\xc2\xb0", pcrecpp::UTF8());       // 2-byte utf8 (degree symbol)
+  TestQuoteMeta("27\xc2\xb0 degrees", pcrecpp::UTF8());  // As a middle character
+  TestQuoteMeta("\xe2\x80\xb3", pcrecpp::UTF8());   // 3-byte utf8 (double prime)
+  TestQuoteMeta("\xf0\x9d\x85\x9f", pcrecpp::UTF8()); // 4-byte utf8 (music note)
+  TestQuoteMeta("27\xc2\xb0"); // Interpreted as Latin-1, but should still work
+  NegativeTestQuoteMeta("27\xc2\xb0",               // 2-byte utf (degree symbol)
+                        "27\\\xc2\\\xb0",
+                        pcrecpp::UTF8());
+#endif
+}
+
+static void TestQuoteMetaAll() {
+  printf("Testing QuoteMeta\n");
+  TestQuotaMetaSimple();
+  TestQuoteMetaSimpleNegative();
+  TestQuoteMetaLatin1();
+  TestQuoteMetaUtf8();
 }
 
 //
@@ -667,6 +764,35 @@ static void TestOptions() {
   Test_all_options();
 }
 
+static void TestConstructors() {
+  printf("Testing constructors\n");
+
+  RE_Options options;
+  options.set_dotall(true);
+  const char *str = "HELLO\n" "cruel\n" "world";
+
+  RE orig("HELLO.*world", options);
+  CHECK(orig.FullMatch(str));
+
+  RE copy1(orig);
+  CHECK(copy1.FullMatch(str));
+
+  RE copy2("not a match");
+  CHECK(!copy2.FullMatch(str));
+  copy2 = copy1;
+  CHECK(copy2.FullMatch(str));
+  copy2 = orig;
+  CHECK(copy2.FullMatch(str));
+
+  // Make sure when we assign to ourselves, nothing bad happens
+  orig = orig;
+  copy1 = copy1;
+  copy2 = copy2;
+  CHECK(orig.FullMatch(str));
+  CHECK(copy1.FullMatch(str));
+  CHECK(copy2.FullMatch(str));
+}
+
 int main(int argc, char** argv) {
   // Treat any flag as --help
   if (argc > 1 && argv[1][0] == '-') {
@@ -701,8 +827,11 @@ int main(int argc, char** argv) {
   /***** FullMatch with no args *****/
 
   CHECK(RE("h.*o").FullMatch("hello"));
-  CHECK(!RE("h.*o").FullMatch("othello"));
-  CHECK(!RE("h.*o").FullMatch("hello!"));
+  CHECK(!RE("h.*o").FullMatch("othello"));     // Must be anchored at front
+  CHECK(!RE("h.*o").FullMatch("hello!"));      // Must be anchored at end
+  CHECK(RE("a*").FullMatch("aaaa"));           // Fullmatch with normal op
+  CHECK(RE("a*?").FullMatch("aaaa"));          // Fullmatch with nongreedy op
+  CHECK(RE("a*?\\z").FullMatch("aaaa"));       // Two unusual ops
 
   /***** FullMatch with args *****/
 
@@ -745,6 +874,24 @@ int main(int argc, char** argv) {
   CHECK(RE("(\\w+):(\\d+)").FullMatch("ruby:1234", &s, &i));
   CHECK_EQ(s, string("ruby"));
   CHECK_EQ(i, 1234);
+
+  // Ignore non-void* NULL arg
+  CHECK(RE("he(.*)lo").FullMatch("hello", (char*)NULL));
+  CHECK(RE("h(.*)o").FullMatch("hello", (string*)NULL));
+  CHECK(RE("h(.*)o").FullMatch("hello", (StringPiece*)NULL));
+  CHECK(RE("(.*)").FullMatch("1234", (int*)NULL));
+#ifdef HAVE_LONG_LONG
+  CHECK(RE("(.*)").FullMatch("1234567890123456", (long long*)NULL));
+#endif
+  CHECK(RE("(.*)").FullMatch("123.4567890123456", (double*)NULL));
+  CHECK(RE("(.*)").FullMatch("123.4567890123456", (float*)NULL));
+
+  // Fail on non-void* NULL arg if the match doesn't parse for the given type.
+  CHECK(!RE("h(.*)lo").FullMatch("hello", &s, (char*)NULL));
+  CHECK(!RE("(.*)").FullMatch("hello", (int*)NULL));
+  CHECK(!RE("(.*)").FullMatch("1234567890123456", (int*)NULL));
+  CHECK(!RE("(.*)").FullMatch("hello", (double*)NULL));
+  CHECK(!RE("(.*)").FullMatch("hello", (float*)NULL));
 
   // Ignored arg
   CHECK(RE("(\\w+)(:)(\\d+)").FullMatch("ruby:1234", &s, (void*)NULL, &i));
@@ -797,27 +944,34 @@ int main(int argc, char** argv) {
     CHECK(!RE("(\\d+)").FullMatch("4294967296", &v));
   }
 #ifdef HAVE_LONG_LONG
+# if defined(__MINGW__) || defined(__MINGW32__)
+#   define LLD "%I64d"
+#   define LLU "%I64u"
+# else
+#   define LLD "%lld"
+#   define LLU "%llu"
+# endif
   {
     long long v;
     static const long long max_value = 0x7fffffffffffffffLL;
     static const long long min_value = -max_value - 1;
-    char buf[32];
+    char buf[32];  // definitely big enough for a long long
 
     CHECK(RE("(-?\\d+)").FullMatch("100", &v)); CHECK_EQ(v, 100);
     CHECK(RE("(-?\\d+)").FullMatch("-100",&v)); CHECK_EQ(v, -100);
 
-    snprintf(buf, sizeof(buf), "%lld", max_value);
+    sprintf(buf, LLD, max_value);
     CHECK(RE("(-?\\d+)").FullMatch(buf,&v)); CHECK_EQ(v, max_value);
 
-    snprintf(buf, sizeof(buf), "%lld", min_value);
+    sprintf(buf, LLD, min_value);
     CHECK(RE("(-?\\d+)").FullMatch(buf,&v)); CHECK_EQ(v, min_value);
 
-    snprintf(buf, sizeof(buf), "%lld", max_value);
+    sprintf(buf, LLD, max_value);
     assert(buf[strlen(buf)-1] != '9');
     buf[strlen(buf)-1]++;
     CHECK(!RE("(-?\\d+)").FullMatch(buf, &v));
 
-    snprintf(buf, sizeof(buf), "%lld", min_value);
+    sprintf(buf, LLD, min_value);
     assert(buf[strlen(buf)-1] != '9');
     buf[strlen(buf)-1]++;
     CHECK(!RE("(-?\\d+)").FullMatch(buf, &v));
@@ -828,12 +982,12 @@ int main(int argc, char** argv) {
     unsigned long long v;
     long long v2;
     static const unsigned long long max_value = 0xffffffffffffffffULL;
-    char buf[32];
+    char buf[32];  // definitely big enough for a unsigned long long
 
     CHECK(RE("(-?\\d+)").FullMatch("100",&v)); CHECK_EQ(v, 100);
     CHECK(RE("(-?\\d+)").FullMatch("-100",&v2)); CHECK_EQ(v2, -100);
 
-    snprintf(buf, sizeof(buf), "%llu", max_value);
+    sprintf(buf, LLU, max_value);
     CHECK(RE("(-?\\d+)").FullMatch(buf,&v)); CHECK_EQ(v, max_value);
 
     assert(buf[strlen(buf)-1] != '9');
@@ -985,11 +1139,14 @@ int main(int argc, char** argv) {
   CHECK(RE("h.*o").PartialMatch("hello!"));
   CHECK(RE("((((((((((((((((((((x))))))))))))))))))))").PartialMatch("x"));
 
+  /***** other tests *****/
+
   RadixTests();
   TestReplace();
   TestExtract();
   TestConsume();
   TestFindAndConsume();
+  TestQuoteMetaAll();
   TestMatchNumberPeculiarity();
 
   // Check the pattern() accessor
@@ -1011,13 +1168,13 @@ int main(int argc, char** argv) {
     printf("Testing UTF-8 handling\n");
 
     // Three Japanese characters (nihongo)
-    const char utf8_string[] = {
+    const unsigned char utf8_string[] = {
          0xe6, 0x97, 0xa5, // 65e5
          0xe6, 0x9c, 0xac, // 627c
          0xe8, 0xaa, 0x9e, // 8a9e
          0
     };
-    const char utf8_pattern[] = {
+    const unsigned char utf8_pattern[] = {
          '.',
          0xe6, 0x9c, 0xac, // 627c
          '.',
@@ -1108,6 +1265,9 @@ int main(int argc, char** argv) {
   if (getenv("VERBOSE_TEST") != NULL)
     VERBOSE_TEST  = true;
   TestOptions();
+
+  // Test the constructors
+  TestConstructors();
 
   // Done
   printf("OK\n");

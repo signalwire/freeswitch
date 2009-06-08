@@ -6,7 +6,7 @@
 and semantics are as close as possible to those of the Perl 5 language.
 
                        Written by Philip Hazel
-           Copyright (c) 1997-2006 University of Cambridge
+           Copyright (c) 1997-2008 University of Cambridge
 
 -----------------------------------------------------------------------------
 Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,9 @@ POSSIBILITY OF SUCH DAMAGE.
 /* This file contains a private PCRE function that converts an ordinal
 character value into a UTF8 string. */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "pcre_internal.h"
 
@@ -62,6 +65,7 @@ Returns:     number of characters placed in the buffer
 int
 _pcre_ord2utf8(int cvalue, uschar *buffer)
 {
+#ifdef SUPPORT_UTF8
 register int i, j;
 for (i = 0; i < _pcre_utf8_table1_size; i++)
   if (cvalue <= _pcre_utf8_table1[i]) break;
@@ -73,6 +77,11 @@ for (j = i; j > 0; j--)
  }
 *buffer = _pcre_utf8_table2[i] | cvalue;
 return i + 1;
+#else
+(void)(cvalue);  /* Keep compiler happy; this function won't ever be */
+(void)(buffer);  /* called when SUPPORT_UTF8 is not defined. */
+return 0;
+#endif
 }
 
 /* End of pcre_ord2utf8.c */

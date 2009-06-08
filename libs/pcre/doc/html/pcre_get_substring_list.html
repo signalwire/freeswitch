@@ -35,10 +35,12 @@ substrings. The arguments are:
   <i>listptr</i>       Where to put a pointer to the list
 </pre>
 The memory in which the substrings and the list are placed is obtained by
-calling <b>pcre_malloc()</b>. A pointer to a list of pointers is put in
-the variable whose address is in <i>listptr</i>. The list is terminated by a
-NULL pointer. The yield of the function is zero on success or
-PCRE_ERROR_NOMEMORY if sufficient memory could not be obtained.
+calling <b>pcre_malloc()</b>. The convenience function
+<b>pcre_free_substring_list()</b> can be used to free it when it is no longer
+needed. A pointer to a list of pointers is put in the variable whose address is
+in <i>listptr</i>. The list is terminated by a NULL pointer. The yield of the
+function is zero on success or PCRE_ERROR_NOMEMORY if sufficient memory could
+not be obtained.
 </P>
 <P>
 There is a complete description of the PCRE native API in the

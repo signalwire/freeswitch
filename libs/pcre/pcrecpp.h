@@ -112,6 +112,12 @@
 //    T             (where "bool T::ParseFrom(const char*, int)" exists)
 //    NULL          (the corresponding matched sub-pattern is not copied)
 //
+// CAVEAT: An optional sub-pattern that does not exist in the matched
+// string is assigned the empty string.  Therefore, the following will
+// return false (because the empty string is not a valid number):
+//    int number;
+//    pcrecpp::RE::FullMatch("abc", "[a-z]+(\\d+)?", &number);
+//
 // -----------------------------------------------------------------------
 // DO_MATCH
 //
@@ -325,11 +331,10 @@
 
 
 #include <string>
-#include <pcrecpparg.h>   // defines the Arg class
-// These aren't technically needed here, but we include them
-// anyway so folks who include pcrecpp.h don't have to include
-// all these other header files as well.
 #include <pcre.h>
+#include <pcrecpparg.h>   // defines the Arg class
+// This isn't technically needed here, but we include it
+// anyway so folks who include pcrecpp.h don't have to.
 #include <pcre_stringpiece.h>
 
 namespace pcrecpp {
@@ -341,16 +346,13 @@ namespace pcrecpp {
 #define PCRE_IS_SET(o)  \
         (all_options_ & o) == o
 
-// We convert user-passed pointers into special Arg objects
-extern Arg no_arg;
-
 /***** Compiling regular expressions: the RE class *****/
 
 // RE_Options allow you to set options to be passed along to pcre,
 // along with other options we put on top of pcre.
 // Only 9 modifiers, plus match_limit and match_limit_recursion,
 // are supported now.
-class RE_Options {
+class PCRECPP_EXP_DEFN RE_Options {
  public:
   // constructor
   RE_Options() : match_limit_(0), match_limit_recursion_(0), all_options_(0) {}
@@ -398,25 +400,25 @@ class RE_Options {
     return PCRE_IS_SET(PCRE_DOTALL);
   }
   RE_Options &set_dotall(bool x) {
-    PCRE_SET_OR_CLEAR(x,PCRE_DOTALL);
+    PCRE_SET_OR_CLEAR(x, PCRE_DOTALL);
   }
 
   bool extended() const {
     return PCRE_IS_SET(PCRE_EXTENDED);
   }
   RE_Options &set_extended(bool x) {
-    PCRE_SET_OR_CLEAR(x,PCRE_EXTENDED);
+    PCRE_SET_OR_CLEAR(x, PCRE_EXTENDED);
   }
 
   bool dollar_endonly() const {
     return PCRE_IS_SET(PCRE_DOLLAR_ENDONLY);
   }
   RE_Options &set_dollar_endonly(bool x) {
-    PCRE_SET_OR_CLEAR(x,PCRE_DOLLAR_ENDONLY);
+    PCRE_SET_OR_CLEAR(x, PCRE_DOLLAR_ENDONLY);
   }
 
   bool extra() const {
-    return PCRE_IS_SET( PCRE_EXTRA);
+    return PCRE_IS_SET(PCRE_EXTRA);
   }
   RE_Options &set_extra(bool x) {
     PCRE_SET_OR_CLEAR(x, PCRE_EXTRA);
@@ -482,14 +484,37 @@ static inline RE_Options EXTENDED() {
 // Interface for regular expression matching.  Also corresponds to a
 // pre-compiled regular expression.  An "RE" object is safe for
 // concurrent use by multiple threads.
-class RE {
+class PCRECPP_EXP_DEFN RE {
  public:
   // We provide implicit conversions from strings so that users can
   // pass in a string or a "const char*" wherever an "RE" is expected.
+  RE(const string& pat) { Init(pat, NULL); }
+  RE(const string& pat, const RE_Options& option) { Init(pat, &option); }
   RE(const char* pat) { Init(pat, NULL); }
-  RE(const char *pat, const RE_Options& option) { Init(pat, &option); }
-  RE(const string& pat) { Init(pat.c_str(), NULL); }
-  RE(const string& pat, const RE_Options& option) { Init(pat.c_str(), &option); }
+  RE(const char* pat, const RE_Options& option) { Init(pat, &option); }
+  RE(const unsigned char* pat) {
+    Init(reinterpret_cast<const char*>(pat), NULL);
+  }
+  RE(const unsigned char* pat, const RE_Options& option) {
+    Init(reinterpret_cast<const char*>(pat), &option);
+  }
+
+  // Copy constructor & assignment - note that these are expensive
+  // because they recompile the expression.
+  RE(const RE& re) { Init(re.pattern_, &re.options_); }
+  const RE& operator=(const RE& re) {
+    if (this != &re) {
+      Cleanup();
+
+      // This is the code that originally came from Google
+      // Init(re.pattern_.c_str(), &re.options_);
+
+      // This is the replacement from Ari Pollak
+      Init(re.pattern_, &re.options_);
+    }
+    return *this;
+  }
+
 
   ~RE();
 
@@ -589,6 +614,18 @@ class RE {
                const StringPiece &text,
                string *out) const;
 
+  // Escapes all potentially meaningful regexp characters in
+  // 'unquoted'.  The returned string, used as a regular expression,
+  // will exactly match the original string.  For example,
+  //           1.5-2.0?
+  // may become:
+  //           1\.5\-2\.0\?
+  // Note QuoteMeta behaves the same as perl's QuoteMeta function,
+  // *except* that it escapes the NUL character (\0) as backslash + 0,
+  // rather than backslash + NUL.
+  static string QuoteMeta(const StringPiece& unquoted);
+
+
   /***** Generic matching interface *****/
 
   // Type of match (TODO: Should be restructured as part of RE_Options)
@@ -609,9 +646,19 @@ class RE {
   // regexp wasn't valid on construction.
   int NumberOfCapturingGroups() const;
 
+  // The default value for an argument, to indicate the end of the argument
+  // list. This must be used only in optional argument defaults. It should NOT
+  // be passed explicitly. Some people have tried to use it like this:
+  //
+  //   FullMatch(x, y, &z, no_arg, &w);
+  //
+  // This is a mistake, and will not work.
+  static Arg no_arg;
+
  private:
 
-  void Init(const char* pattern, const RE_Options* options);
+  void Init(const string& pattern, const RE_Options* options);
+  void Cleanup();
 
   // Match against "text", filling in "vec" (up to "vecsize" * 2/3) with
   // pairs of integers for the beginning and end positions of matched
@@ -655,11 +702,6 @@ class RE {
   pcre*         re_full_;       // For full matches
   pcre*         re_partial_;    // For partial matches
   const string* error_;         // Error indicator (or points to empty string)
-
-  // Don't allow the default copy or assignment constructors --
-  // they're expensive and too easy to do by accident.
-  RE(const RE&);
-  void operator=(const RE&);
 };
 
 }   // namespace pcrecpp

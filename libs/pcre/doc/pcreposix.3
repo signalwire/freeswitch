@@ -7,22 +7,18 @@ PCRE - Perl-compatible regular expressions.
 .B #include <pcreposix.h>
 .PP
 .SM
-.br
 .B int regcomp(regex_t *\fIpreg\fP, const char *\fIpattern\fP,
 .ti +5n
 .B int \fIcflags\fP);
 .PP
-.br
 .B int regexec(regex_t *\fIpreg\fP, const char *\fIstring\fP,
 .ti +5n
 .B size_t \fInmatch\fP, regmatch_t \fIpmatch\fP[], int \fIeflags\fP);
 .PP
-.br
 .B size_t regerror(int \fIerrcode\fP, const regex_t *\fIpreg\fP,
 .ti +5n
 .B char *\fIerrbuf\fP, size_t \fIerrbuf_size\fP);
 .PP
-.br
 .B void regfree(regex_t *\fIpreg\fP);
 .
 .SH DESCRIPTION
@@ -43,11 +39,11 @@ header file, and on Unix systems the library itself is called
 command for linking an application that uses them. Because the POSIX functions
 call the native ones, it is also necessary to add \fB-lpcre\fP.
 .P
-I have implemented only those option bits that can be reasonably mapped to PCRE
-native options. In addition, the option REG_EXTENDED is defined with the value
-zero. This has no effect, but since programs that are written to the POSIX
-interface often use it, this makes it easier to slot in PCRE as a replacement
-library. Other POSIX options are not even defined.
+I have implemented only those POSIX option bits that can be reasonably mapped
+to PCRE native options. In addition, the option REG_EXTENDED is defined with
+the value zero. This has no effect, but since programs that are written to the
+POSIX interface often use it, this makes it easier to slot in PCRE as a
+replacement library. Other POSIX options are not even defined.
 .P
 When PCRE is called via these functions, it is only the API that is POSIX-like
 in style. The syntax and semantics of the regular expressions themselves are
@@ -161,18 +157,36 @@ REG_NEWLINE action.
 .rs
 .sp
 The function \fBregexec()\fP is called to match a compiled pattern \fIpreg\fP
-against a given \fIstring\fP, which is terminated by a zero byte, subject to
-the options in \fIeflags\fP. These can be:
+against a given \fIstring\fP, which is by default terminated by a zero byte
+(but see REG_STARTEND below), subject to the options in \fIeflags\fP. These can
+be:
 .sp
   REG_NOTBOL
 .sp
 The PCRE_NOTBOL option is set when calling the underlying PCRE matching
 function.
 .sp
+  REG_NOTEMPTY
+.sp
+The PCRE_NOTEMPTY option is set when calling the underlying PCRE matching
+function. Note that REG_NOTEMPTY is not part of the POSIX standard. However,
+setting this option can give more POSIX-like behaviour in some situations.
+.sp
   REG_NOTEOL
 .sp
 The PCRE_NOTEOL option is set when calling the underlying PCRE matching
 function.
+.sp
+  REG_STARTEND
+.sp
+The string is considered to start at \fIstring\fP + \fIpmatch[0].rm_so\fP and
+to have a terminating NUL located at \fIstring\fP + \fIpmatch[0].rm_eo\fP
+(there need not actually be a NUL at that location), regardless of the value of
+\fInmatch\fP. This is a BSD extension, compatible with but not specified by
+IEEE Standard 1003.2 (POSIX.2), and should be used with caution in software
+intended to be portable to other systems. Note that a non-zero \fIrm_so\fP does
+not imply REG_NOTBOL; REG_STARTEND affects only the location of the string, not
+how it is matched.
 .P
 If the pattern was compiled with the REG_NOSUB flag, no data about any matched
 strings is returned. The \fInmatch\fP and \fIpmatch\fP arguments of
@@ -214,13 +228,17 @@ memory, after which \fIpreg\fP may no longer be used as a compiled expression.
 .SH AUTHOR
 .rs
 .sp
+.nf
 Philip Hazel
-.br
-University Computing Service,
-.br
-Cambridge CB2 3QG, England.
-.P
-.in 0
-Last updated: 16 January 2006
-.br
-Copyright (c) 1997-2006 University of Cambridge.
+University Computing Service
+Cambridge CB2 3QH, England.
+.fi
+.
+.
+.SH REVISION
+.rs
+.sp
+.nf
+Last updated: 11 March 2009
+Copyright (c) 1997-2009 University of Cambridge.
+.fi

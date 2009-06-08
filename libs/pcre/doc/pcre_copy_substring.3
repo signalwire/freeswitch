@@ -7,7 +7,6 @@ PCRE - Perl-compatible regular expressions
 .B #include <pcre.h>
 .PP
 .SM
-.br
 .B int pcre_copy_substring(const char *\fIsubject\fP, int *\fIovector\fP,
 .ti +5n
 .B int \fIstringcount\fP, int \fIstringnumber\fP, char *\fIbuffer\fP,
@@ -27,7 +26,7 @@ buffer. The arguments are:
   \fIbuffer\fP        Buffer to receive the string
   \fIbuffersize\fP    Size of buffer
 .sp
-The yield is the legnth of the string, PCRE_ERROR_NOMEMORY if the buffer was
+The yield is the length of the string, PCRE_ERROR_NOMEMORY if the buffer was
 too small, or PCRE_ERROR_NOSUBSTRING if the string number is invalid.
 .P
 There is a complete description of the PCRE native API in the

@@ -7,7 +7,6 @@ PCRE - Perl-compatible regular expressions
 .B #include <pcre.h>
 .PP
 .SM
-.br
 .B int pcre_get_substring(const char *\fIsubject\fP, int *\fIovector\fP,
 .ti +5n
 .B int \fIstringcount\fP, int \fIstringnumber\fP,
@@ -27,9 +26,10 @@ arguments are:
   \fIstringptr\fP     Where to put the string pointer
 .sp
 The memory in which the substring is placed is obtained by calling
-\fBpcre_malloc()\fP. The yield of the function is the length of the substring,
-PCRE_ERROR_NOMEMORY if sufficient memory could not be obtained, or
-PCRE_ERROR_NOSUBSTRING if the string number is invalid.
+\fBpcre_malloc()\fP. The convenience function \fBpcre_free_substring()\fP can
+be used to free it when it is no longer needed. The yield of the function is
+the length of the substring, PCRE_ERROR_NOMEMORY if sufficient memory could not
+be obtained, or PCRE_ERROR_NOSUBSTRING if the string number is invalid.
 .P
 There is a complete description of the PCRE native API in the
 .\" HREF

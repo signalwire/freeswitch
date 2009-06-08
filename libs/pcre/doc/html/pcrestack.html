@@ -63,7 +63,7 @@ frame for each matched character. For a long string, a lot of stack is
 required. Consider now this rewritten pattern, which matches exactly the same
 strings:
 <pre>
-  ([^&#60;]++|&#60;(?!inet))
+  ([^&#60;]++|&#60;(?!inet))+
 </pre>
 This uses very much less stack, because runs of characters that do not contain
 "&#60;" are "swallowed" in one item inside the parentheses. Recursion happens only
@@ -73,33 +73,30 @@ backtracking into the runs of non-"&#60;" characters, but that is not related to
 stack usage.
 </P>
 <P>
+This example shows that one way of avoiding stack problems when matching long
+subject strings is to write repeated parenthesized subpatterns to match more
+than one character whenever possible.
+</P>
+<br><b>
+Compiling PCRE to use heap instead of stack
+</b><br>
+<P>
 In environments where stack memory is constrained, you might want to compile
 PCRE to use heap memory instead of stack for remembering back-up points. This
 makes it run a lot more slowly, however. Details of how to do this are given in
 the
 <a href="pcrebuild.html"><b>pcrebuild</b></a>
-documentation.
+documentation. When built in this way, instead of using the stack, PCRE obtains
+and frees memory by calling the functions that are pointed to by the
+<b>pcre_stack_malloc</b> and <b>pcre_stack_free</b> variables. By default, these
+point to <b>malloc()</b> and <b>free()</b>, but you can replace the pointers to
+cause PCRE to use your own functions. Since the block sizes are always the
+same, and are always freed in reverse order, it may be possible to implement
+customized memory handlers that are more efficient than the standard functions.
 </P>
-<P>
-In Unix-like environments, there is not often a problem with the stack, though
-the default limit on stack size varies from system to system. Values from 8Mb
-to 64Mb are common. You can find your default limit by running the command:
-<pre>
-  ulimit -s
-</pre>
-The effect of running out of stack is often SIGSEGV, though sometimes an error
-message is given. You can normally increase the limit on stack size by code
-such as this:
-<pre>
-  struct rlimit rlim;
-  getrlimit(RLIMIT_STACK, &rlim);
-  rlim.rlim_cur = 100*1024*1024;
-  setrlimit(RLIMIT_STACK, &rlim);
-</pre>
-This reads the current limits (soft and hard) using <b>getrlimit()</b>, then
-attempts to increase the soft limit to 100Mb using <b>setrlimit()</b>. You must
-do this before calling <b>pcre_exec()</b>.
-</P>
+<br><b>
+Limiting PCRE's stack usage
+</b><br>
 <P>
 PCRE has an internal counter that can be used to limit the depth of recursion,
 and thus cause <b>pcre_exec()</b> to give an error code before it runs out of
@@ -116,12 +113,60 @@ As a very rough rule of thumb, you should reckon on about 500 bytes per
 recursion. Thus, if you want to limit your stack usage to 8Mb, you
 should set the limit at 16000 recursions. A 64Mb stack, on the other hand, can
 support around 128000 recursions. The <b>pcretest</b> test program has a command
-line option (<b>-S</b>) that can be used to increase its stack.
+line option (<b>-S</b>) that can be used to increase the size of its stack.
 </P>
+<br><b>
+Changing stack size in Unix-like systems
+</b><br>
 <P>
-Last updated: 29 June 2006
+In Unix-like environments, there is not often a problem with the stack unless
+very long strings are involved, though the default limit on stack size varies
+from system to system. Values from 8Mb to 64Mb are common. You can find your
+default limit by running the command:
+<pre>
+  ulimit -s
+</pre>
+Unfortunately, the effect of running out of stack is often SIGSEGV, though
+sometimes a more explicit error message is given. You can normally increase the
+limit on stack size by code such as this:
+<pre>
+  struct rlimit rlim;
+  getrlimit(RLIMIT_STACK, &rlim);
+  rlim.rlim_cur = 100*1024*1024;
+  setrlimit(RLIMIT_STACK, &rlim);
+</pre>
+This reads the current limits (soft and hard) using <b>getrlimit()</b>, then
+attempts to increase the soft limit to 100Mb using <b>setrlimit()</b>. You must
+do this before calling <b>pcre_exec()</b>.
+</P>
+<br><b>
+Changing stack size in Mac OS X
+</b><br>
+<P>
+Using <b>setrlimit()</b>, as described above, should also work on Mac OS X. It
+is also possible to set a stack size when linking a program. There is a
+discussion about stack sizes in Mac OS X at this web site:
+<a href="http://developer.apple.com/qa/qa2005/qa1419.html">http://developer.apple.com/qa/qa2005/qa1419.html.</a>
+</P>
+<br><b>
+AUTHOR
+</b><br>
+<P>
+Philip Hazel
 <br>
-Copyright &copy; 1997-2006 University of Cambridge.
+University Computing Service
+<br>
+Cambridge CB2 3QH, England.
+<br>
+</P>
+<br><b>
+REVISION
+</b><br>
+<P>
+Last updated: 09 July 2008
+<br>
+Copyright &copy; 1997-2008 University of Cambridge.
+<br>
 <p>
 Return to the <a href="index.html">PCRE index page</a>.
 </p>

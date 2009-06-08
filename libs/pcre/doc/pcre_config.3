@@ -7,7 +7,6 @@ PCRE - Perl-compatible regular expressions
 .B #include <pcre.h>
 .PP
 .SM
-.br
 .B int pcre_config(int \fIwhat\fP, void *\fIwhere\fP);
 .
 .SH DESCRIPTION
@@ -26,7 +25,15 @@ The available codes are:
   PCRE_CONFIG_MATCH_LIMIT   Internal resource limit
   PCRE_CONFIG_MATCH_LIMIT_RECURSION
                             Internal recursion depth limit
-  PCRE_CONFIG_NEWLINE       Value of the newline sequence
+  PCRE_CONFIG_NEWLINE       Value of the default newline sequence:
+                                13 (0x000d)    for CR
+                                10 (0x000a)    for LF
+                              3338 (0x0d0a)    for CRLF
+                                -2             for ANYCRLF
+                                -1             for ANY
+  PCRE_CONFIG_BSR           Indicates what \eR matches by default:
+                                 0             all Unicode line endings
+                                 1             CR, LF, or CRLF only
   PCRE_CONFIG_POSIX_MALLOC_THRESHOLD
                             Threshold of return slots, above
                               which \fBmalloc()\fR is used by

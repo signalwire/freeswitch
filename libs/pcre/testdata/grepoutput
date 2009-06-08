@@ -18,6 +18,7 @@ PATTERN at the start of a line.
 ./testdata/grepinput:608:Check up on PATTERN near the end.
 ./testdata/grepinputx:3:Here is the pattern again.
 ./testdata/grepinputx:5:Pattern
+./testdata/grepinputx:42:This line contains pattern not on a line by itself.
 ---------------------------- Test 6 ------------------------------
 7:PATTERN at the start of a line.
 8:In the middle of a line, PATTERN appears.
@@ -25,6 +26,7 @@ PATTERN at the start of a line.
 608:Check up on PATTERN near the end.
 3:Here is the pattern again.
 5:Pattern
+42:This line contains pattern not on a line by itself.
 ---------------------------- Test 7 ------------------------------
 ./testdata/grepinput
 ./testdata/grepinputx
@@ -75,18 +77,13 @@ RC=1
 39:nineteen
 40:twenty
 41:
-42:Here follows some CR/LF/CRLF test data.
-43:
-44:abcdef
-45:ghi
-46:jkl
-47:
-48:This is the last line of this file.
+43:This is the last line of this file.
 ---------------------------- Test 12 -----------------------------
 Pattern
 ---------------------------- Test 13 -----------------------------
 Here is the pattern again.
 That time it was on a line by itself.
+This line contains pattern not on a line by itself.
 ---------------------------- Test 14 -----------------------------
 ./testdata/grepinputx:To pat or not to pat, that is the question.
 ---------------------------- Test 15 -----------------------------
@@ -163,8 +160,8 @@ eighteen
 nineteen
 twenty
 
-Here follows some CR/LF/CRLF test data.
-
+This line contains pattern not on a line by itself.
+This is the last line of this file.
 ---------------------------- Test 25 -----------------------------
 15-
 16-complete pair
@@ -214,8 +211,8 @@ eighteen
 nineteen
 twenty
 
-Here follows some CR/LF/CRLF test data.
-
+This line contains pattern not on a line by itself.
+This is the last line of this file.
 ---------------------------- Test 27 -----------------------------
 four
 five
@@ -235,9 +232,8 @@ eighteen
 nineteen
 twenty
 
-Here follows some CR/LF/CRLF test data.
-
-abcdef
+This line contains pattern not on a line by itself.
+This is the last line of this file.
 ---------------------------- Test 28 -----------------------------
 14-of lines all by themselves.
 15-
@@ -289,11 +285,8 @@ eighteen
 nineteen
 twenty
 
-Here follows some CR/LF/CRLF test data.
-
-abcdef
-ghi
-jkl
+This line contains pattern not on a line by itself.
+This is the last line of this file.
 ---------------------------- Test 30 -----------------------------
 ./testdata/grepinput-4-features should be added at the end, because some of the tests involve the
 ./testdata/grepinput-5-output of line numbers, and we don't want these to change.
@@ -313,6 +306,11 @@ jkl
 ./testdata/grepinputx:3:Here is the pattern again.
 ./testdata/grepinputx-4-
 ./testdata/grepinputx:5:Pattern
+--
+./testdata/grepinputx-39-nineteen
+./testdata/grepinputx-40-twenty
+./testdata/grepinputx-41-
+./testdata/grepinputx:42:This line contains pattern not on a line by itself.
 ---------------------------- Test 31 -----------------------------
 ./testdata/grepinput:7:PATTERN at the start of a line.
 ./testdata/grepinput:8:In the middle of a line, PATTERN appears.
@@ -331,6 +329,9 @@ jkl
 ./testdata/grepinputx-6-That time it was on a line by itself.
 ./testdata/grepinputx-7-
 ./testdata/grepinputx-8-To pat or not to pat, that is the question.
+--
+./testdata/grepinputx:42:This line contains pattern not on a line by itself.
+./testdata/grepinputx-43-This is the last line of this file.
 ---------------------------- Test 32 -----------------------------
 ./testdata/grepinputx
 ---------------------------- Test 33 -----------------------------
@@ -342,6 +343,7 @@ RC=2
 ./testdata/grepinputx
 RC=0
 ---------------------------- Test 36 -----------------------------
+./testdata/grepinput8
 ./testdata/grepinputx
 RC=0
 ---------------------------- Test 37 -----------------------------
@@ -349,11 +351,11 @@ aaaaa0
 aaaaa2
 RC=0
 ======== STDERR ========
-pcregrep: pcre_exec() error -8 while matching this line:
+pcregrep: pcre_exec() error -8 while matching this text:
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 pcregrep: error -8 means that a resource limit was exceeded
 pcregrep: check your regex for nested unlimited loops
-pcregrep: pcre_exec() error -8 while matching this line:
+pcregrep: pcre_exec() error -8 while matching this text:
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 ---------------------------- Test 38 ------------------------------
 This line contains a binary zero here > < for testing.
@@ -371,10 +373,13 @@ after the binary zero
 ./testdata/grepinput:597:after the binary zero
 ---------------------------- Test 42 ------------------------------
 595:before
+595:zero
 596:zero
 597:after
+597:zero
 ---------------------------- Test 43 ------------------------------
 595:before
+595:zero
 596:zero
 597:zero
 ---------------------------- Test 44 ------------------------------
@@ -396,22 +401,25 @@ AB.VE
 AB.VE the turtle
 PUT NEW DATA ABOVE THIS LINE.
 ---------------------------- Test 49 ------------------------------
-abcdef
-ghi
-jkl
 ---------------------------- Test 50 ------------------------------
-def
+over the lazy dog.
+This time it jumps and jumps and jumps.
 ---------------------------- Test 51 ------------------------------
-abcdef
-ghi
-jkl
+fox [1;31mjumps[00m
+This time it [1;31mjumps[00m and [1;31mjumps[00m and [1;31mjumps[00m.
 ---------------------------- Test 52 ------------------------------
-def
-
-ghi
-jkl
-
-This is the last line of this file.
-
+36972,6
+36990,4
+37024,4
+37066,5
+37083,4
 ---------------------------- Test 53 ------------------------------
-jkl
+595:15,6
+595:33,4
+596:28,4
+597:15,5
+597:32,4
+---------------------------- Test 54 -----------------------------
+Here is the [1;31mpattern[00m again.
+That time it was on a [1;31mline by itself[00m.
+This line contains [1;31mpattern[00m not on a [1;31mline by itself[00m.

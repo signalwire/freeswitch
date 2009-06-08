@@ -50,11 +50,13 @@
 #include <bits/type_traits.h>
 #endif
 
+#include <pcre.h>
+
 using std::string;
 
 namespace pcrecpp {
 
-class StringPiece {
+class PCRECPP_EXP_DEFN StringPiece {
  private:
   const char*   ptr_;
   int           length_;
@@ -66,7 +68,10 @@ class StringPiece {
   StringPiece()
     : ptr_(NULL), length_(0) { }
   StringPiece(const char* str)
-    : ptr_(str), length_(static_cast<int>(strlen(str))) { }
+    : ptr_(str), length_(static_cast<int>(strlen(ptr_))) { }
+  StringPiece(const unsigned char* str)
+    : ptr_(reinterpret_cast<const char*>(str)),
+      length_(static_cast<int>(strlen(ptr_))) { }
   StringPiece(const string& str)
     : ptr_(str.data()), length_(static_cast<int>(str.size())) { }
   StringPiece(const char* offset, int len)

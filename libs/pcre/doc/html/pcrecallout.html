@@ -17,6 +17,8 @@ man page, in case the conversion went wrong.
 <li><a name="TOC2" href="#SEC2">MISSING CALLOUTS</a>
 <li><a name="TOC3" href="#SEC3">THE CALLOUT INTERFACE</a>
 <li><a name="TOC4" href="#SEC4">RETURN VALUES</a>
+<li><a name="TOC5" href="#SEC5">AUTHOR</a>
+<li><a name="TOC6" href="#SEC6">REVISION</a>
 </ul>
 <br><a name="SEC1" href="#TOC1">PCRE CALLOUTS</a><br>
 <P>
@@ -35,7 +37,7 @@ function is to be called. Different callout points can be identified by putting
 a number less than 256 after the letter C. The default value is zero.
 For example, this pattern has two callout points:
 <pre>
-  (?C1)\deabc(?C2)def
+  (?C1)abc(?C2)def
 </pre>
 If the PCRE_AUTO_CALLOUT option bit is set when <b>pcre_compile()</b> is called,
 PCRE automatically inserts callouts, all with number 255, before each item in
@@ -60,7 +62,8 @@ trying to optimize the performance of a particular pattern.
 <br><a name="SEC2" href="#TOC1">MISSING CALLOUTS</a><br>
 <P>
 You should be aware that, because of optimizations in the way PCRE matches
-patterns, callouts sometimes do not happen. For example, if the pattern is
+patterns by default, callouts sometimes do not happen. For example, if the
+pattern is
 <pre>
   ab(?C4)cd
 </pre>
@@ -68,6 +71,12 @@ PCRE knows that any matching string must contain the letter "d". If the subject
 string is "abyz", the lack of "d" means that matching doesn't ever start, and
 the callout is never reached. However, with "abyd", though the result is still
 no match, the callout is obeyed.
+</P>
+<P>
+You can disable these optimizations by passing the PCRE_NO_START_OPTIMIZE
+option to <b>pcre_exec()</b> or <b>pcre_dfa_exec()</b>. This slows down the
+matching process, but does ensure that callouts such as the example above are
+obeyed.
 </P>
 <br><a name="SEC3" href="#TOC1">THE CALLOUT INTERFACE</a><br>
 <P>
@@ -113,10 +122,12 @@ The <i>subject</i> and <i>subject_length</i> fields contain copies of the values
 that were passed to <b>pcre_exec()</b>.
 </P>
 <P>
-The <i>start_match</i> field contains the offset within the subject at which the
-current match attempt started. If the pattern is not anchored, the callout
-function may be called several times from the same point in the pattern for
-different starting points in the subject.
+The <i>start_match</i> field normally contains the offset within the subject at
+which the current match attempt started. However, if the escape sequence \K
+has been encountered, this value is changed to reflect the modified starting
+point. If the pattern is not anchored, the callout function may be called
+several times from the same point in the pattern for different starting points
+in the subject.
 </P>
 <P>
 The <i>current_position</i> field contains the offset within the subject of the
@@ -177,10 +188,21 @@ values. In particular, PCRE_ERROR_NOMATCH forces a standard "no match" failure.
 The error number PCRE_ERROR_CALLOUT is reserved for use by callout functions;
 it will never be used by PCRE itself.
 </P>
+<br><a name="SEC5" href="#TOC1">AUTHOR</a><br>
 <P>
-Last updated: 28 February 2005
+Philip Hazel
 <br>
-Copyright &copy; 1997-2005 University of Cambridge.
+University Computing Service
+<br>
+Cambridge CB2 3QH, England.
+<br>
+</P>
+<br><a name="SEC6" href="#TOC1">REVISION</a><br>
+<P>
+Last updated: 15 March 2009
+<br>
+Copyright &copy; 1997-2009 University of Cambridge.
+<br>
 <p>
 Return to the <a href="index.html">PCRE index page</a>.
 </p>

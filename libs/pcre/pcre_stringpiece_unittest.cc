@@ -1,10 +1,16 @@
 // Copyright 2003 and onwards Google Inc.
 // Author: Sanjay Ghemawat
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <map>
 #include <algorithm>    // for make_pair
-#include <pcre_stringpiece.h>
+
+#include "pcrecpp.h"
+#include "pcre_stringpiece.h"
 
 // CHECK dies with a fatal error if condition is not true.  It is *not*
 // controlled by NDEBUG, so the check will be executed regardless of

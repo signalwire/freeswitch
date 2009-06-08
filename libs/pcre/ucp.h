@@ -6,7 +6,8 @@
 #define _UCP_H
 
 /* This file contains definitions of the property values that are returned by
-the function _pcre_ucp_findprop(). */
+the UCD access macros. New values that are added for new releases of Unicode
+should always be at the end of each enum, for backwards compatibility. */
 
 /* These are the general character categories. */
 
@@ -118,7 +119,25 @@ enum {
   ucp_Tibetan,
   ucp_Tifinagh,
   ucp_Ugaritic,
-  ucp_Yi
+  ucp_Yi,
+  /* New for Unicode 5.0: */
+  ucp_Balinese,
+  ucp_Cuneiform,
+  ucp_Nko,
+  ucp_Phags_Pa,
+  ucp_Phoenician,
+  /* New for Unicode 5.1: */
+  ucp_Carian,
+  ucp_Cham,
+  ucp_Kayah_Li,
+  ucp_Lepcha,
+  ucp_Lycian,
+  ucp_Lydian,
+  ucp_Ol_Chiki,
+  ucp_Rejang,
+  ucp_Saurashtra,
+  ucp_Sundanese,
+  ucp_Vai
 };
 
 #endif

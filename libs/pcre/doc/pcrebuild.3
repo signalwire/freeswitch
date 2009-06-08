@@ -5,16 +5,21 @@ PCRE - Perl-compatible regular expressions
 .rs
 .sp
 This document describes the optional features of PCRE that can be selected when
-the library is compiled. They are all selected, or deselected, by providing
-options to the \fBconfigure\fP script that is run before the \fBmake\fP
-command. The complete list of options for \fBconfigure\fP (which includes the
-standard ones such as the selection of the installation directory) can be
-obtained by running
+the library is compiled. It assumes use of the \fBconfigure\fP script, where
+the optional features are selected or deselected by providing options to
+\fBconfigure\fP before running the \fBmake\fP command. However, the same
+options can be selected in both Unix-like and non-Unix-like environments using
+the GUI facility of \fBCMakeSetup\fP if you are using \fBCMake\fP instead of
+\fBconfigure\fP to build PCRE.
+.P
+The complete list of options for \fBconfigure\fP (which includes the standard
+ones such as the selection of the installation directory) can be obtained by
+running
 .sp
   ./configure --help
 .sp
-The following sections describe certain options whose names begin with --enable
-or --disable. These settings specify changes to the defaults for the
+The following sections include descriptions of options whose names begin with
+--enable or --disable. These settings specify changes to the defaults for the
 \fBconfigure\fP command. Because of the way that \fBconfigure\fP works,
 --enable and --disable always come in pairs, so the complementary option always
 exists as well, but as it specifies the default, it is not described.
@@ -33,7 +38,7 @@ to the \fBconfigure\fP command.
 .SH "UTF-8 SUPPORT"
 .rs
 .sp
-To build PCRE with support for UTF-8 character strings, add
+To build PCRE with support for UTF-8 Unicode character strings, add
 .sp
   --enable-utf8
 .sp
@@ -41,6 +46,12 @@ to the \fBconfigure\fP command. Of itself, this does not make PCRE treat
 strings as UTF-8. As well as compiling PCRE with this option, you also have
 have to set the PCRE_UTF8 option when you call the \fBpcre_compile()\fP
 function.
+.P
+If you set --enable-utf8 when compiling in an EBCDIC environment, PCRE expects
+its input to be either ASCII or UTF-8 (depending on the runtime option). It is
+not possible to support both EBCDIC and UTF-8 codes in the same version of the
+library. Consequently, --enable-utf8 and --enable-ebcdic are mutually
+exclusive.
 .
 .SH "UNICODE CHARACTER PROPERTY SUPPORT"
 .rs
@@ -56,9 +67,9 @@ character properties, you must add
 to the \fBconfigure\fP command. This implies UTF-8 support, even if you have
 not explicitly requested it.
 .P
-Including Unicode property support adds around 90K of tables to the PCRE
-library, approximately doubling its size. Only the general category properties
-such as \fILu\fP and \fINd\fP are supported. Details are given in the
+Including Unicode property support adds around 30K of tables to the PCRE
+library. Only the general category properties such as \fILu\fP and \fINd\fP are
+supported. Details are given in the
 .\" HREF
 \fBpcrepattern\fP
 .\"
@@ -67,9 +78,9 @@ documentation.
 .SH "CODE VALUE OF NEWLINE"
 .rs
 .sp
-By default, PCRE interprets character 10 (linefeed, LF) as indicating the end
+By default, PCRE interprets the linefeed (LF) character as indicating the end
 of a line. This is the normal newline character on Unix-like systems. You can
-compile PCRE to use character 13 (carriage return, CR) instead, by adding
+compile PCRE to use carriage return (CR) instead, by adding
 .sp
   --enable-newline-is-cr
 .sp
@@ -81,9 +92,32 @@ character sequence CRLF. If you want this, add
 .sp
   --enable-newline-is-crlf
 .sp
-to the \fBconfigure\fP command. Whatever line ending convention is selected
-when PCRE is built can be overridden when the library functions are called. At
-build time it is conventional to use the standard for your operating system.
+to the \fBconfigure\fP command. There is a fourth option, specified by
+.sp
+  --enable-newline-is-anycrlf
+.sp
+which causes PCRE to recognize any of the three sequences CR, LF, or CRLF as
+indicating a line ending. Finally, a fifth option, specified by
+.sp
+  --enable-newline-is-any
+.sp
+causes PCRE to recognize any Unicode newline sequence.
+.P
+Whatever line ending convention is selected when PCRE is built can be
+overridden when the library functions are called. At build time it is
+conventional to use the standard for your operating system.
+.
+.SH "WHAT \eR MATCHES"
+.rs
+.sp
+By default, the sequence \eR in a pattern matches any Unicode newline sequence,
+whatever has been selected as the line ending sequence. If you specify
+.sp
+  --enable-bsr-anycrlf
+.sp
+the default is changed so that \eR matches only CR, LF, or CRLF. Whatever is
+selected when PCRE is built can be overridden when the library functions are
+called.
 .
 .SH "BUILDING SHARED AND STATIC LIBRARIES"
 .rs
@@ -131,10 +165,6 @@ or four-byte offsets by adding a setting such as
 to the \fBconfigure\fP command. The value given must be 2, 3, or 4. Using
 longer offsets slows down the operation of PCRE because it has to load
 additional bytes when handling them.
-.P
-If you build PCRE with an increased link size, test 2 (and test 5 if you are
-using UTF-8) will fail. Part of the output of these tests is a representation
-of the compiled pattern, and this changes with the link size.
 .
 .SH "AVOIDING EXCESSIVE STACK USAGE"
 .rs
@@ -157,13 +187,17 @@ build a version of PCRE that works this way, add
 .sp
 to the \fBconfigure\fP command. With this configuration, PCRE will use the
 \fBpcre_stack_malloc\fP and \fBpcre_stack_free\fP variables to call memory
-management functions. Separate functions are provided because the usage is very
-predictable: the block sizes requested are always the same, and the blocks are
-always freed in reverse order. A calling program might be able to implement
-optimized functions that perform better than the standard \fBmalloc()\fP and
-\fBfree()\fP functions. PCRE runs noticeably more slowly when built in this
-way. This option affects only the \fBpcre_exec()\fP function; it is not
-relevant for the the \fBpcre_dfa_exec()\fP function.
+management functions. By default these point to \fBmalloc()\fP and
+\fBfree()\fP, but you can replace the pointers so that your own functions are
+used.
+.P
+Separate functions are provided rather than using \fBpcre_malloc\fP and
+\fBpcre_free\fP because the usage is very predictable: the block sizes
+requested are always the same, and the blocks are always freed in reverse
+order. A calling program might be able to implement optimized functions that
+perform better than \fBmalloc()\fP and \fBfree()\fP. PCRE runs noticeably more
+slowly when built in this way. This option affects only the \fBpcre_exec()\fP
+function; it is not relevant for the the \fBpcre_dfa_exec()\fP function.
 .
 .SH "LIMITING PCRE RESOURCE USAGE"
 .rs
@@ -196,18 +230,105 @@ constraints. However, you can set a lower limit by adding, for example,
 .sp
 to the \fBconfigure\fP command. This value can also be overridden at run time.
 .
+.SH "CREATING CHARACTER TABLES AT BUILD TIME"
+.rs
+.sp
+PCRE uses fixed tables for processing characters whose code values are less
+than 256. By default, PCRE is built with a set of tables that are distributed
+in the file \fIpcre_chartables.c.dist\fP. These tables are for ASCII codes
+only. If you add
+.sp
+  --enable-rebuild-chartables
+.sp
+to the \fBconfigure\fP command, the distributed tables are no longer used.
+Instead, a program called \fBdftables\fP is compiled and run. This outputs the
+source for new set of tables, created in the default locale of your C runtime
+system. (This method of replacing the tables does not work if you are cross
+compiling, because \fBdftables\fP is run on the local host. If you need to
+create alternative tables when cross compiling, you will have to do so "by
+hand".)
+.
 .SH "USING EBCDIC CODE"
 .rs
 .sp
 PCRE assumes by default that it will run in an environment where the character
-code is ASCII (or Unicode, which is a superset of ASCII). PCRE can, however, be
-compiled to run in an EBCDIC environment by adding
+code is ASCII (or Unicode, which is a superset of ASCII). This is the case for
+most computer operating systems. PCRE can, however, be compiled to run in an
+EBCDIC environment by adding
 .sp
   --enable-ebcdic
 .sp
-to the \fBconfigure\fP command.
+to the \fBconfigure\fP command. This setting implies
+--enable-rebuild-chartables. You should only use it if you know that you are in
+an EBCDIC environment (for example, an IBM mainframe operating system). The
+--enable-ebcdic option is incompatible with --enable-utf8.
+.
+.SH "PCREGREP OPTIONS FOR COMPRESSED FILE SUPPORT"
+.rs
+.sp
+By default, \fBpcregrep\fP reads all files as plain text. You can build it so
+that it recognizes files whose names end in \fB.gz\fP or \fB.bz2\fP, and reads
+them with \fBlibz\fP or \fBlibbz2\fP, respectively, by adding one or both of
+.sp
+  --enable-pcregrep-libz
+  --enable-pcregrep-libbz2
+.sp
+to the \fBconfigure\fP command. These options naturally require that the
+relevant libraries are installed on your system. Configuration will fail if
+they are not.
+.
+.SH "PCRETEST OPTION FOR LIBREADLINE SUPPORT"
+.rs
+.sp
+If you add
+.sp
+  --enable-pcretest-libreadline
+.sp
+to the \fBconfigure\fP command, \fBpcretest\fP is linked with the
+\fBlibreadline\fP library, and when its input is from a terminal, it reads it
+using the \fBreadline()\fP function. This provides line-editing and history
+facilities. Note that \fBlibreadline\fP is GPL-licenced, so if you distribute a
+binary of \fBpcretest\fP linked in this way, there may be licensing issues.
 .P
-.in 0
-Last updated: 06 June 2006
-.br
-Copyright (c) 1997-2006 University of Cambridge.
+Setting this option causes the \fB-lreadline\fP option to be added to the
+\fBpcretest\fP build. In many operating environments with a sytem-installed
+\fBlibreadline\fP this is sufficient. However, in some environments (e.g.
+if an unmodified distribution version of readline is in use), some extra
+configuration may be necessary. The INSTALL file for \fBlibreadline\fP says
+this:
+.sp
+  "Readline uses the termcap functions, but does not link with the
+  termcap or curses library itself, allowing applications which link
+  with readline the to choose an appropriate library."
+.sp
+If your environment has not been set up so that an appropriate library is
+automatically included, you may need to add something like
+.sp
+  LIBS="-ncurses"
+.sp
+immediately before the \fBconfigure\fP command.
+.
+.
+.SH "SEE ALSO"
+.rs
+.sp
+\fBpcreapi\fP(3), \fBpcre_config\fP(3).
+.
+.
+.SH AUTHOR
+.rs
+.sp
+.nf
+Philip Hazel
+University Computing Service
+Cambridge CB2 3QH, England.
+.fi
+.
+.
+.SH REVISION
+.rs
+.sp
+.nf
+Last updated: 17 March 2009
+Copyright (c) 1997-2009 University of Cambridge.
+.fi

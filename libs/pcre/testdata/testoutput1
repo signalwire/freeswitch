@@ -1817,7 +1817,7 @@ No match
 No match
 
 /^a	b
-      c/x
+      c/x
     abc
  0: abc
 
@@ -2093,14 +2093,6 @@ No match
     {4,5a}bc
  0: {4,5a}bc
 
-/^a.b/
-    a\rb
- 0: a\x0db
-    *** Failers
-No match
-    a\nb
-No match
-
 /abc$/
     abc
  0: abc
@@ -2197,9 +2189,9 @@ No match
 10: j
 11: k
 
-/ab\gdef/
-    abgdef
- 0: abgdef
+/ab\idef/
+    abidef
+ 0: abidef
 
 /a{0}bc/
     bc
@@ -5480,11 +5472,21 @@ No match
  0: b
 
 /^(?:a?b?)*$/
+    \
+ 0: 
+    a
+ 0: a
+    ab
+ 0: ab
+    aaa   
+ 0: aaa
     *** Failers
 No match
     dbcb
 No match
     a--
+No match
+    aa-- 
 No match
 
 /((?s)^a(.))((?m)^b$)/
@@ -5548,12 +5550,6 @@ No match
     a\nb\nc\n
  0: b
  1: b
-
-/(?(1)a|b)/
-
-/(?(1)b|a)/
-    a
- 0: a
 
 /(x)?(?(1)a|b)/
     *** Failers
@@ -6352,5 +6348,302 @@ No match
  0: a,b]
     [a,b,c]  
  0: [a,b,c]
+
+/(?-x: )/x
+    A\x20B
+ 0:  
+    
+"(?x)(?-x: \s*#\s*)"
+    A # B
+ 0:  # 
+    ** Failers
+No match
+    #  
+No match
+
+"(?x-is)(?:(?-ixs) \s*#\s*) include"
+    A #include
+ 0:  #include
+    ** Failers
+No match
+    A#include  
+No match
+    A #Include
+No match
+
+/a*b*\w/
+    aaabbbb
+ 0: aaabbbb
+    aaaa
+ 0: aaaa
+    a
+ 0: a
+
+/a*b?\w/
+    aaabbbb
+ 0: aaabb
+    aaaa
+ 0: aaaa
+    a
+ 0: a
+
+/a*b{0,4}\w/
+    aaabbbb
+ 0: aaabbbb
+    aaaa
+ 0: aaaa
+    a
+ 0: a
+
+/a*b{0,}\w/
+    aaabbbb
+ 0: aaabbbb
+    aaaa
+ 0: aaaa
+    a
+ 0: a
+    
+/a*\d*\w/
+    0a
+ 0: 0a
+    a 
+ 0: a
+    
+/a*b *\w/x
+    a 
+ 0: a
+
+/a*b#comment
+  *\w/x
+    a 
+ 0: a
+
+/a* b *\w/x
+    a 
+ 0: a
+
+/^\w+=.*(\\\n.*)*/
+    abc=xyz\\\npqr
+ 0: abc=xyz\
+
+/(?=(\w+))\1:/
+    abcd:
+ 0: abcd:
+ 1: abcd
+
+/^(?=(\w+))\1:/
+    abcd:
+ 0: abcd:
+ 1: abcd
+
+/^\Eabc/
+    abc
+ 0: abc
+    
+/^[\Eabc]/
+    a
+ 0: a
+    ** Failers 
+No match
+    E 
+No match
+    
+/^[a-\Ec]/
+    b
+ 0: b
+    ** Failers
+No match
+    -
+No match
+    E    
+No match
+
+/^[a\E\E-\Ec]/
+    b
+ 0: b
+    ** Failers
+No match
+    -
+No match
+    E    
+No match
+
+/^[\E\Qa\E-\Qz\E]+/
+    b
+ 0: b
+    ** Failers
+No match
+    -  
+No match
+    
+/^[a\Q]bc\E]/
+    a
+ 0: a
+    ]
+ 0: ]
+    c
+ 0: c
+    
+/^[a-\Q\E]/
+    a
+ 0: a
+    -     
+ 0: -
+
+/^(a()*)*/
+    aaaa
+ 0: aaaa
+ 1: a
+ 2: 
+
+/^(?:a(?:(?:))*)*/
+    aaaa
+ 0: aaaa
+
+/^(a()+)+/
+    aaaa
+ 0: aaaa
+ 1: a
+ 2: 
+
+/^(?:a(?:(?:))+)+/
+    aaaa
+ 0: aaaa
+
+/(a){0,3}(?(1)b|(c|))*D/
+    abbD
+ 0: abbD
+ 1: a
+    ccccD
+ 0: ccccD
+ 1: <unset>
+ 2: 
+    D  
+ 0: D
+ 1: <unset>
+ 2: 
+
+/(a|)*\d/
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+No match
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+ 0: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+ 1: 
+
+/(?>a|)*\d/
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+No match
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+ 0: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+
+/(?:a|)*\d/
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+No match
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+ 0: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+
+/\Z/g
+  abc\n
+ 0: 
+ 0: 
+  
+/^(?s)(?>.*)(?<!\n)/
+  abc
+ 0: abc
+  abc\n  
+No match
+
+/^(?![^\n]*\n\z)/
+  abc
+ 0: 
+  abc\n 
+No match
+  
+/\z(?<!\n)/
+  abc
+ 0: 
+  abc\n  
+No match
+
+/(.*(.)?)*/
+    abcd
+ 0: abcd
+ 1: 
+
+/( (A | (?(1)0|) )*   )/x
+    abcd
+ 0: 
+ 1: 
+ 2: 
+
+/( ( (?(1)0|) )*   )/x
+    abcd
+ 0: 
+ 1: 
+ 2: 
+
+/(  (?(1)0|)*   )/x
+    abcd
+ 0: 
+ 1: 
+
+/[[:abcd:xyz]]/
+    a]
+ 0: a]
+    :] 
+ 0: :]
+    
+/[abc[:x\]pqr]/
+    a
+ 0: a
+    [
+ 0: [
+    :
+ 0: :
+    ]
+ 0: ]
+    p    
+ 0: p
+
+/.*[op][xyz]/
+    fooabcfoo
+No match
+
+/(?(?=.*b)b|^)/
+   adc
+ 0: 
+   abc 
+ 0: b
+
+/(?(?=^.*b)b|^)/
+   adc
+ 0: 
+   abc 
+No match
+
+/(?(?=.*b)b|^)*/
+   adc
+ 0: 
+   abc 
+ 0: 
+
+/(?(?=.*b)b|^)+/
+   adc
+ 0: 
+   abc 
+ 0: b
+
+/(?(?=b).*b|^d)/
+    abc
+ 0: b
+
+/(?(?=.*b).*b|^d)/
+    abc
+ 0: ab
+
+/^%((?(?=[a])[^%])|b)*%$/
+    %ab%
+ 0: %ab%
+ 1: 
 
 / End of testinput1 /

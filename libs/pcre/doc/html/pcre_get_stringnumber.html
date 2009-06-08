@@ -33,7 +33,10 @@ parenthesis in a compiled pattern. Its arguments are:
   <i>name</i>    Name whose number is required
 </pre>
 The yield of the function is the number of the parenthesis if the name is
-found, or PCRE_ERROR_NOSUBSTRING otherwise.
+found, or PCRE_ERROR_NOSUBSTRING otherwise. When duplicate names are allowed
+(PCRE_DUPNAMES is set), it is not defined which of the numbers is returned by
+<b>pcre_get_stringnumber()</b>. You can obtain the complete list by calling
+<b>pcre_get_stringtable_entries()</b>.
 </P>
 <P>
 There is a complete description of the PCRE native API in the

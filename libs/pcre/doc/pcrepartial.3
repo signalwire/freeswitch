@@ -71,6 +71,8 @@ envisaged for this facility, this is not felt to be a major restriction.
 .P
 If PCRE_PARTIAL is set for a pattern that does not conform to the restrictions,
 \fBpcre_exec()\fP returns the error code PCRE_ERROR_BADPARTIAL (-13).
+You can use the PCRE_INFO_OKPARTIAL call to \fBpcre_fullinfo()\fP to find out
+if a compiled pattern can be used for partial matching.
 .
 .
 .SH "EXAMPLE OF PARTIAL MATCHING USING PCRETEST"
@@ -95,10 +97,11 @@ uses the date example quoted above:
 .sp
 The first data string is matched completely, so \fBpcretest\fP shows the
 matched substrings. The remaining four strings do not match the complete
-pattern, but the first two are partial matches. The same test, using DFA
-matching (by means of the \eD escape sequence), produces the following output:
+pattern, but the first two are partial matches. The same test, using
+\fBpcre_dfa_exec()\fP matching (by means of the \eD escape sequence), produces
+the following output:
 .sp
-    re> /^\d?\d(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\d\d$/
+    re> /^\ed?\ed(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\ed\ed$/
   data> 25jun04\eP\eD
    0: 25jun04
   data> 23dec3\eP\eD
@@ -119,13 +122,13 @@ available.
 .sp
 When a partial match has been found using \fBpcre_dfa_exec()\fP, it is possible
 to continue the match by providing additional subject data and calling
-\fBpcre_dfa_exec()\fP again with the PCRE_DFA_RESTART option and the same
-working space (where details of the previous partial match are stored). Here is
-an example using \fBpcretest\fP, where the \eR escape sequence sets the
-PCRE_DFA_RESTART option and the \eD escape sequence requests the use of
-\fBpcre_dfa_exec()\fP:
+\fBpcre_dfa_exec()\fP again with the same compiled regular expression, this
+time setting the PCRE_DFA_RESTART option. You must also pass the same working
+space as before, because this is where details of the previous partial match
+are stored. Here is an example using \fBpcretest\fP, using the \eR escape
+sequence to set the PCRE_DFA_RESTART option (\eP and \eD are as above):
 .sp
-    re> /^\d?\d(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\d\d$/
+    re> /^\ed?\ed(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\ed\ed$/
   data> 23ja\eP\eD
   Partial match: 23ja
   data> n05\eR\eD
@@ -137,9 +140,10 @@ Notice that when the match is complete, only the last part is shown; PCRE does
 not retain the previously partially-matched string. It is up to the calling
 program to do that if it needs to.
 .P
-This facility can be used to pass very long subject strings to
-\fBpcre_dfa_exec()\fP. However, some care is needed for certain types of
-pattern.
+You can set PCRE_PARTIAL with PCRE_DFA_RESTART to continue partial matching
+over multiple segments. This facility can be used to pass very long subject
+strings to \fBpcre_dfa_exec()\fP. However, some care is needed for certain
+types of pattern.
 .P
 1. If the pattern contains tests for the beginning or end of a line, you need
 to pass the PCRE_NOTBOL or PCRE_NOTEOL options, as appropriate, when the
@@ -147,7 +151,7 @@ subject string for any call does not contain the beginning or end of a line.
 .P
 2. If the pattern contains backward assertions (including \eb or \eB), you need
 to arrange for some overlap in the subject strings to allow for this. For
-example, you could pass the subject in chunks that were 500 bytes long, but in
+example, you could pass the subject in chunks that are 500 bytes long, but in
 a buffer of 700 bytes, with the starting offset set to 200 and the previous 200
 bytes at the start of the buffer.
 .P
@@ -155,7 +159,7 @@ bytes at the start of the buffer.
 always produce exactly the same result as matching over one single long string.
 The difference arises when there are multiple matching possibilities, because a
 partial match result is given only when there are no completed matches in a
-call to fBpcre_dfa_exec()\fP. This means that as soon as the shortest match has
+call to \fBpcre_dfa_exec()\fP. This means that as soon as the shortest match has
 been found, continuation to a new subject segment is no longer possible.
 Consider this \fBpcretest\fP example:
 .sp
@@ -196,8 +200,20 @@ patterns or patterns such as:
 where no string can be a partial match for both alternatives.
 .
 .
-.P
-.in 0
-Last updated: 16 January 2006
-.br
-Copyright (c) 1997-2006 University of Cambridge.
+.SH AUTHOR
+.rs
+.sp
+.nf
+Philip Hazel
+University Computing Service
+Cambridge CB2 3QH, England.
+.fi
+.
+.
+.SH REVISION
+.rs
+.sp
+.nf
+Last updated: 04 June 2007
+Copyright (c) 1997-2007 University of Cambridge.
+.fi

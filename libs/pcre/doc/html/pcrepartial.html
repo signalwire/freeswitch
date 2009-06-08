@@ -17,6 +17,8 @@ man page, in case the conversion went wrong.
 <li><a name="TOC2" href="#SEC2">RESTRICTED PATTERNS FOR PCRE_PARTIAL</a>
 <li><a name="TOC3" href="#SEC3">EXAMPLE OF PARTIAL MATCHING USING PCRETEST</a>
 <li><a name="TOC4" href="#SEC4">MULTI-SEGMENT MATCHING WITH pcre_dfa_exec()</a>
+<li><a name="TOC5" href="#SEC5">AUTHOR</a>
+<li><a name="TOC6" href="#SEC6">REVISION</a>
 </ul>
 <br><a name="SEC1" href="#TOC1">PARTIAL MATCHING IN PCRE</a><br>
 <P>
@@ -90,6 +92,8 @@ envisaged for this facility, this is not felt to be a major restriction.
 <P>
 If PCRE_PARTIAL is set for a pattern that does not conform to the restrictions,
 <b>pcre_exec()</b> returns the error code PCRE_ERROR_BADPARTIAL (-13).
+You can use the PCRE_INFO_OKPARTIAL call to <b>pcre_fullinfo()</b> to find out
+if a compiled pattern can be used for partial matching.
 </P>
 <br><a name="SEC3" href="#TOC1">EXAMPLE OF PARTIAL MATCHING USING PCRETEST</a><br>
 <P>
@@ -112,8 +116,9 @@ uses the date example quoted above:
 </pre>
 The first data string is matched completely, so <b>pcretest</b> shows the
 matched substrings. The remaining four strings do not match the complete
-pattern, but the first two are partial matches. The same test, using DFA
-matching (by means of the \D escape sequence), produces the following output:
+pattern, but the first two are partial matches. The same test, using
+<b>pcre_dfa_exec()</b> matching (by means of the \D escape sequence), produces
+the following output:
 <pre>
     re&#62; /^\d?\d(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\d\d$/
   data&#62; 25jun04\P\D
@@ -134,11 +139,11 @@ available.
 <P>
 When a partial match has been found using <b>pcre_dfa_exec()</b>, it is possible
 to continue the match by providing additional subject data and calling
-<b>pcre_dfa_exec()</b> again with the PCRE_DFA_RESTART option and the same
-working space (where details of the previous partial match are stored). Here is
-an example using <b>pcretest</b>, where the \R escape sequence sets the
-PCRE_DFA_RESTART option and the \D escape sequence requests the use of
-<b>pcre_dfa_exec()</b>:
+<b>pcre_dfa_exec()</b> again with the same compiled regular expression, this
+time setting the PCRE_DFA_RESTART option. You must also pass the same working
+space as before, because this is where details of the previous partial match
+are stored. Here is an example using <b>pcretest</b>, using the \R escape
+sequence to set the PCRE_DFA_RESTART option (\P and \D are as above):
 <pre>
     re&#62; /^\d?\d(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\d\d$/
   data&#62; 23ja\P\D
@@ -153,9 +158,10 @@ not retain the previously partially-matched string. It is up to the calling
 program to do that if it needs to.
 </P>
 <P>
-This facility can be used to pass very long subject strings to
-<b>pcre_dfa_exec()</b>. However, some care is needed for certain types of
-pattern.
+You can set PCRE_PARTIAL with PCRE_DFA_RESTART to continue partial matching
+over multiple segments. This facility can be used to pass very long subject
+strings to <b>pcre_dfa_exec()</b>. However, some care is needed for certain
+types of pattern.
 </P>
 <P>
 1. If the pattern contains tests for the beginning or end of a line, you need
@@ -165,7 +171,7 @@ subject string for any call does not contain the beginning or end of a line.
 <P>
 2. If the pattern contains backward assertions (including \b or \B), you need
 to arrange for some overlap in the subject strings to allow for this. For
-example, you could pass the subject in chunks that were 500 bytes long, but in
+example, you could pass the subject in chunks that are 500 bytes long, but in
 a buffer of 700 bytes, with the starting offset set to 200 and the previous 200
 bytes at the start of the buffer.
 </P>
@@ -174,7 +180,7 @@ bytes at the start of the buffer.
 always produce exactly the same result as matching over one single long string.
 The difference arises when there are multiple matching possibilities, because a
 partial match result is given only when there are no completed matches in a
-call to fBpcre_dfa_exec()\fP. This means that as soon as the shortest match has
+call to <b>pcre_dfa_exec()</b>. This means that as soon as the shortest match has
 been found, continuation to a new subject segment is no longer possible.
 Consider this <b>pcretest</b> example:
 <pre>
@@ -216,10 +222,21 @@ patterns or patterns such as:
 </pre>
 where no string can be a partial match for both alternatives.
 </P>
+<br><a name="SEC5" href="#TOC1">AUTHOR</a><br>
 <P>
-Last updated: 16 January 2006
+Philip Hazel
 <br>
-Copyright &copy; 1997-2006 University of Cambridge.
+University Computing Service
+<br>
+Cambridge CB2 3QH, England.
+<br>
+</P>
+<br><a name="SEC6" href="#TOC1">REVISION</a><br>
+<P>
+Last updated: 04 June 2007
+<br>
+Copyright &copy; 1997-2007 University of Cambridge.
+<br>
 <p>
 Return to the <a href="index.html">PCRE index page</a>.
 </p>

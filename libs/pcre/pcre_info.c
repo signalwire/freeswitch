@@ -6,7 +6,7 @@
 and semantics are as close as possible to those of the Perl 5 language.
 
                        Written by Philip Hazel
-           Copyright (c) 1997-2006 University of Cambridge
+           Copyright (c) 1997-2009 University of Cambridge
 
 -----------------------------------------------------------------------------
 Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,10 @@ information about a compiled pattern. However, use of this function is now
 deprecated, as it has been superseded by pcre_fullinfo(). */
 
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "pcre_internal.h"
 
 
@@ -68,7 +72,7 @@ Returns:        number of capturing subpatterns
                 or negative values on error
 */
 
-PCRE_DATA_SCOPE int
+PCRE_EXP_DEFN int PCRE_CALL_CONVENTION
 pcre_info(const pcre *argument_re, int *optptr, int *first_byte)
 {
 real_pcre internal_re;
@@ -79,10 +83,10 @@ if (re->magic_number != MAGIC_NUMBER)
   re = _pcre_try_flipped(re, &internal_re, NULL, NULL);
   if (re == NULL) return PCRE_ERROR_BADMAGIC;
   }
-if (optptr != NULL) *optptr = (int)(re->options & PUBLIC_OPTIONS);
+if (optptr != NULL) *optptr = (int)(re->options & PUBLIC_COMPILE_OPTIONS);
 if (first_byte != NULL)
-  *first_byte = ((re->options & PCRE_FIRSTSET) != 0)? re->first_byte :
-     ((re->options & PCRE_STARTLINE) != 0)? -1 : -2;
+  *first_byte = ((re->flags & PCRE_FIRSTSET) != 0)? re->first_byte :
+     ((re->flags & PCRE_STARTLINE) != 0)? -1 : -2;
 return re->top_bracket;
 }
 

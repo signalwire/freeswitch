@@ -21,6 +21,7 @@ man page, in case the conversion went wrong.
 <li><a name="TOC6" href="#SEC6">ERROR MESSAGES</a>
 <li><a name="TOC7" href="#SEC7">MEMORY USAGE</a>
 <li><a name="TOC8" href="#SEC8">AUTHOR</a>
+<li><a name="TOC9" href="#SEC9">REVISION</a>
 </ul>
 <br><a name="SEC1" href="#TOC1">SYNOPSIS OF POSIX API</a><br>
 <P>
@@ -58,11 +59,11 @@ command for linking an application that uses them. Because the POSIX functions
 call the native ones, it is also necessary to add <b>-lpcre</b>.
 </P>
 <P>
-I have implemented only those option bits that can be reasonably mapped to PCRE
-native options. In addition, the option REG_EXTENDED is defined with the value
-zero. This has no effect, but since programs that are written to the POSIX
-interface often use it, this makes it easier to slot in PCRE as a replacement
-library. Other POSIX options are not even defined.
+I have implemented only those POSIX option bits that can be reasonably mapped
+to PCRE native options. In addition, the option REG_EXTENDED is defined with
+the value zero. This has no effect, but since programs that are written to the
+POSIX interface often use it, this makes it easier to slot in PCRE as a
+replacement library. Other POSIX options are not even defined.
 </P>
 <P>
 When PCRE is called via these functions, it is only the API that is POSIX-like
@@ -179,18 +180,36 @@ REG_NEWLINE action.
 <br><a name="SEC5" href="#TOC1">MATCHING A PATTERN</a><br>
 <P>
 The function <b>regexec()</b> is called to match a compiled pattern <i>preg</i>
-against a given <i>string</i>, which is terminated by a zero byte, subject to
-the options in <i>eflags</i>. These can be:
+against a given <i>string</i>, which is by default terminated by a zero byte
+(but see REG_STARTEND below), subject to the options in <i>eflags</i>. These can
+be:
 <pre>
   REG_NOTBOL
 </pre>
 The PCRE_NOTBOL option is set when calling the underlying PCRE matching
 function.
 <pre>
+  REG_NOTEMPTY
+</pre>
+The PCRE_NOTEMPTY option is set when calling the underlying PCRE matching
+function. Note that REG_NOTEMPTY is not part of the POSIX standard. However,
+setting this option can give more POSIX-like behaviour in some situations.
+<pre>
   REG_NOTEOL
 </pre>
 The PCRE_NOTEOL option is set when calling the underlying PCRE matching
 function.
+<pre>
+  REG_STARTEND
+</pre>
+The string is considered to start at <i>string</i> + <i>pmatch[0].rm_so</i> and
+to have a terminating NUL located at <i>string</i> + <i>pmatch[0].rm_eo</i>
+(there need not actually be a NUL at that location), regardless of the value of
+<i>nmatch</i>. This is a BSD extension, compatible with but not specified by
+IEEE Standard 1003.2 (POSIX.2), and should be used with caution in software
+intended to be portable to other systems. Note that a non-zero <i>rm_so</i> does
+not imply REG_NOTBOL; REG_STARTEND affects only the location of the string, not
+how it is matched.
 </P>
 <P>
 If the pattern was compiled with the REG_NOSUB flag, no data about any matched
@@ -231,14 +250,17 @@ memory, after which <i>preg</i> may no longer be used as a compiled expression.
 <P>
 Philip Hazel
 <br>
-University Computing Service,
+University Computing Service
 <br>
-Cambridge CB2 3QG, England.
+Cambridge CB2 3QH, England.
+<br>
 </P>
+<br><a name="SEC9" href="#TOC1">REVISION</a><br>
 <P>
-Last updated: 16 January 2006
+Last updated: 11 March 2009
 <br>
-Copyright &copy; 1997-2006 University of Cambridge.
+Copyright &copy; 1997-2009 University of Cambridge.
+<br>
 <p>
 Return to the <a href="index.html">PCRE index page</a>.
 </p>

@@ -2735,7 +2735,7 @@ No match
 No match
 
 /^a	b
-      c/x
+      c/x
     abc
  0: abc
 
@@ -2973,7 +2973,7 @@ No match
     {4,5a}bc
  0: {4,5a}bc
 
-/^a.b/
+/^a.b/<lf>
     a\rb
  0: a\x0db
     *** Failers
@@ -3039,9 +3039,9 @@ No match
     abcdefghijk\12S
  0: abcdefghijk\x0aS
 
-/ab\gdef/
-    abgdef
- 0: abgdef
+/ab\idef/
+    abidef
+ 0: abidef
 
 /a{0}bc/
     bc
@@ -4572,8 +4572,6 @@ No match
 No match
     abq
 No match
-
-/ab{1,}bc/
 
 /ab+bc/
     abbbbc
@@ -6600,7 +6598,7 @@ No match
     xyz\rabc\<lf>
 No match
     
-/abc$/m
+/abc$/m<lf>
     xyzabc
  0: abc
     xyzabc\n 
@@ -6656,7 +6654,7 @@ No match
     xyz\rabcdef
 No match
     
-/.*/
+/.*/<lf>
     abc\ndef
  0: abc
  1: ab
@@ -6727,5 +6725,649 @@ No match
  0: abc\x0ddef
     abc\r\ndef
  0: abc\x0d\x0adef
+
+/^\w+=.*(\\\n.*)*/
+    abc=xyz\\\npqr
+ 0: abc=xyz\\x0apqr
+ 1: abc=xyz\\x0apq
+ 2: abc=xyz\\x0ap
+ 3: abc=xyz\\x0a
+ 4: abc=xyz\
+ 5: abc=xyz
+ 6: abc=xy
+ 7: abc=x
+ 8: abc=
+
+/^(a()*)*/
+    aaaa
+ 0: aaaa
+ 1: aaa
+ 2: aa
+ 3: a
+ 4: 
+
+/^(?:a(?:(?:))*)*/
+    aaaa
+ 0: aaaa
+ 1: aaa
+ 2: aa
+ 3: a
+ 4: 
+
+/^(a()+)+/
+    aaaa
+ 0: aaaa
+ 1: aaa
+ 2: aa
+ 3: a
+
+/^(?:a(?:(?:))+)+/
+    aaaa
+ 0: aaaa
+ 1: aaa
+ 2: aa
+ 3: a
+
+/(a|)*\d/
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+No match
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+ 0: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+
+/(?>a|)*\d/
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+No match
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+ 0: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+
+/(?:a|)*\d/
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+No match
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+ 0: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+
+/^a.b/<lf>
+    a\rb
+ 0: a\x0db
+    a\nb\<cr> 
+ 0: a\x0ab
+    ** Failers
+No match
+    a\nb
+No match
+    a\nb\<any>
+No match
+    a\rb\<cr>   
+No match
+    a\rb\<any>   
+No match
+
+/^abc./mgx<any>
+    abc1 \x0aabc2 \x0babc3xx \x0cabc4 \x0dabc5xx \x0d\x0aabc6 \x85abc7 JUNK
+ 0: abc1
+ 0: abc2
+ 0: abc3
+ 0: abc4
+ 0: abc5
+ 0: abc6
+ 0: abc7
+
+/abc.$/mgx<any>
+    abc1\x0a abc2\x0b abc3\x0c abc4\x0d abc5\x0d\x0a abc6\x85 abc9
+ 0: abc1
+ 0: abc2
+ 0: abc3
+ 0: abc4
+ 0: abc5
+ 0: abc6
+ 0: abc9
+
+/^a\Rb/<bsr_unicode>
+    a\nb
+ 0: a\x0ab
+    a\rb
+ 0: a\x0db
+    a\r\nb
+ 0: a\x0d\x0ab
+    a\x0bb
+ 0: a\x0bb
+    a\x0cb
+ 0: a\x0cb
+    a\x85b   
+ 0: a\x85b
+    ** Failers
+No match
+    a\n\rb    
+No match
+
+/^a\R*b/<bsr_unicode>
+    ab
+ 0: ab
+    a\nb
+ 0: a\x0ab
+    a\rb
+ 0: a\x0db
+    a\r\nb
+ 0: a\x0d\x0ab
+    a\x0bb
+ 0: a\x0bb
+    a\x0cb
+ 0: a\x0cb
+    a\x85b   
+ 0: a\x85b
+    a\n\rb    
+ 0: a\x0a\x0db
+    a\n\r\x85\x0cb 
+ 0: a\x0a\x0d\x85\x0cb
+
+/^a\R+b/<bsr_unicode>
+    a\nb
+ 0: a\x0ab
+    a\rb
+ 0: a\x0db
+    a\r\nb
+ 0: a\x0d\x0ab
+    a\x0bb
+ 0: a\x0bb
+    a\x0cb
+ 0: a\x0cb
+    a\x85b   
+ 0: a\x85b
+    a\n\rb    
+ 0: a\x0a\x0db
+    a\n\r\x85\x0cb 
+ 0: a\x0a\x0d\x85\x0cb
+    ** Failers
+No match
+    ab  
+No match
+    
+/^a\R{1,3}b/<bsr_unicode>
+    a\nb
+ 0: a\x0ab
+    a\n\rb
+ 0: a\x0a\x0db
+    a\n\r\x85b
+ 0: a\x0a\x0d\x85b
+    a\r\n\r\nb 
+ 0: a\x0d\x0a\x0d\x0ab
+    a\r\n\r\n\r\nb 
+ 0: a\x0d\x0a\x0d\x0a\x0d\x0ab
+    a\n\r\n\rb
+ 0: a\x0a\x0d\x0a\x0db
+    a\n\n\r\nb 
+ 0: a\x0a\x0a\x0d\x0ab
+    ** Failers
+No match
+    a\n\n\n\rb
+No match
+    a\r
+No match
+
+/^a[\R]b/<bsr_unicode>
+    aRb
+ 0: aRb
+    ** Failers
+No match
+    a\nb  
+No match
+
+/.+foo/
+    afoo
+ 0: afoo
+    ** Failers 
+No match
+    \r\nfoo 
+No match
+    \nfoo 
+No match
+
+/.+foo/<crlf>
+    afoo
+ 0: afoo
+    \nfoo 
+ 0: \x0afoo
+    ** Failers 
+No match
+    \r\nfoo 
+No match
+
+/.+foo/<any>
+    afoo
+ 0: afoo
+    ** Failers 
+No match
+    \nfoo 
+No match
+    \r\nfoo 
+No match
+
+/.+foo/s
+    afoo
+ 0: afoo
+    \r\nfoo 
+ 0: \x0d\x0afoo
+    \nfoo 
+ 0: \x0afoo
+
+/^$/mg<any>
+    abc\r\rxyz
+ 0: 
+    abc\n\rxyz  
+ 0: 
+    ** Failers 
+No match
+    abc\r\nxyz
+No match
+
+/^X/m
+    XABC
+ 0: X
+    ** Failers 
+No match
+    XABC\B
+No match
+
+/(?m)^$/<any>g+
+    abc\r\n\r\n
+ 0: 
+ 0+ \x0d\x0a
+
+/(?m)^$|^\r\n/<any>g+ 
+    abc\r\n\r\n
+ 0: \x0d\x0a
+ 0+ 
+ 1: 
+    
+/(?m)$/<any>g+ 
+    abc\r\n\r\n
+ 0: 
+ 0+ \x0d\x0a\x0d\x0a
+ 0: 
+ 0+ \x0d\x0a
+ 0: 
+ 0+ 
+
+/(?|(abc)|(xyz))/
+   >abc<
+ 0: abc
+   >xyz< 
+ 0: xyz
+
+/(x)(?|(abc)|(xyz))(x)/
+    xabcx
+ 0: xabcx
+    xxyzx 
+ 0: xxyzx
+
+/(x)(?|(abc)(pqr)|(xyz))(x)/
+    xabcpqrx
+ 0: xabcpqrx
+    xxyzx 
+ 0: xxyzx
+
+/(?|(abc)|(xyz))(?1)/
+    abcabc
+ 0: abcabc
+    xyzabc 
+ 0: xyzabc
+    ** Failers 
+No match
+    xyzxyz 
+No match
+ 
+/\H\h\V\v/
+    X X\x0a
+ 0: X X\x0a
+    X\x09X\x0b
+ 0: X\x09X\x0b
+    ** Failers
+No match
+    \xa0 X\x0a   
+No match
+    
+/\H*\h+\V?\v{3,4}/ 
+    \x09\x20\xa0X\x0a\x0b\x0c\x0d\x0a
+ 0: \x09 \xa0X\x0a\x0b\x0c\x0d
+ 1: \x09 \xa0X\x0a\x0b\x0c
+    \x09\x20\xa0\x0a\x0b\x0c\x0d\x0a
+ 0: \x09 \xa0\x0a\x0b\x0c\x0d
+ 1: \x09 \xa0\x0a\x0b\x0c
+    \x09\x20\xa0\x0a\x0b\x0c
+ 0: \x09 \xa0\x0a\x0b\x0c
+    ** Failers 
+No match
+    \x09\x20\xa0\x0a\x0b
+No match
+     
+/\H{3,4}/
+    XY  ABCDE
+ 0: ABCD
+ 1: ABC
+    XY  PQR ST 
+ 0: PQR
+    
+/.\h{3,4}./
+    XY  AB    PQRS
+ 0: B    P
+ 1: B    
+
+/\h*X\h?\H+Y\H?Z/
+    >XNNNYZ
+ 0: XNNNYZ
+    >  X NYQZ
+ 0:   X NYQZ
+    ** Failers
+No match
+    >XYZ   
+No match
+    >  X NY Z
+No match
+
+/\v*X\v?Y\v+Z\V*\x0a\V+\x0b\V{2,3}\x0c/
+    >XY\x0aZ\x0aA\x0bNN\x0c
+ 0: XY\x0aZ\x0aA\x0bNN\x0c
+    >\x0a\x0dX\x0aY\x0a\x0bZZZ\x0aAAA\x0bNNN\x0c
+ 0: \x0a\x0dX\x0aY\x0a\x0bZZZ\x0aAAA\x0bNNN\x0c
+
+/.+A/<crlf>
+    \r\nA
+No match
+    
+/\nA/<crlf>
+    \r\nA 
+ 0: \x0aA
+
+/[\r\n]A/<crlf>
+    \r\nA 
+ 0: \x0aA
+
+/(\r|\n)A/<crlf>
+    \r\nA 
+ 0: \x0aA
+
+/a\Rb/I<bsr_anycrlf>
+Capturing subpattern count = 0
+Options: bsr_anycrlf
+First char = 'a'
+Need char = 'b'
+    a\rb
+ 0: a\x0db
+    a\nb
+ 0: a\x0ab
+    a\r\nb
+ 0: a\x0d\x0ab
+    ** Failers
+No match
+    a\x85b
+No match
+    a\x0bb     
+No match
+
+/a\Rb/I<bsr_unicode>
+Capturing subpattern count = 0
+Options: bsr_unicode
+First char = 'a'
+Need char = 'b'
+    a\rb
+ 0: a\x0db
+    a\nb
+ 0: a\x0ab
+    a\r\nb
+ 0: a\x0d\x0ab
+    a\x85b
+ 0: a\x85b
+    a\x0bb     
+ 0: a\x0bb
+    ** Failers 
+No match
+    a\x85b\<bsr_anycrlf>
+No match
+    a\x0bb\<bsr_anycrlf>
+No match
+    
+/a\R?b/I<bsr_anycrlf>
+Capturing subpattern count = 0
+Options: bsr_anycrlf
+First char = 'a'
+Need char = 'b'
+    a\rb
+ 0: a\x0db
+    a\nb
+ 0: a\x0ab
+    a\r\nb
+ 0: a\x0d\x0ab
+    ** Failers
+No match
+    a\x85b
+No match
+    a\x0bb     
+No match
+
+/a\R?b/I<bsr_unicode>
+Capturing subpattern count = 0
+Options: bsr_unicode
+First char = 'a'
+Need char = 'b'
+    a\rb
+ 0: a\x0db
+    a\nb
+ 0: a\x0ab
+    a\r\nb
+ 0: a\x0d\x0ab
+    a\x85b
+ 0: a\x85b
+    a\x0bb     
+ 0: a\x0bb
+    ** Failers 
+No match
+    a\x85b\<bsr_anycrlf>
+No match
+    a\x0bb\<bsr_anycrlf>
+No match
+    
+/a\R{2,4}b/I<bsr_anycrlf>
+Capturing subpattern count = 0
+Partial matching not supported
+Options: bsr_anycrlf
+First char = 'a'
+Need char = 'b'
+    a\r\n\nb
+ 0: a\x0d\x0a\x0ab
+    a\n\r\rb
+ 0: a\x0a\x0d\x0db
+    a\r\n\r\n\r\n\r\nb
+ 0: a\x0d\x0a\x0d\x0a\x0d\x0a\x0d\x0ab
+    ** Failers
+No match
+    a\x85\85b
+No match
+    a\x0b\0bb     
+No match
+
+/a\R{2,4}b/I<bsr_unicode>
+Capturing subpattern count = 0
+Partial matching not supported
+Options: bsr_unicode
+First char = 'a'
+Need char = 'b'
+    a\r\rb
+ 0: a\x0d\x0db
+    a\n\n\nb
+ 0: a\x0a\x0a\x0ab
+    a\r\n\n\r\rb
+ 0: a\x0d\x0a\x0a\x0d\x0db
+    a\x85\85b
+No match
+    a\x0b\0bb     
+No match
+    ** Failers 
+No match
+    a\r\r\r\r\rb 
+No match
+    a\x85\85b\<bsr_anycrlf>
+No match
+    a\x0b\0bb\<bsr_anycrlf>
+No match
+    
+/a(?!)|\wbc/
+    abc 
+ 0: abc
+
+/a[]b/<JS>
+    ** Failers
+No match
+    ab
+No match
+
+/a[]+b/<JS>
+    ** Failers
+No match
+    ab 
+No match
+
+/a[]*+b/<JS>
+    ** Failers
+No match
+    ab 
+No match
+
+/a[^]b/<JS>
+    aXb
+ 0: aXb
+    a\nb 
+ 0: a\x0ab
+    ** Failers
+No match
+    ab  
+No match
+    
+/a[^]+b/<JS> 
+    aXb
+ 0: aXb
+    a\nX\nXb 
+ 0: a\x0aX\x0aXb
+    ** Failers
+No match
+    ab  
+No match
+
+/X$/E
+    X
+ 0: X
+    ** Failers 
+No match
+    X\n 
+No match
+
+/X$/
+    X
+ 0: X
+    X\n 
+ 0: X
+
+/xyz/C
+  xyz 
+--->xyz
+ +0 ^       x
+ +1 ^^      y
+ +2 ^ ^     z
+ +3 ^  ^    
+ 0: xyz
+  abcxyz 
+--->abcxyz
+ +0    ^       x
+ +1    ^^      y
+ +2    ^ ^     z
+ +3    ^  ^    
+ 0: xyz
+  abcxyz\Y
+--->abcxyz
+ +0 ^          x
+ +0  ^         x
+ +0   ^        x
+ +0    ^       x
+ +1    ^^      y
+ +2    ^ ^     z
+ +3    ^  ^    
+ 0: xyz
+  ** Failers 
+No match
+  abc
+No match
+  abc\Y
+--->abc
+ +0 ^       x
+ +0  ^      x
+ +0   ^     x
+ +0    ^    x
+No match
+  abcxypqr  
+No match
+  abcxypqr\Y  
+--->abcxypqr
+ +0 ^            x
+ +0  ^           x
+ +0   ^          x
+ +0    ^         x
+ +1    ^^        y
+ +2    ^ ^       z
+ +0     ^        x
+ +0      ^       x
+ +0       ^      x
+ +0        ^     x
+ +0         ^    x
+No match
+  
+/(?C)ab/
+  ab
+--->ab
+  0 ^      a
+ 0: ab
+  \C-ab
+ 0: ab
+  
+/ab/C
+  ab
+--->ab
+ +0 ^      a
+ +1 ^^     b
+ +2 ^ ^    
+ 0: ab
+  \C-ab    
+ 0: ab
+
+/^"((?(?=[a])[^"])|b)*"$/C
+    "ab"
+--->"ab"
+ +0 ^        ^
+ +1 ^        "
+ +2 ^^       ((?(?=[a])[^"])|b)*
++21 ^^       "
+ +3 ^^       (?(?=[a])[^"])
++18 ^^       b
+ +5 ^^       (?=[a])
+ +8  ^       [a]
++11  ^^      )
++12 ^^       [^"]
++16 ^ ^      )
++17 ^ ^      |
++21 ^ ^      "
+ +3 ^ ^      (?(?=[a])[^"])
++18 ^ ^      b
+ +5 ^ ^      (?=[a])
+ +8   ^      [a]
++19 ^  ^     )
++21 ^  ^     "
+ +3 ^  ^     (?(?=[a])[^"])
++18 ^  ^     b
+ +5 ^  ^     (?=[a])
+ +8    ^     [a]
++17 ^  ^     |
++22 ^   ^    $
++23 ^   ^    
+ 0: "ab"
+    \C-"ab"
+ 0: "ab"
 
 / End of testinput7 /

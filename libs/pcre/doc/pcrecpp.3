@@ -5,9 +5,7 @@ PCRE - Perl-compatible regular expressions.
 .rs
 .sp
 .B #include <pcrecpp.h>
-.PP
-.SM
-.br
+.
 .SH DESCRIPTION
 .rs
 .sp
@@ -81,14 +79,42 @@ The function returns true iff all of the following conditions are satisfied:
 .sp
   c. The "i"th argument has a suitable type for holding the
      string captured as the "i"th sub-pattern. If you pass in
-     NULL for the "i"th argument, or pass fewer arguments than
+     void * NULL for the "i"th argument, or a non-void * NULL
+     of the correct type, or pass fewer arguments than the
      number of sub-patterns, "i"th captured sub-pattern is
      ignored.
+.sp
+CAVEAT: An optional sub-pattern that does not exist in the matched
+string is assigned the empty string. Therefore, the following will
+return false (because the empty string is not a valid number):
+.sp
+   int number;
+   pcrecpp::RE::FullMatch("abc", "[a-z]+(\e\ed+)?", &number);
 .sp
 The matching interface supports at most 16 arguments per call.
 If you need more, consider using the more general interface
 \fBpcrecpp::RE::DoMatch\fP. See \fBpcrecpp.h\fP for the signature for
 \fBDoMatch\fP.
+.P
+NOTE: Do not use \fBno_arg\fP, which is used internally to mark the end of a
+list of optional arguments, as a placeholder for missing arguments, as this can
+lead to segfaults.
+.
+.
+.SH "QUOTING METACHARACTERS"
+.rs
+.sp
+You can use the "QuoteMeta" operation to insert backslashes before all
+potentially meaningful characters in a string. The returned string, used as a
+regular expression, will exactly match the original string.
+.sp
+  Example:
+     string quoted = RE::QuoteMeta(unquoted);
+.sp
+Note that it's legal to escape a character even if it has no special meaning in
+a regular expression -- so this function does that. (This also makes it
+identical to the perl function of the same name; see "perldoc -f quotemeta".)
+For example, "1.5-2.0?" becomes "1\e.5\e-2\e.0\e?".
 .
 .SH "PARTIAL MATCHES"
 .rs
@@ -307,6 +333,15 @@ string is left unaffected.
 .SH AUTHOR
 .rs
 .sp
+.nf
 The C++ wrapper was contributed by Google Inc.
-.br
-Copyright (c) 2005 Google Inc.
+Copyright (c) 2007 Google Inc.
+.fi
+.
+.
+.SH REVISION
+.rs
+.sp
+.nf
+Last updated: 17 March 2009
+.fi

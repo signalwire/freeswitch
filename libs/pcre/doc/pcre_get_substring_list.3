@@ -7,7 +7,6 @@ PCRE - Perl-compatible regular expressions
 .B #include <pcre.h>
 .PP
 .SM
-.br
 .B int pcre_get_substring_list(const char *\fIsubject\fP,
 .ti +5n
 .B int *\fIovector\fP, int \fIstringcount\fP, "const char ***\fIlistptr\fP);"
@@ -24,10 +23,12 @@ substrings. The arguments are:
   \fIlistptr\fP       Where to put a pointer to the list
 .sp
 The memory in which the substrings and the list are placed is obtained by
-calling \fBpcre_malloc()\fP. A pointer to a list of pointers is put in
-the variable whose address is in \fIlistptr\fP. The list is terminated by a
-NULL pointer. The yield of the function is zero on success or
-PCRE_ERROR_NOMEMORY if sufficient memory could not be obtained.
+calling \fBpcre_malloc()\fP. The convenience function
+\fBpcre_free_substring_list()\fP can be used to free it when it is no longer
+needed. A pointer to a list of pointers is put in the variable whose address is
+in \fIlistptr\fP. The list is terminated by a NULL pointer. The yield of the
+function is zero on success or PCRE_ERROR_NOMEMORY if sufficient memory could
+not be obtained.
 .P
 There is a complete description of the PCRE native API in the
 .\" HREF

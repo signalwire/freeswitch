@@ -29,9 +29,9 @@ DESCRIPTION
 </b><br>
 <P>
 This function matches a compiled regular expression against a given subject
-string, using a DFA matching algorithm (<i>not</i> Perl-compatible). Note that
-the main, Perl-compatible, matching function is <b>pcre_exec()</b>. The
-arguments for this function are:
+string, using an alternative matching algorithm that scans the subject string
+just once (<i>not</i> Perl-compatible). Note that the main, Perl-compatible,
+matching function is <b>pcre_exec()</b>. The arguments for this function are:
 <pre>
   <i>code</i>         Points to the compiled pattern
   <i>extra</i>        Points to an associated <b>pcre_extra</b> structure,
@@ -49,12 +49,17 @@ arguments for this function are:
 The options are:
 <pre>
   PCRE_ANCHORED      Match only at the first position
+  PCRE_BSR_ANYCRLF   \R matches only CR, LF, or CRLF
+  PCRE_BSR_UNICODE   \R matches all Unicode line endings
+  PCRE_NEWLINE_ANY   Recognize any Unicode newline sequence
+  PCRE_NEWLINE_ANYCRLF  Recognize CR, LF, and CRLF as newline sequences
   PCRE_NEWLINE_CR    Set CR as the newline sequence
   PCRE_NEWLINE_CRLF  Set CRLF as the newline sequence
   PCRE_NEWLINE_LF    Set LF as the newline sequence
   PCRE_NOTBOL        Subject is not the beginning of a line
   PCRE_NOTEOL        Subject is not the end of a line
   PCRE_NOTEMPTY      An empty string is not a valid match
+  PCRE_NO_START_OPTIMIZE  Do not do "start-match" optimizations
   PCRE_NO_UTF8_CHECK Do not check the subject for UTF-8
                        validity (only relevant if PCRE_UTF8
                        was set at compile time)
@@ -62,8 +67,8 @@ The options are:
   PCRE_DFA_SHORTEST  Return only the shortest match
   PCRE_DFA_RESTART   This is a restart after a partial match
 </pre>
-There are restrictions on what may appear in a pattern when matching using the
-DFA algorithm is requested. Details are given in the
+There are restrictions on what may appear in a pattern when using this matching
+function. Details are given in the
 <a href="pcrematching.html"><b>pcrematching</b></a>
 documentation.
 </P>
@@ -79,7 +84,7 @@ A <b>pcre_extra</b> structure contains the following fields:
 </pre>
 The flag bits are PCRE_EXTRA_STUDY_DATA, PCRE_EXTRA_MATCH_LIMIT,
 PCRE_EXTRA_MATCH_LIMIT_RECURSION, PCRE_EXTRA_CALLOUT_DATA, and
-PCRE_EXTRA_TABLES. For DFA matching, the <i>match_limit</i> and
+PCRE_EXTRA_TABLES. For this matching function, the <i>match_limit</i> and
 <i>match_limit_recursion</i> fields are not used, and must not be set.
 </P>
 <P>

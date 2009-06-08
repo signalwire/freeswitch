@@ -1775,7 +1775,7 @@
     abc
 
 /^a	b
-      c/x
+      c/x
     abc
 
 /ab{1,3}bc/
@@ -1888,7 +1888,7 @@
 /{4,5a}bc/
     {4,5a}bc
 
-/^a.b/
+/^a.b/<lf>
     a\rb
     *** Failers
     a\nb
@@ -1931,8 +1931,8 @@
 /(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)\12\123/
     abcdefghijk\12S
 
-/ab\gdef/
-    abgdef
+/ab\idef/
+    abidef
 
 /a{0}bc/
     bc
@@ -2732,8 +2732,6 @@
     *** Failers
     abc
     abq
-
-/ab{1,}bc/
 
 /ab+bc/
     abbbbc
@@ -4066,7 +4064,7 @@
     xyz\rabc\<crlf>
     xyz\rabc\<lf>
     
-/abc$/m
+/abc$/m<lf>
     xyzabc
     xyzabc\n 
     xyzabc\npqr 
@@ -4098,7 +4096,7 @@
     ** Failers  
     xyz\rabcdef
     
-/.*/
+/.*/<lf>
     abc\ndef
     abc\rdef
     abc\r\ndef
@@ -4113,5 +4111,314 @@
     abc\ndef
     abc\rdef
     abc\r\ndef
+
+/^\w+=.*(\\\n.*)*/
+    abc=xyz\\\npqr
+
+/^(a()*)*/
+    aaaa
+
+/^(?:a(?:(?:))*)*/
+    aaaa
+
+/^(a()+)+/
+    aaaa
+
+/^(?:a(?:(?:))+)+/
+    aaaa
+
+/(a|)*\d/
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+
+/(?>a|)*\d/
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+
+/(?:a|)*\d/
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4
+
+/^a.b/<lf>
+    a\rb
+    a\nb\<cr> 
+    ** Failers
+    a\nb
+    a\nb\<any>
+    a\rb\<cr>   
+    a\rb\<any>   
+
+/^abc./mgx<any>
+    abc1 \x0aabc2 \x0babc3xx \x0cabc4 \x0dabc5xx \x0d\x0aabc6 \x85abc7 JUNK
+
+/abc.$/mgx<any>
+    abc1\x0a abc2\x0b abc3\x0c abc4\x0d abc5\x0d\x0a abc6\x85 abc9
+
+/^a\Rb/<bsr_unicode>
+    a\nb
+    a\rb
+    a\r\nb
+    a\x0bb
+    a\x0cb
+    a\x85b   
+    ** Failers
+    a\n\rb    
+
+/^a\R*b/<bsr_unicode>
+    ab
+    a\nb
+    a\rb
+    a\r\nb
+    a\x0bb
+    a\x0cb
+    a\x85b   
+    a\n\rb    
+    a\n\r\x85\x0cb 
+
+/^a\R+b/<bsr_unicode>
+    a\nb
+    a\rb
+    a\r\nb
+    a\x0bb
+    a\x0cb
+    a\x85b   
+    a\n\rb    
+    a\n\r\x85\x0cb 
+    ** Failers
+    ab  
+    
+/^a\R{1,3}b/<bsr_unicode>
+    a\nb
+    a\n\rb
+    a\n\r\x85b
+    a\r\n\r\nb 
+    a\r\n\r\n\r\nb 
+    a\n\r\n\rb
+    a\n\n\r\nb 
+    ** Failers
+    a\n\n\n\rb
+    a\r
+
+/^a[\R]b/<bsr_unicode>
+    aRb
+    ** Failers
+    a\nb  
+
+/.+foo/
+    afoo
+    ** Failers 
+    \r\nfoo 
+    \nfoo 
+
+/.+foo/<crlf>
+    afoo
+    \nfoo 
+    ** Failers 
+    \r\nfoo 
+
+/.+foo/<any>
+    afoo
+    ** Failers 
+    \nfoo 
+    \r\nfoo 
+
+/.+foo/s
+    afoo
+    \r\nfoo 
+    \nfoo 
+
+/^$/mg<any>
+    abc\r\rxyz
+    abc\n\rxyz  
+    ** Failers 
+    abc\r\nxyz
+
+/^X/m
+    XABC
+    ** Failers 
+    XABC\B
+
+/(?m)^$/<any>g+
+    abc\r\n\r\n
+
+/(?m)^$|^\r\n/<any>g+ 
+    abc\r\n\r\n
+    
+/(?m)$/<any>g+ 
+    abc\r\n\r\n
+
+/(?|(abc)|(xyz))/
+   >abc<
+   >xyz< 
+
+/(x)(?|(abc)|(xyz))(x)/
+    xabcx
+    xxyzx 
+
+/(x)(?|(abc)(pqr)|(xyz))(x)/
+    xabcpqrx
+    xxyzx 
+
+/(?|(abc)|(xyz))(?1)/
+    abcabc
+    xyzabc 
+    ** Failers 
+    xyzxyz 
+ 
+/\H\h\V\v/
+    X X\x0a
+    X\x09X\x0b
+    ** Failers
+    \xa0 X\x0a   
+    
+/\H*\h+\V?\v{3,4}/ 
+    \x09\x20\xa0X\x0a\x0b\x0c\x0d\x0a
+    \x09\x20\xa0\x0a\x0b\x0c\x0d\x0a
+    \x09\x20\xa0\x0a\x0b\x0c
+    ** Failers 
+    \x09\x20\xa0\x0a\x0b
+     
+/\H{3,4}/
+    XY  ABCDE
+    XY  PQR ST 
+    
+/.\h{3,4}./
+    XY  AB    PQRS
+
+/\h*X\h?\H+Y\H?Z/
+    >XNNNYZ
+    >  X NYQZ
+    ** Failers
+    >XYZ   
+    >  X NY Z
+
+/\v*X\v?Y\v+Z\V*\x0a\V+\x0b\V{2,3}\x0c/
+    >XY\x0aZ\x0aA\x0bNN\x0c
+    >\x0a\x0dX\x0aY\x0a\x0bZZZ\x0aAAA\x0bNNN\x0c
+
+/.+A/<crlf>
+    \r\nA
+    
+/\nA/<crlf>
+    \r\nA 
+
+/[\r\n]A/<crlf>
+    \r\nA 
+
+/(\r|\n)A/<crlf>
+    \r\nA 
+
+/a\Rb/I<bsr_anycrlf>
+    a\rb
+    a\nb
+    a\r\nb
+    ** Failers
+    a\x85b
+    a\x0bb     
+
+/a\Rb/I<bsr_unicode>
+    a\rb
+    a\nb
+    a\r\nb
+    a\x85b
+    a\x0bb     
+    ** Failers 
+    a\x85b\<bsr_anycrlf>
+    a\x0bb\<bsr_anycrlf>
+    
+/a\R?b/I<bsr_anycrlf>
+    a\rb
+    a\nb
+    a\r\nb
+    ** Failers
+    a\x85b
+    a\x0bb     
+
+/a\R?b/I<bsr_unicode>
+    a\rb
+    a\nb
+    a\r\nb
+    a\x85b
+    a\x0bb     
+    ** Failers 
+    a\x85b\<bsr_anycrlf>
+    a\x0bb\<bsr_anycrlf>
+    
+/a\R{2,4}b/I<bsr_anycrlf>
+    a\r\n\nb
+    a\n\r\rb
+    a\r\n\r\n\r\n\r\nb
+    ** Failers
+    a\x85\85b
+    a\x0b\0bb     
+
+/a\R{2,4}b/I<bsr_unicode>
+    a\r\rb
+    a\n\n\nb
+    a\r\n\n\r\rb
+    a\x85\85b
+    a\x0b\0bb     
+    ** Failers 
+    a\r\r\r\r\rb 
+    a\x85\85b\<bsr_anycrlf>
+    a\x0b\0bb\<bsr_anycrlf>
+    
+/a(?!)|\wbc/
+    abc 
+
+/a[]b/<JS>
+    ** Failers
+    ab
+
+/a[]+b/<JS>
+    ** Failers
+    ab 
+
+/a[]*+b/<JS>
+    ** Failers
+    ab 
+
+/a[^]b/<JS>
+    aXb
+    a\nb 
+    ** Failers
+    ab  
+    
+/a[^]+b/<JS> 
+    aXb
+    a\nX\nXb 
+    ** Failers
+    ab  
+
+/X$/E
+    X
+    ** Failers 
+    X\n 
+
+/X$/
+    X
+    X\n 
+
+/xyz/C
+  xyz 
+  abcxyz 
+  abcxyz\Y
+  ** Failers 
+  abc
+  abc\Y
+  abcxypqr  
+  abcxypqr\Y  
+  
+/(?C)ab/
+  ab
+  \C-ab
+  
+/ab/C
+  ab
+  \C-ab    
+
+/^"((?(?=[a])[^"])|b)*"$/C
+    "ab"
+    \C-"ab"
 
 / End of testinput7 /

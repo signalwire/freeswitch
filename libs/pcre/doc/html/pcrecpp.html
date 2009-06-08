@@ -16,19 +16,19 @@ man page, in case the conversion went wrong.
 <li><a name="TOC1" href="#SEC1">SYNOPSIS OF C++ WRAPPER</a>
 <li><a name="TOC2" href="#SEC2">DESCRIPTION</a>
 <li><a name="TOC3" href="#SEC3">MATCHING INTERFACE</a>
-<li><a name="TOC4" href="#SEC4">PARTIAL MATCHES</a>
-<li><a name="TOC5" href="#SEC5">UTF-8 AND THE MATCHING INTERFACE</a>
-<li><a name="TOC6" href="#SEC6">PASSING MODIFIERS TO THE REGULAR EXPRESSION ENGINE</a>
-<li><a name="TOC7" href="#SEC7">SCANNING TEXT INCREMENTALLY</a>
-<li><a name="TOC8" href="#SEC8">PARSING HEX/OCTAL/C-RADIX NUMBERS</a>
-<li><a name="TOC9" href="#SEC9">REPLACING PARTS OF STRINGS</a>
-<li><a name="TOC10" href="#SEC10">AUTHOR</a>
+<li><a name="TOC4" href="#SEC4">QUOTING METACHARACTERS</a>
+<li><a name="TOC5" href="#SEC5">PARTIAL MATCHES</a>
+<li><a name="TOC6" href="#SEC6">UTF-8 AND THE MATCHING INTERFACE</a>
+<li><a name="TOC7" href="#SEC7">PASSING MODIFIERS TO THE REGULAR EXPRESSION ENGINE</a>
+<li><a name="TOC8" href="#SEC8">SCANNING TEXT INCREMENTALLY</a>
+<li><a name="TOC9" href="#SEC9">PARSING HEX/OCTAL/C-RADIX NUMBERS</a>
+<li><a name="TOC10" href="#SEC10">REPLACING PARTS OF STRINGS</a>
+<li><a name="TOC11" href="#SEC11">AUTHOR</a>
+<li><a name="TOC12" href="#SEC12">REVISION</a>
 </ul>
 <br><a name="SEC1" href="#TOC1">SYNOPSIS OF C++ WRAPPER</a><br>
 <P>
 <b>#include &#60;pcrecpp.h&#62;</b>
-</P>
-<P>
 </P>
 <br><a name="SEC2" href="#TOC1">DESCRIPTION</a><br>
 <P>
@@ -101,16 +101,43 @@ The function returns true iff all of the following conditions are satisfied:
 
   c. The "i"th argument has a suitable type for holding the
      string captured as the "i"th sub-pattern. If you pass in
-     NULL for the "i"th argument, or pass fewer arguments than
+     void * NULL for the "i"th argument, or a non-void * NULL
+     of the correct type, or pass fewer arguments than the
      number of sub-patterns, "i"th captured sub-pattern is
      ignored.
+</pre>
+CAVEAT: An optional sub-pattern that does not exist in the matched
+string is assigned the empty string. Therefore, the following will
+return false (because the empty string is not a valid number):
+<pre>
+   int number;
+   pcrecpp::RE::FullMatch("abc", "[a-z]+(\\d+)?", &number);
 </pre>
 The matching interface supports at most 16 arguments per call.
 If you need more, consider using the more general interface
 <b>pcrecpp::RE::DoMatch</b>. See <b>pcrecpp.h</b> for the signature for
 <b>DoMatch</b>.
 </P>
-<br><a name="SEC4" href="#TOC1">PARTIAL MATCHES</a><br>
+<P>
+NOTE: Do not use <b>no_arg</b>, which is used internally to mark the end of a
+list of optional arguments, as a placeholder for missing arguments, as this can
+lead to segfaults.
+</P>
+<br><a name="SEC4" href="#TOC1">QUOTING METACHARACTERS</a><br>
+<P>
+You can use the "QuoteMeta" operation to insert backslashes before all
+potentially meaningful characters in a string. The returned string, used as a
+regular expression, will exactly match the original string.
+<pre>
+  Example:
+     string quoted = RE::QuoteMeta(unquoted);
+</pre>
+Note that it's legal to escape a character even if it has no special meaning in
+a regular expression -- so this function does that. (This also makes it
+identical to the perl function of the same name; see "perldoc -f quotemeta".)
+For example, "1.5-2.0?" becomes "1\.5\-2\.0\?".
+</P>
+<br><a name="SEC5" href="#TOC1">PARTIAL MATCHES</a><br>
 <P>
 You can use the "PartialMatch" operation when you want the pattern
 to match any substring of the text.
@@ -125,7 +152,7 @@ to match any substring of the text.
      assert(number == 100);
 </PRE>
 </P>
-<br><a name="SEC5" href="#TOC1">UTF-8 AND THE MATCHING INTERFACE</a><br>
+<br><a name="SEC6" href="#TOC1">UTF-8 AND THE MATCHING INTERFACE</a><br>
 <P>
 By default, pattern and text are plain text, one byte per character. The UTF8
 flag, passed to the constructor, causes both pattern and string to be treated
@@ -150,7 +177,7 @@ NOTE: The UTF8 flag is ignored if pcre was not configured with the
       --enable-utf8 flag.
 </PRE>
 </P>
-<br><a name="SEC6" href="#TOC1">PASSING MODIFIERS TO THE REGULAR EXPRESSION ENGINE</a><br>
+<br><a name="SEC7" href="#TOC1">PASSING MODIFIERS TO THE REGULAR EXPRESSION ENGINE</a><br>
 <P>
 PCRE defines some modifiers to change the behavior of the regular expression
 engine. The C++ wrapper defines an auxiliary class, RE_Options, as a vehicle to
@@ -244,7 +271,7 @@ PCRE_EXTENDED, and PCRE_MULTILINE to a RE with one statement, you may write:
 
 </PRE>
 </P>
-<br><a name="SEC7" href="#TOC1">SCANNING TEXT INCREMENTALLY</a><br>
+<br><a name="SEC8" href="#TOC1">SCANNING TEXT INCREMENTALLY</a><br>
 <P>
 The "Consume" operation may be useful if you want to repeatedly
 match regular expressions at the front of a string and skip over
@@ -277,7 +304,7 @@ could extract all words from a string by repeatedly calling
   pcrecpp::RE("(\\w+)").FindAndConsume(&input, &word)
 </PRE>
 </P>
-<br><a name="SEC8" href="#TOC1">PARSING HEX/OCTAL/C-RADIX NUMBERS</a><br>
+<br><a name="SEC9" href="#TOC1">PARSING HEX/OCTAL/C-RADIX NUMBERS</a><br>
 <P>
 By default, if you pass a pointer to a numeric value, the
 corresponding text is interpreted as a base-10 number. You can
@@ -295,7 +322,7 @@ prefixes, but defaults to base-10.
 </pre>
 will leave 64 in a, b, c, and d.
 </P>
-<br><a name="SEC9" href="#TOC1">REPLACING PARTS OF STRINGS</a><br>
+<br><a name="SEC10" href="#TOC1">REPLACING PARTS OF STRINGS</a><br>
 <P>
 You can replace the first match of "pattern" in "str" with "rewrite".
 Within "rewrite", backslash-escaped digits (\1 to \9) can be
@@ -327,11 +354,17 @@ The non-matching portions of "text" are ignored. Returns true iff a match
 occurred and the extraction happened successfully;  if no match occurs, the
 string is left unaffected.
 </P>
-<br><a name="SEC10" href="#TOC1">AUTHOR</a><br>
+<br><a name="SEC11" href="#TOC1">AUTHOR</a><br>
 <P>
 The C++ wrapper was contributed by Google Inc.
 <br>
-Copyright &copy; 2005 Google Inc.
+Copyright &copy; 2007 Google Inc.
+<br>
+</P>
+<br><a name="SEC12" href="#TOC1">REVISION</a><br>
+<P>
+Last updated: 17 March 2009
+<br>
 <p>
 Return to the <a href="index.html">PCRE index page</a>.
 </p>

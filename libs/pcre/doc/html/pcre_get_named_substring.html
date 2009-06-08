@@ -39,9 +39,10 @@ arguments are:
   <i>stringptr</i>     Where to put the string pointer
 </pre>
 The memory in which the substring is placed is obtained by calling
-<b>pcre_malloc()</b>. The yield of the function is the length of the extracted
-substring, PCRE_ERROR_NOMEMORY if sufficient memory could not be obtained, or
-PCRE_ERROR_NOSUBSTRING if the string name is invalid.
+<b>pcre_malloc()</b>. The convenience function <b>pcre_free_substring()</b> can
+be used to free it when it is no longer needed. The yield of the function is
+the length of the extracted substring, PCRE_ERROR_NOMEMORY if sufficient memory
+could not be obtained, or PCRE_ERROR_NOSUBSTRING if the string name is invalid.
 </P>
 <P>
 There is a complete description of the PCRE native API in the

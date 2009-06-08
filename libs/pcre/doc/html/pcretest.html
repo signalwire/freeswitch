@@ -23,8 +23,11 @@ man page, in case the conversion went wrong.
 <li><a name="TOC8" href="#SEC8">OUTPUT FROM THE ALTERNATIVE MATCHING FUNCTION</a>
 <li><a name="TOC9" href="#SEC9">RESTARTING AFTER A PARTIAL MATCH</a>
 <li><a name="TOC10" href="#SEC10">CALLOUTS</a>
-<li><a name="TOC11" href="#SEC11">SAVING AND RELOADING COMPILED PATTERNS</a>
-<li><a name="TOC12" href="#SEC12">AUTHOR</a>
+<li><a name="TOC11" href="#SEC11">NON-PRINTING CHARACTERS</a>
+<li><a name="TOC12" href="#SEC12">SAVING AND RELOADING COMPILED PATTERNS</a>
+<li><a name="TOC13" href="#SEC13">SEE ALSO</a>
+<li><a name="TOC14" href="#SEC14">AUTHOR</a>
+<li><a name="TOC15" href="#SEC15">REVISION</a>
 </ul>
 <br><a name="SEC1" href="#TOC1">SYNOPSIS</a><br>
 <P>
@@ -43,6 +46,11 @@ documentation.
 </P>
 <br><a name="SEC2" href="#TOC1">OPTIONS</a><br>
 <P>
+<b>-b</b>
+Behave as if each regex has the <b>/B</b> (show bytecode) modifier; the internal
+form is output after compilation.
+</P>
+<P>
 <b>-C</b>
 Output the version number of the PCRE library, and all available information
 about the optional features that are included, and then exit.
@@ -50,7 +58,8 @@ about the optional features that are included, and then exit.
 <P>
 <b>-d</b>
 Behave as if each regex has the <b>/D</b> (debug) modifier; the internal
-form is output after compilation.
+form and information about the compiled pattern is output after compilation;
+<b>-d</b> is equivalent to <b>-b -i</b>.
 </P>
 <P>
 <b>-dfa</b>
@@ -59,9 +68,19 @@ alternative matching function, <b>pcre_dfa_exec()</b>, to be used instead of the
 standard <b>pcre_exec()</b> function (more detail is given below).
 </P>
 <P>
+<b>-help</b>
+Output a brief summary these options and then exit.
+</P>
+<P>
 <b>-i</b>
 Behave as if each regex has the <b>/I</b> modifier; information about the
 compiled pattern is given after compilation.
+</P>
+<P>
+<b>-M</b>
+Behave as if each data line contains the \M escape sequence; this causes
+PCRE to discover the minimum MATCH_LIMIT and MATCH_LIMIT_RECURSION settings by
+calling <b>pcre_exec()</b> repeatedly with different limits.
 </P>
 <P>
 <b>-m</b>
@@ -72,9 +91,11 @@ with earlier versions of pcretest, <b>-s</b> is a synonym for <b>-m</b>.
 <P>
 <b>-o</b> <i>osize</i>
 Set the number of elements in the output vector that is used when calling
-<b>pcre_exec()</b> to be <i>osize</i>. The default value is 45, which is enough
-for 14 capturing subexpressions. The vector size can be changed for individual
-matching calls by including \O in the data line (see below).
+<b>pcre_exec()</b> or <b>pcre_dfa_exec()</b> to be <i>osize</i>. The default value
+is 45, which is enough for 14 capturing subexpressions for <b>pcre_exec()</b> or
+22 different matches for <b>pcre_dfa_exec()</b>. The vector size can be
+changed for individual matching calls by including \O in the data line (see
+below).
 </P>
 <P>
 <b>-p</b>
@@ -96,7 +117,15 @@ megabytes.
 Run each compile, study, and match many times with a timer, and output
 resulting time per compile or match (in milliseconds). Do not set <b>-m</b> with
 <b>-t</b>, because you will then get the size output a zillion times, and the
-timing will be distorted.
+timing will be distorted. You can control the number of iterations that are
+used for timing by following <b>-t</b> with a number (as a separate item on the
+command line). For example, "-t 1000" would iterate 1000 times. The default is
+to iterate 500000 times.
+</P>
+<P>
+<b>-tm</b>
+This is like <b>-t</b> except that it times only the matching phase, not the
+compile or study phases.
 </P>
 <br><a name="SEC3" href="#TOC1">DESCRIPTION</a><br>
 <P>
@@ -107,6 +136,13 @@ stdout, and prompts for each line of input, using "re&#62;" to prompt for regula
 expressions, and "data&#62;" to prompt for data lines.
 </P>
 <P>
+When <b>pcretest</b> is built, a configuration option can specify that it should
+be linked with the <b>libreadline</b> library. When this is done, if the input
+is from a terminal, it is read using the <b>readline()</b> function. This
+provides line-editing and history facilities. The output from the <b>-help</b>
+option states whether or not <b>readline()</b> will be used.
+</P>
+<P>
 The program handles any number of sets of input on a single input file. Each
 set starts with a regular expression, and continues with any number of data
 lines to be matched against the pattern.
@@ -114,8 +150,8 @@ lines to be matched against the pattern.
 <P>
 Each data line is matched separately and independently. If you want to do
 multi-line matches, you have to use the \n escape sequence (or \r or \r\n,
-depending on the newline setting) in a single line of input to encode the
-newline characters. There is no limit on the length of data lines; the input
+etc., depending on the newline setting) in a single line of input to encode the
+newline sequences. There is no limit on the length of data lines; the input
 buffer is automatically extended if it is too small.
 </P>
 <P>
@@ -168,20 +204,30 @@ effect as they do in Perl. For example:
 The following table shows additional modifiers for setting PCRE options that do
 not correspond to anything in Perl:
 <pre>
-  <b>/A</b>       PCRE_ANCHORED
-  <b>/C</b>       PCRE_AUTO_CALLOUT
-  <b>/E</b>       PCRE_DOLLAR_ENDONLY
-  <b>/f</b>       PCRE_FIRSTLINE
-  <b>/J</b>       PCRE_DUPNAMES
-  <b>/N</b>       PCRE_NO_AUTO_CAPTURE
-  <b>/U</b>       PCRE_UNGREEDY
-  <b>/X</b>       PCRE_EXTRA
-  <b>/&#60;cr&#62;</b>    PCRE_NEWLINE_CR
-  <b>/&#60;lf&#62;</b>    PCRE_NEWLINE_LF
-  <b>/&#60;crlf&#62;</b>  PCRE_NEWLINE_CRLF
+  <b>/A</b>              PCRE_ANCHORED
+  <b>/C</b>              PCRE_AUTO_CALLOUT
+  <b>/E</b>              PCRE_DOLLAR_ENDONLY
+  <b>/f</b>              PCRE_FIRSTLINE
+  <b>/J</b>              PCRE_DUPNAMES
+  <b>/N</b>              PCRE_NO_AUTO_CAPTURE
+  <b>/U</b>              PCRE_UNGREEDY
+  <b>/X</b>              PCRE_EXTRA
+  <b>/&#60;JS&#62;</b>           PCRE_JAVASCRIPT_COMPAT
+  <b>/&#60;cr&#62;</b>           PCRE_NEWLINE_CR
+  <b>/&#60;lf&#62;</b>           PCRE_NEWLINE_LF
+  <b>/&#60;crlf&#62;</b>         PCRE_NEWLINE_CRLF
+  <b>/&#60;anycrlf&#62;</b>      PCRE_NEWLINE_ANYCRLF
+  <b>/&#60;any&#62;</b>          PCRE_NEWLINE_ANY
+  <b>/&#60;bsr_anycrlf&#62;</b>  PCRE_BSR_ANYCRLF
+  <b>/&#60;bsr_unicode&#62;</b>  PCRE_BSR_UNICODE
 </pre>
-Those specifying line endings are literal strings as shown. Details of the
-meanings of these PCRE options are given in the
+Those specifying line ending sequences are literal strings as shown, but the
+letters can be in either case. This example sets multiline matching with CRLF
+as the line ending sequence:
+<pre>
+  /^abc/m&#60;crlf&#62;
+</pre>
+Details of the meanings of these PCRE options are given in the
 <a href="pcreapi.html"><b>pcreapi</b></a>
 documentation.
 </P>
@@ -220,6 +266,14 @@ the subject string. This is useful for tests where the subject contains
 multiple copies of the same substring.
 </P>
 <P>
+The <b>/B</b> modifier is a debugging feature. It requests that <b>pcretest</b>
+output a representation of the compiled byte code after compilation. Normally
+this information contains length and offset values; however, if <b>/Z</b> is
+also present, this data is replaced by spaces. This is a special feature for
+use in the automatic test scripts; it ensures that the same output is generated
+for different internal link sizes.
+</P>
+<P>
 The <b>/L</b> modifier must be followed directly by the name of a locale, for
 example,
 <pre>
@@ -238,10 +292,8 @@ so on). It does this by calling <b>pcre_fullinfo()</b> after compiling a
 pattern. If the pattern is studied, the results of that are also output.
 </P>
 <P>
-The <b>/D</b> modifier is a PCRE debugging feature, which also assumes <b>/I</b>.
-It causes the internal form of compiled regular expressions to be output after
-compilation. If the pattern was studied, the information returned is also
-output.
+The <b>/D</b> modifier is a PCRE debugging feature, and is equivalent to
+<b>/BI</b>, that is, both the <b>/B</b> and the <b>/I</b> modifiers.
 </P>
 <P>
 The <b>/F</b> modifier causes <b>pcretest</b> to flip the byte order of the
@@ -289,15 +341,15 @@ complicated features of PCRE. If you are just testing "ordinary" regular
 expressions, you probably don't need any of these. The following escapes are
 recognized:
 <pre>
-  \a         alarm (= BEL)
-  \b         backspace
-  \e         escape
-  \f         formfeed
-  \n         newline
+  \a         alarm (BEL, \x07)
+  \b         backspace (\x08)
+  \e         escape (\x27)
+  \f         formfeed (\x0c)
+  \n         newline (\x0a)
   \qdd       set the PCRE_MATCH_LIMIT limit to dd (any number of digits)
-  \r         carriage return
-  \t         tab
-  \v         vertical tab
+  \r         carriage return (\x0d)
+  \t         tab (\x09)
+  \v         vertical tab (\x0b)
   \nnn       octal character (up to 3 octal digits)
   \xhh       hexadecimal character (up to 2 hex digits)
   \x{hh...}  hexadecimal character, any number of digits in UTF-8 mode
@@ -331,11 +383,17 @@ recognized:
   \&#60;cr&#62;      pass the PCRE_NEWLINE_CR option to <b>pcre_exec()</b> or <b>pcre_dfa_exec()</b>
   \&#60;lf&#62;      pass the PCRE_NEWLINE_LF option to <b>pcre_exec()</b> or <b>pcre_dfa_exec()</b>
   \&#60;crlf&#62;    pass the PCRE_NEWLINE_CRLF option to <b>pcre_exec()</b> or <b>pcre_dfa_exec()</b>
+  \&#60;anycrlf&#62; pass the PCRE_NEWLINE_ANYCRLF option to <b>pcre_exec()</b> or <b>pcre_dfa_exec()</b>
+  \&#60;any&#62;     pass the PCRE_NEWLINE_ANY option to <b>pcre_exec()</b> or <b>pcre_dfa_exec()</b>
 </pre>
-The escapes that specify line endings are literal strings, exactly as shown.
-A backslash followed by anything else just escapes the anything else. If the
-very last character is a backslash, it is ignored. This gives a way of passing
-an empty line as data, since a real empty line terminates the data input.
+The escapes that specify line ending sequences are literal strings, exactly as
+shown. No more than one newline setting should be present in any data line.
+</P>
+<P>
+A backslash followed by anything else just escapes the anything else. If
+the very last character is a backslash, it is ignored. This gives a way of
+passing an empty line as data, since a real empty line terminates the data
+input.
 </P>
 <P>
 If \M is present, <b>pcretest</b> calls <b>pcre_exec()</b> several times, with
@@ -365,7 +423,10 @@ and \Z, causing REG_NOTBOL and REG_NOTEOL, respectively, to be passed to
 The use of \x{hh...} to represent UTF-8 characters is not dependent on the use
 of the <b>/8</b> modifier on the pattern. It is recognized always. There may be
 any number of hexadecimal digits inside the braces. The result is from one to
-six bytes, encoded according to the UTF-8 rules.
+six bytes, encoded according to the original UTF-8 rules of RFC 2279. This
+allows for values in the range 0 to 0x7FFFFFFF. Note that not all of those are
+valid Unicode code points, or indeed valid UTF-8 characters according to the
+later rules in RFC 3629.
 </P>
 <br><a name="SEC6" href="#TOC1">THE ALTERNATIVE MATCHING FUNCTION</a><br>
 <P>
@@ -398,7 +459,7 @@ respectively, and otherwise the PCRE negative error number. Here is an example
 of an interactive <b>pcretest</b> run.
 <pre>
   $ pcretest
-  PCRE version 5.00 07-Sep-2004
+  PCRE version 7.0 30-Nov-2006
 
     re&#62; /^abc(\d+)/
   data&#62; abc123
@@ -407,11 +468,26 @@ of an interactive <b>pcretest</b> run.
   data&#62; xyz
   No match
 </pre>
+Note that unset capturing substrings that are not followed by one that is set
+are not returned by <b>pcre_exec()</b>, and are not shown by <b>pcretest</b>. In
+the following example, there are two capturing substrings, but when the first
+data line is matched, the second, unset substring is not shown. An "internal"
+unset substring is shown as "&#60;unset&#62;", as for the second data line.
+<pre>
+    re&#62; /(a)|(b)/
+  data&#62; a
+   0: a
+   1: a
+  data&#62; b
+   0: b
+   1: &#60;unset&#62;
+   2: b
+</pre>
 If the strings contain any non-printing characters, they are output as \0x
 escapes, or as \x{...} escapes if the <b>/8</b> modifier was present on the
-pattern. If the pattern has the <b>/+</b> modifier, the output for substring 0
-is followed by the the rest of the subject string, identified by "0+" like
-this:
+pattern. See below for the definition of non-printing characters. If the
+pattern has the <b>/+</b> modifier, the output for substring 0 is followed by
+the the rest of the subject string, identified by "0+" like this:
 <pre>
     re&#62; /cat/+
   data&#62; cataract
@@ -441,10 +517,10 @@ length (that is, the return from the extraction function) is given in
 parentheses after each string for <b>\C</b> and <b>\G</b>.
 </P>
 <P>
-Note that while patterns can be continued over several lines (a plain "&#62;"
+Note that whereas patterns can be continued over several lines (a plain "&#62;"
 prompt is used for continuations), data lines may not. However newlines can be
-included in data by means of the \n escape (or \r or \r\n for those newline
-settings).
+included in data by means of the \n escape (or \r, \r\n, etc., depending on
+the newline sequence setting).
 </P>
 <br><a name="SEC8" href="#TOC1">OUTPUT FROM THE ALTERNATIVE MATCHING FUNCTION</a><br>
 <P>
@@ -463,7 +539,7 @@ the subject where there is at least one match. For example:
 longest matching string is always given first (and numbered zero).
 </P>
 <P>
-If \fB/g\P is present on the pattern, the search for further matches resumes
+If <b>/g</b> is present on the pattern, the search for further matches resumes
 at the end of the longest match. For example:
 <pre>
     re&#62; /(tang|tangerine|tan)/g
@@ -537,7 +613,19 @@ the
 <a href="pcrecallout.html"><b>pcrecallout</b></a>
 documentation.
 </P>
-<br><a name="SEC11" href="#TOC1">SAVING AND RELOADING COMPILED PATTERNS</a><br>
+<br><a name="SEC11" href="#TOC1">NON-PRINTING CHARACTERS</a><br>
+<P>
+When <b>pcretest</b> is outputting text in the compiled version of a pattern,
+bytes other than 32-126 are always treated as non-printing characters are are
+therefore shown as hex escapes.
+</P>
+<P>
+When <b>pcretest</b> is outputting text that is a matched part of a subject
+string, it behaves in the same way, unless a different locale has been set for
+the pattern (using the <b>/L</b> modifier). In this case, the <b>isprint()</b>
+function to distinguish printing and non-printing characters.
+</P>
+<br><a name="SEC12" href="#TOC1">SAVING AND RELOADING COMPILED PATTERNS</a><br>
 <P>
 The facilities described in this section are not available when the POSIX
 inteface to PCRE is being used, that is, when the <b>/P</b> pattern modifier is
@@ -599,18 +687,26 @@ string using a reloaded pattern is likely to cause <b>pcretest</b> to crash.
 Finally, if you attempt to load a file that is not in the correct format, the
 result is undefined.
 </P>
-<br><a name="SEC12" href="#TOC1">AUTHOR</a><br>
+<br><a name="SEC13" href="#TOC1">SEE ALSO</a><br>
+<P>
+<b>pcre</b>(3), <b>pcreapi</b>(3), <b>pcrecallout</b>(3), <b>pcrematching</b>(3),
+<b>pcrepartial</b>(d), <b>pcrepattern</b>(3), <b>pcreprecompile</b>(3).
+</P>
+<br><a name="SEC14" href="#TOC1">AUTHOR</a><br>
 <P>
 Philip Hazel
 <br>
-University Computing Service,
+University Computing Service
 <br>
-Cambridge CB2 3QG, England.
+Cambridge CB2 3QH, England.
+<br>
 </P>
+<br><a name="SEC15" href="#TOC1">REVISION</a><br>
 <P>
-Last updated: 29 June 2006
+Last updated: 10 March 2009
 <br>
-Copyright &copy; 1997-2006 University of Cambridge.
+Copyright &copy; 1997-2009 University of Cambridge.
+<br>
 <p>
 Return to the <a href="index.html">PCRE index page</a>.
 </p>

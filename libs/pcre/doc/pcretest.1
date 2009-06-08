@@ -24,22 +24,35 @@ documentation.
 .SH OPTIONS
 .rs
 .TP 10
+\fB-b\fP
+Behave as if each regex has the \fB/B\fP (show bytecode) modifier; the internal
+form is output after compilation.
+.TP 10
 \fB-C\fP
 Output the version number of the PCRE library, and all available information
 about the optional features that are included, and then exit.
 .TP 10
 \fB-d\fP
 Behave as if each regex has the \fB/D\fP (debug) modifier; the internal
-form is output after compilation.
+form and information about the compiled pattern is output after compilation;
+\fB-d\fP is equivalent to \fB-b -i\fP.
 .TP 10
 \fB-dfa\fP
 Behave as if each data line contains the \eD escape sequence; this causes the
 alternative matching function, \fBpcre_dfa_exec()\fP, to be used instead of the
 standard \fBpcre_exec()\fP function (more detail is given below).
 .TP 10
+\fB-help\fP
+Output a brief summary these options and then exit.
+.TP 10
 \fB-i\fP
 Behave as if each regex has the \fB/I\fP modifier; information about the
 compiled pattern is given after compilation.
+.TP 10
+\fB-M\fP
+Behave as if each data line contains the \eM escape sequence; this causes
+PCRE to discover the minimum MATCH_LIMIT and MATCH_LIMIT_RECURSION settings by
+calling \fBpcre_exec()\fP repeatedly with different limits.
 .TP 10
 \fB-m\fP
 Output the size of each compiled pattern after it has been compiled. This is
@@ -48,9 +61,11 @@ with earlier versions of pcretest, \fB-s\fP is a synonym for \fB-m\fP.
 .TP 10
 \fB-o\fP \fIosize\fP
 Set the number of elements in the output vector that is used when calling
-\fBpcre_exec()\fP to be \fIosize\fP. The default value is 45, which is enough
-for 14 capturing subexpressions. The vector size can be changed for individual
-matching calls by including \eO in the data line (see below).
+\fBpcre_exec()\fP or \fBpcre_dfa_exec()\fP to be \fIosize\fP. The default value
+is 45, which is enough for 14 capturing subexpressions for \fBpcre_exec()\fP or
+22 different matches for \fBpcre_dfa_exec()\fP. The vector size can be
+changed for individual matching calls by including \eO in the data line (see
+below).
 .TP 10
 \fB-p\fP
 Behave as if each regex has the \fB/P\fP modifier; the POSIX wrapper API is
@@ -68,7 +83,14 @@ megabytes.
 Run each compile, study, and match many times with a timer, and output
 resulting time per compile or match (in milliseconds). Do not set \fB-m\fP with
 \fB-t\fP, because you will then get the size output a zillion times, and the
-timing will be distorted.
+timing will be distorted. You can control the number of iterations that are
+used for timing by following \fB-t\fP with a number (as a separate item on the
+command line). For example, "-t 1000" would iterate 1000 times. The default is
+to iterate 500000 times.
+.TP 10
+\fB-tm\fP
+This is like \fB-t\fP except that it times only the matching phase, not the
+compile or study phases.
 .
 .
 .SH DESCRIPTION
@@ -80,14 +102,20 @@ that file and writes to stdout. Otherwise, it reads from stdin and writes to
 stdout, and prompts for each line of input, using "re>" to prompt for regular
 expressions, and "data>" to prompt for data lines.
 .P
+When \fBpcretest\fP is built, a configuration option can specify that it should
+be linked with the \fBlibreadline\fP library. When this is done, if the input
+is from a terminal, it is read using the \fBreadline()\fP function. This
+provides line-editing and history facilities. The output from the \fB-help\fP
+option states whether or not \fBreadline()\fP will be used.
+.P
 The program handles any number of sets of input on a single input file. Each
 set starts with a regular expression, and continues with any number of data
 lines to be matched against the pattern.
 .P
 Each data line is matched separately and independently. If you want to do
 multi-line matches, you have to use the \en escape sequence (or \er or \er\en,
-depending on the newline setting) in a single line of input to encode the
-newline characters. There is no limit on the length of data lines; the input
+etc., depending on the newline setting) in a single line of input to encode the
+newline sequences. There is no limit on the length of data lines; the input
 buffer is automatically extended if it is too small.
 .P
 An empty line signals the end of the data lines, at which point a new regular
@@ -140,20 +168,30 @@ effect as they do in Perl. For example:
 The following table shows additional modifiers for setting PCRE options that do
 not correspond to anything in Perl:
 .sp
-  \fB/A\fP       PCRE_ANCHORED
-  \fB/C\fP       PCRE_AUTO_CALLOUT
-  \fB/E\fP       PCRE_DOLLAR_ENDONLY
-  \fB/f\fP       PCRE_FIRSTLINE
-  \fB/J\fP       PCRE_DUPNAMES
-  \fB/N\fP       PCRE_NO_AUTO_CAPTURE
-  \fB/U\fP       PCRE_UNGREEDY
-  \fB/X\fP       PCRE_EXTRA
-  \fB/<cr>\fP    PCRE_NEWLINE_CR
-  \fB/<lf>\fP    PCRE_NEWLINE_LF
-  \fB/<crlf>\fP  PCRE_NEWLINE_CRLF
+  \fB/A\fP              PCRE_ANCHORED
+  \fB/C\fP              PCRE_AUTO_CALLOUT
+  \fB/E\fP              PCRE_DOLLAR_ENDONLY
+  \fB/f\fP              PCRE_FIRSTLINE
+  \fB/J\fP              PCRE_DUPNAMES
+  \fB/N\fP              PCRE_NO_AUTO_CAPTURE
+  \fB/U\fP              PCRE_UNGREEDY
+  \fB/X\fP              PCRE_EXTRA
+  \fB/<JS>\fP           PCRE_JAVASCRIPT_COMPAT
+  \fB/<cr>\fP           PCRE_NEWLINE_CR
+  \fB/<lf>\fP           PCRE_NEWLINE_LF
+  \fB/<crlf>\fP         PCRE_NEWLINE_CRLF
+  \fB/<anycrlf>\fP      PCRE_NEWLINE_ANYCRLF
+  \fB/<any>\fP          PCRE_NEWLINE_ANY
+  \fB/<bsr_anycrlf>\fP  PCRE_BSR_ANYCRLF
+  \fB/<bsr_unicode>\fP  PCRE_BSR_UNICODE
 .sp
-Those specifying line endings are literal strings as shown. Details of the
-meanings of these PCRE options are given in the
+Those specifying line ending sequences are literal strings as shown, but the
+letters can be in either case. This example sets multiline matching with CRLF
+as the line ending sequence:
+.sp
+  /^abc/m<crlf>
+.sp
+Details of the meanings of these PCRE options are given in the
 .\" HREF
 \fBpcreapi\fP
 .\"
@@ -191,6 +229,13 @@ matched the entire pattern, pcretest should in addition output the remainder of
 the subject string. This is useful for tests where the subject contains
 multiple copies of the same substring.
 .P
+The \fB/B\fP modifier is a debugging feature. It requests that \fBpcretest\fP
+output a representation of the compiled byte code after compilation. Normally
+this information contains length and offset values; however, if \fB/Z\fP is
+also present, this data is replaced by spaces. This is a special feature for
+use in the automatic test scripts; it ensures that the same output is generated
+for different internal link sizes.
+.P
 The \fB/L\fP modifier must be followed directly by the name of a locale, for
 example,
 .sp
@@ -207,10 +252,8 @@ compiled pattern (whether it is anchored, has a fixed first character, and
 so on). It does this by calling \fBpcre_fullinfo()\fP after compiling a
 pattern. If the pattern is studied, the results of that are also output.
 .P
-The \fB/D\fP modifier is a PCRE debugging feature, which also assumes \fB/I\fP.
-It causes the internal form of compiled regular expressions to be output after
-compilation. If the pattern was studied, the information returned is also
-output.
+The \fB/D\fP modifier is a PCRE debugging feature, and is equivalent to
+\fB/BI\fP, that is, both the \fB/B\fP and the \fB/I\fP modifiers.
 .P
 The \fB/F\fP modifier causes \fBpcretest\fP to flip the byte order of the
 fields in the compiled pattern that contain 2-byte and 4-byte numbers. This
@@ -254,17 +297,17 @@ complicated features of PCRE. If you are just testing "ordinary" regular
 expressions, you probably don't need any of these. The following escapes are
 recognized:
 .sp
-  \ea         alarm (= BEL)
-  \eb         backspace
-  \ee         escape
-  \ef         formfeed
-  \en         newline
+  \ea         alarm (BEL, \ex07)
+  \eb         backspace (\ex08)
+  \ee         escape (\ex27)
+  \ef         formfeed (\ex0c)
+  \en         newline (\ex0a)
 .\" JOIN
   \eqdd       set the PCRE_MATCH_LIMIT limit to dd
                (any number of digits)
-  \er         carriage return
-  \et         tab
-  \ev         vertical tab
+  \er         carriage return (\ex0d)
+  \et         tab (\ex09)
+  \ev         vertical tab (\ex0b)
   \ennn       octal character (up to 3 octal digits)
   \exhh       hexadecimal character (up to 2 hex digits)
 .\" JOIN
@@ -344,11 +387,20 @@ recognized:
 .\" JOIN
   \e<crlf>    pass the PCRE_NEWLINE_CRLF option to \fBpcre_exec()\fP
                or \fBpcre_dfa_exec()\fP
+.\" JOIN
+  \e<anycrlf> pass the PCRE_NEWLINE_ANYCRLF option to \fBpcre_exec()\fP
+               or \fBpcre_dfa_exec()\fP
+.\" JOIN
+  \e<any>     pass the PCRE_NEWLINE_ANY option to \fBpcre_exec()\fP
+               or \fBpcre_dfa_exec()\fP
 .sp
-The escapes that specify line endings are literal strings, exactly as shown.
-A backslash followed by anything else just escapes the anything else. If the
-very last character is a backslash, it is ignored. This gives a way of passing
-an empty line as data, since a real empty line terminates the data input.
+The escapes that specify line ending sequences are literal strings, exactly as
+shown. No more than one newline setting should be present in any data line.
+.P
+A backslash followed by anything else just escapes the anything else. If
+the very last character is a backslash, it is ignored. This gives a way of
+passing an empty line as data, since a real empty line terminates the data
+input.
 .P
 If \eM is present, \fBpcretest\fP calls \fBpcre_exec()\fP several times, with
 different values in the \fImatch_limit\fP and \fImatch_limit_recursion\fP
@@ -374,7 +426,10 @@ and \eZ, causing REG_NOTBOL and REG_NOTEOL, respectively, to be passed to
 The use of \ex{hh...} to represent UTF-8 characters is not dependent on the use
 of the \fB/8\fP modifier on the pattern. It is recognized always. There may be
 any number of hexadecimal digits inside the braces. The result is from one to
-six bytes, encoded according to the UTF-8 rules.
+six bytes, encoded according to the original UTF-8 rules of RFC 2279. This
+allows for values in the range 0 to 0x7FFFFFFF. Note that not all of those are
+valid Unicode code points, or indeed valid UTF-8 characters according to the
+later rules in RFC 3629.
 .
 .
 .SH "THE ALTERNATIVE MATCHING FUNCTION"
@@ -411,7 +466,7 @@ respectively, and otherwise the PCRE negative error number. Here is an example
 of an interactive \fBpcretest\fP run.
 .sp
   $ pcretest
-  PCRE version 5.00 07-Sep-2004
+  PCRE version 7.0 30-Nov-2006
 .sp
     re> /^abc(\ed+)/
   data> abc123
@@ -420,11 +475,26 @@ of an interactive \fBpcretest\fP run.
   data> xyz
   No match
 .sp
+Note that unset capturing substrings that are not followed by one that is set
+are not returned by \fBpcre_exec()\fP, and are not shown by \fBpcretest\fP. In
+the following example, there are two capturing substrings, but when the first
+data line is matched, the second, unset substring is not shown. An "internal"
+unset substring is shown as "<unset>", as for the second data line.
+.sp
+    re> /(a)|(b)/
+  data> a
+   0: a
+   1: a
+  data> b
+   0: b
+   1: <unset>
+   2: b
+.sp
 If the strings contain any non-printing characters, they are output as \e0x
 escapes, or as \ex{...} escapes if the \fB/8\fP modifier was present on the
-pattern. If the pattern has the \fB/+\fP modifier, the output for substring 0
-is followed by the the rest of the subject string, identified by "0+" like
-this:
+pattern. See below for the definition of non-printing characters. If the
+pattern has the \fB/+\fP modifier, the output for substring 0 is followed by
+the the rest of the subject string, identified by "0+" like this:
 .sp
     re> /cat/+
   data> cataract
@@ -452,10 +522,11 @@ instead of a colon. This is in addition to the normal full list. The string
 length (that is, the return from the extraction function) is given in
 parentheses after each string for \fB\eC\fP and \fB\eG\fP.
 .P
-Note that while patterns can be continued over several lines (a plain ">"
+Note that whereas patterns can be continued over several lines (a plain ">"
 prompt is used for continuations), data lines may not. However newlines can be
-included in data by means of the \en escape (or \er or \er\en for those newline
-settings).
+included in data by means of the \en escape (or \er, \er\en, etc., depending on
+the newline sequence setting).
+.
 .
 .
 .SH "OUTPUT FROM THE ALTERNATIVE MATCHING FUNCTION"
@@ -475,7 +546,7 @@ the subject where there is at least one match. For example:
 (Using the normal matching function on this data finds only "tang".) The
 longest matching string is always given first (and numbered zero).
 .P
-If \fB/g\P is present on the pattern, the search for further matches resumes
+If \fB/g\fP is present on the pattern, the search for further matches resumes
 at the end of the longest match. For example:
 .sp
     re> /(tang|tangerine|tan)/g
@@ -499,7 +570,7 @@ indicating that the subject partially matched the pattern, you can restart the
 match with additional subject data by means of the \eR escape sequence. For
 example:
 .sp
-    re> /^\d?\d(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\d\d$/
+    re> /^\ed?\ed(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\ed\ed$/
   data> 23ja\eP\eD
   Partial match: 23ja
   data> n05\eR\eD
@@ -554,6 +625,21 @@ the
 \fBpcrecallout\fP
 .\"
 documentation.
+.
+.
+.
+.SH "NON-PRINTING CHARACTERS"
+.rs
+.sp
+When \fBpcretest\fP is outputting text in the compiled version of a pattern,
+bytes other than 32-126 are always treated as non-printing characters are are
+therefore shown as hex escapes.
+.P
+When \fBpcretest\fP is outputting text that is a matched part of a subject
+string, it behaves in the same way, unless a different locale has been set for
+the pattern (using the \fB/L\fP modifier). In this case, the \fBisprint()\fP
+function to distinguish printing and non-printing characters.
+.
 .
 .
 .SH "SAVING AND RELOADING COMPILED PATTERNS"
@@ -616,16 +702,27 @@ Finally, if you attempt to load a file that is not in the correct format, the
 result is undefined.
 .
 .
+.SH "SEE ALSO"
+.rs
+.sp
+\fBpcre\fP(3), \fBpcreapi\fP(3), \fBpcrecallout\fP(3), \fBpcrematching\fP(3),
+\fBpcrepartial\fP(d), \fBpcrepattern\fP(3), \fBpcreprecompile\fP(3).
+.
+.
 .SH AUTHOR
 .rs
 .sp
+.nf
 Philip Hazel
-.br
-University Computing Service,
-.br
-Cambridge CB2 3QG, England.
-.P
-.in 0
-Last updated: 29 June 2006
-.br
-Copyright (c) 1997-2006 University of Cambridge.
+University Computing Service
+Cambridge CB2 3QH, England.
+.fi
+.
+.
+.SH REVISION
+.rs
+.sp
+.nf
+Last updated: 10 March 2009
+Copyright (c) 1997-2009 University of Cambridge.
+.fi
