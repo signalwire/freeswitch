@@ -2213,7 +2213,7 @@ static int config(void)
 				} else if (!strcmp(var, "debug")) {
 					globals.debug = atoi(val);
 				} else if (!strcmp(var, "nat-map")) {
-					if (switch_true(val)) {
+					if (switch_true(val) && switch_core_get_variable("nat_type")) {
 						prefs.nat_map = 1;
 					}
 				} else if (!strcmp(var, "listen-port")) {
@@ -2244,7 +2244,7 @@ static int config(void)
 		prefs.nat_map = 0;
 	}
 
-	if (prefs.nat_map && switch_check_network_list_ip(prefs.ip, "loopback.auto")) {
+	if (prefs.nat_map) {
 		prefs.nat_map = 0;
 	}
 
@@ -2345,7 +2345,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 
 	close_socket(&listen_list.sock);
 	
-	if (prefs.nat_map) {
+	if (prefs.nat_map && switch_core_get_variable("nat_type")) {
 		switch_nat_del_mapping(prefs.port, SWITCH_NAT_TCP);
 	}
 
