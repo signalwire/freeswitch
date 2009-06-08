@@ -34,11 +34,20 @@
 #include "openzap.h"
 #include "ozmod_libpri.h"
 
+/**
+ * \brief Unloads libpri IO module
+ * \return Success
+ */
 static ZIO_IO_UNLOAD_FUNCTION(zap_libpri_unload)
 {
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Starts a libpri channel (outgoing call)
+ * \param zchan Channel to initiate call on
+ * \return Success or failure
+ */
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
 {
 	zap_status_t status = ZAP_SUCCESS;
@@ -47,15 +56,32 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
 	return status;
 }
 
+/**
+ * \brief Requests an libpri channel on a span (outgoing call)
+ * \param span Span where to get a channel (unused)
+ * \param chan_id Specific channel to get (0 for any) (unused)
+ * \param direction Call direction (unused)
+ * \param caller_data Caller information (unused)
+ * \param zchan Channel to initialise (unused)
+ * \return Failure
+ */
 static ZIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 {
 	return ZAP_FAIL;
-
 }
 
 #ifdef WIN32
+/**
+ * \brief Logs a libpri error
+ * \param s Error string
+ */
 static void s_pri_error(char *s)
 #else
+/**
+ * \brief Logs a libpri error
+ * \param pri libpri structure (unused)
+ * \param s Error string
+ */
 static void s_pri_error(struct pri *pri, char *s)
 #endif
 {
@@ -63,14 +89,28 @@ static void s_pri_error(struct pri *pri, char *s)
 }
 
 #ifdef WIN32
+/**
+ * \brief Logs a libpri message
+ * \param s Message string
+ */
 static void s_pri_message(char *s)
 #else
+/**
+ * \brief Logs a libpri message
+ * \param pri libpri structure (unused)
+ * \param s Message string
+ */
 static void s_pri_message(struct pri *pri, char *s)
 #endif
 {
 		zap_log(ZAP_LOG_DEBUG, "%s", s);
 }
 
+/**
+ * \brief Parses an option string to flags
+ * \param in String to parse for configuration options
+ * \return Flags
+ */
 static uint32_t parse_opts(const char *in)
 {
 	uint32_t flags = 0;
@@ -94,7 +134,11 @@ static uint32_t parse_opts(const char *in)
 	return flags;
 }
 
-
+/**
+ * \brief Parses a debug string to flags
+ * \param in Debug string to parse for
+ * \return Flags
+ */
 static int parse_debug(const char *in)
 {
 	int flags = 0;
@@ -154,6 +198,12 @@ static zap_io_interface_t zap_libpri_interface;
 
 static zap_status_t zap_libpri_start(zap_span_t *span);
 
+/**
+ * \brief API function to kill or debug a libpri span
+ * \param stream API stream handler
+ * \param data String containing argurments
+ * \return Flags
+ */
 static ZIO_API_FUNCTION(zap_libpri_api)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
@@ -218,7 +268,11 @@ static ZIO_API_FUNCTION(zap_libpri_api)
 	return ZAP_SUCCESS;
 }
 
-
+/**
+ * \brief Loads libpri IO module
+ * \param zio Openzap IO interface
+ * \return Success
+ */
 static ZIO_IO_LOAD_FUNCTION(zap_libpri_io_init)
 {
 	assert(zio != NULL);
@@ -232,6 +286,11 @@ static ZIO_IO_LOAD_FUNCTION(zap_libpri_io_init)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Loads libpri signaling module
+ * \param zio Openzap IO interface
+ * \return Success
+ */
 static ZIO_SIG_LOAD_FUNCTION(zap_libpri_init)
 {
 	pri_set_error(s_pri_error);
@@ -239,7 +298,9 @@ static ZIO_SIG_LOAD_FUNCTION(zap_libpri_init)
 	return ZAP_SUCCESS;
 }
 
-
+/**
+ * \brief libpri state map
+ */
 static zap_state_map_t isdn_state_map = {
 	{
 		{
@@ -352,10 +413,10 @@ static zap_state_map_t isdn_state_map = {
 	}
 };
 
-
-
-
-
+/**
+ * \brief Handler for channel state change
+ * \param zchan Channel to handle
+ */
 static __inline__ void state_advance(zap_channel_t *zchan)
 {
 	//Q931mes_Generic *gen = (Q931mes_Generic *) zchan->caller_data.raw_data;
@@ -531,6 +592,10 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	return;
 }
 
+/**
+ * \brief Checks current state on a span
+ * \param span Span to check status on
+ */
 static __inline__ void check_state(zap_span_t *span)
 {
     if (zap_test_flag(span, ZAP_SPAN_STATE_CHANGE)) {
@@ -548,8 +613,13 @@ static __inline__ void check_state(zap_span_t *span)
     }
 }
 
-
-
+/**
+ * \brief Handler for libpri information event (incoming call?)
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \param event_type Event type (unused)
+ * \param pevent Event
+ * \return 0
+ */
 static int on_info(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 
@@ -561,6 +631,13 @@ static int on_info(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	return 0;
 }
 
+/**
+ * \brief Handler for libpri hangup event
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \param event_type Event type (unused)
+ * \param pevent Event
+ * \return 0
+ */
 static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 	zap_span_t *span = spri->private_info;
@@ -583,6 +660,13 @@ static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 	return 0;
 }
 
+/**
+ * \brief Handler for libpri answer event
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \param event_type Event type (unused)
+ * \param pevent Event
+ * \return 0
+ */
 static int on_answer(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 	zap_span_t *span = spri->private_info;
@@ -601,7 +685,13 @@ static int on_answer(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 	return 0;
 }
 
-
+/**
+ * \brief Handler for libpri proceed event
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \param event_type Event type (unused)
+ * \param pevent Event
+ * \return 0
+ */
 static int on_proceed(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 	zap_span_t *span = spri->private_info;
@@ -620,7 +710,13 @@ static int on_proceed(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 	return 0;
 }
 
-
+/**
+ * \brief Handler for libpri ringing event
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \param event_type Event type (unused)
+ * \param pevent Event
+ * \return 0
+ */
 static int on_ringing(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 	zap_span_t *span = spri->private_info;
@@ -639,7 +735,13 @@ static int on_ringing(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 	return 0;
 }
 
-
+/**
+ * \brief Handler for libpri ring event
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \param event_type Event type (unused)
+ * \param pevent Event
+ * \return 0 on success
+ */
 static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 	zap_span_t *span = spri->private_info;
@@ -691,7 +793,12 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	return ret;
 }
 
-
+/**
+ * \brief Processes openzap event
+ * \param span Span on which the event was fired
+ * \param event Event to be treated
+ * \return Success or failure
+ */
 static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 {
 	zap_sigmsg_t sig;
@@ -744,8 +851,10 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 	return ZAP_SUCCESS;
 }
 
-
-
+/**
+ * \brief Checks for events on a span
+ * \param span Span to check for events
+ */
 static __inline__ void check_events(zap_span_t *span)
 {
 	zap_status_t status;
@@ -776,6 +885,11 @@ static __inline__ void check_events(zap_span_t *span)
 	}
 }
 
+/**
+ * \brief Checks flags on a pri span
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \return 0 on success, -1 on error
+ */
 static int check_flags(lpwrap_pri_t *spri)
 {
 	zap_span_t *span = spri->private_info;
@@ -791,6 +905,13 @@ static int check_flags(lpwrap_pri_t *spri)
 	return 0;
 }
 
+/**
+ * \brief Handler for libpri restart event
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \param event_type Event type (unused)
+ * \param pevent Event
+ * \return 0
+ */
 static int on_restart(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 	zap_span_t *span = spri->private_info;
@@ -813,6 +934,13 @@ static int on_restart(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 	return 0;
 }
 
+/**
+ * \brief Handler for libpri dchan up event
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \param event_type Event type (unused)
+ * \param pevent Event
+ * \return 0
+ */
 static int on_dchan_up(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 	
@@ -824,6 +952,13 @@ static int on_dchan_up(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 	return 0;
 }
 
+/**
+ * \brief Handler for libpri dchan down event
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \param event_type Event type (unused)
+ * \param pevent Event
+ * \return 0
+ */
 static int on_dchan_down(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 
@@ -835,6 +970,13 @@ static int on_dchan_down(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_
 	return 0;
 }
 
+/**
+ * \brief Handler for any libpri event
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \param event_type Event type (unused)
+ * \param pevent Event
+ * \return 0
+ */
 static int on_anything(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 
@@ -842,8 +984,13 @@ static int on_anything(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 	return 0;
 }
 
-
-
+/**
+ * \brief Handler for libpri io fail event
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \param event_type Event type (unused)
+ * \param pevent Event
+ * \return 0
+ */
 static int on_io_fail(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 
@@ -851,7 +998,11 @@ static int on_io_fail(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 	return 0;
 }
 
-
+/**
+ * \brief Main thread function for libpri span (monitor)
+ * \param me Current thread
+ * \param obj Span to run in this thread
+ */
 static void *zap_libpri_run(zap_thread_t *me, void *obj)
 {
 	zap_span_t *span = (zap_span_t *) obj;
@@ -939,7 +1090,13 @@ static void *zap_libpri_run(zap_thread_t *me, void *obj)
 	return NULL;
 }
 
-
+/**
+ * \brief Stops a libpri span
+ * \param span Span to halt
+ * \return Success
+ *
+ * Sets a stop flag and waits for the thread to end
+ */
 static zap_status_t zap_libpri_stop(zap_span_t *span)
 {
 	zap_libpri_data_t *isdn_data = span->signal_data;
@@ -959,6 +1116,13 @@ static zap_status_t zap_libpri_stop(zap_span_t *span)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Starts a libpri span
+ * \param span Span to halt
+ * \return Success or failure
+ *
+ * Launches a thread to monitor the span
+ */
 static zap_status_t zap_libpri_start(zap_span_t *span)
 {
 	zap_status_t ret;
@@ -981,7 +1145,11 @@ static zap_status_t zap_libpri_start(zap_span_t *span)
 	return ret;
 }
 
-
+/**
+ * \brief Converts a node string to node value
+ * \param node Node string to convert
+ * \return -1 on failure, node value on success
+ */
 static int str2node(char *node)
 {
 	if (!strcasecmp(node, "cpe") || !strcasecmp(node, "user"))
@@ -991,6 +1159,11 @@ static int str2node(char *node)
 	return -1;
 }
 
+/**
+ * \brief Converts a switch string to switch value
+ * \param swtype Swtype string to convert
+ * \return Switch value
+ */
 static int str2switch(char *swtype)
 {
 	if (!strcasecmp(swtype, "ni1"))
@@ -1012,7 +1185,11 @@ static int str2switch(char *swtype)
 	return PRI_SWITCH_DMS100;
 }
 
-
+/**
+ * \brief Converts a L1 string to L1 value
+ * \param l1 L1 string to convert
+ * \return L1 value
+ */
 static int str2l1(char *l1)
 {
 	if (!strcasecmp(l1, "alaw"))
@@ -1021,6 +1198,11 @@ static int str2l1(char *l1)
 	return PRI_LAYER_1_ULAW;
 }
 
+/**
+ * \brief Converts a DP string to DP value
+ * \param dp DP string to convert
+ * \return DP value
+ */
 static int str2dp(char *dp)
 {
 	if (!strcasecmp(dp, "international"))
@@ -1037,6 +1219,13 @@ static int str2dp(char *dp)
 	return PRI_UNKNOWN;
 }
 
+/**
+ * \brief Initialises a libpri span from configuration variables
+ * \param span Span to configure
+ * \param sig_cb Callback function for event signals
+ * \param ap List of configuration variables
+ * \return Success or failure
+ */
 static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 {
 	uint32_t i, x = 0;
@@ -1146,6 +1335,9 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Openzap libpri signaling and IO module definition
+ */
 zap_module_t zap_module = { 
 	"libpri",
 	zap_libpri_io_init,
@@ -1154,9 +1346,6 @@ zap_module_t zap_module = {
 	zap_libpri_configure_span,
 	NULL
 };
-
-
-
 
 
 /* For Emacs:

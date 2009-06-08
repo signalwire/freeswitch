@@ -106,6 +106,10 @@ L3UCHAR  sendFrame[SNAPLEN]= {
                                 3,0,0,0
                              };
 
+/**
+ * \brief Opens a pcap file for capture
+ * \return Success or failure
+ */
 static zap_status_t openPcapFile(void)
 {
         if(!pcaphandle)
@@ -141,6 +145,10 @@ static zap_status_t openPcapFile(void)
         return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Closes a pcap file
+ * \return Success
+ */
 static zap_status_t closePcapFile(void)
 {
 	if (pcapfile) {
@@ -162,6 +170,10 @@ static zap_status_t closePcapFile(void)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Writes a Q931 packet to a pcap file
+ * \return Success or failure
+ */
 static zap_status_t writeQ931PacketToPcap(L3UCHAR* q931buf, L3USHORT q931size, L3ULONG span_id, L3USHORT direction)
 {
         L3UCHAR                 *frame		= NULL;
@@ -242,6 +254,11 @@ static zap_status_t writeQ931PacketToPcap(L3UCHAR* q931buf, L3USHORT q931size, L
 }
 
 #endif
+
+/**
+ * \brief Unloads pcap IO
+ * \return Success or failure
+ */
 static ZIO_IO_UNLOAD_FUNCTION(close_pcap)
 {
 #ifdef HAVE_LIBPCAP
@@ -254,12 +271,20 @@ static ZIO_IO_UNLOAD_FUNCTION(close_pcap)
 /*Q931ToPcap functions DONE*/
 /*-------------------------------------------------------------------------*/
 
-
+/**
+ * \brief Gets current time
+ * \return Current time (in ms)
+ */
 static L2ULONG zap_time_now(void)
 {
 	return (L2ULONG)zap_current_time_in_ms();
 }
 
+/**
+ * \brief Initialises an ISDN channel (outgoing call)
+ * \param zchan Channel to initiate call on
+ * \return Success or failure
+ */
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
 {
 	zap_status_t status = ZAP_SUCCESS;
@@ -268,6 +293,15 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
 	return status;
 }
 
+/**
+ * \brief Requests an ISDN channel on a span (outgoing call)
+ * \param span Span where to get a channel
+ * \param chan_id Specific channel to get (0 for any)
+ * \param direction Call direction (inbound, outbound)
+ * \param caller_data Caller information
+ * \param zchan Channel to initialise
+ * \return Success or failure
+ */
 static ZIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 {
 	Q931mes_Generic *gen = (Q931mes_Generic *) caller_data->raw_data;
@@ -489,12 +523,27 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 
 }
 
+/**
+ * \brief Handler for Q931 error
+ * \param pvt Private structure (span?)
+ * \param id Error number
+ * \param p1 ??
+ * \param p2 ??
+ * \return 0
+ */
 static L3INT zap_isdn_931_err(void *pvt, L3INT id, L3INT p1, L3INT p2)
 {
 	zap_log(ZAP_LOG_ERROR, "ERROR: [%s] [%d] [%d]\n", q931_error_to_name(id), p1, p2);
 	return 0;
 }
 
+/**
+ * \brief Handler for Q931 event message
+ * \param pvt Span to handle
+ * \param msg Message string
+ * \param mlen Message string length
+ * \return 0
+ */
 static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 {
 	zap_span_t *span = (zap_span_t *) pvt;
@@ -973,6 +1022,15 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 	return 0;
 }
 
+/**
+ * \brief Handler for Q921 read event
+ * \param pvt Span were message is coming from
+ * \param ind Q921 indication
+ * \param tei Terminal Endpoint Identifier
+ * \param msg Message string
+ * \param mlen Message string length
+ * \return 0 on success, 1 on failure
+ */
 static int zap_isdn_921_23(void *pvt, Q921DLMsg_t ind, L2UCHAR tei, L2UCHAR *msg, L2INT mlen)
 {
 	int ret, offset = (ind == Q921_DL_DATA) ? 4 : 3;
@@ -1004,6 +1062,13 @@ static int zap_isdn_921_23(void *pvt, Q921DLMsg_t ind, L2UCHAR tei, L2UCHAR *msg
 	return ((ret >= 0) ? 1 : 0);
 }
 
+/**
+ * \brief Handler for Q921 write event
+ * \param pvt Span were message is coming from
+ * \param msg Message string
+ * \param mlen Message string length
+ * \return 0 on success, -1 on failure
+ */
 static int zap_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
 {
 	zap_span_t *span = (zap_span_t *) pvt;
@@ -1022,6 +1087,10 @@ static int zap_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
 	return zap_channel_write(isdn_data->dchan, msg, len, &len) == ZAP_SUCCESS ? 0 : -1;
 }
 
+/**
+ * \brief Handler for channel state change
+ * \param zchan Channel to handle
+ */
 static __inline__ void state_advance(zap_channel_t *zchan)
 {
 	Q931mes_Generic *gen = (Q931mes_Generic *) zchan->caller_data.raw_data;
@@ -1352,6 +1421,10 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	}
 }
 
+/**
+ * \brief Checks current state on a span
+ * \param span Span to check status on
+ */
 static __inline__ void check_state(zap_span_t *span)
 {
     if (zap_test_flag(span, ZAP_SPAN_STATE_CHANGE)) {
@@ -1369,7 +1442,12 @@ static __inline__ void check_state(zap_span_t *span)
     }
 }
 
-
+/**
+ * \brief Processes Openzap event on a span
+ * \param span Span to process event on
+ * \param event Event to process
+ * \return Success or failure
+ */
 static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 {
 	zap_sigmsg_t sig;
@@ -1422,7 +1500,10 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 	return ZAP_SUCCESS;
 }
 
-
+/**
+ * \brief Checks for events on a span
+ * \param span Span to check for events
+ */
 static __inline__ void check_events(zap_span_t *span)
 {
 	zap_status_t status;
@@ -1453,7 +1534,12 @@ static __inline__ void check_events(zap_span_t *span)
 	}
 }
 
-
+/**
+ * \brief Retrieves tone generation output to be sent
+ * \param ts Teletone generator
+ * \param map Tone map
+ * \return -1 on error, 0 on success
+ */
 static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map_t *map)
 {
 	zap_buffer_t *dt_buffer = ts->user_data;
@@ -1467,6 +1553,11 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 	return 0;
 }
 
+/**
+ * \brief Main thread function for tone generation on a span
+ * \param me Current thread
+ * \param obj Span to generate tones on
+ */
 static void *zap_isdn_tones_run(zap_thread_t *me, void *obj)
 {
 	zap_span_t *span = (zap_span_t *) obj;
@@ -1658,6 +1749,11 @@ done:
 	return NULL;
 }
 
+/**
+ * \brief Main thread function for an ISDN span
+ * \param me Current thread
+ * \param obj Span to monitor
+ */
 static void *zap_isdn_run(zap_thread_t *me, void *obj)
 {
 	zap_span_t *span = (zap_span_t *) obj;
@@ -1745,6 +1841,10 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 	return NULL;
 }
 
+/**
+ * \brief Openzap ISDN signaling module initialisation
+ * \return Success
+ */
 static ZIO_SIG_LOAD_FUNCTION(zap_isdn_init)
 {
 	Q931Initialize();
@@ -1755,6 +1855,15 @@ static ZIO_SIG_LOAD_FUNCTION(zap_isdn_init)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Receives a Q931 indication message
+ * \param pvt Span were message is coming from
+ * \param ind Q931 indication
+ * \param tei Terminal Endpoint Identifier
+ * \param msg Message string
+ * \param mlen Message string length
+ * \return 0 on success
+ */
 static int q931_rx_32(void *pvt, Q921DLMsg_t ind, L3UCHAR tei, L3UCHAR *msg, L3INT mlen)
 {
 	int offset = 4;
@@ -1786,6 +1895,14 @@ static int q931_rx_32(void *pvt, Q921DLMsg_t ind, L3UCHAR tei, L3UCHAR *msg, L3I
 	return Q921Rx32(pvt, ind, tei, msg, mlen);
 }
 
+/**
+ * \brief Logs Q921 message
+ * \param pvt Span were message is coming from
+ * \param level Q921 log level
+ * \param msg Message string
+ * \param size Message string length
+ * \return 0
+ */
 static int zap_isdn_q921_log(void *pvt, Q921LogLevel_t level, char *msg, L2INT size)
 {
 	zap_span_t *span = (zap_span_t *) pvt;
@@ -1794,6 +1911,14 @@ static int zap_isdn_q921_log(void *pvt, Q921LogLevel_t level, char *msg, L2INT s
 	return 0;
 }
 
+/**
+ * \brief Logs Q931 message
+ * \param pvt Span were message is coming from
+ * \param level Q931 log level
+ * \param msg Message string
+ * \param size Message string length
+ * \return 0
+ */
 static L3INT zap_isdn_q931_log(void *pvt, Q931LogLevel_t level, char *msg, L3INT size)
 {
 	zap_span_t *span = (zap_span_t *) pvt;
@@ -1801,7 +1926,9 @@ static L3INT zap_isdn_q931_log(void *pvt, Q931LogLevel_t level, char *msg, L3INT
 	zap_log("Span", "Q.931", span->span_id, (int)level, "%s", msg);
 	return 0;
 }
-
+/**
+ * \brief ISDN state map
+ */
 static zap_state_map_t isdn_state_map = {
 	{
 		{
@@ -1914,6 +2041,13 @@ static zap_state_map_t isdn_state_map = {
 	}
 };
 
+/**
+ * \brief Stops an ISDN span
+ * \param span Span to halt
+ * \return Success
+ *
+ * Sets a stop flag and waits for the threads to end
+ */
 static zap_status_t zap_isdn_stop(zap_span_t *span)
 {
 	zap_isdn_data_t *isdn_data = span->signal_data;
@@ -1936,6 +2070,13 @@ static zap_status_t zap_isdn_stop(zap_span_t *span)
 	
 }
 
+/**
+ * \brief Starts an ISDN span
+ * \param span Span to halt
+ * \return Success or failure
+ *
+ * Launches a thread to monitor the span and a thread to generate tones on the span
+ */
 static zap_status_t zap_isdn_start(zap_span_t *span)
 {
 	zap_status_t ret;
@@ -1958,6 +2099,11 @@ static zap_status_t zap_isdn_start(zap_span_t *span)
 	return ret;
 }
 
+/**
+ * \brief Parses an option string to flags
+ * \param in String to parse for configuration options
+ * \return Flags
+ */
 static uint32_t parse_opts(const char *in)
 {
 	uint32_t flags = 0;
@@ -1981,6 +2127,13 @@ static uint32_t parse_opts(const char *in)
 	return flags;
 }
 
+/**
+ * \brief Initialises an ISDN span from configuration variables
+ * \param span Span to configure
+ * \param sig_cb Callback function for event signals
+ * \param ap List of configuration variables
+ * \return Success or failure
+ */
 static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 {
 	uint32_t i, x = 0;
@@ -2191,6 +2344,9 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Openzap ISDN signaling module definition
+ */
 zap_module_t zap_module = { 
 	"isdn",
 	NULL,

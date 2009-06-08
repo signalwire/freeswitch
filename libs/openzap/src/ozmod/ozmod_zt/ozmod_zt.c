@@ -35,7 +35,9 @@
 #include "openzap.h"
 #include "ozmod_zt.h"
 
-
+/**
+ * \brief Zaptel globals
+ */
 static struct {
 	uint32_t codec_ms;
 	uint32_t wink_ms;
@@ -46,6 +48,9 @@ static struct {
     float txgain;
 } zt_globals;
 
+/**
+ * \brief General IOCTL codes
+ */
 struct ioctl_codes {
     int GET_BLOCKSIZE;
     int SET_BLOCKSIZE;
@@ -81,6 +86,9 @@ struct ioctl_codes {
     int GETRXBITS;
 };
 
+/**
+ * \brief Zaptel IOCTL codes
+ */
 static struct ioctl_codes zt_ioctl_codes = {
     .GET_BLOCKSIZE = ZT_GET_BLOCKSIZE,
     .SET_BLOCKSIZE = ZT_SET_BLOCKSIZE,
@@ -116,6 +124,9 @@ static struct ioctl_codes zt_ioctl_codes = {
     .GETRXBITS = ZT_GETRXBITS
 };
 
+/**
+ * \brief Dahdi IOCTL codes
+ */
 static struct ioctl_codes dahdi_ioctl_codes = {
     .GET_BLOCKSIZE = DAHDI_GET_BLOCKSIZE,
     .SET_BLOCKSIZE = DAHDI_SET_BLOCKSIZE,
@@ -167,6 +178,13 @@ static zap_socket_t CONTROL_FD = ZT_INVALID_SOCKET;
 ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event);
 ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event);
 
+/**
+ * \brief Initialises codec, and rx/tx gains
+ * \param g Structure for gains to be initialised
+ * \param rxgain RX gain value
+ * \param txgain TX gain value
+ * \param codec Codec
+ */
 static void zt_build_gains(struct zt_gains *g, float rxgain, float txgain, int codec)
 {
 	int j;
@@ -218,6 +236,17 @@ static void zt_build_gains(struct zt_gains *g, float rxgain, float txgain, int c
 	}
 }
 
+/**
+ * \brief Initialises a range of zaptel channels
+ * \param span Openzap span
+ * \param start Initial wanpipe channel number
+ * \param end Final wanpipe channel number
+ * \param type Openzap channel type
+ * \param name Openzap span name
+ * \param number Openzap span number
+ * \param cas_bits CAS bits
+ * \return number of spans configured
+ */
 static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, zap_chan_type_t type, char *name, char *number, unsigned char cas_bits)
 {
 	unsigned configured = 0, x;
@@ -400,6 +429,15 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 	return configured;
 }
 
+/**
+ * \brief Initialises an openzap zaptel span from a configuration string
+ * \param span Openzap span
+ * \param str Configuration string
+ * \param type Openzap span type
+ * \param name Openzap span name
+ * \param number Openzap span number
+ * \return Success or failure
+ */
 static ZIO_CONFIGURE_SPAN_FUNCTION(zt_configure_span)
 {
 
@@ -461,6 +499,14 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(zt_configure_span)
 
 }
 
+/**
+ * \brief Process configuration variable for a zaptel profile
+ * \param category Wanpipe profile name
+ * \param var Variable name
+ * \param val Variable value
+ * \param lineno Line number from configuration file
+ * \return Success
+ */
 static ZIO_CONFIGURE_FUNCTION(zt_configure)
 {
 
@@ -521,6 +567,11 @@ static ZIO_CONFIGURE_FUNCTION(zt_configure)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Opens a zaptel channel
+ * \param zchan Channel to open
+ * \return Success or failure
+ */
 static ZIO_OPEN_FUNCTION(zt_open) 
 {
 	zap_channel_set_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL);
@@ -596,11 +647,23 @@ static ZIO_OPEN_FUNCTION(zt_open)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Closes zaptel channel
+ * \param zchan Channel to close
+ * \return Success
+ */
 static ZIO_CLOSE_FUNCTION(zt_close)
 {
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Executes an Openzap command on a zaptel channel
+ * \param zchan Channel to execute command on
+ * \param command Openzap command to execute
+ * \param obj Object (unused)
+ * \return Success or failure
+ */
 static ZIO_COMMAND_FUNCTION(zt_command)
 {
 	zt_params_t ztp;
@@ -746,6 +809,11 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Gets alarms from a zaptel Channel
+ * \param zchan Channel to get alarms from
+ * \return Success or failure
+ */
 static ZIO_GET_ALARMS_FUNCTION(zt_get_alarms)
 {
 	struct zt_spaninfo info;
@@ -764,7 +832,13 @@ static ZIO_GET_ALARMS_FUNCTION(zt_get_alarms)
 	return ZAP_SUCCESS;
 }
 
-
+/**
+ * \brief Waits for an event on a zaptel channel
+ * \param zchan Channel to open
+ * \param flags Type of event to wait for
+ * \param to Time to wait (in ms)
+ * \return Success, failure or timeout
+ */
 static ZIO_WAIT_FUNCTION(zt_wait)
 {
 	int32_t inflags = 0;
@@ -825,6 +899,12 @@ static ZIO_WAIT_FUNCTION(zt_wait)
 
 }
 
+/**
+ * \brief Checks for events on a zaptel span
+ * \param span Span to check for events
+ * \param ms Time to wait for event
+ * \return Success if event is waiting or failure if not
+ */
 ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 {
 	struct pollfd pfds[ZAP_MAX_CHANNELS_SPAN];
@@ -862,6 +942,12 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 	return k ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
+/**
+ * \brief Retrieves an event from a zaptel span
+ * \param span Span to retrieve event from
+ * \param event Openzap event to return
+ * \return Success or failure
+ */
 ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 {
 	uint32_t i, event_id = 0;
@@ -957,7 +1043,13 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 	
 }
 
-
+/**
+ * \brief Reads data from a zaptel channel
+ * \param zchan Channel to read from
+ * \param data Data buffer
+ * \param datalen Size of data buffer
+ * \return Success, failure or timeout
+ */
 static ZIO_READ_FUNCTION(zt_read)
 {
 	zap_ssize_t r = 0;
@@ -983,6 +1075,13 @@ static ZIO_READ_FUNCTION(zt_read)
 	return r == 0 ? ZAP_TIMEOUT : ZAP_FAIL;
 }
 
+/**
+ * \brief Writes data to a zaptel channel
+ * \param zchan Channel to write to
+ * \param data Data buffer
+ * \param datalen Size of data buffer
+ * \return Success or failure
+ */
 static ZIO_WRITE_FUNCTION(zt_write)
 {
 	zap_ssize_t w = 0;
@@ -1003,6 +1102,11 @@ static ZIO_WRITE_FUNCTION(zt_write)
 	return ZAP_FAIL;
 }
 
+/**
+ * \brief Destroys a zaptel Channel
+ * \param zchan Channel to destroy
+ * \return Success
+ */
 static ZIO_CHANNEL_DESTROY_FUNCTION(zt_channel_destroy)
 {
 	close(zchan->sockfd);
@@ -1011,8 +1115,16 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(zt_channel_destroy)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Global Openzap IO interface for zaptel
+ */
 static zap_io_interface_t zt_interface;
 
+/**
+ * \brief Loads zaptel IO module
+ * \param zio Openzap IO interface
+ * \return Success or failure
+ */
 static ZIO_IO_LOAD_FUNCTION(zt_init)
 {
 	assert(zio != NULL);
@@ -1063,6 +1175,10 @@ static ZIO_IO_LOAD_FUNCTION(zt_init)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Unloads zaptel IO module
+ * \return Success
+ */
 static ZIO_IO_UNLOAD_FUNCTION(zt_destroy)
 {
 	close(CONTROL_FD);
@@ -1070,7 +1186,9 @@ static ZIO_IO_UNLOAD_FUNCTION(zt_destroy)
 	return ZAP_SUCCESS;
 }
 
-
+/**
+ * \brief Openzap zaptel IO module definition
+ */
 zap_module_t zap_module = { 
 	"zt",
 	zt_init,

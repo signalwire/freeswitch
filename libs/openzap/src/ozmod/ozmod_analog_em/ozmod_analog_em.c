@@ -45,6 +45,13 @@ struct tm * localtime_r(const time_t *clock, struct tm *result);
 
 static void *zap_analog_em_channel_run(zap_thread_t *me, void *obj);
 
+/**
+ * \brief Starts an EM channel thread (outgoing call)
+ * \param zchan Channel to initiate call on
+ * \return Success or failure
+ *
+ * Initialises state, starts tone progress detection and runs the channel in a new a thread.
+ */
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_em_outgoing_call)
 {
 	if (!zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && !zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {		
@@ -63,7 +70,11 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_em_outgoing_call)
 	return ZAP_FAIL;
 }
 
-
+/**
+ * \brief Starts an EM span thread (monitor)
+ * \param span Span to monitor
+ * \return Success or failure
+ */
 static zap_status_t zap_analog_em_start(zap_span_t *span)
 {
 	zap_analog_em_data_t *analog_data = span->signal_data;
@@ -71,6 +82,13 @@ static zap_status_t zap_analog_em_start(zap_span_t *span)
 	return zap_thread_create_detached(zap_analog_em_run, span);
 }
 
+/**
+ * \brief Initialises an EM span from configuration variables
+ * \param span Span to configure
+ * \param sig_cb Callback function for event signals
+ * \param ap List of configuration variables
+ * \return Success or failure
+ */
 static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_em_configure_span)
 //zap_status_t zap_analog_em_configure_span(zap_span_t *span, char *tonemap, uint32_t digit_timeout, uint32_t max_dialstr, zio_signal_cb_t sig_cb)
 {
@@ -136,6 +154,12 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_em_configure_span)
 
 }
 
+/**
+ * \brief Retrieves tone generation output to be sent
+ * \param ts Teletone generator
+ * \param map Tone map
+ * \return -1 on error, 0 on success
+ */
 static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map_t *map)
 {
 	zap_buffer_t *dt_buffer = ts->user_data;
@@ -149,6 +173,11 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 	return 0;
 }
 
+/**
+ * \brief Main thread function for EM channel (outgoing call)
+ * \param me Current thread
+ * \param obj Channel to run in this thread
+ */
 static void *zap_analog_em_channel_run(zap_thread_t *me, void *obj)
 {
 	zap_channel_t *zchan = (zap_channel_t *) obj;
@@ -532,6 +561,12 @@ static void *zap_analog_em_channel_run(zap_thread_t *me, void *obj)
 	return NULL;
 }
 
+/**
+ * \brief Processes EM events coming from zaptel/dahdi
+ * \param span Span on which the event was fired
+ * \param event Event to be treated
+ * \return Success or failure
+ */
 static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 {
 	zap_sigmsg_t sig;
@@ -587,6 +622,11 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Main thread function for EM span (monitor)
+ * \param me Current thread
+ * \param obj Span to run in this thread
+ */
 static void *zap_analog_em_run(zap_thread_t *me, void *obj)
 {
 	zap_span_t *span = (zap_span_t *) obj;
@@ -634,12 +674,18 @@ static void *zap_analog_em_run(zap_thread_t *me, void *obj)
 	return NULL;
 }
 
-
+/**
+ * \brief Openzap analog EM module initialisation
+ * \return Success
+ */
 static ZIO_SIG_LOAD_FUNCTION(zap_analog_em_init)
 {
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Openzap analog EM module definition
+ */
 zap_module_t zap_module = { 
 	"analog_em",
 	NULL,

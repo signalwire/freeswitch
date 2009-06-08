@@ -147,6 +147,14 @@ static const char *pika_board_type_string(PK_UINT type)
 	return "unknown";
 }
 
+/**
+ * \brief Process configuration variable for a pika profile
+ * \param category Pika profile name
+ * \param var Variable name
+ * \param val Variable value
+ * \param lineno Line number from configuration file (unused)
+ * \return Success
+ */
 static ZIO_CONFIGURE_FUNCTION(pika_configure)
 {
 	pika_channel_profile_t *profile = NULL;
@@ -255,6 +263,10 @@ static ZIO_CONFIGURE_FUNCTION(pika_configure)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Pika event handler
+ * \param event Pika event
+ */
 PK_VOID PK_CALLBACK media_out_callback(PKH_TPikaEvent *event)
 {
 	PK_STATUS pk_status;
@@ -296,7 +308,19 @@ PK_VOID PK_CALLBACK media_out_callback(PKH_TPikaEvent *event)
 
 }
 
-
+/**
+ * \brief Initialises a range of pika channels
+ * \param span Openzap span
+ * \param boardno Pika board number
+ * \param spanno Pika span number
+ * \param start Initial pika channel number
+ * \param end Final pika channel number
+ * \param type Openzap channel type
+ * \param name Openzap span name
+ * \param number Openzap span number
+ * \param profile Pika channel profile
+ * \return number of spans configured
+ */
 static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spanno, unsigned start, unsigned end, 
 								zap_chan_type_t type, char *name, char *number, pika_channel_profile_t *profile)
 {
@@ -562,6 +586,15 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 	return configured;
 }
 
+/**
+ * \brief Initialises an openzap pika span from a configuration string
+ * \param span Openzap span
+ * \param str Configuration string
+ * \param type Openzap span type
+ * \param name Openzap span name
+ * \param number Openzap span number
+ * \return Success or failure
+ */
 static ZIO_CONFIGURE_SPAN_FUNCTION(pika_configure_span)
 {
 	int items, i;
@@ -645,6 +678,11 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(pika_configure_span)
 	return configured;
 }
 
+/**
+ * \brief Opens Pika channel
+ * \param zchan Channel to open
+ * \return Success or failure
+ */
 static ZIO_OPEN_FUNCTION(pika_open) 
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
@@ -663,11 +701,23 @@ static ZIO_OPEN_FUNCTION(pika_open)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Closes Pika channel
+ * \param zchan Channel to close
+ * \return Success
+ */
 static ZIO_CLOSE_FUNCTION(pika_close)
 {
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Waits for an event on a Pika channel
+ * \param zchan Channel to open
+ * \param flags Type of event to wait for
+ * \param to Time to wait (in ms)
+ * \return Success, failure or timeout
+ */
 static ZIO_WAIT_FUNCTION(pika_wait)
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
@@ -700,6 +750,13 @@ static ZIO_WAIT_FUNCTION(pika_wait)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Reads data from a Pika channel
+ * \param zchan Channel to read from
+ * \param data Data buffer
+ * \param datalen Size of data buffer
+ * \return Success or failure
+ */
 static ZIO_READ_FUNCTION(pika_read)
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
@@ -734,6 +791,13 @@ static ZIO_READ_FUNCTION(pika_read)
 	return ZAP_FAIL;
 }
 
+/**
+ * \brief Writes data to a Pika channel
+ * \param zchan Channel to write to
+ * \param data Data buffer
+ * \param datalen Size of data buffer
+ * \return Success or failure
+ */
 static ZIO_WRITE_FUNCTION(pika_write)
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
@@ -753,6 +817,13 @@ static ZIO_WRITE_FUNCTION(pika_write)
 	return ZAP_FAIL;
 }
 
+/**
+ * \brief Executes an Openzap command on a Pika channel
+ * \param zchan Channel to execute command on
+ * \param command Openzap command to execute
+ * \param obj Object (unused)
+ * \return Success or failure
+ */
 static ZIO_COMMAND_FUNCTION(pika_command)
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
@@ -882,6 +953,12 @@ static ZIO_COMMAND_FUNCTION(pika_command)
 	return status;
 }
 
+/**
+ * \brief Checks for events on a Pika span
+ * \param span Span to check for events
+ * \param ms Time to wait for event
+ * \return Success if event is waiting or failure if not
+ */
 static ZIO_SPAN_POLL_EVENT_FUNCTION(pika_poll_event)
 {
 	pika_span_data_t *span_data = (pika_span_data_t *) span->mod_data;
@@ -984,6 +1061,12 @@ static ZIO_SPAN_POLL_EVENT_FUNCTION(pika_poll_event)
 	return ZAP_FAIL;
 }
 
+/**
+ * \brief Retrieves an event from a Pika span
+ * \param span Span to retrieve event from
+ * \param event Openzap event to return
+ * \return Success or failure
+ */
 static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
 {
 	uint32_t i, event_id = 0;
@@ -1122,6 +1205,11 @@ static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
 	return ZAP_FAIL;
 }
 
+/**
+ * \brief Destroys a Pika Span
+ * \param span Span to destroy
+ * \return Success
+ */
 static ZIO_SPAN_DESTROY_FUNCTION(pika_span_destroy)
 {
 	pika_span_data_t *span_data = (pika_span_data_t *) span->mod_data;
@@ -1134,6 +1222,11 @@ static ZIO_SPAN_DESTROY_FUNCTION(pika_span_destroy)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Destroys a Pika Channel
+ * \param zchan Channel to destroy
+ * \return Success or failure
+ */
 static ZIO_CHANNEL_DESTROY_FUNCTION(pika_channel_destroy)
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
@@ -1178,6 +1271,11 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(pika_channel_destroy)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Gets alarms from a Pika Channel (does nothing)
+ * \param zchan Channel to get alarms from
+ * \return Failure
+ */
 static ZIO_GET_ALARMS_FUNCTION(pika_get_alarms)
 {
 	return ZAP_FAIL;
@@ -1185,6 +1283,11 @@ static ZIO_GET_ALARMS_FUNCTION(pika_get_alarms)
 
 static zap_io_interface_t pika_interface;
 
+/**
+ * \brief Loads Pika IO module
+ * \param zio Openzap IO interface
+ * \return Success or failure
+ */
 static ZIO_IO_LOAD_FUNCTION(pika_init)
 {
 
@@ -1319,7 +1422,10 @@ static ZIO_IO_LOAD_FUNCTION(pika_init)
 	return ZAP_SUCCESS;
 }
 
-
+/**
+ * \brief Unloads Pika IO module
+ * \return Success
+ */
 static ZIO_IO_UNLOAD_FUNCTION(pika_destroy)
 {
 	uint32_t x;
@@ -1346,6 +1452,9 @@ static ZIO_IO_UNLOAD_FUNCTION(pika_destroy)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Pika IO module definition
+ */
 EX_DECLARE_DATA zap_module_t zap_module = { 
 	"pika",
 	pika_init,

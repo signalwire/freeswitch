@@ -40,6 +40,13 @@ struct tm * localtime_r(const time_t *clock, struct tm *result);
 
 static void *zap_analog_channel_run(zap_thread_t *me, void *obj);
 
+/**
+ * \brief Starts an FXO channel thread (outgoing call)
+ * \param zchan Channel to initiate call on
+ * \return Success or failure
+ *
+ * Initialises state, starts tone progress detection and runs the channel in a new a thread.
+ */
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)
 {
 	if (!zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && !zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {		
@@ -57,6 +64,13 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)
 	return ZAP_FAIL;
 }
 
+/**
+ * \brief Starts an FXS channel thread (outgoing call)
+ * \param zchan Channel to initiate call on
+ * \return Success or failure
+ *
+ * Indicates call waiting if channel is already in use, otherwise runs the channel in a new thread.
+ */
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxs_outgoing_call)
 {
 
@@ -70,7 +84,11 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxs_outgoing_call)
 	return ZAP_SUCCESS;
 }
 
-
+/**
+ * \brief Starts an analog span thread (monitor)
+ * \param span Span to monitor
+ * \return Success or failure
+ */
 static zap_status_t zap_analog_start(zap_span_t *span)
 {
 	zap_analog_data_t *analog_data = span->signal_data;
@@ -78,6 +96,13 @@ static zap_status_t zap_analog_start(zap_span_t *span)
 	return zap_thread_create_detached(zap_analog_run, span);
 }
 
+/**
+ * \brief Initialises an analog span from configuration variables
+ * \param span Span to configure
+ * \param sig_cb Callback function for event signals
+ * \param ap List of configuration variables
+ * \return Success or failure
+ */
 static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 //zap_status_t zap_analog_configure_span(zap_span_t *span, char *tonemap, uint32_t digit_timeout, uint32_t max_dialstr, zio_signal_cb_t sig_cb)
 {
@@ -162,6 +187,12 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 
 }
 
+/**
+ * \brief Retrieves tone generation output to be sent
+ * \param ts Teletone generator
+ * \param map Tone map
+ * \return -1 on error, 0 on success
+ */
 static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map_t *map)
 {
 	zap_buffer_t *dt_buffer = ts->user_data;
@@ -175,6 +206,10 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 	return 0;
 }
 
+/**
+ * \brief Sends caller id on an analog channel (FSK coded)
+ * \param zchan Channel to send caller id on
+ */
 static void send_caller_id(zap_channel_t *zchan)
 {
 	zap_fsk_data_state_t fsk_data;
@@ -220,6 +255,11 @@ static void send_caller_id(zap_channel_t *zchan)
 	zap_channel_send_fsk_data(zchan, &fsk_data, -14);
 }
 
+/**
+ * \brief Main thread function for analog channel (outgoing call)
+ * \param me Current thread
+ * \param obj Channel to run in this thread
+ */
 static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 {
 	zap_channel_t *zchan = (zap_channel_t *) obj;
@@ -729,6 +769,12 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	return NULL;
 }
 
+/**
+ * \brief Processes openzap event
+ * \param span Span on which the event was fired
+ * \param event Event to be treated
+ * \return Success or failure
+ */
 static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 {
 	zap_sigmsg_t sig;
@@ -867,6 +913,11 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Main thread function for analog span (monitor)
+ * \param me Current thread
+ * \param obj Span to run in this thread
+ */
 static void *zap_analog_run(zap_thread_t *me, void *obj)
 {
 	zap_span_t *span = (zap_span_t *) obj;
@@ -914,12 +965,18 @@ static void *zap_analog_run(zap_thread_t *me, void *obj)
 	return NULL;
 }
 
-
+/**
+ * \brief Openzap analog signaling module initialisation
+ * \return Success
+ */
 static ZIO_SIG_LOAD_FUNCTION(zap_analog_init)
 {
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Openzap analog signaling module definition
+ */
 zap_module_t zap_module = { 
 	"analog",
 	NULL,

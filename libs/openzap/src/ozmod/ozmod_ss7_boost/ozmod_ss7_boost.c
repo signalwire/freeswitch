@@ -38,6 +38,9 @@
 #include <sys/select.h>
 #endif
 
+/**
+ * \brief Strange flag
+ */
 typedef enum {
 	SFLAG_FREE_REQ_ID = (1 << 0),
 	SFLAG_SENT_FINAL_RESPONSE = (1 << 1)
@@ -45,6 +48,9 @@ typedef enum {
 
 typedef uint16_t ss7_boost_request_id_t;
 
+/**
+ * \brief SS7 boost request status
+ */
 typedef enum {
 	BST_FREE,
 	BST_WAITING,
@@ -52,6 +58,9 @@ typedef enum {
 	BST_FAIL
 } ss7_boost_request_status_t;
 
+/**
+ * \brief SS7 boost request structure
+ */
 typedef struct {
 	ss7_boost_request_status_t status;
 	ss7bc_short_event_t event;
@@ -73,6 +82,14 @@ static zap_mutex_t *signal_mutex = NULL;
 static uint8_t req_map[MAX_REQ_ID+1] = { 0 };
 static uint8_t nack_map[MAX_REQ_ID+1] = { 0 };
 
+/**
+ * \brief Releases span and channel from setup grid
+ * \param span Span number
+ * \param chan Channel number
+ * \param func Calling function
+ * \param line Line number on request
+ * \return NULL if not found, channel otherwise
+ */
 static void __release_request_id_span_chan(int span, int chan, const char *func, int line)
 {
 	int id;
@@ -87,6 +104,12 @@ static void __release_request_id_span_chan(int span, int chan, const char *func,
 }
 #define release_request_id_span_chan(s, c) __release_request_id_span_chan(s, c, __FUNCTION__, __LINE__)
 
+/**
+ * \brief Releases request ID
+ * \param func Calling function
+ * \param line Line number on request
+ * \return NULL if not found, channel otherwise
+ */
 static void __release_request_id(ss7_boost_request_id_t r, const char *func, int line)
 {
 	assert(r <= MAX_REQ_ID);
@@ -98,6 +121,12 @@ static void __release_request_id(ss7_boost_request_id_t r, const char *func, int
 
 static ss7_boost_request_id_t last_req = 0;
 
+/**
+ * \brief Gets the first available tank request ID
+ * \param func Calling function
+ * \param line Line number on request
+ * \return 0 on failure, request ID on success
+ */
 static ss7_boost_request_id_t __next_request_id(const char *func, int line)
 {
 	ss7_boost_request_id_t r = 0, i = 0;
@@ -136,6 +165,13 @@ static ss7_boost_request_id_t __next_request_id(const char *func, int line)
 }
 #define next_request_id() __next_request_id(__FUNCTION__, __LINE__)
 
+/**
+ * \brief Finds the channel that triggered an event
+ * \param span Span where to search the channel
+ * \param event SS7 event
+ * \param force Do not wait for the channel to be available if in use
+ * \return NULL if not found, channel otherwise
+ */
 static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_short_event_t *event, int force)
 {
 	int i;
@@ -185,6 +221,15 @@ static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_short_event_t *event, i
 	return zchan;
 }
 
+/**
+ * \brief Requests an ss7 boost channel on a span (outgoing call)
+ * \param span Span where to get a channel
+ * \param chan_id Specific channel to get (0 for any)
+ * \param direction Call direction
+ * \param caller_data Caller information
+ * \param zchan Channel to initialise
+ * \return Success or failure
+ */
 static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 {
 	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
@@ -305,12 +350,22 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 	return status;
 }
 
+/**
+ * \brief Starts an ss7 boost channel (outgoing call)
+ * \param zchan Channel to initiate call on
+ * \return Success
+ */
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(ss7_boost_outgoing_call)
 {
 	zap_status_t status = ZAP_SUCCESS;
 	return status;
 }
 
+/**
+ * \brief Handler for call start ack event
+ * \param mcon ss7 boost connection
+ * \param event Event to handle
+ */
 static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	zap_channel_t *zchan;
@@ -354,6 +409,12 @@ static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_short_event_t 
 	
 }
 
+/**
+ * \brief Handler for call done event
+ * \param span Span where event was fired
+ * \param mcon ss7 boost connection
+ * \param event Event to handle
+ */
 static void handle_call_done(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	zap_channel_t *zchan;
@@ -384,6 +445,12 @@ static void handle_call_done(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_s
 	release_request_id_span_chan(event->span, event->chan);
 }
 
+/**
+ * \brief Handler for call start nack event
+ * \param span Span where event was fired
+ * \param mcon ss7 boost connection
+ * \param event Event to handle
+ */
 static void handle_call_start_nack(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	zap_channel_t *zchan;
@@ -428,11 +495,14 @@ static void handle_call_start_nack(zap_span_t *span, ss7bc_connection_t *mcon, s
 					   0,
 					   SIGBOOST_EVENT_CALL_START_NACK_ACK,
 					   0);
-
-
-
 }
 
+/**
+ * \brief Handler for call stop event
+ * \param span Span where event was fired
+ * \param mcon ss7 boost connection
+ * \param event Event to handle
+ */
 static void handle_call_stop(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	zap_channel_t *zchan;
@@ -472,6 +542,12 @@ static void handle_call_stop(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_s
 	release_request_id_span_chan(event->span, event->chan);	
 }
 
+/**
+ * \brief Handler for call answer event
+ * \param span Span where event was fired
+ * \param mcon ss7 boost connection
+ * \param event Event to handle
+ */
 static void handle_call_answer(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	zap_channel_t *zchan;
@@ -499,6 +575,12 @@ static void handle_call_answer(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc
 	}
 }
 
+/**
+ * \brief Handler for call start event
+ * \param span Span where event was fired
+ * \param mcon ss7 boost connection
+ * \param event Event to handle
+ */
 static void handle_call_start(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_event_t *event)
 {
 	zap_channel_t *zchan;
@@ -538,7 +620,11 @@ static void handle_call_start(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_
 		
 }
 
-
+/**
+ * \brief Handler for heartbeat event
+ * \param mcon ss7 boost connection
+ * \param event Event to handle
+ */
 static void handle_heartbeat(ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	int err;
@@ -554,12 +640,23 @@ static void handle_heartbeat(ss7bc_connection_t *mcon, ss7bc_short_event_t *even
     return;
 }
 
+/**
+ * \brief Handler for restart ack event
+ * \param mcon ss7 boost connection
+ * \param span Span where event was fired
+ * \param event Event to handle
+ */
 static void handle_restart_ack(ss7bc_connection_t *mcon, zap_span_t *span, ss7bc_short_event_t *event)
 {
 	zap_log(ZAP_LOG_DEBUG, "RECV RESTART ACK\n");
 }
 
-
+/**
+ * \brief Handler for restart event
+ * \param mcon ss7 boost connection
+ * \param span Span where event was fired
+ * \param event Event to handle
+ */
 static void handle_restart(ss7bc_connection_t *mcon, zap_span_t *span, ss7bc_short_event_t *event)
 {
 	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
@@ -572,6 +669,12 @@ static void handle_restart(ss7bc_connection_t *mcon, zap_span_t *span, ss7bc_sho
 	mcon->hb_elapsed = 0;
 }
 
+/**
+ * \brief Handler for incoming digit event
+ * \param mcon ss7 boost connection
+ * \param span Span where event was fired
+ * \param event Event to handle
+ */
 static void handle_incoming_digit(ss7bc_connection_t *mcon, zap_span_t *span, ss7bc_event_t *event)
 {
 	zap_channel_t *zchan = NULL;
@@ -601,6 +704,12 @@ static void handle_incoming_digit(ss7bc_connection_t *mcon, zap_span_t *span, ss
 	return;
 }
 
+/**
+ * \brief Handler for ss7 boost event
+ * \param span Span where event was fired
+ * \param mcon ss7 boost connection
+ * \param event Event to handle
+ */
 static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	zap_mutex_lock(signal_mutex);
@@ -669,6 +778,10 @@ static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_sho
 	return 0;
 }
 
+/**
+ * \brief Handler for channel state change
+ * \param zchan Channel to handle
+ */
 static __inline__ void state_advance(zap_channel_t *zchan)
 {
 
@@ -831,11 +944,18 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	}
 }
 
+/**
+ * \brief Initialises outgoing requests array
+ */
 static __inline__ void init_outgoing_array(void)
 {
 	memset(&OUTBOUND_REQUESTS, 0, sizeof(OUTBOUND_REQUESTS));
 }
 
+/**
+ * \brief Checks current state on a span
+ * \param span Span to check status on
+ */
 static __inline__ void check_state(zap_span_t *span)
 {
 	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
@@ -877,11 +997,13 @@ static __inline__ void check_state(zap_span_t *span)
 			init_outgoing_array();
 		}
 	}
-
-
 }
 
-
+/**
+ * \brief Main thread function for ss7 boost span (monitor)
+ * \param me Current thread
+ * \param obj Span to run in this thread
+ */
 static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 {
     zap_span_t *span = (zap_span_t *) obj;
@@ -1015,6 +1137,11 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 	return NULL;
 }
 
+/**
+ * \brief Loads ss7 boost signaling module
+ * \param zio Openzap IO interface
+ * \return Success
+ */
 static ZIO_SIG_LOAD_FUNCTION(zap_ss7_boost_init)
 {
 	zap_mutex_create(&request_mutex);
@@ -1129,6 +1256,13 @@ static zap_state_map_t boost_state_map = {
 	}
 };
 
+/**
+ * \brief Initialises an ss7 boost span from configuration variables
+ * \param span Span to configure
+ * \param sig_cb Callback function for event signals
+ * \param ap List of configuration variables
+ * \return Success or failure
+ */
 static ZIO_SIG_CONFIGURE_FUNCTION(zap_ss7_boost_configure_span)
 {
 	zap_ss7_boost_data_t *ss7_boost_data = NULL;
@@ -1190,7 +1324,9 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_ss7_boost_configure_span)
 	return ZAP_SUCCESS;
 }
 
-
+/**
+ * \brief Openzap ss7 boost signaling module definition
+ */
 zap_module_t zap_module = { 
 	"ss7_boost",
 	NULL,

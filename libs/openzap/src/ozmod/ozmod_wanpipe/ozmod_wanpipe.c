@@ -65,10 +65,16 @@
 #define EX_DECLARE_DATA
 #endif
 
+/**
+ * \brief Wanpipe flags
+ */
 typedef enum {
 	WP_RINGING = (1 << 0)
 } wp_flag_t;
 
+/**
+ * \brief Wanpipe globals
+ */
 static struct {
 	uint32_t codec_ms;
 	uint32_t wink_ms;
@@ -84,9 +90,17 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event);
 
 #define WP_INVALID_SOCKET -1 
 
-/* a cross platform way to poll on an actual pollset (span and/or list of spans) will probably also be needed for analog */
-/* so we can have one analong handler thread that will deal with all the idle analog channels for events */
-/* the alternative would be for the driver to provide one socket for all of the oob events for all analog channels */
+/**
+ * \brief Poll for event on a wanpipe socket
+ * \param fd Wanpipe socket descriptor
+ * \param timeout Time to wait for event
+ * \param flags Sangoma event flags
+ * \return -1 on failure, wanpipe event flags on success
+ *
+ * a cross platform way to poll on an actual pollset (span and/or list of spans) will probably also be needed for analog
+ * so we can have one analong handler thread that will deal with all the idle analog channels for events
+ * the alternative would be for the driver to provide one socket for all of the oob events for all analog channels
+ */
 static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int *flags)
 {
 	
@@ -125,15 +139,24 @@ static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int *flags)
 	
 }
 
+/**
+ * \brief Opens a sangoma channel socket (TDM API)
+ * \param span Span number
+ * \param chan Channel number
+ * \return 0 on success, wanpipe error code on failure
+ */
 static __inline__ sng_fd_t tdmv_api_open_span_chan(int span, int chan) 
 {
 	return sangoma_open_tdmapi_span_chan(span, chan);
 }            
 
-
-
 static zap_io_interface_t wanpipe_interface;
 
+/**
+ * \brief Inverts bit string
+ * \param cas_bits CAS bit string
+ * \return Swapped bits
+ */
 static unsigned char wanpipe_swap_bits(unsigned char cas_bits)
 {
 	unsigned char swapped_bits = 0x0;
@@ -152,6 +175,18 @@ static unsigned char wanpipe_swap_bits(unsigned char cas_bits)
 	return swapped_bits;
 }
 
+/**
+ * \brief Initialises a range of wanpipe channels
+ * \param span Openzap span
+ * \param spanno Wanpipe span number
+ * \param start Initial wanpipe channel number
+ * \param end Final wanpipe channel number
+ * \param type Openzap channel type
+ * \param name Openzap span name
+ * \param number Openzap span number
+ * \param cas_bits CAS bits
+ * \return number of spans configured
+ */
 static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start, unsigned end, zap_chan_type_t type, char *name, char *number, unsigned char cas_bits)
 {
 	unsigned configured = 0, x;
@@ -237,6 +272,14 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 	return configured;
 }
 
+/**
+ * \brief Process configuration variable for a Wanpipe profile
+ * \param category Wanpipe profile name
+ * \param var Variable name
+ * \param val Variable value
+ * \param lineno Line number from configuration file
+ * \return Success
+ */
 static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 {
 	int num;
@@ -269,6 +312,15 @@ static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Initialises an openzap Wanpipe span from a configuration string
+ * \param span Openzap span
+ * \param str Configuration string
+ * \param type Openzap span type
+ * \param name Openzap span name
+ * \param number Openzap span number
+ * \return Success or failure
+ */
 static ZIO_CONFIGURE_SPAN_FUNCTION(wanpipe_configure_span)
 {
 	int items, i;
@@ -340,6 +392,11 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(wanpipe_configure_span)
 	return configured;
 }
 
+/**
+ * \brief Opens Wanpipe channel
+ * \param zchan Channel to open
+ * \return Success or failure
+ */
 static ZIO_OPEN_FUNCTION(wanpipe_open) 
 {
 
@@ -362,11 +419,23 @@ static ZIO_OPEN_FUNCTION(wanpipe_open)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Closes Wanpipe channel
+ * \param zchan Channel to close
+ * \return Success
+ */
 static ZIO_CLOSE_FUNCTION(wanpipe_close)
 {
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Executes an Openzap command on a Wanpipe channel
+ * \param zchan Channel to execute command on
+ * \param command Openzap command to execute
+ * \param obj Object (unused)
+ * \return Success or failure
+ */
 static ZIO_COMMAND_FUNCTION(wanpipe_command)
 {
 	wanpipe_tdm_api_t tdm_api;
@@ -461,6 +530,13 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Reads data from a Wanpipe channel
+ * \param zchan Channel to read from
+ * \param data Data buffer
+ * \param datalen Size of data buffer
+ * \return Success, failure or timeout
+ */
 static ZIO_READ_FUNCTION(wanpipe_read)
 {
 	int rx_len = 0;
@@ -484,6 +560,13 @@ static ZIO_READ_FUNCTION(wanpipe_read)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Writes data to a Wanpipe channel
+ * \param zchan Channel to write to
+ * \param data Data buffer
+ * \param datalen Size of data buffer
+ * \return Success or failure
+ */
 static ZIO_WRITE_FUNCTION(wanpipe_write)
 {
 	int bsent;
@@ -502,7 +585,13 @@ static ZIO_WRITE_FUNCTION(wanpipe_write)
 	return ZAP_FAIL;
 }
 
-
+/**
+ * \brief Waits for an event on a Wanpipe channel
+ * \param zchan Channel to open
+ * \param flags Type of event to wait for
+ * \param to Time to wait (in ms)
+ * \return Success, failure or timeout
+ */
 static ZIO_WAIT_FUNCTION(wanpipe_wait)
 {
 	int32_t inflags = 0;
@@ -548,6 +637,12 @@ static ZIO_WAIT_FUNCTION(wanpipe_wait)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Checks for events on a Wanpipe span
+ * \param span Span to check for events
+ * \param ms Time to wait for event
+ * \return Success if event is waiting or failure if not
+ */
 ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 {
 #ifdef LIBSANGOMA_VERSION
@@ -641,7 +736,11 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	return k ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
-
+/**
+ * \brief Gets alarms from a Wanpipe Channel
+ * \param zchan Channel to get alarms from
+ * \return Success or failure
+ */
 static ZIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 {
 	wanpipe_tdm_api_t tdm_api;
@@ -671,7 +770,12 @@ static ZIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
     return ZAP_SUCCESS;
 }
 
-
+/**
+ * \brief Retrieves an event from a wanpipe span
+ * \param span Span to retrieve event from
+ * \param event Openzap event to return
+ * \return Success or failure
+ */
 ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 {
 	uint32_t i,err;
@@ -827,6 +931,11 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 	
 }
 
+/**
+ * \brief Destroys a Wanpipe Channel
+ * \param zchan Channel to destroy
+ * \return Success
+ */
 static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 {
 	if (zchan->sockfd > -1) {
@@ -837,6 +946,11 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Loads wanpipe IO module
+ * \param zio Openzap IO interface
+ * \return Success
+ */
 static ZIO_IO_LOAD_FUNCTION(wanpipe_init)
 {
 	assert(zio != NULL);
@@ -867,13 +981,19 @@ static ZIO_IO_LOAD_FUNCTION(wanpipe_init)
 	return ZAP_SUCCESS;
 }
 
+/**
+ * \brief Unloads wanpipe IO module
+ * \return Success
+ */
 static ZIO_IO_UNLOAD_FUNCTION(wanpipe_destroy)
 {
 	memset(&wanpipe_interface, 0, sizeof(wanpipe_interface));
 	return ZAP_SUCCESS;
 }
 
-
+/**
+ * \brief Openzap wanpipe IO module definition
+ */
 EX_DECLARE_DATA zap_module_t zap_module = { 
 	"wanpipe",
 	wanpipe_init,
