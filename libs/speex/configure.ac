@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script. -*-m4-*-
 
 AC_INIT(libspeex/speex.c)
 
-AM_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 SPEEX_MAJOR_VERSION=1
 SPEEX_MINOR_VERSION=1
