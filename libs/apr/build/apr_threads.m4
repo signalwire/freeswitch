@@ -224,7 +224,10 @@ AC_DEFUN(APR_CHECK_SIGWAIT_ONE_ARG,[
 dnl Check for recursive mutex support (per SUSv3).
 AC_DEFUN([APR_CHECK_PTHREAD_RECURSIVE_MUTEX], [
   AC_CACHE_CHECK([for recursive mutex support], [apr_cv_mutex_recursive],
-[AC_TRY_RUN([#define _XOPEN_SOURCE 600
+[AC_TRY_RUN([
+#ifndef __sun
+#define _XOPEN_SOURCE 600
+#endif
 #include <sys/types.h>
 #include <pthread.h>
 #include <stdlib.h>
