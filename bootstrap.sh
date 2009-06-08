@@ -289,7 +289,7 @@ do
 
       LTTEST=`grep "AC_PROG_LIBTOOL" ${CFFILE}`
       LTTEST2=`grep "AM_PROG_LIBTOOL" ${CFFILE}`
-      AMTEST=`grep "AM_INIT_AUTOMAKE" ${CFFILE}`
+      AMTEST=`grep "AM_INIT_AUTOMAKE\|AC_PROG_INSTALL" ${CFFILE}`
       AHTEST=`grep "AC_CONFIG_HEADERS" ${CFFILE}`
 
       echo "Creating aclocal.m4"
@@ -314,12 +314,11 @@ do
           ${AUTOHEADER:-autoheader} ;
       fi
 
-#only run if AM_INIT_AUTOMAKE is in configure.in/configure.ac
-      if [ ! -z "${AMTEST}" ] ; then
-          if [ -f ${LIBDIR}/${i}/Makefile.am ] ; then
-              echo "Creating Makefile.in"
-              ${AUTOMAKE:-automake} --no-force --add-missing --copy ;
-          fi
+#run if AM_INIT_AUTOMAKE / AC_PROG_INSTALL is in configure.in/configure.ac
+#or Makefile.am exists
+      if [ ! -z "${AMTEST}" ]; then
+          echo "Creating Makefile.in"
+          ${AUTOMAKE:-automake} --no-force --add-missing --copy ;
       fi
       rm -rf autom4te*.cache
   fi
