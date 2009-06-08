@@ -761,7 +761,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 									use_timer ? "timer, " : ""
 									);
 
-	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_core_get_variable("nat_type")) {
 		if (switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_UDP, NULL) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created UDP nat mapping for %s port %d\n", profile->name, profile->sip_port);
 		}
@@ -951,7 +951,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		switch_event_fire(&s_event);
 	}
 
-	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_core_get_variable("nat_type")) {
 		if (switch_nat_del_mapping(profile->sip_port, SWITCH_NAT_UDP) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted UDP nat mapping for %s port %d\n", profile->name, profile->sip_port);
 		}
