@@ -45,7 +45,7 @@
 #define USE_SYSCTL_NET_ROUTE
 #endif
 
-#if (defined(sun) && defined(__SVR4))
+#if ((defined(sun) || defined(__sun)) && defined(__SVR4))
 #undef USE_PROC_NET_ROUTE
 #define USE_SOCKET_ROUTE
 #undef USE_SYSCTL_NET_ROUTE
