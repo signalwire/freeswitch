@@ -315,7 +315,6 @@ do
       fi
 
 #run if AM_INIT_AUTOMAKE / AC_PROG_INSTALL is in configure.in/configure.ac
-#or Makefile.am exists
       if [ ! -z "${AMTEST}" ]; then
           echo "Creating Makefile.in"
           ${AUTOMAKE:-automake} --no-force --add-missing --copy ;
