@@ -22,10 +22,11 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
+ * Christopher M. Rienzo <chris@rienzo.net>
  *
  *
  * switch_core_speech.c -- Main Core Library (speech functions)
@@ -92,9 +93,64 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
 {
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	char *param_string = NULL;
+	char *data = NULL;
+	char *ltext = NULL;
+
 	switch_assert(sh != NULL);
 
-	return sh->speech_interface->speech_feed_tts(sh, text, flags);
+	if (switch_strlen_zero(text)) {
+		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+
+	/* Set TTS parameters from params in the text string
+	 * Params are defined as follows {name1=val1,name2=val2,name3=val3}text to speak
+	 */
+	ltext = strdup(text);
+	data = ltext;
+
+	/* strip leading spaces */
+	while (data && *data == ' ') {
+		data++;
+	}
+	if (switch_strlen_zero(data)) {
+		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+	
+	/* extract params */
+	if (*data == '{') {
+		param_string = data + 1;
+		data = switch_find_end_paren(data, '{', '}');
+		if (switch_strlen_zero(data)) {
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		} else {
+			*data = '\0';
+			data++;
+		}
+	}
+
+	/* set TTS params */
+	if (!switch_strlen_zero(param_string)) {
+		char *param[256] = { 0 };
+		switch_separate_string(param_string, ',', param, (sizeof(param) / sizeof(param[0])));
+		for (int i = 0; param[i]; ++i) {
+			char *param_pair[2] = { 0 };
+			if(switch_separate_string(param[i], '=', param_pair, (sizeof(param_pair) / sizeof(param_pair[0]))) == 2) {
+				switch_core_speech_text_param_tts(sh, param_pair[0], param_pair[1]);
+			}
+		}
+	}
+
+	status = sh->speech_interface->speech_feed_tts(sh, data, flags);
+
+ done:
+
+	switch_safe_free(ltext);
+	return status;	
 }
 
 SWITCH_DECLARE(void) switch_core_speech_flush_tts(switch_speech_handle_t *sh)

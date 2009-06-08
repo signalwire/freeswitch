@@ -342,9 +342,9 @@ struct switch_asr_interface {
 	/*! function to open the asr interface */
 	switch_status_t (*asr_open) (switch_asr_handle_t *ah, const char *codec, int rate, const char *dest, switch_asr_flag_t *flags);
 	/*! function to load a grammar to the asr interface */
-	switch_status_t (*asr_load_grammar) (switch_asr_handle_t *ah, const char *grammar, const char *path);
+	switch_status_t (*asr_load_grammar) (switch_asr_handle_t *ah, const char *grammar, const char *name);
 	/*! function to unload a grammar to the asr interface */
-	switch_status_t (*asr_unload_grammar) (switch_asr_handle_t *ah, const char *grammar);
+	switch_status_t (*asr_unload_grammar) (switch_asr_handle_t *ah, const char *name);
 	/*! function to close the asr interface */
 	switch_status_t (*asr_close) (switch_asr_handle_t *ah, switch_asr_flag_t *flags);
 	/*! function to feed audio to the ASR */
@@ -357,6 +357,11 @@ struct switch_asr_interface {
 	switch_status_t (*asr_check_results) (switch_asr_handle_t *ah, switch_asr_flag_t *flags);
 	/*! function to read results from the ASR */
 	switch_status_t (*asr_get_results) (switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags);
+	/*! function to start ASR input timers */
+	switch_status_t (*asr_start_input_timers) (switch_asr_handle_t *ah);
+	void (*asr_text_param) (switch_asr_handle_t *ah, char *param, const char *val);
+	void (*asr_numeric_param) (switch_asr_handle_t *ah, char *param, int val);
+	void (*asr_float_param) (switch_asr_handle_t *ah, char *param, double val);
 	switch_thread_rwlock_t *rwlock;
 	int refs;
 	switch_mutex_t *reflock;
@@ -409,7 +414,7 @@ struct switch_speech_interface {
 };
 
 
-/*! an abstract representation of a asr/tts speech interface. */
+/*! an abstract representation of a tts speech interface. */
 struct switch_speech_handle {
 	/*! the interface of the module that implemented the current speech interface */
 	switch_speech_interface_t *speech_interface;

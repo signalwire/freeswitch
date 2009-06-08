@@ -1623,19 +1623,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t 
 /*!
   \brief Load a grammar to an asr handle
   \param ah the handle to load to
-  \param grammar the name of the grammar
-  \param path the path to the grammaar file
+  \param grammar the grammar text, file path, or URI
+  \param name the grammar name
   \return SWITCH_STATUS_SUCCESS
 */
-SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *path);
+SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *name);
 
 /*!
   \brief Unload a grammar from an asr handle
   \param ah the handle to unload the grammar from
-  \param grammar the grammar to unload
+  \param name the name of the grammar to unload
   \return SWITCH_STATUS_SUCCESS
 */
-SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle_t *ah, const char *grammar);
+SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle_t *ah, const char *name);
 
 /*!
   \brief Pause detection on an asr handle
@@ -1651,6 +1651,37 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_pause(switch_asr_handle_t *ah);
 */
 SWITCH_DECLARE(switch_status_t) switch_core_asr_resume(switch_asr_handle_t *ah);
 
+/*!
+  \brief Start input timers on an asr handle
+  \param ah the handle to start timers on
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_start_input_timers(switch_asr_handle_t *ah);
+
+/*!
+  \brief Set a text parameter on an asr handle
+  \param sh the asr handle
+  \param param the parameter
+  \param val the value
+*/
+SWITCH_DECLARE(void) switch_core_asr_text_param(switch_asr_handle_t *ah, char *param, const char *val);
+
+/*!
+  \brief Set a numeric parameter on an asr handle
+  \param sh the asr handle
+  \param param the parameter
+  \param val the value
+*/
+SWITCH_DECLARE(void) switch_core_asr_numeric_param(switch_asr_handle_t *ah, char *param, int val);
+
+/*!
+  \brief Set a float parameter on an asr handle
+  \param sh the asr handle
+  \param param the parameter
+  \param val the value
+*/
+SWITCH_DECLARE(void) switch_core_asr_float_param(switch_asr_handle_t *ah, char *param, double val);
+
 ///\}
 
 
@@ -1659,7 +1690,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_resume(switch_asr_handle_t *ah);
 ///\{
 /*! 
   \brief Open a directory handle
-  \param dh a direcotry handle to use
+  \param dh a directory handle to use
   \param module_name the directory module to use
   \param source the source of the db (ip, hostname, path etc)
   \param dsn the username or designation of the lookup
@@ -1672,7 +1703,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_directory_open(switch_directory_hand
 
 /*! 
   \brief Query a directory handle
-  \param dh a direcotry handle to use
+  \param dh a directory handle to use
   \param base the base to query against
   \param query a string of filters or query data
   \return SWITCH_STATUS_SUCCESS if the query is successful
@@ -1681,23 +1712,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_directory_query(switch_directory_han
 
 /*! 
   \brief Obtain the next record in a lookup
-  \param dh a direcotry handle to use
+  \param dh a directory handle to use
   \return SWITCH_STATUS_SUCCESS if another record exists
 */
 SWITCH_DECLARE(switch_status_t) switch_core_directory_next(switch_directory_handle_t *dh);
 
 /*! 
   \brief Obtain the next name/value pair in the current record
-  \param dh a direcotry handle to use
+  \param dh a directory handle to use
   \param var a pointer to pointer of the name to fill in
-  \param val a pointer to poinbter of the value to fill in
+  \param val a pointer to pointer of the value to fill in
   \return SWITCH_STATUS_SUCCESS if an item exists
 */
 SWITCH_DECLARE(switch_status_t) switch_core_directory_next_pair(switch_directory_handle_t *dh, char **var, char **val);
 
 /*! 
   \brief Close an open directory handle
-  \param dh a direcotry handle to close
+  \param dh a directory handle to close
   \return SWITCH_STATUS_SUCCESS if handle was closed
 */
 SWITCH_DECLARE(switch_status_t) switch_core_directory_close(switch_directory_handle_t *dh);

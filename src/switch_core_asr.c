@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
+ * Christopher M. Rienzo <chris@rienzo.net>
  *
  *
  * switch_core_asr.c -- Main Core Library (Speech Detection Interface)
@@ -79,30 +80,74 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 	return ah->asr_interface->asr_open(ah, codec, rate, dest, flags);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *path)
+SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *name)
 {
-	char *epath = NULL;
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	char *param_string = NULL;
+	char *data = NULL;
+	char *lgrammar = NULL;
 
 	switch_assert(ah != NULL);
 
-	if (!switch_is_file_path(path)) {
-		epath = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, path);
-		path = epath;
+	if (switch_strlen_zero(grammar)) {
+		status = SWITCH_STATUS_FALSE;
+		goto done;
 	}
 
-	status = ah->asr_interface->asr_load_grammar(ah, grammar, path);
-	switch_safe_free(epath);
+	/* Set ASR parameters from params in the grammar string
+	 * Params are defined as follows {name1=val1,name2=val2,name3=val3}grammar text
+	 */
+	lgrammar = strdup(grammar);
+	data = lgrammar;
 
+	/* strip leading spaces */
+	while (data && *data == ' ') {
+		data++;
+	}
+	if (switch_strlen_zero(data)) {
+		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+	
+	/* extract params */
+	if (*data == '{') {
+		param_string = data + 1;
+		data = switch_find_end_paren(data, '{', '}');
+		if (switch_strlen_zero(data)) {
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		} else {	
+			*data = '\0';
+			data++;
+		}
+	}
+
+	/* set ASR params */
+	if (!switch_strlen_zero(param_string)) {
+		char *param[256] = { 0 };
+		switch_separate_string(param_string, ',', param, (sizeof(param) / sizeof(param[0])));
+		for (int i = 0; param[i]; ++i) {
+			char *param_pair[2] = { 0 };
+			if(switch_separate_string(param[i], '=', param_pair, (sizeof(param_pair) / sizeof(param_pair[0]))) == 2) {
+				switch_core_asr_text_param(ah, param_pair[0], param_pair[1]);
+			}
+		}
+	}
+
+	status = ah->asr_interface->asr_load_grammar(ah, data, name);
+
+ done:
+
+	switch_safe_free(lgrammar);
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle_t *ah, const char *grammar)
+SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle_t *ah, const char *name)
 {
 	switch_status_t status;
 
 	switch_assert(ah != NULL);
-	status = ah->asr_interface->asr_unload_grammar(ah, grammar);
+	status = ah->asr_interface->asr_unload_grammar(ah, name);
 
 	return status;
 }
@@ -156,6 +201,46 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t 
 	switch_assert(ah != NULL);
 
 	return ah->asr_interface->asr_get_results(ah, xmlstr, flags);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_start_input_timers(switch_asr_handle_t *ah)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_assert(ah != NULL);
+
+	if (ah->asr_interface->asr_start_input_timers) {
+		status = ah->asr_interface->asr_start_input_timers(ah);
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(void) switch_core_asr_text_param(switch_asr_handle_t *ah, char *param, const char *val)
+{
+	switch_assert(ah != NULL);
+
+	if (ah->asr_interface->asr_text_param) {
+		ah->asr_interface->asr_text_param(ah, param, val);
+	}
+}
+
+SWITCH_DECLARE(void) switch_core_asr_numeric_param(switch_asr_handle_t *ah, char *param, int val)
+{
+	switch_assert(ah != NULL);
+
+	if (ah->asr_interface->asr_numeric_param) {
+		ah->asr_interface->asr_numeric_param(ah, param, val);
+	}
+}
+
+SWITCH_DECLARE(void) switch_core_asr_float_param(switch_asr_handle_t *ah, char *param, double val)
+{
+	switch_assert(ah != NULL);
+
+	if (ah->asr_interface->asr_float_param) {
+		ah->asr_interface->asr_float_param(ah, param, val);
+	}
 }
 
 /* For Emacs:

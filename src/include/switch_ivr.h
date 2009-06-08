@@ -148,15 +148,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
   \brief Engage background Speech detection on a session
   \param session the session to attach
   \param mod_name the module name of the ASR library
-  \param grammar the grammar name
-  \param path the path to the grammar file
+  \param grammar the grammar text, URI, or local file name
+  \param name the grammar name
   \param dest the destination address
   \param ah an ASR handle to use (NULL to create one)
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *session,
 														 const char *mod_name,
-														 const char *grammar, const char *path, const char *dest, switch_asr_handle_t *ah);
+														 const char *grammar, const char *name, const char *dest, switch_asr_handle_t *ah);
 
 /*!
   \brief Stop background Speech detection on a session
@@ -182,19 +182,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_resume_detect_speech(switch_core_sess
 /*!
   \brief Load a grammar on a background speech detection handle
   \param session The session to change the grammar on
-  \param grammar the grammar name
-  \param path the grammar path
+  \param grammar the grammar text, URI, or local file name
+  \param name the grammar name
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_core_session_t *session, char *grammar, char *path);
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_core_session_t *session, char *grammar, char *name);
 
 /*!
   \brief Unload a grammar on a background speech detection handle
   \param session The session to change the grammar on
-  \param grammar the grammar name
+  \param name the grammar name
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_core_session_t *session, const char *grammar);
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_core_session_t *session, const char *name);
 
 /*!
   \brief Record a session to disk

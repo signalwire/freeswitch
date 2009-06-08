@@ -111,7 +111,7 @@ static switch_status_t pocketsphinx_asr_open(switch_asr_handle_t *ah, const char
 }
 
 /*! function to load a grammar to the asr interface */
-static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *path)
+static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *name)
 {
 	char *jsgf, *dic, *model, *rate = NULL;
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
@@ -199,7 +199,7 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 }
 
 /*! function to unload a grammar to the asr interface */
-static switch_status_t pocketsphinx_asr_unload_grammar(switch_asr_handle_t *ah, const char *grammar)
+static switch_status_t pocketsphinx_asr_unload_grammar(switch_asr_handle_t *ah, const char *name)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -506,6 +506,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_pocketsphinx_load)
 	asr_interface->asr_pause = pocketsphinx_asr_pause;
 	asr_interface->asr_check_results = pocketsphinx_asr_check_results;
 	asr_interface->asr_get_results = pocketsphinx_asr_get_results;
+	asr_interface->asr_start_input_timers = NULL;
+	asr_interface->asr_text_param = NULL;
+	asr_interface->asr_numeric_param = NULL;
+	asr_interface->asr_float_param = NULL;
 
 	err_set_logfp(NULL);
 
