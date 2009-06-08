@@ -271,6 +271,9 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 	
 	if (gr && *(gr+1)) {
 		event.trunk_group = atoi(gr+1);
+		if (event.trunk_group > 0) {
+			event.trunk_group--;
+		}
 
 		switch(*gr) {
         case 'g':
