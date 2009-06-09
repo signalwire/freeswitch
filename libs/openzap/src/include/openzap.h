@@ -66,6 +66,7 @@
 #define OZ_DECLARE_NONSTD(type)		__declspec(dllimport) type __cdecl
 #define OZ_DECLARE_DATA				__declspec(dllimport)
 #endif
+#define EX_DECLARE_DATA				__declspec(dllexport)
 #else
 #if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(HAVE_VISIBILITY)
 #define OZ_DECLARE(type)		__attribute__((visibility("default"))) type
@@ -76,6 +77,7 @@
 #define OZ_DECLARE_NONSTD(type)	type
 #define OZ_DECLARE_DATA
 #endif
+#define EX_DECLARE_DATA
 #endif
 
 #ifdef _MSC_VER

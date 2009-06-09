@@ -60,9 +60,6 @@
 #define sangoma_sendmsg_socket sangoma_writemsg
 #define sangoma_writemsg_tdm sangoma_writemsg
 #define sangoma_create_socket_intr sangoma_open_api_span_chan
-#define EX_DECLARE_DATA				__declspec(dllexport)
-#else
-#define EX_DECLARE_DATA
 #endif
 
 /**

@@ -2347,7 +2347,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 /**
  * \brief Openzap ISDN signaling module definition
  */
-zap_module_t zap_module = { 
+EX_DECLARE_DATA zap_module_t zap_module = {
 	"isdn",
 	NULL,
 	close_pcap,

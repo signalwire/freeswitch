@@ -977,7 +977,7 @@ static ZIO_SIG_LOAD_FUNCTION(zap_analog_init)
 /**
  * \brief Openzap analog signaling module definition
  */
-zap_module_t zap_module = { 
+EX_DECLARE_DATA zap_module_t zap_module = {
 	"analog",
 	NULL,
 	NULL,
