@@ -1351,7 +1351,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	char *call_id = argv[7];
 	char *expires = argv[10];
 	char *profile_name = argv[13];
-	char *body = argv[14];
+	char *body = argv[15];
 	char *id = NULL;
 	nua_handle_t *nh;
 	int expire_sec = atoi(expires);
