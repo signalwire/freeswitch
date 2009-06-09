@@ -143,7 +143,11 @@ struct globals_struct {
 typedef struct globals_struct globals_t;
 
 struct listen_list_struct {
+#ifdef WIN32
+	SOCKET sockfd;
+#else
 	int sockfd;
+#endif
 	switch_mutex_t *sock_mutex;
 	listener_t *listeners;
 	uint8_t ready;
@@ -215,6 +219,10 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec);
 		ei_x_encode_string(buf, string); \
 		break; \
 }
+
+#ifdef WIN32 /* MSDN suggested hack to fake errno for network operations */
+#define errno WSAGetLastError()
+#endif
 
 /* mod_erlang_event.c */
 session_elem_t* attach_call_to_registered_process(listener_t* listener, char* reg_name, switch_core_session_t *session);

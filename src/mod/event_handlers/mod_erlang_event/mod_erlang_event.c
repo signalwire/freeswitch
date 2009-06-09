@@ -245,7 +245,11 @@ static void close_socket(int *sock)
 	switch_mutex_lock(listen_list.sock_mutex);
 	if (*sock) {
 		shutdown(*sock, SHUT_RDWR);
+#ifdef WIN32
+		closesocket(*sock);
+#else
 		close(*sock);
+#endif
 		sock = NULL;
 	}
 	switch_mutex_unlock(listen_list.sock_mutex);
@@ -1020,7 +1024,11 @@ static listener_t* new_outbound_listener(char* node)
 	int clientfd;
 
 	if (SWITCH_STATUS_SUCCESS==initialise_ei(&ec)) {
+#ifdef WIN32
+		WSASetLastError(0);
+#else
 		errno = 0;
+#endif
 		if ((clientfd=ei_connect(&ec,node)) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error connecting to node %s (erl_errno=%d, errno=%d)!\n",node,erl_errno,errno);
 			return NULL;
@@ -1404,6 +1412,23 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 	int on = 1;
 	int clientfd;
 	int epmdfd;
+#ifdef WIN32
+	/* borrowed from MSDN, stupid winsock */
+	WORD wVersionRequested;
+	WSADATA wsaData;
+
+	wVersionRequested = MAKEWORD(2, 2);
+	
+	if (WSAStartup(wVersionRequested, &wsaData) != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Winsock initialization failed, oh well\n");
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Your winsock version doesn't support the 2.2 specification, bailing\n");
+		return SWITCH_STATUS_TERM;
+	}
+#endif
 
 	memset(&listen_list, 0, sizeof(listen_list));
 	config();
@@ -1488,7 +1513,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 		/* zero out errno because ei_accept doesn't differentiate between a
 		 * failed authentication or a socket failure, or a client version
 		 * mismatch or a godzilla attack */
+#ifdef WIN32
+		WSASetLastError(0);
+#else
 		errno = 0;
+#endif
 		if ((clientfd = ei_accept_tmo(&ec, listen_list.sockfd, &conn, 100)) == ERL_ERROR) {
 			if (prefs.done) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
@@ -1569,6 +1598,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_erlang_event_shutdown)
 	for (l = listen_list.listeners; l; l = l->next) {
 		close_socket(&l->sockfd);
 	}
+
+#ifdef WIN32
+	WSACleanup();
+#endif
 
 	switch_mutex_unlock(globals.listener_mutex);
 
