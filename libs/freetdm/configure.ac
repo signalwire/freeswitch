@@ -25,6 +25,14 @@ oz_builddir=`pwd`
 AC_SUBST(OZ_SRCDIR)
 AC_SUBST(oz_builddir)
 
+if test "$sysconfdir" = "\${prefix}/etc" ; then
+    confdir="$prefix/conf"
+else
+    confdir="$sysconfdir"
+fi
+
+AC_SUBST(confdir)
+
 #override some default libtool behavior and invoke AC_PROG_LIBTOOL (see http://lists.gnu.org/archive/html/libtool/2007-03/msg00000.html)
 m4_defun([_LT_AC_LANG_F77_CONFIG], [:])
 m4_defun([_LT_AC_LANG_GCJ_CONFIG], [:])

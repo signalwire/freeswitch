@@ -37,7 +37,7 @@ libdir = $(PREFIX)/lib/
 library_includedir = $(PREFIX)/include
 
 INCS      = -I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include -I$(OZ_SRCDIR)/$(SRC)/ozmod/ozmod_ss7_boost 
-MY_CFLAGS = $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@prefix@/conf\" -DZAP_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
+MY_CFLAGS = $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@confdir@\" -DZAP_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
 COMPILE   = $(CC) $(MY_CFLAGS) $(INCS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
 LINK      = $(LIBTOOL) --mode=link --tag=CC $(CC) $(MY_CFLAGS) $(LDFLAGS) -o $@
@@ -231,6 +231,6 @@ mod_openzap-clean:
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(PREFIX)
-	$(mkinstalldirs) $(DESTDIR)$(PREFIX)/conf
-	@[ -f "$(DESTDIR)$(PREFIX)/conf/openzap.conf" ] || ( cp conf/*.conf $(DESTDIR)$(PREFIX)/conf)
+	$(mkinstalldirs) $(DESTDIR)@confdir@
+	@[ -f "$(DESTDIR)@confdir@/openzap.conf" ] || ( cp conf/*.conf $(DESTDIR)@confdir@)
 	@echo OpenZAP Installed
