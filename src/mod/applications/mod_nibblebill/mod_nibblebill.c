@@ -363,9 +363,9 @@ static float get_balance(const char *billaccount)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "Retrieved current balance for account %s (balance = %f)\n", billaccount, balance);
 	}
-
-#endif
+	
 	return balance;
+#endif
 }
 
 /* This is where we actually charge the guy 
