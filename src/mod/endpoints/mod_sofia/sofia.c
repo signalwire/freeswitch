@@ -4806,7 +4806,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 							tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url,
 																				  sofia_glue_transport2str(transport));
 						} else {
-							tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", profile->url,
+							tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", url,
 																				  sofia_glue_transport2str(transport));
 						}
 					} else {
@@ -4827,7 +4827,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url,
 																		  sofia_glue_transport2str(transport));
 				} else {
-					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", profile->url,
+					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", url,
 																		  sofia_glue_transport2str(transport));
 				}
 			} else {
