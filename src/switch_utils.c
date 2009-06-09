@@ -756,6 +756,7 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 
 		if (s && m && s->sin_addr.s_addr == me->sin_addr.s_addr) {
 			*mask = m->sin_addr.s_addr;
+			freeifaddrs(ifaddrs);
 			return 0;
 		}
 	}
