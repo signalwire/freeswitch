@@ -74,6 +74,7 @@ static int init_upnp (void)
 		}
 		if (!dev) {
 			dev = devlist; /* defaulting to first device */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No InternetGatewayDevice, using first entry as default.\n");
 		}
 		
 		descXML = miniwget(dev->descURL, &descXMLsize);
@@ -90,6 +91,12 @@ static int init_upnp (void)
 	if ((r = UPNP_GetExternalIPAddress(nat_globals.urls.controlURL,
 									   nat_globals.data.servicetype,
 									   nat_globals.pub_addr)) == UPNPCOMMAND_SUCCESS) {
+
+		if (!strcmp(nat_globals.pub_addr, "0.0.0.0")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							  "uPNP Device (url: %s) returned an invalid external address of 0.0.0.0.  Disabling uPNP\n", nat_globals.urls.controlURL);
+			return -2;
+		}
 
 		nat_globals.nat_type = SWITCH_NAT_TYPE_UPNP;
 		return 0;
