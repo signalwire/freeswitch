@@ -825,6 +825,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\pcre\pcre_newline.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pcre\pcre_ucd.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\pcre\pcre_ucp_searchfuncs.c"
 				>
 			</File>
