@@ -154,8 +154,7 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 	 */
 
 	/* We always store the AOR as the sipip and not the request so SLA works with NAT inside out */
-	aor = switch_mprintf("sip:%s@%s;transport=%s", sip->sip_contact->m_url->url_user,
-						 profile->sipip, sofia_glue_transport2str(transport));
+	aor = switch_mprintf("sip:%s@%s", sip->sip_contact->m_url->url_user, profile->sipip);
 
 	/*
 	 * ok, and now that we HAVE the AOR, we REALLY should go check in the XML config and see if this particular
@@ -293,8 +292,7 @@ void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_han
 
 	/* calculate the AOR we're trying to tell people about. should probably double-check before derferencing XXX MTK */
 	/* We always store the AOR as the sipip and not the request so SLA works with NAT inside out */
-	aor = switch_mprintf("sip:%s@%s;transport=%s", sip->sip_to->a_url->url_user,
-						 profile->sipip, sofia_glue_transport2str(transport));
+	aor = switch_mprintf("sip:%s@%s", sip->sip_to->a_url->url_user, profile->sipip);
 
 	/* this isn't sufficient because on things like the polycom, the subscriber is the 'main' ext number, but the
 	 * 'main' ext number isn't in ANY of the headers they send us in the notify. of course.
