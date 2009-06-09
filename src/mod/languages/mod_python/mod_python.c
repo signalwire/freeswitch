@@ -59,7 +59,17 @@ static struct {
 	char *xml_handler;
 } globals;
 
-static void eval_some_python(const char *funcname, char *args, switch_core_session_t *session, switch_stream_handle_t *stream, switch_event_t *params, char **str)
+struct switch_py_thread {
+	struct switch_py_thread *prev, *next; 
+	char *cmd;
+	char *args;
+	switch_memory_pool_t *pool;
+	PyThreadState *tstate;
+};
+struct switch_py_thread *thread_pool_head = NULL;
+static switch_mutex_t *THREAD_POOL_LOCK = NULL;
+
+static void eval_some_python(const char *funcname, char *args, switch_core_session_t *session, switch_stream_handle_t *stream, switch_event_t *params, char **str, struct switch_py_thread *pt)
 {
 	PyThreadState *tstate = NULL;
 	char *dupargs = NULL;
@@ -110,6 +120,11 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error acquiring tstate\n");
 		goto done;
 	}
+	
+	/* Save state in thread struct so we can terminate it later if needed */
+	if (pt)
+		pt->tstate = tstate;
+
 	// swap in thread state
 	PyEval_AcquireThread(tstate);
 	init_freeswitch();
@@ -178,7 +193,8 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 		if (str) {
 			*str = strdup((char *) PyString_AsString(result));
 		}
-	} else {
+	} else if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
+		// Print error, but ignore SystemExit 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error calling python script\n");
 		PyErr_Print();
 		PyErr_Clear();
@@ -224,7 +240,7 @@ static switch_xml_t python_fetch(const char *section,
 
 		switch_assert(mycmd);
 
-		eval_some_python("xml_fetch", mycmd, NULL, NULL, params, &str);
+		eval_some_python("xml_fetch", mycmd, NULL, NULL, params, &str, NULL);
 
 		if (str) {
 			if (switch_strlen_zero(str)) {
@@ -278,21 +294,36 @@ static switch_status_t do_config(void)
 
 SWITCH_STANDARD_APP(python_function)
 {
-	eval_some_python("handler", (char *) data, session, NULL, NULL, NULL);
+	eval_some_python("handler", (char *) data, session, NULL, NULL, NULL, NULL);
 
 }
-
-struct switch_py_thread {
-	char *args;
-	switch_memory_pool_t *pool;
-};
 
 static void *SWITCH_THREAD_FUNC py_thread_run(switch_thread_t *thread, void *obj)
 {
 	switch_memory_pool_t *pool;
 	struct switch_py_thread *pt = (struct switch_py_thread *) obj;
 
-	eval_some_python("runtime", pt->args, NULL, NULL, NULL, NULL);
+	/* Put thread in pool so we keep track of our threads */
+	switch_mutex_lock(THREAD_POOL_LOCK);
+	pt->next = thread_pool_head;
+	pt->prev = NULL;
+	if (pt->next)
+		pt->next->prev = pt;
+	thread_pool_head = pt;
+	switch_mutex_unlock(THREAD_POOL_LOCK);
+
+	/* Run the python script */
+	eval_some_python("runtime", pt->args, NULL, NULL, NULL, NULL, pt);
+
+	/* Thread is dead, remove from pool */
+	switch_mutex_lock(THREAD_POOL_LOCK);
+	if (pt->next)
+		pt->next->prev = pt->prev;
+	if (pt->prev)
+		pt->prev->next = pt->next;
+	if (thread_pool_head == pt)
+		thread_pool_head = pt->next;
+	switch_mutex_unlock(THREAD_POOL_LOCK);
 
 	pool = pt->pool;
 	switch_core_destroy_memory_pool(&pool);
@@ -303,7 +334,7 @@ static void *SWITCH_THREAD_FUNC py_thread_run(switch_thread_t *thread, void *obj
 SWITCH_STANDARD_API(api_python)
 {
 	
-	eval_some_python("fsapi", (char *) cmd, session, stream, NULL, NULL);
+	eval_some_python("fsapi", (char *) cmd, session, stream, NULL, NULL, NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -383,6 +414,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 		PyEval_ReleaseLock();
 	}
 
+	switch_mutex_init(&THREAD_POOL_LOCK, SWITCH_MUTEX_NESTED, pool);
+
 	do_config();
 
 	/* connect my internal structure to the blank pointer passed to me */
@@ -402,6 +435,53 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 {
 	PyInterpreterState *mainInterpreterState;
 	PyThreadState *myThreadState;
+	int thread_cnt = 0;
+	struct switch_py_thread *pt = NULL;
+	struct switch_py_thread *nextpt;
+	int i;
+
+	/* Kill all remaining threads */
+	pt = thread_pool_head;
+	PyEval_AcquireLock();
+	while (pt) {
+		thread_cnt ++;
+		nextpt = pt->next;
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+						  "Forcibly terminating script [%s]\n", pt->args);
+
+		/* Kill python script */
+		PyThreadState_Swap(pt->tstate);
+		PyThreadState_SetAsyncExc(pt->tstate->thread_id, PyExc_SystemExit);
+
+		pt = nextpt;
+	}
+	PyThreadState_Swap(mainThreadState);
+	PyEval_ReleaseLock();
+	switch_yield(1000000);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+					  "Had to kill %d threads\n", thread_cnt);
+
+	/* Give threads a few seconds to terminate. 
+	   Not using switch_thread_join() since if threads refuse to die
+	   then freeswitch will hang */
+	for (i=0; i < 10 && thread_pool_head; i++) {
+		switch_yield(1000000);
+	}
+	if (thread_pool_head) {
+		/* Not all threads died in time */
+		pt = thread_pool_head;
+		while (pt) {
+			nextpt = pt->next;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+						  "Script [%s] didn't exit in time\n", pt->args);
+			pt = nextpt;
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+						  "Forcing python shutdown. This might cause freeswitch to crash!\n");
+	}
+
 
 	PyEval_AcquireLock();
 	mainInterpreterState = mainThreadState->interp;
