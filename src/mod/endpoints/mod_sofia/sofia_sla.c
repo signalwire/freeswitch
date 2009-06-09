@@ -49,24 +49,6 @@ static int get_call_id_callback(void *pArg, int argc, char **argv, char **column
 	return 0;
 }
 
-char *strip_uri(const char *str)
-{
-	char *p;
-	char *r;
-
-	if ((p = strchr(str, '<'))) {
-		p++;
-		r = strdup(p);
-		if ((p = strchr(r, '>'))) {
-			*p = '\0';
-		}
-	} else {
-		r = strdup(str);
-	}
-
-	return r;
-}
-
 void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const *sip, long exptime, const char *full_contact)
 {
 	nua_handle_t *nh = NULL;
@@ -74,7 +56,7 @@ void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const
 	char my_contact[256] = "";
 	char *sql;
 	struct sla_helper sh = { { 0 } };
-	char *contact_str = strip_uri(full_contact);
+	char *contact_str = sofia_glue_strip_uri(full_contact);
 	sofia_transport_t transport = sofia_glue_url2transport(sip->sip_contact->m_url);
 	char network_ip[80];
 	int network_port = 0;
@@ -235,7 +217,7 @@ void sofia_sla_handle_sip_r_subscribe(int status,
 		char *full_contact = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_contact);
 		time_t expires = switch_epoch_time_now(NULL);
 		char *sql;
-		char *contact_str = strip_uri(full_contact);
+		char *contact_str = sofia_glue_strip_uri(full_contact);
 
 		if (sip && sip->sip_expires) {
 			expires += sip->sip_expires->ex_delta + 30;

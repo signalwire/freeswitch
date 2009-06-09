@@ -832,6 +832,7 @@ const char *sofia_glue_transport2str(const sofia_transport_t tp);
 char * sofia_glue_find_parameter(const char *str, const char *param);
 char *sofia_glue_create_via(switch_core_session_t *session, const char *ip, switch_port_t port, sofia_transport_t transport);
 char *sofia_glue_create_external_via(switch_core_session_t *session, sofia_profile_t *profile, sofia_transport_t transport);
+char *sofia_glue_strip_uri(const char *str);
 int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip);
 int sofia_glue_transport_has_tls(const sofia_transport_t tp);
 const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name);

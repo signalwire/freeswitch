@@ -844,6 +844,24 @@ char *sofia_glue_create_via(switch_core_session_t *session, const char *ip, swit
 	}
 }
 
+char *sofia_glue_strip_uri(const char *str)
+{
+	char *p;
+	char *r;
+
+	if ((p = strchr(str, '<'))) {
+		p++;
+		r = strdup(p);
+		if ((p = strchr(r, '>'))) {
+			*p = '\0';
+		}
+	} else {
+		r = strdup(str);
+	}
+
+	return r;
+}
+
 int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip)
 {
 	return (network_ip && 
