@@ -134,7 +134,9 @@
     <!--Uncomment if you want to force the outbound leg of a bridge to only offer the codec 
 	that the originator is using-->
     <!--<param name="disable-transcoding" value="true"/>-->
-    <!-- Disable Refer -->
+    <!-- Handle 302 Redirect in the dialplan -->
+    <!--<param name="manual-redirect" value="true"/> -->
+    <!-- Disable Register -->
     <!--<param name="disable-transfer" value="true"/> -->
     <!-- Disable Register -->
     <!--<param name="disable-register" value="true"/> -->

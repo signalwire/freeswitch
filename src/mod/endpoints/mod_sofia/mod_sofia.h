@@ -191,7 +191,7 @@ typedef enum {
 	PFLAG_AUTOFIX_TIMING,
 	PFLAG_MESSAGE_QUERY_ON_REGISTER,
 	PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE,
-	PFLAG_PROXY_FOLLOW_REDIRECT,
+	PFLAG_MANUAL_REDIRECT,
 	PFLAG_AUTO_NAT,
 	/* No new flags below this line */
 	PFLAG_MAX
@@ -621,6 +621,7 @@ struct private_object {
 	switch_codec_implementation_t read_impl;
 	switch_codec_implementation_t write_impl;
 	char *user_via;
+	char *redirected;
 };
 
 struct callback_t {

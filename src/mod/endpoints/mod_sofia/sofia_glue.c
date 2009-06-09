@@ -1705,6 +1705,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	nua_invite(tech_pvt->nh,
 			   NUTAG_AUTOANSWER(0),
 			   NUTAG_SESSION_TIMER(session_timeout),
+			   TAG_IF(tech_pvt->redirected, NUTAG_URL(tech_pvt->redirected)),
 			   TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 			   TAG_IF(!switch_strlen_zero(tech_pvt->rpid), SIPTAG_REMOTE_PARTY_ID_STR(tech_pvt->rpid)),
 			   TAG_IF(!switch_strlen_zero(tech_pvt->preferred_id), SIPTAG_P_PREFERRED_IDENTITY_STR(tech_pvt->preferred_id)),
@@ -1724,6 +1725,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
 
 	switch_safe_free(stream.data);
+	tech_pvt->redirected = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
 }

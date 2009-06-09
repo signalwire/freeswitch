@@ -1591,11 +1591,11 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 						}
-					} else if (!strcasecmp(var, "proxy-follow-redirect")) {
+					} else if (!strcasecmp(var, "manual-redirect")) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_PROXY_FOLLOW_REDIRECT);
+							sofia_set_pflag(profile, PFLAG_MANUAL_REDIRECT);
 						} else {
-							sofia_clear_pflag(profile, PFLAG_PROXY_FOLLOW_REDIRECT);
+							sofia_clear_pflag(profile, PFLAG_MANUAL_REDIRECT);
 						}
 					} else if (!strcasecmp(var, "outbound-use-uuid-as-callid")) {
 						if (switch_true(val)) {
@@ -2109,11 +2109,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 						}
-					} else if (!strcasecmp(var, "proxy-follow-redirect")) {
+					} else if (!strcasecmp(var, "manual-redirect")) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_PROXY_FOLLOW_REDIRECT);
+							sofia_set_pflag(profile, PFLAG_MANUAL_REDIRECT);
 						} else {
-							sofia_clear_pflag(profile, PFLAG_PROXY_FOLLOW_REDIRECT);
+							sofia_clear_pflag(profile, PFLAG_MANUAL_REDIRECT);
 						}
 					} else if (!strcasecmp(var, "inbound-proxy-media") && switch_true(val)) {
 						sofia_set_flag(profile, TFLAG_PROXY_MEDIA);
@@ -2968,42 +2968,134 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			}
 		}
 
-		if (channel && sip && status == 100 && switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (channel && sip && (status == 302 || status == 305) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
 			sip_contact_t * p_contact = sip->sip_contact;
 			int i = 0;
 			char var_name[80];	
+			const char *diversion_header;
+			char *full_contact = NULL;
+			char *invite_contact;
+			const char *br;
 			
-			if (sofia_test_pflag(profile, PFLAG_PROXY_FOLLOW_REDIRECT) && tech_pvt->route_uri && p_contact && p_contact->m_url) {
-				if (p_contact->m_url->url_port) {
-					tech_pvt->route_uri = switch_core_session_sprintf(tech_pvt->session, "sip:%s@%s:%s", 
-																	  p_contact->m_url->url_user, p_contact->m_url->url_host, p_contact->m_url->url_port);
-				} else {
-					tech_pvt->route_uri = switch_core_session_sprintf(tech_pvt->session, "sip:%s@%s", 
-																	  p_contact->m_url->url_user, p_contact->m_url->url_host);
+			if ((br = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+				switch_xml_t root = NULL, domain = NULL;
+				switch_core_session_t *a_session;
+				switch_channel_t *a_channel;
+
+				const char *sip_redirect_profile, *sip_redirect_context, *sip_redirect_dialplan, *sip_redirect_fork;
+
+				if ((a_session = switch_core_session_locate(br)) && (a_channel = switch_core_session_get_channel(a_session))) { 
+					switch_stream_handle_t stream = { 0 };
+					char separator[2] = "|";
+					char *redirect_dialstring;
+					su_home_t *home = su_home_new(sizeof(*home));
+					switch_assert(home != NULL);
+
+					SWITCH_STANDARD_STREAM(stream);
+
+					if (!(sip_redirect_profile = switch_channel_get_variable(channel, "sip_redirect_profile"))) {
+						sip_redirect_profile = profile->name;
+					}
+					if (!(sip_redirect_context = switch_channel_get_variable(channel, "sip_redirect_context"))) {
+						sip_redirect_context = "redirected";
+					}
+					if (!(sip_redirect_dialplan = switch_channel_get_variable(channel, "sip_redirect_dialplan"))) {
+						sip_redirect_dialplan = "XML";
+					}
+
+					sip_redirect_fork = switch_channel_get_variable(channel, "sip_redirect_fork");
+					
+					if (switch_true(sip_redirect_fork)) {
+						*separator = ',';
+					}
+
+					for (p_contact = sip->sip_contact; p_contact; p_contact = p_contact->m_next) {
+						if (p_contact->m_url) {
+							full_contact = sip_header_as_string(home, (void *) sip->sip_contact);
+							invite_contact = sofia_glue_strip_uri(full_contact);
+							
+							switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_%d", i);
+							switch_channel_set_variable(a_channel, var_name, full_contact);
+							
+							if (i == 0) {
+								switch_channel_set_variable(channel, "sip_redirected_to", full_contact);
+								switch_channel_set_variable(a_channel, "sip_redirected_to", full_contact);
+							}
+							
+							if (p_contact->m_url->url_user) {
+								switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_user_%d", i);
+								switch_channel_set_variable(channel, var_name, p_contact->m_url->url_user);
+								switch_channel_set_variable(a_channel, var_name, p_contact->m_url->url_user);
+							}
+							if (p_contact->m_url->url_host) {
+								switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_host_%d", i);
+								switch_channel_set_variable(channel, var_name, p_contact->m_url->url_host);
+								switch_channel_set_variable(a_channel, var_name, p_contact->m_url->url_host);
+							}
+							if (p_contact->m_url->url_params) {
+								switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_params_%d", i);
+								switch_channel_set_variable(channel, var_name, p_contact->m_url->url_params);
+								switch_channel_set_variable(a_channel, var_name, p_contact->m_url->url_params);
+							}
+							
+							switch_snprintf(var_name, sizeof(var_name), "sip_redirect_dialstring_%d", i);
+							switch_channel_set_variable_printf(channel, var_name, "sofia/%s/%s", sip_redirect_profile, invite_contact);
+							switch_channel_set_variable_printf(a_channel, var_name, "sofia/%s/%s", sip_redirect_profile, invite_contact);
+							stream.write_function(&stream, "%ssofia/%s/%s", i ? separator : "", sip_redirect_profile, invite_contact);
+							free(invite_contact);
+							i++;
+						}
+					}
+					
+					redirect_dialstring = stream.data;
+					
+					switch_channel_set_variable(channel, "sip_redirect_dialstring", redirect_dialstring);
+					switch_channel_set_variable(a_channel, "sip_redirect_dialstring", redirect_dialstring);
+					
+					p_contact = sip->sip_contact;
+					full_contact = sip_header_as_string(home, (void *) sip->sip_contact);
+					
+					if ((diversion_header = sofia_glue_get_unknown_header(sip, "diversion"))) {
+						switch_channel_set_variable(channel, "sip_redirected_by", diversion_header);
+						switch_channel_set_variable(a_channel, "sip_redirected_by", diversion_header);
+					}
+					
+					if (sofia_test_pflag(profile, PFLAG_MANUAL_REDIRECT)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirect: Transfering to %s %s %s\n", 
+										  p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);
+						switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);					
+					} else if ((!strcmp(profile->sipip, p_contact->m_url->url_host))
+							   || (!strcmp(profile->extsipip, p_contact->m_url->url_host))
+							   || (switch_xml_locate_domain(p_contact->m_url->url_host, NULL, &root, &domain) == SWITCH_STATUS_SUCCESS)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirect: Transfering to %s\n", p_contact->m_url->url_user);
+						switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, NULL, NULL);
+					} else {
+						invite_contact = sofia_glue_strip_uri(full_contact);
+						tech_pvt->redirected = switch_core_session_strdup(session, invite_contact);
+						free(invite_contact);
+					}
+					
+					if (home) {
+						su_home_unref(home);
+						home = NULL;
+					}
+
+					free(stream.data);
+					switch_core_session_rwunlock(a_session);
 				}
+			} else {
+				su_home_t *home = su_home_new(sizeof(*home));
+				switch_assert(home != NULL);
+				full_contact = sip_header_as_string(home, (void *) sip->sip_contact);
+				invite_contact = sofia_glue_strip_uri(full_contact);
 
-				nua_set_hparams(tech_pvt->nh, NUTAG_PROXY(tech_pvt->route_uri), TAG_END());
-			}
+				tech_pvt->redirected = switch_core_session_strdup(session, invite_contact);
 
-			while (p_contact) {
-				if (p_contact->m_url) {
-					if (p_contact->m_url->url_user) {
-						switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_user_%d", i);
-						switch_channel_set_variable_partner(channel, var_name, p_contact->m_url->url_user);
-						switch_channel_set_variable(channel, var_name, p_contact->m_url->url_user);
-					}
-					if (p_contact->m_url->url_host) {
-						switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_host_%d", i);
-						switch_channel_set_variable_partner(channel, var_name, p_contact->m_url->url_host);
-						switch_channel_set_variable(channel, var_name, p_contact->m_url->url_host);
-					}
-					if (p_contact->m_url->url_params) {
-						switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_params_%d", i);
-						switch_channel_set_variable_partner(channel, var_name, p_contact->m_url->url_params);
-						switch_channel_set_variable(channel, var_name, p_contact->m_url->url_params);
-					}
-					p_contact = p_contact->m_next;
-					i++;
+				free(invite_contact);
+
+				if (home) {
+					su_home_unref(home);
+					home = NULL;
 				}
 			}
 		}
@@ -3084,6 +3176,22 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			SIPTAG_REPLACES_STR_REF(replaces_str), SOATAG_LOCAL_SDP_STR_REF(l_sdp), SOATAG_REMOTE_SDP_STR_REF(r_sdp), TAG_END());
 	
 	if (ss_state == nua_callstate_terminated) {
+
+		if ((status == 302 || status == 305) && session) {
+			channel = switch_core_session_get_channel(session);
+			tech_pvt = switch_core_session_get_private(session);
+			
+			if (!tech_pvt || !tech_pvt->nh) {
+				goto done;
+			}
+			
+
+			if (tech_pvt->redirected) {
+				sofia_glue_do_invite(session);
+				goto done;
+			}
+		}
+
 		if (sofia_private) {
 			sofia_private->destroy_me = 1;
 		}
@@ -3493,7 +3601,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			sdp_session_t *sdp;
 			uint8_t match = 0;
 			int is_ok = 1;
-			
+
 			sofia_clear_flag_locked(tech_pvt, TFLAG_NOSDP_REINVITE);
 
 			if (tech_pvt->num_codecs) {
