@@ -1003,9 +1003,9 @@ void launch_sofia_profile_thread(sofia_profile_t *profile)
 static void logger(void *logarg, char const *fmt, va_list ap)
 {
 	if (fmt && ap) {
-		switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, fmt, ap);
+		switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, mod_sofia_globals.tracelevel, fmt, ap);
 	} else if (fmt && !ap) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "%s", fmt);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, mod_sofia_globals.tracelevel, "%s", fmt);
 	}
 }
 
@@ -1521,6 +1521,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					char *val = (char *) switch_xml_attr_soft(param, "value");
 					if (!strcasecmp(var, "debug")) {
 						profile->debug = atoi(val);
+					} else if (!strcasecmp(var, "tracelevel")) {
+						mod_sofia_globals.tracelevel = switch_log_str2level(val);
 					} else if (!strcasecmp(var, "sip-trace")) {
 						if (switch_true(val)) {
 							sofia_set_flag(profile, TFLAG_TPORT_LOG);

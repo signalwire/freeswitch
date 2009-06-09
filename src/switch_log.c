@@ -120,6 +120,19 @@ SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 	int x = 0;
 	switch_log_level_t level = SWITCH_LOG_INVALID;
 
+	if (switch_is_number(str)) {
+		x = atoi(str);
+
+		if (x > SWITCH_LOG_INVALID) {
+			return SWITCH_LOG_INVALID -1;
+		} else if (x < 0) {
+			return 0;
+		} else {
+			return x;
+		}
+	}
+
+
 	for (x = 0;; x++) {
 		if (!LEVELS[x]) {
 			break;

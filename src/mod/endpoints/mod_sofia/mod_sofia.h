@@ -274,6 +274,7 @@ struct mod_sofia_globals {
 	int debug_presence;
 	int auto_restart;
 	int auto_nat;
+	int tracelevel;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 

@@ -690,6 +690,10 @@ SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str)
 	const char *p;
 	switch_bool_t r = SWITCH_TRUE;
 
+	if (*str == '-' || *str == '+') {
+		str++;
+	}
+
 	for (p = str; p && *p; p++) {
 		if (!(*p == '.' || (*p > 47 && *p < 58))) {
 			r = SWITCH_FALSE;

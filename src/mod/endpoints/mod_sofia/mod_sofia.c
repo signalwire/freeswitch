@@ -2441,6 +2441,12 @@ SWITCH_STANDARD_API(sofia_function)
 		func = cmd_status;
 	} else if (!strcasecmp(argv[0], "xmlstatus")) {
 		func = cmd_xml_status;
+	} else if (!strcasecmp(argv[0], "tracelevel")) {
+		if (argv[1]) {
+			mod_sofia_globals.tracelevel = switch_log_str2level(argv[1]);
+		}
+		stream->write_function(stream, "+OK tracelevel is %s", switch_log_level2str(mod_sofia_globals.tracelevel));
+        goto done;
 	} else if (!strcasecmp(argv[0], "loglevel")) {
 		if (argc > 2 && argv[2] && switch_is_number(argv[2])) {
 			int level = atoi(argv[2]);
