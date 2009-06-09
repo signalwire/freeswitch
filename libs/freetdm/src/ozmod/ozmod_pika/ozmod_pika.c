@@ -35,11 +35,6 @@
 #include "openzap.h"
 #include "zap_pika.h"
 
-#if defined(__WINDOWS__)
-#define EX_DECLARE_DATA				__declspec(dllexport)
-#else
-EX_DECLARE_DATA
-#endif
 
 #define MAX_NUMBER_OF_TRUNKS 64
 #define PIKA_BLOCK_SIZE 160
