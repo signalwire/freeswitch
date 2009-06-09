@@ -51,8 +51,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="./"
-				PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;DEBUG;PCRE_DEFINITION;PCRE_STATIC"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)&quot;;&quot;$(ProjectDir)..\..\pcre&quot;"
+				PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;DEBUG;PCRE_DEFINITION;PCRE_STATIC;HAVE_CONFIG_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -137,8 +137,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="./"
-				PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;PCRE_DEFINITION;PCRE_STATIC"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)&quot;;&quot;$(ProjectDir)..\..\pcre&quot;"
+				PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;PCRE_DEFINITION;PCRE_STATIC;HAVE_CONFIG_H"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -221,8 +221,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="./"
-				PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;DEBUG;PCRE_DEFINITION;DLL_EXPORT"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)&quot;;&quot;$(ProjectDir)..\..\pcre&quot;"
+				PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;DEBUG;PCRE_DEFINITION;DLL_EXPORT;HAVE_CONFIG_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -323,8 +323,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="./"
-				PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;PCRE_DEFINITION;DLL_EXPORT"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)&quot;;&quot;$(ProjectDir)..\..\pcre&quot;"
+				PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;PCRE_DEFINITION;DLL_EXPORT;HAVE_CONFIG_H"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -404,522 +404,54 @@
 			<File
 				RelativePath="..\..\pcre\pcre_config.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_dfa_exec.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_exec.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_fullinfo.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_get.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_globals.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_info.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_maketables.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_ord2utf8.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_refcount.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_study.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_tables.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_try_flipped.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_ucp_searchfuncs.c"
@@ -928,162 +460,18 @@
 			<File
 				RelativePath="..\..\pcre\pcre_valid_utf8.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_version.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcre_xclass.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\pcre\pcreposix.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
