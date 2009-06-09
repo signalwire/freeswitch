@@ -1,63 +1,7 @@
 ## Process this file with automake to produce Makefile.in.
 
-dist_doc_DATA = \
-  doc/pcre.txt \
-  doc/pcre-config.txt \
-  doc/pcregrep.txt \
-  doc/pcretest.txt \
-  AUTHORS \
-  COPYING \
-  ChangeLog \
-  LICENCE \
-  NEWS \
-  README
-
-dist_html_DATA = \
-  doc/html/index.html \
-  doc/html/pcre.html \
-  doc/html/pcre-config.html \
-  doc/html/pcre_compile.html \
-  doc/html/pcre_compile2.html \
-  doc/html/pcre_config.html \
-  doc/html/pcre_copy_named_substring.html \
-  doc/html/pcre_copy_substring.html \
-  doc/html/pcre_dfa_exec.html \
-  doc/html/pcre_exec.html \
-  doc/html/pcre_free_substring.html \
-  doc/html/pcre_free_substring_list.html \
-  doc/html/pcre_fullinfo.html \
-  doc/html/pcre_get_named_substring.html \
-  doc/html/pcre_get_stringnumber.html \
-  doc/html/pcre_get_stringtable_entries.html \
-  doc/html/pcre_get_substring.html \
-  doc/html/pcre_get_substring_list.html \
-  doc/html/pcre_info.html \
-  doc/html/pcre_maketables.html \
-  doc/html/pcre_refcount.html \
-  doc/html/pcre_study.html \
-  doc/html/pcre_version.html \
-  doc/html/pcreapi.html \
-  doc/html/pcrebuild.html \
-  doc/html/pcrecallout.html \
-  doc/html/pcrecompat.html \
-  doc/html/pcregrep.html \
-  doc/html/pcrematching.html \
-  doc/html/pcrepartial.html \
-  doc/html/pcrepattern.html \
-  doc/html/pcreperform.html \
-  doc/html/pcreposix.html \
-  doc/html/pcreprecompile.html \
-  doc/html/pcresample.html \
-  doc/html/pcrestack.html \
-  doc/html/pcresyntax.html \
-  doc/html/pcretest.html
-
 pcrecpp_html = doc/html/pcrecpp.html
 dist_noinst_DATA = $(pcrecpp_html)
-
-if WITH_PCRE_CPP
-html_DATA = $(pcrecpp_html)
-endif
 
 # The Libtool libraries to install.  We'll add to this later.
 lib_LTLIBRARIES =
