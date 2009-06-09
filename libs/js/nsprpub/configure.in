@@ -1130,7 +1130,7 @@ tools are selected during the Xcode/Developer Tools installation.])
     if test "$MOZ_OBJFORMAT" = "elf"; then
         DLL_SUFFIX=so
     else
-        DLL_SUFFIX=so.1.0
+        DLL_SUFFIX=so.1
     fi
     MKSHLIB='$(CC) $(DSO_LDOPTS) -o $@'
     DSO_CFLAGS=-fPIC
