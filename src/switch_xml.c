@@ -1538,12 +1538,11 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 	switch_xml_t xml = NULL;
 	switch_xml_binding_t *binding;
 	uint8_t loops = 0;
+	switch_xml_section_t sections = BINDINGS ? switch_xml_parse_section_string(section) : 0;
 
 	switch_thread_rwlock_rdlock(B_RWLOCK);
 
 	for (binding = BINDINGS; binding; binding = binding->next) {
-		switch_xml_section_t sections = switch_xml_parse_section_string(section);
-
 		if (binding->sections && !(sections & binding->sections)) {
 			continue;
 		}
