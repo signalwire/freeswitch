@@ -110,7 +110,7 @@ static void remove_binding(listener_t *listener, erlang_pid *pid) {
 
 	switch_mutex_lock(globals.listener_mutex);
 
-	switch_xml_set_binding_sections(bindings.search_binding, (1 << sizeof(switch_xml_section_enum_t)));
+	switch_xml_set_binding_sections(bindings.search_binding, SWITCH_XML_SECTION_MAX);
 
 	for (ptr = bindings.head; ptr; lst = ptr, ptr = ptr->next) {
 		if ((listener && ptr->listener == listener) ||
@@ -1400,7 +1400,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_erlang_event_load)
 
 	memset(&bindings, 0, sizeof(bindings));
 
-	if (switch_xml_bind_search_function_ret(erlang_fetch, (1 << sizeof(switch_xml_section_enum_t)), NULL, &bindings.search_binding) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_bind_search_function_ret(erlang_fetch, SWITCH_XML_SECTION_MAX, NULL, &bindings.search_binding) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		close_socket(&listen_list.sockfd);
 		return SWITCH_STATUS_GENERR;
