@@ -161,7 +161,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame);
 !strcasecmp(expr, "disabled") ||\
 !strcasecmp(expr, "inactive") ||\
 !strcasecmp(expr, "disallow") ||\
-!(switch_is_number(expr) && atoi(expr)))) ? SWITCH_TRUE : SWITCH_FALSE)
+(switch_is_number(expr) && !atoi(expr)))) ? SWITCH_TRUE : SWITCH_FALSE)
 
 
 /*!
