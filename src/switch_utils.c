@@ -1080,9 +1080,6 @@ SWITCH_DECLARE(const char *) switch_priority_name(switch_priority_t priority)
 
 static char RFC2833_CHARS[] = "0123456789*#ABCDF";
 
-#ifndef _MSC_VER
-#define switch_inet_ntop inet_ntop
-#else
 /* Copyright (c) 1996 by Internet Software Consortium.
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -1125,7 +1122,7 @@ static const char *switch_inet_ntop6(const unsigned char *src, char *dst, size_t
  * author:
  *	Paul Vixie, 1996.
  */
-const char *switch_inet_ntop(int af, void const *src, char *dst, size_t size)
+SWITCH_DECLARE(const char *) switch_inet_ntop(int af, void const *src, char *dst, size_t size)
 {
 
 	switch (af) {
