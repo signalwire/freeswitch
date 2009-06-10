@@ -406,7 +406,10 @@ typedef enum {
 	SWITCH_XML_SECTION_CONFIG = (1 << 0),
 	SWITCH_XML_SECTION_DIRECTORY = (1 << 1),
 	SWITCH_XML_SECTION_DIALPLAN = (1 << 2),
-	SWITCH_XML_SECTION_PHRASES = (1 << 3)
+	SWITCH_XML_SECTION_PHRASES = (1 << 3),
+	
+	/* Nothing after this line */
+	SWITCH_XML_SECTION_MAX = (1 << 4)
 } switch_xml_section_enum_t;
 typedef uint32_t switch_xml_section_t;
 
