@@ -45,6 +45,7 @@ static switch_event_node_t *NODE = NULL;
 static struct {
 	char *model8k;
 	char *model16k;
+	char *dictionary;
 	uint32_t thresh;
 	uint32_t silence_hits;
 	uint32_t listen_hits;
@@ -134,7 +135,7 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 		model = switch_mprintf("%s%smodel%s%s", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, SWITCH_PATH_SEPARATOR, globals.model16k);
 	}
 
-	dic = switch_mprintf("%s%sdefault.dic", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR);
+	dic = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, globals.dictionary);
 
 	if (switch_file_exists(dic, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open dictionary %s.\n", dic); 
@@ -443,6 +444,8 @@ static switch_status_t load_config(void)
 				globals.model8k = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "wideband-model")) {
 				globals.model16k = switch_core_strdup(globals.pool, val);
+			} else if (!strcasecmp(var, "dictionary")) {
+				globals.dictionary = switch_core_strdup(globals.pool, val);
 			}
 		}
 	}
@@ -453,6 +456,10 @@ static switch_status_t load_config(void)
 
 	if (!globals.model16k) {
 		globals.model16k = switch_core_strdup(globals.pool, "wsj1");
+	}
+
+	if (!globals.dictionary) {
+		globals.dictionary = switch_core_strdup(globals.pool, "default.dic");
 	}
 
  done:
