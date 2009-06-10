@@ -2270,11 +2270,11 @@ int sres_parse_config(sres_config_t *c, FILE *f)
       /* Skip whitespace at the beginning ...*/
       b = buf + strspn(buf, " \t");
 
-      /* ... and at the end of line */
-      for (len = strlen(b); len > 0 && strchr(" \t\r\n", b[len - 1]); len--)
+      /* ... and comments + whitespace at the end */
+      for (len = strcspn(b, "#;"); len > 0 && strchr(" \t\r\n", b[len - 1]); len--)
 	;
 
-      if (len == 0 || b[0] == '#') 	/* Empty line or comment */
+      if (len == 0) 	/* Empty line or comment */
 	continue;
 
       b[len] = '\0';
