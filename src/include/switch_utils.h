@@ -561,7 +561,7 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_netwo
 
 #define switch_test_subnet(_ip, _net, _mask) (_mask ? ((_net & _mask) == (_ip & _mask)) : _net ? _net == _ip : 1)
 
-SWITCH_DECLARE(int) switch_inet_pton(int af, const char *src, void *dst)
+SWITCH_DECLARE(int) switch_inet_pton(int af, const char *src, void *dst);
 
 /* malloc or DIE macros */
 #ifdef NDEBUG
