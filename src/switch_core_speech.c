@@ -137,8 +137,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle
 	if (!switch_strlen_zero(param_string)) {
 		char *param[256] = { 0 };
 		int i;
-		switch_separate_string(param_string, ',', param, (sizeof(param) / sizeof(param[0])));
-		for (i = 0; param[i]; ++i) {
+		int argc = switch_separate_string(param_string, ',', param, (sizeof(param) / sizeof(param[0])));
+		for (i = 0; i < argc && param[i]; ++i) {
 			char *param_pair[2] = { 0 };
 			if(switch_separate_string(param[i], '=', param_pair, (sizeof(param_pair) / sizeof(param_pair[0]))) == 2) {
 				switch_core_speech_text_param_tts(sh, param_pair[0], param_pair[1]);
