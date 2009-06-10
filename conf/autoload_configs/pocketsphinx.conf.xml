@@ -6,5 +6,6 @@
     <param name="auto-reload" value="true"/>
     <!--<param name="narrowband-model" value="communicator"/>-->
     <!--<param name="wideband-model" value="wsj1"/>-->
+    <!--<param name="dictionary" value="default.dic"/>-->
   </settings>
 </configuration>
