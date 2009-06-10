@@ -1080,6 +1080,7 @@ SWITCH_DECLARE(const char *) switch_priority_name(switch_priority_t priority)
 
 static char RFC2833_CHARS[] = "0123456789*#ABCDF";
 
+#ifdef _MSC_VER
 /* Copyright (c) 1996 by Internet Software Consortium.
  *
  * Permission to use, copy, modify, and distribute this software for any

@@ -580,8 +580,8 @@ int switch_inet_pton(int af, const char *src, void *dst);
 #ifndef _MSC_VER
 #define switch_inet_ntop inet_ntop
 #else
-
 SWITCH_DECLARE(const char *) switch_inet_ntop(int af, void const *src, char *dst, size_t size);
+#endif
 
 SWITCH_END_EXTERN_C
 #endif
