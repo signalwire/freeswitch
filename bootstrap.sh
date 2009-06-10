@@ -289,7 +289,8 @@ do
 
       LTTEST=`grep "AC_PROG_LIBTOOL" ${CFFILE}`
       LTTEST2=`grep "AM_PROG_LIBTOOL" ${CFFILE}`
-      AMTEST=`grep "AM_INIT_AUTOMAKE\|AC_PROG_INSTALL" ${CFFILE}`
+      AMTEST=`grep "AM_INIT_AUTOMAKE" ${CFFILE}`
+      AMTEST2=`grep "AC_PROG_INSTALL" ${CFFILE}`
       AHTEST=`grep "AC_CONFIG_HEADERS" ${CFFILE}`
 
       echo "Creating aclocal.m4"
@@ -315,7 +316,7 @@ do
       fi
 
 #run if AM_INIT_AUTOMAKE / AC_PROG_INSTALL is in configure.in/configure.ac
-      if [ ! -z "${AMTEST}" ]; then
+      if [ ! -z "${AMTEST}" -o "${AMTEST2}" ] ; then
           echo "Creating Makefile.in"
           ${AUTOMAKE:-automake} --no-force --add-missing --copy ;
       fi
