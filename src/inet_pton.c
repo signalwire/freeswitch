@@ -66,7 +66,7 @@ static int      inet_pton6(const char *src, unsigned char *dst);
  * author:
  *      Paul Vixie, 1996.
  */
-int
+SWITCH_DECLARE(int)
 switch_inet_pton(int af, const char *src, void *dst)
 {
   switch (af) {

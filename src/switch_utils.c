@@ -57,7 +57,7 @@ struct switch_network_list {
 };
 
 #ifndef WIN32
-int switch_inet_pton(int af, const char *src, void *dst)
+SWITCH_DECLARE(int) switch_inet_pton(int af, const char *src, void *dst)
 {
 	return inet_pton(af, src, dst);
 }
