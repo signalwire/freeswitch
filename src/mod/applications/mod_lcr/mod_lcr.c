@@ -125,7 +125,6 @@ struct profile_obj {
 	char *name;
 	uint16_t id;
 	char *order_by;
-	char *pre_order;
 	char *custom_sql;
 	switch_bool_t custom_sql_has_percent;
 	switch_bool_t custom_sql_has_vars;
@@ -788,7 +787,6 @@ static switch_status_t lcr_load_config()
 			char *name = (char *) switch_xml_attr_soft(x_profile, "name");
 			char *comma = ", ";
 			switch_stream_handle_t order_by = { 0 };
-			switch_stream_handle_t pre_order = { 0 };
 			switch_stream_handle_t *thisorder = NULL;
 			char *reorder_by_rate = NULL;
 			char *quote_in_list = NULL;
@@ -799,7 +797,6 @@ static switch_status_t lcr_load_config()
 			char *argv[4] = { 0 };
 			
 			SWITCH_STANDARD_STREAM(order_by);
-			SWITCH_STANDARD_STREAM(pre_order);
 
 			for (param = switch_xml_child(x_profile, "param"); param; param = param->next) {
 				char *var, *val;
@@ -807,13 +804,8 @@ static switch_status_t lcr_load_config()
 				var = (char *) switch_xml_attr_soft(param, "name");
 				val = (char *) switch_xml_attr_soft(param, "value");
 				
-				if ((!strcasecmp(var, "order_by") || !strcasecmp(var, "pre_order"))  && !switch_strlen_zero(val)) {
-					if (!strcasecmp(var, "order_by")) {
-						thisorder = &order_by;
-					} else if (!strcasecmp(var, "pre_order")) {
-						thisorder = &pre_order;
-						comma = ""; /* don't want leading comma */
-					}
+				if (!strcasecmp(var, "order_by")  && !switch_strlen_zero(val)) {
+					thisorder = &order_by;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "param val is %s\n", val);
 					if ((argc = switch_separate_string(val, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 						for (x=0; x<argc; x++) {
@@ -865,12 +857,6 @@ static switch_status_t lcr_load_config()
 					/* default to rate */
 					profile->order_by = ", rate";
 				}
-				if (!switch_strlen_zero((char *)pre_order.data)) {
-					profile->pre_order = switch_core_strdup(globals.pool, (char *)pre_order.data);
-				} else {
-					/* default to rate */
-					profile->pre_order = "";
-				}
 
 				if (!switch_strlen_zero(id_s)) {
 					profile->id = (uint16_t)atoi(id_s);
@@ -901,9 +887,7 @@ static switch_status_t lcr_load_config()
 					if (profile->id > 0) {
 						sql_stream.write_function(&sql_stream, "AND lcr_profile=%d ", profile->id);
 					}
-					sql_stream.write_function(&sql_stream, "ORDER BY %s%s digits DESC%s", 
-															profile->pre_order,
-															switch_strlen_zero(profile->pre_order)? "" : ",",
+					sql_stream.write_function(&sql_stream, "ORDER BY digits DESC%s", 
 															profile->order_by);
 					if (db_random) {
 						sql_stream.write_function(&sql_stream, ", %s", db_random);
@@ -948,7 +932,6 @@ static switch_status_t lcr_load_config()
 				
 			}
 			switch_safe_free(order_by.data);
-			switch_safe_free(pre_order.data);
 			switch_safe_free(sql_stream.data);
 		}
 	} else {
@@ -961,7 +944,6 @@ static switch_status_t lcr_load_config()
 		memset(profile, 0, sizeof(profile_t));
 		profile->name = "global_default";
 		profile->order_by = ", rate";
-		profile->pre_order = "";
 		globals.default_profile = profile;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting system defined default profile.");
 	}
@@ -1309,9 +1291,6 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 				if (switch_strlen_zero(profile->custom_sql)) {
 					stream->write_function(stream, " ID:\t\t%d\n", profile->id);
 					stream->write_function(stream, " order by:\t%s\n", profile->order_by);
-					if (!switch_strlen_zero(profile->pre_order)) {
-						stream->write_function(stream, " pre_order:\t%s\n", profile->pre_order);
-					}
 				} else {
 					stream->write_function(stream, " custom sql:\t%s\n", profile->custom_sql);
 					stream->write_function(stream, " has %%:\t\t%s\n", profile->custom_sql_has_percent ? "true" : "false");
