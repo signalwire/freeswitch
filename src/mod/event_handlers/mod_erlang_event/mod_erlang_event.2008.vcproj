@@ -119,7 +119,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="&quot;C:\cygwin\home\andrew\otp_src_R13B01\lib\erl_interface\obj.debug\win32/ei.lib&quot;"
+				AdditionalOptions="&quot;C:\cygwin\home\andrew\otp_src_R13B01\lib\erl_interface\obj.debug\win32/ei.lib&quot; /NODEFAULTLIB:libcmt"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>

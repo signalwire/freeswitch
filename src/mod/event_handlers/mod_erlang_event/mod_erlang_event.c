@@ -1586,7 +1586,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 
 	/* cleanup epmd registration */
 	ei_unpublish(&ec);
-	close(epmdfd);
+	close_socket(&epmdfd);
 
 init_failed:
 	close_socket(&listen_list.sockfd);
