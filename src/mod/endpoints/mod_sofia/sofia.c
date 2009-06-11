@@ -4758,7 +4758,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		url_set_chanvars(session, sip->sip_to->a_url, sip_to);
 		if (switch_channel_get_variable(channel, "sip_to_uri")) {
 			const char *ipv6;
-
+			const char *url = NULL;
+			
 			host = switch_channel_get_variable(channel, "sip_to_host");
 			user = switch_channel_get_variable(channel, "sip_to_user");
 
@@ -4783,37 +4784,33 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					port,
 					sofia_glue_transport2str(transport));
 
-			if (profile->ndlb & PFLAG_NDLB_TO_IN_200_CONTACT) {
-				if (strchr(tech_pvt->to_uri, '>')) {
-					tech_pvt->reply_contact = tech_pvt->to_uri;
-				} else {
-					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s>", tech_pvt->to_uri);
-				}
-			} else {
-				if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
-					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<sip:%s@%s>", user, host);
-				} else {
-					const char *url = NULL;
-					
-					if (sofia_glue_check_nat(profile, tech_pvt->remote_ip)) {
-						url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_public_url : profile->public_url;
-					} else { 
-						url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url;
-					}			
-
-					if (url) {
-						if (strchr(url, '>')) {
-							tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url,
-																				  sofia_glue_transport2str(transport));
-						} else {
-							tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", url,
-																				  sofia_glue_transport2str(transport));
-						}
-					} else {
-						switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					}
+			if (sofia_glue_check_nat(profile, tech_pvt->remote_ip)) {
+				url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_public_url : profile->public_url;
+			} else { 
+				url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url;
+			}			
+			
+			if ((profile->ndlb & PFLAG_NDLB_TO_IN_200_CONTACT) || sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
+				char *at;
+				char *tmp = sofia_overcome_sip_uri_weakness(session, url, transport, SWITCH_TRUE, NULL);
+				if ((at = strchr(tmp, '@'))) {
+					url = switch_core_session_sprintf(session, "sip:%s%s", user, at);
 				}
 			}
+
+
+			if (url) {
+				if (strchr(url, '>')) {
+					tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url,
+																		  sofia_glue_transport2str(transport));
+				} else {
+					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", url,
+																		  sofia_glue_transport2str(transport));
+				}
+			} else {
+				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			}
+			
 		} else {
 			const char *url = NULL;
 			if (sofia_glue_check_nat(profile, tech_pvt->remote_ip)) {
