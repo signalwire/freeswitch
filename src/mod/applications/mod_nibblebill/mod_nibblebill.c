@@ -420,6 +420,23 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 	if (profile->times->answered < 1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Not billing %s - call is not in answered state\n", billaccount);
+
+		float balance;
+
+		/* See if this person has enough money left to continue the call */
+		balance = get_balance(billaccount);
+switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Comparing %f to hangup balance of %f\n", balance, globals.nobal_amt);
+		if (balance <= globals.nobal_amt) {
+			/* Not enough money - reroute call to nobal location */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Balance of %f fell below allowed amount of %f! (Account %s)\n", balance, globals.nobal_amt, billaccount);
+
+			/* IMPORTANT: Billing must be paused before the transfer occurs! This prevents infinite loops, since the transfer will result */
+			/* in nibblebill checking the call again in the routing process for an allowed balance! */
+			/* If you intend to give the user the option to re-up their balance, you must clear & resume billing once the balance is updated! */
+			nibblebill_pause(session);
+			transfer_call(session, globals.nobal_action);
+		}
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -485,22 +502,22 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 	/* Save this location, but only if the channel/session are not hungup (otherwise, we're done) */
 	if (channel && switch_channel_get_state(channel) != CS_HANGUP) {
-		float balance;
-
 		switch_channel_set_private(channel, "_nibble_data_", nibble_data);
+        }
 
-		/* See if this person has enough money left to continue the call */
-		balance = get_balance(billaccount);
-		if (balance < globals.nobal_amt) {
-			/* Not enough money - reroute call to nobal location */
+	float balance;
+
+	/* See if this person has enough money left to continue the call */
+	balance = get_balance(billaccount);
+	if (balance <= globals.nobal_amt) {
+		/* Not enough money - reroute call to nobal location */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Balance of %f fell below allowed amount of %f! (Account %s)\n", balance, globals.nobal_amt, billaccount);
 
-			/* IMPORTANT: Billing must be paused before the transfer occurs! This prevents infinite loops, since the transfer will result */
-			/* in nibblebill checking the call again in the routing process for an allowed balance! */
-			/* If you intend to give the user the option to re-up their balance, you must clear & resume billing once the balance is updated! */
-			nibblebill_pause(session);
-			transfer_call(session, globals.nobal_action);
-		}
+		/* IMPORTANT: Billing must be paused before the transfer occurs! This prevents infinite loops, since the transfer will result */
+		/* in nibblebill checking the call again in the routing process for an allowed balance! */
+		/* If you intend to give the user the option to re-up their balance, you must clear & resume billing once the balance is updated! */
+		nibblebill_pause(session);
+		transfer_call(session, globals.nobal_action);
 	}
 
 	/* Done changing - release lock */
@@ -820,7 +837,7 @@ static switch_status_t process_hangup(switch_core_session_t *session)
 switch_state_handler_table_t nibble_state_handler =
 {
 	/* on_init */   	NULL,
-	/* on_routing */   	NULL,	/* Need to add a check here for anything in their account before routing */
+	/* on_routing */   	process_hangup,	/* Need to add a check here for anything in their account before routing */
 	/* on_execute */   	sched_billing,  /* Turn on heartbeat for this session and do an initial account check */
 	/* on_hangup */   	process_hangup, /* On hangup - most important place to go bill */
 	/* on_exch_media */   	NULL,
