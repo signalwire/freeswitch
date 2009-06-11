@@ -143,9 +143,9 @@ int ei_pid_from_rpc(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *mo
 /* function to spawn a process on a remote node */
 int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, char *function, int argc, char **argv)
 {
+	int i;
 	ei_x_buff buf;
 	ei_x_new_with_version(&buf);
-	int i;
 
 	ei_x_encode_tuple_header(&buf, 3);
 	ei_x_encode_atom(&buf, "$gen_call");
@@ -323,7 +323,7 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
 	memset(&server_addr, 0, sizeof(server_addr));
 	
 	/* convert the configured IP to network byte order, handing errors */
-	rv = inet_pton(AF_INET, prefs.ip, &server_addr.sin_addr.s_addr);
+	rv = switch_inet_pton(AF_INET, prefs.ip, &server_addr.sin_addr.s_addr);
 	if (rv == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not parse invalid ip address: %s\n", prefs.ip);
 		return SWITCH_STATUS_FALSE;
@@ -336,7 +336,11 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(prefs.port);
 	
-	 if ((nodehost = gethostbyaddr(&server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
+#ifdef WIN32
+	 if ((nodehost = gethostbyaddr((const char*)&server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
+#else
+	if ((nodehost = gethostbyaddr((const char*)&server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
+#endif
 		memcpy(thishostname, nodehost->h_name, EI_MAXHOSTNAMELEN);
 	
 	if (switch_strlen_zero_buf(thishostname)) {

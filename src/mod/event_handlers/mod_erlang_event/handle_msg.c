@@ -79,10 +79,11 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 		switch_event_t *event;
 
 		if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
+			ei_x_buff ebuf;
+
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", acs->uuid_str);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command", acs->api_cmd);
 
-			ei_x_buff ebuf;
 			ei_x_new_with_version(&ebuf);
 
 			if (acs->arg) {
@@ -250,20 +251,22 @@ static switch_status_t handle_msg_event(listener_t *listener, int arity, ei_x_bu
 	else {
 		int custom = 0;
 		switch_event_types_t type;
+		int i = 0;
 		
 		if (!switch_test_flag(listener, LFLAG_EVENTS)) {
 			switch_set_flag_locked(listener, LFLAG_EVENTS);
 		}
 		
-		for (int i = 1; i < arity; i++) {
+		for (i = 1; i < arity; i++) {
 			if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
 				
 				if (custom) {
 					switch_core_hash_insert(listener->event_hash, atom, MARKER);
 				} else if (switch_name_event(atom, &type) == SWITCH_STATUS_SUCCESS) {
 					if (type == SWITCH_EVENT_ALL) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ALL events enabled\n");
 						uint32_t x = 0;
+
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ALL events enabled\n");
 						for (x = 0; x < SWITCH_EVENT_ALL; x++) {
 							listener->event_list[x] = 1;
 						}
@@ -295,9 +298,10 @@ static switch_status_t handle_msg_nixevent(listener_t *listener, int arity, ei_x
 	}
 	else {
 		int custom = 0;
+		int i = 0;
 		switch_event_types_t type;
 		
-		for (int i = 1; i < arity; i++) {
+		for (i = 1; i < arity; i++) {
 			if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
 				
 				if (custom) {

@@ -81,7 +81,11 @@ typedef enum {
    5 call sessions will be "attached" to the same listener.
  */
 struct listener {
+#ifdef WIN32
+	SOCKET sockfd;
+#else
 	int sockfd;
+#endif
 	struct ei_cnode_s *ec;
 	struct erlang_process log_process;
 	struct erlang_process event_process;
@@ -221,7 +225,7 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec);
 }
 
 #ifdef WIN32 /* MSDN suggested hack to fake errno for network operations */
-#define errno WSAGetLastError()
+/*#define errno WSAGetLastError()*/
 #endif
 
 /* mod_erlang_event.c */

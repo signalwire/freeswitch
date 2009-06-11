@@ -240,14 +240,19 @@ static void event_handler(switch_event_t *event)
 }
 
 
+#ifdef WIN32
+static void close_socket(SOCKET *sock)
+#else
 static void close_socket(int *sock)
+#endif
 {
 	switch_mutex_lock(listen_list.sock_mutex);
 	if (*sock) {
-		shutdown(*sock, SHUT_RDWR);
 #ifdef WIN32
+		shutdown(*sock, SD_BOTH);
 		closesocket(*sock);
 #else
+		shutdown(*sock, SHUT_RDWR);
 		close(*sock);
 #endif
 		sock = NULL;
@@ -357,21 +362,22 @@ session_elem_t * find_session_elem_by_pid(listener_t *listener, erlang_pid *pid)
 static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, const char *key_name, const char *key_value,
 								switch_event_t *params, void *user_data)
 {
-	switch_xml_t xml = NULL;
-	struct erlang_binding *ptr;
-	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
 	int type, size;
 	int i = 0;
 	void *p = NULL;
 	char *xmlstr;
+	struct erlang_binding *ptr;
+	switch_uuid_t uuid;
+	switch_xml_section_t section;
+	switch_xml_t xml = NULL;
 	ei_x_buff *rep;
 	ei_x_buff buf;
 	ei_x_new_with_version(&buf);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "looking for bindings\n");
 
-	switch_xml_section_t section = switch_xml_parse_section_string((char *) sectionstr);
+	section = switch_xml_parse_section_string((char *) sectionstr);
 
 	for (ptr = bindings.head; ptr && ptr->section != section; ptr = ptr->next); /* just get the first match */
 
@@ -459,6 +465,7 @@ static switch_status_t notify_new_session(listener_t *listener, session_elem_t *
 	switch_core_session_t *session;
 	switch_event_t *call_event=NULL;
 	switch_channel_t *channel=NULL;
+	ei_x_buff lbuf;
 
 	/* Send a message to the associated registered process to let it know there is a call.
 	   Message is a tuple of the form {call, <call-event>}
@@ -480,7 +487,6 @@ static switch_status_t notify_new_session(listener_t *listener, session_elem_t *
 	switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Content-Type", "command/reply");
 	switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Reply-Text", "+OK\n");
 	
-	ei_x_buff lbuf;
 	ei_x_new_with_version(&lbuf);
 	ei_x_encode_tuple_header(&lbuf, 2);
 	ei_x_encode_atom(&lbuf, "call");
@@ -709,11 +715,10 @@ static void listener_main_loop(listener_t *listener)
 
 	while ((status >= 0 || erl_errno == ETIMEDOUT || erl_errno == EAGAIN) && !prefs.done) {
 		erlang_msg msg;
-
 		ei_x_buff buf;
-		ei_x_new(&buf);
-
 		ei_x_buff rbuf;
+		
+		ei_x_new(&buf);
 		ei_x_new_with_version(&rbuf);
 
 		/* do we need the mutex when reading? */
@@ -1464,7 +1469,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 	memset(&server_addr, 0, sizeof(server_addr));
 
 	/* convert the configured IP to network byte order, handing errors */
-	rv = inet_pton(AF_INET, prefs.ip, &server_addr.sin_addr.s_addr);
+	rv = switch_inet_pton(AF_INET, prefs.ip, &server_addr.sin_addr.s_addr);
 	if (rv == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not parse invalid ip address: %s\n", prefs.ip);
 		goto init_failed;
@@ -1485,7 +1490,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 			goto sock_fail;
 		}
 
+#ifdef WIN32
+		if (setsockopt(listen_list.sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *)&on, sizeof(on))) {
+#else
 		if (setsockopt(listen_list.sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) {
+#endif
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to enable SO_REUSEADDR for socket on %s:%u : %s\n", prefs.ip, prefs.port, strerror(errno));
 			goto sock_fail;
 		}
@@ -1500,7 +1509,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 			goto sock_fail;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Socket up listening on %s:%u\n", prefs.ip, prefs.port);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Socket %d up listening on %s:%u\n", listen_list.sockfd, prefs.ip, prefs.port);
 		break;
 	  sock_fail:
 		switch_yield(100000);
@@ -1538,13 +1547,18 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 #else
 		errno = 0;
 #endif
-		if ((clientfd = ei_accept_tmo(&ec, listen_list.sockfd, &conn, 100)) == ERL_ERROR) {
+		if ((clientfd = ei_accept_tmo(&ec, (int)listen_list.sockfd, &conn, 100)) == ERL_ERROR) {
 			if (prefs.done) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
 			} else if (erl_errno == ETIMEDOUT) {
 				continue;
+#ifdef WIN32
+			} else if (WSAGetLastError()) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error %d %d\n", erl_errno, WSAGetLastError());
+#else
 			} else if (errno) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error %d %d\n", erl_errno, errno);
+#endif
 			} else {
 				/* if errno didn't get set, assume nothing *too* horrible occured */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
@@ -1557,7 +1571,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 		listener = new_listener(&ec,clientfd);
 		if (listener) {
 			/* store the IP and node name we are talking with */
-			inet_ntop(AF_INET, conn.ipadr, listener->remote_ip, sizeof(listener->remote_ip));
+			switch_inet_ntop(AF_INET, conn.ipadr, listener->remote_ip, sizeof(listener->remote_ip));
 			listener->peer_nodename = switch_core_strdup(listener->pool,conn.nodename);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Launching listener, connection from node %s, ip %s\n", conn.nodename, listener->remote_ip);
