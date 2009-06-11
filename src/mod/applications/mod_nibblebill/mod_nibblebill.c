@@ -386,6 +386,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	switch_time_exp_t tm;
 	const char *billrate;
 	const char *billaccount;
+	float balance;
 
 	if (!session) {
 		/* Why are we here? */
@@ -420,8 +421,6 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 	if (profile->times->answered < 1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Not billing %s - call is not in answered state\n", billaccount);
-
-		float balance;
 
 		/* See if this person has enough money left to continue the call */
 		balance = get_balance(billaccount);
@@ -499,8 +498,6 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Comparing %f to hangup 
 	/* Save this location, but only if the channel/session are not hungup (otherwise, we're done) */
 	if (channel && switch_channel_get_state(channel) != CS_HANGUP) {
 		switch_channel_set_private(channel, "_nibble_data_", nibble_data);
-
-		float balance;
 
 		/* See if this person has enough money left to continue the call */
 		balance = get_balance(billaccount);
