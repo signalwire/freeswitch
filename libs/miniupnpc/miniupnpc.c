@@ -29,6 +29,7 @@
 #include <arpa/inet.h>
 #include <poll.h>
 #include <netdb.h>
+#include <strings.h>
 #define closesocket close
 #endif
 #include "miniupnpc.h"
