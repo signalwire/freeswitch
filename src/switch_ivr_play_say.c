@@ -421,7 +421,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 		tmp = atoi(vval);
 
-		if (tmp == 8000 || tmp == 16000 || tmp == 32000 || tmp == 11025 || tmp == 22050 || tmp == 44100) {
+		if (switch_is_valid_rate(tmp)) {
 			fh->samplerate = tmp;
 		}
 	}

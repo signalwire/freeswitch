@@ -587,7 +587,7 @@ static vm_profile_t * load_profile(const char *profile_name)
 				if (!switch_strlen_zero(val)) {
 					tmp = atoi(val);
 				}
-				if (tmp == 8000 || tmp == 16000 || tmp == 32000 || tmp == 11025 || tmp == 22050 || tmp == 44100) {
+				if (switch_is_valid_rate(tmp)) {
 					record_sample_rate = tmp;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid samplerate %s\n", val);
