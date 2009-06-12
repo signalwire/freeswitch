@@ -416,6 +416,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	fh->channels = read_impl.number_of_channels;
 	fh->native_rate = read_impl.actual_samples_per_second;
 
+	if ((vval = switch_channel_get_variable(channel, "record_sample_rate"))) {
+		int tmp = 0;
+
+		tmp = atoi(vval);
+
+		if (tmp == 8000 || tmp == 16000 || tmp == 32000 || tmp == 11025 || tmp == 22050 || tmp == 44100) {
+			fh->samplerate = tmp;
+		}
+	}
+
+
 	if ((vval = switch_channel_get_variable(channel, "record_waste_resources"))) {
 	
 		if (switch_true(vval)) {
