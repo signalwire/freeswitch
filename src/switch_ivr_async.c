@@ -973,6 +973,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	rh->file = switch_core_session_strdup(session, file);
 	rh->lead_in = LEAD_IN;
 
+
+	if ((vval = switch_channel_get_variable(channel, "record_sample_rate"))) {
+		int tmp = 0;
+
+		tmp = atoi(vval);
+
+		if (tmp == 8000 || tmp == 16000 || tmp == 32000 || tmp == 11025 || tmp == 22050 || tmp == 44100) {
+			rh->fh->samplerate = tmp;
+		}
+	}
+
 	if ((status = switch_core_media_bug_add(session, record_callback, rh, to, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error adding media bug for file %s\n", file);
 		switch_core_file_close(fh);
