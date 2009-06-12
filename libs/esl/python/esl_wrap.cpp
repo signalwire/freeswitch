@@ -3659,6 +3659,28 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_ESLconnection_socketDescriptor(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:ESLconnection_socketDescriptor",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_socketDescriptor" "', argument " "1"" of type '" "ESLconnection *""'"); 
+  }
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  result = (int)(arg1)->socketDescriptor();
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_ESLconnection_connected(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
@@ -4307,6 +4329,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"ESLevent_swigregister", ESLevent_swigregister, METH_VARARGS, NULL},
 	 { (char *)"new_ESLconnection", _wrap_new_ESLconnection, METH_VARARGS, NULL},
 	 { (char *)"delete_ESLconnection", _wrap_delete_ESLconnection, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_socketDescriptor", _wrap_ESLconnection_socketDescriptor, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_connected", _wrap_ESLconnection_connected, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_getInfo", _wrap_ESLconnection_getInfo, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_send", _wrap_ESLconnection_send, METH_VARARGS, NULL},

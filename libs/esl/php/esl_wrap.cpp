@@ -1821,6 +1821,32 @@ static void __wrap_delete_ESLconnection(zend_rsrc_list_entry *rsrc, const char *
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_ESLconnection_socketDescriptor) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  int result;
+  zval **args[1];
+  
+  SWIG_ResetError();
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLconnection, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of ESLconnection_socketDescriptor. Expected SWIGTYPE_p_ESLconnection");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (int)(arg1)->socketDescriptor();
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_connected) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   int result;
@@ -2454,6 +2480,7 @@ static zend_function_entry ESL_functions[] = {
  SWIG_ZEND_NAMED_FE(eslevent_firstheader,_wrap_ESLevent_firstHeader,NULL)
  SWIG_ZEND_NAMED_FE(eslevent_nextheader,_wrap_ESLevent_nextHeader,NULL)
  SWIG_ZEND_NAMED_FE(new_eslconnection,_wrap_new_ESLconnection,NULL)
+ SWIG_ZEND_NAMED_FE(eslconnection_socketdescriptor,_wrap_ESLconnection_socketDescriptor,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_connected,_wrap_ESLconnection_connected,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_getinfo,_wrap_ESLconnection_getInfo,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_send,_wrap_ESLconnection_send,NULL)

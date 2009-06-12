@@ -2275,6 +2275,31 @@ fail:
 }
 
 
+static int _wrap_ESLconnection_socketDescriptor(lua_State* L) {
+  int SWIG_arg = -1;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  int result;
+  
+  SWIG_check_num_args("socketDescriptor",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("socketDescriptor",1,"ESLconnection *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_socketDescriptor",1,SWIGTYPE_p_ESLconnection);
+  }
+  
+  result = (int)(arg1)->socketDescriptor();
+  SWIG_arg=0;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_ESLconnection_connected(lua_State* L) {
   int SWIG_arg = -1;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
@@ -2756,6 +2781,7 @@ ESLconnection *arg1 = (ESLconnection *) obj;
 delete arg1;
 }
 static swig_lua_method swig_ESLconnection_methods[] = {
+    {"socketDescriptor", _wrap_ESLconnection_socketDescriptor}, 
     {"connected", _wrap_ESLconnection_connected}, 
     {"getInfo", _wrap_ESLconnection_getInfo}, 
     {"send", _wrap_ESLconnection_send}, 

@@ -76,6 +76,7 @@ class ESLconnection {
 	ESLconnection(const char *host, const char *port, const char *password);
 	ESLconnection(int socket);
 	virtual ~ESLconnection();
+	int socketDescriptor();
 	int connected();
 	ESLevent *getInfo();
 	int send(const char *cmd);

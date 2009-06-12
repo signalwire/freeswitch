@@ -77,6 +77,7 @@ class ESLconnection:
         except: self.this = this
     __swig_destroy__ = _ESL.delete_ESLconnection
     __del__ = lambda self : None;
+    def socketDescriptor(*args): return apply(_ESL.ESLconnection_socketDescriptor, args)
     def connected(*args): return apply(_ESL.ESLconnection_connected, args)
     def getInfo(*args): return apply(_ESL.ESLconnection_getInfo, args)
     def send(*args): return apply(_ESL.ESLconnection_send, args)

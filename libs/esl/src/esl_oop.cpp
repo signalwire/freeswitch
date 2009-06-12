@@ -33,6 +33,16 @@ ESLconnection::~ESLconnection()
 
 }
 
+int ESLconnection::socketDescriptor()
+{
+	if (handle.connected) {
+        return (int) handle.sock;
+    }
+
+	return -1;
+}
+
+
 int ESLconnection::disconnect()
 {
 	if (handle.connected) {

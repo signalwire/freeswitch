@@ -2745,6 +2745,34 @@ XS(_wrap_delete_ESLconnection) {
 }
 
 
+XS(_wrap_ESLconnection_socketDescriptor) {
+  {
+    ESLconnection *arg1 = (ESLconnection *) 0 ;
+    int result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: ESLconnection_socketDescriptor(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_socketDescriptor" "', argument " "1"" of type '" "ESLconnection *""'"); 
+    }
+    arg1 = reinterpret_cast< ESLconnection * >(argp1);
+    result = (int)(arg1)->socketDescriptor();
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_ESLconnection_connected) {
   {
     ESLconnection *arg1 = (ESLconnection *) 0 ;
@@ -3514,6 +3542,7 @@ static swig_command_info swig_commands[] = {
 {"ESLc::ESLevent_nextHeader", _wrap_ESLevent_nextHeader},
 {"ESLc::new_ESLconnection", _wrap_new_ESLconnection},
 {"ESLc::delete_ESLconnection", _wrap_delete_ESLconnection},
+{"ESLc::ESLconnection_socketDescriptor", _wrap_ESLconnection_socketDescriptor},
 {"ESLc::ESLconnection_connected", _wrap_ESLconnection_connected},
 {"ESLc::ESLconnection_getInfo", _wrap_ESLconnection_getInfo},
 {"ESLc::ESLconnection_send", _wrap_ESLconnection_send},

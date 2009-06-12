@@ -50,6 +50,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_delHeader);
 ZEND_NAMED_FUNCTION(_wrap_ESLevent_firstHeader);
 ZEND_NAMED_FUNCTION(_wrap_ESLevent_nextHeader);
 ZEND_NAMED_FUNCTION(_wrap_new_ESLconnection);
+ZEND_NAMED_FUNCTION(_wrap_ESLconnection_socketDescriptor);
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_connected);
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_getInfo);
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_send);

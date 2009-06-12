@@ -128,6 +128,7 @@ sub DESTROY {
     }
 }
 
+*socketDescriptor = *ESLc::ESLconnection_socketDescriptor;
 *connected = *ESLc::ESLconnection_connected;
 *getInfo = *ESLc::ESLconnection_getInfo;
 *send = *ESLc::ESLconnection_send;

@@ -2781,6 +2781,30 @@ free_ESLconnection(ESLconnection *arg1) {
 }
 
 SWIGINTERN VALUE
+_wrap_ESLconnection_socketDescriptor(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","socketDescriptor", 1, self )); 
+  }
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  result = (int)(arg1)->socketDescriptor();
+  vresult = SWIG_From_int(static_cast< int >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
 _wrap_ESLconnection_connected(int argc, VALUE *argv, VALUE self) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   int result;
@@ -3729,6 +3753,7 @@ SWIGEXPORT void Init_ESL(void) {
   SWIG_TypeClientData(SWIGTYPE_p_ESLconnection, (void *) &cESLconnection);
   rb_define_alloc_func(cESLconnection.klass, _wrap_ESLconnection_allocate);
   rb_define_method(cESLconnection.klass, "initialize", VALUEFUNC(_wrap_new_ESLconnection), -1);
+  rb_define_method(cESLconnection.klass, "socketDescriptor", VALUEFUNC(_wrap_ESLconnection_socketDescriptor), -1);
   rb_define_method(cESLconnection.klass, "connected", VALUEFUNC(_wrap_ESLconnection_connected), -1);
   rb_define_method(cESLconnection.klass, "getInfo", VALUEFUNC(_wrap_ESLconnection_getInfo), -1);
   rb_define_method(cESLconnection.klass, "send", VALUEFUNC(_wrap_ESLconnection_send), -1);

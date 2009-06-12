@@ -121,6 +121,10 @@ class ESLconnection {
 		$this->_cPtr=$r;
 	}
 
+	function socketDescriptor() {
+		return ESLconnection_socketDescriptor($this->_cPtr);
+	}
+
 	function connected() {
 		return ESLconnection_connected($this->_cPtr);
 	}
