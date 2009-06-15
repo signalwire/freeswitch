@@ -1774,9 +1774,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if ((switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) &&
 				rtp_session->read_pollfd) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 1) == SWITCH_STATUS_SUCCESS) {
-					if (++rtp_session->hot_hits >= 5) {
+					if (++rtp_session->hot_hits >= 10) {
 						hot_socket = 1;
-						rtp_session->hot_hits = 0;
 					}
 				} else {
 					rtp_session->hot_hits = 0;
