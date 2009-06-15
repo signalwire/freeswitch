@@ -1395,10 +1395,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
 				}
 			} else if (code == 302 && !switch_strlen_zero(msg->string_arg)) {
-				char * p = strchr(msg->string_arg, ' ');
-				*p++ = '\0';
+				char *p;
+
+				if ((p = strchr(msg->string_arg, ' '))) {
+					*p = '\0';
+					msg->string_arg = p;
+				}
+				
 				msg->message_id = SWITCH_MESSAGE_INDICATE_REDIRECT;
-				msg->string_arg = p;
 				switch_core_session_receive_message(session, msg);
 				goto end_lock;
 			} else {
