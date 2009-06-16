@@ -338,10 +338,10 @@ class FreepyDispatcher(LineReceiver):
         transfer <uuid> [-bleg|-both] <dest-exten>
         """
         if bgapi == True:
-            msg = "bgapi transfer %s %s %s" % (uuid, legs, dest_ext)
+            msg = "bgapi uuid_transfer %s %s %s" % (uuid, legs, dest_ext)
             req = request.BgApiRequest()
         else:
-            msg = "api transfer %s %s %s" % (uuid, legs, dest_ext)
+            msg = "api uuid_transfer %s %s %s" % (uuid, legs, dest_ext)
             req = request.ApiRequest()
         self.requestq.put(req)
         self.transport.write("%s\n\n" % msg)
