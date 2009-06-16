@@ -2676,7 +2676,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		if (!strncasecmp(dest, "sip:", 4) || !strncasecmp(dest, "sips:", 5)) {
 			tech_pvt->dest = switch_core_session_strdup(nsession, dest);
 		} else if ((host = strchr(dest, '%'))) {
-			char buf[128];
+			char buf[1024];
 			*host = '@';
 			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
 			*host++ = '\0';
@@ -2689,7 +2689,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				goto error;
 			}
 		} else if (!(host = strchr(dest, '@'))) {
-			char buf[128];
+			char buf[1024];
 			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
 			if (sofia_reg_find_reg_url(profile, dest, profile_name, buf, sizeof(buf))) {
 				tech_pvt->dest = switch_core_session_strdup(nsession, buf);
