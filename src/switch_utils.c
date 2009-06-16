@@ -1688,6 +1688,10 @@ SWITCH_DECLARE(char *) switch_url_decode(char *s)
 	char *o;
 	unsigned int tmp;
 
+	if (switch_strlen_zero(s)) {
+		return s;
+	}
+
 	for (o = s; *s; s++, o++) {
 		if (*s == '%' && strlen(s) > 2 && sscanf(s + 1, "%2x", &tmp) == 1) {
 			*o = (char) tmp;

@@ -1662,7 +1662,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		sofia_glue_tech_patch_sdp(tech_pvt);
 	}
 
-	if (tech_pvt->dest && (route = strstr(tech_pvt->dest, ";fs_path="))) {
+	if (tech_pvt->dest && (route = strstr(tech_pvt->dest, ";fs_path=")) && (*(route + 9))) {
 		char *p;
 
 		route = switch_core_session_strdup(tech_pvt->session, route + 9);
@@ -1686,6 +1686,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 		
 		route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, route_uri, 0, SWITCH_TRUE, NULL);
+	} else {
+		route = NULL;
 	}
 
 	if ((val = switch_channel_get_variable(channel, "sip_route_uri"))) {
@@ -1715,7 +1717,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
 			   TAG_IF(tech_pvt->route_uri, NUTAG_PROXY(tech_pvt->route_uri)),
-			   TAG_IF(route, SIPTAG_ROUTE_STR(route)),
+			   TAG_IF(!switch_strlen_zero(route), SIPTAG_ROUTE_STR(route)),
 			   TAG_IF(!switch_strlen_zero(sendto), NUTAG_PROXY(sendto)),
 			   SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
 			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
