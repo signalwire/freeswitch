@@ -86,6 +86,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 
 	if ((status = sh->speech_interface->speech_open(sh, voice_name, rate, flags)) == SWITCH_STATUS_SUCCESS) {
 		switch_set_flag(sh, SWITCH_SPEECH_FLAG_OPEN);
+	} else {
+		UNPROTECT_INTERFACE(sh->speech_interface);
 	}
 
 	return status;

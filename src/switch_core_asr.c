@@ -77,7 +77,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 	ah->rate = rate;
 	ah->name = switch_core_strdup(ah->memory_pool, module_name);
 
-	return ah->asr_interface->asr_open(ah, codec, rate, dest, flags);
+	status = ah->asr_interface->asr_open(ah, codec, rate, dest, flags);
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		UNPROTECT_INTERFACE(ah->asr_interface);
+	}
+
+	return status;
+
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *name)
