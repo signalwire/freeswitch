@@ -311,10 +311,10 @@ class FreepyDispatcher(LineReceiver):
 
     def killchan(self, uuid, bgapi = False):
         if bgapi == True:
-            msg = "bgapi killchan %s" % (uuid)
+            msg = "bgapi uuid_kill %s" % (uuid)
             req = request.BgApiRequest()
         else:
-            msg = "api killchan %s" % (uuid)            
+            msg = "api uuid_kill %s" % (uuid)            
             req = request.ApiRequest()
         self.requestq.put(req)
         self.transport.write("%s\n\n" % msg)
@@ -323,10 +323,10 @@ class FreepyDispatcher(LineReceiver):
 
     def broadcast(self, uuid, path, legs, bgapi = False):
         if bgapi == True:
-            msg = "bgapi broadcast %s %s %s" % (uuid, path, legs)
+            msg = "bgapi uuid_broadcast %s %s %s" % (uuid, path, legs)
             req = request.BgApiRequest()
         else:
-            msg = "api broadcast %s %s %s" % (uuid, path, legs)            
+            msg = "api uuid_broadcast %s %s %s" % (uuid, path, legs)
             req = request.ApiRequest()
         self.requestq.put(req)
         self.transport.write("%s\n\n" % msg)
