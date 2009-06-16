@@ -1,0 +1,134 @@
+Index: src/ozmod/ozmod_wanpipe/ozmod_wanpipe.c
+===================================================================
+--- src/ozmod/ozmod_wanpipe/ozmod_wanpipe.c	(revision 745)
++++ src/ozmod/ozmod_wanpipe/ozmod_wanpipe.c	(working copy)
+@@ -98,19 +98,21 @@
+  * so we can have one analong handler thread that will deal with all the idle analog channels for events
+  * the alternative would be for the driver to provide one socket for all of the oob events for all analog channels
+  */
+-static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int *flags)
++static __inline__ int tdmv_api_wait_socket(zap_channel_t *zchan, int timeout, int *flags)
+ {
+ 	
+ #ifdef LIBSANGOMA_VERSION
+ 	int err;
+-	sangoma_wait_obj_t sangoma_wait_obj;
++	sangoma_wait_obj_t *sangoma_wait_obj = zchan->mod_data;
+ 
+- 	sangoma_init_wait_obj(&sangoma_wait_obj, fd, 1, 1, *flags, SANGOMA_WAIT_OBJ);
++	sangoma_init_wait_obj(sangoma_wait_obj, zchan->sockfd, 1, 1, 0, SANGOMA_WAIT_OBJ);
+ 
+-	err=sangoma_socket_waitfor_many(&sangoma_wait_obj,1 , timeout);
++	err = sangoma_socket_waitfor_many(&sangoma_wait_obj, 1, timeout);
++
+ 	if (err > 0) {
+-		*flags=sangoma_wait_obj.flags_out;
++		*flags = sangoma_wait_obj.flags_out;
+ 	}
++
+ 	return err;
+ 
+ #else
+@@ -118,7 +120,7 @@
+     int res;
+ 
+     memset(&pfds[0], 0, sizeof(pfds[0]));
+-    pfds[0].fd = fd;
++    pfds[0].fd = zchan->sockfd;
+     pfds[0].events = *flags;
+     res = poll(pfds, 1, timeout);
+ 	*flags = 0;
+@@ -200,6 +202,15 @@
+ 		
+ 		if (sockfd != WP_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
+ 			wanpipe_tdm_api_t tdm_api;
++#ifdef LIBSANGOMA_VERSION
++			sangoma_wait_obj_t *sangoma_wait_obj;
++
++			sangoma_wait_obj = malloc(sizeof(*sangoma_wait_obj));
++			memset(sangoma_wait_obj, 0, sizeof(*sangoma_wait_obj));
++			sangoma_init_wait_obj(sangoma_wait_obj, sockfd, 1, 1, 0, SANGOMA_WAIT_OBJ);
++			chan->mod_data = sangoma_wait_obj;
++#endif
++
+ 			memset(&tdm_api,0,sizeof(tdm_api));
+ 			
+ 			chan->physical_span_id = spanno;
+@@ -211,7 +222,7 @@
+ 				
+ 				dtmf = "software";
+ 
+-				/* FIXME: Handle Error Conditino Check for return code */
++				/* FIXME: Handle Error Condition Check for return code */
+ 				err= sangoma_tdm_get_hw_coding(chan->sockfd, &tdm_api);
+ 
+ 				if (tdm_api.wp_tdm_cmd.hw_tdm_coding) {
+@@ -606,7 +617,7 @@
+ 		inflags |= POLLPRI;
+ 	}
+ 
+-	result = tdmv_api_wait_socket(zchan->sockfd, to, &inflags);
++	result = tdmv_api_wait_socket(zchan, to, &inflags);
+ 
+ 	*flags = ZAP_NO_FLAGS;
+ 
+@@ -643,26 +654,30 @@
+ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
+ {
+ #ifdef LIBSANGOMA_VERSION
+-	sangoma_wait_obj_t pfds[ZAP_MAX_CHANNELS_SPAN];
++	sangoma_wait_obj_t *pfds[ZAP_MAX_CHANNELS_SPAN] = { 0 };
+ #else
+ 	struct pollfd pfds[ZAP_MAX_CHANNELS_SPAN];
+ #endif
+ 
+ 	uint32_t i, j = 0, k = 0, l = 0;
+-	int objects=0;
+ 	int r;
+ 	
+ 	for(i = 1; i <= span->chan_count; i++) {
+ 		zap_channel_t *zchan = span->channels[i];
+ 
++
+ #ifdef LIBSANGOMA_VERSION
+- 		sangoma_init_wait_obj(&pfds[j], zchan->sockfd , 1, 1, POLLPRI, SANGOMA_WAIT_OBJ);
++		if (!zchan->mod_data) {
++			continue;
++		}
++		pfds[j] = zchan->mod_data;
++
+ #else
+ 		memset(&pfds[j], 0, sizeof(pfds[j]));
+ 		pfds[j].fd = span->channels[i]->sockfd;
+ 		pfds[j].events = POLLPRI;
+ #endif
+-		objects++;
++
+ 		/* The driver probably should be able to do this wink/flash/ringing by itself this is sort of a hack to make it work! */
+ 
+ 		if (zap_test_flag(zchan, ZAP_CHANNEL_WINK) || zap_test_flag(zchan, ZAP_CHANNEL_FLASH)) {
+@@ -703,7 +718,7 @@
+ 		ms = l;
+ 	}
+ #ifdef LIBSANGOMA_VERSION
+-	r = sangoma_socket_waitfor_many(pfds,objects,ms);
++	r = sangoma_socket_waitfor_many(pfds, j, ms);
+ #else
+ 	r = poll(pfds, j, ms);
+ #endif
+@@ -935,6 +950,15 @@
+  */
+ static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
+ {
++	sangoma_wait_obj_t *sangoma_wait_obj;
++
++	if (zchan->mod_data) {
++		sangoma_wait_obj = zchan->mod_data;
++		zchan->mod_data = NULL;
++		sangoma_release_wait_obj(sangoma_wait_obj);
++		free(sangoma_wait_obj);
++	}
++
+ 	if (zchan->sockfd > -1) {
+ 		close(zchan->sockfd);
+ 		zchan->sockfd = WP_INVALID_SOCKET;
