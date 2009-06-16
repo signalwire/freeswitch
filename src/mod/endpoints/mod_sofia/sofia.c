@@ -590,15 +590,15 @@ void event_handler(switch_event_t *event)
 		char *exp_str = switch_event_get_header(event, "orig-expires");
 		char *rpid = switch_event_get_header(event, "orig-rpid");
 		char *call_id = switch_event_get_header(event, "orig-call-id");
-		char *user_agent = switch_event_get_header(event, "user-agent");
+		char *user_agent = switch_event_get_header(event, "orig-user-agent");
 		long expires = (long) switch_epoch_time_now(NULL);
 		char *profile_name = switch_event_get_header(event, "orig-profile-name");
 		char *to_user = switch_event_get_header(event, "orig-to-user");
-		char *presence_hosts = switch_event_get_header(event, "presence-hosts");
-		char *network_ip = switch_event_get_header(event, "network-ip");
-		char *network_port = switch_event_get_header(event, "network-port");
-		char *username = switch_event_get_header(event, "username");
-		char *realm = switch_event_get_header(event, "realm");
+		char *presence_hosts = switch_event_get_header(event, "orig-presence-hosts");
+		char *network_ip = switch_event_get_header(event, "orig-network-ip");
+		char *network_port = switch_event_get_header(event, "orig-network-port");
+		char *username = switch_event_get_header(event, "orig-username");
+		char *realm = switch_event_get_header(event, "orig-realm");
 
 		
 		sofia_profile_t *profile = NULL;
@@ -628,11 +628,11 @@ void event_handler(switch_event_t *event)
 		
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
 		sql = switch_mprintf("insert into sip_registrations "
-							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
-							 "user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm) "
-							 "values ('%q', '%q','%q','%q','Registered', '%q', %ld, '%q', '%q', '%q','%q','%q','%q','%q','%q','%q')",
+							 "(call_id, sip_user, sip_host, presence_hosts, contact, status, rpid, expires,"
+							 "user_agent, server_user, server_host, profile_name, hostname, network_ip, network_port, sip_username, sip_realm) "
+							 "values ('%q','%q','%q','%q','%q','Registered','%q',%ld, '%q','%q','%q','%q','%q','%q','%q','%q','%q')",
 							 call_id, from_user, from_host, presence_hosts, contact_str, rpid, expires, user_agent, to_user, guess_ip4, 
-							 profile_name,mod_sofia_globals.hostname, network_ip, network_port, username, realm);
+							 profile_name, mod_sofia_globals.hostname, network_ip, network_port, username, realm);
 
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);

@@ -326,6 +326,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 							term++;
 						}
 					}
+					switch_url_decode(val);
 					switch_snprintf(tmpname, sizeof(tmpname), "Orig-%s", var);
 					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, tmpname, val);
 					var = term + 1;
