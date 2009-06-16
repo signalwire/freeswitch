@@ -21,7 +21,7 @@ LOCAL_LIBADD=$(UNIMRCPLA)
 
 include $(BASE)/build/modmake.rules
 
-$(UNIMRCPLA): $(UNIMRCP_DIR)
+$(UNIMRCPLA): $(UNIMRCP_DIR) $(UNIMRCP_DIR)/.update
 	cd $(UNIMRCP_DIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
