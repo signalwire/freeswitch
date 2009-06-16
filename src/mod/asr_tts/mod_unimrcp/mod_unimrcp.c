@@ -31,9 +31,6 @@
  */
 #include <switch.h>
 
-/* undefine to use UniMRCP's "conf/unimrcpclient.xml" style config */
-#undef MOD_UNIMRCP_FREESWITCH_CONFIG
-
 /* UniMRCP includes */
 #include "apt.h"
 #include "apt_log.h"
@@ -47,7 +44,6 @@
 #include "mrcp_recog_header.h"
 #include "mrcp_recog_resource.h"
 
-#ifdef MOD_UNIMRCP_FREESWITCH_CONFIG
 #include "mrcp_default_factory.h"
 #include "mpf_engine.h"
 #include "mpf_codec_manager.h"
@@ -56,7 +52,6 @@
 #include "mrcp_unirtsp_client_agent.h"
 #include "mrcp_client_connection.h"
 #include "apt_net.h"
-#endif
 
 /*********************************************************************************************************************************************
  * mod_unimrcp : module interface to FreeSWITCH
@@ -88,15 +83,10 @@ typedef struct mod_unimrcp_application mod_unimrcp_application_t;
  * module globals
  */
 struct mod_unimrcp_globals {
-#ifdef MOD_UNIMRCP_FREESWITCH_CONFIG
 	/** max-connection-count config */
 	char *unimrcp_max_connection_count;
 	/** offer-new-connection config */
 	char *unimrcp_offer_new_connection;
-#else
-	/** mrcp-profile-path config */
-	char *unimrcp_dir;
-#endif
 	/** default-tts-profile config */
 	char *unimrcp_default_synth_profile;
 	/** default-asr-profile config */
@@ -125,13 +115,9 @@ static mod_unimrcp_globals_t globals;
  * Defines XML parsing instructions
  */
 static switch_xml_config_item_t instructions[] = {
-#ifdef MOD_UNIMRCP_FREESWITCH_CONFIG
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("max-connection-count", CONFIG_REQUIRED, &globals.unimrcp_max_connection_count, "100", "", "The max MRCPv2 connections to manage"),
 	/* TODO figure out what this param does */
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("offer-new-connection", CONFIG_REQUIRED, &globals.unimrcp_offer_new_connection, "1", "", ""),
-#else
-	SWITCH_CONFIG_ITEM_STRING_STRDUP("mrcp-profile-path", CONFIG_REQUIRED, &globals.unimrcp_dir, "../", "", "The root path for conf/unimrcpclient.xml"),
-#endif
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("default-tts-profile", CONFIG_REQUIRED, &globals.unimrcp_default_synth_profile, "default", "", "The default profile to use for TTS"), 
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("default-asr-profile", CONFIG_REQUIRED, &globals.unimrcp_default_recog_profile, "default", "", "The default profile to use for ASR"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("log-level", CONFIG_REQUIRED, &globals.unimrcp_log_level, "WARNING", "EMERGENCY|ALERT|CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG", "Logging level for UniMRCP"),
@@ -145,12 +131,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load);
 SWITCH_MODULE_DEFINITION(mod_unimrcp, mod_unimrcp_load, mod_unimrcp_shutdown, NULL);
 
 static switch_status_t mod_unimrcp_do_config();
-#ifdef MOD_UNIMRCP_FREESWITCH_CONFIG
 static mrcp_client_t *mod_unimrcp_client_create();
 static int process_rtp_config(mrcp_client_t *client, mpf_rtp_config_t *rtp_config, const char *param, const char *val, apr_pool_t *pool);
 static int process_mrcpv1_config(rtsp_client_config_t *config, const char *param, const char *val, apr_pool_t *pool);
 static int process_mrcpv2_config(mrcp_sofia_client_config_t *config, const char *param, const char *val, apr_pool_t *pool);
-#endif
 
 /* UniMRCP <--> FreeSWITCH logging bridge */
 static apt_bool_t unimrcp_log(const char *file, int line, const char *id, apt_log_priority_e priority, const char *format, va_list arg_ptr);
@@ -395,6 +379,8 @@ struct recognizer_data {
 	char *result;
 	/** true, if voice has started */
 	int start_of_input;
+	/** true, if input timers have started */
+	int timers_started;
 };
 typedef struct recognizer_data recognizer_data_t;
 
@@ -432,6 +418,8 @@ static switch_status_t recog_channel_set_results(speech_channel_t *schannel, con
 static switch_status_t recog_channel_get_results(speech_channel_t *schannel, char **results);
 static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp_message_t *msg, mrcp_generic_header_t *gen_hdr, mrcp_recog_header_t *recog_hdr);
 static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int id, char *val, mrcp_message_t *msg, mrcp_recog_header_t *recog_hdr);
+static switch_status_t recog_channel_set_timers_started(speech_channel_t *schannel);
+
 /**
  * Inspect text to determine if its first non-whitespace text matches "match"
  * @param text the text to inspect.
@@ -480,7 +468,7 @@ static switch_status_t audio_queue_create(audio_queue_t **audio_queue, const cha
 		lname = switch_core_strdup(pool, name);
 	}
 
-	if ((laudio_queue = switch_core_alloc(pool, sizeof(audio_queue_t))) == NULL) {		
+	if ((laudio_queue = switch_core_alloc(pool, sizeof(audio_queue_t))) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) unable to create audio queue\n", lname);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -520,7 +508,7 @@ static switch_status_t audio_queue_create(audio_queue_t **audio_queue, const cha
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) unable to create audio queue write file\n", laudio_queue->name);
 		laudio_queue->file_write = NULL;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) queue tx saved to %s\n", laudio_queue->name, laudio_queue->file_read_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) queue tx saved to %s\n", laudio_queue->name, laudio_queue->file_write_name);
 	}
 #endif
 
@@ -560,7 +548,7 @@ static switch_status_t audio_queue_write(audio_queue_t *queue, void *data, switc
 	if (switch_buffer_write(queue->buffer, data, *data_len) > 0) {
 		queue->write_bytes = queue->write_bytes + *data_len;
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue write bytes = %d\trequested = %d\n", queue->name, (int)queue->write_bytes, (int)*data_len);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue write total = %d\trequested = %d\n", queue->name, queue->write_bytes, *data_len);
 #endif
 		if (queue->waiting <= switch_buffer_inuse(queue->buffer)) {
 			switch_thread_cond_signal(queue->cond);
@@ -580,7 +568,7 @@ static switch_status_t audio_queue_write(audio_queue_t *queue, void *data, switc
  *
  * @param queue the queue to read from 
  * @param data the read data
- * @oaram data_len the amount of data requested / actual amount of data read (returned)
+ * @param data_len the amount of data requested / actual amount of data read (returned)
  * @param block 1 if blocking is allowed
  * @return SWITCH_STATUS_SUCCESS if successful.  SWITCH_STATUS_FALSE if the queue is not allocated
  */
@@ -596,7 +584,7 @@ static switch_status_t audio_queue_read(audio_queue_t *queue, void *data, switch
 			queue->waiting = requested;
 			switch_thread_cond_timedwait(queue->cond, queue->mutex, SPEECH_CHANNEL_TIMEOUT_USEC);
 			if (switch_buffer_inuse(queue->buffer) < requested) {
-				requested = switch_buffer_inuse(queue->buffer);	
+				requested = switch_buffer_inuse(queue->buffer);
 			}
 		}
 		queue->waiting = 0;
@@ -605,7 +593,6 @@ static switch_status_t audio_queue_read(audio_queue_t *queue, void *data, switch
 			requested = switch_buffer_inuse(queue->buffer);
 		}
 	}
-
 	if (requested == 0) {
 		*data_len = 0;
 		status = SWITCH_STATUS_FALSE;
@@ -614,14 +601,12 @@ static switch_status_t audio_queue_read(audio_queue_t *queue, void *data, switch
 
 	/* read the data */
 	*data_len = switch_buffer_read(queue->buffer, data, requested);
-
 	queue->read_bytes = queue->read_bytes + *data_len;
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue bytes total = %d\tread = %d\trequested = %d\n", queue->name, (int)queue->read_bytes, (int)*data_len, (int)requested);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue read total = %d\tread = %d\trequested = %d\n", queue->name, queue->read_bytes, *data_len, requested);
 	switch_size_t len = *data_len;
 	if (queue->file_read) {
-		switch_file
-_write(queue->file_read, data, &len);
+		switch_file_write(queue->file_read, data, &len);
 	}
 #endif
 
@@ -633,7 +618,7 @@ _write(queue->file_read, data, &len);
 
 /**
  * Empty the queue
- * 
+ *
  * @return SWITCH_STATUS_SUCCESS
  */
 static switch_status_t audio_queue_clear(audio_queue_t *queue)
@@ -808,7 +793,7 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, const cha
 		codec->payload_type = 11;
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) requesting codec %s/%d/%d\n", schannel->name, schannel->codec, codec->payload_type, codec->sampling_rate);
-	if(schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {	
+	if(schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
 		termination = mrcp_application_sink_termination_create(schannel->unimrcp_session, &schannel->application->audio_stream_vtable, codec, schannel);
 	} else {
 		termination = mrcp_application_source_termination_create(schannel->unimrcp_session, &schannel->application->audio_stream_vtable, codec, schannel);
@@ -1238,9 +1223,11 @@ static switch_status_t speech_channel_set_param(speech_channel_t *schannel, cons
 static switch_status_t speech_channel_write(speech_channel_t *schannel, void *data, switch_size_t *len)
 {
 	audio_queue_t *queue = schannel->audio_queue;
+	switch_mutex_lock(schannel->mutex);
 	if (schannel->state == SPEECH_CHANNEL_PROCESSING) {
 		audio_queue_write(queue, data, len);
 	}
+	switch_mutex_unlock(schannel->mutex);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1257,11 +1244,13 @@ static switch_status_t speech_channel_read(speech_channel_t *schannel, void *dat
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	audio_queue_t *queue = schannel->audio_queue;
+	switch_mutex_lock(schannel->mutex);
 	if (schannel->state == SPEECH_CHANNEL_PROCESSING) {
 		audio_queue_read(queue, data, len, block);
 	} else {
 		status = SWITCH_STATUS_BREAK;
 	}
+	switch_mutex_unlock(schannel->mutex);
 	return status;
 }
 
@@ -1373,7 +1362,7 @@ static switch_status_t synth_speech_close(switch_speech_handle_t *sh, switch_spe
 }
 
 /**
- * Process feed_tts request from FreeSWITCH.  This is called by FreeSWITCH after speech_open_tts.
+ * Process feed_tts request from FreeSWITCH.  This is called by FreeSWITCH after speech_open.
  * Send SPEAK request to MRCP server.
  *
  * @param sh the FreeSWITCH speech handle
@@ -1413,7 +1402,10 @@ static switch_status_t synth_speech_read_tts(switch_speech_handle_t *sh, void *d
 	if (speech_channel_read(schannel, data, &bytes_read, (*flags & SWITCH_SPEECH_FLAG_BLOCKING)) == SWITCH_STATUS_SUCCESS) {
 		/* pad data, if not enough read */
 		if (bytes_read < *datalen) {
-			memset((uint8_t *)data + bytes_read, bytes_read - *datalen, schannel->silence);
+#ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) adding %d bytes of padding\n", schannel->name, *datalen - bytes_read);
+#endif
+			memset((uint8_t *)data + bytes_read, schannel->silence, *datalen - bytes_read);
 		}
 	} else {
 		*datalen = 0;
@@ -1622,7 +1614,7 @@ static apt_bool_t synth_on_message_receive(mrcp_application_t *application, mrcp
 
 /**
  * Incoming TTS data from UniMRCP
- * 
+ *
  * @param stream the audio stream sending data
  * @param frame the data
  * @return TRUE
@@ -1790,6 +1782,10 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 	r->result = NULL;
 	r->start_of_input = 0;
 
+	/* input timers are started by default unless the start-input-timers=false param is set */
+	char *start_input_timers = switch_core_hash_find(schannel->params, "start-input-timers");
+	r->timers_started = switch_strlen_zero(start_input_timers) || strcasecmp(start_input_timers, "false");
+		
 	/* create MRCP message */
 	mrcp_message = mrcp_application_message_create(schannel->unimrcp_session, schannel->unimrcp_channel, RECOGNIZER_RECOGNIZE);
 	if (mrcp_message == NULL) {
@@ -1996,9 +1992,10 @@ static switch_status_t recog_channel_check_results(speech_channel_t *schannel)
 static switch_status_t recog_channel_start_input_timers(speech_channel_t *schannel)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	recognizer_data_t *r = schannel->data;
 	switch_mutex_lock(schannel->mutex);
 
-	if (schannel->state == SPEECH_CHANNEL_PROCESSING) {
+	if (schannel->state == SPEECH_CHANNEL_PROCESSING && !r->timers_started) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Starting input timers\n", schannel->name);
 		/* Send START-INPUT-TIMERS to MRCP server */
 		mrcp_message_t *mrcp_message = mrcp_application_message_create(schannel->unimrcp_session, schannel->unimrcp_channel, RECOGNIZER_START_INPUT_TIMERS);
@@ -2341,6 +2338,19 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 	}
 
 	return status;
+}
+
+/**
+ * Flag that the recognizer channel timers are started
+ * @param schannel the recognizer channel to flag 
+ */
+static switch_status_t recog_channel_set_timers_started(speech_channel_t *schannel)
+{
+	switch_mutex_lock(schannel->mutex);
+	recognizer_data_t *r = schannel->data;
+	r->timers_started = 1;
+	switch_mutex_unlock(schannel->mutex);
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /**
@@ -2701,6 +2711,7 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 			if (message->start_line.request_state == MRCP_REQUEST_STATE_COMPLETE) {
 				if (message->start_line.status_code >= 200 && message->start_line.status_code <= 299) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) timers started\n", schannel->name);
+					recog_channel_set_timers_started(schannel);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) timers failed to start, status code = %d\n", schannel->name, message->start_line.status_code);
 				}
@@ -2758,7 +2769,7 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 	return TRUE;
 }
 
-/** 
+/**
  * UniMRCP callback requesting next frame for speech recognition
  *
  * @param stream the UniMRCP stream
@@ -2769,19 +2780,15 @@ static apt_bool_t recog_stream_read(mpf_audio_stream_t *stream, mpf_frame_t *fra
 {
 	speech_channel_t *schannel = (speech_channel_t *)stream->obj;
 	switch_size_t to_read = frame->codec_frame.size;
-	switch_mutex_lock(schannel->mutex);
-
-	/* are we ready for data? */
-	if (schannel->state == SPEECH_CHANNEL_PROCESSING) {	
-		/* grab the data.  pad it if there isn't enough */
-		speech_channel_read(schannel, frame->codec_frame.buffer, &to_read, 0);
+	
+	/* grab the data.  pad it if there isn't enough */
+	if (speech_channel_read(schannel, frame->codec_frame.buffer, &to_read, 0) == SWITCH_STATUS_SUCCESS) {
 		if (to_read < frame->codec_frame.size) {
 			memset((uint8_t *)frame->codec_frame.buffer + to_read, schannel->silence, frame->codec_frame.size - to_read);
 		}
 		frame->type |= MEDIA_FRAME_TYPE_AUDIO;
 	}
 
-	switch_mutex_unlock(schannel->mutex);
 	return TRUE;
 }
 
@@ -2912,8 +2919,6 @@ static switch_status_t mod_unimrcp_do_config()
 
 	return status;
 }
-
-#ifdef MOD_UNIMRCP_FREESWITCH_CONFIG
 
 #define DEFAULT_LOCAL_IP_ADDRESS  "127.0.0.1"
 #define DEFAULT_REMOTE_IP_ADDRESS "127.0.0.1"
@@ -3219,7 +3224,6 @@ static mrcp_client_t *mod_unimrcp_client_create()
 
 	return client;
 }
-#endif
 
 /**
  * Macro expands to: switch_status_t mod_unimrcp_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) 
@@ -3236,12 +3240,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load)
 
 	/* get MRCP module configuration */
 	mod_unimrcp_do_config();
-#ifdef MOD_UNIMRCP_FREESWITCH_CONFIG
 	if ((globals.unimrcp_dir_layout = apt_default_dir_layout_create("../", pool)) == NULL) {
-#else
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mrcp-profile-path = %s\n", globals.unimrcp_dir);
-	if ((globals.unimrcp_dir_layout = apt_default_dir_layout_create(globals.unimrcp_dir, pool)) == NULL) {
-#endif
 		return SWITCH_STATUS_FALSE;
 	}
 	if (switch_strlen_zero(globals.unimrcp_default_synth_profile)) {
@@ -3262,11 +3261,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load)
 	apt_log_ext_handler_set(unimrcp_log);
 
 	/* Create the MRCP client */
-#ifdef MOD_UNIMRCP_FREESWITCH_CONFIG
 	if ((globals.mrcp_client = mod_unimrcp_client_create()) == NULL) {
-#else
-	if ((globals.mrcp_client = unimrcp_client_create(globals.unimrcp_dir_layout)) == NULL) {
-#endif
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create mrcp client\n");
 		return SWITCH_STATUS_FALSE;
 	}
