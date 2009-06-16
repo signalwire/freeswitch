@@ -7791,6 +7791,54 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_asr_resume(void * jarg1) {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_asr_start_input_timers(void * jarg1) {
+  int jresult ;
+  switch_asr_handle_t *arg1 = (switch_asr_handle_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_asr_handle_t *)jarg1; 
+  result = (switch_status_t)switch_core_asr_start_input_timers(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_asr_text_param(void * jarg1, char * jarg2, char * jarg3) {
+  switch_asr_handle_t *arg1 = (switch_asr_handle_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  
+  arg1 = (switch_asr_handle_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  switch_core_asr_text_param(arg1,arg2,(char const *)arg3);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_asr_numeric_param(void * jarg1, char * jarg2, int jarg3) {
+  switch_asr_handle_t *arg1 = (switch_asr_handle_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int arg3 ;
+  
+  arg1 = (switch_asr_handle_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (int)jarg3; 
+  switch_core_asr_numeric_param(arg1,arg2,arg3);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_asr_float_param(void * jarg1, char * jarg2, double jarg3) {
+  switch_asr_handle_t *arg1 = (switch_asr_handle_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  double arg3 ;
+  
+  arg1 = (switch_asr_handle_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (double)jarg3; 
+  switch_core_asr_float_param(arg1,arg2,arg3);
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_directory_open(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, void * jarg6) {
   int jresult ;
   switch_directory_handle_t *arg1 = (switch_directory_handle_t *) 0 ;
@@ -14277,6 +14325,98 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_asr_interface_asr_get_results_get(vo
   
   arg1 = (switch_asr_interface *)jarg1; 
   result = (switch_status_t (*)(switch_asr_handle_t *,char **,switch_asr_flag_t *)) ((arg1)->asr_get_results);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_asr_interface_asr_start_input_timers_set(void * jarg1, void * jarg2) {
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  switch_status_t (*arg2)(switch_asr_handle_t *) = (switch_status_t (*)(switch_asr_handle_t *)) 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  arg2 = (switch_status_t (*)(switch_asr_handle_t *))jarg2; 
+  if (arg1) (arg1)->asr_start_input_timers = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_asr_interface_asr_start_input_timers_get(void * jarg1) {
+  void * jresult ;
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  switch_status_t (*result)(switch_asr_handle_t *) = 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  result = (switch_status_t (*)(switch_asr_handle_t *)) ((arg1)->asr_start_input_timers);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_asr_interface_asr_text_param_set(void * jarg1, void * jarg2) {
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  void (*arg2)(switch_asr_handle_t *,char *,char const *) = (void (*)(switch_asr_handle_t *,char *,char const *)) 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  arg2 = (void (*)(switch_asr_handle_t *,char *,char const *))jarg2; 
+  if (arg1) (arg1)->asr_text_param = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_asr_interface_asr_text_param_get(void * jarg1) {
+  void * jresult ;
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  void (*result)(switch_asr_handle_t *,char *,char const *) = 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  result = (void (*)(switch_asr_handle_t *,char *,char const *)) ((arg1)->asr_text_param);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_asr_interface_asr_numeric_param_set(void * jarg1, void * jarg2) {
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  void (*arg2)(switch_asr_handle_t *,char *,int) = (void (*)(switch_asr_handle_t *,char *,int)) 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  arg2 = (void (*)(switch_asr_handle_t *,char *,int))jarg2; 
+  if (arg1) (arg1)->asr_numeric_param = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_asr_interface_asr_numeric_param_get(void * jarg1) {
+  void * jresult ;
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  void (*result)(switch_asr_handle_t *,char *,int) = 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  result = (void (*)(switch_asr_handle_t *,char *,int)) ((arg1)->asr_numeric_param);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_asr_interface_asr_float_param_set(void * jarg1, void * jarg2) {
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  void (*arg2)(switch_asr_handle_t *,char *,double) = (void (*)(switch_asr_handle_t *,char *,double)) 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  arg2 = (void (*)(switch_asr_handle_t *,char *,double))jarg2; 
+  if (arg1) (arg1)->asr_float_param = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_asr_interface_asr_float_param_get(void * jarg1) {
+  void * jresult ;
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  void (*result)(switch_asr_handle_t *,char *,double) = 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  result = (void (*)(switch_asr_handle_t *,char *,double)) ((arg1)->asr_float_param);
   jresult = (void *)result; 
   return jresult;
 }

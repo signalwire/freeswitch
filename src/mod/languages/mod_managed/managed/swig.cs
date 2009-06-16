@@ -1750,13 +1750,13 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_asr_load_grammar(switch_asr_handle ah, string grammar, string path) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_load_grammar(switch_asr_handle.getCPtr(ah), grammar, path);
+  public static switch_status_t switch_core_asr_load_grammar(switch_asr_handle ah, string grammar, string name) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_load_grammar(switch_asr_handle.getCPtr(ah), grammar, name);
     return ret;
   }
 
-  public static switch_status_t switch_core_asr_unload_grammar(switch_asr_handle ah, string grammar) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_unload_grammar(switch_asr_handle.getCPtr(ah), grammar);
+  public static switch_status_t switch_core_asr_unload_grammar(switch_asr_handle ah, string name) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_unload_grammar(switch_asr_handle.getCPtr(ah), name);
     return ret;
   }
 
@@ -1768,6 +1768,23 @@ public class freeswitch {
   public static switch_status_t switch_core_asr_resume(switch_asr_handle ah) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_resume(switch_asr_handle.getCPtr(ah));
     return ret;
+  }
+
+  public static switch_status_t switch_core_asr_start_input_timers(switch_asr_handle ah) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_start_input_timers(switch_asr_handle.getCPtr(ah));
+    return ret;
+  }
+
+  public static void switch_core_asr_text_param(switch_asr_handle ah, string param, string val) {
+    freeswitchPINVOKE.switch_core_asr_text_param(switch_asr_handle.getCPtr(ah), param, val);
+  }
+
+  public static void switch_core_asr_numeric_param(switch_asr_handle ah, string param, int val) {
+    freeswitchPINVOKE.switch_core_asr_numeric_param(switch_asr_handle.getCPtr(ah), param, val);
+  }
+
+  public static void switch_core_asr_float_param(switch_asr_handle ah, string param, double val) {
+    freeswitchPINVOKE.switch_core_asr_float_param(switch_asr_handle.getCPtr(ah), param, val);
   }
 
   public static switch_status_t switch_core_directory_open(switch_directory_handle dh, string module_name, string source, string dsn, string passwd, SWIGTYPE_p_apr_pool_t pool) {
@@ -3082,8 +3099,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_detect_speech(SWIGTYPE_p_switch_core_session session, string mod_name, string grammar, string path, string dest, switch_asr_handle ah) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_detect_speech(SWIGTYPE_p_switch_core_session.getCPtr(session), mod_name, grammar, path, dest, switch_asr_handle.getCPtr(ah));
+  public static switch_status_t switch_ivr_detect_speech(SWIGTYPE_p_switch_core_session session, string mod_name, string grammar, string name, string dest, switch_asr_handle ah) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_detect_speech(SWIGTYPE_p_switch_core_session.getCPtr(session), mod_name, grammar, name, dest, switch_asr_handle.getCPtr(ah));
     return ret;
   }
 
@@ -3102,13 +3119,13 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_detect_speech_load_grammar(SWIGTYPE_p_switch_core_session session, string grammar, string path) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_detect_speech_load_grammar(SWIGTYPE_p_switch_core_session.getCPtr(session), grammar, path);
+  public static switch_status_t switch_ivr_detect_speech_load_grammar(SWIGTYPE_p_switch_core_session session, string grammar, string name) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_detect_speech_load_grammar(SWIGTYPE_p_switch_core_session.getCPtr(session), grammar, name);
     return ret;
   }
 
-  public static switch_status_t switch_ivr_detect_speech_unload_grammar(SWIGTYPE_p_switch_core_session session, string grammar) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_detect_speech_unload_grammar(SWIGTYPE_p_switch_core_session.getCPtr(session), grammar);
+  public static switch_status_t switch_ivr_detect_speech_unload_grammar(SWIGTYPE_p_switch_core_session session, string name) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_detect_speech_unload_grammar(SWIGTYPE_p_switch_core_session.getCPtr(session), name);
     return ret;
   }
 
@@ -6329,6 +6346,18 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_asr_resume")]
   public static extern int switch_core_asr_resume(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_asr_start_input_timers")]
+  public static extern int switch_core_asr_start_input_timers(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_asr_text_param")]
+  public static extern void switch_core_asr_text_param(HandleRef jarg1, string jarg2, string jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_asr_numeric_param")]
+  public static extern void switch_core_asr_numeric_param(HandleRef jarg1, string jarg2, int jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_asr_float_param")]
+  public static extern void switch_core_asr_float_param(HandleRef jarg1, string jarg2, double jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_directory_open")]
   public static extern int switch_core_directory_open(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, HandleRef jarg6);
 
@@ -7894,6 +7923,30 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_asr_get_results_get")]
   public static extern IntPtr switch_asr_interface_asr_get_results_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_asr_start_input_timers_set")]
+  public static extern void switch_asr_interface_asr_start_input_timers_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_asr_start_input_timers_get")]
+  public static extern IntPtr switch_asr_interface_asr_start_input_timers_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_asr_text_param_set")]
+  public static extern void switch_asr_interface_asr_text_param_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_asr_text_param_get")]
+  public static extern IntPtr switch_asr_interface_asr_text_param_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_asr_numeric_param_set")]
+  public static extern void switch_asr_interface_asr_numeric_param_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_asr_numeric_param_get")]
+  public static extern IntPtr switch_asr_interface_asr_numeric_param_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_asr_float_param_set")]
+  public static extern void switch_asr_interface_asr_float_param_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_asr_float_param_get")]
+  public static extern IntPtr switch_asr_interface_asr_float_param_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_rwlock_set")]
   public static extern void switch_asr_interface_rwlock_set(HandleRef jarg1, HandleRef jarg2);
@@ -11855,6 +11908,96 @@ public class SWIGTYPE_p_f_p_q_const__switch_log_node_t_enum_switch_log_level_t__
   }
 
   internal static HandleRef getCPtr(SWIGTYPE_p_f_p_q_const__switch_log_node_t_enum_switch_log_level_t__switch_status_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class SWIGTYPE_p_f_p_switch_asr_handle_p_char_double__void {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_f_p_switch_asr_handle_p_char_double__void(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_f_p_switch_asr_handle_p_char_double__void() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_switch_asr_handle_p_char_double__void obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class SWIGTYPE_p_f_p_switch_asr_handle_p_char_int__void {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_f_p_switch_asr_handle_p_char_int__void(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_f_p_switch_asr_handle_p_char_int__void() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_switch_asr_handle_p_char_int__void obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class SWIGTYPE_p_f_p_switch_asr_handle_p_char_p_q_const__char__void {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_f_p_switch_asr_handle_p_char_p_q_const__char__void(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_f_p_switch_asr_handle_p_char_p_q_const__char__void() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_switch_asr_handle_p_char_p_q_const__char__void obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -16455,6 +16598,50 @@ public class switch_asr_interface : IDisposable {
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_asr_interface_asr_get_results_get(swigCPtr);
       SWIGTYPE_p_f_p_switch_asr_handle_p_p_char_p_unsigned_long__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_p_char_p_unsigned_long__switch_status_t(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_f_p_switch_asr_handle__switch_status_t asr_start_input_timers {
+    set {
+      freeswitchPINVOKE.switch_asr_interface_asr_start_input_timers_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle__switch_status_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_asr_interface_asr_start_input_timers_get(swigCPtr);
+      SWIGTYPE_p_f_p_switch_asr_handle__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle__switch_status_t(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_f_p_switch_asr_handle_p_char_p_q_const__char__void asr_text_param {
+    set {
+      freeswitchPINVOKE.switch_asr_interface_asr_text_param_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_char_p_q_const__char__void.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_asr_interface_asr_text_param_get(swigCPtr);
+      SWIGTYPE_p_f_p_switch_asr_handle_p_char_p_q_const__char__void ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_char_p_q_const__char__void(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_f_p_switch_asr_handle_p_char_int__void asr_numeric_param {
+    set {
+      freeswitchPINVOKE.switch_asr_interface_asr_numeric_param_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_char_int__void.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_asr_interface_asr_numeric_param_get(swigCPtr);
+      SWIGTYPE_p_f_p_switch_asr_handle_p_char_int__void ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_char_int__void(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_f_p_switch_asr_handle_p_char_double__void asr_float_param {
+    set {
+      freeswitchPINVOKE.switch_asr_interface_asr_float_param_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_char_double__void.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_asr_interface_asr_float_param_get(swigCPtr);
+      SWIGTYPE_p_f_p_switch_asr_handle_p_char_double__void ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_char_double__void(cPtr, false);
       return ret;
     } 
   }
@@ -26093,7 +26280,8 @@ namespace FreeSWITCH.Native {
   SWITCH_XML_SECTION_CONFIG = (1 << 0),
   SWITCH_XML_SECTION_DIRECTORY = (1 << 1),
   SWITCH_XML_SECTION_DIALPLAN = (1 << 2),
-  SWITCH_XML_SECTION_PHRASES = (1 << 3)
+  SWITCH_XML_SECTION_PHRASES = (1 << 3),
+  SWITCH_XML_SECTION_MAX = (1 << 4)
 }
 
 }
