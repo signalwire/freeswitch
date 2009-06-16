@@ -1,2 +1,4 @@
 .svn
 .gitignore
+.update
+configure.gnu
