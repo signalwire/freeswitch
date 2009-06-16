@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="unibase"
+	OutputDirectory="$(SolutionDir)$(ConfigurationName)\bin"
+	IntermediateDirectory="$(ConfigurationName)"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		PreprocessorDefinitions="WIN32"
+		WarningLevel="4"
+		WarnAsError="true"
+		DisableSpecificWarnings="4100"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
+	/>
+	<UserMacro
+		Name="ProjectRootDir"
+		Value="$(SolutionDir)"
+	/>
+</VisualStudioPropertySheet>

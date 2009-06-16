@@ -1,0 +1,14 @@
+#! /bin/sh
+
+case `uname` in
+    Darwin) libtoolize=glibtoolize ;;
+    *)      libtoolize=libtoolize  ;;
+esac
+
+set -x
+$libtoolize --force --automake --copy
+aclocal -I build/acmacros
+automake --foreign --add-missing --copy
+autoconf
+
+rm -rf autom4te.cache

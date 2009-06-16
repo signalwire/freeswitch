@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE scenario SYSTEM "sipp.dtd">
+
+
+<scenario name="MRCP Synthesizer Resource UAS">
+  <!-- By adding rrs="true" (Record Route Sets), the route sets         -->
+  <!-- are saved and used for following messages sent. Useful to test   -->
+  <!-- against stateful SIP proxies/B2BUAs.                             -->
+  <recv request="INVITE" crlf="true">
+  </recv>
+
+  <!-- The '[last_*]' keyword is replaced automatically by the          -->
+  <!-- specified header if it was present in the last message received  -->
+  <!-- (except if it was a retransmission). If the header was not       -->
+  <!-- present or if no message has been received, the '[last_*]'       -->
+  <!-- keyword is discarded, and all bytes until the end of the line    -->
+  <!-- are also discarded.                                              -->
+  <!--                                                                  -->
+  <!-- If the specified header was present several times in the         -->
+  <!-- message, all occurences are concatenated (CRLF seperated)        -->
+  <!-- to be used in place of the '[last_*]' keyword.                   -->
+
+  <send retrans="500">
+    <![CDATA[
+
+      SIP/2.0 200 OK
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[call_number]
+      [last_Call-ID:]
+      [last_CSeq:]
+      Contact: <sip:[local_ip]:[local_port];transport=[transport]>
+      Content-Type: application/sdp
+      Content-Length: [len]
+
+      v=0
+      o=user1 53655765 2353687637 IN IP4 [local_ip]
+      s=-
+      c=IN IP4 [media_ip]
+      t=0 0
+      m=application 1050 TCP/MRCPv2 1
+      a=setup:passive
+      a=connection:new
+      a=channel:dca48cf082dd584b@speechsynth
+      a=cmid:1
+      m=audio [media_port] RTP/AVP 0 8
+      a=sendonly
+      a=mid:1
+
+    ]]>
+  </send>
+
+  <recv request="ACK"
+        optional="true"
+        rtd="true"
+        crlf="true">
+  </recv>
+
+  <recv request="INVITE" crlf="true">
+  </recv>
+
+  <send retrans="500">
+    <![CDATA[
+
+      SIP/2.0 200 OK
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[call_number]
+      [last_Call-ID:]
+      [last_CSeq:]
+      Contact: <sip:[local_ip]:[local_port];transport=[transport]>
+      Content-Type: application/sdp
+      Content-Length: [len]
+
+      v=0
+      o=user1 53655765 2353687637 IN IP4 [local_ip]
+      s=-
+      c=IN IP4 [media_ip]
+      t=0 0
+      m=application 0 TCP/MRCPv2 1
+      a=setup:passive
+      a=connection:existing
+      a=channel:dca48cf082dd584b@speechsynth
+      a=cmid:1
+      m=audio 0 RTP/AVP 0 8
+      a=sendonly
+      a=mid:1
+
+    ]]>
+  </send>
+
+  <recv request="ACK"
+        optional="true"
+        rtd="true"
+        crlf="true">
+  </recv>
+
+  <recv request="BYE">
+  </recv>
+
+  <send>
+    <![CDATA[
+
+      SIP/2.0 200 OK
+      [last_Via:]
+      [last_From:]
+      [last_To:]
+      [last_Call-ID:]
+      [last_CSeq:]
+      Contact: <sip:[local_ip]:[local_port];transport=[transport]>
+      Content-Length: 0
+
+    ]]>
+  </send>
+
+  <!-- Keep the call open for a while in case the 200 is lost to be     -->
+  <!-- able to retransmit it if we receive the BYE again.               -->
+  <pause milliseconds="4000"/>
+
+
+  <!-- definition of the response time repartition table (unit is ms)   -->
+  <ResponseTimeRepartition value="10, 20, 30, 40, 50, 100, 150, 200"/>
+
+  <!-- definition of the call length repartition table (unit is ms)     -->
+  <CallLengthRepartition value="10, 50, 100, 500, 1000, 5000, 10000"/>
+
+</scenario>

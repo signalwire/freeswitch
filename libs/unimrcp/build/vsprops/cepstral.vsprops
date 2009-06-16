@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="cepstral"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(CepstralSDKDir)\include&quot;"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalDependencies="swift.lib"
+		AdditionalLibraryDirectories="&quot;$(CepstralSDKDir)\lib\lib-windows&quot;"
+	/>
+	<UserMacro
+		Name="CepstralSDKDir"
+		Value="C:\Program Files\Cepstral\sdk"
+	/>
+</VisualStudioPropertySheet>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="unimrcpsdk"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(ProjectRootDir)\include&quot;"
+		PreprocessorDefinitions="APT_STATIC_LIB;MPF_STATIC_LIB;MRCP_STATIC_LIB"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalLibraryDirectories="&quot;$(ProjectRootDir)\lib&quot;"
+		AdditionalDependencies="mrcp.lib mpf.lib aprtoolkit.lib libaprutil-1.lib libapr-1.lib"
+	/>
+	<UserMacro
+		Name="ProjectRootDir"
+		Value="C:\Program Files\UniMRCP"
+	/>
+</VisualStudioPropertySheet>
