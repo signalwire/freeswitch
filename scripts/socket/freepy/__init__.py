@@ -76,6 +76,20 @@ class FreepyDispatcher(LineReceiver):
         debug(">> %s" % msg)
         return req.getDeferred()
 
+    def _sendCommand(self, command, bgapi):
+        """
+        there is a lot of duplication in this object, and as many
+        methods as possible should be changed to use this method
+        rather than repeating the code
+        """
+        command = ("bgapi %s" if bgapi else "api %s") % command
+        req = (request.BgDialoutRequest if bgapi else
+               request.DialoutRequest)()
+        self.requestq.put(req)
+        self.transport.write("%s\n\n" % command)
+        debug(">> %s" % command)
+        return req.getDeferred()
+
     def confdialout(self, conf_name, sofia_url, bgapi=True):
         """
         Instruct conference to join a particular user via dialout
@@ -161,18 +175,9 @@ class FreepyDispatcher(LineReceiver):
 
                   TODO: add this        
         """
-        if bgapi == True:
-            msg = "bgapi conference %s dtmf %s %s" % \
-                  (conf_name, member_id, dtmf)
-            req = request.BgApiRequest()
-        else:
-            msg = "api conference %s dtmf %s %s" % \
-                  (conf_name, member_id, dtmf)
-            req = request.ApiRequest()
-        self.requestq.put(req)
-        self.transport.write("%s\n\n" % msg)
-        debug(">> %s" % msg)                        
-        return req.getDeferred()
+        msg = "conference %s dtmf %s %s" % \
+              (conf_name, member_id, dtmf)        
+        return self._sendCommand(msg, bgapi)
 
     def confsay(self, conf_name, text2speak, bgapi=False):
         """
@@ -184,18 +189,8 @@ class FreepyDispatcher(LineReceiver):
 
                   TODO: add this        
         """
-        if bgapi == True:
-            msg = "bgapi conference %s say %s" % \
-                  (conf_name, text2speak)
-            req = request.BgApiRequest()
-        else:
-            msg = "api conference %s say %s" % \
-                  (conf_name, text2speak)
-            req = request.ApiRequest()
-        self.requestq.put(req)
-        self.transport.write("%s\n\n" % msg)
-        debug(">> %s" % msg)                                
-        return req.getDeferred()
+        msg = "conference %s say %s" % (conf_name, text2speak)        
+        return self._sendCommand(msg, bgapi)
 
     def confplay(self, conf_name, snd_url, bgapi=False):
         """
@@ -207,18 +202,8 @@ class FreepyDispatcher(LineReceiver):
 
                   TODO: add this        
         """
-        if bgapi == True:
-            msg = "bgapi conference %s play %s" % \
-                  (conf_name, snd_url)
-            req = request.BgApiRequest()
-        else:
-            msg = "api conference %s play %s" % \
-                  (conf_name, snd_url)
-            req = request.ApiRequest()
-        self.requestq.put(req)
-        self.transport.write("%s\n\n" % msg)
-        debug(">> %s" % msg)                                        
-        return req.getDeferred()
+        msg = "conference %s play %s" % (conf_name, snd_url)        
+        return self._sendCommand(msg, bgapi)
 
     def confstop(self, conf_name, bgapi=False):
         """
@@ -229,19 +214,8 @@ class FreepyDispatcher(LineReceiver):
 
                   TODO: add this        
         """
-        if bgapi == True:
-            msg = "bgapi conference %s stop" % \
-                  (conf_name)
-            req = request.BgApiRequest()
-        else:
-            msg = "api conference %s stop" % \
-                  (conf_name)
-            req = request.ApiRequest()
-        self.requestq.put(req)
-        self.transport.write("%s\n\n" % msg)
-        debug(">> %s" % msg)                                        
-        return req.getDeferred()
-
+        msg = "conference %s stop" % (conf_name)        
+        return self._sendCommand(msg, bgapi)
 
     def showchannels(self, bgapi=False):
         """
@@ -269,84 +243,32 @@ class FreepyDispatcher(LineReceiver):
           ...
         </result>
         """
-        if bgapi == True:
-            msg = "bgapi show channels as xml"
-            req = request.BgApiRequest()            
-        else:
-            msg = "api show channels as xml"            
-            req = request.ApiRequest()
-        self.requestq.put(req)
-        self.transport.write("%s\n\n" % msg)
-        debug(">> %s" % msg)                                                
-        return req.getDeferred()
+        msg = "show channels as xml"        
+        return self._sendCommand(msg, bgapi)
 
     def sofia_status_profile(self, profile_name, bgapi=False):
-        # DO NOT USE - TOTALLY BROKEN
-        # FS DOES NOT RETURN XML IN THIS CASE
-        if bgapi == True:
-            msg = "bgapi sofia status profile %s as xml" % (profile_name)
-            req = request.BgApiRequest()
-        else:
-            msg = "api sofia status profile %s as xml" % (profile_name)
-            req = request.ApiRequest()
-        self.requestq.put(req)
-        debug("sending to fs: %s" % msg)
-        self.transport.write("%s\n\n" % msg)
-        return req.getDeferred()
-        
-    def sofia_profile_restart(self, sofia_profile_name, bgapi = False):
-        if bgapi == True:
-            msg = "bgapi sofia profile %s restart" % \
-                  (sofia_profile_name)
-            req = request.BgApiRequest()
-        else:
-            msg = "api sofia profile %s restart" % \
-                  (sofia_profile_name)
-            req = request.ApiRequest()
-        self.requestq.put(req)
-        self.transport.write("%s\n\n" % msg)
-        debug(">> %s" % msg)                                                        
-        return req.getDeferred()
+        msg = "sofia status profile %s as xml" % (profile_name)        
+        return self._sendCommand(msg, bgapi)
 
+    def sofia_profile_restart(self, sofia_profile_name, bgapi = False):
+
+        msg = "sofia profile %s restart" % (sofia_profile_name)
+        return self._sendCommand(msg, bgapi)
 
     def killchan(self, uuid, bgapi = False):
-        if bgapi == True:
-            msg = "bgapi uuid_kill %s" % (uuid)
-            req = request.BgApiRequest()
-        else:
-            msg = "api uuid_kill %s" % (uuid)            
-            req = request.ApiRequest()
-        self.requestq.put(req)
-        self.transport.write("%s\n\n" % msg)
-        debug(">> %s" % msg)        
-        return req.getDeferred()
+        return self._sendCommand("uuid_kill %s" % (uuid), bgapi)
 
     def broadcast(self, uuid, path, legs, bgapi = False):
-        if bgapi == True:
-            msg = "bgapi uuid_broadcast %s %s %s" % (uuid, path, legs)
-            req = request.BgApiRequest()
-        else:
-            msg = "api uuid_broadcast %s %s %s" % (uuid, path, legs)
-            req = request.ApiRequest()
-        self.requestq.put(req)
-        self.transport.write("%s\n\n" % msg)
-        debug(">> %s" % msg)                
-        return req.getDeferred()
-
+        msg = "uuid_broadcast %s %s %s" % (uuid, path, legs)
+        return self._sendCommand(msg, bgapi)
+    
     def transfer(self, uuid, dest_ext, legs, bgapi = False):
         """
         transfer <uuid> [-bleg|-both] <dest-exten>
         """
-        if bgapi == True:
-            msg = "bgapi uuid_transfer %s %s %s" % (uuid, legs, dest_ext)
-            req = request.BgApiRequest()
-        else:
-            msg = "api uuid_transfer %s %s %s" % (uuid, legs, dest_ext)
-            req = request.ApiRequest()
-        self.requestq.put(req)
-        self.transport.write("%s\n\n" % msg)
-        debug(">> %s" % msg)                        
-        return req.getDeferred()
+        msg = "uuid_transfer %s %s %s" % (uuid, legs, dest_ext)        
+        return self._sendCommand(msg, bgapi)
+
         
     def lineReceived(self, line):
         debug("<< %s" % line)                                
