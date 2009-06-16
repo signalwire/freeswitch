@@ -1888,6 +1888,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 		status = switch_core_speech_read_tts(sh, abuf, &ilen, &flags);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
+			write_frame.datalen = (uint32_t) codec->implementation->decoded_bytes_per_packet;
+			write_frame.samples = (uint32_t) (write_frame.datalen / 2);
+			memset(write_frame.data, 0, write_frame.datalen);
 			for (x = 0; !done && x < lead_in_out; x++) {
 				switch_yield(codec->implementation->microseconds_per_packet);
 				if (timer) {
