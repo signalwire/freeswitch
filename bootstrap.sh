@@ -90,11 +90,9 @@ fi
 libtool=${LIBTOOL:-`${LIBDIR}/apr/build/PrintPath glibtool libtool libtool15 libtool14`}
 lt_pversion=`$libtool --version 2>/dev/null|sed -e 's/([^)]*)//g;s/^[^0-9]*//;s/[- ].*//g;q'`
 if test -z "$lt_pversion"; then
-echo "bootstrap: libtool not found."
-echo "           You need libtool version 1.5.14 or newer (up to 1.9.x) installed. 2.x will not work! see http://jira.freeswitch.org/browse/FSBUILD-82"
-echo "           libtool version 2.0 and above WILL NOT work."
-echo "           to build FreeSWITCH from SVN."
-exit 1
+   echo "bootstrap: libtool not found."
+   echo "           You need libtool version 1.5.14 or newer to build FreeSWITCH from SVN."
+   exit 1
 fi
 lt_version=`echo $lt_pversion|sed -e 's/\([a-z]*\)$/.\1/'`
 IFS=.; set $lt_version; IFS=' '
@@ -117,11 +115,9 @@ fi
 if test $lt_status = "good"; then
    echo "bootstrap: libtool version $lt_pversion (ok)"
 else
-echo "bootstrap: libtool version $lt_pversion found."
-echo "           You need libtool version 1.5.14 or newer (up to 1.9.x) installed. 2.x will not work! see http://jira.freeswitch.org/browse/FSBUILD-82"
-echo "           to build FreeSWITCH from SVN."
-
-exit 1
+   echo "bootstrap: libtool version $lt_pversion found."
+   echo "           You need libtool version 1.5.14 or newer to build FreeSWITCH from SVN."
+   exit 1
 fi
 
 # check libtoolize availability
