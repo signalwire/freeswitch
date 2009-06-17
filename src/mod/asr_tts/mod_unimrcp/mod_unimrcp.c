@@ -1309,6 +1309,7 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	speech_channel_t *schannel = NULL;
+	const char *profile = sh->param;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "speech_handle: name = %s, rate = %d, speed = %d, samples = %d, voice = %s, engine = %s, param = %s\n",
 						sh->name, sh->rate, sh->speed, sh->samples, sh->voice, sh->engine, sh->param); 
@@ -1329,7 +1330,9 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	sh->private_info = schannel;
 
 	/* try to open an MRCP channel */
-	const char *profile = globals.unimrcp_default_synth_profile;
+	if (switch_strlen_zero(profile)) {
+		profile = globals.unimrcp_default_synth_profile;
+	}
 	if (speech_channel_open(schannel, profile) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
