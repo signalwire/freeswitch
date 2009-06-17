@@ -737,7 +737,7 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_join(switch_socket_t *sock, switch_
 	return apr_mcast_join(sock, join, iface, source);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_mcast_hops(switch_socket_t *sock, int32_t ttl)
+SWITCH_DECLARE(switch_status_t) switch_mcast_hops(switch_socket_t *sock, uint8_t ttl)
 {
 	return apr_mcast_hops(sock, ttl);
 }

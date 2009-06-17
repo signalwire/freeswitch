@@ -1205,7 +1205,7 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_join(switch_socket_t *sock, switch_
  * @remark If the TTL is 0, packets will only be seen by sockets on the local machine,
  *     and only when multicast loopback is enabled.
  */
-SWITCH_DECLARE(switch_status_t) switch_mcast_hops(switch_socket_t *sock, int32_t ttl);
+SWITCH_DECLARE(switch_status_t) switch_mcast_hops(switch_socket_t *sock, uint8_t ttl);
 
 
 /** @} */
