@@ -1,5 +1,5 @@
 
-LOCAL_CFLAGS= $(openssl_CFLAGS)
-LOCAL_LDLAGS= $(openssl_LIBS)
+LOCAL_CFLAGS= $(OPENSSL_CFLAGS)
+LOCAL_LDLAGS= $(OPENSSL_LIBS)
 
 include ../../../../build/modmake.rules
