@@ -87,19 +87,19 @@ typedef switch_status_t (*switch_xml_config_callback_t)(switch_xml_config_item_t
  * \brief A configuration instruction read by switch_xml_config_parse 
 */
 struct switch_xml_config_item {
-	char *key;					   			/*< The key of the element, or NULL to indicate the end of the list */
+	const char *key;					   			/*< The key of the element, or NULL to indicate the end of the list */
 	switch_xml_config_type_t type; 			/*< The type of variable */
-	switch_config_flags_t flags; 	   		/*< True if the var can be changed on reload */
+	int flags; 	   		/*< True if the var can be changed on reload */
 	void *ptr;					   			/*< Ptr to the var to be changed */
-	void *defaultvalue; 		   			/*< Default value */
+	const void *defaultvalue; 		   			/*< Default value */
 	void *data; 				   			/*< Custom data (depending on the type) */
 	switch_xml_config_callback_t function;	/*< Callback to be called after the var is parsed */
-	char *syntax;							/*< Optional syntax documentation for this setting */
-	char *helptext;							/*< Optional documentation text for this setting */
+	const char *syntax;							/*< Optional syntax documentation for this setting */
+	const char *helptext;							/*< Optional documentation text for this setting */
 };
 
 #define SWITCH_CONFIG_ITEM(_key, _type, _flags, _ptr, _defaultvalue, _data, _syntax, _helptext)	{ _key, _type, _flags, _ptr, (void*)_defaultvalue, (void*)_data, NULL, _syntax, _helptext }
-#define SWITCH_CONFIG_ITEM_STRING_STRDUP(_key, _flags, _ptr, _defaultvalue, _syntax, _helptext)	{ _key, SWITCH_CONFIG_STRING, _flags, _ptr, (void*)_defaultvalue, &switch_config_string_strdup, NULL, _syntax, _helptext }
+#define SWITCH_CONFIG_ITEM_STRING_STRDUP(_key, _flags, _ptr, _defaultvalue, _syntax, _helptext)	{ (_key), SWITCH_CONFIG_STRING, (_flags), (_ptr), ((void*)_defaultvalue), (&switch_config_string_strdup), (NULL), (_syntax), (_helptext) }
 #define SWITCH_CONFIG_ITEM_CALLBACK(_key, _type, _flags, _ptr, _defaultvalue, _function, _functiondata, _syntax, _helptext)	{ _key, _type, _flags, _ptr, (void*)_defaultvalue, _functiondata, _function, _syntax, _helptext }
 #define SWITCH_CONFIG_ITEM_END() { NULL, SWITCH_CONFIG_LAST, 0, NULL, NULL, NULL, NULL, NULL, NULL }
 
