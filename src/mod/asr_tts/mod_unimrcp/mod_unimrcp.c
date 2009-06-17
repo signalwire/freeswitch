@@ -3160,7 +3160,7 @@ static mrcp_client_t *mod_unimrcp_client_create()
 						client = NULL;
 						goto done;
 					}
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading Param %s:%s", param_name, param_value);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading Param %s:%s\n", param_name, param_value);
 					if (!process_mrcpv1_config(config, param_name, param_value, pool) && 
 						!process_rtp_config(client, rtp_config, param_name, param_value, pool)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown param %s\n", param_name);
@@ -3187,7 +3187,7 @@ static mrcp_client_t *mod_unimrcp_client_create()
 						client = NULL;
 						goto done;
 					}
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading Param %s:%s", param_name, param_value);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading Param %s:%s\n", param_name, param_value);
 					if (!process_mrcpv2_config(config, param_name, param_value, pool) &&
 						!process_rtp_config(client, rtp_config, param_name, param_value, pool)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown param %s\n", param_name);
