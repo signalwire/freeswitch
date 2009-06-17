@@ -34,7 +34,7 @@ mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/libs/mrcp/resources/include
 mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/libs/mpf/include
 mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/libs/apr-toolkit/include
 
-mod_unimrcp_la_LIBADD = $(switch_builddir)/libfreeswitch.la $(UNIMRCPLA)
+mod_unimrcp_la_LIBADD = $(switch_builddir)/libfreeswitch.la $(UNIMRCPLA) $(switch_builddir)/libs/apr/libapr-1.la
 mod_unimrcp_la_LDFLAGS = -avoid-version -module -no-undefined
 
 if ISMAC
