@@ -611,6 +611,8 @@ if test "$enable_core_libedit_support" = "yes" ; then
           [AC_MSG_ERROR([libtermcap, libcurses or libncurses are required!])] )] )
 fi
 
+SAC_OPENSSL
+
 AX_CHECK_JAVA
 
 
