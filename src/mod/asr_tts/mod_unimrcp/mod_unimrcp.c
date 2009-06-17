@@ -196,7 +196,7 @@ struct audio_queue {
 	/** total bytes read */
 	unsigned int read_bytes;
 	/** number of bytes reader is waiting for */
-	int waiting;
+	switch_size_t waiting;
 	/** name of this queue (for logging) */
 	char *name;
 };
@@ -268,7 +268,7 @@ struct speech_channel {
 	/** codec */
 	char *codec;
 	/** rate */
-	unsigned int rate;
+	uint16_t rate;
 	/** silence byte */
 	int silence;
 	/** speech channel params */
@@ -284,7 +284,7 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
 static apt_bool_t speech_on_channel_remove(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel, mrcp_sig_status_code_e status);
 
 /* speech_channel funcs */
-static switch_status_t speech_channel_create(speech_channel_t **schannel, const char *name, speech_channel_type_t type, mod_unimrcp_application_t *app, const char *codec, unsigned int rate, switch_memory_pool_t *pool);
+static switch_status_t speech_channel_create(speech_channel_t **schannel, const char *name, speech_channel_type_t type, mod_unimrcp_application_t *app, const char *codec, uint16_t rate, switch_memory_pool_t *pool);
 static switch_status_t speech_channel_open(speech_channel_t *schannel, const char *profile_name);
 static switch_status_t speech_channel_destroy(speech_channel_t *schannel);
 static switch_status_t speech_channel_stop(speech_channel_t *schannel);
@@ -431,12 +431,14 @@ static int text_starts_with(const char *text, const char *match)
 	int result = 0;
 
 	if (!switch_strlen_zero(text)) {
+		size_t textlen, matchlen;
+
 		/* find first non-space character */
 		while (switch_isspace(*text)) {
 			text++;
 		}
-		size_t textlen = strlen(text);
-		size_t matchlen = strlen(match);
+		textlen = strlen(text);
+		matchlen = strlen(match);
 		/* is there a match? */
 		result = textlen > matchlen && !strncmp(match, text, matchlen);
 	}
@@ -681,7 +683,7 @@ static switch_status_t audio_queue_destroy(audio_queue_t *queue)
  * @param pool the memory pool to use
  * @return SWITCH_STATUS_SUCCESS if successful.  SWITCH_STATUS_FALSE if the channel cannot be allocated.
  */
-static switch_status_t speech_channel_create(speech_channel_t **schannel, const char *name, speech_channel_type_t type, mod_unimrcp_application_t *app, const char *codec, unsigned int rate, switch_memory_pool_t *pool)
+static switch_status_t speech_channel_create(speech_channel_t **schannel, const char *name, speech_channel_type_t type, mod_unimrcp_application_t *app, const char *codec, uint16_t rate, switch_memory_pool_t *pool)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	speech_channel_t *schan = NULL;
@@ -763,6 +765,7 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, const cha
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	mpf_termination_t *termination = NULL;
+	mpf_codec_descriptor_t *codec = NULL;
 	mrcp_resource_type_e resource_type;
 
 	switch_mutex_lock(schannel->mutex);
@@ -782,7 +785,6 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, const cha
 	}
 
 	/* create RTP endpoint and link to session channel */
-	mpf_codec_descriptor_t *codec = NULL;
 	codec = apr_palloc(schannel->unimrcp_session->pool, sizeof(mpf_codec_descriptor_t));
 	mpf_codec_descriptor_init(codec);
 	codec->channel_count = 1;
@@ -954,10 +956,11 @@ static switch_status_t synth_channel_set_params(speech_channel_t *schannel, mrcp
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s: %s\n", schannel->name, param_name, param_val);
 				synth_channel_set_header(schannel, id->id, param_val, msg, synth_hdr);
 			} else {
-				/* this is probably a vendor-specific MRCP param */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) (vendor-specific value) %s: %s\n", schannel->name, param_name, param_val);
 				apt_str_t apt_param_name = { 0 };
 				apt_str_t apt_param_val = { 0 };
+
+				/* this is probably a vendor-specific MRCP param */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) (vendor-specific value) %s: %s\n", schannel->name, param_name, param_val);
 				apt_string_set(&apt_param_name, param_name); /* copy isn't necessary since apt_pair_array_append will do it */
 				apt_string_set(&apt_param_val, param_val);
 				if (!gen_hdr->vendor_specific_params) {
@@ -1038,10 +1041,10 @@ static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int 
 	case SYNTHESIZER_HEADER_PROSODY_VOLUME:
 		if (switch_isdigit(*val) || *val == '.') {
 			synth_hdr->prosody_param.volume.type = PROSODY_VOLUME_TYPE_NUMERIC;
-			synth_hdr->prosody_param.volume.value.numeric = atof(val);
+			synth_hdr->prosody_param.volume.value.numeric = (float)atof(val);
 		} else if (*val == '+' || *val == '-') {
 			synth_hdr->prosody_param.volume.type = PROSODY_VOLUME_TYPE_RELATIVE_CHANGE;
-			synth_hdr->prosody_param.volume.value.relative = atof(val);
+			synth_hdr->prosody_param.volume.value.relative = (float)atof(val);
 		} else if (!strcasecmp("silent", val)) {
 			synth_hdr->prosody_param.volume.type = PROSODY_VOLUME_TYPE_LABEL;
 			synth_hdr->prosody_param.volume.value.label = PROSODY_VOLUME_SILENT;
@@ -1073,7 +1076,7 @@ static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int 
 	case SYNTHESIZER_HEADER_PROSODY_RATE:
 		if (switch_isdigit(*val) || *val == '.') {
 			synth_hdr->prosody_param.rate.type = PROSODY_RATE_TYPE_RELATIVE_CHANGE;
-			synth_hdr->prosody_param.rate.value.relative = atof(val);
+			synth_hdr->prosody_param.rate.value.relative = (float)atof(val);
 		} else if (!strcasecmp("x-slow", val)) {
 			synth_hdr->prosody_param.rate.type = PROSODY_RATE_TYPE_LABEL;
 			synth_hdr->prosody_param.rate.value.label = PROSODY_RATE_XSLOW;
@@ -1138,6 +1141,7 @@ static switch_status_t speech_channel_stop(speech_channel_t *schannel)
 
 	if (schannel->state == SPEECH_CHANNEL_PROCESSING) {
 		mrcp_method_id method;
+		mrcp_message_t *mrcp_message;
 		if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
 			method = SYNTHESIZER_STOP;
 		} else {
@@ -1145,7 +1149,7 @@ static switch_status_t speech_channel_stop(speech_channel_t *schannel)
 		} 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Stopping %s\n", schannel->name, speech_channel_type_to_string(schannel->type));
 		/* Send STOP to MRCP server */
-		mrcp_message_t *mrcp_message = mrcp_application_message_create(schannel->unimrcp_session, schannel->unimrcp_channel, method);
+		mrcp_message = mrcp_application_message_create(schannel->unimrcp_session, schannel->unimrcp_channel, method);
 		if (mrcp_message == NULL) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Failed to create STOP message\n", schannel->name);
 			status = SWITCH_STATUS_FALSE;
@@ -1315,6 +1319,8 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	speech_channel_t *schannel = NULL;
 	const char *profile = sh->param;
+	int speech_channel_number = get_next_speech_channel_number();
+	char name[200] = { 0 };
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "speech_handle: name = %s, rate = %d, speed = %d, samples = %d, voice = %s, engine = %s, param = %s\n",
 						sh->name, sh->rate, sh->speed, sh->samples, sh->voice, sh->engine, sh->param); 
@@ -1322,13 +1328,11 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 
 	/* It would be nice if FreeSWITCH let us know which session owns this handle, but it doesn't.  So, lets
 		make our own unique name */
-	int speech_channel_number = get_next_speech_channel_number();
-	char name[200] = { 0 };
 	switch_snprintf(name, sizeof(name) - 1, "TTS-%d", speech_channel_number);
 	name[sizeof(name) - 1] = '\0';
 	
 	/* create channel container with L16 codec (what FreeSWITCH needs) */
-	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_SYNTHESIZER, &globals.synth, "L16", rate, sh->memory_pool) != SWITCH_STATUS_SUCCESS) {
+	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_SYNTHESIZER, &globals.synth, "L16", (uint16_t)rate, sh->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -1781,6 +1785,9 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 	mrcp_message_t *mrcp_message;
 	mrcp_recog_header_t *recog_header;
 	mrcp_generic_header_t *generic_header;
+	recognizer_data_t *r;
+	char *start_input_timers;
+	const char *mime_type;
 
 	switch_mutex_lock(schannel->mutex);
 	if (schannel->state != SPEECH_CHANNEL_READY) {
@@ -1792,12 +1799,12 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	recognizer_data_t *r = (recognizer_data_t *)schannel->data;
+	r = (recognizer_data_t *)schannel->data;
 	r->result = NULL;
 	r->start_of_input = 0;
 
 	/* input timers are started by default unless the start-input-timers=false param is set */
-	char *start_input_timers = switch_core_hash_find(schannel->params, "start-input-timers");
+	start_input_timers = switch_core_hash_find(schannel->params, "start-input-timers");
 	r->timers_started = switch_strlen_zero(start_input_timers) || strcasecmp(start_input_timers, "false");
 		
 	/* create MRCP message */
@@ -1815,7 +1822,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 	}
 
 	/* set Content-Type */
-	const char *mime_type = grammar_type_to_mime(r->grammar->type);
+	mime_type = grammar_type_to_mime(r->grammar->type);
 	if (switch_strlen_zero(mime_type)) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -1879,9 +1886,10 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, const char *name, grammar_type_t type, const char *data)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Loading grammar %s, data = %s\n", schannel->name, name, data);
 	grammar_t *g = NULL;
 	char *ldata = NULL;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Loading grammar %s, data = %s\n", schannel->name, name, data);
 
 	switch_mutex_lock(schannel->mutex);
 	if (schannel->state != SPEECH_CHANNEL_READY) {
@@ -1893,6 +1901,7 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 	if (type != GRAMMAR_TYPE_URI) {
 		mrcp_message_t *mrcp_message;
 		mrcp_generic_header_t *generic_header;
+		const char *mime_type;
 
 		/* create MRCP message */
 		mrcp_message = mrcp_application_message_create(schannel->unimrcp_session, schannel->unimrcp_channel, RECOGNIZER_DEFINE_GRAMMAR);
@@ -1907,7 +1916,7 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
-		const char *mime_type = grammar_type_to_mime(type);
+		mime_type = grammar_type_to_mime(type);
 		if (switch_strlen_zero(mime_type)) {
 			status = SWITCH_STATUS_FALSE;
 			goto done;
@@ -1968,8 +1977,8 @@ static switch_status_t recog_channel_unload_grammar(speech_channel_t *schannel, 
 	if (switch_strlen_zero(grammar_name)) {
 		status = SWITCH_STATUS_FALSE;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Unloading grammar %s\n", schannel->name, grammar_name);
 		recognizer_data_t *r = (recognizer_data_t *)schannel->data;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Unloading grammar %s\n", schannel->name, grammar_name);
 		r->grammar = NULL;
 	}
 
@@ -1984,8 +1993,9 @@ static switch_status_t recog_channel_unload_grammar(speech_channel_t *schannel, 
 static switch_status_t recog_channel_check_results(speech_channel_t *schannel) 
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	recognizer_data_t *r;
 	switch_mutex_lock(schannel->mutex);
-	recognizer_data_t *r = (recognizer_data_t *)schannel->data;
+	r = (recognizer_data_t *)schannel->data;
 	if (!switch_strlen_zero(r->result)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) SUCCESS, have result\n", schannel->name);
 	} else if (r->start_of_input) {
@@ -2010,9 +2020,10 @@ static switch_status_t recog_channel_start_input_timers(speech_channel_t *schann
 	switch_mutex_lock(schannel->mutex);
 
 	if (schannel->state == SPEECH_CHANNEL_PROCESSING && !r->timers_started) {
+		mrcp_message_t *mrcp_message;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Starting input timers\n", schannel->name);
 		/* Send START-INPUT-TIMERS to MRCP server */
-		mrcp_message_t *mrcp_message = mrcp_application_message_create(schannel->unimrcp_session, schannel->unimrcp_channel, RECOGNIZER_START_INPUT_TIMERS);
+		mrcp_message = mrcp_application_message_create(schannel->unimrcp_session, schannel->unimrcp_channel, RECOGNIZER_START_INPUT_TIMERS);
 		if (mrcp_message == NULL) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Failed to create START-INPUT-TIMERS message\n", schannel->name);
 			status = SWITCH_STATUS_FALSE;
@@ -2037,8 +2048,9 @@ static switch_status_t recog_channel_start_input_timers(speech_channel_t *schann
 static switch_status_t recog_channel_set_start_of_input(speech_channel_t *schannel)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	recognizer_data_t *r;
 	switch_mutex_lock(schannel->mutex);
-	recognizer_data_t *r = (recognizer_data_t *)schannel->data;
+	r = (recognizer_data_t *)schannel->data;
 	r->start_of_input = 1;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) start of input\n", schannel->name);
 	switch_mutex_unlock(schannel->mutex);
@@ -2055,8 +2067,9 @@ static switch_status_t recog_channel_set_start_of_input(speech_channel_t *schann
 static switch_status_t recog_channel_set_results(speech_channel_t *schannel, const char *result)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	recognizer_data_t *r;
 	switch_mutex_lock(schannel->mutex);
-	recognizer_data_t *r = (recognizer_data_t *)schannel->data;
+	r = (recognizer_data_t *)schannel->data;
 	if (!switch_strlen_zero(r->result)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) result is already set\n", schannel->name);
 		status = SWITCH_STATUS_FALSE;
@@ -2132,9 +2145,9 @@ static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp
 				recog_channel_set_header(schannel, id->id, param_val, msg, recog_hdr);
 			} else {
 				/* this is probably a vendor-specific MRCP param */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) (vendor-specific value) %s: %s\n", schannel->name, param_name, param_val);
 				apt_str_t apt_param_name = { 0 };
 				apt_str_t apt_param_val = { 0 };
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) (vendor-specific value) %s: %s\n", schannel->name, param_name, param_val);
 				apt_string_set(&apt_param_name, param_name); /* copy isn't necessary since apt_pair_array_append will do it */
 				apt_string_set(&apt_param_val, param_val);
 				if (!gen_hdr->vendor_specific_params) {
@@ -2169,17 +2182,17 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 
 	switch (id) {
 	case RECOGNIZER_HEADER_CONFIDENCE_THRESHOLD:
-		recog_hdr->confidence_threshold = atof(val);
+		recog_hdr->confidence_threshold = (float)atof(val);
 		mrcp_resource_header_property_add(msg, RECOGNIZER_HEADER_CONFIDENCE_THRESHOLD);
 		break;
 
 	case RECOGNIZER_HEADER_SENSITIVITY_LEVEL:
-		recog_hdr->sensitivity_level = atof(val);
+		recog_hdr->sensitivity_level = (float)atof(val);
 		mrcp_resource_header_property_add(msg, RECOGNIZER_HEADER_SENSITIVITY_LEVEL);
 		break;
 
 	case RECOGNIZER_HEADER_SPEED_VS_ACCURACY:
-		recog_hdr->speed_vs_accuracy = atof(val);
+		recog_hdr->speed_vs_accuracy = (float)atof(val);
 		mrcp_resource_header_property_add(msg, RECOGNIZER_HEADER_SPEED_VS_ACCURACY);
 		break;
 
@@ -2360,8 +2373,9 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
  */
 static switch_status_t recog_channel_set_timers_started(speech_channel_t *schannel)
 {
+	recognizer_data_t *r;
 	switch_mutex_lock(schannel->mutex);
-	recognizer_data_t *r = schannel->data;
+	r = schannel->data;
 	r->timers_started = 1;
 	switch_mutex_unlock(schannel->mutex);
 	return SWITCH_STATUS_SUCCESS;
@@ -2381,18 +2395,20 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	speech_channel_t *schannel = NULL;
+	int speech_channel_number = get_next_speech_channel_number();
+	char name[200] = { 0 };
+	const char *profile;
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "asr_handle: name = %s, codec = %s, rate = %d, grammar = %s, param = %s\n",
 		ah->name, ah->codec, ah->rate, ah->grammar, ah->param);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "codec = %s, rate = %d, dest = %s\n", codec, rate, dest);
 
 	/* It would be nice if FreeSWITCH let us know which session owns this handle, but it doesn't.  So, lets
 		make our own unique name */
-	int speech_channel_number = get_next_speech_channel_number();
-	char name[200] = { 0 };
 	switch_snprintf(name, sizeof(name) - 1, "ASR-%d", speech_channel_number);
 	name[sizeof(name) - 1] = '\0';
 
-	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_RECOGNIZER, &globals.recog, "L16", rate, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
+	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_RECOGNIZER, &globals.recog, "L16", (uint16_t)rate, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -2401,7 +2417,7 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	memset(schannel->data, 0, sizeof(recognizer_data_t));
 
 	/* try to open an MRCP channel */
-	const char *profile = switch_strlen_zero(dest) ? globals.unimrcp_default_recog_profile : dest;
+	profile = switch_strlen_zero(dest) ? globals.unimrcp_default_recog_profile : dest;
 	status = speech_channel_open(schannel, profile);
 
  done:
@@ -2755,15 +2771,15 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 					recog_channel_set_results(schannel, message->body.buf);
 				} else {
 					/* string is not null terminated */
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Recognition result is not null-terminated.  Appending null terminator.\n", schannel->name);
 					char *result = (char *)switch_core_alloc(schannel->memory_pool, message->body.length + 1);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Recognition result is not null-terminated.  Appending null terminator.\n", schannel->name);
 					strncpy(result, message->body.buf, message->body.length);
 					result[message->body.length] = '\0';
 					recog_channel_set_results(schannel, result);
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) No result\n", schannel->name);
 				char *completion_cause = switch_mprintf("Completion-Cause: %03d", recog_hdr->completion_cause);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) No result\n", schannel->name);
 				recog_channel_set_results(schannel, completion_cause);
 				switch_safe_free(completion_cause);
 			}
@@ -3092,6 +3108,10 @@ static mrcp_client_t *mod_unimrcp_client_create()
 	apr_pool_t *pool = NULL;
 	mrcp_resource_factory_t *resource_factory = NULL;
 	mpf_codec_manager_t *codec_manager = NULL;
+	apr_size_t max_connection_count = 0;
+	apt_bool_t offer_new_connection = FALSE;
+	mrcp_connection_agent_t *connection_agent;
+	mpf_engine_t *media_engine;
 
 	/* create the client */
 	client = mrcp_client_create(globals.unimrcp_dir_layout);
@@ -3113,24 +3133,22 @@ static mrcp_client_t *mod_unimrcp_client_create()
 	}
 
 	/* set up MRCPv2 connection agent that will be shared with all profiles */
-	apr_size_t max_connection_count = 0;
 	if (!switch_strlen_zero(globals.unimrcp_max_connection_count)) {
 		max_connection_count = atoi(globals.unimrcp_max_connection_count);
 	}
 	if (max_connection_count <= 0) {
 		max_connection_count = 100;
 	}
-	apt_bool_t offer_new_connection = FALSE;
 	if (!switch_strlen_zero(globals.unimrcp_offer_new_connection)) {
 		offer_new_connection = strcasecmp("true", globals.unimrcp_offer_new_connection);
 	}
-	mrcp_connection_agent_t *connection_agent = mrcp_client_connection_agent_create(max_connection_count, offer_new_connection, pool);
+	connection_agent = mrcp_client_connection_agent_create(max_connection_count, offer_new_connection, pool);
 	if (connection_agent) {
 		mrcp_client_connection_agent_register(client, connection_agent, "MRCPv2ConnectionAgent");
 	}
 
 	/* Set up the media engine that will be shared with all profiles */
-	mpf_engine_t *media_engine = mpf_engine_create(pool);
+	media_engine = mpf_engine_create(pool);
 	if (media_engine) {
 		mrcp_client_media_engine_register(client, media_engine, "MediaEngine");
 	}
@@ -3147,6 +3165,7 @@ static mrcp_client_t *mod_unimrcp_client_create()
 			mrcp_sig_agent_t *agent = NULL;
 			mpf_termination_factory_t *termination_factory = NULL;
 			mrcp_profile_t * mprofile = NULL;
+			mpf_rtp_config_t *rtp_config = NULL;
 			
 			/* get profile attributes */
 			const char *name = switch_xml_attr(profile, "name");
@@ -3158,7 +3177,6 @@ static mrcp_client_t *mod_unimrcp_client_create()
 			}
 
 			/* create RTP config, common to MRCPv1 and MRCPv2 */
-			mpf_rtp_config_t *rtp_config = NULL;
 			rtp_config = mpf_rtp_config_create(pool);
 			rtp_config->rtp_port_min = DEFAULT_RTP_PORT_MIN;
 			rtp_config->rtp_port_max = DEFAULT_RTP_PORT_MAX;
