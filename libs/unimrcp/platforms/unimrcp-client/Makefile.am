@@ -22,3 +22,7 @@ unimrcpclient_SOURCES  = src/main.c \
                          src/demo_discover_application.c \
                          src/demo_util.c
 unimrcpclient_LDADD    = $(top_builddir)/platforms/libunimrcp-client/libunimrcpclient.la
+
+if ISMAC
+unimrcpclient_LDFLAGS  = -framework CoreFoundation -framework SystemConfiguration
+endif

@@ -17,3 +17,7 @@ INCLUDES               = -Iinclude \
 bin_PROGRAMS           = unimrcpserver
 unimrcpserver_SOURCES  = src/main.c src/uni_cmdline.c src/uni_daemon.c
 unimrcpserver_LDADD    = $(top_builddir)/platforms/libunimrcp-server/libunimrcpserver.la
+
+if ISMAC
+unimrcpserver_LDFLAGS  = -framework CoreFoundation -framework SystemConfiguration
+endif

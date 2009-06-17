@@ -108,6 +108,7 @@ AC_ARG_ENABLE(demorecog-plugin,
 
 AM_CONDITIONAL([DEMORECOG_PLUGIN],[test "${enable_demorecog_plugin}" = "yes"])
 
+AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
 
 AC_CONFIG_FILES([
   Makefile
