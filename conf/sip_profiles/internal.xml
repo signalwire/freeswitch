@@ -136,7 +136,7 @@
     <!--<param name="disable-transcoding" value="true"/>-->
     <!-- Handle 302 Redirect in the dialplan -->
     <!--<param name="manual-redirect" value="true"/> -->
-    <!-- Disable Register -->
+    <!-- Disable Transfer -->
     <!--<param name="disable-transfer" value="true"/> -->
     <!-- Disable Register -->
     <!--<param name="disable-register" value="true"/> -->
