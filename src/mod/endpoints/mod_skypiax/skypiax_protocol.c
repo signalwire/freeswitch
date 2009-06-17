@@ -1,7 +1,5 @@
 #include "skypiax.h"
 
-#undef FARMING
-
 #ifdef ASTERISK
 #define skypiax_sleep usleep
 #define skypiax_strncpy strncpy
@@ -220,7 +218,6 @@ int skypiax_signaling_read(private_t * tech_pvt)
                 tech_pvt->skype_callflow = CALLFLOW_STATUS_RINGING;
                 tech_pvt->interface_state = SKYPIAX_STATE_RING;
                 /* no owner, no active call, let's answer */
-#ifndef FARMING
                 skypiax_signaling_write(tech_pvt, "SET AGC OFF");
                 skypiax_sleep(10000);
                 skypiax_signaling_write(tech_pvt, "SET AEC OFF");
@@ -231,7 +228,6 @@ int skypiax_signaling_read(private_t * tech_pvt)
                 sprintf(msg_to_skype, "GET CALL %s PARTNER_HANDLE", id);
                 skypiax_signaling_write(tech_pvt, msg_to_skype);
                 skypiax_sleep(10000);
-#endif //FARMING
                 sprintf(msg_to_skype, "ALTER CALL %s ANSWER", id);
                 skypiax_signaling_write(tech_pvt, msg_to_skype);
                 DEBUGA_SKYPE("We answered a Skype RING on skype_call %s\n", SKYPIAX_P_LOG,
@@ -467,11 +463,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 
   memset(&my_addr, 0, sizeof(my_addr));
   my_addr.sin_family = AF_INET;
-#ifdef FARMING
-  //my_addr.sin_addr.s_addr = htonl(0x7f000001);  /* default on all addresses  */
-#else // FARMING
   my_addr.sin_addr.s_addr = htonl(0x7f000001);  /* use the localhost */
-#endif // FARMING
   my_addr.sin_port = htons(tech_pvt->tcp_srv_port);
 
   if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -516,9 +508,6 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
       rt = select(fdselect + 1, &fs, NULL, NULL, &to);
       if (rt > 0) {
 
-#ifdef FARMING
-	      switch_sleep(500);      //seems that reconnecting through a proxy leads to half the packet size, bizarrely, 158-162, never 160 :-)
-#endif // FARMING
 	      if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
 		      len = recv(fd, (char *) srv_in, 320, 0);    //seems that Skype only sends 320 bytes at time
 	      } else {
@@ -628,11 +617,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 
   memset(&my_addr, 0, sizeof(my_addr));
   my_addr.sin_family = AF_INET;
-#ifdef FARMING
-  //my_addr.sin_addr.s_addr = htonl(0x7f000001);  /* default on all addresses */
-#else // FARMING
   my_addr.sin_addr.s_addr = htonl(0x7f000001);  /* use the localhost */
-#endif // FARMING
   my_addr.sin_port = htons(tech_pvt->tcp_cli_port);
 
   if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -1225,14 +1210,6 @@ static int X11_errors_untrap(void)
   return (xerror != BadValue) && (xerror != BadWindow);
 }
 
-#ifdef FARMING
-int skypiax_send_message(struct SkypiaxHandles *SkypiaxHandles, const char *message_P)
-{
-  printf("%s\n", message_P);
-  fflush(stdout);
-  return 1;
-}
-#else // FARMING
 int skypiax_send_message(struct SkypiaxHandles *SkypiaxHandles, const char *message_P)
 {
 
@@ -1281,7 +1258,6 @@ int skypiax_send_message(struct SkypiaxHandles *SkypiaxHandles, const char *mess
   return 1;
 }
 
-#endif // FARMING
 int skypiax_signaling_write(private_t * tech_pvt, char *msg_to_skype)
 {
   struct SkypiaxHandles *SkypiaxHandles;
@@ -1359,47 +1335,6 @@ void skypiax_clean_disp(void *data)
   skypiax_sleep(1000);
 }
 
-#ifdef FARMING
-void *skypiax_do_skypeapi_thread_func(void *obj)
-{
-
-  private_t *tech_pvt = obj;
-  struct SkypiaxHandles *SkypiaxHandles;
-
-  if (!strlen(tech_pvt->X11_display))
-    strcpy(tech_pvt->X11_display, getenv("DISPLAY"));
-
-  if (!tech_pvt->tcp_srv_port)
-    tech_pvt->tcp_srv_port = 10160;
-
-  if (!tech_pvt->tcp_cli_port)
-    tech_pvt->tcp_cli_port = 10161;
-
-  if (pipe(tech_pvt->SkypiaxHandles.fdesc)) {
-    fcntl(tech_pvt->SkypiaxHandles.fdesc[0], F_SETFL, O_NONBLOCK);
-    fcntl(tech_pvt->SkypiaxHandles.fdesc[1], F_SETFL, O_NONBLOCK);
-  }
-  SkypiaxHandles = &tech_pvt->SkypiaxHandles;
-
-  SkypiaxHandles->api_connected = 1;
-
-  char *b;
-  unsigned int howmany;
-
-  while (1) {
-    char s[17000];
-
-    memset(s, '\0', 17000);
-    b = fgets(s, sizeof(s) - 1, stdin);
-    s[strlen(s) - 1] = '\0';
-    howmany = strlen(s) + 1;
-
-    howmany = write(SkypiaxHandles->fdesc[1], &s, howmany);
-
-  }
-}
-
-#else //FARMING
 void *skypiax_do_skypeapi_thread_func(void *obj)
 {
 
@@ -1551,5 +1486,4 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
   return NULL;
 
 }
-#endif //FARMING
 #endif // WIN32
