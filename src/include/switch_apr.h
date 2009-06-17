@@ -1198,6 +1198,14 @@ SWITCH_DECLARE(switch_status_t) switch_socket_timeout_set(switch_socket_t *sock,
  */
 SWITCH_DECLARE(switch_status_t) switch_mcast_join(switch_socket_t *sock, switch_sockaddr_t *join, switch_sockaddr_t *iface, switch_sockaddr_t *source);
 
+/**
+ * Set the Multicast Time to Live (ttl) for a multicast transmission.
+ * @param sock The socket to set the multicast ttl
+ * @param ttl Time to live to Assign. 0-255, default=1
+ * @remark If the TTL is 0, packets will only be seen by sockets on the local machine,
+ *     and only when multicast loopback is enabled.
+ */
+SWITCH_DECLARE(switch_status_t) switch_mcast_hops(switch_socket_t *sock, int32_t ttl);
 
 
 /** @} */
