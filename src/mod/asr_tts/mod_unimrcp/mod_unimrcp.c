@@ -692,12 +692,6 @@ static switch_status_t speech_channel_create(speech_channel_t **schannel, const 
 		goto done;
 	}
 	
-	if (switch_mutex_init(&schan->mutex, SWITCH_MUTEX_UNNESTED, pool) != SWITCH_STATUS_SUCCESS || 
-		switch_thread_cond_create(&schan->cond, pool) != SWITCH_STATUS_SUCCESS ||
-		audio_queue_create(&schan->audio_queue, name, pool) != SWITCH_STATUS_SUCCESS) {
-		status = SWITCH_STATUS_FALSE;
-		goto done;
-	}
 	schan->type = type;
 	schan->application = app;
 	schan->state = SPEECH_CHANNEL_CLOSED;
@@ -705,11 +699,19 @@ static switch_status_t speech_channel_create(speech_channel_t **schannel, const 
 	schan->params = NULL;
 	schan->rate = rate;
 	schan->codec = switch_core_strdup(pool, codec);
+
 	if (!strcmp("L16", schan->codec)) {
 		schan->silence = 0;
 	} else {
 		/* 8-bit PCMU, PCMA */
 		schan->silence = 128;
+	}
+
+	if (switch_mutex_init(&schan->mutex, SWITCH_MUTEX_UNNESTED, pool) != SWITCH_STATUS_SUCCESS || 
+		switch_thread_cond_create(&schan->cond, pool) != SWITCH_STATUS_SUCCESS ||
+		audio_queue_create(&schan->audio_queue, name, pool) != SWITCH_STATUS_SUCCESS) {
+		status = SWITCH_STATUS_FALSE;
+		goto done;
 	}
 	switch_core_hash_init(&schan->params, pool);
 	schan->data = NULL;
@@ -742,6 +744,9 @@ static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
 		if (schannel->state != SPEECH_CHANNEL_CLOSED) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Failed to destroy channel.  Continuing\n", schannel->name);
 		}
+	}
+	if (schannel->params) {
+		switch_core_hash_destroy(&schannel->params);
 	}
 	switch_mutex_unlock(schannel->mutex);
 	return SWITCH_STATUS_SUCCESS;
@@ -1710,6 +1715,12 @@ static switch_status_t synth_load(switch_loadable_module_interface_t *module_int
  */
 static switch_status_t synth_shutdown() 
 {
+	if (globals.synth.fs_param_map) {
+		switch_core_hash_destroy(&globals.synth.fs_param_map);
+	}
+	if (globals.synth.param_id_map) {
+		switch_core_hash_destroy(&globals.synth.param_id_map);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2887,6 +2898,12 @@ static switch_status_t recog_load(switch_loadable_module_interface_t *module_int
  */
 static switch_status_t recog_shutdown()
 {
+	if (globals.recog.fs_param_map) {
+		switch_core_hash_destroy(&globals.recog.fs_param_map);
+	}
+	if (globals.recog.param_id_map) {
+		switch_core_hash_destroy(&globals.recog.param_id_map);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
