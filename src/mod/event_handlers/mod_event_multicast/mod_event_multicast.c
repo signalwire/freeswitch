@@ -55,6 +55,7 @@ static struct {
 	uint8_t event_list[SWITCH_EVENT_ALL + 1];
 	int running;
 	switch_event_node_t *node;
+	uint8_t ttl;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address);
@@ -73,6 +74,8 @@ static switch_status_t load_config(void)
 	gethostname(globals.hostname, sizeof(globals.hostname));
 	globals.host_hash = switch_hashfunc_default(globals.hostname, &hlen);
 	globals.key_count = 0;
+
+	globals.ttl = 1;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
@@ -95,7 +98,15 @@ static switch_status_t load_config(void)
 				set_global_bindings(val);
 			} else if (!strcasecmp(var, "port")) {
 				globals.port = (switch_port_t) atoi(val);
+			} else if (!strcasecmp(var, "ttl")) {
+				int ttl = atoi(val);
+				if ((ttl && ttl <= 255)  || !strcmp(val, "0")) {
+					globals.ttl = (uint8_t) ttl;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid ttl '%s' specified, using default of 1\n", val);
+				}
 			}
+
 		}
 	}
 
@@ -218,6 +229,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 
 	if (switch_mcast_join(globals.udp_socket, globals.addr, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Multicast Error\n");
+		switch_socket_close(globals.udp_socket);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_mcast_hops(globals.udp_socket, globals.ttl) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set ttl to '%d'\n", globals.ttl);
 		switch_socket_close(globals.udp_socket);
 		return SWITCH_STATUS_TERM;
 	}
