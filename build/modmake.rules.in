@@ -21,6 +21,9 @@ LIBCURL_CPPFLAGS=@LIBCURL_CPPFLAGS@
 CURL_DIR=$(switch_srcdir)/libs/curl
 CURLLA=$(CURL_DIR)/lib/libcurl.la
 
+OPENSSL_LIBS=@openssl_LIBS@
+OPENSSL_CFLAGS=@openssl_CFLAGS@
+
 LIBS=$(switch_builddir)/libfreeswitch.la
 DEFS=@DEFS@
 PREFIX = @prefix@
