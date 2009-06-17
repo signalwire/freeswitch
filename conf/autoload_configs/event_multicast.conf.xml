@@ -3,6 +3,7 @@
     <param name="address" value="225.1.1.1"/>
     <param name="port" value="4242"/>
     <param name="bindings" value="all"/>
+    <param name="ttl" value="1"/>
   </settings>
 </configuration>
 
