@@ -155,6 +155,10 @@ while [ $# -gt 0 ]; do
 			shift
 			OUTFILE="$1"
 			;;
+		-days)
+			shift
+			DAYS="$1"
+			;;
 	esac
 	shift
 done
@@ -197,6 +201,7 @@ case ${command} in
 		   -alt      Set alternative name (use prefix 'DNS:' or 'URI:')
 		   -org      Set organization name
 		   -out      Filename for new certificate (create only)
+		   -days     Certificate expires in X days (default: 365)
 
 		EOF
 		exit 1
