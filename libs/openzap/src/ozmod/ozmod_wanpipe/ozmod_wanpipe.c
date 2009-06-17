@@ -62,6 +62,11 @@
 #define sangoma_create_socket_intr sangoma_open_api_span_chan
 #endif
 
+/*! Starting with lbisangoma 3 we can use it, previous versions dont really work so we default to using the old stuff */
+#if defined(LIBSANGOMA_VERSION) && LIBSANGOMA_VERSION_CODE < LIBSANGOMA_VERSION(3,0,0)
+#undef LIBSANGOMA_VERSION
+#endif
+
 /**
  * \brief Wanpipe flags
  */
@@ -98,27 +103,31 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event);
  * so we can have one analong handler thread that will deal with all the idle analog channels for events
  * the alternative would be for the driver to provide one socket for all of the oob events for all analog channels
  */
-static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int *flags)
+static __inline__ int tdmv_api_wait_socket(zap_channel_t *zchan, int timeout, int *flags)
 {
 	
 #ifdef LIBSANGOMA_VERSION
 	int err;
-	sangoma_wait_obj_t sangoma_wait_obj;
+    uint32_t inflags = *flags;
+    uint32_t outflags = 0;
+	sangoma_wait_obj_t *sangoma_wait_obj = zchan->mod_data;
 
- 	sangoma_init_wait_obj(&sangoma_wait_obj, fd, 1, 1, *flags, SANGOMA_WAIT_OBJ);
-
-	err=sangoma_socket_waitfor_many(&sangoma_wait_obj,1 , timeout);
-	if (err > 0) {
-		*flags=sangoma_wait_obj.flags_out;
-	}
-	return err;
-
+	err = sangoma_waitfor(sangoma_wait_obj, inflags, &outflags, timeout);
+	*flags = 0;
+    if (err == SANG_STATUS_SUCCESS) {
+        *flags = outflags;
+        err = 1; /* ideally should be the number of file descriptors with something to read */
+    }
+    if (err == SANG_STATUS_APIPOLL_TIMEOUT) {
+        err = 0;
+    }
+    return err;
 #else
  	struct pollfd pfds[1];
     int res;
 
     memset(&pfds[0], 0, sizeof(pfds[0]));
-    pfds[0].fd = fd;
+    pfds[0].fd = zchan->sockfd;
     pfds[0].events = *flags;
     res = poll(pfds, 1, timeout);
 	*flags = 0;
@@ -200,6 +209,18 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 		
 		if (sockfd != WP_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
 			wanpipe_tdm_api_t tdm_api;
+#ifdef LIBSANGOMA_VERSION
+            sangoma_status_t sangstatus;
+			sangoma_wait_obj_t *sangoma_wait_obj;
+
+            sangstatus = sangoma_wait_obj_create(&sangoma_wait_obj, sockfd, SANGOMA_DEVICE_WAIT_OBJ);
+            if (sangstatus != SANG_STATUS_SUCCESS) {
+			    zap_log(ZAP_LOG_ERROR, "failure create waitable object for s%dc%d\n", spanno, x);
+                continue;
+            }
+			chan->mod_data = sangoma_wait_obj;
+#endif
+
 			memset(&tdm_api,0,sizeof(tdm_api));
 			
 			chan->physical_span_id = spanno;
@@ -211,7 +232,7 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 				
 				dtmf = "software";
 
-				/* FIXME: Handle Error Conditino Check for return code */
+				/* FIXME: Handle Error Condition Check for return code */
 				err= sangoma_tdm_get_hw_coding(chan->sockfd, &tdm_api);
 
 				if (tdm_api.wp_tdm_cmd.hw_tdm_coding) {
@@ -606,7 +627,7 @@ static ZIO_WAIT_FUNCTION(wanpipe_wait)
 		inflags |= POLLPRI;
 	}
 
-	result = tdmv_api_wait_socket(zchan->sockfd, to, &inflags);
+	result = tdmv_api_wait_socket(zchan, to, &inflags);
 
 	*flags = ZAP_NO_FLAGS;
 
@@ -643,26 +664,33 @@ static ZIO_WAIT_FUNCTION(wanpipe_wait)
 ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 {
 #ifdef LIBSANGOMA_VERSION
-	sangoma_wait_obj_t pfds[ZAP_MAX_CHANNELS_SPAN];
+    sangoma_status_t sangstatus;
+	sangoma_wait_obj_t *pfds[ZAP_MAX_CHANNELS_SPAN] = { 0 };
+    uint32_t inflags[ZAP_MAX_CHANNELS_SPAN];
+    uint32_t outflags[ZAP_MAX_CHANNELS_SPAN];
 #else
 	struct pollfd pfds[ZAP_MAX_CHANNELS_SPAN];
 #endif
 
 	uint32_t i, j = 0, k = 0, l = 0;
-	int objects=0;
 	int r;
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		zap_channel_t *zchan = span->channels[i];
 
+
 #ifdef LIBSANGOMA_VERSION
- 		sangoma_init_wait_obj(&pfds[j], zchan->sockfd , 1, 1, POLLPRI, SANGOMA_WAIT_OBJ);
+		if (!zchan->mod_data) {
+			continue; /* should never happen but happens when shutting down */
+		}
+		pfds[j] = zchan->mod_data;
+        inflags[j] = POLLPRI;
 #else
 		memset(&pfds[j], 0, sizeof(pfds[j]));
 		pfds[j].fd = span->channels[i]->sockfd;
 		pfds[j].events = POLLPRI;
 #endif
-		objects++;
+
 		/* The driver probably should be able to do this wink/flash/ringing by itself this is sort of a hack to make it work! */
 
 		if (zap_test_flag(zchan, ZAP_CHANNEL_WINK) || zap_test_flag(zchan, ZAP_CHANNEL_FLASH)) {
@@ -703,7 +731,14 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 		ms = l;
 	}
 #ifdef LIBSANGOMA_VERSION
-	r = sangoma_socket_waitfor_many(pfds,objects,ms);
+	sangstatus = sangoma_waitfor_many(pfds, inflags, outflags, j, ms);
+    if (SANG_STATUS_APIPOLL_TIMEOUT == sangstatus) {
+        r = 0;
+    } else if (SANG_STATUS_SUCCESS == sangstatus) {
+        r = 1; /* hopefully we never need how many changed -_- */
+    } else {
+        r = -1;
+    }
 #else
 	r = poll(pfds, j, ms);
 #endif
@@ -719,7 +754,7 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 		zap_channel_t *zchan = span->channels[i];
 
 #ifdef LIBSANGOMA_VERSION
-		if (pfds[i-1].flags_out & POLLPRI) {
+		if (outflags[i-1] & POLLPRI) {
 #else
 		if (pfds[i-1].revents & POLLPRI) {
 #endif
@@ -935,6 +970,14 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
  */
 static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 {
+	sangoma_wait_obj_t *sangoma_wait_obj;
+
+	if (zchan->mod_data) {
+		sangoma_wait_obj = zchan->mod_data;
+		zchan->mod_data = NULL;
+		sangoma_wait_obj_delete(&sangoma_wait_obj);
+	}
+
 	if (zchan->sockfd > -1) {
 		close(zchan->sockfd);
 		zchan->sockfd = WP_INVALID_SOCKET;
