@@ -101,7 +101,7 @@
     <!-- <load module="mod_say_zh"/> -->
 
     <!-- Third party modules -->
-    <!--<have load module="mod_nibblebill"/>-->
+    <!--<load module="mod_nibblebill"/>-->
 
   </modules>
 </configuration>
