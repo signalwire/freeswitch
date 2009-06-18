@@ -201,14 +201,9 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 				break;
 			case SWITCH_CONFIG_STRING:
 				{
-					switch_xml_config_string_options_t *string_options = (switch_xml_config_string_options_t*)item->data;
+					switch_xml_config_string_options_t string_options_default = { 0 };
+					switch_xml_config_string_options_t *string_options = item->data ? (switch_xml_config_string_options_t*)item->data : &string_options_default;
 					const char *newstring = NULL;
-					
-					if (!string_options) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Missing mandatory switch_xml_config_string_options_t structure for parameter [%s], skipping!\n",
-										  item->key);
-						return SWITCH_STATUS_FALSE;
-					}
 					
 					/* Perform validation */
 					if (value) {
