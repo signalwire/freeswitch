@@ -1002,7 +1002,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (ovars) {
 		var_event = ovars;
 	} else {
-		if (switch_event_create(&var_event, SWITCH_EVENT_GENERAL) != SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create_plain(&var_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
 			abort();
 		}
 	}
@@ -1516,7 +1516,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					local_clobber = switch_true(lc);
 				}
 
-				if (!local_clobber) {
+				if (local_clobber) {
 					if (var_event) {
 						switch_event_t *event;
 						switch_event_header_t *header;
@@ -1549,7 +1549,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 
-				if (local_clobber) {
+				if (!local_clobber) {
 					if (var_event) {
 						switch_event_t *event;
 						switch_event_header_t *header;
