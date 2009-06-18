@@ -168,6 +168,10 @@ static switch_status_t shell_stream_file_close(switch_file_handle_t *handle)
 		close(context->fds[0]);
 	}
 
+	if (context->audio_buffer) {
+		switch_buffer_destroy(&context->audio_buffer);
+	}
+
 	switch_thread_rwlock_wrlock(context->rwlock);
 	switch_thread_rwlock_unlock(context->rwlock);
 
