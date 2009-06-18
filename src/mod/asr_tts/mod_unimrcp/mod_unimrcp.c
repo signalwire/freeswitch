@@ -3171,7 +3171,7 @@ static mrcp_client_t *mod_unimrcp_client_create()
 			mpf_rtp_config_t *rtp_config = NULL;
 			
 			/* get profile attributes */
-			const char *name = switch_xml_attr(profile, "name");
+			const char *name = apr_pstrdup(pool, switch_xml_attr(profile, "name"));
 			const char *version = switch_xml_attr(profile, "version");
 			if (switch_strlen_zero(name) || switch_strlen_zero(version)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "<profile> missing name or version attribute\n");
