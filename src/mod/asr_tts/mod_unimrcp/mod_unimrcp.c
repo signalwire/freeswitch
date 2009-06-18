@@ -3422,15 +3422,13 @@ static apt_bool_t unimrcp_log(const char *file, int line, const char *id, apt_lo
 	
 	/* apr_vsnprintf supports format extensions required by UniMRCP */ 
 	apr_vsnprintf(log_message, sizeof(log_message), format, arg_ptr);
-	if (!switch_strlen_zero(log_message)) {
-		size_t msglen = strlen(log_message);
-		if (msglen >= 2 && log_message[msglen - 2] == '\\' && log_message[msglen - 1] == 'n') {
-			/* log_message already ends in \n */
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, id, level, "%s", log_message);
-		} else {
-			/* log message needs \n appended */
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, id, level, "%s\n", log_message);
-		}
+	size_t msglen = strlen(log_message);
+	if (msglen >= 2 && log_message[msglen - 2] == '\\' && log_message[msglen - 1] == 'n') {
+		/* log_message already ends in \n */
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, id, level, "%s", log_message);
+	} else if (msglen > 0) {
+		/* log message needs \n appended */
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, id, level, "%s\n", log_message);
 	}
 	
 	return TRUE;
