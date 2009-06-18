@@ -474,6 +474,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 {
 	char name[256];
 	unsigned int x;
+	char *p;
 
 	switch_assert(session != NULL);
 	switch_assert(profile != NULL);
@@ -515,6 +516,9 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_core_session_set_private(session, tech_pvt);
 
 	switch_snprintf(name, sizeof(name), "sofia/%s/%s", profile->name, channame);
+	if ((p = strchr(name, ';'))) {
+		*p = '\0';
+	}
 	switch_channel_set_name(tech_pvt->channel, name);
 }
 
