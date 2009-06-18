@@ -373,6 +373,36 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 		if (host_hash == globals.host_hash) {
 			continue;
 		}
+#ifdef HAVE_OPENSSL
+		if (globals.psk) {
+			char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
+			char *tmp;
+			int outl, tmplen;
+			EVP_CIPHER_CTX ctx;
+
+			len -= sizeof(host_hash) + SWITCH_UUID_FORMATTED_LENGTH;
+
+			tmp = malloc(len);
+
+			memset(tmp, 0, len);
+
+			switch_copy_string(uuid_str, packet, SWITCH_UUID_FORMATTED_LENGTH);
+			packet += SWITCH_UUID_FORMATTED_LENGTH;
+
+			EVP_CIPHER_CTX_init(&ctx);
+			EVP_DecryptInit(&ctx, EVP_bf_cfb(), NULL, NULL);
+			EVP_CIPHER_CTX_set_key_length(&ctx, strlen(globals.psk));
+			EVP_DecryptInit(&ctx, NULL, (unsigned char*) globals.psk, (unsigned char*) uuid_str);
+			EVP_DecryptUpdate(&ctx, (unsigned char*) tmp,
+					&outl, (unsigned char*) packet, (int) len);
+			EVP_DecryptFinal(&ctx, (unsigned char*) tmp + outl, &tmplen);
+
+			/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "decrypted event as %s\n----------\n of actual length %d (%d) %d\n", tmp, outl + tmplen, (int) len, (int) strlen(tmp));*/
+			/*continue;*/
+			packet = tmp;
+
+		}
+#endif
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT %d\n--------------------------------\n%s\n", (int) len, packet);
 		if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT) == SWITCH_STATUS_SUCCESS) {
 			char *var, *val, *term = NULL, tmpname[128];
