@@ -29,6 +29,9 @@
  * mod_event_multicast.c -- Multicast Events
  *
  */
+#ifdef HAVE_OPENSSL
+#include <openssl/evp.h>
+#endif
 #include <switch.h>
 
 #define MULTICAST_BUFFSIZE 65536
@@ -56,10 +59,14 @@ static struct {
 	int running;
 	switch_event_node_t *node;
 	uint8_t ttl;
+	char *psk;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_bindings, globals.bindings);
+#ifdef HAVE_OPENSSL
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_psk, globals.psk);
+#endif
 #define MULTICAST_EVENT "multicast::event"
 static switch_status_t load_config(void)
 {
@@ -76,6 +83,7 @@ static switch_status_t load_config(void)
 	globals.key_count = 0;
 
 	globals.ttl = 1;
+	globals.psk = NULL;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
@@ -98,6 +106,12 @@ static switch_status_t load_config(void)
 				set_global_bindings(val);
 			} else if (!strcasecmp(var, "port")) {
 				globals.port = (switch_port_t) atoi(val);
+			} else if (!strcasecmp(var, "psk")) {
+#ifdef HAVE_OPENSSL
+				set_global_psk(val);
+#else
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot use pre shared key encryption without OpenSSL support\n");
+#endif
 			} else if (!strcasecmp(var, "ttl")) {
 				int ttl = atoi(val);
 				if ((ttl && ttl <= 255)  || !strcmp(val, "0")) {
@@ -181,11 +195,44 @@ static void event_handler(switch_event_t *event)
 		default:
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", globals.hostname);
 			if (switch_event_serialize(event, &packet, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-				size_t len = strlen(packet) + sizeof(globals.host_hash);
-				char *buf = malloc(len + 1);
+				size_t len;
+				char *buf;
+#ifdef HAVE_OPENSSL
+				int outlen, tmplen;
+				EVP_CIPHER_CTX ctx;
+				char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
+				switch_uuid_t uuid;
+
+				switch_uuid_get(&uuid);
+				switch_uuid_format(uuid_str, &uuid);
+				len = strlen(packet) + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + EVP_MAX_IV_LENGTH;
+#else
+				len = strlen(packet) + sizeof(globals.host_hash);
+#endif
+				buf = malloc(len + 1);
 				switch_assert(buf);
 				memcpy(buf, &globals.host_hash, sizeof(globals.host_hash));
-				switch_copy_string(buf + sizeof(globals.host_hash), packet, len - sizeof(globals.host_hash));
+
+#ifdef HAVE_OPENSSL
+				if (globals.psk) {
+					switch_copy_string(buf + sizeof(globals.host_hash), uuid_str, SWITCH_UUID_FORMATTED_LENGTH);
+
+					EVP_CIPHER_CTX_init(&ctx);
+					EVP_EncryptInit(&ctx, EVP_bf_cfb(), NULL, NULL);
+					EVP_CIPHER_CTX_set_key_length(&ctx, strlen(globals.psk));
+					EVP_EncryptInit(&ctx, NULL, (unsigned char*) globals.psk, (unsigned char*) uuid_str);
+					EVP_EncryptUpdate(&ctx, (unsigned char*) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH,
+							&outlen, (unsigned char*) packet, (int) strlen(packet));
+					EVP_EncryptFinal(&ctx, (unsigned char*) buf + outlen, &tmplen);
+					outlen += tmplen;
+					len = (size_t) outlen + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH;
+				} else {
+#endif
+					switch_copy_string(buf + sizeof(globals.host_hash), packet, len - sizeof(globals.host_hash));
+#ifdef HAVE_OPENSSL
+				}
+#endif
+
 				switch_socket_sendto(globals.udp_socket, globals.addr, 0, buf, &len);
 				switch_safe_free(packet);
 				switch_safe_free(buf);
