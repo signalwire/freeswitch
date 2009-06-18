@@ -223,7 +223,7 @@ static void event_handler(switch_event_t *event)
 					EVP_EncryptInit(&ctx, NULL, (unsigned char*) globals.psk, (unsigned char*) uuid_str);
 					EVP_EncryptUpdate(&ctx, (unsigned char*) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH,
 							&outlen, (unsigned char*) packet, (int) strlen(packet));
-					EVP_EncryptFinal(&ctx, (unsigned char*) buf + outlen, &tmplen);
+					EVP_EncryptFinal(&ctx, (unsigned char*) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + outlen, &tmplen);
 					outlen += tmplen;
 					len = (size_t) outlen + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH;
 				} else {
