@@ -102,7 +102,7 @@ static switch_status_t shell_stream_file_open(switch_file_handle_t *handle, cons
 	
 	context->fds[0] = -1;
 	context->fds[1] = -1;
-	context->command = switch_core_strdup(handle->memory_pool, path);
+	context->command = switch_core_sprintf(handle->memory_pool, "%s -r %d -c %d", path, handle->samplerate, handle->channels);
 
 	if (pipe(context->fds)) {
 		goto error;
