@@ -20,12 +20,14 @@ typedef struct mrcp_sofia_agent_t mrcp_sofia_agent_t;
 typedef struct mrcp_sofia_session_t mrcp_sofia_session_t;
 #define NUA_HMAGIC_T mrcp_sofia_session_t
 
-#include <apr_general.h>
 #include <sofia-sip/su.h>
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
 #include <sofia-sip/sdp.h>
 #include <sofia-sip/sofia_features.h>
+#undef strcasecmp
+#undef strncasecmp
+#include <apr_general.h>
 
 #include "mrcp_sofiasip_server_agent.h"
 #include "mrcp_session.h"
