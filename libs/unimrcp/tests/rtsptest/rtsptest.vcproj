@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="rtsptest"
 	ProjectGUID="{17A33F3F-BAF5-403F-8EF4-FECDA7D9A335}"
 	RootNamespace="rtsptest"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -49,6 +50,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="unirtsp.lib aprtoolkit.lib libaprutil-1.lib libapr-1.lib"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -67,9 +70,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -111,6 +111,8 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="unirtsp.lib aprtoolkit.lib libaprutil-1.lib libapr-1.lib"
 				LinkTimeCodeGeneration="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -129,9 +131,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"

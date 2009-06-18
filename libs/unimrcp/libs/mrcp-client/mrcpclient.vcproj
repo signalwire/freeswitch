@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="mrcpclient"
 	ProjectGUID="{72782932-37CC-46AE-8C7F-9A7B1A6EE108}"
 	RootNamespace="mrcpclient"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform

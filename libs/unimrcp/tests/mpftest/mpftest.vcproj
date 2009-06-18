@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="mpftest"
 	ProjectGUID="{DCF01B1C-5268-44F3-9130-D647FABFB663}"
 	RootNamespace="mpftest"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -49,6 +50,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpf.lib aprtoolkit.lib libaprutil-1.lib libapr-1.lib ws2_32.lib winmm.lib"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -67,9 +70,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -111,6 +111,8 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpf.lib aprtoolkit.lib libaprutil-1.lib libapr-1.lib ws2_32.lib winmm.lib "
 				LinkTimeCodeGeneration="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -129,9 +131,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"

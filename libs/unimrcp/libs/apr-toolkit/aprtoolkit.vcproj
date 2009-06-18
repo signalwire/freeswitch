@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="aprtoolkit"
 	ProjectGUID="{13DEECA0-BDD4-4744-A1A2-8EB0A44DF3D2}"
 	RootNamespace="aprtoolkit"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform

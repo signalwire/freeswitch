@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="mrcpsofiasip"
 	ProjectGUID="{746F3632-5BB2-4570-9453-31D6D58A7D8E}"
 	RootNamespace="mrcpsofiasip"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform

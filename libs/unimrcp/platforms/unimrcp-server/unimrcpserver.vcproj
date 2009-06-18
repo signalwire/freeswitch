@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="unimrcpserver"
 	ProjectGUID="{592CF22D-3F8F-4A77-A174-130D77B7623B}"
 	RootNamespace="unimrcpserver"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -49,6 +50,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(UniMRCPServerLibs)"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -67,9 +70,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -111,6 +111,8 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(UniMRCPServerLibs)"
 				LinkTimeCodeGeneration="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -129,9 +131,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
