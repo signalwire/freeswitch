@@ -916,10 +916,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	char *fail_on_single_reject_var = NULL;
 	char *loop_data = NULL;
 	uint32_t progress_timelimit_sec = 0;
-	const char *cid_tmp;
+	const char *cid_tmp, *lc;
 	originate_global_t oglobals = { 0 };
 	int cdr_total = 0;
-
+	int local_clobber = 0;
+	
 	oglobals.idx = IDX_NADA;
 	oglobals.early_ok = 1;
 	oglobals.session = session;
@@ -1511,6 +1512,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				originate_status[i].peer_channel = switch_core_session_get_channel(new_session);
 				switch_channel_set_flag(originate_status[i].peer_channel, CF_ORIGINATING);
 
+				if ((lc = switch_event_get_header(var_event, "local_var_clobber"))) {
+					local_clobber = switch_true(lc);
+				}
+
+				if (!local_clobber) {
+					if (var_event) {
+						switch_event_t *event;
+						switch_event_header_t *header;
+						/* install the vars from the {} params */
+						for (header = var_event->headers; header; header = header->next) {
+							switch_channel_set_variable(originate_status[i].peer_channel, header->name, header->value);
+						}
+						switch_event_create(&event, SWITCH_EVENT_CHANNEL_ORIGINATE);
+						switch_assert(event);
+						switch_channel_event_set_data(originate_status[i].peer_channel, event);
+						switch_event_fire(&event);
+					}
+				}
+
 				if (vdata) {
 					char *var_array[1024] = { 0 };
 					int var_count = 0;
@@ -1529,17 +1549,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 
-				if (var_event) {
-					switch_event_t *event;
-					switch_event_header_t *header;
-					/* install the vars from the {} params */
-					for (header = var_event->headers; header; header = header->next) {
-						switch_channel_set_variable(originate_status[i].peer_channel, header->name, header->value);
+				if (local_clobber) {
+					if (var_event) {
+						switch_event_t *event;
+						switch_event_header_t *header;
+						/* install the vars from the {} params */
+						for (header = var_event->headers; header; header = header->next) {
+							switch_channel_set_variable(originate_status[i].peer_channel, header->name, header->value);
+						}
+						switch_event_create(&event, SWITCH_EVENT_CHANNEL_ORIGINATE);
+						switch_assert(event);
+						switch_channel_event_set_data(originate_status[i].peer_channel, event);
+						switch_event_fire(&event);
 					}
-					switch_event_create(&event, SWITCH_EVENT_CHANNEL_ORIGINATE);
-					switch_assert(event);
-					switch_channel_event_set_data(originate_status[i].peer_channel, event);
-					switch_event_fire(&event);
 				}
 
 				if (originate_status[i].peer_channel) {
