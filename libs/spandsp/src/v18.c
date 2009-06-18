@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v18.c,v 1.7 2009/04/26 07:00:38 steveu Exp $
+ * $Id: v18.c,v 1.10 2009/06/02 16:03:56 steveu Exp $
  */
  
 /*! \file */
@@ -379,50 +379,50 @@ SPAN_DECLARE(uint16_t) v18_encode_baudot(v18_state_t *s, uint8_t ch)
 {
     static const uint8_t conv[128] =
     {
-        0x00, /* NUL */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
+        0xFF, /* NUL */
+        0xFF, /* SOH */
+        0xFF, /* STX */
+        0xFF, /* ETX */
+        0xFF, /* EOT */
+        0xFF, /* ENQ */
+        0xFF, /* ACK */
+        0xFF, /* BEL */
+        0x00, /* BS */
+        0x44, /* HT >> SPACE */
         0x42, /* LF */
-        0xFF, /*   */
-        0xFF, /*   */
+        0x42, /* VT >> LF */
+        0x42, /* FF >> LF */
         0x48, /* CR */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
-        0xFF, /*   */
+        0xFF, /* SO */
+        0xFF, /* SI */
+        0xFF, /* DLE */
+        0xFF, /* DC1 */
+        0xFF, /* DC2 */
+        0xFF, /* DC3 */
+        0xFF, /* DC4 */
+        0xFF, /* NAK */
+        0xFF, /* SYN */
+        0xFF, /* ETB */
+        0xFF, /* CAN */
+        0xFF, /* EM */
+        0x99, /* SUB >> ? */
+        0xFF, /* ESC */
+        0x42, /* IS4 >> LF */
+        0x42, /* IS3 >> LF */
+        0x42, /* IS2 >> LF */
+        0x44, /* IS1 >> SPACE */
         0x44, /*   */
-        0xFF, /* ! */
-        0xFF, /* " */
-        0x94, /* # */
+        0x8D, /* ! */
+        0x91, /* " */
+        0x89, /* # >> $ */
         0x89, /* $ */
-        0xFF, /* % */
-        0xFF, /* & */
-        0x85, /* ' */
+        0x9D, /* % >> / */
+        0x9A, /* & >> + */
+        0x8B, /* ' */
         0x8F, /* ( */
         0x92, /* ) */
-        0x8B, /* * */
-        0x91, /* + */
+        0x9C, /* * >> . */
+        0x9A, /* + */
         0x8C, /* , */
         0x83, /* - */
         0x9C, /* . */
@@ -438,12 +438,12 @@ SPAN_DECLARE(uint16_t) v18_encode_baudot(v18_state_t *s, uint8_t ch)
         0x86, /* 8 */
         0x98, /* 9 */
         0x8E, /* : */
-        0xFF, /* ; */
-        0xFF, /* < */
-        0x9E, /* = */
-        0xFF, /* > */
+        0x9E, /* ; */
+        0x8F, /* < >> )*/
+        0x94, /* = */
+        0x92, /* > >> ( */
         0x99, /* ? */
-        0xFF, /* @ */
+        0x1D, /* @ >> X */
         0x03, /* A */
         0x19, /* B */
         0x0E, /* C */
@@ -470,12 +470,12 @@ SPAN_DECLARE(uint16_t) v18_encode_baudot(v18_state_t *s, uint8_t ch)
         0x1D, /* X */
         0x15, /* Y */
         0x11, /* Z */
-        0xFF, /* [ */
-        0xFF, /* \ */
-        0xFF, /* ] */
-        0x9B, /* ^ */
-        0xFF, /* _ */
-        0xFF, /* ` */
+        0x8F, /* [ >> (*/
+        0x9D, /* \ >> / */
+        0x92, /* ] >> ) */
+        0x8B, /* ^ >> ' */
+        0x44, /* _ >> Space */
+        0x8B, /* ` >> ' */
         0x03, /* a */
         0x19, /* b */
         0x0E, /* c */
@@ -502,19 +502,29 @@ SPAN_DECLARE(uint16_t) v18_encode_baudot(v18_state_t *s, uint8_t ch)
         0x1D, /* x */
         0x15, /* y */
         0x11, /* z */
-        0xFF, /* { */
-        0xFF, /* | */
-        0xFF, /* } */
-        0xFF, /* ~ */
+        0x8F, /* { >> ( */
+        0x8D, /* | >> ! */
+        0x92, /* } >> ) */
+        0x44, /* ~ >> Space */
         0xFF, /* DEL */
     };
     uint16_t shift;
 
+    if (ch == 0x7F)
+    {
+        /* DLE is a special character meaning "force a
+           change to the letter character set */
+        shift = BAUDOT_LETTER_SHIFT;
+        return 0;
+    }
     ch = conv[ch];
+    /* Is it a non-existant code? */
     if (ch == 0xFF)
         return 0;
+    /* Is it a code present in both character sets? */
     if ((ch & 0x40))
-        return ch & 0x1F;
+        return 0x8000 | (ch & 0x1F);
+    /* Need to allow for a possible character set change. */
     if ((ch & 0x80))
     {
         if (s->baudot_tx_shift == 1)
@@ -529,7 +539,7 @@ SPAN_DECLARE(uint16_t) v18_encode_baudot(v18_state_t *s, uint8_t ch)
         s->baudot_tx_shift = 0;
         shift = BAUDOT_LETTER_SHIFT;
     }
-    return (shift << 5) | (ch & 0x1F);
+    return 0x8000 | (shift << 5) | (ch & 0x1F);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -537,8 +547,8 @@ SPAN_DECLARE(uint8_t) v18_decode_baudot(v18_state_t *s, uint8_t ch)
 {
     static const uint8_t conv[2][32] =
     {
-        {"\000E\nA SIU\rDRJNFCKTZLWHYPQOBG^MXV^"},
-        {"\0003\n- '87\r$4*,*:(5+)2#6019?*^./=^"}
+        {"\bE\nA SIU\rDRJNFCKTZLWHYPQOBG^MXV^"},
+        {"\b3\n- -87\r$4',!:(5\")2=6019?+^./;^"}
     };
 
     switch (ch)
@@ -633,7 +643,7 @@ static void v18_tdd_put_async_byte(void *user_data, int byte)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v18_tx(v18_state_t *s, int16_t *amp, int max_len)
+SPAN_DECLARE_NONSTD(int) v18_tx(v18_state_t *s, int16_t *amp, int max_len)
 {
     int len;
     int lenx;
@@ -661,7 +671,7 @@ SPAN_DECLARE(int) v18_tx(v18_state_t *s, int16_t *amp, int max_len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v18_rx(v18_state_t *s, const int16_t amp[], int len)
+SPAN_DECLARE_NONSTD(int) v18_rx(v18_state_t *s, const int16_t amp[], int len)
 {
     switch (s->mode)
     {
@@ -709,11 +719,11 @@ SPAN_DECLARE(int) v18_put(v18_state_t *s, const char msg[], int len)
                 buf[n++] = (uint8_t) (x & 0x1F);
                 /* TODO: Deal with out of space condition */
                 if (queue_write(&s->queue.queue, (const uint8_t *) buf, n) < 0)
-                    return 0;
+                    return i;
                 s->tx_signal_on = TRUE;
             }
         }
-        break;
+        return len;
     case V18_MODE_DTMF:
         break;
     }

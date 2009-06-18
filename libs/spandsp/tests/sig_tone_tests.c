@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: sig_tone_tests.c,v 1.24 2008/11/30 10:17:31 steveu Exp $
+ * $Id: sig_tone_tests.c,v 1.25 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \file */
@@ -42,7 +42,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <memory.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 {
     int16_t amp[SAMPLES_PER_CHUNK];
     int16_t out_amp[2*SAMPLES_PER_CHUNK];
-    AFfilehandle outhandle;
+    SNDFILE *outhandle;
     int outframes;
     int i;
     int type;
@@ -182,9 +182,9 @@ int main(int argc, char *argv[])
     awgn_state_t noise_source;
     codec_munge_state_t *munge;
 
-    if ((outhandle = afOpenFile_telephony_write(OUT_FILE_NAME, 2)) == AF_NULL_FILEHANDLE)
+    if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME, 2)) == NULL)
     {
-        fprintf(stderr, "    Cannot create wave file '%s'\n", OUT_FILE_NAME);
+        fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
     /*endif*/
@@ -240,13 +240,10 @@ int main(int argc, char *argv[])
             for (i = 0;  i < rx_samples;  i++)
                 out_amp[2*i + 1] = amp[i];
             /*endfor*/
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      out_amp,
-                                      rx_samples);
+            outframes = sf_writef_short(outhandle, out_amp, rx_samples);
             if (outframes != rx_samples)
             {
-                fprintf(stderr, "    Error writing wave file\n");
+                fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
             /*endif*/
@@ -254,9 +251,9 @@ int main(int argc, char *argv[])
         /*endfor*/
     }
     /*endfor*/
-    if (afCloseFile(outhandle) != 0)
+    if (sf_close(outhandle) != 0)
     {
-        fprintf(stderr, "    Cannot close wave file '%s'\n", OUT_FILE_NAME);
+        fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
     /*endif*/

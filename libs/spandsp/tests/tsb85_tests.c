@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tsb85_tests.c,v 1.30 2009/02/20 12:34:20 steveu Exp $
+ * $Id: tsb85_tests.c,v 1.32 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \file */
@@ -47,7 +47,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include <unistd.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 #if defined(HAVE_LIBXML_XMLMEMORY_H)
 #include <libxml/xmlmemory.h>
@@ -75,7 +75,7 @@
 
 #define SAMPLES_PER_CHUNK       160
 
-AFfilehandle out_handle;
+SNDFILE *out_handle;
 
 int use_receiver_not_ready = FALSE;
 int test_local_interrupt = FALSE;
@@ -335,6 +335,7 @@ static void faxtester_real_time_frame_handler(faxtester_state_t *s,
             {
                 span_log_buf(&s->logging, SPAN_LOG_FLOW, "Expected", awaited, abs(awaited_len));
                 span_log_buf(&s->logging, SPAN_LOG_FLOW, "Received", msg, len);
+                printf("Test failed\n");
                 exit(2);
             }
         }
@@ -359,6 +360,7 @@ static void faxtester_front_end_step_complete_handler(faxtester_state_t *s, void
 static void faxtester_front_end_step_timeout_handler(faxtester_state_t *s, void *user_data)
 {
     span_log(&s->logging, SPAN_LOG_FLOW, "FAX tester step timed out\n");
+    printf("Test failed\n");
     exit(2);
 }
 /*- End of function --------------------------------------------------------*/
@@ -644,6 +646,7 @@ static int next_step(faxtester_state_t *s)
             return 1;
         }
         /* Finished */
+        printf("Test passed\n");
         exit(0);
     }
     while (s->cur  &&  xmlStrcmp(s->cur->name, (const xmlChar *) "step") != 0)
@@ -651,6 +654,7 @@ static int next_step(faxtester_state_t *s)
     if (s->cur == NULL)
     {
         /* Finished */
+        printf("Test passed\n");
         exit(0);
     }
 
@@ -965,6 +969,7 @@ printf("Push '%s'\n", next_tx_file);
             if (t4_tx_init(&t4_state, path, -1, -1) == NULL)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to init T.4 send\n");
+                printf("Test failed\n");
                 exit(2);
             }
             t4_tx_set_min_row_bits(&t4_state, min_row_bits);
@@ -981,6 +986,7 @@ printf("Push '%s'\n", next_tx_file);
             if (t4_tx_start_page(&t4_state))
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to start T.4 send\n");
+                printf("Test failed\n");
                 exit(2);
             }
             len = t4_tx_get_chunk(&t4_state, image, sizeof(image));
@@ -1003,6 +1009,7 @@ printf("Push '%s'\n", next_tx_file);
             if (t4_tx_init(&t4_state, path, -1, -1) == NULL)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to init T.4 send\n");
+                printf("Test failed\n");
                 exit(2);
             }
             t4_tx_set_min_row_bits(&t4_state, min_row_bits);
@@ -1019,6 +1026,7 @@ printf("Push '%s'\n", next_tx_file);
             if (t4_tx_start_page(&t4_state))
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to start T.4 send\n");
+                printf("Test failed\n");
                 exit(2);
             }
             /*endif*/
@@ -1060,9 +1068,10 @@ static void exchange(faxtester_state_t *s)
 
     if (log_audio)
     {
-        if ((out_handle = afOpenFile_telephony_write(OUTPUT_FILE_NAME_WAVE, 2)) == AF_NULL_FILEHANDLE)
+        if ((out_handle = sf_open_telephony_write(OUTPUT_FILE_NAME_WAVE, 2)) == NULL)
         {
-            fprintf(stderr, "    Cannot create wave file '%s'\n", OUTPUT_FILE_NAME_WAVE);
+            fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME_WAVE);
+            printf("Test failed\n");
             exit(2);
         }
         /*endif*/
@@ -1118,7 +1127,7 @@ static void exchange(faxtester_state_t *s)
             for (i = 0;  i < len;  i++)
                 out_amp[2*i + 1] = amp[i];
             /*endfor*/
-            if (afWriteFrames(out_handle, AF_DEFAULT_TRACK, out_amp, SAMPLES_PER_CHUNK) != SAMPLES_PER_CHUNK)
+            if (sf_writef_short(out_handle, out_amp, SAMPLES_PER_CHUNK) != SAMPLES_PER_CHUNK)
                 break;
             /*endif*/
         }
@@ -1127,9 +1136,10 @@ static void exchange(faxtester_state_t *s)
     /*endfor*/
     if (log_audio)
     {
-        if (afCloseFile(out_handle))
+        if (sf_close(out_handle))
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", OUTPUT_FILE_NAME_WAVE);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME_WAVE);
+            printf("Test failed\n");
             exit(2);
         }
         /*endif*/
@@ -1209,6 +1219,7 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
     if ((doc = xmlParseFile(test_file)) == NULL)
     {
         fprintf(stderr, "No document\n");
+        printf("Test failed\n");
         exit(2);
     }
     /*endif*/
@@ -1216,6 +1227,7 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
     if (!xmlValidateDocument(&valid, doc))
     {
         fprintf(stderr, "Invalid document\n");
+        printf("Test failed\n");
         exit(2);
     }
     /*endif*/
@@ -1223,15 +1235,17 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
     /* Check the document is of the right kind */
     if ((cur = xmlDocGetRootElement(doc)) == NULL)
     {
-        fprintf(stderr, "Empty document\n");
         xmlFreeDoc(doc);
+        fprintf(stderr, "Empty document\n");
+        printf("Test failed\n");
         exit(2);
     }
     /*endif*/
     if (xmlStrcmp(cur->name, (const xmlChar *) "fax-tests"))
     {
-        fprintf(stderr, "Document of the wrong type, root node != fax-tests");
         xmlFreeDoc(doc);
+        fprintf(stderr, "Document of the wrong type, root node != fax-tests");
+        printf("Test failed\n");
         exit(2);
     }
     /*endif*/
@@ -1240,7 +1254,10 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
         cur = cur->next;
     /*endwhile*/
     if (cur == NULL)
+    {
+        printf("Test failed\n");
         exit(2);
+    }
     /*endif*/
     while (cur)
     {

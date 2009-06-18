@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.c,v 1.71 2009/02/12 12:38:39 steveu Exp $
+ * $Id: hdlc.c,v 1.72 2009/06/02 16:03:56 steveu Exp $
  */
 
 /*! \file */
@@ -264,7 +264,7 @@ SPAN_DECLARE_NONSTD(void) hdlc_rx_put_bit(hdlc_rx_state_t *s, int new_bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) hdlc_rx_put_byte(hdlc_rx_state_t *s, int new_byte)
+SPAN_DECLARE_NONSTD(void) hdlc_rx_put_byte(hdlc_rx_state_t *s, int new_byte)
 {
     int i;
 
@@ -282,7 +282,7 @@ SPAN_DECLARE(void) hdlc_rx_put_byte(hdlc_rx_state_t *s, int new_byte)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) hdlc_rx_put(hdlc_rx_state_t *s, const uint8_t buf[], int len)
+SPAN_DECLARE_NONSTD(void) hdlc_rx_put(hdlc_rx_state_t *s, const uint8_t buf[], int len)
 {
     int i;
 
@@ -440,7 +440,7 @@ SPAN_DECLARE(int) hdlc_tx_corrupt_frame(hdlc_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) hdlc_tx_get_byte(hdlc_tx_state_t *s)
+SPAN_DECLARE_NONSTD(int) hdlc_tx_get_byte(hdlc_tx_state_t *s)
 {
     int i;
     int byte_in_progress;
@@ -561,7 +561,7 @@ SPAN_DECLARE_NONSTD(int) hdlc_tx_get_bit(hdlc_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) hdlc_tx_get(hdlc_tx_state_t *s, uint8_t buf[], size_t max_len)
+SPAN_DECLARE_NONSTD(int) hdlc_tx_get(hdlc_tx_state_t *s, uint8_t buf[], size_t max_len)
 {
     size_t i;
     int x;

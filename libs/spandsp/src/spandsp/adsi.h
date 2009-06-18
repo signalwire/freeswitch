@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi.h,v 1.39 2009/04/11 18:11:19 steveu Exp $
+ * $Id: adsi.h,v 1.40 2009/05/22 16:39:01 steveu Exp $
  */
 
 /*! \file */
@@ -476,7 +476,8 @@ SPAN_DECLARE(void) adsi_tx_send_alert_tone(adsi_tx_state_t *s);
     \param len The length of the message.
     \return The length actually added. If a message is already in progress
             in the transmitter, this function will return zero, as it will
-            not successfully add the message to the buffer.
+            not successfully add the message to the buffer. If the message is
+            invalid (e.g. it is too long), this function will return -1.
 */
 SPAN_DECLARE(int) adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, int len);
 

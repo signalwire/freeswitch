@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: rfc2198_sim_tests.c,v 1.6 2008/11/30 10:17:31 steveu Exp $
+ * $Id: rfc2198_sim_tests.c,v 1.7 2009/05/30 15:23:14 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -41,7 +41,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
-#include <audiofile.h>
+#include <sndfile.h>
 #if defined(HAVE_MATH_H)
 #define GEN_CONST
 #endif

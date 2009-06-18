@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.c,v 1.146 2009/04/21 13:59:07 steveu Exp $
+ * $Id: v17rx.c,v 1.149 2009/06/02 16:03:56 steveu Exp $
  */
 
 /*! \file */
@@ -64,12 +64,12 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/v17rx.h"
 
-#include "v17tx_constellation_maps.h"
-#include "v17rx_constellation_maps.h"
+#include "v17_v32bis_tx_constellation_maps.h"
+#include "v17_v32bis_rx_constellation_maps.h"
 #if defined(SPANDSP_USE_FIXED_POINT)
-#include "v17rx_fixed_rrc.h"
+#include "v17_v32bis_rx_fixed_rrc.h"
 #else
-#include "v17rx_floating_rrc.h"
+#include "v17_v32bis_rx_floating_rrc.h"
 #endif
 
 /*! The nominal frequency of the carrier, in Hertz */
@@ -292,18 +292,6 @@ static int descramble(v17_rx_state_t *s, int in_bit)
     else
         s->scramble_reg |= (in_bit & 1);
     return out_bit;
-}
-/*- End of function --------------------------------------------------------*/
-
-static __inline__ int find_quadrant(complexf_t *z)
-{
-    int b1;
-    int b2;
-
-    /* Split the space along the two diagonals. */
-    b1 = (z->im > z->re);
-    b2 = (z->im < -z->re);
-    return (b2 << 1) | (b1 ^ b2);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1008,12 +996,81 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
 }
 /*- End of function --------------------------------------------------------*/
 
+static __inline__ int signal_detect(v17_rx_state_t *s, int16_t amp)
+{
+    int16_t diff;
+    int16_t x;
+    int32_t power;
+
+    /* There should be no DC in the signal, but sometimes there is.
+       We need to measure the power with the DC blocked, but not using
+       a slow to respond DC blocker. Use the most elementary HPF. */
+    x = amp >> 1;
+    /* There could be overflow here, but it isn't a problem in practice */
+    diff = x - s->last_sample;
+    s->last_sample = x;
+    power = power_meter_update(&(s->power), diff);
+#if defined(IAXMODEM_STUFF)
+    /* Quick power drop fudge */
+    diff = abs(diff);
+    if (10*diff < s->high_sample)
+    {
+        if (++s->low_samples > 120)
+        {
+            power_meter_init(&(s->power), 4);
+            s->high_sample = 0;
+            s->low_samples = 0;
+        }
+    }
+    else
+    { 
+        s->low_samples = 0;
+        if (diff > s->high_sample)
+            s->high_sample = diff;
+    }
+#endif
+    if (s->signal_present > 0)
+    {
+        /* Look for power below turn-off threshold to turn the carrier off */
+#if defined(IAXMODEM_STUFF)
+        if (s->carrier_drop_pending  ||  power < s->carrier_off_power)
+#else
+        if (power < s->carrier_off_power)
+#endif
+        {
+            if (--s->signal_present <= 0)
+            {
+                /* Count down a short delay, to ensure we push the last
+                   few bits through the filters before stopping. */
+                v17_rx_restart(s, s->bit_rate, s->short_train);
+                report_status_change(s, SIG_STATUS_CARRIER_DOWN);
+                return 0;
+            }
+#if defined(IAXMODEM_STUFF)
+            /* Carrier has dropped, but the put_bit is pending the signal_present delay. */
+            s->carrier_drop_pending = TRUE;
+#endif
+        }
+    }
+    else
+    {
+        /* Look for power exceeding turn-on threshold to turn the carrier on */
+        if (power < s->carrier_on_power)
+            return 0;
+        s->signal_present = 1;
+#if defined(IAXMODEM_STUFF)
+        s->carrier_drop_pending = FALSE;
+#endif
+        report_status_change(s, SIG_STATUS_CARRIER_UP);
+    }
+    return power;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE_NONSTD(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
 {
     int i;
     int step;
-    int16_t x;
-    int16_t diff;
     complexf_t z;
     complexf_t zz;
     complexf_t sample;
@@ -1033,68 +1090,8 @@ SPAN_DECLARE_NONSTD(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
         if (++s->rrc_filter_step >= V17_RX_FILTER_STEPS)
             s->rrc_filter_step = 0;
 
-        /* There should be no DC in the signal, but sometimes there is.
-           We need to measure the power with the DC blocked, but not using
-           a slow to respond DC blocker. Use the most elementary HPF. */
-        x = amp[i] >> 1;
-        /* There could be overflow here, but it isn't a problem in practice */
-        diff = x - s->last_sample;
-        power = power_meter_update(&(s->power), diff);
-#if defined(IAXMODEM_STUFF)
-        /* Quick power drop fudge */
-        diff = abs(diff);
-        if (10*diff < s->high_sample)
-        {
-            if (++s->low_samples > 120)
-            {
-                power_meter_init(&(s->power), 4);
-                s->high_sample = 0;
-                s->low_samples = 0;
-            }
-        }
-        else
-        { 
-            s->low_samples = 0;
-            if (diff > s->high_sample)
-               s->high_sample = diff;
-        }
-#endif
-        s->last_sample = x;
-        if (s->signal_present)
-        {
-            /* Look for power below turnoff threshold to turn the carrier off */
-#if defined(IAXMODEM_STUFF)
-            if (s->carrier_drop_pending  ||  power < s->carrier_off_power)
-#else
-            if (power < s->carrier_off_power)
-#endif
-            {
-                if (--s->signal_present <= 0)
-                {
-                    /* Count down a short delay, to ensure we push the last
-                       few bits through the filters before stopping. */
-                    v17_rx_restart(s, s->bit_rate, s->short_train);
-                    report_status_change(s, SIG_STATUS_CARRIER_DOWN);
-                    continue;
-                }
-#if defined(IAXMODEM_STUFF)
-                /* Carrier has dropped, but the put_bit is
-                   pending the signal_present delay. */
-                s->carrier_drop_pending = TRUE;
-#endif
-            }
-        }
-        else
-        {
-            /* Look for power exceeding turnon threshold to turn the carrier on */
-            if (power < s->carrier_on_power)
-                continue;
-            s->signal_present = 1;
-#if defined(IAXMODEM_STUFF)
-            s->carrier_drop_pending = FALSE;
-#endif
-            report_status_change(s, SIG_STATUS_CARRIER_UP);
-        }
+        if ((power = signal_detect(s, amp[i])) == 0)
+            continue;
         if (s->training_stage == TRAINING_STAGE_PARKED)
             continue;
         /* Only spend effort processing this data if the modem is not
@@ -1171,7 +1168,7 @@ SPAN_DECLARE(int) v17_rx_fillin(v17_rx_state_t *s, int len)
     /* We want to sustain the current state (i.e carrier on<->carrier off), and
        try to sustain the carrier phase. We should probably push the filters, as well */
     span_log(&s->logging, SPAN_LOG_FLOW, "Fill-in %d samples\n", len);
-    if (!s->signal_present)
+    if (s->signal_present <= 0)
         return 0;
     if (s->training_stage == TRAINING_STAGE_PARKED)
         return 0;
@@ -1220,22 +1217,22 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
     switch (bit_rate)
     {
     case 14400:
-        s->constellation = v17_14400_constellation;
+        s->constellation = v17_v32bis_14400_constellation;
         s->space_map = 0;
         s->bits_per_symbol = 6;
         break;
     case 12000:
-        s->constellation = v17_12000_constellation;
+        s->constellation = v17_v32bis_12000_constellation;
         s->space_map = 1;
         s->bits_per_symbol = 5;
         break;
     case 9600:
-        s->constellation = v17_9600_constellation;
+        s->constellation = v17_v32bis_9600_constellation;
         s->space_map = 2;
         s->bits_per_symbol = 4;
         break;
     case 7200:
-        s->constellation = v17_7200_constellation;
+        s->constellation = v17_v32bis_7200_constellation;
         s->space_map = 3;
         s->bits_per_symbol = 3;
         break;

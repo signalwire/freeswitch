@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_utils.c,v 1.2 2009/04/25 14:17:47 steveu Exp $
+ * $Id: fax_utils.c,v 1.3 2009/05/16 03:34:45 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -93,7 +93,7 @@ void log_transfer_statistics(t30_state_t *s, const char *tag)
     t30_get_transfer_statistics(s, &t);
     printf("%s: bit rate %d\n", tag, t.bit_rate);
     printf("%s: ECM %s\n", tag, (t.error_correcting_mode)  ?  "on"  :  "off");
-    printf("%s: pages tx %d, pages rx %d\n", tag, t.pages_tx, t.pages_rx);
+    printf("%s: tx pages %d, rx pages %d\n", tag, t.pages_tx, t.pages_rx);
     printf("%s: pages in the file %d\n", tag, t.pages_in_file);
     printf("%s: image size %d x %d\n", tag, t.width, t.length);
     printf("%s: image resolution %d x %d\n", tag, t.x_resolution, t.y_resolution);

@@ -16,7 +16,7 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.114 2009/04/26 08:25:37 steveu Exp $
+## $Id: Makefile.am,v 1.116 2009/05/30 15:23:13 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -172,7 +172,7 @@ dc_restore_tests_SOURCES = dc_restore_tests.c
 dc_restore_tests_LDADD = $(LIBDIR) -lspandsp
 
 dds_tests_SOURCES = dds_tests.c
-dds_tests_LDADD = $(LIBDIR) -lspandsp
+dds_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 dtmf_rx_tests_SOURCES = dtmf_rx_tests.c
 dtmf_rx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
@@ -196,7 +196,7 @@ g1050_tests_SOURCES = g1050_tests.c media_monitor.cpp
 g1050_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 g168_tests_SOURCES = g168_tests.c
-g168_tests_LDADD = $(LIBDIR) -lspandsp
+g168_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 g711_tests_SOURCES = g711_tests.c
 g711_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
@@ -244,10 +244,10 @@ playout_tests_SOURCES = playout_tests.c media_monitor.cpp
 playout_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 plc_tests_SOURCES = plc_tests.c
-plc_tests_LDADD = $(LIBDIR) -lspandsp
+plc_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 power_meter_tests_SOURCES = power_meter_tests.c
-power_meter_tests_LDADD = $(LIBDIR) -lspandsp
+power_meter_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 queue_tests_SOURCES = queue_tests.c
 queue_tests_LDADD = $(LIBDIR) -lspandsp
@@ -268,7 +268,7 @@ sig_tone_tests_SOURCES = sig_tone_tests.c
 sig_tone_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp 
 
 super_tone_rx_tests_SOURCES = super_tone_rx_tests.c
-super_tone_rx_tests_LDADD = $(LIBDIR) -lspandsp
+super_tone_rx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 super_tone_tx_tests_SOURCES = super_tone_tx_tests.c
 super_tone_tx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp

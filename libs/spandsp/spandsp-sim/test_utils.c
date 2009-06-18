@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: test_utils.c,v 1.12 2009/02/03 16:28:39 steveu Exp $
+ * $Id: test_utils.c,v 1.14 2009/06/01 16:27:12 steveu Exp $
  */
 
 /*! \file */
@@ -44,7 +44,7 @@
 #include "floating_fudge.h"
 #include <time.h>
 #include <fcntl.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
 #include "spandsp.h"
@@ -72,7 +72,7 @@ static int circle_init = FALSE;
 static complex_t icircle[MAX_FFT_LEN/2];
 static int icircle_init = FALSE;
 
-SPAN_DECLARE(complexify_state_t) *complexify_init(void)
+SPAN_DECLARE(complexify_state_t *) complexify_init(void)
 {
     complexify_state_t *s;
     int i;
@@ -261,7 +261,7 @@ SPAN_DECLARE(void) ifft(complex_t data[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(codec_munge_state_t) *codec_munge_init(int codec, int info)
+SPAN_DECLARE(codec_munge_state_t *) codec_munge_init(int codec, int info)
 {
     codec_munge_state_t *s;
     
@@ -351,29 +351,25 @@ SPAN_DECLARE(void) codec_munge(codec_munge_state_t *s, int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(AFfilehandle) afOpenFile_telephony_read(const char *name, int channels)
+SPAN_DECLARE(SNDFILE *) sf_open_telephony_read(const char *name, int channels)
 {
-    float x;
-    AFfilehandle handle;
+    SNDFILE *handle;
+    SF_INFO info;
 
-    if ((handle = afOpenFile(name, "r", 0)) == AF_NULL_FILEHANDLE)
+    memset(&info, 0, sizeof(info));
+    if ((handle = sf_open(name, SFM_READ, &info)) == NULL)
     {
-        fprintf(stderr, "    Cannot open wave file '%s'\n", name);
+        fprintf(stderr, "    Cannot open audio file '%s' for reading\n", name);
         exit(2);
     }
-    if ((x = afGetFrameSize(handle, AF_DEFAULT_TRACK, 1)) != 2.0)
+    if (info.samplerate != SAMPLE_RATE)
     {
-        fprintf(stderr, "    Unexpected frame size in wave file '%s'\n", name);
+        printf("    Unexpected sample rate in audio file '%s'\n", name);
         exit(2);
     }
-    if ((x = afGetRate(handle, AF_DEFAULT_TRACK)) != (float) SAMPLE_RATE)
+    if (info.channels != channels)
     {
-        printf("    Unexpected sample rate in wave file '%s'\n", name);
-        exit(2);
-    }
-    if ((x = afGetChannels(handle, AF_DEFAULT_TRACK)) != (float) channels)
-    {
-        printf("    Unexpected number of channels in wave file '%s'\n", name);
+        printf("    Unexpected number of channels in audio file '%s'\n", name);
         exit(2);
     }
 
@@ -381,27 +377,24 @@ SPAN_DECLARE(AFfilehandle) afOpenFile_telephony_read(const char *name, int chann
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(AFfilehandle) afOpenFile_telephony_write(const char *name, int channels)
+SPAN_DECLARE(SNDFILE *) sf_open_telephony_write(const char *name, int channels)
 {
-    AFfilesetup setup;
-    AFfilehandle handle;
+    SNDFILE *handle;
+    SF_INFO info;
 
-    if ((setup = afNewFileSetup()) == AF_NULL_FILESETUP)
+    memset(&info, 0, sizeof(info));
+    info.frames = 0;
+    info.samplerate = SAMPLE_RATE;
+    info.channels = channels;
+    info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+    info.sections = 1;
+    info.seekable = 1;
+
+    if ((handle = sf_open(name, SFM_WRITE, &info)) == NULL)
     {
-        fprintf(stderr, "    %s: Failed to create file setup\n", name);
+        fprintf(stderr, "    Cannot open audio file '%s' for writing\n", name);
         exit(2);
     }
-    afInitSampleFormat(setup, AF_DEFAULT_TRACK, AF_SAMPFMT_TWOSCOMP, 16);
-    afInitRate(setup, AF_DEFAULT_TRACK, (float) SAMPLE_RATE);
-    afInitFileFormat(setup, AF_FILE_WAVE);
-    afInitChannels(setup, AF_DEFAULT_TRACK, channels);
-
-    if ((handle = afOpenFile(name, "w", setup)) == AF_NULL_FILEHANDLE)
-    {
-        fprintf(stderr, "    Failed to open result file\n");
-        exit(2);
-    }
-    afFreeFileSetup(setup);
 
     return handle;
 }

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: r2_mf_tx_tests.c,v 1.15 2008/11/30 10:17:31 steveu Exp $
+ * $Id: r2_mf_tx_tests.c,v 1.16 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \file */
@@ -47,7 +47,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <time.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -63,14 +63,14 @@ int main(int argc, char *argv[])
     r2_mf_tx_state_t gen;
     int16_t amp[1000];
     int len;
-    AFfilehandle outhandle;
+    SNDFILE *outhandle;
     int outframes;
     int digit;
     const char *digits = "0123456789BCDEF";
 
-    if ((outhandle = afOpenFile_telephony_write(OUTPUT_FILE_NAME, 1)) == AF_NULL_FILEHANDLE)
+    if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 1)) == NULL)
     {
-        fprintf(stderr, "    Cannot open wave file '%s'\n", OUTPUT_FILE_NAME);
+        fprintf(stderr, "    Cannot open audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
 
@@ -81,22 +81,12 @@ int main(int argc, char *argv[])
         len = r2_mf_tx(&gen, amp, 1000);
         printf("Generated %d samples of %c\n", len, digits[digit]);
         if (len > 0)
-        {
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      amp,
-                                      len);
-        }
+            outframes = sf_writef_short(outhandle, amp, len);
         r2_mf_tx_put(&gen, 0);
         len = r2_mf_tx(&gen, amp, 1000);
         printf("Generated %d samples\n", len);
         if (len > 0)
-        {
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      amp,
-                                      len);
-        }
+            outframes = sf_writef_short(outhandle, amp, len);
     }
 
     r2_mf_tx_init(&gen, TRUE);
@@ -106,27 +96,17 @@ int main(int argc, char *argv[])
         len = r2_mf_tx(&gen, amp, 1000);
         printf("Generated %d samples of %c\n", len, digits[digit]);
         if (len > 0)
-        {
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      amp,
-                                      len);
-        }
+            outframes = sf_writef_short(outhandle, amp, len);
         r2_mf_tx_put(&gen, 0);
         len = r2_mf_tx(&gen, amp, 1000);
         printf("Generated %d samples\n", len);
         if (len > 0)
-        {
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      amp,
-                                      len);
-        }
+            outframes = sf_writef_short(outhandle, amp, len);
     }
 
-    if (afCloseFile(outhandle) != 0)
+    if (sf_close(outhandle) != 0)
     {
-        fprintf(stderr, "    Cannot close wave file '%s'\n", OUTPUT_FILE_NAME);
+        fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit (2);
     }
 

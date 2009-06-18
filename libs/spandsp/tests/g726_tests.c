@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g726_tests.c,v 1.32 2009/04/22 12:57:40 steveu Exp $
+ * $Id: g726_tests.c,v 1.33 2009/05/30 15:23:13 steveu Exp $
  */
 
 /*! \file */
@@ -73,7 +73,7 @@ decompressed, and the resulting audio stored in post_g726.wav.
 #include <unistd.h>
 #include <memory.h>
 #include <ctype.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -1224,8 +1224,8 @@ int main(int argc, char *argv[])
     int opt;
     int itutests;
     int bit_rate;
-    AFfilehandle inhandle;
-    AFfilehandle outhandle;
+    SNDFILE *inhandle;
+    SNDFILE *outhandle;
     int16_t amp[1024];
     int frames;
     int outframes;
@@ -1266,14 +1266,14 @@ int main(int argc, char *argv[])
     }
     else
     {
-        if ((inhandle = afOpenFile_telephony_read(IN_FILE_NAME, 1)) == AF_NULL_FILEHANDLE)
+        if ((inhandle = sf_open_telephony_read(IN_FILE_NAME, 1)) == NULL)
         {
-            fprintf(stderr, "    Cannot open wave file '%s'\n", IN_FILE_NAME);
+            fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME);
             exit(2);
         }
-        if ((outhandle = afOpenFile_telephony_write(OUT_FILE_NAME, 1)) == AF_NULL_FILEHANDLE)
+        if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME, 1)) == NULL)
         {
-            fprintf(stderr, "    Cannot create wave file '%s'\n", OUT_FILE_NAME);
+            fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
 
@@ -1281,20 +1281,20 @@ int main(int argc, char *argv[])
         g726_init(&enc_state, bit_rate, G726_ENCODING_LINEAR, packing);
         g726_init(&dec_state, bit_rate, G726_ENCODING_LINEAR, packing);
             
-        while ((frames = afReadFrames(inhandle, AF_DEFAULT_TRACK, amp, 159)))
+        while ((frames = sf_readf_short(inhandle, amp, 159)))
         {
             adpcm = g726_encode(&enc_state, adpcmdata, amp, frames);
             frames = g726_decode(&dec_state, amp, adpcmdata, adpcm);
-            outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, amp, frames);
+            outframes = sf_writef_short(outhandle, amp, frames);
         }
-        if (afCloseFile(inhandle) != 0)
+        if (sf_close(inhandle) != 0)
         {
-            printf("    Cannot close wave file '%s'\n", IN_FILE_NAME);
+            printf("    Cannot close audio file '%s'\n", IN_FILE_NAME);
             exit(2);
         }
-        if (afCloseFile(outhandle) != 0)
+        if (sf_close(outhandle) != 0)
         {
-            printf("    Cannot close wave file '%s'\n", OUT_FILE_NAME);
+            printf("    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
         printf("'%s' transcoded to '%s' at %dbps.\n", IN_FILE_NAME, OUT_FILE_NAME, bit_rate);

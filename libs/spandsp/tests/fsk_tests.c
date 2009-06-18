@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk_tests.c,v 1.56 2009/04/14 16:04:54 steveu Exp $
+ * $Id: fsk_tests.c,v 1.57 2009/05/30 15:23:13 steveu Exp $
  */
 
 /*! \page fsk_tests_page FSK modem tests
@@ -35,7 +35,7 @@ These tests allow either:
    the basic performance of the receive modem. It is also the only test mode
    provided for evaluating the transmit modem.
 
- - An FSK receive modem is used to decode FSK audio, stored in a wave file.
+ - An FSK receive modem is used to decode FSK audio, stored in a file.
    This is good way to evaluate performance with audio recorded from other
    models of modem, and with real world problematic telephone lines.
 
@@ -51,7 +51,7 @@ These tests allow either:
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -178,8 +178,8 @@ int main(int argc, char *argv[])
     int16_t caller_model_amp[BLOCK_LEN];
     int16_t answerer_model_amp[BLOCK_LEN];
     int16_t out_amp[2*BLOCK_LEN];
-    AFfilehandle inhandle;
-    AFfilehandle outhandle;
+    SNDFILE *inhandle;
+    SNDFILE *outhandle;
     int outframes;    
     int i;
     int j;
@@ -255,13 +255,13 @@ int main(int argc, char *argv[])
     if (modem_under_test_2 >= 0)
         printf("Modem channel 2 is '%s'\n", preset_fsk_specs[modem_under_test_2].name);
 
-    outhandle = AF_NULL_FILEHANDLE;
+    outhandle = NULL;
 
     if (log_audio)
     {
-        if ((outhandle = afOpenFile_telephony_write(OUTPUT_FILE_NAME, 2)) == AF_NULL_FILEHANDLE)
+        if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 2)) == NULL)
         {
-            fprintf(stderr, "    Cannot create wave file '%s'\n", OUTPUT_FILE_NAME);
+            fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME);
             exit(2);
         }
     }
@@ -278,9 +278,9 @@ int main(int argc, char *argv[])
 
     if (decode_test_file)
     {
-        if ((inhandle = afOpenFile_telephony_read(decode_test_file, 1)) == AF_NULL_FILEHANDLE)
+        if ((inhandle = sf_open_telephony_read(decode_test_file, 1)) == NULL)
         {
-            fprintf(stderr, "    Cannot open wave file '%s'\n", decode_test_file);
+            fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
             exit(2);
         }
         caller_rx = fsk_rx_init(NULL, &preset_fsk_specs[modem_under_test_1], TRUE, put_bit, NULL);
@@ -289,10 +289,7 @@ int main(int argc, char *argv[])
 
         for (;;)
         {
-            samples = afReadFrames(inhandle,
-                                   AF_DEFAULT_TRACK,
-                                   caller_model_amp,
-                                   BLOCK_LEN);
+            samples = sf_readf_short(inhandle, caller_model_amp, BLOCK_LEN);
             if (samples < BLOCK_LEN)
                 break;
             for (i = 0;  i < samples;  i++)
@@ -300,9 +297,9 @@ int main(int argc, char *argv[])
             fsk_rx(caller_rx, caller_model_amp, samples);
         }
 
-        if (afCloseFile(inhandle) != 0)
+        if (sf_close(inhandle) != 0)
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", decode_test_file);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
         }
     }
@@ -429,13 +426,10 @@ int main(int argc, char *argv[])
         
             if (log_audio)
             {
-                outframes = afWriteFrames(outhandle,
-                                          AF_DEFAULT_TRACK,
-                                          out_amp,
-                                          BLOCK_LEN);
+                outframes = sf_writef_short(outhandle, out_amp, BLOCK_LEN);
                 if (outframes != BLOCK_LEN)
                 {
-                    fprintf(stderr, "    Error writing wave file\n");
+                    fprintf(stderr, "    Error writing audio file\n");
                     exit(2);
                 }
             }
@@ -477,12 +471,7 @@ int main(int argc, char *argv[])
                 if (log_audio)
                 {
                     for (i = 0;  i < 200;  i++)
-                    {
-                        outframes = afWriteFrames(outhandle,
-                                                  AF_DEFAULT_TRACK,
-                                                  out_amp,
-                                                  BLOCK_LEN);
-                    }
+                        outframes = sf_writef_short(outhandle, out_amp, BLOCK_LEN);
                 }
                 if (modem_under_test_1 >= 0)
                 {
@@ -514,9 +503,9 @@ int main(int argc, char *argv[])
     }
     if (log_audio)
     {
-        if (afCloseFile(outhandle) != 0)
+        if (sf_close(outhandle) != 0)
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", OUTPUT_FILE_NAME);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
             exit(2);
         }
     }

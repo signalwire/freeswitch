@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g1050.c,v 1.13 2009/02/03 16:28:39 steveu Exp $
+ * $Id: g1050.c,v 1.17 2009/06/02 14:55:36 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -36,7 +36,6 @@
 #include <time.h>
 #include <stdio.h>
 #include <fcntl.h>
-#include <audiofile.h>
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
@@ -669,11 +668,31 @@ g1050_model_t g1050_standard_models[9] =
     }
 };
 
+#if defined(HAVE_DRAND48)
+static __inline__ void q1050_rand_init(void)
+{
+    srand48(time(NULL));
+}
+/*- End of function --------------------------------------------------------*/
+
 static __inline__ double q1050_rand(void)
 {
     return drand48();
 }
 /*- End of function --------------------------------------------------------*/
+#else
+static __inline__ void q1050_rand_init(void)
+{
+    srand(time(NULL));
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ double q1050_rand(void)
+{
+    return (double) rand()/(double) RAND_MAX;
+}
+/*- End of function --------------------------------------------------------*/
+#endif
 
 static __inline__ double scale_probability(double prob, double scale)
 {
@@ -1070,10 +1089,10 @@ static void g1050_simulate_chunk(g1050_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(g1050_state_t) *g1050_init(int model,
-                                        int speed_pattern,
-                                        int packet_size,
-                                        int packet_rate)
+SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
+                                         int speed_pattern,
+                                         int packet_size,
+                                         int packet_rate)
 {
     g1050_state_t *s;
     g1050_constants_t *constants;
@@ -1089,7 +1108,7 @@ SPAN_DECLARE(g1050_state_t) *g1050_init(int model,
             break;
     }
     if (i >= 10)
-        srand48(time(NULL));
+        q1050_rand_init();
     if ((s = (g1050_state_t *) malloc(sizeof(*s))) == NULL)
         return NULL;
     memset(s, 0, sizeof(*s));

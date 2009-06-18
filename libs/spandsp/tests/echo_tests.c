@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: echo_tests.c,v 1.38 2009/02/10 13:06:47 steveu Exp $
+ * $Id: echo_tests.c,v 1.39 2009/05/30 15:23:13 steveu Exp $
  */
 
 /*! \page echo_can_tests_page Line echo cancellation for voice tests
@@ -54,7 +54,7 @@ all the tests in G.168 are fully implemented at this time.
 #include <string.h>
 #include <strings.h>
 #include <assert.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 #define GEN_CONST
 #include <math.h>
@@ -107,7 +107,7 @@ typedef struct
     int max;
     int cur;
     float gain;
-    AFfilehandle handle;
+    SNDFILE *handle;
     int16_t signal[SAMPLE_RATE];
 } signal_source_t;
 
@@ -139,7 +139,7 @@ signal_source_t far_css;
 awgn_state_t local_noise_source;
 awgn_state_t far_noise_source;
 
-AFfilehandle residue_handle;
+SNDFILE *residue_handle;
 int16_t residue_sound[SAMPLE_RATE];
 int residue_cur = 0;
 
@@ -157,7 +157,7 @@ level_measurement_device_t *sout_power_meter;   /* Also known as Lret (pre NLP v
 level_measurement_device_t *sgen_power_meter;
 
 #define RESULT_CHANNELS 7
-AFfilehandle result_handle;
+SNDFILE *result_handle;
 int16_t result_sound[SAMPLE_RATE*RESULT_CHANNELS];
 int result_cur;
 
@@ -188,10 +188,7 @@ static inline void put_residue(int16_t amp)
     residue_sound[residue_cur++] = amp;
     if (residue_cur >= SAMPLE_RATE)
     {
-        outframes = afWriteFrames(residue_handle,
-                                  AF_DEFAULT_TRACK,
-                                  residue_sound,
-                                  residue_cur);
+        outframes = sf_writef_short(residue_handle, residue_sound, residue_cur);
         if (outframes != residue_cur)
         {
             fprintf(stderr, "    Error writing residue sound\n");
@@ -204,9 +201,9 @@ static inline void put_residue(int16_t amp)
 
 static void signal_load(signal_source_t *sig, const char *name)
 {
-    sig->handle = afOpenFile_telephony_read(name, 1);
+    sig->handle = sf_open_telephony_read(name, 1);
     sig->name = name;
-    sig->max = afReadFrames(sig->handle, AF_DEFAULT_TRACK, sig->signal, SAMPLE_RATE);
+    sig->max = sf_readf_short(sig->handle, sig->signal, SAMPLE_RATE);
     if (sig->max < 0)
     {
         fprintf(stderr, "    Error reading sound file '%s'\n", sig->name);
@@ -217,7 +214,7 @@ static void signal_load(signal_source_t *sig, const char *name)
 
 static void signal_free(signal_source_t *sig)
 {
-    if (afCloseFile(sig->handle) != 0)
+    if (sf_close(sig->handle) != 0)
     {
         fprintf(stderr, "    Cannot close sound file '%s'\n", sig->name);
         exit(2);
@@ -597,10 +594,7 @@ static void run_test(echo_can_state_t *ctx, int16_t (*tx_source)(void), int16_t 
         result_sound[result_cur++] = 0; // TODO: insert the EC's internal status here
         if (result_cur >= RESULT_CHANNELS*SAMPLE_RATE)
         {
-            outframes = afWriteFrames(result_handle,
-                                      AF_DEFAULT_TRACK,
-                                      result_sound,
-                                      result_cur/RESULT_CHANNELS);
+            outframes = sf_writef_short(result_handle, result_sound, result_cur/RESULT_CHANNELS);
             if (outframes != result_cur/RESULT_CHANNELS)
             {
                 fprintf(stderr, "    Error writing result sound\n");
@@ -615,10 +609,7 @@ static void run_test(echo_can_state_t *ctx, int16_t (*tx_source)(void), int16_t 
 #endif
     if (result_cur >= 0)
     {
-        outframes = afWriteFrames(result_handle,
-                                  AF_DEFAULT_TRACK,
-                                  result_sound,
-                                  result_cur/RESULT_CHANNELS);
+        outframes = sf_writef_short(result_handle, result_sound, result_cur/RESULT_CHANNELS);
         if (outframes != result_cur/RESULT_CHANNELS)
         {
             fprintf(stderr, "    Error writing result sound\n");
@@ -678,7 +669,7 @@ static int perform_test_sanity(void)
             /* Inject a burst of far sound */
             if (far_cur >= far_max)
             {
-                far_max = afReadFrames(farhandle, AF_DEFAULT_TRACK, far_sound, SAMPLE_RATE);
+                far_max = sf_readf_short(farhandle, far_sound, SAMPLE_RATE);
                 if (far_max < 0)
                 {
                     fprintf(stderr, "    Error reading far sound\n");
@@ -734,10 +725,7 @@ static int perform_test_sanity(void)
         put_residue(clean - far_tx);
         if (result_cur >= RESULT_CHANNELS*SAMPLE_RATE)
         {
-            outframes = afWriteFrames(result_handle,
-                                      AF_DEFAULT_TRACK,
-                                      result_sound,
-                                      result_cur/RESULT_CHANNELS);
+            outframes = sf_writef_short(result_handle, result_sound, result_cur/RESULT_CHANNELS);
             if (outframes != result_cur/RESULT_CHANNELS)
             {
                 fprintf(stderr, "    Error writing result sound\n");
@@ -748,10 +736,7 @@ static int perform_test_sanity(void)
     }
     if (result_cur > 0)
     {
-        outframes = afWriteFrames(result_handle,
-                                  AF_DEFAULT_TRACK,
-                                  result_sound,
-                                  result_cur/RESULT_CHANNELS);
+        outframes = sf_writef_short(result_handle, result_sound, result_cur/RESULT_CHANNELS);
         if (outframes != result_cur/RESULT_CHANNELS)
         {
             fprintf(stderr, "    Error writing result sound\n");
@@ -1494,10 +1479,10 @@ static int match_test_name(const char *name)
 static void simulate_ec(char *argv[], int two_channel_file, int mode)
 {
     echo_can_state_t *ctx;
-    AFfilehandle txfile;
-    AFfilehandle rxfile;
-    AFfilehandle rxtxfile;
-    AFfilehandle ecfile;
+    SNDFILE *txfile;
+    SNDFILE *rxfile;
+    SNDFILE *rxtxfile;
+    SNDFILE *ecfile;
     int ntx;
     int nrx;
     int nec;
@@ -1515,14 +1500,14 @@ static void simulate_ec(char *argv[], int two_channel_file, int mode)
     ecfile = NULL;
     if (two_channel_file)
     {
-        txfile = afOpenFile_telephony_read(argv[0], 1);
-        rxfile = afOpenFile_telephony_read(argv[1], 1);      
-        ecfile = afOpenFile_telephony_write(argv[2], 1);
+        txfile = sf_open_telephony_read(argv[0], 1);
+        rxfile = sf_open_telephony_read(argv[1], 1);      
+        ecfile = sf_open_telephony_write(argv[2], 1);
     }
     else
     {
-        rxtxfile = afOpenFile_telephony_read(argv[0], 2);
-        ecfile = afOpenFile_telephony_write(argv[1], 1);
+        rxtxfile = sf_open_telephony_read(argv[0], 2);
+        ecfile = sf_open_telephony_write(argv[1], 1);
     }
 
     ctx = echo_can_init(TEST_EC_TAPS, 0);
@@ -1532,7 +1517,7 @@ static void simulate_ec(char *argv[], int two_channel_file, int mode)
     {
         if (two_channel_file)
         {
-            if ((ntx = afReadFrames(rxtxfile, AF_DEFAULT_TRACK, buf, 1)) < 0)
+            if ((ntx = sf_readf_short(rxtxfile, buf, 1)) < 0)
             {
                 fprintf(stderr, "    Error reading tx sound file\n");
                 exit(2);
@@ -1543,12 +1528,12 @@ static void simulate_ec(char *argv[], int two_channel_file, int mode)
         }
         else
         {
-            if ((ntx = afReadFrames(txfile, AF_DEFAULT_TRACK, &rin, 1)) < 0)
+            if ((ntx = sf_readf_short(txfile, &rin, 1)) < 0)
             {
                 fprintf(stderr, "    Error reading tx sound file\n");
                 exit(2);
             }
-            if ((nrx = afReadFrames(rxfile, AF_DEFAULT_TRACK, &sin, 1)) < 0)
+            if ((nrx = sf_readf_short(rxfile, &sin, 1)) < 0)
             {           
                 fprintf(stderr, "    Error reading rx sound file\n");
                 exit(2);
@@ -1557,7 +1542,7 @@ static void simulate_ec(char *argv[], int two_channel_file, int mode)
         rout = echo_can_hpf_tx(ctx, rin);
         sout = echo_can_update(ctx, rout, sin);
 
-        if ((nec = afWriteFrames(ecfile, AF_DEFAULT_TRACK, &sout, 1)) != 1)
+        if ((nec = sf_writef_short(ecfile, &sout, 1)) != 1)
         {
             fprintf(stderr, "    Error writing ec sound file\n");
             exit(2);
@@ -1576,14 +1561,14 @@ static void simulate_ec(char *argv[], int two_channel_file, int mode)
 
     if (two_channel_file)
     {
-        afCloseFile(rxtxfile);
+        sf_close(rxtxfile);
     }
     else
     {
-        afCloseFile(txfile);
-        afCloseFile(rxfile);
+        sf_close(txfile);
+        sf_close(rxfile);
     }
-    afCloseFile(ecfile);
+    sf_close(ecfile);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1666,8 +1651,8 @@ int main(int argc, char *argv[])
 #endif
     if (simulate)
     {
-        /* Process a pair of transmitted and received wave files, and produce
-           an echo cancelled wave file. */
+        /* Process a pair of transmitted and received audio files, and produce
+           an echo cancelled audio file. */
         if (argc < ((two_channel_file)  ?  2  :  3))
         {
             printf("not enough arguments for a simulation\n");
@@ -1692,7 +1677,7 @@ int main(int argc, char *argv[])
         signal_load(&local_css, "sound_c1_8k.wav");
         signal_load(&far_css, "sound_c3_8k.wav");
 
-        if ((residue_handle = afOpenFile_telephony_write(RESIDUE_FILE_NAME, 1)) == AF_NULL_FILEHANDLE)
+        if ((residue_handle = sf_open_telephony_write(RESIDUE_FILE_NAME, 1)) == NULL)
         {
             fprintf(stderr, "    Failed to open '%s'\n", RESIDUE_FILE_NAME);
             exit(2);
@@ -1704,7 +1689,7 @@ int main(int argc, char *argv[])
         else
         {
             time(&now);
-            if ((result_handle = afOpenFile_telephony_write("echo_tests_result.wav", RESULT_CHANNELS)) == AF_NULL_FILEHANDLE)
+            if ((result_handle = sf_open_telephony_write("echo_tests_result.wav", RESULT_CHANNELS)) == NULL)
             {
                 fprintf(stderr, "    Failed to open result file\n");
                 exit(2);
@@ -1720,7 +1705,7 @@ int main(int argc, char *argv[])
                 }
                 match_test_name(argv[i]);
             }
-            if (afCloseFile(result_handle) != 0)
+            if (sf_close(result_handle) != 0)
             {
                 fprintf(stderr, "    Cannot close speech file '%s'\n", "result_sound.wav");
                 exit(2);
@@ -1729,7 +1714,7 @@ int main(int argc, char *argv[])
         }
         signal_free(&local_css);
         signal_free(&far_css);
-        if (afCloseFile(residue_handle) != 0)
+        if (sf_close(residue_handle) != 0)
         {
             fprintf(stderr, "    Cannot close speech file '%s'\n", RESIDUE_FILE_NAME);
             exit(2);

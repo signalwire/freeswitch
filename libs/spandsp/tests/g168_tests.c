@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g168_tests.c,v 1.19 2008/11/30 10:17:31 steveu Exp $
+ * $Id: g168_tests.c,v 1.20 2009/05/30 15:23:13 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -42,6 +42,7 @@
 
 #include "spandsp.h"
 #include "spandsp/g168models.h"
+#include "spandsp-sim.h"
 
 #define FALSE 0
 #define TRUE (!FALSE)
@@ -52,76 +53,18 @@ typedef struct
     int max;
     int cur;
     float gain;
-    AFfilehandle handle;
+    SNDFILE *handle;
     int16_t signal[SAMPLE_RATE];
 } signal_source_t;
 
 signal_source_t local_css;
 signal_source_t far_css;
 
-static AFfilehandle afOpenFile_telephony_read(const char *name, int channels)
-{
-    float x;
-    AFfilehandle handle;
-
-    if ((handle = afOpenFile(name, "r", 0)) == AF_NULL_FILEHANDLE)
-    {
-        fprintf(stderr, "    Cannot open wave file '%s'\n", name);
-        exit(2);
-    }
-    if ((x = afGetFrameSize(handle, AF_DEFAULT_TRACK, 1)) != 2.0)
-    {
-        fprintf(stderr, "    Unexpected frame size in wave file '%s'\n", name);
-        exit(2);
-    }
-    if ((x = afGetRate(handle, AF_DEFAULT_TRACK)) != (float) SAMPLE_RATE)
-    {
-        printf("    Unexpected sample rate in wave file '%s'\n", name);
-        exit(2);
-    }
-    if ((x = afGetChannels(handle, AF_DEFAULT_TRACK)) != (float) channels)
-    {
-        printf("    Unexpected number of channels in wave file '%s'\n", name);
-        exit(2);
-    }
-
-    return handle;
-}
-/*- End of function --------------------------------------------------------*/
-
-#if 0
-static AFfilehandle afOpenFile_telephony_write(const char *name, int channels)
-{
-    AFfilesetup setup;
-    AFfilehandle handle;
-
-    if ((setup = afNewFileSetup()) == AF_NULL_FILESETUP)
-    {
-        fprintf(stderr, "    %s: Failed to create file setup\n", name);
-        exit(2);
-    }
-    afInitSampleFormat(setup, AF_DEFAULT_TRACK, AF_SAMPFMT_TWOSCOMP, 16);
-    afInitRate(setup, AF_DEFAULT_TRACK, (float) SAMPLE_RATE);
-    afInitFileFormat(setup, AF_FILE_WAVE);
-    afInitChannels(setup, AF_DEFAULT_TRACK, channels);
-
-    if ((handle = afOpenFile(name, "w", setup)) == AF_NULL_FILEHANDLE)
-    {
-        fprintf(stderr, "    Failed to open result file\n");
-        exit(2);
-    }
-    afFreeFileSetup(setup);
-
-    return handle;
-}
-/*- End of function --------------------------------------------------------*/
-#endif
-
 static void signal_load(signal_source_t *sig, const char *name)
 {
-    sig->handle = afOpenFile_telephony_read(name, 1);
+    sig->handle = sf_open_telephony_read(name, 1);
     sig->name = name;
-    sig->max = afReadFrames(sig->handle, AF_DEFAULT_TRACK, sig->signal, SAMPLE_RATE);
+    sig->max = sf_readf_short(sig->handle, sig->signal, SAMPLE_RATE);
     if (sig->max < 0)
     {
         fprintf(stderr, "    Error reading sound file '%s'\n", sig->name);
@@ -132,7 +75,7 @@ static void signal_load(signal_source_t *sig, const char *name)
 
 static void signal_free(signal_source_t *sig)
 {
-    if (afCloseFile(sig->handle) != 0)
+    if (sf_close(sig->handle) != 0)
     {
         fprintf(stderr, "    Cannot close sound file '%s'\n", sig->name);
         exit(2);

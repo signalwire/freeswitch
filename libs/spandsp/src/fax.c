@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax.c,v 1.92 2009/04/23 15:48:21 steveu Exp $
+ * $Id: fax.c,v 1.93 2009/05/24 07:18:36 steveu Exp $
  */
 
 /*! \file */
@@ -98,7 +98,7 @@
 #include "spandsp/private/t30.h"
 #include "spandsp/private/fax.h"
 
-#define HDLC_FRAMING_OK_THRESHOLD       5
+#define HDLC_FRAMING_OK_THRESHOLD       8
 
 static void fax_send_hdlc(void *user_data, const uint8_t *msg, int len)
 {
@@ -387,7 +387,7 @@ static void fax_set_rx_type(void *user_data, int type, int bit_rate, int short_t
     {
         put_bit_func = (put_bit_func_t) hdlc_rx_put_bit;
         put_bit_user_data = (void *) &t->hdlc_rx;
-        hdlc_rx_init(&t->hdlc_rx, FALSE, FALSE, HDLC_FRAMING_OK_THRESHOLD, t30_hdlc_accept, &s->t30);
+        hdlc_rx_init(&t->hdlc_rx, FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, t30_hdlc_accept, &s->t30);
     }
     else
     {

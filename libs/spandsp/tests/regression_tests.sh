@@ -17,7 +17,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: regression_tests.sh,v 1.56 2009/04/02 13:43:49 steveu Exp $
+# $Id: regression_tests.sh,v 1.58 2009/05/19 14:47:02 steveu Exp $
 #
 
 ITUTESTS_TIF=../test-data/itu/fax/itutests.tif
@@ -686,28 +686,28 @@ echo tone_detect_tests not enabled
 #echo tone_generate_tests completed OK
 echo tone_generate_tests not enabled
 
-./v17_tests -b 14400 -s -42 >$STDOUT_DEST 2>$STDERR_DEST
+./v17_tests -b 14400 -s -42 -n -66 >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
     echo v17_tests failed!
     exit $RETVAL
 fi
-./v17_tests -b 12000 -s -42 >$STDOUT_DEST 2>$STDERR_DEST
+./v17_tests -b 12000 -s -42 -n -61 >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
     echo v17_tests failed!
     exit $RETVAL
 fi
-./v17_tests -b 9600 -s -42 >$STDOUT_DEST 2>$STDERR_DEST
+./v17_tests -b 9600 -s -42 -n -59 >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
     echo v17_tests failed!
     exit $RETVAL
 fi
-./v17_tests -b 7200 -s -42 >$STDOUT_DEST 2>$STDERR_DEST
+./v17_tests -b 7200 -s -42 -n -56 >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
@@ -733,14 +733,14 @@ echo v17_tests completed OK
 #echo v22bis_tests completed OK
 echo v22bis_tests not enabled
 
-./v27ter_tests -b 4800 -s -42 >$STDOUT_DEST 2>$STDERR_DEST
+./v27ter_tests -b 4800 -s -42 -n -57 >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
     echo v27ter_tests failed!
     exit $RETVAL
 fi
-./v27ter_tests -b 2400 -s -42 >$STDOUT_DEST 2>$STDERR_DEST
+./v27ter_tests -b 2400 -s -42 -n -51 >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
@@ -749,21 +749,21 @@ then
 fi
 echo v27ter_tests completed OK
 
-./v29_tests -b 9600 -s -42 >$STDOUT_DEST 2>$STDERR_DEST
+./v29_tests -b 9600 -s -42 -n -62 >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
     echo v29_tests failed!
     exit $RETVAL
 fi
-./v29_tests -b 7200 -s -42 >$STDOUT_DEST 2>$STDERR_DEST
+./v29_tests -b 7200 -s -42 -n -58 >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
     echo v29_tests failed!
     exit $RETVAL
 fi
-./v29_tests -b 4800 -s -42 >$STDOUT_DEST 2>$STDERR_DEST
+./v29_tests -b 4800 -s -42 -n -54 >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then

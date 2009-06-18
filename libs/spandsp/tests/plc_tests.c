@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: plc_tests.c,v 1.25 2008/05/13 13:17:26 steveu Exp $
+ * $Id: plc_tests.c,v 1.26 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \page plc_tests_page Packet loss concealment tests
@@ -51,18 +51,18 @@ audio file, called post_plc.wav. This file contains 8000 sample/second
 #include <unistd.h>
 #include <string.h>
 
-#include <audiofile.h>
+#include <sndfile.h>
 
 #include "spandsp.h"
+#include "spandsp-sim.h"
 
 #define INPUT_FILE_NAME     "../test-data/local/short_nb_voice.wav"
 #define OUTPUT_FILE_NAME    "post_plc.wav"
 
 int main(int argc, char *argv[])
 {
-    AFfilehandle inhandle;
-    AFfilehandle outhandle;
-    AFfilesetup filesetup;
+    SNDFILE *inhandle;
+    SNDFILE *outhandle;
     plc_state_t plc;
     int inframes;
     int outframes;
@@ -106,23 +106,13 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    if ((filesetup = afNewFileSetup()) == AF_NULL_FILESETUP)
-    {
-        fprintf(stderr, "    Failed to create file setup\n");
-        exit(2);
-    }
-    afInitSampleFormat(filesetup, AF_DEFAULT_TRACK, AF_SAMPFMT_TWOSCOMP, 16);
-    afInitRate(filesetup, AF_DEFAULT_TRACK, (float) SAMPLE_RATE);
-    afInitFileFormat(filesetup, AF_FILE_WAVE);
-    afInitChannels(filesetup, AF_DEFAULT_TRACK, 1);
-
     phase_rate = 0;
     inhandle = NULL;
     if (tone < 0)
     {
-        if ((inhandle = afOpenFile(INPUT_FILE_NAME, "r", NULL)) == AF_NULL_FILEHANDLE)
+        if ((inhandle = sf_open_telephony_read(INPUT_FILE_NAME, 1)) == NULL)
         {
-            fprintf(stderr, "    Failed to open wave file '%s'\n", INPUT_FILE_NAME);
+            fprintf(stderr, "    Failed to open audio file '%s'\n", INPUT_FILE_NAME);
             exit(2);
         }
     }
@@ -130,9 +120,9 @@ int main(int argc, char *argv[])
     {
         phase_rate = dds_phase_ratef((float) tone);
     }
-    if ((outhandle = afOpenFile(OUTPUT_FILE_NAME, "w", filesetup)) == AF_NULL_FILEHANDLE)
+    if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 1)) == NULL)
     {
-        fprintf(stderr, "    Failed to open wave file '%s'\n", OUTPUT_FILE_NAME);
+        fprintf(stderr, "    Failed to open audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
     plc_init(&plc);
@@ -141,10 +131,7 @@ int main(int argc, char *argv[])
     {
         if (tone < 0)
         {
-            inframes = afReadFrames(inhandle,
-                                    AF_DEFAULT_TRACK,
-                                    amp,
-                                    block_len);
+            inframes = sf_readf_short(inhandle, amp, block_len);
             if (inframes != block_len)
                 break;
         }
@@ -170,10 +157,7 @@ int main(int argc, char *argv[])
             if (block_synthetic)
                 memset(amp, 0, sizeof(int16_t)*inframes);
         }
-        outframes = afWriteFrames(outhandle,
-                                  AF_DEFAULT_TRACK,
-                                  amp,
-                                  inframes);
+        outframes = sf_writef_short(outhandle, amp, inframes);
         if (outframes != inframes)
         {
             fprintf(stderr, "    Error writing out sound\n");
@@ -183,18 +167,17 @@ int main(int argc, char *argv[])
     printf("Dropped %d of %d blocks\n", lost_blocks, block_no);
     if (tone < 0)
     {
-        if (afCloseFile(inhandle) != 0)
+        if (sf_close(inhandle) != 0)
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", INPUT_FILE_NAME);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", INPUT_FILE_NAME);
             exit(2);
         }
     }
-    if (afCloseFile(outhandle) != 0)
+    if (sf_close(outhandle) != 0)
     {
-        fprintf(stderr, "    Cannot close wave file '%s'\n", OUTPUT_FILE_NAME);
+        fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
-    afFreeFileSetup(filesetup);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

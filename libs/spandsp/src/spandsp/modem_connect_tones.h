@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_connect_tones.h,v 1.22 2009/02/10 13:06:47 steveu Exp $
+ * $Id: modem_connect_tones.h,v 1.24 2009/06/02 16:03:56 steveu Exp $
  */
  
 /*! \file */
@@ -72,8 +72,7 @@ enum
     /*! \brief The ANSam with phase reversals tone is a version of ANS_PR with 20% of 15Hz+-0.1Hz AM
                modulation, as per V.8 */
     MODEM_CONNECT_TONES_ANSAM_PR = 5,
-    /*! \brief FAX preamble in a string of V.21 HDLC flag octets. This is only valid as a result of tone
-               detection. It should not be specified as a tone type to transmit or receive. */
+    /*! \brief FAX preamble in a string of V.21 HDLC flag octets. */
     MODEM_CONNECT_TONES_FAX_PREAMBLE = 6,
     /*! \brief CED tone is the same as ANS tone. FAX preamble in a string of V.21 HDLC flag octets.
                This is only valid as a tone type to receive. It is never reported as a detected tone
@@ -126,8 +125,8 @@ SPAN_DECLARE(int) modem_connect_tones_tx_free(modem_connect_tones_tx_state_t *s)
     \return The number of samples generated.
 */
 SPAN_DECLARE_NONSTD(int) modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
-                                         int16_t amp[],
-                                         int len);
+                                                int16_t amp[],
+                                                int len);
 
 /*! \brief Process a block of samples through an instance of the modem connect
            tones detector.
@@ -136,9 +135,9 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_tx(modem_connect_tones_tx_state_t *
     \param len The number of samples in the array.
     \return The number of unprocessed samples.
 */
-SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
-                                         const int16_t amp[],
-                                         int len);
+SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
+                                                const int16_t amp[],
+                                                int len);
                              
 /*! \brief Test if a modem_connect tone has been detected.
     \param s The context.

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: power_meter.h,v 1.18 2009/02/10 13:06:47 steveu Exp $
+ * $Id: power_meter.h,v 1.19 2009/05/19 14:15:09 steveu Exp $
  */
 
 #if !defined(_POWER_METER_H_)
@@ -55,6 +55,16 @@ typedef struct
     /*! The current power reading. */
     int32_t reading;
 } power_meter_t;
+
+typedef struct
+{
+    power_meter_t short_term;
+    power_meter_t medium_term;
+    int signal_present;
+    int32_t surge;
+    int32_t sag;
+    int32_t min;
+} power_surge_detector_state_t;
 
 #if defined(__cplusplus)
 extern "C"
@@ -115,6 +125,26 @@ SPAN_DECLARE(int32_t) power_meter_level_dbm0(float level);
     \param level A power level, in dBOv.
     \return The equivalent power meter reading. */
 SPAN_DECLARE(int32_t) power_meter_level_dbov(float level);
+
+SPAN_DECLARE(int32_t) power_surge_detector(power_surge_detector_state_t *s, int16_t amp);
+
+/*! Get the current surge detector short term meter reading, in dBm0.
+    \brief Get the current surge detector meter reading, in dBm0.
+    \param s The power surge detector context.
+    \return The current power surge detector power reading, in dBm0. */
+SPAN_DECLARE(float) power_surge_detector_current_dbm0(power_surge_detector_state_t *s);
+
+/*! Get the current surge detector short term meter reading, in dBOv.
+    \brief Get the current surge detector meter reading, in dBOv.
+    \param s The power surge detector context.
+    \return The current power surge detector power reading, in dBOv. */
+SPAN_DECLARE(float) power_surge_detector_current_dbov(power_surge_detector_state_t *s);
+
+SPAN_DECLARE(power_surge_detector_state_t *) power_surge_detector_init(power_surge_detector_state_t *s, float min, float surge);
+
+SPAN_DECLARE(int) power_surge_detector_release(power_surge_detector_state_t *s);
+
+SPAN_DECLARE(int) power_surge_detector_free(power_surge_detector_state_t *s);
 
 #if defined(__cplusplus)
 }

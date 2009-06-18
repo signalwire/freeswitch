@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: testfax.c,v 1.32 2008/05/13 13:17:26 steveu Exp $
+ * $Id: testfax.c,v 1.33 2009/05/30 15:23:14 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -46,7 +46,7 @@
 
 #include <linux/zaptel.h>
 #include <pthread.h>
-#include <audiofile.h>
+#include <sndfile.h>
 #include <tiffio.h>
 
 #include "unicall.h"
@@ -57,8 +57,8 @@
 #include "spandsp.h"
 
 int caller_mode = FALSE;
-static AFfilehandle rxhandle;
-static AFfilehandle txhandle;
+static SNDFILE *rxhandle;
+static SNDFILE *txhandle;
 
 typedef struct
 {
@@ -104,7 +104,7 @@ void channel_read_fax_channel(uc_t *uc, int chan, void *user_data, uint8_t *buf,
     int outframes;
 
 #if 0
-    outframes = afWriteFrames(rxhandle,
+    outframes = sf_writef_short(rxhandle,
                               AF_DEFAULT_TRACK,
                               buf,
                               len >> 1);
@@ -149,7 +149,7 @@ int channel_write_fax_channel(uc_t *uc, int chan, void *user_data, uint8_t *buf,
     int len;
 
     len = t30_tx(&(chan_stuff[chan].fax), (int16_t *) buf, max_len >> 1);
-    afWriteFrames(txhandle, AF_DEFAULT_TRACK, buf, len);
+    sf_writef_short(txhandle, AF_DEFAULT_TRACK, buf, len);
     if (len > 0)
         len <<= 1;
     return len;
@@ -532,13 +532,13 @@ int main(int argc, char *argv[])
     afInitFileFormat(filesetup, AF_FILE_WAVE);
     afInitChannels(filesetup, AF_DEFAULT_TRACK, 1);
     rxhandle = afOpenFile("rxfax.wav", "w", filesetup);
-    if (rxhandle == AF_NULL_FILEHANDLE)
+    if (rxhandle == NULL)
     {
         fprintf(stderr, "    Failed to open fax audio file\n");
         exit(2);
     }
     txhandle = afOpenFile("txfax.wav", "w", filesetup);
-    if (txhandle == AF_NULL_FILEHANDLE)
+    if (txhandle == NULL)
     {
         fprintf(stderr, "    Failed to open fax audio file\n");
         exit(2);

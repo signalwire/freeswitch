@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE fax-tests SYSTEM "./fax-tests.dtd">
 <fax-tests>
-<!-- $Id: tsb85.xml,v 1.21 2008/09/12 14:41:55 steveu Exp $ -->
+<!-- $Id: tsb85.xml,v 1.22 2009/05/24 07:18:36 steveu Exp $ -->
 <config>
     <path type="IMAGE" value="../test-data/etsi/fax"/>
 </config>
@@ -2202,7 +2202,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="302" frame_size="256"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="303" frame_size="256"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -2541,8 +2541,8 @@
 
         <step type="WAIT" value="75"/>
         <!-- UNKNOWN_BCS_1 -->
-        <step dir="T" type="HDLC" modem="V.21" tag="GARBAGE" value="FF C0 00"/>
-        <step dir="T" type="POSTAMBLE"/>
+        <step dir="T" type="PREAMBLE" modem="V.21" value="37"/>
+        <step dir="T" type="HDLC" tag="GARBAGE" value="FF C0 00"/>
         <step dir="T" type="HDLC" tag="DCS" value="FF C8 41 00 50 00"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
@@ -5513,7 +5513,7 @@
 
         <step dir="R" type="CNG"/>
 
-        <step type="WAIT" value="140001"/>
+        <step type="WAIT" value="40001"/>
         <step dir="T" type="CED"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>

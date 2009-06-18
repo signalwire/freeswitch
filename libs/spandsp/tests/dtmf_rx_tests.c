@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: dtmf_rx_tests.c,v 1.44 2008/11/30 10:17:31 steveu Exp $
+ * $Id: dtmf_rx_tests.c,v 1.45 2009/05/30 15:23:13 steveu Exp $
  */
 
 /*
@@ -94,7 +94,7 @@ they wish to give it away for free.
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -623,7 +623,7 @@ static void mitel_cm7291_side_2_and_bellcore_tests(void)
     int hits;
     int hit_types[256];
     char buf[128 + 1];
-    AFfilehandle inhandle;
+    SNDFILE *inhandle;
     int frames;
     dtmf_rx_state_t *dtmf_state;
 
@@ -633,7 +633,7 @@ static void mitel_cm7291_side_2_and_bellcore_tests(void)
 
     /* The remainder of the Mitel tape is the talk-off test */
     /* Here we use the Bellcore test tapes (much tougher), in six
-       wave files - 1 from each side of the original 3 cassette tapes */
+      files - 1 from each side of the original 3 cassette tapes */
     /* Bellcore say you should get no more than 470 false detections with
        a good receiver. Dialogic claim 20. Of course, we can do better than
        that, eh? */
@@ -641,13 +641,13 @@ static void mitel_cm7291_side_2_and_bellcore_tests(void)
     memset(hit_types, '\0', sizeof(hit_types));
     for (j = 0;  bellcore_files[j][0];  j++)
     {
-        if ((inhandle = afOpenFile_telephony_read(bellcore_files[j], 1)) == AF_NULL_FILEHANDLE)
+        if ((inhandle = sf_open_telephony_read(bellcore_files[j], 1)) == NULL)
         {
             printf("    Cannot open speech file '%s'\n", bellcore_files[j]);
             exit(2);
         }
         hits = 0;
-        while ((frames = afReadFrames(inhandle, AF_DEFAULT_TRACK, amp, SAMPLE_RATE)))
+        while ((frames = sf_readf_short(inhandle, amp, SAMPLE_RATE)))
         {
             dtmf_rx(dtmf_state, amp, frames);
             len = dtmf_rx_get(dtmf_state, buf, 128);
@@ -658,7 +658,7 @@ static void mitel_cm7291_side_2_and_bellcore_tests(void)
                 hits += len;
             }
         }
-        if (afCloseFile(inhandle) != 0)
+        if (sf_close(inhandle) != 0)
         {
             printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
             exit(2);
@@ -804,7 +804,7 @@ static void callback_function_tests(void)
 static void decode_test(const char *test_file)
 {
     int16_t amp[SAMPLES_PER_CHUNK];
-    AFfilehandle inhandle;
+    SNDFILE *inhandle;
     dtmf_rx_state_t *dtmf_state;
     char buf[128 + 1];
     int actual;
@@ -815,16 +815,16 @@ static void decode_test(const char *test_file)
     if (use_dialtone_filter)
         dtmf_rx_parms(dtmf_state, TRUE, -1, -1, -99);
 
-    /* We will decode the audio from a wave file. */
+    /* We will decode the audio from a file. */
     
-    if ((inhandle = afOpenFile_telephony_read(decode_test_file, 1)) == AF_NULL_FILEHANDLE)
+    if ((inhandle = sf_open_telephony_read(decode_test_file, 1)) == NULL)
     {
-        fprintf(stderr, "    Cannot open wave file '%s'\n", decode_test_file);
+        fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
         exit(2);
     }
     
     total = 0;
-    while ((samples = afReadFrames(inhandle, AF_DEFAULT_TRACK, amp, SAMPLES_PER_CHUNK)) > 0)
+    while ((samples = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK)) > 0)
     {
         codec_munge(munge, amp, samples);
         dtmf_rx(dtmf_state, amp, samples);

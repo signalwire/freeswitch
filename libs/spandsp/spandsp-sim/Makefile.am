@@ -16,14 +16,25 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.7 2008/05/03 13:05:04 steveu Exp $
+## $Id: Makefile.am,v 1.10 2009/06/02 16:03:55 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
 
-LIBS += $(TESTLIBS)
+LIBS += -L$(top_builddir)/src -lspandsp $(SIMLIBS)
 
 MAINTAINERCLEANFILES = Makefile.in
+
+EXTRA_DIST = libspandsp_sim.dsp \
+             libspandsp_sim.2005.vcproj \
+             libspandsp_sim.2008.vcproj \
+             msvc/make_line_models.2008.vcproj \
+             msvc/msvcproj.head \
+             msvc/msvcproj.foot \
+             msvc/vc8proj.head \
+             msvc/vc8proj.foot \
+             msvc/vc9proj.head \
+             msvc/vc9proj.foot
 
 INCLUDES = -I$(top_builddir) -I$(top_builddir)/src -DDATADIR="\"$(pkgdatadir)\""
 
@@ -38,7 +49,7 @@ libspandsp_sim_la_SOURCES = g1050.c \
 
 nodist_libspandsp_sim_la_SOURCES = line_models.c
 
-libspandsp_sim_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@:@SPANDSP_LT_AGE@
+libspandsp_sim_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@:@SPANDSP_LT_AGE@ $(COMP_VENDOR_LDFLAGS)
 
 nobase_include_HEADERS = spandsp/g1050.h \
                          spandsp/line_model.h \
@@ -60,14 +71,16 @@ line_models.$(OBJEXT): make_line_models$(EXEEXT) line_models.c
 line_models.c: make_line_models$(EXEEXT)
 	./make_line_models$(EXEEXT)
     
-DSP = libspandsp-sim.dsp
-VCPROJ = libspandsp-sim.vcproj
+DSP = libspandsp_sim.dsp
+VCPROJ8 = libspandsp_sim.2005.vcproj
+VCPROJ9 = libspandsp_sim.2008.vcproj
 
-WIN32SOURCES = $(libspandsp_sim_la_SOURCES) msvc/gettimeofday.c
-WIN32HEADERS = $(nobase_include_HEADERS) spandsp-sim.h
+WIN32SOURCES = $(libspandsp_sim_la_SOURCES)
+WIN32HEADERS = $(nobase_include_HEADERS)
 
 DSPOUT = | awk '{printf("%s\r\n", $$0)}' >> $(DSP)
-VCPROJOUT = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ)
+VCPROJOUT8 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ8)
+VCPROJOUT9 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ9)
 
 $(DSP): msvc/msvcproj.head msvc/msvcproj.foot Makefile.am
 	echo "creating $(DSP)"
@@ -90,14 +103,26 @@ $(DSP): msvc/msvcproj.head msvc/msvcproj.foot Makefile.am
 	echo "# End Group" $(DSPOUT); \
 	cat $(srcdir)/msvc/msvcproj.foot $(DSPOUT) )
 
-$(VCPROJ): msvc/vc8proj.head msvc/vc8proj.foot Makefile.am
-	echo "creating $(VCPROJ)"
-	@(cp $(srcdir)/msvc/vc8proj.head $(VCPROJ); \
+$(VCPROJ8): msvc/vc8proj.head msvc/vc8proj.foot Makefile.am
+	echo "creating $(VCPROJ8)"
+	@(cp $(srcdir)/msvc/vc8proj.head $(VCPROJ8); \
 	for file in $(WIN32SOURCES); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT); \
+		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT8); \
 	done; \
-	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT); \
+	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT8); \
 	for file in $(WIN32HEADERS); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT); \
+		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT8); \
 	done; \
-	cat $(srcdir)/msvc/vc8proj.foot $(VCPROJOUT) )
+	cat $(srcdir)/msvc/vc8proj.foot $(VCPROJOUT8) )
+
+$(VCPROJ9): msvc/vc9proj.head msvc/vc9proj.foot Makefile.am
+	echo "creating $(VCPROJ9)"
+	@(cp $(srcdir)/msvc/vc9proj.head $(VCPROJ9); \
+	for file in $(WIN32SOURCES); do \
+		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT9); \
+	done; \
+	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT9); \
+	for file in $(WIN32HEADERS); do \
+		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT9); \
+	done; \
+	cat $(srcdir)/msvc/vc9proj.foot $(VCPROJOUT9) )

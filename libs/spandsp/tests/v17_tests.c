@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17_tests.c,v 1.102 2009/04/25 16:30:52 steveu Exp $
+ * $Id: v17_tests.c,v 1.103 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \page v17_tests_page V.17 modem tests
@@ -36,7 +36,7 @@ These tests test one way paths, as V.17 is a half-duplex modem. They allow eithe
    receive modem. It is also the only test mode provided for evaluating the
    transmit modem.
 
- - A V.17 receive modem is used to decode V.17 audio, stored in a wave file.
+ - A V.17 receive modem is used to decode V.17 audio, stored in a audio file.
    This is good way to evaluate performance with audio recorded from other
    models of modem, and with real world problematic telephone lines.
 
@@ -62,7 +62,7 @@ display of modem status is maintained.
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -226,8 +226,8 @@ int main(int argc, char *argv[])
     bert_results_t bert_results;
     int16_t gen_amp[BLOCK_LEN];
     int16_t amp[BLOCK_LEN];
-    AFfilehandle inhandle;
-    AFfilehandle outhandle;
+    SNDFILE *inhandle;
+    SNDFILE *outhandle;
     int outframes;
     int samples;
     int tep;
@@ -311,20 +311,20 @@ int main(int argc, char *argv[])
 
     if (log_audio)
     {
-        if ((outhandle = afOpenFile_telephony_write(OUT_FILE_NAME, 1)) == AF_NULL_FILEHANDLE)
+        if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME, 1)) == NULL)
         {
-            fprintf(stderr, "    Cannot create wave file '%s'\n", OUT_FILE_NAME);
+            fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
     }
 
     if (decode_test_file)
     {
-        /* We will decode the audio from a wave file. */
+        /* We will decode the audio from a file. */
         tx = NULL;
-        if ((inhandle = afOpenFile_telephony_read(decode_test_file, 1)) == AF_NULL_FILEHANDLE)
+        if ((inhandle = sf_open_telephony_read(decode_test_file, 1)) == NULL)
         {
-            fprintf(stderr, "    Cannot open wave file '%s'\n", decode_test_file);
+            fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
             exit(2);
         }
     }
@@ -381,10 +381,7 @@ int main(int argc, char *argv[])
     {
         if (decode_test_file)
         {
-            samples = afReadFrames(inhandle,
-                                   AF_DEFAULT_TRACK,
-                                   amp,
-                                   BLOCK_LEN);
+            samples = sf_readf_short(inhandle, amp, BLOCK_LEN);
 #if defined(ENABLE_GUI)
             if (use_gui)
                 qam_monitor_update_audio_level(qam_monitor, amp, samples);
@@ -445,13 +442,10 @@ int main(int argc, char *argv[])
             }
             if (log_audio)
             {
-                outframes = afWriteFrames(outhandle,
-                                          AF_DEFAULT_TRACK,
-                                          gen_amp,
-                                          samples);
+                outframes = sf_writef_short(outhandle, gen_amp, samples);
                 if (outframes != samples)
                 {
-                    fprintf(stderr, "    Error writing wave file\n");
+                    fprintf(stderr, "    Error writing audio file\n");
                     exit(2);
                 }
             }
@@ -485,17 +479,17 @@ int main(int argc, char *argv[])
 #endif
     if (decode_test_file)
     {
-        if (afCloseFile(inhandle))
+        if (sf_close(inhandle))
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", decode_test_file);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
         }
     }
     if (log_audio)
     {
-        if (afCloseFile(outhandle))
+        if (sf_close(outhandle))
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", OUT_FILE_NAME);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
     }

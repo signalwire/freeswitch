@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway.h,v 1.3 2009/04/12 14:18:02 steveu Exp $
+ * $Id: t38_gateway.h,v 1.4 2009/05/16 03:34:45 steveu Exp $
  */
 
 /*! \file */
@@ -168,11 +168,8 @@ typedef struct
     /*! \brief The type of fast receive modem currently active, which may be T38_NONE */
     int fast_rx_active;
 
-    /*! \brief TRUE if between DCS and TCF, and we want the fast image modem to
-               start in the T.38 data at a predictable time from the end of the
-               V.21 signal. */
-    int tcf_mode_predictable_modem_start;
-
+    /*! \brief The current timed operation. */
+    int timed_mode;
     /*! \brief The number of samples until the next timeout event */
     int samples_to_timeout;
 

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.c,v 1.298 2009/04/30 18:46:14 steveu Exp $
+ * $Id: t30.c,v 1.301 2009/05/25 12:37:38 steveu Exp $
  */
 
 /*! \file */
@@ -318,6 +318,11 @@ received. If the timer T8 expires, a DCN command is transmitted for call release
    but it could be varied, and the Japanese spec, for example, does make this value a
    variable. */
 #define PPR_LIMIT_BEFORE_CTC_OR_EOR     4
+
+/* HDLC message header byte values */
+#define ADDRESS_FIELD                   0xFF
+#define CONTROL_FIELD_NON_FINAL_FRAME   0x03
+#define CONTROL_FIELD_FINAL_FRAME       0x13
 
 enum
 {
@@ -660,8 +665,8 @@ static int get_partial_ecm_page(t30_state_t *s)
     for (i = 0;  i < 256;  i++)
     {
         s->ecm_len[i] = -1;
-        s->ecm_data[i][0] = 0xFF;
-        s->ecm_data[i][1] = 0x03;
+        s->ecm_data[i][0] = ADDRESS_FIELD;
+        s->ecm_data[i][1] = CONTROL_FIELD_NON_FINAL_FRAME;
         s->ecm_data[i][2] = T4_FCD;
         /* These frames contain a frame sequence number within the partial page (one octet) followed
            by some image data. */
@@ -749,8 +754,8 @@ static int send_next_ecm_frame(t30_state_t *s)
         /* The RCP frame is an odd man out, as its a simple 1 byte control
            frame, but is specified to not have the final bit set. It doesn't
            seem to have the DIS received bit set, either. */
-        frame[0] = 0xFF;
-        frame[1] = 0x03;
+        frame[0] = ADDRESS_FIELD;
+        frame[1] = CONTROL_FIELD_NON_FINAL_FRAME;
         frame[2] = T4_RCP;
         send_frame(s, frame, 3);
         /* In case we are just after a CTC/CTR exchange, which kicked us back to long training */
@@ -806,8 +811,8 @@ static void send_simple_frame(t30_state_t *s, int type)
     uint8_t frame[3];
 
     /* The simple command/response frames are always final frames */
-    frame[0] = 0xFF;
-    frame[1] = 0x13;
+    frame[0] = ADDRESS_FIELD;
+    frame[1] = CONTROL_FIELD_FINAL_FRAME;
     frame[2] = (uint8_t) (type | s->dis_received);
     send_frame(s, frame, 3);
 }
@@ -821,8 +826,8 @@ static void send_20digit_msg_frame(t30_state_t *s, int cmd, char *msg)
 
     len = strlen(msg);
     p = 0;
-    frame[p++] = 0xFF;
-    frame[p++] = 0x03;
+    frame[p++] = ADDRESS_FIELD;
+    frame[p++] = CONTROL_FIELD_NON_FINAL_FRAME;
     frame[p++] = (uint8_t) (cmd | s->dis_received);
     while (len > 0)
         frame[p++] = msg[--len];
@@ -838,8 +843,8 @@ static int send_nsf_frame(t30_state_t *s)
     if (s->tx_info.nsf  &&  s->tx_info.nsf_len)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending user supplied NSF - %d octets\n", s->tx_info.nsf_len);
-        s->tx_info.nsf[0] = 0xFF;
-        s->tx_info.nsf[1] = 0x03;
+        s->tx_info.nsf[0] = ADDRESS_FIELD;
+        s->tx_info.nsf[1] = CONTROL_FIELD_NON_FINAL_FRAME;
         s->tx_info.nsf[2] = (uint8_t) (T30_NSF | s->dis_received);
         send_frame(s, s->tx_info.nsf, s->tx_info.nsf_len + 3);
         return TRUE;
@@ -854,8 +859,8 @@ static int send_nss_frame(t30_state_t *s)
     if (s->tx_info.nss  &&  s->tx_info.nss_len)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending user supplied NSS - %d octets\n", s->tx_info.nss_len);
-        s->tx_info.nss[0] = 0xFF;
-        s->tx_info.nss[1] = 0x03;
+        s->tx_info.nss[0] = ADDRESS_FIELD;
+        s->tx_info.nss[1] = CONTROL_FIELD_NON_FINAL_FRAME;
         s->tx_info.nss[2] = (uint8_t) (T30_NSS | s->dis_received);
         send_frame(s, s->tx_info.nss, s->tx_info.nss_len + 3);
         return TRUE;
@@ -870,8 +875,8 @@ static int send_nsc_frame(t30_state_t *s)
     if (s->tx_info.nsc  &&  s->tx_info.nsc_len)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending user supplied NSC - %d octets\n", s->tx_info.nsc_len);
-        s->tx_info.nsc[0] = 0xFF;
-        s->tx_info.nsc[1] = 0x03;
+        s->tx_info.nsc[0] = ADDRESS_FIELD;
+        s->tx_info.nsc[1] = CONTROL_FIELD_NON_FINAL_FRAME;
         s->tx_info.nsc[2] = (uint8_t) (T30_NSC | s->dis_received);
         send_frame(s, s->tx_info.nsc, s->tx_info.nsc_len + 3);
         return TRUE;
@@ -1033,8 +1038,8 @@ static int send_pps_frame(t30_state_t *s)
 {
     uint8_t frame[7];
     
-    frame[0] = 0xFF;
-    frame[1] = 0x13;
+    frame[0] = ADDRESS_FIELD;
+    frame[1] = CONTROL_FIELD_FINAL_FRAME;
     frame[2] = (uint8_t) (T30_PPS | s->dis_received);
     frame[3] = (s->ecm_at_page_end)  ?  ((uint8_t) (s->next_tx_step | s->dis_received))  :  T30_NULL;
     frame[4] = (uint8_t) (s->ecm_tx_page & 0xFF);
@@ -1074,8 +1079,8 @@ int t30_build_dis_or_dtc(t30_state_t *s)
        it is sent. It might also be edited if the application changes our
        capabilities (e.g. disabling fine mode). Right now we set up all the
        unchanging stuff about what we are capable of doing. */
-    s->local_dis_dtc_frame[0] = 0xFF;
-    s->local_dis_dtc_frame[1] = 0x13;
+    s->local_dis_dtc_frame[0] = ADDRESS_FIELD;
+    s->local_dis_dtc_frame[1] = CONTROL_FIELD_FINAL_FRAME;
     s->local_dis_dtc_frame[2] = (uint8_t) (T30_DIS | s->dis_received);
     for (i = 3;  i < 19;  i++)
         s->local_dis_dtc_frame[i] = 0x00;
@@ -1258,8 +1263,8 @@ static int build_dcs(t30_state_t *s)
     
     /* Make a DCS frame based on local issues and the latest received DIS/DTC frame. Negotiate
        the result based on what both parties can do. */
-    s->dcs_frame[0] = 0xFF;
-    s->dcs_frame[1] = 0x13;
+    s->dcs_frame[0] = ADDRESS_FIELD;
+    s->dcs_frame[1] = CONTROL_FIELD_FINAL_FRAME;
     s->dcs_frame[2] = (uint8_t) (T30_DCS | s->dis_received);
     for (i = 3;  i < 19;  i++)
         s->dcs_frame[i] = 0x00;
@@ -1608,6 +1613,7 @@ static void send_dcn(t30_state_t *s)
 static void return_to_phase_b(t30_state_t *s, int with_fallback)
 {
     /* This is what we do after things like T30_EOM is exchanged. */
+#if 0
     if (step_fallback_entry(s) < 0)
     {
         /* We have fallen back as far as we can go. Give up. */
@@ -1622,6 +1628,12 @@ static void return_to_phase_b(t30_state_t *s, int with_fallback)
         else
             set_state(s, T30_STATE_R);
     }
+#else
+    if (s->calling_party)
+        set_state(s, T30_STATE_T);
+    else
+        set_state(s, T30_STATE_R);
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2309,8 +2321,8 @@ static int send_deferred_pps_response(t30_state_t *s)
     {
         /* We need to send the PPR frame we have created, to try to fill in the missing/bad data. */
         set_state(s, T30_STATE_F_POST_RCP_PPR);
-        s->ecm_frame_map[0] = 0xFF;
-        s->ecm_frame_map[1] = 0x13;
+        s->ecm_frame_map[0] = ADDRESS_FIELD;
+        s->ecm_frame_map[1] = CONTROL_FIELD_FINAL_FRAME;
         s->ecm_frame_map[2] = (uint8_t) (T30_PPR | s->dis_received);
         send_frame(s, s->ecm_frame_map, 3 + 32);
     }
@@ -2474,8 +2486,8 @@ static void process_rx_ppr(t30_state_t *s, const uint8_t *msg, int len)
         {
             set_state(s, T30_STATE_IV_EOR);
             queue_phase(s, T30_PHASE_D_TX);
-            frame[0] = 0xFF;
-            frame[1] = 0x13;
+            frame[0] = ADDRESS_FIELD;
+            frame[1] = CONTROL_FIELD_FINAL_FRAME;
             frame[2] = (uint8_t) (T30_EOR | s->dis_received);
             frame[3] = (s->ecm_at_page_end)  ?  ((uint8_t) (s->next_tx_step | s->dis_received))  :  T30_NULL;
             span_log(&s->logging, SPAN_LOG_FLOW, "Sending EOR + %s\n", t30_frametype(frame[3]));
@@ -5489,7 +5501,7 @@ SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, i
     */
     if (!ok)
     {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Bad CRC received\n");
+        span_log(&s->logging, SPAN_LOG_FLOW, "Bad HDLC CRC received\n");
         if (s->phase != T30_PHASE_C_ECM_RX)
         {
             /* We either force a resend, or we wait until a resend occurs through a timeout. */
@@ -5502,6 +5514,13 @@ SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, i
                     queue_phase(s, T30_PHASE_D_TX);
                 send_simple_frame(s, T30_CRP);
             }
+            else
+            {
+                /* Cancel the command or response timer (if one is running) */
+                span_log(&s->logging, SPAN_LOG_FLOW, "Bad CRC and timer is %d\n", s->timer_t2_t4_is);
+                if (s->timer_t2_t4_is == TIMER_IS_T2A)
+                    timer_t2_t4_stop(s);
+            }
         }
         return;
     }
@@ -5509,11 +5528,17 @@ SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, i
     if (len < 3)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Bad HDLC frame length - %d\n", len);
+        /* Cancel the command or response timer (if one is running) */
+        timer_t2_t4_stop(s);
         return;
     }
-    if (msg[0] != 0xFF  ||  !(msg[1] == 0x03  ||  msg[1] == 0x13))
+    if (msg[0] != ADDRESS_FIELD
+        ||
+        !(msg[1] == CONTROL_FIELD_NON_FINAL_FRAME  ||  msg[1] == CONTROL_FIELD_FINAL_FRAME))
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Bad HDLC frame header - %02x %02x\n", msg[0], msg[1]);
+        /* Cancel the command or response timer (if one is running) */
+        timer_t2_t4_stop(s);
         return;
     }
     s->rx_frame_received = TRUE;

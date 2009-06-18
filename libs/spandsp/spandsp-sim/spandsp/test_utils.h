@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: test_utils.h,v 1.7 2009/01/31 08:48:10 steveu Exp $
+ * $Id: test_utils.h,v 1.9 2009/05/31 14:47:10 steveu Exp $
  */
 
 /*! \file */
@@ -30,7 +30,7 @@
 #if !defined(_TEST_UTILS_H_)
 #define _TEST_UTILS_H_
 
-#include <audiofile.h>
+#include <sndfile.h>
 
 enum
 {
@@ -51,7 +51,7 @@ typedef struct complexify_state_s complexify_state_t;
 extern "C" {
 #endif
 
-SPAN_DECLARE(complexify_state_t) *complexify_init(void);
+SPAN_DECLARE(complexify_state_t *) complexify_init(void);
 
 SPAN_DECLARE(void) complexify_release(complexify_state_t *s);
 
@@ -61,15 +61,15 @@ SPAN_DECLARE(void) fft(complex_t data[], int len);
 
 SPAN_DECLARE(void) ifft(complex_t data[], int len);
 
-SPAN_DECLARE(codec_munge_state_t) *codec_munge_init(int codec, int info);
+SPAN_DECLARE(codec_munge_state_t *) codec_munge_init(int codec, int info);
 
 SPAN_DECLARE(void) codec_munge_release(codec_munge_state_t *s);
 
 SPAN_DECLARE(void) codec_munge(codec_munge_state_t *s, int16_t amp[], int len);
 
-SPAN_DECLARE(AFfilehandle) afOpenFile_telephony_read(const char *name, int channels);
+SPAN_DECLARE(SNDFILE *) sf_open_telephony_read(const char *name, int channels);
 
-SPAN_DECLARE(AFfilehandle) afOpenFile_telephony_write(const char *name, int channels);
+SPAN_DECLARE(SNDFILE *) sf_open_telephony_write(const char *name, int channels);
 
 #ifdef __cplusplus
 }

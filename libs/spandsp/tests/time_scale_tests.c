@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: time_scale_tests.c,v 1.23 2008/11/15 14:27:29 steveu Exp $
+ * $Id: time_scale_tests.c,v 1.24 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \page time_scale_tests_page Time scaling tests
@@ -44,7 +44,7 @@ This file also contains 8000 sample/second 16 bits/sample linear audio.
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 #include "spandsp.h"
 
@@ -57,9 +57,9 @@ This file also contains 8000 sample/second 16 bits/sample linear audio.
 
 int main(int argc, char *argv[])
 {
-    AFfilehandle inhandle;
-    AFfilehandle outhandle;
-    AFfilesetup filesetup;
+    SNDFILE *inhandle;
+    SNDFILE *outhandle;
+    SF_INFO info;
     int16_t in[BLOCK_LEN];
     int16_t out[5*(BLOCK_LEN + TIME_SCALE_MAX_SAMPLE_RATE/TIME_SCALE_MIN_PITCH)];
     int frames;
@@ -68,7 +68,6 @@ int main(int argc, char *argv[])
     int count;
     int max;
     time_scale_state_t state;
-    float x;
     float rate;
     float sample_rate;
     const char *in_file_name;
@@ -97,35 +96,29 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    if ((inhandle = afOpenFile(in_file_name, "r", 0)) == AF_NULL_FILEHANDLE)
+    if ((inhandle = sf_open(in_file_name, SFM_READ, &info)) == NULL)
     {
-        printf("    Cannot open wave file '%s'\n", in_file_name);
+        printf("    Cannot open audio file '%s'\n", in_file_name);
         exit(2);
     }
-    if ((x = afGetFrameSize(inhandle, AF_DEFAULT_TRACK, 1)) != 2.0)
+    if (info.channels != 1)
     {
-        printf("    Unexpected frame size in wave file '%s'\n", in_file_name);
+        printf("    Unexpected number of channels in audio file '%s'\n", in_file_name);
         exit(2);
     }
-    if ((x = afGetChannels(inhandle, AF_DEFAULT_TRACK)) != 1.0)
-    {
-        printf("    Unexpected number of channels in wave file '%s'\n", in_file_name);
-        exit(2);
-    }
-    sample_rate = afGetRate(inhandle, AF_DEFAULT_TRACK);
+    sample_rate = info.samplerate;
 
-    if ((filesetup = afNewFileSetup()) == AF_NULL_FILESETUP)
+    memset(&info, 0, sizeof(info));
+    info.frames = 0;
+    info.samplerate = sample_rate;
+    info.channels = 1;
+    info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+    info.sections = 1;
+    info.seekable = 1;
+
+    if ((outhandle = sf_open(OUT_FILE_NAME, SFM_WRITE, &info)) == NULL)
     {
-        fprintf(stderr, "    Failed to create file setup\n");
-        exit(2);
-    }
-    afInitSampleFormat(filesetup, AF_DEFAULT_TRACK, AF_SAMPFMT_TWOSCOMP, 16);
-    afInitRate(filesetup, AF_DEFAULT_TRACK, sample_rate);
-    afInitFileFormat(filesetup, AF_FILE_WAVE);
-    afInitChannels(filesetup, AF_DEFAULT_TRACK, 1);
-    if ((outhandle = afOpenFile(OUT_FILE_NAME, "w", filesetup)) == AF_NULL_FILEHANDLE)
-    {
-        fprintf(stderr, "    Cannot create wave file '%s'\n", OUT_FILE_NAME);
+        fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
 
@@ -137,13 +130,13 @@ int main(int argc, char *argv[])
     max = time_scale_max_output_len(&state, BLOCK_LEN);
     printf("Rate is %f, longest output block is %d\n", rate, max);
     count = 0;
-    while ((frames = afReadFrames(inhandle, AF_DEFAULT_TRACK, in, BLOCK_LEN)))
+    while ((frames = sf_readf_short(inhandle, in, BLOCK_LEN)))
     {
         new_frames = time_scale(&state, out, in, frames);
-        out_frames = afWriteFrames(outhandle, AF_DEFAULT_TRACK, out, new_frames);
+        out_frames = sf_writef_short(outhandle, out, new_frames);
         if (out_frames != new_frames)
         {
-            fprintf(stderr, "    Error writing wave file\n");
+            fprintf(stderr, "    Error writing audio file\n");
             exit(2);
         }
         if (sweep_rate  &&  ++count > 100)
@@ -160,17 +153,16 @@ int main(int argc, char *argv[])
             count = 0;
         }
     }
-    if (afCloseFile(inhandle) != 0)
+    if (sf_close(inhandle) != 0)
     {
-        printf("    Cannot close wave file '%s'\n", in_file_name);
+        printf("    Cannot close audio file '%s'\n", in_file_name);
         exit(2);
     }
-    if (afCloseFile(outhandle) != 0)
+    if (sf_close(outhandle) != 0)
     {
-        printf("    Cannot close wave file '%s'\n", OUT_FILE_NAME);
+        printf("    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
-    afFreeFileSetup(filesetup);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

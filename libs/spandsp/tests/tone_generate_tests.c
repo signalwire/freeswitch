@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_generate_tests.c,v 1.21 2008/11/30 10:17:31 steveu Exp $
+ * $Id: tone_generate_tests.c,v 1.22 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \page tone_generate_tests_page Tone generation tests
@@ -38,7 +38,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <time.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -56,12 +56,12 @@ int main(int argc, char *argv[])
     int i;
     int16_t amp[16384];
     int len;
-    AFfilehandle outhandle;
+    SNDFILE *outhandle;
     int outframes;
 
-    if ((outhandle = afOpenFile_telephony_write(OUTPUT_FILE_NAME, 1)) == AF_NULL_FILEHANDLE)
+    if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 1)) == NULL)
     {
-        fprintf(stderr, "    Cannot open wave file '%s'\n", OUTPUT_FILE_NAME);
+        fprintf(stderr, "    Cannot open audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
 
@@ -84,10 +84,7 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
-        outframes = afWriteFrames(outhandle,
-                                  AF_DEFAULT_TRACK,
-                                  amp,
-                                  len);
+        outframes = sf_writef_short(outhandle, amp, len);
     }
     
     /* Try a different tone pair */
@@ -109,10 +106,7 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
-        outframes = afWriteFrames(outhandle,
-                                  AF_DEFAULT_TRACK,
-                                  amp,
-                                  len);
+        outframes = sf_writef_short(outhandle, amp, len);
     }
 
     /* Try a different tone pair */
@@ -134,10 +128,7 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
-        outframes = afWriteFrames(outhandle,
-                                  AF_DEFAULT_TRACK,
-                                  amp,
-                                  len);
+        outframes = sf_writef_short(outhandle, amp, len);
     }
 
     /* Try a single tone */
@@ -159,10 +150,7 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
-        outframes = afWriteFrames(outhandle,
-                                  AF_DEFAULT_TRACK,
-                                  amp,
-                                  len);
+        outframes = sf_writef_short(outhandle, amp, len);
     }
 
     /* Try a single non-repeating tone */
@@ -184,10 +172,7 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
-        outframes = afWriteFrames(outhandle,
-                                  AF_DEFAULT_TRACK,
-                                  amp,
-                                  len);
+        outframes = sf_writef_short(outhandle, amp, len);
     }
 
     /* Try a single non-repeating tone at 0dBm0 */
@@ -209,10 +194,7 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
-        outframes = afWriteFrames(outhandle,
-                                  AF_DEFAULT_TRACK,
-                                  amp,
-                                  len);
+        outframes = sf_writef_short(outhandle, amp, len);
     }
 
     /* Try an AM modulated tone at a modest modulation level (25%) */
@@ -234,10 +216,7 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
-        outframes = afWriteFrames(outhandle,
-                                  AF_DEFAULT_TRACK,
-                                  amp,
-                                  len);
+        outframes = sf_writef_short(outhandle, amp, len);
     }
     
     /* Try an AM modulated tone at maximum modulation level (100%) */
@@ -259,15 +238,12 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
-        outframes = afWriteFrames(outhandle,
-                                  AF_DEFAULT_TRACK,
-                                  amp,
-                                  len);
+        outframes = sf_writef_short(outhandle, amp, len);
     }
     
-    if (afCloseFile(outhandle) != 0)
+    if (sf_close(outhandle) != 0)
     {
-        fprintf(stderr, "    Cannot close wave file '%s'\n", OUTPUT_FILE_NAME);
+        fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit (2);
     }
 

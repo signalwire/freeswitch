@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_detect_tests.c,v 1.11 2008/11/30 12:38:27 steveu Exp $
+ * $Id: tone_detect_tests.c,v 1.12 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \page tone_detect_tests_page Tone detection tests
@@ -38,7 +38,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <time.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES

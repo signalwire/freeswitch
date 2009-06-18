@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: r2_mf_rx_tests.c,v 1.13 2009/04/11 18:11:19 steveu Exp $
+ * $Id: r2_mf_rx_tests.c,v 1.14 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \file */
@@ -51,7 +51,7 @@ a fair test of performance in a real PSTN channel.
 #include <fcntl.h>
 #include <string.h>
 #include <time.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES

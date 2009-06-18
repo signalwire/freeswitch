@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31_tests.c,v 1.71 2009/02/20 12:38:37 steveu Exp $
+ * $Id: t31_tests.c,v 1.72 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \file */
@@ -48,7 +48,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -661,8 +661,8 @@ static int t30_tests(int log_audio, int test_sending)
     int16_t out_amp[2*SAMPLES_PER_CHUNK];
     int t30_len;
     int t31_len;
-    AFfilehandle wave_handle;
-    AFfilehandle in_handle;
+    SNDFILE *wave_handle;
+    SNDFILE *in_handle;
     int fast_send;
     int fast_send_tcf;
     int fast_blocks;
@@ -671,12 +671,12 @@ static int t30_tests(int log_audio, int test_sending)
     logging_state_t *logging;
     int i;
 
-    wave_handle = AF_NULL_FILEHANDLE;
+    wave_handle = NULL;
     if (log_audio)
     {
-        if ((wave_handle = afOpenFile_telephony_write(OUTPUT_WAVE_FILE_NAME, 2)) == AF_NULL_FILEHANDLE)
+        if ((wave_handle = sf_open_telephony_write(OUTPUT_WAVE_FILE_NAME, 2)) == NULL)
         {
-            fprintf(stderr, "    Cannot create wave file '%s'\n", OUTPUT_WAVE_FILE_NAME);
+            fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             exit(2);
         }
     }
@@ -686,9 +686,9 @@ static int t30_tests(int log_audio, int test_sending)
     in_handle = NULL;
     if (decode_test_file)
     {
-        if ((in_handle = afOpenFile_telephony_read(decode_test_file, 1)) == AF_NULL_FILEHANDLE)
+        if ((in_handle = sf_open_telephony_read(decode_test_file, 1)) == NULL)
         {
-            fprintf(stderr, "    Cannot create wave file '%s'\n", decode_test_file);
+            fprintf(stderr, "    Cannot create audio file '%s'\n", decode_test_file);
             exit(2);
         }
     }
@@ -864,24 +864,24 @@ static int t30_tests(int log_audio, int test_sending)
 
         if (log_audio)
         {
-            outframes = afWriteFrames(wave_handle, AF_DEFAULT_TRACK, out_amp, SAMPLES_PER_CHUNK);
+            outframes = sf_writef_short(wave_handle, out_amp, SAMPLES_PER_CHUNK);
             if (outframes != SAMPLES_PER_CHUNK)
                 break;
         }
     }
     if (decode_test_file)
     {
-        if (afCloseFile(in_handle) != 0)
+        if (sf_close(in_handle) != 0)
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", decode_test_file);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
         }
     }
     if (log_audio)
     {
-        if (afCloseFile(wave_handle) != 0)
+        if (sf_close(wave_handle) != 0)
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", OUTPUT_WAVE_FILE_NAME);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             exit(2);
         }
     }

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: gsm0610_tests.c,v 1.24 2009/04/22 12:57:40 steveu Exp $
+ * $Id: gsm0610_tests.c,v 1.25 2009/05/30 15:23:13 steveu Exp $
  */
 
 /*! \file */
@@ -123,7 +123,7 @@ will be compressed to GSM 06.10 data, decompressed, and the resulting audio stor
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -542,8 +542,8 @@ static void etsi_compliance_tests(void)
 
 int main(int argc, char *argv[])
 {
-    AFfilehandle inhandle;
-    AFfilehandle outhandle;
+    SNDFILE *inhandle;
+    SNDFILE *outhandle;
     int frames;
     int outframes;
     int bytes;
@@ -580,14 +580,14 @@ int main(int argc, char *argv[])
     }
     else
     {
-        if ((inhandle = afOpenFile_telephony_read(IN_FILE_NAME, 1)) == AF_NULL_FILEHANDLE)
+        if ((inhandle = sf_open_telephony_read(IN_FILE_NAME, 1)) == NULL)
         {
-            fprintf(stderr, "    Cannot open wave file '%s'\n", IN_FILE_NAME);
+            fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME);
             exit(2);
         }
-        if ((outhandle = afOpenFile_telephony_write(OUT_FILE_NAME, 1)) == AF_NULL_FILEHANDLE)
+        if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME, 1)) == NULL)
         {
-            fprintf(stderr, "    Cannot create wave file '%s'\n", OUT_FILE_NAME);
+            fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
     
@@ -603,21 +603,21 @@ int main(int argc, char *argv[])
             exit(2);
         }
 
-        while ((frames = afReadFrames(inhandle, AF_DEFAULT_TRACK, pre_amp, 2*BLOCK_LEN)))
+        while ((frames = sf_readf_short(inhandle, pre_amp, 2*BLOCK_LEN)))
         {
             bytes = gsm0610_encode(gsm0610_enc_state, gsm0610_data, pre_amp, frames);
             gsm0610_decode(gsm0610_dec_state, post_amp, gsm0610_data, bytes);
-            outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, post_amp, frames);
+            outframes = sf_writef_short(outhandle, post_amp, frames);
         }
     
-        if (afCloseFile(inhandle) != 0)
+        if (sf_close(inhandle) != 0)
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", IN_FILE_NAME);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME);
             exit(2);
         }
-        if (afCloseFile(outhandle) != 0)
+        if (sf_close(outhandle) != 0)
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", OUT_FILE_NAME);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
         gsm0610_release(gsm0610_enc_state);

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v8_tests.c,v 1.32 2009/04/24 22:35:25 steveu Exp $
+ * $Id: v8_tests.c,v 1.33 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \page v8_tests_page V.8 tests
@@ -41,7 +41,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -98,8 +98,8 @@ int main(int argc, char *argv[])
     int remnant;
     int caller_available_modulations;
     int answerer_available_modulations;
-    AFfilehandle inhandle;
-    AFfilehandle outhandle;
+    SNDFILE *inhandle;
+    SNDFILE *outhandle;
     int opt;
     char *decode_test_file;
     logging_state_t *logging;
@@ -150,9 +150,9 @@ int main(int argc, char *argv[])
     
     if (decode_test_file == NULL)
     {
-        if ((outhandle = afOpenFile_telephony_write(OUTPUT_FILE_NAME, 2)) == AF_NULL_FILEHANDLE)
+        if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 2)) == NULL)
         {
-            fprintf(stderr, "    Cannot create wave file '%s'\n", OUTPUT_FILE_NAME);
+            fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME);
             exit(2);
         }
     
@@ -187,19 +187,16 @@ int main(int argc, char *argv[])
             for (i = 0;  i < samples;  i++)
                 out_amp[2*i + 1] = amp[i];
     
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      out_amp,
-                                      samples);
+            outframes = sf_writef_short(outhandle, out_amp, samples);
             if (outframes != samples)
             {
-                fprintf(stderr, "    Error writing wave file\n");
+                fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
         }
-        if (afCloseFile(outhandle))
+        if (sf_close(outhandle))
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", OUTPUT_FILE_NAME);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
             exit(2);
         }
         
@@ -220,21 +217,21 @@ int main(int argc, char *argv[])
         logging = v8_get_logging_state(v8_answerer);
         span_log_set_level(logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG);
         span_log_set_tag(logging, "decoder");
-        if ((inhandle = afOpenFile_telephony_read(decode_test_file, 1)) == AF_NULL_FILEHANDLE)
+        if ((inhandle = sf_open_telephony_read(decode_test_file, 1)) == NULL)
         {
             fprintf(stderr, "    Cannot open speech file '%s'\n", decode_test_file);
             exit (2);
         }
         /*endif*/
 
-        while ((samples = afReadFrames(inhandle, AF_DEFAULT_TRACK, amp, SAMPLES_PER_CHUNK)))
+        while ((samples = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK)))
         {
             remnant = v8_rx(v8_answerer, amp, samples);
         }
         /*endwhile*/
 
         v8_free(v8_answerer);
-        if (afCloseFile(inhandle) != 0)
+        if (sf_close(inhandle) != 0)
         {
             fprintf(stderr, "    Cannot close speech file '%s'\n", decode_test_file);
             exit(2);

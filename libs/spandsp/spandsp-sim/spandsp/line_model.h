@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: line_model.h,v 1.5 2009/01/31 08:48:10 steveu Exp $
+ * $Id: line_model.h,v 1.6 2009/05/31 14:47:10 steveu Exp $
  */
 
 /*! \file */
@@ -143,12 +143,12 @@ SPAN_DECLARE(void) both_ways_line_model_set_dc(both_ways_line_model_state_t *s, 
 
 SPAN_DECLARE(void) both_ways_line_model_set_mains_pickup(both_ways_line_model_state_t *s, int f, float level1, float level2);
     
-SPAN_DECLARE(both_ways_line_model_state_t) *both_ways_line_model_init(int model1,
-                                                                      float noise1,
-                                                                      int model2,
-                                                                      float noise2,
-                                                                      int codec,
-                                                                      int rbs_pattern);
+SPAN_DECLARE(both_ways_line_model_state_t *) both_ways_line_model_init(int model1,
+                                                                       float noise1,
+                                                                       int model2,
+                                                                       float noise2,
+                                                                       int codec,
+                                                                       int rbs_pattern);
 
 SPAN_DECLARE(int) both_ways_line_model_release(both_ways_line_model_state_t *s);
 
@@ -161,7 +161,7 @@ SPAN_DECLARE(void) one_way_line_model_set_dc(one_way_line_model_state_t *s, floa
 
 SPAN_DECLARE(void) one_way_line_model_set_mains_pickup(one_way_line_model_state_t *s, int f, float level);
 
-SPAN_DECLARE(one_way_line_model_state_t) *one_way_line_model_init(int model, float noise, int codec, int rbs_pattern);
+SPAN_DECLARE(one_way_line_model_state_t *) one_way_line_model_init(int model, float noise, int codec, int rbs_pattern);
 
 SPAN_DECLARE(int) one_way_line_model_release(one_way_line_model_state_t *s);
 

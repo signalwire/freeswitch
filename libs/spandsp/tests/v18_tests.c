@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v18_tests.c,v 1.5 2009/04/11 18:11:19 steveu Exp $
+ * $Id: v18_tests.c,v 1.8 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \page v18_tests_page V.18 tests
@@ -41,7 +41,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -58,19 +58,32 @@
 #define SAMPLES_PER_CHUNK   160
 
 int log_audio = FALSE;
-AFfilehandle outhandle = NULL;
+SNDFILE *outhandle = NULL;
 
 char *decode_test_file = NULL;
 
 int good_message_received;
 
+const char *qbf_tx = "The quick Brown Fox Jumps Over The Lazy dog 0123456789!@#$%^&*()'";
+const char *qbf_rx = "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 0123456789!X$$/'+.()'";
+const char *full_baudot_rx =
+    "\b \n\n\n\r?\n\n\n  !\"$$/+'().+,-./"
+    "0123456789:;(=)?"
+    "XABCDEFGHIJKLMNOPQRSTUVWXYZ(/)' "
+    "'ABCDEFGHIJKLMNOPQRSTUVWXYZ(!) ";
+
 #if 1
 static void put_text_msg(void *user_data, const uint8_t *msg, int len)
 {
-    if (strcmp((const char *) msg, "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 0123456789#$*()"))
-        printf("%s\n", msg);
+    if (strcmp((const char *) msg, qbf_rx))
+    {
+        printf("Result:\n%s\n", msg);
+        printf("Reference result:\n%s\n", qbf_rx);
+    }
     else
+    {
         good_message_received = TRUE;
+    }
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -91,7 +104,11 @@ static void basic_tests(int mode)
     /* Fake an OK condition for the first message test */
     good_message_received = TRUE;
     push = 0;
-    v18_put(v18_a, "The quick Brown Fox Jumps Over The Lazy dog 0123456789!@#$%^&*()", -1);
+    if (v18_put(v18_a, qbf_tx, -1) != strlen(qbf_tx))
+    {
+        printf("V.18 put failed\n");
+        exit(2);
+    }
     for (i = 0;  i < 100000;  i++)
     {
         if (push == 0)
@@ -111,7 +128,11 @@ static void basic_tests(int mode)
                     exit(2);
                 }
                 good_message_received = FALSE;
-                v18_put(v18_a, "The quick Brown Fox Jumps Over The Lazy dog 0123456789!@#$%^&*()", -1);
+                if (v18_put(v18_a, qbf_tx, -1) != strlen(qbf_tx))
+                {
+                    printf("V.18 put failed\n");
+                    exit(2);
+                }
             }
         }
         if (len < SAMPLES_PER_CHUNK)
@@ -121,13 +142,10 @@ static void basic_tests(int mode)
         }
         if (log_audio)
         {
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      amp,
-                                      len);
+            outframes = sf_writef_short(outhandle, amp, len);
             if (outframes != len)
             {
-                fprintf(stderr, "    Error writing wave file\n");
+                fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
         }
@@ -165,39 +183,42 @@ static int test_x_03(void)
 
 static int test_x_04(void)
 {
-    const char *s;
-    const char *ref;
     char result[1024];
     char *t;
     int ch;
     int xx;
     int yy;
+    int i;
     v18_state_t *v18_state;
 
     /* III.5.4.5.4 5 Bit to T.50 character conversion */
     v18_state = v18_init(NULL, TRUE, V18_MODE_5BIT_45, NULL, NULL);
-    s = "The quick Brown Fox Jumps Over The Lazy dog 0123456789!@#$%^&*()";
-    printf("Original:\n%s\n", s);
+    printf("Original:\n");
     t = result;
-    while ((ch = *s++))
+    for (i = 0;  i < 127;  i++)
     {
+        ch = i;
+        printf("%c", ch);
         xx = v18_encode_baudot(v18_state, ch);
-        if ((xx & 0x3E0))
+        if (xx)
         {
-            yy = v18_decode_baudot(v18_state, (xx >> 5) & 0x1F);
+            if ((xx & 0x3E0))
+            {
+                yy = v18_decode_baudot(v18_state, (xx >> 5) & 0x1F);
+                if (yy)
+                    *t++ = yy;
+            }
+            yy = v18_decode_baudot(v18_state, xx & 0x1F);
             if (yy)
                 *t++ = yy;
         }
-        yy = v18_decode_baudot(v18_state, xx & 0x1F);
-        if (yy)
-            *t++ = yy;
     }
+    printf("\n");
     *t = '\0';
     v18_free(v18_state);
-    ref = "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 0123456789#$*()";
     printf("Result:\n%s\n", result);
-    printf("Reference result:\n%s\n", ref);
-    if (strcmp(result, ref) != 0)
+    printf("Reference result:\n%s\n", full_baudot_rx);
+    if (strcmp(result, full_baudot_rx) != 0)
         return -1;
     return 0;
 }
@@ -256,30 +277,27 @@ static int decode_test_data_file(int mode, const char *filename)
 {
     v18_state_t *v18_state;
     int16_t amp[SAMPLES_PER_CHUNK];
-    AFfilehandle inhandle;
+    SNDFILE *inhandle;
     int len;
 
     printf("Decoding as '%s'\n", v18_mode_to_str(mode));
-    /* We will decode the audio from a wave file. */
-    if ((inhandle = afOpenFile_telephony_read(decode_test_file, 1)) == AF_NULL_FILEHANDLE)
+    /* We will decode the audio from a file. */
+    if ((inhandle = sf_open_telephony_read(decode_test_file, 1)) == NULL)
     {
-        fprintf(stderr, "    Cannot open wave file '%s'\n", decode_test_file);
+        fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
         exit(2);
     }
     v18_state = v18_init(NULL, FALSE, mode, put_v18_msg, NULL);
     for (;;)
     {
-        len = afReadFrames(inhandle,
-                           AF_DEFAULT_TRACK,
-                           amp,
-                           SAMPLES_PER_CHUNK);
+        len = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK);
         if (len == 0)
             break;
         v18_rx(v18_state, amp, len);
     }
-    if (afCloseFile(inhandle) != 0)
+    if (sf_close(inhandle) != 0)
     {
-        fprintf(stderr, "    Cannot close wave file '%s'\n", decode_test_file);
+        fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
         exit(2);
     }
     v18_free(v18_state);
@@ -429,12 +447,12 @@ int main(int argc, char *argv[])
     if (argc > 0)
         match = argv[0];
 
-    outhandle = AF_NULL_FILEHANDLE;
+    outhandle = NULL;
     if (log_audio)
     {
-        if ((outhandle = afOpenFile_telephony_write(OUTPUT_FILE_NAME, 1)) == AF_NULL_FILEHANDLE)
+        if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 1)) == NULL)
         {
-            fprintf(stderr, "    Cannot create wave file '%s'\n", OUTPUT_FILE_NAME);
+            fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME);
             exit(2);
         }
     }
@@ -477,9 +495,9 @@ int main(int argc, char *argv[])
     basic_tests(V18_MODE_5BIT_45);
     if (log_audio)
     {
-        if (afCloseFile(outhandle) != 0)
+        if (sf_close(outhandle) != 0)
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", OUTPUT_FILE_NAME);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
             exit(2);
         }
     }

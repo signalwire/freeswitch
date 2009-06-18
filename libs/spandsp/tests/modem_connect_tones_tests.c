@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_connect_tones_tests.c,v 1.29 2008/11/30 10:17:31 steveu Exp $
+ * $Id: modem_connect_tones_tests.c,v 1.30 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \page modem_connect_tones_tests_page Modem connect tones tests
@@ -42,7 +42,7 @@ These tests...
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -186,8 +186,8 @@ int main(int argc, char *argv[])
     modem_connect_tones_rx_state_t ans_pr_rx;
     modem_connect_tones_tx_state_t modem_tone_tx;
     awgn_state_t chan_noise_source;
-    AFfilehandle inhandle;
-    AFfilehandle outhandle;
+    SNDFILE *inhandle;
+    SNDFILE *outhandle;
     int outframes;
     int frames;
     int samples;
@@ -264,9 +264,9 @@ int main(int argc, char *argv[])
     if (decode_test_file == NULL  &&  test_list == 0)
         test_list = 0xFFFFFFFF;
 
-    if ((outhandle = afOpenFile_telephony_write(OUTPUT_FILE_NAME, 1)) == AF_NULL_FILEHANDLE)
+    if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 1)) == NULL)
     {
-        fprintf(stderr, "    Cannot create wave file '%s'\n", OUTPUT_FILE_NAME);
+        fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
 
@@ -277,13 +277,10 @@ int main(int argc, char *argv[])
         for (i = 0;  i < 20*SAMPLE_RATE;  i += SAMPLES_PER_CHUNK)
         {
             samples = modem_connect_tones_tx(&modem_tone_tx, amp, SAMPLES_PER_CHUNK);
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      amp,
-                                      samples);
+            outframes = sf_writef_short(outhandle, amp, samples);
             if (outframes != samples)
             {
-                fprintf(stderr, "    Error writing wave file\n");
+                fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
             /*endif*/
@@ -299,13 +296,10 @@ int main(int argc, char *argv[])
         for (i = 0;  i < 20*SAMPLE_RATE;  i += SAMPLES_PER_CHUNK)
         {
             samples = modem_connect_tones_tx(&modem_tone_tx, amp, SAMPLES_PER_CHUNK);
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      amp,
-                                      samples);
+            outframes = sf_writef_short(outhandle, amp, samples);
             if (outframes != samples)
             {
-                fprintf(stderr, "    Error writing wave file\n");
+                fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
             /*endif*/
@@ -322,13 +316,10 @@ int main(int argc, char *argv[])
         for (i = 0;  i < 20*SAMPLE_RATE;  i += SAMPLES_PER_CHUNK)
         {
             samples = modem_connect_tones_tx(&modem_tone_tx, amp, SAMPLES_PER_CHUNK);
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      amp,
-                                      samples);
+            outframes = sf_writef_short(outhandle, amp, samples);
             if (outframes != samples)
             {
-                fprintf(stderr, "    Error writing wave file\n");
+                fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
             /*endif*/
@@ -345,13 +336,10 @@ int main(int argc, char *argv[])
         for (i = 0;  i < 20*SAMPLE_RATE;  i += SAMPLES_PER_CHUNK)
         {
             samples = modem_connect_tones_tx(&modem_tone_tx, amp, SAMPLES_PER_CHUNK);
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      amp,
-                                      samples);
+            outframes = sf_writef_short(outhandle, amp, samples);
             if (outframes != samples)
             {
-                fprintf(stderr, "    Error writing wave file\n");
+                fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
             /*endif*/
@@ -368,13 +356,10 @@ int main(int argc, char *argv[])
         for (i = 0;  i < 20*SAMPLE_RATE;  i += SAMPLES_PER_CHUNK)
         {
             samples = modem_connect_tones_tx(&modem_tone_tx, amp, SAMPLES_PER_CHUNK);
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      amp,
-                                      samples);
+            outframes = sf_writef_short(outhandle, amp, samples);
             if (outframes != samples)
             {
-                fprintf(stderr, "    Error writing wave file\n");
+                fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
             /*endif*/
@@ -383,9 +368,9 @@ int main(int argc, char *argv[])
     }
     /*endif*/
 
-    if (afCloseFile(outhandle) != 0)
+    if (sf_close(outhandle) != 0)
     {
-        printf("    Cannot close wave file '%s'\n", OUTPUT_FILE_NAME);
+        printf("    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
     /*endif*/
@@ -926,7 +911,7 @@ int main(int argc, char *argv[])
         hits = 0;
         for (j = 0;  bellcore_files[j][0];  j++)
         {
-            if ((inhandle = afOpenFile_telephony_read(bellcore_files[j], 1)) == AF_NULL_FILEHANDLE)
+            if ((inhandle = sf_open_telephony_read(bellcore_files[j], 1)) == NULL)
             {
                 fprintf(stderr, "    Cannot open speech file '%s'\n", bellcore_files[j]);
                 exit (2);
@@ -935,7 +920,7 @@ int main(int argc, char *argv[])
 
             when = 0;
             hits = 0;
-            while ((frames = afReadFrames(inhandle, AF_DEFAULT_TRACK, amp, 8000)))
+            while ((frames = sf_readf_short(inhandle, amp, 8000)))
             {
                 when++;
                 modem_connect_tones_rx(&cng_rx, amp, frames);
@@ -967,7 +952,7 @@ int main(int argc, char *argv[])
                 /*endif*/
             }
             /*endwhile*/
-            if (afCloseFile(inhandle) != 0)
+            if (sf_close(inhandle) != 0)
             {
                 fprintf(stderr, "    Cannot close speech file '%s'\n", bellcore_files[j]);
                 exit(2);
@@ -993,7 +978,7 @@ int main(int argc, char *argv[])
         modem_connect_tones_rx_init(&ced_rx, MODEM_CONNECT_TONES_FAX_CED_OR_PREAMBLE, ced_detected, NULL);
         modem_connect_tones_rx_init(&ans_pr_rx, MODEM_CONNECT_TONES_ANS_PR, ec_dis_detected, NULL);
         hits = 0;
-        if ((inhandle = afOpenFile_telephony_read(decode_test_file, 1)) == AF_NULL_FILEHANDLE)
+        if ((inhandle = sf_open_telephony_read(decode_test_file, 1)) == NULL)
         {
             fprintf(stderr, "    Cannot open speech file '%s'\n", decode_test_file);
             exit (2);
@@ -1002,7 +987,7 @@ int main(int argc, char *argv[])
 
         when = 0;
         hits = 0;
-        while ((frames = afReadFrames(inhandle, AF_DEFAULT_TRACK, amp, 8000)))
+        while ((frames = sf_readf_short(inhandle, amp, 8000)))
         {
             when++;
             modem_connect_tones_rx(&cng_rx, amp, frames);
@@ -1010,7 +995,7 @@ int main(int argc, char *argv[])
             modem_connect_tones_rx(&ans_pr_rx, amp, frames);
         }
         /*endwhile*/
-        if (afCloseFile(inhandle) != 0)
+        if (sf_close(inhandle) != 0)
         {
             fprintf(stderr, "    Cannot close speech file '%s'\n", decode_test_file);
             exit(2);

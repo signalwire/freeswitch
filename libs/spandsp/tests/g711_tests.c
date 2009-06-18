@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g711_tests.c,v 1.16 2009/04/22 12:57:40 steveu Exp $
+ * $Id: g711_tests.c,v 1.17 2009/05/30 15:23:13 steveu Exp $
  */
 
 /*! \page g711_tests_page A-law and u-law conversion tests
@@ -40,7 +40,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -64,7 +64,7 @@ const uint8_t ulaw_1khz_sine[] = {0x1E, 0x0B, 0x0B, 0x1E, 0x9E, 0x8B, 0x8B, 0x9E
 
 static void compliance_tests(int log_audio)
 {
-    AFfilehandle outhandle;
+    SNDFILE *outhandle;
     power_meter_t power_meter;
     int outframes;
     int i;
@@ -82,12 +82,12 @@ static void compliance_tests(int log_audio)
     g711_state_t *transcode;
     g711_state_t *dec_state;
 
-    outhandle = AF_NULL_FILEHANDLE;
+    outhandle = NULL;
     if (log_audio)
     {
-        if ((outhandle = afOpenFile_telephony_write(OUT_FILE_NAME, 1)) == AF_NULL_FILEHANDLE)
+        if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME, 1)) == NULL)
         {
-            fprintf(stderr, "    Cannot create wave file '%s'\n", OUT_FILE_NAME);
+            fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
     }
@@ -127,13 +127,10 @@ static void compliance_tests(int log_audio)
         }
         if (log_audio)
         {
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      amp,
-                                      65536);
+            outframes = sf_writef_short(outhandle, amp, 65536);
             if (outframes != 65536)
             {
-                fprintf(stderr, "    Error writing wave file\n");
+                fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
         }
@@ -165,13 +162,10 @@ static void compliance_tests(int log_audio)
         }
         if (log_audio)
         {
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      amp,
-                                      65536);
+            outframes = sf_writef_short(outhandle, amp, 65536);
             if (outframes != 65536)
             {
-                fprintf(stderr, "    Error writing wave file\n");
+                fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
         }
@@ -224,13 +218,10 @@ static void compliance_tests(int log_audio)
     printf("Reference u-law 1kHz tone is %fdBm0\n", power_meter_current_dbm0(&power_meter));
     if (log_audio)
     {
-        outframes = afWriteFrames(outhandle,
-                                  AF_DEFAULT_TRACK,
-                                  amp,
-                                  8000);
+        outframes = sf_writef_short(outhandle, amp, 8000);
         if (outframes != 8000)
         {
-            fprintf(stderr, "    Error writing wave file\n");
+            fprintf(stderr, "    Error writing audio file\n");
             exit(2);
         }
     }
@@ -248,13 +239,10 @@ static void compliance_tests(int log_audio)
     printf("Reference A-law 1kHz tone is %fdBm0\n", power_meter_current_dbm0(&power_meter));
     if (log_audio)
     {
-        outframes = afWriteFrames(outhandle,
-                                  AF_DEFAULT_TRACK,
-                                  amp,
-                                  8000);
+        outframes = sf_writef_short(outhandle, amp, 8000);
         if (outframes != 8000)
         {
-            fprintf(stderr, "    Error writing wave file\n");
+            fprintf(stderr, "    Error writing audio file\n");
             exit(2);
         }
     }
@@ -338,9 +326,9 @@ static void compliance_tests(int log_audio)
 
     if (log_audio)
     {
-        if (afCloseFile(outhandle))
+        if (sf_close(outhandle))
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", OUT_FILE_NAME);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
     }
@@ -351,8 +339,8 @@ static void compliance_tests(int log_audio)
 
 int main(int argc, char *argv[])
 {
-    AFfilehandle inhandle;
-    AFfilehandle outhandle;
+    SNDFILE *inhandle;
+    SNDFILE *outhandle;
     int outframes;
     int opt;
     int samples;
@@ -427,16 +415,16 @@ int main(int argc, char *argv[])
         {
             out_file = (decode)  ?  OUT_FILE_NAME  :  ENCODED_FILE_NAME;
         }
-        inhandle = AF_NULL_FILEHANDLE;
-        outhandle = AF_NULL_FILEHANDLE;
+        inhandle = NULL;
+        outhandle = NULL;
         file = -1;
         enc_state = NULL;
         dec_state = NULL;
         if (encode)
         {
-            if ((inhandle = afOpenFile_telephony_read(in_file, 1)) == AF_NULL_FILEHANDLE)
+            if ((inhandle = sf_open_telephony_read(in_file, 1)) == NULL)
             {
-                fprintf(stderr, "    Cannot open wave file '%s'\n", in_file);
+                fprintf(stderr, "    Cannot open audio file '%s'\n", in_file);
                 exit(2);
             }
             enc_state = g711_init(NULL, law);
@@ -451,9 +439,9 @@ int main(int argc, char *argv[])
         }
         if (decode)
         {
-            if ((outhandle = afOpenFile_telephony_write(out_file, 1)) == AF_NULL_FILEHANDLE)
+            if ((outhandle = sf_open_telephony_write(out_file, 1)) == NULL)
             {
-                fprintf(stderr, "    Cannot create wave file '%s'\n", out_file);
+                fprintf(stderr, "    Cannot create audio file '%s'\n", out_file);
                 exit(2);
             }
             dec_state = g711_init(NULL, law);
@@ -470,10 +458,7 @@ int main(int argc, char *argv[])
         {
             if (encode)
             {
-                samples = afReadFrames(inhandle,
-                                       AF_DEFAULT_TRACK,
-                                       indata,
-                                       BLOCK_LEN);
+                samples = sf_readf_short(inhandle, indata, BLOCK_LEN);
                 if (samples <= 0)
                     break;
                 len2 = g711_encode(enc_state, g711data, indata, samples);
@@ -487,13 +472,10 @@ int main(int argc, char *argv[])
             if (decode)
             {
                 len3 = g711_decode(dec_state, outdata, g711data, len2);
-                outframes = afWriteFrames(outhandle,
-                                          AF_DEFAULT_TRACK,
-                                          outdata,
-                                          len3);
+                outframes = sf_writef_short(outhandle, outdata, len3);
                 if (outframes != len3)
                 {
-                    fprintf(stderr, "    Error writing wave file\n");
+                    fprintf(stderr, "    Error writing audio file\n");
                     exit(2);
                 }
             }
@@ -506,9 +488,9 @@ int main(int argc, char *argv[])
         }
         if (encode)
         {
-            if (afCloseFile(inhandle))
+            if (sf_close(inhandle))
             {
-                fprintf(stderr, "    Cannot close wave file '%s'\n", IN_FILE_NAME);
+                fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME);
                 exit(2);
             }
         }
@@ -518,9 +500,9 @@ int main(int argc, char *argv[])
         }
         if (decode)
         {
-            if (afCloseFile(outhandle))
+            if (sf_close(outhandle))
             {
-                fprintf(stderr, "    Cannot close wave file '%s'\n", OUT_FILE_NAME);
+                fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
                 exit(2);
             }
         }

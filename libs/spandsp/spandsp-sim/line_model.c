@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: line_model.c,v 1.8 2009/02/03 16:28:39 steveu Exp $
+ * $Id: line_model.c,v 1.12 2009/06/01 16:27:12 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -36,7 +36,6 @@
 #include <time.h>
 #include <stdio.h>
 #include <fcntl.h>
-#include <audiofile.h>
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
@@ -270,10 +269,10 @@ static float calc_far_line_filter(one_way_line_model_state_t *s, float v)
 }
 /*- End of function --------------------------------------------------------*/
 
-void one_way_line_model(one_way_line_model_state_t *s, 
-                        int16_t output[],
-                        const int16_t input[],
-                        int samples)
+SPAN_DECLARE(void) one_way_line_model(one_way_line_model_state_t *s, 
+                                      int16_t output[],
+                                      const int16_t input[],
+                                      int samples)
 {
     int i;
     float in;
@@ -336,13 +335,13 @@ void one_way_line_model(one_way_line_model_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-void one_way_line_model_set_dc(one_way_line_model_state_t *s, float dc)
+SPAN_DECLARE(void) one_way_line_model_set_dc(one_way_line_model_state_t *s, float dc)
 {
     s->dc_offset = dc;
 }
 /*- End of function --------------------------------------------------------*/
 
-void one_way_line_model_set_mains_pickup(one_way_line_model_state_t *s, int f, float level)
+SPAN_DECLARE(void) one_way_line_model_set_mains_pickup(one_way_line_model_state_t *s, int f, float level)
 {
     tone_gen_descriptor_t mains_tone_desc;
 
@@ -355,12 +354,12 @@ void one_way_line_model_set_mains_pickup(one_way_line_model_state_t *s, int f, f
 }
 /*- End of function --------------------------------------------------------*/
 
-void both_ways_line_model(both_ways_line_model_state_t *s, 
-                          int16_t output1[],
-                          const int16_t input1[],
-                          int16_t output2[],
-                          const int16_t input2[],
-                          int samples)
+SPAN_DECLARE(void) both_ways_line_model(both_ways_line_model_state_t *s, 
+                                        int16_t output1[],
+                                        const int16_t input1[],
+                                        int16_t output2[],
+                                        const int16_t input2[],
+                                        int samples)
 {
     int i;
     float in1;
@@ -444,14 +443,14 @@ void both_ways_line_model(both_ways_line_model_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-void both_ways_line_model_set_dc(both_ways_line_model_state_t *s, float dc1, float dc2)
+SPAN_DECLARE(void) both_ways_line_model_set_dc(both_ways_line_model_state_t *s, float dc1, float dc2)
 {
     s->line1.dc_offset = dc1;
     s->line2.dc_offset = dc2;
 }
 /*- End of function --------------------------------------------------------*/
 
-void both_ways_line_model_set_mains_pickup(both_ways_line_model_state_t *s, int f, float level1, float level2)
+SPAN_DECLARE(void) both_ways_line_model_set_mains_pickup(both_ways_line_model_state_t *s, int f, float level1, float level2)
 {
     tone_gen_descriptor_t mains_tone_desc;
 
@@ -467,7 +466,7 @@ void both_ways_line_model_set_mains_pickup(both_ways_line_model_state_t *s, int 
 }
 /*- End of function --------------------------------------------------------*/
 
-one_way_line_model_state_t *one_way_line_model_init(int model, float noise, int codec, int rbs_pattern)
+SPAN_DECLARE(one_way_line_model_state_t *) one_way_line_model_init(int model, float noise, int codec, int rbs_pattern)
 {
     one_way_line_model_state_t *s;
 
@@ -486,8 +485,9 @@ one_way_line_model_state_t *one_way_line_model_init(int model, float noise, int 
     s->far_filter = models[model];
     s->far_filter_len = 129;
 
-    awgn_init_dbm0(&s->near_noise, 1234567, noise);
-    awgn_init_dbm0(&s->far_noise, 1234567, noise);
+    /* Put half the noise in each analogue section */
+    awgn_init_dbm0(&s->near_noise, 1234567, noise - 3.02f);
+    awgn_init_dbm0(&s->far_noise, 1234567, noise - 3.02f);
     
     s->dc_offset = 0.0f;
     s->mains_interference = 0;
@@ -496,19 +496,19 @@ one_way_line_model_state_t *one_way_line_model_init(int model, float noise, int 
 }
 /*- End of function --------------------------------------------------------*/
 
-int one_way_line_model_release(one_way_line_model_state_t *s)
+SPAN_DECLARE(int) one_way_line_model_release(one_way_line_model_state_t *s)
 {
     free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-both_ways_line_model_state_t *both_ways_line_model_init(int model1,
-                                                        float noise1,
-                                                        int model2,
-                                                        float noise2,
-                                                        int codec,
-                                                        int rbs_pattern)
+SPAN_DECLARE(both_ways_line_model_state_t *) both_ways_line_model_init(int model1,
+                                                                       float noise1,
+                                                                       int model2,
+                                                                       float noise2,
+                                                                       int codec,
+                                                                       int rbs_pattern)
 {
     float echo_level;
     both_ways_line_model_state_t *s;
@@ -536,11 +536,12 @@ both_ways_line_model_state_t *both_ways_line_model_init(int model1,
     s->line2.far_filter = models[model2];
     s->line2.far_filter_len = 129;
 
-    awgn_init_dbm0(&s->line1.near_noise, 1234567, noise1);
-    awgn_init_dbm0(&s->line2.near_noise, 7654321, noise2);
+    /* Put half the noise in each analogue section */
+    awgn_init_dbm0(&s->line1.near_noise, 1234567, noise1 - 3.02f);
+    awgn_init_dbm0(&s->line2.near_noise, 7654321, noise2 - 3.02f);
 
-    awgn_init_dbm0(&s->line1.far_noise, 1234567, noise1);
-    awgn_init_dbm0(&s->line2.far_noise, 7654321, noise2);
+    awgn_init_dbm0(&s->line1.far_noise, 1234567, noise1 - 3.02f);
+    awgn_init_dbm0(&s->line2.far_noise, 7654321, noise2 - 3.02f);
 
     s->line1.dc_offset = 0.0f;
     s->line2.dc_offset = 0.0f;
@@ -549,16 +550,16 @@ both_ways_line_model_state_t *both_ways_line_model_init(int model1,
 
     /* Echos */
     echo_level = -15; /* in dB */
-    s->line1.near_co_hybrid_echo = pow(10, echo_level/20.0);
-    s->line2.near_co_hybrid_echo = pow(10, echo_level/20.0);
-    s->line1.near_cpe_hybrid_echo = pow(10, echo_level/20.0);
-    s->line2.near_cpe_hybrid_echo = pow(10, echo_level/20.0);
+    s->line1.near_co_hybrid_echo = pow(10, echo_level/20.0f);
+    s->line2.near_co_hybrid_echo = pow(10, echo_level/20.0f);
+    s->line1.near_cpe_hybrid_echo = pow(10, echo_level/20.0f);
+    s->line2.near_cpe_hybrid_echo = pow(10, echo_level/20.0f);
     
     return s;
 }
 /*- End of function --------------------------------------------------------*/
 
-int both_ways_line_model_release(both_ways_line_model_state_t *s)
+SPAN_DECLARE(int) both_ways_line_model_release(both_ways_line_model_state_t *s)
 {
     free(s);
     return 0;

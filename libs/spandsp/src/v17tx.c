@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17tx.c,v 1.73 2009/04/21 13:59:07 steveu Exp $
+ * $Id: v17tx.c,v 1.75 2009/06/02 16:03:56 steveu Exp $
  */
 
 /*! \file */
@@ -62,11 +62,11 @@
 #define SPANDSP_USE_FIXED_POINTx
 #endif
 
-#include "v17tx_constellation_maps.h"
+#include "v17_v32bis_tx_constellation_maps.h"
 #if defined(SPANDSP_USE_FIXED_POINT)
-#include "v17tx_fixed_rrc.h"
+#include "v17_v32bis_tx_fixed_rrc.h"
 #else
-#include "v17tx_floating_rrc.h"
+#include "v17_v32bis_tx_floating_rrc.h"
 #endif
 
 /*! The nominal frequency of the carrier, in Hertz */
@@ -135,7 +135,7 @@ static __inline__ complexf_t training_get(v17_tx_state_t *s)
             if (s->training_step <= V17_TRAINING_SEG_TEP_B)
             {
                 /* Optional segment: Unmodulated carrier (talker echo protection) */
-                return v17_abcd_constellation[0];
+                return v17_v32bis_4800_constellation[0];
             }
             if (s->training_step <= V17_TRAINING_SEG_1)
             {
@@ -143,7 +143,7 @@ static __inline__ complexf_t training_get(v17_tx_state_t *s)
                 return zero;
             }
             /* Segment 1: ABAB... */
-            return v17_abcd_constellation[(s->training_step & 1) ^ 1];
+            return v17_v32bis_4800_constellation[(s->training_step & 1) ^ 1];
         }
         /* Segment 2: CDBA... */
         /* Apply the scrambler */
@@ -155,7 +155,7 @@ static __inline__ complexf_t training_get(v17_tx_state_t *s)
             /* Go straight to the ones test. */
             s->training_step = V17_TRAINING_SEG_4;
         }
-        return v17_abcd_constellation[s->constellation_state];
+        return v17_v32bis_4800_constellation[s->constellation_state];
     }
     /* Segment 3: Bridge... */
     shift = ((s->training_step - V17_TRAINING_SEG_3 - 1) & 0x7) << 1;
@@ -163,7 +163,7 @@ static __inline__ complexf_t training_get(v17_tx_state_t *s)
     bits = scramble(s, V17_BRIDGE_WORD >> shift);
     bits = (bits << 1) | scramble(s, V17_BRIDGE_WORD >> (shift + 1));
     s->constellation_state = (s->constellation_state + dibit_to_step[bits]) & 3;
-    return v17_abcd_constellation[s->constellation_state];
+    return v17_v32bis_4800_constellation[s->constellation_state];
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -359,19 +359,19 @@ SPAN_DECLARE(int) v17_tx_restart(v17_tx_state_t *s, int bit_rate, int tep, int s
     {
     case 14400:
         s->bits_per_symbol = 6;
-        s->constellation = v17_14400_constellation;
+        s->constellation = v17_v32bis_14400_constellation;
         break;
     case 12000:
         s->bits_per_symbol = 5;
-        s->constellation = v17_12000_constellation;
+        s->constellation = v17_v32bis_12000_constellation;
         break;
     case 9600:
         s->bits_per_symbol = 4;
-        s->constellation = v17_9600_constellation;
+        s->constellation = v17_v32bis_9600_constellation;
         break;
     case 7200:
         s->bits_per_symbol = 3;
-        s->constellation = v17_7200_constellation;
+        s->constellation = v17_v32bis_7200_constellation;
         break;
     default:
         return -1;

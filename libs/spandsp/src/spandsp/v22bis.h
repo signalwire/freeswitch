@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis.h,v 1.42 2009/04/29 12:37:45 steveu Exp $
+ * $Id: v22bis.h,v 1.43 2009/06/02 16:03:56 steveu Exp $
  */
 
 /*! \file */
@@ -87,7 +87,7 @@ extern "C"
     \param amp The audio sample buffer.
     \param len The number of samples in the buffer.
     \return The number of samples unprocessed. */
-SPAN_DECLARE(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len);
+SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len);
 
 /*! Fake processing of a missing block of received V.22bis modem audio samples.
     (e.g due to packet loss).
@@ -135,7 +135,7 @@ SPAN_DECLARE(void) v22bis_rx_set_qam_report_handler(v22bis_state_t *s, qam_repor
     \param amp The audio sample buffer.
     \param len The number of samples to be generated.
     \return The number of samples actually generated. */
-SPAN_DECLARE(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len);
+SPAN_DECLARE_NONSTD(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len);
 
 /*! Adjust a V.22bis modem transmit context's power output.
     \brief Adjust a V.22bis modem transmit context's output power.

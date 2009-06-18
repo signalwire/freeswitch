@@ -19,6 +19,11 @@
 extern "C" {
 #endif
 
+typedef __int8		__int8_t;
+typedef __int16		__int16_t;
+typedef __int32		__int32_t;
+typedef __int64		__int64_t;
+
 typedef unsigned __int8		uint8_t;
 typedef unsigned __int16	uint16_t;
 typedef unsigned __int32	uint32_t;
@@ -28,11 +33,11 @@ typedef __int16		int16_t;
 typedef __int32		int32_t;
 typedef __int64		int64_t;
 
-#define  INT16_MAX   0x7fff 
+#define  INT16_MAX   0x7FFF 
 #define  INT16_MIN   (-INT16_MAX - 1) 
 
 #if !defined(INFINITY)
-#define INFINITY 0x7fffffff
+#define INFINITY 0x7FFFFFFF
 #endif
 
 #define INT32_MAX	(2147483647)

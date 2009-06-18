@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: expose.h,v 1.12 2009/04/12 03:29:58 steveu Exp $
+ * $Id: expose.h,v 1.13 2009/05/16 03:34:45 steveu Exp $
  */
 
 /*! \file */
@@ -77,6 +77,7 @@
 #include <spandsp/private/t38_terminal.h>
 #include <spandsp/private/t31.h>
 #include <spandsp/private/v8.h>
+#include <spandsp/private/v18.h>
 #include <spandsp/private/v42.h>
 #include <spandsp/private/v42bis.h>
 #include <spandsp/private/adsi.h>

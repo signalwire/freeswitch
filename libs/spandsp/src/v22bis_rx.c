@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_rx.c,v 1.67 2009/04/29 12:37:45 steveu Exp $
+ * $Id: v22bis_rx.c,v 1.68 2009/06/02 16:03:56 steveu Exp $
  */
 
 /*! \file */
@@ -691,7 +691,7 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
+SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
 {
     int i;
     int j;

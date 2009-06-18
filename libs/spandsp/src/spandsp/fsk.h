@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.h,v 1.39 2009/04/01 13:22:40 steveu Exp $
+ * $Id: fsk.h,v 1.40 2009/06/02 16:03:56 steveu Exp $
  */
 
 /*! \file */

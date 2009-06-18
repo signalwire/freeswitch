@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway_tests.c,v 1.81 2009/04/25 14:27:18 steveu Exp $
+ * $Id: t38_gateway_tests.c,v 1.82 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \file */
@@ -51,7 +51,7 @@ These tests exercise the path
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <audiofile.h>
+#include <sndfile.h>
 #if !defined(_WIN32)
 #include <unistd.h>
 #endif
@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
     int msg_len;
     uint8_t msg[1024];
     int outframes;
-    AFfilehandle wave_handle;
+    SNDFILE *wave_handle;
     int use_ecm;
     int use_tep;
     int feedback_audio;
@@ -327,12 +327,12 @@ int main(int argc, char *argv[])
     if (use_ecm)
         printf("Using ECM\n");
 
-    wave_handle = AF_NULL_FILEHANDLE;
+    wave_handle = NULL;
     if (log_audio)
     {
-        if ((wave_handle = afOpenFile_telephony_write(OUTPUT_FILE_NAME_WAVE, 4)) == AF_NULL_FILEHANDLE)
+        if ((wave_handle = sf_open_telephony_write(OUTPUT_FILE_NAME_WAVE, 4)) == NULL)
         {
-            fprintf(stderr, "    Cannot create wave file '%s'\n", OUTPUT_FILE_NAME_WAVE);
+            fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME_WAVE);
             exit(2);
         }
     }
@@ -599,7 +599,7 @@ int main(int argc, char *argv[])
         }
         if (log_audio)
         {
-            outframes = afWriteFrames(wave_handle, AF_DEFAULT_TRACK, out_amp, SAMPLES_PER_CHUNK);
+            outframes = sf_writef_short(wave_handle, out_amp, SAMPLES_PER_CHUNK);
             if (outframes != SAMPLES_PER_CHUNK)
                 break;
         }
@@ -627,9 +627,9 @@ int main(int argc, char *argv[])
     fax_release(fax_state_b);
     if (log_audio)
     {
-        if (afCloseFile(wave_handle) != 0)
+        if (sf_close(wave_handle) != 0)
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", OUTPUT_FILE_NAME_WAVE);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME_WAVE);
             exit(2);
         }
     }

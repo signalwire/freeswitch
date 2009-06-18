@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.h,v 1.44 2009/02/12 12:38:39 steveu Exp $
+ * $Id: hdlc.h,v 1.45 2009/06/02 16:03:56 steveu Exp $
  */
 
 /*! \file */
@@ -160,14 +160,14 @@ SPAN_DECLARE_NONSTD(void) hdlc_rx_put_bit(hdlc_rx_state_t *s, int new_bit);
     \param s A pointer to an HDLC receiver context.
     \param new_byte The byte of data.
 */
-SPAN_DECLARE(void) hdlc_rx_put_byte(hdlc_rx_state_t *s, int new_byte);
+SPAN_DECLARE_NONSTD(void) hdlc_rx_put_byte(hdlc_rx_state_t *s, int new_byte);
 
 /*! \brief Put a series of bytes of data to an HDLC receiver.
     \param s A pointer to an HDLC receiver context.
     \param buf The buffer of data.
     \param len The length of the data in the buffer.
 */
-SPAN_DECLARE(void) hdlc_rx_put(hdlc_rx_state_t *s, const uint8_t buf[], int len);
+SPAN_DECLARE_NONSTD(void) hdlc_rx_put(hdlc_rx_state_t *s, const uint8_t buf[], int len);
 
 /*! \brief Initialise an HDLC transmitter context.
     \param s A pointer to an HDLC transmitter context.
@@ -234,7 +234,7 @@ SPAN_DECLARE_NONSTD(int) hdlc_tx_get_bit(hdlc_tx_state_t *s);
     \param s A pointer to an HDLC transmitter context.
     \return The next byte for transmission.
 */
-SPAN_DECLARE(int) hdlc_tx_get_byte(hdlc_tx_state_t *s);
+SPAN_DECLARE_NONSTD(int) hdlc_tx_get_byte(hdlc_tx_state_t *s);
 
 /*! \brief Get the next sequence of bytes for transmission.
     \param s A pointer to an HDLC transmitter context.
@@ -242,7 +242,7 @@ SPAN_DECLARE(int) hdlc_tx_get_byte(hdlc_tx_state_t *s);
     \param max_len The number of bytes to get.
     \return The number of bytes actually got.
 */
-SPAN_DECLARE(int) hdlc_tx_get(hdlc_tx_state_t *s, uint8_t buf[], size_t max_len);
+SPAN_DECLARE_NONSTD(int) hdlc_tx_get(hdlc_tx_state_t *s, uint8_t buf[], size_t max_len);
 
 #if defined(__cplusplus)
 }

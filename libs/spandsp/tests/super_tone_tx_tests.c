@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: super_tone_tx_tests.c,v 1.25 2009/02/10 17:44:18 steveu Exp $
+ * $Id: super_tone_tx_tests.c,v 1.26 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \file */
@@ -44,7 +44,7 @@
 #include <time.h>
 #include <inttypes.h>
 #include <sys/socket.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 #if defined(HAVE_LIBXML_XMLMEMORY_H)
 #include <libxml/xmlmemory.h>
@@ -65,7 +65,7 @@
 
 #define OUT_FILE_NAME   "super_tone.wav"
 
-AFfilehandle outhandle;
+SNDFILE *outhandle;
 
 super_tone_tx_step_t *tone_tree = NULL;
 
@@ -82,13 +82,10 @@ static void play_tones(super_tone_tx_state_t *tone, int max_samples)
     do
     {
         len = super_tone_tx(tone, amp, 160);
-        outframes = afWriteFrames(outhandle,
-                                  AF_DEFAULT_TRACK,
-                                  amp,
-                                  len);
+        outframes = sf_writef_short(outhandle, amp, len);
         if (outframes != len)
         {
-            fprintf(stderr, "    Error writing wave file\n");
+            fprintf(stderr, "    Error writing audio file\n");
             exit(2);
         }
         total_length += len;
@@ -286,7 +283,7 @@ static void get_tone_set(const char *tone_file, const char *set_id)
 
 int main(int argc, char *argv[])
 {
-    if ((outhandle = afOpenFile_telephony_write(OUT_FILE_NAME, 1)) == AF_NULL_FILEHANDLE)
+    if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME, 1)) == NULL)
     {
         fprintf(stderr, "    Cannot open audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
@@ -294,7 +291,7 @@ int main(int argc, char *argv[])
 #if defined(HAVE_LIBXML2)
     get_tone_set("../spandsp/global-tones.xml", (argc > 1)  ?  argv[1]  :  "hk");
 #endif
-    if (afCloseFile (outhandle) != 0)
+    if (sf_close (outhandle) != 0)
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);

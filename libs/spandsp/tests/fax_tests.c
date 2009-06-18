@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_tests.c,v 1.101 2009/02/20 12:34:20 steveu Exp $
+ * $Id: fax_tests.c,v 1.102 2009/05/30 15:23:13 steveu Exp $
  */
 
 /*! \page fax_tests_page FAX tests
@@ -39,7 +39,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -179,8 +179,8 @@ static int document_handler(t30_state_t *s, void *user_data, int event)
 
 int main(int argc, char *argv[])
 {
-    AFfilehandle wave_handle;
-    AFfilehandle input_wave_handle;
+    SNDFILE *wave_handle;
+    SNDFILE *input_wave_handle;
     int i;
     int j;
     int k;
@@ -282,22 +282,22 @@ int main(int argc, char *argv[])
         }
     }
 
-    input_wave_handle = AF_NULL_FILEHANDLE;
+    input_wave_handle = NULL;
     if (input_audio_file_name)
     {
-        if ((input_wave_handle = afOpenFile_telephony_read(input_audio_file_name, 1)) == AF_NULL_FILEHANDLE)
+        if ((input_wave_handle = sf_open_telephony_read(input_audio_file_name, 1)) == NULL)
         {
-            fprintf(stderr, "    Cannot open wave file '%s'\n", input_audio_file_name);
+            fprintf(stderr, "    Cannot open audio file '%s'\n", input_audio_file_name);
             exit(2);
         }
     }
 
-    wave_handle = AF_NULL_FILEHANDLE;
+    wave_handle = NULL;
     if (log_audio)
     {
-        if ((wave_handle = afOpenFile_telephony_write(OUTPUT_FILE_NAME_WAVE, 2)) == AF_NULL_FILEHANDLE)
+        if ((wave_handle = sf_open_telephony_write(OUTPUT_FILE_NAME_WAVE, 2)) == NULL)
         {
-            fprintf(stderr, "    Cannot create wave file '%s'\n", OUTPUT_FILE_NAME_WAVE);
+            fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME_WAVE);
             exit(2);
         }
     }
@@ -427,7 +427,7 @@ int main(int argc, char *argv[])
 
             if ((j & 1) == 0  &&  input_audio_file_name)
             {
-                mc->len = afReadFrames(input_wave_handle, AF_DEFAULT_TRACK, mc->amp, SAMPLES_PER_CHUNK);
+                mc->len = sf_readf_short(input_wave_handle, mc->amp, SAMPLES_PER_CHUNK);
                 if (mc->len == 0)
                     break;
             }
@@ -492,7 +492,7 @@ int main(int argc, char *argv[])
 
         if (log_audio)
         {
-            outframes = afWriteFrames(wave_handle, AF_DEFAULT_TRACK, out_amp, SAMPLES_PER_CHUNK);
+            outframes = sf_writef_short(wave_handle, out_amp, SAMPLES_PER_CHUNK);
             if (outframes != SAMPLES_PER_CHUNK)
                 break;
         }
@@ -508,17 +508,17 @@ int main(int argc, char *argv[])
     }
     if (log_audio)
     {
-        if (afCloseFile(wave_handle))
+        if (sf_close(wave_handle))
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", OUTPUT_FILE_NAME_WAVE);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME_WAVE);
             exit(2);
         }
     }
     if (input_audio_file_name)
     {
-        if (afCloseFile(input_wave_handle))
+        if (sf_close(input_wave_handle))
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", input_audio_file_name);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", input_audio_file_name);
             exit(2);
         }
     }

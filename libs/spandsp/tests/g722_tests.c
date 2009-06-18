@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g722_tests.c,v 1.30 2009/04/22 12:57:40 steveu Exp $
+ * $Id: g722_tests.c,v 1.32 2009/06/02 14:55:36 steveu Exp $
  */
 
 /*! \file */
@@ -69,7 +69,7 @@ and the resulting audio stored in post_g722.wav.
 #include <unistd.h>
 #include <memory.h>
 #include <ctype.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 #include "spandsp.h"
 
@@ -357,9 +357,9 @@ int main(int argc, char *argv[])
     int len3;
     int i;
     int file;
-    AFfilehandle inhandle;
-    AFfilehandle outhandle;
-    AFfilesetup filesetup;
+    SNDFILE *inhandle;
+    SNDFILE *outhandle;
+    SF_INFO info;
     int outframes;
     int samples;
     int opt;
@@ -370,7 +370,6 @@ int main(int argc, char *argv[])
     int encode;
     int decode;
     int tone_test;
-    float x;
     const char *in_file;
     const char *out_file;
     int16_t indata[BLOCK_LEN];
@@ -477,54 +476,44 @@ int main(int argc, char *argv[])
         {
             out_file = (decode)  ?  OUT_FILE_NAME  :  ENCODED_FILE_NAME;
         }
-        inhandle = AF_NULL_FILEHANDLE;
-        outhandle = AF_NULL_FILEHANDLE;
+        inhandle = NULL;
+        outhandle = NULL;
         file = -1;
         if (encode)
         {
             if (eight_k_in)
             {
-                if ((inhandle = afOpenFile(in_file, "r", NULL)) == AF_NULL_FILEHANDLE)
+                if ((inhandle = sf_open(in_file, SFM_READ, &info)) == NULL)
                 {
-                    fprintf(stderr, "    Cannot open wave file '%s'\n", in_file);
+                    fprintf(stderr, "    Cannot open audio file '%s'\n", in_file);
                     exit(2);
                 }
-                if ((x = afGetFrameSize(inhandle, AF_DEFAULT_TRACK, 1)) != 2.0)
+                if (info.samplerate != SAMPLE_RATE)
                 {
-                    fprintf(stderr, "    Unexpected frame size in wave file '%s'\n", in_file);
+                    fprintf(stderr, "    Unexpected sample rate %d in audio file '%s'\n", info.samplerate, in_file);
                     exit(2);
                 }
-                if ((x = afGetRate(inhandle, AF_DEFAULT_TRACK)) != (float) SAMPLE_RATE)
+                if (info.channels != 1)
                 {
-                    fprintf(stderr, "    Unexpected sample rate %f in wave file '%s'\n", x, in_file);
-                    exit(2);
-                }
-                if ((x = afGetChannels(inhandle, AF_DEFAULT_TRACK)) != 1.0)
-                {
-                    fprintf(stderr, "    Unexpected number of channels in wave file '%s'\n", in_file);
+                    fprintf(stderr, "    Unexpected number of channels in audio file '%s'\n", in_file);
                     exit(2);
                 }
             }
             else
             {
-                if ((inhandle = afOpenFile(in_file, "r", NULL)) == AF_NULL_FILEHANDLE)
+                if ((inhandle = sf_open(in_file, SFM_READ, &info)) == NULL)
                 {
-                    fprintf(stderr, "    Cannot open wave file '%s'\n", in_file);
+                    fprintf(stderr, "    Cannot open audio file '%s'\n", in_file);
                     exit(2);
                 }
-                if ((x = afGetFrameSize(inhandle, AF_DEFAULT_TRACK, 1)) != 2.0)
+                if (info.samplerate != G722_SAMPLE_RATE)
                 {
-                    fprintf(stderr, "    Unexpected frame size in wave file '%s'\n", in_file);
-                    exit(2);
-                }   
-                if ((x = afGetRate(inhandle, AF_DEFAULT_TRACK)) != (float) G722_SAMPLE_RATE)
-                {
-                    fprintf(stderr, "    Unexpected sample rate %f in wave file '%s'\n", x, in_file);
+                    fprintf(stderr, "    Unexpected sample rate %d in audio file '%s'\n", info.samplerate, in_file);
                     exit(2);
                 }
-                if ((x = afGetChannels(inhandle, AF_DEFAULT_TRACK)) != 1.0)
+                if (info.channels != 1)
                 {
-                    fprintf(stderr, "    Unexpected number of channels in wave file '%s'\n", in_file);
+                    fprintf(stderr, "    Unexpected number of channels in audio file '%s'\n", in_file);
                     exit(2);
                 }
             }
@@ -543,24 +532,18 @@ int main(int argc, char *argv[])
         }
         if (decode)
         {
-            if ((filesetup = afNewFileSetup()) == AF_NULL_FILESETUP)
+            memset(&info, 0, sizeof(info));
+            info.frames = 0;
+            info.samplerate = (eight_k_out)  ?  SAMPLE_RATE  :  G722_SAMPLE_RATE;
+            info.channels = 1;
+            info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+            info.sections = 1;
+            info.seekable = 1;
+            if ((outhandle = sf_open(out_file, SFM_WRITE, &info)) == NULL)
             {
-                fprintf(stderr, "    Failed to create file setup\n");
+                fprintf(stderr, "    Cannot create audio file '%s'\n", out_file);
                 exit(2);
             }
-            afInitSampleFormat(filesetup, AF_DEFAULT_TRACK, AF_SAMPFMT_TWOSCOMP, 16);
-            if (eight_k_out)
-                afInitRate(filesetup, AF_DEFAULT_TRACK, (float) SAMPLE_RATE);
-            else
-                afInitRate(filesetup, AF_DEFAULT_TRACK, (float) G722_SAMPLE_RATE);
-            afInitFileFormat(filesetup, AF_FILE_WAVE);
-            afInitChannels(filesetup, AF_DEFAULT_TRACK, 1);
-            if ((outhandle = afOpenFile(out_file, "w", filesetup)) == AF_NULL_FILEHANDLE)
-            {
-                fprintf(stderr, "    Cannot create wave file '%s'\n", out_file);
-                exit(2);
-            }
-            afFreeFileSetup(filesetup);
             if (eight_k_out)
                 g722_decode_init(&dec_state, bit_rate, G722_PACKED | G722_SAMPLE_RATE_8000);
             else
@@ -578,10 +561,7 @@ int main(int argc, char *argv[])
         {
             if (encode)
             {
-                samples = afReadFrames(inhandle,
-                                       AF_DEFAULT_TRACK,
-                                       indata,
-                                       BLOCK_LEN);
+                samples = sf_readf_short(inhandle, indata, BLOCK_LEN);
                 if (samples <= 0)
                     break;
                 if (tone_test)
@@ -600,13 +580,10 @@ int main(int argc, char *argv[])
             if (decode)
             {
                 len3 = g722_decode(&dec_state, outdata, adpcmdata, len2);
-                outframes = afWriteFrames(outhandle,
-                                          AF_DEFAULT_TRACK,
-                                          outdata,
-                                          len3);
+                outframes = sf_writef_short(outhandle, outdata, len3);
                 if (outframes != len3)
                 {
-                    fprintf(stderr, "    Error writing wave file\n");
+                    fprintf(stderr, "    Error writing audio file\n");
                     exit(2);
                 }
             }
@@ -619,9 +596,9 @@ int main(int argc, char *argv[])
         }
         if (encode)
         {
-            if (afCloseFile(inhandle))
+            if (sf_close(inhandle))
             {
-                fprintf(stderr, "    Cannot close wave file '%s'\n", IN_FILE_NAME);
+                fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME);
                 exit(2);
             }
         }
@@ -631,9 +608,9 @@ int main(int argc, char *argv[])
         }
         if (decode)
         {
-            if (afCloseFile(outhandle))
+            if (sf_close(outhandle))
             {
-                fprintf(stderr, "    Cannot close wave file '%s'\n", OUT_FILE_NAME);
+                fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
                 exit(2);
             }
         }

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v8.h,v 1.27 2009/02/03 16:28:41 steveu Exp $
+ * $Id: v8.h,v 1.28 2009/06/02 16:03:56 steveu Exp $
  */
  
 /*! \file */
@@ -155,7 +155,7 @@ SPAN_DECLARE(logging_state_t *) v8_get_logging_state(v8_state_t *s);
     \param max_len The number of samples to be generated.
     \return The number of samples actually generated.
 */
-SPAN_DECLARE(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len);
+SPAN_DECLARE_NONSTD(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len);
 
 /*! Process a block of received V.8 audio samples.
     \brief Process a block of received V.8 audio samples.
@@ -163,7 +163,7 @@ SPAN_DECLARE(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len);
     \param amp The audio sample buffer.
     \param len The number of samples in the buffer.
 */
-SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len);
+SPAN_DECLARE_NONSTD(int) v8_rx(v8_state_t *s, const int16_t *amp, int len);
 
 /*! Log the list of supported modulations.
     \brief Log the list of supported modulations.

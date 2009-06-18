@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_tx.c,v 1.75 2009/04/21 13:59:07 steveu Exp $
+ * $Id: v27ter_tx.c,v 1.76 2009/06/02 16:03:56 steveu Exp $
  */
 
 /*! \file */

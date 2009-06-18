@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_decode.c,v 1.55 2009/04/29 12:37:45 steveu Exp $
+ * $Id: fax_decode.c,v 1.56 2009/05/30 15:23:13 steveu Exp $
  */
 
 /*! \page fax_decode_page FAX decoder
@@ -41,7 +41,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -446,10 +446,10 @@ int main(int argc, char *argv[])
     v29_rx_state_t *v29;
     v27ter_rx_state_t *v27ter;
     int16_t amp[SAMPLES_PER_CHUNK];
-    AFfilehandle inhandle;
+    SNDFILE *inhandle;
+    SF_INFO info;
     int len;
     const char *filename;
-    float x;
     logging_state_t *logging;
 
     filename = "fax_samp.wav";
@@ -457,26 +457,23 @@ int main(int argc, char *argv[])
     if (argc > 1)
         filename = argv[1];
 
-    if ((inhandle = afOpenFile(filename, "r", NULL)) == AF_NULL_FILEHANDLE)
+    memset(&info, 0, sizeof(info));
+    if ((inhandle = sf_open(filename, SFM_READ, &info)) == NULL)
     {
-        fprintf(stderr, "    Cannot open wave file '%s'\n", filename);
+        fprintf(stderr, "    Cannot open audio file '%s' for reading\n", filename);
         exit(2);
     }
-    if ((x = afGetFrameSize(inhandle, AF_DEFAULT_TRACK, 1)) != 2.0)
+    if (info.samplerate != SAMPLE_RATE)
     {
-        printf("    Unexpected frame size in speech file '%s' (%f)\n", filename, x);
+        printf("    Unexpected sample rate in audio file '%s'\n", filename);
         exit(2);
     }
-    if ((x = afGetRate(inhandle, AF_DEFAULT_TRACK)) != (float) SAMPLE_RATE)
+    if (info.channels != 1)
     {
-        printf("    Unexpected sample rate in speech file '%s' (%f)\n", filename, x);
+        printf("    Unexpected number of channels in audio file '%s'\n", filename);
         exit(2);
     }
-    if ((x = afGetChannels(inhandle, AF_DEFAULT_TRACK)) != 1.0)
-    {
-        printf("    Unexpected number of channels in speech file '%s' (%f)\n", filename, x);
-        exit(2);
-    }
+
     memset(&t30_dummy, 0, sizeof(t30_dummy));
     span_log_init(&t30_dummy.logging, SPAN_LOG_FLOW, NULL);
     span_log_set_protocol(&t30_dummy.logging, "T.30");
@@ -517,7 +514,7 @@ int main(int argc, char *argv[])
         
     for (;;)
     {
-        len = afReadFrames(inhandle, AF_DEFAULT_TRACK, amp, SAMPLES_PER_CHUNK);
+        len = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK);
         if (len < SAMPLES_PER_CHUNK)
             break;
         fsk_rx(fsk, amp, len);
@@ -527,9 +524,9 @@ int main(int argc, char *argv[])
     }
     t4_rx_release(&t4_state);
 
-    if (afCloseFile(inhandle) != 0)
+    if (sf_close(inhandle) != 0)
     {
-        fprintf(stderr, "    Cannot close wave file '%s'\n", filename);
+        fprintf(stderr, "    Cannot close audio file '%s'\n", filename);
         exit(2);
     }
     return  0;

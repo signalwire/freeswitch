@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_echo_tests.c,v 1.31 2008/11/30 10:17:31 steveu Exp $
+ * $Id: modem_echo_tests.c,v 1.32 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \page modem_echo_can_tests_page Line echo cancellation for modems tests
@@ -37,9 +37,9 @@ now, the only aspect of these tests implemented is the line impulse response
 models in g168tests.c. 
 
 \section modem_echo_can_tests_page_sec_2 How does it work?
-The current test consists of feeding a wave file of real speech to the echo
+The current test consists of feeding an audio file of real speech to the echo
 cancellor as the transmit signal. A very simple model of a telephone line is
-used to simulate a simple echo from the transmit signal. A second wave file of
+used to simulate a simple echo from the transmit signal. A second audio file of
 real speech is also used to simulate a signal received form the far end of the
 line. This is gated so it is only placed for one second every 10 seconds,
 simulating the double talk condition. The resulting echo cancelled signal can
@@ -62,7 +62,7 @@ current design is genuinely useful, if imperfect.
 Build the tests with the command "./build". Currently there is no proper make
 setup, or way to build individual tests. "./build" will built all the tests
 which currently exist for the DSP functions. The echo cancellation test assumes
-there are two wave files containing mono, 16 bit signed PCM speech data, sampled
+there are two audio files containing mono, 16 bit signed PCM speech data, sampled
 at 8kHz. These should be called local_sound.wav and far_sound.wav. A third wave
 file will be produced. This very crudely starts with the first 256 bytes from
 the local_sound.wav file, followed by the results of the echo cancellation. The
@@ -87,7 +87,7 @@ cancellor.
 #include <fcntl.h>
 #include <string.h>
 #include <time.h>
-#include <audiofile.h>
+#include <sndfile.h>
 #if defined(HAVE_MATH_H)
 #define GEN_CONST
 #endif
@@ -113,7 +113,7 @@ typedef struct
     const char *name;
     int max;
     int cur;
-    AFfilehandle handle;
+    SNDFILE *handle;
     int16_t signal[8000];
 } signal_source_t;
 
@@ -121,7 +121,7 @@ signal_source_t local_css;
 
 fir32_state_t line_model;
 
-AFfilehandle resulthandle;
+SNDFILE *resulthandle;
 int16_t residue_sound[8000];
 int residue_cur = 0;
 int do_codec_munge = TRUE;
@@ -138,10 +138,7 @@ static inline void put_residue(int16_t tx, int16_t residue)
     if (residue_cur >= 8000)
     {
         residue_cur >>= 1;
-        outframes = afWriteFrames(resulthandle,
-                                  AF_DEFAULT_TRACK,
-                                  residue_sound,
-                                  residue_cur);
+        outframes = sf_writef_short(resulthandle, residue_sound, residue_cur);
         if (outframes != residue_cur)
         {
             fprintf(stderr, "    Error writing residue sound\n");
@@ -155,12 +152,12 @@ static inline void put_residue(int16_t tx, int16_t residue)
 static void signal_load(signal_source_t *sig, const char *name)
 {
     sig->name = name;
-    if ((sig->handle = afOpenFile_telephony_read(sig->name, 1)) == AF_NULL_FILEHANDLE)
+    if ((sig->handle = sf_open_telephony_read(sig->name, 1)) == NULL)
     {
         fprintf(stderr, "    Cannot open sound file '%s'\n", sig->name);
         exit(2);
     }
-    sig->max = afReadFrames(sig->handle, AF_DEFAULT_TRACK, sig->signal, 8000);
+    sig->max = sf_readf_short(sig->handle, sig->signal, 8000);
     if (sig->max < 0)
     {
         fprintf(stderr, "    Error reading sound file '%s'\n", sig->name);
@@ -171,7 +168,7 @@ static void signal_load(signal_source_t *sig, const char *name)
 
 static void signal_free(signal_source_t *sig)
 {
-    if (afCloseFile(sig->handle) != 0)
+    if (sf_close(sig->handle) != 0)
     {
         fprintf(stderr, "    Cannot close sound file '%s'\n", sig->name);
         exit(2);
@@ -296,7 +293,7 @@ int main(int argc, char *argv[])
 
     signal_load(&local_css, "sound_c1_8k.wav");
 
-    if ((resulthandle = afOpenFile_telephony_write("modem_echo.wav", 2)) == AF_NULL_FILEHANDLE)
+    if ((resulthandle = sf_open_telephony_write("modem_echo.wav", 2)) == NULL)
     {
         fprintf(stderr, "    Failed to open result file\n");
         exit(2);
@@ -391,7 +388,7 @@ int main(int argc, char *argv[])
     modem_echo_can_free(ctx);
     signal_free(&local_css);
 
-    if (afCloseFile(resulthandle) != 0)
+    if (sf_close(resulthandle) != 0)
     {
         fprintf(stderr, "    Cannot close speech file '%s'\n", "result_sound.wav");
         exit(2);

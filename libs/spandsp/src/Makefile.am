@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.130 2009/04/16 13:09:40 steveu Exp $
+## $Id: Makefile.am,v 1.134 2009/06/02 11:51:57 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -24,7 +24,6 @@ AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
 MAINTAINERCLEANFILES = Makefile.in
 
 EXTRA_DIST = floating_fudge.h \
-             spandsp/version.h.in \
              libspandsp.dsp \
              libspandsp.2005.sln \
              libspandsp.2008.sln \
@@ -42,19 +41,20 @@ EXTRA_DIST = floating_fudge.h \
              msvc/make_at_dictionary.2008.vcproj \
              msvc/make_modem_filter.2005.vcproj \
              msvc/make_modem_filter.2008.vcproj \
-             msvc/spandsp.h \
-             msvc/unistd.h \
-             msvc/tgmath.h \
              msvc/msvcproj.head \
              msvc/msvcproj.foot \
-             msvc/util.vbs \
-             msvc/vc8proj.head \
-             msvc/vc8proj.foot \
-             msvc/vc9proj.head \
-             msvc/vc9proj.foot \
-             msvc/sys/time.h \
+             msvc/spandsp.h \
+             msvc/tgmath.h \
              msvc/tiff/cleancount \
-             spandsp/private/README
+             msvc/unistd.h \
+             msvc/util.vbs \
+             msvc/vc8proj.foot \
+             msvc/vc8proj.head \
+             msvc/vc9proj.foot \
+             msvc/vc9proj.head \
+             msvc/sys/time.h \
+             spandsp/private/README \
+             spandsp/version.h.in
 
 INCLUDES = -I$(top_builddir)
 
@@ -139,7 +139,7 @@ libspandsp_la_SOURCES = adsi.c \
                         vector_float.c \
                         vector_int.c
 
-libspandsp_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@:@SPANDSP_LT_AGE@ $(COMP_VENDOR_FLAGS)
+libspandsp_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@:@SPANDSP_LT_AGE@ $(COMP_VENDOR_LDFLAGS)
 
 nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/async.h \
@@ -277,8 +277,8 @@ noinst_HEADERS =        faxfont.h \
                         lpc10_encdecs.h \
                         t30_local.h \
                         t4_states.h \
-                        v17rx_constellation_maps.h \
-                        v17tx_constellation_maps.h \
+                        v17_v32bis_rx_constellation_maps.h \
+                        v17_v32bis_tx_constellation_maps.h \
                         v29tx_constellation_maps.h
 
 noinst_PROGRAMS = make_at_dictionary \
@@ -301,25 +301,25 @@ t4.$(OBJEXT): spandsp/version.h
 
 t4.lo: spandsp/version.h
 
-v17rx.$(OBJEXT): v17rx_fixed_rrc.h v17rx_floating_rrc.h
+v17rx.$(OBJEXT): v17_v32bis_rx_fixed_rrc.h v17_v32bis_rx_floating_rrc.h
 
-v17rx.lo: v17rx_fixed_rrc.h v17rx_floating_rrc.h
+v17rx.lo: v17_v32bis_rx_fixed_rrc.h v17_v32bis_rx_floating_rrc.h
 
-v17rx_fixed_rrc.h: make_modem_filter$(EXEEXT)
-	./make_modem_filter$(EXEEXT) -m V.17 -i -r >v17rx_fixed_rrc.h
+v17_v32bis_rx_fixed_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.17 -i -r >v17_v32bis_rx_fixed_rrc.h
 
-v17rx_floating_rrc.h: make_modem_filter$(EXEEXT)
-	./make_modem_filter$(EXEEXT) -m V.17 -r >v17rx_floating_rrc.h
+v17_v32bis_rx_floating_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.17 -r >v17_v32bis_rx_floating_rrc.h
 
-v17tx.$(OBJEXT): v17tx_fixed_rrc.h v17tx_floating_rrc.h
+v17tx.$(OBJEXT): v17_v32bis_tx_fixed_rrc.h v17_v32bis_tx_floating_rrc.h
 
-v17tx.lo: v17tx_fixed_rrc.h v17tx_floating_rrc.h
+v17tx.lo: v17_v32bis_tx_fixed_rrc.h v17_v32bis_tx_floating_rrc.h
 
-v17tx_fixed_rrc.h: make_modem_filter$(EXEEXT)
-	./make_modem_filter$(EXEEXT) -m V.17 -i -t >v17tx_fixed_rrc.h
+v17_v32bis_tx_fixed_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.17 -i -t >v17_v32bis_tx_fixed_rrc.h
 
-v17tx_floating_rrc.h: make_modem_filter$(EXEEXT)
-	./make_modem_filter$(EXEEXT) -m V.17 -t >v17tx_floating_rrc.h
+v17_v32bis_tx_floating_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.17 -t >v17_v32bis_tx_floating_rrc.h
 
 v22bis_rx.$(OBJEXT): v22bis_rx_1200_fixed_rrc.h \
                      v22bis_rx_2400_fixed_rrc.h \

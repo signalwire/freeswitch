@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi_tests.c,v 1.56 2009/04/26 07:24:35 steveu Exp $
+ * $Id: adsi_tests.c,v 1.57 2009/05/30 15:23:13 steveu Exp $
  */
 
 /*! \page adsi_tests_page ADSI tests
@@ -48,7 +48,7 @@ tests, these tests do not include line modelling.
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <audiofile.h>
+#include <sndfile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -87,7 +87,7 @@ adsi_tx_state_t *tx_adsi;
 int current_standard = 0;
 int good_message_received;
 int log_audio = FALSE;
-AFfilehandle outhandle = NULL;
+SNDFILE *outhandle = NULL;
 int short_preamble = FALSE;
 
 static int adsi_create_message(adsi_tx_state_t *s, uint8_t *msg)
@@ -674,13 +674,12 @@ static void basic_tests(int standard)
         }
         if (log_audio)
         {
-            outframes = afWriteFrames(outhandle,
-                                      AF_DEFAULT_TRACK,
-                                      amp,
-                                      len);
+            outframes = sf_writef_short(outhandle,
+                                        amp,
+                                        len);
             if (outframes != len)
             {
-                fprintf(stderr, "    Error writing wave file\n");
+                fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
         }
@@ -696,27 +695,27 @@ static void mitel_cm7291_side_2_and_bellcore_tests(int standard)
 {
     int j;
     int16_t amp[BLOCK_LEN];
-    AFfilehandle inhandle;
+    SNDFILE *inhandle;
     int frames;
 
     /* The remainder of the Mitel tape is the talk-off test */
     /* Here we use the Bellcore test tapes (much tougher), in six
-       wave files - 1 from each side of the original 3 cassette tapes */
+      files - 1 from each side of the original 3 cassette tapes */
     printf("Talk-off tests for %s\n", adsi_standard_to_str(standard));
     rx_adsi = adsi_rx_init(NULL, standard, put_adsi_msg, NULL);
     for (j = 0;  bellcore_files[j][0];  j++)
     {
         printf("Testing with %s\n", bellcore_files[j]);
-        if ((inhandle = afOpenFile_telephony_read(bellcore_files[j], 1)) == AF_NULL_FILEHANDLE)
+        if ((inhandle = sf_open_telephony_read(bellcore_files[j], 1)) == NULL)
         {
             printf("    Cannot open speech file '%s'\n", bellcore_files[j]);
             exit(2);
         }
-        while ((frames = afReadFrames(inhandle, AF_DEFAULT_TRACK, amp, BLOCK_LEN)))
+        while ((frames = sf_readf_short(inhandle, amp, BLOCK_LEN)))
         {
             adsi_rx(rx_adsi, amp, frames);
         }
-        if (afCloseFile(inhandle) != 0)
+        if (sf_close(inhandle) != 0)
         {
             printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
             exit(2);
@@ -735,7 +734,7 @@ static void mitel_cm7291_side_2_and_bellcore_tests(int standard)
 int main(int argc, char *argv[])
 {
     int16_t amp[BLOCK_LEN];
-    AFfilehandle inhandle;
+    SNDFILE *inhandle;
     int len;
     int test_standard;
     int first_standard;
@@ -793,16 +792,16 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    outhandle = AF_NULL_FILEHANDLE;
+    outhandle = NULL;
     
     tdd_character_set_tests();
 
     if (decode_test_file)
     {
-        /* We will decode the audio from a wave file. */
-        if ((inhandle = afOpenFile_telephony_read(decode_test_file, 1)) == AF_NULL_FILEHANDLE)
+        /* We will decode the audio from a file. */
+        if ((inhandle = sf_open_telephony_read(decode_test_file, 1)) == NULL)
         {
-            fprintf(stderr, "    Cannot open wave file '%s'\n", decode_test_file);
+            fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
             exit(2);
         }
         if (test_standard < 0)
@@ -817,17 +816,14 @@ int main(int argc, char *argv[])
 #endif
         for (;;)
         {
-            len = afReadFrames(inhandle,
-                               AF_DEFAULT_TRACK,
-                               amp,
-                               BLOCK_LEN);
+            len = sf_readf_short(inhandle, amp, BLOCK_LEN);
             if (len == 0)
                 break;
             adsi_rx(rx_adsi, amp, len);
         }
-        if (afCloseFile(inhandle) != 0)
+        if (sf_close(inhandle) != 0)
         {
-            fprintf(stderr, "    Cannot close wave file '%s'\n", decode_test_file);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
         }
         adsi_rx_free(rx_adsi);
@@ -836,9 +832,9 @@ int main(int argc, char *argv[])
     {
         if (log_audio)
         {
-            if ((outhandle = afOpenFile_telephony_write(OUTPUT_FILE_NAME, 1)) == AF_NULL_FILEHANDLE)
+            if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 1)) == NULL)
             {
-                fprintf(stderr, "    Cannot create wave file '%s'\n", OUTPUT_FILE_NAME);
+                fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME);
                 exit(2);
             }
         }
@@ -863,9 +859,9 @@ int main(int argc, char *argv[])
         }
         if (log_audio)
         {
-            if (afCloseFile(outhandle) != 0)
+            if (sf_close(outhandle) != 0)
             {
-                fprintf(stderr, "    Cannot close wave file '%s'\n", OUTPUT_FILE_NAME);
+                fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
                 exit(2);
             }
         }

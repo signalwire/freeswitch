@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: silence_gen.h,v 1.17 2009/04/12 03:29:58 steveu Exp $
+ * $Id: silence_gen.h,v 1.18 2009/06/02 16:03:56 steveu Exp $
  */
 
 #if !defined(_SPANDSP_SILENCE_GEN_H_)

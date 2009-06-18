@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: make_modem_filter.c,v 1.14 2009/02/10 17:16:57 steveu Exp $
+ * $Id: make_modem_filter.c,v 1.15 2009/06/02 11:51:57 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -355,6 +355,7 @@ int main(int argc, char **argv)
     }
     if (strcmp(modem, "V.17") == 0)
     {
+        /* This applies to V.32bis as well as V.17 */
         rx_coeff_sets = 192;
         rx_coeffs_per_filter = 27;
         rx_excess_bandwidth = 0.5;

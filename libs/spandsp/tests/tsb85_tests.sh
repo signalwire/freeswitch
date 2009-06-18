@@ -15,7 +15,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: tsb85_tests.sh,v 1.7 2009/04/30 15:04:20 steveu Exp $
+# $Id: tsb85_tests.sh,v 1.8 2009/05/24 07:18:36 steveu Exp $
 #
 
 run_tsb85_test()
@@ -35,14 +35,13 @@ for TEST in MRGN01 MRGN02 MRGN03 MRGN04 MRGN05 MRGN06a MRGN06b MRGN07 MRGN08 ; d
     run_tsb85_test
 done
 
-#MRGN14 fails because ???
+#MRGN14 fails because we don't adequately distinguish between receiving a
+#bad image signal and receiving none at all.
 #MRGN16 fails because we don't adequately distinguish between receiving a
 #bad image signal and receiving none at all.
-#MRGN17 fails because we don't adequately distinguish between receiving a
-#bad HDLC message and receiving none at all.
 
 #for TEST in MRGN09 MRGN10 MRGN11 MRGN12 MRGN13 MRGN14 MRGN15 MRGN16 MRGN17 ; do
-for TEST in MRGN09 MRGN10 MRGN11 MRGN12 MRGN13 MRGN15 ; do
+for TEST in MRGN09 MRGN10 MRGN11 MRGN12 MRGN13 MRGN15 MRGN17 ; do
     run_tsb85_test
 done
 
@@ -54,7 +53,7 @@ for TEST in OREN01 OREN02 OREN03 OREN04 OREN05 OREN06 OREN07 OREN08 OREN09 OREN1
     run_tsb85_test
 done
 
-# MRGX03 is failing because the V.27ter modemsays it trained on HDLC
+# MRGX03 is failing because the V.27ter modem says it trained on HDLC
 # MRGX05 is failing because we don't distinguish MPS immediately after MCF from MPS after
 # a corrupt image signal.
 
@@ -94,6 +93,8 @@ done
 for TEST in OTGC10 OTGC11 ; do
     run_tsb85_test
 done
+
+#OTEN02 fails because ?????
 
 #for TEST in OTEN01 OTEN02 OTEN03 OTEN04 OTEN05 OTEN06 ; do
 for TEST in OTEN01 OTEN03 OTEN04 OTEN05 OTEN06 ; do

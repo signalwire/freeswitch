@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: power_meter.c,v 1.28 2009/02/10 13:06:46 steveu Exp $
+ * $Id: power_meter.c,v 1.31 2009/05/30 17:29:23 steveu Exp $
  */
 
 /*! \file */
@@ -122,7 +122,7 @@ SPAN_DECLARE(int32_t) power_meter_current(power_meter_t *s)
 SPAN_DECLARE(float) power_meter_current_dbm0(power_meter_t *s)
 {
     if (s->reading <= 0)
-        return FLT_MIN;
+        return -96.329f + DBM0_MAX_POWER;
     /* This is based on A-law, but u-law is only 0.03dB different, so don't worry. */
     return log10f((float) s->reading/(32767.0f*32767.0f))*10.0f + DBM0_MAX_POWER;
 }
@@ -131,8 +131,84 @@ SPAN_DECLARE(float) power_meter_current_dbm0(power_meter_t *s)
 SPAN_DECLARE(float) power_meter_current_dbov(power_meter_t *s)
 {
     if (s->reading <= 0)
-        return FLT_MIN;
+        return -96.329f;
     return log10f((float) s->reading/(32767.0f*32767.0f))*10.0f;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int32_t) power_surge_detector(power_surge_detector_state_t *s, int16_t amp)
+{
+    int32_t pow_short;
+    int32_t pow_medium;
+
+    pow_short = power_meter_update(&s->short_term, amp);
+    pow_medium = power_meter_update(&s->medium_term, amp);
+    if (pow_medium < s->min)
+        return 0;
+    if (!s->signal_present)
+    {
+        if (pow_short <= s->surge*(pow_medium >> 10))
+            return 0;
+        s->signal_present = TRUE;
+        s->medium_term.reading = s->short_term.reading;
+    }
+    else
+    {
+        if (pow_short < s->sag*(pow_medium >> 10))
+        {
+            s->signal_present = FALSE;
+            s->medium_term.reading = s->short_term.reading;
+            return 0;
+        }
+    }
+    return pow_short;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(float) power_surge_detector_current_dbm0(power_surge_detector_state_t *s)
+{
+    return power_meter_current_dbm0(&s->short_term);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(float) power_surge_detector_current_dbov(power_surge_detector_state_t *s)
+{
+    return power_meter_current_dbov(&s->short_term);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(power_surge_detector_state_t *) power_surge_detector_init(power_surge_detector_state_t *s, float min, float surge)
+{
+    float ratio;
+
+    if (s == NULL)
+    {
+        if ((s = (power_surge_detector_state_t *) malloc(sizeof(*s))) == NULL)
+            return NULL;
+    }
+    memset(s, 0, sizeof(*s));
+    power_meter_init(&s->short_term, 4);
+    power_meter_init(&s->medium_term, 7);
+    ratio = powf(10.0f, surge/10.0f);
+    s->surge = 1024.0f*ratio;
+    s->sag = 1024.0f/ratio;
+    s->min = power_meter_level_dbm0(min);
+    s->medium_term.reading = s->min + 1;
+    return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) power_surge_detector_release(power_surge_detector_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) power_surge_detector_free(power_surge_detector_state_t *s)
+{
+    if (s)
+        free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

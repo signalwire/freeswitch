@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: make_g168_css.c,v 1.17 2009/02/10 17:49:20 steveu Exp $
+ * $Id: make_g168_css.c,v 1.18 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \page makecss_page CSS construction for G.168 testing
@@ -43,7 +43,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <fcntl.h>
-#include <audiofile.h>
+#include <sndfile.h>
 #if defined(HAVE_FFTW3_H)
 #include <fftw3.h>
 #else
@@ -139,20 +139,18 @@ int main(int argc, char *argv[])
     double pk;
     double ms;
     double scale;
-    AFfilehandle filehandle;
-    AFfilesetup filesetup;
+    SNDFILE *filehandle;
+    SF_INFO info;
     awgn_state_t noise_source;
 
-    if ((filesetup = afNewFileSetup()) == AF_NULL_FILESETUP)
-    {
-        fprintf(stderr, "    Failed to create file setup\n");
-        exit(2);
-    }
-    afInitSampleFormat(filesetup, AF_DEFAULT_TRACK, AF_SAMPFMT_TWOSCOMP, 16);
-    afInitRate(filesetup, AF_DEFAULT_TRACK, FAST_SAMPLE_RATE);
-    afInitFileFormat(filesetup, AF_FILE_WAVE);
-    afInitChannels(filesetup, AF_DEFAULT_TRACK, 1);
-    if ((filehandle = afOpenFile("sound_c1.wav", "w", filesetup)) == AF_NULL_FILEHANDLE)
+    memset(&info, 0, sizeof(info));
+    info.frames = 0;
+    info.samplerate = FAST_SAMPLE_RATE;
+    info.channels = 1;
+    info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+    info.sections = 1;
+    info.seekable = 1;
+    if ((filehandle = sf_open("sound_c1.wav", SFM_WRITE, &info)) == NULL)
     {
         fprintf(stderr, "    Failed to open result file\n");
         exit(2);
@@ -243,26 +241,12 @@ int main(int argc, char *argv[])
         silence_sound[i] = 0.0;
 
     for (i = 0;  i < 16;  i++)
-    {
-        outframes = afWriteFrames(filehandle,
-                                  AF_DEFAULT_TRACK,
-                                  voiced_sound,
-                                  voiced_length);
-    }
+        outframes = sf_writef_short(filehandle, voiced_sound, voiced_length);
     printf("%d samples of voice\n", 16*voiced_length);
-    outframes = afWriteFrames(filehandle,
-                              AF_DEFAULT_TRACK,
-                              noise_sound,
-                              8192);
-    outframes = afWriteFrames(filehandle,
-                              AF_DEFAULT_TRACK,
-                              noise_sound,
-                              C1_NOISE_SAMPLES - 8192);
+    outframes = sf_writef_short(filehandle, noise_sound, 8192);
+    outframes = sf_writef_short(filehandle, noise_sound, C1_NOISE_SAMPLES - 8192);
     printf("%d samples of noise\n", C1_NOISE_SAMPLES);
-    outframes = afWriteFrames(filehandle,
-                              AF_DEFAULT_TRACK,
-                              silence_sound,
-                              C1_SILENCE_SAMPLES);
+    outframes = sf_writef_short(filehandle, silence_sound, C1_SILENCE_SAMPLES);
     printf("%d samples of silence\n", C1_SILENCE_SAMPLES);
 
     /* Now phase invert the C1 set of voice samples. */
@@ -277,40 +261,28 @@ int main(int argc, char *argv[])
         noise_sound[i] = -noise_sound[i];
 
     for (i = 0;  i < 16;  i++)
-    {
-        outframes = afWriteFrames(filehandle,
-                                  AF_DEFAULT_TRACK,
-                                  voiced_sound,
-                                  voiced_length);
-    }
+        outframes = sf_writef_short(filehandle, voiced_sound, voiced_length);
     printf("%d samples of voice\n", 16*voiced_length);
-    outframes = afWriteFrames(filehandle,
-                              AF_DEFAULT_TRACK,
-                              noise_sound,
-                              8192);
-    outframes = afWriteFrames(filehandle,
-                              AF_DEFAULT_TRACK,
-                              noise_sound,
-                              C1_NOISE_SAMPLES - 8192);
+    outframes = sf_writef_short(filehandle, noise_sound, 8192);
+    outframes = sf_writef_short(filehandle, noise_sound, C1_NOISE_SAMPLES - 8192);
     printf("%d samples of noise\n", C1_NOISE_SAMPLES);
-    outframes = afWriteFrames(filehandle,
-                              AF_DEFAULT_TRACK,
-                              silence_sound,
-                              C1_SILENCE_SAMPLES);
+    outframes = sf_writef_short(filehandle, silence_sound, C1_SILENCE_SAMPLES);
     printf("%d samples of silence\n", C1_SILENCE_SAMPLES);
 
-    if (afCloseFile(filehandle) != 0)
+    if (sf_close(filehandle) != 0)
     {
         fprintf(stderr, "    Cannot close speech file '%s'\n", "sound_c1.wav");
         exit(2);
     }
 
-    afInitSampleFormat(filesetup, AF_DEFAULT_TRACK, AF_SAMPFMT_TWOSCOMP, 16);
-    afInitRate(filesetup, AF_DEFAULT_TRACK, FAST_SAMPLE_RATE);
-    afInitFileFormat(filesetup, AF_FILE_WAVE);
-    afInitChannels(filesetup, AF_DEFAULT_TRACK, 1);
-    filehandle = afOpenFile("sound_c3.wav", "w", filesetup);
-    if (filehandle == AF_NULL_FILEHANDLE)
+    memset(&info, 0, sizeof(info));
+    info.frames = 0;
+    info.samplerate = FAST_SAMPLE_RATE;
+    info.channels = 1;
+    info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+    info.sections = 1;
+    info.seekable = 1;
+    if ((filehandle = sf_open("sound_c3.wav", SFM_WRITE, &info)) == NULL)
     {
         fprintf(stderr, "    Failed to open result file\n");
         exit(2);
@@ -333,27 +305,13 @@ int main(int argc, char *argv[])
     printf("Noise level = %.2fdB, crest factor = %.2fdB\n", rms_to_dbm0(ms), rms_to_db(pk/ms));
 
     for (i = 0;  i < 14;  i++)
-    {
-        outframes = afWriteFrames(filehandle,
-                                  AF_DEFAULT_TRACK,
-                                  voiced_sound,
-                                  voiced_length);
-    }
+        outframes = sf_writef_short(filehandle, voiced_sound, voiced_length);
     printf("%d samples of voice\n", 14*voiced_length);
 
-    outframes = afWriteFrames(filehandle,
-                              AF_DEFAULT_TRACK,
-                              noise_sound,
-                              8192);
-    outframes = afWriteFrames(filehandle,
-                              AF_DEFAULT_TRACK,
-                              noise_sound,
-                              C3_NOISE_SAMPLES - 8192);
+    outframes = sf_writef_short(filehandle, noise_sound, 8192);
+    outframes = sf_writef_short(filehandle, noise_sound, C3_NOISE_SAMPLES - 8192);
     printf("%d samples of noise\n", C3_NOISE_SAMPLES);
-    outframes = afWriteFrames(filehandle,
-                              AF_DEFAULT_TRACK,
-                              silence_sound,
-                              C3_SILENCE_SAMPLES);
+    outframes = sf_writef_short(filehandle, silence_sound, C3_SILENCE_SAMPLES);
     printf("%d samples of silence\n", C3_SILENCE_SAMPLES);
 
     /* Now phase invert the set of voice samples. */
@@ -369,34 +327,19 @@ int main(int argc, char *argv[])
         noise_sound[i] = -noise_sound[i];
 
     for (i = 0;  i < 14;  i++)
-    {
-        outframes = afWriteFrames(filehandle,
-                                  AF_DEFAULT_TRACK,
-                                  voiced_sound,
-                                  voiced_length);
-    }
+        outframes = sf_writef_short(filehandle, voiced_sound, voiced_length);
     printf("%d samples of voice\n", 14*i);
-    outframes = afWriteFrames(filehandle,
-                              AF_DEFAULT_TRACK,
-                              noise_sound,
-                              8192);
-    outframes = afWriteFrames(filehandle,
-                              AF_DEFAULT_TRACK,
-                              noise_sound,
-                              C3_NOISE_SAMPLES - 8192);
+    outframes = sf_writef_short(filehandle, noise_sound, 8192);
+    outframes = sf_writef_short(filehandle, noise_sound, C3_NOISE_SAMPLES - 8192);
     printf("%d samples of noise\n", C3_NOISE_SAMPLES);
-    outframes = afWriteFrames(filehandle,
-                              AF_DEFAULT_TRACK,
-                              silence_sound,
-                              C3_SILENCE_SAMPLES);
+    outframes = sf_writef_short(filehandle, silence_sound, C3_SILENCE_SAMPLES);
     printf("%d samples of silence\n", C3_SILENCE_SAMPLES);
 
-    if (afCloseFile(filehandle) != 0)
+    if (sf_close(filehandle) != 0)
     {
         fprintf(stderr, "    Cannot close speech file '%s'\n", "sound_c3.wav");
         exit(2);
     }
-    afFreeFileSetup(filesetup);
 
     fftw_destroy_plan(p);
     return  0;

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t35.c,v 1.30 2009/04/12 09:12:10 steveu Exp $
+ * $Id: t35.c,v 1.31 2009/05/16 03:34:45 steveu Exp $
  */
 
 /*
@@ -525,7 +525,7 @@ static const model_data_t Muratec48[] =
 static const nsf_data_t known_nsf[] =
 {
     /* Japan */
-    {"\x00\x00\x00", 3, "unknown - indeterminate", TRUE, NULL},
+    {"\x00\x00\x00", 3, "Unknown - indeterminate", TRUE, NULL},
     {"\x00\x00\x01", 3, "Anjitsu", FALSE, NULL},
     {"\x00\x00\x02", 3, "Nippon Telephone", FALSE, NULL},
     {"\x00\x00\x05", 3, "Mitsuba Electric", FALSE, NULL},
