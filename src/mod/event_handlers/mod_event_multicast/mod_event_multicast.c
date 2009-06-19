@@ -39,7 +39,6 @@
 /* magic byte sequence */
 static unsigned char MAGIC[] = {226, 132, 177, 197, 152, 198, 142, 211, 172, 197, 158, 208, 169, 208, 135, 197, 166, 207, 154, 196, 166};
 static char *MARKER = "1";
-static switch_mutex_t *MUTEX = NULL;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown);
@@ -63,6 +62,7 @@ static struct {
 	switch_event_node_t *node;
 	uint8_t ttl;
 	char *psk;
+	switch_mutex_t *mutex;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address);
@@ -82,7 +82,6 @@ static switch_status_t load_config(void)
 
 	
 	globals.ttl = 1;
-	globals.psk = NULL;
 	globals.key_count = 0;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -175,7 +174,7 @@ static void event_handler(switch_event_t *event)
 	}
 
 	if (event->event_id == SWITCH_EVENT_RELOADXML) {
-		switch_mutex_lock(MUTEX);
+		switch_mutex_lock(globals.mutex);
 		switch_core_hash_destroy(&globals.event_hash);
 		globals.event_hash = NULL;
 		switch_core_hash_init(&globals.event_hash, module_pool);
@@ -185,10 +184,10 @@ static void event_handler(switch_event_t *event)
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Event Multicast Reloaded\n");
 		}
-		switch_mutex_unlock(MUTEX);
+		switch_mutex_unlock(globals.mutex);
 	}
 
-	switch_mutex_lock(MUTEX);
+	switch_mutex_lock(globals.mutex);
 	if (globals.event_list[(uint8_t) SWITCH_EVENT_ALL]) {
 		send = 1;
 	} else if ((globals.event_list[(uint8_t) event->event_id])) {
@@ -196,7 +195,7 @@ static void event_handler(switch_event_t *event)
 			send = 1;
 		}
 	}
-	switch_mutex_unlock(MUTEX);
+	switch_mutex_unlock(globals.mutex);
 
 	if (send) {
 		char *packet;
@@ -268,7 +267,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 
 	memset(&globals, 0, sizeof(globals));
 
-	switch_mutex_init(&MUTEX, SWITCH_MUTEX_NESTED, pool);
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, pool);
 	module_pool = pool;
 
 	switch_core_hash_init(&globals.event_hash, module_pool);
