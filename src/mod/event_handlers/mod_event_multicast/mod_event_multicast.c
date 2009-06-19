@@ -39,6 +39,7 @@
 /* magic byte sequence */
 static unsigned char MAGIC[] = {226, 132, 177, 197, 152, 198, 142, 211, 172, 197, 158, 208, 169, 208, 135, 197, 166, 207, 154, 196, 166};
 static char *MARKER = "1";
+static switch_mutex_t *MUTEX = NULL;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown);
@@ -78,24 +79,17 @@ static switch_status_t load_config(void)
 	char *next, *cur;
 	uint32_t count = 0;
 	uint8_t custom = 0;
-	switch_ssize_t hlen = -1;
 
-	gethostname(globals.hostname, sizeof(globals.hostname));
-	globals.host_hash = switch_hashfunc_default(globals.hostname, &hlen);
-	globals.key_count = 0;
-
+	
 	globals.ttl = 1;
 	globals.psk = NULL;
+	globals.key_count = 0;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
-	if (switch_event_reserve_subclass(MULTICAST_EVENT) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
-		return SWITCH_STATUS_GENERR;
-	}
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -180,6 +174,21 @@ static void event_handler(switch_event_t *event)
 		return;
 	}
 
+	if (event->event_id == SWITCH_EVENT_RELOADXML) {
+		switch_mutex_lock(MUTEX);
+		switch_core_hash_destroy(&globals.event_hash);
+		globals.event_hash = NULL;
+		switch_core_hash_init(&globals.event_hash, module_pool);
+		bzero(globals.event_list, SWITCH_EVENT_ALL);
+		if (load_config() != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to reload config file\n");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Event Multicast Reloaded\n");
+		}
+		switch_mutex_unlock(MUTEX);
+	}
+
+	switch_mutex_lock(MUTEX);
 	if (globals.event_list[(uint8_t) SWITCH_EVENT_ALL]) {
 		send = 1;
 	} else if ((globals.event_list[(uint8_t) event->event_id])) {
@@ -187,6 +196,7 @@ static void event_handler(switch_event_t *event)
 			send = 1;
 		}
 	}
+	switch_mutex_unlock(MUTEX);
 
 	if (send) {
 		char *packet;
@@ -254,11 +264,18 @@ static void event_handler(switch_event_t *event)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 {
+	switch_ssize_t hlen = -1;
+
 	memset(&globals, 0, sizeof(globals));
 
+	switch_mutex_init(&MUTEX, SWITCH_MUTEX_NESTED, pool);
 	module_pool = pool;
 
 	switch_core_hash_init(&globals.event_hash, module_pool);
+
+	gethostname(globals.hostname, sizeof(globals.hostname));
+	globals.host_hash = switch_hashfunc_default(globals.hostname, &hlen);
+	globals.key_count = 0;
 
 	if (load_config() != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Configure\n");
@@ -302,6 +319,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
+	if (switch_event_reserve_subclass(MULTICAST_EVENT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+		return SWITCH_STATUS_GENERR;
+	}
 
 	if (switch_event_bind(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
