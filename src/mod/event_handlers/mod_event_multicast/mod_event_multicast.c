@@ -36,6 +36,8 @@
 
 #define MULTICAST_BUFFSIZE 65536
 
+/* magic byte sequence */
+static unsigned char MAGIC[] = {226, 132, 177, 197, 152, 198, 142, 211, 172, 197, 158, 208, 169, 208, 135, 197, 166, 207, 154, 196, 166};
 static char *MARKER = "1";
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load);
@@ -205,11 +207,12 @@ static void event_handler(switch_event_t *event)
 
 				switch_uuid_get(&uuid);
 				switch_uuid_format(uuid_str, &uuid);
-				len = strlen(packet) + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + EVP_MAX_IV_LENGTH;
+				len = strlen(packet) + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + EVP_MAX_IV_LENGTH + strlen((char*)MAGIC);
 #else
-				len = strlen(packet) + sizeof(globals.host_hash);
+				len = strlen(packet) + sizeof(globals.host_hash) + strlen((char*) MAGIC);
 #endif
 				buf = malloc(len + 1);
+				bzero(buf, len + 1);
 				switch_assert(buf);
 				memcpy(buf, &globals.host_hash, sizeof(globals.host_hash));
 
@@ -218,17 +221,22 @@ static void event_handler(switch_event_t *event)
 					switch_copy_string(buf + sizeof(globals.host_hash), uuid_str, SWITCH_UUID_FORMATTED_LENGTH);
 
 					EVP_CIPHER_CTX_init(&ctx);
-					EVP_EncryptInit(&ctx, EVP_bf_cfb(), NULL, NULL);
+					EVP_EncryptInit(&ctx, EVP_bf_cbc(), NULL, NULL);
 					EVP_CIPHER_CTX_set_key_length(&ctx, strlen(globals.psk));
 					EVP_EncryptInit(&ctx, NULL, (unsigned char*) globals.psk, (unsigned char*) uuid_str);
 					EVP_EncryptUpdate(&ctx, (unsigned char*) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH,
 							&outlen, (unsigned char*) packet, (int) strlen(packet));
+					EVP_EncryptUpdate(&ctx, (unsigned char*) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + outlen,
+							&tmplen, (unsigned char*) MAGIC, (int) strlen((char *) MAGIC));
+					outlen += tmplen;
 					EVP_EncryptFinal(&ctx, (unsigned char*) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + outlen, &tmplen);
 					outlen += tmplen;
 					len = (size_t) outlen + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH;
+					*(buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + outlen) = '\0';
 				} else {
 #endif
 					switch_copy_string(buf + sizeof(globals.host_hash), packet, len - sizeof(globals.host_hash));
+					switch_copy_string(buf + sizeof(globals.host_hash) + strlen(packet), (char *) MAGIC, strlen((char*) MAGIC)+1);
 #ifdef HAVE_OPENSSL
 				}
 #endif
@@ -246,7 +254,6 @@ static void event_handler(switch_event_t *event)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 {
-
 	memset(&globals, 0, sizeof(globals));
 
 	module_pool = pool;
@@ -340,7 +347,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 {
 	switch_event_t *local_event;
-	char *buf;
+	char *buf, *m;
 	switch_sockaddr_t *addr;
 
 	buf = (char *) malloc(MULTICAST_BUFFSIZE);
@@ -384,26 +391,41 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 
 			tmp = malloc(len);
 
-			memset(tmp, 0, len);
+			bzero(tmp, len);
 
 			switch_copy_string(uuid_str, packet, SWITCH_UUID_FORMATTED_LENGTH);
 			packet += SWITCH_UUID_FORMATTED_LENGTH;
 
 			EVP_CIPHER_CTX_init(&ctx);
-			EVP_DecryptInit(&ctx, EVP_bf_cfb(), NULL, NULL);
+			EVP_DecryptInit(&ctx, EVP_bf_cbc(), NULL, NULL);
 			EVP_CIPHER_CTX_set_key_length(&ctx, strlen(globals.psk));
 			EVP_DecryptInit(&ctx, NULL, (unsigned char*) globals.psk, (unsigned char*) uuid_str);
 			EVP_DecryptUpdate(&ctx, (unsigned char*) tmp,
 					&outl, (unsigned char*) packet, (int) len);
 			EVP_DecryptFinal(&ctx, (unsigned char*) tmp + outl, &tmplen);
 
+			*(tmp + outl + tmplen) = '\0';
+
 			/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "decrypted event as %s\n----------\n of actual length %d (%d) %d\n", tmp, outl + tmplen, (int) len, (int) strlen(tmp));*/
-			/*continue;*/
 			packet = tmp;
 
 		}
 #endif
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT %d\n--------------------------------\n%s\n", (int) len, packet);
+		if ((m = strchr(packet, (int) MAGIC[0])) != 0) {
+			/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found start of magic string\n");*/
+			if (!strncmp((char*) MAGIC, m, strlen((char*) MAGIC))) {
+				/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found entire magic string\n");*/
+				*m = '\0';
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failed to find entire magic string\n");
+				continue;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to find start of magic string\n");
+			continue;
+		}
+
+		/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT %d\n--------------------------------\n%s\n", (int) len, packet);*/
 		if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT) == SWITCH_STATUS_SUCCESS) {
 			char *var, *val, *term = NULL, tmpname[128];
 			switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Multicast", "yes");
