@@ -195,7 +195,7 @@ static mrcp_engine_channel_t* mrcp_swift_engine_channel_create(mrcp_resource_eng
 	mpf_codec_descriptor_init(codec_descriptor);
 	codec_descriptor->channel_count = 1;
 	codec_descriptor->payload_type = 96;
-	apt_string_set(&codec_descriptor->name,"L16");
+	apt_string_set(&codec_descriptor->name,"LPCM");
 	codec_descriptor->sampling_rate = 8000;
 
 	params = swift_params_new(NULL);

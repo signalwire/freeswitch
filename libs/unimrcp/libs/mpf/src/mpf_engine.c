@@ -48,6 +48,7 @@ static apt_bool_t mpf_engine_msg_process(apt_task_t *task, apt_task_msg_t *msg);
 
 static apt_bool_t mpf_engine_contexts_destroy(mpf_engine_t *engine);
 
+mpf_codec_t* mpf_codec_lpcm_create(apr_pool_t *pool);
 mpf_codec_t* mpf_codec_l16_create(apr_pool_t *pool);
 mpf_codec_t* mpf_codec_g711u_create(apr_pool_t *pool);
 mpf_codec_t* mpf_codec_g711a_create(apr_pool_t *pool);
@@ -287,6 +288,9 @@ MPF_DECLARE(mpf_codec_manager_t*) mpf_engine_codec_manager_create(apr_pool_t *po
 	mpf_codec_manager_t *codec_manager = mpf_codec_manager_create(3,pool);
 	if(codec_manager) {
 		mpf_codec_t *codec;
+		codec = mpf_codec_lpcm_create(pool);
+		mpf_codec_manager_codec_register(codec_manager,codec);
+
 		codec = mpf_codec_g711u_create(pool);
 		mpf_codec_manager_codec_register(codec_manager,codec);
 

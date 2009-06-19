@@ -18,8 +18,6 @@
 #include "mpf_stream.h"
 #include "mpf_codec_manager.h"
 
-const mpf_codec_descriptor_t* l16_descriptor_get();
-
 MPF_DECLARE(mpf_termination_t*) mpf_termination_base_create(
 										mpf_termination_factory_t *termination_factory,
 										void *obj,
@@ -69,20 +67,6 @@ MPF_DECLARE(apt_bool_t) mpf_termination_modify(mpf_termination_t *termination, v
 	return TRUE;
 }
 
-static mpf_codec_t* mpf_termination_default_codec_create(mpf_termination_t *termination)
-{
-	mpf_codec_t *codec;
-	const mpf_codec_descriptor_t *default_descriptor = l16_descriptor_get();
-	mpf_codec_descriptor_t *descriptor = apr_palloc(termination->pool,sizeof(mpf_codec_descriptor_t));
-	mpf_codec_descriptor_init(descriptor);
-	*descriptor = *default_descriptor;
-	codec = mpf_codec_manager_codec_get(
-		termination->codec_manager,
-		descriptor,
-		termination->pool);
-	return codec;
-}
-
 MPF_DECLARE(apt_bool_t) mpf_termination_validate(mpf_termination_t *termination)
 {
 	mpf_audio_stream_t *audio_stream;
@@ -96,12 +80,16 @@ MPF_DECLARE(apt_bool_t) mpf_termination_validate(mpf_termination_t *termination)
 		}
 		if((audio_stream->mode & STREAM_MODE_RECEIVE) == STREAM_MODE_RECEIVE) {
 			if(!audio_stream->rx_codec) {
-				audio_stream->rx_codec = mpf_termination_default_codec_create(termination);
+				audio_stream->rx_codec = mpf_codec_manager_default_codec_get(
+											termination->codec_manager,
+											termination->pool);
 			}
 		}
 		if((audio_stream->mode & STREAM_MODE_SEND) == STREAM_MODE_SEND) {
 			if(!audio_stream->tx_codec) {
-				audio_stream->tx_codec = mpf_termination_default_codec_create(termination);
+				audio_stream->tx_codec = mpf_codec_manager_default_codec_get(
+											termination->codec_manager,
+											termination->pool);
 			}
 		}
 	}

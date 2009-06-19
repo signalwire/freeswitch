@@ -348,8 +348,8 @@ static mpf_audio_file_descriptor_t* mpf_file_reader_descriptor_create(mpf_suite_
 	descriptor->write_handle = NULL;
 
 	codec_descriptor = &descriptor->codec_descriptor;
-	codec_descriptor->payload_type = 11;
-	apt_string_set(&codec_descriptor->name,"L16");
+	codec_descriptor->payload_type = 96;
+	apt_string_set(&codec_descriptor->name,"LPCM");
 	codec_descriptor->sampling_rate = 8000;
 	codec_descriptor->channel_count = 1;
 	return descriptor;
@@ -366,8 +366,8 @@ static mpf_audio_file_descriptor_t* mpf_file_writer_descriptor_create(mpf_suite_
 	descriptor->read_handle = NULL;
 
 	codec_descriptor = &descriptor->codec_descriptor;
-	codec_descriptor->payload_type = 11;
-	apt_string_set(&codec_descriptor->name,"L16");
+	codec_descriptor->payload_type = 96;
+	apt_string_set(&codec_descriptor->name,"LPCM");
 	codec_descriptor->sampling_rate = 8000;
 	codec_descriptor->channel_count = 1;
 	return descriptor;

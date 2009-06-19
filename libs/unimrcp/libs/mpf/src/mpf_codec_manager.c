@@ -28,6 +28,8 @@ struct mpf_codec_manager_t {
 };
 
 
+mpf_codec_descriptor_t* mpf_codec_lpcm_descriptor_create(apr_uint16_t sampling_rate, apr_byte_t channel_count, apr_pool_t *pool);
+
 MPF_DECLARE(mpf_codec_manager_t*) mpf_codec_manager_create(apr_size_t codec_count, apr_pool_t *pool)
 {
 	mpf_codec_manager_t *codec_manager = apr_palloc(pool,sizeof(mpf_codec_manager_t));
@@ -91,6 +93,14 @@ MPF_DECLARE(mpf_codec_t*) mpf_codec_manager_codec_get(const mpf_codec_manager_t 
 		ret_codec->descriptor = descriptor;
 	}
 	return ret_codec;
+}
+
+MPF_DECLARE(mpf_codec_t*) mpf_codec_manager_default_codec_get(const mpf_codec_manager_t *codec_manager, apr_pool_t *pool)
+{
+	mpf_codec_t *codec;
+	mpf_codec_descriptor_t *descriptor = mpf_codec_lpcm_descriptor_create(8000,1,pool);
+	codec = mpf_codec_manager_codec_get(codec_manager,descriptor,pool);
+	return codec;
 }
 
 MPF_DECLARE(apt_bool_t) mpf_codec_manager_codec_list_get(const mpf_codec_manager_t *codec_manager, mpf_codec_list_t *codec_list, apr_pool_t *pool)

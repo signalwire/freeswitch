@@ -82,7 +82,7 @@ static APR_INLINE mpf_codec_t* mpf_codec_create(
 }
 
 /**
- * Close codec.
+ * Clone codec.
  * @param src_codec the source (original) codec to clone
  * @param pool the pool to allocate memory from
  */
