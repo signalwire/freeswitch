@@ -476,8 +476,10 @@ static switch_status_t notify_new_session(listener_t *listener, session_elem_t *
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	if (!(session = switch_core_session_locate(session_element->uuid_str)))
+	if (!(session = switch_core_session_locate(session_element->uuid_str))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't locate session %s\n", session_element->uuid_str);
 		return SWITCH_STATUS_FALSE;
+	}
 
 	channel = switch_core_session_get_channel(session);
 
@@ -507,10 +509,9 @@ static switch_status_t notify_new_session(listener_t *listener, session_elem_t *
 
 static switch_status_t check_attached_sessions(listener_t *listener)
 {
-	session_elem_t *last,*sp;
+	session_elem_t *last,*sp, *removed;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	void *pop;
-	int removed = 0;
 	/* check up on all the attached sessions -
 	   if they have not yet sent an initial call event to the associated erlang process then do so
 	   if they have pending events in their queues then send them
@@ -520,15 +521,17 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 	sp = listener->session_list;
 	last = NULL;
 	while(sp) {
-		removed = 0;
+		removed = NULL;
 		if (switch_test_flag(sp, LFLAG_WAITING_FOR_PID)) {
 			break;
 		}
 
 		if (!switch_test_flag(sp, LFLAG_OUTBOUND_INIT)) {
 			status = notify_new_session(listener, sp);
-			if (status != SWITCH_STATUS_SUCCESS)
+			if (status != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Notifying new session failed\n");
 				break;
+			}
 			switch_set_flag(sp, LFLAG_OUTBOUND_INIT);
 		}
 		/* check event queue for this session */
@@ -562,7 +565,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 
 				/* this allows the application threads to exit */
 				switch_clear_flag_locked(sp, LFLAG_SESSION_ALIVE);
-				removed = 1;
+				removed = sp;
 
 				ei_x_new_with_version(&ebuf);
 				ei_x_encode_atom(&ebuf, "call_hangup");
@@ -578,9 +581,12 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 			}
 			switch_event_destroy(&pevent);
 		}
-		if (!removed)
-			last = sp;
 		sp = sp->next;
+		if (removed) {
+			switch_safe_free(removed)
+		} else {
+			last = sp;
+		}
 	}
 	switch_mutex_unlock(listener->session_mutex);
 	return status;
@@ -741,6 +747,7 @@ static void listener_main_loop(listener_t *listener)
 #endif
 
 						if (handle_msg(listener, &msg, &buf, &rbuf)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "handle_msg requested exit\n");
 							return;
 						}
 						break;
@@ -755,6 +762,7 @@ static void listener_main_loop(listener_t *listener)
 #endif
 
 						if (handle_msg(listener, &msg, &buf, &rbuf)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "handle_msg requested exit\n");
 						    return;
 						}
 						break;
@@ -789,6 +797,7 @@ static void listener_main_loop(listener_t *listener)
 		check_log_queue(listener);
 		check_event_queue(listener);
 		if (check_attached_sessions(listener) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "check_attached_sessions requested exit\n");
 			return;
 		}
 	}
@@ -1067,18 +1076,20 @@ static switch_status_t state_handler(switch_core_session_t *session)
 session_elem_t *session_elem_create(listener_t* listener, switch_core_session_t *session) 
 {
 	/* create a session list element */
-	session_elem_t* session_element = switch_core_session_alloc(session, sizeof(*session_element));
-	switch_channel_t *channel = switch_core_session_get_channel(session);
+	session_elem_t* session_element = malloc(sizeof(*session_element));
+	/*switch_channel_t *channel = switch_core_session_get_channel(session);*/
+
+	bzero(session_element, sizeof(*session_element));
 
 	memcpy(session_element->uuid_str, switch_core_session_get_uuid(session), SWITCH_UUID_FORMATTED_LENGTH);
 	
 	switch_queue_create(&session_element->event_queue, SWITCH_CORE_QUEUE_LEN, switch_core_session_get_pool(session));
 	switch_mutex_init(&session_element->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	
-	switch_channel_set_private(channel, "_erlang_session_", session_element);
-	switch_channel_set_private(channel, "_erlang_listener_", listener);
+	/*switch_channel_set_private(channel, "_erlang_session_", session_element);*/
+	/*switch_channel_set_private(channel, "_erlang_listener_", listener);*/
 	
-	switch_core_event_hook_add_state_change(session, state_handler);
+	/*switch_core_event_hook_add_state_change(session, state_handler);*/
 	
 	return session_element;
 }

@@ -914,8 +914,9 @@ int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff 
 				case ERL_REFERENCE_EXT :
 				case ERL_NEW_REFERENCE_EXT :
 					ret = handle_ref_tuple(listener, msg, buf, rbuf);
+					break;
 				default :
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WEEEEEEEE %d\n", type);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WEEEEEEEE %d %d\n", type, type2);
 					/* some other kind of erlang term */
 					ei_x_encode_tuple_header(rbuf, 2);
 					ei_x_encode_atom(rbuf, "error");
