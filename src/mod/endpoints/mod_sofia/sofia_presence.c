@@ -61,10 +61,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	char *dup = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	const char *ct = "text/html";
-	char *clean_to = NULL;
-	char *route = NULL;
-	char *route_uri = NULL;
-	char *ptr = NULL;
+	sofia_destination_t *dst = NULL;
 
 	if (!to) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To: header.\n");
@@ -138,57 +135,29 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 		from = ffrom;
 		switch_safe_free(fp);
 	}
-
-	contact = sofia_glue_get_url_from_contact(buf, 1);
-
-	if (contact && (ptr = strstr(contact, ";fs_path=")) && (route = strdup(ptr + 9))) {
-		char *p;
-		for (p = route; p && *p ; p++) {
-			if (*p == '>' || *p == ';') {
-				*p = '\0';
-				break;
-			}
-		}
-		switch_url_decode(route);
-		route_uri = strdup(route);
-		if ((p = strchr(route_uri, ','))) {
-			while ((p > route_uri) && *(p-1) == ' ') {
-				p--;
-			}
-			if (*p) {
-				*p = '\0';
-			}
-		}
-		*ptr++ = '>';	
-		*ptr++ = '\0';	
-	}
-
-	clean_to = strdup(buf);
-	if ((ptr = strstr(clean_to, ";fs_path="))) {
-		*ptr++ = '>';	
-		*ptr++ = '\0';	
+	
+	if (!(dst = sofia_glue_get_destination(buf))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+		goto end;
 	}
 
 	/* sofia_glue is running sofia_overcome_sip_uri_weakness we do not, not sure if it matters */
 
 	status = SWITCH_STATUS_SUCCESS;
 	/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
-	msg_nh = nua_handle(profile->nua, NULL, TAG_IF(route, NUTAG_PROXY(route_uri)), TAG_IF(route, SIPTAG_ROUTE_STR(route)),
+	msg_nh = nua_handle(profile->nua, NULL, TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
 						SIPTAG_FROM_STR(from), NUTAG_URL(contact),
-						SIPTAG_TO_STR(clean_to), SIPTAG_CONTACT_STR(profile->url),
+						SIPTAG_TO_STR(dst->to), SIPTAG_CONTACT_STR(profile->url),
 						TAG_END());
 	nua_handle_bind(msg_nh, &mod_sofia_globals.destroy_private);
 	nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(body), TAG_END());
-
+	
+	
  end:
-
+	sofia_glue_free_destination(dst);
 	switch_safe_free(contact);
-	switch_safe_free(route);
-	switch_safe_free(route_uri);
 	switch_safe_free(ffrom);
 	switch_safe_free(dup);
-	switch_safe_free(clean_to);
-
 	if (profile) {
 		switch_thread_rwlock_unlock(profile->rwlock);
 	}
@@ -1399,7 +1368,7 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	char *sub_to_user = argv[0];
 	char *sub_to_host = argv[1];
 	char *event = "message-summary";
-	char *contact, *o_contact = argv[2];
+	char *o_contact = argv[2];
 	char *profile_name = argv[3];
 	char *network_ip = argv[4];
 	char *body = argv[5];
@@ -1407,8 +1376,8 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	nua_handle_t *nh;
 	struct mwi_helper *h = (struct mwi_helper *) pArg;
 	sofia_profile_t *ext_profile = NULL, *profile = h->profile;
-	char *route = NULL, *route_uri = NULL, *user_via = NULL;
-	char *p, *contact_str;
+	sofia_destination_t *dst = NULL;
+	char *contact_str, *contact, *user_via = NULL;
 
 	if (profile_name && strcasecmp(profile_name, h->profile->name)) {
 		if ((ext_profile = sofia_glue_find_profile(profile_name))) {
@@ -1421,7 +1390,9 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 		char *ptr = NULL;
 		const char *transport_str = NULL;
 
+
 		id = switch_mprintf("sip:%s@%s", sub_to_user, profile->extsipip);
+		switch_assert(id);
 
 		if ((ptr = sofia_glue_find_parameter(o_contact, "transport="))) {
 			sofia_transport_t transport = sofia_glue_str2transport(ptr);
@@ -1449,43 +1420,9 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 		id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
 	}
 
-	if ((route = strstr(contact, ";fs_path=")) && (route = strdup(route + 9))) {
-		
-		for (p = route; p && *p ; p++) {
-			if (*p == '>' || *p == ';') {
-				*p = '\0';
-				break;
-			}
-		}
-		switch_url_decode(route);
-		route_uri = route;
-		if ((p = strchr(route_uri, ','))) {
-			while (*(p-1) == ' ') {
-				p--;
-			}
-			if (*p) {
-				*p = '\0';
-			}
-		}
-	}
+	dst = sofia_glue_get_destination(o_contact);
+	switch_assert(dst);
 
-	if (!route_uri && strstr(contact, ";fs_nat")) {
-		route_uri = contact;
-	}
-
-	if ((p = strstr(contact, ";fs_"))) {
-		*p = '\0';
-	}
-
-	if (route_uri) {
-		while (route_uri && *route_uri && (*route_uri == '<' || *route_uri == ' ')) {
-			route_uri++;
-		}
-		if ((p = strchr(route_uri, '>'))) {
-			*p++ = '\0';
-		}
-	}
-	
 	nh = nua_handle(profile->nua, NULL, NUTAG_URL(contact),
 					SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id),
 					SIPTAG_CONTACT_STR(contact_str), TAG_END());
@@ -1493,15 +1430,15 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),
-			   TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
+			   TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
 			   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 			   SIPTAG_EVENT_STR(event),
 			   SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
 			   SIPTAG_PAYLOAD_STR(body), TAG_END());
-
+	
 	switch_safe_free(contact);
 	switch_safe_free(id);
-	switch_safe_free(route);
+	sofia_glue_free_destination(dst);
 	switch_safe_free(user_via);
 
 	if (ext_profile) {

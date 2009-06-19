@@ -1319,6 +1319,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	char *route = NULL;
 	char *route_uri = NULL;
 	char *sendto = NULL;
+	sofia_destination_t *dst = NULL;
 	sofia_cid_type_t cid_type = tech_pvt->profile->cid_type;
 
 	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
@@ -1666,32 +1667,14 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		sofia_glue_tech_patch_sdp(tech_pvt);
 	}
 
-	if (tech_pvt->dest && (route = strstr(tech_pvt->dest, ";fs_path=")) && (*(route + 9))) {
-		char *p;
+	dst = sofia_glue_get_destination(tech_pvt->dest);
 
-		route = switch_core_session_strdup(tech_pvt->session, route + 9);
-		switch_assert(route);
-
-		for (p = route; p && *p ; p++) {
-			if (*p == '>' || *p == ';') {
-				*p = '\0';
-				break;
-			}
-		}
-		switch_url_decode(route);
-		route_uri = switch_core_session_strdup(tech_pvt->session, route);
-		if ((p = strchr(route_uri, ','))) {
-			while (*(p-1) == ' ') {
-				p--;
-			}
-			if (*p) {
-				*p = '\0';
-			}
-		}
-		
-		route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, route_uri, 0, SWITCH_TRUE, NULL);
-	} else {
-		route = NULL;
+	if (dst->route_uri) {
+		route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, dst->route_uri, 0, SWITCH_TRUE, NULL);
+	}
+	
+	if (dst->route) {
+		route = dst->route;
 	}
 
 	if ((val = switch_channel_get_variable(channel, "sip_route_uri"))) {
@@ -1720,9 +1703,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
-			   TAG_IF(tech_pvt->route_uri, NUTAG_PROXY(tech_pvt->route_uri)),
+			   TAG_IF(!switch_strlen_zero(route_uri), NUTAG_PROXY(route_uri)),
 			   TAG_IF(!switch_strlen_zero(route), SIPTAG_ROUTE_STR(route)),
-			   TAG_IF(!switch_strlen_zero(sendto), NUTAG_PROXY(sendto)),
 			   SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
 			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 			   SOATAG_REUSE_REJECTED(1),
@@ -1731,6 +1713,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
 
 	switch_safe_free(stream.data);
+	sofia_glue_free_destination(dst);
 	tech_pvt->redirected = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -4159,6 +4142,101 @@ sofia_cid_type_t sofia_cid_name2type(const char *name)
 	
 }
 
+/* all the values of the structure are initialized to NULL  */
+/* in case of failure the function returns NULL */
+/* sofia_destination->route can be NULL */
+sofia_destination_t* sofia_glue_get_destination(char *data)
+{
+	sofia_destination_t *dst = NULL;
+	char *to = NULL;
+	char *contact = NULL;
+    char *route = NULL;
+    char *route_uri = NULL;
+	char *eoc = NULL;
+	char *p = NULL;
+
+	if (switch_strlen_zero(data)) {
+		return NULL;
+	}
+
+	if (!(dst = (sofia_destination_t *)malloc(sizeof(sofia_destination_t)))) {
+		return NULL;
+	}
+
+	/* return a copy of what is in the buffer between the first < and > */
+	if (!(contact = sofia_glue_get_url_from_contact(data, 1))) {
+		goto mem_fail;
+	}
+
+	if((eoc = strstr(contact, ";fs_path="))) {
+		*eoc = '\0';
+
+		if(!(route = strdup(eoc + 9))) {
+			goto mem_fail;
+		}
+
+		for (p = route; p && *p ; p++) {
+			if (*p == '>' || *p == ';') {
+				*p = '\0';
+				break;
+			}
+		}
+
+		switch_url_decode(route);
+
+ 		if (!(route_uri = strdup(route))) {
+			goto mem_fail;
+		}
+		if ((p = strchr(route_uri, ','))) {
+			do {
+				*p = '\0';
+			} while ((--p > route_uri) && *p == ' ');
+		}
+	}
+	else {
+                if(!(route_uri = strdup(contact))) {
+			goto mem_fail;
+		}
+        }
+
+	if (!(to = strdup(data))) {
+		goto mem_fail;
+	}
+
+	if((eoc = strstr(to, ";fs_path="))) {
+		*eoc++ = '>';	
+		*eoc = '\0';	
+	}
+	
+	if ((p = strstr(contact, ";fs_"))) {
+		*p = '\0';
+	}
+	
+	dst->contact = contact;
+	dst->to = to;
+	dst->route = route;
+	dst->route_uri = route_uri;
+	return dst;
+
+mem_fail:
+	switch_safe_free(contact);
+	switch_safe_free(to);
+	switch_safe_free(route);
+	switch_safe_free(route_uri);
+	switch_safe_free(dst);
+	return NULL;
+}
+
+void sofia_glue_free_destination(sofia_destination_t *dst)
+{
+	if (dst) {
+		switch_safe_free(dst->contact);
+		switch_safe_free(dst->route);
+		switch_safe_free(dst->route_uri);
+		switch_safe_free(dst->to);
+		switch_safe_free(dst);
+	}
+}
 
 /* For Emacs:
  * Local Variables:
