@@ -60,6 +60,7 @@ struct session_elem {
 	uint32_t flags;
 	struct erlang_process process;
 	switch_queue_t *event_queue;
+	switch_channel_state_t channel_state;
 	struct session_elem *next;
 };
 

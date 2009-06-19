@@ -677,9 +677,11 @@ static void handle_exit(listener_t *listener, erlang_pid *pid)
 
 	remove_binding(NULL, pid); /* TODO - why don't we pass the listener as the first argument? */
 	if ((s = find_session_elem_by_pid(listener, pid))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Outbound session for %s exited unexpectedly!\n",
-				s->uuid_str);
-		/* TODO - if a spawned process that was handling an outbound call fails.. what do we do with the call? */
+		if (s->channel_state < CS_HANGUP) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Outbound session for %s exited unexpectedly!\n",
+					s->uuid_str);
+			/* TODO - if a spawned process that was handling an outbound call fails.. what do we do with the call? */
+		}
 		remove_session_elem_from_listener(listener, s);
 	}
 
@@ -1058,17 +1060,10 @@ static switch_status_t state_handler(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_state_t state = switch_channel_get_state(channel);
+	session_elem_t *session_element = switch_channel_get_private(channel, "_erlang_session_");
+	/*listener_t* listener = switch_channel_get_private(channel, "_erlang_listener_");*/
 	
-	if (state >= CS_HANGUP)  {
-		session_elem_t *session_element = switch_channel_get_private(channel, "_erlang_session_");
-		listener_t* listener = switch_channel_get_private(channel, "_erlang_listener_");
-		
-		if (session_element && listener) {
-			remove_session_elem_from_listener(listener, session_element);
-		}
-
-		switch_core_event_hook_remove_state_change(session, state_handler);
-	}
+	session_element->channel_state = state;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1077,7 +1072,7 @@ session_elem_t *session_elem_create(listener_t* listener, switch_core_session_t 
 {
 	/* create a session list element */
 	session_elem_t* session_element = malloc(sizeof(*session_element));
-	/*switch_channel_t *channel = switch_core_session_get_channel(session);*/
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	bzero(session_element, sizeof(*session_element));
 
@@ -1086,10 +1081,10 @@ session_elem_t *session_elem_create(listener_t* listener, switch_core_session_t 
 	switch_queue_create(&session_element->event_queue, SWITCH_CORE_QUEUE_LEN, switch_core_session_get_pool(session));
 	switch_mutex_init(&session_element->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	
-	/*switch_channel_set_private(channel, "_erlang_session_", session_element);*/
-	/*switch_channel_set_private(channel, "_erlang_listener_", listener);*/
+	switch_channel_set_private(channel, "_erlang_session_", session_element);
+	switch_channel_set_private(channel, "_erlang_listener_", listener);
 	
-	/*switch_core_event_hook_add_state_change(session, state_handler);*/
+	switch_core_event_hook_add_state_change(session, state_handler);
 	
 	return session_element;
 }
@@ -1407,7 +1402,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_erlang_event_load)
 	globals.reference2 = 0;
 
 	if (switch_event_bind_removable(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind to all events!\n");
 		close_socket(&listen_list.sockfd);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -1417,7 +1412,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_erlang_event_load)
 	memset(&bindings, 0, sizeof(bindings));
 
 	if (switch_xml_bind_search_function_ret(erlang_fetch, SWITCH_XML_SECTION_MAX, NULL, &bindings.search_binding) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't set up xml search bindings!\n");
 		close_socket(&listen_list.sockfd);
 		return SWITCH_STATUS_GENERR;
 	}
