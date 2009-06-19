@@ -34,7 +34,7 @@
 #include <switch_odbc.h>
 
 
-#define LCR_SYNTAX "lcr <digits> [<lcr profile>] [caller_id]"
+#define LCR_SYNTAX "lcr <digits> [<lcr profile>] [caller_id] [intrastate]"
 #define LCR_ADMIN_SYNTAX "lcr_admin show profiles"
 
 /* SQL Query places */
@@ -640,7 +640,6 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	switch_channel_t *channel;
 	char *id_str;
 	char *safe_sql = NULL;
-	const char *intra = NULL;
 	char *rate_field = NULL;
 	
 	switch_assert(cb_struct->lookup_number != NULL);
@@ -658,17 +657,19 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	
 	digits_expanded = expand_digits(cb_struct->pool, digits_copy, cb_struct->profile->quote_in_list);
 	
+	/* set our rate field based on env and profile */
+	if (cb_struct->intrastate == SWITCH_TRUE && profile->profile_has_intra == SWITCH_TRUE) {
+		rate_field = switch_core_strdup(cb_struct->pool, "intra");
+	} else {
+		rate_field = switch_core_strdup(cb_struct->pool, "rate");
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intrastate routing [%d] so rate field is [%s]\n",
+					  cb_struct->intrastate, rate_field);
+	
 	/* set some channel vars if we have a session */
 	if (cb_struct->session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "we have a session\n");
 		if ((channel = switch_core_session_get_channel(cb_struct->session))) {
-			intra = switch_channel_get_variable(channel, "intrastate");
-			if (switch_strlen_zero(intra) || strcasecmp((char *)intra, "true") || profile->profile_has_intra == SWITCH_FALSE) {
-				rate_field = switch_core_strdup(cb_struct->pool, "rate");
-			} else {
-				rate_field = switch_core_strdup(cb_struct->pool, "intra");
-			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intrastate routing [%s] so rate field is [%s]\n", intra, rate_field);
 			switch_channel_set_variable_var_check(channel, "lcr_rate_field", rate_field, SWITCH_FALSE);
 			switch_channel_set_variable_var_check(channel, "lcr_query_digits", digits_copy, SWITCH_FALSE);
 			id_str = switch_core_sprintf(cb_struct->pool, "%d", cb_struct->profile->id);
@@ -677,14 +678,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 		}
 	}
 	if (cb_struct->event) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "we have an event");
-		intra = switch_event_get_header(cb_struct->event, "intrastate");
-		if (switch_strlen_zero(intra) || strcasecmp((char *)intra, "true") || profile->profile_has_intra == SWITCH_FALSE) {
-			rate_field = switch_core_strdup(cb_struct->pool, "rate");
-		} else {
-			rate_field = switch_core_strdup(cb_struct->pool, "intra");
-		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intrastate routing [%s] so rate field is [%s]\n", intra, rate_field);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "we have an event\n");
 		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_rate_field", rate_field);
 		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_digits", digits_copy);
 		id_str = switch_core_sprintf(cb_struct->pool, "%d", cb_struct->profile->id);
@@ -692,11 +686,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_expanded_digits", digits_expanded);
 	}
 
-	if (!cb_struct->session && !cb_struct->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "We have no session and no event, we need to set rate_field somewhere now\n");
-	}
 	/* set up the query to be executed */
-
 	/* format the custom_sql */
 	safe_sql = format_custom_sql(profile->custom_sql, cb_struct, digits_copy);
 	if (!safe_sql) {
@@ -997,6 +987,7 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 	char *lcr_profile = NULL;
 	switch_memory_pool_t *pool = NULL;
 	switch_event_t *event = NULL;
+	const char *intra = NULL;
 
 	if (session) {
 		pool = switch_core_session_get_pool(session);
@@ -1010,6 +1001,16 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 	if (!(routes.profile = locate_profile(lcr_profile))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
 		goto end;
+	}
+
+	intra = switch_channel_get_variable(channel, "intrastate");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intrastate channel var is [%s]\n", intra);
+	if (switch_strlen_zero(intra) || strcasecmp((char *)intra, "true")) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on interstate rates\n");
+		routes.intrastate = SWITCH_FALSE;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on intrastate rates\n");
+		routes.intrastate = SWITCH_TRUE;
 	}
 	
 	if (!caller_profile) {
@@ -1073,6 +1074,7 @@ SWITCH_STANDARD_APP(lcr_app_function)
 	lcr_route cur_route = { 0 };
 	switch_memory_pool_t *pool;
 	switch_event_t *event;
+	const char *intra = NULL;
 
 	if (!(mydata = switch_core_session_strdup(session, data))) {
 		return;
@@ -1087,6 +1089,16 @@ SWITCH_STANDARD_APP(lcr_app_function)
 		routes.event = event;
 	}
 	routes.pool = pool;
+
+	intra = switch_channel_get_variable(channel, "intrastate");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intrastate channel var is [%s]\n", intra);
+	if (switch_strlen_zero(intra) || strcasecmp((char *)intra, "true")) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on interstate rates\n");
+		routes.intrastate = SWITCH_FALSE;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on intrastate rates\n");
+		routes.intrastate = SWITCH_TRUE;
+	}
 
 	if (!caller_profile) {
 		if (!(caller_profile = switch_channel_get_caller_profile(channel))) {
