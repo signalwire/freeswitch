@@ -20,7 +20,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="10"
-			InheritedPropertySheets="$(SolutionDir)build\vsprops\apr.vsprops;$(SolutionDir)build\vsprops\sofiasip.vsprops"
+			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\apr.vsprops;$(ProjectDir)..\..\build\vsprops\sofiasip.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -41,7 +41,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="10"
-			InheritedPropertySheets="$(SolutionDir)build\vsprops\apr.vsprops;$(SolutionDir)build\vsprops\sofiasip.vsprops"
+			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\apr.vsprops;$(ProjectDir)..\..\build\vsprops\sofiasip.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>

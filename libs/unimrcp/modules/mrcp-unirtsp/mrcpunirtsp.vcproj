@@ -18,7 +18,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(SolutionDir)build\vsprops\unidebug.vsprops;$(SolutionDir)build\vsprops\mrcpsignaling.vsprops;$(SolutionDir)build\vsprops\unirtsp.vsprops;$(SolutionDir)build\vsprops\sofiasip.vsprops"
+			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unidebug.vsprops;$(ProjectDir)..\..\build\vsprops\mrcpsignaling.vsprops;$(ProjectDir)..\..\build\vsprops\unirtsp.vsprops;$(ProjectDir)..\..\build\vsprops\sofiasip.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -71,7 +71,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(SolutionDir)build\vsprops\unirelease.vsprops;$(SolutionDir)build\vsprops\mrcpsignaling.vsprops;$(SolutionDir)build\vsprops\unirtsp.vsprops;$(SolutionDir)build\vsprops\sofiasip.vsprops"
+			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unirelease.vsprops;$(ProjectDir)..\..\build\vsprops\mrcpsignaling.vsprops;$(ProjectDir)..\..\build\vsprops\unirtsp.vsprops;$(ProjectDir)..\..\build\vsprops\sofiasip.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
