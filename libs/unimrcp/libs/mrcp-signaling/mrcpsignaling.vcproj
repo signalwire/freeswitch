@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="8.00"
 	Name="mrcpsignaling"
 	ProjectGUID="{12A49562-BAB9-43A3-A21D-15B60BBB4C31}"
 	RootNamespace="mrcpsignaling"
 	Keyword="Win32Proj"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -19,7 +18,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unidebug.vsprops;$(ProjectDir)..\..\build\vsprops\mrcpsignaling.vsprops"
+			InheritedPropertySheets="$(SolutionDir)build\vsprops\unidebug.vsprops;$(SolutionDir)build\vsprops\mrcpsignaling.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -71,7 +70,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unirelease.vsprops;$(ProjectDir)..\..\build\vsprops\mrcpsignaling.vsprops"
+			InheritedPropertySheets="$(SolutionDir)build\vsprops\unirelease.vsprops;$(SolutionDir)build\vsprops\mrcpsignaling.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>

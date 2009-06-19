@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="8.00"
 	Name="libunimrcpserver"
 	ProjectGUID="{C98AF157-352E-4737-BD30-A24E2647F5AE}"
 	RootNamespace="libunimrcpserver"
 	Keyword="Win32Proj"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -19,7 +18,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unidebug.vsprops;$(ProjectDir)..\..\build\vsprops\unimrcpserver.vsprops"
+			InheritedPropertySheets="$(SolutionDir)build\vsprops\unidebug.vsprops;$(SolutionDir)build\vsprops\unimrcpserver.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -72,7 +71,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unirelease.vsprops;$(ProjectDir)..\..\build\vsprops\unimrcpserver.vsprops"
+			InheritedPropertySheets="$(SolutionDir)build\vsprops\unirelease.vsprops;$(SolutionDir)build\vsprops\unimrcpserver.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>

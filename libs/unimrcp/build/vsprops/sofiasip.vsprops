@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="sofiasip"
-	InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unibase.vsprops"
+	InheritedPropertySheets="$(SolutionDir)build\vsprops\unibase.vsprops"
 	>
 	<Tool
 		Name="VCCLCompilerTool"

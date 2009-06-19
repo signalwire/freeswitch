@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="8.00"
 	Name="unimrcpclient"
 	ProjectGUID="{57FAF32E-49FD-491F-895D-132D0D5EFE0A}"
 	RootNamespace="unimrcpclient"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -18,7 +17,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unidebug.vsprops;$(ProjectDir)..\..\build\vsprops\unimrcpclient.vsprops"
+			InheritedPropertySheets="$(SolutionDir)build\vsprops\unidebug.vsprops;$(SolutionDir)build\vsprops\unimrcpclient.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -51,8 +50,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(UniMRCPClientLibs)"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -73,13 +70,16 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unirelease.vsprops;$(ProjectDir)..\..\build\vsprops\unimrcpclient.vsprops"
+			InheritedPropertySheets="$(SolutionDir)build\vsprops\unirelease.vsprops;$(SolutionDir)build\vsprops\unimrcpclient.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -113,8 +113,6 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(UniMRCPClientLibs)"
 				LinkTimeCodeGeneration="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -133,6 +131,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"

@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="8.00"
 	Name="mrcpv2transport"
 	ProjectGUID="{A9EDAC04-6A5F-4BA7-BC0D-CCE7B255B6EA}"
 	RootNamespace="mrcpv2transport"
 	Keyword="Win32Proj"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -19,7 +18,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unidebug.vsprops;$(ProjectDir)..\..\build\vsprops\mrcpv2transport.vsprops"
+			InheritedPropertySheets="$(SolutionDir)build\vsprops\unidebug.vsprops;$(SolutionDir)build\vsprops\mrcpv2transport.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -71,7 +70,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unirelease.vsprops;$(ProjectDir)..\..\build\vsprops\mrcpv2transport.vsprops"
+			InheritedPropertySheets="$(SolutionDir)build\vsprops\unirelease.vsprops;$(SolutionDir)build\vsprops\mrcpv2transport.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
