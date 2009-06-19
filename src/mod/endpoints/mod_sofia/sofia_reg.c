@@ -1933,7 +1933,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 		
 		if (v_event && *v_event) {
-			switch_xml_t xparams[3];
+			short int xparams_type[6];
+			switch_xml_t xparams[6];
 			int i = 0;
 
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "sip_number_alias", number_alias);
@@ -1943,29 +1944,52 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "user_name", username);
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "domain_name", domain_name);
 
-			if ((dparams = switch_xml_child(domain, "variables"))) {
-				xparams[i++] = dparams;
-			}
-
-			if (group && (gparams = switch_xml_child(group, "variables"))) {
-				xparams[i++] = gparams;
-			}
-
-			if ((uparams = switch_xml_child(user, "variables"))) {
+			if ((uparams = switch_xml_child(user, "params"))) {
+				xparams_type[i] = 0;
 				xparams[i++] = uparams;
 			}
 
-			if (i <= 3) {
+			if (group && (gparams = switch_xml_child(group, "params"))) {
+				xparams_type[i] = 0;
+				xparams[i++] = gparams;
+			}
+
+			if ((dparams = switch_xml_child(domain, "params"))) {
+				xparams_type[i] = 0;
+				xparams[i++] = dparams;
+			}
+
+			if ((uparams = switch_xml_child(user, "variables"))) {
+				xparams_type[i] = 1;
+				xparams[i++] = uparams;
+			}
+
+			if (group && (gparams = switch_xml_child(group, "variables"))) {
+				xparams_type[i] = 1;
+				xparams[i++] = gparams;
+			}
+
+			if ((dparams = switch_xml_child(domain, "variables"))) {
+				xparams_type[i] = 1;
+				xparams[i++] = dparams;
+			}
+
+			if (i <= 6) {
 				int j = 0;
 
 				for (j = 0; j < i; j++) {
-					for (param = switch_xml_child(xparams[j], "variable"); param; param = param->next) {
+					for (param = switch_xml_child(xparams[j], (xparams_type[j]?"variable":"param")); param; param = param->next) {
 						const char *var = switch_xml_attr_soft(param, "name");
 						const char *val = switch_xml_attr_soft(param, "value");
 						sofia_gateway_t *gateway_ptr = NULL;
 
-						if (!switch_strlen_zero(var) && !switch_strlen_zero(val)) {
-							switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, var, val);
+						if (!switch_strlen_zero(var) && !switch_strlen_zero(val) && (xparams_type[j] == 1 || !strncasecmp(var, "sip-",4) || !strcasecmp(var, "register-gateway")) ) {
+							if (!switch_event_get_header(*v_event, var)) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "event_add_header -> '%s' = '%s'\n",var, val);
+								switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, var, val);
+							} else {
+								continue;
+							}
 
 							if (!strcasecmp(var, "register-gateway")) {
 								if (!strcasecmp(val, "all")) {
