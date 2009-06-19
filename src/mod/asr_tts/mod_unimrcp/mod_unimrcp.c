@@ -790,15 +790,18 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, const cha
 	codec->channel_count = 1;
 	codec->payload_type = 96;
 	codec->sampling_rate = schannel->rate;
-	apt_string_set(&codec->name, schannel->codec);
+	if (!strcmp(schannel->codec, "L16")) {
+		/* "LPCM" is UniMRCP's name for L16 host byte ordered */
+		apt_string_set(&codec->name, "LPCM");
+	} else {
+		apt_string_set(&codec->name, schannel->codec);
+	}
 	/* see RFC 1890 for payload types */
 	if (!strcmp(schannel->codec, "PCMU") && schannel->rate == 8000) {
 		codec->payload_type = 0;
 	} else if (!strcmp(schannel->codec, "PCMA") && schannel->rate == 8000) {
 		codec->payload_type = 8;
-	} else if (!strcmp(schannel->codec, "L16") && schannel->rate == 44100) {
-		codec->payload_type = 11;
-	}
+	} 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) requesting codec %s/%d/%d\n", schannel->name, schannel->codec, codec->payload_type, codec->sampling_rate);
 	if(schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
 		termination = mrcp_application_sink_termination_create(schannel->unimrcp_session, &schannel->application->audio_stream_vtable, codec, schannel);
