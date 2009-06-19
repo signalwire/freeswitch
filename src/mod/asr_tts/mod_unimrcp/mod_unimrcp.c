@@ -192,9 +192,9 @@ struct audio_queue {
 	/** signaling for blocked readers/writers */
 	switch_thread_cond_t *cond;
 	/** total bytes written */
-	unsigned int write_bytes;
+	switch_size_t write_bytes;
 	/** total bytes read */
-	unsigned int read_bytes;
+	switch_size_t read_bytes;
 	/** number of bytes reader is waiting for */
 	switch_size_t waiting;
 	/** name of this queue (for logging) */
@@ -3388,6 +3388,7 @@ static apt_bool_t unimrcp_log(const char *file, int line, const char *id, apt_lo
 {
 	switch_log_level_t level;
 	char log_message[4096] = { 0 }; /* same size as MAX_LOG_ENTRY_SIZE in UniMRCP apt_log.c */
+	size_t msglen;
 
 	if (switch_strlen_zero(format)) {
 		return TRUE;
@@ -3422,7 +3423,7 @@ static apt_bool_t unimrcp_log(const char *file, int line, const char *id, apt_lo
 	
 	/* apr_vsnprintf supports format extensions required by UniMRCP */ 
 	apr_vsnprintf(log_message, sizeof(log_message), format, arg_ptr);
-	size_t msglen = strlen(log_message);
+	msglen = strlen(log_message);
 	if (msglen >= 2 && log_message[msglen - 2] == '\\' && log_message[msglen - 1] == 'n') {
 		/* log_message already ends in \n */
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, id, level, "%s", log_message);
