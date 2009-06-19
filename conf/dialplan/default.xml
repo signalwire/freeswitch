@@ -60,10 +60,6 @@
     </extension>
 
     <extension name="global" continue="true">
-      <condition field="${network_addr}" expression="^$" break="never">
-	<action application="set" data="use_profile=${cond(${acl($${local_ip_v4} rfc1918)} == true ? nat : default)}"/>
-	<anti-action application="set" data="use_profile=${cond(${acl(${network_addr} rfc1918)} == true ? nat : default)}"/>
-      </condition>
       <condition field="${call_debug}" expression="^true$" break="never">
 	<action application="info"/>
       </condition>
