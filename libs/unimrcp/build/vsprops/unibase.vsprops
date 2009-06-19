@@ -19,6 +19,10 @@
 	/>
 	<UserMacro
 		Name="ProjectRootDir"
+		Value="$(ProjectDir)..\..\"
+	/>
+	<UserMacro
+		Name="LibRootDir"
 		Value="$(SolutionDir)"
 	/>
 </VisualStudioPropertySheet>

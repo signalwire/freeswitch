@@ -15,6 +15,6 @@
 	/>
 	<UserMacro
 		Name="SofiaDir"
-		Value="$(ProjectRootDir)libs\sofia-sip"
+		Value="$(LibRootDir)libs\sofia-sip"
 	/>
 </VisualStudioPropertySheet>
