@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="pocketsphinx"
+	InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unibase.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(PocketSphinxDir)\include&quot;;&quot;$(SphinxBaseDir)\include&quot;"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalDependencies="sphinxbase.lib pocketsphinx.lib"
+		AdditionalLibraryDirectories="&quot;$(PocketSphinxDir)\bin\$(ConfigurationName)&quot;;&quot;$(SphinxBaseDir)\lib\$(ConfigurationName)&quot;"
+	/>
+	<UserMacro
+		Name="PocketSphinxDir"
+		Value="$(LibRootDir)libs\pocketsphinx"
+	/>
+	<UserMacro
+		Name="SphinxBaseDir"
+		Value="$(LibRootDir)libs\sphinxbase"
+	/>
+</VisualStudioPropertySheet>
