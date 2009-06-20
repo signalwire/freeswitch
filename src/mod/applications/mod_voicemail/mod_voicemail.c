@@ -67,6 +67,9 @@ typedef enum {
 	VM_DATE_NEVER
 } date_location_t;
 
+typedef enum {
+	PFLAG_DESTROY = 1 << 0
+} vm_flags_t;
 
 #define VM_PROFILE_CONFIGITEM_COUNT 100
 
@@ -137,6 +140,7 @@ struct vm_profile {
 	switch_bool_t auto_playback_recordings;
 	switch_thread_rwlock_t *rwlock;
 	switch_memory_pool_t *pool;
+	uint32_t flags;
 	
 	switch_xml_config_item_t config[VM_PROFILE_CONFIGITEM_COUNT];
 	switch_xml_config_string_options_t config_str_pool;
@@ -259,8 +263,19 @@ static char *vm_index_list[] = {
 	NULL
 };
 
+static void free_profile(vm_profile_t *profile)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying Profile %s\n", profile->name);
+#ifdef SWITCH_HAVE_ODBC
+	if (profile->odbc_dsn && profile->master_odbc) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Closing ODBC Database! %s\n", profile->name);
+		switch_odbc_handle_destroy(&profile->master_odbc);
+	}
+#endif
+	switch_core_destroy_memory_pool(&profile->pool);
+}
 
-static void destroy_profile(const char *profile_name) 
+static void destroy_profile(const char *profile_name, switch_bool_t block) 
 {
 	vm_profile_t *profile = NULL;
 	switch_mutex_lock(globals.mutex);
@@ -270,21 +285,23 @@ static void destroy_profile(const char *profile_name)
 	switch_mutex_unlock(globals.mutex);
 
 	if (!profile) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile %s\n", profile_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[%s] Invalid Profile\n", profile_name);
 		return;
 	}
-	/* wait readers */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for write lock (Profile %s)\n", profile->name);	
-	switch_thread_rwlock_wrlock(profile->rwlock);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying Profile %s\n", profile->name);
-#ifdef SWITCH_HAVE_ODBC
-	if (profile->odbc_dsn && profile->master_odbc) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Closing ODBC Database! %s\n", profile->name);
-		switch_odbc_handle_destroy(&profile->master_odbc);
+	if (block) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] Waiting for write lock\n", profile->name);	
+		switch_thread_rwlock_wrlock(profile->rwlock);
+	} else {
+		if (switch_thread_rwlock_trywrlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+			/* Lock failed, set the destroy flag so it'll be destroyed whenever its not in use anymore */
+			switch_set_flag(profile, PFLAG_DESTROY);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] Profile is in use, memory will be freed whenever its not longer in use\n", profile->name);
+			return;
+		}
 	}
-#endif
-	switch_core_destroy_memory_pool(&profile->pool);
+	
+	free_profile(profile);
 }
 
 
@@ -311,8 +328,6 @@ static switch_status_t vm_config_email_callback(switch_xml_config_item_t *item, 
 	vm_profile_t *profile = (vm_profile_t*)item->data;
 	
 	switch_assert(profile);
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "In %s newvalue=%s\n", __SWITCH_FUNC__, newvalue);
 	
 	if (callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD)
 	{
@@ -350,8 +365,6 @@ static switch_status_t vm_config_notify_callback(switch_xml_config_item_t *item,
 	vm_profile_t *profile = (vm_profile_t*)item->data;
 	
 	switch_assert(profile);
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "In %s newvalue=%s\n", __SWITCH_FUNC__, newvalue);
 		
 	if (callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD)
 	{
@@ -389,8 +402,6 @@ static switch_status_t vm_config_web_callback(switch_xml_config_item_t *item, co
 	vm_profile_t *profile = (vm_profile_t*)item->data;
 	
 	switch_assert(profile);
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "In %s newvalue=%s\n", __SWITCH_FUNC__, newvalue);
 		
 	if (callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD)
 	{
@@ -756,7 +767,6 @@ static vm_profile_t * load_profile(const char *profile_name)
 		switch_core_hash_insert(globals.profile_hash, profile->name, profile);
 	}
 
-
   end:
 	if (xml) {
 		switch_xml_free(xml);
@@ -775,11 +785,23 @@ static vm_profile_t * get_profile(const char *profile_name)
     	profile = load_profile(profile_name);
 	}
 	if (profile) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] rwlock\n", profile->name);
+		
 		switch_thread_rwlock_rdlock(profile->rwlock);
 	}
 	switch_mutex_unlock(globals.mutex);
 
 	return profile;
+}
+
+static void profile_rwunlock(vm_profile_t *profile)
+{
+	switch_thread_rwlock_unlock(profile->rwlock);
+	if (switch_test_flag(profile, PFLAG_DESTROY)) {
+		if (switch_thread_rwlock_tryrdlock(profile->rwlock) == SWITCH_STATUS_SUCCESS) {
+			free_profile(profile);
+		}
+	}
 }
 
 
@@ -2713,7 +2735,7 @@ static switch_status_t voicemail_inject(const char *data)
 				status = SWITCH_STATUS_FALSE;
 			}
 		}
-		switch_thread_rwlock_unlock(profile->rwlock);
+		profile_rwunlock(profile);
 		
 		switch_core_destroy_memory_pool(&pool);
 
@@ -3147,7 +3169,7 @@ SWITCH_STANDARD_APP(voicemail_function)
 		voicemail_leave_main(session, profile, domain_name, id);
 	}
 
-	switch_thread_rwlock_unlock(profile->rwlock);
+	profile_rwunlock(profile);
 	
 }
 
@@ -3196,7 +3218,7 @@ SWITCH_STANDARD_API(boxcount_api_function)
 			if ((profile = get_profile(profilename))) {
 				message_count(profile, id, domain, "inbox", &total_new_messages, &total_saved_messages,
 							  &total_new_urgent_messages, &total_saved_urgent_messages);
-				switch_thread_rwlock_unlock(profile->rwlock);
+				profile_rwunlock(profile);
 			} else {
 				stream->write_function(stream, "-ERR No such profile\n");
 				goto done;
@@ -3815,16 +3837,16 @@ SWITCH_STANDARD_API(voicemail_api_function)
 				stream->write_function(stream, "Reload XML [%s]\n", err);
 			}
 			if ((profile = get_profile(argv[1]))) {
-				switch_thread_rwlock_unlock(profile->rwlock);
+				profile_rwunlock(profile);
 			}
 			stream->write_function(stream, "+OK load complete\n");
 			goto done;
 		} else if (argc > 1 && !strcasecmp(argv[0], "unload")) {
-			destroy_profile(argv[1]);
+			destroy_profile(argv[1], SWITCH_FALSE);
 			stream->write_function(stream, "+OK unload complete\n");
 			goto done;
 		} else if (argc > 1 && !strcasecmp(argv[0], "reload")) {
-			destroy_profile(argv[1]);
+			destroy_profile(argv[1], SWITCH_FALSE);
 			if (argc > 2 && !strcasecmp(argv[2], "reloadxml")) {
 				if ((xml_root = switch_xml_open_root(1, &err))) {
 					switch_xml_free(xml_root);
@@ -3832,7 +3854,7 @@ SWITCH_STANDARD_API(voicemail_api_function)
 				stream->write_function(stream, "Reload XML [%s]\n", err);
 			}
 			if ((profile = get_profile(argv[1]))) {
-				switch_thread_rwlock_unlock(profile->rwlock);
+				profile_rwunlock(profile);
 			}
 			stream->write_function(stream, "+OK reload complete\n");
 			goto done;
@@ -3905,7 +3927,7 @@ SWITCH_STANDARD_API(voicemail_api_function)
 		do_rss(profile, user, domain, host, port, uri, stream);
 	}
 
-	switch_thread_rwlock_unlock(profile->rwlock);
+	profile_rwunlock(profile);
 	goto done;
 
   error:
