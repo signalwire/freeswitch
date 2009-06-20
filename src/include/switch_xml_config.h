@@ -106,20 +106,9 @@ struct switch_xml_config_item {
 #define SWITCH_CONFIG_SET_ITEM(_item, _key, _type, _flags, _ptr, _defaultvalue, _data, _syntax, _helptext)  switch_config_perform_set_item(&(_item), _key, _type, _flags, _ptr, (void*)(_defaultvalue), _data, NULL, _syntax, _helptext)
 #define SWITCH_CONFIG_SET_ITEM_CALLBACK(_item, _key, _type, _flags, _ptr, _defaultvalue, _data, _function, _syntax, _helptext)  switch_config_perform_set_item(&(_item), _key, _type, _flags, _ptr, (void*)(_defaultvalue), _data, _function, _syntax, _helptext)
 
-inline void switch_config_perform_set_item(switch_xml_config_item_t *item, const char *key, switch_xml_config_type_t type, int flags, void *ptr, 	
-										const void* defaultvalue, void *data, switch_xml_config_callback_t function, const char *syntax, const char *helptext)
-{
-	item->key = key;
-	item->type = type;
-	item->flags = flags;
-	item->ptr = ptr;
-	item->defaultvalue = defaultvalue;
-	item->data = data;
-	item->function = function;
-	item->syntax = syntax;
-	item->helptext = helptext;
-}
-
+SWITCH_DECLARE(void) switch_config_perform_set_item(switch_xml_config_item_t *item, const char *key, switch_xml_config_type_t type, int flags, void *ptr, 	
+	const void* defaultvalue, void *data, switch_xml_config_callback_t function, const char *syntax, const char *helptext);
+	
 /*! 
  * \brief Gets the int representation of an enum
  * \param enum_options the switch_xml_config_enum_item_t array for this enum

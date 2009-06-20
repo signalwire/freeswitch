@@ -425,6 +425,22 @@ SWITCH_DECLARE(void) switch_xml_config_cleanup(switch_xml_config_item_t *instruc
 	}
 }
 
+
+SWITCH_DECLARE(void) switch_config_perform_set_item(switch_xml_config_item_t *item, const char *key, switch_xml_config_type_t type, int flags, void *ptr, 	
+										const void* defaultvalue, void *data, switch_xml_config_callback_t function, const char *syntax, const char *helptext)
+{
+	item->key = key;
+	item->type = type;
+	item->flags = flags;
+	item->ptr = ptr;
+	item->defaultvalue = defaultvalue;
+	item->data = data;
+	item->function = function;
+	item->syntax = syntax;
+	item->helptext = helptext;
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c
