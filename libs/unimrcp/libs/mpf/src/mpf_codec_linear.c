@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define APR_WANT_BYTEFUNC
+#include <apr_want.h>
 #include "mpf_codec.h"
 
 /* linear 16-bit PCM (host horder) */
@@ -40,12 +42,12 @@ static apt_bool_t l16_encode(mpf_codec_t *codec, const mpf_codec_frame_t *frame_
 	apr_uint32_t i;
 	const short *buf_in = frame_in->buffer;
 	short *buf_out = frame_out->buffer;
+	apr_size_t samples = frame_in->size / sizeof(short);
 
 	frame_out->size = frame_in->size;
 
-	for(i=0; i<frame_in->size; ) {
+	for(i=0; i<samples; i++) {
 		buf_out[i] = htons(buf_in[i]);
-		i += sizeof(short);
 	}
 
 	return TRUE;
@@ -56,12 +58,12 @@ static apt_bool_t l16_decode(mpf_codec_t *codec, const mpf_codec_frame_t *frame_
 	apr_uint32_t i;
 	const short *buf_in = frame_in->buffer;
 	short *buf_out = frame_out->buffer;
+	apr_size_t samples = frame_in->size / sizeof(short);
 
 	frame_out->size = frame_in->size;
 
-	for(i=0; i<frame_in->size; ) {
+	for(i=0; i<samples; i++) {
 		buf_out[i] = ntohs(buf_in[i]);
-		i += sizeof(short);
 	}
 
 	return TRUE;

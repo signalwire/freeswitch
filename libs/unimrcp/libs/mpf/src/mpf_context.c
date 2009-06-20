@@ -208,12 +208,12 @@ static mpf_object_t* mpf_context_connection_create(mpf_context_t *context, mpf_t
 				object = mpf_null_bridge_create(source,sink,context->pool);
 			}
 			else {
-				if(rx_codec->attribs->bits_per_samples != BITS_PER_SAMPLE) {
+				if(rx_codec->vtable && rx_codec->vtable->decode) {
 					/* set decoder before bridge */
 					mpf_audio_stream_t *decoder = mpf_decoder_create(source,context->pool);
 					source = decoder;
 				}
-				if(tx_codec->attribs->bits_per_samples != BITS_PER_SAMPLE) {
+				if(tx_codec->vtable && tx_codec->vtable->encode) {
 					/* set encoder after bridge */
 					mpf_audio_stream_t *encoder = mpf_encoder_create(sink,context->pool);
 					sink = encoder;
