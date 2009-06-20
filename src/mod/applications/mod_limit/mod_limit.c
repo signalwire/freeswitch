@@ -376,7 +376,6 @@ static switch_status_t hash_state_handler(switch_core_session_t *session)
 		
 		/* Remove handler */
 		switch_core_event_hook_remove_state_change(session, hash_state_handler);
-
 		
 		switch_mutex_unlock(globals.limit_hash_mutex);
 	}

@@ -134,7 +134,7 @@ SWITCH_DECLARE(void) switch_core_session_disable_heartbeat(switch_core_session_t
   \param session the session to add the bug to
   \param callback a callback for events
   \param user_data arbitrary user data
-  \param stop_time absolute time at which the bug is automatically removed
+  \param stop_time absolute time at which the bug is automatically removed (or 0)
   \param flags flags to choose the stream
   \param new_bug pointer to assign new bug to
   \return SWITCH_STATUS_SUCCESS if the operation was a success

@@ -81,21 +81,21 @@ typedef enum {
 	CONFIG_REQUIRED = (1 << 1)
 } switch_config_flags_t;
 
-typedef switch_status_t (*switch_xml_config_callback_t)(switch_xml_config_item_t *data, switch_config_callback_type_t callback_type, switch_bool_t changed);
+typedef switch_status_t (*switch_xml_config_callback_t)(switch_xml_config_item_t *item, const char *newvalue, switch_config_callback_type_t callback_type, switch_bool_t changed);
 
 /*!
  * \brief A configuration instruction read by switch_xml_config_parse 
 */
 struct switch_xml_config_item {
-	const char *key;					   			/*< The key of the element, or NULL to indicate the end of the list */
+	const char *key;					   	/*< The key of the element, or NULL to indicate the end of the list */
 	switch_xml_config_type_t type; 			/*< The type of variable */
-	int flags; 	   		/*< True if the var can be changed on reload */
+	int flags; 	   							/*< True if the var can be changed on reload */
 	void *ptr;					   			/*< Ptr to the var to be changed */
-	const void *defaultvalue; 		   			/*< Default value */
+	const void *defaultvalue; 		   		/*< Default value */
 	void *data; 				   			/*< Custom data (depending on the type) */
 	switch_xml_config_callback_t function;	/*< Callback to be called after the var is parsed */
-	const char *syntax;							/*< Optional syntax documentation for this setting */
-	const char *helptext;							/*< Optional documentation text for this setting */
+	const char *syntax;						/*< Optional syntax documentation for this setting */
+	const char *helptext;					/*< Optional documentation text for this setting */
 };
 
 #define SWITCH_CONFIG_ITEM(_key, _type, _flags, _ptr, _defaultvalue, _data, _syntax, _helptext)	{ _key, _type, _flags, _ptr, (void*)_defaultvalue, (void*)_data, NULL, _syntax, _helptext }
@@ -103,26 +103,22 @@ struct switch_xml_config_item {
 #define SWITCH_CONFIG_ITEM_CALLBACK(_key, _type, _flags, _ptr, _defaultvalue, _function, _functiondata, _syntax, _helptext)	{ _key, _type, _flags, _ptr, (void*)_defaultvalue, _functiondata, _function, _syntax, _helptext }
 #define SWITCH_CONFIG_ITEM_END() { NULL, SWITCH_CONFIG_LAST, 0, NULL, NULL, NULL, NULL, NULL, NULL }
 
-#define SWITCH_CONFIG_SET_ITEM(_item, _key, _type, _flags, _ptr, _defaultvalue, _data, _syntax, _helptext)  \
-	_item.key = _key; \
-	_item.type = _type; \
-	_item.flags = _flags; \
-	_item.ptr = _ptr; \
-	_item.defaultvalue = (void*)_defaultvalue; \
-	_item.data = (void*)_data; \
-	_item.syntax = _syntax; \
-	_item.helptext = _helptext
+#define SWITCH_CONFIG_SET_ITEM(_item, _key, _type, _flags, _ptr, _defaultvalue, _data, _syntax, _helptext)  switch_config_perform_set_item(&(_item), _key, _type, _flags, _ptr, (void*)(_defaultvalue), _data, NULL, _syntax, _helptext)
+#define SWITCH_CONFIG_SET_ITEM_CALLBACK(_item, _key, _type, _flags, _ptr, _defaultvalue, _data, _function, _syntax, _helptext)  switch_config_perform_set_item(&(_item), _key, _type, _flags, _ptr, (void*)(_defaultvalue), _data, _function, _syntax, _helptext)
 
-#define SWITCH_CONFIG_SET_ITEM_CALLBACK(_item, _key, _type, _flags, _ptr, _defaultvalue, _function, _syntax, _helptext)  \
-	_item.key = _key; \
-	_item.type = _type; \
-	_item.flags = _flags; \
-	_item.ptr = ptr; \
-	_item.defaultvalue = (void*)_defaultvalue; \
-	_item.data = (void*)_data; \
-	_item.function = _function \
-	_item.syntax = _syntax; \
-	_item.helptext = _helptext
+inline void switch_config_perform_set_item(switch_xml_config_item_t *item, const char *key, switch_xml_config_type_t type, int flags, void *ptr, 	
+										const void* defaultvalue, void *data, switch_xml_config_callback_t function, const char *syntax, const char *helptext)
+{
+	item->key = key;
+	item->type = type;
+	item->flags = flags;
+	item->ptr = ptr;
+	item->defaultvalue = defaultvalue;
+	item->data = data;
+	item->function = function;
+	item->syntax = syntax;
+	item->helptext = helptext;
+}
 
 /*! 
  * \brief Gets the int representation of an enum

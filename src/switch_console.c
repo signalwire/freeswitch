@@ -162,6 +162,30 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream
 	return ret ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_stream_write_file_contents(switch_stream_handle_t *stream, const char *path)
+{
+	char *dpath = NULL;
+	int fd;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
+	if (!switch_is_file_path(path)) {
+		dpath = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, path);
+		path = dpath;
+	}
+	
+	if ((fd = open(path, O_RDONLY)) > -1) {
+		char buf[2048] = { 0 };
+		while (switch_fd_read_line(fd, buf, sizeof(buf))) {
+			stream->write_function(stream, "%s", buf);
+		}
+		close(fd);
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	
+	switch_safe_free(dpath);
+	return status;
+}
+
 static int alias_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	char **r = (char **) pArg;

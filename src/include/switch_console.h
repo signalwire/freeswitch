@@ -74,6 +74,8 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_raw_write(switch_st
 SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, const char *fmt, ...) PRINTF_FUNCTION(2, 3);
 #endif
 
+SWITCH_DECLARE(switch_status_t) switch_stream_write_file_contents(switch_stream_handle_t *stream, const char *path);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

@@ -142,8 +142,9 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 		const char *value = switch_event_get_header(event, item->key);
 		switch_bool_t changed = SWITCH_FALSE;
 		switch_xml_config_callback_t callback = (switch_xml_config_callback_t)item->function;
+		void *ptr = item->ptr;
 		
-		switch_assert(item->ptr);
+		//switch_assert(ptr);
 		
 		if (value) {
 			matched_count++;
@@ -162,7 +163,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 			case SWITCH_CONFIG_INT:
 				{
 					switch_xml_config_int_options_t *int_options = (switch_xml_config_int_options_t*)item->data;
-					int *dest = (int*)item->ptr;
+					int *dest = (int*)ptr;
 					int intval;
 					if (value) {
 						if (switch_is_number(value)) {
@@ -229,7 +230,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 
 					if (string_options->length > 0) {
 						/* We have a preallocated buffer */
-						char *dest = (char*)item->ptr;
+						char *dest = (char*)ptr;
 						
 						if (newstring) {
 							if (strncasecmp(dest, newstring, string_options->length)) {
@@ -244,7 +245,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 						}
 					} else if (string_options->pool) {
 						/* Pool-allocated buffer */
-						char **dest = (char**)item->ptr;
+						char **dest = (char**)ptr;
 						
 						if (newstring) {
 							if (!*dest || strcmp(*dest, newstring)) {
@@ -258,7 +259,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 						}
 					} else {
 						/* Dynamically allocated buffer */
-						char **dest = (char**)item->ptr;
+						char **dest = (char**)ptr;
 						
 						if (newstring) {
 							if (!*dest || strcmp(*dest, newstring)) {
@@ -277,7 +278,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 				break;
 			case SWITCH_CONFIG_BOOL:
 				{
-					switch_bool_t *dest = (switch_bool_t*)item->ptr;
+					switch_bool_t *dest = (switch_bool_t*)ptr;
 					switch_bool_t newval = SWITCH_FALSE;
 					
 					if (value && switch_true(value)) {
@@ -305,7 +306,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 			case SWITCH_CONFIG_ENUM:
 				{
 					switch_xml_config_enum_item_t *enum_options = (switch_xml_config_enum_item_t*)item->data;
-					int *dest = (int*)item->ptr;
+					int *dest = (int*)ptr;
 					int newval = 0;
 					switch_status_t lookup_result = SWITCH_STATUS_SUCCESS;
 					
@@ -329,7 +330,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 				break;
 			case SWITCH_CONFIG_FLAG:
 				{
-					int32_t *dest = (int32_t*)item->ptr;
+					int32_t *dest = (int32_t*)ptr;
 					int index = (int)(intptr_t)item->data;
 					int8_t currentval = (int8_t)!!(*dest & index);
 					int8_t newval = 0;
@@ -352,7 +353,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 				break;
 			case SWITCH_CONFIG_FLAGARRAY:
 				{
-					int8_t *dest = (int8_t*)item->ptr;
+					int8_t *dest = (int8_t*)ptr;
 					unsigned int index = (unsigned int)(intptr_t)item->data;
 					int8_t newval = value ? !!switch_true(value) : (int8_t)((intptr_t)item->defaultvalue);
 					if (dest[index] != newval) {
@@ -368,7 +369,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 		}
 		
 		if (callback) {
-			callback(item, (reload ? CONFIG_RELOAD : CONFIG_LOAD), changed);
+			callback(item, value, (reload ? CONFIG_RELOAD : CONFIG_LOAD), changed);
 		}
 	}
 
@@ -418,7 +419,7 @@ SWITCH_DECLARE(void) switch_xml_config_cleanup(switch_xml_config_item_t *instruc
 		}
 		
 		if (callback) {
-			callback(item, CONFIG_SHUTDOWN, SWITCH_FALSE);
+			callback(item, NULL, CONFIG_SHUTDOWN, SWITCH_FALSE);
 		}
 		
 	}

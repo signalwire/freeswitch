@@ -392,10 +392,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (limit) {
 		to = switch_epoch_time_now(NULL) + limit;
 	}
