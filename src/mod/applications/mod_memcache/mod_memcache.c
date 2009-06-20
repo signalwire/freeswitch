@@ -55,18 +55,18 @@ static struct {
 
 static switch_event_node_t *NODE = NULL;
 
-static switch_status_t config_callback_memcached(switch_xml_config_item_t *data, switch_config_callback_type_t callback_type, switch_bool_t changed) 
+static switch_status_t config_callback_memcached(switch_xml_config_item_t *data, const char *newvalue, switch_config_callback_type_t callback_type, switch_bool_t changed) 
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	memcached_server_st *memcached_server = NULL;
 	memcached_st *newmemcached = NULL;
 	memcached_st *oldmemcached = NULL;
-	char *memcached_str = NULL;
+	const char *memcached_str = NULL;
 	memcached_return rc;
 	unsigned int servercount;
 	
 	if ((callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD) && changed) {
-		memcached_str = *((char**)data->ptr);
+		memcached_str = newvalue;
 		
 		/* initialize main ptr */
 		memcached_server = memcached_servers_parse(memcached_str);

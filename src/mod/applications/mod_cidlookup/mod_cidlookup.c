@@ -100,7 +100,7 @@ typedef struct callback_obj callback_t;
 
 static switch_event_node_t *reload_xml_event = NULL;
 
-static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, switch_config_callback_type_t callback_type, switch_bool_t changed)
+static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, const char *newvalue, switch_config_callback_type_t callback_type, switch_bool_t changed)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 #ifdef SWITCH_HAVE_ODBC
@@ -115,7 +115,7 @@ static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, switc
 	}
 	
 	if ((callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD) && changed) {
-		odbc_dsn = strdup(*((char**)data->ptr));
+		odbc_dsn = strdup(newvalue);
 
 		if(switch_strlen_zero(odbc_dsn)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No local database defined.\n");
