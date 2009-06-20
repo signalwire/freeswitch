@@ -25,7 +25,7 @@ dnl Note that if the system doesn't have gai_strerror(), we
 dnl can't use getaddrinfo() because we can't get strings
 dnl describing the error codes.
 dnl
-AC_DEFUN(APR_CHECK_WORKING_GETADDRINFO,[
+AC_DEFUN([APR_CHECK_WORKING_GETADDRINFO],[
   AC_CACHE_CHECK(for working getaddrinfo, ac_cv_working_getaddrinfo,[
   AC_TRY_RUN( [
 #ifdef HAVE_NETDB_H
@@ -74,7 +74,7 @@ fi
 ])
 
 dnl Check whether the AI_ADDRCONFIG flag can be used with getaddrinfo
-AC_DEFUN(APR_CHECK_GETADDRINFO_ADDRCONFIG, [
+AC_DEFUN([APR_CHECK_GETADDRINFO_ADDRCONFIG], [
   AC_CACHE_CHECK(for working AI_ADDRCONFIG, apr_cv_gai_addrconfig, [
   AC_TRY_RUN([
 #ifdef HAVE_NETDB_H
@@ -110,7 +110,7 @@ fi
 dnl
 dnl check for working getnameinfo()
 dnl
-AC_DEFUN(APR_CHECK_WORKING_GETNAMEINFO,[
+AC_DEFUN([APR_CHECK_WORKING_GETNAMEINFO],[
   AC_CACHE_CHECK(for working getnameinfo, ac_cv_working_getnameinfo,[
   AC_TRY_RUN( [
 #ifdef HAVE_NETDB_H
@@ -165,7 +165,7 @@ fi
 dnl
 dnl check for negative error codes for getaddrinfo()
 dnl
-AC_DEFUN(APR_CHECK_NEGATIVE_EAI,[
+AC_DEFUN([APR_CHECK_NEGATIVE_EAI],[
   AC_CACHE_CHECK(for negative error codes for getaddrinfo, ac_cv_negative_eai,[
   AC_TRY_RUN( [
 #ifdef HAVE_NETDB_H
@@ -197,7 +197,7 @@ dnl systems
 dnl
 dnl Note that this test is executed too early to see if we have all of
 dnl the headers.
-AC_DEFUN(APR_CHECK_GETHOSTBYNAME_R_STYLE,[
+AC_DEFUN([APR_CHECK_GETHOSTBYNAME_R_STYLE],[
 
 dnl Try and compile a glibc2 gethostbyname_r piece of code, and set the
 dnl style of the routines to glibc2 on success
@@ -257,7 +257,7 @@ fi
 dnl
 dnl see if TCP_NODELAY setting is inherited from listening sockets
 dnl
-AC_DEFUN(APR_CHECK_TCP_NODELAY_INHERITED,[
+AC_DEFUN([APR_CHECK_TCP_NODELAY_INHERITED],[
   AC_CACHE_CHECK(if TCP_NODELAY setting is inherited from listening sockets, ac_cv_tcp_nodelay_inherited,[
   AC_TRY_RUN( [
 #include <stdio.h>
@@ -425,7 +425,7 @@ fi
 dnl
 dnl see if O_NONBLOCK setting is inherited from listening sockets
 dnl
-AC_DEFUN(APR_CHECK_O_NONBLOCK_INHERITED,[
+AC_DEFUN([APR_CHECK_O_NONBLOCK_INHERITED],[
   AC_CACHE_CHECK(if O_NONBLOCK setting is inherited from listening sockets, ac_cv_o_nonblock_inherited,[
   AC_TRY_RUN( [
 #include <stdio.h>
@@ -538,7 +538,7 @@ fi
 dnl 
 dnl check for socklen_t, fall back to unsigned int
 dnl
-AC_DEFUN(APR_CHECK_SOCKLEN_T,[
+AC_DEFUN([APR_CHECK_SOCKLEN_T],[
 AC_CACHE_CHECK(for socklen_t, ac_cv_socklen_t,[
 AC_TRY_COMPILE([
 #ifdef HAVE_SYS_TYPES_H
@@ -562,7 +562,7 @@ fi
 ])
 
 
-AC_DEFUN(APR_CHECK_INET_ADDR,[
+AC_DEFUN([APR_CHECK_INET_ADDR],[
 AC_CACHE_CHECK(for inet_addr, ac_cv_func_inet_addr,[
 AC_TRY_COMPILE([
 #ifdef HAVE_SYS_TYPES_H
@@ -588,7 +588,7 @@ fi
 ])
 
 
-AC_DEFUN(APR_CHECK_INET_NETWORK,[
+AC_DEFUN([APR_CHECK_INET_NETWORK],[
 AC_CACHE_CHECK(for inet_network, ac_cv_func_inet_network,[
 AC_TRY_COMPILE([
 #ifdef HAVE_SYS_TYPES_H
@@ -614,7 +614,7 @@ fi
 ])
 
 dnl Check for presence of struct sockaddr_storage.
-AC_DEFUN(APR_CHECK_SOCKADDR_STORAGE,[
+AC_DEFUN([APR_CHECK_SOCKADDR_STORAGE],[
 AC_CACHE_CHECK(for sockaddr_storage, apr_cv_define_sockaddr_storage,[
 AC_TRY_COMPILE([
 #ifdef HAVE_SYS_TYPES_H
@@ -636,7 +636,7 @@ AC_SUBST(have_sa_storage)
 ])
 
 dnl Check for presence of struct sockaddr_in6.
-AC_DEFUN(APR_CHECK_SOCKADDR_IN6,[
+AC_DEFUN([APR_CHECK_SOCKADDR_IN6],[
 AC_CACHE_CHECK(for sockaddr_in6, ac_cv_define_sockaddr_in6,[
 AC_TRY_COMPILE([
 #ifdef HAVE_SYS_TYPES_H
@@ -664,7 +664,7 @@ fi
 dnl
 dnl APR_H_ERRNO_COMPILE_CHECK
 dnl
-AC_DEFUN(APR_H_ERRNO_COMPILE_CHECK,[
+AC_DEFUN([APR_H_ERRNO_COMPILE_CHECK],[
   if test x$1 != x; then
     CPPFLAGS="-D$1 $CPPFLAGS"
   fi
@@ -750,7 +750,7 @@ dnl APR_CHECK_H_ERRNO_FLAG
 dnl
 dnl checks which flags are necessary for <netdb.h> to define h_errno
 dnl
-AC_DEFUN(APR_CHECK_H_ERRNO_FLAG,[
+AC_DEFUN([APR_CHECK_H_ERRNO_FLAG],[
   AC_MSG_CHECKING([for h_errno in netdb.h])
   AC_CACHE_VAL(ac_cv_h_errno_cppflags,[
     APR_H_ERRNO_COMPILE_CHECK
@@ -778,7 +778,7 @@ AC_DEFUN(APR_CHECK_H_ERRNO_FLAG,[
 ])
 
 
-AC_DEFUN(APR_EBCDIC,[
+AC_DEFUN([APR_EBCDIC],[
   AC_CACHE_CHECK([whether system uses EBCDIC],ac_cv_ebcdic,[
   AC_TRY_RUN( [
 int main(void) { 

@@ -35,7 +35,7 @@ dnl
 dnl  Generally, we force the setting of CC, and add flags
 dnl  to CFLAGS, CPPFLAGS, LIBS and LDFLAGS. 
 dnl
-AC_DEFUN(APR_PRELOAD, [
+AC_DEFUN([APR_PRELOAD], [
 if test "x$apr_preload_done" != "xyes" ; then
 
   apr_preload_done="yes"
@@ -431,7 +431,7 @@ dnl APR_CC_HINTS
 dnl
 dnl  Allows us to provide a default choice of compiler which
 dnl  the user can override.
-AC_DEFUN(APR_CC_HINTS, [
+AC_DEFUN([APR_CC_HINTS], [
 case "$host" in
   *-apple-aux3*)
       APR_SETIFNULL(CC, [gcc])

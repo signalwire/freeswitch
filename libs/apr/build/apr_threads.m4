@@ -26,7 +26,7 @@ dnl which causes autoconf to incorrectly conclude that
 dnl pthreads is not available.
 dnl Turn off warnings if we're using gcc.
 dnl
-AC_DEFUN(APR_CHECK_PTHREADS_H, [
+AC_DEFUN([APR_CHECK_PTHREADS_H], [
   if test "$GCC" = "yes"; then
     SAVE_FL="$CPPFLAGS"
     CPPFLAGS="$CPPFLAGS -w"
@@ -41,7 +41,7 @@ AC_DEFUN(APR_CHECK_PTHREADS_H, [
 dnl
 dnl APR_CHECK_PTHREAD_GETSPECIFIC_TWO_ARGS
 dnl
-AC_DEFUN(APR_CHECK_PTHREAD_GETSPECIFIC_TWO_ARGS, [
+AC_DEFUN([APR_CHECK_PTHREAD_GETSPECIFIC_TWO_ARGS], [
 AC_CACHE_CHECK(whether pthread_getspecific takes two arguments, ac_cv_pthread_getspecific_two_args,[
 AC_TRY_COMPILE([
 #include <pthread.h>
@@ -65,7 +65,7 @@ fi
 dnl
 dnl APR_CHECK_PTHREAD_ATTR_GETDETACHSTATE_ONE_ARG
 dnl
-AC_DEFUN(APR_CHECK_PTHREAD_ATTR_GETDETACHSTATE_ONE_ARG, [
+AC_DEFUN([APR_CHECK_PTHREAD_ATTR_GETDETACHSTATE_ONE_ARG], [
 AC_CACHE_CHECK(whether pthread_attr_getdetachstate takes one argument, ac_cv_pthread_attr_getdetachstate_one_arg,[
 AC_TRY_COMPILE([
 #include <pthread.h>
@@ -91,7 +91,7 @@ dnl
 dnl Try running a program which uses pthreads, executing the
 dnl actions-if-success commands on success.
 dnl
-AC_DEFUN(APR_PTHREADS_TRY_RUN, [
+AC_DEFUN([APR_PTHREADS_TRY_RUN], [
 AC_TRY_RUN( [
 #include <pthread.h>
 #include <stddef.h>
@@ -122,7 +122,7 @@ dnl
 dnl Try to find a way to enable POSIX threads.  Sets the 
 dnl pthreads_working variable to "yes" on success.
 dnl
-AC_DEFUN(APR_PTHREADS_CHECK,[
+AC_DEFUN([APR_PTHREADS_CHECK],[
 
 AC_CACHE_CHECK([for CFLAGS needed for pthreads], [apr_cv_pthreads_cflags],
 [apr_ptc_cflags=$CFLAGS
@@ -182,12 +182,12 @@ dnl Save the global environment variables that might be modified during
 dnl the checks for threading support so that they can restored if the
 dnl result is not what the caller wanted.
 dnl
-AC_DEFUN(APR_PTHREADS_CHECK_SAVE, [
+AC_DEFUN([APR_PTHREADS_CHECK_SAVE], [
   apr_pthsv_CFLAGS="$CFLAGS"
   apr_pthsv_LIBS="$LIBS"
 ])dnl
 
-AC_DEFUN(APR_PTHREADS_CHECK_RESTORE, [
+AC_DEFUN([APR_PTHREADS_CHECK_RESTORE], [
   CFLAGS="$apr_pthsv_CFLAGS"
   LIBS="$apr_pthsv_LIBS"
 ])dnl
@@ -195,7 +195,7 @@ AC_DEFUN(APR_PTHREADS_CHECK_RESTORE, [
 dnl
 dnl APR_CHECK_SIGWAIT_ONE_ARG
 dnl
-AC_DEFUN(APR_CHECK_SIGWAIT_ONE_ARG,[
+AC_DEFUN([APR_CHECK_SIGWAIT_ONE_ARG],[
   AC_CACHE_CHECK(whether sigwait takes one argument,ac_cv_sigwait_one_arg,[
   AC_TRY_COMPILE([
 #if defined(__NETBSD__) || defined(DARWIN)
