@@ -179,7 +179,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 			/* Try to find the file at the highest rate possible if we can't find one that matches the exact rate.
 			   If we don't find any, we will default back to the original file name.
 			*/
-			for (i = 3; i > 0; i--) {
+			for (i = 3; i >= 0; i--) {
 				switch_snprintf(last, alt_len - (last - alt_path), "%d%s%s", rates[i], SWITCH_PATH_SEPARATOR, ldup);
 				if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {
 					path = alt_path;
