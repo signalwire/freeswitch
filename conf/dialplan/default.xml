@@ -588,6 +588,14 @@
       </condition>
     </extension>
 
+    <!-- install zrtp_agent.lua into scripts (ZRTP == 9787) -->
+    <extension name="tone_stream">
+      <condition field="destination_number" expression="^9787$">
+	<action application="answer"/>
+	<action application="lua" data="zrtp_agent.lua"/>
+      </condition>
+    </extension>
+
     <!--
 	You will no longer hear the bong tone.  The wav file is playing stating the call is secure.
 	The file will not play unless you have both TLS and SRTP active.
@@ -599,9 +607,10 @@
 	<action application="answer"/>
 	<action application="execute_extension" data="is_secure XML features"/>
 	<action application="playback" data="$${hold_music}"/>
-	<!-- This really should be an IVR for zrtp enrollment but this is just a demo-->
-	<anti-action application="set" data="zrtp_enrollment=true"/>
+	<anti-action application="set" data="zrtp_secure_media=true"/>
 	<anti-action application="answer"/>
+	<anti-action application="playback" data="silence_stream://2000"/>
+	<anti-action application="execute_extension" data="is_zrtp_secure XML features"/>
 	<anti-action application="playback" data="$${hold_music}"/>
       </condition>
     </extension>
