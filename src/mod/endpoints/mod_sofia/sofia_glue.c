@@ -1667,14 +1667,16 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		sofia_glue_tech_patch_sdp(tech_pvt);
 	}
 
-	dst = sofia_glue_get_destination(tech_pvt->dest);
+	if (!switch_strlen_zero(tech_pvt->dest)) {
+		dst = sofia_glue_get_destination(tech_pvt->dest);
 
-	if (dst->route_uri) {
-		route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, dst->route_uri, 0, SWITCH_TRUE, NULL);
-	}
+		if (dst->route_uri) {
+			route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, dst->route_uri, 0, SWITCH_TRUE, NULL);
+		}
 	
-	if (dst->route) {
-		route = dst->route;
+		if (dst->route) {
+			route = dst->route;
+		}
 	}
 
 	if ((val = switch_channel_get_variable(channel, "sip_route_uri"))) {
