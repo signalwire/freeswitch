@@ -1985,7 +1985,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 						if (!switch_strlen_zero(var) && !switch_strlen_zero(val) && (xparams_type[j] == 1 || !strncasecmp(var, "sip-",4) || !strcasecmp(var, "register-gateway")) ) {
 							if (!switch_event_get_header(*v_event, var)) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "event_add_header -> '%s' = '%s'\n",var, val);
+								if (profile->debug) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "event_add_header -> '%s' = '%s'\n",var, val);
+								}
 								switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, var, val);
 							} else {
 								continue;
