@@ -1252,7 +1252,10 @@ void do_telecast(switch_stream_handle_t *stream)
 		switch_codec_implementation_t read_impl = {0};
 		switch_core_session_get_read_impl(tsession, &read_impl);
 
-
+		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stepping into media path so this will work!\n");
+			switch_ivr_media(uuid, SMF_REBRIDGE);
+		}
 
 		if (!(gfp = lame_init())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate lame\n");
