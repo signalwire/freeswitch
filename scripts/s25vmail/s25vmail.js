@@ -4,10 +4,40 @@
  *  Machine:                      OS:
  *  Author:  John Wehle           Date: June 24, 2008
  *
+ *  The message waiting indicator is handled by a separate program.
+ */
+
+/*
  *  Copyright (c)  2008  Feith Systems and Software, Inc.
  *                      All Rights Reserved
- *
- *  The message waiting indicator is handled by a separate program.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * 
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 
+ * * Neither the name of the original author; nor the names of any contributors
+ * may be used to endorse or promote products derived from this software
+ * without specific prior written permission.
+ * 
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
+ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 
@@ -33,6 +63,7 @@ function on_dtmf (session, type, obj, arg)
 
 function prompt_for_id ()
   {
+  var dto;
   var id;
   var index;
   var repeat;
@@ -53,7 +84,10 @@ function prompt_for_id ()
     id = dtmf_digits;
 
     if (id.indexOf ('#') == -1) {
-      dtmf_digits = session.getDigits (5, '#', digitTimeOut,
+      dto = digitTimeOut;
+      if (dtmf_digits.length != 0)
+        dto = interDigitTimeOut;
+      dtmf_digits = session.getDigits (5, '#', dto,
                                        interDigitTimeOut, absoluteTimeOut);
       id += dtmf_digits;
       id += '#';
@@ -87,7 +121,14 @@ start = session.getDigits (1, '', digitTimeOut,
                            interDigitTimeOut, absoluteTimeOut);
 
 if (start != "#") {
-  console_log ("err", "Invalid VMAIL start code from PBX\n");
+  var destination_number = session.getVariable ("destination_number");
+
+  console_log ("err", destination_number + " received an invalid VMAIL start code from PBX\n");
+  if (session.ready ())
+    session.sayPhrase ("voicemail_goodbye", "#", "", on_dtmf, "");
+  else
+    console_log ("err", "Possibly due to early hangup from PBX\n");
+  session.hangup ();
   exit();
   }
 
@@ -121,7 +162,7 @@ switch (mode) {
     from = prompt_for_id ();
 
     if (! session.ready ()) {
-      session.hangup();
+      session.hangup ();
       exit();
       }
 
@@ -182,6 +223,8 @@ switch (mode) {
       console_log ("err", "Invalid VMAIL PDC from PBX\n");
       break;
       }
+
+    console_log ("err", "PBX reports problem with VMAIL PDC " + to + "\n");
     break;
 
   // Unknown

@@ -40,3 +40,24 @@ Configuration fragments look something like:
 Tested using FreeSWITCH SVN 10428 running on FreeBSD 6.3
 with a Sangoma A200DX Analog Series w/ Echo Cancellation
 ports card containing 2 FXO modules.
+
+Note that the PBX is * very * sensitive to how long it takes
+for the line to be hung up after it sends the DTMF hangup
+command.  Failure to apply the following patch will cause
+the PBX to occasionally believe that some vmail lines were
+off hook for too long and are therfore out of service.
+
+Index: src/zap_io.c
+===================================================================
+--- src/zap_io.c	(revision 745)
++++ src/zap_io.c	(working copy)
+@@ -1728,7 +1728,8 @@
+ 			zchan->dtmf_hangup_buf[zchan->span->dtmf_hangup_len - 1] = *p;
+ 			if (!strcmp(zchan->dtmf_hangup_buf, zchan->span->dtmf_hangup)) {
+ 				zap_log(ZAP_LOG_DEBUG, "DTMF hangup detected.\n");
+-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
++				zchan->caller_data.hangup_cause = ZAP_CAUSE_NORMAL_CLEARING;
++				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+ 				break;
+ 			}
+ 		}
