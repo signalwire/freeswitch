@@ -62,9 +62,13 @@
 #define sangoma_create_socket_intr sangoma_open_api_span_chan
 #endif
 
-/*! Starting with lbisangoma 3 we can use it, previous versions dont really work so we default to using the old stuff */
-#if defined(LIBSANGOMA_VERSION) && LIBSANGOMA_VERSION_CODE < LIBSANGOMA_VERSION(3,0,0)
+/*! Starting with libsangoma 3 we can use the new libsangoma waitable API, the poor souls of those using a release were LIBSANGOMA version
+ * is defined but the version is not higher or equal to 3.0.0 will be forced to upgrade
+ * */
+#ifdef LIBSANGOMA_VERSION 
+#if LIBSANGOMA_VERSION_CODE < LIBSANGOMA_VERSION(3,0,0)
 #undef LIBSANGOMA_VERSION
+#endif
 #endif
 
 /**
@@ -970,13 +974,14 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
  */
 static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 {
-	sangoma_wait_obj_t *sangoma_wait_obj;
-
+#ifdef LIBSANGOMA_VERSION
 	if (zchan->mod_data) {
 		sangoma_wait_obj = zchan->mod_data;
+	    sangoma_wait_obj_t *sangoma_wait_obj;
 		zchan->mod_data = NULL;
 		sangoma_wait_obj_delete(&sangoma_wait_obj);
 	}
+#endif
 
 	if (zchan->sockfd > -1) {
 		close(zchan->sockfd);
