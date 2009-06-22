@@ -790,6 +790,11 @@ SWITCH_STANDARD_APP(fifo_function)
 		}
 		node_list[node_count++] = node;
 	}
+
+	if(switch_true(switch_channel_get_variable(channel, "fifo_destroy_after_use"))) {
+		node->ready = FIFO_DELAY_DESTROY;
+	}
+
 	switch_mutex_unlock(globals.mutex);
 
 	moh = switch_channel_get_variable(channel, "fifo_music");
