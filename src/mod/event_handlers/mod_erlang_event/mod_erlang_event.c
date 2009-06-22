@@ -304,6 +304,7 @@ static listener_t * find_listener(char* nodename)
 	return l;
 }
 
+
 static void add_session_elem_to_listener(listener_t *listener, session_elem_t *session_element)
 {
 	switch_mutex_lock(listener->session_mutex);
@@ -311,6 +312,7 @@ static void add_session_elem_to_listener(listener_t *listener, session_elem_t *s
 	listener->session_list = session_element;
 	switch_mutex_unlock(listener->session_mutex);
 }
+
 
 static void remove_session_elem_from_listener(listener_t *listener, session_elem_t *session_element)
 {
@@ -320,10 +322,9 @@ static void remove_session_elem_from_listener(listener_t *listener, session_elem
 	if (!session_element)
 		return;
 
-	switch_mutex_lock(listener->session_mutex);
 	for(s = listener->session_list; s; s = s->next) {
 		if (s == session_element) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing session element\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing session element for %s\n", session_element->uuid_str);
 			if (last) {
 				last->next = s->next;
 			} else {
@@ -335,10 +336,17 @@ static void remove_session_elem_from_listener(listener_t *listener, session_elem
 			}
 			/* this allows the application threads to exit */
 			switch_clear_flag_locked(s, LFLAG_SESSION_ALIVE);
+			switch_safe_free(s);
 			break;
 		}
 		last = s;
 	}
+}
+
+
+static void remove_session_elem_from_listener_locked(listener_t *listener, session_elem_t *session_element) {
+	switch_mutex_lock(listener->session_mutex);
+	remove_session_elem_from_listener(listener, session_element);
 	switch_mutex_unlock(listener->session_mutex);
 }
 
@@ -557,14 +565,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 			if (pevent->event_id == SWITCH_EVENT_CHANNEL_DESTROY) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroy event for attached session for %s\n", sp->uuid_str);
 
-				/* remove session from list */
-				if (last)
-					last->next = sp->next;
-				else
-					listener->session_list = sp->next;
-
 				/* this allows the application threads to exit */
-				switch_clear_flag_locked(sp, LFLAG_SESSION_ALIVE);
 				removed = sp;
 
 				ei_x_new_with_version(&ebuf);
@@ -583,7 +584,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 		}
 		sp = sp->next;
 		if (removed) {
-			switch_safe_free(removed)
+			remove_session_elem_from_listener(listener, removed);
 		} else {
 			last = sp;
 		}
@@ -682,7 +683,7 @@ static void handle_exit(listener_t *listener, erlang_pid *pid)
 					s->uuid_str);
 			/* TODO - if a spawned process that was handling an outbound call fails.. what do we do with the call? */
 		}
-		remove_session_elem_from_listener(listener, s);
+		remove_session_elem_from_listener_locked(listener, s);
 	}
 
 	if (listener->log_process.type == ERLANG_PID && !ei_compare_pids(&listener->log_process.pid, pid)) {
@@ -1107,7 +1108,7 @@ session_elem_t* attach_call_to_pid(listener_t* listener, erlang_pid* pid, switch
 {
 	/* create a session list element */
 	session_elem_t* session_element = session_elem_create(listener, session);
-	
+
 	session_element->process.type = ERLANG_PID;
 	memcpy(&session_element->process.pid, pid, sizeof(erlang_pid));
 	switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
@@ -1167,7 +1168,7 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 	while (!(p = switch_core_hash_find(listener->spawn_pid_hash, hash)) || p == &globals.WAITING) {
 		if (i > 50) { /* half a second timeout */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out when waiting for outbound pid\n");
-			remove_session_elem_from_listener(listener,session_element);
+			remove_session_elem_from_listener_locked(listener,session_element);
 			switch_core_hash_insert(listener->spawn_pid_hash, hash, &globals.TIMEOUT); /* TODO lock this? */
 			return NULL;
 		}
