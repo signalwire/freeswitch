@@ -126,7 +126,11 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	}
 
 	/* For additional NOTIFY event packages see http://www.iana.org/assignments/sip-events. */
-	if (!strcasecmp(sip->sip_event->o_type, "refer")) {
+	if (sip->sip_content_type &&
+		sip->sip_content_type->c_type &&
+		sip->sip_payload &&
+		sip->sip_payload->pl_data &&
+		!strcasecmp(sip->sip_event->o_type, "refer")) {
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_NOTIFY_REFER) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "content-type", sip->sip_content_type->c_type);
 			switch_event_add_body(s_event, "%s", sip->sip_payload->pl_data);
