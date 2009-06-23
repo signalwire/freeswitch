@@ -386,3 +386,96 @@ TCase *check_nta_client_2_1(void)
 
   return tc;
 }
+
+/* ---------------------------------------------------------------------- */
+
+#include <sofia-resolv/sres_record.h>
+
+START_TEST(client_2_2_0)
+{
+  nta_outgoing_t *orq;
+  struct message *request;
+  struct event *response;
+  static tp_name_t const tpn[1] = {{ "*", "*", "*", "5060", NULL, NULL }};
+  static char const * const default_protocols[] = { "udp", "tcp", NULL };
+
+  char proxy[] = "sip:cname.example.org:0000000";
+
+  S2_CASE("2.2.0", "Send MESSAGE",
+	  "Basic non-INVITE transaction with target using CNAME");
+  /* Test for sf.net bug #2531152 */
+
+  s2_nta_setup("NTA", NULL, TAG_END());
+
+  s2_nta_setup_logs(7);
+
+  fail_unless(s2sip->udp.contact != NULL);
+
+  if (s2sip->udp.contact->m_url->url_port == NULL ||
+      tport_tbind(s2sip->master, tpn, default_protocols,
+		  TPTAG_SERVER(1),
+		  TAG_END()) == -1) {
+    snprintf(proxy, sizeof proxy, "sip:cname.example.org:%s",
+	     s2sip->udp.contact->m_url->url_port);
+  }
+  else {
+    strcpy(proxy, "sip:cname.example.org");
+  }
+
+  s2_dns_default("example.org.");
+
+  s2_dns_record("cname.example.org.", sres_type_a,
+		"", sres_type_cname, "a.example.org.",
+		"a", sres_type_a, s2sip->udp.contact->m_url->url_host,
+		NULL);
+
+  s2_dns_record("cname.example.org.", sres_type_naptr,
+		"", sres_type_cname, "a.example.org.",
+		NULL);
+
+  s2_dns_record("cname.example.org.", sres_type_aaaa,
+		"", sres_type_cname, "a.example.org.",
+		NULL);
+
+  s2_dns_record("a.example.org.", sres_type_a,
+		"", sres_type_a, s2sip->udp.contact->m_url->url_host,
+		NULL);
+
+
+  s2_nta_agent_setup(URL_STRING_MAKE("sip:0.0.0.0:*"), NULL, NULL,
+		     NTATAG_DEFAULT_PROXY(proxy),
+		     TAG_END());
+
+  orq = nta_outgoing_tcreate(s2->default_leg,
+			     s2_nta_orq_callback, NULL, NULL,
+			     SIP_METHOD_MESSAGE,
+			     URL_STRING_MAKE("sip:test2.2.example.org"),
+			     SIPTAG_FROM_STR("<sip:client@example.net>"),
+			     TAG_END());
+  fail_unless(orq != NULL);
+  request = s2_sip_wait_for_request(SIP_METHOD_MESSAGE);
+  fail_unless(request != NULL);
+  s2_sip_respond_to(request, NULL, 200, "2.2.0", TAG_END());
+  response = s2_nta_wait_for(wait_for_orq, orq,
+			     wait_for_status, 200,
+			     0);
+  s2_sip_free_message(request);
+  s2_nta_free_event(response);
+  nta_outgoing_destroy(orq);
+}
+END_TEST
+
+TCase *
+check_nta_client_2_2(void)
+{
+  TCase *tc = tcase_create("NTA 2.2 - Client");
+
+  tcase_add_checked_fixture(tc, NULL, client_teardown);
+
+  tcase_set_timeout(tc, 2);
+
+  tcase_add_test(tc, client_2_2_0);
+
+  return tc;
+}
+
