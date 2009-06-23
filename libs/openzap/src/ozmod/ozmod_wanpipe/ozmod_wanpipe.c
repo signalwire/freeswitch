@@ -976,8 +976,8 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 {
 #ifdef LIBSANGOMA_VERSION
 	if (zchan->mod_data) {
-		sangoma_wait_obj = zchan->mod_data;
 	    sangoma_wait_obj_t *sangoma_wait_obj;
+		sangoma_wait_obj = zchan->mod_data;
 		zchan->mod_data = NULL;
 		sangoma_wait_obj_delete(&sangoma_wait_obj);
 	}
