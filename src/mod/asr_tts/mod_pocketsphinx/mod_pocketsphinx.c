@@ -383,20 +383,17 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 			ps->confidence = 0;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recognized: %s, Score: %d\n", ps->hyp, ps->confidence);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recognized: %s, Confidence: %d\n", ps->hyp, ps->confidence);
 		switch_mutex_unlock(ps->flag_mutex); 
 
-		*xmlstr = switch_mprintf("<interpretation grammar=\"%s\" score=\"%d\">\n"
-								 "  <result name=\"%s\">%s</result>\n"
-								 "  <input>%s</input>\n"
-								 "</interpretation>",
-								 ps->grammar, ps->confidence,
-								"match", 
-								 ps->hyp, 
-								 ps->hyp
-								 );
+		*xmlstr = switch_mprintf("<?xml version=\"1.0\"?>\n"
+								 "<result grammar=\"%s\">\n"
+								 "  <interpretation grammar=\"%s\" confidence=\"%d\">\n"
+								 "    <input mode=\"speech\">%s</input>\n"
+								 "  </interpretation>\n"
+								 "</result>\n",
+								 ps->grammar, ps->grammar, ps->confidence, ps->hyp);
 
-		
 		if (switch_test_flag(ps, SWITCH_ASR_FLAG_AUTO_RESUME)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Auto Resuming\n");
 			switch_set_flag(ps, PSFLAG_READY);
