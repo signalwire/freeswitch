@@ -1075,7 +1075,7 @@ session_elem_t *session_elem_create(listener_t* listener, switch_core_session_t 
 	session_elem_t* session_element = malloc(sizeof(*session_element));
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	bzero(session_element, sizeof(*session_element));
+	memset(session_element, 0, sizeof(*session_element));
 
 	memcpy(session_element->uuid_str, switch_core_session_get_uuid(session), SWITCH_UUID_FORMATTED_LENGTH);
 	

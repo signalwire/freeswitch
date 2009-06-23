@@ -496,7 +496,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 
 			tmp = malloc(len);
 
-			bzero(tmp, len);
+			memset(tmp, 0, len);
 
 			switch_copy_string(uuid_str, packet, SWITCH_UUID_FORMATTED_LENGTH);
 			packet += SWITCH_UUID_FORMATTED_LENGTH;
