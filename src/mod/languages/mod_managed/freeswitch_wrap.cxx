@@ -8441,6 +8441,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_console_stream_raw_write(void * jarg1, 
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_stream_write_file_contents(void * jarg1, char * jarg2) {
+  int jresult ;
+  switch_stream_handle_t *arg1 = (switch_stream_handle_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_stream_handle_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (switch_status_t)switch_stream_write_file_contents(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_toupper(int jarg1) {
   int jresult ;
   int arg1 ;

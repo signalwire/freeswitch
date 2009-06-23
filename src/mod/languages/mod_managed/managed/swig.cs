@@ -2024,6 +2024,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_stream_write_file_contents(switch_stream_handle stream, string path) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_stream_write_file_contents(switch_stream_handle.getCPtr(stream), path);
+    return ret;
+  }
+
   public static int switch_toupper(int c) {
     int ret = freeswitchPINVOKE.switch_toupper(c);
     return ret;
@@ -6504,6 +6509,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_console_stream_raw_write")]
   public static extern int switch_console_stream_raw_write(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_stream_write_file_contents")]
+  public static extern int switch_stream_write_file_contents(HandleRef jarg1, string jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_toupper")]
   public static extern int switch_toupper(int jarg1);
