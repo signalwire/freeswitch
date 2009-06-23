@@ -871,7 +871,6 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	int mask = 0;
 	char guess_mask[16] = "";
 	char *tmp_name;
-	int ip_tmp = 0;
 	struct in_addr in;
 
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), &mask, AF_INET);
@@ -912,6 +911,10 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	tmp_name = "nat.auto";
 	switch_network_list_create(&rfc_list, tmp_name, SWITCH_FALSE, IP_LIST.pool);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Created ip list %s default (deny)\n", tmp_name);
+	if (switch_network_list_add_host_mask(rfc_list, guess_ip, guess_mask, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+						  "Adding %s/%s (deny) to list %s\n", guess_ip, guess_mask, tmp_name);
+        }
 	switch_network_list_add_cidr(rfc_list, "10.0.0.0/8", SWITCH_TRUE);
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_TRUE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_TRUE);
@@ -932,16 +935,6 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 						  "Adding %s/%s (allow) to list %s\n", guess_ip, guess_mask, tmp_name);
 	}
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, list);	
-
-	switch_inet_pton(AF_INET, guess_ip, &ip_tmp);
-	ip_tmp = htonl(ip_tmp);
-	tmp_name = "nat.auto";
-
-	if (switch_network_list_validate_ip_token(rfc_list, ip_tmp, NULL)) {
-		switch_network_list_add_host_mask(rfc_list, guess_ip, guess_mask, SWITCH_FALSE);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-						  "Adding %s/%s (deny) to list %s\n", guess_ip, guess_mask, tmp_name);
-	}
 
 	
 	if ((xml = switch_xml_open_cfg("acl.conf", &cfg, NULL))) {
