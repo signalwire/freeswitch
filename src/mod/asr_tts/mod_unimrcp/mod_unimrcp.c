@@ -149,6 +149,7 @@ static int get_next_speech_channel_number(void);
 #define BUILTIN_ID "builtin:"
 #define SESSION_ID "session:"
 #define HTTP_ID "http://"
+#define INLINE_ID "inline:"
 static int text_starts_with(const char *text, const char *match);
 
 /**
@@ -2449,7 +2450,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 	switch_size_t grammar_file_size = 0, to_read = 0;
 	grammar_type_t type = GRAMMAR_TYPE_UNKNOWN;
 	const char *lname = switch_strlen_zero(name) ? "grammar" : name;
-
+	char *filename = NULL;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) grammar = %s, name = %s\n", schannel->name, grammar, name);
 
 	if (switch_strlen_zero(grammar)) {
@@ -2463,45 +2464,48 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 		goto done;
 	}
 
-	/* check for local file grammar or URI grammar */
+	/* figure out what type of grammar this is */
 	if (text_starts_with(grammar, HTTP_ID) || text_starts_with(grammar, SESSION_ID) || text_starts_with(grammar, BUILTIN_ID)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Grammar is URI\n", schannel->name);
 		type = GRAMMAR_TYPE_URI;
 		grammar_data = grammar;
-	} else if (switch_is_file_path(grammar)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Grammar is inside file\n", schannel->name);
+	} else if (text_starts_with(grammar, INLINE_ID)) {
+		grammar_data = grammar + strlen(INLINE_ID);
+	} else {
 		/* grammar points to file containing the grammar text.  We assume the MRCP server can't get to this file
 		 * so read the data from the file and cache it */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Grammar is inside file\n", schannel->name);
+		if (switch_is_file_path(grammar)) {
+			filename = switch_mprintf("%s.gram", grammar);
+		} else {
+			filename = switch_mprintf("%s%s%s.gram", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, grammar);
+		}
 		grammar_data = NULL;
-
-		if (switch_file_open(&grammar_file, grammar, SWITCH_FOPEN_READ, 0, schannel->memory_pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Could not read grammar file: %s\n", schannel->name, grammar);
+		if (switch_file_open(&grammar_file, filename, SWITCH_FOPEN_READ, 0, schannel->memory_pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Could not read grammar file: %s\n", schannel->name, filename);
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
 		grammar_file_size = switch_file_get_size(grammar_file);
 		if (grammar_file_size == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Grammar file is empty: %s\n", schannel->name, grammar);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Grammar file is empty: %s\n", schannel->name, filename);
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
 		grammar_file_data = (char *)switch_core_alloc(schannel->memory_pool, grammar_file_size + 1);
 		to_read = grammar_file_size;
 		if (switch_file_read(grammar_file, grammar_file_data, &to_read) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Grammar file read error: %s\n", schannel->name, grammar);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Grammar file read error: %s\n", schannel->name, filename);
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
 		if (to_read != grammar_file_size) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Could not read entire grammar file: %s\n", schannel->name, grammar);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Could not read entire grammar file: %s\n", schannel->name, filename);
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
 		grammar_file_data[to_read] = '\0';
 		grammar_data = grammar_file_data;
-	} else {
-		/* assume inline grammar */
-		grammar_data = grammar;
 	}
 
 	/* determine content type of file grammar or inline grammar */
@@ -2532,6 +2536,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 
  done:
 
+	switch_safe_free(filename);
 	if (grammar_file) {
 		switch_file_close(grammar_file);
 	}
