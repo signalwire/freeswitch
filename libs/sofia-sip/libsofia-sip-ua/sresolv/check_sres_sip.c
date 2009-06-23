@@ -299,6 +299,8 @@ START_TEST(timeout)
 
   sres_sip_unref(srs);
 
+  s2_dns_set_filter(NULL, NULL);
+
   su_timer_destroy(faster);
 }
 END_TEST
