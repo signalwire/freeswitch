@@ -226,14 +226,6 @@ sres_cache_get0(sres_htable_t *htable,
     struct frame *f, frame = { previous, domain };
     unsigned hash = sres_hash_key(domain = cname->cn_cname);
 
-    if (cached) {
-      if (dcount >= len)
-	return -1;
-      cached[dcount] = (sres_record_t *)cname;
-      cname->cn_record->r_refcount++;
-    }
-    dcount++;
-
     /* Check for cname loops */
     for (f = previous; f; f = f->previous) {
       if (su_casematch(domain, f->domain))

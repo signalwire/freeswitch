@@ -311,6 +311,7 @@ struct sres_query_s {
   uint16_t        q_retry_count;
   uint8_t         q_n_servers;
   uint8_t         q_i_server;
+  int8_t          q_aliased;
   int8_t          q_edns;
   uint8_t         q_n_subs;
   sres_query_t   *q_subqueries[1 + SRES_MAX_SEARCH];
@@ -3069,6 +3070,18 @@ sres_resend_dns_query(sres_resolver_t *res, sres_query_t *q, int timeout)
   sres_query_report_error(q, NULL);
 }
 
+static void
+sres_resolve_cname(sres_resolver_t *res,
+                   const sres_query_t *orig_query,
+                   const char *alias)
+{
+  sres_query_t *query;
+  query = sres_query_alloc(res,
+      orig_query->q_callback, orig_query->q_context, orig_query->q_type,
+      alias);
+  query->q_aliased = 1;
+  sres_send_dns_query(res, query);
+}
 
 /** Get a server by socket */
 static
@@ -3456,10 +3469,30 @@ sres_resolver_receive(sres_resolver_t *res, int socket)
     query->q_retry_count++;
   }
   else if (!error && reply) {
-    /* Remove the query from the pending list and notify the listener */
+    /* Remove the query from the pending list */
     sres_remove_query(res, query, 1);
-    if (query->q_callback != NULL)
-      (query->q_callback)(query->q_context, query, reply);
+
+    /* Resolve the CNAME alias, if necessary */
+    if (query->q_type != sres_type_cname && query->q_type != sres_qtype_any &&
+        reply[0] && reply[0]->sr_type == sres_type_cname) {
+      const char *alias = reply[0]->sr_cname[0].cn_cname;
+      sres_record_t **cached = NULL;
+
+      /* Check for the aliased results in the cache */
+      if (sres_cache_get(res->res_cache, query->q_type, alias, &cached)
+          > 0) {
+        reply = cached;
+      } else {
+        /* Resubmit the query with the aliased name, dropping this result */
+        sres_resolve_cname(res, query, alias);
+        reply = NULL;
+      }
+    }
+    if (reply) {
+      /* Notify the listener */
+      if (query->q_callback != NULL)
+        (query->q_callback)(query->q_context, query, reply);
+    }
     sres_free_query(res, query);
   }
   else {
@@ -3630,15 +3663,17 @@ sres_decode_msg(sres_resolver_t *res,
     return -1;
   }
 
-  if (m->m_ancount > 0 && errorcount == 0 && query->q_type < sres_qtype_tsig) {
-    char b0[8], b1[8];
+  if (m->m_ancount > 0 && errorcount == 0 && query->q_type < sres_qtype_tsig
+      && (query->q_aliased || answers[0]->sr_type != sres_type_cname)) {
+
     for (i = 0; i < m->m_ancount; i++) {
       if (query->q_type == answers[i]->sr_type)
 	break;
     }
 
     if (i == m->m_ancount) {
-      /* The queried request was not found. CNAME? */
+      char b0[8], b1[8];
+      /* The queried request was not found */
       SU_DEBUG_5(("sres_decode_msg: sent query %s, got %s\n",
 		  sres_record_type(query->q_type, b0),
 		  sres_record_type(answers[0]->sr_type, b1)));
