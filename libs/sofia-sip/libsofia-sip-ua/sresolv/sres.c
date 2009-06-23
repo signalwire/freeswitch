@@ -3644,7 +3644,8 @@ sres_decode_msg(sres_resolver_t *res,
 		  sres_record_type(answers[0]->sr_type, b1)));
       rr = sres_create_error_rr(res->res_cache, query, err = SRES_RECORD_ERR);
       memmove(answers + 1, answers, (sizeof answers[0]) * total++);
-      answers[errorcount++] = rr;
+      answers[0] = rr;
+      errorcount = 1;
     }
   }
 
