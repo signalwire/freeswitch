@@ -613,6 +613,10 @@ fi
 
 SAC_OPENSSL
 
+if test x$HAVE_OPENSSL = x1; then
+	openssl_CFLAGS="$openssl_CFLAGS -DHAVE_OPENSSL";
+fi
+
 AX_CHECK_JAVA
 
 
