@@ -600,7 +600,9 @@ void s2_dns_record(
 
     atype = va_arg(va, unsigned);
 
-    if (atype == qtype)
+    if (arcount == 0 &&
+	(atype == qtype || atype == sres_type_cname) &&
+	strcmp(qdomain, domain) == 0)
       ancount++;
     else
       arcount++;
@@ -663,4 +665,3 @@ void s2_dns_record(
 
   va_end(va);
 }
-
