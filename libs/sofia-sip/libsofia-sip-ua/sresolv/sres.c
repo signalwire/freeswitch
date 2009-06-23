@@ -324,7 +324,6 @@ struct sres_query_s {
   uint16_t        q_retry_count;
   uint8_t         q_n_servers;
   uint8_t         q_i_server;
-  int8_t          q_aliased;
   int8_t          q_edns;
   uint8_t         q_n_subs;
   sres_query_t   *q_subqueries[1 + SRES_MAX_SEARCH];
@@ -404,6 +403,7 @@ static int sres_config_changed_servers(sres_config_t const *new_c,
 				       sres_config_t const *old_c);
 static sres_server_t **sres_servers_new(sres_resolver_t *res,
 					sres_config_t const *c);
+static sres_answer_f sres_resolving_cname;
 
 /** Generate new 16-bit identifier for DNS query. */
 static void
@@ -3083,15 +3083,35 @@ sres_resend_dns_query(sres_resolver_t *res, sres_query_t *q, int timeout)
 
 static void
 sres_resolve_cname(sres_resolver_t *res,
-                   const sres_query_t *orig_query,
-                   const char *alias)
+                   sres_query_t *orig_query,
+                   char const *cname)
 {
   sres_query_t *query;
+
   query = sres_query_alloc(res,
-      orig_query->q_callback, orig_query->q_context, orig_query->q_type,
-      alias);
-  query->q_aliased = 1;
-  sres_send_dns_query(res, query);
+			   sres_resolving_cname,
+			   (sres_context_t *)orig_query,
+			   orig_query->q_type,
+			   cname);
+
+  if (query)
+    sres_send_dns_query(res, query);
+  else
+    sres_query_report_error(orig_query, NULL);
+}
+
+static void
+sres_resolving_cname(sres_context_t *original_query,
+		    sres_query_t *query,
+		    sres_record_t **answers)
+{
+  sres_query_t *orig = (sres_query_t *)original_query;
+
+  /* Notify the listener */
+  if (orig->q_callback != NULL)
+    (orig->q_callback)(orig->q_context, orig, answers);
+
+  sres_free_query(orig->q_res, orig);
 }
 
 /** Get a server by socket */
@@ -3486,17 +3506,18 @@ sres_resolver_receive(sres_resolver_t *res, int socket)
       if (sres_cache_get(res->res_cache, query->q_type, alias, &cached)
           > 0) {
         reply = cached;
-      } else {
-        /* Resubmit the query with the aliased name, dropping this result */
+      }
+      else {
+        /* Submit a query with the aliased name, dropping this result */
         sres_resolve_cname(res, query, alias);
-        reply = NULL;
+        return 1;
       }
     }
-    if (reply) {
-      /* Notify the listener */
-      if (query->q_callback != NULL)
-        (query->q_callback)(query->q_context, query, reply);
-    }
+
+    /* Notify the listener */
+    if (query->q_callback != NULL)
+      (query->q_callback)(query->q_context, query, reply);
+
     sres_free_query(res, query);
   }
   else {
@@ -3670,7 +3691,8 @@ sres_decode_msg(sres_resolver_t *res,
   }
 
   if (m->m_ancount > 0 && errorcount == 0 && query->q_type < sres_qtype_tsig
-      && (query->q_aliased || answers[0]->sr_type != sres_type_cname)) {
+      && (query->q_callback == sres_resolving_cname ||
+	  answers[0]->sr_type != sres_type_cname)) {
 
     for (i = 0; i < m->m_ancount; i++) {
       if (query->q_type == answers[i]->sr_type)
