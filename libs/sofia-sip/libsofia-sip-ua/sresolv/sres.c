@@ -74,6 +74,12 @@ typedef int socklen_t;
 #include <iphlpapi.h>
 #endif
 
+#if HAVE_IP_RECVERR || HAVE_IPV6_RECVERR
+#include <linux/types.h>
+#include <linux/errqueue.h>
+#include <sys/uio.h>
+#endif
+
 #include <time.h>
 
 #include "sofia-resolv/sres.h"
@@ -183,6 +189,13 @@ const char *su_inet_ntop(int af, void const *src, char *dst, size_t size);
 #else
 #define va_copy(dst, src) (memcpy(&(dst), &(src), sizeof (va_list)))
 #endif
+
+/*
+ * 3571 is a prime =>
+ * we hash successive id values to different parts of hash tables
+ */
+#define Q_PRIME 3571
+#define SRES_QUERY_HASH(q) ((q)->q_hash)
 
 /**
  * How often to recheck nameserver information (seconds).
@@ -393,10 +406,14 @@ static sres_server_t **sres_servers_new(sres_resolver_t *res,
 					sres_config_t const *c);
 
 /** Generate new 16-bit identifier for DNS query. */
-static uint16_t
-sres_new_id(sres_resolver_t *res)
+static void
+sres_gen_id(sres_resolver_t *res, sres_query_t *query)
 {
-  return res->res_id ? res->res_id++ : (res->res_id = 2, 1);
+  if (res->res_id == 0) {
+    res->res_id = 1;
+  }
+  query->q_id = res->res_id++;
+  query->q_hash = query->q_id * Q_PRIME;
 }
 
 /** Return true if we have a search list or a local domain name. */
@@ -1688,13 +1705,6 @@ sres_resolver_destructor(void *arg)
     res->res_updcb(res->res_async, INVALID_SOCKET, INVALID_SOCKET);
 }
 
-/*
- * 3571 is a prime =>
- * we hash successive id values to different parts of hash tables
- */
-#define Q_PRIME 3571
-#define SRES_QUERY_HASH(q) ((q)->q_hash)
-
 HTABLE_BODIES_WITH(sres_qtable, qt, sres_query_t, SRES_QUERY_HASH,
 		   unsigned, size_t);
 
@@ -1726,10 +1736,11 @@ sres_query_alloc(sres_resolver_t *res,
     query->q_timestamp = res->res_now;
     query->q_name = strcpy((char *)(query + 1), domain);
 
-    query->q_id = sres_new_id(res); assert(query->q_id);
+    sres_gen_id(res, query);
+    assert(query->q_id);
+
     query->q_i_server = res->res_i_server;
     query->q_n_servers = res->res_n_servers;
-    query->q_hash = query->q_id * Q_PRIME /* + query->q_i_server */;
 
     sres_qtable_append(res->res_queries, query);
 
@@ -3138,12 +3149,6 @@ sres_canonize_sockaddr(struct sockaddr_storage *from, socklen_t *fromlen)
   }
 }
 
-#if HAVE_IP_RECVERR || HAVE_IPV6_RECVERR
-#include <linux/types.h>
-#include <linux/errqueue.h>
-#include <sys/uio.h>
-#endif
-
 static
 int sres_no_update(sres_async_t *async,
 		   sres_socket_t new_socket,
@@ -3462,8 +3467,7 @@ sres_resolver_receive(sres_resolver_t *res, int socket)
     dns->dns_edns = edns_not_supported;
     assert(query->q_id);
     sres_remove_query(res, query, 0);
-    query->q_id = sres_new_id(res);
-    query->q_hash = query->q_id * Q_PRIME;
+    sres_gen_id(res, query);
     sres_qtable_append(res->res_queries, query);
     sres_send_dns_query(res, query);
     query->q_retry_count++;
