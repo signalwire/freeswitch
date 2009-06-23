@@ -46,6 +46,7 @@ static struct {
 	char *model8k;
 	char *model16k;
 	char *dictionary;
+	char *language_weight;
 	uint32_t thresh;
 	uint32_t silence_hits;
 	uint32_t listen_hits;
@@ -160,6 +161,7 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 							 "-samprate", rate,
 							 "-hmm", model,
 							 "-jsgf", jsgf, 
+							 "-lw", globals.language_weight,
 							 "-dict", dic,
 							 "-frate", "50",
 							 "-silprob", "0.005",
@@ -433,6 +435,8 @@ static switch_status_t load_config(void)
 				globals.thresh = atoi(val);
 			} else if (!strcasecmp(var, "silence-hits")) {
 				globals.silence_hits = atoi(val);
+			} else if (!strcasecmp(var, "language-weight")) {
+				globals.language_weight = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "listen-hits")) {
 				globals.listen_hits = atoi(val);
 			} else if (!strcasecmp(var, "auto-reload")) {
@@ -457,6 +461,10 @@ static switch_status_t load_config(void)
 
 	if (!globals.dictionary) {
 		globals.dictionary = switch_core_strdup(globals.pool, "default.dic");
+	}
+
+	if (!globals.language_weight) {
+		globals.language_weight = switch_core_strdup(globals.pool, "6.5");
 	}
 
  done:
