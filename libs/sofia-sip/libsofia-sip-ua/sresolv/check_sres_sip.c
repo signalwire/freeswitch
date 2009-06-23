@@ -421,25 +421,28 @@ START_TEST(found_cname)
   su_addrinfo_t const *ai;
   url_string_t *uri;
 
-  s2_dns_record("cname1.example.com", sres_type_a,
+  s2_dns_default("example.com.");
+
+  s2_dns_record("cname1.example.com.", sres_type_a,
+		"", sres_type_cname, "a.example.com.",
+		"a", sres_type_a, "11.12.13.14",
+		NULL);
+
+  s2_dns_record("cname1.example.com.", sres_type_naptr,
 		"", sres_type_cname, "a.example.com.",
 		NULL);
 
-  s2_dns_record("cname1.example.com", sres_type_naptr,
+  s2_dns_record("cname1.example.com.", sres_type_aaaa,
 		"", sres_type_cname, "a.example.com.",
 		NULL);
 
-  s2_dns_record("cname1.example.com", sres_type_aaaa,
-		"", sres_type_cname, "a.example.com.",
-		NULL);
-
-  s2_dns_record("a.example.com", sres_type_a,
+  s2_dns_record("a.example.com.", sres_type_a,
 		"", sres_type_a, "11.12.13.14",
 		NULL);
 
-  s2_dns_record("cname2.example.com", sres_type_a,
+  s2_dns_record("cname2.example.com.", sres_type_a,
 		"", sres_type_cname, "a.example.com.",
-		"test.example.com", sres_type_a, "11.12.13.14",
+		"test.example.com.", sres_type_a, "11.12.13.14",
 		NULL);
 
   uri = (void *)"sip:cname1.example.com";
