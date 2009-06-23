@@ -2009,7 +2009,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 											   const char *say_method, switch_input_args_t *args)
 {
 	switch_say_interface_t *si;
+	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const char *save_path = NULL, *chan_lang = NULL, *lang = NULL;
+	
+	switch_assert(session);
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel);
+
+	lang = switch_channel_get_variable(channel, "language");
+
+	if (!lang) {
+		chan_lang = switch_channel_get_variable(channel, "default_language");
+		if (!chan_lang) {
+			chan_lang = "en";
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No language specified - Using [%s]\n", chan_lang);
+	} else {
+		chan_lang = lang;
+	}
+
+	save_path = switch_channel_get_variable(channel, "sound_prefix");
+
+	switch_channel_set_variable_printf(channel, "sound_prefix", "%s%ssounds%s%s", 
+									   SWITCH_GLOBAL_dirs.base_dir,
+									   SWITCH_PATH_SEPARATOR,
+									   SWITCH_PATH_SEPARATOR,
+									   chan_lang);
 
 	if ((si = switch_loadable_module_get_say_interface(module_name))) {
 		/* should go back and proto all the say mods to const.... */
@@ -2019,6 +2045,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 		status = SWITCH_STATUS_FALSE;
 	}
 
+	switch_channel_set_variable(channel, "sound_prefix", save_path);
+	
 	return status;
 }
 
