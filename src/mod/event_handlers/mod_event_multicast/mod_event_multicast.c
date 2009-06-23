@@ -63,7 +63,13 @@ static struct {
 	uint8_t ttl;
 	char *psk;
 	switch_mutex_t *mutex;
+	switch_hash_t *peer_hash;
 } globals;
+
+struct peer_status {
+	switch_bool_t active;
+	int lastseen;
+};
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_bindings, globals.bindings);
@@ -71,6 +77,8 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_bindings, globals.bindings);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_psk, globals.psk);
 #endif
 #define MULTICAST_EVENT "multicast::event"
+#define MULTICAST_PEERUP "multicast::peerup"
+#define MULTICAST_PEERDOWN "multicast::peerdown"
 static switch_status_t load_config(void)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -169,6 +177,42 @@ static void event_handler(switch_event_t *event)
 	}
 
 	if (event->subclass_name && !strcmp(event->subclass_name, MULTICAST_EVENT)) {
+		char * event_name;
+		if ((event_name = switch_event_get_header(event, "orig-event-name")) && !strcasecmp(event_name, "HEARTBEAT")) {
+			char *sender = switch_event_get_header(event, "orig-multicast-sender");
+			struct peer_status *p;
+			int now = switch_epoch_time_now(NULL);
+			
+			if (!(p = switch_core_hash_find(globals.peer_hash, sender))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Host %s not already in hash\n", sender);
+				p = switch_core_alloc(module_pool, sizeof(struct peer_status));
+				p->active = SWITCH_FALSE;
+				p->lastseen = 0;
+			/*} else {*/
+				/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Host %s last seen %d seconds ago\n", sender, now - p->lastseen);*/
+			}
+
+			if (!p->active) {
+				switch_event_t *local_event;
+				if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_PEERUP) == SWITCH_STATUS_SUCCESS) {
+					char lastseen[21];
+					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Peer", sender);
+					if (p->lastseen) {
+						switch_snprintf(lastseen, sizeof(lastseen), "%d", p->lastseen);
+					} else {
+						switch_snprintf(lastseen, sizeof(lastseen), "%s", "Never");
+					}
+					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Lastseen", lastseen);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Peer %s has come up; last seen: %s\n", sender, lastseen);
+
+					switch_event_fire(&local_event);
+				}
+			}
+			p->active = SWITCH_TRUE;
+			p->lastseen = now;
+
+			switch_core_hash_insert(globals.peer_hash, sender, p);
+		}
 		/* ignore our own events to avoid ping pong */
 		return;
 	}
@@ -185,6 +229,36 @@ static void event_handler(switch_event_t *event)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Event Multicast Reloaded\n");
 		}
 		switch_mutex_unlock(globals.mutex);
+	}
+
+	if (event->event_id == SWITCH_EVENT_HEARTBEAT) {
+		switch_hash_index_t *cur;
+		switch_ssize_t keylen;
+		const void *key;
+		void *value;
+		int now = switch_epoch_time_now(NULL);
+		struct peer_status *last;
+		char *host;
+		
+		for (cur = switch_hash_first(NULL, globals.peer_hash); cur; cur = switch_hash_next(cur)) {
+			switch_hash_this(cur, &key, &keylen, &value);
+			host = (char*) key;
+			last = (struct peer_status*) value;
+			if (last->active && (now - (last->lastseen)) > 60) {
+				switch_event_t *local_event;
+
+				last->active = SWITCH_FALSE;
+				if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_PEERDOWN) == SWITCH_STATUS_SUCCESS) {
+					char lastseen[21];
+					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Peer", host);
+					switch_snprintf(lastseen, sizeof(lastseen), "%d", last->lastseen);
+					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Lastseen", lastseen);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Peer %s has gone down; last seen: %s\n", host, lastseen);
+
+					switch_event_fire(&local_event);
+				}
+			}
+		}
 	}
 
 	switch_mutex_lock(globals.mutex);
@@ -271,6 +345,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 	module_pool = pool;
 
 	switch_core_hash_init(&globals.event_hash, module_pool);
+	switch_core_hash_init(&globals.peer_hash, module_pool);
 
 	gethostname(globals.hostname, sizeof(globals.hostname));
 	globals.host_hash = switch_hashfunc_default(globals.hostname, &hlen);
@@ -319,7 +394,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	if (switch_event_reserve_subclass(MULTICAST_EVENT) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MULTICAST_EVENT);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_event_reserve_subclass(MULTICAST_PEERUP) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MULTICAST_PEERUP);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_event_reserve_subclass(MULTICAST_PEERDOWN) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MULTICAST_PEERDOWN);
 		return SWITCH_STATUS_GENERR;
 	}
 
