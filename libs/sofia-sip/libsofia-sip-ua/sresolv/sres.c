@@ -3606,7 +3606,9 @@ sres_decode_msg(sres_resolver_t *res,
   if ((m->m_flags & 15) == SRES_FORMAT_ERR && query->q_edns)
     return SRES_EDNS0_ERR;
 
-  /* Scan question section */
+  /* Scan question section.
+   * XXX: never mind the useless result values, this is done
+   * for the side effects in m */
   for (i = 0; i < m->m_qdcount; i++) {
     char name[1024];
     uint16_t qtype, qclass;
