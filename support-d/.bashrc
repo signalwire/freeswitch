@@ -30,4 +30,5 @@ alias dp='emacs /usr/local/freeswitch/conf/dialplan/default.xml'
 alias fstop='top -p `cat /usr/local/freeswitch/log/freeswitch.pid`'
 alias fsgdb='gdb /usr/local/freeswitch/bin/freeswitch `cat /usr/local/freeswitch/log/freeswitch.pid`'
 alias fscore='gdb /usr/local/freeswitch/bin/freeswitch `ls -rt core.* | tail -n1`'
+alias emacs='emacs -nw'
 # End of file
