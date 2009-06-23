@@ -54,7 +54,7 @@ var pizza = new Object();
 
 /***************** Delivery Or Take-Out? *****************/
 pizza.orderObtainer = new SpeechObtainer(asr, 1, 5000);
-pizza.orderObtainer.setGrammar("pizza_order", "", "result", dft_min, dft_confirm, true);
+pizza.orderObtainer.setGrammar("pizza_order", "", "result.interpretation.input", dft_min, dft_confirm, true);
 pizza.orderObtainer.setTopSound("GP-DeliveryorTakeout");
 pizza.orderObtainer.setBadSound("GP-NoDeliveryorTake-out");
 pizza.orderObtainer.addItemAlias("Delivery", "Delivery");
@@ -62,7 +62,7 @@ pizza.orderObtainer.addItemAlias("Takeout,Pickup", "Pickup");
 
 /***************** What Size? *****************/
 pizza.sizeObtainer = new SpeechObtainer(asr, 1, 5000);
-pizza.sizeObtainer.setGrammar("pizza_size", "", "result", dft_min, dft_confirm, true);
+pizza.sizeObtainer.setGrammar("pizza_size", "", "result.interpretation.input", dft_min, dft_confirm, true);
 pizza.sizeObtainer.setTopSound("GP-Size");
 pizza.sizeObtainer.setBadSound("GP-NI");
 pizza.sizeObtainer.addItemAlias("^Extra\\s*Large", "ExtraLarge");
@@ -73,7 +73,7 @@ pizza.sizeObtainer.addItemAlias("^Humongous$,^Huge$,^Totally\\s*Humongous$,^Tota
 
 /***************** What Type Of Crust? *****************/
 pizza.crustObtainer = new SpeechObtainer(asr, 1, 5000);
-pizza.crustObtainer.setGrammar("pizza_crust", "", "result", dft_min, dft_confirm, true);
+pizza.crustObtainer.setGrammar("pizza_crust", "", "result.interpretation.input", dft_min, dft_confirm, true);
 pizza.crustObtainer.setTopSound("GP-Crust");
 pizza.crustObtainer.setBadSound("GP-NI");
 pizza.crustObtainer.addItemAlias("^Hand\\s*Tossed$,^Tossed$", "HandTossed");
@@ -83,7 +83,7 @@ pizza.crustObtainer.addItemAlias("^New\\s*York,^Thin", "Thin");
 
 /***************** Specialty Or Custom? *****************/
 pizza.typeObtainer = new SpeechObtainer(asr, 1, 5000);
-pizza.typeObtainer.setGrammar("pizza_type", "", "result", dft_min, dft_confirm, true);
+pizza.typeObtainer.setGrammar("pizza_type", "", "result.interpretation.input", dft_min, dft_confirm, true);
 pizza.typeObtainer.setTopSound("GP-SpecialtyorCustom");
 pizza.typeObtainer.setBadSound("GP-NI");
 pizza.typeObtainer.addItemAlias("^Specialty$,^Specialty\\s*pizza$", "Specialty");
@@ -92,7 +92,7 @@ pizza.typeObtainer.addItemAlias("^pick", "Custom");
 
 /***************** Which Specialty? *****************/
 pizza.specialtyObtainer = new SpeechObtainer(asr, 1, 5000);
-pizza.specialtyObtainer.setGrammar("pizza_specialty", "", "result", dft_min, dft_confirm, true);
+pizza.specialtyObtainer.setGrammar("pizza_specialty", "", "result.interpretation.input", dft_min, dft_confirm, true);
 pizza.specialtyObtainer.setTopSound("GP-SpecialtyList");
 pizza.specialtyObtainer.setBadSound("GP-NI");
 pizza.specialtyObtainer.addItemAlias("^Hawaii,^Hawaiian", "Hawaiian");
@@ -104,7 +104,7 @@ pizza.specialtyObtainer.addItemAlias("^Veg", "Vegetarian");
 
 /***************** What Toppings? *****************/
 pizza.toppingsObtainer = new SpeechObtainer(asr, 1, 5000);
-pizza.toppingsObtainer.setGrammar("pizza_toppings", "", "result", dft_min, dft_confirm, true);
+pizza.toppingsObtainer.setGrammar("pizza_toppings", "", "result.interpretation.input", dft_min, dft_confirm, true);
 pizza.toppingsObtainer.setTopSound("GP-Toppings");
 pizza.toppingsObtainer.setBadSound("GP-NI");
 pizza.toppingsObtainer.addItemAlias("anchovie,anchovies", "anchovies");
@@ -130,7 +130,7 @@ pizza.toppingsObtainer.addItemAlias("ham", "ham");
 
 /***************** Change Delivery Or Size Or Crust, Add/Rem Toppings Or Start Over  *****************/
 pizza.arsoObtainer = new SpeechObtainer(asr, 1, 5000);
-pizza.arsoObtainer.setGrammar("pizza_arso", "", "result", dft_min, 50, true);
+pizza.arsoObtainer.setGrammar("pizza_arso", "", "result.interpretation.input", dft_min, 50, true);
 pizza.arsoObtainer.setTopSound("GP-ARSO");
 pizza.arsoObtainer.setBadSound("GP-NI");
 pizza.arsoObtainer.addItemAlias("^delivery$", "delivery");
@@ -142,7 +142,7 @@ pizza.arsoObtainer.addItemAlias("^remove\\s*", "rem_topping");
 
 /***************** Yes? No? Maybe So?  *****************/
 pizza.yesnoObtainer = new SpeechObtainer(asr, 1, 5000);
-pizza.yesnoObtainer.setGrammar("pizza_yesno", "", "result", dft_min, 20, true);
+pizza.yesnoObtainer.setGrammar("pizza_yesno", "", "result.interpretation.input", dft_min, 20, true);
 pizza.yesnoObtainer.setBadSound("GP-NI");
 pizza.yesnoObtainer.addItemAlias("^yes,^correct", "yes");
 pizza.yesnoObtainer.addItemAlias("^no", "no");
