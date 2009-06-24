@@ -536,7 +536,6 @@ struct zap_span {
 	char *name;
 	uint32_t span_id;
 	uint32_t chan_count;
-	uint32_t active_count;
 	zap_span_flag_t flags;
 	struct zap_io_interface *zio;
 	zio_event_cb_t event_callback;
@@ -639,6 +638,7 @@ OZ_DECLARE(zap_status_t) zap_span_set_event_callback(zap_span_t *span, zio_event
 OZ_DECLARE(zap_status_t) zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t event_callback);
 OZ_DECLARE(zap_status_t) zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan);
 OZ_DECLARE(zap_status_t) zap_channel_open_chan(zap_channel_t *zchan);
+OZ_DECLARE(zap_status_t) zap_span_channel_use_count(zap_span_t *span, uint32_t *count);
 OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan);
 OZ_DECLARE(zap_status_t) zap_channel_close(zap_channel_t **zchan);
 OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan);
