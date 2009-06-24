@@ -3071,7 +3071,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 										  p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);
 						switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);					
 					} else if ((!strcmp(profile->sipip, p_contact->m_url->url_host))
-							   || (!strcmp(profile->extsipip, p_contact->m_url->url_host))
+							   || (profile->extsipip && !strcmp(profile->extsipip, p_contact->m_url->url_host))
 							   || (switch_xml_locate_domain(p_contact->m_url->url_host, NULL, &root, &domain) == SWITCH_STATUS_SUCCESS)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirect: Transfering to %s\n", p_contact->m_url->url_user);
 						switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, NULL, NULL);
