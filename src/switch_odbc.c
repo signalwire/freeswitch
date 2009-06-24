@@ -215,9 +215,9 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 #endif
 }
 
+#ifdef SWITCH_HAVE_ODBC
 static int db_is_up(switch_odbc_handle_t *handle)
 {
-#ifdef SWITCH_HAVE_ODBC
 	int ret = 0;
 	SQLHSTMT stmt = NULL;
 	SQLLEN m = 0;
@@ -316,10 +316,8 @@ static int db_is_up(switch_odbc_handle_t *handle)
 	}
 
 	return ret;
-#else
-	return SWITCH_ODBC_FAIL;
-#endif
 }
+#endif
 
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_statement_handle_free(switch_odbc_statement_handle_t * stmt)
 {
