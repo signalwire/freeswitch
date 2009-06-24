@@ -3445,7 +3445,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_API_VERSION_get() {
   int jresult ;
   int result;
   
-  result = (int) 3;
+  result = (int) 4;
   
   jresult = result; 
   return jresult;
