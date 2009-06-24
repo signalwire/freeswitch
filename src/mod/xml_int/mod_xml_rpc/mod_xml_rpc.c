@@ -256,7 +256,7 @@ static abyss_bool is_authorized (const TSession *r, const char *command)
 		return FALSE;
 	}
 
-	if (!switch_strlen_zero(globals.realm) && !strcasecmp(domain_name, globals.realm) && !switch_strlen_zero(globals.user) && !strcmp(user, globals.user)) {
+	if (!switch_strlen_zero(globals.realm) && !switch_strlen_zero(globals.user) && !strcmp(user, globals.user)) {
 		switch_safe_free(user);
 		return TRUE;
 	}
@@ -328,7 +328,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 					goto fail;
 				}
 
-				if (!switch_strlen_zero(globals.realm) && !strcasecmp(domain_name, globals.realm) && !switch_strlen_zero(globals.user) && !switch_strlen_zero(globals.pass)) {
+				if (!switch_strlen_zero(globals.realm) && !switch_strlen_zero(globals.user) && !switch_strlen_zero(globals.pass)) {
 					if (at) {
 						switch_snprintf(z, sizeof(z), "%s@%s:%s", globals.user, globals.realm, globals.pass);
 					} else {
