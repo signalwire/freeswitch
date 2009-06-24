@@ -33,10 +33,6 @@
  */
 #include <switch.h>
 
-#ifdef SWITCH_HAVE_ODBC
-#include <switch_odbc.h>
-#endif
-
 #ifdef _MSC_VER					/* compilers are stupid sometimes */
 #define TRY_CODE(code) for(;;) {status = code; if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) { goto end; } break;}
 #else
@@ -156,9 +152,8 @@ static switch_status_t vm_execute_sql(vm_profile_t *profile, char *sql, switch_m
 		switch_mutex_lock(mutex);
 	}
 
-	if (profile->odbc_dsn) {
-#ifdef SWITCH_HAVE_ODBC
-		SQLHSTMT stmt;
+	if (switch_odbc_available() && profile->odbc_dsn) {
+		switch_odbc_statement_handle_t stmt;
 		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
 			char *err_str;
 			err_str = switch_odbc_handle_get_error(profile->master_odbc, stmt);
@@ -166,8 +161,7 @@ static switch_status_t vm_execute_sql(vm_profile_t *profile, char *sql, switch_m
 			switch_safe_free(err_str);
 			status = SWITCH_STATUS_FALSE;
 		}
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-#endif
+		switch_odbc_statement_handle_free(&stmt);
 	} else {
 		if (!(db = switch_core_db_open_file(profile->dbname))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
@@ -196,10 +190,8 @@ static switch_bool_t vm_execute_sql_callback(vm_profile_t *profile, switch_mutex
 		switch_mutex_lock(mutex);
 	}
 
-	if (profile->odbc_dsn) {
-#ifdef SWITCH_HAVE_ODBC
+	if (switch_odbc_available() && profile->odbc_dsn) {
 		switch_odbc_handle_callback_exec(profile->master_odbc, sql, callback, pdata);
-#endif
 	} else {
 		if (!(db = switch_core_db_open_file(profile->dbname))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
@@ -266,12 +258,10 @@ static char *vm_index_list[] = {
 static void free_profile(vm_profile_t *profile)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying Profile %s\n", profile->name);
-#ifdef SWITCH_HAVE_ODBC
-	if (profile->odbc_dsn && profile->master_odbc) {
+	if (switch_odbc_available() && profile->odbc_dsn && profile->master_odbc) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Closing ODBC Database! %s\n", profile->name);
 		switch_odbc_handle_destroy(&profile->master_odbc);
 	}
-#endif
 	switch_core_destroy_memory_pool(&profile->pool);
 }
 
@@ -669,8 +659,7 @@ static vm_profile_t * load_profile(const char *profile_name)
 		}
 
 		profile->dbname = switch_core_sprintf(profile->pool, "voicemail_%s", profile_name);
-		if (profile->odbc_dsn) {
-#ifdef SWITCH_HAVE_ODBC
+		if (switch_odbc_available() && profile->odbc_dsn) {
 			if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
 				goto end;
@@ -713,7 +702,6 @@ static vm_profile_t * load_profile(const char *profile_name)
 			for (x = 0; vm_index_list[x]; x++) {
 				switch_odbc_handle_exec(profile->master_odbc, vm_index_list[x], NULL);
 			}
-#endif
 		} else {
 			if ((db = switch_core_db_open_file(profile->dbname))) {
 				char *errmsg;
@@ -4006,12 +3994,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_voicemail_shutdown)
 		switch_thread_rwlock_wrlock(profile->rwlock);
 		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying Profile %s\n", profile->name);
-#ifdef SWITCH_HAVE_ODBC
-		if (profile->odbc_dsn && profile->master_odbc) {
+
+		if (switch_odbc_available() && profile->odbc_dsn && profile->master_odbc) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Closing ODBC Database! %s\n", profile->name);
 			switch_odbc_handle_destroy(&profile->master_odbc);
 		}
-#endif
 		switch_core_destroy_memory_pool(&profile->pool);
 		profile = NULL;
 	}

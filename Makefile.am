@@ -97,6 +97,7 @@ src/switch_xml.c\
 src/switch_xml_config.c\
 src/switch_config.c\
 src/switch_time.c\
+src/switch_odbc.c \
 libs/stfu/stfu.c\
 src/switch_cpp.cpp\
 src/g711.c\
@@ -204,7 +205,6 @@ endif
 
 if ADD_ODBC
 CORE_CFLAGS    += -DSWITCH_HAVE_ODBC $(ODBC_INC_FLAGS)
-libfreeswitch_la_SOURCES += src/switch_odbc.c
 libfreeswitch_la_LDFLAGS     += $(ODBC_LIB_FLAGS)
 endif
 

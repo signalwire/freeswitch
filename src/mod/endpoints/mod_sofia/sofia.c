@@ -2068,17 +2068,17 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "sip-trace") && switch_true(val)) {
 						sofia_set_flag(profile, TFLAG_TPORT_LOG);
 					} else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
-#ifdef SWITCH_HAVE_ODBC
-						profile->odbc_dsn = switch_core_strdup(profile->pool, val);
-						if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
-							*profile->odbc_user++ = '\0';
-							if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
-								*profile->odbc_pass++ = '\0';
+						if (switch_odbc_available()) {
+							profile->odbc_dsn = switch_core_strdup(profile->pool, val);
+							if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
+								*profile->odbc_user++ = '\0';
+								if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
+									*profile->odbc_pass++ = '\0';
+								}
 							}
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 						}
-#else
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
-#endif
 					} else if (!strcasecmp(var, "user-agent-string")) {
 						profile->user_agent = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "auto-restart")) {

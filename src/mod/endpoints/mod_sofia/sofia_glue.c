@@ -3616,8 +3616,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   expires           INTEGER\n"
 		");\n";
 
-	if (profile->odbc_dsn) {
-#ifdef SWITCH_HAVE_ODBC
+	if (switch_odbc_available() && profile->odbc_dsn) {
 		int x;
 		char *indexes[] = {
 			"create index sr_call_id on sip_registrations (call_id)",
@@ -3735,9 +3734,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 
 
-#else
+	} else if (profile->odbc_dsn) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
-#endif
 	} else {
 		if (!(profile->master_db = switch_core_db_open_file(profile->dbname))) {
 			return 0;
@@ -3835,27 +3833,22 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_exec(profile->master_db, "create index if not exists sa_hostname on sip_authentication (hostname)", NULL, NULL, NULL);
 	}
 
-#ifdef SWITCH_HAVE_ODBC
-	if (profile->odbc_dsn) {
+	if (switch_odbc_available() && profile->odbc_dsn) {
 		return profile->master_odbc ? 1 : 0;
 	}
-#endif
 
 	return profile->master_db ? 1 : 0;
 }
 
 void sofia_glue_sql_close(sofia_profile_t *profile)
 {
-#ifdef SWITCH_HAVE_ODBC
-	if (profile->master_odbc) {
+	if (switch_odbc_available() && profile->master_odbc) {
 		switch_odbc_handle_destroy(&profile->master_odbc);
+	} else {
+		switch_core_db_close(profile->master_db);
+		profile->master_db = NULL;
 	}
-#else
-	switch_core_db_close(profile->master_db);
-	profile->master_db = NULL;
-#endif
 }
-
 
 void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic)
 {
@@ -3899,9 +3892,8 @@ void sofia_glue_actually_execute_sql(sofia_profile_t *profile, switch_bool_t mas
 		switch_mutex_lock(mutex);
 	}
 
-	if (profile->odbc_dsn) {
-#ifdef SWITCH_HAVE_ODBC
-		SQLHSTMT stmt;
+	if (switch_odbc_available() && profile->odbc_dsn) {
+		switch_odbc_statement_handle_t stmt;
 		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
 			char *err_str;
 			err_str = switch_odbc_handle_get_error(profile->master_odbc, stmt);
@@ -3910,10 +3902,9 @@ void sofia_glue_actually_execute_sql(sofia_profile_t *profile, switch_bool_t mas
 			}
 			switch_safe_free(err_str);
 		}
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-#else
+		switch_odbc_statement_handle_free(&stmt);
+	} else if (profile->odbc_dsn) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
-#endif
 	} else {
 		if (master) {
 			db = profile->master_db;
@@ -3948,12 +3939,10 @@ switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 	}
 
 
-	if (profile->odbc_dsn) {
-#ifdef SWITCH_HAVE_ODBC
+	if (switch_odbc_available() && profile->odbc_dsn) {
 		switch_odbc_handle_callback_exec(profile->master_odbc, sql, callback, pdata);
-#else
+	} else if (profile->odbc_dsn) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
-#endif
 	} else {
 
 		if (master) {
@@ -3984,36 +3973,17 @@ switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 	return ret;
 }
 
-#ifdef SWITCH_HAVE_ODBC
 static char *sofia_glue_execute_sql2str_odbc(sofia_profile_t *profile, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len)
 {
 	char *ret = NULL;
-	SQLHSTMT stmt;
-	SQLCHAR name[1024];
-	SQLLEN m = 0;
 
-	if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt) == SWITCH_ODBC_SUCCESS) {
-		SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
-		SQLULEN ColumnSize;
-		SQLRowCount(stmt, &m);
-
-		if (m <= 0) {
-			return NULL;
-		}
-
-		if (SQLFetch(stmt) != SQL_SUCCESS) {
-			return NULL;
-		}
-
-		SQLDescribeCol(stmt, 1, name, sizeof(name), &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
-		SQLGetData(stmt, 1, SQL_C_CHAR, (SQLCHAR *) resbuf, (SQLLEN) len, NULL);
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	if (switch_odbc_handle_exec_string(profile->master_odbc, sql, resbuf, len) == SWITCH_ODBC_SUCCESS) {
 		ret = resbuf;
 	}
 
 	return ret;
 }
-#endif
+
 
 char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len)
 {
@@ -4021,11 +3991,9 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 	switch_core_db_stmt_t *stmt;
 	char *ret = NULL;
 
-#ifdef SWITCH_HAVE_ODBC
-	if (profile->odbc_dsn) {
+	if (switch_odbc_available() && profile->odbc_dsn) {
 		return sofia_glue_execute_sql2str_odbc(profile, mutex, sql, resbuf, len);
 	}
-#endif
 
 	if (mutex) {
 		switch_mutex_lock(mutex);

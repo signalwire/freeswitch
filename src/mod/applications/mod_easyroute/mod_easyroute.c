@@ -38,10 +38,6 @@
 
 #include <switch.h>
 
-#ifdef SWITCH_HAVE_ODBC
-#include <switch_odbc.h>
-#endif
-
 typedef struct easyroute_results{
 	char	limit[16];
 	char	dialstring[256];
@@ -68,11 +64,7 @@ static struct {
 	char *default_gateway;
 	switch_mutex_t *mutex;
 	char *custom_query;
-#ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_t *master_odbc;
-#else   
-	void *filler1;
-#endif
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_easyroute_load);
@@ -86,7 +78,6 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_default_techprofile, globals.defaul
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_default_gateway, globals.default_gateway);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_custom_query, globals.custom_query);
 
-#ifdef SWITCH_HAVE_ODBC
 static int route_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	route_callback_t *cbt = (route_callback_t *) pArg;
@@ -100,7 +91,6 @@ static int route_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 	return 0;
 }
-#endif
 
 static switch_status_t load_config(void)
 {
@@ -145,9 +135,7 @@ done:
 		set_global_db_dsn("easyroute");
 	}
 
-
-#ifdef SWITCH_HAVE_ODBC
-	if (globals.db_dsn) {
+	if (switch_odbc_available() && globals.db_dsn) {
 		if (!(globals.master_odbc = switch_odbc_handle_new(globals.db_dsn, globals.db_username, globals.db_password))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
 			status = SWITCH_STATUS_FALSE;
@@ -171,15 +159,12 @@ done:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot find  SQL Database! (Where\'s the gateways table\?\?)\n");
 			}
 		}
-	} else {
-#endif
+	} else if (globals.db_dsn) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Connection (did you enable it?!)\n");
-#ifdef SWITCH_HAVE_ODBC
 	}
 
 reallydone:
 
-#endif
 	if (xml) {
 		switch_xml_free(xml);
 	}
@@ -192,16 +177,19 @@ reallydone:
 	return status;
 }
 
-#ifdef SWITCH_HAVE_ODBC
 static char SQL_LOOKUP[] = "SELECT gateways.gateway_ip, gateways.group, gateways.limit, gateways.techprofile, numbers.acctcode, numbers.translated from gateways, numbers where numbers.number = '%q' and numbers.gateway_id = gateways.gateway_id limit 1;";
-#endif
 
 static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int noat, char *seperator)
 {	
 	switch_status_t sstatus = SWITCH_STATUS_SUCCESS;
-#ifdef SWITCH_HAVE_ODBC
 	char *sql = NULL;
 	route_callback_t pdata;
+
+	if (!switch_odbc_available()) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+						  "mod_easyroute requires core ODBC support. Please refer to the documentation on how to enable this\n");
+		return sstatus;
+	}
 
 	memset(&pdata, 0, sizeof(pdata));
 	if (!globals.custom_query){
@@ -278,9 +266,6 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int 
 	}
 
 	switch_safe_free(sql);
-#else
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "mod_easyroute requires core ODBC support. Please refer to the documentation on how to enable this\n");
-#endif
 
 	if (globals.mutex){
 		switch_mutex_unlock(globals.mutex);
@@ -347,11 +332,11 @@ SWITCH_STANDARD_API(easyroute_function)
 		goto done;
 	}
 
-#ifndef SWITCH_HAVE_ODBC
-	stream->write_function(stream, "mod_easyroute requires you enable core odbc support\n");
-	status = SWITCH_STATUS_SUCCESS;
-	goto done;
-#endif
+	if (!switch_odbc_available()) {
+		stream->write_function(stream, "mod_easyroute requires you enable core odbc support\n");
+		status = SWITCH_STATUS_SUCCESS;
+		goto done;
+	}
 	
 	if (!cmd || !(mydata = strdup(cmd))) {
 		stream->write_function(stream, "Usage: easyroute <number>\n");
@@ -430,10 +415,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_easyroute_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_easyroute_shutdown)
 {	
-#ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_disconnect(globals.master_odbc);
-#endif
-	
 	switch_safe_free(globals.db_username);
 	switch_safe_free(globals.db_password);
 	switch_safe_free(globals.db_dsn);

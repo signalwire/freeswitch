@@ -33,9 +33,6 @@
  */
 
 #include <switch.h>
-#ifdef SWITCH_HAVE_ODBC
-#include <switch_odbc.h>
-#endif
 
 #define LIMIT_EVENT_USAGE "limit::usage"
 
@@ -53,11 +50,7 @@ static struct {
 	switch_hash_t *limit_hash;	
 	switch_mutex_t *db_hash_mutex;
 	switch_hash_t *db_hash;	
-#ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_t *master_odbc;
-#else
-	void *filler1;
-#endif
 } globals;
 
 typedef struct  {
@@ -102,9 +95,9 @@ static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
-#ifdef SWITCH_HAVE_ODBC
-	if (globals.odbc_dsn) {
-		SQLHSTMT stmt;
+
+	if (switch_odbc_available() && globals.odbc_dsn) {
+		switch_odbc_statement_handle_t stmt;
 		if (switch_odbc_handle_exec(globals.master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
 			char *err_str;
 			err_str = switch_odbc_handle_get_error(globals.master_odbc, stmt);
@@ -114,21 +107,16 @@ static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 			switch_safe_free(err_str);
 			status = SWITCH_STATUS_FALSE;
 		}
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+		switch_odbc_statement_handle_free(&stmt);
 	} else {
-#endif
 		if (!(db = switch_core_db_open_file(globals.dbname))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", globals.dbname);
 			status = SWITCH_STATUS_FALSE;
 			goto end;
 		}
-
 		status = switch_core_db_persistant_execute(db, sql, 1);
 		switch_core_db_close(db);
-
-#ifdef SWITCH_HAVE_ODBC
 	}
-#endif
 
   end:
 	if (mutex) {
@@ -148,11 +136,9 @@ static switch_bool_t limit_execute_sql_callback(switch_mutex_t *mutex, char *sql
 		switch_mutex_lock(mutex);
 	}
 
-#ifdef SWITCH_HAVE_ODBC
-	if (globals.odbc_dsn) {
+	if (switch_odbc_available() && globals.odbc_dsn) {
 		switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata);
 	} else {
-#endif
 		if (!(db = switch_core_db_open_file(globals.dbname))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", globals.dbname);
 			goto end;
@@ -168,9 +154,7 @@ static switch_bool_t limit_execute_sql_callback(switch_mutex_t *mutex, char *sql
 		if (db) {
 			switch_core_db_close(db);
 		}
-#ifdef SWITCH_HAVE_ODBC
 	}
-#endif
 
   end:
 	if (mutex) {
@@ -202,17 +186,15 @@ static switch_status_t do_config()
 		return SWITCH_STATUS_TERM;
 	}
 	
-	if (globals.odbc_dsn) {
-#ifdef SWITCH_HAVE_ODBC
+	if (switch_odbc_available() && globals.odbc_dsn) {
 		if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
 			*odbc_user++ = '\0';
 			if ((odbc_pass = strchr(odbc_user, ':'))) {
 				*odbc_pass++ = '\0';
 			}
 		}
-#else
+	} else if (globals.odbc_dsn) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
-#endif
 	}
 	
 
@@ -220,8 +202,7 @@ static switch_status_t do_config()
 		globals.dbname = "call_limit";
 	}
 
-#ifdef SWITCH_HAVE_ODBC
-	if (globals.odbc_dsn) {
+	if (switch_odbc_available() && globals.odbc_dsn) {
 		int x;
 		char *indexes[] = {
 			"create index ld_hostname on limit_data (hostname)",
@@ -269,7 +250,6 @@ static switch_status_t do_config()
 			switch_odbc_handle_exec(globals.master_odbc, indexes[x], NULL);
 		}
 	} else {
-#endif
 		if ((db = switch_core_db_open_file(globals.dbname))) {
 			switch_core_db_test_reactive(db, "select * from limit_data", NULL, limit_sql);
 			switch_core_db_test_reactive(db, "select * from db_data", NULL, db_sql);
@@ -292,9 +272,7 @@ static switch_status_t do_config()
 			goto done;
 		}
 		switch_core_db_close(db);
-#ifdef SWITCH_HAVE_ODBC
 	}
-#endif
 
   done:
 
@@ -1129,11 +1107,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_limit_shutdown) 
 {
 	
-	#ifdef SWITCH_HAVE_ODBC
 	if (globals.master_odbc) {
 		switch_odbc_handle_destroy(&globals.master_odbc);
 	}
-	#endif
 	
 	switch_event_free_subclass(LIMIT_EVENT_USAGE);
 	

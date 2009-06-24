@@ -30,7 +30,17 @@
  *
  */
 #include "mod_spidermonkey.h"
-#include <switch_odbc.h>
+
+#include <sql.h>
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4201)
+#include <sqlext.h>
+#pragma warning(pop)
+#else
+#include <sqlext.h>
+#endif
+#include <sqltypes.h>
 
 static const char modname[] = "ODBC";
 

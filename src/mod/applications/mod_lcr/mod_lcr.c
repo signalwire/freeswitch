@@ -31,8 +31,6 @@
  */
 
 #include <switch.h>
-#include <switch_odbc.h>
-
 
 #define LCR_SYNTAX "lcr <digits> [<lcr profile>] [caller_id] [intrastate]"
 #define LCR_ADMIN_SYNTAX "lcr_admin show profiles"
@@ -75,15 +73,6 @@ static char headers[LCR_HEADERS_COUNT][32] = {
 /* sql for random function */
 static char *db_random = NULL;
 
-struct odbc_obj {
-	switch_odbc_handle_t *handle;
-	SQLHSTMT stmt;
-	SQLCHAR *colbuf;
-	int32_t cblen;
-	SQLCHAR *code;
-	int32_t codelen;
-};
-
 struct lcr_obj {
 	char *carrier_name;
 	char *gw_prefix;
@@ -111,9 +100,6 @@ struct max_obj {
 	size_t cid;
 	size_t dialstring;
 };
-
-typedef struct odbc_obj  odbc_obj_t;
-typedef odbc_obj_t *odbc_handle;
 
 typedef struct lcr_obj lcr_obj_t;
 typedef lcr_obj_t *lcr_route;
@@ -1384,11 +1370,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 	
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-#ifndef SWITCH_HAVE_ODBC
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "You must have ODBC support in FreeSWITCH to use this module\n");
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "\t./configure --enable-core-odbc-support\n");
-	return SWITCH_STATUS_FALSE;
-#endif
+	if (!switch_odbc_available()) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "You must have ODBC support in FreeSWITCH to use this module\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "\t./configure --enable-core-odbc-support\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
 	globals.pool = pool;
 
@@ -1417,10 +1403,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lcr_shutdown)
 {
 
-#ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_disconnect(globals.master_odbc);
 	switch_odbc_handle_destroy(&globals.master_odbc);
-#endif
 	switch_core_hash_destroy(&globals.profile_hash);
 
 	return SWITCH_STATUS_SUCCESS;

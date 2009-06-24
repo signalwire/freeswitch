@@ -30,7 +30,18 @@
  */
 
 #include <switch.h>
-#include <switch_odbc.h>
+
+#ifdef SWITCH_HAVE_ODBC
+#include <sql.h>
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4201)
+#include <sqlext.h>
+#pragma warning(pop)
+#else
+#include <sqlext.h>
+#endif
+#include <sqltypes.h>
 
 #if (ODBCVER < 0x0300)
 #define SQL_NO_DATA SQL_SUCCESS
@@ -46,9 +57,11 @@ struct switch_odbc_handle {
 	char odbc_driver[256];
 	BOOL is_firebird;
 };
+#endif
 
 SWITCH_DECLARE(switch_odbc_handle_t *) switch_odbc_handle_new(char *dsn, char *username, char *password)
 {
+#ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_t *new_handle;
 
 	if (!(new_handle = malloc(sizeof(*new_handle)))) {
@@ -86,12 +99,19 @@ SWITCH_DECLARE(switch_odbc_handle_t *) switch_odbc_handle_new(char *dsn, char *u
 		switch_safe_free(new_handle);
 	}
 
+#endif
 	return NULL;
 }
 
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_disconnect(switch_odbc_handle_t *handle)
 {
+#ifdef SWITCH_HAVE_ODBC
+
 	int result;
+
+	if (!handle) {
+		return SWITCH_ODBC_FAIL;
+	}
 
 	if (handle->state == SWITCH_ODBC_STATE_CONNECTED) {
 		result = SQLDisconnect(handle->con);
@@ -105,10 +125,14 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_disconnect(switch_odbc_h
 	handle->state = SWITCH_ODBC_STATE_DOWN;
 
 	return SWITCH_ODBC_SUCCESS;
+#else
+	return SWITCH_ODBC_FAIL;
+#endif
 }
 
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_handle_t *handle)
 {
+#ifdef SWITCH_HAVE_ODBC
 	int result;
 	SQLINTEGER err;
 	int16_t mlen;
@@ -186,10 +210,14 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to [%s]\n", handle->dsn);
 	handle->state = SWITCH_ODBC_STATE_CONNECTED;
 	return SWITCH_ODBC_SUCCESS;
+#else
+	return SWITCH_ODBC_FAIL;
+#endif
 }
 
 static int db_is_up(switch_odbc_handle_t *handle)
 {
+#ifdef SWITCH_HAVE_ODBC
 	int ret = 0;
 	SQLHSTMT stmt = NULL;
 	SQLLEN m = 0;
@@ -288,10 +316,68 @@ static int db_is_up(switch_odbc_handle_t *handle)
 	}
 
 	return ret;
+#else
+	return SWITCH_ODBC_FAIL;
+#endif
 }
 
-SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, char *sql, SQLHSTMT * rstmt)
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_statement_handle_free(switch_odbc_statement_handle_t * stmt)
 {
+	if (!stmt || ! *stmt) {
+		return SWITCH_ODBC_FAIL;
+	}
+#ifdef SWITCH_HAVE_ODBC
+	SQLFreeHandle(SQL_HANDLE_STMT, *stmt);
+	*stmt = NULL;
+	return SWITCH_ODBC_SUCCESS;
+#else
+	return SWITCH_ODBC_FAIL;
+#endif
+}
+
+
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_handle_t *handle,
+																	char *sql,
+																	char *resbuf,
+																	size_t len)
+{
+#ifdef SWITCH_HAVE_ODBC
+	switch_odbc_status_t sstatus = SWITCH_ODBC_FAIL;
+	switch_odbc_statement_handle_t stmt = NULL;
+	SQLCHAR name[1024];
+	SQLLEN m = 0;
+
+	if (switch_odbc_handle_exec(handle, sql, &stmt) == SWITCH_ODBC_SUCCESS) {
+		SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
+		SQLULEN ColumnSize;
+		SQLRowCount(stmt, &m);
+
+		if (m <= 0) {
+			goto done;
+		}
+
+		if (SQLFetch(stmt) != SQL_SUCCESS) {
+			goto done;
+		}
+
+		SQLDescribeCol(stmt, 1, name, sizeof(name), &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
+		SQLGetData(stmt, 1, SQL_C_CHAR, (SQLCHAR *) resbuf, (SQLLEN) len, NULL);
+		sstatus = SWITCH_ODBC_SUCCESS;
+	} else {
+		return sstatus;
+	}
+
+ done:
+	switch_odbc_statement_handle_free(&stmt);
+	return sstatus;
+#else
+	return SWITCH_ODBC_FAIL;
+#endif
+}
+
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, char *sql, switch_odbc_statement_handle_t * rstmt)
+{
+#ifdef SWITCH_HAVE_ODBC
 	SQLHSTMT stmt = NULL;
 	int result;
 
@@ -327,6 +413,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 	} else if (stmt) {
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	}
+#endif
 	return SWITCH_ODBC_FAIL;
 }
 
@@ -334,6 +421,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 																			   switch_odbc_handle_t *handle,
 																			   char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
+#ifdef SWITCH_HAVE_ODBC
 	SQLHSTMT stmt = NULL;
 	SQLSMALLINT c = 0, x = 0;
 	SQLLEN m = 0, t = 0;
@@ -445,11 +533,14 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	}
 
+#endif
 	return SWITCH_ODBC_FAIL;
 }
 
 SWITCH_DECLARE(void) switch_odbc_handle_destroy(switch_odbc_handle_t **handlep)
 {
+#ifdef SWITCH_HAVE_ODBC
+
 	switch_odbc_handle_t *handle = NULL;
 
 	if (!handlep) {
@@ -468,15 +559,24 @@ SWITCH_DECLARE(void) switch_odbc_handle_destroy(switch_odbc_handle_t **handlep)
 		free(handle);
 	}
 	*handlep = NULL;
+#else
+	return;
+#endif
 }
 
 SWITCH_DECLARE(switch_odbc_state_t) switch_odbc_handle_get_state(switch_odbc_handle_t *handle)
 {
+#ifdef SWITCH_HAVE_ODBC
 	return handle ? handle->state : SWITCH_ODBC_STATE_INIT;
+#else
+	return SWITCH_ODBC_STATE_ERROR;
+#endif
 }
 
-SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle, SQLHSTMT stmt)
+SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle, switch_odbc_statement_handle_t stmt)
 {
+#ifdef SWITCH_HAVE_ODBC
+
 	char buffer[SQL_MAX_MESSAGE_LENGTH + 1] = "";
 	char sqlstate[SQL_SQLSTATE_SIZE + 1] = "";
 	SQLINTEGER sqlcode;
@@ -488,6 +588,18 @@ SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle
 	};
 
 	return ret;
+#else
+	return NULL;
+#endif
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_odbc_available(void)
+{
+#ifdef SWITCH_HAVE_ODBC
+	return SWITCH_TRUE;
+#else
+	return SWITCH_FALSE;
+#endif
 }
 
 

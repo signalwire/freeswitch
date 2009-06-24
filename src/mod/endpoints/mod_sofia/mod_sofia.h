@@ -42,9 +42,6 @@
 #define HAVE_APR
 #include <switch.h>
 #include <switch_version.h>
-#ifdef SWITCH_HAVE_ODBC
-#include <switch_odbc.h>
-#endif
 #define SOFIA_NAT_SESSION_TIMEOUT 20
 #define SOFIA_MAX_ACL 100
 #ifdef _MSC_VER

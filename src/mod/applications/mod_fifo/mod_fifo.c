@@ -29,9 +29,6 @@
  *
  */
 #include <switch.h>
-#ifdef SWITCH_HAVE_ODBC
-#include <switch_odbc.h>
-#endif
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown);
 SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load);
@@ -264,12 +261,7 @@ static struct {
 	char *dbname;
 	char *odbc_dsn;
 	int node_thread_running;
-	
-#ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_t *master_odbc;
-#else
-	void *filler1;
-#endif
 } globals;
 
 
@@ -282,9 +274,9 @@ static switch_status_t fifo_execute_sql(char *sql, switch_mutex_t *mutex)
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
-#ifdef SWITCH_HAVE_ODBC
-	if (globals.odbc_dsn) {
-		SQLHSTMT stmt;
+
+	if (switch_odbc_available() && globals.odbc_dsn) {
+		switch_odbc_statement_handle_t stmt;
 		if (switch_odbc_handle_exec(globals.master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
 			
 			err_str = switch_odbc_handle_get_error(globals.master_odbc, stmt);
@@ -294,9 +286,8 @@ static switch_status_t fifo_execute_sql(char *sql, switch_mutex_t *mutex)
 			switch_safe_free(err_str);
 			status = SWITCH_STATUS_FALSE;
 		}
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+		switch_odbc_statement_handle_free(&stmt);
 	} else {
-#endif
 		if (!(db = switch_core_db_open_file(globals.dbname))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", globals.dbname);
 			status = SWITCH_STATUS_FALSE;
@@ -309,12 +300,8 @@ static switch_status_t fifo_execute_sql(char *sql, switch_mutex_t *mutex)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error [%s]\n[%s]\n", sql, err_str);
 			free(err_str);
 		}
-
 		switch_core_db_close(db);
-
-#ifdef SWITCH_HAVE_ODBC
 	}
-#endif
 
   end:
 	if (mutex) {
@@ -334,11 +321,9 @@ static switch_bool_t fifo_execute_sql_callback(switch_mutex_t *mutex, char *sql,
 		switch_mutex_lock(mutex);
 	}
 
-#ifdef SWITCH_HAVE_ODBC
-	if (globals.odbc_dsn) {
+	if (switch_odbc_available() && globals.odbc_dsn) {
 		switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata);
 	} else {
-#endif
 		if (!(db = switch_core_db_open_file(globals.dbname))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", globals.dbname);
 			goto end;
@@ -354,9 +339,7 @@ static switch_bool_t fifo_execute_sql_callback(switch_mutex_t *mutex, char *sql,
 		if (db) {
 			switch_core_db_close(db);
 		}
-#ifdef SWITCH_HAVE_ODBC
 	}
-#endif
 
   end:
 	if (mutex) {
@@ -1766,17 +1749,17 @@ static switch_status_t load_config(int reload, int del_all)
 			val = (char *) switch_xml_attr_soft(param, "value");
 
 			if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
-#ifdef SWITCH_HAVE_ODBC
-				globals.odbc_dsn = switch_core_strdup(globals.pool, val);
-				if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
-					*odbc_user++ = '\0';
-					if ((odbc_pass = strchr(odbc_user, ':'))) {
-						*odbc_pass++ = '\0';
+				if (switch_odbc_available()) {
+					globals.odbc_dsn = switch_core_strdup(globals.pool, val);
+					if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
+						*odbc_user++ = '\0';
+						if ((odbc_pass = strchr(odbc_user, ':'))) {
+							*odbc_pass++ = '\0';
+						}
 					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 				}
-#else
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
-#endif
 			}
 		}
 	}
@@ -1786,8 +1769,7 @@ static switch_status_t load_config(int reload, int del_all)
 		globals.dbname = "fifo";
 	}
 
-#ifdef SWITCH_HAVE_ODBC
-	if (globals.odbc_dsn) {
+	if (switch_odbc_available() && globals.odbc_dsn) {
 		if (!(globals.master_odbc = switch_odbc_handle_new(globals.odbc_dsn, odbc_user, odbc_pass))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
 			status = SWITCH_STATUS_FALSE;
@@ -1806,7 +1788,6 @@ static switch_status_t load_config(int reload, int del_all)
 			}
 		}
 	} else {
-#endif
 		if ((db = switch_core_db_open_file(globals.dbname))) {
 			switch_core_db_test_reactive(db, "delete from fifo_outbound", NULL, (char *)outbound_sql);
 		} else {
@@ -1815,9 +1796,7 @@ static switch_status_t load_config(int reload, int del_all)
 			goto done;
 		}
 		switch_core_db_close(db);
-#ifdef SWITCH_HAVE_ODBC
 	}
-#endif
 
 	if (reload) {
 		switch_hash_index_t *hi;

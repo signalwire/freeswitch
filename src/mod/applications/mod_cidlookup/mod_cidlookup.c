@@ -30,9 +30,6 @@
  */
  
 #include <switch.h>
-#ifdef SWITCH_HAVE_ODBC
-#include <switch_odbc.h>
-#endif
 #include <curl/curl.h>
 
 /* Prototypes */
@@ -56,32 +53,10 @@ static struct {
 	char *odbc_dsn;
 	char *sql;
 
-#ifdef SWITCH_HAVE_ODBC
 	switch_mutex_t *db_mutex;
-#else
-	void *filler1;
-#endif
 	switch_memory_pool_t *pool;
-#ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_t *master_odbc;
-#else
-	void *filler2;
-#endif
 } globals;
-
-#ifdef SWITCH_HAVE_ODBC
-struct odbc_obj {
-	switch_odbc_handle_t *handle;
-	SQLHSTMT stmt;
-	SQLCHAR *colbuf;
-	int32_t cblen;
-	SQLCHAR *code;
-	int32_t codelen;
-};
-
-typedef struct odbc_obj  odbc_obj_t;
-typedef odbc_obj_t *odbc_handle;
-#endif
 
 struct http_data {
 	switch_stream_handle_t stream;
@@ -103,12 +78,16 @@ static switch_event_node_t *reload_xml_event = NULL;
 static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, const char *newvalue, switch_config_callback_type_t callback_type, switch_bool_t changed)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-#ifdef SWITCH_HAVE_ODBC
 	char *odbc_user = NULL;
 	char *odbc_pass = NULL;
 	char *odbc_dsn = NULL;
 	
 	switch_odbc_handle_t *odbc = NULL;
+
+	if (!switch_odbc_available()) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC is not compiled in.  Do not configure odbc-dsn parameter!\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (globals.db_mutex) {
 		switch_mutex_lock(globals.db_mutex);
@@ -152,18 +131,12 @@ static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, const
 	}
 
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
-#else
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC is not compiled in.  Do not configure odbc-dsn parameter!\n");
-	switch_goto_status(SWITCH_STATUS_FALSE, done);
-#endif	
 	
 done:
-#ifdef SWITCH_HAVE_ODBC
 	if (globals.db_mutex) {
 		switch_mutex_unlock(globals.db_mutex);
 	}
 	switch_safe_free(odbc_dsn);
-#endif
 	return status;
 }
 
@@ -193,7 +166,6 @@ static void event_handler(switch_event_t *event)
 	do_config(SWITCH_TRUE);
 }
 
-#ifdef SWITCH_HAVE_ODBC
 static switch_bool_t cidlookup_execute_sql_callback(char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
 	switch_bool_t retval = SWITCH_FALSE;
@@ -227,7 +199,6 @@ static int cidlookup_callback(void *pArg, int argc, char **argv, char **columnNa
 	
 	return SWITCH_STATUS_SUCCESS;
 }
-#endif
 
 /* make a new string with digits only */
 static char *string_digitsonly(switch_memory_pool_t *pool, const char *str) 
@@ -365,7 +336,6 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 	return name;
 }
 
-#ifdef SWITCH_HAVE_ODBC
 static char *do_db_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num) {
 	char *name = NULL;
 	char *newsql = NULL;
@@ -386,7 +356,6 @@ static char *do_db_lookup(switch_memory_pool_t *pool, switch_event_t *event, con
 	}
 	return name;
 }
-#endif
 
 static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, switch_bool_t skipurl) {
 	char *number = NULL;
@@ -395,12 +364,11 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 	number = string_digitsonly(pool, num);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller_id_number", number);
 
-#ifdef SWITCH_HAVE_ODBC
 	/* database always wins */
-	if (globals.master_odbc && globals.sql) {
+	if (switch_odbc_available() && globals.master_odbc && globals.sql) {
 		name = do_db_lookup(pool, event, number);
 	}
-#endif
+
 	if (!name && globals.url) {
 		if (globals.cache) {
 			name = check_cache(pool, number);
@@ -510,11 +478,7 @@ SWITCH_STANDARD_API(cidlookup_function)
 			stream->write_function(stream, " odbc-dsn: %s\n sql: %s\n", 
 									globals.odbc_dsn,
 									globals.sql);
-#ifdef SWITCH_HAVE_ODBC
-			stream->write_function(stream, " ODBC Compiled: true\n");
-#else
-			stream->write_function(stream, " ODBC Compiled: false\n");
-#endif
+			stream->write_function(stream, " ODBC Compiled: %s\n", switch_odbc_available() ? "true" : "false");
 
 			switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 		}
@@ -556,13 +520,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
 	
 	globals.pool = pool;
 
-#ifdef SWITCH_HAVE_ODBC
-	if (!globals.db_mutex) {
+	if (switch_odbc_available() && !globals.db_mutex) {
 		if (switch_mutex_init(&globals.db_mutex, SWITCH_MUTEX_UNNESTED, globals.pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to initialize db_mutex\n");
 		}
 	}
-#endif
 
 	do_config(SWITCH_FALSE);
 	
@@ -585,7 +547,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cidlookup_shutdown)
 {
 	/* Cleanup dynamically allocated config settings */
-#ifdef SWITCH_HAVE_ODBC
+
 	if (globals.db_mutex) {
 		switch_mutex_destroy(globals.db_mutex);
 	}
@@ -593,7 +555,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cidlookup_shutdown)
 		switch_odbc_handle_disconnect(globals.master_odbc);
 		switch_odbc_handle_destroy(&globals.master_odbc);
 	}
-#endif
+
 	switch_event_unbind(&reload_xml_event);
 	return SWITCH_STATUS_SUCCESS;
 }

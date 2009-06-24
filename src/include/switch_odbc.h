@@ -33,18 +33,11 @@
 #define SWITCH_ODBC_H
 
 #include <switch.h>
-#include <sql.h>
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4201)
-#include <sqlext.h>
-#pragma warning(pop)
-#else
-#include <sqlext.h>
-#endif
-#include <sqltypes.h>
 
-SWITCH_BEGIN_EXTERN_C struct switch_odbc_handle;
+SWITCH_BEGIN_EXTERN_C 
+
+struct switch_odbc_handle;
+typedef void * switch_odbc_statement_handle_t;
 
 typedef enum {
 	SWITCH_ODBC_STATE_INIT,
@@ -63,7 +56,13 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_disconnect(switch_odbc_h
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_handle_t *handle);
 SWITCH_DECLARE(void) switch_odbc_handle_destroy(switch_odbc_handle_t **handlep);
 SWITCH_DECLARE(switch_odbc_state_t) switch_odbc_handle_get_state(switch_odbc_handle_t *handle);
-SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, char *sql, SQLHSTMT * rstmt);
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, char *sql, switch_odbc_statement_handle_t * rstmt);
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_handle_t *handle,
+																	char *sql,
+																	char *resbuf,
+																	size_t len);
+SWITCH_DECLARE(switch_bool_t) switch_odbc_available(void);
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_statement_handle_free(switch_odbc_statement_handle_t * stmt);
 
 /*!
   \brief Execute the sql query and issue a callback for each row returned
@@ -93,7 +92,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 												  handle, sql, callback, pdata)
 
 																	  
-SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle, SQLHSTMT stmt);
+SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle, switch_odbc_statement_handle_t stmt);
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

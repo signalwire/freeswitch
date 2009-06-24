@@ -49,15 +49,9 @@
 
 #include <switch.h>
 
-#ifdef SWITCH_HAVE_ODBC
-#include <switch_odbc.h>
-#endif
-
 /* Defaults */
-#ifdef SWITCH_HAVE_ODBC
 static char SQL_LOOKUP[] = "SELECT %s FROM %s WHERE %s='%s'";
 static char SQL_SAVE[] = "UPDATE %s SET %s=%s-%f WHERE %s='%s'";
-#endif
 
 typedef struct
 {
@@ -109,11 +103,7 @@ static struct
 	char *db_table;
 	char *db_column_cash;
 	char *db_column_account;
-#ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_t *master_odbc;
-#else   
-	void *padding1;  /* Keep structures same size */
-#endif
 } globals;
 
 static void nibblebill_pause(switch_core_session_t *session);
@@ -141,7 +131,6 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_percall_action, globals.percall_act
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_lowbal_action, globals.lowbal_action);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_nobal_action, globals.nobal_action);
 
-#ifdef SWITCH_HAVE_ODBC
 static int nibblebill_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	nibblebill_results_t *cbt = (nibblebill_results_t *) pArg;
@@ -150,7 +139,6 @@ static int nibblebill_callback(void *pArg, int argc, char **argv, char **columnN
 
 	return 0;
 }
-#endif
 
 static switch_status_t load_config(void)
 {
@@ -220,8 +208,7 @@ setdefaults:
 		set_global_nobal_action("hangup");
 	}
 
-#ifdef SWITCH_HAVE_ODBC
-	if (globals.db_dsn) {
+	if (switch_odbc_available() && globals.db_dsn) {
 		if (!(globals.master_odbc = switch_odbc_handle_new(globals.db_dsn, globals.db_username, globals.db_password))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot create handle to ODBC Database!\n");
 			status = SWITCH_STATUS_FALSE;
@@ -231,7 +218,9 @@ setdefaults:
 		}
 
 		if (switch_odbc_handle_connect(globals.master_odbc) != SWITCH_ODBC_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot connect to ODBC driver/database %s (user: %s / pass %s)!\n", globals.db_dsn, globals.db_username, globals.db_password);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+							  "Cannot connect to ODBC driver/database %s (user: %s / pass %s)!\n",
+							  globals.db_dsn, globals.db_username, globals.db_password);
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		} else {
@@ -239,16 +228,11 @@ setdefaults:
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", globals.db_dsn);
 	} else {
-#endif
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "ODBC does not appear to be installed in the core. You need to run ./configure --enable-core-odbc-support\n");
-#ifdef SWITCH_HAVE_ODBC
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+						  "ODBC does not appear to be installed in the core. You need to run ./configure --enable-core-odbc-support\n");
 	}
-#endif
 
-#ifdef SWITCH_HAVE_ODBC
 done:
-#endif
-
 	if (xml) {
 		switch_xml_free(xml);
 	}
@@ -314,9 +298,12 @@ static void transfer_call(switch_core_session_t *session, char *destination)
 /* At this time, billing never succeeds if you don't have a database. */
 static switch_status_t bill_event(float billamount, const char *billaccount)
 {
-#ifdef SWITCH_HAVE_ODBC
 	char sql[1024] = "";
-	SQLHSTMT stmt;
+	switch_odbc_statement_handle_t stmt;
+
+	if (!switch_odbc_available()) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	switch_snprintf(sql, 1024, SQL_SAVE, globals.db_table, globals.db_column_cash, globals.db_column_cash, billamount, globals.db_column_account, billaccount);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "Doing update query\n[%s]\n", sql);
@@ -327,36 +314,35 @@ static switch_status_t bill_event(float billamount, const char *billaccount)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
 		switch_safe_free(err_str);
 	} else {
-#endif
 		/* TODO: Failover to a flat/text file if DB is unavailable */
 
 		return SWITCH_STATUS_SUCCESS;
-#ifdef SWITCH_HAVE_ODBC
 	}
 
-	SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-#endif
+	switch_odbc_statement_handle_free(&stmt);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
 static float get_balance(const char *billaccount)
 {
-#ifdef SWITCH_HAVE_ODBC
 	char sql[1024] = "";
 	nibblebill_results_t pdata;
 	float balance = 0.00f;
+
+	if (!switch_odbc_available()) {
+		return -1.00f;
+	}
 
 	memset(&pdata, 0, sizeof(pdata));
 	snprintf(sql, 1024, SQL_LOOKUP, globals.db_column_cash, globals.db_table, globals.db_column_account, billaccount);
 
 	if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, nibblebill_callback, &pdata) != SWITCH_ODBC_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error running this query: [%s]\n", sql);
-#endif
 		/* Return -1 for safety */
 
-		return -1.00;
-#ifdef SWITCH_HAVE_ODBC
+		return -1.00f;
 	} else {
 		/* Successfully retrieved! */
 		balance = pdata.balance;
@@ -365,7 +351,6 @@ static float get_balance(const char *billaccount)
 	}
 	
 	return balance;
-#endif
 }
 
 /* This is where we actually charge the guy 
@@ -879,10 +864,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_nibblebill_shutdown)
 {	
 	switch_event_unbind(&globals.node);
 	switch_core_remove_state_handler(&nibble_state_handler);
-
-#ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_disconnect(globals.master_odbc);
-#endif
 
 	return SWITCH_STATUS_UNLOAD;
 }

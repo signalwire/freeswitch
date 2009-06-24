@@ -32,9 +32,6 @@
 #include <switch.h>
 #include <switch_stun.h>
 #include <libdingaling.h>
-#ifdef SWITCH_HAVE_ODBC
-#include <switch_odbc.h>
-#endif
 
 #define DL_CAND_WAIT 10000000
 #define DL_CAND_INITIAL_WAIT 2000000
@@ -128,17 +125,10 @@ struct mdl_profile {
 	char *timer_name;
 	char *dbname;
 	char *avatar;
-#ifdef SWITCH_HAVE_ODBC
 	char *odbc_dsn;
 	char *odbc_user;
 	char *odbc_pass;
 	switch_odbc_handle_t *master_odbc;
-#else
-	void *filler1;
-	void *filler2;
-	void *filler3;
-	void *filler4;
-#endif
 	switch_mutex_t *mutex;
 	ldl_handle_t *handle;
 	uint32_t flags;
@@ -273,30 +263,24 @@ static void mdl_execute_sql(mdl_profile_t *profile, char *sql, switch_mutex_t *m
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
-#ifdef SWITCH_HAVE_ODBC
-	if (profile->odbc_dsn) {
-		SQLHSTMT stmt;
+
+	if (switch_odbc_available() && profile->odbc_dsn) {
+		switch_odbc_statement_handle_t stmt;
 		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
 			char *err_str;
 			err_str = switch_odbc_handle_get_error(profile->master_odbc, stmt);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
 			switch_safe_free(err_str);
 		}
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+		switch_odbc_statement_handle_free(&stmt);
 	} else {
-#endif
 		if (!(db = switch_core_db_open_file(profile->dbname))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
 			goto end;
 		}
-
 		switch_core_db_persistant_execute(db, sql, 1);
 		switch_core_db_close(db);
-
-#ifdef SWITCH_HAVE_ODBC
 	}
-#endif
-
 
   end:
 	if (mutex) {
@@ -316,20 +300,13 @@ static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile,
 		switch_mutex_lock(mutex);
 	}
 
-#ifdef SWITCH_HAVE_ODBC
-	if (profile->odbc_dsn) {
+	if (switch_odbc_available() && profile->odbc_dsn) {
 		switch_odbc_handle_callback_exec(profile->master_odbc, sql, callback, pdata);
 	} else {
-#endif
-
-
-
 		if (!(db = switch_core_db_open_file(profile->dbname))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
 			goto end;
 		}
-
-
 		switch_core_db_exec(db, sql, callback, pdata, &errmsg);
 
 		if (errmsg) {
@@ -340,10 +317,7 @@ static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile,
 		if (db) {
 			switch_core_db_close(db);
 		}
-#ifdef SWITCH_HAVE_ODBC
 	}
-#endif
-
 
   end:
 
@@ -351,10 +325,7 @@ static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile,
 		switch_mutex_unlock(mutex);
 	}
 
-
-
 	return ret;
-
 }
 
 static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -1949,18 +1920,17 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 	} else if (!strcasecmp(var, "avatar")) {
 		profile->avatar = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
-#ifdef SWITCH_HAVE_ODBC
-		profile->odbc_dsn = switch_core_strdup(module_pool, val);
-		if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
-			*profile->odbc_user++ = '\0';
-			if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
-				*profile->odbc_pass++ = '\0';
+		if (switch_odbc_available()) {
+			profile->odbc_dsn = switch_core_strdup(module_pool, val);
+			if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
+				*profile->odbc_user++ = '\0';
+				if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
+					*profile->odbc_pass++ = '\0';
+				}
 			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 		}
-
-#else
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
-#endif
 	} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
 		switch_set_flag(profile, TFLAG_TIMER);
 	} else if (!strcasecmp(var, "dialplan") && !switch_strlen_zero(val)) {
@@ -2282,9 +2252,7 @@ static switch_status_t load_config(void)
 			switch_snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);
 			profile->dbname = switch_core_strdup(module_pool, dbname);
 
-
-#ifdef SWITCH_HAVE_ODBC
-			if (profile->odbc_dsn) {
+			if (switch_odbc_available() && profile->odbc_dsn) {
 				if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
 					continue;
@@ -2299,7 +2267,6 @@ static switch_status_t load_config(void)
 				switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL);
 				//mdl_execute_sql(profile, sub_sql, NULL);
 			} else {
-#endif
 				if ((db = switch_core_db_open_file(profile->dbname))) {
 					switch_core_db_test_reactive(db, "select * from jabber_subscriptions", NULL, sub_sql);
 				} else {
@@ -2307,9 +2274,7 @@ static switch_status_t load_config(void)
 					continue;
 				}
 				switch_core_db_close(db);
-#ifdef SWITCH_HAVE_ODBC
 			}
-#endif
 		}
 
 		if (profile) {
