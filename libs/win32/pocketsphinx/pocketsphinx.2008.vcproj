@@ -493,7 +493,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\sdc_mgau.h"
+				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\phone_loop_search.h"
 				>
 			</File>
 			<File
@@ -1057,7 +1057,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\sdc_mgau.c"
+				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\phone_loop_search.c"
 				>
 			</File>
 			<File
