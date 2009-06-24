@@ -887,12 +887,6 @@ OZ_DECLARE(zap_status_t) zap_channel_set_state(zap_channel_t *zchan, zap_channel
 	
 
 	if (ok) {
-		if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
-			zchan->span->active_count++;
-		} else if (state == ZAP_CHANNEL_STATE_DOWN) {
-			zchan->span->active_count--;
-		}
-
 		zap_set_flag(zchan, ZAP_CHANNEL_STATE_CHANGE);	
 		zap_set_flag_locked(zchan->span, ZAP_SPAN_STATE_CHANGE);	
 		zchan->last_state = zchan->state; 
@@ -906,11 +900,32 @@ OZ_DECLARE(zap_status_t) zap_channel_set_state(zap_channel_t *zchan, zap_channel
 	return ok ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
+OZ_DECLARE(zap_status_t) zap_span_channel_use_count(zap_span_t *span, uint32_t *count)
+{
+	uint32_t j;
+
+	*count = 0;
+	
+	if (!span || !zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
+		return ZAP_FAIL;
+	}
+	
+	for(j = 1; j <= span->chan_count && span->channels[j]; j++) {
+		if (span->channels[j]) {
+			if (zap_test_flag(span->channels[j], ZAP_CHANNEL_INUSE)) {
+				(*count)++;
+			}
+		}
+	}
+	
+	return ZAP_SUCCESS;
+}
+
 OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan)
 {
 	zap_status_t status = ZAP_FAIL;
 	zap_channel_t *check;
-	uint32_t i,j;
+	uint32_t i, j, count;
 	zap_span_t *span = NULL;
 	uint32_t span_max;
 
@@ -923,7 +938,9 @@ OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t 
             return ZAP_FAIL;
 		}
 
-		if (span->active_count >= span->chan_count) {
+		zap_span_channel_use_count(span, &count);
+
+		if (count >= span->chan_count) {
 			zap_log(ZAP_LOG_CRIT, "All circuits are busy.\n");
 			*zchan = NULL;
 			return ZAP_FAIL;

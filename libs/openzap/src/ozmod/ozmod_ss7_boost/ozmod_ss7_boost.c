@@ -240,6 +240,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 	ss7_boost_request_status_t st;
 	char ani[128] = "";
 	char *gr = NULL;
+	uint32_t count = 0;
 
 	if (zap_test_flag(span, ZAP_SPAN_SUSPENDED)) {
 		zap_log(ZAP_LOG_CRIT, "SPAN is not online.\n");
@@ -247,7 +248,9 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 		return ZAP_FAIL;
 	}
 
-	if (span->active_count >= span->chan_count) {
+	zap_span_channel_use_count(span, &count);
+
+	if (count >= span->chan_count) {
 		zap_log(ZAP_LOG_CRIT, "All circuits are busy.\n");
 		*zchan = NULL;
 		return ZAP_FAIL;
