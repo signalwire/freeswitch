@@ -874,7 +874,12 @@ SWITCH_DECLARE(int) CoreSession::sleep(int ms, int sync) {
 SWITCH_DECLARE(bool) CoreSession::ready() {
 
 	this_check(false);
-	sanity_check(false);	
+
+	if (!session) {
+		return false;
+	}
+	sanity_check(false);
+
 	return switch_channel_ready(channel) != 0;
 }
 
