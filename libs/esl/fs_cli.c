@@ -720,6 +720,7 @@ int main(int argc, char *argv[])
 	el_set(el, EL_HIST, history, myhistory);
 	history(myhistory, &ev, H_LOAD, hfile);
 
+	el_source(el, NULL);
 
 #endif
 #ifdef WIN32
