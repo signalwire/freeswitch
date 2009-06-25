@@ -225,7 +225,7 @@ static void event_handler(switch_event_t *event)
 		switch_core_hash_destroy(&globals.event_hash);
 		globals.event_hash = NULL;
 		switch_core_hash_init(&globals.event_hash, module_pool);
-		memset(globals.event_list, 0, SWITCH_EVENT_ALL);
+		memset(globals.event_list, 0, SWITCH_EVENT_ALL + 1);
 		if (load_config() != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to reload config file\n");
 		} else {
@@ -337,9 +337,36 @@ static void event_handler(switch_event_t *event)
 	return;
 }
 
+SWITCH_STANDARD_API(multicast_peers)
+{
+	switch_hash_index_t *cur;
+	switch_ssize_t keylen;
+	const void *key;
+	void *value;
+	int now = switch_epoch_time_now(NULL);
+	struct peer_status *last;
+	char *host;
+	int i = 0;
+
+	for (cur = switch_hash_first(NULL, globals.peer_hash); cur; cur = switch_hash_next(cur)) {
+		switch_hash_this(cur, &key, &keylen, &value);
+		host = (char*) key;
+		last = (struct peer_status*) value;
+
+		stream->write_function(stream, "Peer %s %s; last seen %d seconds ago\n", host, last->active ? "UP" : "DOWN", now - last->lastseen);
+		i++;
+	}
+
+	if (i == 0) {
+		stream->write_function(stream, "No multicast peers seen\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 {
+	switch_api_interface_t *api_interface;
 	switch_ssize_t hlen = -1;
 
 	memset(&globals, 0, sizeof(globals));
@@ -418,6 +445,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 	}
 
 	switch_socket_opt_set(globals.udp_socket, SWITCH_SO_NONBLOCK, TRUE);
+
+
+	SWITCH_ADD_API(api_interface, "multicast_peers", "Show status of multicast peers", multicast_peers, "");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
