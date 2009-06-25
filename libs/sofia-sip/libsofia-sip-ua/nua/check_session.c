@@ -2414,7 +2414,7 @@ START_TEST(bye_4_1_5)
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 
   nua_handle_destroy(nh);
-  fail_unless(s2_sip_check_response(500, SIP_METHOD_BYE));
+  fail_unless(s2_sip_check_response(200, SIP_METHOD_BYE));
 }
 END_TEST
 
