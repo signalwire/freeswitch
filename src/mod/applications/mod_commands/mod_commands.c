@@ -2784,7 +2784,7 @@ SWITCH_STANDARD_API(show_function)
 			sprintf(sql, "select name, description, syntax, key from interfaces where type = '%s' and description != '' order by type,name", command);
 		}
 	} else if (!strcasecmp(command, "calls")) {
-		sprintf(sql, "select * from calls order by created_epoch");
+		sprintf(sql, "select * from calls order by call_created_epoch");
 		if (argv[1] && !strcasecmp(argv[1],"count")) {
 		    holder.justcount = 1;
 		    if (argv[3] && !strcasecmp(argv[2], "as")) {
