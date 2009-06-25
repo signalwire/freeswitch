@@ -129,22 +129,27 @@ static int tport_thread_send(tport_t *tp,
 
 tport_vtable_t const tport_threadpool_vtable =
 {
-  "udp", tport_type_local,
-  sizeof (tport_threadpool_t),
-  tport_threadpool_init_primary,
-  tport_threadpool_deinit_primary,
-  NULL,
-  NULL,
-  0,				/* No secondary transports! */
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  tport_recv_dgram,
-  tport_send_dgram,
-  NULL,
-  tport_thread_send
+  /* vtp_name 		     */ "udp",
+  /* vtp_public              */ tport_type_local,
+  /* vtp_pri_size            */ sizeof (tport_threadpool_t),
+  /* vtp_init_primary        */ tport_threadpool_init_primary,
+  /* vtp_deinit_primary      */ tport_threadpool_deinit_primary,
+  /* vtp_wakeup_pri          */ NULL,
+  /* vtp_connect             */ NULL,
+  /* vtp_secondary_size      */ 0, /* No secondary transports! */
+  /* vtp_init_secondary      */ NULL,
+  /* vtp_deinit_secondary    */ NULL,
+  /* vtp_shutdown            */ NULL,
+  /* vtp_set_events          */ NULL,
+  /* vtp_wakeup              */ NULL,
+  /* vtp_recv                */ tport_recv_dgram,
+  /* vtp_send                */ tport_send_dgram,
+  /* vtp_deliver             */ NULL,
+  /* vtp_prepare             */ tport_thread_send,
+  /* vtp_keepalive           */ NULL,
+  /* vtp_stun_response       */ NULL,
+  /* vtp_next_secondary_timer*/ NULL,
+  /* vtp_secondary_timer     */ NULL,
 };
 
 static int thrp_udp_init(su_root_t *, threadpool_t *);
@@ -809,4 +814,5 @@ void thrp_udp_send_report(su_root_magic_t *magic,
     tport_error_report(tp, tpd->tpd_errorcode, msg_addr(tpd->tpd_msg));
 
   msg_ref_destroy(tpd->tpd_msg);
+
 }
