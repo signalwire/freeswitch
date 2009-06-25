@@ -227,19 +227,7 @@ channelRead(TChannel *      const channelP,
     struct socketUnix * const socketUnixP = channelP->implP;
 
     int rc;
-	fd_set rfds, efds;
-	struct timeval tv = { 10, 0 };
-	
-	FD_ZERO(&rfds);
-	FD_ZERO(&efds);
-	FD_SET(socketUnixP->fd, &rfds);
-	FD_SET(socketUnixP->fd, &efds);
-
-	if ((rc = select(socketUnixP->fd + 1, &rfds, NULL, &efds, &tv)) > 0) {
-		rc = recv(socketUnixP->fd, buffer, bufferSize, 0);
-	} else {
-		rc = -1;
-	}
+    rc = recv(socketUnixP->fd, buffer, bufferSize, 0);
 
     if (rc < 0) {
         *failedP = TRUE;
