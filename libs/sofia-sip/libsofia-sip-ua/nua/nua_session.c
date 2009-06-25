@@ -2409,6 +2409,8 @@ int nua_invite_server_is_100rel(nua_server_request_t *sr, tagi_t const *tags)
   if (require == NULL && supported == NULL)
     return 0;
 
+  if (!sip_has_feature(NH_PGET(nh, supported), "100rel"))
+    return 0;
   if (sip_has_feature(require, "100rel"))
     return 1;
   if (!sip_has_feature(supported, "100rel"))

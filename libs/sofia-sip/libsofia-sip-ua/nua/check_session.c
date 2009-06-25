@@ -1408,6 +1408,95 @@ START_TEST(call_2_4_2)
 }
 END_TEST
 
+START_TEST(call_2_4_3)
+{
+  struct message *response;
+
+  S2_CASE("2.4.3", "Call without 100rel",
+	  "NUA receives INVITE with Required: 100rel, "
+	  "rejects it with 420");
+
+  nua_set_params(s2->nua,
+		 SIPTAG_SUPPORTED(SIP_NONE),
+		 SIPTAG_SUPPORTED_STR("timer"),
+		 TAG_END());
+  fail_unless_event(nua_r_set_params, 200);
+
+  soa_generate_offer(soa, 1, NULL);
+  request_with_sdp(dialog, SIP_METHOD_INVITE, NULL,
+		   SIPTAG_REQUIRE_STR("100rel"),
+		   TAG_END());
+
+  response = s2_sip_wait_for_response(420, SIP_METHOD_INVITE);
+  fail_if(!response);
+  fail_if(s2_sip_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
+}
+END_TEST
+
+START_TEST(call_2_4_4)
+{
+  nua_handle_t *nh;
+  struct event *invite;
+  struct message *response;
+
+  S2_CASE("2.4.3", "Call without 100rel",
+	  "NUA receives INVITE with Supported: 100rel, "
+	  "proceeds normally");
+
+  nua_set_params(s2->nua,
+		 SIPTAG_SUPPORTED(SIP_NONE),
+		 SIPTAG_SUPPORTED_STR("timer"),
+		 TAG_END());
+  fail_unless_event(nua_r_set_params, 200);
+
+  soa_generate_offer(soa, 1, NULL);
+  request_with_sdp(dialog, SIP_METHOD_INVITE, NULL,
+		   SIPTAG_SUPPORTED_STR("100rel"),
+		   TAG_END());
+
+  invite = s2_wait_for_event(nua_i_invite, 100); fail_unless(invite != NULL);
+  fail_unless(s2_check_callstate(nua_callstate_received));
+
+  nh = invite->nh; fail_if(!nh);
+
+  s2_free_event(invite);
+
+  response = s2_sip_wait_for_response(100, SIP_METHOD_INVITE);
+  fail_if(!response);
+
+  nua_respond(nh, SIP_183_SESSION_PROGRESS,
+	      SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8"),
+	      TAG_END());
+  fail_unless(s2_check_callstate(nua_callstate_early));
+
+  response = s2_sip_wait_for_response(183, SIP_METHOD_INVITE);
+  fail_if(!response);
+  fail_if(response->sip->sip_require);
+  s2_sip_update_dialog(dialog, response);
+  process_answer(response);
+  s2_sip_free_message(response);
+
+  nua_respond(nh, SIP_200_OK, TAG_END());
+
+  fail_unless(s2_check_callstate(nua_callstate_completed));
+
+  response = s2_sip_wait_for_response(200, SIP_METHOD_INVITE);
+  fail_if(!response);
+  s2_sip_update_dialog(dialog, response);
+  s2_sip_free_message(response);
+
+  fail_if(s2_sip_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
+
+  fail_unless_event(nua_i_ack, 200);
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+
+  bye_to_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+
 TCase *invite_100rel_tcase(int threading)
 {
   TCase *tc = tcase_create("2.4 - INVITE with 100rel");
@@ -1415,6 +1504,8 @@ TCase *invite_100rel_tcase(int threading)
   {
     tcase_add_test(tc, call_2_4_1);
     tcase_add_test(tc, call_2_4_2);
+    tcase_add_test(tc, call_2_4_3);
+    tcase_add_test(tc, call_2_4_4);
   }
   return tc;
 }
