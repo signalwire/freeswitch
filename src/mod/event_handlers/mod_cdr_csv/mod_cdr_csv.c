@@ -52,6 +52,7 @@ static struct {
 	switch_hash_t *template_hash;
 	char *log_dir;
 	char *default_template;
+	int masterfileonly;
 	int shutdown;
 	int rotate;
 	int debug;
@@ -226,7 +227,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 	log_line = switch_channel_expand_variables(channel, a_template_str);
 
-	if (accountcode) {
+	if ((accountcode) && (!globals.masterfileonly)) {
 		path = switch_mprintf("%s%s%s.csv", log_dir, SWITCH_PATH_SEPARATOR, accountcode);
 		assert(path);
 		write_cdr(path, log_line);
@@ -338,6 +339,8 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 					globals.rotate = switch_true(val);
 				} else if (!strcasecmp(var, "default-template")) {
 					globals.default_template = switch_core_strdup(pool, val);
+				} else if (!strcasecmp(var, "master-file-only")) {
+					globals.masterfileonly = switch_true(val);
 				}
 			}
 		}
