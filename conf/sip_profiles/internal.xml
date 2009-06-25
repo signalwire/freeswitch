@@ -55,6 +55,10 @@
     <param name="hold-music" value="$${hold_music}"/>
     <param name="apply-nat-acl" value="rfc1918.auto"/>
     <!--<param name="aggressive-nat-detection" value="true"/>-->
+    <!--
+	There are known issues (asserts and segfaults) when 100rel is enabled.
+	It is not recommended to enable 100rel at this time.
+    -->
     <!--<param name="enable-100rel" value="true"/>-->
     <!--<param name="minimum-session-expires" value="120"/>-->
     <param name="apply-inbound-acl" value="domains"/>
