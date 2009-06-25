@@ -104,7 +104,7 @@ static struct {
 	switch_event_node_t *probe_node;
 	switch_event_node_t *out_node;
 	switch_event_node_t *roster_node;
-
+	int auto_nat;
 } globals;
 
 struct mdl_profile {
@@ -135,6 +135,7 @@ struct mdl_profile {
 	uint32_t user_flags;
 	char *acl[MAX_ACL];
 	uint32_t acl_count;
+	char *local_network;
 };
 typedef struct mdl_profile mdl_profile_t;
 
@@ -841,6 +842,12 @@ static int activate_rtp(struct private_object *tech_pvt)
 	switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
 
+	if(globals.auto_nat && tech_pvt->profile->local_network && 
+	   !switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network)) {
+		switch_port_t external_port = 0;
+		switch_nat_add_mapping((switch_port_t)tech_pvt->local_port, SWITCH_NAT_UDP, &external_port);
+		tech_pvt->local_port = external_port;
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SETUP RTP %s:%d -> %s:%d\n", tech_pvt->profile->ip,
 					  tech_pvt->local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
@@ -1192,6 +1199,11 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 			switch_rtp_destroy(&tech_pvt->rtp_session);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NUKE RTP\n");
 			tech_pvt->rtp_session = NULL;
+		}
+
+		if(globals.auto_nat && tech_pvt->profile->local_network && 
+		   !switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network)) {
+			switch_nat_del_mapping((switch_port_t)tech_pvt->local_port, SWITCH_NAT_UDP);
 		}
 
 		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
@@ -1943,10 +1955,22 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		profile->name = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "message") && !switch_strlen_zero(val)) {
 		profile->message = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "local-network-acl")) {
+		profile->local_network = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "rtp-ip")) {
 		profile->ip = switch_core_strdup(module_pool, strcasecmp(switch_str_nil(val), "auto") ? switch_str_nil(val) : globals.guess_ip);
 	} else if (!strcasecmp(var, "ext-rtp-ip")) {
-		profile->extip = switch_core_strdup(module_pool, strcasecmp(switch_str_nil(val), "auto") ? switch_str_nil(val) : globals.guess_ip);
+		char *ip = globals.guess_ip;
+		if (!strcasecmp(val, "auto-nat")) {
+			ip = globals.auto_nat ? switch_core_get_variable("nat_public_addr") : globals.guess_ip;
+		} else if (strcasecmp(val, "auto")) {
+			globals.auto_nat = 0;
+			ip = globals.guess_ip;
+		} else {
+			globals.auto_nat = 0;
+			ip = switch_strlen_zero(val) ? globals.guess_ip : val;
+		}
+		profile->extip = switch_core_strdup(module_pool, ip);
 	} else if (!strcasecmp(var, "server") && !switch_strlen_zero(val)) {
 		profile->server = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "rtp-timer-name") && !switch_strlen_zero(val)) {
@@ -2184,6 +2208,7 @@ static switch_status_t load_config(void)
 
 	memset(&globals, 0, sizeof(globals));
 	globals.running = 1;
+	globals.auto_nat = (switch_core_get_variable("nat_type") ? 1 : 0);
 
 	switch_find_local_ip(globals.guess_ip, sizeof(globals.guess_ip), NULL, AF_INET);
 

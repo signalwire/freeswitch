@@ -9,7 +9,7 @@
     <param name="context" value="public"/>
     <param name="message" value="Jingle all the way"/>
     <param name="rtp-ip" value="$${bind_server_ip}"/>
-    <!-- <param name="ext-rtp-ip" value="$${external_rtp_ip}"/> -->
+    <!-- <param name="ext-rtp-ip" value="auto-nat"/> -->
     <param name="auto-login" value="true"/>
     <!-- SASL "plain" or "md5" -->
     <param name="sasl" value="plain"/>
@@ -27,5 +27,6 @@
     <param name="vad" value="both"/>
     <!--<param name="avatar" value="/path/to/tiny.jpg"/>-->
     <!--<param name="candidate-acl" value="wan.auto"/>-->
+    <param name="local-network-acl" value="localnet.auto"/>
   </x-profile>
 </include>
