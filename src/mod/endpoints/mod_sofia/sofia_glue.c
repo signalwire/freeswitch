@@ -4162,13 +4162,8 @@ sofia_destination_t* sofia_glue_get_destination(char *data)
 				*p = '\0';
 			} while ((--p > route_uri) && *p == ' ');
 		}
-	}
-	else {
-                if(!(route_uri = strdup(contact))) {
-			goto mem_fail;
-		}
-        }
-
+	} 
+	
 	if (!(to = strdup(data))) {
 		goto mem_fail;
 	}
