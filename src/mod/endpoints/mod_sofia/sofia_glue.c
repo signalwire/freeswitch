@@ -1454,7 +1454,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				tech_pvt->transport = SOFIA_TRANSPORT_UDP;
 			}
 		}
-		
+
 		if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 			tech_pvt->user_via = sofia_glue_create_external_via(session, tech_pvt->profile, tech_pvt->transport);
 		}
@@ -1671,7 +1671,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		dst = sofia_glue_get_destination(tech_pvt->dest);
 
 		if (dst->route_uri) {
-			route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, dst->route_uri, 0, SWITCH_TRUE, NULL);
+			route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, dst->route_uri, tech_pvt->transport, SWITCH_TRUE, NULL);
 		}
 	
 		if (dst->route) {
