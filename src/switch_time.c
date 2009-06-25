@@ -193,7 +193,7 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 SWITCH_DECLARE(void) switch_cond_next(void)
 {
 #ifdef DISABLE_1MS_COND
-	do_sleep(10000);
+	do_sleep(1000);
 #else
 	if (globals.RUNNING != 1 || !runtime.timestamp || globals.use_cond_yield != 1) {
 		do_sleep(1000);

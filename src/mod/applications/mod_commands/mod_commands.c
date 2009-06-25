@@ -2822,6 +2822,11 @@ SWITCH_STANDARD_API(show_function)
 				as = argv[3];
 		    }
 		}
+	} else if (!strcasecmp(command, "distinct_channels")) {
+		sprintf(sql, "select * from channels left join calls on channels.uuid=calls.caller_uuid where uuid in (select caller_uuid from calls) or (uuid not in (select caller_uuid from calls) and uuid not in (select callee_uuid from calls)) order by created_epoch");
+		if (argv[2] && !strcasecmp(argv[1], "as")) {
+			as = argv[2];
+		}
 	} else if (!strcasecmp(command, "aliases")) {
 		sprintf(sql, "select * from aliases order by alias");
 	} else if (!strcasecmp(command, "complete")) {

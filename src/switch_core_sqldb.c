@@ -253,8 +253,11 @@ static void core_event_handler(switch_event_t *event)
 		sql = switch_mprintf("delete from tasks where task_id=%q", switch_event_get_header_nil(event, "task-id"));
 		break;
 	case SWITCH_EVENT_RE_SCHEDULE:
-		sql = switch_mprintf("update tasks set task_sql_manager='%q' where task_id=%q",
-							 switch_event_get_header_nil(event, "task-sql_manager"), switch_event_get_header_nil(event, "task-id"));
+		sql = switch_mprintf("update tasks set task_desc='%q',task_group='%q', task_sql_manager='%q' where task_id=%q",
+							 switch_event_get_header_nil(event, "task-desc"), 
+							 switch_event_get_header_nil(event, "task-group"), 
+							 switch_event_get_header_nil(event, "task-sql_manager"), 
+							 switch_event_get_header_nil(event, "task-id"));
 		break;
 	case SWITCH_EVENT_CHANNEL_DESTROY:
 		sql = switch_mprintf("delete from channels where uuid='%q'", switch_event_get_header_nil(event, "unique-id"));
@@ -471,8 +474,8 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 			");\ncreate index uuindex on channels (uuid);\n";
 		char create_calls_sql[] =
 			"CREATE TABLE calls (\n"
-			"   created  VARCHAR(255),\n"
-			"   created_epoch  INTEGER,\n"
+			"   call_created  VARCHAR(255),\n"
+			"   call_created_epoch  INTEGER,\n"
 			"   function  VARCHAR(255),\n"
 			"   caller_cid_name  VARCHAR(255),\n"
 			"   caller_cid_num   VARCHAR(255),\n"
