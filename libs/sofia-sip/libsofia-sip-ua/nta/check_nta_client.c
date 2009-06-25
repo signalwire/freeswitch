@@ -407,8 +407,6 @@ START_TEST(client_2_2_0)
 
   s2_nta_setup("NTA", NULL, TAG_END());
 
-  s2_nta_setup_logs(7);
-
   fail_unless(s2sip->udp.contact != NULL);
 
   if (s2sip->udp.contact->m_url->url_port == NULL ||
