@@ -224,6 +224,10 @@ static void event_handler(switch_event_t *event)
 		switch_mutex_lock(globals.mutex);
 		switch_core_hash_destroy(&globals.event_hash);
 		globals.event_hash = NULL;
+		if (globals.psk) {
+			switch_safe_free(globals.psk);
+			globals.psk = NULL;
+		}
 		switch_core_hash_init(&globals.event_hash, module_pool);
 		memset(globals.event_list, 0, SWITCH_EVENT_ALL + 1);
 		if (load_config() != SWITCH_STATUS_SUCCESS) {
