@@ -176,7 +176,9 @@ static void event_handler(switch_event_t *event)
 		return;
 	}
 
-	if (event->subclass_name && !strcmp(event->subclass_name, MULTICAST_EVENT)) {
+	if (event->subclass_name && (!strcmp(event->subclass_name, MULTICAST_EVENT) ||
+				!strcmp(event->subclass_name, MULTICAST_PEERUP) ||
+				!strcmp(event->subclass_name, MULTICAST_PEERDOWN))) {
 		char * event_name;
 		if ((event_name = switch_event_get_header(event, "orig-event-name")) && !strcasecmp(event_name, "HEARTBEAT")) {
 			char *sender = switch_event_get_header(event, "orig-multicast-sender");
@@ -213,6 +215,7 @@ static void event_handler(switch_event_t *event)
 
 			switch_core_hash_insert(globals.peer_hash, sender, p);
 		}
+
 		/* ignore our own events to avoid ping pong */
 		return;
 	}
