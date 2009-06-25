@@ -385,7 +385,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		} else {
 			switch_snprintf(reason, sizeof(reason), "FreeSWITCH;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
 		}
-		
+
 		if (switch_channel_test_flag(channel, CF_ANSWERED)) {
 			if (!tech_pvt->got_bye) {
 				switch_channel_set_variable(channel, "sip_hangup_disposition", "send_bye");
@@ -620,6 +620,10 @@ static switch_status_t sofia_read_video_frame(switch_core_session_t *session, sw
 			status = switch_rtp_zerocopy_read_frame(tech_pvt->video_rtp_session, &tech_pvt->video_read_frame, flags);
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				if (status == SWITCH_STATUS_TIMEOUT) {
+					if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
+						sofia_glue_toggle_hold(tech_pvt, 0);
+						sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+					}
 					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
 				}
 				return status;
@@ -728,6 +732,12 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				if (status == SWITCH_STATUS_TIMEOUT) {
+					
+					if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
+						sofia_glue_toggle_hold(tech_pvt, 0);
+						sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+					}
+					
 					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
 				}
 				return status;
