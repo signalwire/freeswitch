@@ -299,8 +299,12 @@ void nua_server_request_destroy(nua_server_request_t *sr)
   if (SR_HAS_SAVED_SIGNAL(sr))
     nua_destroy_signal(sr->sr_signal);
 
-  if (sr->sr_irq)
+  if (sr->sr_irq) {
+    if (sr->sr_method == sip_method_bye && sr->sr_status < 200) {
+      nta_incoming_treply(sr->sr_irq, SIP_200_OK, TAG_END());
+    }
     nta_incoming_destroy(sr->sr_irq), sr->sr_irq = NULL;
+  }
 
   if (sr->sr_request.msg)
     msg_destroy(sr->sr_request.msg), sr->sr_request.msg = NULL;
