@@ -1,0 +1,60 @@
+Index: src/mod/endpoints/mod_opal/mod_opal.cpp
+===================================================================
+--- src/mod/endpoints/mod_opal/mod_opal.cpp	(revision 13502)
++++ src/mod/endpoints/mod_opal/mod_opal.cpp	(working copy)
+@@ -509,7 +509,7 @@
+ }
+ 
+ 
+-OpalLocalConnection *FSEndPoint::CreateConnection(OpalCall & call, void *userData)
++OpalLocalConnection *FSEndPoint::CreateConnection(OpalCall & call, void * userData, unsigned options, OpalConnection::StringOptions * stringOptions)
+ {
+     FSManager & mgr = (FSManager &) GetManager();
+     switch_core_session_t *fsSession = switch_core_session_request(mgr.GetSwitchInterface(), 
+@@ -524,7 +524,7 @@
+         return NULL;
+     }
+ 
+-    return new FSConnection(call, *this, (switch_caller_profile_t *)userData, fsSession, fsChannel);
++    return new FSConnection(call, *this, (switch_caller_profile_t *)userData, fsSession, fsChannel, options, stringOptions);
+ }
+ 
+ 
+@@ -557,8 +557,8 @@
+ ///////////////////////////////////////////////////////////////////////
+ 
+ 
+-FSConnection::FSConnection(OpalCall & call, FSEndPoint & endpoint, switch_caller_profile_t *outbound_profile, switch_core_session_t *fsSession, switch_channel_t *fsChannel)
+-  : OpalLocalConnection(call, endpoint, NULL)
++FSConnection::FSConnection(OpalCall & call, FSEndPoint & endpoint, switch_caller_profile_t *outbound_profile, switch_core_session_t *fsSession, switch_channel_t *fsChannel, unsigned options, OpalConnection::StringOptions * stringOptions)
++  : OpalLocalConnection(call, endpoint, NULL, options, stringOptions)
+   , m_endpoint(endpoint)
+   , m_fsSession(fsSession)
+   , m_fsChannel(fsChannel)
+Index: src/mod/endpoints/mod_opal/mod_opal.h
+===================================================================
+--- src/mod/endpoints/mod_opal/mod_opal.h	(revision 13502)
++++ src/mod/endpoints/mod_opal/mod_opal.h	(working copy)
+@@ -148,7 +148,10 @@
+     FSEndPoint(FSManager & manager);
+ 
+     virtual bool OnIncomingCall(OpalLocalConnection &);
+-    virtual OpalLocalConnection *CreateConnection(OpalCall &, void *);
++    virtual OpalLocalConnection *CreateConnection(OpalCall & call,
++                                                  void * userData,
++                                                  unsigned options,
++                                                  OpalConnection::StringOptions * stringOptions);
+ };
+ 
+ 
+@@ -181,7 +184,9 @@
+                  FSEndPoint & endpoint,
+                  switch_caller_profile_t *outbound_profile,
+                  switch_core_session_t *fsSession,
+-                 switch_channel_t *fsChannel);
++                 switch_channel_t *fsChannel,
++                 unsigned options,
++                 OpalConnection::StringOptions * stringOptions);
+ 
+     virtual bool OnIncoming();
+     virtual void OnReleased();
