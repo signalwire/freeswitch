@@ -432,6 +432,7 @@ char *prompt(EditLine * e)
 {
 	if (*prompt_str == '\0') {
 		gethostname(hostname, sizeof(hostname));
+		switch_core_set_variable("hostname", hostname);
 		switch_snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", hostname);
 	}
 
