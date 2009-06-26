@@ -11,7 +11,7 @@ Version:      1.0.4
 Release:      1
 URL:          http://www.freeswitch.org/
 Packager:     	Michal Bielicki
-Vendor:       	http://www.halokwadrat.de/
+Vendor:       	http://www.freeswitch.org/
 Source0:      	http://files.freeswitch.org/%{name}-%{version}.tar.bz2
 Source1:	http://svn.freeswitch.org/downloads/libs/celt-0.5.1.tar.gz
 Source2:	http://svn.freeswitch.org/downloads/libs/flite-1.3.99-latest.tar.gz
@@ -22,14 +22,14 @@ Source6:	http://svn.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
 Source7:	http://svn.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-latest.tar.gz
 Source8:	http://svn.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
 Source9:	http://svn.freeswitch.org/downloads/libs/sphinxbase-0.4.99-latest.tar.gz
-Source10:	http://files.freeswitch.org/freeswitch-sounds-music-8000-1.0.7.tar.gz
-Source11:	http://files.freeswitch.org/freeswitch-sounds-music-16000-1.0.7.tar.gz
-Source12:	http://files.freeswitch.org/freeswitch-sounds-music-32000-1.0.7.tar.gz
-Source13:	http://files.freeswitch.org/freeswitch-sounds-music-48000-1.0.7.tar.gz
-Source14:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-8000-1.0.7.tar.gz
-Source15:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-16000-1.0.7.tar.gz
-Source16:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-32000-1.0.7.tar.gz
-Source17:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-48000-1.0.7.tar.gz
+Source10:	http://files.freeswitch.org/freeswitch-sounds-music-8000-1.0.8.tar.gz
+Source11:	http://files.freeswitch.org/freeswitch-sounds-music-16000-1.0.8.tar.gz
+Source12:	http://files.freeswitch.org/freeswitch-sounds-music-32000-1.0.8.tar.gz
+Source13:	http://files.freeswitch.org/freeswitch-sounds-music-48000-1.0.8.tar.gz
+Source14:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-8000-1.0.10.tar.gz
+Source15:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-16000-1.0.10.tar.gz
+Source16:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-32000-1.0.10.tar.gz
+Source17:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-48000-1.0.10.tar.gz
 Source18:	http://svn.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Prefix:        %{prefix}
 
@@ -178,6 +178,13 @@ Requires:        %{name} = %{version}-%{release}
 %description lang-en
 English language phrases module and directory structure for say module and voicemail
 
+%package lang-ru
+Summary:        Provides russian language dependand modules and speech config for the FreeSwitch Open Source telephone platform.
+Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
+
+%description lang-ru
+Russian language phrases module and directory structure for say module and voicemail
+
 %package lang-fr
 Summary:        Provides french language dependand modules and speech config for the FreeSwitch Open Source telephone platform.
 Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
@@ -308,11 +315,11 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 PASSTHRU_CODEC_MODULES="codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr codecs/mod_amrwb"
 SPIDERMONKEY_MODULES="languages/mod_spidermonkey languages/mod_spidermonkey_curl languages/mod_spidermonkey_core_db languages/mod_spidermonkey_odbc languages/mod_spidermonkey_socket languages/mod_spidermonkey_teletone"
 APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit applications/mod_rss applications/mod_voicemail applications/mod_fsv applications/mod_lcr applications/mod_easyroute applications/mod_stress applications/mod_http applications/mod_vmd applications/mod_limit applications/mod_soundtouch applications/mod_fax"
-ASR_TTS_MODULES="asr_tts/mod_pocketsphinx asr_tts/mod_flite"
 CODECS_MODULES="codecs/mod_ilbc codecs/mod_h26x codecs/mod_voipcodecs codecs/mod_speex codecs/mod_celt codecs/mod_siren"
 DIALPLANS_MODULES="dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
 DIRECTORIES_MODULES=""
 ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_iax endpoints/mod_portaudio endpoints/mod_sofia ../../libs/openzap/mod_openzap endpoints/mod_loopback"
+ASR_TTS_MODULES="asr_tts/mod_pocketsphinx asr_tts/mod_flite asr_tts/mod_unimrcp"
 EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv"
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream formats/mod_shout"
 LANGUAGES_MODULES="languages/mod_perl languages/mod_lua languages/mod_python languages/mod_yaml"
@@ -321,7 +328,7 @@ SAY_MODULES="say/mod_say_en say/mod_say_de say/mod_say_fr"
 TIMERS_MODULES=
 DISABLED_MODULES="applications/mod_soundtouch languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf languages/mod_managed languages/mod_java say/mod_say_it say/mod_say_es say/mod_say_nl"
 XML_INT_MODULES="xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr "
-MYMODULES="$PASSTHRU_CODEC_MODULES $SPIDERMONKEY_MODULES $APPLICATIONS_MODULES $ASR_TTS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $ENDPOINTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
+MYMODULES="$PASSTHRU_CODEC_MODULES $SPIDERMONKEY_MODULES $APPLICATIONS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $ENDPOINTS_MODULES $ASR_TTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
 
 export MODULES=$MYMODULES
 test ! -f  modules.conf || rm -f modules.conf
@@ -378,9 +385,6 @@ touch .noversion
 %{__mkdir} -p $RPM_BUILD_ROOT%{prefix}/log
 
 %ifos linux
-#Install the library path config so the system can find the modules
-%{__mkdir} -p $RPM_BUILD_ROOT/etc/ld.so.conf.d
-%{__cp} build/freeswitch.ld.so.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/
 # Install init files
 # On SuSE:
 %if 0%{?suse_version} > 100
@@ -438,6 +442,7 @@ userdel freeswitch
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/directory
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/directory/default
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/mrcp_profiles
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/dialplan/default
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/dialplan/public
@@ -458,6 +463,7 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/m3ua.conf
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/extensions.conf
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/acl.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cidlookup.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/alsa.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/conference.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/console.conf.xml
@@ -496,6 +502,8 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/opal.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/unicall.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/memcache.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/nibblebill.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/unimrcp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/default/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/public/*.xml
@@ -505,12 +513,13 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/internal/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/external/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/jingle_profiles/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/mrcp_profiles/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/default.dic
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/model/communicator/*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/model/wsj1/*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/htdocs/*
 %ifos linux
-/etc/ld.so.conf.d/*
+#/etc/ld.so.conf.d/*
 /etc/init.d/freeswitch
 /etc/sysconfig/freeswitch
 %if 0%{?suse_version} > 100
@@ -569,6 +578,7 @@ userdel freeswitch
 %{prefix}/mod/mod_fax.so
 %{prefix}/mod/mod_soundtouch.so
 %{prefix}/mod/mod_vmd.so
+%{prefix}/mod/mod_unimrcp.so
 
 %files openzap
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/tones.conf
@@ -670,6 +680,14 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/vm/*.xml
 %{prefix}/mod/mod_say_fr.so*
 
+%files lang-ru
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/ru
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/ru/demo
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/ru/vm
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/demo/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/vm/*.xml
+
 %files moh
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/music/8000
 %{prefix}/sounds/music/8000/*
@@ -688,6 +706,7 @@ userdel freeswitch
 
 %files sounds-en-callie
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/ascii/8000
+%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/base256/8000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/conference/8000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/currency/8000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/digits/8000
@@ -696,7 +715,9 @@ userdel freeswitch
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/phonetic-ascii/8000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/time/8000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/voicemail/8000
+%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/zrtp/8000
 %{prefix}/sounds/en/us/callie/ascii/8000/*
+%{prefix}/sounds/en/us/callie/base256/8000/*
 %{prefix}/sounds/en/us/callie/conference/8000/*
 %{prefix}/sounds/en/us/callie/currency/8000/*
 %{prefix}/sounds/en/us/callie/digits/8000/*
@@ -705,9 +726,11 @@ userdel freeswitch
 %{prefix}/sounds/en/us/callie/phonetic-ascii/8000/*
 %{prefix}/sounds/en/us/callie/time/8000/*
 %{prefix}/sounds/en/us/callie/voicemail/8000/*
+%{prefix}/sounds/en/us/callie/zrtp/8000/*
 
 %files hd-sounds-en-callie
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/ascii/16000
+%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/base256/16000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/conference/16000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/currency/16000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/digits/16000
@@ -716,7 +739,9 @@ userdel freeswitch
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/phonetic-ascii/16000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/time/16000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/voicemail/16000
+%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/zrtp/16000
 %{prefix}/sounds/en/us/callie/ascii/16000/*
+%{prefix}/sounds/en/us/callie/base256/16000/*
 %{prefix}/sounds/en/us/callie/conference/16000/*
 %{prefix}/sounds/en/us/callie/currency/16000/*
 %{prefix}/sounds/en/us/callie/digits/16000/*
@@ -725,10 +750,12 @@ userdel freeswitch
 %{prefix}/sounds/en/us/callie/phonetic-ascii/16000/*
 %{prefix}/sounds/en/us/callie/time/16000/*
 %{prefix}/sounds/en/us/callie/voicemail/16000/*
+%{prefix}/sounds/en/us/callie/zrtp/16000/*
 
 
 %files uhd-sounds-en-callie
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/ascii/32000
+%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/base256/32000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/conference/32000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/currency/32000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/digits/32000
@@ -737,7 +764,9 @@ userdel freeswitch
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/phonetic-ascii/32000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/time/32000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/voicemail/32000
+%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/zrtp/32000
 %{prefix}/sounds/en/us/callie/ascii/32000/*
+%{prefix}/sounds/en/us/callie/base256/32000/*
 %{prefix}/sounds/en/us/callie/conference/32000/*
 %{prefix}/sounds/en/us/callie/currency/32000/*
 %{prefix}/sounds/en/us/callie/digits/32000/*
@@ -746,10 +775,12 @@ userdel freeswitch
 %{prefix}/sounds/en/us/callie/phonetic-ascii/32000/*
 %{prefix}/sounds/en/us/callie/time/32000/*
 %{prefix}/sounds/en/us/callie/voicemail/32000/*
+%{prefix}/sounds/en/us/callie/zrtp/32000/*
 
 
 %files cd-sounds-en-callie
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/ascii/48000
+%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/base256/48000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/conference/48000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/currency/48000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/digits/48000
@@ -758,7 +789,9 @@ userdel freeswitch
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/phonetic-ascii/48000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/time/48000
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/voicemail/48000
+%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/zrtp/48000
 %{prefix}/sounds/en/us/callie/ascii/48000/*
+%{prefix}/sounds/en/us/callie/base256/48000/*
 %{prefix}/sounds/en/us/callie/conference/48000/*
 %{prefix}/sounds/en/us/callie/currency/48000/*
 %{prefix}/sounds/en/us/callie/digits/48000/*
@@ -767,9 +800,15 @@ userdel freeswitch
 %{prefix}/sounds/en/us/callie/phonetic-ascii/48000/*
 %{prefix}/sounds/en/us/callie/time/48000/*
 %{prefix}/sounds/en/us/callie/voicemail/48000/*
+%{prefix}/sounds/en/us/callie/zrtp/48000/*
 
 
 %changelog
+* Tue Jun 23 2009 - raulfragoso@gmail.com
+- Adjusted for the latest SVN trunk (13912)
+- Included new config and mod files to catch up with latest SVN
+- Included new sound files for base256 and zrtp
+- mod_unimrcp must be built after mod_sofia
 * Mon Feb 17 2009 - michal.bielicki@halokwadrat.de
 - added mod_python
 - added mod_fax
