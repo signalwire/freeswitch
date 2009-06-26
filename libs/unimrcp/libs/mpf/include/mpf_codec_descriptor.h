@@ -39,7 +39,9 @@ APT_BEGIN_EXTERN_C
 typedef enum {
 	MPF_SAMPLE_RATE_NONE  = 0x00,
 	MPF_SAMPLE_RATE_8000  = 0x01,
-	MPF_SAMPLE_RATE_16000 = 0x02
+	MPF_SAMPLE_RATE_16000 = 0x02,
+	MPF_SAMPLE_RATE_32000 = 0x04,
+	MPF_SAMPLE_RATE_48000 = 0x08
 } mpf_sample_rates_e;
 
 /** Codec descriptor declaration */

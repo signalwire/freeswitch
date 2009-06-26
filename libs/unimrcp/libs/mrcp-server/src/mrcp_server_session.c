@@ -206,6 +206,7 @@ static mrcp_channel_t* mrcp_server_channel_create(mrcp_server_session_t *session
 
 			engine_channel = mrcp_server_engine_channel_create(session,resource_name);
 			if(engine_channel) {
+				engine_channel->id = session->base.id;
 				engine_channel->event_obj = channel;
 				engine_channel->event_vtable = &engine_channel_vtable;
 				channel->engine_channel = engine_channel;

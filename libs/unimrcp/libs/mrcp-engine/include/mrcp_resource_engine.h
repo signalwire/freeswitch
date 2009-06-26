@@ -74,6 +74,8 @@ struct mrcp_engine_channel_t {
 	mpf_termination_t                         *termination;
 	/** Back pointer to resource engine */
 	mrcp_resource_engine_t                    *engine;
+	/** Unique identifier (useful for traces) */
+	apt_str_t                                  id;
 	/** Pool to allocate memory from */
 	apr_pool_t                                *pool;
 };

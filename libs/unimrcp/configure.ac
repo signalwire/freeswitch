@@ -16,19 +16,19 @@ datadir='${prefix}/data'
 
 AM_INIT_AUTOMAKE(foreign)
 
-#Set default language
+# Set default language
 AC_LANG_C
 
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL
 
-#skip detection of Fortran
+# Skip detection of Fortran
 m4_undefine([AC_PROG_F77])
 m4_defun([AC_PROG_F77],[])
 AC_PROG_LIBTOOL
 
-# get version information
+# Get version information
 get_version="build/get-version.sh"
 version_hdr="build/uni_version.h"
 plugin_version_hdr="libs/mrcp-engine/include/mrcp_resource_plugin.h"
@@ -42,12 +42,13 @@ AC_SUBST(PLUGIN_LT_VERSION)
 
 echo "UniMRCP Version: ${UNI_DOTTED_VERSION}"
 
+# Check APR
 UNIMRCP_CHECK_APR
 UNIMRCP_CHECK_APU
 
+# Check SOFIA
 UNIMRCP_CHECK_SOFIA
 
-UNIMRCP_CHECK_SWIFT
 
 
 AC_SUBST(ac_aux_dir)
@@ -74,7 +75,7 @@ AC_CACHE_CHECK([for _AC_LANG compiler vendor], ax_cv_[]_AC_LANG_ABBREV[]_compile
 
 AX_COMPILER_VENDOR
 
-
+#Enable maintainer mode
 AC_ARG_ENABLE(maintainer-mode,
     [AC_HELP_STRING([--enable-maintainer-mode  ],[turn on debugging and compile time warnings])],
     [enable_maintainer_mode="$enableval"],
@@ -87,6 +88,7 @@ if test "${enable_maintainer_mode}" != "no"; then
     fi
 fi
 
+#Enable test suites
 AC_ARG_ENABLE(test-suites,
     [AC_HELP_STRING([--enable-test-suites  ],[build test suites])],
     [enable_test_suites="$enableval"],
@@ -94,6 +96,10 @@ AC_ARG_ENABLE(test-suites,
 
 AM_CONDITIONAL([TEST_SUITES],[test "${enable_test_suites}" != "no"])
 
+
+### Plugins ###
+
+#Enable demo synthesizer plugin
 AC_ARG_ENABLE(demosynth-plugin,
     [AC_HELP_STRING([--disable-demosynth-plugin  ],[exclude demo synthesizer plugin from build])],
     [enable_demosynth_plugin="$enableval"],
@@ -101,12 +107,59 @@ AC_ARG_ENABLE(demosynth-plugin,
 
 AM_CONDITIONAL([DEMOSYNTH_PLUGIN],[test "${enable_demosynth_plugin}" = "yes"])
 
+
+#Enable demo recognizer plugin
 AC_ARG_ENABLE(demorecog-plugin,
     [AC_HELP_STRING([--disable-demorecog-plugin  ],[exclude demo recognizer plugin from build])],
     [enable_demorecog_plugin="$enableval"],
     [enable_demorecog_plugin="yes"])
 
 AM_CONDITIONAL([DEMORECOG_PLUGIN],[test "${enable_demorecog_plugin}" = "yes"])
+
+
+#Enable Cepstral Swift plugin
+AC_ARG_ENABLE(cepstral-plugin,
+    [AC_HELP_STRING([--disable-cepstral-plugin  ],[exclude cepstral plugin from build])],
+    [enable_cepstral_plugin="$enableval"],
+    [enable_cepstral_plugin="yes"])
+
+if test "${enable_cepstral_plugin}" != "no"; then
+    UNIMRCP_CHECK_SWIFT
+fi
+
+AM_CONDITIONAL([CEPSTRAL_PLUGIN],[test "${enable_cepstral_plugin}" = "yes" &&\
+                                  test "${found_swift}" = "yes"])
+
+
+#Enable PocketSphinx plugin
+AC_ARG_ENABLE(pocketsphinx-plugin,
+    [AC_HELP_STRING([--enable-pocketsphinx-plugin  ],[enable pocketsphinx plugin])],
+    [enable_pocketsphinx_plugin="$enableval"],
+    [enable_pocketsphinx_plugin="no"])
+
+if test "${enable_pocketsphinx_plugin}" != "no"; then
+    UNIMRCP_CHECK_SPHINXBASE
+    UNIMRCP_CHECK_POCKETSPHINX
+fi
+
+AM_CONDITIONAL([POCKETSPHINX_PLUGIN],[test "${enable_pocketsphinx_plugin}" = "yes" &&\
+                                      test "${found_pocketsphinx}" = "yes" &&\
+                                      test "${found_sphinxbase}" = "yes"])
+
+
+#Enable Flite plugin
+AC_ARG_ENABLE(flite-plugin,
+    [AC_HELP_STRING([--enable-flite-plugin  ],[enable flite plugin])],
+    [enable_flite_plugin="$enableval"],
+    [enable_flite_plugin="no"])
+
+if test "${enable_flite_plugin}" != "no"; then
+    UNIMRCP_CHECK_FLITE
+fi
+
+AM_CONDITIONAL([FLITE_PLUGIN],[test "${enable_flite_plugin}" = "yes" &&\
+                               test "${found_flite}" = "yes"])
+
 
 AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
 
@@ -127,6 +180,8 @@ AC_CONFIG_FILES([
   modules/mrcp-unirtsp/Makefile
   plugins/Makefile
   plugins/mrcp-cepstral/Makefile
+  plugins/mrcp-pocketsphinx/Makefile
+  plugins/mrcp-flite/Makefile
   plugins/demo-synth/Makefile
   plugins/demo-recog/Makefile
   platforms/Makefile
@@ -148,3 +203,16 @@ AC_CONFIG_FILES([
 ])
 
 AC_OUTPUT
+
+AC_MSG_NOTICE
+AC_MSG_NOTICE([Report:])
+AC_MSG_NOTICE([  UniMRCP: $UNI_DOTTED_VERSION])
+AC_MSG_NOTICE([  APR: $apr_version])
+AC_MSG_NOTICE([  APR-Util: $apu_version])
+AC_MSG_NOTICE([  Sofia-SIP: $sofia_version])
+AC_MSG_NOTICE([Plugins:])
+AC_MSG_NOTICE([  Demo Synthesizer: $enable_demosynth_plugin])
+AC_MSG_NOTICE([  Demo Recognizer: $enable_demorecog_plugin])
+AC_MSG_NOTICE([  Cepstral: $enable_cepstral_plugin])
+AC_MSG_NOTICE([  PocketSphinx: $enable_pocketsphinx_plugin])
+AC_MSG_NOTICE([  Flite: $enable_flite_plugin])

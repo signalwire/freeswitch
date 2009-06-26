@@ -12,6 +12,7 @@ AC_DEFUN([UNIMRCP_CHECK_SOFIA],
                 [sofia_path="/usr/local"]
                 )
     
+    found_sofia="no"
     sofiaconfig="lib/pkgconfig/sofia-sip-ua.pc"
     sofiasrcdir="libsofia-sip-ua"
     for dir in $sofia_path ; do

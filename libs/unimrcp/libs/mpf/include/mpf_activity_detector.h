@@ -42,6 +42,9 @@ typedef enum {
 /** Create activity detector */
 MPF_DECLARE(mpf_activity_detector_t*) mpf_activity_detector_create(apr_pool_t *pool);
 
+/** Reset activity detector */
+MPF_DECLARE(void) mpf_activity_detector_reset(mpf_activity_detector_t *detector);
+
 /** Set threshold of voice activity (silence) level */
 MPF_DECLARE(void) mpf_activity_detector_level_set(mpf_activity_detector_t *detector, apr_size_t level_threshold);
 

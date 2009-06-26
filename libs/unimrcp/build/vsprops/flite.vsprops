@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="flite"
+	InheritedPropertySheets=".\unibase.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(FliteDir)\include&quot;"
+		PreprocessorDefinitions="APT_LIB_EXPORT"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalDependencies="flite.lib"
+		AdditionalLibraryDirectories="&quot;$(FliteDir)\$(ConfigurationName)&quot;"
+	/>
+	<UserMacro
+		Name="FliteDir"
+		Value="$(LibRootDir)libs\flite"
+	/>
+</VisualStudioPropertySheet>

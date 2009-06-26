@@ -25,6 +25,4 @@ AC_DEFUN([UNIMRCP_CHECK_SWIFT],
     else
 	AC_MSG_WARN([not found - looked for $swift_path])
     fi
-
-    AM_CONDITIONAL([CEPSTRAL_PLUGIN], [test x_$found_swift = x_yes])
 ])

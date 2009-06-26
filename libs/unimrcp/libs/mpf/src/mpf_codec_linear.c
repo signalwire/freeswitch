@@ -84,15 +84,17 @@ static const mpf_codec_vtable_t l16_vtable = {
 };
 
 static const mpf_codec_attribs_t lpcm_attribs = {
-	{LPCM_CODEC_NAME, LPCM_CODEC_NAME_LENGTH},   /* codec name */
-	16,                                          /* bits per sample */
-	MPF_SAMPLE_RATE_8000 | MPF_SAMPLE_RATE_16000 /* sampling rates */
+	{LPCM_CODEC_NAME, LPCM_CODEC_NAME_LENGTH},    /* codec name */
+	16,                                           /* bits per sample */
+	MPF_SAMPLE_RATE_8000 | MPF_SAMPLE_RATE_16000 |
+	MPF_SAMPLE_RATE_32000 | MPF_SAMPLE_RATE_48000 /* supported sampling rates */
 };
 
 static const mpf_codec_attribs_t l16_attribs = {
-	{L16_CODEC_NAME, L16_CODEC_NAME_LENGTH},     /* codec name */
-	16,                                          /* bits per sample */
-	MPF_SAMPLE_RATE_8000 | MPF_SAMPLE_RATE_16000 /* sampling rates */
+	{L16_CODEC_NAME, L16_CODEC_NAME_LENGTH},      /* codec name */
+	16,                                           /* bits per sample */
+	MPF_SAMPLE_RATE_8000 | MPF_SAMPLE_RATE_16000 |
+	MPF_SAMPLE_RATE_32000 | MPF_SAMPLE_RATE_48000 /* supported sampling rates */
 };
 
 mpf_codec_descriptor_t* mpf_codec_lpcm_descriptor_create(apr_uint16_t sampling_rate, apr_byte_t channel_count, apr_pool_t *pool)
