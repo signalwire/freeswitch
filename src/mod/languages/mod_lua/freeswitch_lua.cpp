@@ -99,6 +99,9 @@ bool Session::ready()
 {
 	bool r;
 
+	if (!session) {
+		return false;
+	}
 	sanity_check(false);
 	r = switch_channel_ready(channel) != 0;
 	do_hangup_hook();
