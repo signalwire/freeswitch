@@ -142,10 +142,10 @@ static apt_log_priority_e str_to_log_level(const char *level);
 
 static int get_next_speech_channel_number(void);
 
-#define XML_ID  "<?xml v"
+#define XML_ID  "<?xml"
 #define GSL_ID  ";GSL2.0"
-#define ABNF_ID "#ABNF 1"
-#define JSGF_ID "#JSGF 1.0"
+#define ABNF_ID "#ABNF"
+#define JSGF_ID "#JSGF"
 #define BUILTIN_ID "builtin:"
 #define SESSION_ID "session:"
 #define HTTP_ID "http://"
