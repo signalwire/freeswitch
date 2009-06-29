@@ -1963,7 +1963,7 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		char *ip = globals.guess_ip;
 		if (!strcasecmp(val, "auto-nat")) {
 			ip = globals.auto_nat ? switch_core_get_variable("nat_public_addr") : globals.guess_ip;
-		} else if (strcasecmp(val, "auto")) {
+		} else if (!strcasecmp(val, "auto")) {
 			globals.auto_nat = 0;
 			ip = globals.guess_ip;
 		} else {
