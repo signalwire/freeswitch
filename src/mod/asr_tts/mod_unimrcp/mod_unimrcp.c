@@ -53,6 +53,25 @@
 #include "mrcp_client_connection.h"
 #include "apt_net.h"
 
+
+/*********************************************************************************************************************************************
+ * PROFILE: profile management
+ */
+
+/**
+ * Profile-specific configuration.  This allows us to handle differing MRCP server behavior 
+ * on a per-profile basis 
+ */
+struct profile {
+	char *name;
+	const char *jsgf_mime_type;
+	const char *gsl_mime_type;
+	const char *srgs_xml_mime_type;
+	const char *srgs_mime_type;
+};
+typedef struct profile profile_t;
+static switch_status_t profile_create(profile_t **profile, const char *name, switch_memory_pool_t *pool);
+
 /*********************************************************************************************************************************************
  * mod_unimrcp : module interface to FreeSWITCH
  */
@@ -61,6 +80,7 @@
 #define MOD_UNIMRCP "unimrcp"
 /* module config file */
 #define CONFIG_FILE "unimrcp.conf"
+
 
 /**
  * A UniMRCP application.
@@ -105,6 +125,8 @@ struct mod_unimrcp_globals {
 	switch_mutex_t *mutex;
 	/** next available speech channel number */
 	int speech_channel_number;
+	/** the available profiles */
+	switch_hash_t *profiles;
 };
 typedef struct mod_unimrcp_globals mod_unimrcp_globals_t;
 
@@ -131,10 +153,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load);
 SWITCH_MODULE_DEFINITION(mod_unimrcp, mod_unimrcp_load, mod_unimrcp_shutdown, NULL);
 
 static switch_status_t mod_unimrcp_do_config();
-static mrcp_client_t *mod_unimrcp_client_create();
+static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool);
 static int process_rtp_config(mrcp_client_t *client, mpf_rtp_config_t *rtp_config, const char *param, const char *val, apr_pool_t *pool);
 static int process_mrcpv1_config(rtsp_client_config_t *config, const char *param, const char *val, apr_pool_t *pool);
 static int process_mrcpv2_config(mrcp_sofia_client_config_t *config, const char *param, const char *val, apr_pool_t *pool);
+static int process_profile_config(profile_t *profile, const char *param, const char *val, apr_pool_t *pool);
 
 /* UniMRCP <--> FreeSWITCH logging bridge */
 static apt_bool_t unimrcp_log(const char *file, int line, const char *id, apt_log_priority_e priority, const char *format, va_list arg_ptr);
@@ -161,6 +184,7 @@ struct unimrcp_param_id {
 };
 typedef struct unimrcp_param_id unimrcp_param_id_t;
 static unimrcp_param_id_t *unimrcp_param_id_create(int id, switch_memory_pool_t *pool);
+
 
 /********************************************************************************************************************************************
  * AUDIO QUEUE : UniMRCP <--> FreeSWITCH audio buffering
@@ -248,6 +272,8 @@ typedef enum speech_channel_state speech_channel_state_t;
 struct speech_channel {
 	/** the name of this channel (for logging) */
 	char *name;
+	/** The profile used by this channel */
+	profile_t *profile;
 	/** type of channel */
 	speech_channel_type_t type;
 	/** application this channel is running */
@@ -286,7 +312,7 @@ static apt_bool_t speech_on_channel_remove(mrcp_application_t *application, mrcp
 
 /* speech_channel funcs */
 static switch_status_t speech_channel_create(speech_channel_t **schannel, const char *name, speech_channel_type_t type, mod_unimrcp_application_t *app, const char *codec, uint16_t rate, switch_memory_pool_t *pool);
-static switch_status_t speech_channel_open(speech_channel_t *schannel, const char *profile_name);
+static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t *profile);
 static switch_status_t speech_channel_destroy(speech_channel_t *schannel);
 static switch_status_t speech_channel_stop(speech_channel_t *schannel);
 static switch_status_t speech_channel_set_param(speech_channel_t *schannel, const char *name, const char *val);
@@ -364,7 +390,7 @@ struct grammar {
 typedef struct grammar grammar_t;
 
 static switch_status_t grammar_create(grammar_t **grammar, const char *name, grammar_type_t type, const char *data, switch_memory_pool_t *pool);
-static const char *grammar_type_to_mime(grammar_type_t type);
+static const char *grammar_type_to_mime(grammar_type_t type, profile_t *profile);
 
 /*********************************************************************************************************************************************
  * RECOGNIZER : UniMRCP <--> FreeSWITCH asr interface
@@ -420,6 +446,35 @@ static switch_status_t recog_channel_get_results(speech_channel_t *schannel, cha
 static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp_message_t *msg, mrcp_generic_header_t *gen_hdr, mrcp_recog_header_t *recog_hdr);
 static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int id, char *val, mrcp_message_t *msg, mrcp_recog_header_t *recog_hdr);
 static switch_status_t recog_channel_set_timers_started(speech_channel_t *schannel);
+
+
+/**
+ * Create a mod_unimrcp profile
+ * @param profile the created profile
+ * @param name the profile name
+ * @param pool the memory pool to use
+ * @return SWITCH_STATUS_SUCCESS
+ */
+static switch_status_t profile_create(profile_t **profile, const char *name, switch_memory_pool_t *pool)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	profile_t *lprofile = NULL;
+	
+	lprofile = (profile_t *)switch_core_alloc(pool, sizeof(profile_t));
+	if (lprofile) {
+		lprofile->name = switch_core_strdup(pool, name);
+		lprofile->srgs_mime_type = "application/srgs";
+		lprofile->srgs_xml_mime_type = "application/srgs+xml";
+		lprofile->gsl_mime_type = "application/x-nuance-gsl";
+		lprofile->jsgf_mime_type = "application/x-jsgf";
+		*profile = lprofile;
+	} else {
+		*profile = NULL;
+		status = SWITCH_STATUS_FALSE;
+	}
+	
+	return status;
+}
 
 /**
  * Inspect text to determine if its first non-whitespace text matches "match"
@@ -694,7 +749,7 @@ static switch_status_t speech_channel_create(speech_channel_t **schannel, const 
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	
+	schan->profile = NULL;
 	schan->type = type;
 	schan->application = app;
 	schan->state = SPEECH_CHANNEL_CLOSED;
@@ -702,7 +757,7 @@ static switch_status_t speech_channel_create(speech_channel_t **schannel, const 
 	schan->params = NULL;
 	schan->rate = rate;
 	schan->codec = switch_core_strdup(pool, codec);
-
+	
 	if (!strcmp("L16", schan->codec)) {
 		schan->silence = 0;
 	} else {
@@ -759,10 +814,10 @@ static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
  * Open the speech channel
  *
  * @param schannel the channel to open
- * @param profile_name the profile to use
+ * @param profile the profile to use
  * @return SWITCH_STATUS_FALSE if failed, SWITCH_STATUS_RESTART if retry can be attempted with another profile, SWITCH_STATUS_SUCCESS if successful
  */
-static switch_status_t speech_channel_open(speech_channel_t *schannel, const char *profile_name)
+static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t *profile)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	mpf_termination_t *termination = NULL;
@@ -770,17 +825,19 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, const cha
 	mrcp_resource_type_e resource_type;
 
 	switch_mutex_lock(schannel->mutex);
-
+	
 	/* make sure we can open channel */
 	if (schannel->state != SPEECH_CHANNEL_CLOSED) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 
+	schannel->profile = profile;
+
 	/* create MRCP session */
-	if ((schannel->unimrcp_session = mrcp_application_session_create(schannel->application->app, profile_name, schannel)) == NULL) {	
+	if ((schannel->unimrcp_session = mrcp_application_session_create(schannel->application->app, profile->name, schannel)) == NULL) {	
 		/* profile doesn't exist? */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Unable to create session with %s\n", schannel->name, profile_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Unable to create session with %s\n", schannel->name, profile->name);
 		status = SWITCH_STATUS_RESTART;
 		goto done;
 	}
@@ -810,7 +867,7 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, const cha
 		termination = mrcp_application_source_termination_create(schannel->unimrcp_session, &schannel->application->audio_stream_vtable, codec, schannel);
 	}
 	if(termination == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Unable to create termination with %s\n", schannel->name, profile_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Unable to create termination with %s\n", schannel->name, profile->name);
 		mrcp_application_session_destroy(schannel->unimrcp_session);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -821,7 +878,7 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, const cha
 		resource_type = MRCP_RECOGNIZER_RESOURCE;
 	}
 	if ((schannel->unimrcp_channel = mrcp_application_channel_create(schannel->unimrcp_session, resource_type, termination, NULL, schannel)) == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Unable to create channel with %s\n", schannel->name, profile_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Unable to create channel with %s\n", schannel->name, profile->name);
 		mrcp_application_session_destroy(schannel->unimrcp_session);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -829,7 +886,7 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, const cha
 
 	/* add channel to session... this establishes the connection to the MRCP server */
 	if (mrcp_application_channel_add(schannel->unimrcp_session, schannel->unimrcp_channel) != TRUE) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Unable to add channel to session with %s\n", schannel->name, profile_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Unable to add channel to session with %s\n", schannel->name, profile->name);
 		mrcp_application_session_destroy(schannel->unimrcp_session);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -1322,10 +1379,11 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	speech_channel_t *schannel = NULL;
-	const char *profile = sh->param;
+	const char *profile_name = sh->param;
+	profile_t *profile = NULL;
 	int speech_channel_number = get_next_speech_channel_number();
 	char name[200] = { 0 };
-
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "speech_handle: name = %s, rate = %d, speed = %d, samples = %d, voice = %s, engine = %s, param = %s\n",
 						sh->name, sh->rate, sh->speed, sh->samples, sh->voice, sh->engine, sh->param); 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "voice = %s, rate = %d\n", voice_name, rate);
@@ -1343,8 +1401,14 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	sh->private_info = schannel;
 
 	/* try to open an MRCP channel */
-	if (switch_strlen_zero(profile)) {
-		profile = globals.unimrcp_default_synth_profile;
+	if (switch_strlen_zero(profile_name)) {
+		profile_name = globals.unimrcp_default_synth_profile;
+	}
+	profile = (profile_t *)switch_core_hash_find(globals.profiles, profile_name);
+	if (!profile) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Can't find profile, %s\n", name, profile_name);
+		status = SWITCH_STATUS_FALSE;
+		goto done;
 	}
 	if (speech_channel_open(schannel, profile) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
@@ -1765,17 +1829,18 @@ static switch_status_t grammar_create(grammar_t **grammar, const char *name, gra
 /**
  * Get the MIME type for this grammar type
  * @param type the grammar type
+ * @param profile the profile requesting the type
  * @return the MIME type
  */
-static const char *grammar_type_to_mime(grammar_type_t type)
+static const char *grammar_type_to_mime(grammar_type_t type, profile_t *profile)
 {
 	switch(type) {
 		case GRAMMAR_TYPE_UNKNOWN: return "";
 		case GRAMMAR_TYPE_URI: return "text/uri-list";
-		case GRAMMAR_TYPE_SRGS: return "application/srgs";
-		case GRAMMAR_TYPE_SRGS_XML: return "application/srgs+xml";
-		case GRAMMAR_TYPE_NUANCE_GSL: return "application/x-nuance-gsl";
-		case GRAMMAR_TYPE_JSGF: return "application/x-jsgf";
+		case GRAMMAR_TYPE_SRGS: return profile->srgs_mime_type;
+		case GRAMMAR_TYPE_SRGS_XML: return profile->srgs_xml_mime_type;
+		case GRAMMAR_TYPE_NUANCE_GSL: return profile->gsl_mime_type;
+		case GRAMMAR_TYPE_JSGF: return profile->jsgf_mime_type;
 	}
 	return "";
 }
@@ -1829,7 +1894,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 	}
 
 	/* set Content-Type */
-	mime_type = grammar_type_to_mime(r->grammar->type);
+	mime_type = grammar_type_to_mime(r->grammar->type, schannel->profile);
 	if (switch_strlen_zero(mime_type)) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -1923,7 +1988,7 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
-		mime_type = grammar_type_to_mime(type);
+		mime_type = grammar_type_to_mime(type, schannel->profile);
 		if (switch_strlen_zero(mime_type)) {
 			status = SWITCH_STATUS_FALSE;
 			goto done;
@@ -2404,7 +2469,8 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	speech_channel_t *schannel = NULL;
 	int speech_channel_number = get_next_speech_channel_number();
 	char name[200] = { 0 };
-	const char *profile;
+	const char *profile_name;
+	profile_t *profile = NULL;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "asr_handle: name = %s, codec = %s, rate = %d, grammar = %s, param = %s\n",
 		ah->name, ah->codec, ah->rate, ah->grammar, ah->param);
@@ -2424,7 +2490,13 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	memset(schannel->data, 0, sizeof(recognizer_data_t));
 
 	/* try to open an MRCP channel */
-	profile = switch_strlen_zero(dest) ? globals.unimrcp_default_recog_profile : dest;
+	profile_name = switch_strlen_zero(dest) ? globals.unimrcp_default_recog_profile : dest;
+	profile = (profile_t *)switch_core_hash_find(globals.profiles, profile_name);
+	if (!profile) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Can't find profile, %s\n", name, profile_name);
+		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
 	status = speech_channel_open(schannel, profile);
 
  done:
@@ -2524,7 +2596,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 			goto done;
 		}
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) grammar is %s\n", schannel->name, grammar_type_to_mime(type));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) grammar is %s\n", schannel->name, grammar_type_to_mime(type, schannel->profile));
 
 	/* load the grammar and start recognition */
 	if (recog_channel_load_grammar(schannel, lname, type, grammar_data) != SWITCH_STATUS_SUCCESS) {
@@ -2996,6 +3068,32 @@ static char *ip_addr_get(const char *value, apr_pool_t *pool)
 }
 
 /**
+ * set mod_unimrcp-specific profile configuration
+ * 
+ * @param profile the MRCP profile to configure
+ * @param param the param name
+ * @param val the param value
+ * @param pool the memory pool to use
+ */
+static int process_profile_config(profile_t *profile, const char *param, const char *val, switch_memory_pool_t *pool)
+{
+	int mine = 1;
+	if (strcasecmp(param, "jsgf-mime-type") == 0) {
+		profile->jsgf_mime_type = switch_core_strdup(pool, val);
+	} else if (strcasecmp(param, "gsl-mime-type") == 0) {
+		profile->gsl_mime_type = switch_core_strdup(pool, val);
+	} else if (strcasecmp(param, "srgs-xml-mime-type") == 0) {
+		profile->srgs_xml_mime_type = switch_core_strdup(pool, val);
+	} else if (strcasecmp(param, "srgs-mime-type") == 0) {
+		profile->srgs_mime_type = switch_core_strdup(pool, val);
+	} else {
+		mine = 0;
+	}
+
+	return mine;
+}
+
+/**
  * set RTP config struct with param, val pair 
  * @param client the MRCP client
  * @param rtp_config the config struct to set
@@ -3112,7 +3210,7 @@ static int process_mrcpv2_config(mrcp_sofia_client_config_t *config, const char 
  *
  * @return the MRCP client
  */
-static mrcp_client_t *mod_unimrcp_client_create()
+static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 {
 	switch_xml_t cfg = NULL, xml = NULL, profiles = NULL, profile = NULL;
 	mrcp_client_t *client = NULL;
@@ -3128,7 +3226,7 @@ static mrcp_client_t *mod_unimrcp_client_create()
 	client = mrcp_client_create(globals.unimrcp_dir_layout);
 	if (!client)
 		goto done;
-	
+
 	pool = mrcp_client_memory_pool_get(client);
 	if (!pool)
 		goto done;
@@ -3177,6 +3275,7 @@ static mrcp_client_t *mod_unimrcp_client_create()
 			mpf_termination_factory_t *termination_factory = NULL;
 			mrcp_profile_t * mprofile = NULL;
 			mpf_rtp_config_t *rtp_config = NULL;
+			profile_t *mod_profile = NULL;
 			
 			/* get profile attributes */
 			const char *name = apr_pstrdup(pool, switch_xml_attr(profile, "name"));
@@ -3186,6 +3285,10 @@ static mrcp_client_t *mod_unimrcp_client_create()
 				client = NULL;
 				goto done;
 			}
+
+			/* prepare mod_unimrcp's profile for configuration */
+			profile_create(&mod_profile, name, mod_pool);
+			switch_core_hash_insert(globals.profiles, mod_profile->name, mod_profile);
 
 			/* create RTP config, common to MRCPv1 and MRCPv2 */
 			rtp_config = mpf_rtp_config_create(pool);
@@ -3211,7 +3314,8 @@ static mrcp_client_t *mod_unimrcp_client_create()
 					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading Param %s:%s\n", param_name, param_value);
 					if (!process_mrcpv1_config(config, param_name, param_value, pool) && 
-						!process_rtp_config(client, rtp_config, param_name, param_value, pool)) {
+						!process_rtp_config(client, rtp_config, param_name, param_value, pool) &&
+						!process_profile_config(mod_profile, param_name, param_value, mod_pool)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown param %s\n", param_name);
 					}
 				}
@@ -3238,7 +3342,8 @@ static mrcp_client_t *mod_unimrcp_client_create()
 					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading Param %s:%s\n", param_name, param_value);
 					if (!process_mrcpv2_config(config, param_name, param_value, pool) &&
-						!process_rtp_config(client, rtp_config, param_name, param_value, pool)) {
+						!process_rtp_config(client, rtp_config, param_name, param_value, pool) &&
+						!process_profile_config(mod_profile, param_name, param_value, mod_pool)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown param %s\n", param_name);
 					}
 				}
@@ -3283,9 +3388,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	memset(&globals, 0, sizeof(globals));
-
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_UNNESTED, pool);
 	globals.speech_channel_number = 0;
+	switch_core_hash_init_case(&globals.profiles, pool, SWITCH_FALSE /* case_sensitive */);
 
 	/* get MRCP module configuration */
 	mod_unimrcp_do_config();
@@ -3310,7 +3415,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load)
 	apt_log_ext_handler_set(unimrcp_log);
 
 	/* Create the MRCP client */
-	if ((globals.mrcp_client = mod_unimrcp_client_create()) == NULL) {
+	if ((globals.mrcp_client = mod_unimrcp_client_create(pool)) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create mrcp client\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -3347,6 +3452,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_unimrcp_shutdown)
 	globals.mrcp_client = 0;
 
 	switch_mutex_destroy(globals.mutex);
+	switch_core_hash_destroy(&globals.profiles);
 
 	return SWITCH_STATUS_SUCCESS;
 }
