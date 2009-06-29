@@ -3075,6 +3075,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 							   || (switch_xml_locate_domain(p_contact->m_url->url_host, NULL, &root, &domain) == SWITCH_STATUS_SUCCESS)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirect: Transfering to %s\n", p_contact->m_url->url_user);
 						switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, NULL, NULL);
+						switch_xml_free(root);
 					} else {
 						invite_contact = sofia_glue_strip_uri(full_contact);
 						tech_pvt->redirected = switch_core_session_strdup(session, invite_contact);
