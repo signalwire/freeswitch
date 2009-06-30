@@ -77,7 +77,6 @@ SWITCH_STANDARD_API(nat_map_function)
 		goto ok;
 	} else if (argv[0] && switch_stristr("reinit", argv[0])) {
 		switch_nat_reinit();
-		stream->write_function(stream, "true");
 		tmp = switch_nat_status();
 		stream->write_function(stream, tmp);
 		switch_safe_free(tmp);
