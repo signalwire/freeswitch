@@ -156,8 +156,9 @@ static int get_pmp_pubaddr(char *pub_addr)
 		goto end;
 	}
 
+
 	pubaddr = inet_ntoa(response.pnu.publicaddress.addr);
-	switch_set_string(pub_addr, pubaddr);
+	switch_set_string(nat_globals.pub_addr, pubaddr);
 	nat_globals.nat_type = SWITCH_NAT_TYPE_PMP;
 	
 	closenatpmp(&natpmp);
