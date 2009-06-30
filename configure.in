@@ -487,6 +487,16 @@ elif test "$ac_cv_sizeof_long" = "8"; then
     uint64_t_fmt='#define SWITCH_UINT64_T_FMT "lu"'
     int64_value="long"
     long_value=long
+    case "$host" in
+        *-solaris2*)
+	    if test "$ac_cv_sizeof_long_long" = "8"; then
+	        int64_t_fmt='#define SWITCH_INT64_T_FMT "lld"'
+		uint64_t_fmt='#define SWITCH_UINT64_T_FMT "llu"'
+		int64_value="long long"
+		long_value="long long"
+	    fi
+	;;
+    esac
 elif test "$ac_cv_sizeof_long_long" = "8"; then
     int64_t_fmt='#define SWITCH_INT64_T_FMT "lld"'
     uint64_t_fmt='#define SWITCH_UINT64_T_FMT "llu"'
