@@ -68,9 +68,8 @@ typedef struct {
 	zap_channel_t *zchan;
 } ss7_boost_request_t;
 
-#define MAX_REQ_ID ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN * ZAP_MAX_CHANNELS_PHYSICAL_SPAN
-
-  //#define MAX_REQ_ID 5
+//#define MAX_REQ_ID ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN * ZAP_MAX_CHANNELS_PHYSICAL_SPAN
+#define MAX_REQ_ID 6000
 
 static uint16_t SETUP_GRID[ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN+1][ZAP_MAX_CHANNELS_PHYSICAL_SPAN+1] = {{ 0 }};
 
@@ -140,7 +139,7 @@ static ss7_boost_request_id_t __next_request_id(const char *func, int line)
 		r = ++last_req;
 
 		if (r >= MAX_REQ_ID) {
-			r = last_req = 1;
+			r = i = last_req = 1;
 		}
 
 		if (req_map[r]) {
@@ -448,7 +447,11 @@ static void handle_call_done(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_s
 		zap_mutex_unlock(zchan->mutex);
 	}
 
-	release_request_id_span_chan(event->span, event->chan);
+	if (event->call_setup_id) {
+		release_request_id(event->call_setup_id);
+	} else {
+		release_request_id_span_chan(event->span, event->chan);
+	}
 }
 
 /**
