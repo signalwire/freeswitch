@@ -40,14 +40,15 @@
 #include "../libs/libnatpmp/natpmp.h"
 
 #define MULTICAST_BUFFSIZE 65536
+#define IP_LEN 16
 
 typedef struct {
 	switch_nat_type_t nat_type;
 	struct UPNPUrls urls;
 	struct IGDdatas data;
 	char *descURL;
-	char pub_addr[16];
-	char pvt_addr[16];
+	char pub_addr[IP_LEN];
+	char pvt_addr[IP_LEN];
 } nat_globals_t;
 
 static nat_globals_t nat_globals;
@@ -158,7 +159,7 @@ static int get_pmp_pubaddr(char *pub_addr)
 
 
 	pubaddr = inet_ntoa(response.pnu.publicaddress.addr);
-	switch_set_string(nat_globals.pub_addr, pubaddr);
+	switch_copy_string(pub_addr, pubaddr, IP_LEN);
 	nat_globals.nat_type = SWITCH_NAT_TYPE_PMP;
 	
 	closenatpmp(&natpmp);
@@ -440,7 +441,7 @@ static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat
 static switch_status_t switch_nat_add_mapping_upnp(switch_port_t port, switch_nat_ip_proto_t proto)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	char port_str[16];
+	char port_str[IP_LEN];
 	int r = UPNPCOMMAND_UNKNOWN_ERROR;
 
 	sprintf(port_str, "%d", port);
@@ -504,7 +505,7 @@ static switch_status_t switch_nat_del_mapping_pmp(switch_port_t port, switch_nat
 static switch_status_t switch_nat_del_mapping_upnp(switch_port_t port, switch_nat_ip_proto_t proto)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	char port_str[16];
+	char port_str[IP_LEN];
 	int r = UPNPCOMMAND_UNKNOWN_ERROR;
 
 	sprintf(port_str, "%d", port);
