@@ -623,12 +623,15 @@ int main(int argc, char *argv[])
 		if (rlp.rlim_max > SWITCH_THREAD_STACKSIZE) {
 			char buf[1024] = "";
 			int i = 0;
+
+			fprintf(stderr, "Error: stacksize %d is too large: run ulimit -s %d or run %s -waste.\nauto-adjusting stack size for optimal performance....\n", 
+					(int)(rlp.rlim_max / 1024), SWITCH_THREAD_STACKSIZE / 1024, argv[0]);
+
 			memset(&rlp, 0, sizeof(rlp));
 			rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
 			rlp.rlim_max = SWITCH_THREAD_STACKSIZE;
 			setrlimit(RLIMIT_STACK, &rlp);
-			fprintf(stderr, "Error: stacksize %d is too large: run ulimit -s %d or run %s -waste.\nauto-adjusting stack size for optimal performance....\n", 
-					(int)(rlp.rlim_max / 1024), SWITCH_THREAD_STACKSIZE / 1024, argv[0]);
+
 			apr_terminate();
 			ret = (int)execv(argv[0], argv);
 			
