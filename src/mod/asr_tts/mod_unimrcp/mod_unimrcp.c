@@ -53,25 +53,6 @@
 #include "mrcp_client_connection.h"
 #include "apt_net.h"
 
-
-/*********************************************************************************************************************************************
- * PROFILE: profile management
- */
-
-/**
- * Profile-specific configuration.  This allows us to handle differing MRCP server behavior 
- * on a per-profile basis 
- */
-struct profile {
-	char *name;
-	const char *jsgf_mime_type;
-	const char *gsl_mime_type;
-	const char *srgs_xml_mime_type;
-	const char *srgs_mime_type;
-};
-typedef struct profile profile_t;
-static switch_status_t profile_create(profile_t **profile, const char *name, switch_memory_pool_t *pool);
-
 /*********************************************************************************************************************************************
  * mod_unimrcp : module interface to FreeSWITCH
  */
@@ -100,7 +81,7 @@ struct mod_unimrcp_application {
 typedef struct mod_unimrcp_application mod_unimrcp_application_t;
 
 /**
- * module globals
+ * module globals - global configuration and variables
  */
 struct mod_unimrcp_globals {
 	/** max-connection-count config */
@@ -113,8 +94,6 @@ struct mod_unimrcp_globals {
 	char *unimrcp_default_recog_profile;
 	/** log level for UniMRCP library */	
 	char *unimrcp_log_level;
-	/** UniMRCP directory layout */
-	apt_dir_layout_t *unimrcp_dir_layout;
 	/** the MRCP client stack */
 	mrcp_client_t *mrcp_client;
 	/** synthesizer application */
@@ -132,6 +111,25 @@ typedef struct mod_unimrcp_globals mod_unimrcp_globals_t;
 
 /** Module global variables */
 static mod_unimrcp_globals_t globals;
+
+/**
+ * Profile-specific configuration.  This allows us to handle differing MRCP server behavior 
+ * on a per-profile basis 
+ */
+struct profile {
+	/** name of the profile */
+	char *name;
+	/** MIME type to use for JSGF grammars */
+	const char *jsgf_mime_type;
+	/** MIME type to use for GSL grammars */
+	const char *gsl_mime_type;
+	/** MIME type to use for SRGS XML grammars */
+	const char *srgs_xml_mime_type;
+	/** MIME type to use for SRGS ABNF grammars */
+	const char *srgs_mime_type;
+};
+typedef struct profile profile_t;
+static switch_status_t profile_create(profile_t **profile, const char *name, switch_memory_pool_t *pool);
 
 /**
  * Defines XML parsing instructions
@@ -319,6 +317,7 @@ static switch_status_t speech_channel_set_param(speech_channel_t *schannel, cons
 static switch_status_t speech_channel_write(speech_channel_t *schannel, void *data, switch_size_t *len);
 static switch_status_t speech_channel_read(speech_channel_t *schannel, void *data, switch_size_t *len, int block);
 static switch_status_t speech_channel_set_state(speech_channel_t *schannel, speech_channel_state_t state);
+static switch_status_t speech_channel_set_state_unlocked(speech_channel_t *schannel, speech_channel_state_t state);
 static const char *speech_channel_state_to_string(speech_channel_state_t state);
 static const char *speech_channel_type_to_string(speech_channel_type_t type);
 
@@ -453,7 +452,7 @@ static switch_status_t recog_channel_set_timers_started(speech_channel_t *schann
  * @param profile the created profile
  * @param name the profile name
  * @param pool the memory pool to use
- * @return SWITCH_STATUS_SUCCESS
+ * @return SWITCH_STATUS_SUCCESS if the profile is created
  */
 static switch_status_t profile_create(profile_t **profile, const char *name, switch_memory_pool_t *pool)
 {
@@ -590,6 +589,7 @@ static switch_status_t audio_queue_create(audio_queue_t **audio_queue, const cha
  * @param queue the queue to write to
  * @param data the data to write
  * @param data_len the number of octets to write
+ * @return SWITCH_STATUS_SUCCESS if data was written, SWITCH_STATUS_FALSE if data can't be written because queue is full
  */
 static switch_status_t audio_queue_write(audio_queue_t *queue, void *data, switch_size_t *data_len)
 {
@@ -628,7 +628,7 @@ static switch_status_t audio_queue_write(audio_queue_t *queue, void *data, switc
  * @param data the read data
  * @param data_len the amount of data requested / actual amount of data read (returned)
  * @param block 1 if blocking is allowed
- * @return SWITCH_STATUS_SUCCESS if successful.  SWITCH_STATUS_FALSE if the queue is not allocated
+ * @return SWITCH_STATUS_SUCCESS if successful.  SWITCH_STATUS_FALSE if no data was requested, or there was a timeout while waiting to read
  */
 static switch_status_t audio_queue_read(audio_queue_t *queue, void *data, switch_size_t *data_len, int block)
 {
@@ -677,6 +677,7 @@ static switch_status_t audio_queue_read(audio_queue_t *queue, void *data, switch
 /**
  * Empty the queue
  *
+ * @param queue the queue to empty
  * @return SWITCH_STATUS_SUCCESS
  */
 static switch_status_t audio_queue_clear(audio_queue_t *queue)
@@ -923,7 +924,7 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
  * Send SPEAK request to synthesizer
  *
  * @param schannel the synthesizer channel
- * @param text the text to speak
+ * @param text The text to speak.  This may be plain text or SSML.
  * @return SWITCH_STATUS_SUCCESS if successful
  */
 static switch_status_t synth_channel_speak(speech_channel_t *schannel, const char *text)
@@ -1288,7 +1289,7 @@ static switch_status_t speech_channel_set_param(speech_channel_t *schannel, cons
  * @param schannel the speech channel
  * @param data the speech data
  * @param the number of octets to write / actual number written
- * @return SWITCH_STATUS_SUCCESS if successful
+ * @return SWITCH_STATUS_SUCCESS
  */
 static switch_status_t speech_channel_write(speech_channel_t *schannel, void *data, switch_size_t *len)
 {
@@ -1308,7 +1309,7 @@ static switch_status_t speech_channel_write(speech_channel_t *schannel, void *da
  * @param data the speech data
  * @param the number of octets to read / actual number read
  * @param block 1 if blocking is allowed
- * @return SWITCH_STATUS_SUCCESS if successful
+ * @return SWITCH_STATUS_SUCCESS if successful, SWITCH_STATUS_BREAK if channel is no longer processing
  */
 static switch_status_t speech_channel_read(speech_channel_t *schannel, void *data, switch_size_t *len, int block)
 {
@@ -1347,20 +1348,35 @@ static const char *speech_channel_state_to_string(speech_channel_state_t state)
  *
  * @param schannel the channel
  * @param state the new channel state
- * @return SWITCH_STATUS_SUCCESS if successful
+ * @return SWITCH_STATUS_SUCCESS, if successful
  */
 static switch_status_t speech_channel_set_state(speech_channel_t *schannel, speech_channel_state_t state)
+{
+	switch_status_t status;
+	switch_mutex_lock(schannel->mutex);
+	status = speech_channel_set_state_unlocked(schannel, state);
+	switch_mutex_unlock(schannel->mutex);
+	return status;
+}
+
+/**
+ * Use this function to set the current channel state without locking the 
+ * speech channel.  Do this if you already have the speech channel locked.
+ * 
+ * @param schannel the channel
+ * @param state the new channel state
+ * @return SWITCH_STATUS_SUCCESS
+ */
+static switch_status_t speech_channel_set_state_unlocked(speech_channel_t *schannel, speech_channel_state_t state)
 {
 	if (schannel->state == SPEECH_CHANNEL_PROCESSING && state != SPEECH_CHANNEL_PROCESSING) {
 		/* wake anyone waiting for audio data */
 		audio_queue_clear(schannel->audio_queue);	
 	}
 
-	switch_mutex_lock(schannel->mutex);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s ==> %s\n", schannel->name, speech_channel_state_to_string(schannel->state), speech_channel_state_to_string(state));
 	schannel->state = state;
 	switch_thread_cond_signal(schannel->cond);
-	switch_mutex_unlock(schannel->mutex);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2002,9 +2018,7 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 		apt_string_assign(&mrcp_message->body, data, mrcp_message->pool);
 
 		/* send message and wait for response */
-		switch_mutex_unlock(schannel->mutex);
-		speech_channel_set_state(schannel, SPEECH_CHANNEL_PROCESSING);
-		switch_mutex_lock(schannel->mutex);
+		speech_channel_set_state_unlocked(schannel, SPEECH_CHANNEL_PROCESSING);
 		if (mrcp_application_message_send(schannel->unimrcp_session, schannel->unimrcp_channel, mrcp_message) == FALSE) {
 			status = SWITCH_STATUS_FALSE;
 			goto done;
@@ -3221,9 +3235,13 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 	apt_bool_t offer_new_connection = FALSE;
 	mrcp_connection_agent_t *connection_agent;
 	mpf_engine_t *media_engine;
-
+	apt_dir_layout_t *dir_layout;
+	
 	/* create the client */
-	client = mrcp_client_create(globals.unimrcp_dir_layout);
+	if ((dir_layout = apt_default_dir_layout_create("../", mod_pool)) == NULL) {
+		goto done;
+	}
+	client = mrcp_client_create(dir_layout);
 	if (!client)
 		goto done;
 
@@ -3394,9 +3412,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load)
 
 	/* get MRCP module configuration */
 	mod_unimrcp_do_config();
-	if ((globals.unimrcp_dir_layout = apt_default_dir_layout_create("../", pool)) == NULL) {
-		return SWITCH_STATUS_FALSE;
-	}
 	if (switch_strlen_zero(globals.unimrcp_default_synth_profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing default-tts-profile\n");
 		return SWITCH_STATUS_FALSE;
