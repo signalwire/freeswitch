@@ -2700,7 +2700,7 @@ SWITCH_STANDARD_API(alias_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count]|aliases|complete|chat|endpoint|management|modules|say|interfaces|interface_types"
+#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count]|distinct_channels|aliases|complete|chat|endpoint|management|modules|say|interfaces|interface_types"
 SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
