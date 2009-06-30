@@ -402,6 +402,28 @@ static void core_event_handler(switch_event_t *event)
 								 switch_event_get_header_nil(event, "caller-unique-id"));
 			break;
 		}
+	case SWITCH_EVENT_NAT:
+		{
+			const char *op = switch_event_get_header_nil(event, "op");
+			switch_bool_t sticky = switch_true(switch_event_get_header_nil(event, "sticky"));
+			if (!strcmp("add", op)) {
+				sql = switch_mprintf("insert into nat (port, proto, sticky) values (%s, %s, %d)",
+									switch_event_get_header_nil(event, "port"),
+									switch_event_get_header_nil(event, "proto"),
+									sticky);
+			} else if (!strcmp("del", op)) {
+				sql = switch_mprintf("delete from nat where port=%s and proto=%s",
+									switch_event_get_header_nil(event, "port"),
+									switch_event_get_header_nil(event, "proto"));
+			} else if (!strcmp("status", op)) {
+				/* call show nat api */
+			} else if (!strcmp("status_response", op)) {
+				/* ignore */
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown op for SWITCH_EVENT_NAT: %s\n", op);
+			}
+			break;
+		}
 	default:
 		break;
 	}
@@ -506,6 +528,12 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 			"   task_group          VARCHAR(255),\n" 
 			"   task_sql_manager    INTEGER(8)\n" 
 			");\n";
+		char create_nat_sql[] = 
+			"CREATE TABLE nat (\n"
+			"   sticky  INTEGER,\n" 
+			"	port	INTEGER,\n"
+			"	proto	INTEGER\n"
+			");\n";
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening DB\n");
 		switch_core_db_exec(sql_manager.db, "drop table channels", NULL, NULL, NULL);
@@ -519,8 +547,10 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 
 		switch_core_db_test_reactive(sql_manager.db, "select sticky from complete", "DROP TABLE complete", create_complete_sql);
 		switch_core_db_test_reactive(sql_manager.db, "select sticky from aliases", "DROP TABLE aliases", create_alias_sql);
+		switch_core_db_test_reactive(sql_manager.db, "select sticky from nat", "DROP TABLE nat", create_nat_sql);
 		switch_core_db_exec(sql_manager.db, "delete from complete where sticky=0", NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, "delete from aliases where sticky=0", NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, "delete from nat where sticky=0", NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, "create index if not exists alias1 on aliases (alias)", NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, "create index if not exists complete1 on complete (a1)", NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, "create index if not exists complete2 on complete (a2)", NULL, NULL, NULL);
@@ -532,6 +562,7 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 		switch_core_db_exec(sql_manager.db, "create index if not exists complete8 on complete (a8)", NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, "create index if not exists complete9 on complete (a9)", NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, "create index if not exists complete10 on complete (a10)", NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, "create unique index if not exists nat_map_port_proto on nat (port,proto)", NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_channels_sql, NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_calls_sql, NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_interfaces_sql, NULL, NULL, NULL);

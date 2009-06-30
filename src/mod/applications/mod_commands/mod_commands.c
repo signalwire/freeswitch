@@ -31,6 +31,7 @@
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Cesar Cepeda <cesar@auronix.com>
  * Massimo Cetra <devel@navynet.it>
+ * Rupa Schomaker <rupa@rupa.com>
  *
  * 
  * mod_commands.c -- Misc. Command Module
@@ -47,9 +48,11 @@ SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, mod_commands_shutdown,
 SWITCH_STANDARD_API(nat_map_function)
 {
 	int argc;
-	char *mydata = NULL, *argv[4];
+	char *mydata = NULL, *argv[5];
 	switch_nat_ip_proto_t proto = SWITCH_NAT_UDP;
 	switch_port_t external_port = 0;
+	char *tmp = NULL;
+	switch_bool_t sticky = SWITCH_FALSE;
 
 	if (!cmd) {
 		goto error;
@@ -60,6 +63,27 @@ SWITCH_STANDARD_API(nat_map_function)
 
 	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
+	if (argc < 1) {
+		goto error;
+	}
+	if (argv[0] && switch_stristr("status", argv[0])) {
+		tmp = switch_nat_status();
+		stream->write_function(stream, tmp);
+		switch_safe_free(tmp);
+		goto ok;
+	} else if (argv[0] && switch_stristr("republish", argv[0])) {
+		switch_nat_republish();
+		stream->write_function(stream, "true");
+		goto ok;
+	} else if (argv[0] && switch_stristr("reinit", argv[0])) {
+		switch_nat_reinit();
+		stream->write_function(stream, "true");
+		tmp = switch_nat_status();
+		stream->write_function(stream, tmp);
+		switch_safe_free(tmp);
+		goto ok;
+	}
+	
 	if (argc < 3) {
 		goto error;
 	}
@@ -69,9 +93,13 @@ SWITCH_STANDARD_API(nat_map_function)
 	} else if (argv[2] && switch_stristr("udp", argv[2])) {
 		proto = SWITCH_NAT_UDP;
 	}
+	
+	if (argv[3] && switch_stristr("sticky", argv[3])) {
+		sticky = SWITCH_TRUE;
+	}
 
 	if (argv[0] && switch_stristr("add", argv[0])) {
-		if (switch_nat_add_mapping((switch_port_t)atoi(argv[1]), proto, &external_port) == SWITCH_STATUS_SUCCESS) {
+		if (switch_nat_add_mapping((switch_port_t)atoi(argv[1]), proto, &external_port, sticky) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "%d", (int)external_port);
 			goto ok;
 		}
@@ -2700,7 +2728,7 @@ SWITCH_STANDARD_API(alias_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count]|distinct_channels|aliases|complete|chat|endpoint|management|modules|say|interfaces|interface_types"
+#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count]|distinct_channels|aliases|complete|chat|endpoint|management|modules|nat_map|say|interfaces|interface_types"
 SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
@@ -2844,6 +2872,18 @@ SWITCH_STANDARD_API(show_function)
 		} else {
 			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description, key from interfaces where type = 'api' order by name");
 		}
+	} else if (!strcasecmp(command, "nat_map")) {
+			switch_snprintf(sql, sizeof(sql) - 1, 
+				"SELECT port, "
+				"  CASE proto "
+				"	WHEN 0 THEN 'udp' "
+				"	WHEN 1 THEN 'tcp' "
+				"	ELSE 'unknown' "
+				"  END AS proto, "
+				"  proto AS proto_num, "
+				"  sticky "
+				" FROM nat ORDER BY port, proto"
+			);
 	} else {
 		stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
 		goto end;
@@ -2900,6 +2940,7 @@ SWITCH_STANDARD_API(show_function)
 
 			switch_xml_set_attr(switch_xml_set_flag(holder.xml, SWITCH_XML_DUP), strdup("row_count"), strdup(count));
 			xmlstr = switch_xml_toxml(holder.xml, SWITCH_FALSE);
+			switch_xml_free(holder.xml);
 
 			if (xmlstr) {
 				holder.stream->write_function(holder.stream, "%s", xmlstr);
@@ -3537,7 +3578,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "stun", "stun", stun_function, "<stun_server>[:port]");
 	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "time_test", "time_test", time_test_function, "<mss>");
-	SWITCH_ADD_API(commands_api_interface, "nat_map", "nat_map", nat_map_function, "[add|del] <port> [tcp|udp]");
+	SWITCH_ADD_API(commands_api_interface, "nat_map", "nat_map", nat_map_function, "[status|republish|reinit] | [add|del] <port> [tcp|udp] [static]");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;

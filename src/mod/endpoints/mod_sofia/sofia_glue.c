@@ -672,7 +672,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 
 	if (tech_pvt->profile->extrtpip && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 		tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, tech_pvt->profile->extrtpip);
-		switch_nat_add_mapping((switch_port_t)sdp_port, SWITCH_NAT_UDP, &external_port);
+		switch_nat_add_mapping((switch_port_t)sdp_port, SWITCH_NAT_UDP, &external_port, SWITCH_FALSE);
 	} else {
 		tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, ip);
 	}
@@ -719,7 +719,7 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, in
 	}
 
 	if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
-		switch_nat_add_mapping((switch_port_t)sdp_port, SWITCH_NAT_UDP, &external_port);
+		switch_nat_add_mapping((switch_port_t)sdp_port, SWITCH_NAT_UDP, &external_port, SWITCH_FALSE);
 	}
 	
 	tech_pvt->adv_sdp_video_port = external_port != 0 ? external_port : sdp_port;

@@ -578,6 +578,34 @@ static void roster_event_handler(switch_event_t *event)
 
 }
 
+static void ipchanged_event_handler(switch_event_t *event)
+{
+	const char *cond = switch_event_get_header(event, "condition");
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "EVENT_TRAP: IP change detected\n");
+
+	if (cond && !strcmp(cond, "network-address-change")) {
+		const char *old_ip4 = switch_event_get_header_nil(event, "network-address-previous-v4");
+		const char *new_ip4 = switch_event_get_header_nil(event, "network-address-change-v4");
+		switch_hash_index_t *hi;
+		void *val;
+		char *tmp;
+		mdl_profile_t *profile;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IP change detected [%s]->[%s]\n", old_ip4, new_ip4);
+		if (globals.profile_hash) {
+			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, NULL, NULL, &val);
+				profile = (mdl_profile_t *) val;
+				if (!strcmp(profile->extip, old_ip4)) {
+					tmp = profile->extip;
+					profile->extip = strdup(new_ip4);
+					switch_safe_free(tmp);
+				}
+			}
+		}
+	}
+}
+
 static int so_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	mdl_profile_t *profile = (mdl_profile_t *) pArg;
@@ -845,7 +873,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 	if(globals.auto_nat && tech_pvt->profile->local_network && 
 	   !switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network)) {
 		switch_port_t external_port = 0;
-		switch_nat_add_mapping((switch_port_t)tech_pvt->local_port, SWITCH_NAT_UDP, &external_port);
+		switch_nat_add_mapping((switch_port_t)tech_pvt->local_port, SWITCH_NAT_UDP, &external_port, SWITCH_FALSE);
 		tech_pvt->local_port = external_port;
 	}
 
@@ -1800,6 +1828,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 		return SWITCH_STATUS_GENERR;
 	}
 
+	if (switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, ipchanged_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	dingaling_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);

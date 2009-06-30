@@ -1202,6 +1202,7 @@ typedef uint32_t switch_io_flag_t;
 	SWITCH_EVENT_NOTIFY				- Notification
 	SWITCH_EVENT_SEND_MESSAGE		- Message
 	SWITCH_EVENT_RECV_MESSAGE		- Message
+  SWITCH_EVENT_NAT            - NAT Management (new/del/status)
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -1274,6 +1275,7 @@ typedef enum {
 	SWITCH_EVENT_SEND_INFO,
 	SWITCH_EVENT_RECV_INFO,
 	SWITCH_EVENT_CALL_SECURE,
+	SWITCH_EVENT_NAT,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 

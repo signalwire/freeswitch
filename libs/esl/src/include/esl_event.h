@@ -113,6 +113,7 @@ typedef enum {
 	ESL_EVENT_SEND_INFO,
 	ESL_EVENT_RECV_INFO,
 	ESL_EVENT_CALL_SECURE,
+	ESL_EVENT_NAT,
 	ESL_EVENT_ALL
 } esl_event_types_t;
 

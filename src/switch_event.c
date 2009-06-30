@@ -179,6 +179,7 @@ static char *EVENT_NAMES[] = {
 	"SEND_INFO",
 	"RECV_INFO",
 	"CALL_SECURE",
+	"NAT",
 	"ALL"
 };
 

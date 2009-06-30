@@ -65,12 +65,29 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool);
 SWITCH_DECLARE(void) switch_nat_shutdown(void);
 
 /*!
+ \brief Returns a list of nat mappings and other status info
+ \note  caller must free the string
+*/
+SWITCH_DECLARE(char *) switch_nat_status(void);
+
+/*!
+ \brief Republishes the nap mappings
+ */
+SWITCH_DECLARE(void) switch_nat_republish(void);
+
+/*!
+ \brief re-initializes NAT subsystem
+*/
+SWITCH_DECLARE(void) switch_nat_reinit(void);
+
+/*!
  \brief Maps a port through the NAT Traversal System
  \param port Internal port to map
  \param proto Protocol
  \param external_port [out] Mapped external port 
+ \param sticky make the mapping permanent
 */
-SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t *external_port);
+SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t *external_port, switch_bool_t sticky);
 /*!
  \brief Deletes a NAT mapping
  \param proto Protocol
