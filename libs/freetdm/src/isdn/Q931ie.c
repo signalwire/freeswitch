@@ -519,7 +519,7 @@ L3INT Q931Uie_CallState(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR
 	pie->IEId = IBuf[Octet++];
 
 	/* Octet 2 */
-	IESize = IBuf[Octet++]; 
+	IESize = IBuf[Octet++];
 
 	/* Octet 3 */
 	pie->CodStand  = (IBuf[Octet + Off] >> 6) & 0x03;
@@ -557,7 +557,7 @@ L3INT Q931Pie_CallState(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 	OBuf[(*Octet)++] = Q931ie_CALL_STATE;
 	li = (*Octet)++; /* remember length position */
 
-	OBuf[(*Octet)++] = 0x80 | (pIE->CodStand<<6) | pIE->CallState;
+	OBuf[(*Octet)++] = (pIE->CodStand << 6) | (pIE->CallState & 0x3f);
 
 	OBuf[li] = (L3UCHAR)((*Octet) - Beg) - 2;
 	return rc;
