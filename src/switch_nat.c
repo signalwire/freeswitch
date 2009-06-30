@@ -256,7 +256,7 @@ static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t *th
 		
 		if (nat_globals.nat_type == SWITCH_NAT_TYPE_UPNP) {
 			/* look for our desc URL and servicetype in the packet */
-			if (strstr(buf, nat_globals.descURL) && strstr(buf, nat_globals.data.servicetype)) {
+			if (strstr(buf, nat_globals.descURL) && (buf == NULL || strstr(buf, nat_globals.data.servicetype))) {
 				if (strstr(buf, "NTS: ssdp:alive")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got UPnP keep alive packet: \n%s\n", buf);
 					/* did pub ip change */
