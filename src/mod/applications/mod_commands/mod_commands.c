@@ -3532,7 +3532,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "domain_exists", "check if a domain exists", domain_exists_function, "<domain>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_dtmf", "send dtmf digits", uuid_send_dtmf_function, UUID_SEND_DTMF_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "eval", "eval (noop)", eval_function, "[uuid:<uuid> ]<expression>");
-	SWITCH_ADD_API(commands_api_interface, "expand", "expand vars and exexute", expand_function, "[uuid:<uuid> ]<cmd> <args>");
+	SWITCH_ADD_API(commands_api_interface, "expand", "expand vars and execute", expand_function, "[uuid:<uuid> ]<cmd> <args>");
 	SWITCH_ADD_API(commands_api_interface, "echo", "echo", echo_function, "<data>");
 	SWITCH_ADD_API(commands_api_interface, "stun", "stun", stun_function, "<stun_server>[:port]");
 	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);

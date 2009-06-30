@@ -195,7 +195,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_expr_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_API(commands_api_interface, "expr", "Eval an expession", expr_function, "<expr>");
+	SWITCH_ADD_API(commands_api_interface, "expr", "Eval an expression", expr_function, "<expr>");
 
 
 	/* indicate that the module should continue to be loaded */
