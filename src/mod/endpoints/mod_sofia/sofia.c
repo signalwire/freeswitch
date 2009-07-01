@@ -4695,10 +4695,11 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if ((rpid = sip_remote_party_id(sip))) {
 		if (rpid->rpid_url && rpid->rpid_url->url_user) {
+			char *full_rpid_header = sip_header_as_string(nh->nh_home, (void *) rpid); 
 			from_user = rpid->rpid_url->url_user;
-                        if (!switch_strlen_zero(from_user)) {
-                                switch_channel_set_variable(channel, SOFIA_SIP_HEADER_PREFIX "Remote-Party-ID", from_user);
-                        }
+			if (!switch_strlen_zero(full_rpid_header)) {
+				switch_channel_set_variable(channel, "sip_Remote-Party-ID", full_rpid_header);
+			}
 
 		}
 		if (!switch_strlen_zero(rpid->rpid_display)) {
@@ -4709,10 +4710,11 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if ((passerted = sip_p_asserted_identity(sip))) {
 		if (passerted->paid_url && passerted->paid_url->url_user) {
+			char *full_paid_header = sip_header_as_string(nh->nh_home, (void *) passerted);
 			from_user = passerted->paid_url->url_user;
-			if (!switch_strlen_zero(from_user)) {
-                        	switch_channel_set_variable(channel, SOFIA_SIP_HEADER_PREFIX "P-Asserted-Identity", from_user);
-                        }
+			if (!switch_strlen_zero(full_paid_header)) {
+				switch_channel_set_variable(channel, "sip_P-Asserted-Identity", from_user);
+			}
 		}
 		if (!switch_strlen_zero(passerted->paid_display)) {
 			displayname = passerted->paid_display;
@@ -4722,11 +4724,12 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if ((ppreferred = sip_p_preferred_identity(sip))) {
 		if (ppreferred->ppid_url && ppreferred->ppid_url->url_user) {
+			char *full_ppid_header = sip_header_as_string(nh->nh_home, (void *) ppreferred);
 			from_user = ppreferred->ppid_url->url_user;
-                        if (!switch_strlen_zero(from_user)) {
-                                switch_channel_set_variable(channel, SOFIA_SIP_HEADER_PREFIX "P-Preferred-Identity", from_user);
-                        }
-
+			if (!switch_strlen_zero(full_ppid_header)) {
+				switch_channel_set_variable(channel, "sip_P-Preferred-Identity", full_ppid_header);
+			}
+			
 		}
 		if (!switch_strlen_zero(ppreferred->ppid_display)) {
 			displayname = ppreferred->ppid_display;
@@ -5096,9 +5099,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if ((privacy = sip_privacy(sip))) {
 			char *full_priv_header = sip_header_as_string(nh->nh_home, (void *) privacy); 
 			if (!switch_strlen_zero(full_priv_header)) {
-				switch_channel_set_variable(channel, SOFIA_SIP_HEADER_PREFIX "Privacy", full_priv_header);
+				switch_channel_set_variable(channel, "sip_Privacy", full_priv_header);
 			}
-
 			if (msg_params_find(privacy->priv_values, "id")) {
 				switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 			}
