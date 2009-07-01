@@ -53,7 +53,7 @@
     <!-- ip address to bind to, DO NOT USE HOSTNAMES ONLY IP ADDRESSES -->
     <param name="sip-ip" value="$${local_ip_v4}"/>
     <param name="hold-music" value="$${hold_music}"/>
-    <param name="apply-nat-acl" value="rfc1918.auto"/>
+    <param name="apply-nat-acl" value="nat.auto"/>
     <!--<param name="aggressive-nat-detection" value="true"/>-->
     <!--
 	There are known issues (asserts and segfaults) when 100rel is enabled.
