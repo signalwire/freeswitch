@@ -2031,9 +2031,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 
 	save_path = switch_channel_get_variable(channel, "sound_prefix");
 
-	switch_channel_set_variable_printf(channel, "sound_prefix", "%s%ssounds%s%s", 
-									   SWITCH_GLOBAL_dirs.base_dir,
-									   SWITCH_PATH_SEPARATOR,
+	switch_channel_set_variable_printf(channel, "sound_prefix", "%s%s%s", 
+									   save_path,
 									   SWITCH_PATH_SEPARATOR,
 									   chan_lang);
 
