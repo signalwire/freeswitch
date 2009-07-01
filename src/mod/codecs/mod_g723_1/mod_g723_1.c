@@ -170,15 +170,24 @@ static switch_status_t switch_g723_decode(switch_codec_t *codec,
 SWITCH_MODULE_LOAD_FUNCTION(mod_g723_1_load)
 {
 	switch_codec_interface_t *codec_interface;
-	int mpf = 30000, spf = 240, bpf = 480, ebpf = 24, count;
+	int ompf = 30000, ospf = 240, obpf = 480, oebpf = 24, count = 0;
+	int mpf = ompf , spf = ospf , bpf = obpf , ebpf = oebpf ;
+	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_CODEC(codec_interface, "G.723.1 6.3k");
-	for (count = 1; count > 0; count--) {
+
+	for (count = 0; count < 4; count++) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 4, "G723", NULL, 8000, 8000, 6300,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, count,
+											 mpf , spf , bpf , ebpf , 1, count,
 											 switch_g723_init, switch_g723_encode, switch_g723_decode, switch_g723_destroy);
+		mpf += ompf;
+		spf += ospf;
+		bpf += obpf;
+		ebpf += oebpf;
+
+
 	}
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
