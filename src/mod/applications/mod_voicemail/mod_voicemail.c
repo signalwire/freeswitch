@@ -1460,7 +1460,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 		if (!*cc.buf) {
 			memset(&fh, 0, sizeof(fh));
 			cc.fh = &fh;
-			TRY_CODE(switch_ivr_play_file(session, NULL, cbt->file_path, &args));
+			TRY_CODE(switch_ivr_play_file(session, &fh, cbt->file_path, &args));
 		}
 
 		if (!*cc.buf && (profile->play_date_announcement == VM_DATE_LAST)) {
@@ -1924,7 +1924,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						cc.fh = &fh;
 						cc.noexit = 1;
 						greeting_args.buf = &cc;
-						status = switch_ivr_play_file(session, NULL, file_path, &greeting_args);
+						status = switch_ivr_play_file(session, &fh, file_path, &greeting_args);
 					}
 					if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 						TRY_CODE(switch_ivr_phrase_macro(session, VM_CHOOSE_GREETING_FAIL_MACRO, NULL, NULL, NULL));
