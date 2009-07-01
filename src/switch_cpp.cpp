@@ -180,6 +180,7 @@ SWITCH_DECLARE(const char *) API::execute(const char *cmd, const char *arg)
 	this_check("");
 	SWITCH_STANDARD_STREAM(stream);
 	switch_api_execute(cmd, arg, NULL, &stream);
+	switch_safe_free(last_data);
 	last_data = (char *) stream.data;
 	return last_data;
 }
