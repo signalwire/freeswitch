@@ -31,6 +31,7 @@
  
 #include <switch.h>
 #include <curl/curl.h>
+#include <json.h>
 
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_curl_shutdown);
@@ -94,16 +95,6 @@ static size_t header_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	switch_copy_string(header, ptr, realsize);
 	header[realsize] = '\0';
 
-	/* parse data - placeholder
-	if ((data = index(header, ':')) {
-		*data = '\0';
-		data++;
-		while(*data == ' ' && *data != '\0') {
-			data++;
-		}
-	}
-	*/
-	
 	http_data->headers = curl_slist_append(http_data->headers, header);
 	
 	return realsize;
@@ -134,8 +125,8 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url) {
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
 	curl_easy_setopt(curl_handle, CURLOPT_POST, SWITCH_FALSE);
-	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 0);
+	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 0);
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) http_data);
@@ -161,6 +152,69 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url) {
 }
 
 
+static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data) {
+	struct json_object *top = NULL;
+	struct json_object *headers = NULL;
+	char *data = NULL;
+	struct curl_slist *header = http_data->headers;
+	
+	top = json_object_new_object();
+	headers = json_object_new_array();
+	json_object_object_add(top, "status_code", json_object_new_int(http_data->http_response_code));
+	if (http_data->http_response) {
+		json_object_object_add(top, "body", json_object_new_string(http_data->http_response));
+	}
+	
+	/* parse header data */
+	while(header) {
+		struct json_object *obj = NULL;
+		/* remove trailing \r */
+		if ((data=rindex(header->data, '\r'))) {
+			*data = '\0';
+		}
+		
+		if switch_strlen_zero(header->data) {
+			header = header->next;
+			continue;
+		}
+		
+		if ((data = index(header->data, ':'))) {
+			*data = '\0';
+			data++;
+			while(*data == ' ' && *data != '\0') {
+				data++;
+			}
+			obj = json_object_new_object(); 
+			json_object_object_add(obj, "key", json_object_new_string(header->data));
+			json_object_object_add(obj, "value", json_object_new_string(data));
+			json_object_array_add(headers, obj);
+		} else {
+			if (!strncmp("HTTP", header->data, 4)) {
+				char *argv[3] = { 0 };
+				int argc;
+				if ((argc = switch_separate_string(header->data, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+					if (argc > 2) {
+						json_object_object_add(top, "version", json_object_new_string(argv[0]));
+						json_object_object_add(top, "phrase", json_object_new_string(argv[2]));
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unparsable header: argc: %d\n", argc);
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Starts with HTTP but not parsable: %s\n", header->data);
+				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unparsable header: %s\n", header->data);
+			}
+		}
+		header = header->next;
+	}
+	json_object_object_add(top, "headers", headers);
+	data = switch_core_strdup(pool, json_object_to_json_string(top));
+	json_object_put(top); /* should free up all children */
+	
+	return data;
+}
+
 SWITCH_STANDARD_APP(curl_app_function)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -172,7 +226,12 @@ SWITCH_STANDARD_APP(curl_app_function)
 	switch_memory_pool_t *pool = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *url = NULL;
+	switch_bool_t do_headers = SWITCH_FALSE;
+	switch_bool_t do_json = SWITCH_FALSE;
 	http_data_t *http_data = NULL;
+	struct curl_slist *slist = NULL;
+	switch_stream_handle_t stream = { 0 };
+	
 	
 	if (session) {
 		pool = switch_core_session_get_pool(session);
@@ -188,15 +247,37 @@ SWITCH_STANDARD_APP(curl_app_function)
 			switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
 		}
 		
-		if (argc > 0) {
-			url = switch_core_strdup(pool, argv[0]);
+		url = switch_core_strdup(pool, argv[0]);
+
+		if (argc > 1) {
+			if (!strcasecmp("headers", argv[1])) {
+				do_headers = SWITCH_TRUE;
+			}
+			if (!strcasecmp("json", argv[1])) {
+				do_json = SWITCH_TRUE;
+			}
 		}
 	}
 	
 	http_data = do_lookup_url(pool, url);
-	switch_channel_set_variable(channel, "curl_response_data", http_data->http_response);
+	if (do_json) {
+		switch_channel_set_variable(channel, "curl_response_data", print_json(pool, http_data));
+	} else {
+		SWITCH_STANDARD_STREAM(stream);
+		stream.write_function(&stream, "%ld\n", http_data->http_response_code);
+		if(do_headers) {
+			slist = http_data->headers;
+			while(slist) {
+				stream.write_function(&stream, "%s\n", slist->data);
+				slist = slist->next;
+			}
+			stream.write_function(&stream, "\n");
+		}
+		stream.write_function(&stream, "%s", http_data->http_response ? http_data->http_response : "");
+		switch_channel_set_variable(channel, "curl_response_data", stream.data);
+	}
 	switch_channel_set_variable(channel, "curl_response_code", 
-		switch_core_sprintf(pool, "%ld", http_data->http_response_code));
+	switch_core_sprintf(pool, "%ld", http_data->http_response_code));
 
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 	
@@ -205,6 +286,8 @@ usage:
 	switch_goto_status(status, done);
 	
 done:
+	switch_safe_free(stream.data);
+	curl_slist_free_all(http_data->headers);
 	if (!session) {
 		switch_core_destroy_memory_pool(&pool);
 	}
@@ -216,7 +299,8 @@ SWITCH_STANDARD_API(curl_function)
 	int argc;
 	char *mydata = NULL;
 	char *url = NULL;
-	switch_bool_t headers = SWITCH_FALSE;
+	switch_bool_t do_headers = SWITCH_FALSE;
+	switch_bool_t do_json = SWITCH_FALSE;
 	struct curl_slist *slist = NULL;
 	http_data_t *http_data = NULL;
 
@@ -242,21 +326,28 @@ SWITCH_STANDARD_API(curl_function)
 		
 		if (argc > 1) {
 			if (!strcasecmp("headers", argv[1])) {
-				headers = SWITCH_TRUE;
+				do_headers = SWITCH_TRUE;
+			}
+			if (!strcasecmp("json", argv[1])) {
+				do_json = SWITCH_TRUE;
 			}
 		}
 		
 		http_data = do_lookup_url(pool, url);
-		stream->write_function(stream, "%ld\n", http_data->http_response_codenot);
-		if(headers) {
-			slist = http_data->headers;
-			while(slist) {
-				stream->write_function(stream, "%s\n", slist->data);
-				slist = slist->next;
+		if (do_json) {
+			stream->write_function(stream, "%s", print_json(pool, http_data));
+		} else {
+			stream->write_function(stream, "%ld\n", http_data->http_response_code);
+			if(do_headers) {
+				slist = http_data->headers;
+				while(slist) {
+					stream->write_function(stream, "%s\n", slist->data);
+					slist = slist->next;
+				}
+				stream->write_function(stream, "\n");
 			}
-			stream->write_function(stream, "\n");
+			stream->write_function(stream, "%s", http_data->http_response ? http_data->http_response : "");
 		}
-		stream->write_function(stream, "%s", http_data->http_response ? http_data->http_response : "");
 	}
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 
