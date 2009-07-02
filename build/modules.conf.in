@@ -7,7 +7,7 @@ applications/mod_dptools
 applications/mod_enum
 applications/mod_fifo
 #applications/mod_fax
-#applications/mod_http
+#applications/mod_curl
 applications/mod_voicemail
 #applications/mod_lcr
 applications/mod_limit
