@@ -3713,7 +3713,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 		free(test_sql);
 
-		test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where contact_str='' or network_ip='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where contact_str='' or hostname='%q'", mod_sofia_globals.hostname);
 		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_shared_appearance_subscriptions", NULL);
 			switch_odbc_handle_exec(profile->master_odbc, shared_appearance_sql, NULL);
@@ -3749,7 +3749,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_registrations", reg_sql);
 		free(test_sql);
 
-		test_sql = switch_mprintf("delete from sip_subscriptions where network_ip='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q'", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
 		free(test_sql);
 		
@@ -3766,7 +3766,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		free(test_sql);
 
 		
-		test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where contact_str = '' or network_ip='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where contact_str = '' or hostname='%q'", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_shared_appearance_subscriptions", shared_appearance_sql);
 		free(test_sql);
 
