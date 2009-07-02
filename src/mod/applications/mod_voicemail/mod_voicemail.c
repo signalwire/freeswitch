@@ -2500,7 +2500,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", vm_email);
 			
-			if (body != profile->notify_email_body) {
+			if (body != profile->email_body) {
 				switch_safe_free(body);	
 			}
 
