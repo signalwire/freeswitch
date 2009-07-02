@@ -290,7 +290,7 @@ done:
 	if (http_data && http_data->headers) {
 		curl_slist_free_all(http_data->headers);
 	}
-	if (!session) {
+	if (!session && pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
 }
@@ -362,7 +362,7 @@ done:
 		curl_slist_free_all(http_data->headers);
 	}
 	switch_safe_free(mydata);
-	if (!session) {
+	if (!session && pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
 	return status;
@@ -382,7 +382,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load)
 
 	SWITCH_ADD_API(api_interface, "curl", "curl API", curl_function, SYNTAX);
 	SWITCH_ADD_APP(app_interface, "curl", "Perform a http request", "Perform a http request",
-				   curl_app_function, "curl url", SAF_SUPPORT_NOMEDIA);
+				   curl_app_function, SYNTAX, SAF_SUPPORT_NOMEDIA);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
