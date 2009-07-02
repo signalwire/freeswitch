@@ -339,7 +339,6 @@ SWITCH_STANDARD_API(curl_function)
 		if (do_json) {
 			stream->write_function(stream, "%s", print_json(pool, http_data));
 		} else {
-			stream->write_function(stream, "%ld\n", http_data->http_response_code);
 			if(do_headers) {
 				slist = http_data->headers;
 				while(slist) {
