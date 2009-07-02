@@ -535,9 +535,9 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 		&profile->callback_context, "default", &profile->config_str_pool, NULL, NULL);
 		
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "notify-email-body", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
-		&profile->notify_email_body, "default", &profile->config_str_pool, NULL, NULL);
+		&profile->notify_email_body, NULL, &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "notify-email-headers", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
-		&profile->notify_email_headers, "default", &profile->config_str_pool, NULL, NULL);
+		&profile->notify_email_headers, NULL, &profile->config_str_pool, NULL, NULL);
 
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "play-date-announcement", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, 
 		&profile->play_date_announcement, VM_DATE_FIRST, &config_play_date_announcement, NULL, NULL);
@@ -2499,7 +2499,10 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", vm_email);
-			switch_safe_free(body);
+			
+			if (body != profile->notify_email_body) {
+				switch_safe_free(body);	
+			}
 
 			if (headers != profile->email_headers) {
 				switch_safe_free(headers);
@@ -2544,7 +2547,10 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 			switch_simple_email(vm_notify_email, from, header_string, body, NULL);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending notify message to %s\n", vm_notify_email);
-			switch_safe_free(body);
+			
+			if (body != profile->notify_email_body) {
+				switch_safe_free(body);	
+			}
 
 			if (headers != profile->notify_email_headers) {
 				switch_safe_free(headers);
@@ -2996,9 +3002,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	cc.noexit = 1;
 	args.buf = &cc;
 
-	dbuf = switch_mprintf("%s (%s)", caller_id_name, caller_id_number);
-	switch_channel_set_variable(channel, "RECORD_ARTIST", dbuf);
-	free(dbuf);
+	switch_channel_set_variable_printf(channel, "RECORD_ARTIST", "%s (%s)", caller_id_name, caller_id_number);
 
 	switch_time_exp_lt(&tm, ts);
 	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
