@@ -12,7 +12,7 @@
     </input>
   </macro>
 
-  <macro name="demo_ivr_main_menu" pause="250"> <!-- See conf/autoload_config/ivr.conf.xml for an example on how to use this macro in an IVR -->
+  <macro name="demo_ivr_main_menu" pause="100"> <!-- See conf/autoload_config/ivr.conf.xml for an example on how to use this macro in an IVR -->
     <input pattern="(.*)">
       <match>
         <!-- string together several existing sound files to create one long greeting -->
@@ -69,7 +69,7 @@
 
   <!-- The following macro is the same as demo_ivr_main_menu except it is the "short" version -->
   <!-- The short version has all the options but not the initial greeting -->
-  <macro name="demo_ivr_main_menu_short" pause="250"> 
+  <macro name="demo_ivr_main_menu_short" pause="100"> 
     <input pattern="(.*)">
       <match>
         <!-- Menu option 1: Call FreeSWITCH conference-->
