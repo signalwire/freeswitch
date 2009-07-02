@@ -208,7 +208,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, c
 		pcre_prepared = NULL;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "number of matches: %d\n", match_count);
+	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "number of matches: %d\n", match_count); */
 
 	/* Was it a match made in heaven? */
 	if (match_count > 0) {
