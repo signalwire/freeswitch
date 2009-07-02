@@ -43,7 +43,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load);
  */
 SWITCH_MODULE_DEFINITION(mod_curl, mod_curl_load, mod_curl_shutdown, NULL);
 
-static char *SYNTAX = "curl url [headers]";
+static char *SYNTAX = "curl url [headers|json]";
 
 static struct {
 	switch_memory_pool_t *pool;
@@ -287,7 +287,9 @@ usage:
 	
 done:
 	switch_safe_free(stream.data);
-	curl_slist_free_all(http_data->headers);
+	if (http_data && http_data->headers) {
+		curl_slist_free_all(http_data->headers);
+	}
 	if (!session) {
 		switch_core_destroy_memory_pool(&pool);
 	}
@@ -356,7 +358,9 @@ usage:
 	switch_goto_status(status, done);
 	
 done: 
-	curl_slist_free_all(http_data->headers);
+	if (http_data && http_data->headers) {
+		curl_slist_free_all(http_data->headers);
+	}
 	switch_safe_free(mydata);
 	if (!session) {
 		switch_core_destroy_memory_pool(&pool);
