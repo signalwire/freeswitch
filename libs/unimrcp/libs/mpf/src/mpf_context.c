@@ -208,6 +208,12 @@ static mpf_object_t* mpf_context_connection_create(mpf_context_t *context, mpf_t
 				object = mpf_null_bridge_create(source,sink,context->pool);
 			}
 			else {
+				if(rx_codec->descriptor->sampling_rate != tx_codec->descriptor->sampling_rate) {
+					apt_log(APT_LOG_MARK,APT_PRIO_WARNING,
+						"Resampling is not supported now. "
+						"Try to configure and use the same sampling rate on both ends");
+					return NULL;
+				}
 				if(rx_codec->vtable && rx_codec->vtable->decode) {
 					/* set decoder before bridge */
 					mpf_audio_stream_t *decoder = mpf_decoder_create(source,context->pool);

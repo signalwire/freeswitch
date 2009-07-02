@@ -149,6 +149,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\include\pocketsphinx_properties.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="src"
@@ -156,6 +160,10 @@
 			>
 			<File
 				RelativePath=".\src\mrcp_pocketsphinx.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pocketsphinx_properties.c"
 				>
 			</File>
 		</Filter>

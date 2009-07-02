@@ -54,6 +54,8 @@
     <!-- Resource plugins -->
     <plugin>
       <engine name="Cepstral-Swift-1" class="mrcpcepstral" enable="0"/>
+      <engine name="PocketSphinx-1" class="mrcppocketsphinx" enable="0"/>
+      <engine name="Flite-1" class="mrcpflite" enable="0"/>
       <engine name="Demo-Synth-1" class="demosynth" enable="1"/>
       <engine name="Demo-Recog-1" class="demorecog" enable="1"/>
     </plugin>

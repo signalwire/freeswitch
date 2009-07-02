@@ -15,6 +15,15 @@ INCLUDES                    = -Iinclude \
 
 plugin_LTLIBRARIES          = mrcppocketsphinx.la
 
-mrcppocketsphinx_la_SOURCES = src/mrcp_pocketsphinx.c
+mrcppocketsphinx_la_SOURCES = src/mrcp_pocketsphinx.c \
+                              src/pocketsphinx_properties.c
 mrcppocketsphinx_la_LDFLAGS = -module $(PLUGIN_LT_VERSION)
 mrcppocketsphinx_la_LIBADD  = $(UNIMRCP_POCKETSPHINX_LIBS) $(UNIMRCP_SPHINXBASE_LIBS) -lm
+
+
+install-data-local:
+	test -d $(confdir) || $(mkinstalldirs) $(confdir)
+	test -f $(confdir)/pocketsphinx.xml || $(INSTALL) -m 644 conf/pocketsphinx.xml $(confdir)
+	test -d $(datadir)/wsj1 || $(mkinstalldirs) $(datadir)/wsj1; \
+			$(INSTALL) -m 644 $(UNIMRCP_POCKETSPHINX_MODELS)/hmm/wsj1/* $(datadir)/wsj1; \
+			$(INSTALL) -m 644 $(UNIMRCP_POCKETSPHINX_MODELS)/lm/cmudict.0.6d $(datadir)/default.dic

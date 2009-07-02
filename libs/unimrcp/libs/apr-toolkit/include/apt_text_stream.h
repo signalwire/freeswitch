@@ -122,7 +122,7 @@ static APR_INLINE float apt_float_value_parse(const apt_str_t *str)
 /** Generate float value */
 static APR_INLINE apt_bool_t apt_float_value_generate(float value, apt_text_stream_t *stream)
 {
-	int length = sprintf(stream->pos,"%.1f",value);
+	int length = sprintf(stream->pos,"%.2f",value);
 	if(length <= 0) {
 		return FALSE;
 	}

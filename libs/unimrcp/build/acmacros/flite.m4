@@ -6,15 +6,13 @@ AC_DEFUN([UNIMRCP_CHECK_FLITE],
 
     AC_MSG_CHECKING([for Flite])
     AC_ARG_WITH(flite,
-                [  --with-flite=PATH     prefix for installed Flite or
-                          path to Flite build tree],
+                [  --with-flite=PATH      path to Flite build tree],
                 [flite_path=$withval],
-                [flite_path="/usr/local"]
+                [flite_path="/usr/src/flite"]
                 )
     
     found_flite="no"
     
-    dnl TO BE DONE
     flite_libdir="build/libs"
     for dir in $flite_path ; do
         cd $dir && flite_dir=`pwd` && cd - > /dev/null

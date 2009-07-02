@@ -21,6 +21,7 @@ AC_DEFUN([UNIMRCP_CHECK_POCKETSPHINX],
             found_pocketsphinx="yes"
             UNIMRCP_POCKETSPHINX_INCLUDES="`pkg-config --cflags $dir/$pocketsphinx_config`"
             UNIMRCP_POCKETSPHINX_LIBS="`pkg-config --libs $dir/$pocketsphinx_config`"
+            UNIMRCP_POCKETSPHINX_MODELS=
 	    pocketsphinx_version="`pkg-config --modversion $dir/$pocketsphinx_config`"
             break
         fi
@@ -28,6 +29,7 @@ AC_DEFUN([UNIMRCP_CHECK_POCKETSPHINX],
             found_pocketsphinx="yes"
             UNIMRCP_POCKETSPHINX_INCLUDES="-I$pocketsphinx_dir/include"
             UNIMRCP_POCKETSPHINX_LIBS="$pocketsphinx_dir/$pocketsphinx_srcdir/libpocketsphinx/libpocketsphinx.la"
+            UNIMRCP_POCKETSPHINX_MODELS="$pocketsphinx_dir/model"
 	    pocketsphinx_version="`pkg-config --modversion $pocketsphinx_dir/pocketsphinx.pc`"
             break
         fi
@@ -46,5 +48,6 @@ esac
 
         AC_SUBST(UNIMRCP_POCKETSPHINX_INCLUDES)
         AC_SUBST(UNIMRCP_POCKETSPHINX_LIBS)
+        AC_SUBST(UNIMRCP_POCKETSPHINX_MODELS)
     fi
 ])
