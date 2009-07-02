@@ -30,7 +30,7 @@ Set objArgs = WScript.Arguments
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 UtilsDir=Showpath(ScriptDir)
-ToolsBase="http://svn.freeswitch.org/downloads/win32/"
+ToolsBase="http://files.freeswitch.org/downloads/win32/"
 
 If UseWgetEXE Then
 	GetWgetEXE UtilsDir

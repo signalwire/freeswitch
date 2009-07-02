@@ -22,7 +22,7 @@ if [ -z "$GZCAT" ] ; then
 fi
 
 install=
-base=http://svn.freeswitch.org/downloads/libs
+base=http://files.freeswitch.org/downloads/libs
 
 if [ ! -z "$1" ] && [ "$1" = install ] ; then
     install=1

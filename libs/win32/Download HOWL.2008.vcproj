@@ -75,7 +75,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading HOWL."
-					CommandLine="if not exist &quot;$(ProjectDir)..\howl-1.0.0&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/howl-1.0.0.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\howl-1.0.0&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/howl-1.0.0.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\howl-1.0.0"
 				/>
 			</FileConfiguration>
@@ -85,7 +85,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading HOWL."
-					CommandLine="if not exist &quot;$(ProjectDir)..\howl-1.0.0&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/howl-1.0.0.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\howl-1.0.0&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/howl-1.0.0.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\howl-1.0.0"
 				/>
 			</FileConfiguration>

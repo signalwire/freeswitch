@@ -76,7 +76,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading Lame."
-					CommandLine="if not exist &quot;$(ProjectDir)..\lame-3.97&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/lame-3.97.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\lame-3.97&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\lame-3.97"
         />
       </FileConfiguration>
@@ -86,7 +86,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading Lame."
-					CommandLine="if not exist &quot;$(ProjectDir)..\lame-3.97&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/lame-3.97.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\lame-3.97&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\lame-3.97"
 				/>
 			</FileConfiguration>

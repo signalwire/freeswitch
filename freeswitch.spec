@@ -13,15 +13,15 @@ URL:          http://www.freeswitch.org/
 Packager:     	Michal Bielicki
 Vendor:       	http://www.freeswitch.org/
 Source0:      	http://files.freeswitch.org/%{name}-%{version}.tar.bz2
-Source1:	http://svn.freeswitch.org/downloads/libs/celt-0.5.1.tar.gz
-Source2:	http://svn.freeswitch.org/downloads/libs/flite-1.3.99-latest.tar.gz
-Source3:	http://svn.freeswitch.org/downloads/libs/lame-3.97.tar.gz
-Source4:	http://svn.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
-Source5:	http://svn.freeswitch.org/downloads/libs/mpg123.tar.gz
-Source6:	http://svn.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
-Source7:	http://svn.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-latest.tar.gz
-Source8:	http://svn.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
-Source9:	http://svn.freeswitch.org/downloads/libs/sphinxbase-0.4.99-latest.tar.gz
+Source1:	http://files.freeswitch.org/downloads/libs/celt-0.5.1.tar.gz
+Source2:	http://files.freeswitch.org/downloads/libs/flite-1.3.99-latest.tar.gz
+Source3:	http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz
+Source4:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
+Source5:	http://files.freeswitch.org/downloads/libs/mpg123.tar.gz
+Source6:	http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
+Source7:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-latest.tar.gz
+Source8:	http://files.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
+Source9:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-latest.tar.gz
 Source10:	http://files.freeswitch.org/freeswitch-sounds-music-8000-1.0.8.tar.gz
 Source11:	http://files.freeswitch.org/freeswitch-sounds-music-16000-1.0.8.tar.gz
 Source12:	http://files.freeswitch.org/freeswitch-sounds-music-32000-1.0.8.tar.gz
@@ -30,7 +30,7 @@ Source14:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-8000-1.0.10
 Source15:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-16000-1.0.10.tar.gz
 Source16:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-32000-1.0.10.tar.gz
 Source17:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-48000-1.0.10.tar.gz
-Source18:	http://svn.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
+Source18:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Prefix:        %{prefix}
 
 #AutoReqProv:  no

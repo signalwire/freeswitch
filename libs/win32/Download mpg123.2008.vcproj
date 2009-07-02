@@ -76,7 +76,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading Flite."
-					CommandLine="if not exist &quot;$(ProjectDir)..\mpg123&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/mpg123.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\mpg123&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/mpg123.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\mpg123"
 				/>
 			</FileConfiguration>
@@ -86,7 +86,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading Flite."
-					CommandLine="if not exist &quot;$(ProjectDir)..\mpg123&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/mpg123.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\mpg123&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/mpg123.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\mpg123"
 				/>
 			</FileConfiguration>

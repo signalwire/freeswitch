@@ -13,7 +13,7 @@ else
     fi
 fi
 
-base=http://svn.freeswitch.org/downloads/libs/
+base=http://files.freeswitch.org/downloads/libs/
 tarfile=$1
 url=`echo $tarfile | grep "://"`
 

@@ -76,7 +76,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading sphinxmodel."
-					CommandLine="if not exist &quot;$(SolutionDir)\libs\Communicator_semi_40.cd_semi_6000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(SolutionDir)\libs\Communicator_semi_40.cd_semi_6000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\Communicator_semi_40.cd_semi_6000"
 				/>
 			</FileConfiguration>
@@ -86,7 +86,12 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading sphinxmodel."
-					CommandLine="if not exist &quot;$(SolutionDir)\libs\Communicator_semi_40.cd_semi_6000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist
+				&quot;$(SolutionDir)\libs\Communicator_semi_40.cd_semi_6000&quot;
+				cscript /nologo
+				&quot;$(ProjectDir)util.vbs&quot;
+				GetUnzip http://files.freeswitch.org
+/downloads/libs/communicator_semi_6000_20080321.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\Communicator_semi_40.cd_semi_6000"
 				/>
 			</FileConfiguration>
