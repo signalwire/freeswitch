@@ -2771,7 +2771,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	char date[80] = "";
 	switch_size_t retsize;
 	switch_time_t ts = switch_micro_time_now();
-	char *dbuf = NULL;
 	char *vm_storage_dir = NULL;
 	char *record_macro = VM_RECORD_MESSAGE_MACRO;
 	int send_main = 0;
