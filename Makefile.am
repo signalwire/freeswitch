@@ -242,8 +242,10 @@ vm-sync:
 	test -d $(DESTDIR)@confdir@ || $(mkinstalldirs) $(DESTDIR)@confdir@
 	test -d $(DESTDIR)@confdir@/lang || $(mkinstalldirs) $(DESTDIR)@confdir@/lang
 	test -d $(DESTDIR)@confdir@/lang/en || $(mkinstalldirs) $(DESTDIR)@confdir@/lang/en
+	test -d $(DESTDIR)@confdir@/lang/en/demo || $(mkinstalldirs) $(DESTDIR)@confdir@/lang/en/demo
 	test -d $(DESTDIR)@confdir@/lang/en/vm || $(mkinstalldirs) $(DESTDIR)@confdir@/lang/en/vm
 	$(INSTALL) -m 644 conf/lang/en/vm/* $(DESTDIR)@confdir@/lang/en/vm
+	$(INSTALL) -m 644 conf/lang/en/demo/* $(DESTDIR)@confdir@/lang/en/demo
 
 samples-conf:
 	test -d $(DESTDIR)@confdir@/ || $(mkinstalldirs) $(DESTDIR)@confdir@
