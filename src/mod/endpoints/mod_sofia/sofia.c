@@ -281,6 +281,10 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	const char *tmp;
 	switch_channel_t *channel;
 	private_object_t *tech_pvt;
+#ifdef MANUAL_BYE
+	int cause;
+	char st[80] = "";
+#endif
 
 	if (!session)
 		return;
@@ -288,10 +292,40 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
+
+#ifdef MANUAL_BYE
+	status = 200;
+	phrase = "OK";
+	
+	sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
+
 	if (sip->sip_reason && sip->sip_reason->re_protocol &&
 		(!strcasecmp(sip->sip_reason->re_protocol, "Q.850") || !strcasecmp(sip->sip_reason->re_protocol, "FreeSWITCH")) && sip->sip_reason->re_cause) {
 		tech_pvt->q850_cause = atoi(sip->sip_reason->re_cause);
+		cause = tech_pvt->q850_cause;
+	} else {
+		cause = sofia_glue_sip_cause_to_freeswitch(status);
 	}
+
+	switch_snprintf(st, sizeof(st), "%d", status);
+	switch_channel_set_variable(channel, "sip_term_status", st);
+	switch_snprintf(st, sizeof(st), "sip:%d", status);
+
+	if (phrase) {
+		switch_channel_set_variable_partner(channel, "sip_hangup_phrase", phrase);
+	}
+
+	switch_snprintf(st, sizeof(st), "%d", cause);
+	switch_channel_set_variable(channel, "sip_term_cause", st);
+	switch_channel_hangup(channel, cause);
+	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+
+	if (sofia_private) {
+        sofia_private->destroy_me = 1;
+        sofia_private->destroy_nh = 1;
+    }
+#endif
+
 
 	if (sip->sip_user_agent && !switch_strlen_zero(sip->sip_user_agent->g_string)) {
 		switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
@@ -310,8 +344,8 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	}
 	
 	tech_pvt->got_bye = 1;
-	switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_bye");
-	
+	switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_bye");	
+
 	return;
 }
 
@@ -813,6 +847,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_APPL_METHOD("OPTIONS"),
 				   NUTAG_APPL_METHOD("NOTIFY"),
 				   NUTAG_APPL_METHOD("INFO"),
+#ifdef MANUAL_BYE
+				   NUTAG_APPL_METHOD("BYE"),
+#endif
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_AUTOALERT(0),
 				   NUTAG_ENABLEMESSENGER(1),
