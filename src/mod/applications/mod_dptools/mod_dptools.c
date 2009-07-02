@@ -1415,11 +1415,12 @@ SWITCH_STANDARD_APP(sleep_function)
 		char buf[10];
 		switch_input_args_t args = { 0 };
 
-		args.input_callback = on_dtmf;
-		args.buf = buf;
-		args.buflen = sizeof(buf);
-		
-		switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
+		if (switch_true(switch_channel_get_variable(channel, "sleep_eat_digits"))) {
+			args.input_callback = on_dtmf;
+			args.buf = buf;
+			args.buflen = sizeof(buf);
+			switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
+		}
 
 		switch_ivr_sleep(session, ms, SWITCH_TRUE, &args);
 	}
