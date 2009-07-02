@@ -23,7 +23,7 @@
 
         <!-- Menu option 1: Call FreeSWITCH conference-->
         <action function="play-file" data="ivr/ivr-enter_ext_pound.wav"/>
-        <action function="execute" data="sleep(1500)"/>
+        <action function="play-file" data="silence_stream://1500"/>
         <action function="play-file" data="ivr/ivr-to_call_the_freeswitch_conference.wav"/>
         <action function="play-file" data="ivr/ivr-please.wav"/>
         <action function="play-file" data="voicemail/vm-press.wav"/>
@@ -62,7 +62,7 @@
         <action function="play-file" data="ivr/ivr-please.wav"/>
         <action function="play-file" data="voicemail/vm-press.wav"/>
         <action function="play-file" data="digits/9.wav"/>
-        <action function="execute" data="sleep(2000)"/>
+        <action function="play-file" data="silence_stream://2000"/>
       </match>
     </input>
   </macro>
@@ -73,7 +73,7 @@
     <input pattern="(.*)">
       <match>
         <!-- Menu option 1: Call FreeSWITCH conference-->
-        <action function="execute" data="sleep(1000)"/>
+        <action function="play-file" data="silence_stream://1000"/>
         <action function="play-file" data="ivr/ivr-to_call_the_freeswitch_conference.wav"/>
         <action function="play-file" data="ivr/ivr-please.wav"/>
         <action function="play-file" data="voicemail/vm-press.wav"/>
@@ -108,7 +108,7 @@
         <action function="play-file" data="ivr/ivr-please.wav"/>
         <action function="play-file" data="voicemail/vm-press.wav"/>
         <action function="play-file" data="digits/9.wav"/>
-        <action function="execute" data="sleep(2000)"/>
+        <action function="play-file" data="silence_stream://2000"/>
       </match>
     </input>
   </macro>
