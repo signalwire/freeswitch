@@ -332,7 +332,8 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "waiting for %u/%u digits t/o %d\n", 
 						  (uint32_t)(menu->inlen - strlen(menu->buf)), (uint32_t)need, menu->inter_timeout);
 		status = switch_ivr_collect_digits_count(session, menu->ptr, menu->inlen - strlen(menu->buf), 
-												 need, "#", &terminator, menu_buf_len ? menu->inter_timeout : menu->timeout, 0, 0);
+												 need, "#", &terminator, menu_buf_len ? menu->inter_timeout : menu->timeout,
+												 menu->inter_timeout, menu->timeout);
 	}
 
 	if (menu->confirm_macro && status == SWITCH_STATUS_SUCCESS && *menu->buf != '\0') {
