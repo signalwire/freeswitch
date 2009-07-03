@@ -486,11 +486,12 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 			if (switch_channel_test_flag(channel, CF_ANSWERED) || !switch_core_media_bug_test_flag(bug, SMBF_RECORD_ANSWER_REQ)) {
-				int loops = LEAD_IN;
 				while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS && frame.datalen) {
 					len = (switch_size_t) frame.datalen / 2;
 					switch_core_file_write(rh->fh, data, &len);
-					if (!--loops) break;
+					if (switch_test_flag((&frame), SFF_CNG)) {
+						break;
+					}
 				}
 			}
 			rh->lead_in = LEAD_IN;

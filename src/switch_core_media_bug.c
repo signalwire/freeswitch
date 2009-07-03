@@ -104,7 +104,7 @@ SWITCH_DECLARE(void) switch_core_media_bug_flush(switch_media_bug_t *bug)
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame, switch_bool_t fill)
 {
-	switch_size_t bytes = 0, datalen = 0;
+	switch_size_t bytes = 0, datalen = 0, ttl = 0;
 	int16_t *dp, *fp;
 	uint32_t x;
 	size_t rlen = 0;
@@ -126,11 +126,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Buffer Error\n", switch_channel_get_name(bug->session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
+	frame->flags = 0;
 	frame->datalen = 0;
 	
 	switch_mutex_lock(bug->read_mutex);
 	frame->datalen = (uint32_t) switch_buffer_read(bug->raw_read_buffer, frame->data, bytes);
+	ttl += frame->datalen;
 	if (fill && frame->datalen < bytes) {
 		memset(((unsigned char *)frame->data) + frame->datalen, 0, bytes - frame->datalen);
 		frame->datalen = bytes;
@@ -141,6 +143,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		switch_assert(bug->raw_write_buffer);
 		switch_mutex_lock(bug->write_mutex);
 		datalen = (uint32_t) switch_buffer_read(bug->raw_write_buffer, bug->data, bytes);
+		ttl += datalen;
 		if (fill && datalen < bytes) {
 			memset(((unsigned char *)bug->data) + datalen, 0, bytes - datalen);
 			datalen = bytes;
@@ -190,6 +193,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 			switch_normalize_to_16bit(z);
 			*(fp + x) = (int16_t) z / 2;
 		}
+	}
+
+	if (!ttl) {
+		switch_set_flag(frame, SFF_CNG);
 	}
 
 	frame->datalen = bytes;
