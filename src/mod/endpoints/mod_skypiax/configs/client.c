@@ -216,6 +216,17 @@ int main(int argc, char *argv[])
   else
     dispname = ":0.0";
 
+
+      if (!XInitThreads()) {
+        printf("Not initialized XInitThreads!\n");
+      } else {
+        printf("Initialized XInitThreads!\n");
+      }
+ 
+
+
+
+
   disp = XOpenDisplay(dispname);
   if (!disp) {
     printf("Cannot open X Display '%s', exiting\n", dispname);
