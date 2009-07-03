@@ -2813,7 +2813,6 @@ L3INT Q931Uie_UserUser(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR 
 	ie *pIE = &pMsg->UserUser;
 	L3INT Off = 0;
 	L3INT Octet = 0;
-	L3INT x = 0;
 	L3INT l;
 
 	*pIE = 0;
@@ -2821,22 +2820,20 @@ L3INT Q931Uie_UserUser(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR 
 	pie->IEId = IBuf[Octet++];
 
 	/* Octet 2 */
-	l = IBuf[Octet++] - 3; 
+	l = IBuf[Octet++] - 1;
 
 	/* Octet 3 */
-	pie->ProtDisc = IBuf[Octet + Off];
-	Octet++;
+	pie->ProtDisc = IBuf[Octet++];
 
-	for (x = 0; x < l; x++) {
-		pie->User[x] = IBuf[Octet + Off];
-		Off++;
+	for (Off = 0; Off < l; Off++) {
+		pie->User[Off] = IBuf[Octet + Off];
 	}
 
 	Q931SetIE(*pIE, *OOff);
 
 	*IOff = (*IOff) + Octet + Off;
-	*OOff = (*OOff) + sizeof(Q931ie_UserUser) + x - 1;
-	pie->Size = (L3UCHAR)(sizeof(Q931ie_UserUser) + x - 1);
+	*OOff = (*OOff) + sizeof(Q931ie_UserUser) + Off - 1;
+	pie->Size = (L3UCHAR)(sizeof(Q931ie_UserUser) + Off - 1);
 
 	return Q931E_NO_ERROR;
 }

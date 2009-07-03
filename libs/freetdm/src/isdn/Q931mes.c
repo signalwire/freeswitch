@@ -89,6 +89,7 @@ L3INT Q931Umes_Alerting(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic
 		case Q931ie_DISPLAY:
 		case Q931ie_SIGNAL:
 		case Q931ie_HIGH_LAYER_COMPATIBILITY:
+		case Q931ie_USER_USER:
 			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if (rc != Q931E_NO_ERROR) 
 				return rc;
@@ -289,6 +290,7 @@ L3INT Q931Umes_Connect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic 
 		case Q931ie_LOW_LAYER_COMPATIBILITY:
 		case Q931ie_HIGH_LAYER_COMPATIBILITY:
 		case Q931ie_CONNECTED_NUMBER:		/* not actually used, seen while testing BRI PTMP TE */
+		case Q931ie_USER_USER:
 			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if (rc != Q931E_NO_ERROR) 
 				return rc;
@@ -448,6 +450,7 @@ L3INT Q931Umes_Disconnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Gener
 		case Q931ie_DISPLAY:
 		case Q931ie_SIGNAL:
 		case Q931ie_FACILITY:
+		case Q931ie_USER_USER:
 			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if (rc != Q931E_NO_ERROR) 
 				return rc;
@@ -734,6 +737,7 @@ L3INT Q931Umes_Release(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic 
 		case Q931ie_CAUSE:
 		case Q931ie_DISPLAY:
 		case Q931ie_SIGNAL:
+		case Q931ie_USER_USER:
 			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if (rc != Q931E_NO_ERROR) 
 				return rc;
@@ -799,6 +803,7 @@ L3INT Q931Umes_ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_
 		case Q931ie_CAUSE:
 		case Q931ie_DISPLAY:
 		case Q931ie_SIGNAL:
+		case Q931ie_USER_USER:
 			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if (rc != Q931E_NO_ERROR) 
 				return rc;
@@ -1197,6 +1202,7 @@ L3INT Q931Umes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *m
 		case Q931ie_LOW_LAYER_COMPATIBILITY:
 		case Q931ie_HIGH_LAYER_COMPATIBILITY:
 		case Q931ie_FACILITY:
+		case Q931ie_USER_USER:
 			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if (rc != Q931E_NO_ERROR) 
 				return rc;
