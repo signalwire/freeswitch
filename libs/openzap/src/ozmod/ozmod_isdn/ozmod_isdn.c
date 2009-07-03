@@ -1013,6 +1013,61 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 			}
 			break;
 
+		case Q931mes_STATUS_ENQUIRY:
+			{
+				/*
+				 * !! HACK ALERT !!
+				 *
+				 * Map OpenZAP channel states to Q.931 states
+				 */
+				Q931ie_CallState state;
+				Q931ie_Cause cause;
+
+				gen->MesType = Q931mes_STATUS;
+				gen->CRVFlag = gen->CRVFlag ? 0 : 1;
+
+				state.CodStand  = Q931_CODING_ITU;	/* ITU-T */
+				state.CallState = Q931_U0;		/* Default: Null */
+
+				cause.IEId = Q931ie_CAUSE;
+				cause.Size = sizeof(Q931ie_Cause);
+				cause.CodStand = Q931_CODING_ITU;	/* ITU */
+				cause.Location = 1;	/* private network */
+				cause.Recom    = 1;	/* */
+				*cause.Diag    = '\0';
+
+				if(zchan) {
+					switch(zchan->state) {
+					case ZAP_CHANNEL_STATE_UP:
+						state.CallState = Q931_U10;	/* Active */
+						break;
+					case ZAP_CHANNEL_STATE_RING:
+						state.CallState = Q931_U6;	/* Call present */
+						break;
+					case ZAP_CHANNEL_STATE_DIALING:
+						state.CallState = Q931_U1;	/* Call initiated */
+						break;
+					case ZAP_CHANNEL_STATE_DIALTONE:
+						state.CallState = Q931_U25;	/* Overlap receiving */
+						break;
+
+					/* TODO: map missing states */
+
+					default:
+						state.CallState = Q931_U0;
+					}
+
+					cause.Value = 30;	/* response to STATUS ENQUIRY */
+				} else {
+					cause.Value = 98;	/* */
+				}
+
+				gen->CallState = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &state);
+				gen->Cause     = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &cause);
+				Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
+			}
+			break;
+
 		default:
 			zap_log(ZAP_LOG_CRIT, "Received unhandled message %d (%#x)\n", (int)gen->MesType, (int)gen->MesType);
 			break;
