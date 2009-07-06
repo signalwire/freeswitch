@@ -1900,7 +1900,7 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define HOLD_SYNTAX "<uuid> [<display>]"
+#define HOLD_SYNTAX "[off] <uuid> [<display>]"
 SWITCH_STANDARD_API(uuid_hold_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
