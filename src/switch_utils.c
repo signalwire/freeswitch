@@ -1949,6 +1949,47 @@ SWITCH_DECLARE(int) switch_isxdigit(int c)
 	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & (_N|_X)));
 }
 
+SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val)
+{
+    char *p;
+	
+    if ((p=strchr(exp, '-'))) {
+        int min;
+        int max;
+
+        min = atol(exp);
+        p++;
+        max = atol(p);
+
+        if (val >= min && val <= max) {
+            return 1;
+        }
+    } else if ((p=strchr(exp, ','))) {
+        const char *cur = exp;
+		p++;
+        while(cur) {
+            if (atol(cur) == val) {
+                return 1;
+            }
+			
+            cur = p;
+			if (p && p+1) {
+				if ((p = strchr((p+1), ','))) {
+					p++;
+				}
+			}
+        }
+    } else {
+        if (atol(exp) == val) {
+            return 1;
+        }
+    }
+
+    return 0;
+
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

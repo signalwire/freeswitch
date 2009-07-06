@@ -44,6 +44,7 @@ typedef enum {
 	BREAK_NEVER
 } break_t;
 
+
 static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t xexten, switch_caller_extension_t **extension)
 {
 	switch_xml_t xcond, xaction, xexpression;
@@ -64,6 +65,18 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		switch_regex_t *re = NULL;
 		int ovector[30];
 		break_t do_break_i = BREAK_ON_FALSE;
+		
+		const char *xyear = switch_xml_attr(xcond, "year");
+		const char *xyday = switch_xml_attr(xcond, "yday");
+		const char *xmon = switch_xml_attr(xcond, "mon");
+		const char *xmday = switch_xml_attr(xcond, "mday");
+		const char *xweek = switch_xml_attr(xcond, "week");
+		const char *xwday = switch_xml_attr(xcond, "wday");
+		const char *xhour = switch_xml_attr(xcond, "hour");
+		const char *xminute = switch_xml_attr(xcond, "minute");
+		switch_time_t ts = switch_micro_time_now();
+		int time_match = -1;
+		switch_time_exp_t tm;
 
 		switch_safe_free(field_expanded);
 		switch_safe_free(expression_expanded);
@@ -74,6 +87,40 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			goto done;
 		}
 
+		switch_time_exp_lt(&tm, ts);
+		
+		if (time_match && xyear) {
+			time_match = switch_number_cmp(xyear, tm.tm_year + 1900);
+		}
+
+		if (time_match && xyday) {
+			time_match = switch_number_cmp(xyday, tm.tm_yday + 1);
+		}
+
+		if (time_match && xmon) {
+			time_match = switch_number_cmp(xmon, tm.tm_mon + 1);
+		}
+
+		if (time_match && xmday) {
+			time_match = switch_number_cmp(xmday, tm.tm_mday);
+		}
+
+		if (time_match && xweek) {
+			time_match = switch_number_cmp(xweek, (int) (tm.tm_yday + 1 / 7));
+		}
+
+		if (time_match && xwday) {
+			time_match = switch_number_cmp(xwday, tm.tm_wday + 1);
+		}
+
+		if (time_match && xhour) {
+			time_match = switch_number_cmp(xhour, tm.tm_hour);
+		}
+
+		if (time_match && xminute) {
+			time_match = switch_number_cmp(xminute, tm.tm_min + 1);
+		}
+		
 		field = (char *) switch_xml_attr(xcond, "field");
 
 		if ((xexpression = switch_xml_child(xcond, "expression"))) {
@@ -99,6 +146,17 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				do_break_i = BREAK_NEVER;
 			} else {
 				do_break_a = NULL;
+			}
+		}
+
+		if (time_match == 0) {
+			if (do_break_i == BREAK_ON_FALSE || do_break_i == BREAK_ALWAYS) {
+				break;
+			} else if (do_break_i == BREAK_NEVER) {
+				continue;
+			} else {
+				proceed = 0;
+				goto done;
 			}
 		}
 
