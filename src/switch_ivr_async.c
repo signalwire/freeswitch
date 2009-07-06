@@ -420,11 +420,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define LEAD_IN 25
+
 struct record_helper {
 	char *file;
 	switch_file_handle_t *fh;
-	int lead_in;
+	uint32_t packet_len;
 };
 
 static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
@@ -449,18 +449,15 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					switch_size_t len;
 					uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 					switch_frame_t frame = { 0 };
-					int cnt = LEAD_IN;
+					
 					
 					frame.data = data;
 					frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 					
-					for (; cnt; cnt--) {
-						if (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-							len = (switch_size_t) frame.datalen / 2;
-							switch_core_file_write(rh->fh, data, &len);
-						} 
+					while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS && !switch_test_flag((&frame), SFF_CNG)) {
+						len = (switch_size_t) frame.datalen / 2;
+						if (len) switch_core_file_write(rh->fh, data, &len);
 					}
-						   
 				}
 
 				switch_core_file_close(rh->fh);
@@ -472,29 +469,22 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		}
 
 		break;
-	case SWITCH_ABC_TYPE_READ_PING:
-		if (rh->lead_in) {
-			rh->lead_in--;
-		} else
-
+	case SWITCH_ABC_TYPE_READ:
+		
 		if (rh->fh) {
 			switch_size_t len;
 			uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 			switch_frame_t frame = { 0 };
-			
+
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-
+			
 			if (switch_channel_test_flag(channel, CF_ANSWERED) || !switch_core_media_bug_test_flag(bug, SMBF_RECORD_ANSWER_REQ)) {
-				while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS && frame.datalen) {
+				while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS && !switch_test_flag((&frame), SFF_CNG)) {
 					len = (switch_size_t) frame.datalen / 2;
-					switch_core_file_write(rh->fh, data, &len);
-					if (switch_test_flag((&frame), SFF_CNG)) {
-						break;
-					}
+					if (len) switch_core_file_write(rh->fh, data, &len);
 				}
 			}
-			rh->lead_in = LEAD_IN;
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE:
@@ -890,7 +880,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	}
 
 	channels = read_impl.number_of_channels;
-
+	
 	if ((bug = switch_channel_get_private(channel, file))) {
 		return switch_ivr_stop_record_session(session, file);
 	}
@@ -905,7 +895,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		flags |= SMBF_STEREO;
 		channels = 2;
 	}
-
+		
 	if ((p = switch_channel_get_variable(channel, "RECORD_ANSWER_REQ")) && switch_true(p)) {
 		flags |= SMBF_RECORD_ANSWER_REQ;
 	}
@@ -968,8 +958,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	rh = switch_core_session_alloc(session, sizeof(*rh));
 	rh->fh = fh;
 	rh->file = switch_core_session_strdup(session, file);
-	rh->lead_in = LEAD_IN;
-
+	rh->packet_len = read_impl.decoded_bytes_per_packet;
 
 	if ((vval = switch_channel_get_variable(channel, "record_sample_rate"))) {
 		int tmp = 0;

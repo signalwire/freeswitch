@@ -102,6 +102,25 @@ SWITCH_DECLARE(void) switch_core_media_bug_flush(switch_media_bug_t *bug)
 	}
 }
 
+SWITCH_DECLARE(void) switch_core_media_bug_inuse(switch_media_bug_t *bug, switch_size_t *readp, switch_size_t *writep)
+{
+	if (switch_test_flag(bug, SMBF_READ_STREAM)) {
+		switch_mutex_lock(bug->read_mutex);
+		*readp = bug->raw_read_buffer ? switch_buffer_inuse(bug->raw_read_buffer) : 0;
+		switch_mutex_unlock(bug->read_mutex);
+	} else {
+		*readp = 0;
+	}
+
+	if (switch_test_flag(bug, SMBF_WRITE_STREAM)) {
+		switch_mutex_lock(bug->write_mutex);
+		*writep = bug->raw_write_buffer ? switch_buffer_inuse(bug->raw_write_buffer) : 0;
+		switch_mutex_unlock(bug->write_mutex);
+	} else {
+		*writep = 0;
+	}
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame, switch_bool_t fill)
 {
 	switch_size_t bytes = 0, datalen = 0, ttl = 0;
@@ -129,14 +148,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 	frame->flags = 0;
 	frame->datalen = 0;
-	
+
+	if (!switch_buffer_inuse(bug->raw_read_buffer)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_mutex_lock(bug->read_mutex);
 	frame->datalen = (uint32_t) switch_buffer_read(bug->raw_read_buffer, frame->data, bytes);
 	ttl += frame->datalen;
-	if (fill && frame->datalen < bytes) {
-		memset(((unsigned char *)frame->data) + frame->datalen, 0, bytes - frame->datalen);
-		frame->datalen = bytes;
-	}
 	switch_mutex_unlock(bug->read_mutex);
 	
 	if (switch_test_flag(bug, SMBF_WRITE_STREAM)) {

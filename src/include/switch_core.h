@@ -156,6 +156,8 @@ SWITCH_DECLARE(void) switch_core_media_bug_pause(switch_core_session_t *session)
 */
 SWITCH_DECLARE(void) switch_core_media_bug_resume(switch_core_session_t *session);
 
+SWITCH_DECLARE(void) switch_core_media_bug_inuse(switch_media_bug_t *bug, switch_size_t *readp, switch_size_t *writep);
+
 /*!
   \brief Obtain private data from a media bug
   \param bug the bug to get the data from
