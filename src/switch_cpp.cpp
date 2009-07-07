@@ -86,6 +86,7 @@ SWITCH_DECLARE(Event *) EventConsumer::pop(int block)
 
 	if ((event = (switch_event_t *) pop)) {
 		ret = new Event(event);
+		switch_event_destroy(&event);
 	}
 
 	return ret;
