@@ -64,7 +64,9 @@ static struct ss7bc_map ss7bc_table[] = {
 	{SIGBOOST_EVENT_SYSTEM_RESTART_ACK, "SYSTEM_RESTART_ACK"}, 
 	{SIGBOOST_EVENT_HEARTBEAT, "HEARTBEAT"}, 
 	{SIGBOOST_EVENT_INSERT_CHECK_LOOP, "LOOP START"}, 
-	{SIGBOOST_EVENT_REMOVE_CHECK_LOOP, "LOOP STOP"} 
+	{SIGBOOST_EVENT_REMOVE_CHECK_LOOP, "LOOP STOP"},
+	{SIGBOOST_EVENT_AUTO_CALL_GAP_ABATE, "AUTO_CALL_GAP_ABATE"},
+	{SIGBOOST_EVENT_DIGIT_IN, "DIGIT_IN"}
 }; 
 
 
@@ -261,6 +263,10 @@ ss7bc_event_t *__ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration, 
 	bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, 
 					 (struct sockaddr *) &mcon->local_addr, &fromlen);
 
+	if (bytes <= 0) {
+		return NULL;
+	}
+
     if (mcon->event.version != SIGBOOST_VERSION) {
 		zap_log(ZAP_LOG_CRIT, "Invalid Boost Version %i  Expecting %i\n",mcon->event.version, SIGBOOST_VERSION);
     }   
@@ -338,7 +344,11 @@ ss7bc_event_t *__ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration,
 	int bytes = 0;
 
 	bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, (struct sockaddr *) &mcon->local_addr, &fromlen);
-    
+	
+	if (bytes <= 0) {
+		return NULL;
+	}
+
     if (mcon->event.version != SIGBOOST_VERSION) {
 		zap_log(ZAP_LOG_CRIT, "Invalid Boost Version %i  Expecting %i\n",mcon->event.version, SIGBOOST_VERSION);
     }   

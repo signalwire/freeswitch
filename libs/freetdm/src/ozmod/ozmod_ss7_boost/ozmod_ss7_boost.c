@@ -38,6 +38,9 @@
 #include <sys/select.h>
 #endif
 
+#define MAX_TRUNK_GROUPS 64
+static time_t congestion_timeouts[MAX_TRUNK_GROUPS];
+
 /**
  * \brief Strange flag
  */
@@ -180,45 +183,40 @@ static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_short_event_t *event, i
 	for(i = 1; i <= span->chan_count; i++) {
 		if (span->channels[i]->physical_span_id == event->span+1 && span->channels[i]->physical_chan_id == event->chan+1) {
 			zchan = span->channels[i];
-			if (force) {
+			if (force || (zchan->state == ZAP_CHANNEL_STATE_DOWN && !zap_test_flag(zchan, ZAP_CHANNEL_INUSE))) {
+				break;
+			} else {
+				zchan = NULL;
+				zap_log(ZAP_LOG_ERROR, "Channel %d:%d ~ %d:%d is already in use.\n",
+						span->channels[i]->span_id,
+						span->channels[i]->chan_id,
+						span->channels[i]->physical_span_id,
+						span->channels[i]->physical_chan_id
+						);
 				break;
 			}
-			if (zap_test_flag(zchan, ZAP_CHANNEL_INUSE) || zchan->state != ZAP_CHANNEL_STATE_DOWN) {
-				if (zchan->state == ZAP_CHANNEL_STATE_DOWN || zchan->state >= ZAP_CHANNEL_STATE_TERMINATING) {
-					int x = 0;
-					zap_log(ZAP_LOG_WARNING, "Channel %d:%d ~ %d:%d is already in use waiting for it to become available.\n",
-							span->channels[i]->span_id,
-							span->channels[i]->chan_id,
-							span->channels[i]->physical_span_id,
-							span->channels[i]->physical_chan_id);
-
-					zap_mutex_unlock(signal_mutex);
-					for (x = 0; x < 200; x++) {
-						if (!zap_test_flag(zchan, ZAP_CHANNEL_INUSE)) {
-							break;
-						}
-						zap_sleep(5);
-					}
-					zap_mutex_lock(signal_mutex);
-				}
-				if (zap_test_flag(zchan, ZAP_CHANNEL_INUSE)) {
-					zchan = NULL;
-					zap_log(ZAP_LOG_ERROR, "Channel %d:%d ~ %d:%d is already in use.\n",
-							span->channels[i]->span_id,
-							span->channels[i]->chan_id,
-							span->channels[i]->physical_span_id,
-							span->channels[i]->physical_chan_id
-							);
-				}
-			}
-			break;
 		}
 	}
-	
 	zap_mutex_unlock(signal_mutex);
 
 	return zchan;
 }
+
+static int check_congestion(int trunk_group)
+{
+	if (congestion_timeouts[trunk_group]) {
+		time_t now = time(NULL);
+
+		if (now >= congestion_timeouts[trunk_group]) {
+			congestion_timeouts[trunk_group] = 0;
+		} else {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 
 /**
  * \brief Requests an ss7 boost channel on a span (outgoing call)
@@ -240,9 +238,30 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 	char ani[128] = "";
 	char *gr = NULL;
 	uint32_t count = 0;
-
+	int tg=0;
+	
 	if (zap_test_flag(span, ZAP_SPAN_SUSPENDED)) {
 		zap_log(ZAP_LOG_CRIT, "SPAN is not online.\n");
+		*zchan = NULL;
+		return ZAP_FAIL;
+	}
+	
+	zap_set_string(ani, caller_data->ani.digits);
+
+	if ((gr = strchr(ani, '@'))) {
+		*gr++ = '\0';
+	}
+
+	if (gr && *(gr+1)) {
+		tg = atoi(gr+1);
+		if (tg > 0) {
+			tg--;
+		}
+	}
+	event.trunk_group = tg;
+
+	if (check_congestion(tg)) {
+		zap_log(ZAP_LOG_CRIT, "All circuits are busy. (BOOST REQUESTED BACK OFF)\n");
 		*zchan = NULL;
 		return ZAP_FAIL;
 	}
@@ -262,20 +281,9 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 		return ZAP_FAIL;
 	}
 
-
-	zap_set_string(ani, caller_data->ani.digits);
-
-	if ((gr = strchr(ani, '@'))) {
-		*gr++ = '\0';
-	}
-
 	ss7bc_call_init(&event, caller_data->cid_num.digits, ani, r);
 	
 	if (gr && *(gr+1)) {
-		event.trunk_group = atoi(gr+1);
-		if (event.trunk_group > 0) {
-			event.trunk_group--;
-		}
 
 		switch(*gr) {
         case 'g':
@@ -363,6 +371,12 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(ss7_boost_outgoing_call)
 {
 	zap_status_t status = ZAP_SUCCESS;
+
+	if (check_congestion(0)) {
+		zap_log(ZAP_LOG_CRIT, "All circuits are busy. (BOOST REQUESTED BACK OFF)\n");
+		return ZAP_FAIL;
+	}
+
 	return status;
 }
 
@@ -464,7 +478,35 @@ static void handle_call_start_nack(zap_span_t *span, ss7bc_connection_t *mcon, s
 {
 	zap_channel_t *zchan;
 
+	if (event->release_cause == SIGBOOST_CALL_SETUP_NACK_ALL_CKTS_BUSY) {
+		uint32_t count = 0;
+		int delay = 0;
+		int tg=event->trunk_group;
+
+		zap_span_channel_use_count(span, &count);
+
+		delay = (int) (count / 100) * 2;
+		
+		if (delay > 10) {
+			delay = 10;
+		} else if (delay < 1) {
+			delay = 1;
+		}
+
+		if (tg < 0 || tg >= MAX_TRUNK_GROUPS) {
+			zap_log(ZAP_LOG_CRIT, "Invalid All Ckt Busy trunk group number %i\n", tg);
+			tg=0;
+		}
+		
+		congestion_timeouts[tg] = time(NULL) + delay;
+		event->release_cause = 17;
+
+	} else if (event->release_cause == SIGBOOST_CALL_SETUP_CSUPID_DBL_USE) {
+		event->release_cause = 17;
+	}
+
 	if (event->call_setup_id) {
+
 		ss7bc_exec_command(mcon,
 						   0,
 						   0,
@@ -959,6 +1001,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 static __inline__ void init_outgoing_array(void)
 {
 	memset(&OUTBOUND_REQUESTS, 0, sizeof(OUTBOUND_REQUESTS));
+
 }
 
 /**
@@ -1090,16 +1133,20 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 			}
 
 			if (FD_ISSET(pcon->socket, &rfds)) {
-				if ((event = ss7bc_connection_readp(pcon, i))) {
+				while ((event = ss7bc_connection_readp(pcon, i))) {
 					parse_ss7_event(span, pcon, (ss7bc_short_event_t*)event);
+					i++;
 				}
 			}
+			i=0;
 
 			if (FD_ISSET(mcon->socket, &rfds)) {
 				if ((event = ss7bc_connection_read(mcon, i))) {
 					parse_ss7_event(span, mcon, (ss7bc_short_event_t*)event);
+					i++;
 				}
 			}
+
 		}
 		
 
@@ -1127,7 +1174,6 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 		if (zap_running()) {
 			check_state(span);
 		}
-
 	}
 
 	goto end;
