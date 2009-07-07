@@ -181,8 +181,8 @@ char * generate_pai_str(switch_core_session_t *session)
 	const char *callee_name = NULL, *callee_number = NULL;
 	char *pai = NULL;
 
-	if ((callee_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name"))) {
-		if (!(callee_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number"))) {
+	if ((callee_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name"))) {
+		if (!(callee_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number"))) {
 			callee_number = tech_pvt->caller_profile->destination_number;
 		}
 		pai = switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>", callee_name, callee_number);
