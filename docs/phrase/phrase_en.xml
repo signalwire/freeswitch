@@ -297,6 +297,11 @@
       <prompt phrase="You are about to provision this phone permanently to your extension." filename="ivr-provision_phone_permanently_to_extension.wav"/>
       <prompt phrase="Please enter the extension number to which you would like to provision this phone, followed by the pound sign." filename="ivr-extension_to_provision_this_phone.wav"/>
       <prompt phrase="Thank you, this phone will now reboot." filename="ivr-this_phone_will_now_reboot.wav"/>
+      <!-- The following three phrases still need to be recorded -->
+      <prompt phrase="Thank you. Your recording has been saved." filename="ivr-recording_saved.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Press 1 to save your recording. Press 2 to review your recording. Press 3 to re-record." filename="ivr-save_review_record.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="The system is unable to save your sound file at this time. Please try again later." filename="ivr-unable_save" attr="Needs_to_be_recorded!"/>
+
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
