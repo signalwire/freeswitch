@@ -1,16 +1,24 @@
 <configuration name="cidlookup.conf" description="cidlookup Configuration">
   <settings>
+    <!-- comment out url to not setup a url based lookup -->
     <param name="url" value="http://query.voipcnam.com/query.php?api_key=MYAPIKEY&number=${caller_id_number}"/>
+
+    <!-- set to false to not cache (in memcache) results from the url query -->
     <param name="cache" value="true"/>
+    <!-- expire is in seconds -->
     <param name="cache-expire" value="86400"/>
 
     <param name="odbc-dsn" value="phone:phone:phone"/>
+
+    <!-- comment out sql to not setup a database (directory) lookup -->
     <param name="sql" value="
      SELECT name||' ('||type||')' AS name 
       FROM phonebook p JOIN numbers n ON p.id = n.phonebook_id
       WHERE n.number='${caller_id_number}' 
       LIMIT 1
       "/>
+    <!-- comment out citystate-sql to not setup a database (city/state) 
+         lookup -->
     <param name="citystate-sql" value="
      SELECT ratecenter||' '||state as name
       FROM npa_nxx_company_ocn
