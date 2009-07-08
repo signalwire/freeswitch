@@ -1943,7 +1943,7 @@ SWITCH_STANDARD_API(uuid_display_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 2 || switch_strlen_zero(argv[0]) || switch_strlen_zero(argv[1])) {
-		stream->write_function(stream, "-USAGE: %s\n", HOLD_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", DISPLAY_SYNTAX);
 	} else {
 		switch_core_session_message_t msg = { 0 };
 		switch_core_session_t *lsession = NULL;
