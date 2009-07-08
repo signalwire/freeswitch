@@ -52,6 +52,7 @@ static struct {
 	
 	char *odbc_dsn;
 	char *sql;
+	char *citystate_sql;
 
 	switch_mutex_t *db_mutex;
 	switch_memory_pool_t *pool;
@@ -147,6 +148,7 @@ static switch_xml_config_item_t instructions[] = {
 	SWITCH_CONFIG_ITEM("cache", SWITCH_CONFIG_BOOL, CONFIG_RELOAD, &globals.cache, SWITCH_FALSE, NULL, "true|false", "whether to cache via cidlookup"),
 	SWITCH_CONFIG_ITEM("cache-expire", SWITCH_CONFIG_INT, CONFIG_RELOAD, &globals.cache_expire, (void *)300, NULL, "expire", "seconds to preserve num->name cache"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("sql", CONFIG_RELOAD, &globals.sql, "", "sql whre number=${caller_id_number}", "SQL to run if overriding CID"),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("citystate-sql", CONFIG_RELOAD, &globals.citystate_sql, "", "sql to look up city/state info", "SQL to run if overriding CID"),
 	SWITCH_CONFIG_ITEM_CALLBACK("odbc-dsn", SWITCH_CONFIG_STRING, CONFIG_RELOAD, &globals.odbc_dsn, "", config_callback_dsn, &config_opt_dsn,
 		"db:user:passwd", "Database to use."),
 	SWITCH_CONFIG_ITEM_END()
@@ -336,14 +338,14 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 	return name;
 }
 
-static char *do_db_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num) {
+static char *do_db_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, const char *sql) {
 	char *name = NULL;
 	char *newsql = NULL;
 	callback_t cbt = { 0 };
 	cbt.pool = pool;
 	
 	if (globals.master_odbc) {
-		newsql = switch_event_expand_headers(event, globals.sql);
+		newsql = switch_event_expand_headers(event, sql);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL: %s\n", newsql);
 		if (cidlookup_execute_sql_callback(newsql, cidlookup_callback, &cbt)) {
 			name = cbt.name;
@@ -366,7 +368,7 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 
 	/* database always wins */
 	if (switch_odbc_available() && globals.master_odbc && globals.sql) {
-		name = do_db_lookup(pool, event, number);
+		name = do_db_lookup(pool, event, number, globals.sql);
 	}
 
 	if (!name && globals.url) {
@@ -379,6 +381,12 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 				set_cache(pool, number, name);
 			}
 		}
+	}
+	/* only do the below if it is a nanpa number */
+	if (strlen(number) == 11 && number[0] == '1' &&
+		!name && switch_odbc_available() && globals.master_odbc && globals.citystate_sql) {
+		
+		name = do_db_lookup(pool, event, number, globals.citystate_sql);
 	}
 	return name;
 }
@@ -475,9 +483,10 @@ SWITCH_STANDARD_API(cidlookup_function)
 									(globals.cache) ? "true" : "false",
 									globals.cache_expire);
 									
-			stream->write_function(stream, " odbc-dsn: %s\n sql: %s\n", 
+			stream->write_function(stream, " odbc-dsn: %s\n sql: %s\n citystate-sql: %s\n", 
 									globals.odbc_dsn,
-									globals.sql);
+									globals.sql,
+									globals.citystate_sql);
 			stream->write_function(stream, " ODBC Compiled: %s\n", switch_odbc_available() ? "true" : "false");
 
 			switch_goto_status(SWITCH_STATUS_SUCCESS, done);
