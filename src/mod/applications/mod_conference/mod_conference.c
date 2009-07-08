@@ -380,7 +380,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 											 char *conference_name,
 											 switch_core_session_t *session, char *bridgeto, uint32_t timeout, const char *flags, const char *cid_name,
-											 const char *cid_num);
+											 const char *cid_num, const char *call_uuid);
 SWITCH_STANDARD_APP(conference_function);
 static void launch_conference_thread(conference_obj_t *conference);
 static void launch_conference_video_thread(conference_obj_t *conference);
@@ -2062,7 +2062,7 @@ static void conference_loop_output(conference_member_t *member)
 				for (x = 0; x < argc; x++) {
 					char *dial_str = switch_mprintf("%s%s", switch_str_nil(prefix), argv[x]);
 					switch_assert(dial_str);
-					conference_outcall_bg(member->conference, NULL, NULL, dial_str, to, switch_str_nil(flags), cid_name, cid_num);
+					conference_outcall_bg(member->conference, NULL, NULL, dial_str, to, switch_str_nil(flags), cid_name, cid_num, NULL);
 					switch_safe_free(dial_str);
 				}
 				switch_safe_free(cpstr);
@@ -3798,6 +3798,9 @@ static switch_status_t conf_api_sub_dial(conference_obj_t *conference, switch_st
 
 static switch_status_t conf_api_sub_bgdial(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
+	switch_uuid_t uuid;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+
 	switch_assert(stream != NULL);
 
 	if (argc <= 2) {
@@ -3805,13 +3808,16 @@ static switch_status_t conf_api_sub_bgdial(conference_obj_t *conference, switch_
 		return SWITCH_STATUS_GENERR;
 	}
 
+	switch_uuid_get(&uuid);
+	switch_uuid_format(uuid_str, &uuid);
+	
 	if (conference) {
-		conference_outcall_bg(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3]);
+		conference_outcall_bg(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str);
 	} else {
-		conference_outcall_bg(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3]);
+		conference_outcall_bg(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str);
 	}
 
-	stream->write_function(stream, "OK\n");
+	stream->write_function(stream, "OK Job-UUID: %s\n", uuid_str);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -4422,6 +4428,7 @@ struct bg_call {
 	char *cid_name;
 	char *cid_num;
 	char *conference_name;
+	char *uuid;
 	switch_memory_pool_t *pool;
 };
 
@@ -4441,6 +4448,7 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 			conference_add_event_data(call->conference, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "bgdial-result");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Result", switch_channel_cause2str(cause));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", call->uuid);
 			switch_event_fire(&event);
 		}
 		switch_safe_free(call->bridgeto);
@@ -4448,6 +4456,7 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 		switch_safe_free(call->cid_name);
 		switch_safe_free(call->cid_num);
 		switch_safe_free(call->conference_name);
+		switch_safe_free(call->uuid);
 		if (call->pool) {
 			switch_core_destroy_memory_pool(&call->pool);
 		}
@@ -4460,7 +4469,7 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 											 char *conference_name,
 											 switch_core_session_t *session, char *bridgeto, uint32_t timeout, const char *flags, const char *cid_name,
-											 const char *cid_num)
+											 const char *cid_num, const char *call_uuid)
 {
 	struct bg_call *call = NULL;
 	switch_thread_t *thread;
@@ -4497,6 +4506,10 @@ static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 
 	if (conference_name) {
 		call->conference_name = strdup(conference_name);
+	}
+	
+	if (call_uuid) {
+		call->uuid = strdup(call_uuid);
 	}
 
 	switch_threadattr_create(&thd_attr, pool);
