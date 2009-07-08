@@ -10,6 +10,7 @@
 %typemap(csclassmodifiers) ManagedSession "public partial class"
 %typemap(csclassmodifiers) Event "public partial class"
 %typemap(csclassmodifiers) Stream "public partial class"
+%newobject EventConsumer::pop;
 
 // Allow bitwise compare on flag fields
 %typemap(csclassmodifiers) session_flag_t "[System.Flags] public enum"

@@ -1,7 +1,7 @@
 #include <esl.h>
 #include <esl_oop.h>
 
-#define connection_construct_common() memset(&handle, 0, sizeof(handle)); last_event_obj = NULL
+#define connection_construct_common() memset(&handle, 0, sizeof(handle))
 #define event_construct_common() event = NULL; serialized_string = NULL; mine = 0; hp = NULL
 
 void eslSetLogLevel(int level)
@@ -182,39 +182,27 @@ int ESLconnection::sendEvent(ESLevent *send_me)
 
 ESLevent *ESLconnection::recvEvent()
 {
-	if (last_event_obj) {
-		delete last_event_obj;
-	}
-	
 	if (esl_recv_event(&handle, 1, NULL) == ESL_SUCCESS) {
 		esl_event_t *e = handle.last_ievent ? handle.last_ievent : handle.last_event;
 		if (e) {
 			esl_event_t *event;
 			esl_event_dup(&event, e);
-			last_event_obj = new ESLevent(event, 1);
-			return last_event_obj;
+			return new ESLevent(event, 1);
 		}
 	}
 
-	last_event_obj = new ESLevent("server_disconnected");
-
-	return last_event_obj;
+	return new ESLevent("server_disconnected");
 }
 
 ESLevent *ESLconnection::recvEventTimed(int ms)
 {
-	if (last_event_obj) {
-		delete last_event_obj;
-		last_event_obj = NULL;
-	}
 
 	if (esl_recv_event_timed(&handle, ms, 1, NULL) == ESL_SUCCESS) {
 		esl_event_t *e = handle.last_ievent ? handle.last_ievent : handle.last_event;
 		if (e) {
 			esl_event_t *event;
 			esl_event_dup(&event, e);
-			last_event_obj = new ESLevent(event, 1);
-			return last_event_obj;
+			return new ESLevent(event, 1);
 		}
     }
 	

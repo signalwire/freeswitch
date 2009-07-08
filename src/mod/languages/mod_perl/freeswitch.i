@@ -9,6 +9,7 @@
 //%cstring_bounded_mutable(char *dtmf_buf, 128);
 //%cstring_bounded_mutable(char *terminator, 8);
 
+%newobject EventConsumer::pop;
 
 /** insert the following includes into generated code so it compiles */
 %{

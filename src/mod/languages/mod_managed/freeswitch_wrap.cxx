@@ -5312,6 +5312,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_media_bug_resume(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_media_bug_inuse(void * jarg1, void * jarg2, void * jarg3) {
+  switch_media_bug_t *arg1 = (switch_media_bug_t *) 0 ;
+  switch_size_t *arg2 = (switch_size_t *) 0 ;
+  switch_size_t *arg3 = (switch_size_t *) 0 ;
+  
+  arg1 = (switch_media_bug_t *)jarg1; 
+  arg2 = (switch_size_t *)jarg2; 
+  arg3 = (switch_size_t *)jarg3; 
+  switch_core_media_bug_inuse(arg1,arg2,arg3);
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_media_bug_get_user_data(void * jarg1) {
   void * jresult ;
   switch_media_bug_t *arg1 = (switch_media_bug_t *) 0 ;
@@ -9386,6 +9398,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_network_list_validate_ip_token(void * j
   arg2 = (uint32_t)jarg2; 
   arg3 = (char **)jarg3; 
   result = (switch_bool_t)switch_network_list_validate_ip_token(arg1,arg2,(char const **)arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_number_cmp(char * jarg1, int jarg2) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  int arg2 ;
+  int result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (int)switch_number_cmp((char const *)arg1,arg2);
   jresult = result; 
   return jresult;
 }

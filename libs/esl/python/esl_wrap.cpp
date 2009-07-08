@@ -3718,7 +3718,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_getInfo(PyObject *SWIGUNUSEDPARM(self),
   }
   arg1 = reinterpret_cast< ESLconnection * >(argp1);
   result = (ESLevent *)(arg1)->getInfo();
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -3784,7 +3784,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_sendRecv(PyObject *SWIGUNUSEDPARM(self)
   }
   arg2 = reinterpret_cast< char * >(buf2);
   result = (ESLevent *)(arg1)->sendRecv((char const *)arg2);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return resultobj;
 fail:
@@ -3830,7 +3830,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_api(PyObject *SWIGUNUSEDPARM(self), PyO
     arg3 = reinterpret_cast< char * >(buf3);
   }
   result = (ESLevent *)(arg1)->api((char const *)arg2,(char const *)arg3);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   return resultobj;
@@ -3878,7 +3878,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_bgapi(PyObject *SWIGUNUSEDPARM(self), P
     arg3 = reinterpret_cast< char * >(buf3);
   }
   result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   return resultobj;
@@ -3935,7 +3935,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_recvEvent(PyObject *SWIGUNUSEDPARM(self
   }
   arg1 = reinterpret_cast< ESLconnection * >(argp1);
   result = (ESLevent *)(arg1)->recvEvent();
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -3966,7 +3966,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_recvEventTimed(PyObject *SWIGUNUSEDPARM
   } 
   arg2 = static_cast< int >(val2);
   result = (ESLevent *)(arg1)->recvEventTimed(arg2);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -4008,7 +4008,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_filter(PyObject *SWIGUNUSEDPARM(self), 
   }
   arg3 = reinterpret_cast< char * >(buf3);
   result = (ESLevent *)(arg1)->filter((char const *)arg2,(char const *)arg3);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   return resultobj;

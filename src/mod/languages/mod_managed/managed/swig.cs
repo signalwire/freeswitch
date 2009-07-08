@@ -555,7 +555,7 @@ public class EventConsumer : IDisposable {
 
   public Event pop(int block) {
     IntPtr cPtr = freeswitchPINVOKE.EventConsumer_pop(swigCPtr, block);
-    Event ret = (cPtr == IntPtr.Zero) ? null : new Event(cPtr, false);
+    Event ret = (cPtr == IntPtr.Zero) ? null : new Event(cPtr, true);
     return ret;
   }
 
@@ -886,6 +886,10 @@ public class freeswitch {
 
   public static void switch_core_media_bug_resume(SWIGTYPE_p_switch_core_session session) {
     freeswitchPINVOKE.switch_core_media_bug_resume(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  }
+
+  public static void switch_core_media_bug_inuse(SWIGTYPE_p_switch_media_bug bug, SWIGTYPE_p_switch_size_t readp, SWIGTYPE_p_switch_size_t writep) {
+    freeswitchPINVOKE.switch_core_media_bug_inuse(SWIGTYPE_p_switch_media_bug.getCPtr(bug), SWIGTYPE_p_switch_size_t.getCPtr(readp), SWIGTYPE_p_switch_size_t.getCPtr(writep));
   }
 
   public static SWIGTYPE_p_void switch_core_media_bug_get_user_data(SWIGTYPE_p_switch_media_bug bug) {
@@ -2338,6 +2342,11 @@ public class freeswitch {
 
   public static switch_bool_t switch_network_list_validate_ip_token(SWIGTYPE_p_switch_network_list list, uint ip, ref string token) {
     switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_network_list_validate_ip_token(SWIGTYPE_p_switch_network_list.getCPtr(list), ip, ref token);
+    return ret;
+  }
+
+  public static int switch_number_cmp(string exp, int val) {
+    int ret = freeswitchPINVOKE.switch_number_cmp(exp, val);
     return ret;
   }
 
@@ -5817,6 +5826,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_resume")]
   public static extern void switch_core_media_bug_resume(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_inuse")]
+  public static extern void switch_core_media_bug_inuse(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_get_user_data")]
   public static extern IntPtr switch_core_media_bug_get_user_data(HandleRef jarg1);
 
@@ -6701,6 +6713,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_network_list_validate_ip_token")]
   public static extern int switch_network_list_validate_ip_token(HandleRef jarg1, uint jarg2, ref string jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_number_cmp")]
+  public static extern int switch_number_cmp(string jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_username_set")]
   public static extern void switch_caller_profile_username_set(HandleRef jarg1, string jarg2);

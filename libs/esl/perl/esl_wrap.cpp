@@ -2819,7 +2819,7 @@ XS(_wrap_ESLconnection_getInfo) {
     }
     arg1 = reinterpret_cast< ESLconnection * >(argp1);
     result = (ESLevent *)(arg1)->getInfo();
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 | SWIG_SHADOW); argvi++ ;
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     XSRETURN(argvi);
   fail:
@@ -2895,7 +2895,7 @@ XS(_wrap_ESLconnection_sendRecv) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     result = (ESLevent *)(arg1)->sendRecv((char const *)arg2);
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 | SWIG_SHADOW); argvi++ ;
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     XSRETURN(argvi);
@@ -2945,7 +2945,7 @@ XS(_wrap_ESLconnection_api) {
       arg3 = reinterpret_cast< char * >(buf3);
     }
     result = (ESLevent *)(arg1)->api((char const *)arg2,(char const *)arg3);
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 | SWIG_SHADOW); argvi++ ;
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
@@ -2997,7 +2997,7 @@ XS(_wrap_ESLconnection_bgapi) {
       arg3 = reinterpret_cast< char * >(buf3);
     }
     result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 | SWIG_SHADOW); argvi++ ;
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
@@ -3067,7 +3067,7 @@ XS(_wrap_ESLconnection_recvEvent) {
     }
     arg1 = reinterpret_cast< ESLconnection * >(argp1);
     result = (ESLevent *)(arg1)->recvEvent();
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 | SWIG_SHADOW); argvi++ ;
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     XSRETURN(argvi);
   fail:
@@ -3103,7 +3103,7 @@ XS(_wrap_ESLconnection_recvEventTimed) {
     } 
     arg2 = static_cast< int >(val2);
     result = (ESLevent *)(arg1)->recvEventTimed(arg2);
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 | SWIG_SHADOW); argvi++ ;
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     
     XSRETURN(argvi);
@@ -3151,7 +3151,7 @@ XS(_wrap_ESLconnection_filter) {
     }
     arg3 = reinterpret_cast< char * >(buf3);
     result = (ESLevent *)(arg1)->filter((char const *)arg2,(char const *)arg3);
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 | SWIG_SHADOW); argvi++ ;
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;

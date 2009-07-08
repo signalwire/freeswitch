@@ -51,7 +51,7 @@ public class ESLconnection {
 
   public ESLevent getInfo() {
     long cPtr = eslJNI.ESLconnection_getInfo(swigCPtr, this);
-    return (cPtr == 0) ? null : new ESLevent(cPtr, false);
+    return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 
   public int send(String cmd) {
@@ -60,17 +60,17 @@ public class ESLconnection {
 
   public ESLevent sendRecv(String cmd) {
     long cPtr = eslJNI.ESLconnection_sendRecv(swigCPtr, this, cmd);
-    return (cPtr == 0) ? null : new ESLevent(cPtr, false);
+    return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 
   public ESLevent api(String cmd, String arg) {
     long cPtr = eslJNI.ESLconnection_api(swigCPtr, this, cmd, arg);
-    return (cPtr == 0) ? null : new ESLevent(cPtr, false);
+    return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 
   public ESLevent bgapi(String cmd, String arg) {
     long cPtr = eslJNI.ESLconnection_bgapi(swigCPtr, this, cmd, arg);
-    return (cPtr == 0) ? null : new ESLevent(cPtr, false);
+    return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 
   public int sendEvent(ESLevent send_me) {
@@ -79,17 +79,17 @@ public class ESLconnection {
 
   public ESLevent recvEvent() {
     long cPtr = eslJNI.ESLconnection_recvEvent(swigCPtr, this);
-    return (cPtr == 0) ? null : new ESLevent(cPtr, false);
+    return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 
   public ESLevent recvEventTimed(int ms) {
     long cPtr = eslJNI.ESLconnection_recvEventTimed(swigCPtr, this, ms);
-    return (cPtr == 0) ? null : new ESLevent(cPtr, false);
+    return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 
   public ESLevent filter(String header, String value) {
     long cPtr = eslJNI.ESLconnection_filter(swigCPtr, this, header, value);
-    return (cPtr == 0) ? null : new ESLevent(cPtr, false);
+    return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 
   public int events(String etype, String value) {

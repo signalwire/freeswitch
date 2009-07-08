@@ -5469,10 +5469,8 @@ SWIGINTERN PyObject *_wrap_EventConsumer_pop__SWIG_0(PyObject *SWIGUNUSEDPARM(se
     SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "EventConsumer_pop" "', argument " "2"" of type '" "int""'");
   } 
   arg2 = static_cast< int >(val2);
-  Py_BEGIN_ALLOW_THREADS;
   result = (Event *)(arg1)->pop(arg2);
-  Py_END_ALLOW_THREADS;
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, 0 |  0 );
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -5493,10 +5491,8 @@ SWIGINTERN PyObject *_wrap_EventConsumer_pop__SWIG_1(PyObject *SWIGUNUSEDPARM(se
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_pop" "', argument " "1"" of type '" "EventConsumer *""'"); 
   }
   arg1 = reinterpret_cast< EventConsumer * >(argp1);
-  Py_BEGIN_ALLOW_THREADS;
   result = (Event *)(arg1)->pop();
-  Py_END_ALLOW_THREADS;
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, 0 |  0 );
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;

@@ -93,12 +93,12 @@ public class EventConsumer {
 
   public Event pop(int block) {
     long cPtr = freeswitchJNI.EventConsumer_pop__SWIG_0(swigCPtr, this, block);
-    return (cPtr == 0) ? null : new Event(cPtr, false);
+    return (cPtr == 0) ? null : new Event(cPtr, true);
   }
 
   public Event pop() {
     long cPtr = freeswitchJNI.EventConsumer_pop__SWIG_1(swigCPtr, this);
-    return (cPtr == 0) ? null : new Event(cPtr, false);
+    return (cPtr == 0) ? null : new Event(cPtr, true);
   }
 
 }

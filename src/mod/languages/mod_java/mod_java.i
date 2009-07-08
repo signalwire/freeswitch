@@ -7,7 +7,7 @@
 %}
 
 %ignore SwitchToMempool;   
-
+%newobject EventConsumer::pop;
 
 
 // I thought we were using swig because it's easier than the alternatives :-)

@@ -71,7 +71,6 @@ class ESLevent {
 class ESLconnection {
  private:
 	esl_handle_t handle;
-	ESLevent *last_event_obj;
  public:
 	ESLconnection(const char *host, const char *port, const char *password);
 	ESLconnection(int socket);

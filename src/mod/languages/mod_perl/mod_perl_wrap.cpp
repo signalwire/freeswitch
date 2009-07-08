@@ -4901,7 +4901,7 @@ XS(_wrap_EventConsumer_pop__SWIG_0) {
     } 
     arg2 = static_cast< int >(val2);
     result = (Event *)(arg1)->pop(arg2);
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, 0 | SWIG_SHADOW); argvi++ ;
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     
     XSRETURN(argvi);
@@ -4931,7 +4931,7 @@ XS(_wrap_EventConsumer_pop__SWIG_1) {
     }
     arg1 = reinterpret_cast< EventConsumer * >(argp1);
     result = (Event *)(arg1)->pop();
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, 0 | SWIG_SHADOW); argvi++ ;
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     XSRETURN(argvi);
   fail:

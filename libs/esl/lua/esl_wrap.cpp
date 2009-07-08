@@ -2339,7 +2339,7 @@ static int _wrap_ESLconnection_getInfo(lua_State* L) {
   
   result = (ESLevent *)(arg1)->getInfo();
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2395,7 +2395,7 @@ static int _wrap_ESLconnection_sendRecv(lua_State* L) {
   arg2 = (char *)lua_tostring(L, 2);
   result = (ESLevent *)(arg1)->sendRecv((char const *)arg2);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2428,7 +2428,7 @@ static int _wrap_ESLconnection_api(lua_State* L) {
   }
   result = (ESLevent *)(arg1)->api((char const *)arg2,(char const *)arg3);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2461,7 +2461,7 @@ static int _wrap_ESLconnection_bgapi(lua_State* L) {
   }
   result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2518,7 +2518,7 @@ static int _wrap_ESLconnection_recvEvent(lua_State* L) {
   
   result = (ESLevent *)(arg1)->recvEvent();
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2546,7 +2546,7 @@ static int _wrap_ESLconnection_recvEventTimed(lua_State* L) {
   arg2 = (int)lua_tonumber(L, 2);
   result = (ESLevent *)(arg1)->recvEventTimed(arg2);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2577,7 +2577,7 @@ static int _wrap_ESLconnection_filter(lua_State* L) {
   arg3 = (char *)lua_tostring(L, 3);
   result = (ESLevent *)(arg1)->filter((char const *)arg2,(char const *)arg3);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;

@@ -28,6 +28,8 @@ typedef unsigned long in_addr_t;
   }
 %}
 
+%newobject EventConsumer::pop;
+
 #define SWITCH_DECLARE(type) type
 #define SWITCH_DECLARE_NONSTD(type) type
 #define SWITCH_MOD_DECLARE(type) type

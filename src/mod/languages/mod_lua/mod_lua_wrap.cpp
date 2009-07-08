@@ -3860,7 +3860,7 @@ static int _wrap_EventConsumer_pop__SWIG_0(lua_State* L) {
   arg2 = (int)lua_tonumber(L, 2);
   result = (Event *)(arg1)->pop(arg2);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Event,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Event,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3885,7 +3885,7 @@ static int _wrap_EventConsumer_pop__SWIG_1(lua_State* L) {
   
   result = (Event *)(arg1)->pop();
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Event,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Event,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;

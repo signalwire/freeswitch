@@ -19,6 +19,7 @@
 
 
 %ignore SwitchToMempool;   
+%newobject EventConsumer::pop;
 
 /**
  * tell swig to grok everything defined in these header files and
