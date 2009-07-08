@@ -1,5 +1,6 @@
 json-c=json-c-0.8
 BASE=../../../..
+WANT_CURL=yes
 
 JSON_DIR=$(BASE)/libs/$(json-c)
 
