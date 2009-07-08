@@ -213,7 +213,8 @@ static switch_xml_t lua_fetch(const char *section,
 	if (!switch_strlen_zero(globals.xml_handler)) {
 		lua_State *L = lua_init();
 		char *mycmd = strdup(globals.xml_handler);
-		char *str;
+		const char *str;
+		int error;
 
 		switch_assert(mycmd);
 
@@ -237,22 +238,27 @@ static switch_xml_t lua_fetch(const char *section,
 			mod_lua_conjure_event(L, params, "params", 1);
 		}
 
-		lua_parse_and_execute(L, mycmd);
+		if( error = lua_parse_and_execute(L, mycmd) ){
+		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "LUA script parse/execute error!\n");
+		    return NULL;
+		}
 
 		lua_getfield(L, LUA_GLOBALSINDEX, "XML_STRING");
-		str = strdup( lua_tostring(L, 1) );
+		str = lua_tostring(L, 1);
 		
 		if (str) {
 			if (switch_strlen_zero(str)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
-			} else if (!(xml = switch_xml_parse_str((char *) str, strlen(str)))) {
+			} else if (!(xml = switch_xml_parse_str_dynamic((char *)str, SWITCH_TRUE))) { 
+				/* const char -> char conversion was OK because switch_xml_parse_str_dynamic makes a duplicate of str 
+				   and saves this duplcate as root->m which is freed when switch_xml_free is issued
+				*/
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
 			}
 		}
 
 		lua_uninit(L);
 		free(mycmd);
-		free(str);
 	}
 
 	return xml;
