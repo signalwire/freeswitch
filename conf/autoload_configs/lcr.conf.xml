@@ -31,6 +31,7 @@ AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end
 ORDER BY digits DESC, random();
       "/>
     </profile>
+
     =============================================================
     PostgreSQL with contrib prefix module which supports fast
     prefix queries.  Ideal option.  Alternate syntax which requies
@@ -44,6 +45,7 @@ AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end
 ORDER BY digits DESC, random();
       "/>
     </profile>
+
     =============================================================
     Demonstrates use of computed inlist.
     =============================================================
