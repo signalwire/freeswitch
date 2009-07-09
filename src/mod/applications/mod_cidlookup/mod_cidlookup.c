@@ -443,8 +443,10 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 	
 done:
-	switch_event_destroy(&event);
-	if (!session) {
+	if (event) {
+		switch_event_destroy(&event);
+	}
+	if (!session && pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
 }
@@ -510,8 +512,10 @@ usage:
 	
 done: 
 	switch_safe_free(mydata);
-	switch_event_destroy(&event);
-	if (!session) {
+	if (event) {
+		switch_event_destroy(&event);
+	}
+	if (!session && pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
 	return status;
