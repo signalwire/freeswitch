@@ -384,8 +384,6 @@ START_TEST(register_1_2_2_2)
   s2_nua_fast_forward(120, s2base->root);	  /* Default keepalive interval */
   mark_point();
 
-  receive_natted = "received=4.255.255.10";
-
   m = s2_sip_wait_for_request(SIP_METHOD_OPTIONS);
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
@@ -432,8 +430,6 @@ START_TEST(register_1_2_2_3)
 			    NUTAG_OUTBOUND("no-options-keepalive, no-validate"),
 			    TAG_END());
   s2->registration->nh = nh;
-
-  receive_natted = "received=4.255.255.10";
 
   s2_nua_fast_forward(3600, s2base->root);
   mark_point();
