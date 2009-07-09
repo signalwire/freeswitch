@@ -359,7 +359,7 @@ static char *do_db_lookup(switch_memory_pool_t *pool, switch_event_t *event, con
 	return name;
 }
 
-static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, switch_bool_t skipurl) {
+static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, switch_bool_t skipurl, switch_bool_t skipcitystate) {
 	char *number = NULL;
 	char *name = NULL;
 	
@@ -383,7 +383,7 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 		}
 	}
 	/* only do the below if it is a nanpa number */
-	if (strlen(number) == 11 && number[0] == '1' &&
+	if (!skipcitystate && strlen(number) == 11 && number[0] == '1' &&
 		!name && switch_odbc_available() && globals.master_odbc && globals.citystate_sql) {
 		
 		name = do_db_lookup(pool, event, number, globals.citystate_sql);
@@ -395,9 +395,10 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	
-	char *argv[3] = { 0 };
+	char *argv[4] = { 0 };
 	int argc;
 	char *mydata = NULL;
+	int i;
 
 	switch_memory_pool_t *pool = NULL;
 	switch_event_t *event = NULL;
@@ -406,6 +407,7 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 	char *name = NULL;
 	const char *number = NULL;
 	switch_bool_t skipurl = SWITCH_FALSE;
+	switch_bool_t skipcitystate = SWITCH_FALSE;
 	
 	if (session) {
 		pool = switch_core_session_get_pool(session);
@@ -422,8 +424,12 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 		if (argc > 0) {
 			number = switch_core_session_strdup(session, argv[0]);
 		}
-		if (argc > 1) {
-			skipurl = SWITCH_TRUE;
+		for (i = 1; i < argc; i++) {
+			if (!strcasecmp(argv[i], "skipurl")) {
+				skipurl = SWITCH_TRUE;
+			} else if (!strcasecmp(argv[i], "skipcitystate")) {
+				skipcitystate = SWITCH_TRUE;
+			}
 		}
 	}
 	
@@ -432,7 +438,7 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 	}
 	
 	if (number) {
-		name = do_lookup(pool, event, number, skipurl);
+		name = do_lookup(pool, event, number, skipurl, skipcitystate);
 	}
 	
 	if (name && channel) {
@@ -453,14 +459,16 @@ done:
 SWITCH_STANDARD_API(cidlookup_function)
 {
 	switch_status_t status;
-	char *argv[3] = { 0 };
+	char *argv[4] = { 0 };
 	int argc;
+	int i;
 	char *name = NULL;
 	char *mydata = NULL;
 
 	switch_memory_pool_t *pool = NULL;
 	switch_event_t *event = NULL;
 	switch_bool_t skipurl = SWITCH_FALSE;
+	switch_bool_t skipcitystate = SWITCH_FALSE;
 	
 	if (switch_strlen_zero(cmd)) {
 		switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
@@ -493,11 +501,15 @@ SWITCH_STANDARD_API(cidlookup_function)
 
 			switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 		}
-		if (argc > 1 && !strcmp("skipurl", argv[1])) {
-			skipurl = SWITCH_TRUE;
+		for (i = 1; i < argc; i++) {
+			if (!strcasecmp(argv[i], "skipurl")) {
+				skipurl = SWITCH_TRUE;
+			} else if (!strcasecmp(argv[i], "skipcitystate")) {
+				skipcitystate = SWITCH_TRUE;
+			}
 		}
 
-		name = do_lookup(pool, event, argv[0], skipurl);
+		name = do_lookup(pool, event, argv[0], skipurl, skipcitystate);
 		if (name) {
 			stream->write_function(stream, name);
 		} else {
