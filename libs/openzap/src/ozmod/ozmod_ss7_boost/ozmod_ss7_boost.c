@@ -261,7 +261,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 	event.trunk_group = tg;
 
 	if (check_congestion(tg)) {
-		zap_log(ZAP_LOG_CRIT, "All circuits are busy. (BOOST REQUESTED BACK OFF)\n");
+		zap_log(ZAP_LOG_CRIT, "All circuits are busy. Trunk Group=%i (BOOST REQUESTED BACK OFF)\n",tg+1);
 		*zchan = NULL;
 		return ZAP_FAIL;
 	}
@@ -371,11 +371,6 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(ss7_boost_outgoing_call)
 {
 	zap_status_t status = ZAP_SUCCESS;
-
-	if (check_congestion(0)) {
-		zap_log(ZAP_LOG_CRIT, "All circuits are busy. (BOOST REQUESTED BACK OFF)\n");
-		return ZAP_FAIL;
-	}
 
 	return status;
 }
@@ -652,7 +647,9 @@ static void handle_call_start(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_
 	}
 	zap_set_string(zchan->caller_data.ani.digits, (char *)event->calling_number_digits);
 	zap_set_string(zchan->caller_data.dnis.digits, (char *)event->called_number_digits);
-	zap_set_string(zchan->caller_data.rdnis.digits, (char *)event->isup_in_rdnis);
+	if (event->isup_in_rdnis_size) {
+		zap_set_string(zchan->caller_data.rdnis.digits, (char *)event->isup_in_rdnis);
+	}
 	zchan->caller_data.screen = event->calling_number_screening_ind;
 	zchan->caller_data.pres = event->calling_number_presentation;
 	zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
