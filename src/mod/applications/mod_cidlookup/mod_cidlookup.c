@@ -42,7 +42,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load);
  */
 SWITCH_MODULE_DEFINITION(mod_cidlookup, mod_cidlookup_load, mod_cidlookup_shutdown, NULL);
 
-static char *SYNTAX = "cidlookup status|number [skipurl]";
+static char *SYNTAX = "cidlookup status|number [skipurl] [skipcitystate]";
 
 static struct {
 	char *url;
