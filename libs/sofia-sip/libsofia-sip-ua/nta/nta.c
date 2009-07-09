@@ -510,6 +510,7 @@ struct nta_outgoing_s
 
   unsigned short      	orq_status;
   unsigned char         orq_retries;    /**< Number of tries this far */
+
   unsigned orq_default:1;	        /**< This is default transaction */
   unsigned orq_inserted:1;
   unsigned orq_resolved:1;
@@ -2621,11 +2622,12 @@ int nta_tpn_by_via(tp_name_t *tpn, sip_via_t const *v, int *using_rport)
 }
 
 /** Get transport name from URL. */
-int nta_tpn_by_url(su_home_t *home,
-		   tp_name_t *tpn,
-		   char const **scheme,
-		   char const **port,
-		   url_string_t const *us)
+static int
+nta_tpn_by_url(su_home_t *home,
+	       tp_name_t *tpn,
+	       char const **scheme,
+	       char const **port,
+	       url_string_t const *us)
 {
   url_t url[1];
   isize_t n;
@@ -2650,10 +2652,8 @@ int nta_tpn_by_url(su_home_t *home,
   SU_DEBUG_7(("nta: selecting scheme %s\n", url->url_scheme));
 
   *scheme = url->url_scheme;
-  if (su_casematch(url->url_scheme, "sips"))
-    tpn->tpn_proto = "tls";
-  else
-    tpn->tpn_proto = "*";
+
+  tpn->tpn_proto = NULL;
   tpn->tpn_canon = url->url_host;
   tpn->tpn_host = url->url_host;
 
@@ -2677,6 +2677,14 @@ int nta_tpn_by_url(su_home_t *home,
     tpn->tpn_port = url->url_port;
 
   tpn->tpn_ident = NULL;
+
+  if (tpn->tpn_proto)
+    return 1;
+
+  if (su_casematch(url->url_scheme, "sips"))
+    tpn->tpn_proto = "tls";
+  else
+    tpn->tpn_proto = "*";
 
   return 0;
 }
@@ -7105,7 +7113,7 @@ static int outgoing_default_cb(nta_outgoing_magic_t *magic,
 			       sip_t const *sip);
 
 #if HAVE_SOFIA_SRESOLV
-static void outgoing_resolve(nta_outgoing_t *orq);
+static void outgoing_resolve(nta_outgoing_t *orq, int explicit_transport);
 su_inline void outgoing_cancel_resolver(nta_outgoing_t *orq);
 su_inline void outgoing_destroy_resolver(nta_outgoing_t *orq);
 static int outgoing_other_destinations(nta_outgoing_t const *orq);
@@ -7654,8 +7662,9 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
   ta_list ta;
   char const *scheme = NULL;
   char const *port = NULL;
-  int invalid, resolved, stateless = 0, user_via = agent->sa_user_via;
+  int invalid, resolved = 0, stateless = 0, user_via = agent->sa_user_via;
   int invite_100rel = agent->sa_invite_100rel;
+  int explicit_transport = 1;
 
   tagi_t const *t;
   tport_t *override_tport = NULL;
@@ -7778,23 +7787,28 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
   }
   else if (route_url && !orq->orq_user_tport) {
     invalid = nta_tpn_by_url(home, orq->orq_tpn, &scheme, &port, route_url);
+    if (invalid >= 0) {
+      explicit_transport = invalid > 0;
+      if (override_tport) {	/* Use transport protocol name from transport  */
+	if (strcmp(orq->orq_tpn->tpn_proto, "*") == 0)
+	  orq->orq_tpn->tpn_proto = tport_name(override_tport)->tpn_proto;
+      }
 
-    if (override_tport) {	/* Use transport protocol name from transport  */
-      if (strcmp(orq->orq_tpn->tpn_proto, "*") == 0)
-	orq->orq_tpn->tpn_proto = tport_name(override_tport)->tpn_proto;
+      resolved = tport_name_is_resolved(orq->orq_tpn);
+      orq->orq_url = url_hdup(home, sip->sip_request->rq_url);
+      if (route_url != (url_string_t *)agent->sa_default_proxy)
+	orq->orq_route = url_hdup(home, route_url->us_url);
     }
-
-    resolved = tport_name_is_resolved(orq->orq_tpn);
-    orq->orq_url = url_hdup(home, sip->sip_request->rq_url);
-    if (route_url != (url_string_t *)agent->sa_default_proxy)
-      orq->orq_route = url_hdup(home, route_url->us_url);
   }
   else {
     invalid = nta_tpn_by_url(home, orq->orq_tpn, &scheme, &port,
 			     (url_string_t *)sip->sip_request->rq_url);
-    resolved = tport_name_is_resolved(orq->orq_tpn);
+    if (invalid >= 0) {
+      explicit_transport = invalid > 0;
+      resolved = tport_name_is_resolved(orq->orq_tpn);
+      sip_fragment_clear(sip->sip_request->rq_common);
+    }
     orq->orq_url = url_hdup(home, sip->sip_request->rq_url);
-    sip_fragment_clear(sip->sip_request->rq_common);
   }
 
   if (!override_tport)
@@ -7892,7 +7906,7 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
     outgoing_prepare_send(orq);
 #if HAVE_SOFIA_SRESOLV
   else
-    outgoing_resolve(orq);
+    outgoing_resolve(orq, explicit_transport);
 #endif
 
   if (stateless &&
@@ -9697,6 +9711,8 @@ struct sipdns_resolver
 
   struct sipdns_query  *sr_done;       	/**< Completed intermediate results */
 
+  struct sipdns_tport const *sr_tport;  /**< Selected transport */
+
   /** Transports to consider for this request */
   struct sipdns_tport const *sr_tports[SIPDNS_TRANSPORTS + 1];
 
@@ -9761,10 +9777,11 @@ static void outgoing_query_results(nta_outgoing_t *orq,
 
 /** Resolve a request destination */
 static void
-outgoing_resolve(nta_outgoing_t *orq)
+outgoing_resolve(nta_outgoing_t *orq, int explicit_transport)
 {
   struct sipdns_resolver *sr = NULL;
   char const *tpname = orq->orq_tpn->tpn_proto;
+  int tport_known = strcmp(tpname, "*") != 0;
 
   if (orq->orq_agent->sa_resolver)
     orq->orq_resolver = sr = su_zalloc(orq->orq_agent->sa_home, (sizeof *sr));
@@ -9796,14 +9813,15 @@ outgoing_resolve(nta_outgoing_t *orq)
   */
   if (sr->sr_tpn->tpn_port)
     sr->sr_use_naptr = 0, sr->sr_use_srv = 0;
+
   /* RFC3263:
      If [...] a transport was specified explicitly, the client performs an
      SRV query for that specific transport,
   */
-  else if (strcmp(tpname, "*") != 0)
+  if (explicit_transport)
     sr->sr_use_naptr = 0;
 
-  if (sr->sr_use_srv || sr->sr_use_naptr) {
+  {
     /* Initialize sr_tports */
     tport_t *tport;
     char const *ident = sr->sr_tpn->tpn_ident;
@@ -9813,7 +9831,7 @@ outgoing_resolve(nta_outgoing_t *orq)
 	 tport;
 	 tport = tport_next(tport)) {
       tp_name_t const *tpn = tport_name(tport);
-      if (strcmp(tpname, "*") && !su_casematch(tpn->tpn_proto, tpname))
+      if (tport_known && !su_casematch(tpn->tpn_proto, tpname))
 	continue;
       if (ident && (tpn->tpn_ident == NULL || strcmp(ident, tpn->tpn_ident)))
 	continue;
@@ -9833,8 +9851,10 @@ outgoing_resolve(nta_outgoing_t *orq)
       }
       sr->sr_tports[i] = sipdns_tports + j;
 
-      if (strcmp(tpname, "*")) /* Looking for only one transport */
+      if (tport_known) /* Looking for only one transport */ {
+	sr->sr_tport = sipdns_tports + j;
 	break;
+      }
     }
 
     /* Nothing found */
@@ -10082,9 +10102,9 @@ int outgoing_make_srv_query(nta_outgoing_t *orq)
   struct sipdns_resolver *sr = orq->orq_resolver;
   su_home_t *home = msg_home(orq->orq_request);
   struct sipdns_query *sq;
-  char const *host;
+  char const *host, *prefix;
   int i;
-  size_t hlen;
+  size_t hlen, plen;
 
   sr->sr_use_srv = 0;
 
@@ -10092,8 +10112,11 @@ int outgoing_make_srv_query(nta_outgoing_t *orq)
   hlen = strlen(host) + 1;
 
   for (i = 0; sr->sr_tports[i]; i++) {
-    char const *prefix = sr->sr_tports[i]->prefix;
-    size_t plen = strlen(prefix);
+    if (sr->sr_tport && sr->sr_tports[i] != sr->sr_tport)
+      continue;
+
+    prefix = sr->sr_tports[i]->prefix;
+    plen = strlen(prefix);
 
     sq = su_zalloc(home, (sizeof *sq) + plen + hlen);
     if (sq) {
@@ -10225,6 +10248,7 @@ void outgoing_answer_naptr(sres_context_t *orq,
 
   for (i = 0; answers && answers[i]; i++) {
     sres_naptr_record_t const *na = answers[i]->sr_naptr;
+    struct sipdns_tport const *tport = NULL;
     uint16_t type;
 
     if (na->na_record->r_status)
@@ -10253,8 +10277,12 @@ void outgoing_answer_naptr(sres_context_t *orq,
     /* Use NAPTR results, don't try extra SRV/A/AAAA records */
     sr->sr_use_srv = 0, sr->sr_use_a_aaaa = 0;
 
+    if (sr->sr_tport) {
+      if (su_casematch(na->na_services, sr->sr_tport->service))
+	tport = sr->sr_tport;
+    }
     /* Check if we have a transport mathing with service */
-    for (j = 0; sr->sr_tports[j]; j++) {
+    else for (j = 0; sr->sr_tports[j]; j++) {
       /*
        * Syntax of services is actually more complicated
        * but comparing the values in the transport list
@@ -10265,8 +10293,10 @@ void outgoing_answer_naptr(sres_context_t *orq,
 
       tpn->tpn_proto = sr->sr_tports[j]->name;
 
-      if (tport_primary_by_name(agent->sa_tports, tpn))
+      if (tport_primary_by_name(agent->sa_tports, tpn)) {
+	tport = sr->sr_tport = sr->sr_tports[j];
 	break;
+      }
     }
 
     SU_DEBUG_5(("nta: %s IN NAPTR %u %u \"%s\" \"%s\" \"%s\" %s%s\n",
@@ -10274,9 +10304,9 @@ void outgoing_answer_naptr(sres_context_t *orq,
 		na->na_order, na->na_prefer,
 		na->na_flags, na->na_services,
 		na->na_regexp, na->na_replace,
-		!sr->sr_tports[j] ? " (not supported)" : ""));
+		tport ? "" : " (not used)"));
 
-    if (!sr->sr_tports[j])
+    if (!tport)
       continue;
 
     /* OK, we found matching NAPTR */
@@ -10303,10 +10333,10 @@ void outgoing_answer_naptr(sres_context_t *orq,
     *tail = sq, tail = &sq->sq_next;
     sq->sq_otype = sres_type_naptr;
     sq->sq_priority = na->na_prefer;
-    sq->sq_weight = j;
+    sq->sq_weight = 1;
     sq->sq_type = type;
     sq->sq_domain = memcpy(sq + 1, na->na_replace, rlen);
-    sq->sq_proto = sr->sr_tports[j]->name;
+    sq->sq_proto = tport->name;
   }
 
   sres_free_answers(orq->orq_agent->sa_resolver, answers);
