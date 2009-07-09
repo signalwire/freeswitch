@@ -64,7 +64,7 @@ static void usage(int exitcode)
 int main(int argc, char *argv[])
 {
   int i, failed = 0, selected = 0;
-  int threading;
+  int threading, single_thread, multi_thread;
   char const *xml = NULL;
   Suite *suite = suite_create("Unit tests for Sofia-SIP UA Engine");
   SRunner *runner;
@@ -100,15 +100,27 @@ int main(int argc, char *argv[])
   if (!selected)
     s2_select_tests(getenv("CHECK_NUA_CASES"));
 
-  check_register_cases(suite, threading = 0);
-  check_simple_cases(suite, threading = 0);
-  check_session_cases(suite, threading = 0);
-  check_etsi_cases(suite, threading = 0);
+  if (getenv("CHECK_NUA_THREADING")) {
+    single_thread = strcmp(getenv("CHECK_NUA_THREADING"), "no");
+    multi_thread = !single_thread;
+  }
+  else {
+    single_thread = multi_thread = 1;
+  }
 
-  check_register_cases(suite, threading = 1);
-  check_session_cases(suite, threading = 1);
-  check_etsi_cases(suite, threading = 1);
-  check_simple_cases(suite, threading = 1);
+  if (single_thread) {
+    check_register_cases(suite, threading = 0);
+    check_simple_cases(suite, threading = 0);
+    check_session_cases(suite, threading = 0);
+    check_etsi_cases(suite, threading = 0);
+  }
+
+  if (multi_thread) {
+    check_register_cases(suite, threading = 1);
+    check_session_cases(suite, threading = 1);
+    check_etsi_cases(suite, threading = 1);
+    check_simple_cases(suite, threading = 1);
+  }
 
   runner = srunner_create(suite);
 

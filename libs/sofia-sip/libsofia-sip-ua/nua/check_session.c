@@ -1496,6 +1496,79 @@ START_TEST(call_2_4_4)
 }
 END_TEST
 
+START_TEST(call_2_4_5)
+{
+  nua_handle_t *nh;
+  struct message *invite, *prack, *cancel;
+  int i;
+  int with_sdp;
+  sip_from_t *branch1, *branch2;
+
+  /* Testcase for bug FSCORE-338 -
+     forked transactions getting canceled and terminated properly. */
+
+  S2_CASE("2.4.5", "Destroy proceeding call with 100rel",
+	  "NUA sends INVITE, "
+	  "receives 183, sends PRACK, receives 200 for it, "
+	  "receives 180, sends PRACK, receives 200 for it, "
+          "handle is destroyed.");
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
+
+  invite = invite_sent_by_nua(
+    nh,
+    NUTAG_PROXY(s2sip->tcp.contact->m_url),
+    NUTAG_MEDIA_ENABLE(0),
+    NUTAG_AUTOACK(0),
+    SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+    SIPTAG_PAYLOAD_STR(
+      "v=0" CRLF
+      "o=- 6805647540234172778 5821668777690722690 IN IP4 127.0.0.1" CRLF
+      "s=-" CRLF
+      "c=IN IP4 127.0.0.1" CRLF
+      "m=audio 5004 RTP/AVP 0 8" CRLF),
+    TAG_END());
+
+  prack = respond_with_100rel(invite, dialog, with_sdp = 0,
+			      SIP_183_SESSION_PROGRESS,
+			      SIPTAG_CONTACT(s2sip->tcp.contact),
+			      TAG_END());
+  s2_sip_respond_to(prack, dialog, SIP_200_OK, TAG_END());
+  s2_sip_free_message(prack), prack = NULL;
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+  fail_unless_event(nua_r_prack, 200);
+
+  prack = respond_with_100rel(invite, dialog, with_sdp = 0,
+			      SIP_180_RINGING,
+			      SIPTAG_CONTACT(s2sip->tcp.contact),
+			      TAG_END());
+  s2_sip_respond_to(prack, dialog, SIP_200_OK, TAG_END());
+  s2_sip_free_message(prack), prack = NULL;
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+  fail_unless_event(nua_r_prack, 200);
+
+  branch1 = dialog->local;
+  branch2 = dialog->local = sip_from_dup(dialog->home, invite->sip->sip_to);
+  sip_from_tag(dialog->home, dialog->local, s2_sip_generate_tag(dialog->home));
+
+  nua_handle_destroy(nh), nh = NULL;
+
+  cancel = s2_sip_wait_for_request(SIP_METHOD_CANCEL);
+  s2_sip_respond_to(cancel, dialog, SIP_200_OK, TAG_END());
+
+  for (i = 1; i < 4; i++) {
+    s2_nua_fast_forward(1, s2base->root);
+  }
+
+  s2_sip_respond_to(invite, dialog, SIP_487_REQUEST_CANCELLED, TAG_END());
+  fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
+
+  /* Time out requests */
+  for (i = 1; i < 128; i++) {
+    s2_nua_fast_forward(1, s2base->root);
+  }
+}
+END_TEST
 
 TCase *invite_100rel_tcase(int threading)
 {
@@ -1506,6 +1579,7 @@ TCase *invite_100rel_tcase(int threading)
     tcase_add_test(tc, call_2_4_2);
     tcase_add_test(tc, call_2_4_3);
     tcase_add_test(tc, call_2_4_4);
+    tcase_add_test(tc, call_2_4_5);
   }
   return tc;
 }
