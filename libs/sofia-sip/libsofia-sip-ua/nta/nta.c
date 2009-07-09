@@ -513,7 +513,8 @@ struct nta_outgoing_s
   unsigned orq_default:1;	        /**< This is default transaction */
   unsigned orq_inserted:1;
   unsigned orq_resolved:1;
-  unsigned orq_prepared:1; /**< outgoing_prepare() called */
+  unsigned orq_via_added:1;
+  unsigned orq_prepared:1;
   unsigned orq_canceled:1;
   unsigned orq_terminated:1;
   unsigned orq_destroyed:1;
@@ -2533,19 +2534,22 @@ int outgoing_insert_via(nta_outgoing_t *orq,
   msg_t *msg = orq->orq_request;
   sip_t *sip = sip_object(msg);
   char const *branch = orq->orq_via_branch;
+  int already = orq->orq_user_via || orq->orq_via_added;
   int user_via = orq->orq_user_via;
   sip_via_t *v;
   int clear = 0;
 
   assert(sip); assert(via);
 
-  if (user_via && sip->sip_via) {
-    /* Use existing @Via provided by application */
+  if (already && sip->sip_via) {
+    /* Use existing @Via */
     v = sip->sip_via;
   }
   else if (msg && via && sip->sip_request &&
 	   (v = sip_via_copy(msg_home(msg), via))) {
-    msg_header_insert(msg, (msg_pub_t *)sip, (msg_header_t *)v);
+    if (msg_header_insert(msg, (msg_pub_t *)sip, (msg_header_t *)v) < 0)
+      return -1;
+    orq->orq_via_added = 1;
   }
   else
     return -1;
@@ -7972,8 +7976,6 @@ outgoing_send_via(nta_outgoing_t *orq, tport_t *tp)
     outgoing_reply(orq, 503, "Cannot insert Via", 1);
     return;
   }
-
-  orq->orq_user_via = 1;
 
 #if HAVE_SOFIA_SMIME
   {
