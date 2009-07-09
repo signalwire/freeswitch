@@ -754,6 +754,62 @@ START_TEST(notify_6_3_4)
 }
 END_TEST
 
+START_TEST(notify_6_3_5)
+{
+  nua_handle_t *nh;
+  struct message *notify;
+  struct event *response;
+  sip_t *sip;
+
+  S2_CASE("6.3.4", "NOTIFY server - terminate with error response to NOTIFY",
+	  "NUA receives SUBSCRIBE, sends 202 and NOTIFY. "
+	  "The subscription terminates when watcher "
+	  "returns 481 to NOTIFY.");
+
+  nh = subscribe_to_nua("presence", SIPTAG_EXPIRES_STR("300"), TAG_END());
+
+  nua_notify(nh,
+	     SIPTAG_SUBSCRIPTION_STATE_STR("active"),
+	     SIPTAG_PAYLOAD_STR(presence_closed),
+	     TAG_END());
+  notify = s2_sip_wait_for_request(SIP_METHOD_NOTIFY);
+  fail_unless(notify != NULL);
+  sip = notify->sip;
+  fail_unless(sip->sip_subscription_state != NULL);
+  fail_unless(su_strmatch(sip->sip_subscription_state->ss_substate,
+			  "active"));
+  s2_sip_respond_to(notify, dialog, SIP_200_OK, TAG_END());
+  fail_unless_event(nua_r_notify, 200);
+
+  nua_notify(nh,
+	     SIPTAG_SUBSCRIPTION_STATE_STR("active"),
+	     SIPTAG_PAYLOAD_STR(presence_open),
+	     TAG_END());
+  notify = s2_sip_wait_for_request(SIP_METHOD_NOTIFY);
+  fail_unless(notify != NULL);
+  sip = notify->sip;
+  fail_unless(sip->sip_subscription_state != NULL);
+  fail_unless(su_strmatch(sip->sip_subscription_state->ss_substate,
+			  "active"));
+
+  nua_notify(nh,
+	     NUTAG_NEWSUB(1),
+	     SIPTAG_SUBSCRIPTION_STATE_STR("active"),
+	     SIPTAG_PAYLOAD_STR(presence_open),
+	     TAG_END());
+
+  s2_sip_respond_to(notify, dialog, SIP_481_NO_TRANSACTION, TAG_END());
+  response = s2_wait_for_event(nua_r_notify, 481);
+  fail_unless(s2_event_substate(response) == nua_substate_terminated);
+
+  notify = s2_sip_wait_for_request(SIP_METHOD_NOTIFY);
+  s2_sip_respond_to(notify, dialog, SIP_481_NO_TRANSACTION, TAG_END());
+  response = s2_wait_for_event(nua_r_notify, 481);
+  fail_unless(s2_event_substate(response) == nua_substate_terminated);
+
+  nua_handle_destroy(nh);
+}
+END_TEST
 
 TCase *notifier_tcase(int threading)
 {
@@ -768,6 +824,7 @@ TCase *notifier_tcase(int threading)
     tcase_add_test(tc, notify_6_3_2);
     tcase_add_test(tc, notify_6_3_3);
     tcase_add_test(tc, notify_6_3_4);
+    tcase_add_test(tc, notify_6_3_5);
   }
   return tc;
 }
