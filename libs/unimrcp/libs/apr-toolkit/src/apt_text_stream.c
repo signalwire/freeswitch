@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <stdlib.h>
+#include <stdio.h>
 #include <apr_uuid.h>
 #include "apt_text_stream.h"
 
@@ -307,6 +309,45 @@ APT_DECLARE(apt_bool_t) apt_boolean_value_generate(apt_bool_t value, apt_text_st
 	return TRUE;
 }
 
+/** Parse size_t value */
+APT_DECLARE(apr_size_t) apt_size_value_parse(const apt_str_t *str)
+{
+	return str->buf ? atol(str->buf) : 0;
+}
+
+/** Generate apr_size_t value */
+APT_DECLARE(apt_bool_t) apt_size_value_generate(apr_size_t value, apt_text_stream_t *stream)
+{
+	int length = sprintf(stream->pos, "%"APR_SIZE_T_FMT, value);
+	if(length <= 0) {
+		return FALSE;
+	}
+	stream->pos += length;
+	return TRUE;
+}
+
+/** Parse float value */
+APT_DECLARE(float) apt_float_value_parse(const apt_str_t *str)
+{
+	return str->buf ? (float)atof(str->buf) : 0;
+}
+
+/** Generate float value */
+APT_DECLARE(apt_bool_t) apt_float_value_generate(float value, apt_text_stream_t *stream)
+{
+	char *end;
+	int length = sprintf(stream->pos,"%f",value);
+	if(length <= 0) {
+		return FALSE;
+	}
+
+	/* remove trailing 0s (if any) */
+	end = stream->pos + length -1;
+	while(*end == 0x30 && end != stream->pos) end--;
+
+	stream->pos = end + 1;
+	return TRUE;
+}
 
 /** Generate value plus the length (number of digits) of the value itself. */
 APT_DECLARE(apt_bool_t) apt_var_length_value_generate(apr_size_t *value, apr_size_t max_count, apt_str_t *str)

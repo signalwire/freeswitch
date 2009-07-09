@@ -14,6 +14,6 @@ INCLUDES                   = -Iinclude \
 
 plugin_LTLIBRARIES         = mrcpflite.la
 
-mrcpflite_la_SOURCES       = src/mrcp_flite.c
+mrcpflite_la_SOURCES       = src/mrcp_flite.c src/flite_voices.c
 mrcpflite_la_LDFLAGS       = -module $(PLUGIN_LT_VERSION)
 mrcpflite_la_LIBADD        = $(UNIMRCP_FLITE_LIBS) -lm

@@ -350,8 +350,6 @@ static apt_bool_t apt_net_server_task_run(apt_task_t *base)
 	}
 
 	apt_net_server_task_pollset_destroy(task);
-
-	apt_task_child_terminate(task->base);
 	return TRUE;
 }
 

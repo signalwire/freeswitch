@@ -208,6 +208,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\mpf_frame_buffer.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\mpf_jitter_buffer.h"
 				>
 			</File>
@@ -330,6 +334,10 @@
 			</File>
 			<File
 				RelativePath=".\src\mpf_file_termination_factory.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpf_frame_buffer.c"
 				>
 			</File>
 			<File

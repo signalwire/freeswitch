@@ -128,6 +128,7 @@ static apt_bool_t mpf_engine_terminate(apt_task_t *task)
 
 	mpf_timer_stop(engine->timer);
 	mpf_engine_contexts_destroy(engine);
+	apt_task_child_terminate(task);
 	return TRUE;
 }
 

@@ -83,21 +83,6 @@ MPF_DECLARE(mpf_audio_stream_t*) mpf_rtp_stream_create(mpf_termination_t *termin
 	return rtp_stream->base;
 }
 
-static void mpf_rtp_stream_ip_port_set(mpf_rtp_media_descriptor_t *media, mpf_rtp_config_t *config)
-{
-	if(media->base.ip.length == 0) {
-		media->base.ip = config->ip;
-		media->base.ext_ip = config->ext_ip;
-	}
-	if(media->base.port == 0) {
-		media->base.port = config->rtp_port_cur;
-		config->rtp_port_cur += 2;
-		if(config->rtp_port_cur == config->rtp_port_max) {
-			config->rtp_port_cur = config->rtp_port_min;
-		}
-	}
-}
-
 static apt_bool_t mpf_rtp_stream_local_media_create(mpf_rtp_stream_t *rtp_stream, mpf_rtp_media_descriptor_t *local_media, mpf_rtp_media_descriptor_t *remote_media)
 {
 	apt_bool_t status = TRUE;
@@ -111,9 +96,31 @@ static apt_bool_t mpf_rtp_stream_local_media_create(mpf_rtp_stream_t *rtp_stream
 	if(remote_media) {
 		local_media->base.id = remote_media->base.id;
 	}
+	if(local_media->base.ip.length == 0) {
+		local_media->base.ip = rtp_stream->config->ip;
+		local_media->base.ext_ip = rtp_stream->config->ext_ip;
+	}
+	if(local_media->base.port == 0) {
+		/* RTP port management */
+		apr_port_t first_port_in_search = rtp_stream->config->rtp_port_cur;
+		apt_bool_t is_port_ok = FALSE;
 
-	mpf_rtp_stream_ip_port_set(local_media,rtp_stream->config);
-	if(mpf_rtp_socket_create(rtp_stream,local_media) == FALSE) {
+		do {
+			local_media->base.port = rtp_stream->config->rtp_port_cur;
+			rtp_stream->config->rtp_port_cur += 2;
+			if(rtp_stream->config->rtp_port_cur == rtp_stream->config->rtp_port_max) {
+				rtp_stream->config->rtp_port_cur = rtp_stream->config->rtp_port_min;
+			}
+			if(mpf_rtp_socket_create(rtp_stream,local_media) == TRUE) {
+				is_port_ok = TRUE;
+			}
+		} while((is_port_ok == FALSE) && (first_port_in_search != rtp_stream->config->rtp_port_cur));
+		if(is_port_ok == FALSE) {
+			local_media->base.state = MPF_MEDIA_DISABLED;
+			status = FALSE;
+		}
+	}
+	else if(mpf_rtp_socket_create(rtp_stream,local_media) == FALSE) {
 		local_media->base.state = MPF_MEDIA_DISABLED;
 		status = FALSE;
 	}
