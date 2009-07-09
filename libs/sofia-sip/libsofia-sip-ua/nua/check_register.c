@@ -647,6 +647,7 @@ START_TEST(register_1_3_2_2)
 }
 END_TEST
 
+#if nomore
 START_TEST(register_1_3_3_1)
 {
   nua_handle_t *nh = nua_handle(nua, NULL, TAG_END());
@@ -737,6 +738,109 @@ START_TEST(register_1_3_3_1)
   s2_register_teardown();
 }
 END_TEST
+#endif
+
+START_TEST(register_1_3_3_2)
+{
+  nua_handle_t *nh = nua_handle(nua, NULL, TAG_END());
+  struct message *m;
+  tport_t *tcp;
+  int i;
+
+  S2_CASE("1.3.3.2", "Register behind NAT with TCP",
+	  "Register w/ TCP using rport, pingpong. ");
+
+  nua_set_params(nua, NTATAG_TCP_RPORT(1), TAG_END());
+  fail_unless_event(nua_r_set_params, 200);
+
+  mark_point();
+  s2->registration->nh = nh;
+
+  nua_register(nh,
+	       NUTAG_PROXY(s2sip->tcp.contact->m_url),
+	       NUTAG_OUTBOUND("no-options-keepalive, no-validate"),
+	       TAG_END());
+
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER); fail_if(!m);
+
+  fail_unless(tport_is_tcp(m->tport));
+
+  tcp = tport_ref(m->tport);
+
+  /* Respond to request over TCP */
+  s2_sip_respond_to(m, NULL,
+		SIP_401_UNAUTHORIZED,
+		SIPTAG_WWW_AUTHENTICATE_STR(s2_auth_digest_str),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
+		TAG_END());
+  s2_sip_free_message(m);
+  fail_unless_event(nua_r_register, 401);
+  nua_authenticate(nh, NUTAG_AUTH(s2_auth_credentials), TAG_END());
+
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
+  fail_if(!m); fail_if(!m->sip->sip_authorization);
+  fail_if(!m->sip->sip_contact);
+  s2_save_register(m);
+
+  s2_sip_respond_to(m, NULL,
+		SIP_200_OK,
+		SIPTAG_CONTACT(s2->registration->contact),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
+		TAG_END());
+  s2_sip_free_message(m);
+
+  fail_unless_event(nua_r_register, 200);
+
+  fail_unless(s2->registration->contact != NULL);
+  fail_if(s2->registration->contact->m_next != NULL);
+
+  /* Turn off pong */
+  tport_set_params(tcp, TPTAG_PONG2PING(0), TAG_END());
+
+  /* Wait until ping-pong failure closes the TCP connection */
+  for (i = 0; i < 100; i++) {
+    s2_nua_fast_forward(5, s2base->root);
+    if (tport_is_closed(tcp))
+      break;
+  }
+
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
+  fail_unless(tport_is_tcp(m->tport));
+  fail_unless(tcp != m->tport);
+  fail_if(!m); fail_if(!m->sip->sip_authorization);
+  fail_if(!m->sip->sip_contact);
+  s2_save_register(m);
+
+  s2_sip_respond_to(m, NULL,
+		SIP_200_OK,
+		SIPTAG_CONTACT(s2->registration->contact),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
+		TAG_END());
+  s2_sip_free_message(m);
+
+  tport_unref(tcp);
+
+  /* Contact changed */
+  fail_unless_event(nua_r_register, 100);
+
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
+  fail_if(!m); fail_if(!m->sip->sip_authorization);
+  fail_if(!m->sip->sip_contact);
+  fail_if(!m->sip->sip_contact->m_next);
+  s2_save_register(m);
+
+  s2_sip_respond_to(m, NULL,
+		SIP_200_OK,
+		SIPTAG_CONTACT(s2->registration->contact),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
+		TAG_END());
+  s2_sip_free_message(m);
+
+  fail_unless_event(nua_r_register, 200);
+
+  s2_register_teardown();
+}
+END_TEST
 
 /* ---------------------------------------------------------------------- */
 
@@ -770,7 +874,7 @@ TCase *pingpong_tcase(int threading)
   add_register_fixtures(tc, threading, 1);
 
   {
-    tcase_add_test(tc, register_1_3_3_1);
+    tcase_add_test(tc, register_1_3_3_2);
   }
 
   tcase_set_timeout(tc, 10);
