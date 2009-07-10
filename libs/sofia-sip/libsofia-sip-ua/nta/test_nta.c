@@ -95,7 +95,7 @@ int tstflags = 0;
 
 #define NONE ((void *)-1)
 
-int expensive_checks;
+int expensive_checks, test_nta_sips;
 
 #define EXPENSIVE_CHECKS (expensive_checks)
 
@@ -634,6 +634,15 @@ int test_init(agent_t *ag, char const *resolv_conf)
 				  NTATAG_PRELOAD(2048),
 				  TAG_END());
   TEST_1(ag->ag_agent);
+
+  contact = getenv("SIPSCONTACT");
+  if (contact) {
+    if (nta_agent_add_tport(ag->ag_agent, URL_STRING_MAKE(contact),
+			    TPTAG_CERTIFICATE(getenv("TEST_NTA_CERTDIR")),
+			    TPTAG_TLS_VERIFY_POLICY(TPTLS_VERIFY_NONE),
+			    TAG_END()) == 0)
+      test_nta_sips = 1;
+  }
 
   {
     /* Initialize our headers */
@@ -2121,6 +2130,27 @@ int test_resolv(agent_t *ag, char const *resolv_conf)
     TEST_1(!client_run(ctx, 200));
     TEST_P(ag->ag_latest_leg, ag->ag_default_leg);
     url->url_params = NULL;
+  }
+
+  if (test_nta_sips) {
+    /* Test 1.8 - Send a message to sips:example.org
+     *
+     * Tests sf.net bug #1292657 (SIPS resolving with NAPTR).
+     */
+    client_t ctx[1] = {{ ag, "Test 1.8" }};
+    ag->ag_expect_leg = ag->ag_default_leg;
+    ctx->c_orq =
+      nta_outgoing_tcreate(ag->ag_default_leg, outgoing_callback, ctx,
+			   ag->ag_obp,
+			   SIP_METHOD_MESSAGE,
+			   (url_string_t *)"sips:example.org",
+			   SIPTAG_SUBJECT_STR(ctx->c_name),
+			   SIPTAG_FROM(ag->ag_alice),
+			   SIPTAG_TO(ag->ag_bob),
+			   SIPTAG_CONTACT(ag->ag_m_alice),
+			   TAG_END());
+    TEST_1(!client_run(ctx, 200));
+    TEST_P(ag->ag_latest_leg, ag->ag_default_leg);
   }
 
   nta_agent_set_params(ag->ag_agent,

@@ -69,6 +69,7 @@ port=$(./portbind $v6flag) sink=$port
 port=$(./portbind $v6flag $((port + 1))) down=$port
 port=$(./portbind $v6flag $((port + 1))) bind=$port
 port=$(./portbind $v6flag $((port + 1))) contact=$port
+port=$(./portbind $v6flag $((port + 1))) sips=$port
 
 # Disable IPv6 resolver for now
 if false && eval $ipv6 ; then
@@ -125,11 +126,11 @@ ns	AAAA	$me6
 	A	127.0.0.1
 
 _sip._udp	SRV 1 100 $contact me
-_sips._tcp	SRV 3 100 $contact me
+_sips._tcp	SRV 3 100 $sips me
 _sip._tcp	SRV 2 100 $contact me
 
 _sip._udp.srv	SRV 1 100 $contact a
-_sips._tcp.srv	SRV 3 100 $contact a
+_sips._tcp.srv	SRV 3 100 $sips a
 _sip._tcp.srv	SRV 2 100 $contact $aaaa
 
 _sip._udp.srv2	SRV 1 200 $contact c
@@ -155,9 +156,14 @@ na503   NAPTR 20 15 "S" "SIP+D2F" "" a2
 nona   NAPTR 20 15 "S" "ZIP+D2U" "" a2
 _sip._udp.nona   SRV 1 10 $contact ip4
 
-; No SIP SRV match
+; First SIP SRV is not found
 nosrv	NAPTR 20 1 "s" "SIP+D2U" "" _sip._udp.nosrv
-        NAPTR 20 2 "s" "SIP+D2U" "" _sip._udp.srv
+	NAPTR 20 2 "s" "SIP+D2T" "" _sip._tcp.nosrv
+        NAPTR 20 3 "s" "SIP+D2U" "" _sip._udp.srv
+	NAPTR 20 4 "s" "SIP+D2T" "" _sip._tcp.srv
+
+; Redirect with TLS
+
 
 ; This fails (and we get 503)
 a2	A	127.0.0.2
@@ -198,6 +204,8 @@ if test -r $pidfile ; then
     sink=$sink down=$down \
     ipv6=$ipv6 \
     SIPCONTACT="sip:*:$contact;comp=sigcomp" \
+    SIPSCONTACT="sips:*:$sips;comp=sigcomp" \
+    TEST_NTA_CERTDIR=$srcdir/../tport/ \
     $VALGRIND ./test_nta "$@" - $resolvfile
     exit=$?
     kill $(cat $pidfile)
