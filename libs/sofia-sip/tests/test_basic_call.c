@@ -1791,6 +1791,8 @@ int test_basic_call_7(struct context *ctx)
   TEST_1(!nua_handle_has_active_call(a_call->nh));
 
   TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_method);
+  if (e->next == NULL)
+    run_b_until(ctx, nua_i_state, NULL);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
   TEST_1(!e->next);
