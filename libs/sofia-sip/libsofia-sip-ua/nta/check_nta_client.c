@@ -95,7 +95,7 @@ START_TEST(client_2_0_0)
   struct message *request;
   struct event *response;
 
-  S2_CASE("2.0.0", "Send MESSAGE",
+  S2_CASE("client-2.0.0", "Send MESSAGE",
 	  "Basic non-INVITE transaction with outbound proxy");
 
   orq = nta_outgoing_tcreate(s2->default_leg,
@@ -123,7 +123,7 @@ START_TEST(client_2_0_1)
   struct message *request;
   struct event *response;
 
-  S2_CASE("2.0.0", "Send MESSAGE",
+  S2_CASE("client-2.0.1", "Send MESSAGE",
 	  "Basic non-INVITE transaction with "
 	  "numeric per-transaction outbound proxy");
 
@@ -155,7 +155,7 @@ START_TEST(client_2_0_2)
 
   char payload[2048];
 
-  S2_CASE("2.0.2", "Send MESSAGE",
+  S2_CASE("client-2.0.2", "Send MESSAGE",
 	  "Basic non-INVITE transaction exceeding "
 	  "default path MTU (1300 bytes)");
 
@@ -210,7 +210,7 @@ START_TEST(client_2_1_0)
 
   char payload[2048];
 
-  S2_CASE("2.1.0", "Try UDP after trying with TCP",
+  S2_CASE("client-2.1.0", "Try UDP after trying with TCP",
 	  "TCP connect() is refused");
 
   memset(payload, 'x', sizeof payload);
@@ -279,7 +279,7 @@ START_TEST(client_2_1_1)
 
   char payload[2048];
 
-  S2_CASE("2.1.1", "Try UDP after trying with TCP",
+  S2_CASE("client-2.1.1", "Try UDP after trying with TCP",
 	  "TCP connect() times out");
 
   memset(payload, 'x', sizeof payload);
@@ -337,7 +337,7 @@ START_TEST(client_2_1_2)
   struct event *response;
   url_t udpurl[1];
 
-  S2_CASE("2.1.2", "Send MESSAGE",
+  S2_CASE("client-2.1.2", "Send MESSAGE",
 	  "Non-INVITE transaction to TCP-only server");
 
   client_setup_tcp_only_server();
@@ -361,7 +361,7 @@ START_TEST(client_2_1_2)
   fail_unless(orq != NULL);
   request = s2_sip_wait_for_request(SIP_METHOD_MESSAGE);
   fail_unless(request != NULL);
-  s2_sip_respond_to(request, NULL, 200, "2.0.0", TAG_END());
+  s2_sip_respond_to(request, NULL, 200, "2.1.2", TAG_END());
   s2_sip_free_message(request);
   response = s2_nta_wait_for(wait_for_orq, orq,
 			     wait_for_status, 200,
@@ -401,7 +401,7 @@ START_TEST(client_2_2_0)
 
   char proxy[] = "sip:cname.example.org:0000000";
 
-  S2_CASE("2.2.0", "Send MESSAGE",
+  S2_CASE("client-2.2.0", "Send MESSAGE",
 	  "Basic non-INVITE transaction with target using CNAME");
   /* Test for sf.net bug #2531152 */
 
