@@ -14,7 +14,7 @@ $(RADCLIENT_DIR):
 	$(GETLIB) $(RADCLIENT).tar.gz
 
 $(RADCLIENT_DIR)/Makefile: $(RADCLIENT_DIR)
-	cd $(RADCLIENT_DIR) && ./configure --disable-shared
+	cd $(RADCLIENT_DIR) && ./configure --disable-shared --with-pic
 	$(TOUCH_TARGET)
 
 $(RADCLIENT_LA): $(RADCLIENT_DIR)/Makefile
