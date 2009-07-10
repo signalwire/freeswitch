@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
+ * John Wehle <john@feith.com>
  *
  *
  * switch_core_file.c -- Main Core Library (File I/O Functions)
@@ -335,17 +336,32 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples, int whence)
 {
+	size_t bytes = 0;
 	switch_status_t status;
 
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
 
-	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN) || !switch_test_flag(fh, SWITCH_FILE_FLAG_READ)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!fh->file_interface->file_seek) {
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (fh->buffer) {
+		bytes += switch_buffer_inuse(fh->buffer);
+		switch_buffer_zero(fh->buffer);
+	}
+
+	if (fh->pre_buffer) {
+		bytes += switch_buffer_inuse(fh->pre_buffer);
+		switch_buffer_zero(fh->pre_buffer);
+	}
+
+	if (whence == SWITCH_SEEK_CUR) {
+		samples -= bytes / sizeof(int16_t);
 	}
 
 	switch_set_flag(fh, SWITCH_FILE_SEEK);

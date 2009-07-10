@@ -902,8 +902,8 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 			}
 
 			if (dtmf->digit == *cc->profile->rew_key) {
-				int samps = 24000;
-				switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
+				int samps = -48000;
+				switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
 				return SWITCH_STATUS_SUCCESS;
 			}
 		}
