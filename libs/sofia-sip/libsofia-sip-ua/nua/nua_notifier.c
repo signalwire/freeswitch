@@ -832,10 +832,19 @@ static int nua_notify_usage_shutdown(nua_handle_t *nh,
   nu->nu_substate = nua_substate_terminated;
 
   if (cr) {
+    SU_DEBUG_5(("%s(%p, %p, %p): using existing cr=%p\n",
+		"nua_notify_usage_shutdown",
+		(void *)nh, (void *)ds, (void *)du, (void *)cr));
+
     if (nua_client_resend_request(cr, 1) >= 0)
       return 0;
   }
   else {
+    SU_DEBUG_5(("%s(%p, %p, %p): new NOTIFY cr for %s\n",
+		"nua_notify_usage_shutdown",
+		(void *)nh, (void *)ds, (void *)du,
+		du->du_event ? du->du_event->o_type : "<implicit>"));
+
     if (nua_client_tcreate(nh, nua_r_notify,
 			   &nua_notify_client_methods,
 			   SIPTAG_EVENT(du->du_event),
