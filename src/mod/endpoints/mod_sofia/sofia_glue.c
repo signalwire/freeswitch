@@ -43,6 +43,7 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 	const char *ip = t38_options->ip;
 	uint32_t port = t38_options->port;
 	const char *family = "IP4";
+	const char *username = tech_pvt->profile->username;
 
 	if (!ip) {
 		if (!(ip = tech_pvt->adv_sdp_audio_ip)) {
@@ -69,8 +70,8 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 	family = strchr(ip, ':') ? "IP6" : "IP4";
 	switch_snprintf(buf, sizeof(buf),
 					"v=0\n"
-					"o=FreeSWITCH %010u %010u IN %s %s\n"
-					"s=FreeSWITCH\n"
+					"o=%s %010u %010u IN %s %s\n"
+					"s=%s\n"
 					"c=IN %s %s\n" 
 					"t=0 0\n"
 					"m=image %d udptl t38\n"
@@ -84,10 +85,12 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 					"a=T38FaxUdpEC:%s\n"
 					"a=T38VendorInfo:%s\n",
 					
+					username,
 					tech_pvt->owner_id, 
 					tech_pvt->session_id,
 					family,
 					ip,
+					username,
 					family,
 					ip,
 					port,
@@ -119,6 +122,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	const char *ov_fmtp = switch_channel_get_variable(tech_pvt->channel, "sip_force_video_fmtp");
 	char srbuf[128] = "";
 	const char *var_val;
+	const char *username = tech_pvt->profile->username;
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) ||
 		((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val)) ||
@@ -166,11 +170,12 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	family = strchr(ip, ':') ? "IP6" : "IP4";
 	switch_snprintf(buf, sizeof(buf),
 					"v=0\n"
-					"o=FreeSWITCH %010u %010u IN %s %s\n"
-					"s=FreeSWITCH\n"
+					"o=%s %010u %010u IN %s %s\n"
+					"s=%s\n"
 					"c=IN %s %s\n" "t=0 0\n"
-					"%sm=audio %d RTP/%sAVP", 
-					tech_pvt->owner_id, tech_pvt->session_id, family, ip, family, ip, 
+					"%sm=audio %d RTP/%sAVP",
+					username,
+					tech_pvt->owner_id, tech_pvt->session_id, family, ip, username, family, ip, 
 					srbuf,
 					port,
 					(!switch_strlen_zero(tech_pvt->local_crypto_key) 

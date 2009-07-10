@@ -383,7 +383,10 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		} else if (cause == SWITCH_CAUSE_PICKED_OFF || cause == SWITCH_CAUSE_LOSE_RACE) {
 			switch_snprintf(reason, sizeof(reason), "SIP;cause=200;text=\"Call completed elsewhere\"");
 		} else {
-			switch_snprintf(reason, sizeof(reason), "FreeSWITCH;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
+			switch_snprintf(reason, sizeof(reason), "%s;cause=%d;text=\"%s\"",
+					tech_pvt->profile->username, 
+					cause,
+					switch_channel_cause2str(cause));
 		}
 
 		if (switch_channel_test_flag(channel, CF_ANSWERED)) {

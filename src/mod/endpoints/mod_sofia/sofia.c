@@ -300,7 +300,9 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
 
 	if (sip->sip_reason && sip->sip_reason->re_protocol &&
-		(!strcasecmp(sip->sip_reason->re_protocol, "Q.850") || !strcasecmp(sip->sip_reason->re_protocol, "FreeSWITCH")) && sip->sip_reason->re_cause) {
+		(!strcasecmp(sip->sip_reason->re_protocol, "Q.850") 
+			|| !strcasecmp(sip->sip_reason->re_protocol, "FreeSWITCH")
+			|| !strcasecmp(sip->sip_reason->re_protocol, profile->username)) && sip->sip_reason->re_cause) {
 		tech_pvt->q850_cause = atoi(sip->sip_reason->re_cause);
 		cause = tech_pvt->q850_cause;
 	} else {
