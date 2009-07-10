@@ -38,6 +38,10 @@
 
 #include "config.h"
 
+#ifdef SYMBIAN
+#include <e32def.h>
+#endif
+
 #ifndef __GLIB_H__
 #include <glib.h>
 #endif

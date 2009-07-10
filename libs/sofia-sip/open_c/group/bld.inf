@@ -138,9 +138,9 @@ libsofia-sip-ua-glib.mmp
 //torture_sip.mmp
 //test_http.mmp
 //test_soa.mmp
-test_tport.mmp
+//test_tport.mmp
 //test_nua.mmp
 //test_nta.mmp
-su_source_test.mmp
+//su_source_test.mmp
 
 //  End of File  

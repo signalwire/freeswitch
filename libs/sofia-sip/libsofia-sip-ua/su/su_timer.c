@@ -47,6 +47,7 @@ typedef union {
 #define SU_TIMER_QUEUE_T su_timer_heap_t
 
 #include "sofia-sip/su.h"
+#include "su_port.h"
 #include "sofia-sip/su_wait.h"
 #include "sofia-sip/su_alloc.h"
 #include "sofia-sip/rbtree.h"

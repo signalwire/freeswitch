@@ -128,6 +128,7 @@ extern "C" void *su_localinfo_ap_set(su_sockaddr_t *su, int *ifindex)
   }
 
   sock.Close();
+  return (void *) aConnection;
 }
 
 
