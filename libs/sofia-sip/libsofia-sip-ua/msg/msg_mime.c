@@ -984,9 +984,11 @@ issize_t msg_mediatype_d(char **ss, char const **type)
   /* Media type consists of two tokens, separated by / */
 
   l1 = span_token(s);
-  for (n = l1; IS_LWS(s[n]); n++);
+  for (n = l1; IS_LWS(s[n]); n++)
+    {}
   if (s[n] == '/') {
-    for (n++; IS_LWS(s[n]); n++);
+    for (n++; IS_LWS(s[n]); n++)
+      {}
     l2 = span_token(s + n);
     n += l2;
   }

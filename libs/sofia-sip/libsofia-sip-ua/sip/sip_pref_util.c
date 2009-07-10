@@ -86,7 +86,8 @@ int sip_prefs_parse(union sip_pref *sp,
       *in_out_s = s + strlen(s);
       return 1;
     } else if (s[0] == '"' && s[1] != '\0') {
-      for (s++; IS_LWS(s[0]); s++);
+      for (s++; IS_LWS(s[0]); s++)
+        {}
     } else
       old_type = sp_error;
   } else if (!s[0]) {
@@ -98,14 +99,16 @@ int sip_prefs_parse(union sip_pref *sp,
     return 0;
 
   if ((*return_negation = s[0] == '!'))
-      for (s++; IS_LWS(s[0]); s++);
+      for (s++; IS_LWS(s[0]); s++)
+        {}
 
   if (*s == '#') {
     /* Numeric */
     double n1, n2;
     char s0, *e;
 
-    for (s++; IS_LWS(s[0]); s++);
+    for (s++; IS_LWS(s[0]); s++)
+      {}
 
     s0 = s[0];
 
@@ -143,10 +146,12 @@ int sip_prefs_parse(union sip_pref *sp,
     s += n;
   }
 
-  for (; IS_LWS(s[0]); s++);
+  for (; IS_LWS(s[0]); s++)
+    {}
 
   if (s[0] == ',' || (s[0] == '"' && s[1] == '\0'))
-    for (s++; IS_LWS(s[0]); s++);
+    for (s++; IS_LWS(s[0]); s++)
+      {}
   else
     old_type = sp_error;
 

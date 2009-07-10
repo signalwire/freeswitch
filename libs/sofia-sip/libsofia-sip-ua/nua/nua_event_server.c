@@ -228,7 +228,7 @@ void authorize_watcher(nea_server_t *nes,
     }
 
     SU_DEBUG_7(("nua(%p): authorize_watcher: %s\n", (void *)nh, what));
-    nea_sub_auth(sn->sn_subscriber, substate,
+    nea_sub_auth(sn->sn_subscriber, (nea_state_t)substate,
 		 TAG_IF(substate == nua_substate_pending,
 			NEATAG_FAKE(1)),
 		 TAG_IF(substate == nua_substate_terminated,
@@ -265,7 +265,7 @@ void nua_stack_authorize(nua_t *nua,
 	  TAG_END());
 
   if (sub && state > 0) {
-    nea_sub_auth(sub, state, TAG_NEXT(tags));
+    nea_sub_auth(sub, (nea_state_t)state, TAG_NEXT(tags));
     nua_stack_event(nua, nh, NULL, e, SIP_200_OK, NULL);
   }
   else {

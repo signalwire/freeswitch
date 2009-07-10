@@ -733,7 +733,7 @@ void *su_home_clone(su_home_t *parent, isize_t size)
 
   if (parent) {
     su_block_t *sub = MEMLOCK(parent);
-    home = sub_alloc(parent, sub, size, 2);
+    home = sub_alloc(parent, sub, size, (enum sub_zero)2);
     UNLOCK(parent);
   }
   else {
@@ -781,7 +781,7 @@ void *su_alloc(su_home_t *home, isize_t size)
   void *data;
 
   if (home) {
-    data = sub_alloc(home, MEMLOCK(home), size, 0);
+    data = sub_alloc(home, MEMLOCK(home), size, (enum sub_zero)0);
     UNLOCK(home);
   }
   else
@@ -1304,7 +1304,7 @@ void *su_realloc(su_home_t *home, void *data, isize_t size)
 
   sub = MEMLOCK(home);
   if (!data) {
-    data = sub_alloc(home, sub, size, 0);
+    data = sub_alloc(home, sub, size, (enum sub_zero)0);
     UNLOCK(home);
     return data;
   }
@@ -1468,7 +1468,7 @@ void *su_zalloc(su_home_t *home, isize_t size)
   assert (size >= 0);
 
   if (home) {
-    data = sub_alloc(home, MEMLOCK(home), size, 1);
+    data = sub_alloc(home, MEMLOCK(home), size, (enum sub_zero)1);
     UNLOCK(home);
   }
   else
@@ -1518,7 +1518,7 @@ void *su_salloc(su_home_t *home, isize_t size)
     return (void)(errno = ENOMEM), NULL;
 
   if (home) {
-    retval = sub_alloc(home, MEMLOCK(home), size, 1);
+    retval = sub_alloc(home, MEMLOCK(home), size, (enum sub_zero)1);
     UNLOCK(home);
   }
   else

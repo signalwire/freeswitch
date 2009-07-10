@@ -608,13 +608,13 @@ int tpn_by_host(tp_name_t * tpn, http_host_t const *h, url_t const *url)
   if (!h || !url)
     return -1;
 
-  tpn->tpn_proto = url_tport_default(url->url_type);
+  tpn->tpn_proto = url_tport_default((enum url_type_e)url->url_type);
   tpn->tpn_canon = h->h_host;
   tpn->tpn_host = h->h_host;
   if (h->h_port)
     tpn->tpn_port = h->h_port;
   else
-    tpn->tpn_port = url_port_default(url->url_type);
+    tpn->tpn_port = url_port_default((enum url_type_e)url->url_type);
 
   return 0;
 }
@@ -1189,7 +1189,7 @@ int hc_recv(nth_client_t * hc, msg_t *msg, http_t * http)
 
     if (streaming && !hc->hc_streaming) {
       /* Disable streaming for this msg */
-      msg_set_streaming(msg, 0);
+      msg_set_streaming(msg, (enum msg_streaming_status)0);
 
       return 0;			/* Wait for complete message */
     }
@@ -1204,7 +1204,7 @@ int hc_recv(nth_client_t * hc, msg_t *msg, http_t * http)
     shutdown = 2;
 
   if (!streaming || shutdown)
-    msg_set_streaming(msg, 0);
+    msg_set_streaming(msg, (enum msg_streaming_status)0);
 
   if (hc->hc_pending) {
     tport_release(hc->hc_tport, hc->hc_pending, hc->hc_request, msg, hc,

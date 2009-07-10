@@ -501,7 +501,7 @@ void url_init(url_t *url, enum url_type_e type)
   memset(url, 0, sizeof(*url));
   url->url_type = type;
   if (type > url_unknown) {
-    char const *scheme = url_scheme(url->url_type);
+    char const *scheme = url_scheme((enum url_type_e)url->url_type);
     if (scheme)
       url->url_scheme = scheme;
   }
@@ -593,7 +593,7 @@ int _url_d(url_t *url, char *s)
 
     url->url_type = url_get_type(url->url_scheme, n);
 
-    have_authority = !url_type_is_opaque(url->url_type);
+    have_authority = !url_type_is_opaque((enum url_type_e)url->url_type);
   }
   else {
     url->url_type = url_unknown;
@@ -1135,7 +1135,7 @@ issize_t url_dup(char *buf, isize_t bufsize, url_t *dst, url_t const *src)
     srcp = &src->url_scheme;
 
     if (dst->url_type > url_unknown)
-      *dstp = url_scheme(dst->url_type);
+      *dstp = url_scheme((enum url_type_e)dst->url_type);
 
     if (*dstp != NULL)
       dstp++, srcp++;	/* Skip scheme if it is constant */
@@ -1591,9 +1591,9 @@ int url_cmp(url_t const *a, url_t const *b)
     char const *b_port;
 
     if (url_type != url_sip && url_type != url_sips)
-      a_port = b_port = url_port_default(url_type);
+      a_port = b_port = url_port_default((enum url_type_e)url_type);
     else if (host_is_ip_address(a->url_host))
-      a_port = b_port = url_port_default(url_type);
+      a_port = b_port = url_port_default((enum url_type_e)url_type);
     else
       a_port = b_port = "";
 
@@ -1702,9 +1702,9 @@ int url_cmp_all(url_t const *a, url_t const *b)
     char const *b_port;
 
     if (url_type != url_sip && url_type != url_sips)
-      a_port = b_port = url_port_default(url_type);
+      a_port = b_port = url_port_default((enum url_type_e)url_type);
     else if (host_is_ip_address(a->url_host))
-      a_port = b_port = url_port_default(url_type);
+      a_port = b_port = url_port_default((enum url_type_e)url_type);
     else
       a_port = b_port = "";
 
@@ -1863,7 +1863,7 @@ char const *url_port(url_t const *u)
     if (!host_is_ip_address(u->url_host))
       return "";
 
-  return url_port_default(u->url_type);
+  return url_port_default((enum url_type_e)u->url_type);
 }
 
 /** Sanitize URL.

@@ -332,7 +332,8 @@ int http_version_d(char **ss, char const **ver)
     for (n = l1; IS_LWS(s[n]); n++)
       s[n] = '\0';
     if (s[n] == '/') {
-      for (n = n + 1; IS_LWS(s[n]); n++);
+      for (n = n + 1; IS_LWS(s[n]); n++)
+        {}
       l2 = span_token(s + n);
       n += l2;
     }
@@ -492,7 +493,7 @@ http_method_t http_method_d(char **ss, char const **nname)
   *ss = (s + n);
   if (nname) *nname = name;
 
-  return code;
+  return (http_method_t)code;
 }
 
 /** Get method enum corresponding to method name */

@@ -1287,7 +1287,7 @@ sip_cseq_t *sip_cseq_create(su_home_t *home,
   sip_cseq_t *cs;
 
   if (method)
-    method_name = sip_method_name(method, method_name);
+    method_name = sip_method_name((sip_method_t)method, method_name);
 
   if (method_name == NULL)
     return NULL;
@@ -1298,7 +1298,7 @@ sip_cseq_t *sip_cseq_create(su_home_t *home,
 
   if (cs) {
     cs->cs_seq = seq;
-    cs->cs_method = method;
+    cs->cs_method = (sip_method_t)method;
     if (!method)
       method_name = strcpy((char *)(cs + 1), method_name);
     cs->cs_method_name = method_name;

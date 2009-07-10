@@ -725,9 +725,9 @@ int soa_sdp_upgrade(soa_session_t *ss,
   if (session == NULL || user == NULL)
     return (errno = EFAULT), -1;
 
-  Ns = sdp_media_count(session, sdp_media_any, 0, 0, 0);
-  Nu = sdp_media_count(user, sdp_media_any, 0, 0, 0);
-  Nr = sdp_media_count(remote, sdp_media_any, 0, 0, 0);
+  Ns = sdp_media_count(session, sdp_media_any, (sdp_text_t)0, (sdp_proto_e)0, (sdp_text_t)0);
+  Nu = sdp_media_count(user, sdp_media_any, (sdp_text_t)0, (sdp_proto_e)0, (sdp_text_t)0);
+  Nr = sdp_media_count(remote, sdp_media_any, (sdp_text_t)0, (sdp_proto_e)0, (sdp_text_t)0);
 
   if (remote == NULL)
     Nmax = Ns + Nu;
@@ -1044,29 +1044,29 @@ int soa_sdp_mode_set(sdp_session_t const *user,
       continue;
     }
 
-    send_mode = um->m_mode & sdp_sendonly;
+    send_mode = (sdp_mode_t)(um->m_mode & sdp_sendonly);
     if (rm)
       send_mode = (rm->m_mode & sdp_recvonly) ? sdp_sendonly : 0;
 
-    recv_mode = um->m_mode & sdp_recvonly;
+    recv_mode = (sdp_mode_t)(um->m_mode & sdp_recvonly);
 
     if (rm && rm->m_mode == sdp_inactive) {
-      send_mode = recv_mode = 0;
+      send_mode = recv_mode = (sdp_mode_t)0;
     }
     else if (inactive_all) {
-      send_mode = recv_mode = 0;
+      send_mode = recv_mode = (sdp_mode_t)0;
     }
     else if (hold_all) {
-      recv_mode = 0;
+      recv_mode = (sdp_mode_t)0;
     }
     else if (hold && (hold_media = su_strcasestr(hold, sm->m_type_name))) {
-      recv_mode = 0;
+      recv_mode = (sdp_mode_t)0;
       hold_media += strlen(sm->m_type_name);
       hold_media += strspn(hold_media, " \t");
       if (hold_media[0] == '=') {
 	hold_media += strspn(hold, " \t");
 	if (su_casenmatch(hold_media, "inactive", strlen("inactive")))
-	  recv_mode = send_mode = 0;
+	  recv_mode = send_mode = (sdp_mode_t)0;
       }
     }
 
@@ -1140,8 +1140,8 @@ static int offer_answer_step(soa_session_t *ss,
   if (local && remote) switch (action) {
   case generate_answer:
   case process_answer:
-    if (sdp_media_count(remote, sdp_media_any, "*", 0, 0) <
-	sdp_media_count(local, sdp_media_any, "*", 0, 0)) {
+    if (sdp_media_count(remote, sdp_media_any, "*", (sdp_proto_e)0, (sdp_text_t)0) <
+	sdp_media_count(local, sdp_media_any, "*", (sdp_proto_e)0, (sdp_text_t)0)) {
       SU_DEBUG_5(("%s: remote %s is truncated: expanding\n",
 		  by, action == generate_answer ? "offer" : "answer"));
       remote = soa_sdp_expand_media(tmphome, remote, local);

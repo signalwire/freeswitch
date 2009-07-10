@@ -888,7 +888,7 @@ static int nua_refer_client_request(nua_client_request_t *cr,
   if (!error) {
     /* Give application an Event header for matching NOTIFYs with REFER */
     nua_stack_tevent(nh->nh_nua, nh, NULL,
-		     cr->cr_event, SIP_100_TRYING,
+		     (enum nua_event_e)cr->cr_event, SIP_100_TRYING,
 		     NUTAG_REFER_EVENT(event),
 		     SIPTAG_EVENT(event),
 		     TAG_END());

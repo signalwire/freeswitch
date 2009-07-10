@@ -1513,9 +1513,9 @@ int tport_tbind(tport_t *self,
     server = 0;
 
   if (server)
-    retval = tport_bind_server(mr, mytpn, transports, public, ta_args(ta));
+    retval = tport_bind_server(mr, mytpn, transports, (enum tport_via)public, ta_args(ta));
   else
-    retval = tport_bind_client(mr, mytpn, transports, public, ta_args(ta));
+    retval = tport_bind_client(mr, mytpn, transports, (enum tport_via)public, ta_args(ta));
 
   ta_end(ta);
 
@@ -4678,7 +4678,7 @@ int tport_name_by_url(su_home_t *home,
     return -1;
   }
 
-  tpn->tpn_proto = url_tport_default(url->url_type);
+  tpn->tpn_proto = url_tport_default((enum url_type_e)url->url_type);
   tpn->tpn_canon = url->url_host;
   tpn->tpn_host = url->url_host;
   tpn->tpn_port = url_port(url);

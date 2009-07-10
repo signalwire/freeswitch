@@ -762,7 +762,7 @@ static int nhp_set_tags(su_home_t *home,
       else if (refresher <= nua_no_refresher)
 	refresher = nua_no_refresher;
 
-      NHP_SET(nhp, refresher, refresher);
+      NHP_SET(nhp, refresher, (enum nua_session_refresher)refresher);
     }
     /* NUTAG_UPDATE_REFRESH(update_refresh) */
     else if (tag == nutag_update_refresh) {

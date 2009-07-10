@@ -224,7 +224,7 @@ SOFIAPUBFUN char const *url_port(url_t const *u);
 /** Return the URL port string, using default port if none present. */
 #define URL_PORT(u) \
   ((u) && (u)->url_port ? (u)->url_port : \
-  url_port_default((u) ? (u)->url_type : url_any))
+  url_port_default((u) ? (enum url_type_e)(u)->url_type : url_any))
 
 /* ---------------------------------------------------------------------- */
 /* url_string_t handling */

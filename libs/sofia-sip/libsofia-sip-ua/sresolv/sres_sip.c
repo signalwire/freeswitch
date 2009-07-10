@@ -316,7 +316,7 @@ sres_sip_new(sres_resolver_t *sres,
   if (numeric) {
     naptr = 0, srv = 0;
     if (!port || !strlen(port))
-      port = url_port_default(u->url_type);
+      port = url_port_default((enum url_type_e)u->url_type);
   }
 
   /* RFC 3263:

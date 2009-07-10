@@ -872,7 +872,7 @@ int msg_extract(msg_t *msg)
   }
 
   if (mo->msg_flags & MSG_FLG_TRAILERS)
-    msg_set_streaming(msg, 0);
+    msg_set_streaming(msg, (enum msg_streaming_status)0);
 
   if (msg->m_buffer->mb_used + msg->m_buffer->mb_commit ==
       msg->m_buffer->mb_size)

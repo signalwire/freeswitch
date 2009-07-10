@@ -1272,7 +1272,7 @@ feature_level(sip_t const *sip, char const *tag, int level)
   else if (sip_has_feature(sip->sip_unsupported, tag))
     return outbound_feature_unsupported;
   else
-    return level;
+    return (enum outbound_feature)level;
 }
 
 

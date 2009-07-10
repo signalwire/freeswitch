@@ -3155,7 +3155,7 @@ int agent_aliases(nta_agent_t const *agent, url_t url[], tport_t *tport)
 	url->url_port = lv->v_port;
       return 1;
     }
-    if (su_strmatch(url->url_port, url_port_default(url->url_type)) ||
+    if (su_strmatch(url->url_port, url_port_default((enum url_type_e)url->url_type)) ||
 	su_strmatch(url->url_port, ""))
       /* Remove default or empty port */
       url->url_port = NULL;
@@ -11745,7 +11745,7 @@ int nta_tport_keepalive(nta_outgoing_t *orq)
 {
   tport_t *tp;
 
-  assert(orq); (void)tp;
+  assert(orq);
 
 #if HAVE_SOFIA_STUN
   return tport_keepalive(orq->orq_tport, msg_addrinfo(orq->orq_request),

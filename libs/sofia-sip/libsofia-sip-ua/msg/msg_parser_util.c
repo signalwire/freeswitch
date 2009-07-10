@@ -415,7 +415,7 @@ issize_t msg_avlist_d(su_home_t *home,
 
     if (n == N) {
       /* Reallocate params */
-      char const **nparams = su_realloc(home, params != stack ? params : NULL,
+      char const **nparams = su_realloc(home, (void*)(params != stack ? params : NULL),
 					(N = MSG_PARAMS_NUM(N + 1)) * sizeof(*params));
       if (!nparams) {
 	goto error;
@@ -443,7 +443,7 @@ issize_t msg_avlist_d(su_home_t *home,
   }
   else if (n == N) {
     /* Reallocate params */
-    char const **nparams = su_realloc(home, params != stack ? params : NULL,
+    char const **nparams = su_realloc(home, (void*)(params != stack ? params : NULL),
 				      (N = MSG_PARAMS_NUM(N + 1)) * sizeof(*params));
     if (!nparams) {
       goto error;
@@ -1553,7 +1553,8 @@ int msg_header_join_items(su_home_t *home,
   if (s == NULL)
     return 0;
 
-  for (M = 0; s[M]; M++);
+  for (M = 0; s[M]; M++)
+    {}
 
   if (M == 0)
     return 0;
@@ -1570,7 +1571,8 @@ int msg_header_join_items(su_home_t *home,
   dd = (msg_param_t **)((char *)dst + dst->h_class->hc_params);
   d = *dd;
 
-  for (N = 0; d && d[N]; N++);
+  for (N = 0; d && d[N]; N++)
+    {}
 
   for (m = 0, M = 0, total = 0; s[m]; m++) {
     t = s[m];

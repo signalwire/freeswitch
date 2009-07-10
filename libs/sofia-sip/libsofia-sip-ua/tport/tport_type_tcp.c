@@ -393,7 +393,7 @@ void tport_recv_timeout_timer(tport_t *self, su_time_t now)
     if (self->tp_msg &&
 	su_time_cmp(su_time_add(self->tp_rtime, timeout), now) < 0) {
       msg_t *msg = self->tp_msg;
-      msg_set_streaming(msg, 0);
+      msg_set_streaming(msg, (enum msg_streaming_status)0);
       msg_set_flags(msg, MSG_FLG_ERROR | MSG_FLG_TRUNC | MSG_FLG_TIMEOUT);
       tport_deliver(self, msg, NULL, NULL, now);
       self->tp_msg = NULL;

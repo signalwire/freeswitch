@@ -544,7 +544,7 @@ int soa_base_set_params(soa_session_t *ss, tagi_t const *tags)
     || srtp_integrity != (int)ss->ss_srtp_integrity
     ;
 
-  ss->ss_af = af;
+  ss->ss_af = (enum soa_af)af;
 
   ss->ss_rtp_select = rtp_select;
   ss->ss_rtp_sort = rtp_sort;
@@ -2300,7 +2300,7 @@ soa_init_sdp_connection_with_session(soa_session_t *ss,
 
   if (c->c_nettype != sdp_net_in ||
       (c->c_addrtype != sdp_addr_ip4 && c->c_addrtype != sdp_addr_ip6)) {
-    c->c_nettype = sdp_net_in, c->c_addrtype = 0;
+    c->c_nettype = sdp_net_in, c->c_addrtype = (sdp_addrtype_e)0;
     c->c_address = strcpy(buffer, "");
   }
 
@@ -2323,7 +2323,7 @@ soa_init_sdp_connection_with_session(soa_session_t *ss,
 
   if (ip4 && ip6) {
     /* Prefer address family already used in session, if any */
-    sdp_addrtype_e addrtype = 0;
+    sdp_addrtype_e addrtype = (sdp_addrtype_e)0;
     char const *because = "error";
 
     if (sdp && sdp->sdp_connection &&

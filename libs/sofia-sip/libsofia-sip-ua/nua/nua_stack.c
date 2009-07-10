@@ -373,7 +373,7 @@ void nua_application_event(nua_t *dummy, su_msg_r sumsg, nua_ee_data_t *ee)
   }
   else if (!nh->nh_valid) {	/* Handle has been destroyed */
     if (nua_log->log_level >= 7) {
-      char const *name = nua_event_name(e->e_event) + 4;
+      char const *name = nua_event_name((enum nua_event_e)e->e_event) + 4;
       SU_DEBUG_7(("nua(%p): event %s dropped\n", (void *)nh, name));
     }
     nua_handle_unref(nh);
@@ -390,7 +390,7 @@ void nua_application_event(nua_t *dummy, su_msg_r sumsg, nua_ee_data_t *ee)
     su_msg_save(frame->nf_saved, sumsg);
     frame->nf_next = nua->nua_current, nua->nua_current = frame;
 
-    nua->nua_callback(e->e_event, e->e_status, e->e_phrase,
+    nua->nua_callback((enum nua_event_e)e->e_event, e->e_status, e->e_phrase,
 		      nua, nua->nua_magic,
 		      nh, nh ? nh->nh_magic : NULL,
 		      e->e_msg ? sip_object(e->e_msg) : NULL,
@@ -544,7 +544,7 @@ void nua_stack_signal(nua_t *nua, su_msg_r msg, nua_ee_data_t *ee)
   }
 
   if (nua_log->log_level >= 5) {
-    char const *name = nua_event_name(e->e_event);
+    char const *name = nua_event_name((enum nua_event_e)e->e_event);
 
     if (e->e_status == 0)
       SU_DEBUG_5(("nua(%p): %s signal %s\n", (void *)nh, "recv", name + 4));
@@ -556,7 +556,7 @@ void nua_stack_signal(nua_t *nua, su_msg_r msg, nua_ee_data_t *ee)
 
   su_msg_save(nua->nua_signal, msg);
 
-  event = e->e_event;
+  event = (enum nua_event_e)e->e_event;
 
   if (nua->nua_shutdown && !e->e_always) {
     /* Shutting down */
@@ -913,7 +913,7 @@ nua_handle_t *nh_validate(nua_t *nua, nua_handle_t *maybe)
 void nua_stack_destroy_handle(nua_t *nua, nua_handle_t *nh, tagi_t const *tags)
 {
   if (nh->nh_notifier)
-    nua_stack_terminate(nua, nh, 0, NULL);
+    nua_stack_terminate(nua, nh, (enum nua_event_e)0, NULL);
 
   nua_dialog_shutdown(nh, nh->nh_ds);
 

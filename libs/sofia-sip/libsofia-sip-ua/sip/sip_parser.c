@@ -244,9 +244,11 @@ int sip_version_d(char **ss, char const **ver)
     result = s;
 
     l1 = span_token(s);
-    for (n = l1; IS_LWS(s[n]); n++);
+    for (n = l1; IS_LWS(s[n]); n++)
+      {}
     if (s[n] == '/') {
-      for (n++; IS_LWS(s[n]); n++);
+      for (n++; IS_LWS(s[n]); n++)
+        {}
       l2 = span_token(s + n);
       n += l2;
     }
@@ -436,7 +438,7 @@ sip_method_t sip_method_d(char **ss, char const **return_name)
   *ss = (s + n);
   if (return_name) *return_name = name;
 
-  return code;
+  return (sip_method_t)code;
 }
 
 /** Get method enum corresponding to method name */

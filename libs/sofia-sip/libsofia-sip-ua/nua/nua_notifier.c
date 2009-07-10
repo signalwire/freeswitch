@@ -764,7 +764,7 @@ static int nua_notify_client_report(nua_client_request_t *cr,
 
   nua_stack_tevent(nh->nh_nua, nh,
 		   nta_outgoing_getresponse(orq),
-		   cr->cr_event,
+		   (enum nua_event_e)cr->cr_event,
 		   status, phrase,
 		   NUTAG_SUBSTATE(substate),
 		   SIPTAG_EVENT(du ? du->du_event : NULL),

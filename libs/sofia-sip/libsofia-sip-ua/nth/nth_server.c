@@ -283,7 +283,7 @@ nth_site_t *nth_site_create(nth_site_t *parent,
 
     if (parent->site_path) {
       /* subpath */
-      url_init(url0, parent->site_url->url_type);
+      url_init(url0, (enum url_type_e)parent->site_url->url_type);
       url0->url_path = s;
       address = (url_string_t*)url0;
     }
@@ -291,13 +291,13 @@ nth_site_t *nth_site_create(nth_site_t *parent,
       /* absolute URL with scheme */;
     else if (s[sep] == '\0' && strchr(s, '.') && host_is_valid(s)) {
       /* looks like a domain name */;
-      url_init(url0, parent->site_url->url_type);
+      url_init(url0, (enum url_type_e)parent->site_url->url_type);
       url0->url_host = s;
       address = (url_string_t*)url0;
     }
     else {
       /* looks like a path */
-      url_init(url0, parent->site_url->url_type);
+      url_init(url0, (enum url_type_e)parent->site_url->url_type);
       url0->url_path = s;
       address = (url_string_t*)url0;
     }
@@ -726,7 +726,7 @@ server_t *server_create(url_t const *url,
     return NULL;
   }
 
-  tpn->tpn_proto = url_tport_default(url->url_type);
+  tpn->tpn_proto = url_tport_default((enum url_type_e)url->url_type);
   tpn->tpn_canon = url->url_host;
   tpn->tpn_host =  url->url_host;
   tpn->tpn_port = url_port(url);
@@ -829,7 +829,7 @@ void server_request(server_t *srv,
 
   /* Disable streaming */
   if (msg_is_streaming(request)) {
-    msg_set_streaming(request, 0);
+    msg_set_streaming(request, (enum msg_streaming_status)0);
     return;
   }
 
@@ -901,7 +901,7 @@ void server_request(server_t *srv,
       else {
 	tp_name_t const *tpn = tport_name(tport); assert(tpn);
 	loc->loc_url->url_host = tpn->tpn_canon;
-	if (strcmp(url_port_default(loc->loc_url->url_type), tpn->tpn_port))
+	if (strcmp(url_port_default((enum url_type_e)loc->loc_url->url_type), tpn->tpn_port))
 	  loc->loc_url->url_port = tpn->tpn_port;
       }
     }

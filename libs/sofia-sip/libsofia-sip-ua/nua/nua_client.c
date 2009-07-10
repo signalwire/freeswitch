@@ -153,7 +153,7 @@ int nua_client_create(nua_handle_t *nh,
   if (!cr) {
     return nua_stack_event(nh->nh_nua, nh,
 			   NULL,
-			   event,
+			   (enum nua_event_e)event,
 			   NUA_ERROR_AT(__FILE__, __LINE__),
 			   NULL);
   }
@@ -1245,7 +1245,7 @@ su_inline
 int can_redirect(sip_contact_t const *m, sip_method_t method)
 {
   if (m && m->m_url->url_host) {
-    enum url_type_e type = m->m_url->url_type;
+    enum url_type_e type = (enum url_type_e)m->m_url->url_type;
     return
       type == url_sip ||
       type == url_sips ||
@@ -1546,7 +1546,7 @@ int nua_client_report(nua_client_request_t *cr,
 
   nua_stack_event(nh->nh_nua, nh,
 		  nta_outgoing_getresponse(orq),
-		  cr->cr_event,
+		  (enum nua_event_e)cr->cr_event,
 		  status, phrase,
 		  tags);
   return 1;
