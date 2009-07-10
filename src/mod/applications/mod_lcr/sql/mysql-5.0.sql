@@ -24,6 +24,7 @@ CREATE TABLE `lcr` (
   `id` int(11) NOT NULL auto_increment,
   `digits` varchar(15) default NULL,
   `rate` float(11,5) unsigned NOT NULL,
+  `intra` float(11, 5) unsigned NOT NULL,
   `carrier_id` int(11) NOT NULL,
   `lead_strip` int(11) NOT NULL,
   `trail_strip` int(11) NOT NULL,
@@ -41,7 +42,9 @@ CREATE TABLE `lcr` (
   KEY `digits` (`digits`),
   KEY `lcr_profile` (`lcr_profile`),
   KEY `rate` (`rate`),
+  KEY `intra` (`intra`),
   KEY `digits_profile_cid_rate` USING BTREE (`digits`,`rate`),
+  KEY `digits_profile_cid_intra` USING BTREE (`digits`,`intra`),
   CONSTRAINT `carrier_id` FOREIGN KEY (`carrier_id`) REFERENCES `carriers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=latin1;
 
