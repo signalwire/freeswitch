@@ -11,6 +11,7 @@ CAPABILITY      All -Tcb //NetworkServices
 UID             0x1000008D 0xA000017E
 VENDORID        0
 OPTION CW       -dialect c99 -inline on -warn nounusedarg,nounusedvar
+OPTION ARMCC    --diag_suppress=1293,1295,188,186,550,111,174,177,187
 //CAPABILITY      NetworkServices NetworkControl CommDD UserEnvironment
 
 //EPOCHEAPSIZE 4 4194304
@@ -284,6 +285,8 @@ SYSTEMINCLUDE   \epoc32\include
 SYSTEMINCLUDE   \epoc32\include\stdapis
 SYSTEMINCLUDE   \epoc32\include\stdapis\openssl
 SYSTEMINCLUDE   \epoc32\include\osextensions
+SYSTEMINCLUDE   \epoc32\include\osextensions\sofia-sip
+SYSTEMINCLUDE   \epoc32\include\stdapis\stlport
 
 // Library dependencies
 

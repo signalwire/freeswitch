@@ -57,6 +57,7 @@ PRJ_EXPORTS
 ../../libsofia-sip-ua/nth/sofia-sip/nth_tag.h \epoc32\include\osextensions\sofia-sip\nth_tag.h
 ../../libsofia-sip-ua/nua/sofia-sip/nua.h \epoc32\include\osextensions\sofia-sip\nua.h
 ../../libsofia-sip-ua/nua/sofia-sip/nua_tag.h \epoc32\include\osextensions\sofia-sip\nua_tag.h
+../../libsofia-sip-ua/nua/nua_types.h \epoc32\include\osextensions\sofia-sip\nua_types.h
 ../../libsofia-sip-ua/sdp/sofia-sip/sdp.h \epoc32\include\osextensions\sofia-sip\sdp.h
 ../../libsofia-sip-ua/sdp/sofia-sip/sdp_tag.h \epoc32\include\osextensions\sofia-sip\sdp_tag.h
 ../../libsofia-sip-ua/sip/sofia-sip/sip.h \epoc32\include\osextensions\sofia-sip\sip.h
