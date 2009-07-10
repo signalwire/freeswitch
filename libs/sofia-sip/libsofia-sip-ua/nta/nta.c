@@ -529,6 +529,7 @@ struct nta_outgoing_s
   unsigned orq_forked:1;	/**< Tagged fork  */
 
   /* Attributes */
+  unsigned orq_sips:1;
   unsigned orq_uas:1;		/**< Running this transaction as UAS */
   unsigned orq_user_via:1;
   unsigned orq_stateless:1;
@@ -543,27 +544,24 @@ struct nta_outgoing_s
 #if HAVE_SOFIA_SRESOLV
   sipdns_resolver_t    *orq_resolver;
 #endif
-  enum nta_res_order_e  orq_res_order;  /**< AAAA/A first? */
-
   url_t                *orq_route;      /**< Route URL */
   tp_name_t             orq_tpn[1];     /**< Where to send request */
-  char const           *orq_scheme;     /**< Transport URL type */
 
   tport_t              *orq_tport;
   struct sigcomp_compartment *orq_cc;
   tagi_t               *orq_tags;       /**< Tport tag items */
-  int                   orq_pending;    /**< Request is pending in tport */
 
   char const           *orq_branch;	/**< Transaction branch */
   char const           *orq_via_branch;	/**< @Via branch */
 
   int                  *orq_status2b;   /**< Delayed response */
 
-  nta_outgoing_t       *orq_cancel;     /**< CANCEL transaction */
+  nta_outgoing_t       *orq_cancel;     /**< Delayed CANCEL transaction */
 
   nta_outgoing_t       *orq_forking;    /**< Untagged transaction */
   nta_outgoing_t       *orq_forks;	/**< Tagged transactions */
   uint32_t              orq_rseq;       /**< Latest incoming rseq */
+  int                   orq_pending;    /**< Request is pending in tport */
 };
 
 /* ------------------------------------------------------------------------- */
@@ -7113,7 +7111,9 @@ static int outgoing_default_cb(nta_outgoing_magic_t *magic,
 			       sip_t const *sip);
 
 #if HAVE_SOFIA_SRESOLV
-static void outgoing_resolve(nta_outgoing_t *orq, int explicit_transport);
+static void outgoing_resolve(nta_outgoing_t *orq,
+			     int explicit_transport,
+			     enum nta_res_order_e order);
 su_inline void outgoing_cancel_resolver(nta_outgoing_t *orq);
 su_inline void outgoing_destroy_resolver(nta_outgoing_t *orq);
 static int outgoing_other_destinations(nta_outgoing_t const *orq);
@@ -7749,7 +7749,6 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
   orq->orq_pass_100 = pass_100 != 0;
   orq->orq_sigcomp_zap = sigcomp_zap;
   orq->orq_sigcomp_new = comp != NONE && comp != NULL;
-  orq->orq_res_order = res_order;
   orq->orq_timestamp = use_timestamp;
   orq->orq_delay     = UINT_MAX;
   orq->orq_stateless = stateless != 0;
@@ -7783,7 +7782,6 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
 #endif
     resolved = tport_name_is_resolved(orq->orq_tpn);
     orq->orq_url = url_hdup(home, sip->sip_request->rq_url);
-    scheme = "sip";		/* XXX */
   }
   else if (route_url && !orq->orq_user_tport) {
     invalid = nta_tpn_by_url(home, orq->orq_tpn, &scheme, &port, route_url);
@@ -7885,7 +7883,7 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
 #else
   orq->orq_resolved = resolved = 1;
 #endif
-  orq->orq_scheme = scheme;
+  orq->orq_sips = su_casematch(scheme, "sips");
 
   if (invalid < 0 || !orq->orq_branch || msg_serialize(msg, (void *)sip) < 0) {
     SU_DEBUG_3(("nta outgoing create: %s\n",
@@ -7906,7 +7904,7 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
     outgoing_prepare_send(orq);
 #if HAVE_SOFIA_SRESOLV
   else
-    outgoing_resolve(orq, explicit_transport);
+    outgoing_resolve(orq, explicit_transport, res_order);
 #endif
 
   if (stateless &&
@@ -7938,10 +7936,9 @@ outgoing_prepare_send(nta_outgoing_t *orq)
   nta_agent_t *sa = orq->orq_agent;
   tport_t *tp;
   tp_name_t *tpn = orq->orq_tpn;
-  int sips = su_casematch(orq->orq_scheme, "sips");
 
   /* Select transport by scheme */
-  if (sips && strcmp(tpn->tpn_proto, "*") == 0)
+  if (orq->orq_sips && strcmp(tpn->tpn_proto, "*") == 0)
     tpn->tpn_proto = "tls";
 
   if (!tpn->tpn_port)
@@ -7950,7 +7947,7 @@ outgoing_prepare_send(nta_outgoing_t *orq)
   tp = tport_by_name(sa->sa_tports, tpn);
 
   if (tpn->tpn_port[0] == '\0') {
-    if (sips || tport_has_tls(tp))
+    if (orq->orq_sips || tport_has_tls(tp))
       tpn->tpn_port = "5061";
     else
       tpn->tpn_port = "5060";
@@ -7959,7 +7956,7 @@ outgoing_prepare_send(nta_outgoing_t *orq)
   if (tp) {
     outgoing_send_via(orq, tp);
   }
-  else if (sips) {
+  else if (orq->orq_sips) {
     SU_DEBUG_3(("nta outgoing create: no secure transport\n"));
     outgoing_reply(orq, SIP_416_UNSUPPORTED_URI, 1);
   }
@@ -9779,7 +9776,9 @@ static void outgoing_query_results(nta_outgoing_t *orq,
 
 /** Resolve a request destination */
 static void
-outgoing_resolve(nta_outgoing_t *orq, int explicit_transport)
+outgoing_resolve(nta_outgoing_t *orq,
+		 int explicit_transport,
+		 enum nta_res_order_e res_order)
 {
   struct sipdns_resolver *sr = NULL;
   char const *tpname = orq->orq_tpn->tpn_proto;
@@ -9868,7 +9867,7 @@ outgoing_resolve(nta_outgoing_t *orq, int explicit_transport)
     }
   }
 
-  switch (orq->orq_res_order) {
+  switch (res_order) {
   default:
   case nta_res_ip6_ip4:
     sr->sr_a_aaaa1 = sres_type_aaaa, sr->sr_a_aaaa2 = sres_type_a;
@@ -11317,39 +11316,53 @@ nta_outgoing_t *nta_outgoing_tagged(nta_outgoing_t *orq,
   assert(orq->orq_agent); assert(orq->orq_request);
 
   agent = orq->orq_agent;
-  tagged = su_alloc(agent->sa_home, sizeof(*tagged));
+  tagged = su_zalloc(agent->sa_home, sizeof(*tagged));
+
   home = msg_home((msg_t *)orq->orq_request);
 
-  *tagged = *orq;
+  tagged->orq_hash = orq->orq_hash;
+  tagged->orq_agent = orq->orq_agent;
   tagged->orq_callback = callback;
   tagged->orq_magic = magic;
 
-  tagged->orq_prev = NULL, tagged->orq_next = NULL, tagged->orq_queue = NULL;
-  tagged->orq_rprev = NULL, tagged->orq_rnext = NULL;
-#if HAVE_SOFIA_SRESOLV
-  tagged->orq_resolver = NULL;
-#endif
-
-  if (tagged->orq_cc)
-    nta_compartment_ref(tagged->orq_cc);
+  tagged->orq_method = orq->orq_method;
+  tagged->orq_method_name = orq->orq_method_name;
+  tagged->orq_url = orq->orq_url;
+  tagged->orq_from = orq->orq_from;
 
   sip_to_tag(home, to = sip_to_copy(home, orq->orq_to), to_tag);
 
-  tagged->orq_to 	   = to;
-  tagged->orq_tag          = to->a_tag;
-  tagged->orq_tport        = tport_ref(orq->orq_tport);
-  tagged->orq_request      = msg_ref_create(orq->orq_request);
-  tagged->orq_response     = msg_ref_create(orq->orq_response);
-  tagged->orq_cancel       = NULL;
+  tagged->orq_to = to;
+  tagged->orq_tag = to->a_tag;
+  tagged->orq_cseq = orq->orq_cseq;
+  tagged->orq_call_id = orq->orq_call_id;
 
-  if ((tagged->orq_uas = orq->orq_uas)) {
-    tagged->orq_forking      = orq;
-    tagged->orq_forks        = orq->orq_forks;
-    tagged->orq_forked       = 1;
+  tagged->orq_request = msg_ref_create(orq->orq_request);
+  tagged->orq_response = msg_ref_create(orq->orq_response);
+
+  tagged->orq_status = orq->orq_status;
+  tagged->orq_via_added = orq->orq_via_added;
+  tagged->orq_prepared = orq->orq_prepared;
+  tagged->orq_reliable = orq->orq_reliable;
+  tagged->orq_sips = orq->orq_sips;
+  tagged->orq_uas = orq->orq_uas;
+  tagged->orq_pass_100 = orq->orq_pass_100;
+  tagged->orq_must_100rel = orq->orq_must_100rel;
+  tagged->orq_100rel = orq->orq_100rel;
+  tagged->orq_route = orq->orq_route;
+  *tagged->orq_tpn = *orq->orq_tpn;
+  tagged->orq_tport = tport_ref(orq->orq_tport);
+  if (orq->orq_cc)
+    tagged->orq_cc = nta_compartment_ref(orq->orq_cc);
+  tagged->orq_branch = orq->orq_branch;
+  tagged->orq_via_branch = orq->orq_via_branch;
+
+  if (tagged->orq_uas) {
+    tagged->orq_forking = orq;
+    tagged->orq_forks = orq->orq_forks;
+    tagged->orq_forked = 1;
     orq->orq_forks = tagged;
   }
-
-  tagged->orq_rseq = 0;
 
   outgoing_insert(agent, tagged);
 
