@@ -1555,7 +1555,8 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	}
 
 	if (profile->debug) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n", profile->username, authentication);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n",
+			(sip_auth_username && sip_auth_password) ? sip_auth_username : gateway->auth_username, authentication);
 	}
 
 	ss_state = nua_callstate_authenticating;
