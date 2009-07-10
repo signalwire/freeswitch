@@ -60,7 +60,8 @@ LDADD = 		libnta.la \
 			../url/liburl.la \
 			../msg/libmsg.la \
 			../bnf/libbnf.la \
-			../su/libsu.la
+			../su/libsu.la \
+			${top_builddir}/s2check/libs2.a
 
 test_nta_LDFLAGS = 	-static
 
@@ -72,8 +73,7 @@ check_nta_SOURCES =	check_nta.c check_nta.h \
 			check_nta_api.c \
 			check_nta_client.c
 
-check_nta_LDADD = 	${LDADD} ${top_builddir}/s2check/libs2.a \
-			@CHECK_LIBS@
+check_nta_LDADD = 	${LDADD} @CHECK_LIBS@
 
 else
 check_nta_SOURCES = 	$(top_srcdir)/s2check/exit77.c

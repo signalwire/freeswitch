@@ -72,6 +72,8 @@ typedef struct client_t client_t;
 #include <assert.h>
 #include <unistd.h>
 
+#include "s2util.h"
+
 #if HAVE_OPEN_C
 #include <sys/param.h>
 #endif
@@ -497,6 +499,17 @@ void until_final_received(client_t *c)
       fputs(".", stdout); fflush(stdout);
     }
     su_root_step(c->c_ag->ag_root, 500L);
+  }
+}
+
+static
+void fast_final_received(client_t *c)
+{
+  for (c->c_final = 0; !c->c_final; ) {
+    if (tstflags & tst_verbatim) {
+      fputs(".", stdout); fflush(stdout);
+    }
+    s2_fast_forward(500, c->c_ag->ag_root);
   }
 }
 
@@ -1616,15 +1629,8 @@ int test_tports(agent_t *ag)
     url_t url[1];
     client_t ctx[1] = {{ ag, "Test 0.9" }};
 
-    printf("%s: starting MESSAGE timeout test, completing in 4 seconds\n",
-	   name);
-
     nta_agent_set_params(ag->ag_agent,
 			 NTATAG_TIMEOUT_408(1),
-			 NTATAG_SIP_T1(25),
-			 NTATAG_SIP_T1X64(64 * 25),
-			 NTATAG_SIP_T2(8 * 25),
-			 NTATAG_SIP_T4(10 * 25),
 			 TAG_END());
 
     *url = *ag->ag_aliases->m_url;
@@ -1644,14 +1650,10 @@ int test_tports(agent_t *ag)
 			   SIPTAG_CONTACT(ag->ag_m_bob),
 			   TAG_END());
 
-    TEST_1(!client_run(ctx, 408));
+    TEST_1(!client_run_with(ctx, 408, fast_final_received));
     TEST_P(ag->ag_latest_leg, NULL);
 
     nta_agent_set_params(ag->ag_agent,
-			 NTATAG_SIP_T1(500),
-			 NTATAG_SIP_T1X64(64 * 500),
-			 NTATAG_SIP_T2(NTA_SIP_T2),
-			 NTATAG_SIP_T4(NTA_SIP_T4),
 			 TAG_END());
   }
 
@@ -3958,6 +3960,9 @@ int main(int argc, char *argv[])
     retval |= test_prack(ag); SINGLE_FAILURE_CHECK();
     retval |= test_fix_467(ag); SINGLE_FAILURE_CHECK();
   }
+
+  s2_fast_forward(64000, ag->ag_root);
+
   retval |= test_deinit(ag); fflush(stdout);
 
   su_home_deinit(ag->ag_home);
