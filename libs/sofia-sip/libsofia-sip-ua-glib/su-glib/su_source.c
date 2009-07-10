@@ -38,7 +38,9 @@
 
 #include "config.h"
 
+#ifndef __GLIB_H__
 #include <glib.h>
+#endif
 
 #if HAVE_OPEN_C
 #include <glib/gthread.h>
