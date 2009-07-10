@@ -9747,6 +9747,8 @@ static void outgoing_graylist(nta_outgoing_t *orq, struct sipdns_query *sq);
 static int outgoing_query_naptr(nta_outgoing_t *orq, char const *domain);
 static void outgoing_answer_naptr(sres_context_t *orq, sres_query_t *q,
 				  sres_record_t *answers[]);
+struct sipdns_tport const *outgoing_naptr_tport(nta_outgoing_t *orq,
+						sres_record_t *answers[]);
 
 static int outgoing_make_srv_query(nta_outgoing_t *orq);
 static int outgoing_make_a_aaaa_query(nta_outgoing_t *orq);
@@ -10229,10 +10231,9 @@ void outgoing_answer_naptr(sres_context_t *orq,
 			   sres_query_t *q,
 			   sres_record_t *answers[])
 {
-  int i, j, order = -1;
+  int i, order = -1;
   size_t rlen;
   su_home_t *home = msg_home(orq->orq_request);
-  nta_agent_t *agent = orq->orq_agent;
   struct sipdns_resolver *sr = orq->orq_resolver;
   tp_name_t tpn[1];
   struct sipdns_query *sq, *selected = NULL, **tail = &selected, **at;
@@ -10246,15 +10247,38 @@ void outgoing_answer_naptr(sres_context_t *orq,
   /* The NAPTR results are sorted first by Order then by Preference */
   sres_sort_answers(orq->orq_agent->sa_resolver, answers);
 
+  if (sr->sr_tport == NULL)
+    sr->sr_tport = outgoing_naptr_tport(orq, answers);
+
   for (i = 0; answers && answers[i]; i++) {
     sres_naptr_record_t const *na = answers[i]->sr_naptr;
-    struct sipdns_tport const *tport = NULL;
     uint16_t type;
+    int valid_tport;
 
     if (na->na_record->r_status)
       continue;
     if (na->na_record->r_type != sres_type_naptr)
       continue;
+
+    /* Check if NAPTR matches our target */
+    if (!su_casenmatch(na->na_services, "SIP+", 4) &&
+	!su_casenmatch(na->na_services, "SIPS+", 5))
+      /* Not a SIP/SIPS service */
+      continue;
+
+    /* Use NAPTR results, don't try extra SRV/A/AAAA records */
+    sr->sr_use_srv = 0, sr->sr_use_a_aaaa = 0;
+
+    valid_tport = sr->sr_tport &&
+      su_casematch(na->na_services, sr->sr_tport->service);
+
+    SU_DEBUG_5(("nta: %s IN NAPTR %u %u \"%s\" \"%s\" \"%s\" %s%s\n",
+		na->na_record->r_name,
+		na->na_order, na->na_prefer,
+		na->na_flags, na->na_services,
+		na->na_regexp, na->na_replace,
+		order >= 0 && order != na->na_order ? " (out of order)" :
+		valid_tport ? "" : " (tport not used)"));
 
     /* RFC 2915 p 4:
      * Order
@@ -10266,47 +10290,8 @@ void outgoing_answer_naptr(sres_context_t *orq,
      *    order (except as noted below for the Flags field).
      */
     if (order >= 0 && order != na->na_order)
-      break;
-
-    /* Check if NAPTR matches our target */
-    if (!su_casenmatch(na->na_services, "SIP+", 4) &&
-	!su_casenmatch(na->na_services, "SIPS+", 5))
-      /* Not a SIP/SIPS service */
       continue;
-
-    /* Use NAPTR results, don't try extra SRV/A/AAAA records */
-    sr->sr_use_srv = 0, sr->sr_use_a_aaaa = 0;
-
-    if (sr->sr_tport) {
-      if (su_casematch(na->na_services, sr->sr_tport->service))
-	tport = sr->sr_tport;
-    }
-    /* Check if we have a transport mathing with service */
-    else for (j = 0; sr->sr_tports[j]; j++) {
-      /*
-       * Syntax of services is actually more complicated
-       * but comparing the values in the transport list
-       * match with those values that make any sense
-       */
-      if (!su_casematch(na->na_services, sr->sr_tports[j]->service))
-	continue;
-
-      tpn->tpn_proto = sr->sr_tports[j]->name;
-
-      if (tport_primary_by_name(agent->sa_tports, tpn)) {
-	tport = sr->sr_tport = sr->sr_tports[j];
-	break;
-      }
-    }
-
-    SU_DEBUG_5(("nta: %s IN NAPTR %u %u \"%s\" \"%s\" \"%s\" %s%s\n",
-		na->na_record->r_name,
-		na->na_order, na->na_prefer,
-		na->na_flags, na->na_services,
-		na->na_regexp, na->na_replace,
-		tport ? "" : " (not used)"));
-
-    if (!tport)
+    if (!valid_tport)
       continue;
 
     /* OK, we found matching NAPTR */
@@ -10336,7 +10321,7 @@ void outgoing_answer_naptr(sres_context_t *orq,
     sq->sq_weight = 1;
     sq->sq_type = type;
     sq->sq_domain = memcpy(sq + 1, na->na_replace, rlen);
-    sq->sq_proto = tport->name;
+    sq->sq_proto = sr->sr_tport->name;
   }
 
   sres_free_answers(orq->orq_agent->sa_resolver, answers);
@@ -10365,6 +10350,49 @@ void outgoing_answer_naptr(sres_context_t *orq,
 
   outgoing_resolve_next(orq);
 }
+
+/* Find first supported protocol in order and preference */
+struct sipdns_tport const *
+outgoing_naptr_tport(nta_outgoing_t *orq, sres_record_t *answers[])
+{
+  int i, j, order, pref;
+  int orders[SIPDNS_TRANSPORTS], prefs[SIPDNS_TRANSPORTS];
+  struct sipdns_tport const *tport;
+
+  struct sipdns_resolver *sr = orq->orq_resolver;
+
+  for (j = 0; sr->sr_tports[j]; j++) {
+    tport = sr->sr_tports[j];
+
+    orders[j] = 65536, prefs[j] = 65536;
+
+    /* Find transport order */
+    for (i = 0; answers && answers[i]; i++) {
+      sres_naptr_record_t const *na = answers[i]->sr_naptr;
+      if (na->na_record->r_status)
+	continue;
+      if (na->na_record->r_type != sres_type_naptr)
+	continue;
+      /* Check if NAPTR matches transport */
+      if (!su_casematch(na->na_services, tport->service))
+	continue;
+      orders[j] = na->na_order;
+      prefs[j] = na->na_prefer;
+      break;
+    }
+  }
+
+  tport = sr->sr_tports[0], order = orders[0], pref = prefs[0];
+
+  for (j = 1; sr->sr_tports[j]; j++) {
+    if (orders[j] <= order && prefs[j] < pref) {
+      tport = sr->sr_tports[j], order = orders[j], pref = prefs[j];
+    }
+  }
+
+  return tport;
+}
+
 
 /* Query SRV records */
 static
