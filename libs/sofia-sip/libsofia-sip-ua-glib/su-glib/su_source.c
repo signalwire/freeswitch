@@ -427,20 +427,21 @@ gboolean su_source_check(GSource *gs)
   SuSource *ss = (SuSource *)gs;
   su_port_t *self = ss->ss_port;
   gint tout;
-  unsigned I;
+#if SU_HAVE_POLL
+  unsigned i, I;
+#endif
 
   enter;
 
+#if SU_HAVE_POLL
   I = self->sup_n_waits;
 
-#if SU_HAVE_POLL
-  unsigned i;
   for (i = 0; i < I; i++) {
     if (self->sup_waits[i].revents)
       return TRUE;
   }
 #endif
-  (void)I;
+
   return su_source_prepare(gs, &tout);
 }
 
