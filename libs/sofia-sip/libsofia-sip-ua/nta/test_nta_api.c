@@ -489,7 +489,6 @@ static int api_test_destroy(agent_t *ag)
   TEST_VOID(su_home_deinit(home));
 
   END();
-
 }
 
 
@@ -893,13 +892,13 @@ int api_test_user_via_fillin(agent_t *ag)
   			  NULL,
   			  NULL,
   			  TAG_END()));
-  TEST_1(leg = nta_leg_tcreate(nta, NULL, NULL, 
+  TEST_1(leg = nta_leg_tcreate(nta, NULL, NULL,
   			 NTATAG_NO_DIALOG(1),
   			 TAG_END()));
 
   /* This creates a delayed response message */
   orq0 = nta_outgoing_tcreate(leg, outgoing_callback, ag, NULL,
-  		       SIP_METHOD_MESSAGE, 
+  		       SIP_METHOD_MESSAGE,
   		       URL_STRING_MAKE("sip:foo.bar;transport=none"),
   		       SIPTAG_FROM_STR("<sip:bar.foo>"),
   		       SIPTAG_TO_STR("<sip:foo.bar>"),
@@ -940,7 +939,7 @@ int api_test_user_via_fillin(agent_t *ag)
   TEST_VOID(nta_outgoing_destroy(orq0));
   TEST_VOID(nta_outgoing_destroy(orq1));
   TEST_VOID(nta_leg_destroy(leg));
-  TEST_VOID(nta_agent_destroy(nta)); 
+  TEST_VOID(nta_agent_destroy(nta));
 
   TEST_VOID(su_root_destroy(root));
   TEST_VOID(su_home_deinit(home));
