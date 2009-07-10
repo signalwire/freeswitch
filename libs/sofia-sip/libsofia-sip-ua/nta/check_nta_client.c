@@ -345,12 +345,13 @@ START_TEST(client_2_1_2)
   *udpurl = *s2sip->tcp.contact->m_url;
   udpurl->url_params = "transport=udp";
 
-  /* Create DNS records for both UDP and TCP */
+  /* Create DNS records for both UDP and TCP, resolver matches UDP */
   s2_dns_domain("udptcp.org", 1,
 		"s2", 1, udpurl,
-		"s2", 1, s2sip->tcp.contact->m_url,
+		"s2", 2, s2sip->tcp.contact->m_url,
 		NULL);
 
+  /* Sent to tport selected by resolver */
   orq = nta_outgoing_tcreate(s2->default_leg,
 			     s2_nta_orq_callback, NULL,
 			     URL_STRING_MAKE("sip:udptcp.org"),
@@ -359,8 +360,41 @@ START_TEST(client_2_1_2)
 			     SIPTAG_FROM_STR("<sip:client@example.net>"),
 			     TAG_END());
   fail_unless(orq != NULL);
+  response = s2_nta_wait_for(wait_for_orq, orq,
+			     wait_for_status, 503,
+			     0);
+  s2_nta_free_event(response);
+  nta_outgoing_destroy(orq);
+
+  /* Message size exceeds 1300, tries to use TCP even if NAPTR points to UDP */
+  orq = nta_outgoing_tcreate(s2->default_leg,
+			     s2_nta_orq_callback, NULL,
+			     URL_STRING_MAKE("sip:udptcp.org"),
+			     SIP_METHOD_MESSAGE,
+			     URL_STRING_MAKE("sip:test2.0.example.org"),
+			     SIPTAG_FROM_STR("<sip:client@example.net>"),
+#define ROW "012345678901234567890123456789012345678901234\n"
+			     SIPTAG_PAYLOAD_STR( /* > 1300 bytes */
+       	       	       	       "0000 " ROW "0050 " ROW
+			       "0100 " ROW "0150 " ROW
+			       "0200 " ROW "0250 " ROW
+			       "0300 " ROW "0350 " ROW
+			       "0400 " ROW "0450 " ROW
+			       "0500 " ROW "0550 " ROW
+			       "0600 " ROW "0650 " ROW
+			       "0700 " ROW "0750 " ROW
+			       "0800 " ROW "0850 " ROW
+			       "0900 " ROW "0950 " ROW
+			       "1000 " ROW "1050 " ROW
+			       "1100 " ROW "1150 " ROW
+       	       	       	       "1200 " ROW "1250 " ROW
+						 ),
+#undef ROW
+			     TAG_END());
+  fail_unless(orq != NULL);
   request = s2_sip_wait_for_request(SIP_METHOD_MESSAGE);
   fail_unless(request != NULL);
+  fail_unless(request->sip->sip_via->v_protocol == sip_transport_tcp);
   s2_sip_respond_to(request, NULL, 200, "2.1.2", TAG_END());
   s2_sip_free_message(request);
   response = s2_nta_wait_for(wait_for_orq, orq,
