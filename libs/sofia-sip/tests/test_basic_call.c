@@ -567,7 +567,9 @@ int test_basic_call_2(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_info);
-  TEST_1(e->data->e_status >= 900 || e->data->e_status == 481);
+  TEST_1(e->data->e_status >= 900 || e->data->e_status == 481 ||
+	 /* INFO received outside dialog where it is Allow:ed */
+	 e->data->e_status == 405);
   TEST_1(!e->next);
   free_events_in_list(ctx, b->events);
 
@@ -1656,7 +1658,7 @@ int test_basic_call_6(struct context *ctx)
    Server transitions:
    INIT -(S1)-> RECEIVED -(S2a)-> EARLY -(S3b)-> COMPLETED -(S4)-> READY
 
-   A send INFO:
+   A sends UPDATE:
    READY -(T1)-> TERMINATED
 
    B sends BYE:
@@ -1665,7 +1667,7 @@ int test_basic_call_6(struct context *ctx)
    See @page nua_call_model in nua.docs for more information
 */
 int reject_method(CONDITION_PARAMS);
-int reject_info(CONDITION_PARAMS);
+int reject_update(CONDITION_PARAMS);
 
 int test_basic_call_7(struct context *ctx)
 {
@@ -1897,19 +1899,21 @@ int test_basic_call_7(struct context *ctx)
   TEST_1(!e->next);
   free_events_in_list(ctx, b->events);
 
-  /* Let A allow INFO  */
-  nua_set_params(a->nua, NUTAG_ALLOW("INFO"), TAG_END());
-  /* Make B to process INFO at application level */
-  nua_set_hparams(b_call->nh, NUTAG_APPL_METHOD("INFO"),
-		  NUTAG_ALLOW("INFO"),
+  /* Let A allow UPDATE  */
+  nua_set_params(a->nua, NUTAG_ALLOW("UPDATE"), TAG_END());
+  /* Make B to process UPDATE at application level */
+  nua_set_hparams(b_call->nh, NUTAG_APPL_METHOD("UPDATE"),
+		  NUTAG_ALLOW("UPDATE"),
 		  TAG_END());
   run_ab_until(ctx, nua_r_set_params, NULL, nua_r_set_params, NULL);
 
-  INFO(a, a_call, a_call->nh, TAG_END());
+  UPDATE(a, a_call, a_call->nh, TAG_END());
 
-  run_ab_until(ctx, -1, until_terminated, -1, reject_info);
+  run_ab_until(ctx, -1, until_terminated, -1, reject_update);
 
-  TEST_1(e = a->events->head);  TEST_E(e->data->e_event, nua_r_info);
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_calling);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_update);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
   TEST_1(!e->next);
@@ -1917,11 +1921,17 @@ int test_basic_call_7(struct context *ctx)
 
   TEST_1(!nua_handle_has_active_call(a_call->nh));
 
-  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_info);
+  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_update);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_received); /* TERMINATED */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
   TEST_1(!e->next);
   free_events_in_list(ctx, b->events);
 
-  TEST_1(nua_handle_has_active_call(b_call->nh));
+#if nomore
+  /* Used to use INFO instead of UPDATE and INFO was asymmetric */
+  TEST_1(!nua_handle_has_active_call(b_call->nh));
 
   INFO(b, b_call, b_call->nh, TAG_END());
   run_b_until(ctx, -1, until_terminated);
@@ -1935,6 +1945,7 @@ int test_basic_call_7(struct context *ctx)
   TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
   TEST_1(!e->next);
   free_events_in_list(ctx, b->events);
+#endif
 
   TEST_1(!nua_handle_has_active_call(b_call->nh));
 
@@ -1966,7 +1977,7 @@ int reject_method(CONDITION_PARAMS)
   return 0;
 }
 
-int reject_info(CONDITION_PARAMS)
+int reject_update(CONDITION_PARAMS)
 {
   msg_t *current = nua_current_request(nua);
 
@@ -1975,7 +1986,7 @@ int reject_info(CONDITION_PARAMS)
 
   save_event_in_list(ctx, event, ep, call);
 
-  if (event == nua_i_info) {
+  if (event == nua_i_update) {
     RESPOND(ep, call, nh,
 	    SIP_480_TEMPORARILY_UNAVAILABLE,
 	    NUTAG_WITH(current),
