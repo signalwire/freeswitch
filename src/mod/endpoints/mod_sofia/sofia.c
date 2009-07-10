@@ -1754,12 +1754,6 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_SUPPRESS_CNG);
 						}
-					} else if (!strcasecmp(var, "NDLB-to-in-200-contact")) {
-						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_TO_IN_200_CONTACT;
-						} else {
-							profile->ndlb &= ~PFLAG_NDLB_TO_IN_200_CONTACT;
-						}
 					} else if (!strcasecmp(var, "NDLB-broken-auth-hash")) {
 						if (switch_true(val)) {
 							profile->ndlb |= PFLAG_NDLB_BROKEN_AUTH_HASH;
@@ -2373,10 +2367,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_SUPPRESS_CNG);
 							profile->cng_pt = 0;
-						}
-					} else if (!strcasecmp(var, "NDLB-to-in-200-contact")) {
-						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_TO_IN_200_CONTACT;
 						}
 					} else if (!strcasecmp(var, "NDLB-broken-auth-hash")) {
 						if (switch_true(val)) {
@@ -4814,7 +4804,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		url_set_chanvars(session, sip->sip_to->a_url, sip_to);
 		if (switch_channel_get_variable(channel, "sip_to_uri")) {
 			const char *ipv6;
-			const char *url = NULL;
+			const char *tmp, *at, *url = NULL;
 			
 			host = switch_channel_get_variable(channel, "sip_to_host");
 			user = switch_channel_get_variable(channel, "sip_to_user");
@@ -4846,14 +4836,11 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url;
 			}			
 			
-			if ((profile->ndlb & PFLAG_NDLB_TO_IN_200_CONTACT) || sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
-				char *at;
-				char *tmp = sofia_overcome_sip_uri_weakness(session, url, transport, SWITCH_TRUE, NULL);
-				if ((at = strchr(tmp, '@'))) {
-					url = switch_core_session_sprintf(session, "sip:%s%s", user, at);
-				}
+			tmp = sofia_overcome_sip_uri_weakness(session, url, transport, SWITCH_TRUE, NULL);
+	
+			if ((at = strchr(tmp, '@'))) {
+				url = switch_core_session_sprintf(session, "sip:%s%s", user, at);
 			}
-
 
 			if (url) {
 				if (strchr(url, '>')) {
