@@ -46,6 +46,7 @@
 #include <sofia-sip/auth_digest.h>
 
 #include <sofia-sip/base64.h>
+#include <sofia-sip/bnf.h>
 #include <sofia-sip/su_uniqueid.h>
 #include <sofia-sip/su_string.h>
 
@@ -311,11 +312,24 @@ int auc_credentials(auth_client_t **auc_list, su_home_t *home,
   s0 = s = su_strdup(NULL, data);
 
   /* Parse authentication data */
-  /* Data is string like "Basic:\"agni\":user1:secret" */
+  /* Data is string like "Basic:\"agni\":user1:secret"
+     or "Basic:\"[fe80::204:23ff:fea7:d60a]\":user1:secret" (IPv6)
+     or "Basic:\"Use \\\"interesting\\\" username and password here:\":user1:secret"
+  */
   if (s && (s = strchr(scheme = s, ':')))
     *s++ = 0;
-  if (s && (s = strchr(realm = s, ':')))
-    *s++ = 0;
+  if (s) {
+    if (*s == '"') {
+      realm = s;
+      s += span_quoted(s);
+      if (*s == ':')
+	*s++ = 0;
+      else
+	realm = NULL, s = NULL;
+    }
+    else
+      s = NULL;
+  }
   if (s && (s = strchr(user = s, ':')))
     *s++ = 0;
   if (s && (s = strchr(pass = s, ':')))

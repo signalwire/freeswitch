@@ -1168,6 +1168,54 @@ int test_digest_client(void)
   END();
 }
 
+int
+test_auth_client(void)
+{
+  BEGIN();
+
+  {
+    char challenge[] =
+      PROTOCOL " 401 Unauthorized\r\n"
+      "Call-ID:0e3dc2b2-dcc6-1226-26ac-258b5ce429ab\r\n"
+      "CSeq:32439043 REGISTER\r\n"
+      "From:surf3.ims3.so.noklab.net <sip:surf3@ims3.so.noklab.net>;tag=I8hFdg0H3OK\r\n"
+      "To:<sip:surf3@ims3.so.noklab.net>\r\n"
+      "Via:SIP/2.0/UDP 10.21.36.70:23800;branch=z9hG4bKJjKGu9vIHqf;received=10.21.36.70;rport\r\n"
+      "WWW-Authenticate:DIGEST algorithm=MD5,nonce=\"h7wIpP+atU+/+Zau5UwLMA==\",realm=\"[::1]\"\r\n"
+      "Proxy-Authenticate:DIGEST algorithm=MD5,nonce=\"h7wIpP+atU+/+Zau5UwLMA==\",realm=\"\\\"realm\\\"\"\r\n"
+      "Content-Length:0\r\n"
+      "Security-Server:digest\r\n"
+      "r\n";
+
+    su_home_t *home;
+    msg_t *msg;
+    sip_t *sip;
+    auth_client_t *aucs = NULL;
+
+    TEST_1(home = su_home_new(sizeof(*home)));
+
+    TEST_1(msg = read_message(MSG_DO_EXTRACT_COPY, challenge));
+    TEST_1(sip = sip_object(msg));
+
+    TEST_1(aucs == NULL);
+    TEST(auc_challenge(&aucs, home, sip->sip_www_authenticate,
+		       sip_authorization_class), 1);
+    TEST_1(aucs != NULL);
+
+    TEST(auc_credentials(&aucs, home, "Digest:\"[::1]\":user:pass"), 1);
+
+    TEST(auc_challenge(&aucs, home, sip->sip_proxy_authenticate,
+		       sip_proxy_authorization_class), 1);
+
+    TEST(auc_credentials(&aucs, home, "Digest:\"\\\"realm\\\"\":user:pass"), 1);
+
+    msg_destroy(msg);
+    su_home_unref(home);
+  }
+
+  END();
+}
+
 #if HAVE_FLOCK
 #include <sys/file.h>
 #endif
@@ -1353,7 +1401,7 @@ int main(int argc, char *argv[])
 
   retval |= test_digest();
   retval |= test_digest_client();
-
+  retval |= test_auth_client();
   retval |= test_module_io();
 
   su_deinit();
