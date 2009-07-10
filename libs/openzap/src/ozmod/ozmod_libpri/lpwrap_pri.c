@@ -172,11 +172,11 @@ int lpwrap_init_pri(struct lpwrap_pri *spri, zap_span_t *span, zap_channel_t *dc
 	memset(spri, 0, sizeof(struct lpwrap_pri));
 	
 	spri->dchan = dchan;
+	spri->span = span;
 
 	if ((spri->pri = pri_new_cb(spri->dchan->sockfd, node, swtype, __pri_lpwrap_read, __pri_lpwrap_write, spri))){
 		unsigned char buf[4] = { 0 };
 		size_t buflen = sizeof(buf), len = 0;
-		spri->span = span;
 		pri_set_debug(spri->pri, debug);
 		ret = 0;
 		zap_set_flag(spri, LPWRAP_PRI_READY);
