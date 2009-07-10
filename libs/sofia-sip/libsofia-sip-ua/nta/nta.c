@@ -11743,8 +11743,6 @@ int nta_agent_tport_is_updating(nta_agent_t *agent)
 /** Initiate STUN keepalive controller to TPORT */
 int nta_tport_keepalive(nta_outgoing_t *orq)
 {
-  tport_t *tp;
-
   assert(orq);
 
 #if HAVE_SOFIA_STUN
