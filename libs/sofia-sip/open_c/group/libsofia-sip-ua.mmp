@@ -68,6 +68,9 @@ SOURCE          strtoull.c
 SOURCE          su_string.c
 SOURCE          getopt.c
 SOURCE          poll.c
+SOURCE          smoothsort.c
+SOURCE          su_kqueue_port.c
+SOURCE          su_devpoll_port.c
 
 SOURCEPATH 			..\..\libsofia-sip-ua\bnf
 
@@ -286,7 +289,6 @@ SYSTEMINCLUDE   \epoc32\include\stdapis
 SYSTEMINCLUDE   \epoc32\include\stdapis\openssl
 SYSTEMINCLUDE   \epoc32\include\osextensions
 SYSTEMINCLUDE   \epoc32\include\osextensions\sofia-sip
-SYSTEMINCLUDE   \epoc32\include\stdapis\stlport
 
 // Library dependencies
 

@@ -34,7 +34,8 @@
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  */
-
+#include <stdlib.h>
+#include <sofia-sip/su_config.h>
 #include "config.h"
 
 #include <sofia-sip/heap.h>
@@ -219,7 +220,11 @@ void su_smoothsort(void *base, size_t r, size_t N,
   stretch s = { 1, 1, 1 };
   size_t q;
 
-  array const array[1] = {{ base, less, swap }};
+  array array_i;
+  array* const array = &array_i;
+  array->less = less;
+  array->swap = swap;
+  array->m = base;
 
   assert(less && swap);
 

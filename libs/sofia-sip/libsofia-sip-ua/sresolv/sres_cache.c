@@ -223,8 +223,12 @@ sres_cache_get0(sres_htable_t *htable,
 
   if (cname && dcount == derrorcount) {
     /* Nothing found, trace CNAMEs */
-    struct frame *f, frame = { previous, domain };
-    unsigned hash = sres_hash_key(domain = cname->cn_cname);
+    unsigned hash;
+    struct frame *f, frame;
+    frame.previous = previous;
+    frame.domain = domain;
+
+    hash = sres_hash_key(domain = cname->cn_cname);
 
     /* Check for cname loops */
     for (f = previous; f; f = f->previous) {
