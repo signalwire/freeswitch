@@ -513,7 +513,7 @@ SWITCH_STANDARD_API(cidlookup_function)
 		if (name) {
 			stream->write_function(stream, name);
 		} else {
-			stream->write_function(stream,"-ERR");
+			stream->write_function(stream, "UNKNOWN");
 		}
 	}
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
