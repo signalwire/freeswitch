@@ -661,7 +661,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 	}
 	sdp_port = tech_pvt->local_sdp_audio_port;
 
-	if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_audio_ip")) && !sofia_test_pflag(tech_pvt->profile, PFLAG_AUTO_NAT)) {
+	if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_audio_ip"))) {
 		if (tech_pvt->profile->extrtpip) {
 			use_ip = tech_pvt->profile->extrtpip;
 		}
@@ -675,8 +675,8 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 		}
 	}
 
-	if (tech_pvt->profile->extrtpip && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
-		tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, tech_pvt->profile->extrtpip);
+	if (!use_ip && tech_pvt->profile->extrtpip && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+		tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, ip ? ip : tech_pvt->profile->extrtpip);
 		switch_nat_add_mapping((switch_port_t)sdp_port, SWITCH_NAT_UDP, &external_port, SWITCH_FALSE);
 	} else {
 		tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, ip);
