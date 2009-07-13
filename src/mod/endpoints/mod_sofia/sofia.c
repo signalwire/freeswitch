@@ -1341,7 +1341,11 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			}
 			
 			if (switch_strlen_zero(realm)) {
-				realm = name;
+				if (switch_strlen_zero(proxy)) {
+					realm = name;
+				} else {
+					realm = proxy;
+				}
 			}
 
 			if (switch_strlen_zero(username)) {
