@@ -4781,6 +4781,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		} else {
 			destination_number = sip->sip_request->rq_url->url_user;
 		}
+		if (sip->sip_request->rq_url->url_params && (sofia_glue_find_parameter(sip->sip_request->rq_url->url_params, "intercom=true"))) {
+			switch_channel_set_variable(channel, "sip_auto_answer_detected", "true");
+		}
 	}
 
 	if (!destination_number && sip->sip_to && sip->sip_to->a_url) {
@@ -4983,6 +4986,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if ((call_info = sip_call_info(sip))) {
 		char *tmp = sip_header_as_string(profile->home, (void *) call_info);
+		if (call_info->ci_params && (msg_params_find(call_info->ci_params , "answer-after=0"))) {
+			switch_channel_set_variable(channel, "sip_auto_answer_detected", "true");
+		}
 		switch_channel_set_variable(channel, "sip_call_info", tmp);
 		su_free(profile->home, tmp);
 	}
