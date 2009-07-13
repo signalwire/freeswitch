@@ -404,8 +404,6 @@ int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, con
 		}
 	}
 
-	gettimeofday(&event->tv, NULL);
-	
 	zap_mutex_lock(mcon->mutex);
 	if (event->event_id == SIGBOOST_EVENT_SYSTEM_RESTART_ACK) {
 		mcon->txseq=0;
@@ -450,8 +448,6 @@ int __ss7bc_connection_writep(ss7bc_connection_t *mcon, ss7bc_event_t *event, co
 		event_size=sizeof(ss7bc_short_event_t);
 	}	
 
-	gettimeofday(&event->tv, NULL);
-	
 	zap_mutex_lock(mcon->mutex);
     event->version = SIGBOOST_VERSION; 
 	err = sendto(mcon->socket, event, event_size, 0, (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
