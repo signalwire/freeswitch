@@ -99,7 +99,6 @@ typedef struct
 	uint32_t		trunk_group;
 	uint8_t			span;
 	uint8_t			chan;
-	struct timeval  	tv;
 	uint8_t			called_number_digits_count;
 	char			called_number_digits [MAX_DIALED_DIGITS + 1]; /* it's a null terminated string */
 	uint8_t			calling_number_digits_count; /* it's an array */
@@ -127,7 +126,6 @@ typedef struct
 	uint32_t		trunk_group;
 	uint8_t			span;
 	uint8_t			chan;
-	struct timeval  	tv;
 	uint8_t			release_cause;
 } t_sigboost_short;
 #pragma pack()
