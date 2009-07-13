@@ -21,7 +21,6 @@ ESLconnection::ESLconnection(const char *host, const char *port, const char *pas
 ESLconnection::ESLconnection(int socket)
 {
 	connection_construct_common();
-	memset(&handle, 0, sizeof(handle));
 	esl_attach_handle(&handle, (esl_socket_t)socket, NULL);
 }
 
