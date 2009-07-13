@@ -45,7 +45,14 @@ struct xml_binding {
 	char *cred;
 	int disable100continue;
 	int use_get_style;
-	uint32_t ignore_cacert_check;
+	uint32_t enable_cacert_check;
+	char *ssl_cert_file;
+	char *ssl_key_file;
+	char *ssl_key_password;
+	char *ssl_version;
+	char *ssl_cacert_file;
+	uint32_t enable_ssl_verifyhost;
+	char *cookie_file;
 	switch_hash_t *vars_map;
 	int use_dynamic_url;
 };
@@ -226,8 +233,41 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
 		}
 
-		if (binding->ignore_cacert_check) {
-			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
+		if (binding->enable_cacert_check) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, TRUE);
+		}
+	
+		if (binding->ssl_cert_file) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, binding->ssl_cert_file);
+		}
+		
+		if (binding->ssl_key_file) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSLKEY, binding->ssl_key_file);
+		}
+		
+		if (binding->ssl_key_password) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSLKEYPASSWD, binding->ssl_key_password);
+		}
+		
+		if (binding->ssl_version) {
+			if (!strcasecmp(binding->ssl_version, "SSLv3")) {
+				curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
+			} else if (!strcasecmp(binding->ssl_version, "TLSv1")) {
+				curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+			}
+		}
+		
+		if (binding->ssl_cacert_file) {
+			curl_easy_setopt(curl_handle, CURLOPT_CAINFO, binding->ssl_cacert_file);
+		}
+		
+		if (binding->enable_ssl_verifyhost) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2);
+		}
+	
+		if (binding->cookie_file) {
+			curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, binding->cookie_file);
+			curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, binding->cookie_file);
 		}
 
 		curl_easy_perform(curl_handle);
@@ -299,7 +339,14 @@ static switch_status_t do_config(void)
 		char *method = NULL;
 		int disable100continue = 0;
 		int use_dynamic_url = 0;
-		uint32_t ignore_cacert_check = 0;
+		uint32_t enable_cacert_check = 0;
+		char *ssl_cert_file = NULL;
+		char *ssl_key_file = NULL;
+		char *ssl_key_password = NULL;
+		char *ssl_version = NULL;
+		char *ssl_cacert_file = NULL;
+		uint32_t enable_ssl_verifyhost = 0;
+		char *cookie_file = NULL;
 		hash_node_t* hash_node;
 		need_vars_map = 0;
 		vars_map = NULL;
@@ -318,8 +365,22 @@ static switch_status_t do_config(void)
 				disable100continue = 1;
 			} else if (!strcasecmp(var, "method")) {
 				method = val;
-			} else if (!strcasecmp(var, "ignore-cacert-check") && switch_true(val)) {
-				ignore_cacert_check = 1;
+			} else if (!strcasecmp(var, "enable-cacert-check") && switch_true(val)) {
+				enable_cacert_check = 1;
+			} else if (!strcasecmp(var, "ssl-cert-path")) {
+				ssl_cert_file = val;
+			} else if (!strcasecmp(var, "ssl-key-path")) {
+				ssl_key_file = val;
+			} else if (!strcasecmp(var, "ssl-key-password")) {
+				ssl_key_password = val;
+			} else if (!strcasecmp(var, "ssl-version")) {
+				ssl_version = val;
+			} else if (!strcasecmp(var, "ssl-cacert-file")) {
+				ssl_cacert_file = val;
+			} else if (!strcasecmp(var, "enable-ssl-verifyhost") && switch_true(val)) {
+				enable_ssl_verifyhost = 1;
+			} else if (!strcasecmp(var, "cookie-file")) {
+				cookie_file = val;
 			} else if (!strcasecmp(var, "use-dynamic-url") && switch_true(val)) {
 				use_dynamic_url = 1;
 			} else if (!strcasecmp(var, "enable-post-var")) {
@@ -372,7 +433,33 @@ static switch_status_t do_config(void)
 		binding->disable100continue = disable100continue;
 		binding->use_get_style = method != NULL && strcasecmp(method,"post") != 0;
 		binding->use_dynamic_url = use_dynamic_url;
-		binding->ignore_cacert_check = ignore_cacert_check;
+		binding->enable_cacert_check = enable_cacert_check;
+		
+		if (ssl_cert_file) {
+			binding->ssl_cert_file = strdup(ssl_cert_file);
+		}
+		
+		if (ssl_key_file) {
+			binding->ssl_key_file = strdup(ssl_key_file);
+		}
+		
+		if (ssl_key_password) {
+			binding->ssl_key_password = strdup(ssl_key_password);
+		}
+		
+		if (ssl_version) {
+			binding->ssl_version = strdup(ssl_version);
+		}
+		
+		if (ssl_cacert_file) {
+			binding->ssl_cacert_file = strdup(ssl_cacert_file);
+		}
+		
+		binding->enable_ssl_verifyhost = enable_ssl_verifyhost;
+		
+		if (cookie_file) {
+			binding->cookie_file = strdup(cookie_file);
+		}
 
 		binding->vars_map = vars_map;
 		

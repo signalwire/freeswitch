@@ -45,7 +45,13 @@ static struct {
 	uint32_t delay;
 	uint32_t retries;
 	uint32_t shutdown;
-	uint32_t ignore_cacert_check;
+	uint32_t enable_cacert_check;
+	char *ssl_cert_file;
+	char *ssl_key_file;
+	char *ssl_key_password;
+	char *ssl_version;
+	char *ssl_cacert_file;
+	uint32_t enable_ssl_verifyhost;
 	int encode;
 	int log_b;
 	int prefix_a;
@@ -178,9 +184,29 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			slist = curl_slist_append(slist, "Expect:");
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
 		}
-
-		if (globals.ignore_cacert_check) {
-			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
+		
+		if (globals.ssl_cert_file) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, globals.ssl_cert_file);
+		}
+		
+		if (globals.ssl_key_file) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSLKEY, globals.ssl_key_file);
+		}
+		
+		if (globals.ssl_key_password) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSLKEYPASSWD, globals.ssl_key_password);
+		}
+		
+		if (globals.ssl_version) {
+			if (!strcasecmp(globals.ssl_version, "SSLv3")) {
+				curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
+			} else if (!strcasecmp(globals.ssl_version, "TLSv1")) {
+				curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+			}
+		}
+		
+		if (globals.ssl_cacert_file) {
+			curl_easy_setopt(curl_handle, CURLOPT_CAINFO, globals.ssl_cacert_file);
 		}
 
 		/* these were used for testing, optionally they may be enabled if someone desires
@@ -198,6 +224,14 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			if (!strncasecmp(globals.urls[globals.url_index], "https", 5)) {
 				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+			}
+			
+			if (globals.enable_cacert_check) {
+				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, TRUE);
+			}
+			
+			if (globals.enable_ssl_verifyhost) {
+				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2);
 			}
 
 			curl_easy_perform(curl_handle);
@@ -353,10 +387,22 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 						globals.err_log_dir = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
 					}
 				}
-			} else if (!strcasecmp(var, "ignore-cacert-check") && switch_true(val)) {
-				globals.ignore_cacert_check = 1;
+			} else if (!strcasecmp(var, "enable-cacert-check") && switch_true(val)) {
+				globals.enable_cacert_check = 1;
+			} else if (!strcasecmp(var, "ssl-cert-path")) {
+				globals.ssl_cert_file = val;
+			} else if (!strcasecmp(var, "ssl-key-path")) {
+				globals.ssl_key_file = val;
+			} else if (!strcasecmp(var, "ssl-key-password")) {
+				globals.ssl_key_password = val;
+			} else if (!strcasecmp(var, "ssl-version")) {
+				globals.ssl_version = val;
+			} else if (!strcasecmp(var, "ssl-cacert-file")) {
+				globals.ssl_cacert_file = val;
+			} else if (!strcasecmp(var, "enable-ssl-verifyhost") && switch_true(val)) {
+				globals.enable_ssl_verifyhost = 1;
 			}
-
+		
 			if (switch_strlen_zero(globals.err_log_dir)) {
 				if (!switch_strlen_zero(globals.log_dir)) {
 					globals.err_log_dir = switch_core_strdup(globals.pool, globals.log_dir);
