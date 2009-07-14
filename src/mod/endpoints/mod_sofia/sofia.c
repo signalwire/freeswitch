@@ -2838,7 +2838,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 	}
 
 	if (gateway) {
-		if (status == 200 || status == 404 || status == 501) {
+		if (status >= 200 && status < 600) {
 			if (gateway->state == REG_STATE_FAILED) {
 				gateway->state = REG_STATE_UNREGED;
 			}
