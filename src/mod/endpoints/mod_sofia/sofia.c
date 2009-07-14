@@ -1443,10 +1443,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			
 			if (!strncasecmp(proxy, "sip:", 4)) {
 				gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
-				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, register_proxy ? register_proxy + 4 : proxy + 4);
+				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, from_domain);
 			} else {
 				gateway->register_proxy = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
-				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, register_proxy ? register_proxy : proxy);
+				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, from_domain);
 			}
 
 			gateway->expires_str = switch_core_strdup(gateway->pool, expire_seconds);
