@@ -1417,6 +1417,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				params = switch_core_sprintf(gateway->pool, ";transport=%s", register_transport);
 			}
 
+			if (!switch_strlen_zero(from_domain)) {
+				gateway->from_domain = switch_core_strdup(gateway->pool, from_domain);
+			}
+
 			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s", from_domain ? from_domain : register_proxy ? register_proxy : proxy);
 			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", from_user, from_domain, register_transport);
 
