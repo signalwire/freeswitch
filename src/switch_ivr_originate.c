@@ -109,6 +109,7 @@ typedef struct {
 	uint8_t ignore_ring_ready;
 	int monitor_early_media_ring_count;
 	int monitor_early_media_ring_total;
+	int cancel_timeout;
 } originate_global_t;
 
 
@@ -227,6 +228,10 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 {
 	int x = 0,i;
 	time_t elapsed = switch_epoch_time_now(NULL) - start;
+
+	if (oglobals->cancel_timeout > 0) {
+		return 0;
+	}
 
 	for (i = 0; i < max; i++) {
 		if (originate_status[i].peer_channel && originate_status[i].per_channel_delay_start && elapsed > originate_status[i].per_channel_delay_start) {
@@ -507,6 +512,10 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 			
 			if (!switch_strlen_zero(oglobals->key)) {
 				struct key_collect *collect;
+
+				if (oglobals->cancel_timeout < 0) {
+					oglobals->cancel_timeout = 1;
+				}
 
 				if ((collect = switch_core_session_alloc(originate_status[i].peer_session, sizeof(*collect)))) {
 					switch_channel_set_flag(originate_status[i].peer_channel, CF_TAGGED);
@@ -1047,6 +1056,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "group_confirm_file")) {
 					ok = 1;
+				} else if (!strcasecmp((char *) hi->name, "group_confirm_clear_timeout")) {
+					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "forked_dial")) {
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "fail_on_single_reject")) {
@@ -1121,6 +1132,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if (ringback_data) {
 		oglobals.early_ok = 0;
+	}
+
+	if (switch_true(switch_event_get_header(var_event, "group_confirm_cancel_timeout"))) {
+		oglobals.cancel_timeout = -1;
 	}
 
 	if ((var = switch_event_get_header(var_event, "group_confirm_key"))) {
