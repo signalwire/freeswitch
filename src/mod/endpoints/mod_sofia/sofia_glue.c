@@ -1323,7 +1323,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *call_id = NULL;
 	char *route = NULL;
 	char *route_uri = NULL;
-	char *sendto = NULL;
 	sofia_destination_t *dst = NULL;
 	sofia_cid_type_t cid_type = tech_pvt->profile->cid_type;
 
@@ -1689,10 +1688,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		route = NULL;
 	}
 	
-	if ((val = switch_channel_get_variable(channel, "sip_network_destination"))) {
-		sendto = switch_core_session_strdup(session, val);
-	}
-
 	if (route_uri) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Setting proxy route to %s\n", route_uri, switch_channel_get_name(channel));
 		tech_pvt->route_uri = switch_core_session_strdup(tech_pvt->session, route_uri);
