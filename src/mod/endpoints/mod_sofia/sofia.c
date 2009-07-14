@@ -4856,13 +4856,16 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			}
 
 			if (url) {
-				if (strchr(url, '>')) {
-					tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url,
-																		  sofia_glue_transport2str(transport));
-				} else {
-					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", url,
-																		  sofia_glue_transport2str(transport));
-				}
+				const char *brackets = NULL;
+				const char *proto = NULL;
+				
+				brackets = strchr(url, '>');
+				proto = switch_stristr("transport=", url);
+				tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s%s%s%s%s",
+																	  brackets ? "" : "<", url,
+																	  proto ? "" : ";transport=",
+																	  proto ? "" : sofia_glue_transport2str(transport),
+																	  brackets ? "" : ">");
 			} else {
 				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
@@ -4876,13 +4879,16 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			}			
 			
 			if (url) {
-				if (strchr(url, '>')) {
-					tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url,
-																		  sofia_glue_transport2str(transport));
-				} else {
-					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", url,
-																		  sofia_glue_transport2str(transport));
-				}
+				const char *brackets = NULL;
+				const char *proto = NULL;
+				
+				brackets = strchr(url, '>');
+				proto = switch_stristr("transport=", url);
+				tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s%s%s%s%s",
+																	  brackets ? "" : "<", url,
+																	  proto ? "" : ";transport=",
+																	  proto ? "" : sofia_glue_transport2str(transport),
+																	  brackets ? "" : ">");
 			} else {
 				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
