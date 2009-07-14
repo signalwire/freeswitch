@@ -2658,6 +2658,10 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 		
 		gateway_ptr->ob_calls++;
+		
+		if (!switch_strlen_zero(gateway_ptr->from_domain)) {
+			switch_channel_set_variable(nchannel, "sip_invite_domain", gateway_ptr->from_domain);
+		}
 
 		if (gateway_ptr->ob_vars) {
 			switch_event_header_t *hp;
