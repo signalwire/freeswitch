@@ -508,10 +508,9 @@
 		<prompt phrase="Вы закрепляете этот телефон за Вашим добавочным номером" filename="ivr-provision_phone_permanently_to_extension.wav"/><!--  You are about to provision this phone permanently to your extension.  -->
 		<prompt phrase="Пожалуйста введите добавочный номер за которым вы хотите закрепить этот телефон и нажмите решётку" filename="ivr-extension_to_provision_this_phone.wav"/><!-- Please enter the extension number to which you would like to provision this phone,followed by the pound sign.   -->
 		<prompt phrase="Спасибо, этот телефон сейчас перезагрузится" filename="ivr-this_phone_will_now_reboot.wav"/><!--   Thank you, this phone will now reboot. -->
-		
-		<prompt phrase="Спасибо. Ваше сообщение было записано." filename="ivr-recording_saved.wav" attr="Needs_to_be_recorded!"/> <!-- Thank you. Your recording has been saved. -->
-		<prompt phrase="Нажмите 1 что бы сохранить сообщение. Нажмите 2 что бы прослушать Ваше сообщение. Нажмите 3 что бы перезаписать" filename="ivr-save_review_record.wav" attr="Needs_to_be_recorded!"/><!-- Press 1 to save your recording. Press 2 to review your recording. Press 3 to re-record. -->
-	        <prompt phrase="Система не смогла сохранить ваше сообщение. Попробуйте позднее." filename="ivr-unable_save" attr="Needs_to_be_recorded!"/><!-- The system is unable to save your sound file at this time. Please try again later. -->
+		<prompt phrase="Спасибо. Ваше сообщение было записано." filename="ivr-recording_saved.wav"/> <!-- Thank you. Your recording has been saved. -->
+		<prompt phrase="Нажмите 1 что бы сохранить сообщение. Нажмите 2 что бы прослушать Ваше сообщение. Нажмите 3 что бы перезаписать" filename="ivr-save_review_record.wav"/><!-- Press 1 to save your recording. Press 2 to review your recording. Press 3 to re-record. -->
+	        <prompt phrase="Система не смогла сохранить ваше сообщение. Попробуйте позднее." filename="ivr-unable_save"/><!-- The system is unable to save your sound file at this time. Please try again later. -->
 		
 	</ivr>
 	<misc>
