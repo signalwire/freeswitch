@@ -626,6 +626,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "32khz music", "libs\win32\S
 		{1F0A8A77-E661-418F-BB92-82172AE43803} = {1F0A8A77-E661-418F-BB92-82172AE43803}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_say_ru", "src\mod\say\mod_say_ru\mod_say_ru.2008.vcproj", "{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}"
+	ProjectSection(ProjectDependencies) = postProject
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Win32 = All|Win32
@@ -2051,6 +2056,17 @@ Global
 		{EED13FC7-4F81-4E6F-93DB-CDB7DF5CF959}.Debug|x64.ActiveCfg = Debug|Win32
 		{EED13FC7-4F81-4E6F-93DB-CDB7DF5CF959}.Release|Win32.ActiveCfg = Release|Win32
 		{EED13FC7-4F81-4E6F-93DB-CDB7DF5CF959}.Release|x64.ActiveCfg = Release|Win32
+		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.All|Win32.ActiveCfg = Release|x64
+		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.All|x64.ActiveCfg = Release|x64
+		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.All|x64.Build.0 = Release|x64
+		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.Debug|Win32.Build.0 = Debug|Win32
+		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.Debug|x64.ActiveCfg = Debug|x64
+		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.Debug|x64.Build.0 = Debug|x64
+		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.Release|Win32.ActiveCfg = Release|Win32
+		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.Release|Win32.Build.0 = Release|Win32
+		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.Release|x64.ActiveCfg = Release|x64
+		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
