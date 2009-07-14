@@ -264,8 +264,12 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			gateway_ptr->expires_str = "0";
 		}
 
+		if (!sofia_test_pflag(gateway_ptr->profile, PFLAG_RUNNING) || gateway_ptr->deleted) {
+			continue;
+		}
+
 		if (gateway_ptr->ping && !gateway_ptr->pinging && (now >= gateway_ptr->ping && (ostate == REG_STATE_NOREG || ostate == REG_STATE_REGED))) {
-			nua_handle_t *nh = nua_handle(profile->nua, NULL, NUTAG_URL(gateway_ptr->register_url), SIPTAG_CONTACT_STR(profile->url), TAG_END());
+			nua_handle_t *nh = nua_handle(profile->nua, NULL, NUTAG_URL(gateway_ptr->register_url), TAG_END());
 			sofia_private_t *pvt;
 
 			pvt = malloc(sizeof(*pvt));
@@ -277,7 +281,12 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			nua_handle_bind(nh, pvt);
 
 			gateway_ptr->pinging = 1;
-			nua_options(nh, TAG_END());
+			nua_options(nh, 
+						TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
+						SIPTAG_TO_STR(gateway_ptr->register_from),
+						SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+						SIPTAG_FROM_STR(gateway_ptr->register_from),
+						TAG_END());
 		}
 
 		switch (ostate) {
@@ -325,7 +334,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 							 TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 							 SIPTAG_TO_STR(gateway_ptr->register_from),
 							 SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
-							 SIPTAG_FROM_STR(gateway_ptr->register_from),							 
+							 SIPTAG_FROM_STR(gateway_ptr->register_from),					 
 							 SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
 							 NUTAG_REGISTRAR(gateway_ptr->register_proxy),
 							 NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
