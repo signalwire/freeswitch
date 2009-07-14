@@ -264,11 +264,8 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			gateway_ptr->expires_str = "0";
 		}
 
-		if (!sofia_test_pflag(gateway_ptr->profile, PFLAG_RUNNING) || gateway_ptr->deleted) {
-			continue;
-		}
-
-		if (gateway_ptr->ping && !gateway_ptr->pinging && (now >= gateway_ptr->ping && (ostate == REG_STATE_NOREG || ostate == REG_STATE_REGED))) {
+		if (gateway_ptr->ping && !gateway_ptr->pinging && (now >= gateway_ptr->ping && (ostate == REG_STATE_NOREG || ostate == REG_STATE_REGED)) &&
+			!gateway_ptr->deleted) {
 			nua_handle_t *nh = nua_handle(profile->nua, NULL, NUTAG_URL(gateway_ptr->register_url), TAG_END());
 			sofia_private_t *pvt;
 
