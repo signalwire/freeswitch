@@ -269,6 +269,10 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			nua_handle_t *nh = nua_handle(profile->nua, NULL, NUTAG_URL(gateway_ptr->register_url), TAG_END());
 			sofia_private_t *pvt;
 
+			if (sofia_glue_check_nat(gateway_ptr->profile, gateway_ptr->register_proxy)) {
+				user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
+			}
+
 			pvt = malloc(sizeof(*pvt));
 			switch_assert(pvt);
 			memset(pvt, 0, sizeof(*pvt));
@@ -280,10 +284,14 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			gateway_ptr->pinging = 1;
 			nua_options(nh, 
 						TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
+						TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 						SIPTAG_TO_STR(gateway_ptr->register_from),
 						SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
 						SIPTAG_FROM_STR(gateway_ptr->register_from),
 						TAG_END());
+
+			switch_safe_free(user_via);
+			user_via = NULL;
 		}
 
 		switch (ostate) {
@@ -348,6 +356,8 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			}
 			gateway_ptr->retry = now + gateway_ptr->retry_seconds;
 			gateway_ptr->state = REG_STATE_TRYING;			
+			switch_safe_free(user_via);
+			user_via = NULL;
 			break;
 
 		case REG_STATE_FAILED:
@@ -376,7 +386,6 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		if (ostate != gateway_ptr->state) {
 			sofia_reg_fire_custom_gateway_state_event(gateway_ptr);
 		}
-		switch_safe_free(user_via);
 	}
 }
 
