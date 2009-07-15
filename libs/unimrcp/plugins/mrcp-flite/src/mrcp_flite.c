@@ -119,6 +119,8 @@ typedef struct flite_speak_msg_t flite_speak_msg_t;
 /* we have a special task for the actual synthesis - 
    the task is created when a mrcp speak message is received */
 static apt_bool_t flite_speak(apt_task_t *task, apt_task_msg_t *msg);
+static apt_bool_t flite_on_start(apt_task_t *task);
+static apt_bool_t flite_on_terminate(apt_task_t *task);
 
 /** Declare this macro to use log routine of the server where the plugin is loaded from */
 MRCP_PLUGIN_LOGGER_IMPLEMENT
@@ -184,14 +186,16 @@ static apt_bool_t flite_synth_task_create(flite_synth_channel_t *synth_channel)
 	}
 
 	task_vtable = apt_consumer_task_vtable_get(consumer_task);
-	if(!task_vtable) {
-		apt_log(APT_LOG_MARK,APT_PRIO_ERROR, "flite_synth_channel_speak cannot use flite speak task vtable - channel:%d", synth_channel->iId);
-		return FALSE;
+	if(task_vtable) {
+		task_vtable->process_msg = flite_speak;
+		task_vtable->on_pre_run = flite_on_start;
+		task_vtable->on_post_run = flite_on_terminate;
 	}
-
-	task_vtable->process_msg = flite_speak;
 	synth_channel->msg_pool = msg_pool;
 	synth_channel->task = apt_consumer_task_base_get(consumer_task);
+	if(synth_channel->task) {
+		apt_task_name_set(synth_channel->task,"Flite Task");
+	}
 	return TRUE;
 }
 
@@ -199,19 +203,10 @@ static apt_bool_t flite_synth_task_create(flite_synth_channel_t *synth_channel)
 static mrcp_engine_channel_t* flite_synth_engine_channel_create(mrcp_resource_engine_t *engine, apr_pool_t *pool)
 {
 	/* create flite synth channel */
-	flite_synth_channel_t *synth_channel = (flite_synth_channel_t *) apr_palloc(pool,sizeof(flite_synth_channel_t));
 	mpf_codec_descriptor_t *codec_descriptor = NULL;
+	flite_synth_channel_t *synth_channel = (flite_synth_channel_t *) apr_palloc(pool,sizeof(flite_synth_channel_t));
 
 	apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "flite_synth_engine_channel_create");
-#if 0
-	codec_descriptor = (mpf_codec_descriptor_t *) apr_palloc(pool,sizeof(mpf_codec_descriptor_t));
-	mpf_codec_descriptor_init(codec_descriptor);
-	codec_descriptor->channel_count = 1;
-	codec_descriptor->payload_type = 96;
-	apt_string_set(&codec_descriptor->name,"LPCM");
-	codec_descriptor->sampling_rate = 16000;
-#endif
-
 	synth_channel->flite_engine = (flite_synth_engine_t *) engine->obj;
 	synth_channel->speak_request = NULL; // no active speak request in progress
 	synth_channel->speak_response = NULL;
@@ -227,6 +222,15 @@ static mrcp_engine_channel_t* flite_synth_engine_channel_create(mrcp_resource_en
 		apt_log(APT_LOG_MARK, APT_PRIO_WARNING, "flite_synth_task_create failed");
 		return NULL;
 	}
+
+#if 0
+	codec_descriptor = (mpf_codec_descriptor_t *) apr_palloc(pool,sizeof(mpf_codec_descriptor_t));
+	mpf_codec_descriptor_init(codec_descriptor);
+	codec_descriptor->channel_count = 1;
+	codec_descriptor->payload_type = 96;
+	apt_string_set(&codec_descriptor->name,"LPCM");
+	codec_descriptor->sampling_rate = 16000;
+#endif
 
 	/* create engine channel base */
 	synth_channel->channel = mrcp_engine_source_channel_create(
@@ -272,14 +276,15 @@ static apt_bool_t flite_synth_channel_open(mrcp_engine_channel_t *channel)
 
 	if(synth_channel->task) {
 		if(apt_task_start(synth_channel->task) == TRUE) {
-			apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "Speak task started - channel %d", synth_channel->iId);
+			/* async response will be sent */
+			return TRUE;
 		}
 		else {
 			apt_log(APT_LOG_MARK, APT_PRIO_WARNING, "Speak task start failed - channel %d", synth_channel->iId);
 		}
 	}
 
-	return mrcp_engine_channel_open_respond(channel,TRUE);
+	return mrcp_engine_channel_open_respond(channel,FALSE);
 }
 
 /** Close engine channel (asynchronous response MUST be sent)*/
@@ -289,15 +294,15 @@ static apt_bool_t flite_synth_channel_close(mrcp_engine_channel_t *channel)
 	apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "flite_synth_channel_close - channel %d", synth_channel->iId);
 
 	if(synth_channel->task) {
-		if(apt_task_terminate(synth_channel->task,TRUE) == TRUE) {
-			apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "Speak task terminated - channel %d", synth_channel->iId);
+		if(apt_task_terminate(synth_channel->task,FALSE) == TRUE) {
+			/* async response will be sent */
+			return TRUE;
 		}
 		else {
 			apt_log(APT_LOG_MARK, APT_PRIO_WARNING, "Speak task terminate failed - channel %d", synth_channel->iId);
 		}
 	}
-	mrcp_engine_channel_close_respond(channel);
-	return TRUE; 
+	return mrcp_engine_channel_close_respond(channel);
 }
 
 /** Process MRCP channel request (asynchronous response MUST be sent)*/
@@ -428,7 +433,7 @@ static apt_bool_t flite_speak(apt_task_t *task, apt_task_msg_t *msg)
 	apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "< flite_speak_msg_process speak - channel %d", synth_channel->iId);
 	
 	/* just sequential stuff */
-	start = apr_time_now();	// in microsec
+	start = apr_time_now();	/* in microsec */
 	if(!body->length) {
 		synth_channel->speak_request = NULL;
 		synth_response_construct(response,MRCP_STATUS_CODE_MISSING_PARAM,SYNTHESIZER_COMPLETION_CAUSE_ERROR);
@@ -479,12 +484,32 @@ static apt_bool_t flite_speak(apt_task_t *task, apt_task_msg_t *msg)
 		delete_wave(wave);
 	}
 
-	// this will notify the callback that feeds the client that synthesis is complete
+	/* this will notify the callback that feeds the client that synthesis is complete */
 	mpf_buffer_event_write(synth_channel->audio_buffer, MEDIA_FRAME_TYPE_EVENT);
 	synth_channel->synthesizing = FALSE;
 
 	apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "> flite_speak_msg_process speak - end of TTS - %d", synth_channel->iId);
 	return TRUE;
+}
+
+static APR_INLINE flite_synth_channel_t* flite_synth_channel_get(apt_task_t *task)
+{
+	apt_consumer_task_t *consumer_task = apt_task_object_get(task);
+	return apt_consumer_task_object_get(consumer_task);
+}
+
+static apt_bool_t flite_on_start(apt_task_t *task)
+{
+	flite_synth_channel_t *synth_channel = flite_synth_channel_get(task);
+	apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "Speak task started - channel %d", synth_channel->iId);
+	return mrcp_engine_channel_open_respond(synth_channel->channel,TRUE);
+}
+
+static apt_bool_t flite_on_terminate(apt_task_t *task)
+{
+	flite_synth_channel_t *synth_channel = flite_synth_channel_get(task);
+	apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "Speak task terminated - channel %d", synth_channel->iId);
+	return mrcp_engine_channel_close_respond(synth_channel->channel);
 }
 
 /** Process STOP request */

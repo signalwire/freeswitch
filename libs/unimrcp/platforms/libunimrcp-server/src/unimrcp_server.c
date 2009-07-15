@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <stdlib.h>
 #include <apr_xml.h>
 #include "unimrcp_server.h"
 #include "uni_version.h"

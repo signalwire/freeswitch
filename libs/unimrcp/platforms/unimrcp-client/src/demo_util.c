@@ -25,6 +25,10 @@
 /* recognizer includes */
 #include "mrcp_recog_header.h"
 #include "mrcp_recog_resource.h"
+/* NLSML doc include */
+#include "apt_nlsml_doc.h"
+/* logger include */
+#include "apt_log.h"
 
 static void demo_message_body_set(mrcp_message_t *mrcp_message, const apt_dir_layout_t *dir_layout, const char *file_name)
 {
@@ -127,6 +131,8 @@ mrcp_message_t* demo_recognize_message_create(mrcp_session_t *session, mrcp_chan
 			mrcp_resource_header_property_add(mrcp_message,RECOGNIZER_HEADER_RECOGNITION_TIMEOUT);
 			recog_header->start_input_timers = TRUE;
 			mrcp_resource_header_property_add(mrcp_message,RECOGNIZER_HEADER_START_INPUT_TIMERS);
+			recog_header->confidence_threshold = 0.87f;
+			mrcp_resource_header_property_add(mrcp_message,RECOGNIZER_HEADER_CONFIDENCE_THRESHOLD);
 		}
 		/* set message body */
 		apt_string_assign(&mrcp_message->body,text,mrcp_message->pool);
@@ -134,6 +140,37 @@ mrcp_message_t* demo_recognize_message_create(mrcp_session_t *session, mrcp_chan
 	return mrcp_message;
 }
 
+/** Parse NLSML result */
+apt_bool_t demo_nlsml_result_parse(mrcp_message_t *message)
+{
+	apr_xml_elem *interpret;
+	apr_xml_elem *instance;
+	apr_xml_elem *input;
+	apr_xml_doc *doc = nlsml_doc_load(&message->body,message->pool);
+	if(!doc) {
+		return FALSE;
+	}
+	
+	/* walk through interpreted results */
+	interpret = nlsml_first_interpret_get(doc);
+	for(; interpret; interpret = nlsml_next_interpret_get(interpret)) {
+		/* get instance and input */
+		nlsml_interpret_results_get(interpret,&instance,&input);
+		if(instance) {
+			/* process instance */
+			if(instance->first_cdata.first) {
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Interpreted Instance [%s]",instance->first_cdata.first->text);
+			}
+		}
+		if(input) {
+			/* process input */
+			if(input->first_cdata.first) {
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Interpreted Input [%s]",input->first_cdata.first->text);
+			}
+		}
+	}
+	return TRUE;
+}
 
 /** Create demo RTP termination descriptor */
 mpf_rtp_termination_descriptor_t* demo_rtp_descriptor_create(apr_pool_t *pool)

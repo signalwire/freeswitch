@@ -595,7 +595,7 @@ MRCP_DECLARE(apr_pool_t*) mrcp_server_memory_pool_get(mrcp_server_t *server)
 void mrcp_server_session_add(mrcp_server_session_t *session)
 {
 	if(session->base.id.buf) {
-		apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Add Session "APT_SID_FMT,session->base.id.buf);
+		apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Add Session "APT_SID_FMT,MRCP_SESSION_SID(&session->base));
 		apr_hash_set(session->server->session_table,session->base.id.buf,session->base.id.length,session);
 	}
 }
@@ -603,7 +603,7 @@ void mrcp_server_session_add(mrcp_server_session_t *session)
 void mrcp_server_session_remove(mrcp_server_session_t *session)
 {
 	if(session->base.id.buf) {
-		apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Remove Session "APT_SID_FMT,session->base.id.buf);
+		apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Remove Session "APT_SID_FMT,MRCP_SESSION_SID(&session->base));
 		apr_hash_set(session->server->session_table,session->base.id.buf,session->base.id.length,NULL);
 	}
 }
@@ -820,7 +820,7 @@ static mrcp_profile_t* mrcp_server_profile_get_by_agent(mrcp_server_t *server, m
 			return profile;
 		}
 	}
-	apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot Find Profile by Agent "APT_SID_FMT,session->base.id.buf);
+	apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot Find Profile by Agent "APT_SID_FMT,MRCP_SESSION_SID(&session->base));
 	return NULL;
 }
 

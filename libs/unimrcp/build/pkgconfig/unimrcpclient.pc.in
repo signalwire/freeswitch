@@ -1,7 +1,7 @@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
-includedir=@includedir@ @UNIMRCP_APR_INCLUDES@
+includedir=@includedir@ @UNIMRCP_APR_INCLUDES@ @UNIMRCP_APU_INCLUDES@
 
 Name: unimrcpclient
 Description: UniMRCP Client Stack

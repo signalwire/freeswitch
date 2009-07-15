@@ -237,7 +237,10 @@ static mrcp_engine_channel_t* pocketsphinx_engine_recognizer_create(mrcp_resourc
 			recognizer,           /* object to associate */
 			NULL,                 /* codec descriptor might be NULL by default */
 			pool);                /* pool to allocate memory from */
-	
+
+	apr_thread_mutex_create(&recognizer->mutex,APR_THREAD_MUTEX_DEFAULT,channel->pool);
+	apr_thread_cond_create(&recognizer->wait_object,channel->pool);
+
 	recognizer->channel = channel;
 	return channel;
 }
@@ -245,6 +248,15 @@ static mrcp_engine_channel_t* pocketsphinx_engine_recognizer_create(mrcp_resourc
 /** Destroy pocketsphinx recognizer */
 static apt_bool_t pocketsphinx_recognizer_destroy(mrcp_engine_channel_t *channel)
 {
+	pocketsphinx_recognizer_t *recognizer = channel->method_obj;
+	if(recognizer->mutex) {
+		apr_thread_mutex_destroy(recognizer->mutex);
+		recognizer->mutex = NULL;
+	}
+	if(recognizer->wait_object) {
+		apr_thread_cond_destroy(recognizer->wait_object);
+		recognizer->wait_object = NULL;
+	}
 	return TRUE;
 }
 
@@ -256,17 +268,10 @@ static apt_bool_t pocketsphinx_recognizer_open(mrcp_engine_channel_t *channel)
 
 	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Open Channel "APT_SIDRES_FMT,RECOGNIZER_SIDRES(recognizer));
 
-	apr_thread_mutex_create(&recognizer->mutex,APR_THREAD_MUTEX_DEFAULT,channel->pool);
-	apr_thread_cond_create(&recognizer->wait_object,channel->pool);
-
 	/* Launch a thread to run recognition in */
 	rv = apr_thread_create(&recognizer->thread,NULL,pocketsphinx_recognizer_run,recognizer,channel->pool);
 	if(rv != APR_SUCCESS) {
 		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Failed to Launch Thread "APT_SIDRES_FMT,RECOGNIZER_SIDRES(recognizer));
-		apr_thread_mutex_destroy(recognizer->mutex);
-		recognizer->mutex = NULL;
-		apr_thread_cond_destroy(recognizer->wait_object);
-		recognizer->wait_object = NULL;
 		return mrcp_engine_channel_open_respond(channel,FALSE);
 	}
 
@@ -278,25 +283,16 @@ static apt_bool_t pocketsphinx_recognizer_close(mrcp_engine_channel_t *channel)
 {
 	pocketsphinx_recognizer_t *recognizer = channel->method_obj;
 	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Close Channel "APT_SIDRES_FMT,RECOGNIZER_SIDRES(recognizer));
-	if(recognizer->thread) {
-		apr_status_t rv;
-		
-		/* Signal recognition thread to terminate */
-		apr_thread_mutex_lock(recognizer->mutex);
-		recognizer->close_requested = TRUE;
-		apr_thread_cond_signal(recognizer->wait_object);
-		apr_thread_mutex_unlock(recognizer->mutex);
-
-		apr_thread_join(&rv,recognizer->thread);
-		recognizer->thread = NULL;
-
-		apr_thread_mutex_destroy(recognizer->mutex);
-		recognizer->mutex = NULL;
-		apr_thread_cond_destroy(recognizer->wait_object);
-		recognizer->wait_object = NULL;
+	if(!recognizer->thread) {
+		return mrcp_engine_channel_close_respond(channel);
 	}
 
-	return mrcp_engine_channel_close_respond(channel);
+	/* Signal recognition thread to terminate */
+	apr_thread_mutex_lock(recognizer->mutex);
+	recognizer->close_requested = TRUE;
+	apr_thread_cond_signal(recognizer->wait_object);
+	apr_thread_mutex_unlock(recognizer->mutex);
+	return TRUE;
 }
 
 /** Process MRCP request (asynchronous response MUST be sent)*/
@@ -533,12 +529,10 @@ static apt_bool_t pocketsphinx_recognize(pocketsphinx_recognizer_t *recognizer, 
 		return FALSE;
 	}
 
-	response_recog_header->completion_cause = RECOGNIZER_COMPLETION_CAUSE_SUCCESS;
-	mrcp_resource_header_property_add(response,RECOGNIZER_HEADER_COMPLETION_CAUSE);
-
 	if(!recognizer->decoder || ps_start_utt(recognizer->decoder, NULL) < 0) {
 		response->start_line.status_code = MRCP_STATUS_CODE_METHOD_FAILED;
 		response_recog_header->completion_cause = RECOGNIZER_COMPLETION_CAUSE_ERROR;
+		mrcp_resource_header_property_add(response,RECOGNIZER_HEADER_COMPLETION_CAUSE);
 		return FALSE;
 	}
 
@@ -755,17 +749,6 @@ static void* APR_THREAD_FUNC pocketsphinx_recognizer_run(apr_thread_t *thread, v
 	}
 	while(recognizer->close_requested == FALSE);
 
-	/* check if recognition is still active */
-	if(recognizer->inprogress_recog) {
-		apr_thread_mutex_lock(recognizer->mutex);
-		recognizer->stop_response = recognizer->inprogress_recog;
-		apr_thread_cond_wait(recognizer->wait_object,recognizer->mutex);
-		apr_thread_mutex_unlock(recognizer->mutex);
-		if(recognizer->complete_event) {
-			pocketsphinx_recognition_complete(recognizer,recognizer->complete_event);
-		}
-	}
-
 	/** Clear all the defined grammars */
 	pocketsphinx_grammars_clear(recognizer);
 	
@@ -775,6 +758,10 @@ static void* APR_THREAD_FUNC pocketsphinx_recognizer_run(apr_thread_t *thread, v
 		ps_free(recognizer->decoder);
 		recognizer->decoder = NULL;
 	}
+
+	recognizer->thread = NULL;
+	/** Finally send response to channel_close request */
+	mrcp_engine_channel_close_respond(recognizer->channel);
 
 	/** Exit thread */
 	apr_thread_exit(thread,APR_SUCCESS);

@@ -40,9 +40,9 @@ struct mrcp_resource_t {
 	apt_bool_t (*resourcify_message_by_name)(mrcp_resource_t *resource, mrcp_message_t *message);
 
 	/** Create client side state machine */
-	mrcp_state_machine_t* (*create_client_state_machine)(void *obj, mrcp_message_dispatcher_f dispatcher, mrcp_version_e version, apr_pool_t *pool);
+	mrcp_state_machine_t* (*create_client_state_machine)(void *obj, mrcp_version_e version, apr_pool_t *pool);
 	/** Create server side state machine */
-	mrcp_state_machine_t* (*create_server_state_machine)(void *obj, mrcp_message_dispatcher_f dispatcher, mrcp_version_e version, apr_pool_t *pool);
+	mrcp_state_machine_t* (*create_server_state_machine)(void *obj, mrcp_version_e version, apr_pool_t *pool);
 };
 
 /** Initialize MRCP resource */

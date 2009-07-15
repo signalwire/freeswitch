@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-
+#include <stdlib.h>
 #include <apr_general.h>
 #include <sofia-sip/sdp.h>
 #include "mrcp_sdp.h"

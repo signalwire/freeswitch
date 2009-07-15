@@ -93,6 +93,8 @@ struct mrcp_server_session_t {
 	apr_size_t                 answer_flag_count;
 	/** Number of in-progress terminate requests (flags) */
 	apr_size_t                 terminate_flag_count;
+	/** Number of in-progress deactivare requests (flags) */
+	apr_size_t                 deactivate_flag_count;
 };
 
 /** MRCP profile */

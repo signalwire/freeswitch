@@ -27,10 +27,10 @@
 APT_BEGIN_EXTERN_C
 
 /** Create MRCP recognizer server state machine */
-mrcp_state_machine_t* mrcp_recog_server_state_machine_create(void *obj, mrcp_message_dispatcher_f dispatcher, mrcp_version_e version, apr_pool_t *pool);
+mrcp_state_machine_t* mrcp_recog_server_state_machine_create(void *obj, mrcp_version_e version, apr_pool_t *pool);
 
 /** Create MRCP recognizer client state machine */
-mrcp_state_machine_t* mrcp_recog_client_state_machine_create(void *obj, mrcp_message_dispatcher_f dispatcher, mrcp_version_e version, apr_pool_t *pool);
+mrcp_state_machine_t* mrcp_recog_client_state_machine_create(void *obj, mrcp_version_e version, apr_pool_t *pool);
 
 APT_END_EXTERN_C
 

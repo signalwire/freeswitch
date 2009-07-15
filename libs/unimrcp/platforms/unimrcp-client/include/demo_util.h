@@ -34,6 +34,8 @@ mrcp_message_t* demo_define_grammar_message_create(mrcp_session_t *session, mrcp
 /** Create demo MRCP message (RECOGNIZE request) */
 mrcp_message_t* demo_recognize_message_create(mrcp_session_t *session, mrcp_channel_t *channel, const apt_dir_layout_t *dir_layout);
 
+/** Parse NLSML result */
+apt_bool_t demo_nlsml_result_parse(mrcp_message_t *message);
 
 /** Create demo RTP termination descriptor */
 mpf_rtp_termination_descriptor_t* demo_rtp_descriptor_create(apr_pool_t *pool);

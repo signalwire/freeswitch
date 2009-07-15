@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <stdlib.h>
 #include <apr_general.h>
 #include <sofia-sip/sdp.h>
 #include "rtsp_message.h"

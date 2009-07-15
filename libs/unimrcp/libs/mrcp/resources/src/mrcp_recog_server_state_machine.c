@@ -61,18 +61,26 @@ typedef apt_bool_t (*recog_method_f)(mrcp_recog_state_machine_t *state_machine, 
 static APR_INLINE apt_bool_t recog_request_dispatch(mrcp_recog_state_machine_t *state_machine, mrcp_message_t *message)
 {
 	state_machine->active_request = message;
-	return state_machine->base.dispatcher(&state_machine->base,message);
+	return state_machine->base.on_dispatch(&state_machine->base,message);
 }
 
 static APR_INLINE apt_bool_t recog_response_dispatch(mrcp_recog_state_machine_t *state_machine, mrcp_message_t *message)
 {
 	state_machine->active_request = NULL;
-	return state_machine->base.dispatcher(&state_machine->base,message);
+	if(state_machine->base.active == FALSE) {
+		/* this is the response to deactivation (STOP) request */
+		return state_machine->base.on_deactivate(&state_machine->base);
+	}
+	return state_machine->base.on_dispatch(&state_machine->base,message);
 }
 
 static APR_INLINE apt_bool_t recog_event_dispatch(mrcp_recog_state_machine_t *state_machine, mrcp_message_t *message)
 {
-	return state_machine->base.dispatcher(&state_machine->base,message);
+	if(state_machine->base.active == FALSE) {
+		/* do nothing, state machine has already been deactivated */
+		return FALSE;
+	}
+	return state_machine->base.on_dispatch(&state_machine->base,message);
 }
 
 static APR_INLINE void recog_state_change(mrcp_recog_state_machine_t *state_machine, mrcp_recog_state_e state)
@@ -286,10 +294,10 @@ static apt_bool_t recog_response_stop(mrcp_recog_state_machine_t *state_machine,
 	mrcp_generic_header_property_add(message,GENERIC_HEADER_ACTIVE_REQUEST_ID_LIST);
 	recog_pending_requests_remove(state_machine,state_machine->active_request,message);
 	recog_state_change(state_machine,RECOGNIZER_STATE_IDLE);
+	pending_request = apt_list_pop_front(state_machine->queue);
 	recog_response_dispatch(state_machine,message);
 
 	/* process pending RECOGNIZE requests / if any */
-	pending_request = apt_list_pop_front(state_machine->queue);
 	if(pending_request) {
 		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process Pending RECOGNIZE Request [%d]",pending_request->start_line.request_id);
 		state_machine->is_pending = TRUE;
@@ -432,19 +440,19 @@ static apt_bool_t recog_event_state_update(mrcp_recog_state_machine_t *state_mac
 }
 
 /** Update state according to request received from MRCP client or response/event received from recognition engine */
-static apt_bool_t recog_state_update(mrcp_state_machine_t *state_machine, mrcp_message_t *message)
+static apt_bool_t recog_state_update(mrcp_state_machine_t *base, mrcp_message_t *message)
 {
-	mrcp_recog_state_machine_t *recog_state_machine = (mrcp_recog_state_machine_t*)state_machine;
+	mrcp_recog_state_machine_t *state_machine = (mrcp_recog_state_machine_t*)base;
 	apt_bool_t status = TRUE;
 	switch(message->start_line.message_type) {
 		case MRCP_MESSAGE_TYPE_REQUEST:
-			status = recog_request_state_update(recog_state_machine,message);
+			status = recog_request_state_update(state_machine,message);
 			break;
 		case MRCP_MESSAGE_TYPE_RESPONSE:
-			status = recog_response_state_update(recog_state_machine,message);
+			status = recog_response_state_update(state_machine,message);
 			break;
 		case MRCP_MESSAGE_TYPE_EVENT:
-			status = recog_event_state_update(recog_state_machine,message);
+			status = recog_event_state_update(state_machine,message);
 			break;
 		default:
 			status = FALSE;
@@ -453,13 +461,42 @@ static apt_bool_t recog_state_update(mrcp_state_machine_t *state_machine, mrcp_m
 	return status;
 }
 
+/** Deactivate state machine */
+static apt_bool_t recog_state_deactivate(mrcp_state_machine_t *base)
+{
+	mrcp_recog_state_machine_t *state_machine = (mrcp_recog_state_machine_t*)base;
+	mrcp_message_t *message;
+	mrcp_message_t *source;
+	if(state_machine->state != RECOGNIZER_STATE_RECOGNIZING) {
+		/* no in-progress RECOGNIZE request to deactivate */
+		return FALSE;
+	}
+	source = state_machine->recog;
+	if(!source) {
+		return FALSE;
+	}
+
+	/* create internal STOP request */
+	message = mrcp_request_create(
+						source->channel_id.resource_id,
+						RECOGNIZER_STOP,
+						source->pool);
+	message->channel_id = source->channel_id;
+	message->start_line.request_id = source->start_line.request_id + 1;
+	apt_string_set(&message->start_line.method_name,"DEACTIVATE"); /* informative only */
+	message->header = source->header;
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Create and Process STOP Request [%d]",message->start_line.request_id);
+	return recog_request_dispatch(state_machine,message);
+}
+
 /** Create MRCP recognizer server state machine */
-mrcp_state_machine_t* mrcp_recog_server_state_machine_create(void *obj, mrcp_message_dispatcher_f dispatcher, mrcp_version_e version, apr_pool_t *pool)
+mrcp_state_machine_t* mrcp_recog_server_state_machine_create(void *obj, mrcp_version_e version, apr_pool_t *pool)
 {
 	mrcp_message_header_t *properties;
 	mrcp_recog_state_machine_t *state_machine = apr_palloc(pool,sizeof(mrcp_recog_state_machine_t));
-	mrcp_state_machine_init(&state_machine->base,obj,dispatcher);
+	mrcp_state_machine_init(&state_machine->base,obj);
 	state_machine->base.update = recog_state_update;
+	state_machine->base.deactivate = recog_state_deactivate;
 	state_machine->state = RECOGNIZER_STATE_IDLE;
 	state_machine->is_pending = FALSE;
 	state_machine->active_request = NULL;

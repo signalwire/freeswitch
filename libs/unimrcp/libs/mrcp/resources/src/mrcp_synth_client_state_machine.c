@@ -23,14 +23,14 @@
 static apt_bool_t synth_state_update(mrcp_state_machine_t *state_machine, mrcp_message_t *message)
 {
 	/* no actual state machine processing yet, dispatch whatever received */
-	return state_machine->dispatcher(state_machine,message);
+	return state_machine->on_dispatch(state_machine,message);
 }
 
 /** Create MRCP synthesizer client state machine */
-mrcp_state_machine_t* mrcp_synth_client_state_machine_create(void *obj, mrcp_message_dispatcher_f dispatcher, mrcp_version_e version, apr_pool_t *pool)
+mrcp_state_machine_t* mrcp_synth_client_state_machine_create(void *obj, mrcp_version_e version, apr_pool_t *pool)
 {
 	mrcp_state_machine_t *state_machine = apr_palloc(pool,sizeof(mrcp_state_machine_t));
-	mrcp_state_machine_init(state_machine,obj,dispatcher);
+	mrcp_state_machine_init(state_machine,obj);
 	state_machine->update = synth_state_update;
 	return state_machine;
 }

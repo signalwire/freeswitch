@@ -162,6 +162,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\apt_nlsml_doc.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\apt_obj_list.h"
 				>
 			</File>
@@ -232,6 +236,10 @@
 			</File>
 			<File
 				RelativePath=".\src\apt_net_server_task.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\apt_nlsml_doc.c"
 				>
 			</File>
 			<File

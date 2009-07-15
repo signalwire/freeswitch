@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
 #include "mrcp_synth_header.h"
 
 /** String table of MRCP synthesizer headers (mrcp_synthesizer_header_id) */
