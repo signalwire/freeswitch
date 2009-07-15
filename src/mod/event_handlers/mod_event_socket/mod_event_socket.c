@@ -1801,7 +1801,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		} else {
 			switch_snprintf(reply, reply_len, "-ERR not controlling a session");
 		}
-	} else if (!strncasecmp(cmd, "nolinger", 6)) {
+	} else if (!strncasecmp(cmd, "nolinger", 8)) {
 		if (listener->session) {
 			switch_clear_flag_locked(listener, LFLAG_LINGER);
 			switch_snprintf(reply, reply_len, "+OK will not linger");
