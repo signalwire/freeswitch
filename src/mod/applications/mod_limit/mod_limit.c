@@ -953,7 +953,7 @@ SWITCH_STANDARD_APP(limit_hash_function)
 			item->rate_usage++;
 			
 			if ((max >= 0) && (item->rate_usage > (uint32_t)max)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage for %s exceeds maximum rate of %d/%ds, now at %d\n", hashkey, max, interval, item->rate_usage);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s exceeds maximum rate of %d/%ds, now at %d\n", hashkey, max, interval, item->rate_usage);
 				if (*xfer_exten == '!') {
 					switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten+1));
 				} else {
@@ -963,7 +963,7 @@ SWITCH_STANDARD_APP(limit_hash_function)
 			}
 		}
 	} else if ((max >= 0) && (item->total_usage + increment > (uint32_t)max)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage for %s is already at max value (%d)\n", hashkey, item->total_usage);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is already at max value (%d)\n", hashkey, item->total_usage);
 		if (*xfer_exten == '!') {
 			switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten+1));
 		} else {
