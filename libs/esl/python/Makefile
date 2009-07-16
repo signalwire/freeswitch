@@ -1,5 +1,6 @@
 LOCAL_CFLAGS=-I/usr/include/python2.4
-LOCAL_LDFLAGS=-lpython2.4
+LOCAL_LDFLAGS=-framework python
+#LOCAL_LDFLAGS=-lpython2.4
 
 all: _ESL.so
 

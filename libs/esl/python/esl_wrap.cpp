@@ -137,7 +137,8 @@ template <typename T> T SwigValueInit() {
 
 
 /* Python.h has to appear first */
-#include <Python.h>
+//#include <Python.h>
+#include <Python/Python.h>
 
 /* -----------------------------------------------------------------------------
  * swigrun.swg
