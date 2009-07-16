@@ -645,7 +645,7 @@ static switch_status_t is_intrastatelata(callback_t *cb_struct)
 		e164 format without the +
 		NANP only (so 11 digits starting with 1)
 	*/
-	if (!cb_strcut->lookup_number && strlen(cb_struct->lookup_number) != 11 && *cb_struct->lookup_number != '1') {
+	if (!cb_struct->lookup_number && strlen(cb_struct->lookup_number) != 11 && *cb_struct->lookup_number != '1') {
 		/* dest doesn't appear to be NANP number */
 		return SWITCH_STATUS_GENERR;
 	}
