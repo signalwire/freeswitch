@@ -12,8 +12,7 @@ LDFLAGS=-L.
 OBJS=src/esl.o src/esl_event.o src/esl_threadmutex.o src/esl_config.o
 SRC=src/esl.c src/esl_event.c src/esl_threadmutex.c src/esl_config.c src/esl_oop.cpp
 HEADERS=src/include/esl_config.h src/include/esl_event.h src/include/esl.h src/include/esl_threadmutex.h src/include/esl_oop.h
-//SOLINK=-shared -Xlinker -x
-SOLINK=-dynamiclib -Xlinker -x
+SOLINK=-shared -Xlinker -x
 # comment the next line to disable c++ (no swig mods for you then)
 OBJS += src/esl_oop.o
 

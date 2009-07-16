@@ -501,7 +501,6 @@ static switch_status_t es_say(switch_core_session_t *session, char *tosay, switc
 	}
 
 	if (say_cb) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Using es callback [tosay: %s, type: %d, method: %d]\n", tosay, type, method);
 		return say_cb(session, tosay, type, method, args);
 	}
 

@@ -2039,7 +2039,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 
 	if ((si = switch_loadable_module_get_say_interface(module_name))) {
 		/* should go back and proto all the say mods to const.... */
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Using SAY Interface %s\n", module_name);
 		status = si->say_function(session, (char *) tosay, switch_ivr_get_say_type_by_name(say_type), switch_ivr_get_say_method_by_name(say_method), args);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", module_name);
