@@ -99,7 +99,7 @@ SWITCH_STANDARD_API(nat_map_function)
 
 	if (argv[0] && switch_stristr("add", argv[0])) {
 		if (switch_nat_add_mapping((switch_port_t)atoi(argv[1]), proto, &external_port, sticky) == SWITCH_STATUS_SUCCESS) {
-			stream->write_function(stream, "%d", (int)external_port);
+			stream->write_function(stream, "true"); /* still return true */
 			goto ok;
 		}
 	} else if (argv[0] && switch_stristr("del", argv[0])) {
