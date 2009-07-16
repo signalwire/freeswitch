@@ -1205,7 +1205,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*context = profile->context,
 				*expire_seconds = "3600",
 				*retry_seconds = "30",
-				*from_user = "", *from_domain = "", *register_proxy = NULL, *contact_host = NULL,
+				*from_user = "", *from_domain = "", *outbound_proxy = NULL, *register_proxy = NULL, *contact_host = NULL,
 				*contact_params = NULL, *params = NULL, *register_transport = NULL;
 			
 			if (!context) {
@@ -1313,6 +1313,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					contact_host = val;
 				} else if (!strcmp(var, "register-proxy")) {
 					register_proxy = val;
+				} else if (!strcmp(var, "outbound-proxy")) {
+					outbound_proxy = val;
 				} else if (!strcmp(var, "contact-params")) {
 					contact_params = val;
 				} else if (!strcmp(var, "register-transport")) {
@@ -1385,28 +1387,41 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			
 			if (!switch_strlen_zero(register_proxy)) {
 				if (strncasecmp(register_proxy, "sip:", 4) && strncasecmp(register_proxy, "sips:", 5)) {
-					gateway->register_sticky_proxy = switch_core_sprintf(gateway->pool, "sip:%s", register_proxy);
+					gateway->outbound_sticky_proxy = switch_core_sprintf(gateway->pool, "sip:%s", register_proxy);
 				} else {
-					gateway->register_sticky_proxy = switch_core_strdup(gateway->pool, register_proxy);
+					gateway->outbound_sticky_proxy = switch_core_strdup(gateway->pool, register_proxy);
+				}
+			}
+
+			if (!switch_strlen_zero(outbound_proxy)) {
+				if (strncasecmp(outbound_proxy, "sip:", 4) && strncasecmp(outbound_proxy, "sips:", 5)) {
+					gateway->register_sticky_proxy = switch_core_sprintf(gateway->pool, "sip:%s", outbound_proxy);
+				} else {
+					gateway->register_sticky_proxy = switch_core_strdup(gateway->pool, outbound_proxy);
 				}
 			}
 
 			gateway->retry_seconds = atoi(retry_seconds);
+
 			if (gateway->retry_seconds < 5) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid retry-seconds of %d on gateway %s, using the value of 30 instead.\n",
 								  gateway->retry_seconds, name);
 				gateway->retry_seconds = 30;
 			}
+
 			gateway->register_scheme = switch_core_strdup(gateway->pool, scheme);
 			gateway->register_context = switch_core_strdup(gateway->pool, context);
 			gateway->register_realm = switch_core_strdup(gateway->pool, realm);
 			gateway->register_username = switch_core_strdup(gateway->pool, username);
 			gateway->auth_username = switch_core_strdup(gateway->pool, auth_username);
 			gateway->register_password = switch_core_strdup(gateway->pool, password);
+
 			if (switch_true(caller_id_in_from)) {
 				sofia_set_flag(gateway, REG_FLAG_CALLERID);
 			}
+
 			register_transport = (char *) sofia_glue_transport2str(gateway->register_transport);
+
 			if (contact_params) {
 				if (*contact_params == ';') {
 					params = switch_core_sprintf(gateway->pool, "%s;transport=%s", contact_params, register_transport);
@@ -1421,10 +1436,11 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				gateway->from_domain = switch_core_strdup(gateway->pool, from_domain);
 			}
 
-			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s", from_domain ? from_domain : register_proxy ? register_proxy : proxy);
+			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
 			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", from_user, from_domain, register_transport);
 
 			sipip = contact_host ? contact_host : profile->extsipip ?  profile->extsipip : profile->sipip;
+
 			if (extension_in_contact) {
 				format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
 				gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
@@ -1438,15 +1454,15 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 																sofia_glue_transport_has_tls(gateway->register_transport) ?
 																profile->tls_sip_port : profile->sip_port, params);
 			}
+
 			gateway->extension = switch_core_strdup(gateway->pool, extension);
-			
 			
 			if (!strncasecmp(proxy, "sip:", 4)) {
 				gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
-				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, from_domain);
+				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);
 			} else {
 				gateway->register_proxy = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
-				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, from_domain);
+				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy);
 			}
 
 			gateway->expires_str = switch_core_strdup(gateway->pool, expire_seconds);

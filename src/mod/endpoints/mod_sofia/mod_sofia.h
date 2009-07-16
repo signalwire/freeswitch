@@ -353,6 +353,7 @@ struct sofia_gateway {
 	char *register_to;
 	char *register_proxy;
 	char *register_sticky_proxy;
+	char *outbound_sticky_proxy;
 	char *register_context;
 	char *expires_str;
 	char *register_url;
