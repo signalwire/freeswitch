@@ -114,7 +114,9 @@ struct profile_obj {
 	char *custom_sql;
 	switch_bool_t custom_sql_has_percent;
 	switch_bool_t custom_sql_has_vars;
-	switch_bool_t profile_has_intra;
+	switch_bool_t profile_has_intrastate;
+	switch_bool_t profile_has_intralata;
+	switch_bool_t profile_has_npanxx;
 	
 	switch_bool_t reorder_by_rate;
 	switch_bool_t quote_in_list;
@@ -130,6 +132,7 @@ struct callback_obj {
 	char *lookup_number;
 	char *cid;
 	switch_bool_t intrastate;
+	switch_bool_t intralata;
 	profile_t *profile;
 	switch_core_session_t *session;
 	switch_event_t *event;
@@ -615,6 +618,66 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static int intrastatelata_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	int count = 0;
+	callback_t *cbt = (callback_t *) pArg;
+	
+	count = atoi(argv[1]);
+	if (count == 1) {
+		if (!strcmp(argv[0], "state")) {
+			cbt->intrastate = SWITCH_TRUE;
+		} else if (!strcmp(argv[0], "lata")) {
+			cbt->intralata = SWITCH_TRUE;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Type: %s, Count: %d\n", argv[0], count);    
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t is_intrastatelata(callback_t *cb_struct)
+{
+	char *sql = NULL;
+	
+	/* extract npa nxx - make some assumptions about format:
+		e164 format without the +
+		NANP only (so 11 digits starting with 1)
+	*/
+	if (!cb_strcut->lookup_number && strlen(cb_struct->lookup_number) != 11 && *cb_struct->lookup_number != '1') {
+		/* dest doesn't appear to be NANP number */
+		return SWITCH_STATUS_GENERR;
+	}
+	if (!cb_struct->cid && strlen(cb_struct->cid) != 11 && *cb_struct->cid != '1') {
+		/* cid not NANP */
+		return SWITCH_STATUS_GENERR;
+	}
+	
+	/* assume that if the area code (plus leading 1) are the same we're intrastate */
+	/* probably a bad assumption */
+	/*
+	if (!strncmp(cb_struct->lookup_number, cb_struct->cid, 4)) {
+		cb_struct->intrastate = SWITCH_TRUE;
+		return SWITCH_STATUS_SUCCESS;
+	}
+	*/
+	
+	sql = switch_core_sprintf(cb_struct->pool,
+								"SELECT 'state', count(DISTINCT state) FROM npa_nxx_company_ocn WHERE (npa=%3.3s AND nxx=%3.3s) OR (npa=%3.3s AND nxx=%3.3s)"
+								" UNION "
+								"SELECT 'lata', count(DISTINCT lata) FROM npa_nxx_company_ocn WHERE (npa=%3.3s AND nxx=%3.3s) OR (npa=%3.3s AND nxx=%3.3s)",
+								cb_struct->lookup_number+1, cb_struct->lookup_number+4,
+								cb_struct->cid+1, cb_struct->cid+4,
+								cb_struct->lookup_number+1, cb_struct->lookup_number+4,
+								cb_struct->cid+1, cb_struct->cid+4);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL: %s\n", sql);    
+
+	return(lcr_execute_sql_callback(sql, intrastatelata_callback, cb_struct));
+	
+}
+
 static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 {
 	switch_stream_handle_t sql_stream = { 0 };
@@ -643,14 +706,20 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	
 	digits_expanded = expand_digits(cb_struct->pool, digits_copy, cb_struct->profile->quote_in_list);
 	
+	if (profile->profile_has_npanxx == SWITCH_TRUE) {
+		is_intrastatelata(cb_struct);
+	}
+	
 	/* set our rate field based on env and profile */
-	if (cb_struct->intrastate == SWITCH_TRUE && profile->profile_has_intra == SWITCH_TRUE) {
-		rate_field = switch_core_strdup(cb_struct->pool, "intra");
+	if (cb_struct->intralata == SWITCH_TRUE && profile->profile_has_intralata == SWITCH_TRUE) {
+		rate_field = switch_core_strdup(cb_struct->pool, "intralata_rate");
+	} else if (cb_struct->intrastate == SWITCH_TRUE && profile->profile_has_intrastate == SWITCH_TRUE) {
+		rate_field = switch_core_strdup(cb_struct->pool, "intrastate_rate");
 	} else {
 		rate_field = switch_core_strdup(cb_struct->pool, "rate");
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intrastate routing [%d] so rate field is [%s]\n",
-					  cb_struct->intrastate, rate_field);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intra routing [state:%d lata:%d] so rate field is [%s]\n",
+					  cb_struct->intrastate, cb_struct->intralata, rate_field);
 	
 	/* set some channel vars if we have a session */
 	if (cb_struct->session) {
@@ -901,10 +970,23 @@ static switch_status_t lcr_load_config()
 				}
 				
 				
-				profile->profile_has_intra = db_check("SELECT intra FROM lcr LIMIT 1");
-				if (profile->profile_has_intra != SWITCH_TRUE) {
+				profile->profile_has_intralata = db_check("SELECT intralata_rate FROM lcr LIMIT 1");
+				if (profile->profile_has_intralata != SWITCH_TRUE) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-									  "no \"intra\" field found in the \"lcr\" table, routing by intrastate rates will be disabled until the field is added and mod_lcr is reloaded\n"
+									  "no \"intralata_rate\" field found in the \"lcr\" table, routing by intralata rates will be disabled until the field is added and mod_lcr is reloaded\n"
+									  );
+				}
+				profile->profile_has_intrastate = db_check("SELECT intrastate_rate FROM lcr LIMIT 1");
+				if (profile->profile_has_intrastate != SWITCH_TRUE) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+									  "no \"intrastate_rate\" field found in the \"lcr\" table, routing by intrastate rates will be disabled until the field is added and mod_lcr is reloaded\n"
+									  );
+				}
+				
+				profile->profile_has_npanxx = db_check("SELECT npa, nxx, state FROM npa_nxx_company_ocn LIMIT 1");
+				if (profile->profile_has_npanxx != SWITCH_TRUE) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+									  "no \"npa_nxx_company_ocn\" table found in the \"lcr\" database, automatic intrastate detection will be disabled until the table is added and mod_lcr is reloaded\n"
 									  );
 				}
 
@@ -973,7 +1055,8 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 	char *lcr_profile = NULL;
 	switch_memory_pool_t *pool = NULL;
 	switch_event_t *event = NULL;
-	const char *intra = NULL;
+	const char *intrastate = NULL;
+	const char *intralata = NULL;
 
 	if (session) {
 		pool = switch_core_session_get_pool(session);
@@ -989,14 +1072,19 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 		goto end;
 	}
 
-	intra = switch_channel_get_variable(channel, "intrastate");
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intrastate channel var is [%s]\n", intra);
-	if (switch_strlen_zero(intra) || strcasecmp((char *)intra, "true")) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on interstate rates\n");
-		routes.intrastate = SWITCH_FALSE;
-	} else {
+	intrastate = switch_channel_get_variable(channel, "intrastate");
+	intralata = switch_channel_get_variable(channel, "intralata");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intrastate channel var is [%s]\n", intrastate);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intralata channel var is [%s]\n", intralata);
+	if (!switch_strlen_zero(intralata) && !strcasecmp((char *)intralata, "true")) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on intralata rates\n");
+		routes.intralata = SWITCH_FALSE;
+	} else if (!switch_strlen_zero(intrastate) && !strcasecmp((char *)intrastate, "true")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on intrastate rates\n");
 		routes.intrastate = SWITCH_TRUE;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on interstate rates\n");
+		routes.intrastate = SWITCH_FALSE;
 	}
 	
 	if (!caller_profile) {
@@ -1340,6 +1428,9 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 					stream->write_function(stream, " has %%:\t\t%s\n", profile->custom_sql_has_percent ? "true" : "false");
 					stream->write_function(stream, " has vars:\t%s\n", profile->custom_sql_has_vars ? "true" : "false");
 				}
+				stream->write_function(stream, " has intrastate:\t%s\n", profile->profile_has_intrastate ? "true" : "false");
+				stream->write_function(stream, " has intralata:\t%s\n", profile->profile_has_intralata ? "true" : "false");
+				stream->write_function(stream, " has npanxx:\t%s\n", profile->profile_has_npanxx ? "true" : "false");
 				stream->write_function(stream, " Reorder rate:\t%s\n", 
 										profile->reorder_by_rate ? "enabled" : "disabled");
 				stream->write_function(stream, " Info in headers:\t%s\n", 
