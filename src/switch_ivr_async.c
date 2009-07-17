@@ -900,8 +900,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		flags |= SMBF_RECORD_ANSWER_REQ;
 	}
 
+
+	fh->samplerate = 0;
+	if ((vval = switch_channel_get_variable(channel, "record_sample_rate"))) {
+		int tmp = 0;
+
+		tmp = atoi(vval);
+
+		if (switch_is_valid_rate(tmp)) {
+			fh->samplerate = tmp;
+		}
+	}
+
+	if (!fh->samplerate) {
+		fh->samplerate = read_impl.actual_samples_per_second;
+	}
+
 	fh->channels = channels;
-	fh->samplerate = read_impl.actual_samples_per_second;
 	fh->pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 
 	if (switch_core_file_open(fh,
@@ -959,17 +974,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	rh->fh = fh;
 	rh->file = switch_core_session_strdup(session, file);
 	rh->packet_len = read_impl.decoded_bytes_per_packet;
-
-	if ((vval = switch_channel_get_variable(channel, "record_sample_rate"))) {
-		int tmp = 0;
-
-		tmp = atoi(vval);
-
-		if (switch_is_valid_rate(tmp)) {
-			rh->fh->samplerate = tmp;
-		}
-	}
-
+	
 	if ((status = switch_core_media_bug_add(session, record_callback, rh, to, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error adding media bug for file %s\n", file);
 		switch_core_file_close(fh);
