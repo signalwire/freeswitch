@@ -2346,7 +2346,7 @@ SWITCH_STANDARD_API(oz_function)
                                 stream->write_function(stream, "+OK\n");
                         }
                 } else {
-			stream->write_function(stream, "-ERR Usage: oz q931_pcap on|off [pcapfilename without suffix]\n");
+			stream->write_function(stream, "-ERR Usage: oz q931_pcap <span_id> on|off [pcapfilename without suffix]\n");
                         goto end;
 		}
 
