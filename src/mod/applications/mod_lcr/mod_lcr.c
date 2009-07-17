@@ -156,7 +156,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lcr_shutdown);
 SWITCH_MODULE_DEFINITION(mod_lcr, mod_lcr_load, mod_lcr_shutdown, NULL);
 
-static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const char *number)
+static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const char *number, switch_core_session_t *session)
 {
 	switch_regex_t *re = NULL;
 	int proceed = 0, ovector[30];
@@ -164,6 +164,10 @@ static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const cha
 	uint32_t len = 0;
 	char *src = NULL;
 	char *dst = NULL;
+	char *tmp_regex = NULL;
+	char *src_regex = NULL;
+	char *dst_regex = NULL;
+	switch_channel_t *channel = NULL;
 	
 	if (!switch_strlen_zero(cid)) {
 		len = strlen(cid);
@@ -188,7 +192,29 @@ static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const cha
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not a valid regexp: %s\n", src);
 		goto done;
 	}
-	
+
+	/* if a session is provided, check if the source part of the regex has any channel variables, then expand them */
+	if(session) {
+		channel = switch_core_session_get_channel(session);
+		switch_assert(channel);
+
+		if(switch_string_var_check_const(src) || switch_string_has_escaped_data(src)) {
+			tmp_regex = switch_channel_expand_variables(channel, src);
+			src_regex = switch_core_strdup(pool, tmp_regex);
+			switch_safe_free(tmp_regex);
+			src = src_regex;
+		}
+
+		if(switch_string_var_check_const(dst) || switch_string_has_escaped_data(dst)) {
+			tmp_regex = switch_channel_expand_variables(channel, dst);
+			dst_regex = switch_core_strdup(pool, tmp_regex);
+			switch_safe_free(tmp_regex);
+			dst = dst_regex;
+		}
+			
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "expanded src: %s, dst: %s\n", src, dst);
+	}
+  
 	if ((proceed = switch_regex_perform(number, src, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 		len = (uint32_t) (strlen(src) + strlen(dst) + 10) * proceed; /* guestimate size */
 		if (!(substituted = switch_core_alloc(pool, len))) {
@@ -210,7 +236,7 @@ done:
 	return number;
 }
 
-static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, char *caller_id, lcr_route cur_route, profile_t *profile)
+static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, char *caller_id, lcr_route cur_route, profile_t *profile, switch_core_session_t *session)
 {
 	size_t lstrip;
 	size_t  tstrip;
@@ -250,7 +276,7 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 	cid = "";
 	if (!switch_strlen_zero(cur_route->cid)) {
 		cid = switch_core_sprintf(pool, ",origination_caller_id_number=%s", 
-								  do_cid(pool, cur_route->cid, caller_id));
+								  do_cid(pool, cur_route->cid, caller_id, session));
 	}
 	
 	header = "";
@@ -545,7 +571,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 	if (argc > LCR_CID_PLACE) {
 		additional->cid = switch_core_strdup(pool, switch_str_nil(argv[LCR_CID_PLACE]));
 	}
-	additional->dialstring = get_bridge_data(pool, cbt->lookup_number, cbt->cid, additional, cbt->profile);
+	additional->dialstring = get_bridge_data(pool, cbt->lookup_number, cbt->cid, additional, cbt->profile, cbt->session);
 
 	if (cbt->head == NULL) {
 		key = switch_core_sprintf(pool, "%s:%s", additional->gw_prefix, additional->gw_suffix);
@@ -1340,7 +1366,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 			current = cb_struct.head;
 			while (current) {
 
-				dialstring = get_bridge_data(pool, cb_struct.lookup_number, cb_struct.cid, current, cb_struct.profile);
+				dialstring = get_bridge_data(pool, cb_struct.lookup_number, cb_struct.cid, current, cb_struct.profile, cb_struct.session);
 
 				stream->write_function(stream, " | %s", current->digit_str);
 				str_repeat((maximum_lengths.digit_str - current->digit_len), " ", stream);
