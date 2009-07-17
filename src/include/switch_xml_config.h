@@ -33,6 +33,10 @@
 #ifndef SWITCH_XML_CONFIG_H
 #define SWITCH_XML_CONFIG_H
 
+#include <switch.h>
+
+SWITCH_BEGIN_EXTERN_C
+
 /*! \brief Type of value to parse */
 typedef enum {
 	SWITCH_CONFIG_INT,				/*< (ptr=int* default=int data=NULL) Integer */
@@ -170,6 +174,8 @@ SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const ch
  * \param instructions instrutions on how to parse the elements
  */
 SWITCH_DECLARE(void) switch_xml_config_cleanup(switch_xml_config_item_t *instructions);
+
+SWITCH_END_EXTERN_C
 
 #endif /* !defined(SWITCH_XML_CONFIG_H) */
 
