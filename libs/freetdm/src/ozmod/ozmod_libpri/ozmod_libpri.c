@@ -548,7 +548,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			pri_sr_set_bearer(sr, 0, isdn_data->l1);
 			pri_sr_set_called(sr, zchan->caller_data.ani.digits, dp, 1);
 			pri_sr_set_caller(sr, zchan->caller_data.cid_num.digits, (isdn_data->opts & OZMOD_LIBPRI_OPT_OMIT_DISPLAY_IE ? NULL : zchan->caller_data.cid_name),
-						dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
+						dp, (zchan->caller_data.pres != 1 ? PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN : PRES_PROHIB_USER_NUMBER_NOT_SCREENED));
 
 			if (!(isdn_data->opts & OZMOD_LIBPRI_OPT_OMIT_REDIRECTING_NUMBER_IE)) {
 				pri_sr_set_redirecting(sr, zchan->caller_data.cid_num.digits, dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN, PRI_REDIR_UNCONDITIONAL);
