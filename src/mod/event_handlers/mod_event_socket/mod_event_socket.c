@@ -1151,7 +1151,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 										"Text-Channel: %d\n"
 										"Log-File: %s\n"
 										"Log-Func: %s\n"
-										"Log->Line: %d\n"
+										"Log-Line: %d\n"
 										"\n",
 										strlen(dnode->data),
 										dnode->level,
