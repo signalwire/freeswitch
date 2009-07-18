@@ -799,7 +799,7 @@ static void *SWITCH_THREAD_FUNC handle_thread_run(switch_thread_t *thread, void 
 	ldl_handle_run(handle);
 	switch_clear_flag(profile, TFLAG_IO);
 	globals.handles--;
-	ldl_handle_destroy(&handle);
+	ldl_handle_destroy(&profile->handle);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handle %s [%s] Destroyed\n", profile->name, profile->login);
 
 	return NULL;
@@ -2110,9 +2110,11 @@ SWITCH_STANDARD_API(dl_logout)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if ((profile = switch_core_hash_find(globals.profile_hash, cmd))) {
+	if (((profile = switch_core_hash_find(globals.profile_hash, cmd))) && profile->handle) {
 		ldl_handle_stop(profile->handle);
 		stream->write_function(stream, "OK\n");
+	} else if (profile) {
+		stream->write_function(stream, "NOT LOGGED IN\n");
 	} else {
 		stream->write_function(stream, "NO SUCH PROFILE %s\n", cmd);
 	}
@@ -2149,9 +2151,9 @@ SWITCH_STANDARD_API(dingaling)
 			switch_hash_this(hi, NULL, NULL, &val);
 			profile = (mdl_profile_t *) val;
 			stream->write_function(stream, "%s	|	", profile->login);
-			if (ldl_handle_authorized(profile->handle)){
+			if (profile->handle && ldl_handle_authorized(profile->handle)){
 				stream->write_function(stream, "AUTHORIZED");
-			} else if (ldl_handle_connected(profile->handle)){
+			} else if (profile->handle && ldl_handle_connected(profile->handle)){
 				stream->write_function(stream, "CONNECTED");
 			} else {
 				stream->write_function(stream, "UNCONNECTED");
