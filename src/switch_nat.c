@@ -530,17 +530,16 @@ SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping_internal(switch_port_t po
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event = NULL;
-	char key[1024] = "";
-
+	
 	switch (nat_globals.nat_type) {
 	case SWITCH_NAT_TYPE_PMP:
 		status = switch_nat_add_mapping_pmp(port, proto, external_port);
 		break;
 	case SWITCH_NAT_TYPE_UPNP:
-		if ((status = switch_nat_add_mapping_upnp(port, proto)) && status == SWITCH_STATUS_SUCCESS) {
+		if ((status = switch_nat_add_mapping_upnp(port, proto)) == SWITCH_STATUS_SUCCESS) {
 			if (external_port) {
 				*external_port = port;
-			}	
+			}
 		}
 		break;
 	default:
@@ -550,10 +549,8 @@ SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping_internal(switch_port_t po
 	if (publish && status == SWITCH_STATUS_SUCCESS) {
 		switch_event_create(&event, SWITCH_EVENT_NAT);	
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "op", "add");
-		switch_snprintf(key, sizeof(key), "%d", port);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "port", key);
-		switch_snprintf(key, sizeof(key), "%d", proto);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", key);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "port", "%d", port);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "%d", proto);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sticky", (sticky ? "true" : "false"));
 		switch_event_fire(&event);
 	}
@@ -570,7 +567,6 @@ SWITCH_DECLARE(switch_status_t) switch_nat_del_mapping(switch_port_t port, switc
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event = NULL;
-	char key[1024] = "";
 
 	switch (nat_globals.nat_type) {
 	case SWITCH_NAT_TYPE_PMP:
@@ -586,10 +582,8 @@ SWITCH_DECLARE(switch_status_t) switch_nat_del_mapping(switch_port_t port, switc
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_event_create(&event, SWITCH_EVENT_NAT);	
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "op", "del");
-		switch_snprintf(key, sizeof(key), "%d", port);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "port", key);
-		switch_snprintf(key, sizeof(key), "%d", proto);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", key);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "port", "%d", port);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "%d", proto);
 		switch_event_fire(&event);
 	}
 	
