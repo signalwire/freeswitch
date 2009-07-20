@@ -1,0 +1,51 @@
+Index: src/ozmod/ozmod_wanpipe/ozmod_wanpipe.c
+===================================================================
+--- src/ozmod/ozmod_wanpipe/ozmod_wanpipe.c	(revision 776)
++++ src/ozmod/ozmod_wanpipe/ozmod_wanpipe.c	(working copy)
+@@ -604,6 +604,8 @@
+ 		return ZAP_SUCCESS;
+ 	}
+ 
++	zap_log(ZAP_LOG_ERROR, "FAIL %d\n", bsent);
++
+ 	return ZAP_FAIL;
+ }
+ 
+Index: mod_openzap/mod_openzap.c
+===================================================================
+--- mod_openzap/mod_openzap.c	(revision 776)
++++ mod_openzap/mod_openzap.c	(working copy)
+@@ -674,6 +674,7 @@
+ 	assert(tech_pvt->zchan != NULL);
+ 
+ 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
++		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DEAD\n");
+ 		return SWITCH_STATUS_FALSE;
+ 	}
+ 
+@@ -682,6 +683,7 @@
+ 	}
+ 
+ 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
++		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO FLAG IO\n");
+ 		goto fail;
+ 	}
+ 	
+@@ -689,6 +691,7 @@
+ 		frame->data = data;
+ 		frame->buflen = sizeof(data);
+ 		if ((frame->datalen = tech_pvt->write_codec.implementation->encoded_bytes_per_packet) > frame->buflen) {
++			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "BUF ERR\n");
+ 			goto fail;
+ 		}
+ 		memset(data, 255, frame->datalen);
+@@ -697,7 +700,9 @@
+ 
+ 	len = frame->datalen;
+ 	if (zap_channel_write(tech_pvt->zchan, frame->data, frame->buflen, &len) != ZAP_SUCCESS) {
++		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WR ERR\n");
+ 		if (++tech_pvt->wr_error > 10) {
++			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "10 WR ERR\n");
+ 			goto fail;
+ 		}
+ 	} else {
