@@ -2383,7 +2383,7 @@ SWITCH_STANDARD_APP(disable_ec_function)
 	tech_pvt = switch_core_session_get_private(session);
 	zap_channel_command(tech_pvt->zchan, ZAP_COMMAND_DISABLE_ECHOCANCEL, &x);
 	zap_channel_command(tech_pvt->zchan, ZAP_COMMAND_DISABLE_ECHOTRAIN, &x);
-	zap_log(ZAP_LOG_ERROR, "Echo Canceller Disabled\n");
+	zap_log(ZAP_LOG_INFO, "Echo Canceller Disabled\n");
 }
 
 
