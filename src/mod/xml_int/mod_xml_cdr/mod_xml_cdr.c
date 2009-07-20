@@ -40,6 +40,9 @@ static struct {
 	char *urls[MAX_URLS+1];
 	int url_count;
 	int url_index;
+	switch_thread_rwlock_t *log_path_lock;
+	char *base_log_dir;
+	char *base_err_log_dir;
 	char *log_dir;
 	char *err_log_dir;
 	uint32_t delay;
@@ -56,6 +59,7 @@ static struct {
 	int log_b;
 	int prefix_a;
 	int disable100continue;
+	int rotate;
 	switch_memory_pool_t *pool;
 } globals;
 
@@ -70,6 +74,106 @@ SWITCH_MODULE_DEFINITION(mod_xml_cdr, mod_xml_cdr_load, mod_xml_cdr_shutdown, NU
 static size_t httpCallBack(char *buffer, size_t size, size_t nitems, void *outstream)
 {
 	return size * nitems;
+}
+
+static switch_status_t set_xml_cdr_log_dirs()
+{
+	switch_time_exp_t tm;
+	char *path = NULL;
+	char date[80] = "";
+	switch_size_t retsize;
+	switch_status_t status = SWITCH_STATUS_SUCCESS, dir_status;
+
+	switch_time_exp_lt(&tm, switch_micro_time_now());
+	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Rotating log file paths\n");
+
+	if (!switch_strlen_zero(globals.base_log_dir)) {
+		if (globals.rotate) {
+			if ((path = switch_mprintf("%s%s%s", globals.base_log_dir, SWITCH_PATH_SEPARATOR, date))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Rotating log file path to %s\n", path);
+
+				dir_status = SWITCH_STATUS_SUCCESS;
+				if (switch_directory_exists(path, globals.pool) != SWITCH_STATUS_SUCCESS) {
+					dir_status = switch_dir_make(path, SWITCH_FPROT_OS_DEFAULT, globals.pool);
+				}
+
+				if (dir_status == SWITCH_STATUS_SUCCESS) {
+					switch_thread_rwlock_wrlock(globals.log_path_lock);
+					switch_safe_free(globals.log_dir);
+					globals.log_dir = path;
+					switch_thread_rwlock_unlock(globals.log_path_lock);
+				}
+				else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create new mod_xml_cdr log_dir path\n");
+					switch_safe_free(path);
+					status = SWITCH_STATUS_FALSE;
+				}
+			}
+			else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to generate new mod_xml_cdr log_dir path\n");
+				status = SWITCH_STATUS_FALSE;
+			}
+		}
+		else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Setting log file path to %s\n", globals.base_log_dir);
+			if ((path = switch_safe_strdup(globals.base_log_dir))) {
+				switch_thread_rwlock_wrlock(globals.log_path_lock);
+				switch_safe_free(globals.log_dir);
+				globals.log_dir = path;
+				switch_thread_rwlock_unlock(globals.log_path_lock);
+			}
+			else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set log_dir path\n");
+				status = SWITCH_STATUS_FALSE;
+			}
+		}
+	}
+
+	if (!switch_strlen_zero(globals.base_err_log_dir)) {
+		if (globals.rotate) {
+			if ((path = switch_mprintf("%s%s%s", globals.base_err_log_dir, SWITCH_PATH_SEPARATOR, date))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Rotating err log file path to %s\n", path);
+
+				dir_status = SWITCH_STATUS_SUCCESS;
+				if (switch_directory_exists(path, globals.pool) != SWITCH_STATUS_SUCCESS) {
+					dir_status = switch_dir_make(path, SWITCH_FPROT_OS_DEFAULT, globals.pool);
+				}
+
+				if (dir_status == SWITCH_STATUS_SUCCESS) {
+					switch_thread_rwlock_wrlock(globals.log_path_lock);
+					switch_safe_free(globals.err_log_dir);
+					globals.err_log_dir = path;
+					switch_thread_rwlock_unlock(globals.log_path_lock);
+				}
+				else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create new mod_xml_cdr err_log_dir path\n");
+					switch_safe_free(path);
+					status = SWITCH_STATUS_FALSE;
+				}
+			}
+			else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to generate new mod_xml_cdr err_log_dir path\n");
+				status = SWITCH_STATUS_FALSE;
+			}
+		}
+		else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Setting err log file path to %s\n", globals.base_err_log_dir);
+			if ((path = switch_safe_strdup(globals.base_err_log_dir))) {
+				switch_thread_rwlock_wrlock(globals.log_path_lock);
+				switch_safe_free(globals.err_log_dir);
+				globals.err_log_dir = path;
+				switch_thread_rwlock_unlock(globals.log_path_lock);
+			}
+			else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set err_log_dir path\n");
+				status = SWITCH_STATUS_FALSE;
+			}
+		}
+	}
+
+	return status;
 }
 
 static switch_status_t my_on_reporting(switch_core_session_t *session)
@@ -113,12 +217,16 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		goto error;
 	}
 
+	switch_thread_rwlock_rdlock(globals.log_path_lock);
+
 	if (!(logdir = switch_channel_get_variable(channel, "xml_cdr_base"))) {
 		logdir = globals.log_dir;
 	}
 
 	if (!switch_strlen_zero(logdir)) {
-		if ((path = switch_mprintf("%s%s%s%s.cdr.xml", logdir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session)))) {
+		path = switch_mprintf("%s%s%s%s.cdr.xml", logdir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session));
+		switch_thread_rwlock_unlock(globals.log_path_lock);
+		if (path) {
 #ifdef _MSC_VER
 			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 #else
@@ -139,6 +247,9 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			}
 			switch_safe_free(path);
 		}
+	}
+	else {
+		switch_thread_rwlock_unlock(globals.log_path_lock);
 	}
 
 	/* try to post it to the web server */
@@ -259,7 +370,10 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		/* if we are here the web post failed for some reason */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
 
-		if ((path = switch_mprintf("%s%s%s%s.cdr.xml", globals.err_log_dir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session)))) {
+		switch_thread_rwlock_rdlock(globals.log_path_lock);
+		path = switch_mprintf("%s%s%s%s.cdr.xml", globals.err_log_dir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session));
+		switch_thread_rwlock_unlock(globals.log_path_lock);
+		if (path) {
 #ifdef _MSC_VER
 			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 #else
@@ -302,6 +416,17 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	return status;
 }
 
+static void event_handler(switch_event_t *event)
+{
+	const char *sig = switch_event_get_header(event, "Trapped-Signal");
+
+	if (sig && !strcmp(sig, "HUP")) {
+		if (globals.rotate) {
+			set_xml_cdr_log_dirs();
+		}
+	}
+}
+
 static switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_routing */ NULL,
@@ -327,10 +452,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
+	if (switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
 	memset(&globals, 0, sizeof(globals));
 	globals.log_b = 1;
 	globals.disable100continue = 0;
 	globals.pool = pool;
+	switch_thread_rwlock_create(&globals.log_path_lock, pool);
 
 	/* parse the config */
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -367,24 +498,26 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				}
 			} else if (!strcasecmp(var, "retries") && !switch_strlen_zero(val)) {
 				globals.retries = (uint32_t) atoi(val);
+			} else if (!strcasecmp(var, "rotate") && !switch_strlen_zero(val)) {
+				globals.rotate = atoi(val);
 			} else if (!strcasecmp(var, "log-dir")) {
 				if (switch_strlen_zero(val)) {
-					globals.log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+					globals.base_log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 				} else {
 					if (switch_is_file_path(val)) {
-						globals.log_dir = switch_core_strdup(globals.pool, val);
+						globals.base_log_dir = switch_core_strdup(globals.pool, val);
 					} else {
-						globals.log_dir = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
+						globals.base_log_dir = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
 					}
 				}
 			} else if (!strcasecmp(var, "err-log-dir")) {
 				if (switch_strlen_zero(val)) {
-					globals.err_log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+					globals.base_err_log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 				} else {
 					if (switch_is_file_path(val)) {
-						globals.err_log_dir = switch_core_strdup(globals.pool, val);
+						globals.base_err_log_dir = switch_core_strdup(globals.pool, val);
 					} else {
-						globals.err_log_dir = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
+						globals.base_err_log_dir = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
 					}
 				}
 			} else if (!strcasecmp(var, "enable-cacert-check") && switch_true(val)) {
@@ -403,11 +536,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.enable_ssl_verifyhost = 1;
 			}
 		
-			if (switch_strlen_zero(globals.err_log_dir)) {
-				if (!switch_strlen_zero(globals.log_dir)) {
-					globals.err_log_dir = switch_core_strdup(globals.pool, globals.log_dir);
+			if (switch_strlen_zero(globals.base_err_log_dir)) {
+				if (!switch_strlen_zero(globals.base_log_dir)) {
+					globals.base_err_log_dir = switch_core_strdup(globals.pool, globals.base_log_dir);
 				} else {
-					globals.err_log_dir = switch_core_sprintf(globals.pool, "%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+					globals.base_err_log_dir = switch_core_sprintf(globals.pool, "%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 				}
 			}
 		}
@@ -423,6 +556,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	}
 
 	globals.retries++;
+
+	set_xml_cdr_log_dirs();
 
 	switch_xml_free(xml);
 	return status;
