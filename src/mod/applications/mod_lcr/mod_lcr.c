@@ -1148,8 +1148,8 @@ void str_repeat(size_t how_many, char *what, switch_stream_handle_t *str_stream)
 {
 	size_t i;
 
-	/*//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "repeating %d of '%s'\n", how_many, what);*/
-
+	/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "repeating %d of '%s'\n", (int)how_many, what);*/
+	
 	for (i=0; i<how_many; i++) {
 		str_stream->write_function(str_stream, "%s", what);
 	}
@@ -1258,6 +1258,16 @@ end:
 	}
 }
 
+static void write_data(switch_stream_handle_t *stream, switch_bool_t as_xml, const char *key, const char *data, int indent, int maxlen) {
+	if (as_xml) {
+		str_repeat(indent*2, " ", stream);
+		stream->write_function(stream, "<%s>%s</%s>\n", key, data, key);
+	} else {
+		stream->write_function(stream, " | %s", data);
+		str_repeat((maxlen - strlen(data)), " ", stream);
+	}
+}
+
 SWITCH_STANDARD_API(dialplan_lcr_function)
 {
 	char *argv[4] = { 0 };
@@ -1271,6 +1281,8 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 	switch_memory_pool_t *pool;
 	switch_event_t *event;
 	switch_status_t lookup_status = SWITCH_STATUS_SUCCESS;
+	switch_bool_t as_xml = SWITCH_FALSE;
+	int rowcount=0;
 
 	if (switch_strlen_zero(cmd)) {
 		goto usage;
@@ -1304,6 +1316,13 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 				if (!strcasecmp(argv[i], "intrastate")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on intrastate rates\n");
 					cb_struct.intrastate = SWITCH_TRUE;
+				} else if(!strcasecmp(argv[i], "as")) {
+					i++;
+					if(argv[i] && !strcasecmp(argv[i], "xml")) {
+							as_xml = SWITCH_TRUE;
+						} else {
+							goto usage;
+						}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Caller ID to [%s]\n", argv[i]);
 					/* the only other option we have right now is caller id */
@@ -1329,95 +1348,103 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 		if (cb_struct.head != NULL) {
 			size_t len;
 
-			process_max_lengths(&maximum_lengths, cb_struct.head, cb_struct.lookup_number);
+			if (as_xml) {
+				stream->write_function(stream, "<result>\n");
+			} else {
+				process_max_lengths(&maximum_lengths, cb_struct.head, cb_struct.lookup_number);
 
-			stream->write_function(stream, " | %s", headers[LCR_HEADERS_DIGITS]);
-			if ((len = (maximum_lengths.digit_str - strlen(headers[LCR_HEADERS_DIGITS]))) > 0) {
-				str_repeat(len, " ", stream);
+				stream->write_function(stream, " | %s", headers[LCR_HEADERS_DIGITS]);
+				if ((len = (maximum_lengths.digit_str - strlen(headers[LCR_HEADERS_DIGITS]))) > 0) {
+					str_repeat(len, " ", stream);
+				}
+
+				stream->write_function(stream, " | %s", headers[LCR_HEADERS_CARRIER]);
+				if ((len = (maximum_lengths.carrier_name - strlen(headers[LCR_HEADERS_CARRIER]))) > 0) {
+					str_repeat(len, " ", stream);
+				}
+
+				stream->write_function(stream, " | %s", headers[LCR_HEADERS_RATE]);
+				if ((len = (maximum_lengths.rate - strlen(headers[LCR_HEADERS_RATE]))) > 0) {
+					str_repeat(len, " ", stream);
+				}
+
+				stream->write_function(stream, " | %s", headers[LCR_HEADERS_CODEC]);
+				if ((len = (maximum_lengths.codec - strlen(headers[LCR_HEADERS_CODEC]))) > 0) {
+					str_repeat(len, " ", stream);
+				}
+
+				stream->write_function(stream, " | %s", headers[LCR_HEADERS_CID]);
+				if ((len = (maximum_lengths.cid - strlen(headers[LCR_HEADERS_CID]))) > 0) {
+					str_repeat(len, " ", stream);
+				}
+
+				stream->write_function(stream, " | %s", headers[LCR_HEADERS_DIALSTRING]);
+				if ((len = (maximum_lengths.dialstring - strlen(headers[LCR_HEADERS_DIALSTRING]))) > 0) {
+					str_repeat(len, " ", stream);
+				}
+
+				stream->write_function(stream, " |\n");
 			}
-
-			stream->write_function(stream, " | %s", headers[LCR_HEADERS_CARRIER]);
-			if ((len = (maximum_lengths.carrier_name - strlen(headers[LCR_HEADERS_CARRIER]))) > 0) {
-				str_repeat(len, " ", stream);
-			}
-
-			stream->write_function(stream, " | %s", headers[LCR_HEADERS_RATE]);
-			if ((len = (maximum_lengths.rate - strlen(headers[LCR_HEADERS_RATE]))) > 0) {
-				str_repeat(len, " ", stream);
-			}
-
-			stream->write_function(stream, " | %s", headers[LCR_HEADERS_CODEC]);
-			if ((len = (maximum_lengths.codec - strlen(headers[LCR_HEADERS_CODEC]))) > 0) {
-				str_repeat(len, " ", stream);
-			}
-
-			stream->write_function(stream, " | %s", headers[LCR_HEADERS_CID]);
-			if ((len = (maximum_lengths.cid - strlen(headers[LCR_HEADERS_CID]))) > 0) {
-				str_repeat(len, " ", stream);
-			}
-
-			stream->write_function(stream, " | %s", headers[LCR_HEADERS_DIALSTRING]);
-			if ((len = (maximum_lengths.dialstring - strlen(headers[LCR_HEADERS_DIALSTRING]))) > 0) {
-				str_repeat(len, " ", stream);
-			}
-
-			stream->write_function(stream, " |\n");
-
 			current = cb_struct.head;
 			while (current) {
 
 				dialstring = get_bridge_data(pool, cb_struct.lookup_number, cb_struct.cid, current, cb_struct.profile, cb_struct.session);
+				rowcount++;
 
-				stream->write_function(stream, " | %s", current->digit_str);
-				str_repeat((maximum_lengths.digit_str - current->digit_len), " ", stream);
+				if (as_xml) {
+					stream->write_function(stream, "  <row id=\"%d\">\n", rowcount);
+				}
 				
-				stream->write_function(stream, " | %s", current->carrier_name );
-				str_repeat((maximum_lengths.carrier_name - strlen(current->carrier_name)), " ", stream);
-				
-				stream->write_function(stream, " | %s", current->rate_str );
-				str_repeat((maximum_lengths.rate - strlen(current->rate_str)), " ", stream);
-
+				write_data(stream, as_xml, "prefix", current->digit_str, 2, maximum_lengths.digit_str);
+				write_data(stream, as_xml, "carrier_name", current->carrier_name, 2, maximum_lengths.carrier_name);
+				write_data(stream, as_xml, "rate", current->rate_str, 2, maximum_lengths.rate);
 				if (current->codec) {
-					stream->write_function(stream, " | %s", current->codec );
-					str_repeat((maximum_lengths.codec - strlen(current->codec)), " ", stream);
+					write_data(stream, as_xml, "codec", current->codec, 2, maximum_lengths.codec);
 				} else {
-					stream->write_function(stream, " | ");
-					str_repeat((maximum_lengths.codec), " ", stream);
+					write_data(stream, as_xml, "codec", "", 2, maximum_lengths.codec);
 				}
 
 				if (current->cid) {
-					stream->write_function(stream, " | %s", current->cid );
-					str_repeat((maximum_lengths.cid - strlen(current->cid)), " ", stream);
+					write_data(stream, as_xml, "cid", current->cid, 2, maximum_lengths.cid);
 				} else {
-					stream->write_function(stream, " | ");
-					str_repeat((maximum_lengths.cid), " ", stream);
+					write_data(stream, as_xml, "cid", "", 2, maximum_lengths.cid);
 				}
 				
-				stream->write_function(stream, " | %s", dialstring);
-				str_repeat((maximum_lengths.dialstring - strlen(dialstring)), " ", stream);
-				
-				stream->write_function(stream, " |\n");
-				
+				write_data(stream, as_xml, "dialstring", current->dialstring, 2, maximum_lengths.dialstring);
+
+				if (as_xml) {
+					stream->write_function(stream, "  </row>\n");
+				} else {
+					stream->write_function(stream, " |\n");
+				}
 				current = current->next;
 			}
-
+			if (as_xml) {
+				stream->write_function(stream, "</result>\n");
+			}
 		} else {
 			if (lookup_status == SWITCH_STATUS_SUCCESS) {
-				stream->write_function(stream, "No Routes To Display\n");
+				if (as_xml) {
+					stream->write_function(stream, "<result row_count=\"0\">\n</results>\n");
+				} else {
+					stream->write_function(stream, "No Routes To Display\n");
+				}
 			} else {
-				stream->write_function(stream, "Error looking up routes\n");
+				stream->write_function(stream, "-ERR Error looking up routes\n");
 			}
 		}
 	}
 
 end:
 	if (!session) {
-		switch_core_destroy_memory_pool(&pool);
+		if (pool) {
+			switch_core_destroy_memory_pool(&pool);
+		}
 	}
 	return SWITCH_STATUS_SUCCESS;
- usage:
+usage:
 	stream->write_function(stream, "USAGE: %s\n", LCR_SYNTAX);
-	return SWITCH_STATUS_SUCCESS;
+	goto end;
 }
 
 SWITCH_STANDARD_API(dialplan_lcr_admin_function)
