@@ -1205,7 +1205,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*context = profile->context,
 				*expire_seconds = "3600",
 				*retry_seconds = "30",
-				*from_user = "", *from_domain = "", *outbound_proxy = NULL, *register_proxy = NULL, *contact_host = NULL,
+				*from_user = "", *from_domain = NULL, *outbound_proxy = NULL, *register_proxy = NULL, *contact_host = NULL,
 				*contact_params = NULL, *params = NULL, *register_transport = NULL;
 			
 			if (!context) {
