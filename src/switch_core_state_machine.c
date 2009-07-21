@@ -332,6 +332,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	switch_thread_id_t thread_id;
 	jmp_buf env;
 	int sig, silly = 0;
+	uint32_t new_loops = 60000000;
 
 	if (switch_test_flag((&runtime), SCF_CRASH_PROT)) {
 		thread_id = switch_thread_self();
@@ -520,6 +521,10 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 		if (endstate == switch_channel_get_running_state(session->channel)) {
 			if (endstate == CS_NEW) {
 				switch_cond_next();
+				if (!--new_loops) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s Timeout waiting for next instruction in CS_NEW!\n", session->uuid_str);
+					switch_channel_hangup(session->channel, SWITCH_CAUSE_INVALID_CALL_REFERENCE);
+				}
 			} else {
 				switch_thread_cond_wait(session->cond, session->mutex);
 			}
