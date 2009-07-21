@@ -1377,10 +1377,6 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				gateway->status = SOFIA_GATEWAY_UP;
 			}
 
-			if (switch_strlen_zero(from_domain)) {
-				from_domain = realm;
-			}
-
 			if (switch_strlen_zero(auth_username)) {
 				auth_username = username;
 			}
@@ -1437,7 +1433,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			}
 
 			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
-			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", from_user, from_domain, register_transport);
+			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", 
+														 from_user, from_domain ? from_domain : proxy, register_transport);
 
 			sipip = contact_host ? contact_host : profile->extsipip ?  profile->extsipip : profile->sipip;
 
