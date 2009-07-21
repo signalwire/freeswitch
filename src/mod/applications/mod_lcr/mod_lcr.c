@@ -32,7 +32,7 @@
 
 #include <switch.h>
 
-#define LCR_SYNTAX "lcr <digits> [<lcr profile>] [caller_id] [intrastate]"
+#define LCR_SYNTAX "lcr <digits> [<lcr profile>] [caller_id] [intrastate] [as xml]"
 #define LCR_ADMIN_SYNTAX "lcr_admin show profiles"
 
 /* SQL Query places */
