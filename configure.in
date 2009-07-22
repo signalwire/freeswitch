@@ -832,6 +832,7 @@ AC_CONFIG_SUBDIRS(libs/speex)
 AC_CONFIG_SUBDIRS(libs/portaudio)
 AC_CONFIG_SUBDIRS(libs/openzap)
 AC_CONFIG_SUBDIRS(libs/unimrcp)
-AC_CHECK_LIB([tiff], [TIFFOpen], AC_CONFIG_SUBDIRS(libs/spandsp), , -lm)
+AC_CONFIG_SUBDIRS(libs/tiff-3.8.2)
+AC_CONFIG_SUBDIRS(libs/spandsp)
 
 AC_OUTPUT
