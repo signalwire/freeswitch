@@ -4016,11 +4016,16 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 
 		while (running < 5000) {
 			int result = switch_core_db_step(stmt);
+			const unsigned char *txt;
 
 			if (result == SWITCH_CORE_DB_ROW) {
-				if ((colcount = switch_core_db_column_count(stmt))) {
-					switch_copy_string(resbuf, (char *) switch_core_db_column_text(stmt, 0), len);
-					ret = resbuf;
+				if ((colcount = switch_core_db_column_count(stmt)) > 0) {
+					if ((txt = switch_core_db_column_text(stmt, 0))) {
+						switch_copy_string(resbuf, (char *) txt, len);
+						ret = resbuf;
+					} else {
+						goto fail;
+					}
 				}
 				break;
 			} else if (result == SWITCH_CORE_DB_BUSY) {
