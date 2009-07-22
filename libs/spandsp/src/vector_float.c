@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_float.c,v 1.21 2009/02/05 15:57:27 steveu Exp $
+ * $Id: vector_float.c,v 1.22 2009/07/12 09:23:09 steveu Exp $
  */
 
 /*! \file */
@@ -41,33 +41,10 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
-#include "floating_fudge.h"
 #include <assert.h>
 
-#if defined(SPANDSP_USE_MMX)
-#include <mmintrin.h>
-#endif
-#if defined(SPANDSP_USE_SSE)
-#include <xmmintrin.h>
-#endif
-#if defined(SPANDSP_USE_SSE2)
-#include <emmintrin.h>
-#endif
-#if defined(SPANDSP_USE_SSE3)
-#include <pmmintrin.h>
-#endif
-#if defined(SPANDSP_USE_SSE4_1)
-#include <smmintrin.h>
-#endif
-#if defined(SPANDSP_USE_SSE4_2)
-#include <nmmintrin.h>
-#endif
-#if defined(SPANDSP_USE_SSE4A)
-#include <ammintrin.h>
-#endif
-#if defined(SPANDSP_USE_SSE5)
-#include <bmmintrin.h>
-#endif
+#include "floating_fudge.h"
+#include "mmx_sse_decs.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/vector_float.h"

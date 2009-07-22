@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter.c,v 1.39 2009/04/24 22:35:25 steveu Exp $
+ * $Id: at_interpreter.c,v 1.40 2009/07/10 13:15:56 steveu Exp $
  */
 
 /*! \file */
@@ -76,7 +76,7 @@ enum
 static at_profile_t profiles[3] =
 {
     {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER)  ||  defined(__sunos)  ||  defined(__solaris)
         /*.echo =*/ TRUE,
         /*.verbose =*/ TRUE,
         /*.result_code_format =*/ ASCII_RESULT_CODES,

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_core.c,v 1.52 2009/02/10 13:06:46 steveu Exp $
+ * $Id: t38_core.c,v 1.53 2009/07/14 13:54:22 steveu Exp $
  */
 
 /*! \file */
@@ -777,7 +777,7 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t38_core_send_indicator(t38_core_state_t *s, int indicator, int count)
+SPAN_DECLARE(int) t38_core_send_indicator(t38_core_state_t *s, int indicator)
 {
     uint8_t buf[100];
     int len;
@@ -789,7 +789,7 @@ SPAN_DECLARE(int) t38_core_send_indicator(t38_core_state_t *s, int indicator, in
     {
         /* Zero is a valid count, to suppress the transmission of indicators when the
            transport means they are not needed - e.g. TPKT/TCP. */
-        if (count)
+        if (s->category_control[T38_PACKET_CATEGORY_INDICATOR])
         {
             if ((len = t38_encode_indicator(s, buf, indicator)) < 0)
             {
@@ -797,7 +797,7 @@ SPAN_DECLARE(int) t38_core_send_indicator(t38_core_state_t *s, int indicator, in
                 return len;
             }
             span_log(&s->logging, SPAN_LOG_FLOW, "Tx %5d: indicator %s\n", s->tx_seq_no, t38_indicator_to_str(indicator));
-            s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, count);
+            s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, s->category_control[T38_PACKET_CATEGORY_INDICATOR]);
             s->tx_seq_no = (s->tx_seq_no + 1) & 0xFFFF;
             delay = modem_startup_time[indicator].training;
             if (s->allow_for_tep)
@@ -815,7 +815,7 @@ SPAN_DECLARE(int) t38_core_send_flags_delay(t38_core_state_t *s, int indicator)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t38_core_send_data(t38_core_state_t *s, int data_type, int field_type, const uint8_t field[], int field_len, int count)
+SPAN_DECLARE(int) t38_core_send_data(t38_core_state_t *s, int data_type, int field_type, const uint8_t field[], int field_len, int category)
 {
     t38_data_field_t field0;
     uint8_t buf[1000];
@@ -829,13 +829,13 @@ SPAN_DECLARE(int) t38_core_send_data(t38_core_state_t *s, int data_type, int fie
         span_log(&s->logging, SPAN_LOG_FLOW, "T.38 data len is %d\n", len);
         return len;
     }
-    s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, count);
+    s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, s->category_control[category]);
     s->tx_seq_no = (s->tx_seq_no + 1) & 0xFFFF;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t38_core_send_data_multi_field(t38_core_state_t *s, int data_type, const t38_data_field_t field[], int fields, int count)
+SPAN_DECLARE(int) t38_core_send_data_multi_field(t38_core_state_t *s, int data_type, const t38_data_field_t field[], int fields, int category)
 {
     uint8_t buf[1000];
     int len;
@@ -845,7 +845,7 @@ SPAN_DECLARE(int) t38_core_send_data_multi_field(t38_core_state_t *s, int data_t
         span_log(&s->logging, SPAN_LOG_FLOW, "T.38 data len is %d\n", len);
         return len;
     }
-    s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, count);
+    s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, s->category_control[category]);
     s->tx_seq_no = (s->tx_seq_no + 1) & 0xFFFF;
     return 0;
 }
@@ -911,6 +911,18 @@ SPAN_DECLARE(void) t38_set_tep_handling(t38_core_state_t *s, int allow_for_tep)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(void) t38_set_redundancy_control(t38_core_state_t *s, int category, int setting)
+{
+    s->category_control[category] = setting;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t38_set_fastest_image_data_rate(t38_core_state_t *s, int max_rate)
+{
+    s->fastest_image_data_rate = max_rate;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) t38_get_fastest_image_data_rate(t38_core_state_t *s)
 {
     return s->fastest_image_data_rate;
@@ -951,6 +963,13 @@ SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
     s->max_datagram_size = 100;
     s->t38_version = 0;
     s->check_sequence_numbers = TRUE;
+
+    /* Set some defaults */
+    s->category_control[T38_PACKET_CATEGORY_INDICATOR] = 1;
+    s->category_control[T38_PACKET_CATEGORY_CONTROL_DATA] = 1;
+    s->category_control[T38_PACKET_CATEGORY_CONTROL_DATA_END] = 1;
+    s->category_control[T38_PACKET_CATEGORY_IMAGE_DATA] = 1;
+    s->category_control[T38_PACKET_CATEGORY_IMAGE_DATA_END] = 1;
 
     /* Set the initial current receive states to something invalid, so the
        first data received is seen as a change of state. */

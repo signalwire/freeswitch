@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.h,v 1.71 2009/06/02 16:03:56 steveu Exp $
+ * $Id: v29rx.h,v 1.72 2009/07/09 13:52:09 steveu Exp $
  */
 
 /*! \file */
@@ -119,16 +119,6 @@ sending the ones. This means the first 23 received bits (the length of the
 scrambler register) cannot be trusted for the test. The receive modem,
 therefore, only tests that bits starting at bit 24 are really ones. 
 */
-
-/* Target length for the equalizer is about 63 taps, to deal with the worst stuff
-   in V.56bis. */
-/*! Samples before the target position in the equalizer buffer */
-#define V29_EQUALIZER_PRE_LEN   16
-/*! Samples after the target position in the equalizer buffer */
-#define V29_EQUALIZER_POST_LEN  14
-
-/*! The number of taps in the pulse shaping/bandpass filter */
-#define V29_RX_FILTER_STEPS     27
 
 typedef void (*qam_report_handler_t)(void *user_data, const complexf_t *constel, const complexf_t *target, int symbol);
 

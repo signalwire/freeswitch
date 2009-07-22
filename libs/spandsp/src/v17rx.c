@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.c,v 1.149 2009/06/02 16:03:56 steveu Exp $
+ * $Id: v17rx.c,v 1.153 2009/07/09 14:17:57 steveu Exp $
  */
 
 /*! \file */
@@ -262,24 +262,30 @@ static __inline__ complexf_t equalizer_get(v17_rx_state_t *s)
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
 static void tune_equalizer(v17_rx_state_t *s, const complexi16_t *z, const complexi16_t *target)
+{
+    complexi16_t err;
+
+    /* Find the x and y mismatch from the exact constellation position. */
+    err.re = target->re*FP_FACTOR - z->re;
+    err.im = target->im*FP_FACTOR - z->im;
+    //span_log(&s->logging, SPAN_LOG_FLOW, "Equalizer error %f\n", sqrt(err.re*err.re + err.im*err.im));
+    err.re = ((int32_t) err.re*(int32_t) s->eq_delta) >> 15;
+    err.im = ((int32_t) err.im*(int32_t) s->eq_delta) >> 15;
+    cvec_circular_lmsi16(s->eq_buf, s->eq_coeff, V17_EQUALIZER_LEN, s->eq_step, &err);
+}
 #else
 static void tune_equalizer(v17_rx_state_t *s, const complexf_t *z, const complexf_t *target)
-#endif
 {
     complexf_t err;
 
     /* Find the x and y mismatch from the exact constellation position. */
     err = complex_subf(target, z);
-    //span_log(&s->logging, SPAN_LOG_FLOW, "Equalizer error %f\n", sqrt(ez.re*ez.re + ez.im*ez.im));
-    err.re *= s->eq_delta;
-    err.im *= s->eq_delta;
-
-    err = complex_subf(target, z);
+    //span_log(&s->logging, SPAN_LOG_FLOW, "Equalizer error %f\n", sqrt(err.re*err.re + err.im*err.im));
     err.re *= s->eq_delta;
     err.im *= s->eq_delta;
     cvec_circular_lmsf(s->eq_buf, s->eq_coeff, V17_EQUALIZER_LEN, s->eq_step, &err);
 }
-/*- End of function --------------------------------------------------------*/
+#endif
 
 static int descramble(v17_rx_state_t *s, int in_bit)
 {

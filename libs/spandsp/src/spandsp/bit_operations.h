@@ -22,13 +22,19 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bit_operations.h,v 1.26 2009/02/26 16:08:50 steveu Exp $
+ * $Id: bit_operations.h,v 1.27 2009/07/10 13:15:56 steveu Exp $
  */
 
 /*! \file */
 
 #if !defined(_SPANDSP_BIT_OPERATIONS_H_)
 #define _SPANDSP_BIT_OPERATIONS_H_
+
+#if defined(__i386__)  ||  defined(__x86_64__)
+#if !defined(__SUNPRO_C)  ||  (__SUNPRO_C >= 0x0590)
+#define SPANDSP_USE_86_ASM
+#endif
+#endif
 
 #if defined(__cplusplus)
 extern "C"
@@ -40,7 +46,7 @@ extern "C"
     \return The bit number of the highest set bit, or -1 if the word is zero. */
 static __inline__ int top_bit(unsigned int bits)
 {
-#if defined(__i386__)  ||  defined(__x86_64__)
+#if defined(SPANDSP_USE_86_ASM)
     int res;
 
     __asm__ (" xorl %[res],%[res];\n"
@@ -141,7 +147,7 @@ static __inline__ int bottom_bit(unsigned int bits)
 {
     int res;
     
-#if defined(__i386__)  ||  defined(__x86_64__)
+#if defined(SPANDSP_USE_86_ASM)
     __asm__ (" xorl %[res],%[res];\n"
              " decl %[res];\n"
              " bsfl %[bits],%[res]\n"

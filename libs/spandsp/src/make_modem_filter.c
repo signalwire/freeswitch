@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: make_modem_filter.c,v 1.15 2009/06/02 11:51:57 steveu Exp $
+ * $Id: make_modem_filter.c,v 1.16 2009/07/10 13:15:56 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -44,6 +44,9 @@
 #include <stdio.h>
 #include <time.h>
 #include <fcntl.h>
+#if defined(__sunos)  ||  defined(__solaris)
+#include <getopt.h>
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/complex.h"

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17tx.h,v 1.42 2009/06/02 16:03:56 steveu Exp $
+ * $Id: v17tx.h,v 1.43 2009/07/09 13:52:09 steveu Exp $
  */
 
 /*! \file */
@@ -80,9 +80,6 @@ the processor cache than a table lookup approach. However, the DDS approach
 suits the receiver better, so the same signal generator is also used for the
 transmitter. 
 */
-
-/*! The number of taps in the pulse shaping/bandpass filter */
-#define V17_TX_FILTER_STEPS     9
 
 /*!
     V.17 modem transmit side descriptor. This defines the working state for a

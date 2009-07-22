@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk_tests.c,v 1.57 2009/05/30 15:23:13 steveu Exp $
+ * $Id: fsk_tests.c,v 1.58 2009/07/09 13:52:09 steveu Exp $
  */
 
 /*! \page fsk_tests_page FSK modem tests
@@ -126,37 +126,37 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
     switch (reason)
     {
     case BERT_REPORT_SYNCED:
-        printf("%d: BERT report synced\n", channel);
+        fprintf(stderr, "%d: BERT report synced\n", channel);
         break;
     case BERT_REPORT_UNSYNCED:
-        printf("%d: BERT report unsync'ed\n", channel);
+        fprintf(stderr, "%d: BERT report unsync'ed\n", channel);
         break;
     case BERT_REPORT_REGULAR:
-        printf("%d: BERT report regular - %d bits, %d bad bits, %d resyncs\n", channel, results->total_bits, results->bad_bits, results->resyncs);
+        fprintf(stderr, "%d: BERT report regular - %d bits, %d bad bits, %d resyncs\n", channel, results->total_bits, results->bad_bits, results->resyncs);
         break;
     case BERT_REPORT_GT_10_2:
-        printf("%d: BERT report > 1 in 10^2\n", channel);
+        fprintf(stderr, "%d: BERT report > 1 in 10^2\n", channel);
         break;
     case BERT_REPORT_LT_10_2:
-        printf("%d: BERT report < 1 in 10^2\n", channel);
+        fprintf(stderr, "%d: BERT report < 1 in 10^2\n", channel);
         break;
     case BERT_REPORT_LT_10_3:
-        printf("%d: BERT report < 1 in 10^3\n", channel);
+        fprintf(stderr, "%d: BERT report < 1 in 10^3\n", channel);
         break;
     case BERT_REPORT_LT_10_4:
-        printf("%d: BERT report < 1 in 10^4\n", channel);
+        fprintf(stderr, "%d: BERT report < 1 in 10^4\n", channel);
         break;
     case BERT_REPORT_LT_10_5:
-        printf("%d: BERT report < 1 in 10^5\n", channel);
+        fprintf(stderr, "%d: BERT report < 1 in 10^5\n", channel);
         break;
     case BERT_REPORT_LT_10_6:
-        printf("%d: BERT report < 1 in 10^6\n", channel);
+        fprintf(stderr, "%d: BERT report < 1 in 10^6\n", channel);
         break;
     case BERT_REPORT_LT_10_7:
-        printf("%d: BERT report < 1 in 10^7\n", channel);
+        fprintf(stderr, "%d: BERT report < 1 in 10^7\n", channel);
         break;
     default:
-        printf("%d: BERT report reason %d\n", channel, reason);
+        fprintf(stderr, "%d: BERT report reason %d\n", channel, reason);
         break;
     }
 }

@@ -22,11 +22,21 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.h,v 1.1 2008/10/13 13:14:01 steveu Exp $
+ * $Id: v29rx.h,v 1.2 2009/07/09 13:52:09 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V29RX_H_)
 #define _SPANDSP_PRIVATE_V29RX_H_
+
+/* Target length for the equalizer is about 63 taps, to deal with the worst stuff
+   in V.56bis. */
+/*! Samples before the target position in the equalizer buffer */
+#define V29_EQUALIZER_PRE_LEN   16
+/*! Samples after the target position in the equalizer buffer */
+#define V29_EQUALIZER_POST_LEN  14
+
+/*! The number of taps in the pulse shaping/bandpass filter */
+#define V29_RX_FILTER_STEPS     27
 
 /*!
     V.29 modem receive side descriptor. This defines the working state for a

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.h,v 1.64 2009/06/02 16:03:56 steveu Exp $
+ * $Id: v17rx.h,v 1.65 2009/07/09 13:52:09 steveu Exp $
  */
 
 /*! \file */
@@ -210,25 +210,6 @@ extra signal to noise ratio. However, in this case it is the difference between 
 working only on the most optimal lines, and being widely usable across most phone lines.
 TCM absolutely transformed the phone line modem business.
 */
-
-/* Target length for the equalizer is about 63 taps, to deal with the worst stuff
-   in V.56bis. */
-/*! Samples before the target position in the equalizer buffer */
-#define V17_EQUALIZER_PRE_LEN       8
-/*! Samples after the target position in the equalizer buffer */
-#define V17_EQUALIZER_POST_LEN      8
-
-/*! The number of taps in the pulse shaping/bandpass filter */
-#define V17_RX_FILTER_STEPS         27
-
-/* We can store more trellis depth that we look back over, so that we can push out a group
-   of symbols in one go, giving greater processing efficiency, at the expense of a bit more
-   latency through the modem. */
-/* Right now we don't take advantage of this optimisation. */
-/*! The depth of the trellis buffer */
-#define V17_TRELLIS_STORAGE_DEPTH   16
-/*! How far we look back into history for trellis decisions */
-#define V17_TRELLIS_LOOKBACK_DEPTH  16
 
 /*!
     V.17 modem receive side descriptor. This defines the working state for a

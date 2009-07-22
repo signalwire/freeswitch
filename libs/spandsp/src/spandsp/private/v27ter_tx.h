@@ -22,11 +22,14 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_tx.h,v 1.2 2008/12/06 14:35:04 steveu Exp $
+ * $Id: v27ter_tx.h,v 1.3 2009/07/09 13:52:09 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V27TER_TX_H_)
 #define _SPANDSP_PRIVATE_V27TER_TX_H_
+
+/*! The number of taps in the pulse shaping/bandpass filter */
+#define V27TER_TX_FILTER_STEPS      9
 
 /*!
     V.27ter modem transmit side descriptor. This defines the working state for a

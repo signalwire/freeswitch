@@ -22,11 +22,22 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis.h,v 1.10 2009/04/29 12:37:45 steveu Exp $
+ * $Id: v22bis.h,v 1.11 2009/07/09 13:52:09 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V22BIS_H_)
 #define _SPANDSP_PRIVATE_V22BIS_H_
+
+/*! The number of steps to the left and to the right of the target position in the equalizer buffer. */
+#define V22BIS_EQUALIZER_LEN    7
+/*! One less than a power of 2 >= (2*V22BIS_EQUALIZER_LEN + 1) */
+#define V22BIS_EQUALIZER_MASK   15
+
+/*! The number of taps in the transmit pulse shaping filter */
+#define V22BIS_TX_FILTER_STEPS  9
+
+/*! The number of taps in the receive pulse shaping/bandpass filter */
+#define V22BIS_RX_FILTER_STEPS  37
 
 /*! Segments of the training sequence on the receive side */
 enum

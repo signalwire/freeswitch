@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway.c,v 1.163 2009/05/16 03:34:45 steveu Exp $
+ * $Id: t38_gateway.c,v 1.164 2009/07/14 13:54:22 steveu Exp $
  */
 
 /*! \file */
@@ -1498,7 +1498,7 @@ static int set_fast_packetisation(t38_gateway_state_t *s)
 
 static void announce_training(t38_gateway_state_t *s)
 {
-    t38_core_send_indicator(&s->t38x.t38, set_fast_packetisation(s), s->t38x.t38.indicator_tx_count);
+    t38_core_send_indicator(&s->t38x.t38, set_fast_packetisation(s));
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1552,7 +1552,7 @@ static void non_ecm_rx_status(void *user_data, int status)
                 /* TODO: If the carrier really did fall for good during the 500ms TEP blocking timeout, we
                          won't declare the no-signal condition. */
                 non_ecm_push_residue(s);
-                t38_core_send_indicator(&s->t38x.t38, T38_IND_NO_SIGNAL, s->t38x.t38.indicator_tx_count);
+                t38_core_send_indicator(&s->t38x.t38, T38_IND_NO_SIGNAL);
             }
             restart_rx_modem(s);
             break;
@@ -1586,7 +1586,7 @@ static void non_ecm_push_residue(t38_gateway_state_t *t)
         /* There is a fractional octet in progress. We might as well send every last bit we can. */
         s->data[s->data_ptr++] = (uint8_t) (s->bit_stream << (8 - s->bit_no));
     }
-    t38_core_send_data(&t->t38x.t38, t->t38x.current_tx_data_type, T38_FIELD_T4_NON_ECM_SIG_END, s->data, s->data_ptr, t->t38x.t38.data_end_tx_count);
+    t38_core_send_data(&t->t38x.t38, t->t38x.current_tx_data_type, T38_FIELD_T4_NON_ECM_SIG_END, s->data, s->data_ptr, T38_PACKET_CATEGORY_IMAGE_DATA_END);
     s->in_bits += s->bits_absorbed;
     s->out_octets += s->data_ptr;
     s->data_ptr = 0;
@@ -1600,7 +1600,7 @@ static void non_ecm_push(t38_gateway_state_t *t)
     s = &t->core.to_t38;
     if (s->data_ptr)
     {
-        t38_core_send_data(&t->t38x.t38, t->t38x.current_tx_data_type, T38_FIELD_T4_NON_ECM_DATA, s->data, s->data_ptr, t->t38x.t38.data_tx_count);
+        t38_core_send_data(&t->t38x.t38, t->t38x.current_tx_data_type, T38_FIELD_T4_NON_ECM_DATA, s->data, s->data_ptr, T38_PACKET_CATEGORY_IMAGE_DATA);
         s->in_bits += s->bits_absorbed;
         s->out_octets += s->data_ptr;
         s->bits_absorbed = 0;
@@ -1682,6 +1682,7 @@ static void non_ecm_remove_fill_and_put_bit(void *user_data, int bit)
 static void hdlc_rx_status(hdlc_rx_state_t *t, int status)
 {
     t38_gateway_state_t *s;
+    int category;
 
     s = (t38_gateway_state_t *) t->frame_user_data;
     span_log(&s->logging, SPAN_LOG_FLOW, "HDLC signal status is %s (%d)\n", signal_status_to_str(status), status);
@@ -1712,8 +1713,9 @@ static void hdlc_rx_status(hdlc_rx_state_t *t, int status)
     case SIG_STATUS_CARRIER_DOWN:
         if (t->framing_ok_announced)
         {
-            t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_SIG_END, NULL, 0, s->t38x.t38.data_end_tx_count);
-            t38_core_send_indicator(&s->t38x.t38, T38_IND_NO_SIGNAL, s->t38x.t38.indicator_tx_count);
+            category = (s->t38x.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA_END  :  T38_PACKET_CATEGORY_IMAGE_DATA_END;
+            t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_SIG_END, NULL, 0, category);
+            t38_core_send_indicator(&s->t38x.t38, T38_IND_NO_SIGNAL);
             t->framing_ok_announced = FALSE;
         }
         restart_rx_modem(s);
@@ -1739,6 +1741,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
 {
     t38_gateway_state_t *s;
     t38_gateway_to_t38_state_t *u;
+    int category;
     
     s = (t38_gateway_state_t *) t->frame_user_data;
     u = &s->core.to_t38;
@@ -1757,6 +1760,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
         /* Hit HDLC flag */
         if (t->flags_seen >= t->framing_ok_threshold)
         {
+            category = (s->t38x.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
             if (t->len)
             {
                 /* This is not back-to-back flags */
@@ -1765,7 +1769,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
                     if (u->data_ptr)
                     {
                         bit_reverse(u->data, t->buffer + t->len - 2 - u->data_ptr, u->data_ptr);
-                        t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_DATA, u->data, u->data_ptr, s->t38x.t38.data_tx_count);
+                        t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_DATA, u->data, u->data_ptr, category);
                     }
                     /*endif*/
                     if (t->num_bits != 7)
@@ -1775,7 +1779,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
                         /* It seems some boxes may not like us sending a _SIG_END here, and then another
                            when the carrier actually drops. Lets just send T38_FIELD_HDLC_FCS_OK here. */
                         if (t->len > 2)
-                            t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_BAD, NULL, 0, s->t38x.t38.data_tx_count);
+                            t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_BAD, NULL, 0, category);
                         /*endif*/
                     }
                     else if ((u->crc & 0xFFFF) != 0xF0B8)
@@ -1785,7 +1789,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
                         /* It seems some boxes may not like us sending a _SIG_END here, and then another
                            when the carrier actually drops. Lets just send T38_FIELD_HDLC_FCS_OK here. */
                         if (t->len > 2)
-                            t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_BAD, NULL, 0, s->t38x.t38.data_tx_count);
+                            t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_BAD, NULL, 0, category);
                         /*endif*/
                     }
                     else
@@ -1810,7 +1814,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
                         /*endif*/
                         /* It seems some boxes may not like us sending a _SIG_END here, and then another
                            when the carrier actually drops. Lets just send T38_FIELD_HDLC_FCS_OK here. */
-                        t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_OK, NULL, 0, s->t38x.t38.data_tx_count);
+                        t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_OK, NULL, 0, category);
                     }
                     /*endif*/
                 }
@@ -1835,7 +1839,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
             {
                 if (s->t38x.current_tx_data_type == T38_DATA_V21)
                 {
-                    t38_core_send_indicator(&s->t38x.t38, set_slow_packetisation(s), s->t38x.t38.indicator_tx_count);
+                    t38_core_send_indicator(&s->t38x.t38, set_slow_packetisation(s));
                     s->audio.modems.rx_signal_present = TRUE;
                 }
                 /*endif*/
@@ -1861,6 +1865,7 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
 {
     t38_gateway_state_t *s;
     t38_gateway_to_t38_state_t *u;
+    int category;
 
     if (new_bit < 0)
     {
@@ -1914,7 +1919,8 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
     if (++u->data_ptr >= u->octets_per_data_packet)
     {
         bit_reverse(u->data, t->buffer + t->len - 2 - u->data_ptr, u->data_ptr);
-        t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_DATA, u->data, u->data_ptr, s->t38x.t38.data_tx_count);
+        category = (s->t38x.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
+        t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_DATA, u->data, u->data_ptr, category);
         /* Since we delay transmission by 2 octets, we should now have sent the last of the data octets when
            we have just received the last of the CRC octets. */
         u->data_ptr = 0;
@@ -2028,7 +2034,7 @@ SPAN_DECLARE(int) t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], int len)
                 break;
             case TIMED_MODE_STARTUP:
                 /* Ensure a no-signal condition goes out the moment the received audio starts */
-                t38_core_send_indicator(&s->t38x.t38, T38_IND_NO_SIGNAL, s->t38x.t38.indicator_tx_count);
+                t38_core_send_indicator(&s->t38x.t38, T38_IND_NO_SIGNAL);
                 s->core.timed_mode = TIMED_MODE_IDLE;
                 break;
             }
@@ -2127,11 +2133,11 @@ SPAN_DECLARE(void) t38_gateway_set_supported_modems(t38_gateway_state_t *s, int 
 {
     s->core.supported_modems = supported_modems;
     if ((s->core.supported_modems & T30_SUPPORT_V17))
-        s->t38x.t38.fastest_image_data_rate = 14400;
+        t38_set_fastest_image_data_rate(&s->t38x.t38, 14400);
     else if ((s->core.supported_modems & T30_SUPPORT_V29))
-        s->t38x.t38.fastest_image_data_rate = 9600;
+        t38_set_fastest_image_data_rate(&s->t38x.t38, 9600);
     else
-        s->t38x.t38.fastest_image_data_rate = 4800;
+        t38_set_fastest_image_data_rate(&s->t38x.t38, 4800);
     /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
@@ -2160,8 +2166,8 @@ SPAN_DECLARE(void) t38_gateway_set_fill_bit_removal(t38_gateway_state_t *s, int 
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) t38_gateway_set_real_time_frame_handler(t38_gateway_state_t *s,
-                                                            t38_gateway_real_time_frame_handler_t *handler,
-                                                            void *user_data)
+                                                           t38_gateway_real_time_frame_handler_t *handler,
+                                                           void *user_data)
 {
     s->core.real_time_frame_handler = handler;
     s->core.real_time_frame_user_data = user_data;
@@ -2191,8 +2197,8 @@ static int t38_gateway_audio_init(t38_gateway_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 static int t38_gateway_t38_init(t38_gateway_state_t *t,
-                                 t38_tx_packet_handler_t *tx_packet_handler,
-                                 void *tx_packet_user_data)
+                                t38_tx_packet_handler_t *tx_packet_handler,
+                                void *tx_packet_user_data)
 {
     t38_gateway_t38_state_t *s;
 
@@ -2204,9 +2210,11 @@ static int t38_gateway_t38_init(t38_gateway_state_t *t,
                   (void *) t,
                   tx_packet_handler,
                   tx_packet_user_data);
-    s->t38.indicator_tx_count = INDICATOR_TX_COUNT;
-    s->t38.data_tx_count = DATA_TX_COUNT;
-    s->t38.data_end_tx_count = DATA_END_TX_COUNT;
+    t38_set_redundancy_control(&s->t38, T38_PACKET_CATEGORY_INDICATOR, INDICATOR_TX_COUNT);
+    t38_set_redundancy_control(&s->t38, T38_PACKET_CATEGORY_CONTROL_DATA, DATA_TX_COUNT);
+    t38_set_redundancy_control(&s->t38, T38_PACKET_CATEGORY_CONTROL_DATA_END, DATA_END_TX_COUNT);
+    t38_set_redundancy_control(&s->t38, T38_PACKET_CATEGORY_IMAGE_DATA, DATA_TX_COUNT);
+    t38_set_redundancy_control(&s->t38, T38_PACKET_CATEGORY_IMAGE_DATA_END, DATA_END_TX_COUNT);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

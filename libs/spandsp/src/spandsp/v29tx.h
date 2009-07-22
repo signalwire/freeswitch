@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29tx.h,v 1.40 2009/06/02 16:03:56 steveu Exp $
+ * $Id: v29tx.h,v 1.41 2009/07/09 13:52:09 steveu Exp $
  */
 
 /*! \file */
@@ -93,9 +93,6 @@ gives
     s(n) = I(n)*cos(2*pi*f*n) - Q(n)*sin(2*pi*f*n)
 
 */
-
-/*! The number of taps in the pulse shaping/bandpass filter */
-#define V29_TX_FILTER_STEPS     9
 
 /*!
     V.29 modem transmit side descriptor. This defines the working state for a

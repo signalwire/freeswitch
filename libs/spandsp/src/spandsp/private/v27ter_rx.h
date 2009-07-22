@@ -22,11 +22,29 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_rx.h,v 1.1 2008/10/13 13:14:01 steveu Exp $
+ * $Id: v27ter_rx.h,v 1.2 2009/07/09 13:52:09 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V27TER_RX_H_)
 #define _SPANDSP_PRIVATE_V27TER_RX_H_
+
+/* Target length for the equalizer is about 43 taps for 4800bps and 32 taps for 2400bps
+   to deal with the worst stuff in V.56bis. */
+/*! Samples before the target position in the equalizer buffer */
+#define V27TER_EQUALIZER_PRE_LEN        16  /* This much before the real event */
+/*! Samples after the target position in the equalizer buffer */
+#define V27TER_EQUALIZER_POST_LEN       14  /* This much after the real event (must be even) */
+
+/*! The number of taps in the 4800bps pulse shaping/bandpass filter */
+#define V27TER_RX_4800_FILTER_STEPS     27
+/*! The number of taps in the 2400bps pulse shaping/bandpass filter */
+#define V27TER_RX_2400_FILTER_STEPS     27
+
+#if V27TER_RX_4800_FILTER_STEPS > V27TER_RX_2400_FILTER_STEPS
+#define V27TER_RX_FILTER_STEPS V27TER_RX_4800_FILTER_STEPS
+#else
+#define V27TER_RX_FILTER_STEPS V27TER_RX_2400_FILTER_STEPS
+#endif
 
 /*!
     V.27ter modem receive side descriptor. This defines the working state for a

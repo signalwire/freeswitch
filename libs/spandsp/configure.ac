@@ -16,7 +16,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: configure.ac,v 1.70 2009/06/02 11:51:57 steveu Exp $
+# $Id: configure.ac,v 1.71 2009/07/12 09:29:18 steveu Exp $
 
 # @start 1
 
@@ -124,7 +124,7 @@ AC_ARG_ENABLE(mmx,          [  --enable-mmx         Enable MMX support])
 AC_ARG_ENABLE(sse,          [  --enable-sse         Enable SSE support])
 AC_ARG_ENABLE(sse2,         [  --enable-sse2        Enable SSE2 support])
 AC_ARG_ENABLE(sse3,         [  --enable-sse3        Enable SSE3 support])
-AC_ARG_ENABLE(sse3,         [  --enable-sse3        Enable SSE3 support])
+AC_ARG_ENABLE(ssse3,        [  --enable-ssse3       Enable SSSE3 support])
 AC_ARG_ENABLE(sse4_1,       [  --enable-sse4-1      Enable SSE4.1 support])
 AC_ARG_ENABLE(sse4_2,       [  --enable-sse4-2      Enable SSE4.2 support])
 AC_ARG_ENABLE(sse4a,        [  --enable-sse4a       Enable SSE4A support])
@@ -305,6 +305,9 @@ gnu)
     if test "$enable_sse4_1" = "yes" ; then
         COMP_VENDOR_CFLAGS="-msse41 $COMP_VENDOR_CFLAGS"
     fi
+    if test "$enable_ssse3" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-mssse3 $COMP_VENDOR_CFLAGS"
+    fi
     if test "$enable_sse3" = "yes" ; then
         COMP_VENDOR_CFLAGS="-msse3 $COMP_VENDOR_CFLAGS"
     fi
@@ -357,6 +360,7 @@ AM_CONDITIONAL([COND_MMX], [test "$enable_mmx" = yes])
 AM_CONDITIONAL([COND_SSE], [test "$enable_sse" = yes])
 AM_CONDITIONAL([COND_SSE2], [test "$enable_sse2" = yes])
 AM_CONDITIONAL([COND_SSE3], [test "$enable_sse3" = yes])
+AM_CONDITIONAL([COND_SSSE3], [test "$enable_ssse3" = yes])
 AM_CONDITIONAL([COND_SSE4_1], [test "$enable_sse4_1" = yes])
 AM_CONDITIONAL([COND_SSE4_2], [test "$enable_sse4_2" = yes])
 AM_CONDITIONAL([COND_SSE4A], [test "$enable_sse4a" = yes])
@@ -389,6 +393,10 @@ if test "$enable_sse4_2" = "yes" ; then
 fi
 if test "$enable_sse4_1" = "yes" ; then
     AC_DEFINE([SPANDSP_USE_SSE4_1], [1], [Use the SSE4.1 instruction set (i386 and x86_64 only).])
+    enable_ssse3="yes"
+fi
+if test "$enable_ssse3" = "yes" ; then
+    AC_DEFINE([SPANDSP_USE_SSSE3], [1], [Use the SSSE3 instruction set (i386 and x86_64 only).])
     enable_sse3="yes"
 fi
 if test "$enable_sse3" = "yes" ; then

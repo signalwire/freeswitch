@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_rx.c,v 1.130 2009/06/02 16:03:56 steveu Exp $
+ * $Id: v27ter_rx.c,v 1.131 2009/07/08 15:11:09 steveu Exp $
  */
 
 /*! \file */
@@ -271,11 +271,7 @@ static __inline__ complexf_t equalizer_get(v27ter_rx_state_t *s)
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
 static void tune_equalizer(v27ter_rx_state_t *s, const complexi16_t *z, const complexi16_t *target)
-#else
-static void tune_equalizer(v27ter_rx_state_t *s, const complexf_t *z, const complexf_t *target)
-#endif
 {
-#if defined(SPANDSP_USE_FIXED_POINTx)
     complexi16_t err;
 
     /* Find the x and y mismatch from the exact constellation position. */
@@ -284,7 +280,10 @@ static void tune_equalizer(v27ter_rx_state_t *s, const complexf_t *z, const comp
     err.re = ((int32_t) err.re*(int32_t) s->eq_delta) >> 15;
     err.im = ((int32_t) err.im*(int32_t) s->eq_delta) >> 15;
     cvec_circular_lmsi16(s->eq_buf, s->eq_coeff, V27TER_EQUALIZER_LEN, s->eq_step, &err);
+}
 #else
+static void tune_equalizer(v27ter_rx_state_t *s, const complexf_t *z, const complexf_t *target)
+{
     complexf_t err;
 
     /* Find the x and y mismatch from the exact constellation position. */
@@ -292,8 +291,8 @@ static void tune_equalizer(v27ter_rx_state_t *s, const complexf_t *z, const comp
     err.re *= s->eq_delta;
     err.im *= s->eq_delta;
     cvec_circular_lmsf(s->eq_buf, s->eq_coeff, V27TER_EQUALIZER_LEN, s->eq_step, &err);
-#endif
 }
+#endif
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINTx)

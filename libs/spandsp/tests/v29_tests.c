@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29_tests.c,v 1.119 2009/05/30 15:23:14 steveu Exp $
+ * $Id: v29_tests.c,v 1.120 2009/07/09 13:52:09 steveu Exp $
  */
 
 /*! \page v29_tests_page V.29 modem tests
@@ -99,11 +99,11 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
     switch (reason)
     {
     case BERT_REPORT_REGULAR:
-        printf("BERT report regular - %d bits, %d bad bits, %d resyncs\n", results->total_bits, results->bad_bits, results->resyncs);
+        fprintf(stderr, "BERT report regular - %d bits, %d bad bits, %d resyncs\n", results->total_bits, results->bad_bits, results->resyncs);
         memcpy(&latest_results, results, sizeof(latest_results));
         break;
     default:
-        printf("BERT report %s\n", bert_event_to_str(reason));
+        fprintf(stderr, "BERT report %s\n", bert_event_to_str(reason));
         break;
     }
 }
