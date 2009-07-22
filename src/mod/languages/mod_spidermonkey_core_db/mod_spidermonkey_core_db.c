@@ -214,12 +214,15 @@ static JSBool db_fetch(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 		return JS_TRUE;
 	}
 	for (x = 0; x < colcount; x++) {
-		switch_snprintf(code, sizeof(code), "~_dB_RoW_DaTa_[\"%s\"] = \"%s\"",
-						(char *) switch_core_db_column_name(dbo->stmt, x), (char *) switch_core_db_column_text(dbo->stmt, x));
-
-		eval_some_js(code, dbo->cx, dbo->obj, rval);
-		if (*rval == JS_FALSE) {
-			return JS_TRUE;
+		const char *var = (char *) switch_core_db_column_name(dbo->stmt, x);
+		const char *val = (char *) switch_core_db_column_text(dbo->stmt, x);
+		
+		if (var && val) {
+			switch_snprintf(code, sizeof(code), "~_dB_RoW_DaTa_[\"%s\"] = \"%s\"", var, val);
+			eval_some_js(code, dbo->cx, dbo->obj, rval);
+			if (*rval == JS_FALSE) {
+				return JS_TRUE;
+			}
 		}
 	}
 
