@@ -855,7 +855,7 @@ SWITCH_STANDARD_API(xml_locate_function)
 		goto end;
 	}
 
-	if (argc < 4) {
+	if (argc != 1 && argc != 4) {
 		err = "bad args";
 		goto end;
 	}
@@ -868,9 +868,18 @@ SWITCH_STANDARD_API(xml_locate_function)
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "section", section);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag", tag);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag_attr_name", tag_attr_name);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag_attr_val", tag_attr_val);
+
+	if (tag) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag", tag);
+	}
+
+	if (tag_attr_name) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag_attr_name", tag_attr_name);
+	}
+
+	if (tag_attr_val) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag_attr_val", tag_attr_val);
+	}
 
 	if (switch_xml_locate(section, tag, tag_attr_name, tag_attr_val, &xml, &obj, params, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "can't find anything\n");
