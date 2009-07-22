@@ -416,23 +416,20 @@ void sofia_event_callback(nua_event_t event,
 					tech_pvt->call_id = switch_core_session_strdup(session, sip->sip_call_id->i_id);
 					switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
 				}
+
 				if (tech_pvt->gateway_name) {
 					gateway = sofia_reg_find_gateway(tech_pvt->gateway_name);
 				}
+
+				if (channel && switch_channel_down(channel)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already hungup.\n");
+					goto done;
+				}
 			} else {
-				/* too late */
+				/* we can't find the session it must be hanging up or something else, its too late to do anything with it. */
 				return;
 			}
 		}
-	}
-
-	if (session) {
-		if (channel && switch_channel_down(channel)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already hungup.\n");
-			goto done;
-		}
-	} else if (sofia_private && sofia_private->is_call) {
-		sofia_private->destroy_me = 22;
 	}
 
 	if (sofia_test_pflag(profile, PFLAG_AUTH_ALL) && tech_pvt && tech_pvt->key && sip) {

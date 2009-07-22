@@ -521,7 +521,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_cond_destroy(switch_thread_cond_t 
 	 } switch_uuid_t;
 
 /** UUIDs are formatted as: 00112233-4455-6677-8899-AABBCCDDEEFF */
-#define SWITCH_UUID_FORMATTED_LENGTH 36
+#define SWITCH_UUID_FORMATTED_LENGTH 256
 
 #define SWITCH_MD5_DIGESTSIZE 16
 #define SWITCH_MD5_DIGEST_STRING_SIZE 33

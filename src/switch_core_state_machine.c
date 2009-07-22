@@ -332,7 +332,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	switch_thread_id_t thread_id;
 	jmp_buf env;
 	int sig, silly = 0;
-	uint32_t new_loops = 60000000;
+	uint32_t new_loops = 60000;
 
 	if (switch_test_flag((&runtime), SCF_CRASH_PROT)) {
 		thread_id = switch_thread_self();
