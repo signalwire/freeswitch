@@ -73,3 +73,35 @@ document print_list
 Usage print_list [symbol]
 Prints all the remaining elements of a linked list
 end
+
+define print_tags
+	dont-repeat
+	set $x = $arg0
+	while (*((int*)$x) != 0x0)
+		info sym $x->t_tag
+		printf "%p \"%s\"\n", $x->t_value, $x->t_value
+		set $x = $x + 1
+	end
+end
+document print_tags
+Usage print_tags [tags]
+List sofia tags and their values
+end
+
+define setup_session
+	set $session=(switch_core_session_t*)$arg0
+	set $channel = $session->channel
+	printf "UUID: %s\nName: %s\nState: %d\n", $session->uuid_str, $channel->name, $channel->state
+end
+document setup_session
+Usage setup_session [session address]
+Sets session and channel from the given address
+end
+
+define setup_sofia
+	set $tech_pvt = (private_object_t*)$session->private_info
+	set $nh = $tech_pvt->nh
+end
+document setup_sofia
+No arguments. Sets nh and tech_pvt from the current session
+end
