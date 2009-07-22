@@ -424,6 +424,7 @@ if test "$enable_builtin_tiff" = "yes" ; then
   COMP_VENDOR_CFLAGS="-I$abs_tiffdir/libtiff $COMP_VENDOR_CFLAGS"
   COMP_VENDOR_LDFLAGS="-L$abs_tiffdir/libtiff $COMP_VENDOR_LDFLAGS"
   LIBS="$LIBS $abs_tiffdir/libtiff/libtiff.la"
+  AC_DEFINE([HAVE_LIBTIFF], [1], [Define to 1 if you have the `tiff' library (-ltiff).])
 else
   AC_CHECK_HEADERS([tiffio.h])
   AC_CHECK_LIB([tiff], [TIFFOpen], , AC_MSG_ERROR("Can't build without libtiff (does your system require a libtiff-devel package?)"), -lm)
