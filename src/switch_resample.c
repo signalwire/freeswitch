@@ -56,6 +56,7 @@ SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resa
 															   uint32_t from_rate, uint32_t to_rate, 
 															   uint32_t to_size,
 															   int quality,
+															   uint32_t channels,
 															   const char *file, const char *func, int line)
 {
 	int err = 0;
@@ -64,7 +65,7 @@ SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resa
 
 	switch_zmalloc(resampler, sizeof(*resampler));
 	
-	resampler->resampler = speex_resampler_init(1, from_rate, to_rate, quality, &err);
+	resampler->resampler = speex_resampler_init(channels ? channels : 1, from_rate, to_rate, quality, &err);
 
 	if (!resampler->resampler) {
 		free(resampler);
@@ -88,7 +89,7 @@ SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resa
 SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, int16_t *src, uint32_t srclen)
 {
 	resampler->to_len = resampler->to_size;
-	speex_resampler_process_int(resampler->resampler, 0, src, &srclen, resampler->to, &resampler->to_len);
+	speex_resampler_process_interleaved_int(resampler->resampler, src, &srclen, resampler->to, &resampler->to_len);
 	return resampler->to_len;
 }
 

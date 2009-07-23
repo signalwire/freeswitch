@@ -123,6 +123,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		}
 	}
 
+	if (fh->pre_buffer_datalen) {
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Prebuffering %d bytes\n", (int)fh->pre_buffer_datalen);
+		switch_buffer_create_dynamic(&fh->pre_buffer, fh->pre_buffer_datalen * fh->channels, fh->pre_buffer_datalen * fh->channels / 2, 0);
+		fh->pre_buffer_data = switch_core_alloc(fh->memory_pool, fh->pre_buffer_datalen * fh->channels);
+	}
+
 	if (fh->channels > 1 && (flags & SWITCH_FILE_FLAG_READ)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File has %d channels, muxing to mono will occur.\n", fh->channels);
 	}
@@ -212,7 +218,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 	if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->native_rate != fh->samplerate) {
 		if (!fh->resampler) {
 			if (switch_resample_create(&fh->resampler,
-									   fh->native_rate, fh->samplerate, (uint32_t) orig_len, SWITCH_RESAMPLE_QUALITY) != SWITCH_STATUS_SUCCESS) {
+									   fh->native_rate, fh->samplerate, (uint32_t) orig_len, SWITCH_RESAMPLE_QUALITY, 1) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 				return SWITCH_STATUS_GENERR;
 			}
@@ -273,31 +279,31 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 			if (switch_resample_create(&fh->resampler,
 									   fh->native_rate, 
 									   fh->samplerate, 
-									   (uint32_t) orig_len *fh->channels, 
-									   SWITCH_RESAMPLE_QUALITY) != SWITCH_STATUS_SUCCESS) {
+									   (uint32_t) orig_len * 2 * fh->channels, 
+									   SWITCH_RESAMPLE_QUALITY, fh->channels) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 				return SWITCH_STATUS_GENERR;
 			}
 		}
-		switch_resample_process(fh->resampler, data, (uint32_t)(*len * fh->channels));
 
-		if (fh->resampler->to_len > orig_len * fh->channels) {
+		switch_resample_process(fh->resampler, data, (uint32_t)*len);
+		
+		if (fh->resampler->to_len > orig_len) {
 			if (!fh->dbuf) {
 				void *mem;
-				fh->dbuflen = fh->resampler->to_len * 2;
+				fh->dbuflen = fh->resampler->to_len * 2 * fh->channels;
 				mem = realloc(fh->dbuf, fh->dbuflen);
 				switch_assert(mem);
 				fh->dbuf = mem;
 			}
 			switch_assert(fh->resampler->to_len * 2 <= fh->dbuflen);
-			memcpy(fh->dbuf, fh->resampler->to, fh->resampler->to_len * 2);
+			memcpy(fh->dbuf, fh->resampler->to, fh->resampler->to_len * 2 * fh->channels);
 			data = fh->dbuf;
 		} else {
-			memcpy(data, fh->resampler->to, fh->resampler->to_len * 2);
+			memcpy(data, fh->resampler->to, fh->resampler->to_len * 2 * fh->channels);
 		}
 
-		*len = fh->resampler->to_len / fh->channels;
-
+		*len = fh->resampler->to_len;
 	}
 
 	if (!*len) {
@@ -316,7 +322,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 		if (rlen >= fh->pre_buffer_datalen) {
 			if ((blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen))) {
 				if (!asis) blen /= 2;
-				if (fh->channels) blen /= fh->channels;
+				if (fh->channels > 1) blen /= fh->channels;
 				if ((status = fh->file_interface->file_write(fh, fh->pre_buffer_data, &blen)) != SWITCH_STATUS_SUCCESS) {
 					*len = 0;
 				}
@@ -427,7 +433,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 			while((rlen = switch_buffer_inuse(fh->pre_buffer))) {
 				if ((blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen))) {
 					if (!asis) blen /= 2;
-					if (fh->channels) blen /= fh->channels;
+					if (fh->channels > 1) blen /= fh->channels;
 					if (fh->file_interface->file_write(fh, fh->pre_buffer_data, &blen) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}

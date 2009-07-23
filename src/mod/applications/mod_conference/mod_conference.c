@@ -4795,7 +4795,7 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 	if (read_impl.actual_samples_per_second != conference->rate) {
 		if (switch_resample_create(&member->read_resampler,
 								   read_impl.actual_samples_per_second,
-								   conference->rate, member->frame_size, SWITCH_RESAMPLE_QUALITY) != SWITCH_STATUS_SUCCESS) {
+								   conference->rate, member->frame_size, SWITCH_RESAMPLE_QUALITY, 1) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 			goto done;
 		}

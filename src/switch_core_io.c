@@ -271,7 +271,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 													read_frame->codec->implementation->actual_samples_per_second,
 													session->read_impl.actual_samples_per_second, 
 													session->read_impl.decoded_bytes_per_packet,
-													SWITCH_RESAMPLE_QUALITY);
+													SWITCH_RESAMPLE_QUALITY, 1);
 					
 					switch_mutex_unlock(session->resample_mutex);
 
@@ -677,7 +677,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 												frame->codec->implementation->actual_samples_per_second,
 												session->write_impl.actual_samples_per_second, 
 												session->write_impl.decoded_bytes_per_packet,
-												SWITCH_RESAMPLE_QUALITY);
+												SWITCH_RESAMPLE_QUALITY, 1);
 												
 				
 				switch_mutex_unlock(session->resample_mutex);
@@ -961,7 +961,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 																	frame->codec->implementation->actual_samples_per_second,
 																	session->write_impl.actual_samples_per_second, 
 																	session->write_impl.decoded_bytes_per_packet,
-																	SWITCH_RESAMPLE_QUALITY);
+																	SWITCH_RESAMPLE_QUALITY, 1);
 								}
 								switch_mutex_unlock(session->resample_mutex);
 

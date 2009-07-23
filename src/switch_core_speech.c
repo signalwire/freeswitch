@@ -227,7 +227,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle
 	if (sh->native_rate && sh->samplerate && sh->native_rate != sh->samplerate) {
 		if (!sh->resampler) {
 			if (switch_resample_create(&sh->resampler,
-									   sh->native_rate, sh->samplerate, (uint32_t) orig_len, SWITCH_RESAMPLE_QUALITY) != SWITCH_STATUS_SUCCESS) {
+									   sh->native_rate, sh->samplerate, (uint32_t) orig_len, SWITCH_RESAMPLE_QUALITY, 1) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 				return SWITCH_STATUS_GENERR;
 			}

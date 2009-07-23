@@ -80,10 +80,11 @@ typedef struct {
 SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resampler_t **new_resampler,
 															   uint32_t from_rate, uint32_t to_rate, uint32_t to_size,
 															   int quality,
+															   uint32_t channels,
 															   const char *file, const char *func, int line);
 
 
-#define switch_resample_create(_n, _fr, _tr, _ts, _q) switch_resample_perform_create(_n, _fr, _tr, _ts, _q, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_resample_create(_n, _fr, _tr, _ts, _q, _c) switch_resample_perform_create(_n, _fr, _tr, _ts, _q, _c, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*!
   \brief Destroy an existing resampler handle
