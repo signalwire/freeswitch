@@ -2995,8 +2995,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_resample_perform_create(SWIGTYPE_p_p_switch_audio_resampler_t new_resampler, uint from_rate, uint to_rate, uint to_size, int quality, string file, string func, int line) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_resample_perform_create(SWIGTYPE_p_p_switch_audio_resampler_t.getCPtr(new_resampler), from_rate, to_rate, to_size, quality, file, func, line);
+  public static switch_status_t switch_resample_perform_create(SWIGTYPE_p_p_switch_audio_resampler_t new_resampler, uint from_rate, uint to_rate, uint to_size, int quality, uint channels, string file, string func, int line) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_resample_perform_create(SWIGTYPE_p_p_switch_audio_resampler_t.getCPtr(new_resampler), from_rate, to_rate, to_size, quality, channels, file, func, line);
     return ret;
   }
 
@@ -9577,7 +9577,7 @@ class freeswitchPINVOKE {
   public static extern void delete_switch_audio_resampler_t(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_resample_perform_create")]
-  public static extern int switch_resample_perform_create(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, int jarg5, string jarg6, string jarg7, int jarg8);
+  public static extern int switch_resample_perform_create(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, int jarg5, uint jarg6, string jarg7, string jarg8, int jarg9);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_resample_destroy")]
   public static extern void switch_resample_destroy(HandleRef jarg1);

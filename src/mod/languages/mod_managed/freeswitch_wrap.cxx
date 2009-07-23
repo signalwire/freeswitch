@@ -21087,16 +21087,17 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_audio_resampler_t(void * jarg1)
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_resample_perform_create(void * jarg1, unsigned long jarg2, unsigned long jarg3, unsigned long jarg4, int jarg5, char * jarg6, char * jarg7, int jarg8) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_resample_perform_create(void * jarg1, unsigned long jarg2, unsigned long jarg3, unsigned long jarg4, int jarg5, unsigned long jarg6, char * jarg7, char * jarg8, int jarg9) {
   int jresult ;
   switch_audio_resampler_t **arg1 = (switch_audio_resampler_t **) 0 ;
   uint32_t arg2 ;
   uint32_t arg3 ;
   uint32_t arg4 ;
   int arg5 ;
-  char *arg6 = (char *) 0 ;
+  uint32_t arg6 ;
   char *arg7 = (char *) 0 ;
-  int arg8 ;
+  char *arg8 = (char *) 0 ;
+  int arg9 ;
   switch_status_t result;
   
   arg1 = (switch_audio_resampler_t **)jarg1; 
@@ -21104,10 +21105,11 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_resample_perform_create(void * jarg1, u
   arg3 = (uint32_t)jarg3; 
   arg4 = (uint32_t)jarg4; 
   arg5 = (int)jarg5; 
-  arg6 = (char *)jarg6; 
+  arg6 = (uint32_t)jarg6; 
   arg7 = (char *)jarg7; 
-  arg8 = (int)jarg8; 
-  result = (switch_status_t)switch_resample_perform_create(arg1,arg2,arg3,arg4,arg5,(char const *)arg6,(char const *)arg7,arg8);
+  arg8 = (char *)jarg8; 
+  arg9 = (int)jarg9; 
+  result = (switch_status_t)switch_resample_perform_create(arg1,arg2,arg3,arg4,arg5,arg6,(char const *)arg7,(char const *)arg8,arg9);
   jresult = result; 
   return jresult;
 }
