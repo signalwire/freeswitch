@@ -1,0 +1,29 @@
+Index: mod_openzap/mod_openzap.c
+===================================================================
+--- mod_openzap/mod_openzap.c	(revision 778)
++++ mod_openzap/mod_openzap.c	(working copy)
+@@ -664,7 +664,9 @@
+ 	private_t *tech_pvt = NULL;
+ 	zap_size_t len;
+ 	unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
+-	
++	zap_wait_flag_t wflags = ZAP_WRITE;
++	zap_status_t status;
++
+ 	channel = switch_core_session_get_channel(session);
+ 	assert(channel != NULL);
+ 
+@@ -695,6 +697,13 @@
+ 	}
+ 
+ 
++	wflags = ZAP_WRITE;	
++	status = zap_channel_wait(tech_pvt->zchan, &wflags, tech_pvt->zchan->effective_interval * 4);
++	
++	if (!(wflags & ZAP_WRITE)) {
++		goto fail;
++	}
++
+ 	len = frame->datalen;
+ 	if (zap_channel_write(tech_pvt->zchan, frame->data, frame->buflen, &len) != ZAP_SUCCESS) {
+ 		if (++tech_pvt->wr_error > 10) {
