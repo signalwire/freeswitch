@@ -1905,9 +1905,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	}
 
 	if (nc && cnonce && qop) {
-		input2 = switch_mprintf("%q:%q:%q:%q:%q:%q", a1_hash, nonce, nc, cnonce, qop, uridigest);
+		input2 = switch_mprintf("%s:%s:%s:%s:%s:%s", a1_hash, nonce, nc, cnonce, qop, uridigest);
 	} else {
-		input2 = switch_mprintf("%q:%q:%q", a1_hash, nonce, uridigest);
+		input2 = switch_mprintf("%s:%s:%s", a1_hash, nonce, uridigest);
 	}
 
 	switch_assert(input2);
