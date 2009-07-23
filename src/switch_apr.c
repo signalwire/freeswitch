@@ -318,12 +318,12 @@ SWITCH_DECLARE(switch_time_t) switch_time_now(void)
 
 SWITCH_DECLARE(switch_status_t) switch_time_exp_gmt_get(switch_time_t *result, switch_time_exp_t *input)
 {
-	return apr_time_exp_gmt_get(result, (apr_time_exp_t *) input);
+	return apr_time_exp_gmt_get((apr_time_t *)result, (apr_time_exp_t *) input);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_time_exp_get(switch_time_t *result, switch_time_exp_t *input)
 {
-	return apr_time_exp_get(result, (apr_time_exp_t *) input);
+	return apr_time_exp_get((apr_time_t *)result, (apr_time_exp_t *) input);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_time_exp_lt(switch_time_exp_t *result, switch_time_t input)
