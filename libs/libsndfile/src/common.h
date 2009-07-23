@@ -39,7 +39,7 @@
 
 #if (SIZEOF_LONG == 8)
 #	define	SF_PLATFORM_S64(x)		x##l
-#elif COMPILER_IS_GCC
+#elif COMPILER_IS_GCC || __SUNPRO_C
 #	define	SF_PLATFORM_S64(x)		x##ll
 #elif OS_IS_WIN32
 #	define	SF_PLATFORM_S64(x)		x##I64
