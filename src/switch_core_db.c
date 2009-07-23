@@ -59,8 +59,9 @@ SWITCH_DECLARE(const unsigned char *) switch_core_db_column_text(switch_core_db_
 {
     const unsigned char *txt = sqlite3_column_text(stmt, iCol);
 
-    if (txt && !strcasecmp((char *)txt, "(null)")) {
-        txt = NULL;
+    if (!strcasecmp((char *)stmt, "(null)")) {
+		memset(stmt, 0, 1);
+		txt = NULL;
     }
 
     return txt;
