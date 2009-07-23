@@ -1016,9 +1016,7 @@ static ZIO_IO_LOAD_FUNCTION(wanpipe_init)
 	wanpipe_interface.wait = wanpipe_wait;
 	wanpipe_interface.read = wanpipe_read;
 	wanpipe_interface.write = wanpipe_write;
-#ifndef WIN32
 	wanpipe_interface.poll_event = wanpipe_poll_event;
-#endif
 	wanpipe_interface.next_event = wanpipe_next_event;
 	wanpipe_interface.channel_destroy = wanpipe_channel_destroy;
 	wanpipe_interface.get_alarms = wanpipe_get_alarms;

@@ -65,7 +65,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="FreeSwitchCore.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/mod_openzap.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;../../../w32/Library/$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -144,7 +144,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="FreeSwitchCore.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/mod_openzap.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;../../../w32/Library/$(OutDir)&quot;"
 				GenerateDebugInformation="true"
