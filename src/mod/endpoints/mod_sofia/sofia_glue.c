@@ -3584,7 +3584,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   accept          VARCHAR(255),\n"
 		"   profile_name    VARCHAR(255),\n"
 		"   hostname        VARCHAR(255),\n"
-		"   network_port    VARCHAR(6)\n"
+		"   network_port    VARCHAR(6),\n"
 		"   network_ip      VARCHAR(255)\n"
 		");\n";
 
