@@ -269,7 +269,11 @@ int main(int argc, char *argv[])
 #endif
 	int nc = 0;					/* TRUE if we are running in noconsole mode */
 	pid_t pid = 0;
-	int x;
+	int i,x;
+	char *opts;
+	char opts_str[1024] = "";
+	char *local_argv[1024] = { 0 };
+	char *arg_argv[128] = { 0 };
 	char *usageDesc;
 	int alt_dirs = 0;
 	int known_opt;
@@ -284,7 +288,20 @@ int main(int argc, char *argv[])
 	int waste = 0;
 #endif
 
-	if (argv[0] && strstr(argv[0], "freeswitchd")) {
+	for (x = 0; x < argc; x++) {
+		local_argv[x] = argv[x];
+	}
+
+	if ((opts = getenv("FREESWITCH_OPTS"))) {
+		strncpy(opts_str, opts, sizeof(opts_str) - 1);
+		i = switch_separate_string(opts_str, ' ', arg_argv, (sizeof(arg_argv) / sizeof(arg_argv[0])));
+		for (x = 0; x < i; x++) {
+			local_argv[argc++] = arg_argv[x];
+		}
+	}
+
+
+	if (local_argv[0] && strstr(local_argv[0], "freeswitchd")) {
 		nc++;
 	}
 
@@ -321,11 +338,11 @@ int main(int argc, char *argv[])
 		known_opt = 0;
 #ifdef WIN32
 		if (x == 1) {
-			if (argv[x] && !strcmp(argv[x], "-service")) {
+			if (local_argv[x] && !strcmp(local_argv[x], "-service")) {
 				/* New installs will always have the service name specified, but keep a default for compat */
 				x++;
-				if (argv[x] && strlen(argv[x])) {
-					switch_copy_string(service_name, argv[x], SERVICENAME_MAXLEN);
+				if (local_argv[x] && strlen(local_argv[x])) {
+					switch_copy_string(service_name, local_argv[x], SERVICENAME_MAXLEN);
 				} else {
 					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
 				}
@@ -343,12 +360,12 @@ int main(int argc, char *argv[])
 					exit(0);
 				}
 			}
-			if (argv[x] && !strcmp(argv[x], "-install")) {
+			if (local_argv[x] && !strcmp(local_argv[x], "-install")) {
 				char exePath[1024];
 				char servicePath[1024];
 				x++;
-				if (argv[x] && strlen(argv[x])) {
-					switch_copy_string(service_name, argv[x], SERVICENAME_MAXLEN);
+				if (local_argv[x] && strlen(local_argv[x])) {
+					switch_copy_string(service_name, local_argv[x], SERVICENAME_MAXLEN);
 				} else {
 					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
 				}
@@ -386,10 +403,10 @@ int main(int argc, char *argv[])
 				}
 			}
 
-			if (argv[x] && !strcmp(argv[x], "-uninstall")) {
+			if (local_argv[x] && !strcmp(local_argv[x], "-uninstall")) {
 				x++;
-				if (argv[x] && strlen(argv[x])) {
-					switch_copy_string(service_name, argv[x], SERVICENAME_MAXLEN);
+				if (local_argv[x] && strlen(local_argv[x])) {
+					switch_copy_string(service_name, local_argv[x], SERVICENAME_MAXLEN);
 				} else {
 					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
 				}
@@ -418,29 +435,29 @@ int main(int argc, char *argv[])
 		}
 
 #else
-		if (argv[x] && !strcmp(argv[x], "-u")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-u")) {
 			x++;
-			if (argv[x] && strlen(argv[x])) {
-				runas_user = argv[x];
+			if (local_argv[x] && strlen(local_argv[x])) {
+				runas_user = local_argv[x];
 			}
 			known_opt++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-g")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-g")) {
 			x++;
-			if (argv[x] && strlen(argv[x])) {
-				runas_group = argv[x];
+			if (local_argv[x] && strlen(local_argv[x])) {
+				runas_group = local_argv[x];
 			}
 			known_opt++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-nf")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-nf")) {
 			nf++;
 			known_opt++;
 		}
 #endif
 #ifdef HAVE_SETRLIMIT
-		if (argv[x] && !strcmp(argv[x], "-core")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-core")) {
 			memset(&rlp, 0, sizeof(rlp));
 			rlp.rlim_cur = RLIM_INFINITY;
 			rlp.rlim_max = RLIM_INFINITY;
@@ -448,55 +465,55 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-waste")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-waste")) {
 			waste++;
 			known_opt++;
 		}
 #endif
 
-		if (argv[x] && !strcmp(argv[x], "-hp")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-hp")) {
 			high_prio++;
 			known_opt++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-nosql")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-nosql")) {
 			flags &= ~SCF_USE_SQL;
 			known_opt++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-nonat")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-nonat")) {
 			flags &= ~SCF_USE_AUTO_NAT;
 			known_opt++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-vg")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-vg")) {
 			flags |= SCF_VG;
 			known_opt++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-stop")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-stop")) {
 				return freeswitch_kill_background();
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-nc")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-nc")) {
 			nc++;
 			known_opt++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-c")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-c")) {
 			nc = 0;
 			known_opt++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-conf")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-conf")) {
 			x++;
-			if (argv[x] && strlen(argv[x])) {
-				SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(strlen(argv[x]) + 1);
+			if (local_argv[x] && strlen(local_argv[x])) {
+				SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 				if (!SWITCH_GLOBAL_dirs.conf_dir) {
 					fprintf(stderr, "Allocation error\n");
 					return 255;
 				}
-				strcpy(SWITCH_GLOBAL_dirs.conf_dir, argv[x]);
+				strcpy(SWITCH_GLOBAL_dirs.conf_dir, local_argv[x]);
 				alt_dirs++;
 			} else {
 				fprintf(stderr, "When using -conf you must specify a config directory\n");
@@ -505,15 +522,15 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-mod")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-mod")) {
 			x++;
-			if (argv[x] && strlen(argv[x])) {
-				SWITCH_GLOBAL_dirs.mod_dir = (char *) malloc(strlen(argv[x]) + 1);
+			if (local_argv[x] && strlen(local_argv[x])) {
+				SWITCH_GLOBAL_dirs.mod_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 				if (!SWITCH_GLOBAL_dirs.mod_dir) {
 					fprintf(stderr, "Allocation error\n");
 					return 255;
 				}
-				strcpy(SWITCH_GLOBAL_dirs.mod_dir, argv[x]);
+				strcpy(SWITCH_GLOBAL_dirs.mod_dir, local_argv[x]);
 			} else {
 				fprintf(stderr, "When using -mod you must specify a module directory\n");
 				return 255;
@@ -521,15 +538,15 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 				
-		if (argv[x] && !strcmp(argv[x], "-log")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-log")) {
 			x++;
-			if (argv[x] && strlen(argv[x])) {
-				SWITCH_GLOBAL_dirs.log_dir = (char *) malloc(strlen(argv[x]) + 1);
+			if (local_argv[x] && strlen(local_argv[x])) {
+				SWITCH_GLOBAL_dirs.log_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 				if (!SWITCH_GLOBAL_dirs.log_dir) {
 					fprintf(stderr, "Allocation error\n");
 					return 255;
 				}
-				strcpy(SWITCH_GLOBAL_dirs.log_dir, argv[x]);
+				strcpy(SWITCH_GLOBAL_dirs.log_dir, local_argv[x]);
 				alt_dirs++;
 			} else {
 				fprintf(stderr, "When using -log you must specify a log directory\n");
@@ -538,15 +555,15 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-db")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-db")) {
 			x++;
-			if (argv[x] && strlen(argv[x])) {
-				SWITCH_GLOBAL_dirs.db_dir = (char *) malloc(strlen(argv[x]) + 1);
+			if (local_argv[x] && strlen(local_argv[x])) {
+				SWITCH_GLOBAL_dirs.db_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 				if (!SWITCH_GLOBAL_dirs.db_dir) {
 					fprintf(stderr, "Allocation error\n");
 					return 255;
 				}
-				strcpy(SWITCH_GLOBAL_dirs.db_dir, argv[x]);
+				strcpy(SWITCH_GLOBAL_dirs.db_dir, local_argv[x]);
 				alt_dirs++;
 			} else {
 				fprintf(stderr, "When using -db you must specify a db directory\n");
@@ -555,15 +572,15 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-scripts")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-scripts")) {
 			x++;
-			if (argv[x] && strlen(argv[x])) {
-				SWITCH_GLOBAL_dirs.script_dir = (char *) malloc(strlen(argv[x]) + 1);
+			if (local_argv[x] && strlen(local_argv[x])) {
+				SWITCH_GLOBAL_dirs.script_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 				if (!SWITCH_GLOBAL_dirs.script_dir) {
 					fprintf(stderr, "Allocation error\n");
 					return 255;
 				}
-				strcpy(SWITCH_GLOBAL_dirs.script_dir, argv[x]);
+				strcpy(SWITCH_GLOBAL_dirs.script_dir, local_argv[x]);
 			} else {
 				fprintf(stderr, "When using -scripts you must specify a scripts directory\n");
 				return 255;
@@ -571,15 +588,15 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-htdocs")) {
+		if (local_argv[x] && !strcmp(local_argv[x], "-htdocs")) {
 			x++;
-			if (argv[x] && strlen(argv[x])) {
-				SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(strlen(argv[x]) + 1);
+			if (local_argv[x] && strlen(local_argv[x])) {
+				SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 				if (!SWITCH_GLOBAL_dirs.htdocs_dir) {
 					fprintf(stderr, "Allocation error\n");
 					return 255;
 				}
-				strcpy(SWITCH_GLOBAL_dirs.htdocs_dir, argv[x]);
+				strcpy(SWITCH_GLOBAL_dirs.htdocs_dir, local_argv[x]);
 			} else {
 				fprintf(stderr, "When using -htdocs you must specify a htdocs directory\n");
 				return 255;
@@ -587,7 +604,7 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
-		if (!known_opt || (argv[x] && (!strcmp(argv[x], "-help") || !strcmp(argv[x], "-h") || !strcmp(argv[x], "-?")))) {
+		if (!known_opt || (local_argv[x] && (!strcmp(local_argv[x], "-help") || !strcmp(local_argv[x], "-h") || !strcmp(local_argv[x], "-?")))) {
 			printf("%s\n", usageDesc);
 			exit(0);
 		}
@@ -625,7 +642,7 @@ int main(int argc, char *argv[])
 			int i = 0;
 
 			fprintf(stderr, "Error: stacksize %d is too large: run ulimit -s %d or run %s -waste.\nauto-adjusting stack size for optimal performance....\n", 
-					(int)(rlp.rlim_max / 1024), SWITCH_THREAD_STACKSIZE / 1024, argv[0]);
+					(int)(rlp.rlim_max / 1024), SWITCH_THREAD_STACKSIZE / 1024, local_argv[0]);
 
 			memset(&rlp, 0, sizeof(rlp));
 			rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
@@ -633,10 +650,10 @@ int main(int argc, char *argv[])
 			setrlimit(RLIMIT_STACK, &rlp);
 
 			apr_terminate();
-			ret = (int)execv(argv[0], argv);
+			ret = (int)execv(local_argv[0], local_argv);
 			
 			for(i = 0; i < argc; i++) {
-				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[i]);
+				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", local_argv[i]);
 			}
 
 			return system(buf);
@@ -726,13 +743,13 @@ int main(int argc, char *argv[])
 		char buf[1024] = "";
 		int i = 0;
 		
-		switch_assert(argv[0]);
+		switch_assert(local_argv[0]);
 		switch_sleep(1000000);
-		ret = (int)execv(argv[0], argv);
+		ret = (int)execv(local_argv[0], local_argv);
 		fprintf(stderr, "Restart Failed [%s] resorting to plan b\n", strerror(errno));
 
 		for(i = 0; i < argc; i++) {
-			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[i]);
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", local_argv[i]);
 		}
 
 		ret = system(buf);
