@@ -664,7 +664,9 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	private_t *tech_pvt = NULL;
 	zap_size_t len;
 	unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
-	
+	zap_wait_flag_t wflags = ZAP_WRITE;
+	zap_status_t status;
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -694,6 +696,13 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		memset(data, 255, frame->datalen);
 	}
 
+
+	wflags = ZAP_WRITE;	
+	status = zap_channel_wait(tech_pvt->zchan, &wflags, tech_pvt->zchan->effective_interval * 4);
+	
+	if (!(wflags & ZAP_WRITE)) {
+		goto fail;
+	}
 
 	len = frame->datalen;
 	if (zap_channel_write(tech_pvt->zchan, frame->data, frame->buflen, &len) != ZAP_SUCCESS) {
