@@ -623,6 +623,7 @@ void event_handler(switch_event_t *event)
 	if ((subclass = switch_event_get_header(event, "orig-event-subclass")) && !strcasecmp(subclass, MY_EVENT_REGISTER)) {
 		char *from_user = switch_event_get_header(event, "orig-from-user");
 		char *from_host = switch_event_get_header(event, "orig-from-host");
+		char *to_host = switch_event_get_header(event, "orig-to-host");
 		char *contact_str = switch_event_get_header(event, "orig-contact");
 		char *exp_str = switch_event_get_header(event, "orig-expires");
 		char *rpid = switch_event_get_header(event, "orig-rpid");
@@ -636,8 +637,8 @@ void event_handler(switch_event_t *event)
 		char *network_port = switch_event_get_header(event, "orig-network-port");
 		char *username = switch_event_get_header(event, "orig-username");
 		char *realm = switch_event_get_header(event, "orig-realm");
+		char *fixed_contact_str = NULL;
 
-		
 		sofia_profile_t *profile = NULL;
 
 		char guess_ip4[256];
@@ -660,6 +661,29 @@ void event_handler(switch_event_t *event)
 			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", from_user, from_host);
 		}
 
+		if (mod_sofia_globals.rewrite_multicasted_fs_path && contact_str) {
+			const char *needle = ";fs_path=";
+			char *sptr, *eptr = NULL;
+			/* allocate enough room for worst-case scenario */
+			size_t len = strlen(contact_str) + strlen(to_host) + 14;
+			fixed_contact_str = malloc(len);
+			switch_assert(fixed_contact_str);
+			switch_copy_string(fixed_contact_str, contact_str, len);
+	
+			if ((sptr = strstr(fixed_contact_str, needle))) {
+				if (!(eptr = strchr(fixed_contact_str, ';'))) {
+					eptr = strrchr(fixed_contact_str, '>');
+				}
+			} else {
+				sptr = strchr(fixed_contact_str, '\0') - 1;
+			}
+
+			switch_snprintf(sptr, len - (sptr - fixed_contact_str), ";fs_path=sip:%s%s%s", to_host, eptr ? ";" : "", eptr ? eptr : ">");
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Rewrote contact string from '%s' to '%s'\n", contact_str, fixed_contact_str);
+			contact_str = fixed_contact_str;
+		}
+
 		switch_mutex_lock(profile->ireg_mutex);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		
@@ -677,10 +701,11 @@ void event_handler(switch_event_t *event)
 		}
 		switch_mutex_unlock(profile->ireg_mutex);
 
-
 		if (profile) {
 			sofia_glue_release_profile(profile);
 		}
+
+		switch_safe_free(fixed_contact_str);
 	}
 }
 
@@ -2035,6 +2060,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 	}
 
 	mod_sofia_globals.auto_restart = SWITCH_TRUE;
+	mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
 
 	if ((settings = switch_xml_child(cfg, "global_settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -2046,6 +2072,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				mod_sofia_globals.debug_presence = atoi(val);
 			} else if (!strcasecmp(var, "auto-restart")) {
 				mod_sofia_globals.auto_restart = switch_true(val);
+			} else if (!strcasecmp(var, "rewrite-multicasted-fs-path")) {
+				mod_sofia_globals.rewrite_multicasted_fs_path = switch_true(val);
 			}
 		}
 	}

@@ -274,6 +274,7 @@ struct mod_sofia_globals {
 	int auto_restart;
 	int auto_nat;
 	int tracelevel;
+	int rewrite_multicasted_fs_path;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
