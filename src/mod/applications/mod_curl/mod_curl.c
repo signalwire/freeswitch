@@ -43,7 +43,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load);
  */
 SWITCH_MODULE_DEFINITION(mod_curl, mod_curl_load, mod_curl_shutdown, NULL);
 
-static char *SYNTAX = "curl url [headers|json]";
+static char *SYNTAX = "curl url [headers|json] [get|head|post [url_encoded_data]]";
 
 static struct {
 	switch_memory_pool_t *pool;
@@ -100,7 +100,7 @@ static size_t header_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
-static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url) {
+static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, const char *method, const char *data) {
 	
 	CURL *curl_handle = NULL;
 	long httpRes = 0;
@@ -117,14 +117,26 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url) {
 
 	gethostname(hostname, sizeof(hostname));
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "url: %s\n", url);
+	if (!method) {
+		method = "get";
+	}
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "method: %s, url: %s\n", method, url);
 	curl_handle = curl_easy_init();
 	
 	if (!strncasecmp(url, "https", 5)) {
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
-	curl_easy_setopt(curl_handle, CURLOPT_POST, SWITCH_FALSE);
+	if (!strcasecmp(method, "head")) {
+		curl_easy_setopt(curl_handle, CURLOPT_NOBODY, SWITCH_TRUE);
+	} else if(!strcasecmp(method, "post")) {
+		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, strlen(data));
+		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, (void *) data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Post data: %s\n", data);
+	} else {
+		curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, SWITCH_TRUE);
+	}
 	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 0);
 	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 0);
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
@@ -226,11 +238,14 @@ SWITCH_STANDARD_APP(curl_app_function)
 	switch_memory_pool_t *pool = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *url = NULL;
+	char *method = NULL;
+	char *postdata = NULL;
 	switch_bool_t do_headers = SWITCH_FALSE;
 	switch_bool_t do_json = SWITCH_FALSE;
 	http_data_t *http_data = NULL;
 	struct curl_slist *slist = NULL;
 	switch_stream_handle_t stream = { 0 };
+	int i = 0;
 	
 	
 	if (session) {
@@ -249,17 +264,26 @@ SWITCH_STANDARD_APP(curl_app_function)
 		
 		url = switch_core_strdup(pool, argv[0]);
 
-		if (argc > 1) {
-			if (!strcasecmp("headers", argv[1])) {
+		for (i =1; i < argc; i++) {
+			if (!strcasecmp("headers", argv[i])) {
 				do_headers = SWITCH_TRUE;
-			}
-			if (!strcasecmp("json", argv[1])) {
+			} else if (!strcasecmp("json", argv[i])) {
 				do_json = SWITCH_TRUE;
+			} else if ( !strcasecmp("get", argv[i]) || 
+						!strcasecmp("head", argv[i])) {
+				method = switch_core_strdup(pool, argv[i]);
+			} else if (!strcasecmp("post", argv[i])) {
+				if ( ++i < argc) { 
+					postdata = switch_core_strdup(pool, argv[i]);
+					switch_url_decode(postdata);
+				} else {
+					postdata = "";
+				}
 			}
 		}
 	}
 	
-	http_data = do_lookup_url(pool, url);
+	http_data = do_lookup_url(pool, url, method, postdata);
 	if (do_json) {
 		switch_channel_set_variable(channel, "curl_response_data", print_json(pool, http_data));
 	} else {
@@ -278,6 +302,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 	}
 	switch_channel_set_variable(channel, "curl_response_code", 
 	switch_core_sprintf(pool, "%ld", http_data->http_response_code));
+	switch_channel_set_variable(channel, "curl_method", method);
 
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 	
@@ -301,10 +326,13 @@ SWITCH_STANDARD_API(curl_function)
 	int argc;
 	char *mydata = NULL;
 	char *url = NULL;
+	char *method = NULL;
+	char *postdata = NULL;
 	switch_bool_t do_headers = SWITCH_FALSE;
 	switch_bool_t do_json = SWITCH_FALSE;
 	struct curl_slist *slist = NULL;
 	http_data_t *http_data = NULL;
+	int i = 0;
 
 	switch_memory_pool_t *pool = NULL;
 	
@@ -326,16 +354,26 @@ SWITCH_STANDARD_API(curl_function)
 		
 		url = switch_core_strdup(pool, argv[0]);
 		
-		if (argc > 1) {
-			if (!strcasecmp("headers", argv[1])) {
+		for (i =1; i < argc; i++) {
+			if (!strcasecmp("headers", argv[i])) {
 				do_headers = SWITCH_TRUE;
-			}
-			if (!strcasecmp("json", argv[1])) {
+			} else if (!strcasecmp("json", argv[i])) {
 				do_json = SWITCH_TRUE;
+			} else if ( !strcasecmp("get", argv[i]) || 
+						!strcasecmp("head", argv[i])) {
+				method = switch_core_strdup(pool, argv[i]);
+			} else if (!strcasecmp("post", argv[i])) {
+				method = "post";
+				if ( ++i < argc) { 
+					postdata = switch_core_strdup(pool, argv[i]);
+					switch_url_decode(postdata);
+				} else {
+					postdata = "";
+				}
 			}
 		}
 		
-		http_data = do_lookup_url(pool, url);
+		http_data = do_lookup_url(pool, url, method, postdata);
 		if (do_json) {
 			stream->write_function(stream, "%s", print_json(pool, http_data));
 		} else {
