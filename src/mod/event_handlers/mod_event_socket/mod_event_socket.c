@@ -1085,6 +1085,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 								}
 							}
 							if (var && val) {
+								switch_event_del_header(*event, var);
 								switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, var, val);
 								if (!strcasecmp(var, "content-length")) {
 									clen = atoi(val);
@@ -1687,7 +1688,12 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		if (ename) {
 			switch_event_types_t etype;
 			if (switch_name_event(ename, &etype) == SWITCH_STATUS_SUCCESS) {
+				const char *subclass_name = switch_event_get_header(*event, "Event-Subclass");
 				(*event)->event_id = etype;
+
+				if (etype == SWITCH_EVENT_CUSTOM && subclass_name) {
+					switch_event_set_subclass_name(*event, subclass_name);
+				}
 			}
 		}
 

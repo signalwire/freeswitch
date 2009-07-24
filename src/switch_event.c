@@ -782,6 +782,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, s
 	return switch_event_base_add_header(event, stack, header_name, data);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_event_set_subclass_name(switch_event_t *event, const char *subclass_name)
+{
+	if (!event || !subclass_name) return SWITCH_STATUS_GENERR;
+	
+	switch_safe_free(event->subclass_name);
+	event->subclass_name = DUP(subclass_name);
+	switch_event_del_header(event, "Event-Subclass");
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Subclass", subclass_name);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_event_add_header_string(switch_event_t *event, switch_stack_t stack, const char *header_name, const char *data)
 {
 	if (data) {
@@ -847,6 +858,7 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 	}
 	*event = NULL;
 }
+
 
 SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_event_t *todup)
 {

@@ -163,6 +163,9 @@ SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event);
 SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack,
 														const char *header_name, const char *fmt, ...) PRINTF_FUNCTION(4, 5);
 #endif
+
+SWITCH_DECLARE(switch_status_t) switch_event_set_subclass_name(switch_event_t *event, const char *subclass_name);
+
 /*!
   \brief Add a string header to an event
   \param event the event to add the header to
