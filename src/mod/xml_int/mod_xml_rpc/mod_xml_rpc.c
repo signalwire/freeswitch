@@ -57,24 +57,29 @@ static struct {
 	char *realm;
 	char *user;
 	char *pass;
+	char *default_domain;
+	switch_bool_t virtual_host;
 	TServer abyssServer;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_user, globals.user);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_default_domain, globals.default_domain);
 
 static switch_status_t do_config(void)
 {
 	char *cf = "xml_rpc.conf";
 	switch_xml_t cfg, xml, settings, param;
-	char *realm, *user, *pass;
+	char *realm, *user, *pass, *default_domain;
 
-	realm = user = pass = NULL;
+	default_domain = realm = user = pass = NULL;
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
+
+	globals.virtual_host = SWITCH_TRUE;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -89,6 +94,10 @@ static switch_status_t do_config(void)
 				pass = val;
 			} else if (!strcasecmp(var, "http-port")) {
 				globals.port = (uint16_t) atoi(val);
+			} else if (!strcasecmp(var, "default-domain")) {
+				default_domain = val;
+			} else if (!strcasecmp(var, "virtual-host")) {
+				globals.virtual_host = switch_true(val);
 			}
 		}
 	}
@@ -102,6 +111,9 @@ static switch_status_t do_config(void)
 			set_global_user(user);
 			set_global_pass(pass);
 		}
+	}
+	if (default_domain) {
+		set_global_default_domain(default_domain);
 	}
 	switch_xml_free(xml);
 
@@ -150,13 +162,13 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, const c
 }
 
 static abyss_bool user_attributes (const char *user, const char *domain_name,
-                                   char **ppasswd, char **pvm_passwd,
-                                   char **palias, char **pallowed_commands)
+                                   const char **ppasswd, const char **pvm_passwd,
+                                   const char **palias, const char **pallowed_commands)
 {
-	char *passwd;
-	char *vm_passwd;
-	char *alias;
-	char *allowed_commands;
+	const char *passwd;
+	const char *vm_passwd;
+	const char *alias;
+	const char *allowed_commands;
 	switch_event_t *params;
 	switch_xml_t x_domain, x_domain_root, x_user, x_params, x_param;
 
@@ -318,9 +330,15 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				}
 				
 				if (!domain_name) {
-					domain_name = (char *) r->requestInfo.host;
-					if (!strncasecmp(domain_name, "www.", 3)) {
-						domain_name += 4;
+					if (globals.virtual_host) {
+						domain_name = (char *) r->requestInfo.host;
+						if (!strncasecmp(domain_name, "www.", 3)) {
+							domain_name += 4;
+						}
+					} else if (globals.default_domain) {
+						domain_name = globals.default_domain;
+					} else {
+						domain_name = switch_core_get_variable("domain");
 					}
 				}
 
