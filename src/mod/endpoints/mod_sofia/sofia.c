@@ -1380,17 +1380,17 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			
 			if (!switch_strlen_zero(register_proxy)) {
 				if (strncasecmp(register_proxy, "sip:", 4) && strncasecmp(register_proxy, "sips:", 5)) {
-					gateway->outbound_sticky_proxy = switch_core_sprintf(gateway->pool, "sip:%s", register_proxy);
+					gateway->register_sticky_proxy = switch_core_sprintf(gateway->pool, "sip:%s", outbound_proxy);
 				} else {
-					gateway->outbound_sticky_proxy = switch_core_strdup(gateway->pool, register_proxy);
+					gateway->register_sticky_proxy = switch_core_strdup(gateway->pool, outbound_proxy);
 				}
 			}
 
 			if (!switch_strlen_zero(outbound_proxy)) {
 				if (strncasecmp(outbound_proxy, "sip:", 4) && strncasecmp(outbound_proxy, "sips:", 5)) {
-					gateway->register_sticky_proxy = switch_core_sprintf(gateway->pool, "sip:%s", outbound_proxy);
+					gateway->outbound_sticky_proxy = switch_core_sprintf(gateway->pool, "sip:%s", register_proxy);
 				} else {
-					gateway->register_sticky_proxy = switch_core_strdup(gateway->pool, outbound_proxy);
+					gateway->outbound_sticky_proxy = switch_core_strdup(gateway->pool, register_proxy);
 				}
 			}
 
