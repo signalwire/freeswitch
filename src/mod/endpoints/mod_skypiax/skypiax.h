@@ -36,6 +36,7 @@
 
 #include <switch.h>
 #include <switch_version.h>
+#include <sys/time.h>
 
 #ifndef WIN32
 #include <X11/Xlib.h>
@@ -232,7 +233,11 @@ struct private_object {
   char skype_user[256];
   char skype_password[256];
   char destination[256];
+  struct timeval answer_time;
 
+  struct timeval transfer_time;
+  char transfer_callid_number[50];
+  char skype_transfer_call_id[512];
 };
 
 typedef struct private_object private_t;
@@ -270,6 +275,8 @@ int skypiax_pipe_read(int pipe, short *buf, int howmany);
 int skypiax_pipe_write(int pipe, short *buf, int howmany);
 #endif /* WIN32 */
 int skypiax_close_socket(unsigned int fd);
-private_t *find_available_skypiax_interface(void);
+private_t *find_available_skypiax_interface(private_t * tech_pvt);
 int remote_party_is_ringing(private_t * tech_pvt);
 int remote_party_is_early_media(private_t * tech_pvt);
+int skypiax_answer(private_t * tech_pvt, char *id, char *value);
+int skypiax_transfer(private_t * tech_pvt, char *id, char *value);
