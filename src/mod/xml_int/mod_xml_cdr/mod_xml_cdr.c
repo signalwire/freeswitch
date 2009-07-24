@@ -499,7 +499,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 			} else if (!strcasecmp(var, "retries") && !switch_strlen_zero(val)) {
 				globals.retries = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "rotate") && !switch_strlen_zero(val)) {
-				globals.rotate = atoi(val);
+				globals.rotate = switch_true(val);
 			} else if (!strcasecmp(var, "log-dir")) {
 				if (switch_strlen_zero(val)) {
 					globals.base_log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
