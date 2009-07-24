@@ -13,10 +13,10 @@ wget -c http://files.freeswitch.org/freeswitch-sounds-music-8000-1.0.8.tar.gz
 wget -c http://files.freeswitch.org/freeswitch-sounds-music-16000-1.0.8.tar.gz
 wget -c http://files.freeswitch.org/freeswitch-sounds-music-32000-1.0.8.tar.gz
 wget -c http://files.freeswitch.org/freeswitch-sounds-music-48000-1.0.8.tar.gz
-wget -c http://files.freeswitch.org/freeswitch-sounds-en-us-callie-8000-1.0.10.tar.gz
-wget -c http://files.freeswitch.org/freeswitch-sounds-en-us-callie-16000-1.0.10.tar.gz
-wget -c http://files.freeswitch.org/freeswitch-sounds-en-us-callie-32000-1.0.10.tar.gz
-wget -c http://files.freeswitch.org/freeswitch-sounds-en-us-callie-48000-1.0.10.tar.gz
+wget -c http://files.freeswitch.org/freeswitch-sounds-en-us-callie-8000-1.0.11.tar.gz
+wget -c http://files.freeswitch.org/freeswitch-sounds-en-us-callie-16000-1.0.11.tar.gz
+wget -c http://files.freeswitch.org/freeswitch-sounds-en-us-callie-32000-1.0.11.tar.gz
+wget -c http://files.freeswitch.org/freeswitch-sounds-en-us-callie-48000-1.0.11.tar.gz
 wget -c http://svn.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 
 
