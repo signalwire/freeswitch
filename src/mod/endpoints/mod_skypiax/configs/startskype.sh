@@ -26,9 +26,12 @@ su root -c "/bin/echo 'skypiax2 xxxx'| DISPLAY=:102  /usr/bin/skype --pipelogin 
 
 sleep 7
 
-#################################################################
-# Following X server Skype client instances are commented out
-#################################################################
+exit 0
+
+##################################################################################
+# Following X server and Skype client instances are NOT LAUNCHED (see line before)
+##################################################################################
+
  /usr/bin/Xvfb :103 -ac & 
 sleep 3
 
