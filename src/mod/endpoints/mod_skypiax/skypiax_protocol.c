@@ -181,7 +181,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
               /* this is the call in which we are calling out */
               DEBUGA_SKYPE("Call %s NOTHING\n", SKYPIAX_P_LOG, id);
             } else {
-              usleep(400000);   //0.4 seconds
+              skypiax_sleep(400000);   //0.4 seconds
               DEBUGA_SKYPE("Call %s TRY TRANSFER\n", SKYPIAX_P_LOG, id);
               skypiax_transfer(tech_pvt, id, value);
             }
