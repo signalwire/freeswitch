@@ -443,8 +443,8 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 	if (say_time) {
 		int32_t hour = tm.tm_hour, pm = 0;
 
-		 if (say_date) {
-		   say_file("time/at.wav");
+		 if (say_date || say_today || say_yesterday || say_dow) {
+			say_file("time/at.wav");
 		 }
 
 		if (hour > 12) {
