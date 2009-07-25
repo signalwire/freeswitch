@@ -402,20 +402,25 @@ static switch_status_t handle_msg_bgapi(listener_t *listener, erlang_msg *msg, i
 
 static switch_status_t handle_msg_sendevent(listener_t *listener, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
 {
-	char ename[MAXATOMLEN];
+	char ename[MAXATOMLEN+1];
+	char esname[MAXATOMLEN+1];
 	int headerlength;
+
+	memset(esname, 0, MAXATOMLEN);
 	
 	if (ei_decode_atom(buf->buff, &buf->index, ename) ||
+		(!strncasecmp(ename, "CUSTOM", MAXATOMLEN) &&
+		 ei_decode_atom(buf->buff, &buf->index, esname)) ||
 		ei_decode_list_header(buf->buff, &buf->index, &headerlength)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
-	}
-	else {
+	} else {
 		switch_event_types_t etype;
 		if (switch_name_event(ename, &etype) == SWITCH_STATUS_SUCCESS) {
 			switch_event_t *event;
-			if (switch_event_create(&event, etype) == SWITCH_STATUS_SUCCESS) {
+			if ((strlen(esname) && switch_event_create_subclass(&event, etype, esname) == SWITCH_STATUS_SUCCESS) ||
+					switch_event_create(&event, etype) == SWITCH_STATUS_SUCCESS) {
 				char key[1024];
 				char value[1024];
 				int i = 0;
