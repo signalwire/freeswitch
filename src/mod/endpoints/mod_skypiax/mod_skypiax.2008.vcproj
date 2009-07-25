@@ -116,7 +116,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="rpcrt4.lib"
+				AdditionalOptions="rpcrt4.lib &quot;..\..\..\..\libs\win32\pthread\pthreadvc2.lib&quot; &quot;..\..\..\..\libs\win32\apr\debug\libapr-1.lib&quot; &quot;..\..\..\..\w32\library\debug\freeswitchcore.lib&quot;"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>
