@@ -18,8 +18,8 @@
 		nixevent/2, noevents/1, close/1,
 		get_event_header/2, get_event_body/1,
 		get_event_name/1, getpid/1, sendmsg/3,
-		sendevent/3, handlecall/2, handlecall/3, start_fetch_handler/4,
-		start_log_handler/3, start_event_handler/3]).
+		sendevent/3, sendevent_custom/3, handlecall/2, handlecall/3, start_fetch_handler/5,
+		start_log_handler/4, start_event_handler/4]).
 -define(TIMEOUT, 5000).
 
 %% @doc Return the value for a specific header in an event or `{error,notfound}'.
@@ -79,6 +79,7 @@ api(Node, Cmd) ->
 %% sent to calling process after it is received. This function
 %% returns the result of the initial bgapi call or `timeout' if FreeSWITCH fails
 %% to respond.
+-spec(bgapi/3 :: (Node :: atom(), Cmd :: atom(), Args :: string()) -> {'ok', string()} | {'error', any()} | 'timeout').
 bgapi(Node, Cmd, Args) ->
 	Self = self(),
 	% spawn a new process so that both responses go here instead of directly to
@@ -91,13 +92,13 @@ bgapi(Node, Cmd, Args) ->
 				Self ! {api, {error, Reason}};
 			{ok, JobID} ->
 				% send the reply to the calling process
-				Self ! {api, ok},
+				Self ! {api, {ok, JobID}},
 				receive % wait for the job's reply
 					{bgok, JobID, Reply} ->
 						% send the actual command output back to the calling process
-						Self ! {bgok, Reply};
+						Self ! {bgok, JobID, Reply};
 					{bgerror, JobID, Reply} ->
-						Self ! {bgerror, Reply}
+						Self ! {bgerror, JobID, Reply}
 				end
 		after ?TIMEOUT ->
 			% send a timeout to the calling process
@@ -115,6 +116,7 @@ bgapi(Node, Cmd, Args) ->
 %% passed as the argument to `Fun' after it is received. This function
 %% returns the result of the initial bgapi call or `timeout' if FreeSWITCH fails
 %% to respond.
+-spec(bgapi/4 :: (Node :: atom(), Cmd :: atom(), Args :: string(), Fun :: fun()) -> 'ok' | {'error', any()} | 'timeout').
 bgapi(Node, Cmd, Args, Fun) ->
 	Self = self(),
 	% spawn a new process so that both responses go here instead of directly to
@@ -201,6 +203,19 @@ sendevent(Node, EventName, Headers) ->
 		timeout
 	end.
 
+%% @doc Send a CUSTOM event to FreeSWITCH. `SubClassName' is the name of the event
+%% subclass and `Headers' is a list of `{Key, Value}' string tuples. See the
+%% mod_event_socket documentation for more information.
+sendevent_custom(Node, SubClassName, Headers) ->
+	{sendevent, Node} ! {sendevent, 'CUSTOM',  SubClassName, Headers},
+	receive
+		ok -> ok;
+		{error, Reason} -> {error, Reason}
+	after ?TIMEOUT ->
+		timeout
+	end.
+
+
 %% @doc Send a message to the call identified by `UUID'. `Headers' is a list of
 %% `{Key, Value}' string tuples.
 sendmsg(Node, UUID, Headers) ->
@@ -246,15 +261,16 @@ handlecall(Node, UUID) ->
 	end.
 
 %% @private
-start_handler(Node, Type, Module, Function) ->
+start_handler(Node, Type, Module, Function, State) ->
 	Self = self(),
 	spawn(fun() ->
 		monitor_node(Node, true),
 		{foo, Node} ! Type,
 		receive
 			ok ->
+				io:format("OK!!!!!!!~n"),
 				Self ! {Type, {ok, self()}},
-				apply(Module, Function, [Node]);
+				apply(Module, Function, [Node, State]);
 			{error,Reason} ->
 				Self ! {Type, {error, Reason}}
 		after ?TIMEOUT ->
@@ -281,8 +297,8 @@ start_handler(Node, Type, Module, Function) ->
 %% This function returns either `{ok, Pid}' where `Pid' is the pid of the newly
 %% spawned process, `{error, Reason}' or the atom `timeout' if FreeSWITCH did
 %% not respond.
-start_log_handler(Node, Module, Function) ->
-	start_handler(Node, register_log_handler, Module, Function).
+start_log_handler(Node, Module, Function, State) ->
+	start_handler(Node, register_log_handler, Module, Function, State).
 
 %% @todo Notify the process if it gets replaced with a new event handler.
 
@@ -300,8 +316,8 @@ start_log_handler(Node, Module, Function) ->
 %% This function returns either `{ok, Pid}' where `Pid' is the pid of the newly
 %% spawned process, `{error, Reason}' or the atom `timeout' if FreeSWITCH did
 %% not respond.
-start_event_handler(Node, Module, Function) ->
-	start_handler(Node, register_event_handler, Module, Function).
+start_event_handler(Node, Module, Function, State) ->
+	start_handler(Node, register_event_handler, Module, Function, State).
 
 %% @doc Spawn Module:Function as an XML config fetch handler for configs of type
 %% `Section'. See the FreeSWITCH documentation for mod_xml_rpc for more
@@ -321,5 +337,5 @@ start_event_handler(Node, Module, Function) ->
 %% This function returns either `{ok, Pid}' where `Pid' is the pid of the newly
 %% spawned process, `{error, Reason}' or the atom `timeout' if FreeSWITCH did
 %% not respond.
-start_fetch_handler(Node, Section, Module, Function) ->
-	start_handler(Node, {bind, Section}, Module, Function).
+start_fetch_handler(Node, Section, Module, Function, State) ->
+	start_handler(Node, {bind, Section}, Module, Function, State).
