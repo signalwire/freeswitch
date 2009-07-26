@@ -54,7 +54,7 @@ SWITCH_MODULE_DEFINITION_EX(mod_managed, mod_managed_load, NULL, NULL, SMODF_GLO
 SWITCH_STANDARD_API(managedrun_api_function);	/* ExecuteBackground */
 SWITCH_STANDARD_API(managed_api_function);	/* Execute */
 SWITCH_STANDARD_APP(managed_app_function);	/* Run */
-SWITCH_STANDARD_API(managed_loadassembly); /* Load assembly */
+SWITCH_STANDARD_API(managedreload_api_function);	/* Reload */
 
 #define MOD_MANAGED_ASM_NAME "FreeSWITCH.Managed"
 #define MOD_MANAGED_ASM_V1 1
@@ -71,18 +71,18 @@ mod_managed_globals globals = { 0 };
 typedef int (*runFunction)(const char *data, void *sessionPtr);
 typedef int (*executeFunction)(const char *cmd, void *stream, void *Event);
 typedef int (*executeBackgroundFunction)(const char* cmd);
-typedef int (*loadAssemblyFunction)(const char* filename);
+typedef int (*reloadFunction)(const char* cmd);
 static runFunction runDelegate;
 static executeFunction executeDelegate;
 static executeBackgroundFunction executeBackgroundDelegate;
-static loadAssemblyFunction loadAssemblyDelegate;
+static reloadFunction reloadDelegate;
 
-SWITCH_MOD_DECLARE_NONSTD(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, loadAssemblyFunction loadAssembly) 
+SWITCH_MOD_DECLARE_NONSTD(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, reloadFunction reload) 
 {
 	runDelegate = run;
 	executeDelegate = execute;
 	executeBackgroundDelegate = executeBackground;
-	loadAssemblyDelegate = loadAssembly;
+	reloadDelegate = reload;
 }
 
 // Sets up delegates (and anything else needed) on the ManagedSession object
@@ -362,7 +362,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	SWITCH_ADD_API(api_interface, "managedrun", "Run a module (ExecuteBackground)", managedrun_api_function, "<module> [<args>]");
 	SWITCH_ADD_API(api_interface, "managed", "Run a module as an API function (Execute)", managed_api_function, "<module> [<args>]");
 	SWITCH_ADD_APP(app_interface, "managed", "Run CLI App", "Run an App on a channel", managed_app_function, "<modulename> [<args>]", SAF_NONE);
-	SWITCH_ADD_API(api_interface, "managedload", "Load assembly", managed_loadassembly, "<filename>");
+	SWITCH_ADD_API(api_interface, "managedreload", "Force [re]load of a file", managedreload_api_function, "<filename>");
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -406,16 +406,14 @@ SWITCH_STANDARD_APP(managed_app_function)
 	}
 }
 
-SWITCH_STANDARD_API(managed_loadassembly)
+SWITCH_STANDARD_API(managedreload_api_function) 
 {
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-ERR no args specified!\n");	
 		return SWITCH_STATUS_SUCCESS;
 	}
-	if (loadAssemblyDelegate(cmd)) {
-		stream->write_function(stream, "+OK\n");
-	} else {	
-		stream->write_function(stream, "-ERR LoadAssembly returned false (invalid file or exception).\n");
+	if (!(reloadDelegate(cmd))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module or exception).\n", cmd); 
 	}
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -1,6 +1,6 @@
 ﻿/* 
- * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_cli
- * Copyright (C) 2008, Michael Giagnocavo <mgg@packetrino.com>
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_managed
+ * Copyright (C) 2008, Michael Giagnocavo <mgg@giagnocavo.net>
  *
  * Version: MPL 1.1
  *
@@ -14,16 +14,16 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_cli
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_managed
  *
  * The Initial Developer of the Original Code is
- * Michael Giagnocavo <mgg@packetrino.com>
+ * Michael Giagnocavo <mgg@giagnocavo.net>
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
  * 
- * Michael Giagnocavo <mgg@packetrino.com>
+ * Michael Giagnocavo <mgg@giagnocavo.net>
  * 
  * ManagedSession.cs -- ManagedSession additional functions
  *
@@ -66,14 +66,10 @@ namespace FreeSWITCH.Native
         /// <summary>Function to execute when this session hangs up.</summary>
         public Action HangupFunction { get; set; }
 
-        /// <summary>Sets the application that should have it's run thread aborted (if enabled) when this session is hungup.</summary>
-        internal AppFunction AppToAbort { get; set; }
-
         void hangupCallback()
         {
             Log.WriteLine(LogLevel.Debug, "AppFunction is in hangupCallback.");
             try {
-                if (AppToAbort != null) AppToAbort.AbortRun();
                 var f = HangupFunction;
                 if (f != null) f();
             }
@@ -121,5 +117,21 @@ namespace FreeSWITCH.Native
             }
         }
 
+        // Convenience
+        public bool IsAvailable {
+            get { return this.Ready(); }
+        }
+
+        Guid _uuid;
+        bool _uuidSet;
+        public Guid Uuid {
+            get {
+                if (!_uuidSet) {
+                    _uuid = new Guid(this.GetUuid());
+                    _uuidSet = true;
+                }
+                return _uuid;
+            }
+        }
     }
 }

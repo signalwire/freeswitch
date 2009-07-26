@@ -1,5 +1,70 @@
 %module freeswitch
 
+/** String fix - copied from csharphead.swg with fix for multiple appdomains **/
+/* Must pass -DSWIG_CSHARP_NO_STRING_HELPER to swig */
+
+#if defined(SWIG_CSHARP_NO_STRING_HELPER)
+%insert(runtime) %{
+
+/* Callback for returning strings to C# without leaking memory */
+#ifndef _MANAGED
+#include <glib.h>
+#include <mono/jit/jit.h>
+#include <mono/metadata/environment.h>
+#include <mono/metadata/mono-config.h>
+#include <mono/metadata/threads.h>
+#include <mono/metadata/debug-helpers.h>
+#endif
+
+typedef char * (SWIGSTDCALL* SWIG_CSharpStringHelperCallback)(const char *);
+static SWIG_CSharpStringHelperCallback SWIG_csharp_string_callback_real = NULL;
+%}
+
+%pragma(csharp) imclasscode=%{
+  protected class SWIGStringHelper {
+
+    public delegate string SWIGStringDelegate(string message);
+    static SWIGStringDelegate stringDelegate = new SWIGStringDelegate(CreateString);
+
+    [DllImport("$dllimport", EntryPoint="SWIGRegisterStringCallback_$module")]
+    public static extern void SWIGRegisterStringCallback_$module(SWIGStringDelegate stringDelegate);
+
+    static string CreateString(string cString) {
+      return cString;
+    }
+
+    static SWIGStringHelper() {
+      SWIGRegisterStringCallback_$module(stringDelegate);
+    }
+  }
+
+  static protected SWIGStringHelper swigStringHelper = new SWIGStringHelper();
+%}
+
+%insert(runtime) %{
+#ifdef __cplusplus
+extern "C" 
+#endif
+SWIGEXPORT void SWIGSTDCALL SWIGRegisterStringCallback_freeswitch(SWIG_CSharpStringHelperCallback callback) {
+	/* Set this only once, in the main appdomain */
+	if (SWIG_csharp_string_callback_real == NULL) SWIG_csharp_string_callback_real = callback;
+}
+char * SWIG_csharp_string_callback(const char * str) {
+#ifndef _MANAGED
+	// Mono won't transition appdomains properly after the callback, so we force it
+	MonoDomain* dom = mono_domain_get();
+	char* res = SWIG_csharp_string_callback_real(str);
+	mono_domain_set(dom, true);
+	return res;
+#else
+	return SWIG_csharp_string_callback_real(str);
+#endif
+}
+%}
+#endif // SWIG_CSHARP_NO_STRING_HELPER
+
+
+
 /** insert the following includes into generated code so it compiles */
 %{
 #include "switch.h"
@@ -109,6 +174,9 @@
 %ignore switch_xml_idx;
 %ignore switch_xml_pi;
 
+// GCC complains "ISO C++ forbids assignment of arrays"
+%ignore switch_vmprintf;
+
 // Real header includes now
 %import switch_platform.i // This will give us all the macros we need to compile the other stuff
 
@@ -136,6 +204,5 @@
 %include switch_core_event_hook.h
 %include switch_scheduler.h
 %include switch_config.h
-
 %include switch_cpp.h
 %include freeswitch_managed.h

@@ -3,8 +3,8 @@ all: FreeSWITCH.Managed.dll
 clean:
 	rm -fr FreeSWITCH.Managed.dll
 
-FreeSWITCH.Managed.dll: Loader.cs ManagedSession.cs ApiFunction.cs AppFunction.cs Extensions.cs Log.cs Demo.cs swig.cs
-	gmcs -target:library -out:FreeSWITCH.Managed.dll -d:DEBUG Loader.cs ManagedSession.cs ApiFunction.cs AppFunction.cs Extensions.cs Log.cs Demo.cs swig.cs
+FreeSWITCH.Managed.dll: AssemblyInfo.cs Extensions.cs Loader.cs Log.cs ManagedSession.cs PluginInterfaces.cs PluginManager.cs ScriptPluginManager.cs swig.cs
+	gmcs -target:library -out:FreeSWITCH.Managed.dll AssemblyInfo.cs Extensions.cs Loader.cs Log.cs ManagedSession.cs PluginInterfaces.cs PluginManager.cs ScriptPluginManager.cs swig.cs
 
 install: FreeSWITCH.Managed.dll
 	$(INSTALL) FreeSWITCH.Managed.dll $(DESTDIR)$(MODINSTDIR)

@@ -52,9 +52,10 @@
     <Compile Include="Loader.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Log.cs" />
-    <Compile Include="ApiFunction.cs" />
-    <Compile Include="AppFunction.cs" />
-    <Compile Include="Demo.cs" />
+    <None Include="Demo.cs" />
+    <Compile Include="PluginInterfaces.cs" />
+    <Compile Include="PluginManager.cs" />
+    <Compile Include="ScriptPluginManager.cs" />
     <Compile Include="swig.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

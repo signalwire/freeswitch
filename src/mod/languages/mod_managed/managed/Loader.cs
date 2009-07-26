@@ -1,6 +1,6 @@
 ﻿/* 
- * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_cli
- * Copyright (C) 2008, Michael Giagnocavo <mgg@packetrino.com>
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_managed
+ * Copyright (C) 2008, Michael Giagnocavo <mgg@giagnocavo.net>
  *
  * Version: MPL 1.1
  *
@@ -14,19 +14,20 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_cli
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_managed
  *
  * The Initial Developer of the Original Code is
- * Michael Giagnocavo <mgg@packetrino.com>
+ * Michael Giagnocavo <mgg@giagnocavo.net>
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
  * 
- * Michael Giagnocavo <mgg@packetrino.com>
+ * Michael Giagnocavo <mgg@giagnocavo.net>
  * David Brazier <David.Brazier@360crm.co.uk>
+ * Jeff Lenk <jeff@jefflenk.com>
  * 
- * Loader.cs -- mod_mono managed loader
+ * Loader.cs -- mod_managed loader
  *
  */
 
@@ -38,22 +39,35 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace FreeSWITCH
-{
-    internal static class Loader
-    {
-        // Stores a list of the loaded function types so we can instantiate them as needed
-        static Dictionary<string, Type> functions = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
-        // Only class name. Last in wins.
-        static Dictionary<string, Type> shortFunctions = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
+namespace FreeSWITCH {
+    internal static class Loader {
 
-        #region Load/Unload
+        // Thunks
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ExecuteDelegate(string cmd, IntPtr streamH, IntPtr eventH);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ExecuteBackgroundDelegate(string cmd);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool RunDelegate(string cmd, IntPtr session);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ReloadDelegate(string cmd);
+        static readonly ExecuteDelegate _execute = Execute;
+        static readonly ExecuteBackgroundDelegate _executeBackground = ExecuteBackground;
+        static readonly RunDelegate _run = Run;
+        static readonly ReloadDelegate _reload = Reload;
+        //SWITCH_MOD_DECLARE_NONSTD(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, reloadFunction reload)
+        [DllImport("mod_managed", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        static extern void InitManagedDelegates(RunDelegate run, ExecuteDelegate execute, ExecuteBackgroundDelegate executeBackground, ReloadDelegate reload);
+
+        static readonly object loaderLock = new object();
 
         static string managedDir;
-
-        public static bool Load()
-        {
+        static string shadowDir;
+        
+        public static bool Load() {
             managedDir = Path.Combine(Native.freeswitch.SWITCH_GLOBAL_dirs.mod_dir, "managed");
+            shadowDir = Path.Combine(managedDir, "shadow");
+            if (Directory.Exists(shadowDir)) {
+                Directory.Delete(shadowDir, true);
+                Directory.CreateDirectory(shadowDir);
+            }
+
             Log.WriteLine(LogLevel.Debug, "FreeSWITCH.Managed loader is starting with directory '{0}'.", managedDir);
             if (!Directory.Exists(managedDir)) {
                 Log.WriteLine(LogLevel.Error, "Managed directory not found: {0}", managedDir);
@@ -61,147 +75,238 @@ namespace FreeSWITCH
             }
 
             AppDomain.CurrentDomain.AssemblyResolve += (_, rargs) => {
-                Log.WriteLine(LogLevel.Debug, "Trying to resolve assembly '{0}'.", rargs.Name);
+                Log.WriteLine(LogLevel.Info, "Resolving assembly '{0}'.", rargs.Name);
                 if (rargs.Name == Assembly.GetExecutingAssembly().FullName) return Assembly.GetExecutingAssembly();
-                var path = Path.Combine(managedDir, rargs.Name + ".dll");
-                Log.WriteLine(LogLevel.Debug, "Resolving to: '" + path + "'.");
+                var parts = rargs.Name.Split(',');
+                var path = Path.Combine(managedDir, parts[0] + ".dll");
+                Log.WriteLine(LogLevel.Info, "Resolving to: '" + path + "'.");
                 return File.Exists(path) ? Assembly.LoadFile(path) : null;
             };
 
-            InitManagedDelegates(_run, _execute, _executeBackground, _loadAssembly);
+            InitManagedDelegates(_run, _execute, _executeBackground, _reload);
 
-            // This is a simple one-time loader to get things in memory
-            // Some day we should allow reloading of modules or something
-            var allTypes = loadAssemblies(managedDir).SelectMany(a => a.GetExportedTypes());
-            loadFunctions(allTypes);
+            configureWatcher();
 
+            // Initial load
+            var allFiles = Directory.GetFiles(managedDir);
+            foreach (var file in allFiles) {
+                try {
+                    loadFile(file);
+                } catch (Exception ex) {
+                    Log.WriteLine(LogLevel.Error, "Exception loading file {0}: " + ex.ToString(), file);
+                }
+            }
+            initialLoadComplete = true;
             return true;
         }
 
-        public static bool LoadAssembly(string filename) {
-            try {
-                string path = Path.Combine(managedDir, filename);
-                if (!File.Exists(path)) {
-                    Log.WriteLine(LogLevel.Error, "File not found: '{0}'.", path);
-                    return false;
+
+        // *** File watcher for changes
+        // Cheap queue hack is used because multiple related files can generate a bunch of changes
+        // and a single file can also trigger a few notifications. With a simple queue, these get batched
+        static readonly object watcherLock = new object();
+        static FileSystemWatcher watcher;
+        static System.Threading.Timer watcherTimer;
+        static HashSet<string> watcherFiles = new HashSet<string>();
+        static void configureWatcher() {
+            watcher = new FileSystemWatcher(managedDir);
+            watcher.IncludeSubdirectories = false;
+            watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
+            watcher.EnableRaisingEvents = true;
+            watcher.Changed += watcher_Changed;
+            watcher.Created += watcher_Changed;
+            watcher.Deleted += watcher_Changed;
+            watcher.Renamed += watcher_Changed;
+            watcherTimer = new System.Threading.Timer(_ => {
+                lock (watcherLock) {
+                    foreach (var file in watcherFiles) {
+                        try {
+                            loadFile(file);
+                        } catch (Exception ex) {
+                            Log.WriteLine(LogLevel.Error, "Exception loading change from {0}: {1}", file, ex.ToString());
+                        }
+                    }
+                    watcherFiles.Clear();
                 }
-                var asm = Assembly.LoadFile(path);
-                loadFunctions(asm.GetExportedTypes());
+            });
+            watcherTimer.Change(1000, 1000);
+        }
+        
+        static void watcher_Changed(object sender, FileSystemEventArgs e) {
+            Action<string> queueFile = x => { lock (watcherLock) { watcherFiles.Add(x); } };
+            try {
+                if (!initialLoadComplete) return;
+                var file = e.FullPath;
+                var isConfig = Path.GetExtension(file).ToLowerInvariant() == ".config";
+                if (isConfig) {
+                    queueFile(Path.ChangeExtension(file, null));
+                } else {
+                    queueFile(file);
+                }
+            } catch (Exception ex) {
+                Log.WriteLine(LogLevel.Critical, "Unhandled exception watching for changes: " + ex.ToString());
+            }
+        }
+
+        static volatile bool initialLoadComplete = false;
+        static readonly List<PluginInfo> pluginInfos = new List<PluginInfo>(); 
+        // Volatile cause we haven't streamlined all the locking
+        // These dictionaries are never mutated; the reference is changed instead
+        static volatile Dictionary<string, AppPluginExecutor> appExecs = new Dictionary<string, AppPluginExecutor>(StringComparer.OrdinalIgnoreCase);
+        static volatile Dictionary<string, ApiPluginExecutor> apiExecs = new Dictionary<string, ApiPluginExecutor>(StringComparer.OrdinalIgnoreCase);
+
+        static Dictionary<string, AppPluginExecutor> getAppExecs() {
+            lock (loaderLock) {
+                return appExecs;
+            }
+        }
+        static Dictionary<string, ApiPluginExecutor> getApiExecs() {
+            lock (loaderLock) {
+                return apiExecs;
+            }
+        }
+
+        class PluginInfo {
+            public string FileName { get; set; }
+            public AppDomain Domain { get; set; }
+            public PluginManager Manager { get; set; }
+        }
+
+        static int appDomainCount = 0;
+        static void loadFile(string fileName) {
+            // Attempts to load the file. On failure, it will call unload.
+            // Loading part does not take out a lock. 
+            // Lock is only done after loading is finished and dictionaries need updating.
+
+            // We might get a load for a file that's no longer there. Just unload the old one.
+            if (!File.Exists(fileName)) {
+                unloadFile(fileName);
+                return;
+            }
+
+            Type pmType;
+            switch (Path.GetExtension(fileName).ToLowerInvariant()) {
+                case ".dll":
+                    pmType = typeof(AsmPluginManager);
+                    break;
+                case ".exe": // TODO these need to come from config
+                case ".fsx":
+                case ".vbx":
+                case ".csx":
+                case ".jsx":
+                    pmType = typeof(ScriptPluginManager);
+                    break;
+                default:
+                    pmType = null;
+                    break;
+            }
+            if (pmType == null) return;
+
+            // App domain setup
+            var setup = new AppDomainSetup();
+            if (File.Exists(fileName + ".config")) {
+                setup.ConfigurationFile = fileName + ".config";
+            }
+            setup.ApplicationBase = Native.freeswitch.SWITCH_GLOBAL_dirs.mod_dir;
+            setup.ShadowCopyDirectories = managedDir + ";";
+            setup.LoaderOptimization = LoaderOptimization.MultiDomainHost; // TODO: would MultiDomain work better since FreeSWITCH.Managed isn't gac'd?
+            setup.CachePath = shadowDir;
+            setup.ShadowCopyFiles = "true";
+            setup.PrivateBinPath = "managed";
+
+            // Create domain and load PM inside
+            System.Threading.Interlocked.Increment(ref appDomainCount);
+            setup.ApplicationName = Path.GetFileName(fileName) + "_" + appDomainCount;
+            var domain = AppDomain.CreateDomain(setup.ApplicationName, null, setup);
+                
+            var pm = (PluginManager)domain.CreateInstanceAndUnwrap(pmType.Assembly.FullName, pmType.FullName, null);
+            if (!pm.Load(fileName)) {
+                AppDomain.Unload(domain);
+                unloadFile(fileName);
+                return;
+            }
+
+            lock (loaderLock) {
+                // Update dictionaries atomically
+                unloadFile(fileName);
+
+                var pi = new PluginInfo { FileName = fileName, Domain = domain, Manager = pm };
+                pluginInfos.Add(pi);
+                var newAppExecs = new Dictionary<string, AppPluginExecutor>(appExecs, StringComparer.OrdinalIgnoreCase);
+                var newApiExecs = new Dictionary<string, ApiPluginExecutor>(apiExecs, StringComparer.OrdinalIgnoreCase);
+                pm.AppExecutors.ForEach(x => x.Aliases.ForEach(y => newAppExecs[y] = x));
+                pm.ApiExecutors.ForEach(x => x.Aliases.ForEach(y => newApiExecs[y] = x));
+                appExecs = newAppExecs;
+                apiExecs = newApiExecs;
+                Action<PluginExecutor, string> printLoaded = (pe, type) => {
+                    var aliases = pe.Aliases.Aggregate((acc, x) => acc += ", " + x);
+                    Log.WriteLine(LogLevel.Notice, "Loaded {3} {0}, aliases '{1}', into domain {2}.", pe.Name, aliases, pi.Domain.FriendlyName, type);
+                };
+                pm.AppExecutors.ForEach(x => printLoaded(x, "App"));
+                pm.ApiExecutors.ForEach(x => printLoaded(x, "Api"));
+                Log.WriteLine(LogLevel.Info, "Finished loading {0} into domain {1}.", pi.FileName, pi.Domain.FriendlyName);
+            }
+        }
+
+        static void unloadFile(string fileName) {
+            List<PluginInfo> pisToRemove;
+            lock (loaderLock) {
+                pisToRemove = pluginInfos.Where(x => string.Compare(fileName, x.FileName, StringComparison.OrdinalIgnoreCase) == 0).ToList();
+                if (pisToRemove.Count == 0) return; // Done
+
+                var apisToRemove = pisToRemove.SelectMany(x => x.Manager.ApiExecutors).ToList();
+                var appsToRemove = pisToRemove.SelectMany(x => x.Manager.AppExecutors).ToList();
+                pluginInfos.RemoveAll(pisToRemove.Contains);
+                appExecs = appExecs.Where(x => !appsToRemove.Contains(x.Value)).ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+                apiExecs = apiExecs.Where(x => !apisToRemove.Contains(x.Value)).ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+
+                Action<PluginExecutor, string> printRemoved = (pe, type) => {
+                    Log.WriteLine(LogLevel.Notice, "Unloaded {0} {1} (file {2}).", type, pe.Name, fileName);
+                };
+                apisToRemove.ForEach(x => printRemoved(x, "API"));
+                appsToRemove.ForEach(x => printRemoved(x, "App"));
+            }
+
+            pisToRemove.ForEach(pi => {
+                var t = new System.Threading.Thread(() => {
+                    var friendlyName = pi.Domain.FriendlyName;
+                    Log.WriteLine(LogLevel.Info, "Starting to unload {0}, domain {1}.", pi.FileName, friendlyName);
+                    try {
+                        var d = pi.Domain;
+                        pi.Manager.BlockUntilUnloadIsSafe();
+                        pi.Manager = null;
+                        pi.Domain = null;
+                        AppDomain.Unload(d);
+                        Log.WriteLine(LogLevel.Info, "Unloaded {0}, domain {1}.", pi.FileName, friendlyName);
+                    } catch (Exception ex) {
+                        Log.WriteLine(LogLevel.Critical, "Could not unload {0}, domain {1}: {2}", pi.FileName, friendlyName, ex.ToString());
+                    }
+                });
+                t.Priority = System.Threading.ThreadPriority.BelowNormal;
+                t.IsBackground = true;
+                t.Start();
+            });
+        }
+
+        static bool Reload(string cmd) {
+            try {
+                if (Path.IsPathRooted(cmd)) {  
+                    loadFile(cmd);
+                } else {
+                    loadFile(Path.Combine(managedDir, cmd));
+                }
                 return true;
             } catch (Exception ex) {
-                Log.WriteLine(LogLevel.Error, "Exception in LoadAssembly('{0}'): {1}", filename, ex.ToString());
+                Log.WriteLine(LogLevel.Error, "Error reloading {0}: {1}", cmd, ex.ToString());
                 return false;
             }
         }
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate bool ExecuteDelegate(string cmd, IntPtr streamH, IntPtr eventH);
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate bool ExecuteBackgroundDelegate(string cmd);
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate bool RunDelegate(string cmd, IntPtr session);
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate bool LoadAssemblyDelegate(string filename);
-        static readonly ExecuteDelegate _execute = Execute;
-        static readonly ExecuteBackgroundDelegate _executeBackground = ExecuteBackground;
-        static readonly RunDelegate _run = Run;
-        static readonly LoadAssemblyDelegate _loadAssembly = LoadAssembly;
-        //SWITCH_MOD_DECLARE(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, loadAssemblyFunction loadAssembly)  
-        [DllImport("mod_managed", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        static extern void InitManagedDelegates(RunDelegate run, ExecuteDelegate execute, ExecuteBackgroundDelegate executeBackground, LoadAssemblyDelegate loadAssembly);
-
-        // Be rather lenient in finding the Load and Unload methods
-        static readonly BindingFlags methodBindingFlags =
-            BindingFlags.Static | // Required
-            BindingFlags.Public | BindingFlags.NonPublic | // Implementors might decide to make the load method private
-            BindingFlags.IgnoreCase | // Some case insensitive languages?
-            BindingFlags.FlattenHierarchy; // Allow inherited methods for hierarchies
-
-        static void loadFunctions(IEnumerable<Type> allTypes)
-        {
-            var functions = new Dictionary<string, Type>(Loader.functions, StringComparer.OrdinalIgnoreCase);
-            var shortFunctions = new Dictionary<string, Type>(Loader.shortFunctions, StringComparer.OrdinalIgnoreCase);
-            var filteredTypes = allTypes
-                .Where(t => !t.IsAbstract)
-                .Where(t => t.IsSubclassOf(typeof(AppFunction)) || t.IsSubclassOf(typeof(ApiFunction)));
-            foreach (var t in filteredTypes) {
-                try {
-                    if (functions.ContainsKey(t.FullName)) {
-                        functions.Remove(t.FullName);
-                        Log.WriteLine(LogLevel.Warning, "Replacing function {0}.", t.FullName);
-                    }
-                    var loadMethod = t.GetMethod("Load", methodBindingFlags, null, Type.EmptyTypes, null);
-                    var shouldLoad = Convert.ToBoolean(loadMethod.Invoke(null, null)); // We don't require the Load method to return a bool exactly
-                    if (shouldLoad) {
-                        Log.WriteLine(LogLevel.Notice, "Function {0} loaded.", t.FullName);
-                        functions.Add(t.FullName, t);
-                        shortFunctions[t.Name] = t;
-                    }
-                    else {
-                        Log.WriteLine(LogLevel.Notice, "Function {0} requested not to be loaded.", t.FullName);
-                    }
-                }
-                catch (Exception ex) {
-                    logException("Load", t.FullName, ex);
-                }
-            } 
-            Loader.functions = functions;
-            Loader.shortFunctions = shortFunctions;
-        }
-
-        static Assembly[] loadAssemblies(string managedDir)
-        {
-            // load the modules in the mod/managed directory
-            Log.WriteLine(LogLevel.Notice, "loadAssemblies: {0}", managedDir);
-            foreach (string s in Directory.GetFiles(managedDir, "*.dll", SearchOption.AllDirectories))
-            {
-                string f = Path.Combine(managedDir, s);
-                try {
-                    Log.WriteLine(LogLevel.Debug, "Loading '{0}'.", f);
-                    System.Reflection.Assembly.LoadFile(f);
-                }
-                catch (Exception ex) {
-                    Log.WriteLine(LogLevel.Notice, "Assembly.LoadFile failed; skipping {0} ({1})", f, ex.Message);
-                }
-            }
-
-            return AppDomain.CurrentDomain.GetAssemblies();  // Includes anything else already loaded
-        }
-
-        public static void Unload()
-        {
-            Log.WriteLine(LogLevel.Debug, "FreeSWITCH.Managed Loader is unloading.");
-            foreach (var t in functions.Values) {
-                try {
-                    var unloadMethod = t.GetMethod("Unload", methodBindingFlags, null, Type.EmptyTypes, null);
-                    unloadMethod.Invoke(null, null);
-                }
-                catch (Exception ex) {
-                    logException("Unload", t.FullName, ex);
-                }
-            }
-        }
-
-        #endregion
-
-        #region Execution
-
-        static Type getFunctionType<TFunction>(string fullName)
-        {
-            Type t;
-            if (!functions.TryGetValue(fullName, out t) || !t.IsSubclassOf(typeof(TFunction))) {
-                if (!shortFunctions.TryGetValue(fullName, out t) || !t.IsSubclassOf(typeof(TFunction))) {
-                    Log.WriteLine(LogLevel.Error, "Could not find function {0}.", fullName);
-                    return null;
-                }
-            }
-            return t;
-        }
+        // ******* Execution
 
         static readonly char[] spaceArray = new[] { ' ' };
         /// <summary>Returns a string couple containing the module name and arguments</summary>
-        static string[] parseCommand(string command)
-        {
+        static string[] parseCommand(string command) {
             if (string.IsNullOrEmpty(command)) {
                 Log.WriteLine(LogLevel.Error, "No arguments supplied.");
                 return null;
@@ -213,100 +318,73 @@ namespace FreeSWITCH
             }
             if (args.Length == 1) {
                 return new[] { args[0], "" };
-            }
-            else {
+            } else {
                 return args;
             }
         }
 
-        public static bool ExecuteBackground(string command)
-        {
+        public static bool ExecuteBackground(string command) {
             try {
                 var parsed = parseCommand(command);
                 if (parsed == null) return false;
                 var fullName = parsed[0];
                 var args = parsed[1];
-
-                var fType = getFunctionType<ApiFunction>(fullName);
-                if (fType == null) return false;
-
-                new System.Threading.Thread(() => {
-                    try {
-                        var f = (ApiFunction)Activator.CreateInstance(fType);
-                        f.ExecuteBackground(args);
-                        Log.WriteLine(LogLevel.Debug, "ExecuteBackground in {0} completed.", fullName);
-                    } catch (Exception ex) {
-                        logException("ExecuteBackground", fullName, ex);
-                    }
-                }).Start();
-                return true;
+                var execs = getApiExecs();
+                ApiPluginExecutor exec;
+                if (!execs.TryGetValue(fullName, out exec)) {
+                    Log.WriteLine(LogLevel.Error, "API plugin {0} not found.", fullName);
+                    return false;
+                }
+                return exec.ExecuteApiBackground(args);
             } catch (Exception ex) {
                 Log.WriteLine(LogLevel.Error, "Exception in ExecuteBackground({0}): {1}", command, ex.ToString());
                 return false;
             }
         }
 
-        public static bool Execute(string command, IntPtr streamHandle, IntPtr eventHandle)
-        {
-            System.Diagnostics.Debug.Assert(streamHandle != IntPtr.Zero, "streamHandle is null.");
-            var parsed = parseCommand(command);
-            if (parsed == null) return false;
-            var fullName = parsed[0];
-            var args = parsed[1];
-            
-            var fType = getFunctionType<ApiFunction>(fullName);
-            if (fType == null) return false;
+        public static bool Execute(string command, IntPtr streamHandle, IntPtr eventHandle) {
+            try {
+                System.Diagnostics.Debug.Assert(streamHandle != IntPtr.Zero, "streamHandle is null.");
+                var parsed = parseCommand(command);
+                if (parsed == null) return false;
+                var fullName = parsed[0];
+                var args = parsed[1];
 
-            using (var stream = new Native.Stream(new Native.switch_stream_handle(streamHandle, false)))
-            using (var evt = eventHandle == IntPtr.Zero ? null : new Native.Event(new Native.switch_event(eventHandle, false), 0)) {
-                
-                try {
-                    var f = (ApiFunction)Activator.CreateInstance(fType);
-                    f.Execute(stream, evt, args);
-                    return true;
-                }
-                catch (Exception ex) {
-                    logException("Execute", fullName, ex);
+                var execs = getApiExecs();
+                ApiPluginExecutor exec;
+                if (!execs.TryGetValue(fullName, out exec)) {
+                    Log.WriteLine(LogLevel.Error, "API plugin {0} not found.", fullName);
                     return false;
                 }
+                var res = exec.ExecuteApi(args, streamHandle, eventHandle);
+                return res;
+            } catch (Exception ex) {
+                Log.WriteLine(LogLevel.Error, "Exception in Execute({0}): {1}", command, ex.ToString());
+                return false;
             }
         }
 
-        /// <summary>Runs an application function.</summary>
-        public static bool Run(string command, IntPtr sessionHandle)
-        {
-            Log.WriteLine(LogLevel.Debug, "FreeSWITCH.Managed: attempting to run application '{0}'.", command);
-            System.Diagnostics.Debug.Assert(sessionHandle != IntPtr.Zero, "sessionHandle is null.");
-            var parsed = parseCommand(command);
-            if (parsed == null) return false;
-            var fullName = parsed[0];
-            var args = parsed[1];
+        public static bool Run(string command, IntPtr sessionHandle) {
+            try {
+                Log.WriteLine(LogLevel.Debug, "FreeSWITCH.Managed: attempting to run application '{0}'.", command);
+                System.Diagnostics.Debug.Assert(sessionHandle != IntPtr.Zero, "sessionHandle is null.");
+                var parsed = parseCommand(command);
+                if (parsed == null) return false;
+                var fullName = parsed[0];
+                var args = parsed[1];
 
-            var fType = getFunctionType<AppFunction>(fullName);
-            if (fType == null) return false;
-
-            using (var session = new Native.ManagedSession(new Native.SWIGTYPE_p_switch_core_session(sessionHandle, false))) {
-                session.Initialize();
-                session.SetAutoHangup(false);
-                try {
-                    var f = (AppFunction)Activator.CreateInstance(fType);
-                    f.RunInternal(session, args);
-                    return true;
-                }
-                catch (Exception ex) {
-                    logException("Run", fullName, ex);
+                AppPluginExecutor exec;
+                var execs = getAppExecs();
+                if (!execs.TryGetValue(fullName, out exec)) {
+                    Log.WriteLine(LogLevel.Error, "App plugin {0} not found.", fullName);
                     return false;
                 }
+                return exec.Execute(args, sessionHandle);
+            } catch (Exception ex) {
+                Log.WriteLine(LogLevel.Error, "Exception in Run({0}): {1}", command, ex.ToString());
+                return false;
             }
         }
-
-        static void logException(string action, string moduleName, Exception ex)
-        {
-            Log.WriteLine(LogLevel.Error, "{0} exception in {1}: {2}", action, moduleName, ex.Message);
-            Log.WriteLine(LogLevel.Debug, "{0} exception: {1}", moduleName, ex.ToString());
-        }
-
-        #endregion
     }
 
 }

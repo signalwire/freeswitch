@@ -1,6 +1,6 @@
 ﻿/* 
- * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_cli
- * Copyright (C) 2008, Michael Giagnocavo <mgg@packetrino.com>
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_managed
+ * Copyright (C) 2008, Michael Giagnocavo <mgg@giagnocavo.net>
  *
  * Version: MPL 1.1
  *
@@ -14,16 +14,16 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_cli
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_managed
  *
  * The Initial Developer of the Original Code is
- * Michael Giagnocavo <mgg@packetrino.com>
+ * Michael Giagnocavo <mgg@giagnocavo.net>
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
  * 
- * Michael Giagnocavo <mgg@packetrino.com>
+ * Michael Giagnocavo <mgg@giagnocavo.net>
  * 
  * Extensions.cs -- Helper extensions
  *

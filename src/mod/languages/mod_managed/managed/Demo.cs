@@ -1,6 +1,6 @@
 ﻿/* 
- * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_cli
- * Copyright (C) 2008, Michael Giagnocavo <mgg@packetrino.com>
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_managed
+ * Copyright (C) 2008, Michael Giagnocavo <mgg@giagnocavo.net>
  *
  * Version: MPL 1.1
  *
@@ -14,73 +14,97 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_cli
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application - mod_managed
  *
  * The Initial Developer of the Original Code is
- * Michael Giagnocavo <mgg@packetrino.com>
+ * Michael Giagnocavo <mgg@giagnocavo.net>
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
  * 
- * Michael Giagnocavo <mgg@packetrino.com>
+ * Michael Giagnocavo <mgg@giagnocavo.net>
  * 
  * Demo.cs -- mod_mono demo classes
  *
  */
 
-#if DEBUG
+// How to test the demo (in the mod/managed directory):
+// -- Compile to dll for "normal" loading
+// -- Compile to exe for script EXE loading
+// -- Rename to demo.csx for dynamic compilation
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using FreeSWITCH;
+using FreeSWITCH.Native;
 
-namespace FreeSWITCH.Demo {
-    public class AppDemo : AppFunction {
-        new protected static bool Load() {
-            Log.WriteLine(LogLevel.Info, "Inside AppDemo::Load.");
-            return true;
-        }
+public class AppDemo : IAppPlugin {
 
-        protected override void Run() {
-            Session.Answer();
-            Session.DtmfReceivedFunction = (d, t) => {
-                Log.WriteLine(LogLevel.Info, "Received {0} for {1}.", d, t);
-                return "";
-            };
-            Log.WriteLine(LogLevel.Info, "Inside AppDemo.Run (args '{0}'); HookState is {1}. Now will collect digits.", Arguments, Session.HookState);
-            Session.CollectDigits(5000); // Hanging up here will cause an abort and the next line won't be written
-            Log.WriteLine(LogLevel.Info, "AppDemo is finishing its run and will now hang up.");
-            Session.Hangup("USER_BUSY");
-        }
-
-        void hangupHook() {
-            Log.WriteLine(LogLevel.Debug, "AppDemo hanging up, UUID: {0}.", this.Uuid);
-        }
-
-        protected override bool AbortOnHangup { get { return true; } }
+    ManagedSession Session;
+    public void Run(AppContext context) {
+        Session = context.Session;
+        Session.HangupFunction = hangupHook;
+        Session.Answer();
+        Session.DtmfReceivedFunction = (d, t) => {
+            Log.WriteLine(LogLevel.Notice, "Received {0} for {1}.", d, t);
+            return "";
+        };
+        Log.WriteLine(LogLevel.Notice, "Inside AppDemo.Run (args '{0}'); HookState is {1}. Now will collect digits.", context.Arguments, Session.HookState);
+        Session.CollectDigits(5000); // Hanging up here will cause an abort and the next line won't be written
+        Log.WriteLine(LogLevel.Notice, "AppDemo is finishing its run and will now hang up.");
+        Session.Hangup("USER_BUSY");
     }
 
-    public class ApiDemo : ApiFunction {
-        new protected static bool Load() {
-            Log.WriteLine(LogLevel.Debug, "Inside ApiDemo::Load.");
-            return true;
-        }
+    void hangupHook() {
+        Log.WriteLine(LogLevel.Notice, "AppDemo hanging up, UUID: {0}.", this.Session.Uuid);
+    }
 
-        public override void ExecuteBackground(string args) {
-            Log.WriteLine(LogLevel.Debug, "ApiDemo on a background thread #({0}), with args '{1}'.",
-                System.Threading.Thread.CurrentThread.ManagedThreadId,
-                args);
-        }
+}
 
-        public override void Execute(Native.Stream stream, Native.Event evt, string args) {
-            stream.Write(string.Format("ApiDemo executed with args '{0}' and event type {1}.",
-                args, evt == null ? "<none>" : evt.GetEventType()));
+public class ApiDemo : IApiPlugin {
+
+    public void Execute(ApiContext context) {
+        context.Stream.Write(string.Format("ApiDemo executed with args '{0}' and event type {1}.",
+            context.Arguments, context.Event == null ? "<none>" : context.Event.GetEventType()));
+    }
+
+    public void ExecuteBackground(ApiBackgroundContext context) {
+        Log.WriteLine(LogLevel.Notice, "ApiDemo on a background thread #({0}), with args '{1}'.",
+            System.Threading.Thread.CurrentThread.ManagedThreadId,
+            context.Arguments);
+    }
+
+}
+
+public class LoadDemo : ILoadNotificationPlugin {
+    public bool Load() {
+        Log.WriteLine(LogLevel.Notice, "LoadDemo running.");
+        return true;
+    }
+}
+
+public class ScriptDemo {
+
+    static void Main() {
+        switch (FreeSWITCH.Script.ContextType) {
+            case ScriptContextType.Api: {
+                    var ctx = FreeSWITCH.Script.GetApiContext();
+                    ctx.Stream.Write("Script executing as API with args: " + ctx.Arguments);
+                    break;
+                }
+            case ScriptContextType.ApiBackground: {
+                    var ctx = FreeSWITCH.Script.GetApiBackgroundContext();
+                    Log.WriteLine(LogLevel.Notice, "Executing as APIBackground with args: " + ctx.Arguments);
+                    break;
+                }
+            case ScriptContextType.App: {
+                    var ctx = FreeSWITCH.Script.GetAppContext();
+                    Log.WriteLine(LogLevel.Notice, "Executing as App with args: " + ctx.Arguments);
+                    break;
+                }
         }
 
     }
 
 }
 
-#endif
