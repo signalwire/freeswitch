@@ -95,9 +95,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown);
 SWITCH_MODULE_DEFINITION(mod_skypiax, mod_skypiax_load, mod_skypiax_shutdown, NULL);
 SWITCH_STANDARD_API(sk_function);
-#define SK_SYNTAX "list || console || skype_API_msg"
+/* BEGIN: Changes here */
+#define SK_SYNTAX "list || reload || console || remove interface_name || skype_API_msg"
+/* END: Changes heres */
 SWITCH_STANDARD_API(skypiax_function);
 #define SKYPIAX_SYNTAX "interface_name skype_API_msg"
+
+/* BEGIN: Changes here */
+#define FULL_RELOAD 0
+#define SOFT_RELOAD 1
+/* END: Changes heres */
 
 static struct {
   int debug;
@@ -131,6 +138,11 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_destination, globals.destination);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string,
                                   globals.codec_rates_string);
+
+/* BEGIN: Changes here */
+static switch_status_t interface_exists(char* skype_user);
+static switch_status_t remove_interface(char* skype_user);
+/* END: Changes here */
 
 static switch_status_t channel_on_init(switch_core_session_t * session);
 static switch_status_t channel_on_hangup(switch_core_session_t * session);
@@ -207,6 +219,96 @@ void skypiax_tech_init(private_t * tech_pvt, switch_core_session_t * session)
   }
 
 }
+
+/* BEGIN: Changes here */
+static switch_status_t interface_exists(char* skype_user) {
+	int i;
+	for (i = 0; i < SKYPIAX_MAX_INTERFACES; i++) {
+		if (strlen(globals.SKYPIAX_INTERFACES[i].name)) {
+			if(strcmp(globals.SKYPIAX_INTERFACES[i].skype_user, skype_user) == 0) {
+				return SWITCH_STATUS_SUCCESS;
+			}
+		}
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+static switch_status_t remove_interface(char* skype_user) {
+	int x = 100;
+	unsigned int howmany = 8;
+	int interface_id = -1;
+	private_t *tech_pvt = NULL;
+	switch_status_t status;
+
+	running = 0;
+
+	for (interface_id = 0; interface_id < SKYPIAX_MAX_INTERFACES; interface_id++) {
+		if(strcmp(globals.SKYPIAX_INTERFACES[interface_id].skype_user, skype_user) == 0) {
+			tech_pvt = &globals.SKYPIAX_INTERFACES[interface_id];
+			break;
+		}
+	}
+
+	if(!tech_pvt) {
+		DEBUGA_SKYPE("interface for skype user '%s' does not exist\n", SKYPIAX_P_LOG, skype_user);
+		goto end;
+	}
+
+	if (strlen(globals.SKYPIAX_INTERFACES[interface_id].session_uuid_str)) {
+		DEBUGA_SKYPE("interface for skype user '%s' is busy\n", SKYPIAX_P_LOG, skype_user);
+		goto end;
+	}
+
+	if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
+#ifdef WIN32
+		switch_file_write(tech_pvt->SkypiaxHandles.fdesc[1], "sciutati", &howmany);   // let's the controldev_thread die
+#else /* WIN32 */
+		howmany = write(tech_pvt->SkypiaxHandles.fdesc[1], "sciutati", howmany);
+#endif /* WIN32 */
+	}
+
+	if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread) {
+#ifdef WIN32
+		if (SendMessage(tech_pvt->SkypiaxHandles.win32_hInit_MainWindowHandle, WM_DESTROY, 0, 0) == FALSE) {  // let's the skypiax_api_thread_func die
+			DEBUGA_SKYPE("got FALSE here, thread probably was already dead. GetLastError returned: %d\n",
+					SKYPIAX_P_LOG, GetLastError());
+			globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread = NULL;
+		}
+#else
+		XEvent e;
+		Atom atom1 = XInternAtom(tech_pvt->SkypiaxHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
+		memset(&e, 0, sizeof(e));
+		e.xclient.type = ClientMessage;
+		e.xclient.message_type = atom1;   /*  leading message */
+		e.xclient.display = tech_pvt->SkypiaxHandles.disp;
+		e.xclient.window = tech_pvt->SkypiaxHandles.skype_win;
+		e.xclient.format = 8;
+
+		XSendEvent(tech_pvt->SkypiaxHandles.disp, tech_pvt->SkypiaxHandles.win, False, 0, &e);
+		XSync(tech_pvt->SkypiaxHandles.disp, False);
+#endif
+	}
+
+	while (x) {                 //FIXME 2 seconds?
+		x--;
+		switch_yield(20000);
+	}
+
+	if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
+		switch_thread_join(&status, globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread);
+	}
+
+	if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread) {
+		switch_thread_join(&status, globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread);
+	}
+
+	memset(&globals.SKYPIAX_INTERFACES[interface_id], '\0',sizeof(private_t));
+	DEBUGA_SKYPE("interface for skype user '%s' deleted successfully\n", SKYPIAX_P_LOG, skype_user);
+end:
+	running = 1;
+	return SWITCH_STATUS_SUCCESS;
+}
+/* END: Changes here */
 
 /* 
    State methods they get called when the state changes to the specific state 
@@ -749,7 +851,9 @@ static void *SWITCH_THREAD_FUNC skypiax_signaling_thread_func(switch_thread_t * 
   return NULL;
 }
 
-static switch_status_t load_config(void)
+/* BEGIN: Changes heres */
+static switch_status_t load_config(int reload_type)
+/* END: Changes heres */
 {
   char *cf = "skypiax.conf";
   switch_xml_t cfg, xml, global_settings, param, interfaces, myinterface;
@@ -877,6 +981,14 @@ static switch_status_t load_config(void)
         ERRORA("interface missing REQUIRED param 'skype_user'\n", SKYPIAX_P_LOG);
         continue;
       }
+
+      /* BEGIN: Changes here */
+      if(reload_type == SOFT_RELOAD) {
+        if(interface_exists(skype_user) == SWITCH_STATUS_SUCCESS) {
+	  continue;
+	}
+      }
+      /* END: Changes here */
 
       if (!X11_display) {
         ERRORA("interface missing REQUIRED param 'X11_display'\n", SKYPIAX_P_LOG);
@@ -1112,7 +1224,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load)
 
   running = 1;
 
-  if (load_config() != SWITCH_STATUS_SUCCESS) {
+  if (load_config(FULL_RELOAD) != SWITCH_STATUS_SUCCESS) {
     running = 0;
     return SWITCH_STATUS_FALSE;
   }
@@ -1130,6 +1242,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load)
                    SK_SYNTAX);
     SWITCH_ADD_API(commands_api_interface, "skypiax", "Skypiax interface commands",
                    skypiax_function, SKYPIAX_SYNTAX);
+
     /* indicate that the module should continue to be loaded */
     return SWITCH_STATUS_SUCCESS;
   } else
@@ -1506,6 +1619,28 @@ SWITCH_STANDARD_API(sk_function)
     }
 
   } else if (!strcasecmp(argv[0], "ciapalino")) {
+
+/* BEGIN: Changes heres */
+  } else if (!strcasecmp(argv[0], "reload")) {
+    if(load_config(SOFT_RELOAD) != SWITCH_STATUS_SUCCESS) {
+      stream->write_function(stream, "sk reload failed\n");
+    } else {
+      stream->write_function(stream, "sk reload success\n");
+    }
+  } else if (!strcasecmp(argv[0], "remove")) {
+    if(argc == 2) {
+      if(remove_interface(argv[1]) == SWITCH_STATUS_SUCCESS) {
+	if(interface_exists(argv[1]) == SWITCH_STATUS_SUCCESS) {
+          stream->write_function(stream, "sk remove '%s' failed\n", argv[1]);
+	} else {
+          stream->write_function(stream, "sk remove '%s' success\n",argv[1]);
+	}
+      }
+    } else {
+      stream->write_function(stream, "-ERR Usage: sk remove interface_name\n");
+      goto end;
+    }
+/* END: Changes heres */
 
   } else {
     if (globals.sk_console)
