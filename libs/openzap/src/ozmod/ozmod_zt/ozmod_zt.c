@@ -1071,11 +1071,6 @@ static ZIO_READ_FUNCTION(zt_read)
 			*datalen -= 2;
 		}
 		return ZAP_SUCCESS;
-	} else {
-		if (zchan->type == ZAP_CHAN_TYPE_DQ921) {
-			unsigned char buf[25] = {0};
-			write(zchan->sockfd, buf, sizeof(buf));
-		}
 	}
 
 	return r == 0 ? ZAP_TIMEOUT : ZAP_FAIL;

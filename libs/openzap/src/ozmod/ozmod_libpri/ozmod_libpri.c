@@ -878,7 +878,7 @@ static __inline__ void check_events(zap_span_t *span)
 	case ZAP_FAIL:
 		{
 			zap_log(ZAP_LOG_DEBUG, "Event Failure! %d\n", zap_running());
-			zap_sleep(5000);
+			zap_sleep(2000);
 		}
 		break;
 	default:

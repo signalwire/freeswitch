@@ -103,6 +103,7 @@ struct lpwrap_pri {
 	void *private_info;
 	event_handler eventmap[LPWRAP_PRI_EVENT_MAX];
 	loop_handler on_loop;
+	int errs;
 };
 
 typedef struct lpwrap_pri lpwrap_pri_t;
