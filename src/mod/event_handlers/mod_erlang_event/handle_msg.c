@@ -577,7 +577,7 @@ static switch_status_t handle_msg_handlecall(listener_t *listener, erlang_msg *m
 		ei_x_encode_atom(rbuf, "badarg");
 	} else {
 		switch_core_session_t *session;
-		if (!switch_strlen_zero_buf(uuid_str) && SWITCH_UUID_FORMATTED_LENGTH == strlen(uuid_str)) {
+		if (!switch_strlen_zero_buf(uuid_str)) {
 			if ((session = switch_core_session_locate(uuid_str))) {
 				/* create a new session list element and attach it to this listener */
 				if ((arity==2 && attach_call_to_pid(listener, &msg->from, session)) ||
