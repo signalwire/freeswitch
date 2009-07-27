@@ -375,12 +375,24 @@ int skypiax_signaling_read(private_t * tech_pvt)
               }
             } else {
               tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
-              WARNINGA("Back from REMOTEHOLD!\n", SKYPIAX_P_LOG);
+              DEBUGA_SKYPE("Back from REMOTEHOLD!\n", SKYPIAX_P_LOG);
             }
 
           } else if (!strcasecmp(value, "REMOTEHOLD")) {
             tech_pvt->skype_callflow = CALLFLOW_STATUS_REMOTEHOLD;
-            WARNINGA("skype_call: %s is now REMOTEHOLD\n", SKYPIAX_P_LOG, id);
+            DEBUGA_SKYPE("skype_call: %s is now REMOTEHOLD\n", SKYPIAX_P_LOG, id);
+
+          } else if (!strcasecmp(value, "BUSY")) {
+            tech_pvt->skype_callflow = CALLFLOW_STATUS_FAILED;
+            DEBUGA_SKYPE
+              ("we tried to call Skype on skype_call %s and remote party (destination) was BUSY\n",
+               SKYPIAX_P_LOG, id);
+            skypiax_strncpy(tech_pvt->skype_call_id, id,
+                            sizeof(tech_pvt->skype_call_id) - 1);
+            tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
+            tech_pvt->skype_call_id[0] = '\0';
+			skypiax_sleep(1000);
+            return CALLFLOW_INCOMING_HANGUP;
           } else {
             WARNINGA("skype_call: %s, STATUS: %s is not recognized\n", SKYPIAX_P_LOG, id,
                      value);
