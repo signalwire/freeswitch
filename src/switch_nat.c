@@ -231,6 +231,7 @@ static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t *th
 {
 	char *buf = NULL;
 	char newip[16];
+	char *pos;
 	switch_event_t *event = NULL;
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NAT thread started\n");
@@ -259,17 +260,23 @@ static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t *th
 		if (nat_globals.nat_type == SWITCH_NAT_TYPE_UPNP) {
 			/* look for our desc URL and servicetype in the packet */
 			if (strstr(buf, nat_globals.descURL) && (buf == NULL || strstr(buf, nat_globals.data.servicetype))) {
-				if (strstr(buf, "NTS: ssdp:alive")) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got UPnP keep alive packet: \n%s\n", buf);
-					/* did pub ip change */
-					if (get_upnp_pubaddr(newip) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to get current pubaddr after receiving UPnP keep alive packet.\n");
+				if ((pos = strstr(buf, "NTS:"))) {
+					pos = pos + 4;
+					while(*pos && *pos == ' ') {
+						pos++;
 					}
-				} else if (strstr(buf, "NTS: ssdp:byebye")) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "got UPnP signoff packet.  Your NAT gateway is probably going offline.\n");
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got UPnP signoff packet: \n%s\n", buf);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got UNKNOWN UPnP keep alive packet: \n%s\n", buf);
+					if (!strncmp(pos, "ssdp:alive", 10)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got UPnP keep alive packet: \n%s\n", buf);
+						/* did pub ip change */
+						if (get_upnp_pubaddr(newip) != SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to get current pubaddr after receiving UPnP keep alive packet.\n");
+						}
+					} else if (!strncmp(pos, "ssdp:byebye", 11)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "got UPnP signoff packet.  Your NAT gateway is probably going offline.\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got UPnP signoff packet: \n%s\n", buf);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got UNKNOWN UPnP keep alive packet: \n%s\n", buf);
+					}
 				}
 			}
 		} else {
