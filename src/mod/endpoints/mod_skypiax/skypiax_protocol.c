@@ -252,7 +252,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
             char msg_to_skype[1024];
             tech_pvt->skype_callflow = CALLFLOW_STATUS_EARLYMEDIA;
             tech_pvt->interface_state = SKYPIAX_STATE_DIALING;
-            NOTICA("Our remote party in skype_call %s is EARLYMEDIA\n", SKYPIAX_P_LOG,
+            DEBUGA_SKYPE("Our remote party in skype_call %s is EARLYMEDIA\n", SKYPIAX_P_LOG,
                    id);
             start_audio_threads(tech_pvt);
             skypiax_sleep(1000);
