@@ -671,14 +671,13 @@ void event_handler(switch_event_t *event)
 			switch_copy_string(fixed_contact_str, contact_str, len);
 	
 			if ((sptr = strstr(fixed_contact_str, needle))) {
-				if (!(eptr = strchr(fixed_contact_str, ';'))) {
-					eptr = strrchr(fixed_contact_str, '>');
-				}
+				char *origsptr = strstr(contact_str, needle);
+				eptr = strchr(++origsptr, ';');
 			} else {
 				sptr = strchr(fixed_contact_str, '\0') - 1;
 			}
 
-			switch_snprintf(sptr, len - (sptr - fixed_contact_str), ";fs_path=sip:%s%s%s", to_host, eptr ? ";" : "", eptr ? eptr : ">");
+			switch_snprintf(sptr, len - (sptr - fixed_contact_str), ";fs_path=sip:%s%s", to_host, eptr ? eptr : ">");
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Rewrote contact string from '%s' to '%s'\n", contact_str, fixed_contact_str);
 			contact_str = fixed_contact_str;
