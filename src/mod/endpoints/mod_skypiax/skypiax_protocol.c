@@ -671,6 +671,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
       while ((fd = accept(s, (struct sockaddr *) &remote_addr, &sin_size)) > 0) {
         DEBUGA_SKYPE("ACCEPTED here you send me %d\n", SKYPIAX_P_LOG,
                      tech_pvt->tcp_cli_port);
+		fcntl(tech_pvt->audioskypepipe[0], F_SETFL, O_NONBLOCK);
         if (!running)
           break;
         while (tech_pvt->interface_state != SKYPIAX_STATE_DOWN
@@ -686,7 +687,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
           if (!running)
             break;
           FD_ZERO(&fs);
-          to.tv_usec = 60000;   //60msec
+          to.tv_usec = 120000;   //120msec
           to.tv_sec = 0;
 #if defined(WIN32) && !defined(__CYGWIN__)
 /* on win32 we cannot select from the apr "pipe", so we select on socket writability */
@@ -703,10 +704,17 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 #endif
 
           if (rt > 0) {
+			  int counter;
+
+			  /* until we drained the pipe to empty */
+			for(counter = 0; counter < 10; counter++){
             /* read from the pipe the audio frame we are supposed to send out */
             got =
               skypiax_pipe_read(tech_pvt->audioskypepipe[0], cli_in,
                                 SAMPLES_PER_FRAME * sizeof(short));
+			if(got == -1)
+				break;
+
             if (got != SAMPLES_PER_FRAME * sizeof(short)) {
               WARNINGA("got is %d, but was expected to be %d\n", SKYPIAX_P_LOG, got,
                        (int) (SAMPLES_PER_FRAME * sizeof(short)));
@@ -752,6 +760,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
               WARNINGA("got is %d, but was expected to be %d\n", SKYPIAX_P_LOG, got,
                        (int) (SAMPLES_PER_FRAME * sizeof(short)));
             }
+			}
           } else {
             if (rt)
               ERRORA("CLI rt=%d\n", SKYPIAX_P_LOG, rt);
