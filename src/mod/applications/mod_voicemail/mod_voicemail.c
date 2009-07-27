@@ -1112,6 +1112,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 		*message_len = 0;
 
 		if (macro_name) TRY_CODE(switch_ivr_phrase_macro(session, macro_name, NULL, NULL, NULL));
+		switch_channel_flush_dtmf(channel);
 		TRY_CODE(switch_ivr_gentones(session, profile->tone_spec, 0, NULL));
 
 		memset(&fh, 0, sizeof(fh));
