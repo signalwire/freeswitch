@@ -29,7 +29,7 @@
 	 week = 1-52
 	 wday = 1-7
 	 hour = 0-23
-	 minute = 1-60
+	 minute = 0-59
 	 minute-of-day = 1-1440
 	 
 	 Example:

@@ -119,7 +119,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		}
 
 		if (time_match && xminute) {
-			time_match = switch_number_cmp(xminute, tm.tm_min + 1);
+			time_match = switch_number_cmp(xminute, tm.tm_min);
 		}
 
 		if (time_match && xminday) {
