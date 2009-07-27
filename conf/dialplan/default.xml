@@ -20,11 +20,25 @@
       </condition>
     </extension>
 
-    <!-- Example of doing things based on time of day. -->
+    <!-- Example of doing things based on time of day. 
+
+	 year = 4 digit year. Example year="2009"
+	 yday = 1-365
+	 mon = 1-12
+	 mday = 1-31
+	 week = 1-52
+	 wday = 1-7
+	 hour = 0-23
+	 minute = 1-60
+	 minute-of-day = 1-1440
+	 
+	 Example:
+	 <condition minute-of-day="540-1080"> (9am to 6pm EVERY day)
+	 do something ...
+	 </condition>
+    -->
     <extension name="tod_example" continue="true">
-      <!-- man strftime - M-F, 9AM to 6PM -->
-      <condition field="${strftime(%w)}" expression="^([1-5])$"/>
-      <condition field="${strftime(%H%M)}" expression="^((09|1[0-7])[0-5][0-9]|1800)$">
+      <condition wday="2-6" hour="9-18">
 	<action application="set" data="open=true"/>
       </condition>
     </extension>
