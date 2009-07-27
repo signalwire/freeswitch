@@ -74,7 +74,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		const char *xwday = switch_xml_attr(xcond, "wday");
 		const char *xhour = switch_xml_attr(xcond, "hour");
 		const char *xminute = switch_xml_attr(xcond, "minute");
-		const char *xminday = switch_xml_attr(xcond, "minute_of_day");
+		const char *xminday = switch_xml_attr(xcond, "minute-of-day");
 		switch_time_t ts = switch_micro_time_now();
 		int time_match = -1;
 		switch_time_exp_t tm;
