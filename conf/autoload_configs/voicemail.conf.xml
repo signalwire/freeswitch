@@ -33,6 +33,8 @@
       <param name="ff-key" value="6"/>
       <param name="rew-key" value="4"/>
       <param name="skip-greet-key" value="#"/>
+      <param name="ff-msec" value="3000"/>
+      <param name="rew-msec" value="6000"/>
       <!--<param name="previous-message-key" value=""/>-->
       <!--<param name="next-message-key" value=""/>-->
       <param name="record-silence-threshold" value="200"/>
