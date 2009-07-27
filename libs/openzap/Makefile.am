@@ -101,7 +101,7 @@ core-install: install-libLTLIBRARIES
 #
 # tools & test programs
 #
-noinst_PROGRAMS = testtones detect_tones detect_dtmf testisdn testboost testanalog testapp testcid
+noinst_PROGRAMS = testtones detect_tones detect_dtmf testisdn testpri testboost testanalog testapp testcid
 
 testapp_SOURCES = $(SRC)/testapp.c
 testapp_LDADD   = libopenzap.la
@@ -126,6 +126,10 @@ detect_dtmf_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 testisdn_SOURCES = $(SRC)/testisdn.c
 testisdn_LDADD   = libopenzap.la
 testisdn_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+
+testpri_SOURCES = $(SRC)/testpri.c
+testpri_LDADD   = libopenzap.la
+testpri_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 
 testboost_SOURCES = $(SRC)/testboost.c
 testboost_LDADD   = libopenzap.la
