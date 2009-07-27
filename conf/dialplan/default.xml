@@ -28,7 +28,7 @@
 	 mday = 1-31
 	 week = 1-52
 	 wday = 1-7
-	 hour = 1-23  (1:00 thru 23:59 for hours and min routing.)
+	 hour = 0-24
 	 minute = 0-59
 	 minute-of-day = 1-1440
 	 
