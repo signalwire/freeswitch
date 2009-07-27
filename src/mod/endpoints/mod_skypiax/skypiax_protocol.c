@@ -671,7 +671,10 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
       while ((fd = accept(s, (struct sockaddr *) &remote_addr, &sin_size)) > 0) {
         DEBUGA_SKYPE("ACCEPTED here you send me %d\n", SKYPIAX_P_LOG,
                      tech_pvt->tcp_cli_port);
+#ifndef WIN32
 		fcntl(tech_pvt->audioskypepipe[0], F_SETFL, O_NONBLOCK);
+#endif //WIN32
+
         if (!running)
           break;
         while (tech_pvt->interface_state != SKYPIAX_STATE_DOWN
