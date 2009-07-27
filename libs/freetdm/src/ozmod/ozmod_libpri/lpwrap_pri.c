@@ -120,9 +120,11 @@ static int __pri_lpwrap_read(struct pri *pri, void *buf, int buflen)
 	if ((zst = zap_channel_read(spri->dchan, buf, &len)) != ZAP_SUCCESS) {
 		if (zst == ZAP_FAIL) {
 			zap_log(ZAP_LOG_CRIT, "span %d D-READ FAIL! [%s]\n", spri->span->span_id, spri->dchan->last_error);
+			spri->errs++;
 		} else {
 			zap_log(ZAP_LOG_CRIT, "span %d D-READ TIMEOUT\n", spri->span->span_id);
 		}
+		
 		zap_clear_flag(spri, LPWRAP_PRI_READY);
 		return -1;
 	}
@@ -203,9 +205,10 @@ int lpwrap_one_loop(struct lpwrap_pri *spri)
 		}
 	}
 
-	//if (!zap_test_flag(spri, LPWRAP_PRI_READY)) {
-	//return -1;
-	//}
+	if (spri->errs >= 2) {
+		spri->errs = 0;
+		return -1;
+	}
 
 	FD_ZERO(&rfds);
 	FD_ZERO(&efds);
