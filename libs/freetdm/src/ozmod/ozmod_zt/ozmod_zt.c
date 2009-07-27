@@ -1055,10 +1055,11 @@ static ZIO_READ_FUNCTION(zt_read)
 	zap_ssize_t r = 0;
 	int errs = 0;
 
-	while (errs++ < 300) {
+	while (errs++ < 30) {
 		if ((r = read(zchan->sockfd, data, *datalen)) > 0) {
 			break;
 		}
+		zap_sleep(10);
 		if (r == 0) {
 			errs--;
 		}
@@ -1070,6 +1071,11 @@ static ZIO_READ_FUNCTION(zt_read)
 			*datalen -= 2;
 		}
 		return ZAP_SUCCESS;
+	} else {
+		if (zchan->type == ZAP_CHAN_TYPE_DQ921) {
+			unsigned char buf[25] = {0};
+			write(zchan->sockfd, buf, sizeof(buf));
+		}
 	}
 
 	return r == 0 ? ZAP_TIMEOUT : ZAP_FAIL;

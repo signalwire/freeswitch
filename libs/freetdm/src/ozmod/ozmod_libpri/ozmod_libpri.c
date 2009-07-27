@@ -878,6 +878,7 @@ static __inline__ void check_events(zap_span_t *span)
 	case ZAP_FAIL:
 		{
 			zap_log(ZAP_LOG_DEBUG, "Event Failure! %d\n", zap_running());
+			zap_sleep(5000);
 		}
 		break;
 	default:
@@ -947,6 +948,7 @@ static int on_dchan_up(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 	if (!zap_test_flag(spri, LPWRAP_PRI_READY)) {
 		zap_log(ZAP_LOG_INFO, "Span %d D-Chan UP!\n", spri->span->span_id);
 		zap_set_flag(spri, LPWRAP_PRI_READY);
+		zap_set_state_all(spri->span, ZAP_CHANNEL_STATE_RESTART);
 	}
 
 	return 0;
@@ -965,6 +967,8 @@ static int on_dchan_down(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_
 	if (zap_test_flag(spri, LPWRAP_PRI_READY)) {
 		zap_log(ZAP_LOG_INFO, "Span %d D-Chan DOWN!\n", spri->span->span_id);
 		zap_clear_flag(spri, LPWRAP_PRI_READY);
+		zap_set_state_all(spri->span, ZAP_CHANNEL_STATE_RESTART);
+		
 	}
 
 	return 0;
