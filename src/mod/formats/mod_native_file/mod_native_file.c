@@ -76,6 +76,7 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, const
 	handle->sections = 0;
 	handle->seekable = 1;
 	handle->speed = 0;
+	handle->pos = 0;
 	handle->private_info = context;
 	handle->flags |= SWITCH_FILE_NATIVE;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz\n", path, handle->samplerate);
@@ -97,18 +98,28 @@ static switch_status_t native_file_file_close(switch_file_handle_t *handle)
 
 static switch_status_t native_file_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
+	switch_status_t status;
+
 	native_file_context *context = handle->private_info;
 
-	switch_file_seek(context->fd, whence, &samples);
-
+	status = switch_file_seek(context->fd, whence, &samples);
+	if (status == SWITCH_STATUS_SUCCESS) {
+		handle->pos += samples;
+	}
 	return SWITCH_STATUS_FALSE;
 }
 
 static switch_status_t native_file_file_read(switch_file_handle_t *handle, void *data, size_t *len)
 {
+	switch_status_t status;
+
 	native_file_context *context = handle->private_info;
 
-	return switch_file_read(context->fd, data, len);
+	status = switch_file_read(context->fd, data, len);
+	if (status == SWITCH_STATUS_SUCCESS) {
+		handle->pos += *len;
+	}
+	return status;
 }
 
 static switch_status_t native_file_file_write(switch_file_handle_t *handle, void *data, size_t *len)
@@ -120,8 +131,6 @@ static switch_status_t native_file_file_write(switch_file_handle_t *handle, void
 
 static switch_status_t native_file_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
 {
-	//native_file_context *context = handle->private_info;
-
 	return SWITCH_STATUS_FALSE;
 }
 
