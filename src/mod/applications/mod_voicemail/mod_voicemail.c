@@ -87,6 +87,7 @@ struct vm_profile {
 	char login_keys[16];
 	char main_menu_key[2];
 	char skip_greet_key[2];
+	char skip_info_key[2];
 	char config_menu_key[2];
 	char record_greeting_key[2];
 	char choose_greeting_key[2];
@@ -476,6 +477,8 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 		&profile->main_menu_key, "0", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "skip-greet-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
 		&profile->skip_greet_key, "#", &config_dtmf, NULL, NULL);		
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "skip-info-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
+		&profile->skip_info_key, "", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "config-menu-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
 		&profile->config_menu_key, "5", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "record-greeting-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
@@ -888,7 +891,8 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 
 			if (!cc->noexit
 				&& (dtmf->digit == *cc->profile->delete_file_key || dtmf->digit == *cc->profile->save_file_key
-					|| dtmf->digit == *cc->profile->prev_msg_key || dtmf->digit == *cc->profile->next_msg_key)) {
+					|| dtmf->digit == *cc->profile->prev_msg_key || dtmf->digit == *cc->profile->next_msg_key
+					|| dtmf->digit == *cc->profile->terminator_key || dtmf->digit == *cc->profile->skip_info_key)) {
 				*cc->buf = dtmf->digit;
 				return SWITCH_STATUS_BREAK;
 			}
@@ -1486,7 +1490,8 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 			TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_DATE_MACRO, cbt->created_epoch, NULL, &args));
 		}
 
-		if (!*cc.buf) {
+		if (!*cc.buf || *cc.buf == *cc.profile->skip_info_key) {
+			*cc.buf = '\0';
 			memset(&fh, 0, sizeof(fh));
 			cc.fh = &fh;
 			TRY_CODE(switch_ivr_play_file(session, &fh, cbt->file_path, &args));

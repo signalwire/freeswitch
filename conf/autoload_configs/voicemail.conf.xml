@@ -37,6 +37,7 @@
       <param name="rew-msec" value="6000"/>
       <!--<param name="previous-message-key" value=""/>-->
       <!--<param name="next-message-key" value=""/>-->
+      <!--<param name="skip-info-key" value=""/>-->
       <param name="record-silence-threshold" value="200"/>
       <param name="record-silence-hits" value="2"/>
       <param name="web-template-file" value="web-vm.tpl"/>
