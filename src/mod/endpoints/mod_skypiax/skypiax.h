@@ -37,7 +37,6 @@
 #include <switch.h>
 #include <switch_version.h>
 
-
 #ifndef WIN32
 #include <sys/time.h>
 #include <X11/Xlib.h>
