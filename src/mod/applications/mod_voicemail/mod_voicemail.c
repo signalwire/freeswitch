@@ -67,6 +67,11 @@ typedef enum {
 	PFLAG_DESTROY = 1 << 0
 } vm_flags_t;
 
+typedef enum {
+	VM_MOVE_NEXT,
+	VM_MOVE_PREV
+} msg_move_t;
+
 #define VM_PROFILE_CONFIGITEM_COUNT 100
 
 struct vm_profile {
@@ -99,6 +104,8 @@ struct vm_profile {
 	char restart_key[2];
 	char ff_key[2];
 	char rew_key[2];
+	char prev_msg_key[2];
+	char next_msg_key[2];
 	char urgent_key[2];
 	char operator_key[2];
 	char vmain_key[2];
@@ -498,6 +505,10 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 		&profile->ff_key, "6", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "rew-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
 		&profile->rew_key, "4", &config_dtmf, NULL, NULL);
+        SWITCH_CONFIG_SET_ITEM(profile->config[i++], "previous-message-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
+                &profile->prev_msg_key, "", &config_dtmf, NULL, NULL);
+        SWITCH_CONFIG_SET_ITEM(profile->config[i++], "next-message-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
+                &profile->next_msg_key, "", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "urgent-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
 		&profile->urgent_key, "*", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "operator-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
@@ -870,7 +881,7 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 
 			if (!cc->noexit
 				&& (dtmf->digit == *cc->profile->delete_file_key || dtmf->digit == *cc->profile->save_file_key
-					|| dtmf->digit == *cc->profile->terminator_key)) {
+					|| dtmf->digit == *cc->profile->prev_msg_key || dtmf->digit == *cc->profile->next_msg_key)) {
 				*cc->buf = dtmf->digit;
 				return SWITCH_STATUS_BREAK;
 			}
@@ -905,6 +916,10 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 				int samps = -48000;
 				switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
 				return SWITCH_STATUS_SUCCESS;
+			}
+			if (!cc->noexit && dtmf->digit == *cc->profile->terminator_key) {
+				*cc->buf = dtmf->digit;
+				return SWITCH_STATUS_BREAK;
 			}
 		}
 		break;
@@ -1214,6 +1229,7 @@ struct listen_callback {
 	int index;
 	int want;
 	msg_type_t type;
+	msg_move_t move; 
 };
 typedef struct listen_callback listen_callback_t;
 
@@ -1478,8 +1494,11 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 			} else {
 				TRY_CODE(vm_macro_get(session, VM_LISTEN_FILE_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout));
 			}
-
-			if (!strcmp(input, profile->listen_file_key)) {
+			if (!strcmp(input, profile->prev_msg_key)) {
+				cbt->move = VM_MOVE_PREV;
+			} else if (!strcmp(input, profile->next_msg_key)) {
+				cbt->move = VM_MOVE_NEXT;
+			} else if (!strcmp(input, profile->listen_file_key)) {
 				goto play_file;
 			} else if (!strcmp(input, profile->callback_key)) {
 				switch_core_session_execute_exten(session, cbt->cid_number, profile->callback_dialplan, profile->callback_context);
@@ -1824,6 +1843,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 							  &total_new_urgent_messages, &total_saved_urgent_messages);
 				memset(&cbt, 0, sizeof(cbt));
 				cbt.email = vm_email;
+				cbt.move = VM_MOVE_NEXT;
 				switch (play_msg_type) {
 				case MSG_NEW:
 					{
@@ -1849,8 +1869,16 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					cbt.index = 0;
 					cbt.want = cur_message;
 					cbt.type = play_msg_type;
+					cbt.move = VM_MOVE_NEXT;
 					vm_execute_sql_callback(profile, profile->mutex, sql, listen_callback, &cbt);
 					status = listen_file(session, profile, &cbt);
+					if (cbt.move == VM_MOVE_PREV) {
+						if (cur_message <= 0) {
+							cur_message = -1;
+						} else {
+							cur_message -= 2;
+						}
+					}
 					if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 						break;
 					}
