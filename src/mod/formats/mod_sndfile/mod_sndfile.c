@@ -257,6 +257,7 @@ static switch_status_t sndfile_file_read(switch_file_handle_t *handle, void *dat
 		*len = (size_t) sf_readf_int(context->handle, (int *) data, inlen);
 	}
 
+	handle->pos += *len;
 	handle->sample_count += *len;
 
 	return *len ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
