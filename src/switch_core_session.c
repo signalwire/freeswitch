@@ -1545,7 +1545,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 
 		count++;
 
-		if ((extension = dialplan_interface->hunt_function(session, dparg, new_profile)) != 0) {
+		extension = dialplan_interface->hunt_function(session, dparg, new_profile);
+		UNPROTECT_INTERFACE(dialplan_interface);	
+
+		if (extension) {
 			break;
 		}
 	}
