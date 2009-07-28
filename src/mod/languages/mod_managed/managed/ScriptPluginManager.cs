@@ -43,6 +43,7 @@ using System.Reflection.Emit;
 namespace FreeSWITCH {
 
     public enum ScriptContextType {
+        None,
         App,
         Api,
         ApiBackground,
@@ -151,6 +152,11 @@ namespace FreeSWITCH {
         }
 
         bool processAssembly(string fileName, Assembly asm) {
+            // Call the entrypoint once, to initialize apps that need their main called
+            var entryPoint = getEntryDelegate(asm.EntryPoint);
+            try { entryPoint(); } catch {  }
+
+            // Check for loading
             var allTypes = asm.GetExportedTypes();
             if (!RunLoadNotify(allTypes)) return false;
 
@@ -159,7 +165,6 @@ namespace FreeSWITCH {
             AddAppPlugins(allTypes);
 
             // Add the script executors
-            var entryPoint = getEntryDelegate(asm.EntryPoint);
             var name = Path.GetFileName(fileName);
             var aliases = new List<string> { name };
             this.ApiExecutors.Add(new ApiPluginExecutor(name, aliases, () => new ScriptApiWrapper(entryPoint)));
@@ -181,6 +186,7 @@ namespace FreeSWITCH {
                 try {
                     entryPoint();
                 } finally {
+                    Script.contextType = ScriptContextType.None;
                     Script.context = null;
                 }
             }
@@ -191,6 +197,7 @@ namespace FreeSWITCH {
                 try {
                     entryPoint();
                 } finally {
+                    Script.contextType = ScriptContextType.None;
                     Script.context = null;
                 }
             }
@@ -210,6 +217,7 @@ namespace FreeSWITCH {
                 try {
                     entryPoint();
                 } finally {
+                    Script.contextType = ScriptContextType.None;
                     Script.context = null;
                 }
             }
