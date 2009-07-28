@@ -338,8 +338,6 @@ static switch_status_t hash_state_handler(switch_core_session_t *session)
 			switch_hash_this(hi, &key, &keylen, &val);
 			
 			item = (limit_hash_item_t*)val;
-			
-			/* We keep the structure even though the count is 0 so we do not allocate too often */
 			item->total_usage--;	
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)key, item->total_usage);
 			
@@ -861,6 +859,132 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/* \brief Enforces limit_hash restrictions
+ * \param session current session
+ * \param realm limit realm
+ * \param id limit id
+ * \param max maximum count
+ * \param interval interval for rate limiting
+ * \return SWITCH_TRUE if the access is allowed, SWITCH_FALSE if it isnt
+ */
+static switch_bool_t do_limit_hash(switch_core_session_t *session, const char *realm, const char *id, int max, int interval)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *hashkey = NULL;
+	switch_bool_t status = SWITCH_TRUE;
+	limit_hash_item_t *item = NULL;
+	time_t now = switch_epoch_time_now(NULL);
+	limit_hash_private_t *pvt = NULL;
+	uint8_t increment = 1;
+	
+	hashkey = switch_core_session_sprintf(session, "%s_%s", realm, id);
+
+	switch_mutex_lock(globals.limit_hash_mutex);
+	/* Check if that realm+id has ever been checked */
+	if (!(item = (limit_hash_item_t*)switch_core_hash_find(globals.limit_hash, hashkey))) {
+		/* No, create an empty structure and add it, then continue like as if it existed */
+		item = (limit_hash_item_t*)malloc(sizeof(limit_hash_item_t));
+		switch_assert(item);
+		memset(item, 0, sizeof(limit_hash_item_t));
+		switch_core_hash_insert(globals.limit_hash, hashkey, item);
+	}
+
+	/* Did we already run on this channel before? */
+	if ((pvt = switch_channel_get_private(channel, "limit_hash")))
+	{
+		/* Yes, but check if we did that realm+id
+		   If we didnt, allow incrementing the counter.
+		   If we did, dont touch it but do the validation anyways
+		 */
+		increment = !switch_core_hash_find(pvt->hash, hashkey);
+	} else {
+		/* This is the first limit check on this channel, create a hashtable, set our prviate data and add a state handler */
+		pvt = (limit_hash_private_t*)switch_core_session_alloc(session, sizeof(limit_hash_private_t));
+		memset(pvt, 0, sizeof(limit_hash_private_t));
+		switch_core_hash_init(&pvt->hash, switch_core_session_get_pool(session));
+		switch_channel_set_private(channel, "limit_hash", pvt);
+	}
+
+	if (interval > 0) {
+		if (item->last_check <= (now - interval)) {
+			item->rate_usage = 1;
+			item->last_check = now;
+		} else {
+			/* Always increment rate when its checked as it doesnt depend on the channel */
+			item->rate_usage++;
+
+			if ((max >= 0) && (item->rate_usage > (uint32_t)max)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s exceeds maximum rate of %d/%ds, now at %d\n", hashkey, max, interval, item->rate_usage);
+				status = SWITCH_FALSE;
+				goto end;
+			}
+		}
+	} else if ((max >= 0) && (item->total_usage + increment > (uint32_t)max)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is already at max value (%d)\n", hashkey, item->total_usage);
+		status = SWITCH_FALSE;
+		goto end;
+	}
+
+	if (increment) {
+		item->total_usage++;
+
+		switch_core_hash_insert(pvt->hash, hashkey, item);
+
+		if (max == -1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", hashkey, item->total_usage);
+		} else if (interval == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d/%d\n", hashkey, item->total_usage, max);	
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d/%d for the last %d seconds\n", hashkey, item->rate_usage, max, interval);
+		}
+
+		limit_fire_event(realm, id, item->total_usage, item->rate_usage, max, max >=0 ? (uint32_t)max : 0);
+	}
+
+	/* Save current usage & rate into channel variables so it can be used later in the dialplan, or added to CDR records */
+	{
+		const char *susage = switch_core_session_sprintf(session, "%d", item->total_usage);
+		const char *srate = switch_core_session_sprintf(session, "%d", item->rate_usage);
+
+		switch_channel_set_variable(channel, "limit_usage", susage);
+		switch_channel_set_variable(channel, switch_core_session_sprintf(session, "limit_usage_%s", hashkey), susage);
+
+		switch_channel_set_variable(channel, "limit_rate", srate);
+		switch_channel_set_variable(channel, switch_core_session_sprintf(session, "limit_rate_%s", hashkey), srate);
+	}
+
+	switch_core_event_hook_add_state_change(session, hash_state_handler);
+
+end:	
+	switch_mutex_unlock(globals.limit_hash_mutex);
+	return status;
+}
+
+/* !\brief Releases usage of a limit_hash-controlled ressource  */
+static void limit_hash_release(switch_core_session_t *session, const char *realm, const char *id)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	limit_hash_private_t *pvt = switch_channel_get_private(channel, "limit_hash");
+	limit_hash_item_t *item = NULL;
+	char *hashkey = switch_core_session_sprintf(session, "%s_%s", realm, id);
+	
+	switch_mutex_lock(globals.limit_hash_mutex);
+	
+	item = (limit_hash_item_t*)switch_core_hash_find(pvt->hash, hashkey);
+	item->total_usage--;	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)hashkey, item->total_usage);
+	
+	switch_core_hash_delete(pvt->hash, hashkey);
+	
+	if (item->total_usage == 0)  {
+		/* Noone is using this item anymore */
+		switch_core_hash_delete(globals.limit_hash, (const char*)hashkey);
+		free(item);
+	}
+	
+	switch_mutex_unlock(globals.limit_hash_mutex);
+}
+
 #define LIMITHASH_USAGE "<realm> <id> [<max>[/interval]] [number [dialplan [context]]]"
 #define LIMITHASH_DESC "limit access to a resource and transfer to an extension if the limit is exceeded"
 SWITCH_STANDARD_APP(limit_hash_function)
@@ -870,17 +994,12 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	char *mydata = NULL;
 	char *realm = NULL;
 	char *id = NULL;
-	char *hashkey = NULL;
 	char *xfer_exten = NULL;
 	int max = -1;
 	int interval = 0;
 	char *szinterval = NULL;
-	limit_hash_item_t *item = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	time_t now = switch_epoch_time_now(NULL);
-	limit_hash_private_t *pvt = NULL;
-	uint8_t increment = 1;
-	
+
 	/* Parse application data  */
 	if (!switch_strlen_zero(data)) {
 		mydata = switch_core_session_strdup(session, data);
@@ -916,96 +1035,76 @@ SWITCH_STANDARD_APP(limit_hash_function)
 		xfer_exten = limit_def_xfer_exten;
 	}
 	
-	hashkey = switch_core_session_sprintf(session, "%s_%s", realm, id);
-	
-	switch_mutex_lock(globals.limit_hash_mutex);
-	/* Check if that realm+id has ever been checked */
-	if (!(item = (limit_hash_item_t*)switch_core_hash_find(globals.limit_hash, hashkey))) {
-		/* No, create an empty structure and add it, then continue like as if it existed */
-		item = (limit_hash_item_t*)malloc(sizeof(limit_hash_item_t));
-		switch_assert(item);
-		memset(item, 0, sizeof(limit_hash_item_t));
-		switch_core_hash_insert(globals.limit_hash, hashkey, item);
-	}
-	
-	/* Did we already run on this channel before? */
-	if ((pvt = switch_channel_get_private(channel, "limit_hash")))
-	{
-		/* Yes, but check if we did that realm+id
-		   If we didnt, allow incrementing the counter.
-		   If we did, dont touch it but do the validation anyways
-		 */
-		increment = !switch_core_hash_find(pvt->hash, hashkey);
-	} else {
-		/* This is the first limit check on this channel, create a hashtable, set our prviate data and add a state handler */
-		pvt = (limit_hash_private_t*)switch_core_session_alloc(session, sizeof(limit_hash_private_t));
-		memset(pvt, 0, sizeof(limit_hash_private_t));
-		switch_core_hash_init(&pvt->hash, switch_core_session_get_pool(session));
-		switch_channel_set_private(channel, "limit_hash", pvt);
-	}
-
-	if (interval > 0) {
-		if (item->last_check <= (now - interval)) {
-			item->rate_usage = 1;
-			item->last_check = now;
-		} else {
-			/* Always increment rate when its checked as it doesnt depend on the channel */
-			item->rate_usage++;
-			
-			if ((max >= 0) && (item->rate_usage > (uint32_t)max)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s exceeds maximum rate of %d/%ds, now at %d\n", hashkey, max, interval, item->rate_usage);
-				if (*xfer_exten == '!') {
-					switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten+1));
-				} else {
-					switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
-				}
-				goto end;
-			}
-		}
-	} else if ((max >= 0) && (item->total_usage + increment > (uint32_t)max)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is already at max value (%d)\n", hashkey, item->total_usage);
+	if (!do_limit_hash(session, realm, id, max, interval)) {
+		/* Limit exceeded */
 		if (*xfer_exten == '!') {
 			switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten+1));
 		} else {
 			switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
 		}
-		goto end;
 	}
+}
 
-	if (increment) {
-		item->total_usage++;
-		
-		switch_core_hash_insert(pvt->hash, hashkey, item);
-		
-		if (max == -1) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", hashkey, item->total_usage);
-		} else if (interval == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d/%d\n", hashkey, item->total_usage, max);	
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d/%d for the last %d seconds\n", hashkey, item->rate_usage, max, interval);
+
+#define LIMITHASHEXECUTE_USAGE "<realm> <id> [<max>[/interval]] [number [dialplan [context]]]"
+#define LIMITHASHEXECUTE_DESC "limit access to a resource. the specified application will only be executed if the resource is available"
+SWITCH_STANDARD_APP(limit_hash_execute_function)
+{
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mydata = NULL;
+	char *realm = NULL;
+	char *id = NULL;
+	char *app = NULL;
+	char *app_arg = NULL;
+	int max = -1;
+	int interval = 0;
+	char *szinterval = NULL;
+
+	/* Parse application data  */
+	if (!switch_strlen_zero(data)) {
+		mydata = switch_core_session_strdup(session, data);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+	
+	if (argc < 2) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: limit_hash_execute %s\n", LIMITHASHEXECUTE_USAGE);
+		return;
+	}
+	
+	realm = argv[0];
+	id = argv[1];
+	
+	/* If max is omitted, only act as a counter and skip maximum checks */
+	if (argc > 2) {
+		if ((szinterval = strchr(argv[2], '/')))
+		{
+			*szinterval++ = '\0';
+			interval = atoi(szinterval);
 		}
 		
-		limit_fire_event(realm, id, item->total_usage, item->rate_usage, max, max >=0 ? (uint32_t)max : 0);
-	}
-	
-	/* Save current usage & rate into channel variables so it can be used later in the dialplan, or added to CDR records */
-	{
-		const char *susage = switch_core_session_sprintf(session, "%d", item->total_usage);
-		const char *srate = switch_core_session_sprintf(session, "%d", item->rate_usage);
+		max = atoi(argv[2]);
 		
-		switch_channel_set_variable(channel, "limit_usage", susage);
-		switch_channel_set_variable(channel, switch_core_session_sprintf(session, "limit_usage_%s", hashkey), susage);
-		 
-		switch_channel_set_variable(channel, "limit_rate", srate);
-		switch_channel_set_variable(channel, switch_core_session_sprintf(session, "limit_rate_%s", hashkey), srate);
+		if (max < 0) {
+			max = 0;
+		}
 	}
 
-	switch_core_event_hook_add_state_change(session, hash_state_handler);
 
-	
-end:	
-	switch_mutex_unlock(globals.limit_hash_mutex);
+	app = argv[3];
+	app_arg = argv[4];
+
+	if (switch_strlen_zero(app)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing application\n");
+		return;
+	}
+
+	if (do_limit_hash(session, realm, id, max, interval)) {
+		switch_core_session_execute_application(session, app, app_arg);
+		limit_hash_release(session, realm, id);
+	}
 }
+
 
 #define LIMIT_HASH_USAGE_USAGE "<realm> <id>"
 SWITCH_STANDARD_API(limit_hash_usage_function)
@@ -1080,6 +1179,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 
 	SWITCH_ADD_APP(app_interface, "limit", "Limit", LIMIT_DESC, limit_function, LIMIT_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "limit_hash", "Limit (hash)", LIMITHASH_DESC, limit_hash_function, LIMITHASH_USAGE, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "limit_hash_execute", "Limit (hash)", LIMITHASHEXECUTE_USAGE, limit_hash_execute_function, LIMITHASHEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "db", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "hash", "Insert into the hashtable", HASH_DESC, hash_function, HASH_USAGE, SAF_SUPPORT_NOMEDIA)
 	SWITCH_ADD_APP(app_interface, "group", "Manage a group", GROUP_DESC, group_function, GROUP_USAGE, SAF_SUPPORT_NOMEDIA);
