@@ -1516,6 +1516,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 			} else if (!strcmp(input, profile->next_msg_key)) {
 				cbt->move = VM_MOVE_NEXT;
 			} else if (!strcmp(input, profile->listen_file_key)) {
+				*cc.buf = '\0';
 				goto play_file;
 			} else if (!strcmp(input, profile->callback_key)) {
 				switch_core_session_execute_exten(session, cbt->cid_number, profile->callback_dialplan, profile->callback_context);
