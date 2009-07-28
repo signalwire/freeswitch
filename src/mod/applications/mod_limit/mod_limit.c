@@ -1046,12 +1046,12 @@ SWITCH_STANDARD_APP(limit_hash_function)
 }
 
 
-#define LIMITHASHEXECUTE_USAGE "<realm> <id> [<max>[/interval]] [number [dialplan [context]]]"
+#define LIMITHASHEXECUTE_USAGE "<realm> <id> [<max>[/interval]] [application] [application arguments]"
 #define LIMITHASHEXECUTE_DESC "limit access to a resource. the specified application will only be executed if the resource is available"
 SWITCH_STANDARD_APP(limit_hash_execute_function)
 {
 	int argc = 0;
-	char *argv[6] = { 0 };
+	char *argv[5] = { 0 };
 	char *mydata = NULL;
 	char *realm = NULL;
 	char *id = NULL;
