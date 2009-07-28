@@ -966,20 +966,27 @@ static void limit_hash_release(switch_core_session_t *session, const char *realm
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	limit_hash_private_t *pvt = switch_channel_get_private(channel, "limit_hash");
 	limit_hash_item_t *item = NULL;
-	char *hashkey = switch_core_session_sprintf(session, "%s_%s", realm, id);
+	char *hashkey = NULL;
+	
+	if (!pvt || !pvt->hash) {
+		return;
+	}
+	
+	hashkey = switch_core_session_sprintf(session, "%s_%s", realm, id);
 	
 	switch_mutex_lock(globals.limit_hash_mutex);
 	
-	item = (limit_hash_item_t*)switch_core_hash_find(pvt->hash, hashkey);
-	item->total_usage--;	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)hashkey, item->total_usage);
+	if ((item = (limit_hash_item_t*)switch_core_hash_find(pvt->hash, hashkey))) {
+		item->total_usage--;	
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)hashkey, item->total_usage);
 	
-	switch_core_hash_delete(pvt->hash, hashkey);
+		switch_core_hash_delete(pvt->hash, hashkey);
 	
-	if (item->total_usage == 0)  {
-		/* Noone is using this item anymore */
-		switch_core_hash_delete(globals.limit_hash, (const char*)hashkey);
-		free(item);
+		if (item->total_usage == 0)  {
+			/* Noone is using this item anymore */
+			switch_core_hash_delete(globals.limit_hash, (const char*)hashkey);
+			free(item);
+		}
 	}
 	
 	switch_mutex_unlock(globals.limit_hash_mutex);
