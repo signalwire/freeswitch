@@ -732,6 +732,11 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_ip_get(char **addr, switch_socka
 	return apr_sockaddr_ip_get(addr, sa);
 }
 
+SWITCH_DECLARE(int) switch_sockaddr_equal(const switch_sockaddr_t *sa1, const switch_sockaddr_t *sa2)
+{
+	return apr_sockaddr_equal(sa1, sa2);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_mcast_join(switch_socket_t *sock, switch_sockaddr_t *join, switch_sockaddr_t *iface, switch_sockaddr_t *source)
 {
 	return apr_mcast_join(sock, join, iface, source);
