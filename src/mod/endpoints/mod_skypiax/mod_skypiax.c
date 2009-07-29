@@ -132,8 +132,8 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string,
                                   globals.codec_rates_string);
 
 /* BEGIN: Changes here */
-static switch_status_t interface_exists(char *skype_user);
-static switch_status_t remove_interface(char *skype_user);
+static switch_status_t interface_exists(char *the_interface);
+static switch_status_t remove_interface(char *the_interface);
 /* END: Changes here */
 
 static switch_status_t channel_on_init(switch_core_session_t * session);
@@ -229,7 +229,7 @@ static switch_status_t interface_exists(char *the_interface)
           return SWITCH_STATUS_SUCCESS;
         }
     } else {
-
+      /* interface name */
       for (interface_id = 0; interface_id < SKYPIAX_MAX_INTERFACES; interface_id++) {
         if (strcmp(globals.SKYPIAX_INTERFACES[interface_id].name, the_interface) == 0) {
           return SWITCH_STATUS_SUCCESS;
@@ -241,8 +241,8 @@ static switch_status_t interface_exists(char *the_interface)
 
 
   for (i = 0; i < SKYPIAX_MAX_INTERFACES; i++) {
-    if (strlen(globals.SKYPIAX_INTERFACES[i].name)) {
-      if (strcmp(globals.SKYPIAX_INTERFACES[i].name, the_interface) == 0) {
+    if (strlen(globals.SKYPIAX_INTERFACES[i].skype_user)) {
+      if (strcmp(globals.SKYPIAX_INTERFACES[i].skype_user, the_interface) == 0) {
         return SWITCH_STATUS_SUCCESS;
       }
     }
@@ -1049,7 +1049,10 @@ static switch_status_t load_config(int reload_type)
 
       /* BEGIN: Changes here */
       if (reload_type == SOFT_RELOAD) {
-        if (interface_exists(name) == SWITCH_STATUS_SUCCESS) {
+		  char the_interface[256];
+		  sprintf(the_interface, "#%s", name);
+
+        if (interface_exists(the_interface) == SWITCH_STATUS_SUCCESS) {
           continue;
         }
       }
