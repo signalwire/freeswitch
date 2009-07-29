@@ -11,7 +11,7 @@
   </global_settings>
   <!-- one entry here per skypiax interface -->
   <per_interface_settings>
-    <interface id="1" name="skypiax1">
+    <interface id="1" name="interface1">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -19,9 +19,9 @@
 	<param name="tcp_cli_port" value="15556"/>
 	<param name="tcp_srv_port" value="15557"/>
 	<param name="skype_user" value="skypiax1"/>
-    	<param name="destination" value="3101"/>
+    	<param name="destination" value="5000"/>
     </interface>
-    <interface id="2" name="skypiax2">
+    <interface id="2" name="interface2">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -32,7 +32,7 @@
     	<param name="destination" value="5000"/>
     </interface>
     <!-- following interfaces are commented out!
-    <interface id="3" name="skypiax3">
+    <interface id="3" name="interface3">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -42,7 +42,7 @@
 	<param name="skype_user" value="skypiax3"/>
     </interface>
 
-    <interface id="4" name="skypiax4">
+    <interface id="4" name="interface4">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -52,7 +52,7 @@
 	<param name="skype_user" value="skypiax4"/>
     </interface>
 
-    <interface id="5" name="skypiax5">
+    <interface id="5" name="interface5">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -61,7 +61,7 @@
 	<param name="tcp_srv_port" value="15565"/>
 	<param name="skype_user" value="skypiax5"/>
     </interface>
-    <interface id="6" name="skypiax6">
+    <interface id="6" name="interface6">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -70,7 +70,7 @@
 	<param name="tcp_srv_port" value="15567"/>
 	<param name="skype_user" value="skypiax6"/>
     </interface>
-    <interface id="7" name="skypiax7">
+    <interface id="7" name="interface7">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -80,7 +80,7 @@
 	<param name="skype_user" value="skypiax7"/>
     </interface>
 
-    <interface id="8" name="skypiax8">
+    <interface id="8" name="interface8">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -90,7 +90,7 @@
 	<param name="skype_user" value="skypiax8"/>
     </interface>
 
-    <interface id="9" name="skypiax9">
+    <interface id="9" name="interface9">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -100,7 +100,7 @@
 	<param name="skype_user" value="skypiax9"/>
     </interface>
 
-    <interface id="10" name="skypiax10">
+    <interface id="10" name="interface10">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -110,7 +110,7 @@
 	<param name="skype_user" value="skypiax10"/>
     </interface>
 
-    <interface id="11" name="skypiax11">
+    <interface id="11" name="interface11">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -120,7 +120,7 @@
 	<param name="skype_user" value="skypiax11"/>
     </interface>
 
-    <interface id="12" name="skypiax12">
+    <interface id="12" name="interface12">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -130,7 +130,7 @@
 	<param name="skype_user" value="skypiax12"/>
     </interface>
 
-    <interface id="13" name="skypiax13">
+    <interface id="13" name="interface13">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -140,7 +140,7 @@
 	<param name="skype_user" value="skypiax13"/>
     </interface>
 
-    <interface id="14" name="skypiax14">
+    <interface id="14" name="interface14">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -150,7 +150,7 @@
 	<param name="skype_user" value="skypiax14"/>
     </interface>
 
-    <interface id="15" name="skypiax15">
+    <interface id="15" name="interface15">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -160,7 +160,7 @@
 	<param name="skype_user" value="skypiax15"/>
     </interface>
 
-    <interface id="16" name="skypiax16">
+    <interface id="16" name="interface16">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -170,7 +170,7 @@
 	<param name="skype_user" value="skypiax16"/>
     </interface>
 
-    <interface id="17" name="skypiax17">
+    <interface id="17" name="interface17">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -180,7 +180,7 @@
 	<param name="skype_user" value="skypiax17"/>
     </interface>
 
-    <interface id="18" name="skypiax18">
+    <interface id="18" name="interface18">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -190,7 +190,7 @@
 	<param name="skype_user" value="skypiax18"/>
     </interface>
 
-    <interface id="19" name="skypiax19">
+    <interface id="19" name="interface19">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
@@ -200,7 +200,7 @@
 	<param name="skype_user" value="skypiax19"/>
     </interface>
 
-    <interface id="20" name="skypiax20">
+    <interface id="20" name="interface20">
 	<param name="hold-music" value="$${moh_uri}"/>
 	<param name="dialplan" value="XML"/>
 	<param name="context" value="default"/>
