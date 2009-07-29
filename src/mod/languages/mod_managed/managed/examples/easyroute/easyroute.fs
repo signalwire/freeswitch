@@ -48,7 +48,7 @@ module easyroute =
     let regexOpts = Text.RegularExpressions.RegexOptions.Compiled ||| Text.RegularExpressions.RegexOptions.CultureInvariant
     let lookup (number: string) sep =
         try
-            let number = if numberRegexFilter = "" then number else Text.RegularExpressions.Regex.Replace(number, numberRegexFilter, "", regexOpts)
+            let number = if numberRegexFilter = "(?!.)" then number else Text.RegularExpressions.Regex.Replace(number, numberRegexFilter, "", regexOpts)
             use conn = new Odbc.OdbcConnection(connString)
             use comm = new Odbc.OdbcCommand(query, conn)
             comm.Parameters.AddWithValue("@number", number) |> ignore
