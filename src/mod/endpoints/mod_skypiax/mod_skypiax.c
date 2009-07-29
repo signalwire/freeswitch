@@ -348,9 +348,14 @@ static switch_status_t remove_interface(char *interface)
                        globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread);
   }
 
-  memset(&globals.SKYPIAX_INTERFACES[interface_id], '\0', sizeof(private_t));
-
   switch_mutex_lock(globals.mutex);
+  if(globals.sk_console == &globals.SKYPIAX_INTERFACES[interface_id]){
+	DEBUGA_SKYPE("interface '%s' no more console\n", SKYPIAX_P_LOG, interface);
+	globals.sk_console = NULL;
+  } else {
+	DEBUGA_SKYPE("interface '%s' STILL console\n", SKYPIAX_P_LOG, interface);
+  }
+  memset(&globals.SKYPIAX_INTERFACES[interface_id], '\0', sizeof(private_t));
   globals.real_interfaces--;
   switch_mutex_unlock(globals.mutex);
 
