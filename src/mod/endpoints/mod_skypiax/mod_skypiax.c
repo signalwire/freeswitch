@@ -928,6 +928,7 @@ static switch_status_t load_config(int reload_type)
   if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
     ERRORA("open of %s failed\n", SKYPIAX_P_LOG, cf);
     running = 0;
+	switch_xml_free(xml);
     return SWITCH_STATUS_TERM;
   }
 
@@ -1224,6 +1225,7 @@ static switch_status_t load_config(int reload_type)
             ("Failed to connect to a SKYPE API for interface_id=%d, no SKYPE client running, please (re)start Skype client. Skypiax exiting\n",
              SKYPIAX_P_LOG, interface_id);
           running = 0;
+		  switch_xml_free(xml);
           return SWITCH_STATUS_FALSE;
         }
 
@@ -1247,6 +1249,7 @@ static switch_status_t load_config(int reload_type)
              interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user,
              globals.SKYPIAX_INTERFACES[interface_id].skype_user);
           running = 0;
+		  switch_xml_free(xml);
           return SWITCH_STATUS_FALSE;
         }
 
