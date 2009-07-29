@@ -238,6 +238,7 @@ struct private_object {
   struct timeval transfer_time;
   char transfer_callid_number[50];
   char skype_transfer_call_id[512];
+  int running;
 };
 
 typedef struct private_object private_t;
@@ -276,6 +277,7 @@ int skypiax_pipe_write(int pipe, short *buf, int howmany);
 #endif /* WIN32 */
 int skypiax_close_socket(unsigned int fd);
 private_t *find_available_skypiax_interface(private_t * tech_pvt);
+private_t *find_available_skypiax_interface_rr(void);
 int remote_party_is_ringing(private_t * tech_pvt);
 int remote_party_is_early_media(private_t * tech_pvt);
 int skypiax_answer(private_t * tech_pvt, char *id, char *value);

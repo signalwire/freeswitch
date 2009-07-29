@@ -489,7 +489,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
     fd_set fsgio;
     struct timeval togio;
 
-    if (!running)
+    if (!(running && tech_pvt->running))
       break;
     FD_ZERO(&fsgio);
     togio.tv_usec = 20000;      //20msec
@@ -506,7 +506,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
       while ((fd = accept(s, (struct sockaddr *) &remote_addr, &sin_size)) > 0) {
         DEBUGA_SKYPE("ACCEPTED here I send you %d\n", SKYPIAX_P_LOG,
                      tech_pvt->tcp_srv_port);
-        if (!running)
+        if (!(running && tech_pvt->running))
           break;
         while (tech_pvt->interface_state != SKYPIAX_STATE_DOWN
                && (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
@@ -519,7 +519,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
           fd_set fs;
           struct timeval to;
 
-          if (!running)
+          if (!(running && tech_pvt->running))
             break;
           //exit = 1;
 
@@ -677,7 +677,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
     fd_set fsgio;
     struct timeval togio;
 
-    if (!running)
+    if (!(running && tech_pvt->running))
       break;
     FD_ZERO(&fsgio);
     togio.tv_usec = 20000;      //20msec
@@ -698,7 +698,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
         fcntl(tech_pvt->audioskypepipe[0], F_SETFL, O_NONBLOCK);
 #endif //WIN32
 
-        if (!running)
+        if (!(running && tech_pvt->running))
           break;
         while (tech_pvt->interface_state != SKYPIAX_STATE_DOWN
                && (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
@@ -710,7 +710,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
           fd_set fs;
           struct timeval to;
 
-          if (!running)
+          if (!(running && tech_pvt->running))
             break;
           FD_ZERO(&fs);
           to.tv_usec = 120000;  //120msec
@@ -1238,9 +1238,9 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
              (WPARAM) tech_pvt->SkypiaxHandles.win32_hInit_MainWindowHandle, 0) != 0) {
           tech_pvt->SkypiaxHandles.win32_hInit_MainWindowHandle =
             tech_pvt->SkypiaxHandles.win32_hInit_MainWindowHandle;
-          while (running) {
+          while (running && tech_pvt->running) {
             MSG oMessage;
-            if (!running)
+            if (! (running && tech_pvt->running))
               break;
             while (GetMessage(&oMessage, 0, 0, 0)) {
               TranslateMessage(&oMessage);
@@ -1264,7 +1264,7 @@ int X11_errors_handler(Display * dpy, XErrorEvent * err)
   private_t *tech_pvt = NULL;
 
   xerror = err->error_code;
-  ERRORA("Received error code %d from X Server\n\n", SKYPIAX_P_LOG, xerror);
+  ERRORA("Received error code %d from X Server\n\n", SKYPIAX_P_LOG, xerror); ///FIXME why crash the entire skypiax? just crash the interface, instead
   running = 0;
   return 0;                     /*  ignore the error */
 }
@@ -1489,7 +1489,7 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 
     while (1) {
       XNextEvent(disp, &an_event);
-      if (!running)
+      if (! (running && tech_pvt->running))
         break;
       switch (an_event.type) {
       case ClientMessage:
@@ -1557,7 +1557,7 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
     running = 0;
     return NULL;
   }
-  running = 0;
+  //running = 0;
   return NULL;
 
 }

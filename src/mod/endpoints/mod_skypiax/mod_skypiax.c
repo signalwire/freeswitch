@@ -86,7 +86,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown);
 SWITCH_MODULE_DEFINITION(mod_skypiax, mod_skypiax_load, mod_skypiax_shutdown, NULL);
 SWITCH_STANDARD_API(sk_function);
 /* BEGIN: Changes here */
-#define SK_SYNTAX "list || reload || console || remove interface_name || skype_API_msg"
+#define SK_SYNTAX "list [full] || console || skype_API_msg || remove <skypeusername | #interface_name | #interface_id> || reload"
 /* END: Changes heres */
 SWITCH_STANDARD_API(skypiax_function);
 #define SKYPIAX_SYNTAX "interface_name skype_API_msg"
@@ -111,7 +111,9 @@ static struct {
   int codec_rates_last;
   unsigned int flags;
   int fd;
-  int calls;
+  int calls;          
+  int real_interfaces;
+  int next_interface;
   char hold_music[256];
   private_t SKYPIAX_INTERFACES[SKYPIAX_MAX_INTERFACES];
   switch_mutex_t *mutex;
@@ -211,20 +213,45 @@ void skypiax_tech_init(private_t * tech_pvt, switch_core_session_t * session)
 }
 
 /* BEGIN: Changes here */
-static switch_status_t interface_exists(char *skype_user)
+static switch_status_t interface_exists(char *interface)
 {
   int i;
+  int interface_id;
+
+  if ( *interface == '#') { /* look by interface id or interface name */
+    interface++;
+    switch_assert(interface);
+    interface_id = atoi(interface);
+
+      /* take a number as interface id */
+    if ( interface_id > 0 || (interface_id == 0 && strcmp(interface, "0") == 0 )) {
+        if (strlen(globals.SKYPIAX_INTERFACES[interface_id].name)) {
+          return SWITCH_STATUS_SUCCESS;
+        }
+    } else {
+
+      for (interface_id = 0; interface_id < SKYPIAX_MAX_INTERFACES; interface_id++) {
+        if (strcmp(globals.SKYPIAX_INTERFACES[interface_id].name, interface) == 0) {
+          return SWITCH_STATUS_SUCCESS;
+          break;
+        }
+      }
+    }
+  } else { /* look by skype_user */
+
+
   for (i = 0; i < SKYPIAX_MAX_INTERFACES; i++) {
     if (strlen(globals.SKYPIAX_INTERFACES[i].name)) {
-      if (strcmp(globals.SKYPIAX_INTERFACES[i].skype_user, skype_user) == 0) {
+      if (strcmp(globals.SKYPIAX_INTERFACES[i].name, interface) == 0) {
         return SWITCH_STATUS_SUCCESS;
       }
     }
   }
+  }
   return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t remove_interface(char *skype_user)
+static switch_status_t remove_interface(char *interface)
 {
   int x = 100;
   unsigned int howmany = 8;
@@ -232,25 +259,47 @@ static switch_status_t remove_interface(char *skype_user)
   private_t *tech_pvt = NULL;
   switch_status_t status;
 
-  running = 0;
+  //running = 0;
 
-  for (interface_id = 0; interface_id < SKYPIAX_MAX_INTERFACES; interface_id++) {
-    if (strcmp(globals.SKYPIAX_INTERFACES[interface_id].skype_user, skype_user) == 0) {
+
+  if ( *interface == '#') { /* remove by interface id or interface name */
+    interface++;
+    switch_assert(interface);
+    interface_id = atoi(interface);
+
+    if ( interface_id > 0 || (interface_id == 0 && strcmp(interface, "0") == 0 )) {
+      /* take a number as interface id */
       tech_pvt = &globals.SKYPIAX_INTERFACES[interface_id];
-      break;
+    } else {
+
+      for (interface_id = 0; interface_id < SKYPIAX_MAX_INTERFACES; interface_id++) {
+        if (strcmp(globals.SKYPIAX_INTERFACES[interface_id].name, interface) == 0) {
+          tech_pvt = &globals.SKYPIAX_INTERFACES[interface_id];
+          break;
+        }
+      }
+    }
+  } else { /* remove by skype_user */
+    for (interface_id = 0; interface_id < SKYPIAX_MAX_INTERFACES; interface_id++) {
+      if (strcmp(globals.SKYPIAX_INTERFACES[interface_id].skype_user, interface) == 0) {
+        tech_pvt = &globals.SKYPIAX_INTERFACES[interface_id];
+        break;
+      }
     }
   }
 
   if (!tech_pvt) {
-    DEBUGA_SKYPE("interface for skype user '%s' does not exist\n", SKYPIAX_P_LOG,
-                 skype_user);
+    DEBUGA_SKYPE("interface '%s' does not exist\n", SKYPIAX_P_LOG,
+                 interface);
     goto end;
   }
 
   if (strlen(globals.SKYPIAX_INTERFACES[interface_id].session_uuid_str)) {
-    DEBUGA_SKYPE("interface for skype user '%s' is busy\n", SKYPIAX_P_LOG, skype_user);
+    DEBUGA_SKYPE("interface '%s' is busy\n", SKYPIAX_P_LOG, interface);
     goto end;
   }
+
+  globals.SKYPIAX_INTERFACES[interface_id].running=0;
 
   if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
 #ifdef WIN32
@@ -300,10 +349,16 @@ static switch_status_t remove_interface(char *skype_user)
   }
 
   memset(&globals.SKYPIAX_INTERFACES[interface_id], '\0', sizeof(private_t));
-  DEBUGA_SKYPE("interface for skype user '%s' deleted successfully\n", SKYPIAX_P_LOG,
-               skype_user);
+
+  switch_mutex_lock(globals.mutex);
+  globals.real_interfaces--;
+  switch_mutex_unlock(globals.mutex);
+
+  DEBUGA_SKYPE("interface '%s' deleted successfully\n", SKYPIAX_P_LOG,
+               interface);
+  globals.SKYPIAX_INTERFACES[interface_id].running=1;
 end:
-  running = 1;
+  //running = 1;
   return SWITCH_STATUS_SUCCESS;
 }
 
@@ -333,6 +388,7 @@ static switch_status_t channel_on_init(switch_core_session_t * session)
   switch_channel_set_state(channel, CS_ROUTING);
   switch_mutex_lock(globals.mutex);
   globals.calls++;
+
   switch_mutex_unlock(globals.mutex);
 
   DEBUGA_SKYPE("%s CHANNEL INIT\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
@@ -716,9 +772,14 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t * sess
           /* we've been asked for the "ANY" interface, let's find the first idle interface */
           DEBUGA_SKYPE("Finding one available skype interface\n", SKYPIAX_P_LOG);
           tech_pvt = find_available_skypiax_interface(NULL);
-          if (tech_pvt)
-            found = 1;
+          if (tech_pvt) found = 1;
+        } else if(strncmp("RR", interface_name, strlen(interface_name)) == 0) {
+          /* Find the first idle interface using Round Robin */
+          DEBUGA_SKYPE("Finding one available skype interface RR\n", SKYPIAX_P_LOG);
+          tech_pvt = find_available_skypiax_interface_rr();
+          if (tech_pvt) found = 1;
         }
+
         for (i = 0; !found && i < SKYPIAX_MAX_INTERFACES; i++) {
           /* we've been asked for a normal interface name, or we have not found idle interfaces to serve as the "ANY" interface */
           if (strlen(globals.SKYPIAX_INTERFACES[i].name)
@@ -815,7 +876,7 @@ static void *SWITCH_THREAD_FUNC skypiax_signaling_thread_func(switch_thread_t * 
                (void *) tech_pvt);
 
   while (forever) {
-    if (!running)
+    if (!(running && tech_pvt->running))
       break;
     res = skypiax_signaling_read(tech_pvt);
     if (res == CALLFLOW_INCOMING_HANGUP) {
@@ -983,7 +1044,7 @@ static switch_status_t load_config(int reload_type)
 
       /* BEGIN: Changes here */
       if (reload_type == SOFT_RELOAD) {
-        if (interface_exists(skype_user) == SWITCH_STATUS_SUCCESS) {
+        if (interface_exists(name) == SWITCH_STATUS_SUCCESS) {
           continue;
         }
       }
@@ -1049,6 +1110,8 @@ static switch_status_t load_config(int reload_type)
 
         memset(&newconf, '\0', sizeof(newconf));
         globals.SKYPIAX_INTERFACES[interface_id] = newconf;
+		globals.SKYPIAX_INTERFACES[interface_id].running = 1;
+
 
         tech_pvt = &globals.SKYPIAX_INTERFACES[interface_id];
 
@@ -1189,6 +1252,9 @@ static switch_status_t load_config(int reload_type)
 
     for (i = 0; i < SKYPIAX_MAX_INTERFACES; i++) {
       if (strlen(globals.SKYPIAX_INTERFACES[i].name)) {
+               /* How many real intterfaces */
+               globals.real_interfaces = i + 1;
+
         tech_pvt = &globals.SKYPIAX_INTERFACES[i];
 
         DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].interface_id=%s\n",
@@ -1550,6 +1616,48 @@ private_t *find_available_skypiax_interface(private_t * tech_pvt)
   else
     return NULL;
 }
+   
+private_t *find_available_skypiax_interface_rr(void)
+{
+  private_t *tech_pvt = NULL;
+  int i;
+  /* int num_interfaces = SKYPIAX_MAX_INTERFACES; */
+  int num_interfaces = globals.real_interfaces;
+
+  switch_mutex_lock(globals.mutex);
+
+  /* Fact is the real interface start from 1 */
+  if (globals.next_interface == 0) globals.next_interface = 1;
+
+  for (i = 0; i < num_interfaces; i++) { 
+    int interface_id;
+
+    interface_id = globals.next_interface + i;
+    interface_id = interface_id < num_interfaces ? interface_id : interface_id - num_interfaces + 1;
+
+    if (strlen(globals.SKYPIAX_INTERFACES[interface_id].name)) {
+      int skype_state = 0;
+
+      tech_pvt = &globals.SKYPIAX_INTERFACES[interface_id];
+      skype_state = tech_pvt->interface_state;
+      DEBUGA_SKYPE("skype interface: %d, name: %s, state: %d\n", SKYPIAX_P_LOG, interface_id,
+                         globals.SKYPIAX_INTERFACES[interface_id].name, skype_state);
+      if (SKYPIAX_STATE_DOWN == skype_state || 0 == skype_state) {
+        /*set to Dialing state to avoid other thread fint it, don't know if it is safe */
+        tech_pvt->interface_state = SKYPIAX_STATE_DIALING ;
+        
+        globals.next_interface = interface_id + 1 < num_interfaces ? interface_id + 1 : 1;
+        switch_mutex_unlock(globals.mutex);
+        return tech_pvt;
+      }
+    } else {
+      DEBUGA_SKYPE("Skype interface: %d blank!! A hole here means we cannot hunt the last interface.\n", SKYPIAX_P_LOG, interface_id);
+    }
+  }
+
+  switch_mutex_unlock(globals.mutex);
+  return NULL;
+}
 
 SWITCH_STANDARD_API(sk_function)
 {
@@ -1571,21 +1679,32 @@ SWITCH_STANDARD_API(sk_function)
   }
 
   if (!strcasecmp(argv[0], "list")) {
-    int i;
+    int i;             
+       char next_flag_char = ' ';
+
     for (i = 0; i < SKYPIAX_MAX_INTERFACES; i++) {
+         next_flag_char = i == globals.next_interface ? '*' : ' ';
+
       if (strlen(globals.SKYPIAX_INTERFACES[i].name)) {
         if (strlen(globals.SKYPIAX_INTERFACES[i].session_uuid_str)) {
           stream->write_function(stream,
-                                 "globals.SKYPIAX_INTERFACES[%d].name=\t|||%s||| is \tBUSY, session_uuid_str=|||%s|||\n",
+                                 "%c\t%d\t[%s]\tBUSY, session_uuid_str=|||%s|||\n",
+                                 next_flag_char,
                                  i, globals.SKYPIAX_INTERFACES[i].name,
                                  globals.SKYPIAX_INTERFACES[i].session_uuid_str);
         } else {
           stream->write_function(stream,
-                                 "globals.SKYPIAX_INTERFACES[%d].name=\t|||%s||| is \tIDLE\n",
+                                 "%c\t%d\t[%s]\tIDLE\n",
+                                 next_flag_char,
                                  i, globals.SKYPIAX_INTERFACES[i].name);
         }
-      }
+      } else if(argc > 1 && !strcasecmp(argv[1], "full")) {
+        stream->write_function(stream, "%c\t%d\n", next_flag_char, i);
+      }                                                                      
+
     }
+    stream->write_function(stream, "\nTotal: %d\n", globals.real_interfaces - 1 );
+
   } else if (!strcasecmp(argv[0], "console")) {
     int i;
     int found = 0;
