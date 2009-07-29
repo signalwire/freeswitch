@@ -111,7 +111,7 @@ struct shout_context {
 	int mp3err;
 	int dlen;
 	FILE *fp;
-	int samplerate;
+	size_t samplerate;
 	uint8_t thread_running;
 	uint8_t shout_init;
 	uint32_t prebuf;
@@ -791,7 +791,7 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 		}
 
 		switch_buffer_zero(context->audio_buffer);
-		*cur_sample = mpg123_seek (context->mh, samples, whence);
+		*cur_sample = mpg123_seek (context->mh, (off_t)samples, whence);
 
 		return *cur_sample >= 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 	}

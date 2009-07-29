@@ -741,15 +741,15 @@ int main(int argc, char *argv[])
 
 	if (destroy_status == SWITCH_STATUS_RESTART) {
 		char buf[1024] = "";
-		int i = 0;
+		int j = 0;
 		
 		switch_assert(local_argv[0]);
 		switch_sleep(1000000);
 		ret = (int)execv(local_argv[0], local_argv);
 		fprintf(stderr, "Restart Failed [%s] resorting to plan b\n", strerror(errno));
 
-		for(i = 0; i < argc; i++) {
-			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", local_argv[i]);
+		for(j = 0; i < argc; j++) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", local_argv[j]);
 		}
 
 		ret = system(buf);
