@@ -478,6 +478,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 
 	switch_event_unbind(&globals.node);
 	switch_event_free_subclass(MULTICAST_EVENT);
+	switch_event_free_subclass(MULTICAST_PEERUP);
+	switch_event_free_subclass(MULTICAST_PEERDOWN);
 
 	switch_core_hash_destroy(&globals.event_hash);
 
