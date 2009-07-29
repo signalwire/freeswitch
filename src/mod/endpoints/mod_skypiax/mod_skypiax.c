@@ -213,25 +213,25 @@ void skypiax_tech_init(private_t * tech_pvt, switch_core_session_t * session)
 }
 
 /* BEGIN: Changes here */
-static switch_status_t interface_exists(char *interface)
+static switch_status_t interface_exists(char *the_interface)
 {
   int i;
   int interface_id;
 
-  if ( *interface == '#') { /* look by interface id or interface name */
-    interface++;
-    switch_assert(interface);
-    interface_id = atoi(interface);
+  if ( *the_interface == '#') { /* look by interface id or interface name */
+    the_interface++;
+    switch_assert(the_interface);
+    interface_id = atoi(the_interface);
 
       /* take a number as interface id */
-    if ( interface_id > 0 || (interface_id == 0 && strcmp(interface, "0") == 0 )) {
+    if ( interface_id > 0 || (interface_id == 0 && strcmp(the_interface, "0") == 0 )) {
         if (strlen(globals.SKYPIAX_INTERFACES[interface_id].name)) {
           return SWITCH_STATUS_SUCCESS;
         }
     } else {
 
       for (interface_id = 0; interface_id < SKYPIAX_MAX_INTERFACES; interface_id++) {
-        if (strcmp(globals.SKYPIAX_INTERFACES[interface_id].name, interface) == 0) {
+        if (strcmp(globals.SKYPIAX_INTERFACES[interface_id].name, the_interface) == 0) {
           return SWITCH_STATUS_SUCCESS;
           break;
         }
@@ -242,7 +242,7 @@ static switch_status_t interface_exists(char *interface)
 
   for (i = 0; i < SKYPIAX_MAX_INTERFACES; i++) {
     if (strlen(globals.SKYPIAX_INTERFACES[i].name)) {
-      if (strcmp(globals.SKYPIAX_INTERFACES[i].name, interface) == 0) {
+      if (strcmp(globals.SKYPIAX_INTERFACES[i].name, the_interface) == 0) {
         return SWITCH_STATUS_SUCCESS;
       }
     }
@@ -251,7 +251,7 @@ static switch_status_t interface_exists(char *interface)
   return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t remove_interface(char *interface)
+static switch_status_t remove_interface(char *the_interface)
 {
   int x = 100;
   unsigned int howmany = 8;
@@ -262,18 +262,18 @@ static switch_status_t remove_interface(char *interface)
   //running = 0;
 
 
-  if ( *interface == '#') { /* remove by interface id or interface name */
-    interface++;
-    switch_assert(interface);
-    interface_id = atoi(interface);
+  if ( *the_interface == '#') { /* remove by interface id or interface name */
+    the_interface++;
+    switch_assert(the_interface);
+    interface_id = atoi(the_interface);
 
-    if ( interface_id > 0 || (interface_id == 0 && strcmp(interface, "0") == 0 )) {
+    if ( interface_id > 0 || (interface_id == 0 && strcmp(the_interface, "0") == 0 )) {
       /* take a number as interface id */
       tech_pvt = &globals.SKYPIAX_INTERFACES[interface_id];
     } else {
 
       for (interface_id = 0; interface_id < SKYPIAX_MAX_INTERFACES; interface_id++) {
-        if (strcmp(globals.SKYPIAX_INTERFACES[interface_id].name, interface) == 0) {
+        if (strcmp(globals.SKYPIAX_INTERFACES[interface_id].name, the_interface) == 0) {
           tech_pvt = &globals.SKYPIAX_INTERFACES[interface_id];
           break;
         }
@@ -281,7 +281,7 @@ static switch_status_t remove_interface(char *interface)
     }
   } else { /* remove by skype_user */
     for (interface_id = 0; interface_id < SKYPIAX_MAX_INTERFACES; interface_id++) {
-      if (strcmp(globals.SKYPIAX_INTERFACES[interface_id].skype_user, interface) == 0) {
+      if (strcmp(globals.SKYPIAX_INTERFACES[interface_id].skype_user, the_interface) == 0) {
         tech_pvt = &globals.SKYPIAX_INTERFACES[interface_id];
         break;
       }
@@ -290,12 +290,12 @@ static switch_status_t remove_interface(char *interface)
 
   if (!tech_pvt) {
     DEBUGA_SKYPE("interface '%s' does not exist\n", SKYPIAX_P_LOG,
-                 interface);
+                 the_interface);
     goto end;
   }
 
   if (strlen(globals.SKYPIAX_INTERFACES[interface_id].session_uuid_str)) {
-    DEBUGA_SKYPE("interface '%s' is busy\n", SKYPIAX_P_LOG, interface);
+    DEBUGA_SKYPE("interface '%s' is busy\n", SKYPIAX_P_LOG, the_interface);
     goto end;
   }
 
@@ -350,17 +350,17 @@ static switch_status_t remove_interface(char *interface)
 
   switch_mutex_lock(globals.mutex);
   if(globals.sk_console == &globals.SKYPIAX_INTERFACES[interface_id]){
-	DEBUGA_SKYPE("interface '%s' no more console\n", SKYPIAX_P_LOG, interface);
+	DEBUGA_SKYPE("interface '%s' no more console\n", SKYPIAX_P_LOG, the_interface);
 	globals.sk_console = NULL;
   } else {
-	DEBUGA_SKYPE("interface '%s' STILL console\n", SKYPIAX_P_LOG, interface);
+	DEBUGA_SKYPE("interface '%s' STILL console\n", SKYPIAX_P_LOG, the_interface);
   }
   memset(&globals.SKYPIAX_INTERFACES[interface_id], '\0', sizeof(private_t));
   globals.real_interfaces--;
   switch_mutex_unlock(globals.mutex);
 
   DEBUGA_SKYPE("interface '%s' deleted successfully\n", SKYPIAX_P_LOG,
-               interface);
+               the_interface);
   globals.SKYPIAX_INTERFACES[interface_id].running=1;
 end:
   //running = 1;
