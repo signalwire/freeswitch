@@ -181,7 +181,10 @@ namespace FreeSWITCH {
             var res = LoadInternal(file);
             isLoaded = true;
 
-            res = res && AppExecutors.Count > 0 && ApiExecutors.Count > 0;
+            if (res) {
+                res = (AppExecutors.Count > 0 || ApiExecutors.Count > 0);
+                if (!res) Log.WriteLine(LogLevel.Info, "No App or Api plugins found in {0}.", file);
+            }
             return res;
         }
 
