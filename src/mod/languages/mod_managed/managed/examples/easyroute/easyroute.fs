@@ -6,15 +6,25 @@ open FreeSWITCH
 type QueryResult = { dialstring: string; group: string; acctcode: string; limit: int; translated: string }
 
 module easyroute =
+    // Basic config
     let defaultStr def = function null | "" -> def | s -> s
     let getAppSetting (name:string) = match Configuration.ConfigurationManager.AppSettings.Get name with null -> "" | x -> x
     let connString      = getAppSetting "connectionString"
     let defaultProfile  = getAppSetting "defaultProfile"
     let defaultGateway  = getAppSetting "defaultGateway"
-    let query = getAppSetting "query"
+    let query           = getAppSetting "query"
     let configOk = [ connString; defaultProfile; defaultGateway; query; ] |> List.forall (String.IsNullOrEmpty >> not)
-    let keepBackslashes = defaultStr "false" (getAppSetting "keepBackslashes") = "true"
     let numberRegexFilter = defaultStr "[^0-9#]" (getAppSetting "numberRegexFilter")
+    
+    // Determine if ODBC driver quotes parameters properly - MySQL < 3.51.16 apparently does not
+    // We'll select the string "'" -- if quoting works, we'll get ' back. Otherwise, it'll fail, and we'll refuse to load
+    // Error 1064 seems to be the syntax error code MySQL returns. Otherwise, the exception will still stop it from loading, just less gracefully.
+    let odbcOk = use conn = new Odbc.OdbcConnection(connString)
+                 use comm = new Odbc.OdbcCommand("SELECT ?", conn)
+                 comm.Parameters.AddWithValue("@test", "'") |> ignore
+                 conn.Open()
+                 try string (comm.ExecuteScalar()) = "'" 
+                 with :? Odbc.OdbcException as ex when ex.Errors.Count > 0 && ex.Errors.[0].NativeError = 1064 -> false
                 
     let formatDialstring number gateway profile separator = 
         match separator with 
@@ -39,11 +49,9 @@ module easyroute =
     let lookup (number: string) sep =
         try
             let number = if numberRegexFilter = "" then number else Text.RegularExpressions.Regex.Replace(number, numberRegexFilter, "", regexOpts)
-            let number = if keepBackslashes        then number else number.Replace("\\", "") 
-            let query = query.Replace("%number%", sprintf "'%s'" (number.Replace("'", "''"))) // Don't use params cause some odbc drivers are awesome
-            Log.WriteLine(LogLevel.Debug, "EasyRoute query prepared: {0}", query)
             use conn = new Odbc.OdbcConnection(connString)
             use comm = new Odbc.OdbcCommand(query, conn)
+            comm.Parameters.AddWithValue("@number", number) |> ignore
             conn.Open()
             use reader = comm.ExecuteReader CommandBehavior.SingleRow
             match reader.Read() with
@@ -67,7 +75,8 @@ type EasyRoute() =
     interface ILoadNotificationPlugin with
         member x.Load() = 
             if not configOk then Log.WriteLine(LogLevel.Alert, "EasyRoute configuration is missing values.")
-            configOk
+            if not odbcOk   then Log.WriteLine(LogLevel.Critical, "ODBC driver doesn't handle quoting properly; upgrade driver.")
+            configOk && odbcOk
         
     interface IApiPlugin with
         member x.ExecuteBackground ctx = 
