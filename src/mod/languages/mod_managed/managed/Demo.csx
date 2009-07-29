@@ -32,7 +32,7 @@
 // How to test the demo (in the mod/managed directory):
 // -- Compile to dll for "normal" loading
 // -- Compile to exe for script EXE loading
-// -- Rename to demo.csx for dynamic compilation
+// -- Copy to managed directory for dynamic compilation
 
 using System;
 using FreeSWITCH;
@@ -85,7 +85,7 @@ public class LoadDemo : ILoadNotificationPlugin {
 
 public class ScriptDemo {
 
-    static void Main() {
+    public static void Main() {
         switch (FreeSWITCH.Script.ContextType) {
             case ScriptContextType.Api: {
                     var ctx = FreeSWITCH.Script.GetApiContext();

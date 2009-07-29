@@ -219,15 +219,24 @@ namespace FreeSWITCH {
             setup.ApplicationName = Path.GetFileName(fileName) + "_" + appDomainCount;
             var domain = AppDomain.CreateDomain(setup.ApplicationName, null, setup);
                 
-            var pm = (PluginManager)domain.CreateInstanceAndUnwrap(pmType.Assembly.FullName, pmType.FullName, null);
-            if (!pm.Load(fileName)) {
+            PluginManager pm;
+            try {
+                pm = (PluginManager)domain.CreateInstanceAndUnwrap(pmType.Assembly.FullName, pmType.FullName, null);
+                if (!pm.Load(fileName)) {
+                    AppDomain.Unload(domain);
+                    unloadFile(fileName);
+                    return;
+                }
+            } catch (Exception ex) {
+                // On an exception, we will unload the current file so an old copy doesnt stay active
+                Log.WriteLine(LogLevel.Alert, "Exception loading {0}: {1}", fileName, ex.ToString());
                 AppDomain.Unload(domain);
                 unloadFile(fileName);
                 return;
             }
 
+            // Update dictionaries atomically
             lock (loaderLock) {
-                // Update dictionaries atomically
                 unloadFile(fileName);
 
                 var pi = new PluginInfo { FileName = fileName, Domain = domain, Manager = pm };
@@ -279,7 +288,7 @@ namespace FreeSWITCH {
                         AppDomain.Unload(d);
                         Log.WriteLine(LogLevel.Info, "Unloaded {0}, domain {1}.", pi.FileName, friendlyName);
                     } catch (Exception ex) {
-                        Log.WriteLine(LogLevel.Critical, "Could not unload {0}, domain {1}: {2}", pi.FileName, friendlyName, ex.ToString());
+                        Log.WriteLine(LogLevel.Alert, "Could not unload {0}, domain {1}: {2}", pi.FileName, friendlyName, ex.ToString());
                     }
                 });
                 t.Priority = System.Threading.ThreadPriority.BelowNormal;

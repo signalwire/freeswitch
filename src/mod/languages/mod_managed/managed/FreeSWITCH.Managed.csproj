@@ -52,7 +52,7 @@
     <Compile Include="Loader.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Log.cs" />
-    <None Include="Demo.cs" />
+    <None Include="Demo.csx" />
     <Compile Include="PluginInterfaces.cs" />
     <Compile Include="PluginManager.cs" />
     <Compile Include="ScriptPluginManager.cs" />
