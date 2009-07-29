@@ -679,8 +679,16 @@ static void handle_exit(listener_t *listener, erlang_pid *pid)
 	remove_binding(NULL, pid); /* TODO - why don't we pass the listener as the first argument? */
 	if ((s = find_session_elem_by_pid(listener, pid))) {
 		if (s->channel_state < CS_HANGUP) {
+			switch_core_session_t *session;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Outbound session for %s exited unexpectedly!\n",
 					s->uuid_str);
+			
+			if ((session = switch_core_session_locate(s->uuid_str))) {
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				switch_channel_set_private(channel, "_erlang_session_", NULL);
+				switch_channel_set_private(channel, "_erlang_listener_", NULL);
+				/* TODO can we clear out the state_change hook too? */
+			}
 			/* TODO - if a spawned process that was handling an outbound call fails.. what do we do with the call? */
 		}
 		remove_session_elem_from_listener_locked(listener, s);
@@ -1064,7 +1072,8 @@ static switch_status_t state_handler(switch_core_session_t *session)
 	session_elem_t *session_element = switch_channel_get_private(channel, "_erlang_session_");
 	/*listener_t* listener = switch_channel_get_private(channel, "_erlang_listener_");*/
 	
-	session_element->channel_state = state;
+	if (session_element)
+		session_element->channel_state = state;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1295,8 +1304,12 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 
 			/* keep app thread running for lifetime of session */
 			if (switch_channel_down(switch_core_session_get_channel(session))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "outbound session all done\n");
-				switch_clear_flag_locked(session_element, LFLAG_SESSION_ALIVE);
+				if ((session_element = switch_channel_get_private(switch_core_session_get_channel(session), "_erlang_session_"))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "outbound session all done\n");
+					switch_clear_flag_locked(session_element, LFLAG_SESSION_ALIVE);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "outbound session already done\n");
+				}
 			}
 		}
 	}
