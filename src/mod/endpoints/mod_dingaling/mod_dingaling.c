@@ -596,7 +596,7 @@ static void ipchanged_event_handler(switch_event_t *event)
 			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, NULL, NULL, &val);
 				profile = (mdl_profile_t *) val;
-				if (!strcmp(profile->extip, old_ip4)) {
+				if (old_ip4 && !strcmp(profile->extip, old_ip4)) {
 					tmp = profile->extip;
 					profile->extip = strdup(new_ip4);
 					switch_safe_free(tmp);
@@ -1989,15 +1989,15 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		profile->name = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "message") && !switch_strlen_zero(val)) {
 		profile->message = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "local-network-acl")) {
+	} else if (!strcasecmp(var, "local-network-acl") && !switch_strlen_zero(val)) {
 		profile->local_network = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "rtp-ip")) {
 		profile->ip = switch_core_strdup(module_pool, strcasecmp(switch_str_nil(val), "auto") ? switch_str_nil(val) : globals.guess_ip);
 	} else if (!strcasecmp(var, "ext-rtp-ip")) {
 		char *ip = globals.guess_ip;
-		if (!strcasecmp(val, "auto-nat")) {
+		if (val && !strcasecmp(val, "auto-nat")) {
 			ip = globals.auto_nat ? switch_core_get_variable("nat_public_addr") : globals.guess_ip;
-		} else if (!strcasecmp(val, "auto")) {
+		} else if (val && !strcasecmp(val, "auto")) {
 			globals.auto_nat = 0;
 			ip = globals.guess_ip;
 		} else {

@@ -68,7 +68,7 @@ static struct {
 
 struct peer_status {
 	switch_bool_t active;
-	int lastseen;
+	time_t lastseen;
 };
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address);
@@ -179,11 +179,12 @@ static void event_handler(switch_event_t *event)
 	if (event->subclass_name && (!strcmp(event->subclass_name, MULTICAST_EVENT) ||
 				!strcmp(event->subclass_name, MULTICAST_PEERUP) ||
 				!strcmp(event->subclass_name, MULTICAST_PEERDOWN))) {
-		char * event_name;
-		if ((event_name = switch_event_get_header(event, "orig-event-name")) && !strcasecmp(event_name, "HEARTBEAT")) {
-			char *sender = switch_event_get_header(event, "orig-multicast-sender");
+		char * event_name, *sender;
+		if ((event_name = switch_event_get_header(event, "orig-event-name")) &&
+			!strcasecmp(event_name, "HEARTBEAT") && 
+			(sender = switch_event_get_header(event, "orig-multicast-sender"))) {
 			struct peer_status *p;
-			int now = switch_epoch_time_now(NULL);
+			time_t now = switch_epoch_time_now(NULL);
 			
 			if (!(p = switch_core_hash_find(globals.peer_hash, sender))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Host %s not already in hash\n", sender);
@@ -200,7 +201,7 @@ static void event_handler(switch_event_t *event)
 					char lastseen[21];
 					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Peer", sender);
 					if (p->lastseen) {
-						switch_snprintf(lastseen, sizeof(lastseen), "%d", p->lastseen);
+						switch_snprintf(lastseen, sizeof(lastseen), "%d", (int)p->lastseen);
 					} else {
 						switch_snprintf(lastseen, sizeof(lastseen), "%s", "Never");
 					}
@@ -243,7 +244,7 @@ static void event_handler(switch_event_t *event)
 		switch_ssize_t keylen;
 		const void *key;
 		void *value;
-		int now = switch_epoch_time_now(NULL);
+		time_t now = switch_epoch_time_now(NULL);
 		struct peer_status *last;
 		char *host;
 		
@@ -258,7 +259,7 @@ static void event_handler(switch_event_t *event)
 				if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_PEERDOWN) == SWITCH_STATUS_SUCCESS) {
 					char lastseen[21];
 					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Peer", host);
-					switch_snprintf(lastseen, sizeof(lastseen), "%d", last->lastseen);
+					switch_snprintf(lastseen, sizeof(lastseen), "%d", (int)last->lastseen);
 					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Lastseen", lastseen);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Peer %s has gone down; last seen: %s\n", host, lastseen);
 
@@ -347,7 +348,7 @@ SWITCH_STANDARD_API(multicast_peers)
 	switch_ssize_t keylen;
 	const void *key;
 	void *value;
-	int now = switch_epoch_time_now(NULL);
+	time_t now = switch_epoch_time_now(NULL);
 	struct peer_status *last;
 	char *host;
 	int i = 0;
