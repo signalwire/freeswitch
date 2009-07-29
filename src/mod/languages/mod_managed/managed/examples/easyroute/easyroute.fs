@@ -6,14 +6,15 @@ open FreeSWITCH
 type QueryResult = { dialstring: string; group: string; acctcode: string; limit: int; translated: string }
 
 module easyroute =
+    let defaultStr def = function null | "" -> def | s -> s
     let getAppSetting (name:string) = match Configuration.ConfigurationManager.AppSettings.Get name with null -> "" | x -> x
     let connString      = getAppSetting "connectionString"
     let defaultProfile  = getAppSetting "defaultProfile"
     let defaultGateway  = getAppSetting "defaultGateway"
-    let query = match getAppSetting "customQuery" with
-                | "" -> "SELECT gateways.gateway_ip, gateways.group, gateways.limit, gateways.techprofile, numbers.acctcode, numbers.translated from gateways, numbers where numbers.number = %number% and numbers.gateway_id = gateways.gateway_id;"
-                | x  -> x            
+    let query = getAppSetting "query"
     let configOk = [ connString; defaultProfile; defaultGateway; query; ] |> List.forall (String.IsNullOrEmpty >> not)
+    let keepBackslashes = defaultStr "false" (getAppSetting "keepBackslashes") = "true"
+    let numberRegexFilter = defaultStr "[^0-9#]" (getAppSetting "numberRegexFilter")
                 
     let formatDialstring number gateway profile separator = 
         match separator with 
@@ -25,19 +26,21 @@ module easyroute =
         limit = 9999; group = ""; acctcode = ""; translated = number; }
         
     let readResult (r: IDataReader) number sep =
-        let defString def = function null | "" -> def | s -> s
-        let gw          = defString defaultGateway <| r.GetString(0)
+        let gw          = defaultStr defaultGateway <| r.GetString(0)
         let group       = r.GetString(1)
         let limit       = match r.GetInt32(2) with 0 -> 9999 | x -> x
-        let profile     = defString defaultProfile <| r.GetString(3)
+        let profile     = defaultStr defaultProfile <| r.GetString(3)
         let acctcode    = r.GetString(4)
         let translated  = r.GetString(5)
         let dialstring = formatDialstring number gw profile sep
         { dialstring = dialstring; limit = limit; group = group; acctcode = acctcode; translated = translated; }
 
+    let regexOpts = Text.RegularExpressions.RegexOptions.Compiled ||| Text.RegularExpressions.RegexOptions.CultureInvariant
     let lookup (number: string) sep =
         try
-            let query = query.Replace("%number%", sprintf "'%s'" (number.Replace(@"\'", "'").Replace("'", "''"))) // Don't use params cause some odbc drivers are awesome
+            let number = if numberRegexFilter = "" then number else Text.RegularExpressions.Regex.Replace(number, numberRegexFilter, "", regexOpts)
+            let number = if keepBackslashes        then number else number.Replace("\\", "") 
+            let query = query.Replace("%number%", sprintf "'%s'" (number.Replace("'", "''"))) // Don't use params cause some odbc drivers are awesome
             Log.WriteLine(LogLevel.Debug, "EasyRoute query prepared: {0}", query)
             use conn = new Odbc.OdbcConnection(connString)
             use comm = new Odbc.OdbcCommand(query, conn)
