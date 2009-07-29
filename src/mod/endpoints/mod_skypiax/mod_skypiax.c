@@ -86,7 +86,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown);
 SWITCH_MODULE_DEFINITION(mod_skypiax, mod_skypiax_load, mod_skypiax_shutdown, NULL);
 SWITCH_STANDARD_API(sk_function);
 /* BEGIN: Changes here */
-#define SK_SYNTAX "list [full] || console || skype_API_msg || remove <skypeusername | #interface_name | #interface_id> || reload"
+#define SK_SYNTAX "list [full] || console || skype_API_msg || remove < skypeusername | #interface_name | #interface_id > || reload"
 /* END: Changes heres */
 SWITCH_STANDARD_API(skypiax_function);
 #define SKYPIAX_SYNTAX "interface_name skype_API_msg"
