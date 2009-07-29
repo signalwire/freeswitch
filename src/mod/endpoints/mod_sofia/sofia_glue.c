@@ -635,7 +635,8 @@ const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name)
 
 switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int force)
 {
-	char *ip = tech_pvt->profile->rtpip;
+	char *rtpip = tech_pvt->profile->rtpip;
+	char *lookup_rtpip = NULL;
 	switch_port_t sdp_port;
 	char tmp[50];
 	const char *use_ip = NULL;
@@ -653,7 +654,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 	}
 
 
-	tech_pvt->local_sdp_audio_ip = ip;
+	tech_pvt->local_sdp_audio_ip = rtpip;
 
 	if (!(tech_pvt->local_sdp_audio_port = switch_rtp_request_port(tech_pvt->profile->rtpip))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No RTP ports available!\n");
@@ -669,17 +670,17 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 
 	if (use_ip) {
 		tech_pvt->extrtpip = switch_core_session_strdup(tech_pvt->session, use_ip);
-		if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &ip, &sdp_port, 
+		if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &lookup_rtpip, &sdp_port, 
 										  tech_pvt->extrtpip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
 	}
 
-	if (!use_ip && tech_pvt->profile->extrtpip && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
-		tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, ip ? ip : tech_pvt->profile->extrtpip);
+	if (tech_pvt->profile->extrtpip && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+		tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, lookup_rtpip ? lookup_rtpip : tech_pvt->profile->extrtpip);
 		switch_nat_add_mapping((switch_port_t)sdp_port, SWITCH_NAT_UDP, &external_port, SWITCH_FALSE);
 	} else {
-		tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, ip);
+		tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, rtpip);
 	}
 	
 	tech_pvt->adv_sdp_audio_port = external_port != 0 ? external_port : sdp_port;
