@@ -688,6 +688,7 @@ static void handle_exit(listener_t *listener, erlang_pid *pid)
 				switch_channel_set_private(channel, "_erlang_session_", NULL);
 				switch_channel_set_private(channel, "_erlang_listener_", NULL);
 				/* TODO can we clear out the state_change hook too? */
+				switch_core_session_rwunlock(session);
 			}
 			/* TODO - if a spawned process that was handling an outbound call fails.. what do we do with the call? */
 		}
