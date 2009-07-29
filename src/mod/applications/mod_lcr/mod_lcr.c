@@ -671,11 +671,11 @@ static switch_status_t is_intrastatelata(callback_t *cb_struct)
 		e164 format without the +
 		NANP only (so 11 digits starting with 1)
 	*/
-	if (!cb_struct->lookup_number && strlen(cb_struct->lookup_number) != 11 && *cb_struct->lookup_number != '1') {
+	if (!cb_struct->lookup_number || strlen(cb_struct->lookup_number) != 11 && *cb_struct->lookup_number != '1') {
 		/* dest doesn't appear to be NANP number */
 		return SWITCH_STATUS_GENERR;
 	}
-	if (!cb_struct->cid && strlen(cb_struct->cid) != 11 && *cb_struct->cid != '1') {
+	if (!cb_struct->cid || strlen(cb_struct->cid) != 11 && *cb_struct->cid != '1') {
 		/* cid not NANP */
 		return SWITCH_STATUS_GENERR;
 	}
@@ -1278,7 +1278,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 	lcr_route current = NULL;
 	max_obj_t maximum_lengths = { 0 };
 	callback_t cb_struct = { 0 };
-	switch_memory_pool_t *pool;
+	switch_memory_pool_t *pool = NULL;
 	switch_event_t *event;
 	switch_status_t lookup_status = SWITCH_STATUS_SUCCESS;
 	switch_bool_t as_xml = SWITCH_FALSE;
