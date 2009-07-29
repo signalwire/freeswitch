@@ -2416,6 +2416,55 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/* <gateway_name> [ivar|ovar|var] <name> */
+SWITCH_STANDARD_API(sofia_gateway_data_function)
+{
+	char *argv[4];
+	char *mydata;
+	int argc;
+	sofia_gateway_t *gateway;
+	char *gwname, *param, *varname;
+	const char *val = NULL;
+	
+	if (!(mydata = strdup(cmd))) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (!(argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) || !argv[0]) {
+		goto end;
+	}
+	
+	gwname = argv[0];
+	param = argv[1];
+	varname = argv[2];
+	
+	if (switch_strlen_zero(gwname) || switch_strlen_zero(param) || switch_strlen_zero(varname)) {
+		goto end;
+	}
+	
+	if (!(gateway = sofia_reg_find_gateway(gwname))) {
+		goto end;
+	}
+	
+	if (!strcasecmp(param, "ivar") && gateway->ib_vars && (val = switch_event_get_header(gateway->ib_vars, varname))) {
+		stream->write_function(stream, "%s", val);
+	} else if (!strcasecmp(param, "ovar") && gateway->ob_vars && (val = switch_event_get_header(gateway->ob_vars, varname))) {
+		stream->write_function(stream, "%s", val);		
+	} else if (!strcasecmp(param, "var")) {
+		if (gateway->ib_vars && (val = switch_event_get_header(gateway->ib_vars, varname))) {
+			stream->write_function(stream, "%s", val);
+		} else if (gateway->ob_vars && (val = switch_event_get_header(gateway->ob_vars, varname))) {
+			stream->write_function(stream, "%s", val);
+		}
+	}
+	
+	sofia_reg_release_gateway(gateway);
+	
+end:
+	switch_safe_free(mydata);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(sofia_function)
 {
 	char *argv[1024] = { 0 };
@@ -3337,6 +3386,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	management_interface->management_function = sofia_manage;
 
 	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");
+	SWITCH_ADD_API(api_interface, "sofia_gateway_data", "Get data from a sofia gateway", sofia_gateway_data_function, "<gateway_name> [ivar|ovar|var] <name>");
 	switch_console_set_complete("add sofia help");
 	switch_console_set_complete("add sofia status");
 	switch_console_set_complete("add sofia loglevel");
