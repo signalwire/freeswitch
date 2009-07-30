@@ -748,7 +748,7 @@ int main(int argc, char *argv[])
 		ret = (int)execv(local_argv[0], local_argv);
 		fprintf(stderr, "Restart Failed [%s] resorting to plan b\n", strerror(errno));
 
-		for(j = 0; i < argc; j++) {
+		for(j = 0; j < argc; j++) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", local_argv[j]);
 		}
 
