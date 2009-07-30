@@ -128,6 +128,7 @@ static int __pri_lpwrap_read(struct pri *pri, void *buf, int buflen)
 		zap_clear_flag(spri, LPWRAP_PRI_READY);
 		return -1;
 	}
+	spri->errs = 0;
 	res = (int)len;
 	memset(&((unsigned char*)buf)[res],0,2);
 	res+=2;
