@@ -134,12 +134,15 @@ static int get_pmp_pubaddr(char *pub_addr)
 	char *pubaddr = NULL;
 	fd_set fds;
 	natpmp_t natpmp;
+	const char *err = NULL;
+	
+	if ((r = initnatpmp(&natpmp)) < 0) {
+		err = "init failed";
+		goto end;
+	}
 
-
-	initnatpmp(&natpmp);
-	r = sendpublicaddressrequest(&natpmp);
-
-	if (r < 0) {
+	if ((r = sendpublicaddressrequest(&natpmp)) < 0) {
+		err = "pub addr req failed";
 		goto end;
 	}
 
@@ -150,15 +153,23 @@ static int get_pmp_pubaddr(char *pub_addr)
 
 		FD_ZERO(&fds);
 		FD_SET(natpmp.s, &fds);
-		getnatpmprequesttimeout(&natpmp, &timeout);
-		select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
+
+		if ((r = getnatpmprequesttimeout(&natpmp, &timeout)) < 0) {
+			err = "get timeout failed";
+			goto end;
+		}
+
+		if ((r = select(FD_SETSIZE, &fds, NULL, NULL, &timeout)) < 0) {
+			err = "select failed";
+			goto end;
+		}
 		r = readnatpmpresponseorretry(&natpmp, &response);
 	} while(r == NATPMP_TRYAGAIN && i < max);
 
 	if (r < 0) {
+		err = "general error";
 		goto end;
 	}
-
 
 	pubaddr = inet_ntoa(response.pnu.publicaddress.addr);
 	switch_copy_string(pub_addr, pubaddr, IP_LEN);
@@ -167,6 +178,10 @@ static int get_pmp_pubaddr(char *pub_addr)
 	closenatpmp(&natpmp);
 
  end:
+
+	if (err) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error checking for PMP [%s]\n", err);
+	}
 
 	return r;
 }
