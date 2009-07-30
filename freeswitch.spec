@@ -241,7 +241,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description cd-moh
-40khz CD Quality FreeSWITCH Music on hold files
+48khz CD Quality FreeSWITCH Music on hold files
 
 
 %package sounds-en-callie
@@ -277,7 +277,7 @@ Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
 %description cd-sounds-en-callie
-40khz CD Quality English prompts for Freeswitch
+48khz CD Quality English prompts for Freeswitch
 
 
 %prep
