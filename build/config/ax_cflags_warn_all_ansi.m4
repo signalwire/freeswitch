@@ -14,12 +14,12 @@ VAR,[VAR="no, unknown"
 for ac_arg dnl
 in "-pedantic  % -Wall -std=c99 -pedantic"       dnl   GCC
    "-xstrconst % -v -Xc -xc99=all"                      dnl Solaris C
-   "-std1      % -verbose -w0 -warnprotos -std1" dnl Digital Unix
-   " % -qlanglvl=ansi -qsrcmsg -qinfo=all:noppt:noppc:noobs:nocnd" dnl AIX
-   " % -ansi -ansiE -fullwarn"                dnl IRIX
-   "+ESlit     % +w1 -Aa"                     dnl HP-UX C
-   "-Xc        % -pvctl[,]fullmsg -Xc"        dnl NEC SX-5 (Super-UX 10)
-   "-h conform % -h msglevel 2 -h conform"    dnl Cray C (Unicos)
+#   "-std1      % -verbose -w0 -warnprotos -std1" dnl Digital Unix
+#   " % -qlanglvl=ansi -qsrcmsg -qinfo=all:noppt:noppc:noobs:nocnd" dnl AIX
+#   " % -ansi -ansiE -fullwarn"                dnl IRIX
+#   "+ESlit     % +w1 -Aa"                     dnl HP-UX C
+#   "-Xc        % -pvctl[,]fullmsg -Xc"        dnl NEC SX-5 (Super-UX 10)
+#   "-h conform % -h msglevel 2 -h conform"    dnl Cray C (Unicos)
    #
 do FLAGS="$ac_save_[]FLAGS "`echo $ac_arg | sed -e 's,%%.*,,' -e 's,%,,'`
    AC_TRY_COMPILE([],[return 0;],
@@ -62,12 +62,12 @@ VAR,[VAR="no, unknown"
 for ac_arg dnl
 in "-pedantic  % -Wall -ansi -pedantic"       dnl   GCC
    "-xstrconst % -v -Xc"                      dnl Solaris C
-   "-std1      % -verbose -w0 -warnprotos -std1" dnl Digital Unix
-   " % -qlanglvl=ansi -qsrcmsg -qinfo=all:noppt:noppc:noobs:nocnd" dnl AIX
-   " % -ansi -ansiE -fullwarn"                dnl IRIX
-   "+ESlit     % +w1 -Aa"                     dnl HP-UX C
-   "-Xc        % -pvctl[,]fullmsg -Xc"        dnl NEC SX-5 (Super-UX 10)
-   "-h conform % -h msglevel 2 -h conform"    dnl Cray C (Unicos)
+#   "-std1      % -verbose -w0 -warnprotos -std1" dnl Digital Unix
+#   " % -qlanglvl=ansi -qsrcmsg -qinfo=all:noppt:noppc:noobs:nocnd" dnl AIX
+#   " % -ansi -ansiE -fullwarn"                dnl IRIX
+#   "+ESlit     % +w1 -Aa"                     dnl HP-UX C
+#   "-Xc        % -pvctl[,]fullmsg -Xc"        dnl NEC SX-5 (Super-UX 10)
+#   "-h conform % -h msglevel 2 -h conform"    dnl Cray C (Unicos)
    #
 do FLAGS="$ac_save_[]FLAGS "`echo $ac_arg | sed -e 's,%%.*,,' -e 's,%,,'`
    AC_TRY_COMPILE([],[return 0;],
