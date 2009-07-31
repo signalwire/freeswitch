@@ -450,9 +450,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_core_session_reset(session_a, SWITCH_TRUE, SWITCH_TRUE);
 	switch_channel_set_variable(chan_a, SWITCH_BRIDGE_VARIABLE, NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
-	if (!inner_bridge) {
-		switch_channel_clear_flag(chan_a, CF_BRIDGED);
-	}
+	switch_channel_clear_flag(chan_a, CF_BRIDGED);
 	switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 	switch_core_session_rwunlock(session_b);
 	return NULL;
@@ -948,6 +946,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				switch_cond_next();
 			}
 
+			if (inner_bridge) {
+				if (switch_channel_ready(caller_channel)) {
+					switch_channel_set_flag(caller_channel, CF_BRIDGED);
+				}
+
+				if (switch_channel_ready(peer_channel)) {
+					switch_channel_set_flag(peer_channel, CF_BRIDGED);
+				}
+			}
+			
 			if ((cause = switch_channel_get_cause(caller_channel))) {
 				switch_channel_set_variable(peer_channel, SWITCH_BRIDGE_HANGUP_CAUSE_VARIABLE, switch_channel_cause2str(cause));
 			}

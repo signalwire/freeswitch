@@ -1511,6 +1511,7 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
 
 			if (dtmf->digit == '#') {
+				switch_channel_hangup(peer_channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				return SWITCH_STATUS_FALSE;
 			}
 
