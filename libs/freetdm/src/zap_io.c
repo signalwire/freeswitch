@@ -1122,7 +1122,11 @@ OZ_DECLARE(zap_status_t) zap_channel_open(uint32_t span_id, uint32_t chan_id, za
 		goto done;
 	}
 	
-	check = span->channels[chan_id];
+	if (!(check = span->channels[chan_id])) {
+		zap_log(ZAP_LOG_ERROR, "Invalid Channel %d\n", chan_id);
+		*zchan = NULL;
+		goto done;
+	}
 
 	if (zap_test_flag(check, ZAP_CHANNEL_SUSPENDED) || 
 		!zap_test_flag(check, ZAP_CHANNEL_READY) || (status = zap_mutex_trylock(check->mutex)) != ZAP_SUCCESS) {
