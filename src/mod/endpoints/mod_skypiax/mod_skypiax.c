@@ -47,11 +47,11 @@
 #else /*  */
 #define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
 #endif /*  */
-struct timezone {
+struct sk_timezone {
   int tz_minuteswest;           /* minutes W of Greenwich */
   int tz_dsttime;               /* type of dst correction */
 };
-int gettimeofday(struct timeval *tv, struct timezone *tz)
+int gettimeofday(struct timeval *tv, struct sk_timezone *tz)
 {
   FILETIME ft;
   unsigned __int64 tmpres = 0;
@@ -882,6 +882,8 @@ static void *SWITCH_THREAD_FUNC skypiax_signaling_thread_func(switch_thread_t * 
   int res;
   int forever = 1;
 
+  if (!tech_pvt) return NULL;
+
   DEBUGA_SKYPE("In skypiax_signaling_thread_func: started, p=%p\n", SKYPIAX_P_LOG,
                (void *) tech_pvt);
 
@@ -1695,7 +1697,7 @@ SWITCH_STANDARD_API(sk_function)
     argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
   }
 
-  if (!argc) {
+  if (!argc || !argv[0]) {
     stream->write_function(stream, "%s", SK_SYNTAX);
     goto end;
   }
@@ -1885,7 +1887,7 @@ int skypiax_answer(private_t * tech_pvt, char *id, char *value)
   }
   DEBUGA_SKYPE("NOT FOUND\n", SKYPIAX_P_LOG);
 
-  if (!strlen(tech_pvt->skype_call_id)) {
+  if (tech_pvt && tech_pvt->skype_call_id && !strlen(tech_pvt->skype_call_id)) {
     /* we are not inside an active call */
 
     sprintf(msg_to_skype, "GET CALL %s PARTNER_DISPNAME", id);
@@ -1905,12 +1907,13 @@ int skypiax_answer(private_t * tech_pvt, char *id, char *value)
       ("NEW!  name: %s, state: %d, value=%s, tech_pvt->callid_number=%s, tech_pvt->skype_user=%s\n",
        SKYPIAX_P_LOG, tech_pvt->name, tech_pvt->interface_state, value,
        tech_pvt->callid_number, tech_pvt->skype_user);
-    switch_mutex_unlock(globals.mutex);
+  } else if (!tech_pvt || !tech_pvt->skype_call_id) {
+    ERRORA("No Call ID?\n", SKYPIAX_P_LOG);
   } else {
-
     ERRORA("We're in a call now %s\n", SKYPIAX_P_LOG, tech_pvt->skype_call_id);
-    switch_mutex_unlock(globals.mutex);
   }
+
+  switch_mutex_unlock(globals.mutex);
   return 0;
 }
 int skypiax_transfer(private_t * tech_pvt, char *id, char *value)
@@ -1948,9 +1951,9 @@ int skypiax_transfer(private_t * tech_pvt, char *id, char *value)
   }
   DEBUGA_SKYPE("NOT FOUND\n", SKYPIAX_P_LOG);
 
-  if (!strlen(tech_pvt->skype_call_id)) {
+  if (!tech_pvt || !tech_pvt->skype_call_id || !strlen(tech_pvt->skype_call_id)) {
     /* we are not inside an active call */
-    ERRORA("We're NO MORE in a call now %s\n", SKYPIAX_P_LOG, tech_pvt->skype_call_id);
+	  ERRORA("We're NO MORE in a call now %s\n", SKYPIAX_P_LOG, (tech_pvt && tech_pvt->skype_call_id) ? tech_pvt->skype_call_id : "" );
     switch_mutex_unlock(globals.mutex);
 
   } else {
