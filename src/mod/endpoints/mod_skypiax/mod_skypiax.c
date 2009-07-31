@@ -333,7 +333,7 @@ static switch_status_t remove_interface(char *the_interface)
 #endif
   }
 
-  while (x) {                   //FIXME 2 seconds?
+  while (x) {                  
     x--;
     switch_yield(20000);
   }
@@ -773,6 +773,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t * sess
         slash = strrchr(interface_name, '/');
         *slash = '\0';
 
+  switch_mutex_lock(globals.mutex);
         if (strncmp("ANY", interface_name, strlen(interface_name)) == 0) {
           /* we've been asked for the "ANY" interface, let's find the first idle interface */
           DEBUGA_SKYPE("Finding one available skype interface\n", SKYPIAX_P_LOG);
@@ -798,6 +799,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t * sess
                  SKYPIAX_P_LOG, i, globals.SKYPIAX_INTERFACES[i].name,
                  globals.SKYPIAX_INTERFACES[i].session_uuid_str);
               switch_core_session_destroy(new_session);
+  switch_mutex_unlock(globals.mutex);
               return SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE;
             }
 
@@ -820,6 +822,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t * sess
         ERRORA("Doh! no matching interface for |||%s|||?\n", SKYPIAX_P_LOG,
                interface_name);
         switch_core_session_destroy(new_session);
+  switch_mutex_unlock(globals.mutex);
         return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 
       }
@@ -843,6 +846,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t * sess
     } else {
       ERRORA("Doh! no caller profile\n", SKYPIAX_P_LOG);
       switch_core_session_destroy(new_session);
+  switch_mutex_unlock(globals.mutex);
       return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
     }
 
@@ -860,6 +864,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t * sess
     switch_channel_set_flag(channel, CF_OUTBOUND);
     switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
     switch_channel_set_state(channel, CS_INIT);
+  switch_mutex_unlock(globals.mutex);
     return SWITCH_CAUSE_SUCCESS;
   }
 
@@ -932,6 +937,7 @@ static switch_status_t load_config(int reload_type)
     return SWITCH_STATUS_TERM;
   }
 
+  switch_mutex_lock(globals.mutex);
   if ((global_settings = switch_xml_child(cfg, "global_settings"))) {
     for (param = switch_xml_child(global_settings, "param"); param; param = param->next) {
       char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1225,6 +1231,7 @@ static switch_status_t load_config(int reload_type)
             ("Failed to connect to a SKYPE API for interface_id=%d, no SKYPE client running, please (re)start Skype client. Skypiax exiting\n",
              SKYPIAX_P_LOG, interface_id);
           running = 0;
+  switch_mutex_unlock(globals.mutex);
 		  switch_xml_free(xml);
           return SWITCH_STATUS_FALSE;
         }
@@ -1249,6 +1256,7 @@ static switch_status_t load_config(int reload_type)
              interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user,
              globals.SKYPIAX_INTERFACES[interface_id].skype_user);
           running = 0;
+		  switch_mutex_unlock(globals.mutex);
 		  switch_xml_free(xml);
           return SWITCH_STATUS_FALSE;
         }
@@ -1286,6 +1294,7 @@ static switch_status_t load_config(int reload_type)
     }
   }
 
+  switch_mutex_unlock(globals.mutex);
   switch_xml_free(xml);
 
   return SWITCH_STATUS_SUCCESS;
@@ -1632,19 +1641,21 @@ private_t *find_available_skypiax_interface_rr(void)
 {
   private_t *tech_pvt = NULL;
   int i;
-  /* int num_interfaces = SKYPIAX_MAX_INTERFACES; */
-  int num_interfaces = globals.real_interfaces;
+  //int num_interfaces = SKYPIAX_MAX_INTERFACES; 
+  //int num_interfaces = globals.real_interfaces;
 
   switch_mutex_lock(globals.mutex);
 
   /* Fact is the real interface start from 1 */
-  if (globals.next_interface == 0) globals.next_interface = 1;
+  //XXX no, is just a convention, but you can have it start from 0. I do not, for aestetic reasons :-)  
+  //if (globals.next_interface == 0) globals.next_interface = 1;
 
-  for (i = 0; i < num_interfaces; i++) { 
+  for (i = 0; i < SKYPIAX_MAX_INTERFACES; i++) { 
     int interface_id;
 
-    interface_id = globals.next_interface + i;
-    interface_id = interface_id < num_interfaces ? interface_id : interface_id - num_interfaces + 1;
+    interface_id = globals.next_interface;
+    //interface_id = interface_id < SKYPIAX_MAX_INTERFACES ? interface_id : interface_id - SKYPIAX_MAX_INTERFACES + 1;
+        globals.next_interface = interface_id + 1 < SKYPIAX_MAX_INTERFACES ? interface_id + 1 : 0;
 
     if (strlen(globals.SKYPIAX_INTERFACES[interface_id].name)) {
       int skype_state = 0;
@@ -1655,15 +1666,15 @@ private_t *find_available_skypiax_interface_rr(void)
                          globals.SKYPIAX_INTERFACES[interface_id].name, skype_state);
       if (SKYPIAX_STATE_DOWN == skype_state || 0 == skype_state) {
         /*set to Dialing state to avoid other thread fint it, don't know if it is safe */
-        tech_pvt->interface_state = SKYPIAX_STATE_DIALING ;
+        //XXX no, it's not safe 
+		  //tech_pvt->interface_state = SKYPIAX_STATE_DIALING ;
         
-        globals.next_interface = interface_id + 1 < num_interfaces ? interface_id + 1 : 1;
         switch_mutex_unlock(globals.mutex);
         return tech_pvt;
       }
-    } else {
-      DEBUGA_SKYPE("Skype interface: %d blank!! A hole here means we cannot hunt the last interface.\n", SKYPIAX_P_LOG, interface_id);
-    }
+    }// else {
+      //DEBUGA_SKYPE("Skype interface: %d blank!! A hole here means we cannot hunt the last interface.\n", SKYPIAX_P_LOG, interface_id);
+    //}
   }
 
   switch_mutex_unlock(globals.mutex);

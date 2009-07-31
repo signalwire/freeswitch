@@ -852,7 +852,7 @@ int skypiax_call(private_t * tech_pvt, char *rdest, int timeout)
 {
   char msg_to_skype[1024];
 
-  skypiax_sleep(5000);
+  //skypiax_sleep(5000);
   DEBUGA_SKYPE("Calling Skype, rdest is: %s\n", SKYPIAX_P_LOG, rdest);
   //skypiax_signaling_write(tech_pvt, "SET AGC OFF");
   //skypiax_sleep(10000);
