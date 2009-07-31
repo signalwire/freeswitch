@@ -171,7 +171,7 @@ Requires:       %{name} = %{version}-%{release}
 
 
 %package lang-en
-Summary:	Provides english language dependand modules and speech config for the FreeSwitch Open Source telephone platform.
+Summary:	Provides english language dependand modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
@@ -179,21 +179,21 @@ Requires:        %{name} = %{version}-%{release}
 English language phrases module and directory structure for say module and voicemail
 
 %package lang-ru
-Summary:        Provides russian language dependand modules and speech config for the FreeSwitch Open Source telephone platform.
+Summary:        Provides russian language dependand modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
 
 %description lang-ru
 Russian language phrases module and directory structure for say module and voicemail
 
 %package lang-fr
-Summary:        Provides french language dependand modules and speech config for the FreeSwitch Open Source telephone platform.
+Summary:        Provides french language dependand modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
 
 %description lang-fr
 French language phrases module and directory structure for say module and voicemail
 
 %package lang-de
-Summary:        Provides german language dependand modules and speech config for the FreeSwitch Open Source telephone platform.
+Summary:        Provides german language dependand modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
 
 %description lang-de
@@ -201,7 +201,7 @@ German language phrases module and directory structure for say module and voicem
 
 
 %package openzap
-Summary:	Provides a unified interface to hardware TDM cards and ss7 stacks for freeswitch
+Summary:	Provides a unified interface to hardware TDM cards and ss7 stacks for FreeSWITCH
 Group:		System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
@@ -214,7 +214,7 @@ Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
 %description moh
-8khz music on hold files for freeswitch
+8khz music on hold files for FreeSWITCH
 
 
 %package hd-moh
@@ -245,39 +245,39 @@ Requires:       %{name} = %{version}-%{release}
 
 
 %package sounds-en-callie
-Summary:        English prompts for Freeswitch
+Summary:        English prompts for FreeSWITCH
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
 %description sounds-en-callie
-8khz English prompts for Freeswitch
+8khz English prompts for FreeSWITCH
 
 
 %package hd-sounds-en-callie
-Summary:        High Density English prompts for Freeswitch
+Summary:        High Density English prompts for FreeSWITCH
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
 %description hd-sounds-en-callie 
-16khz High Density English prompts for Freeswitch
+16khz High Density English prompts for FreeSWITCH
 
 
 %package uhd-sounds-en-callie
-Summary:        Ultra High Density English prompts for Freeswitch
+Summary:        Ultra High Density English prompts for FreeSWITCH
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
 %description uhd-sounds-en-callie
-32khz Ultra High Density English prompts for Freeswitch
+32khz Ultra High Density English prompts for FreeSWITCH
 
 
 %package cd-sounds-en-callie
-Summary:        CD Quality English prompts for Freeswitch
+Summary:        CD Quality English prompts for FreeSWITCH
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
 %description cd-sounds-en-callie
-48khz CD Quality English prompts for Freeswitch
+48khz CD Quality English prompts for FreeSWITCH
 
 
 %prep
