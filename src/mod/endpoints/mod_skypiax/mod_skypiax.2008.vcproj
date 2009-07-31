@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="mod_skypiax"
 	ProjectGUID="{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}"
 	RootNamespace="mod_skypiax"
@@ -54,7 +54,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="rpcrt4.lib &quot;..\..\..\..\libs\win32\pthread\pthreadvc2.lib&quot; &quot;..\..\..\..\libs\win32\apr\debug\libapr-1.lib&quot; &quot;..\..\..\..\w32\library\debug\freeswitchcore.lib&quot;"
+				AdditionalOptions="rpcrt4.lib "
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>
@@ -116,7 +116,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="rpcrt4.lib &quot;..\..\..\..\libs\win32\pthread\pthreadvc2.lib&quot; &quot;..\..\..\..\libs\win32\apr\debug\libapr-1.lib&quot; &quot;..\..\..\..\w32\library\debug\freeswitchcore.lib&quot;"
+				AdditionalOptions="rpcrt4.lib "
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>

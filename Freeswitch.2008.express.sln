@@ -631,6 +631,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_say_ru", "src\mod\say\m
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_skypiax", "src\mod\endpoints\mod_skypiax\mod_skypiax.2008.vcproj", "{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Win32 = All|Win32
@@ -2067,6 +2072,15 @@ Global
 		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.Release|Win32.Build.0 = Release|Win32
 		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.Release|x64.ActiveCfg = Release|x64
 		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31}.Release|x64.Build.0 = Release|x64
+		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.All|Win32.ActiveCfg = Release|Win32
+		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.All|Win32.Build.0 = Release|Win32
+		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.All|x64.ActiveCfg = Release|Win32
+		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Debug|Win32.Build.0 = Debug|Win32
+		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Debug|x64.ActiveCfg = Debug|Win32
+		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Release|Win32.ActiveCfg = Release|Win32
+		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Release|Win32.Build.0 = Release|Win32
+		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
