@@ -130,6 +130,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t **sp);
 void dump_chan(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream);
+void dump_chan_xml(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream);
 
 
 static switch_core_session_t *zap_channel_get_session(zap_channel_t *channel, int32_t id)
@@ -2201,6 +2202,48 @@ void dump_chan(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *strea
 						   );
 }
 
+void dump_chan_xml(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream)
+{
+	if (chan_id > span->chan_count) {
+		return;
+	}
+
+	stream->write_function(stream,
+						   " <channel>\n"
+						   "  <span-id>%u</span-id>\n"
+						   "  <chan-id>%u</chan-id>>\n"
+						   "  <physical-span-id>%u</physical-span-id>\n"
+						   "  <physical-chan-id>%u</physical-chan-id>\n"
+						   "  <type>%s</type>\n"
+						   "  <state>%s</state>\n"
+						   "  <last-state>%s</last-state>\n"
+						   "  <cid-date>%s</cid-date>\n"
+						   "  <cid-name>%s</cid-name>\n"
+						   "  <cid-num>%s</cid-num>\n"
+						   "  <ani>%s</ani>\n"
+						   "  <aniII>%s</aniII>\n"
+						   "  <dnis>%s</dnis>\n"
+						   "  <rdnis>%s</rdnis>\n"
+						   "  <cause>%s</cause>\n"
+						   " </channel>\n",
+						   span->channels[chan_id]->span_id,
+						   span->channels[chan_id]->chan_id,
+						   span->channels[chan_id]->physical_span_id,
+						   span->channels[chan_id]->physical_chan_id,
+						   zap_chan_type2str(span->channels[chan_id]->type),
+						   zap_channel_state2str(span->channels[chan_id]->state),
+						   zap_channel_state2str(span->channels[chan_id]->last_state),
+						   span->channels[chan_id]->caller_data.cid_date,
+						   span->channels[chan_id]->caller_data.cid_name,
+						   span->channels[chan_id]->caller_data.cid_num.digits,
+						   span->channels[chan_id]->caller_data.ani.digits,
+						   span->channels[chan_id]->caller_data.aniII,
+						   span->channels[chan_id]->caller_data.dnis.digits,
+						   span->channels[chan_id]->caller_data.rdnis.digits,
+						   switch_channel_cause2str(span->channels[chan_id]->caller_data.hangup_cause)
+						   );
+}
+
 #define OZ_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix]" 
 SWITCH_STANDARD_API(oz_function)
 {
@@ -2223,30 +2266,61 @@ SWITCH_STANDARD_API(oz_function)
 		} else {
 			uint32_t chan_id = 0;
 			zap_span_t *span;
+			char *as = NULL;
 			
 			zap_span_find_by_name(argv[1], &span);
 			
 			if (argc > 2) {
-				chan_id = atoi(argv[2]);
-			}
-			
-			if (!span) {
-				stream->write_function(stream, "-ERR invalid span\n");
-			} else {
-				if (chan_id) {
-					if(chan_id > span->chan_count) {
-						stream->write_function(stream, "-ERR invalid channel\n");
-					} else {
-						dump_chan(span, chan_id, stream);
-					}
+				if (argv[3] && !strcasecmp(argv[2], "as")) {
+					as = argv[3];
 				} else {
-					uint32_t j;
-					
-					stream->write_function(stream, "+OK\n");
-					for (j = 1; j <= span->chan_count; j++) {
-						dump_chan(span, j, stream);
-					}
+					chan_id = atoi(argv[2]);
+				}
+			}
 
+			if (argv[4] && !strcasecmp(argv[3], "as")) {
+				as = argv[4];
+			}
+
+			if (!switch_strlen_zero(as) && !strcasecmp(as, "xml")) {
+				stream->write_function(stream, "<channels>\n");
+				if (!span) {
+					stream->write_function(stream, "<error>invalid span</error>\n");
+				} else {
+					if (chan_id) {
+						if(chan_id > span->chan_count) {
+							stream->write_function(stream, "<error>invalid channel</error>\n");
+						} else {
+							dump_chan_xml(span, chan_id, stream);
+						}
+					} else {
+						uint32_t j;
+						for (j = 1; j <= span->chan_count; j++) {
+							dump_chan_xml(span, j, stream);
+						}
+						
+					}
+				}
+				stream->write_function(stream, "</channels>\n");
+			} else {
+				if (!span) {
+					stream->write_function(stream, "-ERR invalid span\n");
+				} else {
+					if (chan_id) {
+						if(chan_id > span->chan_count) {
+							stream->write_function(stream, "-ERR invalid channel\n");
+						} else {
+							dump_chan(span, chan_id, stream);
+						}
+					} else {
+						uint32_t j;
+						
+						stream->write_function(stream, "+OK\n");
+						for (j = 1; j <= span->chan_count; j++) {
+							dump_chan(span, j, stream);
+						}
+						
+					}
 				}
 			}
 		}
