@@ -1269,48 +1269,48 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 		tech_pvt = &globals.SKYPIAX_INTERFACES[interface_id];
 
 		if (strlen(globals.SKYPIAX_INTERFACES[interface_id].name)) {
-		if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
+			if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
 #ifdef WIN32
-			switch_file_write(tech_pvt->SkypiaxHandles.fdesc[1], "sciutati", &howmany);	// let's the controldev_thread die
+				switch_file_write(tech_pvt->SkypiaxHandles.fdesc[1], "sciutati", &howmany);	// let's the controldev_thread die
 #else /* WIN32 */
-			howmany = write(tech_pvt->SkypiaxHandles.fdesc[1], "sciutati", howmany);
+				howmany = write(tech_pvt->SkypiaxHandles.fdesc[1], "sciutati", howmany);
 #endif /* WIN32 */
-		}
-
-		if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread) {
-#ifdef WIN32
-			if (SendMessage(tech_pvt->SkypiaxHandles.win32_hInit_MainWindowHandle, WM_DESTROY, 0, 0) == FALSE) {	// let's the skypiax_api_thread_func die
-				DEBUGA_SKYPE("got FALSE here, thread probably was already dead. GetLastError returned: %d\n", SKYPIAX_P_LOG, GetLastError());
-				globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread = NULL;
 			}
-#else
-			XEvent e;
-			Atom atom1 = XInternAtom(tech_pvt->SkypiaxHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN",
-									 False);
-			memset(&e, 0, sizeof(e));
-			e.xclient.type = ClientMessage;
-			e.xclient.message_type = atom1;	/*  leading message */
-			e.xclient.display = tech_pvt->SkypiaxHandles.disp;
-			e.xclient.window = tech_pvt->SkypiaxHandles.skype_win;
-			e.xclient.format = 8;
 
-			XSendEvent(tech_pvt->SkypiaxHandles.disp, tech_pvt->SkypiaxHandles.win, False, 0, &e);
-			XSync(tech_pvt->SkypiaxHandles.disp, False);
+			if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread) {
+#ifdef WIN32
+				if (SendMessage(tech_pvt->SkypiaxHandles.win32_hInit_MainWindowHandle, WM_DESTROY, 0, 0) == FALSE) {	// let's the skypiax_api_thread_func die
+					DEBUGA_SKYPE("got FALSE here, thread probably was already dead. GetLastError returned: %d\n", SKYPIAX_P_LOG, GetLastError());
+					globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread = NULL;
+				}
+#else
+				XEvent e;
+				Atom atom1 = XInternAtom(tech_pvt->SkypiaxHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN",
+										 False);
+				memset(&e, 0, sizeof(e));
+				e.xclient.type = ClientMessage;
+				e.xclient.message_type = atom1;	/*  leading message */
+				e.xclient.display = tech_pvt->SkypiaxHandles.disp;
+				e.xclient.window = tech_pvt->SkypiaxHandles.skype_win;
+				e.xclient.format = 8;
+
+				XSendEvent(tech_pvt->SkypiaxHandles.disp, tech_pvt->SkypiaxHandles.win, False, 0, &e);
+				XSync(tech_pvt->SkypiaxHandles.disp, False);
 #endif
-		}
-		x=10;
-		while (x) {				//FIXME 0.5 seconds?
-			x--;
-			switch_yield(50000);
-		}
-		if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
-			switch_thread_join(&status, globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread);
-		}
-		if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread) {
-			switch_thread_join(&status, globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread);
-		}
+			}
+			x = 10;
+			while (x) {			//FIXME 0.5 seconds?
+				x--;
+				switch_yield(50000);
+			}
+			if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
+				switch_thread_join(&status, globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread);
+			}
+			if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread) {
+				switch_thread_join(&status, globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread);
+			}
 #ifndef WIN32
-				WARNINGA("SHUTDOWN interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
+			WARNINGA("SHUTDOWN interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
 			shutdown(tech_pvt->audioskypepipe[0], 2);
 			close(tech_pvt->audioskypepipe[0]);
 			shutdown(tech_pvt->audioskypepipe[1], 2);
