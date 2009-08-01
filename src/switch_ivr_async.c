@@ -2074,8 +2074,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
 	switch_codec_implementation_t read_impl = {0};
-	switch_core_session_get_read_impl(session, &read_impl);
 	const char *p;
+	switch_core_session_get_read_impl(session, &read_impl);
 	
 	if (!ah) {
 		if (!(ah = switch_core_session_alloc(session, sizeof(*ah)))) {
