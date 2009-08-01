@@ -1782,7 +1782,13 @@ int skypiax_answer(private_t * tech_pvt, char *id, char *value)
 					("FOUND  (name=%s, giovatech->interface_state=%d != SKYPIAX_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
 					 SKYPIAX_P_LOG, giovatech->name, giovatech->interface_state,
 					 giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value)
-					break;
+					if(tech_pvt->interface_state == SKYPIAX_STATE_PRERING){
+						tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
+					}else if (tech_pvt->interface_state != SKYPIAX_STATE_DOWN) {
+						WARNINGA("Why an interface_state %d HERE?\n", SKYPIAX_P_LOG, tech_pvt->interface_state);
+					}
+
+				break;
 			}
 		}
 	}
