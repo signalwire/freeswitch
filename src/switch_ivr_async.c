@@ -2073,17 +2073,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	switch_status_t status;
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
-    switch_codec_implementation_t read_impl = {0};
-    switch_core_session_get_read_impl(session, &read_impl);
-
+	switch_codec_implementation_t read_impl = {0};
+	switch_core_session_get_read_impl(session, &read_impl);
+	const char *p;
+	
 	if (!ah) {
 		if (!(ah = switch_core_session_alloc(session, sizeof(*ah)))) {
 			return SWITCH_STATUS_MEMERR;
 		}
-	}
-
-	if ((switch_channel_get_variable(channel, "fire_asr_events"))) {
-		switch_set_flag(ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
 	}
 
 	if (sth) {
@@ -2091,6 +2088,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error loading Grammar\n");
 			switch_core_asr_close(sth->ah, &flags);
 			return SWITCH_STATUS_FALSE;
+		}
+
+		if ((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p)) {
+			switch_set_flag(sth->ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
 		}
 
 		return SWITCH_STATUS_SUCCESS;
@@ -2117,6 +2118,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	sth->pool = switch_core_session_get_pool(session);
 	sth->session = session;
 	sth->ah = ah;
+
+	if ((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p)) {
+		switch_set_flag(ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
+	}
 
 	if ((status = switch_core_media_bug_add(session, speech_callback, sth, 0, SMBF_READ_STREAM, &sth->bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_core_asr_close(ah, &flags);
