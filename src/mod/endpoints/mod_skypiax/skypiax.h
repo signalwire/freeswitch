@@ -58,19 +58,19 @@
 #endif /* SKYPIAX_SVN_VERSION */
 
 typedef enum {
-  TFLAG_IO = (1 << 0),
-  TFLAG_INBOUND = (1 << 1),
-  TFLAG_OUTBOUND = (1 << 2),
-  TFLAG_DTMF = (1 << 3),
-  TFLAG_VOICE = (1 << 4),
-  TFLAG_HANGUP = (1 << 5),
-  TFLAG_LINEAR = (1 << 6),
-  TFLAG_CODEC = (1 << 7),
-  TFLAG_BREAK = (1 << 8)
+	TFLAG_IO = (1 << 0),
+	TFLAG_INBOUND = (1 << 1),
+	TFLAG_OUTBOUND = (1 << 2),
+	TFLAG_DTMF = (1 << 3),
+	TFLAG_VOICE = (1 << 4),
+	TFLAG_HANGUP = (1 << 5),
+	TFLAG_LINEAR = (1 << 6),
+	TFLAG_CODEC = (1 << 7),
+	TFLAG_BREAK = (1 << 8)
 } TFLAGS;
 
 typedef enum {
-  GFLAG_MY_CODEC_PREFS = (1 << 0)
+	GFLAG_MY_CODEC_PREFS = (1 << 0)
 } GFLAGS;
 
 #define DEBUGA_SKYPE(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"rev "SKYPIAX_SVN_VERSION "[%p|%-7lx][DEBUG_SKYPE  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
@@ -135,116 +135,116 @@ typedef enum {
 
 #ifndef WIN32
 struct SkypiaxHandles {
-  Window skype_win;
-  Display *disp;
-  Window win;
-  int currentuserhandle;
-  int api_connected;
-  int fdesc[2];
+	Window skype_win;
+	Display *disp;
+	Window win;
+	int currentuserhandle;
+	int api_connected;
+	int fdesc[2];
 };
 #else //WIN32
 
 struct SkypiaxHandles {
-  HWND win32_hInit_MainWindowHandle;
-  HWND win32_hGlobal_SkypeAPIWindowHandle;
-  HINSTANCE win32_hInit_ProcessHandle;
-  char win32_acInit_WindowClassName[128];
-  UINT win32_uiGlobal_MsgID_SkypeControlAPIAttach;
-  UINT win32_uiGlobal_MsgID_SkypeControlAPIDiscover;
-  int currentuserhandle;
-  int api_connected;
-  switch_file_t *fdesc[2];
+	HWND win32_hInit_MainWindowHandle;
+	HWND win32_hGlobal_SkypeAPIWindowHandle;
+	HINSTANCE win32_hInit_ProcessHandle;
+	char win32_acInit_WindowClassName[128];
+	UINT win32_uiGlobal_MsgID_SkypeControlAPIAttach;
+	UINT win32_uiGlobal_MsgID_SkypeControlAPIDiscover;
+	int currentuserhandle;
+	int api_connected;
+	switch_file_t *fdesc[2];
 };
 
 #endif //WIN32
 
 struct private_object {
-  unsigned int flags;
-  switch_codec_t read_codec;
-  switch_codec_t write_codec;
-  switch_frame_t read_frame;
-  unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
-  char session_uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-  switch_caller_profile_t *caller_profile;
-  switch_mutex_t *mutex;
-  switch_mutex_t *flag_mutex;
+	unsigned int flags;
+	switch_codec_t read_codec;
+	switch_codec_t write_codec;
+	switch_frame_t read_frame;
+	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	char session_uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	switch_caller_profile_t *caller_profile;
+	switch_mutex_t *mutex;
+	switch_mutex_t *flag_mutex;
 
-  char interface_id[80];
-  char name[80];
-  char dialplan[80];
-  char context[80];
-  char dial_regex[256];
-  char fail_dial_regex[256];
-  char hold_music[256];
-  char type[256];
-  char X11_display[256];
+	char interface_id[80];
+	char name[80];
+	char dialplan[80];
+	char context[80];
+	char dial_regex[256];
+	char fail_dial_regex[256];
+	char hold_music[256];
+	char type[256];
+	char X11_display[256];
 #ifdef WIN32
-  unsigned short tcp_cli_port;
-  unsigned short tcp_srv_port;
+	unsigned short tcp_cli_port;
+	unsigned short tcp_srv_port;
 #else
-  int tcp_cli_port;
-  int tcp_srv_port;
+	int tcp_cli_port;
+	int tcp_srv_port;
 #endif
-  struct SkypiaxHandles SkypiaxHandles;
+	struct SkypiaxHandles SkypiaxHandles;
 
-  int interface_state;          /*!< \brief 'state' of the interface (channel) */
-  char language[80];            /*!< \brief default Asterisk dialplan language for this interface */
-  char exten[80];               /*!< \brief default Asterisk dialplan extension for this interface */
-  int skypiax_sound_rate;       /*!< \brief rate of the sound device, in Hz, eg: 8000 */
-  char callid_name[50];
-  char callid_number[50];
-  double playback_boost;
-  double capture_boost;
-  int stripmsd;
-  char skype_call_id[512];
-  int skype_call_ongoing;
-  char skype_friends[4096];
-  char skype_fullname[512];
-  char skype_displayname[512];
-  int skype_callflow;           /*!< \brief 'callflow' of the skype interface (as opposed to phone interface) */
-  int skype;                    /*!< \brief config flag, bool, Skype support on this interface (0 if false, -1 if true) */
-  int control_to_send;
+	int interface_state;		/*!< \brief 'state' of the interface (channel) */
+	char language[80];			/*!< \brief default Asterisk dialplan language for this interface */
+	char exten[80];				/*!< \brief default Asterisk dialplan extension for this interface */
+	int skypiax_sound_rate;		/*!< \brief rate of the sound device, in Hz, eg: 8000 */
+	char callid_name[50];
+	char callid_number[50];
+	double playback_boost;
+	double capture_boost;
+	int stripmsd;
+	char skype_call_id[512];
+	int skype_call_ongoing;
+	char skype_friends[4096];
+	char skype_fullname[512];
+	char skype_displayname[512];
+	int skype_callflow;			/*!< \brief 'callflow' of the skype interface (as opposed to phone interface) */
+	int skype;					/*!< \brief config flag, bool, Skype support on this interface (0 if false, -1 if true) */
+	int control_to_send;
 #ifdef WIN32
-  switch_file_t *audiopipe[2];
-  switch_file_t *audioskypepipe[2];
-  switch_file_t *skypiax_sound_capt_fd; /*!< \brief file descriptor for sound capture dev */
-#else                           /* WIN32 */
-  int audiopipe[2];
-  int audioskypepipe[2];
-  int skypiax_sound_capt_fd;    /*!< \brief file descriptor for sound capture dev */
-#endif                          /* WIN32 */
-  switch_thread_t *tcp_srv_thread;
-  switch_thread_t *tcp_cli_thread;
-  switch_thread_t *skypiax_signaling_thread;
-  switch_thread_t *skypiax_api_thread;
-  short audiobuf[SAMPLES_PER_FRAME];
-  int audiobuf_is_loaded;
+	switch_file_t *audiopipe[2];
+	switch_file_t *audioskypepipe[2];
+	switch_file_t *skypiax_sound_capt_fd;	/*!< \brief file descriptor for sound capture dev */
+#else							/* WIN32 */
+	int audiopipe[2];
+	int audioskypepipe[2];
+	int skypiax_sound_capt_fd;	/*!< \brief file descriptor for sound capture dev */
+#endif							/* WIN32 */
+	switch_thread_t *tcp_srv_thread;
+	switch_thread_t *tcp_cli_thread;
+	switch_thread_t *skypiax_signaling_thread;
+	switch_thread_t *skypiax_api_thread;
+	short audiobuf[SAMPLES_PER_FRAME];
+	int audiobuf_is_loaded;
 
-  //int phonebook_listing;
-  //int phonebook_querying;
-  //int phonebook_listing_received_calls;
+	//int phonebook_listing;
+	//int phonebook_querying;
+	//int phonebook_listing_received_calls;
 
-  //int phonebook_first_entry;
-  //int phonebook_last_entry;
-  //int phonebook_number_lenght;
-  //int phonebook_text_lenght;
-  FILE *phonebook_writing_fp;
-  int skypiax_dir_entry_extension_prefix;
-  char skype_user[256];
-  char skype_password[256];
-  char destination[256];
-  struct timeval answer_time;
+	//int phonebook_first_entry;
+	//int phonebook_last_entry;
+	//int phonebook_number_lenght;
+	//int phonebook_text_lenght;
+	FILE *phonebook_writing_fp;
+	int skypiax_dir_entry_extension_prefix;
+	char skype_user[256];
+	char skype_password[256];
+	char destination[256];
+	struct timeval answer_time;
 
-  struct timeval transfer_time;
-  char transfer_callid_number[50];
-  char skype_transfer_call_id[512];
-  int running;
+	struct timeval transfer_time;
+	char transfer_callid_number[50];
+	char skype_transfer_call_id[512];
+	int running;
 };
 
 typedef struct private_object private_t;
 
 void *SWITCH_THREAD_FUNC skypiax_api_thread_func(switch_thread_t * thread, void *obj);
-void skypiax_tech_init(private_t * tech_pvt, switch_core_session_t * session);
+void skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *session);
 int skypiax_audio_read(private_t * tech_pvt);
 int skypiax_audio_init(private_t * tech_pvt);
 int skypiax_signaling_write(private_t * tech_pvt, char *msg_to_skype);

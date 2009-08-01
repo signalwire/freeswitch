@@ -246,7 +246,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				switch_codec_t *use_codec = read_frame->codec;
 				if (do_bugs) {
 					if (!switch_core_codec_ready(&session->bug_codec)) {
-						switch_core_codec_copy(read_frame->codec, &session->bug_codec, switch_core_session_get_pool(session));
+						switch_core_codec_copy(read_frame->codec, &session->bug_codec, NULL);
 					}
 					use_codec = &session->bug_codec;
 				}
