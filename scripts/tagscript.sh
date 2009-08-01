@@ -25,7 +25,7 @@ svn co http://svn.freeswitch.org/svn/freeswitch/tags/$SWITCH_VERSION_MAJOR.$SWIT
 cd freeswitch-$SWITCH_VERSION_MAJOR.$SWITCH_VERSION_MINOR.$NEW_MICRO
 ./bootstrap.sh
 rm -rf `find . -name .svn`
-rm -f bootstrap.sh
+mv bootstrap.sh rebootstrap.sh
 rm -f docs/AUTHORS
 rm -f docs/COPYING
 rm -f docs/ChangeLog
