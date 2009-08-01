@@ -1784,8 +1784,9 @@ int skypiax_answer(private_t * tech_pvt, char *id, char *value)
 					 giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value)
 					if(tech_pvt->interface_state == SKYPIAX_STATE_PRERING){
 						tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
-					}else if (tech_pvt->interface_state != SKYPIAX_STATE_DOWN) {
+					}else if (tech_pvt->interface_state != 0 && tech_pvt->interface_state != SKYPIAX_STATE_DOWN) {
 						WARNINGA("Why an interface_state %d HERE?\n", SKYPIAX_P_LOG, tech_pvt->interface_state);
+						tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
 					}
 
 				break;
