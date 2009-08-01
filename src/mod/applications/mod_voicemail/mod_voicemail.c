@@ -107,8 +107,6 @@ struct vm_profile {
 	char rew_key[2];
 	char prev_msg_key[2];
 	char next_msg_key[2];
-        uint32_t ff_msec;
-        uint32_t rew_msec;
 	char urgent_key[2];
 	char operator_key[2];
 	char vmain_key[2];
@@ -309,7 +307,6 @@ static void destroy_profile(const char *profile_name, switch_bool_t block)
 static switch_xml_config_string_options_t config_dtmf = { NULL, 2, "[0-9#\\*]" };
 static switch_xml_config_string_options_t config_login_keys = { NULL, 16, "[0-9#\\*]*" };
 static switch_xml_config_string_options_t config_file_ext = { NULL, 10, NULL };
-static switch_xml_config_int_options_t config_int_0_60000 = { SWITCH_TRUE, 0, SWITCH_TRUE, 60000 };
 static switch_xml_config_int_options_t config_int_0_10000 = { SWITCH_TRUE, 0, SWITCH_TRUE, 10000 };
 static switch_xml_config_int_options_t config_int_0_1000 = { SWITCH_TRUE, 0, SWITCH_TRUE, 1000 };
 static switch_xml_config_int_options_t config_int_digit_timeout = { SWITCH_TRUE, 0, SWITCH_TRUE, 30000 };
@@ -515,10 +512,6 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
                 &profile->prev_msg_key, "", &config_dtmf, NULL, NULL);
         SWITCH_CONFIG_SET_ITEM(profile->config[i++], "next-message-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
                 &profile->next_msg_key, "", &config_dtmf, NULL, NULL);
-        SWITCH_CONFIG_SET_ITEM(profile->config[i++], "ff-msec", SWITCH_CONFIG_INT, CONFIG_RELOADABLE,
-                &profile->ff_msec, 3000, &config_int_0_60000, NULL, NULL);
-        SWITCH_CONFIG_SET_ITEM(profile->config[i++], "rew-msec", SWITCH_CONFIG_INT, CONFIG_RELOADABLE,
-                &profile->rew_msec, 6000, &config_int_0_60000, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "urgent-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
 		&profile->urgent_key, "*", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "operator-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
@@ -918,19 +911,14 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 			}
 
 			if (dtmf->digit == *cc->profile->ff_key) {
-				int samps = ((cc->profile->ff_msec * fh->samplerate) / 1000);
+				int samps = 24000;
 				switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
 				return SWITCH_STATUS_SUCCESS;
 			}
 
 			if (dtmf->digit == *cc->profile->rew_key) {
-				int samps = 0- ((cc->profile->rew_msec * fh->samplerate) / 1000);
-				if (fh->pos + samps < 0) {
-					unsigned int seekpos = 0;
-					switch_core_file_seek(fh, &seekpos, 0, SEEK_SET);
-				} else {
-					switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
-				}
+				int samps = -48000;
+				switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
 				return SWITCH_STATUS_SUCCESS;
 			}
 			if (!cc->noexit && dtmf->digit == *cc->profile->terminator_key) {
