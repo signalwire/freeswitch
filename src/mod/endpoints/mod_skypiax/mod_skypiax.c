@@ -240,7 +240,7 @@ static switch_status_t interface_exists(char *the_interface)
 
 static switch_status_t remove_interface(char *the_interface)
 {
-	int x = 100;
+	int x = 10;
 	unsigned int howmany = 8;
 	int interface_id = -1;
 	private_t *tech_pvt = NULL;
@@ -318,7 +318,7 @@ static switch_status_t remove_interface(char *the_interface)
 
 	while (x) {
 		x--;
-		switch_yield(20000);
+		switch_yield(50000);
 	}
 
 	if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
@@ -1257,7 +1257,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 {
-	int x = 100;
+	int x;
 	private_t *tech_pvt = NULL;
 	switch_status_t status;
 	unsigned int howmany = 8;
@@ -1268,6 +1268,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 	for (interface_id = 0; interface_id < SKYPIAX_MAX_INTERFACES; interface_id++) {
 		tech_pvt = &globals.SKYPIAX_INTERFACES[interface_id];
 
+		if (strlen(globals.SKYPIAX_INTERFACES[interface_id].name)) {
 		if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
 #ifdef WIN32
 			switch_file_write(tech_pvt->SkypiaxHandles.fdesc[1], "sciutati", &howmany);	// let's the controldev_thread die
@@ -1297,9 +1298,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 			XSync(tech_pvt->SkypiaxHandles.disp, False);
 #endif
 		}
-		while (x) {				//FIXME 2 seconds?
+		x=10;
+		while (x) {				//FIXME 0.5 seconds?
 			x--;
-			switch_yield(20000);
+			switch_yield(50000);
 		}
 		if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
 			switch_thread_join(&status, globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread);
@@ -1307,8 +1309,24 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 		if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread) {
 			switch_thread_join(&status, globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread);
 		}
-	}
+#ifndef WIN32
+				WARNINGA("SHUTDOWN interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
+			shutdown(tech_pvt->audioskypepipe[0], 2);
+			close(tech_pvt->audioskypepipe[0]);
+			shutdown(tech_pvt->audioskypepipe[1], 2);
+			close(tech_pvt->audioskypepipe[1]);
+			shutdown(tech_pvt->audiopipe[0], 2);
+			close(tech_pvt->audiopipe[0]);
+			shutdown(tech_pvt->audiopipe[1], 2);
+			close(tech_pvt->audiopipe[1]);
+			shutdown(tech_pvt->SkypiaxHandles.fdesc[0], 2);
+			close(tech_pvt->SkypiaxHandles.fdesc[0]);
+			shutdown(tech_pvt->SkypiaxHandles.fdesc[1], 2);
+			close(tech_pvt->SkypiaxHandles.fdesc[1]);
+		}
+#endif /* WIN32 */
 
+	}
 	switch_safe_free(globals.dialplan);
 	switch_safe_free(globals.context);
 	switch_safe_free(globals.destination);
