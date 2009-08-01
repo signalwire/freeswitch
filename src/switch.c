@@ -278,7 +278,11 @@ int main(int argc, char *argv[])
 	int alt_dirs = 0;
 	int known_opt;
 	int high_prio = 0;
+#ifdef __sun
+	switch_core_flag_t flags = SCF_USE_SQL;
+#else
 	switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT;
+#endif
 	int ret = 0;
 	switch_status_t destroy_status;
 	switch_file_t *fd;
