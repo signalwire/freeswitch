@@ -1028,6 +1028,8 @@ SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t 
 		seconds = 60;
 	}
 
+	session->track_duration = seconds;
+
 	if (switch_channel_test_flag(session->channel,  CF_PROXY_MODE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s using scheduler due to bypass_media mode\n", switch_channel_get_name(session->channel));
 		switch_core_session_sched_heartbeat(session, seconds);
@@ -1038,7 +1040,7 @@ SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t 
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s setting session heartbeat to %u second(s).\n", 
 					  switch_channel_get_name(session->channel), seconds);
-	session->track_duration = seconds;
+
 	session->read_frame_count = 0;
 	
 }
