@@ -1323,8 +1323,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 			close(tech_pvt->SkypiaxHandles.fdesc[0]);
 			shutdown(tech_pvt->SkypiaxHandles.fdesc[1], 2);
 			close(tech_pvt->SkypiaxHandles.fdesc[1]);
-		}
 #endif /* WIN32 */
+		}
 
 	}
 	switch_safe_free(globals.dialplan);
