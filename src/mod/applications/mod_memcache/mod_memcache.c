@@ -230,13 +230,39 @@ SWITCH_STANDARD_API(memcache_function)
 			key = argv[1];
 			uint64_t ivalue;
 			unsigned int offset = 1;
+			switch_bool_t increment = SWITCH_TRUE;
+			char *svalue = NULL;
 			if(argc > 2) {
 				offset = (unsigned int)strtol(argv[2], NULL, 10);
+				svalue = argv[2];
+			} else {
+				svalue = "1";
 			}
+			
 			if (!strcasecmp(subcmd, "increment")) {
+				increment = SWITCH_TRUE;
 				rc = memcached_increment(memcached, key, strlen(key), offset, &ivalue);
 			} else if (!strcasecmp(subcmd, "decrement")) {
+				increment = SWITCH_FALSE;
 				rc = memcached_decrement(memcached, key, strlen(key), offset, &ivalue);
+			}
+			if (rc == MEMCACHED_NOTFOUND) {
+				/* ok, trying to incr / decr a value that doesn't exist yet.
+				   Try to add an appropriate initial value.  If someone else beat
+				   us to it, then redo incr/decr.  Otherwise we're good.
+				*/
+				rc = memcached_add(memcached, key, strlen(key), (increment) ? svalue : "0", strlen(svalue), 0, 0);
+				if (rc == MEMCACHED_SUCCESS) {
+					ivalue = (increment) ? offset : 0;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initialized inc/dec memcache key: %s to value %d\n", key, offset);
+				} else {
+					if (increment) {
+						rc = memcached_increment(memcached, key, strlen(key), offset, &ivalue);
+					} else {
+						rc = memcached_decrement(memcached, key, strlen(key), offset, &ivalue);
+					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Someone else created incr/dec memcache key, resubmitting inc/dec request.\n");
+				}
 			}
 			if (rc == MEMCACHED_SUCCESS) {
 				stream->write_function(stream, "%ld", ivalue);
