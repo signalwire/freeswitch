@@ -131,7 +131,7 @@ AC_MSG_CHECKING([libtool major version])
 libtool="${switch_builddir}/libtool"
 LIBTOOL_MAJOR_VERSION="`$libtool --version 2>/dev/null| sed -e 's/([[^)]]*)//g;s/^[[^0-9]]*//;s/[[- ]].*//g;q'| awk  'BEGIN { FS = "." } { print $1 }' `"
 if test -z "$LIBTOOL_MAJOR_VERSION" ; then
-	LIBTOOL_MAJOR_VERSION="`sed -n -e '/^VERSION/{s/^.*=\"\?\([[0-9]]\+\)\..\+/\1/;p;}' ${switch_srcdir}/build/config/ltmain.sh`"
+	LIBTOOL_MAJOR_VERSION="`sed -n -e '/^VERSION/{s/^.*=\"\{0,1\}\([[0-9]]\{1,\}\)\..*/\1/;p;}' ${switch_srcdir}/build/config/ltmain.sh`"
 fi
 if test -z "$LIBTOOL_MAJOR_VERSION" ; then
 	AC_MSG_ERROR([Failed to detect your libtool version, please open a bug report on http://jira.freeswitch.org/])
