@@ -107,7 +107,7 @@ static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, const
 				}
 			}
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connecting to dsn: %s, %s, %s.\n", globals.odbc_dsn, odbc_user, odbc_pass);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connecting to dsn: %s\n", globals.odbc_dsn);
 			
 			/* setup dsn */
 			
