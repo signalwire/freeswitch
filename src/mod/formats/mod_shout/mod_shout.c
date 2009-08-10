@@ -144,8 +144,10 @@ static inline void free_context(shout_context_t *context)
 			int sanity = 0;
 
 			while (context->thread_running) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for stream to terminate: %s\n", context->stream_url);
 				switch_yield(500000);
 				if (++sanity > 10) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for stream to terminate: %s\n", context->stream_url);
 					break;
 				}
 			}
@@ -368,7 +370,7 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 			context->eof++;
 		} else if (decode_status == MPG123_ERR || decode_status > 0) {
 			if (++context->mp3err >= 5) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error!\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error! %s\n", context->stream_url);
 				context->eof++;
 				goto error;
 			}
@@ -382,6 +384,10 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 		switch_mutex_unlock(context->audio_mutex);
 	} while (!context->err && !context->eof && decode_status != MPG123_NEED_MORE);
 
+	if (context->err) {
+		goto error;
+	}
+	
 	return realsize;
 
   error:
