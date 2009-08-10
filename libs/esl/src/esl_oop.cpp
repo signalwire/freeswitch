@@ -76,6 +76,7 @@ ESLevent *ESLconnection::api(const char *cmd, const char *arg)
 {
 	size_t len;
 	char *cmd_buf;
+	ESLevent *event;
 	
 	if (!cmd) {
 		return NULL;
@@ -90,21 +91,17 @@ ESLevent *ESLconnection::api(const char *cmd, const char *arg)
 	*(cmd_buf + (len)) = '\0';
 
 
-	if (esl_send_recv(&handle, cmd_buf) == ESL_SUCCESS) {
-		esl_event_t *event;
-		esl_event_dup(&event, handle.last_sr_event);
-		return new ESLevent(event, 1);
-	}
-	
+	event = sendRecv(cmd_buf);
 	free(cmd_buf);
 
-	return NULL;
+	return event;
 }
 
 ESLevent *ESLconnection::bgapi(const char *cmd, const char *arg)
 {
 	size_t len;
 	char *cmd_buf;
+	ESLevent *event;
 	
 	if (!cmd) {
 		return NULL;
@@ -118,15 +115,10 @@ ESLevent *ESLconnection::bgapi(const char *cmd, const char *arg)
 	snprintf(cmd_buf, len, "bgapi %s %s", cmd, arg ? arg : "");
 	*(cmd_buf + (len)) = '\0';
 
-	if (esl_send_recv(&handle, cmd_buf) == ESL_SUCCESS) {
-		esl_event_t *event;
-		esl_event_dup(&event, handle.last_sr_event);
-		return new ESLevent(event, 1);
-	}
-
+	event = sendRecv(cmd_buf);
 	free(cmd_buf);
 	
-	return NULL;
+	return event;
 }
 
 ESLevent *ESLconnection::getInfo()
