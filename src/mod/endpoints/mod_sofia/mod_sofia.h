@@ -86,6 +86,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_CHAT_PROTO "sip"
 #define SOFIA_SIP_HEADER_PREFIX "sip_h_"
 #define SOFIA_SIP_BYE_HEADER_PREFIX "sip_bye_h_"
+#define SOFIA_SIP_PROGRESS_HEADER_PREFIX "sip_ph_"
 #define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
 #define SOFIA_DEFAULT_PORT "5060"
 #define SOFIA_DEFAULT_TLS_PORT "5061"
@@ -901,3 +902,5 @@ void sofia_glue_set_rtp_stats(private_object_t *tech_pvt);
 void sofia_glue_get_addr(msg_t *msg, char *buf, size_t buflen, int *port);
 sofia_destination_t* sofia_glue_get_destination(char *data);
 void sofia_glue_free_destination(sofia_destination_t *dst);
+char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix);
+void sofia_glue_set_extra_headers(switch_channel_t *channel, sip_t const *sip, const char *prefix);

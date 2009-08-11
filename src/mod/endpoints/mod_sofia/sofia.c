@@ -281,6 +281,7 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	const char *tmp;
 	switch_channel_t *channel;
 	private_object_t *tech_pvt;
+	char *extra_headers;
 #ifdef MANUAL_BYE
 	int cause;
 	char st[80] = "";
@@ -319,8 +320,15 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 
 	switch_snprintf(st, sizeof(st), "%d", cause);
 	switch_channel_set_variable(channel, "sip_term_cause", st);
+	
+	extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_BYE_HEADER_PREFIX);
+	sofia_glue_set_extra_headers(channel, sip, SOFIA_SIP_BYE_HEADER_PREFIX);
+	
 	switch_channel_hangup(channel, cause);
-	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), 
+		TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+		
+	switch_safe_free(extra_headers);
 
 	if (sofia_private) {
         sofia_private->destroy_me = 1;
@@ -2938,6 +2946,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			} else if (sip->sip_server && sip->sip_server->g_string) {
 				switch_channel_set_variable(channel, "sip_user_agent", sip->sip_server->g_string);
 			}
+
+			sofia_glue_set_extra_headers(channel, sip, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
 		}
 
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
@@ -3843,6 +3853,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (phrase) {
 					switch_channel_set_variable_partner(channel, "sip_hangup_phrase", phrase);
 				}
+				sofia_glue_set_extra_headers(channel, sip, SOFIA_SIP_BYE_HEADER_PREFIX);
 			}
 			switch_snprintf(st, sizeof(st), "%d", cause);
 			switch_channel_set_variable(channel, "sip_term_cause", st);

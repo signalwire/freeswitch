@@ -1302,6 +1302,54 @@ void sofia_glue_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_s
 	switch_mutex_unlock(tech_pvt->sofia_mutex);	
 }
 
+char* sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix) 
+{
+	char *extra_headers = NULL;
+	switch_stream_handle_t stream = { 0 };
+    switch_event_header_t *hi = NULL;
+
+    SWITCH_STANDARD_STREAM(stream);
+    if ((hi = switch_channel_variable_first(channel))) {
+        for (; hi; hi = hi->next) {
+            const char *name = (char *) hi->name;
+            char *value = (char *) hi->value;
+
+            if (!strncasecmp(name, prefix, strlen(prefix))) {
+                const char *hname = name + strlen(prefix);
+                stream.write_function(&stream, "%s: %s\r\n", hname, value);
+            }
+        }
+        switch_channel_variable_last(channel);
+    }
+
+    if (!switch_strlen_zero((char*)stream.data)) {
+        extra_headers = stream.data;
+    } else {
+		switch_safe_free(stream.data);
+	}
+
+	return extra_headers;
+}
+
+void sofia_glue_set_extra_headers(switch_channel_t *channel, sip_t const *sip, const char *prefix)
+{
+	sip_unknown_t *un;
+	char name[512] = "";
+	
+	if (!sip || !channel) {
+		return;
+	}
+
+	for (un = sip->sip_unknown; un; un = un->un_next) {
+		if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2)) {
+			if (!switch_strlen_zero(un->un_value)) {
+				switch_snprintf(name, sizeof(name), "%s%s", prefix, un->un_name);
+				switch_channel_set_variable(channel, name, un->un_value);
+			}
+		}
+	}
+}
+
 
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 {
@@ -1314,8 +1362,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *cid_name, *cid_num;
 	char *e_dest = NULL;
 	const char *holdstr = "";
-	switch_stream_handle_t stream = { 0 };
-	switch_event_header_t *hi;
 	char *extra_headers = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	uint32_t session_timeout = 0;
@@ -1639,23 +1685,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		switch_channel_set_variable(channel, "sofia_profile_name", tech_pvt->profile->name);
 	}
 
-	SWITCH_STANDARD_STREAM(stream);
-	if ((hi = switch_channel_variable_first(channel))) {
-		for (; hi; hi = hi->next) {
-			const char *name = (char *) hi->name;
-			char *value = (char *) hi->value;
-
-			if (!strncasecmp(name, SOFIA_SIP_HEADER_PREFIX, strlen(SOFIA_SIP_HEADER_PREFIX))) {
-				const char *hname = name + strlen(SOFIA_SIP_HEADER_PREFIX);
-				stream.write_function(&stream, "%s: %s\r\n", hname, value);
-			}
-		}
-		switch_channel_variable_last(channel);
-	}
-
-	if (stream.data) {
-		extra_headers = stream.data;
-	}
+	extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
 
 	session_timeout = tech_pvt->profile->session_timeout;
 	if ((val = switch_channel_get_variable(channel, SOFIA_SESSION_TIMEOUT))) {
@@ -1715,8 +1745,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 			   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
 
-	switch_safe_free(stream.data);
 	sofia_glue_free_destination(dst);
+	switch_safe_free(extra_headers);
 	tech_pvt->redirected = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
