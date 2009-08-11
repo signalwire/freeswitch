@@ -3751,7 +3751,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 	curl_global_init(CURL_GLOBAL_ALL);
 
 	/* indicate that the module should continue to be loaded */
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_NOUNLOAD;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown)

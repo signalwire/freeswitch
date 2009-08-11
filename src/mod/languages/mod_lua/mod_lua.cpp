@@ -462,7 +462,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 	do_config();
 
 	/* indicate that the module should continue to be loaded */
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_NOUNLOAD;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lua_shutdown)

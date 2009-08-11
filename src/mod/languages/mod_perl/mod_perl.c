@@ -493,7 +493,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load)
 
 	do_config();
 
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_NOUNLOAD;
 }
 
 /* For Emacs:

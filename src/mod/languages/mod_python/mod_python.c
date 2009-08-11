@@ -426,7 +426,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 				   SAF_SUPPORT_NOMEDIA);
 
 	/* indicate that the module should continue to be loaded */
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_NOUNLOAD;
 }
 
 /*

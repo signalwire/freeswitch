@@ -261,7 +261,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_java_load)
     }
     else
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating memory pool\n");
-    return status;
+
+    return status == SWITCH_STATUS_SUCCESS ? SWITCH_STATUS_NOUNLOAD : status;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_java_shutdown)

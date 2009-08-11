@@ -363,7 +363,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	SWITCH_ADD_API(api_interface, "managed", "Run a module as an API function (Execute)", managed_api_function, "<module> [<args>]");
 	SWITCH_ADD_APP(app_interface, "managed", "Run CLI App", "Run an App on a channel", managed_app_function, "<modulename> [<args>]", SAF_NONE);
 	SWITCH_ADD_API(api_interface, "managedreload", "Force [re]load of a file", managedreload_api_function, "<filename>");
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_NOUNLOAD;
 }
 
 #ifdef _MANAGED
