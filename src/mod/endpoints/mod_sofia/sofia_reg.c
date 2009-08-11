@@ -550,9 +550,8 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 
 void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int reboot)
 {
-	char sql[1024];
-	char sqlextra[1024] = "";
-	char *psql = sql;
+	char *sql = NULL;
+	char *sqlextra = NULL;
 	char *dup = strdup(call_id);
 	char *host = NULL, *user = NULL;
 
@@ -570,24 +569,27 @@ void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int
 	}
 
 	if (switch_strlen_zero(user)) {
-		switch_snprintf(sqlextra, sizeof(sqlextra), " or (sip_host='%s')", host);
+		sqlextra = switch_mprintf(" or (sip_host='%q')", host);
 	} else {
-		switch_snprintf(sqlextra, sizeof(sqlextra), " or (sip_user='%s' and sip_host='%s')", user, host);
+		sqlextra = switch_mprintf(" or (sip_user='%q' and sip_host='%q')", user, host);
 	}
 
-	switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,expires"
+	sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,expires"
 					",user_agent,server_user,server_host,profile_name,network_ip"
-					",%d from sip_registrations where call_id='%s' %s", 
+					",%d from sip_registrations where call_id='%q' %s", 
 					reboot, call_id, sqlextra);
+	switch_safe_free(sqlextra);
 	
 	switch_mutex_lock(profile->ireg_mutex);
 	sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, sofia_reg_del_callback, profile);
 	switch_mutex_unlock(profile->ireg_mutex);
-
-	switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where call_id='%s' or (sip_user='%s' and sip_host='%s')", 
+	switch_safe_free(sql);
+	
+	sql = switch_mprintf("delete from sip_registrations where call_id='%q' or (sip_user='%q' and sip_host='%q')", 
 					call_id, user, host);
-	sofia_glue_execute_sql(profile, &psql, SWITCH_FALSE);
+	sofia_glue_execute_sql(profile, &sql, SWITCH_FALSE);
 
+	switch_safe_free(sql);
 	switch_safe_free(dup);
 
 }
