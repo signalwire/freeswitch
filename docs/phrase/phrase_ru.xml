@@ -34,6 +34,7 @@
     </ascii>
 	<phonetic-ascii>
 		<prompt phrase="Пробел" filename="32.wav"/>
+		<prompt phrase="Решётка" filename="35.wav"/>
 		<prompt phrase="Точка" filename="46.wav"/>
 		<prompt phrase="Alpha" filename="97.wav"/>
 		<prompt phrase="Bravo" filename="98.wav"/>
