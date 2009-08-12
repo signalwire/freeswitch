@@ -534,7 +534,7 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 		&profile->record_comment, "FreeSWITCH Voicemail", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "record-copyright", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
 		&profile->record_copyright, "http://www.freeswitch.org", &profile->config_str_pool, NULL, NULL);
-	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "operator-ext", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "operator-extension", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
 		&profile->operator_ext, "", &profile->config_str_pool, NULL, NULL);
 
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "tone-spec", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
