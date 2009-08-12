@@ -384,7 +384,7 @@ int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, con
 		abort();
 	}
 
-	if (event->span > 16 || event->chan > 31) {
+	if (event->span >= ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN || event->chan >= ZAP_MAX_CHANNELS_PHYSICAL_SPAN ) {
 		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: TX Cmd=%s Invalid Span=%i Chan=%i\n", ss7bc_event_id_name(event->event_id), event->span, event->chan);
 		abort();
 		return -1;
