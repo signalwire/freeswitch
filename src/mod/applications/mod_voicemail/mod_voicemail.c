@@ -516,8 +516,6 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 		&profile->urgent_key, "*", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "operator-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
 		&profile->operator_key, "", &config_dtmf, NULL, NULL);
-	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "operator-extension", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
-		&profile->operator_ext, "", NULL, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "vmain-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
 		&profile->vmain_key, "", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "vmain-extension", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
