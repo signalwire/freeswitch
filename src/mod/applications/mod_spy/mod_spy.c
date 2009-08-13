@@ -130,7 +130,7 @@ SWITCH_STANDARD_API(dump_hash)
 
 static void event_handler(switch_event_t* event) 
 {
-	switch_core_session_t *session;
+	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
 	char *username[2] = {0};
 	char* domain[2] = {0};
@@ -166,11 +166,11 @@ static void event_handler(switch_event_t* event)
 		return;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,"UserSpy retrieved uuid %s for key %s, activating eavesdrop \n",uuid,key);
-	my_uuid = switch_event_get_header(event,"Unique-ID");
-
 	session = switch_core_session_locate(uuid);
 	channel = switch_core_session_get_channel(session);
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,"UserSpy retrieved uuid %s for key %s, activating eavesdrop \n",uuid,key);
+	my_uuid = switch_event_get_header(event,"Unique-ID");
 
 	switch_channel_set_variable(channel,"spy_uuid",my_uuid);
 
