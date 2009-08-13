@@ -23,10 +23,6 @@ applications/mod_fsv
 #applications/mod_memcache
 #applications/mod_spy
 applications/mod_cluechoo
-#asr_tts/mod_unimrcp
-#asr_tts/mod_flite
-#asr_tts/mod_pocketsphinx
-#asr_tts/mod_cepstral
 codecs/mod_g723_1
 codecs/mod_amr
 #codecs/mod_amrwb
@@ -51,6 +47,10 @@ endpoints/mod_loopback
 #endpoints/mod_opal
 #endpoints/mod_skypiax
 #../../libs/openzap/mod_openzap
+#asr_tts/mod_unimrcp
+#asr_tts/mod_flite
+#asr_tts/mod_pocketsphinx
+#asr_tts/mod_cepstral
 #event_handlers/mod_event_multicast
 event_handlers/mod_event_socket
 event_handlers/mod_cdr_csv
