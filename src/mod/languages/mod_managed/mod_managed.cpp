@@ -375,11 +375,17 @@ SWITCH_STANDARD_API(managedrun_api_function)
 		stream->write_function(stream, "-ERR no args specified!\n");	
 		return SWITCH_STATUS_SUCCESS;
 	}
+#ifndef _MANAGED
+	mono_thread_attach(globals.domain);
+#endif
 	if (executeBackgroundDelegate(cmd)) {
 		stream->write_function(stream, "+OK\n");
 	} else {	
 		stream->write_function(stream, "-ERR ExecuteBackground returned false (unknown module or exception?).\n");
 	}
+#ifndef _MANAGED
+	mono_thread_detach(mono_thread_current());
+#endif
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -389,9 +395,15 @@ SWITCH_STANDARD_API(managed_api_function)
 		stream->write_function(stream, "-ERR no args specified!\n");	
 		return SWITCH_STATUS_SUCCESS;
 	}
+#ifndef _MANAGED
+	mono_thread_attach(globals.domain);
+#endif
 	if (!(executeDelegate(cmd, stream, stream->param_event))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module or exception).\n", cmd); 
 	}
+#ifndef _MANAGED
+	mono_thread_detach(mono_thread_current());
+#endif
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -401,9 +413,15 @@ SWITCH_STANDARD_APP(managed_app_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No args specified!\n");
 		return;
 	}
+#ifndef _MANAGED
+	mono_thread_attach(globals.domain);
+#endif
 	if (!(runDelegate(data, session))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application run failed for %s (unknown module or exception).\n", data);
 	}
+#ifndef _MANAGED
+	mono_thread_detach(mono_thread_current());
+#endif
 }
 
 SWITCH_STANDARD_API(managedreload_api_function) 
@@ -412,9 +430,15 @@ SWITCH_STANDARD_API(managedreload_api_function)
 		stream->write_function(stream, "-ERR no args specified!\n");	
 		return SWITCH_STATUS_SUCCESS;
 	}
+#ifndef _MANAGED
+	mono_thread_attach(globals.domain);
+#endif
 	if (!(reloadDelegate(cmd))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module or exception).\n", cmd); 
 	}
+#ifndef _MANAGED
+	mono_thread_detach(mono_thread_current());
+#endif
 	return SWITCH_STATUS_SUCCESS;
 }
 
