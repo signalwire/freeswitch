@@ -238,7 +238,7 @@ static void event_handler(switch_event_t *event)
 		
 		if (switch_test_flag(l, LFLAG_STATEFUL) && l->timeout && switch_epoch_time_now(NULL) - l->last_flush > l->timeout) {
 			if (globals.debug > 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Stateful Listener %u has expired\n", l->id);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(l->session), SWITCH_LOG_WARNING, "Stateful Listener %u has expired\n", l->id);
 			}
 			remove_listener(l);
 			expire_listener(&l);
@@ -319,7 +319,7 @@ static void event_handler(switch_event_t *event)
 					if (l->lost_events) {
 						int le = l->lost_events;
 						l->lost_events = 0;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Lost %d events!\n", le);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(l->session), SWITCH_LOG_CRIT, "Lost %d events!\n", le);
 						clone = NULL;
 						if (switch_event_create(&clone, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
 							switch_event_add_header(clone, SWITCH_STACK_BOTTOM, "info", "lost %d events", le);
@@ -331,7 +331,7 @@ static void event_handler(switch_event_t *event)
 					switch_event_destroy(&clone);
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(l->session), SWITCH_LOG_ERROR, "Memory Error!\n");
 			}
 		}
 	}
@@ -357,14 +357,14 @@ SWITCH_STANDARD_APP(socket_function)
 	}
 
 	if (argc < 1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error!\n");
 		return;
 	}
 
 	host = argv[0];
 
 	if (switch_strlen_zero(host)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Host!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing Host!\n");
 		return;
 	}
 
@@ -381,13 +381,13 @@ SWITCH_STANDARD_APP(socket_function)
 	switch_channel_set_variable(channel, "socket_host", host);
 
 	if (switch_sockaddr_info_get(&sa, host, AF_INET, port, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error!\n");
 		return;
 	}
 
 	if (switch_socket_create(&new_sock, AF_INET, SOCK_STREAM, SWITCH_PROTO_TCP, switch_core_session_get_pool(session))
 		!= SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error!\n");
 		return;
 	}
 
@@ -395,13 +395,13 @@ SWITCH_STANDARD_APP(socket_function)
 	switch_socket_opt_set(new_sock, SWITCH_SO_TCP_NODELAY, 1);
 
 	if (switch_socket_connect(new_sock, sa) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error!\n");
 		return;
 	}
 
 
 	if (!(listener = switch_core_session_alloc(session, sizeof(*listener)))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error\n");
 		return;
 	}
 
@@ -816,7 +816,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		stream->write_function(stream, "</data>\n");
 
 		if (globals.debug > 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating event-sink listener [%u]\n", listener->id);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Creating event-sink listener [%u]\n", listener->id);
 		}
 		
 		goto end;
@@ -830,7 +830,7 @@ SWITCH_STANDARD_API(event_sink_function)
 
 		if ((listener = find_listener(idl))) {
 			if (globals.debug > 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying event-sink listener [%u]\n", idl);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Destroying event-sink listener [%u]\n", idl);
 			}
 			remove_listener(listener);
 			stream->write_function(stream, "<data>\n <reply type=\"success\">listener %u destroyed</reply>\n", listener->id);
@@ -840,7 +840,7 @@ SWITCH_STANDARD_API(event_sink_function)
 			goto end;
 		} else {
 			if (globals.debug > 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Request to destroy unknown event-sink listener [%u]\n", idl);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Request to destroy unknown event-sink listener [%u]\n", idl);
 			}
 			stream->write_function(stream, "<data><reply type=\"error\">Can't find listener</reply></data>\n");
 			goto end;
@@ -1208,7 +1208,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 							listener->ebuf = switch_xml_toxml(xml, SWITCH_FALSE);
 							switch_xml_free(xml);
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "XML ERROR!\n");
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session), SWITCH_LOG_ERROR, "XML ERROR!\n");
 							goto endloop;
 						}
 					}
@@ -2009,7 +2009,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 				const char message[] = "Access Denied, go away.\n";
 				int mlen = strlen(message);
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", listener->remote_ip, prefs.acl[x]);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", listener->remote_ip, prefs.acl[x]);
 
 				switch_snprintf(buf, sizeof(buf), "Content-Type: text/rude-rejection\nContent-Length: %d\n\n", mlen);
 				len = strlen(buf);
@@ -2023,9 +2023,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	
 	if (globals.debug > 0) {
 		if (switch_strlen_zero(listener->remote_ip)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Connection Open\n");
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open from %s:%d\n", listener->remote_ip, listener->remote_port);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Connection Open from %s:%d\n", listener->remote_ip, listener->remote_port);
 		}
 	}
 
@@ -2040,7 +2040,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		status = read_packet(listener, &ievent, 25);
 
 		if (status != SWITCH_STATUS_SUCCESS || !ievent) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Socket Error!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Socket Error!\n");
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			goto done;
 		}
@@ -2127,7 +2127,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	remove_listener(listener);
 
 	if (globals.debug > 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session complete, waiting for children\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session complete, waiting for children\n");
 	}
 
 	switch_thread_rwlock_wrlock(listener->rwlock);
@@ -2168,7 +2168,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_thread_rwlock_unlock(listener->rwlock);
 
 	if (globals.debug > 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Closed\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Connection Closed\n");
 	}
 
 	switch_core_hash_destroy(&listener->event_hash);

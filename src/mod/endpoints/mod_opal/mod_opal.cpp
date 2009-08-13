@@ -1034,7 +1034,7 @@ switch_status_t FSConnection::receive_message(switch_core_session_message_t *msg
             
             if (GetPhase() >= ReleasingPhase) {
                 // Call got aborted
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Call abandoned!\n");
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(m_fsSession), SWITCH_LOG_ERROR, "Call abandoned!\n");
                 return SWITCH_STATUS_FALSE;
             }
 

@@ -1138,7 +1138,7 @@ static switch_status_t redirect_audio(switch_core_session_t *session, switch_cor
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "redirect_audio(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "redirect_audio(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1156,7 +1156,7 @@ static switch_status_t transmit_text(switch_core_session_t *session, switch_core
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "transmit_text(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "transmit_text(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1174,12 +1174,12 @@ static switch_status_t answer(switch_core_session_t *session, switch_core_sessio
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "answer(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "answer(%p)\n", (void *) session);
 
 #if 0
     if ((ret = uc_call_control(uc, UC_OP_ANSWERCALL, crn, NULL)) < 0)
     {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Answer call failed - %s\n", uc_ret_to_str(ret));
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Answer call failed - %s\n", uc_ret_to_str(ret));
         return SWITCH_STATUS_FAILED;
     }
     /*endif*/
@@ -1201,12 +1201,12 @@ static switch_status_t progress(switch_core_session_t *session, switch_core_sess
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "progress(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "progress(%p)\n", (void *) session);
 
 #if 0
     if ((ret = uc_call_control(uc, UC_OP_ACCEPTCALL, crn, NULL)) < 0)
     {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Accept call failed - %s\n", uc_ret_to_str(ret));
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Accept call failed - %s\n", uc_ret_to_str(ret));
         return SWITCH_STATUS_FAILED;
     }
     /*endif*/
@@ -1228,7 +1228,7 @@ static switch_status_t bridge(switch_core_session_t *session, switch_core_sessio
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "bridge(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "bridge(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1246,7 +1246,7 @@ static switch_status_t unbridge(switch_core_session_t *session, switch_core_sess
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "unbridge(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "unbridge(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1264,7 +1264,7 @@ static switch_status_t transfer(switch_core_session_t *session, switch_core_sess
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "transfer(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "transfer(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1282,7 +1282,7 @@ static switch_status_t ringing(switch_core_session_t *session, switch_core_sessi
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ringing(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "ringing(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1300,7 +1300,7 @@ static switch_status_t media(switch_core_session_t *session, switch_core_session
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "media(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "media(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1318,7 +1318,7 @@ static switch_status_t nomedia(switch_core_session_t *session, switch_core_sessi
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "nomedia(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "nomedia(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1336,7 +1336,7 @@ static switch_status_t hold(switch_core_session_t *session, switch_core_session_
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hold(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "hold(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1354,7 +1354,7 @@ static switch_status_t unhold(switch_core_session_t *session, switch_core_sessio
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "unhold(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "unhold(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1372,7 +1372,7 @@ static switch_status_t redirect(switch_core_session_t *session, switch_core_sess
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "redirect(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "redirect(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1390,7 +1390,7 @@ static switch_status_t respond(switch_core_session_t *session, switch_core_sessi
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "respond(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "respond(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1408,7 +1408,7 @@ static switch_status_t broadcast(switch_core_session_t *session, switch_core_ses
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "broadcast(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "broadcast(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1426,7 +1426,7 @@ static switch_status_t media_redirect(switch_core_session_t *session, switch_cor
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "media_redirect(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "media_redirect(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1444,7 +1444,7 @@ static switch_status_t deflect(switch_core_session_t *session, switch_core_sessi
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "deflect(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "deflect(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1462,7 +1462,7 @@ static switch_status_t video_refresh_req(switch_core_session_t *session, switch_
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "video_refresh_req(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "video_refresh_req(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1480,7 +1480,7 @@ static switch_status_t display(switch_core_session_t *session, switch_core_sessi
     uc = tech_pvt->uc;
     assert(uc != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "display(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "display(%p)\n", (void *) session);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1528,7 +1528,7 @@ static switch_status_t unicall_receive_message(switch_core_session_t *session, s
     case SWITCH_MESSAGE_INDICATE_DISPLAY:
         return display(session, msg);
     default:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "unicall_receive_message(%p) %d\n", (void *) session, msg->message_id);
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "unicall_receive_message(%p) %d\n", (void *) session, msg->message_id);
         break;
     }
 
@@ -1555,7 +1555,7 @@ static switch_call_cause_t unicall_outgoing_channel(switch_core_session_t *sessi
     int hide;
     char name[128];
 
-switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "unicall_outgoing_channel(%p)\n", (void *) session);
+switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "unicall_outgoing_channel(%p)\n", (void *) session);
 
  if ((*new_session = switch_core_session_request(unicall_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool)) == NULL)
     {
@@ -1565,7 +1565,7 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "unicall_outgoing_channel
     switch_core_session_add_stream(*new_session, NULL);
     if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) == NULL)
     {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
         switch_core_session_destroy(new_session);
         return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
     }
@@ -1574,7 +1574,7 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "unicall_outgoing_channel
 
     if (outbound_profile == NULL)
     {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Doh! no caller profile\n");
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Doh! no caller profile\n");
         switch_core_session_destroy(new_session);
         return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
     }
@@ -1596,7 +1596,7 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "unicall_outgoing_channel
     //uc_callparm_userinfo_layer1_protocol(callparms, prot);
     //uc_callparm_user_rate(callparms, rate);
 
-switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "destination '%s'\n", outbound_profile->destination_number);
+switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_INFO, "destination '%s'\n", outbound_profile->destination_number);
     uc_callparm_set_destination_number(callparms, outbound_profile->destination_number);
     uc_callparm_set_destination_ton(callparms, outbound_profile->destination_number_ton);
     uc_callparm_set_destination_npi(callparms, outbound_profile->destination_number_numplan);
@@ -1617,8 +1617,8 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "destination '%s'\n", out
     //uc_callparm_set_original_called_number_ton(callparms, ton);
     //uc_callparm_set_original_called_number_npi(callparms, npi);
 
-switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "caller id name '%s'\n", outbound_profile->caller_id_name);
-switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "caller id number '%s'\n", outbound_profile->caller_id_number);
+switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_INFO, "caller id name '%s'\n", outbound_profile->caller_id_name);
+switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_INFO, "caller id number '%s'\n", outbound_profile->caller_id_number);
     uc_callparm_set_originating_name(callparms, outbound_profile->caller_id_name);
     uc_callparm_set_originating_number(callparms, outbound_profile->caller_id_number);
     screen = switch_test_flag(outbound_profile, SWITCH_CPF_SCREEN);
@@ -1645,7 +1645,7 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "caller id number '%s'\n"
 #if 0
     if ((ret = uc_call_control(uc, UC_OP_MAKECALL, 0, (void *) &makecall)) < 0)
     {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Make call failed - %s\n", uc_ret_to_str(ret));
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_INFO, "Make call failed - %s\n", uc_ret_to_str(ret));
         return SWITCH_STATUS_FAILED;
     }
     /*endif*/
@@ -1655,7 +1655,7 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "caller id number '%s'\n"
     switch_channel_set_flag(channel, CF_OUTBOUND);
     switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
     switch_channel_set_state(channel, CS_INIT);
-switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "unicall_outgoing_channel(%p) SUCCESS\n", (void *) session);
+switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_INFO, "unicall_outgoing_channel(%p) SUCCESS\n", (void *) session);
     return SWITCH_CAUSE_SUCCESS;
 }
 
@@ -1666,7 +1666,7 @@ static switch_status_t unicall_receive_event(switch_core_session_t *session, swi
 
     switch_assert(tech_pvt != NULL);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "unicall_receive_event(%p)\n", (void *) session);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "unicall_receive_event(%p)\n", (void *) session);
 
     if (body == NULL)
         body = "";
