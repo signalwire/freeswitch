@@ -339,7 +339,7 @@ static switch_status_t hash_state_handler(switch_core_session_t *session)
 			
 			item = (limit_hash_item_t*)val;
 			item->total_usage--;	
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)key, item->total_usage);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)key, item->total_usage);
 			
 			if (item->total_usage == 0)  {
 				/* Noone is using this item anymore */
@@ -470,13 +470,13 @@ SWITCH_STANDARD_APP(db_function)
 	}
 
 	if (argc < 3 || !argv[0]) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: db %s\n", DB_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: db %s\n", DB_USAGE);
 		return;
 	}
 
 	if (!strcasecmp(argv[0], "insert")) {
 		if (argc < 4) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: db %s\n", DB_USAGE);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: db %s\n", DB_USAGE);
 			return;
 		}
 		sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
@@ -490,7 +490,7 @@ SWITCH_STANDARD_APP(db_function)
 	} else if (!strcasecmp(argv[0], "delete")) {
 		sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: db %s\n", DB_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: db %s\n", DB_USAGE);
 		return;
 	}
 
@@ -548,7 +548,7 @@ SWITCH_STANDARD_APP(hash_function)
 	goto done;
 
 usage:
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: hash %s\n", HASH_USAGE);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: hash %s\n", HASH_USAGE);
 
 done:
 	switch_mutex_unlock(globals.db_hash_mutex);
@@ -718,7 +718,7 @@ SWITCH_STANDARD_APP(group_function)
 	}
 
 	if (argc < 3 || !argv[0]) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: group %s\n", DB_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: group %s\n", DB_USAGE);
 		return;
 	}
 
@@ -759,7 +759,7 @@ SWITCH_STANDARD_APP(limit_function)
 	}
 
 	if (argc < 3) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: limit %s\n", LIMIT_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit %s\n", LIMIT_USAGE);
 		return;
 	}
 
@@ -914,13 +914,13 @@ static switch_bool_t do_limit_hash(switch_core_session_t *session, const char *r
 			item->rate_usage++;
 
 			if ((max >= 0) && (item->rate_usage > (uint32_t)max)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s exceeds maximum rate of %d/%ds, now at %d\n", hashkey, max, interval, item->rate_usage);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s exceeds maximum rate of %d/%ds, now at %d\n", hashkey, max, interval, item->rate_usage);
 				status = SWITCH_FALSE;
 				goto end;
 			}
 		}
 	} else if ((max >= 0) && (item->total_usage + increment > (uint32_t)max)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is already at max value (%d)\n", hashkey, item->total_usage);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is already at max value (%d)\n", hashkey, item->total_usage);
 		status = SWITCH_FALSE;
 		goto end;
 	}
@@ -931,11 +931,11 @@ static switch_bool_t do_limit_hash(switch_core_session_t *session, const char *r
 		switch_core_hash_insert(pvt->hash, hashkey, item);
 
 		if (max == -1) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", hashkey, item->total_usage);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", hashkey, item->total_usage);
 		} else if (interval == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d/%d\n", hashkey, item->total_usage, max);	
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d/%d\n", hashkey, item->total_usage, max);	
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d/%d for the last %d seconds\n", hashkey, item->rate_usage, max, interval);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d/%d for the last %d seconds\n", hashkey, item->rate_usage, max, interval);
 		}
 
 		limit_fire_event(realm, id, item->total_usage, item->rate_usage, max, max >=0 ? (uint32_t)max : 0);
@@ -978,7 +978,7 @@ static void limit_hash_release(switch_core_session_t *session, const char *realm
 	
 	if ((item = (limit_hash_item_t*)switch_core_hash_find(pvt->hash, hashkey))) {
 		item->total_usage--;	
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)hashkey, item->total_usage);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)hashkey, item->total_usage);
 	
 		switch_core_hash_delete(pvt->hash, hashkey);
 	
@@ -1014,7 +1014,7 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	}
 	
 	if (argc < 2) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: limit_hash %s\n", LIMITHASH_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit_hash %s\n", LIMITHASH_USAGE);
 		return;
 	}
 	
@@ -1075,7 +1075,7 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 	}
 	
 	if (argc < 2) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: limit_hash_execute %s\n", LIMITHASHEXECUTE_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit_hash_execute %s\n", LIMITHASHEXECUTE_USAGE);
 		return;
 	}
 	
@@ -1102,7 +1102,7 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 	app_arg = argv[4];
 
 	if (switch_strlen_zero(app)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing application\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing application\n");
 		return;
 	}
 

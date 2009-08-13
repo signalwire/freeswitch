@@ -394,7 +394,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attempting to bill at $%s per minute to account %s\n", billrate, billaccount);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Attempting to bill at $%s per minute to account %s\n", billrate, billaccount);
 
 	/* Get caller profile info from channel */
 	profile = switch_channel_get_caller_profile(channel);
@@ -405,14 +405,14 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	}
 
 	if (profile->times->answered < 1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Not billing %s - call is not in answered state\n", billaccount);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Not billing %s - call is not in answered state\n", billaccount);
 
 		/* See if this person has enough money left to continue the call */
 		balance = get_balance(billaccount);
-switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Comparing %f to hangup balance of %f\n", balance, globals.nobal_amt);
+switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Comparing %f to hangup balance of %f\n", balance, globals.nobal_amt);
 		if (balance <= globals.nobal_amt) {
 			/* Not enough money - reroute call to nobal location */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Balance of %f fell below allowed amount of %f! (Account %s)\n", balance, globals.nobal_amt, billaccount);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Balance of %f fell below allowed amount of %f! (Account %s)\n", balance, globals.nobal_amt, billaccount);
 
 			transfer_call(session, globals.nobal_action);
 		}
@@ -433,7 +433,7 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Comparing %f to hangup 
 		if (globals.mutex) {
 			switch_mutex_unlock(globals.mutex);
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received heartbeat, but we're paused - ignoring\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Received heartbeat, but we're paused - ignoring\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -444,21 +444,21 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Comparing %f to hangup 
 
 		/* Setup new billing data (based on call answer time, in case this module started late with active calls) */
 		nibble_data->lastts = profile->times->answered;		/* Set the initial answer time to match when the call was really answered */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Beginning new billing on %s\n", uuid);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Beginning new billing on %s\n", uuid);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Last successful billing time was %s\n", date);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Last successful billing time was %s\n", date);
 	}
 
 	switch_time_exp_lt(&tm, nibble_data->lastts);
 	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d seconds passed since last bill time of %s\n", (int) ((ts - nibble_data->lastts) / 1000000), date);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%d seconds passed since last bill time of %s\n", (int) ((ts - nibble_data->lastts) / 1000000), date);
 
 	if ((ts - nibble_data->lastts) >= 0) {
 		/* Convert billrate into microseconds and multiply by # of microseconds that have passed since last *successful* bill */
 		billamount = ((float)atof(billrate) / 1000000 / 60) * ((ts - nibble_data->lastts)) - nibble_data->bill_adjustments;
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Billing $%f to %s (Call: %s / %f so far)\n", billamount, billaccount, uuid, nibble_data->total);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Billing $%f to %s (Call: %s / %f so far)\n", billamount, billaccount, uuid, nibble_data->total);
 
 		/* DO ODBC BILLING HERE and reset counters if it's successful! */
 		if (bill_event(billamount, billaccount) == SWITCH_STATUS_SUCCESS) {
@@ -471,10 +471,10 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Comparing %f to hangup 
 			/* Update channel variable with current billing */
 			switch_channel_set_variable_printf(channel, "nibble_total_billed", "%f", nibble_data->total);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to log to database!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Failed to log to database!\n");
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Just tried to bill %s negative minutes! That should be impossible.\n", uuid);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Just tried to bill %s negative minutes! That should be impossible.\n", uuid);
 	}
 
 	/* Update the last time we billed */
@@ -488,7 +488,7 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Comparing %f to hangup 
 		balance = get_balance(billaccount);
 		if (balance <= globals.nobal_amt) {
 			/* Not enough money - reroute call to nobal location */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Balance of %f fell below allowed amount of %f! (Account %s)\n", balance, globals.nobal_amt, billaccount);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Balance of %f fell below allowed amount of %f! (Account %s)\n", balance, globals.nobal_amt, billaccount);
 
 			/* IMPORTANT: Billing must be paused before the transfer occurs! This prevents infinite loops, since the transfer will result */
 			/* in nibblebill checking the call again in the routing process for an allowed balance! */
@@ -563,7 +563,7 @@ static void nibblebill_pause(switch_core_session_t *session)
 	nibble_data = (nibble_data_t *) switch_channel_get_private(channel, "_nibble_data_");
 
 	if (!nibble_data) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Can't pause - channel is not initialized for billing!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Can't pause - channel is not initialized for billing!\n");
 		return;
 	}
 
@@ -571,7 +571,7 @@ static void nibblebill_pause(switch_core_session_t *session)
 	if (nibble_data->pausets == 0)
 		nibble_data->pausets = ts;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Paused billing timestamp!\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Paused billing timestamp!\n");
 
 	/* Done checking - release lock */
 	if (globals.mutex) {
@@ -594,12 +594,12 @@ static void nibblebill_resume(switch_core_session_t *session)
 	nibble_data = (nibble_data_t *) switch_channel_get_private(channel, "_nibble_data_");
 
 	if (!nibble_data) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't resume - channel is not initialized for billing (This is expected at hangup time)!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Can't resume - channel is not initialized for billing (This is expected at hangup time)!\n");
 		return;
 	}
 
 	if (nibble_data->pausets == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't resume - channel is not paused! (This is expected at hangup time)\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Can't resume - channel is not paused! (This is expected at hangup time)\n");
 		return;
 	}
 
@@ -612,7 +612,7 @@ static void nibblebill_resume(switch_core_session_t *session)
 
 	/* Calculate how much was "lost" to billings during pause - we do this here because you never know when the billrate may change during a call */
 	nibble_data->bill_adjustments += ((float)atof(billrate) / 1000000 / 60) * ((ts - nibble_data->pausets));
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Resumed billing! Subtracted %f from this billing cycle.\n", (atof(billrate) / 1000000 / 60) * ((ts - nibble_data->pausets)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Resumed billing! Subtracted %f from this billing cycle.\n", (atof(billrate) / 1000000 / 60) * ((ts - nibble_data->pausets)));
 
 	nibble_data->pausets = 0;
 
@@ -636,7 +636,7 @@ static void nibblebill_reset(switch_core_session_t *session)
 	nibble_data = (nibble_data_t *) switch_channel_get_private(channel, "_nibble_data_");
 
 	if (!nibble_data) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Can't reset - channel is not initialized for billing!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Can't reset - channel is not initialized for billing!\n");
 		return;
 	}
 
@@ -648,7 +648,7 @@ static void nibblebill_reset(switch_core_session_t *session)
 	/* Update the last time we billed */
 	nibble_data->lastts = ts;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Reset last billing timestamp marker to right now!\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Reset last billing timestamp marker to right now!\n");
 
 	/* Done checking - release lock */
 	if (globals.mutex) {
@@ -670,7 +670,7 @@ static float nibblebill_check(switch_core_session_t *session)
 	nibble_data = (nibble_data_t *) switch_channel_get_private(channel, "_nibble_data_");
 
 	if (!nibble_data) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Can't check - channel is not initialized for billing!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Can't check - channel is not initialized for billing!\n");
 		return -99999;
 	}
 
@@ -709,9 +709,9 @@ static void nibblebill_adjust(switch_core_session_t *session, float amount)
 
 	/* Add or remove amount from adjusted billing here. Note, we bill the OPPOSITE */
 	if (bill_event(-amount, billaccount) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Recorded adjustment to %s for $%f\n", billaccount, amount);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Recorded adjustment to %s for $%f\n", billaccount, amount);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to record adjustment to %s for $%f\n", billaccount, amount);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to record adjustment to %s for $%f\n", billaccount, amount);
 	}
 }
 
@@ -733,7 +733,7 @@ SWITCH_STANDARD_APP(nibblebill_app_function)
 		} else if (!strcasecmp(argv[0], "resume")) {
 			nibblebill_resume(session);
 		} else if (!strcasecmp(argv[0], "check")) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Current billing is at $%f\n", nibblebill_check(session));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Current billing is at $%f\n", nibblebill_check(session));
 		} else if (!strcasecmp(argv[0], "reset")) {
 			nibblebill_reset(session);
 		} else if (!strcasecmp(argv[0], "heartbeat") && argc == 2) {
@@ -768,7 +768,7 @@ SWITCH_STANDARD_API(nibblebill_api_function)
 				} else if (!strcasecmp(argv[1], "resume")) {
 					nibblebill_resume(psession);
 				} else if (!strcasecmp(argv[1], "check")) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Current billing is at $%f\n", nibblebill_check(psession));
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Current billing is at $%f\n", nibblebill_check(psession));
 				} else if (!strcasecmp(argv[1], "reset")) {
 					nibblebill_reset(psession);
 				} else if (!strcasecmp(argv[1], "heartbeat") && argc == 3) {

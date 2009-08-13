@@ -187,9 +187,9 @@ static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const cha
 		dst = strchr(src, '/');
 		*dst = '\0';
 		dst++;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "src: %s, dst: %s\n", src, dst);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "src: %s, dst: %s\n", src, dst);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not a valid regexp: %s\n", src);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Not a valid regexp: %s\n", src);
 		goto done;
 	}
 
@@ -212,13 +212,13 @@ static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const cha
 			dst = dst_regex;
 		}
 			
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "expanded src: %s, dst: %s\n", src, dst);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "expanded src: %s, dst: %s\n", src, dst);
 	}
   
 	if ((proceed = switch_regex_perform(number, src, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 		len = (uint32_t) (strlen(src) + strlen(dst) + 10) * proceed; /* guestimate size */
 		if (!(substituted = switch_core_alloc(pool, len))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
 			goto done;
 		}
 		memset(substituted, 0, len);
@@ -292,7 +292,7 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 								, cur_route->gw_prefix, cur_route->prefix
 								, destination_number, cur_route->suffix, cur_route->gw_suffix);
 			
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Returning Dialstring %s\n", data);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Returning Dialstring %s\n", data);
 	return data;
 }
 
@@ -492,7 +492,7 @@ static char *format_custom_sql(const char *custom_sql, callback_t *cb_struct, co
 			newSQL = switch_event_expand_headers(cb_struct->event, tmpSQL ? tmpSQL : custom_sql);
 			
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_CRIT,
 								"mod_lcr called without a valid session while using a custom_sql that has channel variables.\n");
 		}
 	}
@@ -698,7 +698,7 @@ static switch_status_t is_intrastatelata(callback_t *cb_struct)
 								cb_struct->lookup_number+1, cb_struct->lookup_number+4,
 								cb_struct->cid+1, cb_struct->cid+4);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL: %s\n", sql);    
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, "SQL: %s\n", sql);    
 
 	return(lcr_execute_sql_callback(sql, intrastatelata_callback, cb_struct));
 	
@@ -726,7 +726,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	
 	/* allocate the dedup hash */
 	if (switch_core_hash_init(&cb_struct->dedup_hash, cb_struct->pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initializing the dedup hash\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_ERROR, "Error initializing the dedup hash\n");
 		return SWITCH_STATUS_GENERR;
 	}
 	
@@ -744,12 +744,12 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	} else {
 		rate_field = switch_core_strdup(cb_struct->pool, "rate");
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intra routing [state:%d lata:%d] so rate field is [%s]\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, "intra routing [state:%d lata:%d] so rate field is [%s]\n",
 					  cb_struct->intrastate, cb_struct->intralata, rate_field);
 	
 	/* set some channel vars if we have a session */
 	if (cb_struct->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "we have a session\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, "we have a session\n");
 		if ((channel = switch_core_session_get_channel(cb_struct->session))) {
 			switch_channel_set_variable_var_check(channel, "lcr_rate_field", rate_field, SWITCH_FALSE);
 			switch_channel_set_variable_var_check(channel, "lcr_query_digits", digits_copy, SWITCH_FALSE);
@@ -759,7 +759,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 		}
 	}
 	if (cb_struct->event) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "we have an event\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, "we have an event\n");
 		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_rate_field", rate_field);
 		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_digits", digits_copy);
 		id_str = switch_core_sprintf(cb_struct->pool, "%d", cb_struct->profile->id);
@@ -782,7 +782,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 		switch_safe_free(safe_sql);
 	}
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL: %s\n", (char *)sql_stream.data);    
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, "SQL: %s\n", (char *)sql_stream.data);    
 	
 	lookup_status = lcr_execute_sql_callback((char *)sql_stream.data, route_add_callback, cb_struct);
 
@@ -1094,22 +1094,22 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 	}
 	routes.pool = pool;
 	if (!(routes.profile = locate_profile(lcr_profile))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
 		goto end;
 	}
 
 	intrastate = switch_channel_get_variable(channel, "intrastate");
 	intralata = switch_channel_get_variable(channel, "intralata");
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intrastate channel var is [%s]\n", intrastate);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intralata channel var is [%s]\n", intralata);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "intrastate channel var is [%s]\n", intrastate);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "intralata channel var is [%s]\n", intralata);
 	if (!switch_strlen_zero(intralata) && !strcasecmp((char *)intralata, "true")) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on intralata rates\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Select routes based on intralata rates\n");
 		routes.intralata = SWITCH_FALSE;
 	} else if (!switch_strlen_zero(intrastate) && !strcasecmp((char *)intrastate, "true")) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on intrastate rates\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Select routes based on intrastate rates\n");
 		routes.intrastate = SWITCH_TRUE;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on interstate rates\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Select routes based on interstate rates\n");
 		routes.intrastate = SWITCH_FALSE;
 	}
 	
@@ -1117,12 +1117,12 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 		caller_profile = switch_channel_get_caller_profile(channel);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "LCR Lookup on %s\n", caller_profile->destination_number);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "LCR Lookup on %s\n", caller_profile->destination_number);
 	routes.lookup_number = caller_profile->destination_number;
 	routes.cid = (char *) caller_profile->caller_id_number;
 	if (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
 		if ((extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "memory error!\n");
 			goto end;
 		}
 
@@ -1134,7 +1134,7 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 			switch_caller_extension_add_application(session, extension, "bridge", cur_route->dialstring);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", caller_profile->destination_number);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", caller_profile->destination_number);
 	}
 
 end:
@@ -1191,18 +1191,18 @@ SWITCH_STANDARD_APP(lcr_app_function)
 	routes.pool = pool;
 
 	intra = switch_channel_get_variable(channel, "intrastate");
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "intrastate channel var is [%s]\n", intra);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "intrastate channel var is [%s]\n", intra);
 	if (switch_strlen_zero(intra) || strcasecmp((char *)intra, "true")) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on interstate rates\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Select routes based on interstate rates\n");
 		routes.intrastate = SWITCH_FALSE;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on intrastate rates\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Select routes based on intrastate rates\n");
 		routes.intrastate = SWITCH_TRUE;
 	}
 
 	if (!caller_profile) {
 		if (!(caller_profile = switch_channel_get_caller_profile(channel))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to locate caller_profile\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Unable to locate caller_profile\n");
 		}
 	}
 
@@ -1212,7 +1212,7 @@ SWITCH_STANDARD_APP(lcr_app_function)
 			lcr_profile = argv[1];
 		}
 		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "LCR Lookup on %s using profile %s\n", dest, lcr_profile);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "LCR Lookup on %s using profile %s\n", dest, lcr_profile);
 		routes.lookup_number = dest;
 		if (caller_profile) {
 			routes.cid = (char *) switch_channel_get_variable(channel, "effective_caller_id_number");
@@ -1222,7 +1222,7 @@ SWITCH_STANDARD_APP(lcr_app_function)
 		}
 	
 		if (!(routes.profile = locate_profile(lcr_profile))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
 			goto end;
 		}
 		if (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
@@ -1248,7 +1248,7 @@ SWITCH_STANDARD_APP(lcr_app_function)
 			switch_channel_set_variable(channel, "lcr_auto_route", rbuf);
 			switch_channel_set_variable(channel, "import", "lcr_carrier,lcr_rate");
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", dest);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", dest);
 		}
 	}
 	
@@ -1288,7 +1288,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 		goto usage;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG
 					  , "data passed to lcr is [%s]\n", cmd
 					  );
 
@@ -1314,7 +1314,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 			int i;
 			for (i=2; i<argc; i++) {
 				if (!strcasecmp(argv[i], "intrastate")) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Select routes based on intrastate rates\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Select routes based on intrastate rates\n");
 					cb_struct.intrastate = SWITCH_TRUE;
 				} else if(!strcasecmp(argv[i], "as")) {
 					i++;
@@ -1324,7 +1324,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 							goto usage;
 						}
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Caller ID to [%s]\n", argv[i]);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set Caller ID to [%s]\n", argv[i]);
 					/* the only other option we have right now is caller id */
 					cb_struct.cid = switch_core_strdup(pool, argv[i]);
 				}
@@ -1332,7 +1332,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 		} 
 		if (switch_strlen_zero(cb_struct.cid)) {
 			cb_struct.cid = "18005551212";
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING
 							  , "Using default CID [%s]\n", cb_struct.cid
 							  );
 		}

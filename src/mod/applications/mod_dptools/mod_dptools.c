@@ -125,7 +125,7 @@ SWITCH_STANDARD_APP(sched_heartbeat_function)
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", SCHED_HEARTBEAT_SYNTAX);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", SCHED_HEARTBEAT_SYNTAX);
 
 }
 
@@ -143,7 +143,7 @@ SWITCH_STANDARD_APP(heartbeat_function)
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", HEARTBEAT_SYNTAX);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", HEARTBEAT_SYNTAX);
 
 }
 
@@ -158,7 +158,7 @@ SWITCH_STANDARD_APP(exe_function)
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		switch_core_session_execute_exten(session, argv[0], argv[1], argv[2]);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", EXE_SYNTAX);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", EXE_SYNTAX);
 	}
 }
 
@@ -166,7 +166,7 @@ SWITCH_STANDARD_APP(exe_function)
 SWITCH_STANDARD_APP(mkdir_function)
 {
 	switch_dir_make_recursive(data, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session));
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s MKDIR: %s\n", switch_channel_get_name(switch_core_session_get_channel(session)), data);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s MKDIR: %s\n", switch_channel_get_name(switch_core_session_get_channel(session)), data);
 }
 
 #define SOFT_HOLD_SYNTAX "<unhold key> [<moh_a>] [<moh_b>]"
@@ -180,7 +180,7 @@ SWITCH_STANDARD_APP(soft_hold_function)
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
 		switch_ivr_soft_hold(session, argv[0], argv[1], argv[2]);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", SOFT_HOLD_SYNTAX);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", SOFT_HOLD_SYNTAX);
 	}
 }
 
@@ -220,7 +220,7 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 
 		if (strchr(argv[2], 'a')) {
 			if ((bind_flags & SBF_EXEC_BLEG)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
 			} else {
 				bind_flags |= SBF_EXEC_ALEG;
 			}
@@ -228,7 +228,7 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 
 		if (strchr(argv[2], 'b')) {
 			if ((bind_flags & SBF_EXEC_ALEG)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
 			} else {
 				bind_flags |= SBF_EXEC_BLEG;
 			}
@@ -236,7 +236,7 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 
 		if (strchr(argv[2], 'a')) {
 			if ((bind_flags & SBF_EXEC_BLEG)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
 			} else {
 				bind_flags |= SBF_EXEC_ALEG;
 			}
@@ -244,7 +244,7 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 
 		if (strchr(argv[2], 'o')) {
 			if ((bind_flags & SBF_EXEC_BLEG) || (bind_flags & SBF_EXEC_ALEG) || (bind_flags & SBF_EXEC_SAME)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
 			} else {
 				bind_flags |= SBF_EXEC_OPPOSITE;
 			}
@@ -252,7 +252,7 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 
 		if (strchr(argv[2], 's')) {
 			if ((bind_flags & SBF_EXEC_BLEG) || (bind_flags & SBF_EXEC_ALEG) || (bind_flags & SBF_EXEC_SAME)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
 			} else {
 				bind_flags |= SBF_EXEC_SAME;
 			}
@@ -263,10 +263,10 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 		}
 		
 		if (switch_ivr_bind_dtmf_meta_session(session, kval, bind_flags, argv[3]) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bind Error!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Bind Error!\n");
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", BIND_SYNTAX);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", BIND_SYNTAX);
 	}
 }
 
@@ -286,7 +286,7 @@ SWITCH_STANDARD_APP(intercept_function)
 					uuid = argv[1];
 					bleg = SWITCH_TRUE;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", INTERCEPT_SYNTAX);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", INTERCEPT_SYNTAX);
 					return;
 				}
 			} else {
@@ -298,7 +298,7 @@ SWITCH_STANDARD_APP(intercept_function)
 		return;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", INTERCEPT_SYNTAX);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", INTERCEPT_SYNTAX);
 }
 
 #define MAX_SPY 3000
@@ -324,7 +324,7 @@ static int e_callback(void *pArg, int argc, char **argv, char **columnNames)
 SWITCH_STANDARD_APP(eavesdrop_function)
 {
 	if (switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", eavesdrop_SYNTAX);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", eavesdrop_SYNTAX);
 	} else {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *require_group = switch_channel_get_variable(channel, "eavesdrop_require_group");
@@ -347,7 +347,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 				e_data.total = 0;
 				switch_core_db_exec(db, sql, e_callback, &e_data, &errmsg);
 				if (errmsg) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error: %s\n", errmsg);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error: %s\n", errmsg);
 					switch_core_db_free(errmsg);
 					if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_failed"))) {
 						switch_ivr_play_file(session, NULL, file, NULL);
@@ -359,13 +359,13 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 					for (x = 0; x < e_data.total && switch_channel_ready(channel); x++) {
 						/* If we have a group and 1000 concurrent calls, we will flood the logs. This check avoids this */
 						if ( !require_group )
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Spy: %s\n", e_data.uuid_list[x]);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Spy: %s\n", e_data.uuid_list[x]);
 						if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_new"))) {
 							switch_ivr_play_file(session, NULL, file, NULL);
 						}
 						if ((status = switch_ivr_eavesdrop_session(session, e_data.uuid_list[x], require_group, ED_DTMF)) != SWITCH_STATUS_SUCCESS) {
 							if (status != SWITCH_STATUS_BREAK) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Spy: %s Failed\n", e_data.uuid_list[x]);
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Spy: %s Failed\n", e_data.uuid_list[x]);
 								if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_failed"))) {
 									switch_ivr_play_file(session, NULL, file, NULL);
 								}
@@ -398,7 +398,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 SWITCH_STANDARD_APP(three_way_function)
 {
 	if (switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", threeway_SYNTAX);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", threeway_SYNTAX);
 	} else {
 		switch_ivr_eavesdrop_session(session, data, NULL, ED_MUX_READ | ED_MUX_WRITE);
 	}
@@ -461,7 +461,7 @@ SWITCH_STANDARD_APP(check_acl_function)
 				if (argc > 2) {
 					cause = switch_channel_str2cause(argv[2]);
 				}
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call failed acl check for ip %s on list %s\n", argv[0], argv[1]);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Call failed acl check for ip %s on list %s\n", argv[0], argv[1]);
 				switch_channel_hangup(channel, cause);
 			}
 		}
@@ -497,7 +497,7 @@ SWITCH_STANDARD_APP(transfer_function)
 						switch_core_session_rwunlock(b_session);
 					}
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No B-leg present.\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No B-leg present.\n");
 				}
 				if (both) {
 					switch_ivr_session_transfer(session, argv[1], argv[2], argv[3]);
@@ -506,7 +506,7 @@ SWITCH_STANDARD_APP(transfer_function)
 				switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No extension specified.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No extension specified.\n");
 		}
 	}
 }
@@ -529,7 +529,7 @@ SWITCH_STANDARD_APP(sched_transfer_function)
 
 			switch_ivr_schedule_transfer(when, switch_core_session_get_uuid(session), argv[1], argv[2], argv[3]);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Args\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");
 		}
 	}
 }
@@ -562,7 +562,7 @@ SWITCH_STANDARD_APP(sched_hangup_function)
 
 			switch_ivr_schedule_hangup(when, switch_core_session_get_uuid(session), cause, bleg);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No time specified.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No time specified.\n");
 		}
 	}
 }
@@ -598,7 +598,7 @@ SWITCH_STANDARD_APP(sched_broadcast_function)
 
 			switch_ivr_schedule_broadcast(when, switch_core_session_get_uuid(session), argv[1], flags);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Args\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");
 		}
 	}
 }
@@ -657,12 +657,12 @@ SWITCH_STANDARD_APP(presence_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (switch_strlen_zero(data) || !(mydata = switch_core_session_strdup(session, data))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID ARGS!\n");
 		return;
 	}
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 2) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID ARGS!\n");
 		return;
 	}
 
@@ -726,7 +726,7 @@ SWITCH_STANDARD_APP(set_function)
 	char *var, *val = NULL;
 	
 	if (switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		char *expanded = NULL;
@@ -745,7 +745,7 @@ SWITCH_STANDARD_APP(set_function)
 			expanded = switch_channel_expand_variables(channel, val);
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SET [%s]=[%s]\n", switch_channel_get_name(channel), var, expanded ? expanded : "UNDEF");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SET [%s]=[%s]\n", switch_channel_get_name(channel), var, expanded ? expanded : "UNDEF");
 		switch_channel_set_variable_var_check(channel, var, expanded, SWITCH_FALSE);
 
 		if (expanded && expanded != val) {
@@ -759,7 +759,7 @@ SWITCH_STANDARD_APP(set_global_function)
 	char *var, *val = NULL;
 
 	if (switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
 		var = strdup(data);
 		switch_assert(var);
@@ -772,7 +772,7 @@ SWITCH_STANDARD_APP(set_global_function)
 			}
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET GLOBAL [%s]=[%s]\n", var, val ? val : "UNDEF");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "SET GLOBAL [%s]=[%s]\n", var, val ? val : "UNDEF");
 		switch_core_set_variable(var, val);
 		free(var);
 	}
@@ -786,7 +786,7 @@ SWITCH_STANDARD_APP(set_profile_var_function)
 	caller_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(session));
 
 	if (switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
 		name = switch_core_session_strdup(session, data);
 		val = strchr(name, '=');
@@ -798,7 +798,7 @@ SWITCH_STANDARD_APP(set_profile_var_function)
 			}
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET_PROFILE_VAR [%s]=[%s]\n", name, val ? val : "UNDEF");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "SET_PROFILE_VAR [%s]=[%s]\n", name, val ? val : "UNDEF");
 
 		if (!strcasecmp(name, "dialplan")) {
 			caller_profile->dialplan = val;
@@ -862,7 +862,7 @@ SWITCH_STANDARD_APP(export_function)
 	int local = 1;
 
 	if (switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
 		exports = switch_channel_get_variable(channel, SWITCH_EXPORT_VARS_VARIABLE);
 		var = switch_core_session_strdup(session, data);
@@ -883,7 +883,7 @@ SWITCH_STANDARD_APP(export_function)
 			}
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "EXPORT %s[%s]=[%s]\n", local ? "" : "(REMOTE ONLY) ", var_name ? var_name : "",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "EXPORT %s[%s]=[%s]\n", local ? "" : "(REMOTE ONLY) ", var_name ? var_name : "",
 						  val ? val : "UNDEF");
 		switch_channel_set_variable(channel, var, val);
 
@@ -905,9 +905,9 @@ SWITCH_STANDARD_APP(export_function)
 SWITCH_STANDARD_APP(unset_function)
 {
 	if (switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "UNSET [%s]\n", (char *) data);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "UNSET [%s]\n", (char *) data);
 		switch_channel_set_variable(switch_core_session_get_channel(session), data, NULL);
 	}
 }
@@ -929,7 +929,7 @@ SWITCH_STANDARD_APP(log_function)
 			ltype = SWITCH_LOG_DEBUG;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, ltype, "%s\n", log_str);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), ltype, "%s\n", log_str);
 		switch_safe_free(level);
 	}
 }
@@ -943,7 +943,7 @@ SWITCH_STANDARD_APP(info_function)
 		switch_channel_event_set_data(switch_core_session_get_channel(session), event);
 		switch_event_serialize(event, &buf, SWITCH_FALSE);
 		switch_assert(buf);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CHANNEL_DATA:\n%s\n", buf);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "CHANNEL_DATA:\n%s\n", buf);
 		switch_event_destroy(&event);
 		free(buf);
 	}
@@ -1013,7 +1013,7 @@ SWITCH_STANDARD_APP(privacy_function)
 	switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(session));
 
 	if (switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No privacy mode specified.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No privacy mode specified.\n");
 	} else {
 		switch_set_flag(caller_profile, SWITCH_CPF_SCREEN);
 
@@ -1030,9 +1030,9 @@ SWITCH_STANDARD_APP(privacy_function)
 			switch_clear_flag(caller_profile, SWITCH_CPF_HIDE_NAME);
 			switch_clear_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID privacy mode specified. Use a valid mode [no|yes|name|full|number].\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID privacy mode specified. Use a valid mode [no|yes|name|full|number].\n");
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Privacy to %s [%d]\n", data, caller_profile->flags);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set Privacy to %s [%d]\n", data, caller_profile->flags);
 	}
 }
 
@@ -1050,7 +1050,7 @@ SWITCH_STANDARD_APP(strftime_function)
 
 		switch_time_exp_lt(&tm, switch_micro_time_now());
 		switch_strftime(date, &retsize, sizeof(date), argv[1], &tm);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", argv[0], date);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", argv[0], date);
 		switch_channel_set_variable(switch_core_session_get_channel(session), argv[0], date);
 	}
 }
@@ -1182,7 +1182,7 @@ static switch_ivr_action_t menu_handler(switch_ivr_menu_t *menu, char *param, ch
 	switch_ivr_action_t action = SWITCH_IVR_ACTION_NOOP;
 
 	if (param != NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "menu_handler '%s'\n", param);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "menu_handler '%s'\n", param);
 	}
 
 	return action;
@@ -1224,15 +1224,15 @@ SWITCH_STANDARD_APP(ivr_application_function)
 						switch_ivr_menu_execute(session, menu_stack, (char*)name, NULL);
 						switch_ivr_menu_stack_free(menu_stack);
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to create menu\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unable to create menu\n");
 					}
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find menu\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unable to find menu\n");
 				}
 			}
 			switch_xml_free(cxml);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", ivr_cf_name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Open of %s failed\n", ivr_cf_name);
 		}
 		switch_event_destroy(&params);
 	}
@@ -1272,9 +1272,9 @@ SWITCH_STANDARD_APP(fax_detect_session_function)
 
 SWITCH_STANDARD_APP(system_session_function)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing command: %s\n", data);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Executing command: %s\n", data);
 	if (switch_system(data, SWITCH_TRUE) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", data);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", data);
 	}
 }
 
@@ -1287,12 +1287,12 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 	int hits = 1;
 
 	if (switch_strlen_zero(data) || !(mydata = switch_core_session_strdup(session, data))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID ARGS!\n");
 		return;
 	}
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 2) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID ARGS!\n");
 		return;
 	}
 
@@ -1302,12 +1302,12 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 			if ((mto = atol(argv[3] + 1)) > 0) {
 				to = switch_epoch_time_now(NULL) + mto;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 			}
 		} else {
 			if ((to = atol(argv[3])) < switch_epoch_time_now(NULL)) {
 				if (to >= 1) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 				}
 				to = 0;
 			}
@@ -1321,14 +1321,14 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enabling tone detection '%s' '%s'\n", argv[0], argv[1]);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Enabling tone detection '%s' '%s'\n", argv[0], argv[1]);
 
 	switch_ivr_tone_detect_session(session, argv[0], argv[1], argv[2], to, hits, argv[4], argv[5], NULL);
 }
 
 SWITCH_STANDARD_APP(stop_fax_detect_session_function)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Disabling tone detection\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Disabling tone detection\n");
 	switch_ivr_stop_tone_detect_session(session);
 }
 
@@ -1386,7 +1386,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 			if (!strcasecmp(terminators, "none")) {
 				terminators = NULL;
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digit %c\n", dtmf->digit);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Digit %c\n", dtmf->digit);
 
 			for (p = terminators; p && *p; p++) {
 				if (*p == dtmf->digit) {
@@ -1409,7 +1409,7 @@ SWITCH_STANDARD_APP(sleep_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No timeout specified.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No timeout specified.\n");
 	} else {
 		uint32_t ms = atoi(data);
 		char buf[10];
@@ -1444,14 +1444,14 @@ SWITCH_STANDARD_APP(speak_function)
 	switch_input_args_t args = { 0 };
 
 	if (switch_strlen_zero(data) || !(mydata = switch_core_session_strdup(session, data))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Params!\n");
 		return;
 	}
 
 	argc = switch_separate_string(mydata, '|', argv, sizeof(argv) / sizeof(argv[0]));
 
 	if (argc == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Params!\n");
 		return;
 	} else if (argc == 1) {
 		text = argv[0];
@@ -1482,7 +1482,7 @@ SWITCH_STANDARD_APP(speak_function)
 		if (!text) {
 			text = "NULL";
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params! [%s][%s][%s]\n", engine, voice, text);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Params! [%s][%s][%s]\n", engine, voice, text);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
 
@@ -1531,7 +1531,7 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 				}
 
 				if ((extension = switch_caller_extension_new(peer_session, app, app_arg)) == 0) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
 					abort();
 				}
 
@@ -1564,7 +1564,7 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 			switch_stream_handle_t stream = { 0 };
 			SWITCH_STANDARD_STREAM(stream);
 			switch_api_execute("uuid_bridge", id, NULL, &stream);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nHangup Command uuid_bridge(%s):\n%s\n", id, switch_str_nil((char *) stream.data));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "\nHangup Command uuid_bridge(%s):\n%s\n", id, switch_str_nil((char *) stream.data));
 			switch_safe_free(stream.data);
 		}
 
@@ -1659,7 +1659,7 @@ SWITCH_STANDARD_APP(read_function)
 	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No arguments specified.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No arguments specified.\n");
 		return;
 	}
 
@@ -1723,7 +1723,7 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No arguments specified.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No arguments specified.\n");
 		return;
 	}
 
@@ -1799,7 +1799,7 @@ SWITCH_STANDARD_APP(say_function)
 		
 		switch_ivr_say(session, argv[3], argv[0], argv[1], argv[2], &args);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", SAY_SYNTAX);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", SAY_SYNTAX);
 	}
 
 }
@@ -1823,7 +1823,7 @@ SWITCH_STANDARD_APP(phrase_function)
 		
 		lang = switch_channel_get_variable(channel, "language");
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s) lang %s\n", macro, switch_str_nil(mdata), switch_str_nil(lang));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Execute %s(%s) lang %s\n", macro, switch_str_nil(mdata), switch_str_nil(lang));
 
 		args.input_callback = on_dtmf;
 		
@@ -1885,7 +1885,7 @@ SWITCH_STANDARD_APP(gentones_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (switch_strlen_zero(data) || !(tone_script = switch_core_session_strdup(session, data))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Params!\n");
 		return;
 	}
 
@@ -1950,7 +1950,7 @@ SWITCH_STANDARD_APP(record_function)
 	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No file specified.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No file specified.\n");
 		return;
 	}
 
@@ -2081,7 +2081,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 				switch_ivr_media(switch_core_session_get_uuid(session), SMF_REBRIDGE);
 				switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already up, delaying proxy mode 'till both legs are answered.\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel is already up, delaying proxy mode 'till both legs are answered.\n");
 				switch_channel_set_variable(caller_channel, "bypass_media_after_bridge", "true");
 				switch_channel_set_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE, NULL);
 				switch_channel_clear_flag(caller_channel, CF_PROXY_MODE);
@@ -2090,7 +2090,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	}
 
 	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
 
 		/* no answer is *always* a reason to continue */
 		if (cause == SWITCH_CAUSE_NO_ANSWER || cause == SWITCH_CAUSE_NO_USER_RESPONSE || cause == SWITCH_CAUSE_ORIGINATOR_CANCEL) {
@@ -2112,12 +2112,12 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			switch_snprintf(cause_num, sizeof(cause_num), "%u", cause);
 			
 			if (failure_causes && !(switch_stristr(cause_str, failure_causes) || strstr(failure_causes, cause_num))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failiure causes [%s]:  Cause: %s\n", failure_causes, cause_str);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Failiure causes [%s]:  Cause: %s\n", failure_causes, cause_str);
 				return;
 			}
 
 			if (continue_on_fail && (switch_true(continue_on_fail) || switch_stristr(cause_str, continue_on_fail) || strstr(continue_on_fail, cause_num))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Continue on fail [%s]:  Cause: %s\n", continue_on_fail, cause_str);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Continue on fail [%s]:  Cause: %s\n", continue_on_fail, cause_str);
 				return;
 			}
 		}
@@ -2362,7 +2362,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "as_channel", "true");
 
 	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, &x_group, params) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", user, domain);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", user, domain);
 		cause = SWITCH_CAUSE_SUBSCRIBER_ABSENT;
 		goto done;
 	}
@@ -2422,7 +2422,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	}
 
 	if (!dest) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No dial-string available, please check your user directory.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No dial-string available, please check your user directory.\n");
 		cause = SWITCH_CAUSE_MANDATORY_IE_MISSING;
 	} else {
 		const char *varval;
@@ -2477,7 +2477,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 		switch_snprintf(stupid, sizeof(stupid), "user/%s", user);
 		if (switch_stristr(stupid, d_dest)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waddya Daft? You almost called '%s' in an infinate loop!\n", stupid);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Waddya Daft? You almost called '%s' in an infinate loop!\n", stupid);
 			cause = SWITCH_CAUSE_INVALID_IE_CONTENTS;
 		} else if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL, 
 								 cid_name_override, cid_num_override, NULL, var_event, myflags) == SWITCH_STATUS_SUCCESS) {
@@ -2578,7 +2578,7 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 
 	} 
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", WAIT_FOR_SILENCE_SYNTAX);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", WAIT_FOR_SILENCE_SYNTAX);
 }
 
 static switch_status_t event_chat_send(const char *proto, const char *from, const char *to, const char *subject,

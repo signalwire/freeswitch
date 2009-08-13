@@ -194,7 +194,7 @@ SWITCH_STANDARD_APP(rss_function)
 	}
 
 	if (!(cxml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return;
 	}
 	switch_safe_free(chanvars);
@@ -251,20 +251,20 @@ SWITCH_STANDARD_APP(rss_function)
 	}
 
 	if (!feed_index) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No Feeds Specified!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No Feeds Specified!\n");
 		return;
 	}
 
 	if (switch_channel_media_ready(channel)) {
 		rate = read_impl.actual_samples_per_second;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Codec Error!\n");
 		return;
 	}
 
 	memset(&sh, 0, sizeof(sh));
 	if (switch_core_speech_open(&sh, engine, voice, rate, interval, &flags, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid TTS module!\n");
 		return;
 	}
 
@@ -275,9 +275,9 @@ SWITCH_STANDARD_APP(rss_function)
 							   interval,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 							   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n", rate, interval);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n", rate, interval);
 		flags = 0;
 		switch_core_speech_close(&sh, &flags);
 		return;
@@ -285,13 +285,13 @@ SWITCH_STANDARD_APP(rss_function)
 
 	if (timer_name) {
 		if (switch_core_timer_init(&timer, timer_name, interval, (int) (rate / 50), switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setup timer failed!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Setup timer failed!\n");
 			switch_core_codec_destroy(&speech_codec);
 			flags = 0;
 			switch_core_speech_close(&sh, &flags);
 			return;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer success %u bytes per %d ms!\n", (rate / 50) * 2, interval);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setup timer success %u bytes per %d ms!\n", (rate / 50) * 2, interval);
 
 		/* start a thread to absorb incoming audio */
 		switch_core_service_session(session);
@@ -388,14 +388,14 @@ SWITCH_STANDARD_APP(rss_function)
 		}
 
 		if (!(xml = switch_xml_parse_file(filename))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", filename);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Open of %s failed\n", filename);
 			goto finished;
 		}
 
 		err = switch_xml_error(xml);
 
 		if (!switch_strlen_zero(err)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error [%s]\n", err);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Error [%s]\n", err);
 			goto finished;
 		}
 

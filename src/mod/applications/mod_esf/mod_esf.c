@@ -124,13 +124,13 @@ SWITCH_STANDARD_APP(bcast_function)
 	}
 
 	if (switch_socket_create(&socket, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error 1\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error 1\n");
 		goto fail;
 	}
 
 	if (switch_sockaddr_info_get(&control_packet_addr, mcast_ip, SWITCH_UNSPEC,
 								 mcast_control_port, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error 3\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error 3\n");
 		goto fail;
 	}
 
@@ -162,9 +162,9 @@ SWITCH_STANDARD_APP(bcast_function)
 									   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 									   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 				switch_core_session_set_read_codec(session, &codec);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec Activation Success\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Codec Activation Success\n");
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Activation Fail\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Activation Fail\n");
 				goto fail;
 			}
 		}
@@ -178,7 +178,7 @@ SWITCH_STANDARD_APP(bcast_function)
 
 
 		if (!(rtp_port = switch_rtp_request_port(esf_broadcast_ip))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP Port Error\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Port Error\n");
 			goto fail;
 		}
 
@@ -192,14 +192,14 @@ SWITCH_STANDARD_APP(bcast_function)
 									 (switch_rtp_flag_t) flags, "soft", &err, switch_core_session_get_pool(session));
 
 		if (!switch_rtp_ready(rtp_session)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP Error\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error\n");
 			goto fail;
 		}
 	} else if (ready == SEND_TYPE_NOMEDIA) {
 		switch_yield(10000);
 	} else if (ready == SEND_TYPE_RAW) {
 		if (switch_sockaddr_info_get(&audio_addr, mcast_ip, SWITCH_UNSPEC, mcast_port, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error 2\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error 2\n");
 			goto fail;
 		}
 	}

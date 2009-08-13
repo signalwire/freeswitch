@@ -146,7 +146,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, const switch_dtmf
 				break;
 
 			case '0':
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "pitch: %f tempo: %f rate: %f\n",sth->pitch,sth->tempo,sth->rate);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "pitch: %f tempo: %f rate: %f\n",sth->pitch,sth->tempo,sth->rate);
 			}
 
 		}
@@ -259,7 +259,7 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 			switch_channel_set_private(channel, "_soundtouch_", NULL);
 			switch_core_media_bug_remove(session, &bug);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
 		}
 		return;
 	}
@@ -300,7 +300,7 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 
 	if ((status = switch_core_media_bug_add(session, soundtouch_callback, sth, 0,
 											sth->send_not_recv ? SMBF_WRITE_REPLACE : SMBF_READ_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
 		return;
 	}
 

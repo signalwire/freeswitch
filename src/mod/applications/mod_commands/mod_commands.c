@@ -1590,7 +1590,7 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 	switch_assert(mydata != NULL);
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 3 || !argv[0]) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "-ERR INVALID ARGS!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "-ERR INVALID ARGS!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1605,12 +1605,12 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 			if ((mto = atoi(argv[4] + 1)) > 0) {
 				to = switch_epoch_time_now(NULL) + mto;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 				goto done;
 			}
 		} else {
 			if ((to = atoi(argv[4])) < switch_epoch_time_now(NULL)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 				to = 0;
 				goto done;
 			}
@@ -2309,7 +2309,7 @@ SWITCH_STANDARD_API(originate_function)
 		}
 
 		if ((extension = switch_caller_extension_new(caller_session, app_name, arg)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
 			abort();
 		}
 		switch_caller_extension_add_application(caller_session, extension, app_name, arg);
@@ -2909,7 +2909,7 @@ SWITCH_STANDARD_API(show_function)
 		holder.delim = ",";
 	}
 
-	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL: %s.\n", sql); */
+	/* switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "SQL: %s.\n", sql); */
 	
 	if (!strcasecmp(as, "delim") || !strcasecmp(as, "csv")) {
 		if (switch_strlen_zero(holder.delim)) {
@@ -3104,7 +3104,7 @@ SWITCH_STANDARD_API(uuid_setvar_function)
 				channel = switch_core_session_get_channel(psession);
 
 				if (switch_strlen_zero(var_name)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 					stream->write_function(stream, "-ERR No variable specified\n");
 				} else {
 					switch_channel_set_variable(channel, var_name, var_value);
@@ -3154,7 +3154,7 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function)
 					*var_value++ = '\0';
 				}
 				if (switch_strlen_zero(var_name)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 					stream->write_function(stream, "-ERR No variable specified\n");
 				} else {
 					switch_channel_set_variable(channel, var_name, var_value);
@@ -3199,7 +3199,7 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 
 				if (switch_strlen_zero(var_name)) {
 					stream->write_function(stream, "-ERR No variable name specified!\n");
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 				} else {
 					var_value = switch_channel_get_variable(channel, var_name);
 					if (var_value != NULL) {
@@ -3383,9 +3383,9 @@ SWITCH_STANDARD_API(system_function)
         return SWITCH_STATUS_SUCCESS;
     } 
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing command: %s\n", cmd);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Executing command: %s\n", cmd);
     if (switch_system(cmd, SWITCH_TRUE) < 0) {
-       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", cmd);
+       switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", cmd);
     }
     stream->write_function(stream, "+OK\n");
     return SWITCH_STATUS_SUCCESS;

@@ -1639,14 +1639,14 @@ static void conference_loop_fn_transfer(conference_member_t *member, caller_cont
 			}
 			
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Empty transfer string [%s]\n", (char *) action->data);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Empty transfer string [%s]\n", (char *) action->data);
 			goto done;
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate memory to duplicate transfer data.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Unable to allocate memory to duplicate transfer data.\n");
 		goto done;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfering to: %s, %s, %s\n", exten, dialplan, context);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Transfering to: %s, %s, %s\n", exten, dialplan, context);
 	
 	switch_ivr_session_transfer(member->session,
 								exten, dialplan, context);
@@ -1683,19 +1683,19 @@ static void conference_loop_fn_exec_app(conference_member_t *member, caller_cont
 			}
 			
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Empty execute app string [%s]\n", (char *) action->data);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Empty execute app string [%s]\n", (char *) action->data);
 			goto done;
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate memory to duplicate execute_app data.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Unable to allocate memory to duplicate execute_app data.\n");
 		goto done;
 	}
 
 	if (!app) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find application.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Unable to find application.\n");
 		goto done;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute app: %s, %s\n", app, arg);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Execute app: %s, %s\n", app, arg);
 
 	channel = switch_core_session_get_channel(member->session);
 	
@@ -2001,11 +2001,11 @@ static void conference_loop_output(conference_member_t *member)
 	flush_len = switch_samples_per_packet(member->conference->rate, member->conference->interval) * 10;
 
 	if (switch_core_timer_init(&timer, member->conference->timer_name, interval, tsamples, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Setup Failed.  Conference Cannot Start\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Timer Setup Failed.  Conference Cannot Start\n");
 		return;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer %s success interval: %u  samples: %u\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Setup timer %s success interval: %u  samples: %u\n",
 					  member->conference->timer_name, interval, tsamples);
 
 	if (!restarting) {
@@ -2026,7 +2026,7 @@ static void conference_loop_output(conference_member_t *member)
 		/* build a digit stream object */
 		if (member->conference->dtmf_parser != NULL
 			&& switch_ivr_digit_stream_new(member->conference->dtmf_parser, &member->digit_stream) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Danger Will Robinson, there is no digit parser stream object\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Danger Will Robinson, there is no digit parser stream object\n");
 		}
 
 		if ((call_list = switch_channel_get_private(channel, "_conference_autocall_list_"))) {
@@ -2118,12 +2118,12 @@ static void conference_loop_output(conference_member_t *member)
 		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 			/* test to see if outbound channel has answered */
 			if (switch_channel_test_flag(channel, CF_ANSWERED) && !switch_test_flag(member->conference, CFLAG_ANSWERED)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Outbound conference channel answered, setting CFLAG_ANSWERED\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Outbound conference channel answered, setting CFLAG_ANSWERED\n");
 				switch_set_flag(member->conference, CFLAG_ANSWERED);
 			}
 		} else {
 			if (switch_test_flag(member->conference, CFLAG_ANSWERED) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CLFAG_ANSWERED set, answering inbound channel\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "CLFAG_ANSWERED set, answering inbound channel\n");
 				switch_channel_answer(channel);
 			}
 		}
@@ -2155,7 +2155,7 @@ static void conference_loop_output(conference_member_t *member)
 				param = caller_action->data;
 			}
 #ifdef INTENSE_DEBUG
-			switch_log_printf(SWITCH_CHANNEL_LOG,
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session),
 							  SWITCH_LOG_INFO,
 							  "executing caller control '%s' param '%s' on call '%u, %s\n",
 							  caller_action->fndesc->key,
@@ -2312,7 +2312,7 @@ static void conference_loop_output(conference_member_t *member)
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
 	switch_core_timer_destroy(&timer);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel leaving conference, cause: %s\n",
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Channel leaving conference, cause: %s\n",
 					  switch_channel_cause2str(switch_channel_get_cause(channel)));
 
 	/* if it's an outbound channel, store the release cause in the conference struct, we might need it */
@@ -2730,13 +2730,13 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	}
 	/* Setup a memory pool to use. */
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Pool Failure\n");
 		status = SWITCH_STATUS_MEMERR;
 		goto done;
 	}
 	/* Create a node object */
 	if (!(fnode = switch_core_alloc(pool, sizeof(*fnode)))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Alloc Failure\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Alloc Failure\n");
 		switch_core_destroy_memory_pool(&pool);
 		status = SWITCH_STATUS_MEMERR;
 		goto done;
@@ -2754,7 +2754,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	}
 	fnode->pool = pool;
 	/* Queue the node */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queueing file '%s' for play\n", file);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Queueing file '%s' for play\n", file);
 	switch_mutex_lock(member->control_mutex);
 	for (nptr = member->fnode; nptr && nptr->next; nptr = nptr->next);
 	if (nptr) {
@@ -2793,13 +2793,13 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 
 	/* Setup a memory pool to use. */
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Pool Failure\n");
 		return SWITCH_STATUS_MEMERR;
 	}
 
 	/* Create a node object */
 	if (!(fnode = switch_core_alloc(pool, sizeof(*fnode)))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Alloc Failure\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Alloc Failure\n");
 		switch_core_destroy_memory_pool(&pool);
 		return SWITCH_STATUS_MEMERR;
 	}
@@ -2813,7 +2813,7 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 		if (switch_core_speech_open(&member->lsh, conference->tts_engine, conference->tts_voice,
 									conference->rate, conference->interval, &flags, switch_core_session_get_pool(member->session)) !=
 			SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
 			return SWITCH_STATUS_FALSE;
 		}
 		member->sh = &member->lsh;
@@ -4335,7 +4335,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	conference_name = conference->name;
 
 	if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Read Lock Fail\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -4354,7 +4354,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	/* establish an outbound call leg */
 
 	if (switch_ivr_originate(session, &peer_session, cause, bridgeto, timeout, NULL, cid_name, cid_num, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create outgoing channel, cause: %s\n", switch_channel_cause2str(*cause));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot create outgoing channel, cause: %s\n", switch_channel_cause2str(*cause));
 		if (caller_channel) {
 			switch_channel_hangup(caller_channel, *cause);
 		}
@@ -4367,7 +4367,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 
 	/* make sure the conference still exists */
 	if (!switch_test_flag(conference, CFLAG_RUNNING)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Conference is gone now, nevermind..\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Conference is gone now, nevermind..\n");
 		if (caller_channel) {
 			switch_channel_hangup(caller_channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
 		}
@@ -4387,7 +4387,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 
 		/* build an extension name object */
 		if ((extension = switch_caller_extension_new(peer_session, conference_name, conference_name)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
 			status = SWITCH_STATUS_MEMERR;
 			goto done;
 		}
@@ -4516,7 +4516,7 @@ static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, conference_outcall_run, call, pool);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Launching BG Thread for outcall\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Launching BG Thread for outcall\n");
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -4775,12 +4775,12 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 							   "L16",
 							   NULL, read_impl.actual_samples_per_second, read_impl.microseconds_per_packet / 1000,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member->pool) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG,
 						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
 						  read_impl.actual_samples_per_second, read_impl.microseconds_per_packet / 1000);
 
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
 						  read_impl.actual_samples_per_second, read_impl.microseconds_per_packet / 1000);
 
 		goto done;
@@ -4796,7 +4796,7 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 		if (switch_resample_create(&member->read_resampler,
 								   read_impl.actual_samples_per_second,
 								   conference->rate, member->frame_size, SWITCH_RESAMPLE_QUALITY, 1) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 			goto done;
 		}
 
@@ -4807,7 +4807,7 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 		/* Setup an audio buffer for the resampled audio */
 		if (switch_buffer_create_dynamic(&member->resample_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX)
 			!= SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 			goto done;
 		}
 	}
@@ -4820,24 +4820,24 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 							   conference->rate,
 							   read_impl.microseconds_per_packet / 1000,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member->pool) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG,
 						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
 						  conference->rate, read_impl.microseconds_per_packet / 1000);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
 						  conference->rate, read_impl.microseconds_per_packet / 1000);
 		goto codec_done2;
 	}
 
 	/* Setup an audio buffer for the incoming audio */
 	if (switch_buffer_create_dynamic(&member->audio_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 		goto codec_done1;
 	}
 
 	/* Setup an audio buffer for the outgoing audio */
 	if (switch_buffer_create_dynamic(&member->mux_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 		goto codec_done1;
 	}
 
@@ -4881,20 +4881,20 @@ SWITCH_STANDARD_APP(conference_function)
 
 	/* Save the original read codec. */
 	if (!(read_codec = switch_core_session_get_read_codec(session))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel has no media!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel has no media!\n");
 		return;
 	}
 
 
 	if (switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid arguments\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Invalid arguments\n");
 		return;
 	}
 
 	mydata = switch_core_session_strdup(session, data);
 
 	if (!mydata) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Pool Failure\n");
 		return;
 	}
 
@@ -4916,7 +4916,7 @@ SWITCH_STANDARD_APP(conference_function)
 		if ((bridgeto = strchr(mydata, ':'))) {
 			*bridgeto++ = '\0';
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Config Error!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Config Error!\n");
 			goto done;
 		}
 	}
@@ -4955,7 +4955,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 	/* Open the config from the xml registry */
 	if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf_name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf_name);
 		goto done;
 	}
 
@@ -4981,7 +4981,7 @@ SWITCH_STANDARD_APP(conference_function)
 		}
 
 		if ((conference = conference_find(conf_name))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Conference %s already exists!\n", conf_name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Conference %s already exists!\n", conf_name);
 			goto done;
 		}
 
@@ -5065,7 +5065,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 		/* acquire a read lock on the thread so it can't leave without us */
 		if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Read Lock Fail\n");
 			goto done;
 		}
 		rl++;
@@ -5107,7 +5107,7 @@ SWITCH_STANDARD_APP(conference_function)
 				}
 				
 				if (pstatus != SWITCH_STATUS_SUCCESS && pstatus != SWITCH_STATUS_BREAK) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot ask the user for a pin, ending call");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot ask the user for a pin, ending call");
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				}
 
@@ -5149,7 +5149,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 		/* don't allow more callers if the conference is locked, unless we invited them */
 		if (switch_test_flag(conference, CFLAG_LOCKED) && enforce_security) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Conference %s is locked.\n", conf_name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Conference %s is locked.\n", conf_name);
 			if (conference->locked_sound) {
 				/* Answer the channel */
 				switch_channel_answer(channel);
@@ -5163,7 +5163,7 @@ SWITCH_STANDARD_APP(conference_function)
 		 * max_members limit
 		 */
 		if ((conference->max_members > 0) && (conference->count >= conference->max_members)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Conference %s is full.\n", conf_name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Conference %s is full.\n", conf_name);
 			if (conference->maxmember_sound) {
 				/* Answer the channel */
 				switch_channel_answer(channel);

@@ -1150,14 +1150,14 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 
 		if (limit && (*message_len = fh.sample_count / read_impl.actual_samples_per_second) < profile->min_record_len) {
 			if (unlink(file_path) != 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 			}
 			got_file = 0;
 			if (exit_keys && input[0] && strchr(exit_keys, input[0])) {
 				*key_pressed = input[0];
 				return SWITCH_STATUS_SUCCESS;
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Message is less than minimum record length: %d, discarding it.\n",
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Message is less than minimum record length: %d, discarding it.\n",
 							  profile->min_record_len);
 			if (switch_channel_ready(channel) && counter < profile->max_retries) {
 				TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "too-small", NULL, NULL));
@@ -1349,7 +1349,7 @@ static char *vm_merge_file(switch_core_session_t *session, vm_profile_t *profile
 							  lfh.channels,
 							  read_impl.actual_samples_per_second,
 							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file %s\n", tmp_path);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open file %s\n", tmp_path);
 		goto end;
 	}
 
@@ -1361,7 +1361,7 @@ static char *vm_merge_file(switch_core_session_t *session, vm_profile_t *profile
 							  lfh.channels,
 							  read_impl.actual_samples_per_second,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file %s\n", announce);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open file %s\n", announce);
 		goto end;
 	}
 
@@ -1398,7 +1398,7 @@ static char *vm_merge_file(switch_core_session_t *session, vm_profile_t *profile
 							  lfh.channels,
 							  read_impl.actual_samples_per_second,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file %s\n", orig);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open file %s\n", orig);
 		goto end;
 	}
 
@@ -1420,7 +1420,7 @@ static char *vm_merge_file(switch_core_session_t *session, vm_profile_t *profile
 	}
 
 	if (unlink(announce) != 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", announce);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", announce);
 	}
 	ret = tmp_path;
 	
@@ -1530,7 +1530,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 						switch_ivr_sleep(session, 1500, SWITCH_TRUE, NULL);
 						forward_file_path = new_path;
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error merging files\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error merging files\n");
 						TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "deleted", NULL, NULL));
 						goto end;
 					}
@@ -1550,10 +1550,10 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 				cmd = switch_core_session_sprintf(session, "%s@%s %s %s %s", vm_cc, cbt->domain, new_file_path, cbt->cid_number, cbt->cid_name);
 
 				if (voicemail_inject(cmd) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL));
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc);
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_INVALID_EXTENSION_MACRO, vm_cc, NULL, NULL));
 					goto get_exten;
 				}
@@ -1660,7 +1660,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					}
 
 					switch_simple_email(cbt->email, from, header_string, body, cbt->file_path);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", cbt->email);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending message to %s\n", cbt->email);
 					switch_safe_free(body);
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "emailed", NULL, NULL));
 				} else {
@@ -1679,7 +1679,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 
 	if (forward_file_path) {
 		if (unlink(forward_file_path) != 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", forward_file_path);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", forward_file_path);
 		}
 	}
 
@@ -2102,7 +2102,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					
 					if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
 											   &x_domain_root, &x_domain, &x_user, NULL, params) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", myid, domain_name);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", myid, domain_name);
 						ok = 0;
 					} else {
 						myid = switch_core_session_strdup(session, switch_xml_attr(x_user, "id"));
@@ -2226,7 +2226,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						}
 
 						if (switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
 							goto end;
 						}
 					}
@@ -2870,7 +2870,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 			if (send_main && switch_strlen_zero(vm_email) && !switch_strlen_zero(email_addr)) {
 				vm_email = switch_core_session_strdup(session, email_addr);
 				if (switch_strlen_zero(vm_email)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No email address, not going to send email.\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No email address, not going to send email.\n");
 					send_main = 0;
 				}
 			}
@@ -2878,13 +2878,13 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 			if (send_notify && switch_strlen_zero(vm_notify_email)) {
 				vm_notify_email = vm_email;
 				if (switch_strlen_zero(vm_notify_email)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No notify email address, not going to notify.\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No notify email address, not going to notify.\n");
 					send_notify = 0;
 				}
 			}
 			
 			if (send_mail && (!(send_main || send_notify))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Falling back to leaving message locally due to too many misconfiguration.\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Falling back to leaving message locally due to too many misconfiguration.\n");
 				send_mail = 0;
 				insert_db = 1;
 			}
@@ -2894,7 +2894,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 			}
 			
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", id, domain_name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", id, domain_name);
 			ok = 0;
 		}
 
@@ -2916,7 +2916,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	}
 
 	if (switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
 		goto end;
 	}
 
@@ -3019,7 +3019,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &callback);
 
 		if (atoi(disk_usage) >= disk_quota) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Voicemail disk quota is exceeded for %s\n", id);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Voicemail disk quota is exceeded for %s\n", id);
 			TRY_CODE(switch_ivr_phrase_macro(session, VM_DISK_QUOTA_EXCEEDED_MACRO, NULL, NULL, NULL));
 			goto end;
 		}
@@ -3087,13 +3087,13 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 			if ((vm_cc = switch_channel_get_variable(channel, "vm_cc"))) {
 				char *cmd = switch_core_session_sprintf(session, "%s %s %s %s", vm_cc, file_path, caller_id_number, caller_id_name);
 				if (voicemail_inject(cmd) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc);
 				}
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to deliver message\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to deliver message\n");
 			TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "deleted", NULL, NULL));
 		}
 
@@ -3178,12 +3178,12 @@ SWITCH_STANDARD_APP(voicemail_function)
 	}
 
 	if (switch_strlen_zero(profile_name) || switch_strlen_zero(domain_name)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Usage: %s\n", VM_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error Usage: %s\n", VM_USAGE);
 		return;
 	}
 
 	if (!(profile = get_profile(profile_name))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
 		return;
 	}
 

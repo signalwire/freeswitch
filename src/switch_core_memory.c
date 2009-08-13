@@ -80,7 +80,7 @@ SWITCH_DECLARE(void *) switch_core_perform_session_alloc(switch_core_session_t *
 
 #ifdef DEBUG_ALLOC
 	if (memory > 500)
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Session Allocate %d\n", (int) memory);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_CONSOLE, "Session Allocate %d\n", (int) memory);
 #endif
 
 	ptr = apr_palloc(session->pool, memory);
@@ -250,7 +250,7 @@ SWITCH_DECLARE(char *) switch_core_perform_session_strdup(switch_core_session_t 
 #ifdef DEBUG_ALLOC
 	len = strlen(todup);
 	if (len > 500)
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Sess Strdup Allocate %d\n", (int) len);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_CONSOLE, "Sess Strdup Allocate %d\n", (int) len);
 #endif
 
 	duped = apr_pstrdup(session->pool, todup);

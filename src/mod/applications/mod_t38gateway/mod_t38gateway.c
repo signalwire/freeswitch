@@ -185,7 +185,7 @@ SWITCH_STANDARD_APP(t38gateway_start_function)
         }
 
         /* We have already started */
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
 
         return;
     }
@@ -200,7 +200,7 @@ SWITCH_STANDARD_APP(t38gateway_start_function)
     status = switch_core_media_bug_add(session, t38gateway_callback, t38gateway_info, 0, SMBF_READ_STREAM, &bug);
 
     if (status != SWITCH_STATUS_SUCCESS) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure hooking to stream\n");
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure hooking to stream\n");
         return;
     }
 

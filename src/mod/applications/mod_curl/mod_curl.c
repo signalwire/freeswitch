@@ -307,7 +307,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 	
 usage:
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", SYNTAX);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", SYNTAX);
 	switch_goto_status(status, done);
 	
 done:

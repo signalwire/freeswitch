@@ -717,7 +717,7 @@ SWITCH_STANDARD_APP(fifo_function)
 	}
 
 	if (switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Args\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No Args\n");
 		return;
 	}
 
@@ -731,26 +731,26 @@ SWITCH_STANDARD_APP(fifo_function)
 	arg_inout = argv[1];
 
 	if (!(arg_fifo_name && arg_inout)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
 		return;
 	}
 
 	if (!strcasecmp(arg_inout, "out")) {
 		consumer = 1;
 	} else if (strcasecmp(arg_inout, "in")) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
 		return;
 	}
 
 	list_string = switch_core_session_strdup(session, arg_fifo_name);
 
 	if (!(nlist_count = switch_separate_string(list_string, ',', nlist, (sizeof(nlist) / sizeof(nlist[0]))))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
 		return;
 	}
 
 	if (!consumer && nlist_count > 1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
 		return;
 	}
 
@@ -1039,7 +1039,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			} else if (!strcasecmp(strat_str, "waiting_longer")) {
 				strat = STRAT_WAITING_LONGER;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid strategy\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid strategy\n");
 				goto done;
 			}
 		}
@@ -1048,7 +1048,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			if (!strcasecmp(argv[2], "nowait")) {
 				do_wait = 0;
 			} else if (strcasecmp(argv[2], "wait")) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
 				goto done;
 			}
 		}
@@ -1435,7 +1435,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 	switch_mutex_lock(globals.mutex);
 	if (node && node->ready == FIFO_DELAY_DESTROY && node->consumer_count == 0 && node->caller_count == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "%s removed. (delayed)\n", node->name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s removed. (delayed)\n", node->name);
 		switch_core_hash_delete(globals.fifo_hash, node->name);
 		switch_core_hash_destroy(&node->caller_hash);
 		switch_core_hash_destroy(&node->consumer_hash);

@@ -173,7 +173,7 @@ SWITCH_STANDARD_API(memcache_function)
 		/* clone memcached struct so we're thread safe */
 		memcached = memcached_clone(NULL, globals.memcached);
 		if (!memcached) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error cloning memcached object");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error cloning memcached object");
 			stream->write_function(stream, "-ERR Error cloning memcached object\n");
 		}
 		
@@ -254,14 +254,14 @@ SWITCH_STANDARD_API(memcache_function)
 				rc = memcached_add(memcached, key, strlen(key), (increment) ? svalue : "0", strlen(svalue), 0, 0);
 				if (rc == MEMCACHED_SUCCESS) {
 					ivalue = (increment) ? offset : 0;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initialized inc/dec memcache key: %s to value %d\n", key, offset);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Initialized inc/dec memcache key: %s to value %d\n", key, offset);
 				} else {
 					if (increment) {
 						rc = memcached_increment(memcached, key, strlen(key), offset, &ivalue);
 					} else {
 						rc = memcached_decrement(memcached, key, strlen(key), offset, &ivalue);
 					}
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Someone else created incr/dec memcache key, resubmitting inc/dec request.\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Someone else created incr/dec memcache key, resubmitting inc/dec request.\n");
 				}
 			}
 			if (rc == MEMCACHED_SUCCESS) {
@@ -336,7 +336,7 @@ SWITCH_STANDARD_API(memcache_function)
 
 mcache_error:
 	if (rc != MEMCACHED_NOTFOUND) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while running command %s: %s\n", subcmd, memcached_strerror(memcached, rc));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error while running command %s: %s\n", subcmd, memcached_strerror(memcached, rc));
 	}
 	stream->write_function(stream, "-ERR %s\n", memcached_strerror(memcached, rc));
 	goto done;

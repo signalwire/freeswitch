@@ -306,7 +306,7 @@ SWITCH_STANDARD_APP(easyroute_app_function)
 			}
 		}
 		route_lookup(destnum, &results, noat, seperator);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "EASY ROUTE DEST: [%s]\n", results.dialstring);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "EASY ROUTE DEST: [%s]\n", results.dialstring);
 		switch_channel_set_variable(channel, "easy_destnum", destnum);
 		switch_channel_set_variable(channel, "easy_dialstring", results.dialstring);
 		switch_channel_set_variable(channel, "easy_group", results.group);
@@ -327,7 +327,7 @@ SWITCH_STANDARD_API(easyroute_function)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	
 	if (session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function cannot be called from the dialplan.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "This function cannot be called from the dialplan.\n");
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -353,7 +353,7 @@ SWITCH_STANDARD_API(easyroute_function)
 		} 
 		if (argc == 2) {
 			if (!strcasecmp(argv[1], "noat")) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Entering noat.\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Entering noat.\n");
 				noat = 1;
                         } else if (!strcasecmp(argv[1], "seperator")) {
                                 if (argc == 3){

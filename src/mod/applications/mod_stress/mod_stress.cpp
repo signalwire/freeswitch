@@ -170,7 +170,7 @@ static switch_bool_t stress_callback(switch_media_bug_t *bug, void *user_data, s
 
             if (sth->stress) {
                 switch_event_t *event, *dup;
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stress %0.2f\n", sth->stress);
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_DEBUG, "Stress %0.2f\n", sth->stress);
 
                 if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
                     switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "stress-level");
@@ -180,7 +180,7 @@ static switch_bool_t stress_callback(switch_media_bug_t *bug, void *user_data, s
                         switch_event_fire(&dup);
                     }
                     if (switch_core_session_queue_event(sth->session, &event) != SWITCH_STATUS_SUCCESS) {
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Event queue failed!\n");
+                        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "Event queue failed!\n");
                         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
                         switch_event_fire(&event);
                     }
@@ -210,7 +210,7 @@ SWITCH_STANDARD_APP(stress_start_function)
 			switch_channel_set_private(channel, "_stress_", NULL);
 			switch_core_media_bug_remove(session, &bug);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
 		}
 		return;
 	}
@@ -230,7 +230,7 @@ SWITCH_STANDARD_APP(stress_start_function)
     
 	if ((status = switch_core_media_bug_add(session, stress_callback, sth, 0,
 											sth->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
 		return;
 	}
 

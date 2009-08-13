@@ -334,7 +334,7 @@ static void find_beep(vmd_session_info_t * vmd_info, switch_frame_t * frame)
             switch_core_session_queue_event(vmd_info->session, &event);
             switch_event_fire(&event_copy);
 
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "<<< VMD - Beep Detected >>>\n");
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(vmd_info->session), SWITCH_LOG_INFO, "<<< VMD - Beep Detected >>>\n");
             switch_channel_set_variable(channel, "vmd_detect", "TRUE");
 
             vmd_info->timestamp = 0;
@@ -559,7 +559,7 @@ SWITCH_STANDARD_APP(vmd_start_function)
         }
 
         /* We have already started */
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
 
         return;
     }
@@ -582,7 +582,7 @@ SWITCH_STANDARD_APP(vmd_start_function)
     status = switch_core_media_bug_add(session, vmd_callback, vmd_info, 0, SMBF_READ_REPLACE, &bug);
 
     if (status != SWITCH_STATUS_SUCCESS) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure hooking to stream\n");
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure hooking to stream\n");
         return;
     }
 
@@ -673,7 +673,7 @@ SWITCH_STANDARD_API(vmd_api_main)
         }
 
         /* We have already started */
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
 
         switch_safe_free(ccmd);
         return SWITCH_STATUS_FALSE;
@@ -711,7 +711,7 @@ SWITCH_STANDARD_API(vmd_api_main)
 
     /* If adding a media bug fails exit */
     if (status != SWITCH_STATUS_SUCCESS) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure hooking to stream\n");
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure hooking to stream\n");
 
         switch_safe_free(ccmd);
         return SWITCH_STATUS_FALSE;

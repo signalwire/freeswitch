@@ -169,33 +169,33 @@ static void phase_e_handler(t30_state_t * s, void *user_data, int result)
 	if (result == T30_ERR_OK) {
 
 		if (pvt->app_mode == FUNCTION_TX) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully sent.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully sent.\n");
 		} else if (pvt->app_mode == FUNCTION_RX) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully received.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully received.\n");
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully managed. How ?\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully managed. How ?\n");
 		}
 		switch_channel_set_variable(channel, "fax_success", "1");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax processing not successful - result (%d) %s.\n", result,
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax processing not successful - result (%d) %s.\n", result,
 						  t30_completion_code_to_str(result));
 		switch_channel_set_variable(channel, "fax_success", "0");
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local station id:  %s\n", local_ident);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred: %i\n", 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local station id:  %s\n", local_ident);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Pages transferred: %i\n", 
 		pvt->app_mode == FUNCTION_TX ? t.pages_rx : t.pages_rx);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Total fax pages:   %i\n", t.pages_in_file);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution:  %ix%i\n", t.x_resolution, t.y_resolution);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t.bit_rate);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Total fax pages:   %i\n", t.pages_in_file);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image resolution:  %ix%i\n", t.x_resolution, t.y_resolution);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t.bit_rate);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ECM status         %s\n", (t.error_correcting_mode) ? "on" : "off");
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote country:   %s\n", switch_str_nil(t30_get_rx_country(s)));
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote vendor:    %s\n", switch_str_nil(t30_get_rx_vendor(s)));
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote model:     %s\n", switch_str_nil(t30_get_rx_model(s)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ECM status         %s\n", (t.error_correcting_mode) ? "on" : "off");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote country:   %s\n", switch_str_nil(t30_get_rx_country(s)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:    %s\n", switch_str_nil(t30_get_rx_vendor(s)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:     %s\n", switch_str_nil(t30_get_rx_model(s)));
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
 
 	/*
 	Set our channel variables
@@ -286,7 +286,7 @@ static switch_status_t spanfax_init(pvt_t * pvt, transport_mode_t trans_mode)
 
 		memset(fax, 0, sizeof(fax_state_t));
 		if (fax_init(fax, pvt->caller) == NULL) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot initialize my fax structs\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my fax structs\n");
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -421,7 +421,7 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 	counter_increment();
 
 	if (!pvt) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot allocate application private data\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot allocate application private data\n");
 		return;
 	} else {
 		memset(pvt, 0, sizeof(pvt_t));
@@ -444,7 +444,7 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 
 	buf = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	if (!buf) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot allocate application buffer data\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot allocate application buffer data\n");
 		return;
 	}
 
@@ -515,13 +515,13 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 		pvt->filename = switch_core_session_strdup(session, data);
 		if (pvt->app_mode == FUNCTION_TX) {
 			if ((switch_file_exists(pvt->filename, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot send inexistant fax file [%s]\n", switch_str_nil(pvt->filename));
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot send inexistant fax file [%s]\n", switch_str_nil(pvt->filename));
 				goto done;
 			}
 		}
 	} else {
 		if (pvt->app_mode == FUNCTION_TX) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fax TX filename not set.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Fax TX filename not set.\n");
 			goto done;
 		} else if (pvt->app_mode == FUNCTION_RX) {
 			char *fname;
@@ -539,7 +539,7 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 				pvt->filename = switch_core_session_strdup(session, fname);
 				switch_safe_free(fname);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot automatically set fax RX destination file\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot automatically set fax RX destination file\n");
 				goto done;
 			}
 		} else {
@@ -556,7 +556,7 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 	*/
 
 	if ((spanfax_init(pvt, AUDIO_MODE) != SWITCH_STATUS_SUCCESS)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot initialize Fax engine\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize Fax engine\n");
 		return;
 	}
 
@@ -588,11 +588,11 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw read codec activation Success L16 %u\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Raw read codec activation Success L16 %u\n",
 						  read_codec.implementation->microseconds_per_packet);
 		switch_core_session_set_read_codec(session, &read_codec);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Raw read codec activation Failed L16\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Raw read codec activation Failed L16\n");
 		goto done;
 	}
 
@@ -604,12 +604,12 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw write codec activation Success L16\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Raw write codec activation Success L16\n");
 		write_frame.codec = &write_codec;
 		write_frame.data = buf;
 		write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Raw write codec activation Failed L16\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Raw write codec activation Failed L16\n");
 		goto done;
 	}
 
@@ -642,18 +642,18 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 		if (!switch_test_flag(read_frame, SFF_CNG)) {
 		/* pass the new incoming audio frame to the fax_rx function */
 			if (fax_rx(pvt->fax_state, (int16_t *) read_frame->data, read_frame->samples)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fax_rx reported an error\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_rx reported an error\n");
 				goto done;
 			}
 		}
 
 		if ((tx = fax_tx(pvt->fax_state, buf, write_codec.implementation->samples_per_packet)) < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fax_tx reported an error\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_tx reported an error\n");
 			goto done;
 		}
 
 		if (!tx) {
-			/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No audio samples to send\n"); */
+			/* switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No audio samples to send\n"); */
 			continue;
 		} else {
 			/* Set our write_frame data */
@@ -663,7 +663,7 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 
 		if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 			/* something weird has happened */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 							  "Cannot write frame [datalen: %d, samples: %d]\n", write_frame.datalen, write_frame.samples);
 			goto done;
 		}
