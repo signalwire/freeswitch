@@ -1500,7 +1500,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		private_object_t *tech_pvt;
 
 		if ((tech_pvt = switch_core_session_get_private(session)) && sofia_test_flag(tech_pvt, TFLAG_REFER)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received reply from REFER\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Received reply from REFER\n");
 			goto end;
 		}
 
@@ -1513,7 +1513,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	} else if (sip->sip_proxy_authenticate) {
 		authenticate = sip->sip_proxy_authenticate;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Missing Authenticate Header!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Missing Authenticate Header!\n");
 		goto end;
 	}
 	scheme = (char const *) authenticate->au_scheme;
@@ -1558,7 +1558,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 
 	if (!(scheme && realm)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No scheme and realm!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No scheme and realm!\n");
 		goto end;
 	}
 
@@ -1567,12 +1567,12 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	} else if (gateway) {
 		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Matching gateway found\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No Matching gateway found\n");
 		goto cancel;		
 	}
 
 	if (profile->debug) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n",
 			(sip_auth_username && sip_auth_password) ? sip_auth_username : gateway->auth_username, authentication);
 	}
 

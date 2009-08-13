@@ -401,6 +401,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 		node->content = content;
 		node->timestamp = now;
 		node->channel = channel;
+		node->userdata = userdata;
 
 		if (switch_queue_trypush(LOG_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
 			free(node->data);

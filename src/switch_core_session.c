@@ -95,13 +95,13 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_force_locate(const c
 			if (switch_test_flag(session, SSF_DESTROYED)) {
 				status = SWITCH_STATUS_FALSE;
 #ifdef SWITCH_DEBUG_RWLOCKS
-				switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "%s Read lock FAIL\n",
+				switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, uuid_str, SWITCH_LOG_ERROR, "%s Read lock FAIL\n",
 								  switch_channel_get_name(session->channel));
 #endif
 			} else {
 				status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
 #ifdef SWITCH_DEBUG_RWLOCKS
-				switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "%s Read lock ACQUIRED\n",
+				switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, uuid_str, SWITCH_LOG_ERROR, "%s Read lock ACQUIRED\n",
 								  switch_channel_get_name(session->channel));
 #endif
 			}
@@ -358,12 +358,12 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 	int forwardval = 70;
 
 	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate channel type %s\n", endpoint_name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Could not locate channel type %s\n", endpoint_name);
 		return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
 	}
 
 	if (!endpoint_interface->io_routines->outgoing_channel) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate outgoing channel interface for %s\n", endpoint_name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Could not locate outgoing channel interface for %s\n", endpoint_name);
 		return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
 	}
 
@@ -422,7 +422,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 	}
 
 	if (!*new_session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Outgoing method for endpoint: [%s] returned: [%s] but there is no new session!\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Outgoing method for endpoint: [%s] returned: [%s] but there is no new session!\n",
 						  endpoint_name, switch_channel_cause2str(cause));
 		UNPROTECT_INTERFACE(endpoint_interface);
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -440,9 +440,9 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			use_uuid = switch_core_session_strdup(*new_session, use_uuid);
 			if (switch_core_session_set_uuid(*new_session, use_uuid) == SWITCH_STATUS_SUCCESS) {
 				switch_event_del_header(var_event, "origination_uuid");
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s set UUID=%s\n", switch_channel_get_name(peer_channel), use_uuid);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG, "%s set UUID=%s\n", switch_channel_get_name(peer_channel), use_uuid);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s set UUID=%s FAILED\n", switch_channel_get_name(peer_channel), use_uuid);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "%s set UUID=%s FAILED\n", switch_channel_get_name(peer_channel), use_uuid);
 			}
 		}
 		
@@ -590,7 +590,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		message->message_id = SWITCH_MESSAGE_INVALID;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s receive message [%s]\n",
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG, "%s receive message [%s]\n",
 					  switch_channel_get_name(session->channel), message_names[message->message_id]);
 	
 	if (session->endpoint_interface->io_routines->receive_message) {
@@ -944,7 +944,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_endpoint_interface_t *endpoint_interface = (*session)->endpoint_interface;
 
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Close Channel %s [%s]\n",
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(*session), SWITCH_LOG_NOTICE, "Close Channel %s [%s]\n",
 					  switch_channel_get_name((*session)->channel), switch_channel_state_name(switch_channel_get_state((*session)->channel)));
 
 
@@ -1031,14 +1031,14 @@ SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t 
 	session->track_duration = seconds;
 
 	if (switch_channel_test_flag(session->channel,  CF_PROXY_MODE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s using scheduler due to bypass_media mode\n", switch_channel_get_name(session->channel));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s using scheduler due to bypass_media mode\n", switch_channel_get_name(session->channel));
 		switch_core_session_sched_heartbeat(session, seconds);
 		return;
 	}
 
 	switch_core_session_unsched_heartbeat(session);
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s setting session heartbeat to %u second(s).\n", 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s setting session heartbeat to %u second(s).\n", 
 					  switch_channel_get_name(session->channel), seconds);
 
 	session->read_frame_count = 0;
@@ -1065,7 +1065,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 	
 	switch_core_session_run(session);
 	switch_core_media_bug_remove_all(session);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %" SWITCH_SIZE_T_FMT " (%s) Locked, Waiting on external entities\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session %" SWITCH_SIZE_T_FMT " (%s) Locked, Waiting on external entities\n",
 					  session->id, switch_channel_get_name(session->channel));
 	switch_core_session_write_lock(session);
 	switch_set_flag(session, SSF_DESTROYED);
@@ -1083,7 +1083,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 
 	switch_core_session_rwunlock(session);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Session %" SWITCH_SIZE_T_FMT " (%s) Ended\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Session %" SWITCH_SIZE_T_FMT " (%s) Ended\n",
 					  session->id, switch_channel_get_name(session->channel));
 	switch_core_session_destroy(&session);
 	return NULL;
@@ -1107,10 +1107,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_se
 			status = SWITCH_STATUS_SUCCESS;
 		} else {
 			session->thread_running = 0;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot create thread!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Cannot create thread!\n");
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot double-launch thread!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Cannot double-launch thread!\n");
 	}
 
 	switch_mutex_unlock(session->mutex);
@@ -1366,31 +1366,31 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	
 	if (switch_channel_down(session->channel)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is hungup, aborting execution of application: %s\n", app);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel is hungup, aborting execution of application: %s\n", app);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if ((application_interface = switch_loadable_module_get_application_interface(app)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", app);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Application %s\n", app);
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!application_interface->application_function) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Function for %s\n", app);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No Function for %s\n", app);
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_goto_status(SWITCH_STATUS_FALSE, done);
 	}
 
 	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
 		switch_ivr_media(session->uuid_str, SMF_NONE);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Application %s Requires media on channel %s!\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Application %s Requires media on channel %s!\n",
 						  app, switch_channel_get_name(session->channel));
 	} else if (!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && !switch_channel_media_ready(session->channel)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Application %s Requires media! pre_answering channel %s\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Application %s Requires media! pre_answering channel %s\n",
 						  app, switch_channel_get_name(session->channel));
 		if (switch_channel_pre_answer(session->channel) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Well, that didn't work very well did it? ...\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Well, that didn't work very well did it? ...\n");
 			switch_goto_status(SWITCH_STATUS_FALSE, done);
 		}
 	}
@@ -1421,7 +1421,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		expanded = switch_channel_expand_variables(session->channel, arg);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "EXECUTE %s %s(%s)\n", 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, "EXECUTE %s %s(%s)\n", 
 					  switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
 
 	if ((var = switch_channel_get_variable(session->channel, "verbose_presence")) && switch_true(var)) {
@@ -1508,7 +1508,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	}
 
 	if (session->stack_count > SWITCH_MAX_STACKS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s too many stacked extensions\n", switch_channel_get_name(session->channel));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error %s too many stacked extensions\n", switch_channel_get_name(session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1573,7 +1573,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	}
 
 	while (switch_channel_ready(channel) && extension->current_application) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Execute %s(%s)\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Execute %s(%s)\n",
 						  extension->current_application->application_name, switch_str_nil(extension->current_application->application_data));
 
 		if (switch_core_session_execute_application(session,

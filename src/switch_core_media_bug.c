@@ -137,12 +137,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	bytes = read_impl.decoded_bytes_per_packet;
 
 	if (frame->buflen < bytes) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s frame buffer too small!\n", switch_channel_get_name(bug->session->channel));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "%s frame buffer too small!\n", switch_channel_get_name(bug->session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
 	
 	if (!(bug->raw_read_buffer && (bug->raw_write_buffer || !switch_test_flag(bug, SMBF_WRITE_STREAM)))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Buffer Error\n", switch_channel_get_name(bug->session->channel));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "%s Buffer Error\n", switch_channel_get_name(bug->session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -253,7 +253,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			if (switch_test_flag(bp, SMBF_WRITE_REPLACE)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Only one bug of this type allowed!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Only one bug of this type allowed!\n");
 				switch_thread_rwlock_unlock(session->bug_rwlock);
 				return SWITCH_STATUS_GENERR;
 			}
@@ -265,7 +265,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			if (switch_test_flag(bp, SMBF_READ_REPLACE)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Only one bug of this type allowed!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Only one bug of this type allowed!\n");
 				switch_thread_rwlock_unlock(session->bug_rwlock);
 				return SWITCH_STATUS_GENERR;
 			}
@@ -310,12 +310,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		switch_bool_t result = bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_INIT);
 		if (result == SWITCH_FALSE) {
 			switch_core_media_bug_destroy(bug);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error attaching BUG to %s\n", switch_channel_get_name(session->channel));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error attaching BUG to %s\n", switch_channel_get_name(session->channel));
 			return SWITCH_STATUS_GENERR;
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
 	bug->ready = 1;
 	switch_thread_rwlock_wrlock(session->bug_rwlock);
 	bug->next = session->bugs;
@@ -353,7 +353,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			if (bp->thread_id && bp->thread_id != switch_thread_self()) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
 				continue;
 			}
 
@@ -361,7 +361,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 				bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
 			}
 			switch_core_media_bug_destroy(bp);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(session->channel));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(session->channel));
 		}
 		session->bugs = NULL;
 		switch_thread_rwlock_unlock(session->bug_rwlock);
@@ -381,7 +381,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t *
 	switch_media_bug_t *bp = *bug;
 	if (bp) {
 		if (bp->thread_id && bp->thread_id != switch_thread_self()) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(*bug)), SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -390,7 +390,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t *
 			bp->ready = 0;
 		}
 		switch_core_media_bug_destroy(bp);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(bp->session->channel));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(*bug)), SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(bp->session->channel));
 		*bug = NULL;
 		return SWITCH_STATUS_SUCCESS;
 	}

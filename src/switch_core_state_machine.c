@@ -37,34 +37,34 @@
 
 static void switch_core_standard_on_init(switch_core_session_t *session)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard INIT\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard INIT\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_hangup(switch_core_session_t *session)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard HANGUP, cause: %s\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard HANGUP, cause: %s\n",
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
 }
 
 static void switch_core_standard_on_reporting(switch_core_session_t *session)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard REPORTING, cause: %s\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard REPORTING, cause: %s\n",
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
 }
 
 static void switch_core_standard_on_destroy(switch_core_session_t *session)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard DESTROY\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard DESTROY\n",
 					  switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_reset(switch_core_session_t *session)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard RESET\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard RESET\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_routing(switch_core_session_t *session)
@@ -75,10 +75,10 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 	char *expanded = NULL;
 	char *dpstr = NULL;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard ROUTING\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard ROUTING\n", switch_channel_get_name(session->channel));
 
 	if ((caller_profile = switch_channel_get_caller_profile(session->channel)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't get profile!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't get profile!\n");
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return;
 	} else {
@@ -121,10 +121,10 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 		if (!count) {
 			if (switch_channel_test_flag(session->channel, CF_OUTBOUND)) {
 				if (switch_channel_test_flag(session->channel, CF_ANSWERED)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No Dialplan on answered channel, changing state to HANGUP\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No Dialplan on answered channel, changing state to HANGUP\n");
 					switch_channel_hangup(session->channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No Dialplan, changing state to CONSUME_MEDIA\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No Dialplan, changing state to CONSUME_MEDIA\n");
 					switch_channel_set_state(session->channel, CS_CONSUME_MEDIA);
 				}
 				goto end;
@@ -133,7 +133,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 	}
 
 	if (!extension) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Route, Aborting\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "No Route, Aborting\n");
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
 	}
 
@@ -148,7 +148,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 {
 	switch_caller_extension_t *extension;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard EXECUTE\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard EXECUTE\n", switch_channel_get_name(session->channel));
 
   top:
 	switch_channel_clear_flag(session->channel, CF_RESET);
@@ -183,19 +183,19 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 static void switch_core_standard_on_exchange_media(switch_core_session_t *session)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard EXCHANGE_MEDIA\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard EXCHANGE_MEDIA\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_soft_execute(switch_core_session_t *session)
 {
 	switch_assert(session != NULL);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard SOFT_EXECUTE\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard SOFT_EXECUTE\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_park(switch_core_session_t *session)
 {
 	switch_assert(session != NULL);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard PARK\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard PARK\n", switch_channel_get_name(session->channel));
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 	switch_ivr_park(session, NULL);
 }
@@ -203,13 +203,13 @@ static void switch_core_standard_on_park(switch_core_session_t *session)
 static void switch_core_standard_on_consume_media(switch_core_session_t *session)
 {
 	switch_assert(session != NULL);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard CONSUME_MEDIA\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard CONSUME_MEDIA\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_hibernate(switch_core_session_t *session)
 {
 	switch_assert(session != NULL);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard HIBERNATE\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard HIBERNATE\n", switch_channel_get_name(session->channel));
 }
 
 #include <sqlite3.h>
@@ -285,7 +285,7 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 
 #define STATE_MACRO(__STATE, __STATE_STR)						do {	\
 		midstate = state;												\
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State %s\n", switch_channel_get_name(session->channel), __STATE_STR);	\
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) State %s\n", switch_channel_get_name(session->channel), __STATE_STR);	\
 		if (!driver_state_handler->on_##__STATE || (driver_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
 													)) {				\
 			while (do_extra_handlers && (application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) { \
@@ -320,7 +320,7 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 				switch_core_standard_on_##__STATE(session);				\
 			}															\
 		}																\
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State %s going to sleep\n", switch_channel_get_name(session->channel), __STATE_STR); \
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) State %s going to sleep\n", switch_channel_get_name(session->channel), __STATE_STR); \
 	} while (silly)
 
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
@@ -349,7 +349,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				switch_channel_event_set_data(session->channel, event);
 				switch_event_fire(&event);
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Thread has crashed for channel %s\n", switch_channel_get_name(session->channel));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Thread has crashed for channel %s\n", switch_channel_get_name(session->channel));
 			switch_channel_hangup(session->channel, SWITCH_CAUSE_CRASH);
 		} else {
 			switch_mutex_lock(stack_mutex);
@@ -401,7 +401,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 			switch (state) {
 			case CS_NEW: /* Just created, Waiting for first instructions */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State NEW\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) State NEW\n", switch_channel_get_name(session->channel));
 				break;
 			case CS_DESTROY:
 				goto done;
@@ -458,7 +458,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 						expanded = switch_channel_expand_variables(session->channel, arg);
 						
 						switch_api_execute(cmd, expanded, use_session, &stream);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hangup Command %s(%s):\n%s\n", cmd, switch_str_nil(expanded),
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Hangup Command %s(%s):\n%s\n", cmd, switch_str_nil(expanded),
 										  switch_str_nil((char *) stream.data));
 
 						if (expanded != arg) {
@@ -522,7 +522,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			if (endstate == CS_NEW) {
 				switch_cond_next();
 				if (!--new_loops) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s Timeout waiting for next instruction in CS_NEW!\n", session->uuid_str);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s Timeout waiting for next instruction in CS_NEW!\n", session->uuid_str);
 					switch_channel_hangup(session->channel, SWITCH_CAUSE_INVALID_CALL_REFERENCE);
 				}
 			} else {

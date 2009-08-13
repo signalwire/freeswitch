@@ -67,7 +67,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *ses
 							   imp.number_of_channels, 
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, 
 							   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Error L16@%uhz %u channels %dms\n", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error L16@%uhz %u channels %dms\n", 
 						  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -105,7 +105,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *ses
 		
 		period_avg = (int)(period_sum / period_total);
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CONSOLE, 
 						  "\npacket_avg=%d packet_peak=%d period_avg=%d global_avg=%d\n\n", avg, peak, period_avg, global_avg); 
 		
 		if (period_total >= period_len) {			
@@ -143,7 +143,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	if (!switch_channel_test_flag(channel, CF_OUTBOUND) && !switch_channel_test_flag(channel, CF_PROXY_MODE) && 
 		!switch_channel_media_ready(channel) && !switch_channel_test_flag(channel, CF_SERVICE)) {
 		if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot establish media.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot establish media.\n");
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -165,13 +165,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 								   imp.number_of_channels, 
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, 
 								   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Error L16@%uhz %u channels %dms\n", 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error L16@%uhz %u channels %dms\n", 
 							  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
 			return SWITCH_STATUS_FALSE;
 		}
 
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec Activated L16@%uhz %u channels %dms\n", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Codec Activated L16@%uhz %u channels %dms\n", 
 						  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
 		
 		write_frame.codec = &codec;
@@ -333,7 +333,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_deactivate_unicast(switch_core_sessio
 	}
 
 	if ((conninfo = switch_channel_get_private(channel, "unicast"))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Shutting down unicast connection\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Shutting down unicast connection\n");
 		switch_clear_flag_locked(conninfo, SUF_READY);
 		switch_socket_shutdown(conninfo->socket, SWITCH_SHUTDOWN_READWRITE);
 		while (switch_test_flag(conninfo, SUF_THREAD_RUNNING)) {
@@ -376,7 +376,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 		conninfo->type = AF_INET;
 		conninfo->transport = SOCK_STREAM;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid transport %s\n", transport);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid transport %s\n", transport);
 		goto fail;
 	}
 
@@ -398,11 +398,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 								   read_codec->implementation->microseconds_per_packet / 1000,
 								   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 							  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
 							  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_packet / 1000);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
 							  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_packet / 1000);
 			goto fail;
 		}
@@ -412,7 +412,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 	conninfo->write_frame.buflen = sizeof(conninfo->write_frame_data);
 	conninfo->write_frame.codec = switch_test_flag(conninfo, SUF_NATIVE) ? read_codec : &conninfo->read_codec;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "connect %s:%d->%s:%d\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "connect %s:%d->%s:%d\n",
 					  conninfo->local_ip, conninfo->local_port, conninfo->remote_ip, conninfo->remote_port);
 
 	if (switch_sockaddr_info_get(&conninfo->local_addr,
@@ -435,7 +435,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 		goto fail;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Created unicast connection %s:%d->%s:%d\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Created unicast connection %s:%d->%s:%d\n",
 					  conninfo->local_ip, conninfo->local_port, conninfo->remote_ip, conninfo->remote_port);
 	switch_channel_set_private(channel, "unicast", conninfo);
 	switch_channel_set_flag(channel, CF_UNICAST);
@@ -444,7 +444,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 
   fail:
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure creating unicast connection %s:%d->%s:%d\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Failure creating unicast connection %s:%d->%s:%d\n",
 					  conninfo->local_ip, conninfo->local_port, conninfo->remote_ip, conninfo->remote_port);
 	return SWITCH_STATUS_FALSE;
 }
@@ -464,7 +464,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (switch_strlen_zero(cmd)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Command!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Command!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -537,7 +537,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 					for (x = 0; x < loops || loops < 0; x++) {
 						switch_time_t b4, aftr;
 
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Command Execute %s(%s)\n",
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Command Execute %s(%s)\n",
 										  switch_channel_get_name(channel), app_name, switch_str_nil(app_arg));
 						b4 = switch_micro_time_now();
 						switch_core_session_exec(session, application_interface, app_arg);
@@ -651,7 +651,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 
 	
 	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that are under control already.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot park channels that are under control already.\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -757,7 +757,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 							tstatus = SWITCH_STATUS_SUCCESS;
 							break;
 						default:
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Codec Error\n");
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Codec Error\n");
 							switch_ivr_deactivate_unicast(session);
 							break;
 						}
@@ -917,13 +917,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 								   imp.number_of_channels, 
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, 
 								   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Error L16@%uhz %u channels %dms\n", 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error L16@%uhz %u channels %dms\n", 
 							  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
 			return SWITCH_STATUS_FALSE;
 		}
 
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec Activated L16@%uhz %u channels %dms\n", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Codec Activated L16@%uhz %u channels %dms\n", 
 						  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
 		
 		write_frame.codec = &codec;
@@ -1346,7 +1346,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		msg.from = __FILE__;
 		switch_core_session_receive_message(session, &msg);
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Transfer %s to %s[%s@%s]\n", switch_channel_get_name(channel), dialplan, extension,
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Transfer %s to %s[%s@%s]\n", switch_channel_get_name(channel), dialplan, extension,
 						  context);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1970,7 +1970,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 
 
 	if (delay_ms < 1 || delay_ms > 10000) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid delay [%d] must be between 1 and 10000\n", delay_ms);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid delay [%d] must be between 1 and 10000\n", delay_ms);
 		return;
 	}
 
@@ -1978,7 +1978,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	samples = switch_samples_per_packet(read_impl.samples_per_second, interval);
 
 	qlen = delay_ms / (interval);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);
 	jb = stfu_n_init(qlen);
 
 	write_frame.codec = switch_core_session_get_read_codec(session);
@@ -2027,7 +2027,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 		if (!chan_lang) {
 			chan_lang = "en";
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No language specified - Using [%s]\n", chan_lang);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No language specified - Using [%s]\n", chan_lang);
 	} else {
 		chan_lang = lang;
 	}
@@ -2040,17 +2040,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 	switch_channel_event_set_data(channel, hint_data);
 
 	if (switch_xml_locate("phrases", NULL, NULL, NULL, &xml, &cfg, hint_data, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of phrases failed.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Open of phrases failed.\n");
 		goto done;
 	}
 
 	if (!(macros = switch_xml_child(cfg, "macros"))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find macros tag.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find macros tag.\n");
 		goto done;
 	}
 
 	if (!(language = switch_xml_child(macros, "language"))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find language tag.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find language tag.\n");
 		goto done;
 	}
 
@@ -2067,7 +2067,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 	}
 
 	if (!language) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find language %s.\n", chan_lang);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find language %s.\n", chan_lang);
 		goto done;
 	}
 
@@ -2091,7 +2091,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 		/* should go back and proto all the say mods to const.... */
 		status = si->say_function(session, (char *) tosay, switch_ivr_get_say_type_by_name(say_type), switch_ivr_get_say_method_by_name(say_method), args);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", module_name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", module_name);
 		status = SWITCH_STATUS_FALSE;
 	}
 
@@ -2133,7 +2133,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 	*domain++ = '\0';
 
 	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, &x_group, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
 		goto done;
 	}
 
@@ -2182,7 +2182,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 	goto done;
 
   error:
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No user@domain specified.\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No user@domain specified.\n");
 
   done:
 	if (xml) {

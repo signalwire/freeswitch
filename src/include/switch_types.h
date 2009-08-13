@@ -784,7 +784,11 @@ typedef uint32_t switch_core_session_message_flag_t;
 
 #define SWITCH_CHANNEL_LOG SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, NULL
 #define SWITCH_CHANNEL_LOG_CLEAN SWITCH_CHANNEL_ID_LOG_CLEAN, __FILE__, __SWITCH_FUNC__, __LINE__, NULL
+#define SWITCH_CHANNEL_SESSION_LOG_CLEAN(x) SWITCH_CHANNEL_ID_LOG_CLEAN, __FILE__, __SWITCH_FUNC__, __LINE__, ((x) ? switch_core_session_get_uuid(x) : NULL)
 #define SWITCH_CHANNEL_EVENT SWITCH_CHANNEL_ID_EVENT, __FILE__, __SWITCH_FUNC__, __LINE__, NULL
+#define SWITCH_CHANNEL_SESSION_LOG(x) SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, ((x) ? switch_core_session_get_uuid(x) : NULL)
+#define SWITCH_CHANNEL_CHANNEL_LOG(x) SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, ((x) ? switch_channel_get_uuid(x) : NULL)
+#define SWITCH_CHANNEL_UUID_LOG(x) SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, x
 
 /*!
   \enum switch_channel_state_t

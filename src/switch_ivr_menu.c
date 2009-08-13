@@ -329,7 +329,7 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 
 	menu->ptr += menu_buf_len;
 	if (menu_buf_len < need) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "waiting for %u/%u digits t/o %d\n", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "waiting for %u/%u digits t/o %d\n", 
 						  (uint32_t)(menu->inlen - strlen(menu->buf)), (uint32_t)need, menu->inter_timeout);
 		status = switch_ivr_collect_digits_count(session, menu->ptr, menu->inlen - strlen(menu->buf), 
 												 need, "#", &terminator, menu_buf_len ? menu->inter_timeout : menu->timeout,
@@ -359,7 +359,7 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 
 			if (menu->confirm_key && *buf != '\0') {
 				if (*menu->confirm_key == *buf) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
 									  "approving digits '%s' via confirm key %s\n", menu->buf, menu->confirm_key);
 					break;
 				} else {
@@ -370,12 +370,12 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 			att--;
 		}
 		if (!att) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "rejecting digits '%s' via confirm key %s\n", menu->buf, menu->confirm_key);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rejecting digits '%s' via confirm key %s\n", menu->buf, menu->confirm_key);
 			*menu->buf = '\0';
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "digits '%s'\n", menu->buf);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "digits '%s'\n", menu->buf);
 
 	return status;
 }
@@ -392,19 +392,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	
 	if (++stack->stack_count > 12) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too many levels of recursion.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Too many levels of recursion.\n");
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if (!session || !stack || switch_strlen_zero(name)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid menu context\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid menu context\n");
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	channel = switch_core_session_get_channel(session);
 
 	if (!(menu = switch_ivr_menu_find(stack, name))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Menu!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Menu!\n");
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
@@ -413,7 +413,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		switch_channel_set_variable(channel, "tts_voice", menu->tts_voice);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Executing IVR menu %s\n", menu->name);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Executing IVR menu %s\n", menu->name);
 	switch_channel_set_variable(channel, "ivr_menu_status", "success");
 
 	for (reps = 0; running && status == SWITCH_STATUS_SUCCESS; reps++) {
@@ -421,12 +421,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 			break;
 		}
 		if (errs == menu->max_failures) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Maximum failures\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Maximum failures\n");
 			switch_channel_set_variable(channel, "ivr_menu_status", "failure");
 			break;
 		}
 		if (timeouts == menu->max_timeouts) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Maximum timeouts\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Maximum timeouts\n");
 			switch_channel_set_variable(channel, "ivr_menu_status", "timeout");
 			break;
 		}
@@ -469,7 +469,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 						switch_perform_substitution(re, ok, ap->arg, menu->buf, substituted, sizeof(substituted), ovector);
 						use_arg = substituted;
 					}
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "action regex [%s] [%s] [%d]\n", menu->buf, ap->bind, ok);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "action regex [%s] [%s] [%d]\n", menu->buf, ap->bind, ok);
 
 					switch_regex_safe_free(re);
 				} else {
@@ -480,18 +480,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 					match++;
 					errs = 0;
 					if (ap->function) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 										  "IVR function on menu '%s' matched '%s' param '%s'\n", menu->name, menu->buf, use_arg);
 						todo = ap->function(menu, use_arg, arg, sizeof(arg), obj);
 						aptr = arg;
 					} else {
 						todo = ap->ivr_action;
 						aptr = use_arg;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 										  "IVR action on menu '%s' matched '%s' param '%s'\n", menu->name, menu->buf, aptr);
 					}
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "switch_ivr_menu_execute todo=[%d]\n", todo);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "switch_ivr_menu_execute todo=[%d]\n", todo);
 
 					switch (todo) {
 					case SWITCH_IVR_ACTION_DIE:
@@ -542,7 +542,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 						status = SWITCH_STATUS_SUCCESS;
 						break;
 					default:
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid TODO!\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid TODO!\n");
 						break;
 					}
 				}
@@ -559,12 +559,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		}
 		if (!match) {
 			if (*menu->buf) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' caught invalid input '%s'\n", menu->name, menu->buf);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "IVR menu '%s' caught invalid input '%s'\n", menu->name, menu->buf);
 				if (menu->invalid_sound) {
 					play_and_collect(session, menu, menu->invalid_sound, 0);
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' no input detected\n", menu->name);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "IVR menu '%s' no input detected\n", menu->name);
 			}
 			errs++;
 			if (status == SWITCH_STATUS_SUCCESS) {
@@ -578,7 +578,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 	}
 
 	if (stack->stack_count == 1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "exit-sound '%s'\n", menu->exit_sound);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "exit-sound '%s'\n", menu->exit_sound);
 		if (!switch_strlen_zero(menu->exit_sound)) {
 			status = play_and_collect(session, menu, menu->exit_sound, 0);
 		}

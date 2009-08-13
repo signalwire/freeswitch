@@ -568,7 +568,7 @@ SWITCH_DECLARE(void) CoreSession::hangup(const char *cause)
 {
 	this_check_void();
 	sanity_check_noreturn;	
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::hangup\n");
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CoreSession::hangup\n");
 	this->begin_allow_threads();
     switch_channel_hangup(channel, switch_channel_str2cause(cause));
 	this->end_allow_threads();
@@ -656,12 +656,12 @@ SWITCH_DECLARE(int) CoreSession::speak(char *text)
 	sanity_check(-1);
 
 	if (!tts_name) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS engine specified\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No TTS engine specified\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!voice_name) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS voice specified\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No TTS voice specified\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -718,7 +718,7 @@ SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits,
 											 &terminator, 
 											 (uint32_t) timeout, (uint32_t)interdigit, 0);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "getDigits dtmf_buf: %s\n", dtmf_buf);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "getDigits dtmf_buf: %s\n", dtmf_buf);
 	end_allow_threads();
     return dtmf_buf;
 }
@@ -730,7 +730,7 @@ SWITCH_DECLARE(int) CoreSession::transfer(char *extension, char *dialplan, char 
 	sanity_check(-1);
     begin_allow_threads();
     status = switch_ivr_session_transfer(session, extension, dialplan, context);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "transfer result: %d\n", status);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "transfer result: %d\n", status);
     end_allow_threads();
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
@@ -791,7 +791,7 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 										 sizeof(dtmf_buf), 
 										 digits_regex);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "playAndGetDigits dtmf_buf: %s\n", dtmf_buf);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "playAndGetDigits dtmf_buf: %s\n", dtmf_buf);
 
 	end_allow_threads();
 	return dtmf_buf;
@@ -802,7 +802,7 @@ SWITCH_DECLARE(void) CoreSession::say(const char *tosay, const char *module_name
 	this_check_void();
 	sanity_check_noreturn;
 	if (!(tosay && module_name && say_type && say_method)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! invalid args.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! invalid args.\n");
 		return;
 	}
 	begin_allow_threads();
@@ -816,7 +816,7 @@ SWITCH_DECLARE(void) CoreSession::sayPhrase(const char *phrase_name, const char 
 	sanity_check_noreturn;
 	
 	if (!(phrase_name)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! invalid args.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! invalid args.\n");
 		return;
 	}
 
@@ -920,7 +920,7 @@ SWITCH_DECLARE(void) CoreSession::destroy(void)
 			switch_channel_set_private(channel, "CoreSession", NULL);
 		}
 		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "destroy/unlink session from object\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "destroy/unlink session from object\n");
 		
         if (switch_channel_up(channel) && switch_test_flag(this, S_HUP) && !switch_channel_test_flag(channel, CF_TRANSFER)) {
             switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
@@ -1097,7 +1097,7 @@ SWITCH_DECLARE(void) CoreSession::setHangupHook(void *hangup_func) {
 	this_check_void();
 	sanity_check_noreturn;
 	
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::seHangupHook, hangup_func: %p\n", hangup_func);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CoreSession::seHangupHook, hangup_func: %p\n", hangup_func);
     on_hangup = hangup_func;
     switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -1144,7 +1144,7 @@ SWITCH_DECLARE(void) msleep(unsigned ms)
 
 SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 {
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bridge called, session_a uuid: %s\n", session_a.get_uuid());
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a.session), SWITCH_LOG_DEBUG, "bridge called, session_a uuid: %s\n", session_a.get_uuid());
 	switch_input_callback_function_t dtmf_func = NULL;
 	switch_input_args_t args;
 	switch_channel_t *channel_a = NULL, *channel_b = NULL;
@@ -1171,7 +1171,7 @@ SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 	}
 
 	if (err) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s", err);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a.session), SWITCH_LOG_ERROR, "%s", err);
 	}
 
 
@@ -1183,7 +1183,7 @@ SWITCH_DECLARE_NONSTD(switch_status_t) hanguphook(switch_core_session_t *session
 	CoreSession *coresession = NULL;
 	switch_channel_state_t state = switch_channel_get_state(channel);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hangup_hook called\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_hungup), SWITCH_LOG_DEBUG, "hangup_hook called\n");
 	
 
 	if ((coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession"))) {
@@ -1207,21 +1207,21 @@ SWITCH_DECLARE_NONSTD(switch_status_t) dtmf_callback(switch_core_session_t *sess
 	CoreSession *coresession = NULL;
 	switch_status_t result;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "dtmf_callback called\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_cb), SWITCH_LOG_INFO, "dtmf_callback called\n");
 
 
 	//coresession = (CoreSession *) buf;
 	coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession");
 
 	if (!coresession) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid CoreSession\n");		
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_cb), SWITCH_LOG_ERROR, "Invalid CoreSession\n");		
 		return SWITCH_STATUS_FALSE;
 	}
 
 	result = coresession->run_dtmf_callback(input, itype);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "process_callback_result returned\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_cb), SWITCH_LOG_DEBUG, "process_callback_result returned\n");
 	if (result) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "process_callback_result returned: %d\n", result);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_cb), SWITCH_LOG_DEBUG, "process_callback_result returned: %d\n", result);
 	}
 	return result;
 
@@ -1306,7 +1306,7 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 			unsigned int pos = 0;
 			char *p;
 			codec = switch_core_session_get_read_codec(session);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got codec\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "got codec\n");
 			if ((p = strchr(result, ':'))) {
 				p++;
 				if (*p == '+' || *p == '-') {
@@ -1316,20 +1316,20 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 					}
 					if (step > 0) {
 						samps = step * (codec->implementation->samples_per_second / 1000);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "going to seek\n");
 						switch_core_file_seek(fhp, &pos, samps, SEEK_CUR);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "done seek\n");
 					} else {
 						samps = step * (codec->implementation->samples_per_second / 1000);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "going to seek\n");
 						switch_core_file_seek(fhp, &pos, fhp->pos - samps, SEEK_SET);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "done seek\n");
 					}
 				} else {
 					samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "going to seek\n");
 					switch_core_file_seek(fhp, &pos, samps, SEEK_SET);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "done seek\n");
 				}
 			}
 
@@ -1338,11 +1338,11 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 	}
 
     if (!strcmp(result, "true") || !strcmp(result, "undefined")) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "return success\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "return success\n");
 		return SWITCH_STATUS_SUCCESS;
     }
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no callback result match for '%s', return false\n", result);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "no callback result match for '%s', return false\n", result);
 
     return SWITCH_STATUS_FALSE;
 }

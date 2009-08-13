@@ -879,12 +879,13 @@ SWITCH_STANDARD_API(event_sink_function)
 				switch_url_encode((char *) dnode->data, encode_buf, encode_len);
 				
 
-				stream->write_function(stream, "<log log-level=\"%d\" text-channel=\"%d\" log-file=\"%s\" log-func=\"%s\" log-line=\"%d\">%s</log>\n",
+				stream->write_function(stream, "<log log-level=\"%d\" text-channel=\"%d\" log-file=\"%s\" log-func=\"%s\" log-line=\"%d\" user-data=\"%s\">%s</log>\n",
 									   dnode->level,
 									   dnode->channel,
 									   dnode->file,
 									   dnode->func,
 									   dnode->line,
+									   switch_str_nil(dnode->userdata),
 									   encode_buf
 									   );
 				free(encode_buf);
@@ -1153,13 +1154,15 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 										"Log-File: %s\n"
 										"Log-Func: %s\n"
 										"Log-Line: %d\n"
+										"User-Data: %s\n"
 										"\n",
 										strlen(dnode->data),
 										dnode->level,
 										dnode->channel,
 										dnode->file,
 										dnode->func,
-										dnode->line
+										dnode->line,
+										switch_str_nil(dnode->userdata)
 										);
 						len = strlen(buf);
 						switch_socket_send(listener->sock, buf, &len);

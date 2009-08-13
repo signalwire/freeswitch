@@ -273,7 +273,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		int x = 0;
 
 		if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
 							  switch_channel_get_name(channel), new_dtmf.digit, new_dtmf.duration);
 			new_dtmf.duration = switch_core_max_dtmf_duration(0);
 		} else if (!new_dtmf.duration) {
@@ -331,7 +331,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 		}
 
 		if (dtmf.duration > switch_core_max_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "EXCESSIVE DTMF DIGIT LEN %c %d\n", dtmf.digit, dtmf.duration);
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "EXCESSIVE DTMF DIGIT LEN %c %d\n", dtmf.digit, dtmf.duration);
 			dtmf.duration = switch_core_max_dtmf_duration(0);
 		} else if (!dtmf.duration) {
 			dtmf.duration = switch_core_default_dtmf_duration(0);
@@ -342,7 +342,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 			if (is_dtmf(*p)) {
 				dtmf.digit = *p;
 				if (switch_channel_queue_dtmf(channel, &dtmf) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Queue dtmf\ndigit=%c ms=%u samples=%u\n",
+					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s Queue dtmf\ndigit=%c ms=%u samples=%u\n",
 									  switch_channel_get_name(channel), dtmf.digit, dur, dtmf.duration);
 					sent++;
 				}
@@ -374,7 +374,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *ch
 		dt = NULL;
 
 		if (dtmf->duration > switch_core_max_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
 							  switch_channel_get_name(channel), dtmf->digit, dtmf->duration);
 			dtmf->duration = switch_core_max_dtmf_duration(0);
 		} else if (!dtmf->duration) {
@@ -597,9 +597,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_name(switch_channel_t *channe
 		channel->name = switch_core_session_strdup(channel->session, name);
 		switch_channel_set_variable(channel, SWITCH_CHANNEL_NAME_VARIABLE, name);
 		if (old) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Rename Channel %s->%s [%s]\n", old, name, uuid);
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_NOTICE, "Rename Channel %s->%s [%s]\n", old, name, uuid);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Channel %s [%s]\n", name, uuid);
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_NOTICE, "New Channel %s [%s]\n", name, uuid);
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -630,7 +630,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 			if (ok) {
 				switch_event_add_header_string(channel->variables, SWITCH_STACK_BOTTOM, varname, value);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid data (${%s} contains a variable)\n", varname);
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "Invalid data (${%s} contains a variable)\n", varname);
 			}
 		}
 		status = SWITCH_STATUS_SUCCESS;
@@ -1000,7 +1000,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 {
 	int x;
 	switch_mutex_lock(channel->state_mutex);
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "(%s) Running State Change %s\n", channel->name, state_names[state]);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_DEBUG, "(%s) Running State Change %s\n", channel->name, state_names[state]);
 	channel->running_state = state;
 
 	if (channel->state_flags[0]) {
@@ -1246,7 +1246,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 	}
 
 	if (ok) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "(%s) State Change %s -> %s\n",
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_DEBUG, "(%s) State Change %s -> %s\n",
 						  channel->name, state_names[last_state], state_names[state]);
 
 		channel->state = state;
@@ -1259,7 +1259,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 			switch_core_session_signal_state_change(channel->session);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_WARNING,
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_WARNING,
 						  "(%s) Invalid State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
 		/* we won't tolerate an invalid state change so we can make sure we are as robust as a nice cup of dark coffee! */
 		/* not cool lets crash this bad boy and figure out wtf is going on */
@@ -1671,7 +1671,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		switch_mutex_unlock(channel->state_mutex);
 
 		channel->hangup_cause = hangup_cause;
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
 						  channel->name, state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP) == SWITCH_STATUS_SUCCESS) {
@@ -1694,7 +1694,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
 	switch_event_t *event;
 
 	if (!switch_channel_test_flag(channel, CF_RING_READY)) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Ring-Ready %s!\n", channel->name);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Ring-Ready %s!\n", channel->name);
 		switch_channel_set_flag(channel, CF_RING_READY);
 		if (channel->caller_profile && channel->caller_profile->times) {
 			switch_mutex_lock(channel->profile_mutex);
@@ -1744,7 +1744,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		const char *uuid;
 		switch_core_session_t *other_session;
 
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
 		switch_channel_set_flag(channel, CF_EARLY_MEDIA);
 		switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "EARLY MEDIA");
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA) == SWITCH_STATUS_SUCCESS) {
@@ -1844,7 +1844,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel
 	}
 	
 	if (status == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Ring Ready %s!\n", channel->name);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Ring Ready %s!\n", channel->name);
 	} else {
 		switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 	}
@@ -1911,20 +1911,20 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	}
 
 	switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ANSWER");
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Channel [%s] has been answered\n", channel->name);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Channel [%s] has been answered\n", channel->name);
 	if ((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE)) && !switch_strlen_zero(var)) {
 		char *arg = NULL;
 
 		app = switch_core_session_strdup(channel->session, var);
 		
 		if ((arg = strchr(app, ':')) && *(arg+1) == ':') {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s execute on answer: %s (BROADCAST)\n", channel->name, app);
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s execute on answer: %s (BROADCAST)\n", channel->name, app);
 			switch_ivr_broadcast(switch_core_session_get_uuid(channel->session), app, SMF_NONE);
 		} else {
 			if ((arg = strchr(app, ' '))) {
 				*arg++ = '\0';
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s execute on answer: %s(%s)\n", channel->name, app, switch_str_nil(arg));
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s execute on answer: %s(%s)\n", channel->name, app, switch_str_nil(arg));
 			switch_core_session_execute_application(channel->session, app, arg);
 		}
 	}
@@ -2167,7 +2167,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 						switch_safe_free(expanded_vname);
 
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+						switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "Memory Error!\n");
 						free(data);
 						free(indup);
 						return (char *) in;

@@ -215,21 +215,21 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	
 	if (!sofia_private || !sofia_private->gateway) {
 		if (profile->debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Gateway information missing Subscription Event: %s\n", sip->sip_event->o_type);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Gateway information missing Subscription Event: %s\n", sip->sip_event->o_type);
 		}
 		goto error;	
 	}
 				
 	/* find the corresponding gateway subscription (if any) */
 	if (!(gw_sub_ptr = sofia_find_gateway_subscription(sofia_private->gateway, sip->sip_event->o_type))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 						  "Could not find gateway subscription.  Gateway: %s.  Subscription Event: %s\n",
 						  sofia_private->gateway->name, sip->sip_event->o_type);
 		goto error;	
 	}
 
 	if (!(gw_sub_ptr->state == SUB_STATE_SUBED || gw_sub_ptr->state == SUB_STATE_SUBSCRIBE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 						  "Ignoring notify due to subscription state: %d\n",
 						  gw_sub_ptr->state);
 		goto error;	
@@ -246,9 +246,9 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_uri", sofia_private->gateway->profile->url);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "gateway_name", sofia_private->gateway->name);
 		switch_event_fire(&s_event);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dispatched freeswitch event for message-summary NOTIFY\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "dispatched freeswitch event for message-summary NOTIFY\n");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create event\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to create event\n");
 		goto error;	
 	}
 
@@ -430,7 +430,7 @@ void sofia_event_callback(nua_event_t event,
 				}
 
 				if (channel && switch_channel_down(channel)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already hungup.\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel is already hungup.\n");
 					goto done;
 				}
 			} else {
@@ -477,6 +477,7 @@ void sofia_event_callback(nua_event_t event,
 	case nua_r_get_params:
 	case nua_i_fork:
 	case nua_r_info:
+		break;
 	case nua_r_bye:
 	case nua_r_unregister:
 	case nua_r_unsubscribe:
@@ -553,9 +554,9 @@ void sofia_event_callback(nua_event_t event,
 		break;
 	default:
 		if (status > 100) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: unknown event %d: %03d %s\n", nua_event_name(event), event, status, phrase);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s: unknown event %d: %03d %s\n", nua_event_name(event), event, status, phrase);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: unknown event %d\n", nua_event_name(event), event);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s: unknown event %d\n", nua_event_name(event), event);
 		}
 		break;
 	}
@@ -2893,10 +2894,10 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 			}
 			gateway->status = SOFIA_GATEWAY_UP;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ping failed %s\n", gateway->name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Ping failed %s\n", gateway->name);
 			gateway->status = SOFIA_GATEWAY_DOWN;
 			if (gateway->state == REG_STATE_REGED) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unregister %s\n", gateway->name);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Unregister %s\n", gateway->name);
 				gateway->state = REG_STATE_FAILED;
 			}
 		}
@@ -2906,7 +2907,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 	} else if (sofia_test_pflag(profile, PFLAG_UNREG_OPTIONS_FAIL) && status != 200 && sip && sip->sip_to) {
 		char *sql;
 		time_t now = switch_epoch_time_now(NULL);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Expire registration '%s@%s' due to options failure\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Expire registration '%s@%s' due to options failure\n",
 						  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
 
 		sql = switch_mprintf("update sip_registrations set expires=%ld where sip_user='%s' and sip_host='%s'",
@@ -2969,7 +2970,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					sofia_glue_tech_proxy_remote_addr(tech_pvt);
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
 
 				msg.message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
 				msg.from = __FILE__;
@@ -2980,7 +2981,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					msg.pointer_arg_size = strlen(r_sdp);
 				}
 				if (switch_core_session_receive_message(other_session, &msg) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Other leg is not available\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg is not available\n");
 					nua_respond(tech_pvt->nh, 403, "Hangup in progress", TAG_END());
 				}
 				switch_core_session_rwunlock(other_session);
@@ -3151,13 +3152,13 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					}
 					
 					if (sofia_test_pflag(profile, PFLAG_MANUAL_REDIRECT)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirect: Transfering to %s %s %s\n", 
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Redirect: Transfering to %s %s %s\n", 
 										  p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);
 						switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);					
 					} else if ((!strcmp(profile->sipip, p_contact->m_url->url_host))
 							   || (profile->extsipip && !strcmp(profile->extsipip, p_contact->m_url->url_host))
 							   || (switch_xml_locate_domain(p_contact->m_url->url_host, NULL, &root, &domain) == SWITCH_STATUS_SUCCESS)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirect: Transfering to %s\n", p_contact->m_url->url_user);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Redirect: Transfering to %s\n", p_contact->m_url->url_user);
 						switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, NULL, NULL);
 						switch_xml_free(root);
 					} else {
@@ -3296,14 +3297,14 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			goto done;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s entering state [%s][%d]\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel %s entering state [%s][%d]\n",
 						  switch_channel_get_name(channel), nua_callstate_name(ss_state), status);
 		
 		if (r_sdp) {
 			sdp_parser_t *parser;
 			sdp_session_t *sdp;
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);
 			tech_pvt->remote_sdp_str = switch_core_session_strdup(session, r_sdp);
 			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 
@@ -3472,7 +3473,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								&& (bnh = nua_handle_by_replaces(nua, replaces))) {
 								sofia_private_t *b_private;
 
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Processing Replaces Attended Transfer\n");
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing Replaces Attended Transfer\n");
 								while (switch_channel_get_state(channel) < CS_EXECUTE) {
 									switch_yield(10000);
 								}
@@ -3563,7 +3564,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				const char *var;
 				
 				if ((var = switch_channel_get_variable(channel, "sip_ignore_reinvites")) && switch_true(var)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring Re-invite\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Ignoring Re-invite\n");
 					nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
 					goto done;
 				}
@@ -3618,7 +3619,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT;
 						msg.from = __FILE__;
 						msg.string_arg = (char *) r_sdp;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Passing SDP to other leg.\n%s\n", r_sdp);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing SDP to other leg.\n%s\n", r_sdp);
 						
 						if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 							if (!switch_stristr("sendonly", r_sdp)) {
@@ -3632,12 +3633,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					
 
 						if (switch_core_session_receive_message(other_session, &msg) != SWITCH_STATUS_SUCCESS) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Other leg is not available\n");
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg is not available\n");
 							nua_respond(tech_pvt->nh, 403, "Hangup in progress", TAG_END());
 						}
 						switch_core_session_rwunlock(other_session);
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Re-INVITE to a no-media channel that is not in a bridge.\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Re-INVITE to a no-media channel that is not in a bridge.\n");
 						is_ok = 0;
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					}
@@ -3658,13 +3659,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 						sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
 						if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Reinvite RTP Error!\n");
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reinvite RTP Error!\n");
 							is_ok = 0;
 							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						}
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Processing Reinvite\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing Reinvite\n");
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Reinvite Codec Error!\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reinvite Codec Error!\n");
 						is_ok = 0;
 					}
 				}
@@ -3707,7 +3708,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			if (match) {
 				sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
 				if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP Error!\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error!\n");
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RTP ERROR");
 					is_ok = 0;
 				}
@@ -3729,13 +3730,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			switch_channel_clear_flag(channel, CF_REQ_MEDIA);
 		}
 		if (tech_pvt && nh == tech_pvt->nh2) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cheater Reinvite!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Cheater Reinvite!\n");
 			sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
 			tech_pvt->nh = tech_pvt->nh2;
 			tech_pvt->nh2 = NULL;
 			if (sofia_glue_tech_choose_port(tech_pvt, 0) == SWITCH_STATUS_SUCCESS) {
 				if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cheater Reinvite RTP Error!\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cheater Reinvite RTP Error!\n");
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				}
 			}
@@ -3803,14 +3804,14 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							if (sofia_glue_activate_rtp(tech_pvt, 0) == SWITCH_STATUS_SUCCESS) {
 								switch_channel_mark_answered(channel);
 							} else {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP Error!\n");
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error!\n");
 								switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 							}
 
 							if (sofia_test_flag(tech_pvt, TFLAG_3PCC)) {
 								/* Check if we are in 3PCC proxy mode, if so then set the flag to indicate we received the ack */
 								if (sofia_test_pflag(profile, PFLAG_3PCC_PROXY )) {
-									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "3PCC-PROXY, Got my ACK\n");
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Got my ACK\n");
 									sofia_set_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
 								} else if (switch_channel_get_state(channel) == CS_HIBERNATE) {
 									sofia_set_flag_locked(tech_pvt, TFLAG_READY);
@@ -3974,7 +3975,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	}
 
 	if (!sip->sip_cseq || !(etmp = switch_mprintf("refer;id=%u", sip->sip_cseq->cs_seq))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
 		goto done;
 	}
 
@@ -3998,14 +3999,14 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 			exten = (char *) refer_to->r_url->url_user;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Process REFER to [%s@%s]\n", exten, (char *) refer_to->r_url->url_host);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Process REFER to [%s@%s]\n", exten, (char *) refer_to->r_url->url_host);
 
 		if (refer_to->r_url->url_headers && (rep = (char *)switch_stristr("Replaces=", refer_to->r_url->url_headers))) {
 			sip_replaces_t *replaces;
 			nua_handle_t *bnh;
 
 			if (switch_channel_test_flag(channel_a, CF_PROXY_MODE)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Attended Transfer BYPASS MEDIA CALLS!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot Attended Transfer BYPASS MEDIA CALLS!\n");
 				switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
 				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 						   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
@@ -4025,9 +4026,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 				
 				if ((buf = switch_core_session_alloc(session, strlen(rep) + 1))) {
 					rep = url_unescape(buf, (const char *) rep);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Replaces: [%s]\n", rep);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Replaces: [%s]\n", rep);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
 					goto done;
 				}
 
@@ -4052,7 +4053,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						if (br_a && br_b) {
 							switch_core_session_t *new_b_session = NULL, *a_session = NULL, *tmp = NULL;
 						
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Attended Transfer [%s][%s]\n", 
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Attended Transfer [%s][%s]\n", 
 											  switch_str_nil(br_a),
 											  switch_str_nil(br_b));
 
@@ -4085,7 +4086,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							}
 						} else {
 							if (!br_a && !br_b) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot transfer channels that are not in a bridge.\n");
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot transfer channels that are not in a bridge.\n");
 								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 										   NUTAG_SUBSTATE(nua_substate_terminated),
 										   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
@@ -4127,7 +4128,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 									switch_core_session_rwunlock(t_session);
 									switch_channel_hangup(hup_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 								} else {
-									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session to transfer to not found.\n");
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session to transfer to not found.\n");
 									nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 											   NUTAG_SUBSTATE(nua_substate_terminated),
 											   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
@@ -4201,7 +4202,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								switch_channel_set_variable(channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
 							}
 
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Good Luck, you'll need it......\n");
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Good Luck, you'll need it......\n");
 							launch_nightmare_xfer(nightmare_xfer_helper);
 							
 							switch_core_session_rwunlock(a_session);
@@ -4212,7 +4213,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 					} else {
 					  error:
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Transfer! [%s]\n", br_a);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Transfer! [%s]\n", br_a);
 						switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
 						nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 								   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp),
@@ -4220,13 +4221,13 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 					}
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot parse Replaces!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot parse Replaces!\n");
 			}
 			goto done;
 		}
 
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Refer-To\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing Refer-To\n");
 		goto done;
 	}
 
@@ -4256,7 +4257,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 					   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
 
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Blind Transfer 1 Legged calls\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot Blind Transfer 1 Legged calls\n");
 			switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
 			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 					   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
@@ -4309,7 +4310,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 						dtmf.digit = switch_rfc2833_to_char(tmp);
 					}
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad signal\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Bad signal\n");
 					goto end;
 				}
 
@@ -4337,7 +4338,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				switch_channel_queue_dtmf(channel, &dtmf);
 
 				/* print debug info */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "INFO DTMF(%c)\n", dtmf.digit);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "INFO DTMF(%c)\n", dtmf.digit);
 				
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 					const char *uuid;
@@ -4364,7 +4365,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 		if ((clientcode_header = sofia_glue_get_unknown_header(sip, "x-clientcode"))) {
 			if (!switch_strlen_zero(clientcode_header)) {
 				switch_channel_set_variable(channel, "call_clientcode", clientcode_header);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Setting CMC to %s\n", clientcode_header);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Setting CMC to %s\n", clientcode_header);
 				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 			}
 			goto end;
@@ -4372,7 +4373,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
 		if ((rec_header = sofia_glue_get_unknown_header(sip, "record"))) {
 			if (switch_strlen_zero(profile->record_template)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Record attempted but no template defined.\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Record attempted but no template defined.\n");
 				nua_respond(nh, 488, "Recording not enabled", NUTAG_WITH_THIS(nua), TAG_END());
 			} else {
 				if (!strcasecmp(rec_header, "on")) {
@@ -4381,7 +4382,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					file = switch_channel_expand_variables(channel, profile->record_template);
 					switch_ivr_record_session(session, file, 0, NULL);
 					switch_channel_set_variable(channel, "sofia_record_file", file);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Recording %s to %s\n", switch_channel_get_name(channel), file);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Recording %s to %s\n", switch_channel_get_name(channel), file);
 					nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 					if (file != profile->record_template) {
 						free(file);
@@ -4391,7 +4392,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					const char *file;
 
 					if ((file = switch_channel_get_variable(channel, "sofia_record_file"))) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Done recording %s to %s\n", switch_channel_get_name(channel), file);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Done recording %s to %s\n", switch_channel_get_name(channel), file);
 						switch_ivr_stop_record_session(session, file);
 						nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 					} else {
@@ -4458,7 +4459,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 		}
 
 		switch_event_fire(&event);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dispatched freeswitch event for INFO\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "dispatched freeswitch event for INFO\n");
 	}
 
 	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
@@ -4676,7 +4677,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
 		switch_core_session_destroy(&session);
 		goto fail;
@@ -4695,9 +4696,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		switch_channel_set_variable(channel, "acl_token", acl_token);
 		if (strchr(acl_token, '@')) {
 			if (switch_ivr_set_user(session, acl_token) == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating user %s\n", acl_token);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Authenticating user %s\n", acl_token);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error Authenticating user %s\n", acl_token);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Error Authenticating user %s\n", acl_token);
 			}
 		}
 	}
@@ -5078,7 +5079,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			if (gateway->ib_vars) {
 				switch_event_header_t *hp;
 				for(hp = gateway->ib_vars->headers; hp; hp = hp->next) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
 									  switch_channel_get_name(channel), hp->name, hp->value);
 					switch_channel_set_variable(channel, hp->name, hp->value);
 				}
@@ -5310,7 +5311,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 		if (is_nat) {
 			sofia_set_flag(tech_pvt, TFLAG_NAT);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting NAT mode based on %s\n", is_nat);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting NAT mode based on %s\n", is_nat);
 			switch_channel_set_variable(channel, "sip_nat_detected", "true");
 		}
 		return;
@@ -5319,8 +5320,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	if (sess_count > 110) {
 		switch_mutex_lock(profile->flag_mutex);
 		switch_core_session_limit(sess_count - 10);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "LUKE: I'm hit, but not bad.\n");
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "LUKE'S VOICE: Artoo, see what you can do with it. Hang on back there....\n"
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "LUKE: I'm hit, but not bad.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "LUKE'S VOICE: Artoo, see what you can do with it. Hang on back there....\n"
 						  "Green laserfire moves past the beeping little robot as his head turns.  "
 						  "After a few beeps and a twist of his mechanical arm,\n"
 						  "Artoo reduces the max sessions to %d thus, saving the switch from certain doom.\n", sess_count - 10);

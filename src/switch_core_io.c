@@ -115,7 +115,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			*frame = &runtime.dummy_cng_frame;
 			return SWITCH_STATUS_SUCCESS;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -276,7 +276,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_mutex_unlock(session->resample_mutex);
 
 					if (status != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate resampler\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unable to allocate resampler\n");
 						status = SWITCH_STATUS_FALSE;
 						goto done;
 					}
@@ -299,7 +299,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (session->read_resampler) {
 					switch_mutex_lock(session->resample_mutex);
 					switch_resample_destroy(&session->read_resampler);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deactivating read resampler\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Deactivating read resampler\n");
 					switch_mutex_unlock(session->resample_mutex);
 				}
 
@@ -319,10 +319,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				status = SWITCH_STATUS_SUCCESS;
 				break;
 			case SWITCH_STATUS_NOT_INITALIZED:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec init error!\n");
 				goto done;
 			default:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s decoder error!\n", session->read_codec->codec_interface->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec %s decoder error!\n", session->read_codec->codec_interface->interface_name);
 				goto done;
 			}
 		}
@@ -398,7 +398,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			} else {
 				if (!session->raw_read_buffer) {
 					switch_size_t bytes = session->read_impl.decoded_bytes_per_packet;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Engaging Read Buffer at %u bytes vs %u\n", 
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Engaging Read Buffer at %u bytes vs %u\n", 
 									  (uint32_t) bytes, (uint32_t) (*frame)->datalen);
 					switch_buffer_create_dynamic(&session->raw_read_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, 0);
 				}
@@ -436,7 +436,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 				switch (status) {
 				case SWITCH_STATUS_RESAMPLE:
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fixme 1\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fixme 1\n");
 				case SWITCH_STATUS_SUCCESS:
 					session->enc_read_frame.samples = session->read_impl.decoded_bytes_per_packet / sizeof(int16_t);
 					if (perfect) {
@@ -464,12 +464,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					status = SWITCH_STATUS_SUCCESS;
 					break;
 				case SWITCH_STATUS_NOT_INITALIZED:
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error!\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec init error!\n");
 					*frame = NULL;
                     status = SWITCH_STATUS_GENERR;
                     break;
 				default:
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error!\n",
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec %s encoder error!\n",
 									  session->read_codec->codec_interface->interface_name);
 					*frame = NULL;
 					status = SWITCH_STATUS_GENERR;
@@ -580,7 +580,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 	
 	if (!(session->write_codec && switch_core_codec_ready(session->write_codec)) && !pass_cng) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s has no write codec.\n", switch_channel_get_name(session->channel));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has no write codec.\n", switch_channel_get_name(session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -702,7 +702,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			if (session->write_resampler) {
 				switch_mutex_lock(session->resample_mutex);
 				switch_resample_destroy(&session->write_resampler);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deactivating write resampler\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Deactivating write resampler\n");
 				switch_mutex_unlock(session->resample_mutex);
 			}
 			write_frame = frame;
@@ -710,7 +710,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			break;
 		default:
 			if (status == SWITCH_STATUS_NOT_INITALIZED) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec init error!\n");
 				goto error;
 			}
 			if (ptime_mismatch) {
@@ -718,7 +718,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				status = SWITCH_STATUS_SUCCESS; goto error;
 			}
 				
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s decoder error!\n", frame->codec->codec_interface->interface_name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec %s decoder error!\n", frame->codec->codec_interface->interface_name);
 			goto error;
 		}
 	}
@@ -840,7 +840,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			switch (status) {
 			case SWITCH_STATUS_RESAMPLE:
 				resample++;
-				/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fixme 2\n"); */
+				/* switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fixme 2\n"); */
 			case SWITCH_STATUS_SUCCESS:
 				session->enc_write_frame.codec = session->write_codec;
 				session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
@@ -867,11 +867,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				status = SWITCH_STATUS_SUCCESS;
 				break;
 			case SWITCH_STATUS_NOT_INITALIZED:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec init error!\n");
 				write_frame = NULL;
 				goto error;					
 			default:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error!\n",
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec %s encoder error!\n",
 								  session->read_codec->codec_interface->interface_name);
 				write_frame = NULL;
 				goto error;
@@ -889,19 +889,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 			if (!session->raw_write_buffer) {
 				switch_size_t bytes_per_packet = session->write_impl.decoded_bytes_per_packet;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 								  "Engaging Write Buffer at %u bytes to accommodate %u->%u\n",
 								  (uint32_t) bytes_per_packet, write_frame->datalen, session->write_impl.decoded_bytes_per_packet);
 				if ((status = switch_buffer_create_dynamic(&session->raw_write_buffer,
 														   bytes_per_packet * SWITCH_BUFFER_BLOCK_FRAMES,
 														   bytes_per_packet * SWITCH_BUFFER_START_FRAMES, 0)) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Write Buffer Failed!\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Write Buffer Failed!\n");
 					goto error;
 				}
 			}
 			
 			if (!(switch_buffer_write(session->raw_write_buffer, write_frame->data, write_frame->datalen))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Write Buffer %u bytes Failed!\n", write_frame->datalen);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Write Buffer %u bytes Failed!\n", write_frame->datalen);
 				status = SWITCH_STATUS_MEMERR; goto error;
 			}
 			
@@ -985,7 +985,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								switch_mutex_lock(session->resample_mutex);
 								if (session->write_resampler) {
 									switch_resample_destroy(&session->write_resampler);
-									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deactivating write resampler\n");
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Deactivating write resampler\n");
 								}
 								switch_mutex_unlock(session->resample_mutex);
 							}
@@ -998,11 +998,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							status = SWITCH_STATUS_SUCCESS;
 							break;
 						case SWITCH_STATUS_NOT_INITALIZED:
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error!\n");
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec init error!\n");
 							write_frame = NULL;
 							goto error;
 						default:
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error %d!\n",
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec %s encoder error %d!\n",
 											  session->read_codec->codec_interface->interface_name, status);
 							write_frame = NULL;
 							goto error;
@@ -1108,7 +1108,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	new_dtmf = *dtmf;
 
 	if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
 						  switch_channel_get_name(session->channel), new_dtmf.digit, new_dtmf.duration);
 		new_dtmf.duration = switch_core_max_dtmf_duration(0);
 	} else if (!new_dtmf.duration) {
@@ -1138,7 +1138,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 	new_dtmf = *dtmf;
 
 	if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
 						  switch_channel_get_name(session->channel), new_dtmf.digit, new_dtmf.duration);
 		new_dtmf.duration = switch_core_max_dtmf_duration(0);
 	} else if (!new_dtmf.duration) {
@@ -1186,7 +1186,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 	}
 
 	if (strlen(dtmf_string) > 99) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Attempt to send very large dtmf string ignored!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Attempt to send very large dtmf string ignored!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1209,7 +1209,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 
 
 		if (dtmf.duration > switch_core_max_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
 							  switch_channel_get_name(session->channel), dtmf.digit, dtmf.duration);
 			dtmf.duration = switch_core_max_dtmf_duration(0);
 		} else if (!dtmf.duration) {
@@ -1220,7 +1220,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 			if (is_dtmf(*p)) {
 				dtmf.digit = *p;
 				if (switch_core_session_send_dtmf(session, &dtmf) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s send dtmf\ndigit=%c ms=%u samples=%u\n",
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s send dtmf\ndigit=%c ms=%u samples=%u\n",
 									  switch_channel_get_name(session->channel), dtmf.digit, dur, dtmf.duration);
 					sent++;
 					dur_total += dtmf.duration + 2000; /* account for 250ms pause */

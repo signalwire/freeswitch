@@ -119,7 +119,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 		if (session->real_read_codec) {
 			session->read_codec = session->real_read_codec;
 			session->read_impl = *session->real_read_codec->implementation;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Restore original codec.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Restore original codec.\n");
 		} else {
 			status = SWITCH_STATUS_FALSE;
 			goto end;
@@ -227,7 +227,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 			session->write_impl = *session->real_write_codec->implementation;
 			session->real_write_codec = NULL;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
 			status = SWITCH_STATUS_FALSE;
 			goto end;
 		}
@@ -238,7 +238,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 				session->write_impl = *codec->implementation;
 				session->real_write_codec = NULL;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot double-set codec!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot double-set codec!\n");
 				status = SWITCH_STATUS_FALSE;
 				goto end;
 			}
@@ -307,7 +307,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_codec(switch_
         	status = SWITCH_STATUS_SUCCESS;
 			goto end;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
@@ -351,7 +351,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_codec(switch
         	status = SWITCH_STATUS_SUCCESS;
 			goto end;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
