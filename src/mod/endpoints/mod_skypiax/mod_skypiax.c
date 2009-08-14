@@ -1596,37 +1596,6 @@ int outbound_channel_answered(private_t * tech_pvt)
 	return 0;
 }
 
-#if 0
-private_t *find_available_skypiax_interface(private_t * tech_pvt)
-{
-	private_t *tech_pvt2 = NULL;
-	int found = 0;
-	int i;
-
-	switch_mutex_lock(globals.mutex);
-
-	for (i = 0; !found && i < SKYPIAX_MAX_INTERFACES; i++) {
-		if (strlen(globals.SKYPIAX_INTERFACES[i].name)) {
-			int skype_state = 0;
-
-			tech_pvt2 = &globals.SKYPIAX_INTERFACES[i];
-			skype_state = tech_pvt2->interface_state;
-			DEBUGA_SKYPE("skype interface: %d, name: %s, state: %d\n", SKYPIAX_P_LOG, i, globals.SKYPIAX_INTERFACES[i].name, skype_state);
-			if ((tech_pvt ? strcmp(tech_pvt2->skype_user, tech_pvt->skype_user) : 1) && (SKYPIAX_STATE_DOWN == skype_state || SKYPIAX_STATE_RING == skype_state || 0 == skype_state)) {	//(if we got tech_pvt NOT NULL) if user is NOT the same, and iface is idle
-				found = 1;
-				break;
-			}
-		}
-	}
-
-	switch_mutex_unlock(globals.mutex);
-	if (found)
-		return tech_pvt2;
-	else
-		return NULL;
-}
-#endif
-
 private_t *find_available_skypiax_interface_rr(private_t * tech_pvt_calling)
 {
 	private_t *tech_pvt = NULL;

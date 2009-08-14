@@ -120,33 +120,6 @@ int skypiax_signaling_read(private_t * tech_pvt)
 					tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
 				}
 			}
-			/*
-			   if (!strncasecmp(message, "ERROR 96 CALL", 12) ) {
-			   ERRORA("Skype got ERROR: |||%s|||, we are trying to use this interface to make or receive a call, but another call is half-active on this interface. We abort this attenpt and leave the previous one to continue.\n", SKYPIAX_P_LOG, message);
-			   tech_pvt->skype_callflow = CALLFLOW_STATUS_FINISHED;
-			   DEBUGA_SKYPE("skype_call now is DOWN\n", SKYPIAX_P_LOG);
-			   tech_pvt->skype_call_id[0] = '\0';
-
-			   if (tech_pvt->interface_state != SKYPIAX_STATE_HANGUP_REQUESTED) {
-			   tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
-			   return CALLFLOW_INCOMING_HANGUP;
-			   } else {
-			   tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
-			   }
-			   }
-			 */
-			/*
-			   if (!strncasecmp(message, "ERROR 99 CALL", 12) ) {
-			   //TODO: let's kill the call
-			   ERRORA("Skype got ERROR: |||%s|||, another call is active on this interface\n\n\n", SKYPIAX_P_LOG, message);
-			   //tech_pvt->skype_callflow = CALLFLOW_STATUS_FINISHED;
-			   //DEBUGA_SKYPE("skype_call now is DOWN\n", SKYPIAX_P_LOG);
-			   //tech_pvt->skype_call_id[0] = '\0';
-
-			   tech_pvt->interface_state = SKYPIAX_STATE_ERROR_DOUBLE_CALL;
-			   }
-			 */
-
 
 			if (!strncasecmp(message, "ERROR", 4)) {
 				if (!strncasecmp(message, "ERROR 96 CALL", 12)) {
@@ -543,25 +516,6 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 	short kill_cli_buff[SAMPLES_PER_FRAME];
 	short totalbuf[SAMPLES_PER_FRAME];
 
-#ifdef  NOTDEF
-	memset(&my_addr, 0, sizeof(my_addr));
-	my_addr.sin_family = AF_INET;
-	my_addr.sin_addr.s_addr = htonl(0x7f000001);	/* use the localhost */
-	my_addr.sin_port = htons(tech_pvt->tcp_srv_port);
-
-	if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		ERRORA("socket Error\n", SKYPIAX_P_LOG);
-		tech_pvt->tcp_srv_thread = NULL;
-		return NULL;
-	}
-
-	if (bind(s, (struct sockaddr *) &my_addr, sizeof(struct sockaddr)) < 0) {
-		ERRORA("bind error: %s\n", SKYPIAX_P_LOG, strerror(errno));
-		tech_pvt->tcp_srv_thread = NULL;
-		return NULL;
-	}
-#endif //NOTDEF
-
 	s = skypiax_socket_create_and_bind(tech_pvt, &tech_pvt->tcp_srv_port);
 	if (s < 0) {
 		ERRORA("skypiax_socket_create_and_bind error!\n", SKYPIAX_P_LOG);
@@ -733,27 +687,6 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 #else
 	unsigned int sin_size;
 #endif /* WIN32 */
-
-#ifdef NOTDEF
-	memset(&my_addr, 0, sizeof(my_addr));
-	my_addr.sin_family = AF_INET;
-	my_addr.sin_addr.s_addr = htonl(0x7f000001);	/* use the localhost */
-	my_addr.sin_port = htons(tech_pvt->tcp_cli_port);
-
-	if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		ERRORA("socket Error\n", SKYPIAX_P_LOG);
-		tech_pvt->tcp_cli_thread = NULL;
-		return NULL;
-	}
-
-	if (bind(s, (struct sockaddr *) &my_addr, sizeof(struct sockaddr)) < 0) {
-		//ERRORA("bind Error\n", SKYPIAX_P_LOG);
-		ERRORA("bind error: %s\n", SKYPIAX_P_LOG, strerror(errno));
-		skypiax_close_socket(s);
-		tech_pvt->tcp_cli_thread = NULL;
-		return NULL;
-	}
-#endif // NOTDEF
 
 	s = skypiax_socket_create_and_bind(tech_pvt, &tech_pvt->tcp_cli_port);
 	if (s < 0) {
