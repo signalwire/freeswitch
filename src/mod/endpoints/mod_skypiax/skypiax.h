@@ -98,6 +98,8 @@ typedef enum {
 #define		SKYPIAX_STATE_UP		5
 #define		SKYPIAX_STATE_RINGING	6
 #define		SKYPIAX_STATE_PRERING	7
+#define		SKYPIAX_STATE_ERROR_DOUBLE_CALL	8
+#define		SKYPIAX_STATE_SELECTED	9
 /*********************************/
 /* call flow from the device */
 #define 	CALLFLOW_CALL_IDLE  SKYPIAX_STATE_DOWN
@@ -244,7 +246,6 @@ struct private_object {
 typedef struct private_object private_t;
 
 void *SWITCH_THREAD_FUNC skypiax_api_thread_func(switch_thread_t * thread, void *obj);
-void skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *session);
 int skypiax_audio_read(private_t * tech_pvt);
 int skypiax_audio_init(private_t * tech_pvt);
 int skypiax_signaling_write(private_t * tech_pvt, char *msg_to_skype);
@@ -277,8 +278,9 @@ int skypiax_pipe_write(int pipe, short *buf, int howmany);
 #endif /* WIN32 */
 int skypiax_close_socket(unsigned int fd);
 private_t *find_available_skypiax_interface(private_t * tech_pvt);
-private_t *find_available_skypiax_interface_rr(void);
+private_t *find_available_skypiax_interface_rr(private_t * tech_pvt_calling);
 int remote_party_is_ringing(private_t * tech_pvt);
 int remote_party_is_early_media(private_t * tech_pvt);
 int skypiax_answer(private_t * tech_pvt, char *id, char *value);
 int skypiax_transfer(private_t * tech_pvt, char *id, char *value);
+int skypiax_socket_create_and_bind(private_t * tech_pvt, int * which_port);
