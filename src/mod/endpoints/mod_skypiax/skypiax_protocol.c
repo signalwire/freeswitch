@@ -50,7 +50,7 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, int *which_port)
 	while (bind(s, (struct sockaddr *) &my_addr, sizeof(struct sockaddr)) < 0) {
 		DEBUGA_SKYPE("*which_port=%d, tech_pvt->tcp_cli_port=%d, tech_pvt->tcp_srv_port=%d\n", SKYPIAX_P_LOG, *which_port, tech_pvt->tcp_cli_port,
 					 tech_pvt->tcp_srv_port);
-		DEBUGA_SKYPE("EADDRINUSE=%d, bind errno=%d, error: %s\n", SKYPIAX_P_LOG, EADDRINUSE, errno, strerror(errno));
+		DEBUGA_SKYPE("bind errno=%d, error: %s\n", SKYPIAX_P_LOG, errno, strerror(errno));
 		start_port++;
 		my_addr.sin_port = htons(start_port);
 		*which_port = start_port;

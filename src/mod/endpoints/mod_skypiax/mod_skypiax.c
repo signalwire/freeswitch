@@ -894,7 +894,7 @@ static void *SWITCH_THREAD_FUNC skypiax_signaling_thread_func(switch_thread_t * 
 					if (channel) {
 						switch_channel_state_t state = switch_channel_get_state(channel);
 						if (state < CS_EXECUTE) {
-							usleep(10000);	//10 msec, let the state evolve from CS_NEW
+							switch_sleep(10000);	//10 msec, let the state evolve from CS_NEW
 						}
 						switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 					} else {
@@ -909,7 +909,7 @@ static void *SWITCH_THREAD_FUNC skypiax_signaling_thread_func(switch_thread_t * 
 				*tech_pvt->skype_call_id = '\0';
 
 				//ERRORA("LET'S WAIT\n", SKYPIAX_P_LOG);
-				usleep(300000);	//0.3 sec
+				switch_sleep(300000);	//0.3 sec
 				//ERRORA("WAIT'S OVER\n", SKYPIAX_P_LOG);
 				tech_pvt->skype_callflow = CALLFLOW_STATUS_FINISHED;
 			} else {
