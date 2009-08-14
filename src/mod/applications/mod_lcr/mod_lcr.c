@@ -1191,7 +1191,8 @@ SWITCH_STANDARD_APP(lcr_app_function)
 	routes.pool = pool;
 
 	intra = switch_channel_get_variable(channel, "intrastate");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "intrastate channel var is [%s]\n", intra);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "intrastate channel var is [%s]\n", 
+					switch_strlen_zero(intra) ? "undef" : intra);
 	if (switch_strlen_zero(intra) || strcasecmp((char *)intra, "true")) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Select routes based on interstate rates\n");
 		routes.intrastate = SWITCH_FALSE;
