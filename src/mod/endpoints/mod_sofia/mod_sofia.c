@@ -1688,6 +1688,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 				stream->write_function(stream, "%s\n", line);
 				stream->write_function(stream, "Name    \t%s\n", switch_str_nil(gp->name));
+				stream->write_function(stream, "Profile \t%s\n", gp->profile->name);
 				stream->write_function(stream, "Scheme  \t%s\n", switch_str_nil(gp->register_scheme));
 				stream->write_function(stream, "Realm   \t%s\n", switch_str_nil(gp->register_realm));
 				stream->write_function(stream, "Username\t%s\n", switch_str_nil(gp->register_username));
