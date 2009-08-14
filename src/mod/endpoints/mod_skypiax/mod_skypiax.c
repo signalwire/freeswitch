@@ -148,7 +148,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
-static switch_status_t  skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *session);
+static switch_status_t skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *session);
 
 static switch_status_t skypiax_codec(private_t * tech_pvt, int sample_rate, int codec_ms)
 {
@@ -174,7 +174,7 @@ static switch_status_t skypiax_codec(private_t * tech_pvt, int sample_rate, int 
 
 	session = switch_core_session_locate(tech_pvt->session_uuid_str);
 
-	if(session){
+	if (session) {
 		switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 		switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
 		switch_core_session_rwunlock(session);
@@ -198,7 +198,7 @@ switch_status_t skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *s
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_core_session_set_private(session, tech_pvt);
 	switch_copy_string(tech_pvt->session_uuid_str, switch_core_session_get_uuid(session), sizeof(tech_pvt->session_uuid_str));
-	if(!strlen(tech_pvt->session_uuid_str)){
+	if (!strlen(tech_pvt->session_uuid_str)) {
 		ERRORA("no tech_pvt->session_uuid_str\n", SKYPIAX_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -741,7 +741,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
-		private_t *tech_pvt = NULL;
+	private_t *tech_pvt = NULL;
 	if ((*new_session = switch_core_session_request(skypiax_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool)) != 0) {
 		switch_channel_t *channel = NULL;
 		switch_caller_profile_t *caller_profile;
@@ -766,8 +766,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				//DEBUGA_SKYPE("Finding one available skype interface\n", SKYPIAX_P_LOG);
 				//tech_pvt = find_available_skypiax_interface(NULL);
 				//if (tech_pvt)
-					//found = 1;
-			//} else if (strncmp("RR", interface_name, strlen(interface_name)) == 0) {
+				//found = 1;
+				//} else if (strncmp("RR", interface_name, strlen(interface_name)) == 0) {
 				/* Find the first idle interface using Round Robin */
 				DEBUGA_SKYPE("Finding one available skype interface RR\n", SKYPIAX_P_LOG);
 				tech_pvt = find_available_skypiax_interface_rr(NULL);
@@ -811,13 +811,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 
 		channel = switch_core_session_get_channel(*new_session);
-		if(!channel){
+		if (!channel) {
 			ERRORA("Doh! no channel?\n", SKYPIAX_P_LOG);
 			switch_core_session_destroy(new_session);
 			switch_mutex_unlock(globals.mutex);
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
-		if( skypiax_tech_init(tech_pvt, *new_session) != SWITCH_STATUS_SUCCESS){
+		if (skypiax_tech_init(tech_pvt, *new_session) != SWITCH_STATUS_SUCCESS) {
 			ERRORA("Doh! no tech_init?\n", SKYPIAX_P_LOG);
 			switch_core_session_destroy(new_session);
 			switch_mutex_unlock(globals.mutex);
@@ -893,14 +893,14 @@ static void *SWITCH_THREAD_FUNC skypiax_signaling_thread_func(switch_thread_t * 
 					channel = switch_core_session_get_channel(session);
 					if (channel) {
 						switch_channel_state_t state = switch_channel_get_state(channel);
-						if(state < CS_EXECUTE){
-							usleep(10000);//10 msec, let the state evolve from CS_NEW
+						if (state < CS_EXECUTE) {
+							usleep(10000);	//10 msec, let the state evolve from CS_NEW
 						}
 						switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 					} else {
 						ERRORA("no channel?\n", SKYPIAX_P_LOG);
 					}
-						switch_core_session_rwunlock(session);
+					switch_core_session_rwunlock(session);
 				} else {
 					DEBUGA_SKYPE("no session\n", SKYPIAX_P_LOG);
 				}
@@ -909,7 +909,7 @@ static void *SWITCH_THREAD_FUNC skypiax_signaling_thread_func(switch_thread_t * 
 				*tech_pvt->skype_call_id = '\0';
 
 				//ERRORA("LET'S WAIT\n", SKYPIAX_P_LOG);
-				usleep(300000); //0.3 sec
+				usleep(300000);	//0.3 sec
 				//ERRORA("WAIT'S OVER\n", SKYPIAX_P_LOG);
 				tech_pvt->skype_callflow = CALLFLOW_STATUS_FINISHED;
 			} else {
@@ -1430,24 +1430,24 @@ int start_audio_threads(private_t * tech_pvt)
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	if (switch_thread_create(&tech_pvt->tcp_srv_thread, thd_attr, skypiax_do_tcp_srv_thread, tech_pvt, skypiax_module_pool) == SWITCH_STATUS_SUCCESS) {
-	DEBUGA_SKYPE("started tcp_srv_thread thread.\n", SKYPIAX_P_LOG);
+		DEBUGA_SKYPE("started tcp_srv_thread thread.\n", SKYPIAX_P_LOG);
 	} else {
-	ERRORA("failed to start tcp_srv_thread thread.\n", SKYPIAX_P_LOG);
-	return -1;
+		ERRORA("failed to start tcp_srv_thread thread.\n", SKYPIAX_P_LOG);
+		return -1;
 	}
 
 	switch_threadattr_create(&thd_attr, skypiax_module_pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	if(switch_thread_create(&tech_pvt->tcp_cli_thread, thd_attr, skypiax_do_tcp_cli_thread, tech_pvt, skypiax_module_pool) == SWITCH_STATUS_SUCCESS) {
-	DEBUGA_SKYPE("started tcp_cli_thread thread.\n", SKYPIAX_P_LOG);
-	}else{
-	ERRORA("failed to start tcp_cli_thread thread.\n", SKYPIAX_P_LOG);
-	return -1;
+	if (switch_thread_create(&tech_pvt->tcp_cli_thread, thd_attr, skypiax_do_tcp_cli_thread, tech_pvt, skypiax_module_pool) == SWITCH_STATUS_SUCCESS) {
+		DEBUGA_SKYPE("started tcp_cli_thread thread.\n", SKYPIAX_P_LOG);
+	} else {
+		ERRORA("failed to start tcp_cli_thread thread.\n", SKYPIAX_P_LOG);
+		return -1;
 	}
 	switch_sleep(100000);
 
-	if(tech_pvt->tcp_cli_thread == NULL || tech_pvt->tcp_srv_thread == NULL) {
+	if (tech_pvt->tcp_cli_thread == NULL || tech_pvt->tcp_srv_thread == NULL) {
 		ERRORA("tcp_cli_thread or tcp_srv_thread exited\n", SKYPIAX_P_LOG);
 		return -1;
 	}
@@ -1463,12 +1463,12 @@ int new_inbound_channel(private_t * tech_pvt)
 	if ((session = switch_core_session_request(skypiax_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, NULL)) != 0) {
 		switch_core_session_add_stream(session, NULL);
 		channel = switch_core_session_get_channel(session);
-		if(!channel){
+		if (!channel) {
 			ERRORA("Doh! no channel?\n", SKYPIAX_P_LOG);
 			switch_core_session_destroy(&session);
 			return 0;
 		}
-		if( skypiax_tech_init(tech_pvt, session) != SWITCH_STATUS_SUCCESS){
+		if (skypiax_tech_init(tech_pvt, session) != SWITCH_STATUS_SUCCESS) {
 			ERRORA("Doh! no tech_init?\n", SKYPIAX_P_LOG);
 			switch_core_session_destroy(&session);
 			return 0;
@@ -1491,7 +1491,7 @@ int new_inbound_channel(private_t * tech_pvt)
 			return 0;
 		}
 	}
-	if(channel){
+	if (channel) {
 		switch_channel_mark_answered(channel);
 	}
 
@@ -1653,12 +1653,15 @@ private_t *find_available_skypiax_interface_rr(private_t * tech_pvt_calling)
 			tech_pvt = &globals.SKYPIAX_INTERFACES[interface_id];
 			skype_state = tech_pvt->interface_state;
 			//DEBUGA_SKYPE("skype interface: %d, name: %s, state: %d\n", SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].name, skype_state);
-			if ((tech_pvt_calling ? strcmp(tech_pvt->skype_user, tech_pvt_calling->skype_user) : 1) && (SKYPIAX_STATE_DOWN == skype_state || 0 == skype_state) && (tech_pvt->skype_callflow ==CALLFLOW_STATUS_FINISHED || 0 == tech_pvt->skype_callflow )) {
-				DEBUGA_SKYPE("returning as available skype interface name: %s, state: %d callflow: %d\n", SKYPIAX_P_LOG, tech_pvt->name, skype_state, tech_pvt->skype_callflow);
+			if ((tech_pvt_calling ? strcmp(tech_pvt->skype_user, tech_pvt_calling->skype_user) : 1)
+				&& (SKYPIAX_STATE_DOWN == skype_state || 0 == skype_state) && (tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED
+																			   || 0 == tech_pvt->skype_callflow)) {
+				DEBUGA_SKYPE("returning as available skype interface name: %s, state: %d callflow: %d\n", SKYPIAX_P_LOG, tech_pvt->name, skype_state,
+							 tech_pvt->skype_callflow);
 				/*set to Dialing state to avoid other thread fint it, don't know if it is safe */
 				//XXX no, it's not safe 
-				if(tech_pvt_calling == NULL){
-				tech_pvt->interface_state = SKYPIAX_STATE_SELECTED ;
+				if (tech_pvt_calling == NULL) {
+					tech_pvt->interface_state = SKYPIAX_STATE_SELECTED;
 				}
 
 				switch_mutex_unlock(globals.mutex);
@@ -1851,12 +1854,12 @@ int skypiax_answer(private_t * tech_pvt, char *id, char *value)
 					("FOUND  (name=%s, giovatech->interface_state=%d != SKYPIAX_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
 					 SKYPIAX_P_LOG, giovatech->name, giovatech->interface_state,
 					 giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value)
-					if(tech_pvt->interface_state == SKYPIAX_STATE_PRERING){
-						tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
-					}else if (tech_pvt->interface_state != 0 && tech_pvt->interface_state != SKYPIAX_STATE_DOWN) {
-						WARNINGA("Why an interface_state %d HERE?\n", SKYPIAX_P_LOG, tech_pvt->interface_state);
-						tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
-					}
+					if (tech_pvt->interface_state == SKYPIAX_STATE_PRERING) {
+					tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
+				} else if (tech_pvt->interface_state != 0 && tech_pvt->interface_state != SKYPIAX_STATE_DOWN) {
+					WARNINGA("Why an interface_state %d HERE?\n", SKYPIAX_P_LOG, tech_pvt->interface_state);
+					tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
+				}
 
 				break;
 			}
@@ -1865,8 +1868,8 @@ int skypiax_answer(private_t * tech_pvt, char *id, char *value)
 
 	if (found) {
 		//tech_pvt->callid_number[0]='\0';
-			//sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
-					//skypiax_signaling_write(tech_pvt, msg_to_skype);
+		//sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
+		//skypiax_signaling_write(tech_pvt, msg_to_skype);
 		switch_mutex_unlock(globals.mutex);
 		return 0;
 	}
@@ -1894,8 +1897,8 @@ int skypiax_answer(private_t * tech_pvt, char *id, char *value)
 		ERRORA("No Call ID?\n", SKYPIAX_P_LOG);
 	} else {
 		DEBUGA_SKYPE("We're in a call now (%s), let's refuse this one (%s)\n", SKYPIAX_P_LOG, tech_pvt->skype_call_id, id);
-			sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
-					skypiax_signaling_write(tech_pvt, msg_to_skype);
+		sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
+		skypiax_signaling_write(tech_pvt, msg_to_skype);
 	}
 
 	switch_mutex_unlock(globals.mutex);
@@ -1931,8 +1934,8 @@ int skypiax_transfer(private_t * tech_pvt, char *id, char *value)
 
 	if (found) {
 		//tech_pvt->callid_number[0]='\0';
-			//sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
-					//skypiax_signaling_write(tech_pvt, msg_to_skype);
+		//sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
+		//skypiax_signaling_write(tech_pvt, msg_to_skype);
 		switch_mutex_unlock(globals.mutex);
 		return 0;
 	}
@@ -1975,7 +1978,7 @@ int skypiax_transfer(private_t * tech_pvt, char *id, char *value)
 		if (found) {
 			//tech_pvt->callid_number[0]='\0';
 			//sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
-					//skypiax_signaling_write(tech_pvt, msg_to_skype);
+			//skypiax_signaling_write(tech_pvt, msg_to_skype);
 			switch_mutex_unlock(globals.mutex);
 			return 0;
 		}
@@ -2002,7 +2005,7 @@ int skypiax_transfer(private_t * tech_pvt, char *id, char *value)
 				("Not answering the skype_call %s, because we are already in a skypiax call(%s) and not transferring, because no other skypiax interfaces are available\n",
 				 SKYPIAX_P_LOG, id, tech_pvt->skype_call_id);
 			sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
-					skypiax_signaling_write(tech_pvt, msg_to_skype);
+			skypiax_signaling_write(tech_pvt, msg_to_skype);
 		}
 		switch_sleep(10000);
 		DEBUGA_SKYPE
