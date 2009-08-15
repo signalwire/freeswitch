@@ -62,7 +62,6 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, int *which_port)
 				   tech_pvt->tcp_cli_port, tech_pvt->tcp_srv_port);
 			return -1;
 		}
-		//usleep(100);
 	}
 
 	DEBUGA_SKYPE("SUCCESS! *which_port=%d, tech_pvt->tcp_cli_port=%d, tech_pvt->tcp_srv_port=%d\n", SKYPIAX_P_LOG, *which_port, tech_pvt->tcp_cli_port,
@@ -231,7 +230,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 				//SKYPIAX_P_LOG, message, obj, id, prop, value, where ? where : "NULL");
 
 				if (!strcasecmp(prop, "PARTNER_HANDLE")) {
-					if (!strlen(tech_pvt->skype_call_id) || !strlen(tech_pvt->session_uuid_str)) {
+					if (tech_pvt->interface_state != SKYPIAX_STATE_SELECTED && (!strlen(tech_pvt->skype_call_id) || !strlen(tech_pvt->session_uuid_str)) ) {
 						//if (!strlen(tech_pvt->skype_call_id)) {
 						/* we are NOT inside an active call */
 						DEBUGA_SKYPE("Call %s TRY ANSWER\n", SKYPIAX_P_LOG, id);
@@ -256,13 +255,13 @@ int skypiax_signaling_read(private_t * tech_pvt)
 				}
 				if (!strcasecmp(prop, "CONF_ID") && !strcasecmp(value, "0")) {
 					//DEBUGA_SKYPE("the skype_call %s is NOT a conference call\n", SKYPIAX_P_LOG, id);
-					if (tech_pvt->interface_state == SKYPIAX_STATE_DOWN)
-						tech_pvt->interface_state = SKYPIAX_STATE_PRERING;
+					//if (tech_pvt->interface_state == SKYPIAX_STATE_DOWN)
+						//tech_pvt->interface_state = SKYPIAX_STATE_PRERING;
 				}
 				if (!strcasecmp(prop, "CONF_ID") && strcasecmp(value, "0")) {
 					DEBUGA_SKYPE("the skype_call %s is a conference call\n", SKYPIAX_P_LOG, id);
-					if (tech_pvt->interface_state == SKYPIAX_STATE_DOWN)
-						tech_pvt->interface_state = SKYPIAX_STATE_PRERING;
+					//if (tech_pvt->interface_state == SKYPIAX_STATE_DOWN)
+						//tech_pvt->interface_state = SKYPIAX_STATE_PRERING;
 				}
 				if (!strcasecmp(prop, "DTMF")) {
 					DEBUGA_SKYPE("Call %s received a DTMF: %s\n", SKYPIAX_P_LOG, id, value);
@@ -338,7 +337,6 @@ int skypiax_signaling_read(private_t * tech_pvt)
 						DEBUGA_SKYPE("We missed skype_call %s\n", SKYPIAX_P_LOG, id);
 					} else if (!strcasecmp(value, "FINISHED")) {
 						//DEBUGA_SKYPE("skype_call %s now is DOWN\n", SKYPIAX_P_LOG, id);
-						//usleep(150000);//150msec, let's give the TCP sockets time to timeout
 						if (!strcasecmp(tech_pvt->skype_call_id, id)) {
 							//tech_pvt->skype_callflow = CALLFLOW_STATUS_FINISHED;
 							DEBUGA_SKYPE("skype_call %s is MY call, now I'm going DOWN\n", SKYPIAX_P_LOG, id);
@@ -429,7 +427,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 									DEBUGA_SKYPE("New Inbound Channel!\n\n\n\n", SKYPIAX_P_LOG);
 									new_inbound_channel(tech_pvt);
 								} else {
-									DEBUGA_SKYPE("Outbound Channel Answered!\n", SKYPIAX_P_LOG);
+									DEBUGA_SKYPE("Outbound Channel Answered! session_uuid_str=%s\n", SKYPIAX_P_LOG, tech_pvt->session_uuid_str);
 									outbound_channel_answered(tech_pvt);
 								}
 							} else {
