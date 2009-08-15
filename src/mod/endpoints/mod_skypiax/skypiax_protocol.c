@@ -230,7 +230,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 				//SKYPIAX_P_LOG, message, obj, id, prop, value, where ? where : "NULL");
 
 				if (!strcasecmp(prop, "PARTNER_HANDLE")) {
-					if (tech_pvt->interface_state != SKYPIAX_STATE_SELECTED && (!strlen(tech_pvt->skype_call_id) || !strlen(tech_pvt->session_uuid_str)) ) {
+					if (tech_pvt->interface_state != SKYPIAX_STATE_SELECTED && (!strlen(tech_pvt->skype_call_id) || !strlen(tech_pvt->session_uuid_str))) {
 						//if (!strlen(tech_pvt->skype_call_id)) {
 						/* we are NOT inside an active call */
 						DEBUGA_SKYPE("Call %s TRY ANSWER\n", SKYPIAX_P_LOG, id);
@@ -256,12 +256,12 @@ int skypiax_signaling_read(private_t * tech_pvt)
 				if (!strcasecmp(prop, "CONF_ID") && !strcasecmp(value, "0")) {
 					//DEBUGA_SKYPE("the skype_call %s is NOT a conference call\n", SKYPIAX_P_LOG, id);
 					//if (tech_pvt->interface_state == SKYPIAX_STATE_DOWN)
-						//tech_pvt->interface_state = SKYPIAX_STATE_PRERING;
+					//tech_pvt->interface_state = SKYPIAX_STATE_PRERING;
 				}
 				if (!strcasecmp(prop, "CONF_ID") && strcasecmp(value, "0")) {
 					DEBUGA_SKYPE("the skype_call %s is a conference call\n", SKYPIAX_P_LOG, id);
 					//if (tech_pvt->interface_state == SKYPIAX_STATE_DOWN)
-						//tech_pvt->interface_state = SKYPIAX_STATE_PRERING;
+					//tech_pvt->interface_state = SKYPIAX_STATE_PRERING;
 				}
 				if (!strcasecmp(prop, "DTMF")) {
 					DEBUGA_SKYPE("Call %s received a DTMF: %s\n", SKYPIAX_P_LOG, id, value);

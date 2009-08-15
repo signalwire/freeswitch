@@ -96,7 +96,7 @@ SWITCH_STANDARD_API(skypiax_function);
 #define SOFT_RELOAD 1
 /* END: Changes heres */
 
-char *interface_status[] = {  /* should match SKYPIAX_STATE_xxx in skypiax.h */
+char *interface_status[] = {	/* should match SKYPIAX_STATE_xxx in skypiax.h */
 	"IDLE",
 	"DOWN",
 	"RING",
@@ -110,34 +110,34 @@ char *interface_status[] = {  /* should match SKYPIAX_STATE_xxx in skypiax.h */
 	"HANG_RQ",
 	"PREANSW"
 };
-char *skype_callflow[] = {  /* should match CALLFLOW_XXX in skypiax.h */
-"CALL_IDLE",
-"CALL_DOWN",
-"INCOMING_RNG",
-"CALL_DIALING",
-"CALL_LINEBUSY",
-"CALL_ACTIVE",
-"INCOMING_HNG",
-"CALL_RLEASD",
-"CALL_NOCARR",
-"CALL_INFLUX",
-"CALL_INCOMING",
-"CALL_FAILED",
-"CALL_NOSRVC",
-"CALL_OUTRESTR",
-"CALL_SECFAIL",
-"CALL_NOANSWER",
-"STATUS_FNSHED",
-"STATUS_CANCLED",
-"STATUS_FAILED",
-"STATUS_REFUSED",
-"STATUS_RINGING",
-"STATUS_INPROGRS",
-"STATUS_UNPLACD",
-"STATUS_ROUTING",
-"STATUS_EARLYMD",
-"INCOMING_CLID",
-"STATUS_RMTEHOLD"
+char *skype_callflow[] = {		/* should match CALLFLOW_XXX in skypiax.h */
+	"CALL_IDLE",
+	"CALL_DOWN",
+	"INCOMING_RNG",
+	"CALL_DIALING",
+	"CALL_LINEBUSY",
+	"CALL_ACTIVE",
+	"INCOMING_HNG",
+	"CALL_RLEASD",
+	"CALL_NOCARR",
+	"CALL_INFLUX",
+	"CALL_INCOMING",
+	"CALL_FAILED",
+	"CALL_NOSRVC",
+	"CALL_OUTRESTR",
+	"CALL_SECFAIL",
+	"CALL_NOANSWER",
+	"STATUS_FNSHED",
+	"STATUS_CANCLED",
+	"STATUS_FAILED",
+	"STATUS_REFUSED",
+	"STATUS_RINGING",
+	"STATUS_INPROGRS",
+	"STATUS_UNPLACD",
+	"STATUS_ROUTING",
+	"STATUS_EARLYMD",
+	"INCOMING_CLID",
+	"STATUS_RMTEHOLD"
 };
 
 
@@ -433,7 +433,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	globals.calls++;
 
 	switch_mutex_unlock(globals.mutex);
-		DEBUGA_SKYPE("%s CHANNEL INIT %s\n", SKYPIAX_P_LOG, tech_pvt->name, switch_core_session_get_uuid(session));
+	DEBUGA_SKYPE("%s CHANNEL INIT %s\n", SKYPIAX_P_LOG, tech_pvt->name, switch_core_session_get_uuid(session));
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -457,7 +457,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		}
 		*tech_pvt->session_uuid_str = '\0';
 		tech_pvt->interface_state = SKYPIAX_STATE_IDLE;
-		if(tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED){
+		if (tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED) {
 			tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
 		}
 		switch_core_session_set_private(session, NULL);
@@ -481,13 +481,13 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
- 	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
- 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
- 			tech_pvt->ob_failed_calls++;
- 		} else {
- 			tech_pvt->ib_failed_calls++;
- 		}
- 	}
+	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			tech_pvt->ob_failed_calls++;
+		} else {
+			tech_pvt->ib_failed_calls++;
+		}
+	}
 
 	switch_clear_flag(tech_pvt, TFLAG_IO);
 	switch_clear_flag(tech_pvt, TFLAG_VOICE);
@@ -508,10 +508,10 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		globals.calls = 0;
 	}
 
-		tech_pvt->interface_state = SKYPIAX_STATE_IDLE;
-		if(tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED){
-			tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
-		}
+	tech_pvt->interface_state = SKYPIAX_STATE_IDLE;
+	if (tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED) {
+		tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
+	}
 	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -926,8 +926,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			switch_mutex_unlock(globals.mutex);
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
-    
-	tech_pvt->ob_calls++;
+
+		tech_pvt->ob_calls++;
 
 		rdest = strchr(caller_profile->destination_number, '/');
 		*rdest++ = '\0';
@@ -992,21 +992,21 @@ static void *SWITCH_THREAD_FUNC skypiax_signaling_thread_func(switch_thread_t * 
 				} else {
 					DEBUGA_SKYPE("no session\n", SKYPIAX_P_LOG);
 				}
-	switch_mutex_lock(globals.mutex);
+				switch_mutex_lock(globals.mutex);
 				tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
 				*tech_pvt->session_uuid_str = '\0';
 				*tech_pvt->skype_call_id = '\0';
-	switch_mutex_unlock(globals.mutex);
+				switch_mutex_unlock(globals.mutex);
 
 				//ERRORA("LET'S WAIT\n", SKYPIAX_P_LOG);
 				switch_sleep(300000);	//0.3 sec
 				//ERRORA("WAIT'S OVER\n", SKYPIAX_P_LOG);
 				//tech_pvt->skype_callflow = CALLFLOW_STATUS_FINISHED;
-				//usleep(30000);	//0.03 sec
-	switch_mutex_lock(globals.mutex);
+				//usleep(30000);    //0.03 sec
+				switch_mutex_lock(globals.mutex);
 				tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
 				tech_pvt->interface_state = SKYPIAX_STATE_IDLE;
-	switch_mutex_unlock(globals.mutex);
+				switch_mutex_unlock(globals.mutex);
 			} else {
 				ERRORA("no tech_pvt?\n", SKYPIAX_P_LOG);
 			}
@@ -1764,27 +1764,26 @@ SWITCH_STANDARD_API(sk_function)
 		int i;
 		char next_flag_char = ' ';
 
-	stream->write_function(stream, "F ID\t    Name    \tIB (F/T)    OB (F/T)\tState\tCallFlw\t\tUUID\n");
-	stream->write_function(stream, "= ====\t  ========  \t=======     =======\t======\t============\t======\n");
+		stream->write_function(stream, "F ID\t    Name    \tIB (F/T)    OB (F/T)\tState\tCallFlw\t\tUUID\n");
+		stream->write_function(stream, "= ====\t  ========  \t=======     =======\t======\t============\t======\n");
 
 		for (i = 0; i < SKYPIAX_MAX_INTERFACES; i++) {
 			next_flag_char = i == globals.next_interface ? '*' : ' ';
 
 			if (strlen(globals.SKYPIAX_INTERFACES[i].name)) {
 				stream->write_function(stream,
-					       "%c %d\t[%s]\t%3ld/%ld\t%6ld/%ld\t%s\t%s\t%s\n",
-					       next_flag_char,
-					       i, globals.SKYPIAX_INTERFACES[i].name,
-					       globals.SKYPIAX_INTERFACES[i].ib_failed_calls,
-					       globals.SKYPIAX_INTERFACES[i].ib_calls,
-					       globals.SKYPIAX_INTERFACES[i].ob_failed_calls,
-					       globals.SKYPIAX_INTERFACES[i].ob_calls,
-					       interface_status[globals.SKYPIAX_INTERFACES[i].interface_state],
-					       skype_callflow[globals.SKYPIAX_INTERFACES[i].skype_callflow],
-					       globals.SKYPIAX_INTERFACES[i].session_uuid_str);
-			} else if(argc > 1 && !strcasecmp(argv[1], "full")) {
+									   "%c %d\t[%s]\t%3ld/%ld\t%6ld/%ld\t%s\t%s\t%s\n",
+									   next_flag_char,
+									   i, globals.SKYPIAX_INTERFACES[i].name,
+									   globals.SKYPIAX_INTERFACES[i].ib_failed_calls,
+									   globals.SKYPIAX_INTERFACES[i].ib_calls,
+									   globals.SKYPIAX_INTERFACES[i].ob_failed_calls,
+									   globals.SKYPIAX_INTERFACES[i].ob_calls,
+									   interface_status[globals.SKYPIAX_INTERFACES[i].interface_state],
+									   skype_callflow[globals.SKYPIAX_INTERFACES[i].skype_callflow], globals.SKYPIAX_INTERFACES[i].session_uuid_str);
+			} else if (argc > 1 && !strcasecmp(argv[1], "full")) {
 				stream->write_function(stream, "%c\t%d\n", next_flag_char, i);
-			}                                                                      
+			}
 
 		}
 		stream->write_function(stream, "\nTotal: %d\n", globals.real_interfaces - 1);
@@ -2078,8 +2077,8 @@ int skypiax_transfer(private_t * tech_pvt, char *id, char *value)
 
 			sprintf(msg_to_skype, "ALTER CALL %s TRANSFER %s", id, available_skypiax_interface->skype_user);
 			skypiax_signaling_write(tech_pvt, msg_to_skype);
-			if(tech_pvt->interface_state == SKYPIAX_STATE_SELECTED) {
-				tech_pvt->interface_state = SKYPIAX_STATE_IDLE; //we marked it SKYPIAX_STATE_SELECTED just in case it has to make an outbound call
+			if (tech_pvt->interface_state == SKYPIAX_STATE_SELECTED) {
+				tech_pvt->interface_state = SKYPIAX_STATE_IDLE;	//we marked it SKYPIAX_STATE_SELECTED just in case it has to make an outbound call
 			}
 		} else {
 			/* no skypiax interfaces idle, do nothing */

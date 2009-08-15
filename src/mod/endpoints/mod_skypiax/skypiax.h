@@ -111,7 +111,7 @@ typedef enum {
 #define 	CALLFLOW_CALL_DIALING				3
 #define 	CALLFLOW_CALL_LINEBUSY				4
 #define 	CALLFLOW_CALL_ACTIVE				5
-#define 	CALLFLOW_INCOMING_HANGUP			6		
+#define 	CALLFLOW_INCOMING_HANGUP			6
 #define 	CALLFLOW_CALL_RELEASED				7
 #define 	CALLFLOW_CALL_NOCARRIER				8
 #define 	CALLFLOW_CALL_INFLUX				9
@@ -243,10 +243,10 @@ struct private_object {
 	char transfer_callid_number[50];
 	char skype_transfer_call_id[512];
 	int running;
-  unsigned long ib_calls;
-  unsigned long ob_calls;     
-  unsigned long ib_failed_calls;
-  unsigned long ob_failed_calls;
+	unsigned long ib_calls;
+	unsigned long ob_calls;
+	unsigned long ib_failed_calls;
+	unsigned long ob_failed_calls;
 };
 
 typedef struct private_object private_t;
