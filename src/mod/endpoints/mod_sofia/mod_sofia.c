@@ -1885,6 +1885,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				stream->write_function(stream, "%s\n", header);
 				stream->write_function(stream, "  <gateway>\n");
 				stream->write_function(stream, "    <name>%s</name>\n", switch_str_nil(gp->name));
+				stream->write_function(stream, "    <profile>%s</profile>\n", gp->profile->name);
 				stream->write_function(stream, "    <scheme>%s</scheme>\n", switch_str_nil(gp->register_scheme));
 				stream->write_function(stream, "    <realm>%s</realm>\n", switch_str_nil(gp->register_realm));
 				stream->write_function(stream, "    <username>%s</username>\n", switch_str_nil(gp->register_username));
