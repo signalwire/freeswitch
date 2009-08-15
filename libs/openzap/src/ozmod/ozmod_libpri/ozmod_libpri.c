@@ -726,6 +726,11 @@ static int on_ringing(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 	
 	if (zchan) {
 		zap_log(ZAP_LOG_DEBUG, "-- Ringing on channel %d:%d\n", spri->span->span_id, pevent->ringing.channel);
+		/* we may get on_ringing even when we're already in ZAP_CHANNEL_STATE_PROGRESS_MEDIA */
+		if (zchan->state == ZAP_CHANNEL_STATE_PROGRESS_MEDIA) {
+			/* dont try to move to STATE_PROGRESS to avoid annoying veto warning */
+			return 0;
+		}
 		zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS);
 	} else {
 		zap_log(ZAP_LOG_DEBUG, "-- Ringing on channel %d:%d %s but it's not in use?\n", spri->span->span_id,
