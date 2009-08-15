@@ -183,7 +183,7 @@ static switch_status_t engage_device(portaudio_stream_source_t *source,int resta
 
 	switch_assert(source->read_codec.implementation);
 
-	if (!switch_core_codec_ready(&source->write_codec) {
+	if (!switch_core_codec_ready(&source->write_codec)) {
 		if (switch_core_codec_init(&source->write_codec,
 								   "L16",
 								   NULL,
@@ -344,7 +344,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		switch_core_codec_destroy(&source->read_codec);
 		switch_core_codec_destroy(&source->write_codec);
 	}
-	if (switch_core_codec_ready(&source->write_codec) {
+	if (switch_core_codec_ready(&source->write_codec)) {
 		switch_core_codec_destroy(&source->write_codec);
 	}
 	switch_mutex_unlock(source->device_lock);
