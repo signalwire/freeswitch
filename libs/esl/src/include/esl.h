@@ -256,28 +256,43 @@ typedef enum {
 
 #include <esl_threadmutex.h>
 
+/*! \brief A handle that will hold the socket information and
+           different events received. */
 typedef struct {
 	struct sockaddr_in sockaddr;
 	struct hostent hostent;
 	char hostbuf[256];
 	esl_socket_t sock;
+	/*! In case of socket error, this will hold the error description as reported by the OS */
 	char err[256];
+	/*! The error number reported by the OS */
 	int errnum;
+	/*! The inner contents received by the socket. Used only internally. */
 	char header_buf[4196];
+	/*! Last command reply */
 	char last_reply[1024];
+	/*! Las command reply when called with esl_send_recv */
 	char last_sr_reply[1024];
+	/*! Last event received. Only populated when **save_event is NULL */
 	esl_event_t *last_event;
+	/*! Last event received when called by esl_send_recv */
 	esl_event_t *last_sr_event;
+	/*! This will hold already processed events queued by esl_recv_event */
 	esl_event_t *race_event;
+	/*! Events that have content-type == text/plain and a body */
 	esl_event_t *last_ievent;
+	/*! For outbound socket. Will hold reply information when connect\n\n is sent */
 	esl_event_t *info_event;
+	/*! Socket is connected or not */
 	int connected;
 	struct sockaddr_in addr;
+	/*! Internal mutex */
 	esl_mutex_t *mutex;
 	int async_execute;
 	int event_lock;
 } esl_handle_t;
 
+/*! \brief Used internally for truth test */
 typedef enum {
 	ESL_TRUE = 1,
 	ESL_FALSE = 0
@@ -312,7 +327,9 @@ ESL_DECLARE(int) esl_vasprintf(char **ret, const char *fmt, va_list ap);
 
 ESL_DECLARE_DATA extern esl_logger_t esl_log;
 
+/*! Sets the logger for libesl. Default is the null_logger */
 ESL_DECLARE(void) esl_global_set_logger(esl_logger_t logger);
+/*! Sets the default log level for libesl */
 ESL_DECLARE(void) esl_global_set_default_logger(int level);
 
 #include "esl_event.h"
@@ -328,19 +345,88 @@ ESL_DECLARE(int) esl_snprintf(char *buffer, size_t count, const char *fmt, ...);
 
 
 typedef void (*esl_listen_callback_t)(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr);
-
+/*!
+    \brief Attach a handle to an established socket connection
+    \param handle Handle to be attached
+    \param socket Socket to which the handle will be attached
+    \param addr Structure that will contain the connection descritption (look up your os info)
+*/
 ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in *addr);
+/*!
+    \brief Will bind to host and callback when event is received. Used for outbound socket.
+    \param host Host to bind to
+    \param port Port to bind to
+    \param callback Callback that will be called upon data received
+*/
 ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback);
+/*!
+    \brief Executes application with sendmsg to a specific UUID. Used for outbound socket.
+    \param handle Handle that the msg will be sent
+    \param app Application to execute
+    \param arg Application arguments
+    \param uuid Target UUID for the application
+*/
 ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, const char *arg, const char *uuid);
+/*!
+    \brief Send an event
+    \param handle Handle to which the event should be sent
+    \param event Event to be sent
+*/
 ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event);
 
+/*!
+    \brief Connect a handle to a host/port with a specific password. This will also authenticate against the server
+    \param handle Handle to connect
+    \param host Host to be connected
+    \param port Port to be connected
+    \param password FreeSWITCH server password
+*/
 ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *password);
+/*!
+    \brief Disconnect a handle
+    \param handle Handle to be disconnected
+*/
 ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle);
+/*!
+    \brief Send a raw command using specific handle
+    \param handle Handle to send the command to
+    \param cmd Command to send
+*/
 ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd);
+/*!
+    \brief Poll the handle's socket until an event is received or a connection error occurs 
+    \param handle Handle to poll
+    \param check_q If set to 1, will check the handle queue (handle->race_event) and return the last event from it
+    \param[out] save_event If this is not NULL, will return the event received
+*/
 ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_event_t **save_event);
+/*!
+    \brief Poll the handle's socket until an event is received, a connection error occurs or ms expires
+    \param handle Handle to poll
+    \param ms Maximum time to poll
+    \param check_q If set to 1, will check the handle queue (handle->race_event) and return the last event from it
+    \param[out] save_event If this is not NULL, will return the event received
+*/
 ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, int check_q, esl_event_t **save_event);
+/*!
+    \brief This will send a command and place its response event on handle->last_sr_event and handle->last_sr_reply
+    \param handle Handle to be used
+    \param cmd Raw command to send 
+*/
 ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd);
+/*!
+    \brief Applies a filter to received events
+    \param handle Handle to apply the filter to
+    \param header Header that the filter will be based on
+    \param value The value of the header to filter
+*/
 ESL_DECLARE(esl_status_t) esl_filter(esl_handle_t *handle, const char *header, const char *value);
+/*!
+    \brief Will subscribe to events on the server
+    \param handle Handle to which we will subscribe to events
+    \param etype Event type to subscribe
+    \param value Which event to subscribe to 
+*/
 ESL_DECLARE(esl_status_t) esl_events(esl_handle_t *handle, esl_event_type_t etype, const char *value);
 
 #define esl_recv(_h) esl_recv_event(_h, 0, NULL)
