@@ -2950,115 +2950,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 			sofia_glue_set_extra_headers(channel, sip, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
 		}
-
-		if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-
-			if (!sofia_test_flag(tech_pvt, TFLAG_SENT_UPDATE)) {
-				return;
-			}
-
-			sofia_clear_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
-
-			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
-				const char *r_sdp = NULL;
-				switch_core_session_message_t msg = { 0 };
-
-				if (sip->sip_payload && sip->sip_payload->pl_data &&
-					sip->sip_content_type && sip->sip_content_type->c_subtype && switch_stristr("sdp", sip->sip_content_type->c_subtype)) {
-					tech_pvt->remote_sdp_str = switch_core_session_strdup(tech_pvt->session, sip->sip_payload->pl_data);
-					r_sdp = tech_pvt->remote_sdp_str;
-					sofia_glue_tech_proxy_remote_addr(tech_pvt);
-				}
-
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
-
-				msg.message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
-				msg.from = __FILE__;
-				msg.numeric_arg = status;
-				msg.string_arg = switch_core_session_strdup(other_session, phrase);
-				if (r_sdp) {
-					msg.pointer_arg = switch_core_session_strdup(other_session, r_sdp);
-					msg.pointer_arg_size = strlen(r_sdp);
-				}
-				if (switch_core_session_receive_message(other_session, &msg) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg is not available\n");
-					nua_respond(tech_pvt->nh, 403, "Hangup in progress", TAG_END());
-				}
-				switch_core_session_rwunlock(other_session);
-			}
-			return;
-		}
-
-		if ((status == 180 || status == 183 || status == 200)) {
-			const char *astate = "early";
-			url_t *from = NULL, *to = NULL, *contact = NULL;
-
-			if (sip->sip_to) {
-				to = sip->sip_to->a_url;
-			}
-			if (sip->sip_from) {
-				from = sip->sip_from->a_url;
-			}
-			if (sip->sip_contact) {
-				contact = sip->sip_contact->m_url;
-			}
-
-			if (status == 200) {
-				astate = "confirmed";
-			}
-
-			if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED) &&
-				!switch_channel_test_flag(channel, CF_RING_READY)) {
-				const char *from_user = "", *from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
-				const char *user_agent = "", *call_id = "";
-				char *sql = NULL;
-
-				if (sip->sip_user_agent) {
-					user_agent = switch_str_nil(sip->sip_user_agent->g_string);
-				}
-
-				if (sip->sip_call_id) {
-					call_id = switch_str_nil(sip->sip_call_id->i_id);
-				}
-
-				if (to) {
-					from_user = switch_str_nil(to->url_user);
-				}
-
-				if (from) {
-					from_host = switch_str_nil(from->url_host);
-					to_user = switch_str_nil(from->url_user);
-					to_host = switch_str_nil(from->url_host);
-				}
-
-				if (contact) {
-					contact_user = switch_str_nil(contact->url_user);
-					contact_host = switch_str_nil(contact->url_host);
-				}
-
-				if (profile->pres_type) {
-					sql = switch_mprintf("insert into sip_dialogs "
-										 "(call_id,uuid,sip_to_user,sip_to_host,sip_from_user,sip_from_host,contact_user,"
-										 "contact_host,state,direction,user_agent,profile_name,hostname) "
-										 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
-										 call_id,
-										 switch_core_session_get_uuid(session),
-										 to_user, to_host, from_user, from_host, contact_user, 
-										 contact_host, astate, "outbound", user_agent,
-										 profile->name, mod_sofia_globals.hostname);
-
-					switch_assert(sql);
-
-					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-				}
-			} else if (status == 200 && (profile->pres_type)) {
-				char *sql = NULL;
-				sql = switch_mprintf("update sip_dialogs set state='%s' where uuid='%s';\n", astate, switch_core_session_get_uuid(session));
-				switch_assert(sql);
-				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-			}
-		}
-
+		
 		if (channel && sip && (status == 300 || status == 302 || status == 305) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
 			sip_contact_t * p_contact = sip->sip_contact;
 			int i = 0;
@@ -3191,6 +3083,116 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				}
 			}
 		}
+
+		if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+
+			if (!sofia_test_flag(tech_pvt, TFLAG_SENT_UPDATE)) {
+				return;
+			}
+
+			sofia_clear_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
+
+			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+				const char *r_sdp = NULL;
+				switch_core_session_message_t msg = { 0 };
+
+				if (sip->sip_payload && sip->sip_payload->pl_data &&
+					sip->sip_content_type && sip->sip_content_type->c_subtype && switch_stristr("sdp", sip->sip_content_type->c_subtype)) {
+					tech_pvt->remote_sdp_str = switch_core_session_strdup(tech_pvt->session, sip->sip_payload->pl_data);
+					r_sdp = tech_pvt->remote_sdp_str;
+					sofia_glue_tech_proxy_remote_addr(tech_pvt);
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
+
+				msg.message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
+				msg.from = __FILE__;
+				msg.numeric_arg = status;
+				msg.string_arg = switch_core_session_strdup(other_session, phrase);
+				if (r_sdp) {
+					msg.pointer_arg = switch_core_session_strdup(other_session, r_sdp);
+					msg.pointer_arg_size = strlen(r_sdp);
+				}
+				if (switch_core_session_receive_message(other_session, &msg) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg is not available\n");
+					nua_respond(tech_pvt->nh, 403, "Hangup in progress", TAG_END());
+				}
+				switch_core_session_rwunlock(other_session);
+			}
+			return;
+		}
+
+		if ((status == 180 || status == 183 || status == 200)) {
+			const char *astate = "early";
+			url_t *from = NULL, *to = NULL, *contact = NULL;
+
+			if (sip->sip_to) {
+				to = sip->sip_to->a_url;
+			}
+			if (sip->sip_from) {
+				from = sip->sip_from->a_url;
+			}
+			if (sip->sip_contact) {
+				contact = sip->sip_contact->m_url;
+			}
+
+			if (status == 200) {
+				astate = "confirmed";
+			}
+
+			if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED) &&
+				!switch_channel_test_flag(channel, CF_RING_READY)) {
+				const char *from_user = "", *from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
+				const char *user_agent = "", *call_id = "";
+				char *sql = NULL;
+
+				if (sip->sip_user_agent) {
+					user_agent = switch_str_nil(sip->sip_user_agent->g_string);
+				}
+
+				if (sip->sip_call_id) {
+					call_id = switch_str_nil(sip->sip_call_id->i_id);
+				}
+
+				if (to) {
+					from_user = switch_str_nil(to->url_user);
+				}
+
+				if (from) {
+					from_host = switch_str_nil(from->url_host);
+					to_user = switch_str_nil(from->url_user);
+					to_host = switch_str_nil(from->url_host);
+				}
+
+				if (contact) {
+					contact_user = switch_str_nil(contact->url_user);
+					contact_host = switch_str_nil(contact->url_host);
+				}
+
+				if (profile->pres_type) {
+					sql = switch_mprintf("insert into sip_dialogs "
+										 "(call_id,uuid,sip_to_user,sip_to_host,sip_from_user,sip_from_host,contact_user,"
+										 "contact_host,state,direction,user_agent,profile_name,hostname) "
+										 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+										 call_id,
+										 switch_core_session_get_uuid(session),
+										 to_user, to_host, from_user, from_host, contact_user, 
+										 contact_host, astate, "outbound", user_agent,
+										 profile->name, mod_sofia_globals.hostname);
+
+					switch_assert(sql);
+
+					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+				}
+			} else if (status == 200 && (profile->pres_type)) {
+				char *sql = NULL;
+				sql = switch_mprintf("update sip_dialogs set state='%s' where uuid='%s';\n", astate, switch_core_session_get_uuid(session));
+				switch_assert(sql);
+				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+			}
+		}
+
+
 	}
 
 	if (!session && (status == 180 || status == 183 || status == 200)) {
