@@ -662,7 +662,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 	}
 	sdp_port = tech_pvt->local_sdp_audio_port;
 
-	if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_audio_ip"))) {
+	if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_audio_ip")) && !sofia_test_pflag(tech_pvt->profile, PFLAG_AUTO_NAT)) {
 		if (tech_pvt->profile->extrtpip) {
 			use_ip = tech_pvt->profile->extrtpip;
 		}
