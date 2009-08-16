@@ -3252,7 +3252,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	int offer_recv = 0, answer_recv = 0, offer_sent = 0, answer_sent = 0;
 	int ss_state = nua_callstate_init;
 	switch_channel_t *channel = NULL;
-	private_object_t *tech_pvt = session ? switch_core_session_get_private(session) : NULL;
+	private_object_t *tech_pvt = NULL;
 	const char *replaces_str = NULL;
 	const char *uuid;
 	switch_core_session_t *other_session = NULL;
