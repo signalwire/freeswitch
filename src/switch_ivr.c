@@ -971,6 +971,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 		if (abs_timeout) {
 			abs_elapsed = (uint32_t) ((switch_micro_time_now() - started) / 1000);
 			if (abs_elapsed >= abs_timeout) {
+				status = SWITCH_STATUS_TIMEOUT;
 				break;
 			}
 		}
