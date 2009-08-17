@@ -761,7 +761,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot);
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_reg_unregister(sofia_profile_t *profile);
-switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_object_t *tech_pvt, char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool);
+switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_object_t *tech_pvt, char **ip, switch_port_t *port, const char *sourceip, switch_memory_pool_t *pool);
 
 void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp);
 int sofia_glue_get_user_host(char *in, char **user, char **host);

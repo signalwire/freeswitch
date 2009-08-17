@@ -527,7 +527,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_channel_set_name(tech_pvt->channel, name);
 }
 
-switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_object_t *tech_pvt, char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool)
+switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_object_t *tech_pvt, char **ip, switch_port_t *port, const char *sourceip, switch_memory_pool_t *pool)
 {
 	char *error = "";
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -550,7 +550,7 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 		if (!sofia_test_pflag(profile, PFLAG_STUN_ENABLED)) {
 			*ip = switch_core_strdup(pool, profile->rtpip);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Trying to use STUN but its disabled!\n");
-			return SWITCH_STATUS_SUCCESS;
+			goto out;
 		}
 		
 		stun_ip = strdup(sourceip + 5);
@@ -608,7 +608,7 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 			}
 		}
 	} else {
-		*ip = sourceip;
+		*ip = (char*)sourceip;
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
@@ -635,13 +635,11 @@ const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name)
 
 switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int force)
 {
-	char *rtpip = tech_pvt->profile->rtpip;
-	char *lookup_rtpip = NULL;
-	switch_port_t sdp_port;
-	char tmp[50];
-	const char *use_ip = NULL;
-	switch_port_t external_port = 0;
+	char *lookup_rtpip = tech_pvt->profile->rtpip;	/* Pointer to externally looked up address */
+	switch_port_t sdp_port;		/* The external port to be sent in the SDP */
+	const char *use_ip = NULL;	/* The external IP to be sent in the SDP */
 
+	/* Don't do anything if we're in proxy mode or if a (remote) port already has been found */
 	if (!force) {
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) ||
 			switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) || tech_pvt->adv_sdp_audio_port) {
@@ -649,90 +647,123 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 		}
 	}
 
+	/* Release the local sdp port */
 	if (tech_pvt->local_sdp_audio_port) {
 		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_audio_port);
 	}
 
-
-	tech_pvt->local_sdp_audio_ip = rtpip;
-
+	/* Request a local port from the core's allocator */
 	if (!(tech_pvt->local_sdp_audio_port = switch_rtp_request_port(tech_pvt->profile->rtpip))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_CRIT, "No RTP ports available!\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
+	tech_pvt->local_sdp_audio_ip = tech_pvt->profile->rtpip;
+	
 	sdp_port = tech_pvt->local_sdp_audio_port;
 
-	if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_audio_ip")) && !sofia_test_pflag(tech_pvt->profile, PFLAG_AUTO_NAT)) {
-		if (tech_pvt->profile->extrtpip) {
+	if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_audio_ip")) 
+		&& !switch_strlen_zero(tech_pvt->profile->extrtpip)) {
 			use_ip = tech_pvt->profile->extrtpip;
-		}
 	}
 
 	if (use_ip) {
-		tech_pvt->extrtpip = switch_core_session_strdup(tech_pvt->session, use_ip);
 		if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &lookup_rtpip, &sdp_port, 
-										  tech_pvt->extrtpip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_FALSE;
+										  use_ip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+			/* Address lookup was required and fail (external ip was "host:..." or "stun:...") */
+			return SWITCH_STATUS_FALSE;	
+		} else {
+			if (lookup_rtpip == use_ip) {
+				/* sofia_glue_ext_address_lookup didn't return any error, but the return IP is the same as the original one, 
+				which means no lookup was necessary. Check if NAT is detected  */
+				if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+					/* Yes, map the port through switch_nat */
+					switch_nat_add_mapping(tech_pvt->local_sdp_audio_port, SWITCH_NAT_UDP, &sdp_port, SWITCH_FALSE);
+				} else {
+					/* No NAT detected */
+					use_ip = tech_pvt->profile->rtpip;
+				}
+			} else {
+				/* Address properly resolved, use it as external ip */ 
+				use_ip = lookup_rtpip;
+			}
 		}
-	}
-
-	if (tech_pvt->profile->extrtpip && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
-		tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, lookup_rtpip ? lookup_rtpip : tech_pvt->profile->extrtpip);
-		switch_nat_add_mapping((switch_port_t)sdp_port, SWITCH_NAT_UDP, &external_port, SWITCH_FALSE);
 	} else {
-		tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, rtpip);
+		/* No NAT traversal required, use the profile's rtp ip */
+		use_ip = tech_pvt->profile->rtpip;
 	}
 	
-	tech_pvt->adv_sdp_audio_port = external_port != 0 ? external_port : sdp_port;
+	tech_pvt->adv_sdp_audio_port = sdp_port;
+	tech_pvt->adv_sdp_audio_ip = tech_pvt->extrtpip = switch_core_session_strdup(tech_pvt->session, use_ip);
 
-	switch_snprintf(tmp, sizeof(tmp), "%d", sdp_port);
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
-	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, tmp);
+	switch_channel_set_variable_printf(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, "%d", sdp_port);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
 switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, int force)
 {
-	char *ip = tech_pvt->profile->rtpip;
-	switch_port_t sdp_port;
-	char tmp[50];
-	switch_port_t external_port = 0;
+	char *lookup_rtpip = tech_pvt->profile->rtpip;	/* Pointer to externally looked up address */
+	switch_port_t sdp_port;		/* The external port to be sent in the SDP */
+	const char *use_ip = NULL;	/* The external IP to be sent in the SDP */
 
+	/* Don't do anything if we're in proxy mode or if a (remote) port already has been found */
 	if (!force) {
-		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)
-			|| tech_pvt->local_sdp_video_port) {
+		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) ||
+			switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) || tech_pvt->adv_sdp_video_port) {
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}
 
+	/* Release the local sdp port */
 	if (tech_pvt->local_sdp_video_port) {
 		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_video_port);
 	}
 
+	/* Request a local port from the core's allocator */
 	if (!(tech_pvt->local_sdp_video_port = switch_rtp_request_port(tech_pvt->profile->rtpip))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_CRIT, "No RTP ports available!\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
 	sdp_port = tech_pvt->local_sdp_video_port;
 
-
-	if (tech_pvt->profile->extrtpip) {
-		if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &ip, &sdp_port, tech_pvt->profile->extrtpip,
-										  switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_FALSE;
-		}
+	if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_video_ip")) 
+		&& !switch_strlen_zero(tech_pvt->profile->extrtpip)) {
+			use_ip = tech_pvt->profile->extrtpip;
 	}
 
-	if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
-		switch_nat_add_mapping((switch_port_t)sdp_port, SWITCH_NAT_UDP, &external_port, SWITCH_FALSE);
+	if (use_ip) {
+		if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &lookup_rtpip, &sdp_port, 
+										  use_ip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+			/* Address lookup was required and fail (external ip was "host:..." or "stun:...") */
+			return SWITCH_STATUS_FALSE;	
+		} else {
+			if (lookup_rtpip == use_ip) {
+				/* sofia_glue_ext_address_lookup didn't return any error, but the return IP is the same as the original one, 
+				which means no lookup was necessary. Check if NAT is detected  */
+				if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+					/* Yes, map the port through switch_nat */
+					switch_nat_add_mapping(tech_pvt->local_sdp_video_port, SWITCH_NAT_UDP, &sdp_port, SWITCH_FALSE);
+				} else {
+					/* No NAT detected */
+					use_ip = tech_pvt->profile->rtpip;
+				}
+			} else {
+				/* Address properly resolved, use it as external ip */ 
+				use_ip = lookup_rtpip;
+			}
+		}
+	} else {
+		/* No NAT traversal required, use the profile's rtp ip */
+		use_ip = tech_pvt->profile->rtpip;
 	}
 	
-	tech_pvt->adv_sdp_video_port = external_port != 0 ? external_port : sdp_port;
-
-	switch_snprintf(tmp, sizeof(tmp), "%d", sdp_port);
+	tech_pvt->adv_sdp_video_port = sdp_port;
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_VIDEO_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
-	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE, tmp);
+	switch_channel_set_variable_printf(tech_pvt->channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE, "%d", sdp_port);
 
 	return SWITCH_STATUS_SUCCESS;
 }
