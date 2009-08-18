@@ -24282,8 +24282,9 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_log_node_t_userdata_set(void * jarg1, 
   arg1 = (switch_log_node_t *)jarg1; 
   arg2 = (char *)jarg2; 
   {
+    if (arg1->userdata) delete [] arg1->userdata;
     if (arg2) {
-      arg1->userdata = (char const *) (new char[strlen((const char *)arg2)+1]);
+      arg1->userdata = (char *) (new char[strlen((const char *)arg2)+1]);
       strcpy((char *)arg1->userdata, (const char *)arg2);
     } else {
       arg1->userdata = 0;
