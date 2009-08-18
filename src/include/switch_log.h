@@ -61,7 +61,7 @@ SWITCH_BEGIN_EXTERN_C
 	switch_time_t timestamp;
 	/*! A pointer to where the actual content of the message starts (skipping past the preformatted portion) */
 	char *content;
-	const char *userdata;
+	char *userdata;
 	/* To maintain abi, only add new elements to the end of this struct and do not delete any elements */
 	switch_text_channel_t channel;
 } switch_log_node_t;
@@ -142,6 +142,9 @@ SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(_In_z_ const char *str);
 
 SWITCH_DECLARE(uint32_t) switch_log_str2mask(_In_z_ const char *str);
 #define switch_log_check_mask(_mask, _level) (_mask & (1 << _level))
+
+SWITCH_DECLARE(switch_log_node_t*) switch_log_node_alloc();
+SWITCH_DECLARE(void) switch_log_node_free(switch_log_node_t **node);
 
 ///\}
 SWITCH_END_EXTERN_C

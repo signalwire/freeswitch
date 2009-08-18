@@ -332,6 +332,9 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Log-Function", funcp);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Level", "%d", (int) level);
+			if (!switch_strlen_zero(userdata)) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "User-Data", userdata);
+			}
 			switch_event_fire(&event);
 			data = NULL;
 		}
@@ -378,19 +381,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 	} 
 
 	if (do_mods && level <= MAX_LEVEL) {
-		switch_log_node_t *node;
-#ifdef SWITCH_LOG_RECYCLE
-		void *pop = NULL;
-
-		if (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
-			node = (switch_log_node_t *) pop;
-		} else {
-#endif
-			node = malloc(sizeof(*node));
-			switch_assert(node);
-#ifdef SWITCH_LOG_RECYCLE
-		}
-#endif
+		switch_log_node_t *node = switch_log_node_alloc();
 		
 		node->data = data;
 		data = NULL;
@@ -401,18 +392,10 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 		node->content = content;
 		node->timestamp = now;
 		node->channel = channel;
-		node->userdata = userdata;
+		node->userdata = !switch_strlen_zero(userdata) ? strdup(userdata) : NULL;
 
 		if (switch_queue_trypush(LOG_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
-			free(node->data);
-#ifdef SWITCH_LOG_RECYCLE
-			if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
-				free(node);
-			}
-#else
-			free(node);
-#endif
-			node = NULL;
+			switch_log_node_free(&node);
 		}
 	}
 
@@ -471,7 +454,7 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled log node(s) %d bytes\n", size,
 					  (int) sizeof(switch_log_node_t) * size);
 	while (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
-		free(pop);
+		switch_log_node_free(&pop);
 	}
 #else
 	return;
@@ -494,6 +477,48 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
 	switch_core_memory_reclaim_logger();
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_log_node_t*) switch_log_node_alloc()
+{
+	switch_log_node_t *node = NULL;
+#ifdef SWITCH_LOG_RECYCLE
+	void *pop = NULL;
+
+	if (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+		node = (switch_log_node_t *) pop;
+	} else {
+#endif
+		node = malloc(sizeof(*node));
+		switch_assert(node);
+#ifdef SWITCH_LOG_RECYCLE
+	}
+#endif
+	return node;
+}
+
+SWITCH_DECLARE(void) switch_log_node_free(switch_log_node_t **pnode)
+{
+	switch_log_node_t *node;
+	
+	if (!pnode) {
+		return;
+	}
+
+	node = *pnode;
+
+	if (node) {		
+		switch_safe_free(node->userdata);		
+		switch_safe_free(node->data);
+#ifdef SWITCH_LOG_RECYCLE
+		if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
+			free(node);
+		}
+#else
+		free(node);
+#endif
+	}
+	*pnode = NULL;	
 }
 
 /* For Emacs:
