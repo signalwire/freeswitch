@@ -443,6 +443,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	char sql[256] = "";
 	const char *member_wait = NULL;
 	fifo_node_t *node = NULL;
+	switch_event_t *ovars = NULL;
 
 	switch_mutex_lock(globals.mutex);
 	node = switch_core_hash_find(globals.fifo_hash, h->node_name);
@@ -457,7 +458,11 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_snprintf(sql, sizeof(sql), "update fifo_outbound set use_count=use_count+1 where uuid='%s'", h->uuid);
 	fifo_execute_sql(sql, globals.sql_mutex);
 	
-	if (switch_ivr_originate(NULL, &session, &cause, h->originate_string, h->timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
+	switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_assert(ovars);
+	switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "originate_timeout", "%d", h->timeout);
+	
+	if (switch_ivr_originate(NULL, &session, &cause, h->originate_string, h->timeout, NULL, NULL, NULL, NULL, ovars, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
 		switch_snprintf(sql, sizeof(sql), "update fifo_outbound set use_count=use_count-1, outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag where uuid='%s'", 
 						(long)switch_epoch_time_now(NULL), h->uuid);
 		fifo_execute_sql(sql, globals.sql_mutex);
@@ -485,6 +490,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 
   end:
 
+	switch_event_destroy(&ovars);
 	if (node) {
 		switch_mutex_lock(node->mutex);
 		if (node->ring_consumer_count-- < 0) node->ring_consumer_count = 0;
