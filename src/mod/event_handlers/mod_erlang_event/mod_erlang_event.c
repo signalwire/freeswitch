@@ -152,15 +152,15 @@ static void send_event_to_attached_sessions(listener_t* listener, switch_event_t
 	for (s = listener->session_list; s; s = s->next) {
 		/* check the event uuid against the uuid of each session */
 		if (!strcmp(uuid, s->uuid_str)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending event to attached session for %s\n", s->uuid_str);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_DEBUG, "Sending event to attached session for %s\n", s->uuid_str);
 			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
 				/* add the event to the queue for this session */
 				if (switch_queue_trypush(s->event_queue, clone) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Lost event!\n");
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_ERROR, "Lost event!\n");
 					switch_event_destroy(&clone);
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_ERROR, "Memory Error!\n");
 			}
 		}
 	}
@@ -324,7 +324,7 @@ static void remove_session_elem_from_listener(listener_t *listener, session_elem
 
 	for(s = listener->session_list; s; s = s->next) {
 		if (s == session_element) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing session element for %s\n", session_element->uuid_str);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_element->uuid_str), SWITCH_LOG_DEBUG, "Removing session element for %s\n", session_element->uuid_str);
 			if (last) {
 				last->next = s->next;
 			} else {
@@ -480,12 +480,12 @@ static switch_status_t notify_new_session(listener_t *listener, session_elem_t *
 	*/
 	
 	if (switch_event_create(&call_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_element->uuid_str), SWITCH_LOG_CRIT, "Memory Error!\n");
 		return SWITCH_STATUS_MEMERR;
 	}
 
 	if (!(session = switch_core_session_locate(session_element->uuid_str))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't locate session %s\n", session_element->uuid_str);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_element->uuid_str), SWITCH_LOG_WARNING, "Can't locate session %s\n", session_element->uuid_str);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -502,13 +502,13 @@ static switch_status_t notify_new_session(listener_t *listener, session_elem_t *
 	ei_x_encode_atom(&lbuf, "call");
 	ei_encode_switch_event(&lbuf, call_event);
 	switch_mutex_lock(listener->sock_mutex);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending initial call event\n");
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_element->uuid_str), SWITCH_LOG_DEBUG, "Sending initial call event\n");
 	result = ei_sendto(listener->ec, listener->sockfd, &session_element->process, &lbuf);
 
 	switch_mutex_unlock(listener->sock_mutex);
 
 	if (result) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to send call event\n");
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_element->uuid_str), SWITCH_LOG_ERROR, "Failed to send call event\n");
 	}
 	
 	ei_x_free(&lbuf);
@@ -537,7 +537,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 		if (!switch_test_flag(sp, LFLAG_OUTBOUND_INIT)) {
 			status = notify_new_session(listener, sp);
 			if (status != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Notifying new session failed\n");
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(sp->uuid_str), SWITCH_LOG_DEBUG, "Notifying new session failed\n");
 				break;
 			}
 			switch_set_flag(sp, LFLAG_OUTBOUND_INIT);
@@ -563,7 +563,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 
 			/* event is a channel destroy, so this session can be removed */
 			if (pevent->event_id == SWITCH_EVENT_CHANNEL_DESTROY) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroy event for attached session for %s\n", sp->uuid_str);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(sp->uuid_str), SWITCH_LOG_DEBUG, "Destroy event for attached session for %s\n", sp->uuid_str);
 
 				/* this allows the application threads to exit */
 				removed = sp;
@@ -680,7 +680,7 @@ static void handle_exit(listener_t *listener, erlang_pid *pid)
 	if ((s = find_session_elem_by_pid(listener, pid))) {
 		if (s->channel_state < CS_HANGUP) {
 			switch_core_session_t *session;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Outbound session for %s exited unexpectedly!\n",
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_WARNING, "Outbound session for %s exited unexpectedly!\n",
 					s->uuid_str);
 			
 			if ((session = switch_core_session_locate(s->uuid_str))) {
@@ -1234,6 +1234,7 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 	int argc = 0, argc2=0;
 	char *argv[80] = { 0 }, *argv2[80] = { 0 };
 	char *mydata, *myarg;
+	char uuid[SWITCH_UUID_FORMATTED_LENGTH+1];
 	switch_bool_t new_session = SWITCH_FALSE;
 	session_elem_t* session_element=NULL;
 
@@ -1241,12 +1242,15 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} /* XXX else? */
+
+	memcpy(uuid, switch_core_session_get_uuid(session), SWITCH_UUID_FORMATTED_LENGTH);
+
 	if (argc < 2) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error - need registered name and node!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error - need registered name and node!\n");
 		return;
 	}
 	if (switch_strlen_zero(argv[0])) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing registered name or module:function!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing registered name or module:function!\n");
 		return;
 	}
 
@@ -1266,22 +1270,22 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 
 	node = argv[1];
 	if (switch_strlen_zero(node)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing node name!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing node name!\n");
 		return;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "enter erlang_outbound_function %s %s\n",argv[0], node);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "enter erlang_outbound_function %s %s\n",argv[0], node);
 
 	/* first work out if there is a listener already talking to the node we want to talk to */
 	listener = find_listener(node);
 	/* if there is no listener, then create one */
 	if (!listener) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating new listener for session\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Creating new listener for session\n");
 		new_session = SWITCH_TRUE;
 		listener = new_outbound_listener(node);
 	}
 	else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Using existing listener for session\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Using existing listener for session\n");
 	}
 
 	if (listener) {
@@ -1292,10 +1296,10 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 
 		if (module && function) {
 			switch_core_hash_init(&listener->spawn_pid_hash, listener->pool);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating new spawned session for listener\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Creating new spawned session for listener\n");
 			session_element=attach_call_to_spawned_process(listener, module, function, session);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating new registered session for listener\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Creating new registered session for listener\n");
 			session_element=attach_call_to_registered_process(listener, reg_name, session);
 		}
 
@@ -1306,15 +1310,15 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 			/* keep app thread running for lifetime of session */
 			if (switch_channel_down(switch_core_session_get_channel(session))) {
 				if ((session_element = switch_channel_get_private(switch_core_session_get_channel(session), "_erlang_session_"))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "outbound session all done\n");
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "outbound session all done\n");
 					switch_clear_flag_locked(session_element, LFLAG_SESSION_ALIVE);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "outbound session already done\n");
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "outbound session already done\n");
 				}
 			}
 		}
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "exit erlang_outbound_function\n");
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "exit erlang_outbound_function\n");
 }
 
 
