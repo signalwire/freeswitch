@@ -78,6 +78,49 @@ static const char*
 #endif
 COLORS[] = { SWITCH_SEQ_DEFAULT_COLOR, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN, SWITCH_SEQ_FGREEN, SWITCH_SEQ_FYELLOW };
 
+
+static switch_log_node_t* switch_log_node_alloc()
+{
+	switch_log_node_t *node = NULL;
+#ifdef SWITCH_LOG_RECYCLE
+	void *pop = NULL;
+
+	if (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+		node = (switch_log_node_t *) pop;
+	} else {
+#endif
+		node = malloc(sizeof(*node));
+		switch_assert(node);
+#ifdef SWITCH_LOG_RECYCLE
+	}
+#endif
+	return node;
+}
+
+static void switch_log_node_free(switch_log_node_t **pnode)
+{
+	switch_log_node_t *node;
+	
+	if (!pnode) {
+		return;
+	}
+
+	node = *pnode;
+
+	if (node) {		
+		switch_safe_free(node->userdata);		
+		switch_safe_free(node->data);
+#ifdef SWITCH_LOG_RECYCLE
+		if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
+			free(node);
+		}
+#else
+		free(node);
+#endif
+	}
+	*pnode = NULL;	
+}
+
 SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level_t level)
 {
 	if (level > SWITCH_LOG_DEBUG) {
@@ -479,47 +522,6 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_log_node_t*) switch_log_node_alloc()
-{
-	switch_log_node_t *node = NULL;
-#ifdef SWITCH_LOG_RECYCLE
-	void *pop = NULL;
-
-	if (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
-		node = (switch_log_node_t *) pop;
-	} else {
-#endif
-		node = malloc(sizeof(*node));
-		switch_assert(node);
-#ifdef SWITCH_LOG_RECYCLE
-	}
-#endif
-	return node;
-}
-
-SWITCH_DECLARE(void) switch_log_node_free(switch_log_node_t **pnode)
-{
-	switch_log_node_t *node;
-	
-	if (!pnode) {
-		return;
-	}
-
-	node = *pnode;
-
-	if (node) {		
-		switch_safe_free(node->userdata);		
-		switch_safe_free(node->data);
-#ifdef SWITCH_LOG_RECYCLE
-		if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
-			free(node);
-		}
-#else
-		free(node);
-#endif
-	}
-	*pnode = NULL;	
-}
 
 /* For Emacs:
  * Local Variables:
