@@ -92,8 +92,9 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generi
 			case Q931ie_LOW_LAYER_COMPATIBILITY:
 			case Q931ie_HIGH_LAYER_COMPATIBILITY:
 			case Q931ie_FACILITY:
+			case Q931ie_REDIRECTING_NUMBER:
 				rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-				if (rc != Q931E_NO_ERROR) 
+				if (rc != Q931E_NO_ERROR)
 					return rc;
 				break;
 			case Q931ie_REPEAT_INDICATOR:

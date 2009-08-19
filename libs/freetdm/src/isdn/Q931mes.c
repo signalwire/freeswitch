@@ -1203,6 +1203,7 @@ L3INT Q931Umes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *m
 		case Q931ie_HIGH_LAYER_COMPATIBILITY:
 		case Q931ie_FACILITY:
 		case Q931ie_USER_USER:
+		case Q931ie_REDIRECTING_NUMBER:
 			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if (rc != Q931E_NO_ERROR) 
 				return rc;
