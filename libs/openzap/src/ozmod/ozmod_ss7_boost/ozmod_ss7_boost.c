@@ -1064,15 +1064,9 @@ static __inline__ void check_events(zap_span_t *span, int ms_timeout)
 		{
 			zap_event_t *event;
 			while (zap_span_next_event(span, &event) == ZAP_SUCCESS) {
-#if 0
-				/* Do nothing for now */
-				if (event->enum_id == ZAP_OOB_NOOP) {
-					continue;
-				}
-				if (process_event(span, event) != ZAP_SUCCESS) {
-					break;
-				}
-#endif
+			// for now we do nothing with events, this is here
+			// just to have the hardware layer to get any HW DTMF
+			// events and enqueue the DTMF on the channel (done during zap_span_next_event())
 			}
 		}
 		break;
@@ -1269,7 +1263,8 @@ static zap_status_t zap_ss7_boost_start(zap_span_t *span)
 		zap_clear_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING);
 		return err;
 	}
-
+	// launch the events thread to handle HW DTMF and possibly
+	// other events in the future
 	err=zap_thread_create_detached(zap_ss7_events_run, span);
 	if (err) {
 		zap_clear_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING);
