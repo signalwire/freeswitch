@@ -1048,6 +1048,63 @@ static __inline__ void check_state(zap_span_t *span)
 	}
 }
 
+
+/**
+ * \brief Checks for events on a span
+ * \param span Span to check for events
+ */
+static __inline__ void check_events(zap_span_t *span, int ms_timeout)
+{
+	zap_status_t status;
+
+	status = zap_span_poll_event(span, ms_timeout);
+
+	switch(status) {
+	case ZAP_SUCCESS:
+		{
+			zap_event_t *event;
+			while (zap_span_next_event(span, &event) == ZAP_SUCCESS) {
+#if 0
+				/* Do nothing for now */
+				if (event->enum_id == ZAP_OOB_NOOP) {
+					continue;
+				}
+				if (process_event(span, event) != ZAP_SUCCESS) {
+					break;
+				}
+#endif
+			}
+		}
+		break;
+	case ZAP_FAIL:
+		{
+			zap_log(ZAP_LOG_DEBUG, "Boost Check Event Failure Failure! %d\n", zap_running());
+		}
+		break;
+	default:
+		break;
+	}
+
+	return;
+}
+
+/**
+ * \brief Main thread function for ss7 boost span (monitor)
+ * \param me Current thread
+ * \param obj Span to run in this thread
+ */
+static void *zap_ss7_events_run(zap_thread_t *me, void *obj)
+{
+    zap_span_t *span = (zap_span_t *) obj;
+	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
+
+	while (zap_test_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING) && zap_running()) {
+		check_events(span,100);
+	}
+
+	return NULL;
+}
+
 /**
  * \brief Main thread function for ss7 boost span (monitor)
  * \param me Current thread
@@ -1204,9 +1261,20 @@ static ZIO_SIG_LOAD_FUNCTION(zap_ss7_boost_init)
 
 static zap_status_t zap_ss7_boost_start(zap_span_t *span)
 {
+	int err;
 	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
 	zap_set_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING);
-	return zap_thread_create_detached(zap_ss7_boost_run, span);
+	err=zap_thread_create_detached(zap_ss7_boost_run, span);
+	if (err) {
+		zap_clear_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING);
+		return err;
+	}
+
+	err=zap_thread_create_detached(zap_ss7_events_run, span);
+	if (err) {
+		zap_clear_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING);
+	}
+	return err;
 }
 
 static zap_state_map_t boost_state_map = {
