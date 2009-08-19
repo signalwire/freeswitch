@@ -1522,14 +1522,17 @@ OZ_DECLARE(zap_status_t) zap_channel_command(zap_channel_t *zchan, zap_command_t
 
 	if (!zchan->zio->command) {
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "method not implemented");
-		zap_log(ZAP_LOG_ERROR, "no commnand functon!\n");	
+		zap_log(ZAP_LOG_ERROR, "no command function defined by the I/O openzap module!\n");	
 		GOTO_STATUS(done, ZAP_FAIL);
 	}
 
     status = zchan->zio->command(zchan, command, obj);
 
-
- done:
+	if (status == ZAP_NOTIMPL) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "I/O command %d not implemented in backend", command);
+		zap_log(ZAP_LOG_ERROR, "I/O backend does not support command %d!\n", command);	
+	}
+done:
 	zap_mutex_unlock(zchan->mutex);
 	return status;
 

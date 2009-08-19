@@ -168,6 +168,9 @@ AM_CONDITIONAL([LIBSANGOMA],[test "${have_libsangoma}" = "yes"])
 
 AM_CONDITIONAL([LIBPRI],[test "${enable_libpri}" = "yes"])
 
+AC_CHECK_LIB([openr2], [openr2_context_set_io_type], [have_openr2="yes"])
+AM_CONDITIONAL([OPENR2],[test "${have_openr2}" = "yes"])
+
 COMP_VENDOR_CFLAGS="$COMP_VENDOR_CFLAGS"
 AC_SUBST(COMP_VENDOR_CFLAGS)
 AC_CONFIG_FILES([Makefile

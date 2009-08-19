@@ -442,7 +442,7 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(zt_configure_span)
 {
 
 	int items, i;
-        char *mydata, *item_list[10];
+	char *mydata, *item_list[10];
 	char *ch, *mx;
 	unsigned char cas_bits = 0;
 	int channo;
@@ -777,10 +777,9 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 				zchan->packet_len = len;
 				zchan->effective_interval = zchan->native_interval = zchan->packet_len / 8;
 
-                if (zchan->effective_codec == ZAP_CODEC_SLIN) {
-                    zchan->packet_len *= 2;
-                }
-
+				if (zchan->effective_codec == ZAP_CODEC_SLIN) {
+					zchan->packet_len *= 2;
+				}
 			}
 		}
 		break;
@@ -792,21 +791,42 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 		break;
 	case ZAP_COMMAND_GET_CAS_BITS:
 		{
-			/* probably we should call ZT_GETRXBITS instead? */
-			ZAP_COMMAND_OBJ_INT = zchan->cas_bits;
+			err = ioctl(zchan->sockfd, codes.GETRXBITS, &zchan->rx_cas_bits);
+			if (!err) {
+				ZAP_COMMAND_OBJ_INT = zchan->rx_cas_bits;
+			}
+		}
+		break;
+	case ZAP_COMMAND_FLUSH_TX_BUFFERS:
+		{
+			int flushmode = ZT_FLUSH_WRITE;
+			err = ioctl(zchan->sockfd, codes.FLUSH, &flushmode);
+		}
+		break;
+	case ZAP_COMMAND_FLUSH_RX_BUFFERS:
+		{
+			int flushmode = ZT_FLUSH_READ;
+			err = ioctl(zchan->sockfd, codes.FLUSH, &flushmode);
+		}
+		break;
+	case ZAP_COMMAND_FLUSH_BUFFERS:
+		{
+			int flushmode = ZT_FLUSH_BOTH;
+			err = ioctl(zchan->sockfd, codes.FLUSH, &flushmode);
 		}
 		break;
 	default:
+		err = ZAP_NOTIMPL;
 		break;
 	};
 
-	if (err) {
+	if (err && err != ZAP_NOTIMPL) {
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
 		return ZAP_FAIL;
 	}
 
 
-	return ZAP_SUCCESS;
+	return err == 0 ? ZAP_SUCCESS : err;
 }
 
 /**
@@ -1019,7 +1039,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 					if (err) {
 						return ZAP_FAIL;
 					}
-					span->channels[i]->cas_bits = bits;
+					span->channels[i]->rx_cas_bits = bits;
 				}
 				break;
 			default:

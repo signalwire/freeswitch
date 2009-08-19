@@ -216,14 +216,14 @@ OZ_DECLARE (int) zap_config_get_cas_bits(char *strvalue, unsigned char *outbits)
 	int x = 0;
 	char *double_colon = strchr(strvalue, ':');
 	if (!double_colon) {
-		zap_log(ZAP_LOG_ERROR, "No CAS bits specified: %s, :xxxx definition expected, where x is 1 or 0\n", double_colon);
+		zap_log(ZAP_LOG_ERROR, "No CAS bits specified: %s, :xxxx definition expected, where x is 1 or 0\n", strvalue);
 		return -1;
 	}
 	double_colon++;
 	*outbits = 0;
 	cas_bits[4] = 0;
 	if (sscanf(double_colon, "%c%c%c%c", &cas_bits[0], &cas_bits[1], &cas_bits[2], &cas_bits[3]) != 4) {
-		zap_log(ZAP_LOG_ERROR, "Invalid CAS bits specified: %s, :xxxx definition expected, where x is 1 or 0\n", double_colon);
+		zap_log(ZAP_LOG_ERROR, "Invalid CAS bits specified: '%s', :xxxx definition expected, where x is 1 or 0\n", double_colon);
 		return -1;
 	}
 	zap_log(ZAP_LOG_DEBUG, "CAS bits specification found: %s\n", cas_bits);
