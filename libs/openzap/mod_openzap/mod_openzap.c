@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Moises Silva <moy@sangoma.com>
  *
  *
  * mod_openzap.c -- OPENZAP Endpoint Module
@@ -446,6 +447,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch (tech_pvt->zchan->type) {
 	case ZAP_CHAN_TYPE_FXO:
 	case ZAP_CHAN_TYPE_EM:
+	case ZAP_CHAN_TYPE_CAS:
 		{
 
 			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
@@ -723,6 +725,65 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 }
 
+static switch_status_t channel_receive_message_cas(switch_core_session_t *session, switch_core_session_message_t *msg)
+{
+	switch_channel_t *channel;
+	private_t *tech_pvt;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+			
+	tech_pvt = (private_t *) switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+	
+	zap_log(ZAP_LOG_DEBUG, "Got Freeswitch message in R2 channel %d [%d]\n", tech_pvt->zchan->physical_chan_id, 
+            msg->message_id);
+
+	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_RINGING:
+		{
+			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
+			} else {
+				zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
+			}
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_PROGRESS:
+		{
+			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
+				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_MEDIA);
+			} else {
+				zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
+				zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
+			}
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_ANSWER:
+		{
+			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_ANSWERED);
+			} else {
+				/* lets make the ozmod_r2 module life easier by moving thru each
+                 * state waiting for completion, clumsy, but does the job
+				 */
+				if (tech_pvt->zchan->state < ZAP_CHANNEL_STATE_PROGRESS) {
+					zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
+				}
+				if (tech_pvt->zchan->state < ZAP_CHANNEL_STATE_PROGRESS_MEDIA) {
+					zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
+				}
+				zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 static switch_status_t channel_receive_message_b(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
@@ -876,7 +937,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		break;
 	case ZAP_CHAN_TYPE_B:
 		status = channel_receive_message_b(session, msg);
-		break;
+        break;
+	case ZAP_CHAN_TYPE_CAS:
+		status = channel_receive_message_cas(session, msg);
+        break;
 	default:
 		status = SWITCH_STATUS_FALSE;
 		break;
@@ -1468,6 +1532,106 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 		}
 		break;
 
+	}
+
+	return status;
+}
+
+static ZIO_SIGNAL_CB_FUNCTION(on_r2_signal)
+{
+	switch_core_session_t *session = NULL;
+	switch_channel_t *channel = NULL;
+	zap_status_t status = ZAP_SUCCESS;
+
+	zap_log(ZAP_LOG_DEBUG, "Got R2 channel sig [%s] in channel %d\n", zap_signal_event2str(sigmsg->event_id), sigmsg->channel->physical_chan_id);
+
+	switch(sigmsg->event_id) {
+		/* on_call_disconnect from the R2 side */
+		case ZAP_SIGEVENT_STOP: 
+		{	
+			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				channel = switch_core_session_get_channel(session);
+				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
+				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
+
+		/* on_call_offered from the R2 side */
+		case ZAP_SIGEVENT_START: 
+		{
+			status = zap_channel_from_event(sigmsg, &session);
+		}
+		break;
+
+		/* on DNIS received from the R2 forward side, return status == ZAP_BREAK to stop requesting DNIS */
+		case ZAP_SIGEVENT_COLLECTED_DIGIT: 
+		{
+			char *regex = SPAN_CONFIG[sigmsg->channel->span->span_id].dial_regex;
+			char *fail_regex = SPAN_CONFIG[sigmsg->channel->span->span_id].fail_dial_regex;
+
+			if (switch_strlen_zero(regex)) {
+				regex = NULL;
+			}
+
+			if (switch_strlen_zero(fail_regex)) {
+				fail_regex = NULL;
+			}
+
+			zap_log(ZAP_LOG_DEBUG, "R2 DNIS so far [%s]\n", sigmsg->channel->caller_data.dnis.digits);
+
+			if ((regex || fail_regex) && !switch_strlen_zero(sigmsg->channel->caller_data.dnis.digits)) {
+				switch_regex_t *re = NULL;
+				int ovector[30];
+				int match = 0;
+
+				if (fail_regex) {
+					match = switch_regex_perform(sigmsg->channel->caller_data.dnis.digits, fail_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+					status = match ? ZAP_SUCCESS : ZAP_BREAK;
+					switch_regex_safe_free(re);
+				}
+
+				if (status == ZAP_SUCCESS && regex) {
+					match = switch_regex_perform(sigmsg->channel->caller_data.dnis.digits, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+					status = match ? ZAP_BREAK : ZAP_SUCCESS;
+				}
+
+				switch_regex_safe_free(re);
+			}
+		}
+		break;
+
+		case ZAP_SIGEVENT_PROGRESS:
+		{
+			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				channel = switch_core_session_get_channel(session);
+				switch_channel_mark_ring_ready(channel);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
+
+		case ZAP_SIGEVENT_UP:
+		{
+			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				zap_tone_type_t tt = ZAP_TONE_DTMF;
+				channel = switch_core_session_get_channel(session);
+				switch_channel_mark_answered(channel);
+				if (zap_channel_command(sigmsg->channel, ZAP_COMMAND_ENABLE_DTMF_DETECT, &tt) != ZAP_SUCCESS) {
+					zap_log(ZAP_LOG_ERROR, "Failed to enable DTMF detection in R2 channel %d:%d\n", sigmsg->channel->span_id, sigmsg->channel->chan_id);
+				}
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
+
+		default:
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled event %d from R2 for channel %d:%d\n",
+			sigmsg->event_id, sigmsg->channel->span_id, sigmsg->channel->chan_id);
+		}
+		break;
 	}
 
 	return status;
@@ -2154,7 +2318,170 @@ static switch_status_t load_config(void)
 		}
 	}
 
+	if ((spans = switch_xml_child(cfg, "r2_spans"))) {
+		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
+			char *id = (char *) switch_xml_attr(myspan, "id");
+			char *name = (char *) switch_xml_attr(myspan, "name");
+			zap_status_t zstatus = ZAP_FAIL;
 
+			/* strings */
+			const char *variant = "itu";
+			const char *category = "national_subscriber";
+			const char *logdir = "/usr/local/freeswitch/log/"; /* FIXME: get PREFIX variable */
+			const char *logging = "notice,warning,error";
+			const char *advanced_protocol_file = "";
+
+			/* booleans */
+			int call_files = 0;
+			int get_ani_first = -1;
+			int immediate_accept = -1;
+			int double_answer = -1;
+			int skip_category = -1;
+			int forced_release = -1;
+			int charge_calls = -1;
+
+			/* integers */
+			int mfback_timeout = -1;
+			int metering_pulse_timeout = -1;
+			int allow_collect_calls = -1;
+			int max_ani = 10;
+			int max_dnis = 4;
+
+			/* common non r2 stuff */
+			const char *context = "default";
+			const char *dialplan = "XML";
+			char *dial_regex = NULL;
+			char *fail_dial_regex = NULL;
+			uint32_t span_id = 0;
+			zap_span_t *span = NULL;
+
+
+			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+
+				/* string parameters */
+				if (!strcasecmp(var, "variant")) {
+					variant = val;
+				} else if (!strcasecmp(var, "category")) {
+					category = val;
+				} else if (!strcasecmp(var, "logdir")) {
+					logdir = val;
+				} else if (!strcasecmp(var, "logging")) {
+					logging = val;
+				} else if (!strcasecmp(var, "advanced_protocol_file")) {
+					advanced_protocol_file = val;
+
+				/* booleans */
+				} else if (!strcasecmp(var, "allow_collect_calls")) {
+					allow_collect_calls = switch_true(val);
+				} else if (!strcasecmp(var, "immediate_accept")) {
+					immediate_accept = switch_true(val);
+				} else if (!strcasecmp(var, "double_answer")) {
+					double_answer = switch_true(val);
+				} else if (!strcasecmp(var, "skip_category")) {
+					skip_category = switch_true(var);
+				} else if (!strcasecmp(var, "forced_release")) {
+					forced_release = switch_true(val);
+				} else if (!strcasecmp(var, "charge_calls")) {
+					charge_calls = switch_true(val);
+				} else if (!strcasecmp(var, "get_ani_first")) {
+					get_ani_first = switch_true(val);
+				} else if (!strcasecmp(var, "call_files")) {
+					call_files = switch_true(val);
+
+				/* integers */
+				} else if (!strcasecmp(var, "mfback_timeout")) {
+					mfback_timeout = atoi(val);
+				} else if (!strcasecmp(var, "metering_pulse_timeout")) {
+					metering_pulse_timeout = atoi(val);
+				} else if (!strcasecmp(var, "max_ani")) {
+					max_ani = atoi(val);
+				} else if (!strcasecmp(var, "max_dnis")) {
+					max_dnis = atoi(val);
+
+				/* common non r2 stuff */
+				} else if (!strcasecmp(var, "context")) {
+					context = val;
+				} else if (!strcasecmp(var, "dialplan")) {
+					dialplan = val;
+				} else if (!strcasecmp(var, "dial-regex")) {
+					dial_regex = val;
+				} else if (!strcasecmp(var, "fail-dial-regex")) {
+					fail_dial_regex = val;
+				}
+			}
+
+			if (!id && !name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
+				continue;
+			}
+
+			if (name) {
+				zstatus = zap_span_find_by_name(name, &span);
+			} else {
+				if (switch_is_number(id)) {
+					span_id = atoi(id);
+					zstatus = zap_span_find(span_id, &span);
+				}
+
+				if (zstatus != ZAP_SUCCESS) {
+					zstatus = zap_span_find_by_name(id, &span);
+				}
+			}
+
+			if (zstatus != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				continue;
+			}
+
+			if (!span_id) {
+				span_id = span->span_id;
+			}
+
+			if (zap_configure_span("r2", span, on_r2_signal, 
+				"variant", variant, 
+				"max_ani", max_ani,
+				"max_dnis", max_dnis,
+				"category", category,
+				"logdir", logdir,
+				"logging", logging,
+				"advanced_protocol_file", advanced_protocol_file,
+				"allow_collect_calls", allow_collect_calls,
+				"immediate_accept", immediate_accept,
+				"double_answer", double_answer,
+				"skip_category", skip_category,
+				"forced_release", forced_release,
+				"charge_calls", charge_calls,
+				"get_ani_first", get_ani_first,
+				"call_files", call_files,
+				"mfback_timeout", mfback_timeout,
+				"metering_pulse_timeout", metering_pulse_timeout, 
+				TAG_END) != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "Error configuring R2 OpenZAP span %d, error: %s\n", 
+				span_id, span->last_error);
+				continue;
+			}
+
+			if (dial_regex) {
+				switch_set_string(SPAN_CONFIG[span->span_id].dial_regex, dial_regex);
+			}
+
+			if (fail_dial_regex) {
+				switch_set_string(SPAN_CONFIG[span->span_id].fail_dial_regex, fail_dial_regex);
+			}
+
+			SPAN_CONFIG[span->span_id].span = span;
+			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
+			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
+			switch_copy_string(SPAN_CONFIG[span->span_id].type, "r2", sizeof(SPAN_CONFIG[span->span_id].type));
+
+			if (zap_span_start(span) == ZAP_FAIL) {
+				zap_log(ZAP_LOG_ERROR, "Error starting R2 OpenZAP span %d, error: %s\n", span_id, span->last_error);
+				continue;
+			}
+		}
+	}
 
 	switch_xml_free(xml);
 

@@ -101,7 +101,7 @@ core-install: install-libLTLIBRARIES
 #
 # tools & test programs
 #
-noinst_PROGRAMS = testtones detect_tones detect_dtmf testisdn testpri testboost testanalog testapp testcid
+noinst_PROGRAMS = testtones detect_tones detect_dtmf testisdn testpri testr2 testboost testanalog testapp testcid
 
 testapp_SOURCES = $(SRC)/testapp.c
 testapp_LDADD   = libopenzap.la
@@ -131,6 +131,10 @@ testpri_SOURCES = $(SRC)/testpri.c
 testpri_LDADD   = libopenzap.la
 testpri_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 
+testr2_SOURCES = $(SRC)/testr2.c
+testr2_LDADD   = libopenzap.la
+testr2_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+
 testboost_SOURCES = $(SRC)/testboost.c
 testboost_LDADD   = libopenzap.la
 testboost_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
@@ -150,6 +154,10 @@ endif
 
 if LIBPRI
 mod_LTLIBRARIES += ozmod_libpri.la
+endif
+
+if OPENR2
+mod_LTLIBRARIES += ozmod_r2.la
 endif
 
 ozmod_zt_la_SOURCES = $(SRC)/ozmod/ozmod_zt/ozmod_zt.c
@@ -216,6 +224,13 @@ ozmod_libpri_la_SOURCES = $(SRC)/ozmod/ozmod_libpri/ozmod_libpri.c $(SRC)/ozmod/
 ozmod_libpri_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_libpri_la_LDFLAGS = -module  -avoid-version -lpri
 ozmod_libpri_la_LIBADD  = $(MYLIB)
+endif
+
+if OPENR2
+ozmod_r2_la_SOURCES = $(SRC)/ozmod/ozmod_r2/ozmod_r2.c 
+ozmod_r2_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_r2_la_LDFLAGS = -module  -avoid-version -lopenr2
+ozmod_r2_la_LIBADD  = $(MYLIB)
 endif
 
 

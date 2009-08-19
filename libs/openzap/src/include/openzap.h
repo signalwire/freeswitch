@@ -280,6 +280,17 @@
 		}									\
 	} while(0);
 
+#define zap_locked_wait_for_flag_cleared(obj, flag, time) 						\
+	do {										\
+		int __safety = time;							\
+		while(__safety-- && zap_test_flag(obj, flag)) {	\
+			zap_sleep(10);							\
+		}									\
+		if(!__safety) {								\
+			zap_log(ZAP_LOG_CRIT, "flag %d was never cleared\n", flag);		\
+		}									\
+	} while(0);
+
 
 typedef enum {
 	ZAP_STATE_CHANGE_FAIL,
@@ -517,7 +528,7 @@ struct zap_channel {
 	struct zap_span *span;
 	struct zap_io_interface *zio;
 	zap_hash_t *variable_hash;
-	unsigned char cas_bits;
+	unsigned char rx_cas_bits;
 };
 
 

@@ -202,7 +202,7 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 	unsigned configured = 0, x;
 
 	if (type == ZAP_CHAN_TYPE_CAS) {
-		zap_log(ZAP_LOG_DEBUG, "Configuring CAS channels with abcd == 0x%X\n", cas_bits);
+		zap_log(ZAP_LOG_DEBUG, "Configuring Wanpipe CAS channels with abcd == 0x%X\n", cas_bits);
 	}	
 	for(x = start; x < end; x++) {
 		zap_channel_t *chan;
@@ -210,22 +210,25 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 		const char *dtmf = "none";
 
 		sockfd = tdmv_api_open_span_chan(spanno, x);
+		if (sockfd == WP_INVALID_SOCKET) {
+			zap_log(ZAP_LOG_ERROR, "Failed to open wanpipe device span %d channel %d\n", spanno, x);
+			continue;
+		}
 		
-		if (sockfd != WP_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
+		if (zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
 			wanpipe_tdm_api_t tdm_api;
+			memset(&tdm_api, 0, sizeof(tdm_api));
 #ifdef LIBSANGOMA_VERSION
-            sangoma_status_t sangstatus;
+			sangoma_status_t sangstatus;
 			sangoma_wait_obj_t *sangoma_wait_obj;
 
-            sangstatus = sangoma_wait_obj_create(&sangoma_wait_obj, sockfd, SANGOMA_DEVICE_WAIT_OBJ);
-            if (sangstatus != SANG_STATUS_SUCCESS) {
-			    zap_log(ZAP_LOG_ERROR, "failure create waitable object for s%dc%d\n", spanno, x);
-                continue;
-            }
+			sangstatus = sangoma_wait_obj_create(&sangoma_wait_obj, sockfd, SANGOMA_DEVICE_WAIT_OBJ);
+			if (sangstatus != SANG_STATUS_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "failure create waitable object for s%dc%d\n", spanno, x);
+				continue;
+			}
 			chan->mod_data = sangoma_wait_obj;
 #endif
-
-			memset(&tdm_api,0,sizeof(tdm_api));
 			
 			chan->physical_span_id = spanno;
 			chan->physical_chan_id = x;
@@ -237,7 +240,7 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 				dtmf = "software";
 
 				/* FIXME: Handle Error Condition Check for return code */
-				err= sangoma_tdm_get_hw_coding(chan->sockfd, &tdm_api);
+				err = sangoma_tdm_get_hw_coding(chan->sockfd, &tdm_api);
 
 				if (tdm_api.wp_tdm_cmd.hw_tdm_coding) {
 					chan->native_codec = chan->effective_codec = ZAP_CODEC_ALAW;
@@ -270,15 +273,26 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 			if (type == ZAP_CHAN_TYPE_CAS || 
 				((span->trunk_type == ZAP_TRUNK_T1 || span->trunk_type == ZAP_TRUNK_E1) && type != ZAP_CHAN_TYPE_B)) {
 #ifdef LIBSANGOMA_VERSION
-				sangoma_tdm_write_rbs(chan->sockfd,&tdm_api,chan->physical_chan_id,wanpipe_swap_bits(cas_bits));
+				sangoma_tdm_write_rbs(chan->sockfd,&tdm_api,chan->physical_chan_id, wanpipe_swap_bits(cas_bits));
+
+				/* this should probably be done for old libsangoma but I am not sure if the API is available and I'm lazy to check,
+				   The poll rate is hard coded to 100 per second (done in the driver, is the max rate of polling allowed by wanpipe)
+				 */
+				if (sangoma_tdm_enable_rbs_events(chan->sockfd, &tdm_api, 100)) {
+					zap_log(ZAP_LOG_ERROR, "Failed to enable RBS/CAS events in device %d:%d fd:%d\n", chan->span_id, chan->chan_id, sockfd);
+					continue;
+				}
+				/* probably done by the driver but lets write defensive code this time */
+				sangoma_flush_bufs(chan->sockfd, &tdm_api);
 #else
-				sangoma_tdm_write_rbs(chan->sockfd,&tdm_api,wanpipe_swap_bits(cas_bits));
+				sangoma_tdm_write_rbs(chan->sockfd,&tdm_api, wanpipe_swap_bits(cas_bits));
 #endif
 			}
 			
 			if (!zap_strlen_zero(name)) {
 				zap_copy_string(chan->chan_name, name, sizeof(chan->chan_name));
 			}
+
 			if (!zap_strlen_zero(number)) {
 				zap_copy_string(chan->chan_number, number, sizeof(chan->chan_number));
 			}
@@ -288,7 +302,7 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 				spanno, x, chan->span_id, chan->chan_id, sockfd, dtmf);
 
 		} else {
-			zap_log(ZAP_LOG_ERROR, "failure configuring device s%dc%d\n", spanno, x);
+			zap_log(ZAP_LOG_ERROR, "zap_span_add_channel failed for wanpipe span %d channel %d\n", spanno, x);
 		}
 	}
 	
@@ -371,14 +385,12 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(wanpipe_configure_span)
 		}
 
 		if (!(sp && ch)) {
-			zap_log(ZAP_LOG_ERROR, "Invalid input\n");
+			zap_log(ZAP_LOG_ERROR, "No valid wanpipe span and channel was specified\n");
 			continue;
 		}
 
-
 		channo = atoi(ch);
 		spanno = atoi(sp);
-
 
 		if (channo < 0) {
 			zap_log(ZAP_LOG_ERROR, "Invalid channel number %d\n", channo);
@@ -528,16 +540,24 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 	case ZAP_COMMAND_SET_CAS_BITS:
 		{
 #ifdef LIBSANGOMA_VERSION
-			err=sangoma_tdm_write_rbs(zchan->sockfd,&tdm_api,zchan->physical_chan_id,wanpipe_swap_bits(ZAP_COMMAND_OBJ_INT));
+			err = sangoma_tdm_write_rbs(zchan->sockfd,&tdm_api, zchan->physical_chan_id, wanpipe_swap_bits(ZAP_COMMAND_OBJ_INT));
 #else
-			err=sangoma_tdm_write_rbs(zchan->sockfd,&tdm_api,wanpipe_swap_bits(ZAP_COMMAND_OBJ_INT));
+			err = sangoma_tdm_write_rbs(zchan->sockfd, &tdm_api, wanpipe_swap_bits(ZAP_COMMAND_OBJ_INT));
 #endif
 		}
 		break;
 	case ZAP_COMMAND_GET_CAS_BITS:
 		{
-			/* wanpipe does not has a command to get the CAS bits so we emulate it */
-			ZAP_COMMAND_OBJ_INT = zchan->cas_bits;
+#ifdef LIBSANGOMA_VERSION
+            unsigned char rbsbits;
+            err = sangoma_tdm_read_rbs(zchan->sockfd, &tdm_api, zchan->physical_chan_id, &rbsbits);
+            if (!err) {
+                ZAP_COMMAND_OBJ_INT = wanpipe_swap_bits(rbsbits);
+            }
+#else
+            // does sangoma_tdm_read_rbs is available here?
+			ZAP_COMMAND_OBJ_INT = zchan->rx_cas_bits;
+#endif
 		}
 		break;
 	default:
@@ -817,7 +837,6 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 {
 	uint32_t i,err;
 	zap_oob_event_t event_id;
-	
 	for(i = 1; i <= span->chan_count; i++) {
 		if (span->channels[i]->last_event_time && !zap_test_flag(span->channels[i], ZAP_CHANNEL_EVENT)) {
 			uint32_t diff = (uint32_t)(zap_current_time_in_ms() - span->channels[i]->last_event_time);
@@ -856,7 +875,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 			memset(&tdm_api, 0, sizeof(tdm_api));
 			zap_clear_flag(span->channels[i], ZAP_CHANNEL_EVENT);
 
-			err=sangoma_tdm_read_event(zchan->sockfd,&tdm_api);
+			err = sangoma_tdm_read_event(zchan->sockfd, &tdm_api);
 			if (err != ZAP_SUCCESS) {
 				snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
 				return ZAP_FAIL;
@@ -926,9 +945,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 			case WP_TDMAPI_EVENT_RBS:
 				{
 					event_id = ZAP_OOB_CAS_BITS_CHANGE;
-					/* save the CAS bits, user should retrieve it with ZAP_COMMAND_GET_CAS_BITS 
-					   is there a best play to store this? instead of adding cas_bits member to zap_chan? */
-					span->channels[i]->cas_bits = wanpipe_swap_bits(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_rbs_bits);
+					span->channels[i]->rx_cas_bits = wanpipe_swap_bits(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_rbs_bits);
 				}
 				break;
             case WP_TDMAPI_EVENT_DTMF:
