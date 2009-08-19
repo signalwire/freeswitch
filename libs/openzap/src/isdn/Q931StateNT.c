@@ -116,8 +116,9 @@ void Q931CreateNT(L3UCHAR i)
 	Q931SetIEProc(Q931ie_HIGH_LAYER_COMPATIBILITY,         i, Q931Pie_HLComp,      Q931Uie_HLComp);
 	Q931SetIEProc(Q931ie_USER_USER,                        i, Q931Pie_UserUser,    Q931Uie_UserUser);
 
-	Q931SetIEProc(Q931ie_CONNECTED_NUMBER, i, Q931Pie_Generic, Q931Uie_Generic);
-	Q931SetIEProc(Q931ie_FACILITY,         i, Q931Pie_Generic, Q931Uie_Generic);
+	Q931SetIEProc(Q931ie_CONNECTED_NUMBER,   i, Q931Pie_Generic, Q931Uie_Generic);
+	Q931SetIEProc(Q931ie_FACILITY,           i, Q931Pie_Generic, Q931Uie_Generic);
+	Q931SetIEProc(Q931ie_REDIRECTING_NUMBER, i, Q931Pie_Generic, Q931Uie_Generic);
 
 	/* The following define a state machine. The point is that the Message
 	 * procs can when search this to find out if the message/state
