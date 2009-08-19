@@ -917,7 +917,7 @@ giovadpcms[i].started=0;
 	giovatimer.function = snd_card_dummy_pcm_timer_function;
 	giovatimer.expires = (HZ/100) + jiffies;
 	add_timer(&giovatimer);
-printk("giova skypiax: %d\n", __LINE__);
+printk("snd-dummy skypiax driver, %s:%d working on a machine with %dHZ kernel\n", __FILE__, __LINE__, HZ);
 	spin_unlock_bh(&giovalock);
 }
 
