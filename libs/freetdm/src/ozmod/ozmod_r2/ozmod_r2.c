@@ -1142,7 +1142,6 @@ static void *zap_r2_run(zap_thread_t *me, void *obj)
 		}
 		if (ZAP_SUCCESS == status) {
 			zap_event_t *event;
-            zap_log(ZAP_LOG_ERROR, "success getting poll event\n");
 			while (zap_span_next_event(span, &event) == ZAP_SUCCESS) {
 				if (event->enum_id == ZAP_OOB_CAS_BITS_CHANGE) {
                     r2chan = R2CALL(event->channel)->r2chan;
