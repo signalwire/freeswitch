@@ -405,10 +405,10 @@ int skypiax_signaling_read(private_t * tech_pvt)
 							if (!strlen(tech_pvt->session_uuid_str) || !strlen(tech_pvt->skype_call_id)
 								|| !strcasecmp(tech_pvt->skype_call_id, id)) {
 								skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+								tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
 								DEBUGA_SKYPE("skype_call: %s is now active\n", SKYPIAX_P_LOG, id);
 
 								if (tech_pvt->skype_callflow != CALLFLOW_STATUS_EARLYMEDIA) {
-									tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
 									tech_pvt->interface_state = SKYPIAX_STATE_UP;
 
 									if (start_audio_threads(tech_pvt)) {
@@ -422,11 +422,11 @@ int skypiax_signaling_read(private_t * tech_pvt)
 									sprintf(msg_to_skype, "#output ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id, tech_pvt->tcp_srv_port);
 									skypiax_signaling_write(tech_pvt, msg_to_skype);
 								}
-								tech_pvt->skype_callflow = SKYPIAX_STATE_UP;
 								if (!strlen(tech_pvt->session_uuid_str)) {
 									DEBUGA_SKYPE("New Inbound Channel!\n\n\n\n", SKYPIAX_P_LOG);
 									new_inbound_channel(tech_pvt);
 								} else {
+									tech_pvt->interface_state = SKYPIAX_STATE_UP;
 									DEBUGA_SKYPE("Outbound Channel Answered! session_uuid_str=%s\n", SKYPIAX_P_LOG, tech_pvt->session_uuid_str);
 									outbound_channel_answered(tech_pvt);
 								}
