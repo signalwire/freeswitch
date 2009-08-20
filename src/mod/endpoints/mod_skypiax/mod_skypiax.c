@@ -914,7 +914,15 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (outbound_profile) {
 			char name[128];
 
-			snprintf(name, sizeof(name), "skypiax/%s", outbound_profile->destination_number);
+			if (strncmp("ANY", outbound_profile->destination_number, 3 ) == 0) {
+				snprintf(name, sizeof(name), "skypiax/ANY/%s%s", tech_pvt->name, outbound_profile->destination_number+3);
+			} else if (strncmp("RR", outbound_profile->destination_number, 2) == 0) {
+				snprintf(name, sizeof(name), "skypiax/RR/%s%s", tech_pvt->name, outbound_profile->destination_number+2);
+			} else {
+				snprintf(name, sizeof(name), "skypiax/%s", outbound_profile->destination_number);
+			}
+
+			//snprintf(name, sizeof(name), "skypiax/%s", outbound_profile->destination_number);
 			//snprintf(name, sizeof(name), "skypiax/%s", tech_pvt->name);
 			switch_channel_set_name(channel, name);
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
@@ -1762,6 +1770,10 @@ SWITCH_STANDARD_API(sk_function)
 
 	if (!strcasecmp(argv[0], "list")) {
 		int i;
+		int ib = 0;
+		int ib_failed = 0;
+		int ob = 0;
+		int ob_failed = 0;
 		char next_flag_char = ' ';
 
 		stream->write_function(stream, "F ID\t    Name    \tIB (F/T)    OB (F/T)\tState\tCallFlw\t\tUUID\n");
@@ -1769,6 +1781,10 @@ SWITCH_STANDARD_API(sk_function)
 
 		for (i = 0; i < SKYPIAX_MAX_INTERFACES; i++) {
 			next_flag_char = i == globals.next_interface ? '*' : ' ';
+			ib += globals.SKYPIAX_INTERFACES[i].ib_calls;
+			ib_failed += globals.SKYPIAX_INTERFACES[i].ib_failed_calls;
+			ob += globals.SKYPIAX_INTERFACES[i].ob_calls;
+			ob_failed += globals.SKYPIAX_INTERFACES[i].ob_failed_calls;
 
 			if (strlen(globals.SKYPIAX_INTERFACES[i].name)) {
 				stream->write_function(stream,
@@ -1786,7 +1802,8 @@ SWITCH_STANDARD_API(sk_function)
 			}
 
 		}
-		stream->write_function(stream, "\nTotal: %d\n", globals.real_interfaces - 1);
+		stream->write_function(stream, "\nTotal Interfaces: %d  IB Calls(Failed/Total): %ld/%ld  OB Calls(Failed/Total): %ld/%ld\n",
+		       globals.real_interfaces - 1, ib_failed, ib, ob_failed, ob);
 
 	} else if (!strcasecmp(argv[0], "console")) {
 		int i;

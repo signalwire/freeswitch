@@ -243,10 +243,10 @@ struct private_object {
 	char transfer_callid_number[50];
 	char skype_transfer_call_id[512];
 	int running;
-	unsigned long ib_calls;
-	unsigned long ob_calls;
-	unsigned long ib_failed_calls;
-	unsigned long ob_failed_calls;
+	uint32_t ib_calls;
+	uint32_t ob_calls;
+	uint32_t ib_failed_calls;
+	uint32_t ob_failed_calls;
 };
 
 typedef struct private_object private_t;
