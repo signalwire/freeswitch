@@ -793,10 +793,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 									  atoi(timeout), 
 									  strlen(max_failures)? atoi(max_failures): 0, 
 									  strlen(max_timeouts)? atoi(max_timeouts): 0, 
-									  xml_menu_ctx->pool);
+									  xml_menu_ctx->pool);									
 		/* set the menu_stack for the caller */
 		if (status == SWITCH_STATUS_SUCCESS && *menu_stack == NULL) {
 			*menu_stack = menu;
+			
+			if (xml_menu_ctx->autocreated) {
+				switch_set_flag(menu, SWITCH_IVR_MENU_FLAG_FREEPOOL);
+			}
 		}
 
 		if (status == SWITCH_STATUS_SUCCESS && menu != NULL) {
