@@ -569,6 +569,11 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 		switch_clear_flag(tech_pvt, TFLAG_IO);
 		switch_clear_flag(tech_pvt, TFLAG_VOICE);
 		switch_set_flag(tech_pvt, TFLAG_HANGUP);
+		if (tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD) {
+			ERRORA("%s CHANNEL got SWITCH_SIG_KILL\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
+			channel_on_hangup(session);
+		}
+
 		//switch_mutex_unlock(tech_pvt->flag_mutex);
 		break;
 	case SWITCH_SIG_BREAK:
