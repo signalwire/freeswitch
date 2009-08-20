@@ -253,8 +253,17 @@ static abyss_bool is_authorized (const TSession *r, const char *command)
 	int argc;
 	int i;
 
-	if (!r || !r->requestInfo.user)
+	if (!r) {
 		return FALSE;
+	}
+
+	if (switch_strlen_zero(globals.realm) && switch_strlen_zero(globals.user)) {
+		return TRUE;
+	}
+
+	if (!r->requestInfo.user) {
+		return FALSE;	
+	}
 
 	user = strdup(r->requestInfo.user);
 
@@ -263,15 +272,16 @@ static abyss_bool is_authorized (const TSession *r, const char *command)
 		domain_name = dp;
 	}
 
-	if (switch_strlen_zero(user) || switch_strlen_zero(domain_name)) {
-		switch_safe_free(user);
-		return FALSE;
-	}
-
 	if (!switch_strlen_zero(globals.realm) && !switch_strlen_zero(globals.user) && !strcmp(user, globals.user)) {
 		switch_safe_free(user);
 		return TRUE;
 	}
+	
+	if (switch_strlen_zero(user) || switch_strlen_zero(domain_name)) {
+		switch_safe_free(user);
+		return FALSE;
+	}
+	
 
 	if (!user_attributes (user, domain_name, NULL, NULL, NULL, &allowed_commands)) {
 		switch_safe_free(user);
