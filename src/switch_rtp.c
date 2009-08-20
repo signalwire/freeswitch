@@ -1066,6 +1066,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 												  switch_rtp_flag_t flags, char *timer_name, const char **err, switch_memory_pool_t *pool)
 {
 	switch_rtp_t *rtp_session = NULL;
+	switch_core_session_t *session = switch_core_memory_pool_get_data(pool, "__session");
 
 	*new_rtp_session = NULL;
 
@@ -1135,15 +1136,15 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 
 		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, samples_per_interval, pool) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 							  "Starting timer [%s] %d bytes per %dms\n", timer_name, samples_per_interval, ms_per_packet / 1000);
 		} else {
 			memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error starting timer [%s], async RTP disabled\n", timer_name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error starting timer [%s], async RTP disabled\n", timer_name);
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Not using a timer\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Not using a timer\n");
 		switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 		switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 	}
@@ -1151,13 +1152,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 #ifdef ENABLE_ZRTP
 	if (zrtp_on) {
 		int initiator = 0;
-		switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *zrtp_enabled = switch_channel_get_variable(channel, "zrtp_secure_media");
 		const char *srtp_enabled = switch_channel_get_variable(channel, "sip_secure_media");
 
 		if (switch_true(srtp_enabled) && switch_true(zrtp_enabled)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You can not have ZRTP and SRTP enabled simultaneously, ZRTP will be disabled for this call!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "You can not have ZRTP and SRTP enabled simultaneously, ZRTP will be disabled for this call!\n");
 			switch_channel_set_variable(channel, "zrtp_secure_media", NULL);
 			zrtp_enabled = NULL;
 		}
@@ -1175,7 +1175,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 			rtp_session->zrtp_profile->cache_ttl = -1;
 			
 			if (zrtp_status_ok != zrtp_session_init(zrtp_global, rtp_session->zrtp_profile, zid, initiator, &rtp_session->zrtp_session)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! zRTP INIT Failed\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error! zRTP INIT Failed\n");
 				zrtp_session_down(rtp_session->zrtp_session);
 				rtp_session->zrtp_session = NULL;
 			}
