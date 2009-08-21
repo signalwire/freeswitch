@@ -1042,7 +1042,6 @@ static int on_result(void *user_data, ikspak *pak)
 
 		apr_queue_push(handle->queue, msg);
 		msg = NULL;
-		ldl_set_flag_locked(handle, LDL_FLAG_READY);
 	}
 	return IKS_FILTER_EAT;
 }
@@ -1122,7 +1121,6 @@ static int on_stream_component(ldl_handle_t *handle, int type, iks *node)
 			if (iks_recv(handle->parser, 1) == 2) {
 				handle->state = CS_CONNECTED;
 				if (!ldl_test_flag(handle, LDL_FLAG_AUTHORIZED)) {
-					ldl_set_flag_locked(handle, LDL_FLAG_READY);
 					do_roster(handle);
 					if (handle->session_callback) {
 						handle->session_callback(handle, NULL, LDL_SIGNAL_LOGIN_SUCCESS, "user", "core", "Login Success", handle->login);
@@ -1550,7 +1548,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 				goto fail;
 			}
 
-			if (!ldl_test_flag(handle, LDL_FLAG_TLS) && ldl_test_flag(handle, LDL_FLAG_READY)) {
+			if (!ldl_test_flag(handle, LDL_FLAG_TLS) && ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 				ldl_flush_queue(handle, 0);
 			}
 
@@ -2237,7 +2235,7 @@ void ldl_global_set_log_stream(FILE *log_stream)
 
 int8_t ldl_handle_ready(ldl_handle_t *handle)
 {
-	return (int8_t) (ldl_test_flag(handle, LDL_FLAG_READY) && ldl_test_flag((&globals), LDL_FLAG_READY));
+	return (int8_t) (ldl_test_flag(handle, LDL_FLAG_RUNNING) && ldl_test_flag((&globals), LDL_FLAG_READY));
 }
 
 ldl_status ldl_handle_init(ldl_handle_t **handle,
