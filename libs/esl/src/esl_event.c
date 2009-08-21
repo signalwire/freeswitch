@@ -126,6 +126,8 @@ static const char *EVENT_NAMES[] = {
 	"RECV_INFO",
 	"CALL_SECURE",
 	"NAT",
+	"RECORD_START",
+	"RECORD_STOP",
 	"ALL"
 };
 

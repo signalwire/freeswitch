@@ -1365,6 +1365,8 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		event->event_id == SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE ||
 		event->event_id == SWITCH_EVENT_SESSION_HEARTBEAT ||
 		event->event_id == SWITCH_EVENT_API ||
+		event->event_id == SWITCH_EVENT_RECORD_START ||
+		event->event_id == SWITCH_EVENT_RECORD_STOP ||
 		event->event_id == SWITCH_EVENT_CUSTOM
 		) {
 

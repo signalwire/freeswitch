@@ -432,9 +432,16 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct record_helper *rh = (struct record_helper *) user_data;
+	switch_event_t *event;
+
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
+		if (switch_event_create(&event, SWITCH_EVENT_RECORD_START) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(channel, event);
+			switch_event_fire(&event);
+		}
+
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		{
@@ -444,6 +451,11 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Stop recording file %s\n", rh->file);
 			switch_channel_set_private(channel, rh->file, NULL);
 			
+			if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(channel, event);
+				switch_event_fire(&event);
+			}
+
 			if (rh->fh) {
 				if (switch_channel_test_flag(channel, CF_ANSWERED) || !switch_core_media_bug_test_flag(bug, SMBF_RECORD_ANSWER_REQ)) {
 					switch_size_t len;

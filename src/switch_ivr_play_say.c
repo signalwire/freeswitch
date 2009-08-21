@@ -393,7 +393,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
     switch_codec_implementation_t read_impl = {0};
 	switch_frame_t write_frame = { 0 };
 	unsigned char write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
-
+	switch_event_t *event;
 
     switch_core_session_get_read_impl(session, &read_impl);
 
@@ -575,6 +575,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		}
 	}
 
+
+	if (switch_event_create(&event, SWITCH_EVENT_RECORD_START) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
+
 	for (;;) {
 		switch_size_t len;
 
@@ -683,6 +689,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			}
 		}
 
+	}
+
+	if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
 	}
 
 	if (waste_resources) {
