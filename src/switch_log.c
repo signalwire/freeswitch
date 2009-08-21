@@ -283,15 +283,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *t, void *obj)
 		}
 		switch_mutex_unlock(BINDLOCK);
 
-		switch_safe_free(node->data);
-#ifdef SWITCH_LOG_RECYCLE
-		if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
-			free(node);
-		}
-#else
-		free(node);
-#endif
-
+		switch_log_node_free(&node);
 	}
 
 	THREAD_RUNNING = 0;
