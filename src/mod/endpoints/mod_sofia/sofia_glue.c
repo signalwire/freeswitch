@@ -4275,6 +4275,71 @@ void sofia_glue_free_destination(sofia_destination_t *dst)
 	}
 }
 
+switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *user, const char *host, const char *event, const char *contenttype, const char *body, const char *o_contact, const char *network_ip)
+{
+	char *id = NULL;
+	nua_handle_t *nh;
+	sofia_destination_t *dst = NULL;
+	char *contact_str, *contact, *user_via = NULL;
+
+	contact = sofia_glue_get_url_from_contact((char*) o_contact, 1);
+	if (sofia_glue_check_nat(profile, network_ip)) {
+		char *ptr = NULL;
+		const char *transport_str = NULL;
+
+
+		id = switch_mprintf("sip:%s@%s", user, profile->extsipip);
+		switch_assert(id);
+
+		if ((ptr = sofia_glue_find_parameter(o_contact, "transport="))) {
+			sofia_transport_t transport = sofia_glue_str2transport(ptr);
+			transport_str = sofia_glue_transport2str(transport);
+			switch (transport) {
+				case SOFIA_TRANSPORT_TCP:
+					contact_str = profile->tcp_public_contact;
+					break;
+				case SOFIA_TRANSPORT_TCP_TLS:
+					contact_str = profile->tls_public_contact;
+					break;
+				default:
+					contact_str = profile->public_url;
+					break;
+			}
+			user_via = sofia_glue_create_external_via(NULL, profile, transport);
+		} else {
+			user_via = sofia_glue_create_external_via(NULL, profile, SOFIA_TRANSPORT_UDP);
+			contact_str = profile->public_url;
+		}
+
+	} else {
+		contact_str = profile->url;
+		id = switch_mprintf("sip:%s@%s", user, host);
+	}
+
+	dst = sofia_glue_get_destination((char*) o_contact);
+	switch_assert(dst);
+
+	nh = nua_handle(profile->nua, NULL, NUTAG_URL(contact),
+			SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id),
+			SIPTAG_CONTACT_STR(contact_str), TAG_END());
+	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
+
+	nua_notify(nh,
+			NUTAG_NEWSUB(1),
+			TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
+			TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
+			SIPTAG_EVENT_STR(event),
+			SIPTAG_CONTENT_TYPE_STR(contenttype),
+			SIPTAG_PAYLOAD_STR(body), TAG_END());
+
+	switch_safe_free(contact);
+	switch_safe_free(id);
+	sofia_glue_free_destination(dst);
+	switch_safe_free(user_via);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

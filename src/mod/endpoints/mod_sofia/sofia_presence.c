@@ -1365,19 +1365,17 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 
 static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char **columnNames)
 {
-	char *sub_to_user = argv[0];
-	char *sub_to_host = argv[1];
-	char *event = "message-summary";
-	char *o_contact = argv[2];
+	const char *user = argv[0];
+	const char *host = argv[1];
+	const char *event = "message-summary";
+	const char *contenttype = "application/simple-message-summary";
+	const char *body = argv[5];
+	const char *o_contact = argv[2];
+	const char *network_ip = argv[4];
+
 	char *profile_name = argv[3];
-	char *network_ip = argv[4];
-	char *body = argv[5];
-	char *id = NULL;
-	nua_handle_t *nh;
 	struct mwi_helper *h = (struct mwi_helper *) pArg;
 	sofia_profile_t *ext_profile = NULL, *profile = h->profile;
-	sofia_destination_t *dst = NULL;
-	char *contact_str, *contact, *user_via = NULL;
 
 	if (profile_name && strcasecmp(profile_name, h->profile->name)) {
 		if ((ext_profile = sofia_glue_find_profile(profile_name))) {
@@ -1385,61 +1383,7 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 		}
 	}
 
-	contact = sofia_glue_get_url_from_contact(o_contact, 1);
-	if (sofia_glue_check_nat(profile, network_ip)) {
-		char *ptr = NULL;
-		const char *transport_str = NULL;
-
-
-		id = switch_mprintf("sip:%s@%s", sub_to_user, profile->extsipip);
-		switch_assert(id);
-
-		if ((ptr = sofia_glue_find_parameter(o_contact, "transport="))) {
-			sofia_transport_t transport = sofia_glue_str2transport(ptr);
-			transport_str = sofia_glue_transport2str(transport);
-
-			switch (transport) {
-			case SOFIA_TRANSPORT_TCP:
-				contact_str = profile->tcp_public_contact;
-				break;
-			case SOFIA_TRANSPORT_TCP_TLS:
-				contact_str = profile->tls_public_contact;
-				break;
-			default:
-				contact_str = profile->public_url;
-				break;
-			}
-			user_via = sofia_glue_create_external_via(NULL, profile, transport);
-		} else {
-			user_via = sofia_glue_create_external_via(NULL, profile, SOFIA_TRANSPORT_UDP);
-			contact_str = profile->public_url;
-		}
-		
-	} else {
-		contact_str = profile->url;
-		id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
-	}
-
-	dst = sofia_glue_get_destination(o_contact);
-	switch_assert(dst);
-
-	nh = nua_handle(profile->nua, NULL, NUTAG_URL(contact),
-					SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id),
-					SIPTAG_CONTACT_STR(contact_str), TAG_END());
-	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
-
-	nua_notify(nh,
-			   NUTAG_NEWSUB(1),
-			   TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
-			   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
-			   SIPTAG_EVENT_STR(event),
-			   SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
-			   SIPTAG_PAYLOAD_STR(body), TAG_END());
-	
-	switch_safe_free(contact);
-	switch_safe_free(id);
-	sofia_glue_free_destination(dst);
-	switch_safe_free(user_via);
+	sofia_glue_send_notify(profile, user, host, event, contenttype, body, o_contact, network_ip);
 
 	if (ext_profile) {
 		sofia_glue_release_profile(ext_profile);
