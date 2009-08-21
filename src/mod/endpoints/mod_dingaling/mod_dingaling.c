@@ -1942,6 +1942,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown)
 	switch_event_unbind(&globals.probe_node);
 	switch_event_unbind(&globals.out_node);
 	switch_event_unbind(&globals.roster_node);
+	switch_event_unbind_callback(ipchanged_event_handler);
 
 
 	switch_core_hash_destroy(&globals.profile_hash);
