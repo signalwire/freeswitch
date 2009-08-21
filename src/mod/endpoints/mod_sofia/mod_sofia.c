@@ -1777,22 +1777,19 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				cb.profile = profile;
 				cb.stream = stream;
 				
-				if (argv[3]) {
-					if (argv[4]) {
-						if (!strcasecmp(argv[3], "pres")) {
-							sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
-												 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-												 "network_ip,network_port,sip_username,sip_realm"
-												 " from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", 
-												 profile->name, argv[4]);
-						}
-					} else {
-						sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
-											 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-											 "network_ip,network_port,sip_username,sip_realm"
-											 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", 
-											 profile->name, argv[3]);
-					}
+				if (!sql && argv[2] && !strcasecmp(argv[2], "pres") && argv[3]) {
+					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
+							"rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
+							"network_ip,network_port,sip_username,sip_realm"
+							" from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", 
+							profile->name, argv[3]);
+				}
+				if (!sql && argv[2] && !strcasecmp(argv[2], "reg") && argv[3]) {
+					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
+							"rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
+							"network_ip,network_port,sip_username,sip_realm"
+							" from sip_registrations where profile_name='%q' and contact like '%%%q%%'", 
+							profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "user") && argv[3]) {
 					char *dup = strdup(argv[3]);
@@ -1834,7 +1831,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				}
 
 				sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, show_reg_callback, &cb);
-				free(sql);
+				switch_safe_free(sql);
 
 				stream->write_function(stream, "%s\n", line);
 
@@ -1998,23 +1995,22 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 				cb.profile = profile;
 				cb.stream = stream;
-				
-				if (argv[3]) {
-					if (argv[4]) {
-						if (!strcasecmp(argv[3], "pres")) {
-							sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
-												 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-												 "network_ip,network_port,sip_username,sip_realm"
-												 " from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", 
-												 profile->name, argv[4]);
-						}
-					} else {
-						sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
-											 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-											 "network_ip,network_port,sip_username,sip_realm"
-											 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", 
-											 profile->name, argv[3]);
-					}
+
+				if (!sql && argv[2] && !strcasecmp(argv[2], "pres") && argv[3]) {
+
+					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
+							"rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
+							"network_ip,network_port,sip_username,sip_realm"
+							" from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", 
+							profile->name, argv[3]);
+				}
+				if (!sql && argv[2] && !strcasecmp(argv[2], "reg") && argv[3]) {
+
+					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
+							"rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
+							"network_ip,network_port,sip_username,sip_realm"
+							" from sip_registrations where profile_name='%q' and contact like '%%%q%%'", 
+							profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "user") && argv[3]) {
 					char *dup = strdup(argv[3]);
@@ -2056,7 +2052,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				}
 
 				sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, show_reg_callback_xml, &cb);
-				free(sql);
+				switch_safe_free(sql);
 
 				stream->write_function(stream, "  </registrations>\n");
 				stream->write_function(stream, "</profile>\n");
