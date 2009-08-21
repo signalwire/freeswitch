@@ -1717,7 +1717,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 			char *sql = NULL;
 
 			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
-				if (!argv[2] || strcasecmp(argv[2], "reg")) {
+				if (!argv[2] || (strcasecmp(argv[2], "reg") && strcasecmp(argv[2], "user"))) {
 					stream->write_function(stream, "%s\n", line);
 					stream->write_function(stream, "Name             \t%s\n", switch_str_nil(argv[1]));
 					stream->write_function(stream, "Domain Name      \t%s\n", profile->domain_name ? profile->domain_name : "N/A");
@@ -1791,6 +1791,36 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 											 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", 
 											 profile->name, argv[3]);
 					}
+				}
+				if (!sql && argv[2] && !strcasecmp(argv[2], "user") && argv[3]) {
+					char *dup = strdup(argv[3]);
+					char *host = NULL, *user = NULL;
+					char *sqlextra = NULL;
+
+					switch_assert(dup);
+
+					if ((host = strchr(dup, '@'))) {
+						*host++ = '\0';
+						user = dup;
+					} else {
+						host = dup;
+					}
+
+					if (switch_strlen_zero(user) ) {
+						sqlextra = switch_mprintf("(sip_host='%q')", host);
+					} else if (switch_strlen_zero(host)) {
+						sqlextra = switch_mprintf("(sip_user='%q')", user);
+					} else {
+						sqlextra = switch_mprintf("(sip_user='%q' and sip_host='%q')", user, host);
+					}
+
+					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
+							"rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
+							"network_ip,network_port,sip_username,sip_realm"
+							" from sip_registrations where profile_name='%q' and %s",
+							profile->name, sqlextra);
+					switch_safe_free(dup);
+					switch_safe_free(sqlextra);
 				}
 
 				if (!sql) {
@@ -1917,7 +1947,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
 				stream->write_function(stream, "%s\n", header);
 				stream->write_function(stream, "<profile>\n");
-				if (!argv[2] || strcasecmp(argv[2], "reg")) {
+				if (!argv[2] || (strcasecmp(argv[2], "reg") && strcasecmp(argv[2], "user"))) {
 					stream->write_function(stream, "  <profile-info>\n");
 					stream->write_function(stream, "    <name>%s</name>\n", switch_str_nil(argv[1]));
 					stream->write_function(stream, "    <domain-name>%s</domain-name>\n", profile->domain_name ? profile->domain_name : "N/A");
@@ -1983,6 +2013,36 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 											 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", 
 											 profile->name, argv[3]);
 					}
+				}
+				if (!sql && argv[2] && !strcasecmp(argv[2], "user") && argv[3]) {
+					char *dup = strdup(argv[3]);
+					char *host = NULL, *user = NULL;
+					char *sqlextra = NULL;
+
+					switch_assert(dup);
+
+					if ((host = strchr(dup, '@'))) {
+						*host++ = '\0';
+						user = dup;
+					} else {
+						host = dup;
+					}
+
+					if (switch_strlen_zero(user)) {
+						sqlextra = switch_mprintf("(sip_host='%q')", host);
+					} else if (switch_strlen_zero(host)) {
+						sqlextra = switch_mprintf("(sip_user='%q')", user);
+					} else {
+						sqlextra = switch_mprintf("(sip_user='%q' and sip_host='%q')", user, host);
+					}
+
+					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
+							"rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
+							"network_ip,network_port,sip_username,sip_realm"
+							" from sip_registrations where profile_name='%q' and %s",
+							profile->name, sqlextra);
+					switch_safe_free(dup);
+					switch_safe_free(sqlextra);
 				}
 
 				if (!sql) {
@@ -2475,7 +2535,7 @@ SWITCH_STANDARD_API(sofia_function)
 		"--------------------------------------------------------------------------------\n"
 		"sofia help\n"
 		"sofia profile <profile_name> [[start|stop|restart|rescan] [reloadxml]|flush_inbound_reg [<call_id>] [reboot]|[register|unregister] [<gateway name>|all]|killgw <gateway name>|[stun-auto-disable|stun-enabled] [true|false]]|siptrace [on|off]\n"
-		"sofia status profile <name> [ reg <contact str> ] | [ pres <pres str> ]\n"
+		"sofia status profile <name> [ reg <contact str> ] | [ pres <pres str> ] | [ user <user@domain> ]\n"
 		"sofia status gateway <name>\n"
 		"sofia loglevel <all|default|tport|iptsec|nea|nta|nth_client|nth_server|nua|soa|sresolv|stun> [0-9]\n"
 		"--------------------------------------------------------------------------------\n";
