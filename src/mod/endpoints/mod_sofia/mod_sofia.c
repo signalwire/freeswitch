@@ -678,6 +678,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int payload = 0;
+	uint32_t sanity = 1000;
 
 	switch_assert(tech_pvt != NULL);
 
@@ -691,7 +692,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	}
 
 	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session) && !switch_channel_test_flag(channel, CF_REQ_MEDIA))) {
-		if (switch_channel_ready(channel)) {
+		if (--sanity && switch_channel_ready(channel)) {
 			switch_yield(10000);
 		} else {
 			return SWITCH_STATUS_GENERR;
