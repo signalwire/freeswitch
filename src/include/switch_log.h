@@ -143,6 +143,10 @@ SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(_In_z_ const char *str);
 SWITCH_DECLARE(uint32_t) switch_log_str2mask(_In_z_ const char *str);
 #define switch_log_check_mask(_mask, _level) (_mask & (1 << _level))
 
+
+SWITCH_DECLARE(switch_log_node_t*) switch_log_node_dup(const switch_log_node_t *node);
+SWITCH_DECLARE(void) switch_log_node_free(switch_log_node_t **pnode);
+
 ///\}
 SWITCH_END_EXTERN_C
 #endif

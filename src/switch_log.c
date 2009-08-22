@@ -97,7 +97,26 @@ static switch_log_node_t* switch_log_node_alloc()
 	return node;
 }
 
-static void switch_log_node_free(switch_log_node_t **pnode)
+SWITCH_DECLARE(switch_log_node_t*) switch_log_node_dup(const switch_log_node_t *node)
+{
+	switch_log_node_t *newnode = switch_log_node_alloc();
+	
+	*newnode = *node;
+	
+	if (!switch_strlen_zero(node->data)) {
+		newnode->data = strdup(node->data);	
+		switch_assert(node->data);
+	}
+	
+	if (!switch_strlen_zero(node->userdata)) {
+		newnode->userdata = strdup(node->userdata);
+		switch_assert(node->userdata);
+	}
+	
+	return newnode;
+}
+
+SWITCH_DECLARE(void) switch_log_node_free(switch_log_node_t **pnode)
 {
 	switch_log_node_t *node;
 	
@@ -284,6 +303,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *t, void *obj)
 		switch_mutex_unlock(BINDLOCK);
 
 		switch_log_node_free(&node);
+
 	}
 
 	THREAD_RUNNING = 0;

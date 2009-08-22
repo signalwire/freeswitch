@@ -144,12 +144,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 	switch_mutex_lock(globals.listener_mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
 		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level) {
-			switch_log_node_t *dnode = malloc(sizeof(*node));
-
-			switch_assert(dnode);
-			*dnode = *node;
-			dnode->data = strdup(node->data);
-			switch_assert(dnode->data);
+			switch_log_node_t *dnode = switch_log_node_dup(node);			
 			
 			if (switch_queue_trypush(l->log_queue, dnode) == SWITCH_STATUS_SUCCESS) {
 				if (l->lost_logs) {
@@ -163,8 +158,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 					}
 				}
 			} else {
-				switch_safe_free(dnode->data);
-				switch_safe_free(dnode);
+				switch_log_node_free(&dnode);
 				l->lost_logs++;
 			}
 		}
@@ -182,8 +176,7 @@ static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch
 		while (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_log_node_t *dnode = (switch_log_node_t *) pop;
 			if (dnode) {
-				free(dnode->data);
-				free(dnode);
+				switch_log_node_free(&dnode);
 			}
 		}
 	}
@@ -889,8 +882,7 @@ SWITCH_STANDARD_API(event_sink_function)
 									   encode_buf
 									   );
 				free(encode_buf);
-				free(dnode->data);
-				free(dnode);
+				switch_log_node_free(&dnode);
 			}
 
 			stream->write_function(stream, "</log_data>\n");
@@ -1168,10 +1160,9 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 						switch_socket_send(listener->sock, buf, &len);
 						len = strlen(dnode->data);
 						switch_socket_send(listener->sock, dnode->data, &len);
-
-						free(dnode->data);
-						free(dnode);
 					}
+					
+					switch_log_node_free(&dnode);
 					do_sleep = 0;
 				}
 			}
