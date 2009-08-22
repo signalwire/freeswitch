@@ -322,9 +322,12 @@ int skypiax_signaling_read(private_t * tech_pvt)
 						tech_pvt->skype_callflow = CALLFLOW_STATUS_EARLYMEDIA;
 						tech_pvt->interface_state = SKYPIAX_STATE_DIALING;
 						DEBUGA_SKYPE("Our remote party in skype_call %s is EARLYMEDIA\n", SKYPIAX_P_LOG, id);
-						if (start_audio_threads(tech_pvt)) {
-							ERRORA("start_audio_threads FAILED\n", SKYPIAX_P_LOG);
-							return CALLFLOW_INCOMING_HANGUP;
+						if(tech_pvt->tcp_cli_thread == NULL){
+							DEBUGA_SKYPE("START start_audio_threads\n", SKYPIAX_P_LOG);
+							if (start_audio_threads(tech_pvt)) {
+								ERRORA("start_audio_threads FAILED\n", SKYPIAX_P_LOG);
+								return CALLFLOW_INCOMING_HANGUP;
+							}
 						}
 						skypiax_sleep(1000);
 						sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id, tech_pvt->tcp_cli_port);
@@ -405,15 +408,18 @@ int skypiax_signaling_read(private_t * tech_pvt)
 							if (!strlen(tech_pvt->session_uuid_str) || !strlen(tech_pvt->skype_call_id)
 								|| !strcasecmp(tech_pvt->skype_call_id, id)) {
 								skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
-								tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
 								DEBUGA_SKYPE("skype_call: %s is now active\n", SKYPIAX_P_LOG, id);
 
 								if (tech_pvt->skype_callflow != CALLFLOW_STATUS_EARLYMEDIA) {
+									tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
 									tech_pvt->interface_state = SKYPIAX_STATE_UP;
 
-									if (start_audio_threads(tech_pvt)) {
-										ERRORA("start_audio_threads FAILED\n", SKYPIAX_P_LOG);
-										return CALLFLOW_INCOMING_HANGUP;
+									if(tech_pvt->tcp_cli_thread == NULL){
+										DEBUGA_SKYPE("START start_audio_threads\n", SKYPIAX_P_LOG);
+										if (start_audio_threads(tech_pvt)) {
+											ERRORA("start_audio_threads FAILED\n", SKYPIAX_P_LOG);
+											return CALLFLOW_INCOMING_HANGUP;
+										}
 									}
 									skypiax_sleep(1000);	//FIXME
 									sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id, tech_pvt->tcp_cli_port);
@@ -422,6 +428,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 									sprintf(msg_to_skype, "#output ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id, tech_pvt->tcp_srv_port);
 									skypiax_signaling_write(tech_pvt, msg_to_skype);
 								}
+								tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
 								if (!strlen(tech_pvt->session_uuid_str)) {
 									DEBUGA_SKYPE("New Inbound Channel!\n\n\n\n", SKYPIAX_P_LOG);
 									new_inbound_channel(tech_pvt);
@@ -550,7 +557,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 
   /****************************/
 
-			while ((fd = accept(s, (struct sockaddr *) &remote_addr, &sin_size)) > 0) {
+			while (s > 0 && (fd = accept(s, (struct sockaddr *) &remote_addr, &sin_size)) > 0) {
 				DEBUGA_SKYPE("ACCEPTED here I send you %d\n", SKYPIAX_P_LOG, tech_pvt->tcp_srv_port);
 				if (!(running && tech_pvt->running))
 					break;
@@ -655,15 +662,13 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 
 				DEBUGA_SKYPE("Skype incoming audio GONE\n", SKYPIAX_P_LOG);
 				skypiax_close_socket(fd);
-				//if (exit)
-				break;
 			}
 		}
 	}
 
 	DEBUGA_SKYPE("incoming audio server (I am it) EXITING\n", SKYPIAX_P_LOG);
 	skypiax_close_socket(s);
-	tech_pvt->tcp_srv_thread = NULL;
+	s=-1;
 	return NULL;
 }
 
@@ -725,7 +730,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 
   /****************************/
 
-			while ((fd = accept(s, (struct sockaddr *) &remote_addr, &sin_size)) > 0) {
+			while (s > 0 && (fd = accept(s, (struct sockaddr *) &remote_addr, &sin_size)) > 0) {
 				DEBUGA_SKYPE("ACCEPTED here you send me %d\n", SKYPIAX_P_LOG, tech_pvt->tcp_cli_port);
 #ifndef WIN32
 				fcntl(tech_pvt->audioskypepipe[0], F_SETFL, O_NONBLOCK);
@@ -836,14 +841,13 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 				}
 				DEBUGA_SKYPE("Skype outbound audio GONE\n", SKYPIAX_P_LOG);
 				skypiax_close_socket(fd);
-				break;
 			}
 		}
 	}
 
 	DEBUGA_SKYPE("outbound audio server (I am it) EXITING\n", SKYPIAX_P_LOG);
 	skypiax_close_socket(s);
-	tech_pvt->tcp_cli_thread = NULL;
+	s=-1;
 	return NULL;
 }
 
@@ -949,8 +953,12 @@ int skypiax_pipe_read(int pipe, short *buf, int howmany)
 
 int skypiax_pipe_write(int pipe, short *buf, int howmany)
 {
-	howmany = write(pipe, buf, howmany);
-	return howmany;
+	if(buf){
+		howmany = write(pipe, buf, howmany);
+		return howmany;
+	} else {
+		return 0;
+	}
 }
 
 int skypiax_close_socket(unsigned int fd)
@@ -1452,6 +1460,8 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 		if (!skypiax_send_message(SkypiaxHandles, buf)) {
 			ERRORA("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch Skypiax again\n", SKYPIAX_P_LOG);
 			running = 0;
+			if(disp)
+				XCloseDisplay(disp);
 			return NULL;
 		}
 
@@ -1459,6 +1469,8 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 		if (!skypiax_send_message(SkypiaxHandles, buf)) {
 			ERRORA("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch Skypiax again\n", SKYPIAX_P_LOG);
 			running = 0;
+			if(disp)
+				XCloseDisplay(disp);
 			return NULL;
 		}
 
@@ -1472,6 +1484,7 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 		Atom atom_begin = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
 		Atom atom_continue = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE", False);
 
+		memset(buffer, '\0', 17000);
 		b = buffer;
 
 		while (1) {
@@ -1539,9 +1552,13 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 	} else {
 		ERRORA("Skype is not running, maybe crashed. Please run/restart Skype and relaunch Skypiax\n", SKYPIAX_P_LOG);
 		running = 0;
+		if(disp)
+			XCloseDisplay(disp);
 		return NULL;
 	}
 	//running = 0;
+	if(disp)
+		XCloseDisplay(disp);
 	return NULL;
 
 }

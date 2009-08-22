@@ -570,10 +570,17 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 		switch_clear_flag(tech_pvt, TFLAG_VOICE);
 		switch_set_flag(tech_pvt, TFLAG_HANGUP);
 		if (tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD) {
-			ERRORA("%s CHANNEL got SWITCH_SIG_KILL\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
+			ERRORA("FYI %s CHANNEL in CALLFLOW_STATUS_REMOTEHOLD got SWITCH_SIG_KILL\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
 			channel_on_hangup(session);
 		}
-
+		if (switch_channel_get_state(channel) == CS_NEW) {
+			ERRORA("FYI %s CHANNEL in CS_NEW state got SWITCH_SIG_KILL\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
+			channel_on_hangup(session);
+		}
+		if ( switch_channel_get_state(channel) != CS_NEW && switch_channel_get_state(channel) < CS_EXECUTE) {
+			ERRORA("FYI %s CHANNEL in %d state got SWITCH_SIG_KILL\n", SKYPIAX_P_LOG, switch_channel_get_name(channel), switch_channel_get_state(channel));
+			channel_on_hangup(session);
+		}
 		//switch_mutex_unlock(tech_pvt->flag_mutex);
 		break;
 	case SWITCH_SIG_BREAK:
@@ -1281,6 +1288,7 @@ static switch_status_t load_config(int reload_type)
 				WARNINGA("STARTING interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
 
 				switch_threadattr_create(&skypiax_api_thread_attr, skypiax_module_pool);
+				switch_threadattr_detach_set(skypiax_api_thread_attr, 1);
 				switch_threadattr_stacksize_set(skypiax_api_thread_attr, SWITCH_THREAD_STACKSIZE);
 				switch_thread_create(&globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread,
 									 skypiax_api_thread_attr, skypiax_do_skypeapi_thread, &globals.SKYPIAX_INTERFACES[interface_id], skypiax_module_pool);
@@ -1288,6 +1296,7 @@ static switch_status_t load_config(int reload_type)
 				switch_sleep(100000);
 
 				switch_threadattr_create(&skypiax_signaling_thread_attr, skypiax_module_pool);
+				switch_threadattr_detach_set(skypiax_signaling_thread_attr, 1);
 				switch_threadattr_stacksize_set(skypiax_signaling_thread_attr, SWITCH_THREAD_STACKSIZE);
 				switch_thread_create(&globals.SKYPIAX_INTERFACES[interface_id].
 									 skypiax_signaling_thread, skypiax_signaling_thread_attr,
@@ -1793,7 +1802,7 @@ SWITCH_STANDARD_API(sk_function)
 
 			if (strlen(globals.SKYPIAX_INTERFACES[i].name)) {
 				stream->write_function(stream,
-									   "%c %d\t[%s]\t%3ld/%ld\t%6ld/%ld\t%s\t%s\t%s\n",
+									   "%c %d\t[%s]\t%3u/%u\t%6u/%u\t%s\t%s\t%s\n",
 									   next_flag_char,
 									   i, globals.SKYPIAX_INTERFACES[i].name,
 									   globals.SKYPIAX_INTERFACES[i].ib_failed_calls,
@@ -1808,7 +1817,7 @@ SWITCH_STANDARD_API(sk_function)
 
 		}
 		stream->write_function(stream, "\nTotal Interfaces: %d  IB Calls(Failed/Total): %ld/%ld  OB Calls(Failed/Total): %ld/%ld\n",
-		       globals.real_interfaces - 1, ib_failed, ib, ob_failed, ob);
+		       globals.real_interfaces > 0 ? globals.real_interfaces - 1 : 0, ib_failed, ib, ob_failed, ob);
 
 	} else if (!strcasecmp(argv[0], "console")) {
 		int i;
