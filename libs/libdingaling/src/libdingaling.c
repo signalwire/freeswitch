@@ -1019,7 +1019,7 @@ static int on_commands(void *user_data, ikspak *pak)
 				}
 			}
 		}
-		xml = iks_child (xml);
+		xml = iks_next_tag(xml);
 	}
 
 
