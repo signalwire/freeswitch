@@ -2337,6 +2337,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	char *last_app = NULL, *last_arg = NULL;
 	char start[80] = "", answer[80] = "", progress[80] = "", progress_media[80] = "", end[80] = "", tmp[80] = "", profile_start[80] = "";
 	int32_t duration = 0, legbillsec = 0, billsec = 0, mduration = 0, billmsec = 0, legbillmsec = 0, progressmsec = 0, progress_mediamsec = 0;
+	int32_t answersec = 0, answermsec = 0;
+	switch_time_t answerusec = 0;
 	switch_time_t uduration = 0, legbillusec = 0, billusec = 0, progresssec = 0, progressusec = 0, progress_mediasec = 0, progress_mediausec = 0;
 	time_t tt_created = 0, tt_answered = 0, tt_progress = 0, tt_progress_media = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_hungup =
 		0, tt_prof_created, mtt_prof_created, mtt_progress = 0, mtt_progress_media = 0;
@@ -2477,6 +2479,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 			legbillsec = (int32_t) (tt_hungup - tt_prof_created);
 			legbillmsec = (int32_t) (mtt_hungup - mtt_prof_created);
 			legbillusec = caller_profile->times->hungup - caller_profile->times->profile_created;
+
+			answersec = (int32_t) (tt_answered - tt_prof_created);
+			answermsec = (int32_t) (mtt_answered - mtt_prof_created);
+			answerusec = caller_profile->times->answered - caller_profile->times->profile_created;
 		}
 
 		if (caller_profile->times->progress) {
@@ -2507,6 +2513,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, progresssec);
 	switch_channel_set_variable(channel, "progresssec", tmp);
 
+	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, answersec);
+	switch_channel_set_variable(channel, "answersec", tmp);
+
 	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, progress_mediasec);
 	switch_channel_set_variable(channel, "progress_mediasec", tmp);
 
@@ -2522,6 +2531,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%d", progressmsec);
 	switch_channel_set_variable(channel, "progressmsec", tmp);
 
+	switch_snprintf(tmp, sizeof(tmp), "%d", answermsec);
+	switch_channel_set_variable(channel, "answermsec", tmp);
+
 	switch_snprintf(tmp, sizeof(tmp), "%d" , progressmsec);
 	switch_channel_set_variable(channel, "progress_mediamsec", tmp);
 
@@ -2536,6 +2548,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 
 	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, progressusec);
 	switch_channel_set_variable(channel, "progressusec", tmp);
+
+	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, answerusec);
+	switch_channel_set_variable(channel, "answerusec", tmp);
 
 	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, progress_mediausec);
 	switch_channel_set_variable(channel, "progress_mediausec", tmp);
