@@ -245,7 +245,7 @@ switch_status_t init_nat_monitor(switch_memory_pool_t *pool)
 static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t *thread, void *obj)
 {
 	char *buf = NULL;
-	char newip[16];
+	char newip[16] = "";
 	char *pos;
 	switch_event_t *event = NULL;
 	
@@ -283,6 +283,7 @@ static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t *th
 					if (!strncmp(pos, "ssdp:alive", 10)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got UPnP keep alive packet: \n%s\n", buf);
 						/* did pub ip change */
+						newip[0] = '\0';
 						if (get_upnp_pubaddr(newip) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to get current pubaddr after receiving UPnP keep alive packet.\n");
 						}
