@@ -1271,7 +1271,7 @@ int X11_errors_handler(Display * dpy, XErrorEvent * err)
 
 	xerror = err->error_code;
 	ERRORA("Received error code %d from X Server\n\n", SKYPIAX_P_LOG, xerror);	///FIXME why crash the entire skypiax? just crash the interface, instead
-	running = 0;
+	//running = 0;
 	return 0;					/*  ignore the error */
 }
 
@@ -1287,15 +1287,16 @@ static int X11_errors_untrap(void)
 	return (xerror != BadValue) && (xerror != BadWindow);
 }
 
-int skypiax_send_message(struct SkypiaxHandles *SkypiaxHandles, const char *message_P)
+int skypiax_send_message(private_t * tech_pvt, const char *message_P)
 {
-
+	struct SkypiaxHandles *SkypiaxHandles;
 	Window w_P;
 	Display *disp;
 	Window handle_P;
 	int ok;
-	private_t *tech_pvt = NULL;
+	//private_t *tech_pvt = NULL;
 
+	SkypiaxHandles = &tech_pvt->SkypiaxHandles;
 	w_P = SkypiaxHandles->skype_win;
 	disp = SkypiaxHandles->disp;
 	handle_P = SkypiaxHandles->win;
@@ -1328,8 +1329,11 @@ int skypiax_send_message(struct SkypiaxHandles *SkypiaxHandles, const char *mess
 	XSync(disp, False);
 	ok = X11_errors_untrap();
 
-	if (!ok)
+	if (!ok){
 		ERRORA("Sending message failed with status %d\n", SKYPIAX_P_LOG, xerror);
+		tech_pvt->running = 0;
+		return 0;
+	}
 	//XUnlockDisplay(disp);
 
 	return 1;
@@ -1337,13 +1341,11 @@ int skypiax_send_message(struct SkypiaxHandles *SkypiaxHandles, const char *mess
 
 int skypiax_signaling_write(private_t * tech_pvt, char *msg_to_skype)
 {
-	struct SkypiaxHandles *SkypiaxHandles;
 
 	DEBUGA_SKYPE("SENDING: |||%s||||\n", SKYPIAX_P_LOG, msg_to_skype);
 
-	SkypiaxHandles = &tech_pvt->SkypiaxHandles;
 
-	if (!skypiax_send_message(SkypiaxHandles, msg_to_skype)) {
+	if (!skypiax_send_message(tech_pvt, msg_to_skype)) {
 		ERRORA
 			("Sending message failed - probably Skype crashed.\n\nPlease shutdown Skypiax, then restart Skype, then launch Skypiax and try again.\n",
 			 SKYPIAX_P_LOG);
@@ -1457,7 +1459,7 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 
 		snprintf(buf, 512, "NAME skypiax");
 
-		if (!skypiax_send_message(SkypiaxHandles, buf)) {
+		if (!skypiax_send_message(tech_pvt, buf)) {
 			ERRORA("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch Skypiax again\n", SKYPIAX_P_LOG);
 			running = 0;
 			if(disp)
@@ -1466,7 +1468,7 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 		}
 
 		snprintf(buf, 512, "PROTOCOL 7");
-		if (!skypiax_send_message(SkypiaxHandles, buf)) {
+		if (!skypiax_send_message(tech_pvt, buf)) {
 			ERRORA("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch Skypiax again\n", SKYPIAX_P_LOG);
 			running = 0;
 			if(disp)
@@ -1487,7 +1489,7 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 		memset(buffer, '\0', 17000);
 		b = buffer;
 
-		while (1) {
+		while (running && tech_pvt->running) {
 			XNextEvent(disp, &an_event);
 			if (!(running && tech_pvt->running))
 				break;

@@ -359,17 +359,19 @@ static switch_status_t remove_interface(char *the_interface)
 			globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread = NULL;
 		}
 #else
-		XEvent e;
-		Atom atom1 = XInternAtom(tech_pvt->SkypiaxHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
-		memset(&e, 0, sizeof(e));
-		e.xclient.type = ClientMessage;
-		e.xclient.message_type = atom1;	/*  leading message */
-		e.xclient.display = tech_pvt->SkypiaxHandles.disp;
-		e.xclient.window = tech_pvt->SkypiaxHandles.skype_win;
-		e.xclient.format = 8;
+		if(tech_pvt->running && tech_pvt->SkypiaxHandles.disp){
+			XEvent e;
+			Atom atom1 = XInternAtom(tech_pvt->SkypiaxHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
+			memset(&e, 0, sizeof(e));
+			e.xclient.type = ClientMessage;
+			e.xclient.message_type = atom1;	/*  leading message */
+			e.xclient.display = tech_pvt->SkypiaxHandles.disp;
+			e.xclient.window = tech_pvt->SkypiaxHandles.skype_win;
+			e.xclient.format = 8;
 
-		XSendEvent(tech_pvt->SkypiaxHandles.disp, tech_pvt->SkypiaxHandles.win, False, 0, &e);
-		XSync(tech_pvt->SkypiaxHandles.disp, False);
+			XSendEvent(tech_pvt->SkypiaxHandles.disp, tech_pvt->SkypiaxHandles.win, False, 0, &e);
+			XSync(tech_pvt->SkypiaxHandles.disp, False);
+		}
 #endif
 	}
 
@@ -1441,18 +1443,20 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 					globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread = NULL;
 				}
 #else
-				XEvent e;
-				Atom atom1 = XInternAtom(tech_pvt->SkypiaxHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN",
-										 False);
-				memset(&e, 0, sizeof(e));
-				e.xclient.type = ClientMessage;
-				e.xclient.message_type = atom1;	/*  leading message */
-				e.xclient.display = tech_pvt->SkypiaxHandles.disp;
-				e.xclient.window = tech_pvt->SkypiaxHandles.skype_win;
-				e.xclient.format = 8;
+				if(tech_pvt->SkypiaxHandles.disp){
+					XEvent e;
+					Atom atom1 = XInternAtom(tech_pvt->SkypiaxHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN",
+							False);
+					memset(&e, 0, sizeof(e));
+					e.xclient.type = ClientMessage;
+					e.xclient.message_type = atom1;	/*  leading message */
+					e.xclient.display = tech_pvt->SkypiaxHandles.disp;
+					e.xclient.window = tech_pvt->SkypiaxHandles.skype_win;
+					e.xclient.format = 8;
 
-				XSendEvent(tech_pvt->SkypiaxHandles.disp, tech_pvt->SkypiaxHandles.win, False, 0, &e);
-				XSync(tech_pvt->SkypiaxHandles.disp, False);
+					XSendEvent(tech_pvt->SkypiaxHandles.disp, tech_pvt->SkypiaxHandles.win, False, 0, &e);
+					XSync(tech_pvt->SkypiaxHandles.disp, False);
+				}
 #endif
 			}
 			x = 10;
