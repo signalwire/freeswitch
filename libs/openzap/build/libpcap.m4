@@ -123,10 +123,7 @@ AC_ARG_WITH(pcap-include,
 	fi
 
 	AC_MSG_CHECKING(whether to include pcap)
-	if test "X$ac_cv_pcap_where_lib" = "X" -a "X$ac_cv_pcap_where_inc" = "X"; then
-	  ac_cv_found_pcap=no
-	  AC_MSG_RESULT(no)
-	else
+	if test "X$ac_cv_pcap_where_lib" != "X" -a "X$ac_cv_pcap_where_inc" != "X"; then
 	  ac_cv_found_pcap=yes
 	  AC_MSG_RESULT(yes)
 	  PCAP_INC_DIR=$ac_cv_pcap_where_inc
@@ -138,6 +135,9 @@ AC_ARG_WITH(pcap-include,
 	  AC_SUBST(PCAP_INC_FLAGS)
 	  AC_SUBST(PCAP_LIB_FLAGS)
 	  AC_DEFINE([HAVE_LIBPCAP],[1],[libpcap])
+        else
+	  ac_cv_found_pcap=no
+	  AC_MSG_RESULT(no)
 	fi
 	])
 
