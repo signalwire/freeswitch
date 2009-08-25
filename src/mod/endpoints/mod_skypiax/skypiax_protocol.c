@@ -25,12 +25,19 @@ XErrorHandler old_handler = 0;
 int xerror = 0;
 #endif /* WIN32 */
 /*************************************/
-
+#ifndef WIN32
 int skypiax_socket_create_and_bind(private_t * tech_pvt, int *which_port)
+#else
+int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_port)
+#endif //WIN32
 {
 	int s = -1;
 	struct sockaddr_in my_addr;
+#ifndef WIN32
 	int start_port = 6001;
+#else
+unsigned short start_port = 6001;
+#endif //WIN32
 
 	memset(&my_addr, 0, sizeof(my_addr));
 	my_addr.sin_family = AF_INET;
