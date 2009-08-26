@@ -618,6 +618,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	int timelimit = 60;
 	const char *var;
 	switch_time_t start = 0;
+	const char *cancel_key = NULL;
 
 	switch_assert(peer_channel);
 	
@@ -643,6 +644,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	start = switch_micro_time_now();
 
 	if (caller_channel) {
+		cancel_key = switch_channel_get_variable(caller_channel, "origination_cancel_key");
+
 		if (switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
 			ringback_data = switch_channel_get_variable(caller_channel, "transfer_ringback");
 		}
@@ -757,6 +760,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	while (switch_channel_ready(peer_channel)
 		   && !(switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA))) {
 		int diff = (int) (switch_micro_time_now() - start);
+
+		if (caller_channel && cancel_key) {
+			if (switch_channel_has_dtmf(caller_channel)) {
+				switch_dtmf_t dtmf = { 0, 0 };
+				if (switch_channel_dequeue_dtmf(caller_channel, &dtmf) == SWITCH_STATUS_SUCCESS) {
+					if (dtmf.digit == *cancel_key) {
+						status = SWITCH_STATUS_FALSE;
+						goto done;
+					}
+				}
+			}
+		}
 
 		if (diff > timelimit) {
 			status = SWITCH_STATUS_TIMEOUT;
@@ -929,7 +944,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	originate_global_t oglobals = { 0 };
 	int cdr_total = 0;
 	int local_clobber = 0;
-	
+	const char *cancel_key = NULL;
+
 	oglobals.idx = IDX_NADA;
 	oglobals.early_ok = 1;
 	oglobals.session = session;
@@ -1103,6 +1119,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if (caller_channel) {		/* ringback is only useful when there is an originator */
 		ringback_data = NULL;
+		cancel_key = switch_channel_get_variable(caller_channel, "origination_cancel_key");
 
 		if (switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
 			ringback_data = switch_channel_get_variable(caller_channel, "transfer_ringback");
@@ -1870,6 +1887,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					switch_status_t tstatus = SWITCH_STATUS_SUCCESS;
 					int silence = 0;
+
+					if (caller_channel && cancel_key) {
+						if (switch_channel_has_dtmf(caller_channel)) {
+							switch_dtmf_t dtmf = { 0, 0 };
+							if (switch_channel_dequeue_dtmf(caller_channel, &dtmf) == SWITCH_STATUS_SUCCESS) {
+								if (dtmf.digit == *cancel_key) {
+									oglobals.idx = IDX_TIMEOUT;
+									goto notready;
+								}
+							}
+						}
+					}
 
 					if (switch_channel_media_ready(caller_channel)) {
 						tstatus = switch_core_session_read_frame(oglobals.session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
