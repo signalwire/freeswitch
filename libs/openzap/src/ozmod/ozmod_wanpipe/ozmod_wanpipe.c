@@ -158,7 +158,12 @@ static __inline__ int tdmv_api_wait_socket(zap_channel_t *zchan, int timeout, in
 static __inline__ sng_fd_t tdmv_api_open_span_chan(int span, int chan) 
 {
 	return sangoma_open_tdmapi_span_chan(span, chan);
-}            
+}
+
+static __inline__ sng_fd_t __tdmv_api_open_span_chan(int span, int chan) 
+{ 
+	return  __sangoma_open_tdmapi_span_chan(span, chan);
+}                        
 
 static zap_io_interface_t wanpipe_interface;
 
@@ -209,7 +214,12 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 		zap_socket_t sockfd = WP_INVALID_SOCKET;
 		const char *dtmf = "none";
 
-		sockfd = tdmv_api_open_span_chan(spanno, x);
+		if (!strncasecmp(span->name, "smg_prid_nfas", 8) && span->trunk_type == ZAP_TRUNK_T1 && x == 24) {
+			sockfd = __tdmv_api_open_span_chan(spanno, x);
+		} else {
+			sockfd = tdmv_api_open_span_chan(spanno, x);
+		}
+
 		if (sockfd == WP_INVALID_SOCKET) {
 			zap_log(ZAP_LOG_ERROR, "Failed to open wanpipe device span %d channel %d\n", spanno, x);
 			continue;
@@ -233,7 +243,7 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 			chan->physical_span_id = spanno;
 			chan->physical_chan_id = x;
 			chan->rate = 8000;
-
+			
 			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO || type == ZAP_CHAN_TYPE_B) {
 				int err;
 				
@@ -635,6 +645,7 @@ static ZIO_WRITE_FUNCTION(wanpipe_write)
  * \param to Time to wait (in ms)
  * \return Success, failure or timeout
  */
+
 static ZIO_WAIT_FUNCTION(wanpipe_wait)
 {
 	int32_t inflags = 0;
@@ -703,6 +714,9 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	for(i = 1; i <= span->chan_count; i++) {
 		zap_channel_t *zchan = span->channels[i];
 
+		if (!strncasecmp(span->name, "smg_prid_nfas", 8) && span->trunk_type == ZAP_TRUNK_T1 && zchan->physical_chan_id == 24) {
+			continue;
+		} 
 
 #ifdef LIBSANGOMA_VERSION
 		if (!zchan->mod_data) {
