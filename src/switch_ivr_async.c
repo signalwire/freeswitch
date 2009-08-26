@@ -2311,6 +2311,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	char *cause = NULL;
 	char *mypath;
 	char *p;
+	int custom = 0;
 
 	switch_assert(path);
 
@@ -2320,29 +2321,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 
 	channel = switch_core_session_get_channel(session);
 
-	if ((switch_channel_test_flag(channel, CF_EVENT_PARSE))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Channel [%s][%s] already broadcasting...broadcast aborted\n",
-						  switch_channel_get_name(channel), path);
-		switch_core_session_rwunlock(session);
-		return SWITCH_STATUS_FALSE;
-	}
-
 	mypath = strdup(path);
-
-	if (!mypath) {
-		switch_core_session_rwunlock(session);
-		return SWITCH_STATUS_MEMERR;
-	}
-
-	if ((nomedia = switch_channel_test_flag(channel, CF_PROXY_MODE))) {
-		switch_ivr_media(uuid, SMF_REBRIDGE);
-	}
+	assert(mypath);
 
 	if ((p = strchr(mypath, ':')) && *(p + 1) == ':') {
 		app = mypath;
 		*p++ = '\0';
 		*p++ = '\0';
 		path = p;
+		custom++;
+	}
+
+	if (!custom && (switch_channel_test_flag(channel, CF_EVENT_PARSE))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Channel [%s][%s] already broadcasting...broadcast aborted\n",
+						  switch_channel_get_name(channel), path);
+		switch_core_session_rwunlock(session);
+		switch_safe_free(mypath);		
+		return SWITCH_STATUS_FALSE;
+	}
+
+
+	if ((nomedia = switch_channel_test_flag(channel, CF_PROXY_MODE))) {
+		switch_ivr_media(uuid, SMF_REBRIDGE);
 	}
 
 	if ((cause = strchr(app, '!'))) {

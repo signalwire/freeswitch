@@ -470,10 +470,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 	cmd_hash = switch_hashfunc_default(cmd, &hlen);
 
-	switch_channel_set_flag(channel, CF_EVENT_PARSE);
+	switch_channel_set_flag_recursive(channel, CF_EVENT_PARSE);
 
 	if (switch_true(event_lock)) {
-		switch_channel_set_flag(channel, CF_EVENT_LOCK);
+		switch_channel_set_flag_recursive(channel, CF_EVENT_LOCK);
 	}
 
 	if (lead_frames) {
@@ -604,8 +604,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	status = SWITCH_STATUS_SUCCESS;
 
   done:
-	switch_channel_clear_flag(channel, CF_EVENT_PARSE);
-	switch_channel_clear_flag(channel, CF_EVENT_LOCK);
+	switch_channel_clear_flag_recursive(channel, CF_EVENT_PARSE);
+	switch_channel_clear_flag_recursive(channel, CF_EVENT_LOCK);
 
 	return status;
 }

@@ -119,7 +119,7 @@ struct switch_channel {
 	switch_core_session_t *session;
 	switch_channel_state_t state;
 	switch_channel_state_t running_state;
-	uint8_t flags[CF_FLAG_MAX];
+	uint32_t flags[CF_FLAG_MAX];
 	uint8_t state_flags[CF_FLAG_MAX];
 	uint32_t private_flags;
 	uint32_t app_flags;
@@ -844,6 +844,20 @@ SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_c
 	}
 }
 
+SWITCH_DECLARE(void) switch_channel_set_flag_recursive(switch_channel_t *channel, switch_channel_flag_t flag)
+{
+	switch_assert(channel);
+	switch_assert(channel->flag_mutex);
+
+	switch_mutex_lock(channel->flag_mutex);
+	channel->flags[flag]++;
+	switch_mutex_unlock(channel->flag_mutex);
+
+	if (flag == CF_OUTBOUND) {
+		switch_channel_set_variable(channel, "is_outbound", "true");
+	}
+}
+
 
 SWITCH_DECLARE(void) switch_channel_set_private_flag(switch_channel_t *channel, uint32_t flags)
 {
@@ -910,6 +924,22 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 
 	switch_mutex_lock(channel->flag_mutex);
 	channel->flags[flag] = 0;
+	switch_mutex_unlock(channel->flag_mutex);
+	if (flag == CF_OUTBOUND) {
+		switch_channel_set_variable(channel, "is_outbound", NULL);
+	}
+}
+
+
+SWITCH_DECLARE(void) switch_channel_clear_flag_recursive(switch_channel_t *channel, switch_channel_flag_t flag)
+{
+	switch_assert(channel != NULL);
+	switch_assert(channel->flag_mutex);
+
+	switch_mutex_lock(channel->flag_mutex);
+	if (channel->flags[flag]) {
+		channel->flags[flag]--;
+	}
 	switch_mutex_unlock(channel->flag_mutex);
 	if (flag == CF_OUTBOUND) {
 		switch_channel_set_variable(channel, "is_outbound", NULL);

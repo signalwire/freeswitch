@@ -290,6 +290,7 @@ SWITCH_DECLARE(uint32_t) switch_channel_test_flag(switch_channel_t *channel, swi
   \param flag or'd list of flags to set
 */
 SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flag);
+SWITCH_DECLARE(void) switch_channel_set_flag_recursive(switch_channel_t *channel, switch_channel_flag_t flag);
 
 /*!
   \brief Set given flag(s) on a given channel's bridge partner
@@ -322,6 +323,7 @@ SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, sw
   \param flag flag to clear
 */
 SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flag);
+SWITCH_DECLARE(void) switch_channel_clear_flag_recursive(switch_channel_t *channel, switch_channel_flag_t flag);
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *channel, const char *file, const char *func, int line);
 
