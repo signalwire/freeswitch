@@ -58,11 +58,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 	for (l = listen_list.listeners; l; l = l->next) {
 		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level) {
 
-			switch_log_node_t *dnode = malloc(sizeof(*node));
-			switch_assert(dnode);
-			*dnode = *node;
-			dnode->data = strdup(node->data);
-			switch_assert(dnode->data);
+			 switch_log_node_t *dnode = switch_log_node_dup(node); 
 
 			if (switch_queue_trypush(l->log_queue, dnode) == SWITCH_STATUS_SUCCESS) {
 				if (l->lost_logs) {
@@ -76,8 +72,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 					}
 				}
 			} else {
-				switch_safe_free(dnode->data);
-				switch_safe_free(dnode);
+				switch_log_node_free(&dnode);
 				l->lost_logs++;
 			}
 		}
@@ -502,13 +497,13 @@ static switch_status_t notify_new_session(listener_t *listener, session_elem_t *
 	ei_x_encode_atom(&lbuf, "call");
 	ei_encode_switch_event(&lbuf, call_event);
 	switch_mutex_lock(listener->sock_mutex);
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_element->uuid_str), SWITCH_LOG_DEBUG, "Sending initial call event\n");
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_element->uuid_str), SWITCH_LOG_DEBUG, "Sending initial call event for %s\n", session_element->uuid_str);
 	result = ei_sendto(listener->ec, listener->sockfd, &session_element->process, &lbuf);
 
 	switch_mutex_unlock(listener->sock_mutex);
 
 	if (result) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_element->uuid_str), SWITCH_LOG_ERROR, "Failed to send call event\n");
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_element->uuid_str), SWITCH_LOG_ERROR, "Failed to send call event for %s\n", session_element->uuid_str);
 	}
 	
 	ei_x_free(&lbuf);
@@ -563,7 +558,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 
 			/* event is a channel destroy, so this session can be removed */
 			if (pevent->event_id == SWITCH_EVENT_CHANNEL_DESTROY) {
-				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(sp->uuid_str), SWITCH_LOG_DEBUG, "Destroy event for attached session for %s\n", sp->uuid_str);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(sp->uuid_str), SWITCH_LOG_DEBUG, "Destroy event for attached session for %s in state %s\n", sp->uuid_str, switch_channel_state_name(sp->channel_state));
 
 				/* this allows the application threads to exit */
 				removed = sp;
@@ -607,7 +602,7 @@ static void check_log_queue(listener_t *listener)
 				ei_x_new_with_version(&lbuf);
 				ei_x_encode_tuple_header(&lbuf, 2);
 				ei_x_encode_atom(&lbuf, "log");
-				ei_x_encode_list_header(&lbuf, 6);
+				ei_x_encode_list_header(&lbuf, 7);
 				
 				ei_x_encode_tuple_header(&lbuf, 2);
 				ei_x_encode_atom(&lbuf, "level");
@@ -632,6 +627,10 @@ static void check_log_queue(listener_t *listener)
 				ei_x_encode_tuple_header(&lbuf, 2);
 				ei_x_encode_atom(&lbuf, "data");
 				ei_x_encode_string(&lbuf, dnode->data);
+
+				ei_x_encode_tuple_header(&lbuf, 2);
+				ei_x_encode_atom(&lbuf, "user_data");
+				ei_x_encode_string(&lbuf, switch_str_nil(dnode->userdata));
 				
 				ei_x_encode_empty_list(&lbuf);
 				
@@ -640,8 +639,7 @@ static void check_log_queue(listener_t *listener)
 				switch_mutex_unlock(listener->sock_mutex);
 				
 				ei_x_free(&lbuf);
-				switch_safe_free(dnode->data);
-				switch_safe_free(dnode);
+				switch_log_node_free(&dnode);
 			}
 		}
 	}
@@ -700,7 +698,10 @@ static void handle_exit(listener_t *listener, erlang_pid *pid)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Log handler process for node %s exited\n", pid->node);
 		/*purge the log queue */
-		while (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS);
+		while (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_log_node_t *dnode = (switch_log_node_t *) pop;
+			switch_log_node_free(&dnode);
+		}
 
 		if (switch_test_flag(listener, LFLAG_LOG)) {
 			switch_clear_flag_locked(listener, LFLAG_LOG);
@@ -1073,8 +1074,11 @@ static switch_status_t state_handler(switch_core_session_t *session)
 	session_elem_t *session_element = switch_channel_get_private(channel, "_erlang_session_");
 	/*listener_t* listener = switch_channel_get_private(channel, "_erlang_listener_");*/
 	
-	if (session_element)
+	if (session_element) {
 		session_element->channel_state = state;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unable to update channel state for %s to %s\n", switch_core_session_get_uuid(session), switch_channel_state_name(state));
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1379,7 +1383,7 @@ SWITCH_STANDARD_API(erlang_cmd)
 				switch_mutex_lock(l->session_mutex);
 				if ((sp = l->session_list)) {
 					while(sp) {
-						stream->write_function(stream, "Outbound session for %s\n", sp->uuid_str);
+						stream->write_function(stream, "Outbound session for %s in state %s\n", sp->uuid_str, switch_channel_state_name(sp->channel_state));
 						sp = sp->next;
 					}
 				} else {
