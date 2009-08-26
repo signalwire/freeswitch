@@ -1049,7 +1049,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 		switch_channel_presence(channel, "unknown", (const char *) state_names[state], NULL);
 	}
 
-	if (state < CS_HANGUP) {
+	if (state <= CS_DESTROY) {
 		switch_event_t *event;
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
 			if (state == CS_ROUTING) {
@@ -1285,7 +1285,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 			channel->hangup_cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		}
 
-		if (state < CS_DESTROY) {
+		if (state <= CS_DESTROY) {
 			switch_core_session_signal_state_change(channel->session);
 		}
 	} else {

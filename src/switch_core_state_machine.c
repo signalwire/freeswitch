@@ -553,6 +553,7 @@ SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *se
 	int index = 0;
 
 	switch_assert(session != NULL);
+	switch_channel_set_running_state(session->channel, CS_DESTROY);
 
 	session->thread_running = 1;
 	endpoint_interface = session->endpoint_interface;
