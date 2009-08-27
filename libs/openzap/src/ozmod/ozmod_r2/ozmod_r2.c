@@ -1128,6 +1128,7 @@ static void *zap_r2_run(zap_thread_t *me, void *obj)
 	int i;
 
 	zap_log(ZAP_LOG_DEBUG, "OpenR2 monitor thread started.\n");
+  r2chan = NULL;
 	for (i = 1; i <= span->chan_count; i++) {
 		r2chan = R2CALL(span->channels[i])->r2chan;
 		openr2_chan_set_idle(r2chan);
