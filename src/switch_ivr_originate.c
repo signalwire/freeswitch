@@ -1893,7 +1893,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							switch_dtmf_t dtmf = { 0, 0 };
 							if (switch_channel_dequeue_dtmf(caller_channel, &dtmf) == SWITCH_STATUS_SUCCESS) {
 								if (dtmf.digit == *cancel_key) {
-									oglobals.idx = IDX_TIMEOUT;
+									oglobals.idx = IDX_CANCEL;
 									goto notready;
 								}
 							}
@@ -2014,10 +2014,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (switch_channel_up(originate_status[i].peer_channel)) {
 						if (caller_channel && i == 0) {
 							holding = switch_channel_get_variable(caller_channel, SWITCH_HOLDING_UUID_VARIABLE);
-							holding = switch_core_session_strdup(oglobals.session, holding);
 							switch_channel_set_variable(caller_channel, SWITCH_HOLDING_UUID_VARIABLE, NULL);
 						}
-						if (holding) {
+						if (holding && oglobals.idx != IDX_TIMEOUT && oglobals.idx != IDX_CANCEL) {
 							switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(originate_status[i].peer_session));
 						} else {
 							switch_channel_hangup(originate_status[i].peer_channel, reason);
