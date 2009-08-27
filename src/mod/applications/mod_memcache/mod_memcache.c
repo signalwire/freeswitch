@@ -44,7 +44,7 @@ SWITCH_MODULE_DEFINITION(mod_memcache, mod_memcache_load, mod_memcache_shutdown,
 static char *SYNTAX = "memcache <set|replace|add> <key> <value> [expiration [flags]]\n"
   "memcache <get|getflags> <key>\n"
   "memcache <delete> <key>\n"
-  "memcache <increment|decrement> <key> [offset]\n"
+  "memcache <increment|decrement> <key> [offset [expires [flags]]]\n"
   "memcache <flush>\n"
   "memcache <status> [verbose]\n";
 
@@ -232,11 +232,19 @@ SWITCH_STANDARD_API(memcache_function)
 			unsigned int offset = 1;
 			switch_bool_t increment = SWITCH_TRUE;
 			char *svalue = NULL;
-			if(argc > 2) {
+			if (argc > 2) {
 				offset = (unsigned int)strtol(argv[2], NULL, 10);
 				svalue = argv[2];
 			} else {
 				svalue = "1";
+			}
+			if(argc > 3) {
+				expires_str = argv[3];
+				expires = (time_t)strtol(expires_str, NULL, 10);
+			}
+			if(argc > 4) {
+				flags_str = argv[4];
+				flags = (uint32_t)strtol(flags_str, NULL, 16);
 			}
 			
 			if (!strcasecmp(subcmd, "increment")) {
@@ -251,7 +259,7 @@ SWITCH_STANDARD_API(memcache_function)
 				   Try to add an appropriate initial value.  If someone else beat
 				   us to it, then redo incr/decr.  Otherwise we're good.
 				*/
-				rc = memcached_add(memcached, key, strlen(key), (increment) ? svalue : "0", strlen(svalue), 0, 0);
+				rc = memcached_add(memcached, key, strlen(key), (increment) ? svalue : "0", strlen(svalue), expires, flags);
 				if (rc == MEMCACHED_SUCCESS) {
 					ivalue = (increment) ? offset : 0;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Initialized inc/dec memcache key: %s to value %d\n", key, offset);
