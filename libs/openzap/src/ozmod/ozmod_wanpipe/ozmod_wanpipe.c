@@ -160,10 +160,12 @@ static __inline__ sng_fd_t tdmv_api_open_span_chan(int span, int chan)
 	return sangoma_open_tdmapi_span_chan(span, chan);
 }
 
+#ifdef LIBSANGOMA_VERSION
 static __inline__ sng_fd_t __tdmv_api_open_span_chan(int span, int chan) 
 { 
 	return  __sangoma_open_tdmapi_span_chan(span, chan);
 }                        
+#endif
 
 static zap_io_interface_t wanpipe_interface;
 
@@ -213,9 +215,12 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 		zap_channel_t *chan;
 		zap_socket_t sockfd = WP_INVALID_SOCKET;
 		const char *dtmf = "none";
-
 		if (!strncasecmp(span->name, "smg_prid_nfas", 8) && span->trunk_type == ZAP_TRUNK_T1 && x == 24) {
+#ifdef LIBSANGOMA_VERSION
 			sockfd = __tdmv_api_open_span_chan(spanno, x);
+#else
+			zap_log(ZAP_LOG_ERROR, "span %d channel %d cannot be configured as smg_prid_nfas, you need to compile openzap with newer libsangoma\n", spanno, x);
+#endif
 		} else {
 			sockfd = tdmv_api_open_span_chan(spanno, x);
 		}
