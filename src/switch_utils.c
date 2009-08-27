@@ -866,6 +866,25 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 
 #endif
 
+
+SWITCH_DECLARE(switch_status_t) switch_resolve_host(char *host, char *buf, size_t buflen)
+{
+
+    struct addrinfo *ai;
+    int err;
+	
+    if ((err = getaddrinfo(host, 0, 0, &ai))) {
+        return SWITCH_STATUS_FALSE;
+    }
+
+	get_addr(buf, buflen, ai->ai_addr, sizeof(*ai->ai_addr));
+
+    freeaddrinfo(ai);
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *mask, int family)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
