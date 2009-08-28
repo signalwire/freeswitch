@@ -27,6 +27,7 @@
  * Ken Rice <krice at suspicious dot org
  * Mathieu Rene <mathieu.rene@gmail.com>
  * Bret McDanel <trixter AT 0xdecafbad.com>
+ * Rupa Schomaker <rupa@rupa.com>
  *
  * mod_limit.c -- Resource Limit Module
  *
@@ -356,6 +357,55 @@ static switch_status_t hash_state_handler(switch_core_session_t *session)
 		switch_mutex_unlock(globals.limit_hash_mutex);
 	}
 	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t memcache_state_handler(switch_core_session_t *session) 
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_state_t state = switch_channel_get_state(channel);
+	int argc = 0;
+	char *argv[32] = { 0 };
+	char *pvt = switch_channel_get_private(channel, "limit_keys");
+	char *mydata = NULL;
+	int i = 0;
+
+	char *hashkey = NULL;
+	uint32_t total_usage = 0;
+	char *cmd = NULL;
+	switch_stream_handle_t stream = { 0 };
+	SWITCH_STANDARD_STREAM(stream);
+	
+	switch_assert(pvt);
+	
+	/* The call is either hung up, or is going back into the dialplan, decrement appropriate couters */
+	if (state >= CS_HANGUP || state == CS_ROUTING) {	
+
+		/* Loop through the channel's keys which contains mapping to all the limits referenced by that channel */
+		mydata = switch_core_session_strdup(session, pvt);
+		argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+		for (i = 0; i < argc; i++) {
+			hashkey = argv[i];
+			cmd = switch_core_session_sprintf(session, "decrement limit:%s_total 1", hashkey);
+			switch_api_execute("memcache", cmd, session, &stream);
+			if (strncmp("-ERR", stream.data, 4)) {
+				total_usage = atoi(stream.data);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)hashkey, total_usage);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error from mod_memcache %s.", (const char *) stream.data);
+				goto end;
+			}
+			
+			stream.end = stream.data;
+		}
+			
+		/* Remove handler */
+		switch_core_event_hook_remove_state_change(session, memcache_state_handler);
+		switch_channel_set_private(channel, "limit_keys", NULL);
+	}
+	
+end:
+	switch_safe_free(stream.data);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1152,6 +1202,350 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/* \brief Enforces limit_memcache restrictions
+ * \param session current session
+ * \param realm limit realm
+ * \param id limit id
+ * \param max maximum count
+ * \param interval interval for rate limiting
+ * \return SWITCH_TRUE if the access is allowed, SWITCH_FALSE if it isnt
+ */
+static switch_bool_t do_limit_memcache(switch_core_session_t *session, const char *realm, const char *id, int max, int interval)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *hashkey = NULL;
+	switch_bool_t status = SWITCH_TRUE;
+	uint8_t increment = 1;
+	uint32_t total_usage = 0;
+	uint32_t rate_usage = 0;
+	char *cmd = NULL;
+	char *pvt = NULL;
+	int argc = 0;
+	int i = 0;
+	char *argv[32] = { 0 };
+	char *mydata = NULL;
+	
+	switch_stream_handle_t stream = { 0 };
+	
+	if (switch_loadable_module_exists("mod_memcache") != SWITCH_STATUS_SUCCESS) {
+		status = SWITCH_TRUE;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "mod_memcache is not loaded.");
+		goto end;
+	}
+	
+	SWITCH_STANDARD_STREAM(stream);
+	hashkey = switch_core_session_sprintf(session, "%s_%s", realm, id);
+	
+	/* Did we already run on this channel before? */
+	if ((pvt = switch_channel_get_private(channel, "limit_keys")))
+	{
+		/* Yes, but check if we did that realm+id
+		   If we didnt, allow incrementing the counter.
+		   If we did, dont touch it but do the validation anyways
+		 */
+		mydata = switch_core_session_strdup(session, pvt);
+		argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+		for (i = 0; i < argc; i++) {
+			if (!strcmp(hashkey, argv[i])) {
+				increment = 0;
+				break;
+			}
+		}
+	}
+	
+	cmd = switch_core_session_sprintf(session, "get limit:%s_total", hashkey);
+	switch_api_execute("memcache", cmd, session, &stream);
+	if (strncmp("-ERR", stream.data, 4)) {
+		total_usage = atoi(stream.data);
+	} else if (!strncmp("-ERR NOT FOUND", stream.data, 14)) {
+		total_usage = 0;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error from mod_memcache %s.", (const char *) stream.data);
+		status = SWITCH_TRUE;
+		goto end;
+	}
+	
+	stream.end = stream.data;
+
+	if (interval > 0) {
+		cmd = switch_core_session_sprintf(session, "increment limit:%s_rate 1 %d", hashkey, interval);
+		switch_api_execute("memcache", cmd, session, &stream);
+		if (strncmp("-ERR", stream.data, 4)) {
+			rate_usage = atoi(stream.data);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error from mod_memcache %s.", (const char *) stream.data);
+			status = SWITCH_TRUE;
+			goto end;
+		}
+		if ((max >= 0) && (rate_usage > (uint32_t)max)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s exceeds maximum rate of %d/%ds, now at %d\n", hashkey, max, interval, rate_usage);
+			status = SWITCH_FALSE;
+			goto end;
+		}
+	} else if ((max >= 0) && (total_usage + increment > (uint32_t)max)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is already at max value (%d)\n", hashkey, total_usage);
+		status = SWITCH_FALSE;
+		goto end;
+	}
+	
+	stream.end = stream.data;
+
+	if (increment) {
+		cmd = switch_core_session_sprintf(session, "increment limit:%s_total 1", hashkey);
+		switch_api_execute("memcache", cmd, session, &stream);
+		if (strncmp("-ERR", stream.data, 4)) {
+			total_usage = atoi(stream.data);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error from mod_memcache %s.", (const char *) stream.data);
+			status = SWITCH_TRUE;
+			goto end;
+		}
+		if (max == -1) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", hashkey, total_usage);
+		} else if (interval == 0) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d/%d\n", hashkey, total_usage, max);	
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d/%d for the last %d seconds\n", hashkey, rate_usage, max, interval);
+		}
+
+		limit_fire_event(realm, id, total_usage, rate_usage, max, max >=0 ? (uint32_t)max : 0);
+	}
+
+	/* Save current usage & rate into channel variables so it can be used later in the dialplan, or added to CDR records */
+	{
+		const char *susage = switch_core_session_sprintf(session, "%d", total_usage);
+		const char *srate = switch_core_session_sprintf(session, "%d", rate_usage);
+
+		switch_channel_set_variable(channel, "limit_usage", susage);
+		switch_channel_set_variable(channel, switch_core_session_sprintf(session, "limit_usage_%s", hashkey), susage);
+
+		switch_channel_set_variable(channel, "limit_rate", srate);
+		switch_channel_set_variable(channel, switch_core_session_sprintf(session, "limit_rate_%s", hashkey), srate);
+	}
+	
+	if (pvt && increment) {
+		pvt = switch_core_session_sprintf(session, "%s,%s", pvt, hashkey);
+	} else {
+		/* This is the first limit check on this channel, create a hashtable, set our prviate data and add a state handler */
+		pvt = (char *) hashkey;
+	}
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "hash_keys: %s\n", pvt);
+	switch_channel_set_private(channel, "limit_keys", pvt);
+
+	switch_core_event_hook_add_state_change(session, memcache_state_handler);
+
+end:	
+	switch_safe_free(stream.data);
+	return status;
+}
+
+/* !\brief Releases usage of a limit_hash-controlled ressource  */
+static void limit_memcache_release(switch_core_session_t *session, const char *realm, const char *id)
+{
+	char *hashkey = NULL;
+	uint32_t total_usage = 0;
+	char *cmd = NULL;
+	switch_stream_handle_t stream = { 0 };
+	SWITCH_STANDARD_STREAM(stream);
+	
+	if (switch_loadable_module_exists("mod_memcache") != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "mod_memcache is not loaded.");
+		goto end;
+	}
+
+	hashkey = switch_core_session_sprintf(session, "%s_%s", realm, id);
+	
+	cmd = switch_core_session_sprintf(session, "decrement limit:%s_total 1", hashkey);
+	switch_api_execute("memcache", cmd, session, &stream);
+	if (strncmp("-ERR", stream.data, 4)) {
+		total_usage = atoi(stream.data);
+	} else if (!strncmp("-ERR NOT FOUND", stream.data, 14)) {
+		total_usage = 0;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error from mod_memcache %s.", (const char *) stream.data);
+		goto end;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)hashkey, total_usage);
+
+end:
+	switch_safe_free(stream.data);
+}
+
+#define LIMITMEMCACHE_USAGE "<realm> <id> [<max>[/interval]] [number [dialplan [context]]]"
+#define LIMITMEMCACHE_DESC "limit access to a resource and transfer to an extension if the limit is exceeded"
+SWITCH_STANDARD_APP(limit_memcache_function)
+{
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mydata = NULL;
+	char *realm = NULL;
+	char *id = NULL;
+	char *xfer_exten = NULL;
+	int max = -1;
+	int interval = 0;
+	char *szinterval = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	/* Parse application data  */
+	if (!switch_strlen_zero(data)) {
+		mydata = switch_core_session_strdup(session, data);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+	
+	if (argc < 2) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit_memcache %s\n", LIMITMEMCACHE_USAGE);
+		return;
+	}
+	
+	realm = argv[0];
+	id = argv[1];
+	
+	/* If max is omitted, only act as a counter and skip maximum checks */
+	if (argc > 2) {
+		if ((szinterval = strchr(argv[2], '/')))
+		{
+			*szinterval++ = '\0';
+			interval = atoi(szinterval);
+		}
+		
+		max = atoi(argv[2]);
+		
+		if (max < 0) {
+			max = 0;
+		}
+	}
+
+	if (argc > 3) {
+		xfer_exten = argv[3];
+	} else {
+		xfer_exten = limit_def_xfer_exten;
+	}
+	
+	if (!do_limit_memcache(session, realm, id, max, interval)) {
+		/* Limit exceeded */
+		if (*xfer_exten == '!') {
+			switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten+1));
+		} else {
+			switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
+		}
+	}
+}
+
+
+#define LIMITMEMCACHEEXECUTE_USAGE "<realm> <id> [<max>[/interval]] [application] [application arguments]"
+#define LIMITMEMCACHEEXECUTE_DESC "limit access to a resource. the specified application will only be executed if the resource is available"
+SWITCH_STANDARD_APP(limit_memcache_execute_function)
+{
+	int argc = 0;
+	char *argv[5] = { 0 };
+	char *mydata = NULL;
+	char *realm = NULL;
+	char *id = NULL;
+	char *app = NULL;
+	char *app_arg = NULL;
+	int max = -1;
+	int interval = 0;
+	char *szinterval = NULL;
+
+	/* Parse application data  */
+	if (!switch_strlen_zero(data)) {
+		mydata = switch_core_session_strdup(session, data);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+	
+	if (argc < 2) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit_memcache_execute %s\n", LIMITMEMCACHEEXECUTE_USAGE);
+		return;
+	}
+	
+	realm = argv[0];
+	id = argv[1];
+	
+	/* If max is omitted, only act as a counter and skip maximum checks */
+	if (argc > 2) {
+		if ((szinterval = strchr(argv[2], '/')))
+		{
+			*szinterval++ = '\0';
+			interval = atoi(szinterval);
+		}
+		
+		max = atoi(argv[2]);
+		
+		if (max < 0) {
+			max = 0;
+		}
+	}
+
+
+	app = argv[3];
+	app_arg = argv[4];
+
+	if (switch_strlen_zero(app)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing application\n");
+		return;
+	}
+
+	if (do_limit_memcache(session, realm, id, max, interval)) {
+		switch_core_session_execute_application(session, app, app_arg);
+		limit_memcache_release(session, realm, id);
+	}
+}
+
+
+#define LIMIT_MEMCACHE_USAGE_USAGE "<realm> <id>"
+SWITCH_STANDARD_API(limit_memcache_usage_function)
+{
+	int argc = 0;
+	char *argv[3] = { 0 };
+	char *mydata = NULL;
+	uint32_t count = 0;
+	char *apicmd = NULL;
+	switch_bool_t status = SWITCH_TRUE;
+	switch_stream_handle_t apistream = { 0 };
+
+	SWITCH_STANDARD_STREAM(apistream);
+	if (switch_loadable_module_exists("mod_memcache") != SWITCH_STATUS_SUCCESS) {
+		status = SWITCH_TRUE;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "mod_memcache is not loaded.");
+		stream->write_function(stream, "-ERR mod_memcache not loaded");
+		goto end;
+	}
+
+	if (!switch_strlen_zero(cmd)) {
+		mydata = strdup(cmd);
+		switch_assert(mydata);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+	
+	if (argc < 2) {
+		stream->write_function(stream, "USAGE: limit_memcache_usage %s\n", LIMIT_MEMCACHE_USAGE_USAGE);
+		goto end;
+	}
+	
+	apicmd = switch_mprintf("get limit:%s_%s_total", argv[0], argv[1]);
+	switch_api_execute("memcache", apicmd, session, &apistream);
+	if (strncmp("-ERR", apistream.data, 4)) {
+		count = atoi(apistream.data);
+	} else if (!strncmp("-ERR NOT FOUND", apistream.data, 14)) {
+		count = 0;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error from mod_memcache %s.", (const char *) apistream.data);
+		status = SWITCH_TRUE;
+		goto end;
+	}
+	
+	stream->write_function(stream, "%d", count);
+	
+end:
+	switch_safe_free(mydata);
+	switch_safe_free(apistream.data);
+	switch_safe_free(apicmd);
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 {
 	switch_status_t status;
@@ -1187,11 +1581,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 	SWITCH_ADD_APP(app_interface, "limit", "Limit", LIMIT_DESC, limit_function, LIMIT_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "limit_hash", "Limit (hash)", LIMITHASH_DESC, limit_hash_function, LIMITHASH_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "limit_hash_execute", "Limit (hash)", LIMITHASHEXECUTE_USAGE, limit_hash_execute_function, LIMITHASHEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "limit_memcache", "Limit (memcache)", LIMITMEMCACHE_DESC, limit_memcache_function, LIMITMEMCACHE_USAGE, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "limit_memcache_execute", "Limit (memcache)", LIMITMEMCACHEEXECUTE_USAGE, limit_memcache_execute_function, LIMITMEMCACHEEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "db", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "hash", "Insert into the hashtable", HASH_DESC, hash_function, HASH_USAGE, SAF_SUPPORT_NOMEDIA)
 	SWITCH_ADD_APP(app_interface, "group", "Manage a group", GROUP_DESC, group_function, GROUP_USAGE, SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_API(commands_api_interface, "limit_hash_usage", "Gets the usage count of a limited resource", limit_hash_usage_function,  LIMIT_HASH_USAGE_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "limit_memcache_usage", "Gets the usage count of a limited resource", limit_memcache_usage_function,  LIMIT_MEMCACHE_USAGE_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "limit_usage", "Gets the usage count of a limited resource", limit_usage_function, "<realm> <id>");
 	SWITCH_ADD_API(commands_api_interface, "db", "db get/set", db_api_function, "[insert|delete|select]/<realm>/<key>/<value>");
 	switch_console_set_complete("add db insert");
