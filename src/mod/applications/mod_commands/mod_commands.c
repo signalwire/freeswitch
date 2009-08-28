@@ -45,6 +45,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown);
 SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, mod_commands_shutdown, NULL);
 
+SWITCH_STANDARD_API(host_lookup_function)
+{
+	char host[256] = "";
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "%s", "parameter missing\n");
+	} else {
+		if (switch_resolve_host(cmd, host, sizeof(host)) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "%s", host);
+		} else {
+			stream->write_function(stream, "%s", "!err!");
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(nat_map_function)
 {
 	int argc;
@@ -3587,6 +3604,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "time_test", "time_test", time_test_function, "<mss>");
 	SWITCH_ADD_API(commands_api_interface, "nat_map", "nat_map", nat_map_function, "[status|republish|reinit] | [add|del] <port> [tcp|udp] [static]");
+	SWITCH_ADD_API(commands_api_interface, "host_lookup", "host_lookup", host_lookup_function, "<hostname>");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;

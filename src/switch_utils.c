@@ -867,7 +867,7 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 #endif
 
 
-SWITCH_DECLARE(switch_status_t) switch_resolve_host(char *host, char *buf, size_t buflen)
+SWITCH_DECLARE(switch_status_t) switch_resolve_host(const char *host, char *buf, size_t buflen)
 {
 
     struct addrinfo *ai;
