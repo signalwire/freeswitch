@@ -88,4 +88,14 @@ namespace FreeSWITCH {
         bool Load();
     }
 
+    [Flags]
+    public enum PluginOptions {
+        None            = 0,
+        NoAutoReload    = 1,
+    }
+
+    public interface IPluginOptionsProvider {
+        PluginOptions GetOptions();
+    }
+
 }

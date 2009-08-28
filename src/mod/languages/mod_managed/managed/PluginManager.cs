@@ -51,11 +51,15 @@ namespace FreeSWITCH {
         public string Name { get { return name; } }
         readonly string name;
 
-        protected PluginExecutor(string name, List<string> aliases) {
+        public PluginOptions PluginOptions { get { return pluginOptions; } }
+        readonly PluginOptions pluginOptions;
+
+        protected PluginExecutor(string name, List<string> aliases, PluginOptions pluginOptions) {
             if (string.IsNullOrEmpty(name)) throw new ArgumentException("No name provided.");
             if (aliases == null || aliases.Count == 0) throw new ArgumentException("No aliases provided.");
             this.name = name;
             this.aliases = aliases.Distinct().ToList();
+            this.pluginOptions = pluginOptions;
         }
 
         int useCount = 0;
@@ -85,8 +89,8 @@ namespace FreeSWITCH {
 
         readonly Func<IAppPlugin> createPlugin;
 
-        public AppPluginExecutor(string name, List<string> aliases, Func<IAppPlugin> creator)
-            : base(name, aliases) {
+        public AppPluginExecutor(string name, List<string> aliases, Func<IAppPlugin> creator, PluginOptions pluginOptions)
+            : base(name, aliases, pluginOptions) {
             if (creator == null) throw new ArgumentNullException("Creator cannot be null.");
             this.createPlugin = creator;
         }
@@ -117,8 +121,8 @@ namespace FreeSWITCH {
 
         readonly Func<IApiPlugin> createPlugin;
 
-        public ApiPluginExecutor(string name, List<string> aliases, Func<IApiPlugin> creator)
-            : base(name, aliases) {
+        public ApiPluginExecutor(string name, List<string> aliases, Func<IApiPlugin> creator, PluginOptions pluginOptions)
+            : base(name, aliases, pluginOptions) {
             if (creator == null) throw new ArgumentNullException("Creator cannot be null.");
             this.createPlugin = creator;
         }
@@ -196,7 +200,7 @@ namespace FreeSWITCH {
             var pluginTypes = allTypes.Where(x => ty.IsAssignableFrom(x) && !x.IsAbstract).ToList();
             if (pluginTypes.Count == 0) return true;
             foreach (var pt in pluginTypes) {
-                var load = ((ILoadNotificationPlugin)Activator.CreateInstance(pt, false));
+                var load = ((ILoadNotificationPlugin)Activator.CreateInstance(pt, true));
                 if (!load.Load()) {
                     Log.WriteLine(LogLevel.Notice, "Type {0} requested no loading. Assembly will not be loaded.", pt.FullName);
                     return false;
@@ -205,20 +209,29 @@ namespace FreeSWITCH {
             return true;
         }
 
-        protected void AddApiPlugins(Type[] allTypes) {
+        protected PluginOptions GetOptions(Type[] allTypes) {
+            var ty = typeof(IPluginOptionsProvider);
+            var pluginTypes = allTypes.Where(x => ty.IsAssignableFrom(x) && !x.IsAbstract).ToList();
+            return pluginTypes.Aggregate(PluginOptions.None, (opts, t) => {
+                var x = ((IPluginOptionsProvider)Activator.CreateInstance(t, true));
+                return opts | x.GetOptions();
+            });
+        }
+
+        protected void AddApiPlugins(Type[] allTypes, PluginOptions pluginOptions) {
             var iApiTy = typeof(IApiPlugin);
             foreach (var ty in allTypes.Where(x => iApiTy.IsAssignableFrom(x) && !x.IsAbstract)) {
                 var del = CreateConstructorDelegate<IApiPlugin>(ty);
-                var exec = new ApiPluginExecutor(ty.FullName, new List<string> { ty.FullName, ty.Name }, del);
+                var exec = new ApiPluginExecutor(ty.FullName, new List<string> { ty.FullName, ty.Name }, del, pluginOptions);
                 this.ApiExecutors.Add(exec);
             }
         }
 
-        protected void AddAppPlugins(Type[] allTypes) {
+        protected void AddAppPlugins(Type[] allTypes, PluginOptions pluginOptions) {
             var iAppTy = typeof(IAppPlugin);
             foreach (var ty in allTypes.Where(x => iAppTy.IsAssignableFrom(x) && !x.IsAbstract)) {
                 var del = CreateConstructorDelegate<IAppPlugin>(ty);
-                var exec = new AppPluginExecutor(ty.FullName, new List<string> { ty.FullName, ty.Name }, del);
+                var exec = new AppPluginExecutor(ty.FullName, new List<string> { ty.FullName, ty.Name }, del, pluginOptions);
                 this.AppExecutors.Add(exec);
             }
         }
@@ -283,8 +296,10 @@ namespace FreeSWITCH {
             var allTypes = asm.GetExportedTypes();
             if (!RunLoadNotify(allTypes)) return false;
 
-            AddApiPlugins(allTypes);
-            AddAppPlugins(allTypes);
+            var opts = GetOptions(allTypes);
+
+            AddApiPlugins(allTypes, opts);
+            AddAppPlugins(allTypes, opts);
 
             return true;
         }

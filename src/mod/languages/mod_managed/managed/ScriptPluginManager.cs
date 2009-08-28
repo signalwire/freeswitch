@@ -161,14 +161,15 @@ namespace FreeSWITCH {
             if (!RunLoadNotify(allTypes)) return false;
 
             // Scripts can specify classes too
-            AddApiPlugins(allTypes);
-            AddAppPlugins(allTypes);
+            var opts = GetOptions(allTypes);
+            AddApiPlugins(allTypes, opts);
+            AddAppPlugins(allTypes, opts);
 
             // Add the script executors
             var name = Path.GetFileName(fileName);
             var aliases = new List<string> { name };
-            this.ApiExecutors.Add(new ApiPluginExecutor(name, aliases, () => new ScriptApiWrapper(entryPoint)));
-            this.AppExecutors.Add(new AppPluginExecutor(name, aliases, () => new ScriptAppWrapper(entryPoint)));
+            this.ApiExecutors.Add(new ApiPluginExecutor(name, aliases, () => new ScriptApiWrapper(entryPoint), opts));
+            this.AppExecutors.Add(new AppPluginExecutor(name, aliases, () => new ScriptAppWrapper(entryPoint), opts));
 
             return true;
         }

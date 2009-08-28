@@ -133,7 +133,17 @@ namespace FreeSWITCH {
         }
         
         static void watcher_Changed(object sender, FileSystemEventArgs e) {
-            Action<string> queueFile = x => { lock (watcherLock) { watcherFiles.Add(x); } };
+            Action<string> queueFile = fileName => {
+                var currentPi = pluginInfos.FirstOrDefault(p => string.Compare(fileName, p.FileName, StringComparison.OrdinalIgnoreCase) == 0);
+                if (currentPi != null) {
+                    var noReload = currentPi.Manager.ApiExecutors.Any(x => (x.PluginOptions & PluginOptions.NoAutoReload) == PluginOptions.NoAutoReload) ||
+                                   currentPi.Manager.AppExecutors.Any(x => (x.PluginOptions & PluginOptions.NoAutoReload) == PluginOptions.NoAutoReload);
+                    if (noReload) return;
+                }
+                lock (watcherLock) {
+                    watcherFiles.Add(fileName); 
+                } 
+            };
             try {
                 if (!initialLoadComplete) return;
                 var file = e.FullPath;
