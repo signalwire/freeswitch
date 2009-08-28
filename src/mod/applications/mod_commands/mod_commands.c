@@ -3196,6 +3196,25 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define EXISTS_SYNTAX "<uuid> <var>"
+SWITCH_STANDARD_API(uuid_exists_function)
+{
+	int exists = 0;
+	
+    if (cmd) {
+		switch_core_session_t *psession = NULL;
+		if ((psession = switch_core_session_locate(cmd))) {
+			switch_core_session_rwunlock(psession);
+			exists = 1;
+		}
+    }
+
+	stream->write_function(stream, "%s", exists ? "true" : "false");
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 #define GETVAR_SYNTAX "<uuid> <var>"
 SWITCH_STANDARD_API(uuid_getvar_function)
 {
@@ -3542,6 +3561,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar", "uuid_setvar", uuid_setvar_function, SETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar_multi", "uuid_setvar_multi", uuid_setvar_multi_function, SETVAR_MULTI_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_getvar", "uuid_getvar", uuid_getvar_function, GETVAR_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_exists", "see if a uuid exists", uuid_exists_function, EXISTS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_dump", "uuid_dump", uuid_dump_function, DUMP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "global_setvar", "global_setvar", global_setvar_function, GLOBAL_SETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "global_getvar", "global_getvar", global_getvar_function, GLOBAL_GETVAR_SYNTAX);
