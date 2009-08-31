@@ -39,6 +39,8 @@ static switch_status_t originate_on_consume_media_transmit(switch_core_session_t
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
+	/* testing out not using this, we probably don't need it anymore now that we have audio sync */
+#if 0
 	if (!switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 		while (switch_channel_get_state(channel) == CS_CONSUME_MEDIA && !switch_channel_test_flag(channel, CF_TAGGED)) {
 			if (!switch_channel_media_ready(channel)) {
@@ -48,6 +50,7 @@ static switch_status_t originate_on_consume_media_transmit(switch_core_session_t
 			}
 		}
 	}
+#endif
 
 	switch_channel_clear_state_handler(channel, &originate_state_handlers);
 
@@ -525,7 +528,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 					if (!switch_strlen_zero(oglobals->file)) {
 						collect->file = switch_core_session_strdup(originate_status[i].peer_session, oglobals->file);
 					}
-
+					switch_channel_audio_sync(originate_status[i].peer_channel);
 					collect->session = originate_status[i].peer_session;
 					launch_collect_thread(collect);
 				}
