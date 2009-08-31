@@ -43,9 +43,7 @@ CREATE TABLE `lcr` (
   KEY `digits` (`digits`),
   KEY `lcr_profile` (`lcr_profile`),
   KEY `rate` (`rate`),
-  KEY `intra` (`intra`),
   KEY `digits_profile_cid_rate` USING BTREE (`digits`,`rate`),
-  KEY `digits_profile_cid_intra` USING BTREE (`digits`,`intra`),
   CONSTRAINT `carrier_id` FOREIGN KEY (`carrier_id`) REFERENCES `carriers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=latin1;
 
