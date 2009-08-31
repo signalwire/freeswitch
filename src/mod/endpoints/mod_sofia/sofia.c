@@ -877,7 +877,10 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created agent for %s\n", profile->name);
 
 	nua_set_params(profile->nua,
+				   SIPTAG_ALLOW_STR("INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, UPDATE, INFO"),
 				   NUTAG_APPL_METHOD("OPTIONS"),
+				   NUTAG_APPL_METHOD("REFER"),
+				   NUTAG_APPL_METHOD("REGISTER"),
 				   NUTAG_APPL_METHOD("NOTIFY"),
 				   NUTAG_APPL_METHOD("INFO"),
 #ifdef MANUAL_BYE
@@ -888,6 +891,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_ENABLEMESSENGER(1),
 				   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
 				   TAG_IF((profile->mflags & MFLAG_REFER), NUTAG_ALLOW("REFER")),
+				   TAG_IF(!sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_ALLOW("PRACK")),
 				   NUTAG_ALLOW("INFO"),
 				   NUTAG_ALLOW("NOTIFY"),
 				   NUTAG_ALLOW_EVENTS("talk"),
@@ -917,6 +921,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 		nua_set_params(node->nua,
 					   NUTAG_APPL_METHOD("OPTIONS"),
+					   NUTAG_APPL_METHOD("REFER"),
 					   NUTAG_AUTOANSWER(0),
 					   NUTAG_AUTOALERT(0),
 					   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
