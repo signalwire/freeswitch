@@ -2507,7 +2507,7 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	speech_channel_t *schannel = NULL;
 	int speech_channel_number = get_next_speech_channel_number();
 	char name[200] = { 0 };
-	const char *profile_name;
+	const char *profile_name = NULL;
 	profile_t *profile = NULL;
 	recognizer_data_t *r = NULL;
 
@@ -2532,8 +2532,14 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	switch_core_hash_init(&r->grammars, ah->memory_pool); 
 
 	/* try to open an MRCP channel */
-	profile_name = switch_strlen_zero(dest) ? globals.unimrcp_default_recog_profile : dest;
+	if (!(profile_name = dest)) {
+		if (!(profile_name = ah->param)) {
+			profile_name = globals.unimrcp_default_recog_profile;
+		}
+	}
+
 	profile = (profile_t *)switch_core_hash_find(globals.profiles, profile_name);
+
 	if (!profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Can't find profile, %s\n", name, profile_name);
 		status = SWITCH_STATUS_FALSE;
