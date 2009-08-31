@@ -60,6 +60,8 @@
 	It is not recommended to enable 100rel at this time.
     -->
     <!--<param name="enable-100rel" value="true"/>-->
+    <!-- Enable Compact SIP headers. -->
+    <!--<param name="enable-compact-headers" value="true"/>-->
     <!--
 	enable/disable session timers 
     -->

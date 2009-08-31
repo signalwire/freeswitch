@@ -861,6 +861,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
 							  NTATAG_SERVER_RPORT(profile->rport_level),
 							  TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)), 
+ 							  TAG_IF(sofia_test_pflag(profile, PFLAG_SIPCOMPACT), NTATAG_SIPFLAGS(MSG_DO_COMPACT)),
 							  TAG_IF(profile->timer_t1, NTATAG_SIP_T1(profile->timer_t1)),
 							  TAG_IF(profile->timer_t1x64, NTATAG_SIP_T1X64(profile->timer_t1x64)),
 							  TAG_IF(profile->timer_t2, NTATAG_SIP_T2(profile->timer_t2)),
@@ -2522,6 +2523,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "enable-100rel")) {
 						if (switch_true(val)) {
 							sofia_clear_pflag(profile, PFLAG_DISABLE_100REL);
+						}
+					} else if (!strcasecmp(var, "enable-compact-headers")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_SIPCOMPACT);
 						}
 					} else if (!strcasecmp(var, "bitpacking")) {
 						if (!strcasecmp(val, "aal2")) {

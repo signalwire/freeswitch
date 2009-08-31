@@ -111,7 +111,7 @@ typedef struct private_object private_object_t;
 #include "sofia-sip/msg_parser.h"
 #include "sofia-sip/sip_parser.h"
 #include "sofia-sip/tport_tag.h"
-
+#include <sofia-sip/msg.h>
 
 typedef enum {
 	DTMF_2833,
@@ -193,6 +193,7 @@ typedef enum {
 	PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE,
 	PFLAG_MANUAL_REDIRECT,
 	PFLAG_AUTO_NAT,
+	PFLAG_SIPCOMPACT,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
