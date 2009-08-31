@@ -58,6 +58,16 @@ static int EC = 0;
 #define MIN(a, b) ((a)<(b)?(a):(b))
 #endif
 
+/* the rate at which the infinite impulse response filter on speaker score will decay. */
+#define SCORE_DECAY 0.8
+/* the maximum value for the IIR score [keeps loud & longwinded people from getting overweighted] */
+#define SCORE_MAX_IIR 25000
+/* the minimum score for which you can be considered to be loud enough to now have the floor */
+#define SCORE_IIR_SPEAKING_MAX 3000
+/* the threshold below which you cede the floor to someone loud (see above value). */
+#define SCORE_IIR_SPEAKING_MIN 100
+
+
 #define test_eflag(conference, flag) ((conference)->eflags & flag)
 
 typedef enum {
@@ -300,6 +310,7 @@ struct conference_member {
 	switch_buffer_t *resample_buffer;
 	uint32_t flags;
 	uint32_t score;
+	uint32_t score_iir;
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *control_mutex;
 	switch_mutex_t *audio_in_mutex;
@@ -603,6 +614,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	member->conference = conference;
 	member->next = conference->members;
 	member->energy_level = conference->energy_level;
+	member->score_iir = 0;
 	member->verbose_events = conference->verbose_events;
 	conference->members = member;
 	switch_set_flag_locked(member, MFLAG_INTREE);
@@ -1796,6 +1808,12 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				member->score = energy / (samples / divisor);
 			}
 
+			member->score_iir = (int)(((1.0 - SCORE_DECAY) * (float)member->score) + (SCORE_DECAY * (float)member->score_iir));
+
+			if(member->score_iir > SCORE_MAX_IIR) {
+				member->score_iir = SCORE_MAX_IIR;
+			}
+
 			if (member->score > energy_level) {
 				uint32_t diff = member->score - energy_level;
 				if (hangover_hits) {
@@ -1810,8 +1828,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 						switch_set_flag_locked(member, MFLAG_TALKING);
 						switch_mutex_lock(member->conference->member_mutex);
 						if (!member->conference->floor_holder ||
-							!switch_test_flag(member->conference->floor_holder, MFLAG_TALKING) || member->score >
-							member->conference->floor_holder->score + 200) {
+							!switch_test_flag(member->conference->floor_holder, MFLAG_TALKING) ||
+							((member->score_iir > SCORE_IIR_SPEAKING_MAX) && (member->conference->floor_holder->score_iir < SCORE_IIR_SPEAKING_MIN))) {
 							if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE) &&
 								switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 								conference_add_event_member_data(member, event);
@@ -1824,7 +1842,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 							member->conference->floor_holder = member;
 						}
 						switch_mutex_unlock(member->conference->member_mutex);
-
+						
 						if (test_eflag(member->conference, EFLAG_START_TALKING) && switch_test_flag(member, MFLAG_CAN_SPEAK) &&
 							switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 							conference_add_event_member_data(member, event);
