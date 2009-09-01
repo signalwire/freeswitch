@@ -2011,7 +2011,8 @@ OZ_DECLARE(zap_status_t) zap_channel_read(zap_channel_t *zchan, void *data, zap_
 				}
 			}
 		}
-
+	
+		
 		if (zap_test_flag(zchan, ZAP_CHANNEL_DTMF_DETECT) && !zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_DETECT)) {
 			teletone_dtmf_detect(&zchan->dtmf_detect, sln, (int)slen);
 			teletone_dtmf_get(&zchan->dtmf_detect, digit_str, sizeof(digit_str));
@@ -2041,14 +2042,17 @@ OZ_DECLARE(zap_status_t) zap_channel_read(zap_channel_t *zchan, void *data, zap_
 					if (zap_test_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF)) {
 						zchan->skip_read_frames = 20;
 					}
-					if (zchan->skip_read_frames > 0) {
-						memset(data, 0, *datalen);
-						zchan->skip_read_frames--;
-					}  
 				}
 			}
 		}
 	}
+
+	if (zchan->skip_read_frames > 0 || zap_test_flag(zchan, ZAP_CHANNEL_MUTE)) {
+		memset(data, 0, *datalen);
+		if (zchan->skip_read_frames > 0) {
+			zchan->skip_read_frames--;
+		}
+	}  
 
 	return status;
 }

@@ -371,7 +371,8 @@ typedef enum {
 	ZAP_CHANNEL_3WAY = (1 << 20),
 	ZAP_CHANNEL_PROGRESS = (1 << 21),
 	ZAP_CHANNEL_MEDIA = (1 << 22),
-	ZAP_CHANNEL_ANSWERED = (1 << 23)
+	ZAP_CHANNEL_ANSWERED = (1 << 23),
+	ZAP_CHANNEL_MUTE = (1 << 24)
 } zap_channel_flag_t;
 
 typedef enum {
