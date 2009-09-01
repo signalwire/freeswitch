@@ -26,3 +26,4 @@ reswig:	swigclean esl_wrap.cpp
 install: ESL.so
 	cp ESL.so $(shell php-config --extension-dir)
 	cp ESL.php $(shell php -r 'phpinfo();' | grep include_path | cut -d: -f2)
+	echo 'extension=ESL.so' > $(shell php-config --configure-options | tr " " "\n" | grep -- --with-config-file-scan-dir | cut -f2 -d=)/esl.ini
