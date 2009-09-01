@@ -96,6 +96,10 @@ static void check_ip(void) {
 	char old_ip6[256] = "";
 	int ok4 = 1, ok6 = 1;
 	int mask = 0;
+	static char hostname[256] = "";
+
+	gethostname(hostname, sizeof(hostname));
+	switch_core_set_variable("hostname", hostname);
 
 	switch_find_local_ip(guess_ip4, sizeof(guess_ip4), &mask, AF_INET);
 	switch_find_local_ip(guess_ip6, sizeof(guess_ip6), NULL, AF_INET6);
