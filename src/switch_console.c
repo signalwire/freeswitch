@@ -431,8 +431,6 @@ static unsigned char console_f12key(EditLine * el, int ch)
 char *prompt(EditLine * e)
 {
 	if (*prompt_str == '\0') {
-		gethostname(hostname, sizeof(hostname));
-		switch_core_set_variable("hostname", hostname);
 		switch_snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", hostname);
 	}
 
@@ -738,6 +736,8 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool;
+
+	gethostname(hostname, sizeof(hostname));
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
