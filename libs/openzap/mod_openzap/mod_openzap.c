@@ -1286,6 +1286,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_pre_answered(channel);
+				switch_core_session_rwunlock(session);
 			}
 		}
 		break;
