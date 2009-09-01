@@ -769,6 +769,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 {
 	switch_channel_t *channel;
 	private_t *tech_pvt;
+	//int i;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -777,17 +778,29 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	switch_assert(tech_pvt != NULL);
 
 	switch (msg->message_id) {
-	case SWITCH_MESSAGE_INDICATE_ANSWER:
-		{
-			DEBUGA_SKYPE("MSG_ID=%d, TO BE ANSWERED!\n", SKYPIAX_P_LOG, msg->message_id);
-			channel_answer_channel(session);
-		}
-		break;
-	default:
-		{
-			DEBUGA_SKYPE("MSG_ID=%d\n", SKYPIAX_P_LOG, msg->message_id);
-		}
-		break;
+		case SWITCH_MESSAGE_INDICATE_ANSWER:
+			{
+				DEBUGA_SKYPE("MSG_ID=%d, TO BE ANSWERED!\n", SKYPIAX_P_LOG, msg->message_id);
+				channel_answer_channel(session);
+			}
+			break;
+		case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
+
+			DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_AUDIO_SYNC\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
+
+			//for (i=0; i<50; i++) {
+			//skypiax_audio_read(tech_pvt);
+			//WARNINGA("read samples\n", SKYPIAX_P_LOG);
+			//}
+			//switch_core_timer_sync(&tech_pvt->timer_read);
+			//switch_core_timer_sync(&tech_pvt->timer_write);
+
+			break;
+		default:
+			{
+				DEBUGA_SKYPE("MSG_ID=%d\n", SKYPIAX_P_LOG, msg->message_id);
+			}
+			break;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
