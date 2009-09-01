@@ -2303,7 +2303,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	switch_event_t *local_event = NULL;
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
 	
-	if (params) {
+	if (!params) {
 		switch_event_create(&local_event, SWITCH_EVENT_REQUEST_PARAMS);
 		params = local_event;
 	}
