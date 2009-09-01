@@ -986,6 +986,8 @@ SWITCH_STANDARD_API(regex_function)
 	size_t len = 0;
 	char *substituted = NULL;
 	int proceed = 0;
+	char *d;
+	char delim = '|';
 
 	if (!cmd) {
 		goto error;
@@ -993,8 +995,26 @@ SWITCH_STANDARD_API(regex_function)
 
 	mydata = strdup(cmd);
 	switch_assert(mydata);
+	
+	d = mydata;
 
-	argc = switch_separate_string(mydata, '|', argv, (sizeof(argv) / sizeof(argv[0])));
+	if (*d == 'm' && *(d + 1) == ':' && *(d + 2)) {
+		char t = *(d + 2);
+
+		switch (t) {
+		case '|':
+		case '~':
+		case '/':
+			d += 3;
+			delim = t;
+			break;
+		default:
+			break;
+		}
+	}
+	
+
+	argc = switch_separate_string(d, delim, argv, (sizeof(argv) / sizeof(argv[0])));
 
 	if (argc < 2) {
 		goto error;
@@ -1015,7 +1035,11 @@ SWITCH_STANDARD_API(regex_function)
 			stream->write_function(stream, "true");
 		}
 	} else {
-		stream->write_function(stream, "false");
+		if (argc > 2) {
+			stream->write_function(stream, "%s", argv[0]);
+		} else {
+			stream->write_function(stream, "false");
+		}
 	}
 	goto ok;
 
