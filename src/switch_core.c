@@ -1160,6 +1160,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	char *dir_path;
 	int mask = 0;
 	struct in_addr in;
+	char hostname[256] = "";
 
 	memset(&runtime, 0, sizeof(runtime));
 
@@ -1218,6 +1219,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	if (console) {
 		runtime.console = stdout;
 	}
+
+	gethostname(hostname, sizeof(hostname));
+	switch_core_set_variable("hostname", hostname);
 
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), &mask, AF_INET);
 	switch_core_set_variable("local_ip_v4", guess_ip);
