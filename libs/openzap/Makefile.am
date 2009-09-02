@@ -36,7 +36,7 @@ moddir = @modinstdir@
 libdir = $(PREFIX)/lib/
 library_includedir = $(PREFIX)/include
 
-INCS      = -I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include -I$(OZ_SRCDIR)/$(SRC)/ozmod/ozmod_ss7_boost 
+INCS      = -I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include -I$(OZ_SRCDIR)/$(SRC)/ozmod/ozmod_sangoma_boost 
 MY_CFLAGS = $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@confdir@\" -DZAP_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
 COMPILE   = $(CC) $(MY_CFLAGS) $(INCS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
@@ -146,7 +146,7 @@ testanalog_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 #
 # ozmod modules
 #
-mod_LTLIBRARIES = ozmod_zt.la ozmod_skel.la ozmod_isdn.la ozmod_analog.la ozmod_analog_em.la ozmod_ss7_boost.la
+mod_LTLIBRARIES = ozmod_zt.la ozmod_skel.la ozmod_isdn.la ozmod_analog.la ozmod_analog_em.la ozmod_sangoma_boost.la
 
 if LIBSANGOMA
 mod_LTLIBRARIES += ozmod_wanpipe.la
@@ -214,10 +214,10 @@ ozmod_analog_em_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_analog_em_la_LDFLAGS = -module -avoid-version
 ozmod_analog_em_la_LIBADD  = $(MYLIB)
 
-ozmod_ss7_boost_la_SOURCES = $(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.c $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c
-ozmod_ss7_boost_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
-ozmod_ss7_boost_la_LDFLAGS = -module -avoid-version
-ozmod_ss7_boost_la_LIBADD  = $(MYLIB)
+ozmod_sangoma_boost_la_SOURCES = $(SRC)/ozmod/ozmod_sangoma_boost/sangoma_boost_client.c $(SRC)/ozmod/ozmod_sangoma_boost/ozmod_sangoma_boost.c
+ozmod_sangoma_boost_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_sangoma_boost_la_LDFLAGS = -module -avoid-version
+ozmod_sangoma_boost_la_LIBADD  = $(MYLIB)
 
 if LIBPRI
 ozmod_libpri_la_SOURCES = $(SRC)/ozmod/ozmod_libpri/ozmod_libpri.c $(SRC)/ozmod/ozmod_libpri/lpwrap_pri.c
