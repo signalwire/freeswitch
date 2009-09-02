@@ -129,48 +129,53 @@ class ESLconnection {
 		return ESLconnection_connected($this->_cPtr);
 	}
 
-	function __construct() {
-		$this->_cPtr=ESLconnection_getInfo($this->_cPtr);
+	function getInfo() {
+		$r=ESLconnection_getInfo($this->_cPtr);
+		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
 	function send($cmd) {
 		return ESLconnection_send($this->_cPtr,$cmd);
 	}
 
-	function __construct($cmd) {
-		$this->_cPtr=ESLconnection_sendRecv($this->_cPtr,$cmd);
+	function sendRecv($cmd) {
+		$r=ESLconnection_sendRecv($this->_cPtr,$cmd);
+		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
-	function __construct($cmd,$arg=null) {
+	function api($cmd,$arg=null) {
 		switch (func_num_args()) {
 		case 1: $r=ESLconnection_api($this->_cPtr,$cmd); break;
 		default: $r=ESLconnection_api($this->_cPtr,$cmd,$arg);
 		}
-		$this->_cPtr=$r;
+		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
-	function __construct($cmd,$arg=null) {
+	function bgapi($cmd,$arg=null) {
 		switch (func_num_args()) {
 		case 1: $r=ESLconnection_bgapi($this->_cPtr,$cmd); break;
 		default: $r=ESLconnection_bgapi($this->_cPtr,$cmd,$arg);
 		}
-		$this->_cPtr=$r;
+		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
 	function sendEvent($send_me) {
 		return ESLconnection_sendEvent($this->_cPtr,$send_me);
 	}
 
-	function __construct() {
-		$this->_cPtr=ESLconnection_recvEvent($this->_cPtr);
+	function recvEvent() {
+		$r=ESLconnection_recvEvent($this->_cPtr);
+		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
-	function __construct($ms) {
-		$this->_cPtr=ESLconnection_recvEventTimed($this->_cPtr,$ms);
+	function recvEventTimed($ms) {
+		$r=ESLconnection_recvEventTimed($this->_cPtr,$ms);
+		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
-	function __construct($header,$value) {
-		$this->_cPtr=ESLconnection_filter($this->_cPtr,$header,$value);
+	function filter($header,$value) {
+		$r=ESLconnection_filter($this->_cPtr,$header,$value);
+		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
 	function events($etype,$value) {
