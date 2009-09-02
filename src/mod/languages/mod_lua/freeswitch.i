@@ -20,6 +20,10 @@
 
 %ignore SwitchToMempool;   
 %newobject EventConsumer::pop;
+%newobject Session;
+%newobject CoreSession;
+%newobject Event;
+%newobject Stream;
 
 /**
  * tell swig to grok everything defined in these header files and

@@ -671,7 +671,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(_In_z_ const 
   \note if the session was located it will have a read lock obtained which will need to be released with switch_core_session_rwunlock()
 */
 #ifdef SWITCH_DEBUG_RWLOCKS
-#define switch_core_session_locate(uuid_str) switch_core_session_perform_force_locate(uuid_str, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_core_session_force_locate(uuid_str) switch_core_session_perform_force_locate(uuid_str, __FILE__, __SWITCH_FUNC__, __LINE__)
 #else
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_force_locate(_In_z_ const char *uuid_str);
 #endif
