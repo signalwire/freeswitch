@@ -1859,12 +1859,28 @@ SWITCH_STANDARD_APP(playback_function)
 	switch_input_args_t args = { 0 };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_file_handle_t fh = { 0 };
+	char *p;
+	const char *file = NULL;
+	
+	if (data) {
+		file = switch_core_session_strdup(session, data);
+		if ((p = strchr(file, '@')) && *(p+1) == '@') {
+			*p = '\0';
+			p += 2;
+			if (p && *p) {
+				fh.samples = atoi(p);
+			}
+		}
+	} else {
+		file = data;
+	}
 
 	args.input_callback = on_dtmf;
 
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
 
-	status = switch_ivr_play_file(session, NULL, data, &args);
+	status = switch_ivr_play_file(session, &fh, file, &args);
 
 	switch (status) {
 	case SWITCH_STATUS_SUCCESS:
