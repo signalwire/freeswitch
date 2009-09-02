@@ -36,7 +36,7 @@
 #endif
 
 #include "openzap.h"
-#include <ss7_boost_client.h>
+#include <sangoma_boost_client.h>
 
 
 #ifndef HAVE_GETHOSTBYNAME_R
@@ -47,12 +47,12 @@ extern int gethostbyname_r (const char *__name,
 							int *__h_errnop);
 #endif
 
-struct ss7bc_map {
+struct sangomabc_map {
 	uint32_t event_id;
 	const char *name;
 };
 
-static struct ss7bc_map ss7bc_table[] = {
+static struct sangomabc_map sangomabc_table[] = {
 	{SIGBOOST_EVENT_CALL_START, "CALL_START"}, 
 	{SIGBOOST_EVENT_CALL_START_ACK, "CALL_START_ACK"}, 
 	{SIGBOOST_EVENT_CALL_START_NACK, "CALL_START_NACK"}, 
@@ -71,13 +71,13 @@ static struct ss7bc_map ss7bc_table[] = {
 
 
 
-static void ss7bc_print_event_call(ss7bc_connection_t *mcon, ss7bc_event_t *event, int priority, int dir, const char *file, const char *func, int line)
+static void sangomabc_print_event_call(sangomabc_connection_t *mcon, sangomabc_event_t *event, int priority, int dir, const char *file, const char *func, int line)
 {
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
 	zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "%s EVENT: %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s]\n", 
 		    dir ? "TX":"RX", 
-			ss7bc_event_id_name(event->event_id), 
+			sangomabc_event_id_name(event->event_id), 
 			event->event_id, 
 			event->span+1, 
 			event->chan+1, 
@@ -89,14 +89,14 @@ static void ss7bc_print_event_call(ss7bc_connection_t *mcon, ss7bc_event_t *even
 			);
 
 }
-static void ss7bc_print_event_short(ss7bc_connection_t *mcon, ss7bc_short_event_t *event, int priority, int dir, const char *file, const char *func, int line)
+static void sangomabc_print_event_short(sangomabc_connection_t *mcon, sangomabc_short_event_t *event, int priority, int dir, const char *file, const char *func, int line)
 {
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
 	zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "%s EVENT (%s): %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i \n", 
 			   dir ? "TX":"RX", 
 			   priority ? "P":"N", 	
-                           ss7bc_event_id_name(event->event_id), 
+                           sangomabc_event_id_name(event->event_id), 
                            event->event_id, 
                            event->span+1, 
                            event->chan+1, 
@@ -106,7 +106,7 @@ static void ss7bc_print_event_short(ss7bc_connection_t *mcon, ss7bc_short_event_
 }
 
 
-static int create_conn_socket(ss7bc_connection_t *mcon, char *local_ip, int local_port, char *ip, int port)
+static int create_conn_socket(sangomabc_connection_t *mcon, char *local_ip, int local_port, char *ip, int port)
 {
 	int rc;
 	struct hostent *result, *local_result;
@@ -172,7 +172,7 @@ static int create_conn_socket(ss7bc_connection_t *mcon, char *local_ip, int loca
 	return mcon->socket;
 }
 
-int ss7bc_connection_close(ss7bc_connection_t *mcon)
+int sangomabc_connection_close(sangomabc_connection_t *mcon)
 {
 	if (mcon->socket > -1) {
 		close(mcon->socket);
@@ -189,19 +189,19 @@ int ss7bc_connection_close(ss7bc_connection_t *mcon)
 	return 0;
 }
 
-int ss7bc_connection_open(ss7bc_connection_t *mcon, char *local_ip, int local_port, char *ip, int port)
+int sangomabc_connection_open(sangomabc_connection_t *mcon, char *local_ip, int local_port, char *ip, int port)
 {
 	create_conn_socket(mcon, local_ip, local_port, ip, port);
 	return mcon->socket;
 }
 
 
-int ss7bc_exec_command(ss7bc_connection_t *mcon, int span, int chan, int id, int cmd, int cause)
+int sangomabc_exec_command(sangomabc_connection_t *mcon, int span, int chan, int id, int cmd, int cause)
 {
-    ss7bc_short_event_t oevent;
+    sangomabc_short_event_t oevent;
     int retry = 5;
 
-    ss7bc_event_init(&oevent, cmd, chan, span);
+    sangomabc_event_init(&oevent, cmd, chan, span);
     oevent.release_cause = cause;
 
 	if (cmd == SIGBOOST_EVENT_SYSTEM_RESTART || cmd == SIGBOOST_EVENT_SYSTEM_RESTART_ACK) {
@@ -215,7 +215,7 @@ int ss7bc_exec_command(ss7bc_connection_t *mcon, int span, int chan, int id, int
         oevent.call_setup_id = id;
     }
 
-    while (ss7bc_connection_write(mcon, (ss7bc_event_t*)&oevent) <= 0) {
+    while (sangomabc_connection_write(mcon, (sangomabc_event_t*)&oevent) <= 0) {
         if (--retry <= 0) {
             zap_log(ZAP_LOG_CRIT, "Failed to tx on ISUP socket: %s\n", strerror(errno));
             return -1;
@@ -229,19 +229,19 @@ int ss7bc_exec_command(ss7bc_connection_t *mcon, int span, int chan, int id, int
 }
 
 
-int ss7bc_exec_commandp(ss7bc_connection_t *pcon, int span, int chan, int id, int cmd, int cause)
+int sangomabc_exec_commandp(sangomabc_connection_t *pcon, int span, int chan, int id, int cmd, int cause)
 {
-    ss7bc_short_event_t oevent;
+    sangomabc_short_event_t oevent;
     int retry = 5;
 
-    ss7bc_event_init(&oevent, cmd, chan, span);
+    sangomabc_event_init(&oevent, cmd, chan, span);
     oevent.release_cause = cause;
 
     if (id >= 0) {
         oevent.call_setup_id = id;
     }
 
-    while (ss7bc_connection_writep(pcon, (ss7bc_event_t*)&oevent) <= 0) {
+    while (sangomabc_connection_writep(pcon, (sangomabc_event_t*)&oevent) <= 0) {
         if (--retry <= 0) {
             zap_log(ZAP_LOG_CRIT, "Failed to tx on ISUP socket: %s\n", strerror(errno));
             return -1;
@@ -254,7 +254,7 @@ int ss7bc_exec_commandp(ss7bc_connection_t *pcon, int span, int chan, int id, in
     return 0;
 }
 
-ss7bc_event_t *__ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration, const char *file, const char *func, int line)
+sangomabc_event_t *__sangomabc_connection_read(sangomabc_connection_t *mcon, int iteration, const char *file, const char *func, int line)
 {
 	unsigned int fromlen = sizeof(struct sockaddr_in);
 	int bytes = 0;
@@ -278,7 +278,7 @@ ss7bc_event_t *__ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration, 
 	} else if ((bytes >= MIN_SIZE_CALLSTART_MSG) && boost_full_event(mcon->event.event_id)) {
 		msg_ok=1;
 		
-	} else if (bytes == sizeof(ss7bc_short_event_t)) {
+	} else if (bytes == sizeof(sangomabc_short_event_t)) {
 		msg_ok=1;
 
 	} else {
@@ -287,20 +287,20 @@ ss7bc_event_t *__ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration, 
 
 	if (msg_ok){
 
-		if (ss7bc_test_flag(mcon, MSU_FLAG_DOWN)) {
+		if (sangomabc_test_flag(mcon, MSU_FLAG_DOWN)) {
 			if (mcon->event.event_id != SIGBOOST_EVENT_SYSTEM_RESTART && 
 				mcon->event.event_id != SIGBOOST_EVENT_SYSTEM_RESTART_ACK && 
 				mcon->event.event_id != SIGBOOST_EVENT_HEARTBEAT) {
 				zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "Not reading packets when connection is down. [%s]\n", 
-						ss7bc_event_id_name(mcon->event.event_id));
+						sangomabc_event_id_name(mcon->event.event_id));
 				return NULL;
 			}
 		}
 
 		if  (boost_full_event(mcon->event.event_id)) {
-			ss7bc_print_event_call(mcon, &mcon->event, 0, 0, file, func, line);
+			sangomabc_print_event_call(mcon, &mcon->event, 0, 0, file, func, line);
 		} else {
-			ss7bc_print_event_short(mcon, (ss7bc_short_event_t*)&mcon->event, 0, 0, file, func, line);
+			sangomabc_print_event_short(mcon, (sangomabc_short_event_t*)&mcon->event, 0, 0, file, func, line);
 		}
 
 #if 0
@@ -338,7 +338,7 @@ ss7bc_event_t *__ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration, 
 	return NULL;
 }
 
-ss7bc_event_t *__ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration, const char *file, const char *func, int line)
+sangomabc_event_t *__sangomabc_connection_readp(sangomabc_connection_t *mcon, int iteration, const char *file, const char *func, int line)
 {
 	unsigned int fromlen = sizeof(struct sockaddr_in);
 	int bytes = 0;
@@ -353,12 +353,12 @@ ss7bc_event_t *__ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration,
 		zap_log(ZAP_LOG_CRIT, "Invalid Boost Version %i  Expecting %i\n",mcon->event.version, SIGBOOST_VERSION);
     }   
 
-	if (bytes == sizeof(ss7bc_short_event_t)) {
+	if (bytes == sizeof(sangomabc_short_event_t)) {
 
 		if  (boost_full_event(mcon->event.event_id)) {
-			ss7bc_print_event_call(mcon, &mcon->event, 1, 0, file, func, line);
+			sangomabc_print_event_call(mcon, &mcon->event, 1, 0, file, func, line);
 		} else {
-			ss7bc_print_event_short(mcon, (ss7bc_short_event_t*)&mcon->event, 1, 0, file, func, line);
+			sangomabc_print_event_short(mcon, (sangomabc_short_event_t*)&mcon->event, 1, 0, file, func, line);
 		}
 
 		return &mcon->event;
@@ -373,7 +373,7 @@ ss7bc_event_t *__ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration,
 }
 
 
-int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, const char *file, const char *func, int line)
+int __sangomabc_connection_write(sangomabc_connection_t *mcon, sangomabc_event_t *event, const char *file, const char *func, int line)
 {
 	int err;
 	int event_size=MIN_SIZE_CALLSTART_MSG+event->isup_in_rdnis_size;
@@ -385,21 +385,21 @@ int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, con
 	}
 
 	if (event->span >= ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN || event->chan >= ZAP_MAX_CHANNELS_PHYSICAL_SPAN ) {
-		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: TX Cmd=%s Invalid Span=%i Chan=%i\n", ss7bc_event_id_name(event->event_id), event->span, event->chan);
+		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: TX Cmd=%s Invalid Span=%i Chan=%i\n", sangomabc_event_id_name(event->event_id), event->span, event->chan);
 		abort();
 		return -1;
 	}
 
 	if (!boost_full_event(event->event_id)) {
-		event_size=sizeof(ss7bc_short_event_t);
+		event_size=sizeof(sangomabc_short_event_t);
 	}	
 
-	if (ss7bc_test_flag(mcon, MSU_FLAG_DOWN)) {
+	if (sangomabc_test_flag(mcon, MSU_FLAG_DOWN)) {
 		if (event->event_id != SIGBOOST_EVENT_SYSTEM_RESTART && 
 			event->event_id != SIGBOOST_EVENT_SYSTEM_RESTART_ACK && 
 			event->event_id != SIGBOOST_EVENT_HEARTBEAT) {
 			zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "Not writing packets when connection is down. [%s]\n",
-					ss7bc_event_id_name(event->event_id));
+					sangomabc_event_id_name(event->event_id));
 			return 0;
 		}
 	}
@@ -424,19 +424,19 @@ int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, con
 	}
 
 	if (boost_full_event(event->event_id)) {
-		ss7bc_print_event_call(mcon, event, 0, 1, file, func, line);
+		sangomabc_print_event_call(mcon, event, 0, 1, file, func, line);
 	} else {
-		ss7bc_print_event_short(mcon, (ss7bc_short_event_t*)event, 0, 1, file, func, line);
+		sangomabc_print_event_short(mcon, (sangomabc_short_event_t*)event, 0, 1, file, func, line);
 	}
 
 	return err;
 }
 
 
-int __ss7bc_connection_writep(ss7bc_connection_t *mcon, ss7bc_event_t *event, const char *file, const char *func, int line)
+int __sangomabc_connection_writep(sangomabc_connection_t *mcon, sangomabc_event_t *event, const char *file, const char *func, int line)
 {
 	int err;
-	int event_size=sizeof(ss7bc_event_t);
+	int event_size=sizeof(sangomabc_event_t);
 
 	if (!event || mcon->socket < 0 || !mcon->mutex) {
 		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: No Event Device\n");
@@ -445,7 +445,7 @@ int __ss7bc_connection_writep(ss7bc_connection_t *mcon, ss7bc_event_t *event, co
 	}
 
 	if (!boost_full_event(event->event_id)) {
-		event_size=sizeof(ss7bc_short_event_t);
+		event_size=sizeof(sangomabc_short_event_t);
 	}	
 
 	zap_mutex_lock(mcon->mutex);
@@ -459,18 +459,18 @@ int __ss7bc_connection_writep(ss7bc_connection_t *mcon, ss7bc_event_t *event, co
 	}
 
 	if (boost_full_event(event->event_id)) {
-		ss7bc_print_event_call(mcon, event, 1, 1, file, func, line);
+		sangomabc_print_event_call(mcon, event, 1, 1, file, func, line);
 	} else {
-		ss7bc_print_event_short(mcon, (ss7bc_short_event_t*)event, 1, 1, file, func, line);
+		sangomabc_print_event_short(mcon, (sangomabc_short_event_t*)event, 1, 1, file, func, line);
 	}
 
 	return err;
 }
 
 
-void ss7bc_call_init(ss7bc_event_t *event, const char *calling, const char *called, int setup_id)
+void sangomabc_call_init(sangomabc_event_t *event, const char *calling, const char *called, int setup_id)
 {
-	memset(event, 0, sizeof(ss7bc_event_t));
+	memset(event, 0, sizeof(sangomabc_event_t));
 	event->event_id = SIGBOOST_EVENT_CALL_START;
 
 	if (calling) {
@@ -487,22 +487,22 @@ void ss7bc_call_init(ss7bc_event_t *event, const char *calling, const char *call
 	
 }
 
-void ss7bc_event_init(ss7bc_short_event_t *event, ss7bc_event_id_t event_id, int chan, int span)
+void sangomabc_event_init(sangomabc_short_event_t *event, sangomabc_event_id_t event_id, int chan, int span)
 {
-	memset(event, 0, sizeof(ss7bc_short_event_t));
+	memset(event, 0, sizeof(sangomabc_short_event_t));
 	event->event_id = event_id;
 	event->chan = chan;
 	event->span = span;
 }
 
-const char *ss7bc_event_id_name(uint32_t event_id)
+const char *sangomabc_event_id_name(uint32_t event_id)
 {
 	unsigned int x;
 	const char *ret = NULL;
 
-	for (x = 0 ; x < sizeof(ss7bc_table)/sizeof(struct ss7bc_map); x++) {
-		if (ss7bc_table[x].event_id == event_id) {
-			ret = ss7bc_table[x].name;
+	for (x = 0 ; x < sizeof(sangomabc_table)/sizeof(struct sangomabc_map); x++) {
+		if (sangomabc_table[x].event_id == event_id) {
+			ret = sangomabc_table[x].name;
 			break;
 		}
 	}

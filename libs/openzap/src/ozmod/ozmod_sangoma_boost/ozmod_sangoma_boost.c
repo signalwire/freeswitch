@@ -32,8 +32,8 @@
  */
 
 #include "openzap.h"
-#include "ss7_boost_client.h"
-#include "zap_ss7_boost.h"
+#include "sangoma_boost_client.h"
+#include "zap_sangoma_boost.h"
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
@@ -49,34 +49,34 @@ typedef enum {
 	SFLAG_SENT_FINAL_RESPONSE = (1 << 1)
 } sflag_t;
 
-typedef uint16_t ss7_boost_request_id_t;
+typedef uint16_t sangoma_boost_request_id_t;
 
 /**
- * \brief SS7 boost request status
+ * \brief SANGOMA boost request status
  */
 typedef enum {
 	BST_FREE,
 	BST_WAITING,
 	BST_READY,
 	BST_FAIL
-} ss7_boost_request_status_t;
+} sangoma_boost_request_status_t;
 
 /**
- * \brief SS7 boost request structure
+ * \brief SANGOMA boost request structure
  */
 typedef struct {
-	ss7_boost_request_status_t status;
-	ss7bc_short_event_t event;
+	sangoma_boost_request_status_t status;
+	sangomabc_short_event_t event;
 	zap_span_t *span;
 	zap_channel_t *zchan;
-} ss7_boost_request_t;
+} sangoma_boost_request_t;
 
 //#define MAX_REQ_ID ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN * ZAP_MAX_CHANNELS_PHYSICAL_SPAN
 #define MAX_REQ_ID 6000
 
 static uint16_t SETUP_GRID[ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN+1][ZAP_MAX_CHANNELS_PHYSICAL_SPAN+1] = {{ 0 }};
 
-static ss7_boost_request_t OUTBOUND_REQUESTS[MAX_REQ_ID+1] = {{ 0 }};
+static sangoma_boost_request_t OUTBOUND_REQUESTS[MAX_REQ_ID+1] = {{ 0 }};
 
 static zap_mutex_t *request_mutex = NULL;
 static zap_mutex_t *signal_mutex = NULL;
@@ -112,7 +112,7 @@ static void __release_request_id_span_chan(int span, int chan, const char *func,
  * \param line Line number on request
  * \return NULL if not found, channel otherwise
  */
-static void __release_request_id(ss7_boost_request_id_t r, const char *func, int line)
+static void __release_request_id(sangoma_boost_request_id_t r, const char *func, int line)
 {
 	assert(r <= MAX_REQ_ID);
 	zap_mutex_lock(request_mutex);
@@ -121,7 +121,7 @@ static void __release_request_id(ss7_boost_request_id_t r, const char *func, int
 }
 #define release_request_id(r) __release_request_id(r, __FUNCTION__, __LINE__)
 
-static ss7_boost_request_id_t last_req = 0;
+static sangoma_boost_request_id_t last_req = 0;
 
 /**
  * \brief Gets the first available tank request ID
@@ -129,9 +129,9 @@ static ss7_boost_request_id_t last_req = 0;
  * \param line Line number on request
  * \return 0 on failure, request ID on success
  */
-static ss7_boost_request_id_t __next_request_id(const char *func, int line)
+static sangoma_boost_request_id_t __next_request_id(const char *func, int line)
 {
-	ss7_boost_request_id_t r = 0, i = 0;
+	sangoma_boost_request_id_t r = 0, i = 0;
 	int found=0;
 	
 	zap_mutex_lock(request_mutex);
@@ -170,11 +170,11 @@ static ss7_boost_request_id_t __next_request_id(const char *func, int line)
 /**
  * \brief Finds the channel that triggered an event
  * \param span Span where to search the channel
- * \param event SS7 event
+ * \param event SANGOMA event
  * \param force Do not wait for the channel to be available if in use
  * \return NULL if not found, channel otherwise
  */
-static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_short_event_t *event, int force)
+static zap_channel_t *find_zchan(zap_span_t *span, sangomabc_short_event_t *event, int force)
 {
 	int i;
 	zap_channel_t *zchan = NULL;
@@ -219,7 +219,7 @@ static int check_congestion(int trunk_group)
 
 
 /**
- * \brief Requests an ss7 boost channel on a span (outgoing call)
+ * \brief Requests an sangoma boost channel on a span (outgoing call)
  * \param span Span where to get a channel
  * \param chan_id Specific channel to get (0 for any)
  * \param direction Call direction
@@ -227,14 +227,14 @@ static int check_congestion(int trunk_group)
  * \param zchan Channel to initialise
  * \return Success or failure
  */
-static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
+static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 {
-	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	zap_status_t status = ZAP_FAIL;
-	ss7_boost_request_id_t r;
-	ss7bc_event_t event = {0};
+	sangoma_boost_request_id_t r;
+	sangomabc_event_t event = {0};
 	int sanity = 5000;
-	ss7_boost_request_status_t st;
+	sangoma_boost_request_status_t st;
 	char ani[128] = "";
 	char *gr = NULL;
 	uint32_t count = 0;
@@ -281,7 +281,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 		return ZAP_FAIL;
 	}
 
-	ss7bc_call_init(&event, caller_data->cid_num.digits, ani, r);
+	sangomabc_call_init(&event, caller_data->cid_num.digits, ani, r);
 	
 	if (gr && *(gr+1)) {
 
@@ -316,7 +316,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 	OUTBOUND_REQUESTS[r].status = BST_WAITING;
 	OUTBOUND_REQUESTS[r].span = span;
 
-	if (ss7bc_connection_write(&ss7_boost_data->mcon, &event) <= 0) {
+	if (sangomabc_connection_write(&sangoma_boost_data->mcon, &event) <= 0) {
 		zap_log(ZAP_LOG_CRIT, "Failed to tx on ISUP socket [%s]\n", strerror(errno));
 		status = ZAP_FAIL;
 		*zchan = NULL;
@@ -352,7 +352,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 	} else if (st != BST_READY) {
 		assert(r <= MAX_REQ_ID);
 		nack_map[r] = 1;
-		ss7bc_exec_command(&ss7_boost_data->mcon,
+		sangomabc_exec_command(&sangoma_boost_data->mcon,
 						   0,
 						   0,
 						   r,
@@ -364,11 +364,11 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 }
 
 /**
- * \brief Starts an ss7 boost channel (outgoing call)
+ * \brief Starts an sangoma boost channel (outgoing call)
  * \param zchan Channel to initiate call on
  * \return Success
  */
-static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(ss7_boost_outgoing_call)
+static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(sangoma_boost_outgoing_call)
 {
 	zap_status_t status = ZAP_SUCCESS;
 
@@ -377,10 +377,10 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(ss7_boost_outgoing_call)
 
 /**
  * \brief Handler for call start ack event
- * \param mcon ss7 boost connection
+ * \param mcon sangoma boost connection
  * \param event Event to handle
  */
-static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
+static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
 	zap_channel_t *zchan;
 
@@ -413,7 +413,7 @@ static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_short_event_t 
 
 
 	zap_log(ZAP_LOG_CRIT, "START ACK CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
-	ss7bc_exec_command(mcon,
+	sangomabc_exec_command(mcon,
 					   event->span,
 					   event->chan,
 					   event->call_setup_id,
@@ -426,10 +426,10 @@ static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_short_event_t 
 /**
  * \brief Handler for call done event
  * \param span Span where event was fired
- * \param mcon ss7 boost connection
+ * \param mcon sangoma boost connection
  * \param event Event to handle
  */
-static void handle_call_done(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
+static void handle_call_done(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
 	zap_channel_t *zchan;
 	int r = 0;
@@ -466,10 +466,10 @@ static void handle_call_done(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_s
 /**
  * \brief Handler for call start nack event
  * \param span Span where event was fired
- * \param mcon ss7 boost connection
+ * \param mcon sangoma boost connection
  * \param event Event to handle
  */
-static void handle_call_start_nack(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
+static void handle_call_start_nack(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
 	zap_channel_t *zchan;
 
@@ -502,7 +502,7 @@ static void handle_call_start_nack(zap_span_t *span, ss7bc_connection_t *mcon, s
 
 	if (event->call_setup_id) {
 
-		ss7bc_exec_command(mcon,
+		sangomabc_exec_command(mcon,
 						   0,
 						   0,
 						   event->call_setup_id,
@@ -535,7 +535,7 @@ static void handle_call_start_nack(zap_span_t *span, ss7bc_connection_t *mcon, s
 
 
 	/* nobody else will do it so we have to do it ourselves */
-	ss7bc_exec_command(mcon,
+	sangomabc_exec_command(mcon,
 					   event->span,
 					   event->chan,
 					   0,
@@ -546,10 +546,10 @@ static void handle_call_start_nack(zap_span_t *span, ss7bc_connection_t *mcon, s
 /**
  * \brief Handler for call stop event
  * \param span Span where event was fired
- * \param mcon ss7 boost connection
+ * \param mcon sangoma boost connection
  * \param event Event to handle
  */
-static void handle_call_stop(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
+static void handle_call_stop(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
 	zap_channel_t *zchan;
 	
@@ -578,7 +578,7 @@ static void handle_call_stop(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_s
 		zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_RESPONSE);
 	}
 
-	ss7bc_exec_command(mcon,
+	sangomabc_exec_command(mcon,
 					   event->span,
 					   event->chan,
 					   0,
@@ -591,10 +591,10 @@ static void handle_call_stop(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_s
 /**
  * \brief Handler for call answer event
  * \param span Span where event was fired
- * \param mcon ss7 boost connection
+ * \param mcon sangoma boost connection
  * \param event Event to handle
  */
-static void handle_call_answer(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
+static void handle_call_answer(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
 	zap_channel_t *zchan;
 	
@@ -624,14 +624,14 @@ static void handle_call_answer(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc
 /**
  * \brief Handler for call start event
  * \param span Span where event was fired
- * \param mcon ss7 boost connection
+ * \param mcon sangoma boost connection
  * \param event Event to handle
  */
-static void handle_call_start(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_event_t *event)
+static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_event_t *event)
 {
 	zap_channel_t *zchan;
 
-	if (!(zchan = find_zchan(span, (ss7bc_short_event_t*)event, 0))) {
+	if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 0))) {
 		goto error;
 	}
 
@@ -659,7 +659,7 @@ static void handle_call_start(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_
 
 	zap_log(ZAP_LOG_CRIT, "START CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
 
-	ss7bc_exec_command(mcon,
+	sangomabc_exec_command(mcon,
 					   event->span,
 					   event->chan,
 					   0,
@@ -670,14 +670,14 @@ static void handle_call_start(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_
 
 /**
  * \brief Handler for heartbeat event
- * \param mcon ss7 boost connection
+ * \param mcon sangoma boost connection
  * \param event Event to handle
  */
-static void handle_heartbeat(ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
+static void handle_heartbeat(sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
 	int err;
 	
-	err = ss7bc_connection_writep(mcon, (ss7bc_event_t*)event);
+	err = sangomabc_connection_writep(mcon, (sangomabc_event_t*)event);
 	
 	if (err <= 0) {
 		zap_log(ZAP_LOG_CRIT, "Failed to tx on ISUP socket [%s]: %s\n", strerror(errno));
@@ -690,45 +690,45 @@ static void handle_heartbeat(ss7bc_connection_t *mcon, ss7bc_short_event_t *even
 
 /**
  * \brief Handler for restart ack event
- * \param mcon ss7 boost connection
+ * \param mcon sangoma boost connection
  * \param span Span where event was fired
  * \param event Event to handle
  */
-static void handle_restart_ack(ss7bc_connection_t *mcon, zap_span_t *span, ss7bc_short_event_t *event)
+static void handle_restart_ack(sangomabc_connection_t *mcon, zap_span_t *span, sangomabc_short_event_t *event)
 {
 	zap_log(ZAP_LOG_DEBUG, "RECV RESTART ACK\n");
 }
 
 /**
  * \brief Handler for restart event
- * \param mcon ss7 boost connection
+ * \param mcon sangoma boost connection
  * \param span Span where event was fired
  * \param event Event to handle
  */
-static void handle_restart(ss7bc_connection_t *mcon, zap_span_t *span, ss7bc_short_event_t *event)
+static void handle_restart(sangomabc_connection_t *mcon, zap_span_t *span, sangomabc_short_event_t *event)
 {
-	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 
     mcon->rxseq_reset = 0;
-	zap_set_flag((&ss7_boost_data->mcon), MSU_FLAG_DOWN);
+	zap_set_flag((&sangoma_boost_data->mcon), MSU_FLAG_DOWN);
 	zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
-	zap_set_flag(ss7_boost_data, ZAP_SS7_BOOST_RESTARTING);
+	zap_set_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RESTARTING);
 	
 	mcon->hb_elapsed = 0;
 }
 
 /**
  * \brief Handler for incoming digit event
- * \param mcon ss7 boost connection
+ * \param mcon sangoma boost connection
  * \param span Span where event was fired
  * \param event Event to handle
  */
-static void handle_incoming_digit(ss7bc_connection_t *mcon, zap_span_t *span, ss7bc_event_t *event)
+static void handle_incoming_digit(sangomabc_connection_t *mcon, zap_span_t *span, sangomabc_event_t *event)
 {
 	zap_channel_t *zchan = NULL;
 	char digits[MAX_DIALED_DIGITS + 2] = "";
 	
-	if (!(zchan = find_zchan(span, (ss7bc_short_event_t *)event, 1))) {
+	if (!(zchan = find_zchan(span, (sangomabc_short_event_t *)event, 1))) {
 		zap_log(ZAP_LOG_ERROR, "Invalid channel\n");
 		return;
 	}
@@ -753,12 +753,12 @@ static void handle_incoming_digit(ss7bc_connection_t *mcon, zap_span_t *span, ss
 }
 
 /**
- * \brief Handler for ss7 boost event
+ * \brief Handler for sangoma boost event
  * \param span Span where event was fired
- * \param mcon ss7 boost connection
+ * \param mcon sangoma boost connection
  * \param event Event to handle
  */
-static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
+static int parse_sangoma_event(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
 	zap_mutex_lock(signal_mutex);
 	
@@ -772,7 +772,7 @@ static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_sho
     switch(event->event_id) {
 
     case SIGBOOST_EVENT_CALL_START:
-		handle_call_start(span, mcon, (ss7bc_event_t*)event);
+		handle_call_start(span, mcon, (sangomabc_event_t*)event);
 		break;
     case SIGBOOST_EVENT_CALL_STOPPED:
 		handle_call_stop(span, mcon, event);
@@ -812,10 +812,10 @@ static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_sho
 		//handle_gap_abate(event);
 		break;
 	case SIGBOOST_EVENT_DIGIT_IN:
-		handle_incoming_digit(mcon, span, (ss7bc_event_t*)event);
+		handle_incoming_digit(mcon, span, (sangomabc_event_t*)event);
 		break;
     default:
-		zap_log(ZAP_LOG_WARNING, "No handler implemented for [%s]\n", ss7bc_event_id_name(event->event_id));
+		zap_log(ZAP_LOG_WARNING, "No handler implemented for [%s]\n", sangomabc_event_id_name(event->event_id));
 		break;
     }
 
@@ -833,8 +833,8 @@ static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_sho
 static __inline__ void state_advance(zap_channel_t *zchan)
 {
 
-	zap_ss7_boost_data_t *ss7_boost_data = zchan->span->signal_data;
-	ss7bc_connection_t *mcon = &ss7_boost_data->mcon;
+	zap_sangoma_boost_data_t *sangoma_boost_data = zchan->span->signal_data;
+	sangomabc_connection_t *mcon = &sangoma_boost_data->mcon;
 	zap_sigmsg_t sig;
 	zap_status_t status;
 
@@ -865,11 +865,11 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_PROGRESS_MEDIA;
-				if ((status = ss7_boost_data->signal_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = sangoma_boost_data->signal_cb(&sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else {
-				ss7bc_exec_command(mcon,
+				sangomabc_exec_command(mcon,
 								   zchan->physical_span_id-1,
 								   zchan->physical_chan_id-1,								   
 								   0,
@@ -882,7 +882,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (!zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_START;
-				if ((status = ss7_boost_data->signal_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = sangoma_boost_data->signal_cb(&sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			}
@@ -892,7 +892,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	case ZAP_CHANNEL_STATE_RESTART:
 		{
 			sig.event_id = ZAP_SIGEVENT_RESTART;
-			status = ss7_boost_data->signal_cb(&sig);
+			status = sangoma_boost_data->signal_cb(&sig);
 			zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_RESPONSE);
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 
@@ -902,12 +902,12 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_UP;
-				if ((status = ss7_boost_data->signal_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = sangoma_boost_data->signal_cb(&sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else {
 				if (!(zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS) || zap_test_flag(zchan, ZAP_CHANNEL_MEDIA))) {
-					ss7bc_exec_command(mcon,
+					sangomabc_exec_command(mcon,
 									   zchan->physical_span_id-1,
 									   zchan->physical_chan_id-1,								   
 									   0,
@@ -915,7 +915,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 									   0);
 				}
 				
-				ss7bc_exec_command(mcon,
+				sangomabc_exec_command(mcon,
 								   zchan->physical_span_id-1,
 								   zchan->physical_chan_id-1,								   
 								   0,
@@ -941,14 +941,14 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 				
 				zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_RESPONSE);
 				if (zap_test_flag(zchan, ZAP_CHANNEL_ANSWERED) || zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS) || zap_test_flag(zchan, ZAP_CHANNEL_MEDIA)) {
-					ss7bc_exec_command(mcon,
+					sangomabc_exec_command(mcon,
 									   zchan->physical_span_id-1,
 									   zchan->physical_chan_id-1,
 									   0,
 									   SIGBOOST_EVENT_CALL_STOPPED,
 									   zchan->caller_data.hangup_cause);
 				} else {
-					ss7bc_exec_command(mcon,
+					sangomabc_exec_command(mcon,
 									   zchan->physical_span_id-1,
 									   zchan->physical_chan_id-1,								   
 									   0,
@@ -961,10 +961,10 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	case ZAP_CHANNEL_STATE_CANCEL:
 		{
 			sig.event_id = ZAP_SIGEVENT_STOP;
-			status = ss7_boost_data->signal_cb(&sig);
+			status = sangoma_boost_data->signal_cb(&sig);
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 			zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_RESPONSE);
-			ss7bc_exec_command(mcon,
+			sangomabc_exec_command(mcon,
 							   zchan->physical_span_id-1,
 							   zchan->physical_chan_id-1,
 							   0,
@@ -975,10 +975,10 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	case ZAP_CHANNEL_STATE_TERMINATING:
 		{
 			sig.event_id = ZAP_SIGEVENT_STOP;
-			status = ss7_boost_data->signal_cb(&sig);
+			status = sangoma_boost_data->signal_cb(&sig);
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE);
 			zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_RESPONSE);
-			ss7bc_exec_command(mcon,
+			sangomabc_exec_command(mcon,
 							   zchan->physical_span_id-1,
 							   zchan->physical_chan_id-1,
 							   0,
@@ -1007,7 +1007,7 @@ static __inline__ void init_outgoing_array(void)
  */
 static __inline__ void check_state(zap_span_t *span)
 {
-	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	int susp = zap_test_flag(span, ZAP_SPAN_SUSPENDED);
 	
 	if (susp && zap_check_state_all(span, ZAP_CHANNEL_STATE_DOWN)) {
@@ -1031,18 +1031,18 @@ static __inline__ void check_state(zap_span_t *span)
         }
     }
 
-	if (zap_test_flag(ss7_boost_data, ZAP_SS7_BOOST_RESTARTING)) {
+	if (zap_test_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RESTARTING)) {
 		if (zap_check_state_all(span, ZAP_CHANNEL_STATE_DOWN)) {
-			ss7bc_exec_command(&ss7_boost_data->mcon,
+			sangomabc_exec_command(&sangoma_boost_data->mcon,
 							   0,
 							   0,
 							   -1,
 							   SIGBOOST_EVENT_SYSTEM_RESTART_ACK,
 							   0);	
-			zap_clear_flag(ss7_boost_data, ZAP_SS7_BOOST_RESTARTING);
+			zap_clear_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RESTARTING);
 			zap_clear_flag_locked(span, ZAP_SPAN_SUSPENDED);
-			zap_clear_flag((&ss7_boost_data->mcon), MSU_FLAG_DOWN);
-			ss7_boost_data->mcon.hb_elapsed = 0;
+			zap_clear_flag((&sangoma_boost_data->mcon), MSU_FLAG_DOWN);
+			sangoma_boost_data->mcon.hb_elapsed = 0;
 			init_outgoing_array();
 		}
 	}
@@ -1083,16 +1083,16 @@ static __inline__ void check_events(zap_span_t *span, int ms_timeout)
 }
 
 /**
- * \brief Main thread function for ss7 boost span (monitor)
+ * \brief Main thread function for sangoma boost span (monitor)
  * \param me Current thread
  * \param obj Span to run in this thread
  */
-static void *zap_ss7_events_run(zap_thread_t *me, void *obj)
+static void *zap_sangoma_events_run(zap_thread_t *me, void *obj)
 {
     zap_span_t *span = (zap_span_t *) obj;
-	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 
-	while (zap_test_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING) && zap_running()) {
+	while (zap_test_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING) && zap_running()) {
 		check_events(span,100);
 	}
 
@@ -1100,44 +1100,44 @@ static void *zap_ss7_events_run(zap_thread_t *me, void *obj)
 }
 
 /**
- * \brief Main thread function for ss7 boost span (monitor)
+ * \brief Main thread function for sangoma boost span (monitor)
  * \param me Current thread
  * \param obj Span to run in this thread
  */
-static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
+static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 {
     zap_span_t *span = (zap_span_t *) obj;
-    zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
-	ss7bc_connection_t *mcon, *pcon;
+    zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+	sangomabc_connection_t *mcon, *pcon;
 	uint32_t ms = 10; //, too_long = 20000;
 		
 
-	ss7_boost_data->pcon = ss7_boost_data->mcon;
+	sangoma_boost_data->pcon = sangoma_boost_data->mcon;
 
-	if (ss7bc_connection_open(&ss7_boost_data->mcon,
-							  ss7_boost_data->mcon.cfg.local_ip,
-							  ss7_boost_data->mcon.cfg.local_port,
-							  ss7_boost_data->mcon.cfg.remote_ip,
-							  ss7_boost_data->mcon.cfg.remote_port) < 0) {
-		zap_log(ZAP_LOG_DEBUG, "Error: Opening MCON Socket [%d] %s\n", ss7_boost_data->mcon.socket, strerror(errno));
+	if (sangomabc_connection_open(&sangoma_boost_data->mcon,
+							  sangoma_boost_data->mcon.cfg.local_ip,
+							  sangoma_boost_data->mcon.cfg.local_port,
+							  sangoma_boost_data->mcon.cfg.remote_ip,
+							  sangoma_boost_data->mcon.cfg.remote_port) < 0) {
+		zap_log(ZAP_LOG_DEBUG, "Error: Opening MCON Socket [%d] %s\n", sangoma_boost_data->mcon.socket, strerror(errno));
 		goto end;
     }
  
-	if (ss7bc_connection_open(&ss7_boost_data->pcon,
-							  ss7_boost_data->pcon.cfg.local_ip,
-							  ++ss7_boost_data->pcon.cfg.local_port,
-							  ss7_boost_data->pcon.cfg.remote_ip,
-							  ++ss7_boost_data->pcon.cfg.remote_port) < 0) {
-		zap_log(ZAP_LOG_DEBUG, "Error: Opening PCON Socket [%d] %s\n", ss7_boost_data->pcon.socket, strerror(errno));
+	if (sangomabc_connection_open(&sangoma_boost_data->pcon,
+							  sangoma_boost_data->pcon.cfg.local_ip,
+							  ++sangoma_boost_data->pcon.cfg.local_port,
+							  sangoma_boost_data->pcon.cfg.remote_ip,
+							  ++sangoma_boost_data->pcon.cfg.remote_port) < 0) {
+		zap_log(ZAP_LOG_DEBUG, "Error: Opening PCON Socket [%d] %s\n", sangoma_boost_data->pcon.socket, strerror(errno));
 		goto end;
     }
 	
-	mcon = &ss7_boost_data->mcon;
-	pcon = &ss7_boost_data->pcon;
+	mcon = &sangoma_boost_data->mcon;
+	pcon = &sangoma_boost_data->pcon;
 
 	init_outgoing_array();
 
-	ss7bc_exec_commandp(pcon,
+	sangomabc_exec_commandp(pcon,
 					   0,
 					   0,
 					   -1,
@@ -1145,14 +1145,14 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 					   0);
 	zap_set_flag(mcon, MSU_FLAG_DOWN);
 
-	while (zap_test_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING)) {
+	while (zap_test_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING)) {
 		fd_set rfds, efds;
 		struct timeval tv = { 0, ms * 1000 };
 		int max, activity, i = 0;
-		ss7bc_event_t *event = NULL;
+		sangomabc_event_t *event = NULL;
 		
 		if (!zap_running()) {
-			ss7bc_exec_commandp(pcon,
+			sangomabc_exec_commandp(pcon,
 							   0,
 							   0,
 							   -1,
@@ -1181,16 +1181,16 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 			}
 
 			if (FD_ISSET(pcon->socket, &rfds)) {
-				while ((event = ss7bc_connection_readp(pcon, i))) {
-					parse_ss7_event(span, pcon, (ss7bc_short_event_t*)event);
+				while ((event = sangomabc_connection_readp(pcon, i))) {
+					parse_sangoma_event(span, pcon, (sangomabc_short_event_t*)event);
 					i++;
 				}
 			}
 			i=0;
 
 			if (FD_ISSET(mcon->socket, &rfds)) {
-				if ((event = ss7bc_connection_read(mcon, i))) {
-					parse_ss7_event(span, mcon, (ss7bc_short_event_t*)event);
+				if ((event = sangomabc_connection_read(mcon, i))) {
+					parse_sangoma_event(span, mcon, (sangomabc_short_event_t*)event);
 					i++;
 				}
 			}
@@ -1210,7 +1210,7 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 			zap_log(ZAP_LOG_CRIT, "Lost Heartbeat!\n");
 			zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
 			zap_set_flag(mcon, MSU_FLAG_DOWN);
-			ss7bc_exec_commandp(pcon,
+			sangomabc_exec_commandp(pcon,
 								0,
 								0,
 								-1,
@@ -1231,21 +1231,21 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 
  end:
 
-	ss7bc_connection_close(&ss7_boost_data->mcon);
-	ss7bc_connection_close(&ss7_boost_data->pcon);
+	sangomabc_connection_close(&sangoma_boost_data->mcon);
+	sangomabc_connection_close(&sangoma_boost_data->pcon);
 
-	zap_clear_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING);
+	zap_clear_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING);
 
-	zap_log(ZAP_LOG_DEBUG, "SS7_BOOST thread ended.\n");
+	zap_log(ZAP_LOG_DEBUG, "SANGOMA_BOOST thread ended.\n");
 	return NULL;
 }
 
 /**
- * \brief Loads ss7 boost signaling module
+ * \brief Loads sangoma boost signaling module
  * \param zio Openzap IO interface
  * \return Success
  */
-static ZIO_SIG_LOAD_FUNCTION(zap_ss7_boost_init)
+static ZIO_SIG_LOAD_FUNCTION(zap_sangoma_boost_init)
 {
 	zap_mutex_create(&request_mutex);
 	zap_mutex_create(&signal_mutex);
@@ -1253,21 +1253,21 @@ static ZIO_SIG_LOAD_FUNCTION(zap_ss7_boost_init)
 	return ZAP_SUCCESS;
 }
 
-static zap_status_t zap_ss7_boost_start(zap_span_t *span)
+static zap_status_t zap_sangoma_boost_start(zap_span_t *span)
 {
 	int err;
-	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
-	zap_set_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING);
-	err=zap_thread_create_detached(zap_ss7_boost_run, span);
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+	zap_set_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING);
+	err=zap_thread_create_detached(zap_sangoma_boost_run, span);
 	if (err) {
-		zap_clear_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING);
+		zap_clear_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING);
 		return err;
 	}
 	// launch the events thread to handle HW DTMF and possibly
 	// other events in the future
-	err=zap_thread_create_detached(zap_ss7_events_run, span);
+	err=zap_thread_create_detached(zap_sangoma_events_run, span);
 	if (err) {
-		zap_clear_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING);
+		zap_clear_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING);
 	}
 	return err;
 }
@@ -1372,15 +1372,15 @@ static zap_state_map_t boost_state_map = {
 };
 
 /**
- * \brief Initialises an ss7 boost span from configuration variables
+ * \brief Initialises an sangoma boost span from configuration variables
  * \param span Span to configure
  * \param sig_cb Callback function for event signals
  * \param ap List of configuration variables
  * \return Success or failure
  */
-static ZIO_SIG_CONFIGURE_FUNCTION(zap_ss7_boost_configure_span)
+static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
 {
-	zap_ss7_boost_data_t *ss7_boost_data = NULL;
+	zap_sangoma_boost_data_t *sangoma_boost_data = NULL;
 	const char *local_ip = "127.0.0.65", *remote_ip = "127.0.0.66";
 	int local_port = 53000, remote_port = 53000;
 	char *var, *val;
@@ -1419,20 +1419,20 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_ss7_boost_configure_span)
 		return ZAP_FAIL;
 	}
 
-	ss7_boost_data = malloc(sizeof(*ss7_boost_data));
-	assert(ss7_boost_data);
-	memset(ss7_boost_data, 0, sizeof(*ss7_boost_data));
+	sangoma_boost_data = malloc(sizeof(*sangoma_boost_data));
+	assert(sangoma_boost_data);
+	memset(sangoma_boost_data, 0, sizeof(*sangoma_boost_data));
 	
-	zap_set_string(ss7_boost_data->mcon.cfg.local_ip, local_ip);
-	ss7_boost_data->mcon.cfg.local_port = local_port;
-	zap_set_string(ss7_boost_data->mcon.cfg.remote_ip, remote_ip);
-	ss7_boost_data->mcon.cfg.remote_port = remote_port;
-	ss7_boost_data->signal_cb = sig_cb;
-	span->start = zap_ss7_boost_start;
-	span->signal_data = ss7_boost_data;
-    span->signal_type = ZAP_SIGTYPE_SS7BOOST;
-    span->outgoing_call = ss7_boost_outgoing_call;
-	span->channel_request = ss7_boost_channel_request;
+	zap_set_string(sangoma_boost_data->mcon.cfg.local_ip, local_ip);
+	sangoma_boost_data->mcon.cfg.local_port = local_port;
+	zap_set_string(sangoma_boost_data->mcon.cfg.remote_ip, remote_ip);
+	sangoma_boost_data->mcon.cfg.remote_port = remote_port;
+	sangoma_boost_data->signal_cb = sig_cb;
+	span->start = zap_sangoma_boost_start;
+	span->signal_data = sangoma_boost_data;
+    span->signal_type = ZAP_SIGTYPE_SANGOMABOOST;
+    span->outgoing_call = sangoma_boost_outgoing_call;
+	span->channel_request = sangoma_boost_channel_request;
 	span->state_map = &boost_state_map;
 	zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
 
@@ -1440,14 +1440,14 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_ss7_boost_configure_span)
 }
 
 /**
- * \brief Openzap ss7 boost signaling module definition
+ * \brief Openzap sangoma boost signaling module definition
  */
 zap_module_t zap_module = { 
-	"ss7_boost",
+	"sangoma_boost",
 	NULL,
 	NULL,
-	zap_ss7_boost_init,
-	zap_ss7_boost_configure_span,
+	zap_sangoma_boost_init,
+	zap_sangoma_boost_configure_span,
 	NULL
 };
 

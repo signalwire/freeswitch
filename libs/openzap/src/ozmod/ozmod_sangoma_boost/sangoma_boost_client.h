@@ -31,8 +31,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SS7BC_H
-#define _SS7BC_H
+#ifndef _SANGOMABC_H
+#define _SANGOMABC_H
 
 #include <ctype.h>
 #include <string.h>
@@ -53,46 +53,46 @@
 #include <sigboost.h>
 #include <sys/time.h>
 
-#define ss7bc_test_flag(p,flag) 		({		\
+#define sangomabc_test_flag(p,flag) 		({		\
 			((p)->flags & (flag));				\
 		})
 
-#define ss7bc_set_flag(p,flag) 		do {		\
+#define sangomabc_set_flag(p,flag) 		do {		\
 		((p)->flags |= (flag));					\
 	} while (0)
 
-#define ss7bc_clear_flag(p,flag) 		do {	\
+#define sangomabc_clear_flag(p,flag) 		do {	\
 		((p)->flags &= ~(flag));				\
 	} while (0)
 
-#define ss7bc_copy_flags(dest,src,flagz)	do {	\
+#define sangomabc_copy_flags(dest,src,flagz)	do {	\
 		(dest)->flags &= ~(flagz);					\
 		(dest)->flags |= ((src)->flags & (flagz));	\
 	} while (0)
 
-typedef  t_sigboost_callstart ss7bc_event_t;
-typedef  t_sigboost_short ss7bc_short_event_t;
-typedef uint32_t ss7bc_event_id_t;
+typedef  t_sigboost_callstart sangomabc_event_t;
+typedef  t_sigboost_short sangomabc_short_event_t;
+typedef uint32_t sangomabc_event_id_t;
 
-typedef struct ss7bc_ip_cfg
+typedef struct sangomabc_ip_cfg
 {
 	char local_ip[25];
 	int local_port;
 	char remote_ip[25];
 	int remote_port;
-}ss7bc_ip_cfg_t;
+}sangomabc_ip_cfg_t;
 
 typedef enum {
 	MSU_FLAG_EVENT = (1 << 0),
 	MSU_FLAG_DOWN = (1 << 1)
-} ss7bc_flag_t;
+} sangomabc_flag_t;
 
 
-struct ss7bc_connection {
+struct sangomabc_connection {
 	zap_socket_t socket;
 	struct sockaddr_in local_addr;
 	struct sockaddr_in remote_addr;
-	ss7bc_event_t event;
+	sangomabc_event_t event;
 	struct hostent remote_hp;
 	struct hostent local_hp;
 	unsigned int flags;
@@ -102,11 +102,11 @@ struct ss7bc_connection {
 	unsigned int rxseq;
 	unsigned int txwindow;
 	unsigned int rxseq_reset;
-	ss7bc_ip_cfg_t cfg;
+	sangomabc_ip_cfg_t cfg;
 	uint32_t hb_elapsed;
 };
 
-typedef struct ss7bc_connection ss7bc_connection_t;
+typedef struct sangomabc_connection sangomabc_connection_t;
 
 /* disable nagle's algorythm */
 static inline void sctp_no_nagle(int socket)
@@ -117,21 +117,21 @@ static inline void sctp_no_nagle(int socket)
 #endif
 }
 
-int ss7bc_connection_close(ss7bc_connection_t *mcon);
-int ss7bc_connection_open(ss7bc_connection_t *mcon, char *local_ip, int local_port, char *ip, int port);
-ss7bc_event_t *__ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration, const char *file, const char *func, int line);
-ss7bc_event_t *__ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration, const char *file, const char *func, int line);
-int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, const char *file, const char *func, int line);
-int __ss7bc_connection_writep(ss7bc_connection_t *mcon, ss7bc_event_t *event, const char *file, const char *func, int line);
-#define ss7bc_connection_write(_m,_e) __ss7bc_connection_write(_m, _e, __FILE__, __func__, __LINE__)
-#define ss7bc_connection_writep(_m,_e) __ss7bc_connection_writep(_m, _e, __FILE__, __func__, __LINE__)
-#define ss7bc_connection_read(_m,_e) __ss7bc_connection_read(_m, _e, __FILE__, __func__, __LINE__)
-#define ss7bc_connection_readp(_m,_e) __ss7bc_connection_readp(_m, _e, __FILE__, __func__, __LINE__)
-void ss7bc_event_init(ss7bc_short_event_t *event, ss7bc_event_id_t event_id, int chan, int span);
-void ss7bc_call_init(ss7bc_event_t *event, const char *calling, const char *called, int setup_id);
-const char *ss7bc_event_id_name(uint32_t event_id);
-int ss7bc_exec_command(ss7bc_connection_t *mcon, int span, int chan, int id, int cmd, int cause);
-int ss7bc_exec_commandp(ss7bc_connection_t *pcon, int span, int chan, int id, int cmd, int cause);
+int sangomabc_connection_close(sangomabc_connection_t *mcon);
+int sangomabc_connection_open(sangomabc_connection_t *mcon, char *local_ip, int local_port, char *ip, int port);
+sangomabc_event_t *__sangomabc_connection_read(sangomabc_connection_t *mcon, int iteration, const char *file, const char *func, int line);
+sangomabc_event_t *__sangomabc_connection_readp(sangomabc_connection_t *mcon, int iteration, const char *file, const char *func, int line);
+int __sangomabc_connection_write(sangomabc_connection_t *mcon, sangomabc_event_t *event, const char *file, const char *func, int line);
+int __sangomabc_connection_writep(sangomabc_connection_t *mcon, sangomabc_event_t *event, const char *file, const char *func, int line);
+#define sangomabc_connection_write(_m,_e) __sangomabc_connection_write(_m, _e, __FILE__, __func__, __LINE__)
+#define sangomabc_connection_writep(_m,_e) __sangomabc_connection_writep(_m, _e, __FILE__, __func__, __LINE__)
+#define sangomabc_connection_read(_m,_e) __sangomabc_connection_read(_m, _e, __FILE__, __func__, __LINE__)
+#define sangomabc_connection_readp(_m,_e) __sangomabc_connection_readp(_m, _e, __FILE__, __func__, __LINE__)
+void sangomabc_event_init(sangomabc_short_event_t *event, sangomabc_event_id_t event_id, int chan, int span);
+void sangomabc_call_init(sangomabc_event_t *event, const char *calling, const char *called, int setup_id);
+const char *sangomabc_event_id_name(uint32_t event_id);
+int sangomabc_exec_command(sangomabc_connection_t *mcon, int span, int chan, int id, int cmd, int cause);
+int sangomabc_exec_commandp(sangomabc_connection_t *pcon, int span, int chan, int id, int cmd, int cause);
 
 #endif
 
