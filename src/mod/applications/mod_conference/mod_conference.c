@@ -222,6 +222,7 @@ typedef struct conference_file_node {
 	switch_memory_pool_t *pool;
 	uint32_t leadin;
 	struct conference_file_node *next;
+	char *file;
 } conference_file_node_t;
 
 /* conference xml config sections */
@@ -1041,6 +1042,15 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				}
 
 				if (file_sample_len <= 0) {
+					if (test_eflag(conference, EFLAG_PLAY_FILE) &&
+						switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+						conference_add_event_data(conference, event);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-done");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", conference->fnode->file);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Async", "true");
+						switch_event_fire(&event);
+					}
+
 					conference->fnode->done++;
 				} else {
 					has_file_data = 1;
@@ -1057,6 +1067,14 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				switch_core_file_read(&conference->async_fnode->fh, async_file_frame, &file_sample_len);
 
 				if (file_sample_len <= 0) {
+					if (test_eflag(conference, EFLAG_PLAY_FILE) &&
+						switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+						conference_add_event_data(conference, event);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-done");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", conference->fnode->file);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Async", "true");
+						switch_event_fire(&event);
+					}
 					conference->async_fnode->done++;
 				} else {
 					if (has_file_data) {
@@ -2223,6 +2241,14 @@ static void conference_loop_output(conference_member_t *member)
 
 					if (file_sample_len <= 0) {
 						member->fnode->done++;
+
+						if (test_eflag(member->conference, EFLAG_PLAY_FILE) &&
+							switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+							conference_add_event_data(member->conference, event);
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member-done");
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", member->fnode->file);
+							switch_event_fire(&event);
+						}
 					} else {	/* there is file node data to deliver */
 						write_frame.data = file_frame;
 						write_frame.datalen = (uint32_t) file_data_len;
@@ -2677,6 +2703,8 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 
 	fnode->pool = pool;
 	fnode->async = async;
+	fnode->file = switch_core_strdup(fnode->pool, file);
+
 	/* Queue the node */
 	switch_mutex_lock(conference->mutex);
 
@@ -2771,6 +2799,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 		goto done;
 	}
 	fnode->pool = pool;
+	fnode->file = switch_core_strdup(fnode->pool, file);
 	/* Queue the node */
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Queueing file '%s' for play\n", file);
 	switch_mutex_lock(member->control_mutex);
@@ -3525,6 +3554,7 @@ static switch_status_t conf_api_sub_play(conference_obj_t *conference, switch_st
 				conference_add_event_data(conference, event);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", argv[2]);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Async", async ? "true" : "false");
 				switch_event_fire(&event);
 			}
 		} else {
