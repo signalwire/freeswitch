@@ -99,6 +99,7 @@ static struct {
 	char *cid_name;
 	char *cid_num;
 	char *dialplan;
+	char *context;
 	char *ring_file;
 	char *hold_file;
 	char *timer_name;
@@ -137,6 +138,7 @@ static struct {
 
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_context, globals.context);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_name, globals.cid_name);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_num, globals.cid_num);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ring_file, globals.ring_file);
@@ -903,6 +905,8 @@ static switch_status_t load_config(void)
 				}
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
+			} else if (!strcmp(var, "context")) {
+				set_global_context(val);
 			} else if (!strcmp(var, "cid-name")) {
 				set_global_cid_name(val);
 			} else if (!strcmp(var, "cid-num")) {
@@ -931,6 +935,10 @@ static switch_status_t load_config(void)
 
 	if (!globals.dialplan) {
 		set_global_dialplan("default");
+	}
+	
+	if (!globals.context) {
+		set_global_context("default");
 	}
 
 	if (!globals.sample_rate) {
@@ -994,6 +1002,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown)
 	switch_event_free_subclass(MY_EVENT_RINGING);
 	
 	switch_safe_free(globals.dialplan);
+	switch_safe_free(globals.context);
 	switch_safe_free(globals.cid_name);
 	switch_safe_free(globals.cid_num);
 	switch_safe_free(globals.ring_file);
@@ -1492,6 +1501,7 @@ static switch_status_t switch_call(char **argv, int argc, switch_stream_handle_t
 	private_t *tp, *tech_pvt = NULL;
 	char *callid = argv[0];
 	uint8_t one_call = 0;
+	
 
 	switch_mutex_lock(globals.pvt_lock);
 	if (switch_strlen_zero(callid)) {
@@ -1717,6 +1727,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		char *dialplan = globals.dialplan;
+		char *context = globals.context;
 		char *cid_name = globals.cid_name;
 		char *cid_num = globals.cid_num;
 		char ip[25] = "0.0.0.0";
@@ -1758,7 +1769,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 		switch_find_local_ip(ip, sizeof(ip), NULL, AF_INET);
 
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-																  NULL, dialplan, cid_name, cid_num, ip, NULL, NULL, NULL, modname, NULL, dest)) != 0) {
+																  NULL, dialplan, cid_name, cid_num, ip, NULL, NULL, NULL, modname, context, dest)) != 0) {
 			char name[128];
 			switch_snprintf(name, sizeof(name), "portaudio/%s",
 							tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->destination_number : modname);
