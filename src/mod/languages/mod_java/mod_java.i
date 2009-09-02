@@ -8,6 +8,10 @@
 
 %ignore SwitchToMempool;   
 %newobject EventConsumer::pop;
+%newobject Session;
+%newobject CoreSession;
+%newobject Event;
+%newobject Stream;
 
 
 // I thought we were using swig because it's easier than the alternatives :-)

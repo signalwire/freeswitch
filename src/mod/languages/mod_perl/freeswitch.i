@@ -10,6 +10,10 @@
 //%cstring_bounded_mutable(char *terminator, 8);
 
 %newobject EventConsumer::pop;
+%newobject Session;
+%newobject CoreSession;
+%newobject Event;
+%newobject Stream;
 
 /** insert the following includes into generated code so it compiles */
 %{

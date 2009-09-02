@@ -2147,6 +2147,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_resolve_host(string host, string buf, uint buflen) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_resolve_host(host, buf, buflen);
+    return ret;
+  }
+
   public static switch_status_t switch_find_local_ip(string buf, int len, SWIGTYPE_p_int mask, int family) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_find_local_ip(buf, len, SWIGTYPE_p_int.getCPtr(mask), family);
     return ret;
@@ -2571,6 +2576,10 @@ public class freeswitch {
     freeswitchPINVOKE.switch_channel_set_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flag);
   }
 
+  public static void switch_channel_set_flag_recursive(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flag) {
+    freeswitchPINVOKE.switch_channel_set_flag_recursive(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flag);
+  }
+
   public static switch_bool_t switch_channel_set_flag_partner(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flag) {
     switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_channel_set_flag_partner(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flag);
     return ret;
@@ -2592,6 +2601,10 @@ public class freeswitch {
 
   public static void switch_channel_clear_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flag) {
     freeswitchPINVOKE.switch_channel_clear_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flag);
+  }
+
+  public static void switch_channel_clear_flag_recursive(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flag) {
+    freeswitchPINVOKE.switch_channel_clear_flag_recursive(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flag);
   }
 
   public static switch_status_t switch_channel_perform_answer(SWIGTYPE_p_switch_channel channel, string file, string func, int line) {
@@ -3772,6 +3785,16 @@ public class freeswitch {
   public static uint switch_log_str2mask(string str) {
     uint ret = freeswitchPINVOKE.switch_log_str2mask(str);
     return ret;
+  }
+
+  public static switch_log_node_t switch_log_node_dup(switch_log_node_t node) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_log_node_dup(switch_log_node_t.getCPtr(node));
+    switch_log_node_t ret = (cPtr == IntPtr.Zero) ? null : new switch_log_node_t(cPtr, false);
+    return ret;
+  }
+
+  public static void switch_log_node_free(SWIGTYPE_p_p_switch_log_node_t pnode) {
+    freeswitchPINVOKE.switch_log_node_free(SWIGTYPE_p_p_switch_log_node_t.getCPtr(pnode));
   }
 
   public static switch_xml switch_xml_parse_str_dynamic(string s, switch_bool_t dup) {
@@ -6596,6 +6619,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_free")]
   public static extern int switch_frame_free(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_resolve_host")]
+  public static extern int switch_resolve_host(string jarg1, string jarg2, uint jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_find_local_ip")]
   public static extern int switch_find_local_ip(string jarg1, int jarg2, HandleRef jarg3, int jarg4);
 
@@ -9155,6 +9181,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_flag")]
   public static extern void switch_channel_set_flag(HandleRef jarg1, int jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_flag_recursive")]
+  public static extern void switch_channel_set_flag_recursive(HandleRef jarg1, int jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_flag_partner")]
   public static extern int switch_channel_set_flag_partner(HandleRef jarg1, int jarg2);
 
@@ -9169,6 +9198,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_clear_flag")]
   public static extern void switch_channel_clear_flag(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_clear_flag_recursive")]
+  public static extern void switch_channel_clear_flag_recursive(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_perform_answer")]
   public static extern int switch_channel_perform_answer(HandleRef jarg1, string jarg2, string jarg3, int jarg4);
@@ -10264,6 +10296,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_log_str2mask")]
   public static extern uint switch_log_str2mask(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_log_node_dup")]
+  public static extern IntPtr switch_log_node_dup(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_log_node_free")]
+  public static extern void switch_log_node_free(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_XML_BUFSIZE_get")]
   public static extern int SWITCH_XML_BUFSIZE_get();
@@ -14390,6 +14428,36 @@ public class SWIGTYPE_p_p_switch_ivr_menu_xml_ctx {
   }
 
   internal static HandleRef getCPtr(SWIGTYPE_p_p_switch_ivr_menu_xml_ctx obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class SWIGTYPE_p_p_switch_log_node_t {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_p_switch_log_node_t(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_p_switch_log_node_t() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_p_switch_log_node_t obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -20663,6 +20731,8 @@ public enum switch_event_types_t {
   SWITCH_EVENT_RECV_INFO,
   SWITCH_EVENT_CALL_SECURE,
   SWITCH_EVENT_NAT,
+  SWITCH_EVENT_RECORD_START,
+  SWITCH_EVENT_RECORD_STOP,
   SWITCH_EVENT_ALL
 }
 

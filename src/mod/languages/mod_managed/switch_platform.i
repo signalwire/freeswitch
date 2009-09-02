@@ -29,6 +29,10 @@ typedef unsigned long in_addr_t;
 %}
 
 %newobject EventConsumer::pop;
+%newobject Session;
+%newobject CoreSession;
+%newobject Event;
+%newobject Stream;
 
 #define SWITCH_DECLARE(type) type
 #define SWITCH_DECLARE_NONSTD(type) type

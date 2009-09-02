@@ -76,6 +76,10 @@ char * SWIG_csharp_string_callback(const char * str) {
 %typemap(csclassmodifiers) Event "public partial class"
 %typemap(csclassmodifiers) Stream "public partial class"
 %newobject EventConsumer::pop;
+%newobject Session;
+%newobject CoreSession;
+%newobject Event;
+%newobject Stream;
 
 // Allow bitwise compare on flag fields
 %typemap(csclassmodifiers) session_flag_t "[System.Flags] public enum"
