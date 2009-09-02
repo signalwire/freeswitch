@@ -31,22 +31,22 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ZAP_SS7_BOOST_H
-#define ZAP_SS7_BOOST_H
-#include "ss7_boost_client.h"
+#ifndef ZAP_SANGOMA_BOOST_H
+#define ZAP_SANGOMA_BOOST_H
+#include "sangoma_boost_client.h"
 #include "openzap.h"
 
 typedef enum {
-	ZAP_SS7_BOOST_RUNNING = (1 << 0),
-	ZAP_SS7_BOOST_RESTARTING = (1 << 1)
-} zap_ss7_boost_flag_t;
+	ZAP_SANGOMA_BOOST_RUNNING = (1 << 0),
+	ZAP_SANGOMA_BOOST_RESTARTING = (1 << 1)
+} zap_sangoma_boost_flag_t;
 
-typedef struct zap_ss7_boost_data {
-	ss7bc_connection_t mcon;
-	ss7bc_connection_t pcon;
+typedef struct zap_sangoma_boost_data {
+	sangomabc_connection_t mcon;
+	sangomabc_connection_t pcon;
 	zio_signal_cb_t signal_cb;
 	uint32_t flags;
-} zap_ss7_boost_data_t;
+} zap_sangoma_boost_data_t;
 
 #endif
 
