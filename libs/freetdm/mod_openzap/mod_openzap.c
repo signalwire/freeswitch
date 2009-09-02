@@ -2300,7 +2300,7 @@ static switch_status_t load_config(void)
 				span_id = span->span_id;
 			}
 
-			if (zap_configure_span("ss7_boost", span, on_clear_channel_signal, 
+			if (zap_configure_span("sangoma_boost", span, on_clear_channel_signal, 
 								   "local_ip", local_ip,
 								   "local_port", &local_port,
 								   "remote_ip", remote_ip,
@@ -2315,7 +2315,7 @@ static switch_status_t load_config(void)
 			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
 
 			zap_span_start(span);
-			switch_copy_string(SPAN_CONFIG[span->span_id].type, "ss7 (boost)", sizeof(SPAN_CONFIG[span->span_id].type));
+			switch_copy_string(SPAN_CONFIG[span->span_id].type, "Sangoma (boost)", sizeof(SPAN_CONFIG[span->span_id].type));
 		}
 	}
 
