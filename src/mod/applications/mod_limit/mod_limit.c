@@ -860,7 +860,12 @@ SWITCH_STANDARD_APP(limit_function)
 	limit_execute_sql(sql, NULL);
 	switch_safe_free(sql);
 	
-	switch_channel_set_variable_printf(channel, "limit_usage", "%d", ++got);
+	{
+		const char *susage = switch_core_session_sprintf(session, "%d", ++got);
+
+		switch_channel_set_variable(channel, "limit_usage", susage);
+		switch_channel_set_variable(channel, switch_core_session_sprintf(session, "limit_usage_%s_%s", realm, id), susage);
+	}
 	limit_fire_event(realm, id, got, 0, max, 0);
 
   done:
