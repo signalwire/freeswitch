@@ -2,6 +2,7 @@ LOCAL_CFLAGS=$(shell php-config --includes)
 PHP_LDFLAGS=$(shell php-config --ldflags)
 PHP_LIBS=$(shell php-config --libs | sed -r 's/ ?-l(bz2|pcre|xml2|gssapi_krb5|krb5|k5crypto|com_err|history|z|readline|gmp|ssl|crypto)//g')
 LOCAL_LDFLAGS=$(PHP_LDFLAGS) $(PHP_LIBS)
+LOCAL_LDFLAGS+=-lpthread
 WRAP_GCC_WARNING_SILENCE=-Wno-unused-label -Wno-unused-function
 
 all: ESL.so
