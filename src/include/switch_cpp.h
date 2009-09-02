@@ -110,7 +110,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 	   public:
 		 SWITCH_DECLARE_CONSTRUCTOR API(void);
 		 virtual SWITCH_DECLARE_CONSTRUCTOR ~ API();
-		 SWITCH_DECLARE(const char *) execute(const char *command, const char *data);
+		 SWITCH_DECLARE(const char *) execute(const char *command, const char *data = NULL);
 		 SWITCH_DECLARE(const char *) executeString(const char *command);
 		 SWITCH_DECLARE(char *) getTime(void);
 	 };

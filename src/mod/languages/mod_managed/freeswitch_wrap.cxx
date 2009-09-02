@@ -27462,7 +27462,7 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_Api_Execute(void * jarg1, char * jarg2, cha
   char * jresult ;
   API *arg1 = (API *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
   char *result = 0 ;
   
   arg1 = (API *)jarg1; 

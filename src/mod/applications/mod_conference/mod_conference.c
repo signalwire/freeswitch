@@ -1071,7 +1071,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 						switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 						conference_add_event_data(conference, event);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-done");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", conference->fnode->file);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", conference->async_fnode->file);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Async", "true");
 						switch_event_fire(&event);
 					}
