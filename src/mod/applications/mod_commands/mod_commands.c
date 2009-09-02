@@ -3451,6 +3451,23 @@ SWITCH_STANDARD_API(system_function)
     return SWITCH_STATUS_SUCCESS;
 }
 
+
+#define SYSTEM_SYNTAX "<command>"
+SWITCH_STANDARD_API(bg_system_function)
+{
+    if (switch_strlen_zero(cmd)) {
+        stream->write_function(stream, "-USAGE: %s\n", SYSTEM_SYNTAX);
+        return SWITCH_STATUS_SUCCESS;
+    } 
+
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Executing command: %s\n", cmd);
+    if (switch_system(cmd, SWITCH_FALSE) < 0) {
+       switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", cmd);
+    }
+    stream->write_function(stream, "+OK\n");
+    return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(strftime_tz_api_function)
 {
 	char *format = NULL;
@@ -3646,6 +3663,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "echo", "echo", echo_function, "<data>");
 	SWITCH_ADD_API(commands_api_interface, "stun", "stun", stun_function, "<stun_server>[:port]");
 	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "bg_system", "Execute a system command in the background", bg_system_function, SYSTEM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "time_test", "time_test", time_test_function, "<mss>");
 	SWITCH_ADD_API(commands_api_interface, "nat_map", "nat_map", nat_map_function, "[status|republish|reinit] | [add|del] <port> [tcp|udp] [static]");
 	SWITCH_ADD_API(commands_api_interface, "host_lookup", "host_lookup", host_lookup_function, "<hostname>");
