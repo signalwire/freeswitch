@@ -1800,7 +1800,15 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		if (!rtp_session->timer.interval && rtp_session->read_pollfd) {
-			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, poll_sec * 1000000);
+			int pt = poll_sec * 1000000;
+
+			if (rtp_session->dtmf_data.out_digit_dur > 0) {
+				pt = 20000;
+			}
+			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
+			if (rtp_session->dtmf_data.out_digit_dur > 0) {
+				do_2833(rtp_session);
+			}
 		} 
 		
 		if (poll_status == SWITCH_STATUS_SUCCESS) {
