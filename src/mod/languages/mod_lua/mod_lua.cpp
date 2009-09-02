@@ -386,8 +386,7 @@ SWITCH_STANDARD_APP(lua_function)
 		return;
 	}
 
-	snprintf(code, sizeof(code), "~session = freeswitch.Session(\"%s\");", switch_core_session_get_uuid(session));
-	error = lua_parse_and_execute(L, code);
+	mod_lua_conjure_session(L, session, "session", 1);
 
 	mycmd = strdup((char *) data);
 	switch_assert(mycmd);
@@ -425,6 +424,11 @@ SWITCH_STANDARD_API(lua_api_function)
 
 		mycmd = strdup(cmd);
 		switch_assert(mycmd);
+
+		if (session) {
+			mod_lua_conjure_session(L, session, "session", 1);
+		}
+
 		mod_lua_conjure_stream(L, stream, "stream", 1);
 
 		if (stream->param_event) {
