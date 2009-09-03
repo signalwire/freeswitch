@@ -460,7 +460,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					session->raw_read_frame.m = read_frame->m;
 					session->raw_read_frame.ssrc = read_frame->ssrc;
 					session->raw_read_frame.seq = read_frame->seq;
-					*frame = &session->raw_read_frame;
+					*frame = enc_frame;
 					status = SWITCH_STATUS_SUCCESS;
 					break;
 				case SWITCH_STATUS_NOT_INITALIZED:
