@@ -1457,8 +1457,8 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	/* ZRTP */
 	if (zrtp_on) {
 
-		if (rtp_session->zrtp_ctx != NULL) {
-			zrtp_stream_stop(rtp_session->zrtp_ctx);
+		if ((*rtp_session)->zrtp_ctx != NULL) {
+			zrtp_stream_stop((*rtp_session)->zrtp_ctx);
 		}
 
 		if (switch_test_flag((*rtp_session), SWITCH_ZRTP_FLAG_SECURE_SEND)) {
