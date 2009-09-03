@@ -2614,7 +2614,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 static switch_status_t voicemail_inject(const char *data)
 {
 	vm_profile_t *profile;
-	char *dup = NULL, *user = NULL, *domain = NULL;
+	char *dup = NULL, *user = NULL, *domain = NULL, *profile_name = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int isgroup = 0, isall = 0;
 	int argc = 0;
@@ -2649,6 +2649,12 @@ static switch_status_t voicemail_inject(const char *data)
 		domain = user;
 	}
 
+	if ((profile_name = strchr(domain, '@'))) {
+		*profile_name++ = '\0';
+	} else {
+		profile_name = domain;
+	}
+
 	if (switch_stristr("group=", user)) {
 		user += 6;
 		isgroup++;
@@ -2662,8 +2668,10 @@ static switch_status_t voicemail_inject(const char *data)
 		goto end;
 	}
 
-	if (!(profile = get_profile(domain))) {
-		profile = get_profile("default");
+	if (!(profile = get_profile(profile_name))) {
+		if (!(profile = get_profile(domain))) {
+			profile = get_profile("default");
+		}
 	}
 	
 	if (!profile) {
