@@ -282,6 +282,8 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	}
 
 	sangomabc_call_init(&event, caller_data->cid_num.digits, ani, r);
+	//sangoma_bc_call_init will clear the trunk_group val so we need to set it again	
+	event.trunk_group=tg;
 	
 	if (gr && *(gr+1)) {
 
