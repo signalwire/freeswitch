@@ -18,6 +18,7 @@
 %}
 
 
+
 %ignore SwitchToMempool;   
 %newobject EventConsumer::pop;
 %newobject Session;
@@ -54,7 +55,7 @@ class Session : public CoreSession {
 	virtual switch_status_t run_dtmf_callback(void *input, switch_input_type_t itype);
 	void unsetInputCallback(void);
 	void setInputCallback(char *cbfunc, char *funcargs = NULL);
-	void setHangupHook(char *func, char *arg = NULL);
+	void setHangupHook(char *func, char *arg);
 	bool ready();
 	int originate(CoreSession *a_leg_session, char *dest, int timeout);
 	

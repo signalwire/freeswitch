@@ -187,16 +187,22 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 	return error;
 }
 
+struct lua_thread_helper {
+	switch_memory_pool_t *pool;
+	char *input_code;
+};
+
 static void *SWITCH_THREAD_FUNC lua_thread_run(switch_thread_t *thread, void *obj)
 {
-	char *input_code = (char *) obj;
+	struct lua_thread_helper *lth = (struct lua_thread_helper *) obj;
+	switch_memory_pool_t *pool = lth->pool;
 	lua_State *L = lua_init();	/* opens Lua */
 
-	lua_parse_and_execute(L, input_code);
+	lua_parse_and_execute(L, lth->input_code);
 
-	if (input_code) {
-		free(input_code);
-	}
+	lth = NULL;
+
+	switch_core_destroy_memory_pool(&pool);
 
 	lua_uninit(L);
 
@@ -365,11 +371,18 @@ int lua_thread(const char *text)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
+	switch_memory_pool_t *pool;
+	lua_thread_helper *lth;
 
-	switch_threadattr_create(&thd_attr, globals.pool);
+	switch_core_new_memory_pool(&pool);
+	lth = (lua_thread_helper *) switch_core_alloc(pool, sizeof(*lth));
+	lth->pool = pool;
+	lth->input_code = switch_core_strdup(lth->pool, text);
+
+	switch_threadattr_create(&thd_attr, lth->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&thread, thd_attr, lua_thread_run, strdup(text), globals.pool);
+	switch_thread_create(&thread, thd_attr, lua_thread_run, lth, lth->pool);
 
 	return 0;
 }
