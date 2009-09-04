@@ -20,7 +20,7 @@ void mod_lua_conjure_session(lua_State * L, switch_core_session_t *session, cons
 {
 	Session *result = new Session(session);
 
-	SWIG_NewPointerObj(L, result, SWIGTYPE_p_CoreSession, destroy_me);
+	SWIG_NewPointerObj(L, result, SWIGTYPE_p_LUA__Session, destroy_me);
 	lua_setglobal(L, name);
 }
 
