@@ -424,6 +424,9 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 #define lock_member(_member) switch_mutex_lock(_member->write_mutex); switch_mutex_lock(_member->read_mutex)
 #define unlock_member(_member) switch_mutex_unlock(_member->read_mutex); switch_mutex_unlock(_member->write_mutex)
 
+//#define lock_member(_member) switch_mutex_lock(_member->write_mutex)
+//#define unlock_member(_member) switch_mutex_unlock(_member->write_mutex)
+
 static switch_status_t conference_add_event_data(conference_obj_t *conference, switch_event_t *event)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -1757,34 +1760,34 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	switch_frame_t *read_frame = NULL;
 	uint32_t hangover = 40, hangunder = 15, hangover_hits = 0, hangunder_hits = 0, energy_level = 0, diff_level = 400;
 	switch_codec_implementation_t read_impl = {0};
-
+	switch_core_session_t *session = member->session;
 	switch_assert(member != NULL);
 
 	switch_clear_flag_locked(member, MFLAG_TALKING);
 
-	channel = switch_core_session_get_channel(member->session);
+	channel = switch_core_session_get_channel(session);
 
-	switch_core_session_get_read_impl(member->session, &read_impl);
+	switch_core_session_get_read_impl(session, &read_impl);
 
 	/* As long as we have a valid read, feed that data into an input buffer where the conference thread will take it 
 	   and mux it with any audio from other channels. */
 
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_channel_ready(channel)) {
 
-		switch_mutex_lock(member->read_mutex);
-
 		if (switch_channel_ready(channel) && switch_channel_test_app_flag(channel, CF_APP_TAGGED)) {
 			switch_yield(100000);
-			goto do_continue;
+			continue;
 		}
 
-
 		/* Read a frame. */
-		status = switch_core_session_read_frame(member->session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
+		switch_mutex_lock(member->read_mutex);
 
 		/* end the loop, if appropriate */
 		if (!SWITCH_READ_ACCEPTABLE(status) || !switch_test_flag(member, MFLAG_RUNNING)) {
-			goto do_break;
+			switch_mutex_unlock(member->read_mutex);
+			break;
 		}
 
 		if (switch_test_flag(read_frame, SFF_CNG)) {
@@ -1805,6 +1808,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					}
 				}
 			}
+			
 			goto do_continue;
 		}
 
@@ -1947,7 +1951,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				ok = switch_buffer_write(member->audio_buffer, data, datalen);
 				switch_mutex_unlock(member->audio_in_mutex);
 				if (!ok) {
-					goto do_break;
+					switch_mutex_unlock(member->read_mutex);
+					break;
 				}
 			}
 		}
@@ -1955,12 +1960,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	do_continue:
 
 		switch_mutex_unlock(member->read_mutex);
-		
 	}
 
- do_break:
-
-	switch_mutex_unlock(member->read_mutex);
 
 	switch_resample_destroy(&member->read_resampler);
 	switch_clear_flag_locked(member, MFLAG_ITHREAD);
