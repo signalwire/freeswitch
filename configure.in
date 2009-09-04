@@ -38,6 +38,13 @@ AC_ARG_WITH([modinstdir],
 AC_SUBST(modinstdir)
 AC_DEFINE_UNQUOTED([SWITCH_MOD_DIR],"${modinstdir}",[where to install the modules to])
 
+# Where to put pidfile
+AC_ARG_WITH([rundir],
+	[AS_HELP_STRING([--with-rundir=DIR], [Put pidfile into this location (default: $prefix/log)])], [rundir="$withval"], [rundir="${prefix}/log"])
+
+AC_SUBST(rundir)
+AC_DEFINE_UNQUOTED([SWITCH_RUN_DIR],"${rundir}",[where to put pidfile to])
+
 if test "$sysconfdir" = "\${prefix}/etc" ; then
     confdir="$prefix/conf"
 else

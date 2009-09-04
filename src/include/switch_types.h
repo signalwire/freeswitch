@@ -358,6 +358,7 @@ struct switch_directories {
 	char *mod_dir;
 	char *conf_dir;
 	char *log_dir;
+	char *run_dir;
 	char *db_dir;
 	char *script_dir;
 	char *temp_dir;

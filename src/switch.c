@@ -91,7 +91,7 @@ static int freeswitch_kill_background()
 	switch_core_set_globals();
 
 	/* get the full path of the pid file. */
-	switch_snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
+	switch_snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.run_dir, SWITCH_PATH_SEPARATOR, pfile);
 
 	/* open the pid file */
 	if ((f = fopen(path, "r")) == 0) {
@@ -333,6 +333,7 @@ int main(int argc, char *argv[])
 		"\t-c                     -- output to a console and stay in the foreground\n"
 		"\t-conf [confdir]        -- specify an alternate config dir\n"
 		"\t-log [logdir]          -- specify an alternate log dir\n"
+		"\t-run [rundir]          -- specify an alternate run dir\n"
 		"\t-db [dbdir]            -- specify an alternate db dir\n"
 		"\t-mod [moddir]          -- specify an alternate mod dir\n"
 		"\t-htdocs [htdocsdir]    -- specify an alternate htdocs dir\n"
@@ -559,6 +560,22 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
+		if (local_argv[x] && !strcmp(local_argv[x], "-run")) {
+			x++;
+			if (local_argv[x] && strlen(local_argv[x])) {
+				SWITCH_GLOBAL_dirs.run_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+				if (!SWITCH_GLOBAL_dirs.run_dir) {
+					fprintf(stderr, "Allocation error\n");
+					return 255;
+				}
+				strcpy(SWITCH_GLOBAL_dirs.run_dir, local_argv[x]);
+			} else {
+				fprintf(stderr, "When using -run you must specify a pid directory\n");
+				return 255;
+			}
+			known_opt++;
+		}
+
 		if (local_argv[x] && !strcmp(local_argv[x], "-db")) {
 			x++;
 			if (local_argv[x] && strlen(local_argv[x])) {
@@ -690,7 +707,7 @@ int main(int argc, char *argv[])
 	pid = getpid();
 
 	memset(pid_buffer, 0, sizeof(pid_buffer));
-	switch_snprintf(pid_path, sizeof(pid_path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
+	switch_snprintf(pid_path, sizeof(pid_path), "%s%s%s", SWITCH_GLOBAL_dirs.run_dir, SWITCH_PATH_SEPARATOR, pfile);
 	switch_snprintf(pid_buffer, sizeof(pid_buffer), "%d", pid);
 	pid_len = strlen(pid_buffer);
 
