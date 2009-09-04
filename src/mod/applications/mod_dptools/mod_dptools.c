@@ -940,7 +940,7 @@ SWITCH_STANDARD_APP(info_function)
 	char *buf;
 	int level = SWITCH_LOG_INFO;
 
-	if (data) {
+	if (!switch_strlen_zero(data)) {
 		level = switch_log_str2level(data);
 	}
 
