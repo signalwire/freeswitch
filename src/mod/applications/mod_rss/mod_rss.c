@@ -52,8 +52,8 @@ struct dtmf_buffer {
 
 #define TTS_MEAN_SPEED 170
 #define TTS_MAX_ENTRIES 99
-#define TTS_DEFAULT_ENGINE "cepstral"
-#define TTS_DEFAULT_VOICE "david"
+#define TTS_DEFAULT_ENGINE "flite"
+#define TTS_DEFAULT_VOICE "slt"
 
 #define MATCH_COUNT
 
