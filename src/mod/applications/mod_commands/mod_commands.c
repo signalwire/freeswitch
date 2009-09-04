@@ -2491,14 +2491,15 @@ SWITCH_STANDARD_API(unsched_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SCHED_SYNTAX "[+@]<time> <group_name> <command_string>"
+#define SCHED_SYNTAX "[+@]<time> <group_name> <command_string>[&]"
 SWITCH_STANDARD_API(sched_api_function)
 {
 	char *tm = NULL, *dcmd, *group;
 	time_t when;
 	struct api_task *api_task = NULL;
 	uint32_t recur = 0;
-	
+	int flags = SSHF_FREE_ARG;
+
 	if (!cmd) {
 		goto bad;
 	}
@@ -2525,8 +2526,13 @@ SWITCH_STANDARD_API(sched_api_function)
 			switch_zmalloc(api_task, sizeof(*api_task) + strlen(dcmd) + 1);
 			switch_copy_string(api_task->cmd, dcmd, strlen(dcmd) + 1);
 			api_task->recur = recur;
+			if (end_of(api_task->cmd) == '&') {
+				end_of(api_task->cmd) = '\0';
+				flags |= SSHF_OWN_THREAD;
+			}
 
-			id = switch_scheduler_add_task(when, sch_api_callback, (char *) __SWITCH_FUNC__, group, 0, api_task, SSHF_FREE_ARG);
+
+			id = switch_scheduler_add_task(when, sch_api_callback, (char *) __SWITCH_FUNC__, group, 0, api_task, flags);
 			stream->write_function(stream, "+OK Added: %u\n", id);
 			goto good;
 		}
