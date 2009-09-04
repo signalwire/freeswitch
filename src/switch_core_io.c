@@ -924,8 +924,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 						enc_frame = &session->raw_write_frame;
 						session->raw_write_frame.rate = session->write_impl.actual_samples_per_second;
 						session->enc_write_frame.datalen = session->enc_write_frame.buflen;
+						session->enc_write_frame.timestamp = 0;
 						
-
 						
 						if (frame->codec && frame->codec->implementation && switch_core_codec_ready(frame->codec)) {
 							rate = frame->codec->implementation->actual_samples_per_second;
