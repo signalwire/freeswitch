@@ -52,6 +52,9 @@ namespace FreeSWITCH.Native
         /// <summary>Initializes the native ManagedSession. Must be called after Originate.</summary>
         public void Initialize()
         {
+            if (allocated == 0) {
+                Log.WriteLine(LogLevel.Critical, "Cannot initialize a ManagedSession until it is allocated (originated successfully).");
+            }
             // P/Invoke generated function pointers stick around until the delegate is collected
             // By sticking the delegates in fields, their lifetime won't be less than the session
             // So we don't need to worry about GCHandles and all that....
@@ -59,6 +62,7 @@ namespace FreeSWITCH.Native
             this._inputCallbackRef = inputCallback;
             this._hangupCallbackRef = hangupCallback;
             InitManagedSession(ManagedSession.getCPtr(this).Handle, this._inputCallbackRef, this._hangupCallbackRef);
+            this._variables = new ChannelVariables(this);
         }
         DtmfCallback _inputCallbackRef;
         CdeclAction _hangupCallbackRef;
@@ -122,15 +126,9 @@ namespace FreeSWITCH.Native
             get { return this.Ready(); }
         }
 
-        Guid _uuid;
-        bool _uuidSet;
         public Guid Uuid {
             get {
-                if (!_uuidSet) {
-                    _uuid = new Guid(this.GetUuid());
-                    _uuidSet = true;
-                }
-                return _uuid;
+                return new Guid(this.GetUuid());
             }
         }
     }
