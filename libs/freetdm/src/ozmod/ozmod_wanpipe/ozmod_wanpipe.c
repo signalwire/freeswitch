@@ -300,6 +300,17 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 				/* probably done by the driver but lets write defensive code this time */
 				sangoma_flush_bufs(chan->sockfd, &tdm_api);
 #else
+				/* 
+				 * With wanpipe 3.4.4.2 I get failure even though the events are enabled, /var/log/messages said:
+				 * wanpipe4: WARNING: Event type 9 is already pending!
+				 * wanpipe4: Failed to add new fe event 09 ch_map=FFFFFFFF!
+				 * may be we should not send an error until that is fixed in the driver
+				 */
+				if (sangoma_tdm_enable_rbs_events(chan->sockfd, &tdm_api, 100)) {
+					zap_log(ZAP_LOG_ERROR, "Failed to enable RBS/CAS events in device %d:%d fd:%d\n", chan->span_id, chan->chan_id, sockfd);
+				}
+				/* probably done by the driver but lets write defensive code this time */
+				sangoma_tdm_flush_bufs(chan->sockfd, &tdm_api);
 				sangoma_tdm_write_rbs(chan->sockfd,&tdm_api, wanpipe_swap_bits(cas_bits));
 #endif
 			}
@@ -1093,5 +1104,5 @@ EX_DECLARE_DATA zap_module_t zap_module = {
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 
  */
