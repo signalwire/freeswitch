@@ -151,6 +151,17 @@ static switch_core_session_t *zap_channel_get_session(zap_channel_t *channel, in
 	return session;
 }
 
+static const char *zap_channel_get_uuid(zap_channel_t *channel, int32_t id)
+{
+	if (id > ZAP_MAX_TOKENS) {
+		return NULL;
+	}
+
+	if (!switch_strlen_zero(channel->tokens[id])) {
+		return channel->tokens[id];
+	}
+	return NULL;
+}
 
 static void stop_hold(switch_core_session_t *session_a, const char *uuid)
 {
@@ -1679,8 +1690,10 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 				}
 				switch_core_session_rwunlock(session);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session for channel %d:%d not found\n",
-					sigmsg->channel->span_id, sigmsg->channel->chan_id);
+				const char *uuid = zap_channel_get_uuid(sigmsg->channel, 0);
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session for channel %d:%d not found [UUID: %s]\n",
+					sigmsg->channel->span_id, sigmsg->channel->chan_id, (uuid) ? uuid : "N/A");
 			}
 		}
     case ZAP_SIGEVENT_PROGRESS_MEDIA:
@@ -1690,8 +1703,10 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 				switch_channel_mark_pre_answered(channel);
 				switch_core_session_rwunlock(session);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session for channel %d:%d not found\n",
-					sigmsg->channel->span_id, sigmsg->channel->chan_id);
+				const char *uuid = zap_channel_get_uuid(sigmsg->channel, 0);
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session for channel %d:%d not found [UUID: %s]\n",
+					sigmsg->channel->span_id, sigmsg->channel->chan_id, (uuid) ? uuid : "N/A");
 			}
 		}
 		break;
@@ -1702,8 +1717,10 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 				switch_channel_mark_ring_ready(channel);
 				switch_core_session_rwunlock(session);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session for channel %d:%d not found\n",
-					sigmsg->channel->span_id, sigmsg->channel->chan_id);
+				const char *uuid = zap_channel_get_uuid(sigmsg->channel, 0);
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session for channel %d:%d not found [UUID: %s]\n",
+					sigmsg->channel->span_id, sigmsg->channel->chan_id, (uuid) ? uuid : "N/A");
 			}
 		}
 		break;
