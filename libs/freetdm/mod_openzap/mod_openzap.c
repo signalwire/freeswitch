@@ -1649,7 +1649,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
     case ZAP_SIGEVENT_START:
 		{
 			zap_tone_type_t tt = ZAP_TONE_DTMF;
-			
+
 			if (zap_channel_command(sigmsg->channel, ZAP_COMMAND_ENABLE_DTMF_DETECT, &tt) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "TONE ERROR\n");
 			}
@@ -1659,7 +1659,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		break;
     case ZAP_SIGEVENT_STOP:
     case ZAP_SIGEVENT_RESTART:
-		{	
+		{
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
@@ -1678,6 +1678,9 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 					zap_log(ZAP_LOG_ERROR, "TONE ERROR\n");
 				}
 				switch_core_session_rwunlock(session);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session for channel %d:%d not found\n",
+					sigmsg->channel->span_id, sigmsg->channel->chan_id);
 			}
 		}
     case ZAP_SIGEVENT_PROGRESS_MEDIA:
@@ -1686,6 +1689,9 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_pre_answered(channel);
 				switch_core_session_rwunlock(session);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session for channel %d:%d not found\n",
+					sigmsg->channel->span_id, sigmsg->channel->chan_id);
 			}
 		}
 		break;
@@ -1695,6 +1701,9 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_ring_ready(channel);
 				switch_core_session_rwunlock(session);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session for channel %d:%d not found\n",
+					sigmsg->channel->span_id, sigmsg->channel->chan_id);
 			}
 		}
 		break;
@@ -1714,7 +1723,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 static ZIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+
 	switch (sigmsg->channel->type) {
 	case ZAP_CHAN_TYPE_FXO:
 	case ZAP_CHAN_TYPE_EM:
