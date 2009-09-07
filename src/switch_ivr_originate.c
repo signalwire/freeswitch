@@ -1606,7 +1606,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						int val = atoi(vvar);
 						if (val > 0) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Setting leg timeout to %d\n", 
-											  switch_channel_get_name(originate_status[0].peer_channel), val);
+											  switch_channel_get_name(originate_status[i].peer_channel), val);
 							originate_status[i].per_channel_timelimit_sec = (uint32_t) val;
 						}
 					}
@@ -1615,7 +1615,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						int val = atoi(vvar);
 						if (val > 0) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Setting leg progress timeout to %d\n", 
-											  switch_channel_get_name(originate_status[0].peer_channel), val);
+											  switch_channel_get_name(originate_status[i].peer_channel), val);
 							originate_status[i].per_channel_progress_timelimit_sec = (uint32_t) val;
 						}
 					}
@@ -1624,7 +1624,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						int val = atoi(vvar);
 						if (val > 0) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Setting leg delay start to %d\n", 
-											  switch_channel_get_name(originate_status[0].peer_channel), val);
+											  switch_channel_get_name(originate_status[i].peer_channel), val);
 							originate_status[i].per_channel_delay_start = (uint32_t) val;
 						}
 					}
