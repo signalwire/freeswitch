@@ -2482,6 +2482,10 @@ SWITCH_STANDARD_API(sofia_gateway_data_function)
 	char *gwname, *param, *varname;
 	const char *val = NULL;
 	
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "-ERR Parameter missing\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
 	if (!(mydata = strdup(cmd))) {
 		return SWITCH_STATUS_FALSE;
 	}
