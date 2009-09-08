@@ -29,6 +29,7 @@
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  * Norman Brandinger
+ * Raymond Chandler <intralanman@gmail.com>
  *
  *
  * sofia.c -- SOFIA SIP Endpoint (sofia code)
@@ -1605,6 +1606,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 			/* you could change profile->foo here if it was a minor change like context or dialplan ... */
 			profile->rport_level = 1; /* default setting */
 			profile->acl_count = 0;
+			profile->reg_acl_count = 0;
+			profile->proxy_acl_count = 0;
 			sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
 			profile->ib_calls = 0;
 			profile->ob_calls = 0;
@@ -1760,6 +1763,13 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					} else if (!strcasecmp(var, "apply-inbound-acl")) {
 						if (profile->acl_count < SOFIA_MAX_ACL) {
 							profile->acl[profile->acl_count++] = switch_core_strdup(profile->pool, val);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
+						}
+					} else if (!strcasecmp(var, "apply-proxy-acl")) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "apply proxy acl [%s]\n", val);
+						if (profile->proxy_acl_count < SOFIA_MAX_ACL) {
+							profile->proxy_acl[profile->proxy_acl_count++] = switch_core_strdup(profile->pool, val);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
@@ -2155,6 +2165,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					char *val = (char *) switch_xml_attr_soft(param, "value");
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s [%s]\n", var, val);
 
 					if (!strcasecmp(var, "debug")) {
 						profile->debug = atoi(val);
@@ -2553,6 +2565,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "apply-inbound-acl")) {
 						if (profile->acl_count < SOFIA_MAX_ACL) {
 							profile->acl[profile->acl_count++] = switch_core_strdup(profile->pool, val);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
+						}
+					} else if (!strcasecmp(var, "apply-proxy-acl")) {
+						if (profile->proxy_acl_count < SOFIA_MAX_ACL) {
+							profile->proxy_acl[profile->proxy_acl_count++] = switch_core_strdup(profile->pool, val);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
@@ -4480,6 +4498,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 }
 
 #define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri", #varprefix "_params")
+
 const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const char *user_var,
 							  const char *host_var, const char *port_var, const char *uri_var, const char *params_var)
 {
@@ -4551,6 +4570,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	const char *context = NULL;
 	const char *dialplan = NULL;
 	char network_ip[80];
+	char proxied_client_ip[80];
 	switch_event_t *v_event = NULL;
 	uint32_t sess_count = switch_core_session_count();
 	uint32_t sess_max = switch_core_session_limit(0);
@@ -4643,13 +4663,66 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				is_auth = 1;
 			}
 		} else {
-			if (!sofia_test_pflag(profile, PFLAG_AUTH_CALLS)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", network_ip, switch_str_nil(last_acl));
-				nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
-				goto fail;
+			int network_ip_is_proxy = 0;
+			/* Check if network_ip is a proxy allowed to send us calls */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d acls to check for proxy\n", profile->proxy_acl_count);
+			
+			for (x = 0; x < profile->proxy_acl_count; x++) {
+				last_acl = profile->proxy_acl[x];
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "checking %s against acl %s\n", network_ip, last_acl);
+				if (switch_check_network_list_ip_token(network_ip, last_acl, &token)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+									  "%s is a proxy according to the %s acl\n",
+									  network_ip, last_acl
+									  );
+					network_ip_is_proxy = 1;
+					break;
+				}
+			}
+			/*
+			 * if network_ip is a proxy allowed to send calls, check for auth
+			 * ip header and see if it matches against the inbound acl
+			 */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "network ip is a proxy [%d]\n", network_ip_is_proxy);
+			
+			if (network_ip_is_proxy) {
+				for (un = sip->sip_unknown; un; un = un->un_next) {
+					if (!strcasecmp(un->un_name, "X-AUTH-IP")) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+										  "found auth ip [%s] header of [%s]\n",
+										  un->un_name, un->un_value
+										  );
+						if (!switch_strlen_zero(un->un_value)) {
+							for (x = 0; x < profile->acl_count; x++) {
+								last_acl = profile->acl[x];
+								if ((ok = switch_check_network_list_ip_token(un->un_value, last_acl, &token))) {
+									switch_copy_string(proxied_client_ip, un->un_value, sizeof (proxied_client_ip));
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			if (!ok) {
+				if (!sofia_test_pflag(profile, PFLAG_AUTH_CALLS)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", network_ip, switch_str_nil(last_acl));
+					nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
+					goto fail;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Rejected by acl \"%s\". Falling back to Digest auth.\n",
+									  network_ip, switch_str_nil(last_acl));
+				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Rejected by acl \"%s\". Falling back to Digest auth.\n",
-								  network_ip, switch_str_nil(last_acl));
+				if (token) {
+					switch_set_string(acl_token, token);
+				}
+				if (sofia_test_pflag(profile, PFLAG_AUTH_CALLS)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Approved by acl \"%s[%s]\". Access Granted.\n",
+									  proxied_client_ip, switch_str_nil(last_acl), acl_token);
+					is_auth = 1;
+				}
 			}
 		}
 	}
