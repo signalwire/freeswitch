@@ -1657,7 +1657,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					} else if (!strcasecmp(var, "caller-id-type")) {
 						profile->cid_type = sofia_cid_name2type(val);
 					} else if (!strcasecmp(var, "record-template")) {
-						profile->record_template = switch_core_strdup(profile->pool, val);;
+						profile->record_template = switch_core_strdup(profile->pool, val);
 					} else if ((!strcasecmp(var, "inbound-no-media") || !strcasecmp(var, "inbound-bypass-media"))) {
 						if (switch_true(val)) {
 							sofia_set_flag(profile, TFLAG_INB_NOMEDIA);
@@ -2033,7 +2033,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 	sofia_profile_t *profile = NULL;
 	char url[512] = "";
 	int profile_found = 0;
-	switch_event_t *params = NULL;;
+	switch_event_t *params = NULL;
 
 	if (!reload) {
 		su_init();
