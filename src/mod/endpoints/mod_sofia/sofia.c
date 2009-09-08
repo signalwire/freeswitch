@@ -2495,8 +2495,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "enable-3pcc")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_3PCC);
-						}
-						else if (!strcasecmp(val, "proxy")){
+						} else if (!strcasecmp(val, "proxy")) {
 							sofia_set_pflag(profile, PFLAG_3PCC_PROXY);
 						}
 					} else if (!strcasecmp(var, "accept-blind-auth")) {
