@@ -2113,6 +2113,30 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 	return status;
 }
 
+static const char *get_prefixed_str(char *buffer, size_t buffer_size, const char *prefix, size_t prefix_size, const char *str)
+{
+	size_t str_len;
+
+	if (switch_strlen_zero(buffer)) {
+		/*
+		  if buffer is null then it just returns the str without the prefix appended, otherwise buffer contains the prefix followed by the original string
+		*/
+
+		return str;
+	}
+
+	str_len = strlen(str);
+	memcpy(buffer, prefix, prefix_size);
+	
+	if (str_len + prefix_size + 1 > buffer_size) {
+		memcpy(buffer + prefix_size, str, buffer_size-prefix_size - 1);
+		buffer[buffer_size-prefix_size - 1] = '\0';
+	} else {
+		memcpy(buffer + prefix_size, str, str_len + 1);
+	}
+
+	return buffer;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data)
 {
@@ -2121,11 +2145,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
+	char * prefix_buffer = NULL, *prefix;
+	size_t buffer_size =0;
+	size_t prefix_size=0;
 	if (switch_strlen_zero(data)) {
 		goto error;
 	}
 
 	user = switch_core_session_strdup(session, data);
+	
+	if ((prefix = strchr(user, ' '))){
+		*prefix++ = 0;
+	}
 
 	if (!(domain = strchr(user, '@'))) {
 		goto error;
@@ -2140,8 +2171,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 
 	status = SWITCH_STATUS_SUCCESS;
 
+	if (!switch_strlen_zero(prefix)) {
+		prefix_size = strlen(prefix);
+		buffer_size = 1024 + prefix_size + 1;
+		prefix_buffer = switch_core_session_alloc(session, buffer_size);
+	}
+
 	if ((number_alias = (char *) switch_xml_attr(x_user, "number-alias"))) {
-		switch_channel_set_variable(channel, "number_alias", number_alias);
+		switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, "number_alias"), number_alias);
 	}
 
 	if ((x_params = switch_xml_child(x_domain, "variables"))) {
@@ -2150,7 +2187,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 			const char *val = switch_xml_attr(x_param, "value");
 
 			if (var && val) {
-				switch_channel_set_variable(channel, var, val);
+				switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, var), val);
 			}
 		}
 	}
@@ -2161,7 +2198,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 			const char *val = switch_xml_attr(x_param, "value");
 
 			if (var && val) {
-				switch_channel_set_variable(channel, var, val);
+				switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, var), val);
 			}
 		}
 	}
@@ -2172,13 +2209,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 			const char *val = switch_xml_attr(x_param, "value");
 
 			if (var && val) {
-				switch_channel_set_variable(channel, var, val);
+				switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, var), val);
 			}
 		}
 	}
 
-	switch_channel_set_variable(channel, "user_name", user);
-	switch_channel_set_variable(channel, "domain_name", domain);
+	switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer,buffer_size,prefix,prefix_size,"user_name") , user);
+	switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer,buffer_size,prefix,prefix_size,"domain_name") , domain);
 
 	goto done;
 

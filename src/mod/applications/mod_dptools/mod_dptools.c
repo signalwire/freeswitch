@@ -404,7 +404,7 @@ SWITCH_STANDARD_APP(three_way_function)
 	}
 }
 
-#define SET_USER_SYNTAX "<user>@<domain>"
+#define SET_USER_SYNTAX "<user>@<domain> [prefix]"
 SWITCH_STANDARD_APP(set_user_function)
 {
 	switch_ivr_set_user(session, data);
