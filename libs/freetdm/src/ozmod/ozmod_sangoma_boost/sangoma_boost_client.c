@@ -116,14 +116,15 @@ static int create_conn_socket(sangomabc_connection_t *mcon, char *local_ip, int 
 	memset(&mcon->remote_hp, 0, sizeof(mcon->remote_hp));
 	memset(&mcon->local_hp, 0, sizeof(mcon->local_hp));
 #ifdef HAVE_NETINET_SCTP_H
+	zap_log(ZAP_LOG_DEBUG, "Creating SCTP socket L=%s:%d R=%s:%d\n", 
+			local_ip, local_port, ip, port);
 	mcon->socket = socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP);
 #else
+	zap_log(ZAP_LOG_DEBUG, "Creating UDP socket L=%s:%d R=%s:%d\n", 
+			local_ip, local_port, ip, port);
 	mcon->socket = socket(AF_INET, SOCK_DGRAM, 0);
 #endif
  
-	zap_log(ZAP_LOG_DEBUG, "Creating L=%s:%d R=%s:%d\n", 
-			local_ip, local_port, ip, port);
-
 	if (mcon->socket >= 0) {
 		int flag;
 
