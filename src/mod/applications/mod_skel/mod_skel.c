@@ -87,7 +87,7 @@ static switch_xml_config_item_t instructions[] = {
 		"greedy|generous|evil", "Specifies the codec negotiation scheme to be used."),
 	SWITCH_CONFIG_ITEM("codec-negotiation", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, &globals.codec_negotiation,  (void*)CODEC_NEGOTIATION_GREEDY, &config_opt_codec_negotiation_enum,
 		"greedy|generous|evil", "Specifies the codec negotiation scheme to be used."),
-	SWITCH_CONFIG_ITEM_CALLBACK("sip-trace", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.sip_trace,  (void*)SWITCH_FALSE,  config_callback_siptrace, NULL ,
+	SWITCH_CONFIG_ITEM_CALLBACK("sip-trace", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.sip_trace,  (void*)SWITCH_FALSE,  (switch_xml_config_callback_t)config_callback_siptrace, NULL,
 		"yes|no", "If enabled, print out sip messages on the console."),
 	SWITCH_CONFIG_ITEM("integer", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &globals.integer, (void*)100, &config_opt_integer,
 		NULL, NULL),
