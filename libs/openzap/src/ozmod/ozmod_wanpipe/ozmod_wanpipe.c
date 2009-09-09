@@ -984,12 +984,12 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 					event_id = ZAP_OOB_NOOP;
 
 					//zap_log(ZAP_LOG_DEBUG, "%d:%d queue hardware dtmf %s\n", zchan->span_id, zchan->chan_id, tmp_dtmf);
-                    if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT) {
-						zap_set_flag_locked(zchan, ZAP_CHANNEL_MUTE);
-					}
+                    //if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT) {
+					//zap_set_flag_locked(zchan, ZAP_CHANNEL_MUTE);
+					//}
 
                     if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_STOP) {
-						zap_clear_flag_locked(zchan, ZAP_CHANNEL_MUTE);
+						//zap_clear_flag_locked(zchan, ZAP_CHANNEL_MUTE);
                         zap_channel_queue_dtmf(zchan, tmp_dtmf);
                     } 
                 }
