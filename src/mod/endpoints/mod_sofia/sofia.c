@@ -3140,7 +3140,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					msg.pointer_arg = switch_core_session_strdup(other_session, r_sdp);
 					msg.pointer_arg_size = strlen(r_sdp);
 				}
-				if (switch_core_session_receive_message(other_session, &msg) != SWITCH_STATUS_SUCCESS) {
+
+				switch_mutex_unlock(tech_pvt->sofia_mutex);
+				status = switch_core_session_receive_message(other_session, &msg);
+				switch_mutex_lock(tech_pvt->sofia_mutex);
+
+				if (status != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg is not available\n");
 					nua_respond(tech_pvt->nh, 403, "Hangup in progress", TAG_END());
 				}
@@ -3398,7 +3403,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_core_session_message_t msg;
 						msg.message_id = SWITCH_MESSAGE_INDICATE_RINGING;
 						msg.from = __FILE__;
+						switch_mutex_unlock(tech_pvt->sofia_mutex);
 						switch_core_session_receive_message(other_session, &msg);
+						switch_mutex_lock(tech_pvt->sofia_mutex);
 						switch_core_session_rwunlock(other_session);
 					}
 
@@ -3660,8 +3667,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							switch_channel_presence(tech_pvt->channel, "unknown", "hold", NULL);
 						}
 					
+						switch_mutex_unlock(tech_pvt->sofia_mutex);
+						status = switch_core_session_receive_message(other_session, &msg);
+						switch_mutex_lock(tech_pvt->sofia_mutex);
 
-						if (switch_core_session_receive_message(other_session, &msg) != SWITCH_STATUS_SUCCESS) {
+						if (status != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg is not available\n");
 							nua_respond(tech_pvt->nh, 403, "Hangup in progress", TAG_END());
 						}
