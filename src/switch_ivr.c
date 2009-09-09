@@ -2117,7 +2117,7 @@ static const char *get_prefixed_str(char *buffer, size_t buffer_size, const char
 {
 	size_t str_len;
 
-	if (switch_strlen_zero(buffer)) {
+	if (!buffer) {
 		/*
 		  if buffer is null then it just returns the str without the prefix appended, otherwise buffer contains the prefix followed by the original string
 		*/
