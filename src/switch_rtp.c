@@ -213,8 +213,8 @@ struct switch_rtp {
 	uint32_t cng_count;
 	switch_rtp_bug_flag_t rtp_bugs;
 	switch_rtp_stats_t stats;
-	int hot_hits;
-	int sync_packets;
+	uint32_t hot_hits;
+	uint32_t sync_packets;
 
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
