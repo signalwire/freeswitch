@@ -878,6 +878,14 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 			break;
 		}
 
+		if (FD_ISSET(fileno(stdin), &efds)) {
+			continue;
+		}
+		
+		if (!FD_ISSET(fileno(stdin), &rfds)) {
+			activity = 0;
+		}
+
 		if (activity == 0) {
 			fflush(stdout);
 			continue;
