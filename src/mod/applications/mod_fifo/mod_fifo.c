@@ -888,6 +888,8 @@ SWITCH_STANDARD_APP(fifo_function)
 		}
 		
 		switch_queue_push(node->fifo_list[p], (void *) strdup(uuid));
+		switch_snprintf(tmp, sizeof(tmp), "%d", switch_queue_size(node->fifo_list[p]));
+		switch_channel_set_variable(channel, "fifo_position", tmp);
 
 		if (!pri) {
 			switch_snprintf(tmp, sizeof(tmp), "%d", p);
