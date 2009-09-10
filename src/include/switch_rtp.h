@@ -112,6 +112,8 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port);
 SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(const char *ip);
 SWITCH_DECLARE(void) switch_rtp_release_port(const char *ip, switch_port_t port);
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_interval(switch_rtp_t *rtp_session, uint32_t ms_per_packet, uint32_t samples_per_interval);
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_change_interval(switch_rtp_t *rtp_session, uint32_t ms_per_packet, uint32_t samples_per_interval);
 /*! 
   \brief create a new RTP session handle
@@ -247,13 +249,6 @@ SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp
   \return the socket from the RTP session
 */
 SWITCH_DECLARE(switch_socket_t *) switch_rtp_get_rtp_socket(switch_rtp_t *rtp_session);
-
-/*! 
-  \brief Set the default samples per interval for a given RTP session
-  \param rtp_session the RTP session to set the samples per interval on
-  \param samples_per_interval the new default samples per interval 
-*/
-SWITCH_DECLARE(void) switch_rtp_set_default_samples_per_interval(switch_rtp_t *rtp_session, uint32_t samples_per_interval);
 
 /*! 
   \brief Get the default samples per interval for a given RTP session

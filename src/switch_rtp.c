@@ -182,6 +182,7 @@ struct switch_rtp {
 	char *remote_host_str;
 	switch_time_t last_stun;
 	uint32_t samples_per_interval;
+	uint32_t samples_per_second;
 	uint32_t conf_samples_per_interval;
 	uint32_t rsamples_per_interval;
 	uint32_t ms_per_packet;
@@ -213,6 +214,7 @@ struct switch_rtp {
 	switch_rtp_bug_flag_t rtp_bugs;
 	switch_rtp_stats_t stats;
 	int hot_hits;
+	int sync_packets;
 
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
@@ -1038,12 +1040,21 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_change_interval(switch_rtp_t *rtp_session, uint32_t ms_per_packet, uint32_t samples_per_interval)
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_interval(switch_rtp_t *rtp_session, uint32_t ms_per_packet, uint32_t samples_per_interval)
 {
 	rtp_session->ms_per_packet = ms_per_packet;
 	rtp_session->samples_per_interval = rtp_session->conf_samples_per_interval = samples_per_interval;
 	rtp_session->missed_count = 0;
+	rtp_session->samples_per_second = (uint32_t)((double)(1000.0f / (double)(rtp_session->ms_per_packet / 1000)) * (double)rtp_session->samples_per_interval);
 
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_change_interval(switch_rtp_t *rtp_session, uint32_t ms_per_packet, uint32_t samples_per_interval)
+{
+
+	switch_rtp_set_interval(rtp_session, ms_per_packet, samples_per_interval);
+	
 	if (rtp_session->timer_name) {
 		if (rtp_session->timer.timer_interface) {
 			switch_core_timer_destroy(&rtp_session->timer);
@@ -1123,8 +1134,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->recv_msg.header.cc = 0;
 
 	rtp_session->payload = payload;
-	rtp_session->ms_per_packet = ms_per_packet;
-	rtp_session->samples_per_interval = rtp_session->conf_samples_per_interval = samples_per_interval;
+
+	switch_rtp_set_interval(rtp_session, ms_per_packet, samples_per_interval);
+	rtp_session->conf_samples_per_interval = samples_per_interval;
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) && switch_strlen_zero(timer_name)) {
 		timer_name = "soft";
@@ -1490,11 +1502,6 @@ SWITCH_DECLARE(switch_socket_t *) switch_rtp_get_rtp_socket(switch_rtp_t *rtp_se
 	return rtp_session->sock_input;
 }
 
-SWITCH_DECLARE(void) switch_rtp_set_default_samples_per_interval(switch_rtp_t *rtp_session, uint32_t samples_per_interval)
-{
-	rtp_session->samples_per_interval = samples_per_interval;
-}
-
 SWITCH_DECLARE(uint32_t) switch_rtp_get_default_samples_per_interval(switch_rtp_t *rtp_session)
 {
 	return rtp_session->samples_per_interval;
@@ -1783,7 +1790,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if ((switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) &&
 				rtp_session->read_pollfd) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 1) == SWITCH_STATUS_SUCCESS) {
-					if (++rtp_session->hot_hits >= 10) {
+					rtp_session->hot_hits += rtp_session->samples_per_interval;
+					
+					if (rtp_session->hot_hits >= rtp_session->samples_per_second * 60) {
 						hot_socket = 1;
 					}
 				} else {
@@ -1792,8 +1801,17 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			if (hot_socket) {
+				rtp_session->sync_packets++;
 				switch_core_timer_sync(&rtp_session->timer);
 			} else {
+				if (rtp_session->sync_packets) {
+#if 0
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+									  "Auto-Flush catching up %d packets (%d)ms.\n", 
+									  rtp_session->sync_packets, rtp_session->ms_per_packet * rtp_session->sync_packets);
+#endif
+					rtp_session->sync_packets = 0;
+				}
 				switch_core_timer_next(&rtp_session->timer);
 			}
 		}
@@ -2440,6 +2458,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			rtp_session->ts = (uint32_t) timestamp;
 		} else if (rtp_session->timer.timer_interface) {
 			rtp_session->ts = rtp_session->timer.samplecount;
+			
 			if (rtp_session->ts <= rtp_session->last_write_ts) {
 				rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
 			}

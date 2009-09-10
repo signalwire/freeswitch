@@ -2076,7 +2076,9 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		switch_assert(tech_pvt->read_codec.implementation);
-		switch_rtp_set_default_samples_per_interval(tech_pvt->rtp_session, tech_pvt->read_impl.samples_per_packet);
+		switch_rtp_set_interval(tech_pvt->rtp_session,
+								   tech_pvt->write_codec.implementation->microseconds_per_packet,
+								   tech_pvt->read_impl.samples_per_packet);
 	}
 
 	tech_pvt->read_frame.rate = tech_pvt->rm_rate;

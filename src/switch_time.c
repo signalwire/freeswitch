@@ -307,8 +307,8 @@ static switch_status_t timer_sync(switch_timer_t *timer)
 
 	/* apply timestamp */
 	if (timer_step(timer) == SWITCH_STATUS_SUCCESS) {
-		/* push the reference into the future 2 more intervals to prevent collision */
-		private_info->reference += 2;
+		/* push the reference into the future to prevent collision */
+		private_info->reference++;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
