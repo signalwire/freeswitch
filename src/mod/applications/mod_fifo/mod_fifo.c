@@ -688,6 +688,70 @@ static void pres_event_handler(switch_event_t *event)
 	switch_safe_free(dup_to);
 }
 
+static uint32_t fifo_add_outbound(const char *node_name, const char *url, uint32_t priority)
+{
+	fifo_node_t *node;
+	char *str;
+
+	if (priority >= MAX_PRI) {
+		priority = MAX_PRI - 1;
+	}
+
+	switch_mutex_lock(globals.mutex);
+
+	if (!(node = switch_core_hash_find(globals.fifo_hash, node_name))) {
+		node = create_node(node_name, 0);
+	}
+
+	switch_mutex_unlock(globals.mutex);
+	
+	str = switch_mprintf("dial:%s", url);
+	switch_queue_push(node->fifo_list[priority], (void *) str);
+	
+	return switch_queue_size(node->fifo_list[priority]);
+	
+}
+
+
+SWITCH_STANDARD_API(fifo_add_outbound_function)
+{
+	char *data = NULL, *argv[4] = { 0 };
+	int argc;
+	uint32_t priority = 0;
+
+	if (switch_strlen_zero(cmd)) {
+		goto fail;
+	}
+
+	data = strdup(cmd);
+
+	if ((argc = switch_separate_string(data, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2 || !argv[0]) {
+		goto fail;
+	}
+
+	if (argv[2]) {
+		int tmp = atoi(argv[2]);
+		if (tmp > 0) {
+			priority = tmp;
+		}
+	}
+
+	stream->write_function(stream, "%d", fifo_add_outbound(argv[0], argv[1], priority));
+
+	
+	free(data);	
+	return SWITCH_STATUS_SUCCESS;	
+
+
+ fail:
+
+	free(data);	
+	stream->write_function(stream, "0");
+	return SWITCH_STATUS_SUCCESS;	
+
+}
+
+
 typedef enum {
 	STRAT_MORE_PPL,
 	STRAT_WAITING_LONGER,
@@ -1039,7 +1103,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		char buf[5] = "";
 		const char *strat_str = switch_channel_get_variable(channel, "fifo_strategy");
 		fifo_strategy_t strat = STRAT_WAITING_LONGER;
-
+		char *url = NULL;
 
 		if (!switch_strlen_zero(strat_str)) {
 			if (!strcasecmp(strat_str, "more_ppl")) {
@@ -1200,20 +1264,59 @@ SWITCH_STANDARD_APP(fifo_function)
 			uuid = (char *) pop;
 			pop = NULL;
 
-			if (node && (other_session = switch_core_session_locate(uuid))) {
+			if (!strncasecmp(uuid, "dial:", 5)) {
+				switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+				const char *o_announce = NULL;
+				url = uuid + 5;
+				
+				if ((o_announce = switch_channel_get_variable(channel, "fifo_outbound_announce"))) {
+					switch_ivr_play_file(session, NULL, o_announce, NULL);
+				}
+
+				if (switch_ivr_originate(session, &other_session, &cause, url, 120, NULL, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
+					other_session = NULL;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Originate to [%s] failed, cause: %s\n", url, switch_channel_cause2str(cause));
+
+					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+						switch_channel_event_set_data(channel, event);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "caller_outbound");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Result", "failure:%s", switch_channel_cause2str(cause));
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Outbound-URL", url);
+						switch_event_fire(&event);
+					}
+					
+				} else {
+					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+						switch_channel_event_set_data(channel, event);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "caller_outbound");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Result", "success");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Outbound-URL", url);
+						switch_event_fire(&event);
+					}					
+				}
+
+			} else {
+				if ((other_session = switch_core_session_locate(uuid))) {
+					switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+						switch_channel_event_set_data(other_channel, event);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "caller_pop");
+						switch_event_fire(&event);
+					}
+				}
+			}
+
+			if (node && other_session) {
 				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 				switch_caller_profile_t *cloned_profile;
 				const char *o_announce = NULL;
 				const char *record_template = switch_channel_get_variable(channel, "fifo_record_template");
 				char *expanded = NULL;
 
-				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
-					switch_channel_event_set_data(other_channel, event);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "caller_pop");
-					switch_event_fire(&event);
-				}
-
+				
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(channel, event);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
@@ -2124,6 +2227,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 	SWITCH_ADD_APP(app_interface, "fifo", "Park with FIFO", FIFO_DESC, fifo_function, FIFO_USAGE, SAF_NONE);
 	SWITCH_ADD_API(commands_api_interface, "fifo", "Return data about a fifo", fifo_api_function, FIFO_API_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "fifo_member", "Add members to a fifo", fifo_member_api_function, FIFO_MEMBER_API_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "fifo_add_outbound", "Add outbound members to a fifo", fifo_add_outbound_function, "<node> <url> [<priority>]");
 	switch_console_set_complete("add fifo list");
 	switch_console_set_complete("add fifo list_verbose");
 	switch_console_set_complete("add fifo count");
