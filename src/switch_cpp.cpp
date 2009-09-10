@@ -1295,7 +1295,7 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 				p++;
 				if (*p == '+' || *p == '-') {
 					int step;
-					int target;
+					int64_t target;
 					if (!(step = atoi(p))) {
 						step = 1000;
 					}
@@ -1307,7 +1307,7 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 						target = 0;
 					}
 
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "seek to position %d\n", target);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "seek to position %d\n", (uint32_t)target);
 					switch_core_file_seek(fhp, &pos, target, SEEK_SET);
 
 				} else {
