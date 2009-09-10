@@ -1295,6 +1295,9 @@ SWITCH_STANDARD_APP(fifo_function)
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Outbound-URL", url);
 						switch_event_fire(&event);
 					}					
+					url = NULL;
+					free(uuid);
+					uuid = strdup(switch_core_session_get_uuid(other_session));
 				}
 
 			} else {
