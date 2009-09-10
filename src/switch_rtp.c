@@ -71,7 +71,7 @@ typedef srtp_hdr_t rtp_hdr_t;
 static zrtp_global_t *zrtp_global;
 static zrtp_zid_t zid = { "FreeSWITCH01" };
 static int zrtp_on = 0;
-#define ZRTP_MITM_TRIES 500
+#define ZRTP_MITM_TRIES 100
 #endif
 
 #ifdef _MSC_VER
