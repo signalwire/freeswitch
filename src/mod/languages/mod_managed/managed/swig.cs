@@ -3543,6 +3543,11 @@ public class freeswitch {
     freeswitchPINVOKE.switch_rtp_release_port(ip, port);
   }
 
+  public static switch_status_t switch_rtp_set_interval(SWIGTYPE_p_switch_rtp rtp_session, uint ms_per_packet, uint samples_per_interval) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_set_interval(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), ms_per_packet, samples_per_interval);
+    return ret;
+  }
+
   public static switch_status_t switch_rtp_change_interval(SWIGTYPE_p_switch_rtp rtp_session, uint ms_per_packet, uint samples_per_interval) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_change_interval(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), ms_per_packet, samples_per_interval);
     return ret;
@@ -3631,10 +3636,6 @@ public class freeswitch {
     IntPtr cPtr = freeswitchPINVOKE.switch_rtp_get_rtp_socket(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
     SWIGTYPE_p_switch_socket_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_socket_t(cPtr, false);
     return ret;
-  }
-
-  public static void switch_rtp_set_default_samples_per_interval(SWIGTYPE_p_switch_rtp rtp_session, uint samples_per_interval) {
-    freeswitchPINVOKE.switch_rtp_set_default_samples_per_interval(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), samples_per_interval);
   }
 
   public static uint switch_rtp_get_default_samples_per_interval(SWIGTYPE_p_switch_rtp rtp_session) {
@@ -5064,6 +5065,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_directories_log_dir_get")]
   public static extern string switch_directories_log_dir_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_directories_run_dir_set")]
+  public static extern void switch_directories_run_dir_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_directories_run_dir_get")]
+  public static extern string switch_directories_run_dir_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_directories_db_dir_set")]
   public static extern void switch_directories_db_dir_set(HandleRef jarg1, string jarg2);
@@ -10084,6 +10091,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_release_port")]
   public static extern void switch_rtp_release_port(string jarg1, ushort jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_interval")]
+  public static extern int switch_rtp_set_interval(HandleRef jarg1, uint jarg2, uint jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_change_interval")]
   public static extern int switch_rtp_change_interval(HandleRef jarg1, uint jarg2, uint jarg3);
 
@@ -10140,9 +10150,6 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_get_rtp_socket")]
   public static extern IntPtr switch_rtp_get_rtp_socket(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_default_samples_per_interval")]
-  public static extern void switch_rtp_set_default_samples_per_interval(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_get_default_samples_per_interval")]
   public static extern uint switch_rtp_get_default_samples_per_interval(HandleRef jarg1);
@@ -19817,6 +19824,16 @@ public class switch_directories : IDisposable {
     } 
     get {
       string ret = freeswitchPINVOKE.switch_directories_log_dir_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public string run_dir {
+    set {
+      freeswitchPINVOKE.switch_directories_run_dir_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_directories_run_dir_get(swigCPtr);
       return ret;
     } 
   }

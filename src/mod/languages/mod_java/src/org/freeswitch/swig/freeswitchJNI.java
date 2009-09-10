@@ -17,7 +17,8 @@ class freeswitchJNI {
   public final static native void IVRMenu_execute(long jarg1, IVRMenu jarg1_, long jarg2, CoreSession jarg2_, String jarg3);
   public final static native long new_API();
   public final static native void delete_API(long jarg1);
-  public final static native String API_execute(long jarg1, API jarg1_, String jarg2, String jarg3);
+  public final static native String API_execute__SWIG_0(long jarg1, API jarg1_, String jarg2, String jarg3);
+  public final static native String API_execute__SWIG_1(long jarg1, API jarg1_, String jarg2);
   public final static native String API_executeString(long jarg1, API jarg1_, String jarg2);
   public final static native String API_getTime(long jarg1, API jarg1_);
   public final static native void input_callback_state_t_function_set(long jarg1, input_callback_state_t jarg1_, long jarg2);

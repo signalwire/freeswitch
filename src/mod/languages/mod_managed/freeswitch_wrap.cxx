@@ -2101,6 +2101,36 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_directories_log_dir_get(void * jarg1
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_directories_run_dir_set(void * jarg1, char * jarg2) {
+  switch_directories *arg1 = (switch_directories *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_directories *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg1->run_dir) delete [] arg1->run_dir;
+    if (arg2) {
+      arg1->run_dir = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->run_dir, (const char *)arg2);
+    } else {
+      arg1->run_dir = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_directories_run_dir_get(void * jarg1) {
+  char * jresult ;
+  switch_directories *arg1 = (switch_directories *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_directories *)jarg1; 
+  result = (char *) ((arg1)->run_dir);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_directories_db_dir_set(void * jarg1, char * jarg2) {
   switch_directories *arg1 = (switch_directories *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -23516,6 +23546,22 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_release_port(char * jarg1, unsigne
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_set_interval(void * jarg1, unsigned long jarg2, unsigned long jarg3) {
+  int jresult ;
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  uint32_t arg2 ;
+  uint32_t arg3 ;
+  switch_status_t result;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  arg3 = (uint32_t)jarg3; 
+  result = (switch_status_t)switch_rtp_set_interval(arg1,arg2,arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_change_interval(void * jarg1, unsigned long jarg2, unsigned long jarg3) {
   int jresult ;
   switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
@@ -23779,16 +23825,6 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_get_rtp_socket(void * jarg1) {
   result = (switch_socket_t *)switch_rtp_get_rtp_socket(arg1);
   jresult = (void *)result; 
   return jresult;
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_set_default_samples_per_interval(void * jarg1, unsigned long jarg2) {
-  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
-  uint32_t arg2 ;
-  
-  arg1 = (switch_rtp_t *)jarg1; 
-  arg2 = (uint32_t)jarg2; 
-  switch_rtp_set_default_samples_per_interval(arg1,arg2);
 }
 
 
