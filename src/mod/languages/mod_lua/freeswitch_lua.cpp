@@ -251,7 +251,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 	case SWITCH_INPUT_TYPE_DTMF:
 		{
 			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
-			char str[2] = "";
+			char str[3] = "";
 			int arg_count = 3;
 
 			lua_getfield(L, LUA_GLOBALSINDEX, (char *) cb_function);
