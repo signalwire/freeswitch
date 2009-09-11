@@ -1059,7 +1059,6 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	char *xfer_exten = NULL;
 	int max = -1;
 	int interval = 0;
-	char *szinterval = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	/* Parse application data  */
@@ -1078,6 +1077,7 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	
 	/* If max is omitted, only act as a counter and skip maximum checks */
 	if (argc > 2) {
+		char *szinterval = NULL;
 		if ((szinterval = strchr(argv[2], '/')))
 		{
 			*szinterval++ = '\0';
@@ -1121,7 +1121,6 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 	char *app_arg = NULL;
 	int max = -1;
 	int interval = 0;
-	char *szinterval = NULL;
 
 	/* Parse application data  */
 	if (!switch_strlen_zero(data)) {
@@ -1129,7 +1128,7 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 	
-	if (argc < 2) {
+	if (argc < 5) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit_hash_execute %s\n", LIMITHASHEXECUTE_USAGE);
 		return;
 	}
@@ -1137,22 +1136,25 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 	realm = argv[0];
 	id = argv[1];
 	
-	/* If max is omitted, only act as a counter and skip maximum checks */
-	if (argc > 2) {
+	/* Accept '-' as unlimited (act as counter)*/
+	if (argv[2][0] == '-') {
+		max = -1;
+	} else {
+		char *szinterval = NULL;
+
 		if ((szinterval = strchr(argv[2], '/')))
 		{
 			*szinterval++ = '\0';
 			interval = atoi(szinterval);
 		}
-		
+
 		max = atoi(argv[2]);
-		
+
 		if (max < 0) {
 			max = 0;
-		}
+		}	
 	}
-
-
+	
 	app = argv[3];
 	app_arg = argv[4];
 
