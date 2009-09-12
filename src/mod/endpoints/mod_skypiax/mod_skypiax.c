@@ -1545,7 +1545,7 @@ int dtmf_received(private_t * tech_pvt, char *value)
 			switch_set_flag(tech_pvt, TFLAG_DTMF);
 			switch_mutex_unlock(tech_pvt->flag_mutex);
 		} else {
-			DEBUGA_SKYPE
+			NOTICA
 				("received a DTMF on channel %s, but we're BRIDGED, so let's NOT relay it out of band\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
 		}
 	} else {
@@ -1965,9 +1965,8 @@ int skypiax_answer(private_t * tech_pvt, char *id, char *value)
 		if (strlen(globals.SKYPIAX_INTERFACES[i].name)) {
 
 			giovatech = &globals.SKYPIAX_INTERFACES[i];
-			//NOTICA("skype interface: %d, name: %s, state: %d, value=%s, giovatech->callid_number=%s, giovatech->skype_user=%s\n", SKYPIAX_P_LOG, i, giovatech->name, giovatech->interface_state, value, giovatech->callid_number, giovatech->skype_user);
-			//FIXME check a timestamp here
-			if (strlen(giovatech->skype_call_id) && (giovatech->interface_state != SKYPIAX_STATE_DOWN) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->callid_number, value)) && ((((timenow.tv_sec - giovatech->answer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->answer_time.tv_usec)) < 500000)) {	//0.5sec
+			//NOTICA("interface=%d, name=%s, giovatech->skype_call_id=%s, giovatech->interface_state=%d, giovatech->skype_user=%s, tech_pvt->skype_user=%s, giovatech->callid_number=%s, value=%s, delta=%ld  500000\n", SKYPIAX_P_LOG, i, giovatech->name, giovatech->skype_call_id, giovatech->interface_state, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value, (((timenow.tv_sec - giovatech->answer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->answer_time.tv_usec)) );
+			if (strlen(giovatech->skype_call_id) && (giovatech->interface_state != SKYPIAX_STATE_DOWN) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->callid_number, value)) && ((((timenow.tv_sec - giovatech->answer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->answer_time.tv_usec)) < 1000000)) {	//XXX 1.5sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.5 seconds
 				found = 1;
 				DEBUGA_SKYPE
 					("FOUND  (name=%s, giovatech->interface_state=%d != SKYPIAX_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
