@@ -260,7 +260,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 	 * \return an int status code indicating success or failure
 	 *
 	 */
-		 SWITCH_DECLARE(int) originate(CoreSession * a_leg_session, char *dest, int timeout = 60);
+		 SWITCH_DECLARE(int) originate(CoreSession * a_leg_session, char *dest, int timeout = 60, switch_state_handler_table_t *handlers = NULL);
 
 
 		 SWITCH_DECLARE(virtual void) destroy(void);

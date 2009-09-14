@@ -244,8 +244,8 @@ public class CoreSession : IDisposable {
     freeswitchPINVOKE.CoreSession_SetCallerData(swigCPtr, var, val);
   }
 
-  public int Originate(CoreSession a_leg_session, string dest, int timeout) {
-    int ret = freeswitchPINVOKE.CoreSession_Originate(swigCPtr, CoreSession.getCPtr(a_leg_session), dest, timeout);
+  public int Originate(CoreSession a_leg_session, string dest, int timeout, switch_state_handler_table handlers) {
+    int ret = freeswitchPINVOKE.CoreSession_Originate(swigCPtr, CoreSession.getCPtr(a_leg_session), dest, timeout, switch_state_handler_table.getCPtr(handlers));
     return ret;
   }
 
@@ -1140,6 +1140,10 @@ public class freeswitch {
 
   public static void switch_core_session_reporting_state(SWIGTYPE_p_switch_core_session session) {
     freeswitchPINVOKE.switch_core_session_reporting_state(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  }
+
+  public static void switch_core_session_hangup_state(SWIGTYPE_p_switch_core_session session) {
+    freeswitchPINVOKE.switch_core_session_hangup_state(SWIGTYPE_p_switch_core_session.getCPtr(session));
   }
 
   public static uint switch_core_session_count() {
@@ -6007,6 +6011,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_reporting_state")]
   public static extern void switch_core_session_reporting_state(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_hangup_state")]
+  public static extern void switch_core_session_hangup_state(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_count")]
   public static extern uint switch_core_session_count();
@@ -11289,7 +11296,7 @@ class freeswitchPINVOKE {
   public static extern void CoreSession_SetCallerData(HandleRef jarg1, string jarg2, string jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_Originate")]
-  public static extern int CoreSession_Originate(HandleRef jarg1, HandleRef jarg2, string jarg3, int jarg4);
+  public static extern int CoreSession_Originate(HandleRef jarg1, HandleRef jarg2, string jarg3, int jarg4, HandleRef jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_destroy")]
   public static extern void CoreSession_destroy(HandleRef jarg1);

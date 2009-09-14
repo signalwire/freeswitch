@@ -1714,6 +1714,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 
 		switch_core_session_kill_channel(channel->session, SWITCH_SIG_KILL);
 		switch_core_session_signal_state_change(channel->session);
+		switch_core_session_hangup_state(channel->session);
 	}
 
 	return channel->state;

@@ -1062,7 +1062,8 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 	const char *val;
 
 	session->thread = thread;
-	
+	session->thread_id = switch_thread_self();
+
 	switch_core_session_run(session);
 	switch_core_media_bug_remove_all(session);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session %" SWITCH_SIZE_T_FMT " (%s) Locked, Waiting on external entities\n",
@@ -1207,6 +1208,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 
 	session = switch_core_alloc(usepool, sizeof(*session));
 	session->pool = usepool;
+	session->thread_id = switch_thread_self();
 
 	switch_core_memory_pool_set_data(session->pool, "__session", session);
 	

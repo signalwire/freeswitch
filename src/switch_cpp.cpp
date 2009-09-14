@@ -932,7 +932,7 @@ SWITCH_DECLARE(void) CoreSession::destroy(void)
 	
 }
 
-SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *dest, int timeout)
+SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *dest, int timeout, switch_state_handler_table_t *handlers)
 {
 
 	switch_core_session_t *aleg_core_session = NULL;
@@ -957,7 +957,7 @@ SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *des
 							 &cause, 
 							 dest, 
 							 timeout,
-							 NULL, 
+							 handlers, 
 							 NULL, 
 							 NULL, 
 							 &caller_profile,

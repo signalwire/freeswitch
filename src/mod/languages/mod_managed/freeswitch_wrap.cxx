@@ -6048,6 +6048,14 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_reporting_state(void * ja
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_hangup_state(void * jarg1) {
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  switch_core_session_hangup_state(arg1);
+}
+
+
 SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_core_session_count() {
   unsigned long jresult ;
   uint32_t result;
@@ -28592,19 +28600,21 @@ SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_SetCallerData(void * jarg1, char 
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_Originate(void * jarg1, void * jarg2, char * jarg3, int jarg4) {
+SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_Originate(void * jarg1, void * jarg2, char * jarg3, int jarg4, void * jarg5) {
   int jresult ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   CoreSession *arg2 = (CoreSession *) 0 ;
   char *arg3 = (char *) 0 ;
   int arg4 = (int) 60 ;
+  switch_state_handler_table_t *arg5 = (switch_state_handler_table_t *) NULL ;
   int result;
   
   arg1 = (CoreSession *)jarg1; 
   arg2 = (CoreSession *)jarg2; 
   arg3 = (char *)jarg3; 
   arg4 = (int)jarg4; 
-  result = (int)(arg1)->originate(arg2,arg3,arg4);
+  arg5 = (switch_state_handler_table_t *)jarg5; 
+  result = (int)(arg1)->originate(arg2,arg3,arg4,arg5);
   jresult = result; 
   return jresult;
 }
