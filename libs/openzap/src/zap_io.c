@@ -1847,8 +1847,10 @@ static zap_status_t handle_dtmf(zap_channel_t *zchan, zap_size_t datalen)
 					return ZAP_FAIL;
 				}
 			}
-		
-			zchan->skip_read_frames = wrote / (1000 / zchan->effective_interval);
+
+			if (x) {
+				zchan->skip_read_frames = (wrote / (zchan->effective_interval * 8)) + 4;
+			}
 		}
 	}
 	
