@@ -503,6 +503,7 @@ struct zap_channel {
 	uint32_t skip_read_frames;
 	zap_buffer_t *dtmf_buffer;
 	zap_buffer_t *gen_dtmf_buffer;
+	zap_buffer_t *pre_buffer;
 	zap_buffer_t *digit_buffer;
 	zap_buffer_t *fsk_buffer;
 	uint32_t dtmf_on;
@@ -529,6 +530,7 @@ struct zap_channel {
 	struct zap_io_interface *zio;
 	zap_hash_t *variable_hash;
 	unsigned char rx_cas_bits;
+	uint32_t pre_buffer_size;
 };
 
 
@@ -657,6 +659,7 @@ OZ_DECLARE(zap_status_t) zap_channel_use(zap_channel_t *zchan);
 OZ_DECLARE(zap_status_t) zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj);
 OZ_DECLARE(zap_status_t) zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to);
 OZ_DECLARE(zap_status_t) zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen);
+OZ_DECLARE(void) zap_generate_sln_silence(int16_t *data, uint32_t samples, uint32_t divisor);
 OZ_DECLARE(zap_status_t) zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t datasize, zap_size_t *datalen);
 OZ_DECLARE(zap_status_t) zap_channel_add_var(zap_channel_t *zchan, const char *var_name, const char *value);
 OZ_DECLARE(const char *) zap_channel_get_var(zap_channel_t *zchan, const char *var_name);

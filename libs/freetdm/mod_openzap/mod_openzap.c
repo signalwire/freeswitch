@@ -934,9 +934,29 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 {
 	private_t *tech_pvt;
 	switch_status_t status;
-	
+	switch_channel_t *channel;
+	const char *var;
+
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
+
+	channel = switch_core_session_get_channel(session);
+
+	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_PROGRESS:
+	case SWITCH_MESSAGE_INDICATE_ANSWER:
+		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			if ((var = switch_channel_get_variable(channel, "openzap_pre_buffer_size"))) {
+				int tmp = atoi(var);
+				if (tmp > -1) {
+					zap_channel_command(tech_pvt->zchan, ZAP_COMMAND_SET_PRE_BUFFER_SIZE, &tmp);
+				}
+			}
+		}
+		break;
+	default:
+		break;
+	}
 
 	switch (tech_pvt->zchan->type) {
 	case ZAP_CHAN_TYPE_FXS:
@@ -1117,6 +1137,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if (status != ZAP_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channels available\n");
 		return SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION;
+	}
+
+	if ((var = switch_event_get_header(var_event, "openzap_pre_buffer_size"))) {
+		int tmp = atoi(var);
+		if (tmp > -1) {
+			zap_channel_command(zchan, ZAP_COMMAND_SET_PRE_BUFFER_SIZE, &tmp);
+		}
 	}
 
 	zap_channel_clear_vars(zchan);
