@@ -4283,6 +4283,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 	nua_handle_t *nh;
 	sofia_destination_t *dst = NULL;
 	char *contact_str, *contact, *user_via = NULL;
+	char *route_uri = NULL;
 
 	contact = sofia_glue_get_url_from_contact((char*) o_contact, 1);
 	if (sofia_glue_check_nat(profile, network_ip)) {
@@ -4321,6 +4322,10 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 	dst = sofia_glue_get_destination((char*) o_contact);
 	switch_assert(dst);
 
+	if(dst->route_uri) {
+		route_uri = sofia_glue_strip_uri(dst->route_uri);
+	}
+
 	nh = nua_handle(profile->nua, NULL, NUTAG_URL(contact),
 			SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id),
 			SIPTAG_CONTACT_STR(contact_str), TAG_END());
@@ -4328,13 +4333,14 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 
 	nua_notify(nh,
 			NUTAG_NEWSUB(1),
-			TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
+			TAG_IF(dst->route_uri, NUTAG_PROXY(route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
 			TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 			SIPTAG_EVENT_STR(event),
 			SIPTAG_CONTENT_TYPE_STR(contenttype),
 			SIPTAG_PAYLOAD_STR(body), TAG_END());
 
 	switch_safe_free(contact);
+	switch_safe_free(route_uri);
 	switch_safe_free(id);
 	sofia_glue_free_destination(dst);
 	switch_safe_free(user_via);
