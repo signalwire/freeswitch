@@ -56,10 +56,6 @@ void Session::destroy(void)
 		cb_arg = NULL;
 	}
 
-	if (Self) {
-		Py_DECREF(Self);
-	}	
-
 	CoreSession::destroy();
 }
 
