@@ -330,6 +330,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 	for (i = 0; i < len; i++) {
 		switch_channel_state_t state;
 		if (!(originate_status[i].peer_channel && originate_status[i].peer_session)) {
+			oglobals->hups++;
 			continue;
 		}
 
@@ -342,7 +343,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				oglobals->ring_ready = 1;
 			}
 		}
-		
+
 		if (switch_channel_test_flag(originate_status[i].peer_channel, CF_EARLY_MEDIA)) {
 			if (!originate_status[i].early_media) {
 				originate_status[i].early_media = 1;
