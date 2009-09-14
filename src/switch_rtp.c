@@ -1792,7 +1792,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 1) == SWITCH_STATUS_SUCCESS) {
 					rtp_session->hot_hits += rtp_session->samples_per_interval;
 					
-					if (rtp_session->hot_hits >= rtp_session->samples_per_second * 60) {
+					if (rtp_session->hot_hits >= rtp_session->samples_per_second * 5) {
 						hot_socket = 1;
 					}
 				} else {
@@ -1808,7 +1808,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 #if 0
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
 									  "Auto-Flush catching up %d packets (%d)ms.\n", 
-									  rtp_session->sync_packets, rtp_session->ms_per_packet * rtp_session->sync_packets);
+									  rtp_session->sync_packets, (rtp_session->ms_per_packet * rtp_session->sync_packets) / 1000);
 #endif
 					rtp_session->sync_packets = 0;
 				}
