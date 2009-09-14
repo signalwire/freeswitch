@@ -176,6 +176,11 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	switch_assert(data);
 
 	if (binding->use_dynamic_url) {
+		if (!params) {
+			switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+			switch_assert(params);
+		}
+
 		switch_event_add_header_string(params, SWITCH_STACK_TOP, "hostname", hostname);
 		switch_event_add_header_string(params, SWITCH_STACK_TOP, "section", switch_str_nil(section));
 		switch_event_add_header_string(params, SWITCH_STACK_TOP, "tag_name", switch_str_nil(tag_name));
