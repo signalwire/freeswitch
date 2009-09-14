@@ -3088,5 +3088,5 @@ OZ_DECLARE_NONSTD(zap_status_t) zap_console_stream_write(zap_stream_handle_t *ha
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */
