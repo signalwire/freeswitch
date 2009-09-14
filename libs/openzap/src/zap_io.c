@@ -245,6 +245,7 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 			zap_sleep(500);
 		}
 
+		zap_buffer_destroy(&zchan->pre_buffer);
 		zap_buffer_destroy(&zchan->digit_buffer);
 		zap_buffer_destroy(&zchan->gen_dtmf_buffer);
 		zap_buffer_destroy(&zchan->dtmf_buffer);
@@ -986,7 +987,10 @@ OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t 
 		if (zap_test_flag(check, ZAP_CHANNEL_READY) && 
 			!zap_test_flag(check, ZAP_CHANNEL_INUSE) && 
 			!zap_test_flag(check, ZAP_CHANNEL_SUSPENDED) && 
-			check->state == ZAP_CHANNEL_STATE_DOWN
+			check->state == ZAP_CHANNEL_STATE_DOWN && 
+			check->type != ZAP_CHAN_TYPE_DQ921 &&
+			check->type != ZAP_CHAN_TYPE_DQ931
+			
 			) {
 
 			if (span && span->channel_request) {
@@ -1195,6 +1199,8 @@ OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan)
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_PROGRESS);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_MEDIA);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_ANSWERED);
+	zap_buffer_destroy(&zchan->pre_buffer);
+
 	zchan->init_state = ZAP_CHANNEL_STATE_DOWN;
 	zchan->state = ZAP_CHANNEL_STATE_DOWN;
 	zap_log(ZAP_LOG_DEBUG, "channel done %u:%u\n", zchan->span_id, zchan->chan_id);
@@ -1457,6 +1463,27 @@ OZ_DECLARE(zap_status_t) zap_channel_command(zap_channel_t *zchan, zap_command_t
                 }
 			}
 		}
+
+	case ZAP_COMMAND_SET_PRE_BUFFER_SIZE:
+		{
+			int val = ZAP_COMMAND_OBJ_INT;
+
+			if (val < 0) {
+				val = 0;
+			}
+
+			zchan->pre_buffer_size = val * 8;
+
+			if (!zchan->pre_buffer_size) {
+				zap_buffer_destroy(&zchan->pre_buffer);
+			} else if (!zchan->pre_buffer) {
+				zap_buffer_create(&zchan->pre_buffer, 1024, zchan->pre_buffer_size, 0);
+			}
+
+			GOTO_STATUS(done, ZAP_SUCCESS);
+
+		}
+		break;
 	case ZAP_COMMAND_GET_DTMF_ON_PERIOD:
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_GENERATE)) {
@@ -1514,6 +1541,13 @@ OZ_DECLARE(zap_status_t) zap_channel_command(zap_channel_t *zchan, zap_command_t
 				
 				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
+		}
+		break;
+
+	case ZAP_COMMAND_DISABLE_ECHOCANCEL:
+		{
+			zap_buffer_destroy(&zchan->pre_buffer);
+			zchan->pre_buffer_size = 0;
 		}
 		break;
 	default:
@@ -1737,6 +1771,10 @@ OZ_DECLARE(zap_status_t) zap_channel_queue_dtmf(zap_channel_t *zchan, const char
 	
 	assert(zchan != NULL);
 
+	if (zchan->pre_buffer) {
+		zap_buffer_zero(zchan->pre_buffer);
+	}
+
 	zap_mutex_lock(zchan->mutex);
 
 	inuse = zap_buffer_inuse(zchan->digit_buffer);
@@ -1779,6 +1817,7 @@ static zap_status_t handle_dtmf(zap_channel_t *zchan, zap_size_t datalen)
 {
 	zap_buffer_t *buffer = NULL;
 	zap_size_t dblen = 0;
+	int wrote = 0;
 
 	if (zchan->gen_dtmf_buffer && (dblen = zap_buffer_inuse(zchan->gen_dtmf_buffer))) {
 		char digits[128] = "";
@@ -1800,7 +1839,6 @@ static zap_status_t handle_dtmf(zap_channel_t *zchan, zap_size_t datalen)
 			}
 
 			for (; *cur; cur++) {
-				int wrote = 0;
 				if ((wrote = teletone_mux_tones(&zchan->tone_session, &zchan->tone_session.TONES[(int)*cur]))) {
 					zap_buffer_write(zchan->dtmf_buffer, zchan->tone_session.buffer, wrote * 2);
 					x++;
@@ -1810,7 +1848,7 @@ static zap_status_t handle_dtmf(zap_channel_t *zchan, zap_size_t datalen)
 				}
 			}
 		
-			zchan->skip_read_frames = 200 * x;
+			zchan->skip_read_frames = wrote / (1000 / zchan->effective_interval);
 		}
 	}
 	
@@ -1852,6 +1890,28 @@ static zap_status_t handle_dtmf(zap_channel_t *zchan, zap_size_t datalen)
 
 	return ZAP_SUCCESS;
 
+}
+
+
+OZ_DECLARE(void) zap_generate_sln_silence(int16_t *data, uint32_t samples, uint32_t divisor)
+{
+    int16_t x;
+    uint32_t i;
+    int sum_rnd = 0;
+    int16_t rnd2 = (int16_t) zap_current_time_in_ms * (int16_t) (intptr_t) data;
+
+    assert(divisor);
+
+    for (i = 0; i < samples; i++, sum_rnd = 0) {
+        for (x = 0; x < 6; x++) {
+            rnd2 = rnd2 * 31821U + 13849U;
+            sum_rnd += rnd2 ;
+        }
+        //switch_normalize_to_16bit(sum_rnd);
+        *data = (int16_t) ((int16_t) sum_rnd / (int) divisor);
+
+        data++;
+    }
 }
 
 
@@ -2048,11 +2108,25 @@ OZ_DECLARE(zap_status_t) zap_channel_read(zap_channel_t *zchan, void *data, zap_
 	}
 
 	if (zchan->skip_read_frames > 0 || zap_test_flag(zchan, ZAP_CHANNEL_MUTE)) {
-		memset(data, 0, *datalen);
+		
+		if (zchan->pre_buffer && zap_buffer_inuse(zchan->pre_buffer)) {
+			zap_buffer_zero(zchan->pre_buffer);
+		}
+
+		memset(data, 255, *datalen);
+
 		if (zchan->skip_read_frames > 0) {
 			zchan->skip_read_frames--;
 		}
-	}  
+	}  else	if (zchan->pre_buffer_size) {
+		zap_buffer_write(zchan->pre_buffer, data, *datalen);
+		if (zap_buffer_inuse(zchan->pre_buffer) >= zchan->pre_buffer_size) {
+			zap_buffer_read(zchan->pre_buffer, data, *datalen);
+		} else {
+			memset(data, 255, *datalen);
+		}
+	}
+
 
 	return status;
 }
