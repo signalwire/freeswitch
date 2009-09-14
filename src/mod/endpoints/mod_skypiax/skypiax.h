@@ -163,6 +163,14 @@ struct SkypiaxHandles {
 };
 #endif //WIN32
 
+#define MAX_CHATS 10
+
+struct chat {
+	char chatname[256];
+	char dialog_partner[256];
+};
+typedef struct chat chat_t;
+
 #define MAX_CHATMESSAGES 10
 
 struct chatmessage {
@@ -261,6 +269,7 @@ struct private_object {
 	uint32_t ob_failed_calls;
 
 	chatmessage_t chatmessages[MAX_CHATMESSAGES];
+	chat_t chats[MAX_CHATS];
 };
 
 typedef struct private_object private_t;

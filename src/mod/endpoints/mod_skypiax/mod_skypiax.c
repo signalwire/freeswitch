@@ -91,6 +91,8 @@ SWITCH_STANDARD_API(sk_function);
 SWITCH_STANDARD_API(skypiax_function);
 #define SKYPIAX_SYNTAX "interface_name skype_API_msg"
 
+SWITCH_STANDARD_API(skypiax_chat_function);
+#define SKYPIAX_CHAT_SYNTAX "interface_name remote_skypename TEXT"
 /* BEGIN: Changes here */
 #define FULL_RELOAD 0
 #define SOFT_RELOAD 1
@@ -1425,6 +1427,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load)
 
 		SWITCH_ADD_API(commands_api_interface, "sk", "Skypiax console commands", sk_function, SK_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "skypiax", "Skypiax interface commands", skypiax_function, SKYPIAX_SYNTAX);
+		SWITCH_ADD_API(commands_api_interface, "skypiax_chat", "Skypiax_chat interface remote_skypename TEXT", skypiax_chat_function, SKYPIAX_CHAT_SYNTAX);
 
 		/* indicate that the module should continue to be loaded */
 		return SWITCH_STATUS_SUCCESS;
@@ -1904,6 +1907,85 @@ SWITCH_STANDARD_API(sk_function)
 
 	return SWITCH_STATUS_SUCCESS;
 }
+SWITCH_STANDARD_API(skypiax_chat_function)
+{
+	char *mycmd = NULL, *argv[10] = { 0 };
+	int argc = 0;
+	private_t *tech_pvt = NULL;
+	int tried =0;
+	int i;
+	int found = 0;
+	char skype_msg[1024];
+
+	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (!argc) {
+		stream->write_function(stream, "ERROR, usage: %s", SKYPIAX_CHAT_SYNTAX);
+		goto end;
+	}
+
+	if (argc < 3) {
+		stream->write_function(stream, "ERROR, usage: %s", SKYPIAX_CHAT_SYNTAX);
+		goto end;
+	}
+
+	if (argv[0]) {
+
+		for (i = 0; !found && i < SKYPIAX_MAX_INTERFACES; i++) {
+			/* we've been asked for a normal interface name, or we have not found idle interfaces to serve as the "ANY" interface */
+			if (strlen(globals.SKYPIAX_INTERFACES[i].name)
+					&& (strncmp(globals.SKYPIAX_INTERFACES[i].name, argv[0], strlen(argv[0])) == 0)) {
+				tech_pvt = &globals.SKYPIAX_INTERFACES[i];
+				stream->write_function(stream, "Using interface: globals.SKYPIAX_INTERFACES[%d].name=|||%s|||\n", i, globals.SKYPIAX_INTERFACES[i].name);
+				found = 1;
+				break;
+			}
+
+		}
+		if (!found) {
+			stream->write_function(stream, "ERROR: A Skypiax interface with name='%s' was not found\n", argv[0]);
+			goto end;
+		} else {
+			char skype_msg[256];
+			//NOTICA("TEXT is: %s\n", SKYPIAX_P_LOG, (char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1] );
+			snprintf(skype_msg, sizeof(skype_msg), "CHAT CREATE %s", argv[1]);
+			skypiax_signaling_write(tech_pvt, skype_msg);
+			usleep(100);
+		}
+	} else {
+		stream->write_function(stream, "ERROR, usage: %s", SKYPIAX_CHAT_SYNTAX);
+	}
+
+
+	found=0;
+
+	while(!found){
+		for(i=0; i<MAX_CHATS; i++){
+			if(!strcmp(tech_pvt->chats[i].dialog_partner, argv[1]) ){
+				snprintf(skype_msg, sizeof(skype_msg), "CHATMESSAGE %s %s", tech_pvt->chats[i].chatname, (char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]);
+				skypiax_signaling_write(tech_pvt, skype_msg);
+				found=1;
+				break;
+			}
+		}
+		if(found){
+			break;
+		}
+		if(tried > 1000){
+			stream->write_function(stream, "ERROR: no chat with dialog_partner='%s' was not found\n", argv[1]);
+			break;
+		}
+		usleep(1000);
+	}
+
+end:
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 SWITCH_STANDARD_API(skypiax_function)
 {
