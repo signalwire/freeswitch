@@ -222,6 +222,123 @@ int skypiax_signaling_read(private_t * tech_pvt)
 					skypiax_signaling_write(tech_pvt, msg_to_skype);
 				}
 			}
+			if (!strcasecmp(message, "CHATMESSAGE")) {
+				char msg_to_skype[256];
+				int i;
+				int found;
+
+				skypiax_strncpy(obj, where, sizeof(obj) - 1);
+				where = strsep(stringp, " ");
+				skypiax_strncpy(id, where, sizeof(id) - 1);
+				where = strsep(stringp, " ");
+				skypiax_strncpy(prop, where, sizeof(prop) - 1);
+				//where = strsep(stringp, " ");
+				skypiax_strncpy(value, *stringp, sizeof(value) - 1);
+				//where = strsep(stringp, " ");
+
+				//ERRORA ("Skype MSG, obj: %s, id: %s, prop: %s, value: %s,where: %s!\n", SKYPIAX_P_LOG, obj, id, prop, value, where ? where : "NULL");
+
+				if (!strcasecmp(prop, "STATUS") && !strcasecmp(value, "RECEIVED")) {
+					NOTICA("RECEIVED CHATMESSAGE %s, let's see which type it is\n", SKYPIAX_P_LOG, id);
+					sprintf(msg_to_skype, "GET CHATMESSAGE %s TYPE", id);
+					skypiax_signaling_write(tech_pvt, msg_to_skype);
+				}
+
+				if (!strcasecmp(prop, "TYPE") && !strcasecmp(value, "SAID")) {
+					NOTICA("CHATMESSAGE %s is of type SAID, let's get the other infos\n", SKYPIAX_P_LOG, id);
+					found=0;
+					for(i=0; i<MAX_CHATMESSAGES; i++){
+						if(strlen(tech_pvt->chatmessages[i].id) == 0){
+							strncpy(tech_pvt->chatmessages[i].id, id, sizeof(tech_pvt->chatmessages[i].id));
+							strncpy(tech_pvt->chatmessages[i].type, value, sizeof(tech_pvt->chatmessages[i].type));
+							found=1;
+							break;
+						}
+					}
+					if(!found){
+						ERRORA("why we do not have a chatmessages slot free? we have more than %d chatmessages in parallel?\n", SKYPIAX_P_LOG, MAX_CHATMESSAGES);
+					} else {
+						NOTICA("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s\n", SKYPIAX_P_LOG, id, i, tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id);
+						sprintf(msg_to_skype, "GET CHATMESSAGE %s CHATNAME", id);
+						skypiax_signaling_write(tech_pvt, msg_to_skype);
+						skypiax_sleep(100);
+						sprintf(msg_to_skype, "GET CHATMESSAGE %s FROM_HANDLE", id);
+						skypiax_signaling_write(tech_pvt, msg_to_skype);
+						skypiax_sleep(100);
+						sprintf(msg_to_skype, "GET CHATMESSAGE %s FROM_DISPNAME", id);
+						skypiax_signaling_write(tech_pvt, msg_to_skype);
+						skypiax_sleep(100);
+						sprintf(msg_to_skype, "GET CHATMESSAGE %s BODY", id);
+						skypiax_signaling_write(tech_pvt, msg_to_skype);
+					}
+				}
+
+				if (!strcasecmp(prop, "CHATNAME")) {
+					NOTICA("CHATMESSAGE %s belongs to the CHAT %s\n", SKYPIAX_P_LOG, id, value);
+					found=0;
+					for(i=0; i<MAX_CHATMESSAGES; i++){
+						if(!strcmp(tech_pvt->chatmessages[i].id, id)){
+							strncpy(tech_pvt->chatmessages[i].chatname, value, sizeof(tech_pvt->chatmessages[i].chatname));
+							found=1;
+							break;
+						}
+					}
+					if(!found){
+						ERRORA("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
+					} 
+				}
+				if (!strcasecmp(prop, "FROM_HANDLE")) {
+					NOTICA("CHATMESSAGE %s was sent by FROM_HANDLE %s\n", SKYPIAX_P_LOG, id, value);
+					found=0;
+					for(i=0; i<MAX_CHATMESSAGES; i++){
+						if(!strcmp(tech_pvt->chatmessages[i].id, id)){
+							strncpy(tech_pvt->chatmessages[i].from_handle, value, sizeof(tech_pvt->chatmessages[i].from_handle));
+							found=1;
+							break;
+						}
+					}
+					if(!found){
+						ERRORA("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
+					} 
+
+				}
+				if (!strcasecmp(prop, "FROM_DISPNAME")) {
+					NOTICA("CHATMESSAGE %s was sent by FROM_DISPNAME %s\n", SKYPIAX_P_LOG, id, value);
+					found=0;
+					for(i=0; i<MAX_CHATMESSAGES; i++){
+						if(!strcmp(tech_pvt->chatmessages[i].id, id)){
+							strncpy(tech_pvt->chatmessages[i].from_dispname, value, sizeof(tech_pvt->chatmessages[i].from_dispname));
+							found=1;
+							break;
+						}
+					}
+					if(!found){
+						ERRORA("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
+					} 
+
+				}
+				if (!strcasecmp(prop, "BODY")) {
+					NOTICA("CHATMESSAGE %s has BODY %s\n", SKYPIAX_P_LOG, id, value);
+					found=0;
+					for(i=0; i<MAX_CHATMESSAGES; i++){
+						if(!strcmp(tech_pvt->chatmessages[i].id, id)){
+							strncpy(tech_pvt->chatmessages[i].body, value, sizeof(tech_pvt->chatmessages[i].body));
+							found=1;
+							break;
+						}
+					}
+					if(!found){
+						ERRORA("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
+					}else {
+						ERRORA("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s, chatname=%s, from_handle=%s, from_dispname=%s, body=%s\n", SKYPIAX_P_LOG, id, i, tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id, tech_pvt->chatmessages[i].chatname, tech_pvt->chatmessages[i].from_handle, tech_pvt->chatmessages[i].from_dispname, tech_pvt->chatmessages[i].body);
+						incoming_chatmessage(tech_pvt, i);
+					}
+
+				}
+
+			}
+
+
 			if (!strcasecmp(message, "CALL")) {
 				skypiax_strncpy(obj, where, sizeof(obj) - 1);
 				where = strsep(stringp, " ");
@@ -238,7 +355,6 @@ int skypiax_signaling_read(private_t * tech_pvt)
 
 				if (!strcasecmp(prop, "PARTNER_HANDLE")) {
 					if (tech_pvt->interface_state != SKYPIAX_STATE_SELECTED && (!strlen(tech_pvt->skype_call_id) || !strlen(tech_pvt->session_uuid_str))) {
-						//if (!strlen(tech_pvt->skype_call_id)) {
 						/* we are NOT inside an active call */
 						DEBUGA_SKYPE("Call %s TRY ANSWER\n", SKYPIAX_P_LOG, id);
 						skypiax_answer(tech_pvt, id, value);

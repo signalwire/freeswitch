@@ -1410,6 +1410,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load)
 		return SWITCH_STATUS_FALSE;
 	}
 
+        if (switch_event_reserve_subclass(MY_EVENT_INCOMING_CHATMESSAGE) != SWITCH_STATUS_SUCCESS) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+                return SWITCH_STATUS_GENERR;
+        }
+
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	skypiax_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	skypiax_endpoint_interface->interface_name = "skypiax";
@@ -1501,6 +1506,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 		}
 
 	}
+        switch_event_free_subclass(MY_EVENT_INCOMING_CHATMESSAGE);
+
 	switch_safe_free(globals.dialplan);
 	switch_safe_free(globals.context);
 	switch_safe_free(globals.destination);
@@ -2144,6 +2151,31 @@ int skypiax_transfer(private_t * tech_pvt, char *id, char *value)
 	}
 	return 0;
 }
+
+int incoming_chatmessage(private_t * tech_pvt, int which)
+{
+        char event_info[512];
+        switch_event_t *event;
+
+        DEBUGA_SKYPE("received CHATMESSAGE on interface %s\n", SKYPIAX_P_LOG, tech_pvt->name);
+
+        switch_snprintf(event_info, sizeof(event_info), "incoming CHATMESSAGE on %s\n", tech_pvt->name);
+
+        if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_INCOMING_CHATMESSAGE) == SWITCH_STATUS_SUCCESS) {
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_info", event_info);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "interface_name", tech_pvt->name);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_handle", tech_pvt->chatmessages[which].from_handle);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_dispname", tech_pvt->chatmessages[which].from_dispname);
+                switch_event_add_body(event, "%s\n\n", tech_pvt->chatmessages[which].body);
+                switch_event_fire(&event);
+		memset(&tech_pvt->chatmessages[which], '\0', sizeof(&tech_pvt->chatmessages[which]) );
+        }
+
+        return 0;
+}
+
 
 /* For Emacs:
  * Local Variables:

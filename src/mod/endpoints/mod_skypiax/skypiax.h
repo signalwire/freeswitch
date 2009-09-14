@@ -50,6 +50,8 @@
 #pragma warning(disable:4127)
 #endif
 
+#define MY_EVENT_INCOMING_CHATMESSAGE "skypiax::incoming_chatmessage"
+
 #define SAMPLERATE_SKYPIAX 16000
 #define SAMPLES_PER_FRAME SAMPLERATE_SKYPIAX/50
 
@@ -159,9 +161,19 @@ struct SkypiaxHandles {
 	int api_connected;
 	switch_file_t *fdesc[2];
 };
-
 #endif //WIN32
 
+#define MAX_CHATMESSAGES 10
+
+struct chatmessage {
+	char id[256];
+	char type[256];
+	char chatname[256];
+	char from_handle[256];
+	char from_dispname[256];
+	char body[512];
+};
+typedef struct chatmessage chatmessage_t;
 struct private_object {
 	unsigned int flags;
 	switch_codec_t read_codec;
@@ -247,6 +259,8 @@ struct private_object {
 	uint32_t ob_calls;
 	uint32_t ib_failed_calls;
 	uint32_t ob_failed_calls;
+
+	chatmessage_t chatmessages[MAX_CHATMESSAGES];
 };
 
 typedef struct private_object private_t;
@@ -293,3 +307,4 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, int *which_port);
 #else
 int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_port);
 #endif //WIN32
+int incoming_chatmessage(private_t * tech_pvt, int which);
