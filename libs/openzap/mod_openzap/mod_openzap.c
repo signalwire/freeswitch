@@ -304,8 +304,15 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	switch_core_session_set_private(session, tech_pvt);
 	tech_pvt->session = session;
 
-	zap_channel_command(zchan, ZAP_COMMAND_GET_INTERVAL, &interval);
-	zap_channel_command(zchan, ZAP_COMMAND_GET_CODEC, &codec);
+	if (ZAP_SUCCESS != zap_channel_command(zchan, ZAP_COMMAND_GET_INTERVAL, &interval)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to retrieve channel interval.\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (ZAP_SUCCESS != zap_channel_command(zchan, ZAP_COMMAND_GET_CODEC, &codec)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to retrieve channel codec.\n");
+		return SWITCH_STATUS_GENERR;
+	}
 
 	switch(codec) {
 	case ZAP_CODEC_ULAW:
@@ -324,7 +331,10 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		}
 		break;
 	default:
-		abort();
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid codec value retrieved from channel, codec value: %d\n", codec);
+			return SWITCH_STATUS_GENERR;
+		}
 	}
 
 
@@ -2902,5 +2912,5 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_openzap_shutdown)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 
  */
