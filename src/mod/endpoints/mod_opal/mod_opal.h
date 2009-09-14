@@ -271,5 +271,5 @@ class FSMediaStream:public OpalMediaStream {
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4: expandtabs:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:s:
  */
