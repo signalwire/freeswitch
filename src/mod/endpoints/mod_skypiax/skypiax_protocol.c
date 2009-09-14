@@ -1487,13 +1487,16 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 		XEvent an_event;
 		char buf[21];			/*  can't be longer */
 		char buffer[17000];
+		char continuebuffer[17000];
 		char *b;
 		int i;
 		int continue_is_broken = 0;
+		int there_were_continues = 0;
 		Atom atom_begin = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
 		Atom atom_continue = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE", False);
 
 		memset(buffer, '\0', 17000);
+		memset(continuebuffer, '\0', 17000);
 		b = buffer;
 
 		while (running && tech_pvt->running) {
@@ -1514,20 +1517,27 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 				//DEBUGA_SKYPE ("BUF=|||%s|||\n", SKYPIAX_P_LOG, buf);
 
 				if (an_event.xclient.message_type == atom_begin) {
+					//DEBUGA_SKYPE ("BEGIN BUF=|||%s|||\n", SKYPIAX_P_LOG, buf);
 
 					if (strlen(buffer)) {
 						unsigned int howmany;
 						howmany = strlen(b) + 1;
 						howmany = write(SkypiaxHandles->fdesc[1], b, howmany);
-						DEBUGA_SKYPE("RECEIVED2=|||%s|||\n", SKYPIAX_P_LOG, buffer);
+						WARNINGA("A begin atom while the previous message is not closed???? value of previous message (between vertical bars) is=|||%s|||, will be lost\n", SKYPIAX_P_LOG, buffer);
 						memset(buffer, '\0', 17000);
+					}
+					if(continue_is_broken){
+						continue_is_broken=0;
+						there_were_continues = 1;
 					}
 				}
 				if (an_event.xclient.message_type == atom_continue) {
+					//DEBUGA_SKYPE ("CONTINUE BUF=|||%s|||\n", SKYPIAX_P_LOG, buf);
 
 					if (!strlen(buffer)) {
 						DEBUGA_SKYPE
-							("Got a 'continue' XAtom without a previous 'begin'. It's value (between vertical bars) is=|||%s|||\n", SKYPIAX_P_LOG, buf);
+							("Got a 'continue' XAtom without a previous 'begin'. It's value (between vertical bars) is=|||%s|||, let's store it and hope next 'begin' will be the good one\n", SKYPIAX_P_LOG, buf);
+						strcat(continuebuffer, buf);
 						continue_is_broken = 1;
 						if (!strncmp(buf, "ognised identity", 15)) {
 							WARNINGA
@@ -1538,10 +1548,18 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 						break;
 					}
 				}
+				if(continue_is_broken){
+					continue;
+				}
 
+				//DEBUGA_SKYPE ("i=%d, buffer=|||%s|||\n", SKYPIAX_P_LOG, i, buffer);
 				strcat(buffer, buf);
+				//DEBUGA_SKYPE ("i=%d, buffer=|||%s|||\n", SKYPIAX_P_LOG, i, buffer);
+				strcat(buffer, continuebuffer);
+				//DEBUGA_SKYPE ("i=%d, buffer=|||%s|||\n", SKYPIAX_P_LOG, i, buffer);
+				memset(continuebuffer, '\0', 17000);
 
-				if (i < 20 || continue_is_broken) {	/* last fragment */
+				if (i < 20 || there_were_continues) {	/* last fragment */
 					unsigned int howmany;
 
 					howmany = strlen(b) + 1;
@@ -1550,7 +1568,7 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 					//DEBUGA_SKYPE ("RECEIVED=|||%s|||\n", SKYPIAX_P_LOG, buffer);
 					memset(buffer, '\0', 17000);
 					XFlush(disp);
-					continue_is_broken = 0;
+					there_were_continues = 0;
 				}
 
 				break;
