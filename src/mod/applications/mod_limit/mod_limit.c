@@ -790,59 +790,27 @@ SWITCH_STANDARD_APP(group_function)
 	}
 }
 
-#define LIMIT_USAGE "<realm> <id> [<max> [number  [dialplan [context]]]]"
-#define LIMIT_DESC "limit access to a resource and transfer to an extension if the limit is exceeded"
-static char *limit_def_xfer_exten = "limit_exceeded";
-
-SWITCH_STANDARD_APP(limit_function)
+/* \brief Enforces limit restrictions
+ * \param session current session
+ * \param realm limit realm
+ * \param id limit id
+ * \param max maximum count
+ * \return SWITCH_TRUE if the access is allowed, SWITCH_FALSE if it isnt
+ */
+static switch_bool_t do_limit(switch_core_session_t *session, const char *realm, const char *id, int max)
 {
-	int argc = 0;
-	char *argv[6] = { 0 };
-	char *mydata = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	int got = 0;
 	char *sql = NULL;
-	char *realm = NULL;
-	char *id = NULL;
-	char *xfer_exten = NULL;
-	int max = 0, got = 0;
 	char buf[80] = "";
 	callback_t cbt = { 0 };
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-
-	if (!switch_strlen_zero(data)) {
-		mydata = switch_core_session_strdup(session, data);
-		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-	}
-
-	if (argc < 3) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit %s\n", LIMIT_USAGE);
-		return;
-	}
+	switch_status_t status = SWITCH_TRUE;
 
 	switch_mutex_lock(globals.mutex);
 
-	realm = argv[0];
-	id = argv[1];
-	
-	if (argc > 2) {
-		max = atoi(argv[2]);
-		if (max < 0) {
-			max = 0; 
-		}
-	}
-	else {
-		max = -1;
-	}
-
-	if (argc >= 4) {
-		xfer_exten = argv[3];
-	} else {
-		xfer_exten = limit_def_xfer_exten;
-	}
-
-	
 	switch_channel_set_variable(channel, "limit_realm", realm);
 	switch_channel_set_variable(channel, "limit_id", id);
-	switch_channel_set_variable(channel, "limit_max", argv[2]);
+	switch_channel_set_variable(channel, "limit_max", switch_core_session_sprintf(session, "%d", max));
 
 	cbt.buf = buf;
 	cbt.len = sizeof(buf);
@@ -851,12 +819,17 @@ SWITCH_STANDARD_APP(limit_function)
 	switch_safe_free(sql);
 	got = atoi(buf);
 
+	if (max < 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s_%s is now %d\n", realm, id, got+1);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s_%s is now %d/%d\n", realm, id, got+1, max);
+	}
+
 	if (max >= 0 && got + 1 > max) {
-		switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
+		status = SWITCH_FALSE;
 		goto done;
 	}
 
-	switch_core_event_hook_add_state_change(session, db_state_handler);
 	switch_core_event_hook_add_state_change(session, db_state_handler);
 
 	sql =
@@ -875,8 +848,135 @@ SWITCH_STANDARD_APP(limit_function)
 
   done:
 	switch_mutex_unlock(globals.mutex);
+	return status;
 }
 
+#define LIMIT_USAGE "<realm> <id> [<max> [number  [dialplan [context]]]]"
+#define LIMIT_DESC "limit access to a resource and transfer to an extension if the limit is exceeded"
+static char *limit_def_xfer_exten = "limit_exceeded";
+
+SWITCH_STANDARD_APP(limit_function)
+{
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mydata = NULL;
+	char *realm = NULL;
+	char *id = NULL;
+	char *xfer_exten = NULL;
+	int max = 0;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (!switch_strlen_zero(data)) {
+		mydata = switch_core_session_strdup(session, data);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 3) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit %s\n", LIMIT_USAGE);
+		return;
+	}
+
+	realm = argv[0];
+	id = argv[1];
+	
+	/* Accept '-' as unlimited (act as counter)*/
+	if (argv[2][0] == '-') {
+		max = -1;
+	} else {
+		max = atoi(argv[2]);
+
+		if (max < 0) {
+			max = 0;
+		}	
+	}
+
+	if (argc >= 4) {
+		xfer_exten = argv[3];
+	} else {
+		xfer_exten = limit_def_xfer_exten;
+	}
+
+	if (!do_limit(session, realm, id, max)) {
+		/* Limit exceeded */
+		if (*xfer_exten == '!') {
+			switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten+1));
+		} else {
+			switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
+		}
+	}
+	
+}
+
+/* !\brief Releases usage of a limit_-controlled ressource  */
+static void limit_release(switch_core_session_t *session, const char *realm, const char *id)
+{
+	char *sql = NULL;
+	char buf[80] = "";
+	callback_t cbt = { 0 };
+
+	switch_mutex_lock(globals.mutex);
+
+	cbt.buf = buf;
+	cbt.len = sizeof(buf);
+	sql = switch_mprintf("delete from limit_data where uuid='%q' and realm='%q' and id like '%q'", 
+						switch_core_session_get_uuid(session), realm, id);
+	limit_execute_sql_callback(NULL, sql, sql2str_callback, &cbt);
+	switch_safe_free(sql);
+	
+	switch_mutex_unlock(globals.mutex);
+}
+
+#define LIMITEXECUTE_USAGE "<realm> <id> [<max>] [application] [application arguments]"
+#define LIMITEXECUTE_DESC "limit access to a resource. the specified application will only be executed if the resource is available"
+SWITCH_STANDARD_APP(limit_execute_function)
+{
+	int argc = 0;
+	char *argv[5] = { 0 };
+	char *mydata = NULL;
+	char *realm = NULL;
+	char *id = NULL;
+	char *app = NULL;
+	char *app_arg = NULL;
+	int max = -1;
+
+	/* Parse application data  */
+	if (!switch_strlen_zero(data)) {
+		mydata = switch_core_session_strdup(session, data);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+	
+	if (argc < 2) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit_execute %s\n", LIMITEXECUTE_USAGE);
+		return;
+	}
+	
+	realm = argv[0];
+	id = argv[1];
+	
+	/* Accept '-' as unlimited (act as counter)*/
+	if (argv[2][0] == '-') {
+		max = -1;
+	} else {
+		max = atoi(argv[2]);
+
+		if (max < 0) {
+			max = 0;
+		}	
+	}
+
+	app = argv[3];
+	app_arg = argv[4];
+
+	if (switch_strlen_zero(app)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing application\n");
+		return;
+	}
+
+	if (do_limit(session, realm, id, max)) {
+		switch_core_session_execute_application(session, app, app_arg);
+		limit_release(session, realm, id);
+	}
+}
 
 #define LIMIT_USAGE_USAGE "<realm> <id>"
 SWITCH_STANDARD_API(limit_usage_function)
@@ -1591,6 +1691,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 
 
 	SWITCH_ADD_APP(app_interface, "limit", "Limit", LIMIT_DESC, limit_function, LIMIT_USAGE, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "limit_execute", "Limit", LIMITEXECUTE_USAGE, limit_execute_function, LIMITEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "limit_hash", "Limit (hash)", LIMITHASH_DESC, limit_hash_function, LIMITHASH_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "limit_hash_execute", "Limit (hash)", LIMITHASHEXECUTE_USAGE, limit_hash_execute_function, LIMITHASHEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "limit_memcache", "Limit (memcache)", LIMITMEMCACHE_DESC, limit_memcache_function, LIMITMEMCACHE_USAGE, SAF_SUPPORT_NOMEDIA);
