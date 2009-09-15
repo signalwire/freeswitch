@@ -181,12 +181,16 @@ public class CoreSession {
     freeswitchJNI.CoreSession_setCallerData(swigCPtr, this, var, val);
   }
 
+  public int originate(CoreSession a_leg_session, String dest, int timeout, SWIGTYPE_p_switch_state_handler_table_t handlers) {
+    return freeswitchJNI.CoreSession_originate__SWIG_0(swigCPtr, this, CoreSession.getCPtr(a_leg_session), a_leg_session, dest, timeout, SWIGTYPE_p_switch_state_handler_table_t.getCPtr(handlers));
+  }
+
   public int originate(CoreSession a_leg_session, String dest, int timeout) {
-    return freeswitchJNI.CoreSession_originate__SWIG_0(swigCPtr, this, CoreSession.getCPtr(a_leg_session), a_leg_session, dest, timeout);
+    return freeswitchJNI.CoreSession_originate__SWIG_1(swigCPtr, this, CoreSession.getCPtr(a_leg_session), a_leg_session, dest, timeout);
   }
 
   public int originate(CoreSession a_leg_session, String dest) {
-    return freeswitchJNI.CoreSession_originate__SWIG_1(swigCPtr, this, CoreSession.getCPtr(a_leg_session), a_leg_session, dest);
+    return freeswitchJNI.CoreSession_originate__SWIG_2(swigCPtr, this, CoreSession.getCPtr(a_leg_session), a_leg_session, dest);
   }
 
   public void destroy() {

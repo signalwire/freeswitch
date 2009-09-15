@@ -1505,12 +1505,13 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 #define SWIGTYPE_p_switch_input_type_t swig_types[18]
 #define SWIGTYPE_p_switch_priority_t swig_types[19]
 #define SWIGTYPE_p_switch_queue_t swig_types[20]
-#define SWIGTYPE_p_switch_status_t swig_types[21]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[22]
-#define SWIGTYPE_p_uint32_t swig_types[23]
-#define SWIGTYPE_p_void swig_types[24]
-static swig_type_info *swig_types[26];
-static swig_module_info swig_module = {swig_types, 25, 0, 0, 0, 0};
+#define SWIGTYPE_p_switch_state_handler_table_t swig_types[21]
+#define SWIGTYPE_p_switch_status_t swig_types[22]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[23]
+#define SWIGTYPE_p_uint32_t swig_types[24]
+#define SWIGTYPE_p_void swig_types[25]
+static swig_type_info *swig_types[27];
+static swig_module_info swig_module = {swig_types, 26, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -5381,6 +5382,51 @@ static int _wrap_CoreSession_originate__SWIG_0(lua_State* L) {
   CoreSession *arg2 = (CoreSession *) 0 ;
   char *arg3 = (char *) 0 ;
   int arg4 ;
+  switch_state_handler_table_t *arg5 = (switch_state_handler_table_t *) 0 ;
+  int result;
+  
+  SWIG_check_num_args("originate",5,5)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("originate",1,"CoreSession *");
+  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("originate",2,"CoreSession *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("originate",3,"char *");
+  if(!lua_isnumber(L,4)) SWIG_fail_arg("originate",4,"int");
+  if(!SWIG_isptrtype(L,5)) SWIG_fail_arg("originate",5,"switch_state_handler_table_t *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_originate",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_originate",2,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg3 = (char *)lua_tostring(L, 3);
+  arg4 = (int)lua_tonumber(L, 4);
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,5,(void**)&arg5,SWIGTYPE_p_switch_state_handler_table_t,0))){
+    SWIG_fail_ptr("CoreSession_originate",5,SWIGTYPE_p_switch_state_handler_table_t);
+  }
+  
+  result = (int)(arg1)->originate(arg2,arg3,arg4,arg5);
+  SWIG_arg=0;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_originate__SWIG_1(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  CoreSession *arg2 = (CoreSession *) 0 ;
+  char *arg3 = (char *) 0 ;
+  int arg4 ;
   int result;
   
   SWIG_check_num_args("originate",4,4)
@@ -5413,7 +5459,7 @@ fail:
 }
 
 
-static int _wrap_CoreSession_originate__SWIG_1(lua_State* L) {
+static int _wrap_CoreSession_originate__SWIG_2(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
   CoreSession *arg2 = (CoreSession *) 0 ;
@@ -5450,8 +5496,8 @@ fail:
 
 static int _wrap_CoreSession_originate(lua_State* L) {
   int argc;
-  int argv[5]={
-    1,2,3,4,5
+  int argv[6]={
+    1,2,3,4,5,6
   };
   
   argc = lua_gettop(L);
@@ -5479,7 +5525,7 @@ static int _wrap_CoreSession_originate(lua_State* L) {
           _v = lua_isstring(L,argv[2]);
         }
         if (_v) {
-          return _wrap_CoreSession_originate__SWIG_1(L);
+          return _wrap_CoreSession_originate__SWIG_2(L);
         }
       }
     }
@@ -5512,7 +5558,51 @@ static int _wrap_CoreSession_originate(lua_State* L) {
             _v = lua_isnumber(L,argv[3]);
           }
           if (_v) {
-            return _wrap_CoreSession_originate__SWIG_0(L);
+            return _wrap_CoreSession_originate__SWIG_1(L);
+          }
+        }
+      }
+    }
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        void *ptr;
+        if (SWIG_isptrtype(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
+          _v = 0;
+        } else {
+          _v = 1;
+        }
+      }
+      if (_v) {
+        {
+          _v = lua_isstring(L,argv[2]);
+        }
+        if (_v) {
+          {
+            _v = lua_isnumber(L,argv[3]);
+          }
+          if (_v) {
+            {
+              void *ptr;
+              if (SWIG_isptrtype(L,argv[4])==0 || SWIG_ConvertPtr(L,argv[4], (void **) &ptr, SWIGTYPE_p_switch_state_handler_table_t, 0)) {
+                _v = 0;
+              } else {
+                _v = 1;
+              }
+            }
+            if (_v) {
+              return _wrap_CoreSession_originate__SWIG_0(L);
+            }
           }
         }
       }
@@ -8271,6 +8361,7 @@ static swig_type_info _swigt__p_switch_input_args_t = {"_p_switch_input_args_t",
 static swig_type_info _swigt__p_switch_input_type_t = {"_p_switch_input_type_t", "switch_input_type_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_priority_t = {"_p_switch_priority_t", "switch_priority_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_queue_t = {"_p_switch_queue_t", "switch_queue_t *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_switch_state_handler_table_t = {"_p_switch_state_handler_table_t", "switch_state_handler_table_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_status_t = {"_p_switch_status_t", "switch_status_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_stream_handle_t = {"_p_switch_stream_handle_t", "switch_stream_handle_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_uint32_t = {"_p_uint32_t", "uint32_t *", 0, 0, (void*)0, 0};
@@ -8298,6 +8389,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_switch_input_type_t,
   &_swigt__p_switch_priority_t,
   &_swigt__p_switch_queue_t,
+  &_swigt__p_switch_state_handler_table_t,
   &_swigt__p_switch_status_t,
   &_swigt__p_switch_stream_handle_t,
   &_swigt__p_uint32_t,
@@ -8325,6 +8417,7 @@ static swig_cast_info _swigc__p_switch_input_args_t[] = {  {&_swigt__p_switch_in
 static swig_cast_info _swigc__p_switch_input_type_t[] = {  {&_swigt__p_switch_input_type_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_priority_t[] = {  {&_swigt__p_switch_priority_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_queue_t[] = {  {&_swigt__p_switch_queue_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_switch_state_handler_table_t[] = {  {&_swigt__p_switch_state_handler_table_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_status_t[] = {  {&_swigt__p_switch_status_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_stream_handle_t[] = {  {&_swigt__p_switch_stream_handle_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_uint32_t[] = {  {&_swigt__p_uint32_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -8352,6 +8445,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_switch_input_type_t,
   _swigc__p_switch_priority_t,
   _swigc__p_switch_queue_t,
+  _swigc__p_switch_state_handler_table_t,
   _swigc__p_switch_status_t,
   _swigc__p_switch_stream_handle_t,
   _swigc__p_uint32_t,
