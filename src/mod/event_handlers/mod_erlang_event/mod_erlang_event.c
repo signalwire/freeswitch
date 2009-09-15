@@ -1203,6 +1203,19 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 		ei_x_buff rbuf;
 		ei_x_new_with_version(&rbuf);
 
+		ei_x_encode_tuple_header(&rbuf, 4);
+		ei_x_encode_atom(&rbuf, "get_pid");
+		_ei_x_encode_string(&rbuf, switch_core_session_get_uuid(session));
+		ei_x_encode_ref(&rbuf, &ref);
+		ei_x_encode_pid(&rbuf, ei_self(listener->ec));
+		/* should lock with mutex? */
+		ei_reg_send(listener->ec, listener->sockfd, module, rbuf.buff, rbuf.index);
+#ifdef EI_DEBUG
+		ei_x_print_reg_msg(&rbuf, module, 1);
+#endif
+		ei_x_free(&rbuf);
+
+		ei_x_new_with_version(&rbuf);
 		ei_x_encode_tuple_header(&rbuf, 3);
 		ei_x_encode_atom(&rbuf, "new_pid");
 		ei_x_encode_ref(&rbuf, &ref);
@@ -1212,6 +1225,7 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 #ifdef EI_DEBUG
 		ei_x_print_reg_msg(&rbuf, module, 1);
 #endif
+
 		ei_x_free(&rbuf);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "rpc call: %s:%s(Ref)\n", module, function);
