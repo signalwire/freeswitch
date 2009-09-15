@@ -35,6 +35,7 @@
  */
 
 #include "skypiax.h"
+#define MDL_CHAT_PROTO "skype"
 
 #ifdef WIN32
 /***************/
@@ -2236,26 +2237,67 @@ int skypiax_transfer(private_t * tech_pvt, char *id, char *value)
 
 int incoming_chatmessage(private_t * tech_pvt, int which)
 {
-        char event_info[512];
-        switch_event_t *event;
+	switch_event_t *event;
+	switch_core_session_t *session = NULL;
+	int event_sent_to_esl = 0;
 
-        DEBUGA_SKYPE("received CHATMESSAGE on interface %s\n", SKYPIAX_P_LOG, tech_pvt->name);
+	DEBUGA_SKYPE("received CHATMESSAGE on interface %s\n", SKYPIAX_P_LOG, tech_pvt->name);
 
-        switch_snprintf(event_info, sizeof(event_info), "incoming CHATMESSAGE on %s\n", tech_pvt->name);
+	if (!switch_strlen_zero(tech_pvt->session_uuid_str)) {
+		session = switch_core_session_locate(tech_pvt->session_uuid_str);
+	}
+	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->chatmessages[which].from_handle);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
+		switch_event_add_body(event, "%s", tech_pvt->chatmessages[which].body);
+		if(session){
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "true");
+			if (switch_core_session_queue_event(session, &event) != SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+				switch_event_fire(&event);
+			}
+		} else { //no session
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "false");
+			switch_event_fire(&event);
+			event_sent_to_esl=1;
+		}
 
-        if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_INCOMING_CHATMESSAGE) == SWITCH_STATUS_SUCCESS) {
-                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_info", event_info);
-                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "interface_name", tech_pvt->name);
-                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
-                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
-                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_handle", tech_pvt->chatmessages[which].from_handle);
-                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_dispname", tech_pvt->chatmessages[which].from_dispname);
-                switch_event_add_body(event, "%s\n\n", tech_pvt->chatmessages[which].body);
-                switch_event_fire(&event);
-		memset(&tech_pvt->chatmessages[which], '\0', sizeof(&tech_pvt->chatmessages[which]) );
-        }
+	}else{
+		ERRORA("cannot create event on interface %s. WHY?????\n", SKYPIAX_P_LOG, tech_pvt->name);
+	}
 
-        return 0;
+	if(!event_sent_to_esl){
+
+		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->chatmessages[which].from_handle);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
+			switch_event_add_body(event, "%s", tech_pvt->chatmessages[which].body);
+			if(session){
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "true");
+			} else { //no session
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "false");
+			}
+			switch_event_fire(&event);
+		} else{
+			ERRORA("cannot create event on interface %s. WHY?????\n", SKYPIAX_P_LOG, tech_pvt->name);
+		}
+	}
+
+	if(session){
+		switch_core_session_rwunlock(session);
+	}
+	memset(&tech_pvt->chatmessages[which], '\0', sizeof(&tech_pvt->chatmessages[which]) );
+	return 0;
 }
 
 
