@@ -54,6 +54,22 @@ struct stfu_instance {
 };
 
 
+static stfu_status_t stfu_n_resize_aqueue(stfu_queue_t *queue, uint32_t qlen)
+{
+    unsigned char *m;
+
+    if (qlen <= queue->array_size) {
+        return STFU_IT_FAILED;;
+    }
+
+	m = realloc(queue->array, qlen * sizeof(struct stfu_frame));
+    assert(m);
+    memset(m + queue->array_size, 0, qlen * sizeof(struct stfu_frame) - queue->array_size);
+    queue->array = (struct stfu_frame *) m;
+	queue->array_size = qlen;
+	return STFU_IT_WORKED;
+}
+
 static void stfu_n_init_aqueue(stfu_queue_t *queue, uint32_t qlen)
 {
 	queue->array = calloc(qlen, sizeof(struct stfu_frame));
@@ -74,6 +90,26 @@ void stfu_n_destroy(stfu_instance_t **i)
 		free(ii->b_queue.array);
 		free(ii);
 	}
+}
+
+void stfu_n_report(stfu_instance_t *i, stfu_report_t *r)
+{
+    assert(i);
+    r->in_len = i->in_queue->array_len;
+    r->in_size = i->in_queue->array_size;
+    r->out_len = i->out_queue->array_len;
+    r->out_size = i->out_queue->array_size;
+}
+
+stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen) 
+{
+    stfu_status_t s;
+
+    if ((s = stfu_n_resize_aqueue(&i->a_queue, qlen)) == STFU_IT_WORKED) {
+        s = stfu_n_resize_aqueue(&i->b_queue, qlen);
+    }
+    
+    return s;
 }
 
 stfu_instance_t *stfu_n_init(uint32_t qlen)
@@ -165,7 +201,13 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, void *data, size_
 		i->miss_count = 0;
 
 		if (stfu_n_process(i, i->out_queue) < 0) {
-			return STFU_IT_FAILED;
+            if (i->in_queue->array_len == i->in_queue->array_size && i->out_queue->array_len == i->out_queue->array_size) {
+                stfu_n_resize(i, i->out_queue->array_size * 2);
+                printf("DOH RESIZE\n");
+            }
+
+
+			//return STFU_IT_FAILED;
 		}
 		for(index = 0; index < i->out_queue->array_len; index++) {
 			i->out_queue->array[index].was_read = 0;
