@@ -1900,7 +1900,7 @@ OZ_DECLARE(void) zap_generate_sln_silence(int16_t *data, uint32_t samples, uint3
     int16_t x;
     uint32_t i;
     int sum_rnd = 0;
-    int16_t rnd2 = (int16_t) zap_current_time_in_ms * (int16_t) (intptr_t) data;
+    int16_t rnd2 = (int16_t) zap_current_time_in_ms() * (int16_t) (intptr_t) data;
 
     assert(divisor);
 
