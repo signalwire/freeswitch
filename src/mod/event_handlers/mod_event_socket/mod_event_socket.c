@@ -1667,6 +1667,8 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 	if (!strncasecmp(cmd, "sendevent", 9)) {
 		char *ename;
+		const char *uuid = NULL;
+
 		strip_cr(cmd);
 
 		ename = cmd + 9;
@@ -1691,7 +1693,17 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			}
 		}
 
-		switch_event_fire(event);
+		if ((uuid = switch_event_get_header(*event, "unique-id"))) {
+			switch_core_session_t *dsession;
+			if ((dsession = switch_core_session_locate(uuid))) {
+				switch_core_session_queue_event(dsession, event);
+				switch_core_session_rwunlock(dsession);
+			}
+		}
+		
+		if (*event) {
+			switch_event_fire(event);
+		}
 		switch_snprintf(reply, reply_len, "+OK");
 		goto done;
 	} else if (!strncasecmp(cmd, "api ", 4)) {
