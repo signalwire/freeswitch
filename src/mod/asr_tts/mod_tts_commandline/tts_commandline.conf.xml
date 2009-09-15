@@ -1,0 +1,11 @@
+<configuration name="tts_commandline.conf" description="TextToSpeech Commandline configuration">
+    <settings>
+	<!--
+	Some variables will be replaced :
+	${text}: input text
+	${voice}: voice_name passed to TTS
+	${file}: output file (.wav)
+	-->
+	<param name="command" value="echo '${text}' | text2wave > '${file}'"/>
+    </settings>
+</configuration>

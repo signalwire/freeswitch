@@ -36,6 +36,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_tts_commandline_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_tts_commandline_shutdown);
 SWITCH_MODULE_DEFINITION(mod_tts_commandline, mod_tts_commandline_load, mod_tts_commandline_shutdown, NULL);
 
+static switch_event_node_t *NODE = NULL;
+
 static struct {
 	char *command;
 } globals;
@@ -49,6 +51,45 @@ struct tts_commandline_data {
 };
 
 typedef struct tts_commandline_data tts_commandline_t;
+
+static int load_tts_commandline_config(void)
+{
+	char *cf = "tts_commandline.conf";
+	switch_xml_t cfg, xml, settings, param;
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
+	} else {
+		if ((settings = switch_xml_child(cfg, "settings"))) {
+			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+
+				if (!strcmp(var, "command")) {
+					set_global_command(val);
+				}
+			}
+		}
+		switch_xml_free(xml);
+	}
+
+	if (switch_strlen_zero(globals.command)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No command set, please edit %s\n", cf);   
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static void event_handler(switch_event_t *event)
+{
+	if (event->event_id == SWITCH_EVENT_RELOADXML) {
+		if (load_tts_commandline_config() != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to reload config file\n");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Con\n");
+		}
+	}
+}
 
 static switch_status_t tts_commandline_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, switch_speech_flag_t *flags)
 {
@@ -186,12 +227,17 @@ static void tts_commandline_float_param_tts(switch_speech_handle_t *sh, char *pa
 SWITCH_MODULE_LOAD_FUNCTION(mod_tts_commandline_load)
 {
 	switch_speech_interface_t *speech_interface;
-
-	// set_global_command("tts \"${text}\" \"${file}\"");
-	set_global_command("cp \"/opt/freeswitch/sounds/en/us/callie/ivr/8000/ivr-sample_submenu.wav\" \"${file}\"");
 	
+    load_tts_commandline_config();
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &NODE) != SWITCH_STATUS_SUCCESS)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our reloadxml handler!\n");
+		/* Not such severe to prevent loading */
+	}
+
 	speech_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SPEECH_INTERFACE);
 	speech_interface->interface_name = "tts_commandline";
 	speech_interface->speech_open = tts_commandline_speech_open;
@@ -209,6 +255,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_tts_commandline_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_tts_commandline_shutdown)
 {
+	switch_event_unbind(&NODE);
+
 	switch_safe_free(globals.command);
 
 	return SWITCH_STATUS_UNLOAD;
