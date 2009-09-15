@@ -1372,6 +1372,51 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 }
 
 
+/* Entry point for sendmsg */
+SWITCH_STANDARD_APP(erlang_sendmsg_function)
+{
+	char *reg_name = NULL, *node;
+	int argc = 0;
+	char *argv[3] = { 0 };
+	char *mydata;
+	ei_x_buff buf;
+	listener_t *listener;
+
+	ei_x_new_with_version(&buf);
+
+	/* process app arguments */
+	if (data && (mydata = switch_core_session_strdup(session, data))) {
+		argc = switch_separate_string(mydata, ' ', argv, 3);
+	} /* XXX else? */
+
+	if (argc < 3) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error - need node, registered name and message!\n");
+		return;
+	}
+
+	reg_name = argv[0];
+	node = argv[1];
+
+	/*switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sendmsg: {%s, %s} ! %s\n", reg_name, node, argv[2]);*/
+
+	ei_x_encode_tuple_header(&buf, 2);
+	ei_x_encode_atom(&buf, "freeswitch_sendmsg");
+	_ei_x_encode_string(&buf, argv[2]);
+
+	listener = find_listener(node);
+	if (!listener) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Creating new listener for sendmsg %s\n", node);
+		listener = new_outbound_listener(node);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Using existing listener for sendmsg to %s\n", node);
+	}
+
+	if (listener) {
+		ei_reg_send(listener->ec, listener->sockfd, reg_name, buf.buff, buf.index);
+	}
+}
+
+
 /* 'erlang' console stuff */
 SWITCH_STANDARD_API(erlang_cmd)
 {
@@ -1491,8 +1536,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_erlang_event_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_APP(app_interface, "erlang", "Connect to an erlang node", "Connect to erlang", erlang_outbound_function, "<registered name> <node@host>", SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_API(api_interface, "erlang", "PortAudio", erlang_cmd, "<command> [<args>]");
+	SWITCH_ADD_APP(app_interface, "erlang", "Yield call control to an erlang process", "Connect to erlang", erlang_outbound_function, "<registered name> <node@host>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "erlang_sendmsg", "Send a message to an erlang process", "Connect to erlang", erlang_sendmsg_function, "<registered name> <node@host> <message>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_API(api_interface, "erlang", "erlang information", erlang_cmd, "<command> [<args>]");
 	switch_console_set_complete("add erlang listeners");
 
 	/* indicate that the module should continue to be loaded */
