@@ -254,6 +254,7 @@ namespace FreeSWITCH {
             ApiExecutors.ForEach(x => x.SetZeroUseNotification(decreaseUnloadCount));
             AppExecutors.ForEach(x => x.SetZeroUseNotification(decreaseUnloadCount));
             unloadSignal.WaitOne();
+            GC.WaitForPendingFinalizers();
         }
 
         #endregion
@@ -288,7 +289,7 @@ namespace FreeSWITCH {
             // Ensure it's a plugin assembly
             var ourName = Assembly.GetExecutingAssembly().GetName().Name;
             if (!asm.GetReferencedAssemblies().Any(n => n.Name == ourName)) {
-                Log.WriteLine(LogLevel.Debug, "Assembly {0} doesn't reference FreeSWITCH.Managed, not loading.");
+                Log.WriteLine(LogLevel.Debug, "Assembly {0} doesn't reference FreeSWITCH.Managed, not loading.", asm.FullName);
                 return false; 
             }
 

@@ -69,7 +69,6 @@ ManagedSession::~ManagedSession()
 	// Do auto-hangup ourselves because CoreSession can't call check_hangup_hook 
 	// after ManagedSession destruction (cause at point it's pure virtual)
 	if (session) {
-		channel = switch_core_session_get_channel(session);
 		if (switch_test_flag(this, S_HUP) && !switch_channel_test_flag(channel, CF_TRANSFER)) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			setAutoHangup(0);
@@ -104,3 +103,6 @@ switch_status_t ManagedSession::run_dtmf_callback(void *input, switch_input_type
 	return status;
 }
 
+static switch_status_t stateHangupHandler(switch_core_session_t *session) {
+	return SWITCH_STATUS_FALSE;
+}

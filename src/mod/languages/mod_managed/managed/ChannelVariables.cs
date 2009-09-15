@@ -103,7 +103,7 @@ namespace FreeSWITCH.Native {
             /*** Times ***/
             const string created_time = "created_time";
             const string answered_time = "answered_time";
-            const string hangup_time = "hangup_time";
+            const string hangup_time = "hungup_time";
             const string progress_time = "progress_time";
             const string transfer_time = "transfer_time";
 

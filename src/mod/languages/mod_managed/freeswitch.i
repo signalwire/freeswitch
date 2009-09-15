@@ -21,6 +21,7 @@ static SWIG_CSharpStringHelperCallback SWIG_csharp_string_callback_real = NULL;
 %}
 
 %pragma(csharp) imclasscode=%{
+
   protected class SWIGStringHelper {
 
     public delegate string SWIGStringDelegate(string message);
@@ -120,13 +121,14 @@ char * SWIG_csharp_string_callback(const char * str) {
 %ignore run_dtmf_callback;
 %ignore setDTMFCallback;
 
+// These methods need a bit of wrapping help
+%csmethodmodifiers CoreSession::originate "protected";
+
 // Rename some things to make them more .NET-like
-//%csmethodmodifiers CoreSession::hangup "internal";
 %rename (Answer) CoreSession::answer;
 %rename (Hangup) CoreSession::hangup;
 %rename (Ready) CoreSession::ready;
 %rename (Transfer) CoreSession::transfer;
-%rename (Originate) CoreSession::originate;
 %rename (SetVariable) CoreSession::setVariable;
 %rename (GetVariable) CoreSession::getVariable;
 %rename (SetPrivate) CoreSession::setPrivate;

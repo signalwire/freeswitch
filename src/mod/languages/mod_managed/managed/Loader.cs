@@ -295,6 +295,7 @@ namespace FreeSWITCH {
                         pi.Manager.BlockUntilUnloadIsSafe();
                         pi.Manager = null;
                         pi.Domain = null;
+                        // This can crash if there is still sessions in the appdomain. Plugin code should use dispose properly.
                         AppDomain.Unload(d);
                         Log.WriteLine(LogLevel.Info, "Unloaded {0}, domain {1}.", pi.FileName, friendlyName);
                     } catch (Exception ex) {

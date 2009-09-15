@@ -41,7 +41,6 @@ SWITCH_BEGIN_EXTERN_C
 typedef void (*hangupFunction)(void);
 typedef char* (*inputFunction)(void*, switch_input_type_t);
 
-
 #ifndef _MANAGED
 #include <glib.h>
 #include <mono/jit/jit.h>
@@ -136,7 +135,6 @@ public:
 	virtual bool begin_allow_threads();
 	virtual bool end_allow_threads();
 	virtual void check_hangup_hook();
-
 	virtual switch_status_t run_dtmf_callback(void *input, switch_input_type_t itype);
 
 	// P/Invoke function pointer to delegates
