@@ -911,19 +911,11 @@ SWITCH_STANDARD_APP(limit_function)
 static void limit_release(switch_core_session_t *session, const char *realm, const char *id)
 {
 	char *sql = NULL;
-	char buf[80] = "";
-	callback_t cbt = { 0 };
 
-	switch_mutex_lock(globals.mutex);
-
-	cbt.buf = buf;
-	cbt.len = sizeof(buf);
 	sql = switch_mprintf("delete from limit_data where uuid='%q' and realm='%q' and id like '%q'", 
 						switch_core_session_get_uuid(session), realm, id);
-	limit_execute_sql_callback(NULL, sql, sql2str_callback, &cbt);
+	limit_execute_sql(sql, globals.mutex);
 	switch_safe_free(sql);
-	
-	switch_mutex_unlock(globals.mutex);
 }
 
 #define LIMITEXECUTE_USAGE "<realm> <id> [<max>] [application] [application arguments]"
