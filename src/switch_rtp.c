@@ -1793,6 +1793,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					rtp_session->hot_hits += rtp_session->samples_per_interval;
 					
 					if (rtp_session->hot_hits >= rtp_session->samples_per_second * 5) {
+						switch_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 						hot_socket = 1;
 					}
 				} else {
