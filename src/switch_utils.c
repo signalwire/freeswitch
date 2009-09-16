@@ -831,6 +831,7 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 	INTERFACE_INFO interfaces[20];
 	unsigned long bytes;
 	int interface_count, x;
+	int r = -1;
 
 	*mask = 0;
 
@@ -839,7 +840,8 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 	}
 
 	if (WSAIoctl(sock, SIO_GET_INTERFACE_LIST, 0, 0, &interfaces, sizeof(interfaces), &bytes, 0, 0) == SOCKET_ERROR) {
-		return -1;
+		r = -1;
+		goto end;
 	}
 
     interface_count = bytes / sizeof(INTERFACE_INFO);
@@ -850,11 +852,14 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 		if (addr->sin_addr.s_addr == me->sin_addr.s_addr) {
 			struct sockaddr_in *netmask = (struct sockaddr_in *) & (interfaces[x].iiNetmask);
 			*mask = netmask->sin_addr.s_addr;
+			r = 0;
 			break;
 		}
     }
 
-	return 0;
+end:
+	closesocket(sock);
+	return r;
 }
 
 #else
