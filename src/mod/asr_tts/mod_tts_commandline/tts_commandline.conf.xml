@@ -6,6 +6,6 @@
 	${voice}: voice_name passed to TTS
 	${file}: output file (.wav)
 	-->
-	<param name="command" value="echo '${text}' | text2wave > '${file}'"/>
+	<param name="command" value="echo '${text}' | text2wave -f ${rate} > '${file}'"/>
     </settings>
 </configuration>
