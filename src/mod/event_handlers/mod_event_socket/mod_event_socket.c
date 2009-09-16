@@ -1486,7 +1486,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			len = strlen(event_str);
 			switch_socket_send(listener->sock, event_str, &len);
 			switch_safe_free(event_str);
-
+			switch_event_destroy(&call_event);
 			//switch_snprintf(reply, reply_len, "+OK");
 			goto done_noreply;
 		} else if (!strncasecmp(cmd, "getvar", 6)) {
