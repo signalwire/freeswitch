@@ -2065,18 +2065,42 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		 */
 		if (bytes && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && 
 			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_msg.header.pt == rtp_session->te) {
+			switch_size_t len = bytes - rtp_header_len;
 			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
-			int end = packet[1] & 0x80 ? 1 : 0;
-			uint16_t duration = (packet[2] << 8) + packet[3];
-			char key = switch_rfc2833_to_char(packet[0]);
-			uint16_t in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
-			uint32_t ts = htonl(rtp_session->recv_msg.header.ts);
+			int end;
+			uint16_t duration;
+			char key;
+			uint16_t in_digit_seq;
+			uint32_t ts;
+
+
+			if (!(packet[0] || packet[1] || packet[2] || packet[3]) && len >= 8) {
+				packet += 4;
+				len -= 4;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "DTMF payload offset by 4 bytes.\n");
+			}
+
+			if (!(packet[0] || packet[1] || packet[2] || packet[3])) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed DTMF payload check.\n");
+				rtp_session->dtmf_data.last_digit = 0;
+				rtp_session->dtmf_data.in_digit_ts = 0;
+			}
+
+			end = packet[1] & 0x80 ? 1 : 0;
+			duration = (packet[2] << 8) + packet[3];
+			key = switch_rfc2833_to_char(packet[0]);
+			in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
+			ts = htonl(rtp_session->recv_msg.header.ts);
 
 			if (in_digit_seq < rtp_session->dtmf_data.in_digit_seq) {
 				if (rtp_session->dtmf_data.in_digit_seq - in_digit_seq > 100) {
 					rtp_session->dtmf_data.in_digit_seq = 0;
 				}
 			}
+#ifdef DEBUG_2833			
+			printf("packet[%d]: %02x %02x %02x %02x\n", (int) len, (unsigned) packet[0],(unsigned)
+				   packet[1], (unsigned) packet[2], (unsigned) packet[3]);
+#endif
 
 			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
 
