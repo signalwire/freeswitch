@@ -148,14 +148,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_goto_status(status, end);
 	}
 
-	if ((status = switch_file_exists(file_path, fh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File [%s] not created!\n", fh->spool_path);
+	if (!strstr(file_path, SWITCH_URL_SEPARATOR) && (status = switch_file_exists(file_path, fh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File [%s] not created!\n", file_path);
 		fh->file_interface->file_close(fh);
 		UNPROTECT_INTERFACE(fh->file_interface);
 		switch_goto_status(status, end);
 	}
-
-
 
 	if ((flags & SWITCH_FILE_FLAG_READ)) {
 		fh->native_rate = fh->samplerate;
