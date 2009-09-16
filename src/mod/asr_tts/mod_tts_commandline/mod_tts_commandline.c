@@ -85,21 +85,13 @@ static void event_handler(switch_event_t *event)
 {
 	if (event->event_id == SWITCH_EVENT_RELOADXML) {
 		if (load_tts_commandline_config() != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to reload config file\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to reload config file\n");
 		}
 	}
 }
 
 static switch_status_t tts_commandline_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, switch_speech_flag_t *flags)
 {
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "tts_commandline_speech_open(?,%s,%d,%u)\n",voice_name,rate, *flags);
-    
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-        "speech_handle: name = %s, rate = %d, speed = %d, samples = %d, voice = %s, engine = %s, param = %s\n",
-        sh->name, sh->rate, sh->speed, sh->samples, sh->voice, sh->engine, sh->param); 
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "voice = %s, rate = %d\n", voice_name, rate);
-
 	tts_commandline_t *info = switch_core_alloc(sh->memory_pool, sizeof(*info));
 
 	info->voice_name = switch_core_strdup(sh->memory_pool, voice_name);
@@ -122,8 +114,6 @@ static switch_status_t tts_commandline_speech_close(switch_speech_handle_t *sh, 
 
 static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
 {
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "tts_commandline_speech_feed_tts(?,%s,%u)\n", text, *flags);
-	
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	assert(info != NULL);
 
@@ -135,10 +125,10 @@ static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *s
     rate = switch_core_sprintf(sh->memory_pool, "%d", info->rate);
     message = switch_string_replace(message, "${rate}", rate);
     message = switch_string_replace(message, "${file}", info->file);
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Executing: %s\n", message);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Executing: %s\n", message);
     
     if (switch_system(message, SWITCH_TRUE) < 0) {
-       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", message);
+       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute command: %s\n", message);
        return SWITCH_STATUS_FALSE;
     }
 	
@@ -147,26 +137,10 @@ static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *s
                             0, //number_of_channels,
                             0, //samples_per_second,
                             SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Failed to open file: %s\n", info->file);
+       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file: %s\n", info->file);
        return SWITCH_STATUS_FALSE;
     }
     
-	// sh->rate = info->fh.samplerate;
-	// sh->speed = info->fh.speed;
-	// sh->samples = info->fh.samples;
-	// sh->samplerate = info->fh.samplerate / 2;
-	// sh->native_rate = info->fh.native_rate;
-    
-	// info->fh.speed = sh->speed;
-	// info->fh.samples = sh->samples;
-    // info->fh.samplerate = sh->samplerate;
-
-    
-   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-    "File handle info: flags=%u, samples=%u,samplerate=%u,native_rate=%u,channels=%u,format=%u,sections=%u,seekable=%u,sample_count=%u,speed=%u\n",
-    info->fh.flags, info->fh.samples, info->fh.samplerate, info->fh.native_rate, info->fh.channels,
-    info->fh.format, info->fh.sections, info->fh.seekable, info->fh.sample_count, info->fh.speed);
-
     sh->private_info = info;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -177,10 +151,13 @@ static switch_status_t tts_commandline_speech_read_tts(switch_speech_handle_t *s
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	assert(info != NULL);
     
-    if (switch_core_file_read(&info->fh, data, datalen) != SWITCH_STATUS_SUCCESS) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "done\n");
+    size_t my_datalen = *datalen / 2;
+    
+    if (switch_core_file_read(&info->fh, data, &my_datalen) != SWITCH_STATUS_SUCCESS) {
+        *datalen = my_datalen * 2;
         return SWITCH_STATUS_FALSE;
     }
+    *datalen = my_datalen * 2;
     if(datalen == 0) {
         return SWITCH_STATUS_BREAK;
     } else {
@@ -201,8 +178,6 @@ static void tts_commandline_speech_flush_tts(switch_speech_handle_t *sh)
 
 static void tts_commandline_text_param_tts(switch_speech_handle_t *sh, char *param, const char *val)
 {
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "tts_commandline_text_param_tts(?,%s,%s)\n", param, val);
-    
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	assert(info != NULL);
 
@@ -213,12 +188,10 @@ static void tts_commandline_text_param_tts(switch_speech_handle_t *sh, char *par
 
 static void tts_commandline_numeric_param_tts(switch_speech_handle_t *sh, char *param, int val)
 {
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "tts_commandline_numeric_param_tts(?,%s,%d)\n", param, val);
 }
 
 static void tts_commandline_float_param_tts(switch_speech_handle_t *sh, char *param, double val)
 {
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "tts_commandline_numeric_param_tts(?,%s,%e)\n", param, val);
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_tts_commandline_load)
