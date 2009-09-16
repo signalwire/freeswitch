@@ -1399,6 +1399,26 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_core_session_set_read_impl(SWIGTYPE_p_switch_core_session session, switch_codec_implementation impp) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_set_read_impl(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_codec_implementation.getCPtr(impp));
+    return ret;
+  }
+
+  public static switch_status_t switch_core_session_set_write_impl(SWIGTYPE_p_switch_core_session session, switch_codec_implementation impp) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_set_write_impl(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_codec_implementation.getCPtr(impp));
+    return ret;
+  }
+
+  public static switch_status_t switch_core_session_set_video_read_impl(SWIGTYPE_p_switch_core_session session, switch_codec_implementation impp) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_set_video_read_impl(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_codec_implementation.getCPtr(impp));
+    return ret;
+  }
+
+  public static switch_status_t switch_core_session_set_video_write_impl(SWIGTYPE_p_switch_core_session session, switch_codec_implementation impp) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_set_video_write_impl(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_codec_implementation.getCPtr(impp));
+    return ret;
+  }
+
   public static void switch_core_session_reset(SWIGTYPE_p_switch_core_session session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec) {
     freeswitchPINVOKE.switch_core_session_reset(SWIGTYPE_p_switch_core_session.getCPtr(session), (int)flush_dtmf, (int)reset_read_codec);
   }
@@ -1975,6 +1995,11 @@ public class freeswitch {
 
   public static void switch_time_set_monotonic(switch_bool_t enable) {
     freeswitchPINVOKE.switch_time_set_monotonic((int)enable);
+  }
+
+  public static uint switch_core_min_dtmf_duration(uint duration) {
+    uint ret = freeswitchPINVOKE.switch_core_min_dtmf_duration(duration);
+    return ret;
   }
 
   public static uint switch_core_max_dtmf_duration(uint duration) {
@@ -4280,6 +4305,7 @@ public class freeswitch {
   public static readonly string SWITCH_SEQ_CLEARLINEEND = freeswitchPINVOKE.SWITCH_SEQ_CLEARLINEEND_get();
   public static readonly string SWITCH_SEQ_CLEARSCR = freeswitchPINVOKE.SWITCH_SEQ_CLEARSCR_get();
   public static readonly int SWITCH_DEFAULT_DTMF_DURATION = freeswitchPINVOKE.SWITCH_DEFAULT_DTMF_DURATION_get();
+  public static readonly int SWITCH_MIN_DTMF_DURATION = freeswitchPINVOKE.SWITCH_MIN_DTMF_DURATION_get();
   public static readonly int SWITCH_MAX_DTMF_DURATION = freeswitchPINVOKE.SWITCH_MAX_DTMF_DURATION_get();
   public static readonly string SWITCH_PATH_SEPARATOR = freeswitchPINVOKE.SWITCH_PATH_SEPARATOR_get();
   public static readonly string SWITCH_URL_SEPARATOR = freeswitchPINVOKE.SWITCH_URL_SEPARATOR_get();
@@ -4752,6 +4778,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_DEFAULT_DTMF_DURATION_get")]
   public static extern int SWITCH_DEFAULT_DTMF_DURATION_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_MIN_DTMF_DURATION_get")]
+  public static extern int SWITCH_MIN_DTMF_DURATION_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_MAX_DTMF_DURATION_get")]
   public static extern int SWITCH_MAX_DTMF_DURATION_get();
@@ -6169,6 +6198,18 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_write_video_frame")]
   public static extern int switch_core_session_write_video_frame(HandleRef jarg1, HandleRef jarg2, uint jarg3, int jarg4);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_set_read_impl")]
+  public static extern int switch_core_session_set_read_impl(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_set_write_impl")]
+  public static extern int switch_core_session_set_write_impl(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_set_video_read_impl")]
+  public static extern int switch_core_session_set_video_read_impl(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_set_video_write_impl")]
+  public static extern int switch_core_session_set_video_write_impl(HandleRef jarg1, HandleRef jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_reset")]
   public static extern void switch_core_session_reset(HandleRef jarg1, int jarg2, int jarg3);
 
@@ -6522,6 +6563,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_time_set_monotonic")]
   public static extern void switch_time_set_monotonic(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_min_dtmf_duration")]
+  public static extern uint switch_core_min_dtmf_duration(uint jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_max_dtmf_duration")]
   public static extern uint switch_core_max_dtmf_duration(uint jarg1);
@@ -24486,6 +24530,7 @@ public enum switch_session_ctl_t {
   SCSC_MAX_SESSIONS,
   SCSC_SYNC_CLOCK,
   SCSC_MAX_DTMF_DURATION,
+  SCSC_MIN_DTMF_DURATION,
   SCSC_DEFAULT_DTMF_DURATION,
   SCSC_SHUTDOWN_ELEGANT,
   SCSC_SHUTDOWN_ASAP,

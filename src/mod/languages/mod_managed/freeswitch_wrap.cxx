@@ -894,6 +894,17 @@ SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_DEFAULT_DTMF_DURATION_get() {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_MIN_DTMF_DURATION_get() {
+  int jresult ;
+  int result;
+  
+  result = (int) 400;
+  
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_MAX_DTMF_DURATION_get() {
   int jresult ;
   int result;
@@ -6732,6 +6743,62 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_write_video_frame(void * j
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_set_read_impl(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_codec_implementation_t *arg2 = (switch_codec_implementation_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (switch_codec_implementation_t *)jarg2; 
+  result = (switch_status_t)switch_core_session_set_read_impl(arg1,(switch_codec_implementation const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_set_write_impl(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_codec_implementation_t *arg2 = (switch_codec_implementation_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (switch_codec_implementation_t *)jarg2; 
+  result = (switch_status_t)switch_core_session_set_write_impl(arg1,(switch_codec_implementation const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_set_video_read_impl(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_codec_implementation_t *arg2 = (switch_codec_implementation_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (switch_codec_implementation_t *)jarg2; 
+  result = (switch_status_t)switch_core_session_set_video_read_impl(arg1,(switch_codec_implementation const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_set_video_write_impl(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_codec_implementation_t *arg2 = (switch_codec_implementation_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (switch_codec_implementation_t *)jarg2; 
+  result = (switch_status_t)switch_core_session_set_video_write_impl(arg1,(switch_codec_implementation const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_reset(void * jarg1, int jarg2, int jarg3) {
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   switch_bool_t arg2 ;
@@ -8345,6 +8412,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_time_set_monotonic(int jarg1) {
   
   arg1 = (switch_bool_t)jarg1; 
   switch_time_set_monotonic(arg1);
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_core_min_dtmf_duration(unsigned long jarg1) {
+  unsigned long jresult ;
+  uint32_t arg1 ;
+  uint32_t result;
+  
+  arg1 = (uint32_t)jarg1; 
+  result = (uint32_t)switch_core_min_dtmf_duration(arg1);
+  jresult = (unsigned long)result; 
+  return jresult;
 }
 
 

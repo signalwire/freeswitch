@@ -202,6 +202,7 @@ struct switch_runtime {
 	char *mailer_app;
 	char *mailer_app_args;
 	uint32_t max_dtmf_duration;
+	uint32_t min_dtmf_duration;
 	uint32_t default_dtmf_duration;
 	switch_frame_t dummy_cng_frame;
 	char dummy_data[5];

@@ -1104,6 +1104,9 @@ SWITCH_DECLARE(uint32_t) switch_core_max_dtmf_duration(uint32_t duration)
 		if (duration > SWITCH_MAX_DTMF_DURATION) {
 			duration = SWITCH_MAX_DTMF_DURATION;
 		}
+		if (duration < SWITCH_MIN_DTMF_DURATION) {
+			duration = SWITCH_MIN_DTMF_DURATION;
+		}
 		runtime.max_dtmf_duration = duration;
 	}
 	return runtime.max_dtmf_duration;
@@ -1112,12 +1115,28 @@ SWITCH_DECLARE(uint32_t) switch_core_max_dtmf_duration(uint32_t duration)
 SWITCH_DECLARE(uint32_t) switch_core_default_dtmf_duration(uint32_t duration)
 {
 	if (duration) {
-		if (duration < SWITCH_DEFAULT_DTMF_DURATION) {
-			duration = SWITCH_DEFAULT_DTMF_DURATION;
+		if (duration < SWITCH_MIN_DTMF_DURATION) {
+			duration = SWITCH_MIN_DTMF_DURATION;
+		}
+		if (duration > SWITCH_MAX_DTMF_DURATION) {
+			duration = SWITCH_MAX_DTMF_DURATION;
 		}
 		runtime.default_dtmf_duration = duration;
 	}
 	return runtime.default_dtmf_duration;
+}
+
+SWITCH_DECLARE(uint32_t) switch_core_min_dtmf_duration(uint32_t duration)
+{
+	if (duration) {
+		if (duration < SWITCH_MIN_DTMF_DURATION) {
+			duration = SWITCH_MIN_DTMF_DURATION;
+		}
+		if (duration > SWITCH_MAX_DTMF_DURATION) {
+			duration = SWITCH_MAX_DTMF_DURATION;
+		}
+	}
+	return runtime.min_dtmf_duration;
 }
 
 static void switch_core_set_serial(void)
@@ -1184,6 +1203,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.mailer_app_args = "-t";
 	runtime.max_dtmf_duration = SWITCH_MAX_DTMF_DURATION;
 	runtime.default_dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
+	runtime.min_dtmf_duration = SWITCH_MIN_DTMF_DURATION;
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
@@ -1394,6 +1414,11 @@ static void switch_load_core_config(const char *file)
 					int tmp = atoi(val);
 					if (tmp > 0) {
 						switch_core_max_dtmf_duration((uint32_t) tmp);
+					}
+				} else if (!strcasecmp(var, "min_dtmf_duration") && !switch_strlen_zero(val)) {
+					int tmp = atoi(val);
+					if (tmp > 0) {
+						switch_core_min_dtmf_duration((uint32_t) tmp);
 					}
 				} else if (!strcasecmp(var, "default_dtmf_duration") && !switch_strlen_zero(val)) {
 					int tmp = atoi(val);
@@ -1609,6 +1634,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 		break;
 	case SCSC_MAX_DTMF_DURATION:
 		*val = switch_core_max_dtmf_duration(*val);
+		break;
+	case SCSC_MIN_DTMF_DURATION:
+		*val = switch_core_min_dtmf_duration(*val);
 		break;
 	case SCSC_DEFAULT_DTMF_DURATION:
 		*val = switch_core_default_dtmf_duration(*val);

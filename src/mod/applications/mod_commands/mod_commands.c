@@ -1242,7 +1242,7 @@ SWITCH_STANDARD_API(status_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[send_sighup|hupall|pause|resume|shutdown [cancel|elegant|asap|restart]|sps|sync_clock|reclaim_mem|max_sessions|max_dtmf_duration [num]|loglevel [level]]"
+#define CTL_SYNTAX "[send_sighup|hupall|pause|resume|shutdown [cancel|elegant|asap|restart]|sps|sync_clock|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|loglevel [level]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -1311,6 +1311,12 @@ SWITCH_STANDARD_API(ctl_function)
 			}
 			switch_core_session_ctl(SCSC_MAX_DTMF_DURATION, &arg);
 			stream->write_function(stream, "+OK max dtmf duration: %d\n", arg);
+		} else if (!strcasecmp(argv[0], "min_dtmf_duration")) {
+			if (argc > 1) {
+				arg = atoi(argv[1]);
+			}
+			switch_core_session_ctl(SCSC_MIN_DTMF_DURATION, &arg);
+			stream->write_function(stream, "+OK min dtmf duration: %d\n", arg);
 		} else if (!strcasecmp(argv[0], "default_dtmf_duration")) {
 			if (argc > 1) {
 				arg = atoi(argv[1]);
@@ -3636,6 +3642,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl reclaim_mem");
 	switch_console_set_complete("add fsctl max_sessions");
 	switch_console_set_complete("add fsctl max_dtmf_duration");
+	switch_console_set_complete("add fsctl min_dtmf_duration");
+	switch_console_set_complete("add fsctl default_dtmf_duration");
 	SWITCH_ADD_API(commands_api_interface, "help", "Show help for all the api commands", help_function, "");
 	SWITCH_ADD_API(commands_api_interface, "version", "Show version of the switch", version_function, "");
 	SWITCH_ADD_API(commands_api_interface, "sched_hangup", "Schedule a running call to hangup", sched_hangup_function, SCHED_HANGUP_SYNTAX);
