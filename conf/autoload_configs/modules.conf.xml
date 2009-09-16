@@ -94,6 +94,7 @@
     <!-- <load module="mod_flite"/> -->
     <!-- <load module="mod_pocketsphinx"/> -->
     <!-- <load module="mod_cepstral"/> -->
+    <!-- <load module="mod_tts_commandline"/> -->
     <!-- <load module="mod_rss"/> -->
     
     <!-- Say -->
