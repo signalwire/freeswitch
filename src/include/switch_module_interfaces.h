@@ -333,6 +333,8 @@ struct switch_file_handle {
 	const char *file;
 	const char *func;
 	int line;
+	char *file_path;
+	char *spool_path;
 };
 
 /*! \brief Abstract interface to an asr module */

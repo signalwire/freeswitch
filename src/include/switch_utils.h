@@ -66,11 +66,9 @@ SWITCH_DECLARE(int) switch_isxdigit(int c);
                                                  codec->implementation->iananame, \
                                                  codec->implementation->samples_per_second, \
                                                  codec->implementation->microseconds_per_packet / 1000)
-#ifdef WIN32
-#define switch_is_file_path(file) (file && (*file == '\\' || *(file +1) == ':' || *file == '/' || strstr(file, SWITCH_URL_SEPARATOR)))
-#else
-#define switch_is_file_path(file) (file && ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR)))
-#endif
+
+
+
 /*!
   \brief Test for NULL or zero length string
   \param s the string to test
@@ -552,6 +550,30 @@ SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len)
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
 SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *from, const char *headers, const char *body, const char *file);
 SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char close);
+
+
+static inline switch_bool_t switch_is_file_path(const char *file)
+{
+	const char *e;
+	int r;
+
+	if (*file == '[' && *(file + 1) == *SWITCH_PATH_SEPARATOR) {
+		if ((e = switch_find_end_paren(file, '[', ']'))) {
+			file = e + 1;
+		}
+	}
+
+#ifdef WIN32
+	r = (file && (*file == '\\' || *(file +1) == ':' || *file == '/' || strstr(file, SWITCH_URL_SEPARATOR)));
+#else
+	r = (file && ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR)));
+#endif
+
+	return r ? SWITCH_TRUE : SWITCH_FALSE;
+	
+}
+
+
 
 SWITCH_DECLARE(int) switch_parse_cidr(const char *string, uint32_t *ip, uint32_t *mask, uint32_t *bitp);
 SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, const char *name, switch_bool_t default_type, switch_memory_pool_t *pool);

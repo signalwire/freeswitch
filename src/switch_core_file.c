@@ -45,6 +45,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	switch_status_t status;
 	char stream_name[128] = "";
 	char *rhs = NULL;
+	const char *spool_path = NULL;
 
 	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle already open\n");
@@ -56,28 +57,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((rhs = strstr(file_path, SWITCH_URL_SEPARATOR))) {
-		switch_copy_string(stream_name, file_path, (rhs + 1) - file_path);
-		ext = stream_name;
-		file_path = rhs + 3;
-	} else {
-		if ((ext = strrchr(file_path, '.')) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown file Format [%s]\n", file_path);
-			return SWITCH_STATUS_FALSE;
-		}
-		ext++;
-	}
-
-	if ((fh->file_interface = switch_loadable_module_get_file_interface(ext)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid file format [%s] for [%s]!\n", ext, file_path);
-		return SWITCH_STATUS_GENERR;
-	}
-
-	fh->file = file;
-	fh->func = func;
-	fh->line = line;
-
-	fh->flags = flags;
 	if (pool) {
 		fh->memory_pool = pool;
 	} else {
@@ -86,6 +65,60 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 			return status;
 		}
 		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
+	}
+
+	fh->file_path = switch_core_strdup(fh->memory_pool, file_path);
+	
+	if ((flags & SWITCH_FILE_FLAG_WRITE)) {
+		char *p = fh->file_path, *e;
+		
+		if (*p == '[' && *(p + 1) == *SWITCH_PATH_SEPARATOR) {
+			e = switch_find_end_paren(p, '[', ']');
+			
+			if (e) {
+				*e = '\0';
+				spool_path = p + 1;
+				fh->file_path = e + 1;
+			}
+		} 
+
+		if (!spool_path) {
+			spool_path = switch_core_get_variable(SWITCH_AUDIO_SPOOL_PATH_VARIABLE);
+		}
+		
+		file_path = fh->file_path;
+
+	}
+
+	if ((rhs = strstr(file_path, SWITCH_URL_SEPARATOR))) {
+		switch_copy_string(stream_name, file_path, (rhs + 1) - file_path);
+		ext = stream_name;
+		file_path = rhs + 3;
+	} else {
+		if ((ext = strrchr(file_path, '.')) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown file Format [%s]\n", file_path);
+			switch_goto_status(SWITCH_STATUS_FALSE, end);
+		}
+		ext++;
+	}
+
+	if ((fh->file_interface = switch_loadable_module_get_file_interface(ext)) == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid file format [%s] for [%s]!\n", ext, file_path);
+		switch_goto_status(SWITCH_STATUS_GENERR, end);
+	}
+
+	fh->file = file;
+	fh->func = func;
+	fh->line = line;
+	fh->flags = flags;
+	
+	if (spool_path) {
+		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+		switch_uuid_t uuid;
+		switch_uuid_get(&uuid);
+		switch_uuid_format(uuid_str, &uuid);
+		
+		fh->spool_path = switch_core_sprintf(fh->memory_pool, "%s%s%s.%s", spool_path, SWITCH_PATH_SEPARATOR, uuid_str, ext);
 	}
 
 	if (rhs) {
@@ -104,10 +137,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		fh->channels = 1;
 	}
 
+	file_path = fh->spool_path ? fh->spool_path : fh->file_path;
+
+
 	if ((status = fh->file_interface->file_open(fh, file_path)) != SWITCH_STATUS_SUCCESS) {
+		if (fh->spool_path) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Spool dir is set.  Make sure [%s] is also a valid path\n", fh->spool_path);
+		}
 		UNPROTECT_INTERFACE(fh->file_interface);
-		return status;
+		switch_goto_status(status, end);
 	}
+
+	if ((status = switch_file_exists(file_path, fh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File [%s] not created!\n", fh->spool_path);
+		fh->file_interface->file_close(fh);
+		UNPROTECT_INTERFACE(fh->file_interface);
+		switch_goto_status(status, end);
+	}
+
 
 
 	if ((flags & SWITCH_FILE_FLAG_READ)) {
@@ -134,6 +181,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	}
 
 	switch_set_flag(fh, SWITCH_FILE_OPEN);
+
+ end:
+	
+	if (switch_test_flag(fh, SWITCH_FILE_FLAG_FREE_POOL)) {
+		switch_core_destroy_memory_pool(&fh->memory_pool);
+	}
 
 	return status;
 }
@@ -448,6 +501,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 	status = fh->file_interface->file_close(fh);
 
 	switch_resample_destroy(&fh->resampler);
+
+
+	if (fh->spool_path) {
+		char *command;
+
+#ifdef _MSC_VER
+		command = switch_mprintf("move %s %s", fh->spool_path, fh->file_path);
+#else
+		command = switch_mprintf("/bin/mv %s %s", fh->spool_path, fh->file_path);
+#endif
+		system(command);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Copy spooled file [%s] to [%s]\n", fh->spool_path, fh->file_path);
+		free(command);
+	}
+
 
 	UNPROTECT_INTERFACE(fh->file_interface);
 
