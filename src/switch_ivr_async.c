@@ -933,6 +933,32 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	fh->channels = channels;
 	fh->pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 
+
+	
+	if (!switch_is_file_path(file)) {
+		char *tfile = NULL;
+		char *e;
+		const char *prefix;
+
+		prefix = switch_channel_get_variable(channel, "sound_prefix");
+
+		if (!prefix) {
+			prefix = SWITCH_GLOBAL_dirs.base_dir;
+		}
+
+		if (*file == '[') {
+			tfile = switch_core_session_strdup(session, file);
+			if ((e = switch_find_end_paren(tfile, '[', ']'))) {
+				*e = '\0';
+				file = e + 1;
+			} else {
+				tfile = NULL;
+			}
+		}
+		
+		file = switch_core_session_sprintf(session, "%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", prefix, SWITCH_PATH_SEPARATOR, file);
+	}
+	
 	if (switch_core_file_open(fh,
 							  file,
 							  channels,

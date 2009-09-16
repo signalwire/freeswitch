@@ -461,12 +461,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		const char *prefix;
 
 		prefix = switch_channel_get_variable(channel, "sound_prefix");
+
 		if (!prefix) {
 			prefix = SWITCH_GLOBAL_dirs.base_dir;
 		}
 		
 		if (!switch_is_file_path(file)) {
-			file = switch_core_session_sprintf(session, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, file);
+			char *tfile = NULL;
+			char *e;
+
+			if (*file == '[') {
+				tfile = switch_core_session_strdup(session, file);
+				if ((e = switch_find_end_paren(tfile, '[', ']'))) {
+					*e = '\0';
+					file = e + 1;
+				} else {
+					tfile = NULL;
+				}
+			}
+			
+			file = switch_core_session_sprintf(session, "%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", prefix, SWITCH_PATH_SEPARATOR, file);
 		}
 		if ((ext = strrchr(file, '.'))) {
 			ext++;
@@ -1001,7 +1015,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (!strstr(file, SWITCH_URL_SEPARATOR)) {
 			if (!switch_is_file_path(file)) {
-				file = switch_core_session_sprintf(session, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, file);
+				char *tfile = NULL;
+				char *e;
+
+				if (*file == '[') {
+					tfile = switch_core_session_strdup(session, file);
+					if ((e = switch_find_end_paren(tfile, '[', ']'))) {
+						*e = '\0';
+						file = e + 1;
+					} else {
+						tfile = NULL;
+					}
+				}
+
+				file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", prefix, SWITCH_PATH_SEPARATOR, file);
 			}
 			if ((ext = strrchr(file, '.'))) {
 				ext++;
