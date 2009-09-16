@@ -1040,7 +1040,7 @@ static void *SWITCH_THREAD_FUNC skypiax_signaling_thread_func(switch_thread_t * 
 				switch_sleep(300000);	//0.3 sec
 				//ERRORA("WAIT'S OVER\n", SKYPIAX_P_LOG);
 				//tech_pvt->skype_callflow = CALLFLOW_STATUS_FINISHED;
-				//usleep(30000);    //0.03 sec
+				//switch_sleep(30000);    //0.03 sec
 				switch_mutex_lock(globals.mutex);
 				tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
 				tech_pvt->interface_state = SKYPIAX_STATE_IDLE;
@@ -1468,7 +1468,7 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 
 				snprintf(skype_msg, sizeof(skype_msg), "CHAT CREATE %s", to);
 				skypiax_signaling_write(tech_pvt, skype_msg);
-				usleep(100);
+				switch_sleep(100);
 			}
 		//} else {
 			//FIXME don't know how to do here, let's hope this is correct
@@ -1501,7 +1501,7 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 				ERRORA("No chat with dialog_partner='%s' was found\n", SKYPIAX_P_LOG, to);
 				break;
 			}
-			usleep(1000);
+			switch_sleep(1000);
 		}
 
 	}
@@ -2390,7 +2390,7 @@ SWITCH_STANDARD_API(skypiax_chat_function)
 			//NOTICA("TEXT is: %s\n", SKYPIAX_P_LOG, (char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1] );
 			//snprintf(skype_msg, sizeof(skype_msg), "CHAT CREATE %s", argv[1]);
 			//skypiax_signaling_write(tech_pvt, skype_msg);
-			//usleep(100);
+			//switch_sleep(100);
 		}
 	} else {
 		stream->write_function(stream, "ERROR, usage: %s", SKYPIAX_CHAT_SYNTAX);
@@ -2417,7 +2417,7 @@ SWITCH_STANDARD_API(skypiax_chat_function)
 			stream->write_function(stream, "ERROR: no chat with dialog_partner='%s' was found\n", argv[1]);
 			break;
 		}
-		usleep(1000);
+		switch_sleep(1000);
 	}
 #endif //NOTDEF
 
