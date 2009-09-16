@@ -67,40 +67,46 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
 	}
 
-	fh->file_path = switch_core_strdup(fh->memory_pool, file_path);
-	
-	if ((flags & SWITCH_FILE_FLAG_WRITE)) {
-		char *p = fh->file_path, *e;
-		
-		if (*p == '[' && *(p + 1) == *SWITCH_PATH_SEPARATOR) {
-			e = switch_find_end_paren(p, '[', ']');
-			
-			if (e) {
-				*e = '\0';
-				spool_path = p + 1;
-				fh->file_path = e + 1;
-			}
-		} 
-
-		if (!spool_path) {
-			spool_path = switch_core_get_variable(SWITCH_AUDIO_SPOOL_PATH_VARIABLE);
-		}
-		
-		file_path = fh->file_path;
-
-	}
 
 	if ((rhs = strstr(file_path, SWITCH_URL_SEPARATOR))) {
 		switch_copy_string(stream_name, file_path, (rhs + 1) - file_path);
 		ext = stream_name;
 		file_path = rhs + 3;
+		fh->file_path = switch_core_strdup(fh->memory_pool, file_path);
 	} else {
+		if ((flags & SWITCH_FILE_FLAG_WRITE)) {
+
+			char *p, *e;
+
+			fh->file_path = switch_core_strdup(fh->memory_pool, file_path);
+			p = fh->file_path;
+
+			if (*p == '[' && *(p + 1) == *SWITCH_PATH_SEPARATOR) {
+				e = switch_find_end_paren(p, '[', ']');
+				
+				if (e) {
+					*e = '\0';
+					spool_path = p + 1;
+					fh->file_path = e + 1;
+				}
+			} 
+			
+			if (!spool_path) {
+				spool_path = switch_core_get_variable(SWITCH_AUDIO_SPOOL_PATH_VARIABLE);
+			}
+			
+			file_path = fh->file_path;
+		}
+
 		if ((ext = strrchr(file_path, '.')) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown file Format [%s]\n", file_path);
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
 		ext++;
+		fh->file_path = switch_core_strdup(fh->memory_pool, file_path);
 	}
+
+	
 
 	if ((fh->file_interface = switch_loadable_module_get_file_interface(ext)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid file format [%s] for [%s]!\n", ext, file_path);
