@@ -2073,6 +2073,8 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 	tech_pvt->read_impl = *tech_pvt->read_codec.implementation;
 	tech_pvt->write_impl = *tech_pvt->write_codec.implementation;
 
+	switch_core_session_set_read_impl(tech_pvt->session, tech_pvt->read_codec.implementation);
+	switch_core_session_set_write_impl(tech_pvt->session, tech_pvt->write_codec.implementation);
 
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		switch_assert(tech_pvt->read_codec.implementation);

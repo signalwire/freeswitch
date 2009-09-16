@@ -212,6 +212,31 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_write_impl(switch_
 }
 
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_impl(switch_core_session_t *session,  const switch_codec_implementation_t *impp)
+{
+	session->read_impl =*impp;
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_impl(switch_core_session_t *session,  const switch_codec_implementation_t *impp)
+{
+	session->write_impl = *impp;
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_impl(switch_core_session_t *session,  const switch_codec_implementation_t *impp)
+{
+	session->video_read_impl = *impp;
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_impl(switch_core_session_t *session,  const switch_codec_implementation_t *impp)
+{
+	session->video_write_impl = *impp;
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_session_t *session, switch_codec_t *codec)
 {
 	switch_event_t *event;
