@@ -1398,10 +1398,124 @@ static switch_status_t load_config(int reload_type)
 
 	return SWITCH_STATUS_SUCCESS;
 }
+static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject, const char *body, const char *type, const char *hint)
+{
+	//char *user, *host, *f_user = NULL, *ffrom = NULL, *f_host = NULL, *f_resource = NULL;
+	char *user, *host, *f_user = NULL, *f_host = NULL, *f_resource = NULL;
+	//mdl_profile_t *profile = NULL;
+	private_t * tech_pvt=NULL;
+	int i=0, found=0, tried=0;
+	char skype_msg[1024];
+
+	switch_assert(proto != NULL);
+
+	DEBUGA_SKYPE("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=%s, hint=%s)\n", SKYPIAX_P_LOG, proto, from, to, subject, body, type, hint?hint:"NULL");
+
+	if (!to || !strlen(to)) {
+		ERRORA("Missing To: header.\n", SKYPIAX_P_LOG);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if ((!from && !hint) || (!strlen(from) && !strlen(hint)) ) {
+		ERRORA("Missing From: AND Hint: headers.\n", SKYPIAX_P_LOG);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (from && (f_user = strdup(from))) {
+		if ((f_host = strchr(f_user, '@'))) {
+			*f_host++ = '\0';
+			if ((f_resource = strchr(f_host, '/'))) {
+				*f_resource++ = '\0';
+			}
+		}
+	}
+
+	if (to && (user = strdup(to))) {
+		if ((host = strchr(user, '@'))) {
+			*host++ = '\0';
+		}
+
+		//if (!strcmp(proto, MDL_CHAT_PROTO)) {
+
+	DEBUGA_SKYPE("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=%s, hint=%s)\n", SKYPIAX_P_LOG, proto, from, to, subject, body, type, hint?hint:"NULL");
+			if (hint && strlen(hint)) {
+				//in hint we receive the interface name to use
+				for (i = 0; !found && i < SKYPIAX_MAX_INTERFACES; i++) {
+					if (strlen(globals.SKYPIAX_INTERFACES[i].name)
+							&& (strncmp(globals.SKYPIAX_INTERFACES[i].name, hint, strlen(hint)) == 0)) {
+						tech_pvt = &globals.SKYPIAX_INTERFACES[i];
+						DEBUGA_SKYPE("Using interface: globals.SKYPIAX_INTERFACES[%d].name=|||%s|||\n", SKYPIAX_P_LOG, i, globals.SKYPIAX_INTERFACES[i].name);
+						found = 1;
+						break;
+					}
+				}
+			} else {
+				//we have no a predefined interface name to use (hint is NULL), so let's choose an interface from the username (from)
+				for (i = 0; !found && i < SKYPIAX_MAX_INTERFACES; i++) {
+					if (strlen(globals.SKYPIAX_INTERFACES[i].name)
+							&& (strncmp(globals.SKYPIAX_INTERFACES[i].skype_user, from, strlen(from)) == 0)) {
+						tech_pvt = &globals.SKYPIAX_INTERFACES[i];
+						DEBUGA_SKYPE("Using interface: globals.SKYPIAX_INTERFACES[%d].name=|||%s|||\n", SKYPIAX_P_LOG, i, globals.SKYPIAX_INTERFACES[i].name);
+						found = 1;
+						break;
+					}
+				}
+			}
+			if (!found) {
+				ERRORA("ERROR: A Skypiax interface with name='%s' or one with skypeuser='%s' was not found\n", SKYPIAX_P_LOG, hint?hint:"NULL", from?from:"NULL");
+				goto end;
+			} else {
+
+				snprintf(skype_msg, sizeof(skype_msg), "CHAT CREATE %s", to);
+				skypiax_signaling_write(tech_pvt, skype_msg);
+				usleep(100);
+			}
+		//} else {
+			//FIXME don't know how to do here, let's hope this is correct
+			//char *p;
+			//ffrom = switch_mprintf("%s+%s", proto, from);
+			//from = ffrom;
+			//if ((p = strchr(from, '/'))) {
+				//*p = '\0';
+			//}
+	//NOTICA("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=%s, hint=%s)\n", SKYPIAX_P_LOG, proto, from, to, subject, body, type, hint?hint:"NULL");
+			//switch_core_chat_send(proto, proto, from, to, subject, body, type, hint);
+			//return SWITCH_STATUS_SUCCESS;
+		//}
+
+		found=0;
+
+		while(!found){
+			for(i=0; i<MAX_CHATS; i++){
+				if(!strcmp(tech_pvt->chats[i].dialog_partner, to) ){
+					snprintf(skype_msg, sizeof(skype_msg), "CHATMESSAGE %s %s", tech_pvt->chats[i].chatname, body);
+					skypiax_signaling_write(tech_pvt, skype_msg);
+					found=1;
+					break;
+				}
+			}
+			if(found){
+				break;
+			}
+			if(tried > 1000){
+				ERRORA("No chat with dialog_partner='%s' was found\n", SKYPIAX_P_LOG, to);
+				break;
+			}
+			usleep(1000);
+		}
+
+	}
+end:
+	switch_safe_free(user);
+	switch_safe_free(f_user);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load)
 {
 	switch_api_interface_t *commands_api_interface;
+	switch_chat_interface_t *chat_interface;
 
 	skypiax_module_pool = pool;
 	memset(&globals, '\0', sizeof(globals));
@@ -1429,6 +1543,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load)
 		SWITCH_ADD_API(commands_api_interface, "sk", "Skypiax console commands", sk_function, SK_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "skypiax", "Skypiax interface commands", skypiax_function, SKYPIAX_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "skypiax_chat", "Skypiax_chat interface remote_skypename TEXT", skypiax_chat_function, SKYPIAX_CHAT_SYNTAX);
+		SWITCH_ADD_CHAT(chat_interface, MDL_CHAT_PROTO, chat_send);
+
 
 		/* indicate that the module should continue to be loaded */
 		return SWITCH_STATUS_SUCCESS;
@@ -1908,85 +2024,6 @@ SWITCH_STANDARD_API(sk_function)
 
 	return SWITCH_STATUS_SUCCESS;
 }
-SWITCH_STANDARD_API(skypiax_chat_function)
-{
-	char *mycmd = NULL, *argv[10] = { 0 };
-	int argc = 0;
-	private_t *tech_pvt = NULL;
-	int tried =0;
-	int i;
-	int found = 0;
-	char skype_msg[1024];
-
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-	}
-
-	if (!argc) {
-		stream->write_function(stream, "ERROR, usage: %s", SKYPIAX_CHAT_SYNTAX);
-		goto end;
-	}
-
-	if (argc < 3) {
-		stream->write_function(stream, "ERROR, usage: %s", SKYPIAX_CHAT_SYNTAX);
-		goto end;
-	}
-
-	if (argv[0]) {
-
-		for (i = 0; !found && i < SKYPIAX_MAX_INTERFACES; i++) {
-			/* we've been asked for a normal interface name, or we have not found idle interfaces to serve as the "ANY" interface */
-			if (strlen(globals.SKYPIAX_INTERFACES[i].name)
-					&& (strncmp(globals.SKYPIAX_INTERFACES[i].name, argv[0], strlen(argv[0])) == 0)) {
-				tech_pvt = &globals.SKYPIAX_INTERFACES[i];
-				stream->write_function(stream, "Using interface: globals.SKYPIAX_INTERFACES[%d].name=|||%s|||\n", i, globals.SKYPIAX_INTERFACES[i].name);
-				found = 1;
-				break;
-			}
-
-		}
-		if (!found) {
-			stream->write_function(stream, "ERROR: A Skypiax interface with name='%s' was not found\n", argv[0]);
-			goto end;
-		} else {
-			char skype_msg[256];
-			//NOTICA("TEXT is: %s\n", SKYPIAX_P_LOG, (char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1] );
-			snprintf(skype_msg, sizeof(skype_msg), "CHAT CREATE %s", argv[1]);
-			skypiax_signaling_write(tech_pvt, skype_msg);
-			usleep(100);
-		}
-	} else {
-		stream->write_function(stream, "ERROR, usage: %s", SKYPIAX_CHAT_SYNTAX);
-	}
-
-
-	found=0;
-
-	while(!found){
-		for(i=0; i<MAX_CHATS; i++){
-			if(!strcmp(tech_pvt->chats[i].dialog_partner, argv[1]) ){
-				snprintf(skype_msg, sizeof(skype_msg), "CHATMESSAGE %s %s", tech_pvt->chats[i].chatname, (char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]);
-				skypiax_signaling_write(tech_pvt, skype_msg);
-				found=1;
-				break;
-			}
-		}
-		if(found){
-			break;
-		}
-		if(tried > 1000){
-			stream->write_function(stream, "ERROR: no chat with dialog_partner='%s' was not found\n", argv[1]);
-			break;
-		}
-		usleep(1000);
-	}
-
-end:
-	switch_safe_free(mycmd);
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 
 SWITCH_STANDARD_API(skypiax_function)
 {
@@ -2299,6 +2336,97 @@ int incoming_chatmessage(private_t * tech_pvt, int which)
 	memset(&tech_pvt->chatmessages[which], '\0', sizeof(&tech_pvt->chatmessages[which]) );
 	return 0;
 }
+
+
+SWITCH_STANDARD_API(skypiax_chat_function)
+{
+	char *mycmd = NULL, *argv[10] = { 0 };
+	int argc = 0;
+	private_t *tech_pvt = NULL;
+	//int tried =0;
+	int i;
+	int found = 0;
+	//char skype_msg[1024];
+
+	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (!argc) {
+		stream->write_function(stream, "ERROR, usage: %s", SKYPIAX_CHAT_SYNTAX);
+		goto end;
+	}
+
+	if (argc < 3) {
+		stream->write_function(stream, "ERROR, usage: %s", SKYPIAX_CHAT_SYNTAX);
+		goto end;
+	}
+
+	if (argv[0]) {
+		for (i = 0; !found && i < SKYPIAX_MAX_INTERFACES; i++) {
+			/* we've been asked for a normal interface name, or we have not found idle interfaces to serve as the "ANY" interface */
+			if (strlen(globals.SKYPIAX_INTERFACES[i].name)
+					&& (strncmp(globals.SKYPIAX_INTERFACES[i].name, argv[0], strlen(argv[0])) == 0)) {
+				tech_pvt = &globals.SKYPIAX_INTERFACES[i];
+				stream->write_function(stream, "Using interface: globals.SKYPIAX_INTERFACES[%d].name=|||%s|||\n", i, globals.SKYPIAX_INTERFACES[i].name);
+				found = 1;
+				break;
+			}
+
+		}
+		if (!found) {
+			stream->write_function(stream, "ERROR: A Skypiax interface with name='%s' was not found\n", argv[0]);
+			goto end;
+		} else {
+
+			//chat_send(const char *proto, const char *from, const char *to, const char *subject, const char *body, const char *type, const char *hint);
+			//chat_send(p*roto, const char *from, const char *to, const char *subject, const char *body, const char *type, const char *hint);
+			//chat_send(MDL_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE", switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), NULL, hint);
+
+			NOTICA("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=NULL, hint=%s)\n", SKYPIAX_P_LOG, MDL_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE", switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), tech_pvt->name);
+
+			chat_send(MDL_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE", switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), NULL, tech_pvt->name);
+
+			//NOTICA("TEXT is: %s\n", SKYPIAX_P_LOG, (char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1] );
+			//snprintf(skype_msg, sizeof(skype_msg), "CHAT CREATE %s", argv[1]);
+			//skypiax_signaling_write(tech_pvt, skype_msg);
+			//usleep(100);
+		}
+	} else {
+		stream->write_function(stream, "ERROR, usage: %s", SKYPIAX_CHAT_SYNTAX);
+		goto end;
+	}
+
+#ifdef NOTDEF
+
+	found=0;
+
+	while(!found){
+		for(i=0; i<MAX_CHATS; i++){
+			if(!strcmp(tech_pvt->chats[i].dialog_partner, argv[1]) ){
+				snprintf(skype_msg, sizeof(skype_msg), "CHATMESSAGE %s %s", tech_pvt->chats[i].chatname, (char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]);
+				skypiax_signaling_write(tech_pvt, skype_msg);
+				found=1;
+				break;
+			}
+		}
+		if(found){
+			break;
+		}
+		if(tried > 1000){
+			stream->write_function(stream, "ERROR: no chat with dialog_partner='%s' was found\n", argv[1]);
+			break;
+		}
+		usleep(1000);
+	}
+#endif //NOTDEF
+
+end:
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 
 /* For Emacs:
