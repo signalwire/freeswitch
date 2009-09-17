@@ -422,6 +422,15 @@ void iax_showframe(struct iax_frame *f, struct ast_iax2_full_hdr *fhi, int rx, s
 		snprintf(subclass2, (int) sizeof(subclass2), "%d", fh->csub);
 		subclass = subclass2;
 	}
+
+	if (!subclass) {
+		subclass = "";
+	}
+
+	if (!class) {
+		class = "";
+	}
+
 	snprintf(tmp, (int) sizeof(tmp),
 			 "%s-Frame Retry[%s] -- OSeqno: %3.3d ISeqno: %3.3d Type: %s Subclass: %s\n",
 			 (rx ? "Rx" : "Tx"), retries, fh->oseqno, fh->iseqno, class, subclass);
