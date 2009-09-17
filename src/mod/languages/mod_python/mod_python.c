@@ -48,6 +48,7 @@ PyThreadState *mainThreadState = NULL;
 
 void init_freeswitch(void);
 int py_thread(const char *text);
+static void set_max_recursion_depth(void);
 static switch_api_interface_t python_run_interface;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_python_load);
@@ -292,6 +293,36 @@ static switch_status_t do_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+/**
+ * As freeswitch runs with a smaller than normal stack size (240K instead of the usual value .. 1 or 2 MB),
+ * we must decrease the default python recursion limit accordingly.  Otherwise, python can easily blow
+ * up the stack and the whole switch crashes.  See modlang-134
+ */
+static void set_max_recursion_depth(void) {
+
+	// assume that a stack frame is approximately 1K, so divide thread stack size (eg, 240K) by
+	// 1K to get the approx number of stack frames we can hold before blowing up.
+	int newMaxRecursionDepth = SWITCH_THREAD_STACKSIZE / 1024;
+	
+	PyObject *sysModule = PyImport_ImportModule("sys");
+	PyObject *setRecursionLimit = PyObject_GetAttrString(sysModule, "setrecursionlimit");
+	PyObject *recLimit = Py_BuildValue("(i)",newMaxRecursionDepth);
+	PyObject *setrecursion_result = PyEval_CallObjectWithKeywords(setRecursionLimit, recLimit, (PyObject *) NULL);
+	if (setrecursion_result) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set python recursion limit to %d\n", newMaxRecursionDepth);
+	}
+	else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set recursion limit to %d\n", newMaxRecursionDepth);
+		PyErr_Print();
+		PyErr_Clear();
+		PyRun_SimpleString("python_makes_sense");
+		PyGC_Collect();
+	}
+
+
+}
+
 SWITCH_STANDARD_APP(python_function)
 {
 	eval_some_python("handler", (char *) data, session, NULL, NULL, NULL, NULL);
@@ -405,6 +436,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 		// save threadstate since it's interp field will be needed
 		// to create new threadstates, and will be needed for shutdown
 		mainThreadState = PyThreadState_Get();
+
+		// set the maximum recursion depth
+		set_max_recursion_depth();
 
 		// swap out threadstate since the call threads will create
 		// their own and swap in their threadstate
