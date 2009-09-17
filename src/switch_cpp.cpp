@@ -487,6 +487,7 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(char *nuuid, CoreSession *a_
 		channel = switch_core_session_get_channel(session);
 		allocated = 1;
     } else {
+		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		if (switch_ivr_originate(a_leg ? a_leg->session : NULL, &session, &cause, nuuid, 60, NULL, NULL, NULL, NULL, NULL, SOF_NONE) 
 			== SWITCH_STATUS_SUCCESS) {
 			channel = switch_core_session_get_channel(session);
@@ -933,6 +934,7 @@ SWITCH_DECLARE(void) CoreSession::destroy(void)
 
 SWITCH_DECLARE(const char *) CoreSession::hangupCause()
 {
+	this_check(NULL);
 	return switch_channel_cause2str(cause);
 }
 
