@@ -941,7 +941,8 @@ typedef uint32_t switch_frame_flag_t;
 
 typedef enum {
 	SAF_NONE = 0,
-	SAF_SUPPORT_NOMEDIA = (1 << 0)
+	SAF_SUPPORT_NOMEDIA = (1 << 0),
+	SAF_ROUTING_EXEC = (1 << 1)
 } switch_application_flag_enum_t;
 typedef uint32_t switch_application_flag_t;
 
