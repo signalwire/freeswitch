@@ -1,0 +1,82 @@
+core=`ls -rt core.*`
+
+if [ -z "$core" ] ; then
+	echo "You must be in the current directory with a core file from FreeSWITCH!"
+	exit 255
+fi
+
+line="--------------------------------------------------------------------------------"
+
+mypwd=`pwd`
+tmpdir=/tmp/fscore_pb.tmp
+post_file=$pwd/fscore_pb.post
+user=$1
+shift
+
+if [ -z $user ] ; then
+	user=$SUDO_USER
+fi
+
+if [ -z $user ] ; then
+	user=$USER
+fi
+
+if [ -z $user ] ; then
+	user="anon"
+fi
+
+
+echo "Gathering Data Please Wait........."
+
+echo -n "paste=Send&remember=0&poster=$user&format=none&code2=" > $post_file
+
+echo "LSB RELEASE:" >> $post_file
+echo $line >> $post_file
+lsb_release -a >> $post_file
+
+echo "CPU INFO:" >> $post_file
+echo $line >> $post_file
+cat /proc/cpuinfo >> $post_file
+
+echo "SVN INFO:" >> $post_file
+echo $line >> $post_file
+echo -n "Revision: " >> $post_file
+svnversion . >> $post_file
+svn stat | grep -v \? >> $post_file
+
+echo "GDB BACKTRACE:" >> $post_file
+echo $line >> $post_file
+
+gdb /usr/local/freeswitch/bin/freeswitch `ls -rt core.* | tail -n1` \
+        --eval-command='echo \n\n' \
+        --eval-command='set pagination off' \
+        --eval-command='echo Stack Trace' \
+        --eval-command='echo $line\n' \
+        --eval-command='bt' \
+        --eval-command='echo \n\n\n\n Stack Trace (full)' \
+        --eval-command='echo $line\n' \
+        --eval-command='bt full' \
+        --eval-command='echo \n\n\n\n Stack Trace (all threads)' \
+        --eval-command='echo $line\n' \
+        --eval-command='thread apply all bt' \
+        --eval-command='echo \n\n\n\n Stack Trace (all threads) (full)' \
+        --eval-command='echo $line\n' \
+        --eval-command='thread apply all bt full' \
+        --eval-command='quit' 1>> $post_file 2>/dev/null
+
+rm -fr $tmpdir 
+mkdir -p $tmpdir
+cd $tmpdir
+
+
+
+wget --output-file=/dev/null --http-user=pastebin --http-password=freeswitch http://pastebin.freeswitch.org --post-file=$post_file
+
+pb=`ls [0-9]*`
+
+echo "Finished."
+echo "Please report http://pastebin.freeswitch.org/$pb to the developers."
+
+
+
+
