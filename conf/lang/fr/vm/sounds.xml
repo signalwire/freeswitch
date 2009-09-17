@@ -49,9 +49,14 @@
   </macro>
 
   <macro name="voicemail_message_count">
-    <input pattern="^([^:]+):([^:]+):{0,1}(.*)">
+    <input pattern="^([^:]+):urgent-new:{0,1}(.*)">
       <match>
-	<action function="speak-text" data="Vous avez $1 $2 message$3 dans le répertoir ${voicemail_current_folder}."/>
+	<action function="speak-text" data="Vous avez $1 nouveau message$2 urgent dans le répertoir ${voicemail_current_folder}."/>
+      </match>
+    </input>
+    <input pattern="^([^:]+):new:{0,1}(.*)">
+      <match>
+	<action function="speak-text" data="Vous avez $1 nouveau message$2 dans le répertoir ${voicemail_current_folder}."/>
       </match>
     </input>
   </macro>
@@ -104,10 +109,10 @@
   </macro>
 
   <macro name="voicemail_listen_file_check">
-    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="Pour réécouter l'enregistrement à nouveau, tappez $1, Pour sauvegarder l'enregistrement, tappez $2,  Pour supprimer l'enregistrement, tappez $3, pour transférer l'enregistrement à votre mail, tappez $4."/>
+		data="Pour réécouter l'enregistrement à nouveau, tappez $1, Pour sauvegarder l'enregistrement, tappez $2,  Pour supprimer l'enregistrement, tappez $3, pour transférer l'enregistrement à votre mail, tappez $4, Pour appeler l'appelant, tappez $5, Pour transférer ce message à un  autre numéro, tappez $6."/>
       </match>
     </input>
   </macro>
@@ -155,7 +160,7 @@
   <macro name="voicemail_play_greeting">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="$1 n'est pas valide."/>
+	<action function="speak-text" data="$1 n'est pas disponible."/>
       </match>
     </input>
   </macro>
@@ -169,9 +174,14 @@
   </macro>
 
   <macro name="voicemail_say_message_number">
-    <input pattern="^([a-z]+):(.*)$">
+    <input pattern="new:(.*)$">
       <match>
-	<action function="speak-text" data="$1 message numero $2."/>
+	<action function="speak-text" data="nouveau message numero $1."/>
+      </match>
+    </input>
+    <input pattern="^(saved):(.*)$">
+      <match>
+	<action function="speak-text" data="message sauvegardé numero $1."/>
       </match>
     </input>
   </macro>
@@ -193,9 +203,29 @@
   </macro>
 
   <macro name="voicemail_ack">
-    <input pattern="^(.*)$">
+    <input pattern="^(too-small)$">
       <match>
-	<action function="speak-text" data="message $1"/>
+	<action function="speak-text" data="message trop court"/>
+      </match>
+    </input>
+    <input pattern="^(deleted)$">
+      <match>
+	<action function="speak-text" data="message supprimé"/>
+      </match>
+    </input>
+    <input pattern="^(saved)$">
+      <match>
+	<action function="speak-text" data="message sauvegardé"/>
+      </match>
+    </input>
+    <input pattern="^(emailed)$">
+      <match>
+	<action function="speak-text" data="message envoyé"/>
+      </match>
+    </input>
+    <input pattern="^(marked-urgent)$">
+      <match>
+	<action function="speak-text" data="message marqué comme étant urgent"/>
       </match>
     </input>
   </macro>
@@ -203,7 +233,7 @@
   <macro name="voicemail_say_date">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="$strftime($1|%A, %B %d %Y, %I %M %p)"/>
+	<action function="speak-text" data="${strftime($1|%A, %e %B %Y, %H heures %M)}"/>
       </match>
     </input>
   </macro>
