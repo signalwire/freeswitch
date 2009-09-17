@@ -363,6 +363,8 @@ void iax_showframe(struct iax_frame *f, struct ast_iax2_full_hdr *fhi, int rx, s
 		"FWDOWNLD",
 		"FWDATA"
 	};
+
+
 	const char *cmds[] = {
 		"(0?)",
 		"HANGUP ",
@@ -370,9 +372,26 @@ void iax_showframe(struct iax_frame *f, struct ast_iax2_full_hdr *fhi, int rx, s
 		"RINGING",
 		"ANSWER ",
 		"BUSY   ",
-		"TKOFFHK ",
-		"OFFHOOK"
+		"TKOFFHK",
+		"OFFHOOK",
+		"CONGSTN",
+		"FLASH  ",
+		"WINK   ",
+		"OPTION ",
+		"RDKEY  ",
+		"RDUNKEY",
+		"PROGRES",
+		"PROCDNG",
+		"HOLD   ",
+		"UNHOLD ",
+		"VIDUPDT",
+		"T38    ",
+		"SRCUPDT",
+		"TXFER  ",
+		"CNLINE ",
+		"REDIR  ",
 	};
+
 	struct ast_iax2_full_hdr *fh;
 	char retries[20];
 	char class2[20];
@@ -421,14 +440,6 @@ void iax_showframe(struct iax_frame *f, struct ast_iax2_full_hdr *fhi, int rx, s
 	} else {
 		snprintf(subclass2, (int) sizeof(subclass2), "%d", fh->csub);
 		subclass = subclass2;
-	}
-
-	if (!subclass) {
-		subclass = "";
-	}
-
-	if (!class) {
-		class = "";
 	}
 
 	snprintf(tmp, (int) sizeof(tmp),
