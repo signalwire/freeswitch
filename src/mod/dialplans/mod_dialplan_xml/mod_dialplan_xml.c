@@ -52,6 +52,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	char *exten_name = (char *) switch_xml_attr(xexten, "name");
 	int proceed = 0;
 	char *expression_expanded = NULL, *field_expanded = NULL;
+	switch_regex_t *re = NULL;
 
 	if (!exten_name) {
 		exten_name = "_anon_";
@@ -62,8 +63,8 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		char *do_break_a = NULL;
 		char *expression = NULL;
 		const char *field_data = NULL;
-		switch_regex_t *re = NULL;
 		int ovector[30];
+		switch_bool_t anti_action = SWITCH_TRUE;
 		break_t do_break_i = BREAK_ON_FALSE;
 		
 		const char *xyear = switch_xml_attr(xcond, "year");
@@ -91,39 +92,66 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		switch_time_exp_lt(&tm, ts);
 		
 		if (time_match && xyear) {
-			time_match = switch_number_cmp(xyear, tm.tm_year + 1900);
+			int test = tm.tm_year + 1900;
+			time_match = switch_number_cmp(xyear, test);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+							  "Dialplan: year[%d] =~ %s %s\n", test, xyear, time_match ? "PASS" : "FAIL");
 		}
 
 		if (time_match && xyday) {
-			time_match = switch_number_cmp(xyday, tm.tm_yday + 1);
+			int test = tm.tm_yday + 1;
+			time_match = switch_number_cmp(xyday, test);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+							  "Dialplan: day of year[%d] =~ %s %s\n", test, xyday, time_match ? "PASS" : "FAIL");
 		}
 
 		if (time_match && xmon) {
-			time_match = switch_number_cmp(xmon, tm.tm_mon + 1);
+			int test = tm.tm_mon + 1;
+			time_match = switch_number_cmp(xmon, test);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+							  "Dialplan: month[%d] =~ %s %s\n", test, xmon, time_match ? "PASS" : "FAIL");
 		}
 
 		if (time_match && xmday) {
-			time_match = switch_number_cmp(xmday, tm.tm_mday);
+			int test = tm.tm_mday;
+			time_match = switch_number_cmp(xmday, test);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+							  "Dialplan: day of month[%d] =~ %s %s\n", test, xmday, time_match ? "PASS" : "FAIL");
 		}
 
 		if (time_match && xweek) {
-			time_match = switch_number_cmp(xweek, (int) (tm.tm_yday + 1 / 7));
+			int test = (int) (tm.tm_yday + 1 / 7);
+			time_match = switch_number_cmp(xweek, test);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+							  "Dialplan: week of year[%d] =~ %s %s\n", test, xweek, time_match ? "PASS" : "FAIL");
 		}
 
 		if (time_match && xwday) {
-			time_match = switch_number_cmp(xwday, tm.tm_wday + 1);
+			int test = tm.tm_wday + 1;
+			time_match = switch_number_cmp(xwday, test);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+							  "Dialplan: day of week[%d] =~ %s %s\n", test, xwday, time_match ? "PASS" : "FAIL");
 		}
 
 		if (time_match && xhour) {
-			time_match = switch_number_cmp(xhour, tm.tm_hour);
+			int test = tm.tm_hour;
+			time_match = switch_number_cmp(xhour, test);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+							  "Dialplan: hour[%d] =~ %s %s\n", test, xhour, time_match ? "PASS" : "FAIL");
 		}
 
 		if (time_match && xminute) {
-			time_match = switch_number_cmp(xminute, tm.tm_min);
+			int test = tm.tm_min;
+			time_match = switch_number_cmp(xminute, test);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+							  "Dialplan: minute[%d] =~ %s %s\n", test, xminute, time_match ? "PASS" : "FAIL");
 		}
 
 		if (time_match && xminday) {
-			time_match = switch_number_cmp(xminday, (tm.tm_hour * 60) + (tm.tm_min + 1));
+			int test = (tm.tm_hour * 60) + (tm.tm_min + 1);
+			time_match = switch_number_cmp(xminday, test);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+							  "Dialplan: minute of day[%d] =~ %s %s\n", test, xminday, time_match ? "PASS" : "FAIL");
 		}
 		
 		field = (char *) switch_xml_attr(xcond, "field");
@@ -154,15 +182,15 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			}
 		}
 
-		if (time_match == 0) {
-			if (do_break_i == BREAK_ON_FALSE || do_break_i == BREAK_ALWAYS) {
-				break;
-			} else if (do_break_i == BREAK_NEVER) {
-				continue;
-			} else {
-				proceed = 0;
-				goto done;
-			}
+		if (time_match == 1) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+					"Dialplan: %s Date/Time Match (PASS) [%s] break=%s\n",
+					switch_channel_get_name(channel), exten_name, do_break_a ? do_break_a : "on-false");
+			anti_action = SWITCH_FALSE;
+		} else if (time_match == 0) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+					"Dialplan: %s Date/Time Match (FAIL) [%s] break=%s\n",
+					switch_channel_get_name(channel), exten_name, do_break_a ? do_break_a : "on-false");
 		}
 
 		if (field) {
@@ -184,86 +212,83 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, 
 								  "Dialplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ break=%s\n", 
 								  switch_channel_get_name(channel), exten_name, field, field_data, expression, do_break_a ? do_break_a : "on-false");
+				anti_action = SWITCH_FALSE;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, 
 								  "Dialplan: %s Regex (FAIL) [%s] %s(%s) =~ /%s/ break=%s\n", 
 								  switch_channel_get_name(channel), exten_name, field, field_data, expression, do_break_a ? do_break_a : "on-false");
-				for (xaction = switch_xml_child(xcond, "anti-action"); xaction; xaction = xaction->next) {
-					char *application = (char *) switch_xml_attr_soft(xaction, "application");
-					char *data = (char *) switch_xml_attr_soft(xaction, "data");
-					
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, 
-									  "Dialplan: %s ANTI-Action %s(%s)\n", 
-									  switch_channel_get_name(channel), application, data);
-					
-					if (!*extension) {
-						if ((*extension = switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
-							proceed = 0;
-							goto done;
-						}
-					}
-
-					switch_caller_extension_add_application(session, *extension, application, data);
-					proceed = 1;
-				}
-
-				if (do_break_i == BREAK_ON_FALSE || do_break_i == BREAK_ALWAYS) {
-					break;
-				} else {
-					continue;
-				}
 			}
-			assert(re != NULL);
-		} else {
+		} else if (time_match == -1) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, 
 							  "Dialplan: %s Absolute Condition [%s]\n", 
 							  switch_channel_get_name(channel), exten_name);
+			anti_action = SWITCH_FALSE;
 		}
 
-		for (xaction = switch_xml_child(xcond, "action"); xaction; xaction = xaction->next) {
-			char *application = (char *) switch_xml_attr_soft(xaction, "application");
-			char *data = NULL;
-			char *substituted = NULL;
-			uint32_t len = 0;
-			char *app_data = NULL;
+		if (anti_action) {
+			for (xaction = switch_xml_child(xcond, "anti-action"); xaction; xaction = xaction->next) {
+				char *application = (char *) switch_xml_attr_soft(xaction, "application");
+				char *data = (char *) switch_xml_attr_soft(xaction, "data");
 
-			if (!switch_strlen_zero(xaction->txt)) {
-				data = xaction->txt;
-			} else {
-				data = (char *) switch_xml_attr_soft(xaction, "data");
-			}
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+						"Dialplan: %s ANTI-Action %s(%s)\n",
+						switch_channel_get_name(channel), application, data);
 
-			if (field && strchr(expression, '(')) {
-				len = (uint32_t) (strlen(data) + strlen(field_data) + 10) * proceed;
-				if (!(substituted = malloc(len))) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
-					proceed = 0;
-					goto done;
+				if (!*extension) {
+					if ((*extension = switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
+						proceed = 0;
+						goto done;
+					}
 				}
-				memset(substituted, 0, len);
-				switch_perform_substitution(re, proceed, data, field_data, substituted, len, ovector);
-				app_data = substituted;
-			} else {
-				app_data = data;
-			}
 
-			if (!*extension) {
-				if ((*extension = switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
-					proceed = 0;
-					goto done;
+				switch_caller_extension_add_application(session, *extension, application, data);
+				proceed = 1;
+			}
+		} else {
+			for (xaction = switch_xml_child(xcond, "action"); xaction; xaction = xaction->next) {
+				char *application = (char *) switch_xml_attr_soft(xaction, "application");
+				char *data = NULL;
+				char *substituted = NULL;
+				uint32_t len = 0;
+				char *app_data = NULL;
+
+				if (!switch_strlen_zero(xaction->txt)) {
+					data = xaction->txt;
+				} else {
+					data = (char *) switch_xml_attr_soft(xaction, "data");
 				}
+
+				if (field && strchr(expression, '(')) {
+					len = (uint32_t) (strlen(data) + strlen(field_data) + 10) * proceed;
+					if (!(substituted = malloc(len))) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
+						proceed = 0;
+						goto done;
+					}
+					memset(substituted, 0, len);
+					switch_perform_substitution(re, proceed, data, field_data, substituted, len, ovector);
+					app_data = substituted;
+				} else {
+					app_data = data;
+				}
+
+				if (!*extension) {
+					if ((*extension = switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
+						proceed = 0;
+						goto done;
+					}
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, 
+						"Dialplan: %s Action %s(%s)\n", 
+						switch_channel_get_name(channel), application, app_data);
+
+				switch_caller_extension_add_application(session, *extension, application, app_data);
+				switch_safe_free(substituted);
 			}
-
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, 
-							  "Dialplan: %s Action %s(%s)\n", 
-							  switch_channel_get_name(channel), application, app_data);
-
-			switch_caller_extension_add_application(session, *extension, application, app_data);
-			switch_safe_free(substituted);
 		}
-
 		switch_regex_safe_free(re);
 
 		if (do_break_i == BREAK_ON_TRUE || do_break_i == BREAK_ALWAYS) {
@@ -272,6 +297,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	}
 
   done:
+	switch_regex_safe_free(re);
 	switch_safe_free(field_expanded);
 	switch_safe_free(expression_expanded);
 	return proceed;
