@@ -938,6 +938,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_URL_SEPARATOR_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_AUDIO_SPOOL_PATH_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "audio_spool_path";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_BRIDGE_HANGUP_CAUSE_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -9450,6 +9461,18 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_find_end_paren(char * jarg1, char ja
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_is_file_path(char * jarg1) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_bool_t result;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_bool_t)switch_is_file_path((char const *)arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_parse_cidr(char * jarg1, void * jarg2, void * jarg3, void * jarg4) {
   int jresult ;
   char *arg1 = (char *) 0 ;
@@ -14246,6 +14269,66 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_file_handle_line_get(void * jarg1) {
   arg1 = (switch_file_handle *)jarg1; 
   result = (int) ((arg1)->line);
   jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_file_path_set(void * jarg1, char * jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg1->file_path) delete [] arg1->file_path;
+    if (arg2) {
+      arg1->file_path = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->file_path, (const char *)arg2);
+    } else {
+      arg1->file_path = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_file_handle_file_path_get(void * jarg1) {
+  char * jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result = (char *) ((arg1)->file_path);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_spool_path_set(void * jarg1, char * jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg1->spool_path) delete [] arg1->spool_path;
+    if (arg2) {
+      arg1->spool_path = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->spool_path, (const char *)arg2);
+    } else {
+      arg1->spool_path = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_file_handle_spool_path_get(void * jarg1) {
+  char * jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result = (char *) ((arg1)->spool_path);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
 
@@ -20595,6 +20678,29 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_event_next_get(void * jarg1) {
   arg1 = (switch_event *)jarg1; 
   result = (switch_event *) ((arg1)->next);
   jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_event_flags_set(void * jarg1, int jarg2) {
+  switch_event *arg1 = (switch_event *) 0 ;
+  int arg2 ;
+  
+  arg1 = (switch_event *)jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->flags = arg2;
+  
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_flags_get(void * jarg1) {
+  int jresult ;
+  switch_event *arg1 = (switch_event *) 0 ;
+  int result;
+  
+  arg1 = (switch_event *)jarg1; 
+  result = (int) ((arg1)->flags);
+  jresult = result; 
   return jresult;
 }
 
@@ -28441,6 +28547,29 @@ SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_HookState_get(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_cause_set(void * jarg1, int jarg2) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  switch_call_cause_t arg2 ;
+  
+  arg1 = (CoreSession *)jarg1; 
+  arg2 = (switch_call_cause_t)jarg2; 
+  if (arg1) (arg1)->cause = arg2;
+  
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_cause_get(void * jarg1) {
+  int jresult ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  switch_call_cause_t result;
+  
+  arg1 = (CoreSession *)jarg1; 
+  result = (switch_call_cause_t) ((arg1)->cause);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_uuid_set(void * jarg1, char * jarg2) {
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -28644,6 +28773,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_SayPhrase(void * jarg1, char * ja
   arg3 = (char *)jarg3; 
   arg4 = (char *)jarg4; 
   (arg1)->sayPhrase((char const *)arg2,(char const *)arg3,(char const *)arg4);
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_hangupCause(void * jarg1) {
+  char * jresult ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (CoreSession *)jarg1; 
+  result = (char *)(arg1)->hangupCause();
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
 }
 
 

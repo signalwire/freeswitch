@@ -37,7 +37,8 @@ extern "C" {
 	on_hangup = NULL;									\
 	memset(&cb_state, 0, sizeof(cb_state));				\
 	hook_state = CS_NEW;								\
-	fhp = NULL
+	fhp = NULL;											\
+	cause = SWITCH_CAUSE_NONE
 
 //// C++ Interface: switch_to_cpp_mempool//// Description: This class allows for overloading the new operator to allocate from a switch_memory_pool_t//// Author: Yossi Neiman <freeswitch@cartissolutions.com>, (C) 2007//// Copyright: See COPYING file that comes with this distribution//
 #if 0
@@ -218,6 +219,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 input_callback_state cb_state;	// callback state, always pointed to by the buf
 		 // field in this->args
 		 switch_channel_state_t hook_state;	// store hookstate for on_hangup callback
+		 switch_call_cause_t cause;
 
 		 char *uuid;
 		 char *tts_name;
@@ -233,6 +235,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 SWITCH_DECLARE(switch_status_t) process_callback_result(char *result);
 		 SWITCH_DECLARE(void) say(const char *tosay, const char *module_name, const char *say_type, const char *say_method);
 		 SWITCH_DECLARE(void) sayPhrase(const char *phrase_name, const char *phrase_data = "", const char *phrase_lang = NULL);
+		 SWITCH_DECLARE(const char *) hangupCause();
 
 	/** \brief Record to a file
 	 * \param file_name 

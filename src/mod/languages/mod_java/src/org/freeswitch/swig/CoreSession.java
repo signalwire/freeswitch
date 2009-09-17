@@ -84,6 +84,14 @@ public class CoreSession {
     return new SWIGTYPE_p_switch_channel_state_t(freeswitchJNI.CoreSession_hook_state_get(swigCPtr, this), true);
   }
 
+  public void setCause(SWIGTYPE_p_switch_call_cause_t value) {
+    freeswitchJNI.CoreSession_cause_set(swigCPtr, this, SWIGTYPE_p_switch_call_cause_t.getCPtr(value));
+  }
+
+  public SWIGTYPE_p_switch_call_cause_t getCause() {
+    return new SWIGTYPE_p_switch_call_cause_t(freeswitchJNI.CoreSession_cause_get(swigCPtr, this), true);
+  }
+
   public void setUuid(String value) {
     freeswitchJNI.CoreSession_uuid_set(swigCPtr, this, value);
   }
@@ -159,6 +167,10 @@ public class CoreSession {
 
   public void sayPhrase(String phrase_name) {
     freeswitchJNI.CoreSession_sayPhrase__SWIG_2(swigCPtr, this, phrase_name);
+  }
+
+  public String hangupCause() {
+    return freeswitchJNI.CoreSession_hangupCause(swigCPtr, this);
   }
 
   public int recordFile(String file_name, int time_limit, int silence_threshold, int silence_hits) {

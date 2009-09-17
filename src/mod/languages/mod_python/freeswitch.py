@@ -247,6 +247,9 @@ class CoreSession(_object):
     __swig_setmethods__["hook_state"] = _freeswitch.CoreSession_hook_state_set
     __swig_getmethods__["hook_state"] = _freeswitch.CoreSession_hook_state_get
     if _newclass:hook_state = _swig_property(_freeswitch.CoreSession_hook_state_get, _freeswitch.CoreSession_hook_state_set)
+    __swig_setmethods__["cause"] = _freeswitch.CoreSession_cause_set
+    __swig_getmethods__["cause"] = _freeswitch.CoreSession_cause_get
+    if _newclass:cause = _swig_property(_freeswitch.CoreSession_cause_get, _freeswitch.CoreSession_cause_set)
     __swig_setmethods__["uuid"] = _freeswitch.CoreSession_uuid_set
     __swig_getmethods__["uuid"] = _freeswitch.CoreSession_uuid_get
     if _newclass:uuid = _swig_property(_freeswitch.CoreSession_uuid_get, _freeswitch.CoreSession_uuid_set)
@@ -266,6 +269,7 @@ class CoreSession(_object):
     def process_callback_result(*args): return _freeswitch.CoreSession_process_callback_result(*args)
     def say(*args): return _freeswitch.CoreSession_say(*args)
     def sayPhrase(*args): return _freeswitch.CoreSession_sayPhrase(*args)
+    def hangupCause(*args): return _freeswitch.CoreSession_hangupCause(*args)
     def recordFile(*args): return _freeswitch.CoreSession_recordFile(*args)
     def setCallerData(*args): return _freeswitch.CoreSession_setCallerData(*args)
     def originate(*args): return _freeswitch.CoreSession_originate(*args)

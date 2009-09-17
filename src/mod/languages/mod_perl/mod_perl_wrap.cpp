@@ -1458,23 +1458,24 @@ SWIG_Perl_SetModule(swig_module_info *module) {
 #define SWIGTYPE_p_char swig_types[9]
 #define SWIGTYPE_p_input_callback_state swig_types[10]
 #define SWIGTYPE_p_session_flag_t swig_types[11]
-#define SWIGTYPE_p_switch_channel_state_t swig_types[12]
-#define SWIGTYPE_p_switch_channel_t swig_types[13]
-#define SWIGTYPE_p_switch_core_session_t swig_types[14]
-#define SWIGTYPE_p_switch_event_node_t swig_types[15]
-#define SWIGTYPE_p_switch_event_t swig_types[16]
-#define SWIGTYPE_p_switch_event_types_t swig_types[17]
-#define SWIGTYPE_p_switch_input_args_t swig_types[18]
-#define SWIGTYPE_p_switch_input_type_t swig_types[19]
-#define SWIGTYPE_p_switch_priority_t swig_types[20]
-#define SWIGTYPE_p_switch_queue_t swig_types[21]
-#define SWIGTYPE_p_switch_state_handler_table_t swig_types[22]
-#define SWIGTYPE_p_switch_status_t swig_types[23]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[24]
-#define SWIGTYPE_p_uint32_t swig_types[25]
-#define SWIGTYPE_p_void swig_types[26]
-static swig_type_info *swig_types[28];
-static swig_module_info swig_module = {swig_types, 27, 0, 0, 0, 0};
+#define SWIGTYPE_p_switch_call_cause_t swig_types[12]
+#define SWIGTYPE_p_switch_channel_state_t swig_types[13]
+#define SWIGTYPE_p_switch_channel_t swig_types[14]
+#define SWIGTYPE_p_switch_core_session_t swig_types[15]
+#define SWIGTYPE_p_switch_event_node_t swig_types[16]
+#define SWIGTYPE_p_switch_event_t swig_types[17]
+#define SWIGTYPE_p_switch_event_types_t swig_types[18]
+#define SWIGTYPE_p_switch_input_args_t swig_types[19]
+#define SWIGTYPE_p_switch_input_type_t swig_types[20]
+#define SWIGTYPE_p_switch_priority_t swig_types[21]
+#define SWIGTYPE_p_switch_queue_t swig_types[22]
+#define SWIGTYPE_p_switch_state_handler_table_t swig_types[23]
+#define SWIGTYPE_p_switch_status_t swig_types[24]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[25]
+#define SWIGTYPE_p_uint32_t swig_types[26]
+#define SWIGTYPE_p_void swig_types[27]
+static swig_type_info *swig_types[29];
+static swig_module_info swig_module = {swig_types, 28, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -5567,6 +5568,76 @@ XS(_wrap_CoreSession_hook_state_get) {
 }
 
 
+XS(_wrap_CoreSession_cause_set) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    switch_call_cause_t arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 ;
+    int res2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: CoreSession_cause_set(self,cause);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_cause_set" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    {
+      res2 = SWIG_ConvertPtr(ST(1), &argp2, SWIGTYPE_p_switch_call_cause_t,  0 );
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_cause_set" "', argument " "2"" of type '" "switch_call_cause_t""'"); 
+      }  
+      if (!argp2) {
+        SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "CoreSession_cause_set" "', argument " "2"" of type '" "switch_call_cause_t""'");
+      } else {
+        arg2 = *(reinterpret_cast< switch_call_cause_t * >(argp2));
+      }
+    }
+    if (arg1) (arg1)->cause = arg2;
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_CoreSession_cause_get) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    switch_call_cause_t result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: CoreSession_cause_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_cause_get" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    result =  ((arg1)->cause);
+    ST(argvi) = SWIG_NewPointerObj((new switch_call_cause_t(static_cast< const switch_call_cause_t& >(result))), SWIGTYPE_p_switch_call_cause_t, SWIG_POINTER_OWN | 0); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_CoreSession_uuid_set) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
@@ -6534,6 +6605,34 @@ XS(_wrap_CoreSession_sayPhrase) {
   
   croak("No matching function for overloaded 'CoreSession_sayPhrase'");
   XSRETURN(0);
+}
+
+
+XS(_wrap_CoreSession_hangupCause) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: CoreSession_hangupCause(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_hangupCause" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    result = (char *)(arg1)->hangupCause();
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
 }
 
 
@@ -11253,6 +11352,7 @@ static swig_type_info _swigt__p_Stream = {"_p_Stream", "Stream *", 0, 0, (void*)
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_input_callback_state = {"_p_input_callback_state", "input_callback_state_t *|input_callback_state *", 0, 0, (void*)"freeswitch::input_callback_state_t", 0};
 static swig_type_info _swigt__p_session_flag_t = {"_p_session_flag_t", "enum session_flag_t *|session_flag_t *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_switch_call_cause_t = {"_p_switch_call_cause_t", "switch_call_cause_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_channel_state_t = {"_p_switch_channel_state_t", "switch_channel_state_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_channel_t = {"_p_switch_channel_t", "switch_channel_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_core_session_t = {"_p_switch_core_session_t", "switch_core_session_t *", 0, 0, (void*)0, 0};
@@ -11282,6 +11382,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_char,
   &_swigt__p_input_callback_state,
   &_swigt__p_session_flag_t,
+  &_swigt__p_switch_call_cause_t,
   &_swigt__p_switch_channel_state_t,
   &_swigt__p_switch_channel_t,
   &_swigt__p_switch_core_session_t,
@@ -11311,6 +11412,7 @@ static swig_cast_info _swigc__p_Stream[] = {  {&_swigt__p_Stream, 0, 0, 0},{0, 0
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_input_callback_state[] = {  {&_swigt__p_input_callback_state, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_session_flag_t[] = {  {&_swigt__p_session_flag_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_switch_call_cause_t[] = {  {&_swigt__p_switch_call_cause_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_channel_state_t[] = {  {&_swigt__p_switch_channel_state_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_channel_t[] = {  {&_swigt__p_switch_channel_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_core_session_t[] = {  {&_swigt__p_switch_core_session_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -11340,6 +11442,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_char,
   _swigc__p_input_callback_state,
   _swigc__p_session_flag_t,
+  _swigc__p_switch_call_cause_t,
   _swigc__p_switch_channel_state_t,
   _swigc__p_switch_channel_t,
   _swigc__p_switch_core_session_t,
@@ -11446,6 +11549,8 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_cb_state_get", _wrap_CoreSession_cb_state_get},
 {"freeswitchc::CoreSession_hook_state_set", _wrap_CoreSession_hook_state_set},
 {"freeswitchc::CoreSession_hook_state_get", _wrap_CoreSession_hook_state_get},
+{"freeswitchc::CoreSession_cause_set", _wrap_CoreSession_cause_set},
+{"freeswitchc::CoreSession_cause_get", _wrap_CoreSession_cause_get},
 {"freeswitchc::CoreSession_uuid_set", _wrap_CoreSession_uuid_set},
 {"freeswitchc::CoreSession_uuid_get", _wrap_CoreSession_uuid_get},
 {"freeswitchc::CoreSession_tts_name_set", _wrap_CoreSession_tts_name_set},
@@ -11462,6 +11567,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_process_callback_result", _wrap_CoreSession_process_callback_result},
 {"freeswitchc::CoreSession_say", _wrap_CoreSession_say},
 {"freeswitchc::CoreSession_sayPhrase", _wrap_CoreSession_sayPhrase},
+{"freeswitchc::CoreSession_hangupCause", _wrap_CoreSession_hangupCause},
 {"freeswitchc::CoreSession_recordFile", _wrap_CoreSession_recordFile},
 {"freeswitchc::CoreSession_setCallerData", _wrap_CoreSession_setCallerData},
 {"freeswitchc::CoreSession_originate", _wrap_CoreSession_originate},
@@ -11820,17 +11926,17 @@ XS(SWIG_init) {
   SWIG_TypeClientData(SWIGTYPE_p_IVRMenu, (void*) "freeswitch::IVRMenu");
   SWIG_TypeClientData(SWIGTYPE_p_API, (void*) "freeswitch::API");
   SWIG_TypeClientData(SWIGTYPE_p_input_callback_state, (void*) "freeswitch::input_callback_state_t");
-  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_HUP", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_HUP)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_FREE", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_FREE)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_RDLOCK", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_RDLOCK)));
     SvREADONLY_on(sv);

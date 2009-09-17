@@ -98,6 +98,8 @@ class freeswitchJNI {
   public final static native long CoreSession_cb_state_get(long jarg1, CoreSession jarg1_);
   public final static native void CoreSession_hook_state_set(long jarg1, CoreSession jarg1_, long jarg2);
   public final static native long CoreSession_hook_state_get(long jarg1, CoreSession jarg1_);
+  public final static native void CoreSession_cause_set(long jarg1, CoreSession jarg1_, long jarg2);
+  public final static native long CoreSession_cause_get(long jarg1, CoreSession jarg1_);
   public final static native void CoreSession_uuid_set(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native String CoreSession_uuid_get(long jarg1, CoreSession jarg1_);
   public final static native void CoreSession_tts_name_set(long jarg1, CoreSession jarg1_, String jarg2);
@@ -117,6 +119,7 @@ class freeswitchJNI {
   public final static native void CoreSession_sayPhrase__SWIG_0(long jarg1, CoreSession jarg1_, String jarg2, String jarg3, String jarg4);
   public final static native void CoreSession_sayPhrase__SWIG_1(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
   public final static native void CoreSession_sayPhrase__SWIG_2(long jarg1, CoreSession jarg1_, String jarg2);
+  public final static native String CoreSession_hangupCause(long jarg1, CoreSession jarg1_);
   public final static native int CoreSession_recordFile__SWIG_0(long jarg1, CoreSession jarg1_, String jarg2, int jarg3, int jarg4, int jarg5);
   public final static native int CoreSession_recordFile__SWIG_1(long jarg1, CoreSession jarg1_, String jarg2, int jarg3, int jarg4);
   public final static native int CoreSession_recordFile__SWIG_2(long jarg1, CoreSession jarg1_, String jarg2, int jarg3);

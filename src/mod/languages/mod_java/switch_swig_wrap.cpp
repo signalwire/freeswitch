@@ -1773,6 +1773,41 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1hoo
 }
 
 
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1cause_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  switch_call_cause_t arg2 ;
+  switch_call_cause_t *argp2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  argp2 = *(switch_call_cause_t **)&jarg2; 
+  if (!argp2) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "Attempt to dereference null switch_call_cause_t");
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->cause = arg2;
+  
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1cause_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  switch_call_cause_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  result =  ((arg1)->cause);
+  *(switch_call_cause_t **)&jresult = new switch_call_cause_t((switch_call_cause_t &)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1uuid_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -2177,6 +2212,21 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1sayP
   }
   (arg1)->sayPhrase((char const *)arg2);
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1hangupCause(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  result = (char *)(arg1)->hangupCause();
+  if(result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
 }
 
 

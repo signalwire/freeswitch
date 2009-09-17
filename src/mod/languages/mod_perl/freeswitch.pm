@@ -393,6 +393,8 @@ sub DESTROY {
 *swig_cb_state_set = *freeswitchc::CoreSession_cb_state_set;
 *swig_hook_state_get = *freeswitchc::CoreSession_hook_state_get;
 *swig_hook_state_set = *freeswitchc::CoreSession_hook_state_set;
+*swig_cause_get = *freeswitchc::CoreSession_cause_get;
+*swig_cause_set = *freeswitchc::CoreSession_cause_set;
 *swig_uuid_get = *freeswitchc::CoreSession_uuid_get;
 *swig_uuid_set = *freeswitchc::CoreSession_uuid_set;
 *swig_tts_name_get = *freeswitchc::CoreSession_tts_name_get;
@@ -409,6 +411,7 @@ sub DESTROY {
 *process_callback_result = *freeswitchc::CoreSession_process_callback_result;
 *say = *freeswitchc::CoreSession_say;
 *sayPhrase = *freeswitchc::CoreSession_sayPhrase;
+*hangupCause = *freeswitchc::CoreSession_hangupCause;
 *recordFile = *freeswitchc::CoreSession_recordFile;
 *setCallerData = *freeswitchc::CoreSession_setCallerData;
 *originate = *freeswitchc::CoreSession_originate;
