@@ -95,7 +95,13 @@ struct switch_event {
 	/*! unique key */
 	unsigned long key;
 	struct switch_event *next;
+	int flags;
 };
+
+typedef enum {
+	EF_UNIQ_HEADERS = (1 << 0)
+} switch_event_flag_t;
+
 
 struct switch_event_node;
 

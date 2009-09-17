@@ -299,6 +299,10 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 	header = ALLOC(sizeof(*header));
 	esl_assert(header);
 
+	if ((event->flags & EF_UNIQ_HEADERS)) {
+		esl_event_del_header(event, header_name);
+	}
+
 	memset(header, 0, sizeof(*header));
 
 	header->name = DUP(header_name);

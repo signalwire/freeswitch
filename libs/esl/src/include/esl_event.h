@@ -160,8 +160,12 @@ struct esl_event {
 	/*! unique key */
 	unsigned long key;
 	struct esl_event *next;
+	int flags;
 };
 
+typedef enum {
+	EF_UNIQ_HEADERS = (1 << 0)
+} esl_event_flag_t;
 
 
 #define ESL_EVENT_SUBCLASS_ANY NULL

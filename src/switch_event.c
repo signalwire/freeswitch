@@ -635,6 +635,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 
 	memset(*event, 0, sizeof(switch_event_t));
 
+	if (event_id == SWITCH_EVENT_REQUEST_PARAMS) {
+		(*event)->flags |= EF_UNIQ_HEADERS;
+	}
+
 	if (event_id != SWITCH_EVENT_CLONE) {
 		(*event)->event_id = event_id;
 		switch_event_prep_for_delivery_detailed(file, func, line, *event);
@@ -741,6 +745,10 @@ switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack
 #ifdef SWITCH_EVENT_RECYCLE
 	}
 #endif
+
+	if (switch_test_flag(event, EF_UNIQ_HEADERS)) {
+		switch_event_del_header(event, header_name);
+	}
 
 	memset(header, 0, sizeof(*header));
 
