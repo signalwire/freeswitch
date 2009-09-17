@@ -48,21 +48,21 @@ echo "GDB BACKTRACE:" >> $post_file
 echo $line >> $post_file
 
 gdb /usr/local/freeswitch/bin/freeswitch `ls -rt core.* | tail -n1` \
-        --eval-command='echo \n\n' \
-        --eval-command='set pagination off' \
-        --eval-command='echo Stack Trace' \
-        --eval-command='echo $line\n' \
-        --eval-command='bt' \
-        --eval-command='echo \n\n\n\n Stack Trace (full)' \
-        --eval-command='echo $line\n' \
-        --eval-command='bt full' \
-        --eval-command='echo \n\n\n\n Stack Trace (all threads)' \
-        --eval-command='echo $line\n' \
-        --eval-command='thread apply all bt' \
-        --eval-command='echo \n\n\n\n Stack Trace (all threads) (full)' \
-        --eval-command='echo $line\n' \
-        --eval-command='thread apply all bt full' \
-        --eval-command='quit' 1>> $post_file 2>/dev/null
+        --eval-command="echo \n\n" \
+        --eval-command="set pagination off" \
+        --eval-command="echo Stack Trace\n" \
+        --eval-command="echo $line\n" \
+        --eval-command="bt" \
+        --eval-command="echo \n\n\n\n Stack Trace (full)\n" \
+        --eval-command="echo $line\n" \
+        --eval-command="bt full" \
+        --eval-command="echo \n\n\n\n Stack Trace (all threads)\n" \
+        --eval-command="echo $line\n" \
+        --eval-command="thread apply all bt" \
+        --eval-command="echo \n\n\n\n Stack Trace (all threads) (full)\n" \
+        --eval-command="echo $line\n" \
+        --eval-command="thread apply all bt full" \
+        --eval-command="quit" 1>> $post_file 2>/dev/null
 
 rm -fr $tmpdir 
 mkdir -p $tmpdir
