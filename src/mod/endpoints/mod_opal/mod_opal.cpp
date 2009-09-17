@@ -983,6 +983,25 @@ switch_status_t FSConnection::receive_message(switch_core_session_message_t *msg
     case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
         switch_channel_set_private_flag(channel, CF_NEED_FLUSH);
         break;
+
+    case SWITCH_MESSAGE_INDICATE_RINGING:
+    case SWITCH_MESSAGE_INDICATE_PROGRESS:
+    case SWITCH_MESSAGE_INDICATE_ANSWER:
+        {
+            switch_caller_profile_t * profile = switch_channel_get_caller_profile(channel);
+            if (profile != NULL && profile->caller_extension != NULL)
+            {
+                PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+                if (other != NULL) {
+                    other->SetLocalPartyName(profile->caller_extension->extension_number);
+                    other->SetDisplayName(profile->caller_extension->extension_name);
+                }
+                SetLocalPartyName(profile->caller_extension->extension_number);
+                SetDisplayName(profile->caller_extension->extension_name);
+            }
+        }
+        break;
+
     default:
         break;
     }
