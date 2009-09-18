@@ -128,6 +128,8 @@ struct mdl_profile {
 	char *odbc_dsn;
 	char *odbc_user;
 	char *odbc_pass;
+	switch_bool_t purge;
+	switch_thread_rwlock_t *rwlock;
 	switch_odbc_handle_t *master_odbc;
 	switch_mutex_t *mutex;
 	ldl_handle_t *handle;
@@ -214,6 +216,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 static ldl_status handle_response(ldl_handle_t *handle, char *id);
 static switch_status_t load_config(void);
 static int sin_callback(void *pArg, int argc, char **argv, char **columnNames);
+
+static switch_status_t soft_reload(void);
 
 #define is_special(s) (s && (strstr(s, "ext+") || strstr(s, "user+")))
 
@@ -1241,6 +1245,15 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		if (switch_core_codec_ready(&tech_pvt->write_codec)) {
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
+
+		switch_thread_rwlock_unlock(tech_pvt->profile->rwlock);
+
+		if(tech_pvt->profile->purge) {
+			mdl_profile_t *profile = tech_pvt->profile;
+			if(switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s deleted successfully\n", profile->name);
+			}
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1673,6 +1686,18 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				}
 			}
 
+			if(mdl_profile->purge) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile '%s' is marked for deletion, disallowing outgoing call\n", mdl_profile->name);
+				terminate_session(new_session, __LINE__, SWITCH_CAUSE_NORMAL_UNSPECIFIED);
+				return SWITCH_CAUSE_NORMAL_UNSPECIFIED;
+			}
+
+			if(switch_thread_rwlock_tryrdlock(mdl_profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't do read lock on profile '%s'\n", mdl_profile->name);
+				terminate_session(new_session, __LINE__, SWITCH_CAUSE_NORMAL_UNSPECIFIED);
+				return SWITCH_CAUSE_NORMAL_UNSPECIFIED;
+			}
+
 			if (!ldl_handle_ready(mdl_profile->handle)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG, "Doh! we are not logged in yet!\n");
 				terminate_session(new_session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -1845,7 +1870,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 #define LOGOUT_SYNTAX "dl_logout <profile_name>"
 #define LOGIN_SYNTAX "Existing Profile:\ndl_login profile=<profile_name>\nDynamic Profile:\ndl_login var1=val1;var2=val2;varN=valN\n"
 #define DEBUG_SYNTAX "dl_debug [true|false]"
-#define DINGALING_SYNTAX "dingaling [status]"
+#define DINGALING_SYNTAX "dingaling [status|reload]"
 
 	SWITCH_ADD_API(api_interface, "dl_debug", "DingaLing Debug", dl_debug, DEBUG_SYNTAX);
 	SWITCH_ADD_API(api_interface, "dl_pres", "DingaLing Presence", dl_pres, PRES_SYNTAX);
@@ -1905,6 +1930,9 @@ static switch_status_t init_profile(mdl_profile_t *profile, uint8_t login)
 						profile->password,
 						profile->server,
 						profile->user_flags, profile->message, handle_loop, handle_signalling, handle_response, profile) == LDL_STATUS_SUCCESS) {
+		profile->purge = SWITCH_FALSE;
+		switch_thread_rwlock_create(&profile->rwlock, module_pool);
+
 		profile->handle = handle;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Started Thread for %s@%s\n", profile->login, profile->dialplan);
 		switch_core_hash_insert(globals.profile_hash, profile->name, profile);
@@ -2161,6 +2189,9 @@ SWITCH_STANDARD_API(dingaling)
 			}
 			stream->write_function(stream, "\n");
 		}
+	} else if (argv[0] && !strncasecmp(argv[0], "reload", 6)) {
+		soft_reload();
+		stream->write_function(stream, "OK\n");
 	} else {
 		stream->write_function(stream, "USAGE: %s\n", DINGALING_SYNTAX);
 	}
@@ -2235,6 +2266,229 @@ SWITCH_STANDARD_API(dl_login)
 	switch_safe_free(myarg);
 
 	return status;
+}
+
+
+static switch_bool_t match_profile(mdl_profile_t *profile, mdl_profile_t *new_profile)
+{
+	if(profile == new_profile) {
+		return SWITCH_TRUE;
+	}
+
+	if(
+	((!new_profile->name && !profile->name) || 
+	 (new_profile->name && profile->name && !strcasecmp(new_profile->name, profile->name))) &&
+	((!new_profile->login && !profile->login) || 
+	 (new_profile->login && profile->login && !strcasecmp(new_profile->login, profile->login))) &&
+	((!new_profile->password && !profile->password) || 
+	 (new_profile->password && profile->password && !strcasecmp(new_profile->password, profile->password))) &&
+	((!new_profile->message && !profile->message) || 
+	 (new_profile->message && profile->message && !strcasecmp(new_profile->message, profile->message))) &&
+	((!new_profile->avatar && !profile->avatar) || 
+	 (new_profile->avatar && profile->avatar && !strcasecmp(new_profile->avatar, profile->avatar))) &&
+#ifdef AUTO_REPLY
+	((!new_profile->auto_reply && !profile->auto_reply) || 
+	 (new_profile->auto_reply && profile->auto_reply && !strcasecmp(new_profile->auto_reply, profile->auto_reply))) &&
+#endif
+	((!new_profile->dialplan && !profile->dialplan) || 
+	 (new_profile->dialplan && profile->dialplan && !strcasecmp(new_profile->dialplan, profile->dialplan))) &&
+	((!new_profile->local_network && !profile->local_network) || 
+	 (new_profile->local_network && profile->local_network && !strcasecmp(new_profile->local_network, profile->local_network))) &&
+	((!new_profile->ip && !profile->ip) || 
+	 (new_profile->ip && profile->ip && !strcasecmp(new_profile->ip, profile->ip))) &&
+	((!new_profile->extip && !profile->extip) || 
+	 (new_profile->extip && profile->extip && !strcasecmp(new_profile->extip, profile->extip))) &&
+	((!new_profile->server && !profile->server) || 
+	 (new_profile->server && profile->server && !strcasecmp(new_profile->server, profile->server))) &&
+	((!new_profile->timer_name && !profile->timer_name) || 
+	 (new_profile->timer_name && profile->timer_name && !strcasecmp(new_profile->timer_name, profile->timer_name))) &&
+	((!new_profile->lanaddr && !profile->lanaddr) || 
+	 (new_profile->lanaddr && profile->lanaddr && !strcasecmp(new_profile->lanaddr, profile->lanaddr))) &&
+	((!new_profile->exten && !profile->exten) || 
+	 (new_profile->exten && profile->exten && !strcasecmp(new_profile->exten, profile->exten))) &&
+	((!new_profile->context && !profile->context) || 
+	 (new_profile->context && profile->context && !strcasecmp(new_profile->context, profile->context))) &&
+	(new_profile->user_flags == profile->user_flags) && (new_profile->acl_count == profile->acl_count)
+	) {
+		if (switch_odbc_available()) {
+			if(!(
+			((!new_profile->odbc_dsn && !profile->odbc_dsn) || 
+			 (new_profile->odbc_dsn && profile->odbc_dsn && !strcasecmp(new_profile->odbc_dsn, profile->odbc_dsn))) &&
+			((!new_profile->odbc_user && !profile->odbc_user) || 
+			 (new_profile->odbc_user && profile->odbc_user && !strcasecmp(new_profile->odbc_user, profile->odbc_user))) &&
+			((!new_profile->odbc_pass && !profile->odbc_pass) || 
+			 (new_profile->odbc_pass && profile->odbc_pass && !strcasecmp(new_profile->odbc_pass, profile->odbc_pass)))
+			)) {
+				return SWITCH_FALSE;
+			}
+		}
+
+		for(int i=0; i<new_profile->acl_count; i++) {
+			if(strcasecmp(new_profile->acl[i], profile->acl[i]) != 0) {
+				return SWITCH_FALSE;
+			}
+		}
+	}
+
+	return SWITCH_TRUE;
+}
+
+static switch_status_t destroy_profile(char *name) 
+{
+	mdl_profile_t *profile = NULL;
+
+	if((profile = switch_core_hash_find(globals.profile_hash, name))) {
+		if (profile->user_flags & LDL_FLAG_COMPONENT) {
+			if (switch_odbc_available() && profile->odbc_dsn && profile->master_odbc) {
+				switch_odbc_handle_disconnect(profile->master_odbc);
+				switch_odbc_handle_destroy(&profile->master_odbc);
+			}
+
+			switch_mutex_destroy(profile->mutex);
+		}
+
+		if(switch_thread_rwlock_trywrlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s is busy\n", profile->name);
+			profile->purge = SWITCH_TRUE;
+			if(profile->handle) {
+				ldl_handle_stop(profile->handle);
+			}
+		} else {
+			switch_thread_rwlock_unlock(profile->rwlock);
+			profile->purge = SWITCH_TRUE;
+
+			if(profile->handle) {
+				ldl_handle_stop(profile->handle);
+			}
+
+			if(switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s deleted successfully\n", profile->name);
+			}
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t soft_reload(void)
+{
+	char *cf = "dingaling.conf";
+	mdl_profile_t *profile = NULL, *old_profile = NULL;
+	switch_xml_t cfg, xml, /*settings,*/ param, xmlint;
+
+	void *data = NULL;
+	switch_hash_t *name_hash;
+	switch_core_hash_init(&name_hash, module_pool);
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (!(xmlint = switch_xml_child(cfg, "profile"))) {
+		if ((xmlint = switch_xml_child(cfg, "interface"))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "!!!!!!! DEPRICATION WARNING 'interface' is now 'profile' !!!!!!!\n");
+		}
+	}
+
+	for (; xmlint; xmlint = xmlint->next) {
+		char *type = (char *) switch_xml_attr_soft(xmlint, "type");
+		for (param = switch_xml_child(xmlint, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+
+                        if (!profile) {
+				profile = switch_core_alloc(module_pool, sizeof(*profile));
+			}
+
+			set_profile_val(profile, var, val);
+		}
+
+		if (profile && type && !strcasecmp(type, "component")) {
+			char dbname[256];
+			switch_core_db_t *db;
+
+			if (!profile->login && profile->name) {
+				profile->login = switch_core_strdup(module_pool, profile->name);
+			}
+
+			switch_set_flag(profile, TFLAG_AUTO);
+			profile->message = "";
+			profile->user_flags |= LDL_FLAG_COMPONENT;
+			switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, module_pool);
+			switch_snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);
+			profile->dbname = switch_core_strdup(module_pool, dbname);
+
+			if (switch_odbc_available() && profile->odbc_dsn) {
+				if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+					continue;
+
+				}
+				if (switch_odbc_handle_connect(profile->master_odbc) != SWITCH_ODBC_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+					continue;
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
+				switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL);
+				//mdl_execute_sql(profile, sub_sql, NULL);
+			} else {
+				if ((db = switch_core_db_open_file(profile->dbname))) {
+					switch_core_db_test_reactive(db, "select * from jabber_subscriptions", NULL, sub_sql);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
+					continue;
+				}
+				switch_core_db_close(db);
+			}
+		}
+
+		if (profile) {
+			switch_core_hash_insert(name_hash, profile->name, profile->login);
+
+			if((old_profile = switch_core_hash_find(globals.profile_hash, profile->name))) {
+				if(match_profile(old_profile, profile)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found pre-existing profile %s [%s]\n", profile->name, profile->login);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Overwriting pre-existing profile %s [%s]\n", profile->name, profile->login);
+					destroy_profile(old_profile->name);
+					init_profile(profile, switch_test_flag(profile, TFLAG_AUTO) ? 1 : 0);
+				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found new profile %s [%s]\n", profile->name, profile->login);
+				init_profile(profile, switch_test_flag(profile, TFLAG_AUTO) ? 1 : 0);
+			}
+
+			profile = NULL;
+		}
+	}
+
+	switch_xml_free(xml);
+
+	for (switch_hash_index_t *hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &data);
+		profile = (mdl_profile_t *) data;
+
+		if(switch_core_hash_find(name_hash, profile->name)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "New profile %s [%s] activated\n", profile->name, profile->login);
+		} else {
+			switch_core_hash_insert(name_hash, profile->name, profile->name);
+		}
+	}
+
+	for (switch_hash_index_t *hi = switch_hash_first(NULL, name_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &data);
+
+		if((profile = switch_core_hash_find(globals.profile_hash, (char*)data))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleting unused profile %s [%s]\n", profile->name, profile->login);
+			destroy_profile(profile->name);
+		}
+	}
+
+	switch_core_hash_destroy(&name_hash);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t load_config(void)
@@ -2672,6 +2926,19 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			status = LDL_STATUS_FALSE;
 			goto done;
 		}
+
+		if(profile->purge) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile '%s' is marked for deletion, disallowing incoming call\n", profile->name);
+			status = LDL_STATUS_FALSE;
+			goto done;
+		}
+
+		if(switch_thread_rwlock_tryrdlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't do read lock on profile '%s'\n", profile->name);
+			status = LDL_STATUS_FALSE;
+			goto done;
+		}
+
 		if ((session = switch_core_session_request(dingaling_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, NULL)) != 0) {
 			switch_core_session_add_stream(session, NULL);
 
