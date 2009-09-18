@@ -1288,7 +1288,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Only calling the first element in the list in this mode.\n");
 			or_argc = 1;
 		}
-
+		
 		for (r = 0; r < or_argc; r++) {
 			char *p, *end = NULL;
 			const char *var_begin, *var_end;
@@ -2074,9 +2074,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 		  done:
-			
-			switch_safe_free(fail_on_single_reject_var);
-
+		
 			*cause = SWITCH_CAUSE_NONE;
 
 			if (caller_channel && !switch_channel_ready(caller_channel)) {
@@ -2219,6 +2217,32 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			if (status == SWITCH_STATUS_SUCCESS) {
 				goto outer_for;
+			} else {
+				int ok = 0;
+
+				if (fail_on_single_reject_var && !switch_true(fail_on_single_reject_var)) {
+					ok = 1;
+					for (i = 0; i < and_argc; i++) {
+						switch_channel_t *pchannel;
+						const char *cause_str;
+						
+						if (!originate_status[i].peer_session) {
+							continue;
+						}
+						pchannel = switch_core_session_get_channel(originate_status[i].peer_session);
+
+						if (switch_channel_down(pchannel)) {
+							cause_str = switch_channel_cause2str(switch_channel_get_cause(pchannel));
+							if (switch_stristr(cause_str, fail_on_single_reject_var)) {
+								ok = 0;
+								break;
+							}
+						}
+					}
+				}
+				if (!ok) {
+					goto outer_for;
+				}
 			}
 		}
 	}
@@ -2251,7 +2275,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (var_event && var_event != ovars) {
 		switch_event_destroy(&var_event);
 	}
+
 	switch_safe_free(write_frame.data);
+	switch_safe_free(fail_on_single_reject_var);
 
 	return status;
 }
