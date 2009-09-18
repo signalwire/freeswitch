@@ -63,9 +63,8 @@ typedef struct  {
 
 typedef struct {
 	switch_hash_t *hash;
-	} limit_hash_private_t;
+} limit_hash_private_t;
 
- 
 static char limit_sql[] =
 	"CREATE TABLE limit_data (\n"
 	"   hostname   VARCHAR(255),\n"
@@ -1172,19 +1171,23 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	realm = argv[0];
 	id = argv[1];
 	
-	/* If max is omitted, only act as a counter and skip maximum checks */
+	/* If max is omitted or negative, only act as a counter and skip maximum checks */
 	if (argc > 2) {
-		char *szinterval = NULL;
-		if ((szinterval = strchr(argv[2], '/')))
-		{
-			*szinterval++ = '\0';
-			interval = atoi(szinterval);
-		}
-		
-		max = atoi(argv[2]);
-		
-		if (max < 0) {
-			max = 0;
+		if (argv[2][0] == '-') {
+			max = -1;
+		} else {
+			char *szinterval = NULL;
+			if ((szinterval = strchr(argv[2], '/')))
+			{
+				*szinterval++ = '\0';
+				interval = atoi(szinterval);
+			}
+			
+			max = atoi(argv[2]);
+			
+			if (max < 0) {
+				max = 0;
+			}
 		}
 	}
 
