@@ -24,8 +24,6 @@
     <param name="sessions-per-second" value="30"/>
     <!-- Default Global Log Level - value is one of debug,info,notice,warning,err,crit,alert -->
     <param name="loglevel" value="debug"/>
-    <!--Try to catch any crashes that can be recoverable (in the context of a call)-->
-    <param name="crash-protection" value="false"/>
 	<!-- The min_dtmf_duration specifies the minimum DTMF duration to use on 
 	     outgoing events. Events shorter than this will be increased in duration
 		 to match min_dtmf_duration. You cannot configure a dtmf duration on a 

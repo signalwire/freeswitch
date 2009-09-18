@@ -1379,11 +1379,7 @@ static void switch_load_core_config(const char *file)
 				const char *var = switch_xml_attr_soft(param, "name");
 				const char *val = switch_xml_attr_soft(param, "value");
 
-				if (!strcasecmp(var, "crash-protection")) {
-					if (switch_true(val)) {
-						switch_set_flag((&runtime), SCF_CRASH_PROT);
-					}
-				} else if (!strcasecmp(var, "loglevel")) {
+				if (!strcasecmp(var, "loglevel")) {
 					int level;
 					if (*val > 47 && *val < 58) {
 						level = atoi(val);
@@ -1507,8 +1503,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-					  "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\nSession Rate[%d]\nSQL [%s]\n", SWITCH_VERSION_FULL,
-					  switch_test_flag((&runtime), SCF_CRASH_PROT) ? "Enabled" : "Disabled",
+					  "\nFreeSWITCH Version %s Started.\nMax Sessions[%u]\nSession Rate[%d]\nSQL [%s]\n", SWITCH_VERSION_FULL,
 					  switch_core_session_limit(0),
 					  switch_core_sessions_per_second(0), switch_test_flag((&runtime), SCF_USE_SQL) ? "Enabled" : "Disabled");
 
