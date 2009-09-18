@@ -419,7 +419,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load)
 
 	SWITCH_ADD_API(api_interface, "curl", "curl API", curl_function, SYNTAX);
 	SWITCH_ADD_APP(app_interface, "curl", "Perform a http request", "Perform a http request",
-				   curl_app_function, SYNTAX, SAF_SUPPORT_NOMEDIA);
+				   curl_app_function, SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

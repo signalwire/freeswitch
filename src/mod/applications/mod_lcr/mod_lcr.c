@@ -1538,7 +1538,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 	SWITCH_ADD_API(dialplan_lcr_api_interface, "lcr", "Least Cost Routing Module", dialplan_lcr_function, LCR_SYNTAX);
 	SWITCH_ADD_API(dialplan_lcr_api_admin_interface, "lcr_admin", "Least Cost Routing Module Admin", dialplan_lcr_admin_function, LCR_ADMIN_SYNTAX);
 	SWITCH_ADD_APP(app_interface, "lcr", "Perform an LCR lookup", "Perform an LCR lookup",
-				   lcr_app_function, "<number>", SAF_SUPPORT_NOMEDIA);
+				   lcr_app_function, "<number>", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_DIALPLAN(dp_interface, "lcr", lcr_dialplan_hunt);
 	
 	/* indicate that the module should continue to be loaded */

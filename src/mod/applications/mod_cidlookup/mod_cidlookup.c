@@ -560,7 +560,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
 	
 	SWITCH_ADD_API(api_interface, "cidlookup", "cidlookup API", cidlookup_function, SYNTAX);
 	SWITCH_ADD_APP(app_interface, "cidlookup", "Perform a CID lookup", "Perform a CID lookup",
-				   cidlookup_app_function, "[number [skipurl]]", SAF_SUPPORT_NOMEDIA);
+				   cidlookup_app_function, "[number [skipurl]]", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

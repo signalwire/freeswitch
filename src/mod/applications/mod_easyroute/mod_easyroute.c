@@ -407,7 +407,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_easyroute_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_API(api_interface, "easyroute", "EasyRoute", easyroute_function, "");
-	SWITCH_ADD_APP(app_interface, "easyroute", "Perform an easyroute lookup", "Perform an easyroute lookup", easyroute_app_function, "<number>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "easyroute", "Perform an easyroute lookup", "Perform an easyroute lookup", easyroute_app_function, "<number>", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
