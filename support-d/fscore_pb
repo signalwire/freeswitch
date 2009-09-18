@@ -74,6 +74,7 @@ wget --output-file=/dev/null --http-user=pastebin --http-password=freeswitch htt
 
 pb=`ls [0-9]*`
 
+mv $post_file $tmpdir
 echo "Finished."
 echo "Please report http://pastebin.freeswitch.org/$pb to the developers."
 
