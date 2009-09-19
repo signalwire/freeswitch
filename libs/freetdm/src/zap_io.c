@@ -250,6 +250,9 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 		zap_buffer_destroy(&zchan->gen_dtmf_buffer);
 		zap_buffer_destroy(&zchan->dtmf_buffer);
 		zap_buffer_destroy(&zchan->fsk_buffer);
+		zap_buffer_destroy(&zchan->pre_buffer);
+		zchan->pre_buffer_size = 0;
+
 		hashtable_destroy(zchan->variable_hash);
 
 		zap_safe_free(zchan->dtmf_hangup_buf);
@@ -1200,6 +1203,7 @@ OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan)
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_MEDIA);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_ANSWERED);
 	zap_buffer_destroy(&zchan->pre_buffer);
+	zchan->pre_buffer_size = 0;
 
 	zchan->init_state = ZAP_CHANNEL_STATE_DOWN;
 	zchan->state = ZAP_CHANNEL_STATE_DOWN;
@@ -2120,7 +2124,7 @@ OZ_DECLARE(zap_status_t) zap_channel_read(zap_channel_t *zchan, void *data, zap_
 		if (zchan->skip_read_frames > 0) {
 			zchan->skip_read_frames--;
 		}
-	}  else	if (zchan->pre_buffer_size) {
+	}  else	if (zchan->pre_buffer_size && zchan->pre_buffer) {
 		zap_buffer_write(zchan->pre_buffer, data, *datalen);
 		if (zap_buffer_inuse(zchan->pre_buffer) >= zchan->pre_buffer_size) {
 			zap_buffer_read(zchan->pre_buffer, data, *datalen);
