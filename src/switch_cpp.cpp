@@ -938,6 +938,18 @@ SWITCH_DECLARE(const char *) CoreSession::hangupCause()
 	return switch_channel_cause2str(cause);
 }
 
+SWITCH_DECLARE(const char *) CoreSession::getState()
+{
+	this_check(NULL);
+
+	if (channel) {
+		return switch_channel_state_name(switch_channel_get_state(channel));
+	}
+
+	return "ERROR";
+
+}
+
 SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *dest, int timeout, switch_state_handler_table_t *handlers)
 {
 

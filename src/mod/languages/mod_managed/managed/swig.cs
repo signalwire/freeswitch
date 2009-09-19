@@ -250,6 +250,11 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
+  public string getState() {
+    string ret = freeswitchPINVOKE.CoreSession_getState(swigCPtr);
+    return ret;
+  }
+
   public int RecordFile(string file_name, int time_limit, int silence_threshold, int silence_hits) {
     int ret = freeswitchPINVOKE.CoreSession_RecordFile(swigCPtr, file_name, time_limit, silence_threshold, silence_hits);
     return ret;
@@ -11388,6 +11393,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_hangupCause")]
   public static extern string CoreSession_hangupCause(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_getState")]
+  public static extern string CoreSession_getState(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_RecordFile")]
   public static extern int CoreSession_RecordFile(HandleRef jarg1, string jarg2, int jarg3, int jarg4, int jarg5);
 
@@ -19235,11 +19243,10 @@ namespace FreeSWITCH.Native {
   SCF_USE_SQL = (1 << 0),
   SCF_NO_NEW_SESSIONS = (1 << 1),
   SCF_SHUTTING_DOWN = (1 << 2),
-  SCF_CRASH_PROT = (1 << 3),
-  SCF_VG = (1 << 4),
-  SCF_RESTART = (1 << 5),
-  SCF_SHUTDOWN_REQUESTED = (1 << 6),
-  SCF_USE_AUTO_NAT = (1 << 7)
+  SCF_VG = (1 << 3),
+  SCF_RESTART = (1 << 4),
+  SCF_SHUTDOWN_REQUESTED = (1 << 5),
+  SCF_USE_AUTO_NAT = (1 << 6)
 }
 
 }

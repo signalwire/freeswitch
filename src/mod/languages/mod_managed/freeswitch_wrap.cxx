@@ -28788,6 +28788,18 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_hangupCause(void * jarg1) {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_getState(void * jarg1) {
+  char * jresult ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (CoreSession *)jarg1; 
+  result = (char *)(arg1)->getState();
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_RecordFile(void * jarg1, char * jarg2, int jarg3, int jarg4, int jarg5) {
   int jresult ;
   CoreSession *arg1 = (CoreSession *) 0 ;

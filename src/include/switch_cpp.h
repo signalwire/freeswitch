@@ -236,6 +236,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 SWITCH_DECLARE(void) say(const char *tosay, const char *module_name, const char *say_type, const char *say_method);
 		 SWITCH_DECLARE(void) sayPhrase(const char *phrase_name, const char *phrase_data = "", const char *phrase_lang = NULL);
 		 SWITCH_DECLARE(const char *) hangupCause();
+		 SWITCH_DECLARE(const char *) getState();
 
 	/** \brief Record to a file
 	 * \param file_name 
