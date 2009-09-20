@@ -80,7 +80,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	const char *esf_broadcast_ip = NULL, *var;
 	switch_codec_implementation_t read_impl = {0};
     switch_core_session_get_read_impl(session, &read_impl);
-
+	int mcast_ttl = 1;
 
 	if (!switch_strlen_zero((char *) data)) {
 		mydata = switch_core_session_strdup(session, data);
@@ -104,6 +104,13 @@ SWITCH_STANDARD_APP(bcast_function)
 		if (!switch_strlen_zero(argv[2])) {
 			mcast_control_port = (switch_port_t) atoi(argv[2]);
 		}
+		
+		if (!switch_strlen_zero(argv[3])) {
+			mcast_ttl = atoi(argv[3]);
+			if (mcast_ttl < 1 || mcast_ttl > 255) {
+				mcast_ttl = 1;
+			}
+		}
 	}
 
 	if (switch_true(switch_channel_get_variable(channel, SWITCH_BYPASS_MEDIA_VARIABLE))) {
@@ -125,6 +132,11 @@ SWITCH_STANDARD_APP(bcast_function)
 
 	if (switch_socket_create(&socket, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error 1\n");
+		goto fail;
+	}
+
+	if (switch_mcast_hops(socket, mcast_ttl) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Mutlicast TTL set failed\n");
 		goto fail;
 	}
 
