@@ -511,13 +511,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 
 	if (fh->spool_path) {
 		char *command;
+		int result;
 
 #ifdef _MSC_VER
 		command = switch_mprintf("move %s %s", fh->spool_path, fh->file_path);
 #else
 		command = switch_mprintf("/bin/mv %s %s", fh->spool_path, fh->file_path);
 #endif
-		system(command);
+		result = system(command);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Copy spooled file [%s] to [%s]\n", fh->spool_path, fh->file_path);
 		free(command);
 	}
