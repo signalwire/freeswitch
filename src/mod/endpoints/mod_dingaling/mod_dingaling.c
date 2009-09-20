@@ -2310,6 +2310,7 @@ static switch_bool_t match_profile(mdl_profile_t *profile, mdl_profile_t *new_pr
 	 (new_profile->context && profile->context && !strcasecmp(new_profile->context, profile->context))) &&
 	(new_profile->user_flags == profile->user_flags) && (new_profile->acl_count == profile->acl_count)
 	) {
+		int i;
 		if (switch_odbc_available()) {
 			if(!(
 			((!new_profile->odbc_dsn && !profile->odbc_dsn) || 
@@ -2323,7 +2324,7 @@ static switch_bool_t match_profile(mdl_profile_t *profile, mdl_profile_t *new_pr
 			}
 		}
 
-		for(int i=0; i<new_profile->acl_count; i++) {
+		for(i=0; i<new_profile->acl_count; i++) {
 			if(strcasecmp(new_profile->acl[i], profile->acl[i]) != 0) {
 				return SWITCH_FALSE;
 			}
@@ -2378,6 +2379,7 @@ static switch_status_t soft_reload(void)
 
 	void *data = NULL;
 	switch_hash_t *name_hash;
+	switch_hash_index_t *hi;
 	switch_core_hash_init(&name_hash, module_pool);
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -2466,7 +2468,7 @@ static switch_status_t soft_reload(void)
 
 	switch_xml_free(xml);
 
-	for (switch_hash_index_t *hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &data);
 		profile = (mdl_profile_t *) data;
 
@@ -2477,7 +2479,7 @@ static switch_status_t soft_reload(void)
 		}
 	}
 
-	for (switch_hash_index_t *hi = switch_hash_first(NULL, name_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(NULL, name_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &data);
 
 		if((profile = switch_core_hash_find(globals.profile_hash, (char*)data))) {
