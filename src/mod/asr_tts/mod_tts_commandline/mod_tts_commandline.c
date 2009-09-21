@@ -32,6 +32,8 @@
 #include <unistd.h>
 #include <switch.h>
 
+SWITCH_DECLARE(char *) switch_escape_shell_arg(char *string);
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_tts_commandline_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_tts_commandline_shutdown);
 SWITCH_MODULE_DEFINITION(mod_tts_commandline, mod_tts_commandline_load, mod_tts_commandline_shutdown, NULL);
@@ -45,13 +47,70 @@ static struct {
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_command, globals.command);
 
 struct tts_commandline_data {
-    switch_file_handle_t fh;
+	switch_file_handle_t fh;
 	char *voice_name;
 	int rate;
-	char file[512];
+	char *file;
 };
 
 typedef struct tts_commandline_data tts_commandline_t;
+
+
+SWITCH_DECLARE(char *) switch_quote_shell_arg(char *string)
+{
+	size_t string_len = strlen(string);
+	size_t i;
+	size_t n = 0;
+	size_t dest_len = string_len + 1; /* +1 for the opening quote  */
+	char *dest, *tmp;
+
+	dest = (char *) malloc(sizeof(char) * dest_len);
+	switch_assert(dest);
+
+#ifdef WIN32
+    dest[n++] = '"';
+#else
+    dest[n++] = '\'';
+#endif
+
+	for (i = 0; i < string_len; i++) {
+		switch (string[i]) {
+#ifdef WIN32
+		case '"':
+		case '%':
+			dest[n++] = ' ';
+			break;
+#else
+		case '\'':
+            /* We replace ' by '\'' */
+			dest_len+=3;
+			tmp = (char *) realloc(dest, sizeof(char) * (dest_len));
+			switch_assert(tmp);
+			dest = tmp;
+			dest[n++] = '\'';
+			dest[n++] = '\\';
+			dest[n++] = '\'';
+			dest[n++] = '\'';
+			break;
+#endif
+		default:
+			dest[n++] = string[i];
+		}
+  }
+  
+dest_len++;
+tmp = (char *) realloc(dest, sizeof(char) * (dest_len));
+switch_assert(tmp);
+dest = tmp;
+#ifdef WIN32
+    dest[n++] = '"';
+#else
+    dest[n++] = '\'';
+#endif
+
+	dest[dest_len] = 0;
+	return dest;
+}
 
 static int load_tts_commandline_config(void)
 {
@@ -75,7 +134,7 @@ static int load_tts_commandline_config(void)
 	}
 
 	if (switch_strlen_zero(globals.command)) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No command set, please edit %s\n", cf);   
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No command set, please edit %s\n", cf);   
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -92,23 +151,31 @@ static void event_handler(switch_event_t *event)
 
 static switch_status_t tts_commandline_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, switch_speech_flag_t *flags)
 {
+	switch_uuid_t uuid;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	char outfile[512] = "";
+	
 	tts_commandline_t *info = switch_core_alloc(sh->memory_pool, sizeof(*info));
 
 	info->voice_name = switch_core_strdup(sh->memory_pool, voice_name);
-    info->rate = rate;
+	info->rate = rate;
 
-	switch_snprintf(info->file, sizeof(info->file), "%s%s.wav", SWITCH_GLOBAL_dirs.temp_dir, "tts_commandline");
-    
-    sh->private_info = info;
-    
-    return SWITCH_STATUS_SUCCESS;
+	switch_uuid_get(&uuid);
+	switch_uuid_format(uuid_str, &uuid);
+
+	switch_snprintf(outfile, sizeof(outfile), "%s%s.tmp.wav", SWITCH_GLOBAL_dirs.temp_dir, uuid_str);
+	info->file = outfile;
+	
+	sh->private_info = info;
+  
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t tts_commandline_speech_close(switch_speech_handle_t *sh, switch_speech_flag_t *flags)
 {
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	assert(info != NULL);
-    
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -117,31 +184,39 @@ static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *s
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	assert(info != NULL);
 
-    char *message;
-    char *rate;
-	message = switch_core_strdup(sh->memory_pool, globals.command);
-    message = switch_string_replace(message, "${text}", text);
-    message = switch_string_replace(message, "${voice}", info->voice_name);
-    rate = switch_core_sprintf(sh->memory_pool, "%d", info->rate);
-    message = switch_string_replace(message, "${rate}", rate);
-    message = switch_string_replace(message, "${file}", info->file);
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Executing: %s\n", message);
-    
-    if (switch_system(message, SWITCH_TRUE) < 0) {
-       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute command: %s\n", message);
-       return SWITCH_STATUS_FALSE;
-    }
+	char *message, *tmp, *rate;
 	
-    if (switch_core_file_open(&info->fh,
-                            info->file,
-                            0, //number_of_channels,
-                            0, //samples_per_second,
-                            SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file: %s\n", info->file);
-       return SWITCH_STATUS_FALSE;
-    }
-    
-    sh->private_info = info;
+	message = switch_core_strdup(sh->memory_pool, globals.command);
+	
+	tmp = switch_quote_shell_arg(text);
+	message = switch_string_replace(message, "${text}", tmp);
+	
+	tmp = switch_quote_shell_arg(info->voice_name);
+	message = switch_string_replace(message, "${voice}", tmp);
+	
+	rate = switch_core_sprintf(sh->memory_pool, "%d", info->rate);
+	message = switch_string_replace(message, "${rate}", rate);
+	
+	tmp = switch_quote_shell_arg(info->file);
+	message = switch_string_replace(message, "${file}", tmp);
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Executing: %s\n", message);
+	
+	if (switch_system(message, SWITCH_TRUE) < 0) {
+	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute command: %s\n", message);
+	   return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_core_file_open(&info->fh,
+	                        info->file,
+	                        0, //number_of_channels,
+	                        0, //samples_per_second,
+	                        SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file: %s\n", info->file);
+	   return SWITCH_STATUS_FALSE;
+	}
+	
+	sh->private_info = info;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -150,30 +225,30 @@ static switch_status_t tts_commandline_speech_read_tts(switch_speech_handle_t *s
 {
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	assert(info != NULL);
-    
-    size_t my_datalen = *datalen / 2;
-    
-    if (switch_core_file_read(&info->fh, data, &my_datalen) != SWITCH_STATUS_SUCCESS) {
-        *datalen = my_datalen * 2;
-        return SWITCH_STATUS_FALSE;
-    }
-    *datalen = my_datalen * 2;
-    if(datalen == 0) {
-        return SWITCH_STATUS_BREAK;
-    } else {
-        return SWITCH_STATUS_SUCCESS;
-    }
+	
+	size_t my_datalen = *datalen / 2;
+	
+	if (switch_core_file_read(&info->fh, data, &my_datalen) != SWITCH_STATUS_SUCCESS) {
+	    *datalen = my_datalen * 2;
+	    return SWITCH_STATUS_FALSE;
+	}
+	*datalen = my_datalen * 2;
+	if(datalen == 0) {
+	    return SWITCH_STATUS_BREAK;
+	} else {
+	    return SWITCH_STATUS_SUCCESS;
+	}
 }
 
 static void tts_commandline_speech_flush_tts(switch_speech_handle_t *sh)
 {
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	assert(info != NULL);
-    
-    switch_core_file_close(&info->fh);
-    if (unlink(info->file) != 0) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Sound file [%s] delete failed\n", info->file);
-    }
+	
+	switch_core_file_close(&info->fh);
+	if (unlink(info->file) != 0) {
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Sound file [%s] delete failed\n", info->file);
+	}
 }
 
 static void tts_commandline_text_param_tts(switch_speech_handle_t *sh, char *param, const char *val)
@@ -182,8 +257,8 @@ static void tts_commandline_text_param_tts(switch_speech_handle_t *sh, char *par
 	assert(info != NULL);
 
 	if (!strcasecmp(param, "voice")) {
-        info->voice_name = switch_core_strdup(sh->memory_pool, val);
-    }
+	    info->voice_name = switch_core_strdup(sh->memory_pool, val);
+	}
 }
 
 static void tts_commandline_numeric_param_tts(switch_speech_handle_t *sh, char *param, int val)
@@ -197,8 +272,8 @@ static void tts_commandline_float_param_tts(switch_speech_handle_t *sh, char *pa
 SWITCH_MODULE_LOAD_FUNCTION(mod_tts_commandline_load)
 {
 	switch_speech_interface_t *speech_interface;
-	
-    load_tts_commandline_config();
+
+	load_tts_commandline_config();
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
