@@ -1,4 +1,4 @@
-MEMCACHED=libmemcached-0.27
+MEMCACHED=libmemcached-0.32
 switch_srcdir=../../../..
 
 WANT_CURL=yes
