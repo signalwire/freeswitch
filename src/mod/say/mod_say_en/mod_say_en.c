@@ -362,6 +362,7 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 	}
 	
 	if (tz) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Timezone is [%s]\n", tz);
 		int check = atoi(tz);
 		if (check) {
 			switch_time_exp_tz(&tm, target, check);
