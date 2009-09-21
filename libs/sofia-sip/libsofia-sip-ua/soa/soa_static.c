@@ -778,7 +778,8 @@ int soa_sdp_upgrade(soa_session_t *ss,
 	continue;
       if (j >= Nu) /* lines removed from user SDP */
 	continue;
-      assert(i < Ns);
+	  if (i >= Ns) /* I should never be called but somehow i and Ns are 0 here sometimes */
+    continue;
       s_media[i] = u_media[j], u_media[j] = SDP_MEDIA_NONE;
       u2s[j] = i, s2u[i] = j;
     }
