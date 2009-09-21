@@ -47,10 +47,10 @@ static struct {
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_command, globals.command);
 
 struct tts_commandline_data {
-	switch_file_handle_t fh;
 	char *voice_name;
 	int rate;
 	char *file;
+	switch_file_handle_t *fh;
 };
 
 typedef struct tts_commandline_data tts_commandline_t;
@@ -68,9 +68,9 @@ SWITCH_DECLARE(char *) switch_quote_shell_arg(char *string)
 	switch_assert(dest);
 
 #ifdef WIN32
-    dest[n++] = '"';
+	dest[n++] = '"';
 #else
-    dest[n++] = '\'';
+	dest[n++] = '\'';
 #endif
 
 	for (i = 0; i < string_len; i++) {
@@ -82,7 +82,7 @@ SWITCH_DECLARE(char *) switch_quote_shell_arg(char *string)
 			break;
 #else
 		case '\'':
-            /* We replace ' by '\'' */
+			/* We replace ' by '\'' */
 			dest_len+=3;
 			tmp = (char *) realloc(dest, sizeof(char) * (dest_len));
 			switch_assert(tmp);
@@ -98,17 +98,17 @@ SWITCH_DECLARE(char *) switch_quote_shell_arg(char *string)
 		}
   }
   
-dest_len++;
-tmp = (char *) realloc(dest, sizeof(char) * (dest_len));
-switch_assert(tmp);
-dest = tmp;
+	dest_len += 2; /* +2 for the closing quote and the null character */
+	tmp = (char *) realloc(dest, sizeof(char) * (dest_len));
+	switch_assert(tmp);
+	dest = tmp;
 #ifdef WIN32
-    dest[n++] = '"';
+	dest[n++] = '"';
 #else
-    dest[n++] = '\'';
+	dest[n++] = '\'';
 #endif
-
-	dest[dest_len] = 0;
+	dest[n++] = 0;
+	switch_assert(n == dest_len);
 	return dest;
 }
 
@@ -134,7 +134,7 @@ static int load_tts_commandline_config(void)
 	}
 
 	if (switch_strlen_zero(globals.command)) {
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No command set, please edit %s\n", cf);   
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No command set, please edit %s\n", cf);   
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -160,11 +160,13 @@ static switch_status_t tts_commandline_speech_open(switch_speech_handle_t *sh, c
 	info->voice_name = switch_core_strdup(sh->memory_pool, voice_name);
 	info->rate = rate;
 
+	/* Construct temporary file name with a new UUID */
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
-
 	switch_snprintf(outfile, sizeof(outfile), "%s%s.tmp.wav", SWITCH_GLOBAL_dirs.temp_dir, uuid_str);
-	info->file = outfile;
+	info->file = switch_core_strdup(sh->memory_pool, outfile);
+	
+	info->fh = (switch_file_handle_t *) switch_core_alloc(sh->memory_pool, sizeof(switch_file_handle_t));
 	
 	sh->private_info = info;
   
@@ -207,11 +209,11 @@ static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *s
 	   return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_core_file_open(&info->fh,
-	                        info->file,
-	                        0, //number_of_channels,
-	                        0, //samples_per_second,
-	                        SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_file_open(info->fh,
+							info->file,
+							0, //number_of_channels,
+							0, //samples_per_second,
+							SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file: %s\n", info->file);
 	   return SWITCH_STATUS_FALSE;
 	}
@@ -228,15 +230,15 @@ static switch_status_t tts_commandline_speech_read_tts(switch_speech_handle_t *s
 	
 	size_t my_datalen = *datalen / 2;
 	
-	if (switch_core_file_read(&info->fh, data, &my_datalen) != SWITCH_STATUS_SUCCESS) {
-	    *datalen = my_datalen * 2;
-	    return SWITCH_STATUS_FALSE;
+	if (switch_core_file_read(info->fh, data, &my_datalen) != SWITCH_STATUS_SUCCESS) {
+		*datalen = my_datalen * 2;
+		return SWITCH_STATUS_FALSE;
 	}
 	*datalen = my_datalen * 2;
 	if(datalen == 0) {
-	    return SWITCH_STATUS_BREAK;
+		return SWITCH_STATUS_BREAK;
 	} else {
-	    return SWITCH_STATUS_SUCCESS;
+		return SWITCH_STATUS_SUCCESS;
 	}
 }
 
@@ -245,9 +247,9 @@ static void tts_commandline_speech_flush_tts(switch_speech_handle_t *sh)
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	assert(info != NULL);
 	
-	switch_core_file_close(&info->fh);
+	switch_core_file_close(info->fh);
 	if (unlink(info->file) != 0) {
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Sound file [%s] delete failed\n", info->file);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Sound file [%s] delete failed\n", info->file);
 	}
 }
 
@@ -257,7 +259,7 @@ static void tts_commandline_text_param_tts(switch_speech_handle_t *sh, char *par
 	assert(info != NULL);
 
 	if (!strcasecmp(param, "voice")) {
-	    info->voice_name = switch_core_strdup(sh->memory_pool, val);
+		info->voice_name = switch_core_strdup(sh->memory_pool, val);
 	}
 }
 
