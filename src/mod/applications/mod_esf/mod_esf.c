@@ -79,8 +79,9 @@ SWITCH_STANDARD_APP(bcast_function)
 	char *mcast_port_str = "34567";
 	const char *esf_broadcast_ip = NULL, *var;
 	switch_codec_implementation_t read_impl = {0};
-    switch_core_session_get_read_impl(session, &read_impl);
 	int mcast_ttl = 1;
+
+    switch_core_session_get_read_impl(session, &read_impl);
 
 	if (!switch_strlen_zero((char *) data)) {
 		mydata = switch_core_session_strdup(session, data);
