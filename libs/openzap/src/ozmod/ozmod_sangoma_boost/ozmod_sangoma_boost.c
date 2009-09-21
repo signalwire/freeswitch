@@ -650,7 +650,24 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 	zap_set_string(zchan->caller_data.ani.digits, (char *)event->calling_number_digits);
 	zap_set_string(zchan->caller_data.dnis.digits, (char *)event->called_number_digits);
 	if (event->isup_in_rdnis_size) {
-		zap_set_string(zchan->caller_data.rdnis.digits, (char *)event->isup_in_rdnis);
+		char* p;
+
+		//Set value of rdnis.digis in case prot daemon is still using older style RDNIS
+		if (atoi((char *)event->isup_in_rdnis) > 0) {
+			zap_set_string(zchan->caller_data.rdnis.digits, (char *)event->isup_in_rdnis);
+		}
+
+		p = strstr((char*)event->isup_in_rdnis,"PRI001-ANI2-");
+		if (p!=NULL) {
+			int ani2 = 0;
+			sscanf(p, "PRI001-ANI2-%d", &ani2);
+			snprintf(zchan->caller_data.aniII, 5, "%.2d", ani2);
+		}	
+		p = strstr((char*)event->isup_in_rdnis,"RDNIS-");
+		if (p!=NULL) {
+			sscanf(p, "RDNIS-%s", &zchan->caller_data.rdnis.digits[0]);
+		}
+		
 	}
 	zchan->caller_data.screen = event->calling_number_screening_ind;
 	zchan->caller_data.pres = event->calling_number_presentation;
