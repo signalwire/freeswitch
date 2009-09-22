@@ -1765,7 +1765,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 
 	default:
 		{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type for channel %d:%d\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type %d for channel %d:%d\n",
 							  sigmsg->event_id, sigmsg->channel->span_id, sigmsg->channel->chan_id);
 		}
 		break;
