@@ -1,6 +1,14 @@
 core=`ls -rt core.*`
 
 if [ -z "$core" ] ; then
+	core=`ls -rt core`
+fi
+
+if [ -z "$core" ] ; then
+	core=`ls -rt freeswitch.core`
+fi
+
+if [ -z "$core" ] ; then
 	echo "You must be in the current directory with a core file from FreeSWITCH!"
 	exit 255
 fi
