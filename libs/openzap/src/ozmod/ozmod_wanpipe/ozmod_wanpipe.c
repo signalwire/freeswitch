@@ -285,8 +285,7 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
             }
 #endif
 
-			if (type == ZAP_CHAN_TYPE_CAS || 
-				((span->trunk_type == ZAP_TRUNK_T1 || span->trunk_type == ZAP_TRUNK_E1) && type != ZAP_CHAN_TYPE_B)) {
+			if (type == ZAP_CHAN_TYPE_CAS || type == ZAP_CHAN_TYPE_EM) {
 #ifdef LIBSANGOMA_VERSION
 				sangoma_tdm_write_rbs(chan->sockfd,&tdm_api,chan->physical_chan_id, wanpipe_swap_bits(cas_bits));
 
