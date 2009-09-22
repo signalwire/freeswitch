@@ -129,6 +129,7 @@ static void write_cdr(const char *path, const char *log_line)
 {
 	cdr_fd_t *fd = NULL;
 	unsigned int bytes_in, bytes_out;
+	int loops = 0;
 
 	if (!(fd = switch_core_hash_find(globals.fd_hash, path))) {
 		fd = switch_core_alloc(globals.pool, sizeof(*fd));
@@ -155,11 +156,15 @@ static void write_cdr(const char *path, const char *log_line)
 		do_rotate(fd);
 	}
 
-	if ((bytes_in = write(fd->fd, log_line, bytes_out)) != bytes_out) {
+	while ((bytes_in = write(fd->fd, log_line, bytes_out)) != bytes_out && ++loops < 10) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write error to file %s %d/%d\n", path, (int) bytes_in, (int) bytes_out);
+		do_rotate(fd);
+		switch_yield(250000);
 	}
-
-	fd->bytes += bytes_in;
+	
+	if (bytes_in > 0) {
+		fd->bytes += bytes_in;
+	}
 
   end:
 
