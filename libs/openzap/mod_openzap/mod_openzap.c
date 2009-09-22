@@ -499,7 +499,8 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		break;
 	default: 
 		{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unhandled type for channel %s\n", switch_channel_get_name(channel));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unhandled channel type %d for channel %s\n", tech_pvt->zchan->type,
+                    switch_channel_get_name(channel));
 		}
 		break;
 	}
@@ -1369,8 +1370,8 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 
 	default:
 		{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled type for channel %d:%d\n",
-							  sigmsg->channel->span_id, sigmsg->channel->chan_id);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type %d for channel %d:%d\n",
+							  sigmsg->event_id, sigmsg->channel->span_id, sigmsg->channel->chan_id);
 		}
 		break;
 
@@ -1576,8 +1577,8 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 
 	default:
 		{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled type for channel %d:%d\n",
-							  sigmsg->channel->span_id, sigmsg->channel->chan_id);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type %d for channel %d:%d\n",
+							  sigmsg->event_id, sigmsg->channel->span_id, sigmsg->channel->chan_id);
 		}
 		break;
 
@@ -1764,8 +1765,8 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 
 	default:
 		{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled type for channel %d:%d\n",
-							  sigmsg->channel->span_id, sigmsg->channel->chan_id);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type for channel %d:%d\n",
+							  sigmsg->event_id, sigmsg->channel->span_id, sigmsg->channel->chan_id);
 		}
 		break;
 	}
@@ -1792,8 +1793,8 @@ static ZIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 		break;
 	default: 
 		{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled type for channel %d:%d\n",
-							  sigmsg->channel->span_id, sigmsg->channel->chan_id);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled analog channel type %d for channel %d:%d\n",
+							  sigmsg->channel->type, sigmsg->channel->span_id, sigmsg->channel->chan_id);
 		}
 		break;
 	}
