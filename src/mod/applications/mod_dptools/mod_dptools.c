@@ -2022,6 +2022,11 @@ SWITCH_STANDARD_APP(record_function)
 	}
 }
 
+SWITCH_STANDARD_APP(preprocess_session_function)
+{
+	switch_ivr_preprocess_session(session, (char *)data);
+}
+
 SWITCH_STANDARD_APP(record_session_function)
 {
 	char *path = NULL;
@@ -2806,6 +2811,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "record_session", "Record Session", SESS_REC_DESC, record_session_function, "<path> [+<timeout>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "record", "Record File", "Record a file from the channels input", record_function,
 				   "<path> [<time_limit_secs>] [<silence_thresh>] [<silence_hits>]", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "preprocess", "pre-process", "pre-process", preprocess_session_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "stop_displace_session", "Stop Displace File", "Stop Displacing to a file", stop_displace_session_function, "<path>",
 				   SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "displace_session", "Displace File", DISPLACE_DESC, displace_session_function, "<path> [<flags>] [+time_limit_ms]",

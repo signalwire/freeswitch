@@ -1529,6 +1529,29 @@ SWITCH_STANDARD_API(kill_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define PREPROCESS_SYNTAX "<>"
+SWITCH_STANDARD_API(preprocess_function)
+{
+	switch_core_session_t *ksession = NULL;
+	char *mycmd = NULL;
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "-USAGE: %s\n", KILL_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!(ksession = switch_core_session_locate(cmd))) {
+		stream->write_function(stream, "-ERR No Such Channel!\n");
+	} else {
+		switch_ivr_preprocess_session(session, (char *)cmd);
+		switch_core_session_rwunlock(ksession);
+		stream->write_function(stream, "+OK\n");
+	}
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define PARK_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(park_function)
 {
@@ -3580,6 +3603,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "originate", "Originate a Call", originate_function, ORIGINATE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "tone_detect", "Start Tone Detection on a channel", tone_detect_session_function, TONE_DETECT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill Channel", kill_function, KILL_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_preprocess", "Pre-process Channel", preprocess_function, PREPROCESS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_park", "Park Channel", park_function, PARK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload ACL", reload_acl_function, "[reloadxml]");
 	switch_console_set_complete("add reloadacl reloadxml");

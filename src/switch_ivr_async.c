@@ -32,6 +32,8 @@
  */
 
 #include <switch.h>
+#include <speex/speex_preprocess.h>
+#include <speex/speex_echo.h>
 
 #ifdef SWITCH_VIDEO_IN_THREADS
 struct echo_helper {
@@ -1022,6 +1024,295 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	}
 
 	switch_channel_set_private(channel, file, bug);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+typedef struct  {
+	SpeexPreprocessState *read_st;
+	SpeexPreprocessState *write_st;
+	SpeexEchoState *read_ec;
+	SpeexEchoState *write_ec;
+	switch_byte_t read_data[2048];
+	switch_byte_t write_data[2048];
+	switch_byte_t read_out[2048];
+	switch_byte_t write_out[2048];
+	switch_mutex_t *read_mutex;
+	switch_mutex_t *write_mutex;
+	int done;
+} pp_cb_t;
+
+static switch_bool_t preprocess_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	pp_cb_t *cb = (pp_cb_t *) user_data;
+	switch_codec_implementation_t read_impl = {0};
+
+    switch_core_session_get_read_impl(session, &read_impl);
+	switch_frame_t *frame = NULL;
+	int y;
+	
+	switch (type) {
+	case SWITCH_ABC_TYPE_INIT:
+		{
+			switch_mutex_init(&cb->read_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+			switch_mutex_init(&cb->write_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+		}
+		break;
+	case SWITCH_ABC_TYPE_CLOSE:
+		{
+			if (cb->read_st) {
+				speex_preprocess_state_destroy(cb->read_st);
+			}
+
+			if (cb->write_st) {
+				speex_preprocess_state_destroy(cb->write_st);
+			}
+
+			if (cb->read_ec) {
+				speex_echo_state_destroy(cb->read_ec);
+			}
+
+			if (cb->write_ec) {
+				speex_echo_state_destroy(cb->write_ec);
+			}
+
+			switch_channel_set_private(channel, "_preprocess", NULL);
+		}
+		break;
+	case SWITCH_ABC_TYPE_READ_REPLACE:
+		{
+			if (cb->done) return SWITCH_FALSE;
+			frame = switch_core_media_bug_get_read_replace_frame(bug);
+
+			if (cb->read_st) {
+
+				if (cb->read_ec) {
+					speex_echo_cancellation(cb->read_ec, (int16_t *)frame->data, (int16_t *)cb->write_data, (int16_t *)cb->read_out);
+					memcpy(frame->data, cb->read_out, frame->datalen);
+				}
+
+				y = speex_preprocess_run(cb->read_st, frame->data);				
+			}
+
+			if (cb->write_ec) {
+				memcpy(cb->read_data, frame->data, frame->datalen);
+			}
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE_REPLACE:
+		{
+			if (cb->done) return SWITCH_FALSE;
+			frame = switch_core_media_bug_get_write_replace_frame(bug);
+
+			if (cb->write_st) {
+
+				if (cb->write_ec) {
+					speex_echo_cancellation(cb->write_ec, (int16_t *)frame->data, (int16_t *)cb->read_data, (int16_t *)cb->write_out);
+					memcpy(frame->data, cb->write_out, frame->datalen);
+				}
+				
+				y = speex_preprocess_run(cb->write_st, frame->data);
+			}
+
+			if (cb->read_ec) {
+				memcpy(cb->write_data, frame->data, frame->datalen);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_session_t *session, const char *cmds)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_media_bug_t *bug;
+	switch_status_t status;
+	time_t to = 0;
+	switch_media_bug_flag_t flags = 0;
+	switch_codec_implementation_t read_impl = {0};
+	pp_cb_t *cb;
+	int update = 0;
+	int argc;
+	char *mydata = NULL, *argv[5];
+	int i = 0;
+
+    switch_core_session_get_read_impl(session, &read_impl);
+
+	if ((cb = switch_channel_get_private(channel, "_preprocess"))) {
+		update = 1;
+	} else {
+		cb = switch_core_session_alloc(session, sizeof(*cb));		
+	}
+
+
+	if (update) {
+		if (!strcasecmp(cmds, "stop")) {
+			cb->done = 1;
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	mydata = strdup(cmds);
+	argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+	
+	for(i = 0; i < argc; i++) {
+		char *var = argv[i];
+		char *val = NULL;
+		char rw;
+		int tr;
+		int err = 1;
+		SpeexPreprocessState *st = NULL;
+		SpeexEchoState *ec;
+		switch_mutex_t *mutex = NULL;
+		int r = 0;
+
+		if (var) {
+			if ((val = strchr(var, '='))) {
+				*val++ = '\0';
+				
+				rw = *var++;
+				while(*var == '.' || *var == '_') {
+					var++;
+				}
+				
+				if (rw == 'r') {
+					if (!cb->read_st) {
+						cb->read_st = speex_preprocess_state_init(read_impl.samples_per_packet, read_impl.samples_per_second);
+						flags |= SMBF_READ_REPLACE;
+					}
+					st = cb->read_st;
+					ec = cb->read_ec;
+					mutex = cb->read_mutex;
+				} else if (rw == 'w') {
+					if (!cb->write_st) {
+						cb->write_st = speex_preprocess_state_init(read_impl.samples_per_packet, read_impl.samples_per_second);
+						flags |= SMBF_WRITE_REPLACE;
+					}
+					st = cb->write_st;
+					ec = cb->write_ec;
+					mutex = cb->write_mutex;
+				}
+
+				if (mutex) switch_mutex_lock(mutex);
+				
+				if (st) {
+					err = 0;
+					tr = switch_true(val);
+					if (!strcasecmp(var, "agc")) {
+						int l = read_impl.samples_per_second;
+						int tmp = atoi(val);
+
+						if (!tr) {
+							l = tmp;
+						}
+
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting AGC on %c to %d\n", rw, tr);
+						speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_AGC, &tr);
+						speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_AGC_LEVEL, &l);
+
+					} else if (!strcasecmp(var, "noise_supress")) {
+						int db = atoi(val);
+						if (db < 0) {
+							r = speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_NOISE_SUPPRESS, &db);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting NOISE_SUPRESS on %c to %d [%d]\n", rw, db, r);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Syntax error noise_supress should be in -db\n");
+						}
+					} else if (!strcasecmp(var, "echo_cancel")) {
+						int tail = 1024;
+						int tmp = atoi(val);
+
+						if (!tr && tmp > 0) {
+							tail = tmp;
+						} else if (!tr) {
+							if (ec) {
+								if (rw == 'r') {
+									speex_echo_state_destroy(cb->read_ec);
+									cb->read_ec = NULL;
+								} else {
+									speex_echo_state_destroy(cb->write_ec);
+									cb->write_ec = NULL;
+								}
+							}
+							
+							ec = NULL;
+						}
+						
+						if (!ec) {
+							if (rw == 'r') {
+								ec = cb->read_ec = speex_echo_state_init(read_impl.samples_per_packet, tail);
+								speex_echo_ctl(ec, SPEEX_ECHO_SET_SAMPLING_RATE, &read_impl.samples_per_second);
+								flags |= SMBF_WRITE_REPLACE;
+							} else {
+								ec = cb->write_ec = speex_echo_state_init(read_impl.samples_per_packet, tail);
+								speex_echo_ctl(ec, SPEEX_ECHO_SET_SAMPLING_RATE, &read_impl.samples_per_second);
+								flags |= SMBF_READ_REPLACE;
+							}
+							speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_ECHO_STATE, ec);
+						}
+
+
+					} else if (!strcasecmp(var, "echo_supress")) {
+						int db = atoi(val);
+						if (db < 0) {
+							speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_ECHO_SUPPRESS, &db);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting ECHO_SUPRESS on %c to %d [%d]\n", rw, db, r);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Syntax error echo_supress should be in -db\n");
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Warning unknown parameter [%s] \n", var);
+					}
+				}
+			}
+
+			if (mutex) switch_mutex_unlock(mutex);
+
+			if (err) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Syntax error parsing preprossor commands\n");
+			}
+
+		} else {
+			break;
+		}
+	}
+
+
+	switch_safe_free(mydata);
+
+	if (update) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+
+	if ((status = switch_core_media_bug_add(session, preprocess_callback, cb, to, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error adding media bug.\n");
+		if (cb->read_st) {
+			speex_preprocess_state_destroy(cb->read_st);
+		}
+		
+		if (cb->write_st) {
+			speex_preprocess_state_destroy(cb->write_st);
+		}
+
+		if (cb->read_ec) {
+			speex_echo_state_destroy(cb->read_ec);
+		}
+		
+		if (cb->write_ec) {
+			speex_echo_state_destroy(cb->write_ec);
+		}
+		
+		return status;
+	}
+
+	switch_channel_set_private(channel, "_preprocess", cb);
 
 	return SWITCH_STATUS_SUCCESS;
 }
