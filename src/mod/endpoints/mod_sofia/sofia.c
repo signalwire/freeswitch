@@ -2987,6 +2987,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			char *invite_contact;
 			const char *br;
 			
+			if (!p_contact) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing contact header in redirect request\n");
+				return;
+			}
+
 			if ((br = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 				switch_xml_t root = NULL, domain = NULL;
 				switch_core_session_t *a_session;
