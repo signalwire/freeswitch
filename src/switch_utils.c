@@ -1661,6 +1661,62 @@ SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *sea
 	return dest;
 }
 
+SWITCH_DECLARE(char *) switch_util_quote_shell_arg(const char *string)
+{
+	size_t string_len = strlen(string);
+	size_t i;
+	size_t n = 0;
+	size_t dest_len = string_len + 1; /* +1 for the opening quote  */
+	char *dest, *tmp;
+
+	dest = (char *) malloc(sizeof(char) * dest_len);
+	switch_assert(dest);
+
+#ifdef WIN32
+	dest[n++] = '"';
+#else
+	dest[n++] = '\'';
+#endif
+
+	for (i = 0; i < string_len; i++) {
+		switch (string[i]) {
+#ifdef WIN32
+		case '"':
+		case '%':
+			dest[n++] = ' ';
+			break;
+#else
+		case '\'':
+			/* We replace ' by '\'' */
+			dest_len+=3;
+			tmp = (char *) realloc(dest, sizeof(char) * (dest_len));
+			switch_assert(tmp);
+			dest = tmp;
+			dest[n++] = '\'';
+			dest[n++] = '\\';
+			dest[n++] = '\'';
+			dest[n++] = '\'';
+			break;
+#endif
+		default:
+			dest[n++] = string[i];
+		}
+  }
+  
+	dest_len += 2; /* +2 for the closing quote and the null character */
+	tmp = (char *) realloc(dest, sizeof(char) * (dest_len));
+	switch_assert(tmp);
+	dest = tmp;
+#ifdef WIN32
+	dest[n++] = '"';
+#else
+	dest[n++] = '\'';
+#endif
+	dest[n++] = 0;
+	switch_assert(n == dest_len);
+	return dest;
+}
+
 SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 {
 	int nsds = 0;

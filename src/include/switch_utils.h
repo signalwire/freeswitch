@@ -545,6 +545,13 @@ SWITCH_DECLARE(const char *) switch_cut_path(const char *in);
 SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *search, const char *replace);
 SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len);
 
+/*!
+  \brief Quote shell argument
+  \param string the string to quote (example: a ' b"' c)
+  \return the quoted string (gives: 'a '\'' b"'\'' c' for unices, "a ' b ' c" for MS Windows)
+*/
+SWITCH_DECLARE(char *) switch_util_quote_shell_arg(const char *string);
+
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK)
 SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len);
 SWITCH_DECLARE(char *) switch_url_decode(char *s);

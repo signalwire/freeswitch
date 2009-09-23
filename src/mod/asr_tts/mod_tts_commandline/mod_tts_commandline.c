@@ -32,8 +32,6 @@
 #include <unistd.h>
 #include <switch.h>
 
-SWITCH_DECLARE(char *) switch_escape_shell_arg(char *string);
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_tts_commandline_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_tts_commandline_shutdown);
 SWITCH_MODULE_DEFINITION(mod_tts_commandline, mod_tts_commandline_load, mod_tts_commandline_shutdown, NULL);
@@ -55,62 +53,6 @@ struct tts_commandline_data {
 
 typedef struct tts_commandline_data tts_commandline_t;
 
-
-SWITCH_DECLARE(char *) switch_quote_shell_arg(char *string)
-{
-	size_t string_len = strlen(string);
-	size_t i;
-	size_t n = 0;
-	size_t dest_len = string_len + 1; /* +1 for the opening quote  */
-	char *dest, *tmp;
-
-	dest = (char *) malloc(sizeof(char) * dest_len);
-	switch_assert(dest);
-
-#ifdef WIN32
-	dest[n++] = '"';
-#else
-	dest[n++] = '\'';
-#endif
-
-	for (i = 0; i < string_len; i++) {
-		switch (string[i]) {
-#ifdef WIN32
-		case '"':
-		case '%':
-			dest[n++] = ' ';
-			break;
-#else
-		case '\'':
-			/* We replace ' by '\'' */
-			dest_len+=3;
-			tmp = (char *) realloc(dest, sizeof(char) * (dest_len));
-			switch_assert(tmp);
-			dest = tmp;
-			dest[n++] = '\'';
-			dest[n++] = '\\';
-			dest[n++] = '\'';
-			dest[n++] = '\'';
-			break;
-#endif
-		default:
-			dest[n++] = string[i];
-		}
-  }
-  
-	dest_len += 2; /* +2 for the closing quote and the null character */
-	tmp = (char *) realloc(dest, sizeof(char) * (dest_len));
-	switch_assert(tmp);
-	dest = tmp;
-#ifdef WIN32
-	dest[n++] = '"';
-#else
-	dest[n++] = '\'';
-#endif
-	dest[n++] = 0;
-	switch_assert(n == dest_len);
-	return dest;
-}
 
 static int load_tts_commandline_config(void)
 {
@@ -190,16 +132,16 @@ static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *s
 	
 	message = switch_core_strdup(sh->memory_pool, globals.command);
 	
-	tmp = switch_quote_shell_arg(text);
+	tmp = switch_util_quote_shell_arg(text);
 	message = switch_string_replace(message, "${text}", tmp);
 	
-	tmp = switch_quote_shell_arg(info->voice_name);
+	tmp = switch_util_quote_shell_arg(info->voice_name);
 	message = switch_string_replace(message, "${voice}", tmp);
 	
 	rate = switch_core_sprintf(sh->memory_pool, "%d", info->rate);
 	message = switch_string_replace(message, "${rate}", rate);
 	
-	tmp = switch_quote_shell_arg(info->file);
+	tmp = switch_util_quote_shell_arg(info->file);
 	message = switch_string_replace(message, "${file}", tmp);
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Executing: %s\n", message);
