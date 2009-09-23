@@ -1,17 +1,23 @@
-core=`ls -rt core.*`
+core=`ls -rt core.* 2> /dev/null`
 
 if [ -z "$core" ] ; then
-	core=`ls -rt core`
+	core=`ls -rt core 2> /dev/null`
 fi
 
 if [ -z "$core" ] ; then
-	core=`ls -rt freeswitch.core`
+	core=`ls -rt freeswitch.core 2> /dev/null`
 fi
 
 if [ -z "$core" ] ; then
 	echo "You must be in the current directory with a core file from FreeSWITCH!"
 	exit 255
 fi
+
+if [ -z "which gdb" ] ; then
+  echo "Unable to locate gdb, is it installed?"
+  exit 255
+fi
+
 
 line="--------------------------------------------------------------------------------"
 
@@ -55,7 +61,7 @@ svn stat | grep -v \? >> $post_file
 echo "GDB BACKTRACE:" >> $post_file
 echo $line >> $post_file
 
-gdb /usr/local/freeswitch/bin/freeswitch `ls -rt core.* | tail -n1` \
+gdb /usr/local/freeswitch/bin/freeswitch `echo $core | tail -n1` \
         --eval-command="echo \n\n" \
         --eval-command="set pagination off" \
         --eval-command="echo Stack Trace\n" \
@@ -85,7 +91,3 @@ pb=`ls [0-9]*`
 mv $post_file $tmpdir
 echo "Finished."
 echo "Please report http://pastebin.freeswitch.org/$pb to the developers."
-
-
-
-
