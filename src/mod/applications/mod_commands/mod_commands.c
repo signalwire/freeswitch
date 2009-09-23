@@ -1533,21 +1533,33 @@ SWITCH_STANDARD_API(kill_function)
 SWITCH_STANDARD_API(preprocess_function)
 {
 	switch_core_session_t *ksession = NULL;
-	char *mycmd = NULL;
+	char *mycmd = NULL, *argv[3] = { 0 };
+	int argc = 0;
 
-	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "-USAGE: %s\n", KILL_SYNTAX);
-		return SWITCH_STATUS_SUCCESS;
+	if (switch_strlen_zero(cmd) || !(mycmd = strdup(cmd))) {
+		goto usage;
 	}
 
-	if (!(ksession = switch_core_session_locate(cmd))) {
+	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 2) {
+		goto usage;
+	}
+
+	if (!(ksession = switch_core_session_locate(argv[0]))) {
 		stream->write_function(stream, "-ERR No Such Channel!\n");
+		goto done;
 	} else {
-		switch_ivr_preprocess_session(session, (char *)cmd);
+		switch_ivr_preprocess_session(ksession, (char *)argv[1]);
 		switch_core_session_rwunlock(ksession);
 		stream->write_function(stream, "+OK\n");
+		goto done;
 	}
 
+ usage:
+	stream->write_function(stream, "-USAGE: %s\n", PREPROCESS_SYNTAX);
+
+ done:
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
