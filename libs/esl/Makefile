@@ -48,6 +48,7 @@ clean:
 	$(MAKE) -C python clean
 	$(MAKE) -C ruby clean
 	$(MAKE) -C java clean
+	$(MAKE) -C managed clean
 
 reswig:	swigclean
 	$(MAKE) -C perl reswig
@@ -56,6 +57,7 @@ reswig:	swigclean
 	$(MAKE) -C python reswig
 	$(MAKE) -C ruby reswig
 	$(MAKE) -C java reswig
+	$(MAKE) -C managed reswig
 
 swigclean: clean
 	$(MAKE) -C perl swigclean
@@ -64,6 +66,7 @@ swigclean: clean
 	$(MAKE) -C python swigclean
 	$(MAKE) -C ruby swigclean
 	$(MAKE) -C java swigclean
+	$(MAKE) -C managed swigclean
 
 perlmod: $(MYLIB)
 	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C perl
@@ -83,7 +86,10 @@ rubymod: $(MYLIB)
 javamod: $(MYLIB)
 	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C java
 
+managedmod: $(MYLIB)
+	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C managed
+
 phpmod-install: phpmod
 	$(MAKE) -C php install
 
-everymod: perlmod phpmod luamod pymod rubymod javamod
+everymod: perlmod phpmod luamod pymod rubymod javamod managedmod
