@@ -1552,8 +1552,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			to_host = to->a_url->url_host;
 		}
 
-		if (profile->reg_db_domain) {
-			to_host = profile->reg_db_domain;
+		if (profile->sub_domain) {
+			to_host = profile->sub_domain;
 		}
 
 		if (sip && sip->sip_from) {

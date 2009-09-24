@@ -1893,6 +1893,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						profile->local_network = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "force-register-domain")) {
 						profile->reg_domain = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "force-subscription-domain")) {
+						profile->sub_domain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "force-register-db-domain")) {
 						profile->reg_db_domain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "hold-music")) {
