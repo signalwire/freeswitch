@@ -63,6 +63,7 @@ struct local_stream_context {
 
 typedef struct local_stream_context local_stream_context_t;
 
+#define MAX_CHIME 100
 struct local_stream_source {
 	char *name;
 	char *location;
@@ -81,6 +82,14 @@ struct local_stream_source {
 	switch_thread_rwlock_t *rwlock;
 	int ready;
 	int stopped;
+	int chime_freq;
+	int chime_total;
+	int chime_max;
+	int chime_cur;
+	char *chime_list[MAX_CHIME];
+	int32_t chime_counter;
+	int32_t chime_max_counter;
+	switch_file_handle_t chime_fh;
 };
 
 typedef struct local_stream_source local_stream_source_t;
@@ -202,16 +211,65 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 			while (RUNNING) {
 				int is_open;
+				switch_file_handle_t *use_fh = &fh;
+
 				switch_core_timer_next(&timer);
 				olen = source->samples;
-				is_open = switch_test_flag((&fh), SWITCH_FILE_OPEN);
 
-				if (is_open) {
-					if (switch_core_file_read(&fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
-						switch_core_file_close(&fh);
+				if (source->chime_total) {
+
+					if (source->chime_counter > 0) {
+						source->chime_counter -= source->samples;
+					}
+					
+					if (!switch_test_flag((&source->chime_fh), SWITCH_FILE_OPEN) && source->chime_counter <= 0) {
+						char *val;
+						
+						val = source->chime_list[source->chime_cur++];
+
+						if (source->chime_cur >= source->chime_total) {
+							source->chime_cur = 0;
+						}
+
+						if (switch_core_file_open(&source->chime_fh,
+												  (char *) val,
+												  source->channels, 
+												  source->rate, 
+												  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s\n", val);
+						}
 					}
 
-					switch_buffer_write(audio_buffer, abuf, olen * 2);
+					if (switch_test_flag((&source->chime_fh), SWITCH_FILE_OPEN)) {
+						use_fh = &source->chime_fh;
+					}
+				}
+
+			retry:
+
+				is_open = switch_test_flag(use_fh, SWITCH_FILE_OPEN);
+
+				if (is_open) {
+					if (switch_core_file_read(use_fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
+						switch_core_file_close(use_fh);
+						if (use_fh == &source->chime_fh) {
+							source->chime_counter = source->rate * source->chime_freq;
+						}
+						is_open = 0;
+					} else {
+						if (use_fh == &source->chime_fh && source->chime_max) {
+							source->chime_max_counter += source->samples;
+							if (source->chime_max_counter >= source->chime_max) {
+								source->chime_max_counter = 0;
+								switch_core_file_close(use_fh);
+								source->chime_counter = source->rate * source->chime_freq;
+								use_fh = &fh;
+								goto retry;
+							}
+						}
+
+						switch_buffer_write(audio_buffer, abuf, olen * 2);
+					}
 				}
 
 				used = switch_buffer_inuse(audio_buffer);
@@ -258,6 +316,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 	if (switch_test_flag((&fh), SWITCH_FILE_OPEN)) {
 		switch_core_file_close(&fh);
+	}
+
+	if (switch_test_flag((&source->chime_fh), SWITCH_FILE_OPEN)) {
+		switch_core_file_close(&source->chime_fh);
 	}
 
 	source->ready = 0;
@@ -462,6 +524,7 @@ static void launch_threads(void)
 		source->timer_name = "soft";
 		source->prebuf = DEFAULT_PREBUFFER_SIZE;
 		source->stopped = 0;
+		source->chime_freq = 30;
 
 		for (param = switch_xml_child(directory, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -484,6 +547,19 @@ static void launch_threads(void)
 				if (tmp == 1 || tmp == 2) {
 					source->channels = (uint8_t) tmp;
 				}
+			} else if (!strcasecmp(var, "chime-freq")) {
+				int tmp = atoi(val);
+				if (tmp > 1) {
+					source->chime_freq = tmp;
+				}
+			} else if (!strcasecmp(var, "chime-max")) {
+				int tmp = atoi(val);
+				if (tmp > 1) {
+					source->chime_max = tmp;
+				}
+			} else if (!strcasecmp(var, "chime-list")) {
+				char *list_dup = switch_core_strdup(source->pool, val);
+				source->chime_total = switch_separate_string(list_dup, ',', source->chime_list, (sizeof(source->chime_list) / sizeof(source->chime_list[0])));
 			} else if (!strcasecmp(var, "interval")) {
 				int tmp = atoi(val);
 				if (SWITCH_ACCEPTABLE_INTERVAL(tmp)) {
@@ -495,6 +571,14 @@ static void launch_threads(void)
 			} else if (!strcasecmp(var, "timer-name")) {
 				source->timer_name = switch_core_strdup(source->pool, val);
 			}
+		}
+
+		if (source->chime_max) {
+			source->chime_max *= source->rate;
+		}
+
+		if (source->chime_total) {
+			source->chime_counter = source->rate * source->chime_freq;
 		}
 
 		source->samples = switch_samples_per_packet(source->rate, source->interval);

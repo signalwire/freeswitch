@@ -6,6 +6,12 @@
     <param name="channels" value="1"/>
     <param name="interval" value="20"/>
     <param name="timer-name" value="soft"/>
+    <!-- list of short files to break in with every so often -->
+    <!--<param name="chime-list" value="file1.wav,file2.wav"/>-->
+    <!-- frequency of break-in (seconds)-->
+    <!--<param name="chime-freq" value="30"/>-->
+    <!-- limit to how many seconds the file will play -->
+    <!--<param name="chime-max" value="500"/>-->
   </directory>
 
   <directory name="moh/8000" path="$${base_dir}/sounds/music/8000">
