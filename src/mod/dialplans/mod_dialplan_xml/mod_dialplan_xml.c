@@ -154,7 +154,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		}
 
 		if (time_match && xweek) {
-			int test = (int) (tm.tm_yday + 1 / 7);
+			int test = (int) (tm.tm_yday / 7 + 1);
 			time_match = switch_number_cmp(xweek, test);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
 							  "Dialplan: week of year[%d] =~ %s (%s)\n", test, xweek, time_match ? "PASS" : "FAIL");
