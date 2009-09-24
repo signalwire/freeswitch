@@ -182,7 +182,7 @@ TELETONE_API(int) teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 {
 	int sample, limit = 0, j, x = 0;
 	float v1, famp;
-	float eng_sum = 0, eng_all[TELETONE_MAX_TONES];
+	float eng_sum = 0, eng_all[TELETONE_MAX_TONES] = {0.0};
 	int gtest = 0, see_hit = 0;
 
 	for (sample = 0;  sample >= 0 && sample < samples; sample = limit) {
