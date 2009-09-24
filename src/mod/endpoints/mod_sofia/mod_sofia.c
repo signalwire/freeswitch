@@ -1033,6 +1033,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	char* extra_headers;
 
 	if (switch_channel_down(channel) || !tech_pvt || sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		status = SWITCH_STATUS_FALSE;
@@ -1365,6 +1366,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				}
 			}
 
+			extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
+
 			if (code == 407 && !msg->numeric_arg) {
 				const char *to_uri = switch_channel_get_variable(channel, "sip_to_uri");
 				const char *to_host = reason;
@@ -1393,6 +1396,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Overlap Dial with %d %s\n", code, reason);
 					nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
 								SIPTAG_SUPPORTED_STR(NULL), SIPTAG_ACCEPT_STR(NULL),
+								TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 								TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), TAG_END());
 					
 					sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
@@ -1421,9 +1425,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 									SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 									SOATAG_REUSE_REJECTED(1),
-									SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+									SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
+									TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+									TAG_END());
 					} else {
-						nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact), TAG_END());
+						nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact), 
+									TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+									TAG_END());
 					}
 				}
 			}
