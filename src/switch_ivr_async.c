@@ -1048,10 +1048,10 @@ static switch_bool_t preprocess_callback(switch_media_bug_t *bug, void *user_dat
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	pp_cb_t *cb = (pp_cb_t *) user_data;
 	switch_codec_implementation_t read_impl = {0};
-
-    switch_core_session_get_read_impl(session, &read_impl);
 	switch_frame_t *frame = NULL;
 	int y;
+
+    switch_core_session_get_read_impl(session, &read_impl);
 	
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
