@@ -194,7 +194,8 @@ typedef enum {
 	SBF_EXEC_BLEG = (1 << 3),
 	SBF_EXEC_OPPOSITE = (1 << 4),
 	SBF_EXEC_SAME = (1 << 5),
-	SBF_ONCE = (1 << 6)
+	SBF_ONCE = (1 << 6),
+	SBF_EXEC_INLINE = (1 << 7)
 } switch_bind_flag_enum_t;
 typedef uint32_t switch_bind_flag_t;
 
@@ -318,7 +319,8 @@ typedef enum {
 	SMF_FORCE = (1 << 3),
 	SMF_LOOP = (1 << 4),
 	SMF_HOLD_BLEG = (1 << 5),
-	SMF_IMMEDIATE = (1 << 6)
+	SMF_IMMEDIATE = (1 << 6),
+	SMF_EXEC_INLINE = (1 << 7)
 } switch_media_flag_enum_t;
 typedef uint32_t switch_media_flag_t;
 

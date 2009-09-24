@@ -198,7 +198,7 @@ SWITCH_STANDARD_APP(dtmf_unbind_function)
 
 }
 
-#define BIND_SYNTAX "<key> [a|b|ab] [a|b|o|s|1] <app>"
+#define BIND_SYNTAX "<key> [a|b|ab] [a|b|o|s|i|1] <app>"
 SWITCH_STANDARD_APP(dtmf_bind_function)
 {
 	char *argv[4] = { 0 };
@@ -240,6 +240,10 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 			} else {
 				bind_flags |= SBF_EXEC_ALEG;
 			}
+		}
+
+		if (strchr(argv[2], 'i')) {
+			bind_flags |= SBF_EXEC_INLINE;
 		}
 
 		if (strchr(argv[2], 'o')) {

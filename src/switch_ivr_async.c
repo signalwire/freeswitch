@@ -2031,6 +2031,8 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 					} else {
 						flags |= SMF_ECHO_ALEG;
 					}
+				} else if ((md->sr[direction].map[dval].bind_flags & SBF_EXEC_INLINE)) {
+					flags |= SMF_EXEC_INLINE;
 				} else if ((md->sr[direction].map[dval].bind_flags & SBF_EXEC_ALEG)) {
 					flags |= SMF_ECHO_ALEG;
 				} else if ((md->sr[direction].map[dval].bind_flags & SBF_EXEC_BLEG)) {
@@ -2684,7 +2686,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
 			}
 
-			switch_core_session_queue_private_event(other_session, &event);
+			if ((flags & SMF_EXEC_INLINE)) {
+				switch_core_session_execute_application(other_session, app, path);
+			} else {
+				switch_core_session_queue_private_event(other_session, &event);
+			}
 		}
 
 		switch_core_session_rwunlock(other_session);
