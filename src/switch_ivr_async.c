@@ -1938,7 +1938,13 @@ static void *SWITCH_THREAD_FUNC bcast_thread(switch_thread_t *thread, void *obj)
 {
 	bch_t *bch = (bch_t *) obj;
 
+	if (!bch->session) {
+		return NULL;
+	}
+
+	switch_core_session_read_lock(bch->session);
 	switch_ivr_broadcast(switch_core_session_get_uuid(bch->session), bch->app, bch->flags);
+	switch_core_session_rwunlock(bch->session);
 
 	return NULL;
 
@@ -2031,8 +2037,6 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 					} else {
 						flags |= SMF_ECHO_ALEG;
 					}
-				} else if ((md->sr[direction].map[dval].bind_flags & SBF_EXEC_INLINE)) {
-					flags |= SMF_EXEC_INLINE;
 				} else if ((md->sr[direction].map[dval].bind_flags & SBF_EXEC_ALEG)) {
 					flags |= SMF_ECHO_ALEG;
 				} else if ((md->sr[direction].map[dval].bind_flags & SBF_EXEC_BLEG)) {
@@ -2041,6 +2045,10 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 					flags |= SMF_ECHO_ALEG;
 				}
 
+				if ((md->sr[direction].map[dval].bind_flags & SBF_EXEC_INLINE)) {
+					flags |= SMF_EXEC_INLINE;
+				}
+				
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Processing meta digit '%c' [%s]\n",
 								  switch_channel_get_name(channel), dtmf->digit, md->sr[direction].map[dval].app);
 
@@ -2673,22 +2681,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 
 	if ((flags & SMF_ECHO_BLEG) && (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 		&& (other_session = switch_core_session_locate(other_uuid))) {
-		if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", path);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-lock", "true");
-			if ((flags & SMF_LOOP)) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
-			}
-			if ((flags & SMF_HOLD_BLEG)) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
-			}
+		if ((flags & SMF_EXEC_INLINE)) {
+			switch_core_session_execute_application(other_session, app, path);
+			nomedia = 0;
+		} else {
+			if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", path);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-lock", "true");
+				if ((flags & SMF_LOOP)) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
+				}
 
-			if ((flags & SMF_EXEC_INLINE)) {
-				switch_core_session_execute_application(other_session, app, path);
-			} else {
+				if ((flags & SMF_HOLD_BLEG)) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
+				}
+				
 				switch_core_session_queue_private_event(other_session, &event);
 			}
 		}
@@ -2702,21 +2712,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 		nomedia = 0;
 	}
 
-	if ((flags & SMF_ECHO_ALEG)) {
-		if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", path);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-lock", "true");
-			if ((flags & SMF_LOOP)) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
-			}
-			if ((flags & SMF_HOLD_BLEG)) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
-			}
 
-			switch_core_session_queue_private_event(session, &event);
+	if ((flags & SMF_ECHO_ALEG)) {
+		if ((flags & SMF_EXEC_INLINE)) {
+			switch_core_session_execute_application(session, app, path);
+			nomedia = 0;
+		} else {
+			if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", path);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-lock", "true");
+				if ((flags & SMF_LOOP)) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
+				}
+				if ((flags & SMF_HOLD_BLEG)) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
+				}
+			}
 		}
 		master = session;
 	}
