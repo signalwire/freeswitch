@@ -3289,6 +3289,76 @@ done:
 	switch_safe_free(dup);
 	return SWITCH_STATUS_SUCCESS;
 }
+#define PREFS_SYNTAX "[profile/]<user>@<domain>[|[name_path|greeting_path|password]]"
+SWITCH_STANDARD_API(prefs_api_function)
+{
+    char *dup = NULL;
+    const char *how = "greeting_path";
+    vm_profile_t *profile = NULL;
+    char *id, *domain, *p, *profilename = NULL;
+
+    if (switch_strlen_zero(cmd)) {
+        stream->write_function(stream, "%d", 0);
+        goto done;
+    }
+
+    id = dup = strdup(cmd);
+
+    if ((p = strchr(dup, '/'))) {
+        *p++ = '\0';
+        id = p;
+        profilename = dup;
+    }
+
+    if (!strncasecmp(id, "sip:", 4)) {
+        id += 4;
+    }
+
+    if (switch_strlen_zero(id)) {
+        stream->write_function(stream, "%d", 0);
+        goto done;
+    }
+
+    if ((domain = strchr(id, '@'))) {
+        *domain++ = '\0';
+        if ((p = strchr(domain, '|'))) {
+            *p++ = '\0';
+            how = p;
+        }
+
+        if (!switch_strlen_zero(profilename) && !(profile = get_profile(profilename))) {
+            stream->write_function(stream, "-ERR No such profile\n");
+            goto done;
+        }
+        if (!(profile = get_profile("default"))) {
+            stream->write_function(stream, "-ERR profile 'default' doesn't exist\n");
+            goto done;
+        }
+    } else {
+        stream->write_function(stream, "-ERR No domain specified\n");
+        goto done;
+
+    }
+    char sql[256];
+    prefs_callback_t cbt = {{0}};
+
+    switch_snprintf(sql, sizeof(sql), "select * from voicemail_prefs where username='%s' and domain='%s'", id, domain);
+    vm_execute_sql_callback(profile, profile->mutex, sql, prefs_callback, &cbt);
+
+    if (!strcasecmp(how, "greeting_path")) {
+        stream->write_function(stream, "%s", cbt.greeting_path);
+    } else if (!strcasecmp(how, "name_path")) {
+        stream->write_function(stream, "%s", cbt.name_path);
+    } else if (!strcasecmp(how, "password")) {
+        stream->write_function(stream, "%s", cbt.password);
+    } else {
+        stream->write_function(stream, "%s:%s:%s", cbt.greeting_path, cbt.name_path, cbt.password);
+    } 
+    profile_rwunlock(profile);
+done:
+    switch_safe_free(dup);
+    return SWITCH_STATUS_SUCCESS;
+}
 
 #define parse_profile() {\
 		total_new_messages = total_saved_messages = 0;					\
@@ -4012,7 +4082,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 	SWITCH_ADD_API(commands_api_interface, "voicemail", "voicemail", voicemail_api_function, VOICEMAIL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "voicemail_inject", "voicemail_inject", voicemail_inject_api_function, VM_INJECT_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_boxcount", "vm_boxcount", boxcount_api_function, BOXCOUNT_SYNTAX);
-
+	SWITCH_ADD_API(commands_api_interface, "vm_prefs", "vm_prefs", prefs_api_function, PREFS_SYNTAX);
 
 	return SWITCH_STATUS_SUCCESS;
 }
