@@ -63,6 +63,7 @@ opt/freeswitch/mod/mod_fsv.so*
 opt/freeswitch/mod/mod_tone_stream.so*
 opt/freeswitch/mod/mod_fax.so*
 opt/freeswitch/mod/mod_loopback.so*
+opt/freeswitch/mod/mod_tts_commandline.so*
 opt/freeswitch/conf/vars.xml
 opt/freeswitch/conf/mime.types
 opt/freeswitch/conf/web-vm.tpl
@@ -158,3 +159,4 @@ opt/freeswitch/conf/autoload_configs/unicall.conf.xml
 opt/freeswitch/conf/autoload_configs/python.conf.xml
 opt/freeswitch/conf/autoload_configs/cidlookup.conf.xml
 opt/freeswitch/conf/autoload_configs/nibblebill.conf.xml
+opt/freeswitch/conf/autoload_configs/tts_commandline.conf.xml
