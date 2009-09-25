@@ -761,16 +761,16 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 						return SWITCH_STATUS_GENERR;
 					}
 					
-					if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING) && tech_pvt->check_frames++ < MAX_CODEC_CHECK_FRAMES) {
+					if ((tech_pvt->read_frame.datalen % 10) == 0 &&
+						sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING) && tech_pvt->check_frames++ < MAX_CODEC_CHECK_FRAMES) {
 						if (!tech_pvt->read_impl.encoded_bytes_per_packet) {
 							tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
 							goto skip;
 						}
-
+						
 						if (tech_pvt->last_ts && tech_pvt->read_frame.datalen != tech_pvt->read_impl.encoded_bytes_per_packet) {
 							switch_size_t codec_ms = (int)(tech_pvt->read_frame.timestamp - 
 														   tech_pvt->last_ts) / (tech_pvt->read_impl.samples_per_second / 1000);
-
 							if ((codec_ms % 10) != 0) {
 								tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
 								goto skip;
@@ -871,6 +871,9 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 							tech_pvt->mismatch_count = 0;
 						}
 						tech_pvt->last_ts = tech_pvt->read_frame.timestamp;
+					} else {
+						tech_pvt->mismatch_count = 0;
+						tech_pvt->last_ts = 0;
 					}
 				skip:
 					
