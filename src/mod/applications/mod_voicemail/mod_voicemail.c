@@ -2826,6 +2826,11 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_event_t *vars = NULL;
 	const char *vm_cc = NULL, *vtmp, *vm_ext = NULL;
 	int disk_quota = 0;
+	switch_bool_t skip_greeting = switch_true(switch_channel_get_variable(channel, "skip_greeting"));
+	switch_bool_t skip_instructions = switch_true(switch_channel_get_variable(channel, "skip_instructions"));
+
+	switch_channel_set_variable(channel, "skip_greeting", NULL);
+	switch_channel_set_variable(channel, "skip_instructions", NULL);
 	
 	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
 		caller_id_name = caller_profile->caller_id_name;
@@ -2949,70 +2954,76 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		greet_path = cbt.greeting_path;
 	}
 
-  greet:
-	memset(buf, 0, sizeof(buf));
-	args.input_callback = cancel_on_dtmf;
-	args.buf = buf;
-	args.buflen = sizeof(buf);
-
-	switch_ivr_sleep(session, 100, SWITCH_TRUE, NULL);
-
-	if (!switch_strlen_zero(greet_path)) {
+greet:
+	if (!skip_greeting) {
 		memset(buf, 0, sizeof(buf));
-		TRY_CODE(switch_ivr_play_file(session, NULL, greet_path, &args));
-	} else {
-		if (!switch_strlen_zero(cbt.name_path)) {
+		args.input_callback = cancel_on_dtmf;
+		args.buf = buf;
+		args.buflen = sizeof(buf);
+
+		switch_ivr_sleep(session, 100, SWITCH_TRUE, NULL);
+
+		if (!switch_strlen_zero(greet_path)) {
 			memset(buf, 0, sizeof(buf));
-			TRY_CODE(switch_ivr_play_file(session, NULL, cbt.name_path, &args));
-		}
-		if (*buf == '\0') {
-			if (!read_id) {
-				if (!(read_id = switch_channel_get_variable(channel, "voicemail_alternate_greet_id"))) {
-					read_id = id;
-				}
+			TRY_CODE(switch_ivr_play_file(session, NULL, greet_path, &args));
+		} else {
+			if (!switch_strlen_zero(cbt.name_path)) {
+				memset(buf, 0, sizeof(buf));
+				TRY_CODE(switch_ivr_play_file(session, NULL, cbt.name_path, &args));
 			}
-			memset(buf, 0, sizeof(buf));
-			TRY_CODE(switch_ivr_phrase_macro(session, VM_PLAY_GREETING_MACRO, read_id, NULL, &args));
+			if (*buf == '\0') {
+				if (!read_id) {
+					if (!(read_id = switch_channel_get_variable(channel, "voicemail_alternate_greet_id"))) {
+						read_id = id;
+					}
+				}
+				memset(buf, 0, sizeof(buf));
+				TRY_CODE(switch_ivr_phrase_macro(session, VM_PLAY_GREETING_MACRO, read_id, NULL, &args));
+			}
+		}
+
+        if (*buf != '\0') {
+greet_key_press:
+            if (switch_stristr(buf, profile->login_keys)) {
+                voicemail_check_main(session, profile, domain_name, id, 0);
+            } else if (!strcasecmp(buf, profile->operator_key) && !switch_strlen_zero(profile->operator_key)) {
+                int argc;
+                char *argv[4];
+                char *mycmd;
+
+                if (!switch_strlen_zero(profile->operator_ext) && (mycmd = switch_core_session_strdup(session, profile->operator_ext))) {
+                    argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+                    if (argc >= 1 && argc <= 4) {
+                        switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
+                        /* the application still runs after we leave it so we need to make sure that we don't do anything evil */
+                        send_mail = 0;
+                        goto end;
+                    }
+                }
+            } else if (!strcasecmp(buf, profile->vmain_key) && !switch_strlen_zero(profile->vmain_key)) {
+                int argc;
+                char *argv[4];
+                char *mycmd;
+
+                if (!switch_strlen_zero(profile->vmain_ext) && (mycmd = switch_core_session_strdup(session, profile->vmain_ext))) {
+                    argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+                    if (argc >= 1 && argc <= 4) {
+                        switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
+                        /* the application still runs after we leave it so we need to make sure that we don't do anything evil */
+                        send_mail = 0;
+                        goto end;
+                    }
+                }
+			} else if (*profile->skip_greet_key && !strcasecmp(buf, profile->skip_greet_key)) {
+				skip_instructions = SWITCH_TRUE;
+			} else {
+				goto greet;
+			}
 		}
 	}
 
-	if (*buf != '\0') {
-  greet_key_press:
-		if (switch_stristr(buf, profile->login_keys)) {
-			voicemail_check_main(session, profile, domain_name, id, 0);
-		} else if (!strcasecmp(buf, profile->operator_key) && !switch_strlen_zero(profile->operator_key)) {
-			int argc;
-			char *argv[4];
-			char *mycmd;
-
-			if (!switch_strlen_zero(profile->operator_ext) && (mycmd = switch_core_session_strdup(session, profile->operator_ext))) {
-				argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-				if (argc >= 1 && argc <= 4) {
-					switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
-					/* the application still runs after we leave it so we need to make sure that we don't do anything evil */
-					send_mail = 0;
-					goto end;
-				}
-			}
-		} else if (!strcasecmp(buf, profile->vmain_key) && !switch_strlen_zero(profile->vmain_key)) {
-			int argc;
-			char *argv[4];
-			char *mycmd;
-
-			if (!switch_strlen_zero(profile->vmain_ext) && (mycmd = switch_core_session_strdup(session, profile->vmain_ext))) {
-				argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-				if (argc >= 1 && argc <= 4) {
-					switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
-					/* the application still runs after we leave it so we need to make sure that we don't do anything evil */
-					send_mail = 0;
-					goto end;
-				}
-			}
-		} else if (*profile->skip_greet_key && !strcasecmp(buf, profile->skip_greet_key)) {
-			record_macro = NULL;
-		} else {
-			goto greet;
-		}
+	if (skip_instructions) {
+		record_macro = NULL;
 	}
 
 	if (disk_quota) {
