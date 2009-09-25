@@ -710,6 +710,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	switch_event_t *s_event;
 	const char *to_user = NULL;
 	const char *to_host = NULL;
+	char *mwi_account = NULL;
+	char *dup_mwi_account = NULL;
+	char *mwi_user = NULL;
+	char *mwi_host = NULL;
 	const char *from_user = NULL;
 	const char *from_host = NULL;
 	const char *reg_host = profile->reg_db_domain;
@@ -1004,6 +1008,19 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	}
   reg:
 
+	if ((mwi_account = switch_event_get_header(*v_event, "mwi-account"))) {
+		dup_mwi_account = strdup(mwi_account);
+		switch_assert(dup_mwi_account != NULL);
+		sofia_glue_get_user_host(dup_mwi_account, &mwi_user, &mwi_host);
+	}
+
+	if (!mwi_user) {
+		mwi_user = (char *) to_user;
+	}
+	if (!mwi_host) {
+		mwi_host = (char *) reg_host;
+	}
+
 	if (regtype != REG_REGISTER) {
 		switch_goto_int(r, 0, end);
 	}
@@ -1049,20 +1066,19 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 		switch_mutex_lock(profile->ireg_mutex);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-		
+
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
 		sql = switch_mprintf("insert into sip_registrations "
 							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
-							 "user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm) "
-							 "values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q')", 
+							 "user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host) "
+							 "values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q')", 
 							 call_id, to_user, reg_host, profile->presence_hosts ? profile->presence_hosts : reg_host, 
 							 contact_str, reg_desc, rpid, (long) switch_epoch_time_now(NULL) + (long) exptime * 2, 
-							 agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm);
+							 agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm, mwi_user, mwi_host);
 							 
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
-
 
 		switch_mutex_unlock(profile->ireg_mutex);
 
@@ -1198,7 +1214,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 			if (sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER)) {
 				if (switch_event_create(&s_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", to_user, reg_host);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", mwi_user, mwi_host);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "VM-Call-ID", call_id);
 				}
@@ -1239,6 +1255,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 
  end:
+	switch_safe_free(dup_mwi_account);
 
 	if (auth_params) {
 		switch_event_destroy(&auth_params);
@@ -1568,6 +1585,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	int first = 0;
 	const char *passwd = NULL;
 	const char *a1_hash = NULL;
+	const char *mwi_account = NULL;
 	char *sql;
 	char *number_alias = NULL;
 	switch_xml_t domain, xml = NULL, user, param, uparams, dparams, group = NULL, gparams = NULL;
@@ -1762,6 +1780,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			if (!strcasecmp(var, "a1-hash")) {
 				a1_hash = val;
 			}
+			if (!strcasecmp(var, "mwi-account")) {
+				mwi_account = val;
+			}
 		}
 	}
 
@@ -1786,6 +1807,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			if (!strcasecmp(var, "a1-hash")) {
 				a1_hash = val;
 			}
+			if (!strcasecmp(var, "mwi-account")) {
+				mwi_account = val;
+			}
 		}
 	}
 
@@ -1809,6 +1833,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 			if (!strcasecmp(var, "a1-hash")) {
 				a1_hash = val;
+			}
+			if (!strcasecmp(var, "mwi-account")) {
+				mwi_account = val;
 			}
 		}
 	}
@@ -1896,6 +1923,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "number_alias", number_alias);
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "user_name", username);
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "domain_name", domain_name);
+
+			if (mwi_account) {
+				switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "mwi-account", mwi_account);
+			}
 
 			if ((uparams = switch_xml_child(user, "params"))) {
 				xparams_type[i] = 0;

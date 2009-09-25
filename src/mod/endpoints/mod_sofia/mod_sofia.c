@@ -1634,10 +1634,12 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "IP:         \t%s\n"
 							   "Port:       \t%s\n"
 							   "Auth-User:  \t%s\n"
-							   "Auth-Realm: \t%s\n\n",
+							   "Auth-Realm: \t%s\n"
+							   "MWI-Account:\t%s@%s\n\n",
 							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_str_nil(argv[3]),
 							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, switch_str_nil(argv[11]),
-							   switch_str_nil(argv[12]), switch_str_nil(argv[13]), switch_str_nil(argv[14]), switch_str_nil(argv[15]));
+							   switch_str_nil(argv[12]), switch_str_nil(argv[13]), switch_str_nil(argv[14]), switch_str_nil(argv[15]),
+							   switch_str_nil(argv[16]), switch_str_nil(argv[17]));
 	return 0;
 }
 
@@ -1669,11 +1671,13 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 							   "        <network-port>%s</network-port>\n"
 							   "        <sip-auth-user>%s</sip-auth-user>\n"
 							   "        <sip-auth-realm>%s</sip-auth-realm>\n"
+							   "        <mwi-account>%s@%s</mwi-account>\n"
 							   "    </registration>\n", 
 							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), 
 							   switch_amp_encode(switch_str_nil(argv[3]),xmlbuf,buflen),
 							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, switch_str_nil(argv[11]),
-							   switch_str_nil(argv[12]), switch_str_nil(argv[13]), switch_str_nil(argv[14]), switch_str_nil(argv[15]));
+							   switch_str_nil(argv[12]), switch_str_nil(argv[13]), switch_str_nil(argv[14]), switch_str_nil(argv[15]),
+							   switch_str_nil(argv[16]), switch_str_nil(argv[17]));
 	return 0;
 }
 
@@ -1791,14 +1795,14 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				if (!sql && argv[2] && !strcasecmp(argv[2], "pres") && argv[3]) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 							"rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-							"network_ip,network_port,sip_username,sip_realm"
+							"network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
 							" from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", 
 							profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "reg") && argv[3]) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 							"rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-							"network_ip,network_port,sip_username,sip_realm"
+							"network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
 							" from sip_registrations where profile_name='%q' and contact like '%%%q%%'", 
 							profile->name, argv[3]);
 				}
@@ -1826,7 +1830,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 							"rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-							"network_ip,network_port,sip_username,sip_realm"
+							"network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
 							" from sip_registrations where profile_name='%q' and %s",
 							profile->name, sqlextra);
 					switch_safe_free(dup);
@@ -1836,7 +1840,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				if (!sql) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
 										 " from sip_registrations where profile_name='%q'", 
 										 profile->name);
 				}
@@ -2011,7 +2015,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 							"rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-							"network_ip,network_port,sip_username,sip_realm"
+							"network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
 							" from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", 
 							profile->name, argv[3]);
 				}
@@ -2019,7 +2023,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 							"rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-							"network_ip,network_port,sip_username,sip_realm"
+							"network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
 							" from sip_registrations where profile_name='%q' and contact like '%%%q%%'", 
 							profile->name, argv[3]);
 				}
@@ -2047,7 +2051,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 							"rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-							"network_ip,network_port,sip_username,sip_realm"
+							"network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
 							" from sip_registrations where profile_name='%q' and %s",
 							profile->name, sqlextra);
 					switch_safe_free(dup);
@@ -2057,7 +2061,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				if (!sql) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
 										 " from sip_registrations where profile_name='%q'", 
 										 profile->name);
 				}
@@ -3108,10 +3112,18 @@ static void general_event_handler(switch_event_t *event)
 										 "from sip_registrations where call_id='%q'", ct, es, switch_str_nil(body), call_id
 										 );
 				} else {
-					sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q','%q','%q' "
-										 "from sip_registrations where sip_user='%s' and sip_host='%q'",
-										 ct, es, switch_str_nil(body), switch_str_nil(user), switch_str_nil(host)
-										 );
+					if (!strcasecmp(es, "message-summary")) {
+						sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q','%q','%q' "
+								"from sip_registrations where mwi_user='%s' and mwi_host='%q'",
+								ct, es, switch_str_nil(body), switch_str_nil(user), switch_str_nil(host)
+								);
+					} else {
+						sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q','%q','%q' "
+								"from sip_registrations where sip_user='%s' and sip_host='%q'",
+								ct, es, switch_str_nil(body), switch_str_nil(user), switch_str_nil(host)
+								);
+
+					}
 				}
 				
 

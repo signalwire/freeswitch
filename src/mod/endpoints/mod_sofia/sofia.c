@@ -651,6 +651,24 @@ void event_handler(switch_event_t *event)
 
 		sofia_profile_t *profile = NULL;
 
+		char *mwi_account = NULL;
+		char *dup_mwi_account = NULL;
+		char *mwi_user = NULL;
+		char *mwi_host = NULL;
+
+		if ((mwi_account = switch_event_get_header(event, "orig-mwi-account"))) {
+			dup_mwi_account = strdup(mwi_account);
+			switch_assert(dup_mwi_account != NULL);
+			sofia_glue_get_user_host(dup_mwi_account, &mwi_user, &mwi_host);
+		}
+
+		if (!mwi_user) {
+			mwi_user = (char *) from_user;
+		}
+		if (!mwi_host) {
+			mwi_host = (char *) from_host;
+		}
+
 		char guess_ip4[256];
 
 		if (exp_str) {
@@ -663,7 +681,7 @@ void event_handler(switch_event_t *event)
 
 		if (!profile_name || !(profile = sofia_glue_find_profile(profile_name))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
-			return;
+			goto end;
 		}
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
 			sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
@@ -699,10 +717,10 @@ void event_handler(switch_event_t *event)
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
 		sql = switch_mprintf("insert into sip_registrations "
 							 "(call_id, sip_user, sip_host, presence_hosts, contact, status, rpid, expires,"
-							 "user_agent, server_user, server_host, profile_name, hostname, network_ip, network_port, sip_username, sip_realm) "
-							 "values ('%q','%q','%q','%q','%q','Registered','%q',%ld, '%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+							 "user_agent, server_user, server_host, profile_name, hostname, network_ip, network_port, sip_username, sip_realm, mwi_user, mwi_host) "
+							 "values ('%q','%q','%q','%q','%q','Registered','%q',%ld, '%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
 							 call_id, from_user, from_host, presence_hosts, contact_str, rpid, expires, user_agent, to_user, guess_ip4, 
-							 profile_name, mod_sofia_globals.hostname, network_ip, network_port, username, realm);
+							 profile_name, mod_sofia_globals.hostname, network_ip, network_port, username, realm, mwi_user, mwi_host);
 
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
@@ -713,8 +731,9 @@ void event_handler(switch_event_t *event)
 		if (profile) {
 			sofia_glue_release_profile(profile);
 		}
-
+end:
 		switch_safe_free(fixed_contact_str);
+		switch_safe_free(dup_mwi_account);
 	}
 }
 

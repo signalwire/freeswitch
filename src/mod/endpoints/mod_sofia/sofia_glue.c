@@ -3597,7 +3597,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   network_ip      VARCHAR(255),\n" 
 		"   network_port    VARCHAR(6),\n" 
 		"   sip_username    VARCHAR(255),\n" 
-		"   sip_realm       VARCHAR(255)\n" 
+		"   sip_realm       VARCHAR(255),\n"
+		"   mwi_user        VARCHAR(255),\n"
+		"   mwi_host        VARCHAR(255)\n"
 		");\n";
 
 
@@ -3740,7 +3742,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		
 		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
 								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q' "
-								  "and network_ip!='-1' and network_port!='-1' and sip_username != '-1'", 
+								  "and network_ip!='-1' and network_port!='-1' and sip_username != '-1' and mwi_user != '-1' and mwi_host != '-1'", 
 								  mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
@@ -3813,7 +3815,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
 								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q' "
-								  "and network_ip!='-1' and network_port!='-1' and sip_username != '-1'",
+								  "and network_ip!='-1' and network_port!='-1' and sip_username != '-1' and mwi_user != '-1' and mwi_host != '-1'",
 								  mod_sofia_globals.hostname);
 		
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_registrations", reg_sql);
@@ -4120,45 +4122,43 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 
 int sofia_glue_get_user_host(char *in, char **user, char **host)
 {
-	char *p, *h, *u = in;
+	char *p = NULL, *h = NULL, *u = in;
 
-	if (user) {
-		*user = NULL;
+	if (!in) {
+		return 0;
 	}
-
-	*host = NULL;
 
 	/* First isolate the host part from the user part */
 	if ((h = strchr(u, '@'))) {
 		*h++ = '\0';
-	} else {
-		return 0;
 	}
 
 	/* Clean out the user part of its protocol prefix (if any) */
-	if (user && (p = strchr(u, ':'))) {
+	if ((p = strchr(u, ':'))) {
 		*p++ = '\0';
 		u = p;
 	}
 
 	/* Clean out the host part of any suffix */
-	if ((p = strchr(h, ':'))) {
-		*p = '\0';
-	}
-	
-	if ((p = strchr(h, ';'))) {
-		*p = '\0';
-	}
-	
-	if ((p = strchr(h, ' '))) {
-		*p = '\0';
-	}
+	if (h) {
+		if ((p = strchr(h, ':'))) {
+			*p = '\0';
+		}
 
+		if ((p = strchr(h, ';'))) {
+			*p = '\0';
+		}
+
+		if ((p = strchr(h, ' '))) {
+			*p = '\0';
+		}
+	}
 	if (user) {
-	*user = u;
+		*user = u;
 	}
-
-	*host = h;
+	if (host) {
+		*host = h;
+	}
 
 	return 1;
 }

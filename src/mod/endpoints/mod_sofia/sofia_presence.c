@@ -345,11 +345,11 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	if (for_everyone) {
 		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q' "
-							 "from sip_registrations where sip_user='%q' and sip_host='%q'", 
+							 "from sip_registrations where mwi_user='%q' and mwi_host='%q'", 
 							 stream.data, user, host);
 	} else if (call_id) {
 		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q' "
-							 "from sip_registrations where sip_user='%q' and sip_host='%q' and call_id='%q'", 
+							 "from sip_registrations where mwi_user='%q' and mwi_host='%q' and call_id='%q'", 
 							 stream.data, user, host, call_id);
 	}
 
