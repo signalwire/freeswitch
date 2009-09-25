@@ -183,6 +183,8 @@
     -->
     <!--all inbound reg will look in this domain for the users -->
     <param name="force-register-domain" value="$${domain}"/>
+    <!--force the domain in subscriptions to this value -->
+    <param name="force-subscription-domain" value="$${domain}"/>
     <!--all inbound reg will stored in the db using this domain -->
     <param name="force-register-db-domain" value="$${domain}"/>
     <!--force suscription expires to a lower value than requested-->
