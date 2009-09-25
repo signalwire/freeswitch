@@ -1011,7 +1011,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					goto abort;
 				}
 			} else {
-				switch_ivr_collect_digits_callback(session, &args, 0);
+				switch_ivr_collect_digits_callback(session, &args, 0, 0);
 			}
 
 			if (caller_exit_key && *buf == *caller_exit_key) {

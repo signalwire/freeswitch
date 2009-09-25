@@ -815,21 +815,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session, switch_input_args_t *args, uint32_t timeout)
+SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session, switch_input_args_t *args, uint32_t digit_timeout, uint32_t abs_timeout)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_time_t started = 0;
-	uint32_t elapsed;
+	switch_time_t abs_started = 0, digit_started = 0;
+	uint32_t abs_elapsed = 0, digit_elapsed = 0;
 
 	if (!args || !args->input_callback) {
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (timeout) {
-		started = switch_micro_time_now();
+	if (abs_timeout) {
+		abs_started = switch_micro_time_now();
 	}
-
+	if (digit_timeout) {
+		digit_started = switch_micro_time_now();
+	}
 	while (switch_channel_ready(channel)) {
 		switch_frame_t *read_frame = NULL;
 		switch_event_t *event;
@@ -841,9 +843,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 			break;
 		}
 
-		if (timeout) {
-			elapsed = (uint32_t) ((switch_micro_time_now() - started) / 1000);
-			if (elapsed >= timeout) {
+		if (abs_timeout) {
+			abs_elapsed = (uint32_t) ((switch_micro_time_now() - abs_started) / 1000);
+			if (abs_elapsed >= abs_timeout) {
+				status = SWITCH_STATUS_TIMEOUT;
+				break;
+			}
+		}
+		if (digit_timeout) {
+			digit_elapsed = (uint32_t) ((switch_micro_time_now() - digit_started) / 1000);
+			if (digit_elapsed >= digit_timeout) {
+				status = SWITCH_STATUS_TIMEOUT;
 				break;
 			}
 		}
@@ -855,6 +865,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		if (switch_channel_has_dtmf(channel)) {
 			switch_channel_dequeue_dtmf(channel, &dtmf);
 			status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+			if (digit_timeout) {
+				digit_started = switch_micro_time_now();
+			}
 		}
 
 		if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {

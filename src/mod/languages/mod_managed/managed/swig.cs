@@ -282,8 +282,13 @@ public class CoreSession : IDisposable {
     freeswitchPINVOKE.CoreSession_SetTtsParameters(swigCPtr, tts_name, voice_name);
   }
 
-  public int CollectDigits(int timeout) {
-    int ret = freeswitchPINVOKE.CoreSession_CollectDigits(swigCPtr, timeout);
+  public int CollectDigits(int abs_timeout) {
+    int ret = freeswitchPINVOKE.CoreSession_CollectDigits__SWIG_0(swigCPtr, abs_timeout);
+    return ret;
+  }
+
+  public int CollectDigits(int digit_timeout, int abs_timeout) {
+    int ret = freeswitchPINVOKE.CoreSession_CollectDigits__SWIG_1(swigCPtr, digit_timeout, abs_timeout);
     return ret;
   }
 
@@ -3178,8 +3183,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_collect_digits_callback(SWIGTYPE_p_switch_core_session session, switch_input_args_t args, uint timeout) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_collect_digits_callback(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_input_args_t.getCPtr(args), timeout);
+  public static switch_status_t switch_ivr_collect_digits_callback(SWIGTYPE_p_switch_core_session session, switch_input_args_t args, uint digit_timeout, uint abs_timeout) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_collect_digits_callback(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_input_args_t.getCPtr(args), digit_timeout, abs_timeout);
     return ret;
   }
 
@@ -9901,7 +9906,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_park(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_collect_digits_callback")]
-  public static extern int switch_ivr_collect_digits_callback(HandleRef jarg1, HandleRef jarg2, uint jarg3);
+  public static extern int switch_ivr_collect_digits_callback(HandleRef jarg1, HandleRef jarg2, uint jarg3, uint jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_collect_digits_count")]
   public static extern int switch_ivr_collect_digits_count(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4, string jarg5, string jarg6, uint jarg7, uint jarg8, uint jarg9);
@@ -11430,8 +11435,11 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_SetTtsParameters")]
   public static extern void CoreSession_SetTtsParameters(HandleRef jarg1, string jarg2, string jarg3);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_CollectDigits")]
-  public static extern int CoreSession_CollectDigits(HandleRef jarg1, int jarg2);
+  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_CollectDigits__SWIG_0")]
+  public static extern int CoreSession_CollectDigits__SWIG_0(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_CollectDigits__SWIG_1")]
+  public static extern int CoreSession_CollectDigits__SWIG_1(HandleRef jarg1, int jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_GetDigits__SWIG_0")]
   public static extern string CoreSession_GetDigits__SWIG_0(HandleRef jarg1, int jarg2, string jarg3, int jarg4);

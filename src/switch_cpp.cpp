@@ -684,11 +684,15 @@ SWITCH_DECLARE(void) CoreSession::set_tts_parms(char *tts_name_p, char *voice_na
 
 
 
-SWITCH_DECLARE(int) CoreSession::collectDigits(int timeout) {
+SWITCH_DECLARE(int) CoreSession::collectDigits(int abs_timeout) {
+	return collectDigits(0, abs_timeout);
+}
+
+SWITCH_DECLARE(int) CoreSession::collectDigits(int digit_timeout, int abs_timeout) {
 	this_check(-1);
 	sanity_check(-1);
     begin_allow_threads();
-	switch_ivr_collect_digits_callback(session, ap, timeout);
+	switch_ivr_collect_digits_callback(session, ap, digit_timeout, abs_timeout);
     end_allow_threads();
     return SWITCH_STATUS_SUCCESS;
 } 

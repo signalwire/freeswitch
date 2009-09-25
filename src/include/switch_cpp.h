@@ -286,7 +286,8 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 	 * For timeout milliseconds, call the dtmf function set previously
 	 * by setDTMFCallback whenever a dtmf or event is received
 	 */
-		 SWITCH_DECLARE(int) collectDigits(int timeout);
+		 SWITCH_DECLARE(int) collectDigits(int abs_timeout);
+		 SWITCH_DECLARE(int) collectDigits(int digit_timeout, int abs_timeout);
 
 	/** 
 	 * Collect up to maxdigits digits worth of digits

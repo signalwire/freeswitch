@@ -122,7 +122,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
   \param timeout a timeout in milliseconds
   \return SWITCH_STATUS_SUCCESS to keep the collection moving.
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session, switch_input_args_t *args, uint32_t timeout);
+SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session, switch_input_args_t *args, uint32_t digit_timeout, uint32_t abs_timeout);
 
 /*!
   \brief Wait for specified number of DTMF digits, untile terminator is received or until the channel hangs up.

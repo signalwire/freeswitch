@@ -22136,17 +22136,19 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_park(void * jarg1, void * jarg2) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_collect_digits_callback(void * jarg1, void * jarg2, unsigned long jarg3) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_collect_digits_callback(void * jarg1, void * jarg2, unsigned long jarg3, unsigned long jarg4) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   switch_input_args_t *arg2 = (switch_input_args_t *) 0 ;
   uint32_t arg3 ;
+  uint32_t arg4 ;
   switch_status_t result;
   
   arg1 = (switch_core_session_t *)jarg1; 
   arg2 = (switch_input_args_t *)jarg2; 
   arg3 = (uint32_t)jarg3; 
-  result = (switch_status_t)switch_ivr_collect_digits_callback(arg1,arg2,arg3);
+  arg4 = (uint32_t)jarg4; 
+  result = (switch_status_t)switch_ivr_collect_digits_callback(arg1,arg2,arg3,arg4);
   jresult = result; 
   return jresult;
 }
@@ -28912,7 +28914,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_SetTtsParameters(void * jarg1, ch
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_CollectDigits(void * jarg1, int jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_CollectDigits__SWIG_0(void * jarg1, int jarg2) {
   int jresult ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   int arg2 ;
@@ -28921,6 +28923,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_CollectDigits(void * jarg1, int ja
   arg1 = (CoreSession *)jarg1; 
   arg2 = (int)jarg2; 
   result = (int)(arg1)->collectDigits(arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_CollectDigits__SWIG_1(void * jarg1, int jarg2, int jarg3) {
+  int jresult ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  int result;
+  
+  arg1 = (CoreSession *)jarg1; 
+  arg2 = (int)jarg2; 
+  arg3 = (int)jarg3; 
+  result = (int)(arg1)->collectDigits(arg2,arg3);
   jresult = result; 
   return jresult;
 }

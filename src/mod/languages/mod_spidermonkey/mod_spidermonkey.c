@@ -1463,7 +1463,9 @@ static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, 
 	switch_channel_t *channel;
 	void *bp = NULL;
 	int len = 0;
-	int32 to = 0;
+	int32 abs_timeout = 0;
+	int32 digit_timeout = 0;
+
 	switch_input_callback_function_t dtmf_func = NULL;
 	struct input_callback_state cb_state = { 0 };
 	JSFunction *function;
@@ -1494,8 +1496,11 @@ static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, 
 		}
 	}
 
-	if (argc > 2) {
-		JS_ValueToInt32(jss->cx, argv[2], &to);
+	if (argc == 3) {
+		JS_ValueToInt32(jss->cx, argv[2], &abs_timeout);
+	} else if (argc > 3) {
+		JS_ValueToInt32(jss->cx, argv[2], &digit_timeout);
+		JS_ValueToInt32(jss->cx, argv[3], &abs_timeout);
 	}
 
 	cb_state.saveDepth = JS_SuspendRequest(cx);
@@ -1503,7 +1508,7 @@ static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, 
 	args.buf = bp;
 	args.buflen = len;
 
-	switch_ivr_collect_digits_callback(jss->session, &args, to);
+	switch_ivr_collect_digits_callback(jss->session, &args, digit_timeout, abs_timeout);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;

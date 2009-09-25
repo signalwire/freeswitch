@@ -2223,7 +2223,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 			if (!switch_strlen_zero(moh) && strcasecmp(moh, "silence")) {
 				switch_ivr_play_file(session, NULL, moh, &args);
 			} else {
-				switch_ivr_collect_digits_callback(session, &args, 0);
+				switch_ivr_collect_digits_callback(session, &args, 0, 0);
 			}
 
 			if (moh_br) {
