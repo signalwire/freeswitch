@@ -8545,6 +8545,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_chat_send(char * jarg1, char * jar
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_preprocess_session(void * jarg1, char * jarg2) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (switch_status_t)switch_ivr_preprocess_session(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_CMD_CHUNK_LEN_get() {
   int jresult ;
   int result;
@@ -9393,6 +9407,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_string_match(char * jarg1, unsigned lon
   arg4 = (size_t)jarg4; 
   result = (switch_status_t)switch_string_match((char const *)arg1,arg2,(char const *)arg3,arg4);
   jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_util_quote_shell_arg(char * jarg1) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (char *)switch_util_quote_shell_arg((char const *)arg1);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
 

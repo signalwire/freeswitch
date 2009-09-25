@@ -2061,6 +2061,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_ivr_preprocess_session(SWIGTYPE_p_switch_core_session session, string cmds) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_preprocess_session(SWIGTYPE_p_switch_core_session.getCPtr(session), cmds);
+    return ret;
+  }
+
   public static void switch_console_loop() {
     freeswitchPINVOKE.switch_console_loop();
   }
@@ -2345,6 +2350,11 @@ public class freeswitch {
 
   public static switch_status_t switch_string_match(string arg0, uint string_len, string search, uint search_len) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_string_match(arg0, string_len, search, search_len);
+    return ret;
+  }
+
+  public static string switch_util_quote_shell_arg(string arg0) {
+    string ret = freeswitchPINVOKE.switch_util_quote_shell_arg(arg0);
     return ret;
   }
 
@@ -6620,6 +6630,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_chat_send")]
   public static extern int switch_core_chat_send(string jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_preprocess_session")]
+  public static extern int switch_ivr_preprocess_session(HandleRef jarg1, string jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CMD_CHUNK_LEN_get")]
   public static extern int SWITCH_CMD_CHUNK_LEN_get();
 
@@ -6796,6 +6809,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_string_match")]
   public static extern int switch_string_match(string jarg1, uint jarg2, string jarg3, uint jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_util_quote_shell_arg")]
+  public static extern string switch_util_quote_shell_arg(string jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_url_encode")]
   public static extern uint switch_url_encode(string jarg1, string jarg2, uint jarg3);
@@ -17054,7 +17070,8 @@ namespace FreeSWITCH.Native {
   SBF_EXEC_BLEG = (1 << 3),
   SBF_EXEC_OPPOSITE = (1 << 4),
   SBF_EXEC_SAME = (1 << 5),
-  SBF_ONCE = (1 << 6)
+  SBF_ONCE = (1 << 6),
+  SBF_EXEC_INLINE = (1 << 7)
 }
 
 }
@@ -23644,7 +23661,8 @@ namespace FreeSWITCH.Native {
   SMF_FORCE = (1 << 3),
   SMF_LOOP = (1 << 4),
   SMF_HOLD_BLEG = (1 << 5),
-  SMF_IMMEDIATE = (1 << 6)
+  SMF_IMMEDIATE = (1 << 6),
+  SMF_EXEC_INLINE = (1 << 7)
 }
 
 }

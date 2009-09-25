@@ -270,6 +270,7 @@ class CoreSession(_object):
     def say(*args): return _freeswitch.CoreSession_say(*args)
     def sayPhrase(*args): return _freeswitch.CoreSession_sayPhrase(*args)
     def hangupCause(*args): return _freeswitch.CoreSession_hangupCause(*args)
+    def getState(*args): return _freeswitch.CoreSession_getState(*args)
     def recordFile(*args): return _freeswitch.CoreSession_recordFile(*args)
     def setCallerData(*args): return _freeswitch.CoreSession_setCallerData(*args)
     def originate(*args): return _freeswitch.CoreSession_originate(*args)

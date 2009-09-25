@@ -173,6 +173,10 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_hangupCause(swigCPtr, this);
   }
 
+  public String getState() {
+    return freeswitchJNI.CoreSession_getState(swigCPtr, this);
+  }
+
   public int recordFile(String file_name, int time_limit, int silence_threshold, int silence_hits) {
     return freeswitchJNI.CoreSession_recordFile__SWIG_0(swigCPtr, this, file_name, time_limit, silence_threshold, silence_hits);
   }

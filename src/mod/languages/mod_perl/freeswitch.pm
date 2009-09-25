@@ -412,6 +412,7 @@ sub DESTROY {
 *say = *freeswitchc::CoreSession_say;
 *sayPhrase = *freeswitchc::CoreSession_sayPhrase;
 *hangupCause = *freeswitchc::CoreSession_hangupCause;
+*getState = *freeswitchc::CoreSession_getState;
 *recordFile = *freeswitchc::CoreSession_recordFile;
 *setCallerData = *freeswitchc::CoreSession_setCallerData;
 *originate = *freeswitchc::CoreSession_originate;

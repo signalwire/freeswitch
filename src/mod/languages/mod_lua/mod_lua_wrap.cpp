@@ -5185,6 +5185,31 @@ fail:
 }
 
 
+static int _wrap_CoreSession_getState(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("getState",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getState",1,"CoreSession *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_getState",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  result = (char *)(arg1)->getState();
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_CoreSession_recordFile__SWIG_0(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -7258,6 +7283,7 @@ static swig_lua_method swig_CoreSession_methods[] = {
     {"say", _wrap_CoreSession_say}, 
     {"sayPhrase", _wrap_CoreSession_sayPhrase}, 
     {"hangupCause", _wrap_CoreSession_hangupCause}, 
+    {"getState", _wrap_CoreSession_getState}, 
     {"recordFile", _wrap_CoreSession_recordFile}, 
     {"setCallerData", _wrap_CoreSession_setCallerData}, 
     {"originate", _wrap_CoreSession_originate}, 

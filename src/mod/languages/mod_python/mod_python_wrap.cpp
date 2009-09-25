@@ -6853,6 +6853,28 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_CoreSession_getState(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:CoreSession_getState",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_getState" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  result = (char *)(arg1)->getState();
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_CoreSession_recordFile__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -10354,6 +10376,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"CoreSession_say", _wrap_CoreSession_say, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_sayPhrase", _wrap_CoreSession_sayPhrase, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_hangupCause", _wrap_CoreSession_hangupCause, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_getState", _wrap_CoreSession_getState, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_recordFile", _wrap_CoreSession_recordFile, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_setCallerData", _wrap_CoreSession_setCallerData, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_originate", _wrap_CoreSession_originate, METH_VARARGS, NULL},
