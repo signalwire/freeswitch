@@ -219,6 +219,25 @@
       <prompt phrase="urgent" filename="vm-urgent.wav"/>
       <prompt phrase="That mailbox is full. Please try your call again later." filename="vm-mailbox_full.wav"/>
     </voicemail>
+    <directory>
+	  <prompt phrase="Please enter the first few letters of the persons" filename="dir-enter-person.wav"/>
+	  <prompt phrase="last name." filename="dir-last_name.wav"/>
+	  <prompt phrase="To search by" filename="dir-to_search_by.wav"/>
+	  <prompt phrase="first name." filename="dir-first_name.wav"/>
+	  <prompt phrase="Your search matched no results, try again." filename="dir-no_match_entry.wav"/>
+	  <prompt phrase="results matched your search." filename="dir-result_match.wav"/>
+	  <prompt phrase="Your search returned too many results, please try again." filename="dir-to_many_result.wav"/>
+	  <prompt phrase="No more results." filename="dir-no_more_result.wav"/>
+	  <prompt phrase="Result number." filename="dir-result_number.wav"/>
+	  <prompt phrase="at extension" filename="dir-at_extension.wav"/>
+	  <prompt phrase="To select this entry" filename="dir-to_select_entry.wav"/>
+	  <prompt phrase="For the next entry" filename="dir-for_next.wav"/>
+	  <prompt phrase="For the previous entry" filename="dir-for_prev.wav"/>
+	  <prompt phrase="To start a new search" filename="dir-to_make_new_search.wav"/>
+	  <prompt phrase="You need to specify a minimum of" filename="dir-specify_mininum_first.wav"/>
+	  <prompt phrase="letters of the person name, try again." filename="dir-letters_of_person_name.wav"/>
+	  <prompt phrase="press" filename="dir-press.wav"/>
+    </directory>
     <conference>
       <prompt phrase="NULL" filename="conf-ack.wav" type="tone"/>
       <prompt phrase="NULL" filename="conf-nack.wav" type="tone"/>

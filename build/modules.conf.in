@@ -10,6 +10,7 @@ applications/mod_fifo
 #applications/mod_fax
 #applications/mod_curl
 applications/mod_voicemail
+#applications/mod_directory
 #applications/mod_lcr
 applications/mod_limit
 applications/mod_expr
