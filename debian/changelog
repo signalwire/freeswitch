@@ -1,3 +1,9 @@
+freeswitch (1.0.4-1) unstable; urgency=low
+
+    * new
+
+ -- Mike Jerris <mike@jerris.com>  Mon, 18 Feb 2009 17:39:00 -0500
+
 freeswitch (1.0.3-1) unstable; urgency=low
 
    * build: add targets cd-sounds[-install] and cd-moh[-install] for 48k sounds (r:11151)
