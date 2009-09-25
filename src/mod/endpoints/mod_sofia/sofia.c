@@ -650,6 +650,7 @@ void event_handler(switch_event_t *event)
 		char *fixed_contact_str = NULL;
 
 		sofia_profile_t *profile = NULL;
+		char guess_ip4[256];
 
 		char *mwi_account = NULL;
 		char *dup_mwi_account = NULL;
@@ -668,8 +669,6 @@ void event_handler(switch_event_t *event)
 		if (!mwi_host) {
 			mwi_host = (char *) from_host;
 		}
-
-		char guess_ip4[256];
 
 		if (exp_str) {
 			expires += atol(exp_str);
