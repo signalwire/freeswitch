@@ -3389,9 +3389,12 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 			switch_hash_this(hi, NULL, NULL, &val);
 			conference = (conference_obj_t *) val;
 
-			stream->write_function(stream, "Conference %s (%u member%s%s)\n",
+			stream->write_function(stream, "Conference %s (%u member%s rate: %u%s)\n",
 								   conference->name,
-								   conference->count, conference->count == 1 ? "" : "s", switch_test_flag(conference, CFLAG_LOCKED) ? " locked" : "");
+								   conference->count,
+								   conference->count == 1 ? "" : "s",
+								   conference->rate,
+								   switch_test_flag(conference, CFLAG_LOCKED) ? " locked" : "");
 			count++;
 			if (!summary) {
 				if (pretty) {
@@ -3449,6 +3452,8 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 	switch_xml_set_attr_d(x_conference, "name", conference->name);
 	switch_snprintf(i, sizeof(i), "%d", conference->count);
 	switch_xml_set_attr_d(x_conference, "member-count", ival);
+	switch_snprintf(i, sizeof(i), "%u", conference->rate);
+	switch_xml_set_attr_d(x_conference, "rate", ival);
 
 	if (switch_test_flag(conference, CFLAG_LOCKED)) {
 		switch_xml_set_attr_d(x_conference, "locked", "true");
