@@ -611,20 +611,20 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vmd_shutdown)
  */
 SWITCH_STANDARD_API(vmd_api_main)
 {
-    switch_core_session_t *vmd_session;
+    switch_core_session_t *vmd_session = NULL;
     switch_media_bug_t *bug;
     vmd_session_info_t *vmd_info;
     switch_channel_t *channel;
     switch_status_t status;
     int argc;
     char *argv[VMD_PARAMS];
-    char *ccmd;
+    char *ccmd = NULL;
     char *uuid;
     char *command;
     int i;
 
     /* No command? Display usage */
-    if (cmd == NULL) {
+    if (switch_strlen_zero(cmd)) {
         stream->write_function(stream, "-USAGE: %s\n", VMD_SYNTAX);
         return SWITCH_STATUS_SUCCESS;
     }
@@ -638,8 +638,7 @@ SWITCH_STANDARD_API(vmd_api_main)
      * display usage */
     if (argc != VMD_PARAMS) {
         stream->write_function(stream, "-USAGE: %s\n", VMD_SYNTAX);
-        switch_safe_free(ccmd);
-        return SWITCH_STATUS_SUCCESS;
+		goto end;
     }
 
     uuid = argv[0];
@@ -650,9 +649,8 @@ SWITCH_STANDARD_API(vmd_api_main)
 
     /* If the session was not found exit */
     if (vmd_session == NULL) {
-        switch_safe_free(ccmd);
         stream->write_function(stream, "-USAGE: %s\n", VMD_SYNTAX);
-        return SWITCH_STATUS_FALSE;
+		goto end;
     }
 
     /* Get current channel of the session to tag the session
@@ -669,21 +667,18 @@ SWITCH_STANDARD_API(vmd_api_main)
             switch_core_media_bug_remove(vmd_session, &bug);
             switch_safe_free(ccmd);
             stream->write_function(stream, "+OK\n");
-            return SWITCH_STATUS_SUCCESS;
+			goto end;
         }
 
         /* We have already started */
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
-
-        switch_safe_free(ccmd);
-        return SWITCH_STATUS_FALSE;
+		goto end;
     }
 
     /* If we don't see the expected start exit */
     if (strcasecmp(command, "start") != 0) {
-        switch_safe_free(ccmd);
         stream->write_function(stream, "-USAGE: %s\n", VMD_SYNTAX);
-        return SWITCH_STATUS_FALSE;
+		goto end;
     }
 
     /* Allocate memory attached to this FreeSWITCH session for
@@ -712,9 +707,7 @@ SWITCH_STANDARD_API(vmd_api_main)
     /* If adding a media bug fails exit */
     if (status != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure hooking to stream\n");
-
-        switch_safe_free(ccmd);
-        return SWITCH_STATUS_FALSE;
+        goto end;
     }
 
     /* Set the vmd tag to detect an existing vmd media bug */
@@ -723,7 +716,15 @@ SWITCH_STANDARD_API(vmd_api_main)
     /* Everything went according to plan! Notify the user */
     stream->write_function(stream, "+OK\n");
 
+
+ end:
+
+	if (vmd_session) {
+		switch_core_session_rwunlock(vmd_session);
+	}
+
     switch_safe_free(ccmd);
+
     return SWITCH_STATUS_SUCCESS;
 }
 
