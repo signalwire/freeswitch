@@ -1008,7 +1008,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	}
   reg:
 
-	if ((mwi_account = switch_event_get_header(*v_event, "mwi-account"))) {
+	if (v_event && *v_event && (mwi_account = switch_event_get_header(*v_event, "mwi-account"))) {
 		dup_mwi_account = strdup(mwi_account);
 		switch_assert(dup_mwi_account != NULL);
 		sofia_glue_get_user_host(dup_mwi_account, &mwi_user, &mwi_host);
