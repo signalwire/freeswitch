@@ -1168,7 +1168,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 		int tr;
 		int err = 1;
 		SpeexPreprocessState *st = NULL;
-		SpeexEchoState *ec;
+		SpeexEchoState *ec = NULL;
 		switch_mutex_t *mutex = NULL;
 		int r = 0;
 
