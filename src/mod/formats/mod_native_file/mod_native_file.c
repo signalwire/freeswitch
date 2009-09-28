@@ -152,7 +152,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_native_file_load)
 	uint32_t x;
 
 	for (x = 0; x < num_codecs; x++) {
-		supported_formats[x] = codecs[x]->iananame;
+		supported_formats[x] = switch_core_strdup(pool, codecs[x]->iananame);
 	}
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
