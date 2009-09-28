@@ -225,8 +225,12 @@ public class CoreSession {
     freeswitchJNI.CoreSession_set_tts_parms(swigCPtr, this, tts_name, voice_name);
   }
 
-  public int collectDigits(int timeout) {
-    return freeswitchJNI.CoreSession_collectDigits(swigCPtr, this, timeout);
+  public int collectDigits(int abs_timeout) {
+    return freeswitchJNI.CoreSession_collectDigits__SWIG_0(swigCPtr, this, abs_timeout);
+  }
+
+  public int collectDigits(int digit_timeout, int abs_timeout) {
+    return freeswitchJNI.CoreSession_collectDigits__SWIG_1(swigCPtr, this, digit_timeout, abs_timeout);
   }
 
   public String getDigits(int maxdigits, String terminators, int timeout) {

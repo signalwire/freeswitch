@@ -2529,7 +2529,7 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1set_
 }
 
 
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1collectDigits(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1collectDigits_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
   jint jresult = 0 ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   int arg2 ;
@@ -2541,6 +2541,25 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1coll
   arg1 = *(CoreSession **)&jarg1; 
   arg2 = (int)jarg2; 
   result = (int)(arg1)->collectDigits(arg2);
+  jresult = (jint)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1collectDigits_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jint jarg3) {
+  jint jresult = 0 ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  arg2 = (int)jarg2; 
+  arg3 = (int)jarg3; 
+  result = (int)(arg1)->collectDigits(arg2,arg3);
   jresult = (jint)result; 
   return jresult;
 }
