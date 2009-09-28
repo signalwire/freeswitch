@@ -125,7 +125,6 @@ class freeswitchJNI {
   public final static native int CoreSession_recordFile__SWIG_1(long jarg1, CoreSession jarg1_, String jarg2, int jarg3, int jarg4);
   public final static native int CoreSession_recordFile__SWIG_2(long jarg1, CoreSession jarg1_, String jarg2, int jarg3);
   public final static native int CoreSession_recordFile__SWIG_3(long jarg1, CoreSession jarg1_, String jarg2);
-  public final static native void CoreSession_setCallerData(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
   public final static native int CoreSession_originate__SWIG_0(long jarg1, CoreSession jarg1_, long jarg2, CoreSession jarg2_, String jarg3, int jarg4, long jarg5);
   public final static native int CoreSession_originate__SWIG_1(long jarg1, CoreSession jarg1_, long jarg2, CoreSession jarg2_, String jarg3, int jarg4);
   public final static native int CoreSession_originate__SWIG_2(long jarg1, CoreSession jarg1_, long jarg2, CoreSession jarg2_, String jarg3);

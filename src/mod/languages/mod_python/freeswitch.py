@@ -272,7 +272,6 @@ class CoreSession(_object):
     def hangupCause(*args): return _freeswitch.CoreSession_hangupCause(*args)
     def getState(*args): return _freeswitch.CoreSession_getState(*args)
     def recordFile(*args): return _freeswitch.CoreSession_recordFile(*args)
-    def setCallerData(*args): return _freeswitch.CoreSession_setCallerData(*args)
     def originate(*args): return _freeswitch.CoreSession_originate(*args)
     def destroy(*args): return _freeswitch.CoreSession_destroy(*args)
     def setDTMFCallback(*args): return _freeswitch.CoreSession_setDTMFCallback(*args)

@@ -193,10 +193,6 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_recordFile__SWIG_3(swigCPtr, this, file_name);
   }
 
-  public void setCallerData(String var, String val) {
-    freeswitchJNI.CoreSession_setCallerData(swigCPtr, this, var, val);
-  }
-
   public int originate(CoreSession a_leg_session, String dest, int timeout, SWIGTYPE_p_switch_state_handler_table_t handlers) {
     return freeswitchJNI.CoreSession_originate__SWIG_0(swigCPtr, this, CoreSession.getCPtr(a_leg_session), a_leg_session, dest, timeout, SWIGTYPE_p_switch_state_handler_table_t.getCPtr(handlers));
   }

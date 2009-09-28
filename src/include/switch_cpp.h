@@ -20,19 +20,8 @@ extern "C" {
 	tts_name = NULL;									\
 	voice_name = NULL;									\
 	xml_cdr_text = NULL;								\
-	memset(&caller_profile, 0, sizeof(caller_profile)); \
 	memset(&args, 0, sizeof(args));						\
 	ap = NULL;											\
-	caller_profile.source = "mod_unknown";				\
-	caller_profile.dialplan = "";						\
-	caller_profile.context = "";						\
-	caller_profile.caller_id_name = "";					\
-	caller_profile.caller_id_number = "";				\
-	caller_profile.network_addr = "";					\
-	caller_profile.ani = "";							\
-	caller_profile.aniii = "";							\
-	caller_profile.rdnis = "";							\
-	caller_profile.username = "";						\
 	flags = 0;											\
 	on_hangup = NULL;									\
 	memset(&cb_state, 0, sizeof(cb_state));				\
@@ -199,7 +188,6 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 switch_input_args_t args;	// holds ptr to cb function and input_callback_state struct
 		 // which has a language specific callback function
 		 switch_input_args_t *ap;	// ptr to args .. (is this really needed?)
-		 switch_caller_profile_t caller_profile;	// avoid passing so many args to originate, 
 		 // instead set them here first
 		 char *xml_cdr_text;
 		 void store_file_handle(switch_file_handle_t *fh);
@@ -247,12 +235,10 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 	 */
 		 SWITCH_DECLARE(int) recordFile(char *file_name, int time_limit = 0, int silence_threshold = 0, int silence_hits = 0);
 
-
 	/** \brief Set attributes of caller data for purposes of outgoing calls
 	 * \param var - the variable name, eg, "caller_id_name"
 	 * \param val - the data to set, eg, "bob"
 	 */
-		 SWITCH_DECLARE(void) setCallerData(char *var, char *val);
 
 	/** \brief Originate a call to a destination
 	 *

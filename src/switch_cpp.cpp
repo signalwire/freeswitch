@@ -981,7 +981,7 @@ SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *des
 							 handlers, 
 							 NULL, 
 							 NULL, 
-							 &caller_profile,
+							 NULL,
 							 NULL,
 							 SOF_NONE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error Creating Outgoing Channel! [%s]\n", dest);
@@ -1075,41 +1075,6 @@ SWITCH_DECLARE(void) CoreSession::waitForAnswer(CoreSession *calling_session)
 	sanity_check_noreturn;
 	
 	switch_ivr_wait_for_answer(calling_session ? calling_session->session : NULL, session);
-
-}
-
-SWITCH_DECLARE(void) CoreSession::setCallerData(char *var, char *val) {
-
-	this_check_void();
-	sanity_check_noreturn;
-
-	if (strcmp(var, "dialplan") == 0) {
-		caller_profile.dialplan = val;
-	}
-	if (strcmp(var, "context") == 0) {
-		caller_profile.context = val;
-	}
-	if (strcmp(var, "caller_id_name") == 0) {
-		caller_profile.caller_id_name = val;
-	}
-	if (strcmp(var, "caller_id_number") == 0) {
-		caller_profile.caller_id_number = val;
-	}
-	if (strcmp(var, "network_addr") == 0) {
-		caller_profile.network_addr = val;
-	}
-	if (strcmp(var, "ani") == 0) {
-		caller_profile.ani = val;
-	}
-	if (strcmp(var, "aniii") == 0) {
-		caller_profile.aniii = val;
-	}
-	if (strcmp(var, "rdnis") == 0) {
-		caller_profile.rdnis = val;
-	}
-	if (strcmp(var, "username") == 0) {
-		caller_profile.username = val;
-	}
 
 }
 

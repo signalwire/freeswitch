@@ -28848,18 +28848,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_RecordFile(void * jarg1, char * ja
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_SetCallerData(void * jarg1, char * jarg2, char * jarg3) {
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  
-  arg1 = (CoreSession *)jarg1; 
-  arg2 = (char *)jarg2; 
-  arg3 = (char *)jarg3; 
-  (arg1)->setCallerData(arg2,arg3);
-}
-
-
 SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_originate(void * jarg1, void * jarg2, char * jarg3, int jarg4, void * jarg5) {
   int jresult ;
   CoreSession *arg1 = (CoreSession *) 0 ;

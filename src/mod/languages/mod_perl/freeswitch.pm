@@ -414,7 +414,6 @@ sub DESTROY {
 *hangupCause = *freeswitchc::CoreSession_hangupCause;
 *getState = *freeswitchc::CoreSession_getState;
 *recordFile = *freeswitchc::CoreSession_recordFile;
-*setCallerData = *freeswitchc::CoreSession_setCallerData;
 *originate = *freeswitchc::CoreSession_originate;
 *destroy = *freeswitchc::CoreSession_destroy;
 *setDTMFCallback = *freeswitchc::CoreSession_setDTMFCallback;

@@ -260,10 +260,6 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
-  public void SetCallerData(string var, string val) {
-    freeswitchPINVOKE.CoreSession_SetCallerData(swigCPtr, var, val);
-  }
-
   protected int originate(CoreSession a_leg_session, string dest, int timeout, switch_state_handler_table handlers) {
     int ret = freeswitchPINVOKE.CoreSession_originate(swigCPtr, CoreSession.getCPtr(a_leg_session), dest, timeout, switch_state_handler_table.getCPtr(handlers));
     return ret;
@@ -11419,9 +11415,6 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_RecordFile")]
   public static extern int CoreSession_RecordFile(HandleRef jarg1, string jarg2, int jarg3, int jarg4, int jarg5);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_SetCallerData")]
-  public static extern void CoreSession_SetCallerData(HandleRef jarg1, string jarg2, string jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_originate")]
   public static extern int CoreSession_originate(HandleRef jarg1, HandleRef jarg2, string jarg3, int jarg4, HandleRef jarg5);
