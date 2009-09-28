@@ -1399,6 +1399,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					new_profile->uuid = SWITCH_BLANK_STRING;
 					new_profile->chan_name = SWITCH_BLANK_STRING;
 					new_profile->destination_number = switch_core_strdup(new_profile->pool, chan_data);
+					new_profile->dialplan = SWITCH_BLANK_STRING;
+					new_profile->context = SWITCH_BLANK_STRING;
 
 					if (cid_name_override) {
 						new_profile->caller_id_name = switch_core_strdup(new_profile->pool, cid_name_override);
@@ -1416,6 +1418,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						new_profile->destination_number = switch_core_strdup(new_profile->pool, switch_str_nil(chan_data));
 						new_profile->uuid = SWITCH_BLANK_STRING;
 						new_profile->chan_name = SWITCH_BLANK_STRING;
+						new_profile->dialplan = SWITCH_BLANK_STRING;
+						new_profile->context = SWITCH_BLANK_STRING;
 					} else {
 						if (!cid_name_override) {
 							cid_name_override = "FreeSWITCH";
