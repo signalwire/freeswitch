@@ -105,6 +105,7 @@ namespace FreeSWITCH.Native {
             const string answered_time = "answered_time";
             const string hangup_time = "hungup_time";
             const string progress_time = "progress_time";
+            const string progress_media_time = "progress_media_time";
             const string transfer_time = "transfer_time";
 
             public DateTime CreatedTime {
@@ -129,6 +130,9 @@ namespace FreeSWITCH.Native {
             }
             public DateTime? ProgressTime {
                 get { return readUsecsDateTime(progress_time); }
+            }
+            public DateTime? ProgressMediaTime {
+                get { return readUsecsDateTime(progress_media_time); }
             }
             public DateTime? TransferTime {
                 get { return readUsecsDateTime(transfer_time); }
