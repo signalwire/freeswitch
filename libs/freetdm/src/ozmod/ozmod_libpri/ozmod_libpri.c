@@ -1275,6 +1275,14 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 	isdn_data = malloc(sizeof(*isdn_data));
 	assert(isdn_data != NULL);
 	memset(isdn_data, 0, sizeof(*isdn_data));
+
+    if (span->trunk_type == ZAP_TRUNK_E1) {
+        zap_log(ZAP_LOG_NOTICE, "Setting default Layer 1 to ALAW since this is an E1 trunk\n");
+        isdn_data->l1 = PRI_LAYER_1_ALAW;
+    } else if (span->trunk_type == ZAP_TRUNK_T1) {
+        zap_log(ZAP_LOG_NOTICE, "Setting default Layer 1 to ULAW since this is a T1 trunk\n");
+        isdn_data->l1 = PRI_LAYER_1_ULAW;
+    }
 	
 	while((var = va_arg(ap, char *))) {
 		if (!strcasecmp(var, "node")) {
@@ -1318,8 +1326,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 			return ZAP_FAIL;
 		}
 	}
-	
-
+    
 	span->start = zap_libpri_start;
 	span->stop = zap_libpri_stop;
 	isdn_data->sig_cb = sig_cb;
