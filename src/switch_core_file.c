@@ -46,6 +46,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	char stream_name[128] = "";
 	char *rhs = NULL;
 	const char *spool_path = NULL;
+	int is_stream = 0;
 
 	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle already open\n");
@@ -73,6 +74,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		ext = stream_name;
 		file_path = rhs + 3;
 		fh->file_path = switch_core_strdup(fh->memory_pool, file_path);
+		is_stream = 1;
 	} else {
 		if ((flags & SWITCH_FILE_FLAG_WRITE)) {
 
@@ -156,7 +158,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 
 	if ((flags & SWITCH_FILE_FLAG_WRITE) && 
-		!strstr(file_path, SWITCH_URL_SEPARATOR) && (status = switch_file_exists(file_path, fh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+		!is_stream && (status = switch_file_exists(file_path, fh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File [%s] not created!\n", file_path);
 		fh->file_interface->file_close(fh);
 		UNPROTECT_INTERFACE(fh->file_interface);
