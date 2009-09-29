@@ -1537,6 +1537,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			listener->event_list[SWITCH_EVENT_CHANNEL_EXECUTE] = 1;
 			listener->event_list[SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE] = 1;
 			listener->event_list[SWITCH_EVENT_CHANNEL_HANGUP] = 1;
+			listener->event_list[SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE] = 1;
 			listener->event_list[SWITCH_EVENT_CHANNEL_ORIGINATE] = 1;
 			listener->event_list[SWITCH_EVENT_CHANNEL_UUID] = 1;
 			listener->event_list[SWITCH_EVENT_CHANNEL_OUTGOING] = 1;
