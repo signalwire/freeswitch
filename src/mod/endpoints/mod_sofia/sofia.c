@@ -5190,7 +5190,13 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			switch_channel_set_variable(channel, "sip_gateway", gateway->name);
 
 			if (gateway->extension) {
-				destination_number = switch_core_session_strdup(session, gateway->extension);
+				if (!strcasecmp(gateway->extension, "auto_to_user")) {
+					destination_number = sip->sip_to->a_url->url_user;
+				} else {
+					destination_number = switch_core_session_strdup(session, gateway->extension);
+				}
+			} else {
+				destination_number = sip->sip_to->a_url->url_user;
 			}
 
 			gateway->ib_calls++;
