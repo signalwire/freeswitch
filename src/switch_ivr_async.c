@@ -2730,6 +2730,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 				if ((flags & SMF_HOLD_BLEG)) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
 				}
+				switch_core_session_queue_private_event(session, &event);
 			}
 		}
 		master = session;
