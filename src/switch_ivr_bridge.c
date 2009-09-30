@@ -815,6 +815,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	const char *var;
 	switch_call_cause_t cause;
 
+	if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Call has no media... Redirecting to signal bridge.\n");
+		return switch_ivr_signal_bridge(session, peer_session);
+	}
+
 	switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 
 	b_leg->session = peer_session;

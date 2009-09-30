@@ -999,9 +999,37 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	int local_clobber = 0;
 	const char *cancel_key = NULL;
 
+	if (session) {
+		caller_channel = switch_core_session_get_channel(session);
+		oglobals.session = session;
+
+		if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_PROXY_MEDIA_VARIABLE))) {
+			switch_channel_set_flag(caller_channel, CF_PROXY_MEDIA);
+		}
+
+		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)
+			|| (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE)))) {
+			if (!switch_channel_test_flag(caller_channel, CF_ANSWERED)
+				&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
+				switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
+			} else {
+				if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
+					switch_ivr_media(switch_core_session_get_uuid(session), SMF_REBRIDGE);
+					switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel is already up, delaying proxy mode 'till both legs are answered.\n");
+					switch_channel_set_variable(caller_channel, "bypass_media_after_bridge", "true");
+					switch_channel_set_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE, NULL);
+					switch_channel_clear_flag(caller_channel, CF_PROXY_MODE);
+				}
+			}
+		}
+	}
+
+	
 	oglobals.idx = IDX_NADA;
 	oglobals.early_ok = 1;
-	oglobals.session = session;
+
 
 
 	*bleg = NULL;
@@ -1106,8 +1134,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (oglobals.session) {
 		switch_event_header_t *hi;
 		const char *cdr_total_var;
-
-		caller_channel = switch_core_session_get_channel(oglobals.session);
 
 		if ((cdr_total_var = switch_channel_get_variable(caller_channel, "failed_xml_cdr_total"))) {
 			int tmp = atoi(cdr_total_var);

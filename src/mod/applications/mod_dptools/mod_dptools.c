@@ -2102,28 +2102,6 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	continue_on_fail = switch_channel_get_variable(caller_channel, "continue_on_fail");
 	failure_causes = switch_channel_get_variable(caller_channel, "failure_causes");
 
-	if ((var = switch_channel_get_variable(caller_channel, SWITCH_PROXY_MEDIA_VARIABLE)) && switch_true(var)) {
-		switch_channel_set_flag(caller_channel, CF_PROXY_MEDIA);
-	}
-
-	if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)
-		|| ((var = switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE)) && switch_true(var))) {
-		if (!switch_channel_test_flag(caller_channel, CF_ANSWERED)
-			&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
-			switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
-		} else {
-			if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
-				switch_ivr_media(switch_core_session_get_uuid(session), SMF_REBRIDGE);
-				switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel is already up, delaying proxy mode 'till both legs are answered.\n");
-				switch_channel_set_variable(caller_channel, "bypass_media_after_bridge", "true");
-				switch_channel_set_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE, NULL);
-				switch_channel_clear_flag(caller_channel, CF_PROXY_MODE);
-			}
-		}
-	}
-
 	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
 
