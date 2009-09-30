@@ -46,6 +46,8 @@ static char *SYNTAX = "cidlookup status|number [skipurl] [skipcitystate]";
 
 static struct {
 	char *url;
+	
+	char *whitepages_apikey;
 
 	switch_bool_t cache;
 	int cache_expire;
@@ -145,6 +147,7 @@ static switch_xml_config_string_options_t config_opt_dsn = {NULL, 0, NULL}; /* a
 static switch_xml_config_item_t instructions[] = {
 	/* parameter name        type                 reloadable   pointer                         default value     options structure */
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("url", CONFIG_RELOAD, &globals.url, NULL, "http://server.example.com/app?number=${caller_id_number}", "URL for the CID lookup service"),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("whitepages-apikey", CONFIG_RELOAD, &globals.whitepages_apikey, NULL, "api key for whitepages.com", "api key for whitepages.com"),
 	SWITCH_CONFIG_ITEM("cache", SWITCH_CONFIG_BOOL, CONFIG_RELOAD, &globals.cache, SWITCH_FALSE, NULL, "true|false", "whether to cache via cidlookup"),
 	SWITCH_CONFIG_ITEM("cache-expire", SWITCH_CONFIG_INT, CONFIG_RELOAD, &globals.cache_expire, (void *)300, NULL, "expire", "seconds to preserve num->name cache"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("sql", CONFIG_RELOAD, &globals.sql, "", "sql whre number=${caller_id_number}", "SQL to run if overriding CID"),
@@ -286,9 +289,8 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
-static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, const char *num) {
+static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, const char *query) {
 	char *name = NULL;
-	char *newurl = NULL;
 	
 	CURL *curl_handle = NULL;
 	long httpRes = 0;
@@ -298,24 +300,22 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 	
 	memset(&http_data, 0, sizeof(http_data));
 	
-	http_data.max_bytes = 1024;
+	http_data.max_bytes = 10240;
 	SWITCH_STANDARD_STREAM(http_data.stream);
 
 	gethostname(hostname, sizeof(hostname));
 	
-	newurl = switch_event_expand_headers(event, globals.url);
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "url: %s\n", newurl);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "url: %s\n", query);
 	curl_handle = curl_easy_init();
 	
-	if (!strncasecmp(newurl, "https", 5)) {
+	if (!strncasecmp(query, "https", 5)) {
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
 	curl_easy_setopt(curl_handle, CURLOPT_POST, SWITCH_FALSE);
 	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
-	curl_easy_setopt(curl_handle, CURLOPT_URL, newurl);
+	curl_easy_setopt(curl_handle, CURLOPT_URL, query);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &http_data);
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-cidlookup/1.0");
@@ -331,10 +331,80 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 		name = switch_core_strdup(pool, http_data.stream.data);
 	}
 	
-	if (newurl != globals.url) {
-		switch_safe_free(newurl);
-	}
 	switch_safe_free(http_data.stream.data);
+	return name;
+}
+
+static char *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, switch_bool_t *areaonly)
+{
+	char *xml_s = NULL;
+	char *query = NULL;
+	char *name = NULL;
+	char *city = NULL;
+	char *state = NULL;
+	switch_xml_t xml = NULL;
+	switch_xml_t node = NULL;
+
+	/* NANPA check */
+	if (strlen(num) == 11 && num[0] == '1') {
+		num++; /* skip past leading 1 */
+	} else {
+		goto done;
+	}
+	
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "whitepages-cid", num);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "whitepages-api-key", globals.whitepages_apikey);
+	
+	query = switch_event_expand_headers(event, "http://api.whitepages.com/reverse_phone/1.0/?phone=${whitepages-cid};api_key=${whitepages-api-key}");
+	xml_s = do_lookup_url(pool, event, query);
+	
+	xml = switch_xml_parse_str_dup(xml_s);
+	
+	if (!xml) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to parse XML: %s\n", xml_s);
+		goto done;
+	}
+
+	*areaonly = SWITCH_FALSE;
+	
+	/* try for bizname first */
+	node = switch_xml_get(xml, "wp:listings", 0, "wp:listing", 0, "wp:business", 0, "wp:businessname", -1);
+	if (node) {
+		name = switch_core_strdup(pool, switch_xml_txt(node));
+		goto done;
+	}
+	
+	node = switch_xml_get(xml, "wp:listings", 0, "wp:listing", 0, "wp:displayname", -1);
+	if (node) {
+		name = switch_core_strdup(pool, switch_xml_txt(node));
+		goto done;
+	}
+	
+	node = switch_xml_get(xml, "wp:listings", 0, "wp:listing", 0, "wp:address", 0, "wp:city", -1);
+	if (node) {
+		city = switch_xml_txt(node);
+	}
+
+	node = switch_xml_get(xml, "wp:listings", 0, "wp:listing", 0, "wp:address", 0, "wp:state", -1);
+	if (node) {
+		state = switch_xml_txt(node);
+	}
+	
+	if (city || state) {
+		*areaonly = SWITCH_TRUE;
+		name = switch_core_sprintf(pool, "%s %s", city ? city : "", state ? state : "");
+	}
+
+done:
+
+	if (query) {
+		switch_safe_free(query);
+	}
+	if (xml) {
+		switch_xml_free(xml);
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "whitepages XML: %s\n", xml_s);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "whitepages name: %s\n", name ? name : "(null)");
 	return name;
 }
 
@@ -362,6 +432,9 @@ static char *do_db_lookup(switch_memory_pool_t *pool, switch_event_t *event, con
 static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, switch_bool_t skipurl, switch_bool_t skipcitystate) {
 	char *number = NULL;
 	char *name = NULL;
+	char *area = NULL;
+	char *url_query = NULL;
+	switch_bool_t areaonly = SWITCH_FALSE;
 	
 	number = string_digitsonly(pool, num);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller_id_number", number);
@@ -376,7 +449,28 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 			name = check_cache(pool, number);
 		}
 		if (!skipurl && !name) {
-			name = do_lookup_url(pool, event, number);
+			name = do_whitepages_lookup(pool, event, number, &areaonly);
+			if (areaonly) {
+				if (!skipcitystate) {
+					area = name; /* preserve if we're not skipping city/state */
+				}
+				name = NULL; /* always clear out name */
+			}
+			if (globals.cache && name) {
+				set_cache(pool, number, name);
+			}
+		}
+		if (!skipurl && !name) {
+			url_query = switch_event_expand_headers(event, globals.url);
+			name = do_lookup_url(pool, event, url_query);
+			if (url_query != globals.url) {
+				switch_safe_free(url_query);
+			}
+			
+			/* store and use preserved area info */
+			if (!name && area) {
+				name = area;
+			}
 			if (globals.cache && name) {
 				set_cache(pool, number, name);
 			}
