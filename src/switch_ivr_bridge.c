@@ -30,7 +30,7 @@
  */
 
 #include <switch.h>
-#define DEFAULT_LEAD_FRAMES 50
+#define DEFAULT_LEAD_FRAMES 5
 
 static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
 
