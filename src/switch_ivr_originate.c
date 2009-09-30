@@ -1162,9 +1162,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 
+#if 0
+	/* changing behaviour ignore_early_media=true must also be explicitly set for previous behaviour */
 	if (ringback_data) {
 		oglobals.early_ok = 0;
 	}
+#endif
 
 	if (switch_true(switch_event_get_header(var_event, "group_confirm_cancel_timeout"))) {
 		oglobals.cancel_timeout = -1;
@@ -1844,10 +1847,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			
 		no_ringback:
 
+#if 0
+			/* changing behaviour ignore_early_media=true must also be explicitly set for previous behaviour */
 			if (ringback_data) {
 				oglobals.early_ok = 0;
 			}
-
+#endif
 			while ((!caller_channel || switch_channel_ready(caller_channel)) && check_channel_status(&oglobals, originate_status, and_argc)) {
 				time_t elapsed = switch_epoch_time_now(NULL) - start;
 				if (caller_channel && !oglobals.sent_ring && oglobals.ring_ready && !oglobals.return_ring_ready) {
