@@ -229,17 +229,55 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 									  int max,
 									  time_t start)
 {
-	int x = 0,i;
+	int x = 0,i,delayed_channels=0,active_channels=0;
+	uint32_t early_exit_time=0, delayed_min=0;
+
 	time_t elapsed = switch_epoch_time_now(NULL) - start;
 
 	if (oglobals->cancel_timeout > 0) {
 		return 0;
 	}
-
 	for (i = 0; i < max; i++) {
-		if (originate_status[i].peer_channel && originate_status[i].per_channel_delay_start && elapsed > originate_status[i].per_channel_delay_start) {
-			switch_channel_clear_flag(originate_status[i].peer_channel, CF_BLOCK_STATE);
-			originate_status[i].per_channel_delay_start = 0;
+		if (originate_status[i].peer_channel && switch_channel_get_state(originate_status[i].peer_channel) != CS_DESTROY && switch_channel_get_state(originate_status[i].peer_channel) != CS_REPORTING) {
+			if (originate_status[i].per_channel_delay_start) {
+				delayed_channels++;
+			} else {
+				active_channels++;
+			}
+		}
+	}
+
+	if (active_channels == 0 && delayed_channels) {
+		for (i = 0; i < max; i++) {
+			if ( originate_status[i].peer_channel && originate_status[i].per_channel_delay_start && (! delayed_min || delayed_min > originate_status[i].per_channel_delay_start) ) {
+				delayed_min = originate_status[i].per_channel_delay_start;
+			}
+		}
+		early_exit_time = delayed_min - elapsed;
+	}
+	for (i = 0; i < max; i++) {
+		if (originate_status[i].peer_channel && originate_status[i].per_channel_delay_start && (elapsed > originate_status[i].per_channel_delay_start || active_channels == 0) ) {
+			if (active_channels == 0) {
+				if (originate_status[i].per_channel_timelimit_sec) {
+					if (originate_status[i].per_channel_timelimit_sec > early_exit_time) /* IN theory this check is not needed ( should just be if !0 then -= with no else), if its not 0 it should always be greater.... */
+						originate_status[i].per_channel_timelimit_sec -= early_exit_time;
+					else
+						originate_status[i].per_channel_timelimit_sec = 1;
+				}
+				if (originate_status[i].per_channel_progress_timelimit_sec) {
+					if (originate_status[i].per_channel_progress_timelimit_sec > early_exit_time) /* IN theory this check is not needed ( should just be if !0 then -= with no else), if its not 0 it should always be greater.... */
+						originate_status[i].per_channel_progress_timelimit_sec -= early_exit_time;
+					else
+						originate_status[i].per_channel_progress_timelimit_sec = 1;
+				}
+				originate_status[i].per_channel_delay_start -= delayed_min;
+			} else {
+				originate_status[i].per_channel_delay_start = 0;
+			}
+
+			if (! originate_status[i].per_channel_delay_start) {
+				switch_channel_clear_flag(originate_status[i].peer_channel, CF_BLOCK_STATE);
+			}
 		}
 
 		if (originate_status[i].peer_channel && switch_channel_up(originate_status[i].peer_channel)) {
@@ -1645,6 +1683,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Setting leg delay start to %d\n", 
 											  switch_channel_get_name(originate_status[i].peer_channel), val);
 							originate_status[i].per_channel_delay_start = (uint32_t) val;
+
+							if (originate_status[i].per_channel_progress_timelimit_sec != 0) {
+								originate_status[i].per_channel_progress_timelimit_sec += originate_status[i].per_channel_delay_start;
+							}
+
+							if (originate_status[i].per_channel_timelimit_sec != 0) {
+								originate_status[i].per_channel_timelimit_sec += originate_status[i].per_channel_delay_start;
+							}
 						}
 					}
 				}
