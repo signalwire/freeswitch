@@ -36,6 +36,8 @@
 #define LCR_ADMIN_SYNTAX "lcr_admin show profiles"
 
 /* SQL Query places */
+/* these now make up a map that describes the location of
+   the field based on name */
 #define LCR_DIGITS_PLACE 0
 #define LCR_CARRIER_PLACE 1
 #define LCR_RATE_PLACE 2
@@ -47,9 +49,10 @@
 #define LCR_SUFFIX_PLACE 8
 #define LCR_CODEC_PLACE 9
 #define LCR_CID_PLACE 10
+#define LCR_USER_RATE_PLACE 11
 
 #define LCR_QUERY_COLS_REQUIRED 9
-#define LCR_QUERY_COLS 11
+#define LCR_QUERY_COLS 12
 
 #define LCR_HEADERS_COUNT 6
 
@@ -83,6 +86,8 @@ struct lcr_obj {
 	char *dialstring;
 	float rate;
 	char *rate_str;
+	float user_rate;
+	char *user_rate_str;
 	size_t lstrip;
 	size_t tstrip;
 	size_t digit_len;
@@ -246,6 +251,7 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 	char *codec = NULL;
 	char *cid = NULL;
 	char *header = NULL;
+	char *user_rate = NULL;
 
 	orig_destination_number = destination_number = switch_core_strdup(pool, dialed_number);
 	
@@ -286,9 +292,15 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 									  cur_route->carrier_name);
 	}
 	
-	data = switch_core_sprintf(pool, "[lcr_carrier=%s,lcr_rate=%s%s%s%s]%s%s%s%s%s"
+	if (switch_strlen_zero(cur_route->user_rate_str)) {
+		user_rate = "";
+	} else {
+		user_rate = switch_core_sprintf(pool, ",lcr_user_rate=%s", cur_route->user_rate_str);
+	}
+	
+	data = switch_core_sprintf(pool, "[lcr_carrier=%s,lcr_rate=%s%s%s%s%s]%s%s%s%s%s"
 								, cur_route->carrier_name, cur_route->rate_str
-								, codec, cid, header
+								, user_rate, codec, cid, header
 								, cur_route->gw_prefix, cur_route->prefix
 								, destination_number, cur_route->suffix, cur_route->gw_suffix);
 			
@@ -571,6 +583,10 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 	if (argc > LCR_CID_PLACE) {
 		additional->cid = switch_core_strdup(pool, switch_str_nil(argv[LCR_CID_PLACE]));
 	}
+	if (argc > LCR_USER_RATE_PLACE) {
+		additional->user_rate = (float)atof(switch_str_nil(argv[LCR_USER_RATE_PLACE]));
+		additional->user_rate_str = switch_core_sprintf(pool, "%0.5f", additional->user_rate);
+	}
 	additional->dialstring = get_bridge_data(pool, cbt->lookup_number, cbt->cid, additional, cbt->profile, cbt->session);
 
 	if (cbt->head == NULL) {
@@ -716,6 +732,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	char *id_str;
 	char *safe_sql = NULL;
 	char *rate_field = NULL;
+	char *user_rate_field = NULL;
 	
 	switch_assert(cb_struct->lookup_number != NULL);
 
@@ -739,10 +756,13 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	/* set our rate field based on env and profile */
 	if (cb_struct->intralata == SWITCH_TRUE && profile->profile_has_intralata == SWITCH_TRUE) {
 		rate_field = switch_core_strdup(cb_struct->pool, "intralata_rate");
+		user_rate_field = switch_core_strdup(cb_struct->pool, "user_intralata_rate");
 	} else if (cb_struct->intrastate == SWITCH_TRUE && profile->profile_has_intrastate == SWITCH_TRUE) {
 		rate_field = switch_core_strdup(cb_struct->pool, "intrastate_rate");
+		user_rate_field = switch_core_strdup(cb_struct->pool, "user_intrastate_rate");
 	} else {
 		rate_field = switch_core_strdup(cb_struct->pool, "rate");
+		user_rate_field = switch_core_strdup(cb_struct->pool, "user_rate");
 	}
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, "intra routing [state:%d lata:%d] so rate field is [%s]\n",
 					  cb_struct->intrastate, cb_struct->intralata, rate_field);
@@ -752,6 +772,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, "we have a session\n");
 		if ((channel = switch_core_session_get_channel(cb_struct->session))) {
 			switch_channel_set_variable_var_check(channel, "lcr_rate_field", rate_field, SWITCH_FALSE);
+			switch_channel_set_variable_var_check(channel, "lcr_user_rate_field", user_rate_field, SWITCH_FALSE);
 			switch_channel_set_variable_var_check(channel, "lcr_query_digits", digits_copy, SWITCH_FALSE);
 			id_str = switch_core_sprintf(cb_struct->pool, "%d", cb_struct->profile->id);
 			switch_channel_set_variable_var_check(channel, "lcr_query_profile", id_str, SWITCH_FALSE);
@@ -761,6 +782,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	if (cb_struct->event) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, "we have an event\n");
 		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_rate_field", rate_field);
+		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_user_rate_field", user_rate_field);
 		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_digits", digits_copy);
 		id_str = switch_core_sprintf(cb_struct->pool, "%d", cb_struct->profile->id);
 		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_profile", id_str);
@@ -1217,10 +1239,13 @@ SWITCH_STANDARD_APP(lcr_app_function)
 		routes.lookup_number = dest;
 		if (caller_profile) {
 			routes.cid = (char *) switch_channel_get_variable(channel, "effective_caller_id_number");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Caller ID: %s\n", routes.cid);
 			if (!routes.cid) {
 				routes.cid = (char *) caller_profile->caller_id_number;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Caller ID2: %s\n", routes.cid);
 			}
 		}
+
 	
 		if (!(routes.profile = locate_profile(lcr_profile))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
