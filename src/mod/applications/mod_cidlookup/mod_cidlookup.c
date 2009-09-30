@@ -95,11 +95,11 @@ static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, const
 	}
 	
 	if ((callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD) && changed) {
-		odbc_dsn = strdup(newvalue);
 
-		if(switch_strlen_zero(odbc_dsn)) {
+		if(switch_strlen_zero(newvalue)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No local database defined.\n");
 		} else {
+			odbc_dsn = strdup(newvalue);
 			if ((odbc_user = strchr(odbc_dsn, ':'))) {
 				*odbc_user++ = '\0';
 				if ((odbc_pass = strchr(odbc_user, ':'))) {
