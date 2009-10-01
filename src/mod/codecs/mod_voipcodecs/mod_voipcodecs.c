@@ -33,7 +33,7 @@
  */
 
 #include <switch.h>
-#include "voipcodecs.h"
+#include "spandsp.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load);
 SWITCH_MODULE_DEFINITION(mod_voipcodecs, mod_voipcodecs_load, NULL, NULL);
@@ -41,8 +41,8 @@ SWITCH_MODULE_DEFINITION(mod_voipcodecs, mod_voipcodecs_load, NULL, NULL);
 /*  LPC10     - START */
 
 struct lpc10_context {
-	lpc10_encode_state_t encoder_object;
-	lpc10_decode_state_t decoder_object;
+	lpc10_encode_state_t *encoder_object;
+	lpc10_decode_state_t *decoder_object;
 };
 
 static switch_status_t switch_lpc10_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
@@ -58,11 +58,11 @@ static switch_status_t switch_lpc10_init(switch_codec_t *codec, switch_codec_fla
 	} else {
 
 		if (encoding) {
-			lpc10_encode_init(&context->encoder_object, TRUE);
+			context->encoder_object = lpc10_encode_init(context->encoder_object, TRUE);
 		}
 
 		if (decoding) {
-			lpc10_decode_init(&context->decoder_object, TRUE);
+			context->decoder_object = lpc10_decode_init(context->decoder_object, TRUE);
 		}
 
 		codec->private_info = context;
@@ -73,7 +73,18 @@ static switch_status_t switch_lpc10_init(switch_codec_t *codec, switch_codec_fla
 
 static switch_status_t switch_lpc10_destroy(switch_codec_t *codec)
 {
+	struct lpc10_context *context = codec->private_info;
 	codec->private_info = NULL;
+
+	if (!context) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (context->encoder_object) lpc10_encode_free(context->encoder_object);
+	context->encoder_object = NULL;
+	if (context->decoder_object) lpc10_decode_free(context->decoder_object);
+	context->decoder_object = NULL;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -90,7 +101,7 @@ static switch_status_t switch_lpc10_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len = lpc10_encode(&context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
+	*encoded_data_len = lpc10_encode(context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -108,7 +119,7 @@ static switch_status_t switch_lpc10_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*decoded_data_len = (2 * lpc10_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
+	*decoded_data_len = (2 * lpc10_decode(context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -118,8 +129,8 @@ static switch_status_t switch_lpc10_decode(switch_codec_t *codec,
 
 /*  GSM       - START */
 struct gsm_context {
-	gsm0610_state_t decoder_object;
-	gsm0610_state_t encoder_object;
+	gsm0610_state_t *decoder_object;
+	gsm0610_state_t *encoder_object;
 };
 
 static switch_status_t switch_gsm_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
@@ -134,10 +145,10 @@ static switch_status_t switch_gsm_init(switch_codec_t *codec, switch_codec_flag_
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if (encoding) {
-			gsm0610_init(&context->encoder_object, GSM0610_PACKING_VOIP);
+			context->encoder_object = gsm0610_init(context->encoder_object, GSM0610_PACKING_VOIP);
 		}
 		if (decoding) {
-			gsm0610_init(&context->decoder_object, GSM0610_PACKING_VOIP);
+			context->decoder_object = gsm0610_init(context->decoder_object, GSM0610_PACKING_VOIP);
 		}
 
 		codec->private_info = context;
@@ -157,7 +168,7 @@ static switch_status_t switch_gsm_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len = gsm0610_encode(&context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
+	*encoded_data_len = gsm0610_encode(context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -174,15 +185,26 @@ static switch_status_t switch_gsm_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*decoded_data_len = (2 * gsm0610_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
+	*decoded_data_len = (2 * gsm0610_decode(context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t switch_gsm_destroy(switch_codec_t *codec)
 {
-	/* We do not need to use release here as the pool memory is taken care of for us */
+	struct gsm_context *context = codec->private_info;
+
 	codec->private_info = NULL;
+
+	if (!context) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (context->decoder_object) gsm0610_free(context->decoder_object);
+	context->decoder_object = NULL;
+	if (context->encoder_object) gsm0610_free(context->encoder_object);
+	context->encoder_object = NULL;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -338,8 +360,8 @@ static switch_status_t switch_g711a_destroy(switch_codec_t *codec)
 /*  G722      - START */
 
 struct g722_context {
-	g722_decode_state_t decoder_object;
-	g722_encode_state_t encoder_object;
+	g722_decode_state_t *decoder_object;
+	g722_encode_state_t *encoder_object;
 };
 
 static switch_status_t switch_g722_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
@@ -354,10 +376,10 @@ static switch_status_t switch_g722_init(switch_codec_t *codec, switch_codec_flag
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if (encoding) {
-			g722_encode_init(&context->encoder_object, 64000, G722_PACKED);
+			context->encoder_object = g722_encode_init(context->encoder_object, 64000, G722_PACKED);
 		}
 		if (decoding) {
-			g722_decode_init(&context->decoder_object, 64000, G722_PACKED);
+			context->decoder_object = g722_decode_init(context->decoder_object, 64000, G722_PACKED);
 		}
 	}
 
@@ -378,7 +400,7 @@ static switch_status_t switch_g722_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len = g722_encode(&context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
+	*encoded_data_len = g722_encode(context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -396,15 +418,26 @@ static switch_status_t switch_g722_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*decoded_data_len = (2 * g722_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
+	*decoded_data_len = (2 * g722_decode(context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t switch_g722_destroy(switch_codec_t *codec)
 {
-	/* We do not need to use release here as the pool memory is taken care of for us */
+	struct g722_context *context = codec->private_info;
+
 	codec->private_info = NULL;
+
+	if (!context) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (context->decoder_object) g722_decode_free(context->decoder_object);
+	context->decoder_object = NULL;
+	if (context->encoder_object) g722_encode_free(context->encoder_object);
+	context->encoder_object = NULL;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -416,27 +449,36 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 {
 	uint32_t encoding, decoding;
 	int packing = G726_PACKING_RIGHT;
-	g726_state_t *context;
+	g726_state_t *context = NULL;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 
-	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context))))) {
+	if (!(encoding || decoding)) {
 		return SWITCH_STATUS_FALSE;
-	} else {
-		if ((flags & SWITCH_CODEC_FLAG_AAL2 || strstr(codec->implementation->iananame, "AAL2"))) {
-			packing = G726_PACKING_LEFT;
-		}
+	} 
 
-		g726_init(context, codec->implementation->bits_per_second, G726_ENCODING_LINEAR, packing);
-
-		codec->private_info = context;
-		return SWITCH_STATUS_SUCCESS;
+	if ((flags & SWITCH_CODEC_FLAG_AAL2 || strstr(codec->implementation->iananame, "AAL2"))) {
+		packing = G726_PACKING_LEFT;
 	}
+	
+	context = g726_init(context, codec->implementation->bits_per_second, G726_ENCODING_LINEAR, packing);
+	
+	codec->private_info = context;
+	return SWITCH_STATUS_SUCCESS;
+
 }
 
 static switch_status_t switch_g726_destroy(switch_codec_t *codec)
 {
+	g726_state_t *context = codec->private_info;
+
+	if (!context) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	g726_free(context);
+
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -482,8 +524,8 @@ static switch_status_t switch_g726_decode(switch_codec_t *codec,
 /*  IMA_ADPCM - START */
 
 struct ima_adpcm_context {
-	ima_adpcm_state_t decoder_object;
-	ima_adpcm_state_t encoder_object;
+	ima_adpcm_state_t *decoder_object;
+	ima_adpcm_state_t *encoder_object;
 };
 
 static switch_status_t switch_adpcm_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
@@ -498,10 +540,10 @@ static switch_status_t switch_adpcm_init(switch_codec_t *codec, switch_codec_fla
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if (encoding) {
-			ima_adpcm_init(&context->encoder_object, IMA_ADPCM_DVI4, 0);
+			context->encoder_object = ima_adpcm_init(context->encoder_object, IMA_ADPCM_DVI4, 0);
 		}
 		if (decoding) {
-			ima_adpcm_init(&context->decoder_object, IMA_ADPCM_DVI4, 0);
+			context->decoder_object = ima_adpcm_init(context->decoder_object, IMA_ADPCM_DVI4, 0);
 		}
 
 		codec->private_info = context;
@@ -522,7 +564,7 @@ static switch_status_t switch_adpcm_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len = ima_adpcm_encode(&context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
+	*encoded_data_len = ima_adpcm_encode(context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -540,15 +582,26 @@ static switch_status_t switch_adpcm_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*decoded_data_len = (2 * ima_adpcm_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
+	*decoded_data_len = (2 * ima_adpcm_decode(context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t switch_adpcm_destroy(switch_codec_t *codec)
 {
-	/* We do not need to use release here as the pool memory is taken care of for us */
+	struct ima_adpcm_context *context = codec->private_info;
+
 	codec->private_info = NULL;
+
+	if (!context) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (context->decoder_object) ima_adpcm_free(context->decoder_object);
+	context->decoder_object = NULL;
+	if (context->encoder_object) ima_adpcm_free(context->encoder_object);
+	context->encoder_object = NULL;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
