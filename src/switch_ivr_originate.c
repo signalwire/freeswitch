@@ -253,7 +253,7 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 				delayed_min = originate_status[i].per_channel_delay_start;
 			}
 		}
-		early_exit_time = delayed_min - elapsed;
+		early_exit_time = delayed_min - (uint32_t) elapsed;
 	}
 	for (i = 0; i < max; i++) {
 		if (originate_status[i].peer_channel && originate_status[i].per_channel_delay_start && (elapsed > originate_status[i].per_channel_delay_start || active_channels == 0) ) {
