@@ -555,7 +555,13 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg(const char *string);
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK)
 SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len);
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
-SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *from, const char *headers, const char *body, const char *file);
+SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, 
+												  const char *from, 
+												  const char *headers, 
+												  const char *body, 
+												  const char *file,
+												  const char *convert_cmd,
+												  const char *convert_ext);
 SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char close);
 
 

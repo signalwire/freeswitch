@@ -130,6 +130,8 @@ struct vm_profile {
 	char *web_tail;
 	char *email_from;
 	char *date_fmt;
+	char *convert_cmd;
+	char *convert_ext;
 	date_location_t play_date_announcement;
 	uint32_t digit_timeout;
 	uint32_t max_login_attempts;
@@ -553,7 +555,13 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "play-date-announcement", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, 
 		&profile->play_date_announcement, VM_DATE_FIRST, &config_play_date_announcement, NULL, NULL);
-		
+
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "convert-cmd", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
+						   &profile->convert_cmd, NULL, &profile->config_str_pool, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "convert-ext", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
+						   &profile->convert_ext, NULL, &profile->config_str_pool, NULL, NULL);
+
+	
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "digit-timeout", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, 
 		&profile->digit_timeout, 10000, &config_int_digit_timeout, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "max-login-attempts", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, 
@@ -1232,6 +1240,8 @@ struct listen_callback {
 	int want;
 	msg_type_t type;
 	msg_move_t move; 
+	char *convert_cmd;
+	char *convert_ext;
 };
 typedef struct listen_callback listen_callback_t;
 
@@ -1659,7 +1669,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 						body = switch_mprintf("%u second Voicemail from %s %s", message_len, cbt->cid_name, cbt->cid_number);
 					}
 
-					switch_simple_email(cbt->email, from, header_string, body, cbt->file_path);
+					switch_simple_email(cbt->email, from, header_string, body, cbt->file_path, cbt->convert_cmd, cbt->convert_ext);
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending message to %s\n", cbt->email);
 					switch_safe_free(body);
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "emailed", NULL, NULL));
@@ -1735,6 +1745,8 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	int total_saved_urgent_messages = 0;
 	int heard_auto_saved = 0, heard_auto_new = 0;
 	char *vm_email = NULL;
+	char *convert_cmd = profile->convert_cmd;
+	char *convert_ext = profile->convert_ext;
 	char *vm_storage_dir = NULL;
 	char global_buf[2] = "";
 	switch_input_args_t args = { 0 };
@@ -1849,6 +1861,8 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 							  &total_new_urgent_messages, &total_saved_urgent_messages);
 				memset(&cbt, 0, sizeof(cbt));
 				cbt.email = vm_email;
+				cbt.convert_cmd = convert_cmd;
+				cbt.convert_ext = convert_ext;
 				cbt.move = VM_MOVE_NEXT;
 				switch (play_msg_type) {
 				case MSG_NEW:
@@ -2154,9 +2168,13 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						}
 					} else if (!strcasecmp(var, "vm-mailto")) {
 						vm_email = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "vm-convert-cmd")) {
+						convert_cmd = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "vm-convert-ext")) {
+						convert_ext = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "storage-dir")) {
 						vm_storage_dir = switch_core_session_strdup(session, val);
-
+						
 					} else if (!strcasecmp(var, "timezone")) {
 						switch_channel_set_variable(channel, var, val);
 					} 
@@ -2304,7 +2322,9 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	const char *tmp;
 	switch_event_t *local_event = NULL;
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
-	
+	char *convert_cmd = profile->convert_cmd;
+	char *convert_ext = profile->convert_ext;
+
 	if (!params) {
 		switch_event_create(&local_event, SWITCH_EVENT_REQUEST_PARAMS);
 		params = local_event;
@@ -2357,6 +2377,10 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 			insert_db = switch_true(val);
 		} else if (!strcasecmp(var, "vm-attach-file")) {
 			email_attach = switch_true(val);
+		} else if (!strcasecmp(var, "vm-convert-cmd")) {
+			convert_cmd = switch_core_strdup(pool, val);
+		} else if (!strcasecmp(var, "vm-convert-ext")) {
+			convert_ext = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "timezone")) {
 			vm_timezone = switch_core_strdup(pool, val);
 		}
@@ -2528,9 +2552,9 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 			}
 
 			if (email_attach) {
-				switch_simple_email(vm_email, from, header_string, body, file_path);
+				switch_simple_email(vm_email, from, header_string, body, file_path, convert_cmd, convert_ext);
 			} else {
-				switch_simple_email(vm_email, from, header_string, body, NULL);
+				switch_simple_email(vm_email, from, header_string, body, NULL, NULL, NULL);
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", vm_email);
@@ -2579,7 +2603,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 				body = switch_mprintf("%u second Voicemail from %s %s", message_len, caller_id_name, caller_id_number);
 			}
 
-			switch_simple_email(vm_notify_email, from, header_string, body, NULL);
+			switch_simple_email(vm_notify_email, from, header_string, body, NULL, NULL, NULL);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending notify message to %s\n", vm_notify_email);
 			

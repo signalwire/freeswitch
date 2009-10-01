@@ -429,7 +429,13 @@ static int write_buf(int fd, const char *buf)
 	return 1;
 }
 
-SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *from, const char *headers, const char *body, const char *file)
+SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, 
+												  const char *from, 
+												  const char *headers, 
+												  const char *body, 
+												  const char *file,
+												  const char *convert_cmd,
+												  const char *convert_ext)
 {
 	char *bound = "XXXX_boundary_XXXX";
 	const char *mime_type = "audio/inline";
@@ -439,25 +445,47 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 	unsigned int b = 0, l = 0;
 	unsigned char in[B64BUFFLEN];
 	unsigned char out[B64BUFFLEN + 512];
+	char *dupfile = NULL, *ext = NULL;
+	char *newfile = NULL;
+	switch_bool_t rval = SWITCH_FALSE;
+
+	if (!switch_strlen_zero(file) && !switch_strlen_zero(convert_cmd) && !switch_strlen_zero(convert_ext)) {
+		if ((ext = strrchr(file, '.'))) {
+			dupfile = strdup(file);
+			if ((ext = strrchr(dupfile, '.'))) {
+				*ext++ = '\0';
+				newfile = switch_mprintf("%s.%s", dupfile, convert_ext);
+			}
+		}
+		
+		if (newfile) {
+			char cmd[1024] = "";
+			switch_snprintf(cmd, sizeof(cmd), "%s %s %s", convert_cmd, file, newfile);
+			switch_system(cmd, SWITCH_TRUE);
+			file = newfile;
+		}
+
+		switch_safe_free(dupfile);
+	}
 
 	switch_snprintf(filename, 80, "%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, (int) switch_epoch_time_now(NULL), rand() & 0xffff);
 
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
 		if (file) {
 			if ((ifd = open(file, O_RDONLY | O_BINARY)) < 1) {
-				return SWITCH_FALSE;
+				rval = SWITCH_FALSE; goto end;
 			}
 		}
 		switch_snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
 		if (!write_buf(fd, buf)) {
-			return SWITCH_FALSE;
+			rval = SWITCH_FALSE; goto end;
 		}
 
 		if (headers && !write_buf(fd, headers))
-			return SWITCH_FALSE;
+			rval = SWITCH_FALSE; goto end;
 
 		if (!write_buf(fd, "\n\n"))
-			return SWITCH_FALSE;
+			rval = SWITCH_FALSE; goto end;
 
 		if (body && switch_stristr("content-type", body)) {
 			switch_snprintf(buf, B64BUFFLEN, "--%s\n", bound);
@@ -465,11 +493,11 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 			switch_snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
 		}
 		if (!write_buf(fd, buf))
-			return SWITCH_FALSE;
+			rval = SWITCH_FALSE; goto end;
 
 		if (body) {
 			if (!write_buf(fd, body)) {
-				return SWITCH_FALSE;
+				rval = SWITCH_FALSE; goto end;
 			}
 		}
 
@@ -492,7 +520,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 							"Content-Description: Sound attachment.\n"
 							"Content-Disposition: attachment; filename=\"%s\"\n\n", bound, mime_type, stipped_file, stipped_file);
 			if (!write_buf(fd, buf))
-				return SWITCH_FALSE;
+				rval = SWITCH_FALSE; goto end;
 
 			while ((ilen = read(ifd, in, B64BUFFLEN))) {
 				for (x = 0; x < ilen; x++) {
@@ -507,7 +535,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 					}
 				}
 				if (write(fd, &out, bytes) != bytes) {
-					return -1;
+					rval = -1;
 				} else
 					bytes = 0;
 
@@ -521,14 +549,14 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 					out[bytes++] = '=', l += 2;
 				}
 			if (write(fd, &out, bytes) != bytes) {
-				return -1;
+				rval = -1;
 			}
 
 		}
 
 		switch_snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
 		if (!write_buf(fd, buf))
-			return SWITCH_FALSE;
+			rval = SWITCH_FALSE; goto end;
 	}
 
 	if (fd) {
@@ -556,7 +584,16 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed data to [%s]\n", to);
 	}
 
-	return SWITCH_TRUE;
+	rval = SWITCH_TRUE;
+
+ end:	
+	
+	if (newfile) {
+		unlink(newfile);
+		free(newfile);
+	}
+
+	return rval;
 }
 
 SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip)
