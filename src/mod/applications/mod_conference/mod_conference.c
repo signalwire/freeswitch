@@ -29,6 +29,7 @@
  * Dale Thatcher <freeswitch at dalethatcher dot com>
  * Chris Danielson <chris at maxpowersoft dot com>
  * Rupa Schomaker <rupa@rupa.com>
+ * David Weekly <david@weekly.org>
  *
  * mod_conference.c -- Software Conference Bridge
  *
@@ -287,6 +288,7 @@ typedef struct conference_obj {
 	switch_byte_t *not_talking_buf;
 	uint32_t not_talking_buf_len;
 	int comfort_noise_level;
+	int is_recording;
 	int video_running;
 	uint32_t eflags;
 	uint32_t verbose_events;
@@ -962,28 +964,9 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	switch_mutex_lock(globals.hash_mutex);
 	globals.threads++;
 	switch_mutex_unlock(globals.hash_mutex);
+
+	conference->is_recording = 0;
 	
-	if (conference->auto_record) {
-		uint32_t sanity = 1200;
-
-		while (!conference->members && --sanity) {
-			switch_yield(100000);
-		}
-
-		imember = conference->members;
-		if (imember) {
-			switch_channel_t *channel = switch_core_session_get_channel(imember->session);
-			char *rfile = switch_channel_expand_variables(channel, conference->auto_record); 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Auto recording file: %s\n", rfile);
-			launch_conference_record_thread(conference, rfile);
-			if (rfile != conference->auto_record) {
-				switch_safe_free(rfile);
-			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Auto Record Failed.  No members in conference.\n");
-		}
-	}
-
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
 		switch_size_t file_sample_len = samples;
 		switch_size_t file_data_len = samples * 2;
@@ -1025,6 +1008,24 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			}
 			switch_mutex_unlock(imember->audio_in_mutex);
 		}
+
+		/* Start recording if there's more than one participant. */
+		if (ready > 1 && conference->auto_record && !conference->is_recording){
+			conference->is_recording = 1;
+			imember = conference->members;
+			if (imember) {
+				switch_channel_t *channel = switch_core_session_get_channel(imember->session);
+				char *rfile = switch_channel_expand_variables(channel, conference->auto_record); 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Auto recording file: %s\n", rfile);
+				launch_conference_record_thread(conference, rfile);
+				if (rfile != conference->auto_record) {
+					switch_safe_free(rfile);
+				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Auto Record Failed.  No members in conference.\n");
+			}
+		}
+
 
 		if (members_with_video && conference->video_running != 1) {
 			launch_conference_video_thread(conference);
