@@ -398,6 +398,11 @@ speex-reconf:
 	cd libs/speex && ./config.status --recheck
 	cd libs/speex && ./config.status
 
+tiff-reconf:
+	cd libs/tiff-3.8.2 && autoreconf -fi
+	cd libs/tiff-3.8.2 && sh ./configure.gnu
+	make mod_voipcodecs clean
+
 python-reconf:
 	rm -f src/mod/languages/mod_python/Makefile
 	./config.status
