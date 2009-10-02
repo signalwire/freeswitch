@@ -1346,13 +1346,6 @@ static void handle_SIGBUS(int sig)
 }
 #endif
 
-/* no ctl-c mofo */
-static void handle_SIGINT(int sig)
-{
-	if (sig);
-	return;
-}
-
 static void handle_SIGHUP(int sig)
 {
 	if (sig) {
@@ -1463,7 +1456,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	}
 
 	/* set signal handlers */
-	signal(SIGINT, handle_SIGINT);
+	signal(SIGINT, SIG_IGN);
 #ifdef SIGPIPE
 	signal(SIGPIPE, handle_SIGPIPE);
 #endif
