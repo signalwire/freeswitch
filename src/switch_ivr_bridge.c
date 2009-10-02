@@ -108,6 +108,10 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	int16_t silence_data[SWITCH_RECOMMENDED_BUFFER_SIZE/2] = { 0 };
 	const char *silence_var, *var;
 	int silence_val = 0, bypass_media_after_bridge = 0;
+	const char *bridge_answer_timeout = NULL;
+	int answer_timeout;
+	time_t answer_limit = 0;
+	
 #ifdef SWITCH_VIDEO_IN_THREADS
 	struct vid_helper vh = { 0 };
 	uint32_t vid_launch = 0;
@@ -133,7 +137,15 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	}
 
 	inner_bridge = switch_channel_test_flag(chan_a, CF_INNER_BRIDGE);
-
+	
+	if (!switch_channel_test_flag(chan_a, CF_ANSWERED) && (bridge_answer_timeout = switch_channel_get_variable(chan_a, "bridge_answer_timeout"))) {
+		if ((answer_timeout = atoi(bridge_answer_timeout)) < 0) {
+			answer_timeout = 0;
+		} else {
+			answer_limit = switch_epoch_time_now(NULL) + answer_timeout;
+		}
+	}
+	
 
 	switch_channel_set_flag(chan_a, CF_BRIDGED);
 
@@ -298,6 +310,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			} else {
 				message = NULL;
 			}
+		}
+
+		if (!ans_a && answer_limit && switch_epoch_time_now(NULL) > answer_limit) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Answer timeout hit on %s.\n", switch_channel_get_name(chan_a));
+			switch_channel_hangup(chan_a, SWITCH_CAUSE_ALLOTTED_TIMEOUT);
 		}
 
 		if (!ans_a && originator) {
