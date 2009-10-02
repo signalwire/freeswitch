@@ -2345,7 +2345,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						}
 					}
 				}
-				if (!ok) {
+				if (ok) {
 					goto outer_for;
 				}
 			}
