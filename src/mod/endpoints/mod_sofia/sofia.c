@@ -4049,6 +4049,10 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	home = su_home_new(sizeof(*home));
 	switch_assert(home != NULL);
 
+	nua_respond(nh, SIP_202_ACCEPTED,
+				NUTAG_WITH_THIS(nua),
+				SIPTAG_EXPIRES_STR("60"), TAG_END());
+
 	if (sip->sip_referred_by) {
 		full_ref_by = sip_header_as_string(home, (void *) sip->sip_referred_by);
 	}
