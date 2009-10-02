@@ -1,6 +1,8 @@
 # FREESWITCH CMAKE BUILD
 # Created by SHANE BURRELL 2009 (supjigator)
 
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+
 PROJECT (freeswitch)
 
 #GETSVN VERSION
@@ -28,8 +30,6 @@ INCLUDE (CheckFunctionExists)
 INCLUDE (CheckLibraryExists)
 INCLUDE (CheckTypeSize)
 INCLUDE (CheckCXXSourceCompiles)
-
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 MESSAGE( STATUS ) 
 MESSAGE( STATUS "FREESWITCH CMAKE Build-----------------------------------------" ) 
