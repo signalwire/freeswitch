@@ -26,7 +26,7 @@
 docdir = $(LIBTIFF_DOCDIR)
 
 AUTOMAKE_OPTIONS = dist-zip foreign
-ACLOCAL_AMFLAGS = -I ./m4
+ACLOCAL_AMFLAGS = -I m4
 
 docfiles = \
 	COPYRIGHT \
