@@ -150,7 +150,7 @@ extern "C"
         );
         return retval;
     }
-#elif defined(__GNUC__)
+#elif defined(__GNUC__)  || (__SUNPRO_C >= 0x0590)
 
 #if defined(__i386__)
     /* These routines are guaranteed fast on an i386 machine. Using the built in

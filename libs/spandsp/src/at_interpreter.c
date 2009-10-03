@@ -76,7 +76,7 @@ enum
 static at_profile_t profiles[3] =
 {
     {
-#if defined(_MSC_VER)  ||  defined(__sunos)  ||  defined(__solaris)
+#if defined(_MSC_VER)  ||  defined(__sunos)  ||  defined(__solaris) || defined(__sun)
         /*.echo =*/ TRUE,
         /*.verbose =*/ TRUE,
         /*.result_code_format =*/ ASCII_RESULT_CODES,

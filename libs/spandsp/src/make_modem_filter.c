@@ -44,7 +44,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <fcntl.h>
-#if defined(__sunos)  ||  defined(__solaris)
+#if defined(__sunos)  ||  defined(__solaris) || defined(__sun)
 #include <getopt.h>
 #endif
 
