@@ -1,2 +1,4 @@
 #! /bin/sh
-./configure "`echo $@ | sed 's| -Xc | |'`" --disable-shared --with-pic --enable-builtin-tiff
+ARGS='$@'
+MYARGS=`echo $ARGS | sed 's| -Xc | |'`
+./configure "$MYARGS" --disable-shared --with-pic --enable-builtin-tiff
