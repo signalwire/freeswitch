@@ -34,6 +34,10 @@
 #include "config.h"
 #endif
 
+#if defined(__sun)
+#define __EXTENSIONS__
+#endif
+
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
