@@ -39,18 +39,25 @@
 
 struct switch_hash {
 	Hash table;
+	switch_memory_pool_t *pool;
 };
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(switch_hash_t **hash, switch_memory_pool_t *pool, switch_bool_t case_sensitive)
 {
 	switch_hash_t *newhash;
 
-	newhash = switch_core_alloc(pool, sizeof(*newhash));
+	if (pool) {
+		newhash = switch_core_alloc(pool, sizeof(*newhash));
+		newhash->pool = pool;
+	} else {
+		switch_zmalloc(newhash, sizeof(*newhash));
+	}
+
 	switch_assert(newhash);
 
 	sqlite3HashInit(&newhash->table, case_sensitive ? SQLITE_HASH_BINARY : SQLITE_HASH_STRING, 1);
 	*hash = newhash;
-
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -58,7 +65,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t **hash)
 {
 	switch_assert(hash != NULL && *hash != NULL);
 	sqlite3HashClear(&(*hash)->table);
+
+	if (!(*hash)->pool) {
+		free(*hash);
+	}
+
 	*hash = NULL;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

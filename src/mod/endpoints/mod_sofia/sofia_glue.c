@@ -444,6 +444,7 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 		}
 	}
 
+
 	if (codec_string) {
 		char *tmp_codec_string;
 		if ((tmp_codec_string = switch_core_session_strdup(tech_pvt->session, codec_string))) {
