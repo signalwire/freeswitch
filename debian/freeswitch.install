@@ -17,7 +17,6 @@ opt/freeswitch/mod/mod_nibblebill*
 opt/freeswitch/mod/mod_skypiax*
 opt/freeswitch/mod/mod_snom*
 opt/freeswitch/mod/mod_spy*
-opt/freeswitch/mod/mod_t38gateway*
 opt/freeswitch/mod/mod_vmd*
 opt/freeswitch/mod/mod_shout*
 opt/freeswitch/mod/mod_cdr_csv.so*
