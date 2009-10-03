@@ -40,6 +40,9 @@
 #include <fcntl.h>
 #include <memory.h>
 #include <string.h>
+#if defined(HAVE_STRINGS_H)
+#include <strings.h>
+#endif
 #include <ctype.h>
 #include <assert.h>
 
