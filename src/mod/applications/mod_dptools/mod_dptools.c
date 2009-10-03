@@ -87,12 +87,10 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 #define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume"
 SWITCH_STANDARD_APP(detect_speech_function)
 {
-	char *argv[4];
-	int argc;
+
 	char *lbuf = NULL;
 
-	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
-		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+
 		if (!strcasecmp(argv[0], "grammar") && argc >= 1) {
 			switch_ivr_detect_speech_load_grammar(session, argv[1], argv[2]);
 		} else if (!strcasecmp(argv[0], "nogrammar")) {
