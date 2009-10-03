@@ -2035,16 +2035,27 @@ static switch_status_t load_config(int reload, int del_all)
 				if ((p = strchr(name_dup, '@'))) {
 					*p = '\0';
 				}
+				
+				if (switch_stristr("origination_caller_id", member->txt)) {
+					sql = switch_mprintf("insert into fifo_outbound "
+										 "(uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
+										 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname) "
+										 "values ('%q','%q',"
+										 "'{execute_on_answer=''unset fifo_hangup_check'',fifo_hangup_check=''%q''"
+										 "}%q',%d,%d,%d,%d,0,0,1,0,0,'%q')",
+										 digest, node->name, node->name, member->txt, simo_i, 0, timeout_i, lag_i, globals.hostname);
+				} else {
 
-				sql = switch_mprintf("insert into fifo_outbound "
-									 "(uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
-									 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname) "
-									 "values ('%q','%q',"
-									 "'{execute_on_answer=''unset fifo_hangup_check'',fifo_hangup_check=''%q'',origination_caller_id_name=Queue,"
-									 "origination_caller_id_number=''fifo+%q''}%q',%d,%d,%d,%d,0,0,1,0,0,'%q')",
-									 
-									 digest, node->name, node->name, name_dup, member->txt, simo_i, 0, timeout_i, lag_i, globals.hostname
-									 );
+					sql = switch_mprintf("insert into fifo_outbound "
+										 "(uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
+										 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname) "
+										 "values ('%q','%q',"
+										 "'{execute_on_answer=''unset fifo_hangup_check'',fifo_hangup_check=''%q'',origination_caller_id_name=Queue,"
+										 "origination_caller_id_number=''fifo+%q''}%q',%d,%d,%d,%d,0,0,1,0,0,'%q')",
+										 digest, node->name, node->name, name_dup, member->txt, simo_i, 0, timeout_i, lag_i, globals.hostname);
+										 
+				}
+
 				switch_assert(sql);
 				fifo_execute_sql(sql, globals.sql_mutex);
 				free(sql);
