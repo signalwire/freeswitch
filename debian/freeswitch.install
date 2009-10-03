@@ -7,7 +7,6 @@ opt/freeswitch/bin/fs_ivrd
 opt/freeswitch/bin/scripts/*
 opt/freeswitch/lib/libfreeswitch*.so*
 opt/freeswitch/lib/libopenzap*.so*
-opt/freeswitch/mod/mod_amr*
 opt/freeswitch/mod/mod_cidlookup*
 opt/freeswitch/mod/mod_curl*
 opt/freeswitch/mod/mod_easyroute*
