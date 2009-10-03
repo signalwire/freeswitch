@@ -403,7 +403,7 @@ extern "C"
        the accuracy issues related to changing the rounding scheme are of little concern
        to us. */
 
-    #if !defined(__sgi)  &&  !defined(__sunos)  &&  !defined(__solaris)
+    #if !defined(__sgi)  &&  !defined(__sunos)  &&  !defined(__solaris) && !defined(__sun)
         #warning "No usable lrint() and lrintf() functions available."
         #warning "Replacing these functions with a simple C cast."
     #endif
