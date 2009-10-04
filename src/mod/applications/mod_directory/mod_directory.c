@@ -833,10 +833,14 @@ SWITCH_STANDARD_APP(directory_function)
 	int attempts = 3;
 	char macro[255];
 
-	if (!switch_strlen_zero(data)) {
-		mydata = switch_core_session_strdup(session, data);
-		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	if (switch_strlen_zero(data)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing profile name\n");
+		return;
 	}
+
+	mydata = switch_core_session_strdup(session, data);
+	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
 	if (argv[x]) {
 		profile_name = argv[x++];
 	}
@@ -845,10 +849,9 @@ SWITCH_STANDARD_APP(directory_function)
 		domain_name = argv[x++];
 	}
 
-
 	if (!(profile = get_profile(profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
-		goto end;
+		return;
 	}
 
 	populate_database(session, profile, domain_name);
@@ -888,15 +891,11 @@ SWITCH_STANDARD_APP(directory_function)
 		switch_ivr_session_transfer(session, s_param.transfer_to, "XML", domain_name);
 	}
 
-end:
 	/* Delete all sql entry for this call */
 	sql = switch_mprintf("delete from directory_search where hostname = '%q' and uuid = '%q'", globals.hostname, switch_core_session_get_uuid(session));
 	directory_execute_sql(sql, profile->mutex);
 	switch_safe_free(sql);
-
-
-	profile_rwunlock(profile);
-
+	profile_rwunlock(profile);	
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_directory_load)
@@ -929,7 +928,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_directory_load)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open db name : %s\n", globals.dbname);
 		return SWITCH_STATUS_FALSE;
-
 	}
 
 	sql = switch_mprintf("delete from directory_search where hostname = '%q'", globals.hostname);
