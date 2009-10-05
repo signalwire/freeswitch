@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31.c,v 1.152 2009/09/04 14:38:46 steveu Exp $
+ * $Id: t31.c,v 1.153 2009/10/05 16:33:25 steveu Exp $
  */
 
 /*! \file */
@@ -2282,7 +2282,7 @@ static int v27ter_v21_rx_fillin(void *user_data, int len)
 
     t = (t31_state_t *) user_data;
     s = &t->audio.modems;
-    v17_rx_fillin(&s->v27ter_rx, len);
+    v27ter_rx_fillin(&s->v27ter_rx, len);
     fsk_rx_fillin(&s->v21_rx, len);
     return 0;
 }

@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_non_ecm_buffer.c,v 1.8 2009/02/10 13:06:46 steveu Exp $
+ * $Id: t38_non_ecm_buffer.c,v 1.9 2009/10/05 16:33:25 steveu Exp $
  */
 
 /*! \file */
@@ -46,9 +46,6 @@
 #endif
 #include "floating_fudge.h"
 #include <assert.h>
-#if defined(LOG_FAX_AUDIO)
-#include <unistd.h>
-#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"

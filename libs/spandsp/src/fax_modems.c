@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_modems.c,v 1.6 2009/09/04 14:38:46 steveu Exp $
+ * $Id: fax_modems.c,v 1.7 2009/10/05 16:33:25 steveu Exp $
  */
 
 /*! \file */
@@ -45,9 +45,6 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <time.h>
-#if defined(LOG_FAX_AUDIO)
-#include <unistd.h>
-#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"

@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: make_at_dictionary.c,v 1.4 2009/04/24 22:35:25 steveu Exp $
+ * $Id: make_at_dictionary.c,v 1.5 2009/10/05 16:36:42 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -32,7 +32,6 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
