@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_echo.c,v 1.25 2009/02/03 16:28:39 steveu Exp $
+ * $Id: modem_echo.c,v 1.26 2009/09/22 13:11:04 steveu Exp $
  */
 
 /*! \file */
@@ -52,6 +52,8 @@
 #include "spandsp/bit_operations.h"
 #include "spandsp/dc_restore.h"
 #include "spandsp/modem_echo.h"
+
+#include "spandsp/private/modem_echo.h"
 
 SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_create(int len)
 {

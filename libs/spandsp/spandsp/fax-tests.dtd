@@ -1,6 +1,7 @@
 <!-- FAX test scripts -->
 <!ELEMENT fax-tests (config|messages|test-group)* >
 <!ELEMENT config (path)* >
+<!ELEMENT path (EMPTY)* >
 <!ATTLIST path
   type      CDATA   #REQUIRED
   value     CDATA   #REQUIRED

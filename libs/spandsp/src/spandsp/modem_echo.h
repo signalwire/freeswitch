@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_echo.h,v 1.13 2009/02/03 16:28:41 steveu Exp $
+ * $Id: modem_echo.h,v 1.14 2009/09/22 13:11:04 steveu Exp $
  */
 
 /*! \file */
@@ -84,22 +84,7 @@ minor burden.
     Modem line echo canceller descriptor. This defines the working state for a line
     echo canceller.
 */
-typedef struct
-{
-    int adapt;
-    int taps;
-
-    fir16_state_t fir_state;
-    /*! Echo FIR taps (16 bit version) */
-    int16_t *fir_taps16;
-    /*! Echo FIR taps (32 bit version) */
-    int32_t *fir_taps32;
-
-    int tx_power;
-    int rx_power;
-
-    int curr_pos;
-} modem_echo_can_state_t;
+typedef struct modem_echo_can_state_s modem_echo_can_state_t;
 
 #if defined(__cplusplus)
 extern "C"

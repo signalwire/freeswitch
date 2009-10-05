@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: silence_gen.c,v 1.22 2009/06/02 16:03:56 steveu Exp $
+ * $Id: silence_gen.c,v 1.23 2009/09/04 14:38:46 steveu Exp $
  */
 
 /*! \file */
@@ -156,6 +156,12 @@ SPAN_DECLARE_NONSTD(int) span_dummy_rx(void *user_data, const int16_t amp[], int
 SPAN_DECLARE(int) span_dummy_mod(void *user_data, int16_t amp[], int len)
 {
     return len;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE_NONSTD(int) span_dummy_rx_fillin(void *user_data, int len)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

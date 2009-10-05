@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: sig_tone_tests.c,v 1.25 2009/05/30 15:23:14 steveu Exp $
+ * $Id: sig_tone_tests.c,v 1.27 2009/09/23 16:02:59 steveu Exp $
  */
 
 /*! \file */
@@ -58,112 +58,97 @@
 static int sampleno = 0;
 static int tone_1_present = 0;
 static int tone_2_present = 0;
-static int ping = 0;
+static int tx_section = 0;
+static int dial_pulses = 0;
 
-void map_frequency_response(sig_tone_rx_state_t *s);
-
-static int tx_handler(void *user_data, int what)
+static void tx_handler(void *user_data, int what, int level, int duration)
 {
-    //printf("What - %d\n", what);
-    if ((what & SIG_TONE_UPDATE_REQUEST))
+    sig_tone_tx_state_t *s;
+    
+    s = (sig_tone_tx_state_t *) user_data;
+    //printf("What - %d, duration - %d\n", what, duration);
+    if ((what & SIG_TONE_TX_UPDATE_REQUEST))
     {
         printf("Tx: update request\n");
-        /* The signaling processor wants to know what to do next */
-        if (sampleno < ms_to_samples(100))
+        /* The sig tone transmit side wants to know what to do next */
+        switch (tx_section)
         {
-            /* 100ms off-hook */
-            printf("100ms off-hook - %d samples\n", 800 - sampleno);
-            return 0x02 | ((ms_to_samples(100) - sampleno) << 16);
-        }
-        else if (sampleno < ms_to_samples(600))
-        {
-            /* 500ms idle */
-            printf("500ms idle - %d samples\n", ms_to_samples(600) - sampleno);
-            return 0x02 | SIG_TONE_1_PRESENT | ((ms_to_samples(600) - sampleno) << 16);
-        }
-        else if (sampleno < ms_to_samples(700))
-        {
-            /* 100ms seize */
-            printf("100ms seize - %d samples\n", ms_to_samples(700) - sampleno);
-            return 0x02 | ((ms_to_samples(700) - sampleno) << 16);
-        }
-        else if (sampleno < ms_to_samples(1700))
-        {
-            if (ping)
-            {
-                printf("33ms break - %d samples\n", ms_to_samples(33));
-                ping = !ping;
-                return 0x02 | (ms_to_samples(33) << 16);
-            }
+        case 0:
+            printf("33ms break - %d samples\n", ms_to_samples(33));
+            tx_section++;
+            sig_tone_tx_set_mode(s, SIG_TONE_1_PRESENT, ms_to_samples(33));
+            break;
+        case 1:
+            printf("67ms make - %d samples\n", ms_to_samples(67));
+            if (++dial_pulses == 9)
+                tx_section++;
             else
-            {
-                printf("67ms make - %d samples\n", ms_to_samples(67));
-                ping = !ping;
-                return 0x02 | SIG_TONE_1_PRESENT | (ms_to_samples(67) << 16);
-            }
-            /*endif*/
+                tx_section--;
+            sig_tone_tx_set_mode(s, 0, ms_to_samples(67));
+            break;
+        case 2:
+            tx_section++;
+            sig_tone_tx_set_mode(s, SIG_TONE_1_PRESENT, ms_to_samples(600));
+            break;
+        case 3:
+            sig_tone_tx_set_mode(s, SIG_TONE_1_PRESENT | SIG_TONE_TX_PASSTHROUGH, 0);
+            break;
         }
-        else
-        {
-            return 0x02 | SIG_TONE_1_PRESENT | ((ms_to_samples(700) - sampleno) << 16) | SIG_TONE_TX_PASSTHROUGH;
-        }
-        /*endif*/
+        /*endswitch*/
     }
     /*endif*/
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-static int rx_handler(void *user_data, int what)
+static void rx_handler(void *user_data, int what, int level, int duration)
 {
-    //printf("What - %d\n", what);
+    float ms;
+
+    ms = 1000.0f*(float) duration/(float) SAMPLE_RATE;
+    printf("What - %d, duration - %d\n", what, duration);
     if ((what & SIG_TONE_1_CHANGE))
     {
         tone_1_present = what & SIG_TONE_1_PRESENT;
-        printf("Rx: tone 1 is %s after %d samples\n", (tone_1_present)  ?  "on"  : "off", (what >> 16) & 0xFFFF);
+        printf("Rx: tone 1 is %s after %d samples (%fms)\n", (tone_1_present)  ?  "on"  : "off", duration, ms);
     }
     /*endif*/
     if ((what & SIG_TONE_2_CHANGE))
     {
         tone_2_present = what & SIG_TONE_2_PRESENT;
-        printf("Rx: tone 2 is %s after %d samples\n", (tone_2_present)  ?  "on"  : "off", (what >> 16) & 0xFFFF);
+        printf("Rx: tone 2 is %s after %d samples (%fms)\n", (tone_2_present)  ?  "on"  : "off", duration, ms);
     }
     /*endif*/
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-void map_frequency_response(sig_tone_rx_state_t *s)
+static void map_frequency_response(sig_tone_rx_state_t *s)
 {
     int16_t buf[8192];
-    awgn_state_t noise_source;
     int i;
-    int f;
-    uint32_t phase_acc;
-    int32_t phase_rate;
-    int32_t scaling;
-    double sum;
+    int len;
+    double sumin;
+    double sumout;
+    swept_tone_state_t *swept;
     
     /* Things like noise don't highlight the frequency response of the high Q notch
        very well. We use a slowly swept frequency to check it. */
-    awgn_init_dbm0(&noise_source, 1234567, -10.0f);
-    for (f = 1;  f < 4000;  f++)
+    swept = swept_tone_init(NULL, 200.0f, 3900.0f, -10.0f, 120*SAMPLE_RATE, 0);
+    for (;;)
     {
-        phase_rate = dds_phase_rate(f);
-        scaling = dds_scaling_dbm0(-10);
-        phase_acc = 0;
-        for (i = 0;  i < 8192;  i++)
-            buf[i] = dds_mod(&phase_acc, phase_rate, scaling, 0);
+        if ((len = swept_tone(swept, buf, SAMPLES_PER_CHUNK)) <= 0)
+            break;
+        sumin = 0.0;
+        for (i = 0;  i < len;  i++)
+            sumin += (double) buf[i]*(double) buf[i];
+        sig_tone_rx(s, buf, len);
+        sumout = 0.0;
+        for (i = 0;  i < len;  i++)
+            sumout += (double) buf[i]*(double) buf[i];
         /*endfor*/
-        sig_tone_rx(s, buf, 8192);
-        sum = 0.0;
-        for (i = 1000;  i < 8192;  i++)
-            sum += (double) buf[i]*(double) buf[i];
-        /*endfor*/
-        sum = sqrt(sum);
-        printf("%7d %f\n", f, sum);
+        printf("%7.1f %f\n", swept_tone_current_frequency(swept), 10.0*log10(sumout/sumin));
     }
     /*endfor*/
+    swept_tone_free(swept);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -189,45 +174,56 @@ int main(int argc, char *argv[])
     }
     /*endif*/
 
-    awgn_init_dbm0(&noise_source, 1234567, -10.0f);
+    awgn_init_dbm0(&noise_source, 1234567, -20.0f);
 
     for (type = 1;  type <= 3;  type++)
     {
         sampleno = 0;
         tone_1_present = 0;
         tone_2_present = 0;
-        ping = 0;
+        tx_section = 0;
         munge = NULL;
         switch (type)
         {
         case 1:
             printf("2280Hz tests.\n");
             munge = codec_munge_init(MUNGE_CODEC_ALAW, 0);
-            sig_tone_tx_init(&tx_state, SIG_TONE_2280HZ, tx_handler, NULL);
-            sig_tone_rx_init(&rx_state, SIG_TONE_2280HZ, rx_handler, NULL);
+            sig_tone_tx_init(&tx_state, SIG_TONE_2280HZ, tx_handler, &tx_state);
+            sig_tone_rx_init(&rx_state, SIG_TONE_2280HZ, rx_handler, &rx_state);
             rx_state.current_rx_tone |= SIG_TONE_RX_PASSTHROUGH;
             break;
         case 2:
-            printf("26000Hz tests.\n");
+            printf("2600Hz tests.\n");
             munge = codec_munge_init(MUNGE_CODEC_ULAW, 0);
-            sig_tone_tx_init(&tx_state, SIG_TONE_2600HZ, tx_handler, NULL);
-            sig_tone_rx_init(&rx_state, SIG_TONE_2600HZ, rx_handler, NULL);
+            sig_tone_tx_init(&tx_state, SIG_TONE_2600HZ, tx_handler, &tx_state);
+            sig_tone_rx_init(&rx_state, SIG_TONE_2600HZ, rx_handler, &rx_state);
             rx_state.current_rx_tone |= SIG_TONE_RX_PASSTHROUGH;
             break;
         case 3:
-            printf("2400Hz/26000Hz tests.\n");
+            printf("2400Hz/2600Hz tests.\n");
             munge = codec_munge_init(MUNGE_CODEC_ULAW, 0);
-            sig_tone_tx_init(&tx_state, SIG_TONE_2400HZ_2600HZ, tx_handler, NULL);
-            sig_tone_rx_init(&rx_state, SIG_TONE_2400HZ_2600HZ, rx_handler, NULL);
+            sig_tone_tx_init(&tx_state, SIG_TONE_2400HZ_2600HZ, tx_handler, &tx_state);
+            sig_tone_rx_init(&rx_state, SIG_TONE_2400HZ_2600HZ, rx_handler, &rx_state);
             rx_state.current_rx_tone |= SIG_TONE_RX_PASSTHROUGH;
             break;
         }
         /*endswitch*/
-    
-        //map_frequency_response(&rx_state);
+        /* Set to the default of hook condition */
+        sig_tone_rx_set_mode(&rx_state, SIG_TONE_RX_PASSTHROUGH | SIG_TONE_RX_FILTER_TONE, 0);
+        sig_tone_tx_set_mode(&tx_state, SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT | SIG_TONE_TX_PASSTHROUGH, 0);
 
-        for (sampleno = 0;  sampleno < 20000;  sampleno += SAMPLES_PER_CHUNK)
+        map_frequency_response(&rx_state);
+
+        sig_tone_rx_set_mode(&rx_state, SIG_TONE_RX_PASSTHROUGH, 0);
+        for (sampleno = 0;  sampleno < 30000;  sampleno += SAMPLES_PER_CHUNK)
         {
+            if (sampleno == 8000)
+            {
+                /* 100ms seize */
+                printf("100ms seize - %d samples\n", ms_to_samples(100));
+                dial_pulses = 0;
+                sig_tone_tx_set_mode(&tx_state, 0, ms_to_samples(100));
+            }
             for (i = 0;  i < SAMPLES_PER_CHUNK;  i++)
                 amp[i] = awgn(&noise_source);
             /*endfor*/

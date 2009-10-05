@@ -1,11 +1,11 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * version.h - A tag file, so the exact installed revision can be assertained.
+ * private/swept_tone.h - Swept tone generation
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2007 Steve Underwood
+ * Copyright (C) 2009 Steve Underwood
  *
  * All rights reserved.
  *
@@ -22,17 +22,23 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: version.h.in,v 1.3 2009/03/01 12:39:02 steveu Exp $
+ * $Id: swept_tone.h,v 1.1 2009/09/22 12:54:33 steveu Exp $
  */
 
-#if !defined(_SPANDSP_VERSION_H_)
-#define _SPANDSP_VERSION_H_
+#if !defined(_SPANDSP_PRIVATE_SWEPT_TONE_H_)
+#define _SPANDSP_PRIVATE_SWEPT_TONE_H_
 
-/* The date and time of the version are in UTC form. */
-
-#define SPANDSP_RELEASE_DATE            20091005
-#define SPANDSP_RELEASE_TIME            132812
-#define SPANDSP_RELEASE_DATETIME_STRING "20091005 132812"
+struct swept_tone_state_s
+{
+    int32_t starting_phase_inc;
+    int32_t phase_inc_step;
+    int scale;
+    int duration;
+    int repeating;
+    int pos;
+    int32_t current_phase_inc;
+    uint32_t phase;
+};
 
 #endif
 /*- End of file ------------------------------------------------------------*/

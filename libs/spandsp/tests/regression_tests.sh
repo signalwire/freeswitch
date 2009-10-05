@@ -17,7 +17,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: regression_tests.sh,v 1.58 2009/05/19 14:47:02 steveu Exp $
+# $Id: regression_tests.sh,v 1.59 2009/09/22 13:28:18 steveu Exp $
 #
 
 ITUTESTS_TIF=../test-data/itu/fax/itutests.tif
@@ -467,6 +467,16 @@ echo super_tone_rx_tests not enabled
 #fi
 #echo super_tone_tx_tests completed OK
 echo super_tone_tx_tests not enabled
+
+#./swept_tone_tests >$STDOUT_DEST 2>$STDERR_DEST
+#RETVAL=$?
+#if [ $RETVAL != 0 ]
+#then
+#    echo swept_tone_tests failed!
+#    exit $RETVAL
+#fi
+#echo swept_tone_tests completed OK
+echo swept_tone_tests not enabled
 
 ./t31_tests -r >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?

@@ -212,6 +212,7 @@
 <File RelativePath="silence_gen.c"></File>
 <File RelativePath="super_tone_rx.c"></File>
 <File RelativePath="super_tone_tx.c"></File>
+<File RelativePath="swept_tone.c"></File>
 <File RelativePath="t4.c"></File>
 <File RelativePath="t30.c"></File>
 <File RelativePath="t30_api.c"></File>
@@ -289,6 +290,7 @@
 <File RelativePath="spandsp/silence_gen.h"></File>
 <File RelativePath="spandsp/super_tone_rx.h"></File>
 <File RelativePath="spandsp/super_tone_tx.h"></File>
+<File RelativePath="spandsp/swept_tone.h"></File>
 <File RelativePath="spandsp/t4.h"></File>
 <File RelativePath="spandsp/t30.h"></File>
 <File RelativePath="spandsp/t30_api.h"></File>
@@ -327,6 +329,7 @@
 <File RelativePath="spandsp/private/bert.h"></File>
 <File RelativePath="spandsp/private/bitstream.h"></File>
 <File RelativePath="spandsp/private/dtmf.h"></File>
+<File RelativePath="spandsp/private/echo.h"></File>
 <File RelativePath="spandsp/private/fax.h"></File>
 <File RelativePath="spandsp/private/fax_modems.h"></File>
 <File RelativePath="spandsp/private/fsk.h"></File>
@@ -339,6 +342,7 @@
 <File RelativePath="spandsp/private/logging.h"></File>
 <File RelativePath="spandsp/private/lpc10.h"></File>
 <File RelativePath="spandsp/private/modem_connect_tones.h"></File>
+<File RelativePath="spandsp/private/modem_echo.h"></File>
 <File RelativePath="spandsp/private/noise.h"></File>
 <File RelativePath="spandsp/private/oki_adpcm.h"></File>
 <File RelativePath="spandsp/private/queue.h"></File>
@@ -347,6 +351,7 @@
 <File RelativePath="spandsp/private/silence_gen.h"></File>
 <File RelativePath="spandsp/private/super_tone_rx.h"></File>
 <File RelativePath="spandsp/private/super_tone_tx.h"></File>
+<File RelativePath="spandsp/private/swept_tone.h"></File>
 <File RelativePath="spandsp/private/t30.h"></File>
 <File RelativePath="spandsp/private/t31.h"></File>
 <File RelativePath="spandsp/private/t38_core.h"></File>

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: line_model_tests.c,v 1.27 2009/05/30 15:23:14 steveu Exp $
+ * $Id: line_model_tests.c,v 1.28 2009/09/23 16:02:59 steveu Exp $
  */
 
 /*! \page line_model_tests_page Telephony line model tests
@@ -62,7 +62,7 @@
 #define IN_FILE_NAME1       "line_model_test_in1.wav"
 #define IN_FILE_NAME2       "line_model_test_in2.wav"
 #define OUT_FILE_NAME1      "line_model_one_way_test_out.wav"
-#define OUT_FILE_NAME       "line_model_test_out.wav"
+#define OUT_FILE_NAME2      "line_model_two_way_test_out.wav"
 
 int channel_codec;
 int rbs_pattern;
@@ -128,10 +128,17 @@ static void test_one_way_model(int line_model_no, int speech_test)
     
     awgn_init_dbm0(&noise1, 1234567, -10.0f);
 
-    if ((inhandle1 = sf_open_telephony_read(IN_FILE_NAME1, 1)) == NULL)
+    if (speech_test)
     {
-        fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME1);
-        exit(2);
+        if ((inhandle1 = sf_open_telephony_read(IN_FILE_NAME1, 1)) == NULL)
+        {
+            fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME1);
+            exit(2);
+        }
+    }
+    else
+    {
+        inhandle1 = NULL;
     }
     if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME1, 1)) == NULL)
     {
@@ -167,10 +174,13 @@ static void test_one_way_model(int line_model_no, int speech_test)
             exit(2);
         }
     }
-    if (sf_close(inhandle1))
+    if (speech_test)
     {
-        fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME1);
-        exit(2);
+        if (sf_close(inhandle1))
+        {
+            fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME1);
+            exit(2);
+        }
     }
     if (sf_close(outhandle))
     {
@@ -208,19 +218,27 @@ static void test_both_ways_model(int line_model_no, int speech_test)
     awgn_init_dbm0(&noise1, 1234567, -10.0f);
     awgn_init_dbm0(&noise2, 1234567, -10.0f);
 
-    if ((inhandle1 = sf_open_telephony_read(IN_FILE_NAME1, 1)) == NULL)
+    if (speech_test)
     {
-        fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME1);
-        exit(2);
+        if ((inhandle1 = sf_open_telephony_read(IN_FILE_NAME1, 1)) == NULL)
+        {
+            fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME1);
+            exit(2);
+        }
+        if ((inhandle2 = sf_open_telephony_read(IN_FILE_NAME2, 1)) == NULL)
+        {
+            fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME2);
+            exit(2);
+        }
     }
-    if ((inhandle2 = sf_open_telephony_read(IN_FILE_NAME2, 1)) == NULL)
+    else
     {
-        fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME2);
-        exit(2);
+        inhandle1 =
+        inhandle2 = NULL;
     }
-    if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME, 2)) == NULL)
+    if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME2, 2)) == NULL)
     {
-        fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
+        fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME2);
         exit(2);
     }
     for (i = 0;  i < 10000;  i++)
@@ -261,22 +279,77 @@ static void test_both_ways_model(int line_model_no, int speech_test)
             exit(2);
         }
     }
-    if (sf_close(inhandle1))
+    if (speech_test)
     {
-        fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME1);
-        exit(2);
-    }
-    if (sf_close(inhandle2))
-    {
-        fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME2);
-        exit(2);
+        if (sf_close(inhandle1))
+        {
+            fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME1);
+            exit(2);
+        }
+        if (sf_close(inhandle2))
+        {
+            fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME2);
+            exit(2);
+        }
     }
     if (sf_close(outhandle))
     {
-        fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
+        fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME2);
         exit(2);
     }
     both_ways_line_model_release(model);
+}
+/*- End of function --------------------------------------------------------*/
+
+static void test_line_filter(int line_model_no)
+{
+    float out;
+    double sumin;
+    double sumout;
+    int i;
+    int j;
+    int p;
+    int ptr;
+    int len;
+    swept_tone_state_t *s;
+    float filter[129];
+    int16_t buf[BLOCK_LEN];
+
+    s = swept_tone_init(NULL, 200.0f, 3900.0f, -10.0f, 120*SAMPLE_RATE, 0);
+    for (j = 0;  j < 129;  j++)
+        filter[j] = 0.0f;
+    ptr = 0;
+    for (;;)
+    {
+        if ((len = swept_tone(s, buf, BLOCK_LEN)) <= 0)
+            break;
+        sumin = 0.0;
+        sumout = 0.0;
+        for (i = 0;  i < len;  i++)
+        {
+            /* Add the sample in the filter buffer */
+            p = ptr;
+            filter[p] = buf[i];
+            if (++p == 129)
+                p = 0;
+            ptr = p;
+    
+            /* Apply the filter */
+            out = 0.0f;
+            for (j = 0;  j < 129;  j++)
+            {
+                out += line_models[line_model_no][128 - j]*filter[p];
+                if (++p >= 129)
+                    p = 0;
+            }
+            sumin += buf[i]*buf[i];
+            sumout += out*out;
+        }
+        /*endfor*/
+        printf("%7.1f %f\n", swept_tone_current_frequency(s), 10.0*log10(sumout/sumin));
+    }
+    /*endfor*/
+    swept_tone_free(s);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -319,6 +392,7 @@ int main(int argc, char *argv[])
     complexify_tests();
     test_one_way_model(line_model_no, speech_test);
     test_both_ways_model(line_model_no, speech_test);
+    test_line_filter(line_model_no);
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

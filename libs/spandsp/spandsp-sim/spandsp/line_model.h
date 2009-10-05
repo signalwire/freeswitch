@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: line_model.h,v 1.6 2009/05/31 14:47:10 steveu Exp $
+ * $Id: line_model.h,v 1.7 2009/09/23 16:02:59 steveu Exp $
  */
 
 /*! \file */
@@ -131,6 +131,8 @@ typedef struct
 extern "C"
 {
 #endif
+
+SPAN_DECLARE_DATA extern const float *line_models[];
 
 SPAN_DECLARE(void) both_ways_line_model(both_ways_line_model_state_t *s, 
                                         int16_t output1[],

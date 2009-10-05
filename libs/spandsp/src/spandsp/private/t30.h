@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.h,v 1.4 2009/04/12 14:18:02 steveu Exp $
+ * $Id: t30.h,v 1.5 2009/09/20 13:42:29 steveu Exp $
  */
 
 /*! \file */
@@ -221,10 +221,10 @@ struct t30_state_s
     /*! \brief A bit map of the OK ECM frames, constructed as a PPR frame. */
     uint8_t ecm_frame_map[3 + 32];
     
-    /*! \brief The current page number for receiving, in ECM mode. This is reset at the start of a call. */
-    int ecm_rx_page;
-    /*! \brief The current page number for sending, in ECM mode. This is reset at the start of a call. */
-    int ecm_tx_page;
+    /*! \brief The current page number for receiving, in ECM or non-ECM mode. This is reset at the start of a call. */
+    int rx_page_number;
+    /*! \brief The current page number for sending, in ECM or non-ECM mode. This is reset at the start of a call. */
+    int tx_page_number;
     /*! \brief The current block number, in ECM mode */
     int ecm_block;
     /*! \brief The number of frames in the current block number, in ECM mode */

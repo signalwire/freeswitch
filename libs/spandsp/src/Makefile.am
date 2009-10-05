@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.135 2009/07/12 09:23:09 steveu Exp $
+## $Id: Makefile.am,v 1.137 2009/09/22 14:52:31 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -110,6 +110,7 @@ libspandsp_la_SOURCES = adsi.c \
                         silence_gen.c \
                         super_tone_rx.c \
                         super_tone_tx.c \
+                        swept_tone.c \
                         t4.c \
                         t30.c \
                         t30_api.c \
@@ -188,6 +189,7 @@ nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/silence_gen.h \
                          spandsp/super_tone_rx.h \
                          spandsp/super_tone_tx.h \
+                         spandsp/swept_tone.h \
                          spandsp/t4.h \
                          spandsp/t30.h \
                          spandsp/t30_api.h \
@@ -226,6 +228,7 @@ nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/private/bert.h \
                          spandsp/private/bitstream.h \
                          spandsp/private/dtmf.h \
+                         spandsp/private/echo.h \
                          spandsp/private/fax.h \
                          spandsp/private/fax_modems.h \
                          spandsp/private/fsk.h \
@@ -238,6 +241,7 @@ nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/private/logging.h \
                          spandsp/private/lpc10.h \
                          spandsp/private/modem_connect_tones.h \
+                         spandsp/private/modem_echo.h \
                          spandsp/private/noise.h \
                          spandsp/private/oki_adpcm.h \
                          spandsp/private/queue.h \
@@ -246,6 +250,7 @@ nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/private/silence_gen.h \
                          spandsp/private/super_tone_rx.h \
                          spandsp/private/super_tone_tx.h \
+                         spandsp/private/swept_tone.h \
                          spandsp/private/t30.h \
                          spandsp/private/t31.h \
                          spandsp/private/t38_core.h \

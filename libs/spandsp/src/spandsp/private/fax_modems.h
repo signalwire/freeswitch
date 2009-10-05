@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_modems.h,v 1.3 2009/03/23 14:17:42 steveu Exp $
+ * $Id: fax_modems.h,v 1.4 2009/09/04 14:38:47 steveu Exp $
  */
 
 /*! \file */
@@ -95,11 +95,9 @@ struct fax_modems_state_s
 
     /*! The current receive signal handler */
     span_rx_handler_t *rx_handler;
-    void *rx_user_data;
-
     /*! The current receive missing signal fill-in handler */
     span_rx_fillin_handler_t *rx_fillin_handler;
-    void *rx_fillin_user_data;
+    void *rx_user_data;
 
     /*! The current transmit signal handler */
     span_tx_handler_t *tx_handler;

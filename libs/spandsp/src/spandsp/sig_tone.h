@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: sig_tone.h,v 1.19 2009/04/12 14:18:02 steveu Exp $
+ * $Id: sig_tone.h,v 1.20 2009/09/04 14:38:46 steveu Exp $
  */
 
 /*! \file */
@@ -54,32 +54,39 @@ least supervisory information may be heard.
 #if !defined(_SPANDSP_SIG_TONE_H_)
 #define _SPANDSP_SIG_TONE_H_
 
-typedef int (*sig_tone_func_t)(void *user_data, int what);
-
 /* The optional tone sets */
 enum
 {
-    /*! European 2280Hz signaling tone */
+    /*! European 2280Hz signaling tone. Tone 1 is 2280Hz. Tone 2 is not used. */
     SIG_TONE_2280HZ = 1,
-    /*! US 2600Hz signaling tone */
+    /*! US 2600Hz signaling tone. Tone 1 is 2600Hz. Tone 2 is not used. */
     SIG_TONE_2600HZ,
-    /*! US 2400Hz + 2600Hz signaling tones */
+    /*! US 2400Hz + 2600Hz signaling tones. Tone 1 is 2600Hz. Tone 2 is 2400Hz. */
     SIG_TONE_2400HZ_2600HZ
 };
 
+/* Mode control and report bits for transmit and receive */
 enum
 {
     /*! Signaling tone 1 is present */
     SIG_TONE_1_PRESENT          = 0x001,
+    /*! Signaling tone 1 has changed state (ignored when setting tx mode) */
     SIG_TONE_1_CHANGE           = 0x002,
     /*! Signaling tone 2 is present */
     SIG_TONE_2_PRESENT          = 0x004,
+    /*! Signaling tone 2 has changed state (ignored when setting tx mode) */
     SIG_TONE_2_CHANGE           = 0x008,
     /*! The media signal is passing through. Tones might be added to it. */
     SIG_TONE_TX_PASSTHROUGH     = 0x010,
     /*! The media signal is passing through. Tones might be extracted from it, if detected. */
-    SIG_TONE_RX_PASSTHROUGH     = 0x020,
-    SIG_TONE_UPDATE_REQUEST     = 0x100
+    SIG_TONE_RX_PASSTHROUGH     = 0x040,
+    /*! Force filtering of the signaling tone, whether signaling is being detected or not.
+        This is mostly useful for test purposes. */
+    SIG_TONE_RX_FILTER_TONE     = 0x080,
+    /*! Request an update of the transmit status, upon timeout of the previous status. */
+    SIG_TONE_TX_UPDATE_REQUEST  = 0x100,
+    /*! Request an update of the receiver status, upon timeout of the previous status. */
+    SIG_TONE_RX_UPDATE_REQUEST  = 0x200
 };
 
 /*!
@@ -106,6 +113,14 @@ extern "C"
     \return The number of samples unprocessed. */
 SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len);
 
+/*! Set the receive mode.
+    \brief Set the receive mode.
+    \param s The signaling tone context.
+    \param mode The new mode for the receiver.
+    \param duration The duration for this mode, before an update is requested.
+                    A duration of zero means forever. */
+SPAN_DECLARE(void) sig_tone_rx_set_mode(sig_tone_rx_state_t *s, int mode, int duration);
+
 /*! Initialise a signaling tone receiver context.
     \brief Initialise a signaling tone context.
     \param s The signaling tone context.
@@ -113,7 +128,7 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len);
     \param sig_update Callback function to handle signaling updates.
     \param user_data An opaque pointer.
     \return A pointer to the signalling tone context, or NULL if there was a problem. */
-SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int tone_type, sig_tone_func_t sig_update, void *user_data);
+SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int tone_type, tone_report_func_t sig_update, void *user_data);
 
 /*! Release a signaling tone receiver context.
     \brief Release a signaling tone receiver context.
@@ -138,8 +153,10 @@ SPAN_DECLARE(int) sig_tone_tx(sig_tone_tx_state_t *s, int16_t amp[], int len);
 /*! Set the tone mode.
     \brief Set the tone mode.
     \param s The signaling tone context.
-    \param mode The new mode for the transmitted tones. */
-SPAN_DECLARE(void) sig_tone_tx_set_mode(sig_tone_tx_state_t *s, int mode);
+    \param mode The new mode for the transmitted tones.
+    \param duration The duration for this mode, before an update is requested.
+                    A duration of zero means forever. */
+SPAN_DECLARE(void) sig_tone_tx_set_mode(sig_tone_tx_state_t *s, int mode, int duration);
 
 /*! Initialise a signaling tone transmitter context.
     \brief Initialise a signaling tone context.
@@ -148,7 +165,7 @@ SPAN_DECLARE(void) sig_tone_tx_set_mode(sig_tone_tx_state_t *s, int mode);
     \param sig_update Callback function to handle signaling updates.
     \param user_data An opaque pointer.
     \return A pointer to the signalling tone context, or NULL if there was a problem. */
-SPAN_DECLARE(sig_tone_tx_state_t *) sig_tone_tx_init(sig_tone_tx_state_t *s, int tone_type, sig_tone_func_t sig_update, void *user_data);
+SPAN_DECLARE(sig_tone_tx_state_t *) sig_tone_tx_init(sig_tone_tx_state_t *s, int tone_type, tone_report_func_t sig_update, void *user_data);
 
 /*! Release a signaling tone transmitter context.
     \brief Release a signaling tone transmitter context.

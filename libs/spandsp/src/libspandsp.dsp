@@ -293,6 +293,10 @@ SOURCE=.\super_tone_tx.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\swept_tone.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\t4.c
 # End Source File
 # Begin Source File
@@ -599,6 +603,10 @@ SOURCE=.\spandsp/super_tone_tx.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\spandsp/swept_tone.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\spandsp/t4.h
 # End Source File
 # Begin Source File
@@ -751,6 +759,10 @@ SOURCE=.\spandsp/private/dtmf.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\spandsp/private/echo.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\spandsp/private/fax.h
 # End Source File
 # Begin Source File
@@ -799,6 +811,10 @@ SOURCE=.\spandsp/private/modem_connect_tones.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\spandsp/private/modem_echo.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\spandsp/private/noise.h
 # End Source File
 # Begin Source File
@@ -828,6 +844,10 @@ SOURCE=.\spandsp/private/super_tone_rx.h
 # Begin Source File
 
 SOURCE=.\spandsp/private/super_tone_tx.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\spandsp/private/swept_tone.h
 # End Source File
 # Begin Source File
 

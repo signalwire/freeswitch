@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_terminal.c,v 1.127 2009/07/14 13:54:22 steveu Exp $
+ * $Id: t38_terminal.c,v 1.128 2009/09/04 14:38:46 steveu Exp $
  */
 
 /*! \file */
@@ -93,9 +93,9 @@
 
 enum
 {
-    T38_CHUNKING_MERGE_FCS_WITH_DATA    = 0x0001,
-    T38_CHUNKING_WHOLE_FRAMES           = 0x0002,
-    T38_CHUNKING_ALLOW_TEP_TIME         = 0x0004
+    T38_CHUNKING_MERGE_FCS_WITH_DATA = 0x0001,
+    T38_CHUNKING_WHOLE_FRAMES = 0x0002,
+    T38_CHUNKING_ALLOW_TEP_TIME = 0x0004
 };
 
 enum

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: line_model.c,v 1.12 2009/06/01 16:27:12 steveu Exp $
+ * $Id: line_model.c,v 1.14 2009/09/23 16:02:59 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -54,7 +54,7 @@
 #define NULL (void *) 0
 #endif
 
-float null_line_model[] =
+static const float null_line_model[] =
 {
         0.0,
         0.0,
@@ -187,7 +187,7 @@ float null_line_model[] =
         1.0
 };
 
-static float *models[] =
+SPAN_DECLARE_DATA const float *line_models[] =
 {
     null_line_model,        /* 0 */
     proakis_line_model,
@@ -225,7 +225,7 @@ static float calc_near_line_filter(one_way_line_model_state_t *s, float v)
     s->near_buf_ptr = p;
     
     /* Apply the filter */
-    sum = 0;
+    sum = 0.0f;
     for (j = 0;  j < s->near_filter_len;  j++)
     {
         sum += s->near_filter[j]*s->near_buf[p];
@@ -254,7 +254,7 @@ static float calc_far_line_filter(one_way_line_model_state_t *s, float v)
     s->far_buf_ptr = p;
     
     /* Apply the filter */
-    sum = 0;
+    sum = 0.0f;
     for (j = 0;  j < s->far_filter_len;  j++)
     {
         sum += s->far_filter[j]*s->far_buf[p];
@@ -479,10 +479,10 @@ SPAN_DECLARE(one_way_line_model_state_t *) one_way_line_model_init(int model, fl
 
     s->munge = codec_munge_init(codec, rbs_pattern);
 
-    s->near_filter = models[model];
+    s->near_filter = line_models[model];
     s->near_filter_len = 129;
 
-    s->far_filter = models[model];
+    s->far_filter = line_models[model];
     s->far_filter_len = 129;
 
     /* Put half the noise in each analogue section */
@@ -526,14 +526,14 @@ SPAN_DECLARE(both_ways_line_model_state_t *) both_ways_line_model_init(int model
     s->line1.bulk_delay_ptr = 0;
     s->line2.bulk_delay_ptr = 0;
 
-    s->line1.near_filter = models[model1];
+    s->line1.near_filter = line_models[model1];
     s->line1.near_filter_len = 129;
-    s->line2.near_filter = models[model2];
+    s->line2.near_filter = line_models[model2];
     s->line2.near_filter_len = 129;
 
-    s->line1.far_filter = models[model1];
+    s->line1.far_filter = line_models[model1];
     s->line1.far_filter_len = 129;
-    s->line2.far_filter = models[model2];
+    s->line2.far_filter = line_models[model2];
     s->line2.far_filter_len = 129;
 
     /* Put half the noise in each analogue section */

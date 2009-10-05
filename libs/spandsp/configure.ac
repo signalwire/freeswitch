@@ -16,7 +16,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: configure.ac,v 1.71 2009/07/12 09:29:18 steveu Exp $
+# $Id: configure.ac,v 1.73 2009/10/03 04:37:25 steveu Exp $
 
 # @start 1
 
@@ -108,20 +108,20 @@ else
   CXXFLAGS=${CXXFLAGS-"-g -O2"}
 fi
 
-AC_DEFUN([REMOVE_FROM_VAR],[                                                                                                                                     
-    new_val=""                                                                                                                                           
-    removed=0                                                                                                                                               
-    for i in $$1; do                                                                                                                                            
-      if test "x$i" != "x$2"; then                                                                                                                              
-        new_val="$new_val $i"                                                                                                                     
-      else                                                                                                                                                      
-        removed=1                                                                                                                                           
-      fi                                                                                                                                                        
-    done                                                                                                                                                        
-    if test $removed = "1"; then                                                                                                                            
-      echo "  removed \"$2\" from $1"                                                                                              
-      $1=$new_val                                                                                                                                        
-    fi                                                                                                                                                          
+AC_DEFUN([REMOVE_FROM_VAR],[
+    new_val=""
+    removed=0
+    for i in $$1; do
+        if test "x$i" != "x$2"; then
+            new_val="$new_val $i"
+        else
+            removed=1
+        fi
+    done
+    if test $removed = "1"; then
+        echo "  removed \"$2\" from $1"
+        $1=$new_val
+    fi
 ])
 
 AC_C_CONST
@@ -146,9 +146,9 @@ AC_ARG_ENABLE(sse4_2,       [  --enable-sse4-2      Enable SSE4.2 support])
 AC_ARG_ENABLE(sse4a,        [  --enable-sse4a       Enable SSE4A support])
 AC_ARG_ENABLE(sse5,         [  --enable-sse5        Enable SSE5 support])
 AC_ARG_ENABLE(fixed_point,  [  --enable-fixed-point Enable fixed point support])
+# The following is for MSVC, where we may be using a local copy of libtiff, built alongside spandsp
 AC_ARG_ENABLE(builtin_tiff,
-[AC_HELP_STRING([--enable-builtin-tiff],[build with builtin libtiff])],[enable_builtin_tiff="$enableval"],[enable_builtin_tiff="no"])
-
+    [AC_HELP_STRING([--enable-builtin-tiff],[build with builtin libtiff])],[enable_builtin_tiff="$enableval"],[enable_builtin_tiff="no"])
 
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_VPRINTF

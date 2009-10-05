@@ -27,7 +27,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: echo.c,v 1.32 2009/02/10 13:06:46 steveu Exp $
+ * $Id: echo.c,v 1.33 2009/09/22 13:11:04 steveu Exp $
  */
 
 /*! \file */
@@ -101,6 +101,8 @@
 #include "spandsp/dc_restore.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/echo.h"
+
+#include "spandsp/private/echo.h"
 
 #if !defined(NULL)
 #define NULL (void *) 0

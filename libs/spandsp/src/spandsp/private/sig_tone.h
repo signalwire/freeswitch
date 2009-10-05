@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: sig_tone.h,v 1.3 2009/04/12 14:18:02 steveu Exp $
+ * $Id: sig_tone.h,v 1.4 2009/09/04 14:38:47 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_SIG_TONE_H_)
@@ -38,8 +38,8 @@ struct sig_tone_descriptor_s
 {
     /*! \brief The tones used. */
     int tone_freq[2];
-    /*! \brief The high and low tone amplitudes. */
-    int tone_amp[2];
+    /*! \brief The high and low tone amplitudes for each of the tones. */
+    int tone_amp[2][2];
 
     /*! \brief The delay, in audio samples, before the high level tone drops
                to a low level tone. */
@@ -79,7 +79,6 @@ struct sig_tone_descriptor_s
         float notch_b2[3];
 #endif
     } tone[2];
-
 
 #if defined(SPANDSP_USE_FIXED_POINT)
     /*! \brief Flat mode bandpass bi-quad parameters */
@@ -128,22 +127,22 @@ struct sig_tone_descriptor_s
 struct sig_tone_tx_state_s
 {
     /*! \brief The callback function used to handle signaling changes. */
-    sig_tone_func_t sig_update;
+    tone_report_func_t sig_update;
     /*! \brief A user specified opaque pointer passed to the callback function. */
     void *user_data;
 
     /*! \brief Tone descriptor */
     sig_tone_descriptor_t *desc;
 
-    /*! The scaling values for the high and low level tones */
-    int16_t tone_scaling[2];
-    /*! The sample timer, used to switch between the high and low level tones. */
-    int high_low_timer;
-
     /*! The phase rates for the one or two tones */
     int32_t phase_rate[2];
     /*! The phase accumulators for the one or two tones */
     uint32_t phase_acc[2];
+
+    /*! The scaling values for the one or two tones, and the high and low level of each tone */
+    int16_t tone_scaling[2][2];
+    /*! The sample timer, used to switch between the high and low level tones. */
+    int high_low_timer;
 
     /*! \brief Current transmit tone */
     int current_tx_tone;
@@ -159,7 +158,7 @@ struct sig_tone_tx_state_s
 struct sig_tone_rx_state_s
 {
     /*! \brief The callback function used to handle signaling changes. */
-    sig_tone_func_t sig_update;
+    tone_report_func_t sig_update;
     /*! \brief A user specified opaque pointer passed to the callback function. */
     void *user_data;
 

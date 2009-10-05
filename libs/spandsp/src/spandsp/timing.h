@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: timing.h,v 1.13 2008/04/17 14:27:01 steveu Exp $
+ * $Id: timing.h,v 1.14 2009/09/04 14:38:47 steveu Exp $
  */
 
 #if !defined(_SPANDSP_TIMING_H_)
@@ -56,8 +56,8 @@ static __inline__ uint64_t rdtscll(void)
 #elif defined(__x86_64__)
 static __inline__ uint64_t rdtscll(void)
 {
-    unsigned int a;
-    unsigned int d;
+    uint32_t a;
+    uint32_t d;
 
     /* For x86_64 we need to merge the result in 2 32 bit registers
        into one clean 64 bit result. */

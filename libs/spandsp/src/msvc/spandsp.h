@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: spandsp.h.in,v 1.18 2009/04/02 13:43:49 steveu Exp $
+ * $Id: spandsp.h.in,v 1.19 2009/09/22 13:11:04 steveu Exp $
  */
 
 /*! \file */
@@ -69,6 +69,7 @@
 #include <spandsp/complex_filters.h>
 #include <spandsp/dc_restore.h>
 #include <spandsp/dds.h>
+#include <spandsp/swept_tone.h>
 #include <spandsp/echo.h>
 #include <spandsp/modem_echo.h>
 #include <spandsp/crc.h>

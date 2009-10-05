@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.h,v 1.125 2009/04/12 09:12:10 steveu Exp $
+ * $Id: t30.h,v 1.126 2009/09/21 15:52:39 steveu Exp $
  */
 
 /*! \file */
@@ -524,9 +524,9 @@ typedef struct
     int pages_rx;
     /*! \brief The number of pages in the file (<0 if not known). */
     int pages_in_file;
-    /*! \brief The horizontal column-to-column resolution of the page, in pixels per metre */
+    /*! \brief The horizontal column-to-column resolution of the most recent page, in pixels per metre */
     int x_resolution;
-    /*! \brief The vertical row-to-row resolution of the page, in pixels per metre */
+    /*! \brief The vertical row-to-row resolution of the most recent page, in pixels per metre */
     int y_resolution;
     /*! \brief The number of horizontal pixels in the most recent page. */
     int width;

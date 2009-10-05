@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: echo.h,v 1.19 2009/02/10 13:06:47 steveu Exp $
+ * $Id: echo.h,v 1.20 2009/09/22 13:11:04 steveu Exp $
  */
 
 /*! \file */
@@ -133,59 +133,7 @@ enum
     G.168 echo canceller descriptor. This defines the working state for a line
     echo canceller.
 */
-typedef struct
-{
-    int tx_power[4];
-    int rx_power[3];
-    int clean_rx_power;
-
-    int rx_power_threshold;
-    int nonupdate_dwell;
-
-    int curr_pos;
-	
-    int taps;
-    int tap_mask;
-    int adaption_mode;
-    
-    int32_t supp_test1;
-    int32_t supp_test2;
-    int32_t supp1;
-    int32_t supp2;
-    int vad;
-    int cng;
-
-    int16_t geigel_max;
-    int geigel_lag;
-    int dtd_onset;
-    int tap_set;
-    int tap_rotate_counter;
-
-    int32_t latest_correction;  /* Indication of the magnitude of the latest
-                                   adaption, or a code to indicate why adaption
-                                   was skipped, for test purposes */
-    int32_t last_acf[28];
-    int narrowband_count;
-    int narrowband_score;
-
-    fir16_state_t fir_state;
-    /*! Echo FIR taps (16 bit version) */
-    int16_t *fir_taps16[4];
-    /*! Echo FIR taps (32 bit version) */
-    int32_t *fir_taps32;
-
-    /* DC and near DC blocking filter states */
-    int32_t tx_hpf[2];
-    int32_t rx_hpf[2];
-   
-    /* Parameters for the optional Hoth noise generator */
-    int cng_level;
-    int cng_rndnum;
-    int cng_filter;
-    
-    /* Snapshot sample of coeffs used for development */
-    int16_t *snapshot;       
-} echo_can_state_t;
+typedef struct echo_can_state_s echo_can_state_t;
 
 #if defined(__cplusplus)
 extern "C"

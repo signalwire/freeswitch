@@ -1,11 +1,11 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * version.h - A tag file, so the exact installed revision can be assertained.
+ * swept_tone.h - Swept tone generation
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2007 Steve Underwood
+ * Copyright (C) 2009 Steve Underwood
  *
  * All rights reserved.
  *
@@ -22,17 +22,38 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: version.h.in,v 1.3 2009/03/01 12:39:02 steveu Exp $
+ * $Id: swept_tone.h,v 1.1 2009/09/22 12:54:33 steveu Exp $
  */
 
-#if !defined(_SPANDSP_VERSION_H_)
-#define _SPANDSP_VERSION_H_
+/*! \file */
 
-/* The date and time of the version are in UTC form. */
+#if !defined(_SPANDSP_SWEPT_TONE_H_)
+#define _SPANDSP_SWEPT_TONE_H_
 
-#define SPANDSP_RELEASE_DATE            20091005
-#define SPANDSP_RELEASE_TIME            132812
-#define SPANDSP_RELEASE_DATETIME_STRING "20091005 132812"
+/*! \page swept_tone_page The swept tone generator
+\section swept_tone_page_sec_1 What does it do?
+*/
+
+typedef struct swept_tone_state_s swept_tone_state_t;
+
+#if defined(__cplusplus)
+extern "C"
+{
+#endif
+
+SPAN_DECLARE(swept_tone_state_t *) swept_tone_init(swept_tone_state_t *s, float start, float end, float level, int duration, int repeating);
+
+SPAN_DECLARE(int) swept_tone(swept_tone_state_t *s, int16_t amp[], int len);
+
+SPAN_DECLARE(float) swept_tone_current_frequency(swept_tone_state_t *s);
+
+SPAN_DECLARE(int) swept_tone_release(swept_tone_state_t *s);
+
+SPAN_DECLARE(int) swept_tone_free(swept_tone_state_t *s);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif
 /*- End of file ------------------------------------------------------------*/

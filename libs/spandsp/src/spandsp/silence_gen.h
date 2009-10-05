@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: silence_gen.h,v 1.18 2009/06/02 16:03:56 steveu Exp $
+ * $Id: silence_gen.h,v 1.19 2009/09/04 14:38:47 steveu Exp $
  */
 
 #if !defined(_SPANDSP_SILENCE_GEN_H_)
@@ -124,6 +124,16 @@ SPAN_DECLARE_NONSTD(int) span_dummy_rx(void *user_data, const int16_t amp[], int
     \return 0.
 */
 SPAN_DECLARE(int) span_dummy_mod(void *user_data, int16_t amp[], int len);
+
+/*! A dummy routine to use as a receive fillin callback, when we aren't really
+    trying to process what is received. It just absorbs and ignores the
+    request.
+    \brief Dummy receive fillin callback.
+    \param user_data The context.
+    \param len The length of the signal buffer
+    \return 0.
+*/
+SPAN_DECLARE_NONSTD(int) span_dummy_rx_fillin(void *user_data, int len);
 
 #if defined(__cplusplus)
 }

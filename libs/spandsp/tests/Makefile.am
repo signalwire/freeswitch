@@ -16,7 +16,7 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.116 2009/05/30 15:23:13 steveu Exp $
+## $Id: Makefile.am,v 1.117 2009/09/22 13:11:04 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -99,6 +99,7 @@ noinst_PROGRAMS =   adsi_tests \
                     sig_tone_tests \
                     super_tone_rx_tests \
                     super_tone_tx_tests \
+                    swept_tone_tests \
                     t4_tests \
                     t31_tests \
                     t38_core_tests \
@@ -272,6 +273,9 @@ super_tone_rx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR
 
 super_tone_tx_tests_SOURCES = super_tone_tx_tests.c
 super_tone_tx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+
+swept_tone_tests_SOURCES = swept_tone_tests.c
+swept_tone_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 t4_tests_SOURCES = t4_tests.c
 t4_tests_LDADD = $(LIBDIR) -lspandsp

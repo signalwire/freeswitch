@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_decode.c,v 1.56 2009/05/30 15:23:13 steveu Exp $
+ * $Id: fax_decode.c,v 1.57 2009/09/15 14:01:53 steveu Exp $
  */
 
 /*! \page fax_decode_page FAX decoder
@@ -124,7 +124,7 @@ static void print_frame(const char *io, const uint8_t *fr, int frlen)
     type = fr[2] & 0xFE;
     if (type == T30_DIS  ||  type == T30_DTC  ||  type == T30_DCS)
         t30_decode_dis_dtc_dcs(&t30_dummy, fr, frlen);
-    if (type == T30_NSF)
+    if (type == T30_NSF  ||  type == T30_NSS  ||  type == T30_NSC)
     {
         if (t35_decode(&fr[3], frlen - 3, &country, &vendor, &model))
         {
