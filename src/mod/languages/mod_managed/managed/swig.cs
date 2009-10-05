@@ -2369,8 +2369,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_bool_t switch_simple_email(string to, string from, string headers, string body, string file) {
-    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_simple_email(to, from, headers, body, file);
+  public static switch_bool_t switch_simple_email(string to, string from, string headers, string body, string file, string convert_cmd, string convert_ext) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_simple_email(to, from, headers, body, file, convert_cmd, convert_ext);
     return ret;
   }
 
@@ -6821,7 +6821,7 @@ class freeswitchPINVOKE {
   public static extern string switch_url_decode(string jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_simple_email")]
-  public static extern int switch_simple_email(string jarg1, string jarg2, string jarg3, string jarg4, string jarg5);
+  public static extern int switch_simple_email(string jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_find_end_paren")]
   public static extern string switch_find_end_paren(string jarg1, char jarg2, char jarg3);

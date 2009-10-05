@@ -9451,13 +9451,15 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_url_decode(char * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_simple_email(char * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_simple_email(char * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, char * jarg7) {
   int jresult ;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   char *arg5 = (char *) 0 ;
+  char *arg6 = (char *) 0 ;
+  char *arg7 = (char *) 0 ;
   switch_bool_t result;
   
   arg1 = (char *)jarg1; 
@@ -9465,7 +9467,9 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_simple_email(char * jarg1, char * jarg2
   arg3 = (char *)jarg3; 
   arg4 = (char *)jarg4; 
   arg5 = (char *)jarg5; 
-  result = (switch_bool_t)switch_simple_email((char const *)arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5);
+  arg6 = (char *)jarg6; 
+  arg7 = (char *)jarg7; 
+  result = (switch_bool_t)switch_simple_email((char const *)arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7);
   jresult = result; 
   return jresult;
 }
