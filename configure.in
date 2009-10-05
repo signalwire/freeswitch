@@ -826,7 +826,6 @@ fi
 AC_CONFIG_SUBDIRS(libs/pcre)
 AC_CONFIG_SUBDIRS(libs/apr)
 AC_CONFIG_SUBDIRS(libs/apr-util)
-AC_CONFIG_SUBDIRS(libs/voipcodecs)
 AC_CONFIG_SUBDIRS(libs/ilbc)
 AC_CONFIG_SUBDIRS(libs/curl)
 AC_CONFIG_SUBDIRS(libs/iksemel)
