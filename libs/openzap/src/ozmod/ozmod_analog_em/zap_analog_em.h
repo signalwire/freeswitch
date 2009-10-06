@@ -40,6 +40,8 @@
 #define ZAP_ANALOG_EM_H
 #include "openzap.h"
 
+#define MAX_DIALSTRING 256
+
 typedef enum {
 	ZAP_ANALOG_EM_RUNNING = (1 << 0)
 } zap_analog_em_flag_t;
