@@ -274,6 +274,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 
 					if (!strcasecmp(func, "play-file")) {
 						status = switch_ivr_play_file(session, NULL, odata, args);
+					} else if (!strcasecmp(func, "phrase")) {
+						char *name = (char *) switch_xml_attr_soft(action, "phrase");
+						status = switch_ivr_phrase_macro(session, name, odata, chan_lang, args);
 					} else if (!strcasecmp(func, "break")) {
 						done = 1;
 						/* must allow the switch_safe_free below to execute or we leak - do not break here */
