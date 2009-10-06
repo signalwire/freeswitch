@@ -137,8 +137,9 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_em_configure_span)
 		digit_timeout = 2000;
 	}
 
-	if (max_dialstr < 2 || max_dialstr > 20) {
-		max_dialstr = 11;
+	if (max_dialstr < 2 || max_dialstr > MAX_DIALSTRING) {
+		zap_log(ZAP_LOG_ERROR, "Invalid max_dialstr, setting to %d\n", MAX_DIALSTRING);
+		max_dialstr = MAX_DIALSTRING;
 	}
 
 	span->start = zap_analog_em_start;
