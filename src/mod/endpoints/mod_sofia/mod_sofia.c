@@ -2739,6 +2739,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		tech_pvt->transport = gateway_ptr->register_transport;
 
+
 		/*
 		 * Handle params, strip them off the destination and add them to the
 		 * invite contact.
@@ -2780,6 +2781,16 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s@%s", dest, sofia_glue_strip_proto(gateway_ptr->register_proxy));
 		} else {
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s", dest);
+		}
+
+		if ((host = switch_core_session_strdup(session, tech_pvt->dest))) {
+			char *p = strchr(host, '@');
+			if (p) {
+				host = p+1;
+			} else {
+				host = NULL;
+				dest_to = NULL;
+			}
 		}
 
 		if (params) {
