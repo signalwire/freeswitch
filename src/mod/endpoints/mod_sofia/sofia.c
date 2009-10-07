@@ -4253,6 +4253,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								if ((tmp = switch_channel_get_variable(a_channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
 									moh = tmp;
 								}
+
+								if (!strcasecmp(moh, "silence")) {
+									moh = NULL;
+								}
+
 								//switch_channel_set_variable(a_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, "true");
 								if (moh) {
 									switch_channel_set_variable_printf(a_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, 
