@@ -2783,7 +2783,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s", dest);
 		}
 
-		if ((host = switch_core_session_strdup(session, tech_pvt->dest))) {
+		if ((host = switch_core_session_strdup(nsession, tech_pvt->dest))) {
 			char *p = strchr(host, '@');
 			if (p) {
 				host = p+1;
