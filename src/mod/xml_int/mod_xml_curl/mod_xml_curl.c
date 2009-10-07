@@ -374,15 +374,15 @@ static switch_status_t do_config(void)
 					auth_scheme = 0;
 					val++;
 				}
-
+				
 				if (!strcasecmp(val, "basic")) {
 					auth_scheme |= CURLAUTH_BASIC;
 				} else if (!strcasecmp(val, "digest")) {
-					auth_scheme = CURLAUTH_DIGEST;
+					auth_scheme |= CURLAUTH_DIGEST;
 				} else if (!strcasecmp(val, "NTLM")) {
-					auth_scheme = CURLAUTH_NTLM;
+					auth_scheme |= CURLAUTH_NTLM;
 				} else if (!strcasecmp(val, "GSS-NEGOTIATE")) {
-					auth_scheme = CURLAUTH_GSSNEGOTIATE;
+					auth_scheme |= CURLAUTH_GSSNEGOTIATE;
 				} else if (!strcasecmp(val, "any")) {
 					auth_scheme = CURLAUTH_ANY;
 				}
