@@ -55,6 +55,7 @@ struct xml_binding {
 	char *cookie_file;
 	switch_hash_t *vars_map;
 	int use_dynamic_url;
+	int auth_scheme;
 };
 
 static int keep_files_around = 0;
@@ -217,7 +218,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 	if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 		if (!switch_strlen_zero(binding->cred)) {
-			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, binding->auth_scheme);
 			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, binding->cred);
 		}
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
@@ -355,6 +356,8 @@ static switch_status_t do_config(void)
 		hash_node_t* hash_node;
 		need_vars_map = 0;
 		vars_map = NULL;
+		int auth_scheme = CURLAUTH_BASIC;
+
 
 		for (param = switch_xml_child(binding_tag, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -366,6 +369,23 @@ static switch_status_t do_config(void)
 				}
 			} else if (!strcasecmp(var, "gateway-credentials")) {
 				bind_cred = val;
+			} else if (!strcasecmp(var, "auth-scheme")) {
+				if (*val == '=') {
+					auth_scheme = 0;
+					val++;
+				}
+
+				if (!strcasecmp(val, "basic")) {
+					auth_scheme |= CURLAUTH_BASIC;
+				} else if (!strcasecmp(val, "digest")) {
+					auth_scheme = CURLAUTH_DIGEST;
+				} else if (!strcasecmp(val, "NTLM")) {
+					auth_scheme = CURLAUTH_NTLM;
+				} else if (!strcasecmp(val, "GSS-NEGOTIATE")) {
+					auth_scheme = CURLAUTH_GSSNEGOTIATE;
+				} else if (!strcasecmp(val, "any")) {
+					auth_scheme = CURLAUTH_ANY;
+				}
 			} else if (!strcasecmp(var, "disable-100-continue") && switch_true(val)) {
 				disable100continue = 1;
 			} else if (!strcasecmp(var, "method")) {
@@ -419,6 +439,8 @@ static switch_status_t do_config(void)
 		}
 		memset(binding, 0, sizeof(*binding));
 
+		binding->auth_scheme = auth_scheme;
+		
 		binding->url = strdup(url);
 		switch_assert(binding->url);
 
