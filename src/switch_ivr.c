@@ -666,6 +666,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			expires = switch_epoch_time_now(NULL) + timeout;
 		}
 		switch_channel_set_variable(channel, "park_timeout", NULL);
+		switch_channel_set_variable(channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, NULL);
 	}
 
 	switch_channel_set_flag(channel, CF_CONTROLLED);
@@ -1150,7 +1151,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 	if ((session = switch_core_session_locate(uuid))) {
 		channel = switch_core_session_get_channel(session);
 
-		if ((flags & SMF_REBRIDGE) && !switch_channel_test_flag(channel, CF_ORIGINATOR)) {
+		if ((flags & SMF_REBRIDGE) && !switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 			swap = 1;
 		}
 
@@ -1214,7 +1215,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 		status = SWITCH_STATUS_SUCCESS;
 		channel = switch_core_session_get_channel(session);
 
-		if ((flags & SMF_REBRIDGE) && !switch_channel_test_flag(channel, CF_ORIGINATOR)) {
+		if ((flags & SMF_REBRIDGE) && !switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 			swap = 1;
 		}
 

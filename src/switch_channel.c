@@ -1706,10 +1706,11 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	switch_channel_clear_flag(channel, CF_BLOCK_STATE);
 	
 	if (channel->state < CS_HANGUP) {
-		switch_channel_state_t last_state = channel->state;
+		switch_channel_state_t last_state;
 		switch_event_t *event;
 
 		switch_mutex_lock(channel->state_mutex);
+		last_state = channel->state;
 		channel->state = CS_HANGUP;
 		switch_mutex_unlock(channel->state_mutex);
 

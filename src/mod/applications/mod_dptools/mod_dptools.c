@@ -1533,7 +1533,7 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 				switch_caller_extension_t *extension = NULL;
 				const char *app = "three_way";
 				const char *app_arg = switch_core_session_get_uuid(session);
-				const char *holding = switch_channel_get_variable(channel, SWITCH_HOLDING_UUID_VARIABLE);
+				const char *holding = switch_channel_get_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE);
 				switch_core_session_t *b_session;
 
 				if (holding && (b_session = switch_core_session_locate(holding))) {
@@ -1603,8 +1603,8 @@ SWITCH_STANDARD_APP(att_xfer_function)
 		bond = switch_core_session_strdup(session, bond);
 	}
 
-	switch_channel_set_variable(channel, SWITCH_HOLDING_UUID_VARIABLE, bond);
-
+	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, bond);
+	switch_channel_set_flag(channel, CF_XFER_ZOMBIE);
 
 	if ((var = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
 		timelimit = atoi(var);
@@ -1654,7 +1654,8 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_core_session_rwunlock(peer_session);
 
   end:
-	switch_channel_set_variable(channel, SWITCH_HOLDING_UUID_VARIABLE, NULL);
+	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, NULL);
+	switch_channel_clear_flag(channel, CF_XFER_ZOMBIE);
 }
 
 SWITCH_STANDARD_APP(read_function)
@@ -1890,6 +1891,35 @@ SWITCH_STANDARD_APP(playback_function)
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
 
 	status = switch_ivr_play_file(session, &fh, file, &args);
+
+	switch (status) {
+	case SWITCH_STATUS_SUCCESS:
+	case SWITCH_STATUS_BREAK:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE PLAYED");
+		break;
+	case SWITCH_STATUS_NOTFOUND:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
+		break;
+	default:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR");
+		break;
+	}
+
+}
+
+
+
+SWITCH_STANDARD_APP(endless_playback_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const char *file = data;
+	
+	while(switch_channel_ready(channel)) {
+		if ((status = switch_ivr_play_file(session, NULL, file, NULL)) == SWITCH_STATUS_NOTFOUND) {
+			break;
+		}
+	}
 
 	switch (status) {
 	case SWITCH_STATUS_SUCCESS:
@@ -2791,6 +2821,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "park_state", "Park State", "Park State", park_state_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "gentones", "Generate Tones", "Generate tones to the channel", gentones_function, "<tgml_script>[|<loops>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "playback", "Playback File", "Playback a file to the channel", playback_function, "<path>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "endless_playback", "Playback File Endlessly", "Endlessly Playback a file to the channel", 
+				   endless_playback_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "att_xfer", "Attended Transfer", "Attended Transfer", att_xfer_function, "<channel_url>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "read", "Read Digits", "Read Digits", read_function, "<min> <max> <file> <var_name> <timeout> <terminators>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "play_and_get_digits", "Play and get Digits", "Play and get Digits", 

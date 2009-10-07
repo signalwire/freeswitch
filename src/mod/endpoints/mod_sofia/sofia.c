@@ -4117,8 +4117,46 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 						br_a = switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE);
 						br_b = switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE);
+						
+						if (switch_channel_test_flag(channel_b, CF_ORIGINATOR)) {
+							switch_core_session_t *a_session;
 
-						if (br_a && br_b) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, 
+											  "Attended Transfer on originating session %s\n", switch_core_session_get_uuid(b_session));
+							
+
+							
+							switch_channel_set_variable(channel_b, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
+							
+							
+							sofia_clear_flag_locked(b_tech_pvt, TFLAG_SIP_HOLD);
+							sofia_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
+
+							switch_channel_set_variable(channel_b, SWITCH_HOLDING_UUID_VARIABLE, br_a);
+							switch_channel_set_flag(channel_b, CF_XFER_ZOMBIE);
+
+							if ((a_session = switch_core_session_locate(br_a))) {
+								const char *moh = profile->hold_music;
+								switch_channel_t *a_channel = switch_core_session_get_channel(a_session);
+								const char *tmp;
+
+								if ((tmp = switch_channel_get_variable(a_channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+									moh = tmp;
+								}
+								//switch_channel_set_variable(a_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, "true");
+								switch_channel_set_variable_printf(a_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, "'endless_playback:%s':inline", moh);
+								//switch_channel_set_variable_printf(a_channel, "park_command", "moh");
+								switch_core_session_rwunlock(a_session);
+							}
+
+							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+									   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
+
+							//switch_channel_set_variable(channel_b, "park_timeout", "2");
+							//switch_channel_set_state(channel_b, CS_PARK);
+							
+											  
+						} else if (br_a && br_b) {
 							switch_core_session_t *new_b_session = NULL, *a_session = NULL, *tmp = NULL;
 						
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Attended Transfer [%s][%s]\n", 
@@ -4138,8 +4176,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 							sofia_clear_flag_locked(b_tech_pvt, TFLAG_SIP_HOLD);
 							sofia_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
-							switch_channel_set_variable(switch_core_session_get_channel(b_session), "park_timeout", "2");
-							switch_channel_set_state(switch_core_session_get_channel(b_session), CS_PARK);
+							switch_channel_set_variable(channel_b, "park_timeout", "2");
+							switch_channel_set_state(channel_b, CS_PARK);
+							
 
 							new_b_session = switch_core_session_locate(br_b);
 							a_session = switch_core_session_locate(br_a);
