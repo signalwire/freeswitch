@@ -255,68 +255,95 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 SWITCH_STANDARD_API(console_api_function)
 {
 	int argc;
-	char *mydata = NULL, *argv[3];
-	const char *err = NULL;
+	char *mycmd = NULL, *argv[3] = { 0 };
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const char *usage_string = "USAGE:\n"
+		"--------------------------------------------------------------------------------\n"
+		"console help\n"
+		"console loglevel [[0-7] | <loglevel_string>]\n"
+		"console colorize [on|off|toggle]\n"
+		"--------------------------------------------------------------------------------\n";
+	const char *loglevel_usage_string = "USAGE:\n"
+		"--------------------------------------------------------------------------------\n"
+		"console loglevel [[0-7] | <loglevel_string>]\n"
+		"\n"
+		"Set the logging verbosity of the console from 0 (least verbose) to\n"
+		"7 (debugging), or specify the loglevel as a string:\n"
+		"\n"
+		"  0 console\n"
+		"  1 alert\n"
+		"  2 crit\n"
+		"  3 err\n"
+		"  4 warning\n"
+		"  5 notice\n"
+		"  6 info\n"
+		"  7 debug\n"
+		"--------------------------------------------------------------------------------\n";
+	const char *colorize_usage_string = "USAGE:\n"
+		"--------------------------------------------------------------------------------\n"
+		"console colorize [on|off|toggle]\n"
+		"\n"
+		"Enable, disable, or toggle console coloring.\n"
+		"--------------------------------------------------------------------------------\n";
 
-	if (!cmd) {
-		err = "bad args";
-		goto end;
+	if (session)
+		return SWITCH_STATUS_FALSE;
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "%s", usage_string);
+		goto done;
 	}
 
-	mydata = strdup(cmd);
-	assert(mydata);
+	if (!(mycmd = strdup(cmd))) {
+		status = SWITCH_STATUS_MEMERR;
+		goto done;
+	}
 
-	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	if (!(argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) || !argv[0]) {
+		stream->write_function(stream, "%s", usage_string);
+		goto done;
+	}
 
-	if (argc > 0) {
+	if (!strcasecmp(argv[0], "loglevel")) {
+		int level = hard_log_level;
 
-		if (argc < 1) {
-			err = "missing arg";
-			goto end;
+		if (argc > 1) {
+			if (!strcasecmp(argv[1], "help")) {
+				stream->write_function(stream, "%s", loglevel_usage_string);
+				goto done;
+			} else if (*argv[1] > 47 && *argv[1] < 58) {
+				level = atoi(argv[1]);
+			} else {
+				level = switch_log_str2level(argv[1]);
+			} 
+		}
+		if (level == SWITCH_LOG_INVALID) {
+			stream->write_function(stream, "-ERR Invalid console loglevel (%s)!\n\n", argc>1? argv[1] : "");
+		} else {
+			hard_log_level = level;
+			stream->write_function(stream, "+OK console log level set to %s\n", switch_log_level2str(hard_log_level));
 		}
 
-		if (!strcasecmp(argv[0], "loglevel")) {
-			int level = hard_log_level;
-
-			if (argc > 1) {
-				if (*argv[1] > 47 && *argv[1] < 58) {
-					level = atoi(argv[1]);
-				} else {
-					level = switch_log_str2level(argv[1]);
-				}
-			}
-
-			if (level == SWITCH_LOG_INVALID) {
-				stream->write_function(stream, "-ERR syntax error, console log level not set!\n");
+	} else if (!strcasecmp(argv[0], "colorize")) {
+		if (argc > 1) {
+			if (!strcasecmp(argv[1], "help")) {
+				stream->write_function(stream, "%s", colorize_usage_string);
+				goto done;
+			} else if (!strcasecmp(argv[1], "toggle")) {
+				COLORIZE ^= 1;
 			} else {
-				hard_log_level = level;
-				stream->write_function(stream, "+OK console log level set to %s\n", switch_log_level2str(hard_log_level));
-			}
-			goto end;
-		} else if (!strcasecmp(argv[0], "colorize")) {
-			if (argc > 1) {
 				COLORIZE = switch_true(argv[1]);
 			}
-			stream->write_function(stream, "+OK console color %s\n", COLORIZE ? "enabled" : "disabled");
-			goto end;
 		}
+		stream->write_function(stream, "+OK console color %s\n", COLORIZE ? "enabled" : "disabled");
 
-		err = "invalid command";
-
+	} else { /* if (!strcasecmp(argv[0], "help")) { */
+		stream->write_function(stream, "%s", usage_string);
 	}
 
-
-  end:
-
-	if (err) {
-		stream->write_function(stream, "-Error %s\n", err);
-	}
-
-
-	free(mydata);
-
-	return SWITCH_STATUS_SUCCESS;
-
+done:
+	switch_safe_free(mycmd);
+	return status;
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_console_load)
@@ -329,9 +356,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_console_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_API(api_interface, "console", "Console", console_api_function, "loglevel [level]|colorize [on|off]");
+	SWITCH_ADD_API(api_interface, "console", "Console", console_api_function, "loglevel [level]|colorize [on|toggle|off]");
+	switch_console_set_complete("add console help");
 	switch_console_set_complete("add console loglevel");
+	switch_console_set_complete("add console loglevel help");
+	switch_console_set_complete("add console loglevel console");
+	switch_console_set_complete("add console loglevel alert");
+	switch_console_set_complete("add console loglevel crit");
+	switch_console_set_complete("add console loglevel err");
+	switch_console_set_complete("add console loglevel warning");
+	switch_console_set_complete("add console loglevel notice");
+	switch_console_set_complete("add console loglevel info");
+	switch_console_set_complete("add console loglevel debug");
 	switch_console_set_complete("add console colorize");
+	switch_console_set_complete("add console colorize help");
+	switch_console_set_complete("add console colorize on");
+	switch_console_set_complete("add console colorize off");
+	switch_console_set_complete("add console colorize toggle");
 
 	/* setup my logger function */
 	switch_log_bind_logger(switch_console_logger, SWITCH_LOG_DEBUG, SWITCH_TRUE);
