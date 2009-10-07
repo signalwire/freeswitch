@@ -175,7 +175,7 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-char * generate_pai_str(switch_core_session_t *session) 
+char *generate_pai_str(switch_core_session_t *session) 
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	const char *callee_name = NULL, *callee_number = NULL;
@@ -185,6 +185,12 @@ char * generate_pai_str(switch_core_session_t *session)
 		if (!(callee_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number"))) {
 			callee_number = tech_pvt->caller_profile->destination_number;
 		}
+
+		if (!strchr(callee_number, '@')) {
+			char *tmp = switch_core_session_sprintf(session, "sip:%s@cluecon.com", callee_number);
+			callee_number = tmp;
+		}
+
 		pai = switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>", callee_name, callee_number);
 	}
 	return pai;
@@ -1257,20 +1263,46 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_DISPLAY:
 		{
-			if (!switch_strlen_zero(msg->string_arg)) {
+			const char *name = msg->string_array_arg[0], *number = msg->string_array_arg[1];
+			char *arg = NULL;
+			char *argv[2] = { 0 };
+			int argc;
+			
+			if (switch_strlen_zero(name) && !switch_strlen_zero(msg->string_arg)) {
+				arg = strdup(msg->string_arg);
+				switch_assert(arg);
+
+				argc = switch_separate_string(arg, '|', argv, (sizeof(argv) / sizeof(argv[0])));
+				name = argv[0];
+				number = argv[1];
+
+			}
+
+
+			if (!switch_strlen_zero(name)) {
 				char message[256] = "";
 				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 
+				if (switch_strlen_zero(number)) {
+					number = tech_pvt->caller_profile->destination_number;
+				}
+
 				if (ua && switch_stristr("snom", ua)) {
-					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", msg->string_arg, tech_pvt->caller_profile->destination_number);
-					nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
-				} else if (ua && switch_stristr("polycom", ua)) {
-					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
+					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", name, number);
+					nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+							 TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+							 SIPTAG_PAYLOAD_STR(message), TAG_END());
+				} else if (ua && (switch_stristr("polycom", ua) || switch_stristr("FreeSWITCH", ua))) {
+					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", name, number);
 					nua_update(tech_pvt->nh,
 							   TAG_IF(!switch_strlen_zero_buf(message), SIPTAG_HEADER_STR(message)),
+							   TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 							   TAG_END());
 				}
+
 			}
+
+			switch_safe_free(arg);
 		}
 		break;
 
@@ -1284,11 +1316,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				if (ua && switch_stristr("snom", ua)) {
 					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", msg->string_arg, tech_pvt->caller_profile->destination_number);
-					nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
+					nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+							 TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+							 SIPTAG_PAYLOAD_STR(message), TAG_END());
 				} else if (ua && switch_stristr("polycom", ua)) {
 					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
 					nua_update(tech_pvt->nh,
 							   TAG_IF(!switch_strlen_zero_buf(message), SIPTAG_HEADER_STR(message)),
+							   TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 							   TAG_END());
 				}
 			}
@@ -1552,6 +1587,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	}
 
  end_lock:
+
+	if (msg->message_id == SWITCH_MESSAGE_INDICATE_ANSWER || msg->message_id == SWITCH_MESSAGE_INDICATE_PROGRESS) {
+		sofia_send_callee_id(session, NULL, NULL);
+	}
 
 	switch_mutex_unlock(tech_pvt->sofia_mutex);
 
@@ -2669,12 +2708,12 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 {
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	switch_core_session_t *nsession = NULL;
-	char *data, *profile_name, *dest;
+	char *data, *profile_name, *dest, *dest_num = NULL;
 	sofia_profile_t *profile = NULL;
 	switch_caller_profile_t *caller_profile = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *nchannel;
-	char *host = NULL, *dest_to = NULL;
+	char *host = NULL, *dest_to = NULL, *p;
 	const char *hval = NULL;
 
 	*new_session = NULL;
@@ -2894,8 +2933,16 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	}
 	switch_channel_set_variable(nchannel, "sip_destination_url", tech_pvt->dest);
 
+	dest_num = switch_core_session_strdup(nsession, dest);
+	if ((p = strchr(dest_num, ':'))) {
+		dest_num = p + 1;
+		if ((p = strchr(dest_num, '@'))) {
+			*p = '\0';
+		}
+	}
+
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
-	caller_profile->destination_number = switch_core_strdup(caller_profile->pool, dest);
+	caller_profile->destination_number = switch_core_strdup(caller_profile->pool, dest_num);
 	switch_channel_set_caller_profile(nchannel, caller_profile);
 	switch_channel_set_flag(nchannel, CF_OUTBOUND);
 	sofia_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);

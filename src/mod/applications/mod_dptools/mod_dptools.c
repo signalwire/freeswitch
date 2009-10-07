@@ -792,7 +792,7 @@ SWITCH_STANDARD_APP(set_profile_var_function)
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
-		name = switch_core_session_strdup(session, data);
+		name = switch_core_strdup(caller_profile->pool, data);
 		val = strchr(name, '=');
 
 		if (val) {
@@ -815,6 +815,12 @@ SWITCH_STANDARD_APP(set_profile_var_function)
 		}
 		if (!strcasecmp(name, "caller_id_number")) {
 			caller_profile->caller_id_number = val;
+		}
+		if (!strcasecmp(name, "callee_id_name")) {
+			caller_profile->callee_id_name = val;
+		}
+		if (!strcasecmp(name, "callee_id_number")) {
+			caller_profile->callee_id_number = val;
 		}
 		if (val && !strcasecmp(name, "caller_ton")) {
 			caller_profile->caller_ton = (uint8_t) atoi(val);

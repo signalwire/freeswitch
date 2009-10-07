@@ -67,6 +67,10 @@ SWITCH_BEGIN_EXTERN_C
 	const char *caller_id_name;
 	/*! Caller ID Number */
 	const char *caller_id_number;
+	/*! Callee ID Name */
+	const char *callee_id_name;
+	/*! Callee ID Number */
+	const char *callee_id_number;
 	uint8_t caller_ton;
 	uint8_t caller_numplan;
 	/*! Caller Network Address (when applicable) */

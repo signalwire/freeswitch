@@ -408,6 +408,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 switch_originate_flag_t flags
 													 );
 
+SWITCH_DECLARE(void) switch_ivr_bridge_display(switch_core_session_t *session, switch_core_session_t *peer_session);
+
 /*!
   \brief Bridge Audio from one session to another
   \param session one session

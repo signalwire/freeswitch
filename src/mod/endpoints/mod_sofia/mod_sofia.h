@@ -147,7 +147,8 @@ typedef struct sip_alias_node sip_alias_node_t;
 
 typedef enum {
 	MFLAG_REFER = (1 << 0),
-	MFLAG_REGISTER = (1 << 1)
+	MFLAG_REGISTER = (1 << 1),
+	MFLAG_UPDATE = (1 << 2)
 } MFLAGS;
 
 typedef enum {
@@ -910,3 +911,6 @@ void sofia_glue_free_destination(sofia_destination_t *dst);
 switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *user, const char *host, const char *event, const char *contenttype, const char *body, const char *o_contact, const char *network_ip);
 char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix);
 void sofia_glue_set_extra_headers(switch_channel_t *channel, sip_t const *sip, const char *prefix);
+void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t *bleg);
+void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *profile, sip_t const *sip, switch_bool_t send);
+void sofia_send_callee_id(switch_core_session_t *session, const char *name, const char *number);

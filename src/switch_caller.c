@@ -78,7 +78,8 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 	profile_dup_clean(destination_number, profile->destination_number, pool);
 	profile->uuid = SWITCH_BLANK_STRING;
 	profile->chan_name = SWITCH_BLANK_STRING;
-
+	profile->callee_id_name = SWITCH_BLANK_STRING;
+	profile->callee_id_number = SWITCH_BLANK_STRING;
 	switch_set_flag(profile, SWITCH_CPF_SCREEN);
 	profile->pool = pool;
 	return profile;
@@ -95,6 +96,8 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memor
 	profile_dup(tocopy->dialplan, profile->dialplan, pool);
 	profile_dup(tocopy->caller_id_name, profile->caller_id_name, pool);
 	profile_dup(tocopy->caller_id_number, profile->caller_id_number, pool);
+	profile_dup(tocopy->callee_id_name, profile->callee_id_name, pool);
+	profile_dup(tocopy->callee_id_number, profile->callee_id_number, pool);
 	profile_dup(tocopy->network_addr, profile->network_addr, pool);
 	profile_dup(tocopy->ani, profile->ani, pool);
 	profile_dup(tocopy->aniii, profile->aniii, pool);
@@ -139,14 +142,20 @@ SWITCH_DECLARE(const char *) switch_caller_get_field_by_name(switch_caller_profi
 	if (!strcasecmp(name, "caller_id_name")) {
 		return caller_profile->caller_id_name;
 	}
+	if (!strcasecmp(name, "caller_id_number")) {
+		return caller_profile->caller_id_number;
+	}
+	if (!strcasecmp(name, "callee_id_name")) {
+		return caller_profile->callee_id_name;
+	}
+	if (!strcasecmp(name, "callee_id_number")) {
+		return caller_profile->callee_id_number;
+	}
 	if (!strcasecmp(name, "ani")) {
 		return caller_profile->ani;
 	}
 	if (!strcasecmp(name, "aniii")) {
 		return caller_profile->aniii;
-	}
-	if (!strcasecmp(name, "caller_id_number")) {
-		return caller_profile->caller_id_number;
 	}
 	if (!strcasecmp(name, "network_addr")) {
 		return caller_profile->network_addr;
