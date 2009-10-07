@@ -2254,6 +2254,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *commands_api_interface;
+	switch_status_t status;
 
 	/* create/register custom event message type */
 	if (switch_event_reserve_subclass(FIFO_EVENT) != SWITCH_STATUS_SUCCESS) {
@@ -2272,6 +2273,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 	switch_core_hash_init(&globals.fifo_hash, globals.pool);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	switch_mutex_init(&globals.sql_mutex, SWITCH_MUTEX_NESTED, globals.pool);
+	
+	globals.running = 1;
+	
+	if ((status = load_config(0,1)) != SWITCH_STATUS_SUCCESS) {
+		switch_event_unbind(&globals.node);
+		switch_event_free_subclass(FIFO_EVENT);
+		switch_core_hash_destroy(&globals.fifo_hash);
+		switch_core_destroy_memory_pool(&globals.pool);
+		return status;
+	}
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -2284,9 +2295,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 	switch_console_set_complete("add fifo count");
 	switch_console_set_complete("add fifo importance");
 
-	globals.running = 1;
-
-	load_config(0,1);
 	start_node_thread(globals.pool);
 
 	return SWITCH_STATUS_SUCCESS;
