@@ -1114,6 +1114,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_HOLDING_UUID_VARIABLE_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_SOFT_HOLDING_UUID_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "soft_holding_uuid";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_API_BRIDGE_END_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -5125,6 +5136,32 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_message__line_get(void * j
   
   arg1 = (switch_core_session_message *)jarg1; 
   result = (int) ((arg1)->_line);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_message_string_array_arg_set(void * jarg1, void * jarg2) {
+  switch_core_session_message *arg1 = (switch_core_session_message *) 0 ;
+  char **arg2 ;
+  
+  arg1 = (switch_core_session_message *)jarg1; 
+  arg2 = (char **)jarg2; 
+  {
+    size_t ii;
+    char const * *b = (char const * *) arg1->string_array_arg;
+    for (ii = 0; ii < (size_t)10; ii++) b[ii] = *((char const * *) arg2 + ii);
+  }
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_session_message_string_array_arg_get(void * jarg1) {
+  void * jresult ;
+  switch_core_session_message *arg1 = (switch_core_session_message *) 0 ;
+  char **result = 0 ;
+  
+  arg1 = (switch_core_session_message *)jarg1; 
+  result = (char **)(char **) ((arg1)->string_array_arg);
   jresult = result; 
   return jresult;
 }
@@ -9716,6 +9753,64 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_caller_profile_caller_id_number_get(
   
   arg1 = (switch_caller_profile *)jarg1; 
   result = (char *) ((arg1)->caller_id_number);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_caller_profile_callee_id_name_set(void * jarg1, char * jarg2) {
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->callee_id_name = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->callee_id_name, (const char *)arg2);
+    } else {
+      arg1->callee_id_name = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_caller_profile_callee_id_name_get(void * jarg1) {
+  char * jresult ;
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  result = (char *) ((arg1)->callee_id_name);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_caller_profile_callee_id_number_set(void * jarg1, char * jarg2) {
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->callee_id_number = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->callee_id_number, (const char *)arg2);
+    } else {
+      arg1->callee_id_number = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_caller_profile_callee_id_number_get(void * jarg1) {
+  char * jresult ;
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  result = (char *) ((arg1)->callee_id_number);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
@@ -22665,6 +22760,16 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_originate(void * jarg1, void * jarg
   result = (switch_status_t)switch_ivr_originate(arg1,arg2,arg3,(char const *)arg4,arg5,(switch_state_handler_table const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10,arg11);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_ivr_bridge_display(void * jarg1, void * jarg2) {
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_core_session_t *arg2 = (switch_core_session_t *) 0 ;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (switch_core_session_t *)jarg2; 
+  switch_ivr_bridge_display(arg1,arg2);
 }
 
 
