@@ -1595,12 +1595,10 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 
 SWITCH_STANDARD_APP(att_xfer_function)
 {
-	const char *var;
 	switch_core_session_t *peer_session = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 	switch_channel_t *channel, *peer_channel = NULL;
 	const char *bond = NULL;
-	int timelimit = 60;
 	switch_core_session_t *b_session = NULL;
 
 	channel = switch_core_session_get_channel(session);
@@ -1612,11 +1610,7 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, bond);
 	switch_channel_set_flag(channel, CF_XFER_ZOMBIE);
 
-	if ((var = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
-		timelimit = atoi(var);
-	}
-
-	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL, NULL, SOF_NONE) 
+	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE) 
 		!= SWITCH_STATUS_SUCCESS || !peer_session) {
 		goto end;
 	}
@@ -2125,22 +2119,17 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 {
 	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
 	switch_core_session_t *peer_session = NULL;
-	unsigned int timelimit = 60;
-	const char *var, *continue_on_fail = NULL, *failure_causes = NULL;
+	const char *continue_on_fail = NULL, *failure_causes = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
 	if (switch_strlen_zero(data)) {
 		return;
 	}
 
-	if ((var = switch_channel_get_variable(caller_channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
-		timelimit = atoi(var);
-	}
-
 	continue_on_fail = switch_channel_get_variable(caller_channel, "continue_on_fail");
 	failure_causes = switch_channel_get_variable(caller_channel, "failure_causes");
 
-	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
 
 		/* 
@@ -2258,11 +2247,11 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	switch_originate_flag_t myflags = SOF_NONE;
 	char *cid_name_override = NULL;
 	char *cid_num_override = NULL;
-	const char *var, *skip = NULL;
-	unsigned int timelimit = 60;
 	char *domain = NULL;
 	switch_channel_t *new_channel = NULL;
-	
+	unsigned int timelimit = 60;
+	const char *skip, *var;
+
 	group = strdup(outbound_profile->destination_number);
 
 	if (!group) goto done;

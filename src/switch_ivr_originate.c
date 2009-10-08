@@ -113,6 +113,7 @@ typedef struct {
 	int monitor_early_media_ring_count;
 	int monitor_early_media_ring_total;
 	int cancel_timeout;
+	int continue_on_timeout;
 } originate_global_t;
 
 
@@ -755,7 +756,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				switch_core_session_set_read_codec(session, &write_codec);
 			}
 		}
-			
+		
 		if (ringback_data) {
 			char *tmp_data = NULL;
 
@@ -1033,9 +1034,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_channel_state_t wait_state = 0;
 
 	if (session) {
+		const char *to_var;
 		caller_channel = switch_core_session_get_channel(session);
 		switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 		oglobals.session = session;
+
+
+		if ((to_var = switch_channel_get_variable(caller_channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
+			timelimit_sec = atoi(to_var);
+		}
 
 		if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_PROXY_MEDIA_VARIABLE))) {
 			switch_channel_set_flag(caller_channel, CF_PROXY_MEDIA);
@@ -1058,6 +1065,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 			}
 		}
+	}
+
+	if (timelimit_sec <= 0) {
+		timelimit_sec = 60;
 	}
 
 	
@@ -1193,6 +1204,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "ignore_early_media")) {
 					ok = 1;
+				} else if (!strcasecmp((char *) hi->name, "originate_continue_on_timeout")) {
+					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "ignore_ring_ready")) {
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "monitor_early_media_ring")) {
@@ -1294,6 +1307,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if ((var_val = switch_event_get_header(var_event, "ignore_early_media")) && switch_true(var_val)) {
 		oglobals.early_ok = 0;
 		oglobals.ignore_early_media = 1;
+	}
+
+	if ((var_val = switch_event_get_header(var_event, "originate_continue_on_timeout")) && switch_true(var_val)) {
+		oglobals.continue_on_timeout = 1;
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "ignore_ring_ready")) && switch_true(var_val)) {
@@ -2145,7 +2162,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_core_session_reset(oglobals.session, SWITCH_FALSE, SWITCH_TRUE);
 			}
 
-			if ((oglobals.idx == IDX_TIMEOUT || oglobals.idx == IDX_KEY_CANCEL) && switch_channel_ready(caller_channel)) {
+			if ((oglobals.idx == IDX_TIMEOUT || oglobals.idx == IDX_KEY_CANCEL) && (caller_channel && switch_channel_ready(caller_channel))) {
 				holding = NULL;
 			}
 
@@ -2463,6 +2480,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 				if (ok) {
+					goto outer_for;
+				}
+
+				if (to && !oglobals.continue_on_timeout) {
 					goto outer_for;
 				}
 			}
