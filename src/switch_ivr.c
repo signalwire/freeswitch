@@ -2244,6 +2244,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 	return status;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_exists(const char *uuid)
+{
+	switch_bool_t exists = SWITCH_FALSE;
+	switch_core_session_t *psession = NULL;
+
+	if ((psession = switch_core_session_locate(uuid))) {
+		switch_core_session_rwunlock(psession);
+		exists = 1;
+	}
+
+	return exists;
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

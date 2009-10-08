@@ -4247,6 +4247,14 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						br_a = switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE);
 						br_b = switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE);
 						
+						if (!switch_ivr_uuid_exists(br_a)) {
+							br_a = NULL;
+						}
+
+						if (!switch_ivr_uuid_exists(br_b)) {
+							br_b = NULL;
+						}
+						
 						if (switch_channel_test_flag(channel_b, CF_ORIGINATOR)) {
 							switch_core_session_t *a_session;
 

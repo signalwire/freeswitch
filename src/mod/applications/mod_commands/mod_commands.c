@@ -3267,18 +3267,14 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define EXISTS_SYNTAX "<uuid> <var>"
+#define EXISTS_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(uuid_exists_function)
 {
-	int exists = 0;
-	
-    if (cmd) {
-		switch_core_session_t *psession = NULL;
-		if ((psession = switch_core_session_locate(cmd))) {
-			switch_core_session_rwunlock(psession);
-			exists = 1;
-		}
-    }
+	switch_bool_t exists = SWITCH_FALSE;
+
+	if (cmd) {
+		exists = switch_ivr_uuid_exists(cmd);
+	}
 
 	stream->write_function(stream, "%s", exists ? "true" : "false");
 

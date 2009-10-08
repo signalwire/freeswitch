@@ -802,6 +802,8 @@ SWITCH_DECLARE(switch_say_type_t) switch_ivr_get_say_type_by_name(const char *na
 SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data);
 SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_process_import(switch_core_session_t *session, switch_channel_t *peer_channel, const char *varname);
+SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_exists(const char *uuid);
+
 /** @} */
 
 SWITCH_END_EXTERN_C
