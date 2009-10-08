@@ -1922,7 +1922,9 @@ SWITCH_STANDARD_APP(endless_playback_function)
 	const char *file = data;
 	
 	while(switch_channel_ready(channel)) {
-		if ((status = switch_ivr_play_file(session, NULL, file, NULL)) == SWITCH_STATUS_NOTFOUND) {
+		status = switch_ivr_play_file(session, NULL, file, NULL);
+
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 			break;
 		}
 	}
