@@ -354,9 +354,9 @@ static switch_status_t do_config(void)
 		uint32_t enable_ssl_verifyhost = 0;
 		char *cookie_file = NULL;
 		hash_node_t* hash_node;
+		int auth_scheme = CURLAUTH_BASIC;
 		need_vars_map = 0;
 		vars_map = NULL;
-		int auth_scheme = CURLAUTH_BASIC;
 
 
 		for (param = switch_xml_child(binding_tag, "param"); param; param = param->next) {
