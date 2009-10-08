@@ -1294,7 +1294,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 							 TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 							 SIPTAG_PAYLOAD_STR(message), TAG_END());
-				} else if (ua && (switch_stristr("polycom", ua) || switch_stristr("FreeSWITCH", ua))) {
+				} else if ((ua && (switch_stristr("polycom", ua) || switch_stristr("FreeSWITCH", ua))) || 
+						   switch_stristr("UPDATE", tech_pvt->x_actually_support_remote)) {
 					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", name, number);
 					nua_update(tech_pvt->nh,
 							   TAG_IF(!switch_strlen_zero_buf(message), SIPTAG_HEADER_STR(message)),

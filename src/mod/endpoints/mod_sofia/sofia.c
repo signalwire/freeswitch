@@ -3095,6 +3095,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		switch_channel_clear_flag(channel, CF_REQ_MEDIA);
 		
 		if ((status == 180 || status == 183 || status == 200)) { 
+			const char *x_actually_support;
+
+			if ((x_actually_support = sofia_glue_get_unknown_header(sip, "X-Actually-Support"))) {
+				tech_pvt->x_actually_support_remote = switch_core_session_strdup(session, x_actually_support);
+			}
+
 			if (sip->sip_user_agent && sip->sip_user_agent->g_string) {
 				switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
 			} else if (sip->sip_server && sip->sip_server->g_string) {
@@ -5491,8 +5497,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				}
 			} else if (!strncasecmp(un->un_name, "History-Info", 12)) {
 				switch_channel_set_variable(channel, "sip_history_info", un->un_value);
-			} else if (!strcasecmp(un->un_name, "X-Actually-Supported")) {
-				tech_pvt->x_actually_supported_remote = switch_core_session_strdup(session, un->un_value);
+			} else if (!strcasecmp(un->un_name, "X-Actually-Support")) {
+				tech_pvt->x_actually_support_remote = switch_core_session_strdup(session, un->un_value);
 			} else if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2)) {
 				if (!switch_strlen_zero(un->un_value)) {
 					char new_name[512] = "";

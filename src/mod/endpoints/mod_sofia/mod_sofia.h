@@ -581,8 +581,8 @@ struct private_object {
 	char *extrtpip;
 	char *stun_ip;
 	char *route_uri;
-	char *x_actually_supported_remote;
-	char *x_actually_supported_local;
+	char *x_actually_support_remote;
+	char *x_actually_support_local;
 	switch_port_t stun_port;
 	uint32_t stun_flags;
 	unsigned long rm_rate;
