@@ -58,6 +58,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		return SWITCH_STATUS_FALSE;
 	}
 
+	fh->flags = flags;
+
 	if (pool) {
 		fh->memory_pool = pool;
 	} else {
@@ -118,7 +120,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	fh->file = file;
 	fh->func = func;
 	fh->line = line;
-	fh->flags = flags;
+
 	
 	if (spool_path) {
 		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
