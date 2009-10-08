@@ -280,10 +280,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 	if (session->write_codec && codec && session->write_impl.decoded_bytes_per_packet) {
 		if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-write-codec-name", session->write_impl.iananame);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-write-codec-rate", "%d", session->write_impl.actual_samples_per_second);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", session->write_impl.iananame);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Rate", "%d", session->write_impl.actual_samples_per_second);
 			if (session->write_impl.actual_samples_per_second != session->write_impl.samples_per_second) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-reported-write-codec-rate", "%d",
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Reported-Write-Codec-Rate", "%d",
 										session->write_impl.actual_samples_per_second);
 			}
 			switch_event_fire(&event);
