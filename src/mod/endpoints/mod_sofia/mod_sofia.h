@@ -96,6 +96,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_SECURE_MEDIA_CONFIRMED_VARIABLE "sip_secure_media_confirmed"
 #define SOFIA_HAS_CRYPTO_VARIABLE "sip_has_crypto"
 #define SOFIA_CRYPTO_MANDATORY_VARIABLE "sip_crypto_mandatory"
+#define SOFIA_ACTUALLY_SUPPORT "UPDATE"
 
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
@@ -580,6 +581,8 @@ struct private_object {
 	char *extrtpip;
 	char *stun_ip;
 	char *route_uri;
+	char *x_actually_supported_remote;
+	char *x_actually_supported_local;
 	switch_port_t stun_port;
 	uint32_t stun_flags;
 	unsigned long rm_rate;

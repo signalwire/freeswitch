@@ -104,7 +104,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 		if ((ext = strrchr(file_path, '.')) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown file Format [%s]\n", file_path);
-			switch_goto_status(SWITCH_STATUS_FALSE, end);
+			switch_goto_status(SWITCH_STATUS_FALSE, fail);
 		}
 		ext++;
 		fh->file_path = switch_core_strdup(fh->memory_pool, file_path);
@@ -114,7 +114,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 	if ((fh->file_interface = switch_loadable_module_get_file_interface(ext)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid file format [%s] for [%s]!\n", ext, file_path);
-		switch_goto_status(SWITCH_STATUS_GENERR, end);
+		switch_goto_status(SWITCH_STATUS_GENERR, fail);
 	}
 
 	fh->file = file;
@@ -155,7 +155,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Spool dir is set.  Make sure [%s] is also a valid path\n", fh->spool_path);
 		}
 		UNPROTECT_INTERFACE(fh->file_interface);
-		switch_goto_status(status, end);
+		switch_goto_status(status, fail);
 	}
 
 
@@ -164,7 +164,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File [%s] not created!\n", file_path);
 		fh->file_interface->file_close(fh);
 		UNPROTECT_INTERFACE(fh->file_interface);
-		switch_goto_status(status, end);
+		switch_goto_status(status, fail);
 	}
 
 	if ((flags & SWITCH_FILE_FLAG_READ)) {
@@ -191,8 +191,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	}
 
 	switch_set_flag(fh, SWITCH_FILE_OPEN);
+	return status;
 
- end:
+ fail:
 	
 	if (switch_test_flag(fh, SWITCH_FILE_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&fh->memory_pool);

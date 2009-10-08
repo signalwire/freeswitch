@@ -483,6 +483,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 							SOATAG_REUSE_REJECTED(1),
 							SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
 							TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+							SIPTAG_HEADER_STR("X-Actually-Support: "SOFIA_ACTUALLY_SUPPORT),
 							TAG_END());
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Sent a 200 OK, waiting for ACK\n");
@@ -571,6 +572,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 					SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 					SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
 					TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+					SIPTAG_HEADER_STR("X-Actually-Support: "SOFIA_ACTUALLY_SUPPORT),
 					TAG_END());
 		switch_safe_free(extra_headers);
 		sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
@@ -1491,6 +1493,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_HEADER_STR(generate_pai_str(session)), 
 						TAG_IF(!switch_strlen_zero(extra_header), SIPTAG_HEADER_STR(extra_header)),
+						SIPTAG_HEADER_STR("X-Actually-Support: "SOFIA_ACTUALLY_SUPPORT),
 						TAG_END());
 			switch_safe_free(extra_header);
 			switch_channel_mark_ring_ready(channel);
@@ -1576,6 +1579,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 								SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
 								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), 
 								TAG_IF(!switch_strlen_zero(extra_header), SIPTAG_HEADER_STR(extra_header)),
+								SIPTAG_HEADER_STR("X-Actually-Support: "SOFIA_ACTUALLY_SUPPORT),
 								TAG_END());
 					switch_safe_free(extra_header);
 				}
