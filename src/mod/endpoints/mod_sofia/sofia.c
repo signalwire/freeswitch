@@ -420,6 +420,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	const char *number = "unknown", *tmp;
 	switch_caller_profile_t *caller_profile;
 	char *dup = NULL;
+	switch_event_t *event;
 
 	if (sip->sip_to) {
 		number = sip->sip_to->a_url->url_user;
@@ -450,6 +451,18 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 		number = tmp;
 	}
 
+	if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
+		const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Callee-Name", name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Callee-Number", number);
+		if (uuid) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
+		}
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
+	
 	caller_profile = switch_channel_get_caller_profile(channel);
 	caller_profile->callee_id_name = switch_core_strdup(caller_profile->pool, name);
 	caller_profile->callee_id_number = switch_core_strdup(caller_profile->pool, number);
@@ -5673,6 +5686,7 @@ void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t 
 						   TAG_IF(!switch_strlen_zero(b_tech_pvt->user_via), SIPTAG_VIA_STR(b_tech_pvt->user_via)),
 						   TAG_END());
 			}
+
 		}
 	}
 }

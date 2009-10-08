@@ -182,6 +182,7 @@ static char *EVENT_NAMES[] = {
 	"NAT",
 	"RECORD_START",
 	"RECORD_STOP",
+	"CALL_UPDATE"
 	"ALL"
 };
 

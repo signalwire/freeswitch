@@ -1284,6 +1284,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			if (!switch_strlen_zero(name)) {
 				char message[256] = "";
 				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
+				switch_event_t *event;
 
 				if (switch_strlen_zero(number)) {
 					number = tech_pvt->caller_profile->destination_number;
@@ -1302,6 +1303,22 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							   TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 							   TAG_END());
 				}
+
+
+				
+				if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
+					const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "SEND");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Callee-Name", name);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Callee-Number", number);
+					if (uuid) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
+					}
+					switch_channel_event_set_data(channel, event);
+					switch_event_fire(&event);
+				}
+
+
 
 			}
 
