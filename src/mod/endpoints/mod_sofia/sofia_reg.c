@@ -1358,7 +1358,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	sofia_reg_handle_register(nua, profile, nh, sip, type, key, sizeof(key), &v_event, is_nat);
 	
 	if (v_event) {
-		switch_event_fire(&v_event);
+		switch_event_destroy(&v_event);
 	}
 
   end:
