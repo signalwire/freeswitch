@@ -7,7 +7,7 @@
     
     Authenticated users will use the user_context variable on the user to determine what context
     they can access.  You can also add a user in the directory with the cidr= attribute acl.conf.xml
-    will build the domains acl using this value.
+    will build the domains ACL using this value.
 -->
 <!-- http://wiki.freeswitch.org/wiki/Dialplan_XML -->
 <include>
@@ -110,7 +110,7 @@
     </extension>
     -->
     <!--
-	snom button demo, call 9000 to make button 2 mapped to transfer the current call to a conference
+	Snom button demo, call 9000 to make button 2 mapped to transfer the current call to a conference
     -->
 
     <extension name="snom-demo-2">
@@ -296,7 +296,7 @@
       </condition>
     </extension>
     
-    <!-- dial the freeswitch conference via SIP-->
+    <!-- dial the FreeSWITCH conference via SIP-->
     <extension name="freeswitch_public_conf_via_sip">
       <condition field="destination_number" expression="^9(888|1616|3232)$">
 	<action application="export" data="hold_music=silence"/>
@@ -406,8 +406,32 @@
       </condition>
     </extension>
 
+    <!-- 
+	 Valet park retrieval, works with valet_park extension below.
+	 Retrieve a valet parked call by dialing 6000 + park number + #
+    -->
+    <extension name="valet_park">
+      <condition field="destination_number" expression="^(6000)$">
+	<action application="answer"/>
+	<action application="valet_park" data="valet_parking_lot $1"/>
+      </condition>
+    </extension>
+
+    <!-- 
+	 Valet park 6001-6099.  Blind x-fer to 6001, 6002, etc. to valet park the call.
+	 Dial 6001, 6002, etc. to retrieve a call that is already valet parked.
+	 After call is retrieved, park extension is free for another call.
+    -->
+    <extension name="valet_park">
+      <condition field="destination_number" expression="^(60\d[1-9])$">
+	<action application="answer"/>
+	<action application="valet_park" data="valet_parking_lot $1"/>
+      </condition>
+    </extension>
+
+
     <!--
-	This extension is used with snom phones.  
+	This extension is used with Snom phones.  
 	
 	Set a function key to park+lot (lot being a number or name.)
 	Set type to Park+Orbit.  You can then park and pickup using 
@@ -433,7 +457,7 @@
     </extension>
 
     <!--
-       This extension is used with linksys phones.
+       This extension is used with Linksys phones.
 
        Set a Phone tab option Call Park Serv to yes. You can park and
        pickup using soft keys "park" and "unpark" found during
@@ -450,7 +474,7 @@
     </extension>
     
     <!--
-       This extension is used with linksys phones.
+       This extension is used with Linksys phones.
 
        The extension is parking pickup with a to param of the fifo
        we are calling. Linksys sends orbit=<parkingslotnumber>
