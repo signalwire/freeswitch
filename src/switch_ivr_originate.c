@@ -364,6 +364,9 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 
 	if (oglobals->session) {
 		caller_channel = switch_core_session_get_channel(oglobals->session);
+		if (switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) {
+			caller_channel = NULL;
+		}
 	}
 	
 
@@ -1997,8 +2000,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				if (caller_channel && switch_channel_get_state(caller_channel) != wait_state && !switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) {
-					oglobals.idx = IDX_NADA;
-                    goto notready;
+					//oglobals.idx = IDX_NADA;
+                    //goto notready;
 				}
 
 				if (!oglobals.sent_ring && !oglobals.progress && (progress_timelimit_sec && elapsed > (time_t) progress_timelimit_sec)) {
@@ -2162,10 +2165,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_core_session_reset(oglobals.session, SWITCH_FALSE, SWITCH_TRUE);
 			}
 
-			if ((oglobals.idx == IDX_TIMEOUT || oglobals.idx == IDX_KEY_CANCEL) && (caller_channel && switch_channel_ready(caller_channel))) {
-				holding = NULL;
-			}
-
 			if (holding) {
 				if (oglobals.idx > IDX_NADA) {
 					peer_session = originate_status[oglobals.idx].peer_session;
@@ -2202,26 +2201,62 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			end_search:
 
-
-				if (peer_channel && switch_channel_ready(peer_channel)) {
-					force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
-					switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(peer_session));
-					oglobals.idx = IDX_NADA;
-					if (caller_channel) {
-						switch_channel_hangup(caller_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
-					}
-					switch_core_session_rwunlock(peer_session);
-				} else {
+				if (peer_channel && (oglobals.idx == IDX_TIMEOUT || to || oglobals.idx == IDX_KEY_CANCEL || oglobals.idx == IDX_CANCEL)) {
+					const char *dest = switch_channel_get_variable(peer_channel, "destination_number");
+					const char *context = switch_channel_get_variable(peer_channel, "context");
+					const char *dialplan = switch_channel_get_variable(peer_channel, "dialplan");
 					switch_core_session_t *holding_session;
 
-					if ((holding_session = switch_core_session_locate(holding))) {
-						switch_channel_t *holding_channel = switch_core_session_get_channel(holding_session);
-						if (caller_channel && switch_channel_ready(caller_channel)) {
-							switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(session));
-						} else {
-							switch_channel_hangup(holding_channel, SWITCH_CAUSE_NORMAL_UNSPECIFIED);
+					if (caller_channel) {
+						if (switch_strlen_zero(context)) {
+							context = switch_channel_get_variable(caller_channel, "context"); 
 						}
+						if (switch_strlen_zero(dialplan)) {
+							dialplan = switch_channel_get_variable(caller_channel, "dialplan"); 
+						}
+					}
+					
+					if (switch_strlen_zero(context)) {
+						context = "default";
+					}
+
+					if (switch_strlen_zero(context)) {
+						dialplan = "XML";
+					}
+
+					if ((holding_session = switch_core_session_locate(holding))) {
+						switch_ivr_session_transfer(holding_session, dest, dialplan, context);
 						switch_core_session_rwunlock(holding_session);
+						holding = NULL;
+						holding_session = NULL;
+					}
+
+					switch_channel_hangup(peer_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
+					switch_core_session_rwunlock(peer_session);
+				} else {
+					if (peer_channel && switch_channel_ready(peer_channel)) {
+						force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
+						switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(peer_session));
+						oglobals.idx = IDX_NADA;
+						if (caller_channel && switch_channel_up(caller_channel)) {
+							switch_channel_hangup(caller_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
+						}
+						caller_channel = NULL;
+						oglobals.session = NULL;
+						session = NULL;
+						switch_core_session_rwunlock(peer_session);
+					} else {
+						switch_core_session_t *holding_session;
+
+						if ((holding_session = switch_core_session_locate(holding))) {
+							switch_channel_t *holding_channel = switch_core_session_get_channel(holding_session);
+							if (caller_channel && switch_channel_ready(caller_channel)) {
+								switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(session));
+							} else {
+								switch_channel_hangup(holding_channel, SWITCH_CAUSE_NORMAL_UNSPECIFIED);
+							}
+							switch_core_session_rwunlock(holding_session);
+						}
 					}
 				}
 
@@ -2229,8 +2264,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				peer_channel = NULL;
 				
 			}
-
-
+			
 			for (i = 0; i < and_argc; i++) {
 				if (!peer_eligible(originate_status[i].peer_channel)) {
 					continue;

@@ -314,6 +314,7 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
+	const char *app, *arg;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -324,6 +325,21 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 	do_reset(tech_pvt);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL ROUTING\n", switch_channel_get_name(channel));
+
+
+	if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && (app = switch_channel_get_variable(channel, "loopback_app"))) {
+		switch_caller_extension_t *extension = NULL;
+		arg = switch_channel_get_variable(channel, "loopback_app_arg");
+		extension = switch_caller_extension_new(session, app, app);
+		switch_caller_extension_add_application(session, extension, "pre_answer", NULL);
+		switch_caller_extension_add_application(session, extension, app, arg);
+		
+		switch_channel_set_caller_extension(channel, extension);
+		switch_channel_set_state(channel, CS_EXECUTE);
+		return SWITCH_STATUS_FALSE;
+	}
+
+
 	
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -555,6 +571,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		if (tech_pvt->write_frame) {
 			switch_frame_free(&tech_pvt->write_frame);
 		}
+
 		tech_pvt->write_frame = (switch_frame_t *) pop;
 		tech_pvt->write_frame->codec = &tech_pvt->read_codec;
 		*frame = tech_pvt->write_frame;
@@ -571,6 +588,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		*frame = &tech_pvt->cng_frame;
 		tech_pvt->cng_frame.codec = &tech_pvt->read_codec;
 		tech_pvt->cng_frame.datalen = tech_pvt->read_codec.implementation->decoded_bytes_per_packet;
+
 		memset(tech_pvt->cng_frame.data, 0, tech_pvt->cng_frame.datalen);
 		memset(&data, 0, sizeof(data));
 
@@ -797,6 +815,23 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 			caller_profile->source = switch_core_strdup(caller_profile->pool, modname);
+			if (!strncasecmp(caller_profile->destination_number, "app=", 4)) {
+				char *dest = switch_core_session_strdup(*new_session, caller_profile->destination_number);
+				char *app = dest + 4;
+				char *arg = NULL;
+
+				if ((arg = strchr(app, ':'))) {
+					*arg++ = '\0';
+				}
+
+				switch_channel_set_variable(channel, "loopback_app", app);
+				if (arg) {
+					switch_channel_set_variable(channel, "loopback_app_arg", arg);
+				}
+
+				caller_profile->destination_number = switch_core_strdup(caller_profile->pool, app);
+			}
+
 			if ((context = strchr(caller_profile->destination_number, '/'))) {
 				*context++ = '\0';
 				

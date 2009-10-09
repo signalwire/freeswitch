@@ -1283,6 +1283,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		
 		if (switch_strlen_zero(dialplan)) {
 			dialplan = profile->dialplan;
+			if (!switch_strlen_zero(dialplan) && !strcasecmp(dialplan, "inline")) {
+				dialplan = NULL;
+			}
 		}
 
 		if (switch_strlen_zero(context)) {

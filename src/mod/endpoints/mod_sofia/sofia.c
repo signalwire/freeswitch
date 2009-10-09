@@ -4271,7 +4271,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 							switch_channel_set_variable(channel_b, SWITCH_HOLDING_UUID_VARIABLE, br_a);
 							switch_channel_set_flag(channel_b, CF_XFER_ZOMBIE);
+							switch_channel_set_flag(channel_b, CF_TRANSFER);
 
+							//switch_channel_set_variable(channel_b, "park_timeout", "2");
+							//switch_channel_set_state(channel_b, CS_PARK);
+							
 							if ((a_session = switch_core_session_locate(br_a))) {
 								const char *moh = profile->hold_music;
 								switch_channel_t *a_channel = switch_core_session_get_channel(a_session);
@@ -4284,21 +4288,40 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								if (!strcasecmp(moh, "silence")) {
 									moh = NULL;
 								}
-
+								
 								//switch_channel_set_variable(a_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, "true");
+								
 								if (moh) {
-									switch_channel_set_variable_printf(a_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, 
-																	   "'endless_playback:%s',park:inline", moh);
+									char *xdest;
+									//switch_channel_set_variable_printf(a_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, 
+									//							   "'endless_playback:%s,park':inline", moh);
+									xdest = switch_core_session_sprintf(a_session, "endless_playback:%s,park", moh);
+									switch_ivr_session_transfer(a_session, xdest, "inline", NULL);
 								} else {
-									switch_channel_set_variable(a_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, "park:inline");
+									//switch_channel_set_variable(a_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, "park:inline");
+									switch_ivr_session_transfer(a_session, "park", "inline", NULL);
 								}
 								//switch_channel_set_variable_printf(a_channel, "park_command", "moh");
 								switch_core_session_rwunlock(a_session);
+
+								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+										   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
+
+
+								if (0 && b_tech_pvt) {
+									sofia_set_flag_locked(b_tech_pvt, TFLAG_BYE);
+									nua_bye(b_tech_pvt->nh, 
+											SIPTAG_REASON_STR("Q.850;cause=16;text=\"normal_clearing\""),
+											TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+											TAG_END());
+								}
+							} else {
+								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+										   NUTAG_SUBSTATE(nua_substate_terminated),
+										   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
 							}
 
-							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-									   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
-
+							
 							//switch_channel_set_variable(channel_b, "park_timeout", "2");
 							//switch_channel_set_state(channel_b, CS_PARK);
 							
