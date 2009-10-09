@@ -2078,6 +2078,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (switch_channel_media_ready(caller_channel)) {
 						tstatus = switch_core_session_read_frame(oglobals.session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 						if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
+							if (switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) {
+								continue;
+							}
 							break;
 						}
 					} else {
@@ -2133,6 +2136,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						}
 						
 						if (switch_core_session_write_frame(oglobals.session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+							if (switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) {
+								continue;
+							}
 							break;
 						}
 					}
@@ -2156,7 +2162,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 			}
 			
-			if (caller_channel && !switch_channel_ready(caller_channel)) {
+			if (caller_channel && !switch_channel_ready(caller_channel) && !switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) {
 				oglobals.idx = IDX_CANCEL;
 			}
 
@@ -2206,7 +2212,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					const char *context = switch_channel_get_variable(peer_channel, "context");
 					const char *dialplan = switch_channel_get_variable(peer_channel, "dialplan");
 					switch_core_session_t *holding_session;
-
+					
 					if (caller_channel) {
 						if (switch_strlen_zero(context)) {
 							context = switch_channel_get_variable(caller_channel, "context"); 
@@ -2225,7 +2231,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 
 					if ((holding_session = switch_core_session_locate(holding))) {
-						switch_ivr_session_transfer(holding_session, dest, dialplan, context);
+						switch_channel_t *holding_channel = switch_core_session_get_channel(holding_session);
+						switch_status_t mstatus = SWITCH_STATUS_FALSE;
+						
+						if (caller_channel) {
+							if ((mstatus = switch_channel_caller_extension_masquerade(caller_channel, holding_channel, 1)) == SWITCH_STATUS_SUCCESS) {
+								switch_channel_set_state(holding_channel, CS_RESET);
+								switch_channel_wait_for_state_timeout(holding_channel, CS_RESET, 5000);
+								switch_channel_set_state(holding_channel, CS_EXECUTE);
+							}
+						}
+
+						if (mstatus != SWITCH_STATUS_SUCCESS) {
+							switch_ivr_session_transfer(holding_session, dest, dialplan, context);
+						}
+
 						switch_core_session_rwunlock(holding_session);
 						holding = NULL;
 						holding_session = NULL;
@@ -2233,6 +2253,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					switch_channel_hangup(peer_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 					switch_core_session_rwunlock(peer_session);
+					force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
 				} else {
 					if (peer_channel && switch_channel_ready(peer_channel)) {
 						force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
@@ -2273,9 +2294,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (i != oglobals.idx) {
 					holding = NULL;
 
-					if (force_reason != SWITCH_CAUSE_NONE) {
-						reason = force_reason;
-					} else if (oglobals.idx == IDX_TIMEOUT || to) {
+					if (oglobals.idx == IDX_TIMEOUT || to) {
 						reason = SWITCH_CAUSE_NO_ANSWER;
 					} else {
 						if (oglobals.idx == IDX_CANCEL) {
@@ -2437,6 +2456,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG,
 									  "Originate Cancelled by originator termination Cause: %d [%s]\n", *cause, switch_channel_cause2str(*cause));
 
+				} else if (oglobals.idx == IDX_TIMEOUT) {
+					*cause = SWITCH_CAUSE_NO_ANSWER;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG,
 									  "Originate Resulted in Error Cause: %d [%s]\n", *cause, switch_channel_cause2str(*cause));
@@ -2559,6 +2580,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (caller_channel) {
 		switch_channel_clear_flag(caller_channel, CF_ORIGINATOR);
 		switch_channel_clear_flag(caller_channel, CF_XFER_ZOMBIE);
+	}
+
+	if (force_reason != SWITCH_CAUSE_NONE) {
+		*cause = force_reason;
 	}
 
 	return status;

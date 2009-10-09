@@ -1664,6 +1664,72 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channe
 	switch_mutex_unlock(channel->state_mutex);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_caller_extension_masquerade(switch_channel_t *orig_channel, switch_channel_t *new_channel, uint32_t offset)
+{
+	switch_caller_profile_t *caller_profile;
+	switch_caller_extension_t *extension = NULL, *orig_extension = NULL;
+	switch_caller_application_t *ap;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_event_header_t *hi = NULL;
+	const char *no_copy = switch_channel_get_variable(orig_channel, "attended_transfer_no_copy");
+	char *dup;
+	int i, argc = 0;
+	char *argv[128];
+
+	if (no_copy) {
+		dup = switch_core_session_strdup(new_channel->session, no_copy);
+		argc = switch_separate_string(dup, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+
+	switch_mutex_lock(orig_channel->profile_mutex);
+	switch_mutex_lock(new_channel->profile_mutex);
+	
+	
+	caller_profile = switch_caller_profile_clone(new_channel->session, new_channel->caller_profile);
+	switch_assert(caller_profile);
+	extension = switch_caller_extension_new(new_channel->session, caller_profile->destination_number, caller_profile->destination_number);
+	orig_extension = switch_channel_get_caller_extension(orig_channel);
+	
+	
+	if (extension && orig_extension) {
+		for(ap = orig_extension->current_application; ap && offset > 0; offset--) {
+			ap = ap->next;
+		}
+		
+		for (; ap; ap = ap->next) {
+			switch_caller_extension_add_application(new_channel->session, extension, ap->application_name, ap->application_data);
+		}
+		
+		caller_profile->destination_number = switch_core_strdup(caller_profile->pool, orig_channel->caller_profile->destination_number);
+		switch_channel_set_caller_profile(new_channel, caller_profile);
+		switch_channel_set_caller_extension(new_channel, extension);
+
+		for (hi = orig_channel->variables->headers; hi; hi = hi->next) {
+			int ok = 1;
+			for (i = 0; i < argc; i++) {
+				if (!strcasecmp(argv[i], hi->name)) {
+					ok = 0;
+					break;
+				}
+			}
+			
+			if (!ok) continue;
+
+			switch_channel_set_variable(new_channel, hi->name, hi->value);
+		}
+
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+
+	switch_mutex_unlock(new_channel->profile_mutex);
+	switch_mutex_unlock(orig_channel->profile_mutex);
+
+
+	return status;
+}
+
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension)
 {
 	switch_assert(channel != NULL);
