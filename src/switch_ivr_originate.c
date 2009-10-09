@@ -2204,13 +2204,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						}
 					}
 				}
-
+				
 			end_search:
 
-				if (peer_channel && (oglobals.idx == IDX_TIMEOUT || to || oglobals.idx == IDX_KEY_CANCEL || oglobals.idx == IDX_CANCEL)) {
-					const char *dest = switch_channel_get_variable(peer_channel, "destination_number");
-					const char *context = switch_channel_get_variable(peer_channel, "context");
-					const char *dialplan = switch_channel_get_variable(peer_channel, "dialplan");
+				if (peer_channel && switch_channel_down(peer_channel)) {
+					switch_core_session_rwunlock(peer_session);
+					peer_session = NULL;
+					peer_channel = NULL;
+
+				}
+				
+				if (oglobals.idx == IDX_TIMEOUT || to || oglobals.idx == IDX_KEY_CANCEL || oglobals.idx == IDX_CANCEL || 
+					(!peer_session && oglobals.idx == IDX_NADA)) {
+					const char *dest = NULL;
+					const char *context = NULL;
+					const char *dialplan = NULL;
 					switch_core_session_t *holding_session;
 					
 					if (caller_channel) {
@@ -2236,14 +2244,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						
 						if (caller_channel) {
 							if ((mstatus = switch_channel_caller_extension_masquerade(caller_channel, holding_channel, 1)) == SWITCH_STATUS_SUCCESS) {
-								switch_channel_set_state(holding_channel, CS_RESET);
-								switch_channel_wait_for_state_timeout(holding_channel, CS_RESET, 5000);
-								switch_channel_set_state(holding_channel, CS_EXECUTE);
+								switch_channel_restart(holding_channel);
 							}
 						}
 
 						if (mstatus != SWITCH_STATUS_SUCCESS) {
-							switch_ivr_session_transfer(holding_session, dest, dialplan, context);
+							if (peer_channel) {
+								dest = switch_channel_get_variable(peer_channel, "destination_number");
+								context = switch_channel_get_variable(peer_channel, "context");
+								dialplan = switch_channel_get_variable(peer_channel, "dialplan");
+							} else if (caller_channel) {
+								dest = switch_channel_get_variable(caller_channel, "destination_number");
+							}
+							if (dest) {
+								switch_ivr_session_transfer(holding_session, dest, dialplan, context);
+							}
 						}
 
 						switch_core_session_rwunlock(holding_session);
@@ -2251,8 +2266,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						holding_session = NULL;
 					}
 
-					switch_channel_hangup(peer_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
-					switch_core_session_rwunlock(peer_session);
+					if (peer_channel) {
+						switch_channel_hangup(peer_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
+						switch_core_session_rwunlock(peer_session);
+					}
 					force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
 				} else {
 					if (peer_channel && switch_channel_ready(peer_channel)) {

@@ -4146,6 +4146,34 @@ static void launch_nightmare_xfer(nightmare_xfer_helper_t *nhelper)
 
 /*---------------------------------------*/
 
+static switch_status_t xfer_hanguphook(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_state_t state = switch_channel_get_state(channel);
+
+	if (state == CS_HANGUP) {
+		switch_core_session_t *ksession;
+		const char *uuid = switch_channel_get_variable(channel, "att_xfer_kill_uuid");
+		
+		if (uuid && (ksession = switch_core_session_force_locate(uuid))) {
+			switch_channel_t *kchannel = switch_core_session_get_channel(ksession);
+			
+			switch_channel_clear_flag(kchannel, CF_XFER_ZOMBIE);
+			switch_channel_clear_flag(kchannel, CF_TRANSFER);
+			if (switch_channel_up(kchannel)) {
+				switch_channel_hangup(kchannel, SWITCH_CAUSE_NORMAL_CLEARING);
+			}
+
+			switch_core_session_rwunlock(ksession);
+		}
+
+		switch_core_event_hook_remove_state_change(session, xfer_hanguphook);
+
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
 {
 	/* Incoming refer */
@@ -4279,34 +4307,31 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								switch_channel_t *a_channel = switch_core_session_get_channel(a_session);
 								const char *tmp;
 
+								switch_core_event_hook_add_state_change(a_session, xfer_hanguphook);
+								switch_channel_set_variable(a_channel, "att_xfer_kill_uuid", switch_core_session_get_uuid(b_session));
+
 								if ((tmp = switch_channel_get_variable(a_channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
 									moh = tmp;
 								}
-
+								
 								if (!strcasecmp(moh, "silence")) {
 									moh = NULL;
 								}
 								
-								//switch_channel_set_variable(a_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, "true");
-								
 								if (moh) {
 									char *xdest;
-									//switch_channel_set_variable_printf(a_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, 
-									//							   "'endless_playback:%s,park':inline", moh);
 									xdest = switch_core_session_sprintf(a_session, "endless_playback:%s,park", moh);
 									switch_ivr_session_transfer(a_session, xdest, "inline", NULL);
 								} else {
-									//switch_channel_set_variable(a_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, "park:inline");
 									switch_ivr_session_transfer(a_session, "park", "inline", NULL);
 								}
-								//switch_channel_set_variable_printf(a_channel, "park_command", "moh");
+								
 								switch_core_session_rwunlock(a_session);
 
 								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 										   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
 
-								
-								if (1 && b_tech_pvt) {
+								if (b_tech_pvt) {
 									sofia_set_flag_locked(b_tech_pvt, TFLAG_BYE);
 									nua_bye(b_tech_pvt->nh, 
 											SIPTAG_REASON_STR("Q.850;cause=16;text=\"normal_clearing\""),
@@ -4319,11 +4344,6 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 										   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
 							}
 
-							
-							//switch_channel_set_variable(channel_b, "park_timeout", "2");
-							//switch_channel_set_state(channel_b, CS_PARK);
-							
-											  
 						} else if (br_a && br_b) {
 							switch_core_session_t *tmp = NULL;
 							

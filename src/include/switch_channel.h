@@ -263,6 +263,8 @@ SWITCH_DECLARE(switch_event_header_t *) switch_channel_variable_first(switch_cha
 SWITCH_DECLARE(void) switch_channel_variable_last(switch_channel_t *channel);
 
 
+SWITCH_DECLARE(void) switch_channel_restart(switch_channel_t *channel);
+
 SWITCH_DECLARE(switch_status_t) switch_channel_caller_extension_masquerade(switch_channel_t *orig_channel, switch_channel_t *new_channel, uint32_t offset);
 
 /*!

@@ -1664,6 +1664,22 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channe
 	switch_mutex_unlock(channel->state_mutex);
 }
 
+SWITCH_DECLARE(void) switch_channel_restart(switch_channel_t *channel)
+{
+	switch_channel_set_state(channel, CS_RESET);
+	switch_channel_wait_for_state_timeout(channel, CS_RESET, 5000);
+	switch_channel_set_state(channel, CS_EXECUTE);
+}
+
+/* XXX This is a somewhat simple operation.  Were essentially taking the extension that one channel 
+   was executing and generating a new extension for another channel that starts out where the 
+   original one left off with an optional forward offset.  Since all we are really doing is 
+   copying a few basic pool-allocated structures from one channel to another there really is 
+   not much to worry about here in terms of threading since we use read-write locks. 
+   While the features are nice, they only really are needed in one specific crazy attended 
+   transfer scenario where one channel was in the middle of calling a particular extension
+   when it was rudely cut off by a transfer key press. XXX */
+
 SWITCH_DECLARE(switch_status_t) switch_channel_caller_extension_masquerade(switch_channel_t *orig_channel, switch_channel_t *new_channel, uint32_t offset)
 {
 	switch_caller_profile_t *caller_profile;
