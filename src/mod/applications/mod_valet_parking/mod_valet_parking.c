@@ -97,6 +97,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		switch_status_t status;
 		switch_input_args_t args = { 0 };
 		char dbuf[10];
+		char *dest;
 
 		lot = valet_find_lot(lot_name);
 		switch_assert(lot);
@@ -152,7 +153,12 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			switch_mutex_unlock(lot->mutex);
 			return;
 		}
-			
+
+
+		dest = switch_core_session_sprintf(session, "valet_park:%s %s", lot_name, ext);
+		switch_channel_set_variable(channel, "inline_destination", dest);
+
+		
 		if (!(tmp = switch_channel_get_variable(channel, "valet_hold_music"))) {
 			tmp = switch_channel_get_variable(channel, "hold_music");
 		}

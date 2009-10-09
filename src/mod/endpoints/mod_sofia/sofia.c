@@ -4374,6 +4374,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 								if (t_session) {
 									switch_channel_t *t_channel = switch_core_session_get_channel(t_session);
+									const char *idest = switch_channel_get_variable(hup_channel, "inline_destination");
 									ext = switch_channel_get_variable(hup_channel, "destination_number");
 
 									if (!switch_strlen_zero(full_ref_by)) {
@@ -4383,8 +4384,13 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 									if (!switch_strlen_zero(full_ref_to)) {
 										switch_channel_set_variable(t_channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
 									}
-
-									switch_ivr_session_transfer(t_session, ext, NULL, NULL);
+									
+									if (idest) {
+										switch_ivr_session_transfer(t_session, idest, "inline", NULL);
+									} else {
+										switch_ivr_session_transfer(t_session, ext, NULL, NULL);
+									}
+									
 									nua_notify(tech_pvt->nh,
 											   NUTAG_NEWSUB(1),
 											   SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
