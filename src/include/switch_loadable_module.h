@@ -335,7 +335,7 @@ static inline int switch_check_interval(uint32_t rate, uint32_t ptime)
 		if (ptime < 120) return 1;
 		break;
 	case 48000:
-		max_ms = 20;
+		max_ms = 40;
 		ptime_div = 2;
 		break;
 	case 32000:
