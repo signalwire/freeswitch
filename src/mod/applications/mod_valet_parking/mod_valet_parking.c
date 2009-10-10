@@ -29,7 +29,7 @@
  *
  */
 #include <switch.h>
-
+#define VALET_EVENT "valet_perking::info"
 /* Prototypes */
 SWITCH_MODULE_LOAD_FUNCTION(mod_valet_parking_load);
 
@@ -51,12 +51,14 @@ static valet_lot_t *valet_find_lot(const char *name)
 {
 	valet_lot_t *lot;
 
+	switch_mutex_lock(globals.mutex);
 	if (!(lot = switch_core_hash_find(globals.hash, name))) {
 		switch_zmalloc(lot, sizeof(*lot));
 		switch_mutex_init(&lot->mutex, SWITCH_MUTEX_NESTED, globals.pool);
 		switch_core_hash_init(&lot->hash, NULL);
 		switch_core_hash_insert(globals.hash, name, lot);
 	}
+	switch_mutex_unlock(globals.mutex);
 	return lot;
 }
 
@@ -85,6 +87,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 	char *argv[6], *lbuf;
 	int argc;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_event_t *event;
 
 	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
@@ -149,11 +152,30 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		
 		switch_mutex_lock(lot->mutex);
 		if ((uuid = switch_core_hash_find(lot->hash, ext))) {
-			switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), uuid);
-			switch_mutex_unlock(lot->mutex);
-			return;
+			switch_core_session_t *b_session;
+			if ((b_session = switch_core_session_locate(uuid))) {
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VALET_EVENT) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "bridge");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-To-UUID", switch_core_session_get_uuid(session));
+					switch_channel_event_set_data(switch_core_session_get_channel(b_session), event);
+					switch_event_fire(&event);
+					switch_core_session_rwunlock(b_session);
+					
+					switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), uuid);
+					switch_mutex_unlock(lot->mutex);
+					return;
+				}
+			}
 		}
-
+			
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VALET_EVENT) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "hold");
+			switch_event_fire(&event);
+		}
 
 		dest = switch_core_session_sprintf(session, "valet_park:%s %s", lot_name, ext);
 		switch_channel_set_variable(channel, "inline_destination", dest);
@@ -184,18 +206,69 @@ SWITCH_STANDARD_APP(valet_parking_function)
 	}
 }
 
+SWITCH_STANDARD_API(valet_info_function)
+{
+	switch_hash_index_t *hi;
+	const void *var;
+    void *val;
+	char *name;
+	valet_lot_t *lot;
+
+	stream->write_function(stream, "<lots>\n");
+
+	switch_mutex_lock(globals.mutex);
+	for (hi = switch_hash_first(NULL, globals.hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_index_t *i_hi;
+		const void *i_var;
+		void *i_val;
+		char *i_ext;
+		char *i_uuid;
+
+		switch_hash_this(hi, &var, NULL, &val);
+		name = (char *) var;
+		lot = (valet_lot_t *) val;
+		
+		if (!switch_strlen_zero(cmd) && strcasecmp(cmd, name)) continue;
+		
+		stream->write_function(stream, "  <lot name=\"%s\">\n", name);
+
+		for (i_hi = switch_hash_first(NULL, lot->hash); i_hi; i_hi = switch_hash_next(i_hi)) {
+			switch_hash_this(i_hi, &i_var, NULL, &i_val);
+			i_ext = (char *) i_var;
+			i_uuid = (char *) i_val;
+			stream->write_function(stream, "    <extension uuid=\"%s\">%s</extension>\n", i_uuid, i_ext);
+		}
+		stream->write_function(stream, "  </lot>\n");
+	}
+
+	stream->write_function(stream, "</lots>\n");
+
+	switch_mutex_unlock(globals.mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 /* Macro expands to: switch_status_t mod_valet_parking_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_valet_parking_load)
 {
 	switch_application_interface_t *app_interface;
+	switch_api_interface_t *api_interface;
 
-	switch_core_hash_init(&globals.hash, NULL);
+	/* create/register custom event message type */
+	if (switch_event_reserve_subclass(VALET_EVENT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", VALET_EVENT);
+		return SWITCH_STATUS_TERM;
+	}
+
 	globals.pool = pool;
+	switch_core_hash_init(&globals.hash, NULL);
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_APP(app_interface, "valet_park", "valet_park", "valet_park", valet_parking_function, VALET_APP_SYNTAX, SAF_NONE);
+	SWITCH_ADD_API(api_interface, "valet_info", "Valet Parking Info", valet_info_function, "[<lot name>]");
 
 	return SWITCH_STATUS_NOUNLOAD;
 }
