@@ -29,7 +29,7 @@
  *
  */
 #include <switch.h>
-#define VALET_EVENT "valet_perking::info"
+#define VALET_EVENT "valet_parking::info"
 /* Prototypes */
 SWITCH_MODULE_LOAD_FUNCTION(mod_valet_parking_load);
 
