@@ -80,6 +80,24 @@ static switch_status_t valet_on_dtmf(switch_core_session_t *session, void *input
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static int next_id(valet_lot_t *lot)
+{
+	int i, r = 0;
+	char buf[128] = "";
+
+	switch_mutex_lock(globals.mutex);
+	for(i = 1 ;; i++) {
+		switch_snprintf(buf, sizeof(buf), "%d", i);
+		if (!switch_core_hash_find(lot->hash, buf)) {
+			r = i;
+			break;
+		}
+	}
+	switch_mutex_unlock(globals.mutex);
+
+	return r;
+}
+
 
 #define VALET_APP_SYNTAX "<lotname> <extension>|[ask [<min>] [<max>] [<to>] [<prompt>]]"
 SWITCH_STANDARD_APP(valet_parking_function)
@@ -88,13 +106,15 @@ SWITCH_STANDARD_APP(valet_parking_function)
 	int argc;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_event_t *event;
+	char dtmf_buf[128] = "";
+			
 
 	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 		char *lot_name = argv[0];
 		char *ext = argv[1];
 		valet_lot_t *lot;
-		char *uuid;
+		const char *uuid;
 		const char *music = "silence";
 		const char *tmp = NULL;
 		switch_status_t status;
@@ -104,10 +124,12 @@ SWITCH_STANDARD_APP(valet_parking_function)
 
 		lot = valet_find_lot(lot_name);
 		switch_assert(lot);
-		
-		if (!strcasecmp(ext, "ask")) {
+
+		if (!strcasecmp(ext, "auto")) {		
+			switch_snprintf(dtmf_buf, sizeof(dtmf_buf), "%d", next_id(lot));
+			ext = dtmf_buf;
+		} else if (!strcasecmp(ext, "ask")) {
 			const char *prompt = "ivr/ivr-enter_ext_pound.wav";
-			char dtmf_buf[12] = "";
 			int min = 1;
 			int max = 11;
 			int to = 10000;
@@ -169,6 +191,27 @@ SWITCH_STANDARD_APP(valet_parking_function)
 				}
 			}
 		}
+
+		dest = switch_core_session_sprintf(session, "valet_park:%s %s", lot_name, ext);
+		switch_channel_set_variable(channel, "inline_destination", dest);
+
+		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+			switch_core_session_t *b_session;
+			if ((b_session = switch_core_session_locate(uuid))) {
+				const char *lang = switch_channel_get_variable(channel, "language");
+				if (!lang) {
+					lang = "en";
+				}
+				switch_ivr_session_transfer(b_session, dest, "inline", NULL);
+				switch_mutex_unlock(lot->mutex);
+				switch_core_session_rwunlock(b_session);
+				//maybe a phrase here for more flexibility
+				switch_ivr_say(session, ext, lang, "name_spelled", "pronounced", NULL);
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				return;
+			}
+		}
+		
 			
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VALET_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
@@ -176,9 +219,6 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "hold");
 			switch_event_fire(&event);
 		}
-
-		dest = switch_core_session_sprintf(session, "valet_park:%s %s", lot_name, ext);
-		switch_channel_set_variable(channel, "inline_destination", dest);
 
 		
 		if (!(tmp = switch_channel_get_variable(channel, "valet_hold_music"))) {
