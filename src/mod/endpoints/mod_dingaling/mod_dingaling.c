@@ -1090,7 +1090,6 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 	started = switch_micro_time_now();
 
 	/* jingle has no ringing indication so we will just pretend that we got one */
-	switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
 	switch_channel_mark_ring_ready(channel);
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {

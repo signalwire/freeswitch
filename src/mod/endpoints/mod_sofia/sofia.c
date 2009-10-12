@@ -401,13 +401,14 @@ void sofia_send_callee_id(switch_core_session_t *session, const char *name, cons
 	}
 	
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (session_b = switch_core_session_locate(uuid))) {
-		switch_core_session_message_t msg = { 0 };
+		switch_core_session_message_t *msg;
 		
-		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
-		msg.string_array_arg[0] = name;
-		msg.string_array_arg[1] = number;
-		msg.from = __FILE__;
-		switch_core_session_receive_message(session_b, &msg);
+		msg = switch_core_session_alloc(session_b, sizeof(*msg));
+		msg->message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
+		msg->string_array_arg[0] = switch_core_session_strdup(session_b, name);
+		msg->string_array_arg[1] = switch_core_session_strdup(session_b, number);
+		msg->from = __FILE__;
+		switch_core_session_queue_message(session_b, msg);
 		switch_core_session_rwunlock(session_b);
 	}
 }
@@ -3275,7 +3276,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 				const char *r_sdp = NULL;
-				switch_core_session_message_t msg = { 0 };
+				switch_core_session_message_t *msg;
 
 				if (sip->sip_payload && sip->sip_payload->pl_data &&
 					sip->sip_content_type && sip->sip_content_type->c_subtype && switch_stristr("sdp", sip->sip_content_type->c_subtype)) {
@@ -3286,23 +3287,17 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
 
-				msg.message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
-				msg.from = __FILE__;
-				msg.numeric_arg = status;
-				msg.string_arg = switch_core_session_strdup(other_session, phrase);
+				msg = switch_core_session_alloc(other_session, sizeof(*msg));
+				msg->message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
+				msg->from = __FILE__;
+				msg->numeric_arg = status;
+				msg->string_arg = switch_core_session_strdup(other_session, phrase);
 				if (r_sdp) {
-					msg.pointer_arg = switch_core_session_strdup(other_session, r_sdp);
-					msg.pointer_arg_size = strlen(r_sdp);
+					msg->pointer_arg = switch_core_session_strdup(other_session, r_sdp);
+					msg->pointer_arg_size = strlen(r_sdp);
 				}
 
-				switch_mutex_unlock(tech_pvt->sofia_mutex);
-				status = switch_core_session_receive_message(other_session, &msg);
-				switch_mutex_lock(tech_pvt->sofia_mutex);
-
-				if (status != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg is not available\n");
-					nua_respond(tech_pvt->nh, 403, "Hangup in progress", TAG_END());
-				}
+				switch_core_session_queue_message(other_session, msg);
 				switch_core_session_rwunlock(other_session);
 			}
 			return;
@@ -3550,23 +3545,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	case nua_callstate_proceeding:
 		if (status == 180) {
 			switch_channel_mark_ring_ready(channel);
-			if (!switch_channel_test_flag(channel, CF_GEN_RINGBACK)) {
-				if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
-						&& (other_session = switch_core_session_locate(uuid))) {
-						switch_core_session_message_t msg;
-						msg.message_id = SWITCH_MESSAGE_INDICATE_RINGING;
-						msg.from = __FILE__;
-						switch_mutex_unlock(tech_pvt->sofia_mutex);
-						switch_core_session_receive_message(other_session, &msg);
-						switch_mutex_lock(tech_pvt->sofia_mutex);
-						switch_core_session_rwunlock(other_session);
-					}
-
-				} else {
-					switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
-				}
-			}
 		}
 			
 		if (r_sdp) {
@@ -3582,7 +3560,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						goto done;
 					}
 				}
-				if (!switch_channel_test_flag(channel, CF_GEN_RINGBACK) && (uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
+				if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 					&& (other_session = switch_core_session_locate(uuid))) {
 					other_channel = switch_core_session_get_channel(other_session);
 					if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
@@ -3764,7 +3742,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 						&& (other_session = switch_core_session_locate(uuid))) {
-						switch_core_session_message_t msg = { 0 };
+						switch_core_session_message_t *msg;
 						
 						if (profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) {
 							tech_pvt->hold_laps = 1;
@@ -3807,9 +3785,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							goto done;
 						}
 						
-						msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT;
-						msg.from = __FILE__;
-						msg.string_arg = (char *) r_sdp;
+						msg = switch_core_session_alloc(other_session, sizeof(*msg));
+						msg->message_id = SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT;
+						msg->from = __FILE__;
+						msg->string_arg = switch_core_session_strdup(other_session, r_sdp);
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing SDP to other leg.\n%s\n", r_sdp);
 						
 						if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
@@ -3822,17 +3801,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							switch_channel_presence(tech_pvt->channel, "unknown", "hold", NULL);
 						}
 					
-						switch_mutex_unlock(tech_pvt->sofia_mutex);
-						status = switch_core_session_receive_message(other_session, &msg);
-						switch_mutex_lock(tech_pvt->sofia_mutex);
+						switch_core_session_queue_message(other_session, msg);
 
-						if (status != SWITCH_STATUS_SUCCESS) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg is not available\n");
-							nua_respond(tech_pvt->nh, 403, "Hangup in progress", TAG_END());
-						}
 						switch_core_session_rwunlock(other_session);
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Re-INVITE to a no-media channel that is not in a bridge.\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+										  "Re-INVITE to a no-media channel that is not in a bridge.\n");
 						is_ok = 0;
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					}

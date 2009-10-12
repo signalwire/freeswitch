@@ -384,6 +384,9 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 
 			if (!oglobals->ring_ready) {
 				oglobals->ring_ready = 1;
+				if (caller_channel && !oglobals->ignore_ring_ready) {
+					switch_channel_ring_ready(caller_channel);
+				}
 			}
 		}
 
@@ -534,13 +537,12 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				
 				if (!oglobals->ring_ready && !oglobals->ignore_ring_ready) {
 					oglobals->ring_ready = 1;
+					
 				}
 			}
 		}
 		
-		if (switch_core_session_private_event_count(originate_status[i].peer_session)) {
-			switch_ivr_parse_all_events(originate_status[i].peer_session);
-		}
+		switch_ivr_parse_all_events(originate_status[i].peer_session);
 
 		state = switch_channel_get_state(originate_status[i].peer_channel);
 		if (state >= CS_HANGUP || state == CS_RESET || switch_channel_test_flag(originate_status[i].peer_channel, CF_TRANSFER) ||
@@ -659,7 +661,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 	uint8_t pass = 0;
 	ringback_t ringback = { 0 };
-	switch_core_session_message_t *message = NULL;
 	switch_frame_t *read_frame = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int timelimit = 60;
@@ -848,15 +849,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 			goto done;
 		}
 
-
-		if (switch_core_session_dequeue_message(peer_session, &message) == SWITCH_STATUS_SUCCESS) {
-			if (switch_test_flag(message, SCSMF_DYNAMIC)) {
-				switch_safe_free(message);
-			} else {
-				message = NULL;
-			}
-		}
-		
 		if (switch_channel_media_ready(caller_channel)) {
 			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -1991,7 +1983,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				
 				check_per_channel_timeouts(&oglobals, originate_status, and_argc, start);
 
-				if (oglobals.session && switch_core_session_private_event_count(oglobals.session)) {
+				if (oglobals.session) {
 					switch_ivr_parse_all_events(oglobals.session);
 				}
 
@@ -2035,17 +2027,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				if (originate_status[0].peer_session
-					&& switch_core_session_dequeue_message(originate_status[0].peer_session, &message) == SWITCH_STATUS_SUCCESS) {
+					&& switch_core_session_dequeue_message(oglobals.session, &message) == SWITCH_STATUS_SUCCESS) {
 					if (oglobals.session && !ringback_data && or_argc == 1 && and_argc == 1) {	
 						/* when there is only 1 channel to call and bridge and no ringback */
 						switch_core_session_receive_message(oglobals.session, message);
 					}
-
-					if (switch_test_flag(message, SCSMF_DYNAMIC)) {
-						switch_safe_free(message);
-					} else {
-						message = NULL;
-					}
+					message = NULL;
 				}
 
 				/* read from the channel while we wait if the audio is up on it */

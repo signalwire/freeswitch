@@ -612,9 +612,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			break;
 		}
 
-		if (switch_core_session_private_event_count(session)) {
-			switch_ivr_parse_all_events(session);
-		}
+		switch_ivr_parse_all_events(session);
 
 		if (start && (switch_epoch_time_now(NULL) - start) > limit) {
 			break;
@@ -803,9 +801,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 			break;
 		}
 
-		if (switch_core_session_private_event_count(session)) {
-            switch_ivr_parse_all_events(session);
-        }
+		switch_ivr_parse_all_events(session);
 
 		if (args && (args->input_callback || args->buf || args->buflen)) {
 			/*
@@ -1193,9 +1189,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				break; 
 			}
 
-			if (switch_core_session_private_event_count(session)) {
-				switch_ivr_parse_all_events(session);
-			}
+			switch_ivr_parse_all_events(session);
 
 			if (args && (args->input_callback || args->buf || args->buflen)) {
 				/*

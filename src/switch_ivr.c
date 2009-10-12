@@ -220,9 +220,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 			break;
 		}
 		
-		if (switch_core_session_private_event_count(session)) {
-			switch_ivr_parse_all_events(session);
-		}
+
+		switch_ivr_parse_all_events(session);
+
 
 		if (args && (args->input_callback || args->buf || args->buflen)) {
 			switch_dtmf_t dtmf;
@@ -624,10 +624,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_next_event(switch_core_session_
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_messages(switch_core_session_t *session)
+{
+	switch_core_session_message_t *message;
+	int i = 0;
+	
+	while (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
+		i++;
+		switch_core_session_receive_message(session, message);
+		message = NULL;
+	}
+
+	return i ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_t *session)
 {
 
+
 	while (switch_ivr_parse_next_event(session) == SWITCH_STATUS_SUCCESS);
+	switch_ivr_parse_all_messages(session);
 	switch_ivr_sleep(session, 0, SWITCH_TRUE, NULL);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -773,9 +789,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 				}
 			}
 
-			if (switch_core_session_private_event_count(session)) {
-				switch_ivr_parse_all_events(session);
-			}
+			switch_ivr_parse_all_events(session);
+
 
 			if (switch_channel_has_dtmf(channel)) {
 				switch_dtmf_t dtmf = { 0 };
@@ -859,9 +874,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 			}
 		}
 
-		if (switch_core_session_private_event_count(session)) {
-			switch_ivr_parse_all_events(session);
-		}
+
+		switch_ivr_parse_all_events(session);
+
 
 		if (switch_channel_has_dtmf(channel)) {
 			switch_channel_dequeue_dtmf(channel, &dtmf);
@@ -990,9 +1005,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 			}
 		}
 
-		if (switch_core_session_private_event_count(session)) {
-			switch_ivr_parse_all_events(session);
-		}
+
+		switch_ivr_parse_all_events(session);
+
 
 		
 		if (eff_timeout) {

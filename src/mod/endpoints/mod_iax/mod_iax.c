@@ -1032,7 +1032,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 				break;
 			case IAX_EVENT_RINGA:
 				if (channel) {
-					switch_core_session_queue_indication(tech_pvt->session, SWITCH_MESSAGE_INDICATE_RINGING);
 					switch_channel_mark_ring_ready(channel);
 				}
 				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_NOTICE, "Ringing heard.\n");

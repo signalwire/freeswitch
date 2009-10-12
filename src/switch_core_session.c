@@ -633,6 +633,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		break;
 	}
 
+	switch_core_session_free_message(&message);
 	switch_core_session_rwunlock(session);
 
 	return status;
@@ -684,9 +685,35 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_se
 		if (switch_queue_trypush(session->message_queue, message) == SWITCH_STATUS_SUCCESS) {
 			status = SWITCH_STATUS_SUCCESS;
 		}
+
+		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
+			switch_core_session_wake_session_thread(session);
+		}
 	}
 
 	return status;
+}
+
+SWITCH_DECLARE(void) switch_core_session_free_message(switch_core_session_message_t **message)
+{
+	switch_core_session_message_t *to_free = *message;
+	int i;
+	char *s;
+
+	*message = NULL;
+
+	if (switch_test_flag(to_free, SCSMF_DYNAMIC)) {
+		s = (char *)to_free->string_arg;
+		switch_safe_free(s);
+		switch_safe_free(to_free->pointer_arg);
+		
+		for (i = 0; i < MESSAGE_STRING_ARG_MAX; i++) {
+			s = (char *)to_free->string_array_arg[i];
+			switch_safe_free(s);
+		}
+
+		switch_safe_free(to_free);
+	}
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_session_t *session, switch_core_session_message_t **message)
@@ -709,12 +736,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_flush_message(switch_core_se
 {
 	switch_core_session_message_t *message;
 
-	if (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
-		if (switch_test_flag(message, SCSMF_DYNAMIC)) {
-			switch_safe_free(message);
-		} else {
-			message = NULL;
-		}
+	while (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
+		switch_core_session_free_message(&message);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -907,16 +930,21 @@ SWITCH_DECLARE(switch_channel_t *) switch_core_session_get_channel(switch_core_s
 	return session->channel;
 }
 
-SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session_t *session)
+SWITCH_DECLARE(void) switch_core_session_wake_session_thread(switch_core_session_t *session)
 {
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_io_event_hook_state_change_t *ptr;
-
 	/* If trylock fails the signal is already awake so we needn't bother */
 	if (switch_mutex_trylock(session->mutex) == SWITCH_STATUS_SUCCESS) {
 		switch_thread_cond_signal(session->cond);
 		switch_mutex_unlock(session->mutex);
 	}
+}
+
+SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session_t *session)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_io_event_hook_state_change_t *ptr;
+
+	switch_core_session_wake_session_thread(session);
 
 	if (session->endpoint_interface->io_routines->state_change) {
 		status = session->endpoint_interface->io_routines->state_change(session);

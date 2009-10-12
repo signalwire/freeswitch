@@ -176,7 +176,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel_t *c
 SWITCH_DECLARE(void) switch_channel_audio_sync(switch_channel_t *channel) 
 {
 	if (switch_channel_media_ready(channel)) {
-		switch_core_session_message_t msg;
+		switch_core_session_message_t msg = { 0 };
 		msg.message_id = SWITCH_MESSAGE_INDICATE_AUDIO_SYNC;
 		msg.from = channel->name;
 		switch_core_session_receive_message(channel->session, &msg);
@@ -1914,7 +1914,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel_t *channel, const char *file, const char *func, int line)
 {
-	switch_core_session_message_t msg;
+	switch_core_session_message_t msg = { 0 };
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_assert(channel != NULL);
@@ -1948,7 +1948,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel_t *channel, const char *file, const char *func, int line)
 {
-	switch_core_session_message_t msg;
+	switch_core_session_message_t msg = { 0 };
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_assert(channel != NULL);
@@ -2064,7 +2064,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *channel, const char *file, const char *func, int line)
 {
-	switch_core_session_message_t msg;
+	switch_core_session_message_t msg = { 0 };
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_assert(channel != NULL);

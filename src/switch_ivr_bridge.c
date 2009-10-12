@@ -357,11 +357,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 		if (switch_core_session_dequeue_message(session_b, &message) == SWITCH_STATUS_SUCCESS) {
 			switch_core_session_receive_message(session_a, message);
-			if (switch_test_flag(message, SCSMF_DYNAMIC)) {
-				switch_safe_free(message);
-			} else {
-				message = NULL;
-			}
+			message = NULL;
 		}
 
 		if (!ans_a && answer_limit && switch_epoch_time_now(NULL) > answer_limit) {

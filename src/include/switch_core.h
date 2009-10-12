@@ -59,6 +59,7 @@ struct switch_app_log {
 	struct switch_app_log *next;
 };
 
+#define MESSAGE_STRING_ARG_MAX 10
 /*! \brief A message object designed to allow unlike technologies to exchange data */
 struct switch_core_session_message {
 	/*! uuid of the sender (for replies) */
@@ -92,7 +93,7 @@ struct switch_core_session_message {
 	const char *_file;
 	const char *_func;
 	int _line;
-	const char *string_array_arg[10];
+	const char *string_array_arg[MESSAGE_STRING_ARG_MAX];
 };
 
 /*! \brief A generic object to pass as a thread's session object to allow mutiple arguements and a pool */
@@ -634,6 +635,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(_In_ switch_co
 /*! 
   \brief Signal a session's state machine thread that a state change has occured
 */
+SWITCH_DECLARE(void) switch_core_session_wake_session_thread(_In_ switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(_In_ switch_core_session_t *session);
 
 /*! 
@@ -651,6 +653,10 @@ SWITCH_DECLARE(char *) switch_core_get_uuid(void);
 
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const char *uuid_str, const char *file, const char *func, int line);
+#endif
+
+#ifdef SWITCH_DEBUG_RWLOCKS
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_force_locate(const char *uuid_str, const char *file, const char *func, int line);
 #endif
 
 /*! 
@@ -736,6 +742,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(_In_z_ const ch
   \return SWITCH_STATUS_SUCCESS if the message was queued
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(_In_ switch_core_session_t *session, _In_ switch_core_session_message_t *message);
+
+SWITCH_DECLARE(void) switch_core_session_free_message(switch_core_session_message_t **message);
 
 /*! 
   \brief pass an indication message on a session

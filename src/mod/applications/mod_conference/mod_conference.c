@@ -2359,6 +2359,8 @@ static void conference_loop_output(conference_member_t *member)
 			switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
 			switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 			switch_core_session_set_read_codec(member->session, &member->read_codec);
+		} else {
+			switch_ivr_parse_all_messages(member->session);
 		}
 		
 		if (use_timer) {

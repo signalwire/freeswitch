@@ -100,9 +100,7 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session, swi
 			break;
 		}
 
-		if (switch_core_session_private_event_count(session)) {
-            switch_ivr_parse_all_events(session);
-        }
+		switch_ivr_parse_all_events(session);
 
 		if (args && (args->input_callback || args->buf || args->buflen)) {
 			switch_dtmf_t dtmf;

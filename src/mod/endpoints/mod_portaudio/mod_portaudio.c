@@ -248,7 +248,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 			switch_mutex_unlock(globals.pvt_lock);
 			switch_yield(1000000);
 		} else {
-			switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
 			switch_channel_mark_ring_ready(channel);
 		}
 

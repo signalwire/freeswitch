@@ -243,7 +243,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 			}
 		}
 
-		switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
 		switch_channel_mark_ring_ready(channel);
 
 		while (switch_channel_get_state(channel) == CS_INIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
