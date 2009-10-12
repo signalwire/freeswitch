@@ -640,11 +640,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_messages(switch_core_sessio
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_t *session)
 {
+	int x = 0;
 
 
-	while (switch_ivr_parse_next_event(session) == SWITCH_STATUS_SUCCESS);
 	switch_ivr_parse_all_messages(session);
-	switch_ivr_sleep(session, 0, SWITCH_TRUE, NULL);
+
+	while (switch_ivr_parse_next_event(session) == SWITCH_STATUS_SUCCESS) x++;
+
+	if (x) {
+		switch_ivr_sleep(session, 0, SWITCH_TRUE, NULL);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
