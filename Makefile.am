@@ -403,7 +403,7 @@ tiff-reconf:
 	cd libs/tiff-3.8.2 && sh ./configure.gnu
 	cd libs/spandsp && autoreconf -fi
 	cd libs/spandsp && sh ./configure.gnu
-	make mod_voipcodecs clean
+	make mod_voipcodecs-clean
 
 python-reconf:
 	rm -f src/mod/languages/mod_python/Makefile
