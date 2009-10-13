@@ -146,7 +146,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_ivr_bridge_data_t *data = obj;
 	int stream_id = 0, pre_b = 0, ans_a = 0, ans_b = 0, originator = 0;
 	switch_input_callback_function_t input_callback;
-	switch_core_session_message_t *message, msg = { 0 };
+	switch_core_session_message_t msg = { 0 };
 	void *user_data;
 	switch_channel_t *chan_a, *chan_b;
 	switch_frame_t *read_frame;
@@ -354,11 +354,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				switch_event_destroy(&event);
 			}
 
-		}
-
-		if (switch_core_session_dequeue_message(session_b, &message) == SWITCH_STATUS_SUCCESS) {
-			switch_core_session_receive_message(session_a, message);
-			message = NULL;
 		}
 
 		if (!ans_a && answer_limit && switch_epoch_time_now(NULL) > answer_limit) {

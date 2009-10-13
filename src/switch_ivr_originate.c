@@ -1014,7 +1014,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	char *e = NULL;
 	const char *ringback_data = NULL;
 	switch_codec_t *read_codec = NULL;
-	switch_core_session_message_t *message = NULL;
 	switch_event_t *var_event = NULL;
 	uint8_t fail_on_single_reject = 0;
 	char *fail_on_single_reject_var = NULL;
@@ -1026,7 +1025,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	int local_clobber = 0;
 	const char *cancel_key = NULL;
 	const char *holding = NULL;
-	switch_channel_state_t wait_state = 0;
 
 	if (session) {
 		const char *to_var;
@@ -1968,10 +1966,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 #endif
 
-			if (caller_channel) {
-				wait_state = switch_channel_get_state(caller_channel);
-			}
-			
 			while ((!caller_channel || switch_channel_ready(caller_channel) || switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) && 
 				   check_channel_status(&oglobals, originate_status, and_argc)) {
 				time_t elapsed = switch_epoch_time_now(NULL) - start;
@@ -1985,11 +1979,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (oglobals.session) {
 					switch_ivr_parse_all_events(oglobals.session);
-				}
-
-				if (caller_channel && switch_channel_get_state(caller_channel) != wait_state && !switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) {
-					//oglobals.idx = IDX_NADA;
-                    //goto notready;
 				}
 
 				if (!oglobals.sent_ring && !oglobals.progress && (progress_timelimit_sec && elapsed > (time_t) progress_timelimit_sec)) {
@@ -2025,12 +2014,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						goto notready;
 					}
 				}
-
-				if (oglobals.session && switch_core_session_dequeue_message(oglobals.session, &message) == SWITCH_STATUS_SUCCESS) {
-					switch_core_session_receive_message(oglobals.session, message);
-					message = NULL;
-				}
-
+				
 				/* read from the channel while we wait if the audio is up on it */
 				if (oglobals.session &&
 					!switch_channel_test_flag(caller_channel, CF_PROXY_MODE) &&

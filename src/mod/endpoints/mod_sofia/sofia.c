@@ -399,10 +399,10 @@ void sofia_send_callee_id(switch_core_session_t *session, const char *name, cons
 	if (switch_strlen_zero(number)) {
 		number = caller_profile->destination_number;
 	}
-	
+
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (session_b = switch_core_session_locate(uuid))) {
 		switch_core_session_message_t *msg;
-		
+
 		msg = switch_core_session_alloc(session_b, sizeof(*msg));
 		MESSAGE_STAMP_FFL(msg);
 		msg->message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
@@ -427,7 +427,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	if (sip->sip_to) {
 		number = sip->sip_to->a_url->url_user;
 	}
-
+	
 	if ((passerted = sip_p_asserted_identity(sip))) {
 		if (passerted->paid_url && passerted->paid_url->url_user) {
 			number = passerted->paid_url->url_user;
