@@ -81,7 +81,7 @@ static void launch_video(struct vid_helper *vh)
 
 static void send_display(switch_core_session_t *session, switch_core_session_t *peer_session) {
 
-	switch_core_session_message_t msg = { 0 };
+	switch_core_session_message_t *msg;
 	switch_caller_profile_t *caller_profile;
 	switch_channel_t *caller_channel;
 	const char *name, *number;
@@ -111,13 +111,13 @@ static void send_display(switch_core_session_t *session, switch_core_session_t *
 		}
 	}
 
-
-	msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
-	msg.string_array_arg[0] = name;
-	msg.string_array_arg[1] = number;
-	msg.from = __FILE__;
-	
-	switch_core_session_receive_message(peer_session, &msg);
+	msg = switch_core_session_alloc(peer_session, sizeof(*msg));
+	MESSAGE_STAMP_FFL(msg);
+	msg->message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
+	msg->string_array_arg[0] = switch_core_session_strdup(peer_session, name);
+	msg->string_array_arg[1] = switch_core_session_strdup(peer_session, number);
+	msg->from = __FILE__;
+	switch_core_session_queue_message(peer_session, msg);
 
 }
 
@@ -164,6 +164,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	int answer_timeout, sent_update = -50;
 	time_t answer_limit = 0;
 	
+
 #ifdef SWITCH_VIDEO_IN_THREADS
 	struct vid_helper vh = { 0 };
 	uint32_t vid_launch = 0;
@@ -216,10 +217,10 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_channel_set_variable(chan_a, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE, NULL);
 	}
 
-	if ((silence_var = switch_channel_get_variable(chan_a, "bridge_generate_comfort_noise"))) {
+	if ((silence_var = switch_channel_get_variable(chan_a, "bridge_generate_comfort_noise"))) {		
 		switch_codec_implementation_t read_impl = {0};
 		switch_core_session_get_read_impl(session_a, &read_impl);
-		
+
 		if (!switch_channel_media_ready(chan_a)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel has no media!\n");
 			goto end_of_bridge_loop;
