@@ -402,7 +402,7 @@ void sofia_send_callee_id(switch_core_session_t *session, const char *name, cons
 
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (session_b = switch_core_session_locate(uuid))) {
 		switch_core_session_message_t *msg;
-
+		
 		msg = switch_core_session_alloc(session_b, sizeof(*msg));
 		MESSAGE_STAMP_FFL(msg);
 		msg->message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
@@ -468,6 +468,8 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	caller_profile = switch_channel_get_caller_profile(channel);
 	caller_profile->callee_id_name = switch_core_strdup(caller_profile->pool, name);
 	caller_profile->callee_id_number = switch_core_strdup(caller_profile->pool, number);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Update Callee ID to \"%s\" <%s>\n", name, number);
 	
 	if (send) {
 		sofia_send_callee_id(session, NULL, NULL);
