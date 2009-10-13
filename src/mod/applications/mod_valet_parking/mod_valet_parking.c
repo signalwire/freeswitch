@@ -80,15 +80,21 @@ static switch_status_t valet_on_dtmf(switch_core_session_t *session, void *input
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static int next_id(valet_lot_t *lot)
+
+
+static int next_id(valet_lot_t *lot, int min, int max, int in)
 {
-	int i, r = 0;
+	int i, r = 0, m;
 	char buf[128] = "";
 
+	if (!min) min = 1;
+
 	switch_mutex_lock(globals.mutex);
-	for(i = 1 ;; i++) {
+	for(i = min ; (i < max || max == 0) ; i++) {
 		switch_snprintf(buf, sizeof(buf), "%d", i);
-		if (!switch_core_hash_find(lot->hash, buf)) {
+		m = !!switch_core_hash_find(lot->hash, buf);
+
+		if ((in && !m) || (!in && m)) {
 			r = i;
 			break;
 		}
@@ -107,7 +113,6 @@ SWITCH_STANDARD_APP(valet_parking_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_event_t *event;
 	char dtmf_buf[128] = "";
-			
 
 	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
@@ -126,7 +131,35 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		switch_assert(lot);
 
 		if (!strcasecmp(ext, "auto")) {		
-			switch_snprintf(dtmf_buf, sizeof(dtmf_buf), "%d", next_id(lot));
+			const char *io = argv[2];
+			const char *min = argv[3];
+			const char *max = argv[4];
+			int min_i, max_i, id, in = -1;
+
+			if (io) {
+				if (!strcasecmp(io, "in")) {
+					in = 1;
+				} else if (!strcasecmp(io, "out")) {
+					in = 0;
+				}
+			}
+
+			if (in < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", VALET_APP_SYNTAX);
+				switch_mutex_unlock(lot->mutex);
+				return;
+			}
+
+			min_i = atoi(min);
+			max_i = atoi(max);
+
+			if (!(id = next_id(lot, min_i, max_i, in))) {
+				switch_ivr_phrase_macro(session, in ? "valet_lot_full" : "valet_lot_empty", "", NULL, NULL);
+				switch_mutex_unlock(lot->mutex);
+				return;
+			}
+			
+			switch_snprintf(dtmf_buf, sizeof(dtmf_buf), "%d", id);
 			ext = dtmf_buf;
 		} else if (!strcasecmp(ext, "ask")) {
 			const char *prompt = "ivr/ivr-enter_ext_pound.wav";
@@ -197,16 +230,21 @@ SWITCH_STANDARD_APP(valet_parking_function)
 
 		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 			switch_core_session_t *b_session;
+			char tmp[512] = "";
+			
 			if ((b_session = switch_core_session_locate(uuid))) {
 				const char *lang = switch_channel_get_variable(channel, "language");
 				if (!lang) {
 					lang = "en";
 				}
+				
 				switch_ivr_session_transfer(b_session, dest, "inline", NULL);
 				switch_mutex_unlock(lot->mutex);
 				switch_core_session_rwunlock(b_session);
 				//maybe a phrase here for more flexibility
-				switch_ivr_say(session, ext, lang, "name_spelled", "pronounced", NULL);
+				switch_snprintf(tmp, sizeof(tmp), "%s:%s", lot_name, ext);
+				switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
+				//switch_ivr_say(session, ext, lang, "name_spelled", "pronounced", NULL);
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				return;
 			}
