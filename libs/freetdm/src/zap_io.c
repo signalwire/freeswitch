@@ -245,12 +245,14 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 			zap_sleep(500);
 		}
 
+		zap_mutex_lock(zchan->pre_buffer_mutex);
 		zap_buffer_destroy(&zchan->pre_buffer);
+		zap_mutex_unlock(zchan->pre_buffer_mutex);
+
 		zap_buffer_destroy(&zchan->digit_buffer);
 		zap_buffer_destroy(&zchan->gen_dtmf_buffer);
 		zap_buffer_destroy(&zchan->dtmf_buffer);
 		zap_buffer_destroy(&zchan->fsk_buffer);
-		zap_buffer_destroy(&zchan->pre_buffer);
 		zchan->pre_buffer_size = 0;
 
 		hashtable_destroy(zchan->variable_hash);
@@ -273,11 +275,11 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 		}
 
 		zap_mutex_destroy(&zchan->mutex);
+		zap_mutex_destroy(&zchan->pre_buffer_mutex);
 	}
 	
 	return ZAP_SUCCESS;
 }
-
 
 
 OZ_DECLARE(zap_status_t) zap_channel_get_alarms(zap_channel_t *zchan)
@@ -525,6 +527,8 @@ OZ_DECLARE(zap_status_t) zap_span_add_channel(zap_span_t *span, zap_socket_t soc
 		}
 
 		zap_mutex_create(&new_chan->mutex);
+		zap_mutex_create(&new_chan->pre_buffer_mutex);
+
 		zap_buffer_create(&new_chan->digit_buffer, 128, 128, 0);
 		zap_buffer_create(&new_chan->gen_dtmf_buffer, 128, 128, 0);
 		new_chan->variable_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
@@ -1202,8 +1206,10 @@ OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan)
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_PROGRESS);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_MEDIA);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_ANSWERED);
+	zap_mutex_lock(zchan->pre_buffer_mutex);
 	zap_buffer_destroy(&zchan->pre_buffer);
 	zchan->pre_buffer_size = 0;
+	zap_mutex_unlock(zchan->pre_buffer_mutex);
 
 	zchan->init_state = ZAP_CHANNEL_STATE_DOWN;
 	zchan->state = ZAP_CHANNEL_STATE_DOWN;
@@ -1478,11 +1484,13 @@ OZ_DECLARE(zap_status_t) zap_channel_command(zap_channel_t *zchan, zap_command_t
 
 			zchan->pre_buffer_size = val * 8;
 
+			zap_mutex_lock(zchan->pre_buffer_mutex);
 			if (!zchan->pre_buffer_size) {
 				zap_buffer_destroy(&zchan->pre_buffer);
 			} else if (!zchan->pre_buffer) {
 				zap_buffer_create(&zchan->pre_buffer, 1024, zchan->pre_buffer_size, 0);
 			}
+			zap_mutex_unlock(zchan->pre_buffer_mutex);
 
 			GOTO_STATUS(done, ZAP_SUCCESS);
 
@@ -1550,8 +1558,10 @@ OZ_DECLARE(zap_status_t) zap_channel_command(zap_channel_t *zchan, zap_command_t
 
 	case ZAP_COMMAND_DISABLE_ECHOCANCEL:
 		{
+			zap_mutex_lock(zchan->pre_buffer_mutex);
 			zap_buffer_destroy(&zchan->pre_buffer);
 			zchan->pre_buffer_size = 0;
+			zap_mutex_unlock(zchan->pre_buffer_mutex);
 		}
 		break;
 	default:
@@ -2115,22 +2125,29 @@ OZ_DECLARE(zap_status_t) zap_channel_read(zap_channel_t *zchan, void *data, zap_
 
 	if (zchan->skip_read_frames > 0 || zap_test_flag(zchan, ZAP_CHANNEL_MUTE)) {
 		
+		zap_mutex_lock(zchan->pre_buffer_mutex);
 		if (zchan->pre_buffer && zap_buffer_inuse(zchan->pre_buffer)) {
 			zap_buffer_zero(zchan->pre_buffer);
 		}
+		zap_mutex_unlock(zchan->pre_buffer_mutex);
+
 
 		memset(data, 255, *datalen);
 
 		if (zchan->skip_read_frames > 0) {
 			zchan->skip_read_frames--;
 		}
-	}  else	if (zchan->pre_buffer_size && zchan->pre_buffer) {
-		zap_buffer_write(zchan->pre_buffer, data, *datalen);
-		if (zap_buffer_inuse(zchan->pre_buffer) >= zchan->pre_buffer_size) {
-			zap_buffer_read(zchan->pre_buffer, data, *datalen);
-		} else {
-			memset(data, 255, *datalen);
+	}  else	{
+		zap_mutex_lock(zchan->pre_buffer_mutex);
+		if (zchan->pre_buffer_size && zchan->pre_buffer) {
+			zap_buffer_write(zchan->pre_buffer, data, *datalen);
+			if (zap_buffer_inuse(zchan->pre_buffer) >= zchan->pre_buffer_size) {
+				zap_buffer_read(zchan->pre_buffer, data, *datalen);
+			} else {
+				memset(data, 255, *datalen);
+			}
 		}
+		zap_mutex_unlock(zchan->pre_buffer_mutex);
 	}
 
 

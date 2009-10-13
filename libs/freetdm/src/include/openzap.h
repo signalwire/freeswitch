@@ -506,6 +506,7 @@ struct zap_channel {
 	zap_buffer_t *pre_buffer;
 	zap_buffer_t *digit_buffer;
 	zap_buffer_t *fsk_buffer;
+	zap_mutex_t *pre_buffer_mutex;
 	uint32_t dtmf_on;
 	uint32_t dtmf_off;
 	char *dtmf_hangup_buf;
