@@ -583,6 +583,8 @@ struct private_object {
 	char *route_uri;
 	char *x_actually_support_remote;
 	char *x_actually_support_local;
+	char *last_sent_callee_id_name;
+	char *last_sent_callee_id_number;
 	switch_port_t stun_port;
 	uint32_t stun_flags;
 	unsigned long rm_rate;

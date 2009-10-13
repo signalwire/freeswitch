@@ -298,6 +298,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 		}
 
+		switch_ivr_parse_all_messages(session_a);
+
 		if (!inner_bridge && (switch_channel_test_flag(chan_a, CF_SUSPEND) || switch_channel_test_flag(chan_b, CF_SUSPEND))) {
 			status = switch_core_session_read_frame(session_a, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
 

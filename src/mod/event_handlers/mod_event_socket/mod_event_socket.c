@@ -432,9 +432,7 @@ SWITCH_STANDARD_APP(socket_function)
 		
 		switch_ivr_park(session, NULL);
 
-		if (switch_core_session_private_event_count(session)) {
-			switch_ivr_parse_all_events(session);
-		}
+		switch_ivr_parse_all_events(session);
 		
 		if (switch_test_flag(listener, LFLAG_RESUME) || ((var = switch_channel_get_variable(channel, "socket_resume")) && switch_true(var))) {
 			switch_channel_set_state(channel, CS_EXECUTE);
