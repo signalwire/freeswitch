@@ -2026,12 +2026,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 
-				if (originate_status[0].peer_session
-					&& switch_core_session_dequeue_message(oglobals.session, &message) == SWITCH_STATUS_SUCCESS) {
-					if (oglobals.session && !ringback_data && or_argc == 1 && and_argc == 1) {	
-						/* when there is only 1 channel to call and bridge and no ringback */
-						switch_core_session_receive_message(oglobals.session, message);
-					}
+				if (oglobals.session && switch_core_session_dequeue_message(oglobals.session, &message) == SWITCH_STATUS_SUCCESS) {
+					switch_core_session_receive_message(oglobals.session, message);
 					message = NULL;
 				}
 
