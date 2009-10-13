@@ -404,6 +404,7 @@ void sofia_send_callee_id(switch_core_session_t *session, const char *name, cons
 		switch_core_session_message_t *msg;
 		
 		msg = switch_core_session_alloc(session_b, sizeof(*msg));
+		MESSAGE_STAMP_FFL(msg);
 		msg->message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
 		msg->string_array_arg[0] = switch_core_session_strdup(session_b, name);
 		msg->string_array_arg[1] = switch_core_session_strdup(session_b, number);
@@ -443,7 +444,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 			}
 		}
 	}
-
+	
 	if ((tmp = switch_channel_get_variable(channel, "sip_callee_id_name"))) {
 		name = (char *)tmp;
 	}
@@ -467,7 +468,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	caller_profile = switch_channel_get_caller_profile(channel);
 	caller_profile->callee_id_name = switch_core_strdup(caller_profile->pool, name);
 	caller_profile->callee_id_number = switch_core_strdup(caller_profile->pool, number);
-
+	
 	if (send) {
 		sofia_send_callee_id(session, NULL, NULL);
 	}
@@ -483,8 +484,8 @@ static void sofia_handle_sip_i_update(nua_t *nua, sofia_profile_t *profile, nua_
 		return;
 	}
 
-
 	sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
+	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 }
 
 

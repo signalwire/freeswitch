@@ -59,6 +59,8 @@ struct switch_app_log {
 	struct switch_app_log *next;
 };
 
+#define MESSAGE_STAMP_FFL(_m) _m->_file = __FILE__; _m->_func = __SWITCH_FUNC__; _m->_line = __LINE__
+
 #define MESSAGE_STRING_ARG_MAX 10
 /*! \brief A message object designed to allow unlike technologies to exchange data */
 struct switch_core_session_message {

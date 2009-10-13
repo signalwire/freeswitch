@@ -161,7 +161,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	const char *silence_var, *var;
 	int silence_val = 0, bypass_media_after_bridge = 0;
 	const char *bridge_answer_timeout = NULL;
-	int answer_timeout, sent_update = -5;
+	int answer_timeout, sent_update = -50;
 	time_t answer_limit = 0;
 	
 #ifdef SWITCH_VIDEO_IN_THREADS

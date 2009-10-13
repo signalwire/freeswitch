@@ -582,15 +582,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		return status;
 	}
 
-	message->_file = file;
-	message->_func = func;
-	message->_line = line;
+	if (!message->_file) {
+		message->_file = file;
+	}
+
+	if (!message->_func) {
+		message->_func = func;
+	}
+
+	if (!message->_line) {
+		message->_line = line;
+	}
 
 	if (message->message_id > SWITCH_MESSAGE_INVALID) {
 		message->message_id = SWITCH_MESSAGE_INVALID;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG, "%s receive message [%s]\n",
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line, 
+					  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG, "%s receive message [%s]\n",
 					  switch_channel_get_name(session->channel), message_names[message->message_id]);
 	
 	if (session->endpoint_interface->io_routines->receive_message) {
