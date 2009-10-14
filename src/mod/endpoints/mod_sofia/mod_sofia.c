@@ -1289,43 +1289,45 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					number = tech_pvt->caller_profile->destination_number;
 				}
 
-				if (switch_strlen_zero(tech_pvt->last_sent_callee_id_name) || strcmp(tech_pvt->last_sent_callee_id_name, name) ||
-					switch_strlen_zero(tech_pvt->last_sent_callee_id_number) || strcmp(tech_pvt->last_sent_callee_id_number, number)) {
-					
-					if (ua && switch_stristr("snom", ua)) {
-						snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", name, number);
-						nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-								 TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
-								 SIPTAG_PAYLOAD_STR(message), TAG_END());
-					} else if ((ua && (switch_stristr("polycom", ua) ||
-									   switch_stristr("UPDATE", tech_pvt->x_actually_support_remote)))) {
-						snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", name, number);
-						nua_update(tech_pvt->nh,
-								   TAG_IF(!switch_strlen_zero_buf(message), SIPTAG_HEADER_STR(message)),
-								   TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
-								   TAG_END());
-					}
-
-					tech_pvt->last_sent_callee_id_name = switch_core_session_strdup(tech_pvt->session, name);
-					tech_pvt->last_sent_callee_id_number = switch_core_session_strdup(tech_pvt->session, number);
-					
-					if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
-						const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "SEND");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Callee-Name", name);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Callee-Number", number);
-						if (uuid) {
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
-						}
-						switch_channel_event_set_data(channel, event);
-						switch_event_fire(&event);
-					}
+				if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+					switch_channel_set_variable(channel, "sip_callee_id_name", name);
+					switch_channel_set_variable(channel, "sip_callee_id_number", number);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Not sending same id again \"%s\" <%s>\n", name, number);
+					if (switch_strlen_zero(tech_pvt->last_sent_callee_id_name) || strcmp(tech_pvt->last_sent_callee_id_name, name) ||
+						switch_strlen_zero(tech_pvt->last_sent_callee_id_number) || strcmp(tech_pvt->last_sent_callee_id_number, number)) {
+					
+						if (ua && switch_stristr("snom", ua)) {
+							snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", name, number);
+							nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+									 TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+									 SIPTAG_PAYLOAD_STR(message), TAG_END());
+						} else if ((ua && (switch_stristr("polycom", ua) ||
+										   switch_stristr("UPDATE", tech_pvt->x_actually_support_remote)))) {
+							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", name, number);
+							nua_update(tech_pvt->nh,
+									   TAG_IF(!switch_strlen_zero_buf(message), SIPTAG_HEADER_STR(message)),
+									   TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+									   TAG_END());
+						}
+
+						tech_pvt->last_sent_callee_id_name = switch_core_session_strdup(tech_pvt->session, name);
+						tech_pvt->last_sent_callee_id_number = switch_core_session_strdup(tech_pvt->session, number);
+					
+						if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
+							const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "SEND");
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Callee-Name", name);
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Callee-Number", number);
+							if (uuid) {
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
+							}
+							switch_channel_event_set_data(channel, event);
+							switch_event_fire(&event);
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Not sending same id again \"%s\" <%s>\n", name, number);
+					}
 				}
-
-
-
 			}
 
 			switch_safe_free(arg);

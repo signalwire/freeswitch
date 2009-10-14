@@ -603,11 +603,14 @@ void sofia_event_callback(nua_event_t event,
 	case nua_r_cancel:
 	case nua_i_error:
 	case nua_i_active:
-	case nua_i_ack:
 	case nua_i_terminated:
 	case nua_r_set_params:
 	case nua_i_prack:
 	case nua_r_prack:
+		break;
+	case nua_i_ack:
+	case nua_r_ack:
+		if (channel) switch_channel_set_flag(channel, CF_MEDIA_ACK);
 		break;
 	case nua_r_shutdown:
 		if (status >= 200) su_root_break(profile->s_root);
@@ -1021,6 +1024,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_APPL_METHOD("REGISTER"),
 				   NUTAG_APPL_METHOD("NOTIFY"),
 				   NUTAG_APPL_METHOD("INFO"),
+				   NUTAG_APPL_METHOD("ACK"),
 #ifdef MANUAL_BYE
 				   NUTAG_APPL_METHOD("BYE"),
 #endif
@@ -3109,10 +3113,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			caller_profile->network_addr = switch_core_strdup(caller_profile->pool, network_ip);
 		}
 
-		switch_channel_clear_flag(channel, CF_REQ_MEDIA);
-		
 		if ((status == 180 || status == 183 || status == 200)) { 
 			const char *x_actually_support;
+
+			switch_channel_set_flag(channel, CF_MEDIA_ACK);
+			switch_channel_clear_flag(channel, CF_REQ_MEDIA);
 
 			if ((x_actually_support = sofia_glue_get_unknown_header(sip, "X-Actually-Support"))) {
 				tech_pvt->x_actually_support_remote = switch_core_session_strdup(session, x_actually_support);

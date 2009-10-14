@@ -80,6 +80,7 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 #define switch_channel_media_ready(_channel) switch_channel_test_ready(_channel, SWITCH_TRUE)
 #define switch_channel_up(_channel) (switch_channel_get_state(_channel) < CS_HANGUP)
 #define switch_channel_down(_channel) (switch_channel_get_state(_channel) >= CS_HANGUP)
+#define switch_channel_media_ack(_channel) (!switch_channel_test_cap(_channel, CC_MEDIA_ACK) || switch_channel_test_flag(_channel, CF_MEDIA_ACK))
 
 SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state);
 SWITCH_DECLARE(void) switch_channel_wait_for_state_timeout(switch_channel_t *other_channel, switch_channel_state_t want_state, uint32_t timeout);
@@ -296,6 +297,10 @@ SWITCH_DECLARE(uint32_t) switch_channel_test_flag(switch_channel_t *channel, swi
 */
 SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flag);
 SWITCH_DECLARE(void) switch_channel_set_flag_recursive(switch_channel_t *channel, switch_channel_flag_t flag);
+
+SWITCH_DECLARE(void) switch_channel_set_cap(switch_channel_t *channel, switch_channel_cap_t cap);
+SWITCH_DECLARE(void) switch_channel_clear_cap(switch_channel_t *channel, switch_channel_cap_t cap);
+SWITCH_DECLARE(uint32_t) switch_channel_test_cap(switch_channel_t *channel, switch_channel_cap_t cap);
 
 /*!
   \brief Set given flag(s) on a given channel's bridge partner

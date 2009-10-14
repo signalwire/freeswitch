@@ -1,4 +1,3 @@
-
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
@@ -120,6 +119,7 @@ struct switch_channel {
 	switch_channel_state_t state;
 	switch_channel_state_t running_state;
 	uint32_t flags[CF_FLAG_MAX];
+	uint32_t caps[CC_FLAG_MAX];
 	uint8_t state_flags[CF_FLAG_MAX];
 	uint32_t private_flags;
 	uint32_t app_flags;
@@ -839,6 +839,33 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *c
 	}
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(void) switch_channel_set_cap(switch_channel_t *channel, switch_channel_cap_t cap)
+{
+	switch_assert(channel);
+	switch_assert(channel->flag_mutex);
+
+	switch_mutex_lock(channel->flag_mutex);
+	channel->caps[cap] = 1;
+	switch_mutex_unlock(channel->flag_mutex);
+}
+
+SWITCH_DECLARE(void) switch_channel_clear_cap(switch_channel_t *channel, switch_channel_cap_t cap)
+{
+	switch_assert(channel != NULL);
+	switch_assert(channel->flag_mutex);
+
+	switch_mutex_lock(channel->flag_mutex);
+	channel->caps[cap] = 0;
+	switch_mutex_unlock(channel->flag_mutex);
+}
+
+SWITCH_DECLARE(uint32_t) switch_channel_test_cap(switch_channel_t *channel, switch_channel_cap_t cap)
+{
+	switch_assert(channel != NULL);
+	return channel->caps[cap] ? 1 : 0;
 }
 
 SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flag)

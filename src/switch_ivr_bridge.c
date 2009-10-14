@@ -161,7 +161,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	const char *silence_var, *var;
 	int silence_val = 0, bypass_media_after_bridge = 0;
 	const char *bridge_answer_timeout = NULL;
-	int answer_timeout, sent_update = -50;
+	int answer_timeout, sent_update = 0;
 	time_t answer_limit = 0;
 	
 
@@ -184,6 +184,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	chan_b = switch_core_session_get_channel(session_b);
 
 	ans_a = switch_channel_test_flag(chan_a, CF_ANSWERED);
+
 	if ((originator = switch_channel_test_flag(chan_a, CF_BRIDGE_ORIGINATOR))) {
 		pre_b = switch_channel_test_flag(chan_a, CF_EARLY_MEDIA);
 		ans_b = switch_channel_test_flag(chan_b, CF_ANSWERED);
@@ -397,12 +398,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			}
 		}
 		
-
-		if (originator && sent_update < 0 && ans_a && ans_b) {
-			if (!++sent_update) {
-				switch_ivr_bridge_display(session_a, session_b);
-				sent_update = 1;
-			}
+		if (originator && !sent_update && ans_a && ans_b && switch_channel_media_ack(chan_a) && switch_channel_media_ack(chan_b)) {
+			switch_ivr_bridge_display(session_a, session_b);
+			sent_update = 1;
 		}
 
 #ifndef SWITCH_VIDEO_IN_THREADS
