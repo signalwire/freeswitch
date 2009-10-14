@@ -386,7 +386,7 @@ swigall:
 	@echo reswigging all
 	sh ./build/swigall.sh
 
-sure: update-clean all
+sure: current
 
 speedy-sure: update-clean
 	$(MAKE) -j core
