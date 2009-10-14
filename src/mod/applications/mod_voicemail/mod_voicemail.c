@@ -3053,7 +3053,7 @@ greet_key_press:
 	if (disk_quota) {
 		callback_t callback = { 0 };
 		char sqlstmt[256];
-		char disk_usage[256]; 
+		char disk_usage[256] = ""; 
 
 		callback.buf = disk_usage;
 		callback.len = sizeof(disk_usage);
@@ -3061,7 +3061,7 @@ greet_key_press:
 		switch_snprintf(sqlstmt, sizeof(sqlstmt),
 						"select sum(message_len) from voicemail_msgs where username='%s' and domain='%s'",
 						id, domain_name);
-		vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &callback);
+		vm_execute_sql_callback(profile, profile->mutex, sqlstmt, sql2str_callback, &callback);
 
 		if (atoi(disk_usage) >= disk_quota) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Voicemail disk quota is exceeded for %s\n", id);
