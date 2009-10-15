@@ -3263,6 +3263,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				full_contact = sip_header_as_string(home, (void *) sip->sip_contact);
 				invite_contact = sofia_glue_strip_uri(full_contact);
 
+				switch_channel_set_variable(channel, "sip_redirected_to", invite_contact);
 				tech_pvt->redirected = switch_core_session_strdup(session, invite_contact);
 
 				free(invite_contact);
