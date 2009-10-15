@@ -9,6 +9,7 @@
   <!-- info    - informational message  -->
   <!-- debug   - debug-level message -->
   <settings>
+    <param name="facility" value="user"/>
     <param name="ident" value="freeswitch"/>
     <param name="loglevel" value="warning"/>
   </settings>

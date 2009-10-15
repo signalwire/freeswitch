@@ -49,10 +49,12 @@ static switch_log_level_t log_level;
 static struct {
 	char *ident;
 	char *format;
+	char *facility;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ident, globals.ident);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_format, globals.format);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_facility, globals.facility);
 
 static switch_loadable_module_interface_t console_module_interface = {
 	/*.module_name */ modname,
@@ -126,6 +128,8 @@ static switch_status_t load_config(void)
 					set_global_ident(val);
 				} else if (!strcmp(var, "format")) {
 					set_global_format(val);
+				} else if (!strcmp(var, "facility")) {
+					set_global_facility(val);
                 } else if (!strcasecmp(var, "loglevel") && !switch_strlen_zero(val)) {
                     log_level = switch_log_str2level(val);
                     if (log_level == SWITCH_LOG_INVALID) {
@@ -144,7 +148,9 @@ static switch_status_t load_config(void)
 	if (switch_strlen_zero(globals.format)) {
 		set_global_format(DEFAULT_FORMAT);
 	}
-
+    if (switch_strlen_zero(globals.facility)) {
+		set_global_facility(DEFAULT_FACILITY);
+    }
 	return 0;
 }
 
@@ -173,6 +179,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_syslog_shutdown)
 
 	switch_safe_free(globals.ident);
 	switch_safe_free(globals.format);
+	switch_safe_free(globals.facility);
 
 	switch_log_unbind_logger(mod_syslog_logger);
 
