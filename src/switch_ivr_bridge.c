@@ -286,7 +286,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			goto end_of_bridge_loop;
 		}
 
-		if (loop_count > DEFAULT_LEAD_FRAMES && switch_core_session_private_event_count(session_a)) {
+		if (loop_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a) && switch_core_session_private_event_count(session_a)) {
 			switch_channel_set_flag(chan_b, CF_SUSPEND);
 			msg.string_arg = data->b_uuid;
 			msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
@@ -318,7 +318,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 #endif
 
-		if (loop_count > DEFAULT_LEAD_FRAMES && bypass_media_after_bridge && switch_channel_test_flag(chan_a, CF_ANSWERED) && 
+		if (loop_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a) && 
+			bypass_media_after_bridge && switch_channel_test_flag(chan_a, CF_ANSWERED) && 
 			switch_channel_test_flag(chan_b, CF_ANSWERED)) {
 			switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
 			bypass_media_after_bridge = 0;
