@@ -273,6 +273,7 @@ int main(int argc, char *argv[])
 	char *opts;
 	char opts_str[1024] = "";
 	char *local_argv[1024] = { 0 };
+	int local_argc = argc;
 	char *arg_argv[128] = { 0 };
 	char *usageDesc;
 	int alt_dirs = 0;
@@ -300,7 +301,7 @@ int main(int argc, char *argv[])
 		strncpy(opts_str, opts, sizeof(opts_str) - 1);
 		i = switch_separate_string(opts_str, ' ', arg_argv, (sizeof(arg_argv) / sizeof(arg_argv[0])));
 		for (x = 0; x < i; x++) {
-			local_argv[argc++] = arg_argv[x];
+			local_argv[local_argc++] = arg_argv[x];
 		}
 	}
 
@@ -339,7 +340,7 @@ int main(int argc, char *argv[])
 		"\t-htdocs [htdocsdir]    -- specify an alternate htdocs dir\n"
 		"\t-scripts [scriptsdir]  -- specify an alternate scripts dir\n";
 
-	for (x = 1; x < argc; x++) {
+	for (x = 1; x < local_argc; x++) {
 		known_opt = 0;
 #ifdef WIN32
 		if (x == 1) {
@@ -671,10 +672,10 @@ int main(int argc, char *argv[])
 			setrlimit(RLIMIT_STACK, &rlp);
 
 			apr_terminate();
-			ret = (int)execv(local_argv[0], local_argv);
+			ret = (int)execv(argv[0], argv);
 			
 			for(i = 0; i < argc; i++) {
-				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", local_argv[i]);
+				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[i]);
 			}
 
 			return system(buf);
@@ -764,13 +765,12 @@ int main(int argc, char *argv[])
 		char buf[1024] = "";
 		int j = 0;
 		
-		switch_assert(local_argv[0]);
 		switch_sleep(1000000);
-		ret = (int)execv(local_argv[0], local_argv);
+		ret = (int)execv(argv[0], argv);
 		fprintf(stderr, "Restart Failed [%s] resorting to plan b\n", strerror(errno));
 
 		for(j = 0; j < argc; j++) {
-			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", local_argv[j]);
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[j]);
 		}
 
 		ret = system(buf);
