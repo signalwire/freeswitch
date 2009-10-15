@@ -207,6 +207,10 @@ static unsigned char wanpipe_swap_bits(unsigned char cas_bits)
 static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start, unsigned end, zap_chan_type_t type, char *name, char *number, unsigned char cas_bits)
 {
 	unsigned configured = 0, x;
+#ifdef LIBSANGOMA_VERSION
+	sangoma_status_t sangstatus;
+	sangoma_wait_obj_t *sangoma_wait_obj;
+#endif
 
 	if (type == ZAP_CHAN_TYPE_CAS) {
 		zap_log(ZAP_LOG_DEBUG, "Configuring Wanpipe CAS channels with abcd == 0x%X\n", cas_bits);
@@ -234,9 +238,6 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 			wanpipe_tdm_api_t tdm_api;
 			memset(&tdm_api, 0, sizeof(tdm_api));
 #ifdef LIBSANGOMA_VERSION
-			sangoma_status_t sangstatus;
-			sangoma_wait_obj_t *sangoma_wait_obj;
-
 			sangstatus = sangoma_wait_obj_create(&sangoma_wait_obj, sockfd, SANGOMA_DEVICE_WAIT_OBJ);
 			if (sangstatus != SANG_STATUS_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "failure create waitable object for s%dc%d\n", spanno, x);
