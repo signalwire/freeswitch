@@ -1600,12 +1600,12 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 			if (contact_params) {
 				if (*contact_params == ';') {
-					params = switch_core_sprintf(gateway->pool, "%s;transport=%s", contact_params, register_transport);
+					params = switch_core_sprintf(gateway->pool, "%s;transport=%s;gw=%s", contact_params, register_transport, gateway->name);
 				} else {
-					params = switch_core_sprintf(gateway->pool, ";%s;transport=%s", contact_params, register_transport);
+					params = switch_core_sprintf(gateway->pool, ";%s;transport=%s;gw=%s", contact_params, register_transport, gateway->name);
 				}
 			} else {
-				params = switch_core_sprintf(gateway->pool, ";transport=%s", register_transport);
+				params = switch_core_sprintf(gateway->pool, ";transport=%s;gw=%s", register_transport, gateway->name);
 			}
 
 			if (!switch_strlen_zero(from_domain)) {
@@ -4823,6 +4823,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	char *is_nat = NULL;
 	char acl_token[512] = "";
 	sofia_transport_t transport;
+	const char *gw_name = NULL;
 
 	profile->ib_calls++;
 
@@ -5390,9 +5391,16 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		free(tmp);
 	}
 
+	
+	if (sip->sip_request->rq_url->url_params) {
+		gw_name = sofia_glue_find_parameter(sip->sip_request->rq_url->url_params, "gw=");
+	}
 
 	if (strstr(destination_number, "gw+")) {
-		const char *gw_name = destination_number + 3;
+		gw_name = destination_number + 3;
+	}
+
+	if (gw_name) {
 		sofia_gateway_t *gateway;
 		if (gw_name && (gateway = sofia_reg_find_gateway(gw_name))) {
 			context = switch_core_session_strdup(session, gateway->register_context);
