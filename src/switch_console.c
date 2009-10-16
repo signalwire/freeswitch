@@ -841,15 +841,16 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 SWITCH_DECLARE(void) switch_console_loop(void)
 {
 
-	char cmd[2048];
-	int32_t activity = 1;
-	switch_size_t x = 0;
-
+	char cmd[2048] = "";
+	int32_t activity = 1, r;	
 	gethostname(hostname, sizeof(hostname));
 
 	while (running) {
 		int32_t arg;
-#ifndef _MSC_VER
+#ifdef _MSC_VER
+		HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
+		INPUT_RECORD in[128];
+#else
 		fd_set rfds, efds;
 		struct timeval tv = { 0, 20000 };
 #endif
@@ -863,11 +864,33 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "\nfreeswitch@%s> ", hostname);
 		}
 #ifdef _MSC_VER
-		activity = WaitForSingleObject(GetStdHandle(STD_INPUT_HANDLE), 20);
+		r = WaitForSingleObject(stdinHandle, 200);
+		activity = 0;
 
-		if (activity == 102) {
-			fflush(stdout);
-			continue;
+		if (r == WAIT_OBJECT_0) {
+			DWORD bytes = 0;
+			DWORD read, i;
+			PeekConsoleInput(stdinHandle, in, 128, &read);
+			for (i = 0; i < read; i++) {
+				if (in[i].EventType == KEY_EVENT && !in[i].Event.KeyEvent.bKeyDown) {
+					activity = 1;
+					break;
+				}
+			}
+			if (activity) {
+				char *end;
+				ReadConsole(stdinHandle, cmd, sizeof(cmd), &bytes, NULL);
+				end = end_of_p(cmd);
+				while(*end == '\r' || *end == '\n') {
+					*end-- = '\0';	
+				}
+			}
+
+			if (cmd[0]) {
+				running = switch_console_process(cmd, 0);
+				memset(cmd, 0, sizeof(cmd));
+			}
+			
 		}
 #else
 		FD_ZERO(&rfds);
@@ -890,7 +913,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 			fflush(stdout);
 			continue;
 		}
-#endif
+
 		memset(&cmd, 0, sizeof(cmd));
 		for (x = 0; x < (sizeof(cmd) - 1); x++) {
 			int c = getchar();
@@ -911,6 +934,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		if (cmd[0]) {
 			running = switch_console_process(cmd, 0);
 		}
+#endif
 	}
 }
 #endif

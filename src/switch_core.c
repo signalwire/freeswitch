@@ -1593,11 +1593,36 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 		}
 		break;
 	case SCSC_SHUTDOWN:
+
+#ifdef _MSC_VER
+		{
+			HANDLE shutdown_event;	
+			char path[512];
+			/* for windows we need the event to signal for shutting down a background FreeSWITCH */
+			snprintf(path, sizeof(path), "Global\\Freeswitch.%d", getpid());
+
+			/* open the event so we can signal it */
+			shutdown_event = OpenEvent(EVENT_MODIFY_STATE, FALSE, path);
+
+		
+			if (shutdown_event) {
+				/* signal the event to shutdown */
+				SetEvent(shutdown_event);
+				/* cleanup */
+				CloseHandle(shutdown_event);
+			}
+		}
+#endif
+
+
 		if (*val) {
 			switch_set_flag((&runtime), SCF_RESTART);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Restarting\n");
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Shutting down\n");
+#ifdef _MSC_VER
+			fclose(stdin);
+#endif
 		}
 		runtime.running = 0;
 		break;
