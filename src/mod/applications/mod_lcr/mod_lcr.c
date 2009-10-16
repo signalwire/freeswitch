@@ -1239,10 +1239,8 @@ SWITCH_STANDARD_APP(lcr_app_function)
 		routes.lookup_number = dest;
 		if (caller_profile) {
 			routes.cid = (char *) switch_channel_get_variable(channel, "effective_caller_id_number");
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Caller ID: %s\n", routes.cid);
 			if (!routes.cid) {
 				routes.cid = (char *) caller_profile->caller_id_number;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Caller ID2: %s\n", routes.cid);
 			}
 		}
 
