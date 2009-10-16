@@ -225,7 +225,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			}
 		}
 
-		dest = switch_core_session_sprintf(session, "valet_park:%s %s", lot_name, ext);
+		dest = switch_core_session_sprintf(session, "sleep:1000,valet_park:%s %s", lot_name, ext);
 		switch_channel_set_variable(channel, "inline_destination", dest);
 
 		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
