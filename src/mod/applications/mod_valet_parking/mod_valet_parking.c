@@ -113,6 +113,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_event_t *event;
 	char dtmf_buf[128] = "";
+	int is_auto = 0;
 
 	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
@@ -139,6 +140,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			if (io) {
 				if (!strcasecmp(io, "in")) {
 					in = 1;
+					is_auto = 1;
 				} else if (!strcasecmp(io, "out")) {
 					in = 0;
 				}
@@ -228,26 +230,24 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		dest = switch_core_session_sprintf(session, "sleep:1000,valet_park:%s %s", lot_name, ext);
 		switch_channel_set_variable(channel, "inline_destination", dest);
 
-		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
-			switch_core_session_t *b_session;
+		if (is_auto) {
 			char tmp[512] = "";
-			
-			if ((b_session = switch_core_session_locate(uuid))) {
-				const char *lang = switch_channel_get_variable(channel, "language");
-				if (!lang) {
-					lang = "en";
-				}
+			switch_snprintf(tmp, sizeof(tmp), "%s:%s", lot_name, ext);
+
+			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+				switch_core_session_t *b_session;
 				
-				switch_ivr_session_transfer(b_session, dest, "inline", NULL);
-				switch_mutex_unlock(lot->mutex);
-				switch_core_session_rwunlock(b_session);
-				//maybe a phrase here for more flexibility
-				switch_snprintf(tmp, sizeof(tmp), "%s:%s", lot_name, ext);
-				switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
-				//switch_ivr_say(session, ext, lang, "name_spelled", "pronounced", NULL);
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-				return;
+				if ((b_session = switch_core_session_locate(uuid))) {
+					switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
+					switch_ivr_session_transfer(b_session, dest, "inline", NULL);
+					switch_mutex_unlock(lot->mutex);
+					switch_core_session_rwunlock(b_session);
+					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+					return;
+				}
 			}
+
+			switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
 		}
 		
 			
