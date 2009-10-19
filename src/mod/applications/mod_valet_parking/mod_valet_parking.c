@@ -137,6 +137,11 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			const char *max = argv[4];
 			int min_i, max_i, id, in = -1;
 
+			if (argc < 5) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", VALET_APP_SYNTAX);
+				return;
+			}
+
 			if (io) {
 				if (!strcasecmp(io, "in")) {
 					in = 1;
