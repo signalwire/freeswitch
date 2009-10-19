@@ -386,6 +386,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				oglobals->ring_ready = 1;
 				if (caller_channel && !oglobals->ignore_ring_ready) {
 					switch_channel_ring_ready(caller_channel);
+					oglobals->sent_ring = 1;
 				}
 			}
 		}
@@ -1828,7 +1829,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						goto notready;
 					}
 
-					if (!oglobals.sent_ring && !oglobals.progress && (progress_timelimit_sec && elapsed > (time_t) progress_timelimit_sec)) {
+					if (!oglobals.sent_ring && !oglobals.ignore_ring_ready && 
+						!oglobals.progress && (progress_timelimit_sec && elapsed > (time_t) progress_timelimit_sec)) {
 						to++;
 						oglobals.idx = IDX_TIMEOUT;
 						goto notready;
@@ -1977,11 +1979,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			while ((!caller_channel || switch_channel_ready(caller_channel) || switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) && 
 				   check_channel_status(&oglobals, originate_status, and_argc)) {
 				time_t elapsed = switch_epoch_time_now(NULL) - start;
-				if (caller_channel && !oglobals.sent_ring && oglobals.ring_ready && !oglobals.return_ring_ready) {
-					switch_channel_ring_ready(caller_channel);
-					oglobals.sent_ring = 1;
-				}
-				/* When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail. */
 				
 				check_per_channel_timeouts(&oglobals, originate_status, and_argc, start);
 
