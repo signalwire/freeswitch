@@ -751,7 +751,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 				char *command = switch_event_get_header(event, "eavesdrop-command");
 				if (command) {
-					fcommand = command;
+					fcommand = switch_core_session_strdup(session, command);
 				}
 				switch_event_destroy(&event);
 			}
