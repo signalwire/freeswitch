@@ -522,6 +522,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	tech_pvt->session = session;
 	tech_pvt->channel = switch_core_session_get_channel(session);
 	switch_channel_set_cap(tech_pvt->channel, CC_MEDIA_ACK);
+	switch_channel_set_cap(tech_pvt->channel, CC_BYPASS_MEDIA);
 	
 	switch_core_session_set_private(session, tech_pvt);
 

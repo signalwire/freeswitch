@@ -1232,7 +1232,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			switch_channel_clear_flag(channel, CF_PROXY_MODE);
 			sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
 
-			if (!switch_channel_media_ready(channel)) {
+			if (!(switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
 				if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
 					const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 
@@ -2989,6 +2989,14 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		switch_channel_set_variable(nchannel, "sip_invite_params", "intercom=true");
 	}
 
+	if ((hval = switch_event_get_header(var_event, "sip_callee_id_name"))) {
+		caller_profile->callee_id_name = switch_core_strdup(caller_profile->pool, hval);
+	}
+
+	if ((hval = switch_event_get_header(var_event, "sip_callee_id_number"))) {
+		caller_profile->callee_id_number = switch_core_strdup(caller_profile->pool, hval);
+	}
+
 	if (session) {
 		switch_channel_t *o_channel = switch_core_session_get_channel(session);
 		const char *vval = NULL;
@@ -3005,7 +3013,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		switch_ivr_transfer_variable(session, nsession, "sip-force-contact");
 		switch_ivr_transfer_variable(session, nsession, "sip_sticky_contact");
 		switch_ivr_transfer_variable(session, nsession, "sip_cid_type");
-
+		
 		if (switch_core_session_compare(session, nsession)) {
 			/* It's another sofia channel! so lets cache what they use as a pt for telephone event so 
 			   we can keep it the same

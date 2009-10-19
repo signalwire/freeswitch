@@ -84,7 +84,7 @@ static void send_display(switch_core_session_t *session, switch_core_session_t *
 	switch_core_session_message_t *msg;
 	switch_caller_profile_t *caller_profile;
 	switch_channel_t *caller_channel;
-	const char *name, *number;
+	const char *name, *number, *p;
 
 	caller_channel = switch_core_session_get_channel(session);
 	caller_profile = switch_channel_get_caller_profile(caller_channel);
@@ -109,6 +109,13 @@ static void send_display(switch_core_session_t *session, switch_core_session_t *
 		if (switch_strlen_zero(number)) {
 			number = caller_profile->destination_number;
 		}
+	}
+
+	if ((p = strrchr(number, '/'))) {
+		number = p+1;
+	}
+	if ((p = strrchr(name, '/'))) {
+		name = p+1;
 	}
 
 	msg = switch_core_session_alloc(peer_session, sizeof(*msg));
@@ -394,9 +401,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(un));
 					goto end_of_bridge_loop;
 				}
-				
-				if (ans_a) ans_b = 1; else ans_a = 1;
 			}
+
+			if (ans_a) ans_b = 1; else ans_a = 1;
 		}
 		
 		if (originator && !sent_update && ans_a && ans_b && switch_channel_media_ack(chan_a) && switch_channel_media_ack(chan_b)) {
@@ -865,6 +872,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 		switch_channel_set_flag(caller_channel, CF_TRANSFER);
 		switch_channel_set_flag(peer_channel, CF_TRANSFER);
 	}
+
+	switch_ivr_bridge_display(session, peer_session);
 
 	return SWITCH_STATUS_SUCCESS;
 }

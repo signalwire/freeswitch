@@ -506,13 +506,21 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			}
 
 			if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-				switch_channel_set_flag(peer_channel, CF_PROXY_MODE);
-			}
-
-			if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-				switch_channel_set_flag(peer_channel, CF_PROXY_MEDIA);
-				if (switch_channel_test_flag(channel, CF_VIDEO)) {
-					switch_channel_set_flag(peer_channel, CF_VIDEO);
+				if (switch_channel_test_cap(peer_channel, CC_BYPASS_MEDIA)) {
+					switch_channel_set_flag(peer_channel, CF_PROXY_MODE);
+			
+					if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+						switch_channel_set_flag(peer_channel, CF_PROXY_MEDIA);
+						if (switch_channel_test_flag(channel, CF_VIDEO)) {
+							switch_channel_set_flag(peer_channel, CF_VIDEO);
+						}
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+									  "%s does not support the proxy feature, disabling.\n", 
+									  switch_channel_get_name(peer_channel));
+					switch_channel_clear_flag(channel, CF_PROXY_MODE);
+					switch_channel_clear_flag(channel, CF_PROXY_MEDIA);
 				}
 			}
 

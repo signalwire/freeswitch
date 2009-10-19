@@ -229,6 +229,8 @@ SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel_t *channel);
   \returns SWITCH_STATUS_SUCCESS if successful
 */
 
+SWITCH_DECLARE(switch_status_t) switch_channel_set_profile_var(switch_channel_t *channel, const char *name, const char *val);
+
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel, 
 																	  const char *varname, const char *value, switch_bool_t var_check);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channel_t *channel, const char *varname,  const char *fmt, ...);

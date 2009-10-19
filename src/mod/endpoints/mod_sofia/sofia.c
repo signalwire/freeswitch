@@ -3113,11 +3113,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			caller_profile->network_addr = switch_core_strdup(caller_profile->pool, network_ip);
 		}
 
+		switch_channel_clear_flag(channel, CF_REQ_MEDIA);
+
 		if ((status == 180 || status == 183 || status == 200)) { 
 			const char *x_actually_support;
 
 			switch_channel_set_flag(channel, CF_MEDIA_ACK);
-			switch_channel_clear_flag(channel, CF_REQ_MEDIA);
 
 			if ((x_actually_support = sofia_glue_get_unknown_header(sip, "X-Actually-Support"))) {
 				tech_pvt->x_actually_support_remote = switch_core_session_strdup(session, x_actually_support);

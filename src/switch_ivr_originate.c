@@ -1725,6 +1725,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (originate_status[i].peer_channel) {
 					const char *vvar;
 					
+					if ((vvar = switch_channel_get_variable(originate_status[i].peer_channel, "origination_callee_id_name"))) {
+						switch_channel_set_profile_var(originate_status[i].peer_channel, "callee_id_name", vvar);
+					}
+
+					if ((vvar = switch_channel_get_variable(originate_status[i].peer_channel, "origination_callee_id_number"))) {
+						switch_channel_set_profile_var(originate_status[i].peer_channel, "callee_id_number", vvar);
+					}
+
 					if ((vvar = switch_channel_get_variable(originate_status[i].peer_channel, "leg_timeout"))) {
 						int val = atoi(vvar);
 						if (val > 0) {

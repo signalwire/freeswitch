@@ -784,15 +784,12 @@ SWITCH_STANDARD_APP(set_global_function)
 
 SWITCH_STANDARD_APP(set_profile_var_function)
 {
-	switch_caller_profile_t *caller_profile;
 	char *name, *val = NULL;
-
-	caller_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(session));
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
-		name = switch_core_strdup(caller_profile->pool, data);
+		name = switch_core_session_strdup(session, data);
 		val = strchr(name, '=');
 
 		if (val) {
@@ -801,66 +798,8 @@ SWITCH_STANDARD_APP(set_profile_var_function)
 				val = NULL;
 			}
 		}
-
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "SET_PROFILE_VAR [%s]=[%s]\n", name, val ? val : "UNDEF");
-
-		if (!strcasecmp(name, "dialplan")) {
-			caller_profile->dialplan = val;
-		}
-		if (!strcasecmp(name, "username")) {
-			caller_profile->username = val;
-		}
-		if (!strcasecmp(name, "caller_id_name")) {
-			caller_profile->caller_id_name = val;
-		}
-		if (!strcasecmp(name, "caller_id_number")) {
-			caller_profile->caller_id_number = val;
-		}
-		if (!strcasecmp(name, "callee_id_name")) {
-			caller_profile->callee_id_name = val;
-		}
-		if (!strcasecmp(name, "callee_id_number")) {
-			caller_profile->callee_id_number = val;
-		}
-		if (val && !strcasecmp(name, "caller_ton")) {
-			caller_profile->caller_ton = (uint8_t) atoi(val);
-		}
-		if (val && !strcasecmp(name, "caller_numplan")) {
-			caller_profile->caller_numplan = (uint8_t) atoi(val);
-		}
-		if (val && !strcasecmp(name, "destination_number_ton")) {
-			caller_profile->destination_number_ton = (uint8_t) atoi(val);
-		}
-		if (val && !strcasecmp(name, "destination_number_numplan")) {
-			caller_profile->destination_number_numplan = (uint8_t) atoi(val);
-		}
-		if (!strcasecmp(name, "ani")) {
-			caller_profile->ani = val;
-		}
-		if (!strcasecmp(name, "aniii")) {
-			caller_profile->aniii = val;
-		}
-		if (!strcasecmp(name, "network_addr")) {
-			caller_profile->network_addr = val;
-		}
-		if (!strcasecmp(name, "rdnis")) {
-			caller_profile->rdnis = val;
-		}
-		if (!strcasecmp(name, "destination_number")) {
-			caller_profile->destination_number = val;
-		}
-		if (!strcasecmp(name, "uuid")) {
-			caller_profile->uuid = val;
-		}
-		if (!strcasecmp(name, "source")) {
-			caller_profile->source = val;
-		}
-		if (!strcasecmp(name, "context")) {
-			caller_profile->context = val;
-		}
-		if (!strcasecmp(name, "chan_name")) {
-			caller_profile->chan_name = val;
-		}
+		
+		switch_channel_set_profile_var(switch_core_session_get_channel(session), name, val);
 	}
 }
 
