@@ -868,7 +868,8 @@ CF_STOP_BROADCAST	- Signal to stop broadcast
 
 typedef enum {
 	CC_MEDIA_ACK = 1,
-	CC_BYPASS_MEDIA = 1,
+	CC_BYPASS_MEDIA,
+	CC_PROXY_MEDIA,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CC_FLAG_MAX
 } switch_channel_cap_t;
@@ -914,6 +915,7 @@ typedef enum {
 	CF_ORIGINATOR,
 	CF_XFER_ZOMBIE,
 	CF_MEDIA_ACK,
+	CF_THREAD_SLEEPING,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CF_FLAG_MAX
 } switch_channel_flag_t;

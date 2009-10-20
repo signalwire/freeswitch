@@ -381,8 +381,10 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					switch_core_session_receive_message(session, message);
 					message = NULL;
 				}
-				
+
+				switch_channel_set_flag(session->channel, CF_THREAD_SLEEPING);
 				switch_thread_cond_wait(session->cond, session->mutex);
+				switch_channel_clear_flag(session->channel, CF_THREAD_SLEEPING);
 				
 				while (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
 					switch_core_session_receive_message(session, message);
