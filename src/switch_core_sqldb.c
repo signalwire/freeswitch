@@ -40,6 +40,8 @@ static struct {
 	switch_core_db_t *event_db;
 	switch_queue_t *sql_queue[2];
 	switch_memory_pool_t *memory_pool;
+	switch_event_node_t *event_node;
+	switch_thread_t *thread;
 	int thread_running;
 } sql_manager;
 
@@ -177,7 +179,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread,
 				if (itterations == 0) {
 					trans = 1;
 				}
-
+				
 				/* ignore abnormally large strings sql strings as potential buffer overflow */
 				if (newlen < SQLLEN) {
 					itterations++;
@@ -440,8 +442,7 @@ static void core_event_handler(switch_event_t *event)
 
 void switch_core_sqldb_start(switch_memory_pool_t *pool)
 {
-	switch_thread_t *thread;
-	switch_threadattr_t *thd_attr;;
+	switch_threadattr_t *thd_attr;
 
 	sql_manager.memory_pool = pool;
 
@@ -567,7 +568,8 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 		switch_core_db_exec(sql_manager.db, create_calls_sql, NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_interfaces_sql, NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_tasks_sql, NULL, NULL, NULL);
-		if (switch_event_bind("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+
+		if (switch_event_bind_removable("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL, &sql_manager.event_node) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind event handler!\n");
 		}
 	}
@@ -578,7 +580,7 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 	switch_threadattr_create(&thd_attr, sql_manager.memory_pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&thread, thd_attr, switch_core_sql_thread, NULL, sql_manager.memory_pool);
+	switch_thread_create(&sql_manager.thread, thd_attr, switch_core_sql_thread, NULL, sql_manager.memory_pool);
 
 	while (!sql_manager.thread_running) {
 		switch_yield(10000);
@@ -587,16 +589,15 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 
 void switch_core_sqldb_stop(void)
 {
+	switch_status_t st;
+
+	switch_event_unbind(&sql_manager.event_node);
+
 	switch_queue_push(sql_manager.sql_queue[0], NULL);
 	switch_queue_push(sql_manager.sql_queue[1], NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Waiting for unfinished SQL transactions\n");
-	while (switch_queue_size(sql_manager.sql_queue[0]) > 0) {
-		switch_yield(10000);
-	}
-	while (switch_queue_size(sql_manager.sql_queue[1]) > 0) {
-		switch_yield(10000);
-	}
+	switch_thread_join(&st, sql_manager.thread);
 
 	switch_core_db_close(sql_manager.db);
 	switch_core_db_close(sql_manager.event_db);
