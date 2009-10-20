@@ -3634,6 +3634,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add show channels");
 	switch_console_set_complete("add show aliases");
 	switch_console_set_complete("add show complete");
+	switch_console_set_complete("add show distinct_channels");
+	switch_console_set_complete("add show chat");
+	switch_console_set_complete("add show endpoint");
+	switch_console_set_complete("add show management");
+	switch_console_set_complete("add show modules");
+	switch_console_set_complete("add show nat_map");
+	switch_console_set_complete("add show say");
+	switch_console_set_complete("add show interfaces");
+	switch_console_set_complete("add show interface_types");
 	SWITCH_ADD_API(commands_api_interface, "complete", "Complete", complete_function, COMPLETE_SYNTAX);
 	switch_console_set_complete("add complete add");
 	switch_console_set_complete("add complete del");
