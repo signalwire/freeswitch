@@ -714,6 +714,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	char *dup_mwi_account = NULL;
 	char *mwi_user = NULL;
 	char *mwi_host = NULL;
+	char *var = NULL;
 	const char *from_user = NULL;
 	const char *from_host = NULL;
 	const char *reg_host = profile->reg_db_domain;
@@ -1007,6 +1008,11 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		switch_goto_int(r, 1, end);
 	}
   reg:
+
+
+	if (v_event && *v_event && (var = switch_event_get_header(*v_event, "sip-force-extension"))) {
+		to_user = var;
+	}
 
 	if (v_event && *v_event && (mwi_account = switch_event_get_header(*v_event, "mwi-account"))) {
 		dup_mwi_account = strdup(mwi_account);
