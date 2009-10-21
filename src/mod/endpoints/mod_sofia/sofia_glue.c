@@ -2321,7 +2321,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		//const char *port = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
 		char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
 		switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
-		
+
 		if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_audio_ip) && remote_port == tech_pvt->remote_sdp_audio_port) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Audio params are unchanged for %s.\n", switch_channel_get_name(tech_pvt->channel));
 			goto video;
@@ -2970,7 +2970,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 		} else if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
 			sdp_rtpmap_t *map;
-
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
 				if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
 					ptime = atoi(attr->a_value);
@@ -3065,26 +3064,43 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 		  greed:
 			x = 0;
 
-			if (tech_pvt->rm_encoding) {
+			if (tech_pvt->rm_encoding) {// && !sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
+				char *remote_host = tech_pvt->remote_sdp_audio_ip;
+				switch_port_t remote_port = tech_pvt->remote_sdp_audio_port;
+				int same = 0;
+
+				if (switch_rtp_ready(tech_pvt->rtp_session)) {
+					remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
+					remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
+				}
+				
 				for (map = m->m_rtpmaps; map; map = map->rm_next) {
-					if (map->rm_pt < 96) {
+					if (switch_strlen_zero(map->rm_encoding) && map->rm_pt < 96) {
 						match = (map->rm_pt == tech_pvt->pt) ? 1 : 0;
 					} else {
 						match = strcasecmp(switch_str_nil(map->rm_encoding), tech_pvt->iananame) ? 0 : 1;
 					}
 
-					if (match && connection->c_address && tech_pvt->remote_sdp_audio_ip && 
-						!strcmp(connection->c_address, tech_pvt->remote_sdp_audio_ip) && m->m_port == tech_pvt->remote_sdp_audio_port) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Our existing sdp is still good [%s %s:%d], let's keep it.\n",
-										  tech_pvt->rm_encoding, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
-						got_audio = 1;
+					if (match && connection->c_address && remote_host &&
+						!strcmp(connection->c_address, remote_host) && m->m_port == remote_port) {
+						same = 1;
+					} else {
+						same = 0;
 						break;
 					}
 				}
+
+				if (same) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+									  "Our existing sdp is still good [%s %s:%d], let's keep it.\n",
+									  tech_pvt->rm_encoding, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
+					got_audio = 1;
+				} else {
+					match = 0;
+					got_audio = 0;
+				}
 			}
-
-
-
+			
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
 				uint32_t near_rate = 0;
@@ -3144,7 +3160,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u:%d]/[%s:%d:%u:%d]\n",
 									  rm_encoding, map->rm_pt, (int) map->rm_rate, ptime,
 									  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000);
-					if (map->rm_pt < 96) {
+					if (switch_strlen_zero(map->rm_encoding) && map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						match = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;

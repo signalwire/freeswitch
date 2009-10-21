@@ -3474,6 +3474,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	switch_core_session_t *other_session = NULL;
 	switch_channel_t *other_channel = NULL;
 	char st[80] = "";
+	int is_dup_sdp = 0;
 
 	tl_gets(tags,
 			NUTAG_CALLSTATE_REF(ss_state),
@@ -3519,18 +3520,23 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		if (r_sdp) {
 			sdp_parser_t *parser;
 			sdp_session_t *sdp;
+			
+			if (!switch_strlen_zero(tech_pvt->remote_sdp_str) && !strcmp(tech_pvt->remote_sdp_str, r_sdp)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Duplicate SDP\n%s\n", r_sdp);
+				is_dup_sdp = 1;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);
+				tech_pvt->remote_sdp_str = switch_core_session_strdup(session, r_sdp);
+				switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);
-			tech_pvt->remote_sdp_str = switch_core_session_strdup(session, r_sdp);
-			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
-
-			if ( sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) && (parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
-				if ((sdp = sdp_session(parser))) {
-					sofia_glue_set_r_sdp_codec_string(channel, (tech_pvt->profile?tech_pvt->profile->codec_string:NULL), sdp);
+				if (sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) && (parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
+					if ((sdp = sdp_session(parser))) {
+						sofia_glue_set_r_sdp_codec_string(channel, (tech_pvt->profile?tech_pvt->profile->codec_string:NULL), sdp);
+					}
+					sdp_parser_free(parser);
 				}
-				sdp_parser_free(parser);
+				sofia_glue_pass_sdp(tech_pvt, (char *) r_sdp);
 			}
-			sofia_glue_pass_sdp(tech_pvt, (char *) r_sdp);
 		}
 	}
 
@@ -3848,6 +3854,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					}
 					goto done;
 				} else {
+					sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
+
 					if (tech_pvt->num_codecs) {
 						if ((parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
 							if ((sdp = sdp_session(parser))) {
@@ -3861,14 +3869,15 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							goto done;
 						}
 						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-						sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
+						
 						if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reinvite RTP Error!\n");
 							is_ok = 0;
 							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						}
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing Reinvite\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing updated SDP\n");
 					} else {
+						sofia_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reinvite Codec Error!\n");
 						is_ok = 0;
 					}
@@ -3891,6 +3900,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 		break;
 	case nua_callstate_ready:
+		if (r_sdp && !is_dup_sdp && switch_rtp_ready(tech_pvt->rtp_session)) {
+			ss_state = nua_callstate_completed;
+			goto state_process;
+		}
 
 		if (r_sdp && sofia_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
 			sdp_parser_t *parser;

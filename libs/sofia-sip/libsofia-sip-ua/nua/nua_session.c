@@ -943,14 +943,19 @@ static int nua_session_client_response(nua_client_request_t *cr,
   SU_DEBUG_5(("nua(%p): %s: %s %s in %u %s\n", \
 	      (void *)nh, cr->cr_method_name, (m), received, status, phrase))
 
+ retry:
+
   if (!ss || !sip || 300 <= status)
     /* Xyzzy */;
   else if (!session_get_description(sip, &sdp, &len))
     /* No SDP */;
   else if (cr->cr_answer_recv) {
     /* Ignore spurious answers after completing O/A */
-    LOG3("ignoring duplicate");
-    sdp = NULL;
+	  //LOG3("ignoring duplicate");
+	  //sdp = NULL;
+	  // we need to make sure its *actually* a dup, so we can't assume for now.
+	  cr->cr_answer_recv = 0;
+	  goto retry;
   }
   else if (cr->cr_offer_sent) {
     /* case 1: answer to our offer */
