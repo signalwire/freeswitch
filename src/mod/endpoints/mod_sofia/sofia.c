@@ -3759,7 +3759,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		if (r_sdp) {
 			sdp_parser_t *parser;
 			sdp_session_t *sdp;
-			uint8_t match = 0, is_ok = 1;
+			uint8_t match = 0, is_ok = 1, is_t38 = 0;
 			tech_pvt->hold_laps = 0;
 
 			if (r_sdp) {
@@ -3771,13 +3771,16 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					goto done;
 				}
 
+				if (switch_stristr("m=image", r_sdp)) {
+					is_t38 = 1;
+				}
+
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-					
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 						&& (other_session = switch_core_session_locate(uuid))) {
 						switch_core_session_message_t *msg;
 						
-						if (profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) {
+						if (switch_channel_test_flag(channel, CF_PROXY_MODE) && !is_t38 && profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) {
 							tech_pvt->hold_laps = 1;
 							switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 							switch_channel_clear_flag(channel, CF_PROXY_MODE);
