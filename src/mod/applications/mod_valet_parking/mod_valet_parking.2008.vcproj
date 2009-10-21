@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="mod_valet_parking"
-	ProjectGUID="{11C9BC3D-45E9-46E3-BE84-B8CEE4685E39}"
+	ProjectGUID="{432DB165-1EB2-4781-A9C0-71E62610B20A}"
 	RootNamespace="mod_valet_parking"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
