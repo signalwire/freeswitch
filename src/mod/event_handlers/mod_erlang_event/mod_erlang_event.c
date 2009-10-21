@@ -982,6 +982,7 @@ static int config(void)
 
 	prefs.shortname = SWITCH_TRUE;
 	prefs.encoding = ERLANG_STRING;
+	prefs.compat_rel = 0;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
@@ -999,6 +1000,11 @@ static int config(void)
 					set_pref_cookie(val);
 				} else if (!strcmp(var, "nodename")) {
 					set_pref_nodename(val);
+				} else if (!strcmp(var, "compat-rel")) {
+					if (atoi(val) >= 7)
+						prefs.compat_rel = atoi(val);
+					else
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid compatability release '%s' specified\n", val);
 				} else if (!strcmp(var, "shortname")) {
 						prefs.shortname = switch_true(val);
 				} else if (!strcmp(var, "encoding")) {
@@ -1129,7 +1135,7 @@ session_elem_t *session_elem_create(listener_t* listener, switch_core_session_t 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
 		return NULL;
 	}
-
+=
 	session_element = switch_core_alloc(session_elem_pool, sizeof(*session_element));
 
 	memset(session_element, 0, sizeof(*session_element));
@@ -1648,6 +1654,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 		break;
 	  sock_fail:
 		switch_yield(100000);
+	}
+
+	if (prefs.compat_rel) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Compatability with OTP R%d requested\n", prefs.compat_rel);
+		ei_set_compat_rel(prefs.compat_rel);
 	}
 
 	if (SWITCH_STATUS_SUCCESS!=initialise_ei(&ec)) {

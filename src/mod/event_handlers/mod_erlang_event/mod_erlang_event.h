@@ -181,6 +181,7 @@ struct prefs_struct {
 	uint32_t acl_count;
 	uint32_t id;
 	erlang_encoding_t encoding;
+	int compat_rel;
 };
 typedef struct prefs_struct prefs_t;
 
