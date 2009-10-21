@@ -3490,8 +3490,9 @@ int nua_update_server_init(nua_server_request_t *sr)
 	if ((overlap = sr0->sr_offer_recv && !sr0->sr_answer_sent))
 	  break;
 
-    if (nh->nh_soa && overlap)
-      return nua_server_retry_after(sr, 500, "Overlapping Offer/Answer", 1, 9);
+    if (nh->nh_soa && overlap) {
+		return nua_server_retry_after(sr, 500, "Overlapping Offer/Answer", 1, 9);
+	}
 
     if (nh->nh_soa &&
 	soa_set_remote_sdp(nh->nh_soa, NULL, sr->sr_sdp, sr->sr_sdp_len) < 0) {

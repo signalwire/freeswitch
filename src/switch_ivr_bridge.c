@@ -375,6 +375,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		if (!ans_a && originator) {
 
 			if (!ans_b && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
+				switch_channel_pass_callee_id(chan_b, chan_a);
 				if (switch_channel_answer(chan_a) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
 					goto end_of_bridge_loop;
@@ -397,6 +398,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_channel_t *un = ans_a ? chan_b : chan_a;
 			
 			if (!switch_channel_test_flag(un, CF_OUTBOUND)) {
+				switch_channel_pass_callee_id(un == chan_b ? chan_a : chan_b, un);
 				if (switch_channel_answer(un) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(un));
 					goto end_of_bridge_loop;
@@ -920,6 +922,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
+		switch_channel_pass_callee_id(peer_channel, caller_channel);
 		switch_channel_answer(caller_channel);
 	}
 

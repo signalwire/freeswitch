@@ -2531,6 +2531,32 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 	return stream.data;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_pass_callee_id(switch_channel_t *channel, switch_channel_t *other_channel)
+{
+	int x = 0;
+
+	switch_assert(channel);
+	switch_assert(other_channel);
+
+	switch_mutex_lock(channel->profile_mutex);
+	switch_mutex_lock(other_channel->profile_mutex);
+
+	if (!switch_strlen_zero(channel->caller_profile->callee_id_name)) {
+		other_channel->caller_profile->callee_id_name = switch_core_strdup(channel->caller_profile->pool, channel->caller_profile->callee_id_name);
+		x++;
+	}
+
+	if (!switch_strlen_zero(channel->caller_profile->callee_id_number)) {
+		other_channel->caller_profile->callee_id_number = switch_core_strdup(channel->caller_profile->pool, channel->caller_profile->callee_id_number);
+		x++;
+	}
+
+	switch_mutex_unlock(other_channel->profile_mutex);
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *channel, switch_event_t **event)
 {
 	switch_status_t status;

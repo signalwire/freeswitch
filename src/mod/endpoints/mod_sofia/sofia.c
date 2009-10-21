@@ -393,7 +393,7 @@ void sofia_send_callee_id(switch_core_session_t *session, const char *name, cons
 	}
 
 	if (switch_strlen_zero(name)) {
-		name = "unknown";
+		name = number;
 	}
 	
 	if (switch_strlen_zero(number)) {
@@ -402,7 +402,11 @@ void sofia_send_callee_id(switch_core_session_t *session, const char *name, cons
 
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (session_b = switch_core_session_locate(uuid))) {
 		switch_core_session_message_t *msg;
-		
+		//switch_channel_t *channel_b = switch_core_session_get_channel(session_b);
+
+		//switch_channel_set_profile_var(channel_b, "callee_id_name", name);
+		//switch_channel_set_profile_var(channel_b, "callee_id_number", number);
+
 		msg = switch_core_session_alloc(session_b, sizeof(*msg));
 		MESSAGE_STAMP_FFL(msg);
 		msg->message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
@@ -418,33 +422,47 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	sip_p_asserted_identity_t *passerted = NULL;
-	char *name = "unknown";
+	char *name = NULL;
 	const char *number = "unknown", *tmp;
 	switch_caller_profile_t *caller_profile;
 	char *dup = NULL;
 	switch_event_t *event;
+	const char *val;
+	int fs = 0;
 
 	if (sip->sip_to) {
 		number = sip->sip_to->a_url->url_user;
 	}
-	
-	if ((passerted = sip_p_asserted_identity(sip))) {
-		if (passerted->paid_url && passerted->paid_url->url_user) {
-			number = passerted->paid_url->url_user;
-		}
-		if (!switch_strlen_zero(passerted->paid_display)) {
-			dup = strdup(passerted->paid_display);
-			if (*dup == '"') {
-				name = dup + 1;
-			} else {
-				name = dup;
+
+	if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Display-Number"))) {
+		number = val;
+		fs++;
+	}
+
+	if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Display-Name"))) {
+		name = (char *)val;
+		fs++;
+	}
+
+	if (!fs) {
+		if ((passerted = sip_p_asserted_identity(sip))) {
+			if (passerted->paid_url && passerted->paid_url->url_user) {
+				number = passerted->paid_url->url_user;
 			}
-			if (end_of(name) == '"') {
-				end_of(name) = '\0';
+			if (!switch_strlen_zero(passerted->paid_display)) {
+				dup = strdup(passerted->paid_display);
+				if (*dup == '"') {
+					name = dup + 1;
+				} else {
+					name = dup;
+				}
+				if (end_of(name) == '"') {
+					end_of(name) = '\0';
+				}
 			}
 		}
 	}
-	
+
 	if ((tmp = switch_channel_get_variable(channel, "sip_callee_id_name"))) {
 		name = (char *)tmp;
 	}
@@ -452,6 +470,8 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	if ((tmp = switch_channel_get_variable(channel, "sip_callee_id_number"))) {
 		number = tmp;
 	}
+
+	if (!name) name = (char *) number;
 
 	if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
 		const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
@@ -663,6 +683,9 @@ void sofia_event_callback(nua_event_t event,
 		if (session) sofia_handle_sip_i_update(nua, profile, nh, session, sip, tags);
 		break;
 	case nua_r_update:
+		if (session && tech_pvt && locked) {
+			sofia_clear_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
+		}
 		break;
 	case nua_r_refer:
 		break;
@@ -1033,7 +1056,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_ENABLEMESSENGER(1),
 				   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
 				   TAG_IF((profile->mflags & MFLAG_REFER), NUTAG_ALLOW("REFER")),
-				   TAG_IF((profile->mflags & MFLAG_UPDATE), NUTAG_ALLOW("UPDATE")),
+				   //TAG_IF((profile->mflags & MFLAG_UPDATE), NUTAG_ALLOW("UPDATE")),
 				   TAG_IF(!sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_ALLOW("PRACK")),
 				   NUTAG_ALLOW("INFO"),
 				   NUTAG_ALLOW("NOTIFY"),
@@ -1069,7 +1092,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 					   NUTAG_AUTOALERT(0),
 					   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
 					   TAG_IF((profile->mflags & MFLAG_REFER), NUTAG_ALLOW("REFER")),
-					   TAG_IF((profile->mflags & MFLAG_UPDATE), NUTAG_ALLOW("UPDATE")),
+					   //TAG_IF((profile->mflags & MFLAG_UPDATE), NUTAG_ALLOW("UPDATE")),
 					   NUTAG_ALLOW("INFO"),
 					   TAG_IF(profile->pres_type, NUTAG_ALLOW("PUBLISH")),
 					   TAG_IF(profile->pres_type, NUTAG_ENABLEMESSAGE(1)),
@@ -3116,12 +3139,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		switch_channel_clear_flag(channel, CF_REQ_MEDIA);
 
 		if ((status == 180 || status == 183 || status == 200)) { 
-			const char *x_actually_support;
+			const char *x_freeswitch_support;
 
 			switch_channel_set_flag(channel, CF_MEDIA_ACK);
 
-			if ((x_actually_support = sofia_glue_get_unknown_header(sip, "X-Actually-Support"))) {
-				tech_pvt->x_actually_support_remote = switch_core_session_strdup(session, x_actually_support);
+			if ((x_freeswitch_support = sofia_glue_get_unknown_header(sip, "X-FS-Support"))) {
+				tech_pvt->x_freeswitch_support_remote = switch_core_session_strdup(session, x_freeswitch_support);
 			}
 
 			if (sip->sip_user_agent && sip->sip_user_agent->g_string) {
@@ -4603,6 +4626,8 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 			} else if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "dtmf")) {
 				int tmp = atoi(sip->sip_payload->pl_data);
 				dtmf.digit = switch_rfc2833_to_char(tmp);
+			} else if (!strncasecmp(sip->sip_content_type->c_type, "message", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "update_display")) {
+				sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
 			} else {
 				goto end;
 			}
@@ -5558,8 +5583,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				}
 			} else if (!strncasecmp(un->un_name, "History-Info", 12)) {
 				switch_channel_set_variable(channel, "sip_history_info", un->un_value);
-			} else if (!strcasecmp(un->un_name, "X-Actually-Support")) {
-				tech_pvt->x_actually_support_remote = switch_core_session_strdup(session, un->un_value);
+			} else if (!strcasecmp(un->un_name, "X-FS-Support")) {
+				tech_pvt->x_freeswitch_support_remote = switch_core_session_strdup(session, un->un_value);
 			} else if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2)) {
 				if (!switch_strlen_zero(un->un_value)) {
 					char new_name[512] = "";

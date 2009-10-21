@@ -252,6 +252,8 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_
 SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *channel, const char *varname);
 SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *channel, switch_event_t **event);
 
+SWITCH_DECLARE(switch_status_t) switch_channel_pass_callee_id(switch_channel_t *channel, switch_channel_t *other_channel);
+
 /*!
  * \brief Start iterating over the entries in the channel variable list.
  * \param channel the channel to iterate the variables for

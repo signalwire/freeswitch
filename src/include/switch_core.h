@@ -96,6 +96,7 @@ struct switch_core_session_message {
 	const char *_func;
 	int _line;
 	const char *string_array_arg[MESSAGE_STRING_ARG_MAX];
+	time_t delivery_time;
 };
 
 /*! \brief A generic object to pass as a thread's session object to allow mutiple arguements and a pool */

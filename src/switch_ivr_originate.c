@@ -385,6 +385,9 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 			if (!oglobals->ring_ready) {
 				oglobals->ring_ready = 1;
 				if (caller_channel && !oglobals->ignore_ring_ready) {
+					if (len == 1) {
+						switch_channel_pass_callee_id(originate_status[0].peer_channel, caller_channel);
+					}
 					switch_channel_ring_ready(caller_channel);
 					oglobals->sent_ring = 1;
 				}
@@ -2321,6 +2324,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			if (caller_channel) {
 				if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+					switch_channel_pass_callee_id(peer_channel, caller_channel);
 					status = switch_channel_answer(caller_channel);
 				} else if (switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
 					status = switch_channel_pre_answer(caller_channel);
@@ -2561,7 +2565,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	switch_safe_free(write_frame.data);
 	switch_safe_free(fail_on_single_reject_var);
-
+	
 	if (caller_channel) {
 		switch_channel_clear_flag(caller_channel, CF_ORIGINATOR);
 		switch_channel_clear_flag(caller_channel, CF_XFER_ZOMBIE);

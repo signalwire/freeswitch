@@ -181,17 +181,19 @@ char *generate_pai_str(switch_core_session_t *session)
 	const char *callee_name = NULL, *callee_number = NULL;
 	char *pai = NULL;
 
-	if ((callee_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name"))) {
-		if (!(callee_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number"))) {
+	if (!(callee_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name"))) {
+		callee_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name");
+	}
+
+	if (!(callee_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number"))) {
+		if (!(callee_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number"))) {
 			callee_number = tech_pvt->caller_profile->destination_number;
 		}
+	}
 
-		if (!strchr(callee_number, '@')) {
-			char *tmp = switch_core_session_sprintf(session, "sip:%s@cluecon.com", callee_number);
-			callee_number = tmp;
-		}
-
-		pai = switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>", callee_name, callee_number);
+	if (callee_name && callee_number) {
+		pai = switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>\nX-FS-Display-Name: %s\nX-FS-Display-Number: %s\n", 
+										  callee_name, callee_number, callee_name, callee_number);
 	}
 	return pai;
 }
@@ -483,7 +485,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 							SOATAG_REUSE_REJECTED(1),
 							SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
 							TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-							SIPTAG_HEADER_STR("X-Actually-Support: "SOFIA_ACTUALLY_SUPPORT),
+							SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT),
 							TAG_END());
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Sent a 200 OK, waiting for ACK\n");
@@ -572,7 +574,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 					SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 					SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
 					TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-					SIPTAG_HEADER_STR("X-Actually-Support: "SOFIA_ACTUALLY_SUPPORT),
+					SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT),
 					TAG_END());
 		switch_safe_free(extra_headers);
 		sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
@@ -1289,21 +1291,25 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					number = tech_pvt->caller_profile->destination_number;
 				}
 
-				if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
-					switch_channel_set_variable(channel, "sip_callee_id_name", name);
-					switch_channel_set_variable(channel, "sip_callee_id_number", number);
-				} else {
+				if (switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_UPDATING_DISPLAY)) {
 					if (switch_strlen_zero(tech_pvt->last_sent_callee_id_name) || strcmp(tech_pvt->last_sent_callee_id_name, name) ||
 						switch_strlen_zero(tech_pvt->last_sent_callee_id_number) || strcmp(tech_pvt->last_sent_callee_id_number, number)) {
-					
-						if (ua && switch_stristr("snom", ua)) {
+						
+						if (switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote)) {
+							snprintf(message, sizeof(message), "X-FS-Display-Name: %s\nX-FS-Display-Number: %s\n", name, number);
+
+							nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/update_display"),
+									 TAG_IF(!switch_strlen_zero_buf(message), SIPTAG_HEADER_STR(message)),
+									 TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+									 TAG_END());
+						} else if (ua && switch_stristr("snom", ua)) {
 							snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", name, number);
 							nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 									 TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 									 SIPTAG_PAYLOAD_STR(message), TAG_END());
-						} else if ((ua && (switch_stristr("polycom", ua) ||
-										   switch_stristr("UPDATE", tech_pvt->x_actually_support_remote)))) {
+						} else if ((ua && (switch_stristr("polycom", ua)))) {
 							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", name, number);
+							sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
 							nua_update(tech_pvt->nh,
 									   TAG_IF(!switch_strlen_zero_buf(message), SIPTAG_HEADER_STR(message)),
 									   TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
@@ -1519,7 +1525,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_HEADER_STR(generate_pai_str(session)), 
 						TAG_IF(!switch_strlen_zero(extra_header), SIPTAG_HEADER_STR(extra_header)),
-						SIPTAG_HEADER_STR("X-Actually-Support: "SOFIA_ACTUALLY_SUPPORT),
+						SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT),
 						TAG_END());
 			switch_safe_free(extra_header);
 			switch_channel_mark_ring_ready(channel);
@@ -1605,7 +1611,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 								SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
 								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), 
 								TAG_IF(!switch_strlen_zero(extra_header), SIPTAG_HEADER_STR(extra_header)),
-								SIPTAG_HEADER_STR("X-Actually-Support: "SOFIA_ACTUALLY_SUPPORT),
+								SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT),
 								TAG_END());
 					switch_safe_free(extra_header);
 				}

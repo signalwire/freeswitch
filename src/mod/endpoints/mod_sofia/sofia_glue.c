@@ -496,7 +496,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 		tech_pvt->flags[x] = profile->flags[x];
 	}
 
-	tech_pvt->x_actually_support_local = SOFIA_ACTUALLY_SUPPORT;
+	tech_pvt->x_freeswitch_support_local = FREESWITCH_SUPPORT;
 
 	tech_pvt->profile = profile;
 	profile->inuse++;
@@ -1773,7 +1773,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   TAG_IF(!switch_strlen_zero(tech_pvt->privacy), SIPTAG_PRIVACY_STR(tech_pvt->privacy)),
 			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-			   SIPTAG_HEADER_STR("X-Actually-Support: "SOFIA_ACTUALLY_SUPPORT),
+			   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT),
 			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
 			   TAG_IF(!switch_strlen_zero(route_uri), NUTAG_PROXY(route_uri)),
 			   TAG_IF(!switch_strlen_zero(route), SIPTAG_ROUTE_STR(route)),

@@ -96,7 +96,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_SECURE_MEDIA_CONFIRMED_VARIABLE "sip_secure_media_confirmed"
 #define SOFIA_HAS_CRYPTO_VARIABLE "sip_has_crypto"
 #define SOFIA_CRYPTO_MANDATORY_VARIABLE "sip_crypto_mandatory"
-#define SOFIA_ACTUALLY_SUPPORT "UPDATE"
+#define FREESWITCH_SUPPORT "update_display"
 
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
@@ -247,7 +247,7 @@ typedef enum {
 	TFLAG_HOLD_LOCK,
 	TFLAG_3PCC_HAS_ACK,
 	TFLAG_PASS_RFC2833,
-
+	TFLAG_UPDATING_DISPLAY,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -581,8 +581,8 @@ struct private_object {
 	char *extrtpip;
 	char *stun_ip;
 	char *route_uri;
-	char *x_actually_support_remote;
-	char *x_actually_support_local;
+	char *x_freeswitch_support_remote;
+	char *x_freeswitch_support_local;
 	char *last_sent_callee_id_name;
 	char *last_sent_callee_id_number;
 	switch_port_t stun_port;
