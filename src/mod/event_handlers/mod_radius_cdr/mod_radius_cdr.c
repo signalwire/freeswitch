@@ -369,7 +369,9 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 		retval = SWITCH_STATUS_TERM;
 	}
 	rc_avpair_free(send);
+        rc_destroy(rad_config);
  end:
+	switch_xml_free(cdr);
 	switch_thread_rwlock_unlock(globals.rwlock);
 	return (retval);
 }
@@ -641,8 +643,10 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		retval = SWITCH_STATUS_TERM;
 	}
 	rc_avpair_free(send);
+        rc_destroy(rad_config);
 
  end:
+	switch_xml_free(cdr);
 	switch_thread_rwlock_unlock(globals.rwlock);
 	return (retval);
 }
