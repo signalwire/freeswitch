@@ -1192,6 +1192,7 @@ SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session_t *se
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session_t *session, const char *use_uuid)
 {
 	switch_event_t *event;
+	switch_core_session_message_t msg = { 0 };
 
 	switch_assert(use_uuid);
 
@@ -1201,6 +1202,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 		switch_mutex_unlock(runtime.session_hash_mutex);
         return SWITCH_STATUS_FALSE;
 	}
+
+	msg.message_id = SWITCH_MESSAGE_INDICATE_UUID_CHANGE;
+	msg.from = switch_channel_get_name(session->channel);
+	msg.string_array_arg[0] = session->uuid_str;
+	msg.string_array_arg[1] = use_uuid;
+	switch_core_session_receive_message(session, &msg);
 
 	switch_event_create(&event, SWITCH_EVENT_CHANNEL_UUID);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-Unique-ID", session->uuid_str);
