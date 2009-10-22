@@ -1135,7 +1135,7 @@ session_elem_t *session_elem_create(listener_t* listener, switch_core_session_t 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
 		return NULL;
 	}
-=
+
 	session_element = switch_core_alloc(session_elem_pool, sizeof(*session_element));
 
 	memset(session_element, 0, sizeof(*session_element));
