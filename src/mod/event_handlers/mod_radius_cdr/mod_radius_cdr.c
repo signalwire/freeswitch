@@ -138,6 +138,7 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 	switch_status_t retval = SWITCH_STATUS_TERM;
 	VALUE_PAIR *send = NULL;
 	uint32_t client_port = 0;
+	uint32_t framed_addr = 0;
 	uint32_t status_type = PW_STATUS_START;
 	switch_time_t callstartdate = 0;
 	switch_time_t callanswerdate = 0;
@@ -254,7 +255,9 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 				}
 			}
 			if (profile->network_addr) {
-				if (rc_avpair_add(rad_config, &send, PW_FRAMED_IP_ADDRESS, (void *) profile->network_addr, -1, 0) == NULL) {
+				inet_pton(AF_INET, (void *) profile->network_addr, &framed_addr);
+				framed_addr = htonl(framed_addr);
+				if (rc_avpair_add(rad_config, &send, PW_FRAMED_IP_ADDRESS, &framed_addr, -1, 0) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed adding Framed-IP-Address: %s\n", profile->network_addr);
 					rc_destroy(rad_config);
 					goto end;
@@ -379,6 +382,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	switch_status_t retval = SWITCH_STATUS_TERM;
 	VALUE_PAIR *send = NULL;
 	uint32_t client_port = 0;
+	uint32_t framed_addr = 0;
 	uint32_t status_type = PW_STATUS_STOP;
 	switch_time_t callstartdate = 0;
 	switch_time_t callanswerdate = 0;
@@ -513,7 +517,9 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				}
 			}
 			if (profile->network_addr) {
-				if (rc_avpair_add(rad_config, &send, PW_FRAMED_IP_ADDRESS, (void *) profile->network_addr, -1, 0) == NULL) {
+				inet_pton(AF_INET, (void *) profile->network_addr, &framed_addr);
+				framed_addr = htonl(framed_addr);
+				if (rc_avpair_add(rad_config, &send, PW_FRAMED_IP_ADDRESS, &framed_addr, -1, 0) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed adding Framed-IP-Address: %s\n", profile->network_addr);
 					rc_destroy(rad_config);
 					goto end;
