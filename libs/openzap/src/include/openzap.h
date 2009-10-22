@@ -635,6 +635,7 @@ OZ_DECLARE(void) zap_channel_clear_needed_tones(zap_channel_t *zchan);
 OZ_DECLARE(zap_status_t) zap_channel_get_alarms(zap_channel_t *zchan);
 OZ_DECLARE(zap_status_t) zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_t *fsk_data, float db_level);
 OZ_DECLARE(zap_status_t) zap_channel_clear_token(zap_channel_t *zchan, const char *token);
+OZ_DECLARE(void) zap_channel_replace_token(zap_channel_t *zchan, const char *old_token, const char *new_token);
 OZ_DECLARE(zap_status_t) zap_channel_add_token(zap_channel_t *zchan, char *token, int end);
 OZ_DECLARE(zap_status_t) zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state, int lock);
 OZ_DECLARE(zap_status_t) zap_span_load_tones(zap_span_t *span, const char *mapname);

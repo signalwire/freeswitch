@@ -965,6 +965,11 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			}
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_UUID_CHANGE:
+		{
+			zap_channel_replace_token(tech_pvt->zchan, msg->string_array_arg[0], msg->string_array_arg[1]);
+		}
+		break;
 	default:
 		break;
 	}

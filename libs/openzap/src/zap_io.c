@@ -703,6 +703,20 @@ OZ_DECLARE(void) zap_channel_rotate_tokens(zap_channel_t *zchan)
 	}
 }
 
+OZ_DECLARE(void) zap_channel_replace_token(zap_channel_t *zchan, const char *old_token, const char *new_token)
+{
+	int i;
+
+	if (zchan->token_count) {
+		for(i = 0; i < zchan->token_count; i++) {
+			if (!strcmp(zchan->tokens[i], old_token)) {
+				zap_copy_string(zchan->tokens[i], new_token, ZAP_TOKEN_STRLEN);
+				break;
+			}
+		}
+	}
+}
+
 OZ_DECLARE(zap_status_t) zap_channel_add_token(zap_channel_t *zchan, char *token, int end)
 {
 	zap_status_t status = ZAP_FAIL;
