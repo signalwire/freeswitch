@@ -1080,7 +1080,7 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 	ret = 0;
 
 	if (!channel->hangup_cause && channel->state > CS_ROUTING && channel->state < CS_HANGUP && channel->state != CS_RESET &&
-		!switch_channel_test_flag(channel, CF_TRANSFER)) {
+		!switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_NOT_READY)) {
 		ret++;
 	}
 

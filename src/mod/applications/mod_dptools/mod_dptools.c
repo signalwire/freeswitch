@@ -2054,13 +2054,47 @@ SWITCH_STANDARD_APP(stop_record_session_function)
 /*								Bridge Functions								*/
 /********************************************************************************/
 
+struct camping_stake {
+	switch_core_session_t *session;
+	int running;
+	const char *moh;
+};
+
+static void *SWITCH_THREAD_FUNC camp_music_thread(switch_thread_t *thread, void *obj)
+{
+	struct camping_stake *stake = (struct camping_stake *) obj;
+	switch_core_session_t *session = stake->session;
+	switch_channel_t *channel = switch_core_session_get_channel(stake->session);
+	const char *moh = stake->moh;
+
+	switch_core_session_read_lock(session);
+	while(stake->running && switch_channel_ready(channel)) {
+		if (!strcasecmp(moh, "silence")) {
+			switch_ivr_collect_digits_callback(session, NULL, 0, 0);
+		} else {
+			switch_ivr_play_file(session, NULL, stake->moh, NULL);
+		}
+	}
+	switch_core_session_rwunlock(session);
+
+	return NULL;
+}
+
 SWITCH_STANDARD_APP(audio_bridge_function)
 {
 	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
 	switch_core_session_t *peer_session = NULL;
-	const char *continue_on_fail = NULL, *failure_causes = NULL;
+	const char *continue_on_fail = NULL, *failure_causes = NULL, 
+		*v_campon = NULL, *v_campon_retries, *v_campon_sleep, *v_campon_timeout, *v_campon_fallback_exten = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
-
+	int campon_retries = 100, campon_timeout = 10, campon_sleep = 10, tmp, do_xfer = 0, camping = 0, fail = 0, thread_started = 0;
+	struct camping_stake stake = { 0 };
+	const char *moh = NULL;
+	switch_thread_t *thread = NULL;
+	switch_threadattr_t *thd_attr = NULL;
+	char *camp_data = NULL;
+	switch_status_t status;
+	
 	if (switch_strlen_zero(data)) {
 		return;
 	}
@@ -2068,7 +2102,133 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	continue_on_fail = switch_channel_get_variable(caller_channel, "continue_on_fail");
 	failure_causes = switch_channel_get_variable(caller_channel, "failure_causes");
 
-	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
+	if ((v_campon = switch_channel_get_variable(caller_channel, "campon")) && switch_true(v_campon)) {
+		const char *cid_name = NULL;
+		const char *cid_number = NULL;
+		
+		if (!(cid_name = switch_channel_get_variable(caller_channel, "effective_caller_id_name"))) {
+			cid_name = switch_channel_get_variable(caller_channel, "caller_id_name");
+		}
+
+		if (!(cid_number = switch_channel_get_variable(caller_channel, "effective_caller_id_number"))) {
+			cid_number = switch_channel_get_variable(caller_channel, "caller_id_number");
+		}
+
+		if (cid_name && !cid_number) {
+			cid_number = cid_name;
+		}
+
+		if (cid_number && !cid_name) {
+			cid_name = cid_number;
+		}
+
+		v_campon_retries = switch_channel_get_variable(caller_channel, "campon_retries");
+		v_campon_timeout = switch_channel_get_variable(caller_channel, "campon_timeout");
+		v_campon_sleep = switch_channel_get_variable(caller_channel, "campon_sleep");
+		v_campon_fallback_exten = switch_channel_get_variable(caller_channel, "campon_fallback_exten");
+		
+		if (v_campon_retries) {
+			if ((tmp = atoi(v_campon_retries)) > 0) {
+				campon_retries = tmp;
+			}
+		}
+
+		if (v_campon_timeout) {
+			if ((tmp = atoi(v_campon_timeout)) > 0) {
+				campon_timeout = tmp;
+			}
+		}
+
+		if (v_campon_sleep) {
+			if ((tmp = atoi(v_campon_sleep)) > 0) {
+				campon_sleep = tmp;
+			}
+		}
+
+		switch_channel_answer(caller_channel);
+		camping = 1;
+
+		if (cid_name && cid_number) {
+			camp_data = switch_core_session_sprintf(session, "{origination_caller_id_name='%s',origination_caller_id_number='%s'}%s", 
+													cid_name, cid_number, data);
+		} else {
+			camp_data = (char *)data;
+		}
+
+		if (!(moh = switch_channel_get_variable(caller_channel, "hold_music"))) {
+			moh = switch_channel_get_variable(caller_channel, "campon_hold_music");
+		}
+
+		do {
+			fail = 0;
+			status = switch_ivr_originate(NULL, &peer_session, &cause, camp_data, campon_timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE);
+			
+			if (!switch_channel_ready(caller_channel)) {
+				fail = 1;
+				break;
+			}
+			
+			if (status == SWITCH_STATUS_SUCCESS) {
+				camping = 0;
+				break;
+			} else {
+				fail = 1;
+			}
+			
+			if (camping) {
+				
+				if (!thread_started && fail && moh && !switch_channel_test_flag(caller_channel, CF_PROXY_MODE) && 
+					!switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) &&
+					!switch_true(switch_channel_get_variable(caller_channel, "bypass_media"))) {
+					switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
+					switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+					stake.running = 1;
+					stake.moh = moh;
+					stake.session = session;
+					switch_thread_create(&thread, thd_attr, camp_music_thread, &stake, switch_core_session_get_pool(session));
+					thread_started = 1;
+				}
+
+
+				if (--campon_retries <= 0) {
+					camping = 0;
+					do_xfer = 1;
+					break;
+				}
+
+				if (fail) {
+					int64_t wait = campon_sleep * 1000000;
+					
+					while(wait > 0 && switch_channel_ready(caller_channel)) {
+						switch_yield(100000);
+						wait -= 100000;
+					}
+				}
+			}
+		} while (camping);
+		
+		if (thread) {
+			stake.running = 0;
+			switch_channel_set_flag(caller_channel, CF_NOT_READY);
+			switch_thread_join(&status, thread);
+			switch_channel_clear_flag(caller_channel, CF_NOT_READY);
+		}
+		
+		if (do_xfer && !switch_strlen_zero(v_campon_fallback_exten)) {
+			switch_ivr_session_transfer(session, 
+										v_campon_fallback_exten, 
+										switch_channel_get_variable(caller_channel, "campon_fallback_dialplan"),
+										switch_channel_get_variable(caller_channel, "campon_fallback_context"));
+			return;
+		}
+
+	} else {
+		if ((status = switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE)) != SWITCH_STATUS_SUCCESS) {
+			fail = 1;
+		}
+	}
+
+	if (fail) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
 
 		/* 

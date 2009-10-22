@@ -395,6 +395,12 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 		}
 
 		if (switch_channel_test_flag(originate_status[i].peer_channel, CF_EARLY_MEDIA)) {
+			if (oglobals->ignore_early_media == 2 && len == 1 && caller_channel && !oglobals->ignore_ring_ready) {
+				switch_channel_pass_callee_id(originate_status[0].peer_channel, caller_channel);
+				switch_channel_ring_ready(caller_channel);
+				oglobals->sent_ring = 1;
+			}
+
 			if (!originate_status[i].early_media) {
 				originate_status[i].early_media = 1;
 				if (oglobals->early_ok) {
@@ -765,6 +771,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 			}
 		}
 		
+		if (switch_channel_test_flag(caller_channel, CF_DISABLE_RINGBACK)) {
+			ringback_data = NULL;
+		}
+
 		if (ringback_data) {
 			char *tmp_data = NULL;
 
@@ -1301,9 +1311,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		*oglobals.file = '\0';
 	}
 
-	if ((var_val = switch_event_get_header(var_event, "ignore_early_media")) && switch_true(var_val)) {
-		oglobals.early_ok = 0;
-		oglobals.ignore_early_media = 1;
+	if ((var_val = switch_event_get_header(var_event, "ignore_early_media"))) {
+		if (switch_true(var_val)) {
+			oglobals.early_ok = 0;
+			oglobals.ignore_early_media = 1;
+		} else if (!strcmp(var_val, "ring_ready")) {
+			oglobals.early_ok = 0;
+			oglobals.ignore_early_media = 2;
+		}
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "originate_continue_on_timeout")) && switch_true(var_val)) {
@@ -1855,7 +1870,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		endfor1:
 
 			if (caller_channel) {
-				if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
+				if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || 
+					switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) || switch_channel_test_flag(caller_channel, CF_DISABLE_RINGBACK)) {
 					ringback_data = NULL;
 				}
 			}
