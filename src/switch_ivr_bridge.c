@@ -221,8 +221,12 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	}
 
 	if ((var = switch_channel_get_variable(chan_a, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) && switch_true(var)) {
+		if (switch_stristr("loopback", switch_channel_get_name(chan_a)) || switch_stristr("loopback", switch_channel_get_name(chan_b))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot bypass media while bridged to a loopback address.\n");
+		} else {
+			switch_channel_set_variable(chan_a, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE, NULL);
+		}
 		bypass_media_after_bridge = 1;
-		switch_channel_set_variable(chan_a, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE, NULL);
 	}
 
 	if ((silence_var = switch_channel_get_variable(chan_a, "bridge_generate_comfort_noise"))) {		
