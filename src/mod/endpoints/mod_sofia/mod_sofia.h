@@ -441,6 +441,7 @@ struct sofia_profile {
 	char *reg_db_domain;
 	char *user_agent;
 	char *record_template;
+	char *record_path;
 	char *presence_hosts;
 	char *challenge_realm;
 	sofia_cid_type_t cid_type;

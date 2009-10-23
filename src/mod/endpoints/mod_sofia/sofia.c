@@ -1827,6 +1827,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						profile->cid_type = sofia_cid_name2type(val);
 					} else if (!strcasecmp(var, "record-template")) {
 						profile->record_template = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "record-path")) {
+						profile->record_path = switch_core_strdup(profile->pool, val);
 					} else if ((!strcasecmp(var, "inbound-no-media") || !strcasecmp(var, "inbound-bypass-media"))) {
 						if (switch_true(val)) {
 							sofia_set_flag(profile, TFLAG_INB_NOMEDIA);
@@ -2378,6 +2380,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->cid_type = sofia_cid_name2type(val);
 					} else if (!strcasecmp(var, "record-template")) {
 						profile->record_template = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "record-path")) {
+						profile->record_path = switch_core_strdup(profile->pool, val);
 					} else if ((!strcasecmp(var, "inbound-no-media") || !strcasecmp(var, "inbound-bypass-media")) && switch_true(val)) {
 						sofia_set_flag(profile, TFLAG_INB_NOMEDIA);
 					} else if (!strcasecmp(var, "inbound-late-negotiation") && switch_true(val)) {
@@ -4698,12 +4702,15 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				nua_respond(nh, 488, "Recording not enabled", NUTAG_WITH_THIS(nua), TAG_END());
 			} else {
 				if (!strcasecmp(rec_header, "on")) {
-					char *file;
+					char *file = NULL, *tmp = NULL;
 
-					file = switch_channel_expand_variables(channel, profile->record_template);
+					tmp = switch_mprintf("%s%s%s", profile->record_path ? profile->record_path : "${base_dir}/recordings",
+										 SWITCH_PATH_SEPARATOR, profile->record_template);
+					file = switch_channel_expand_variables(channel, tmp);
 					switch_ivr_record_session(session, file, 0, NULL);
 					switch_channel_set_variable(channel, "sofia_record_file", file);
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Recording %s to %s\n", switch_channel_get_name(channel), file);
+					switch_safe_free(tmp);
 					nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 					if (file != profile->record_template) {
 						free(file);
