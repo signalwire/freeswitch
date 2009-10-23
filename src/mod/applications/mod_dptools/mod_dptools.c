@@ -2054,9 +2054,29 @@ SWITCH_STANDARD_APP(stop_record_session_function)
 /*								Bridge Functions								*/
 /********************************************************************************/
 
+static switch_status_t camp_fire(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+{
+	switch (itype) {
+	case SWITCH_INPUT_TYPE_DTMF:
+		{
+			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+			char *key = (char *) buf;
+
+			if (dtmf->digit == *key) {
+				return SWITCH_STATUS_BREAK;
+			}
+		}
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 struct camping_stake {
 	switch_core_session_t *session;
 	int running;
+	int do_xfer;
 	const char *moh;
 };
 
@@ -2065,18 +2085,44 @@ static void *SWITCH_THREAD_FUNC camp_music_thread(switch_thread_t *thread, void 
 	struct camping_stake *stake = (struct camping_stake *) obj;
 	switch_core_session_t *session = stake->session;
 	switch_channel_t *channel = switch_core_session_get_channel(stake->session);
-	const char *moh = stake->moh;
+	const char *moh = stake->moh, *greet = NULL;
+	switch_input_args_t args = { 0 };
+	char dbuf[2] = "";
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	const char *stop;
 
+	if ((stop = switch_channel_get_variable(channel, "campon_stop_key"))) {
+		*dbuf = *stop;
+	}
+
+	args.input_callback = camp_fire;
+	args.buf = dbuf;
+	args.buflen = sizeof(dbuf);
+	
 	switch_core_session_read_lock(session);
+
+	/* don't set this to a local_stream:// or you will not be happy */
+	if ((greet = switch_channel_get_variable(channel, "campon_announce_sound"))) {
+		status = switch_ivr_play_file(session, NULL, greet, &args);
+	}
+	
 	while(stake->running && switch_channel_ready(channel)) {
-		if (!strcasecmp(moh, "silence")) {
-			switch_ivr_collect_digits_callback(session, NULL, 0, 0);
-		} else {
-			switch_ivr_play_file(session, NULL, stake->moh, NULL);
+		if (status != SWITCH_STATUS_BREAK) {
+			if (!strcasecmp(moh, "silence")) {
+				status = switch_ivr_collect_digits_callback(session, &args, 0, 0);
+			} else {
+				status = switch_ivr_play_file(session, NULL, stake->moh, &args);
+			}
+		}
+
+		if (status == SWITCH_STATUS_BREAK) {
+			switch_channel_set_flag(channel, CF_NOT_READY);
+			stake->do_xfer = 1;
 		}
 	}
 	switch_core_session_rwunlock(session);
 
+	stake->running = 0;
 	return NULL;
 }
 
@@ -2087,7 +2133,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	const char *continue_on_fail = NULL, *failure_causes = NULL, 
 		*v_campon = NULL, *v_campon_retries, *v_campon_sleep, *v_campon_timeout, *v_campon_fallback_exten = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
-	int campon_retries = 100, campon_timeout = 10, campon_sleep = 10, tmp, do_xfer = 0, camping = 0, fail = 0, thread_started = 0;
+	int campon_retries = 100, campon_timeout = 10, campon_sleep = 10, tmp, camping = 0, fail = 0, thread_started = 0;
 	struct camping_stake stake = { 0 };
 	const char *moh = NULL;
 	switch_thread_t *thread = NULL;
@@ -2190,31 +2236,32 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 				}
 
 
-				if (--campon_retries <= 0) {
+				if (--campon_retries <= 0 || stake.do_xfer) {
 					camping = 0;
-					do_xfer = 1;
+					stake.do_xfer = 1;
 					break;
 				}
 
 				if (fail) {
 					int64_t wait = campon_sleep * 1000000;
 					
-					while(wait > 0 && switch_channel_ready(caller_channel)) {
+					while(stake.running && wait > 0 && switch_channel_ready(caller_channel)) {
 						switch_yield(100000);
 						wait -= 100000;
 					}
 				}
 			}
-		} while (camping);
+		} while (camping && switch_channel_ready(caller_channel));
 		
 		if (thread) {
 			stake.running = 0;
 			switch_channel_set_flag(caller_channel, CF_NOT_READY);
 			switch_thread_join(&status, thread);
-			switch_channel_clear_flag(caller_channel, CF_NOT_READY);
 		}
+
+		switch_channel_clear_flag(caller_channel, CF_NOT_READY);
 		
-		if (do_xfer && !zstr(v_campon_fallback_exten)) {
+		if (stake.do_xfer && !zstr(v_campon_fallback_exten)) {
 			switch_ivr_session_transfer(session, 
 										v_campon_fallback_exten, 
 										switch_channel_get_variable(caller_channel, "campon_fallback_dialplan"),
