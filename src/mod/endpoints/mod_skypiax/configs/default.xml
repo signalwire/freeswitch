@@ -261,7 +261,7 @@
     <!-- dial via skypiax -->
     <extension name="skypiax">
       <condition field="destination_number" expression="^2909$">
-	<action application="bridge" data="skypiax/skypiax1/echo123"/>
+	<action application="bridge" data="skypiax/interface1/echo123"/>
       </condition>
     </extension>
 
