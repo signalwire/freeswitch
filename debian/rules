@@ -27,7 +27,7 @@ export EVENT_HANDLERS_MODULES=event_handlers/mod_event_multicast event_handlers/
 export FORMATS_MODULES=formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream formats/mod_shout
 export LANGUAGES_MODULES=languages/mod_perl languages/mod_lua
 export LOGGERS_MODULES=loggers/mod_console loggers/mod_logfile loggers/mod_syslog
-export SAY_MODULES=say/mod_say_en say/mod_say_it say/mod_say_de say/mod_say_fr say/mod_say_es say/mod_say_nl
+export SAY_MODULES=say/mod_say_en say/mod_say_it say/mod_say_de say/mod_say_fr say/mod_say_es say/mod_say_nl say/mod_say_ru
 export TIMERS_MODULES=
 export DISABLED_MODULES=applications/mod_soundtouch directories/mod_ldap languages/mod_java languages/mod_python \
 			languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox endpoints/mod_wanpipe \
@@ -106,7 +106,7 @@ install: build
 	dh_clean -k 
 	dh_installdirs -A --sourcedir=debian/tmp
 
-	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install uhd-sounds-install moh-install
+	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install cd-sounds-install cd-sounds-ru-install moh-install
 
 
 # Build architecture-independent files here.
