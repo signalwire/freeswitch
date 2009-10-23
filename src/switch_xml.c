@@ -1551,7 +1551,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 			const char *err = NULL;
 
 			err = switch_xml_error(xml);
-			if (switch_strlen_zero(err)) {
+			if (zstr(err)) {
 				if ((conf = switch_xml_find_child(xml, "section", "name", "result"))) {
 					switch_xml_t p;
 					const char *aname;
@@ -1890,7 +1890,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 		*err = switch_xml_error(new_main);
 		switch_copy_string(not_so_threadsafe_error_buffer, *err, sizeof(not_so_threadsafe_error_buffer));
 		*err = not_so_threadsafe_error_buffer;
-		if (!switch_strlen_zero(*err)) {
+		if (!zstr(*err)) {
 			switch_xml_free(new_main);
 			new_main = NULL;
 			errcnt++;

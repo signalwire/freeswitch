@@ -608,7 +608,7 @@ SWITCH_STANDARD_API(stop_local_stream_function)
 	int argc = 0;
 
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		goto usage;
 	}
 
@@ -621,7 +621,7 @@ SWITCH_STANDARD_API(stop_local_stream_function)
 	}
 
 	local_stream_name = argv[0];
-	if (switch_strlen_zero(local_stream_name)) {
+	if (zstr(local_stream_name)) {
 		goto usage;
 	}
 
@@ -662,7 +662,7 @@ SWITCH_STANDARD_API(show_local_stream_function)
 
 	switch_mutex_lock(globals.mutex);
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		for (hi = switch_hash_first(NULL, globals.source_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, &var, NULL, &val);
 			if ((source = (local_stream_source_t *) val)) {
@@ -751,7 +751,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	switch_xml_t cfg, xml, directory, param;
 	int tmp;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		goto usage;
 	}
 
@@ -855,7 +855,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 		switch_xml_free(xml);
 	}
 	
-	if (switch_strlen_zero(local_stream_name) || switch_strlen_zero(path)) {
+	if (zstr(local_stream_name) || zstr(path)) {
 		goto usage;
 	}
 

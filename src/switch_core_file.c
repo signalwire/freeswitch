@@ -53,7 +53,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_strlen_zero(file_path)) {
+	if (zstr(file_path)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Filename\n");
 		return SWITCH_STATUS_FALSE;
 	}

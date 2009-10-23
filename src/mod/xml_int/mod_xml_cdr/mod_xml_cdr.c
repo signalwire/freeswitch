@@ -89,7 +89,7 @@ static switch_status_t set_xml_cdr_log_dirs()
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Rotating log file paths\n");
 
-	if (!switch_strlen_zero(globals.base_log_dir)) {
+	if (!zstr(globals.base_log_dir)) {
 		if (globals.rotate) {
 			if ((path = switch_mprintf("%s%s%s", globals.base_log_dir, SWITCH_PATH_SEPARATOR, date))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Rotating log file path to %s\n", path);
@@ -131,7 +131,7 @@ static switch_status_t set_xml_cdr_log_dirs()
 		}
 	}
 
-	if (!switch_strlen_zero(globals.base_err_log_dir)) {
+	if (!zstr(globals.base_err_log_dir)) {
 		if (globals.rotate) {
 			if ((path = switch_mprintf("%s%s%s", globals.base_err_log_dir, SWITCH_PATH_SEPARATOR, date))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Rotating err log file path to %s\n", path);
@@ -223,7 +223,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		logdir = globals.log_dir;
 	}
 
-	if (!switch_strlen_zero(logdir)) {
+	if (!zstr(logdir)) {
 		path = switch_mprintf("%s%s%s%s.cdr.xml", logdir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session));
 		switch_thread_rwlock_unlock(globals.log_path_lock);
 		if (path) {
@@ -280,7 +280,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			goto error;
 		}
 
-		if (!switch_strlen_zero(globals.cred)) {
+		if (!zstr(globals.cred)) {
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, globals.cred);
 		}
@@ -474,15 +474,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
-			if (!strcasecmp(var, "cred") && !switch_strlen_zero(val)) {
+			if (!strcasecmp(var, "cred") && !zstr(val)) {
 				globals.cred = switch_core_strdup(globals.pool, val);
-			} else if (!strcasecmp(var, "url") && !switch_strlen_zero(val)) {
+			} else if (!strcasecmp(var, "url") && !zstr(val)) {
 				if (globals.url_count >= MAX_URLS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "maximum urls configured!\n");
 				} else {
 					globals.urls[globals.url_count++] = switch_core_strdup(globals.pool, val);
 				}
-			} else if (!strcasecmp(var, "delay") && !switch_strlen_zero(val)) {
+			} else if (!strcasecmp(var, "delay") && !zstr(val)) {
 				globals.delay = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-b-leg")) {
 				globals.log_b = switch_true(val);
@@ -490,18 +490,18 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.prefix_a = switch_true(val);
 			} else if (!strcasecmp(var, "disable-100-continue") && switch_true(val)) {
 				globals.disable100continue = 1;
-			} else if (!strcasecmp(var, "encode") && !switch_strlen_zero(val)) {
+			} else if (!strcasecmp(var, "encode") && !zstr(val)) {
 				if (!strcasecmp(val, "base64")) {
 					globals.encode = 2;
 				} else {
 					globals.encode = switch_true(val) ? 1 : 0;
 				}
-			} else if (!strcasecmp(var, "retries") && !switch_strlen_zero(val)) {
+			} else if (!strcasecmp(var, "retries") && !zstr(val)) {
 				globals.retries = (uint32_t) atoi(val);
-			} else if (!strcasecmp(var, "rotate") && !switch_strlen_zero(val)) {
+			} else if (!strcasecmp(var, "rotate") && !zstr(val)) {
 				globals.rotate = switch_true(val);
 			} else if (!strcasecmp(var, "log-dir")) {
-				if (switch_strlen_zero(val)) {
+				if (zstr(val)) {
 					globals.base_log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 				} else {
 					if (switch_is_file_path(val)) {
@@ -511,7 +511,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 					}
 				}
 			} else if (!strcasecmp(var, "err-log-dir")) {
-				if (switch_strlen_zero(val)) {
+				if (zstr(val)) {
 					globals.base_err_log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 				} else {
 					if (switch_is_file_path(val)) {
@@ -536,8 +536,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.enable_ssl_verifyhost = 1;
 			}
 		
-			if (switch_strlen_zero(globals.base_err_log_dir)) {
-				if (!switch_strlen_zero(globals.base_log_dir)) {
+			if (zstr(globals.base_err_log_dir)) {
+				if (!zstr(globals.base_log_dir)) {
 					globals.base_err_log_dir = switch_core_strdup(globals.pool, globals.base_log_dir);
 				} else {
 					globals.base_err_log_dir = switch_core_sprintf(globals.pool, "%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);

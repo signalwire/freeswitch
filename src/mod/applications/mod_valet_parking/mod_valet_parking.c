@@ -115,7 +115,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 	char dtmf_buf[128] = "";
 	int is_auto = 0;
 
-	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 		char *lot_name = argv[0];
 		char *ext = argv[1];
@@ -311,7 +311,7 @@ SWITCH_STANDARD_API(valet_info_function)
 		name = (char *) var;
 		lot = (valet_lot_t *) val;
 		
-		if (!switch_strlen_zero(cmd) && strcasecmp(cmd, name)) continue;
+		if (!zstr(cmd) && strcasecmp(cmd, name)) continue;
 		
 		stream->write_function(stream, "  <lot name=\"%s\">\n", name);
 

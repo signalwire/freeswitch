@@ -130,7 +130,7 @@ static switch_status_t config_logger(void)
 #else
 				COLORIZE = 1;
 #endif
-			} else if (!strcasecmp(var, "loglevel") && !switch_strlen_zero(val)) {
+			} else if (!strcasecmp(var, "loglevel") && !zstr(val)) {
 				hard_log_level = switch_log_str2level(val);
 			}
 		}
@@ -289,7 +289,7 @@ SWITCH_STANDARD_API(console_api_function)
 	if (session)
 		return SWITCH_STATUS_FALSE;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "%s", usage_string);
 		goto done;
 	}

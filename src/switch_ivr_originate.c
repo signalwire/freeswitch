@@ -409,7 +409,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				
 				if (oglobals->monitor_early_media_fail) {
 					const char *var = switch_channel_get_variable(originate_status[i].peer_channel, "monitor_early_media_fail");
-					if (!switch_strlen_zero(var)) {
+					if (!zstr(var)) {
 						char *fail_array[128] = {0};
 						int fail_count = 0;
 						char *fail_data = strdup(var);
@@ -476,7 +476,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				if (oglobals->monitor_early_media_ring) {
 					const char *var = switch_channel_get_variable(originate_status[i].peer_channel, "monitor_early_media_ring");
 					const char *var_total = switch_channel_get_variable(originate_status[i].peer_channel, "monitor_early_media_ring_total");
-					if (!switch_strlen_zero(var)) {
+					if (!zstr(var)) {
 						char *ring_array[128] = {0};
 						int ring_count = 0;
 						char *ring_data = strdup(var);
@@ -569,7 +569,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				   && !switch_channel_test_flag(originate_status[i].peer_channel, CF_TAGGED)
 				   ) {
 			
-			if (!switch_strlen_zero(oglobals->key)) {
+			if (!zstr(oglobals->key)) {
 				struct key_collect *collect;
 
 				if (oglobals->cancel_timeout < 0) {
@@ -578,10 +578,10 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 
 				if ((collect = switch_core_session_alloc(originate_status[i].peer_session, sizeof(*collect)))) {
 					switch_channel_set_flag(originate_status[i].peer_channel, CF_TAGGED);
-					if (!switch_strlen_zero(oglobals->key)) {
+					if (!zstr(oglobals->key)) {
 						collect->key = switch_core_session_strdup(originate_status[i].peer_session, oglobals->key);
 					}
-					if (!switch_strlen_zero(oglobals->file)) {
+					if (!zstr(oglobals->file)) {
 						collect->file = switch_core_session_strdup(originate_status[i].peer_session, oglobals->file);
 					}
 					switch_channel_audio_sync(originate_status[i].peer_channel);
@@ -719,7 +719,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
 			ringback_data = NULL;
-		} else if (switch_strlen_zero(ringback_data)) {
+		} else if (zstr(ringback_data)) {
 			if ((var = switch_channel_get_variable(caller_channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE))) {
 				int sval = atoi(var);
 
@@ -1146,7 +1146,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		data++;
 	}
 
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No origination URL specified!\n");
 		status = SWITCH_STATUS_GENERR;
 		goto done;
@@ -1266,7 +1266,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
 			ringback_data = NULL;
-		} else if (switch_strlen_zero(ringback_data)) {
+		} else if (zstr(ringback_data)) {
 			const char *vvar;
 			
 			if ((vvar = switch_channel_get_variable(caller_channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE))) {
@@ -2209,19 +2209,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_core_session_t *holding_session;
 					
 					if (caller_channel) {
-						if (switch_strlen_zero(context)) {
+						if (zstr(context)) {
 							context = switch_channel_get_variable(caller_channel, "context"); 
 						}
-						if (switch_strlen_zero(dialplan)) {
+						if (zstr(dialplan)) {
 							dialplan = switch_channel_get_variable(caller_channel, "dialplan"); 
 						}
 					}
 					
-					if (switch_strlen_zero(context)) {
+					if (zstr(context)) {
 						context = "default";
 					}
 
-					if (switch_strlen_zero(context)) {
+					if (zstr(context)) {
 						dialplan = "XML";
 					}
 

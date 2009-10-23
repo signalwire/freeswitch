@@ -75,7 +75,7 @@ static int load_tts_commandline_config(void)
 		switch_xml_free(xml);
 	}
 
-	if (switch_strlen_zero(globals.command)) {
+	if (zstr(globals.command)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No command set, please edit %s\n", cf);   
 	}
 

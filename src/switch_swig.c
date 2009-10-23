@@ -49,7 +49,7 @@ int fs_core_init(char *path)
 	switch_status_t status;
 	const char *err = NULL;
 
-	if (switch_strlen_zero(path)) {
+	if (zstr(path)) {
 		path = NULL;
 	}
 

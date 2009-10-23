@@ -139,7 +139,7 @@ SWITCH_DECLARE(char *) switch_core_perform_permanent_strdup(const char *todup, c
 		return NULL;
 	}
 
-	if (switch_strlen_zero(todup)) {
+	if (zstr(todup)) {
 		return SWITCH_BLANK_STRING;
 	}
 
@@ -235,7 +235,7 @@ SWITCH_DECLARE(char *) switch_core_perform_session_strdup(switch_core_session_t 
 		return NULL;
 	}
 
-	if (switch_strlen_zero(todup)) {
+	if (zstr(todup)) {
 		return SWITCH_BLANK_STRING;
 	}
 
@@ -275,7 +275,7 @@ SWITCH_DECLARE(char *) switch_core_perform_strdup(switch_memory_pool_t *pool, co
 		return NULL;
 	}
 
-	if (switch_strlen_zero(todup)) {
+	if (zstr(todup)) {
 		return SWITCH_BLANK_STRING;
 	}
 

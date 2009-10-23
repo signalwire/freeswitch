@@ -54,7 +54,7 @@ SWITCH_STANDARD_API(expr_function)
 	size_t len;
 	int ec = 0;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		goto error;
 	}
 

@@ -96,7 +96,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
 
 	switch_assert(ah != NULL);
 
-	if (switch_strlen_zero(grammar)) {
+	if (zstr(grammar)) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -111,7 +111,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
 	while (data && *data == ' ') {
 		data++;
 	}
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -120,7 +120,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
 	if (*data == '{') {
 		param_string = data + 1;
 		data = switch_find_end_paren(data, '{', '}');
-		if (switch_strlen_zero(data)) {
+		if (zstr(data)) {
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		} else {	
@@ -130,7 +130,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
 	}
 
 	/* set ASR params */
-	if (!switch_strlen_zero(param_string)) {
+	if (!zstr(param_string)) {
 		char *param[256] = { 0 };
 		int i;
 		int argc = switch_separate_string(param_string, ',', param, (sizeof(param) / sizeof(param[0])));

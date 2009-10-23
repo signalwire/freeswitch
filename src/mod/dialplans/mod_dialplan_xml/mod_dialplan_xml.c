@@ -295,7 +295,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				const char *inline_ = switch_xml_attr_soft(xaction, "inline");
 				int xinline = switch_true(inline_);
 
-				if (!switch_strlen_zero(xaction->txt)) {
+				if (!zstr(xaction->txt)) {
 					data = xaction->txt;
 				} else {
 					data = (char *) switch_xml_attr_soft(xaction, "data");
@@ -393,7 +393,7 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 
 	/* get our handle to the "dialplan" section of the config */
 
-	if (!switch_strlen_zero(alt_path)) {
+	if (!zstr(alt_path)) {
 		switch_xml_t conf = NULL, tag = NULL;
 		if (!(alt_root = switch_xml_parse_file_simple(alt_path))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Open of [%s] failed\n", alt_path);

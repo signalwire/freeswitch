@@ -508,7 +508,7 @@ void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int
 		host = "none";
 	}
 
-	if (switch_strlen_zero(user)) {
+	if (zstr(user)) {
 		sqlextra = switch_mprintf(" or (sip_host='%q')", host);
 	} else {
 		sqlextra = switch_mprintf(" or (sip_user='%q' and sip_host='%q')", user, host);
@@ -822,10 +822,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 		}
 
-		if (switch_strlen_zero(display)) {
+		if (zstr(display)) {
 			if (to) {
 				display = to->a_display;
-				if (switch_strlen_zero(display)) {
+				if (zstr(display)) {
 					display = "\"user\"";
 				}
 			}
@@ -991,7 +991,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	if (!authorization || stale) {
 		const char *realm = profile->challenge_realm;
 
-		if (switch_strlen_zero(realm) || !strcasecmp(realm, "auto_to")) {
+		if (zstr(realm) || !strcasecmp(realm, "auto_to")) {
 			realm = to_host;
 		} else if (!strcasecmp(realm, "auto_from")) {
 			realm = from_host;
@@ -1320,7 +1320,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 			contact_host = sip->sip_contact->m_url->url_host;
 		}
 
-		if (!switch_strlen_zero(contact_host)) {
+		if (!zstr(contact_host)) {
 			for (x = 0; x < profile->nat_acl_count; x++) {
 				last_acl = profile->nat_acl[x];
 				if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
@@ -1649,14 +1649,14 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 	/* Optional check that auth name == SIP username */
 	if ((regtype == REG_REGISTER) && sofia_test_pflag(profile, PFLAG_CHECKUSER)) {
-		if (switch_strlen_zero(username) || switch_strlen_zero(to_user) || strcasecmp(to_user, username)) {
+		if (zstr(username) || zstr(to_user) || strcasecmp(to_user, username)) {
 			/* Names don't match, so fail */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SIP username %s does not match auth username\n", switch_str_nil(to_user));
 			goto end;
 		}
 	}
 
-	if (switch_strlen_zero(np)) {
+	if (zstr(np)) {
 		first = 1;
 		sql = switch_mprintf("select nonce from sip_authentication where nonce='%q'", nonce);
 		switch_assert(sql != NULL);
@@ -1726,13 +1726,13 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	}
 
 
-	if (!switch_strlen_zero(profile->reg_domain)) {
+	if (!zstr(profile->reg_domain)) {
 		domain_name = profile->reg_domain;
 	} else {
 		domain_name = realm;
 	}
 
-	if (switch_xml_locate_user("id", switch_strlen_zero(username) ? "nobody" : username, 
+	if (switch_xml_locate_user("id", zstr(username) ? "nobody" : username, 
 							   domain_name, ip, &xml, &domain, &user, &group, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n"
 						  "You must define a domain called '%s' in your directory and add a user with the id=\"%s\" attribute\n"
@@ -1751,7 +1751,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	}
 	
 	if (!(number_alias = (char *) switch_xml_attr(user, "number-alias"))) {
-		number_alias = switch_strlen_zero(username) ? "nobody" : username;
+		number_alias = zstr(username) ? "nobody" : username;
 	}
 
 	dparams = switch_xml_child(domain, "params");
@@ -1854,7 +1854,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		}
 	}
 
-	if (switch_strlen_zero(passwd) && switch_strlen_zero(a1_hash)) {
+	if (zstr(passwd) && zstr(a1_hash)) {
 		ret = AUTH_OK;
 		goto skip_auth;
 	}
@@ -1973,7 +1973,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 						const char *val = switch_xml_attr_soft(param, "value");
 						sofia_gateway_t *gateway_ptr = NULL;
 
-						if (!switch_strlen_zero(var) && !switch_strlen_zero(val) && (xparams_type[j] == 1 || !strncasecmp(var, "sip-",4) || !strcasecmp(var, "register-gateway")) ) {
+						if (!zstr(var) && !zstr(val) && (xparams_type[j] == 1 || !strncasecmp(var, "sip-",4) || !strcasecmp(var, "register-gateway")) ) {
 							if (!switch_event_get_header(*v_event, var)) {
 								if (profile->debug) {
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "event_add_header -> '%s' = '%s'\n",var, val);
@@ -1989,7 +1989,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 									if ((gateways_tag = switch_xml_child(user, "gateways"))) {
 										for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
 											char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
-											if (switch_strlen_zero(name)) {
+											if (zstr(name)) {
 												name = "anonymous";
 											}
 

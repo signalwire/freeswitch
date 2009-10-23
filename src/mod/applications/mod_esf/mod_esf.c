@@ -83,7 +83,7 @@ SWITCH_STANDARD_APP(bcast_function)
 
     switch_core_session_get_read_impl(session, &read_impl);
 
-	if (!switch_strlen_zero((char *) data)) {
+	if (!zstr((char *) data)) {
 		mydata = switch_core_session_strdup(session, data);
 		assert(mydata != NULL);
 
@@ -93,20 +93,20 @@ SWITCH_STANDARD_APP(bcast_function)
 			mcast_ip = switch_core_session_strdup(session, var);
 		}
 
-		if (!switch_strlen_zero(argv[0])) {
+		if (!zstr(argv[0])) {
 			mcast_ip = argv[0];
 		}
 
-		if (!switch_strlen_zero(argv[1])) {
+		if (!zstr(argv[1])) {
 			mcast_port_str = argv[1];
 			mcast_port = (switch_port_t) atoi(mcast_port_str);
 		}
 
-		if (!switch_strlen_zero(argv[2])) {
+		if (!zstr(argv[2])) {
 			mcast_control_port = (switch_port_t) atoi(argv[2]);
 		}
 		
-		if (!switch_strlen_zero(argv[3])) {
+		if (!zstr(argv[3])) {
 			mcast_ttl = atoi(argv[3]);
 			if (mcast_ttl < 1 || mcast_ttl > 255) {
 				mcast_ttl = 1;

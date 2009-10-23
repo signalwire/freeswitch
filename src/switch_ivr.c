@@ -463,7 +463,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	char *event_lock = switch_event_get_header(event, "event-lock");
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Command!\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -569,19 +569,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		char *transport = switch_event_get_header(event, "transport");
 		char *flags = switch_event_get_header(event, "flags");
 
-		if (switch_strlen_zero(local_ip)) {
+		if (zstr(local_ip)) {
 			local_ip = "127.0.0.1";
 		}
-		if (switch_strlen_zero(remote_ip)) {
+		if (zstr(remote_ip)) {
 			remote_ip = "127.0.0.1";
 		}
-		if (switch_strlen_zero(local_port)) {
+		if (zstr(local_port)) {
 			local_port = "8025";
 		}
-		if (switch_strlen_zero(remote_port)) {
+		if (zstr(remote_port)) {
 			remote_port = "8026";
 		}
-		if (switch_strlen_zero(transport)) {
+		if (zstr(transport)) {
 			transport = "udp";
 		}
 
@@ -972,7 +972,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 		*terminator = '\0';
 	}
 
-	if (!switch_strlen_zero(terminators)) {
+	if (!zstr(terminators)) {
 		for (i = 0; i < x; i++) {
 			if (strchr(terminators, buf[i]) && terminator != NULL) {
 				*terminator = buf[i];
@@ -1038,7 +1038,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 					break;
 				}
 
-				if (!switch_strlen_zero(terminators) && strchr(terminators, dtmf.digit) && terminator != NULL) {
+				if (!zstr(terminators) && strchr(terminators, dtmf.digit) && terminator != NULL) {
 					*terminator = dtmf.digit;
 					return SWITCH_STATUS_SUCCESS;
 				}
@@ -1281,7 +1281,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	const char *forwardvar = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 	int forwardval = 70;
 
-	if (!switch_strlen_zero(forwardvar)) {
+	if (!zstr(forwardvar)) {
 		forwardval = atoi(forwardvar) - 1;
 	}
 	if (forwardval <= 0) {
@@ -1301,26 +1301,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	if ((profile = switch_channel_get_caller_profile(channel))) {
 		const char *var;
 		
-		if (switch_strlen_zero(dialplan)) {
+		if (zstr(dialplan)) {
 			dialplan = profile->dialplan;
-			if (!switch_strlen_zero(dialplan) && !strcasecmp(dialplan, "inline")) {
+			if (!zstr(dialplan) && !strcasecmp(dialplan, "inline")) {
 				dialplan = NULL;
 			}
 		}
 
-		if (switch_strlen_zero(context)) {
+		if (zstr(context)) {
 			context = profile->context;
 		}
 
-		if (switch_strlen_zero(dialplan)) {
+		if (zstr(dialplan)) {
 			dialplan = "XML";
 		}
 
-		if (switch_strlen_zero(context)) {
+		if (zstr(context)) {
 			context = "default";
 		}
 
-		if (switch_strlen_zero(extension)) {
+		if (zstr(extension)) {
 			extension = "service";
 		}
 
@@ -1750,7 +1750,7 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_chan_vars(switch_xml_t xml, switch_channe
 		return off;
 
 	for (; hi; hi = hi->next) {
-		if (!switch_strlen_zero(hi->name) && !switch_strlen_zero(hi->value) && ((variable = switch_xml_add_child_d(xml, hi->name, off++)))) {
+		if (!zstr(hi->name) && !zstr(hi->value) && ((variable = switch_xml_add_child_d(xml, hi->name, off++)))) {
 			char *data;
 			switch_size_t dlen = strlen(hi->value) * 3;
 
@@ -1815,11 +1815,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 			goto error;
 		}
 
-		if (!switch_strlen_zero(caller_profile->dialplan)) {
+		if (!zstr(caller_profile->dialplan)) {
 			switch_xml_set_attr_d(x_callflow, "dialplan", caller_profile->dialplan);
 		}
 
-		if (!switch_strlen_zero(caller_profile->profile_index)) {
+		if (!zstr(caller_profile->profile_index)) {
 			switch_xml_set_attr_d(x_callflow, "profile_index", caller_profile->profile_index);
 		}
 
@@ -2185,7 +2185,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 	char * prefix_buffer = NULL, *prefix;
 	size_t buffer_size =0;
 	size_t prefix_size=0;
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		goto error;
 	}
 
@@ -2208,7 +2208,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 
 	status = SWITCH_STATUS_SUCCESS;
 
-	if (!switch_strlen_zero(prefix)) {
+	if (!zstr(prefix)) {
 		prefix_size = strlen(prefix);
 		buffer_size = 1024 + prefix_size + 1;
 		prefix_buffer = switch_core_session_alloc(session, buffer_size);

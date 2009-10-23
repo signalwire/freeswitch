@@ -128,11 +128,11 @@ static JSBool odbc_construct(JSContext * cx, JSObject * obj, uintN argc, jsval *
 		}
 	}
 
-	if (switch_strlen_zero(username)) {
+	if (zstr(username)) {
 		username = NULL;
 	}
 
-	if (switch_strlen_zero(password)) {
+	if (zstr(password)) {
 		password = NULL;
 	}
 

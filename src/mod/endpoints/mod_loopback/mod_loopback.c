@@ -839,20 +839,20 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 					*dialplan++ = '\0';
 				}
 
-				if (!switch_strlen_zero(context)) {
+				if (!zstr(context)) {
 					caller_profile->context = switch_core_strdup(caller_profile->pool, context);
 				}
 
-				if (!switch_strlen_zero(dialplan)) {
+				if (!zstr(dialplan)) {
 					caller_profile->dialplan = switch_core_strdup(caller_profile->pool, dialplan);
 				}
 			}
 			
-			if (switch_strlen_zero(caller_profile->context)) {
+			if (zstr(caller_profile->context)) {
 				caller_profile->context = switch_core_strdup(caller_profile->pool, "default");
 			}
 
-			if (switch_strlen_zero(caller_profile->dialplan)) {
+			if (zstr(caller_profile->dialplan)) {
 				caller_profile->dialplan = switch_core_strdup(caller_profile->pool, "xml");
 			}
 

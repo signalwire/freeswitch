@@ -372,7 +372,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	}
 
 
-	if (switch_strlen_zero(globals.default_template)) {
+	if (zstr(globals.default_template)) {
 		globals.default_template = switch_core_strdup(pool, "default");
 	}
 

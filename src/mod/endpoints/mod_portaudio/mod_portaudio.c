@@ -749,7 +749,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		if (outbound_profile) {
 			char name[128];
-			const char *id = !switch_strlen_zero(outbound_profile->caller_id_number) ? outbound_profile->caller_id_number : "na";
+			const char *id = !zstr(outbound_profile->caller_id_number) ? outbound_profile->caller_id_number : "na";
 			switch_snprintf(name, sizeof(name), "portaudio/%s", id);
 
 			switch_channel_set_name(channel, name);
@@ -1051,7 +1051,7 @@ static int get_dev_by_name(char *name, int in)
 		int match = 0;
 		pdi = Pa_GetDeviceInfo(i);
 
-		if (switch_strlen_zero(name)) {
+		if (zstr(name)) {
 			match = 1;
 		} else if (pdi && pdi->name && strstr(pdi->name, name)) {
 			match = 1;
@@ -1476,7 +1476,7 @@ static switch_status_t dtmf_call(char **argv, int argc, switch_stream_handle_t *
 	char *dtmf_str = argv[0];
 	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0) };
 
-	if (switch_strlen_zero(dtmf_str)) {
+	if (zstr(dtmf_str)) {
 		stream->write_function(stream, "No DTMF Supplied!\n");
 	} else {
 		switch_mutex_lock(globals.pvt_lock);
@@ -1503,7 +1503,7 @@ static switch_status_t switch_call(char **argv, int argc, switch_stream_handle_t
 	
 
 	switch_mutex_lock(globals.pvt_lock);
-	if (switch_strlen_zero(callid)) {
+	if (zstr(callid)) {
 		if (globals.call_list) {
 			if (globals.call_list->next) {
 				tech_pvt = globals.call_list->next;
@@ -1548,7 +1548,7 @@ static switch_status_t hangup_call(char **argv, int argc, switch_stream_handle_t
 	char *callid = argv[0];
 
 	switch_mutex_lock(globals.pvt_lock);
-	if (switch_strlen_zero(callid)) {
+	if (zstr(callid)) {
 		tech_pvt = globals.call_list;
 	} else {
 		tech_pvt = switch_core_hash_find(globals.call_hash, callid);
@@ -1573,7 +1573,7 @@ static switch_status_t answer_call(char **argv, int argc, switch_stream_handle_t
 
 	switch_mutex_lock(globals.pvt_lock);
 
-	if (!switch_strlen_zero(callid)) {
+	if (!zstr(callid)) {
 		if ((tp = switch_core_hash_find(globals.call_hash, callid))) {
 			if (switch_test_flag(tp, TFLAG_ANSWER)) {
 				stream->write_function(stream, "CALL ALREADY ANSWERED\n");
@@ -1716,7 +1716,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *dest = NULL;
 
-	if (switch_strlen_zero(argv[0])) {
+	if (zstr(argv[0])) {
 		stream->write_function(stream, "FAIL:Usage: call <dest>\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1745,23 +1745,23 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 			return SWITCH_STATUS_MEMERR;
 		}
 
-		if (!switch_strlen_zero(argv[1])) {
+		if (!zstr(argv[1])) {
 			dialplan = argv[1];
 		}
 
-		if (!switch_strlen_zero(argv[2])) {
+		if (!zstr(argv[2])) {
 			cid_num = argv[2];
 		}
 
-		if (!switch_strlen_zero(argv[3])) {
+		if (!zstr(argv[3])) {
 			cid_name = argv[3];
 		}
 
-		if (!switch_strlen_zero(argv[4])) {
+		if (!zstr(argv[4])) {
 			tech_pvt->sample_rate = atoi(argv[4]);
 		}
 
-		if (!switch_strlen_zero(argv[5])) {
+		if (!zstr(argv[5])) {
 			tech_pvt->codec_ms = atoi(argv[5]);
 		}
 
@@ -1862,13 +1862,13 @@ SWITCH_STANDARD_API(pa_cmd)
 			}
 		}
 
-		if (switch_strlen_zero(cmd)) {
+		if (zstr(cmd)) {
 			goto done;
 		}
 
 	} else {
 
-		if (switch_strlen_zero(cmd)) {
+		if (zstr(cmd)) {
 			stream->write_function(stream, "%s", usage_string);
 			goto done;
 		}

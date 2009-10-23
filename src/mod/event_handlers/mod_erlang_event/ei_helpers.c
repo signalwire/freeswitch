@@ -347,7 +347,7 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
 #endif
 		memcpy(thishostname, nodehost->h_name, EI_MAXHOSTNAMELEN);
 	
-	if (switch_strlen_zero_buf(thishostname)) {
+	if (zstr_buf(thishostname)) {
 		gethostname(thishostname, EI_MAXHOSTNAMELEN);
 	}
 

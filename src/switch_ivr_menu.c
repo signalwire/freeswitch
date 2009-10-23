@@ -140,35 +140,35 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 		inter_timeout = timeout / 2;
 	}
 
-	if (!switch_strlen_zero(name)) {
+	if (!zstr(name)) {
 		menu->name = switch_core_strdup(menu->pool, name);
 	}
 
-	if (!switch_strlen_zero(greeting_sound)) {
+	if (!zstr(greeting_sound)) {
 		menu->greeting_sound = switch_core_strdup(menu->pool, greeting_sound);
 	}
 
-	if (!switch_strlen_zero(short_greeting_sound)) {
+	if (!zstr(short_greeting_sound)) {
 		menu->short_greeting_sound = switch_core_strdup(menu->pool, short_greeting_sound);
 	}
 
-	if (!switch_strlen_zero(invalid_sound)) {
+	if (!zstr(invalid_sound)) {
 		menu->invalid_sound = switch_core_strdup(menu->pool, invalid_sound);
 	}
 
-	if (!switch_strlen_zero(exit_sound)) {
+	if (!zstr(exit_sound)) {
 		menu->exit_sound = switch_core_strdup(menu->pool, exit_sound);
 	}
 
-	if (!switch_strlen_zero(confirm_macro)) {
+	if (!zstr(confirm_macro)) {
 		menu->confirm_macro = switch_core_strdup(menu->pool, confirm_macro);
 	}
 
-	if (!switch_strlen_zero(tts_engine)) {
+	if (!zstr(tts_engine)) {
 		menu->tts_engine = switch_core_strdup(menu->pool, tts_engine);
 	}
 
-	if (!switch_strlen_zero(tts_voice)) {
+	if (!zstr(tts_voice)) {
 		menu->tts_voice = switch_core_strdup(menu->pool, tts_voice);
 	}
 
@@ -294,7 +294,7 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 	char *sound_expanded = sound;
 	switch_size_t menu_buf_len = 0;
 
-	if (!session || !menu || switch_strlen_zero(sound)) {
+	if (!session || !menu || zstr(sound)) {
 		return status;
 	}
 
@@ -396,7 +396,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
-	if (!session || !stack || switch_strlen_zero(name)) {
+	if (!session || !stack || zstr(name)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid menu context\n");
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
@@ -408,7 +408,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
-	if (!switch_strlen_zero(menu->tts_engine) && !switch_strlen_zero(menu->tts_voice)) {
+	if (!zstr(menu->tts_engine) && !zstr(menu->tts_voice)) {
 		switch_channel_set_variable(channel, "tts_engine", menu->tts_engine);
 		switch_channel_set_variable(channel, "tts_voice", menu->tts_voice);
 	}
@@ -456,7 +456,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 				char substituted[1024];
 				char *use_arg = ap->arg;
 
-				if (!switch_strlen_zero(menu->tts_engine) && !switch_strlen_zero(menu->tts_voice)) {
+				if (!zstr(menu->tts_engine) && !zstr(menu->tts_voice)) {
 					switch_channel_set_variable(channel, "tts_engine", menu->tts_engine);
 					switch_channel_set_variable(channel, "tts_voice", menu->tts_voice);
 				}
@@ -516,7 +516,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 							status = SWITCH_STATUS_FALSE;
 
-							if (!switch_strlen_zero(aptr)) {
+							if (!zstr(aptr)) {
 								app_name = switch_core_session_strdup(session, aptr);
 								if ((app_arg = strchr(app_name, ' '))) {
 									*app_arg++ = '\0';
@@ -579,7 +579,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 	if (stack->stack_count == 1) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "exit-sound '%s'\n", menu->exit_sound);
-		if (!switch_strlen_zero(menu->exit_sound)) {
+		if (!zstr(menu->exit_sound)) {
 			status = play_and_collect(session, menu, menu->exit_sound, 0);
 		}
 	}
@@ -669,7 +669,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_str2action(const char *action_na
 {
 	int i;
 
-	if (!switch_strlen_zero(action_name)) {
+	if (!zstr(action_name)) {
 		for(i = 0;;i++) {
 			if (!iam[i].name) {
 				break;
@@ -689,7 +689,7 @@ static switch_bool_t is_valid_action(const char *action)
 {
 	int i;
 
-	if (!switch_strlen_zero(action)) {
+	if (!zstr(action)) {
 		for(i = 0;;i++) {
 			if (!iam[i].name) {
 				break;
@@ -770,7 +770,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 
 		switch_ivr_menu_t *menu = NULL;
 
-		if (switch_strlen_zero(max_timeouts)) {
+		if (zstr(max_timeouts)) {
 			max_timeouts = max_failures;
 		}
 
@@ -812,7 +812,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 				const char *digits = switch_xml_attr(xml_kvp, "digits");
 				const char *param = switch_xml_attr_soft(xml_kvp, "param");
 
-				if (is_valid_action(action) && !switch_strlen_zero(digits)) {
+				if (is_valid_action(action) && !zstr(digits)) {
 					switch_ivr_menu_xml_map_t *xml_map = xml_menu_ctx->map;
 					int found = 0;
 

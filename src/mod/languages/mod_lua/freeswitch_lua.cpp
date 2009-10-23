@@ -140,7 +140,7 @@ void Session::do_hangup_hook()
 		lua_call(L, arg_count, 1);
 		err = lua_tostring(L, -1);
 
-		if (!switch_strlen_zero(err)) {
+		if (!zstr(err)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
 		}
 
@@ -198,7 +198,7 @@ void Session::setHangupHook(char *func, char *arg)
 
 	if (func) {
 		hangup_func_str = strdup(func);
-		if (!switch_strlen_zero(arg)) {
+		if (!zstr(arg)) {
 			hangup_func_arg = strdup(arg);
 		}
 		switch_channel_set_private(channel, "CoreSession", this);
@@ -269,7 +269,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			lua_pushnumber(L, dtmf->duration);
 			lua_rawset(L, -3);
 
-			if (!switch_strlen_zero(cb_arg)) {
+			if (!zstr(cb_arg)) {
 				lua_getfield(L, LUA_GLOBALSINDEX, (char *) cb_arg);
 				arg_count++;
 			}
@@ -293,7 +293,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			mod_lua_conjure_event(L, event, "__Input_Event__", 1);
 			lua_getfield(L, LUA_GLOBALSINDEX, "__Input_Event__");
 
-			if (!switch_strlen_zero(cb_arg)) {
+			if (!zstr(cb_arg)) {
 				lua_getfield(L, LUA_GLOBALSINDEX, (char *) cb_arg);
 				arg_count++;
 			}

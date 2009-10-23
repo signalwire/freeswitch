@@ -236,7 +236,7 @@ static switch_xml_t python_fetch(const char *section,
 	switch_xml_t xml = NULL;
 	char *str = NULL;
 
-	if (!switch_strlen_zero(globals.xml_handler)) {
+	if (!zstr(globals.xml_handler)) {
 		char *mycmd = strdup(globals.xml_handler);
 
 		switch_assert(mycmd);
@@ -244,7 +244,7 @@ static switch_xml_t python_fetch(const char *section,
 		eval_some_python("xml_fetch", mycmd, NULL, NULL, params, &str, NULL);
 
 		if (str) {
-			if (switch_strlen_zero(str)) {
+			if (zstr(str)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
 			} else if (!(xml = switch_xml_parse_str((char *) str, strlen(str)))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
@@ -276,7 +276,7 @@ static switch_status_t do_config(void)
 			if (!strcmp(var, "xml-handler-script")) {
 				globals.xml_handler = switch_core_strdup(globals.pool, val);
 			} else if (!strcmp(var, "xml-handler-bindings")) {
-				if (!switch_strlen_zero(globals.xml_handler)) {
+				if (!zstr(globals.xml_handler)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding '%s' to '%s'\n", globals.xml_handler, val);
 					switch_xml_bind_search_function(python_fetch, switch_xml_parse_section_string(val), NULL);
 				}
@@ -397,7 +397,7 @@ int py_thread(const char *text)
 SWITCH_STANDARD_API(launch_python)
 {
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", python_run_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}

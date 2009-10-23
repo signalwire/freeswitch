@@ -356,7 +356,7 @@ SWITCH_STANDARD_APP(socket_function)
 
 	host = argv[0];
 
-	if (switch_strlen_zero(host)) {
+	if (zstr(host)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing Host!\n");
 		return;
 	}
@@ -617,7 +617,7 @@ SWITCH_STANDARD_API(event_sink_function)
             goto end;
 		}
 
-		if (switch_strlen_zero(action)) {
+		if (zstr(action)) {
 			stream->write_function(stream, "<data><reply type=\"error\">Invalid Syntax</reply></data>\n");
             goto end;
 		}
@@ -628,7 +628,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		}
 
 		if (!strcasecmp(action, "delete")) {
-			if (switch_strlen_zero(header_val)) {
+			if (zstr(header_val)) {
 				stream->write_function(stream, "<data><reply type=\"error\">Invalid Syntax</reply></data>\n");
 				goto filter_end;
 			}
@@ -641,7 +641,7 @@ SWITCH_STANDARD_API(event_sink_function)
 			}
 			stream->write_function(stream, "<data>\n <reply type=\"success\">filter deleted.</reply>\n<api-command>\n");
 		} else if (!strcasecmp(action, "add")) {
-			if (switch_strlen_zero(header_name) || switch_strlen_zero(header_val)) {
+			if (zstr(header_name) || zstr(header_val)) {
 				stream->write_function(stream, "<data><reply type=\"error\">Invalid Syntax</reply></data>\n");
 				goto filter_end;
 			}
@@ -715,7 +715,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		uint8_t custom = 0;
 		char *edup;
 		
-		if (switch_strlen_zero(events) && switch_strlen_zero(loglevel)) {
+		if (zstr(events) && zstr(loglevel)) {
 			stream->write_function(stream, "<data><reply type=\"error\">Missing parameter!</reply></data>\n");
 			goto end;
 		}
@@ -1068,7 +1068,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 						char *var, *val;
 						var = cur;
 						strip_cr(var);
-						if (!switch_strlen_zero(var)) {
+						if (!zstr(var)) {
 							if ((val = strchr(var, ':'))) {
 								*val++ = '\0';
 								while (*val == ' ') {
@@ -1583,7 +1583,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			}
 		}
 
-		if (switch_strlen_zero(onoff)) {
+		if (zstr(onoff)) {
 			switch_snprintf(reply, reply_len, "-ERR missing value.");
 			goto done;
 		}
@@ -1623,7 +1623,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			}
 		}
 		
-		if (switch_strlen_zero(uuid)) {
+		if (zstr(uuid)) {
 			uuid = switch_event_get_header(*event, "session-id");
 		}
 
@@ -1631,7 +1631,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			uuid = NULL;
 		}
 
-		if (switch_strlen_zero(uuid) && listener->session) {
+		if (zstr(uuid) && listener->session) {
 			if (async) {
 				if ((status = switch_core_session_queue_private_event(listener->session, event)) == SWITCH_STATUS_SUCCESS) {
 					switch_snprintf(reply, reply_len, "+OK");
@@ -1643,7 +1643,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				switch_snprintf(reply, reply_len, "+OK");
 			}
 		} else {
-			if (!switch_strlen_zero(uuid) && (session = switch_core_session_locate(uuid))) {
+			if (!zstr(uuid) && (session = switch_core_session_locate(uuid))) {
 				if ((status = switch_core_session_queue_private_event(session, event)) == SWITCH_STATUS_SUCCESS) {
 					switch_snprintf(reply, reply_len, "+OK");
 				} else {
@@ -1789,12 +1789,12 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		level_s = cmd + 3;
 
 		//see if we got an argument
-		if (!switch_strlen_zero(level_s)) {
+		if (!zstr(level_s)) {
 			//if so move to the argument
 			level_s++;
 		}
 		//see if we lined up on an argument or not
-		if (!switch_strlen_zero(level_s)) {
+		if (!zstr(level_s)) {
 			ltype = switch_log_str2level(level_s);
 		}
 
@@ -1961,7 +1961,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
  done:
 
-	if (switch_strlen_zero(reply)) {
+	if (zstr(reply)) {
 		switch_snprintf(reply, reply_len, "-ERR command not found");
 	}
 
@@ -2003,7 +2003,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_socket_opt_set(listener->sock, SWITCH_SO_TCP_NODELAY, TRUE);
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
 
-	if (prefs.acl_count && listener->sa && !switch_strlen_zero(listener->remote_ip)) {
+	if (prefs.acl_count && listener->sa && !zstr(listener->remote_ip)) {
 		uint32_t x = 0;
 
 		for (x = 0; x < prefs.acl_count; x++) {
@@ -2024,7 +2024,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	}
 	
 	if (globals.debug > 0) {
-		if (switch_strlen_zero(listener->remote_ip)) {
+		if (zstr(listener->remote_ip)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Connection Open\n");
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Connection Open from %s:%d\n", listener->remote_ip, listener->remote_port);
@@ -2243,11 +2243,11 @@ static int config(void)
 		switch_xml_free(xml);
 	}
 
-	if (switch_strlen_zero(prefs.ip)) {
+	if (zstr(prefs.ip)) {
 		set_pref_ip("127.0.0.1");
 	}
 
-	if (switch_strlen_zero(prefs.password)) {
+	if (zstr(prefs.password)) {
 		set_pref_pass("ClueCon");
 	}
 

@@ -85,7 +85,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 		char *dp[25];
 		int argc, x, count = 0;
 
-		if (!switch_strlen_zero(caller_profile->dialplan)) {
+		if (!zstr(caller_profile->dialplan)) {
 			if ((dpstr = switch_core_session_strdup(session, caller_profile->dialplan))) {
 				expanded = switch_channel_expand_variables(session->channel, dpstr);
 				argc = switch_separate_string(expanded, ',', dp, (sizeof(dp) / sizeof(dp[0])));
@@ -482,7 +482,7 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 		use_session = session;
 	}
 
-	if (!switch_strlen_zero(hook_var)) {
+	if (!zstr(hook_var)) {
 		switch_stream_handle_t stream = { 0 };
 		char *cmd = switch_core_session_strdup(session, hook_var);
 		char *arg = NULL;
@@ -552,7 +552,7 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 	driver_state_handler = endpoint_interface->state_handler;
 	switch_assert(driver_state_handler != NULL);
 	
-	if (!switch_strlen_zero(var)) {
+	if (!zstr(var)) {
 		if (!strcasecmp(var, "a_only")) {
 			if (switch_channel_get_originator_caller_profile(session->channel)) {
 				do_extra_handlers = 0;

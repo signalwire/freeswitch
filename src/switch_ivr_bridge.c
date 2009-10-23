@@ -93,20 +93,20 @@ static void send_display(switch_core_session_t *session, switch_core_session_t *
 		name = caller_profile->callee_id_name;
 		number = caller_profile->callee_id_number;
 		
-		if (switch_strlen_zero(name)) {
+		if (zstr(name)) {
 			name = caller_profile->destination_number;
 		}
-		if (switch_strlen_zero(number)) {
+		if (zstr(number)) {
 			number = caller_profile->destination_number;
 		}
 	} else {
 		name = caller_profile->caller_id_name;
 		number = caller_profile->caller_id_number;
 		
-		if (switch_strlen_zero(name)) {
+		if (zstr(name)) {
 			name = caller_profile->destination_number;
 		}
-		if (switch_strlen_zero(number)) {
+		if (zstr(number)) {
 			number = caller_profile->destination_number;
 		}
 	}
@@ -482,7 +482,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		hook_var = switch_channel_get_variable(chan_a, SWITCH_API_BRIDGE_END_VARIABLE);
 	}
 
-	if (!switch_strlen_zero(hook_var)) {
+	if (!zstr(hook_var)) {
 		switch_stream_handle_t stream = { 0 };
 		char *cmd = switch_core_session_strdup(session_a, hook_var);
 		char *arg = NULL;
@@ -546,7 +546,7 @@ static void transfer_after_bridge(switch_core_session_t *session, const char *wh
 
 	switch_channel_set_variable(switch_core_session_get_channel(session), SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, NULL);
 
-	if (!switch_strlen_zero(where) && (mydata = switch_core_session_strdup(session, where))) {
+	if (!zstr(where) && (mydata = switch_core_session_strdup(session, where))) {
 		if ((argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
 			switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
 		} else {
@@ -787,7 +787,7 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
         const char *sbv = switch_channel_get_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
 		const char *var;
 
-        if (!switch_strlen_zero(sbv) && !strcmp(sbv, switch_core_session_get_uuid(session))) {
+        if (!zstr(sbv) && !strcmp(sbv, switch_core_session_get_uuid(session))) {
 
             switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
             switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
@@ -1147,7 +1147,7 @@ static void cleanup_proxy_mode(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Restore media to %s\n", switch_channel_get_name(channel));
 		switch_ivr_media(switch_core_session_get_uuid(session), SMF_IMMEDIATE);
 
-		if (!switch_strlen_zero(sbv) && (sbsession = switch_core_session_locate(sbv))) {
+		if (!zstr(sbv) && (sbsession = switch_core_session_locate(sbv))) {
 			switch_channel_t *sbchannel = switch_core_session_get_channel(sbsession);
 			switch_channel_hangup(sbchannel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 			switch_core_session_rwunlock(sbsession);
@@ -1321,7 +1321,7 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 		}
 	}
 
-	if (switch_strlen_zero(uuid) || !(rsession = switch_core_session_locate(uuid))) {
+	if (zstr(uuid) || !(rsession = switch_core_session_locate(uuid))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no uuid %s\n", uuid);
 		return;
 	}

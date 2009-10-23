@@ -451,7 +451,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got data %s after %d milliseconds!\n", xmlstr, i*10);
 
-	if (switch_strlen_zero(xmlstr)) {
+	if (zstr(xmlstr)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
 	} else if (!(xml = switch_xml_parse_str_dynamic(xmlstr, SWITCH_FALSE))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
@@ -848,7 +848,7 @@ static void listener_main_loop(listener_t *listener)
 static switch_bool_t check_inbound_acl(listener_t* listener)
 {
 	/* check acl to see if inbound connection is allowed */
-	if (prefs.acl_count && !switch_strlen_zero(listener->remote_ip)) {
+	if (prefs.acl_count && !zstr(listener->remote_ip)) {
 		uint32_t x = 0;
 		for (x = 0; x < prefs.acl_count; x++) {
 			if (!switch_check_network_list_ip(listener->remote_ip, prefs.acl[x])) {
@@ -904,7 +904,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_assert(listener != NULL);
 
 	if (check_inbound_acl(listener)) {
-		if (switch_strlen_zero(listener->remote_ip)) {
+		if (zstr(listener->remote_ip)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open\n");
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open from %s\n", listener->remote_ip);/*, listener->remote_port);*/
@@ -1027,11 +1027,11 @@ static int config(void)
 		switch_xml_free(xml);
 	}
 
-	if (switch_strlen_zero(prefs.ip)) {
+	if (zstr(prefs.ip)) {
 		set_pref_ip("0.0.0.0");
 	}
 
-	if (switch_strlen_zero(prefs.cookie)) {
+	if (zstr(prefs.cookie)) {
 		set_pref_cookie("ClueCon");
 	}
 
@@ -1319,7 +1319,7 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error - need registered name and node!\n");
 		return;
 	}
-	if (switch_strlen_zero(argv[0])) {
+	if (zstr(argv[0])) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing registered name or module:function!\n");
 		return;
 	}
@@ -1339,7 +1339,7 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 
 
 	node = argv[1];
-	if (switch_strlen_zero(node)) {
+	if (zstr(node)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing node name!\n");
 		return;
 	}
@@ -1451,7 +1451,7 @@ SWITCH_STANDARD_API(erlang_cmd)
 		"erlang sessions <node_name>\n"
 		"--------------------------------------------------------------------------------\n";
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "%s", usage_string);
 		goto done;
 	}

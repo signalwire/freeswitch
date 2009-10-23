@@ -125,13 +125,13 @@ static switch_status_t load_config(void)
 	}
 	
 done:
-	if (switch_strlen_zero(globals.db_username)) {
+	if (zstr(globals.db_username)) {
 		set_global_db_username("root");
 	}
-	if (switch_strlen_zero(globals.db_password)) {
+	if (zstr(globals.db_password)) {
 		set_global_db_password("password");
 	}
-	if (switch_strlen_zero(globals.db_dsn)) {
+	if (zstr(globals.db_dsn)) {
 		set_global_db_dsn("easyroute");
 	}
 
@@ -208,25 +208,25 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int 
 		char tmp_profile[129];
 		char tmp_gateway[129];
 
-		if (switch_strlen_zero(pdata.limit)) {
+		if (zstr(pdata.limit)) {
 			switch_set_string(results->limit, "9999" );
 		} else {
 			switch_set_string(results->limit, pdata.limit );
 		}
 
-		if (switch_strlen_zero(pdata.techprofile)){
+		if (zstr(pdata.techprofile)){
 			switch_set_string(tmp_profile, globals.default_techprofile);
 		} else {
 			switch_set_string(tmp_profile, pdata.techprofile);
 		}
 
-		if (switch_strlen_zero(pdata.gateway)){
+		if (zstr(pdata.gateway)){
 			switch_set_string(tmp_gateway, globals.default_gateway);
 		} else {
 			switch_set_string(tmp_gateway, pdata.gateway);
 		}
 
-		if (switch_strlen_zero(pdata.translated)){
+		if (zstr(pdata.translated)){
 			switch_set_string(results->translated, dn);
 		} else {
 			switch_set_string(results->translated, pdata.translated);
@@ -240,13 +240,13 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int 
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "THE ROUTE [%s]\n", results->dialstring);
 
-		if (switch_strlen_zero(pdata.group)){
+		if (zstr(pdata.group)){
 			switch_set_string(results->group, "");
 		} else {
 			switch_set_string(results->group, pdata.group);
 		}
 
-		if (switch_strlen_zero(pdata.acctcode)){
+		if (zstr(pdata.acctcode)){
 			switch_set_string(results->acctcode, "");
 		} else {
 			switch_set_string(results->acctcode, pdata.acctcode);

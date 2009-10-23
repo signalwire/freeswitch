@@ -404,7 +404,7 @@ SWITCH_STANDARD_DIALPLAN(yaml_dialplan_hunt)
 	char *path = NULL;
 	FILE *input;
 
-	if (!switch_strlen_zero(alt_path)) {
+	if (!zstr(alt_path)) {
 		path = strdup(alt_path);
 	} else {
 		path = switch_mprintf("%s/yaml/extensions.yaml", SWITCH_GLOBAL_dirs.conf_dir);

@@ -181,7 +181,7 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_networ
 	node->bits = bits;
 	node->str = switch_core_strdup(list->pool, cidr_str);
 
-	if (!switch_strlen_zero(token)) {
+	if (!zstr(token)) {
 		node->token = switch_core_strdup(list->pool, token);
 	}
 	
@@ -449,7 +449,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	char *newfile = NULL;
 	switch_bool_t rval = SWITCH_FALSE;
 
-	if (!switch_strlen_zero(file) && !switch_strlen_zero(convert_cmd) && !switch_strlen_zero(convert_ext)) {
+	if (!zstr(file) && !zstr(convert_cmd) && !zstr(convert_ext)) {
 		if ((ext = strrchr(file, '.'))) {
 			dupfile = strdup(file);
 			if ((ext = strrchr(dupfile, '.'))) {
@@ -580,7 +580,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		close(ifd);
 	}
 
-	if (switch_strlen_zero(from)) {
+	if (zstr(from)) {
 		from = "freeswitch";
 	}
 
@@ -617,7 +617,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 
 SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip)
 {
-	if (switch_strlen_zero(ip))
+	if (zstr(ip))
 		return SWITCH_FALSE;
 
 	return (strncmp(ip, "10.", 3) &&
@@ -1824,7 +1824,7 @@ SWITCH_DECLARE(char *) switch_url_decode(char *s)
 	char *o;
 	unsigned int tmp;
 
-	if (switch_strlen_zero(s)) {
+	if (zstr(s)) {
 		return s;
 	}
 

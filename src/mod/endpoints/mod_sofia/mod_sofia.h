@@ -818,7 +818,7 @@ void sofia_reg_release_gateway__(const char *file, const char *func, int line, s
 
 #define check_decode(_var, _session) do {								\
 		assert(_session);												\
-		if (!switch_strlen_zero(_var)) {								\
+		if (!zstr(_var)) {								\
 			int d = 0;													\
 			char *p;													\
 			if (strchr(_var, '%')) {									\

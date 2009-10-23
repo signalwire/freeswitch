@@ -640,11 +640,11 @@ void switch_load_timezones(switch_bool_t reload)
 				const char *name = switch_xml_attr(x_list, "name");
 				const char *value= switch_xml_attr(x_list, "value");
 
-				if (switch_strlen_zero(name)) {
+				if (zstr(name)) {
 					continue;
 				}
 
-				if (switch_strlen_zero(value)) {
+				if (zstr(value)) {
 					continue;
 				}
 
@@ -683,7 +683,7 @@ SWITCH_DECLARE(switch_status_t) switch_time_exp_tz_name(const char *tz, switch_t
 
 	timep =  (thetime) / (int64_t) (1000000);
 
-	if (!switch_strlen_zero(tz_name)) {
+	if (!zstr(tz_name)) {
 		tzdef = switch_lookup_timezone( tz_name );
 	} else {
 		/* We set the default timezone to GMT. */
@@ -719,7 +719,7 @@ SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *f
 
 	timep =  (thetime) / (int64_t) (1000000);
 
-	if (!switch_strlen_zero(tz_name)) {
+	if (!zstr(tz_name)) {
 		tzdef = switch_lookup_timezone( tz_name );
 	} else {
 		/* We set the default timezone to GMT. */
@@ -730,8 +730,8 @@ SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *f
 	if (tzdef) { /* The lookup of the zone may fail. */
 		tztime( &timep, tzdef, &tm );
 		tm2switchtime( &tm, &stm );
-		switch_strftime_nocheck(date, &retsize, len, switch_strlen_zero(format) ? "%Y-%m-%d %T" : format, &stm);
-		if (!switch_strlen_zero_buf(date)) {
+		switch_strftime_nocheck(date, &retsize, len, zstr(format) ? "%Y-%m-%d %T" : format, &stm);
+		if (!zstr_buf(date)) {
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}

@@ -471,7 +471,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 		root = mroot;
 	}
 
-	if (switch_strlen_zero(root)) {
+	if (zstr(root)) {
 		root = globals.root;
 	}
 
@@ -675,7 +675,7 @@ SWITCH_STANDARD_API(enum_api)
 	char *last_delim = "|";
 	int ok = 0;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "%s", "none");
 		return SWITCH_STATUS_SUCCESS;
 	}

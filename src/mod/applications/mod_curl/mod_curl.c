@@ -151,7 +151,7 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	curl_easy_cleanup(curl_handle);
 	
 	if (	http_data->stream.data &&
-			!switch_strlen_zero((char *)http_data->stream.data) &&
+			!zstr((char *)http_data->stream.data) &&
 			strcmp(" ", http_data->stream.data) ) {
 		
 		http_data->http_response = switch_core_strdup(pool, http_data->stream.data);
@@ -185,7 +185,7 @@ static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data) {
 			*data = '\0';
 		}
 		
-		if switch_strlen_zero(header->data) {
+		if zstr(header->data) {
 			header = header->next;
 			continue;
 		}
@@ -336,7 +336,7 @@ SWITCH_STANDARD_API(curl_function)
 
 	switch_memory_pool_t *pool = NULL;
 	
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
 	}
 

@@ -464,7 +464,7 @@ static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *ob
 		line = el_gets(el, &count);
 
 		if (count > 1) {
-			if (!switch_strlen_zero(line)) {
+			if (!zstr(line)) {
 				char *cmd = strdup(line);
 				char *p;
 				const LineInfo *lf = el_line(el);
@@ -513,7 +513,7 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 	switch_copy_string(h->last, target, sizeof(h->last));
 
-	if (!switch_strlen_zero(target)) {
+	if (!zstr(target)) {
 		if ((++h->hits % 4) == 0) {
 			fprintf(h->out, "\n");
 		}

@@ -371,7 +371,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 #endif
 SWITCH_STANDARD_API(managedrun_api_function) 
 {
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-ERR no args specified!\n");	
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -391,7 +391,7 @@ SWITCH_STANDARD_API(managedrun_api_function)
 
 SWITCH_STANDARD_API(managed_api_function) 
 {
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-ERR no args specified!\n");	
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -409,7 +409,7 @@ SWITCH_STANDARD_API(managed_api_function)
 
 SWITCH_STANDARD_APP(managed_app_function) 
 {
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No args specified!\n");
 		return;
 	}
@@ -426,7 +426,7 @@ SWITCH_STANDARD_APP(managed_app_function)
 
 SWITCH_STANDARD_API(managedreload_api_function) 
 {
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-ERR no args specified!\n");	
 		return SWITCH_STATUS_SUCCESS;
 	}

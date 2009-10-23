@@ -1182,7 +1182,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_strlen_zero(dtmf_string)) {
+	if (zstr(dtmf_string)) {
 		return SWITCH_STATUS_FALSE;
 	}
 

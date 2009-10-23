@@ -141,7 +141,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 		caller_profile = switch_channel_get_caller_profile(channel);
 	}
 
-	if (!caller_profile || switch_strlen_zero(caller_profile->destination_number)) {
+	if (!caller_profile || zstr(caller_profile->destination_number)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Obtaining Profile!\n");
 		return NULL;
 	}
@@ -271,7 +271,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				switch_regex_safe_free(re);
 
 				if (!extension) {
-					if (switch_strlen_zero(field_data)) {
+					if (zstr(field_data)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No extension!\n");
 						break;
 					}
@@ -313,7 +313,7 @@ static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session, 
 	} else {
 		profile = switch_core_get_variable("sip_profile");
 	}
-	if (switch_strlen_zero(profile)) {
+	if (zstr(profile)) {
 		profile = "default";
 	}
 

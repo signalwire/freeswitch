@@ -1071,7 +1071,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 		}
 	}
 
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		body = data;
 	} else if (event->body) {
 		body = event->body;
@@ -1606,7 +1606,7 @@ SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, co
 
 
 	for (x = 0; prof[x]; x++) {
-		if (switch_strlen_zero(prof[x])) {
+		if (zstr(prof[x])) {
 			continue;
 		}
 		new_len = (strlen(prof[x]) * 3) + 1;

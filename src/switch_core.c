@@ -957,7 +957,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 				const char *dft = switch_xml_attr(x_list, "default");
 				switch_bool_t default_type = SWITCH_TRUE;
 
-				if (switch_strlen_zero(name)) {
+				if (zstr(name)) {
 					continue;
 				}
 
@@ -1393,34 +1393,34 @@ static void switch_load_core_config(const char *file)
 #endif
 				} else if (!strcasecmp(var, "colorize-console") && switch_true(val)) {
 					runtime.colorize_console = SWITCH_TRUE;
-				} else if (!strcasecmp(var, "mailer-app") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "mailer-app") && !zstr(val)) {
 					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "mailer-app-args") && val) {
 					runtime.mailer_app_args = switch_core_strdup(runtime.memory_pool, val);
-				} else if (!strcasecmp(var, "sessions-per-second") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "sessions-per-second") && !zstr(val)) {
 					switch_core_sessions_per_second(atoi(val));
-				} else if (!strcasecmp(var, "max_dtmf_duration") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "max_dtmf_duration") && !zstr(val)) {
 					int tmp = atoi(val);
 					if (tmp > 0) {
 						switch_core_max_dtmf_duration((uint32_t) tmp);
 					}
-				} else if (!strcasecmp(var, "min_dtmf_duration") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "min_dtmf_duration") && !zstr(val)) {
 					int tmp = atoi(val);
 					if (tmp > 0) {
 						switch_core_min_dtmf_duration((uint32_t) tmp);
 					}
-				} else if (!strcasecmp(var, "default_dtmf_duration") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "default_dtmf_duration") && !zstr(val)) {
 					int tmp = atoi(val);
 					if (tmp > 0) {
 						switch_core_default_dtmf_duration((uint32_t) tmp);
 					}
 				} else if (!strcasecmp(var, "disable-monotonic-timing")) {
 					switch_time_set_monotonic(SWITCH_FALSE);
-				} else if (!strcasecmp(var, "max-sessions") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "max-sessions") && !zstr(val)) {
 					switch_core_session_limit(atoi(val));
-				} else if (!strcasecmp(var, "rtp-start-port") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "rtp-start-port") && !zstr(val)) {
 					switch_rtp_set_start_port((switch_port_t) atoi(val));
-				} else if (!strcasecmp(var, "rtp-end-port") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "rtp-end-port") && !zstr(val)) {
 					switch_rtp_set_end_port((switch_port_t) atoi(val));
 #ifdef ENABLE_ZRTP
 				} else if (!strcasecmp(var, "rtp-enable-zrtp")) {

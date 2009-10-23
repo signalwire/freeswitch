@@ -174,7 +174,7 @@ static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const cha
 	char *dst_regex = NULL;
 	switch_channel_t *channel = NULL;
 	
-	if (!switch_strlen_zero(cid)) {
+	if (!zstr(cid)) {
 		len = strlen(cid);
 	} else {
 		goto done;
@@ -275,12 +275,12 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 		}
 	}	
 	codec = "";
-	if (!switch_strlen_zero(cur_route->codec)) {
+	if (!zstr(cur_route->codec)) {
 		codec = switch_core_sprintf(pool, ",absolute_codec_string=%s", cur_route->codec);
 	}
 	
 	cid = "";
-	if (!switch_strlen_zero(cur_route->cid)) {
+	if (!zstr(cur_route->cid)) {
 		cid = switch_core_sprintf(pool, ",origination_caller_id_number=%s", 
 								  do_cid(pool, cur_route->cid, caller_id, session));
 	}
@@ -292,7 +292,7 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 									  cur_route->carrier_name);
 	}
 	
-	if (switch_strlen_zero(cur_route->user_rate_str)) {
+	if (zstr(cur_route->user_rate_str)) {
 		user_rate = "";
 	} else {
 		user_rate = switch_core_sprintf(pool, ",lcr_user_rate=%s", cur_route->user_rate_str);
@@ -312,7 +312,7 @@ static profile_t *locate_profile(const char *profile_name)
 {
 	profile_t *profile = NULL;
 	
-	if (switch_strlen_zero(profile_name)) {
+	if (zstr(profile_name)) {
 		profile = globals.default_profile;
 	} else if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
@@ -555,7 +555,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_strlen_zero(argv[LCR_GW_PREFIX_PLACE]) && switch_strlen_zero(argv[LCR_GW_SUFFIX_PLACE]) ) {
+	if (zstr(argv[LCR_GW_PREFIX_PLACE]) && zstr(argv[LCR_GW_SUFFIX_PLACE]) ) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 								"There's no way to dial this Gateway: Carrier: \"%s\" Prefix: \"%s\", Suffix \"%s\"\n",
 								switch_str_nil(argv[LCR_CARRIER_PLACE]),
@@ -737,7 +737,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	switch_assert(cb_struct->lookup_number != NULL);
 
 	digits_copy = string_digitsonly(cb_struct->pool, digits);
-	if (switch_strlen_zero(digits_copy)) {
+	if (zstr(digits_copy)) {
 		return SWITCH_STATUS_GENERR;
 	}
 	
@@ -862,7 +862,7 @@ static switch_status_t lcr_load_config()
 			char *val = NULL;
 			var = (char *) switch_xml_attr_soft(param, "name");
 			val = (char *) switch_xml_attr_soft(param, "value");
-			if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
+			if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "odbc_dsn is %s\n", val);
 				globals.odbc_dsn = switch_core_strdup(globals.pool, val);
 				if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
@@ -922,13 +922,13 @@ static switch_status_t lcr_load_config()
 				var = (char *) switch_xml_attr_soft(param, "name");
 				val = (char *) switch_xml_attr_soft(param, "value");
 				
-				if (!strcasecmp(var, "order_by")  && !switch_strlen_zero(val)) {
+				if (!strcasecmp(var, "order_by")  && !zstr(val)) {
 					thisorder = &order_by;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "param val is %s\n", val);
 					if ((argc = switch_separate_string(val, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 						for (x=0; x<argc; x++) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "arg #%d/%d is %s\n", x, argc, argv[x]);
-							if (!switch_strlen_zero(argv[x])) {
+							if (!zstr(argv[x])) {
 								if (!strcasecmp(argv[x], "quality")) {
 									thisorder->write_function(thisorder, "%s quality DESC", comma);
 								} else if (!strcasecmp(argv[x], "reliability")) {
@@ -951,40 +951,40 @@ static switch_status_t lcr_load_config()
 							thisorder->write_function(thisorder, "%s %s", comma, val);
 						}
 					}
-				} else if (!strcasecmp(var, "id") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "id") && !zstr(val)) {
 					id_s = val;
-				} else if (!strcasecmp(var, "custom_sql") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "custom_sql") && !zstr(val)) {
 					custom_sql = val;
-				} else if (!strcasecmp(var, "reorder_by_rate") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "reorder_by_rate") && !zstr(val)) {
 					reorder_by_rate = val;
-				} else if (!strcasecmp(var, "info_in_headers") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "info_in_headers") && !zstr(val)) {
 					info_in_headers = val;
-				} else if (!strcasecmp(var, "quote_in_list") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "quote_in_list") && !zstr(val)) {
 					quote_in_list = val;
 				}
 			}
 			
-			if (switch_strlen_zero(name)) {
+			if (zstr(name)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No name specified.\n");
 			} else {
 				profile = switch_core_alloc(globals.pool, sizeof(*profile));
 				memset(profile, 0, sizeof(profile_t));
 				profile->name = switch_core_strdup(globals.pool, name);
 				
-				if (!switch_strlen_zero((char *)order_by.data)) {
+				if (!zstr((char *)order_by.data)) {
 					profile->order_by = switch_core_strdup(globals.pool, (char *)order_by.data);
 				} else {
 					/* default to rate */
 					profile->order_by = ", ${lcr_rate_field}";
 				}
 
-				if (!switch_strlen_zero(id_s)) {
+				if (!zstr(id_s)) {
 					profile->id = (uint16_t)atoi(id_s);
 				}
 				
 				/* SWITCH_STANDARD_STREAM doesn't use pools.  but we only have to free sql_stream.data */
 				SWITCH_STANDARD_STREAM(sql_stream);
-				if (switch_strlen_zero(custom_sql)) {
+				if (zstr(custom_sql)) {
 					/* use default sql */
 					sql_stream.write_function(&sql_stream, 
 											  "SELECT l.digits, c.carrier_name, l.${lcr_rate_field}, cg.prefix AS gw_prefix, cg.suffix AS gw_suffix, l.lead_strip, l.trail_strip, l.prefix, l.suffix "
@@ -1046,15 +1046,15 @@ static switch_status_t lcr_load_config()
 				}
 				profile->custom_sql = switch_core_strdup(globals.pool, (char *)custom_sql);
 				
-				if (!switch_strlen_zero(reorder_by_rate)) {
+				if (!zstr(reorder_by_rate)) {
 					profile->reorder_by_rate = switch_true(reorder_by_rate);
 				}
 				
-				if (!switch_strlen_zero(info_in_headers)) {
+				if (!zstr(info_in_headers)) {
 					profile->info_in_headers = switch_true(info_in_headers);
 				}
 				
-				if (!switch_strlen_zero(quote_in_list)) {
+				if (!zstr(quote_in_list)) {
 					profile->quote_in_list = switch_true(quote_in_list);
 				}
 				
@@ -1124,10 +1124,10 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 	intralata = switch_channel_get_variable(channel, "intralata");
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "intrastate channel var is [%s]\n", intrastate);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "intralata channel var is [%s]\n", intralata);
-	if (!switch_strlen_zero(intralata) && !strcasecmp((char *)intralata, "true")) {
+	if (!zstr(intralata) && !strcasecmp((char *)intralata, "true")) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Select routes based on intralata rates\n");
 		routes.intralata = SWITCH_FALSE;
-	} else if (!switch_strlen_zero(intrastate) && !strcasecmp((char *)intrastate, "true")) {
+	} else if (!zstr(intrastate) && !strcasecmp((char *)intrastate, "true")) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Select routes based on intrastate rates\n");
 		routes.intrastate = SWITCH_TRUE;
 	} else {
@@ -1214,8 +1214,8 @@ SWITCH_STANDARD_APP(lcr_app_function)
 
 	intra = switch_channel_get_variable(channel, "intrastate");
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "intrastate channel var is [%s]\n", 
-					switch_strlen_zero(intra) ? "undef" : intra);
-	if (switch_strlen_zero(intra) || strcasecmp((char *)intra, "true")) {
+					zstr(intra) ? "undef" : intra);
+	if (zstr(intra) || strcasecmp((char *)intra, "true")) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Select routes based on interstate rates\n");
 		routes.intrastate = SWITCH_FALSE;
 	} else {
@@ -1308,7 +1308,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 	switch_bool_t as_xml = SWITCH_FALSE;
 	int rowcount=0;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		goto usage;
 	}
 
@@ -1354,7 +1354,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 				}
 			}
 		} 
-		if (switch_strlen_zero(cb_struct.cid)) {
+		if (zstr(cb_struct.cid)) {
 			cb_struct.cid = "18005551212";
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING
 							  , "Using default CID [%s]\n", cb_struct.cid
@@ -1480,7 +1480,7 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 	void *val;
 	profile_t *profile;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		goto usage;
 	}
 
@@ -1497,7 +1497,7 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 				profile = (profile_t *) val;
 				
 				stream->write_function(stream, "Name:\t\t%s\n", profile->name);
-				if (switch_strlen_zero(profile->custom_sql)) {
+				if (zstr(profile->custom_sql)) {
 					stream->write_function(stream, " ID:\t\t%d\n", profile->id);
 					stream->write_function(stream, " order by:\t%s\n", profile->order_by);
 				} else {

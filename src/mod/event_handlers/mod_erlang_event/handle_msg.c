@@ -465,7 +465,7 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 	}
 	else {
 		switch_core_session_t *session;
-		if (!switch_strlen_zero_buf(uuid) && (session = switch_core_session_locate(uuid))) {
+		if (!zstr_buf(uuid) && (session = switch_core_session_locate(uuid))) {
 			switch_event_t *event;	  
 			if (switch_event_create(&event, SWITCH_EVENT_SEND_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 				
@@ -577,7 +577,7 @@ static switch_status_t handle_msg_handlecall(listener_t *listener, erlang_msg *m
 		ei_x_encode_atom(rbuf, "badarg");
 	} else {
 		switch_core_session_t *session;
-		if (!switch_strlen_zero_buf(uuid_str)) {
+		if (!zstr_buf(uuid_str)) {
 			if ((session = switch_core_session_locate(uuid_str))) {
 				/* create a new session list element and attach it to this listener */
 				if ((arity==2 && attach_call_to_pid(listener, &msg->from, session)) ||

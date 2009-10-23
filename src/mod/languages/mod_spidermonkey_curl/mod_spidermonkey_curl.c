@@ -144,7 +144,7 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 
 	if (argc > 5) {
 		cred = JS_GetStringBytes(JS_ValueToString(cx, argv[5]));
-		if (!switch_strlen_zero(cred)) {
+		if (!zstr(cred)) {
 			curl_easy_setopt(co->curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 			curl_easy_setopt(co->curl_handle, CURLOPT_USERPWD, cred);
 		}
@@ -174,7 +174,7 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 			data = "";
 		}
 		curl_easy_setopt(co->curl_handle, CURLOPT_POSTFIELDS, data);
-	} else if (!switch_strlen_zero(data)) {
+	} else if (!zstr(data)) {
 		durl = switch_mprintf("%s?%s", url, data);
 		url_p = durl;
 	}

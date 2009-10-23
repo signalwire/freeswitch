@@ -257,7 +257,7 @@ static abyss_bool is_authorized (const TSession *r, const char *command)
 		return FALSE;
 	}
 
-	if (switch_strlen_zero(globals.realm) && switch_strlen_zero(globals.user)) {
+	if (zstr(globals.realm) && zstr(globals.user)) {
 		return TRUE;
 	}
 
@@ -272,12 +272,12 @@ static abyss_bool is_authorized (const TSession *r, const char *command)
 		domain_name = dp;
 	}
 
-	if (!switch_strlen_zero(globals.realm) && !switch_strlen_zero(globals.user) && !strcmp(user, globals.user)) {
+	if (!zstr(globals.realm) && !zstr(globals.user) && !strcmp(user, globals.user)) {
 		switch_safe_free(user);
 		return TRUE;
 	}
 	
-	if (switch_strlen_zero(user) || switch_strlen_zero(domain_name)) {
+	if (zstr(user) || zstr(domain_name)) {
 		switch_safe_free(user);
 		return FALSE;
 	}
@@ -352,11 +352,11 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 					}
 				}
 
-				if (switch_strlen_zero(user) || switch_strlen_zero(domain_name)) {
+				if (zstr(user) || zstr(domain_name)) {
 					goto fail;
 				}
 
-				if (!switch_strlen_zero(globals.realm) && !switch_strlen_zero(globals.user) && !switch_strlen_zero(globals.pass)) {
+				if (!zstr(globals.realm) && !zstr(globals.user) && !zstr(globals.pass)) {
 					if (at) {
 						switch_snprintf(z, sizeof(z), "%s@%s:%s", globals.user, globals.realm, globals.pass);
 					} else {
@@ -374,7 +374,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				}
 
 
-				if (!switch_strlen_zero(mypass2) && !strcasecmp(mypass2, "user-choose")) {
+				if (!zstr(mypass2) && !strcasecmp(mypass2, "user-choose")) {
 					mypass2 = NULL;
 				}
 
@@ -872,7 +872,7 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * cons
 		relative_oid = oid;
 	}
 
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		switch_copy_string(buf, data, sizeof(buf));
 	}
 

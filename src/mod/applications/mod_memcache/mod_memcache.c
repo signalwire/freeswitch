@@ -160,7 +160,7 @@ SWITCH_STANDARD_API(memcache_function)
 	memcached_stat_st *stat = NULL;
 	memcached_server_st *server_list;
 	
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		goto usage;
 	}
 	

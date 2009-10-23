@@ -64,7 +64,7 @@ static int Perl_safe_eval(PerlInterpreter * my_perl, const char *string)
 
 	Perl_eval_pv(my_perl, string, FALSE);
 
-	if ((err = SvPV(get_sv("@", TRUE), n_a)) && !switch_strlen_zero(err)) {
+	if ((err = SvPV(get_sv("@", TRUE), n_a)) && !zstr(err)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[%s]\n%s\n", string, err);
 		return -1;
 	}
@@ -77,7 +77,7 @@ static int perl_parse_and_execute(PerlInterpreter * my_perl, char *input_code, c
 {
 	int error = 0;
 
-	if (switch_strlen_zero(input_code)) {
+	if (zstr(input_code)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No code to execute!\n");
 		return -1;
 	}
@@ -183,7 +183,7 @@ static perl_parse_and_execute(PerlInterpreter * my_perl, char *input_code, char 
 			}
 		}
 
-		if ((err = SvPV(get_sv("@", TRUE), n_a)) && !switch_strlen_zero(err)) {
+		if ((err = SvPV(get_sv("@", TRUE), n_a)) && !zstr(err)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
 		}
 
@@ -304,7 +304,7 @@ int perl_thread(const char *text)
 SWITCH_STANDARD_API(perlrun_api_function)
 {
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-ERR Missing args.\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -319,7 +319,7 @@ SWITCH_STANDARD_API(perl_api_function)
 
 	struct perl_o po = { 0 };
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-ERR Missing args.\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -338,7 +338,7 @@ static switch_xml_t perl_fetch(const char *section,
 	int argc = 0;
 	switch_xml_t xml = NULL;
 
-	if (!switch_strlen_zero(globals.xml_handler)) {
+	if (!zstr(globals.xml_handler)) {
 		PerlInterpreter *my_perl = clone_perl();
 		HV *hash;
 		char *str;
@@ -360,7 +360,7 @@ static switch_xml_t perl_fetch(const char *section,
 			abort();
 		}
 
-		if (switch_strlen_zero(section)) {
+		if (zstr(section)) {
 			section = "";
 		}
 
@@ -368,7 +368,7 @@ static switch_xml_t perl_fetch(const char *section,
 		sv_setpv(this, section);
 		hv_store(hash, "section", 7, this, 0);
 
-		if (switch_strlen_zero(tag_name)) {
+		if (zstr(tag_name)) {
 			tag_name = "";
 		}
 
@@ -376,7 +376,7 @@ static switch_xml_t perl_fetch(const char *section,
 		sv_setpv(this, tag_name);
 		hv_store(hash, "tag_name", 8, this, 0);
 
-		if (switch_strlen_zero(key_name)) {
+		if (zstr(key_name)) {
 			key_name = "";
 		}
 
@@ -384,7 +384,7 @@ static switch_xml_t perl_fetch(const char *section,
 		sv_setpv(this, key_name);
 		hv_store(hash, "key_name", 8, this, 0);
 
-		if (switch_strlen_zero(key_value)) {
+		if (zstr(key_value)) {
 			key_value = "";
 		}
 
@@ -414,8 +414,8 @@ static switch_xml_t perl_fetch(const char *section,
 		perl_run(my_perl);
 		str = SvPV(get_sv("XML_STRING", TRUE), n_a);
 
-		if (!switch_strlen_zero(str)) {
-			if (switch_strlen_zero(str)) {
+		if (!zstr(str)) {
+			if (zstr(str)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
 			} else if (!(xml = switch_xml_parse_str(str, strlen(str)))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
@@ -446,7 +446,7 @@ static switch_status_t do_config(void)
 			if (!strcmp(var, "xml-handler-script")) {
 				globals.xml_handler = switch_core_strdup(globals.pool, val);
 			} else if (!strcmp(var, "xml-handler-bindings")) {
-				if (!switch_strlen_zero(globals.xml_handler)) {
+				if (!zstr(globals.xml_handler)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding '%s' to '%s'\n", globals.xml_handler, var);
 					switch_xml_bind_search_function(perl_fetch, switch_xml_parse_section_string(val), NULL);
 				}

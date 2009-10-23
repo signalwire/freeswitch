@@ -344,7 +344,7 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char *status = argv[4];
 	//char *proto = argv[5];
 
-	if (switch_strlen_zero(type)) {
+	if (zstr(type)) {
 		type = NULL;
 	} else if (!strcasecmp(type, "unavailable")) {
 		status = NULL;
@@ -550,7 +550,7 @@ static void roster_event_handler(switch_event_t *event)
 		status = NULL;
 	}
 
-	if (switch_strlen_zero(event_type)) {
+	if (zstr(event_type)) {
 		event_type = "presence";
 	}
 
@@ -1993,7 +1993,7 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		profile->password = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "avatar")) {
 		profile->avatar = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
+	} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 		if (switch_odbc_available()) {
 			profile->odbc_dsn = switch_core_strdup(module_pool, val);
 			if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
@@ -2007,17 +2007,17 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		}
 	} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
 		switch_set_flag(profile, TFLAG_TIMER);
-	} else if (!strcasecmp(var, "dialplan") && !switch_strlen_zero(val)) {
+	} else if (!strcasecmp(var, "dialplan") && !zstr(val)) {
 		profile->dialplan = switch_core_strdup(module_pool, val);
 #ifdef AUTO_REPLY				// gotta fix looping on this
 	} else if (!strcasecmp(var, "auto-reply")) {
 		profile->auto_reply = switch_core_strdup(module_pool, val);
 #endif
-	} else if (!strcasecmp(var, "name") && !switch_strlen_zero(val)) {
+	} else if (!strcasecmp(var, "name") && !zstr(val)) {
 		profile->name = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "message") && !switch_strlen_zero(val)) {
+	} else if (!strcasecmp(var, "message") && !zstr(val)) {
 		profile->message = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "local-network-acl") && !switch_strlen_zero(val)) {
+	} else if (!strcasecmp(var, "local-network-acl") && !zstr(val)) {
 		profile->local_network = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "rtp-ip")) {
 		profile->ip = switch_core_strdup(module_pool, strcasecmp(switch_str_nil(val), "auto") ? switch_str_nil(val) : globals.guess_ip);
@@ -2030,14 +2030,14 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 			ip = globals.guess_ip;
 		} else {
 			globals.auto_nat = 0;
-			ip = switch_strlen_zero(val) ? globals.guess_ip : val;
+			ip = zstr(val) ? globals.guess_ip : val;
 		}
 		profile->extip = switch_core_strdup(module_pool, ip);
-	} else if (!strcasecmp(var, "server") && !switch_strlen_zero(val)) {
+	} else if (!strcasecmp(var, "server") && !zstr(val)) {
 		profile->server = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "rtp-timer-name") && !switch_strlen_zero(val)) {
+	} else if (!strcasecmp(var, "rtp-timer-name") && !zstr(val)) {
 		profile->timer_name = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "lanaddr") && !switch_strlen_zero(val)) {
+	} else if (!strcasecmp(var, "lanaddr") && !zstr(val)) {
 		profile->lanaddr = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "candidate-acl")) {
 		if (profile->acl_count < MAX_ACL) {
@@ -2055,11 +2055,11 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		} else if (val && !strcasecmp(val, "md5")) {
 			profile->user_flags |= LDL_FLAG_SASL_MD5;
 		}
-	} else if (!strcasecmp(var, "exten") && !switch_strlen_zero(val)) {
+	} else if (!strcasecmp(var, "exten") && !zstr(val)) {
 		profile->exten = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "context") && !switch_strlen_zero(val)) {
+	} else if (!strcasecmp(var, "context") && !zstr(val)) {
 		profile->context = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "auto-login") && !switch_strlen_zero(val)) {
+	} else if (!strcasecmp(var, "auto-login") && !zstr(val)) {
 		if (switch_true(val)) {
 			switch_set_flag(profile, TFLAG_AUTO);
 		}
@@ -2162,7 +2162,7 @@ SWITCH_STANDARD_API(dingaling)
 
 	if (session) return status;
 
-	if (switch_strlen_zero(cmd) || !(myarg = strdup(cmd))) {
+	if (zstr(cmd) || !(myarg = strdup(cmd))) {
 		stream->write_function(stream, "USAGE: %s\n", DINGALING_SYNTAX);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -2214,7 +2214,7 @@ SWITCH_STANDARD_API(dl_login)
 		goto done;
 	}
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", LOGIN_SYNTAX);
 		status = SWITCH_STATUS_SUCCESS;
 		goto done;
@@ -2224,7 +2224,7 @@ SWITCH_STANDARD_API(dl_login)
 
 	argc = switch_separate_string(myarg, ';', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (switch_strlen_zero(cmd) || argc != 1) {
+	if (zstr(cmd) || argc != 1) {
 		stream->write_function(stream, "USAGE: %s\n", LOGIN_SYNTAX);
 		status = SWITCH_STATUS_SUCCESS;
 		goto done;

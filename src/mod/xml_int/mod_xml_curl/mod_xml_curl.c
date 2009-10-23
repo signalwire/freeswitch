@@ -90,7 +90,7 @@ SWITCH_STANDARD_API(xml_curl_function)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		goto usage;
 	}
 
@@ -217,7 +217,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	config_data.max_bytes = XML_CURL_MAX_BYTES;
 
 	if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-		if (!switch_strlen_zero(binding->cred)) {
+		if (!zstr(binding->cred)) {
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, binding->auth_scheme);
 			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, binding->cred);
 		}
@@ -508,7 +508,7 @@ static switch_status_t do_config(void)
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n",
-						  switch_strlen_zero(bname) ? "N/A" : bname, binding->url, binding->bindings ? binding->bindings : "all");
+						  zstr(bname) ? "N/A" : bname, binding->url, binding->bindings ? binding->bindings : "all");
 		switch_xml_bind_search_function(xml_url_fetch, switch_xml_parse_section_string(binding->bindings), binding);
 		x++;
 		binding = NULL;

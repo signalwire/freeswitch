@@ -55,11 +55,11 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 		abort();
 	}
 
-	if (switch_strlen_zero(target)) {
+	if (zstr(target)) {
 		target = caller_profile->destination_number;
 	}
 
-	if (!switch_strlen_zero(target) && (lbuf = switch_core_session_strdup(session, target))
+	if (!zstr(target) && (lbuf = switch_core_session_strdup(session, target))
 		&& (argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 	} else {
 		return NULL;
@@ -91,7 +91,7 @@ SWITCH_STANDARD_APP(detect_speech_function)
 	int argc;
 	char *lbuf = NULL;
 
-	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (!strcasecmp(argv[0], "grammar") && argc >= 1) {
 			switch_ivr_detect_speech_load_grammar(session, argv[1], argv[2]);
@@ -154,7 +154,7 @@ SWITCH_STANDARD_APP(exe_function)
 	int argc;
 	char *lbuf = NULL;
 
-	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		switch_core_session_execute_exten(session, argv[0], argv[1], argv[2]);
 	} else {
@@ -176,7 +176,7 @@ SWITCH_STANDARD_APP(soft_hold_function)
 	int argc;
 	char *lbuf = NULL;
 
-	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
 		switch_ivr_soft_hold(session, argv[0], argv[1], argv[2]);
 	} else {
@@ -205,7 +205,7 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 	int argc;
 	char *lbuf = NULL;
 
-	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
 		int kval = atoi(argv[0]);
 		switch_bind_flag_t bind_flags = 0;
@@ -283,7 +283,7 @@ SWITCH_STANDARD_APP(intercept_function)
 	char *uuid;
 	switch_bool_t bleg = SWITCH_FALSE;
 
-	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
+	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
 			if (!strcasecmp(argv[0], "-bleg")) {
 				if (argv[1]) {
@@ -327,7 +327,7 @@ static int e_callback(void *pArg, int argc, char **argv, char **columnNames)
 #define eavesdrop_SYNTAX "[all | <uuid>]"
 SWITCH_STANDARD_APP(eavesdrop_function)
 {
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", eavesdrop_SYNTAX);
 	} else {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -401,7 +401,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 #define threeway_SYNTAX "<uuid>"
 SWITCH_STANDARD_APP(three_way_function)
 {
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", threeway_SYNTAX);
 	} else {
 		switch_ivr_eavesdrop_session(session, data, NULL, ED_MUX_READ | ED_MUX_WRITE);
@@ -458,7 +458,7 @@ SWITCH_STANDARD_APP(check_acl_function)
 	char *mydata;
 	switch_call_cause_t cause = SWITCH_CAUSE_CALL_REJECTED;
 
-	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
+	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) > 1) {
 			if (!switch_check_network_list_ip(argv[0], argv[1])) {
 				switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -486,7 +486,7 @@ SWITCH_STANDARD_APP(transfer_function)
 	int bleg = 0, both = 0;
 
 
-	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
+	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
 			bleg = !strcasecmp(argv[0], "-bleg");
 			both = !strcasecmp(argv[0], "-both");
@@ -521,7 +521,7 @@ SWITCH_STANDARD_APP(sched_transfer_function)
 	char *argv[4] = { 0 };
 	char *mydata;
 
-	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
+	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 			time_t when;
 
@@ -544,7 +544,7 @@ SWITCH_STANDARD_APP(sched_hangup_function)
 	char *argv[5] = { 0 };
 	char *mydata;
 
-	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
+	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
 			time_t when;
 			switch_call_cause_t cause = SWITCH_CAUSE_ALLOTTED_TIMEOUT;
@@ -577,7 +577,7 @@ SWITCH_STANDARD_APP(sched_broadcast_function)
 	char *argv[6] = { 0 };
 	char *mydata;
 
-	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
+	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 			time_t when;
 			switch_media_flag_t flags = SMF_NONE;
@@ -611,7 +611,7 @@ SWITCH_STANDARD_APP(delay_function)
 {
 	uint32_t len = 0;
 
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		len = 1000;
 	} else {
 		len = atoi(data);
@@ -630,7 +630,7 @@ SWITCH_STANDARD_APP(hangup_function)
 {
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		cause = switch_channel_str2cause(data);
 	}
 
@@ -640,7 +640,7 @@ SWITCH_STANDARD_APP(hangup_function)
 SWITCH_STANDARD_APP(set_name_function)
 {
 
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		switch_channel_set_name(switch_core_session_get_channel(session), (char *) data);
 	}
 }
@@ -660,7 +660,7 @@ SWITCH_STANDARD_APP(presence_function)
 	char *mydata = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if (switch_strlen_zero(data) || !(mydata = switch_core_session_strdup(session, data))) {
+	if (zstr(data) || !(mydata = switch_core_session_strdup(session, data))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID ARGS!\n");
 		return;
 	}
@@ -729,7 +729,7 @@ SWITCH_STANDARD_APP(set_function)
 {
 	char *var, *val = NULL;
 	
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -740,7 +740,7 @@ SWITCH_STANDARD_APP(set_function)
 
 		if (val) {
 			*val++ = '\0';
-			if (switch_strlen_zero(val)) {
+			if (zstr(val)) {
 				val = NULL;
 			}
 		}
@@ -762,7 +762,7 @@ SWITCH_STANDARD_APP(set_global_function)
 {
 	char *var, *val = NULL;
 
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
 		var = strdup(data);
@@ -771,7 +771,7 @@ SWITCH_STANDARD_APP(set_global_function)
 
 		if (val) {
 			*val++ = '\0';
-			if (switch_strlen_zero(val)) {
+			if (zstr(val)) {
 				val = NULL;
 			}
 		}
@@ -786,7 +786,7 @@ SWITCH_STANDARD_APP(set_profile_var_function)
 {
 	char *name, *val = NULL;
 
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
 		name = switch_core_session_strdup(session, data);
@@ -794,7 +794,7 @@ SWITCH_STANDARD_APP(set_profile_var_function)
 
 		if (val) {
 			*val++ = '\0';
-			if (switch_strlen_zero(val)) {
+			if (zstr(val)) {
 				val = NULL;
 			}
 		}
@@ -810,7 +810,7 @@ SWITCH_STANDARD_APP(export_function)
 	char *new_exports = NULL, *new_exports_d = NULL, *var, *val = NULL, *var_name = NULL;
 	int local = 1;
 
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
 		exports = switch_channel_get_variable(channel, SWITCH_EXPORT_VARS_VARIABLE);
@@ -827,7 +827,7 @@ SWITCH_STANDARD_APP(export_function)
 
 		if (val) {
 			*val++ = '\0';
-			if (switch_strlen_zero(val)) {
+			if (zstr(val)) {
 				val = NULL;
 			}
 		}
@@ -853,7 +853,7 @@ SWITCH_STANDARD_APP(export_function)
 
 SWITCH_STANDARD_APP(unset_function)
 {
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "UNSET [%s]\n", (char *) data);
@@ -889,7 +889,7 @@ SWITCH_STANDARD_APP(info_function)
 	char *buf;
 	int level = SWITCH_LOG_INFO;
 
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		level = switch_log_str2level(data);
 	}
 
@@ -916,7 +916,7 @@ SWITCH_STANDARD_APP(event_function)
 	char *lbuf;
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_APPLICATION) == SWITCH_STATUS_SUCCESS) {
-		if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
+		if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 			&& (argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 			int x = 0;
 
@@ -966,7 +966,7 @@ SWITCH_STANDARD_APP(privacy_function)
 {
 	switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(session));
 
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No privacy mode specified.\n");
 	} else {
 		switch_set_flag(caller_profile, SWITCH_CPF_SCREEN);
@@ -996,7 +996,7 @@ SWITCH_STANDARD_APP(strftime_function)
 	int argc;
 	char *lbuf;
 
-	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, '=', argv, (sizeof(argv) / sizeof(argv[0])))) > 1) {
 		switch_size_t retsize;
 		switch_time_exp_t tm;
@@ -1013,7 +1013,7 @@ SWITCH_STANDARD_API(strepoch_api_function)
 {
 	switch_time_t out;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		out = switch_micro_time_now();
 	} else {
 		out = switch_str_time(cmd);
@@ -1031,14 +1031,14 @@ SWITCH_STANDARD_API(strftime_api_function)
 	char date[80] = "";
 	switch_time_t thetime;
 	char *p;
-	if (!switch_strlen_zero(cmd) && (p = strchr(cmd, '|'))) {
+	if (!zstr(cmd) && (p = strchr(cmd, '|'))) {
 		thetime = switch_time_make(atoi(cmd), 0);
 		cmd = p + 1;
 	} else {
 		thetime = switch_micro_time_now();
 	}
 	switch_time_exp_lt(&tm, thetime);
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 	} else {
 		switch_strftime(date, &retsize, sizeof(date), cmd, &tm);
@@ -1058,7 +1058,7 @@ SWITCH_STANDARD_API(presence_api_function)
 	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
 	int need = 4;
 
-	if (!switch_strlen_zero(cmd) && (lbuf = strdup(cmd))
+	if (!zstr(cmd) && (lbuf = strdup(cmd))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) > 0) {
 
 		if (!strcasecmp(argv[0], "out")) {
@@ -1111,11 +1111,11 @@ SWITCH_STANDARD_API(chat_api_function)
 	char *lbuf = NULL, *argv[5];
 	int argc = 0;
 
-	if (!switch_strlen_zero(cmd) && (lbuf = strdup(cmd))
+	if (!zstr(cmd) && (lbuf = strdup(cmd))
 		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) >= 4) {
 
 		if (switch_core_chat_send(argv[0], "dp", argv[1], argv[2], "", argv[3],
-								  !switch_strlen_zero(argv[4]) ? argv[4] : NULL , "") == SWITCH_STATUS_SUCCESS) {
+								  !zstr(argv[4]) ? argv[4] : NULL , "") == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "Sent");
 		} else {
 			stream->write_function(stream, "Error! Message Not Sent");
@@ -1206,7 +1206,7 @@ SWITCH_STANDARD_APP(dtmf_session_generate_function)
 {
 	switch_bool_t do_read = SWITCH_TRUE;
 
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		if (!strcasecmp(data, "write")) {
 			do_read = SWITCH_FALSE;
 		}
@@ -1240,7 +1240,7 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 	time_t to = 0;
 	int hits = 1;
 
-	if (switch_strlen_zero(data) || !(mydata = switch_core_session_strdup(session, data))) {
+	if (zstr(data) || !(mydata = switch_core_session_strdup(session, data))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID ARGS!\n");
 		return;
 	}
@@ -1362,7 +1362,7 @@ SWITCH_STANDARD_APP(sleep_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No timeout specified.\n");
 	} else {
 		uint32_t ms = atoi(data);
@@ -1397,7 +1397,7 @@ SWITCH_STANDARD_APP(speak_function)
 	char *mydata = NULL;
 	switch_input_args_t args = { 0 };
 
-	if (switch_strlen_zero(data) || !(mydata = switch_core_session_strdup(session, data))) {
+	if (zstr(data) || !(mydata = switch_core_session_strdup(session, data))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Params!\n");
 		return;
 	}
@@ -1610,7 +1610,7 @@ SWITCH_STANDARD_APP(read_function)
 	const char *var_name = NULL;
 	const char *valid_terminators = NULL;
 
-	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
+	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No arguments specified.\n");
@@ -1651,7 +1651,7 @@ SWITCH_STANDARD_APP(read_function)
 		timeout = 1000;
 	}
 
-	if (switch_strlen_zero(valid_terminators)) {
+	if (zstr(valid_terminators)) {
 		valid_terminators = "#";
 	}
 
@@ -1674,7 +1674,7 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 	const char *valid_terminators = NULL;
 	const char *digits_regex = NULL;
 
-	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
+	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No arguments specified.\n");
@@ -1727,7 +1727,7 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 		timeout = 1000;
 	}
 
-	if (switch_strlen_zero(valid_terminators)) {
+	if (zstr(valid_terminators)) {
 		valid_terminators = "#";
 	}
 
@@ -1744,7 +1744,7 @@ SWITCH_STANDARD_APP(say_function)
 	switch_input_args_t args = { 0 };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
 		
 		args.input_callback = on_dtmf;
@@ -1766,7 +1766,7 @@ SWITCH_STANDARD_APP(phrase_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status;
 
-	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
+	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
 		const char *lang;
 		char *macro = mydata;
 		char *mdata = NULL;
@@ -1885,7 +1885,7 @@ SWITCH_STANDARD_APP(gentones_function)
 	int32_t loops = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if (switch_strlen_zero(data) || !(tone_script = switch_core_session_strdup(session, data))) {
+	if (zstr(data) || !(tone_script = switch_core_session_strdup(session, data))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Params!\n");
 		return;
 	}
@@ -1915,13 +1915,13 @@ SWITCH_STANDARD_APP(displace_session_function)
 	char *lbuf = NULL;
 	char *flags = NULL;
 
-	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		path = argv[0];
 		for (x = 1; x < argc; x++) {
 			if (strchr(argv[x], '+')) {
 				limit = atoi(argv[x]);
-			} else if (!switch_strlen_zero(argv[x])) {
+			} else if (!zstr(argv[x])) {
 				flags = argv[x];
 			}
 		}
@@ -1948,7 +1948,7 @@ SWITCH_STANDARD_APP(record_function)
 	const char *tmp;
 	int rate;
 
-	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
+	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No file specified.\n");
@@ -2013,7 +2013,7 @@ SWITCH_STANDARD_APP(record_session_function)
 	char *path_end;
 	uint32_t limit = 0;
 
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		return;
 	}
 
@@ -2095,7 +2095,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	char *camp_data = NULL;
 	switch_status_t status;
 	
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		return;
 	}
 
@@ -2214,7 +2214,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			switch_channel_clear_flag(caller_channel, CF_NOT_READY);
 		}
 		
-		if (do_xfer && !switch_strlen_zero(v_campon_fallback_exten)) {
+		if (do_xfer && !zstr(v_campon_fallback_exten)) {
 			switch_ivr_session_transfer(session, 
 										v_campon_fallback_exten, 
 										switch_channel_get_variable(caller_channel, "campon_fallback_dialplan"),
@@ -2468,7 +2468,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	char stupid[128] = "";
 	const char *skip = NULL, *var = NULL;
 
-	if (switch_strlen_zero(outbound_profile->destination_number)) {
+	if (zstr(outbound_profile->destination_number)) {
 		goto done;
 	}
 
@@ -2699,7 +2699,7 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 	int argc;
 	char *lbuf = NULL;
 	
-	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 3) {
 		thresh = atoi(argv[0]);
 		silence_hits = atoi(argv[1]);
@@ -2776,7 +2776,7 @@ static switch_status_t api_chat_send(const char *proto, const char *from, const 
 
 		if (proto) {
 			switch_core_chat_send(proto, "api", to, hint && strchr(hint, '/') ? hint : from, 
-								  !switch_strlen_zero(type) ? type : NULL, (char *) stream.data, NULL, NULL);
+								  !zstr(type) ? type : NULL, (char *) stream.data, NULL, NULL);
 		}
 
 		switch_safe_free(stream.data);

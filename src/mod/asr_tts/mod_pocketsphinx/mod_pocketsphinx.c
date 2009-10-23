@@ -282,11 +282,11 @@ static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data
 
 			switch_mutex_lock(ps->flag_mutex); 
 			if ((hyp = ps_get_hyp(ps->ps, &ps->score, &ps->uttid))) {
-				if (!switch_strlen_zero(hyp)) {
+				if (!zstr(hyp)) {
 					ps_end_utt(ps->ps);
 					switch_clear_flag(ps, PSFLAG_READY);
 					if ((hyp = ps_get_hyp(ps->ps, &ps->score, &ps->uttid))) {
-						if (switch_strlen_zero(hyp)) {
+						if (zstr(hyp)) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Lost the text, never mind....\n");   
 							ps_start_utt(ps->ps, NULL);
 							switch_set_flag(ps, PSFLAG_READY);

@@ -45,7 +45,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 	char buf[256] = "";
 	char *param = NULL;
 
-	if (!sh || !flags || switch_strlen_zero(module_name)) {
+	if (!sh || !flags || zstr(module_name)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -102,7 +102,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle
 
 	switch_assert(sh != NULL);
 
-	if (switch_strlen_zero(text)) {
+	if (zstr(text)) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -117,7 +117,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle
 	while (data && *data == ' ') {
 		data++;
 	}
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -126,7 +126,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle
 	if (*data == '{') {
 		param_string = data + 1;
 		data = switch_find_end_paren(data, '{', '}');
-		if (switch_strlen_zero(data)) {
+		if (zstr(data)) {
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		} else {
@@ -136,7 +136,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle
 	}
 
 	/* set TTS params */
-	if (!switch_strlen_zero(param_string)) {
+	if (!zstr(param_string)) {
 		char *param[256] = { 0 };
 		int i;
 		int argc = switch_separate_string(param_string, ',', param, (sizeof(param) / sizeof(param[0])));

@@ -133,7 +133,7 @@ static void spanfax_log_message(int level, const char *msg)
 		break;
 	}
 
-	if (!switch_strlen_zero(msg)) {
+	if (!zstr(msg)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, fs_log_level, "%s", msg);
 	}
 }
@@ -511,7 +511,7 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 		}
 	}
 
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		pvt->filename = switch_core_session_strdup(session, data);
 		if (pvt->app_mode == FUNCTION_TX) {
 			if ((switch_file_exists(pvt->filename, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS)) {
@@ -706,11 +706,11 @@ void load_configuration(switch_bool_t reload)
 				const char *name = switch_xml_attr(x_list, "name");
 				const char *value = switch_xml_attr(x_list, "value");
 
-				if (switch_strlen_zero(name)) {
+				if (zstr(name)) {
 					continue;
 				}
 
-				if (switch_strlen_zero(value)) {
+				if (zstr(value)) {
 					continue;
 				}
 

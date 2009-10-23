@@ -98,7 +98,7 @@ static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, const
 	
 	if ((callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD) && changed) {
 
-		if(switch_strlen_zero(newvalue)) {
+		if(zstr(newvalue)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No local database defined.\n");
 		} else {
 			odbc_dsn = strdup(newvalue);
@@ -325,7 +325,7 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 	curl_easy_cleanup(curl_handle);
 	
 	if (	http_data.stream.data &&
-			!switch_strlen_zero((char *)http_data.stream.data) &&
+			!zstr((char *)http_data.stream.data) &&
 			strcmp(" ", http_data.stream.data) ) {
 		
 		name = switch_core_strdup(pool, http_data.stream.data);
@@ -564,7 +564,7 @@ SWITCH_STANDARD_API(cidlookup_function)
 	switch_bool_t skipurl = SWITCH_FALSE;
 	switch_bool_t skipcitystate = SWITCH_FALSE;
 	
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
 	}
 

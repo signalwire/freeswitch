@@ -136,7 +136,7 @@ static int get_dev_by_name(char *name, int in)
 		int match = 0;
 		pdi = Pa_GetDeviceInfo(i);
 
-		if (switch_strlen_zero(name)) {
+		if (zstr(name)) {
 			match = 1;
 		} else if (pdi && pdi->name && strstr(pdi->name, name)) {
 			match = 1;

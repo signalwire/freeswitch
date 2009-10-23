@@ -542,7 +542,7 @@ static switch_status_t populate_database(switch_core_session_t *session, dir_pro
 					} else {
 						fullName = caller_name;
 					}
-					if (switch_strlen_zero(fullName)) {
+					if (zstr(fullName)) {
 						continue;
 					}
 					firstName = switch_core_session_strdup(session, fullName);
@@ -649,29 +649,29 @@ static switch_status_t listen_entry(switch_core_session_t *session, dir_profile_
 		switch_safe_free(stream.data);
 	}
 
-	if (switch_strlen_zero_buf(buf)) {
+	if (zstr_buf(buf)) {
 		switch_snprintf(macro, sizeof(macro), "phrase:%s:%d", DIR_RESULT_ITEM, cbt->want+1);
 		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), 1, profile->terminator_key);
 	}
 
-	if (!switch_strlen_zero_buf(recorded_name) && switch_strlen_zero_buf(buf)) {
+	if (!zstr_buf(recorded_name) && zstr_buf(buf)) {
         switch_ivr_read(session, 0, 1, recorded_name, NULL, buf, sizeof(buf), 1, profile->terminator_key);
 
 	}
-	if (switch_strlen_zero_buf(recorded_name) && switch_strlen_zero_buf(buf)) {
+	if (zstr_buf(recorded_name) && zstr_buf(buf)) {
 		switch_snprintf(macro, sizeof(macro), "phrase:%s:%s", DIR_RESULT_SAY_NAME, cbt->fullname);
 		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), 1, profile->terminator_key);
 	}
-	if (cbt->exten_visible && switch_strlen_zero_buf(buf)) {
+	if (cbt->exten_visible && zstr_buf(buf)) {
 		switch_snprintf(macro, sizeof(macro), "phrase:%s:%s", DIR_RESULT_AT, cbt->extension);
 		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), 1, profile->terminator_key);
 	}
-	if (switch_strlen_zero_buf(buf)) {
+	if (zstr_buf(buf)) {
 		switch_snprintf(macro, sizeof(macro), "phrase:%s:%c,%c,%c,%c", DIR_RESULT_MENU, *profile->select_name_key, *profile->next_key, *profile->prev_key, *profile->new_search_key);
 		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), profile->digit_timeout, profile->terminator_key);
 	}
 
-	if (!switch_strlen_zero_buf(buf)) {
+	if (!zstr_buf(buf)) {
 		if (buf[0] == *profile->select_name_key) {
 			switch_copy_string(cbt->transfer_to, cbt->extension, 255);
 		}
@@ -781,7 +781,7 @@ switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *p
 		listing_cbt.move = ENTRY_MOVE_NEXT;
 		directory_execute_sql_callback(profile->mutex, sql, listing_callback, &listing_cbt);
 		status = listen_entry(session, profile, &listing_cbt);
-		if (!switch_strlen_zero(listing_cbt.transfer_to)) {
+		if (!zstr(listing_cbt.transfer_to)) {
 			switch_copy_string(params->transfer_to, listing_cbt.transfer_to, 255);
 			break;
 		}
@@ -833,7 +833,7 @@ SWITCH_STANDARD_APP(directory_function)
 	int attempts = 3;
 	char macro[255];
 
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing profile name\n");
 		return;
 	}
@@ -871,7 +871,7 @@ SWITCH_STANDARD_APP(directory_function)
 		s_param.try_again = 0;
 		gather_name_digit(session, profile, &s_param);
 
-		if (switch_strlen_zero(s_param.digits)) {
+		if (zstr(s_param.digits)) {
 			s_param.try_again = 1;
 			continue;
 		}
@@ -886,7 +886,7 @@ SWITCH_STANDARD_APP(directory_function)
 		navigate_entrys(session, profile, &s_param);
 	}
 
-	if (!switch_strlen_zero(s_param.transfer_to)) {
+	if (!zstr(s_param.transfer_to)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Directory transfering call to : %s\n", s_param.transfer_to);
 		switch_ivr_session_transfer(session, s_param.transfer_to, "XML", domain_name);
 	}

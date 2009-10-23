@@ -49,7 +49,7 @@ SWITCH_STANDARD_API(host_lookup_function)
 {
 	char host[256] = "";
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "%s", "parameter missing\n");
 	} else {
 		if (switch_resolve_host(cmd, host, sizeof(host)) == SWITCH_STATUS_SUCCESS) {
@@ -146,7 +146,7 @@ SWITCH_STANDARD_API(time_test_function)
 	int diff;
 	int max = 10;
 	char *p;
-	if (switch_strlen_zero(cmd)){
+	if (zstr(cmd)){
 		stream->write_function(stream, "parameter missing\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -189,7 +189,7 @@ SWITCH_STANDARD_API(group_call_function)
 	char *fp = NULL;
 	const char *call_delim = ",";
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		goto end;
 	}
 
@@ -224,7 +224,7 @@ SWITCH_STANDARD_API(group_call_function)
 		domain = switch_core_get_variable("domain");
 	}
 	
-	if (!switch_strlen_zero(domain)) {
+	if (!zstr(domain)) {
 		switch_xml_t xml, x_domain, x_group;
 		switch_event_t *params;
 		switch_stream_handle_t dstream = { 0 };
@@ -377,7 +377,7 @@ SWITCH_STANDARD_API(in_group_function)
 	const char *rval = "false";
 	char *group;
 	
-	if (switch_strlen_zero(cmd) || !(mydata = strdup(cmd))) {
+	if (zstr(cmd) || !(mydata = strdup(cmd))) {
 		goto end;
 	}
 
@@ -427,7 +427,7 @@ SWITCH_STANDARD_API(user_data_function)
 	const char *container = "params", *elem = "param";
 	switch_event_t *params = NULL;
 
-	if (switch_strlen_zero(cmd) || !(mydata = strdup(cmd))) {
+	if (zstr(cmd) || !(mydata = strdup(cmd))) {
 		goto end;
 	}
 
@@ -580,7 +580,7 @@ SWITCH_STANDARD_API(md5_function)
 {
 	char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "%s", "!err!");
 	} else {
 		switch_md5_string(digest, (void *) cmd, strlen(cmd));
@@ -595,7 +595,7 @@ SWITCH_STANDARD_API(url_decode_function)
 	char *reply = "";
 	char *data = NULL;
 
-	if (!switch_strlen_zero(cmd)) {
+	if (!zstr(cmd)) {
 		data = strdup(cmd);
 		switch_url_decode(data);
 		reply = data;
@@ -627,7 +627,7 @@ SWITCH_STANDARD_API(stun_function)
 
 	ip = ip_buf;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "%s", "-STUN Failed! NO STUN SERVER\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -658,7 +658,7 @@ SWITCH_STANDARD_API(stun_function)
 
 	switch_core_new_memory_pool(&pool);
 
-	if (switch_strlen_zero(stun_ip)) {
+	if (zstr(stun_ip)) {
 		stream->write_function(stream, "%s", "-STUN Failed! NO STUN SERVER\n");
 	} else {
 		if ((switch_stun_lookup(&ip, &port, stun_ip, stun_port, &error, pool)) == SWITCH_STATUS_SUCCESS && ip && port) {
@@ -684,7 +684,7 @@ SWITCH_STANDARD_API(expand_function)
 	switch_core_session_t *xsession;
 	char uuid[80] = "";
 	
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-ERR, no input\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -699,7 +699,7 @@ SWITCH_STANDARD_API(expand_function)
 		}
 	}
 	
-	if (switch_strlen_zero(mycmd)) {
+	if (zstr(mycmd)) {
 		stream->write_function(stream, "-ERR, no input\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -739,7 +739,7 @@ SWITCH_STANDARD_API(eval_function)
 	char uuid[80] = "";
 	const char *p, *input = cmd;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "%s", "");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -751,7 +751,7 @@ SWITCH_STANDARD_API(eval_function)
 		}
 	}
 	
-	if (switch_strlen_zero(input)) {
+	if (zstr(input)) {
 		stream->write_function(stream, "%s", "");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -778,7 +778,7 @@ SWITCH_STANDARD_API(eval_function)
 
 SWITCH_STANDARD_API(module_exists_function)
 {
-	if (!switch_strlen_zero(cmd)) {
+	if (!zstr(cmd)) {
 		if (switch_loadable_module_exists(cmd) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "true");
 		} else {
@@ -793,7 +793,7 @@ SWITCH_STANDARD_API(domain_exists_function)
 {
 	switch_xml_t root = NULL, domain = NULL;
 	
-	if (!switch_strlen_zero(cmd)) {	
+	if (!zstr(cmd)) {	
 		if (switch_xml_locate_domain(cmd, NULL, &root, &domain) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "true");
 			switch_xml_free(root); 
@@ -811,7 +811,7 @@ SWITCH_STANDARD_API(url_encode_function)
 	char *data = NULL;
 	int len = 0 ;
 
-	if (!switch_strlen_zero(cmd)) {
+	if (!zstr(cmd)) {
 		len = (strlen(cmd) * 3) + 1;
 		switch_zmalloc(data, len);
 		switch_url_encode(cmd, data, len);
@@ -1249,7 +1249,7 @@ SWITCH_STANDARD_API(ctl_function)
 	char *mydata, *argv[5];
 	int32_t arg = 0;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", CTL_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1374,7 +1374,7 @@ SWITCH_STANDARD_API(load_function)
 {
 	const char *err;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", LOAD_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1395,7 +1395,7 @@ SWITCH_STANDARD_API(unload_function)
 	switch_bool_t force = SWITCH_FALSE;
 	const char *p = cmd;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", UNLOAD_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1419,7 +1419,7 @@ SWITCH_STANDARD_API(unload_function)
 	}
  end:
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", UNLOAD_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1439,7 +1439,7 @@ SWITCH_STANDARD_API(reload_function)
 	switch_bool_t force = SWITCH_FALSE;
 	const char *p = cmd;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", UNLOAD_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1462,7 +1462,7 @@ SWITCH_STANDARD_API(reload_function)
 	}
  end:
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", UNLOAD_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1504,7 +1504,7 @@ SWITCH_STANDARD_API(kill_function)
 	char *mycmd = NULL, *kcause = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
-	if (switch_strlen_zero(cmd) || !(mycmd = strdup(cmd))) {
+	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
 		stream->write_function(stream, "-USAGE: %s\n", KILL_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1513,11 +1513,11 @@ SWITCH_STANDARD_API(kill_function)
 		*kcause++ = '\0';
 	}
 
-	if (switch_strlen_zero(mycmd) || !(ksession = switch_core_session_locate(mycmd))) {
+	if (zstr(mycmd) || !(ksession = switch_core_session_locate(mycmd))) {
 		stream->write_function(stream, "-ERR No Such Channel!\n");
 	} else {
 		switch_channel_t *channel = switch_core_session_get_channel(ksession);
-		if (!switch_strlen_zero(kcause)){
+		if (!zstr(kcause)){
 			cause = switch_channel_str2cause(kcause);
 		}  
 		switch_channel_hangup(channel, cause);
@@ -1536,7 +1536,7 @@ SWITCH_STANDARD_API(preprocess_function)
 	char *mycmd = NULL, *argv[3] = { 0 };
 	int argc = 0;
 
-	if (switch_strlen_zero(cmd) || !(mycmd = strdup(cmd))) {
+	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
 		goto usage;
 	}
 
@@ -1590,7 +1590,7 @@ SWITCH_STANDARD_API(transfer_function)
 	int argc = 0;
 	char *tuuid, *dest, *dp, *context, *arg = NULL;
 
-	if (switch_strlen_zero(cmd) || !(mycmd = strdup(cmd))) {
+	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
 		stream->write_function(stream, "-USAGE: %s\n", TRANSFER_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1606,7 +1606,7 @@ SWITCH_STANDARD_API(transfer_function)
 	dp = argv[2];
 	context = argv[3];
 
-	if (switch_strlen_zero(tuuid) || !(tsession = switch_core_session_locate(tuuid))) {
+	if (zstr(tuuid) || !(tsession = switch_core_session_locate(tuuid))) {
 		stream->write_function(stream, "-ERR No Such Channel!\n");
 		goto done;
 	}
@@ -1734,13 +1734,13 @@ SWITCH_STANDARD_API(uuid_chat)
 	switch_core_session_t *tsession = NULL;
 	char *uuid = NULL, *text = NULL;
 
-	if (!switch_strlen_zero(cmd) && (uuid = strdup(cmd))) {
+	if (!zstr(cmd) && (uuid = strdup(cmd))) {
 		if ((text = strchr(uuid, ' '))) {
 			*text++ = '\0';
 		}
 	}
 
-	if (switch_strlen_zero(uuid) || switch_strlen_zero(text)) {
+	if (zstr(uuid) || zstr(text)) {
 		stream->write_function(stream, "-USAGE: %s\n", UUID_CHAT_SYNTAX);
 	} else {
 		if ((tsession = switch_core_session_locate(uuid))) {
@@ -1772,13 +1772,13 @@ SWITCH_STANDARD_API(uuid_deflect)
 	switch_core_session_t *tsession = NULL;
 	char *uuid = NULL, *text = NULL;
 
-	if (!switch_strlen_zero(cmd) && (uuid = strdup(cmd))) {
+	if (!zstr(cmd) && (uuid = strdup(cmd))) {
 		if ((text = strchr(uuid, ' '))) {
 			*text++ = '\0';
 		}
 	}
 
-	if (switch_strlen_zero(uuid) || switch_strlen_zero(text)) {
+	if (zstr(uuid) || zstr(text)) {
 		stream->write_function(stream, "-USAGE: %s\n", UUID_DEFLECT_SYNTAX);
 	} else {
 		if ((tsession = switch_core_session_locate(uuid))) {
@@ -1807,11 +1807,11 @@ SWITCH_STANDARD_API(sched_transfer_function)
 	char *mycmd = NULL, *argv[6] = { 0 };
 	int argc = 0;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 2 || argc > 5 || switch_strlen_zero(argv[0])) {
+	if (zstr(cmd) || argc < 2 || argc > 5 || zstr(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", SCHED_TRANSFER_SYNTAX);
 	} else {
 		char *uuid = argv[1];
@@ -1846,11 +1846,11 @@ SWITCH_STANDARD_API(sched_hangup_function)
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 1 || switch_strlen_zero(argv[0])) {
+	if (zstr(cmd) || argc < 1 || zstr(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", SCHED_HANGUP_SYNTAX);
 	} else {
 		char *uuid = argv[1];
@@ -1888,11 +1888,11 @@ SWITCH_STANDARD_API(uuid_media_function)
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 1 || switch_strlen_zero(argv[0])) {
+	if (zstr(cmd) || argc < 1 || zstr(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", MEDIA_SYNTAX);
 	} else {
 		if (!strcasecmp(argv[0], "off")) {
@@ -1919,11 +1919,11 @@ SWITCH_STANDARD_API(uuid_broadcast_function)
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 2) {
+	if (zstr(cmd) || argc < 2) {
 		stream->write_function(stream, "-USAGE: %s\n", BROADCAST_SYNTAX);
 	} else {
 		switch_media_flag_t flags = SMF_NONE;
@@ -1955,11 +1955,11 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 3 || switch_strlen_zero(argv[0])) {
+	if (zstr(cmd) || argc < 3 || zstr(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", SCHED_BROADCAST_SYNTAX);
 	} else {
 		switch_media_flag_t flags = SMF_NONE;
@@ -1998,11 +1998,11 @@ SWITCH_STANDARD_API(uuid_hold_function)
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 1 || switch_strlen_zero(argv[0])) {
+	if (zstr(cmd) || argc < 1 || zstr(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", HOLD_SYNTAX);
 	} else {
 		if (!strcasecmp(argv[0], "off")) {
@@ -2029,11 +2029,11 @@ SWITCH_STANDARD_API(uuid_display_function)
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 2 || switch_strlen_zero(argv[0]) || switch_strlen_zero(argv[1])) {
+	if (zstr(cmd) || argc < 2 || zstr(argv[0]) || zstr(argv[1])) {
 		stream->write_function(stream, "-USAGE: %s\n", DISPLAY_SYNTAX);
 	} else {
 		switch_core_session_message_t msg = { 0 };
@@ -2065,11 +2065,11 @@ SWITCH_STANDARD_API(uuid_bridge_function)
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 2) {
+	if (zstr(cmd) || argc < 2) {
 		stream->write_function(stream, "-USAGE: %s\n", UUID_SYNTAX);
 	} else {
 		switch_status_t status;
@@ -2105,7 +2105,7 @@ SWITCH_STANDARD_API(session_record_function)
 	int argc = 0;
 	uint32_t limit = 0;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		goto usage;
 	}
 
@@ -2122,7 +2122,7 @@ SWITCH_STANDARD_API(session_record_function)
 	path = argv[2];
 	limit = argv[3] ? atoi(argv[3]) : 0;
 
-	if (switch_strlen_zero(uuid) || switch_strlen_zero(action) || switch_strlen_zero(path)) {
+	if (zstr(uuid) || zstr(action) || zstr(path)) {
 		goto usage;
 	}
 
@@ -2171,7 +2171,7 @@ SWITCH_STANDARD_API(session_displace_function)
 	uint32_t limit = 0;
 	char *flags = NULL;
 
-	if (switch_strlen_zero(cmd) || !(mycmd = strdup(cmd))) {
+	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
 		goto usage;
 	}
 
@@ -2185,7 +2185,7 @@ SWITCH_STANDARD_API(session_displace_function)
 	limit = argv[3] ? atoi(argv[3]) : 0;
 	flags = argv[4];
 
-	if (switch_strlen_zero(uuid) || switch_strlen_zero(action) || switch_strlen_zero(path)) {
+	if (zstr(uuid) || zstr(action) || zstr(path)) {
 		goto usage;
 	}
 
@@ -2232,7 +2232,7 @@ SWITCH_STANDARD_API(break_function)
 	switch_channel_t *channel = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", BREAK_SYNTAX);
 		goto done;
 	}
@@ -2277,11 +2277,11 @@ SWITCH_STANDARD_API(pause_function)
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 2 || switch_strlen_zero(argv[0])) {
+	if (zstr(cmd) || argc < 2 || zstr(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", PAUSE_SYNTAX);
 	} else {
 		char *uuid = argv[0];
@@ -2320,7 +2320,7 @@ SWITCH_STANDARD_API(originate_function)
 	uint8_t machine = 1;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (session || switch_strlen_zero(cmd)) {
+	if (session || zstr(cmd)) {
 		stream->write_function(stream, "-USAGE %s\n", ORIGINATE_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -3000,7 +3000,7 @@ SWITCH_STANDARD_API(show_function)
 	/* switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "SQL: %s.\n", sql); */
 	
 	if (!strcasecmp(as, "delim") || !strcasecmp(as, "csv")) {
-		if (switch_strlen_zero(holder.delim)) {
+		if (zstr(holder.delim)) {
 			if (!(holder.delim = argv[3])) {
 				holder.delim = ",";
 			}
@@ -3075,7 +3075,7 @@ SWITCH_STANDARD_API(help_function)
 {
 	char showcmd[1024];
 	int all = 0;
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		sprintf(showcmd, "help");
 		all = 1;
 	} else {
@@ -3100,7 +3100,7 @@ SWITCH_STANDARD_API(uuid_session_heartbeat_function)
 	switch_core_session_t *l_session = NULL;
 	int x = 0, sched = 0;
 
-	if (switch_strlen_zero(cmd) || !(mycmd = strdup(cmd))) {
+	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
 		goto error;
 	}
 
@@ -3158,7 +3158,7 @@ SWITCH_STANDARD_API(uuid_flush_dtmf_function)
 {
 	switch_core_session_t *fsession;
 
-	if (!switch_strlen_zero(cmd) && (fsession = switch_core_session_locate(cmd))) {
+	if (!zstr(cmd) && (fsession = switch_core_session_locate(cmd))) {
 		switch_channel_flush_dtmf(switch_core_session_get_channel(fsession));
 		switch_core_session_rwunlock(fsession);
 		stream->write_function(stream, "+OK\n");
@@ -3176,9 +3176,9 @@ SWITCH_STANDARD_API(uuid_setvar_function)
 	char *mycmd = NULL, *argv[3] = { 0 };
 	int argc = 0;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-		if ((argc == 2 || argc == 3) && !switch_strlen_zero(argv[0])) {
+		if ((argc == 2 || argc == 3) && !zstr(argv[0])) {
 			char *uuid = argv[0];
 			char *var_name = argv[1];
 			char *var_value = NULL;
@@ -3191,7 +3191,7 @@ SWITCH_STANDARD_API(uuid_setvar_function)
 				switch_channel_t *channel;
 				channel = switch_core_session_get_channel(psession);
 
-				if (switch_strlen_zero(var_name)) {
+				if (zstr(var_name)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 					stream->write_function(stream, "-ERR No variable specified\n");
 				} else {
@@ -3224,7 +3224,7 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function)
 	int argc = 0;
 	char *var_name, *var_value = NULL;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		char *uuid = mycmd;
 		if (!(vars = strchr(uuid, ' '))) {
 			goto done;
@@ -3241,7 +3241,7 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function)
 				if (var_name && (var_value = strchr(var_name, '='))) {
 					*var_value++ = '\0';
 				}
-				if (switch_strlen_zero(var_name)) {
+				if (zstr(var_name)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 					stream->write_function(stream, "-ERR No variable specified\n");
 				} else {
@@ -3289,9 +3289,9 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-		if (argc >= 2 && !switch_strlen_zero(argv[0])) {
+		if (argc >= 2 && !zstr(argv[0])) {
 			char *uuid = argv[0];
 			char *var_name = argv[1];
 			const char *var_value = NULL;
@@ -3300,7 +3300,7 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 				switch_channel_t *channel;
 				channel = switch_core_session_get_channel(psession);
 
-				if (switch_strlen_zero(var_name)) {
+				if (zstr(var_name)) {
 					stream->write_function(stream, "-ERR No variable name specified!\n");
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 				} else {
@@ -3336,7 +3336,7 @@ SWITCH_STANDARD_API(uuid_send_dtmf_function)
 	char *uuid = NULL, *dtmf_data = NULL;
 	int argc = 0;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		goto usage;
 	}
 
@@ -3350,7 +3350,7 @@ SWITCH_STANDARD_API(uuid_send_dtmf_function)
 
 	uuid = argv[0];
 	dtmf_data = argv[1];
-	if (switch_strlen_zero(uuid) || switch_strlen_zero(dtmf_data)) {
+	if (zstr(uuid) || zstr(dtmf_data)) {
 		goto usage;
 	}
 
@@ -3381,9 +3381,9 @@ SWITCH_STANDARD_API(uuid_dump_function)
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-		if (argc >= 0 && !switch_strlen_zero(argv[0])) {
+		if (argc >= 0 && !zstr(argv[0])) {
 			char *uuid = argv[0];
 			char *format = argv[1];
 
@@ -3445,13 +3445,13 @@ SWITCH_STANDARD_API(global_setvar_function)
 	char *mycmd = NULL, *argv[2] = { 0 };
 	int argc = 0;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, '=', argv, (sizeof(argv) / sizeof(argv[0])));
-		if (argc > 0 && !switch_strlen_zero(argv[0])) {
+		if (argc > 0 && !zstr(argv[0])) {
 			char *var_name = argv[0];
 			char *var_value = argv[1];
 
-			if (switch_strlen_zero(var_value)) {
+			if (zstr(var_value)) {
 				var_value = NULL;
 			}
 			switch_core_set_variable(var_name, var_value);
@@ -3470,7 +3470,7 @@ SWITCH_STANDARD_API(global_setvar_function)
 #define GLOBAL_GETVAR_SYNTAX "<var>"
 SWITCH_STANDARD_API(global_getvar_function)
 {
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		switch_core_dump_variables(stream);
 	} else {
 		stream->write_function(stream, "%s", switch_str_nil(switch_core_get_variable(cmd)));
@@ -3481,7 +3481,7 @@ SWITCH_STANDARD_API(global_getvar_function)
 #define SYSTEM_SYNTAX "<command>"
 SWITCH_STANDARD_API(system_function)
 {
-    if (switch_strlen_zero(cmd)) {
+    if (zstr(cmd)) {
         stream->write_function(stream, "-USAGE: %s\n", SYSTEM_SYNTAX);
         return SWITCH_STATUS_SUCCESS;
     } 
@@ -3498,7 +3498,7 @@ SWITCH_STANDARD_API(system_function)
 #define SYSTEM_SYNTAX "<command>"
 SWITCH_STANDARD_API(bg_system_function)
 {
-    if (switch_strlen_zero(cmd)) {
+    if (zstr(cmd)) {
         stream->write_function(stream, "-USAGE: %s\n", SYSTEM_SYNTAX);
         return SWITCH_STATUS_SUCCESS;
     } 
@@ -3517,7 +3517,7 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 	const char *tz_name = NULL;
 	char date[80] = "";
 
-	if (!switch_strlen_zero(cmd)) {
+	if (!zstr(cmd)) {
 		format = strchr(cmd, ' ');
 		tz_name = cmd;
 		if (format) {
@@ -3542,7 +3542,7 @@ SWITCH_STANDARD_API(hupall_api_function)
 	char *val = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_MANAGER_REQUEST;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 		switch_assert(argv[0]);
 		if ((cause = switch_channel_str2cause(argv[0])) == SWITCH_CAUSE_NONE) {
@@ -3556,13 +3556,13 @@ SWITCH_STANDARD_API(hupall_api_function)
 		var = NULL;
 	}
 
-	if (switch_strlen_zero(var)) {
+	if (zstr(var)) {
 		switch_core_session_hupall(cause);
 	} else {
 		switch_core_session_hupall_matching_var(var, val, cause);
 	}
 	
-	if (switch_strlen_zero(var)) {
+	if (zstr(var)) {
 		stream->write_function(stream, "+OK hangup all channels with cause %s\n", switch_channel_cause2str(cause));
 	} else {
 		stream->write_function(stream, "+OK hangup all channels matching [%s]=[%s] with cause: %s\n", var, val, switch_channel_cause2str(cause));

@@ -188,7 +188,7 @@ SWITCH_STANDARD_APP(userspy_function)
 	char* argv[2] = {0};
 	char* params = NULL;
 
-	if (!switch_strlen_zero(data) && (params = switch_core_session_strdup(session,data))) {
+	if (!zstr(data) && (params = switch_core_session_strdup(session,data))) {
 		if ((argc = switch_separate_string(params, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
 
 			switch_channel_t *channel = switch_core_session_get_channel(session);

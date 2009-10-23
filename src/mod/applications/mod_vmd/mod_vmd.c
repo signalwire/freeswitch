@@ -624,7 +624,7 @@ SWITCH_STANDARD_API(vmd_api_main)
     int i;
 
     /* No command? Display usage */
-    if (switch_strlen_zero(cmd)) {
+    if (zstr(cmd)) {
         stream->write_function(stream, "-USAGE: %s\n", VMD_SYNTAX);
         return SWITCH_STATUS_SUCCESS;
     }

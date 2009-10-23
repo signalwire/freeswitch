@@ -866,7 +866,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_core_session_add_stream(*new_session, NULL);
 
 
-		if (!switch_strlen_zero(outbound_profile->destination_number)) {
+		if (!zstr(outbound_profile->destination_number)) {
 			int i;
 			char *slash;
 
@@ -1767,7 +1767,7 @@ int remote_party_is_ringing(private_t * tech_pvt)
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 
-	if (!switch_strlen_zero(tech_pvt->session_uuid_str)) {
+	if (!zstr(tech_pvt->session_uuid_str)) {
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	} else {
 		ERRORA("No session???\n", SKYPIAX_P_LOG);
@@ -1797,7 +1797,7 @@ int remote_party_is_early_media(private_t * tech_pvt)
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 
-	if (!switch_strlen_zero(tech_pvt->session_uuid_str)) {
+	if (!zstr(tech_pvt->session_uuid_str)) {
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	} else {
 		ERRORA("No session???\n\n\n", SKYPIAX_P_LOG);
@@ -1831,7 +1831,7 @@ int outbound_channel_answered(private_t * tech_pvt)
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 
-	if (!switch_strlen_zero(tech_pvt->session_uuid_str)) {
+	if (!zstr(tech_pvt->session_uuid_str)) {
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	} else {
 		ERRORA("No session???\n", SKYPIAX_P_LOG);
@@ -1917,7 +1917,7 @@ SWITCH_STANDARD_API(sk_function)
 	else
 		stream->write_function(stream, "sk console is NOT yet assigned\n");
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
@@ -2031,7 +2031,7 @@ SWITCH_STANDARD_API(skypiax_function)
 	int argc = 0;
 	private_t *tech_pvt = NULL;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
@@ -2280,7 +2280,7 @@ int incoming_chatmessage(private_t * tech_pvt, int which)
 
 	DEBUGA_SKYPE("received CHATMESSAGE on interface %s\n", SKYPIAX_P_LOG, tech_pvt->name);
 
-	if (!switch_strlen_zero(tech_pvt->session_uuid_str)) {
+	if (!zstr(tech_pvt->session_uuid_str)) {
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	}
 	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
@@ -2348,7 +2348,7 @@ SWITCH_STANDARD_API(skypiax_chat_function)
 	int found = 0;
 	//char skype_msg[1024];
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 

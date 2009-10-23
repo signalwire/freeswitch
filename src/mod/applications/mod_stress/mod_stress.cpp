@@ -206,7 +206,7 @@ SWITCH_STANDARD_APP(stress_start_function)
 	int x = 0;
 
 	if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_stress_"))) {
-		if (!switch_strlen_zero(data) && !strcasecmp(data, "stop")) {
+		if (!zstr(data) && !strcasecmp(data, "stop")) {
 			switch_channel_set_private(channel, "_stress_", NULL);
 			switch_core_media_bug_remove(session, &bug);
 		} else {

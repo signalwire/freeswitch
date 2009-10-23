@@ -524,7 +524,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 	
 	if (stmt) {
 		err_str = switch_odbc_handle_get_error(handle, stmt);
-		if (!switch_strlen_zero(err_str)) {
+		if (!zstr(err_str)) {
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
 		}
 		switch_safe_free(err_str);

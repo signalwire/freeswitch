@@ -102,7 +102,7 @@ static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 		if (switch_odbc_handle_exec(globals.master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
 			char *err_str;
 			err_str = switch_odbc_handle_get_error(globals.master_odbc, stmt);
-			if (!switch_strlen_zero(err_str)) {
+			if (!zstr(err_str)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
 			}
 			switch_safe_free(err_str);
@@ -199,7 +199,7 @@ static switch_status_t do_config()
 	}
 	
 
-	if (switch_strlen_zero(globals.odbc_dsn) || switch_strlen_zero(odbc_user) || switch_strlen_zero(odbc_pass)) {
+	if (zstr(globals.odbc_dsn) || zstr(odbc_user) || zstr(odbc_pass)) {
 		globals.dbname = "call_limit";
 	}
 
@@ -447,7 +447,7 @@ SWITCH_STANDARD_API(db_api_function)
 
 	switch_mutex_lock(globals.mutex);
 
-	if (!switch_strlen_zero(cmd)) {
+	if (!zstr(cmd)) {
 		mydata = strdup(cmd);
 		switch_assert(mydata);
 		argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -518,7 +518,7 @@ SWITCH_STANDARD_APP(db_function)
 	char *mydata = NULL;
 	char *sql = NULL;
 
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(session, data);
 		argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
@@ -567,7 +567,7 @@ SWITCH_STANDARD_APP(hash_function)
 	
 	switch_mutex_lock(globals.db_hash_mutex);
 	
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		mydata = strdup(data);
 		switch_assert(mydata);
 		argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -621,7 +621,7 @@ SWITCH_STANDARD_API(hash_api_function)
 
 	switch_mutex_lock(globals.db_hash_mutex);
 
-	if (!switch_strlen_zero(cmd)) {
+	if (!zstr(cmd)) {
 		mydata = strdup(cmd);
 		switch_assert(mydata);
 		argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -683,7 +683,7 @@ SWITCH_STANDARD_API(group_api_function)
 
 	switch_mutex_lock(globals.mutex);
 
-	if (!switch_strlen_zero(cmd)) {
+	if (!zstr(cmd)) {
 		mydata = strdup(cmd);
 		argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
@@ -766,7 +766,7 @@ SWITCH_STANDARD_APP(group_function)
 	char *mydata = NULL;
 	char *sql;
 
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(session, data);
 		argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
@@ -865,7 +865,7 @@ SWITCH_STANDARD_APP(limit_function)
 	int max = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(session, data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
@@ -931,7 +931,7 @@ SWITCH_STANDARD_APP(limit_execute_function)
 	int max = -1;
 
 	/* Parse application data  */
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(session, data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
@@ -958,7 +958,7 @@ SWITCH_STANDARD_APP(limit_execute_function)
 	app = argv[3];
 	app_arg = argv[4];
 
-	if (switch_strlen_zero(app)) {
+	if (zstr(app)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing application\n");
 		return;
 	}
@@ -982,7 +982,7 @@ SWITCH_STANDARD_API(limit_usage_function)
 	callback_t cbt = { 0 };
 
 
-	if (!switch_strlen_zero(cmd)) {
+	if (!zstr(cmd)) {
 		mydata = strdup(cmd);
 		switch_assert(mydata);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -1158,7 +1158,7 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	/* Parse application data  */
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(session, data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
@@ -1223,7 +1223,7 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 	int interval = 0;
 
 	/* Parse application data  */
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(session, data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
@@ -1258,7 +1258,7 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 	app = argv[3];
 	app_arg = argv[4];
 
-	if (switch_strlen_zero(app)) {
+	if (zstr(app)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing application\n");
 		return;
 	}
@@ -1282,7 +1282,7 @@ SWITCH_STANDARD_API(limit_hash_usage_function)
 
 	switch_mutex_lock(globals.limit_hash_mutex);
 	
-	if (!switch_strlen_zero(cmd)) {
+	if (!zstr(cmd)) {
 		mydata = strdup(cmd);
 		switch_assert(mydata);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -1495,7 +1495,7 @@ SWITCH_STANDARD_APP(limit_memcache_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	/* Parse application data  */
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(session, data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
@@ -1556,7 +1556,7 @@ SWITCH_STANDARD_APP(limit_memcache_execute_function)
 	char *szinterval = NULL;
 
 	/* Parse application data  */
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(session, data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
@@ -1588,7 +1588,7 @@ SWITCH_STANDARD_APP(limit_memcache_execute_function)
 	app = argv[3];
 	app_arg = argv[4];
 
-	if (switch_strlen_zero(app)) {
+	if (zstr(app)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing application\n");
 		return;
 	}
@@ -1619,7 +1619,7 @@ SWITCH_STANDARD_API(limit_memcache_usage_function)
 		goto end;
 	}
 
-	if (!switch_strlen_zero(cmd)) {
+	if (!zstr(cmd)) {
 		mydata = strdup(cmd);
 		switch_assert(mydata);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));

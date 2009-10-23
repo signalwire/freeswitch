@@ -55,7 +55,7 @@ SWITCH_DECLARE_CONSTRUCTOR EventConsumer::EventConsumer(const char *event_name, 
 	switch_name_event(event_name, &e_event_id);
 	switch_core_new_memory_pool(&pool);
 	
-	if (!switch_strlen_zero(subclass_name)) {
+	if (!zstr(subclass_name)) {
 		e_subclass_name = switch_core_strdup(pool, subclass_name);
 	} else {
 		e_subclass_name = NULL;
@@ -124,7 +124,7 @@ SWITCH_DECLARE_CONSTRUCTOR IVRMenu::IVRMenu(IVRMenu *main,
 	menu = NULL;
 	switch_core_new_memory_pool(&pool);
 	switch_assert(pool);
-	if (switch_strlen_zero(name)) {
+	if (zstr(name)) {
 		name = "no name";
 	}
 
@@ -227,7 +227,7 @@ SWITCH_DECLARE_CONSTRUCTOR Event::Event(const char *type, const char *subclass_n
 		event_id = SWITCH_EVENT_MESSAGE;
 	}
 
-	if (!switch_strlen_zero(subclass_name) && event_id != SWITCH_EVENT_CUSTOM) {
+	if (!zstr(subclass_name) && event_id != SWITCH_EVENT_CUSTOM) {
 		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_WARNING, "Changing event type to custom because you specified a subclass name!\n");
 		event_id = SWITCH_EVENT_CUSTOM;
 	}
@@ -1204,7 +1204,7 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 	this_check(SWITCH_STATUS_FALSE);
 	sanity_check(SWITCH_STATUS_FALSE);
 	
-    if (switch_strlen_zero(result)) {
+    if (zstr(result)) {
 		return SWITCH_STATUS_SUCCESS;	
     }
 

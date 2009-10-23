@@ -765,7 +765,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 
 	*err = NULL;
 
-	if (switch_strlen_zero(host) || !port) {
+	if (zstr(host) || !port) {
 		*err = "Address Error";
 		goto done;
 	}
@@ -869,7 +869,7 @@ SWITCH_DECLARE(void) switch_rtp_reset_media_timer(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(char *) switch_rtp_get_remote_host(switch_rtp_t *rtp_session)
 {
-	return switch_strlen_zero(rtp_session->remote_host_str) ? "0.0.0.0" : rtp_session->remote_host_str;
+	return zstr(rtp_session->remote_host_str) ? "0.0.0.0" : rtp_session->remote_host_str;
 }
 
 SWITCH_DECLARE(switch_port_t) switch_rtp_get_remote_port(switch_rtp_t *rtp_session)
@@ -1138,15 +1138,15 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	switch_rtp_set_interval(rtp_session, ms_per_packet, samples_per_interval);
 	rtp_session->conf_samples_per_interval = samples_per_interval;
 
-	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) && switch_strlen_zero(timer_name)) {
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) && zstr(timer_name)) {
 		timer_name = "soft";
 	}
 
-	if (!switch_strlen_zero(timer_name) && !strcasecmp(timer_name, "none")) {
+	if (!zstr(timer_name) && !strcasecmp(timer_name, "none")) {
 		timer_name = NULL;
 	}
 
-	if (!switch_strlen_zero(timer_name)) {
+	if (!zstr(timer_name)) {
 		rtp_session->timer_name = switch_core_strdup(pool, timer_name);
 		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
@@ -1229,7 +1229,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 {
 	switch_rtp_t *rtp_session = NULL;
 
-	if (switch_strlen_zero(rx_host)) {
+	if (zstr(rx_host)) {
 		*err = "Missing local host";
 		goto end;
 	}
@@ -1239,7 +1239,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		goto end;
 	}
 
-	if (switch_strlen_zero(tx_host)) {
+	if (zstr(tx_host)) {
 		*err = "Missing remote host";
 		goto end;
 	}
@@ -1901,7 +1901,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					const char *err;
 					uint32_t old = rtp_session->remote_port;
 					
-					if (!switch_strlen_zero(tx_host) && switch_sockaddr_get_port(rtp_session->from_addr) > 0) {
+					if (!zstr(tx_host) && switch_sockaddr_get_port(rtp_session->from_addr) > 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 										  "Auto Changing port from %s:%u to %s:%u\n", old_host, old, tx_host,
 										  switch_sockaddr_get_port(rtp_session->from_addr));

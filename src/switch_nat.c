@@ -69,7 +69,7 @@ static switch_status_t get_upnp_pubaddr(char *pub_addr)
 	if (UPNP_GetExternalIPAddress(nat_globals.urls.controlURL,
 								   nat_globals.data.servicetype,
 								   pub_addr) == UPNPCOMMAND_SUCCESS) {
-		if (!strcmp(pub_addr, "0.0.0.0") || switch_strlen_zero_buf(pub_addr)) {
+		if (!strcmp(pub_addr, "0.0.0.0") || zstr_buf(pub_addr)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							  "uPNP Device (url: %s) returned an invalid external address of '%s'.  Disabling uPNP\n", nat_globals.urls.controlURL, pub_addr);
 			return SWITCH_STATUS_GENERR;

@@ -103,12 +103,12 @@ SWITCH_DECLARE(switch_log_node_t*) switch_log_node_dup(const switch_log_node_t *
 	
 	*newnode = *node;
 	
-	if (!switch_strlen_zero(node->data)) {
+	if (!zstr(node->data)) {
 		newnode->data = strdup(node->data);	
 		switch_assert(node->data);
 	}
 	
-	if (!switch_strlen_zero(node->userdata)) {
+	if (!zstr(node->userdata)) {
 		newnode->userdata = strdup(node->userdata);
 		switch_assert(node->userdata);
 	}
@@ -398,7 +398,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Log-Function", funcp);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Level", "%d", (int) level);
-			if (!switch_strlen_zero(userdata)) {
+			if (!zstr(userdata)) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "User-Data", userdata);
 			}
 			switch_event_fire(&event);
@@ -458,7 +458,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 		node->content = content;
 		node->timestamp = now;
 		node->channel = channel;
-		node->userdata = !switch_strlen_zero(userdata) ? strdup(userdata) : NULL;
+		node->userdata = !zstr(userdata) ? strdup(userdata) : NULL;
 
 		if (switch_queue_trypush(LOG_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
 			switch_log_node_free(&node);

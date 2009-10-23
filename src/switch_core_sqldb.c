@@ -316,7 +316,7 @@ static void core_event_handler(switch_event_t *event)
 			char *state = switch_event_get_header_nil(event, "channel-state-number");
 			switch_channel_state_t state_i = CS_DESTROY;
 
-			if (!switch_strlen_zero(state)) {
+			if (!zstr(state)) {
 				state_i = atoi(state);
 			}
 
@@ -375,7 +375,7 @@ static void core_event_handler(switch_event_t *event)
 			const char *syntax = switch_event_get_header_nil(event, "syntax");
 			const char *key = switch_event_get_header_nil(event, "key");
 			const char *filename = switch_event_get_header_nil(event, "filename");
-			if (!switch_strlen_zero(type) && !switch_strlen_zero(name)) {
+			if (!zstr(type) && !zstr(name)) {
 				sql =
 					switch_mprintf("insert into interfaces (type,name,description,syntax,key,filename) values('%q','%q','%q','%q','%q','%q')",
 								   type, name, switch_str_nil(description), switch_str_nil(syntax), switch_str_nil(key), switch_str_nil(filename)
@@ -387,7 +387,7 @@ static void core_event_handler(switch_event_t *event)
 		{
 			const char *type = switch_event_get_header_nil(event, "type");
 			const char *name = switch_event_get_header_nil(event, "name");
-			if (!switch_strlen_zero(type) && !switch_strlen_zero(name)) {
+			if (!zstr(type) && !zstr(name)) {
 				sql = switch_mprintf("delete from interfaces where type='%q' and name='%q'", type, name);
 			}
 			break;
@@ -396,7 +396,7 @@ static void core_event_handler(switch_event_t *event)
 		{
 			const char *type = switch_event_get_header_nil(event, "secure_type");
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Secure Type: %s\n", type);
-			if (switch_strlen_zero(type)) {
+			if (zstr(type)) {
 				break;
 			}
 			sql = switch_mprintf("update channels set secure='%s' where uuid='%s'",

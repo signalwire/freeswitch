@@ -327,7 +327,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 						if (!my_tts_voice) {
 							my_tts_voice = tts_voice;
 						}
-						if (switch_strlen_zero(tts_engine) || switch_strlen_zero(tts_voice)) {
+						if (zstr(tts_engine) || zstr(tts_voice)) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "TTS is not configured\n");
 						} else {
 							status = switch_ivr_speak_text(session, my_tts_engine, my_tts_voice, odata, args);
@@ -924,7 +924,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	prefix = switch_channel_get_variable(channel, "sound_prefix");
 	timer_name = switch_channel_get_variable(channel, "timer_name");
 
-	if (switch_strlen_zero(file) || !switch_channel_media_ready(channel)) {
+	if (zstr(file) || !switch_channel_media_ready(channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -982,21 +982,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				dup = switch_core_session_strdup(session, alt);
 				engine = dup;
 
-				if (!switch_strlen_zero(engine)) {
+				if (!zstr(engine)) {
 					if ((voice = strchr(engine, ':'))) {
 						*voice++ = '\0';
-						if (!switch_strlen_zero(voice) && (text = strchr(voice, ':'))) {
+						if (!zstr(voice) && (text = strchr(voice, ':'))) {
 							*text++ = '\0';
 						}
 					}
 				}
 
-				if (!switch_strlen_zero(engine) && !switch_strlen_zero(voice) && !switch_strlen_zero(text)) {
+				if (!zstr(engine) && !zstr(voice) && !zstr(text)) {
 					if ((status = switch_ivr_speak_text(session, engine, voice, text, args)) != SWITCH_STATUS_SUCCESS) {
 						return status;
 					}
 					continue;
-				} else if (!switch_strlen_zero(engine) && !(voice && text)) {
+				} else if (!zstr(engine) && !(voice && text)) {
 					text = engine;
 					engine = (char *) switch_channel_get_variable(channel, "tts_engine");
 					voice = (char *) switch_channel_get_variable(channel, "tts_voice");
@@ -1639,7 +1639,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	args.buf = digit_buffer;
 	args.buflen = (uint32_t) digit_buffer_length;
 
-	if (!switch_strlen_zero(prompt_audio_file) && strcasecmp(prompt_audio_file, "silence")) {
+	if (!zstr(prompt_audio_file) && strcasecmp(prompt_audio_file, "silence")) {
 		if ((status = switch_ivr_play_file(session, NULL, prompt_audio_file, &args)) == SWITCH_STATUS_BREAK) {
 			status = SWITCH_STATUS_SUCCESS;
 		}
@@ -1686,7 +1686,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 		*digit_buffer = '\0';
 	}
 
-	if (var_name && !switch_strlen_zero(digit_buffer)) {
+	if (var_name && !zstr(digit_buffer)) {
 		switch_channel_set_variable(channel, var_name, digit_buffer);
 	}
 
@@ -1721,8 +1721,8 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		}
 
 		if (status == SWITCH_STATUS_SUCCESS) {
-			if (!switch_strlen_zero(digit_buffer)) {
-				if (switch_strlen_zero(digits_regex)) {
+			if (!zstr(digit_buffer)) {
+				if (zstr(digits_regex)) {
 					return SWITCH_STATUS_SUCCESS;
 				}
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Test Regex [%s][%s]\n", digit_buffer, digits_regex);
@@ -2217,7 +2217,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 				moh = switch_channel_get_variable(other_channel, "hold_music");
 			}
 
-			if (!switch_strlen_zero(moh) && strcasecmp(moh, "silence") && !switch_channel_test_flag(other_channel, CF_BROADCAST)) {
+			if (!zstr(moh) && strcasecmp(moh, "silence") && !switch_channel_test_flag(other_channel, CF_BROADCAST)) {
 				switch_ivr_broadcast(other_uuid, moh, SMF_ECHO_ALEG | SMF_LOOP);
 				moh_br++;
 			}
@@ -2228,7 +2228,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 				moh = switch_channel_get_variable(channel, "hold_music");
 			}
 
-			if (!switch_strlen_zero(moh) && strcasecmp(moh, "silence")) {
+			if (!zstr(moh) && strcasecmp(moh, "silence")) {
 				switch_ivr_play_file(session, NULL, moh, &args);
 			} else {
 				switch_ivr_collect_digits_callback(session, &args, 0, 0);

@@ -208,7 +208,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 					
 					/* Perform validation */
 					if (value) {
-						if (!switch_strlen_zero(string_options->validation_regex)) {
+						if (!zstr(string_options->validation_regex)) {
 							if (switch_regex_match(value, string_options->validation_regex) == SWITCH_STATUS_SUCCESS) {
 								newstring = value; /* Regex match, accept value*/
 							} else {

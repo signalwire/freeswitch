@@ -101,7 +101,7 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 	}
 
 	/* don't log blank lines */
-	if (!switch_strlen_zero(node->data) && (strspn(node->data, " \t\r\n") < strlen(node->data))) {
+	if (!zstr(node->data) && (strspn(node->data, " \t\r\n") < strlen(node->data))) {
 		syslog(syslog_level, "%s", node->data);
 	}
 
@@ -130,7 +130,7 @@ static switch_status_t load_config(void)
 					set_global_format(val);
 				} else if (!strcmp(var, "facility")) {
 					set_global_facility(val);
-                } else if (!strcasecmp(var, "loglevel") && !switch_strlen_zero(val)) {
+                } else if (!strcasecmp(var, "loglevel") && !zstr(val)) {
                     log_level = switch_log_str2level(val);
                     if (log_level == SWITCH_LOG_INVALID) {
                         log_level = SWITCH_LOG_WARNING;
@@ -142,13 +142,13 @@ static switch_status_t load_config(void)
 		switch_xml_free(xml);
 	}
 
-	if (switch_strlen_zero(globals.ident)) {
+	if (zstr(globals.ident)) {
 		set_global_ident(DEFAULT_IDENT);
 	}
-	if (switch_strlen_zero(globals.format)) {
+	if (zstr(globals.format)) {
 		set_global_format(DEFAULT_FORMAT);
 	}
-    if (switch_strlen_zero(globals.facility)) {
+    if (zstr(globals.facility)) {
 		set_global_facility(DEFAULT_FACILITY);
     }
 	return 0;

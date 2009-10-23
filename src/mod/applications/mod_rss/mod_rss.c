@@ -234,7 +234,7 @@ SWITCH_STANDARD_APP(rss_function)
 
 	switch_channel_answer(channel);
 
-	if (!switch_strlen_zero(data)) {
+	if (!zstr(data)) {
 		if ((mydata = switch_core_session_strdup(session, data))) {
 			argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]));
 
@@ -394,7 +394,7 @@ SWITCH_STANDARD_APP(rss_function)
 
 		err = switch_xml_error(xml);
 
-		if (!switch_strlen_zero(err)) {
+		if (!zstr(err)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Error [%s]\n", err);
 			goto finished;
 		}

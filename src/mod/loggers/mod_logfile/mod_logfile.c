@@ -277,7 +277,7 @@ static switch_status_t load_profile(switch_xml_t xml)
 		}
 	}
 
-	if (switch_strlen_zero(new_profile->logfile)) {
+	if (zstr(new_profile->logfile)) {
 		char logfile[512];
 		switch_snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch.log");
 		new_profile->logfile = strdup(logfile);

@@ -1015,7 +1015,7 @@ static switch_status_t load_modules(void)
 		if ((mods = switch_xml_child(cfg, "modules"))) {
 			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
 				const char *val = switch_xml_attr_soft(ld, "module");
-				if (!switch_strlen_zero(val) && strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT)) {
+				if (!zstr(val) && strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 					continue;
 				}
@@ -1405,7 +1405,7 @@ static JSBool session_recordfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 
 	if (argc > 0) {
 		file_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		if (switch_strlen_zero(file_name)) {
+		if (zstr(file_name)) {
 			return JS_FALSE;
 		}
 	}
@@ -1542,7 +1542,7 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 
 	if (argc > 0) {
 		phrase_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		if (switch_strlen_zero(phrase_name)) {
+		if (zstr(phrase_name)) {
 			return JS_FALSE;
 		}
 	} else {
@@ -1555,7 +1555,7 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 
 	if (argc > 2) {
 		tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
-		if (!switch_strlen_zero(tmp)) {
+		if (!zstr(tmp)) {
 			phrase_lang = tmp;
 		}
 	}
@@ -1609,7 +1609,7 @@ static jsval check_hangup_hook(struct js_session *jss, jsval *rp)
 		}
 		JS_CallFunction(jss->cx, jss->obj, jss->on_hangup, argc, argv, &ret);
 		resp = JS_GetStringBytes(JS_ValueToString(jss->cx, ret));
-		if (!switch_strlen_zero(resp)) {
+		if (!zstr(resp)) {
 			ret = !strcasecmp(resp, "exit") ? JS_FALSE : JS_TRUE;
 		}
 	}
@@ -1683,7 +1683,7 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 
 	if (argc > 0) {
 		file_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		if (switch_strlen_zero(file_name)) {
+		if (zstr(file_name)) {
 			return JS_FALSE;
 		}
 	}
@@ -1927,12 +1927,12 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	voice_name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 	text = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
 
-	if (switch_strlen_zero(tts_name)) {
+	if (zstr(tts_name)) {
 		eval_some_js("~throw new Error(\"Invalid TTS Name\");", cx, obj, rval);
 		return JS_FALSE;
 	}
 
-	if (switch_strlen_zero(text)) {
+	if (zstr(text)) {
 		eval_some_js("~throw new Error(\"Invalid Text\");", cx, obj, rval);
 		return JS_FALSE;
 	}
@@ -2972,21 +2972,21 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 
 		}
 
-		if (!switch_strlen_zero(jss->dialplan))
+		if (!zstr(jss->dialplan))
 			dialplan = jss->dialplan;
-		if (!switch_strlen_zero(jss->caller_id_name))
+		if (!zstr(jss->caller_id_name))
 			cid_name = jss->caller_id_name;
-		if (!switch_strlen_zero(jss->caller_id_number))
+		if (!zstr(jss->caller_id_number))
 			cid_num = jss->caller_id_number;
-		if (!switch_strlen_zero(jss->ani))
+		if (!zstr(jss->ani))
 			ani = jss->ani;
-		if (!switch_strlen_zero(jss->aniii))
+		if (!zstr(jss->aniii))
 			aniii = jss->aniii;
-		if (!switch_strlen_zero(jss->rdnis))
+		if (!zstr(jss->rdnis))
 			rdnis = jss->rdnis;
-		if (!switch_strlen_zero(jss->context))
+		if (!zstr(jss->context))
 			context = jss->context;
-		if (!switch_strlen_zero(jss->username))
+		if (!zstr(jss->username))
 			username = jss->username;
 
 		dest = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
@@ -2998,7 +2998,7 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 
 		if (argc > 2) {
 			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
-			if (!switch_strlen_zero(tmp)) {
+			if (!zstr(tmp)) {
 				to = tmp;
 			}
 		}
@@ -3678,7 +3678,7 @@ static void js_thread_launch(const char *text)
 	struct js_task *task;
 	switch_memory_pool_t *pool;
 
-	if (switch_strlen_zero(text)) {
+	if (zstr(text)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "missing required input!\n");
 		return;
 	}
@@ -3707,11 +3707,11 @@ SWITCH_STANDARD_API(jsapi_function)
 		path_info = switch_event_get_header(stream->param_event, "http-path-info");
 	}
 
-	if (switch_strlen_zero(cmd) && path_info) {
+	if (zstr(cmd) && path_info) {
 		cmd = path_info;
 	}
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", jsapi_interface->syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -3727,7 +3727,7 @@ SWITCH_STANDARD_API(jsapi_function)
 
 SWITCH_STANDARD_API(launch_async)
 {
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", js_run_interface->syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}

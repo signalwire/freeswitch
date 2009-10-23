@@ -121,7 +121,7 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 {
 	int error = 0;
 
-	if (switch_strlen_zero(input_code)) {
+	if (zstr(input_code)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No code to execute!\n");
 		return 1;
 	}
@@ -178,7 +178,7 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 
 	if (error) {
 		const char *err = lua_tostring(L, -1);
-		if (!switch_strlen_zero(err)) {
+		if (!zstr(err)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
 		}
 		lua_pop(L, 1);			/* pop error message from the stack */
@@ -216,7 +216,7 @@ static switch_xml_t lua_fetch(const char *section,
 
 	switch_xml_t xml = NULL;
 
-	if (!switch_strlen_zero(globals.xml_handler)) {
+	if (!zstr(globals.xml_handler)) {
 		lua_State *L = lua_init();
 		char *mycmd = strdup(globals.xml_handler);
 		const char *str;
@@ -253,7 +253,7 @@ static switch_xml_t lua_fetch(const char *section,
 		str = lua_tostring(L, 1);
 		
 		if (str) {
-			if (switch_strlen_zero(str)) {
+			if (zstr(str)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
 			} else if (!(xml = switch_xml_parse_str_dynamic((char *)str, SWITCH_TRUE))) { 
 				/* const char -> char conversion was OK because switch_xml_parse_str_dynamic makes a duplicate of str 
@@ -293,17 +293,17 @@ static switch_status_t do_config(void)
 			if (!strcmp(var, "xml-handler-script")) {
 				globals.xml_handler = switch_core_strdup(globals.pool, val);
 			} else if (!strcmp(var, "xml-handler-bindings")) {
-				if (!switch_strlen_zero(globals.xml_handler)) {
+				if (!zstr(globals.xml_handler)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding '%s' to '%s'\n", globals.xml_handler, val);
 					switch_xml_bind_search_function(lua_fetch, switch_xml_parse_section_string(val), NULL);
 				}
-			} else if (!strcmp(var, "module-directory") && !switch_strlen_zero(val)) {
+			} else if (!strcmp(var, "module-directory") && !zstr(val)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: appending module directory: '%s'\n", val);
 				if (cpath_stream.data_len) {
 					cpath_stream.write_function(&cpath_stream, ";");
 				}
 				cpath_stream.write_function(&cpath_stream, "%s", val);
-			} else if (!strcmp(var, "script-directory") && !switch_strlen_zero(val)) {
+			} else if (!strcmp(var, "script-directory") && !zstr(val)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: appending script directory: '%s'\n", val);
 				if (path_stream.data_len) {
 					path_stream.write_function(&path_stream, ";");
@@ -394,7 +394,7 @@ SWITCH_STANDARD_APP(lua_function)
 	char *mycmd;
 	int error;
 
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no args specified!\n");
 		return;
 	}
@@ -413,7 +413,7 @@ SWITCH_STANDARD_APP(lua_function)
 SWITCH_STANDARD_API(luarun_api_function)
 {
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-ERR no args specified!\n");
 	} else {
 		lua_thread(cmd);
@@ -431,7 +431,7 @@ SWITCH_STANDARD_API(lua_api_function)
 	char *mycmd;
 	int error;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "");
 	} else {
 

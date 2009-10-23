@@ -653,7 +653,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		}
 
 
-		if (!switch_strlen_zero(require_group)) {
+		if (!zstr(require_group)) {
 			int argc, i;
 			int ok = 0;
 			char *argv[10] = { 0 };
@@ -1774,7 +1774,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
     switch_core_session_get_read_impl(session, &read_impl);
 
 	
-	if (switch_strlen_zero(key)) {
+	if (zstr(key)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No Key Specified!\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1786,7 +1786,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		}
 
 		for (i = 0; i < cont->index; i++) {
-			if (!switch_strlen_zero(cont->list[i].key) && !strcasecmp(key, cont->list[i].key)) {
+			if (!zstr(cont->list[i].key) && !strcasecmp(key, cont->list[i].key)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Re-enabling %s\n", key);
 				cont->list[i].up = 1;
 				cont->list[i].hits = 0;
@@ -1797,7 +1797,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		}
 	}
 
-	if (switch_strlen_zero(tone_spec)) {
+	if (zstr(tone_spec)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No Spec Specified!\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1876,7 +1876,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	}
 
 
-	if (switch_strlen_zero(flags)) {
+	if (zstr(flags)) {
 		bflags = SMBF_READ_REPLACE;
 	} else {
 		if (strchr(flags, 'o')) {
@@ -2117,7 +2117,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 		switch_core_event_hook_add_recv_dtmf(session, meta_on_dtmf);
 	}
 
-	if (!switch_strlen_zero(app)) {
+	if (!zstr(app)) {
 		if ((bind_flags & SBF_DIAL_ALEG)) {
 			md->sr[SWITCH_DTMF_RECV].up = 1;
 			md->sr[SWITCH_DTMF_RECV].map[key].app = switch_core_session_strdup(session, app);

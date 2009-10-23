@@ -257,7 +257,7 @@ static switch_status_t do_config(void) {
 
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] (%s) [%s]\n",
-						  switch_strlen_zero(bname) ? "N/A" : bname, binding->basedn, binding->filter, binding->bindings ? binding->bindings : "all");
+						  zstr(bname) ? "N/A" : bname, binding->basedn, binding->filter, binding->bindings ? binding->bindings : "all");
 
 		switch_xml_bind_search_function(xml_ldap_search, switch_xml_parse_section_string(bname), binding);
 

@@ -74,11 +74,11 @@ SWITCH_DECLARE(int) switch_isxdigit(int c);
   \param s the string to test
   \return true value if the string is NULL or zero length
 */
-#define switch_strlen_zero(s) (!s || *(s) == '\0')
-#define switch_strlen_zero_buf(s) (*(s) == '\0')
+#define zstr(s) (!s || *(s) == '\0')
+#define zstr_buf(s) (*(s) == '\0')
 static inline switch_bool_t switch_is_moh(const char *s)
 {
-	if (switch_strlen_zero(s) || !strcasecmp(s, "silence") || !strcasecmp(s, "indicate_hold")) {
+	if (zstr(s) || !strcasecmp(s, "silence") || !strcasecmp(s, "indicate_hold")) {
 		return SWITCH_FALSE;
 	}
 	return SWITCH_TRUE;

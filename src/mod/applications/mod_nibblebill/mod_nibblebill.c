@@ -189,22 +189,22 @@ static switch_status_t load_config(void)
 	
 /* Set defaults for any variables still not set */
 setdefaults:
-	if (switch_strlen_zero(globals.db_username)) {
+	if (zstr(globals.db_username)) {
 		set_global_db_username("bandwidth.com");
 	}
-	if (switch_strlen_zero(globals.db_password)) {
+	if (zstr(globals.db_password)) {
 		set_global_db_password("dev");
 	}
-	if (switch_strlen_zero(globals.db_dsn)) {
+	if (zstr(globals.db_dsn)) {
 		set_global_db_dsn("bandwidth.com");
 	}
-	if (switch_strlen_zero(globals.percall_action)) {
+	if (zstr(globals.percall_action)) {
 		set_global_percall_action("hangup");
 	}
-	if (switch_strlen_zero(globals.lowbal_action)) {
+	if (zstr(globals.lowbal_action)) {
 		set_global_lowbal_action("play ding");
 	}
-	if (switch_strlen_zero(globals.nobal_action)) {
+	if (zstr(globals.nobal_action)) {
 		set_global_nobal_action("hangup");
 	}
 
@@ -722,7 +722,7 @@ SWITCH_STANDARD_APP(nibblebill_app_function)
 	char *lbuf = NULL;
 	char *argv[3] = { 0 };
 
-	if (!switch_strlen_zero(data) && (lbuf = strdup(data))
+	if (!zstr(data) && (lbuf = strdup(data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (!strcasecmp(argv[0], "adjust") && argc == 2) {
 			nibblebill_adjust(session, (float)atof(argv[1]));
@@ -751,9 +751,9 @@ SWITCH_STANDARD_API(nibblebill_api_function)
 	char *mycmd = NULL, *argv[3] = { 0 };
 	int argc = 0;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-		if ((argc == 2 || argc == 3) && !switch_strlen_zero(argv[0])) {
+		if ((argc == 2 || argc == 3) && !zstr(argv[0])) {
 			char *uuid = argv[0];
 			if ((psession = switch_core_session_locate(uuid))) {
 				switch_channel_t *channel;

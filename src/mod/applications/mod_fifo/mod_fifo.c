@@ -146,7 +146,7 @@ static switch_status_t moh_on_dtmf(switch_core_session_t *session, void *input, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define check_string(s) if (!switch_strlen_zero(s) && !strcasecmp(s, "undef")) { s = NULL; }
+#define check_string(s) if (!zstr(s) && !strcasecmp(s, "undef")) { s = NULL; }
 
 static int node_consumer_wait_count(fifo_node_t *node)
 {
@@ -297,7 +297,7 @@ static switch_status_t fifo_execute_sql(char *sql, switch_mutex_t *mutex)
 		if (switch_odbc_handle_exec(globals.master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
 			
 			err_str = switch_odbc_handle_get_error(globals.master_odbc, stmt);
-			if (!switch_strlen_zero(err_str)) {
+			if (!zstr(err_str)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
 			}
 			switch_safe_free(err_str);
@@ -752,7 +752,7 @@ SWITCH_STANDARD_API(fifo_add_outbound_function)
 	int argc;
 	uint32_t priority = 0;
 
-	if (switch_strlen_zero(cmd)) {
+	if (zstr(cmd)) {
 		goto fail;
 	}
 
@@ -819,7 +819,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		return;
 	}
 
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No Args\n");
 		return;
 	}
@@ -1139,7 +1139,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		fifo_strategy_t strat = STRAT_WAITING_LONGER;
 		char *url = NULL;
 
-		if (!switch_strlen_zero(strat_str)) {
+		if (!zstr(strat_str)) {
 			if (!strcasecmp(strat_str, "more_ppl")) {
 				strat = STRAT_MORE_PPL;
 			} else if (!strcasecmp(strat_str, "waiting_longer")) {
@@ -1489,7 +1489,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				fifo_consumer_wrapup_sound = switch_channel_get_variable(channel, "fifo_consumer_wrapup_sound");
 				fifo_consumer_wrapup_key = switch_channel_get_variable(channel, "fifo_consumer_wrapup_key");
 				sfifo_consumer_wrapup_time = switch_channel_get_variable(channel, "fifo_consumer_wrapup_time");
-				if (!switch_strlen_zero(sfifo_consumer_wrapup_time)){
+				if (!zstr(sfifo_consumer_wrapup_time)){
 					fifo_consumer_wrapup_time = atoi(sfifo_consumer_wrapup_time);
 				} else {
 					fifo_consumer_wrapup_time = 5000;
@@ -1497,7 +1497,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				memset(buf, 0, sizeof(buf));
 
-				if (fifo_consumer_wrapup_time || !switch_strlen_zero(fifo_consumer_wrapup_key)) {
+				if (fifo_consumer_wrapup_time || !zstr(fifo_consumer_wrapup_key)) {
 					switch_channel_set_variable(channel, "fifo_status", "WRAPUP");
 					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 						switch_channel_event_set_data(channel, event);
@@ -1507,7 +1507,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					}
 				}
 
-				if (!switch_strlen_zero(fifo_consumer_wrapup_sound)) {
+				if (!zstr(fifo_consumer_wrapup_sound)) {
 					memset(&args, 0, sizeof(args));
 					args.buf = buf;
 					args.buflen = sizeof(buf);
@@ -1518,7 +1518,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					wrapup_time_started = switch_micro_time_now();
 				}
 
-				if (!switch_strlen_zero(fifo_consumer_wrapup_key) && strcmp(buf, fifo_consumer_wrapup_key)) {
+				if (!zstr(fifo_consumer_wrapup_key) && strcmp(buf, fifo_consumer_wrapup_key)) {
 					while(switch_channel_ready(channel)) {
 						char terminator = 0;
 						
@@ -1537,7 +1537,7 @@ SWITCH_STANDARD_APP(fifo_function)
 						}
 
 					}
-				} else if (fifo_consumer_wrapup_time && (switch_strlen_zero(fifo_consumer_wrapup_key) || !strcmp(buf, fifo_consumer_wrapup_key))) {
+				} else if (fifo_consumer_wrapup_time && (zstr(fifo_consumer_wrapup_key) || !strcmp(buf, fifo_consumer_wrapup_key))) {
 					while(switch_channel_ready(channel)) {
 						wrapup_time_elapsed = (switch_micro_time_now() - wrapup_time_started) / 1000;
 						if (wrapup_time_elapsed > fifo_consumer_wrapup_time) {
@@ -1761,12 +1761,12 @@ SWITCH_STANDARD_API(fifo_api_function)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!switch_strlen_zero(cmd)) {
+	if (!zstr(cmd)) {
 		data = strdup(cmd);
 		switch_assert(data);
 	}
 
-	if (switch_strlen_zero(cmd) || (argc = switch_separate_string(data, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 1 || !argv[0]) {
+	if (zstr(cmd) || (argc = switch_separate_string(data, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 1 || !argv[0]) {
 		stream->write_function(stream, "%s\n", FIFO_API_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1897,7 +1897,7 @@ static switch_status_t load_config(int reload, int del_all)
 			var = (char *) switch_xml_attr_soft(param, "name");
 			val = (char *) switch_xml_attr_soft(param, "value");
 
-			if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
+			if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 				if (switch_odbc_available()) {
 					globals.odbc_dsn = switch_core_strdup(globals.pool, val);
 					if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
@@ -1915,7 +1915,7 @@ static switch_status_t load_config(int reload, int del_all)
 		}
 	}
 
-	if (switch_strlen_zero(globals.odbc_dsn) || switch_strlen_zero(odbc_user) || switch_strlen_zero(odbc_pass)) {
+	if (zstr(globals.odbc_dsn) || zstr(odbc_user) || zstr(odbc_pass)) {
 		globals.dbname = "fifo";
 	}
 
@@ -2190,7 +2190,7 @@ SWITCH_STANDARD_API(fifo_member_api_function)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_strlen_zero(cmd)){
+	if (zstr(cmd)){
 		stream->write_function(stream, "-USAGE: %s\n", FIFO_MEMBER_API_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}

@@ -263,7 +263,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group(const char *group)
 
 	switch_mutex_lock(globals.task_mutex);
 	for (tp = globals.task_list; tp; tp = tp->next) {
-		if (!switch_strlen_zero(group) && !strcmp(tp->task.group, group)) {
+		if (!zstr(group) && !strcmp(tp->task.group, group)) {
 			if (switch_test_flag(tp, SSHF_NO_DEL)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Attempt made to delete undeletable task #%u (group %s)\n",
 								  tp->task.task_id, group);

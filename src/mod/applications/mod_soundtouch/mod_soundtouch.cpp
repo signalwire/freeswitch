@@ -255,7 +255,7 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 	int x;
 
 	if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_soundtouch_"))) {
-		if (!switch_strlen_zero(data) && !strcasecmp(data, "stop")) {
+		if (!zstr(data) && !strcasecmp(data, "stop")) {
 			switch_channel_set_private(channel, "_soundtouch_", NULL);
 			switch_core_media_bug_remove(session, &bug);
 		} else {

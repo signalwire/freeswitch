@@ -960,7 +960,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_exists(const char *mod)
 {
 	switch_status_t status;  
 
-	if (switch_strlen_zero(mod)) {
+	if (zstr(mod)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1166,7 +1166,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 				switch_bool_t global = SWITCH_FALSE;
 				const char *val = switch_xml_attr_soft(ld, "module");
 				const char *sglobal = switch_xml_attr_soft(ld, "global");
-				if (switch_strlen_zero(val) || (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT))) {
+				if (zstr(val) || (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 					continue;
 				}
@@ -1189,7 +1189,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 				switch_bool_t global = SWITCH_FALSE;
 				const char *val = switch_xml_attr_soft(ld, "module");
 				const char *sglobal = switch_xml_attr_soft(ld, "global");
-				if (switch_strlen_zero(val) || (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT))) {
+				if (zstr(val) || (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 					continue;
 				}
@@ -1230,7 +1230,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 				continue;
 			}
 
-			if (switch_strlen_zero(fname) || (!strstr(fname, ext) && !strstr(fname, EXT))) {
+			if (zstr(fname) || (!strstr(fname, ext) && !strstr(fname, EXT))) {
 				continue;
 			}
 

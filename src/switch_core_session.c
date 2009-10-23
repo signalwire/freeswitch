@@ -373,7 +373,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		switch_assert(channel != NULL);
 
 		forwardvar = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
-		if (!switch_strlen_zero(forwardvar)) {
+		if (!zstr(forwardvar)) {
 			forwardval = atoi(forwardvar) - 1;
 		}
 		if (forwardval <= 0) {
@@ -1494,7 +1494,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		char *myarg = NULL;
 		if (expanded) {
 			myarg = switch_mprintf("%s(%s)", app, expanded);
-		} else if (!switch_strlen_zero(arg)) {
+		} else if (!zstr(arg)) {
 			myarg = switch_mprintf("%s(%s)", app, arg);
 		} else {
 			myarg = switch_mprintf("%s", app);
@@ -1583,11 +1583,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	new_profile = switch_caller_profile_clone(session, profile);
 	new_profile->destination_number = switch_core_strdup(new_profile->pool, exten);
 
-	if (!switch_strlen_zero(dialplan)) {
+	if (!zstr(dialplan)) {
 		new_profile->dialplan = switch_core_strdup(new_profile->pool, dialplan);
 	}
 
-	if (!switch_strlen_zero(context)) {
+	if (!zstr(context)) {
 		new_profile->context = switch_core_strdup(new_profile->pool, context);
 	}
 

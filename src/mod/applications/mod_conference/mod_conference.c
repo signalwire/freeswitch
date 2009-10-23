@@ -676,7 +676,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			switch_snprintf(saymsg, sizeof(saymsg), "Auto Calling %d parties", call_list->itteration);
 			conference_member_say(member, saymsg, 0);
 		} else {
-			if (switch_strlen_zero(conference->special_announce)) {
+			if (zstr(conference->special_announce)) {
 				/* announce the total number of members in the conference */
 				if (conference->count >= conference->announce_count && conference->announce_count > 1) {
 					switch_snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
@@ -1882,7 +1882,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 						
 						if (switch_test_flag(member, MFLAG_MUTE_DETECT) && !switch_test_flag(member, MFLAG_CAN_SPEAK)) {
 
-							if (!switch_strlen_zero(member->conference->mute_detect_sound)) {
+							if (!zstr(member->conference->mute_detect_sound)) {
 								conference_member_play_file(member, member->conference->mute_detect_sound, 0);
 							}
 
@@ -2782,7 +2782,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 		expanded = NULL;
 	}
 	if (!strncasecmp(file, "say:", 4)) {
-		if (!switch_strlen_zero(file + 4)) {
+		if (!zstr(file + 4)) {
 			status = conference_member_say(member, file + 4, leadin);
 		}
 		goto done;
@@ -2793,7 +2793,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 				goto done;
 			}
 			file = dfile;
-		} else if (!switch_strlen_zero(file)) {
+		} else if (!zstr(file)) {
 			status = conference_member_say(member, file, leadin);
 			goto done;
 		}
@@ -2853,7 +2853,7 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (member == NULL || switch_strlen_zero(text))
+	if (member == NULL || zstr(text))
 		return SWITCH_STATUS_FALSE;
 
 	switch_assert(conference != NULL);
@@ -2935,7 +2935,7 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 
 	switch_assert(conference != NULL);
 
-	if (switch_strlen_zero(text)) {
+	if (zstr(text)) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -3123,7 +3123,7 @@ static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_str
 		return SWITCH_STATUS_GENERR;
 
 	switch_clear_flag_locked(member, MFLAG_CAN_SPEAK);
-	if (!switch_strlen_zero(member->conference->muted_sound)) {
+	if (!zstr(member->conference->muted_sound)) {
 		conference_member_play_file(member, member->conference->muted_sound, 0);
 	} else {
 		char msg[512];
@@ -3155,7 +3155,7 @@ static switch_status_t conf_api_sub_unmute(conference_member_t *member, switch_s
 	if (stream != NULL) {
 		stream->write_function(stream, "OK unmute %u\n", member->id);
 	}
-	if (!switch_strlen_zero(member->conference->unmuted_sound)) {
+	if (!zstr(member->conference->unmuted_sound)) {
 		conference_member_play_file(member, member->conference->unmuted_sound, 0);
 	} else {
 		char msg[512];
@@ -3250,7 +3250,7 @@ static switch_status_t conf_api_sub_dtmf(conference_member_t *member, switch_str
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_strlen_zero(dtmf)) {
+	if (zstr(dtmf)) {
 		stream->write_function(stream, "Invalid input!\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -3620,7 +3620,7 @@ static switch_status_t conf_api_sub_say(conference_obj_t *conference, switch_str
 {
 	switch_event_t *event;
 
-	if (switch_strlen_zero(text)) {
+	if (zstr(text)) {
 		stream->write_function(stream, "(say) Error! No text.\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -3650,7 +3650,7 @@ static switch_status_t conf_api_sub_saymember(conference_obj_t *conference, swit
 	conference_member_t *member;
 	switch_event_t *event;
 
-	if (switch_strlen_zero(text)) {
+	if (zstr(text)) {
 		stream->write_function(stream, "(saymember) No Text!\n");
 		goto done;
 	}
@@ -3667,7 +3667,7 @@ static switch_status_t conf_api_sub_saymember(conference_obj_t *conference, swit
 
 	id = atoi(workspace);
 
-	if (!id || switch_strlen_zero(text)) {
+	if (!id || zstr(text)) {
 		stream->write_function(stream, "(saymember) No Text!\n");
 		goto done;
 	}
@@ -3910,7 +3910,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
 
-	if (argc > 3 && !switch_strlen_zero(argv[2])) {
+	if (argc > 3 && !zstr(argv[2])) {
 		int x;
 
 		conf_name = strdup(argv[2]);
@@ -4274,7 +4274,7 @@ switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_ha
 					const char *modified_cmdline = cmdline;
 					const char *cmd = conf_api_sub_commands[i].pname;
 
-					if (!switch_strlen_zero(modified_cmdline) && (start_text = strstr(modified_cmdline, cmd))) {
+					if (!zstr(modified_cmdline) && (start_text = strstr(modified_cmdline, cmd))) {
 						modified_cmdline = start_text + strlen(cmd);
 						while (modified_cmdline && (*modified_cmdline == ' ' || *modified_cmdline == '\t')) {
 							modified_cmdline++;
@@ -4421,11 +4421,11 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 		caller_channel = switch_core_session_get_channel(session);
 	}
 
-	if (switch_strlen_zero(cid_name)) {
+	if (zstr(cid_name)) {
 		cid_name = conference->caller_id_name;
 	}
 
-	if (switch_strlen_zero(cid_num)) {
+	if (zstr(cid_num)) {
 		cid_num = conference->caller_id_number;
 	}
 
@@ -4810,7 +4810,7 @@ SWITCH_STANDARD_APP(conference_auto_function)
 
 	call_list = switch_channel_get_private(channel, "_conference_autocall_list_");
 
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		call_list = NULL;
 	} else {
 		np = switch_core_session_alloc(session, sizeof(*np));
@@ -4964,7 +4964,7 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 
 
-	if (switch_strlen_zero(data)) {
+	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Invalid arguments\n");
 		return;
 	}
@@ -5121,11 +5121,11 @@ SWITCH_STANDARD_APP(conference_function)
 			switch_channel_set_variable(channel, "conference_name", conference->name);
 
 			/* Set MOH from variable if not set */
-			if(switch_strlen_zero(conference->moh_sound)) {
+			if(zstr(conference->moh_sound)) {
 				conference->moh_sound = switch_core_strdup(conference->pool, switch_channel_get_variable(channel, "conference_moh_sound"));
 			}
 			/* Set perpetual-sound from variable if not set */
-			if(switch_strlen_zero(conference->perpetual_sound)) {
+			if(zstr(conference->perpetual_sound)) {
 				conference->perpetual_sound = switch_core_strdup(conference->pool, switch_channel_get_variable(channel, "conference_perpetual_sound"));
 			}
 			
@@ -5155,7 +5155,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 
 		/* if this is not an outbound call, deal with conference pins */
-		if (enforce_security && !switch_strlen_zero(dpin)) {
+		if (enforce_security && !zstr(dpin)) {
 			char pin_buf[80] = "";
 			int pin_retries = 3;	/* XXX - this should be configurable - i'm too lazy to do it right now... */
 			int pin_valid = 0;
@@ -5259,7 +5259,7 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 
 	/* if we're using "bridge:" make an outbound call and bridge it in */
-	if (!switch_strlen_zero(bridgeto) && strcasecmp(bridgeto, "none")) {
+	if (!zstr(bridgeto) && strcasecmp(bridgeto, "none")) {
 		switch_call_cause_t cause;
 		if (conference_outcall(conference, NULL, session, bridgeto, 60, NULL, NULL, NULL, &cause) != SWITCH_STATUS_SUCCESS) {
 			goto done;
@@ -5512,7 +5512,7 @@ static switch_status_t conf_default_controls(conference_obj_t *conference)
 	switch_assert(conference != NULL);
 
 	for (i = 0, status = SWITCH_STATUS_SUCCESS; status == SWITCH_STATUS_SUCCESS && i < CCFNTBL_QTY; i++) {
-		if (!switch_strlen_zero(ccfntbl[i].digits)) {
+		if (!zstr(ccfntbl[i].digits)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 							  "Installing default caller control action '%s' bound to '%s'.\n", ccfntbl[i].key, ccfntbl[i].digits);
 			action = (caller_control_action_t *) switch_core_alloc(conference->pool, sizeof(caller_control_action_t));
@@ -5548,7 +5548,7 @@ static switch_status_t conference_new_install_caller_controls_custom(conference_
 		char *val = (char *) switch_xml_attr(xml_kvp, "digits");
 		char *data = (char *) switch_xml_attr_soft(xml_kvp, "data");
 
-		if (!switch_strlen_zero(key) && !switch_strlen_zero(val)) {
+		if (!zstr(key) && !zstr(val)) {
 			uint32_t i;
 
 			/* scan through all of the valid actions, and if found, */
@@ -5640,7 +5640,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	char *auto_record = NULL;
 
 	/* Validate the conference name */
-	if (switch_strlen_zero(name)) {
+	if (zstr(name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Record! no name.\n");
 		return NULL;
 	}
@@ -5665,14 +5665,14 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 			var = buf;
 		}
 
-		if (!strcasecmp(var, "rate") && !switch_strlen_zero(val)) {
+		if (!strcasecmp(var, "rate") && !zstr(val)) {
 			uint32_t tmp = atoi(val);
 			if (tmp == 8000 || tmp == 16000 || tmp == 32000 || tmp == 48000) {
 				rate = tmp;
 			}
-		} else if (!strcasecmp(var, "domain") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "domain") && !zstr(val)) {
 			domain = val;
-		} else if (!strcasecmp(var, "interval") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "interval") && !zstr(val)) {
 			uint32_t tmp = atoi(val);
 			if (SWITCH_ACCEPTABLE_INTERVAL(tmp)) {
 				interval = tmp;
@@ -5680,59 +5680,59 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 								  "Interval must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
 			}
-		} else if (!strcasecmp(var, "timer-name") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "timer-name") && !zstr(val)) {
 			timer_name = val;
-		} else if (!strcasecmp(var, "tts-engine") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "tts-engine") && !zstr(val)) {
 			tts_engine = val;
-		} else if (!strcasecmp(var, "tts-voice") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "tts-voice") && !zstr(val)) {
 			tts_voice = val;
-		} else if (!strcasecmp(var, "enter-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "enter-sound") && !zstr(val)) {
 			enter_sound = val;
-		} else if (!strcasecmp(var, "exit-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "exit-sound") && !zstr(val)) {
 			exit_sound = val;
-		} else if (!strcasecmp(var, "alone-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "alone-sound") && !zstr(val)) {
 			alone_sound = val;
-		} else if (!strcasecmp(var, "perpetual-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "perpetual-sound") && !zstr(val)) {
 			perpetual_sound = val;
-		} else if (!strcasecmp(var, "moh-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "moh-sound") && !zstr(val)) {
 			moh_sound = val;
-		} else if (!strcasecmp(var, "ack-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "ack-sound") && !zstr(val)) {
 			ack_sound = val;
-		} else if (!strcasecmp(var, "nack-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "nack-sound") && !zstr(val)) {
 			nack_sound = val;
-		} else if (!strcasecmp(var, "muted-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "muted-sound") && !zstr(val)) {
 			muted_sound = val;
-		} else if (!strcasecmp(var, "mute-detect-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "mute-detect-sound") && !zstr(val)) {
 			mute_detect_sound = val;
-		} else if (!strcasecmp(var, "unmuted-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "unmuted-sound") && !zstr(val)) {
 			unmuted_sound = val;
-		} else if (!strcasecmp(var, "locked-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "locked-sound") && !zstr(val)) {
 			locked_sound = val;
-		} else if (!strcasecmp(var, "is-locked-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "is-locked-sound") && !zstr(val)) {
 			is_locked_sound = val;
-		} else if (!strcasecmp(var, "is-unlocked-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "is-unlocked-sound") && !zstr(val)) {
 			is_unlocked_sound = val;
-		} else if (!strcasecmp(var, "member-flags") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "member-flags") && !zstr(val)) {
 			member_flags = val;
-		} else if (!strcasecmp(var, "conference-flags") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "conference-flags") && !zstr(val)) {
 			conference_flags = val;
-		} else if (!strcasecmp(var, "kicked-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "kicked-sound") && !zstr(val)) {
 			kicked_sound = val;
-		} else if (!strcasecmp(var, "pin") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "pin") && !zstr(val)) {
 			pin = val;
-		} else if (!strcasecmp(var, "pin-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "pin-sound") && !zstr(val)) {
 			pin_sound = val;
-		} else if (!strcasecmp(var, "bad-pin-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "bad-pin-sound") && !zstr(val)) {
 			bad_pin_sound = val;
-		} else if (!strcasecmp(var, "energy-level") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "energy-level") && !zstr(val)) {
 			energy_level = val;
-		} else if (!strcasecmp(var, "caller-id-name") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "caller-id-name") && !zstr(val)) {
 			caller_id_name = val;
-		} else if (!strcasecmp(var, "caller-id-number") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "caller-id-number") && !zstr(val)) {
 			caller_id_number = val;
-		} else if (!strcasecmp(var, "caller-controls") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "caller-controls") && !zstr(val)) {
 			caller_controls = val;
-		} else if (!strcasecmp(var, "comfort-noise") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "comfort-noise") && !zstr(val)) {
 			int tmp;
 			tmp = atoi(val);
 			if (tmp > 1 && tmp < 10000) {
@@ -5740,9 +5740,9 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 			} else if (switch_true(val)) {
 				comfort_noise_level = 1400;
 			}
-		} else if (!strcasecmp(var, "sound-prefix") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "sound-prefix") && !zstr(val)) {
 			sound_prefix = val;
-		} else if (!strcasecmp(var, "max-members") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "max-members") && !zstr(val)) {
 			errno = 0;			/* sanity first */
 			max_members = strtol(val, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
 			if (errno == ERANGE || errno == EINVAL || max_members < 0 || max_members == 1) {
@@ -5752,20 +5752,20 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 				max_members = 0;	/* set to 0 to disable max counts */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "max-members %s is invalid, not setting a limit\n", val);
 			}
-		} else if (!strcasecmp(var, "max-members-sound") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "max-members-sound") && !zstr(val)) {
 			maxmember_sound = val;
-		} else if (!strcasecmp(var, "announce-count") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "announce-count") && !zstr(val)) {
 			errno = 0;			/* safety first */
 			announce_count = strtol(val, NULL, 0);
 			if (errno == ERANGE || errno == EINVAL) {
 				announce_count = 0;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "announce-count is invalid, not anouncing member counts\n");
 			}
-		} else if (!strcasecmp(var, "suppress-events") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "suppress-events") && !zstr(val)) {
 			suppress_events = val;
-		} else if (!strcasecmp(var, "verbose-events") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "verbose-events") && !zstr(val)) {
 			verbose_events = val;
-		} else if (!strcasecmp(var, "auto-record") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "auto-record") && !zstr(val)) {
 			auto_record = val;
 		}
 	}
@@ -5773,17 +5773,17 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	/* Set defaults and various paramaters */
 
 	/* Timer module to use */
-	if (switch_strlen_zero(timer_name)) {
+	if (zstr(timer_name)) {
 		timer_name = "soft";
 	}
 
 	/* Caller ID Name */
-	if (switch_strlen_zero(caller_id_name)) {
+	if (zstr(caller_id_name)) {
 		caller_id_name = (char *) global_app_name;
 	}
 
 	/* Caller ID Number */
-	if (switch_strlen_zero(caller_id_number)) {
+	if (zstr(caller_id_number)) {
 		caller_id_number = "0000000000";
 	}
 
@@ -5823,13 +5823,13 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	conference->caller_id_number = switch_core_strdup(conference->pool, caller_id_number);
 
 
-	if (!switch_strlen_zero(perpetual_sound)) {
+	if (!zstr(perpetual_sound)) {
 		conference->perpetual_sound = switch_core_strdup(conference->pool, perpetual_sound);
 	}
 
 	conference->mflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
 	
-	if (!switch_strlen_zero(moh_sound) && switch_is_moh(moh_sound)) {
+	if (!zstr(moh_sound) && switch_is_moh(moh_sound)) {
 		conference->moh_sound = switch_core_strdup(conference->pool, moh_sound);
 	}
 
@@ -5845,75 +5845,75 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 		conference->sound_prefix = switch_core_strdup(conference->pool, sound_prefix);
 	}
 
-	if (!switch_strlen_zero(enter_sound)) {
+	if (!zstr(enter_sound)) {
 		conference->enter_sound = switch_core_strdup(conference->pool, enter_sound);
 	}
 
-	if (!switch_strlen_zero(exit_sound)) {
+	if (!zstr(exit_sound)) {
 		conference->exit_sound = switch_core_strdup(conference->pool, exit_sound);
 	}
 
-	if (!switch_strlen_zero(ack_sound)) {
+	if (!zstr(ack_sound)) {
 		conference->ack_sound = switch_core_strdup(conference->pool, ack_sound);
 	}
 
-	if (!switch_strlen_zero(nack_sound)) {
+	if (!zstr(nack_sound)) {
 		conference->nack_sound = switch_core_strdup(conference->pool, nack_sound);
 	}
 
-	if (!switch_strlen_zero(muted_sound)) {
+	if (!zstr(muted_sound)) {
 		conference->muted_sound = switch_core_strdup(conference->pool, muted_sound);
 	}
 
-	if (switch_strlen_zero(mute_detect_sound)) {
-		if (!switch_strlen_zero(muted_sound)) {
+	if (zstr(mute_detect_sound)) {
+		if (!zstr(muted_sound)) {
 			conference->mute_detect_sound = switch_core_strdup(conference->pool, muted_sound);
 		}
 	} else {
 		conference->mute_detect_sound = switch_core_strdup(conference->pool, mute_detect_sound);
 	}
 
-	if (!switch_strlen_zero(unmuted_sound)) {
+	if (!zstr(unmuted_sound)) {
 		conference->unmuted_sound = switch_core_strdup(conference->pool, unmuted_sound);
 	}
 
-	if (!switch_strlen_zero(kicked_sound)) {
+	if (!zstr(kicked_sound)) {
 		conference->kicked_sound = switch_core_strdup(conference->pool, kicked_sound);
 	}
 
-	if (!switch_strlen_zero(pin_sound)) {
+	if (!zstr(pin_sound)) {
 		conference->pin_sound = switch_core_strdup(conference->pool, pin_sound);
 	}
 
-	if (!switch_strlen_zero(bad_pin_sound)) {
+	if (!zstr(bad_pin_sound)) {
 		conference->bad_pin_sound = switch_core_strdup(conference->pool, bad_pin_sound);
 	}
 
-	if (!switch_strlen_zero(pin)) {
+	if (!zstr(pin)) {
 		conference->pin = switch_core_strdup(conference->pool, pin);
 	}
 
-	if (!switch_strlen_zero(alone_sound)) {
+	if (!zstr(alone_sound)) {
 		conference->alone_sound = switch_core_strdup(conference->pool, alone_sound);
 	}
 
-	if (!switch_strlen_zero(locked_sound)) {
+	if (!zstr(locked_sound)) {
 		conference->locked_sound = switch_core_strdup(conference->pool, locked_sound);
 	}
 
-	if (!switch_strlen_zero(is_locked_sound)) {
+	if (!zstr(is_locked_sound)) {
 		conference->is_locked_sound = switch_core_strdup(conference->pool, is_locked_sound);
 	}
 
-	if (!switch_strlen_zero(is_unlocked_sound)) {
+	if (!zstr(is_unlocked_sound)) {
 		conference->is_unlocked_sound = switch_core_strdup(conference->pool, is_unlocked_sound);
 	}
 
-	if (!switch_strlen_zero(energy_level)) {
+	if (!zstr(energy_level)) {
 		conference->energy_level = atoi(energy_level);
 	}
 
-	if (!switch_strlen_zero(maxmember_sound)) {
+	if (!zstr(maxmember_sound)) {
 		conference->maxmember_sound = switch_core_strdup(conference->pool, maxmember_sound);
 	}
 	/* its going to be 0 by default, set to a value otherwise so this should be safe */
@@ -5931,15 +5931,15 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	conference->dtmf_parser = NULL;
 
 	conference->eflags = 0xFFFFFFFF;
-	if (!switch_strlen_zero(suppress_events)) {
+	if (!zstr(suppress_events)) {
 		clear_eflags(suppress_events, &conference->eflags);
 	}
 
-	if (!switch_strlen_zero(auto_record)) {
+	if (!zstr(auto_record)) {
 		conference->auto_record = switch_core_strdup(conference->pool, auto_record);
 	}
 
-	if (!switch_strlen_zero(verbose_events) && switch_true(verbose_events)) {
+	if (!zstr(verbose_events) && switch_true(verbose_events)) {
 		conference->verbose_events = 1;
 	}
 	

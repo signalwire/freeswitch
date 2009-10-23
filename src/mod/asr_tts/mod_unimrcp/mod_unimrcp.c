@@ -490,7 +490,7 @@ static int text_starts_with(const char *text, const char *match)
 {
 	int result = 0;
 
-	if (!switch_strlen_zero(text)) {
+	if (!zstr(text)) {
 		size_t textlen, matchlen;
 
 		/* find first non-space character */
@@ -524,7 +524,7 @@ static switch_status_t audio_queue_create(audio_queue_t **audio_queue, const cha
 	char *lname = "";
 	*audio_queue = NULL;
 
-	if (switch_strlen_zero(name)) {
+	if (zstr(name)) {
 		lname = "";
 	} else {
 		lname = switch_core_strdup(pool, name);
@@ -704,7 +704,7 @@ static switch_status_t audio_queue_destroy(audio_queue_t *queue)
 {
 	if (queue) {
 		char *name = queue->name;
-		if (switch_strlen_zero(name)) {
+		if (zstr(name)) {
 			name = "";
 		}
 		if (queue->buffer) {
@@ -779,7 +779,7 @@ static switch_status_t speech_channel_create(speech_channel_t **schannel, const 
 	}
 	switch_core_hash_init(&schan->params, pool);
 	schan->data = NULL;
-	if (switch_strlen_zero(name)) {
+	if (zstr(name)) {
 		schan->name = "";
 	} else {
 		schan->name = switch_core_strdup(pool, name);
@@ -1017,7 +1017,7 @@ static switch_status_t synth_channel_set_params(speech_channel_t *schannel, mrcp
 		switch_hash_this(hi, &key, NULL, &val);
 		param_name = (char *)key;
 		param_val = (char *)val;
-		if (!switch_strlen_zero(param_name) && !switch_strlen_zero(param_val)) {
+		if (!zstr(param_name) && !zstr(param_val)) {
 			unimrcp_param_id_t *id = (unimrcp_param_id_t *)switch_core_hash_find(schannel->application->param_id_map, param_name);
 			if (id) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s: %s\n", schannel->name, param_name, param_val);
@@ -1272,11 +1272,11 @@ static const char *speech_channel_type_to_string(speech_channel_type_t type)
 static switch_status_t speech_channel_set_param(speech_channel_t *schannel, const char *param, const char *val)
 {
 	switch_mutex_lock(schannel->mutex);
-	if (!switch_strlen_zero(param) && val != NULL) {
+	if (!zstr(param) && val != NULL) {
 		/* check if this is a FreeSWITCH param that needs to be translated to an MRCP param: e.g. voice ==> voice-name */
 		char *mrcp_param = (char *)switch_core_hash_find(schannel->application->fs_param_map, param);
 		char *lcparam = NULL;
-		if (switch_strlen_zero(mrcp_param)) {
+		if (zstr(mrcp_param)) {
 			lcparam = switch_lc_strdup(param);
 			mrcp_param = lcparam;
 		}
@@ -1422,7 +1422,7 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	sh->private_info = schannel;
 
 	/* try to open an MRCP channel */
-	if (switch_strlen_zero(profile_name)) {
+	if (zstr(profile_name)) {
 		profile_name = globals.unimrcp_default_synth_profile;
 	}
 	profile = (profile_t *)switch_core_hash_find(globals.profiles, profile_name);
@@ -1437,7 +1437,7 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	}
 
 	/* Set session TTS params */
-	if (!switch_strlen_zero(voice_name)) {
+	if (!zstr(voice_name)) {
 		speech_channel_set_param(schannel, "Voice-Name", voice_name);
 	}
 
@@ -1476,7 +1476,7 @@ static switch_status_t synth_speech_feed_tts(switch_speech_handle_t *sh, char *t
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	speech_channel_t *schannel = (speech_channel_t *)sh->private_info;
 	
-	if (switch_strlen_zero(text)) {
+	if (zstr(text)) {
 		status = SWITCH_STATUS_FALSE;
 	} else {
 		status = synth_channel_speak(schannel, text);
@@ -1900,10 +1900,10 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel, const cha
 
 	/* input timers are started by default unless the start-input-timers=false param is set */
 	start_input_timers = (char *)switch_core_hash_find(schannel->params, "start-input-timers");
-	r->timers_started = switch_strlen_zero(start_input_timers) || strcasecmp(start_input_timers, "false");
+	r->timers_started = zstr(start_input_timers) || strcasecmp(start_input_timers, "false");
 	
 	/* get the cached grammar */
-	if (switch_strlen_zero(name)) {
+	if (zstr(name)) {
 		grammar = r->last_grammar;
 	} else {
 		grammar = (grammar_t *)switch_core_hash_find(r->grammars, name);
@@ -1935,7 +1935,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel, const cha
 
 	/* set Content-Type */
 	mime_type = grammar_type_to_mime(grammar->type, schannel->profile);
-	if (switch_strlen_zero(mime_type)) {
+	if (zstr(mime_type)) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -2029,7 +2029,7 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 			goto done;
 		}
 		mime_type = grammar_type_to_mime(type, schannel->profile);
-		if (switch_strlen_zero(mime_type)) {
+		if (zstr(mime_type)) {
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
@@ -2084,7 +2084,7 @@ static switch_status_t recog_channel_unload_grammar(speech_channel_t *schannel, 
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (switch_strlen_zero(grammar_name)) {
+	if (zstr(grammar_name)) {
 		status = SWITCH_STATUS_FALSE;
 	} else {
 		recognizer_data_t *r = (recognizer_data_t *)schannel->data;
@@ -2106,7 +2106,7 @@ static switch_status_t recog_channel_check_results(speech_channel_t *schannel)
 	recognizer_data_t *r;
 	switch_mutex_lock(schannel->mutex);
 	r = (recognizer_data_t *)schannel->data;
-	if (!switch_strlen_zero(r->result)) {
+	if (!zstr(r->result)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) SUCCESS, have result\n", schannel->name);
 	} else if (r->start_of_input) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) SUCCESS, start of input\n", schannel->name);
@@ -2180,12 +2180,12 @@ static switch_status_t recog_channel_set_results(speech_channel_t *schannel, con
 	recognizer_data_t *r;
 	switch_mutex_lock(schannel->mutex);
 	r = (recognizer_data_t *)schannel->data;
-	if (!switch_strlen_zero(r->result)) {
+	if (!zstr(r->result)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) result is already set\n", schannel->name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	if (switch_strlen_zero(result)) {
+	if (zstr(result)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) result is NULL\n", schannel->name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -2211,7 +2211,7 @@ static switch_status_t recog_channel_get_results(speech_channel_t *schannel, cha
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	recognizer_data_t *r = (recognizer_data_t *)schannel->data;
 	switch_mutex_lock(schannel->mutex);
-	if (!switch_strlen_zero(r->result)) {
+	if (!zstr(r->result)) {
 		*result = strdup(r->result);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) result:\n\n%s\n", schannel->name, *result);
 		r->result = NULL;
@@ -2248,7 +2248,7 @@ static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp
 		switch_hash_this(hi, &key, NULL, &val);
 		param_name = (char *)key;
 		param_val = (char *)val;
-		if (!switch_strlen_zero(param_name) && !switch_strlen_zero(param_val)) {
+		if (!zstr(param_name) && !zstr(param_val)) {
 			unimrcp_param_id_t *id = (unimrcp_param_id_t *)switch_core_hash_find(schannel->application->param_id_map, param_name);
 			if (id) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) \"%s\": \"%s\"\n", schannel->name, param_name, param_val);
@@ -2572,7 +2572,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 	char *filename = NULL;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) grammar = %s, name = %s\n", schannel->name, grammar, name);
 
-	if (switch_strlen_zero(grammar) || switch_strlen_zero(name)) {
+	if (zstr(grammar) || zstr(name)) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -2673,7 +2673,7 @@ static switch_status_t recog_asr_unload_grammar(switch_asr_handle_t *ah, const c
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	speech_channel_t *schannel = (speech_channel_t *)ah->private_info;
-	if (switch_strlen_zero(name) || speech_channel_stop(schannel) != SWITCH_STATUS_SUCCESS ||
+	if (zstr(name) || speech_channel_stop(schannel) != SWITCH_STATUS_SUCCESS ||
 		recog_channel_unload_grammar(schannel, name) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
 	}
@@ -3316,13 +3316,13 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 	}
 
 	/* set up MRCPv2 connection agent that will be shared with all profiles */
-	if (!switch_strlen_zero(globals.unimrcp_max_connection_count)) {
+	if (!zstr(globals.unimrcp_max_connection_count)) {
 		max_connection_count = atoi(globals.unimrcp_max_connection_count);
 	}
 	if (max_connection_count <= 0) {
 		max_connection_count = 100;
 	}
-	if (!switch_strlen_zero(globals.unimrcp_offer_new_connection)) {
+	if (!zstr(globals.unimrcp_offer_new_connection)) {
 		offer_new_connection = strcasecmp("true", globals.unimrcp_offer_new_connection);
 	}
 	connection_agent = mrcp_client_connection_agent_create(max_connection_count, offer_new_connection, pool);
@@ -3354,7 +3354,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 			/* get profile attributes */
 			const char *name = apr_pstrdup(pool, switch_xml_attr(profile, "name"));
 			const char *version = switch_xml_attr(profile, "version");
-			if (switch_strlen_zero(name) || switch_strlen_zero(version)) {
+			if (zstr(name) || zstr(version)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "<profile> missing name or version attribute\n");
 				client = NULL;
 				goto done;
@@ -3381,7 +3381,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 				for (param = switch_xml_child(profile, "param"); param; param = switch_xml_next(param)) {
 					const char *param_name = switch_xml_attr(param, "name");
 					const char *param_value = switch_xml_attr(param, "value");
-					if (switch_strlen_zero(param_name)) {
+					if (zstr(param_name)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing param name\n");
 						client = NULL;
 						goto done;
@@ -3409,7 +3409,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 				for (param = switch_xml_child(profile, "param"); param; param = switch_xml_next(param)) {
 					const char *param_name = switch_xml_attr(param, "name");
 					const char *param_value = switch_xml_attr(param, "value");
-					if (switch_strlen_zero(param_name)) {
+					if (zstr(param_name)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing param name\n");
 						client = NULL;
 						goto done;
@@ -3468,11 +3468,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load)
 
 	/* get MRCP module configuration */
 	mod_unimrcp_do_config();
-	if (switch_strlen_zero(globals.unimrcp_default_synth_profile)) {
+	if (zstr(globals.unimrcp_default_synth_profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing default-tts-profile\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	if (switch_strlen_zero(globals.unimrcp_default_recog_profile)) {
+	if (zstr(globals.unimrcp_default_recog_profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing default-asr-profile\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -3575,7 +3575,7 @@ static apt_bool_t unimrcp_log(const char *file, int line, const char *id, apt_lo
 	char log_message[4096] = { 0 }; /* same size as MAX_LOG_ENTRY_SIZE in UniMRCP apt_log.c */
 	size_t msglen;
 
-	if (switch_strlen_zero(format)) {
+	if (zstr(format)) {
 		return TRUE;
 	}
 
