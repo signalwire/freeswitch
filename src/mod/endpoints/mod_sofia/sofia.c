@@ -430,6 +430,10 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	const char *val;
 	int fs = 0;
 
+	if (switch_true(switch_channel_get_variable(channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE))) {
+		return;
+	}
+
 	if (sip->sip_to) {
 		number = sip->sip_to->a_url->url_user;
 	}

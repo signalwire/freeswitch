@@ -111,6 +111,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PATH_SEPARATOR "/"
 #endif
 #define SWITCH_URL_SEPARATOR "://"
+#define SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE "ignore_display_updates"
 #define SWITCH_AUDIO_SPOOL_PATH_VARIABLE "audio_spool_path"
 #define SWITCH_BRIDGE_HANGUP_CAUSE_VARIABLE "bridge_hangup_cause"
 #define SWITCH_READ_TERMINATOR_USED_VARIABLE "read_terminator_used"
