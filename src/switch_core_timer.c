@@ -61,9 +61,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, co
 		switch_set_flag(timer, SWITCH_TIMER_FLAG_FREE_POOL);
 	}
 
-	timer->timer_interface->timer_init(timer);
-	return SWITCH_STATUS_SUCCESS;
-
+	return timer->timer_interface->timer_init(timer);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_timer_next(switch_timer_t *timer)

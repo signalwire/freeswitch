@@ -233,8 +233,8 @@ static switch_status_t timer_init(switch_timer_t *timer)
 
 	while (globals.STARTED == 0) {
 		do_sleep(100000);
-		if (++sanity == 10) {
-			break;
+		if (++sanity == 300) {
+			abort();
 		}
 	}
 
