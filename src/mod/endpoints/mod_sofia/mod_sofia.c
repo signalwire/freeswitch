@@ -1278,10 +1278,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				if (!sofia_test_flag(tech_pvt, TFLAG_UPDATING_DISPLAY)) {
 						
 					if ((ua && (switch_stristr("polycom", ua)))) {
-						message = switch_mprintf("Warning: 300 freeswitch \"%s\"", msg->string_arg);
+						message = switch_mprintf("Warning: 399 devnull \"%s\"", msg->string_arg);
 						sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
-						nua_update(tech_pvt->nh,
-								   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
+						nua_update(tech_pvt->nh, 
+								   TAG_IF(!zstr(message), SIPTAG_HEADER_STR(message)),
 								   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 								   TAG_END());
 						free(message);

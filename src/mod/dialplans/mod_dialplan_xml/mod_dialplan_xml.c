@@ -262,9 +262,15 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		if (anti_action) {
 			for (xaction = switch_xml_child(xcond, "anti-action"); xaction; xaction = xaction->next) {
 				const char *application = switch_xml_attr_soft(xaction, "application");
-				const char *data = switch_xml_attr_soft(xaction, "data");
+				const char *data;
 				const char *inline_ = switch_xml_attr_soft(xaction, "inline");
 				int xinline = switch_true(inline_);				
+
+				if (!zstr(xaction->txt)) {
+					data = xaction->txt;
+				} else {
+					data = (char *) switch_xml_attr_soft(xaction, "data");
+				}
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
 								  "Dialplan: %s ANTI-Action %s(%s) %s\n",

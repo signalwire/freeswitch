@@ -576,6 +576,8 @@ static const char *message_names[] = {
 	"TRANSCODING_NECESSARY",
 	"AUDIO_SYNC",
 	"REQUEST_IMAGE_MEDIA",
+	"UUID_CHANGE",
+	"WARNING",
 	"INVALID"
 };
 
