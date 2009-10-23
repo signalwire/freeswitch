@@ -3475,6 +3475,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	switch_channel_t *other_channel = NULL;
 	char st[80] = "";
 	int is_dup_sdp = 0;
+	switch_event_t *s_event = NULL;
 
 	tl_gets(tags,
 			NUTAG_CALLSTATE_REF(ss_state),
@@ -3893,6 +3894,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								SOATAG_REUSE_REJECTED(1),
 								SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), 
 								TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
+
+					if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REINVITE) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
+						switch_event_fire(&s_event);
+					}
 				} else {
 					nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 				}
