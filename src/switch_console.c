@@ -842,12 +842,13 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 {
 
 	char cmd[2048] = "";
-	int32_t activity = 1, r;	
+	int32_t activity = 1;	
 	gethostname(hostname, sizeof(hostname));
 
 	while (running) {
 		int32_t arg;
 #ifdef _MSC_VER
+		DWORD read, i;
 		HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
 		INPUT_RECORD in[128];
 #else
@@ -864,34 +865,31 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "\nfreeswitch@%s> ", hostname);
 		}
 #ifdef _MSC_VER
-		r = WaitForSingleObject(stdinHandle, 200);
 		activity = 0;
-
-		if (r == WAIT_OBJECT_0) {
-			DWORD bytes = 0;
-			DWORD read, i;
-			PeekConsoleInput(stdinHandle, in, 128, &read);
-			for (i = 0; i < read; i++) {
-				if (in[i].EventType == KEY_EVENT && !in[i].Event.KeyEvent.bKeyDown) {
-					activity = 1;
-					break;
-				}
+		PeekConsoleInput(stdinHandle, in, 128, &read);
+		for (i = 0; i < read; i++) {
+			if (in[i].EventType == KEY_EVENT && !in[i].Event.KeyEvent.bKeyDown) {
+				activity = 1;
+				break;
 			}
-			if (activity) {
-				char *end;
-				ReadConsole(stdinHandle, cmd, sizeof(cmd), &bytes, NULL);
-				end = end_of_p(cmd);
-				while(*end == '\r' || *end == '\n') {
-					*end-- = '\0';	
-				}
-			}
-
-			if (cmd[0]) {
-				running = switch_console_process(cmd, 0);
-				memset(cmd, 0, sizeof(cmd));
-			}
-			
 		}
+
+		if (activity) {
+			DWORD bytes = 0;
+			char *end;
+			ReadConsole(stdinHandle, cmd, sizeof(cmd), &bytes, NULL);
+			FlushConsoleInputBuffer(stdinHandle);
+			end = end_of_p(cmd);
+			while(*end == '\r' || *end == '\n') {
+				*end-- = '\0';	
+			}
+		}
+
+		if (cmd[0]) {
+			running = switch_console_process(cmd, 0);
+			memset(cmd, 0, sizeof(cmd));
+		}
+		Sleep(20);
 #else
 		FD_ZERO(&rfds);
 		FD_ZERO(&efds);
