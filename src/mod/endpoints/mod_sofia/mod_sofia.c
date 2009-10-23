@@ -1269,6 +1269,28 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 
+	case SWITCH_MESSAGE_INDICATE_WARNING:
+		{
+			char *message;
+			if (!zstr(msg->string_arg)) {
+				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
+				
+				if (!sofia_test_flag(tech_pvt, TFLAG_UPDATING_DISPLAY)) {
+						
+					if ((ua && (switch_stristr("polycom", ua)))) {
+						message = switch_mprintf("Warning: 300 freeswitch \"%s\"", msg->string_arg);
+						sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
+						nua_update(tech_pvt->nh,
+								   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
+								   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+								   TAG_END());
+						free(message);
+					}
+
+				}
+			}
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_DISPLAY:
 		{
 			const char *name = msg->string_array_arg[0], *number = msg->string_array_arg[1];
