@@ -142,7 +142,7 @@ static switch_core_session_t *zap_channel_get_session(zap_channel_t *channel, in
 		return NULL;
 	}
 
-	if (!switch_strlen_zero(channel->tokens[id])) {
+	if (!zstr(channel->tokens[id])) {
 		if (!(session = switch_core_session_locate(channel->tokens[id]))) {
 			zap_channel_clear_token(channel, channel->tokens[id]);
 		}
@@ -157,7 +157,7 @@ static const char *zap_channel_get_uuid(zap_channel_t *channel, int32_t id)
 		return NULL;
 	}
 
-	if (!switch_strlen_zero(channel->tokens[id])) {
+	if (!zstr(channel->tokens[id])) {
 		return channel->tokens[id];
 	}
 	return NULL;
@@ -202,7 +202,7 @@ static void start_hold(zap_channel_t *zchan, switch_core_session_t *session_a, c
 	
 	if ((session = switch_core_session_locate(uuid))) {
 		channel = switch_core_session_get_channel(session);
-		if (switch_strlen_zero(stream)) {
+		if (zstr(stream)) {
 			if (!strcasecmp(globals.hold_music, "indicate_hold")) {
 				stream = "indicate_hold";
 			}
@@ -211,24 +211,24 @@ static void start_hold(zap_channel_t *zchan, switch_core_session_t *session_a, c
 			}
 		}
 
-		if (switch_strlen_zero(stream)) {
+		if (zstr(stream)) {
 			stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
 		}
 
-		if (switch_strlen_zero(stream)) {
+		if (zstr(stream)) {
 			stream = SPAN_CONFIG[zchan->span->span_id].hold_music;
 		}
 
-		if (switch_strlen_zero(stream)) {
+		if (zstr(stream)) {
 			stream = globals.hold_music;
 		}
 		
 		
-		if (switch_strlen_zero(stream) && !(stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+		if (zstr(stream) && !(stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
 			stream = globals.hold_music;
 		}
 
-		if (!switch_strlen_zero(stream)) {
+		if (!zstr(stream)) {
 			if (!strcasecmp(stream, "indicate_hold")) {
 				channel_a = switch_core_session_get_channel(session_a);
 				switch_ivr_hold_uuid(uuid, NULL, 0);
@@ -1052,7 +1052,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
-	if (switch_strlen_zero(outbound_profile->destination_number)) {
+	if (zstr(outbound_profile->destination_number)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
@@ -1088,7 +1088,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
         return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
-	if (span_id == -1 && !switch_strlen_zero(span_name)) {
+	if (span_id == -1 && !zstr(span_name)) {
 		zap_span_t *span;
 		zap_status_t zstatus = zap_span_find_by_name(span_name, &span);
 		if (zstatus == ZAP_SUCCESS && span) {
@@ -1114,7 +1114,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		caller_data.pres = 1;
 	}
 
-	if (!switch_strlen_zero(dest)) {
+	if (!zstr(dest)) {
 		zap_set_string(caller_data.ani.digits, dest);
 	}
 	
@@ -1136,7 +1136,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 
 #if 0
-	if (!switch_strlen_zero(outbound_profile->rdnis)) {
+	if (!zstr(outbound_profile->rdnis)) {
 		zap_set_string(caller_data.rdnis.digits, outbound_profile->rdnis);
 	}
 #endif
@@ -1166,7 +1166,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	for (h = var_event->headers; h; h = h->next) {
 		if (!strncasecmp(h->name, OPENZAP_VAR_PREFIX, OPENZAP_VAR_PREFIX_LEN)) {
 			char *v = h->name + OPENZAP_VAR_PREFIX_LEN;
-			if (!switch_strlen_zero(v)) {
+			if (!zstr(v)) {
 				zap_channel_add_var(zchan, v, h->value);
 			}
 		}
@@ -1263,12 +1263,12 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 	
 	*sigmsg->channel->caller_data.collected = '\0';
 	
-	if (switch_strlen_zero(sigmsg->channel->caller_data.cid_name)) {
+	if (zstr(sigmsg->channel->caller_data.cid_name)) {
 		switch_set_string(sigmsg->channel->caller_data.cid_name, sigmsg->channel->chan_name);
 	}
 
-	if (switch_strlen_zero(sigmsg->channel->caller_data.cid_num.digits)) {
-		if (!switch_strlen_zero(sigmsg->channel->caller_data.ani.digits)) {
+	if (zstr(sigmsg->channel->caller_data.cid_num.digits)) {
+		if (!zstr(sigmsg->channel->caller_data.ani.digits)) {
 			switch_set_string(sigmsg->channel->caller_data.cid_num.digits, sigmsg->channel->caller_data.ani.digits);
 		} else {
 			switch_set_string(sigmsg->channel->caller_data.cid_num.digits, sigmsg->channel->chan_number);
@@ -1427,7 +1427,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			if (sigmsg->channel->token_count) {
 				switch_core_session_t *session_a, *session_b, *session_t = NULL;
 				switch_channel_t *channel_a = NULL, *channel_b = NULL;
-				int digits = !switch_strlen_zero(sigmsg->channel->caller_data.collected);
+				int digits = !zstr(sigmsg->channel->caller_data.collected);
 				const char *br_a_uuid = NULL, *br_b_uuid = NULL;
 				private_t *tech_pvt = NULL;
 
@@ -1547,18 +1547,18 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			char *regex = SPAN_CONFIG[sigmsg->channel->span->span_id].dial_regex;
 			char *fail_regex = SPAN_CONFIG[sigmsg->channel->span->span_id].fail_dial_regex;
 			
-			if (switch_strlen_zero(regex)) {
+			if (zstr(regex)) {
 				regex = NULL;
 			}
 
-			if (switch_strlen_zero(fail_regex)) {
+			if (zstr(fail_regex)) {
 				fail_regex = NULL;
 			}
 
 			zap_log(ZAP_LOG_DEBUG, "got DTMF sig [%s]\n", dtmf);
 			switch_set_string(sigmsg->channel->caller_data.collected, dtmf);
 			
-			if ((regex || fail_regex) && !switch_strlen_zero(dtmf)) {
+			if ((regex || fail_regex) && !zstr(dtmf)) {
 				switch_regex_t *re = NULL;
 				int ovector[30];
 				int match = 0;
@@ -1626,17 +1626,17 @@ static ZIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 			char *regex = SPAN_CONFIG[sigmsg->channel->span->span_id].dial_regex;
 			char *fail_regex = SPAN_CONFIG[sigmsg->channel->span->span_id].fail_dial_regex;
 
-			if (switch_strlen_zero(regex)) {
+			if (zstr(regex)) {
 				regex = NULL;
 			}
 
-			if (switch_strlen_zero(fail_regex)) {
+			if (zstr(fail_regex)) {
 				fail_regex = NULL;
 			}
 
 			zap_log(ZAP_LOG_DEBUG, "R2 DNIS so far [%s]\n", sigmsg->channel->caller_data.dnis.digits);
 
-			if ((regex || fail_regex) && !switch_strlen_zero(sigmsg->channel->caller_data.dnis.digits)) {
+			if ((regex || fail_regex) && !zstr(sigmsg->channel->caller_data.dnis.digits)) {
 				switch_regex_t *re = NULL;
 				int ovector[30];
 				int match = 0;
@@ -2647,7 +2647,7 @@ SWITCH_STANDARD_API(oz_function)
 	char *mycmd = NULL, *argv[10] = { 0 };
 	int argc = 0;
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
@@ -2679,7 +2679,7 @@ SWITCH_STANDARD_API(oz_function)
 				as = argv[4];
 			}
 
-			if (!switch_strlen_zero(as) && !strcasecmp(as, "xml")) {
+			if (!zstr(as) && !strcasecmp(as, "xml")) {
 				stream->write_function(stream, "<channels>\n");
 				if (!span) {
 					stream->write_function(stream, "<error>invalid span</error>\n");
