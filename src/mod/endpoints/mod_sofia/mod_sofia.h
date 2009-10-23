@@ -198,6 +198,7 @@ typedef enum {
 	PFLAG_MANUAL_REDIRECT,
 	PFLAG_AUTO_NAT,
 	PFLAG_SIPCOMPACT,
+	PFLAG_SQL_IN_TRANS,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
