@@ -1571,7 +1571,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 							tech_pvt->num_codecs = 0;
 							sofia_glue_tech_prepare_codecs(tech_pvt);
-							if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+							if (zstr(r_sdp) || sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, 
+												  "CODEC NEGOTIATION ERROR.  SDP:\n%s\n", r_sdp ? r_sdp : "NO SDP!"); 
 								switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 								//nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 								status = SWITCH_STATUS_FALSE;
