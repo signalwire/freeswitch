@@ -185,13 +185,17 @@ char *generate_pai_str(switch_core_session_t *session)
 		callee_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name");
 	}
 
-	if (!(callee_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number"))) {
-		if (!(callee_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number"))) {
+	if (switch_strlen_zero((callee_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number")))) {
+		if (switch_strlen_zero((callee_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number")))) {
 			callee_number = tech_pvt->caller_profile->destination_number;
 		}
 	}
 
-	if (callee_name && callee_number) {
+	if (switch_strlen_zero(callee_name) && !switch_strlen_zero(callee_number)) {
+		callee_name = callee_number;
+	}
+
+	if (!switch_strlen_zero(callee_name) && !switch_strlen_zero(callee_number)) {
 		pai = switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>\nX-FS-Display-Name: %s\nX-FS-Display-Number: %s\n", 
 										  callee_name, callee_number, callee_name, callee_number);
 	}
