@@ -2143,6 +2143,23 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		}
 	}
 
+	if ((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE)) && !switch_strlen_zero(var)) {
+		switch_stream_handle_t stream = { 0 };
+		char *arg = NULL;
+
+		app = switch_core_session_strdup(channel->session, var);
+		if ((arg = strchr(app, ' '))) {
+			*arg++ = '\0';
+		}
+
+		SWITCH_STANDARD_STREAM(stream);
+		switch_api_execute(app, arg, NULL, &stream);
+
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s api on answer: %s(%s)\n%s\n", 
+						  channel->name, app, switch_str_nil(arg), (char *)stream.data);
+		free(stream.data);
+	}
+
 	switch_channel_audio_sync(channel);
 
 	return SWITCH_STATUS_SUCCESS;
