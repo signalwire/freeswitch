@@ -1291,7 +1291,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					number = tech_pvt->caller_profile->destination_number;
 				}
 
-				if (switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_UPDATING_DISPLAY)) {
+				if (!sofia_test_flag(tech_pvt, TFLAG_UPDATING_DISPLAY)) {
 					if (switch_strlen_zero(tech_pvt->last_sent_callee_id_name) || strcmp(tech_pvt->last_sent_callee_id_name, name) ||
 						switch_strlen_zero(tech_pvt->last_sent_callee_id_number) || strcmp(tech_pvt->last_sent_callee_id_number, number)) {
 						
