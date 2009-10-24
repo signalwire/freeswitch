@@ -45,6 +45,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown);
 SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, mod_commands_shutdown, NULL);
 
+SWITCH_STANDARD_API(hostname_api_function)
+{
+	char hostname[256]="";
+	gethostname(hostname, sizeof(hostname));
+	stream->write_function(stream, "%s",hostname);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_STANDARD_API(host_lookup_function)
 {
 	char host[256] = "";
@@ -3760,6 +3769,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "time_test", "time_test", time_test_function, "<mss>");
 	SWITCH_ADD_API(commands_api_interface, "nat_map", "nat_map", nat_map_function, "[status|republish|reinit] | [add|del] <port> [tcp|udp] [static]");
 	SWITCH_ADD_API(commands_api_interface, "host_lookup", "host_lookup", host_lookup_function, "<hostname>");
+	SWITCH_ADD_API(commands_api_interface, "hostname", "Returns the system hostname", hostname_api_function, "");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
