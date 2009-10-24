@@ -1,0 +1,10 @@
+
+fix misstype in codec conversion.
+fix rtp issue causes choppy sound.
+fix progress ind handling on outbound calls.
+fix crash on log line, btw not understand why.
+implement dtmf transfer.
+fix codec name conversion a bit.
+fix crash on inbound fast start connection.
+
+initial release.
