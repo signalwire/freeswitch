@@ -149,8 +149,7 @@ typedef struct sip_alias_node sip_alias_node_t;
 
 typedef enum {
 	MFLAG_REFER = (1 << 0),
-	MFLAG_REGISTER = (1 << 1),
-	MFLAG_UPDATE = (1 << 2)
+	MFLAG_REGISTER = (1 << 1)
 } MFLAGS;
 
 typedef enum {

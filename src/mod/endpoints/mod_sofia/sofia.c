@@ -503,19 +503,6 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 }
 
 
-static void sofia_handle_sip_i_update(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
-{
-	if (!(profile->mflags & MFLAG_UPDATE)) {
-		nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
-		return;
-	}
-
-	sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
-	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
-}
-
-
-
 void sofia_event_callback(nua_event_t event,
 						  int status,
 						  char const *phrase,
@@ -684,7 +671,6 @@ void sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_info(nua, profile, nh, session, sip, tags);
 		break;
 	case nua_i_update:
-		if (session) sofia_handle_sip_i_update(nua, profile, nh, session, sip, tags);
 		break;
 	case nua_r_update:
 		if (session && tech_pvt && locked) {
@@ -1096,7 +1082,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created agent for %s\n", profile->name);
 
 	nua_set_params(profile->nua,
-				   SIPTAG_ALLOW_STR("INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO"),
+				   SIPTAG_ALLOW_STR("INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, UPDATE, INFO"),
 				   NUTAG_APPL_METHOD("OPTIONS"),
 				   NUTAG_APPL_METHOD("REFER"),
 				   NUTAG_APPL_METHOD("REGISTER"),
@@ -1111,7 +1097,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_ENABLEMESSENGER(1),
 				   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
 				   TAG_IF((profile->mflags & MFLAG_REFER), NUTAG_ALLOW("REFER")),
-				   //TAG_IF((profile->mflags & MFLAG_UPDATE), NUTAG_ALLOW("UPDATE")),
 				   TAG_IF(!sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_ALLOW("PRACK")),
 				   NUTAG_ALLOW("INFO"),
 				   NUTAG_ALLOW("NOTIFY"),
@@ -1147,7 +1132,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 					   NUTAG_AUTOALERT(0),
 					   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
 					   TAG_IF((profile->mflags & MFLAG_REFER), NUTAG_ALLOW("REFER")),
-					   //TAG_IF((profile->mflags & MFLAG_UPDATE), NUTAG_ALLOW("UPDATE")),
 					   NUTAG_ALLOW("INFO"),
 					   TAG_IF(profile->pres_type, NUTAG_ALLOW("PUBLISH")),
 					   TAG_IF(profile->pres_type, NUTAG_ENABLEMESSAGE(1)),
@@ -2384,7 +2368,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				profile->dtmf_duration = 100;
 				profile->tls_version = 0;
-				profile->mflags = MFLAG_REFER | MFLAG_REGISTER | MFLAG_UPDATE;
+				profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
 				profile->rport_level = 1;
 				sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
 				sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
@@ -2628,8 +2612,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->mflags &= ~MFLAG_REFER;
 					} else if (!strcasecmp(var, "disable-register") && switch_true(val)) {
 						profile->mflags &= ~MFLAG_REGISTER;
-					} else if (!strcasecmp(var, "disable-update") && switch_true(val)) {
-						profile->mflags &= ~MFLAG_UPDATE;
 					} else if (!strcasecmp(var, "media-option")) {
 						if (!strcasecmp(val, "resume-media-on-hold")) {
 							profile->media_options |= MEDIA_OPT_MEDIA_ON_HOLD;
