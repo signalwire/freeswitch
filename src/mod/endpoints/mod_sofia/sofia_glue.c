@@ -1773,7 +1773,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   TAG_IF(!zstr(tech_pvt->privacy), SIPTAG_PRIVACY_STR(tech_pvt->privacy)),
 			   TAG_IF(!zstr(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-			   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT),
+			   TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID), SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
 			   TAG_IF(!zstr(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
 			   TAG_IF(!zstr(route_uri), NUTAG_PROXY(route_uri)),
 			   TAG_IF(!zstr(route), SIPTAG_ROUTE_STR(route)),

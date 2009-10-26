@@ -179,6 +179,7 @@ char *generate_pai_str(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	const char *callee_name = NULL, *callee_number = NULL;
+	const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 	char *pai = NULL;
 
 	if (!(callee_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name"))) {
@@ -195,9 +196,19 @@ char *generate_pai_str(switch_core_session_t *session)
 		callee_name = callee_number;
 	}
 
+	if (ua && !zstr(callee_number) && !switch_stristr("polycom", ua)) {
+		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, tech_pvt->profile->sipip);
+	}
+	
+
 	if (!zstr(callee_name) && !zstr(callee_number)) {
-		pai = switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>\nX-FS-Display-Name: %s\nX-FS-Display-Number: %s\n", 
-										  callee_name, callee_number, callee_name, callee_number);
+		if (switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote)) {
+			pai = switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>\nX-FS-Display-Name: %s\nX-FS-Display-Number: %s\n", 
+											  callee_name, callee_number, callee_name, callee_number);
+		} else {
+			pai = switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>\n", 
+											  callee_name, callee_number, callee_name, callee_number);
+		}
 	}
 	return pai;
 }
@@ -496,7 +507,8 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 							SOATAG_REUSE_REJECTED(1),
 							SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
 							TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-							SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT),
+							TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
+								   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
 							TAG_END());
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Sent a 200 OK, waiting for ACK\n");
@@ -586,7 +598,8 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 					SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 					SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
 					TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-					SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT),
+					TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
+						   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
 					TAG_END());
 		switch_safe_free(extra_headers);
 		sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
@@ -1568,7 +1581,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_HEADER_STR(generate_pai_str(session)), 
 						TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
-						SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT),
+						TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
+							   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
 						TAG_END());
 			switch_safe_free(extra_header);
 			switch_channel_mark_ring_ready(channel);
@@ -1665,7 +1679,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 								SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
 								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), 
 								TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
-								SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT),
+								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
+									   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
 								TAG_END());
 					switch_safe_free(extra_header);
 				}

@@ -1830,6 +1830,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 			profile->reg_acl_count = 0;
 			profile->proxy_acl_count = 0;
 			sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
+			sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
 			profile->ib_calls = 0;
 			profile->ob_calls = 0;
 			profile->ib_failed_calls = 0;
@@ -1847,6 +1848,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						profile->debug = atoi(val);
 					} else if (!strcasecmp(var, "tracelevel")) {
 						mod_sofia_globals.tracelevel = switch_log_str2level(val);
+					} else if (!strcasecmp(var, "pass-callee-id")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PASS_CALLEE_ID);
+						}
 					} else if (!strcasecmp(var, "sip-trace")) {
 						if (switch_true(val)) {
 							sofia_set_flag(profile, TFLAG_TPORT_LOG);
@@ -2386,6 +2393,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 				sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 				profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
+				sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2772,6 +2780,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "enable-compact-headers")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_SIPCOMPACT);
+						}
+					} else if (!strcasecmp(var, "pass-callee-id")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PASS_CALLEE_ID);
 						}
 					} else if (!strcasecmp(var, "sql-in-transactions")) {
 						if (switch_true(val)) {

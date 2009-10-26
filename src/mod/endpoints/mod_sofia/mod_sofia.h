@@ -199,6 +199,7 @@ typedef enum {
 	PFLAG_AUTO_NAT,
 	PFLAG_SIPCOMPACT,
 	PFLAG_SQL_IN_TRANS,
+	PFLAG_PASS_CALLEE_ID,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
