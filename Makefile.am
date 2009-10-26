@@ -299,7 +299,17 @@ src/include/switch_version.h: $(top_srcdir)/src/include/switch_version.h.in .ver
 	  fi ; \
 	fi ;
 
-update:
+is-svn:
+	@if [ ! -d .svn ] ; then \
+		echo ; echo ; \
+		echo "**************************************************************************************************" ; \
+		echo "You can not update a release tarball or without a svn working copy, please checkout fresh from svn" ; \
+		echo "**************************************************************************************************" ; \
+		echo ; echo ; \
+		exit 1; \
+	fi 
+
+update: is-svn
 	@if test -d .svn ; then \
 	  test ! -f .version || rm -f .version ; \
 	  echo Updating... ; \
@@ -357,17 +367,17 @@ core_install: install_core
 
 everything: install
 
-up: clean
+up: is-svn clean
 	svn update
 	$(MAKE) -j core
 	$(MAKE) -j modules
 	$(MAKE) install
 
-sync:
+sync: is-svn
 	svn update
 	$(MAKE) install
 
-speedy-sync:
+speedy-sync: is-svn
 	svn update
 	$(MAKE) -j install
 
@@ -431,14 +441,14 @@ sofia-reconf:
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/sofia-sip && ./configure --prefix=$(PREFIX) --with-pic --with-glib=no --disable-shared
 
-current: update-clean
+current: is-svn update-clean
 	svn update
 	$(MAKE) all
 	$(MAKE) install
 
 installall: current
 
-speedy-current: update-clean
+speedy-current: is-svn update-clean
 	svn update
 	$(MAKE) speedy-sure
 	$(MAKE) install
