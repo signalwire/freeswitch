@@ -125,12 +125,13 @@ struct FSListener {
     PString localUserName;
     PString gatekeeper;
 };
-
+class FSGkRegThread;
 class FSH323EndPoint:public H323EndPoint {
 
     PCLASSINFO(FSH323EndPoint, H323EndPoint);
 	public:
 		FSH323EndPoint();
+		~FSH323EndPoint();
 		
 		
 	 /**Create a connection that uses the specified call.
@@ -147,6 +148,9 @@ class FSH323EndPoint:public H323EndPoint {
 	
     switch_status_t ReadConfig(int reload);
 	
+	void StartGkClient(int retry, PString* gkAddress,PString* gkIdentifer,PString* gkInterface);
+	void StopGkClient();
+	
 	switch_endpoint_interface_t *GetSwitchInterface() const {
         return m_freeswitch;
     }
@@ -159,8 +163,32 @@ class FSH323EndPoint:public H323EndPoint {
 		PString m_gkAddress;
 		PString m_gkIdentifer;
 		PString m_gkInterface;
+		bool m_faststart;
+		bool m_h245tunneling;
+		bool m_h245insetup;
+		int m_gkretry;
+		FSGkRegThread* m_thread;
 		
 };
+
+
+class FSGkRegThread : public PThread
+{
+    PCLASSINFO(FSGkRegThread, PThread);
+public:
+    FSGkRegThread(FSH323EndPoint* endpoint, PString* gkAddress, PString* gkIdentifer, PString* gkInterface, int retry = 0)
+	: PThread(10000), m_ep(endpoint), m_retry(retry), m_gkAddress(gkAddress),m_gkIdentifer(gkIdentifer),m_gkInterface(gkInterface)
+	{ }
+    void Main()
+	{ m_ep->StartGkClient(m_retry,m_gkAddress,m_gkIdentifer,m_gkInterface); }
+protected:
+    FSH323EndPoint* m_ep;
+    int m_retry;
+    PString* m_gkAddress;
+	PString* m_gkIdentifer;
+	PString* m_gkInterface;
+};
+
 
 class FSH323Connection:public H323Connection {
     PCLASSINFO(FSH323Connection, H323Connection)
@@ -225,6 +253,10 @@ class FSH323Connection:public H323Connection {
 	
 	bool m_callOnPreAnswer;
 	bool m_startRTP;
+	bool m_rxChennel;
+	bool m_txChennel;
+	bool m_ChennelAnswer;
+	bool m_ChennelProgress;
 	PSyncPoint m_rxAudioOpened;
     PSyncPoint m_txAudioOpened;
   protected:
@@ -237,6 +269,7 @@ class FSH323Connection:public H323Connection {
 	WORD m_RTPlocalPort;
 	unsigned char m_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 };
+
 
 class FSH323_ExternalRTPChannel : public H323_ExternalRTPChannel{
     PCLASSINFO(FSH323_ExternalRTPChannel, H323_ExternalRTPChannel);
@@ -409,6 +442,70 @@ protected:
 	unsigned m_type;
 };
 
+class BaseG726Cap : public H323AudioCapability
+{
+	PCLASSINFO(BaseG726Cap, H323AudioCapability);
+
+public:
+	
+	BaseG726Cap(const char* fname, unsigned type = H245_AudioCapability::e_nonStandard)
+	: H323AudioCapability(24,2), m_name(fname), m_type(type),m_comfortNoise(0),m_scrambled(0)
+	{ }
+	
+	virtual PObject * Clone() const{
+		return new BaseG726Cap(*this);
+	}
+
+	virtual H323Codec* CreateCodec(H323Codec::Direction direction) const{
+		return 0;
+	}
+
+	virtual unsigned GetSubType() const{
+		PTRACE(2, "mod_h323\t==============>BaseG726Cap::GetSubType");
+		return H245_AudioCapability::e_nonStandard;
+	}
+
+	virtual PString GetFormatName() const{
+		PTRACE(2, "mod_h323\t==============>BaseG726Cap::GetFormatName");
+		return m_name;
+	}
+
+	virtual bool OnSendingPDU(H245_AudioCapability & pdu, unsigned packetSize) const{
+		PTRACE(2, "mod_h323\t==============>BaseG726Cap::OnSendingPDU");
+		pdu.SetTag(H245_AudioCapability::e_nonStandard);
+		return true;
+	}
+	
+	virtual bool OnReceivedPDU(const H245_AudioCapability & pdu, unsigned & packetSize){
+		PTRACE(2, "mod_h323\t==============>BaseG726Cap::OnReceivedPDU");
+		return true;
+	}
+
+protected:
+	const char* m_name;
+	int m_comfortNoise;
+	int m_scrambled;
+	unsigned m_type;
+};
+
+
+
+
+#define OPAL_G726_40 "G.726-40k"
+
+char OpalG726_40[] = OPAL_G726_40;
+
+OPAL_MEDIA_FORMAT_DECLARE(OpalG726Format,
+          OpalG726_40,
+          OpalMediaFormat::DefaultAudioSessionID,
+          RTP_DataFrame::G726,
+          TRUE, // Needs jitter
+          8000, // bits/sec
+          5,   // bytes
+          80,   // 10 milliseconds
+          OpalMediaFormat::AudioTimeUnits,
+          0)
+
 
 #define DEFINE_H323_CAPAB(cls,base,param,name) \
 class cls : public base { \
@@ -427,5 +524,6 @@ DEFINE_H323_CAPAB(FS_G729A,BaseG729Capab,H245_AudioCapability::e_g729AnnexA,OPAL
 DEFINE_H323_CAPAB(FS_G729B,BaseG729Capab,H245_AudioCapability::e_g729wAnnexB,OPAL_G729B"{sw}")
 DEFINE_H323_CAPAB(FS_G729AB,BaseG729Capab,H245_AudioCapability::e_g729AnnexAwAnnexB,OPAL_G729AB"{sw}")
 DEFINE_H323_CAPAB(FS_GSM,BaseGSM0610Cap,H245_AudioCapability::e_gsmFullRate,OPAL_GSM0610"{sw}")
+DEFINE_H323_CAPAB(FS_G726_40,BaseG726Cap,H245_AudioCapability::e_nonStandard,OPAL_G726_40"{sw}")
 
 static FSProcess *h323_process = NULL;
