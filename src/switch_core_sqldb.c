@@ -578,7 +578,6 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 	switch_queue_create(&sql_manager.sql_queue[1], SWITCH_SQL_QUEUE_LEN, sql_manager.memory_pool);
 
 	switch_threadattr_create(&thd_attr, sql_manager.memory_pool);
-	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&sql_manager.thread, thd_attr, switch_core_sql_thread, NULL, sql_manager.memory_pool);
 
