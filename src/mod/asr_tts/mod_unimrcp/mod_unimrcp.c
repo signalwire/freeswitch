@@ -164,12 +164,15 @@ static apt_log_priority_e str_to_log_level(const char *level);
 static int get_next_speech_channel_number(void);
 
 #define XML_ID  "<?xml"
+#define SRGS_ID "<grammar"
+#define SSML_ID "<speak"
 #define GSL_ID  ";GSL2.0"
 #define ABNF_ID "#ABNF"
 #define JSGF_ID "#JSGF"
 #define BUILTIN_ID "builtin:"
 #define SESSION_ID "session:"
 #define HTTP_ID "http://"
+#define FILE_ID "file://"
 #define INLINE_ID "inline:"
 static int text_starts_with(const char *text, const char *match);
 
@@ -959,7 +962,7 @@ static switch_status_t synth_channel_speak(speech_channel_t *schannel, const cha
 	}
 
 	/* good enough way of determining SSML or plain text body */
-	if (text_starts_with(text, XML_ID)) {
+	if (text_starts_with(text, XML_ID) || text_starts_with(text, SSML_ID)) {
 		apt_string_assign(&generic_header->content_type, MIME_TYPE_SSML_XML, mrcp_message->pool);
 	} else {
 		apt_string_assign(&generic_header->content_type, MIME_TYPE_PLAIN_TEXT, mrcp_message->pool);
@@ -2584,7 +2587,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 	}
 
 	/* figure out what type of grammar this is */
-	if (text_starts_with(grammar, HTTP_ID) || text_starts_with(grammar, SESSION_ID) || text_starts_with(grammar, BUILTIN_ID)) {
+	if (text_starts_with(grammar, HTTP_ID) || text_starts_with(grammar, FILE_ID) || text_starts_with(grammar, SESSION_ID) || text_starts_with(grammar, BUILTIN_ID)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Grammar is URI\n", schannel->name);
 		type = GRAMMAR_TYPE_URI;
 		grammar_data = grammar;
@@ -2629,7 +2632,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 
 	/* determine content type of file grammar or inline grammar */
 	if (type == GRAMMAR_TYPE_UNKNOWN) {
-		if (text_starts_with(grammar_data, XML_ID)) {
+		if (text_starts_with(grammar_data, XML_ID) || text_starts_with(grammar_data, SRGS_ID)) {
 			type = GRAMMAR_TYPE_SRGS_XML;
 		} else if (text_starts_with(grammar_data, GSL_ID)) {
 			type = GRAMMAR_TYPE_NUANCE_GSL;
