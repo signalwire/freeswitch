@@ -226,6 +226,9 @@
     <!-- set to false disable this feature -->
     <!--<param name="rtp-autofix-timing" value="false"/>-->
 
+    <!-- set this param to false if your gateway for some reason hates X- headers that is is supposed to ignore-->
+    <!--<param name="pass-callee-id" value="false"/>-->
+
     <!-- clear clears them all or supply the name to add or the name prefixed with ~ to remove
 	 valid values:
 
