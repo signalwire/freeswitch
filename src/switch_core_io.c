@@ -334,6 +334,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_bool_t ok = SWITCH_TRUE;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
+				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
+					continue;
+				}
+
 				if (bp->ready && switch_test_flag(bp, SMBF_READ_STREAM)) {
 					switch_mutex_lock(bp->read_mutex);
 					switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
@@ -496,6 +500,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_bool_t ok = SWITCH_TRUE;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
+				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
+					continue;
+				}
+
 				if (bp->ready && switch_test_flag(bp, SMBF_READ_PING)) {
 					switch_mutex_lock(bp->read_mutex);
 					if (bp->callback) {
@@ -760,6 +768,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			if (!bp->ready) {
 				continue;
 			}
+
+			if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
+				continue;
+			}
+
 			if (switch_test_flag(bp, SMBF_WRITE_STREAM)) {
 
 				switch_mutex_lock(bp->write_mutex);

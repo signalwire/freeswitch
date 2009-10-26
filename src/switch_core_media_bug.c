@@ -235,7 +235,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	switch_size_t bytes;
 	switch_codec_implementation_t read_impl = {0};
 	switch_codec_implementation_t write_impl = {0};
-	
+	const char *p;
 
 	if (!switch_channel_media_ready(session->channel)) {
 		if (switch_channel_pre_answer(session->channel) != SWITCH_STATUS_SUCCESS) {
@@ -247,6 +247,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	switch_core_session_get_write_impl(session, &write_impl);
 
 	*new_bug = NULL;
+
+
+	if ((p = switch_channel_get_variable(session->channel, "media_bug_answer_req")) && switch_true(p)) {
+		flags |= SMBF_ANSWER_REQ;
+	}
 
 #if 0
 	if (flags & SMBF_WRITE_REPLACE) {

@@ -459,20 +459,18 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			}
 
 			if (rh->fh) {
-				if (switch_channel_test_flag(channel, CF_ANSWERED) || !switch_core_media_bug_test_flag(bug, SMBF_RECORD_ANSWER_REQ)) {
-					switch_size_t len;
-					uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
-					switch_frame_t frame = { 0 };
+				switch_size_t len;
+				uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+				switch_frame_t frame = { 0 };
 					
+				frame.data = data;
+				frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 					
-					frame.data = data;
-					frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-					
-					while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS && !switch_test_flag((&frame), SFF_CNG)) {
-						len = (switch_size_t) frame.datalen / 2;
-						if (len) switch_core_file_write(rh->fh, data, &len);
-					}
+				while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS && !switch_test_flag((&frame), SFF_CNG)) {
+					len = (switch_size_t) frame.datalen / 2;
+					if (len) switch_core_file_write(rh->fh, data, &len);
 				}
+				
 
 				switch_core_file_close(rh->fh);
 				if (rh->fh->samples_out < read_impl.samples_per_second * 3) {
@@ -493,12 +491,11 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			
-			if (switch_channel_test_flag(channel, CF_ANSWERED) || !switch_core_media_bug_test_flag(bug, SMBF_RECORD_ANSWER_REQ)) {
-				while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS && !switch_test_flag((&frame), SFF_CNG)) {
-					len = (switch_size_t) frame.datalen / 2;
-					if (len) switch_core_file_write(rh->fh, data, &len);
-				}
+			while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS && !switch_test_flag((&frame), SFF_CNG)) {
+				len = (switch_size_t) frame.datalen / 2;
+				if (len) switch_core_file_write(rh->fh, data, &len);
 			}
+
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE:
@@ -911,7 +908,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	}
 		
 	if ((p = switch_channel_get_variable(channel, "RECORD_ANSWER_REQ")) && switch_true(p)) {
-		flags |= SMBF_RECORD_ANSWER_REQ;
+		flags |= SMBF_ANSWER_REQ;
 	}
 
 
