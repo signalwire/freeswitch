@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
 	int local_argc = argc;
 	char *arg_argv[128] = { 0 };
 	char *usageDesc;
-	int alt_dirs = 0;
+	int alt_dirs = 0, log_set = 0, run_set = 0, kill = 0;
 	int known_opt;
 	int high_prio = 0;
 #ifdef __sun
@@ -498,7 +498,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-stop")) {
-				return freeswitch_kill_background();
+			kill++;
 		}
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-nc")) {
@@ -554,6 +554,7 @@ int main(int argc, char *argv[])
 				}
 				strcpy(SWITCH_GLOBAL_dirs.log_dir, local_argv[x]);
 				alt_dirs++;
+				log_set++;
 			} else {
 				fprintf(stderr, "When using -log you must specify a log directory\n");
 				return 255;
@@ -570,6 +571,7 @@ int main(int argc, char *argv[])
 					return 255;
 				}
 				strcpy(SWITCH_GLOBAL_dirs.run_dir, local_argv[x]);
+				run_set++;
 			} else {
 				fprintf(stderr, "When using -run you must specify a pid directory\n");
 				return 255;
@@ -630,6 +632,14 @@ int main(int argc, char *argv[])
 			printf("%s\n", usageDesc);
 			exit(0);
 		}
+	}
+	
+	if (log_set && !run_set) {
+		strcpy(SWITCH_GLOBAL_dirs.run_dir, SWITCH_GLOBAL_dirs.log_dir);
+	}
+
+	if (kill) {
+		return freeswitch_kill_background();
 	}
 
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
