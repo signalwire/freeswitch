@@ -3801,8 +3801,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						//3PCC proxy mode delays the 200 OK until the call is answered
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
 						sofia_set_flag_locked(tech_pvt, TFLAG_3PCC);
-						sofia_glue_tech_choose_port(tech_pvt, 0);
-						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+						//sofia_glue_tech_choose_port(tech_pvt, 0);
+						//sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 						switch_channel_set_flag(channel, TFLAG_LATE_NEGOTIATION);
 						//Moves into CS_INIT so call moves forward into the dialplan
 						switch_channel_set_state(channel, CS_INIT);

@@ -480,6 +480,13 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	} else {
 		/* This if statement check and handles the 3pcc proxy mode */
 		if (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC)) {
+
+			tech_pvt->num_codecs = 0;
+			sofia_glue_tech_prepare_codecs(tech_pvt);
+			tech_pvt->local_sdp_str = NULL;
+			sofia_glue_tech_choose_port(tech_pvt, 0);
+			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+			
 			/* Send the 200 OK */
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
@@ -508,6 +515,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			switch_mutex_lock(tech_pvt->sofia_mutex);
 			
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Done waiting for ACK\n");
+			return SWITCH_STATUS_SUCCESS;
 		}
 
 		if ((is_proxy && !b_sdp) || sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) || !tech_pvt->iananame) {
@@ -1544,6 +1552,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
+
+		if (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC)) {
+			switch_channel_mark_ring_ready(channel);
+			status = SWITCH_STATUS_SUCCESS;
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, msg->_file, msg->_func, msg->_line, NULL, SWITCH_LOG_INFO, 
+							  "Pretending to send ringing.  Not available for 3pcc calls\n");
+			goto end_lock;
+		}
+
 		if (!switch_channel_test_flag(channel, CF_RING_READY) && !sofia_test_flag(tech_pvt, TFLAG_BYE) &&
 			!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
 			char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
@@ -1564,6 +1581,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			char *sticky = NULL;
 			const char *val = NULL;
+
+			if (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC)) {
+				sofia_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
+				switch_channel_mark_pre_answered(channel);
+				status = SWITCH_STATUS_SUCCESS;
+				switch_log_printf(SWITCH_CHANNEL_ID_LOG, msg->_file, msg->_func, msg->_line, NULL, SWITCH_LOG_INFO, 
+								  "Pretending to send early media.  Not available for 3pcc calls\n");
+				goto end_lock;
+			}
 
 			if (!sofia_test_flag(tech_pvt, TFLAG_ANS) && !sofia_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 
