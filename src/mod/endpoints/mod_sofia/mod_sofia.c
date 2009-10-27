@@ -196,7 +196,7 @@ char *generate_pai_str(switch_core_session_t *session)
 		callee_name = callee_number;
 	}
 
-	if (ua && !zstr(callee_number) && !switch_stristr("polycom", ua)) {
+	if (!zstr(callee_number) && (zstr(ua) || !switch_stristr("polycom", ua))) {
 		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, tech_pvt->profile->sipip);
 	}
 	
