@@ -635,6 +635,11 @@ int main(int argc, char *argv[])
 	}
 	
 	if (log_set && !run_set) {
+		SWITCH_GLOBAL_dirs.run_dir = (char *) malloc(strlen(SWITCH_GLOBAL_dirs.log_dir) + 1);
+		if (!SWITCH_GLOBAL_dirs.run_dir) {
+			fprintf(stderr, "Allocation error\n");
+			return 255;
+		}
 		strcpy(SWITCH_GLOBAL_dirs.run_dir, SWITCH_GLOBAL_dirs.log_dir);
 	}
 
