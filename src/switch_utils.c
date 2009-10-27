@@ -585,9 +585,9 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	}
 
 #ifdef WIN32
-	switch_snprintf(buf, B64BUFFLEN, "type %s | %s %s -f %s %s", filename, runtime.mailer_app, runtime.mailer_app_args, from, to);
+	switch_snprintf(buf, B64BUFFLEN, "type %s | %s -f %s %s %s", filename, runtime.mailer_app, from, runtime.mailer_app_args, to);
 #else
-	switch_snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s %s -f %s %s", filename, runtime.mailer_app, runtime.mailer_app_args, from, to);
+	switch_snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s -f %s %s %s", filename, runtime.mailer_app, from, runtime.mailer_app_args, to);
 #endif
 	if (switch_system(buf, SWITCH_TRUE) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
