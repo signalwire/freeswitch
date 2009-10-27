@@ -499,6 +499,7 @@ int main(int argc, char *argv[])
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-stop")) {
 			kill++;
+			known_opt++;
 		}
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-nc")) {
