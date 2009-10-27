@@ -1,5 +1,5 @@
 /*
-	Version 0.0.8
+	Version 0.0.9
 */
 
 #include "mod_h323.h"
@@ -872,9 +872,9 @@ bool FSH323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCa
 bool FSH323Connection::OnAlerting(const H323SignalPDU &alertingPDU, const PString &user){
 
 	PTRACE(4, "mod_h323\t======>PFSH323Connection::OnAlerting user = "<<(const char *)user<<" ["<<*this<<"]");
-	
-	return (switch_channel_mark_ring_ready(m_fsChannel) == SWITCH_STATUS_SUCCESS);
-	 ;
+	switch_status_t status = switch_channel_mark_ring_ready(m_fsChannel);
+	PTRACE(4, "mod_h323\t----------->OnAlerting return = "<<status);
+	return ( status == SWITCH_STATUS_SUCCESS);
 }
 
 void FSH323Connection::OnEstablished(){
