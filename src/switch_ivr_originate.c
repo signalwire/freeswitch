@@ -1788,13 +1788,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 
-				if (!table) {
-					table = &originate_state_handlers;
-				}
-
 				if (table) {
 					switch_channel_add_state_handler(originate_status[i].peer_channel, table);
 				}
+
+				switch_channel_add_state_handler(originate_status[i].peer_channel, &originate_state_handlers);
 
 				if ((flags & SOF_NOBLOCK) && originate_status[i].peer_session) {
 					status = SWITCH_STATUS_SUCCESS;
