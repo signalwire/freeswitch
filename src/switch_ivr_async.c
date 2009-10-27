@@ -902,6 +902,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		}
 	}
 
+	if ((p = switch_channel_get_variable(channel, "RECORD_WRITE_ONLY")) && switch_true(p)) {
+		flags &= ~SMBF_READ_STREAM;
+		flags |= SMBF_WRITE_STREAM;
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_READ_ONLY")) && switch_true(p)) {
+		flags &= ~SMBF_WRITE_STREAM;
+		flags |= SMBF_READ_STREAM;
+	} 
+
 	if ((p = switch_channel_get_variable(channel, "RECORD_STEREO")) && switch_true(p)) {
 		flags |= SMBF_STEREO;
 		channels = 2;
