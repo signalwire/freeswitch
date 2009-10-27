@@ -706,7 +706,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	sip_expires_t const *expires = NULL;
 	sip_authorization_t const *authorization = NULL;
 	sip_contact_t const *contact = NULL;
-	char *sql = NULL;
+	char *sql;
 	switch_event_t *s_event;
 	const char *to_user = NULL;
 	const char *to_host = NULL;
@@ -1072,7 +1072,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 		switch_mutex_lock(profile->ireg_mutex);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-		switch_safe_free(sql);
 
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
 		sql = switch_mprintf("insert into sip_registrations "
@@ -1086,7 +1085,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
-		switch_safe_free(sql);
 
 		switch_mutex_unlock(profile->ireg_mutex);
 
@@ -1188,7 +1186,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-			switch_safe_free(sql);
 
 			if (multi_reg_contact) {
 				sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q' and contact='%q'", to_user, reg_host, contact_str);
@@ -1197,19 +1194,16 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-			switch_safe_free(sql);
 
 			switch_safe_free(icontact);
 		} else {
 			if ((sql = switch_mprintf("delete from sip_subscriptions where sip_user='%q' and sip_host='%q'", to_user, reg_host))) {
 				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			}
-			switch_safe_free(sql);
 
 			if ((sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", to_user, reg_host))) {
 				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			}
-			switch_safe_free(sql);
 		}
 	}
 
@@ -1598,7 +1592,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	const char *passwd = NULL;
 	const char *a1_hash = NULL;
 	const char *mwi_account = NULL;
-	char *sql = NULL;
+	char *sql;
 	char *number_alias = NULL;
 	switch_xml_t domain, xml = NULL, user, param, uparams, dparams, group = NULL, gparams = NULL;
 	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
@@ -1667,11 +1661,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		sql = switch_mprintf("select nonce from sip_authentication where nonce='%q'", nonce);
 		switch_assert(sql != NULL);
 		if (!sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, np, nplen)) {
-			switch_safe_free(sql);
+			free(sql);
 			ret = AUTH_STALE;
 			goto end;
 		}
-		switch_safe_free(sql);
+		free(sql);
 	}
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
