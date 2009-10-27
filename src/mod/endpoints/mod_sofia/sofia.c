@@ -3546,6 +3546,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			NUTAG_ANSWER_SENT_REF(answer_sent),
 			SIPTAG_REPLACES_STR_REF(replaces_str), SOATAG_LOCAL_SDP_STR_REF(l_sdp), SOATAG_REMOTE_SDP_STR_REF(r_sdp), TAG_END());
 	
+	
+
 	if (ss_state == nua_callstate_terminated) {
 
 		if ((status == 300 || status == 302 || status == 305) && session) {
@@ -3573,6 +3575,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		tech_pvt = switch_core_session_get_private(session);
 
 		if (!tech_pvt || !tech_pvt->nh) {
+			goto done;
+		}
+
+		if ((switch_channel_test_flag(channel, CF_EARLY_MEDIA) || switch_channel_test_flag(channel, CF_ANSWERED)) && status < 200) {
+			/* Must you send 180 after 183 w/sdp ? sheesh */
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel %s skipping state [%s][%d]\n",
+							  switch_channel_get_name(channel), nua_callstate_name(ss_state), status);
 			goto done;
 		}
 
@@ -3917,7 +3926,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					goto done;
 				} else {
 					sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
-
+					
 					if (tech_pvt->num_codecs) {
 						if ((parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
 							if ((sdp = sdp_session(parser))) {
@@ -3945,6 +3954,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					}
 				}
 				
+				
 				if (is_ok) {
 					if (tech_pvt->local_crypto_key) {
 						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
@@ -3968,8 +3978,40 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		break;
 	case nua_callstate_ready:
 		if (r_sdp && !is_dup_sdp && switch_rtp_ready(tech_pvt->rtp_session)) {
-			ss_state = nua_callstate_completed;
-			goto state_process;
+			/* sdp changed since 18X w sdp, we're supposed to ignore it but we, of course, were pressured into supporting it */
+			sdp_parser_t *parser;
+			sdp_session_t *sdp;
+			uint8_t match = 0;
+
+			sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
+			
+			if (tech_pvt->num_codecs) {
+				if ((parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
+					if ((sdp = sdp_session(parser))) {
+						match = sofia_glue_negotiate_sdp(session, sdp);
+					}
+					sdp_parser_free(parser);
+				}
+			}
+			if (match) {
+				if (sofia_glue_tech_choose_port(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+					goto done;
+				}
+				sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+				
+				if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error!\n");
+					goto done;
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing updated SDP\n");
+				}
+			} else {
+				sofia_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error!\n");
+				goto done;
+
+			}
 		}
 
 		if (r_sdp && sofia_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
