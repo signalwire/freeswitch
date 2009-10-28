@@ -3685,7 +3685,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   nonce           VARCHAR(255),\n" 
 		"   expires         INTEGER," 
 		"   profile_name    VARCHAR(255),\n"
-		"   hostname        VARCHAR(255)\n"
+		"   hostname        VARCHAR(255),\n"
+		"   last_nc         INTEGER\n"
 		");\n";
 
 	/* should we move this glue to sofia_sla or keep it here where all db init happens? XXX MTK */
@@ -3799,7 +3800,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 
 		free(test_sql);
-		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q' and last_nc >= 0", mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_authentication", NULL);
@@ -3857,7 +3858,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_presence", pres_sql);
 		free(test_sql);
 
-		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q' and last_nc >= 0", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_authentication", auth_sql);
 		free(test_sql);
 

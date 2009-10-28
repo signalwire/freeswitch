@@ -681,8 +681,10 @@ void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
 
-	sql = switch_mprintf("insert into sip_authentication (nonce,expires,profile_name,hostname) "
-						 "values('%q', %ld, '%q', '%q')", uuid_str, switch_epoch_time_now(NULL) + profile->nonce_ttl, profile->name, mod_sofia_globals.hostname);
+	sql = switch_mprintf("insert into sip_authentication (nonce,expires,profile_name,hostname, last_nc) "
+						 "values('%q', %ld, '%q', '%q', 0)", uuid_str, 
+						 switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL), 
+						 profile->name, mod_sofia_globals.hostname);
 	switch_assert(sql != NULL);
 	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 	switch_safe_free(sql);
@@ -1567,6 +1569,25 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 }
 
+static unsigned long get_nc(const char *nc, sip_t const *sip)
+{
+	unsigned long x;
+	const char *ua = NULL;
+
+	if (sip->sip_user_agent) {
+		ua = sip->sip_user_agent->g_string;
+	}
+
+	/* sigh, polycom sends nc in base-10 rather than spec which says base-16*/
+	if (ua && switch_stristr("polycom", ua)) {
+		x = strtoul(nc, 0, 10);
+	} else {
+		x = strtoul(nc, 0, 16);
+	}
+
+	return x;
+}
+
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, 
 								sip_authorization_t const *authorization, 
 								sip_t const *sip, 
@@ -1658,7 +1679,15 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 	if (zstr(np)) {
 		first = 1;
-		sql = switch_mprintf("select nonce from sip_authentication where nonce='%q'", nonce);
+		if (nc) {
+			unsigned long x;
+
+			x = get_nc(nc, sip);
+			sql = switch_mprintf("select nonce from sip_authentication where nonce='%q' and last_nc + 1 >= %lu", nonce, x);
+		} else {
+			sql = switch_mprintf("select nonce from sip_authentication where nonce='%q'", nonce);
+		}
+
 		switch_assert(sql != NULL);
 		if (!sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, np, nplen)) {
 			free(sql);
@@ -1885,15 +1914,15 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		input2 = switch_mprintf("%s:%s:%s", a1_hash, nonce, uridigest);
 	}
 
-	switch_assert(input2);
+	if (input2) {
+		memset(&ctx, 0, sizeof(ctx));
+		su_md5_init(&ctx);
+		su_md5_strupdate(&ctx, input2);
+		su_md5_hexdigest(&ctx, bigdigest);
+		su_md5_deinit(&ctx);
+	}
 
-	memset(&ctx, 0, sizeof(ctx));
-	su_md5_init(&ctx);
-	su_md5_strupdate(&ctx, input2);
-	su_md5_hexdigest(&ctx, bigdigest);
-	su_md5_deinit(&ctx);
-
-	if (!strcasecmp(bigdigest, response)) {
+	if (input2 && !strcasecmp(bigdigest, response)) {
 		ret = AUTH_OK;
 	} else {
 		if ((profile->ndlb & PFLAG_NDLB_BROKEN_AUTH_HASH) && strcasecmp(regstr, "REGISTER") && strcasecmp(regstr, "INVITE")) {
@@ -2046,6 +2075,22 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		}
 	}
   end:
+
+
+	if (nc && cnonce && qop) {
+		unsigned long x;
+		char *sql;
+
+		x = get_nc(nc, sip);
+		input2 = switch_mprintf("%s:%s:%s:%s:%s:%s", a1_hash, nonce, nc, cnonce, qop, uridigest);
+
+		sql = switch_mprintf("update sip_authentication set expires='%ld',last_nc=%lu where nonce='%s'", 
+							 switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : exptime + 10), x, nonce);
+
+		switch_assert(sql != NULL);
+		sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
+		switch_safe_free(sql);
+	}
 
 	switch_event_destroy(&params);
 

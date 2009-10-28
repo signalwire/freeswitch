@@ -37,7 +37,7 @@
 /*Defines etc..*/
 /*************************************************************************************************************************************************************/
 #define MANUAL_BYE
-
+#define DEFAULT_NONCE_TTL 60
 #define IREG_SECONDS 30
 #define GATEWAY_SECONDS 1
 #define SOFIA_QUEUE_SIZE 50000
