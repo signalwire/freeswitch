@@ -779,6 +779,9 @@ static vm_profile_t * load_profile(const char *profile_name)
 	if (xml) {
 		switch_xml_free(xml);
 	}
+	if (event) {
+		switch_event_destroy(&event);
+	}
 	return profile;
 
 }
