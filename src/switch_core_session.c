@@ -618,12 +618,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 					  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG, "%s receive message [%s]\n",
 					  switch_channel_get_name(session->channel), message_names[message->message_id]);
 
-
+	
 	if (message->message_id == SWITCH_MESSAGE_INDICATE_DISPLAY && 
 		switch_true(switch_channel_get_variable(session->channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE))) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
 						  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG, "Ignoring display update.\n");
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
+		goto end;
 	}
 	
 	if (session->endpoint_interface->io_routines->receive_message) {
@@ -665,6 +666,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 	default:
 		break;
 	}
+
+ end:
 
 	switch_core_session_free_message(&message);
 	switch_core_session_rwunlock(session);
