@@ -1678,6 +1678,20 @@ static void do_flush(switch_rtp_t *rtp_session)
 	READ_INC(rtp_session);
 
 	if (switch_rtp_ready(rtp_session)) {
+
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_DEBUG_RTP)) {
+			switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
+			if (!session) {
+				switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_DEBUG_RTP);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "RTP HAS NO SESSION!\n");
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
+								  SWITCH_LOG_CONSOLE, "%s FLUSH\n",
+								  switch_channel_get_name(switch_core_session_get_channel(session))
+								  );
+			}
+		}
+
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK)) {
 			was_blocking = 1;
 			switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);		
@@ -1888,6 +1902,38 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (bytes && rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->te) {
 			rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
 		}
+
+
+		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_DEBUG_RTP)) {
+			switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
+
+			if (!session) {
+				switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_DEBUG_RTP);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "RTP HAS NO SESSION!\n");
+			} else {
+				const char *tx_host;
+				const char *old_host;
+				const char *my_host;
+
+				char bufa[30], bufb[30], bufc[30];
+				
+				
+				tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
+				old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
+				my_host = switch_get_addr(bufc, sizeof(bufc), rtp_session->local_addr);
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_CONSOLE,
+								  "%s b=%ld %s:%u %s:%u %s:%u pt=%d ts=%u m=%d\n", 
+								  switch_channel_get_name(switch_core_session_get_channel(session)),
+								  (long)bytes,
+								  my_host, switch_sockaddr_get_port(rtp_session->local_addr),
+								  old_host, rtp_session->remote_port, 
+								  tx_host, switch_sockaddr_get_port(rtp_session->from_addr),
+								  rtp_session->recv_msg.header.pt, ntohl(rtp_session->recv_msg.header.ts), rtp_session->recv_msg.header.m);
+			
+			}
+		}
+
 
 		if (bytes && ((rtp_session->cng_pt && rtp_session->recv_msg.header.pt == rtp_session->cng_pt) || rtp_session->recv_msg.header.pt == 13)) {
 			bytes = 0;

@@ -578,6 +578,7 @@ static const char *message_names[] = {
 	"REQUEST_IMAGE_MEDIA",
 	"UUID_CHANGE",
 	"WARNING",
+	"DEBUG_AUDIO",
 	"INVALID"
 };
 

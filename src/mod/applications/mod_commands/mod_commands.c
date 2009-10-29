@@ -2105,6 +2105,44 @@ SWITCH_STANDARD_API(uuid_warning_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+#define DEBUG_AUDIO_SYNTAX "<uuid> <on|off>"
+SWITCH_STANDARD_API(uuid_debug_audio_function)
+{
+	char *mycmd = NULL, *argv[2] = { 0 };
+	int argc = 0;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (zstr(cmd) || argc < 2 || zstr(argv[0]) || zstr(argv[1])) {
+		stream->write_function(stream, "-USAGE: %s\n", DEBUG_AUDIO_SYNTAX);
+	} else {
+		switch_core_session_message_t msg = { 0 };
+		switch_core_session_t *lsession = NULL;
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_DEBUG_AUDIO;
+		msg.string_arg = argv[1];
+		msg.from = __FILE__;
+
+		if ((lsession = switch_core_session_locate(argv[0]))) {
+			status = switch_core_session_receive_message(lsession, &msg);
+			switch_core_session_rwunlock(lsession);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+	}
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define UUID_SYNTAX "<uuid> <other_uuid>"
 SWITCH_STANDARD_API(uuid_bridge_function)
 {
@@ -3711,6 +3749,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_hold", "hold", uuid_hold_function, HOLD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_display", "change display", uuid_display_function, DISPLAY_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_warning", "send popup", uuid_warning_function, WARNING_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_debug_audio", "debug audio", uuid_debug_audio_function, DEBUG_AUDIO_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "media", uuid_media_function, MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "fsctl", "control messages", ctl_function, CTL_SYNTAX);
 	switch_console_set_complete("add fsctl hupall");
