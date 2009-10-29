@@ -1937,7 +1937,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 		ret = AUTH_FORBIDDEN;
 	}
-
+	switch_safe_free(input2);
 
   skip_auth:
 
