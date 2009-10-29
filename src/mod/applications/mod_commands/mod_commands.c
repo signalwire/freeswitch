@@ -2106,10 +2106,10 @@ SWITCH_STANDARD_API(uuid_warning_function)
 }
 
 
-#define DEBUG_AUDIO_SYNTAX "<uuid> <on|off>"
+#define DEBUG_AUDIO_SYNTAX "<uuid> <read|write|both> <on|off>"
 SWITCH_STANDARD_API(uuid_debug_audio_function)
 {
-	char *mycmd = NULL, *argv[2] = { 0 };
+	char *mycmd = NULL, *argv[3] = { 0 };
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -2117,14 +2117,15 @@ SWITCH_STANDARD_API(uuid_debug_audio_function)
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (zstr(cmd) || argc < 2 || zstr(argv[0]) || zstr(argv[1])) {
+	if (zstr(cmd) || argc < 3 || zstr(argv[0]) || zstr(argv[1]) || zstr(argv[2])) {
 		stream->write_function(stream, "-USAGE: %s\n", DEBUG_AUDIO_SYNTAX);
 	} else {
 		switch_core_session_message_t msg = { 0 };
 		switch_core_session_t *lsession = NULL;
-
+		
 		msg.message_id = SWITCH_MESSAGE_INDICATE_DEBUG_AUDIO;
-		msg.string_arg = argv[1];
+		msg.string_array_arg[0] = argv[1];
+		msg.string_array_arg[1] = argv[2];
 		msg.from = __FILE__;
 
 		if ((lsession = switch_core_session_locate(argv[0]))) {
