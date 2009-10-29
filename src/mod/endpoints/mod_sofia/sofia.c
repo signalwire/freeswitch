@@ -1093,6 +1093,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_APPL_METHOD("BYE"),
 #endif
 				   NUTAG_AUTOANSWER(0),
+				   NUTAG_AUTOACK(0),
 				   NUTAG_AUTOALERT(0),
 				   NUTAG_ENABLEMESSENGER(1),
 				   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
@@ -1129,6 +1130,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 					   NUTAG_APPL_METHOD("OPTIONS"),
 					   NUTAG_APPL_METHOD("REFER"),
 					   NUTAG_AUTOANSWER(0),
+					   NUTAG_AUTOACK(0),
 					   NUTAG_AUTOALERT(0),
 					   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
 					   TAG_IF((profile->mflags & MFLAG_REFER), NUTAG_ALLOW("REFER")),
@@ -3467,7 +3469,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			}
 		}
 
-
 	}
 
 	if (!session && (status == 180 || status == 183 || status == 200)) {
@@ -3578,7 +3579,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			goto done;
 		}
 
-		if ((switch_channel_test_flag(channel, CF_EARLY_MEDIA) || switch_channel_test_flag(channel, CF_ANSWERED)) && status == 180) {
+		if ((switch_channel_test_flag(channel, CF_EARLY_MEDIA) || switch_channel_test_flag(channel, CF_ANSWERED)) && 
+			(status == 180 || status == 183)) {
 			/* Must you send 180 after 183 w/sdp ? sheesh */
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel %s skipping state [%s][%d]\n",
 							  switch_channel_get_name(channel), nua_callstate_name(ss_state), status);
@@ -3695,7 +3697,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 		break;
 	case nua_callstate_completing:
-		nua_ack(nh, TAG_END());
+		nua_ack(tech_pvt->nh,
+				TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+				TAG_END());
 		break;
 	case nua_callstate_received:
 		if (!sofia_test_flag(tech_pvt, TFLAG_SDP)) {
