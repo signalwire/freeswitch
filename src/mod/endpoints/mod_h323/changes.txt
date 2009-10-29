@@ -1,4 +1,6 @@
 
+fixxxxes
+remove trys to implement non standard codecs.
 implement jitter-size value option.
 implement gk register retry timer.
 implement h245insetup enable/disable option.

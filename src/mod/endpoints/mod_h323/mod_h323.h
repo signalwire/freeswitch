@@ -257,8 +257,6 @@ class FSH323Connection:public H323Connection {
 	bool m_txChennel;
 	bool m_ChennelAnswer;
 	bool m_ChennelProgress;
-	PSyncPoint m_rxAudioOpened;
-    PSyncPoint m_txAudioOpened;
   protected:
 	FSH323EndPoint * m_endpoint;
 	PString m_remoteAddr;
@@ -442,70 +440,6 @@ protected:
 	unsigned m_type;
 };
 
-class BaseG726Cap : public H323AudioCapability
-{
-	PCLASSINFO(BaseG726Cap, H323AudioCapability);
-
-public:
-	
-	BaseG726Cap(const char* fname, unsigned type = H245_AudioCapability::e_nonStandard)
-	: H323AudioCapability(24,2), m_name(fname), m_type(type),m_comfortNoise(0),m_scrambled(0)
-	{ }
-	
-	virtual PObject * Clone() const{
-		return new BaseG726Cap(*this);
-	}
-
-	virtual H323Codec* CreateCodec(H323Codec::Direction direction) const{
-		return 0;
-	}
-
-	virtual unsigned GetSubType() const{
-		PTRACE(2, "mod_h323\t==============>BaseG726Cap::GetSubType");
-		return H245_AudioCapability::e_nonStandard;
-	}
-
-	virtual PString GetFormatName() const{
-		PTRACE(2, "mod_h323\t==============>BaseG726Cap::GetFormatName");
-		return m_name;
-	}
-
-	virtual bool OnSendingPDU(H245_AudioCapability & pdu, unsigned packetSize) const{
-		PTRACE(2, "mod_h323\t==============>BaseG726Cap::OnSendingPDU");
-		pdu.SetTag(H245_AudioCapability::e_nonStandard);
-		return true;
-	}
-	
-	virtual bool OnReceivedPDU(const H245_AudioCapability & pdu, unsigned & packetSize){
-		PTRACE(2, "mod_h323\t==============>BaseG726Cap::OnReceivedPDU");
-		return true;
-	}
-
-protected:
-	const char* m_name;
-	int m_comfortNoise;
-	int m_scrambled;
-	unsigned m_type;
-};
-
-
-
-
-#define OPAL_G726_40 "G.726-40k"
-
-char OpalG726_40[] = OPAL_G726_40;
-
-OPAL_MEDIA_FORMAT_DECLARE(OpalG726Format,
-          OpalG726_40,
-          OpalMediaFormat::DefaultAudioSessionID,
-          RTP_DataFrame::G726,
-          TRUE, // Needs jitter
-          8000, // bits/sec
-          5,   // bytes
-          80,   // 10 milliseconds
-          OpalMediaFormat::AudioTimeUnits,
-          0)
-
 
 #define DEFINE_H323_CAPAB(cls,base,param,name) \
 class cls : public base { \
@@ -513,6 +447,8 @@ class cls : public base { \
     cls() : base(name,param) { } \
 }; \
 H323_REGISTER_CAPABILITY(cls,name) \
+
+
 
 
 DEFINE_H323_CAPAB(FS_G7231_5,BaseG7231Capab,false,OPAL_G7231_5k3"{sw}")
@@ -524,6 +460,6 @@ DEFINE_H323_CAPAB(FS_G729A,BaseG729Capab,H245_AudioCapability::e_g729AnnexA,OPAL
 DEFINE_H323_CAPAB(FS_G729B,BaseG729Capab,H245_AudioCapability::e_g729wAnnexB,OPAL_G729B"{sw}")
 DEFINE_H323_CAPAB(FS_G729AB,BaseG729Capab,H245_AudioCapability::e_g729AnnexAwAnnexB,OPAL_G729AB"{sw}")
 DEFINE_H323_CAPAB(FS_GSM,BaseGSM0610Cap,H245_AudioCapability::e_gsmFullRate,OPAL_GSM0610"{sw}")
-DEFINE_H323_CAPAB(FS_G726_40,BaseG726Cap,H245_AudioCapability::e_nonStandard,OPAL_G726_40"{sw}")
+
 
 static FSProcess *h323_process = NULL;
