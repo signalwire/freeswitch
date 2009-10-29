@@ -404,7 +404,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
+	if (switch_channel_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
 	
@@ -511,10 +511,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 	if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 		asis = 1;
-	}
-
-	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
 	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_TITLE"))) {
