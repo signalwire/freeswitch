@@ -3461,6 +3461,34 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 	if (switch_test_flag(conference, CFLAG_LOCKED)) {
 		switch_xml_set_attr_d(x_conference, "locked", "true");
 	}
+	
+	if (switch_test_flag(conference, CFLAG_DESTRUCT)) {
+		switch_xml_set_attr_d(x_conference, "destruct", "true");
+	}
+
+	if (switch_test_flag(conference, CFLAG_WAIT_MOD)) {
+		switch_xml_set_attr_d(x_conference, "wait_mod", "true");
+	}
+
+	if (switch_test_flag(conference, CFLAG_RUNNING)) {
+		switch_xml_set_attr_d(x_conference, "running", "true");
+	}
+
+	if (switch_test_flag(conference, CFLAG_ANSWERED)) {
+		switch_xml_set_attr_d(x_conference, "answered", "true");
+	}
+
+	if (switch_test_flag(conference, CFLAG_ENFORCE_MIN)) {
+		switch_xml_set_attr_d(x_conference, "enforce_min", "true");
+	}
+
+	if (switch_test_flag(conference, CFLAG_BRIDGE_TO)) {
+		switch_xml_set_attr_d(x_conference, "bridge_to", "true");
+	}
+
+	if (switch_test_flag(conference, CFLAG_DYNAMIC)) {
+		switch_xml_set_attr_d(x_conference, "dynamic", "true");
+	}
 
 	x_members = switch_xml_add_child_d(x_conference, "members", 0);
 	switch_assert(x_members);
@@ -3514,6 +3542,12 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		
 		x_tag = switch_xml_add_child_d(x_flags, "has_floor", count++);
 		switch_xml_set_txt_d(x_tag, (member == member->conference->floor_holder) ? "true" : "false");
+		
+		x_tag = switch_xml_add_child_d(x_flags, "is_moderator", count++);
+		switch_xml_set_txt_d(x_tag, switch_test_flag(member, MFLAG_MOD) ? "true" : "false");
+		
+		x_tag = switch_xml_add_child_d(x_flags, "end_conference", count++);
+		switch_xml_set_txt_d(x_tag, switch_test_flag(member, MFLAG_ENDCONF) ? "true" : "false");
 		
 	}
 
