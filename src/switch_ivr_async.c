@@ -425,6 +425,7 @@ struct record_helper {
 	char *file;
 	switch_file_handle_t *fh;
 	uint32_t packet_len;
+	int min_sec;
 };
 
 static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
@@ -473,7 +474,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				
 
 				switch_core_file_close(rh->fh);
-				if (rh->fh->samples_out < read_impl.samples_per_second * 3) {
+				if (rh->fh->samples_out < read_impl.samples_per_second * rh->min_sec) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Discarding short file %s\n", rh->file);
 					switch_file_remove(rh->file, switch_core_session_get_pool(session));
 				}
@@ -1011,6 +1012,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		vval = (const char *) switch_core_session_strdup(session, p);
 		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_DATE, vval);
 		switch_channel_set_variable(channel, "RECORD_DATE", NULL);
+	}
+
+	rh->min_sec = 3;
+	
+	if ((p = switch_channel_get_variable(channel, "RECORD_MIN_SEC"))) {
+		int tmp = atoi(p);
+		if (tmp > 0) {
+			rh->min_sec = tmp;
+		}
 	}
 
 	if (limit) {
