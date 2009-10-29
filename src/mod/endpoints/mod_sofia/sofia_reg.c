@@ -1937,6 +1937,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 		ret = AUTH_FORBIDDEN;
 	}
+
 	switch_safe_free(input2);
 
   skip_auth:
@@ -2082,8 +2083,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		char *sql;
 
 		x = get_nc(nc, sip);
-		input2 = switch_mprintf("%s:%s:%s:%s:%s:%s", a1_hash, nonce, nc, cnonce, qop, uridigest);
-
 		sql = switch_mprintf("update sip_authentication set expires='%ld',last_nc=%lu where nonce='%s'", 
 							 switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : exptime + 10), x, nonce);
 
@@ -2099,7 +2098,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	}
 
 	switch_safe_free(input);
-	switch_safe_free(input2);
 	switch_safe_free(username);
 	switch_safe_free(realm);
 	switch_safe_free(nonce);
