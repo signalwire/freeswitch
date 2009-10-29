@@ -1014,6 +1014,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		switch_channel_set_variable(channel, "RECORD_DATE", NULL);
 	}
 
+	if (limit) {
+		to = switch_epoch_time_now(NULL) + limit;
+	}
+
+	rh = switch_core_session_alloc(session, sizeof(*rh));
+	rh->fh = fh;
+	rh->file = switch_core_session_strdup(session, file);
+	rh->packet_len = read_impl.decoded_bytes_per_packet;
+
 	rh->min_sec = 3;
 	
 	if ((p = switch_channel_get_variable(channel, "RECORD_MIN_SEC"))) {
@@ -1023,14 +1032,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		}
 	}
 
-	if (limit) {
-		to = switch_epoch_time_now(NULL) + limit;
-	}
-
-	rh = switch_core_session_alloc(session, sizeof(*rh));
-	rh->fh = fh;
-	rh->file = switch_core_session_strdup(session, file);
-	rh->packet_len = read_impl.decoded_bytes_per_packet;
 	
 	if ((status = switch_core_media_bug_add(session, record_callback, rh, to, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error adding media bug for file %s\n", file);
