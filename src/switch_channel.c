@@ -1953,6 +1953,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_channel_t *channel, const char *file, const char *func, int line)
 {
 	switch_event_t *event;
+	const char *var = NULL;
+	char *app;
 
 	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
 		const char *uuid;
@@ -1982,6 +1984,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 				channel->caller_profile->originator_caller_profile->times->progress_media = channel->caller_profile->times->progress_media;
 			}
 			switch_mutex_unlock(channel->profile_mutex);
+		}
+
+		if (((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE)) || 
+			 (var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE))) && !zstr(var)) {
+			char *arg = NULL;
+			app = switch_core_session_strdup(channel->session, var);
+			if ((arg = strchr(app, ' '))) {
+				*arg++ = '\0';
+			}
+			switch_core_session_execute_application(channel->session, app, arg);
 		}
 
 		/* if we're the child of another channel and the other channel is in a blocking read they will never realize we have answered so send 
@@ -2126,7 +2138,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 
 	switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ANSWER");
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Channel [%s] has been answered\n", channel->name);
-	if ((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE)) && !zstr(var)) {
+
+	if (((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE)) || 
+		 (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && (var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE)))) 
+		&& !zstr(var)) {
 		char *arg = NULL;
 
 		app = switch_core_session_strdup(channel->session, var);
