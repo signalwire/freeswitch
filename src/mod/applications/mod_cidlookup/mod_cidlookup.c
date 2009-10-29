@@ -434,6 +434,7 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 	char *name = NULL;
 	char *area = NULL;
 	char *url_query = NULL;
+	char *src = NULL;
 	switch_bool_t areaonly = SWITCH_FALSE;
 	
 	number = string_digitsonly(pool, num);
@@ -442,14 +443,17 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 	/* database always wins */
 	if (switch_odbc_available() && globals.master_odbc && globals.sql) {
 		name = do_db_lookup(pool, event, number, globals.sql);
+		src = "database";
 	}
 
 	if (!name && globals.url) {
 		if (globals.cache) {
 			name = check_cache(pool, number);
+			src = "cache";
 		}
 		if (!skipurl && !name) {
 			name = do_whitepages_lookup(pool, event, number, &areaonly);
+			src = "whitepages";
 			if (areaonly) {
 				if (!skipcitystate) {
 					area = name; /* preserve if we're not skipping city/state */
@@ -463,12 +467,14 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 		if (!skipurl && !name) {
 			url_query = switch_event_expand_headers(event, globals.url);
 			name = do_lookup_url(pool, event, url_query);
+			src = "url";
 			if (url_query != globals.url) {
 				switch_safe_free(url_query);
 			}
 			
 			/* store and use preserved area info */
 			if (!name && area) {
+				src = "whitepages";
 				name = area;
 			}
 			if (globals.cache && name) {
@@ -481,7 +487,11 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 		!name && switch_odbc_available() && globals.master_odbc && globals.citystate_sql) {
 		
 		name = do_db_lookup(pool, event, number, globals.citystate_sql);
+		src = "npanxx";
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cidlookup source: %s\n", src);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cidlookup_source", src);
 	return name;
 }
 
@@ -537,6 +547,9 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 	
 	if (name && channel) {
 		switch_channel_set_variable(channel, "original_caller_id_name", switch_core_strdup(pool, profile->caller_id_name));
+		if (!zstr(switch_event_get_header(event, "cidlookup_source"))) {
+			switch_channel_set_variable(channel, "cidlookup_source", switch_core_strdup(pool, switch_event_get_header(event, "cidlookup_source")));
+		}
 		profile->caller_id_name = switch_core_strdup(profile->pool, name);;
 	}
 	
