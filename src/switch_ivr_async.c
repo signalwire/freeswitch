@@ -1018,7 +1018,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	
 	if ((p = switch_channel_get_variable(channel, "RECORD_MIN_SEC"))) {
 		int tmp = atoi(p);
-		if (tmp > 0) {
+		if (tmp >= 0) {
 			rh->min_sec = tmp;
 		}
 	}
