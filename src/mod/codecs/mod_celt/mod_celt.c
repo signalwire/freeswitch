@@ -53,7 +53,7 @@ static switch_status_t switch_celt_init(switch_codec_t *codec, switch_codec_flag
 		return SWITCH_STATUS_FALSE;
 	} 
 
-	context->mode_object = celt_mode_create(codec->implementation->actual_samples_per_second, 1, codec->implementation->samples_per_packet, NULL); 
+	context->mode_object = celt_mode_create(codec->implementation->actual_samples_per_second, codec->implementation->samples_per_packet, NULL); 
 	celt_mode_info(context->mode_object, CELT_GET_FRAME_SIZE, &context->frame_size);
 	context->bytes_per_packet = (codec->implementation->bits_per_second * context->frame_size/codec->implementation->actual_samples_per_second + 4) / 8;
 
@@ -81,11 +81,11 @@ static switch_status_t switch_celt_init(switch_codec_t *codec, switch_codec_flag
 	codec->fmtp_out = switch_core_sprintf(codec->memory_pool, "bitrate=%d", bit_rate);
 	*/
 	if (encoding) {
-		context->encoder_object = celt_encoder_create(context->mode_object);
+		context->encoder_object = celt_encoder_create(context->mode_object, 1, NULL);
 	}
 	
 	if (decoding) {
-		context->decoder_object = celt_decoder_create(context->mode_object);
+		context->decoder_object = celt_decoder_create(context->mode_object, 1, NULL);
 	}
 	
 	codec->private_info = context;
@@ -111,7 +111,7 @@ static switch_status_t switch_celt_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len = (uint32_t) celt_encode(context->encoder_object, (celt_int16_t *)decoded_data, NULL,
+	*encoded_data_len = (uint32_t) celt_encode(context->encoder_object, (void *)decoded_data, NULL,
 											   (unsigned char *)encoded_data, context->bytes_per_packet);
 
 	return SWITCH_STATUS_SUCCESS;
