@@ -1,0 +1,8 @@
+opt/freeswitch/conf/lang/ru/*.xml
+opt/freeswitch/conf/lang/ru/demo/*.xml
+opt/freeswitch/conf/lang/ru/vm/*.xml
+opt/freeswitch/mod/mod_say_ru.so*
+opt/freeswitch/conf/lang/ru/*.xml
+opt/freeswitch/conf/lang/ru/demo/*.xml
+opt/freeswitch/conf/lang/ru/vm/*.xml
+opt/freeswitch/mod/mod_say_ru.so*
