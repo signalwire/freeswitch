@@ -280,6 +280,18 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_zwrite(switch_buffer_t *buffer, cons
 	return w;
 }
 
+SWITCH_DECLARE(switch_size_t) switch_buffer_slide_write(switch_buffer_t *buffer, const void *data, switch_size_t datalen)
+{
+	switch_size_t w;
+
+	if (!(w = switch_buffer_write(buffer, data, datalen))) {
+		switch_buffer_toss(buffer, datalen);
+		return switch_buffer_write(buffer, data, datalen);
+	}
+
+	return w;
+}
+
 SWITCH_DECLARE(void) switch_buffer_destroy(switch_buffer_t **buffer)
 {
 	if (buffer && *buffer) {

@@ -137,6 +137,8 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_toss(_In_ switch_buffer_t *buffer, _
  */
 SWITCH_DECLARE(void) switch_buffer_zero(_In_ switch_buffer_t *buffer);
 
+SWITCH_DECLARE(switch_size_t) switch_buffer_slide_write(switch_buffer_t *buffer, const void *data, switch_size_t datalen);
+
 /*! \brief Destroy the buffer
  * \param buffer buffer to destroy
  * \note only neccessary on dynamic buffers (noop on pooled ones)
