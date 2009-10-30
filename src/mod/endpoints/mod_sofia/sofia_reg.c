@@ -2083,7 +2083,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		char *sql;
 
 		x = get_nc(nc, sip);
-#ifdef _WIN32 && !_WIN64
+#if defined(_WIN32) && !defined(_WIN64)
 #define	LL_FMT "ll"
 #else
 #define	LL_FMT "l"
