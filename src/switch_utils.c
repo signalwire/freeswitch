@@ -1338,10 +1338,28 @@ static const char *switch_inet_ntop6(unsigned char const *src, char *dst, size_t
 
 #endif
 
+SWITCH_DECLARE(int) get_addr_int(switch_sockaddr_t *sa)
+{
+	struct sockaddr_in *s = (struct sockaddr_in *)&sa->sa;
+
+	return ntohs(s->sin_addr.s_addr);
+}
+
+
+SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2)
+{
+	struct sockaddr_in *s1 = (struct sockaddr_in *)&sa1->sa;
+	struct sockaddr_in *s2 = (struct sockaddr_in *)&sa2->sa;
+
+	return (ntohs(s1->sin_addr.s_addr) == ntohs(s2->sin_addr.s_addr) && ntohs(s1->sin_port) == ntohs(s2->sin_port));
+}
+
+
 SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct sockaddr *sa, socklen_t salen)
 {
 	switch_assert(buf);
 	*buf = '\0';
+
 	if (sa) {
 		getnameinfo(sa, salen, buf, (socklen_t)len, NULL, 0, NI_NUMERICHOST);
 	}

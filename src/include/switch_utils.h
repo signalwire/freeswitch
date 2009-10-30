@@ -186,6 +186,9 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(_Out_opt_bytecapcount_(len)
 */
 SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct sockaddr *sa, socklen_t salen);
 
+SWITCH_DECLARE(int) get_addr_int(switch_sockaddr_t *sa);
+SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2);
+
 /*!
   \brief get the port number of an ip address
   \param sa the struct sockaddr * to get the port from
