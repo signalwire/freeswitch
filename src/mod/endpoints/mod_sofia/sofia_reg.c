@@ -2083,7 +2083,12 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		char *sql;
 
 		x = get_nc(nc, sip);
-		sql = switch_mprintf("update sip_authentication set expires='%ld',last_nc=%lu where nonce='%s'", 
+#ifdef _WIN32 && !_WIN64
+#define	LL_FMT "ll"
+#else
+#define	LL_FMT "l"
+#endif
+		sql = switch_mprintf("update sip_authentication set expires='%"LL_FMT"u',last_nc=%lu where nonce='%s'", 
 							 switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : exptime + 10), x, nonce);
 
 		switch_assert(sql != NULL);

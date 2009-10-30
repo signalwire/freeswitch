@@ -1342,7 +1342,7 @@ SWITCH_DECLARE(int) get_addr_int(switch_sockaddr_t *sa)
 {
 	struct sockaddr_in *s = (struct sockaddr_in *)&sa->sa;
 
-	return ntohs(s->sin_addr.s_addr);
+	return ntohs((unsigned short)s->sin_addr.s_addr);
 }
 
 
@@ -1351,7 +1351,7 @@ SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *s
 	struct sockaddr_in *s1 = (struct sockaddr_in *)&sa1->sa;
 	struct sockaddr_in *s2 = (struct sockaddr_in *)&sa2->sa;
 
-	return (ntohs(s1->sin_addr.s_addr) == ntohs(s2->sin_addr.s_addr) && ntohs(s1->sin_port) == ntohs(s2->sin_port));
+	return (ntohs((unsigned short)s1->sin_addr.s_addr) == ntohs((unsigned short)s2->sin_addr.s_addr) && ntohs(s1->sin_port) == ntohs(s2->sin_port));
 }
 
 
