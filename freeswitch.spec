@@ -593,7 +593,7 @@ userdel freeswitch
 %{prefix}/mod/ozmod_analog_em.so*
 %{prefix}/mod/ozmod_isdn.so*
 %{prefix}/mod/ozmod_skel.*
-%{prefix}/mod/ozmod_ss7_boost.so*
+%{prefix}/mod/ozmod_sangoma_boost.so*
 %{prefix}/mod/ozmod_zt.so*
 
 %files codec-passthru-amrwb
