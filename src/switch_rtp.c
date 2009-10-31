@@ -1936,12 +1936,18 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 		
 		/* ignore packets not meant for us unless the auto-adjust window is open */
-		if (bytes && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && 
-			(!switch_cmp_addr(rtp_session->from_addr, rtp_session->remote_addr) || 
-			 ((rtp_session->cng_pt && rtp_session->recv_msg.header.pt == rtp_session->cng_pt) || rtp_session->recv_msg.header.pt == 13))) {
-			bytes = 0;
-			goto recvfrom;			 
-			
+		if (bytes) {
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ)) {
+				if (((rtp_session->cng_pt && rtp_session->recv_msg.header.pt == rtp_session->cng_pt) || rtp_session->recv_msg.header.pt == 13)) {
+					bytes = 0;
+					goto recvfrom;			 
+					
+				} 
+			} else if (!switch_cmp_addr(rtp_session->from_addr, rtp_session->remote_addr)) {
+				bytes = 0;
+				goto recvfrom;			 
+				
+			}
 		}
 
 		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && switch_sockaddr_get_port(rtp_session->from_addr)) {
