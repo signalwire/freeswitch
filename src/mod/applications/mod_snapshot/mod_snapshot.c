@@ -136,7 +136,7 @@ static switch_status_t start_capture(switch_core_session_t *session, unsigned in
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void do_snap(switch_core_session_t *session)
+static switch_status_t do_snap(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_media_bug_t *bug = switch_channel_get_private(channel, "snapshot");
@@ -153,7 +153,7 @@ static void do_snap(switch_core_session_t *session)
 		struct cap_cb *cb = (struct cap_cb *) switch_core_media_bug_get_user_data(bug);
 
 		if (!cb) {
-			return;
+			return SWITCH_STATUS_FALSE;
 		}
 
 		switch_time_exp_lt(&tm, switch_time_make(switch_epoch_time_now(NULL), 0));
@@ -174,7 +174,7 @@ static void do_snap(switch_core_session_t *session)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error opening %s\n", file);
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
-			return;
+			return SWITCH_STATUS_FALSE;
 		}
 
 		switch_mutex_lock(cb->mutex);
@@ -191,6 +191,8 @@ static void do_snap(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Wrote %s\n", file);
 	}
 
+	return SWITCH_STATUS_SUCCESS;
+
 }
 
 #define SNAP_SYNTAX "start <sec> <read|write>"
@@ -200,12 +202,14 @@ SWITCH_STANDARD_APP(snapshot_app_function)
 	int argc = 0;
 	char *lbuf = NULL;
 	switch_media_bug_flag_t flags = SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_PING;
+
 	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} 
 	
 	if (argc < 1) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", SNAP_SYNTAX);
+		return;
 	}
 
 	if (!strcasecmp(argv[0], "start")) {
@@ -243,7 +247,6 @@ SWITCH_STANDARD_APP(snapshot_app_function)
 		do_snap(session);
 		return;
 	}
-
 }
 
 
@@ -260,12 +263,13 @@ SWITCH_STANDARD_API(snapshot_function)
 
 	if (zstr(cmd) || argc < 1 || zstr(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", SNAP_API_SYNTAX);
+		goto done;
 	} else {
 		switch_core_session_t *lsession = NULL;
 
 		if ((lsession = switch_core_session_locate(argv[0]))) {
 			if (!strcasecmp(argv[1], "snap")) {
-				do_snap(lsession);
+				status = do_snap(lsession);
 			} else if (!strcasecmp(argv[1], "start")) {
 				char *sec = argv[1];
 				char *fl = argv[2];
@@ -293,8 +297,8 @@ SWITCH_STANDARD_API(snapshot_function)
 				if (!base) {
 					base = "mod_snapshot";
 				}
-
-				start_capture(lsession, seconds, flags, base);
+				
+				status = start_capture(lsession, seconds, flags, base);
 			}
 
 			switch_core_session_rwunlock(lsession);
@@ -306,6 +310,8 @@ SWITCH_STANDARD_API(snapshot_function)
 	} else {
 		stream->write_function(stream, "-ERR Operation Failed\n");
 	}
+
+ done:
 
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
