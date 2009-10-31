@@ -48,7 +48,7 @@ line="--------------------------------------------------------------------------
 
 mypwd=`pwd`
 tmpdir=/tmp/fscore_pb.tmp
-post_file=$pwd/fscore_pb.post
+post_file=$mypwd/fscore_pb.post
 
 
 if [ -z $user ] ; then
