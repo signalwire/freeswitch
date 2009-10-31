@@ -160,12 +160,16 @@
     <param name="inbound-reg-force-matching-username" value="true"/>
     <!-- on authed calls, authenticate *all* the packets not just invite -->
     <param name="auth-all-packets" value="false"/>
-    <!--
-	Possible options for ext-rtp-ip or ext-sip-ip 
-
-	auto     - Use guessed ip.
-	auto-nat - Use ip learned from NAT-PMP or UPNP
-    -->
+    
+    <!-- external_sip_ip
+      Used as the public IP address for SDP.
+      Can be an one of:
+           ip address            - "12.34.56.78"
+           a stun server lookup  - "stun:stun.server.com"
+           a DNS name            - "host:host.server.com"
+           auto                  - Use guessed ip.
+           auto-nat              - Use ip learned from NAT-PMP or UPNP
+       -->
     <param name="ext-rtp-ip" value="auto-nat"/>
     <param name="ext-sip-ip" value="auto-nat"/>
 
