@@ -1374,7 +1374,8 @@ SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *s
 	case AF_INET:
 		return (s1->sin_addr.s_addr == s2->sin_addr.s_addr && s1->sin_port == s2->sin_port);	
 	case AF_INET6:
-		return (s16->sin6_addr.s6_addr == s26->sin6_addr.s6_addr && s16->sin6_port == s26->sin6_port);	
+		return (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr &&
+				*s16->sin6_addr.s6_addr == *s26->sin6_addr.s6_addr && s16->sin6_port == s26->sin6_port);	
 	}
 	
 	return 0;	
