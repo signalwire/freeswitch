@@ -1594,7 +1594,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
 									  "Shutdown in progress, %u session(s) remain.\nShutting down %s\n", 
 									  count,
-									  cmd == SCSC_SHUTDOWN_ASAP ? "ASAP" : "Once there are no active calls.");
+									  cmd == SCSC_SHUTDOWN_ASAP ? "ASAP" : "once there are no active calls.");
 					x = 0;
 				}
 			}
