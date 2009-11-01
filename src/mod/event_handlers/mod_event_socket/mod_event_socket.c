@@ -583,7 +583,7 @@ SWITCH_STANDARD_API(event_sink_function)
     }
 
 	if (!http) {
-		stream->write_function(stream, "This is a web application.!\n");
+		stream->write_function(stream, "This is a web application!\n");
         return SWITCH_STATUS_SUCCESS;
 	}
 	stream->write_function(stream, "Content-Type: text/xml\n\n");
