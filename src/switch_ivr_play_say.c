@@ -483,7 +483,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 				}
 			}
 			
-			file = switch_core_session_sprintf(session, "%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", prefix, SWITCH_PATH_SEPARATOR, file);
+			file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", prefix, SWITCH_PATH_SEPARATOR, file);
 		}
 		if ((ext = strrchr(file, '.'))) {
 			ext++;
