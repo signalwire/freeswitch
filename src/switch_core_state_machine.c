@@ -77,6 +77,10 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard ROUTING\n", switch_channel_get_name(session->channel));
 
+	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
+		switch_ivr_media(session->uuid_str, SMF_NONE);
+	}
+
 	if ((caller_profile = switch_channel_get_caller_profile(session->channel)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't get profile!\n");
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
