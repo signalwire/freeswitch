@@ -1345,7 +1345,6 @@ SWITCH_DECLARE(int) get_addr_int(switch_sockaddr_t *sa)
 	return ntohs((unsigned short)s->sin_addr.s_addr);
 }
 
-
 SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2)
 {
 	struct sockaddr_in *s1;
@@ -1374,8 +1373,17 @@ SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *s
 	case AF_INET:
 		return (s1->sin_addr.s_addr == s2->sin_addr.s_addr && s1->sin_port == s2->sin_port);	
 	case AF_INET6:
-		return (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr &&
-				*s16->sin6_addr.s6_addr == *s26->sin6_addr.s6_addr && s16->sin6_port == s26->sin6_port);	
+		if (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr) {
+			int i;
+
+			if (s16->sin6_port != s26->sin6_port) return 0;
+
+			for(i = 0; i < 4; i++) {
+				if (*((int32_t *)s16->sin6_addr.s6_addr + i) != *((int32_t *)s26->sin6_addr.s6_addr + i)) return 0;
+			}
+
+			return 1;
+		}
 	}
 	
 	return 0;	
