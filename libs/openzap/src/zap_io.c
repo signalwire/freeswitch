@@ -1752,7 +1752,13 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw)
 
 OZ_DECLARE(void) zap_channel_clear_detected_tones(zap_channel_t *zchan)
 {
+	uint32_t i;
+
 	memset(zchan->detected_tones, 0, sizeof(zchan->detected_tones[0]) * ZAP_TONEMAP_INVALID);
+	
+	for (i = 1; i < ZAP_TONEMAP_INVALID; i++) {
+		zchan->span->tone_finder[i].tone_count = 0;
+	}
 }
 
 OZ_DECLARE(void) zap_channel_clear_needed_tones(zap_channel_t *zchan)
