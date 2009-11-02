@@ -365,7 +365,13 @@ SWITCH_DECLARE(switch_status_t) switch_thread_cond_wait(switch_thread_cond_t *co
 
 SWITCH_DECLARE(switch_status_t) switch_thread_cond_timedwait(switch_thread_cond_t *cond, switch_mutex_t *mutex, switch_interval_time_t timeout)
 {
-	return apr_thread_cond_timedwait(cond, mutex, timeout);
+	apr_status_t st = apr_thread_cond_timedwait(cond, mutex, timeout);
+
+	if (st == APR_TIMEUP) {
+		st = SWITCH_STATUS_TIMEOUT;
+	}
+
+	return st;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_thread_cond_signal(switch_thread_cond_t *cond)
