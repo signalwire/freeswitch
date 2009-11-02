@@ -2877,7 +2877,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		dest_to = switch_core_session_strdup(nsession, hval);
 	}
 
-	if (!strncasecmp(profile_name, "gateway", 7)) {
+	if (!strncasecmp(profile_name, "gateway/", 8)) {
 		char *gw, *params;
 		sofia_gateway_t *gateway_ptr = NULL;
 
