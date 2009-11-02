@@ -4451,7 +4451,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 									moh = tmp;
 								}
 								
-								if (moh && !strcasecmp(moh, "silence")) {
+								if (!zstr(moh) && !strcasecmp(moh, "silence")) {
 									moh = NULL;
 								}
 								
