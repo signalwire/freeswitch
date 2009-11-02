@@ -16,7 +16,6 @@ if [ "$arg" = "gcore" ] ; then
 	fspid=`cat $prefix/log/freeswitch.pid`
 	echo "pulling gcore $fspid"
 	gcore -o core $fspid
-exit
 else
     user=$arg
 fi
