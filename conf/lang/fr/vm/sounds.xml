@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="utf-8"?>
 <include><!--This line will be ignored it's here to validate the xml and is optional -->
   <macro name="voicemail_enter_id">
     <input pattern="(.*)">
@@ -27,7 +27,7 @@
   <macro name="voicemail_hello">
     <input pattern="(.*)">
       <match>
-	<action function="speak-text" data="Bienvenu sur votre répondeur."/>
+	<action function="speak-text" data="Bienvenue sur votre rÃ©pondeur."/>
       </match>
     </input>
   </macro>
@@ -35,7 +35,7 @@
   <macro name="voicemail_goodbye">
     <input pattern="(.*)">
       <match>
-	<action function="speak-text" data="Aurevoir."/>
+	<action function="speak-text" data="Au revoir."/>
       </match>
     </input>
   </macro>
@@ -43,7 +43,7 @@
   <macro name="voicemail_abort">
     <input pattern="(.*)">
       <match>
-	<action function="speak-text" data="Trop de tentatives échouées."/>
+	<action function="speak-text" data="Trop de tentatives Ã©chouÃ©es."/>
       </match>
     </input>
   </macro>
@@ -51,12 +51,12 @@
   <macro name="voicemail_message_count">
     <input pattern="^([^:]+):urgent-new:{0,1}(.*)">
       <match>
-	<action function="speak-text" data="Vous avez $1 nouveau message$2 urgent dans le répertoir ${voicemail_current_folder}."/>
+	<action function="speak-text" data="Vous avez $1 nouveau message $2 urgent dans le rÃ©pertoir ${voicemail_current_folder}."/>
       </match>
     </input>
     <input pattern="^([^:]+):new:{0,1}(.*)">
       <match>
-	<action function="speak-text" data="Vous avez $1 nouveau message$2 dans le répertoir ${voicemail_current_folder}."/>
+	<action function="speak-text" data="Vous avez $1 nouveau message$2 dans le rÃ©pertoir ${voicemail_current_folder}."/>
       </match>
     </input>
   </macro>
@@ -65,17 +65,17 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="Pour écouter les nouveaux message, tappez $1, Pour écouter les messages enregistrés, tappez $2, Pour les options avancées, tappez $3, pour sortir, tappez $4."/>
+		data="Pour Ã©couter les nouveaux message, tappez $1, Pour Ã©couter les messages enregistrÃ©s, tappez $2, Pour les options avancÃ©es, tappez $3, pour sortir, tappez $4."/>
       </match>
     </input>
   </macro>
 
 
   <macro name="voicemail_config_menu">
-    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="pour enregistrer un message d'accueil, tappez $1, Pour choisir votre message d'accueil, tappez $2, Pour enregistrer votre nom, tappez $3, pour retourner au menu principale, tappez $4."/>
+		data="pour enregistrer un message d'accueil, tappez $1, Pour choisir votre message d'accueil, tappez $2, Pour enregistrer votre nom, tappez $3, Pour changer votre mot de passe, tappez $4, Pour retourner au menu principal, tappez $5."/>
       </match>
     </input>
   </macro>
@@ -84,7 +84,7 @@
   <macro name="voicemail_record_name">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="enregistrez votre nom au bip, puis tappez une touche ou arretez de parler pour arreter l'enregistrement."/>
+	<action function="speak-text" data="enregistrez votre nom aprÃ¨s le bip, puis tappez une touche ou arrÃªtez de parler pour arrÃªter l'enregistrement."/>
 
       </match>
     </input>
@@ -94,7 +94,7 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="Pour écouter l'enregistrement, tappez $1, pour sauvegarder l'enregistrement, tappez $2, Pour réenregistrer, tappez $3."/>
+		data="Pour Ã©couter l'enregistrement, tappez $1, pour sauvegarder l'enregistrement, tappez $2, Pour rÃ©enregistrer, tappez $3."/>
       </match>
     </input>
   </macro>
@@ -103,7 +103,7 @@
     <input pattern="^([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="Pour indiquer ce messange comme étant urgent, tappez $1, Pour continuer, tappez $2."/>
+		data="Pour indiquer ce message comme Ã©tant urgent, tappez $1, Pour continuer, tappez $2."/>
       </match>
     </input>
   </macro>
@@ -112,7 +112,7 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="Pour réécouter l'enregistrement à nouveau, tappez $1, Pour sauvegarder l'enregistrement, tappez $2,  Pour supprimer l'enregistrement, tappez $3, pour transférer l'enregistrement à votre mail, tappez $4, Pour appeler l'appelant, tappez $5, Pour transférer ce message à un  autre numéro, tappez $6."/>
+		data="Pour rÃ©Ã©couter l'enregistrement Ã  nouveau, tappez $1, Pour sauvegarder l'enregistrement, tappez $2,  Pour supprimer l'enregistrement, tappez $3, pour transfÃ©rer l'enregistrement Ã  votre courriel, tappez $4, Pour appeler l'appelant, tappez $5, Pour transfÃ©rer ce message Ã  un  autre numÃ©ro, tappez $6."/>
       </match>
     </input>
   </macro>
@@ -128,7 +128,7 @@
   <macro name="voicemail_choose_greeting_fail">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="valeur incorrect."/>
+	<action function="speak-text" data="valeur incorrecte."/>
       </match>
     </input>
   </macro>
@@ -136,7 +136,7 @@
   <macro name="voicemail_record_greeting">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="enregistrez votre message d'accueil au bip, puis tappez une touche ou arretez de parler pour arreter l'enregistrement."/>
+	<action function="speak-text" data="enregistrez votre message d'accueil aprÃ¨s le bip, puis tappez une touche ou arrÃªtez de parler pour arrÃªter l'enregistrement."/>
       </match>
     </input>
   </macro>
@@ -144,7 +144,7 @@
   <macro name="voicemail_record_message">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="enregistrez votre message au bip, puis tappez une touche ou arretez de parler pour arreter l'enregistrement."/>
+	<action function="speak-text" data="enregistrez votre message aprÃ¨s le bip, puis tappez une touche ou arrÃªtez de parler pour arrÃªter l'enregistrement."/>
       </match>
     </input>
   </macro>
@@ -152,7 +152,7 @@
   <macro name="voicemail_greeting_selected">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="message d'accueil numero $1 selectionné."/>
+	<action function="speak-text" data="message d'accueil numÃ©ro $1 sÃ©lectionnÃ©."/>
       </match>
     </input>
   </macro>
@@ -176,12 +176,12 @@
   <macro name="voicemail_say_message_number">
     <input pattern="new:(.*)$">
       <match>
-	<action function="speak-text" data="nouveau message numero $1."/>
+	<action function="speak-text" data="nouveau message numÃ©ro $1."/>
       </match>
     </input>
-    <input pattern="^(saved):(.*)$">
+    <input pattern="^saved:(.*)$">
       <match>
-	<action function="speak-text" data="message sauvegardé numero $1."/>
+	<action function="speak-text" data="message sauvegardÃ© numÃ©ro $1."/>
       </match>
     </input>
   </macro>
@@ -210,22 +210,22 @@
     </input>
     <input pattern="^(deleted)$">
       <match>
-	<action function="speak-text" data="message supprimé"/>
+	<action function="speak-text" data="message supprimÃ©"/>
       </match>
     </input>
     <input pattern="^(saved)$">
       <match>
-	<action function="speak-text" data="message sauvegardé"/>
+	<action function="speak-text" data="message sauvegardÃ©"/>
       </match>
     </input>
     <input pattern="^(emailed)$">
       <match>
-	<action function="speak-text" data="message envoyé"/>
+	<action function="speak-text" data="message envoyÃ©"/>
       </match>
     </input>
     <input pattern="^(marked-urgent)$">
       <match>
-	<action function="speak-text" data="message marqué comme étant urgent"/>
+	<action function="speak-text" data="message marquÃ© comme Ã©tant urgent"/>
       </match>
     </input>
   </macro>
@@ -233,7 +233,7 @@
   <macro name="voicemail_say_date">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="${strftime($1|%A, %e %B %Y, %H heures %M)}"/>
+	<action function="speak-text" data="${strftime($1|%e/%m/%Y, %H heures %M)}"/>
       </match>
     </input>
   </macro>
