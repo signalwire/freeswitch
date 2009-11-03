@@ -1437,7 +1437,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 		if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
 			const char *sipip, *format;
 			switch_uuid_t uuid;
-			uint32_t ping_freq = 0, extension_in_contact = 0;
+			uint32_t ping_freq = 0, extension_in_contact = 0, distinct_to = 0;
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
 				*username = NULL,
@@ -1559,6 +1559,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					register_proxy = val;
 				} else if (!strcmp(var, "outbound-proxy")) {
 					outbound_proxy = val;
+				} else if (!strcmp(var, "distinct-to")) {
+					distinct_to = switch_true(val);
 				} else if (!strcmp(var, "contact-params")) {
 					contact_params = val;
 				} else if (!strcmp(var, "register-transport")) {
@@ -1655,6 +1657,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->register_username = switch_core_strdup(gateway->pool, username);
 			gateway->auth_username = switch_core_strdup(gateway->pool, auth_username);
 			gateway->register_password = switch_core_strdup(gateway->pool, password);
+			gateway->distinct_to = distinct_to;
 
 			if (switch_true(caller_id_in_from)) {
 				sofia_set_flag(gateway, REG_FLAG_CALLERID);
@@ -1929,6 +1932,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							sofia_set_pflag(profile, PFLAG_RECIEVED_IN_NAT_REG_CONTACT);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_RECIEVED_IN_NAT_REG_CONTACT);
+						}
+					} else if (!strcasecmp(var, "NDLB-allow-bad-iananame")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_NDLB_ALLOW_BAD_IANANAME);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_NDLB_ALLOW_BAD_IANANAME);
 						}
 					} else if (!strcasecmp(var, "aggressive-nat-detection")) {
 						if (switch_true(val)) { 
@@ -2672,6 +2681,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							profile->ndlb |= PFLAG_NDLB_SENDRECV_IN_SESSION;
 						} else {
 							profile->ndlb &= ~PFLAG_NDLB_SENDRECV_IN_SESSION;
+						}
+					} else if (!strcasecmp(var, "NDLB-allow-bad-iananame")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_NDLB_ALLOW_BAD_IANANAME);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_NDLB_ALLOW_BAD_IANANAME);
 						}
 					} else if (!strcasecmp(var, "pass-rfc2833")) {
 						if (switch_true(val)) {
@@ -3604,7 +3619,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 				if (sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) && (parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
 					if ((sdp = sdp_session(parser))) {
-						sofia_glue_set_r_sdp_codec_string(channel, (tech_pvt->profile?tech_pvt->profile->codec_string:NULL), sdp);
+						sofia_glue_set_r_sdp_codec_string(session, (tech_pvt->profile?tech_pvt->profile->codec_string:NULL), sdp);
 					}
 					sdp_parser_free(parser);
 				}

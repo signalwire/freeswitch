@@ -206,7 +206,8 @@ typedef enum {
 typedef enum {
 	PFLAG_NDLB_TO_IN_200_CONTACT = (1 << 0),
 	PFLAG_NDLB_BROKEN_AUTH_HASH = (1 << 1),
-	PFLAG_NDLB_SENDRECV_IN_SESSION = (1 << 2)
+	PFLAG_NDLB_SENDRECV_IN_SESSION = (1 << 2),
+	PFLAG_NDLB_ALLOW_BAD_IANANAME = (1 << 3)
 } sofia_NDLB_t;
 
 typedef enum {
@@ -387,6 +388,7 @@ struct sofia_gateway {
 	int failures;
 	struct sofia_gateway *next;
 	sofia_gateway_subscription_t *subscriptions;
+	int distinct_to;
 };
 
 typedef enum {
@@ -733,7 +735,7 @@ void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt);
  * \param codec_string The profile's codec string or NULL if inexistant
  * \param sdp The parsed SDP content
  */
-void sofia_glue_set_r_sdp_codec_string(switch_channel_t *channel,const char *codec_string, sdp_session_t *sdp);
+void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp);
 switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_sdp);
 char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const char *host, char *val, switch_size_t len);
 void event_handler(switch_event_t *event);

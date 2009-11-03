@@ -2591,7 +2591,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 }
 
-void sofia_glue_set_r_sdp_codec_string(switch_channel_t *channel,const char *codec_string, sdp_session_t *sdp)
+void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp)
 {
 	char buf[1024] = {0};
 	sdp_media_t *m;
@@ -2605,6 +2605,8 @@ void sofia_glue_set_r_sdp_codec_string(switch_channel_t *channel,const char *cod
 	int num_codecs = 0;
 	char *codec_order[SWITCH_MAX_CODECS];
 	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS] = { 0 };
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
 
 	if (!zstr(codec_string)) {
 		char *tmp_codec_string;
@@ -2666,7 +2668,7 @@ void sofia_glue_set_r_sdp_codec_string(switch_channel_t *channel,const char *cod
 						continue;
 					}
 
-					if (map->rm_pt < 96) {
+					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						if (map->rm_encoding) {
@@ -2707,7 +2709,7 @@ void sofia_glue_set_r_sdp_codec_string(switch_channel_t *channel,const char *cod
 						continue;
 					}
 
-					if (map->rm_pt < 96) {
+					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						if(map->rm_encoding) {
@@ -3075,7 +3077,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 				}
 				
 				for (map = m->m_rtpmaps; map; map = map->rm_next) {
-					if (zstr(map->rm_encoding) && map->rm_pt < 96) {
+					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == tech_pvt->pt) ? 1 : 0;
 					} else {
 						match = strcasecmp(switch_str_nil(map->rm_encoding), tech_pvt->iananame) ? 0 : 1;
@@ -3160,7 +3162,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u:%d]/[%s:%d:%u:%d]\n",
 									  rm_encoding, map->rm_pt, (int) map->rm_rate, ptime,
 									  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000);
-					if (zstr(map->rm_encoding) && map->rm_pt < 96) {
+					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						match = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
@@ -3294,7 +3296,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Video Codec Compare [%s:%d]/[%s:%d]\n",
 									  rm_encoding, map->rm_pt, imp->iananame, imp->ianacode);
-					if (map->rm_pt < 96) {
+					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						vmatch = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						vmatch = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
