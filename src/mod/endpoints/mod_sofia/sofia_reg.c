@@ -337,7 +337,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 							 NUTAG_URL(gateway_ptr->register_url),
 							 TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
 							 TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
-							 SIPTAG_TO_STR(gateway_ptr->distinct_to ? gateway_ptr->register_from : gateway_ptr->register_to),
+							 SIPTAG_TO_STR(gateway_ptr->distinct_to ? gateway_ptr->register_to : gateway_ptr->register_from),
 							 SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
 							 SIPTAG_FROM_STR(gateway_ptr->register_from),					 
 							 SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
@@ -349,7 +349,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 							   NUTAG_URL(gateway_ptr->register_url),
 							   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 							   SIPTAG_FROM_STR(gateway_ptr->register_from),
-							   SIPTAG_TO_STR(gateway_ptr->distinct_to ? gateway_ptr->register_from : gateway_ptr->register_to),
+							   SIPTAG_TO_STR(gateway_ptr->distinct_to ? gateway_ptr->register_to : gateway_ptr->register_from),
 							   SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
 							   NUTAG_REGISTRAR(gateway_ptr->register_proxy),
 							   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
