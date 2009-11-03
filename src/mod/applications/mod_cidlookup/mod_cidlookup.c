@@ -32,6 +32,8 @@
 #include <switch.h>
 #include <curl/curl.h>
 
+#define SWITCH_REWIND_STREAM(s) s.end = s.data
+
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cidlookup_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_cidlookup_runtime);
@@ -42,7 +44,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load);
  */
 SWITCH_MODULE_DEFINITION(mod_cidlookup, mod_cidlookup_load, mod_cidlookup_shutdown, NULL);
 
-static char *SYNTAX = "cidlookup status|number [skipurl] [skipcitystate]";
+static char *SYNTAX = "cidlookup status|number [skipurl] [skipcitystate] [verbose]";
 
 static struct {
 	char *url;
@@ -67,6 +69,13 @@ struct http_data {
 	switch_size_t max_bytes;
 	int err;
 };
+
+struct cid_data_obj {
+	char *name;
+	char *area;
+	char *src;
+};
+typedef struct cid_data_obj cid_data_t;
 
 
 struct callback_obj {
@@ -215,6 +224,7 @@ static char *string_digitsonly(switch_memory_pool_t *pool, const char *str)
 
 	len = strlen(str);
 	newstr = switch_core_alloc(pool, len+1);
+	switch_assert(newstr);
 	np = newstr;
 	
 	while(*p) {
@@ -229,14 +239,17 @@ static char *string_digitsonly(switch_memory_pool_t *pool, const char *str)
 	return newstr;
 }
 
-static char *check_cache(switch_memory_pool_t *pool, const char *number) {
+static cid_data_t *check_cache(switch_memory_pool_t *pool, const char *number) {
 	char *cmd;
 	char *name = NULL;
+	char *area = NULL;
+	char *src = NULL;
+	cid_data_t *cid = NULL;
 	switch_stream_handle_t stream = { 0 };
 	
 	SWITCH_STANDARD_STREAM(stream);
-	cmd = switch_core_sprintf(pool, "get fs:cidlookup:%s", number);
 	
+	cmd = switch_core_sprintf(pool, "get fs:cidlookup:name:%s", number);
 	if (switch_api_execute("memcache", cmd, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 		if (strncmp("-ERR", stream.data, 4)) {
 			name = switch_core_strdup(pool, stream.data);
@@ -244,29 +257,86 @@ static char *check_cache(switch_memory_pool_t *pool, const char *number) {
 			name = NULL;
 		}
 	}
+
+	SWITCH_REWIND_STREAM(stream);
+	cmd = switch_core_sprintf(pool, "get fs:cidlookup:area:%s", number);
+	if (switch_api_execute("memcache", cmd, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+		if (strncmp("-ERR", stream.data, 4)) {
+			area = switch_core_strdup(pool, stream.data);
+		} else {
+			area = NULL;
+		}
+	}
+
+	SWITCH_REWIND_STREAM(stream);
+	cmd = switch_core_sprintf(pool, "get fs:cidlookup:src:%s", number);
+	if (switch_api_execute("memcache", cmd, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+		if (strncmp("-ERR", stream.data, 4)) {
+			src = switch_core_strdup(pool, stream.data);
+		} else {
+			src = NULL;
+		}
+	}
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "memcache: k:'%s', v:'%s'\n", cmd, (name) ? name : "(null)");
+	if (name || area || src) {
+		cid = switch_core_alloc(pool, sizeof(cid_data_t));
+		switch_assert(cid);
+		cid->name = name;
+		cid->area = area;
+		cid->src = src;
+	}
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "memcache: k:'%s', vn:'%s', va:'%s', vs:'%s'\n", 
+						cmd, 
+						(name) ? name : "(null)",
+						(area) ? area : "(null)",
+						(src) ? src : "(null)"
+						);
 	switch_safe_free(stream.data);
-	return name;
+	return cid;
 }
 
-switch_bool_t set_cache(switch_memory_pool_t *pool, const char *number, const char *cid) {
+switch_bool_t set_cache(switch_memory_pool_t *pool, char *number, cid_data_t *cid) {
 	char *cmd;
 	switch_bool_t success = SWITCH_TRUE;
 	switch_stream_handle_t stream = { 0 };
 	
 	SWITCH_STANDARD_STREAM(stream);
-	cmd = switch_core_sprintf(pool, "set fs:cidlookup:%s '%s' %d", number, cid, globals.cache_expire);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "memcache: %s\n", cmd);
 	
+	cmd = switch_core_sprintf(pool, "set fs:cidlookup:name:%s '%s' %d", number, cid->name, globals.cache_expire);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "memcache: %s\n", cmd);
 	if (switch_api_execute("memcache", cmd, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 		if (strncmp("-ERR", stream.data, 4)) {
 			success = SWITCH_TRUE;
 		} else {
 			success = SWITCH_FALSE;
+			goto done;
 		}
 	}
-	
+
+	SWITCH_REWIND_STREAM(stream);
+	cmd = switch_core_sprintf(pool, "set fs:cidlookup:area:%s '%s' %d", number, cid->area, globals.cache_expire);
+	if (switch_api_execute("memcache", cmd, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+		if (strncmp("-ERR", stream.data, 4)) {
+			success = SWITCH_TRUE;
+		} else {
+			success = SWITCH_FALSE;
+			goto done;
+		}
+	}
+
+	SWITCH_REWIND_STREAM(stream);
+	cmd = switch_core_sprintf(pool, "set fs:cidlookup:src:%s '%s' %d", number, cid->src, globals.cache_expire);
+	if (switch_api_execute("memcache", cmd, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+		if (strncmp("-ERR", stream.data, 4)) {
+			success = SWITCH_TRUE;
+		} else {
+			success = SWITCH_FALSE;
+			goto done;
+		}
+	}
+
+done:
 	switch_safe_free(stream.data);
 	return success;
 }
@@ -339,15 +409,17 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 	return name;
 }
 
-static char *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, char **area)
+static cid_data_t *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num)
 {
 	char *xml_s = NULL;
 	char *query = NULL;
 	char *name = NULL;
 	char *city = NULL;
 	char *state = NULL;
+	char *area = NULL;
 	switch_xml_t xml = NULL;
 	switch_xml_t node = NULL;
+	cid_data_t *cid = NULL;
 
 	/* NANPA check */
 	if (strlen(num) == 11 && num[0] == '1') {
@@ -355,8 +427,6 @@ static char *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event_t *ev
 	} else {
 		goto done;
 	}
-	
-	switch_assert(area);
 	
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "whitepages-cid", num);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "whitepages-api-key", globals.whitepages_apikey);
@@ -396,7 +466,7 @@ area:
 	}
 	
 	if (city || state) {
-		*area = switch_core_sprintf(pool, "%s %s", city ? city : "", state ? state : "");
+		area = switch_core_sprintf(pool, "%s %s", city ? city : "", state ? state : "");
 	}
 
 done:
@@ -408,8 +478,14 @@ done:
 		switch_xml_free(xml);
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "whitepages XML: %s\n", xml_s);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "whitepages name: %s, area: %s\n", name ? name : "(null)", *area ? *area : "(null)");
-	return name;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "whitepages name: %s, area: %s\n", name ? name : "(null)", area ? area : "(null)");
+	
+	cid = switch_core_alloc(pool, sizeof(cid_data_t));
+	switch_assert(cid);
+	
+	cid->name = name;
+	cid->area = area;
+	return cid;
 }
 
 static char *do_db_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, const char *sql) {
@@ -433,12 +509,15 @@ static char *do_db_lookup(switch_memory_pool_t *pool, switch_event_t *event, con
 	return name;
 }
 
-static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, switch_bool_t skipurl, switch_bool_t skipcitystate) {
+static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, switch_bool_t skipurl, switch_bool_t skipcitystate) {
 	char *number = NULL;
 	char *name = NULL;
-	char *area = NULL;
 	char *url_query = NULL;
-	char *src = NULL;
+	cid_data_t *cid = NULL;
+	switch_bool_t save_cache = SWITCH_FALSE;
+	
+	cid = switch_core_alloc(pool, sizeof(cid_data_t));
+	switch_assert(cid);
 
 	number = string_digitsonly(pool, num);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller_id_number", number);
@@ -447,65 +526,77 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 	if (switch_odbc_available() && globals.master_odbc && globals.sql) {
 		name = do_db_lookup(pool, event, number, globals.sql);
 		if (name) {
-			src = "database";
+			cid->name = name;
+			cid->src = "phone_database";
+			goto done;
 		}
 	}
 
-	if (!name && (globals.url || globals.whitepages_apikey)) {
-		if (globals.cache) {
-			name = check_cache(pool, number);
-			if (name) {
-				src = "cache";
-			}
-		}
-		if (!skipurl && !name && globals.whitepages_apikey) {
-			name = do_whitepages_lookup(pool, event, number, &area);
-			if (area || name) {
-				src = "whitepages";
-			}
-			if (name) {
-				if (globals.cache) {
-					set_cache(pool, number, name);
-				}
-			}
-		}
-		if (!skipurl && !name && globals.url) {
-			url_query = switch_event_expand_headers(event, globals.url);
-			name = do_lookup_url(pool, event, url_query);
-			if (name) {
-				src = "url";
-				if (globals.cache) {
-					set_cache(pool, number, name);
-				}
-			}
-			if (url_query != globals.url) {
-				switch_safe_free(url_query);
-			}
-			
+	if (globals.cache) {
+		cid = check_cache(pool, number);
+		if (cid) {
+			cid->src = switch_core_sprintf(pool, "%s (cache)", cid->src);
+			goto done;
 		}
 	}
-	/* only do the below if we don't know anything about the # and it is a nanpa number */
-	if (!area && !name && 
+
+	if (!skipurl && globals.whitepages_apikey) {
+		cid = do_whitepages_lookup(pool, event, number);
+		if (cid && cid->name) { /* only cache if we have a name */
+			save_cache = SWITCH_TRUE;
+			goto done;
+		}
+	}
+		
+	if (!skipurl && globals.url) {
+		url_query = switch_event_expand_headers(event, globals.url);
+		name = do_lookup_url(pool, event, url_query);
+		if (name) {
+			cid->name = name;
+			cid->src = "url";
+			
+			save_cache = SWITCH_TRUE;
+		}
+		if (url_query != globals.url) {
+			switch_safe_free(url_query);
+		}
+	}
+	
+done:	
+	/* append area if we can */
+	if (!cid->area &&
 		!skipcitystate && 
 		strlen(number) == 11 && number[0] == '1' &&
 		switch_odbc_available() && globals.master_odbc && globals.citystate_sql) {
 		
-		area = do_db_lookup(pool, event, number, globals.citystate_sql);
-		src = "npanxx";
+		name = do_db_lookup(pool, event, number, globals.citystate_sql);
+		if (name) {
+			cid->area = name;
+			if (cid->src) {
+				cid->src = switch_core_sprintf(pool, "%s,%s", cid->src, "npanxx_database");
+			} else {
+				cid->src = "npanxx_database";
+			}
+		}
 	}
 	
-	if (!name && area) {
-		name = area;
+	if (!cid->name) {
+		cid->name = "UNKNOWN";
+	}
+	if (!cid->area) {
+		cid->area = "UNKNOWN";
+	}
+	if (!cid->src) {
+		cid->src = "UNKNOWN";
 	}
 	
-	if (!name) {
-		name = "UNKNOWN";
+	if (globals.cache && save_cache) {
+		set_cache(pool, number, cid);
 	}
+	
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cidlookup source: %s\n", src ? src : "none");
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cidlookup_source", src ? src : "none");
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cidlookup_area", area ? area : "unknown");
-	return name;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cidlookup source: %s\n", cid->src);
+	return cid;
 }
 
 SWITCH_STANDARD_APP(cidlookup_app_function)
@@ -521,7 +612,7 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 	switch_event_t *event = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *profile = switch_channel_get_caller_profile(channel);
-	char *name = NULL;
+	cid_data_t *cid = NULL;
 	const char *number = NULL;
 	switch_bool_t skipurl = SWITCH_FALSE;
 	switch_bool_t skipcitystate = SWITCH_FALSE;
@@ -555,18 +646,18 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 	}
 	
 	if (number) {
-		name = do_lookup(pool, event, number, skipurl, skipcitystate);
+		cid = do_lookup(pool, event, number, skipurl, skipcitystate);
 	}
 	
-	if (name && channel) {
+	if (cid && channel) {
 		switch_channel_set_variable(channel, "original_caller_id_name", switch_core_strdup(pool, profile->caller_id_name));
-		if (!zstr(switch_event_get_header(event, "cidlookup_source"))) {
-			switch_channel_set_variable(channel, "cidlookup_source", switch_core_strdup(pool, switch_event_get_header(event, "cidlookup_source")));
+		if (!zstr(cid->src)) {
+			switch_channel_set_variable(channel, "cidlookup_source", cid->src);
 		}
-		if (!zstr(switch_event_get_header(event, "cidlookup_area"))) {
-			switch_channel_set_variable(channel, "cidlookup_area", switch_core_strdup(pool, switch_event_get_header(event, "cidlookup_area")));
+		if (!zstr(cid->area)) {
+			switch_channel_set_variable(channel, "cidlookup_area", cid->area);
 		}
-		profile->caller_id_name = switch_core_strdup(profile->pool, name);;
+		profile->caller_id_name = switch_core_strdup(profile->pool, cid->name);;
 	}
 	
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
@@ -585,13 +676,14 @@ SWITCH_STANDARD_API(cidlookup_function)
 	char *argv[4] = { 0 };
 	int argc;
 	int i;
-	char *name = NULL;
+	cid_data_t *cid = NULL;
 	char *mydata = NULL;
 
 	switch_memory_pool_t *pool = NULL;
 	switch_event_t *event = NULL;
 	switch_bool_t skipurl = SWITCH_FALSE;
 	switch_bool_t skipcitystate = SWITCH_FALSE;
+	switch_bool_t verbose = SWITCH_FALSE;
 	
 	if (zstr(cmd)) {
 		switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
@@ -629,12 +721,17 @@ SWITCH_STANDARD_API(cidlookup_function)
 				skipurl = SWITCH_TRUE;
 			} else if (!strcasecmp(argv[i], "skipcitystate")) {
 				skipcitystate = SWITCH_TRUE;
+			} else if (!strcasecmp(argv[i], "verbose")) {
+				verbose = SWITCH_TRUE;
 			}
 		}
 
-		name = do_lookup(pool, event, argv[0], skipurl, skipcitystate);
-		if (name) {
-			stream->write_function(stream, name);
+		cid = do_lookup(pool, event, argv[0], skipurl, skipcitystate);
+		if (cid) {
+			stream->write_function(stream, cid->name);
+			if (verbose) {
+				stream->write_function(stream, " (%s) [%s]", cid->area, cid->src);
+			}
 		} else {
 			stream->write_function(stream, "UNKNOWN");
 		}
