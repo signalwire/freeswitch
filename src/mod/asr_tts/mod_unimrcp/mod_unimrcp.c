@@ -1277,15 +1277,18 @@ static switch_status_t speech_channel_set_param(speech_channel_t *schannel, cons
 	switch_mutex_lock(schannel->mutex);
 	if (!zstr(param) && val != NULL) {
 		/* check if this is a FreeSWITCH param that needs to be translated to an MRCP param: e.g. voice ==> voice-name */
-		char *mrcp_param = (char *)switch_core_hash_find(schannel->application->fs_param_map, param);
-		char *lcparam = NULL;
-		if (zstr(mrcp_param)) {
-			lcparam = switch_lc_strdup(param);
-			mrcp_param = lcparam;
+		const char *v;
+		const char *p = switch_core_hash_find(schannel->application->fs_param_map, param);
+		if (!p) {
+			p = switch_core_strdup(schannel->memory_pool, param);
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) param = %s, val = %s\n", schannel->name, mrcp_param, val);
-		switch_core_hash_insert(schannel->params, mrcp_param, val);
-		switch_safe_free(lcparam);
+		if (val) {
+			v = switch_core_strdup(schannel->memory_pool, val);
+		} else {
+			v = val;
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) param = %s, val = %s\n", schannel->name, p, v);
+		switch_core_hash_insert(schannel->params, p, v);
 	}
 	switch_mutex_unlock(schannel->mutex);
 	return SWITCH_STATUS_SUCCESS;
@@ -1777,11 +1780,11 @@ static switch_status_t synth_load(switch_loadable_module_interface_t *module_int
 	mrcp_client_application_register(globals.mrcp_client, globals.synth.app, "synth");
 
 	/* map FreeSWITCH params to MRCP param */
-	switch_core_hash_init_case(&globals.synth.fs_param_map, pool, SWITCH_FALSE /* case_sensitive */);
+	switch_core_hash_init_nocase(&globals.synth.fs_param_map, pool);
 	switch_core_hash_insert(globals.synth.fs_param_map, "voice", "voice-name");
 
 	/* map MRCP params to UniMRCP ID */
-	switch_core_hash_init_case(&globals.synth.param_id_map, pool, SWITCH_FALSE /* case_sensitive */);
+	switch_core_hash_init_nocase(&globals.synth.param_id_map, pool);
 	switch_core_hash_insert(globals.synth.param_id_map, "jump-size", unimrcp_param_id_create(SYNTHESIZER_HEADER_JUMP_SIZE, pool));
 	switch_core_hash_insert(globals.synth.param_id_map, "kill-on-barge-in", unimrcp_param_id_create(SYNTHESIZER_HEADER_KILL_ON_BARGE_IN, pool));
 	switch_core_hash_insert(globals.synth.param_id_map, "speaker-profile", unimrcp_param_id_create(SYNTHESIZER_HEADER_SPEAKER_PROFILE, pool));
@@ -2057,6 +2060,7 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 		}
 
 		/* set up name, type for future RECOGNIZE requests.  We'll reference this cached grammar by name */
+		/* TODO rethink this */
 		ldata = switch_mprintf("session:%s", name);
 		data = ldata;
 		type = GRAMMAR_TYPE_URI;
@@ -2065,7 +2069,7 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 	/* Create the grammar and save it */
 	if ((status = grammar_create(&g, name, type, data, schannel->memory_pool)) == SWITCH_STATUS_SUCCESS) {
 		recognizer_data_t *r = (recognizer_data_t *)schannel->data;
-		switch_core_hash_insert(r->grammars, name, g);
+		switch_core_hash_insert(r->grammars, g->name, g);
 	}
 
  done:
@@ -2575,7 +2579,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 	char *filename = NULL;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) grammar = %s, name = %s\n", schannel->name, grammar, name);
 
-	if (zstr(grammar) || zstr(name)) {
+	if (zstr(grammar)) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -2591,8 +2595,20 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Grammar is URI\n", schannel->name);
 		type = GRAMMAR_TYPE_URI;
 		grammar_data = grammar;
+
+		/* if a name was not given, just use the URI that was passed in */
+		if (zstr(name)) {
+			name = grammar;
+		}
 	} else if (text_starts_with(grammar, INLINE_ID)) {
 		grammar_data = grammar + strlen(INLINE_ID);
+
+		/* name is required for inline grammars */
+		if (zstr(name)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) missing grammar name\n", schannel->name);
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		}
 	} else {
 		/* grammar points to file containing the grammar text.  We assume the MRCP server can't get to this file
 		 * so read the data from the file and cache it */
@@ -2628,6 +2644,11 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 		}
 		grammar_file_data[to_read] = '\0';
 		grammar_data = grammar_file_data;
+
+		/* if a name was not given, just use the filename that was passed in */
+		if (zstr(name)) {
+			name = grammar;
+		}
 	}
 
 	/* determine content type of file grammar or inline grammar */
@@ -3022,12 +3043,12 @@ static switch_status_t recog_load(switch_loadable_module_interface_t *module_int
 	mrcp_client_application_register(globals.mrcp_client, globals.recog.app, "recog");
 	
 	/* map FreeSWITCH params or old params to MRCPv2 param */
-	switch_core_hash_init_case(&globals.recog.fs_param_map, pool, SWITCH_FALSE /* case_sensitive */);
+	switch_core_hash_init_nocase(&globals.recog.fs_param_map, pool);
 	/* MRCPv1 param */
 	switch_core_hash_insert(globals.recog.fs_param_map, "recognizer-start-timers", "start-input-timers");
 	
 	/* map MRCP params to UniMRCP ID */
-	switch_core_hash_init_case(&globals.recog.param_id_map, pool, SWITCH_FALSE /* case_sensitive */);
+	switch_core_hash_init_nocase(&globals.recog.param_id_map, pool);
 	switch_core_hash_insert(globals.recog.param_id_map, "Confidence-Threshold", unimrcp_param_id_create(RECOGNIZER_HEADER_CONFIDENCE_THRESHOLD, pool));
 	switch_core_hash_insert(globals.recog.param_id_map, "Sensitivity-Level", unimrcp_param_id_create(RECOGNIZER_HEADER_SENSITIVITY_LEVEL, pool));
 	switch_core_hash_insert(globals.recog.param_id_map, "Speed-Vs-Accuracy", unimrcp_param_id_create(RECOGNIZER_HEADER_SPEED_VS_ACCURACY, pool));
@@ -3467,7 +3488,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load)
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_UNNESTED, pool);
 	globals.speech_channel_number = 0;
-	switch_core_hash_init_case(&globals.profiles, pool, SWITCH_FALSE /* case_sensitive */);
+	switch_core_hash_init_nocase(&globals.profiles, pool);
 
 	/* get MRCP module configuration */
 	mod_unimrcp_do_config();
