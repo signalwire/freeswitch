@@ -850,6 +850,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 		return SWITCH_STATUS_FALSE;
 	}
 
+	switch_channel_set_flag_recursive(caller_channel, CF_SIGNAL_BRIDGE_TTL);
+	switch_channel_set_flag_recursive(peer_channel, CF_SIGNAL_BRIDGE_TTL);
+
 	switch_channel_set_variable(caller_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, switch_core_session_get_uuid(peer_session));
 	switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, switch_core_session_get_uuid(session));
 
@@ -921,6 +924,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		return switch_ivr_signal_bridge(session, peer_session);
 	}
 	
+
+	switch_channel_set_flag_recursive(caller_channel, CF_MEDIA_BRIDGE_TTL);
+	switch_channel_set_flag_recursive(peer_channel, CF_MEDIA_BRIDGE_TTL);
+
 	switch_channel_set_flag_recursive(caller_channel, CF_BRIDGE_ORIGINATOR);
 	switch_channel_clear_flag(peer_channel, CF_BRIDGE_ORIGINATOR);
 

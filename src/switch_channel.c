@@ -768,7 +768,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner_var_check(sw
 SWITCH_DECLARE(uint32_t) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flag)
 {
 	switch_assert(channel != NULL);
-	return channel->flags[flag] ? 1 : 0;
+	return channel->flags[flag];
 }
 
 SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *channel, switch_channel_flag_t flag)

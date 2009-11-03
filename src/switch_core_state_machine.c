@@ -77,7 +77,11 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard ROUTING\n", switch_channel_get_name(session->channel));
 
-	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
+	if (
+		(switch_channel_test_flag(session->channel, CF_ANSWERED) || 
+		 switch_channel_test_flag(session->channel, CF_EARLY_MEDIA) ||
+		 switch_channel_test_flag(session->channel, CF_SIGNAL_BRIDGE_TTL)) && 
+		switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
 		switch_ivr_media(session->uuid_str, SMF_NONE);
 	}
 
