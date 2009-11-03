@@ -27,6 +27,8 @@
       <!-- <param name="ssl-cert-path" value="$${base_dir}/conf/certs/public_key.pem"/> -->
       <!-- <param name="ssl-key-path" value="$${base_dir}/conf/certs/private_key.pem"/> -->
       <!-- <param name="ssl-key-password" value="MyPrivateKeyPassword"/> -->
+      <!-- optional timeout -->
+      <!-- <param name="timeout" value="10"/> -->
 
       <!-- optional: use a custom CA certificate in PEM format to verify the peer
            with. This is useful if you are acting as your own certificate authority.
