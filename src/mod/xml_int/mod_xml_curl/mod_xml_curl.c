@@ -56,6 +56,7 @@ struct xml_binding {
 	switch_hash_t *vars_map;
 	int use_dynamic_url;
 	int auth_scheme;
+	int timeout;
 };
 
 static int keep_files_around = 0;
@@ -234,6 +235,10 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
 
+		if (binding->timeout) {
+			curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, binding->timeout);
+		}
+
 		if (binding->disable100continue) {
 			slist = curl_slist_append(slist, "Expect:");
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
@@ -344,7 +349,7 @@ static switch_status_t do_config(void)
 		char *bind_mask = NULL;
 		char *method = NULL;
 		int disable100continue = 0;
-		int use_dynamic_url = 0;
+		int use_dynamic_url = 0, timeout = 0;
 		uint32_t enable_cacert_check = 0;
 		char *ssl_cert_file = NULL;
 		char *ssl_key_file = NULL;
@@ -390,6 +395,8 @@ static switch_status_t do_config(void)
 				disable100continue = 1;
 			} else if (!strcasecmp(var, "method")) {
 				method = val;
+			} else if (!strcasecmp(var, "timeout")) {
+				timeout = timeout;
 			} else if (!strcasecmp(var, "enable-cacert-check") && switch_true(val)) {
 				enable_cacert_check = 1;
 			} else if (!strcasecmp(var, "ssl-cert-path")) {
@@ -440,7 +447,7 @@ static switch_status_t do_config(void)
 		memset(binding, 0, sizeof(*binding));
 
 		binding->auth_scheme = auth_scheme;
-		
+		binding->timeout = timeout;
 		binding->url = strdup(url);
 		switch_assert(binding->url);
 
