@@ -151,7 +151,7 @@ static switch_xml_config_item_t instructions[] = {
 	SWITCH_CONFIG_ITEM("cache", SWITCH_CONFIG_BOOL, CONFIG_RELOAD, &globals.cache, SWITCH_FALSE, NULL, "true|false", "whether to cache via cidlookup"),
 	SWITCH_CONFIG_ITEM("cache-expire", SWITCH_CONFIG_INT, CONFIG_RELOAD, &globals.cache_expire, (void *)300, NULL, "expire", "seconds to preserve num->name cache"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("sql", CONFIG_RELOAD, &globals.sql, "", "sql whre number=${caller_id_number}", "SQL to run if overriding CID"),
-	SWITCH_CONFIG_ITEM_STRING_STRDUP("citystate-sql", CONFIG_RELOAD, &globals.citystate_sql, "", "sql to look up city/state info", "SQL to run if overriding CID"),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("citystate-sql", CONFIG_RELOAD, &globals.citystate_sql, NULL, "sql to look up city/state info", "SQL to run if overriding CID"),
 	SWITCH_CONFIG_ITEM_CALLBACK("odbc-dsn", SWITCH_CONFIG_STRING, CONFIG_RELOAD, &globals.odbc_dsn, "", config_callback_dsn, &config_opt_dsn,
 		"db:user:passwd", "Database to use."),
 	SWITCH_CONFIG_ITEM_END()
@@ -328,14 +328,18 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 			!zstr((char *)http_data.stream.data) &&
 			strcmp(" ", http_data.stream.data) ) {
 		
-		name = switch_core_strdup(pool, http_data.stream.data);
+		/* don't return UNKNOWN */
+		if (strcmp("UNKNOWN", http_data.stream.data) ||
+			strcmp("UNAVAILABLE", http_data.stream.data)) {
+			name = switch_core_strdup(pool, http_data.stream.data);
+		}
 	}
 	
 	switch_safe_free(http_data.stream.data);
 	return name;
 }
 
-static char *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, switch_bool_t *areaonly)
+static char *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, char **area)
 {
 	char *xml_s = NULL;
 	char *query = NULL;
@@ -352,6 +356,8 @@ static char *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event_t *ev
 		goto done;
 	}
 	
+	switch_assert(area);
+	
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "whitepages-cid", num);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "whitepages-api-key", globals.whitepages_apikey);
 	
@@ -365,20 +371,19 @@ static char *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event_t *ev
 		goto done;
 	}
 
-	*areaonly = SWITCH_FALSE;
-	
 	/* try for bizname first */
 	node = switch_xml_get(xml, "wp:listings", 0, "wp:listing", 0, "wp:business", 0, "wp:businessname", -1);
 	if (node) {
 		name = switch_core_strdup(pool, switch_xml_txt(node));
-		goto done;
+		goto area;
 	}
 	
 	node = switch_xml_get(xml, "wp:listings", 0, "wp:listing", 0, "wp:displayname", -1);
 	if (node) {
 		name = switch_core_strdup(pool, switch_xml_txt(node));
-		goto done;
 	}
+
+area:
 	
 	node = switch_xml_get(xml, "wp:listings", 0, "wp:listing", 0, "wp:address", 0, "wp:city", -1);
 	if (node) {
@@ -391,8 +396,7 @@ static char *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event_t *ev
 	}
 	
 	if (city || state) {
-		*areaonly = SWITCH_TRUE;
-		name = switch_core_sprintf(pool, "%s %s", city ? city : "", state ? state : "");
+		*area = switch_core_sprintf(pool, "%s %s", city ? city : "", state ? state : "");
 	}
 
 done:
@@ -404,7 +408,7 @@ done:
 		switch_xml_free(xml);
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "whitepages XML: %s\n", xml_s);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "whitepages name: %s\n", name ? name : "(null)");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "whitepages name: %s, area: %s\n", name ? name : "(null)", *area ? *area : "(null)");
 	return name;
 }
 
@@ -435,63 +439,72 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 	char *area = NULL;
 	char *url_query = NULL;
 	char *src = NULL;
-	switch_bool_t areaonly = SWITCH_FALSE;
-	
+
 	number = string_digitsonly(pool, num);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller_id_number", number);
 
 	/* database always wins */
 	if (switch_odbc_available() && globals.master_odbc && globals.sql) {
 		name = do_db_lookup(pool, event, number, globals.sql);
-		src = "database";
+		if (name) {
+			src = "database";
+		}
 	}
 
-	if (!name && globals.url) {
+	if (!name && (globals.url || globals.whitepages_apikey)) {
 		if (globals.cache) {
 			name = check_cache(pool, number);
-			src = "cache";
+			if (name) {
+				src = "cache";
+			}
 		}
-		if (!skipurl && !name) {
-			name = do_whitepages_lookup(pool, event, number, &areaonly);
-			src = "whitepages";
-			if (areaonly) {
-				if (!skipcitystate) {
-					area = name; /* preserve if we're not skipping city/state */
+		if (!skipurl && !name && globals.whitepages_apikey) {
+			name = do_whitepages_lookup(pool, event, number, &area);
+			if (area || name) {
+				src = "whitepages";
+			}
+			if (name) {
+				if (globals.cache) {
+					set_cache(pool, number, name);
 				}
-				name = NULL; /* always clear out name */
-			}
-			if (globals.cache && name) {
-				set_cache(pool, number, name);
 			}
 		}
-		if (!skipurl && !name) {
+		if (!skipurl && !name && globals.url) {
 			url_query = switch_event_expand_headers(event, globals.url);
 			name = do_lookup_url(pool, event, url_query);
-			src = "url";
+			if (name) {
+				src = "url";
+				if (globals.cache) {
+					set_cache(pool, number, name);
+				}
+			}
 			if (url_query != globals.url) {
 				switch_safe_free(url_query);
 			}
 			
-			/* store and use preserved area info */
-			if (!name && area) {
-				src = "whitepages";
-				name = area;
-			}
-			if (globals.cache && name) {
-				set_cache(pool, number, name);
-			}
 		}
 	}
-	/* only do the below if it is a nanpa number */
-	if (!skipcitystate && strlen(number) == 11 && number[0] == '1' &&
-		!name && switch_odbc_available() && globals.master_odbc && globals.citystate_sql) {
+	/* only do the below if we don't know anything about the # and it is a nanpa number */
+	if (!area && !name && 
+		!skipcitystate && 
+		strlen(number) == 11 && number[0] == '1' &&
+		switch_odbc_available() && globals.master_odbc && globals.citystate_sql) {
 		
-		name = do_db_lookup(pool, event, number, globals.citystate_sql);
+		area = do_db_lookup(pool, event, number, globals.citystate_sql);
 		src = "npanxx";
 	}
+	
+	if (!name && area) {
+		name = area;
+	}
+	
+	if (!name) {
+		name = "UNKNOWN";
+	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cidlookup source: %s\n", src);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cidlookup_source", src);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cidlookup source: %s\n", src ? src : "none");
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cidlookup_source", src ? src : "none");
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cidlookup_area", area ? area : "unknown");
 	return name;
 }
 
@@ -550,6 +563,9 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 		if (!zstr(switch_event_get_header(event, "cidlookup_source"))) {
 			switch_channel_set_variable(channel, "cidlookup_source", switch_core_strdup(pool, switch_event_get_header(event, "cidlookup_source")));
 		}
+		if (!zstr(switch_event_get_header(event, "cidlookup_area"))) {
+			switch_channel_set_variable(channel, "cidlookup_area", switch_core_strdup(pool, switch_event_get_header(event, "cidlookup_area")));
+		}
 		profile->caller_id_name = switch_core_strdup(profile->pool, name);;
 	}
 	
@@ -596,14 +612,14 @@ SWITCH_STANDARD_API(cidlookup_function)
 		
 		if (!strcmp("status", argv[0])) {
 			stream->write_function(stream, "+OK\n url: %s\n cache: %s\n cache-expire: %d\n", 
-									globals.url,
+									globals.url ? globals.url : "(null)",
 									(globals.cache) ? "true" : "false",
 									globals.cache_expire);
 									
 			stream->write_function(stream, " odbc-dsn: %s\n sql: %s\n citystate-sql: %s\n", 
-									globals.odbc_dsn,
-									globals.sql,
-									globals.citystate_sql);
+									globals.odbc_dsn ? globals.odbc_dsn : "(null)",
+									globals.sql ? globals.sql : "(null)",
+									globals.citystate_sql ? globals.citystate_sql : "(null)");
 			stream->write_function(stream, " ODBC Compiled: %s\n", switch_odbc_available() ? "true" : "false");
 
 			switch_goto_status(SWITCH_STATUS_SUCCESS, done);
