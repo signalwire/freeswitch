@@ -485,6 +485,7 @@ done:
 	
 	cid->name = name;
 	cid->area = area;
+	cid->src = "whitepages";
 	return cid;
 }
 
