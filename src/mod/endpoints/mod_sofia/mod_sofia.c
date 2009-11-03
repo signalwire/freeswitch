@@ -3049,7 +3049,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		if (strchr(dest_to, '@')) {
 			tech_pvt->dest_to = switch_core_session_sprintf(nsession, "sip:%s", dest_to);
 		} else {
-			tech_pvt->dest_to = switch_core_session_sprintf(nsession, "sip:%s@%s", dest_to, host);
+			tech_pvt->dest_to = switch_core_session_sprintf(nsession, "sip:%s@%s", dest_to, host ? host : profile->sipip);
 		}
 	}
 
