@@ -1133,6 +1133,7 @@ static switch_status_t load_config(int reload_type)
 			char *tcp_cli_port = NULL;
 			char *tcp_srv_port = NULL;
 			char *skype_user = NULL;
+			char *report_incoming_chatmessages = "true";
 
 			uint32_t interface_id = 0, to = 0, max = 0;
 
@@ -1162,6 +1163,8 @@ static switch_status_t load_config(int reload_type)
 					hold_music = val;
 				} else if (!strcasecmp(var, "skype_user")) {
 					skype_user = val;
+				} else if (!strcasecmp(var, "report_incoming_chatmessages")) {
+					report_incoming_chatmessages = val;
 				} else if (!strcasecmp(var, "tcp_cli_port")) {
 					tcp_cli_port = val;
 				} else if (!strcasecmp(var, "tcp_srv_port")) {
@@ -1277,6 +1280,13 @@ static switch_status_t load_config(int reload_type)
 				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].destination, destination);
 				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].context, context);
 
+				if(!strcmp(report_incoming_chatmessages, "true") || !strcmp(report_incoming_chatmessages, "1")){
+					globals.SKYPIAX_INTERFACES[interface_id].report_incoming_chatmessages = 1;
+				}else {
+					globals.SKYPIAX_INTERFACES[interface_id].report_incoming_chatmessages = 0; //redundant, just in case
+
+				}
+
 				DEBUGA_SKYPE
 					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].X11_display=%s\n",
 					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].X11_display);
@@ -1303,6 +1313,11 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_SKYPE
 					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].context=%s\n",
 					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].context);
+
+				DEBUGA_SKYPE
+					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].report_incoming_chatmessages=%d\n",
+					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].report_incoming_chatmessages);
+
 				WARNINGA("STARTING interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
 
 				switch_threadattr_create(&skypiax_api_thread_attr, skypiax_module_pool);
@@ -1392,6 +1407,7 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].dialplan=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].dialplan);
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].destination=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].destination);
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].context=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].context);
+				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].report_incoming_chatmessages=%d\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].report_incoming_chatmessages);
 			}
 		}
 	}
@@ -2282,6 +2298,11 @@ int incoming_chatmessage(private_t * tech_pvt, int which)
 	int event_sent_to_esl = 0;
 
 	DEBUGA_SKYPE("received CHATMESSAGE on interface %s\n", SKYPIAX_P_LOG, tech_pvt->name);
+
+	if(!tech_pvt->report_incoming_chatmessages){
+		DEBUGA_SKYPE("I will not generate an Event, report_incoming_chatmessages is %d\n", SKYPIAX_P_LOG, tech_pvt->report_incoming_chatmessages);
+		return 0;
+	}
 
 	if (!zstr(tech_pvt->session_uuid_str)) {
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);

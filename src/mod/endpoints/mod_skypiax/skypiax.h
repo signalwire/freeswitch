@@ -270,6 +270,7 @@ struct private_object {
 
 	chatmessage_t chatmessages[MAX_CHATMESSAGES];
 	chat_t chats[MAX_CHATS];
+	uint32_t report_incoming_chatmessages;
 };
 
 typedef struct private_object private_t;
