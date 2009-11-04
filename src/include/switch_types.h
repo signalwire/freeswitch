@@ -1409,6 +1409,10 @@ typedef enum {
 	SCSC_SEND_SIGHUP
 } switch_session_ctl_t;
 
+typedef enum {
+	SSH_FLAG_STICKY = (1 << 0)
+} switch_state_handler_flag_t;
+
 typedef struct apr_pool_t switch_memory_pool_t;
 typedef uint16_t switch_port_t;
 typedef uint8_t switch_payload_t;

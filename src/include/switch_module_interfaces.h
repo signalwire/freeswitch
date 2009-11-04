@@ -85,6 +85,7 @@ struct switch_state_handler_table {
 	switch_state_handler_t on_reporting;
 	/*! executed when the state changes to destroy */
 	switch_state_handler_t on_destroy;
+	int flags;
 	void *padding[10];
 };
 
