@@ -159,7 +159,7 @@ static switch_xml_config_item_t instructions[] = {
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("whitepages-apikey", CONFIG_RELOAD, &globals.whitepages_apikey, NULL, "api key for whitepages.com", "api key for whitepages.com"),
 	SWITCH_CONFIG_ITEM("cache", SWITCH_CONFIG_BOOL, CONFIG_RELOAD, &globals.cache, SWITCH_FALSE, NULL, "true|false", "whether to cache via cidlookup"),
 	SWITCH_CONFIG_ITEM("cache-expire", SWITCH_CONFIG_INT, CONFIG_RELOAD, &globals.cache_expire, (void *)300, NULL, "expire", "seconds to preserve num->name cache"),
-	SWITCH_CONFIG_ITEM_STRING_STRDUP("sql", CONFIG_RELOAD, &globals.sql, "", "sql whre number=${caller_id_number}", "SQL to run if overriding CID"),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("sql", CONFIG_RELOAD, &globals.sql, NULL, "sql whre number=${caller_id_number}", "SQL to run if overriding CID"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("citystate-sql", CONFIG_RELOAD, &globals.citystate_sql, NULL, "sql to look up city/state info", "SQL to run if overriding CID"),
 	SWITCH_CONFIG_ITEM_CALLBACK("odbc-dsn", SWITCH_CONFIG_STRING, CONFIG_RELOAD, &globals.odbc_dsn, "", config_callback_dsn, &config_opt_dsn,
 		"db:user:passwd", "Database to use."),
@@ -570,9 +570,10 @@ done:
 		strlen(number) == 11 && number[0] == '1' &&
 		switch_odbc_available() && globals.master_odbc && globals.citystate_sql) {
 		
+		/* yes, this is really area */
 		name = do_db_lookup(pool, event, number, globals.citystate_sql);
 		if (name) {
-			cid->name = name;
+			cid->area = name;
 			if (cid->src) {
 				cid->src = switch_core_sprintf(pool, "%s,%s", cid->src, "npanxx_database");
 			} else {
@@ -581,11 +582,11 @@ done:
 		}
 	}
 	
-	if (!cid->name) {
-		cid->name = "UNKNOWN";
-	}
 	if (!cid->area) {
 		cid->area = "UNKNOWN";
+	}
+	if (!cid->name) {
+		cid->name = cid->area;
 	}
 	if (!cid->src) {
 		cid->src = "UNKNOWN";
