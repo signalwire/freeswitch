@@ -9252,7 +9252,9 @@ int outgoing_recv(nta_outgoing_t *_orq,
     /* Non-INVITE */
     if (orq->orq_queue == sa->sa_out.trying ||
 	orq->orq_queue == sa->sa_out.resolving) {
-      assert(orq->orq_status < 200);
+	  /* hacked by freeswitch, this is being hit by options 404 status with 404 orq->orq_status and orq_destroyed = 1, orq_completed = 1 */  
+	  /*      assert(orq->orq_status < 200); */
+	  if (orq->orq_status >= 200) {msg_destroy(msg); return 0;}
 
       if (status < 200) {
 	/* @RFC3261 17.1.2.1:
