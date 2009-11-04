@@ -1356,6 +1356,9 @@ static switch_status_t load_config(int reload_type)
 						("Interface_id=%d is now STARTED, the Skype client to which we are connected gave us the correct CURRENTUSERHANDLE (%s)\n",
 						 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user);
 
+
+					skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "PROTOCOL 7");
+					switch_sleep(10000);
 					skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET AUTOAWAY OFF");
 				} else {
 					ERRORA
