@@ -193,6 +193,7 @@ namespace FreeSWITCH.Native
             bleg.originate_table = new switch_state_handler_table();
             bleg.originate_table.on_hangup = WrapStateHandlerDelegate(bleg.originate_onhangup_delegate);
             bleg.originate_table.on_destroy = WrapStateHandlerDelegate(bleg.originate_ondestroy_delegate);
+            bleg.originate_table.flags = (int)switch_state_handler_flag_t.SSH_FLAG_STICKY;
             var res = 0 == bleg.originate(aLegSession, destination, (int)timeout.TotalSeconds, bleg.originate_table);
             bleg.originate_keepalive_handle = GCHandle.Alloc(bleg, GCHandleType.Normal); // Prevent GC from eating the bleg
             if (res) {
