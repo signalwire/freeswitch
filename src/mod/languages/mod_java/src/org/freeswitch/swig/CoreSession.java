@@ -132,6 +132,10 @@ public class CoreSession {
     freeswitchJNI.CoreSession_hangup__SWIG_1(swigCPtr, this);
   }
 
+  public void hangupState() {
+    freeswitchJNI.CoreSession_hangupState(swigCPtr, this);
+  }
+
   public void setVariable(String var, String val) {
     freeswitchJNI.CoreSession_setVariable(swigCPtr, this, var, val);
   }

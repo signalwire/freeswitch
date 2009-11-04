@@ -262,6 +262,7 @@ class CoreSession(_object):
     def answer(*args): return _freeswitch.CoreSession_answer(*args)
     def preAnswer(*args): return _freeswitch.CoreSession_preAnswer(*args)
     def hangup(*args): return _freeswitch.CoreSession_hangup(*args)
+    def hangupState(*args): return _freeswitch.CoreSession_hangupState(*args)
     def setVariable(*args): return _freeswitch.CoreSession_setVariable(*args)
     def setPrivate(*args): return _freeswitch.CoreSession_setPrivate(*args)
     def getPrivate(*args): return _freeswitch.CoreSession_getPrivate(*args)

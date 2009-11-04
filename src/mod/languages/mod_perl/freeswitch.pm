@@ -404,6 +404,7 @@ sub DESTROY {
 *answer = *freeswitchc::CoreSession_answer;
 *preAnswer = *freeswitchc::CoreSession_preAnswer;
 *hangup = *freeswitchc::CoreSession_hangup;
+*hangupState = *freeswitchc::CoreSession_hangupState;
 *setVariable = *freeswitchc::CoreSession_setVariable;
 *setPrivate = *freeswitchc::CoreSession_setPrivate;
 *getPrivate = *freeswitchc::CoreSession_getPrivate;

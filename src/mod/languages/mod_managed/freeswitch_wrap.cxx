@@ -29114,6 +29114,14 @@ SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_Hangup(void * jarg1, char * jarg2
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_hangupState(void * jarg1) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  
+  arg1 = (CoreSession *)jarg1; 
+  (arg1)->hangupState();
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_SetVariable(void * jarg1, char * jarg2, char * jarg3) {
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;

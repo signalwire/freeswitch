@@ -218,6 +218,10 @@ public class CoreSession : IDisposable {
     freeswitchPINVOKE.CoreSession_Hangup(swigCPtr, cause);
   }
 
+  public void hangupState() {
+    freeswitchPINVOKE.CoreSession_hangupState(swigCPtr);
+  }
+
   public void SetVariable(string var, string val) {
     freeswitchPINVOKE.CoreSession_SetVariable(swigCPtr, var, val);
   }
@@ -11557,6 +11561,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_Hangup")]
   public static extern void CoreSession_Hangup(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_hangupState")]
+  public static extern void CoreSession_hangupState(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_SetVariable")]
   public static extern void CoreSession_SetVariable(HandleRef jarg1, string jarg2, string jarg3);

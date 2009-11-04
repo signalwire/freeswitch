@@ -6045,6 +6045,33 @@ XS(_wrap_CoreSession_hangup) {
 }
 
 
+XS(_wrap_CoreSession_hangupState) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: CoreSession_hangupState(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_hangupState" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    (arg1)->hangupState();
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_CoreSession_setVariable) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
@@ -11679,6 +11706,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_answer", _wrap_CoreSession_answer},
 {"freeswitchc::CoreSession_preAnswer", _wrap_CoreSession_preAnswer},
 {"freeswitchc::CoreSession_hangup", _wrap_CoreSession_hangup},
+{"freeswitchc::CoreSession_hangupState", _wrap_CoreSession_hangupState},
 {"freeswitchc::CoreSession_setVariable", _wrap_CoreSession_setVariable},
 {"freeswitchc::CoreSession_setPrivate", _wrap_CoreSession_setPrivate},
 {"freeswitchc::CoreSession_getPrivate", _wrap_CoreSession_getPrivate},

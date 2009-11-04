@@ -1990,6 +1990,17 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1hang
 }
 
 
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1hangupState(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  (arg1)->hangupState();
+}
+
+
 SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1setVariable(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3) {
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;

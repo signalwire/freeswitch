@@ -6368,6 +6368,27 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_CoreSession_hangupState(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:CoreSession_hangupState",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_hangupState" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  (arg1)->hangupState();
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_CoreSession_setVariable(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -10419,6 +10440,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"CoreSession_answer", _wrap_CoreSession_answer, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_preAnswer", _wrap_CoreSession_preAnswer, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_hangup", _wrap_CoreSession_hangup, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_hangupState", _wrap_CoreSession_hangupState, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_setVariable", _wrap_CoreSession_setVariable, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_setPrivate", _wrap_CoreSession_setPrivate, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_getPrivate", _wrap_CoreSession_getPrivate, METH_VARARGS, NULL},

@@ -110,6 +110,7 @@ class freeswitchJNI {
   public final static native int CoreSession_preAnswer(long jarg1, CoreSession jarg1_);
   public final static native void CoreSession_hangup__SWIG_0(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native void CoreSession_hangup__SWIG_1(long jarg1, CoreSession jarg1_);
+  public final static native void CoreSession_hangupState(long jarg1, CoreSession jarg1_);
   public final static native void CoreSession_setVariable(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
   public final static native void CoreSession_setPrivate(long jarg1, CoreSession jarg1_, String jarg2, long jarg3);
   public final static native long CoreSession_getPrivate(long jarg1, CoreSession jarg1_, String jarg2);
