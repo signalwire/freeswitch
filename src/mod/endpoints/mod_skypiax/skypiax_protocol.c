@@ -1622,8 +1622,8 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 		if (!skypiax_send_message(tech_pvt, buf)) {
 			ERRORA("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch Skypiax again\n", SKYPIAX_P_LOG);
 			running = 0;
-			if(disp)
-				XCloseDisplay(disp);
+			//if(disp)
+				//XCloseDisplay(disp);
 			return NULL;
 		}
 
@@ -1631,8 +1631,8 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 		if (!skypiax_send_message(tech_pvt, buf)) {
 			ERRORA("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch Skypiax again\n", SKYPIAX_P_LOG);
 			running = 0;
-			if(disp)
-				XCloseDisplay(disp);
+			//if(disp)
+				//XCloseDisplay(disp);
 			return NULL;
 		}
 
@@ -1732,13 +1732,13 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 	} else {
 		ERRORA("Skype is not running, maybe crashed. Please run/restart Skype and relaunch Skypiax\n", SKYPIAX_P_LOG);
 		running = 0;
-		if(disp)
-			XCloseDisplay(disp);
+		//if(disp)
+			//XCloseDisplay(disp);
 		return NULL;
 	}
 	//running = 0;
-	if(disp)
-		XCloseDisplay(disp);
+	//if(disp)
+		//XCloseDisplay(disp);
 	return NULL;
 
 }
