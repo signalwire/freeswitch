@@ -367,6 +367,7 @@ static switch_status_t do_config(void)
 		for (param = switch_xml_child(binding_tag, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
+
 			if (!strcasecmp(var, "gateway-url")) {
 				bind_mask = (char *) switch_xml_attr_soft(param, "bindings");
 				if (val) {
@@ -396,7 +397,12 @@ static switch_status_t do_config(void)
 			} else if (!strcasecmp(var, "method")) {
 				method = val;
 			} else if (!strcasecmp(var, "timeout")) {
-				timeout = timeout;
+				int tmp = atoi(val);
+				if (tmp >= 0) {
+					timeout = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't set a negative timeout!\n");
+				}
 			} else if (!strcasecmp(var, "enable-cacert-check") && switch_true(val)) {
 				enable_cacert_check = 1;
 			} else if (!strcasecmp(var, "ssl-cert-path")) {
