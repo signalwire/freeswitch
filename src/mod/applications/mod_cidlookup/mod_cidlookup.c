@@ -572,7 +572,7 @@ done:
 		
 		name = do_db_lookup(pool, event, number, globals.citystate_sql);
 		if (name) {
-			cid->area = name;
+			cid->name = name;
 			if (cid->src) {
 				cid->src = switch_core_sprintf(pool, "%s,%s", cid->src, "npanxx_database");
 			} else {
