@@ -2156,7 +2156,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					} else if (!strcasecmp(var, "challenge-realm")) {
 						profile->challenge_realm = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "dtmf-duration")) {
-						int dur = atoi(val);
+						uint32_t dur = atoi(val);
 						if (dur > switch_core_min_dtmf_duration(0) && dur < switch_core_max_dtmf_duration(0)) {
 							profile->dtmf_duration = dur;
 						} else {
