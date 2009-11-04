@@ -1748,7 +1748,7 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channe
 		channel->state_handlers[index] = NULL;
 	}
 
-	if (state_handler) {
+	if (channel->state_handler_index > 0) {
 		for (index = 0; index < channel->state_handler_index; index++) {
 			channel->state_handlers[index] = new_handlers[index];
 		}
