@@ -3069,12 +3069,18 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	switch_channel_set_variable(nchannel, "sip_destination_url", tech_pvt->dest);
 
 	dest_num = switch_core_session_strdup(nsession, dest);
-	if ((p = strchr(dest_num, ':'))) {
-		dest_num = p + 1;
-		if ((p = strchr(dest_num, '@'))) {
-			*p = '\0';
+	if ((p = strchr(dest_num, '@'))) {
+		*p = '\0';
+		
+		if ((p = strrchr(dest_num, '/'))) {
+			dest_num = p + 1;
+		} else if ((p = (char *)switch_stristr("sip:", dest_num))) {
+			dest_num = p + 4;
+		} else if ((p = (char *)switch_stristr("sips:", dest_num))) {
+			dest_num = p + 5;
 		}
 	}
+	
 
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
 	caller_profile->destination_number = switch_core_strdup(caller_profile->pool, dest_num);
