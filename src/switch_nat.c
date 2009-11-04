@@ -409,7 +409,7 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 			switch_nat_thread_start();
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No PMP or UPnP NAT detected!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No PMP or UPnP NAT devices detected!\n");
 	}
 	first_init = SWITCH_FALSE;
 }
