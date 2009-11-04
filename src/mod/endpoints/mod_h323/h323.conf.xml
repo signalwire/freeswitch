@@ -3,7 +3,7 @@
     <param name="trace-level" value="10"/>
     <param name="context" value="default"/>
     <param name="dialplan" value="XML"/>
-    <param name="codec-prefs" value="PCMA,GSM,G729,G726"/>
+    <param name="codec-prefs" value="PCMA,PCMU,GSM,G729"/>
     <param name="gk-address" value=""/>    <!-- empty to disable, "*" to search LAN -->
     <param name="gk-identifer" value=""/>  <!-- optional name of gk -->
     <param name="gk-interface" value=""/>  <!-- mandatory listener interface name -->

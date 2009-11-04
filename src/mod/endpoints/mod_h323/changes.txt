@@ -1,4 +1,5 @@
 
+fix faststart in progress handling
 fixxxxes
 remove trys to implement non standard codecs.
 implement jitter-size value option.

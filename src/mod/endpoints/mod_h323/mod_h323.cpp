@@ -1,5 +1,5 @@
 /*
-	Version 0.0.11
+	Version 0.0.12
 */
 
 #include "mod_h323.h"
@@ -244,7 +244,7 @@ PString GetH245CodecName(const H323Capability* cap){
 		case H245_AudioCapability::e_gsmFullRate:
 		case H245_AudioCapability::e_gsmHalfRate:
 		case H245_AudioCapability::e_gsmEnhancedFullRate:
-			return "GSM";
+			return "GSM";	
 	}
 	return "Unknown";
 }
@@ -763,6 +763,7 @@ void FSH323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu){
 bool FSH323Connection::OnReceivedProgress(const H323SignalPDU &pdu)
 {
 	PTRACE(4, "mod_h323\t======>FSH323Connection::OnReceivedProgress ["<<*this<<"]");
+	H323Connection::OnReceivedProgress(pdu);
 	if ((m_rxChennel && m_txChennel) || (m_ChennelProgress && m_rxChennel))
 		switch_channel_mark_pre_answered(m_fsChannel);
 	else{
