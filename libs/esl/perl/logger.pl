@@ -13,6 +13,21 @@ my $e;
 my $running = 1;
 my $con;
 
+my $USAGE = "
+FreeSWITCH Logger Utility
+
+USAGE:
+-h --helpThis help
+-p --port <port>            Choose port
+-P -pass  <pass>            Choose password
+-f --file <file>            Output file
+-pb --paste-bin <name>	    Post to FreeSWITCH Paste Bin
+-sp --sip-profiles <list>   List of SIP profiles to trace
+-sd --sip-debug <leve>      Set SIP debug level
+
+No arguments given will trace profile 'internal' to STDOUT
+";
+
 $SIG{INT} = sub { $running = 0 };
 
 sub parse(\$\$$) {
@@ -27,6 +42,11 @@ sub parse(\$\$$) {
 }
 
 for($i = 0; $i < $argc; $i++) {
+    if ($ARGV[$i] =~ /^\-help$|^\-\-help$/) {
+	print $USAGE;
+	exit;
+    }
+
     if (! (parse($i, $host, '^-h$|^--host$') ||
 	   parse($i, $port, '^-p$|^--port$') ||
 	   parse($i, $pass, '^-P$|^--pass$') ||
