@@ -162,7 +162,7 @@ namespace FreeSWITCH.Native
         switch_state_handler_table originate_table;
         GCHandle originate_keepalive_handle; // Make sure the B Leg is not collected and disposed until we run ondestroy
 
-        switch_status_t originate_onhangup_method(IntPtr channelPtr) {
+        switch_status_t originate_ondestroy_method(IntPtr channelPtr) {
             // CS_DESTROY lets the bleg be collected
             // and frees originate_table memory
             // Note that this (bleg ManagedSession) is invalid 
@@ -179,19 +179,19 @@ namespace FreeSWITCH.Native
 
         /// <summary>
         /// Performs originate. Returns ManagedSession on success, null on failure.
-        /// onHangup is called as a state handler, after the channel is truly hungup.
+        /// onHangup is called as a state handler, after the channel is truly hungup (CS_REPORTING).
         /// </summary>
         public static ManagedSession OriginateHandleHangup(CoreSession aLegSession, string destination, TimeSpan timeout, Action<ManagedSession> onHangup) {
             var bleg = new ManagedSession();
 
-            bleg.originate_ondestroy_delegate = bleg.originate_onhangup_method;
+            bleg.originate_ondestroy_delegate = bleg.originate_ondestroy_method;
             bleg.originate_onhangup_delegate = CreateStateHandlerDelegate(sess_b => {
                 if (onHangup != null) {
                     onHangup(sess_b);
                 }
             });
             bleg.originate_table = new switch_state_handler_table();
-            bleg.originate_table.on_hangup = WrapStateHandlerDelegate(bleg.originate_onhangup_delegate);
+            bleg.originate_table.on_reporting = WrapStateHandlerDelegate(bleg.originate_onhangup_delegate);
             bleg.originate_table.on_destroy = WrapStateHandlerDelegate(bleg.originate_ondestroy_delegate);
             bleg.originate_table.flags = (int)switch_state_handler_flag_t.SSH_FLAG_STICKY;
             var res = 0 == bleg.originate(aLegSession, destination, (int)timeout.TotalSeconds, bleg.originate_table);
