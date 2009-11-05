@@ -479,7 +479,11 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 		number = tmp;
 	}
 
-	if (!name) name = (char *) number;
+	if (zstr(name)) name = (char *) number;
+
+	if (zstr(name) || zstr(number)) {
+		goto end;
+	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
 		const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
@@ -503,6 +507,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 		sofia_send_callee_id(session, NULL, NULL);
 	}
 
+ end:
 	switch_safe_free(dup);
 }
 
