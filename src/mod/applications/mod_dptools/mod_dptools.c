@@ -81,6 +81,9 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 		switch_caller_extension_add_application(session, extension, app, data);
 	}
 
+	caller_profile->destination_number = (char *)caller_profile->rdnis;
+	caller_profile->rdnis = SWITCH_BLANK_STRING;
+
 	return extension;
 }
 
