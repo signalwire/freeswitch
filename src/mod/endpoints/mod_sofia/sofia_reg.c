@@ -1386,7 +1386,8 @@ void sofia_reg_handle_sip_r_register(int status,
 			nua_handle_destroy(sofia_private->gateway->nh);
 			sofia_private->gateway->nh = NULL;
 			sofia_private->gateway->state = REG_STATE_UNREGED;
-
+		} else {
+			nua_handle_destroy(nh);
 		}
 		return;
 	}
