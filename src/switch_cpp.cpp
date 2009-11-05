@@ -568,7 +568,9 @@ SWITCH_DECLARE(void) CoreSession::hangupState(void)
 {
 	sanity_check_noreturn;	
 	this->begin_allow_threads();
-	switch_core_session_hangup_state(session);
+	if (switch_channel_down(channel)) {
+		switch_core_session_hangup_state(session);
+	}
 	this->end_allow_threads();
 }
 
