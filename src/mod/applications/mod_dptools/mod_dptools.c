@@ -2328,16 +2328,20 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 				}
 
 				if (continue_on_fail) {
-					char *lbuf = switch_core_session_strdup(session, continue_on_fail);
-					char *argv[256] = { 0 };
-					int argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0])));
-					int i;
-					
-					for (i = 0; i < argc; i++) {
-						if (!strcasecmp(argv[i], cause_str) || !strcasecmp(argv[i], cause_num)) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
-											  "Continue on fail [%s]:  Cause: %s\n", continue_on_fail, cause_str);
-							return;
+					if (switch_true(continue_on_fail)) {
+						return;
+					} else {
+						char *lbuf = switch_core_session_strdup(session, continue_on_fail);
+						char *argv[256] = { 0 };
+						int argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+						int i;
+						
+						for (i = 0; i < argc; i++) {
+							if (!strcasecmp(argv[i], cause_str) || !strcasecmp(argv[i], cause_num)) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+												  "Continue on fail [%s]:  Cause: %s\n", continue_on_fail, cause_str);
+								return;
+							}
 						}
 					}
 				}
