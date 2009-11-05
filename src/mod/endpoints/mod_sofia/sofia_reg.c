@@ -2068,7 +2068,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 
 	if (nc && cnonce && qop) {
-		char *sql;
 
 #if defined(_WIN32) && !defined(_WIN64)
 #define	LL_FMT "ll"

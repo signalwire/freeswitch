@@ -207,7 +207,7 @@ char *generate_pai_str(switch_core_session_t *session)
 											  callee_name, callee_number, callee_name, callee_number);
 		} else {
 			pai = switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>\n", 
-											  callee_name, callee_number, callee_name, callee_number);
+											  callee_name, callee_number);
 		}
 	}
 	return pai;
@@ -2958,9 +2958,9 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 		if ((host = switch_core_session_strdup(nsession, tech_pvt->dest))) {
-			char *p = strchr(host, '@');
-			if (p) {
-				host = p+1;
+			char *pp = strchr(host, '@');
+			if (pp) {
+				host = pp+1;
 			} else {
 				host = NULL;
 				dest_to = NULL;

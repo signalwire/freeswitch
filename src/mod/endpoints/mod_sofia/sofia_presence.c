@@ -1660,6 +1660,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 			*/
 
+
 			sql = switch_mprintf("insert into sip_subscriptions "
 								 "(proto,sip_user,sip_host,sub_to_user,sub_to_host,presence_hosts,event,contact,call_id,full_from,"
 								 "full_via,expires,user_agent,accept,profile_name,hostname,network_port,network_ip) "
@@ -1667,7 +1668,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								 proto, from_user, from_host, to_user, to_host, profile->presence_hosts ? profile->presence_hosts : to_host, 
 								 event, contact_str, call_id, full_from, full_via, 
 								 //sofia_test_pflag(profile, PFLAG_MULTIREG) ? switch_epoch_time_now(NULL) + exp_delta : exp_delta * -1,
-								 switch_epoch_time_now(NULL) + exp_delta,
+								 (long)switch_epoch_time_now(NULL) + exp_delta,
 								 full_agent, accept, profile->name,mod_sofia_globals.hostname, network_port, network_ip);
 								 
 			if (mod_sofia_globals.debug_presence > 0) {

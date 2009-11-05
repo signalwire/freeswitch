@@ -2855,7 +2855,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "challenge-realm")) {
 						profile->challenge_realm = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "dtmf-duration")) {
-						int dur = atoi(val);
+						uint32_t dur = atoi(val);
 						if (dur > switch_core_min_dtmf_duration(0) && dur < switch_core_max_dtmf_duration(0)) {
 							profile->dtmf_duration = dur;
 						} else {
@@ -4030,8 +4030,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				
 				if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error!\n");
-					goto done;
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					goto done;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing updated SDP\n");
 				}
