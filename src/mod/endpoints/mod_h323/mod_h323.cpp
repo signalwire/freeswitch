@@ -1279,7 +1279,7 @@ PBoolean FSH323_ExternalRTPChannel::Start(){
 	PTRACE(4, "mod_h323\t------------------->actual_samples_per_second = "<<m_switchCodec->implementation->actual_samples_per_second);
 	
 	if (!m_conn->m_startRTP) {			
-		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT|SWITCH_RTP_FLAG_AUTO_CNG|SWITCH_RTP_FLAG_RAW_WRITE|SWITCH_RTP_FLAG_AUTOADJ);		
+		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT|SWITCH_RTP_FLAG_AUTO_CNG|SWITCH_RTP_FLAG_RAW_WRITE);		
 		if ((var = switch_channel_get_variable(m_fsChannel, "timer_name"))) {
 			timer_name = (char *) var;
 		}
