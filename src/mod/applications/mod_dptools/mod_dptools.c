@@ -2298,30 +2298,56 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		   'false' to not continue.
 		   A list of codes either names or numbers eg "user_busy,normal_temporary_failure,603"
 		   failure_causes acts as the opposite version	
+		   EXCEPTION... ATTENDED_TRANSFER never is a reason to continue.......
 		 */
-		if (continue_on_fail || failure_causes) {
-			const char *cause_str;
-			char cause_num[35] = "";
-
-			cause_str = switch_channel_cause2str(cause);
-			switch_snprintf(cause_num, sizeof(cause_num), "%u", cause);
+		if (cause != SWITCH_CAUSE_ATTENDED_TRANSFER) {
+			if (continue_on_fail || failure_causes) {
+				const char *cause_str;
+				char cause_num[35] = "";
+																
+				cause_str = switch_channel_cause2str(cause);
+				switch_snprintf(cause_num, sizeof(cause_num), "%u", cause);
 			
-			if (failure_causes && !(switch_stristr(cause_str, failure_causes) || strstr(failure_causes, cause_num))) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Failiure causes [%s]:  Cause: %s\n", failure_causes, cause_str);
-				return;
-			}
+				if (failure_causes) {
+					char *lbuf = switch_core_session_strdup(session, failure_causes);
+					char *argv[256] = { 0 };
+					int argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+					int i, x = 0;
+					
+					for (i = 0; i < argc; i++) {
+						if (!strcasecmp(argv[i], cause_str) || !strcasecmp(argv[i], cause_num)) {
+							x++;
+							break;
+						}
+						if (x) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+											  "Failiure causes [%s]:  Cause: %s\n", failure_causes, cause_str);
+							return;
+						}
+					}
+				}
 
-			if (continue_on_fail && (switch_true(continue_on_fail) || switch_stristr(cause_str, continue_on_fail) || strstr(continue_on_fail, cause_num))) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Continue on fail [%s]:  Cause: %s\n", continue_on_fail, cause_str);
-				return;
-			}
-		} else {
-			/* no answer is *always* a reason to continue */
-			if (cause == SWITCH_CAUSE_NO_ANSWER || cause == SWITCH_CAUSE_NO_USER_RESPONSE || cause == SWITCH_CAUSE_ORIGINATOR_CANCEL) {
-				return;
+				if (continue_on_fail) {
+					char *lbuf = switch_core_session_strdup(session, continue_on_fail);
+					char *argv[256] = { 0 };
+					int argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+					int i;
+					
+					for (i = 0; i < argc; i++) {
+						if (!strcasecmp(argv[i], cause_str) || !strcasecmp(argv[i], cause_num)) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+											  "Continue on fail [%s]:  Cause: %s\n", continue_on_fail, cause_str);
+							return;
+						}
+					}
+				}
+			} else {
+				/* no answer is *always* a reason to continue */
+				if (cause == SWITCH_CAUSE_NO_ANSWER || cause == SWITCH_CAUSE_NO_USER_RESPONSE || cause == SWITCH_CAUSE_ORIGINATOR_CANCEL) {
+					return;
+				}
 			}
 		}
-
 		if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && switch_channel_get_state(caller_channel) != CS_ROUTING) {
 			switch_channel_hangup(caller_channel, cause);
 		}
