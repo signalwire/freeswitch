@@ -2089,7 +2089,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						goto notready;
 					}
 				}
-				
+
 				/* read from the channel while we wait if the audio is up on it */
 				if (oglobals.session &&
 					!switch_channel_test_flag(caller_channel, CF_PROXY_MODE) &&
@@ -2281,7 +2281,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					const char *context = NULL;
 					const char *dialplan = NULL;
 					switch_core_session_t *holding_session;
-					
+
 					if (caller_channel) {
 						if (zstr(context)) {
 							context = switch_channel_get_variable(caller_channel, "context"); 
@@ -2302,7 +2302,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if ((holding_session = switch_core_session_locate(holding))) {
 						switch_channel_t *holding_channel = switch_core_session_get_channel(holding_session);
 						switch_status_t mstatus = SWITCH_STATUS_FALSE;
-						
+
 						if (caller_channel) {
 							if ((mstatus = switch_channel_caller_extension_masquerade(caller_channel, holding_channel, 1)) == SWITCH_STATUS_SUCCESS) {
 								switch_channel_restart(holding_channel);
@@ -2333,9 +2333,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 					force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
 				} else {
+
 					if (peer_channel && switch_channel_ready(peer_channel)) {
+						switch_core_session_t *holding_session;
+
 						force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
+
+						if ((holding_session = switch_core_session_locate(holding))) {
+							switch_channel_set_flag(switch_core_session_get_channel(holding_session), CF_HANGUP_AFTER_BRIDGE);
+							switch_core_session_rwunlock(holding_session);
+						}
+						
 						switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(peer_session));
+						holding = NULL;
 						oglobals.idx = IDX_NADA;
 						if (caller_channel && switch_channel_up(caller_channel)) {
 							switch_channel_hangup(caller_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
@@ -2349,8 +2359,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 						if ((holding_session = switch_core_session_locate(holding))) {
 							switch_channel_t *holding_channel = switch_core_session_get_channel(holding_session);
+
 							if (caller_channel && switch_channel_ready(caller_channel)) {
 								switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(session));
+								holding = NULL;
 							} else {
 								switch_channel_hangup(holding_channel, SWITCH_CAUSE_NORMAL_UNSPECIFIED);
 							}
@@ -2361,7 +2373,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				peer_session = NULL;
 				peer_channel = NULL;
-				
 			}
 			
 			for (i = 0; i < and_argc; i++) {
