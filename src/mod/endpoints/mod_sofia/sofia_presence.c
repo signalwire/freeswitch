@@ -1628,7 +1628,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		switch_snprintf(exp_delta_str, sizeof(exp_delta_str), "%ld", exp_delta);
 		
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
-			sql = switch_mprintf("delete from sip_subscriptions where call_id='%q' or (contact='%q' and and event='%q')", call_id, contact_str, event);
+			sql = switch_mprintf("delete from sip_subscriptions where call_id='%q' or (contact='%q' and event='%q')", call_id, contact_str, event);
 		} else {
 			sql = switch_mprintf("delete from sip_subscriptions where "
 								 "proto='%q' and sip_user='%q' and sip_host='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q' and hostname='%q'",
