@@ -2340,7 +2340,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
 
 						if ((holding_session = switch_core_session_locate(holding))) {
-							switch_channel_set_flag(switch_core_session_get_channel(holding_session), CF_HANGUP_AFTER_BRIDGE);
+							switch_channel_set_variable(switch_core_session_get_channel(holding_session), SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 							switch_core_session_rwunlock(holding_session);
 						}
 						
@@ -2361,6 +2361,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							switch_channel_t *holding_channel = switch_core_session_get_channel(holding_session);
 
 							if (caller_channel && switch_channel_ready(caller_channel)) {
+								switch_channel_set_variable(holding_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 								switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(session));
 								holding = NULL;
 							} else {
@@ -2403,7 +2404,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
                         }
 						
 						if (holding && oglobals.idx != IDX_TIMEOUT && oglobals.idx != IDX_KEY_CANCEL) {
+							switch_core_session_t *holding_session;
+
+							if ((holding_session = switch_core_session_locate(holding))) {
+								switch_channel_set_variable(switch_core_session_get_channel(holding_session), SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
+								switch_core_session_rwunlock(holding_session);
+							}
+							
                             switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(originate_status[i].peer_session));
+							holding = NULL;
                         } else {
 							switch_channel_hangup(originate_status[i].peer_channel, reason);
 						}
