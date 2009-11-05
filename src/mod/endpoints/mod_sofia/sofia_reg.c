@@ -1381,6 +1381,16 @@ void sofia_reg_handle_sip_r_register(int status,
 									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
 									 tagi_t tags[])
 {
+	if (status >= 900) {
+		if (sofia_private && sofia_private->gateway) {
+			nua_handle_destroy(sofia_private->gateway->nh);
+			sofia_private->gateway->nh = NULL;
+			sofia_private->gateway->state = REG_STATE_UNREGED;
+
+		}
+		return;
+	}
+
 	if (sofia_private && sofia_private->gateway) {
 		reg_state_t ostate = sofia_private->gateway->state;
 		switch (status) {
