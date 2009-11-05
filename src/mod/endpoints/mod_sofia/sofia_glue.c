@@ -3848,7 +3848,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_registrations", reg_sql);
 		free(test_sql);
 
-		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' and network_ip!='-1'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' and network_ip!='-1' and network_port!='-1'", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
 		free(test_sql);
 
@@ -4006,6 +4006,8 @@ void sofia_glue_actually_execute_sql(sofia_profile_t *profile, switch_bool_t mas
 	} else if (profile->odbc_dsn) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 	} else {
+		char *errmsg;
+
 		if (master) {
 			db = profile->master_db;
 		} else {
@@ -4014,7 +4016,12 @@ void sofia_glue_actually_execute_sql(sofia_profile_t *profile, switch_bool_t mas
 				goto end;
 			}
 		}
-		switch_core_db_persistant_execute(db, sql, 1);
+
+		switch_core_db_exec(db, sql, NULL, NULL, &errmsg);
+		if (errmsg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n%s\n", errmsg, sql);
+			switch_core_db_free(errmsg);
+		}
 
 		if (!master) {
 			switch_core_db_close(db);

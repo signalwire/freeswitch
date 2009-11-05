@@ -1133,6 +1133,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		nua_set_params(node->nua,
 					   NUTAG_APPL_METHOD("OPTIONS"),
 					   NUTAG_APPL_METHOD("REFER"),
+					   NUTAG_APPL_METHOD("SUBSCRIBE"),
 					   NUTAG_AUTOANSWER(0),
 					   NUTAG_AUTOACK(0),
 					   NUTAG_AUTOALERT(0),

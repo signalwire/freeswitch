@@ -1569,25 +1569,6 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 }
 
-static unsigned long get_nc(const char *nc, sip_t const *sip)
-{
-	unsigned long x;
-	const char *ua = NULL;
-
-	if (sip->sip_user_agent) {
-		ua = sip->sip_user_agent->g_string;
-	}
-
-	/* sigh, polycom sends nc in base-10 rather than spec which says base-16*/
-	if (ua && switch_stristr("polycom", ua)) {
-		x = strtoul(nc, 0, 10);
-	} else {
-		x = strtoul(nc, 0, 16);
-	}
-
-	return x;
-}
-
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, 
 								sip_authorization_t const *authorization, 
 								sip_t const *sip, 
@@ -1680,10 +1661,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	if (zstr(np)) {
 		first = 1;
 		if (nc) {
-			unsigned long x;
-
-			x = get_nc(nc, sip);
-			sql = switch_mprintf("select nonce from sip_authentication where nonce='%q' and last_nc + 1 >= %lu", nonce, x);
+			sql = switch_mprintf("select nonce from sip_authentication where nonce='%q' and last_nc < %lu", nonce, strtoul(nc, 0, 16));
 		} else {
 			sql = switch_mprintf("select nonce from sip_authentication where nonce='%q'", nonce);
 		}
@@ -2079,17 +2057,15 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 
 	if (nc && cnonce && qop) {
-		unsigned long x;
 		char *sql;
 
-		x = get_nc(nc, sip);
 #if defined(_WIN32) && !defined(_WIN64)
 #define	LL_FMT "ll"
 #else
 #define	LL_FMT "l"
 #endif
 		sql = switch_mprintf("update sip_authentication set expires='%"LL_FMT"u',last_nc=%lu where nonce='%s'", 
-							 switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : exptime + 10), x, nonce);
+							 switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : exptime + 10), strtoul(nc, 0, 16), nonce);
 
 		switch_assert(sql != NULL);
 		sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);

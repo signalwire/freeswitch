@@ -1041,7 +1041,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	if (expires) {
 		long tmp = atol(expires);
 		if (tmp > 0) {
-			exptime = tmp - switch_epoch_time_now(NULL) - SUB_OVERLAP;
+			exptime = tmp - switch_epoch_time_now(NULL);// - SUB_OVERLAP;
 		} else {
 			exptime = tmp;
 		}
@@ -1628,7 +1628,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		switch_snprintf(exp_delta_str, sizeof(exp_delta_str), "%ld", exp_delta);
 		
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
-			sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", call_id);
+			sql = switch_mprintf("delete from sip_subscriptions where call_id='%q' or (contact='%q' and and event='%q')", call_id, contact_str, event);
 		} else {
 			sql = switch_mprintf("delete from sip_subscriptions where "
 								 "proto='%q' and sip_user='%q' and sip_host='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q' and hostname='%q'",
@@ -1662,14 +1662,14 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 			sql = switch_mprintf("insert into sip_subscriptions "
 								 "(proto,sip_user,sip_host,sub_to_user,sub_to_host,presence_hosts,event,contact,call_id,full_from,"
-								 "full_via,expires,user_agent,accept,profile_name,hostname,network_ip) "
-								 "values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld,'%q','%q','%q','%q','%q')",
+								 "full_via,expires,user_agent,accept,profile_name,hostname,network_port,network_ip) "
+								 "values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld,'%q','%q','%q','%q','%d','%q')",
 								 proto, from_user, from_host, to_user, to_host, profile->presence_hosts ? profile->presence_hosts : to_host, 
 								 event, contact_str, call_id, full_from, full_via, 
-								 exp_delta * -1, 
-								 full_agent, accept, profile->name,mod_sofia_globals.hostname, network_ip);
+								 //sofia_test_pflag(profile, PFLAG_MULTIREG) ? switch_epoch_time_now(NULL) + exp_delta : exp_delta * -1,
+								 switch_epoch_time_now(NULL) + exp_delta,
+								 full_agent, accept, profile->name,mod_sofia_globals.hostname, network_port, network_ip);
 								 
-			
 			if (mod_sofia_globals.debug_presence > 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "%s SUBSCRIBE %s@%s %s@%s\n", profile->name, from_user, from_host, to_user, to_host);
 			}
@@ -1723,7 +1723,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 
 			if (nh && nh->nh_ds && nh->nh_ds->ds_usage) {
-				nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta + SUB_OVERLAP, exp_delta + SUB_OVERLAP);
+				//nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta + SUB_OVERLAP, exp_delta + SUB_OVERLAP);
+				nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta, exp_delta);
 			}
 
 			nua_respond(nh, SIP_202_ACCEPTED,
