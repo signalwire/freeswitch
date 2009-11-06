@@ -182,14 +182,14 @@ char *generate_pai_str(switch_core_session_t *session)
 	const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 	char *pai = NULL;
 
-	if (!(callee_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name"))) {
+	if (zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_name"))) &&
+		zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name")))) {
 		callee_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name");
 	}
 
-	if (zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number")))) {
-		if (zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number")))) {
-			callee_number = tech_pvt->caller_profile->destination_number;
-		}
+	if (zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "origination_callee_id_number"))) &&
+		zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number")))) {
+		callee_number = tech_pvt->caller_profile->destination_number;
 	}
 
 	if (zstr(callee_name) && !zstr(callee_number)) {
