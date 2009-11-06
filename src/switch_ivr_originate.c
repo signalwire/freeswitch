@@ -1193,6 +1193,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	int local_clobber = 0;
 	const char *cancel_key = NULL;
 	const char *holding = NULL;
+	const char *export_vars = NULL;
 
 	oglobals.ringback_ok = 1;
 
@@ -1319,6 +1320,29 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	} else {
 		if (switch_event_create_plain(&var_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
 			abort();
+		}
+	}
+
+	/* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
+	if ((export_vars = switch_channel_get_variable(caller_channel, SWITCH_EXPORT_VARS_VARIABLE))) {
+		char *cptmp = switch_core_session_strdup(session, export_vars);
+		int argc;
+		char *argv[256];
+
+		if ((argc = switch_separate_string(cptmp, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+			int x;
+
+			for (x = 0; x < argc; x++) {
+				const char *vval;
+				if ((vval = switch_channel_get_variable(caller_channel, argv[x]))) {
+					char *vvar = argv[x];
+					if (!strncasecmp(vvar, "nolocal:", 8)) {
+						vvar += 8;
+					}
+					switch_event_del_header(var_event, vvar);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, vvar, vval);
+				}
+			}
 		}
 	}
 

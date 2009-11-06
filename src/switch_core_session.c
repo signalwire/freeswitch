@@ -447,7 +447,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		}
 		
 		if (channel) {
-			const char *export_vars, *val;
+			const char *val;
 			switch_codec_t *vid_read_codec = NULL, *read_codec = switch_core_session_get_read_codec(session);
 			const char *max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
 
@@ -474,28 +474,6 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE, switch_core_session_get_uuid(session));
 			switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
 			switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(*new_session));
-
-			/* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
-			if ((export_vars = switch_channel_get_variable(channel, SWITCH_EXPORT_VARS_VARIABLE))) {
-				char *cptmp = switch_core_session_strdup(session, export_vars);
-				int argc;
-				char *argv[256];
-
-				if ((argc = switch_separate_string(cptmp, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-					int x;
-
-					for (x = 0; x < argc; x++) {
-						const char *vval;
-						if ((vval = switch_channel_get_variable(channel, argv[x]))) {
-							char *vvar = argv[x];
-							if (!strncasecmp(vvar, "nolocal:", 8)) {
-								vvar += 8;
-							}
-							switch_channel_set_variable(peer_channel, vvar, vval);
-						}
-					}
-				}
-			}
 
 			if ((val = switch_channel_get_variable(channel, SWITCH_PROCESS_CDR_VARIABLE))) {
 				switch_channel_set_variable(peer_channel, SWITCH_PROCESS_CDR_VARIABLE, val);
