@@ -185,7 +185,7 @@ static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data) {
 			*data = '\0';
 		}
 		
-		if zstr(header->data) {
+		if (zstr(header->data)) {
 			header = header->next;
 			continue;
 		}
