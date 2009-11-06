@@ -440,7 +440,7 @@ static switch_status_t vm_config_validate_samplerate(switch_xml_config_item_t *i
 {
 	if ((callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD) && newvalue) {
 		int val = *(int*)item->ptr;
-		if (!switch_is_valid_rate(val)) {
+		if (val != 0 && !switch_is_valid_rate(val)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid samplerate %s\n", newvalue);
 			return SWITCH_STATUS_FALSE;
 		}
@@ -577,7 +577,7 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "record-silence-hits", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, 
 		&profile->record_silence_hits, 2, &config_int_0_1000, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM_CALLBACK(profile->config[i++], "record-sample-rate", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, 
-		&profile->record_sample_rate, 8000, NULL, vm_config_validate_samplerate, NULL, NULL);
+		&profile->record_sample_rate, 0, NULL, vm_config_validate_samplerate, NULL, NULL);
 
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "email_headers", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, 
 		&profile->email_headers, NULL, &profile->config_str_pool, NULL, NULL);	
@@ -783,7 +783,6 @@ static vm_profile_t * load_profile(const char *profile_name)
 		switch_event_destroy(&event);
 	}
 	return profile;
-
 }
 
 
