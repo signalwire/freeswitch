@@ -467,21 +467,21 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 		}
 	}
 
-	if ((tmp = switch_channel_get_variable(channel, "effective_callee_id_name")) ||
+	if (((tmp = switch_channel_get_variable(channel, "effective_callee_id_name")) ||
 		(tmp = switch_channel_get_variable(channel, "sip_callee_id_name")) ||
-		(tmp = switch_channel_get_variable(channel, "callee_id_name"))) {
+		 (tmp = switch_channel_get_variable(channel, "callee_id_name"))) && !zstr(tmp)) {
 		name = (char *)tmp;
 	}
 
-	if ((tmp = switch_channel_get_variable(channel, "effective_callee_id_number")) ||
+	if (((tmp = switch_channel_get_variable(channel, "effective_callee_id_number")) ||
 		(tmp = switch_channel_get_variable(channel, "sip_callee_id_number")) ||
-		(tmp = switch_channel_get_variable(channel, "callee_id_number"))) {
+		 (tmp = switch_channel_get_variable(channel, "callee_id_number"))) && !zstr(tmp)) {
 		number = tmp;
 	}
 
 	if (zstr(name)) name = (char *) number;
 
-	if (zstr(name) || zstr(number)) {
+	if (zstr(name) && zstr(number)) {
 		goto end;
 	}
 
@@ -507,7 +507,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 		sofia_send_callee_id(session, NULL, NULL);
 	}
 
- end:
+	end:
 	switch_safe_free(dup);
 }
 

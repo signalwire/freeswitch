@@ -74,7 +74,10 @@ SWITCH_DECLARE(int) switch_isxdigit(int c);
   \param s the string to test
   \return true value if the string is NULL or zero length
 */
-#define zstr(s) (!s || *(s) == '\0')
+static inline int zstr(const char *s) {
+	return (!s || *(s) == '\0');
+}
+
 #define zstr_buf(s) (*(s) == '\0')
 static inline switch_bool_t switch_is_moh(const char *s)
 {
