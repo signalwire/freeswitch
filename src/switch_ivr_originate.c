@@ -1324,7 +1324,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	/* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
-	if ((export_vars = switch_channel_get_variable(caller_channel, SWITCH_EXPORT_VARS_VARIABLE))) {
+	if (caller_channel && (export_vars = switch_channel_get_variable(caller_channel, SWITCH_EXPORT_VARS_VARIABLE))) {
 		char *cptmp = switch_core_session_strdup(session, export_vars);
 		int argc;
 		char *argv[256];
