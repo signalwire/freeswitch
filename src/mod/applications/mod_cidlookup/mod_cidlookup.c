@@ -563,7 +563,11 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 		}
 	}
 	
-done:	
+done:
+	if (!cid) {
+		cid = switch_core_alloc(pool, sizeof(cid_data_t));
+		switch_assert(cid);
+	}
 	/* append area if we can */
 	if (!cid->area &&
 		!skipcitystate && 
