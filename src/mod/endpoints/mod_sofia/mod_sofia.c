@@ -3100,11 +3100,13 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		switch_channel_set_variable(nchannel, "sip_invite_params", "intercom=true");
 	}
 
-	if ((hval = switch_event_get_header(var_event, "sip_callee_id_name"))) {
+	if (((hval = switch_event_get_header(var_event, "effective_callee_id_name")) || 
+		 (hval = switch_event_get_header(var_event, "sip_callee_id_name"))) && !zstr(hval)) {
 		caller_profile->callee_id_name = switch_core_strdup(caller_profile->pool, hval);
 	}
 
-	if ((hval = switch_event_get_header(var_event, "sip_callee_id_number"))) {
+	if (((hval = switch_event_get_header(var_event, "effective_callee_id_number")) || 
+		 (hval = switch_event_get_header(var_event, "sip_callee_id_number"))) && !zstr(hval)) {
 		caller_profile->callee_id_number = switch_core_strdup(caller_profile->pool, hval);
 	}
 
