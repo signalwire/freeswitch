@@ -474,7 +474,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				
 
 				switch_core_file_close(rh->fh);
-				if (rh->fh->samples_out < read_impl.samples_per_second * rh->min_sec) {
+				if (rh->fh->samples_out < rh->fh->samplerate * rh->min_sec) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Discarding short file %s\n", rh->file);
 					switch_file_remove(rh->file, switch_core_session_get_pool(session));
 				}

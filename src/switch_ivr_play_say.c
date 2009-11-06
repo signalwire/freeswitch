@@ -397,8 +397,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	switch_frame_t write_frame = { 0 };
 	unsigned char write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 	switch_event_t *event;
+	int divisor = 0;
 
     switch_core_session_get_read_impl(session, &read_impl);
+
+	if (!(divisor = read_impl.actual_samples_per_second / 8000)) {
+		divisor = 1;
+	}
+
 
 	if (!switch_channel_ready(channel)) {
 		return SWITCH_STATUS_FALSE;
@@ -663,18 +669,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			uint32_t samples = read_frame->datalen / sizeof(*fdata);
 			uint32_t score, count = 0, j = 0;
 			double energy = 0;
-			int divisor = 0;
+
 
 			for (count = 0; count < samples; count++) {
 				energy += abs(fdata[j]);
 				j += read_impl.number_of_channels;
 			}
 
-			if (!(divisor = read_impl.actual_samples_per_second / 8000)) {
-				divisor = 1;
-			}
-
 			score = (uint32_t) (energy / (samples / divisor));
+
 			if (score < fh->thresh) {
 				if (!--fh->silence_hits) {
 					break;

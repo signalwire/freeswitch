@@ -323,6 +323,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 	return status;
 }
 
+
 SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh, void *data, switch_size_t *len)
 {
 	switch_size_t orig_len = *len;
@@ -374,7 +375,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-
 	if (fh->pre_buffer) {
 		switch_size_t rlen, blen;
 		switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -383,6 +383,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 		switch_buffer_write(fh->pre_buffer, data, (asis ? *len : *len * 2) * fh->channels);
 
 		rlen = switch_buffer_inuse(fh->pre_buffer);
+
 		if (rlen >= fh->pre_buffer_datalen) {
 			if ((blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen))) {
 				if (!asis) blen /= 2;
@@ -398,7 +399,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 	} else {
 		switch_status_t status;
 		if ((status = fh->file_interface->file_write(fh, data, len)) == SWITCH_STATUS_SUCCESS) {
-			fh->samples_out += *len;
+			fh->samples_out += orig_len;
 		}
 		return status;
 	}
