@@ -372,7 +372,7 @@
 	</time>
 	<voicemail>
 		<prompt phrase="Абонент с номером" filename="vm-person.wav"/>   <!-- The person at extension-->
-		<prompt phrase="Помечено как важное" filename="vm-marked_urgent.wav"/> <!-- marked urgent-->
+		<prompt phrase="Помечено как важное" filename="vm-marked-urgent.wav"/> <!-- marked urgent-->
 		<prompt phrase="отправлен на электронную почту" filename="vm-emailed.wav"/><!-- emailed-->
 		<prompt phrase="у Вас" filename="vm-you_have.wav"/><!--you have    -->
 		<prompt phrase="Пожалуйста, введите свой идентификатор, завершив нажатием на клавишу" filename="vm-enter_id.wav"/><!--   please enter your i d, followed by -->
@@ -394,6 +394,7 @@
 		<prompt phrase="новых" filename="vm-newx.wav"/><!--    -->
 		<prompt phrase="срочное сообщение сохранено" filename="vm-urgent-saved.wav"/><!--urgent saved    -->
 		<prompt phrase="сохранено" filename="vm-saved.wav"/><!--saved    -->
+		<prompt phrase="сохранённых" filename="vm-savedx.wav"/><!--saved    -->
 		<prompt phrase="сообщение" filename="vm-message.wav"/><!--message    -->
 		<prompt phrase="сообщений" filename="vm-messagex.wav"/><!--messages    -->
 		<prompt phrase="сообщения" filename="vm-messages.wav"/><!-- message   -->
