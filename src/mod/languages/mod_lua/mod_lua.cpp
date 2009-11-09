@@ -461,10 +461,129 @@ SWITCH_STANDARD_API(lua_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_DIALPLAN(lua_dialplan_hunt)
+{
+	lua_State *L = lua_init();
+	switch_caller_extension_t *extension = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *cmd;
+
+	if (!caller_profile) {
+		if (!(caller_profile = switch_channel_get_caller_profile(channel))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error Obtaining Profile!\n");
+			goto done;
+		}
+	}
+
+	if (!caller_profile->context) {
+		caller_profile->context = "lua/dialplan.lua";
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Processing %s->%s in context/script %s\n",
+	          caller_profile->caller_id_name, caller_profile->destination_number, caller_profile->context);
+
+	if ((extension = switch_caller_extension_new(session, "_anon_", caller_profile->destination_number)) == 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
+		goto done;
+	}
+
+	cmd = strdup(caller_profile->context);
+	switch_assert(cmd);
+
+	mod_lua_conjure_session(L, session, "session", 1);
+	lua_parse_and_execute(L, cmd);
+
+	/* expecting ACTIONS = { {"app1", "app_data1"}, { "app2" }, "app3" } -- each of three is valid */
+	lua_getfield(L, LUA_GLOBALSINDEX, "ACTIONS");
+	if (!lua_istable(L, 1)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+			"Global variable ACTIONS may only be a table\n");
+		goto done;
+	}
+
+	lua_pushnil(L); /* STACK = tab | nil */
+
+	while (lua_next(L, 1) != 0) { /* STACK = tab | k1 .. kn | vn */
+		char *application, *app_data;
+
+		if (lua_isstring(L, -1)) {
+			application = strdup(lua_tostring(L, -1));
+			app_data = strdup("");
+
+		} else if (lua_istable(L, -1)) {
+			int i = lua_gettop(L);
+
+			lua_pushnil(L); /* STACK = tab1 | k1 .. kn | tab2 | nil */
+
+			if (lua_next(L, i) != 0) { /* STACK = tab1 | k1 .. kn | tab2 | k | v */
+
+				if (!lua_isstring(L, -1)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+						"First element in each table in the ACTIONS table may only be a string - application name\n");
+					goto rollback;
+				}
+
+				application = strdup(lua_tostring(L, -1));
+
+				lua_pop(L, 1);
+
+				if (lua_next(L, i) == 0) { /* STACK = tab1 | k1 .. kn | tab2 | k | k | v */
+					app_data = strdup("");
+
+				} else {
+					if (!lua_isstring(L, -1)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+							"Second (optional) element in each table in the ACTIONS table may only be a string - app_data\n");
+						free(application);
+						goto rollback;
+					}
+					app_data = strdup(lua_tostring(L, -1));
+				}
+
+			}
+
+			lua_settop(L, i); /* STACK = tab1 | k1 .. kn | tab2 */
+
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+				"ACTIONS table may only contain strings or tables\n");
+			goto rollback;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+			"Dialplan: %s Action %s(%s)\n",
+			switch_channel_get_name(channel), application, app_data);
+
+		switch_caller_extension_add_application(session, extension, application, app_data);
+		free(app_data);
+		free(application);
+
+		lua_pop(L, 1);
+	}
+
+	/* all went fine */
+	goto done;
+
+ rollback:
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+		"Rollback, all applications previously added to this extension in current context/script are discarded\n");
+
+	/* extension was created on session's memory pool, so just make a new, empty one here */
+	if ((extension = switch_caller_extension_new(session, "_anon_", caller_profile->destination_number)) == 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
+	}
+
+ done:
+	switch_safe_free(cmd);
+	lua_uninit(L);
+	return extension;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 {
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
+	switch_dialplan_interface_t *dp_interface;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -472,6 +591,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 	SWITCH_ADD_API(api_interface, "luarun", "run a script", luarun_api_function, "<script>");
 	SWITCH_ADD_API(api_interface, "lua", "run a script as an api function", lua_api_function, "<script>");
 	SWITCH_ADD_APP(app_interface, "lua", "Launch LUA ivr", "Run a lua ivr on a channel", lua_function, "<script>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_DIALPLAN(dp_interface, "LUA", lua_dialplan_hunt);
 
 
 
