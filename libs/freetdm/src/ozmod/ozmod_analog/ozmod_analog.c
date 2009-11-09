@@ -922,14 +922,17 @@ static void *zap_analog_run(zap_thread_t *me, void *obj)
 {
 	zap_span_t *span = (zap_span_t *) obj;
 	zap_analog_data_t *analog_data = span->signal_data;
-
+	int errs = 0;
+	
 	zap_log(ZAP_LOG_DEBUG, "ANALOG thread starting.\n");
 
 	while(zap_running() && zap_test_flag(analog_data, ZAP_ANALOG_RUNNING)) {
 		int waitms = 1000;
 		zap_status_t status;
 
-		status = zap_span_poll_event(span, waitms);
+		if ((status = zap_span_poll_event(span, waitms)) != ZAP_FAIL) {
+			errs = 0;
+		}
 		
 		switch(status) {
 		case ZAP_SUCCESS:
@@ -948,6 +951,10 @@ static void *zap_analog_run(zap_thread_t *me, void *obj)
 		case ZAP_FAIL:
 			{
 				zap_log(ZAP_LOG_ERROR, "Failure Polling event! [%s]\n", span->last_error);
+				if (++errs > 300) {
+					zap_log(ZAP_LOG_CRIT, "Too Many Errors!\n");
+					goto end;
+				}
 			}
 			break;
 		default:
