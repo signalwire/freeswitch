@@ -1945,9 +1945,9 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						}
 					} else if (!strcasecmp(var, "NDLB-allow-bad-iananame")) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_NDLB_ALLOW_BAD_IANANAME);
+							profile->ndlb |= PFLAG_NDLB_ALLOW_BAD_IANANAME;
 						} else {
-							sofia_clear_pflag(profile, PFLAG_NDLB_ALLOW_BAD_IANANAME);
+							profile->ndlb &= ~PFLAG_NDLB_ALLOW_BAD_IANANAME;
 						}
 					} else if (!strcasecmp(var, "aggressive-nat-detection")) {
 						if (switch_true(val)) { 
@@ -2694,9 +2694,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "NDLB-allow-bad-iananame")) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_NDLB_ALLOW_BAD_IANANAME);
+							profile->ndlb |= PFLAG_NDLB_ALLOW_BAD_IANANAME;
 						} else {
-							sofia_clear_pflag(profile, PFLAG_NDLB_ALLOW_BAD_IANANAME);
+							profile->ndlb &= ~PFLAG_NDLB_ALLOW_BAD_IANANAME;
 						}
 					} else if (!strcasecmp(var, "pass-rfc2833")) {
 						if (switch_true(val)) {
