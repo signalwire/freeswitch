@@ -1098,7 +1098,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
-			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "statusd", reg_desc);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", reg_desc);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-user", from_user);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", from_host);
