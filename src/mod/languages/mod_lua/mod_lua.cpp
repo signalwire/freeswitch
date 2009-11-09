@@ -390,9 +390,7 @@ int lua_thread(const char *text)
 SWITCH_STANDARD_APP(lua_function)
 {
 	lua_State *L = lua_init();
-	char code[1024] = "";
 	char *mycmd;
-	int error;
 
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no args specified!\n");
@@ -466,7 +464,7 @@ SWITCH_STANDARD_DIALPLAN(lua_dialplan_hunt)
 	lua_State *L = lua_init();
 	switch_caller_extension_t *extension = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *cmd;
+	char *cmd = NULL;
 
 	if (!caller_profile) {
 		if (!(caller_profile = switch_channel_get_caller_profile(channel))) {
@@ -504,7 +502,7 @@ SWITCH_STANDARD_DIALPLAN(lua_dialplan_hunt)
 	lua_pushnil(L); /* STACK = tab | nil */
 
 	while (lua_next(L, 1) != 0) { /* STACK = tab | k1 .. kn | vn */
-		char *application, *app_data;
+		char *application = NULL, *app_data = NULL;
 
 		if (lua_isstring(L, -1)) {
 			application = strdup(lua_tostring(L, -1));
