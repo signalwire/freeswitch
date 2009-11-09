@@ -787,7 +787,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 			}
 
 			if (tech_pvt->read_frame.datalen > 0) {
-				size_t bytes = 0;
+				uint32_t bytes = 0;
 				int frames = 1;
 				
 				if (!switch_test_flag((&tech_pvt->read_frame), SFF_CNG)) {
@@ -804,7 +804,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 						}
 						
 						if (tech_pvt->last_ts && tech_pvt->read_frame.datalen != tech_pvt->read_impl.encoded_bytes_per_packet) {
-							switch_size_t codec_ms = (int)(tech_pvt->read_frame.timestamp - 
+							uint32_t codec_ms = (int)(tech_pvt->read_frame.timestamp - 
 														   tech_pvt->last_ts) / (tech_pvt->read_impl.samples_per_second / 1000);
 							if ((codec_ms % 10) != 0) {
 								tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
@@ -1545,8 +1545,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				}
 
 				if (!switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Overlap Dial with %d %s\n", code, reason);
 					char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Overlap Dial with %d %s\n", code, reason);
 
 					nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
 								SIPTAG_SUPPORTED_STR(NULL), SIPTAG_ACCEPT_STR(NULL),
