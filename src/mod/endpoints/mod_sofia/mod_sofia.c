@@ -1071,7 +1071,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char* extra_headers;
 
 	if (switch_channel_down(channel) || !tech_pvt || sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		status = SWITCH_STATUS_FALSE;
@@ -1445,6 +1444,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_REDIRECT:
 		if (!zstr(msg->string_arg)) {
 			if (!switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
 				char *dest = (char *) msg->string_arg;
 
 				if (!strchr(msg->string_arg, '<') && !strchr(msg->string_arg, '>')) {
@@ -1453,8 +1453,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Redirecting to %s\n", dest);
 
-				nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(dest), TAG_END());
+				nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(dest),
+							TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+							TAG_END());
 				sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
+				switch_safe_free(extra_headers);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Too late for redirecting to %s, already answered\n", msg->string_arg);
 			}
@@ -1462,7 +1465,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_DEFLECT:
 		{
-			char ref_to[128] = "";
+			char ref_to[1024] = "";
 			const char *var;
 
 			if (!strstr(msg->string_arg, "sip:")) {
@@ -1517,8 +1520,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				}
 			}
 
-			extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
-
 			if (code == 407 && !msg->numeric_arg) {
 				const char *to_uri = switch_channel_get_variable(channel, "sip_to_uri");
 				const char *to_host = reason;
@@ -1545,12 +1546,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				if (!switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Overlap Dial with %d %s\n", code, reason);
+					char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
+
 					nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
 								SIPTAG_SUPPORTED_STR(NULL), SIPTAG_ACCEPT_STR(NULL),
 								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 								TAG_IF(!zstr(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), TAG_END());
 					
 					sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
+					switch_safe_free(extra_headers);
 				}
 			} else if (code == 302 && !zstr(msg->string_arg)) {
 				char *p;
@@ -1565,6 +1569,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				goto end_lock;
 			} else {
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+					char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Responding with %d [%s]\n", code, reason);
 					if (!zstr(((char *) msg->pointer_arg))) {
 						sofia_glue_tech_set_local_sdp(tech_pvt, (char *) msg->pointer_arg, SWITCH_TRUE);
@@ -1584,6 +1589,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 									TAG_END());
 					}
+					switch_safe_free(extra_headers);
 				}
 			}
 
