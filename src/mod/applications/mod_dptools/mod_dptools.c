@@ -2144,7 +2144,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 {
 	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
 	switch_core_session_t *peer_session = NULL;
-	const char *continue_on_fail = NULL, *failure_causes = NULL, 
+	const char *continue_on_fail = NULL, *failure_causes = NULL,
 		*v_campon = NULL, *v_campon_retries, *v_campon_sleep, *v_campon_timeout, *v_campon_fallback_exten = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 	int campon_retries = 100, campon_timeout = 10, campon_sleep = 10, tmp, camping = 0, fail = 0, thread_started = 0;
@@ -2381,6 +2381,10 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			} else {
 				a_key = NULL;
 				b_key = NULL;
+			}
+
+			if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
+				switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 			}
 
 			switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, a_key);

@@ -165,13 +165,12 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_codec_t silence_codec = { 0 };
 	switch_frame_t silence_frame = { 0 };
 	int16_t silence_data[SWITCH_RECOMMENDED_BUFFER_SIZE/2] = { 0 };
-	const char *silence_var, *var;
+	const char *silence_var;
 	int silence_val = 0, bypass_media_after_bridge = 0;
 	const char *bridge_answer_timeout = NULL;
 	int answer_timeout, sent_update = 0;
 	time_t answer_limit = 0;
 	
-
 #ifdef SWITCH_VIDEO_IN_THREADS
 	struct vid_helper vh = { 0 };
 	uint32_t vid_launch = 0;
@@ -189,6 +188,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 	chan_a = switch_core_session_get_channel(session_a);
 	chan_b = switch_core_session_get_channel(session_b);
+
+	bypass_media_after_bridge = switch_channel_test_flag(chan_a, CF_BYPASS_MEDIA_AFTER_BRIDGE);
+	switch_channel_clear_flag(chan_a, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 
 	ans_a = switch_channel_test_flag(chan_a, CF_ANSWERED);
 
@@ -220,13 +222,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		goto end_of_bridge_loop;
 	}
 
-	if ((var = switch_channel_get_variable(chan_a, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) && switch_true(var)) {
+	if (bypass_media_after_bridge) {
 		if (switch_stristr("loopback", switch_channel_get_name(chan_a)) || switch_stristr("loopback", switch_channel_get_name(chan_b))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot bypass media while bridged to a loopback address.\n");
-		} else {
-			switch_channel_set_variable(chan_a, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE, NULL);
+			bypass_media_after_bridge = 0;
 		}
-		bypass_media_after_bridge = 1;
 	}
 
 	if ((silence_var = switch_channel_get_variable(chan_a, "bridge_generate_comfort_noise"))) {		
@@ -330,10 +330,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 #endif
 
 		if (loop_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a) && 
-			bypass_media_after_bridge && switch_channel_test_flag(chan_a, CF_ANSWERED) && 
+			(bypass_media_after_bridge || switch_channel_test_flag(chan_a, CF_BYPASS_MEDIA_AFTER_BRIDGE)) && switch_channel_test_flag(chan_a, CF_ANSWERED) && 
 			switch_channel_test_flag(chan_b, CF_ANSWERED)) {
 			switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
 			bypass_media_after_bridge = 0;
+			switch_channel_clear_flag(chan_a, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 		}
 		
 		/* if 1 channel has DTMF pass it to the other */

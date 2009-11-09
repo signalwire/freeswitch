@@ -727,7 +727,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	}
 
 	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session) && !switch_channel_test_flag(channel, CF_REQ_MEDIA))) {
-		if (--sanity && switch_channel_ready(channel)) {
+		if (--sanity && switch_channel_up(channel)) {
 			switch_yield(10000);
 		} else {
 			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE);

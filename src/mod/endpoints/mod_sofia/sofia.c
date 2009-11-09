@@ -3922,7 +3922,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 										SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), 
 										TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
 							launch_media_on_hold(session);
-
+							
 							switch_core_session_rwunlock(other_session);
 							goto done;
 						}
@@ -4391,14 +4391,6 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		if (refer_to->r_url->url_headers && (rep = (char *)switch_stristr("Replaces=", refer_to->r_url->url_headers))) {
 			sip_replaces_t *replaces;
 			nua_handle_t *bnh;
-
-			if (switch_channel_test_flag(channel_a, CF_PROXY_MODE)) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot Attended Transfer BYPASS MEDIA CALLS!\n");
-				switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
-				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-						   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
-				goto done;
-			}
 			
 			if (rep) {
 				const char *br_a = NULL, *br_b = NULL;
@@ -4515,7 +4507,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 							if ((profile->media_options & MEDIA_OPT_BYPASS_AFTER_ATT_XFER) && (tmp = switch_core_session_locate(br_b))) {
 								switch_channel_t *tchannel = switch_core_session_get_channel(tmp);
-								switch_channel_set_variable(tchannel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE, "true");
+								switch_channel_set_flag(tchannel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 								switch_core_session_rwunlock(tmp);
 							}
 							

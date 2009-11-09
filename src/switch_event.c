@@ -884,6 +884,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 	(*event)->bind_user_data = todup->bind_user_data;
 
 	for (hp = todup->headers; hp; hp = hp->next) {
+		if (todup->subclass_name && !strcmp(hp->name, "Event-Subclass")) {
+			continue;
+		}
 		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
 	}
 
