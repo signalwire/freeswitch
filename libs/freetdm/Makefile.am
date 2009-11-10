@@ -36,7 +36,10 @@ moddir = @modinstdir@
 libdir = $(PREFIX)/lib/
 library_includedir = $(PREFIX)/include
 
-INCS      = -I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include -I$(OZ_SRCDIR)/$(SRC)/ozmod/ozmod_sangoma_boost 
+INCS      = -I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include
+if HAVE_SCTP
+INCS +=  -I$(OZ_SRCDIR)/$(SRC)/ozmod/ozmod_sangoma_boost 
+endif
 MY_CFLAGS = $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@confdir@\" -DZAP_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
 COMPILE   = $(CC) $(MY_CFLAGS) $(INCS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
@@ -101,7 +104,10 @@ core-install: install-libLTLIBRARIES
 #
 # tools & test programs
 #
-noinst_PROGRAMS = testtones detect_tones detect_dtmf testisdn testpri testr2 testboost testanalog testapp testcid
+noinst_PROGRAMS = testtones detect_tones detect_dtmf testisdn testpri testr2 testanalog testapp testcid
+if HAVE_SCTP
+noinst_PROGRAMS += testboost
+endif
 
 testapp_SOURCES = $(SRC)/testapp.c
 testapp_LDADD   = libopenzap.la
@@ -135,9 +141,11 @@ testr2_SOURCES = $(SRC)/testr2.c
 testr2_LDADD   = libopenzap.la
 testr2_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 
+if HAVE_SCTP
 testboost_SOURCES = $(SRC)/testboost.c
 testboost_LDADD   = libopenzap.la
 testboost_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+endif
 
 testanalog_SOURCES = $(SRC)/testanalog.c
 testanalog_LDADD   = libopenzap.la
@@ -214,10 +222,12 @@ ozmod_analog_em_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_analog_em_la_LDFLAGS = -module -avoid-version
 ozmod_analog_em_la_LIBADD  = $(MYLIB)
 
+if HAVE_SCTP
 ozmod_sangoma_boost_la_SOURCES = $(SRC)/ozmod/ozmod_sangoma_boost/sangoma_boost_client.c $(SRC)/ozmod/ozmod_sangoma_boost/ozmod_sangoma_boost.c
 ozmod_sangoma_boost_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_sangoma_boost_la_LDFLAGS = -module -avoid-version
 ozmod_sangoma_boost_la_LIBADD  = $(MYLIB)
+endif
 
 if LIBPRI
 ozmod_libpri_la_SOURCES = $(SRC)/ozmod/ozmod_libpri/ozmod_libpri.c $(SRC)/ozmod/ozmod_libpri/lpwrap_pri.c
