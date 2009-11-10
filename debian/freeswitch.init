@@ -103,7 +103,7 @@ do_reload() {
 	# restarting (for example, when it is sent a SIGHUP),
 	# then implement that here.
 	#
-	start-stop-daemon -C $USER --stop --signal 1 --quiet --pidfile $PIDFILE --name $NAME
+	start-stop-daemon -c $USER --stop --signal 1 --quiet --pidfile $PIDFILE --name $NAME
 	return 0
 }
 
