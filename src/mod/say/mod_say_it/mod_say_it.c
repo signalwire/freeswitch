@@ -95,7 +95,9 @@ static switch_status_t play_group(switch_say_method_t method, int a, int b, int 
 {
 
 	if (a) {
-		say_file("digits/%d.wav", a);
+        if (a != 1) {
+            say_file("digits/%d.wav", a);
+        }
 		say_file("digits/hundred.wav");
 	}
 
@@ -151,7 +153,7 @@ static char *strip_nonnumerics(char *in, char *out, switch_size_t len)
 	char *p = in, *q = out;
 	char *ret = out;
 	switch_size_t x = 0;
-	// valid are 0 - 9, period (.), minus (-), and plus (+) - remove all others
+	/* valid are 0 - 9, period (.), minus (-), and plus (+) - remove all others */
 	for (; p && *p; p++) {
 		if ((*p > 47 && *p < 58) || *p == '.' || *p == '-' || *p == '+') {
 			*q++ = *p;
@@ -170,7 +172,7 @@ static switch_status_t it_say_general_count(switch_core_session_t *session,
 											char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 	int in;
-	int x = 0;
+	int places_count = 0;
 	int places[9] = { 0 };
 	char sbuf[13] = "";
 	switch_status_t status;
@@ -179,26 +181,65 @@ static switch_status_t it_say_general_count(switch_core_session_t *session,
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
-
+    
+    /* Get in */
 	in = atoi(tosay);
+    
+    /* Check if number too big */
+    if (in > 999999999) {
+        /* Fail */
+        return SWITCH_STATUS_FALSE;
+    }
 
+    /* Check if number isin't zero */
 	if (in != 0) {
-		for (x = 8; x >= 0; x--) {
-			int num = (int) pow(10, x);
-			if ((places[(uint32_t) x] = in / num)) {
-				in -= places[(uint32_t) x] * num;
-			}
-		}
-
+        
+        /* Init x to 0 */
+        places_count = 0;
+        
+        /* Loop until in is greater than zero */
+        do {
+            /* Get last digit */
+            places[places_count] = in % 10;
+            
+            /* Drop last digit */
+            in = in / 10;
+        }
+        while(in > 0 && ++places_count > 0 /* fake check to put in while */);
+        
 		switch (method) {
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
-			if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
-				return status;
-			}
-			if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3], "digits/thousand.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
-				return status;
-			}
+            
+            /* Check for milions */
+            if (places_count > 5) {
+                /* Check if the millions digit is one (digit 6 = 1, digit 7 and 8 = 0) */
+                if (places[6] == 1 && places[7] == 0 && places[8] == 0) {
+                    say_file("digits/un.wav");
+                    say_file("digits/million.wav");
+                } else {
+                    /* Play millions group (digits/million.wav should be digits/millions.wav) */
+                    if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
+                        return status;
+                    }
+                }
+                
+            }
+			
+            /* Check for thousands */
+            if (places_count > 2) {
+                if (places[3] == 1 && places[4] == 0 && places[5] == 0) {
+                    say_file("digits/thousand.wav");
+                } else {
+                    /* Play thousand group */
+                    if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3],
+											 "digits/thousands.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
+                        return status;
+                    }
+                }
+            }
+            
+            /* Play last group */
 			if ((status = play_group(method, places[2], places[1], places[0], NULL, session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
@@ -370,36 +411,19 @@ static switch_status_t it_say_time(switch_core_session_t *session, char *tosay, 
 
 	if (say_date) {
 		say_file("time/day-%d.wav", tm.tm_wday);
+		say_num(tm.tm_mday, SSM_PRONOUNCED);
 		say_file("time/mon-%d.wav", tm.tm_mon);
-		say_num(tm.tm_mday, SSM_COUNTED);
 		say_num(tm.tm_year + 1900, SSM_PRONOUNCED);
 	}
 
 	if (say_time) {
-		int32_t hour = tm.tm_hour, pm = 0;
+        say_file("time/hours.wav");
+		say_num(tm.tm_hour, SSM_PRONOUNCED);
 
-		if (hour > 12) {
-			hour -= 12;
-			pm = 1;
-		} else if (hour == 12) {
-			pm = 1;
-		} else if (hour == 0) {
-			hour = 12;
-			pm = 0;
-		}
-
-		say_num(hour, SSM_PRONOUNCED);
-
-		if (tm.tm_min > 9) {
+		if (tm.tm_min) {
+            say_file("time/and.wav");
 			say_num(tm.tm_min, SSM_PRONOUNCED);
-		} else if (tm.tm_min) {
-			say_file("time/oh.wav");
-			say_num(tm.tm_min, SSM_PRONOUNCED);
-		} else {
-			say_file("time/oclock.wav");
 		}
-
-		say_file("time/%s.wav", pm ? "p-m" : "a-m");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
