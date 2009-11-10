@@ -318,7 +318,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				continue;
 			}
 			*frame = &tech_pvt->read_frame;
-#ifdef BIGENDIAN
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 			if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
 				switch_swap_linear((*frame)->data, (int) (*frame)->datalen / 2);
 			}
@@ -358,7 +358,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		return SWITCH_STATUS_FALSE;
 	}
-#ifdef BIGENDIAN
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 	if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
 		switch_swap_linear(frame->data, (int) frame->datalen / 2);
 	}
