@@ -116,6 +116,8 @@ AC_CHECK_LIB([m], [cos])
 AX_LIB_PCAP
 
 AC_CHECK_HEADERS([netinet/sctp.h netdb.h sys/select.h])
+AM_CONDITIONAL([HAVE_SCTP],[test "${ac_cv_header_netinet_sctp_h}" = "yes"])
+
 AC_CHECK_FUNC([gethostbyname_r],
 	[], [AC_CHECK_LIB([nsl], [gethostbyname_r])]
 )
