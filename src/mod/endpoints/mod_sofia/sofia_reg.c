@@ -1213,14 +1213,28 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	if (regtype == REG_REGISTER) {
 		char exp_param[128] = "";
 		char date[80] = "";
-
+		long nc_long = 0;		
+		
 		s_event = NULL;
 
 		if (exptime) {
 			switch_snprintf(exp_param, sizeof(exp_param), "expires=%ld", exptime);
 			sip_contact_add_param(nua_handle_home(nh), sip->sip_contact, exp_param);
+			
+			if (auth_params && sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER)) {
+				const char *nc = NULL;
 
-			if (sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER)) {
+				if ((nc = switch_event_get_header(auth_params, "sip_auth_nc"))) {
+					nc_long = strtoul(nc, 0, 16);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+									  "No nonce count, cannot determine if this was the first register, sending notify implicitly.\n");
+					nc_long = 1;
+				}
+			}
+			
+			if (sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER) || 
+				(nc_long == 1 && sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER))) {
 				if (switch_event_create(&s_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", mwi_user, mwi_host);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);

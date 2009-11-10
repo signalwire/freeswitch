@@ -1863,6 +1863,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					} else if (!strcasecmp(var, "send-message-query-on-register")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
+						} else if (!strcasecmp(val, "first-only")) {
+							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 						}
@@ -2476,6 +2478,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "send-message-query-on-register")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
+						} else if (!strcasecmp(val, "first-only")) {
+							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 						}
