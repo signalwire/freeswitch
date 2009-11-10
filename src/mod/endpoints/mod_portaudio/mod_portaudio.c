@@ -1105,8 +1105,10 @@ static switch_status_t devlist(char **argv, int argc, switch_stream_handle_t *st
 {
 	int i, numDevices, prev;
 	const PaDeviceInfo *deviceInfo;
+	const PaHostApiInfo *hostApiInfo;
 
 	numDevices = Pa_GetDeviceCount();
+
 	if (numDevices < 0) {
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1116,7 +1118,8 @@ static switch_status_t devlist(char **argv, int argc, switch_stream_handle_t *st
 
 		for (i = 0; i < numDevices; i++) {
 			deviceInfo = Pa_GetDeviceInfo(i);
-			stream->write_function(stream, "\t\t<device id=\"%d\" name=\"%s\" inputs=\"%d\" outputs=\"%d\" />\n", i, deviceInfo->name, deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
+			hostApiInfo = Pa_GetHostApiInfo(deviceInfo->hostApi);
+			stream->write_function(stream, "\t\t<device id=\"%d\" name=\"%s\" hostapi=\"%s\" inputs=\"%d\" outputs=\"%d\" />\n", i, deviceInfo->name, hostApiInfo->name, deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
 		}
 
 		stream->write_function(stream, "\t</devices>\n\t<bindings>\n"
@@ -1128,7 +1131,9 @@ static switch_status_t devlist(char **argv, int argc, switch_stream_handle_t *st
 
 		for (i = 0; i < numDevices; i++) {
 			deviceInfo = Pa_GetDeviceInfo(i);
-			stream->write_function(stream, "%d;%s;%d;%d;", i, deviceInfo->name, deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
+			hostApiInfo = Pa_GetHostApiInfo(deviceInfo->hostApi);
+
+			stream->write_function(stream, "%d;%s(%s);%d;%d;", i, deviceInfo->name, hostApiInfo->name, deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
 
 			prev = 0;
 			if (globals.ringdev == i) {
