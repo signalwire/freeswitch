@@ -52,6 +52,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle already open\n");
 		return SWITCH_STATUS_FALSE;
 	}
+	
+	if (!fh->samplerate) {
+		if (!(fh->samplerate = rate)) {
+			fh->samplerate = 8000;
+		}
+	}
 
 	if (zstr(file_path)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Filename\n");
@@ -133,12 +139,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 	if (rhs) {
 		fh->handler = switch_core_strdup(fh->memory_pool, rhs);
-	}
-
-	if (!fh->samplerate) {
-		if (!(fh->samplerate = rate)) {
-			fh->samplerate = 8000;
-		}
 	}
 
 	if (channels) {
