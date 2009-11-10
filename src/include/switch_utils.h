@@ -78,6 +78,8 @@ static inline int zstr(const char *s) {
 	return (!s || *(s) == '\0');
 }
 
+#define switch_strlen_zero(x) zstr(x)
+#define switch_strlen_zero_buf(x) zstr_buf(x)
 #define zstr_buf(s) (*(s) == '\0')
 static inline switch_bool_t switch_is_moh(const char *s)
 {
