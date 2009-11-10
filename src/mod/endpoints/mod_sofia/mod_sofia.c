@@ -424,6 +424,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause), 
 								SIPTAG_REASON_STR(reason), 
+								SIPTAG_HEADER_STR(generate_pai_str(session)),
 								TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
 								TAG_END());
 				}
@@ -1550,6 +1551,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 					nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
 								SIPTAG_SUPPORTED_STR(NULL), SIPTAG_ACCEPT_STR(NULL),
+								SIPTAG_HEADER_STR(generate_pai_str(session)),
 								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 								TAG_IF(!zstr(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), TAG_END());
 					
