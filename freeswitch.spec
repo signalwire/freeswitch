@@ -650,7 +650,6 @@ userdel freeswitch
 %{prefix}/mod/*.a
 %{prefix}/mod/*.la
 %{prefix}/include/*.h
-%{prefix}/include/spandsp/*
 
 %files lang-en
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/en
