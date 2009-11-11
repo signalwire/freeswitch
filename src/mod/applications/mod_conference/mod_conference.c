@@ -42,6 +42,7 @@ SWITCH_MODULE_DEFINITION(mod_conference, mod_conference_load, mod_conference_shu
 
 static const char global_app_name[] = "conference";
 static char *global_cf_name = "conference.conf";
+static char *cf_pin_url_param_name ="X-ConfPin=";
 static char *api_syntax;
 static int EC = 0;
 
@@ -5194,9 +5195,26 @@ SWITCH_STANDARD_APP(conference_function)
 			int pin_retries = 3;	/* XXX - this should be configurable - i'm too lazy to do it right now... */
 			int pin_valid = 0;
 			switch_status_t status = SWITCH_STATUS_SUCCESS;
+			char *supplied_pin_value;
 
 			/* Answer the channel */
 			switch_channel_answer(channel);
+			
+			/* look for PIN in channel variable first.  If not present or invalid revert to prompting user */ 
+			supplied_pin_value = switch_core_strdup(conference->pool, switch_channel_get_variable(channel, "supplied_pin"));
+			if (!zstr(supplied_pin_value)){
+				char *supplied_pin_value_start;
+				int i = 0;
+				if ((supplied_pin_value_start = (char *)switch_stristr(cf_pin_url_param_name, supplied_pin_value))){
+					/* pin supplied as a URL parameter, move pointer to start of actual pin value */
+					supplied_pin_value = supplied_pin_value_start + strlen(cf_pin_url_param_name);
+				}
+				while (*supplied_pin_value != 0 && *supplied_pin_value != ';'){
+					pin_buf[i++] = *supplied_pin_value++;
+				}
+				pin_valid = (strcmp(pin_buf, dpin) == 0);
+				memset(pin_buf, 0, sizeof(pin_buf));
+			}
 			
 			if (!conference->pin_sound) {
 				conference->pin_sound = switch_core_strdup(conference->pool, "conference/conf-pin.wav");
