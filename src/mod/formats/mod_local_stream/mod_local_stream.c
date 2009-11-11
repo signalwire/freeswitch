@@ -119,6 +119,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_byte_t *dist_buf;
 	switch_size_t used;
 	int skip = 0;
+	switch_memory_pool_t *temp_pool = NULL;
 
 	switch_mutex_lock(globals.mutex);
 	THREADS++;
@@ -146,8 +147,17 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 	while (RUNNING && !source->stopped) {
 		const char *fname;
+
+		if (temp_pool) {
+			switch_core_destroy_memory_pool(&temp_pool);
+		}
+
+		if (switch_core_new_memory_pool(&temp_pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error creating pool");
+			goto done;
+		}
 		
-		if (switch_dir_open(&source->dir_handle, source->location, source->pool) != SWITCH_STATUS_SUCCESS) {
+		if (switch_dir_open(&source->dir_handle, source->location, temp_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't open directory: %s\n", source->location);
 			goto done;
 		}
@@ -202,7 +212,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				continue;
 			}
 			
-			if (switch_core_timer_init(&timer, source->timer_name, source->interval, source->samples, source->pool) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_timer_init(&timer, source->timer_name, source->interval, source->samples, temp_pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
 				switch_dir_close(source->dir_handle);
 				source->dir_handle = NULL;
@@ -334,6 +344,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 	if (fd > -1) {
 		close(fd);
+	}
+
+	if (temp_pool) {
+		switch_core_destroy_memory_pool(&temp_pool);
 	}
 
 	switch_core_destroy_memory_pool(&source->pool);
