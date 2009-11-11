@@ -705,7 +705,7 @@ OZ_DECLARE(void) zap_channel_rotate_tokens(zap_channel_t *zchan)
 
 OZ_DECLARE(void) zap_channel_replace_token(zap_channel_t *zchan, const char *old_token, const char *new_token)
 {
-	int i;
+	unsigned int i;
 
 	if (zchan->token_count) {
 		for(i = 0; i < zchan->token_count; i++) {
