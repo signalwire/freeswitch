@@ -124,16 +124,16 @@ case "$1" in
 		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
 	esac
 	;;
-  #reload|force-reload)
+  reload|force-reload)
 	#
 	# If do_reload() is not implemented then leave this commented out
 	# and leave 'force-reload' as an alias for 'restart'.
 	#
-	#log_daemon_msg "Reloading $DESC" "$NAME"
-	#do_reload
-	#log_end_msg $?
+	log_daemon_msg "Reloading $DESC" "$NAME"
+	do_reload
+	log_end_msg $?
 	#;;
-  restart|force-reload)
+  restart)
 	#
 	# If the "reload" option is implemented then remove the
 	# 'force-reload' alias
@@ -156,8 +156,8 @@ case "$1" in
 	esac
 	;;
   *)
-	#echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
-	echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+	echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
+	#echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
 	exit 3
 	;;
 esac
