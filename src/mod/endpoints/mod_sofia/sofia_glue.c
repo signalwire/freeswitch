@@ -1669,9 +1669,14 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 					screen = "yes";
 				}
 				
-				tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>;party=calling;screen=%s;privacy=%s",
-															 tech_pvt->caller_profile->caller_id_name,
-															 tech_pvt->caller_profile->caller_id_number, rpid_domain, screen, priv);
+				if (!strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+					tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s>;party=calling;screen=%s;privacy=%s",
+																 tech_pvt->caller_profile->caller_id_number, rpid_domain, screen, priv);
+				} else {
+					tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>;party=calling;screen=%s;privacy=%s",
+																 tech_pvt->caller_profile->caller_id_name,
+																 tech_pvt->caller_profile->caller_id_number, rpid_domain, screen, priv);
+				}
 			}
 			break;
 		default:
