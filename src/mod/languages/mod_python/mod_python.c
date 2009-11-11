@@ -187,6 +187,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	// invoke the handler 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call python script \n");
 	result = PyEval_CallObjectWithKeywords(function, arg, (PyObject *) NULL);
+	Py_DECREF(function);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Finished calling python script \n");
 	
 	// check the result and print out any errors
