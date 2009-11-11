@@ -271,7 +271,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 #endif
 
   if (tls->ctx == NULL) {
-    SSL_METHOD *meth;
+    const SSL_METHOD *meth;
 
     /* meth = SSLv3_method(); */
     /* meth = SSLv23_method(); */
@@ -281,7 +281,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     else
       meth = SSLv23_method();
 
-    tls->ctx = SSL_CTX_new(meth);
+    tls->ctx = SSL_CTX_new((SSL_METHOD*)meth);
   }
 
   if (tls->ctx == NULL) {
