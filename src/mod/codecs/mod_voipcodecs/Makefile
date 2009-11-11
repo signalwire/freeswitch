@@ -18,11 +18,3 @@ $(SPANDSP_LA): $(TIFF_LA) $(SPANDSP_DIR) $(SPANDSP_DIR)/.update
 $(TIFF_LA): $(TIFF_DIR) $(TIFF_DIR)/.update
 	cd $(TIFF_DIR) && $(MAKE)
 	$(TOUCH_TARGET)
-
-
-depend_install: $(DESTDIR)$(libdir)/libspandsp.la
-
-$(DESTDIR)$(libdir)/libspandsp.la: $(SPANDSP_LA)
-	cd $(SPANDSP_DIR) && $(MAKE) install
-
-
