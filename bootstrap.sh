@@ -122,7 +122,7 @@ fi
 if [ -n "${LIBTOOL}" ]; then
     libtoolize=${LIBTOOLIZE:-`dirname "${libtool}"`/libtoolize}
 else
-    libtoolize=${LIBTOOLIZE:-`${LIBDIR}/apr/build/PrintPath glibtoolize libtoolize15 libtoolize14 libtoolize`}
+    libtoolize=${LIBTOOLIZE:-`${LIBDIR}/apr/build/PrintPath glibtoolize libtoolize libtoolize22 libtoolize15 libtoolize14`}
 fi
 if [ "x$libtoolize" = "x" ]; then
     echo "libtoolize not found in path"
