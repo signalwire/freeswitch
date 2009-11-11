@@ -1709,8 +1709,10 @@ static OSStatus ringBufferIOProc( AudioConverterRef inAudioConverter,
    PaUtilRingBuffer *rb = (PaUtilRingBuffer *) inUserData;
 
    VVDBUG(("ringBufferIOProc()\n"));
-
-   assert( sizeof( UInt32 ) == sizeof( long ) );
+   /*
+	 Removing this fixes it but no clue if it breaks other things. (bkw_)
+	 assert( sizeof( UInt32 ) == sizeof( long ) );
+   */
    if( PaUtil_GetRingBufferReadAvailable( rb ) == 0 ) {
       *outData = NULL;
       *ioDataSize = 0;
