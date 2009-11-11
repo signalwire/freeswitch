@@ -3451,7 +3451,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				const char *from_user = "", *from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
 				const char *user_agent = "", *call_id = "";
 				char *sql = NULL;
-
+				
 				if (sip->sip_user_agent) {
 					user_agent = switch_str_nil(sip->sip_user_agent->g_string);
 				}
@@ -3476,23 +3476,38 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				}
 
 				if (profile->pres_type) {
+					const char *presence_data = switch_channel_get_variable(channel, "presence_data");
+					const char *presence_id = switch_channel_get_variable(channel, "presence_id");
+					char *full_contact = "";
+					
+					if (sip->sip_contact) {
+						full_contact = sip_header_as_string(nua_handle_home(tech_pvt->nh), (void *) sip->sip_contact);
+					}
+					
 					sql = switch_mprintf("insert into sip_dialogs "
 										 "(call_id,uuid,sip_to_user,sip_to_host,sip_from_user,sip_from_host,contact_user,"
-										 "contact_host,state,direction,user_agent,profile_name,hostname) "
-										 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+										 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id, presence_data) "
+										 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
 										 call_id,
 										 switch_core_session_get_uuid(session),
 										 to_user, to_host, from_user, from_host, contact_user, 
 										 contact_host, astate, "outbound", user_agent,
-										 profile->name, mod_sofia_globals.hostname);
-
+										 profile->name, mod_sofia_globals.hostname, switch_str_nil(full_contact),
+										 switch_str_nil(presence_id), switch_str_nil(presence_data));
+					
 					switch_assert(sql);
 
 					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+
 				}
 			} else if (status == 200 && (profile->pres_type)) {
 				char *sql = NULL;
-				sql = switch_mprintf("update sip_dialogs set state='%s' where uuid='%s';\n", astate, switch_core_session_get_uuid(session));
+				const char *presence_data = switch_channel_get_variable(channel, "presence_data");
+				const char *presence_id = switch_channel_get_variable(channel, "presence_id");
+
+				sql = switch_mprintf("update sip_dialogs set state='%q',presence_id='%q',presence_data='%q' "
+									 "where uuid='%s';\n", astate, switch_str_nil(presence_id), switch_str_nil(presence_data), 
+									 switch_core_session_get_uuid(session));
 				switch_assert(sql);
 				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			}
@@ -5819,16 +5834,27 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 
 		if (profile->pres_type) {
+			const char *presence_data = switch_channel_get_variable(channel, "presence_data");
+			const char *presence_id = switch_channel_get_variable(channel, "presence_id");
+			char *full_contact = "";
+
+			if (sip->sip_contact) {
+				full_contact = sip_header_as_string(nua_handle_home(tech_pvt->nh), (void *) sip->sip_contact);
+			}
+			
 			sql = switch_mprintf("insert into sip_dialogs "
 								 "(call_id,uuid,sip_to_user,sip_to_host,sip_from_user,sip_from_host,contact_user,"
-								 "contact_host,state,direction,user_agent,profile_name,hostname) "
-								 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+								 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data) "
+								 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
 								 call_id,
 								 tech_pvt->sofia_private->uuid,
 								 to_user, to_host, dialog_from_user, dialog_from_host, 
 								 contact_user, contact_host, "confirmed", "inbound", user_agent,
-								 profile->name, mod_sofia_globals.hostname);
+								 profile->name, mod_sofia_globals.hostname, switch_str_nil(full_contact), 
+								 switch_str_nil(presence_id), switch_str_nil(presence_data));
+
 			switch_assert(sql);
+			
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
 

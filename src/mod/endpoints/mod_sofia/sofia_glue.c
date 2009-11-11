@@ -3657,7 +3657,10 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   direction       VARCHAR(255),\n" 
 		"   user_agent      VARCHAR(255),\n" 
 		"   profile_name    VARCHAR(255),\n"
-        "   hostname        VARCHAR(255)\n"
+        "   hostname        VARCHAR(255),\n"
+        "   contact         VARCHAR(255),\n"
+        "   presence_id     VARCHAR(255),\n"
+        "   presence_data   VARCHAR(255)\n"
 		");\n";
 
 	char sub_sql[] =
@@ -3750,6 +3753,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			"create index ssa_profile_name on sip_shared_appearance_subscriptions (profile_name)",
 			"create index ssa_aor on sip_shared_appearance_subscriptions (aor)",
 			"create index ssd_profile_name on sip_shared_appearance_dialogs (profile_name)",
+			"create index ssd_contact on sip_shared_appearance_dialogs (contact)",
+			"create index ssd_presence_id on sip_shared_appearance_dialogs (presence_id)",
+			"create index ssd_presence_data on sip_shared_appearance_dialogs (presence_data)",
 			"create index ssd_hostname on sip_shared_appearance_dialogs (hostname)",
 			"create index ssd_contact_str on sip_shared_appearance_dialogs (contact_str)",
 			"create index ssd_call_id on sip_shared_appearance_dialogs (call_id)",
@@ -3787,7 +3793,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 
 		free(test_sql);
-		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and contact like '%%'", mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_dialogs", NULL);
@@ -3852,7 +3858,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
 		free(test_sql);
 
-		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and contact like '%%'", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_dialogs", dialog_sql);
 		free(test_sql);
 
@@ -3926,6 +3932,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 		switch_core_db_exec(profile->master_db, "create index if not exists sd_uuid on sip_dialogs (uuid)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists sd_hostname on sip_dialogs (hostname)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sd_hostname on sip_dialogs (contact)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sd_hostname on sip_dialogs (presence_id)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sd_hostname on sip_dialogs (presence_data)", NULL, NULL, NULL);
 
 		switch_core_db_exec(profile->master_db, "create index if not exists sp_hostname on sip_presence (hostname)", NULL, NULL, NULL);
 

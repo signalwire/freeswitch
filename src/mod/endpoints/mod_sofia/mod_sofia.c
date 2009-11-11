@@ -1167,6 +1167,19 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
+			const char *presence_data = switch_channel_get_variable(channel, "presence_data");
+			const char *presence_id = switch_channel_get_variable(channel, "presence_id");
+			char *sql;
+			
+			if (presence_id || presence_data) {
+				sql = switch_mprintf("update sip_dialogs set presence_id='%q',presence_data='%q' "
+									 "where uuid='%s';\n", switch_str_nil(presence_id), switch_str_nil(presence_data), 
+									 switch_core_session_get_uuid(session));
+			}
+
+			switch_assert(sql);
+			sofia_glue_execute_sql(tech_pvt->profile, &sql, SWITCH_TRUE);
+
 			const char *var;
 			if ((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) && switch_true(var)) {
 				sofia_set_flag_locked(tech_pvt, TFLAG_SECURE);
