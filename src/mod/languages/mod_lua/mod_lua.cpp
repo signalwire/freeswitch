@@ -141,14 +141,14 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 				switch_stream_handle_t stream = { 0 };
 				SWITCH_STANDARD_STREAM(stream);
 
-				stream.write_function(&stream, " argv = { ");
+				stream.write_function(&stream, " argv = {[0]='%s', ", input_code);
 				for (x = 0; x < argc; x++) {
 					stream.write_function(&stream, "'%s'%s", argv[x], x == argc - 1 ? "" : ", ");
 				}
 				stream.write_function(&stream, " };");
 				code = (char *) stream.data;
 			} else {
-				code = switch_mprintf("argv = {};");
+				code = switch_mprintf("argv = {[0]='%s'};", input_code);
 			}
 
 			if (code) {
@@ -158,7 +158,7 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 		} else {
 			// Force empty argv table
 			char *code = NULL;
-			code = switch_mprintf("argv = {};");
+			code = switch_mprintf("argv = {[0]='%s'};", input_code);
 			error = luaL_loadbuffer(L, code, strlen(code), "line") || docall(L, 0, 1);
 			switch_safe_free(code);
 		}
