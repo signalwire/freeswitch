@@ -34,6 +34,8 @@
 #ifndef _SANGOMABC_H
 #define _SANGOMABC_H
 
+#include "sangoma_boost_sigmod.h"
+
 #include <ctype.h>
 #include <string.h>
 #include <unistd.h>
@@ -104,6 +106,8 @@ struct sangomabc_connection {
 	unsigned int rxseq_reset;
 	sangomabc_ip_cfg_t cfg;
 	uint32_t hb_elapsed;
+	/* boost signaling mod interface pointer (if not working in TCP mode) */
+	boost_sigmod_interface_t *sigmod;
 };
 
 typedef struct sangomabc_connection sangomabc_connection_t;

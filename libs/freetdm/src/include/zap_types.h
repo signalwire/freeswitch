@@ -179,6 +179,18 @@ typedef enum {
 	ZAP_SIGTYPE_R2
 } zap_signal_type_t;
 
+/*!
+  \brief Signaling status on the channel
+ */
+typedef enum {
+	/* The channel signaling link is down (no d-chans up in the span/group, MFC-R2 bit pattern unidentified) */
+	ZAP_SIG_STATE_DOWN,
+	/* The channel signaling link is suspended (MFC-R2 bit pattern blocked, ss7 blocked?) */
+	ZAP_SIG_STATE_SUSPENDED,
+	/* The channel signaling link is ready and calls can be placed */
+	ZAP_SIG_STATE_UP
+} zap_channel_sig_status_t;
+
 typedef enum {
 	ZAP_SIGEVENT_START,
 	ZAP_SIGEVENT_STOP,

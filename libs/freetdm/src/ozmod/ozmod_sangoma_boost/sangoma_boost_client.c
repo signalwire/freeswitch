@@ -36,7 +36,7 @@
 #endif
 
 #include "openzap.h"
-#include <sangoma_boost_client.h>
+#include "sangoma_boost_client.h"
 
 
 #ifndef HAVE_GETHOSTBYNAME_R
