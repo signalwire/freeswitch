@@ -1158,7 +1158,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 			got_file = 1;
 		}
 
-		if (limit && (*message_len = fh.samples_out / fh.samplerate ? fh.samplerate : 8000) < profile->min_record_len) {
+		if (limit && (*message_len = fh.samples_out / (fh.samplerate ? fh.samplerate : 8000)) < profile->min_record_len) {
 			if (unlink(file_path) != 0) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 			}
