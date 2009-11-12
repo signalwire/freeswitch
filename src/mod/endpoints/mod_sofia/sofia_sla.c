@@ -154,6 +154,8 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 	char *sla_contact = NULL;
 	char network_ip[80];
 	int network_port = 0;
+	char port_str[25] = "";
+
 	sofia_transport_t transport = sofia_glue_url2transport(sip->sip_contact->m_url);
 
 	sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
@@ -217,10 +219,15 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 			*p++ = '\0';
 		}
 	}
+
+	switch_snprintf(port_str, sizeof(port_str), ":%ld", sofia_glue_transport_has_tls(transport) ? profile->tls_sip_port : profile->sip_port);
+
 	if (sofia_glue_check_nat(profile, network_ip)) { 
-		sla_contact = switch_mprintf("<sip:%s@%s;transport=%s>", profile->sla_contact, profile->extsipip, sofia_glue_transport2str(transport));
+		sla_contact = switch_mprintf("<sip:%s@%s%s;transport=%s>", profile->sla_contact, profile->extsipip,
+									 port_str, sofia_glue_transport2str(transport));
 	} else {
-		sla_contact = switch_mprintf("<sip:%s@%s;transport=%s>", profile->sla_contact, profile->sipip, sofia_glue_transport2str(transport));
+		sla_contact = switch_mprintf("<sip:%s@%s%s;transport=%s>", profile->sla_contact, profile->sipip,
+									 port_str, sofia_glue_transport2str(transport));
 	}
 
 	nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_CONTACT_STR(sla_contact), NUTAG_WITH_THIS(nua),
