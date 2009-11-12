@@ -49,6 +49,25 @@ static int get_call_id_callback(void *pArg, int argc, char **argv, char **column
 	return 0;
 }
 
+int sofia_sla_supported(sip_t const *sip)
+{
+	if (sip && sip->sip_user_agent && sip->sip_user_agent->g_string) {
+		const char *ua = sip->sip_user_agent->g_string;
+
+		if (switch_stristr("polycom", ua)) {
+			return 1;
+		}
+
+		if (switch_stristr("snom", ua)) {
+			return 1;
+		}
+
+	}
+
+	return 0;
+}
+
+
 void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const *sip, long exptime, const char *full_contact)
 {
 	nua_handle_t *nh = NULL;
@@ -60,12 +79,15 @@ void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const
 	sofia_transport_t transport = sofia_glue_url2transport(sip->sip_contact->m_url);
 	char network_ip[80];
 	int network_port = 0;
+	sofia_destination_t *dst;
+	char *route_uri = NULL;
+	char port_str[25] = "";
 
 	sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
 
 	sql = switch_mprintf("select call_id from sip_shared_appearance_dialogs where hostname='%q' and profile_name='%q' and contact_str='%q'", 
 						 mod_sofia_globals.hostname, profile->name, contact_str);
-	sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, get_call_id_callback, &sh);
+	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, get_call_id_callback, &sh);
 
 	free(sql);
 	
@@ -85,20 +107,34 @@ void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const
 	nua_handle_bind(nh, &mod_sofia_globals.keep_private);
 
 	switch_snprintf(exp_str, sizeof(exp_str), "%ld", exptime + 30);
+
+	switch_snprintf(port_str, sizeof(port_str), ":%ld", sofia_glue_transport_has_tls(transport) ? profile->tls_sip_port : profile->sip_port);
+
 	if (sofia_glue_check_nat(profile, network_ip)) { 
-		switch_snprintf(my_contact, sizeof(my_contact), "<sip:%s@%s;transport=%s>;expires=%s", profile->sla_contact, 
-						profile->extsipip, sofia_glue_transport2str(transport), exp_str);
+		switch_snprintf(my_contact, sizeof(my_contact), "<sip:%s@%s%s;transport=%s>;expires=%s", profile->sla_contact, 
+						profile->extsipip, port_str, sofia_glue_transport2str(transport), exp_str);
 	} else {
-		switch_snprintf(my_contact, sizeof(my_contact), "<sip:%s@%s;transport=%s>;expires=%s", profile->sla_contact, 
-						profile->sipip, sofia_glue_transport2str(transport), exp_str);
+		switch_snprintf(my_contact, sizeof(my_contact), "<sip:%s@%s%s;transport=%s>;expires=%s", profile->sla_contact, 
+						profile->sipip, port_str, sofia_glue_transport2str(transport), exp_str);
 	}
+
+	dst = sofia_glue_get_destination((char*) full_contact);
+
+	if(dst->route_uri) {
+		route_uri = sofia_glue_strip_uri(dst->route_uri);
+	}
+
 	nua_subscribe(nh,
+				  TAG_IF(dst->route_uri, NUTAG_PROXY(route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
 				  SIPTAG_TO(sip->sip_to),
 				  SIPTAG_FROM(sip->sip_to),
 				  SIPTAG_CONTACT_STR(my_contact),
 				  SIPTAG_EXPIRES_STR(exp_str),
-				  SIPTAG_EVENT_STR("dialog;sla"),	/* some phones want ;include-session-description too? */
+				  SIPTAG_EVENT_STR("dialog;sla;include-session-description"),
+				  SIPTAG_ACCEPT_STR("application/dialog-info+xml"),
 				  TAG_NULL());
+
+	sofia_glue_free_destination(dst);
 
 	free(contact_str);
 }
@@ -119,6 +155,7 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 	char network_ip[80];
 	int network_port = 0;
 	sofia_transport_t transport = sofia_glue_url2transport(sip->sip_contact->m_url);
+	char *pl;
 
 	sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
 	/*
@@ -193,6 +230,21 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 				SIPTAG_EXPIRES_STR("300"), /* likewise, totally fake - FIXME XXX MTK */
 				/*  sofia_presence says something about needing TAG_IF(sticky, NUTAG_PROXY(sticky)) for NAT stuff? */
 				TAG_END());
+
+
+	
+	pl = switch_mprintf("<?xml version=\"1.0\"?>\n"
+						"<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
+						"version=\"0\" state=\"full\" entity=\"%s\"></dialog-info>\n", aor);
+	
+	nua_notify(nh,
+			   SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=300"), /* XXX MTK FIXME - this is totally fake calculation */
+			   TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
+			   SIPTAG_CONTENT_TYPE_STR("application/dialog-info+xml"),	/* could've just kept the type from the payload */
+			   SIPTAG_PAYLOAD_STR(pl),
+			   TAG_END());
+	
+	
 
 	switch_safe_free(aor);
 	switch_safe_free(subscriber);
@@ -295,7 +347,7 @@ void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_han
 		helper.payload = sip->sip_payload->pl_data; 	/* could just send the WHOLE payload. you'd get the type that way. */
 
 		/* which mutex if any is correct to hold in this callback? XXX MTK FIXME */
-		sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_sla_sub_callback, &helper);
+		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_sla_sub_callback, &helper);
 
 		switch_safe_free(sql);
 		switch_safe_free(aor);

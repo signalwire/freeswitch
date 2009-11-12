@@ -521,7 +521,7 @@ void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int
 	switch_safe_free(sqlextra);
 	
 	switch_mutex_lock(profile->ireg_mutex);
-	sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, sofia_reg_del_callback, profile);
+	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_del_callback, profile);
 	switch_mutex_unlock(profile->ireg_mutex);
 	switch_safe_free(sql);
 	
@@ -543,11 +543,6 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
 			return;
 		}
-	} else {
-		if (!profile->master_db) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-			return;
-		}
 	}
 
 	switch_mutex_lock(profile->ireg_mutex);
@@ -562,7 +557,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 						",%d from sip_registrations where expires > 0", reboot);
 	}
 
-	sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, sofia_reg_del_callback, profile);
+	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_del_callback, profile);
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires <= %ld and hostname='%s'", 
 						(long) now, mod_sofia_globals.hostname);
@@ -570,7 +565,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 		switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
 	}
 
-	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+	sofia_glue_actually_execute_sql(profile, sql, NULL);
 
 
 
@@ -579,12 +574,12 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 						"and profile_name='%s' and expires <= %ld", 
 						mod_sofia_globals.hostname, profile->name, (long) now);
 	
-		sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, sofia_sla_dialog_del_callback, profile);
+		sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_sla_dialog_del_callback, profile);
 		switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and hostname='%s' and expires <= %ld", 
 						mod_sofia_globals.hostname, (long) now);
 
 
-		sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+		sofia_glue_actually_execute_sql(profile, sql, NULL);
 	}
 
 
@@ -595,7 +590,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 		switch_snprintf(sql, sizeof(sql), "delete from sip_presence where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
 	}
 
-	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+	sofia_glue_actually_execute_sql(profile, sql, NULL);
 
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires <= %ld and hostname='%s'", 
@@ -604,7 +599,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 		switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
 	}
 
-	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+	sofia_glue_actually_execute_sql(profile, sql, NULL);
 
 
 
@@ -615,7 +610,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 		switch_snprintf(sql, sizeof(sql), "select call_id from sip_subscriptions where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
 	}
 
-	sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, sofia_sub_del_callback, profile);
+	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_sub_del_callback, profile);
 
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and expires <= %ld and hostname='%s'", 
@@ -624,7 +619,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
 	}
 
-	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+	sofia_glue_actually_execute_sql(profile, sql, NULL);
 
 
 	if (now && sofia_test_pflag(profile, PFLAG_NAT_OPTIONS_PING)) {
@@ -633,7 +628,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 						" from sip_registrations where (status like '%%AUTO-NAT%%' "
 						"or status like '%%UDP-NAT%%') and hostname='%s'", mod_sofia_globals.hostname);
 
-		sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, sofia_reg_nat_callback, profile);
+		sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_nat_callback, profile);
 	}
 
 	switch_mutex_unlock(profile->ireg_mutex);
@@ -661,7 +656,7 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 	}
 
 
-	sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_reg_find_callback, &cbt);
+	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_find_callback, &cbt);
 
 
 	if (cbt.matches) {
@@ -686,9 +681,10 @@ void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						 switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL), 
 						 profile->name, mod_sofia_globals.hostname);
 	switch_assert(sql != NULL);
-	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
+	sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
 	switch_safe_free(sql);
 
+	//auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "");
 	auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=\"true\"," : "");
 
 	if (regtype == REG_REGISTER) {
@@ -741,6 +737,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	char *path_val = NULL;
 	switch_event_t *auth_params = NULL;
 	int r = 0;
+	long reg_count = 0;
 
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	switch_assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
@@ -896,7 +893,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	if (authorization) {
 		char *v_contact_str;
 		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip, sip->sip_request->rq_method_name,
-											 key, keylen, network_ip, v_event, exptime, regtype, to_user, &auth_params)) == AUTH_STALE) {
+											 key, keylen, network_ip, v_event, exptime, regtype, to_user, &auth_params, &reg_count)) == AUTH_STALE) {
 			stale = 1;
 		}
 
@@ -1131,16 +1128,21 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_fire(&event);
 		}
 #else
-		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "sip");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, reg_host);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, reg_host);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "Registered");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_subtype", "probe");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_fire(&event);
+
+		if (sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER) || 
+			(reg_count == 1 && sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER))) {
+
+			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "sip");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, reg_host);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, reg_host);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "Registered");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_subtype", "probe");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+				switch_event_fire(&event);
+			}
 		}
 #endif
 
@@ -1213,28 +1215,15 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	if (regtype == REG_REGISTER) {
 		char exp_param[128] = "";
 		char date[80] = "";
-		long nc_long = 0;		
-		
+
 		s_event = NULL;
 
 		if (exptime) {
 			switch_snprintf(exp_param, sizeof(exp_param), "expires=%ld", exptime);
 			sip_contact_add_param(nua_handle_home(nh), sip->sip_contact, exp_param);
 			
-			if (auth_params && sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER)) {
-				const char *nc = NULL;
-
-				if ((nc = switch_event_get_header(auth_params, "sip_auth_nc"))) {
-					nc_long = strtoul(nc, 0, 16);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-									  "No nonce count, cannot determine if this was the first register, sending notify implicitly.\n");
-					nc_long = 1;
-				}
-			}
-			
 			if (sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER) || 
-				(nc_long == 1 && sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER))) {
+				(reg_count == 1 && sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER))) {
 				if (switch_event_create(&s_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", mwi_user, mwi_host);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);
@@ -1263,13 +1252,9 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		if (s_event) {
 			switch_event_fire(&s_event);
 		}
-
-		if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
-			char *full_contact = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_contact);
-			if (full_contact && switch_stristr("SUBSCRIBE", full_contact)) {
-				sofia_sla_handle_register(nua, profile, sip, exptime, full_contact);
-				su_free(nua_handle_home(nh), full_contact);
-			}
+		
+		if (contact_str && sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE) && sofia_sla_supported(sip)) {
+			sofia_sla_handle_register(nua, profile, sip, exptime, contact_str);
 		}
 
 		switch_goto_int(r, 1, end);
@@ -1594,6 +1579,20 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 }
 
+typedef struct {
+	char *nonce;
+	switch_size_t nplen;
+	int last_nc;
+} nonce_cb_t;
+
+static int sofia_reg_nonce_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	nonce_cb_t *cb = (nonce_cb_t *) pArg;
+	switch_copy_string(cb->nonce, argv[0], cb->nplen);
+	cb->last_nc = zstr(argv[1]) ? 0 : atoi(argv[1]);
+	return 0;
+}
+
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, 
 								sip_authorization_t const *authorization, 
 								sip_t const *sip, 
@@ -1606,7 +1605,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 								sofia_regtype_t 
 								regtype, 
 								const char *to_user,
-								switch_event_t **auth_params)
+								switch_event_t **auth_params,
+								long *reg_count)
 {
 	int indexnum;
 	const char *cur;
@@ -1626,6 +1626,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	char *domain_name = NULL;
 	switch_event_t *params = NULL;
 	const char *auth_acl = NULL;
+	long ncl = 0;
 
 	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
 
@@ -1684,20 +1685,35 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	}
 
 	if (zstr(np)) {
+		nonce_cb_t cb = { 0 };
+		long nc_long = 0;
 		first = 1;
+		
 		if (nc) {
-			sql = switch_mprintf("select nonce from sip_authentication where nonce='%q' and last_nc < %lu", nonce, strtoul(nc, 0, 16));
+			nc_long = strtoul(nc, 0, 16);
+			sql = switch_mprintf("select nonce,last_nc from sip_authentication where nonce='%q' and last_nc < %lu", nonce, nc_long);
 		} else {
 			sql = switch_mprintf("select nonce from sip_authentication where nonce='%q'", nonce);
 		}
 
+		cb.nonce = np;
+		cb.nplen = nplen;
+		
 		switch_assert(sql != NULL);
-		if (!sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, np, nplen)) {
-			free(sql);
+		sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_nonce_callback, &cb);
+		free(sql);
+
+		//if (!sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, np, nplen)) {
+		if (zstr(np)) {
+			sql = switch_mprintf("delete from sip_authentication where nonce='%q'", nonce);
+			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			ret = AUTH_STALE;
 			goto end;
 		}
-		free(sql);
+
+		if (reg_count) {
+			*reg_count = cb.last_nc + 1;
+		}
 	}
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
@@ -2082,6 +2098,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 
 	if (nc && cnonce && qop) {
+		ncl = strtoul(nc, 0, 16);
 
 #if defined(_WIN32) && !defined(_WIN64)
 #define	LL_FMT "ll"
@@ -2089,10 +2106,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 #define	LL_FMT "l"
 #endif
 		sql = switch_mprintf("update sip_authentication set expires='%"LL_FMT"u',last_nc=%lu where nonce='%s'", 
-							 switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : exptime + 10), strtoul(nc, 0, 16), nonce);
+							 switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : exptime + 10), ncl, nonce);
 
 		switch_assert(sql != NULL);
-		sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
+		sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
 		switch_safe_free(sql);
 	}
 
@@ -2111,6 +2128,18 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	switch_safe_free(cnonce);
 	switch_safe_free(nc);
 	switch_safe_free(response);
+
+	if (reg_count && !*reg_count) {
+		if (ret == AUTH_OK) {
+			if (ncl) {
+				*reg_count = ncl;
+			} else {
+				*reg_count = 1;
+			}
+		} else {
+			*reg_count = 0;
+		}
+	}
 
 	return ret;
 

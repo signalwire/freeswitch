@@ -2042,7 +2042,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 										 profile->name);
 				}
 
-				sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, show_reg_callback, &cb);
+				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, show_reg_callback, &cb);
 				switch_safe_free(sql);
 
 				stream->write_function(stream, "%s\n", line);
@@ -2263,7 +2263,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 										 profile->name);
 				}
 
-				sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, show_reg_callback_xml, &cb);
+				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, show_reg_callback_xml, &cb);
 				switch_safe_free(sql);
 
 				stream->write_function(stream, "  </registrations>\n");
@@ -2653,7 +2653,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			}
 
 			switch_assert(sql);
-			sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, contact_callback, &cb);
+			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, contact_callback, &cb);
 			switch_safe_free(sql);
 			reply = (char *) mystream.data;
 			if (!zstr(reply) && end_of(reply) == ',') {
@@ -3365,7 +3365,7 @@ static void general_event_handler(switch_event_t *event)
 				
 
 				switch_mutex_lock(profile->ireg_mutex);
-				sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, notify_callback, profile);
+				sofia_glue_execute_sql_callback(profile, NULL, sql, notify_callback, profile);
 				switch_mutex_unlock(profile->ireg_mutex);
 				sofia_glue_release_profile(profile);
 

@@ -475,7 +475,8 @@ struct sofia_profile {
 	sofia_gateway_t *gateways;
 	su_home_t *home;
 	switch_hash_t *chat_hash;
-	switch_core_db_t *master_db;
+	switch_hash_t *db_hash;
+	//switch_core_db_t *master_db;
 	switch_thread_rwlock_t *rwlock;
 	switch_mutex_t *flag_mutex;
 	uint32_t inuse;
@@ -670,6 +671,11 @@ typedef struct {
         char *route_uri;
 } sofia_destination_t;
 
+typedef struct {
+	switch_core_db_t *db;
+	time_t last_used;
+} sofia_cache_db_handle_t;
+
 #define sofia_test_pflag(obj, flag) ((obj)->pflags[flag] ? 1 : 0)
 #define sofia_set_pflag(obj, flag) (obj)->pflags[flag] = 1
 #define sofia_set_pflag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
@@ -747,7 +753,7 @@ switch_status_t config_sofia(int reload, char *profile_name);
 void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_regtype_t regtype, const char *realm, int stale);
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, 
 								sip_t const *sip, const char *regstr, char *np, size_t nplen, char *ip, switch_event_t **v_event, 
-								long exptime, sofia_regtype_t regtype, const char *to_user, switch_event_t **auth_params);
+								long exptime, sofia_regtype_t regtype, const char *to_user, switch_event_t **auth_params, long *reg_count);
 								
 
 void sofia_reg_handle_sip_r_challenge(int status,
@@ -773,7 +779,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 					 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
 void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic);
-void sofia_glue_actually_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex);
+void sofia_glue_actually_execute_sql(sofia_profile_t *profile, char *sql, switch_mutex_t *mutex);
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot);
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now);
@@ -795,7 +801,6 @@ void sofia_glue_sql_close(sofia_profile_t *profile);
 int sofia_glue_init_sql(sofia_profile_t *profile);
 char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const sofia_transport_t transport, switch_bool_t uri_only, const char *params);
 switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
-											  switch_bool_t master,
 											  switch_mutex_t *mutex,
 											  char *sql,
 											  switch_core_db_callback_func_t callback,
@@ -925,3 +930,4 @@ void sofia_glue_set_extra_headers(switch_channel_t *channel, sip_t const *sip, c
 void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t *bleg);
 void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *profile, sip_t const *sip, switch_bool_t send);
 void sofia_send_callee_id(switch_core_session_t *session, const char *name, const char *number);
+int sofia_sla_supported(sip_t const *sip);

@@ -591,7 +591,7 @@ void sofia_event_callback(nua_event_t event,
 			sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), NULL);
 			auth_res = sofia_reg_parse_auth(profile, authorization, sip,
 											(char *) sip->sip_request->rq_method_name, tech_pvt->key, strlen(tech_pvt->key), network_ip, NULL, 0,
-											REG_INVITE, NULL, NULL);
+											REG_INVITE, NULL, NULL, NULL);
 		}
 		
 		if (auth_res != AUTH_OK) {
@@ -943,7 +943,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 				sprintf(sqlbuf + len, "commit;\n");
 
 				//printf("TRANS:\n%s\n", sqlbuf);
-				sofia_glue_actually_execute_sql(profile, SWITCH_TRUE, sqlbuf, NULL);
+				sofia_glue_actually_execute_sql(profile, sqlbuf, NULL);
 				switch_mutex_unlock(profile->ireg_mutex);
 				loop_count = 0;
 			}
@@ -951,7 +951,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 			if (qsize) {
 				switch_mutex_lock(profile->ireg_mutex);
 				while (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-					sofia_glue_actually_execute_sql(profile, SWITCH_TRUE, (char *) pop, NULL);
+					sofia_glue_actually_execute_sql(profile, (char *) pop, NULL);
 					free(pop);
 				}
 				switch_mutex_unlock(profile->ireg_mutex);
@@ -978,7 +978,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 	switch_mutex_lock(profile->ireg_mutex);
 	while (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-		sofia_glue_actually_execute_sql(profile, SWITCH_TRUE, (char *) pop, NULL);
+		sofia_glue_actually_execute_sql(profile, (char *) pop, NULL);
 		free(pop);
 	}
 	switch_mutex_unlock(profile->ireg_mutex);
@@ -1098,6 +1098,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_APPL_METHOD("NOTIFY"),
 				   NUTAG_APPL_METHOD("INFO"),
 				   NUTAG_APPL_METHOD("ACK"),
+				   NUTAG_APPL_METHOD("SUBSCRIBE"),
 #ifdef MANUAL_BYE
 				   NUTAG_APPL_METHOD("BYE"),
 #endif
@@ -1267,6 +1268,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	sofia_glue_del_profile(profile);
 	switch_core_hash_destroy(&profile->chat_hash);
+	switch_core_hash_destroy(&profile->db_hash);
 
 	switch_thread_rwlock_unlock(profile->rwlock);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write unlock %s\n", profile->name);
@@ -1864,6 +1866,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 						} else if (!strcasecmp(val, "first-only")) {
+							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
@@ -2387,6 +2390,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 				profile->dbname = switch_core_strdup(profile->pool, url);
 				switch_core_hash_init(&profile->chat_hash, profile->pool);
+				switch_core_hash_init(&profile->db_hash, profile->pool);
 				switch_thread_rwlock_create(&profile->rwlock, profile->pool);
 				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				profile->dtmf_duration = 100;
@@ -2397,10 +2401,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
 				profile->auto_restart = 1;
 				sofia_set_pflag(profile, PFLAG_AUTOFIX_TIMING);
-				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 				sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 				profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
 				sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
+				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
+				sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2479,6 +2484,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 						} else if (!strcasecmp(val, "first-only")) {
+							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
@@ -2653,6 +2659,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "manage-shared-appearance")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE);
+							profile->pres_type = PRES_TYPE_FULL;
 							profile->sla_contact = switch_core_sprintf(profile->pool, "sla-agent");
 						}
 					} else if (!strcasecmp(var, "disable-srv")) {

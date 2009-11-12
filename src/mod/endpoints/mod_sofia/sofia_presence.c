@@ -190,7 +190,7 @@ void sofia_presence_cancel(void)
 			}
 			helper.profile = profile;
 			helper.event = NULL;
-			if (sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_sub_callback, &helper) != SWITCH_TRUE) {
+			if (sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_callback, &helper) != SWITCH_TRUE) {
 				continue;
 			}
 		}
@@ -202,13 +202,13 @@ void sofia_presence_cancel(void)
 void sofia_presence_establish_presence(sofia_profile_t *profile)
 {
 
-	if (sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex,
+	if (sofia_glue_execute_sql_callback(profile, profile->ireg_mutex,
 										"select sip_user,sip_host,'Registered','unknown','' from sip_registrations",
 										sofia_presence_resub_callback, profile) != SWITCH_TRUE) {
 		return;
 	}
 
-	if (sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex,
+	if (sofia_glue_execute_sql_callback(profile, profile->ireg_mutex,
 										"select sub_to_user,sub_to_host,'Online','unknown',proto from sip_subscriptions "
 										"where proto='ext' or proto='user' or proto='conf'", sofia_presence_resub_callback, profile) != SWITCH_TRUE) {
 		return;
@@ -337,7 +337,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 
 	if (sql) {
-		sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_mwi_callback, &h);
+		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_mwi_callback, &h);
 		free(sql);
 		sql = NULL;
 		
@@ -355,7 +355,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	if (sql) {
 		switch_assert(sql != NULL);
-		sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_mwi_callback2, &h);
+		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_mwi_callback2, &h);
 		free(sql);
 		sql = NULL;
 	}
@@ -456,7 +456,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			}
 			helper.profile = profile;
 			helper.event = NULL;
-			sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_sub_callback, &helper);
+			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_callback, &helper);
 		}
 		switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 		free(sql);
@@ -534,7 +534,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s DUMP PRESENCE_PROBE_SQL:\n%s\n", profile->name, sql);
 				}
 
-				sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_resub_callback, profile);
+				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_resub_callback, profile);
 				if (mod_sofia_globals.debug_presence > 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s END_PRESENCE_PROBE_SQL\n\n", profile->name);
 				}
@@ -573,7 +573,6 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			}
 			continue;
 		}
-		
 
 		if ((sql = switch_mprintf(
 							 
@@ -615,7 +614,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				free(buf);
 			}
 
-			sofia_glue_execute_sql_callback(profile, SWITCH_FALSE,
+			sofia_glue_execute_sql_callback(profile,
 											NULL, sql, sofia_presence_sub_callback, &helper);
 
 			if (mod_sofia_globals.debug_presence > 0) {
@@ -1764,7 +1763,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								  "full_via,expires,user_agent,accept,profile_name,network_ip"
 								  " from sip_subscriptions where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')", 
 								  to_host, to_user, to_host, to_host))) {
-			sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_sub_reg_callback, profile);
+			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_reg_callback, profile);
 			
 			switch_safe_free(sql);
 		}
