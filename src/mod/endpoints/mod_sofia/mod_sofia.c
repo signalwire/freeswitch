@@ -3539,8 +3539,6 @@ static void general_event_handler(switch_event_t *event)
 
 
 			if (cond && !strcmp(cond, "network-address-change") && mod_sofia_globals.auto_restart) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "EVENT_TRAP: IP change detected\n");
-
 				const char *old_ip4 = switch_event_get_header_nil(event, "network-address-previous-v4");
 				const char *new_ip4 = switch_event_get_header_nil(event, "network-address-change-v4");
 				const char *old_ip6 = switch_event_get_header_nil(event, "network-address-previous-v6");
@@ -3550,6 +3548,7 @@ static void general_event_handler(switch_event_t *event)
 				void *val;
 				sofia_profile_t *profile;
 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "EVENT_TRAP: IP change detected\n");
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IP change detected [%s]->[%s] [%s]->[%s]\n", old_ip4, new_ip4, old_ip6, new_ip6);
 
 				switch_mutex_lock(mod_sofia_globals.hash_mutex);
