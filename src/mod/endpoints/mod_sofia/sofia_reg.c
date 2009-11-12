@@ -538,13 +538,6 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 {
 	char sql[1024];
 
-	if (switch_odbc_available() && profile->odbc_dsn) {
-		if (!profile->master_odbc) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-			return;
-		}
-	}
-
 	switch_mutex_lock(profile->ireg_mutex);
 
 	if (now) {

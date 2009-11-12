@@ -960,7 +960,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 		
 		if (++loops >= 1000) {
 			if (++ireg_loops >= IREG_SECONDS) {
-				sofia_reg_check_expire(profile, switch_epoch_time_now(NULL), 0);
+				time_t now = switch_epoch_time_now(NULL);
+				sofia_reg_check_expire(profile, now, 0);
+				sofia_glue_sql_close(profile, now);
 				ireg_loops = 0;
 			}
 
@@ -1261,7 +1263,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		}
 	}
 
-	sofia_glue_sql_close(profile);
+	sofia_glue_sql_close(profile, 0);
 	su_home_unref(profile->home);
 	su_root_destroy(profile->s_root);
 	pool = profile->pool;

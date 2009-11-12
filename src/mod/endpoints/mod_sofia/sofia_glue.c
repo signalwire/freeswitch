@@ -3610,6 +3610,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 {
 	char *test_sql = NULL;
 	switch_core_db_t *db = NULL;
+	switch_odbc_handle_t *odbc_dbh = NULL;
 
 	char reg_sql[] =
 		"CREATE TABLE sip_registrations (\n"
@@ -3769,14 +3770,17 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			NULL	
 		};
 
-		if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
-			return 0;
-		}
-		if (switch_odbc_handle_connect(profile->master_odbc) != SWITCH_ODBC_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Connecting ODBC DSN: %s\n", profile->odbc_dsn);
+
+		if (!(odbc_dbh = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
 			return 0;
 		}
 
+		if (switch_odbc_handle_connect(odbc_dbh) != SWITCH_ODBC_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Connecting ODBC DSN: %s\n", profile->odbc_dsn);
+			switch_odbc_handle_destroy(&odbc_dbh);
+			return 0;
+		}
+		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
 		
 		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
@@ -3785,9 +3789,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 								  "like '%%' and mwi_user  like '%%' and mwi_host like '%%'", 
 								  mod_sofia_globals.hostname);
 
-		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_registrations", NULL);
-			switch_odbc_handle_exec(profile->master_odbc, reg_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_registrations", NULL);
+			switch_odbc_handle_exec(odbc_dbh, reg_sql, NULL);
 		}
 		free(test_sql);
 
@@ -3795,55 +3799,55 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' and network_ip like '%%' and network_port like '%%'", 
 								  mod_sofia_globals.hostname);
 
-		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_subscriptions", NULL);
-			switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_subscriptions", NULL);
+			switch_odbc_handle_exec(odbc_dbh, sub_sql, NULL);
 		}
 
 		free(test_sql);
 		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and contact like '%%'", mod_sofia_globals.hostname);
 
-		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_dialogs", NULL);
-			switch_odbc_handle_exec(profile->master_odbc, dialog_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_dialogs", NULL);
+			switch_odbc_handle_exec(odbc_dbh, dialog_sql, NULL);
 		}
 
 		test_sql = switch_mprintf("delete from sip_presence where hostname='%q'", mod_sofia_globals.hostname);
 
-		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_presence", NULL);
-			switch_odbc_handle_exec(profile->master_odbc, pres_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_presence", NULL);
+			switch_odbc_handle_exec(odbc_dbh, pres_sql, NULL);
 		}
 
 		free(test_sql);
 		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q' or last_nc >= 0", mod_sofia_globals.hostname);
 
-		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_authentication", NULL);
-			switch_odbc_handle_exec(profile->master_odbc, auth_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_authentication", NULL);
+			switch_odbc_handle_exec(odbc_dbh, auth_sql, NULL);
 		}
 		free(test_sql);
 
 		test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where contact_str='' or hostname='%q' and network_ip like '%%'",
 								  mod_sofia_globals.hostname);
-		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_shared_appearance_subscriptions", NULL);
-			switch_odbc_handle_exec(profile->master_odbc, shared_appearance_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_shared_appearance_subscriptions", NULL);
+			switch_odbc_handle_exec(odbc_dbh, shared_appearance_sql, NULL);
 		}
 		free(test_sql);
 
 
 		test_sql = switch_mprintf("delete from sip_shared_appearance_dialogs where contact_str='' or hostname='%q' and network_ip like '%%'",
 								  mod_sofia_globals.hostname);
-		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_shared_appearance_dialogs", NULL);
-			switch_odbc_handle_exec(profile->master_odbc, shared_appearance_dialogs_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_shared_appearance_dialogs", NULL);
+			switch_odbc_handle_exec(odbc_dbh, shared_appearance_dialogs_sql, NULL);
 		}
 		free(test_sql);
 
 
 		for (x = 0; indexes[x]; x++) {
-			switch_odbc_handle_exec(profile->master_odbc, indexes[x], NULL);
+			switch_odbc_handle_exec(odbc_dbh, indexes[x], NULL);
 		}
 
 
@@ -3952,44 +3956,73 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_exec(db, "create index if not exists sa_hostname on sip_authentication (hostname)", NULL, NULL, NULL);
 	}
 
-	if (switch_odbc_available() && profile->odbc_dsn) {
-		return profile->master_odbc ? 1 : 0;
+	if (odbc_dbh) {
+		switch_odbc_handle_destroy(&odbc_dbh);
+		return 1;
 	}
-	
+
 	if (db) {
 		switch_core_db_close(db);
 		return 1;
-	} else {
-		return 0;
 	}
+
+	return 0;	
 
 }
 
-void sofia_glue_sql_close(sofia_profile_t *profile)
+void sofia_glue_sql_close(sofia_profile_t *profile, time_t prune)
 {
-	if (switch_odbc_available() && profile->master_odbc) {
-		switch_odbc_handle_destroy(&profile->master_odbc);
-	} else {
-		switch_hash_index_t *hi;
-		const void *var;
-		void *val;
-		sofia_cache_db_handle_t *dbh = NULL;
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+	sofia_cache_db_handle_t *dbh = NULL;
+	int locked = 0;
+	char *key;
 
-		switch_mutex_lock(profile->ireg_mutex);
-	top:
-        for (hi = switch_hash_first(NULL, profile->db_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
-            if ((dbh = (sofia_cache_db_handle_t *) val)) {
-				switch_core_db_close(dbh->db);
-				dbh->db = NULL;
-				switch_core_hash_delete(profile->db_hash, (char *)var);
+	switch_mutex_lock(profile->ireg_mutex);
+ top:
+	locked = 0;
+	
+	for (hi = switch_hash_first(NULL, profile->db_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		key = (char *) var;
 
+		if ((dbh = (sofia_cache_db_handle_t *) val)) {
+			time_t diff = 0;
+
+			if (prune > 0 && prune > dbh->last_used) {
+				diff = (time_t) prune - dbh->last_used;
+			}
+			
+			if (diff < SQL_CACHE_TIMEOUT) {
+				continue;
+			}
+
+			if (switch_mutex_trylock(dbh->mutex) == SWITCH_STATUS_SUCCESS) {
+				if (dbh->db) {
+					switch_core_db_close(dbh->db);
+					dbh->db = NULL;
+				} else if (switch_odbc_available() && dbh->odbc_dbh) {
+					switch_odbc_handle_destroy(&dbh->odbc_dbh);
+				}
+
+				switch_core_hash_delete(profile->db_hash, key);
+				switch_mutex_unlock(dbh->mutex);
+				switch_core_destroy_memory_pool(&dbh->pool);
 				goto top;
+	
+			} else {
+				if (!prune) locked++;
+				continue;
 			}
 		}
-		switch_mutex_unlock(profile->ireg_mutex);
-
 	}
+
+	if (locked) {
+		goto top;
+	}
+
+	switch_mutex_unlock(profile->ireg_mutex);
 }
 
 void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic)
@@ -4026,45 +4059,85 @@ void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t
 	}
 }
 
-switch_core_db_t *sofia_glue_get_db_handle(sofia_profile_t *profile)
+
+void sofia_glue_release_db_handle(sofia_cache_db_handle_t **dbh)
+{
+	if (dbh && *dbh) {
+		switch_mutex_unlock((*dbh)->mutex);
+		*dbh = NULL;
+	}
+}
+
+sofia_cache_db_handle_t *sofia_glue_get_db_handle(sofia_profile_t *profile)
 {
 	switch_thread_id_t self = switch_thread_self();
 	char thread_str[256] = "";
-	switch_core_db_t *db = NULL;
 	sofia_cache_db_handle_t *dbh = NULL;
-
+	
 	snprintf(thread_str, sizeof(thread_str) - 1, "%lu", (unsigned long)(intptr_t)self);
 
 	switch_mutex_lock(profile->ireg_mutex);
-	if ((dbh = switch_core_hash_find(profile->db_hash, thread_str))) {
-		db = dbh->db;
-	} else {
-		dbh = switch_core_alloc(profile->pool, sizeof(*dbh));
-		dbh->db = switch_core_db_open_file(profile->dbname);
-		dbh->last_used = switch_epoch_time_now(NULL);
+	if (!(dbh = switch_core_hash_find(profile->db_hash, thread_str))) {
+		switch_memory_pool_t *pool = NULL;
+		switch_core_db_t *db = NULL;
+		switch_odbc_handle_t *odbc_dbh = NULL;
+
+		if (switch_odbc_available() && profile->odbc_dsn) {
+			if ((odbc_dbh = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
+				if (switch_odbc_handle_connect(odbc_dbh) != SWITCH_STATUS_SUCCESS) {
+					switch_odbc_handle_destroy(&odbc_dbh);
+				}
+			}
+		} else {
+			db = switch_core_db_open_file(profile->dbname);
+		}
+
+		if (!db && !odbc_dbh) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure!\n");
+			goto end;
+		}
+
+		switch_core_new_memory_pool(&pool);
+		dbh = switch_core_alloc(pool, sizeof(*dbh));
+		dbh->pool = pool;
+
+		
+		if (db) dbh->db = db; else dbh->odbc_dbh = odbc_dbh;
+		switch_mutex_init(&dbh->mutex, SWITCH_MUTEX_NESTED, dbh->pool);
+		switch_mutex_lock(dbh->mutex);
+
 		switch_core_hash_insert(profile->db_hash, thread_str, dbh);
-		db = dbh->db;
 	}
+
+ end:
+
+	if (dbh) dbh->last_used = switch_epoch_time_now(NULL);
+
 	switch_mutex_unlock(profile->ireg_mutex);
 
-	return db;
+	return dbh;
 }
 
 
 
 void sofia_glue_actually_execute_sql(sofia_profile_t *profile, char *sql, switch_mutex_t *mutex)
 {
-	switch_core_db_t *db;
+	sofia_cache_db_handle_t *dbh = NULL;
 
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (switch_odbc_available() && profile->odbc_dsn) {
+	if (!(dbh = sofia_glue_get_db_handle(profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		goto end;
+	}
+
+	if (switch_odbc_available() && dbh->odbc_dbh) {
 		switch_odbc_statement_handle_t stmt;
-		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
+		if (switch_odbc_handle_exec(dbh->odbc_dbh, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
 			char *err_str;
-			err_str = switch_odbc_handle_get_error(profile->master_odbc, stmt);
+			err_str = switch_odbc_handle_get_error(dbh->odbc_dbh, stmt);
 			if (!zstr(err_str)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, err_str);
 			}
@@ -4076,21 +4149,19 @@ void sofia_glue_actually_execute_sql(sofia_profile_t *profile, char *sql, switch
 	} else {
 		char *errmsg;
 
+        switch_core_db_exec(dbh->db, sql, NULL, NULL, &errmsg);
+
+        if (errmsg) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n%s\n", errmsg, sql);
+            switch_core_db_free(errmsg);
+        }
 		
-		if (!(db = sofia_glue_get_db_handle(profile))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-			goto end;
-		}
-
-		switch_core_db_exec(db, sql, NULL, NULL, &errmsg);
-
-		if (errmsg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n%s\n", errmsg, sql);
-			switch_core_db_free(errmsg);
-		}
 	}
 
   end:
+
+	sofia_glue_release_db_handle(&dbh);
+
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
@@ -4100,27 +4171,24 @@ switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 											  switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
 	switch_bool_t ret = SWITCH_FALSE;
-	switch_core_db_t *db;
 	char *errmsg = NULL;
-
+	sofia_cache_db_handle_t *dbh = NULL;
+	
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
+	if (!(dbh = sofia_glue_get_db_handle(profile))) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+        goto end;
+    }
 
-	if (switch_odbc_available() && profile->odbc_dsn) {
-		switch_odbc_handle_callback_exec(profile->master_odbc, sql, callback, pdata);
+	if (switch_odbc_available() && dbh->odbc_dbh) {
+		switch_odbc_handle_callback_exec(dbh->odbc_dbh, sql, callback, pdata);
 	} else if (profile->odbc_dsn) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 	} else {
-
-		if (!(db = sofia_glue_get_db_handle(profile))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-			goto end;
-		}
-
-
-		switch_core_db_exec(db, sql, callback, pdata, &errmsg);
+		switch_core_db_exec(dbh->db, sql, callback, pdata, &errmsg);
 
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
@@ -4129,46 +4197,43 @@ switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 	}
 
   end:
+
+	sofia_glue_release_db_handle(&dbh);
+
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
-	return ret;
-}
-
-static char *sofia_glue_execute_sql2str_odbc(sofia_profile_t *profile, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len)
-{
-	char *ret = NULL;
-
-	if (switch_odbc_handle_exec_string(profile->master_odbc, sql, resbuf, len) == SWITCH_ODBC_SUCCESS) {
-		ret = resbuf;
-	}
 
 	return ret;
 }
-
 
 char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len)
 {
-	switch_core_db_t *db;
 	switch_core_db_stmt_t *stmt;
 	char *ret = NULL;
 
-	if (switch_odbc_available() && profile->odbc_dsn) {
-		return sofia_glue_execute_sql2str_odbc(profile, mutex, sql, resbuf, len);
-	}
+	sofia_cache_db_handle_t *dbh = NULL;
+
+	if (!(dbh = sofia_glue_get_db_handle(profile))) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+        goto end;
+    }
 
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (!(db = switch_core_db_open_file(profile->dbname))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-		goto end;
+	if (switch_odbc_available() && dbh->odbc_dbh) {
+		if (switch_odbc_handle_exec_string(dbh->odbc_dbh, sql, resbuf, len) == SWITCH_ODBC_SUCCESS) {
+			return resbuf;
+		} else {
+			goto end;
+		}
 	}
 
-	if (switch_core_db_prepare(db, sql, -1, &stmt, 0)) {
+	if (switch_core_db_prepare(dbh->db, sql, -1, &stmt, 0)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Statement Error [%s]!\n", sql);
-		goto fail;
+		goto end;
 	} else {
 		int running = 1;
 		int colcount;
@@ -4183,7 +4248,7 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 						switch_copy_string(resbuf, (char *) txt, len);
 						ret = resbuf;
 					} else {
-						goto fail;
+						goto end;
 					}
 				}
 				break;
@@ -4198,13 +4263,13 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 		switch_core_db_finalize(stmt);
 	}
 
-  fail:
-	switch_core_db_close(db);
+ end:
 
-  end:
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
+
+	sofia_glue_release_db_handle(&dbh);
 
 	return ret;
 }

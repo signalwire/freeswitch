@@ -36,7 +36,8 @@
 
 /*Defines etc..*/
 /*************************************************************************************************************************************************************/
-#define MANUAL_BYE
+#define MANUAL_BYE 1
+#define SQL_CACHE_TIMEOUT 300
 #define DEFAULT_NONCE_TTL 60
 #define IREG_SECONDS 30
 #define GATEWAY_SECONDS 1
@@ -489,7 +490,7 @@ struct sofia_profile {
 	char *odbc_dsn;
 	char *odbc_user;
 	char *odbc_pass;
-	switch_odbc_handle_t *master_odbc;
+	//	switch_odbc_handle_t *master_odbc;
 	switch_queue_t *sql_queue;
 	char *acl[SOFIA_MAX_ACL];
 	uint32_t acl_count;
@@ -673,7 +674,10 @@ typedef struct {
 
 typedef struct {
 	switch_core_db_t *db;
+	switch_odbc_handle_t *odbc_dbh;
 	time_t last_used;
+	switch_mutex_t *mutex;
+	switch_memory_pool_t *pool;
 } sofia_cache_db_handle_t;
 
 #define sofia_test_pflag(obj, flag) ((obj)->pflags[flag] ? 1 : 0)
@@ -797,7 +801,7 @@ void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip);
 switch_status_t sofia_on_hangup(switch_core_session_t *session);
 char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup);
 void sofia_presence_set_hash_key(char *hash_key, int32_t len, sip_t const *sip);
-void sofia_glue_sql_close(sofia_profile_t *profile);
+void sofia_glue_sql_close(sofia_profile_t *profile, time_t prune);
 int sofia_glue_init_sql(sofia_profile_t *profile);
 char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const sofia_transport_t transport, switch_bool_t uri_only, const char *params);
 switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,

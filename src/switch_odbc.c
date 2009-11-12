@@ -130,6 +130,132 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_disconnect(switch_odbc_h
 #endif
 }
 
+
+#ifdef SWITCH_HAVE_ODBC
+static int db_is_up(switch_odbc_handle_t *handle)
+{
+	int ret = 0;
+	SQLHSTMT stmt = NULL;
+	SQLLEN m = 0;
+	int result;
+	switch_event_t *event;
+	switch_odbc_status_t recon = 0;
+	char *err_str = NULL;
+	SQLCHAR sql[255] = "";
+	int max_tries = 120;
+	int code = 0;
+	SQLRETURN rc;
+	SQLSMALLINT nresultcols;
+
+
+  top:
+
+	if (!handle) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No DB Handle\n");
+		goto done;
+	}
+
+	if (handle->is_firebird) {
+		strcpy((char *) sql, "select first 1 * from RDB$RELATIONS");
+	} else {
+		strcpy((char *) sql, "select 1");
+	}
+
+	if (SQLAllocHandle(SQL_HANDLE_STMT, handle->con, &stmt) != SQL_SUCCESS) {
+		code = __LINE__;
+		goto error;
+	}
+
+	if (SQLPrepare(stmt, sql, SQL_NTS) != SQL_SUCCESS) {
+		code = __LINE__;
+		goto error;
+	}
+
+	result = SQLExecute(stmt);
+
+	if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO) {
+		code = __LINE__;
+		goto error;
+	}
+	
+	SQLRowCount (stmt, &m);
+	rc = SQLNumResultCols (stmt, &nresultcols);
+	if (rc != SQL_SUCCESS){
+		code = __LINE__;
+		goto error;
+	}
+	ret = (int) nresultcols;
+	/* determine statement type */
+	if (nresultcols <= 0) {
+		/* statement is not a select statement */
+		code = __LINE__;
+		goto error;
+	}
+
+	goto done;
+
+  error:
+	err_str = switch_odbc_handle_get_error(handle, stmt);
+	recon = switch_odbc_handle_connect(handle);
+
+	max_tries--;
+
+	if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Failure-Message", "The sql server is not responding for DSN %s [%s][%d]",
+								switch_str_nil(handle->dsn), switch_str_nil(err_str), code);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The sql server is not responding for DSN %s [%s][%d]\n",
+						  switch_str_nil(handle->dsn), switch_str_nil(err_str), code);
+
+		if (recon == SWITCH_ODBC_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Additional-Info", "The connection has been re-established");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "The connection has been re-established\n");
+		} else {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Additional-Info", "The connection could not be re-established");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The connection could not be re-established\n");
+		}
+		if (!max_tries) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Additional-Info", "Giving up!");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Giving up!\n");
+		}
+
+		switch_event_fire(&event);
+	}
+
+	if (!max_tries) {
+		goto done;
+	}
+
+	switch_safe_free(err_str);
+	switch_yield(1000000);
+	goto top;
+
+  done:
+
+	switch_safe_free(err_str);
+
+	if (stmt) {
+		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	}
+
+	return ret;
+}
+#endif
+
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_statement_handle_free(switch_odbc_statement_handle_t * stmt)
+{
+	if (!stmt || ! *stmt) {
+		return SWITCH_ODBC_FAIL;
+	}
+#ifdef SWITCH_HAVE_ODBC
+	SQLFreeHandle(SQL_HANDLE_STMT, *stmt);
+	*stmt = NULL;
+	return SWITCH_ODBC_SUCCESS;
+#else
+	return SWITCH_ODBC_FAIL;
+#endif
+}
+
+
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_handle_t *handle)
 {
 #ifdef SWITCH_HAVE_ODBC
@@ -206,7 +332,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 	} else {
 		handle->is_firebird = FALSE;
 	}
-
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to [%s]\n", handle->dsn);
 	handle->state = SWITCH_ODBC_STATE_CONNECTED;
 	return SWITCH_ODBC_SUCCESS;
@@ -214,125 +340,6 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 	return SWITCH_ODBC_FAIL;
 #endif
 }
-
-#ifdef SWITCH_HAVE_ODBC
-static int db_is_up(switch_odbc_handle_t *handle)
-{
-	int ret = 0;
-	SQLHSTMT stmt = NULL;
-	SQLLEN m = 0;
-	int result;
-	switch_event_t *event;
-	switch_odbc_status_t recon = 0;
-	char *err_str = NULL;
-	SQLCHAR sql[255] = "";
-	int max_tries = 120;
-
-	SQLRETURN rc;
-	SQLSMALLINT nresultcols;
-
-  top:
-
-	if (!handle) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No DB Handle\n");
-		goto done;
-	}
-
-	if (handle->is_firebird) {
-		strcpy((char *) sql, "select first 1 * from RDB$RELATIONS");
-	} else {
-		strcpy((char *) sql, "select 1");
-	}
-
-	if (SQLAllocHandle(SQL_HANDLE_STMT, handle->con, &stmt) != SQL_SUCCESS) {
-		goto error;
-	}
-
-	if (SQLPrepare(stmt, sql, SQL_NTS) != SQL_SUCCESS) {
-		goto error;
-	}
-
-	result = SQLExecute(stmt);
-
-	if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO) {
-		goto error;
-	}
-
-	SQLRowCount (stmt, &m);
-	rc = SQLNumResultCols (stmt, &nresultcols);
-	if (rc != SQL_SUCCESS){
-		goto error;
-	}
-	ret = (int) nresultcols;
-	/* determine statement type */
-	if (nresultcols <= 0) {
-		/* statement is not a select statement */
-		goto error;
-	}
-
-	goto done;
-
-  error:
-	err_str = switch_odbc_handle_get_error(handle, stmt);
-	recon = switch_odbc_handle_connect(handle);
-
-	max_tries--;
-
-	if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Failure-Message", "The sql server is not responding for DSN %s [%s]",
-								switch_str_nil(handle->dsn), switch_str_nil(err_str));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The sql server is not responding for DSN %s [%s]\n",
-						  switch_str_nil(handle->dsn), switch_str_nil(err_str));
-
-		if (recon == SWITCH_ODBC_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Additional-Info", "The connection has been re-established");
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "The connection has been re-established\n");
-		} else {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Additional-Info", "The connection could not be re-established");
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The connection could not be re-established\n");
-		}
-		if (!max_tries) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Additional-Info", "Giving up!");
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Giving up!\n");
-		}
-
-		switch_event_fire(&event);
-	}
-
-	if (!max_tries) {
-		goto done;
-	}
-
-	switch_safe_free(err_str);
-	switch_yield(1000000);
-	goto top;
-
-  done:
-
-	switch_safe_free(err_str);
-
-	if (stmt) {
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-	}
-
-	return ret;
-}
-#endif
-
-SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_statement_handle_free(switch_odbc_statement_handle_t * stmt)
-{
-	if (!stmt || ! *stmt) {
-		return SWITCH_ODBC_FAIL;
-	}
-#ifdef SWITCH_HAVE_ODBC
-	SQLFreeHandle(SQL_HANDLE_STMT, *stmt);
-	*stmt = NULL;
-	return SWITCH_ODBC_SUCCESS;
-#else
-	return SWITCH_ODBC_FAIL;
-#endif
-}
-
 
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_handle_t *handle,
 																	char *sql,
