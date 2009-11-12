@@ -1253,7 +1253,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_fire(&s_event);
 		}
 		
-		if (contact_str && sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE) && sofia_sla_supported(sip)) {
+		if (*contact_str && sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE) && sofia_sla_supported(sip)) {
 			sofia_sla_handle_register(nua, profile, sip, exptime, contact_str);
 		}
 
