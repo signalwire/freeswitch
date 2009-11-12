@@ -4,10 +4,12 @@ arg=$1
 shift
 
 prefix=$(cat config.status | grep @prefix@ | awk -F, '{print $3}')
+if [ -z "$prefix" ] ; then
+    prefix=$(cat config.status | grep '"prefix"' | awk -F\" '{print $4}')
+fi
 
 if [ -z "$prefix" ] ; then
-	echo "Cannot determine prefix!"
-	exit 255
+    prefix="/usr/local/freeswitch"
 fi
 
 if [ "$arg" = "gcore" ] ; then
