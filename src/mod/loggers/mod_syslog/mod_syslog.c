@@ -34,7 +34,7 @@
 #include <syslog.h>
 
 #define DEFAULT_IDENT    "freeswitch"
-#define DEFAULT_FACILITY "user"
+#define DEFAULT_FACILITY LOG_USER
 #define DEFAULT_LEVEL    "warning"
 #define DEFAULT_FORMAT   "[message]"
 #define MAX_LENGTH       1024
@@ -49,12 +49,54 @@ static switch_log_level_t log_level;
 static struct {
 	char *ident;
 	char *format;
-	char *facility;
+	int   facility;
 } globals;
+
+struct _facility_table_entry {
+	char *description;
+	int  facility;
+};
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ident, globals.ident);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_format, globals.format);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_facility, globals.facility);
+
+switch_status_t set_global_facility(const char *facility)
+{
+	const struct _facility_table_entry facilities[] = {
+		{ "auth",     LOG_AUTH     },
+		{ "authpriv", LOG_AUTHPRIV },
+		{ "cron",     LOG_CRON     },
+		{ "daemon",   LOG_DAEMON   },
+		{ "ftp",      LOG_FTP      },
+		{ "kern",     LOG_KERN     },
+		{ "local0",   LOG_LOCAL0   },
+		{ "local1",   LOG_LOCAL1   },
+		{ "local2",   LOG_LOCAL2   },
+		{ "local3",   LOG_LOCAL3   },
+		{ "local4",   LOG_LOCAL4   },
+		{ "local5",   LOG_LOCAL5   },
+		{ "local6",   LOG_LOCAL6   },
+		{ "local7",   LOG_LOCAL7   },
+		{ "lpr",      LOG_LPR      },
+		{ "mail",     LOG_MAIL     },
+		{ "news",     LOG_NEWS     },
+		{ "syslog",   LOG_SYSLOG   },
+		{ "user",     LOG_USER     },
+		{ "uucp",     LOG_UUCP     },
+		{ NULL,       0            }
+	};
+	const struct _facility_table_entry *entry = facilities;
+
+	while(!zstr(entry->description)) {
+		if (!strcasecmp(entry->description, facility)) {
+			globals.facility = entry->facility;
+			return SWITCH_STATUS_SUCCESS;
+		}
+		entry++;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
 
 static switch_loadable_module_interface_t console_module_interface = {
 	/*.module_name */ modname,
@@ -116,6 +158,9 @@ static switch_status_t load_config(void)
     /* default log level */
     log_level = SWITCH_LOG_WARNING;
 
+	/* default facility */
+	globals.facility = DEFAULT_FACILITY;
+
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 	} else {
@@ -130,13 +175,12 @@ static switch_status_t load_config(void)
 					set_global_format(val);
 				} else if (!strcmp(var, "facility")) {
 					set_global_facility(val);
-                } else if (!strcasecmp(var, "loglevel") && !zstr(val)) {
-                    log_level = switch_log_str2level(val);
-                    if (log_level == SWITCH_LOG_INVALID) {
-                        log_level = SWITCH_LOG_WARNING;
-                    }
-                }
-
+				} else if (!strcasecmp(var, "loglevel") && !zstr(val)) {
+					log_level = switch_log_str2level(val);
+					if (log_level == SWITCH_LOG_INVALID) {
+						log_level = SWITCH_LOG_WARNING;
+					}
+				}
 			}
 		}
 		switch_xml_free(xml);
@@ -148,9 +192,6 @@ static switch_status_t load_config(void)
 	if (zstr(globals.format)) {
 		set_global_format(DEFAULT_FORMAT);
 	}
-    if (zstr(globals.facility)) {
-		set_global_facility(DEFAULT_FACILITY);
-    }
 	return 0;
 }
 
@@ -165,7 +206,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_syslog_load)
 		return status;
 	}
 
-	openlog(globals.ident, LOG_PID, LOG_USER);
+	openlog(globals.ident, LOG_PID, globals.facility);
 
 	setlogmask(LOG_UPTO(LOG_DEBUG));
 	switch_log_bind_logger(mod_syslog_logger, log_level, SWITCH_FALSE);
@@ -179,7 +220,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_syslog_shutdown)
 
 	switch_safe_free(globals.ident);
 	switch_safe_free(globals.format);
-	switch_safe_free(globals.facility);
 
 	switch_log_unbind_logger(mod_syslog_logger);
 
