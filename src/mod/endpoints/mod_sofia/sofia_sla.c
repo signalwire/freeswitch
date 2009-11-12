@@ -155,7 +155,6 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 	char network_ip[80];
 	int network_port = 0;
 	sofia_transport_t transport = sofia_glue_url2transport(sip->sip_contact->m_url);
-	char *pl;
 
 	sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
 	/*
@@ -230,22 +229,7 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 				SIPTAG_EXPIRES_STR("300"), /* likewise, totally fake - FIXME XXX MTK */
 				/*  sofia_presence says something about needing TAG_IF(sticky, NUTAG_PROXY(sticky)) for NAT stuff? */
 				TAG_END());
-
-
 	
-	pl = switch_mprintf("<?xml version=\"1.0\"?>\n"
-						"<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
-						"version=\"0\" state=\"full\" entity=\"%s\"></dialog-info>\n", aor);
-	
-	nua_notify(nh,
-			   SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=300"), /* XXX MTK FIXME - this is totally fake calculation */
-			   TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
-			   SIPTAG_CONTENT_TYPE_STR("application/dialog-info+xml"),	/* could've just kept the type from the payload */
-			   SIPTAG_PAYLOAD_STR(pl),
-			   TAG_END());
-	
-	
-
 	switch_safe_free(aor);
 	switch_safe_free(subscriber);
 	switch_safe_free(route_uri);

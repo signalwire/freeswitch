@@ -132,7 +132,7 @@ case "$1" in
 	log_daemon_msg "Reloading $DESC" "$NAME"
 	do_reload
 	log_end_msg $?
-	#;;
+	;;
   restart)
 	#
 	# If the "reload" option is implemented then remove the
