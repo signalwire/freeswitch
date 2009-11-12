@@ -1134,6 +1134,180 @@ static switch_status_t setup_ringback(originate_global_t *oglobals,
  
 }
 
+#define OSEP ":_:"
+#define MAX_PEERS 128
+
+typedef struct {
+	switch_core_session_t *session;
+	switch_core_session_t *bleg;
+	switch_call_cause_t cause;
+	const char *bridgeto;
+	uint32_t timelimit_sec;
+	const switch_state_handler_table_t *table;
+	const char *cid_name_override;
+	const char *cid_num_override;
+	switch_caller_profile_t *caller_profile_override; 
+	switch_event_t *ovars;
+	switch_originate_flag_t flags;
+	switch_status_t status;
+	int done;
+	switch_thread_t *thread;
+} enterprise_originate_handle_t;
+
+
+static void *SWITCH_THREAD_FUNC enterprise_originate_thread(switch_thread_t *thread, void *obj)
+{
+	enterprise_originate_handle_t *handle = (enterprise_originate_handle_t *) obj;
+	
+	handle->done = 0;
+	handle->status = switch_ivr_originate(NULL, &handle->bleg, &handle->cause, 
+										  handle->bridgeto, handle->timelimit_sec,
+										  handle->table,
+										  handle->cid_name_override,
+										  handle->cid_num_override,
+										  handle->caller_profile_override,
+										  handle->ovars,
+										  handle->flags
+										  );
+
+
+	handle->done = 1;
+	
+	return NULL;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_session_t *session,
+														   switch_core_session_t **bleg,
+														   switch_call_cause_t *cause,
+														   const char *bridgeto,
+														   uint32_t timelimit_sec,
+														   const switch_state_handler_table_t *table,
+														   const char *cid_name_override,
+														   const char *cid_num_override,
+														   switch_caller_profile_t *caller_profile_override, 
+														   switch_event_t *ovars,
+														   switch_originate_flag_t flags
+														   )
+{
+	int x_argc;
+	char *x_argv[MAX_PEERS] = { 0 };
+	enterprise_originate_handle_t *hp = NULL, handles[MAX_PEERS] = { { 0 } };
+	int i;
+	switch_caller_profile_t *cp = NULL;
+	switch_channel_t *channel = NULL;
+	char *data;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_threadattr_t *thd_attr = NULL;
+	int running = 0;
+	switch_status_t tstatus = SWITCH_STATUS_FALSE;
+	switch_memory_pool_t *pool;
+	switch_event_header_t *hi = NULL;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (zstr(bridgeto)) {
+		*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
+
+	data = switch_core_strdup(pool, bridgeto);
+
+	if (!(x_argc = switch_separate_string_string(data, OSEP, x_argv, MAX_PEERS))) {
+		*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
+
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+		cp = switch_channel_get_caller_profile(channel);
+	}
+
+	switch_threadattr_create(&thd_attr, pool);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+
+	for(i = 0; i < x_argc; i++) {
+		handles[i].session = session;
+		handles[i].bleg = NULL;
+		handles[i].cause = 0;
+		handles[i].bridgeto = x_argv[i];
+		handles[i].timelimit_sec = timelimit_sec;
+		handles[i].table = table;
+		handles[i].cid_name_override = cid_name_override;
+		handles[i].cid_num_override = cid_num_override;
+		handles[i].caller_profile_override = cp;
+
+		if (channel) {
+			switch_channel_get_variables(channel, &handles[i].ovars);
+		} else {
+			switch_event_create_plain(&handles[i].ovars, SWITCH_EVENT_CHANNEL_DATA);
+		}
+
+		if (ovars) {
+			for (hi = ovars->headers; hi; hi = hi->next) {
+				switch_event_add_header_string(handles[i].ovars, SWITCH_STACK_BOTTOM, hi->name, hi->value);
+			}
+		}
+
+		handles[i].flags = flags;
+		switch_thread_create(&handles[i].thread, thd_attr, enterprise_originate_thread, &handles[i], pool);
+	}
+
+	for(;;) {
+		running = 0;
+
+		for(i = 0; i < x_argc; i++) {
+			if (handles[i].done == 0) {
+				running++;
+			} else if (handles[i].done == 1) {
+				if (handles[i].status == SWITCH_STATUS_SUCCESS) {
+					hp = &handles[i];
+					goto done;
+				} else {
+					handles[i].done = 2;
+				}
+			}
+			switch_cond_next();
+		}
+
+		if (!running) {
+			break;
+		}
+	}
+
+ done:
+
+	for(i = 0; i < x_argc; i++) {
+		if (hp && hp == &handles[i]) {
+			continue;
+		}
+		if (handles[i].bleg) {
+			switch_channel_hangup(switch_core_session_get_channel(handles[i].bleg), SWITCH_CAUSE_LOSE_RACE);
+			switch_core_session_rwunlock(handles[i].bleg);
+		}
+
+		handles[i].cause = SWITCH_CAUSE_LOSE_RACE;
+		switch_thread_join(&tstatus, handles[i].thread);
+		switch_event_destroy(&handles[i].ovars);
+	}
+	
+
+	if (hp) {
+		*cause = hp->cause;
+		status = hp->status;
+		*bleg = hp->bleg;
+		switch_thread_join(&tstatus, hp->thread);
+		switch_event_destroy(&hp->ovars);
+	}
+
+
+
+ end:
+
+	switch_core_destroy_memory_pool(&pool);
+
+	return status;
+
+}
 
 #define peer_eligible(_peer) (_peer && !(switch_channel_test_flag(_peer, CF_TRANSFER) || \
 										 switch_channel_test_flag(_peer, CF_REDIRECT) || \
@@ -1141,7 +1315,7 @@ static switch_status_t setup_ringback(originate_global_t *oglobals,
 										 switch_channel_get_state(_peer) == CS_RESET || \
 										 !switch_channel_test_flag(_peer, CF_ORIGINATING)))
 
-#define MAX_PEERS 128
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
 													 switch_core_session_t **bleg,
 													 switch_call_cause_t *cause,
@@ -1195,6 +1369,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	const char *holding = NULL;
 	const char *export_vars = NULL;
 
+
+	if (strstr(bridgeto, OSEP)) {
+		return switch_ivr_enterprise_originate(session, bleg, cause, bridgeto, timelimit_sec, table, cid_name_override, cid_num_override,
+										  caller_profile_override, ovars, flags);
+	}
+
+
 	oglobals.ringback_ok = 1;
 
 	if (session) {
@@ -1239,8 +1420,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	
 	oglobals.idx = IDX_NADA;
 	oglobals.early_ok = 1;
-
-
 
 	*bleg = NULL;
 
@@ -2088,7 +2267,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				oglobals.ringback_ok = 0;
 			}
 			
-			while ((!caller_channel || switch_channel_ready(caller_channel) || switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) && 
+			*cause = 0;
+			while (*cause == 0 && ((!caller_channel || switch_channel_ready(caller_channel) || switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE))) && 
 				   check_channel_status(&oglobals, originate_status, and_argc)) {
 				time_t elapsed = switch_epoch_time_now(NULL) - start;
 				
@@ -2250,6 +2430,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_cond_next();
 				}
 				
+			}
+
+			if (*cause) {
+				force_reason = *cause;
 			}
 
 		  notready:

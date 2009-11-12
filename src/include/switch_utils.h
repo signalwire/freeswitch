@@ -517,6 +517,7 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in);
   \return the number of elements added to the array
 */
 SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, unsigned int arraylen);
+SWITCH_DECLARE(unsigned int) switch_separate_string_string(char *buf, char *delim, char **array, unsigned int arraylen);
 
 SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str);
 SWITCH_DECLARE(char *) switch_strip_spaces(const char *str);

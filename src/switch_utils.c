@@ -1589,6 +1589,25 @@ static char *cleanup_separated_string(char *str, char delim)
 	return start;
 }
 
+SWITCH_DECLARE(unsigned int) switch_separate_string_string(char *buf, char *delim, char **array, unsigned int arraylen)
+{
+	unsigned int count = 0;
+	char *d;
+	size_t dlen = strlen(delim);
+	
+	array[count++] = buf;
+
+	while (count < arraylen && array[count-1]) {
+		if ((d = strstr(array[count-1], delim))) {
+			*d = '\0';
+			d += dlen;
+			array[count++] = d;
+		} else break;
+	}
+
+	return count;
+}
+
 /* Separate a string using a delimiter that is not a space */
 static unsigned int separate_string_char_delim(char *buf, char delim, char **array, unsigned int arraylen)
 {
