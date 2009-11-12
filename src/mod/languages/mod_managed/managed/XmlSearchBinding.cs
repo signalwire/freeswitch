@@ -52,7 +52,7 @@ namespace FreeSWITCH {
         //                                              const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
         //                                              void *user_data);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate switch_xml switch_xml_search_function_delegate(string section, string tag_name, string key_name, string key_value, switch_event param, IntPtr user_data);
+        delegate IntPtr switch_xml_search_function_delegate(string section, string tag_name, string key_name, string key_value, IntPtr param, IntPtr user_data);
 
         readonly switch_xml_search_function_delegate del; // Prevent GC
         readonly SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml function;
@@ -69,6 +69,8 @@ namespace FreeSWITCH {
         }
         void dispose() {
             if (disposed) return;
+            // HACK: FS crashes if we unbind after shutdown is pretty complete. This is still a race condition.
+            if (freeswitch.switch_core_ready() == switch_bool_t.SWITCH_FALSE) return; 
             freeswitch.switch_xml_unbind_search_function_ptr(this.function);
             disposed = true;
         }
@@ -78,10 +80,10 @@ namespace FreeSWITCH {
 
         public static IDisposable Bind(Func<XmlBindingArgs, string> f, switch_xml_section_enum_t sections) {
             switch_xml_search_function_delegate boundFunc = (section, tag, key, keyval, param, userData) => {
-                var args = new XmlBindingArgs { Section = section, TagName = tag, KeyName = key, KeyValue = keyval, Parameters = param };
+                var args = new XmlBindingArgs { Section = section, TagName = tag, KeyName = key, KeyValue = keyval, Parameters = new switch_event(param, false) };
                 var xmlStr = f(args);
-                var fsxml = freeswitch.switch_xml_parse_str_dynamic(xmlStr, switch_bool_t.SWITCH_FALSE);
-                return fsxml;
+                var fsxml = string.IsNullOrEmpty(xmlStr) ? null : freeswitch.switch_xml_parse_str_dynamic(xmlStr, switch_bool_t.SWITCH_TRUE);
+                return switch_xml.getCPtr(fsxml).Handle;
             };
             var fp = Marshal.GetFunctionPointerForDelegate(boundFunc);
             var swigFp = new SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml(fp, false);
