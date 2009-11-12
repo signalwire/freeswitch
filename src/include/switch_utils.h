@@ -626,6 +626,8 @@ SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val);
 #endif
 #endif
 
+#define DUMP_EVENT(_e) 	{char *event_str;switch_event_serialize(_e, &event_str, SWITCH_FALSE);printf("DUMP\n%s\n", event_str);free(event_str);}
+
 #ifndef _MSC_VER
 #define switch_inet_ntop inet_ntop
 #else
