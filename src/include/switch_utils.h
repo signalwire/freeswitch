@@ -75,7 +75,7 @@ SWITCH_DECLARE(int) switch_isxdigit(int c);
   \return true value if the string is NULL or zero length
 */
 static inline int zstr(const char *s) {
-	return (!s || *(s) == '\0');
+	return !s || *s == '\0';
 }
 
 #define switch_strlen_zero(x) zstr(x)

@@ -3793,7 +3793,22 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_registrations", NULL);
 			switch_odbc_handle_exec(odbc_dbh, reg_sql, NULL);
 		}
-		free(test_sql);
+
+
+
+		if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
+			char *test2 = switch_mprintf("%s;%s", test_sql, test_sql);
+
+			if (switch_odbc_handle_exec(odbc_dbh, test2, NULL) != SWITCH_ODBC_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "GREAT SCOTT!!! Cannot execute batched statements!\n"
+								  "If you are using mysql, make sure you are using MYODBC 3.51.18 or higher and enable FLAG_MULTI_STATEMENTS\n");
+				sofia_clear_pflag(profile, PFLAG_SQL_IN_TRANS);
+				
+			}
+			free(test2);
+		}
+
+		free(test_sql);		
 
 
 		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' and network_ip like '%%' and network_port like '%%'", 
