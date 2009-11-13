@@ -62,6 +62,7 @@ libopenzap_la_SOURCES = \
 $(SRC)/hashtable.c \
 $(SRC)/hashtable_itr.c \
 $(SRC)/zap_io.c \
+$(SRC)/zap_queue.c \
 $(SRC)/zap_config.c \
 $(SRC)/zap_callerid.c \
 $(SRC)/fsk.c \

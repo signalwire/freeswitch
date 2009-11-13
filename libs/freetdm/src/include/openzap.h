@@ -612,7 +612,7 @@ OZ_DECLARE(void *) zap_queue_dequeue(zap_queue_t queue);
 OZ_DECLARE(zap_status_t) zap_queue_wait(zap_queue_t queue, int ms);
 
 /*! destroy the queue */ 
-OZ_DECLARE(void) zap_queue_destroy(zap_queue_t *queue);
+OZ_DECLARE(void) zap_queue_destroy(zap_queue_t queue);
 
 OZ_DECLARE(zap_size_t) zap_fsk_modulator_generate_bit(zap_fsk_modulator_t *fsk_trans, int8_t bit, int16_t *buf, zap_size_t buflen);
 OZ_DECLARE(int32_t) zap_fsk_modulator_generate_carrier_bits(zap_fsk_modulator_t *fsk_trans, uint32_t bits);
