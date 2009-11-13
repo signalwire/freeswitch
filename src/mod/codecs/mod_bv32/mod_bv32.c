@@ -120,8 +120,12 @@ static switch_status_t switch_bv32_decode(switch_codec_t *codec,
 
 	*decoded_data_len = 0;
 	for (i = 0; i < frames; i++) {
-		BV32_BitUnPack(cur_frame, &context->dbs);
-		BV32_Decode(&context->dbs, &context->ds, target);
+		if ((*flag & SFF_PLC)) {
+			BV32_PLC(&context->ds, target);
+		} else {
+			BV32_BitUnPack(cur_frame, &context->dbs);
+			BV32_Decode(&context->dbs, &context->ds, target);
+		}
 		cur_frame += CODE_SIZE;
 		target += FRAME_SIZE;
 		*decoded_data_len += FRAME_SIZE * 2;

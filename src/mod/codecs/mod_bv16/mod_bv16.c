@@ -120,8 +120,12 @@ static switch_status_t switch_bv16_decode(switch_codec_t *codec,
 
 	*decoded_data_len = 0;
 	for (i = 0; i < frames; i++) {
-		BV16_BitUnPack(cur_frame, &context->dbs);
-		BV16_Decode(&context->dbs, &context->ds, target);
+		if ((*flag & SFF_PLC)) {
+			BV16_PLC(&context->ds, target);
+		} else {
+			BV16_BitUnPack(cur_frame, &context->dbs);
+			BV16_Decode(&context->dbs, &context->ds, target);
+		}
 		cur_frame += CODE_SIZE;
 		target += FRAME_SIZE;
 		*decoded_data_len += FRAME_SIZE * 2;
