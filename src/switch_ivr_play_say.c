@@ -745,7 +745,7 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 	return 0;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *session, char *script, int32_t loops, switch_input_args_t *args)
+SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *session, const char *script, int32_t loops, switch_input_args_t *args)
 {
 	teletone_generation_session_t ts;
 	switch_dtmf_t dtmf = { 0 };

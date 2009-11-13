@@ -320,7 +320,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_t *session, uint32_t thresh, uint32_t silence_hits, 
 															uint32_t listen_hits, uint32_t timeout_ms, const char *file);
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *session, char *script, int32_t loops, switch_input_args_t *args);
+SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *session, const char *script, int32_t loops, switch_input_args_t *args);
 
 /*!
   \brief record a file from the session to a file
