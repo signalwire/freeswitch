@@ -48,6 +48,7 @@ typedef void (*boost_sig_status_cb_func_t) BOOST_SIG_STATUS_CB_ARGS;
 
 /*! 
   \brief Write a boost msg to a boost endpoint 
+  \param span The openzap span where this msg was generated
   \param msg The generic message pointer, owned by the caller
   \param msglen The length of the provided structure pointed by msg
   \return ZAP_SUCCESS or ZAP_FAIL
@@ -57,7 +58,7 @@ typedef void (*boost_sig_status_cb_func_t) BOOST_SIG_STATUS_CB_ARGS;
    the endpoint receiving the msg will first cast to
    t_sigboost_short, check the event type, and if needed.
  */
-#define BOOST_WRITE_MSG_ARGS (void *msg, zap_size_t msglen)
+#define BOOST_WRITE_MSG_ARGS (zap_span_t *span, void *msg, zap_size_t msglen)
 typedef zap_status_t (*boost_write_msg_func_t) BOOST_WRITE_MSG_ARGS;
 #define BOOST_WRITE_MSG_FUNCTION(name) zap_status_t name BOOST_WRITE_MSG_ARGS
 

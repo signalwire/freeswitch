@@ -577,7 +577,6 @@ struct zap_span {
 	struct zap_span *next;
 };
 
-
 OZ_DECLARE_DATA extern zap_logger_t zap_log;
 
 struct zap_io_interface {
@@ -598,6 +597,22 @@ struct zap_io_interface {
 	zio_api_t api;
 };
 
+typedef void* zap_queue_t;
+
+/*! brief create a new queue */
+OZ_DECLARE(zap_queue_t) zap_queue_create(void);
+
+/*! Enqueue an object */
+OZ_DECLARE(zap_status_t) zap_queue_enqueue(zap_queue_t queue, void *obj);
+
+/*! dequeue an object from the queue */
+OZ_DECLARE(void *) zap_queue_dequeue(zap_queue_t queue);
+
+/*! wait ms milliseconds for a queue to have available objects, -1 to wait forever */
+OZ_DECLARE(zap_status_t) zap_queue_wait(zap_queue_t queue, int ms);
+
+/*! destroy the queue */ 
+OZ_DECLARE(void) zap_queue_destroy(zap_queue_t *queue);
 
 OZ_DECLARE(zap_size_t) zap_fsk_modulator_generate_bit(zap_fsk_modulator_t *fsk_trans, int8_t bit, int16_t *buf, zap_size_t buflen);
 OZ_DECLARE(int32_t) zap_fsk_modulator_generate_carrier_bits(zap_fsk_modulator_t *fsk_trans, uint32_t bits);

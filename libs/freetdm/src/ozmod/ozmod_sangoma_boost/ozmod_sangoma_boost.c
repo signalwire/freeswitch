@@ -1122,11 +1122,11 @@ static void *zap_sangoma_events_run(zap_thread_t *me, void *obj)
 	return NULL;
 }
 
-static int zap_boost_connection_open(zap_span_t *span)
+static zap_status_t zap_boost_connection_open(zap_span_t *span)
 {
 	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	if (sangoma_boost_data->sigmod) {
-		return 0;
+		return sangoma_boost_data->sigmod->start_span(span);
 	} 
 
 	sangoma_boost_data->pcon = sangoma_boost_data->mcon;
@@ -1136,8 +1136,8 @@ static int zap_boost_connection_open(zap_span_t *span)
 								  sangoma_boost_data->mcon.cfg.local_port,
 								  sangoma_boost_data->mcon.cfg.remote_ip,
 								  sangoma_boost_data->mcon.cfg.remote_port) < 0) {
-		zap_log(ZAP_LOG_DEBUG, "Error: Opening MCON Socket [%d] %s\n", sangoma_boost_data->mcon.socket, strerror(errno));
-		return -1;
+		zap_log(ZAP_LOG_ERROR, "Error: Opening MCON Socket [%d] %s\n", sangoma_boost_data->mcon.socket, strerror(errno));
+		return ZAP_FAIL;
 	}
 
 	if (sangomabc_connection_open(&sangoma_boost_data->pcon,
@@ -1145,10 +1145,10 @@ static int zap_boost_connection_open(zap_span_t *span)
 							  ++sangoma_boost_data->pcon.cfg.local_port,
 							  sangoma_boost_data->pcon.cfg.remote_ip,
 							  ++sangoma_boost_data->pcon.cfg.remote_port) < 0) {
-		zap_log(ZAP_LOG_DEBUG, "Error: Opening PCON Socket [%d] %s\n", sangoma_boost_data->pcon.socket, strerror(errno));
-		return -1;
+		zap_log(ZAP_LOG_ERROR, "Error: Opening PCON Socket [%d] %s\n", sangoma_boost_data->pcon.socket, strerror(errno));
+		return ZAP_FAIL;
     }
-	return 0;	
+	return ZAP_SUCCESS;
 }
 
 /*! 
@@ -1218,16 +1218,20 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 	uint32_t ms = 10;
     zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 
-	if (zap_boost_connection_open(span) < 0) {
-		goto end;
-	}
-
 	mcon = &sangoma_boost_data->mcon;
 	pcon = &sangoma_boost_data->pcon;	
 
-	/* sigmod overrides socket functionality if not null */
-	mcon->sigmod = sangoma_boost_data->sigmod;
-	pcon->sigmod = sangoma_boost_data->sigmod;
+	if (sangoma_boost_data->sigmod) {
+		/* sigmod overrides socket functionality if not null */
+		mcon->sigmod = sangoma_boost_data->sigmod;
+		pcon->sigmod = sangoma_boost_data->sigmod;
+		mcon->span = span;
+		pcon->span = span;
+	}
+
+	if (zap_boost_connection_open(span) != ZAP_SUCCESS) {
+		goto end;
+	}
 
 	init_outgoing_array();
 
@@ -1370,9 +1374,15 @@ static zap_status_t zap_sangoma_boost_start(zap_span_t *span)
 
 static zap_status_t zap_sangoma_boost_stop(zap_span_t *span)
 {
+	zap_status_t status = ZAP_SUCCESS;
 	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	if (sangoma_boost_data->sigmod) {
-		return sangoma_boost_data->sigmod->stop_span(span);
+		/* FIXME: we should make sure the span thread is stopped (use pthread_kill or openzap thread kill function) */
+		/* I think stopping the span before destroying the queue makes sense
+		   otherwise may be boost events would still arrive when the queue is already destroyed! */
+		status = sangoma_boost_data->sigmod->stop_span(span);
+		zap_queue_destroy(sangoma_boost_data->boost_queue);
+		return status;
 	}
 	return ZAP_SUCCESS;
 }
@@ -1478,7 +1488,14 @@ static zap_state_map_t boost_state_map = {
 
 static BOOST_WRITE_MSG_FUNCTION(zap_boost_write_msg)
 {
-	/* TODO: write to msg queue and kick the pthread condition */
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+	sangomabc_queue_element_t *element = malloc(sizeof(*element));
+	if (!element) {
+		return ZAP_FAIL;
+	}
+	memcpy(&element->boostmsg, msg, msglen);
+	element->size = msglen;
+	zap_queue_enqueue(sangoma_boost_data->boost_queue, element);
 	return ZAP_SUCCESS;
 }
 
@@ -1594,11 +1611,18 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
 		sigmod_iface->set_sig_status_cb(zap_boost_sig_status_change);
 		sigmod_iface->set_write_msg_cb(zap_boost_write_msg);
 		hashtable_insert(g_boost_modules_hash, (void *)sigmod_iface->name, sigmod_iface, HASHTABLE_FLAG_NONE);
+		lib = NULL; /* destroying the lib will be done when going down and NOT on FAIL_CONFIG_RETURN */
 	}
 	zap_mutex_unlock(g_boost_modules_mutex);
 	hash_locked = 0;
 
 	if (sigmod_iface) {
+		/* try to create the boost queue */
+		sangoma_boost_data->boost_queue = zap_queue_create();
+		if (!sangoma_boost_data->boost_queue) {
+			zap_log(ZAP_LOG_ERROR, "Span %s could not create its boost queue!\n", span->name);
+			FAIL_CONFIG_RETURN(ZAP_FAIL);
+		}
 		zap_log(ZAP_LOG_NOTICE, "Span %s will use Sangoma Boost Signaling Module %s\n", span->name, sigmod_iface->name);
 		sangoma_boost_data->sigmod = sigmod_iface;
 		sigmod_iface->configure_span(span, conflist);

@@ -50,6 +50,7 @@ typedef struct zap_sangoma_boost_data {
 	zio_signal_cb_t signal_cb;
 	uint32_t flags;
 	boost_sigmod_interface_t *sigmod;
+	zap_queue_t boost_queue;
 } zap_sangoma_boost_data_t;
 
 #endif

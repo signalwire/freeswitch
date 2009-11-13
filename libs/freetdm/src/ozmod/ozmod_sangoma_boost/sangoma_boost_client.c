@@ -273,11 +273,13 @@ sangomabc_event_t *__sangomabc_connection_read(sangomabc_connection_t *mcon, int
 	unsigned int fromlen = sizeof(struct sockaddr_in);
 	int bytes = 0;
 	int msg_ok = 0;
+	sangomabc_queue_element_t *e = NULL;
 
 	if (mcon->sigmod) {
-		/* TODO: implement me */
-		zap_log(ZAP_LOG_ERROR, "__sangomabc_connection_read not implemented yet for signaling modules\n");
-		return NULL;
+		e = zap_queue_dequeue(mcon->boost_queue);
+		bytes = e->size;
+		memcpy(&mcon->event, e->boostmsg, bytes);
+		zap_safe_free(e);
 	} else {
 		bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, 
 						 (struct sockaddr *) &mcon->local_addr, &fromlen);
@@ -362,8 +364,16 @@ sangomabc_event_t *__sangomabc_connection_readp(sangomabc_connection_t *mcon, in
 {
 	unsigned int fromlen = sizeof(struct sockaddr_in);
 	int bytes = 0;
+	sangomabc_queue_element_t *e = NULL;
 
-	bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, (struct sockaddr *) &mcon->local_addr, &fromlen);
+	if (mcon->sigmod) {
+		e = zap_queue_dequeue(mcon->boost_queue);
+		bytes = e->size;
+		memcpy(&mcon->event, e->boostmsg, bytes);
+		zap_safe_free(e);
+	} else {
+		bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, (struct sockaddr *) &mcon->local_addr, &fromlen);
+	}
 	
 	if (bytes <= 0) {
 		return NULL;
@@ -434,7 +444,13 @@ int __sangomabc_connection_write(sangomabc_connection_t *mcon, sangomabc_event_t
 	}
 	event->bseqno = mcon->rxseq;
     event->version = SIGBOOST_VERSION; 
-	err = sendto(mcon->socket, event, event_size, 0, (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
+
+	if (mcon->sigmod) {
+		mcon->sigmod->write_msg(mcon->span, event, event_size);
+		err = event_size;
+	} else {
+		err = sendto(mcon->socket, event, event_size, 0, (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
+	}
 
 	zap_mutex_unlock(mcon->mutex);
 
@@ -470,7 +486,13 @@ int __sangomabc_connection_writep(sangomabc_connection_t *mcon, sangomabc_event_
 
 	zap_mutex_lock(mcon->mutex);
     event->version = SIGBOOST_VERSION; 
-	err = sendto(mcon->socket, event, event_size, 0, (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
+	if (mcon->sigmod) {
+		mcon->sigmod->write_msg(mcon->span, event, event_size);
+		err = event_size;
+		return -1;
+	} else {
+		err = sendto(mcon->socket, event, event_size, 0, (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
+	}
 	zap_mutex_unlock(mcon->mutex);
 
 	if (err != event_size) {

@@ -108,9 +108,16 @@ struct sangomabc_connection {
 	uint32_t hb_elapsed;
 	/* boost signaling mod interface pointer (if not working in TCP mode) */
 	boost_sigmod_interface_t *sigmod;
+	zap_queue_t boost_queue;	
+	zap_span_t *span;
 };
 
 typedef struct sangomabc_connection sangomabc_connection_t;
+
+typedef struct sangomabc_queue_element {
+	unsigned char boostmsg[sizeof(sangomabc_event_t)];
+	zap_size_t size;
+} sangomabc_queue_element_t;
 
 /* disable nagle's algorythm */
 static inline void sctp_no_nagle(int socket)
