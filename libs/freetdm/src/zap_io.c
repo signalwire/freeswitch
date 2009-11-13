@@ -2528,14 +2528,8 @@ static zap_status_t process_module_config(zap_io_interface_t *zio)
 	return ZAP_SUCCESS;
 }
 
-OZ_DECLARE(int) zap_load_module(const char *name)
+OZ_DECLARE(char *) zap_build_dso_path(const char *name, char *path, zap_size_t len)
 {
-	zap_dso_lib_t lib;
-	int count = 0, x = 0;
-	char path[128] = "";
-	char *err;
-	zap_module_t *mod;
-
 #ifdef WIN32
     const char *ext = ".dll";
     //const char *EXT = ".DLL";
@@ -2547,13 +2541,24 @@ OZ_DECLARE(int) zap_load_module(const char *name)
     const char *ext = ".so";
     //const char *EXT = ".SO";
 #endif
-	
 	if (*name == *ZAP_PATH_SEPARATOR) {
-		snprintf(path, sizeof(path), "%s%s", name, ext);
+		snprintf(path, len, "%s%s", name, ext);
 	} else {
-		snprintf(path, sizeof(path), "%s%s%s%s", ZAP_MOD_DIR, ZAP_PATH_SEPARATOR, name, ext);
+		snprintf(path, len, "%s%s%s%s", ZAP_MOD_DIR, ZAP_PATH_SEPARATOR, name, ext);
 	}
-	
+	return path;	
+}
+
+OZ_DECLARE(int) zap_load_module(const char *name)
+{
+	zap_dso_lib_t lib;
+	int count = 0, x = 0;
+	char path[128] = "";
+	char *err;
+	zap_module_t *mod;
+
+	zap_build_dso_path(name, path, sizeof(path));
+
 	if (!(lib = zap_dso_open(path, &err))) {
 		zap_log(ZAP_LOG_ERROR, "Error loading %s [%s]\n", path, err);
 		zap_safe_free(err);

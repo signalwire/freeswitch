@@ -38,6 +38,10 @@
 #include <sys/select.h>
 #endif
 
+/* Boost signaling modules global hash and its mutex */
+zap_mutex_t *g_boost_modules_mutex = NULL;
+zap_hash_t *g_boost_modules_hash = NULL;
+
 #define MAX_TRUNK_GROUPS 64
 static time_t congestion_timeouts[MAX_TRUNK_GROUPS];
 
@@ -1118,6 +1122,90 @@ static void *zap_sangoma_events_run(zap_thread_t *me, void *obj)
 	return NULL;
 }
 
+static int zap_boost_connection_open(zap_span_t *span)
+{
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+	if (sangoma_boost_data->sigmod) {
+		return 0;
+	} 
+
+	sangoma_boost_data->pcon = sangoma_boost_data->mcon;
+
+	if (sangomabc_connection_open(&sangoma_boost_data->mcon,
+								  sangoma_boost_data->mcon.cfg.local_ip,
+								  sangoma_boost_data->mcon.cfg.local_port,
+								  sangoma_boost_data->mcon.cfg.remote_ip,
+								  sangoma_boost_data->mcon.cfg.remote_port) < 0) {
+		zap_log(ZAP_LOG_DEBUG, "Error: Opening MCON Socket [%d] %s\n", sangoma_boost_data->mcon.socket, strerror(errno));
+		return -1;
+	}
+
+	if (sangomabc_connection_open(&sangoma_boost_data->pcon,
+							  sangoma_boost_data->pcon.cfg.local_ip,
+							  ++sangoma_boost_data->pcon.cfg.local_port,
+							  sangoma_boost_data->pcon.cfg.remote_ip,
+							  ++sangoma_boost_data->pcon.cfg.remote_port) < 0) {
+		zap_log(ZAP_LOG_DEBUG, "Error: Opening PCON Socket [%d] %s\n", sangoma_boost_data->pcon.socket, strerror(errno));
+		return -1;
+    }
+	return 0;	
+}
+
+/*! 
+  \brief wait for a boost event 
+  \return -1 on error, 0 on timeout, 1 when there are events
+ */
+static int zap_boost_wait_event(zap_span_t *span, int ms)
+{
+		struct timeval tv = { 0, ms * 1000 };
+		int max, activity;
+		sangomabc_connection_t *mcon, *pcon;
+		zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+
+		mcon = &sangoma_boost_data->mcon;
+		pcon = &sangoma_boost_data->pcon;
+
+		FD_ZERO(&sangoma_boost_data->rfds);
+		FD_ZERO(&sangoma_boost_data->efds);
+		FD_SET(mcon->socket, &sangoma_boost_data->rfds);
+		FD_SET(mcon->socket, &sangoma_boost_data->efds);
+		FD_SET(pcon->socket, &sangoma_boost_data->rfds);
+		FD_SET(pcon->socket, &sangoma_boost_data->efds);
+		sangoma_boost_data->iteration = 0;
+
+		max = ((pcon->socket > mcon->socket) ? pcon->socket : mcon->socket) + 1;
+		if ((activity = select(max, &sangoma_boost_data->rfds, NULL, &sangoma_boost_data->efds, &tv)) < 0) {
+			return -1;
+		}
+
+		if (FD_ISSET(pcon->socket, &sangoma_boost_data->efds) || FD_ISSET(mcon->socket, &sangoma_boost_data->efds)) {
+			return -1;
+		}
+
+		return 1;
+}
+
+
+static sangomabc_event_t *zap_boost_read_event(zap_span_t *span)
+{
+	sangomabc_event_t *event = NULL;
+	sangomabc_connection_t *mcon, *pcon;
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+
+	mcon = &sangoma_boost_data->mcon;
+	pcon = &sangoma_boost_data->pcon;
+
+	if (sangoma_boost_data->sigmod || FD_ISSET(pcon->socket, &sangoma_boost_data->rfds)) {
+		event = sangomabc_connection_readp(pcon, sangoma_boost_data->iteration);
+	}
+
+	/* if there is no event and this is not a sigmod-driven span it's time to try the other connection for events */
+	if (!event && !sangoma_boost_data->sigmod && FD_ISSET(mcon->socket, &sangoma_boost_data->rfds)) {
+		event = sangomabc_connection_readp(mcon, sangoma_boost_data->iteration);
+	}
+	return event;
+}
+
 /**
  * \brief Main thread function for sangoma boost span (monitor)
  * \param me Current thread
@@ -1126,33 +1214,20 @@ static void *zap_sangoma_events_run(zap_thread_t *me, void *obj)
 static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 {
     zap_span_t *span = (zap_span_t *) obj;
-    zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	sangomabc_connection_t *mcon, *pcon;
-	uint32_t ms = 10; //, too_long = 20000;
-		
+	uint32_t ms = 10;
+    zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 
-	sangoma_boost_data->pcon = sangoma_boost_data->mcon;
+	if (zap_boost_connection_open(span) < 0) {
+		goto end;
+	}
 
-	if (sangomabc_connection_open(&sangoma_boost_data->mcon,
-							  sangoma_boost_data->mcon.cfg.local_ip,
-							  sangoma_boost_data->mcon.cfg.local_port,
-							  sangoma_boost_data->mcon.cfg.remote_ip,
-							  sangoma_boost_data->mcon.cfg.remote_port) < 0) {
-		zap_log(ZAP_LOG_DEBUG, "Error: Opening MCON Socket [%d] %s\n", sangoma_boost_data->mcon.socket, strerror(errno));
-		goto end;
-    }
- 
-	if (sangomabc_connection_open(&sangoma_boost_data->pcon,
-							  sangoma_boost_data->pcon.cfg.local_ip,
-							  ++sangoma_boost_data->pcon.cfg.local_port,
-							  sangoma_boost_data->pcon.cfg.remote_ip,
-							  ++sangoma_boost_data->pcon.cfg.remote_port) < 0) {
-		zap_log(ZAP_LOG_DEBUG, "Error: Opening PCON Socket [%d] %s\n", sangoma_boost_data->pcon.socket, strerror(errno));
-		goto end;
-    }
-	
 	mcon = &sangoma_boost_data->mcon;
-	pcon = &sangoma_boost_data->pcon;
+	pcon = &sangoma_boost_data->pcon;	
+
+	/* sigmod overrides socket functionality if not null */
+	mcon->sigmod = sangoma_boost_data->sigmod;
+	pcon->sigmod = sangoma_boost_data->sigmod;
 
 	init_outgoing_array();
 
@@ -1165,10 +1240,8 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 	zap_set_flag(mcon, MSU_FLAG_DOWN);
 
 	while (zap_test_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING)) {
-		fd_set rfds, efds;
-		struct timeval tv = { 0, ms * 1000 };
-		int max, activity, i = 0;
 		sangomabc_event_t *event = NULL;
+		int activity = 0;
 		
 		if (!zap_running()) {
 			sangomabc_exec_commandp(pcon,
@@ -1181,37 +1254,15 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 			break;
 		}
 
-		FD_ZERO(&rfds);
-		FD_ZERO(&efds);
-		FD_SET(mcon->socket, &rfds);
-		FD_SET(mcon->socket, &efds);
-		FD_SET(pcon->socket, &rfds);
-		FD_SET(pcon->socket, &efds);
-
-		max = ((pcon->socket > mcon->socket) ? pcon->socket : mcon->socket) + 1;
-		
-		if ((activity = select(max, &rfds, NULL, &efds, &tv)) < 0) {
+		if ((activity = zap_boost_wait_event(span, ms)) < 0) {
 			goto error;
 		}
 		
 		if (activity) {
-			if (FD_ISSET(pcon->socket, &efds) || FD_ISSET(mcon->socket, &efds)) {
-				goto error;
-			}
 
-			if (FD_ISSET(pcon->socket, &rfds)) {
-				while ((event = sangomabc_connection_readp(pcon, i))) {
-					parse_sangoma_event(span, pcon, (sangomabc_short_event_t*)event);
-					i++;
-				}
-			}
-			i=0;
-
-			if (FD_ISSET(mcon->socket, &rfds)) {
-				if ((event = sangomabc_connection_read(mcon, i))) {
-					parse_sangoma_event(span, mcon, (sangomabc_short_event_t*)event);
-					i++;
-				}
+			while ((event = zap_boost_read_event(span))) {
+				parse_sangoma_event(span, pcon, (sangomabc_short_event_t*)event);
+				sangoma_boost_data->iteration++;
 			}
 
 		}
@@ -1246,7 +1297,7 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 	goto end;
 
  error:
-	zap_log(ZAP_LOG_CRIT, "Socket Error!\n");
+	zap_log(ZAP_LOG_CRIT, "Boost event processing Error!\n");
 
  end:
 
@@ -1255,7 +1306,7 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 
 	zap_clear_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING);
 
-	zap_log(ZAP_LOG_DEBUG, "SANGOMA_BOOST thread ended.\n");
+	zap_log(ZAP_LOG_DEBUG, "Sangoma Boost thread ended.\n");
 	return NULL;
 }
 
@@ -1266,9 +1317,35 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
  */
 static ZIO_SIG_LOAD_FUNCTION(zap_sangoma_boost_init)
 {
+	g_boost_modules_hash = create_hashtable(10, zap_hash_hashfromstring, zap_hash_equalkeys);
+	if (!g_boost_modules_hash) {
+		return ZAP_FAIL;
+	}
 	zap_mutex_create(&request_mutex);
 	zap_mutex_create(&signal_mutex);
-	
+	zap_mutex_create(&g_boost_modules_mutex);
+	return ZAP_SUCCESS;
+}
+
+static ZIO_SIG_UNLOAD_FUNCTION(zap_sangoma_boost_destroy)
+{
+	zap_hash_iterator_t *i = NULL;
+	boost_sigmod_interface_t *sigmod = NULL;
+	const void *key = NULL;
+	void *val = NULL;
+
+	for (i = hashtable_first(g_boost_modules_hash); i; i = hashtable_next(i)) {
+		hashtable_this(i, &key, NULL, &val);
+		if (key && val) {
+			sigmod = val;
+			zap_dso_destroy(sigmod->pvt);
+		}
+	}
+
+	hashtable_destroy(g_boost_modules_hash);
+	zap_mutex_destroy(&request_mutex);
+	zap_mutex_destroy(&signal_mutex);
+	zap_mutex_destroy(&g_boost_modules_mutex);
 	return ZAP_SUCCESS;
 }
 
@@ -1289,6 +1366,15 @@ static zap_status_t zap_sangoma_boost_start(zap_span_t *span)
 		zap_clear_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING);
 	}
 	return err;
+}
+
+static zap_status_t zap_sangoma_boost_stop(zap_span_t *span)
+{
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+	if (sangoma_boost_data->sigmod) {
+		return sangoma_boost_data->sigmod->stop_span(span);
+	}
+	return ZAP_SUCCESS;
 }
 
 static zap_state_map_t boost_state_map = {
@@ -1390,6 +1476,19 @@ static zap_state_map_t boost_state_map = {
 	}
 };
 
+static BOOST_WRITE_MSG_FUNCTION(zap_boost_write_msg)
+{
+	/* TODO: write to msg queue and kick the pthread condition */
+	return ZAP_SUCCESS;
+}
+
+static BOOST_SIG_STATUS_CB_FUNCTION(zap_boost_sig_status_change)
+{
+	/* TODO: Notify the upper layer of the signaling status change (via span signaling callback and a new msg type?) */
+	return;
+}
+
+
 /**
  * \brief Initialises an sangoma boost span from configuration variables
  * \param span Span to configure
@@ -1399,14 +1498,41 @@ static zap_state_map_t boost_state_map = {
  */
 static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
 {
+#define FAIL_CONFIG_RETURN(retstatus) \
+		if (sangoma_boost_data) \
+			zap_safe_free(sangoma_boost_data); \
+		if (err) \
+			zap_safe_free(err) \
+		if (hash_locked) \
+			zap_mutex_unlock(g_boost_modules_mutex); \
+		if (lib) \
+			zap_dso_destroy(lib); \
+		va_end(conflist); \
+		return retstatus;
+
+	boost_sigmod_interface_t *sigmod_iface = NULL;
 	zap_sangoma_boost_data_t *sangoma_boost_data = NULL;
 	const char *local_ip = "127.0.0.65", *remote_ip = "127.0.0.66";
+	const char *sigmod = NULL;
 	int local_port = 53000, remote_port = 53000;
-	char *var, *val;
-	int *intval;
+	char *var = NULL, *val = NULL;
+	int *intval = NULL;
+	int hash_locked = 0;
+	zap_dso_lib_t lib = NULL;
+	char path[255] = "";
+	char *err = NULL;
+	va_list conflist;
+
+	/* we need to copy the list before moving with va_arg in case this configuration should be handled by a sigmod */
+	va_copy(conflist, ap); /* WARNING: must be freed before returning */
 
 	while((var = va_arg(ap, char *))) {
-		if (!strcasecmp(var, "local_ip")) {
+		if (!strcasecmp(var, "sigmod")) {
+			if (!(val = va_arg(ap, char *))) {
+				break;
+			}
+			sigmod = val;
+		} else if (!strcasecmp(var, "local_ip")) {
 			if (!(val = va_arg(ap, char *))) {
 				break;
 			}
@@ -1428,32 +1554,71 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
 			remote_port = *intval;
 		} else {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
-			return ZAP_FAIL;
+			FAIL_CONFIG_RETURN(ZAP_FAIL);
 		}
 	}
 
 
-	if (!local_ip && local_port && remote_ip && remote_port && sig_cb) {
-		zap_set_string(span->last_error, "missing params");
-		return ZAP_FAIL;
+	if (!sigmod) {
+		if (!local_ip && local_port && remote_ip && remote_port && sig_cb) {
+			zap_set_string(span->last_error, "missing Sangoma boost IP parameters");
+			FAIL_CONFIG_RETURN(ZAP_FAIL);
+		}
 	}
 
 	sangoma_boost_data = malloc(sizeof(*sangoma_boost_data));
-	assert(sangoma_boost_data);
+	if (!sangoma_boost_data) {
+		FAIL_CONFIG_RETURN(ZAP_FAIL);
+	}
 	memset(sangoma_boost_data, 0, sizeof(*sangoma_boost_data));
-	
-	zap_set_string(sangoma_boost_data->mcon.cfg.local_ip, local_ip);
-	sangoma_boost_data->mcon.cfg.local_port = local_port;
-	zap_set_string(sangoma_boost_data->mcon.cfg.remote_ip, remote_ip);
-	sangoma_boost_data->mcon.cfg.remote_port = remote_port;
+
+	/* WARNING: be sure to release this mutex on errors inside this if() */
+	zap_mutex_lock(g_boost_modules_mutex);
+	hash_locked = 1;
+	if (sigmod && !(sigmod_iface = hashtable_search(g_boost_modules_hash, (void *)sigmod))) {
+		zap_build_dso_path(sigmod, path, sizeof(path));	
+		lib = zap_dso_open(path, &err);
+		if (!lib) {
+			zap_log(ZAP_LOG_ERROR, "Error loading Sangoma boost signaling module '%s': %s\n", path, err);
+			snprintf(span->last_error, sizeof(span->last_error), "Failed to load sangoma boost signaling module %s", path);
+
+			FAIL_CONFIG_RETURN(ZAP_FAIL);
+		}
+		if (!(sigmod_iface = (boost_sigmod_interface_t *)zap_dso_func_sym(lib, "boost_sigmod_interface", &err))) {
+			zap_log(ZAP_LOG_ERROR, "Failed to read Sangoma boost signaling module interface '%s': %s\n", path, err);
+			snprintf(span->last_error, sizeof(span->last_error), "Failed to read Sangoma boost signaling module interface '%s': %s", path, err);
+
+			FAIL_CONFIG_RETURN(ZAP_FAIL);
+		}
+		sigmod_iface->pvt = lib;
+		sigmod_iface->set_sig_status_cb(zap_boost_sig_status_change);
+		sigmod_iface->set_write_msg_cb(zap_boost_write_msg);
+		hashtable_insert(g_boost_modules_hash, (void *)sigmod_iface->name, sigmod_iface, HASHTABLE_FLAG_NONE);
+	}
+	zap_mutex_unlock(g_boost_modules_mutex);
+	hash_locked = 0;
+
+	if (sigmod_iface) {
+		zap_log(ZAP_LOG_NOTICE, "Span %s will use Sangoma Boost Signaling Module %s\n", span->name, sigmod_iface->name);
+		sangoma_boost_data->sigmod = sigmod_iface;
+		sigmod_iface->configure_span(span, conflist);
+	} else {
+		zap_set_string(sangoma_boost_data->mcon.cfg.local_ip, local_ip);
+		sangoma_boost_data->mcon.cfg.local_port = local_port;
+		zap_set_string(sangoma_boost_data->mcon.cfg.remote_ip, remote_ip);
+		sangoma_boost_data->mcon.cfg.remote_port = remote_port;
+	}
 	sangoma_boost_data->signal_cb = sig_cb;
 	span->start = zap_sangoma_boost_start;
+	span->stop = zap_sangoma_boost_stop;
 	span->signal_data = sangoma_boost_data;
     span->signal_type = ZAP_SIGTYPE_SANGOMABOOST;
     span->outgoing_call = sangoma_boost_outgoing_call;
 	span->channel_request = sangoma_boost_channel_request;
 	span->state_map = &boost_state_map;
 	zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
+
+	va_end(conflist);
 
 	return ZAP_SUCCESS;
 }
@@ -1467,7 +1632,7 @@ zap_module_t zap_module = {
 	NULL,
 	zap_sangoma_boost_init,
 	zap_sangoma_boost_configure_span,
-	NULL
+	zap_sangoma_boost_destroy	
 };
 
 /* For Emacs:

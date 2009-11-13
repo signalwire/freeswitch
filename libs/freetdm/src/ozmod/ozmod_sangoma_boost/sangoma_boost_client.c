@@ -113,6 +113,11 @@ static int create_conn_socket(sangomabc_connection_t *mcon, char *local_ip, int 
 	char buf[512], local_buf[512];
 	int err = 0, local_err = 0;
 
+	if (mcon->sigmod) {
+		zap_log(ZAP_LOG_WARNING, "I should not be called on a sigmod-managed connection!\n");
+		return 0;
+	}
+
 	memset(&mcon->remote_hp, 0, sizeof(mcon->remote_hp));
 	memset(&mcon->local_hp, 0, sizeof(mcon->local_hp));
 #ifdef HAVE_NETINET_SCTP_H
@@ -175,6 +180,10 @@ static int create_conn_socket(sangomabc_connection_t *mcon, char *local_ip, int 
 
 int sangomabc_connection_close(sangomabc_connection_t *mcon)
 {
+	if (mcon->sigmod) {
+		zap_log(ZAP_LOG_WARNING, "I should not be called on a sigmod-managed connection!\n");
+		return 0;
+	}
 	if (mcon->socket > -1) {
 		close(mcon->socket);
 	}
@@ -192,6 +201,10 @@ int sangomabc_connection_close(sangomabc_connection_t *mcon)
 
 int sangomabc_connection_open(sangomabc_connection_t *mcon, char *local_ip, int local_port, char *ip, int port)
 {
+	if (mcon->sigmod) {
+		zap_log(ZAP_LOG_WARNING, "I should not be called on a sigmod-managed connection!\n");
+		return 0;
+	}
 	create_conn_socket(mcon, local_ip, local_port, ip, port);
 	return mcon->socket;
 }
@@ -261,8 +274,14 @@ sangomabc_event_t *__sangomabc_connection_read(sangomabc_connection_t *mcon, int
 	int bytes = 0;
 	int msg_ok = 0;
 
-	bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, 
-					 (struct sockaddr *) &mcon->local_addr, &fromlen);
+	if (mcon->sigmod) {
+		/* TODO: implement me */
+		zap_log(ZAP_LOG_ERROR, "__sangomabc_connection_read not implemented yet for signaling modules\n");
+		return NULL;
+	} else {
+		bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, 
+						 (struct sockaddr *) &mcon->local_addr, &fromlen);
+	}
 
 	if (bytes <= 0) {
 		return NULL;

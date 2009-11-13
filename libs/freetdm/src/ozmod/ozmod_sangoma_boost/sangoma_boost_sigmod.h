@@ -135,15 +135,26 @@ typedef zap_status_t (*boost_stop_span_func_t) BOOST_START_SPAN_ARGS;
   \brief The boost signaling module interface 
  */
 typedef struct boost_sigmod_interface_s {
+	/*! \brief Module name */
 	const char *name;
+	/*! \brief write boost message function */
 	boost_write_msg_func_t write_msg;	
+	/*! \brief set the user write boost message function */
 	boost_set_write_msg_cb_func_t set_write_msg_cb;
+	/*! \brief set the user signaling status function */
 	boost_set_sig_status_cb_func_t set_sig_status_cb;
+	/*! \brief get channel signaling status */
 	boost_get_sig_status_func_t get_sig_status;
+	/*! \brief set channel signaling status */
 	boost_set_sig_status_func_t set_sig_status;
+	/*! \brief configure span signaling */
 	boost_configure_span_func_t configure_span;
+	/*! \brief start openzap span */
 	boost_start_span_func_t start_span;
-	boost_stop_span_func_t stop_stpan;
+	/*! \brief stop openzap span */
+	boost_stop_span_func_t stop_span;
+	/*! \brief private pointer for the interface user */
+	void *pvt;
 } boost_sigmod_interface_t;
 
 #endif
