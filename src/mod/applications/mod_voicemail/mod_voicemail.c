@@ -1737,7 +1737,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	char pass_buf[80] = "", *mypass = NULL, id_buf[80] = "", *myfolder = NULL;
 	const char *thepass = NULL, *myid = id, *thehash = NULL, *vmhash = NULL;
 	char term = 0;
-	uint32_t timeout, attempts = 0;
+	uint32_t timeout, attempts = 0, retries = 0;
 	int failed = 0;
 	msg_type_t play_msg_type = MSG_NONE;
 	char *dir_path = NULL, *file_path = NULL;
@@ -1782,6 +1782,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				heard_auto_new = 0;
 				play_msg_type = MSG_NONE;
 				attempts = profile->max_login_attempts;
+				retries = profile->max_retries;
 				myid = id;
 				mypass = NULL;
 				myfolder = "inbox";
@@ -2049,6 +2050,13 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				char input[10] = "";
 				char key_buf[80] = "";
 				play_msg_type = MSG_NONE;
+
+				if (!retries) {
+					goto end;
+				}
+
+				retries--;
+
 				if (!zstr_buf(global_buf)) {
 					switch_set_string(input, global_buf);
 					*global_buf = '\0';
@@ -2076,6 +2084,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 
 				if (play_msg_type) {
 					vm_check_state = VM_CHECK_PLAY_MESSAGES;
+					retries = profile->max_retries;
 				}
 
 				continue;
