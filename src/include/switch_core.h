@@ -116,6 +116,7 @@ struct switch_core_session;
 struct switch_core_runtime;
 struct switch_core_port_allocator;
 
+
 /*!
   \defgroup core1 Core Library 
   \ingroup FREESWITCH
@@ -1403,7 +1404,7 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_write_codec(_In_ 
   \param filename the path to the db file to open
   \return the db handle
 */
-SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(char *filename);
+SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename);
 
 /*! 
   \brief Execute a sql stmt until it is accepted
@@ -1919,6 +1920,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 /*!
   \}
 */
+
+typedef struct {
+	switch_core_db_t *db;
+	switch_odbc_handle_t *odbc_dbh;
+	time_t last_used;
+	switch_mutex_t *mutex;
+	switch_memory_pool_t *pool;
+} switch_cache_db_handle_t;
+
+SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t **dbh);
+SWITCH_DECLARE(switch_cache_db_handle_t *)switch_cache_db_get_db_handle(const char *db_name, const char *odbc_user, const char *odbc_pass);
+SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, char *sql);
+SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cache_db_handle_t *dbh, char *sql, 
+																	 switch_core_db_callback_func_t callback, void *pdata);
+
+
 
 SWITCH_END_EXTERN_C
 #endif

@@ -195,12 +195,12 @@ SWITCH_DECLARE(char *) switch_vmprintf(const char *zFormat, va_list ap)
 	return sqlite3_vmprintf(zFormat, ap);
 }
 
-SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(char *filename)
+SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename)
 {
 	switch_core_db_t *db;
 	char path[1024];
 
-	db_pick_path(filename, path, sizeof(path));
+	db_pick_path((char *)filename, path, sizeof(path));
 	if (switch_core_db_open(path, &db)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", switch_core_db_errmsg(db));
 		switch_core_db_close(db);

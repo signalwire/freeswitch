@@ -59,7 +59,7 @@ struct switch_odbc_handle {
 };
 #endif
 
-SWITCH_DECLARE(switch_odbc_handle_t *) switch_odbc_handle_new(char *dsn, char *username, char *password)
+SWITCH_DECLARE(switch_odbc_handle_t *) switch_odbc_handle_new(const char *dsn, const char *username, const char *password)
 {
 #ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_t *new_handle;
