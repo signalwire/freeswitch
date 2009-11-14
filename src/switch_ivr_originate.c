@@ -1227,7 +1227,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 																switch_originate_flag_t flags
 																)
 {
-	int x_argc;
+	int x_argc = 0;
 	char *x_argv[MAX_PEERS] = { 0 };
 	enterprise_originate_handle_t *hp = NULL, handles[MAX_PEERS] = { { 0 } };
 	int i;
@@ -1242,6 +1242,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	switch_event_header_t *hi = NULL;
 	struct ent_originate_ringback rb_data = { 0 };
 	const char *ringback_data = NULL;
+	char *vars = NULL;
+	int var_block_count = 0;
+	char *e = NULL;
+	switch_event_t *var_event = NULL;
+	const char *export_vars = NULL;
 
 	switch_core_new_memory_pool(&pool);
 
@@ -1251,6 +1256,108 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	}
 
 	data = switch_core_strdup(pool, bridgeto);
+
+	/* strip leading spaces */
+	while (data && *data && *data == ' ') {
+		data++;
+	}
+
+	/* extract channel variables, allowing multiple sets of braces */
+	while (*data == '<') {
+		if (!var_block_count) {
+			e = switch_find_end_paren(data, '<', '>');
+			if (!e || !*e) {
+				goto var_extract_error;
+			}
+			vars = data + 1;
+			*e = '\0';
+			data = e + 1;
+		} else {
+			int j = 0, k = 0;
+			if (e) {
+				*e = ',';
+			}
+			e = switch_find_end_paren(data, '<', '>');
+			if (!e || !*e) {
+				goto var_extract_error;
+			}
+			/* swallow the opening bracket */
+			while ((data + k) && *(data + k)) {
+				j = k; k++;
+				/* note that this affects vars[] */
+				data[j] = data[k];
+			}
+			*(--e) = '\0';
+			data = e + 1;
+		}
+		var_block_count++;
+		continue;
+    
+	var_extract_error:
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error!\n");
+		switch_goto_status(SWITCH_STATUS_GENERR, done);
+	}
+
+	/* strip leading spaces (again) */
+	while (data && *data && *data == ' ') {
+		data++;
+	}
+
+	if (ovars) {
+		var_event = ovars;
+	} else {
+		if (switch_event_create_plain(&var_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
+			abort();
+		}
+	}
+
+	/* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
+	if (channel && (export_vars = switch_channel_get_variable(channel, SWITCH_EXPORT_VARS_VARIABLE))) {
+		char *cptmp = switch_core_session_strdup(session, export_vars);
+		int argc;
+		char *argv[256];
+
+		if ((argc = switch_separate_string(cptmp, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+			int x;
+
+			for (x = 0; x < argc; x++) {
+				const char *vval;
+				if ((vval = switch_channel_get_variable(channel, argv[x]))) {
+					char *vvar = argv[x];
+					if (!strncasecmp(vvar, "nolocal:", 8)) {
+						vvar += 8;
+					}
+					switch_event_del_header(var_event, vvar);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, vvar, vval);
+				}
+			}
+		}
+	}
+
+	if (vars) {					/* Parse parameters specified from the dialstring */
+		char *var_array[1024] = { 0 };
+		int var_count = 0;
+		if ((var_count = switch_separate_string(vars, ',', var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
+			int x = 0;
+			for (x = 0; x < var_count; x++) {
+				char *inner_var_array[2] = { 0 };
+				int inner_var_count;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "variable string %d = [%s]\n", x, var_array[x]);
+				if ((inner_var_count =
+					 switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
+					switch_event_del_header(var_event, inner_var_array[0]);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
+				}
+			}
+		}
+	}
+
+	if (ovars) {
+		for (hi = ovars->headers; hi; hi = hi->next) {
+			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, hi->name, hi->value);
+		}
+	}
+
 
 	if (!(x_argc = switch_separate_string_string(data, OSEP, x_argv, MAX_PEERS))) {
 		*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -1275,19 +1382,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		handles[i].cid_name_override = cid_name_override;
 		handles[i].cid_num_override = cid_num_override;
 		handles[i].caller_profile_override = cp;
-
-		if (channel) {
-			switch_channel_get_variables(channel, &handles[i].ovars);
-		} else {
-			switch_event_create_plain(&handles[i].ovars, SWITCH_EVENT_CHANNEL_DATA);
-		}
-
-		if (ovars) {
-			for (hi = ovars->headers; hi; hi = hi->next) {
-				switch_event_add_header_string(handles[i].ovars, SWITCH_STACK_BOTTOM, hi->name, hi->value);
-			}
-		}
-
+		switch_event_dup(&handles[i].ovars, var_event);		
 		handles[i].flags = flags;
 		switch_thread_create(&handles[i].thread, thd_attr, enterprise_originate_thread, &handles[i], pool);
 	}
@@ -1374,9 +1469,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		switch_event_destroy(&hp->ovars);
 	}
 
-
-
  end:
+
+	if (var_event && var_event != ovars) {
+		switch_event_destroy(&var_event);
+	}
 
 	switch_core_destroy_memory_pool(&pool);
 
