@@ -37,30 +37,148 @@
 
 #include "openzap.h"
 
-OZ_DECLARE(zap_queue_t) zap_queue_create(void)
-{
-	return NULL;
-}
+#undef zap_queue_t
+#define ZAP_QUEUE_SIZE
+typedef struct zap_queue {
+	zap_mutex_t *mutex;
+	zap_condition_t *condition;
+	zap_size_t size;
+	unsigned rindex;
+	unsigned windex;
+	void **elements;
+} zap_queue_t;
 
-OZ_DECLARE(zap_status_t) zap_queue_enqueue(zap_queue_t queue, void *obj)
+OZ_DECLARE(zap_status_t) zap_queue_create(zap_queue_t **outqueue, zap_size_t size)
 {
+	zap_assert(outqueue, ZAP_FAIL, "Queue double pointer is null\n");
+	zap_assert(size > 0, ZAP_FAIL, "Queue size is not bigger than 0\n");
+
+	*outqueue = NULL;
+	zap_queue_t *queue = calloc(1, sizeof(*queue));
+	if (!queue) {
+		return ZAP_FAIL;
+	}
+
+	queue->elements = calloc(1, (sizeof(void*)*size));
+	if (!queue->elements) {
+		goto failed;
+	}
+	queue->size = size;
+
+	if (zap_mutex_create(&queue->mutex) != ZAP_SUCCESS) {
+		goto failed;
+	}
+
+	if (zap_condition_create(&queue->condition, queue->mutex) != ZAP_SUCCESS) {
+		goto failed;
+	}
+
+	*outqueue = queue;	
+	return ZAP_SUCCESS;
+
+failed:
+	if (queue) {
+		if (queue->condition) {
+			zap_condition_destroy(&queue->condition);
+		}
+		if (queue->mutex) {
+			zap_mutex_destroy(&queue->mutex);
+		}
+		zap_safe_free(queue->elements);
+		zap_safe_free(queue);
+	}
 	return ZAP_FAIL;
 }
 
-OZ_DECLARE(void *) zap_queue_dequeue(zap_queue_t queue)
+OZ_DECLARE(zap_status_t) zap_queue_enqueue(zap_queue_t *queue, void *obj)
 {
-	return NULL;
+	zap_status_t status = ZAP_FAIL;
+
+	zap_assert(queue != NULL, ZAP_FAIL, "Queue is null!");
+
+	zap_mutex_lock(queue->mutex);
+
+	if (queue->windex == queue->size) {
+		/* try to see if we can wrap around */
+		queue->windex = 0;
+	}
+
+	if (queue->windex == queue->rindex) {
+		zap_log(ZAP_LOG_ERROR, "Failed to enqueue obj %p in queue %p, no more room! windex == rindex == %d!\n", obj, queue, queue->windex);
+		goto done;
+	}
+	queue->elements[queue->windex++] = obj;
+	status = ZAP_SUCCESS;
+
+	/* wake up queue reader */
+	zap_condition_signal(queue->condition);
+
+done:
+
+	zap_mutex_unlock(queue->mutex);
+
+	return status;
 }
 
-OZ_DECLARE(zap_status_t) zap_queue_wait(zap_queue_t queue, int ms)
+OZ_DECLARE(void *) zap_queue_dequeue(zap_queue_t *queue)
 {
-	return ZAP_FAIL;
+	void *obj = NULL;
+
+	zap_assert(queue != NULL, NULL, "Queue is null!");
+
+	zap_mutex_lock(queue->mutex);
+
+	if (!queue->elements[queue->rindex]) {
+		goto done;
+	}
+
+	obj = queue->elements[queue->rindex];
+	queue->elements[queue->rindex] = NULL;
+	if (queue->rindex == queue->size) {
+		queue->rindex = 0;
+	}
+
+done:
+	zap_mutex_unlock(queue->mutex);
+	return obj;
 }
 
-OZ_DECLARE(void) zap_queue_destroy(zap_queue_t queue)
+OZ_DECLARE(zap_status_t) zap_queue_wait(zap_queue_t *queue, int ms)
 {
+	zap_assert(queue != NULL, ZAP_FAIL, "Queue is null!");
+	
+	zap_mutex_lock(queue->mutex);
 
+	if (queue->elements[queue->rindex]) {
+		zap_mutex_unlock(queue->mutex);
+		return ZAP_SUCCESS;
+	}
+
+	if (zap_condition_wait(queue->condition, ms)) {
+		zap_mutex_unlock(queue->mutex);
+		return ZAP_FAIL;
+	}
+
+	zap_mutex_unlock(queue->mutex);
+
+	return ZAP_SUCCESS;
 }
+
+OZ_DECLARE(zap_status_t) zap_queue_destroy(zap_queue_t **inqueue)
+{
+	zap_queue_t *queue = NULL;
+	zap_assert(inqueue != NULL, ZAP_FAIL, "Queue is null!");
+	zap_assert(*inqueue != NULL, ZAP_FAIL, "Queue is null!");
+
+	queue = *inqueue;
+	zap_condition_destroy(&queue->condition);
+	zap_mutex_destroy(&queue->mutex);
+	zap_safe_free(queue->elements);
+	zap_safe_free(queue);
+	*inqueue = NULL;
+	return ZAP_SUCCESS;
+}
+
 #endif
 
 /* For Emacs:

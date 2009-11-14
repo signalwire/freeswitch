@@ -34,6 +34,10 @@ struct zap_mutex {
 	CRITICAL_SECTION mutex;
 };
 
+struct zap_condition {
+	HANDLE condition;
+};
+
 #else
 
 #include <pthread.h>
@@ -42,6 +46,11 @@ struct zap_mutex {
 
 struct zap_mutex {
 	pthread_mutex_t mutex;
+};
+
+struct zap_condition {
+	pthread_cond_t condition;
+	pthread_mutex_t *mutex;
 };
 
 #endif
@@ -222,8 +231,91 @@ OZ_DECLARE(zap_status_t) _zap_mutex_unlock(zap_mutex_t *mutex)
 }
 
 
+OZ_DECLARE(zap_status_t) zap_condition_create(zap_condition_t **incondition, zap_mutex_t *mutex)
+{
+	zap_condition_t *condition = NULL;
 
+	zap_assert(condition != NULL, ZAP_FAIL, "Condition double pointer is null!\n");
+	zap_assert(mutex != NULL, ZAP_FAIL, "Mutex for condition must not be null!\n");
 
+#ifdef WIN32
+	return ZAP_NOTIMPL;
+#endif
+
+	condition = malloc(sizeof(*condition));
+	if (!condition) {
+		return ZAP_FAIL;
+	}
+
+#ifndef WIN32
+	condition->mutex = &mutex->mutex;
+
+	if (pthread_cond_init(&condition->condition, NULL)) {
+		goto failed;
+	}
+
+	return ZAP_SUCCESS;
+
+failed:
+	if (condition) {
+		zap_safe_free(condition);
+	}
+	return ZAP_FAIL;
+#endif
+}
+
+OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
+{
+	zap_assert(condition != NULL, ZAP_FAIL, "Condition is null!\n");
+	int res = 0;
+#ifdef WIN32
+	return ZAP_NOTIMPL;
+#else
+	if (ms > 0) {
+		struct timespec waitms = { 0, ((ms * 1000) * 1000)};
+		res = pthread_cond_timedwait(&condition->condition, condition->mutex, &waitms);
+	} else {
+		res = pthread_cond_wait(&condition->condition, condition->mutex);
+	}
+	if (res != 0) {
+		if (res == ETIMEDOUT) {
+			return ZAP_TIMEOUT;
+		}
+		return ZAP_FAIL;
+	}
+#endif
+	return ZAP_SUCCESS;
+}
+
+OZ_DECLARE(zap_status_t) zap_condition_signal(zap_condition_t *condition)
+{
+	zap_assert(condition != NULL, ZAP_FAIL, "Condition is null!\n");
+#ifdef WIN32
+	return ZAP_NOTIMPL;
+#else
+	if (pthread_cond_signal(&condition->condition)) {
+		return ZAP_FAIL;
+	}
+#endif
+	return ZAP_SUCCESS;
+}
+
+OZ_DECLARE(zap_status_t) zap_condition_destroy(zap_condition_t **incondition)
+{
+	zap_condition_t *condition = NULL;
+	zap_assert(incondition != NULL, ZAP_FAIL, "Condition null when destroying!\n");
+	condition = *incondition;
+#ifdef WIN32
+	return ZAP_NOTIMPL;
+#else
+	if (pthread_cond_destroy(&condition->condition)) {
+		return ZAP_FAIL;
+	}
+	zap_safe_free(condition);
+#endif
+	*incondition = NULL;
+	return ZAP_SUCCESS;
+}
 
 /* For Emacs:
  * Local Variables:

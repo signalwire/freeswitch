@@ -15,6 +15,10 @@
  * constitutes an essential part of this license. No use of any covered code is authorized hereunder
  * except under this disclaimer. 
  *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ *
  */
 
 
@@ -25,6 +29,7 @@
 
 typedef struct zap_mutex zap_mutex_t;
 typedef struct zap_thread zap_thread_t;
+typedef struct zap_condition zap_condition_t;
 typedef void *(*zap_thread_function_t) (zap_thread_t *, void *);
 
 OZ_DECLARE(zap_status_t) zap_thread_create_detached(zap_thread_function_t func, void *data);
@@ -35,6 +40,10 @@ OZ_DECLARE(zap_status_t) zap_mutex_destroy(zap_mutex_t **mutex);
 OZ_DECLARE(zap_status_t) _zap_mutex_lock(zap_mutex_t *mutex);
 OZ_DECLARE(zap_status_t) _zap_mutex_trylock(zap_mutex_t *mutex);
 OZ_DECLARE(zap_status_t) _zap_mutex_unlock(zap_mutex_t *mutex);
+OZ_DECLARE(zap_status_t) zap_condition_create(zap_condition_t **cond, zap_mutex_t *mutex);
+OZ_DECLARE(zap_status_t) zap_condition_destroy(zap_condition_t **cond);
+OZ_DECLARE(zap_status_t) zap_condition_signal(zap_condition_t *cond);
+OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *cond, int ms);
 
 #endif
 

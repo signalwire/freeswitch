@@ -45,6 +45,8 @@ zap_hash_t *g_boost_modules_hash = NULL;
 #define MAX_TRUNK_GROUPS 64
 static time_t congestion_timeouts[MAX_TRUNK_GROUPS];
 
+#define BOOST_QUEUE_SIZE 500
+
 /**
  * \brief Strange flag
  */
@@ -1221,12 +1223,15 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 	mcon = &sangoma_boost_data->mcon;
 	pcon = &sangoma_boost_data->pcon;	
 
+	/* sigmod overrides socket functionality if not null */
 	if (sangoma_boost_data->sigmod) {
-		/* sigmod overrides socket functionality if not null */
-		mcon->sigmod = sangoma_boost_data->sigmod;
-		pcon->sigmod = sangoma_boost_data->sigmod;
 		mcon->span = span;
 		pcon->span = span;
+		/* everything could be retrieved through span, but let's use shortcuts */
+		mcon->sigmod = sangoma_boost_data->sigmod;
+		pcon->sigmod = sangoma_boost_data->sigmod;
+		mcon->boost_queue = sangoma_boost_data->boost_queue;
+		pcon->boost_queue = sangoma_boost_data->boost_queue;
 	}
 
 	if (zap_boost_connection_open(span) != ZAP_SUCCESS) {
@@ -1381,7 +1386,7 @@ static zap_status_t zap_sangoma_boost_stop(zap_span_t *span)
 		/* I think stopping the span before destroying the queue makes sense
 		   otherwise may be boost events would still arrive when the queue is already destroyed! */
 		status = sangoma_boost_data->sigmod->stop_span(span);
-		zap_queue_destroy(sangoma_boost_data->boost_queue);
+		zap_queue_destroy(&sangoma_boost_data->boost_queue);
 		return status;
 	}
 	return ZAP_SUCCESS;
@@ -1489,7 +1494,7 @@ static zap_state_map_t boost_state_map = {
 static BOOST_WRITE_MSG_FUNCTION(zap_boost_write_msg)
 {
 	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
-	sangomabc_queue_element_t *element = malloc(sizeof(*element));
+	sangomabc_queue_element_t *element = calloc(1, sizeof(*element));
 	if (!element) {
 		return ZAP_FAIL;
 	}
@@ -1583,11 +1588,10 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
 		}
 	}
 
-	sangoma_boost_data = malloc(sizeof(*sangoma_boost_data));
+	sangoma_boost_data = calloc(1, sizeof(*sangoma_boost_data));
 	if (!sangoma_boost_data) {
 		FAIL_CONFIG_RETURN(ZAP_FAIL);
 	}
-	memset(sangoma_boost_data, 0, sizeof(*sangoma_boost_data));
 
 	/* WARNING: be sure to release this mutex on errors inside this if() */
 	zap_mutex_lock(g_boost_modules_mutex);
@@ -1618,8 +1622,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
 
 	if (sigmod_iface) {
 		/* try to create the boost queue */
-		sangoma_boost_data->boost_queue = zap_queue_create();
-		if (!sangoma_boost_data->boost_queue) {
+		if (zap_queue_create(&sangoma_boost_data->boost_queue, BOOST_QUEUE_SIZE) != ZAP_SUCCESS) {
 			zap_log(ZAP_LOG_ERROR, "Span %s could not create its boost queue!\n", span->name);
 			FAIL_CONFIG_RETURN(ZAP_FAIL);
 		}

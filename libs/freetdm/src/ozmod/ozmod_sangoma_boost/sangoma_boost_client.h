@@ -108,7 +108,7 @@ struct sangomabc_connection {
 	uint32_t hb_elapsed;
 	/* boost signaling mod interface pointer (if not working in TCP mode) */
 	boost_sigmod_interface_t *sigmod;
-	zap_queue_t boost_queue;	
+	zap_queue_t *boost_queue;	
 	zap_span_t *span;
 };
 

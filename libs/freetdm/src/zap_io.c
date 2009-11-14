@@ -176,7 +176,14 @@ static void default_logger(const char *file, const char *func, int line, int lev
 
 }
 
+OZ_DECLARE_DATA zap_crash_policy_t g_zap_crash_policy = ZAP_CRASH_NEVER;
+
 OZ_DECLARE_DATA zap_logger_t zap_log = null_logger;
+
+OZ_DECLARE(void) zap_global_set_crash_policy(zap_crash_policy_t policy)
+{
+	g_zap_crash_policy = policy;
+}
 
 OZ_DECLARE(void) zap_global_set_logger(zap_logger_t logger)
 {

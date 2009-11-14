@@ -619,7 +619,6 @@ typedef enum {
 	ZAP_CAUSE_MEDIA_TIMEOUT = 604
 } zap_call_cause_t;
 
-
 #endif
 
 /* For Emacs:

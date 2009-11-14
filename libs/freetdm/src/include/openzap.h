@@ -579,6 +579,13 @@ struct zap_span {
 
 OZ_DECLARE_DATA extern zap_logger_t zap_log;
 
+typedef enum {
+	ZAP_CRASH_NEVER = 0,
+	ZAP_CRASH_ON_ASSERT
+} zap_crash_policy_t;
+
+OZ_DECLARE_DATA extern zap_crash_policy_t g_zap_crash_policy;
+
 struct zap_io_interface {
 	const char *name;
 	zio_configure_span_t configure_span;
@@ -597,22 +604,23 @@ struct zap_io_interface {
 	zio_api_t api;
 };
 
-typedef void* zap_queue_t;
+struct zap_queue;
+#define zap_queue_t struct zap_queue
 
 /*! brief create a new queue */
-OZ_DECLARE(zap_queue_t) zap_queue_create(void);
+OZ_DECLARE(zap_status_t) zap_queue_create(zap_queue_t **queue, zap_size_t size);
 
 /*! Enqueue an object */
-OZ_DECLARE(zap_status_t) zap_queue_enqueue(zap_queue_t queue, void *obj);
+OZ_DECLARE(zap_status_t) zap_queue_enqueue(zap_queue_t *queue, void *obj);
 
 /*! dequeue an object from the queue */
-OZ_DECLARE(void *) zap_queue_dequeue(zap_queue_t queue);
+OZ_DECLARE(void *) zap_queue_dequeue(zap_queue_t *queue);
 
 /*! wait ms milliseconds for a queue to have available objects, -1 to wait forever */
-OZ_DECLARE(zap_status_t) zap_queue_wait(zap_queue_t queue, int ms);
+OZ_DECLARE(zap_status_t) zap_queue_wait(zap_queue_t *queue, int ms);
 
 /*! destroy the queue */ 
-OZ_DECLARE(void) zap_queue_destroy(zap_queue_t queue);
+OZ_DECLARE(zap_status_t) zap_queue_destroy(zap_queue_t **queue);
 
 OZ_DECLARE(zap_size_t) zap_fsk_modulator_generate_bit(zap_fsk_modulator_t *fsk_trans, int8_t bit, int16_t *buf, zap_size_t buflen);
 OZ_DECLARE(int32_t) zap_fsk_modulator_generate_carrier_bits(zap_fsk_modulator_t *fsk_trans, uint32_t bits);
@@ -683,6 +691,7 @@ OZ_DECLARE(const char *) zap_channel_get_var(zap_channel_t *zchan, const char *v
 OZ_DECLARE(zap_status_t) zap_channel_clear_vars(zap_channel_t *zchan);
 OZ_DECLARE(zap_status_t) zap_global_init(void);
 OZ_DECLARE(zap_status_t) zap_global_destroy(void);
+OZ_DECLARE(void) zap_global_set_crash_policy(zap_crash_policy_t policy);
 OZ_DECLARE(void) zap_global_set_logger(zap_logger_t logger);
 OZ_DECLARE(void) zap_global_set_default_logger(int level);
 OZ_DECLARE(uint32_t) zap_separate_string(char *buf, char delim, char **array, int arraylen);
@@ -722,6 +731,15 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw);
 #define zap_mutex_unlock(_x) _zap_mutex_unlock(_x)
 #endif
 
+#define zap_assert(assertion, retval, msg) \
+	if (!(assertion)) { \
+		zap_log(ZAP_LOG_CRIT, msg); \
+		if (g_zap_crash_policy & ZAP_CRASH_ON_ASSERT) { \
+			abort();  \
+		} else { \
+			return retval; \
+		} \
+	}
 
 static __inline__ void zap_set_state_all(zap_span_t *span, zap_channel_state_t state)
 {
