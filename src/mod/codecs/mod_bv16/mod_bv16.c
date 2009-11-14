@@ -146,7 +146,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_bv16_load)
 	switch_core_codec_add_implementation(pool,
 										 codec_interface,
 										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 126,						/* the IANA code number */
+										 106,						/* the IANA code number */
 										 "BV16",					/* the IANA code name */
 										 NULL,						/* default fmtp to send (can be overridden by the init function) */
 										 8000,						/* samples transferred per second */
