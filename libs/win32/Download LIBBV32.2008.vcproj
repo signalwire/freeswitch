@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="9.00"
+	Name="Download LIBBV32"
+	ProjectGUID="{0A205813-6D7C-4148-A6CC-2D86FA2F82C6}"
+	RootNamespace="Download LIBBV32"
+	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+				CommandLine=""
+				Outputs=""
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath=".\LIBBV32\cleancount"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading LIBBV32."
+					CommandLine="if not exist &quot;$(ProjectDir)..\libbv32-0.1&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/libbv32-0.1.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\libbv32-0.1"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading LIBBV32."
+					CommandLine="if not exist &quot;$(ProjectDir)..\libbv32-0.1&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/libbv32-0.1.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\libbv32-0.1"
+				/>
+			</FileConfiguration>
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>
