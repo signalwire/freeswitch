@@ -4240,10 +4240,9 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 
 	if (switch_odbc_available() && dbh->odbc_dbh) {
 		if (switch_odbc_handle_exec_string(dbh->odbc_dbh, sql, resbuf, len) == SWITCH_ODBC_SUCCESS) {
-			return resbuf;
-		} else {
-			goto end;
+			ret = resbuf;
 		}
+		goto end;		
 	}
 
 	if (switch_core_db_prepare(dbh->db, sql, -1, &stmt, 0)) {
