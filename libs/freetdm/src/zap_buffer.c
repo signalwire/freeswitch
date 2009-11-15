@@ -53,12 +53,12 @@ OZ_DECLARE(zap_status_t) zap_buffer_create(zap_buffer_t **buffer, zap_size_t blo
 {
 	zap_buffer_t *new_buffer;
 
-	new_buffer = malloc(sizeof(*new_buffer));
+	new_buffer = zap_malloc(sizeof(*new_buffer));
 	if (new_buffer) {
 		memset(new_buffer, 0, sizeof(*new_buffer));
 
 		if (start_len) {
-			new_buffer->data = malloc(start_len);
+			new_buffer->data = zap_malloc(start_len);
 			if (!new_buffer->data) {
 				free(new_buffer);
 				return ZAP_MEMERR;

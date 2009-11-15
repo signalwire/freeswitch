@@ -2263,7 +2263,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 		return ZAP_FAIL;
 	}
 
-	isdn_data = malloc(sizeof(*isdn_data));
+	isdn_data = zap_malloc(sizeof(*isdn_data));
 	assert(isdn_data != NULL);
 	memset(isdn_data, 0, sizeof(*isdn_data));
 	
@@ -2333,7 +2333,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	if (isdn_data->mode == Q931_NT) {
 		zap_isdn_bchan_data_t *data;
 
-		data = malloc((span->chan_count - 1) * sizeof(zap_isdn_bchan_data_t));
+		data = zap_malloc((span->chan_count - 1) * sizeof(zap_isdn_bchan_data_t));
 		if (!data) {
 			return ZAP_FAIL;
 		}

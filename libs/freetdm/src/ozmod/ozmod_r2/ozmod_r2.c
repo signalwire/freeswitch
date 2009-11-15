@@ -32,7 +32,6 @@
  */
 
 #include <stdio.h>
-#include <pthread.h>
 #include <openr2.h>
 #include "openzap.h"
 
@@ -738,7 +737,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_r2_configure_span)
 			}
 			openr2_log_level_t tmplevel;
 			char *clevel;
-			char *logval = malloc(strlen(val)+1); /* alloca man page scared me, so better to use good ol' malloc  */
+			char *logval = zap_malloc(strlen(val)+1); /* alloca man page scared me, so better to use good ol' malloc  */
 			if (!logval) {
 				zap_log(ZAP_LOG_WARNING, "Ignoring R2 logging parameter: '%s', failed to alloc memory\n", val);
 				continue;
@@ -811,14 +810,14 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_r2_configure_span)
 		return ZAP_FAIL;
 	}
 
-	r2data = malloc(sizeof(*r2data));
+	r2data = zap_malloc(sizeof(*r2data));
 	if (!r2data) {
 		snprintf(span->last_error, sizeof(span->last_error), "Failed to allocate R2 data.");
 		return ZAP_FAIL;
 	}
 	memset(r2data, 0, sizeof(*r2data));
 
-	spanpvt = malloc(sizeof(*spanpvt));
+	spanpvt = zap_malloc(sizeof(*spanpvt));
 	if (!spanpvt) {
 		snprintf(span->last_error, sizeof(span->last_error), "Failed to allocate private span data container.");
 		goto fail;
@@ -862,7 +861,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_r2_configure_span)
 			openr2_chan_set_log_level(r2chan, r2conf.loglevel);
 		}
 
-		r2call = malloc(sizeof(*r2call));
+		r2call = zap_malloc(sizeof(*r2call));
 		if (!r2call) {
 			snprintf(span->last_error, sizeof(span->last_error), "Cannot create all R2 call data structures for the span.");
 			zap_safe_free(r2chan);

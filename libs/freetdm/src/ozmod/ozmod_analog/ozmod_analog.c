@@ -122,7 +122,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 		return ZAP_FAIL;
 	}
 	
-	analog_data = malloc(sizeof(*analog_data));
+	analog_data = zap_malloc(sizeof(*analog_data));
 	assert(analog_data != NULL);
 	memset(analog_data, 0, sizeof(*analog_data));
 

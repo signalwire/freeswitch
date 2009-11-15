@@ -399,7 +399,7 @@ static ZIO_CONFIGURE_FUNCTION(m3ua_configure)
 	int ok = 1;
 
 	if (!(profile = (m3ua_channel_profile_t *) hashtable_search(globals.profile_hash, (char *)category))) {
-		profile = malloc(sizeof(*profile));
+		profile = zap_malloc(sizeof(*profile));
 		memset(profile, 0, sizeof(*profile));
 		zap_set_string(profile->name, category);
 		hashtable_insert(globals.profile_hash, (void *)profile->name, profile);

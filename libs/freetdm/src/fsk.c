@@ -32,7 +32,7 @@
  *
  *	2005 03 20	R. Krten		created
 */
-
+#include <openzap.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -134,7 +134,7 @@ dsp_fsk_handle_t *dsp_fsk_create(dsp_fsk_attr_t *attr)
 	double					phi_mark, phi_space;
 	dsp_fsk_handle_t	*handle;
 
-	handle = malloc(sizeof(*handle));
+	handle = zap_malloc(sizeof(*handle));
 	if (!handle) {
 		return NULL;
 	}
@@ -157,7 +157,7 @@ dsp_fsk_handle_t *dsp_fsk_create(dsp_fsk_attr_t *attr)
 
 	/* allocate the correlation sin/cos arrays and initialize */
 	for (i = 0; i < 4; i++) {
-		handle->correlates[i] = malloc(sizeof(double) * handle->corrsize);
+		handle->correlates[i] = zap_malloc(sizeof(double) * handle->corrsize);
 		if (handle->correlates[i] == NULL) {
 			/* some failed, back out memory allocations */
 			dsp_fsk_destroy(&handle);
@@ -177,7 +177,7 @@ dsp_fsk_handle_t *dsp_fsk_create(dsp_fsk_attr_t *attr)
 	}
 
 	/* initialize the ring buffer */
-	handle->buffer = malloc(sizeof(double) * handle->corrsize);
+	handle->buffer = zap_malloc(sizeof(double) * handle->corrsize);
 	if (!handle->buffer) {				/* failed; back out memory allocations */
 		dsp_fsk_destroy(&handle);
 		return NULL;

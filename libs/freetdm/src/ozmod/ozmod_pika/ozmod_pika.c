@@ -156,7 +156,7 @@ static ZIO_CONFIGURE_FUNCTION(pika_configure)
 	int ok = 1;
 
 	if (!(profile = (pika_channel_profile_t *) hashtable_search(globals.profile_hash, (char *)category))) {
-		profile = malloc(sizeof(*profile));
+		profile = zap_malloc(sizeof(*profile));
 		memset(profile, 0, sizeof(*profile));
 		zap_set_string(profile->name, category);
 		profile->ec_config = globals.ec_config;
@@ -348,7 +348,7 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 	if (span->mod_data) {
 		span_data = span->mod_data;
 	} else {
-		span_data = malloc(sizeof(*span_data));
+		span_data = zap_malloc(sizeof(*span_data));
 		assert(span_data != NULL);
 		memset(span_data, 0, sizeof(*span_data));
 		span_data->boardno = boardno;
@@ -376,7 +376,7 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 		zap_channel_t *chan;
 		pika_chan_data_t *chan_data = NULL;
 
-		chan_data = malloc(sizeof *chan_data);
+		chan_data = zap_malloc(sizeof *chan_data);
 		assert(chan_data);
 		memset(chan_data, 0, sizeof(*chan_data));
 		zap_span_add_channel(span, 0, type, &chan);

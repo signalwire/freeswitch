@@ -1272,7 +1272,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 	}
 #endif
 
-	isdn_data = malloc(sizeof(*isdn_data));
+	isdn_data = zap_malloc(sizeof(*isdn_data));
 	assert(isdn_data != NULL);
 	memset(isdn_data, 0, sizeof(*isdn_data));
 

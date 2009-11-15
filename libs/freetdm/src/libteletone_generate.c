@@ -34,6 +34,7 @@
  */
 
 #include <libteletone.h>
+#include "openzap.h"
 
 #define SMAX 32767
 #define SMIN -32768
@@ -273,7 +274,7 @@ TELETONE_API(int) teletone_mux_tones(teletone_generation_session_t *ts, teletone
 static char *my_strdup (const char *s)
 {
 	size_t len = strlen (s) + 1;
-	void *new = malloc (len);
+	void *new = zap_malloc(len);
 	
 	if (new == NULL) {
 		return NULL;

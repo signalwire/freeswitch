@@ -753,19 +753,19 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw);
   \brief Allocate uninitialized memory
   \command chunksize the chunk size
 */
-#define zap_malloc(chunksize) g_zap_mem_handler.malloc(g_zap_mem_handler.pool, chunksize);
+#define zap_malloc(chunksize) g_zap_mem_handler.malloc(g_zap_mem_handler.pool, chunksize)
 
 /*!
   \brief Allocate initialized memory
   \command chunksize the chunk size
 */
-#define zap_calloc(elements, chunksize) g_zap_mem_handler.calloc(g_zap_mem_handler.pool, elements, chunksize);
+#define zap_calloc(elements, chunksize) g_zap_mem_handler.calloc(g_zap_mem_handler.pool, elements, chunksize)
 
 /*!
   \brief Free chunk of memory
   \command chunksize the chunk size
 */
-#define zap_free(chunk) g_zap_mem_handler.free(g_zap_mem_handler.pool, chunk);
+#define zap_free(chunk) g_zap_mem_handler.free(g_zap_mem_handler.pool, chunk)
 
 /*!
   \brief Free a pointer and set it to NULL unless it already is NULL

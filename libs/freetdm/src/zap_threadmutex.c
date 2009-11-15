@@ -99,7 +99,7 @@ OZ_DECLARE(zap_status_t) zap_thread_create_detached_ex(zap_thread_function_t fun
 	zap_thread_t *thread = NULL;
 	zap_status_t status = ZAP_FAIL;
 
-	if (!func || !(thread = (zap_thread_t *)malloc(sizeof(zap_thread_t)))) {
+	if (!func || !(thread = (zap_thread_t *)zap_malloc(sizeof(zap_thread_t)))) {
 		goto done;
 	}
 
@@ -149,7 +149,7 @@ OZ_DECLARE(zap_status_t) zap_mutex_create(zap_mutex_t **mutex)
 #endif
 	zap_mutex_t *check = NULL;
 
-	check = (zap_mutex_t *)malloc(sizeof(**mutex));
+	check = (zap_mutex_t *)zap_malloc(sizeof(**mutex));
 	if (!check)
 		goto done;
 #ifdef WIN32
@@ -242,7 +242,7 @@ OZ_DECLARE(zap_status_t) zap_condition_create(zap_condition_t **incondition, zap
 	return ZAP_NOTIMPL;
 #endif
 
-	condition = malloc(sizeof(*condition));
+	condition = zap_malloc(sizeof(*condition));
 	if (!condition) {
 		return ZAP_FAIL;
 	}

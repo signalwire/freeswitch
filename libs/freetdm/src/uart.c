@@ -32,6 +32,7 @@
  *	2005 06 11	R. Krten		created
 */
 
+#include <openzap.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -76,7 +77,7 @@ dsp_uart_handle_t *dsp_uart_create(dsp_uart_attr_t *attr)
 {
 	dsp_uart_handle_t *handle;
 
-	handle = malloc(sizeof (*handle));
+	handle = zap_malloc(sizeof (*handle));
 	if (handle) {
 		memset(handle, 0, sizeof (*handle));
 

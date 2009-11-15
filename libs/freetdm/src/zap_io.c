@@ -35,8 +35,6 @@
 #ifndef WIN32
 #endif
 #include "openzap.h"
-//#include "zap_isdn.h"
-//#include "zap_ss7_boost.h"
 #include <stdarg.h>
 #ifdef WIN32
 #include <io.h>
@@ -426,7 +424,7 @@ OZ_DECLARE(zap_status_t) zap_span_create(zap_io_interface_t *zio, zap_span_t **s
 	zap_mutex_lock(globals.mutex);
 
 	if (globals.span_index < ZAP_MAX_SPANS_INTERFACE) {
-		new_span = malloc(sizeof(*new_span));
+		new_span = zap_malloc(sizeof(*new_span));
 		assert(new_span);
 		memset(new_span, 0, sizeof(*new_span));
 		status = zap_mutex_create(&new_span->mutex);
@@ -554,7 +552,7 @@ OZ_DECLARE(zap_status_t) zap_span_add_channel(zap_span_t *span, zap_socket_t soc
 		zap_channel_t *new_chan = span->channels[++span->chan_count];
 
 		if (!new_chan) {
-			if (!(new_chan = malloc(sizeof(*new_chan)))) {
+			if (!(new_chan = zap_malloc(sizeof(*new_chan)))) {
 				return ZAP_FAIL;
 			}
 			span->channels[span->chan_count] = new_chan;
@@ -3112,7 +3110,7 @@ OZ_DECLARE(int) zap_vasprintf(char **ret, const char *fmt, va_list ap) /* code f
 
 	len = vsnprintf(tmp, 0, fmt, ap2);
 
-	if (len > 0 && (buf = malloc((buflen = (size_t) (len + 1)))) != NULL) {
+	if (len > 0 && (buf = zap_malloc((buflen = (size_t) (len + 1)))) != NULL) {
 		len = vsnprintf(buf, buflen, fmt, ap);
 		*ret = buf;
 	} else {

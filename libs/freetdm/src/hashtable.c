@@ -31,6 +31,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "openzap.h"
 #include "hashtable.h"
 #include "hashtable_private.h"
 #include <stdlib.h>
@@ -69,9 +70,9 @@ create_hashtable(unsigned int minsize,
     for (pindex=0; pindex < prime_table_length; pindex++) {
         if (primes[pindex] > minsize) { size = primes[pindex]; break; }
     }
-    h = (struct hashtable *)malloc(sizeof(struct hashtable));
+    h = (struct hashtable *)zap_malloc(sizeof(struct hashtable));
     if (NULL == h) return NULL; /*oom*/
-    h->table = (struct entry **)malloc(sizeof(struct entry*) * size);
+    h->table = (struct entry **)zap_malloc(sizeof(struct entry*) * size);
     if (NULL == h->table) { free(h); return NULL; } /*oom*/
     memset(h->table, 0, size * sizeof(struct entry *));
     h->tablelength  = size;
@@ -110,7 +111,7 @@ hashtable_expand(struct hashtable *h)
     if (h->primeindex == (prime_table_length - 1)) return 0;
     newsize = primes[++(h->primeindex)];
 
-    newtable = (struct entry **)malloc(sizeof(struct entry*) * newsize);
+    newtable = (struct entry **)zap_malloc(sizeof(struct entry*) * newsize);
     if (NULL != newtable)
 		{
 			memset(newtable, 0, newsize * sizeof(struct entry *));
@@ -178,7 +179,7 @@ hashtable_insert(struct hashtable *h, void *k, void *v, hashtable_flag_t flags)
 			 * element may be ok. Next time we insert, we'll try expanding again.*/
 			hashtable_expand(h);
 		}
-    e = (struct entry *)malloc(sizeof(struct entry));
+    e = (struct entry *)zap_malloc(sizeof(struct entry));
     if (NULL == e) { --(h->entrycount); return 0; } /*oom*/
     e->h = hash(h,k);
     index = indexFor(h->tablelength,e->h);
