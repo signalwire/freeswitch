@@ -583,7 +583,7 @@ OZ_DECLARE(zap_status_t) zap_span_add_channel(zap_span_t *span, zap_socket_t soc
 		zap_buffer_create(&new_chan->gen_dtmf_buffer, 128, 128, 0);
 		new_chan->variable_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 
-		new_chan->dtmf_hangup_buf = calloc (span->dtmf_hangup_len + 1, sizeof (char));
+		new_chan->dtmf_hangup_buf = zap_calloc (span->dtmf_hangup_len + 1, sizeof (char));
 
 		zap_set_flag(new_chan, ZAP_CHANNEL_CONFIGURED | ZAP_CHANNEL_READY);
 		*chan = new_chan;

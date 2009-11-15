@@ -54,12 +54,12 @@ OZ_DECLARE(zap_status_t) zap_queue_create(zap_queue_t **outqueue, zap_size_t siz
 	zap_assert(size > 0, ZAP_FAIL, "Queue size is not bigger than 0\n");
 
 	*outqueue = NULL;
-	zap_queue_t *queue = calloc(1, sizeof(*queue));
+	zap_queue_t *queue = zap_calloc(1, sizeof(*queue));
 	if (!queue) {
 		return ZAP_FAIL;
 	}
 
-	queue->elements = calloc(1, (sizeof(void*)*size));
+	queue->elements = zap_calloc(1, (sizeof(void*)*size));
 	if (!queue->elements) {
 		goto failed;
 	}

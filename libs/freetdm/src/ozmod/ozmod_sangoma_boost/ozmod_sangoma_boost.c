@@ -1494,7 +1494,7 @@ static zap_state_map_t boost_state_map = {
 static BOOST_WRITE_MSG_FUNCTION(zap_boost_write_msg)
 {
 	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
-	sangomabc_queue_element_t *element = calloc(1, sizeof(*element));
+	sangomabc_queue_element_t *element = zap_calloc(1, sizeof(*element));
 	if (!element) {
 		return ZAP_FAIL;
 	}
@@ -1588,7 +1588,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
 		}
 	}
 
-	sangoma_boost_data = calloc(1, sizeof(*sangoma_boost_data));
+	sangoma_boost_data = zap_calloc(1, sizeof(*sangoma_boost_data));
 	if (!sangoma_boost_data) {
 		FAIL_CONFIG_RETURN(ZAP_FAIL);
 	}

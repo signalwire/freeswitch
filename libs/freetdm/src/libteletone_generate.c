@@ -111,7 +111,7 @@ TELETONE_API(int) teletone_init_session(teletone_generation_session_t *ts, int b
 	ts->decay_step = 0;
 	ts->decay_factor = 1;
 	if (buflen) {
-		if ((ts->buffer = calloc(buflen, sizeof(teletone_audio_t))) == 0) {
+		if ((ts->buffer = zap_calloc(buflen, sizeof(teletone_audio_t))) == 0) {
 			return -1;
 		}
 		ts->datalen = buflen;
