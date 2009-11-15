@@ -4273,6 +4273,7 @@ typedef struct {
 	char *event;
 	char *reply_uuid;
 	char *bridge_to_uuid;
+	switch_event_t *vars;
 	switch_memory_pool_t *pool;
 } nightmare_xfer_helper_t;
 
@@ -4293,16 +4294,17 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 			private_object_t *tech_pvt = switch_core_session_get_private(session);
 			switch_channel_t *channel_a = switch_core_session_get_channel(session);
 
-			status = switch_ivr_originate(a_session, &tsession, &cause, nhelper->exten, timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE);
-							
+			status = switch_ivr_originate(NULL, &tsession, &cause, nhelper->exten, timeout, NULL, NULL, NULL,
+                                          switch_channel_get_caller_profile(channel_a), nhelper->vars, SOF_NONE);
+
 			if ((switch_channel_up(channel_a))) {
-				
 				if (status != SWITCH_STATUS_SUCCESS || cause != SWITCH_CAUSE_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! [%s]\n", nhelper->exten);
 					nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("messsage/sipfrag"),
 							   NUTAG_SUBSTATE(nua_substate_terminated),
 							   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
 					status = SWITCH_STATUS_FALSE;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Don't be sad.... I tried to warn you.\n");
 				} else {
 					tuuid_str = switch_core_session_get_uuid(tsession);
 					switch_ivr_uuid_bridge(nhelper->bridge_to_uuid, tuuid_str);
@@ -4311,13 +4313,22 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 					nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 							   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
 					switch_core_session_rwunlock(tsession);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Congratulations! You have *no* idea how lucky you are!\n");
 				}
+			} else {
+				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("messsage/sipfrag"),
+						   NUTAG_SUBSTATE(nua_substate_terminated),
+						   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
+				status = SWITCH_STATUS_FALSE;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Wow, This could not have turned out any worse...=/ Sorry...\n");
 			}
 			switch_core_session_rwunlock(session);
 		}
 
 		switch_core_session_rwunlock(a_session);
 	}
+
+	switch_event_destroy(&nhelper->vars);
 
 	pool = nhelper->pool;
 	switch_core_destroy_memory_pool(&pool);
@@ -4665,15 +4676,16 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							nightmare_xfer_helper->reply_uuid = switch_core_strdup(npool, switch_core_session_get_uuid(session));
 							nightmare_xfer_helper->bridge_to_uuid = switch_core_strdup(npool, br_a);
 							nightmare_xfer_helper->pool = npool;
+							switch_event_create(&nightmare_xfer_helper->vars, SWITCH_EVENT_CHANNEL_DATA);
 
-							switch_channel_set_variable(channel, SOFIA_REPLACES_HEADER, rep);
-
+							switch_event_add_header_string(nightmare_xfer_helper->vars, SWITCH_STACK_BOTTOM, SOFIA_REPLACES_HEADER, rep);
+							
 							if (!zstr(full_ref_by)) {
-								switch_channel_set_variable(channel, SOFIA_SIP_HEADER_PREFIX "Referred-By", full_ref_by);
+								switch_event_add_header_string(nightmare_xfer_helper->vars, SWITCH_STACK_BOTTOM, "Referred-By", full_ref_by);
 							}
 
 							if (!zstr(full_ref_to)) {
-								switch_channel_set_variable(channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
+								switch_event_add_header_string(nightmare_xfer_helper->vars, SWITCH_STACK_BOTTOM, SOFIA_REFER_TO_VARIABLE, full_ref_to);
 							}
 
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Good Luck, you'll need it......\n");
