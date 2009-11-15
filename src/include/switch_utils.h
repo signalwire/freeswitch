@@ -308,6 +308,26 @@ switch_mutex_unlock(obj->flag_mutex);
 
 #define switch_set_string(_dst, _src) switch_copy_string(_dst, _src, sizeof(_dst))
 
+
+static inline char *switch_sanitize_number(char *number)
+{
+	char *p = number, *q;
+	char warp[] = "/:";
+	int i;
+
+	if (!(strchr(p, '/') || strchr(p, ':') || strchr(p, '@'))) {
+		return number;
+	}
+
+	while((q = strrchr(p, '@'))) *q = '\0';
+ 
+	for(i = 0; i < strlen(warp); i++) {
+		while(p && (q = strchr(p, warp[i]))) p = q + 1;
+	}
+
+	return p;
+}
+
 static inline switch_bool_t switch_string_var_check(char *s, switch_bool_t disable)
 {
     char *p;

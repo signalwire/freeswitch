@@ -179,15 +179,15 @@ char *generate_pai_str(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	const char *callee_name = NULL, *callee_number = NULL;
-	const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
-	char *pai = NULL;
+	const char *header, *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
+	char *pai = NULL, *tmp = NULL;
 
 	if (zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_name"))) &&
 		zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name")))) {
 		callee_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name");
 	}
-
-	if (zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "origination_callee_id_number"))) &&
+	
+	if (zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_number"))) &&
 		zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number")))) {
 		callee_number = tech_pvt->caller_profile->destination_number;
 	}
@@ -196,20 +196,30 @@ char *generate_pai_str(switch_core_session_t *session)
 		callee_name = callee_number;
 	}
 
+	tmp = switch_core_session_strdup(session, callee_number);
+	callee_number = switch_sanitize_number(tmp);
+
+	tmp = switch_core_session_strdup(session, callee_name);
+	callee_name = switch_sanitize_number(tmp);
+
 	if (!zstr(callee_number) && (zstr(ua) || !switch_stristr("polycom", ua))) {
 		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, tech_pvt->profile->sipip);
 	}
 	
+	header = (tech_pvt->cid_type == CID_TYPE_RPID) ? "Remote-Party-ID" : "P-Asserted-Identity";
 
 	if (!zstr(callee_name) && !zstr(callee_number)) {
 		if (switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote)) {
-			pai = switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>\nX-FS-Display-Name: %s\nX-FS-Display-Number: %s\n", 
-											  callee_name, callee_number, callee_name, callee_number);
+			pai = switch_core_session_sprintf(tech_pvt->session, "%s: \"%s\" <%s>\n"
+											  "X-FS-Display-Name: %s\nX-FS-Display-Number: %s\n", 
+											  header, callee_name, callee_number, callee_name, callee_number);
 		} else {
-			pai = switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>\n", 
-											  callee_name, callee_number);
+			pai = switch_core_session_sprintf(tech_pvt->session, "%s: \"%s\" <%s>\n", 
+											  header, callee_name, callee_number);
 		}
+
 	}
+
 	return pai;
 }
 
@@ -2859,12 +2869,12 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 {
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	switch_core_session_t *nsession = NULL;
-	char *data, *profile_name, *dest, *dest_num = NULL;
+	char *data, *profile_name, *dest;//, *dest_num = NULL;
 	sofia_profile_t *profile = NULL;
 	switch_caller_profile_t *caller_profile = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *nchannel;
-	char *host = NULL, *dest_to = NULL, *p;
+	char *host = NULL, *dest_to = NULL;
 	const char *hval = NULL;
 
 	*new_session = NULL;
@@ -3088,7 +3098,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 	}
 	switch_channel_set_variable(nchannel, "sip_destination_url", tech_pvt->dest);
-
+#if 0
 	dest_num = switch_core_session_strdup(nsession, dest);
 	if ((p = strchr(dest_num, '@'))) {
 		*p = '\0';
@@ -3101,10 +3111,16 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			dest_num = p + 5;
 		}
 	}
-	
+#endif
 
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
-	caller_profile->destination_number = switch_core_strdup(caller_profile->pool, dest_num);
+	
+
+	caller_profile->destination_number = switch_sanitize_number(caller_profile->destination_number);
+	caller_profile->caller_id_name = switch_sanitize_number((char *)caller_profile->caller_id_name);
+	caller_profile->caller_id_number = switch_sanitize_number((char *)caller_profile->caller_id_number);
+	
+	//caller_profile->destination_number = switch_core_strdup(caller_profile->pool, dest_num);
 	switch_channel_set_caller_profile(nchannel, caller_profile);
 	switch_channel_set_flag(nchannel, CF_OUTBOUND);
 	sofia_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
@@ -3157,6 +3173,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			switch_assert(ctech_pvt != NULL);
 			tech_pvt->bte = ctech_pvt->te;
 			tech_pvt->bcng_pt = ctech_pvt->cng_pt;
+			tech_pvt->cid_type = ctech_pvt->cid_type;
 		}
 
 		if (switch_channel_test_flag(o_channel, CF_PROXY_MEDIA)) {

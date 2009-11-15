@@ -501,6 +501,9 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	caller_profile->callee_id_name = switch_core_strdup(caller_profile->pool, name);
 	caller_profile->callee_id_number = switch_core_strdup(caller_profile->pool, number);
 
+	caller_profile->callee_id_name = switch_sanitize_number((char *)caller_profile->callee_id_name);
+	caller_profile->callee_id_number = switch_sanitize_number((char *)caller_profile->callee_id_number);
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Update Callee ID to \"%s\" <%s>\n", name, number);
 	
 	if (send) {
@@ -5324,6 +5327,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			displayname = rpid->rpid_display;
 		}
 		switch_channel_set_variable(channel, "sip_cid_type", "rpid");
+		tech_pvt->cid_type = CID_TYPE_RPID;
 	}
 
 	if ((passerted = sip_p_asserted_identity(sip))) {
@@ -5338,6 +5342,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			displayname = passerted->paid_display;
 		}
 		switch_channel_set_variable(channel, "sip_cid_type", "pid");
+		tech_pvt->cid_type = CID_TYPE_PID;
 	}
 
 	if ((ppreferred = sip_p_preferred_identity(sip))) {
@@ -5353,6 +5358,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			displayname = ppreferred->ppid_display;
 		}
 		switch_channel_set_variable(channel, "sip_cid_type", "pid");
+		tech_pvt->cid_type = CID_TYPE_PID;
 	}
 
 	if (from_user) {

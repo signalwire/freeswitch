@@ -645,6 +645,7 @@ struct private_object {
 	switch_codec_implementation_t write_impl;
 	char *user_via;
 	char *redirected;
+	sofia_cid_type_t cid_type;
 };
 
 struct callback_t {

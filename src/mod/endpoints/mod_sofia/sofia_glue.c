@@ -1632,7 +1632,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		
 		if ((val = switch_channel_get_variable(channel, "sip_cid_type"))) {
 			cid_type = sofia_cid_name2type(val);
+		} else {
+			cid_type = tech_pvt->cid_type;
 		}
+
 		switch (cid_type) {
 		case CID_TYPE_PID:
 			if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
