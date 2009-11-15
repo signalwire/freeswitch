@@ -318,15 +318,6 @@ typedef enum {
 */
 #define zap_copy_flags(dest, src, flags) (dest)->flags &= ~(flags);	(dest)->flags |= ((src)->flags & (flags))
 
-/*!
-  \brief Free a pointer and set it to NULL unless it already is NULL
-  \command it the pointer
-*/
-#define zap_safe_free(it) if (it) {free(it);it=NULL;}
-
-#define zap_socket_close(it) if (it > -1) { close(it); it = -1;}
-
-
 struct zap_stream_handle {
 	zap_stream_handle_write_function_t write_function;
 	zap_stream_handle_raw_write_function_t raw_write_function;
@@ -586,6 +577,18 @@ typedef enum {
 
 OZ_DECLARE_DATA extern zap_crash_policy_t g_zap_crash_policy;
 
+typedef void *(*zap_malloc_func_t)(void *pool, zap_size_t len);
+typedef void *(*zap_calloc_func_t)(void *pool, zap_size_t elements, zap_size_t len);
+typedef void (*zap_free_func_t)(void *pool, void *ptr);
+typedef struct zap_memory_handler {
+	void *pool;
+	zap_malloc_func_t malloc;
+	zap_calloc_func_t calloc;
+	zap_free_func_t free;
+} zap_memory_handler_t;
+
+OZ_DECLARE_DATA extern zap_memory_handler_t g_zap_mem_handler;
+
 struct zap_io_interface {
 	const char *name;
 	zio_configure_span_t configure_span;
@@ -691,6 +694,7 @@ OZ_DECLARE(const char *) zap_channel_get_var(zap_channel_t *zchan, const char *v
 OZ_DECLARE(zap_status_t) zap_channel_clear_vars(zap_channel_t *zchan);
 OZ_DECLARE(zap_status_t) zap_global_init(void);
 OZ_DECLARE(zap_status_t) zap_global_destroy(void);
+OZ_DECLARE(zap_status_t) zap_global_set_memory_handler(zap_memory_handler_t *handler);
 OZ_DECLARE(void) zap_global_set_crash_policy(zap_crash_policy_t policy);
 OZ_DECLARE(void) zap_global_set_logger(zap_logger_t logger);
 OZ_DECLARE(void) zap_global_set_default_logger(int level);
@@ -731,6 +735,10 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw);
 #define zap_mutex_unlock(_x) _zap_mutex_unlock(_x)
 #endif
 
+/*!
+  \brief Allocate uninitialized memory
+  \command chunksize the chunk size
+*/
 #define zap_assert(assertion, retval, msg) \
 	if (!(assertion)) { \
 		zap_log(ZAP_LOG_CRIT, msg); \
@@ -740,6 +748,36 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw);
 			return retval; \
 		} \
 	}
+
+/*!
+  \brief Allocate uninitialized memory
+  \command chunksize the chunk size
+*/
+#define zap_malloc(chunksize) g_zap_mem_handler.malloc(g_zap_mem_handler.pool, chunksize);
+
+/*!
+  \brief Allocate initialized memory
+  \command chunksize the chunk size
+*/
+#define zap_calloc(elements, chunksize) g_zap_mem_handler.calloc(g_zap_mem_handler.pool, elements, chunksize);
+
+/*!
+  \brief Free chunk of memory
+  \command chunksize the chunk size
+*/
+#define zap_free(chunk) g_zap_mem_handler.free(g_zap_mem_handler.pool, chunk);
+
+/*!
+  \brief Free a pointer and set it to NULL unless it already is NULL
+  \command it the pointer
+*/
+#define zap_safe_free(it) if (it) { zap_free(it); it = NULL; }
+
+/*!
+  \brief Socket the given socket
+  \command it the socket
+*/
+#define zap_socket_close(it) if (it > -1) { close(it); it = -1;}
 
 static __inline__ void zap_set_state_all(zap_span_t *span, zap_channel_state_t state)
 {

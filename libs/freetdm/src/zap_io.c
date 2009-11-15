@@ -176,6 +176,33 @@ static void default_logger(const char *file, const char *func, int line, int lev
 
 }
 
+static inline void *zap_std_malloc(void *pool, zap_size_t size)
+{
+	void *ptr = malloc(size);
+	zap_assert(ptr != NULL, NULL, "Out of memory");
+	return ptr;
+}
+
+static inline void *zap_std_calloc(void *pool, zap_size_t elements, zap_size_t size)
+{
+	void *ptr = calloc(elements, size);
+	zap_assert(ptr != NULL, NULL, "Out of memory");
+	return ptr;
+}
+
+static inline void zap_std_free(void *pool, void *ptr)
+{
+	free(ptr);
+}
+
+OZ_DECLARE_DATA zap_memory_handler_t g_zap_mem_handler = 
+{
+	.pool = NULL,
+	.malloc = zap_std_malloc,
+	.calloc = zap_std_calloc,
+	.free = zap_std_free
+};
+
 OZ_DECLARE_DATA zap_crash_policy_t g_zap_crash_policy = ZAP_CRASH_NEVER;
 
 OZ_DECLARE_DATA zap_logger_t zap_log = null_logger;
@@ -183,6 +210,24 @@ OZ_DECLARE_DATA zap_logger_t zap_log = null_logger;
 OZ_DECLARE(void) zap_global_set_crash_policy(zap_crash_policy_t policy)
 {
 	g_zap_crash_policy = policy;
+}
+
+OZ_DECLARE(zap_status_t) zap_global_set_memory_handler(zap_memory_handler_t *handler)
+{
+	if (!handler) {
+		return ZAP_FAIL;
+	}
+	if (!handler->malloc) {
+		return ZAP_FAIL;
+	}
+	if (!handler->calloc) {
+		return ZAP_FAIL;
+	}
+	if (!handler->free) {
+		return ZAP_FAIL;
+	}
+	memcpy(&g_zap_mem_handler, handler, sizeof(*handler));
+	return ZAP_SUCCESS;
 }
 
 OZ_DECLARE(void) zap_global_set_logger(zap_logger_t logger)

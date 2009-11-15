@@ -31,6 +31,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "openzap.h"
 #include "hashtable.h"
 #include "hashtable_private.h"
 #include "hashtable_itr.h"
@@ -43,8 +44,7 @@ struct hashtable_itr *
 hashtable_iterator(struct hashtable *h)
 {
     unsigned int i, tablelength;
-    struct hashtable_itr *itr = (struct hashtable_itr *)
-        malloc(sizeof(struct hashtable_itr));
+    struct hashtable_itr *itr = zap_malloc(sizeof(struct hashtable_itr));
     if (NULL == itr) return NULL;
     itr->h = h;
     itr->e = NULL;
