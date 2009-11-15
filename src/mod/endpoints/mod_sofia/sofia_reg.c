@@ -1510,7 +1510,9 @@ void sofia_reg_handle_sip_r_challenge(int status,
 			if ((p = strchr(rb, '"'))) {
 				*p = '\0';
 			}
-			var_gateway = sofia_reg_find_gateway(rb);
+			if (!(var_gateway = sofia_reg_find_gateway(rb))) {
+				var_gateway = sofia_reg_find_gateway_by_realm(rb);
+			}
 		}
 
 		if (!var_gateway && sip && sip->sip_to) {
@@ -2164,6 +2166,48 @@ sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, in
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 	return gateway;
 }
+
+
+sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char *func, int line, const char *key)
+{
+	sofia_gateway_t *gateway = NULL;
+	switch_hash_index_t *hi;
+	const void *var;
+    void *val;
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	for (hi = switch_hash_first(NULL, mod_sofia_globals.gateway_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		if ((gateway = (sofia_gateway_t *) val)) {
+			if (!strcasecmp(gateway->register_realm, key)) {
+				break;
+			}
+		} else {
+			gateway = NULL;
+		}
+	}
+
+	if (gateway) {
+		if (!sofia_test_pflag(gateway->profile, PFLAG_RUNNING) || gateway->deleted) {
+			gateway = NULL;
+			goto done;
+		}
+		if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "Profile %s is locked\n", gateway->profile->name);
+			gateway = NULL;
+		}
+	}
+	if (gateway) {
+#ifdef SOFIA_DEBUG_RWLOCKS
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX GW LOCK %s\n", gateway->profile->name);
+#endif
+	}
+
+  done:
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+	return gateway;
+}
+
 
 void sofia_reg_release_gateway__(const char *file, const char *func, int line, sofia_gateway_t *gateway)
 {
