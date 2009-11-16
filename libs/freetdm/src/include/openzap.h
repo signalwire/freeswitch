@@ -720,6 +720,7 @@ OZ_DECLARE(zap_status_t) zap_channel_add_var(zap_channel_t *zchan, const char *v
 OZ_DECLARE(const char *) zap_channel_get_var(zap_channel_t *zchan, const char *var_name);
 OZ_DECLARE(zap_status_t) zap_channel_clear_vars(zap_channel_t *zchan);
 OZ_DECLARE(zap_status_t) zap_global_init(void);
+OZ_DECLARE(zap_status_t) zap_global_configuration(void);
 OZ_DECLARE(zap_status_t) zap_global_destroy(void);
 OZ_DECLARE(zap_status_t) zap_global_set_memory_handler(zap_memory_handler_t *handler);
 OZ_DECLARE(void) zap_global_set_crash_policy(zap_crash_policy_t policy);

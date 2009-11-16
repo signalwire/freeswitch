@@ -2818,8 +2818,6 @@ OZ_DECLARE(zap_status_t) zap_span_start(zap_span_t *span)
 
 OZ_DECLARE(zap_status_t) zap_global_init(void)
 {
-	int modcount;
-
 	memset(&globals, 0, sizeof(globals));
 
 	time_init();
@@ -2830,20 +2828,22 @@ OZ_DECLARE(zap_status_t) zap_global_init(void)
 	globals.interface_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 	globals.module_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 	globals.span_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
-	modcount = 0;
 	zap_mutex_create(&globals.mutex);
 	zap_mutex_create(&globals.span_mutex);
-	
-	modcount = zap_load_modules();
+	return ZAP_FAIL;
+}
+
+OZ_DECLARE(zap_status_t) zap_global_configuration(void)
+{
+	int modcount = zap_load_modules();
 	zap_log(ZAP_LOG_NOTICE, "Modules configured: %d \n", modcount);
 
-	if (load_config() == ZAP_SUCCESS) {
-		globals.running = 1;
-		return ZAP_SUCCESS;
+	if (load_config() != ZAP_SUCCESS) {
+		globals.running = 0;
+		zap_log(ZAP_LOG_ERROR, "OpenZap global configuration failed!\n");
+		return ZAP_FAIL;
 	}
-
-	zap_log(ZAP_LOG_ERROR, "No modules configured!\n");
-	return ZAP_FAIL;
+	return ZAP_SUCCESS;
 }
 
 OZ_DECLARE(uint32_t) zap_running(void)
