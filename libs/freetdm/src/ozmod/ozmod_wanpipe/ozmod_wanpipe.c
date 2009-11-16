@@ -598,22 +598,19 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 	case ZAP_COMMAND_SET_LINK_STATUS:
 		{
 			zap_hw_link_status_t status = ZAP_COMMAND_OBJ_INT;
-			char sangoma_status;
-			switch (status) {
-			case ZAP_HW_LINK_UNINITIALIZED: 
-				sangoma_status = FE_UNITIALIZED;
-				break;
-			case ZAP_HW_LINK_DISCONNECTED:
-				sangoma_status = FE_DISCONNECTED;
-				break;
-			case ZAP_HW_LINK_CONNECTED:
-				sangoma_status = FE_CONNECTED;
-				break;
-			default:
-				return ZAP_FAIL;
-			}
-			err = sangoma_tdm_set_fe_status(zchan->sockfd, &tdm_api, status);
+			char sangoma_status = status == ZAP_HW_LINK_CONNECTED ? FE_CONNECTED : FE_DISCONNECTED;
+			err = sangoma_tdm_set_fe_status(zchan->sockfd, &tdm_api, sangoma_status);
 		}
+		break;
+	case ZAP_COMMAND_GET_LINK_STATUS:
+		{
+			unsigned char sangoma_status = 0;
+			err = sangoma_tdm_get_fe_status(zchan->sockfd, &tdm_api, &sangoma_status);
+			if (!err) {
+				ZAP_COMMAND_OBJ_INT = sangoma_status == FE_CONNECTED ? ZAP_HW_LINK_CONNECTED : ZAP_HW_LINK_DISCONNECTED;
+			}
+		}
+		break;
 	default:
 		break;
 	};

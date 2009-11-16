@@ -301,6 +301,7 @@ typedef enum {
 	ZAP_COMMAND_FLUSH_BUFFERS,
 	ZAP_COMMAND_SET_PRE_BUFFER_SIZE,
 	ZAP_COMMAND_SET_LINK_STATUS,
+	ZAP_COMMAND_GET_LINK_STATUS,
 	ZAP_COMMAND_COUNT
 } zap_command_t;
 
@@ -421,8 +422,7 @@ struct zap_state_map {
 typedef struct zap_state_map zap_state_map_t;
 
 typedef enum zap_hw_link_status {
-	ZAP_HW_LINK_UNINITIALIZED = 0,
-	ZAP_HW_LINK_DISCONNECTED,
+	ZAP_HW_LINK_DISCONNECTED = 0,
 	ZAP_HW_LINK_CONNECTED
 } zap_hw_link_status_t;
 
