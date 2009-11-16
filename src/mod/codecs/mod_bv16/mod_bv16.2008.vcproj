@@ -169,7 +169,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\libbv16\bv16&quot;;&quot;$(InputDir)..\..\..\..\libs\libbv16\bvcommon&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\libbv16-0.1\bv16&quot;;&quot;$(InputDir)..\..\..\..\libs\libbv16-0.1\bvcommon&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -232,7 +232,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\libbv16\bv16&quot;;&quot;$(InputDir)..\..\..\..\libs\libbv16\bvcommon&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\libbv16-0.1\bv16&quot;;&quot;$(InputDir)..\..\..\..\libs\libbv16-0.1\bvcommon&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
