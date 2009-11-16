@@ -2604,6 +2604,19 @@ OZ_DECLARE(char *) zap_build_dso_path(const char *name, char *path, zap_size_t l
 	return path;	
 }
 
+OZ_DECLARE(zap_status_t) zap_global_add_io_interface(zap_io_interface_t *interface1)
+{
+	zap_status_t ret = ZAP_SUCCESS;
+	zap_mutex_lock(globals.mutex);
+	if (hashtable_search(globals.interface_hash, (void *)interface1->name)) {
+		zap_log(ZAP_LOG_ERROR, "Interface %s already loaded!\n", interface1->name);
+	} else {
+		hashtable_insert(globals.interface_hash, (void *)interface1->name, interface1, HASHTABLE_FLAG_NONE);
+	}
+	zap_mutex_unlock(globals.mutex);
+	return ret;
+}
+
 OZ_DECLARE(int) zap_load_module(const char *name)
 {
 	zap_dso_lib_t lib;
@@ -2633,15 +2646,10 @@ OZ_DECLARE(int) zap_load_module(const char *name)
 			zap_log(ZAP_LOG_ERROR, "Error loading %s\n", path);
 		} else {
 			zap_log(ZAP_LOG_INFO, "Loading IO from %s [%s]\n", path, interface1->name);
-			zap_mutex_lock(globals.mutex);
-			if (hashtable_search(globals.interface_hash, (void *)interface1->name)) {
-				zap_log(ZAP_LOG_ERROR, "Interface %s already loaded!\n", interface1->name);
-			} else {
-				hashtable_insert(globals.interface_hash, (void *)interface1->name, interface1, HASHTABLE_FLAG_NONE);
+			if (zap_global_add_io_interface(interface1) == ZAP_SUCCESS) {
 				process_module_config(interface1);
 				x++;
 			}
-			zap_mutex_unlock(globals.mutex);
 		}
 	}
 
