@@ -169,6 +169,9 @@ typedef struct boost_sigmod_interface_s {
 	void *pvt;
 } boost_sigmod_interface_t;
 
+#define BOOST_INTERFACE_NAME "boost_sigmod_interface"
+/* use this in your sig boost module to declare your interface */
+#define BOOST_INTERFACE boost_sigmod_interface_t BOOST_INTERFACE_NAME
 #endif
 
 /* For Emacs:
