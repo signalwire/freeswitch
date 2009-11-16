@@ -34,7 +34,7 @@
 #ifndef _SANGOMABC_H
 #define _SANGOMABC_H
 
-#include "sangoma_boost_sigmod.h"
+#include "sangoma_boost_interface.h"
 
 #include <ctype.h>
 #include <string.h>
