@@ -15,6 +15,10 @@
  * constitutes an essential part of this license. No use of any covered code is authorized hereunder
  * except under this disclaimer. 
  *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ *
  */
 
 #ifdef WIN32

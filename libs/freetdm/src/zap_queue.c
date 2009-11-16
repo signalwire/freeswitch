@@ -32,13 +32,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ZAP_QUEUE_H
-#define ZAP_QUEUE_H
-
 #include "openzap.h"
 
 #undef zap_queue_t
-#define ZAP_QUEUE_SIZE
 typedef struct zap_queue {
 	zap_mutex_t *mutex;
 	zap_condition_t *condition;
@@ -48,7 +44,36 @@ typedef struct zap_queue {
 	void **elements;
 } zap_queue_t;
 
-OZ_DECLARE(zap_status_t) zap_queue_create(zap_queue_t **outqueue, zap_size_t size)
+static zap_status_t zap_std_queue_create(zap_queue_t **outqueue, zap_size_t size);
+static zap_status_t zap_std_queue_enqueue(zap_queue_t *queue, void *obj);
+static void *zap_std_queue_dequeue(zap_queue_t *queue);
+static zap_status_t zap_std_queue_wait(zap_queue_t *queue, int ms);
+static zap_status_t zap_std_queue_destroy(zap_queue_t **inqueue);
+
+OZ_DECLARE_DATA zap_queue_handler_t g_zap_queue_handler = 
+{
+	.create = zap_std_queue_create,
+	.enqueue = zap_std_queue_enqueue,
+	.dequeue = zap_std_queue_dequeue,
+	.wait = zap_std_queue_wait,
+	.destroy = zap_std_queue_destroy
+};
+
+OZ_DECLARE(zap_status_t) zap_global_set_queue_handler(zap_queue_handler_t *handler)
+{
+	if (!handler ||
+		!handler->create || 
+		!handler->enqueue || 
+		!handler->dequeue || 
+		!handler->wait || 
+		!handler->destroy) {
+		return ZAP_FAIL;
+	}
+	memcpy(&g_zap_queue_handler, handler, sizeof(*handler));
+	return ZAP_SUCCESS;
+}
+
+static zap_status_t zap_std_queue_create(zap_queue_t **outqueue, zap_size_t size)
 {
 	zap_assert(outqueue, ZAP_FAIL, "Queue double pointer is null\n");
 	zap_assert(size > 0, ZAP_FAIL, "Queue size is not bigger than 0\n");
@@ -90,7 +115,7 @@ failed:
 	return ZAP_FAIL;
 }
 
-OZ_DECLARE(zap_status_t) zap_queue_enqueue(zap_queue_t *queue, void *obj)
+static zap_status_t zap_std_queue_enqueue(zap_queue_t *queue, void *obj)
 {
 	zap_status_t status = ZAP_FAIL;
 
@@ -120,7 +145,7 @@ done:
 	return status;
 }
 
-OZ_DECLARE(void *) zap_queue_dequeue(zap_queue_t *queue)
+static void *zap_std_queue_dequeue(zap_queue_t *queue)
 {
 	void *obj = NULL;
 
@@ -143,7 +168,7 @@ done:
 	return obj;
 }
 
-OZ_DECLARE(zap_status_t) zap_queue_wait(zap_queue_t *queue, int ms)
+static zap_status_t zap_std_queue_wait(zap_queue_t *queue, int ms)
 {
 	zap_assert(queue != NULL, ZAP_FAIL, "Queue is null!");
 	
@@ -164,7 +189,7 @@ OZ_DECLARE(zap_status_t) zap_queue_wait(zap_queue_t *queue, int ms)
 	return ZAP_SUCCESS;
 }
 
-OZ_DECLARE(zap_status_t) zap_queue_destroy(zap_queue_t **inqueue)
+static zap_status_t zap_std_queue_destroy(zap_queue_t **inqueue)
 {
 	zap_queue_t *queue = NULL;
 	zap_assert(inqueue != NULL, ZAP_FAIL, "Queue is null!");
@@ -178,8 +203,6 @@ OZ_DECLARE(zap_status_t) zap_queue_destroy(zap_queue_t **inqueue)
 	*inqueue = NULL;
 	return ZAP_SUCCESS;
 }
-
-#endif
 
 /* For Emacs:
  * Local Variables:

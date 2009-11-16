@@ -29,6 +29,11 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ *
  */
 
 #ifndef OPENZAP_H
@@ -610,22 +615,39 @@ struct zap_io_interface {
 struct zap_queue;
 #define zap_queue_t struct zap_queue
 
+typedef zap_status_t (*zap_queue_create_func_t)(zap_queue_t **queue, zap_size_t);
+typedef zap_status_t (*zap_queue_enqueue_func_t)(zap_queue_t *queue, void *obj);
+typedef void *(*zap_queue_dequeue_func_t)(zap_queue_t *queue);
+typedef zap_status_t (*zap_queue_wait_func_t)(zap_queue_t *queue, int ms);
+typedef zap_status_t (*zap_queue_destroy_func_t)(zap_queue_t **queue);
+typedef struct zap_queue_handler {
+	zap_queue_create_func_t create;
+	zap_queue_enqueue_func_t enqueue;
+	zap_queue_dequeue_func_t dequeue;
+	zap_queue_wait_func_t wait;
+	zap_queue_destroy_func_t destroy;
+} zap_queue_handler_t;
+OZ_DECLARE_DATA extern zap_queue_handler_t g_zap_queue_handler;
+
 /*! brief create a new queue */
-OZ_DECLARE(zap_status_t) zap_queue_create(zap_queue_t **queue, zap_size_t size);
+#define zap_queue_create(queue, size) g_zap_queue_handler.create(queue, size)
 
 /*! Enqueue an object */
-OZ_DECLARE(zap_status_t) zap_queue_enqueue(zap_queue_t *queue, void *obj);
+#define zap_queue_enqueue(queue, obj) g_zap_queue_handler.enqueue(queue, obj)
 
 /*! dequeue an object from the queue */
-OZ_DECLARE(void *) zap_queue_dequeue(zap_queue_t *queue);
+#define zap_queue_dequeue(queue) g_zap_queue_handler.dequeue(queue)
 
 /*! wait ms milliseconds for a queue to have available objects, -1 to wait forever */
-OZ_DECLARE(zap_status_t) zap_queue_wait(zap_queue_t *queue, int ms);
+#define zap_queue_wait(queue, ms) g_zap_queue_handler.wait(queue, ms)
 
 /*! destroy the queue */ 
-OZ_DECLARE(zap_status_t) zap_queue_destroy(zap_queue_t **queue);
+#define zap_queue_destroy(queue) g_zap_queue_handler.destroy(queue)
 
-/* Duplicate string */
+/*! \brief Override the default queue handler */
+OZ_DECLARE(zap_status_t) zap_global_set_queue_handler(zap_queue_handler_t *handler);
+
+/*! \brief Duplicate string */
 OZ_DECLARE(char *) zap_strdup(const char *str);
 
 OZ_DECLARE(zap_size_t) zap_fsk_modulator_generate_bit(zap_fsk_modulator_t *fsk_trans, int8_t bit, int16_t *buf, zap_size_t buflen);
