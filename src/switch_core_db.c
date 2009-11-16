@@ -35,7 +35,7 @@
 
 #include <sqlite3.h>
 
-static void db_pick_path(char *dbname, char *buf, switch_size_t size)
+static void db_pick_path(const char *dbname, char *buf, switch_size_t size)
 {
 	memset(buf, 0, size);
 	if (switch_is_file_path(dbname)) {
@@ -200,7 +200,7 @@ SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename
 	switch_core_db_t *db;
 	char path[1024];
 
-	db_pick_path((char *)filename, path, sizeof(path));
+	db_pick_path(filename, path, sizeof(path));
 	if (switch_core_db_open(path, &db)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", switch_core_db_errmsg(db));
 		switch_core_db_close(db);
