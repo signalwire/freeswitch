@@ -226,13 +226,13 @@ void dsp_fsk_destroy(dsp_fsk_handle_t **handle)
 
 	for (i = 0; i < 4; i++) {
 		if ((*handle)->correlates[i] != NULL) {
-			free((*handle)->correlates[i]);
+			zap_safe_free((*handle)->correlates[i]);
 			(*handle)->correlates[i] = NULL;
 		}
 	}
 
 	if ((*handle)->buffer != NULL) {
-		free((*handle)->buffer);
+		zap_safe_free((*handle)->buffer);
 		(*handle)->buffer = NULL;
 	}
 
@@ -241,7 +241,7 @@ void dsp_fsk_destroy(dsp_fsk_handle_t **handle)
 		dsp_uart_destroy(dhandle);
 	}
 
-	free(*handle);
+	zap_safe_free(*handle);
 	*handle = NULL;
 }
 

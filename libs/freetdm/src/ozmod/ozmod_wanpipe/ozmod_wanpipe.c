@@ -397,7 +397,7 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(wanpipe_configure_span)
 	assert(str != NULL);
 	
 
-	mydata = strdup(str);
+	mydata = zap_strdup(str);
 	assert(mydata != NULL);
 
 
@@ -447,7 +447,7 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(wanpipe_configure_span)
 
 	}
 	
-	free(mydata);
+	zap_safe_free(mydata);
 
 	return configured;
 }

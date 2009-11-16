@@ -752,7 +752,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_r2_configure_span)
 				r2conf.loglevel |= tmplevel;
 				zap_log(ZAP_LOG_DEBUG, "Configuring R2 span %d with loglevel %s\n", span->span_id, clevel);
 			}
-			free(logval);
+			zap_safe_free(logval);
 		} else if (!strcasecmp(var, "advanced_protocol_file")) {
 			if (!(val = va_arg(ap, char *))) {
 				break;
@@ -1182,7 +1182,7 @@ static ZIO_API_FUNCTION(zap_r2_api)
 	int argc = 0;
 
 	if (data) {
-		mycmd = strdup(data);
+		mycmd = zap_strdup(data);
 		argc = zap_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 

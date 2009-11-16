@@ -142,7 +142,7 @@ TELETONE_API(int) teletone_init_session(teletone_generation_session_t *ts, int b
 TELETONE_API(int) teletone_destroy_session(teletone_generation_session_t *ts)
 {
 	if (ts->buffer) {
-		free(ts->buffer);
+		zap_safe_free(ts->buffer);
 		ts->buffer = NULL;
 		ts->samples = 0;
 	}
@@ -270,19 +270,6 @@ TELETONE_API(int) teletone_mux_tones(teletone_generation_session_t *ts, teletone
 	return ts->samples;
 }
 
-/* don't ask */
-static char *my_strdup (const char *s)
-{
-	size_t len = strlen (s) + 1;
-	void *new = zap_malloc(len);
-	
-	if (new == NULL) {
-		return NULL;
-	}
-
-	return (char *) memcpy (new, s, len);
-}
-
 TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cmd)
 {
 	char *data = NULL, *cur = NULL, *end = NULL;
@@ -293,7 +280,7 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 	}
 
 	do {
-		if (!(data = my_strdup(cmd))) {
+		if (!(data = zap_strdup(cmd))) {
 			return -1;
 		}
 
@@ -442,7 +429,7 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 			}
 		}
 	bottom:
-		free(data);
+		zap_safe_free(data);
 		data = NULL;
 		if (ts->LOOPS > 0) {
 			ts->LOOPS--;

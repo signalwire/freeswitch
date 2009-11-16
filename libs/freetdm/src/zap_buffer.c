@@ -60,7 +60,7 @@ OZ_DECLARE(zap_status_t) zap_buffer_create(zap_buffer_t **buffer, zap_size_t blo
 		if (start_len) {
 			new_buffer->data = zap_malloc(start_len);
 			if (!new_buffer->data) {
-				free(new_buffer);
+				zap_safe_free(new_buffer);
 				return ZAP_MEMERR;
 			}
 			memset(new_buffer->data, 0, start_len);
@@ -283,8 +283,8 @@ OZ_DECLARE(zap_size_t) zap_buffer_zwrite(zap_buffer_t *buffer, const void *data,
 OZ_DECLARE(void) zap_buffer_destroy(zap_buffer_t **buffer)
 {
 	if (*buffer) {
-		free((*buffer)->data);
-		free(*buffer);
+		zap_safe_free((*buffer)->data);
+		zap_safe_free(*buffer);
 	}
 
 	*buffer = NULL;

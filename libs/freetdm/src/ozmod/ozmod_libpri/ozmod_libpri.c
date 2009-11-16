@@ -210,7 +210,7 @@ static ZIO_API_FUNCTION(zap_libpri_api)
     int argc = 0;
 	
 	if (data) {
-		mycmd = strdup(data);
+		mycmd = zap_strdup(data);
 		argc = zap_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 

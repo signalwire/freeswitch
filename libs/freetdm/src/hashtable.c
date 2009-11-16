@@ -73,7 +73,7 @@ create_hashtable(unsigned int minsize,
     h = (struct hashtable *)zap_malloc(sizeof(struct hashtable));
     if (NULL == h) return NULL; /*oom*/
     h->table = (struct entry **)zap_malloc(sizeof(struct entry*) * size);
-    if (NULL == h->table) { free(h); return NULL; } /*oom*/
+    if (NULL == h->table) { zap_safe_free(h); return NULL; } /*oom*/
     memset(h->table, 0, size * sizeof(struct entry *));
     h->tablelength  = size;
     h->primeindex   = pindex;
@@ -125,7 +125,7 @@ hashtable_expand(struct hashtable *h)
 					newtable[index] = e;
 				}
 			}
-			free(h->table);
+			zap_safe_free(h->table);
 			h->table = newtable;
 		}
     /* Plan B: realloc instead */
@@ -236,7 +236,7 @@ hashtable_remove(struct hashtable *h, void *k)
 					if (e->flags & HASHTABLE_FLAG_FREE_KEY) {
 						freekey(e->k);
 					}
-					free(e);
+					zap_safe_free(e);
 					return v;
 				}
 			pE = &(e->next);
@@ -258,11 +258,11 @@ hashtable_destroy(struct hashtable *h)
         {
             e = table[i];
             while (NULL != e)
-				{ f = e; e = e->next; if (f->flags & HASHTABLE_FLAG_FREE_KEY) freekey(f->k); if (f->flags & HASHTABLE_FLAG_FREE_VALUE) free(f->v); free(f); }
+				{ f = e; e = e->next; if (f->flags & HASHTABLE_FLAG_FREE_KEY) freekey(f->k); if (f->flags & HASHTABLE_FLAG_FREE_VALUE) zap_safe_free(f->v); zap_safe_free(f); }
         }
     
-    free(h->table);
-    free(h);
+    zap_safe_free(h->table);
+    zap_safe_free(h);
 }
 
 OZ_DECLARE(struct hashtable_iterator *) hashtable_next(struct hashtable_iterator *i)

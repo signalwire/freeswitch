@@ -487,7 +487,7 @@ static ZIO_SPAN_DESTROY_FUNCTION(m3ua_span_destroy)
 	m3ua_span_data_t *span_data = (m3ua_span_data_t *) span->mod_data;
 	
 	if (span_data) {
-		free(span_data);
+		zap_safe_free(span_data);
 	}
 	
 	return ZAP_SUCCESS;
@@ -513,7 +513,7 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(m3ua_channel_destroy)
 	zap_safe_free(chan_data);
 	
 	if (span_data) {
-		free(span_data);
+		zap_safe_free(span_data);
 	}
 	
 			

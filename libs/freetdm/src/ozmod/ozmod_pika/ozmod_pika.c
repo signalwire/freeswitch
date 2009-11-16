@@ -358,7 +358,7 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 		if (status != PK_SUCCESS) {
 			zap_log(ZAP_LOG_ERROR, "Error: PKH_QUEUE_Create failed(%s)!\n",
 					PKH_ERROR_GetText(status, error_text, sizeof(error_text)));
-			free(span_data);
+			zap_safe_free(span_data);
 			return 0;
 		}
 
@@ -605,7 +605,7 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(pika_configure_span)
 
 	assert(str != NULL);
 
-	mydata = strdup(str);
+	mydata = zap_strdup(str);
 	assert(mydata != NULL);
 
 	if ((profile_name = strchr(mydata, '@'))) {
@@ -668,7 +668,7 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(pika_configure_span)
 
 	}
 	
-	free(mydata);
+	zap_safe_free(mydata);
 
 	return configured;
 }
@@ -1211,7 +1211,7 @@ static ZIO_SPAN_DESTROY_FUNCTION(pika_span_destroy)
 	
 	if (span_data) {
 		PKH_QUEUE_Destroy(span_data->event_queue);
-		free(span_data);
+		zap_safe_free(span_data);
 	}
 	
 	return ZAP_SUCCESS;

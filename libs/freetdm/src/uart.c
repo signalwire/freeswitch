@@ -90,7 +90,7 @@ dsp_uart_handle_t *dsp_uart_create(dsp_uart_attr_t *attr)
 void dsp_uart_destroy(dsp_uart_handle_t **handle)
 {
 	if (*handle) {
-		free(*handle);
+		zap_safe_free(*handle);
 		*handle = NULL;
 	}
 }

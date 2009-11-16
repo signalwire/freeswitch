@@ -452,7 +452,7 @@ OZ_DECLARE(zap_status_t) zap_span_create(zap_io_interface_t *zio, zap_span_t **s
 			snprintf(buf, sizeof(buf), "span%d", new_span->span_id);
 			name = buf;
 		}
-		new_span->name = strdup(name);
+		new_span->name = zap_strdup(name);
 		zap_span_add(new_span);
 		*span = new_span;
 		status = ZAP_SUCCESS;
@@ -2306,8 +2306,8 @@ OZ_DECLARE(zap_status_t) zap_channel_add_var(zap_channel_t *zchan, const char *v
 		return ZAP_FAIL;
 	}
 
-	t_name = strdup(var_name);
-	t_val = strdup(value);
+	t_name = zap_strdup(var_name);
+	t_val = zap_strdup(value);
 
 	if(hashtable_insert(zchan->variable_hash, t_name, t_val, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_FLAG_FREE_VALUE)) {
 		return ZAP_SUCCESS;
@@ -2336,7 +2336,7 @@ OZ_DECLARE(char *) zap_api_execute(const char *type, const char *cmd)
 	char *rval = NULL;
 
 	if (type && !cmd) {
-		dup = strdup(type);
+		dup = zap_strdup(type);
 		if ((p = strchr(dup, ' '))) {
 			*p++ = '\0';
 			cmd = p;
@@ -2440,7 +2440,7 @@ static zap_status_t load_config(void)
 				}
 
 				if (zap_span_create(zio, &span, name) == ZAP_SUCCESS) {
-					span->type = strdup(type);
+					span->type = zap_strdup(type);
 					d = 0;
 
 					zap_log(ZAP_LOG_DEBUG, "created span %d (%s) of type %s\n", span->span_id, span->name, type);
@@ -2534,7 +2534,7 @@ static zap_status_t load_config(void)
 			} else if (!strcasecmp(var, "cas-channel")) {
 				configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_CAS, name, number);	
 			} else if (!strcasecmp(var, "dtmf_hangup")) {
-				span->dtmf_hangup = strdup(val);
+				span->dtmf_hangup = zap_strdup(val);
 				span->dtmf_hangup_len = strlen(val);
 			} else {
 				zap_log(ZAP_LOG_ERROR, "unknown span variable '%s'\n", var);
@@ -2849,7 +2849,7 @@ OZ_DECLARE(zap_status_t) zap_global_destroy(void)
 						if (zap_test_flag(cur_chan, ZAP_CHANNEL_CONFIGURED)) {
 							zap_channel_destroy(cur_chan);
 						}
-						free(cur_chan);
+						zap_safe_free(cur_chan);
 						cur_chan = NULL;
 					}
 				}
@@ -2866,7 +2866,7 @@ OZ_DECLARE(zap_status_t) zap_global_destroy(void)
 			hashtable_remove(globals.span_hash, (void *)cur_span->name);
 			zap_safe_free(cur_span->type);
 			zap_safe_free(cur_span->name);
-			free(cur_span);
+			zap_safe_free(cur_span);
 			cur_span = NULL;
 		}
 	}
@@ -3157,7 +3157,7 @@ OZ_DECLARE_NONSTD(zap_status_t) zap_console_stream_write(zap_stream_handle_t *ha
 				end = handle->end;
 			} else {
 				zap_log(ZAP_LOG_CRIT, "Memory Error!\n");
-				free(data);
+				zap_safe_free(data);
 				return ZAP_FAIL;
 			}
 		}
@@ -3170,12 +3170,23 @@ OZ_DECLARE_NONSTD(zap_status_t) zap_console_stream_write(zap_stream_handle_t *ha
 			handle->data_len = strlen(buf);
 			handle->end = (uint8_t *) (handle->data) + handle->data_len;
 		}
-		free(data);
+		zap_safe_free(data);
 	}
 
 	return ret ? ZAP_FAIL : ZAP_SUCCESS;
 }
 
+OZ_DECLARE(char *) zap_strdup(const char *str)
+{
+	zap_size_t len = strlen(str) + 1;
+	void *new = zap_malloc(len);
+
+	if (!new) {
+		return NULL;
+	}
+
+	return (char *)memcpy(new, str, len);
+}
 
 
 /* For Emacs:

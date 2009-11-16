@@ -84,7 +84,7 @@ static void * ZAP_THREAD_CALLING_CONVENTION thread_launch(void *args)
 #ifndef WIN32
 	pthread_attr_destroy(&thread->attribute);
 #endif
-	free(thread);
+	zap_safe_free(thread);
 
 	return exit_val;
 }
@@ -134,7 +134,7 @@ OZ_DECLARE(zap_status_t) zap_thread_create_detached_ex(zap_thread_function_t fun
 
  fail:
 	if (thread) {
-		free(thread);
+		zap_safe_free(thread);
 	}
  done:
 	return status;
@@ -192,7 +192,7 @@ OZ_DECLARE(zap_status_t) zap_mutex_destroy(zap_mutex_t **mutex)
 	if (pthread_mutex_destroy(&mp->mutex))
 		return ZAP_FAIL;
 #endif
-	free(mp);
+	zap_safe_free(mp);
 	return ZAP_SUCCESS;
 }
 

@@ -138,7 +138,7 @@ hashtable_iterator_remove(struct hashtable_itr *itr)
     remember_parent = itr->parent;
     ret = hashtable_iterator_advance(itr);
     if (itr->parent == remember_e) { itr->parent = remember_parent; }
-    free(remember_e);
+    zap_safe_free(remember_e);
     return ret;
 }
 

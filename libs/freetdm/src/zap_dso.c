@@ -17,6 +17,7 @@
  *
  */
 
+#include "openzap.h"
 #include "zap_dso.h"
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +47,7 @@ zap_dso_lib_t zap_dso_open(const char *path, char **err) {
 		DWORD error = GetLastError();
 		char tmp[80];
 		sprintf(tmp, "dll open error [%ul]\n", error);
-		*err = _strdup(tmp);
+		*err = zap_strdup(tmp);
 	}
 
 	return lib;
@@ -58,7 +59,7 @@ void* zap_dso_func_sym(zap_dso_lib_t lib, const char *sym, char **err) {
 		DWORD error = GetLastError();
 		char tmp[80];
 		sprintf(tmp, "dll sym error [%ul]\n", error);
-		*err = _strdup(tmp);
+		*err = zap_strdup(tmp);
 	}
 	return (void *)(intptr_t)func; // this should really be addr - zap_dso_func_data
 }
@@ -87,7 +88,7 @@ void zap_dso_destroy(zap_dso_lib_t *lib) {
 zap_dso_lib_t zap_dso_open(const char *path, char **err) {
 	void *lib = dlopen(path, RTLD_NOW | RTLD_LOCAL);
 	if (lib == NULL) {
-		*err = strdup(dlerror());
+		*err = zap_strdup(dlerror());
 	}
 	return lib;
 }
@@ -95,7 +96,7 @@ zap_dso_lib_t zap_dso_open(const char *path, char **err) {
 void *zap_dso_func_sym(zap_dso_lib_t lib, const char *sym, char **err) {
 	void *func = dlsym(lib, sym);
 	if (!func) {
-		*err = strdup(dlerror());
+		*err = zap_strdup(dlerror());
 	}
 	return func;
 }
