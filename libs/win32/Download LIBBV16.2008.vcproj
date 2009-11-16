@@ -76,7 +76,7 @@
 					Name="VCCustomBuildTool"
 					Description="Downloading LIBBV16."
 					CommandLine="if not exist &quot;$(ProjectDir)..\libbv16-0.1&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/libbv16-0.1.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
-					Outputs="$(ProjectDir)..\LIBBV16"
+					Outputs="$(ProjectDir)..\LIBBV16-0.1"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -86,7 +86,7 @@
 					Name="VCCustomBuildTool"
 					Description="Downloading LIBBV16."
 					CommandLine="if not exist &quot;$(ProjectDir)..\libbv16-0.1&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/libbv16-0.1.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
-					Outputs="$(ProjectDir)..\LIBBV16"
+					Outputs="$(ProjectDir)..\LIBBV16-0.1"
 				/>
 			</FileConfiguration>
 		</File>
