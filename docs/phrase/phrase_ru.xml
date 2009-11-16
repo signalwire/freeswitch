@@ -512,7 +512,7 @@
 		<prompt phrase="Спасибо, этот телефон сейчас перезагрузится" filename="ivr-this_phone_will_now_reboot.wav"/><!--   Thank you, this phone will now reboot. -->
 		<prompt phrase="Спасибо. Ваше сообщение было записано." filename="ivr-recording_saved.wav"/> <!-- Thank you. Your recording has been saved. -->
 		<prompt phrase="Нажмите 1 что бы сохранить сообщение. Нажмите 2 что бы прослушать Ваше сообщение. Нажмите 3 что бы перезаписать" filename="ivr-save_review_record.wav"/><!-- Press 1 to save your recording. Press 2 to review your recording. Press 3 to re-record. -->
-	        <prompt phrase="Система не смогла сохранить ваше сообщение. Попробуйте позднее." filename="ivr-unable_save"/><!-- The system is unable to save your sound file at this time. Please try again later. -->
+	        <prompt phrase="Система не смогла сохранить ваше сообщение. Попробуйте позднее." filename="ivr-unable_save.wav"/><!-- The system is unable to save your sound file at this time. Please try again later. -->
 		
 	</ivr>
 	<misc>
