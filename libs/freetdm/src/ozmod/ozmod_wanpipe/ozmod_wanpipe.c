@@ -597,7 +597,7 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 		break;
 	case ZAP_COMMAND_SET_LINK_STATUS:
 		{
-			zap_hw_link_status_t status = ZAP_COMMAND_OBJ_INT;
+			zap_channel_hw_link_status_t status = ZAP_COMMAND_OBJ_INT;
 			char sangoma_status = status == ZAP_HW_LINK_CONNECTED ? FE_CONNECTED : FE_DISCONNECTED;
 			err = sangoma_tdm_set_fe_status(zchan->sockfd, &tdm_api, sangoma_status);
 		}
@@ -741,30 +741,24 @@ static ZIO_WAIT_FUNCTION(wanpipe_wait)
 ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 {
 #ifdef LIBSANGOMA_VERSION
-    sangoma_status_t sangstatus;
+	sangoma_status_t sangstatus;
 	sangoma_wait_obj_t *pfds[ZAP_MAX_CHANNELS_SPAN] = { 0 };
-    uint32_t inflags[ZAP_MAX_CHANNELS_SPAN];
-    uint32_t outflags[ZAP_MAX_CHANNELS_SPAN];
+	uint32_t inflags[ZAP_MAX_CHANNELS_SPAN];
+	uint32_t outflags[ZAP_MAX_CHANNELS_SPAN];
 #else
 	struct pollfd pfds[ZAP_MAX_CHANNELS_SPAN];
 #endif
-
 	uint32_t i, j = 0, k = 0, l = 0;
 	int r;
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		zap_channel_t *zchan = span->channels[i];
-
-		if (!strncasecmp(span->name, "smg_prid_nfas", 8) && span->trunk_type == ZAP_TRUNK_T1 && zchan->physical_chan_id == 24) {
-			continue;
-		} 
-
 #ifdef LIBSANGOMA_VERSION
 		if (!zchan->mod_data) {
 			continue; /* should never happen but happens when shutting down */
 		}
 		pfds[j] = zchan->mod_data;
-        inflags[j] = POLLPRI;
+		inflags[j] = POLLPRI;
 #else
 		memset(&pfds[j], 0, sizeof(pfds[j]));
 		pfds[j].fd = span->channels[i]->sockfd;
@@ -772,7 +766,6 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 #endif
 
 		/* The driver probably should be able to do this wink/flash/ringing by itself this is sort of a hack to make it work! */
-
 		if (zap_test_flag(zchan, ZAP_CHANNEL_WINK) || zap_test_flag(zchan, ZAP_CHANNEL_FLASH)) {
 			l = 5;
 		}
@@ -788,7 +781,7 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 			int err;
 			memset(&tdm_api, 0, sizeof(tdm_api));
 			if (zap_test_pflag(zchan, WP_RINGING)) {
-				err=sangoma_tdm_txsig_offhook(zchan->sockfd,&tdm_api);
+				err = sangoma_tdm_txsig_offhook(zchan->sockfd,&tdm_api);
 				if (err) {
 					snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring-off Failed");
 					return ZAP_FAIL;
@@ -812,13 +805,13 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	}
 #ifdef LIBSANGOMA_VERSION
 	sangstatus = sangoma_waitfor_many(pfds, inflags, outflags, j, ms);
-    if (SANG_STATUS_APIPOLL_TIMEOUT == sangstatus) {
-        r = 0;
-    } else if (SANG_STATUS_SUCCESS == sangstatus) {
-        r = 1; /* hopefully we never need how many changed -_- */
-    } else {
-        r = -1;
-    }
+	if (SANG_STATUS_APIPOLL_TIMEOUT == sangstatus) {
+		r = 0;
+	} else if (SANG_STATUS_SUCCESS == sangstatus) {
+		r = 1; /* hopefully we never need how many changed -_- */
+	} else {
+		r = -1;
+	}
 #else
 	r = poll(pfds, j, ms);
 #endif
@@ -863,15 +856,15 @@ static ZIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 
 #ifdef LIBSANGOMA_VERSION
 	if ((err = sangoma_tdm_get_fe_alarms(zchan->sockfd, &tdm_api, &alarms))) {
-        snprintf(zchan->last_error, sizeof(zchan->last_error), "ioctl failed (%s)", strerror(errno));
-        snprintf(zchan->span->last_error, sizeof(zchan->span->last_error), "ioctl failed (%s)", strerror(errno));
-        return ZAP_FAIL;		
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "ioctl failed (%s)", strerror(errno));
+		snprintf(zchan->span->last_error, sizeof(zchan->span->last_error), "ioctl failed (%s)", strerror(errno));
+		return ZAP_FAIL;		
 	}
 #else
 	if ((err = sangoma_tdm_get_fe_alarms(zchan->sockfd, &tdm_api)) < 0){
-        snprintf(zchan->last_error, sizeof(zchan->last_error), "ioctl failed (%s)", strerror(errno));
-        snprintf(zchan->span->last_error, sizeof(zchan->span->last_error), "ioctl failed (%s)", strerror(errno));
-        return ZAP_FAIL;		
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "ioctl failed (%s)", strerror(errno));
+		snprintf(zchan->span->last_error, sizeof(zchan->span->last_error), "ioctl failed (%s)", strerror(errno));
+		return ZAP_FAIL;		
 	}
 	alarms = tdm_api.wp_tdm_cmd.fe_alarms;
 #endif
@@ -1003,24 +996,25 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 					span->channels[i]->rx_cas_bits = wanpipe_swap_bits(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_rbs_bits);
 				}
 				break;
-            case WP_TDMAPI_EVENT_DTMF:
-                {
-                    char tmp_dtmf[2] = { tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_digit, 0 };
+			case WP_TDMAPI_EVENT_DTMF:
+				{
+					char tmp_dtmf[2] = { tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_digit, 0 };
 					event_id = ZAP_OOB_NOOP;
 
-					//zap_log(ZAP_LOG_DEBUG, "%d:%d queue hardware dtmf %s\n", zchan->span_id, zchan->chan_id, tmp_dtmf);
-                    if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT) {
+					if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT) {
 						zap_set_flag_locked(zchan, ZAP_CHANNEL_MUTE);
 					}
 
-                    if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_STOP) {
+					if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_STOP) {
 						zap_clear_flag_locked(zchan, ZAP_CHANNEL_MUTE);
-                        zap_channel_queue_dtmf(zchan, tmp_dtmf);
-                    } 
-                }
-                break;
+						zap_channel_queue_dtmf(zchan, tmp_dtmf);
+					} 
+				}
+				break;
 			case WP_TDMAPI_EVENT_ALARM:
-				event_id = ZAP_OOB_NOOP;
+				{
+					event_id = ZAP_OOB_NOOP;
+				}
 				break;
 			default:
 				{

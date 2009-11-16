@@ -1088,6 +1088,10 @@ static __inline__ void check_state(zap_span_t *span)
 static __inline__ void check_events(zap_span_t *span, int ms_timeout)
 {
 	zap_status_t status;
+	zap_sigmsg_t sigmsg;
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+
+	memset(&sigmsg, 0, sizeof(sigmsg));	
 
 	status = zap_span_poll_event(span, ms_timeout);
 
@@ -1096,9 +1100,27 @@ static __inline__ void check_events(zap_span_t *span, int ms_timeout)
 		{
 			zap_event_t *event;
 			while (zap_span_next_event(span, &event) == ZAP_SUCCESS) {
-			// for now we do nothing with events, this is here
-			// just to have the hardware layer to get any HW DTMF
-			// events and enqueue the DTMF on the channel (done during zap_span_next_event())
+				sigmsg.span_id = event->channel->span_id;
+				sigmsg.chan_id = event->channel->chan_id;
+				sigmsg.channel = event->channel;
+				switch (event->enum_id) {
+				case ZAP_OOB_ALARM_TRAP:
+					sigmsg.event_id = ZAP_SIGEVENT_HWSTATUS_CHANGED;
+					sigmsg.raw_data = (void *)ZAP_HW_LINK_DISCONNECTED;
+					if (sangoma_boost_data->sigmod) {
+						sangoma_boost_data->sigmod->on_hw_link_status_change(event->channel, ZAP_HW_LINK_DISCONNECTED);
+					}
+					sangoma_boost_data->signal_cb(&sigmsg);
+					break;
+				case ZAP_OOB_ALARM_CLEAR:
+					sigmsg.event_id = ZAP_SIGEVENT_HWSTATUS_CHANGED;
+					sigmsg.raw_data = (void *)ZAP_HW_LINK_CONNECTED;
+					if (sangoma_boost_data->sigmod) {
+						sangoma_boost_data->sigmod->on_hw_link_status_change(event->channel, ZAP_HW_LINK_CONNECTED);
+					}
+					sangoma_boost_data->signal_cb(&sigmsg);
+					break;
+				}
 			}
 		}
 		break;
@@ -1523,7 +1545,6 @@ static BOOST_SIG_STATUS_CB_FUNCTION(zap_boost_sig_status_change)
 	sig.channel = zchan;
 	sig.event_id = ZAP_SIGEVENT_SIGSTATUS_CHANGED;
 	sig.raw_data = &status;
-	sig.raw_data_len = sizeof(status);
 	sangoma_boost_data->signal_cb(&sig);
 	return;
 }

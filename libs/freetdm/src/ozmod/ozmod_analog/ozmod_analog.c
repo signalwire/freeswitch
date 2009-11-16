@@ -874,35 +874,6 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DOWN);
 			}
 		}
-	case ZAP_OOB_DTMF:
-		{
-			const char * digit_str = (const char *)event->data;
-			if(digit_str) {
-				if (event->channel->state == ZAP_CHANNEL_STATE_CALLWAITING && (*digit_str == 'D' || *digit_str == 'A')) {
-					event->channel->detected_tones[ZAP_TONEMAP_CALLWAITING_ACK]++;
-				} else {
-					zio_event_cb_t event_callback = NULL;
-					
-					zap_channel_queue_dtmf(event->channel, digit_str);
-					if (span->event_callback) {
-						event_callback = span->event_callback;
-					} else if (event->channel->event_callback) {
-						event_callback = event->channel->event_callback;
-					}
-					
-					if (event_callback) {
-						event->channel->event_header.channel = event->channel;
-						event->channel->event_header.e_type = ZAP_EVENT_DTMF;
-						event->channel->event_header.data = (void *)digit_str;
-						event_callback(event->channel, &event->channel->event_header);
-						event->channel->event_header.e_type = ZAP_EVENT_NONE;
-						event->channel->event_header.data = NULL;
-					}
-					
-				}
-				zap_safe_free(event->data);
-			}
-		}
 	}
 
  end:

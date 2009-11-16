@@ -140,7 +140,6 @@ typedef enum {
 ZAP_STR2ENUM_P(zap_str2zap_analog_start_type, zap_analog_start_type2str, zap_analog_start_type_t)
 
 typedef enum {
-	ZAP_OOB_DTMF, 
 	ZAP_OOB_ONHOOK,
 	ZAP_OOB_OFFHOOK,
 	ZAP_OOB_WINK,
@@ -212,10 +211,13 @@ typedef enum {
 	ZAP_SIGEVENT_RESTART,
 	/* Signaling link status changed (D-chan up, down, R2 blocked etc) */
 	ZAP_SIGEVENT_SIGSTATUS_CHANGED,
+	/* Hardware link status changed (Line connected, disconnected) */
+	ZAP_SIGEVENT_HWSTATUS_CHANGED,
 	ZAP_SIGEVENT_INVALID
 } zap_signal_event_t;
 #define SIGNAL_STRINGS "START", "STOP", "TRANSFER", "ANSWER", "UP", "FLASH", "PROGRESS", \
-		"PROGRESS_MEDIA", "NOTIFY", "TONE_DETECTED", "ALARM_TRAP", "ALARM_CLEAR", "MISC", "COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGLINK_CHANGED", "INVALID"
+		"PROGRESS_MEDIA", "NOTIFY", "TONE_DETECTED", "ALARM_TRAP", "ALARM_CLEAR", "MISC", \
+		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGLINK_CHANGED", "HWSTATUS_CHANGED", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_signal_event, zap_signal_event2str, zap_signal_event_t)
 
 typedef enum {
@@ -421,10 +423,10 @@ struct zap_state_map {
 };
 typedef struct zap_state_map zap_state_map_t;
 
-typedef enum zap_hw_link_status {
+typedef enum zap_channel_hw_link_status {
 	ZAP_HW_LINK_DISCONNECTED = 0,
 	ZAP_HW_LINK_CONNECTED
-} zap_hw_link_status_t;
+} zap_channel_hw_link_status_t;
 
 typedef struct zap_channel zap_channel_t;
 typedef struct zap_event zap_event_t;

@@ -820,7 +820,8 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 	switch(event->enum_id) {
 	case ZAP_OOB_ALARM_TRAP:
 		{
-			sig.event_id = ZAP_OOB_ALARM_TRAP;
+			sig.event_id = ZAP_SIGEVENT_HWSTATUS_CHANGED;
+			sig.raw_data = (void *)ZAP_HW_LINK_CONNECTED;
 			if (event->channel->state != ZAP_CHANNEL_STATE_DOWN) {
 				if (event->channel->type == ZAP_CHAN_TYPE_B) {
 					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_RESTART);
@@ -845,7 +846,8 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 			zap_log(ZAP_LOG_WARNING, "channel %d:%d (%d:%d) alarms Cleared!\n", event->channel->span_id, event->channel->chan_id,
 					event->channel->physical_span_id, event->channel->physical_chan_id);
 
-			sig.event_id = ZAP_OOB_ALARM_CLEAR;
+			sig.event_id = ZAP_SIGEVENT_HWSTATUS_CHANGED;
+			sig.raw_data = (void *)ZAP_HW_LINK_CONNECTED;
 			zap_clear_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
 			zap_channel_get_alarms(event->channel);
 			isdn_data->sig_cb(&sig);
