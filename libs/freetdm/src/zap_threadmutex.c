@@ -242,21 +242,22 @@ OZ_DECLARE(zap_status_t) zap_condition_create(zap_condition_t **incondition, zap
 	zap_assert(condition != NULL, ZAP_FAIL, "Condition double pointer is null!\n");
 	zap_assert(mutex != NULL, ZAP_FAIL, "Mutex for condition must not be null!\n");
 
-#ifdef WIN32
-	return ZAP_NOTIMPL;
-#endif
-
-	condition = zap_malloc(sizeof(*condition));
+	condition = zap_calloc(1, sizeof(*condition));
 	if (!condition) {
 		return ZAP_FAIL;
 	}
 
-#ifndef WIN32
+#ifdef WIN32
+	condition->condition = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (!condition->condition) {
+		goto failed;
+	}
+#else
 	condition->mutex = &mutex->mutex;
-
 	if (pthread_cond_init(&condition->condition, NULL)) {
 		goto failed;
 	}
+#endif
 
 	return ZAP_SUCCESS;
 
@@ -265,16 +266,26 @@ failed:
 		zap_safe_free(condition);
 	}
 	return ZAP_FAIL;
-#endif
 }
 
 OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 {
 	zap_assert(condition != NULL, ZAP_FAIL, "Condition is null!\n");
-	int res = 0;
 #ifdef WIN32
-	return ZAP_NOTIMPL;
+	DWORD res = 0;
+	res = WaitForSingleObject(condition->condition, waitms > 0 ? waitms : INFINITE);
+	switch (res) {
+	case WAIT_ABANDONED:
+	case WAIT_TIMEOUT:
+		return ZAP_TIMEOUT;
+	case WAIT_FAILED:
+		return ZAP_FAIL;
+	defaul:
+		zap_log(ZAP_LOG_ERROR, "Error waiting for openzap condition event\n");
+			return ZAP_FAIL;
+	}
 #else
+	int res = 0;
 	if (ms > 0) {
 		struct timespec waitms = { 0, ((ms * 1000) * 1000)};
 		res = pthread_cond_timedwait(&condition->condition, condition->mutex, &waitms);
@@ -295,7 +306,9 @@ OZ_DECLARE(zap_status_t) zap_condition_signal(zap_condition_t *condition)
 {
 	zap_assert(condition != NULL, ZAP_FAIL, "Condition is null!\n");
 #ifdef WIN32
-	return ZAP_NOTIMPL;
+	if (!SetEvent(condition->condition)) {
+		return ZAP_FAIL;
+	}
 #else
 	if (pthread_cond_signal(&condition->condition)) {
 		return ZAP_FAIL;
@@ -310,7 +323,7 @@ OZ_DECLARE(zap_status_t) zap_condition_destroy(zap_condition_t **incondition)
 	zap_assert(incondition != NULL, ZAP_FAIL, "Condition null when destroying!\n");
 	condition = *incondition;
 #ifdef WIN32
-	return ZAP_NOTIMPL;
+	CloseHandle(condition->condition);
 #else
 	if (pthread_cond_destroy(&condition->condition)) {
 		return ZAP_FAIL;
