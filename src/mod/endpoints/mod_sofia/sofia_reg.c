@@ -1354,6 +1354,10 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		nua_respond(nh, SIP_500_INTERNAL_SERVER_ERROR, TAG_END());
 		goto end;
 	}
+	
+	if (is_nat && !sofia_glue_check_nat(profile, network_ip)) {
+		is_nat = NULL;
+	}
 
 	sofia_reg_handle_register(nua, profile, nh, sip, type, key, sizeof(key), &v_event, is_nat);
 	
