@@ -296,6 +296,7 @@ typedef enum {
 	ZAP_COMMAND_FLUSH_RX_BUFFERS,
 	ZAP_COMMAND_FLUSH_BUFFERS,
 	ZAP_COMMAND_SET_PRE_BUFFER_SIZE,
+	ZAP_COMMAND_SET_LINK_STATUS,
 	ZAP_COMMAND_COUNT
 } zap_command_t;
 
@@ -414,6 +415,12 @@ struct zap_state_map {
 	zap_state_map_node_t nodes[ZAP_MAP_NODE_SIZE];
 };
 typedef struct zap_state_map zap_state_map_t;
+
+typedef enum zap_hw_link_status {
+	ZAP_HW_LINK_UNINITIALIZED = 0,
+	ZAP_HW_LINK_DISCONNECTED,
+	ZAP_HW_LINK_CONNECTED
+} zap_hw_link_status_t;
 
 typedef struct zap_channel zap_channel_t;
 typedef struct zap_event zap_event_t;

@@ -584,17 +584,36 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 	case ZAP_COMMAND_GET_CAS_BITS:
 		{
 #ifdef LIBSANGOMA_VERSION
-            unsigned char rbsbits;
-            err = sangoma_tdm_read_rbs(zchan->sockfd, &tdm_api, zchan->physical_chan_id, &rbsbits);
-            if (!err) {
-                ZAP_COMMAND_OBJ_INT = wanpipe_swap_bits(rbsbits);
-            }
+			unsigned char rbsbits;
+			err = sangoma_tdm_read_rbs(zchan->sockfd, &tdm_api, zchan->physical_chan_id, &rbsbits);
+			if (!err) {
+				ZAP_COMMAND_OBJ_INT = wanpipe_swap_bits(rbsbits);
+			}
 #else
-            // does sangoma_tdm_read_rbs is available here?
+			// does sangoma_tdm_read_rbs is available here?
 			ZAP_COMMAND_OBJ_INT = zchan->rx_cas_bits;
 #endif
 		}
 		break;
+	case ZAP_COMMAND_SET_LINK_STATUS:
+		{
+			zap_hw_link_status_t status = ZAP_COMMAND_OBJ_INT;
+			char sangoma_status;
+			switch (status) {
+			case ZAP_HW_LINK_UNINITIALIZED: 
+				sangoma_status = FE_UNITIALIZED;
+				break;
+			case ZAP_HW_LINK_DISCONNECTED:
+				sangoma_status = FE_DISCONNECTED;
+				break;
+			case ZAP_HW_LINK_CONNECTED:
+				sangoma_status = FE_CONNECTED;
+				break;
+			default:
+				return ZAP_FAIL;
+			}
+			err = sangoma_tdm_set_fe_status(zchan->sockfd, &tdm_api, status);
+		}
 	default:
 		break;
 	};
