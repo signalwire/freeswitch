@@ -29,6 +29,13 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ * David Yatzin <davidy@sangoma.com>
+ * Nenad Corbic <ncorbic@sangoma.com>
+ *
  */
 
 #include "openzap.h"
@@ -1506,10 +1513,30 @@ static BOOST_WRITE_MSG_FUNCTION(zap_boost_write_msg)
 
 static BOOST_SIG_STATUS_CB_FUNCTION(zap_boost_sig_status_change)
 {
-	/* TODO: Notify the upper layer of the signaling status change (via span signaling callback and a new msg type?) */
+	zap_sigmsg_t sig;
+	zap_sangoma_boost_data_t *sangoma_boost_data = zchan->span->signal_data;
+	zap_log(ZAP_LOG_DEBUG, "%d:%d Signaling link status changed to %s\n", zchan->span_id, zchan->chan_id, zap_sig_status2str(status));
+	
+	memset(&sig, 0, sizeof(sig));
+	sig.chan_id = zchan->chan_id;
+	sig.span_id = zchan->span_id;
+	sig.channel = zchan;
+	sig.event_id = ZAP_SIGEVENT_SIGSTATUS_CHANGED;
+	sig.raw_data = &status;
+	sig.raw_data_len = sizeof(status);
+	sangoma_boost_data->signal_cb(&sig);
 	return;
 }
 
+static ZIO_CHANNEL_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_sig_status)
+{
+	zap_sangoma_boost_data_t *sangoma_boost_data = zchan->span->signal_data;
+	if (!sangoma_boost_data->sigmod) {
+		zap_log(ZAP_LOG_ERROR, "Cannot get signaling status in boost channel with no signaling module configured\n");
+		return ZAP_FAIL;
+	}
+	return sangoma_boost_data->sigmod->get_sig_status(zchan, status);
+}
 
 /**
  * \brief Initialises an sangoma boost span from configuration variables
@@ -1612,8 +1639,8 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
 			FAIL_CONFIG_RETURN(ZAP_FAIL);
 		}
 		sigmod_iface->pvt = lib;
-		sigmod_iface->set_sig_status_cb(zap_boost_sig_status_change);
 		sigmod_iface->set_write_msg_cb(zap_boost_write_msg);
+		sigmod_iface->set_sig_status_cb(zap_boost_sig_status_change);
 		hashtable_insert(g_boost_modules_hash, (void *)sigmod_iface->name, sigmod_iface, HASHTABLE_FLAG_NONE);
 		lib = NULL; /* destroying the lib will be done when going down and NOT on FAIL_CONFIG_RETURN */
 	}
@@ -1642,6 +1669,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
     span->signal_type = ZAP_SIGTYPE_SANGOMABOOST;
     span->outgoing_call = sangoma_boost_outgoing_call;
 	span->channel_request = sangoma_boost_channel_request;
+	span->get_sig_status = sangoma_boost_get_sig_status;
 	span->state_map = &boost_state_map;
 	zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
 

@@ -190,6 +190,8 @@ typedef enum {
 	/* The channel signaling link is ready and calls can be placed */
 	ZAP_SIG_STATE_UP
 } zap_channel_sig_status_t;
+#define SIGSTATUS_STRINGS "DOWN", "SUSPENDED", "UP"
+ZAP_STR2ENUM_P(zap_str2zap_channel_sig_status, zap_sig_status2str, zap_channel_sig_status_t)
 
 typedef enum {
 	ZAP_SIGEVENT_START,
@@ -208,10 +210,12 @@ typedef enum {
 	ZAP_SIGEVENT_COLLECTED_DIGIT,
 	ZAP_SIGEVENT_ADD_CALL,
 	ZAP_SIGEVENT_RESTART,
+	/* Signaling link status changed (D-chan up, down, R2 blocked etc) */
+	ZAP_SIGEVENT_SIGSTATUS_CHANGED,
 	ZAP_SIGEVENT_INVALID
 } zap_signal_event_t;
 #define SIGNAL_STRINGS "START", "STOP", "TRANSFER", "ANSWER", "UP", "FLASH", "PROGRESS", \
-		"PROGRESS_MEDIA", "NOTIFY", "TONE_DETECTED", "ALARM_TRAP", "ALARM_CLEAR", "MISC", "COLLECTED_DIGIT", "ADD_CALL", "RESTART", "INVALID"
+		"PROGRESS_MEDIA", "NOTIFY", "TONE_DETECTED", "ALARM_TRAP", "ALARM_CLEAR", "MISC", "COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGLINK_CHANGED", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_signal_event, zap_signal_event2str, zap_signal_event_t)
 
 typedef enum {
@@ -437,6 +441,7 @@ typedef zap_status_t (*zap_stream_handle_write_function_t) (zap_stream_handle_t 
 
 #define ZIO_CHANNEL_REQUEST_ARGS (zap_span_t *span, uint32_t chan_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan)
 #define ZIO_CHANNEL_OUTGOING_CALL_ARGS (zap_channel_t *zchan)
+#define ZIO_CHANNEL_GET_SIG_STATUS_ARGS (zap_channel_t *zchan, zap_channel_sig_status_t *status)
 #define ZIO_SPAN_POLL_EVENT_ARGS (zap_span_t *span, uint32_t ms)
 #define ZIO_SPAN_NEXT_EVENT_ARGS (zap_span_t *span, zap_event_t **event)
 #define ZIO_SIGNAL_CB_ARGS (zap_sigmsg_t *sigmsg)
@@ -462,6 +467,7 @@ typedef zap_status_t (*zap_stream_handle_write_function_t) (zap_stream_handle_t 
 
 typedef zap_status_t (*zio_channel_request_t) ZIO_CHANNEL_REQUEST_ARGS ;
 typedef zap_status_t (*zio_channel_outgoing_call_t) ZIO_CHANNEL_OUTGOING_CALL_ARGS ;
+typedef zap_status_t (*zio_channel_get_sig_status_t) ZIO_CHANNEL_GET_SIG_STATUS_ARGS;
 typedef zap_status_t (*zio_span_poll_event_t) ZIO_SPAN_POLL_EVENT_ARGS ;
 typedef zap_status_t (*zio_span_next_event_t) ZIO_SPAN_NEXT_EVENT_ARGS ;
 typedef zap_status_t (*zio_signal_cb_t) ZIO_SIGNAL_CB_ARGS ;
@@ -488,6 +494,7 @@ typedef zap_status_t (*zio_api_t) ZIO_API_ARGS ;
 
 #define ZIO_CHANNEL_REQUEST_FUNCTION(name) zap_status_t name ZIO_CHANNEL_REQUEST_ARGS
 #define ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(name) zap_status_t name ZIO_CHANNEL_OUTGOING_CALL_ARGS
+#define ZIO_CHANNEL_GET_SIG_STATUS_FUNCTION(name) zap_status_t name ZIO_CHANNEL_GET_SIG_STATUS_ARGS
 #define ZIO_SPAN_POLL_EVENT_FUNCTION(name) zap_status_t name ZIO_SPAN_POLL_EVENT_ARGS
 #define ZIO_SPAN_NEXT_EVENT_FUNCTION(name) zap_status_t name ZIO_SPAN_NEXT_EVENT_ARGS
 #define ZIO_SIGNAL_CB_FUNCTION(name) zap_status_t name ZIO_SIGNAL_CB_ARGS

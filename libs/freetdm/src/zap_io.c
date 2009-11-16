@@ -1255,6 +1255,22 @@ OZ_DECLARE(zap_status_t) zap_channel_outgoing_call(zap_channel_t *zchan)
 	return ZAP_FAIL;
 }
 
+OZ_DECLARE(zap_status_t) zap_channel_get_sig_status(zap_channel_t *zchan, zap_channel_sig_status_t *sigstatus)
+{
+	zap_status_t status;
+
+	zap_assert(zchan != NULL, ZAP_FAIL, "Null channel\n");
+	zap_assert(sigstatus != NULL, ZAP_FAIL, "Null sig status");
+	
+	if (zchan->span->get_sig_status) {
+		status = zchan->span->get_sig_status(zchan, sigstatus);
+	} else {
+		zap_log(ZAP_LOG_ERROR, "get_sig_status method not implemented!\n");
+	}
+	
+	return ZAP_FAIL;
+}
+
 OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan)
 {
 	assert(zchan != NULL);

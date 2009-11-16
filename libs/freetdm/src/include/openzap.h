@@ -561,6 +561,7 @@ struct zap_span {
 	teletone_multi_tone_t tone_finder[ZAP_TONEMAP_INVALID+1];
 	zap_channel_t *channels[ZAP_MAX_CHANNELS_SPAN+1];
 	zio_channel_outgoing_call_t outgoing_call;
+	zio_channel_get_sig_status_t get_sig_status;
 	zio_channel_request_t channel_request;
 	zap_span_start_t start;
 	zap_span_stop_t stop;
@@ -680,6 +681,7 @@ OZ_DECLARE(zap_status_t) zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_
 OZ_DECLARE(zap_status_t) zap_fsk_data_add_checksum(zap_fsk_data_state_t *state);
 OZ_DECLARE(zap_status_t) zap_fsk_data_add_sdmf(zap_fsk_data_state_t *state, const char *date, char *number);
 OZ_DECLARE(zap_status_t) zap_channel_outgoing_call(zap_channel_t *zchan);
+OZ_DECLARE(zap_status_t) zap_channel_get_sig_status(zap_channel_t *zchan, zap_channel_sig_status_t *status);
 OZ_DECLARE(void) zap_channel_rotate_tokens(zap_channel_t *zchan);
 OZ_DECLARE(void) zap_channel_clear_detected_tones(zap_channel_t *zchan);
 OZ_DECLARE(void) zap_channel_clear_needed_tones(zap_channel_t *zchan);
