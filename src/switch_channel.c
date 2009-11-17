@@ -1403,7 +1403,8 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 	switch_caller_profile_t *caller_profile, *originator_caller_profile = NULL, *originatee_caller_profile = NULL;
 	switch_codec_implementation_t impl = {0};
 	char state_num[25];
-
+	const char *v;
+	
 	switch_mutex_lock(channel->profile_mutex);
 
 	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
@@ -1421,6 +1422,14 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 								   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Call-Direction",
 								   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
+
+	if ((v = switch_channel_get_variable(channel, "presence_id"))) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Presence-ID", v);
+	}
+
+	if ((v = switch_channel_get_variable(channel, "presence_data"))) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Presence-Data", v);
+	}
 
 
 	if (switch_channel_test_flag(channel, CF_ANSWERED)) {

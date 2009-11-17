@@ -207,11 +207,14 @@ struct switch_runtime {
 	switch_frame_t dummy_cng_frame;
 	char dummy_data[5];
 	switch_bool_t colorize_console;
+	char *odbc_dsn;
+	char *odbc_user;
+	char *odbc_pass;
 };
 
 extern struct switch_runtime runtime;
 
-void switch_core_sqldb_start(switch_memory_pool_t *pool);
+switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_t manage);
 void switch_core_sqldb_stop(void);
 void switch_core_session_init(switch_memory_pool_t *pool);
 void switch_core_session_uninit(void);

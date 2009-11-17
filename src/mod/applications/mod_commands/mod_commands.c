@@ -2914,7 +2914,7 @@ SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
 	char *errmsg;
-	switch_core_db_t *db;
+	switch_cache_db_handle_t *db;
 	struct holder holder = { 0 };
 	int help = 0;
 	char *mydata = NULL, *argv[6] = { 0 };
@@ -2923,7 +2923,7 @@ SWITCH_STANDARD_API(show_function)
 	switch_core_flag_t cflags = switch_core_flags();
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	db = switch_core_db_handle();
+	switch_core_db_handle(&db);
 	
 	holder.justcount = 0;
 	
@@ -3090,7 +3090,7 @@ SWITCH_STANDARD_API(show_function)
 				holder.delim = ",";
 			}
 		}
-		switch_core_db_exec(db, sql, show_callback, &holder, &errmsg);
+		switch_cache_db_execute_sql_callback(db, sql, show_callback, &holder, &errmsg);
 		if (holder.http) {
 			holder.stream->write_function(holder.stream, "</table>");
 		}
@@ -3106,7 +3106,7 @@ SWITCH_STANDARD_API(show_function)
 			stream->write_function(stream, "\n%u total.\n", holder.count);
 		}
 	} else if (!strcasecmp(as, "xml")) {
-		switch_core_db_exec(db, sql, show_as_xml_callback, &holder, &errmsg);
+		switch_cache_db_execute_sql_callback(db, sql, show_as_xml_callback, &holder, &errmsg);
 
 		if (errmsg) {
 			stream->write_function(stream, "-ERR SQL Error [%s]\n", errmsg);
@@ -3141,7 +3141,7 @@ SWITCH_STANDARD_API(show_function)
 	switch_safe_free(mydata);
 
 	if (db) {
-		switch_core_db_close(db);
+		switch_cache_db_release_db_handle(&db);
 	}
 
 	return status;

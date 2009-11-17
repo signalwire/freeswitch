@@ -241,6 +241,111 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
 
 }
 
+
+SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute_trans(switch_core_db_t *db, char *sql, uint32_t retries)
+{
+	char *errmsg;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	uint8_t forever = 0;
+	unsigned begin_retries = 100;
+	uint8_t again = 0;
+
+	if (!retries) {
+		forever = 1;
+		retries = 1000;
+	}
+
+again:
+
+	while (begin_retries > 0) {
+		again = 0;
+
+		switch_core_db_exec(db, "BEGIN", NULL, NULL, &errmsg);
+
+		if (errmsg) {
+			begin_retries--;
+			if (strstr(errmsg, "cannot start a transaction within a transaction")) {
+				again = 1;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL Retry [%s]\n", errmsg);
+			}
+			switch_core_db_free(errmsg);
+			errmsg = NULL;
+
+			if (again) {
+				switch_core_db_exec(db, "COMMIT", NULL, NULL, NULL);
+				goto again;
+			}
+
+			switch_yield(100000);
+
+			if (begin_retries == 0) {
+				goto done;
+			}
+		} else {
+			break;
+		}
+
+	}
+
+	while (retries > 0) {
+		switch_core_db_exec(db, sql, NULL, NULL, &errmsg);
+		if (errmsg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
+			switch_core_db_free(errmsg);
+			errmsg = NULL;
+			switch_yield(100000);
+			retries--;
+			if (retries == 0 && forever) {
+				retries = 1000;
+				continue;
+			}
+		} else {
+			status = SWITCH_STATUS_SUCCESS;
+			break;
+		}
+	}
+
+done:
+
+	switch_core_db_exec(db, "COMMIT", NULL, NULL, NULL);
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db_t *db, char *sql, uint32_t retries)
+{
+	char *errmsg;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	uint8_t forever = 0;
+
+	if (!retries) {
+		forever = 1;
+		retries = 1000;
+	}
+
+	while (retries > 0) {
+		switch_core_db_exec(db, sql, NULL, NULL, &errmsg);
+		if (errmsg) {
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
+			switch_core_db_free(errmsg);
+			switch_yield(100000);
+			retries--;
+			if (retries == 0 && forever) {
+				retries = 1000;
+				continue;
+			}
+		} else {
+			status = SWITCH_STATUS_SUCCESS;
+			break;
+		}
+	}
+
+	return status;
+}
+
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

@@ -1415,6 +1415,7 @@ SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename
 
 */
 SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db_t *db, char *sql, uint32_t retries);
+SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute_trans(switch_core_db_t *db, char *sql, uint32_t retries);
 
 /*! 
   \brief perform a test query then perform a reactive query if the first one fails
@@ -1424,12 +1425,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db
   \param reactive_sql the reactive sql
 */
 SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *test_sql, char *drop_sql, char *reactive_sql);
-
-#define SWITCH_CORE_DB "core"
-/*!
-  \brief Open the default system database
-*/
-#define switch_core_db_handle() switch_core_db_open_file(SWITCH_CORE_DB)
 
 ///\}
 
@@ -1930,12 +1925,16 @@ typedef struct {
 } switch_cache_db_handle_t;
 
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t **dbh);
-SWITCH_DECLARE(switch_cache_db_handle_t *)switch_cache_db_get_db_handle(const char *db_name, const char *odbc_user, const char *odbc_pass);
-SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, char *sql);
+SWITCH_DECLARE(switch_status_t) switch_cache_db_get_db_handle(switch_cache_db_handle_t **dbh, 
+																		const char *db_name, const char *odbc_user, const char *odbc_pass);
+SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, char *sql, char **err);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cache_db_handle_t *dbh, char *sql, 
-																	 switch_core_db_callback_func_t callback, void *pdata);
+																	 switch_core_db_callback_func_t callback, void *pdata, char **err);
 
-
+SWITCH_DECLARE(switch_status_t)switch_core_db_handle(switch_cache_db_handle_t **dbh);
+SWITCH_DECLARE(void) switch_cache_db_test_reactive(switch_cache_db_handle_t *db, char *test_sql, char *drop_sql, char *reactive_sql);
+SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_db_handle_t *dbh, char *sql, uint32_t retries);
+SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, char *sql, uint32_t retries);
 
 SWITCH_END_EXTERN_C
 #endif

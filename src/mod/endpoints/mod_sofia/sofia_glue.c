@@ -4008,12 +4008,14 @@ void sofia_glue_sql_close(sofia_profile_t *profile, time_t prune)
 		if ((dbh = (sofia_cache_db_handle_t *) val)) {
 			time_t diff = 0;
 
-			if (prune > 0 && prune > dbh->last_used) {
-				diff = (time_t) prune - dbh->last_used;
-			}
+			if (prune > 0) {
+				if (prune > dbh->last_used) {
+					diff = (time_t) prune - dbh->last_used;
+				}
 			
-			if (diff < SQL_CACHE_TIMEOUT) {
-				continue;
+				if (diff < SQL_CACHE_TIMEOUT) {
+					continue;
+				}
 			}
 
 			if (switch_mutex_trylock(dbh->mutex) == SWITCH_STATUS_SUCCESS) {
@@ -4121,7 +4123,7 @@ sofia_cache_db_handle_t *sofia_glue_get_db_handle(sofia_profile_t *profile)
 
 		
 		if (db) dbh->db = db; else dbh->odbc_dbh = odbc_dbh;
-		switch_mutex_init(&dbh->mutex, SWITCH_MUTEX_NESTED, dbh->pool);
+		switch_mutex_init(&dbh->mutex, 0, dbh->pool);
 		switch_mutex_lock(dbh->mutex);
 
 		switch_core_hash_insert(profile->db_hash, thread_str, dbh);
@@ -4202,7 +4204,7 @@ switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
     }
 
 	if (switch_odbc_available() && dbh->odbc_dbh) {
-		switch_odbc_handle_callback_exec(dbh->odbc_dbh, sql, callback, pdata);
+		switch_odbc_handle_callback_exec(dbh->odbc_dbh, sql, callback, pdata, NULL);
 	} else if (profile->odbc_dsn) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 	} else {

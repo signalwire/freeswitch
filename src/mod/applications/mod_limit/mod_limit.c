@@ -138,7 +138,7 @@ static switch_bool_t limit_execute_sql_callback(switch_mutex_t *mutex, char *sql
 	}
 
 	if (switch_odbc_available() && globals.odbc_dsn) {
-		switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata);
+		switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata, NULL);
 	} else {
 		if (!(db = switch_core_db_open_file(globals.dbname))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", globals.dbname);

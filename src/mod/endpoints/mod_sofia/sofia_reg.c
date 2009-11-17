@@ -1678,7 +1678,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	if ((regtype == REG_REGISTER) && sofia_test_pflag(profile, PFLAG_CHECKUSER)) {
 		if (zstr(username) || zstr(to_user) || strcasecmp(to_user, username)) {
 			/* Names don't match, so fail */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SIP username %s does not match auth username\n", switch_str_nil(to_user));
+			if (profile->debug) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SIP username %s does not match auth username\n", switch_str_nil(to_user));
+			}
 			goto end;
 		}
 	}

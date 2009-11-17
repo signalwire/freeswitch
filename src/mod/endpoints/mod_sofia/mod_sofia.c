@@ -2876,7 +2876,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	switch_channel_t *nchannel;
 	char *host = NULL, *dest_to = NULL;
 	const char *hval = NULL;
-
+	char *not_const = NULL;
+		
 	*new_session = NULL;
 
 	if (!outbound_profile || zstr(outbound_profile->destination_number)) {
@@ -3115,10 +3116,12 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
 	
-
+	
 	caller_profile->destination_number = switch_sanitize_number(caller_profile->destination_number);
-	caller_profile->caller_id_name = switch_sanitize_number((char *)caller_profile->caller_id_name);
-	caller_profile->caller_id_number = switch_sanitize_number((char *)caller_profile->caller_id_number);
+	not_const = (char *)caller_profile->caller_id_name;
+	caller_profile->caller_id_name = switch_sanitize_number(not_const);
+	not_const = (char *)caller_profile->caller_id_number;
+	caller_profile->caller_id_number = switch_sanitize_number(not_const);
 	
 	//caller_profile->destination_number = switch_core_strdup(caller_profile->pool, dest_num);
 	switch_channel_set_caller_profile(nchannel, caller_profile);

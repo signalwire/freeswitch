@@ -424,7 +424,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(const char *file, const char *func, int line,
 																			   switch_odbc_handle_t *handle,
-																			   char *sql, switch_core_db_callback_func_t callback, void *pdata)
+																			   char *sql, switch_core_db_callback_func_t callback, void *pdata, char **err)
 {
 #ifdef SWITCH_HAVE_ODBC
 	SQLHSTMT stmt = NULL;
@@ -432,7 +432,6 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 	SQLLEN m = 0, t = 0;
 	char *err_str = NULL;
 	int result;
-	int err = 0;
 	
 	switch_assert(callback != NULL);
 
@@ -441,12 +440,12 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 	}
 
 	if (SQLAllocHandle(SQL_HANDLE_STMT, handle->con, &stmt) != SQL_SUCCESS) {
-		err_str = "Unable to SQL allocate handle.";
+		err_str = strdup("Unable to SQL allocate handle.");
 		goto error;
 	}
 
 	if (SQLPrepare(stmt, (unsigned char *) sql, SQL_NTS) != SQL_SUCCESS) {
-		err_str = "Unable to prepare SQL statement.";
+		err_str = strdup("Unable to prepare SQL statement.");
 		goto error;
 	}
 
@@ -517,26 +516,23 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 	
 	SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 
-	if (!err) {
-		return SWITCH_ODBC_SUCCESS;
-	}
-
  error:
 
-	/* err_str is already defined  for some error cases */
-	if (err_str != NULL) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
-		err_str = NULL;
-	}
-	
 	if (stmt) {
 		err_str = switch_odbc_handle_get_error(handle, stmt);
-		if (!zstr(err_str)) {
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
-		}
-		switch_safe_free(err_str);
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	}
+
+	if (err_str) {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
+		if (err) {
+			*err = err_str;
+		} else {
+			*err = NULL;
+			free(err_str);
+		}
+	}
+	
 
 #endif
 	return SWITCH_ODBC_FAIL;

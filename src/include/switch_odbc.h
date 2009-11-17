@@ -77,7 +77,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_statement_handle_free(switch_od
   \note none
 */
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(const char *file, const char *func, int line, switch_odbc_handle_t *handle,
-																	  char *sql, switch_core_db_callback_func_t callback, void *pdata);
+																			   char *sql, switch_core_db_callback_func_t callback, void *pdata, char **err);
 /*!
   \brief Execute the sql query and issue a callback for each row returned
   \param handle the ODBC handle
@@ -87,9 +87,9 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
   \return SWITCH_STATUS_SUCCESS if the operation was successful
   \note none
 */
-#define switch_odbc_handle_callback_exec(handle,  sql,  callback, pdata) \
+#define switch_odbc_handle_callback_exec(handle,  sql,  callback, pdata, err) \
 		switch_odbc_handle_callback_exec_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, \
-												  handle, sql, callback, pdata)
+												  handle, sql, callback, pdata, err)
 
 																	  
 SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle, switch_odbc_statement_handle_t stmt);

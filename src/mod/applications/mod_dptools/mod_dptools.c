@@ -336,7 +336,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *require_group = switch_channel_get_variable(channel, "eavesdrop_require_group");
 		if (!strcasecmp((char *) data, "all")) {
-			switch_core_db_t *db = switch_core_db_handle();
+			switch_cache_db_handle_t *db = NULL;
 			char *errmsg = NULL;
 			struct e_data e_data = { {0} };
 			char *sql = switch_mprintf("select uuid from channels where uuid != '%q'", switch_core_session_get_uuid(session));
@@ -347,12 +347,14 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 			char terminator;
 			switch_status_t status;
 
+			switch_core_db_handle(&db);
+
 			while (switch_channel_ready(channel)) {
 				for (x = 0; x < MAX_SPY; x++) {
 					switch_safe_free(e_data.uuid_list[x]);
 				}
 				e_data.total = 0;
-				switch_core_db_exec(db, sql, e_callback, &e_data, &errmsg);
+				switch_cache_db_execute_sql_callback(db, sql, e_callback, &e_data, &errmsg);
 				if (errmsg) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error: %s\n", errmsg);
 					switch_core_db_free(errmsg);
@@ -393,7 +395,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 			}
 
 			free(sql);
-			switch_core_db_close(db);
+			switch_cache_db_release_db_handle(&db);
 
 		} else {
 			switch_ivr_eavesdrop_session(session, data, require_group, ED_DTMF);

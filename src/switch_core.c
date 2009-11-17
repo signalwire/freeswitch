@@ -1282,9 +1282,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_core_state_machine_init(runtime.memory_pool);
 
-	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
-		switch_core_sqldb_start(runtime.memory_pool);
+	if (switch_core_sqldb_start(runtime.memory_pool, switch_test_flag((&runtime), SCF_USE_SQL) ? SWITCH_TRUE : SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
+		abort();
 	}
+
 	switch_scheduler_task_thread_start();
 
 	switch_rtp_init(runtime.memory_pool);
@@ -1422,6 +1423,18 @@ static void switch_load_core_config(const char *file)
 					switch_rtp_set_start_port((switch_port_t) atoi(val));
 				} else if (!strcasecmp(var, "rtp-end-port") && !zstr(val)) {
 					switch_rtp_set_end_port((switch_port_t) atoi(val));
+				} else if (!strcasecmp(var, "core-db-dsn") && !zstr(val)) {
+					if (switch_odbc_available()) {
+						runtime.odbc_dsn = switch_core_strdup(runtime.memory_pool, val);
+						if ((runtime.odbc_user = strchr(runtime.odbc_dsn, ':'))) {
+							*runtime.odbc_user++ = '\0';
+							if ((runtime.odbc_pass = strchr(runtime.odbc_user, ':'))) {
+								*runtime.odbc_pass++ = '\0';
+							}
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+					}
 #ifdef ENABLE_ZRTP
 				} else if (!strcasecmp(var, "rtp-enable-zrtp")) {
 					switch_core_set_variable("zrtp_enabled", val);
@@ -1444,6 +1457,19 @@ static void switch_load_core_config(const char *file)
 	}
 
 
+}
+
+#define SWITCH_CORE_DB "core"
+/*!
+  \brief Open the default system database
+*/
+SWITCH_DECLARE(switch_status_t)switch_core_db_handle(switch_cache_db_handle_t **dbh)
+{
+	if (runtime.odbc_dsn && runtime.odbc_user && runtime.odbc_pass) {
+		return switch_cache_db_get_db_handle(dbh, runtime.odbc_dsn, runtime.odbc_user, runtime.odbc_pass);
+	} else {
+		return switch_cache_db_get_db_handle(dbh, SWITCH_CORE_DB, NULL, NULL);
+	}
 }
 
 

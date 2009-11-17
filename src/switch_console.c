@@ -199,12 +199,15 @@ char *expand_alias(char *cmd, char *arg)
 	char *r = NULL;
 	char *sql = NULL;
 	char *exp = NULL;
-	switch_core_db_t *db = switch_core_db_handle();
+	switch_cache_db_handle_t *db = NULL;
 	int full = 0;
+
+
+	switch_core_db_handle(&db);
 
 	sql = switch_mprintf("select command from aliases where alias='%q'", cmd);
 
-	switch_core_db_exec(db, sql, alias_callback, &r, &errmsg);
+	switch_cache_db_execute_sql_callback(db, sql, alias_callback, &r, &errmsg);
 
 	if (errmsg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", sql, errmsg);
@@ -216,7 +219,7 @@ char *expand_alias(char *cmd, char *arg)
 	if (!r) {
 		sql = switch_mprintf("select command from aliases where alias='%q %q'", cmd, arg);
 
-		switch_core_db_exec(db, sql, alias_callback, &r, &errmsg);
+		switch_cache_db_execute_sql_callback(db, sql, alias_callback, &r, &errmsg);
 
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", sql, errmsg);
@@ -240,7 +243,8 @@ char *expand_alias(char *cmd, char *arg)
 		exp = cmd;
 	}
 
-	switch_core_db_close(db);
+	switch_cache_db_release_db_handle(&db);
+
 	return exp;
 }
 
@@ -524,7 +528,7 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 static unsigned char complete(EditLine * el, int ch)
 {
-	switch_core_db_t *db = switch_core_db_handle();
+	switch_cache_db_handle_t *db = NULL;
 	char *sql;
 	const LineInfo *lf = el_line(el);
 	char *dup = strdup(lf->buffer);
@@ -533,6 +537,8 @@ static unsigned char complete(EditLine * el, int ch)
 	char *errmsg = NULL;
 	struct helper h = { el };
 	unsigned char ret = CC_REDISPLAY;
+
+	switch_core_db_handle(&db);
 
 	h.out = switch_core_get_console();
 
@@ -560,12 +566,14 @@ static unsigned char complete(EditLine * el, int ch)
 	fprintf(h.out, "\n\n");
 
 	if (h.words == 0) {
-		sql = switch_mprintf("select distinct name from interfaces where type='api' and name like '%s%%' order by name", buf);
+		sql = switch_mprintf("select distinct name from interfaces where type='api' and name like '%q%%' and hostname='%q' order by name", 
+							 buf, switch_core_get_variable("hostname"));
 	} else {
-		sql = switch_mprintf("select distinct uuid from channels where uuid like '%s%%' order by uuid", buf);
+		sql = switch_mprintf("select distinct uuid from channels where uuid like '%q%%' and hostname='%q' order by uuid", 
+							 buf, switch_core_get_variable("hostname"));
 	}
 
-	switch_core_db_exec(db, sql, comp_callback, &h, &errmsg);
+	switch_cache_db_execute_sql_callback(db, sql, comp_callback, &h, &errmsg);
 
 	if (errmsg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", sql, errmsg);
@@ -586,7 +594,8 @@ static unsigned char complete(EditLine * el, int ch)
 		argc = switch_separate_string(dupdup, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 		if (h.words == 0) {
-			stream.write_function(&stream, "select distinct a1 from complete where " "a1 not in (select name from interfaces) %s ", argc ? "and" : "");
+			stream.write_function(&stream, "select distinct a1 from complete where " "a1 not in (select name from interfaces where hostname='%s') %s ", 
+								  switch_core_get_variable("hostname"), argc ? "and" : "");
 		} else {
 			stream.write_function(&stream, "select distinct a%d from complete where ", h.words + 1);
 
@@ -596,7 +605,9 @@ static unsigned char complete(EditLine * el, int ch)
 			stream.write_function(&stream, "(a%d = '' or a%d like '%s%%')%s", x + 1, x + 1, switch_str_nil(argv[x]), x == argc - 1 ? "" : " and ");
 		}
 
-		switch_core_db_exec(db, stream.data, comp_callback, &h, &errmsg);
+		stream.write_function(&stream, " and hostname='%s'", switch_core_get_variable("hostname"));
+
+		switch_cache_db_execute_sql_callback(db, stream.data, comp_callback, &h, &errmsg);
 
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", (char *) stream.data, errmsg);
@@ -626,7 +637,7 @@ static unsigned char complete(EditLine * el, int ch)
 	switch_safe_free(sql);
 	switch_safe_free(dup);
 
-	switch_core_db_close(db);
+	switch_cache_db_release_db_handle(&db);
 
 	return (ret);
 }
@@ -640,40 +651,44 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 
 	if (string && (mydata = strdup(string))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-			switch_core_db_t *db = switch_core_db_handle();
+			switch_cache_db_handle_t *db = NULL;
 			switch_stream_handle_t mystream = { 0 };
 			SWITCH_STANDARD_STREAM(mystream);
 
-
+			switch_core_db_handle(&db);
+			
 			if (!strcasecmp(argv[0], "stickyadd")) {
 				mystream.write_function(&mystream, "insert into complete values (1,");
 				for (x = 0; x < 10; x++) {
-					mystream.write_function(&mystream, "'%s'%s", switch_str_nil(argv[x + 1]), x == 9 ? ")" : ", ");
+					mystream.write_function(&mystream, "'%s', ", switch_str_nil(argv[x + 1]));
 				}
-				switch_core_db_persistant_execute(db, mystream.data, 5);
+				mystream.write_function(&mystream, " '%s')", switch_core_get_variable("hostname"));
+				switch_cache_db_persistant_execute(db, mystream.data, 5);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "add")) {
 				mystream.write_function(&mystream, "insert into complete values (0,");
 				for (x = 0; x < 10; x++) {
-					mystream.write_function(&mystream, "'%s'%s", switch_str_nil(argv[x + 1]), x == 9 ? ")" : ", ");
+					mystream.write_function(&mystream, "'%s', ", switch_str_nil(argv[x + 1]));
 				}
-				switch_core_db_persistant_execute(db, mystream.data, 5);
+				mystream.write_function(&mystream, " '%s')", switch_core_get_variable("hostname"));
+				switch_cache_db_persistant_execute(db, mystream.data, 5);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "del")) {
 				char *what = argv[1];
 				if (!strcasecmp(what, "*")) {
-					switch_core_db_persistant_execute(db, "delete from complete", 1);
+					switch_cache_db_persistant_execute(db, "delete from complete", 1);
 				} else {
 					mystream.write_function(&mystream, "delete from complete where ");
 					for (x = 0; x < argc - 1; x++) {
 						mystream.write_function(&mystream, "a%d = '%s'%s", x + 1, switch_str_nil(argv[x + 1]), x == argc - 2 ? "" : " and ");
 					}
-					switch_core_db_persistant_execute(db, mystream.data, 1);
+					mystream.write_function(&mystream, " and hostname='%s'", switch_core_get_variable("hostname"));
+					switch_cache_db_persistant_execute(db, mystream.data, 1);
 				}
 				status = SWITCH_STATUS_SUCCESS;
 			}
 			switch_safe_free(mystream.data);
-			switch_core_db_close(db);
+			switch_cache_db_release_db_handle(&db);
 		}
 	}
 
@@ -692,36 +707,40 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 
 	if (string && (mydata = strdup(string))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
-			switch_core_db_t *db = switch_core_db_handle();
+			switch_cache_db_handle_t *db = NULL;
 			char *sql = NULL;
 
+			switch_core_db_handle(&db);
 
 			if (!strcasecmp(argv[0], "stickyadd") && argc == 3) {
-				sql = switch_mprintf("delete from aliases where alias='%q'", argv[1]);
-				switch_core_db_persistant_execute(db, sql, 5);
+				sql = switch_mprintf("delete from aliases where alias='%q' and hostname='%q'", argv[1], switch_core_get_variable("hostname"));
+				switch_cache_db_persistant_execute(db, sql, 5);
 				switch_safe_free(sql);
-				sql = switch_mprintf("insert into aliases (sticky, alias, command) values (1, '%q','%q')", argv[1], argv[2]);
-				switch_core_db_persistant_execute(db, sql, 5);
+				sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (1, '%q','%q','%q')", 
+									 argv[1], argv[2], switch_core_get_variable("hostname"));
+				switch_cache_db_persistant_execute(db, sql, 5);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "add") && argc == 3) {
-				sql = switch_mprintf("delete from aliases where alias='%q'", argv[1]);
-				switch_core_db_persistant_execute(db, sql, 5);
+				sql = switch_mprintf("delete from aliases where alias='%q' and hostname='%q'", argv[1], switch_core_get_variable("hostname"));
+				switch_cache_db_persistant_execute(db, sql, 5);
 				switch_safe_free(sql);
-				sql = switch_mprintf("insert into aliases (sticky, alias, command) values (0, '%q','%q')", argv[1], argv[2]);
-				switch_core_db_persistant_execute(db, sql, 5);
+				sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (0, '%q','%q')", 
+									 argv[1], argv[2], switch_core_get_variable("hostname"));
+				switch_cache_db_persistant_execute(db, sql, 5);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "del") && argc == 2) {
 				char *what = argv[1];
 				if (!strcasecmp(what, "*")) {
-					switch_core_db_persistant_execute(db, "delete from aliases", 1);
+					sql = switch_mprintf("delete from aliases where hostname='%q'", switch_core_get_variable("hostname"));
+					switch_cache_db_persistant_execute(db, sql, 1);
 				} else {
-					sql = switch_mprintf("delete from aliases where alias='%q'", argv[1]);
-					switch_core_db_persistant_execute(db, sql, 5);
+					sql = switch_mprintf("delete from aliases where alias='%q' and hostname='%q'", argv[1], switch_core_get_variable("hostname"));
+					switch_cache_db_persistant_execute(db, sql, 5);
 				}
 				status = SWITCH_STATUS_SUCCESS;
 			}
 			switch_safe_free(sql);
-			switch_core_db_close(db);
+			switch_cache_db_release_db_handle(&db);
 		}
 	}
 
