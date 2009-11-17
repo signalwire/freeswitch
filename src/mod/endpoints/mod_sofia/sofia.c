@@ -498,11 +498,9 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	}
 	
 	caller_profile = switch_channel_get_caller_profile(channel);
-	caller_profile->callee_id_name = switch_core_strdup(caller_profile->pool, name);
-	caller_profile->callee_id_number = switch_core_strdup(caller_profile->pool, number);
 
-	caller_profile->callee_id_name = switch_sanitize_number((char *)caller_profile->callee_id_name);
-	caller_profile->callee_id_number = switch_sanitize_number((char *)caller_profile->callee_id_number);
+	caller_profile->callee_id_name = switch_sanitize_number(switch_core_strdup(caller_profile->pool, name));
+	caller_profile->callee_id_number = switch_sanitize_number(switch_core_strdup(caller_profile->pool, number));
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Update Callee ID to \"%s\" <%s>\n", name, number);
 	
