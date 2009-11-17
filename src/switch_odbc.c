@@ -342,7 +342,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 }
 
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_handle_t *handle,
-																	char *sql,
+																	const char *sql,
 																	char *resbuf,
 																	size_t len)
 {
@@ -380,7 +380,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_
 #endif
 }
 
-SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, char *sql, switch_odbc_statement_handle_t * rstmt)
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, const char *sql, switch_odbc_statement_handle_t * rstmt)
 {
 #ifdef SWITCH_HAVE_ODBC
 	SQLHSTMT stmt = NULL;
@@ -424,7 +424,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(const char *file, const char *func, int line,
 																			   switch_odbc_handle_t *handle,
-																			   char *sql, switch_core_db_callback_func_t callback, void *pdata, char **err)
+																			   const char *sql, switch_core_db_callback_func_t callback, void *pdata, char **err)
 {
 #ifdef SWITCH_HAVE_ODBC
 	SQLHSTMT stmt = NULL;
