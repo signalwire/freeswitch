@@ -169,14 +169,13 @@
 
     <extension name="call-group-simo">
       <condition field="destination_number" expression="^82(\d{2})$">
-	<action application="bridge" data="{ignore_early_media=true}${group(call:$1@${domain_name})}"/>
+	<action application="bridge" data="{leg_timeout=15,ignore_early_media=true}${group(call:$1@${domain_name})}"/>
       </condition>
     </extension>
 
     <extension name="call-group-order">
       <condition field="destination_number" expression="^83(\d{2})$">
-	<action application="set" data="call_timeout=10"/>
-	<action application="bridge" data="{ignore_early_media=true}${group(call:$1@${domain_name}:order)}"/>
+	<action application="bridge" data="{leg_timeout=15,ignore_early_media=true}${group(call:$1@${domain_name}:order)}"/>
       </condition>
     </extension>
 
