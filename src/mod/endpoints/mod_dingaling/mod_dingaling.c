@@ -306,7 +306,7 @@ static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile,
 	}
 
 	if (switch_odbc_available() && profile->odbc_dsn) {
-		switch_odbc_handle_callback_exec(profile->master_odbc, sql, callback, pdata);
+		switch_odbc_handle_callback_exec(profile->master_odbc, sql, callback, pdata, NULL);
 	} else {
 		if (!(db = switch_core_db_open_file(profile->dbname))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
