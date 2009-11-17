@@ -5,7 +5,9 @@
 
 #include "hashtable.h"
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 /*****************************************************************************/
 
 struct entry
@@ -56,6 +58,9 @@ indexFor(unsigned int tablelength, unsigned int hashvalue) {
 #define freekey(X) free(X)
 /*define freekey(X) ; */
 
+#ifdef __cplusplus
+}
+#endif
 
 /*****************************************************************************/
 

@@ -39,6 +39,10 @@
 
 //#include "m3ua_client.h"
 #include "openzap.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 enum	e_sigboost_event_id_values
 {
 	SIGBOOST_EVENT_CALL_START			= 0x80, /*128*/
@@ -113,7 +117,9 @@ zap_status_t m3ua_init(zap_io_interface_t **zint);
 zap_status_t m3ua_destroy(void);
 zap_status_t m3ua_start(zap_span_t *span);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 /* For Emacs:
  * Local Variables:

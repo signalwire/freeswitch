@@ -21,6 +21,10 @@
 #ifndef _ZAP_DSO_H
 #define _ZAP_DSO_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*zap_func_ptr_t) (void);
 typedef void * zap_dso_lib_t;
 
@@ -28,6 +32,9 @@ void zap_dso_destroy(zap_dso_lib_t *lib);
 zap_dso_lib_t zap_dso_open(const char *path, char **err);
 void *zap_dso_func_sym(zap_dso_lib_t lib, const char *sym, char **err);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

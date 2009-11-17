@@ -34,6 +34,10 @@
 #ifndef	__UART_H__
 #define	__UART_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*bytehandler_func_t) (void *, int);
 typedef void (*bithandler_func_t) (void *, int);
 
@@ -72,5 +76,8 @@ void					dsp_uart_destroy(dsp_uart_handle_t **handle);
 
 void					dsp_uart_bit_handler(void *handle, int bit);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
 

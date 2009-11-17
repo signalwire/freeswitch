@@ -9,6 +9,9 @@
 #endif
 #include "openzap.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 struct hashtable;
 struct hashtable_iterator;
 
@@ -180,6 +183,10 @@ hashtable_destroy(struct hashtable *h);
 OZ_DECLARE(struct hashtable_iterator*) hashtable_first(struct hashtable *h);
 OZ_DECLARE(struct hashtable_iterator*) hashtable_next(struct hashtable_iterator *i);
 OZ_DECLARE(void) hashtable_this(struct hashtable_iterator *i, const void **key, int *klen, void **val);
+
+#ifdef __cplusplus
+} /* extern C */
+#endif
 
 #endif /* __HASHTABLE_CWC22_H__ */
 

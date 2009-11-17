@@ -36,6 +36,10 @@
 
 #include "openzap.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @defgroup zap_buffer Buffer Routines
  * @ingroup buffer
@@ -132,6 +136,10 @@ OZ_DECLARE(zap_size_t) zap_buffer_seek(zap_buffer_t *buffer, zap_size_t datalen)
 /** @} */
 
 OZ_DECLARE(zap_size_t) zap_buffer_zwrite(zap_buffer_t *buffer, const void *data, zap_size_t datalen);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 /* For Emacs:

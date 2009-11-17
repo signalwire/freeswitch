@@ -27,6 +27,9 @@
 
 #include "openzap.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct zap_mutex zap_mutex_t;
 typedef struct zap_thread zap_thread_t;
 typedef struct zap_condition zap_condition_t;
@@ -44,6 +47,10 @@ OZ_DECLARE(zap_status_t) zap_condition_create(zap_condition_t **cond, zap_mutex_
 OZ_DECLARE(zap_status_t) zap_condition_destroy(zap_condition_t **cond);
 OZ_DECLARE(zap_status_t) zap_condition_signal(zap_condition_t *cond);
 OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *cond, int ms);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

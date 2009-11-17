@@ -297,12 +297,6 @@
 	} while(0);
 
 
-typedef enum {
-	ZAP_STATE_CHANGE_FAIL,
-	ZAP_STATE_CHANGE_SUCCESS,
-	ZAP_STATE_CHANGE_SAME,
-} zap_state_change_result_t;
-
 #define zap_set_state_r(obj, s, l, r) if ( obj->state == s ) {	\
 		zap_log(ZAP_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(obj->state), zap_channel_state2str(s)); r = ZAP_STATE_CHANGE_SAME;	\
 	} else if (zap_test_flag(obj, ZAP_CHANNEL_READY)) {					\
@@ -322,6 +316,16 @@ typedef enum {
   \command flags the flags to copy
 */
 #define zap_copy_flags(dest, src, flags) (dest)->flags &= ~(flags);	(dest)->flags |= ((src)->flags & (flags))
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef enum {
+	ZAP_STATE_CHANGE_FAIL,
+	ZAP_STATE_CHANGE_SUCCESS,
+	ZAP_STATE_CHANGE_SAME,
+} zap_state_change_result_t;
 
 struct zap_stream_handle {
 	zap_stream_handle_write_function_t write_function;
@@ -850,6 +854,10 @@ static __inline__ void zap_clear_flag_all(zap_span_t *span, uint32_t flag)
 	}
 	zap_mutex_unlock(span->mutex);
 }
+
+#ifdef __cplusplus
+} /* extern C */
+#endif
 
 #endif
 

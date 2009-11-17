@@ -70,6 +70,10 @@
 #define zap_is_file_path(file) ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR))
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct zap_config zap_config_t;
 
 /*! \brief A simple file handle representing an open configuration file **/
@@ -123,6 +127,9 @@ int zap_config_next_pair(zap_config_t * cfg, char **var, char **val);
 */
 OZ_DECLARE (int) zap_config_get_cas_bits(char *strvalue, unsigned char *outbits);
 
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */
 #endif

@@ -63,6 +63,9 @@ typedef ssize_t zap_ssize_t;
 typedef int zap_filehandle_t;
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define TAG_END NULL
 
 typedef size_t zap_size_t;
@@ -654,6 +657,10 @@ typedef enum {
 	ZAP_CAUSE_USER_CHALLENGE = 603,
 	ZAP_CAUSE_MEDIA_TIMEOUT = 604
 } zap_call_cause_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

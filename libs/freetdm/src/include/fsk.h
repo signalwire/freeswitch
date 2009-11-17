@@ -35,6 +35,10 @@
 #define	__FSK_H__
 #include "uart.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     int freq_space;		/* Frequency of the 0 bit				*/
     int freq_mark;		/* Frequency of the 1 bit				*/
@@ -108,6 +112,10 @@ void					dsp_fsk_destroy(dsp_fsk_handle_t **handle);
 void					dsp_fsk_sample(dsp_fsk_handle_t *handle, double normalized_sample);
 
 extern fsk_modem_definition_t fsk_modem_definitions[];
+
+#ifdef __cplusplus
+} /* extern C */
+#endif
 
 #endif	
 

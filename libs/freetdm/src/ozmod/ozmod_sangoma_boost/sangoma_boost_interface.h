@@ -35,7 +35,7 @@
 #ifndef SANGOMA_BOOST_INTERFACE_H
 #define SANGOMA_BOOST_INTERFACE_H
 
-#include "zap_types.h"
+#include "openzap.h"
 
 /*! 
   \brief Callback used to notify signaling status changes on a channel
@@ -111,7 +111,7 @@ typedef void (*boost_on_hw_link_status_change_t) BOOST_ON_HW_LINK_STATUS_CHANGE_
  */
 #define BOOST_SET_SIG_STATUS_ARGS (zap_channel_t *zchan, zap_channel_sig_status_t status)
 typedef zap_status_t (*boost_set_sig_status_func_t) BOOST_SET_SIG_STATUS_ARGS;
-#define BOOST_SET_SIG_STATUS_FUNCTION(name) zap_status_t BOOST_SET_SIG_STATUS_ARGS
+#define BOOST_SET_SIG_STATUS_FUNCTION(name) zap_status_t name BOOST_SET_SIG_STATUS_ARGS
 
 /*! 
   \brief Configure the given span signaling
@@ -169,7 +169,8 @@ typedef struct boost_sigmod_interface_s {
 	void *pvt;
 } boost_sigmod_interface_t;
 
-#define BOOST_INTERFACE_NAME "boost_sigmod_interface"
+#define BOOST_INTERFACE_NAME boost_sigmod_interface
+#define BOOST_INTERFACE_NAME_STR "boost_sigmod_interface"
 /* use this in your sig boost module to declare your interface */
 #define BOOST_INTERFACE boost_sigmod_interface_t BOOST_INTERFACE_NAME
 #endif

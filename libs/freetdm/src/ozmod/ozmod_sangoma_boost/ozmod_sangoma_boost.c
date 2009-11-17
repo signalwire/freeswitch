@@ -1635,7 +1635,7 @@ static ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(zap_sangoma_boost_configure_span)
 
 			FAIL_CONFIG_RETURN(ZAP_FAIL);
 		}
-		if (!(sigmod_iface = (boost_sigmod_interface_t *)zap_dso_func_sym(lib, BOOST_INTERFACE_NAME, &err))) {
+		if (!(sigmod_iface = (boost_sigmod_interface_t *)zap_dso_func_sym(lib, BOOST_INTERFACE_NAME_STR, &err))) {
 			zap_log(ZAP_LOG_ERROR, "Failed to read Sangoma boost signaling module interface '%s': %s\n", path, err);
 			snprintf(span->last_error, sizeof(span->last_error), "Failed to read Sangoma boost signaling module interface '%s': %s", path, err);
 
