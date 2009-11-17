@@ -3454,6 +3454,7 @@ static void general_event_handler(switch_event_t *event)
 		{
 			const char *profile_name = switch_event_get_header(event, "profile");
 			const char *ct = switch_event_get_header(event, "content-type");
+			const char *cd = switch_event_get_header(event, "content-disposition");
 			const char *to_uri = switch_event_get_header(event, "to-uri");
 			const char *local_user_full = switch_event_get_header(event, "local-user");
 			const char *from_uri = switch_event_get_header(event, "from-uri");
@@ -3496,29 +3497,26 @@ static void general_event_handler(switch_event_t *event)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Call-ID %s\n", call_id);
 					goto done;
 				}
-			}
-
-			else {
+			} else {
 				if (local_user_full) {
 					local_dup = strdup(local_user_full);
 					local_user = local_dup;
 					if ((local_host = strchr(local_user, '@'))) {
 						*local_host++ = '\0';
 					}
-
+					
 					if (!local_user || !local_host || !sofia_reg_find_reg_url(profile, local_user, local_host, buf, sizeof(buf))) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find local user\n");
 						goto done;
 					}
-
+					
 					to_uri = sofia_glue_get_url_from_contact(buf, 0);
 					
 					if ((p = strstr(to_uri, ";fs_"))) {
 						*p = '\0';
 					}
-
+					
 				}
-
 
 				nh = nua_handle(profile->nua, 
 								NULL, 
@@ -3534,6 +3532,7 @@ static void general_event_handler(switch_event_t *event)
 			nua_info(nh,
 					 NUTAG_WITH_THIS(profile->nua),
 					 TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)),
+					 TAG_IF(cd, SIPTAG_CONTENT_DISPOSITION_STR(cd)),
 					 TAG_IF(alert_info, SIPTAG_ALERT_INFO_STR(alert_info)),
 					 TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 					 TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)),
