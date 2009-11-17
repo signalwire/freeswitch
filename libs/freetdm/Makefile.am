@@ -109,6 +109,7 @@ noinst_PROGRAMS = testtones detect_tones detect_dtmf testisdn testpri testr2 tes
 if HAVE_SCTP
 noinst_PROGRAMS += testboost
 endif
+noinst_PROGRAMS += testsangomaboost
 
 testapp_SOURCES = $(SRC)/testapp.c
 testapp_LDADD   = libopenzap.la
@@ -147,6 +148,10 @@ testboost_SOURCES = $(SRC)/testboost.c
 testboost_LDADD   = libopenzap.la
 testboost_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 endif
+
+testsangomaboost_SOURCES = $(SRC)/testsangomaboost.c
+testsangomaboost_LDADD   = libopenzap.la
+testsangomaboost_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 
 testanalog_SOURCES = $(SRC)/testanalog.c
 testanalog_LDADD   = libopenzap.la
