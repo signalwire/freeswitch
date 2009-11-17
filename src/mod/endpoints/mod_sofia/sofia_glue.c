@@ -1906,7 +1906,7 @@ static void set_stats(switch_rtp_t *rtp_session, private_object_t *tech_pvt, con
 		add_stat(stats->inbound.jb_packet_count, "in_jb_packet_count");
 		add_stat(stats->inbound.dtmf_packet_count, "in_dtmf_packet_count");
 		add_stat(stats->inbound.cng_packet_count, "in_cng_packet_count");
-		add_stat(stats->inbound.cng_packet_count, "in_flush_packet_count");
+		add_stat(stats->inbound.flush_packet_count, "in_flush_packet_count");
 
 		add_stat(stats->outbound.raw_bytes, "out_raw_bytes");
 		add_stat(stats->outbound.media_bytes, "out_media_bytes");
