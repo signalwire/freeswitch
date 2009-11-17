@@ -528,7 +528,6 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 		if (err) {
 			*err = err_str;
 		} else {
-			*err = NULL;
 			free(err_str);
 		}
 	}
