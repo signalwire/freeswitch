@@ -180,7 +180,7 @@ char *generate_pai_str(switch_core_session_t *session)
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	const char *callee_name = NULL, *callee_number = NULL;
 	const char *header, *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
-	char *pai = NULL, *tmp = NULL;
+	char *pai = NULL;
 
 	if (zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_name"))) &&
 		zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name")))) {
@@ -196,11 +196,8 @@ char *generate_pai_str(switch_core_session_t *session)
 		callee_name = callee_number;
 	}
 
-	tmp = switch_core_session_strdup(session, callee_number);
-	callee_number = switch_sanitize_number(tmp);
-
-	tmp = switch_core_session_strdup(session, callee_name);
-	callee_name = switch_sanitize_number(tmp);
+	callee_number = switch_sanitize_number(switch_core_session_strdup(session, callee_number));
+	callee_name = switch_sanitize_number(switch_core_session_strdup(session, callee_name));
 
 	if (!zstr(callee_number) && (zstr(ua) || !switch_stristr("polycom", ua))) {
 		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, tech_pvt->profile->sipip);
