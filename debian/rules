@@ -119,7 +119,7 @@ binary-arch: build install
 	dh_testroot
 	dh_installdocs
 	dh_installchangelogs
-	dh_installinit --sourcedir=debian/tmp
+	dh_installinit
 	cp debian/monit/freeswitch.monitrc debian/freeswitch/etc/monit/freeswitch.monitrc
 	dh_install --sourcedir=debian/tmp
 	dh_link
