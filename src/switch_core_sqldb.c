@@ -546,6 +546,8 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread,
 
 	sql_manager.thread_running = 0;
 
+	switch_cache_db_release_db_handle(&sql_manager.event_db);
+
 	return NULL;
 }
 
@@ -1030,9 +1032,6 @@ void switch_core_sqldb_stop(void)
 
 	switch_event_unbind(&sql_manager.event_node);
 	
-	switch_cache_db_release_db_handle(&sql_manager.event_db);
-	sql_close(0);
-
 	if (sql_manager.thread && sql_manager.thread_running) {
 
 		if (sql_manager.manage) {
@@ -1045,6 +1044,7 @@ void switch_core_sqldb_stop(void)
 		switch_thread_join(&st, sql_manager.thread);
 	}
 
+	sql_close(0);
 
 	switch_core_hash_destroy(&dbh_hash);
 
