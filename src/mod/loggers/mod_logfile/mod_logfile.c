@@ -57,6 +57,7 @@ struct logfile_profile {
 	switch_file_t *log_afd;
 	switch_hash_t *log_hash;
 	uint32_t all_level;
+	switch_bool_t log_uuid;
 };
 
 typedef struct logfile_profile logfile_profile_t;
@@ -228,7 +229,13 @@ static switch_status_t process_node(const switch_log_node_t *node, switch_log_le
 		}
 
 		if (ok) {
-			mod_logfile_raw_write(profile, node->data);
+			if (profile->log_uuid && !zstr(node->userdata)) {
+				char buf[2048];
+				switch_snprintf(buf, sizeof(buf), "%s %s", node->userdata, node->data);	
+				mod_logfile_raw_write(profile, buf);
+			} else {
+				mod_logfile_raw_write(profile, node->data);
+			}
 		}
 
 	}
@@ -264,6 +271,8 @@ static switch_status_t load_profile(switch_xml_t xml)
 				if (new_profile->roll_size < 0) {
 					new_profile->roll_size = 0;
 				}
+			} else if (!strcmp(var, "uuid") && switch_true(val)) {
+				new_profile->log_uuid = SWITCH_TRUE;
 			}
 		}
 	}
