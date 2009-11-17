@@ -4123,7 +4123,7 @@ sofia_cache_db_handle_t *sofia_glue_get_db_handle(sofia_profile_t *profile)
 
 		
 		if (db) dbh->db = db; else dbh->odbc_dbh = odbc_dbh;
-		switch_mutex_init(&dbh->mutex, 0, dbh->pool);
+		switch_mutex_init(&dbh->mutex, SWITCH_MUTEX_UNNESTED, dbh->pool);
 		switch_mutex_lock(dbh->mutex);
 
 		switch_core_hash_insert(profile->db_hash, thread_str, dbh);

@@ -1916,15 +1916,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
   \}
 */
 
+#define CACHE_DB_LEN 256
+typedef enum {
+	CDF_INUSE = (1 << 0)
+} cache_db_flag_t;
+
 typedef struct {
+	char name[CACHE_DB_LEN];
 	switch_core_db_t *db;
 	switch_odbc_handle_t *odbc_dbh;
 	time_t last_used;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
+	int32_t flags;
 } switch_cache_db_handle_t;
 
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t **dbh);
+SWITCH_DECLARE(void) switch_cache_db_destroy_db_handle(switch_cache_db_handle_t **dbh);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_get_db_handle(switch_cache_db_handle_t **dbh, 
 																		const char *db_name, const char *odbc_user, const char *odbc_pass);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, const char *sql, char **err);
@@ -1935,6 +1943,7 @@ SWITCH_DECLARE(switch_status_t)switch_core_db_handle(switch_cache_db_handle_t **
 SWITCH_DECLARE(void) switch_cache_db_test_reactive(switch_cache_db_handle_t *db, const char *test_sql, const char *drop_sql, const char *reactive_sql);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
+SWITCH_DECLARE(void) switch_cache_db_detach(void);
 
 SWITCH_END_EXTERN_C
 #endif

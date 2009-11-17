@@ -630,10 +630,12 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_priority_increase(switch_threa
 	return stat;
 }
 
+static char TT_KEY[] = "1";
 
 SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t **new_thread, switch_threadattr_t *attr,
 													 switch_thread_start_t func, void *data, switch_memory_pool_t *cont)
 {
+	switch_core_memory_pool_set_data(cont, "_in_thread", TT_KEY);
 	return apr_thread_create(new_thread, attr, func, data, cont);
 }
 

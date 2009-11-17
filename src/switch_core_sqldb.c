@@ -106,6 +106,7 @@ static void sql_close(time_t prune)
 	switch_mutex_unlock(dbh_mutex);
 }
 
+
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t **dbh)
 {
 	if (dbh && *dbh) {
@@ -114,19 +115,89 @@ SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t 
 	}
 }
 
+
+SWITCH_DECLARE(void) switch_cache_db_destroy_db_handle(switch_cache_db_handle_t **dbh)
+{
+	if (dbh && *dbh) {
+		switch_mutex_lock(dbh_mutex);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleting DB connection %s\n", (*dbh)->name);
+		if ((*dbh)->db) {
+			switch_core_db_close((*dbh)->db);
+			(*dbh)->db = NULL;
+		} else if (switch_odbc_available() && (*dbh)->odbc_dbh) {
+			switch_odbc_handle_destroy(&(*dbh)->odbc_dbh);
+		}
+		
+		switch_core_hash_delete(dbh_hash, (*dbh)->name);		
+		switch_mutex_unlock((*dbh)->mutex);
+		switch_core_destroy_memory_pool(&(*dbh)->pool);
+		*dbh = NULL;
+		switch_mutex_unlock(dbh_mutex);
+	}
+}
+
+SWITCH_DECLARE(void) switch_cache_db_detach(void)
+{
+	char thread_str[CACHE_DB_LEN] = "";
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+	char *key;
+	switch_cache_db_handle_t *dbh = NULL;
+
+	snprintf(thread_str, sizeof(thread_str) - 1, "%lu", (unsigned long)(intptr_t)switch_thread_self());
+	switch_mutex_lock(dbh_mutex);
+
+	for (hi = switch_hash_first(NULL, dbh_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		key = (char *) var;
+		if ((dbh = (switch_cache_db_handle_t *) val)) {
+			if (switch_mutex_trylock(dbh->mutex) == SWITCH_STATUS_SUCCESS) {
+				if (strstr(dbh->name, thread_str)) {
+					switch_clear_flag(dbh, CDF_INUSE);
+				} 
+				switch_mutex_unlock(dbh->mutex);
+			}
+		}
+	}
+
+	switch_mutex_unlock(dbh_mutex);
+}
+
 SWITCH_DECLARE(switch_status_t)switch_cache_db_get_db_handle(switch_cache_db_handle_t **dbh,
 															 const char *db_name, const char *odbc_user, const char *odbc_pass)
 {
 	switch_thread_id_t self = switch_thread_self();
-	char thread_str[256] = "";
+	char thread_str[CACHE_DB_LEN] = "";
 	switch_cache_db_handle_t *new_dbh = NULL;
 	
 	switch_assert(db_name);
 
 	snprintf(thread_str, sizeof(thread_str) - 1, "%s_%lu", db_name, (unsigned long)(intptr_t)self);
-
+	
 	switch_mutex_lock(dbh_mutex);
 	if (!(new_dbh = switch_core_hash_find(dbh_hash, thread_str))) {
+		switch_hash_index_t *hi;
+		const void *var;
+		void *val;
+		char *key;
+
+		for (hi = switch_hash_first(NULL, dbh_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, &var, NULL, &val);
+			key = (char *) var;
+			
+			if ((new_dbh = (switch_cache_db_handle_t *) val)) {
+				if (!switch_test_flag(new_dbh, CDF_INUSE) && switch_mutex_trylock(new_dbh->mutex) == SWITCH_STATUS_SUCCESS) {
+					switch_set_flag(new_dbh, CDF_INUSE);
+					switch_set_string(new_dbh->name, thread_str);
+					break;
+				}
+			}
+			new_dbh = NULL;
+		}
+	}
+
+	if (!new_dbh) {
 		switch_memory_pool_t *pool = NULL;
 		switch_core_db_t *db = NULL;
 		switch_odbc_handle_t *odbc_dbh = NULL;
@@ -149,13 +220,14 @@ SWITCH_DECLARE(switch_status_t)switch_cache_db_get_db_handle(switch_cache_db_han
 		switch_core_new_memory_pool(&pool);
 		new_dbh = switch_core_alloc(pool, sizeof(*new_dbh));
 		new_dbh->pool = pool;
-
+		switch_set_string(new_dbh->name, thread_str);
+		switch_set_flag(new_dbh, CDF_INUSE);
 		
 		if (db) new_dbh->db = db; else new_dbh->odbc_dbh = odbc_dbh;
-		switch_mutex_init(&new_dbh->mutex, 0, new_dbh->pool);
+		switch_mutex_init(&new_dbh->mutex, SWITCH_MUTEX_UNNESTED, new_dbh->pool);
 		switch_mutex_lock(new_dbh->mutex);
 
-		switch_core_hash_insert(dbh_hash, thread_str, new_dbh);
+		switch_core_hash_insert(dbh_hash, new_dbh->name, new_dbh);
 	}
 
  end:
