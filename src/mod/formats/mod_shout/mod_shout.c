@@ -1319,10 +1319,12 @@ void do_broadcast(switch_stream_handle_t *stream)
 
 void do_index(switch_stream_handle_t *stream)
 {
-	switch_core_db_t *db = switch_core_db_handle();
+	switch_cache_db_handle_t *db; 
 	const char *sql = "select * from channels";
 	struct holder holder;
 	char *errmsg;
+
+	switch_core_db_handle(&db);
 
 	holder.host = switch_event_get_header(stream->param_event, "http-host");
 	holder.port = switch_event_get_header(stream->param_event, "http-port");
@@ -1335,7 +1337,7 @@ void do_index(switch_stream_handle_t *stream)
 						   "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
 						   "Created", "CID Name", "CID Num", "Ext", "App", "Data", "Codec", "Rate", "Listen");
 
-	switch_core_db_exec(db, sql, web_callback, &holder, &errmsg);
+	switch_cache_db_execute_sql_callback(db, sql, web_callback, &holder, &errmsg);
 
 	stream->write_function(stream, "</table>");
 

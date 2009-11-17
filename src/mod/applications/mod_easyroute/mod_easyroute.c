@@ -204,7 +204,7 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int 
 		switch_mutex_lock(globals.mutex);
 	}
 	/* Do the Query */
-	if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, route_callback, &pdata) == SWITCH_ODBC_SUCCESS){
+	if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, route_callback, &pdata, NULL) == SWITCH_ODBC_SUCCESS){
 		char tmp_profile[129];
 		char tmp_gateway[129];
 

@@ -526,7 +526,7 @@ static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback
 	
 	switch_mutex_lock(globals.db_mutex);
 	if (globals.odbc_dsn) {
-		if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata)
+		if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata, NULL)
 				== SWITCH_ODBC_FAIL) {
 			retval = SWITCH_FALSE;
 		} else {

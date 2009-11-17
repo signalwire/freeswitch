@@ -338,7 +338,7 @@ static float get_balance(const char *billaccount)
 	memset(&pdata, 0, sizeof(pdata));
 	snprintf(sql, 1024, SQL_LOOKUP, globals.db_column_cash, globals.db_table, globals.db_column_account, billaccount);
 
-	if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, nibblebill_callback, &pdata) != SWITCH_ODBC_SUCCESS) {
+	if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, nibblebill_callback, &pdata, NULL) != SWITCH_ODBC_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error running this query: [%s]\n", sql);
 		/* Return -1 for safety */
 
