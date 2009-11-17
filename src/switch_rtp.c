@@ -2797,7 +2797,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		rtp_session->stats.outbound.raw_bytes += bytes;
 		rtp_session->stats.outbound.packet_count++;
 
-		if (send_msg->header.pt == rtp_session->cng_pt) {
+		if (rtp_session->cng_pt && send_msg->header.pt == rtp_session->cng_pt) {
 			rtp_session->stats.outbound.cng_packet_count++;
 		} else {
 			rtp_session->stats.outbound.media_packet_count++;
