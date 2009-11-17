@@ -99,9 +99,9 @@ typedef zap_status_t (*boost_get_sig_status_func_t) BOOST_GET_SIG_STATUS_ARGS;
   \param zchan The openzap channel
   \param status The status pointer where the current signaling status will be set
  */
-#define BOOST_ON_HW_STATUS_CHANGE_ARGS (zap_channel_t *zchan, zap_channel_hw_link_status_t status)
-typedef void (*boost_on_hw_link_status_change_t) BOOST_ON_HW_STATUS_CHANGE_ARGS;
-#define BOOST_ON_HW_STATUS_CHANGE_FUNCTION(name) void name BOOST_ON_HW_STATUS_CHANGE_ARGS
+#define BOOST_ON_HW_LINK_STATUS_CHANGE_ARGS (zap_channel_t *zchan, zap_channel_hw_link_status_t status)
+typedef void (*boost_on_hw_link_status_change_t) BOOST_ON_HW_LINK_STATUS_CHANGE_ARGS;
+#define BOOST_ON_HW_LINK_STATUS_CHANGE_FUNCTION(name) void name BOOST_ON_HW_LINK_STATUS_CHANGE_ARGS
 
 /*! 
   \brief Set the signaling status on the given channel.
