@@ -737,6 +737,7 @@ OZ_DECLARE(zap_status_t) zap_channel_init(zap_channel_t *zchan);
 OZ_DECLARE(int) zap_load_modules(void);
 OZ_DECLARE(zap_status_t) zap_unload_modules(void);
 OZ_DECLARE(zap_status_t) zap_configure_span(const char *type, zap_span_t *span, zio_signal_cb_t sig_cb, ...);
+OZ_DECLARE(zap_status_t) zap_configure_span_signaling(const char *type, zap_span_t *span, zio_signal_cb_t sig_cb, zap_conf_parameter_t *parameters);
 OZ_DECLARE(zap_status_t) zap_span_start(zap_span_t *span);
 OZ_DECLARE(zap_status_t) zap_span_stop(zap_span_t *span);
 OZ_DECLARE(char *) zap_build_dso_path(const char *name, char *path, zap_size_t len);

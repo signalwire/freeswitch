@@ -2806,6 +2806,32 @@ OZ_DECLARE(zap_status_t) zap_configure_span(const char *type, zap_span_t *span, 
 	return status;
 }
 
+OZ_DECLARE(zap_status_t) zap_configure_span_signaling(const char *type, zap_span_t *span, zio_signal_cb_t sig_cb, zap_conf_parameter_t *parameters) 
+{
+	zap_module_t *mod = (zap_module_t *) hashtable_search(globals.module_hash, (void *)type);
+	zap_status_t status = ZAP_FAIL;
+
+	zap_assert(type != NULL, ZAP_FAIL, "No signaling type");
+	zap_assert(span != NULL, ZAP_FAIL, "No span");
+	zap_assert(sig_cb != NULL, ZAP_FAIL, "No signaling callback");
+	zap_assert(parameters != NULL, ZAP_FAIL, "No parameters");
+
+	if (!mod) {
+		zap_load_module_assume(type);
+		if ((mod = (zap_module_t *) hashtable_search(globals.module_hash, (void *)type))) {
+			zap_log(ZAP_LOG_INFO, "auto-loaded '%s'\n", type);
+		}
+	}
+
+	if (mod && mod->configure_span_signaling) {
+		status = mod->configure_span_signaling(span, sig_cb, parameters);
+	} else {
+		zap_log(ZAP_LOG_ERROR, "can't find module '%s' or the module did not implement the signaling configuration method\n", type);
+	}
+
+	return status;
+}
+
 OZ_DECLARE(zap_status_t) zap_span_start(zap_span_t *span)
 {
 	if (span->start) {

@@ -2306,41 +2306,45 @@ static switch_status_t load_config(void)
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
 			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
+			char *sigmod = (char *) switch_xml_attr(myspan, "sigmod");
 			zap_status_t zstatus = ZAP_FAIL;
 			const char *context = "default";
 			const char *dialplan = "XML";
 			uint32_t span_id = 0;
 			zap_span_t *span = NULL;
 			const char *tonegroup = NULL;
-			char *local_ip = NULL;
-			int local_port = 0;
-			char *remote_ip = NULL;
-			int remote_port = 0;
+			zap_conf_parameter_t spanparameters[30];
+			unsigned paramindex = 0;
+			
+			if (!id && !name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "boost span requires an id or name as attribute: <span id=ozid|name=ozname>\n");
+				continue;
+			}
+			memset(spanparameters, 0, sizeof(spanparameters));
+			if (sigmod) {
+				spanparameters[paramindex].var = "sigmod";
+				spanparameters[paramindex].val = sigmod;
+				paramindex++;
+			}
 
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
-
+				if (sizeof(spanparameters)/sizeof(spanparameters[0]) == paramindex) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too many parameters for boost span, ignoring any parameter after %s\n", var);
+					break;
+				}
 				if (!strcasecmp(var, "tonegroup")) {
 					tonegroup = val;
-				} else if (!strcasecmp(var, "local-ip")) {
-					local_ip = val;
-				} else if (!strcasecmp(var, "local-port")) {
-					local_port = atoi(val);
-				} else if (!strcasecmp(var, "remote-ip")) {
-					remote_ip = val;
-				} else if (!strcasecmp(var, "remote-port")) {
-					remote_port = atoi(val);
 				} else if (!strcasecmp(var, "context")) {
 					context = val;
 				} else if (!strcasecmp(var, "dialplan")) {
 					dialplan = val;
-				} 
-			}
-				
-			if (!id && !name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param\n");
-				continue;
+				} else {
+					spanparameters[paramindex].var = var;
+					spanparameters[paramindex].val = val;
+					paramindex++;
+				}
 			}
 
 			if (!tonegroup) {
@@ -2369,12 +2373,7 @@ static switch_status_t load_config(void)
 				span_id = span->span_id;
 			}
 
-			if (zap_configure_span("sangoma_boost", span, on_clear_channel_signal, 
-								   "local_ip", local_ip,
-								   "local_port", &local_port,
-								   "remote_ip", remote_ip,
-								   "remote_port", &remote_port,
-								   TAG_END) != ZAP_SUCCESS) {
+			if (zap_configure_span_signaling("sangoma_boost", span, on_clear_channel_signal, spanparameters) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d error: %s\n", span_id, span->last_error);
 				continue;
 			}

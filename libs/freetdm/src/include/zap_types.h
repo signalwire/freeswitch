@@ -29,6 +29,11 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ *
  */
 
 #ifndef ZAP_TYPES_H
@@ -428,6 +433,11 @@ typedef enum zap_channel_hw_link_status {
 	ZAP_HW_LINK_CONNECTED
 } zap_channel_hw_link_status_t;
 
+typedef struct zap_conf_parameter_s {
+	const char *var;
+	const char *val;
+} zap_conf_parameter_t;
+
 typedef struct zap_channel zap_channel_t;
 typedef struct zap_event zap_event_t;
 typedef struct zap_sigmsg zap_sigmsg_t;
@@ -464,6 +474,7 @@ typedef zap_status_t (*zap_stream_handle_write_function_t) (zap_stream_handle_t 
 #define ZIO_IO_UNLOAD_ARGS (void)
 #define ZIO_SIG_LOAD_ARGS (void)
 #define ZIO_SIG_CONFIGURE_ARGS (zap_span_t *span, zio_signal_cb_t sig_cb, va_list ap)
+#define ZIO_CONFIGURE_SPAN_SIGNALING_ARGS (zap_span_t *span, zio_signal_cb_t sig_cb, zap_conf_parameter_t *zap_parameters)
 #define ZIO_SIG_UNLOAD_ARGS (void)
 #define ZIO_API_ARGS (zap_stream_handle_t *stream, const char *data)
 
@@ -489,6 +500,7 @@ typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 typedef zap_status_t (*zio_io_load_t) ZIO_IO_LOAD_ARGS ;
 typedef zap_status_t (*zio_sig_load_t) ZIO_SIG_LOAD_ARGS ;
 typedef zap_status_t (*zio_sig_configure_t) ZIO_SIG_CONFIGURE_ARGS ;
+typedef zap_status_t (*zio_configure_span_signaling_t) ZIO_CONFIGURE_SPAN_SIGNALING_ARGS ;
 typedef zap_status_t (*zio_io_unload_t) ZIO_IO_UNLOAD_ARGS ;
 typedef zap_status_t (*zio_sig_unload_t) ZIO_SIG_UNLOAD_ARGS ;
 typedef zap_status_t (*zio_api_t) ZIO_API_ARGS ;
@@ -516,13 +528,12 @@ typedef zap_status_t (*zio_api_t) ZIO_API_ARGS ;
 #define ZIO_IO_LOAD_FUNCTION(name) zap_status_t name ZIO_IO_LOAD_ARGS
 #define ZIO_SIG_LOAD_FUNCTION(name) zap_status_t name ZIO_SIG_LOAD_ARGS
 #define ZIO_SIG_CONFIGURE_FUNCTION(name) zap_status_t name ZIO_SIG_CONFIGURE_ARGS
+#define ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(name) zap_status_t name ZIO_CONFIGURE_SPAN_SIGNALING_ARGS
 #define ZIO_IO_UNLOAD_FUNCTION(name) zap_status_t name ZIO_IO_UNLOAD_ARGS
 #define ZIO_SIG_UNLOAD_FUNCTION(name) zap_status_t name ZIO_SIG_UNLOAD_ARGS
 #define ZIO_API_FUNCTION(name) zap_status_t name ZIO_API_ARGS
 
 #include "zap_dso.h"
-
-
 
 typedef struct {
 	char name[256];
@@ -533,6 +544,15 @@ typedef struct {
 	zio_sig_unload_t sig_unload;
 	zap_dso_lib_t lib;
 	char path[256];
+	/*! 
+	  \brief configure a given span signaling 
+	  \see sig_configure
+	  This is just like sig_configure but receives
+	  an array of paramters instead of va_list
+	  I'd like to deprecate sig_configure and move
+	  all modules to use sigparam_configure
+	 */
+	zio_configure_span_signaling_t configure_span_signaling;
 } zap_module_t;
 
 #ifndef __FUNCTION__

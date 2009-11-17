@@ -1566,7 +1566,7 @@ static ZIO_CHANNEL_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_sig_status)
  * \param ap List of configuration variables
  * \return Success or failure
  */
-static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
+static ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(zap_sangoma_boost_configure_span)
 {
 #define FAIL_CONFIG_RETURN(retstatus) \
 		if (sangoma_boost_data) \
@@ -1577,7 +1577,6 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
 			zap_mutex_unlock(g_boost_modules_mutex); \
 		if (lib) \
 			zap_dso_destroy(lib); \
-		va_end(conflist); \
 		return retstatus;
 
 	boost_sigmod_interface_t *sigmod_iface = NULL;
@@ -1585,44 +1584,27 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
 	const char *local_ip = "127.0.0.65", *remote_ip = "127.0.0.66";
 	const char *sigmod = NULL;
 	int local_port = 53000, remote_port = 53000;
-	char *var = NULL, *val = NULL;
-	int *intval = NULL;
+	const char *var = NULL, *val = NULL;
 	int hash_locked = 0;
 	zap_dso_lib_t lib = NULL;
 	char path[255] = "";
 	char *err = NULL;
-	va_list conflist;
+	unsigned paramindex = 0;
 
-	/* we need to copy the list before moving with va_arg in case this configuration should be handled by a sigmod */
-	va_copy(conflist, ap); /* WARNING: must be freed before returning */
-
-	while((var = va_arg(ap, char *))) {
+	for (; zap_parameters[paramindex].var; paramindex++) {
+		var = zap_parameters[paramindex].var;
+		val = zap_parameters[paramindex].val;
 		if (!strcasecmp(var, "sigmod")) {
-			if (!(val = va_arg(ap, char *))) {
-				break;
-			}
 			sigmod = val;
 		} else if (!strcasecmp(var, "local_ip")) {
-			if (!(val = va_arg(ap, char *))) {
-				break;
-			}
 			local_ip = val;
 		} else if (!strcasecmp(var, "remote_ip")) {
-			if (!(val = va_arg(ap, char *))) {
-				break;
-			}
 			remote_ip = val;
 		} else if (!strcasecmp(var, "local_port")) {
-			if (!(intval = va_arg(ap, int *))) {
-				break;
-			}
-			local_port = *intval;
+			local_port = atoi(val);
 		} else if (!strcasecmp(var, "remote_port")) {
-			if (!(intval = va_arg(ap, int *))) {
-				break;
-			}
-			remote_port = *intval;
-		} else {
+			remote_port = atoi(val);
+		} else if (!sigmod) {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
 			FAIL_CONFIG_RETURN(ZAP_FAIL);
 		}
@@ -1676,7 +1658,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
 		}
 		zap_log(ZAP_LOG_NOTICE, "Span %s will use Sangoma Boost Signaling Module %s\n", span->name, sigmod_iface->name);
 		sangoma_boost_data->sigmod = sigmod_iface;
-		sigmod_iface->configure_span(span, conflist);
+		sigmod_iface->configure_span(span, zap_parameters);
 	} else {
 		zap_set_string(sangoma_boost_data->mcon.cfg.local_ip, local_ip);
 		sangoma_boost_data->mcon.cfg.local_port = local_port;
@@ -1693,9 +1675,6 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
 	span->get_sig_status = sangoma_boost_get_sig_status;
 	span->state_map = &boost_state_map;
 	zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
-
-	va_end(conflist);
-
 	return ZAP_SUCCESS;
 }
 
@@ -1703,12 +1682,10 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
  * \brief Openzap sangoma boost signaling module definition
  */
 zap_module_t zap_module = { 
-	"sangoma_boost",
-	NULL,
-	NULL,
-	zap_sangoma_boost_init,
-	zap_sangoma_boost_configure_span,
-	zap_sangoma_boost_destroy	
+	.name = "sangoma_boost",
+	.sig_load = zap_sangoma_boost_init,
+	.sig_unload = zap_sangoma_boost_destroy,
+	.configure_span_signaling = zap_sangoma_boost_configure_span
 };
 
 /* For Emacs:

@@ -116,10 +116,10 @@ typedef zap_status_t (*boost_set_sig_status_func_t) BOOST_SET_SIG_STATUS_ARGS;
 /*! 
   \brief Configure the given span signaling
   \param span The openzap span
-  \param ap The list of configuration key,value pairs (must be null terminated)
+  \param parameters The array of configuration key,value pairs (must be null terminated)
   \return ZAP_SUCCESS or ZAP_FAIL 
  */
-#define BOOST_CONFIGURE_SPAN_ARGS (zap_span_t *span, va_list ap) 
+#define BOOST_CONFIGURE_SPAN_ARGS (zap_span_t *span, zap_conf_parameter_t *parameters) 
 typedef zap_status_t (*boost_configure_span_func_t) BOOST_CONFIGURE_SPAN_ARGS;
 #define BOOST_CONFIGURE_SPAN_FUNCTION(name) zap_status_t name BOOST_CONFIGURE_SPAN_ARGS
 
