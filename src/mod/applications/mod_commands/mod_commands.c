@@ -3725,6 +3725,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add show management");
 	switch_console_set_complete("add show modules");
 	switch_console_set_complete("add show nat_map");
+	switch_console_set_complete("add nat_map status");
+	switch_console_set_complete("add nat_map republish");
+	switch_console_set_complete("add nat_map reinit");
 	switch_console_set_complete("add show say");
 	switch_console_set_complete("add show interfaces");
 	switch_console_set_complete("add show interface_types");
