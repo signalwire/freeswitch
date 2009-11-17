@@ -398,6 +398,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	unsigned char write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 	switch_event_t *event;
 	int divisor = 0;
+	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 
     switch_core_session_get_read_impl(session, &read_impl);
 
@@ -505,11 +506,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		fh->pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 	}
 
+	if ((p = switch_channel_get_variable(channel, "RECORD_APPEND")) && switch_true(p)) {
+		file_flags |= SWITCH_FILE_WRITE_APPEND;
+	}
+
+
 	if (switch_core_file_open(fh,
 							  file,
 							  fh->channels,
 							  read_impl.actual_samples_per_second,
-							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+							  file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 		return SWITCH_STATUS_GENERR;

@@ -475,6 +475,36 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t
 	return fh->file_interface->file_get_string(fh, col, string);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_file_truncate(switch_file_handle_t *fh, int64_t offset)
+{
+	switch_status_t status;
+	
+	switch_assert(fh != NULL);
+	switch_assert(fh->file_interface != NULL);
+
+	if (!(switch_test_flag(fh, SWITCH_FILE_OPEN) && switch_test_flag(fh, SWITCH_FILE_FLAG_WRITE))) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!fh->file_interface->file_truncate) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if ((status=fh->file_interface->file_truncate(fh, offset)) == SWITCH_STATUS_SUCCESS) {
+		if (fh->buffer) {
+			switch_buffer_zero(fh->buffer);
+		}
+		if (fh->pre_buffer) {
+			switch_buffer_zero(fh->pre_buffer);
+		}
+		fh->samples_out = 0;
+		fh->pos = 0;
+	}
+
+	return status;
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 {
 	switch_status_t status;

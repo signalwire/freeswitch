@@ -420,6 +420,11 @@ SWITCH_DECLARE(switch_status_t) switch_file_close(switch_file_t *thefile)
 	return apr_file_close(thefile);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_file_trunc(switch_file_t *thefile, int64_t offset)
+{
+	return apr_file_trunc(thefile, offset);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_file_lock(switch_file_t *thefile, int type)
 {
 	return apr_file_lock(thefile, type);

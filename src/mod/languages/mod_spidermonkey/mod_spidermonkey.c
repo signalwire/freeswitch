@@ -1247,6 +1247,8 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 				switch_set_flag(fh, SWITCH_FILE_PAUSE);
 			}
 			return SWITCH_STATUS_SUCCESS;
+		} else if (!strcasecmp(ret, "truncate")) {
+			switch_core_file_truncate(fh, 0);
 		} else if (!strcasecmp(ret, "restart")) {
 			uint32_t pos = 0;
 			fh->speed = 0;

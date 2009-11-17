@@ -626,6 +626,9 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 
 		}
 	} else if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Appending to MP3 not supported.\n");
+		}
 		if (!(context->gfp = lame_init())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate lame\n");
 			goto error;

@@ -83,7 +83,11 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	}
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-		mode += SFM_WRITE;
+		if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
+			mode += SFM_RDWR;
+		} else {
+			mode += SFM_WRITE;
+		}
 	}
 
 	if (!mode) {
@@ -98,8 +102,6 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	map = switch_core_hash_find(globals.format_hash, ext);
 
 	if (mode & SFM_WRITE) {
-		sf_count_t frames = 0;
-
 		context->sfinfo.channels = handle->channels;
 		context->sfinfo.samplerate = handle->samplerate;
 		if (handle->samplerate == 8000 || handle->samplerate == 16000 ||
@@ -107,8 +109,6 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 			handle->samplerate == 11025 || handle->samplerate == 22050 || handle->samplerate == 44100) {
 			context->sfinfo.format |= SF_FORMAT_PCM_16;
 		}
-
-		sf_command(context->handle, SFC_FILE_TRUNCATE, &frames, sizeof(frames));
 	}
 
 	if (map) {
@@ -206,12 +206,28 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	handle->speed = 0;
 	handle->private_info = context;
 
+	if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
+		handle->pos = sf_seek(context->handle, 0, SEEK_END);
+	} else {
+		sf_count_t frames = 0;
+		sf_command(context->handle, SFC_FILE_TRUNCATE, &frames, sizeof(frames));
+	}
+
+
   end:
 
 	switch_safe_free(alt_path);
 	switch_safe_free(ldup);
 
 	return status;
+}
+
+static switch_status_t sndfile_file_truncate(switch_file_handle_t *handle, int64_t offset)
+{
+	sndfile_context *context = handle->private_info;
+	sf_command(context->handle, SFC_FILE_TRUNCATE, &offset, sizeof(offset));
+	handle->pos = 0;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t sndfile_file_close(switch_file_handle_t *handle)
@@ -416,6 +432,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load)
 	file_interface->extens = supported_formats;
 	file_interface->file_open = sndfile_file_open;
 	file_interface->file_close = sndfile_file_close;
+	file_interface->file_truncate = sndfile_file_truncate;
 	file_interface->file_read = sndfile_file_read;
 	file_interface->file_write = sndfile_file_write;
 	file_interface->file_seek = sndfile_file_seek;

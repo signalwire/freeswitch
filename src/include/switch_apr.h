@@ -786,6 +786,8 @@ SWITCH_DECLARE(switch_status_t) switch_file_copy(const char *from_path,
  */
 SWITCH_DECLARE(switch_status_t) switch_file_close(switch_file_t *thefile);
 
+SWITCH_DECLARE(switch_status_t) switch_file_trunc(switch_file_t *thefile, int64_t offset);
+
 SWITCH_DECLARE(switch_status_t) switch_file_lock(switch_file_t *thefile, int type);
 
 /**

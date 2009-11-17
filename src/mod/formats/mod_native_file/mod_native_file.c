@@ -57,7 +57,13 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, const
 	}
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-		flags |= SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE | SWITCH_FOPEN_TRUNCATE;
+		flags |= SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE;
+		if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
+			flags |= SWITCH_FOPEN_READ;
+		} else {
+			flags |= SWITCH_FOPEN_TRUNCATE;
+		}
+
 	}
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
@@ -67,6 +73,12 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, const
 	if (switch_file_open(&context->fd, path, flags, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, handle->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
 		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
+		int64_t samples = 0;
+		switch_file_seek(context->fd, SEEK_END, &samples);
+		handle->pos = samples;
 	}
 
 	handle->samples = 0;
@@ -82,6 +94,19 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, const
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz\n", path, handle->samplerate);
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t native_file_file_truncate(switch_file_handle_t *handle, int64_t offset)
+{
+	native_file_context *context = handle->private_info;
+	switch_status_t status;
+
+	if ((status = switch_file_trunc(context->fd, offset)) == SWITCH_STATUS_SUCCESS) {
+		handle->pos = 0;
+	}
+	
+	return status;
+
 }
 
 static switch_status_t native_file_file_close(switch_file_handle_t *handle)
@@ -161,6 +186,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_native_file_load)
 	file_interface->extens = supported_formats;
 	file_interface->file_open = native_file_file_open;
 	file_interface->file_close = native_file_file_close;
+	file_interface->file_truncate = native_file_file_truncate;
 	file_interface->file_read = native_file_file_read;
 	file_interface->file_write = native_file_file_write;
 	file_interface->file_seek = native_file_file_seek;

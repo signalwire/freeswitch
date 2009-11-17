@@ -1275,6 +1275,8 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(result, "stop")) {
 			return SWITCH_STATUS_FALSE;
+		} else if (!strcasecmp(result, "truncate")) {
+			switch_core_file_truncate(fhp, 0);
 		} else if (!strcasecmp(result, "restart")) {
 			unsigned int pos = 0;
 			fhp->speed = 0;

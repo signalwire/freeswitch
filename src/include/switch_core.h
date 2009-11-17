@@ -1505,6 +1505,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(_In_ switch_file_han
   \return SWITCH_STATUS_SUCCESS if the file handle was closed
 */
 SWITCH_DECLARE(switch_status_t) switch_core_file_close(_In_ switch_file_handle_t *fh);
+
+SWITCH_DECLARE(switch_status_t) switch_core_file_truncate(switch_file_handle_t *fh, int64_t offset);
+
+
 ///\}
 
 ///\defgroup speech ASR/TTS Functions

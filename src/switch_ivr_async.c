@@ -879,7 +879,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	uint8_t channels;
 	switch_codec_implementation_t read_impl = {0};
 	struct record_helper *rh = NULL;
-
+	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
+	
     switch_core_session_get_read_impl(session, &read_impl);
 
 	if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
@@ -920,6 +921,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		
 	if ((p = switch_channel_get_variable(channel, "RECORD_ANSWER_REQ")) && switch_true(p)) {
 		flags |= SMBF_ANSWER_REQ;
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_APPEND")) && switch_true(p)) {
+		file_flags |= SWITCH_FILE_WRITE_APPEND;
 	}
 
 
@@ -971,7 +976,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 							  file,
 							  channels,
 							  read_impl.actual_samples_per_second,
-							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+							  file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error opening %s\n", file);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
