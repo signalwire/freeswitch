@@ -16,8 +16,8 @@ DEFAULT_SOUNDS=en-us-callie-8000
 	@target=`echo $@ | sed -e 's|^.*-||'`; \
 	 target_prefix=`echo $@ | sed -e 's|-.*$$||'`; \
 	 sound_perfix=`echo $@ | sed -e 's|-.*||'`; \
-	 sounds_version=`cat build/sounds_version.txt`;\
-	 moh_version=`cat build/moh_version.txt`;\
+	 sounds_version=`cat $(switch_srcdir)/build/sounds_version.txt`;\
+	 moh_version=`cat $(switch_srcdir)/build/moh_version.txt`;\
 	 full_sound_dir=`echo $@ | sed -e 's|^sounds||' | sed -e 's|^-||' | sed -e 's|-install$$||'`; \
 	 test ! -z $$full_sound_dir || full_sound_dir=`echo $(DEFAULT_SOUNDS)`; \
 	 soundfile=`echo freeswitch-sounds-$$full_sound_dir-$$moh_version.tar.gz`; \
@@ -394,7 +394,7 @@ update-clean: clean modwipe uninstall libs/openzap/Makefile python-reconf
 
 swigall:
 	@echo reswigging all
-	sh ./build/swigall.sh
+	sh $(switch_srcdir)/build/swigall.sh
 
 sure: current
 
