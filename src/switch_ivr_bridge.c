@@ -59,22 +59,29 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 			break;
 		}
 
-		switch_core_session_write_video_frame(vh->session_b, read_frame, SWITCH_IO_FLAG_NONE, 0);
+		if (!switch_test_flag(read_frame, SFF_CNG)) {
+			if (switch_core_session_write_video_frame(vh->session_b, read_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
 
 	}
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s video thread ended.\n", switch_channel_get_name(channel));
+
 	vh->up = 0;
 	return NULL;
 }
 
-static void launch_video(struct vid_helper *vh)
+static switch_thread_t *launch_video(struct vid_helper *vh)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 
 	switch_threadattr_create(&thd_attr, switch_core_session_get_pool(vh->session_a));
-	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, video_bridge_thread, vh, switch_core_session_get_pool(vh->session_a));
+	return thread;
 }
 #endif
 
@@ -172,6 +179,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	time_t answer_limit = 0;
 	
 #ifdef SWITCH_VIDEO_IN_THREADS
+	switch_thread_t *vid_thread = NULL;
 	struct vid_helper vh = { 0 };
 	uint32_t vid_launch = 0;
 #endif
@@ -325,7 +333,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			vid_launch++;
 			vh.session_a = session_a;
 			vh.session_b = session_b;
-			launch_video(&vh);
+			vid_thread = launch_video(&vh);
 		}
 #endif
 
@@ -468,17 +476,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_core_codec_destroy(&silence_codec);
 	}
 
-
-#ifdef SWITCH_VIDEO_IN_THREADS
-	if (vh.up) {
-		vh.up = -1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ending video thread.\n");
-		while (vh.up) {
-			switch_yield(100000);
-		}
-	}
-#endif
-
 	if (!inner_bridge) {
 		hook_var = switch_channel_get_variable(chan_a, SWITCH_API_BRIDGE_END_VARIABLE);
 	}
@@ -529,6 +526,19 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	}
 
   end:
+
+#ifdef SWITCH_VIDEO_IN_THREADS
+	if (vid_thread) {
+		switch_status_t st;
+		vh.up = -1;
+		switch_core_session_kill_channel(session_a, SWITCH_SIG_BREAK);
+		switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ending video thread.\n");
+		switch_thread_join(&st, vid_thread);
+	}
+#endif
+
+
 
 	switch_core_session_reset(session_a, SWITCH_TRUE, SWITCH_TRUE);
 	switch_channel_set_variable(chan_a, SWITCH_BRIDGE_VARIABLE, NULL);

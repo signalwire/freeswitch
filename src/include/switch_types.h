@@ -515,7 +515,8 @@ typedef enum {
 	SWITCH_ZRTP_FLAG_SECURE_MITM_SEND = (1 << 25),
 	SWITCH_ZRTP_FLAG_SECURE_MITM_RECV = (1 << 26),
 	SWITCH_RTP_FLAG_DEBUG_RTP_READ = (1 << 27),
-	SWITCH_RTP_FLAG_DEBUG_RTP_WRITE = (1 << 28)
+	SWITCH_RTP_FLAG_DEBUG_RTP_WRITE = (1 << 28),
+	SWITCH_RTP_FLAG_VIDEO = (1 << 29)
 } switch_rtp_flag_enum_t;
 typedef uint32_t switch_rtp_flag_t;
 

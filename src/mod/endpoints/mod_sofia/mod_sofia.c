@@ -293,6 +293,14 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
 
+		if (switch_core_codec_ready(&tech_pvt->video_read_codec)) {
+			switch_core_codec_destroy(&tech_pvt->video_read_codec);
+		}
+		
+		if (switch_core_codec_ready(&tech_pvt->video_write_codec)) {
+			switch_core_codec_destroy(&tech_pvt->video_write_codec);
+		}
+
 		switch_core_session_unset_read_codec(session);
 		switch_core_session_unset_write_codec(session);
 
@@ -685,7 +693,7 @@ static switch_status_t sofia_write_video_frame(switch_core_session_t *session, s
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int wrote = 0;
 
 	switch_assert(tech_pvt != NULL);
 
@@ -710,10 +718,10 @@ static switch_status_t sofia_write_video_frame(switch_core_session_t *session, s
 	}
 
 	if (!switch_test_flag(frame, SFF_CNG)) {
-		switch_rtp_write_frame(tech_pvt->video_rtp_session, frame);
+		wrote = switch_rtp_write_frame(tech_pvt->video_rtp_session, frame);
 	}
 
-	return status;
+	return wrote > 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_GENERR;
 }
 
 static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)

@@ -2537,6 +2537,86 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		sofia_glue_check_video_codecs(tech_pvt);
 
+		/******************************************************************************************/
+		if (tech_pvt->video_rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
+			//const char *ip = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
+			//const char *port = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
+			char *remote_host = switch_rtp_get_remote_host(tech_pvt->video_rtp_session);
+			switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->video_rtp_session);
+
+			if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_video_ip) && remote_port == tech_pvt->remote_sdp_video_port) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Video params are unchanged for %s.\n", switch_channel_get_name(tech_pvt->channel));
+				goto video_up;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Video params changed for %s from %s:%d to %s:%d\n", 
+								  switch_channel_get_name(tech_pvt->channel),
+								  remote_host, remote_port, tech_pvt->remote_sdp_video_ip, tech_pvt->remote_sdp_video_port);
+			}
+		}
+
+		if (!switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "VIDEO RTP [%s] %s port %d -> %s port %d codec: %u ms: %d\n",
+							  switch_channel_get_name(tech_pvt->channel),
+							  tech_pvt->local_sdp_audio_ip,
+							  tech_pvt->local_sdp_video_port,
+							  tech_pvt->remote_sdp_video_ip,
+							  tech_pvt->remote_sdp_video_port, tech_pvt->video_agreed_pt, tech_pvt->read_impl.microseconds_per_packet / 1000);
+		}
+
+		switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->local_sdp_video_port);
+		switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
+		switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, tmp);
+
+		if (tech_pvt->video_rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
+			sofia_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
+		
+			if (switch_rtp_set_remote_address(tech_pvt->video_rtp_session, tech_pvt->remote_sdp_video_ip, tech_pvt->remote_sdp_video_port, SWITCH_TRUE, &err) !=
+				SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "VIDEO RTP REPORTS ERROR: [%s]\n", err);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "VIDEO RTP CHANGING DEST TO: [%s:%d]\n",
+								  tech_pvt->remote_sdp_video_ip, tech_pvt->remote_sdp_video_port);
+				if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
+					!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
+					/* Reactivate the NAT buster flag. */
+					switch_rtp_set_flag(tech_pvt->video_rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+				}
+			}
+			goto video_up;
+		}
+
+		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
+			if ((status = sofia_glue_tech_proxy_remote_addr(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+				goto end;
+			}
+
+			if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
+				!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
+				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_PROXY_MEDIA | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT);
+			} else {
+				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_PROXY_MEDIA | SWITCH_RTP_FLAG_DATAWAIT);
+			}
+			timer_name = NULL;
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG,
+							  "PROXY VIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
+							  switch_channel_get_name(tech_pvt->channel),
+							  tech_pvt->local_sdp_audio_ip,
+							  tech_pvt->local_sdp_video_port,
+							  tech_pvt->remote_sdp_video_ip,
+							  tech_pvt->remote_sdp_video_port, tech_pvt->video_agreed_pt, tech_pvt->read_impl.microseconds_per_packet / 1000);
+
+		} else {
+			timer_name = tech_pvt->profile->timer_name;
+
+			if ((var = switch_channel_get_variable(tech_pvt->channel, "rtp_timer_name"))) {
+				timer_name = (char *) var;
+			}
+		}
+
+		/******************************************************************************************/
+
+
 		if (sofia_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding && tech_pvt->remote_sdp_video_port) {
 			if (!tech_pvt->local_sdp_video_port) {
 				sofia_glue_tech_choose_video_port(tech_pvt, 1);
@@ -2545,9 +2625,9 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) &&
 				!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_AUTOADJ |
-		 									 SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_NOBLOCK | SWITCH_RTP_FLAG_RAW_WRITE);
+		 									 SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
 			} else {
-				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_NOBLOCK | SWITCH_RTP_FLAG_RAW_WRITE);
+				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
 			}
 
 			if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
@@ -2555,13 +2635,15 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			}
 			sofia_glue_tech_set_video_codec(tech_pvt, 0);
 
-			/* set video timer to 10ms so it can co-exist with audio */
+			flags &= ~(SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_NOBLOCK);
+			flags |= SWITCH_RTP_FLAG_VIDEO | SWITCH_RTP_FLAG_PROXY_MEDIA;
+
 			tech_pvt->video_rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
 														 tech_pvt->local_sdp_video_port,
 														 tech_pvt->remote_sdp_video_ip,
 														 tech_pvt->remote_sdp_video_port,
 														 tech_pvt->video_agreed_pt,
-														 1, 10000, (switch_rtp_flag_t) flags, NULL, &err, switch_core_session_get_pool(tech_pvt->session));
+														 1, 90000, (switch_rtp_flag_t) flags, NULL, &err, switch_core_session_get_pool(tech_pvt->session));
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%sVIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",
 							  switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) ? "PROXY " : "",
@@ -2580,6 +2662,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				goto end;
 			}
 		}
+
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", switch_str_nil(err));
 		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -2587,6 +2670,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
+
+ video_up:
 
 	sofia_set_flag(tech_pvt, TFLAG_IO);
 	status = SWITCH_STATUS_SUCCESS;

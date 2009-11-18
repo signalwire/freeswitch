@@ -1997,7 +1997,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
 			return_cng_frame();
-	}
+		}
 
 		
 		if (check && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) &&
@@ -2896,23 +2896,33 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	uint8_t fwd = 0;
 	void *data = NULL;
 	uint32_t len, ts = 0;
-	switch_payload_t payload;
+	switch_payload_t payload = 0;
 	rtp_msg_t *send_msg = NULL;
-
+	
 	if (!switch_rtp_ready(rtp_session) || !rtp_session->remote_addr) {
 		return -1;
 	}
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
 		switch_size_t bytes;
-
+		char bufa[30];
+		const char *tx_host;
 		/* Fast PASS! */
 		if (!switch_test_flag(frame, SFF_PROXY_PACKET)) {
 			return 0;
 		}
 		bytes = frame->packetlen;
-		if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, frame->packet, &bytes) != SWITCH_STATUS_SUCCESS) {
-			return -1;
+		tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->remote_addr);
+		
+
+		send_msg = frame->packet;
+
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
+			send_msg->header.pt = rtp_session->payload;
+
+			if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, frame->packet, &bytes) != SWITCH_STATUS_SUCCESS) {
+				return -1;
+			}
 		}
 
 		rtp_session->stats.outbound.raw_bytes += bytes;
@@ -2947,7 +2957,11 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	switch_assert(frame != NULL);
 
 	if (switch_test_flag(frame, SFF_CNG)) {
-		payload = rtp_session->cng_pt;
+		if (rtp_session->cng_pt) {
+			payload = rtp_session->cng_pt;
+		} else {
+			return (int)frame->packetlen;
+		}
 	} else {
 		payload = rtp_session->payload;
 	}
