@@ -212,7 +212,7 @@ OZ_DECLARE_DATA zap_logger_t zap_log = null_logger;
 
 OZ_DECLARE(void) zap_global_set_crash_policy(zap_crash_policy_t policy)
 {
-	g_zap_crash_policy = policy;
+	g_zap_crash_policy |= policy;
 }
 
 OZ_DECLARE(zap_status_t) zap_global_set_memory_handler(zap_memory_handler_t *handler)

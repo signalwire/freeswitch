@@ -239,7 +239,7 @@ OZ_DECLARE(zap_status_t) zap_condition_create(zap_condition_t **incondition, zap
 {
 	zap_condition_t *condition = NULL;
 
-	zap_assert(condition != NULL, ZAP_FAIL, "Condition double pointer is null!\n");
+	zap_assert(incondition != NULL, ZAP_FAIL, "Condition double pointer is null!\n");
 	zap_assert(mutex != NULL, ZAP_FAIL, "Mutex for condition must not be null!\n");
 
 	condition = zap_calloc(1, sizeof(*condition));
