@@ -58,6 +58,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				ImportLibrary="$(PlatformName)\$(ConfigurationName)\$(ProjectName).lib"
 				AdditionalLibraryDirectories=""
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -124,6 +125,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				ImportLibrary="$(PlatformName)\$(ConfigurationName)\$(ProjectName).lib"
 				OutputFile="$(SolutionDir)$(PlatformName)\$(ConfigurationName)/mod/$(ProjectName).dll"
 				AdditionalLibraryDirectories=""
 				RandomizedBaseAddress="1"
@@ -190,6 +192,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				ImportLibrary="$(PlatformName)\$(ConfigurationName)\$(ProjectName).lib"
 				AdditionalLibraryDirectories=""
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -255,6 +258,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				ImportLibrary="$(PlatformName)\$(ConfigurationName)\$(ProjectName).lib"
 				OutputFile="$(SolutionDir)$(PlatformName)\$(ConfigurationName)/mod/$(ProjectName).dll"
 				AdditionalLibraryDirectories=""
 				RandomizedBaseAddress="1"
