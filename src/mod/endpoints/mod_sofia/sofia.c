@@ -3751,7 +3751,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 		break;
 	case nua_callstate_completing:
-		nua_ack(tech_pvt->nh,
+		nua_ack(nh,
 				TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 				TAG_END());
 		break;
