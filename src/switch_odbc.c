@@ -429,10 +429,12 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 #ifdef SWITCH_HAVE_ODBC
 	SQLHSTMT stmt = NULL;
 	SQLSMALLINT c = 0, x = 0;
-	SQLLEN m = 0, t = 0;
+	SQLLEN m = 0;
 	char *err_str = NULL;
 	int result;
-	
+	int err_cnt = 0;
+	int done = 0;
+
 	switch_assert(callback != NULL);
 
 	if (!db_is_up(handle)) {
@@ -458,18 +460,18 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 	SQLNumResultCols(stmt, &c);
 	SQLRowCount(stmt, &m);
 
-	for (t = 0 ;; t++) {
+
+	while(!done) {
 		int name_len = 256;
 		char **names;
 		char **vals;
 		int y = 0;
-		int done = 0;
-
+		
 		result = SQLFetch(stmt);
 
 		if (result != SQL_SUCCESS) {
 			if (result != SQL_NO_DATA){
-				err++;
+				err_cnt++;
 			}
 			break;
 		}
@@ -508,13 +510,13 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 		}
 		free(names);
 		free(vals);
-
-		if (done) {
-			break;
-		}
 	}
 	
 	SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+
+	if (!err_cnt) {
+		return SWITCH_ODBC_SUCCESS;
+	}
 
  error:
 
