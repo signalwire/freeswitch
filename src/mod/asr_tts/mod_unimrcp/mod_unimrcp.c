@@ -25,6 +25,7 @@
  * Contributor(s):
  *
  * Brian West <brian@freeswitch.org>
+ * Christopher M. Rienzo <chris@rienzo.net>
  *
  * mod_unimrcp.c -- UniMRCP module (MRCP client)
  *
@@ -92,8 +93,12 @@ struct mod_unimrcp_globals {
 	char *unimrcp_default_synth_profile;
 	/** default-asr-profile config */
 	char *unimrcp_default_recog_profile;
-	/** log level for UniMRCP library */	
+	/** log level for UniMRCP library */
 	char *unimrcp_log_level;
+	/** profile events configuration param */
+	char *enable_profile_events_param;
+	/** True if profile events are wanted */
+	int enable_profile_events;
 	/** the MRCP client stack */
 	mrcp_client_t *mrcp_client;
 	/** synthesizer application */
@@ -131,6 +136,11 @@ struct profile {
 typedef struct profile profile_t;
 static switch_status_t profile_create(profile_t **profile, const char *name, switch_memory_pool_t *pool);
 
+/* Profile events that may be monitored.  Useful for tracking MRCP profile utilization */
+#define MY_EVENT_PROFILE_CREATE "unimrcp::profile_create"
+#define MY_EVENT_PROFILE_OPEN "unimrcp::profile_open"
+#define MY_EVENT_PROFILE_CLOSE "unimrcp::profile_close"
+
 /**
  * Defines XML parsing instructions
  */
@@ -141,6 +151,7 @@ static switch_xml_config_item_t instructions[] = {
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("default-tts-profile", CONFIG_REQUIRED, &globals.unimrcp_default_synth_profile, "default", "", "The default profile to use for TTS"), 
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("default-asr-profile", CONFIG_REQUIRED, &globals.unimrcp_default_recog_profile, "default", "", "The default profile to use for ASR"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("log-level", CONFIG_REQUIRED, &globals.unimrcp_log_level, "WARNING", "EMERGENCY|ALERT|CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG", "Logging level for UniMRCP"),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("enable-profile-events", CONFIG_REQUIRED, &globals.enable_profile_events_param, "false", "", "Fire profile events (true|false)"),
 	SWITCH_CONFIG_ITEM_END()
 };
 
@@ -297,7 +308,7 @@ struct speech_channel {
 	char *codec;
 	/** rate */
 	uint16_t rate;
-	/** silence byte */
+	/** silence sample */
 	int silence;
 	/** speech channel params */
 	switch_hash_t *params;
@@ -466,6 +477,7 @@ static switch_status_t profile_create(profile_t **profile, const char *name, swi
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	profile_t *lprofile = NULL;
+	switch_event_t *event = NULL;
 	
 	lprofile = (profile_t *)switch_core_alloc(pool, sizeof(profile_t));
 	if (lprofile) {
@@ -475,6 +487,11 @@ static switch_status_t profile_create(profile_t **profile, const char *name, swi
 		lprofile->gsl_mime_type = "application/x-nuance-gsl";
 		lprofile->jsgf_mime_type = "application/x-jsgf";
 		*profile = lprofile;
+
+		if (globals.enable_profile_events && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_CREATE) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Profile", lprofile->name);
+			switch_event_fire(&event);
+		}
 	} else {
 		*profile = NULL;
 		status = SWITCH_STATUS_FALSE;
@@ -1437,8 +1454,7 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	if (speech_channel_open(schannel, profile) != SWITCH_STATUS_SUCCESS) {
-		status = SWITCH_STATUS_FALSE;
+	if ((status = speech_channel_open(schannel, profile)) != SWITCH_STATUS_SUCCESS) {
 		goto done;
 	}
 
@@ -1620,10 +1636,23 @@ static apt_bool_t speech_on_session_terminate(mrcp_application_t *application, m
  */
 static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel, mrcp_sig_status_code_e status)
 {
+	switch_event_t *event = NULL;
 	speech_channel_t *schannel =  (speech_channel_t *)mrcp_application_channel_object_get(channel);
+
+	/* check status */
 	if (session && schannel && status == MRCP_SIG_STATUS_CODE_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) %s channel is ready\n", schannel->name, speech_channel_type_to_string(schannel->type));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) %s channel is ready\n", schannel->name, speech_channel_type_to_string(schannel->type));	
 		speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
+		/* notify of channel open */
+		if (globals.enable_profile_events && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_OPEN) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Profile", schannel->profile->name);
+			if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "TTS");
+			} else {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "ASR");
+			}
+			switch_event_fire(&event);
+		}
 	} else {
 		if (schannel) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) %s channel error!\n", schannel->name, speech_channel_type_to_string(schannel->type));
@@ -1651,10 +1680,25 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
  */
 static apt_bool_t speech_on_channel_remove(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel, mrcp_sig_status_code_e status)
 {
+	switch_event_t *event = NULL;
 	speech_channel_t *schannel = (speech_channel_t *)mrcp_application_channel_object_get(channel);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) %s channel is removed\n", schannel->name, speech_channel_type_to_string(schannel->type));
 	schannel->unimrcp_channel = NULL;
-	
+
+	/* notify of channel close */
+	if (globals.enable_profile_events) {
+		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_CLOSE);
+		if (event) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Profile", schannel->profile->name);
+			if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "TTS");
+			} else {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "ASR");
+			}
+			switch_event_fire(&event);
+		}
+	}
+
 	if (session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Terminating MRCP session\n", schannel->name);
 		mrcp_application_session_terminate(session);
@@ -2720,7 +2764,7 @@ static switch_status_t recog_asr_close(switch_asr_handle_t *ah, switch_asr_flag_
 	switch_core_hash_destroy(&r->grammars);
 
 	/* this lets FreeSWITCH's speech_thread know the handle is closed */
-    switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
+	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -3120,7 +3164,7 @@ static switch_status_t mod_unimrcp_do_config()
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		if (switch_xml_config_parse(switch_xml_child(settings, "param"), SWITCH_FALSE, instructions) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Config parsed ok!\n");
-			goto done;
+			globals.enable_profile_events = !zstr(globals.enable_profile_events_param) && (!strcasecmp(globals.enable_profile_events_param, "true") || 	!strcmp(globals.enable_profile_events_param, "1"));
 		}
 	}
 
