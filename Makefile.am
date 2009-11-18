@@ -197,7 +197,7 @@ fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
 fs_ivrd_CFLAGS = $(AM_CFLAGS) -Ilibs/esl/src/include 
 fs_ivrd_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
 freeswitch_CFLAGS = $(AM_CFLAGS) $(CORE_CFLAGS)
-freeswitch_LDFLAGS = $(AM_LDFLAGS) -rpath $(libdir)
+freeswitch_LDFLAGS = $(AM_LDFLAGS) -lpthread -rpath $(libdir)
 freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la
 if ADD_LIBEDIT
 fs_cli_CFLAGS += -DHAVE_EDITLINE -Ilibs/libedit/src
