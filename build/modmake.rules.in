@@ -10,6 +10,7 @@ SHELL=@SHELL@
 INSTALL=@INSTALL@
 GETLIB=@GETLIB@
 LIBTOOL=@LIBTOOL@
+AR=@AR@
 LTINSTALL=$(LIBTOOL) --quiet --mode=install $(INSTALL) 
 LTUNINSTALL=$(LIBTOOL) --mode=uninstall rm -f 
 CCLD = $(CC)
