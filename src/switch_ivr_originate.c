@@ -1134,7 +1134,7 @@ static switch_status_t setup_ringback(originate_global_t *oglobals,
  
 }
 
-#define OSEP ":_:"
+
 #define MAX_PEERS 128
 
 typedef struct {
@@ -1359,7 +1359,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	}
 
 
-	if (!(x_argc = switch_separate_string_string(data, OSEP, x_argv, MAX_PEERS))) {
+	if (!(x_argc = switch_separate_string_string(data, SWITCH_ENT_ORIGINATE_DELIM, x_argv, MAX_PEERS))) {
 		*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
@@ -1542,7 +1542,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	const char *export_vars = NULL;
 
 
-	if (strstr(bridgeto, OSEP)) {
+	if (strstr(bridgeto, SWITCH_ENT_ORIGINATE_DELIM)) {
 		return switch_ivr_enterprise_originate(session, bleg, cause, bridgeto, timelimit_sec, table, cid_name_override, cid_num_override,
 										  caller_profile_override, ovars, flags);
 	}

@@ -218,6 +218,8 @@ SWITCH_STANDARD_API(group_call_function)
 				break;
 			case 'A':
 				call_delim = ",";
+			case 'E':
+				call_delim = SWITCH_ENT_ORIGINATE_DELIM;
 				break;
 			default:
 				break;
@@ -324,10 +326,8 @@ SWITCH_STANDARD_API(group_call_function)
 					}
 					
 					if (d_dest) {
-						if (!switch_stristr("error/", d_dest)) {
-							dstream.write_function(&dstream, "%s%s", d_dest, call_delim);
-						}
-					
+						dstream.write_function(&dstream, "%s%s", d_dest, call_delim);
+
 						if (d_dest != dest) {
 							free(d_dest);
 						}
@@ -336,13 +336,12 @@ SWITCH_STANDARD_API(group_call_function)
 
 				if (ok && dstream.data) {
 					char *data = (char *) dstream.data;
-					char c = end_of(data);
 					char *p;
 
-					if (c == ',' || c == '|') {
-						end_of(data) = '\0';
+					if ((p = strstr(end_of_p(data) - 3, call_delim))) {
+						*p = '\0';
 					}
-					
+
 					for (p = data; p && *p; p++) {
 						if (*p == '{') {
 							*p = '[';
