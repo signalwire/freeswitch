@@ -513,7 +513,7 @@ libclean:
 	@for file in `ls ./libs`; do pushd "./libs/"$$file; make clean; rm -f .built; popd; done
 
 modules.conf:
-	if test -f $@; then touch $@; else cp build/modules.conf.in $@ ;fi
+	if test -f $@; then touch $@; else cp $(switch_srcdir)/build/modules.conf.in $@ ;fi
 
 $(OUR_MODULES):
 	@set fnord $$MAKEFLAGS; amf=$$2; \
