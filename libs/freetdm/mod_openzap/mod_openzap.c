@@ -2881,6 +2881,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 		return SWITCH_STATUS_TERM;
 	}
 
+	if (zap_global_configuration() != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_ERROR, "Error configuring OpenZAP\n");
+		return SWITCH_STATUS_TERM;
+	}
+	
 	if (load_config() != SWITCH_STATUS_SUCCESS) {
 		zap_global_destroy();
 		return SWITCH_STATUS_TERM;
