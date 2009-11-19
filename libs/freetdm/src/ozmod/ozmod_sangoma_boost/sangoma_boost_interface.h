@@ -143,16 +143,17 @@ typedef zap_status_t (*boost_stop_span_func_t) BOOST_START_SPAN_ARGS;
 
 /*! 
   \brief Called when the module is being loaded BEFORE calling anything else
+  \return ZAP_SUCCESS or ZAP_FAIL
  */
 #define BOOST_ON_LOAD_ARGS (void) 
-typedef void (*boost_on_load_func_t) BOOST_ON_LOAD_ARGS;
+typedef zap_status_t (*boost_on_load_func_t) BOOST_ON_LOAD_ARGS;
 #define BOOST_ON_LOAD_FUNCTION(name) void name BOOST_ON_LOAD_ARGS 
 
 /*! 
   \brief Called when the module is being unloaded, last chance to stop everything!
  */
 #define BOOST_ON_UNLOAD_ARGS (void) 
-typedef void (*boost_on_unload_func_t) BOOST_ON_UNLOAD_ARGS;
+typedef zap_status_t (*boost_on_unload_func_t) BOOST_ON_UNLOAD_ARGS;
 #define BOOST_ON_UNLOAD_FUNCTION(name) void name BOOST_ON_UNLOAD_ARGS 
 
 /*! 

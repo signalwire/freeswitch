@@ -1376,7 +1376,12 @@ static ZIO_SIG_UNLOAD_FUNCTION(zap_sangoma_boost_destroy)
 		hashtable_this(i, &key, NULL, &val);
 		if (key && val) {
 			sigmod = val;
-			zap_dso_destroy(sigmod->pvt);
+			if (sigmod->on_unload() != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "Failed to unload boost signaling module object\n");
+				/* hope for the best */
+			} else {
+				zap_dso_destroy(sigmod->pvt);
+			}
 		}
 	}
 
@@ -1639,6 +1644,10 @@ static ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(zap_sangoma_boost_configure_span)
 			zap_log(ZAP_LOG_ERROR, "Failed to read Sangoma boost signaling module interface '%s': %s\n", path, err);
 			snprintf(span->last_error, sizeof(span->last_error), "Failed to read Sangoma boost signaling module interface '%s': %s", path, err);
 
+			FAIL_CONFIG_RETURN(ZAP_FAIL);
+		}
+		if (sigmod_iface->on_load() != ZAP_SUCCESS) {
+			zap_log(ZAP_LOG_ERROR, "Failed to load Sangoma boost signaling module interface '%s': on_load method failed\n", path);
 			FAIL_CONFIG_RETURN(ZAP_FAIL);
 		}
 		sigmod_iface->pvt = lib;
