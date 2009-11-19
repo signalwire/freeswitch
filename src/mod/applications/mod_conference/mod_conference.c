@@ -856,37 +856,49 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thread, void *obj)
 {
 	conference_obj_t *conference = (conference_obj_t *) obj;
-	conference_member_t *imember, *last_member = NULL;
+	conference_member_t *imember;
 	switch_frame_t *vid_frame;
 	switch_status_t status;
 	int has_vid = 1, req_iframe = 0;
+	int yield = 0;
+	uint32_t last_member = 0;
+	switch_core_session_t *session;
 
 	conference->video_running = 1;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Video thread started for conference %s\n", conference->name);
 
 	while (has_vid && conference->video_running == 1 && globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
+		if (yield) {
+			switch_yield(yield);
+			yield = 0;
+		}
+
+		switch_mutex_lock(conference->member_mutex);
+
 		if (!conference->floor_holder) {
-			switch_yield(100000);
-			continue;
+			yield = 100000;
+			goto do_continue;
 		}
 
 		if (!switch_channel_test_flag(switch_core_session_get_channel(conference->floor_holder->session), CF_VIDEO)) {
 			switch_cond_next();
-			continue;
+			goto do_continue;
 		}
 
-		status = switch_core_session_read_video_frame(conference->floor_holder->session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
+		session = conference->floor_holder->session;
+		switch_core_session_read_lock(session);
+		switch_mutex_unlock(conference->member_mutex);
+		status = switch_core_session_read_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
+		switch_mutex_lock(conference->member_mutex);
+		switch_core_session_rwunlock(session);
+
+		if (!SWITCH_READ_ACCEPTABLE(status) || !conference->floor_holder || switch_test_flag(vid_frame, SFF_CNG)) {
 			conference->floor_holder = NULL;
 			req_iframe = 0;
-			continue;
+			goto do_continue;
 		}
-
-		if (switch_test_flag(vid_frame, SFF_CNG)) {
-			continue;
-		}
-
-		if (conference->floor_holder != last_member) {
+		
+		if (conference->floor_holder->id != last_member) {
 			int iframe = 0;
 #if 0
 			switch_core_session_message_t msg = { 0 };
@@ -914,15 +926,15 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			}
 
 			if (!iframe) {
-				continue;
+				goto do_continue;
 			}
 
-			req_iframe = 0;
+			req_iframe = 0;			
 		}
 
-		last_member = conference->floor_holder;
+		last_member = conference->floor_holder->id;
 
-		switch_mutex_lock(conference->member_mutex);
+		
 		has_vid = 0;
 		for (imember = conference->members; imember; imember = imember->next) {
 			if (switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
@@ -930,9 +942,12 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 				switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 		}
+
+	do_continue:
+		
 		switch_mutex_unlock(conference->member_mutex);
-	
 	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Video thread ending for conference %s\n", conference->name);
 	conference->video_running = 0;
 
