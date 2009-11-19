@@ -148,7 +148,7 @@ class FSEndPoint:public OpalLocalEndPoint {
     FSEndPoint(FSManager & manager);
 
     virtual bool OnIncomingCall(OpalLocalConnection &);
-    virtual OpalLocalConnection *CreateConnection(OpalCall &, void *);
+    virtual OpalLocalConnection *CreateConnection(OpalCall & call, void * userData, unsigned options, OpalConnection::StringOptions* stringOptions);
 };
 
 
@@ -179,6 +179,9 @@ class FSConnection:public OpalLocalConnection {
   public:
     FSConnection(OpalCall & call,
                  FSEndPoint & endpoint,
+                 void* userData,
+                 unsigned options,
+                 OpalConnection::StringOptions* stringOptions,
                  switch_caller_profile_t *outbound_profile,
                  switch_core_session_t *fsSession,
                  switch_channel_t *fsChannel);

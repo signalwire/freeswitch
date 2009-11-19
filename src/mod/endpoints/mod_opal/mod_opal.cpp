@@ -509,7 +509,7 @@ bool FSEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 }
 
 
-OpalLocalConnection *FSEndPoint::CreateConnection(OpalCall & call, void *userData)
+OpalLocalConnection *FSEndPoint::CreateConnection(OpalCall & call, void *userData, unsigned options, OpalConnection::StringOptions* stringOptions)
 {
     FSManager & mgr = (FSManager &) GetManager();
     switch_core_session_t *fsSession = switch_core_session_request(mgr.GetSwitchInterface(), 
@@ -524,7 +524,7 @@ OpalLocalConnection *FSEndPoint::CreateConnection(OpalCall & call, void *userDat
         return NULL;
     }
 
-    return new FSConnection(call, *this, (switch_caller_profile_t *)userData, fsSession, fsChannel);
+    return new FSConnection(call, *this, userData, options, stringOptions, (switch_caller_profile_t *)userData, fsSession, fsChannel);
 }
 
 
@@ -557,8 +557,8 @@ PBoolean FSCall::OnSetUp(OpalConnection & connection)
 ///////////////////////////////////////////////////////////////////////
 
 
-FSConnection::FSConnection(OpalCall & call, FSEndPoint & endpoint, switch_caller_profile_t *outbound_profile, switch_core_session_t *fsSession, switch_channel_t *fsChannel)
-  : OpalLocalConnection(call, endpoint, NULL)
+FSConnection::FSConnection(OpalCall & call, FSEndPoint & endpoint, void* userData, unsigned options, OpalConnection::StringOptions* stringOptions, switch_caller_profile_t *outbound_profile, switch_core_session_t *fsSession, switch_channel_t *fsChannel)
+  : OpalLocalConnection(call, endpoint, userData, options, stringOptions)
   , m_endpoint(endpoint)
   , m_fsSession(fsSession)
   , m_fsChannel(fsChannel)
@@ -1293,7 +1293,7 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
             switch_cond_next();
         }
         if (CheckPatchAndLock()) {
-            GetPatch()->OnPatchStart();
+            GetPatch()->OnStartMediaPatch();
             m_callOnStart = false;
             UnlockReadWrite();
         } else {
@@ -1415,7 +1415,7 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
 
     if (m_callOnStart) {
         if (CheckPatchAndLock()) {
-            GetPatch()->OnPatchStart();
+            GetPatch()->OnStartMediaPatch();
             m_callOnStart = false;
             UnlockReadWrite();
         } else {
