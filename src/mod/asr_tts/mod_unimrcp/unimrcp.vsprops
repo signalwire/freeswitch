@@ -7,7 +7,7 @@
 	>
 	<Tool
 		Name="VCCLCompilerTool"
-		AdditionalIncludeDirectories="&quot;$(SolutionDir)libs\unimrcp\platforms\libunimrcp-client\include&quot;;&quot;$(SolutionDir)libs\unimrcp\include&quot;;&quot;$(SolutionDir)libs\unimrcp\libs\apr-toolkit\include&quot;"
+		AdditionalIncludeDirectories="&quot;$(SolutionDir)libs\unimrcp\platforms\libunimrcp-client\include&quot;;&quot;$(SolutionDir)libs\unimrcp\include&quot;;&quot;$(SolutionDir)libs\unimrcp\libs\apr-toolkit\include&quot;;&quot;$(SolutionDir)libs\unimrcp\build&quot;"
 		PreprocessorDefinitions=""
 	/>
 </VisualStudioPropertySheet>
