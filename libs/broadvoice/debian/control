@@ -1,0 +1,34 @@
+Source: broadvoice
+Section: libs
+Priority: optional
+Maintainer: Debian VoIP Team <pkg-voip-maintainers@lists.alioth.debian.org>
+Uploaders: Jose Carlos Garcia Sogo <jsogo@debian.org>, Kilian Krause <kilian@debian.org>, Santiago Garcia Mantinan <manty@debian.org>, Mark Purcell <msp@debian.org>, Tzafrir Cohen <tzafrir.cohen@xorcom.com>, Santiago Ruano Rincón <santiago@debian.org>
+Build-Depends: debhelper (>= 4.0.0), dpatch, doxygen, autotools-dev
+Standards-Version: 3.7.2
+XS-Vcs-Svn: svn://svn.debian.org/pkg-voip/
+XS-Vcs-Browser: http://svn.debian.org/wsvn/pkg-voip/
+
+Package: libgbroadvoice
+Architecture: any
+Depends: ${shlibs:Depends}
+Conflicts: libbroadvoice0, libbroadvoice1, libbroadvoice2
+Description: Telephony signal processing library
+ This package contains the BroadVoice 16 and 32 low bit rate speech codecs.
+ .
+ This package contains the shared library.
+
+Package: libbroadvoice-dev
+Section: libdevel
+Architecture: any
+Depends: libbroadvoice3 (= ${Source-Version})
+Description: Telephony signal processing library
+ This package contains the BroadVoice 16 and 32 low bit rate speech codecs.
+ .
+ This package contains the static library and development headers.
+ .
+ Homepage: http://www.soft-switch.org/
+
+Package: libbroadvoice-doc
+Section: doc
+Architecture: all
+Description: Documentation for the Broadvoice 16 and 32 low bit rate speech codecs.
