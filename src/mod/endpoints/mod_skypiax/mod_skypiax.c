@@ -741,10 +741,22 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	sent = frame->datalen;
 #ifdef WIN32
-	switch_file_write(tech_pvt->audioskypepipe[1], frame->data, &sent);
+	//switch_file_write(tech_pvt->audiopipe_cli[1], frame->data, &sent);
 #else /* WIN32 */
-	sent = write(tech_pvt->audioskypepipe[1], frame->data, sent);
+	//sent = write(tech_pvt->audiopipe_cli[1], frame->data, sent);
 #endif /* WIN32 */
+					while(tech_pvt->flag_audio_cli == 1){
+						switch_sleep(100); //1 millisec
+						//NOTICA("write \n", SKYPIAX_P_LOG);
+						}
+						//WARNINGA("write \n", SKYPIAX_P_LOG);
+
+
+	//memcpy(tech_pvt->audiobuf_cli, frame->data, frame->datalen);
+	memcpy(tech_pvt->audiobuf_cli, frame->data, frame->datalen);
+	tech_pvt->flag_audio_cli = 1;
+	//NOTICA("write \n", SKYPIAX_P_LOG);
+
 	if (sent != frame->datalen && sent != -1) {
 		DEBUGA_SKYPE("CLI PIPE write %d\n", SKYPIAX_P_LOG, sent);
 	}
@@ -1420,7 +1432,7 @@ static switch_status_t load_config(int reload_type)
 static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject, const char *body, const char *type, const char *hint)
 {
 	//char *user, *host, *f_user = NULL, *ffrom = NULL, *f_host = NULL, *f_resource = NULL;
-	char *user, *host, *f_user = NULL, *f_host = NULL, *f_resource = NULL;
+	char *user=NULL, *host, *f_user = NULL, *f_host = NULL, *f_resource = NULL;
 	//mdl_profile_t *profile = NULL;
 	private_t * tech_pvt=NULL;
 	int i=0, found=0, tried=0;
@@ -1629,14 +1641,14 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 			}
 #ifndef WIN32
 			WARNINGA("SHUTDOWN interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
-			shutdown(tech_pvt->audioskypepipe[0], 2);
-			close(tech_pvt->audioskypepipe[0]);
-			shutdown(tech_pvt->audioskypepipe[1], 2);
-			close(tech_pvt->audioskypepipe[1]);
-			shutdown(tech_pvt->audiopipe[0], 2);
-			close(tech_pvt->audiopipe[0]);
-			shutdown(tech_pvt->audiopipe[1], 2);
-			close(tech_pvt->audiopipe[1]);
+			shutdown(tech_pvt->audiopipe_cli[0], 2);
+			close(tech_pvt->audiopipe_cli[0]);
+			shutdown(tech_pvt->audiopipe_cli[1], 2);
+			close(tech_pvt->audiopipe_cli[1]);
+			shutdown(tech_pvt->audiopipe_srv[0], 2);
+			close(tech_pvt->audiopipe_srv[0]);
+			shutdown(tech_pvt->audiopipe_srv[1], 2);
+			close(tech_pvt->audiopipe_srv[1]);
 			shutdown(tech_pvt->SkypiaxHandles.fdesc[0], 2);
 			close(tech_pvt->SkypiaxHandles.fdesc[0]);
 			shutdown(tech_pvt->SkypiaxHandles.fdesc[1], 2);

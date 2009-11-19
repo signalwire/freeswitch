@@ -229,12 +229,12 @@ struct private_object {
 	int skype;					/*!< \brief config flag, bool, Skype support on this interface (0 if false, -1 if true) */
 	int control_to_send;
 #ifdef WIN32
-	switch_file_t *audiopipe[2];
-	switch_file_t *audioskypepipe[2];
+	switch_file_t *audiopipe_srv[2];
+	switch_file_t *audiopipe_cli[2];
 	switch_file_t *skypiax_sound_capt_fd;	/*!< \brief file descriptor for sound capture dev */
 #else							/* WIN32 */
-	int audiopipe[2];
-	int audioskypepipe[2];
+	int audiopipe_srv[2];
+	int audiopipe_cli[2];
 	int skypiax_sound_capt_fd;	/*!< \brief file descriptor for sound capture dev */
 #endif							/* WIN32 */
 	switch_thread_t *tcp_srv_thread;
@@ -243,6 +243,12 @@ struct private_object {
 	switch_thread_t *skypiax_api_thread;
 	short audiobuf[SAMPLES_PER_FRAME];
 	int audiobuf_is_loaded;
+	short audiobuf_cli[SAMPLES_PER_FRAME];
+	switch_mutex_t *mutex_audio_cli;
+	int flag_audio_cli;
+	short audiobuf_srv[SAMPLES_PER_FRAME];
+	switch_mutex_t *mutex_audio_srv;
+	int flag_audio_srv;
 
 	//int phonebook_listing;
 	//int phonebook_querying;

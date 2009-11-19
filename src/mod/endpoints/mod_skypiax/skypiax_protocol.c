@@ -786,7 +786,18 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 									i++;
 								}
 								/* send the complete frame through the pipe to our code waiting for incoming audio */
-								howmany = skypiax_pipe_write(tech_pvt->audiopipe[1], totalbuf, SAMPLES_PER_FRAME * sizeof(short));
+								//howmany = skypiax_pipe_write(tech_pvt->audiopipe_srv[1], totalbuf, SAMPLES_PER_FRAME * sizeof(short));
+					while(tech_pvt->flag_audio_srv == 1){
+						switch_sleep(100); //1 millisec
+						//NOTICA("write \n", SKYPIAX_P_LOG);
+						}
+						//WARNINGA("read \n", SKYPIAX_P_LOG);
+
+
+								howmany = SAMPLES_PER_FRAME * sizeof(short);
+								memcpy(tech_pvt->audiobuf_srv, totalbuf, SAMPLES_PER_FRAME * sizeof(short));
+								tech_pvt->flag_audio_srv = 1;
+								//NOTICA("read \n", SKYPIAX_P_LOG);
 								if (howmany != SAMPLES_PER_FRAME * sizeof(short)) {
 									ERRORA("howmany is %d, but was expected to be %d\n", SKYPIAX_P_LOG,
 										   howmany, (int) (SAMPLES_PER_FRAME * sizeof(short)));
@@ -811,15 +822,24 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 
 				/* let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die */
 				kill_cli_size = SAMPLES_PER_FRAME * sizeof(short);
-				len = skypiax_pipe_write(tech_pvt->audiopipe[1], kill_cli_buff, kill_cli_size);
+				len = skypiax_pipe_write(tech_pvt->audiopipe_srv[1], kill_cli_buff, kill_cli_size);
 				kill_cli_size = SAMPLES_PER_FRAME * sizeof(short);
-				len = skypiax_pipe_write(tech_pvt->audioskypepipe[1], kill_cli_buff, kill_cli_size);
-				tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
+				len = skypiax_pipe_write(tech_pvt->audiopipe_cli[1], kill_cli_buff, kill_cli_size);
+				//tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
 				kill_cli_size = SAMPLES_PER_FRAME * sizeof(short);
-				len = skypiax_pipe_write(tech_pvt->audiopipe[1], kill_cli_buff, kill_cli_size);
+				len = skypiax_pipe_write(tech_pvt->audiopipe_srv[1], kill_cli_buff, kill_cli_size);
 				kill_cli_size = SAMPLES_PER_FRAME * sizeof(short);
-				len = skypiax_pipe_write(tech_pvt->audioskypepipe[1], kill_cli_buff, kill_cli_size);
+				len = skypiax_pipe_write(tech_pvt->audiopipe_cli[1], kill_cli_buff, kill_cli_size);
 
+				tech_pvt->flag_audio_cli = 1; //let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
+				skypiax_sleep(200);
+				tech_pvt->flag_audio_srv = 1; //let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
+				skypiax_sleep(200);
+				tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
+				tech_pvt->flag_audio_cli = 1; //let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
+				skypiax_sleep(200);
+				tech_pvt->flag_audio_srv = 1; //let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
+				skypiax_sleep(200);
 				DEBUGA_SKYPE("Skype incoming audio GONE\n", SKYPIAX_P_LOG);
 				skypiax_close_socket(fd);
 			}
@@ -893,8 +913,8 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 			while (s > 0 && (fd = accept(s, (struct sockaddr *) &remote_addr, &sin_size)) > 0) {
 				DEBUGA_SKYPE("ACCEPTED here you send me %d\n", SKYPIAX_P_LOG, tech_pvt->tcp_cli_port);
 #ifndef WIN32
-				fcntl(tech_pvt->audioskypepipe[0], F_SETFL, O_NONBLOCK);
-				fcntl(tech_pvt->audioskypepipe[1], F_SETFL, O_NONBLOCK);
+				fcntl(tech_pvt->audiopipe_cli[0], F_SETFL, O_NONBLOCK);
+				fcntl(tech_pvt->audiopipe_cli[1], F_SETFL, O_NONBLOCK);
 #endif //WIN32
 
 				if (!(running && tech_pvt->running))
@@ -918,22 +938,43 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 					fdselect = fd;
 					FD_SET(fdselect, &fs);
 
-					rt = select(fdselect + 1, NULL, &fs, NULL, &to);
+					//rt = select(fdselect + 1, NULL, &fs, NULL, &to);
 #else
 /* on *unix and cygwin we select from the real pipe */
-					fdselect = tech_pvt->audioskypepipe[0];
+					//XXX fdselect = tech_pvt->audiopipe_cli[0];
+					//XXX FD_SET(fdselect, &fs);
+
+					//rt = select(fdselect + 1, &fs, NULL, NULL, &to);
+#endif
+					fdselect = fd;
 					FD_SET(fdselect, &fs);
 
-					rt = select(fdselect + 1, &fs, NULL, NULL, &to);
-#endif
+					//XXX rt = select(fdselect + 1, NULL, &fs, NULL, &to);
+					while(tech_pvt->flag_audio_cli == 0){
+						skypiax_sleep(100); //1 millisec
+						//NOTICA("write \n", SKYPIAX_P_LOG);
+						}
+						//ERRORA("write \n", SKYPIAX_P_LOG);
+
+					rt = 1;
 
 					if (rt > 0) {
 						int counter;
 
 						/* until we drained the pipe to empty */
-						for (counter = 0; counter < 10; counter++) {
+						//for (counter = 0; counter < 10; counter++) {
+						for (counter = 0; counter < 1; counter++) {
 							/* read from the pipe the audio frame we are supposed to send out */
-							got = skypiax_pipe_read(tech_pvt->audioskypepipe[0], cli_in, SAMPLES_PER_FRAME * sizeof(short));
+							//got = skypiax_pipe_read(tech_pvt->audiopipe_cli[0], cli_in, SAMPLES_PER_FRAME * sizeof(short));
+
+
+							got = SAMPLES_PER_FRAME * sizeof(short);
+							memcpy(cli_in, tech_pvt->audiobuf_cli, SAMPLES_PER_FRAME * sizeof(short));
+							tech_pvt->flag_audio_cli = 0;
+
+
+
+
 							if (got == -1)
 								break;
 
@@ -1015,7 +1056,15 @@ int skypiax_audio_read(private_t * tech_pvt)
 {
 	unsigned int samples;
 
-	samples = skypiax_pipe_read(tech_pvt->audiopipe[0], tech_pvt->read_frame.data, SAMPLES_PER_FRAME * sizeof(short));
+	while(tech_pvt->flag_audio_srv == 0){
+		skypiax_sleep(100); //1 millisec
+		//NOTICA("read \n", SKYPIAX_P_LOG);
+		}
+		//ERRORA("read \n", SKYPIAX_P_LOG);
+	//samples = skypiax_pipe_read(tech_pvt->audiopipe_srv[0], tech_pvt->read_frame.data, SAMPLES_PER_FRAME * sizeof(short));
+	samples = SAMPLES_PER_FRAME * sizeof(short);
+	memcpy(tech_pvt->read_frame.data, tech_pvt->audiobuf_srv, SAMPLES_PER_FRAME * sizeof(short));
+	tech_pvt->flag_audio_srv = 0;
 
 	if (samples != SAMPLES_PER_FRAME * sizeof(short)) {
 		if (samples)
@@ -1100,8 +1149,8 @@ int skypiax_close_socket(unsigned int fd)
 int skypiax_audio_init(private_t * tech_pvt)
 {
 	switch_status_t rv;
-	rv = switch_file_pipe_create(&tech_pvt->audiopipe[0], &tech_pvt->audiopipe[1], skypiax_module_pool);
-	rv = switch_file_pipe_create(&tech_pvt->audioskypepipe[0], &tech_pvt->audioskypepipe[1], skypiax_module_pool);
+	rv = switch_file_pipe_create(&tech_pvt->audiopipe_srv[0], &tech_pvt->audiopipe_srv[1], skypiax_module_pool);
+	rv = switch_file_pipe_create(&tech_pvt->audiopipe_cli[0], &tech_pvt->audiopipe_cli[1], skypiax_module_pool);
 	return 0;
 }
 #else /* WIN32 */
@@ -1132,17 +1181,17 @@ int skypiax_close_socket(unsigned int fd)
 
 int skypiax_audio_init(private_t * tech_pvt)
 {
-	if (pipe(tech_pvt->audiopipe)) {
-		fcntl(tech_pvt->audiopipe[0], F_SETFL, O_NONBLOCK);
-		fcntl(tech_pvt->audiopipe[1], F_SETFL, O_NONBLOCK);
+	if (pipe(tech_pvt->audiopipe_srv)) {
+		fcntl(tech_pvt->audiopipe_srv[0], F_SETFL, O_NONBLOCK);
+		fcntl(tech_pvt->audiopipe_srv[1], F_SETFL, O_NONBLOCK);
 	}
-	if (pipe(tech_pvt->audioskypepipe)) {
-		fcntl(tech_pvt->audioskypepipe[0], F_SETFL, O_NONBLOCK);
-		fcntl(tech_pvt->audioskypepipe[1], F_SETFL, O_NONBLOCK);
+	if (pipe(tech_pvt->audiopipe_cli)) {
+		fcntl(tech_pvt->audiopipe_cli[0], F_SETFL, O_NONBLOCK);
+		fcntl(tech_pvt->audiopipe_cli[1], F_SETFL, O_NONBLOCK);
 	}
 
 /* this pipe is the audio fd for asterisk to poll on during a call. FS do not use it */
-	tech_pvt->skypiax_sound_capt_fd = tech_pvt->audiopipe[0];
+	tech_pvt->skypiax_sound_capt_fd = tech_pvt->audiopipe_srv[0];
 
 	return 0;
 }
