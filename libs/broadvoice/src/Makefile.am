@@ -114,7 +114,7 @@ noinst_PROGRAMS =
 DSP = broadvoice.dsp
 VCPROJ = broadvoice.vcproj
 
-WIN32SOURCES = $(broadvoice_la_SOURCES) msvc/gettimeofday.c
+WIN32SOURCES = $(libbroadvoice_la_SOURCES) msvc/gettimeofday.c
 WIN32HEADERS = $(nobase_include_HEADERS) broadvoice.h
 
 DSPOUT = | awk '{printf("%s\r\n", $$0)}' >> $(DSP)

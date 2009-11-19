@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
-	ProjectType="Visual C"
+	ProjectType="Visual C++"
 	Version="9.00"
-	Name="libg722_1"
+	Name="libbroadvoice"
 	ProjectGUID="{CF70F278-3364-4395-A2E1-23501C9B8AD2}"
-	RootNamespace="libg722_1"
+	RootNamespace="libbroadvoice"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -41,8 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src; src\g722_1; src\msvc"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBG722_1_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_TGMATH_H"
+				AdditionalIncludeDirectories=".; .\floating\common; .\floating\bv16; .\floating\bv32; .\broadvoice;  .\msvc"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;BROADVOICE_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_TGMATH_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -64,7 +64,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkIncremental="2"
-				ModuleDefinitionFile="src/msvc/g722_1.def"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
@@ -118,8 +117,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="src; src\g722_1; src\msvc"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBG722_1_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_TGMATH_H"
+				AdditionalIncludeDirectories=".; .\floating\common; .\floating\bv16; .\floating\bv32; .\broadvoice;  .\msvc"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;BROADVOICE_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_TGMATH_H"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
@@ -138,7 +137,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkIncremental="1"
-				ModuleDefinitionFile="src/msvc/g722_1.def"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -178,12 +176,71 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-<File RelativePath="msvc/gettimeofday.c"></File>
-</Filter><Filter  Name="Header Files">
-<File RelativePath="broadvoice/broadvoice.h"></File>
-<File RelativePath="broadvoice/version.h"></File>
-<File RelativePath="broadvoice/private/broadvoice.h"></File>
-<File RelativePath="broadvoice.h"></File>
+			<File RelativePath="bitpack16.c"></File>
+			<File RelativePath="bitpack32.c"></File>
+			<File RelativePath="bitstream.c"></File>
+			<File RelativePath="floating\bv16\bv16coarse_pitch.c"></File>
+			<File RelativePath="floating\bv16\bv16decoder.c"></File>
+			<File RelativePath="floating\bv16\bv16encoder.c"></File>
+			<File RelativePath="floating\bv16\bv16excdec.c"></File>
+			<File RelativePath="floating\bv16\bv16excquan.c"></File>
+			<File RelativePath="floating\bv16\bv16fine_pitch.c"></File>
+			<File RelativePath="floating\bv16\bv16gaindec.c"></File>
+			<File RelativePath="floating\bv16\bv16gainquan.c"></File>
+			<File RelativePath="floating\bv16\bv16levelest.c"></File>
+			<File RelativePath="floating\bv16\bv16lspdec.c"></File>
+			<File RelativePath="floating\bv16\bv16lspquan.c"></File>
+			<File RelativePath="floating\bv16\bv16plc.c"></File>
+			<File RelativePath="floating\bv16\bv16postfilter.c"></File>
+			<File RelativePath="floating\bv16\bv16ptdec.c"></File>
+			<File RelativePath="floating\bv16\bv16ptquan.c"></File>
+			<File RelativePath="floating\bv16\bv16tables.c"></File>
+			<File RelativePath="floating\bv32\bv32coarse_pitch.c"></File>
+			<File RelativePath="floating\bv32\bv32decoder.c"></File>
+			<File RelativePath="floating\bv32\bv32encoder.c"></File>
+			<File RelativePath="floating\bv32\bv32excdec.c"></File>
+			<File RelativePath="floating\bv32\bv32excquan.c"></File>
+			<File RelativePath="floating\bv32\bv32fine_pitch.c"></File>
+			<File RelativePath="floating\bv32\bv32gaindec.c"></File>
+			<File RelativePath="floating\bv32\bv32gainquan.c"></File>
+			<File RelativePath="floating\bv32\bv32levelest.c"></File>
+			<File RelativePath="floating\bv32\bv32lspdec.c"></File>
+			<File RelativePath="floating\bv32\bv32lspquan.c"></File>
+			<File RelativePath="floating\bv32\bv32plc.c"></File>
+			<File RelativePath="floating\bv32\bv32ptdec.c"></File>
+			<File RelativePath="floating\bv32\bv32ptquan.c"></File>
+			<File RelativePath="floating\bv32\bv32tables.c"></File>
+			<File RelativePath="floating\common\a2lsp.c"></File>
+			<File RelativePath="floating\common\allpole.c"></File>
+			<File RelativePath="floating\common\allzero.c"></File>
+			<File RelativePath="floating\common\autocor.c"></File>
+			<File RelativePath="floating\common\cmtables.c"></File>
+			<File RelativePath="floating\common\levdur.c"></File>
+			<File RelativePath="floating\common\lsp2a.c"></File>
+			<File RelativePath="floating\common\stblchck.c"></File>
+			<File RelativePath="floating\common\stblzlsp.c"></File>
+			<File RelativePath="floating\common\utility.c"></File>
+			<File RelativePath="msvc\gettimeofday.c"></File>
+		</Filter>
+		<Filter
+			Name="Header Files"
+			>
+			<File
+				RelativePath="broadvoice.h"
+				>
+			</File>
+			<File
+				RelativePath="broadvoice/broadvoice.h"
+				>
+			</File>
+			<File
+				RelativePath="broadvoice/private/broadvoice.h"
+				>
+			</File>
+			<File
+				RelativePath="broadvoice/version.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
