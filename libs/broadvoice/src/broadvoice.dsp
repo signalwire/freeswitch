@@ -93,21 +93,197 @@ LINK32=link.exe
 # Begin Group "Source Files"
 # Begin Source File
 
-SOURCE=.\msvc/gettimeofday.c
+SOURCE=.\bitstream.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\common\a2lsp.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\common\allpole.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\common\allzero.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\common\autocor.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\common\cmtables.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\common\levdur.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\common\lsp2a.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\common\stblchck.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\common\stblzlsp.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\common\utility.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\bitpack16.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16decoder.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16encoder.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16coarse_pitch.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16excdec.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16excquan.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16fine_pitch.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16gaindec.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16gainquan.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16levelest.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16lspdec.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16lspquan.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16plc.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16ptdec.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16postfilter.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16ptquan.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv16\bv16tables.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\bitpack32.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32decoder.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32encoder.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32coarse_pitch.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32excdec.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32excquan.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32fine_pitch.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32gaindec.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32gainquan.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32levelest.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32lspdec.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32lspquan.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32plc.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32ptdec.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32ptquan.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\floating\bv32\bv32tables.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\msvc\gettimeofday.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
 # Begin Source File
 
-SOURCE=.\broadvoice/broadvoice.h
+SOURCE=.\broadvoice\broadvoice.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\broadvoice/version.h
+SOURCE=.\broadvoice\version.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\broadvoice/private/broadvoice.h
+SOURCE=.\broadvoice\private\broadvoice.h
 # End Source File
 # Begin Source File
 

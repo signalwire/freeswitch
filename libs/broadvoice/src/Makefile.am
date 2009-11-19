@@ -125,17 +125,19 @@ $(DSP): msvc/msvcproj.head msvc/msvcproj.foot Makefile.am
 	@(cp $(srcdir)/msvc/msvcproj.head $(DSP); \
 	echo "# Begin Group \"Source Files\"" $(DSPOUT); \
 	for file in $(WIN32SOURCES); do \
+	myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
 	echo "# Begin Source File" $(DSPOUT); \
 	echo "" $(DSPOUT); \
-	echo "SOURCE=.\\"$$file $(DSPOUT); \
+	echo "SOURCE=.\\"$$myfile $(DSPOUT); \
 	echo "# End Source File" $(DSPOUT); \
 	done; \
 	echo "# End Group" $(DSPOUT); \
 	echo "# Begin Group \"Header Files\"" $(DSPOUT); \
 	for file in $(WIN32HEADERS); do \
+	myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
 	echo "# Begin Source File" $(DSPOUT); \
 	echo "" $(DSPOUT); \
-	echo "SOURCE=.\\"$$file $(DSPOUT); \
+	echo "SOURCE=.\\"$$myfile $(DSPOUT); \
 	echo "# End Source File" $(DSPOUT); \
 	done; \
 	echo "# End Group" $(DSPOUT); \
@@ -145,11 +147,13 @@ $(VCPROJ): msvc/vc8proj.head msvc/vc8proj.foot Makefile.am
 	echo "creating $(VCPROJ)"
 	@(cp $(srcdir)/msvc/vc8proj.head $(VCPROJ); \
 	for file in $(WIN32SOURCES); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT); \
+		myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
+		echo "<File RelativePath=\""$$myfile"\"></File>" $(VCPROJOUT); \
 	done; \
 	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT); \
 	for file in $(WIN32HEADERS); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT); \
+		myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
+		echo "<File RelativePath=\""$$myfile"\"></File>" $(VCPROJOUT); \
 	done; \
 	cat $(srcdir)/msvc/vc8proj.foot $(VCPROJOUT) )
 
