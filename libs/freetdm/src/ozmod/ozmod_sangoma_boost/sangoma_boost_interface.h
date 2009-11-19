@@ -100,7 +100,7 @@ typedef zap_status_t (*boost_get_sig_status_func_t) BOOST_GET_SIG_STATUS_ARGS;
   \param status The status pointer where the current signaling status will be set
  */
 #define BOOST_ON_HW_LINK_STATUS_CHANGE_ARGS (zap_channel_t *zchan, zap_channel_hw_link_status_t status)
-typedef void (*boost_on_hw_link_status_change_t) BOOST_ON_HW_LINK_STATUS_CHANGE_ARGS;
+typedef void (*boost_on_hw_link_status_change_func_t) BOOST_ON_HW_LINK_STATUS_CHANGE_ARGS;
 #define BOOST_ON_HW_LINK_STATUS_CHANGE_FUNCTION(name) void name BOOST_ON_HW_LINK_STATUS_CHANGE_ARGS
 
 /*! 
@@ -142,6 +142,20 @@ typedef zap_status_t (*boost_stop_span_func_t) BOOST_START_SPAN_ARGS;
 #define BOOST_STOP_SPAN_FUNCTION(name) zap_status_t name BOOST_STOP_SPAN_ARGS
 
 /*! 
+  \brief Called when the module is being loaded BEFORE calling anything else
+ */
+#define BOOST_ON_LOAD_ARGS (void) 
+typedef void (*boost_on_load_func_t) BOOST_ON_LOAD_ARGS;
+#define BOOST_ON_LOAD_FUNCTION(name) void name BOOST_ON_LOAD_ARGS 
+
+/*! 
+  \brief Called when the module is being unloaded, last chance to stop everything!
+ */
+#define BOOST_ON_UNLOAD_ARGS (void) 
+typedef void (*boost_on_unload_func_t) BOOST_ON_UNLOAD_ARGS;
+#define BOOST_ON_UNLOAD_FUNCTION(name) void name BOOST_ON_UNLOAD_ARGS 
+
+/*! 
   \brief The boost signaling module interface 
  */
 typedef struct boost_sigmod_interface_s {
@@ -158,13 +172,17 @@ typedef struct boost_sigmod_interface_s {
 	/*! \brief set channel signaling status */
 	boost_set_sig_status_func_t set_sig_status;
 	/*! \brief set notify hardware link status change */
-	boost_on_hw_link_status_change_t on_hw_link_status_change;
+	boost_on_hw_link_status_change_func_t on_hw_link_status_change;
 	/*! \brief configure span signaling */
 	boost_configure_span_func_t configure_span;
 	/*! \brief start openzap span */
 	boost_start_span_func_t start_span;
 	/*! \brief stop openzap span */
 	boost_stop_span_func_t stop_span;
+	/*! \brief the module was just loaded */
+	boost_on_load_func_t on_load;
+	/*! \brief the module is about to be unloaded */
+	boost_on_load_func_t on_unload;
 	/*! \brief private pointer for the interface user */
 	void *pvt;
 } boost_sigmod_interface_t;
