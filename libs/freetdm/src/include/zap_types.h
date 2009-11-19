@@ -195,9 +195,11 @@ typedef enum {
 	/* The channel signaling link is suspended (MFC-R2 bit pattern blocked, ss7 blocked?) */
 	ZAP_SIG_STATE_SUSPENDED,
 	/* The channel signaling link is ready and calls can be placed */
-	ZAP_SIG_STATE_UP
+	ZAP_SIG_STATE_UP,
+	/* Invalid status */
+	ZAP_SIG_STATE_INVALID
 } zap_channel_sig_status_t;
-#define SIGSTATUS_STRINGS "DOWN", "SUSPENDED", "UP"
+#define SIGSTATUS_STRINGS "DOWN", "SUSPENDED", "UP", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_channel_sig_status, zap_sig_status2str, zap_channel_sig_status_t)
 
 typedef enum {

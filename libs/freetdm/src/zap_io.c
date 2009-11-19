@@ -114,6 +114,8 @@ ZAP_STR2ENUM(zap_str2zap_mdmf_type, zap_mdmf_type2str, zap_mdmf_type_t, MDMF_TYP
 ZAP_ENUM_NAMES(CHAN_TYPE_NAMES, CHAN_TYPE_STRINGS)
 ZAP_STR2ENUM(zap_str2zap_chan_type, zap_chan_type2str, zap_chan_type_t, CHAN_TYPE_NAMES, ZAP_CHAN_TYPE_COUNT)
 
+ZAP_ENUM_NAMES(CHAN_SIG_STATUS_NAMES, SIGSTATUS_STRINGS)
+ZAP_STR2ENUM(zap_str2zap_channel_sig_status, zap_sig_status2str, zap_channel_sig_status_t, CHAN_SIG_STATUS_NAMES, ZAP_SIG_STATE_INVALID)
 
 static const char *cut_path(const char *in)
 {
