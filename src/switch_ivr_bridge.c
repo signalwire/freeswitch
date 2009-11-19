@@ -48,13 +48,13 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 {
 	struct vid_helper *vh = obj;
 	switch_channel_t *channel = switch_core_session_get_channel(vh->session_a);
+	switch_channel_t *b_channel = switch_core_session_get_channel(vh->session_b);
 	switch_status_t status;
 	switch_frame_t *read_frame;
 
 	vh->up = 1;
-	while (switch_channel_ready(channel) && vh->up == 1) {
+	while (switch_channel_ready(channel) && switch_channel_ready(b_channel) && vh->up == 1) {
 		status = switch_core_session_read_video_frame(vh->session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
@@ -67,7 +67,9 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 
 	}
 	
+	switch_core_session_kill_channel(vh->session_b, SWITCH_SIG_BREAK);	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s video thread ended.\n", switch_channel_get_name(channel));
+
 
 	vh->up = 0;
 	return NULL;
@@ -472,6 +474,18 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
  end_of_bridge_loop:
 
+#ifdef SWITCH_VIDEO_IN_THREADS
+	if (vid_thread) {
+		vh.up = -1;
+		switch_channel_set_flag(chan_a, CF_NOT_READY);
+		switch_channel_set_flag(chan_b, CF_NOT_READY);
+		switch_core_session_kill_channel(session_a, SWITCH_SIG_BREAK);
+		switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ending video thread.\n");
+	}
+#endif
+
+
 	if (silence_val) {
 		switch_core_codec_destroy(&silence_codec);
 	}
@@ -530,11 +544,15 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 #ifdef SWITCH_VIDEO_IN_THREADS
 	if (vid_thread) {
 		switch_status_t st;
-		vh.up = -1;
-		switch_core_session_kill_channel(session_a, SWITCH_SIG_BREAK);
-		switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
+
+		if (vh.up) {
+			switch_core_session_kill_channel(session_a, SWITCH_SIG_BREAK);
+			switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ending video thread.\n");
 		switch_thread_join(&st, vid_thread);
+		switch_channel_clear_flag(chan_a, CF_NOT_READY);
+		switch_channel_clear_flag(chan_b, CF_NOT_READY);
 	}
 #endif
 
