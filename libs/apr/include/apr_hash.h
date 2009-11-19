@@ -175,6 +175,12 @@ APR_DECLARE(void) apr_hash_this(apr_hash_index_t *hi, const void **key,
 APR_DECLARE(unsigned int) apr_hash_count(apr_hash_t *ht);
 
 /**
+ * Clear any key/value pairs in the hash table.
+ * @param ht The hash table
+ */
+APR_DECLARE(void) apr_hash_clear(apr_hash_t *ht);
+
+/**
  * Merge two hash tables into one new hash table. The values of the overlay
  * hash override the values of the base if both have the same key.  Both
  * hash tables must use the same hash function.

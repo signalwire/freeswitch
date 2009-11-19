@@ -367,6 +367,13 @@ APR_DECLARE(unsigned int) apr_hash_count(apr_hash_t *ht)
     return ht->count;
 }
 
+APR_DECLARE(void) apr_hash_clear(apr_hash_t *ht)
+{
+    apr_hash_index_t *hi;
+    for (hi = apr_hash_first(NULL, ht); hi; hi = apr_hash_next(hi))
+        apr_hash_set(ht, hi->this->key, hi->this->klen, NULL);
+}
+
 APR_DECLARE(apr_hash_t*) apr_hash_overlay(apr_pool_t *p,
                                           const apr_hash_t *overlay,
                                           const apr_hash_t *base)

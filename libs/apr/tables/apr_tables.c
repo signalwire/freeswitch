@@ -90,6 +90,11 @@ APR_DECLARE(apr_array_header_t *) apr_array_make(apr_pool_t *p,
     return res;
 }
 
+APR_DECLARE(void) apr_array_clear(apr_array_header_t *arr)
+{
+    arr->nelts = 0;
+}
+
 APR_DECLARE(void *) apr_array_pop(apr_array_header_t *arr)
 {
     if (apr_is_empty_array(arr)) {
