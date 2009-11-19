@@ -504,6 +504,9 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/memcache.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/nibblebill.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/unimrcp.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/directory.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/distributor.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/tts_commandline.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/default/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/public/*.xml
@@ -593,7 +596,6 @@ userdel freeswitch
 %{prefix}/mod/ozmod_analog_em.so*
 %{prefix}/mod/ozmod_isdn.so*
 %{prefix}/mod/ozmod_skel.*
-%{prefix}/mod/ozmod_sangoma_boost.so*
 %{prefix}/mod/ozmod_zt.so*
 
 %files codec-passthru-amrwb
@@ -658,6 +660,7 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/en/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/en/demo/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/en/vm/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/en/dir/*.xml
 %{prefix}/mod/mod_say_en.so*
 
 %files lang-de
@@ -676,6 +679,7 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/demo/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/vm/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/dir/*.xml
 %{prefix}/mod/mod_say_fr.so*
 
 %files lang-ru
@@ -802,6 +806,9 @@ userdel freeswitch
 
 
 %changelog
+* Thu Nov 18 2009 - michal.bielicki@seventhsignal.de
+- added new config files for diretory and distributor
+- removed sangoma boost from openzap for builds that do not inherit wanpipe while building.
 * Tue Jul 24 2009 - mike@jerris.com
 - removed mod_http
 - removed ozmod_wanpipe
