@@ -21,6 +21,7 @@ mod_unimrcp_la_CFLAGS  = $(AM_CFLAGS)
 mod_unimrcp_la_CFLAGS += -I.
 mod_unimrcp_la_CFLAGS += -I$(switch_srcdir)/libs/apr/include
 mod_unimrcp_la_CFLAGS += -I$(switch_srcdir)/libs/apr-util/include
+mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/build
 mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/platforms/libunimrcp-client/include
 mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/modules/mrcp-sofiasip/include
 mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/modules/mrcp-unirtsp/include

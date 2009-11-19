@@ -44,8 +44,12 @@
 #include "mrcp_synth_resource.h"
 #include "mrcp_recog_header.h"
 #include "mrcp_recog_resource.h"
-
+#include "uni_version.h"
+#if UNI_VERSION_AT_LEAST(0,8,0)
+#include "mrcp_resource_loader.h"
+#else
 #include "mrcp_default_factory.h"
+#endif
 #include "mpf_engine.h"
 #include "mpf_codec_manager.h"
 #include "mpf_rtp_termination_factory.h"
@@ -3264,6 +3268,16 @@ static int process_rtp_config(mrcp_client_t *client, mpf_rtp_config_t *rtp_confi
 		}
 	} else if (strcasecmp(param, "ptime") == 0) {
 		rtp_config->ptime = (apr_uint16_t)atol(val);
+#if UNI_VERSION_AT_LEAST(0,8,0)
+	} else if(strcasecmp(param, "rtcp") == 0) {
+		rtp_config->rtcp = atoi(val);
+	} else if(strcasecmp(param, "rtcp-bye") == 0) {
+		rtp_config->rtcp_bye_policy = atoi(val);
+	} else if(strcasecmp(param, "rtcp-tx-interval") == 0) {
+		rtp_config->rtcp_tx_interval = (apr_uint16_t)atoi(val);
+	} else if(strcasecmp(param, "rtcp-rx-resolution") == 0) {
+		rtp_config->rtcp_rx_resolution = (apr_uint16_t)atol(val);
+#endif
 	} else {
 		mine = 0;
 	}
@@ -3343,7 +3357,7 @@ static int process_mrcpv2_config(mrcp_sofia_client_config_t *config, const char 
  * Create the MRCP client and configure it with profiles defined in FreeSWITCH XML config
  *
  * Some code and ideas borrowed from unimrcp-client.c
- * Please check libs/unimrcp/platform/libunimrcp-client/src/unimrcp-client.c when upgrading
+ * Please check libs/unimrcp/platforms/libunimrcp-client/src/unimrcp-client.c when upgrading
  * the UniMRCP library to ensure nothing new needs to be set up.
  *
  * @return the MRCP client
@@ -3353,6 +3367,9 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 	switch_xml_t cfg = NULL, xml = NULL, profiles = NULL, profile = NULL;
 	mrcp_client_t *client = NULL;
 	apr_pool_t *pool = NULL;
+#if UNI_VERSION_AT_LEAST(0,8,0)
+	mrcp_resource_loader_t *resource_loader = NULL;
+#endif
 	mrcp_resource_factory_t *resource_factory = NULL;
 	mpf_codec_manager_t *codec_manager = NULL;
 	apr_size_t max_connection_count = 0;
@@ -3366,17 +3383,42 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 		goto done;
 	}
 	client = mrcp_client_create(dir_layout);
-	if (!client)
+	if (!client) {
 		goto done;
+	}
 
 	pool = mrcp_client_memory_pool_get(client);
-	if (!pool)
+	if (!pool) {
+		client = NULL;
 		goto done;
+	}
 
+#if UNI_VERSION_AT_LEAST(0,8,0)
+	/* load the synthesizer and recognizer resources */	
+	resource_loader = mrcp_resource_loader_create(FALSE, pool);
+	if(resource_loader) {
+		apt_str_t synth_resource;
+		apt_str_t recog_resource;
+		apt_string_set(&synth_resource, "speechsynth");
+		mrcp_resource_load(resource_loader, &synth_resource);
+		apt_string_set(&recog_resource, "speechrecog");
+		mrcp_resource_load(resource_loader, &recog_resource);
+		resource_factory = mrcp_resource_factory_get(resource_loader);
+		mrcp_client_resource_factory_register(client, resource_factory);
+	} else {
+		client = NULL;
+		goto done;
+	}
+#else
+	/* load resources */
 	resource_factory = mrcp_default_factory_create(pool);
 	if (resource_factory) {
 		mrcp_client_resource_factory_register(client, resource_factory);
+	} else {
+		client = NULL;
+		goto done;
 	}
+#endif
 
 	codec_manager = mpf_engine_codec_manager_create(pool);
 	if (codec_manager) {
