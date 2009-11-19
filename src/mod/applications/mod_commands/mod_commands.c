@@ -153,7 +153,7 @@ SWITCH_STANDARD_API(time_test_function)
 	long mss;
 	uint32_t total = 0;
 	int diff;
-	int max = 10;
+	int max = 10, a = 0;
 	char *p;
 	if (zstr(cmd)){
 		stream->write_function(stream, "parameter missing\n");
@@ -162,28 +162,28 @@ SWITCH_STANDARD_API(time_test_function)
 
 	mss = atol(cmd);
 
-	if (mss > 10000) {
-		mss = 10000;
+	if (mss > 1000000) {
+		mss = 1000000;
 	}
 
 	if ((p = strchr(cmd, ' '))) {
-		max = atoi(p+1);
-		if (max < 0) {
-			max = 1;
-		} else if (max > 100) {
-			max = 100;
+		if ((a = atoi(p+1)) > 0) {
+			max = a;
+			if (max > 100) {
+				max = 100;
+			}
 		}
 	}
 
-	for (x = 0; x < max; x++) {
+	for (x = 1; x <= max; x++) {
 		then = switch_time_now();
 		switch_yield(mss);
 		now = switch_time_now();
 		diff = (int) (now - then);
-		stream->write_function(stream, "test %d sleep %ld %d\n", x+1, mss, diff);
+		stream->write_function(stream, "test %d sleep %ld %d\n", x, mss, diff);
 		total += diff;
 	}
-	stream->write_function(stream, "avg %d\n", total / x);
+	stream->write_function(stream, "avg %d\n", total / (x > 1 ? x - 1 : 1));
 
 	return SWITCH_STATUS_SUCCESS;
 }
