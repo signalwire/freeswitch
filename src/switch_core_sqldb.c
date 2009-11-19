@@ -953,6 +953,18 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_test_reactive(dbh, "select hostname from aliases", "DROP TABLE aliases", create_alias_sql);
 	switch_cache_db_test_reactive(dbh, "select hostname from nat", "DROP TABLE nat", create_nat_sql);
 
+	if (dbh->db) {
+		switch_cache_db_execute_sql(dbh, create_channels_sql, NULL);
+		switch_cache_db_execute_sql(dbh, create_calls_sql, NULL);
+		switch_cache_db_execute_sql(dbh, create_interfaces_sql, NULL);
+		switch_cache_db_execute_sql(dbh, create_tasks_sql, NULL);
+	} else {
+		switch_cache_db_test_reactive(dbh, "select hostname from channels", "DROP TABLE channels", create_channels_sql);
+		switch_cache_db_test_reactive(dbh, "select hostname from calls", "DROP TABLE calls", create_calls_sql);
+		switch_cache_db_test_reactive(dbh, "select hostname from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
+		switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
+		
+	}
 
 	if (dbh->odbc_dbh) {
 		char *err;
@@ -968,20 +980,6 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			free(err);
 			goto top;
 		}
-	}
-
-
-	if (dbh->db) {
-		switch_cache_db_execute_sql(dbh, create_channels_sql, NULL);
-		switch_cache_db_execute_sql(dbh, create_calls_sql, NULL);
-		switch_cache_db_execute_sql(dbh, create_interfaces_sql, NULL);
-		switch_cache_db_execute_sql(dbh, create_tasks_sql, NULL);
-	} else {
-		switch_cache_db_test_reactive(dbh, "select hostname from channels", "DROP TABLE channels", create_channels_sql);
-		switch_cache_db_test_reactive(dbh, "select hostname from calls", "DROP TABLE calls", create_calls_sql);
-		switch_cache_db_test_reactive(dbh, "select hostname from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
-		switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
-		
 	}
 
 	switch_cache_db_execute_sql(dbh, "delete from complete where sticky=0", NULL);
