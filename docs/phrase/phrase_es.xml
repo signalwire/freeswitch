@@ -90,11 +90,20 @@
       <prompt phrase="Dieciocho" filename="18.wav"/>
       <prompt phrase="Diecinueve" filename="19.wav"/>
       <prompt phrase="Veinte" filename="20.wav"/>
-<!-- In english we just say twenty one
+	  
+	  <!-- New File neccesary
+	  In english we just say twenty one
 in spanish we say veintiuno etc in the 20's
 and treinta y uno etc from 30's on
 -->
-      <prompt phrase="Veintiuno" filename="21.wav"/>
+	  <prompt phrase="Veinti" filename="veinti.wav"/>
+	  
+<!--     this is not neccesary 
+In english we just say twenty one
+in spanish we say veintiuno etc in the 20's
+and treinta y uno etc from 30's on
+-->
+      <!-- <prompt phrase="Veintiuno" filename="21.wav"/>
       <prompt phrase="Veintidos" filename="22.wav"/>
       <prompt phrase="Veintitrés" filename="23.wav"/>
       <prompt phrase="Veinticuatro" filename="24.wav"/>
@@ -102,7 +111,9 @@ and treinta y uno etc from 30's on
       <prompt phrase="Veintiséis" filename="26.wav"/>
       <prompt phrase="Veintisiete" filename="27.wav"/>
       <prompt phrase="Veintiocho" filename="28.wav"/>
-      <prompt phrase="Veintinueve" filename="29.wav"/>
+      <prompt phrase="Veintinueve" filename="29.wav"/> -->
+	  
+	  
       <prompt phrase="Treinta" filename="30.wav"/>
       <prompt phrase="Cuarenta" filename="40.wav"/>
       <prompt phrase="Cincuenta" filename="50.wav"/>
@@ -111,6 +122,15 @@ and treinta y uno etc from 30's on
       <prompt phrase="Ochenta" filename="80.wav"/>
       <prompt phrase="Noventa" filename="90.wav"/>
       <prompt phrase="Punto" filename="dot.wav"/>
+	  
+	  
+	  <!--  New Files neccesaries  -->
+	  <prompt phrase="Cien" filename="100.wav"/>
+	  <prompt phrase="Quinientos" filename="500.wav"/>
+	  <prompt phrase="Setecientos" filename="700.wav"/>
+	  <prompt phrase="Novecientos" filename="900.wav"/>
+	  
+	  
 <!-- This part is not easy... it depends on context
 When used as an adjective, ordinal numbers must agree 
 with the nouns the refer to in both number and gender: 
