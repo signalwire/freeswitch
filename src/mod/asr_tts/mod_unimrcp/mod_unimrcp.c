@@ -666,18 +666,17 @@ static switch_status_t audio_queue_read(audio_queue_t *queue, void *data, switch
 
 	/* wait for data, if allowed */
 	if (block) {
-		if (switch_buffer_inuse(queue->buffer) < requested) {
+		while (switch_buffer_inuse(queue->buffer) < requested) {
 			queue->waiting = requested;
-			switch_thread_cond_timedwait(queue->cond, queue->mutex, SPEECH_CHANNEL_TIMEOUT_USEC);
-			if (switch_buffer_inuse(queue->buffer) < requested) {
-				requested = switch_buffer_inuse(queue->buffer);
+			if (switch_thread_cond_timedwait(queue->cond, queue->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
+				break;
 			}
 		}
 		queue->waiting = 0;
-	} else {
-		if (switch_buffer_inuse(queue->buffer) < requested) {
-			requested = switch_buffer_inuse(queue->buffer);
-		}
+	}
+		
+	if (switch_buffer_inuse(queue->buffer) < requested) {
+		requested = switch_buffer_inuse(queue->buffer);
 	}
 	if (requested == 0) {
 		*data_len = 0;
@@ -818,7 +817,11 @@ static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
 	switch_mutex_lock(schannel->mutex);
 	if (schannel->state != SPEECH_CHANNEL_CLOSED) {
 		mrcp_application_channel_remove(schannel->unimrcp_session, schannel->unimrcp_channel);
-		switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC);
+		while(schannel->state != SPEECH_CHANNEL_CLOSED) {
+			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
+				break;
+			}
+		}
 		audio_queue_destroy(schannel->audio_queue);
 		if (schannel->state != SPEECH_CHANNEL_CLOSED) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Failed to destroy channel.  Continuing\n", schannel->name);
@@ -947,7 +950,11 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 	}
 
 	/* wait for channel to be ready */
-	switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC);
+	while (schannel->state == SPEECH_CHANNEL_CLOSED) {
+		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
+			break;
+		}
+	}
 	if (schannel->state == SPEECH_CHANNEL_READY) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) channel is ready\n", schannel->name);
 	}
@@ -957,7 +964,11 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 		status = SWITCH_STATUS_FALSE;
 	} else if (schannel->state == SPEECH_CHANNEL_ERROR) {
 		/* Wait for session to be cleaned up */
-		switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC);
+		while(schannel->state == SPEECH_CHANNEL_ERROR) {
+			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
+				break;
+			}
+		}
 		if (schannel->state != SPEECH_CHANNEL_CLOSED) {
 			/* major issue... can't retry */
 			status = SWITCH_STATUS_FALSE;
@@ -1033,7 +1044,11 @@ static switch_status_t synth_channel_speak(speech_channel_t *schannel, const cha
 		goto done;
 	}
 	/* wait for IN PROGRESS */
-	switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC);
+	while (schannel->state == SPEECH_CHANNEL_READY) {
+		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
+			break;
+		}
+	}
 	if (schannel->state != SPEECH_CHANNEL_PROCESSING) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -1271,7 +1286,11 @@ static switch_status_t speech_channel_stop(speech_channel_t *schannel)
 			goto done;
 		}
 		mrcp_application_message_send(schannel->unimrcp_session, schannel->unimrcp_channel, mrcp_message);
-		switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC);
+		while (schannel->state == SPEECH_CHANNEL_PROCESSING) {
+			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
+				break;
+			}
+		}
 
 		if (schannel->state == SPEECH_CHANNEL_PROCESSING) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Timed out waiting for session to close.  Continuing.\n", schannel->name);
@@ -1561,8 +1580,6 @@ static switch_status_t synth_speech_read_tts(switch_speech_handle_t *sh, void *d
 		*datalen = 0;
 		status = SWITCH_STATUS_BREAK;
 	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) rate = %d, native_rate = %d, samplerate = %d\n", schannel->name, sh->rate, sh->native_rate, sh->samplerate);
 
 	/* report negotiated sample rate back to FreeSWITCH */
 	sh->native_rate = schannel->rate;
@@ -2072,7 +2089,11 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel, const cha
 		goto done;
 	}
 	/* wait for IN PROGRESS */
-	switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC);
+	while (schannel->state == SPEECH_CHANNEL_READY) {
+		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
+			break;
+		}
+	}
 	if (schannel->state != SPEECH_CHANNEL_PROCESSING) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -2145,7 +2166,11 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
-		switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC);
+		while (schannel->state == SPEECH_CHANNEL_PROCESSING) {
+			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
+				break;
+			}
+		}
 		if (schannel->state != SPEECH_CHANNEL_READY) {
 			status = SWITCH_STATUS_FALSE;
 			goto done;
