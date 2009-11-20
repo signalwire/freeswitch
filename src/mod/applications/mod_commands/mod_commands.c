@@ -2118,6 +2118,7 @@ SWITCH_STANDARD_API(uuid_debug_audio_function)
 
 	if (zstr(cmd) || argc < 3 || zstr(argv[0]) || zstr(argv[1]) || zstr(argv[2])) {
 		stream->write_function(stream, "-USAGE: %s\n", DEBUG_AUDIO_SYNTAX);
+		goto done;
 	} else {
 		switch_core_session_message_t msg = { 0 };
 		switch_core_session_t *lsession = NULL;
@@ -2138,6 +2139,8 @@ SWITCH_STANDARD_API(uuid_debug_audio_function)
 	} else {
 		stream->write_function(stream, "-ERR Operation Failed\n");
 	}
+	
+ done:
 
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
