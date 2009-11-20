@@ -173,7 +173,6 @@ static int create_conn_socket(sangomabc_connection_t *mcon, char *local_ip, int 
 		}
 	}
 
-	zap_mutex_create(&mcon->mutex);
 
 	return mcon->socket;
 }
@@ -201,8 +200,9 @@ int sangomabc_connection_close(sangomabc_connection_t *mcon)
 
 int sangomabc_connection_open(sangomabc_connection_t *mcon, char *local_ip, int local_port, char *ip, int port)
 {
+	zap_mutex_create(&mcon->mutex);
 	if (mcon->sigmod) {
-		zap_log(ZAP_LOG_WARNING, "I should not be called on a sigmod-managed connection!\n");
+		/*value of mcon->socket will be ignored in sigmod mode */
 		return 0;
 	}
 	create_conn_socket(mcon, local_ip, local_port, ip, port);
@@ -474,22 +474,24 @@ int __sangomabc_connection_writep(sangomabc_connection_t *mcon, sangomabc_event_
 	int err;
 	int event_size=sizeof(sangomabc_event_t);
 
-	if (!event || mcon->socket < 0 || !mcon->mutex) {
-		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: No Event Device\n");
-		return -EINVAL;
-		abort();
+	if (!mcon->sigmod) {
+		if (!event || mcon->socket < 0 || !mcon->mutex) {
+			zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: No Event Device\n");
+			return -EINVAL;
+			abort();
+		}
 	}
-
+    
 	if (!boost_full_event(event->event_id)) {
 		event_size=sizeof(sangomabc_short_event_t);
 	}	
 
 	zap_mutex_lock(mcon->mutex);
-    event->version = SIGBOOST_VERSION; 
+	event->version = SIGBOOST_VERSION; 
 	if (mcon->sigmod) {
 		mcon->sigmod->write_msg(mcon->span, event, event_size);
-		err = event_size;
-		return -1;
+	    err = event_size;
+
 	} else {
 		err = sendto(mcon->socket, event, event_size, 0, (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
 	}

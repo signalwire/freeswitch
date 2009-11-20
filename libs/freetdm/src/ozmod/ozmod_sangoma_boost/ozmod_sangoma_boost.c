@@ -1157,7 +1157,9 @@ static zap_status_t zap_boost_connection_open(zap_span_t *span)
 {
 	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	if (sangoma_boost_data->sigmod) {
-		return sangoma_boost_data->sigmod->start_span(span);
+		if (sangoma_boost_data->sigmod->start_span(span) != ZAP_SUCCESS) {
+			return ZAP_FAIL;
+		}
 	} 
 
 	sangoma_boost_data->pcon = sangoma_boost_data->mcon;
@@ -1338,9 +1340,10 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 	zap_log(ZAP_LOG_CRIT, "Boost event processing Error!\n");
 
  end:
-
-	sangomabc_connection_close(&sangoma_boost_data->mcon);
-	sangomabc_connection_close(&sangoma_boost_data->pcon);
+	if (!sangoma_boost_data->sigmod) {
+		sangomabc_connection_close(&sangoma_boost_data->mcon);
+		sangomabc_connection_close(&sangoma_boost_data->pcon);
+	}
 
 	zap_clear_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING);
 
@@ -1371,17 +1374,14 @@ static ZIO_SIG_UNLOAD_FUNCTION(zap_sangoma_boost_destroy)
 	boost_sigmod_interface_t *sigmod = NULL;
 	const void *key = NULL;
 	void *val = NULL;
+	zap_dso_lib_t lib;
 
 	for (i = hashtable_first(g_boost_modules_hash); i; i = hashtable_next(i)) {
 		hashtable_this(i, &key, NULL, &val);
 		if (key && val) {
 			sigmod = val;
-			if (sigmod->on_unload() != ZAP_SUCCESS) {
-				zap_log(ZAP_LOG_ERROR, "Failed to unload boost signaling module object\n");
-				/* hope for the best */
-			} else {
-				zap_dso_destroy(sigmod->pvt);
-			}
+			lib = sigmod->pvt;
+			zap_dso_destroy(&lib);
 		}
 	}
 
@@ -1581,7 +1581,7 @@ static ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(zap_sangoma_boost_configure_span)
 		if (hash_locked) \
 			zap_mutex_unlock(g_boost_modules_mutex); \
 		if (lib) \
-			zap_dso_destroy(lib); \
+			zap_dso_destroy(&lib); \
 		return retstatus;
 
 	boost_sigmod_interface_t *sigmod_iface = NULL;
@@ -1644,10 +1644,6 @@ static ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(zap_sangoma_boost_configure_span)
 			zap_log(ZAP_LOG_ERROR, "Failed to read Sangoma boost signaling module interface '%s': %s\n", path, err);
 			snprintf(span->last_error, sizeof(span->last_error), "Failed to read Sangoma boost signaling module interface '%s': %s", path, err);
 
-			FAIL_CONFIG_RETURN(ZAP_FAIL);
-		}
-		if (sigmod_iface->on_load() != ZAP_SUCCESS) {
-			zap_log(ZAP_LOG_ERROR, "Failed to load Sangoma boost signaling module interface '%s': on_load method failed\n", path);
 			FAIL_CONFIG_RETURN(ZAP_FAIL);
 		}
 		sigmod_iface->pvt = lib;
