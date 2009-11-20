@@ -4448,7 +4448,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 
 	if (conference == NULL) {
 		char *dialstr = switch_mprintf("{ignore_early_media=true}%s", bridgeto);
-		status = switch_ivr_originate(NULL, &peer_session, cause, dialstr, 60, NULL, cid_name, cid_num, NULL, NULL, SOF_NONE);
+		status = switch_ivr_originate(NULL, &peer_session, cause, dialstr, 60, NULL, cid_name, cid_num, NULL, NULL, SOF_NONE, NULL);
 		switch_safe_free(dialstr);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
@@ -4481,7 +4481,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 
 	/* establish an outbound call leg */
 
-	if (switch_ivr_originate(session, &peer_session, cause, bridgeto, timeout, NULL, cid_name, cid_num, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(session, &peer_session, cause, bridgeto, timeout, NULL, cid_name, cid_num, NULL, NULL, SOF_NONE, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot create outgoing channel, cause: %s\n", switch_channel_cause2str(*cause));
 		if (caller_channel) {
 			switch_channel_hangup(caller_channel, *cause);

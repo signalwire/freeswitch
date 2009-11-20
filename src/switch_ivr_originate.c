@@ -1141,6 +1141,7 @@ typedef struct {
 	switch_core_session_t *session;
 	switch_core_session_t *bleg;
 	switch_call_cause_t cause;
+	switch_call_cause_t cancel_cause;
 	const char *bridgeto;
 	uint32_t timelimit_sec;
 	const switch_state_handler_table_t *table;
@@ -1152,6 +1153,7 @@ typedef struct {
 	switch_status_t status;
 	int done;
 	switch_thread_t *thread;
+	switch_mutex_t *mutex;
 } enterprise_originate_handle_t;
 
 
@@ -1174,12 +1176,22 @@ static void *SWITCH_THREAD_FUNC enterprise_originate_thread(switch_thread_t *thr
 										  handle->cid_num_override,
 										  handle->caller_profile_override,
 										  handle->ovars,
-										  handle->flags
+										  handle->flags,
+										  &handle->cancel_cause
 										  );
 
 
 	handle->done = 1;
+	switch_mutex_lock(handle->mutex);
+	switch_mutex_unlock(handle->mutex);
 	
+	if (handle->done != 2) {
+		if (handle->status == SWITCH_STATUS_SUCCESS) {
+			switch_channel_hangup(switch_core_session_get_channel(handle->bleg), SWITCH_CAUSE_LOSE_RACE);
+			switch_core_session_rwunlock(handle->bleg);
+		}
+	}
+
 	return NULL;
 }
 
@@ -1236,7 +1248,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	char *data;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_threadattr_t *thd_attr = NULL;
-	int running = 0;
+	int running = 0, over = 0;
 	switch_status_t tstatus = SWITCH_STATUS_FALSE;
 	switch_memory_pool_t *pool;
 	switch_event_header_t *hi = NULL;
@@ -1358,6 +1370,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		}
 	}
 
+	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
 
 	if (!(x_argc = switch_separate_string_string(data, SWITCH_ENT_ORIGINATE_DELIM, x_argv, MAX_PEERS))) {
 		*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -1376,6 +1389,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		handles[i].session = session;
 		handles[i].bleg = NULL;
 		handles[i].cause = 0;
+		handles[i].cancel_cause = 0;
 		handles[i].bridgeto = x_argv[i];
 		handles[i].timelimit_sec = timelimit_sec;
 		handles[i].table = table;
@@ -1384,6 +1398,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		handles[i].caller_profile_override = cp;
 		switch_event_dup(&handles[i].ovars, var_event);		
 		handles[i].flags = flags;
+		switch_mutex_init(&handles[i].mutex, SWITCH_MUTEX_NESTED, pool);
+		switch_mutex_lock(handles[i].mutex);
 		switch_thread_create(&handles[i].thread, thd_attr, enterprise_originate_thread, &handles[i], pool);
 	}
 	
@@ -1412,26 +1428,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 	for(;;) {
 		running = 0;
+		over = 0;
 		
 		if (channel && !switch_channel_ready(channel)) {
 			break;
 		}
 
 		for(i = 0; i < x_argc; i++) {
+
+
 			if (handles[i].done == 0) {
 				running++;
 			} else if (handles[i].done == 1) {
 				if (handles[i].status == SWITCH_STATUS_SUCCESS) {
+					handles[i].done = 2;
 					hp = &handles[i];
 					goto done;
 				} else {
-					handles[i].done = 2;
+					handles[i].done = -1;
 				}
+			} else {
+				over++;
 			}
-			switch_cond_next();
+
+			switch_yield(10000);
 		}
 
-		if (!running) {
+		if (!running || over == x_argc) {
 			break;
 		}
 	}
@@ -1439,35 +1462,38 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
  done:
 
+	if (hp) {
+		*cause = hp->cause;
+		status = hp->status;
+		*bleg = hp->bleg;
+		switch_mutex_unlock(hp->mutex);
+		switch_thread_join(&tstatus, hp->thread);
+		switch_event_destroy(&hp->ovars);
+	}
+
+	for(i = 0; i < x_argc; i++) {
+		if (hp == &handles[i]) {
+			continue;
+		}
+		handles[i].cancel_cause = SWITCH_CAUSE_LOSE_RACE;
+	}
+
+	for(i = 0; i < x_argc; i++) {
+		if (hp == &handles[i]) {
+			continue;
+		}
+		switch_mutex_unlock(handles[i].mutex);
+		switch_thread_join(&tstatus, handles[i].thread);
+		switch_event_destroy(&handles[i].ovars);
+	}
+	
+
 	if (channel && rb_data.thread) {
 		switch_channel_set_flag(channel, CF_NOT_READY);
 		switch_thread_join(&tstatus, rb_data.thread);
 		switch_channel_clear_flag(channel, CF_NOT_READY);
 	}
 
-
-	for(i = 0; i < x_argc; i++) {
-		if (hp && hp == &handles[i]) {
-			continue;
-		}
-		if (handles[i].bleg) {
-			switch_channel_hangup(switch_core_session_get_channel(handles[i].bleg), SWITCH_CAUSE_LOSE_RACE);
-			switch_core_session_rwunlock(handles[i].bleg);
-		}
-
-		handles[i].cause = SWITCH_CAUSE_LOSE_RACE;
-		switch_thread_join(&tstatus, handles[i].thread);
-		switch_event_destroy(&handles[i].ovars);
-	}
-	
-
-	if (hp) {
-		*cause = hp->cause;
-		status = hp->status;
-		*bleg = hp->bleg;
-		switch_thread_join(&tstatus, hp->thread);
-		switch_event_destroy(&hp->ovars);
-	}
 
  end:
 
@@ -1498,7 +1524,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 const char *cid_num_override,
 													 switch_caller_profile_t *caller_profile_override, 
 													 switch_event_t *ovars,
-													 switch_originate_flag_t flags
+													 switch_originate_flag_t flags,
+													 switch_call_cause_t *cancel_cause
 													 )
 {
 	originate_status_t originate_status[MAX_PEERS] = { { 0 } }; 
@@ -1546,7 +1573,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		return switch_ivr_enterprise_originate(session, bleg, cause, bridgeto, timelimit_sec, table, cid_name_override, cid_num_override,
 										  caller_profile_override, ovars, flags);
 	}
-
 
 	oglobals.ringback_ok = 1;
 
@@ -2218,7 +2244,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", oglobals.early_ok ? "true" : "false");
 
 				if ((reason = switch_core_session_outgoing_channel(oglobals.session, var_event, chan_type, 
-																   new_profile, &new_session, &pool, myflags)) != SWITCH_CAUSE_SUCCESS) {
+																   new_profile, &new_session, &pool, myflags, cancel_cause)) != SWITCH_CAUSE_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot create outgoing channel of type [%s] cause: [%s]\n", 
 									  chan_type, switch_channel_cause2str(reason));
 					
@@ -2439,11 +2465,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				oglobals.ringback_ok = 0;
 			}
 			
-			*cause = 0;
-			while (*cause == 0 && ((!caller_channel || switch_channel_ready(caller_channel) || switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE))) && 
-				   check_channel_status(&oglobals, originate_status, and_argc)) {
+			while ((!caller_channel || switch_channel_ready(caller_channel) || switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) &&
+                   check_channel_status(&oglobals, originate_status, and_argc)) {
 				time_t elapsed = switch_epoch_time_now(NULL) - start;
 				
+				if (cancel_cause && *cancel_cause > 0) {
+					force_reason = *cancel_cause;
+					oglobals.idx = IDX_CANCEL;
+					goto notready;
+				}
+
 				check_per_channel_timeouts(&oglobals, originate_status, and_argc, start);
 
 				if (oglobals.session) {
@@ -2603,11 +2634,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 				
 			}
-
-			if (*cause) {
-				force_reason = *cause;
-			}
-
+			
 		  notready:
 
 			if (caller_channel) {
@@ -2812,7 +2839,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
                             switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(originate_status[i].peer_session));
 							holding = NULL;
                         } else {
-							switch_channel_hangup(originate_status[i].peer_channel, reason);
+							switch_channel_hangup(originate_status[i].peer_channel, force_reason ? force_reason : reason);
 						}
 					}
 				}

@@ -4292,7 +4292,7 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 			switch_channel_t *channel_a = switch_core_session_get_channel(session);
 
 			status = switch_ivr_originate(NULL, &tsession, &cause, nhelper->exten, timeout, NULL, NULL, NULL,
-                                          switch_channel_get_caller_profile(channel_a), nhelper->vars, SOF_NONE);
+                                          switch_channel_get_caller_profile(channel_a), nhelper->vars, SOF_NONE, NULL);
 
 			if ((switch_channel_up(channel_a))) {
 				if (status != SWITCH_STATUS_SUCCESS || cause != SWITCH_CAUSE_SUCCESS) {

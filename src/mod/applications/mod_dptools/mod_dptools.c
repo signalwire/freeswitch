@@ -1565,7 +1565,7 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, bond);
 	switch_channel_set_flag(channel, CF_XFER_ZOMBIE);
 
-	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE) 
+	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL) 
 		!= SWITCH_STATUS_SUCCESS || !peer_session) {
 		goto end;
 	}
@@ -2223,7 +2223,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 
 		do {
 			fail = 0;
-			status = switch_ivr_originate(NULL, &peer_session, &cause, camp_data, campon_timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE);
+			status = switch_ivr_originate(NULL, &peer_session, &cause, camp_data, campon_timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL);
 			
 			if (!switch_channel_ready(caller_channel)) {
 				fail = 1;
@@ -2286,7 +2286,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		}
 
 	} else {
-		if ((status = switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL)) != SWITCH_STATUS_SUCCESS) {
 			fail = 1;
 		}
 	}
@@ -2403,7 +2403,7 @@ switch_endpoint_interface_t *error_endpoint_interface;
 static switch_call_cause_t error_outgoing_channel(switch_core_session_t *session,
 												 switch_event_t *var_event,
 												 switch_caller_profile_t *outbound_profile,
-												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
 switch_io_routines_t error_io_routines = {
 	/*.outgoing_channel */ error_outgoing_channel
 };
@@ -2411,7 +2411,7 @@ switch_io_routines_t error_io_routines = {
 static switch_call_cause_t error_outgoing_channel(switch_core_session_t *session,
 												 switch_event_t *var_event,
 												 switch_caller_profile_t *outbound_profile,
-												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
 {
 	switch_call_cause_t cause = switch_channel_str2cause(outbound_profile->destination_number);
 	if (cause == SWITCH_CAUSE_NONE) {
@@ -2427,7 +2427,7 @@ switch_endpoint_interface_t *group_endpoint_interface;
 static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session,
 												 switch_event_t *var_event,
 												 switch_caller_profile_t *outbound_profile,
-												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
 switch_io_routines_t group_io_routines = {
 	/*.outgoing_channel */ group_outgoing_channel
 };
@@ -2435,7 +2435,7 @@ switch_io_routines_t group_io_routines = {
 static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session,
 												 switch_event_t *var_event,
 												 switch_caller_profile_t *outbound_profile,
-												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
 {
 	char *group = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
@@ -2507,7 +2507,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	
 	
 	if (switch_ivr_originate(session, new_session, &cause, dest, timelimit, NULL, 
-							 cid_name_override, cid_num_override, NULL, var_event, myflags) == SWITCH_STATUS_SUCCESS) {
+							 cid_name_override, cid_num_override, NULL, var_event, myflags, cancel_cause) == SWITCH_STATUS_SUCCESS) {
 		const char *context;
 		switch_caller_profile_t *cp;
 		
@@ -2545,7 +2545,7 @@ switch_endpoint_interface_t *user_endpoint_interface;
 static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_event_t *var_event,
 												 switch_caller_profile_t *outbound_profile,
-												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
 switch_io_routines_t user_io_routines = {
 	/*.outgoing_channel */ user_outgoing_channel
 };
@@ -2553,7 +2553,7 @@ switch_io_routines_t user_io_routines = {
 static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_event_t *var_event,
 												 switch_caller_profile_t *outbound_profile,
-												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
 {
 	switch_xml_t x_domain = NULL, xml = NULL, x_user = NULL, x_group = NULL, x_param, x_params;
 	char *user = NULL, *domain = NULL;
@@ -2717,7 +2717,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Waddya Daft? You almost called '%s' in an infinate loop!\n", stupid);
 			cause = SWITCH_CAUSE_INVALID_IE_CONTENTS;
 		} else if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL, 
-								 cid_name_override, cid_num_override, NULL, var_event, myflags) == SWITCH_STATUS_SUCCESS) {
+										cid_name_override, cid_num_override, outbound_profile, var_event, myflags, cancel_cause) == SWITCH_STATUS_SUCCESS) {
 			const char *context;
 			switch_caller_profile_t *cp;
 

@@ -346,7 +346,9 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 																		 const char *endpoint_name,
 																		 switch_caller_profile_t *caller_profile,
 																		 switch_core_session_t **new_session,
-																		 switch_memory_pool_t **pool, switch_originate_flag_t flags)
+																		 switch_memory_pool_t **pool, 
+																		 switch_originate_flag_t flags,
+																		 switch_call_cause_t *cancel_cause)
 {
 	switch_io_event_hook_outgoing_channel_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -408,7 +410,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 	}
 
 	if ((cause =
-		 endpoint_interface->io_routines->outgoing_channel(session, var_event, outgoing_profile, new_session, pool, flags)) != SWITCH_CAUSE_SUCCESS) {
+		 endpoint_interface->io_routines->outgoing_channel(session, var_event, outgoing_profile, new_session, pool, flags, cancel_cause)) != SWITCH_CAUSE_SUCCESS) {
 		UNPROTECT_INTERFACE(endpoint_interface);
 		return cause;
 	}

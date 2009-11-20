@@ -54,7 +54,7 @@ static switch_status_t sofia_on_exchange_media(switch_core_session_t *session);
 static switch_status_t sofia_on_soft_execute(switch_core_session_t *session);
 static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												  switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
-												  switch_memory_pool_t **pool, switch_originate_flag_t flags);
+												  switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
 static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t sofia_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
@@ -2870,7 +2870,7 @@ static switch_status_t sofia_manage(char *relative_oid, switch_management_action
 
 static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												  switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
-												  switch_memory_pool_t **pool, switch_originate_flag_t flags)
+												  switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
 {
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	switch_core_session_t *nsession = NULL;

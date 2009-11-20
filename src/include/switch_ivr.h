@@ -406,7 +406,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 const char *cid_num_override,
 													 switch_caller_profile_t *caller_profile_override, 
 													 switch_event_t *ovars,
-													 switch_originate_flag_t flags
+													 switch_originate_flag_t flags,
+													 switch_call_cause_t *cancel_cause
 													 );
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_session_t *session,
