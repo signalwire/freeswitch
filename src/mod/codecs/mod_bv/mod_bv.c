@@ -208,54 +208,62 @@ static switch_status_t switch_bv32_decode(switch_codec_t *codec,
 SWITCH_MODULE_LOAD_FUNCTION(mod_bv_load)
 {
 	switch_codec_interface_t *codec_interface;
+	int mpf, spf, bpf, ebpf, count; 
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	
 	SWITCH_ADD_CODEC(codec_interface, "BroadVoice16 (BV16)"); 
 
-	switch_core_codec_add_implementation(pool,
-										 codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 106,						/* the IANA code number */
-										 "BV16",					/* the IANA code name */
-										 NULL,						/* default fmtp to send (can be overridden by the init function) */
-										 8000,						/* samples transferred per second */
-										 8000,						/* actual samples transferred per second */
-										 16000,						/* bits transferred per second */
-										 20000,						/* number of microseconds per frame */
-										 160,						/* number of samples per frame */
-										 320,						/* number of bytes per frame decompressed */
-										 40,						/* number of bytes per frame compressed */
-										 1,							/* number of channels represented */
-										 1,							/* number of frames per network packet */
-										 switch_bv16_init,			/* function to initialize a codec handle using this implementation */
-										 switch_bv16_encode,		/* function to encode raw data into encoded data */
-										 switch_bv16_decode,		/* function to decode encoded data into raw data */
-										 switch_bv16_destroy);		/* deinitalize a codec handle using this implementation */
+	mpf = 10000, spf = 80, bpf = 160, ebpf = 20;
+	
+	for (count = 12; count > 0; count--) { 
+		switch_core_codec_add_implementation(pool,
+											 codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 106,						/* the IANA code number */
+											 "BV16",					/* the IANA code name */
+											 NULL,						/* default fmtp to send (can be overridden by the init function) */
+											 8000,						/* samples transferred per second */
+											 8000,						/* actual samples transferred per second */
+											 16000,						/* bits transferred per second */
+											 mpf * count,				/* number of microseconds per frame */
+											 spf * count,				/* number of samples per frame */
+											 bpf * count,				/* number of bytes per frame decompressed */
+											 ebpf * count,				/* number of bytes per frame compressed */
+											 1,							/* number of channels represented */
+											 1,							/* number of frames per network packet */
+											 switch_bv16_init,			/* function to initialize a codec handle using this implementation */
+											 switch_bv16_encode,		/* function to encode raw data into encoded data */
+											 switch_bv16_decode,		/* function to decode encoded data into raw data */
+											 switch_bv16_destroy);		/* deinitalize a codec handle using this implementation */
+	}
 
 	SWITCH_ADD_CODEC(codec_interface, "BroadVoice32 (BV32)"); 
 
-	switch_core_codec_add_implementation(pool,
-										 codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 127,						/* the IANA code number */
-										 "BV32",					/* the IANA code name */
-										 NULL,						/* default fmtp to send (can be overridden by the init function) */
-										 16000,						/* samples transferred per second */
-										 16000,						/* actual samples transferred per second */
-										 32000,						/* bits transferred per second */
-										 20000,						/* number of microseconds per frame */
-										 320,						/* number of samples per frame */
-										 640,						/* number of bytes per frame decompressed */
-										 80,						/* number of bytes per frame compressed */
-										 1,							/* number of channels represented */
-										 1,							/* number of frames per network packet */
-										 switch_bv32_init,			/* function to initialize a codec handle using this implementation */
-										 switch_bv32_encode,		/* function to encode raw data into encoded data */
-										 switch_bv32_decode,		/* function to decode encoded data into raw data */
-										 switch_bv32_destroy);		/* deinitalize a codec handle using this implementation */
+	mpf = 10000, spf = 160, bpf = 320 , ebpf = 40;
 
+	for (count = 12; count > 0; count--) { 
+		switch_core_codec_add_implementation(pool,
+											 codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 127,						/* the IANA code number */
+											 "BV32",					/* the IANA code name */
+											 NULL,						/* default fmtp to send (can be overridden by the init function) */
+											 16000,						/* samples transferred per second */
+											 16000,						/* actual samples transferred per second */
+											 32000,						/* bits transferred per second */
+											 mpf * count,				/* number of microseconds per frame */
+											 spf * count,				/* number of samples per frame */
+											 bpf * count,				/* number of bytes per frame decompressed */
+											 ebpf * count,				/* number of bytes per frame compressed */
+											 1,							/* number of channels represented */
+											 1,							/* number of frames per network packet */
+											 switch_bv32_init,			/* function to initialize a codec handle using this implementation */
+											 switch_bv32_encode,		/* function to encode raw data into encoded data */
+											 switch_bv32_decode,		/* function to decode encoded data into raw data */
+											 switch_bv32_destroy);		/* deinitalize a codec handle using this implementation */
+	}
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
