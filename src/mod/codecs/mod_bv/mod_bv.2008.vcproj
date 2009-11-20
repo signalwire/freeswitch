@@ -169,7 +169,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\libg722_1\src\g722_1&quot;;&quot;$(InputDir)..\..\..\..\libs\libg722_1\src\msvc&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\broadvoice\src\broadvoice&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -232,7 +232,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\libg722_1\src\g722_1&quot;;&quot;$(InputDir)..\..\..\..\libs\libg722_1\src\msvc&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\broadvoice\src\broadvoice&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
