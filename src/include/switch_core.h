@@ -1943,7 +1943,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_hand
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cache_db_handle_t *dbh, const char *sql, 
 																	 switch_core_db_callback_func_t callback, void *pdata, char **err);
 
-SWITCH_DECLARE(switch_status_t)switch_core_db_handle(switch_cache_db_handle_t **dbh);
+SWITCH_DECLARE(switch_status_t) switch_core_db_handle(switch_cache_db_handle_t **dbh);
 SWITCH_DECLARE(void) switch_cache_db_test_reactive(switch_cache_db_handle_t *db, const char *test_sql, const char *drop_sql, const char *reactive_sql);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
