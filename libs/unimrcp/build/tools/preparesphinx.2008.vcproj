@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="9.00"
+	Name="preparesphinx"
+	ProjectGUID="{71D62A04-8EF6-4C6B-AC12-0C15A875E53A}"
+	RootNamespace="preparesphinx"
+	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\pocketsphinx.vsprops"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="xcopy &quot;$(PocketSphinxDir)\bin\$(ConfigurationName)\pocketsphinx.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;xcopy &quot;$(SphinxBaseDir)\lib\$(ConfigurationName)\sphinxbase.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;&#x0D;&#x0A;xcopy &quot;$(PocketSphinxDir)\model\hmm\wsj1\*&quot; &quot;$(SolutionDir)$(ConfigurationName)\data\wsj1\&quot; /Y&#x0D;&#x0A;copy &quot;$(PocketSphinxDir)\model\lm\cmudict.0.6d&quot; &quot;$(SolutionDir)$(ConfigurationName)\data\default.dic&quot;&#x0D;&#x0A;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(ConfigurationName)\conf\pocketsphinx.xml&quot; xcopy &quot;$(SolutionDir)plugins\mrcp-pocketsphinx\conf\pocketsphinx.xml&quot; &quot;$(SolutionDir)$(ConfigurationName)\conf\&quot; /Y&#x0D;&#x0A;"
+				ExcludedFromBuild="false"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			ConfigurationType="10"
+			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\pocketsphinx.vsprops"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="xcopy &quot;$(PocketSphinxDir)\bin\$(ConfigurationName)\pocketsphinx.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;xcopy &quot;$(SphinxBaseDir)\lib\$(ConfigurationName)\sphinxbase.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;&#x0D;&#x0A;xcopy &quot;$(PocketSphinxDir)\model\hmm\wsj1\*&quot; &quot;$(SolutionDir)$(ConfigurationName)\data\wsj1\&quot; /Y&#x0D;&#x0A;copy &quot;$(PocketSphinxDir)\model\lm\cmudict.0.6d&quot; &quot;$(SolutionDir)$(ConfigurationName)\data\default.dic&quot;&#x0D;&#x0A;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(ConfigurationName)\conf\pocketsphinx.xml&quot; xcopy &quot;$(SolutionDir)plugins\mrcp-pocketsphinx\conf\pocketsphinx.xml&quot; &quot;$(SolutionDir)$(ConfigurationName)\conf\&quot; /Y&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+	</Files>
+</VisualStudioProject>
