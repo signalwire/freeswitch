@@ -32,6 +32,7 @@ codecs/mod_amr
 codecs/mod_g729
 codecs/mod_h26x
 codecs/mod_voipcodecs
+codecs/mod_bv
 codecs/mod_ilbc
 codecs/mod_speex
 codecs/mod_siren
