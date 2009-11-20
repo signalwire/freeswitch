@@ -1,7 +1,11 @@
 BASE=../../../..
-DIR=$(BASE)/libs/broadvoice
-A=$(DIR)/src/.libs/libbroadvoice.a
-
-LOCAL_INSERT_CFLAGS=if test -f $(A); then echo "-I$(DIR)/src" ; fi ;
-LOCAL_INSERT_LDFLAGS=test ! -f $(A) || echo $(A) 
+BV_DIR=$(BASE)/libs/broadvoice
+LOCAL_CFLAGS=-I$(BV_DIR)/src 
+BV_LA=$(BV_DIR)/src/.libs/libbroadvoice.la
+LOCAL_LIBADD=$(BV_LA)
 include $(BASE)/build/modmake.rules
+
+$(BV_LA): $(BV_DIR)/.update	
+	cd $(BV_DIR) && ./configure  --disable-shared --with-pic  && $(MAKE)
+	$(TOUCH_TARGET)
+
