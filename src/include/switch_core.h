@@ -1937,17 +1937,24 @@ typedef struct {
 
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t **dbh);
 SWITCH_DECLARE(void) switch_cache_db_destroy_db_handle(switch_cache_db_handle_t **dbh);
-SWITCH_DECLARE(switch_status_t) switch_cache_db_get_db_handle(switch_cache_db_handle_t **dbh, 
-																		const char *db_name, const char *odbc_user, const char *odbc_pass);
+SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_handle_t **dbh, 
+															   const char *db_name, 
+															   const char *odbc_user, 
+															   const char *odbc_pass, const char *file, const char *func, int line);
+#define switch_cache_db_get_db_handle(_a, _b, _c, _d) _switch_cache_db_get_db_handle(_a, _b, _c, _d, __FILE__, __SWITCH_FUNC__, __LINE__)
+
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, const char *sql, char **err);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cache_db_handle_t *dbh, const char *sql, 
 																	 switch_core_db_callback_func_t callback, void *pdata, char **err);
 
-SWITCH_DECLARE(switch_status_t) switch_core_db_handle(switch_cache_db_handle_t **dbh);
+SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t **dbh, const char *file, const char *func, int line);
+#define switch_core_db_handle(_a) _switch_core_db_handle(_a, __FILE__, __SWITCH_FUNC__, __LINE__)
+
 SWITCH_DECLARE(void) switch_cache_db_test_reactive(switch_cache_db_handle_t *db, const char *test_sql, const char *drop_sql, const char *reactive_sql);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
 SWITCH_DECLARE(void) switch_cache_db_detach(void);
+SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
 
 SWITCH_END_EXTERN_C
 #endif

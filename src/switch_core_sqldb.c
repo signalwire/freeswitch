@@ -164,8 +164,9 @@ SWITCH_DECLARE(void) switch_cache_db_detach(void)
 	switch_mutex_unlock(dbh_mutex);
 }
 
-SWITCH_DECLARE(switch_status_t)switch_cache_db_get_db_handle(switch_cache_db_handle_t **dbh,
-															 const char *db_name, const char *odbc_user, const char *odbc_pass)
+SWITCH_DECLARE(switch_status_t)_switch_cache_db_get_db_handle(switch_cache_db_handle_t **dbh,
+															  const char *db_name, const char *odbc_user, const char *odbc_pass,
+															  const char *file, const char *func, int line)
 {
 	switch_thread_id_t self = switch_thread_self();
 	char thread_str[CACHE_DB_LEN] = "";
@@ -176,7 +177,10 @@ SWITCH_DECLARE(switch_status_t)switch_cache_db_get_db_handle(switch_cache_db_han
 	snprintf(thread_str, sizeof(thread_str) - 1, "%s_%lu", db_name, (unsigned long)(intptr_t)self);
 	
 	switch_mutex_lock(dbh_mutex);
-	if (!(new_dbh = switch_core_hash_find(dbh_hash, thread_str))) {
+	if ((new_dbh = switch_core_hash_find(dbh_hash, thread_str))) {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG1, 
+						  "Reuse Cached DB handle %s [%s]\n", thread_str, new_dbh->db ? "sqlite" : "ODBC");
+	} else {
 		switch_hash_index_t *hi;
 		const void *var;
 		void *val;
@@ -190,6 +194,8 @@ SWITCH_DECLARE(switch_status_t)switch_cache_db_get_db_handle(switch_cache_db_han
 				if (!switch_test_flag(new_dbh, CDF_INUSE) && switch_mutex_trylock(new_dbh->mutex) == SWITCH_STATUS_SUCCESS) {
 					switch_set_flag(new_dbh, CDF_INUSE);
 					switch_set_string(new_dbh->name, thread_str);
+					switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG1, 
+									  "Reuse Unused Cached DB handle %s [%s]\n", thread_str, new_dbh->db ? "sqlite" : "ODBC");
 					break;
 				}
 			}
@@ -217,6 +223,9 @@ SWITCH_DECLARE(switch_status_t)switch_cache_db_get_db_handle(switch_cache_db_han
 			goto end;
 		}
 
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG1, 
+						  "Create Cached DB handle %s [%s]\n", thread_str, db ? "sqlite" : "ODBC");
+
 		switch_core_new_memory_pool(&pool);
 		new_dbh = switch_core_alloc(pool, sizeof(*new_dbh));
 		new_dbh->pool = pool;
@@ -242,16 +251,15 @@ SWITCH_DECLARE(switch_status_t)switch_cache_db_get_db_handle(switch_cache_db_han
 }
 
 
-
-SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, const char *sql, char **err)
+static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t *dbh, const char *sql, char **err)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg = NULL;
 
 	if (err) *err = NULL;
-
+	
 	if (switch_odbc_available() && dbh->odbc_dbh) {
-		switch_odbc_statement_handle_t stmt;
+		switch_odbc_statement_handle_t stmt = NULL;
 		if ((status = switch_odbc_handle_exec(dbh->odbc_dbh, sql, &stmt)) != SWITCH_ODBC_SUCCESS) {
 			errmsg = switch_odbc_handle_get_error(dbh->odbc_dbh, stmt);
 		}
@@ -269,6 +277,84 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_hand
 		} else {
 			free(errmsg);
 		}
+	}
+	
+	return status;
+}
+
+/**
+   OMFG you cruel bastards.  Who chooses 64k as a max buffer len for a sql statement, have you ever heard of transactions?
+ **/
+static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handle_t *dbh, const char *sql, uint32_t chunk_size, char **err)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *p, *s, *e;
+	int chunk_count;
+	char *dup = NULL;
+	switch_size_t len;
+	
+	switch_assert(chunk_size);
+
+	if (err) *err = NULL;
+
+	len = strlen(sql);
+
+	if (chunk_size > len) {
+		return switch_cache_db_execute_sql_real(dbh, sql, err);
+	}
+
+	if (!(chunk_count = strlen(sql) / chunk_size)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	dup = strdup(sql);
+
+
+	e = end_of_p(dup);
+	s = dup;
+
+	while(s && s < e) {
+		p = s + chunk_size;
+
+		if (p > e) {
+			p = e;
+		}
+		
+		while (p > s && *p != ';') {
+			p--;
+		}
+
+		if (p) {
+			*p = '\0';
+			while(p < e && (*p == '\n' || *p == ' ')) {
+				p++;
+			}
+		}
+		
+		status = switch_cache_db_execute_sql_real(dbh, s, err);
+		if (status != SWITCH_STATUS_SUCCESS || (err && *err)) {
+			break;
+		}
+
+		s = p + 1;
+	
+	}
+
+	free(dup);
+
+	return status;
+
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, const char *sql, char **err)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (dbh->db) {
+		status = switch_cache_db_execute_sql_real(dbh, sql, err);
+	} else {
+		status = switch_cache_db_execute_sql_chunked(dbh, (char *)sql, 32000, err);
 	}
 	
 	return status;
@@ -313,7 +399,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 	uint8_t forever = 0;
 	unsigned begin_retries = 100;
 	uint8_t again = 0;
-
+	
 	if (!retries) {
 		forever = 1;
 		retries = 1000;
@@ -353,7 +439,10 @@ again:
 	}
 
 	while (retries > 0) {
-		switch_cache_db_execute_sql(dbh,  sql, &errmsg);
+
+		switch_cache_db_execute_sql(dbh, sql, &errmsg);
+
+
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
 			free(errmsg);
@@ -518,7 +607,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread,
 		
 		
 		if (trans && ((itterations == target) || (nothing_in_queue && ++lc >= 500))) {
-			if (switch_cache_db_persistant_execute_trans(sql_manager.event_db, sqlbuf, 100) != SWITCH_STATUS_SUCCESS) {
+			if (switch_cache_db_persistant_execute_trans(sql_manager.event_db, sqlbuf, 1) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread unable to commit transaction, records lost!\n");
 			}
 			itterations = 0;

@@ -1250,7 +1250,7 @@ SWITCH_STANDARD_API(status_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[send_sighup|hupall|pause|resume|shutdown [cancel|elegant|asap|restart]|sps|sync_clock|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|loglevel [level]]"
+#define CTL_SYNTAX "[send_sighup|hupall|pause|resume|shutdown [cancel|elegant|asap|restart]|sps|sync_clock|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|loglevel [level]|debug_level [level]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -1348,6 +1348,16 @@ SWITCH_STANDARD_API(ctl_function)
 				switch_core_session_ctl(SCSC_LOGLEVEL, &arg);
 				stream->write_function(stream, "+OK log level: %s [%d]\n", switch_log_level2str(arg), arg);
 			}
+		} else if (!strcasecmp(argv[0], "debug_level")) {
+			if (argc > 1) {
+				arg = atoi(argv[1]);
+			} else {
+				arg = -1;
+			}
+
+			switch_core_session_ctl(SCSC_DEBUG_LEVEL, &arg);
+			stream->write_function(stream, "+OK DEBUG level: %d\n", arg);
+
 		} else if (!strcasecmp(argv[0], "last_sps")) {
 			switch_core_session_ctl(SCSC_LAST_SPS, &arg);
 			stream->write_function(stream, "+OK last sessions per second: %d\n", arg);
@@ -3759,6 +3769,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "media", uuid_media_function, MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "fsctl", "control messages", ctl_function, CTL_SYNTAX);
 	switch_console_set_complete("add fsctl hupall");
+	switch_console_set_complete("add fsctl loglevel");
+	switch_console_set_complete("add fsctl debug_level");
 	switch_console_set_complete("add fsctl pause");
 	switch_console_set_complete("add fsctl resume");
 	switch_console_set_complete("add fsctl shutdown");

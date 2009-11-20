@@ -340,6 +340,14 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 	const char *extra_fmt = "%s [%s] %s:%d%c%s";
 #endif
 
+	if (level > 100) {
+		if (level - 100 > runtime.debug_level) {
+			return;
+		}
+
+		level = 7;
+	}
+
 	if (level > runtime.hard_log_level) {
 		return;
 	}

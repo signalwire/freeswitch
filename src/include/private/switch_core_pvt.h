@@ -210,6 +210,7 @@ struct switch_runtime {
 	char *odbc_dsn;
 	char *odbc_user;
 	char *odbc_pass;
+	uint32_t debug_level;
 };
 
 extern struct switch_runtime runtime;

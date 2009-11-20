@@ -1463,12 +1463,12 @@ static void switch_load_core_config(const char *file)
 /*!
   \brief Open the default system database
 */
-SWITCH_DECLARE(switch_status_t)switch_core_db_handle(switch_cache_db_handle_t **dbh)
+SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t **dbh, const char *file, const char *func, int line)
 {
 	if (runtime.odbc_dsn && runtime.odbc_user && runtime.odbc_pass) {
-		return switch_cache_db_get_db_handle(dbh, runtime.odbc_dsn, runtime.odbc_user, runtime.odbc_pass);
+		return _switch_cache_db_get_db_handle(dbh, runtime.odbc_dsn, runtime.odbc_user, runtime.odbc_pass, file, func, line);
 	} else {
-		return switch_cache_db_get_db_handle(dbh, SWITCH_CORE_DB, NULL, NULL);
+		return _switch_cache_db_get_db_handle(dbh, SWITCH_CORE_DB, NULL, NULL, file, func, line);
 	}
 }
 
@@ -1576,6 +1576,12 @@ static void win_shutdown(void)
 }
 #endif
 
+SWITCH_DECLARE(uint32_t) switch_core_debug_level(void)
+{
+	return runtime.debug_level;
+}
+
+
 SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_t *val)
 {
 	if (switch_test_flag((&runtime), SCF_SHUTTING_DOWN)) {
@@ -1676,6 +1682,13 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 			runtime.hard_log_level = SWITCH_LOG_DEBUG;
 		}
 		*val = runtime.hard_log_level;
+		break;
+	case SCSC_DEBUG_LEVEL:
+		if (*val > -1) {
+			if (*val > 10) *val = 10;
+			runtime.debug_level = *val;
+		}
+		*val = runtime.debug_level;
 		break;
 	case SCSC_MAX_SESSIONS:
 		*val = switch_core_session_limit(*val);
