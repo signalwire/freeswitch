@@ -1195,6 +1195,13 @@ static int zap_boost_wait_event(zap_span_t *span, int ms)
 		sangomabc_connection_t *mcon, *pcon;
 		zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 
+		if (sangoma_boost_data->sigmod) {
+			int result;
+			result =  zap_queue_wait(sangoma_boost_data->boost_queue, ms);
+			if (result == ZAP_TIMEOUT) return 0;
+			if (result != ZAP_SUCCESS) return -1;
+			return 1;
+		}
 		mcon = &sangoma_boost_data->mcon;
 		pcon = &sangoma_boost_data->pcon;
 
@@ -1266,6 +1273,7 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 	}
 
 	if (zap_boost_connection_open(span) != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_ERROR, "zap_boost_connection failed\n");
 		goto end;
 	}
 
@@ -1291,10 +1299,12 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 							   SIGBOOST_EVENT_SYSTEM_RESTART,
 							   0);
 			zap_set_flag(mcon, MSU_FLAG_DOWN);
+			zap_log(ZAP_LOG_DEBUG, "OPENZAP is no longer running\n");
 			break;
 		}
 
 		if ((activity = zap_boost_wait_event(span, ms)) < 0) {
+			zap_log(ZAP_LOG_ERROR, "Zap boost waitevent failed\n");
 			goto error;
 		}
 		
@@ -1534,8 +1544,7 @@ static BOOST_WRITE_MSG_FUNCTION(zap_boost_write_msg)
 	}
 	memcpy(&element->boostmsg, msg, msglen);
 	element->size = msglen;
-	zap_queue_enqueue(sangoma_boost_data->boost_queue, element);
-	return ZAP_SUCCESS;
+	return zap_queue_enqueue(sangoma_boost_data->boost_queue, element);
 }
 
 static BOOST_SIG_STATUS_CB_FUNCTION(zap_boost_sig_status_change)

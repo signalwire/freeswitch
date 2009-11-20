@@ -2858,6 +2858,7 @@ OZ_DECLARE(zap_status_t) zap_global_init(void)
 	globals.span_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 	zap_mutex_create(&globals.mutex);
 	zap_mutex_create(&globals.span_mutex);
+	globals.running = 1;
 	return ZAP_SUCCESS;
 }
 

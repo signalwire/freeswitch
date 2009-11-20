@@ -205,8 +205,11 @@ OZ_DECLARE(zap_status_t) _zap_mutex_lock(zap_mutex_t *mutex)
 #ifdef WIN32
 	EnterCriticalSection(&mutex->mutex);
 #else
-	if (pthread_mutex_lock(&mutex->mutex))
+	int err;
+	if ((err = pthread_mutex_lock(&mutex->mutex))) {
+		zap_log(ZAP_LOG_ERROR, "Failed to lock mutex %d:%s\n", err, strerror(err));
 		return ZAP_FAIL;
+	}
 #endif
 	return ZAP_SUCCESS;
 }
@@ -259,6 +262,7 @@ OZ_DECLARE(zap_status_t) zap_condition_create(zap_condition_t **incondition, zap
 	}
 #endif
 
+	*incondition = condition;
 	return ZAP_SUCCESS;
 
 failed:
@@ -287,7 +291,10 @@ OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 #else
 	int res = 0;
 	if (ms > 0) {
-		struct timespec waitms = { 0, ((ms * 1000) * 1000)};
+		struct timespec waitms; 
+		waitms.tv_sec = time(NULL)+(ms/1000);
+		waitms.tv_nsec = 1000*1000*(ms%1000);
+
 		res = pthread_cond_timedwait(&condition->condition, condition->mutex, &waitms);
 	} else {
 		res = pthread_cond_wait(&condition->condition, condition->mutex);
@@ -310,7 +317,9 @@ OZ_DECLARE(zap_status_t) zap_condition_signal(zap_condition_t *condition)
 		return ZAP_FAIL;
 	}
 #else
-	if (pthread_cond_signal(&condition->condition)) {
+	int err;
+	if ((err = pthread_cond_signal(&condition->condition))) {
+		zap_log(ZAP_LOG_ERROR, "Failed to signal condition %d:%s\n", err, strerror(err));
 		return ZAP_FAIL;
 	}
 #endif
