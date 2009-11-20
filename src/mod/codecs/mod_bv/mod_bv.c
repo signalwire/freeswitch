@@ -54,11 +54,11 @@ static switch_status_t switch_bv16_init(switch_codec_t *codec, switch_codec_flag
 	} 
 
 	if (encoding) {
-		bv16_encode_init(context->encoder_object);
+		context->encoder_object = bv16_encode_init(NULL);
 	}
 	
 	if (decoding) {
-		bv16_decode_init(context->decoder_object);
+		context->decoder_object = bv16_decode_init(NULL);
 	}
 	
 	codec->private_info = context;
@@ -67,6 +67,16 @@ static switch_status_t switch_bv16_init(switch_codec_t *codec, switch_codec_flag
 
 static switch_status_t switch_bv16_destroy(switch_codec_t *codec)
 {
+	struct bv16_context *context = codec->private_info;
+	
+	if (context->encoder_object) {
+		bv16_encode_free(context->encoder_object);
+	}
+
+	if (context->decoder_object) {
+		bv16_decode_free(context->decoder_object);
+	}
+
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -127,11 +137,11 @@ static switch_status_t switch_bv32_init(switch_codec_t *codec, switch_codec_flag
 	} 
 
 	if (encoding) {
-		bv32_encode_init(context->encoder_object);
+		context->encoder_object = bv32_encode_init(NULL);
 	}
 	
 	if (decoding) {
-		bv32_decode_init(context->decoder_object);
+		context->decoder_object = bv32_decode_init(NULL);
 	}
 	
 	codec->private_info = context;
@@ -140,7 +150,19 @@ static switch_status_t switch_bv32_init(switch_codec_t *codec, switch_codec_flag
 
 static switch_status_t switch_bv32_destroy(switch_codec_t *codec)
 {
+	struct bv32_context *context = codec->private_info;
+
+	if (context->encoder_object) {
+		bv32_encode_free(context->encoder_object);
+	}
+
+	if (context->decoder_object) {
+		bv32_decode_free(context->decoder_object);
+	}
+
 	codec->private_info = NULL;
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
