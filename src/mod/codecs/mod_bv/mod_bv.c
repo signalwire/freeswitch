@@ -243,7 +243,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_bv_load)
 
 	mpf = 10000, spf = 160, bpf = 320 , ebpf = 40;
 
-	for (count = 12; count > 0; count--) { 
+	for (count = 6; count > 0; count--) { 
 		switch_core_codec_add_implementation(pool,
 											 codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
