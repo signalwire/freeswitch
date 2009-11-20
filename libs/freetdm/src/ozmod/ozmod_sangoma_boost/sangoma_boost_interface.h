@@ -183,7 +183,7 @@ typedef struct boost_sigmod_interface_s {
 	/*! \brief the module was just loaded */
 	boost_on_load_func_t on_load;
 	/*! \brief the module is about to be unloaded */
-	boost_on_load_func_t on_unload;
+	boost_on_unload_func_t on_unload;
 	/*! \brief private pointer for the interface user */
 	void *pvt;
 } boost_sigmod_interface_t;
