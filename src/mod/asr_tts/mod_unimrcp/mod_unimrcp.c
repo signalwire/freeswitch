@@ -308,8 +308,6 @@ struct speech_channel {
 	speech_channel_state_t state;
 	/** UniMRCP <--> FreeSWITCH audio buffer */
 	audio_queue_t *audio_queue;
-	/** codec */
-	char *codec;
 	/** rate */
 	uint16_t rate;
 	/** silence sample */
@@ -327,7 +325,8 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
 static apt_bool_t speech_on_channel_remove(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel, mrcp_sig_status_code_e status);
 
 /* speech_channel funcs */
-static switch_status_t speech_channel_create(speech_channel_t **schannel, const char *name, speech_channel_type_t type, mod_unimrcp_application_t *app, const char *codec, uint16_t rate, switch_memory_pool_t *pool);
+static switch_status_t speech_channel_create(speech_channel_t **schannel, const char *name, speech_channel_type_t type, mod_unimrcp_application_t *app, uint16_t rate, switch_memory_pool_t *pool);
+static mpf_termination_t *speech_channel_create_mpf_termination(speech_channel_t *schannel);
 static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t *profile);
 static switch_status_t speech_channel_destroy(speech_channel_t *schannel);
 static switch_status_t speech_channel_stop(speech_channel_t *schannel);
@@ -635,7 +634,7 @@ static switch_status_t audio_queue_write(audio_queue_t *queue, void *data, switc
 	if (switch_buffer_write(queue->buffer, data, *data_len) > 0) {
 		queue->write_bytes = queue->write_bytes + *data_len;
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue write total = %d\trequested = %d\n", queue->name, queue->write_bytes, *data_len);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue write total = %ld\trequested = %ld\n", queue->name, queue->write_bytes, *data_len);
 #endif
 		if (queue->waiting <= switch_buffer_inuse(queue->buffer)) {
 			switch_thread_cond_signal(queue->cond);
@@ -690,7 +689,7 @@ static switch_status_t audio_queue_read(audio_queue_t *queue, void *data, switch
 	*data_len = switch_buffer_read(queue->buffer, data, requested);
 	queue->read_bytes = queue->read_bytes + *data_len;
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue read total = %d\tread = %d\trequested = %d\n", queue->name, queue->read_bytes, *data_len, requested);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue read total = %ld\tread = %ld\trequested = %ld\n", queue->name, queue->read_bytes, *data_len, requested);
 	switch_size_t len = *data_len;
 	if (queue->file_read) {
 		switch_file_write(queue->file_read, data, &len);
@@ -764,12 +763,11 @@ static switch_status_t audio_queue_destroy(audio_queue_t *queue)
  * @param name the name of the channel
  * @param type the type of channel to create
  * @param app the application
- * @param codec the codec to use
  * @param rate the rate to use
  * @param pool the memory pool to use
  * @return SWITCH_STATUS_SUCCESS if successful.  SWITCH_STATUS_FALSE if the channel cannot be allocated.
  */
-static switch_status_t speech_channel_create(speech_channel_t **schannel, const char *name, speech_channel_type_t type, mod_unimrcp_application_t *app, const char *codec, uint16_t rate, switch_memory_pool_t *pool)
+static switch_status_t speech_channel_create(speech_channel_t **schannel, const char *name, speech_channel_type_t type, mod_unimrcp_application_t *app, uint16_t rate, switch_memory_pool_t *pool)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	speech_channel_t *schan = NULL;
@@ -786,14 +784,7 @@ static switch_status_t speech_channel_create(speech_channel_t **schannel, const 
 	schan->memory_pool = pool;
 	schan->params = NULL;
 	schan->rate = rate;
-	schan->codec = switch_core_strdup(pool, codec);
-	
-	if (!strcmp("L16", schan->codec)) {
-		schan->silence = 0;
-	} else {
-		/* 8-bit PCMU, PCMA */
-		schan->silence = 128;
-	}
+	schan->silence = 0; /* L16 silence sample */
 
 	if (switch_mutex_init(&schan->mutex, SWITCH_MUTEX_UNNESTED, pool) != SWITCH_STATUS_SUCCESS || 
 		switch_thread_cond_create(&schan->cond, pool) != SWITCH_STATUS_SUCCESS ||
@@ -841,6 +832,63 @@ static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
 }
 
 /**
+ * Create the audio termination for the speech channel
+ * @param schannel the speech channel
+ * @return the termination or NULL
+ */
+#if UNI_VERSION_AT_LEAST(0,8,0)
+static mpf_termination_t *speech_channel_create_mpf_termination(speech_channel_t *schannel)
+{
+	mpf_termination_t *termination = NULL;
+	mpf_stream_capabilities_t *capabilities = NULL;
+	int sample_rates;
+
+	if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
+		capabilities = mpf_sink_stream_capabilities_create(schannel->unimrcp_session->pool);
+	} else {
+		capabilities = mpf_source_stream_capabilities_create(schannel->unimrcp_session->pool);
+	}
+	/* FreeSWITCH is capable of resampling so pick rates that are are multiples of the desired rate.
+	 * UniMRCP should transcode whatever the MRCP server wants to use into LPCM (host-byte ordered L16) for us.
+	 */
+	if (schannel->rate == 16000) {
+		sample_rates = MPF_SAMPLE_RATE_8000 | MPF_SAMPLE_RATE_16000;
+	} else if (schannel->rate == 32000) {
+		sample_rates = MPF_SAMPLE_RATE_8000 | MPF_SAMPLE_RATE_16000 | MPF_SAMPLE_RATE_32000;
+	} else if (schannel->rate == 48000) {
+		sample_rates = MPF_SAMPLE_RATE_8000 | MPF_SAMPLE_RATE_16000 | MPF_SAMPLE_RATE_48000;
+	} else {
+		sample_rates = MPF_SAMPLE_RATE_8000;
+	}
+	mpf_codec_capabilities_add(&capabilities->codecs, sample_rates, "LPCM");
+	termination = mrcp_application_audio_termination_create(schannel->unimrcp_session, &schannel->application->audio_stream_vtable, capabilities, schannel);
+
+	return termination;
+}
+#else
+static mpf_termination_t *speech_channel_create_mpf_termination(speech_channel_t *schannel)
+{
+	mpf_termination_t *termination = NULL;
+	mpf_codec_descriptor_t *codec = NULL;
+	codec = (mpf_codec_descriptor_t *)apr_palloc(schannel->unimrcp_session->pool, sizeof(mpf_codec_descriptor_t));
+	mpf_codec_descriptor_init(codec);
+	codec->channel_count = 1;
+	codec->payload_type = 96;
+	codec->sampling_rate = schannel->rate;
+	apt_string_set(&codec->name, "LPCM"); /* "LPCM" is UniMRCP's name for L16 host byte ordered */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) requesting codec LPCM/%d/%d\n", schannel->name, codec->payload_type, codec->sampling_rate);
+
+	if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
+		termination = mrcp_application_sink_termination_create(schannel->unimrcp_session, &schannel->application->audio_stream_vtable, codec, schannel);
+	} else {
+		termination = mrcp_application_source_termination_create(schannel->unimrcp_session, &schannel->application->audio_stream_vtable, codec, schannel);
+	}
+	
+	return termination;
+}
+#endif
+
+/**
  * Open the speech channel
  *
  * @param schannel the channel to open
@@ -851,7 +899,6 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	mpf_termination_t *termination = NULL;
-	mpf_codec_descriptor_t *codec = NULL;
 	mrcp_resource_type_e resource_type;
 
 	switch_mutex_lock(schannel->mutex);
@@ -871,32 +918,9 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 		status = SWITCH_STATUS_RESTART;
 		goto done;
 	}
-
-	/* create RTP endpoint and link to session channel */
-	codec = (mpf_codec_descriptor_t *)apr_palloc(schannel->unimrcp_session->pool, sizeof(mpf_codec_descriptor_t));
-	mpf_codec_descriptor_init(codec);
-	codec->channel_count = 1;
-	codec->payload_type = 96;
-	codec->sampling_rate = schannel->rate;
-	if (!strcmp(schannel->codec, "L16")) {
-		/* "LPCM" is UniMRCP's name for L16 host byte ordered */
-		apt_string_set(&codec->name, "LPCM");
-	} else {
-		apt_string_set(&codec->name, schannel->codec);
-	}
-	/* see RFC 1890 for payload types */
-	if (!strcmp(schannel->codec, "PCMU") && schannel->rate == 8000) {
-		codec->payload_type = 0;
-	} else if (!strcmp(schannel->codec, "PCMA") && schannel->rate == 8000) {
-		codec->payload_type = 8;
-	} 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) requesting codec %s/%d/%d\n", schannel->name, schannel->codec, codec->payload_type, codec->sampling_rate);
-	if(schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
-		termination = mrcp_application_sink_termination_create(schannel->unimrcp_session, &schannel->application->audio_stream_vtable, codec, schannel);
-	} else {
-		termination = mrcp_application_source_termination_create(schannel->unimrcp_session, &schannel->application->audio_stream_vtable, codec, schannel);
-	}
-	if(termination == NULL) {
+	
+	/* create audio termination and add to channel */
+	if ((termination = speech_channel_create_mpf_termination(schannel)) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Unable to create termination with %s\n", schannel->name, profile->name);
 		mrcp_application_session_destroy(schannel->unimrcp_session);
 		status = SWITCH_STATUS_FALSE;
@@ -1441,8 +1465,7 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	switch_snprintf(name, sizeof(name) - 1, "TTS-%d", speech_channel_number);
 	name[sizeof(name) - 1] = '\0';
 	
-	/* create channel container with L16 codec (what FreeSWITCH needs) */
-	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_SYNTHESIZER, &globals.synth, "L16", (uint16_t)rate, sh->memory_pool) != SWITCH_STATUS_SUCCESS) {
+	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_SYNTHESIZER, &globals.synth, (uint16_t)rate, sh->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -1530,7 +1553,7 @@ static switch_status_t synth_speech_read_tts(switch_speech_handle_t *sh, void *d
 		/* pad data, if not enough read */
 		if (bytes_read < *datalen) {
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) adding %d bytes of padding\n", schannel->name, *datalen - bytes_read);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) adding %ld bytes of padding\n", schannel->name, *datalen - bytes_read);
 #endif
 			memset((uint8_t *)data + bytes_read, schannel->silence, *datalen - bytes_read);
 		}
@@ -1538,6 +1561,11 @@ static switch_status_t synth_speech_read_tts(switch_speech_handle_t *sh, void *d
 		*datalen = 0;
 		status = SWITCH_STATUS_BREAK;
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) rate = %d, native_rate = %d, samplerate = %d\n", schannel->name, sh->rate, sh->native_rate, sh->samplerate);
+
+	/* report negotiated sample rate back to FreeSWITCH */
+	sh->native_rate = schannel->rate;
 
 	return status;
 }
@@ -1645,7 +1673,23 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
 
 	/* check status */
 	if (session && schannel && status == MRCP_SIG_STATUS_CODE_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) %s channel is ready\n", schannel->name, speech_channel_type_to_string(schannel->type));	
+#if UNI_VERSION_AT_LEAST(0,8,0)
+		char codec_name[60] = { 0 };
+		const mpf_codec_descriptor_t *descriptor;
+		/* what sample rate did we negotiate? */
+		if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
+ 			descriptor = mrcp_application_sink_descriptor_get(channel);
+		} else {
+			descriptor = mrcp_application_source_descriptor_get(channel);
+		}
+		schannel->rate = descriptor->sampling_rate;
+		if (descriptor->name.length) {
+			strncpy(codec_name, descriptor->name.buf, sizeof(codec_name));
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s channel is ready, codec = %s, sample rate = %d\n", schannel->name, speech_channel_type_to_string(schannel->type), codec_name, schannel->rate);
+#else
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) %s channel is ready\n", schannel->name, speech_channel_type_to_string(schannel->type));
+#endif	
 		speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
 		/* notify of channel open */
 		if (globals.enable_profile_events && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_OPEN) == SWITCH_STATUS_SUCCESS) {
@@ -2575,7 +2619,7 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	switch_snprintf(name, sizeof(name) - 1, "ASR-%d", speech_channel_number);
 	name[sizeof(name) - 1] = '\0';
 
-	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_RECOGNIZER, &globals.recog, "L16", (uint16_t)rate, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
+	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_RECOGNIZER, &globals.recog, (uint16_t)rate, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
