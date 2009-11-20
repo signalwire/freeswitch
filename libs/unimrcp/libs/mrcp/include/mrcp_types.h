@@ -31,22 +31,39 @@ typedef enum {
 	
 	MRCP_VERSION_UNKNOWN = 0,  /**< Unknown version */
 	MRCP_VERSION_1 = 1,        /**< MRCPv1 (RFC4463) */
-	MRCP_VERSION_2 = 2         /**< MRCPv2 (draft-ietf-speechsc-mrcpv2-15) */
+	MRCP_VERSION_2 = 2         /**< MRCPv2 (draft-ietf-speechsc-mrcpv2-20) */
 } mrcp_version_e;
 
 /** Enumeration of MRCP resource types */
 typedef enum {
 	MRCP_SYNTHESIZER_RESOURCE, /**< Synthesizer resource */
 	MRCP_RECOGNIZER_RESOURCE,  /**< Recognizer resource */
+	MRCP_RECORDER_RESOURCE,    /**< Recorder resource */
 
 	MRCP_RESOURCE_TYPE_COUNT   /**< Number of resources */
 } mrcp_resource_type_e;
 
-/** Message identifier used in request/response/event messages. */
-typedef apr_size_t  mrcp_request_id;
-/** Method identifier associated with method name. */
+/* MRCPv2 specifies request-id as 32bit unsigned integer,
+ * while MRCPv1 doesn't limit this value (1 * DIGIT).
+ * Some MRCPv1 clients use too long request-id. 
+ * To support them #define TOO_LONG_MRCP_REQUEST_ID
+ */
+#ifdef TOO_LONG_MRCP_REQUEST_ID
+/** MRCP request identifier */
+typedef apr_uint64_t  mrcp_request_id;
+/** Format to log MRCP request identifier */
+#define MRCP_REQUEST_ID_FMT    APR_UINT64_T_FMT
+#else 
+/** MRCP request identifier */
+typedef apr_uint32_t  mrcp_request_id;
+/** Format to log MRCP request identifier */
+#define MRCP_REQUEST_ID_FMT    "d"
+#endif
+
+
+/** Method identifier associated with method name */
 typedef apr_size_t mrcp_method_id;
-/** Resource identifier associated with resource name. */
+/** Resource identifier associated with resource name */
 typedef apr_size_t mrcp_resource_id;
 
 

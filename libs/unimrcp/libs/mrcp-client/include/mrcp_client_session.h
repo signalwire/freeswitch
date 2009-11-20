@@ -25,7 +25,7 @@
 #include "mrcp_client_types.h"
 #include "mrcp_application.h"
 #include "mrcp_session.h"
-#include "mpf_message.h"
+#include "mpf_engine.h"
 #include "apt_task_msg.h"
 #include "apt_obj_list.h"
 
@@ -37,47 +37,59 @@ typedef struct rtp_termination_slot_t rtp_termination_slot_t;
 /** MRCP client session declaration */
 typedef struct mrcp_client_session_t mrcp_client_session_t;
 
+/** Client session states */
+typedef enum {
+	SESSION_STATE_NONE,
+	SESSION_STATE_GENERATING_OFFER,
+	SESSION_STATE_PROCESSING_ANSWER,
+	SESSION_STATE_TERMINATING,
+	SESSION_STATE_DISCOVERING
+} mrcp_client_session_state_e;
+
 /** MRCP client session */
 struct mrcp_client_session_t {
 	/** Session base */
-	mrcp_session_t             base;
+	mrcp_session_t              base;
 	/** Application session belongs to */
-	mrcp_application_t        *application;
+	mrcp_application_t         *application;
 	/** External object associated with session */
-	void                      *app_obj;
+	void                       *app_obj;
 	/** Profile to use */
-	mrcp_profile_t            *profile;
+	mrcp_profile_t             *profile;
 
 	/** Media context */
-	mpf_context_t             *context;
+	mpf_context_t              *context;
 	/** Codec manager */
-	const mpf_codec_manager_t *codec_manager;
+	const mpf_codec_manager_t  *codec_manager;
 
 
 	/** RTP termination array (mrcp_termination_slot_t) */
-	apr_array_header_t        *terminations;
+	apr_array_header_t         *terminations;
 	/** MRCP control channel array (mrcp_channel_t*) */
-	apr_array_header_t        *channels;
+	apr_array_header_t         *channels;
 
 	/** Indicates whether session is already added to session table */
-	apt_bool_t                 registered;
+	apt_bool_t                  registered;
 
 	/** In-progress offer */
-	mrcp_session_descriptor_t *offer;
+	mrcp_session_descriptor_t  *offer;
 	/** In-progress answer */
-	mrcp_session_descriptor_t *answer;
+	mrcp_session_descriptor_t  *answer;
 
 	/** MRCP application active request */
-	const mrcp_app_message_t  *active_request;
+	const mrcp_app_message_t   *active_request;
 	/** MRCP application request queue */
-	apt_obj_list_t            *request_queue;
+	apt_obj_list_t             *request_queue;
 
-	/** Number of in-progress offer requests (flags) */
-	apr_size_t                 offer_flag_count;
-	/** Number of in-progress answer requests (flags) */
-	apr_size_t                 answer_flag_count;
-	/** Number of in-progress terminate requests (flags) */
-	apr_size_t                 terminate_flag_count;
+	/** MPF task message, which construction is in progress */
+	mpf_task_msg_t             *mpf_task_msg;
+
+	/** Session state */
+	mrcp_client_session_state_e state;
+	/** Status code of the app response to be generated */
+	mrcp_sig_status_code_e      status;
+	/** Number of in-progress sub requests */
+	apr_size_t                  subrequest_count;
 };
 
 /** MRCP channel */
@@ -86,10 +98,6 @@ struct mrcp_channel_t {
 	apr_pool_t             *pool;
 	/** External object associated with channel */
 	void                   *obj;
-	/** MRCP resource identifier */
-	mrcp_resource_id        resource_id;
-	/** MRCP resource name */
-	const apt_str_t        *resource_name;
 	/** MRCP resource */
 	mrcp_resource_t        *resource;
 	/** MRCP session entire channel belongs to */
@@ -115,6 +123,10 @@ struct rtp_termination_slot_t {
 	mpf_termination_t                *termination;
 	/** RTP termination descriptor */
 	mpf_rtp_termination_descriptor_t *descriptor;
+	/** Associated MRCP channel */
+	mrcp_channel_t                   *channel;
+	/** media descriptor id (index of media in session descriptor) */
+	apr_size_t                        id;
 };
 
 
@@ -149,7 +161,7 @@ mrcp_client_session_t* mrcp_client_session_create(mrcp_application_t *applicatio
 /** Create channel */
 mrcp_channel_t* mrcp_client_channel_create(
 					mrcp_session_t *session, 
-					mrcp_resource_id resource_id, 
+					mrcp_resource_t *resource, 
 					mpf_termination_t *termination, 
 					mpf_rtp_termination_descriptor_t *rtp_descriptor, 
 					void *obj);
@@ -160,13 +172,11 @@ mrcp_app_message_t* mrcp_client_app_signaling_request_create(mrcp_sig_command_e 
 mrcp_app_message_t* mrcp_client_app_signaling_event_create(mrcp_sig_event_e event_id, apr_pool_t *pool);
 /** Create control app_message_t */
 mrcp_app_message_t* mrcp_client_app_control_message_create(apr_pool_t *pool);
-/** Create response to app_message_t request */
-mrcp_app_message_t* mrcp_client_app_response_create(const mrcp_app_message_t *app_request, mrcp_sig_status_code_e status, apr_pool_t *pool);
 
 /** Process application message */
 apt_bool_t mrcp_client_app_message_process(mrcp_app_message_t *app_message);
 /** Process MPF message */
-apt_bool_t mrcp_client_mpf_message_process(mpf_message_t *mpf_message);
+apt_bool_t mrcp_client_mpf_message_process(mpf_message_container_t *mpf_message_container);
 
 /** Process session answer */
 apt_bool_t mrcp_client_session_answer_process(mrcp_client_session_t *session, mrcp_session_descriptor_t *descriptor);
@@ -187,6 +197,8 @@ apt_bool_t mrcp_client_on_channel_modify(mrcp_channel_t *channel, mrcp_control_d
 apt_bool_t mrcp_client_on_channel_remove(mrcp_channel_t *channel, apt_bool_t status);
 /** Process message receive event */
 apt_bool_t mrcp_client_on_message_receive(mrcp_channel_t *channel, mrcp_message_t *message);
+/** Process disconnect event */
+apt_bool_t mrcp_client_on_disconnect(mrcp_channel_t *channel);
 
 APT_END_EXTERN_C
 

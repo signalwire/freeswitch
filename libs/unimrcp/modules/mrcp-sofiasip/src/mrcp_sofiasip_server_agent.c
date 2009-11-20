@@ -276,7 +276,8 @@ static apt_bool_t mrcp_sofia_on_session_answer(mrcp_session_t *session, mrcp_ses
 	nua_respond(sofia_session->nh, SIP_200_OK, 
 				SIPTAG_CONTACT_STR(sofia_agent->sip_contact_str),
 				TAG_IF(local_sdp_str,SOATAG_USER_SDP_STR(local_sdp_str)),
-			    NUTAG_AUTOANSWER(0),
+				SOATAG_AUDIO_AUX("telephone-event"),
+				NUTAG_AUTOANSWER(0),
 				TAG_END());
 	
 	return TRUE;
@@ -403,6 +404,7 @@ static void mrcp_sofia_on_resource_discover(mrcp_sofia_agent_t   *sofia_agent,
 				NUTAG_WITH_CURRENT(sofia_agent->nua),
 				SIPTAG_CONTACT_STR(sofia_agent->sip_contact_str),
 				TAG_IF(local_sdp_str,SOATAG_USER_SDP_STR(local_sdp_str)),
+				SOATAG_AUDIO_AUX("telephone-event"),
 				TAG_END());
 }
 
@@ -427,10 +429,13 @@ static void mrcp_sofia_event_callback( nua_event_t           nua_event,
 			mrcp_sofia_on_resource_discover(sofia_agent,nh,sofia_session,sip,tags);
 			break;
 		case nua_r_shutdown:
-			/* break main loop of sofia thread */
-			su_root_break(sofia_agent->root);
+			/* if status < 200, shutdown still in progress */
+			if(status >= 200) {
+				/* break main loop of sofia thread */
+				su_root_break(sofia_agent->root);
+			}
 			break;
-		default: 
+		default:
 			break;
 	}
 }

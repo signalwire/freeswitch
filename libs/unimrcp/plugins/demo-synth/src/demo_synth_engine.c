@@ -15,20 +15,19 @@
  */
 
 /* 
- * Some mandatory rules for plugin implementation.
- * 1. Each plugin MUST contain the following function as an entry point of the plugin
- *        MRCP_PLUGIN_DECLARE(mrcp_resource_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
- * 2. One and only one response MUST be sent back to the received request.
- * 3. Methods (callbacks) of the MRCP engine channel MUST not block.
- *   (asynch response can be sent from the context of other thread)
- * 4. Methods (callbacks) of the MPF engine stream MUST not block.
+ * Mandatory rules concerning plugin implementation.
+ * 1. Each plugin MUST implement a plugin/engine creator function
+ *    with the exact signature and name (the main entry point)
+ *        MRCP_PLUGIN_DECLARE(mrcp_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
+ * 2. Each plugin MUST declare its version number
+ *        MRCP_PLUGIN_VERSION_DECLARE
+ * 3. One and only one response MUST be sent back to the received request.
+ * 4. Methods (callbacks) of the MRCP engine channel MUST not block.
+ *   (asynchronous response can be sent from the context of other thread)
+ * 5. Methods (callbacks) of the MPF engine stream MUST not block.
  */
 
-#include "mrcp_resource_engine.h"
-#include "mrcp_synth_resource.h"
-#include "mrcp_synth_header.h"
-#include "mrcp_generic_header.h"
-#include "mrcp_message.h"
+#include "mrcp_synth_engine.h"
 #include "apt_consumer_task.h"
 #include "apt_log.h"
 
@@ -39,10 +38,10 @@ typedef struct demo_synth_channel_t demo_synth_channel_t;
 typedef struct demo_synth_msg_t demo_synth_msg_t;
 
 /** Declaration of synthesizer engine methods */
-static apt_bool_t demo_synth_engine_destroy(mrcp_resource_engine_t *engine);
-static apt_bool_t demo_synth_engine_open(mrcp_resource_engine_t *engine);
-static apt_bool_t demo_synth_engine_close(mrcp_resource_engine_t *engine);
-static mrcp_engine_channel_t* demo_synth_engine_channel_create(mrcp_resource_engine_t *engine, apr_pool_t *pool);
+static apt_bool_t demo_synth_engine_destroy(mrcp_engine_t *engine);
+static apt_bool_t demo_synth_engine_open(mrcp_engine_t *engine);
+static apt_bool_t demo_synth_engine_close(mrcp_engine_t *engine);
+static mrcp_engine_channel_t* demo_synth_engine_channel_create(mrcp_engine_t *engine, apr_pool_t *pool);
 
 static const struct mrcp_engine_method_vtable_t engine_vtable = {
 	demo_synth_engine_destroy,
@@ -67,7 +66,7 @@ static const struct mrcp_engine_channel_method_vtable_t channel_vtable = {
 
 /** Declaration of synthesizer audio stream methods */
 static apt_bool_t demo_synth_stream_destroy(mpf_audio_stream_t *stream);
-static apt_bool_t demo_synth_stream_open(mpf_audio_stream_t *stream);
+static apt_bool_t demo_synth_stream_open(mpf_audio_stream_t *stream, mpf_codec_t *codec);
 static apt_bool_t demo_synth_stream_close(mpf_audio_stream_t *stream);
 static apt_bool_t demo_synth_stream_read(mpf_audio_stream_t *stream, mpf_frame_t *frame);
 
@@ -119,15 +118,17 @@ struct demo_synth_msg_t {
 };
 
 
-#define DEMO_SPEECH_SOURCE_FILE "demo.pcm"
 static apt_bool_t demo_synth_msg_signal(demo_synth_msg_type_e type, mrcp_engine_channel_t *channel, mrcp_message_t *request);
 static apt_bool_t demo_synth_msg_process(apt_task_t *task, apt_task_msg_t *msg);
+
+/** Declare this macro to set plugin version */
+MRCP_PLUGIN_VERSION_DECLARE
 
 /** Declare this macro to use log routine of the server, plugin is loaded from */
 MRCP_PLUGIN_LOGGER_IMPLEMENT
 
 /** Create demo synthesizer engine */
-MRCP_PLUGIN_DECLARE(mrcp_resource_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
+MRCP_PLUGIN_DECLARE(mrcp_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
 {
 	/* create demo engine */
 	demo_synth_engine_t *demo_engine = apr_palloc(pool,sizeof(demo_synth_engine_t));
@@ -148,16 +149,16 @@ MRCP_PLUGIN_DECLARE(mrcp_resource_engine_t*) mrcp_plugin_create(apr_pool_t *pool
 		vtable->process_msg = demo_synth_msg_process;
 	}
 
-	/* create resource engine base */
-	return mrcp_resource_engine_create(
-					MRCP_SYNTHESIZER_RESOURCE, /* MRCP resource identifier */
-					demo_engine,               /* object to associate */
-					&engine_vtable,            /* virtual methods table of resource engine */
-					pool);                     /* pool to allocate memory from */
+	/* create engine base */
+	return mrcp_engine_create(
+				MRCP_SYNTHESIZER_RESOURCE, /* MRCP resource identifier */
+				demo_engine,               /* object to associate */
+				&engine_vtable,            /* virtual methods table of engine */
+				pool);                     /* pool to allocate memory from */
 }
 
 /** Destroy synthesizer engine */
-static apt_bool_t demo_synth_engine_destroy(mrcp_resource_engine_t *engine)
+static apt_bool_t demo_synth_engine_destroy(mrcp_engine_t *engine)
 {
 	demo_synth_engine_t *demo_engine = engine->obj;
 	if(demo_engine->task) {
@@ -169,7 +170,7 @@ static apt_bool_t demo_synth_engine_destroy(mrcp_resource_engine_t *engine)
 }
 
 /** Open synthesizer engine */
-static apt_bool_t demo_synth_engine_open(mrcp_resource_engine_t *engine)
+static apt_bool_t demo_synth_engine_open(mrcp_engine_t *engine)
 {
 	demo_synth_engine_t *demo_engine = engine->obj;
 	if(demo_engine->task) {
@@ -180,7 +181,7 @@ static apt_bool_t demo_synth_engine_open(mrcp_resource_engine_t *engine)
 }
 
 /** Close synthesizer engine */
-static apt_bool_t demo_synth_engine_close(mrcp_resource_engine_t *engine)
+static apt_bool_t demo_synth_engine_close(mrcp_engine_t *engine)
 {
 	demo_synth_engine_t *demo_engine = engine->obj;
 	if(demo_engine->task) {
@@ -191,8 +192,11 @@ static apt_bool_t demo_synth_engine_close(mrcp_resource_engine_t *engine)
 }
 
 /** Create demo synthesizer channel derived from engine channel base */
-static mrcp_engine_channel_t* demo_synth_engine_channel_create(mrcp_resource_engine_t *engine, apr_pool_t *pool)
+static mrcp_engine_channel_t* demo_synth_engine_channel_create(mrcp_engine_t *engine, apr_pool_t *pool)
 {
+	mpf_stream_capabilities_t *capabilities;
+	mpf_termination_t *termination; 
+
 	/* create demo synth channel */
 	demo_synth_channel_t *synth_channel = apr_palloc(pool,sizeof(demo_synth_channel_t));
 	synth_channel->demo_engine = engine->obj;
@@ -201,14 +205,28 @@ static mrcp_engine_channel_t* demo_synth_engine_channel_create(mrcp_resource_eng
 	synth_channel->time_to_complete = 0;
 	synth_channel->paused = FALSE;
 	synth_channel->audio_file = NULL;
-	/* create engine channel base */
-	synth_channel->channel = mrcp_engine_source_channel_create(
-			engine,               /* resource engine */
-			&channel_vtable,      /* virtual methods table of engine channel */
-			&audio_stream_vtable, /* virtual methods table of audio stream */
+	
+	capabilities = mpf_source_stream_capabilities_create(pool);
+	mpf_codec_capabilities_add(
+			&capabilities->codecs,
+			MPF_SAMPLE_RATE_8000 | MPF_SAMPLE_RATE_16000,
+			"LPCM");
+
+	/* create media termination */
+	termination = mrcp_engine_audio_termination_create(
 			synth_channel,        /* object to associate */
-			NULL,                 /* codec descriptor might be NULL by default */
+			&audio_stream_vtable, /* virtual methods table of audio stream */
+			capabilities,         /* stream capabilities */
 			pool);                /* pool to allocate memory from */
+
+	/* create engine channel base */
+	synth_channel->channel = mrcp_engine_channel_create(
+			engine,               /* engine */
+			&channel_vtable,      /* virtual methods table of engine channel */
+			synth_channel,        /* object to associate */
+			termination,          /* associated media termination */
+			pool);                /* pool to allocate memory from */
+
 	return synth_channel->channel;
 }
 
@@ -244,7 +262,10 @@ static apt_bool_t demo_synth_channel_speak(mrcp_engine_channel_t *channel, mrcp_
 	demo_synth_channel_t *synth_channel = channel->method_obj;
 	synth_channel->time_to_complete = 0;
 	if(channel->engine) {
-		file_path = apt_datadir_filepath_get(channel->engine->dir_layout,DEMO_SPEECH_SOURCE_FILE,channel->pool);
+		const mpf_codec_descriptor_t *descriptor = mrcp_engine_source_stream_codec_get(channel);
+		char *file_name = apr_psprintf(channel->pool,"demo-%dkHz.pcm",
+			descriptor ? descriptor->sampling_rate/1000 : 8);
+		file_path = apt_datadir_filepath_get(channel->engine->dir_layout,file_name,channel->pool);
 	}
 	if(file_path) {
 		synth_channel->audio_file = fopen(file_path,"rb");
@@ -394,7 +415,7 @@ static apt_bool_t demo_synth_stream_destroy(mpf_audio_stream_t *stream)
 }
 
 /** Callback is called from MPF engine context to perform any action before open */
-static apt_bool_t demo_synth_stream_open(mpf_audio_stream_t *stream)
+static apt_bool_t demo_synth_stream_open(mpf_audio_stream_t *stream, mpf_codec_t *codec)
 {
 	return TRUE;
 }

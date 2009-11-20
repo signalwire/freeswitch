@@ -70,7 +70,6 @@ struct rtsp_server_session_t {
 
 	/** Session identifier */
 	apt_str_t                 id;
-	apt_str_t                 url;
 
 	/** Last cseq sent */
 	apr_size_t                last_cseq;
@@ -79,6 +78,9 @@ struct rtsp_server_session_t {
 	rtsp_message_t           *active_request;
 	/** request queue */
 	apt_obj_list_t           *request_queue;
+
+	/** Resource table */
+	apr_hash_t               *resource_table;
 
 	/** In-progress termination request */
 	apt_bool_t                terminating;
@@ -261,9 +263,9 @@ static rtsp_server_session_t* rtsp_server_session_create(rtsp_server_t *server)
 	session->last_cseq = 0;
 	session->active_request = NULL;
 	session->request_queue = apt_list_create(pool);
+	session->resource_table = apr_hash_make(pool);
 	session->terminating = FALSE;
 
-	apt_string_reset(&session->url);
 	apt_unique_id_generate(&session->id,RTSP_SESSION_ID_HEX_STRING_LENGTH,pool);
 	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create RTSP Session "APT_SID_FMT,session->id.buf);
 	if(server->vtable->create_session(server,session) != TRUE) {
@@ -335,8 +337,14 @@ static apt_bool_t rtsp_server_session_terminate_request(rtsp_server_t *server, r
 static apt_bool_t rtsp_server_session_message_handle(rtsp_server_t *server, rtsp_server_session_t *session, rtsp_message_t *message)
 {
 	if(message->start_line.common.request_line.method_id == RTSP_METHOD_TEARDOWN) {
-		rtsp_server_session_terminate_request(server,session);
-		return TRUE;
+		/* remove resource */
+		const char *resource_name = message->start_line.common.request_line.resource_name;
+		apr_hash_set(session->resource_table,resource_name,APR_HASH_KEY_STRING,NULL);
+
+		if(apr_hash_count(session->resource_table) == 0) {
+			rtsp_server_session_terminate_request(server,session);
+			return TRUE;
+		}
 	}
 
 	if(server->vtable->handle_message(server,session,message) != TRUE) {
@@ -349,7 +357,7 @@ static apt_bool_t rtsp_server_session_message_handle(rtsp_server_t *server, rtsp
 	return TRUE;
 }
 
-/* Process incoming SETUP request */
+/* Process incoming SETUP/DESCRIBE request */
 static rtsp_server_session_t* rtsp_server_session_setup_process(rtsp_server_t *server, rtsp_server_connection_t *rtsp_connection, rtsp_message_t *message)
 {
 	rtsp_server_session_t *session = NULL;
@@ -357,7 +365,6 @@ static rtsp_server_session_t* rtsp_server_session_setup_process(rtsp_server_t *s
 		/* create new session */
 		session = rtsp_server_session_create(server);
 		session->connection = rtsp_connection;
-		session->url = message->start_line.common.request_line.url;
 		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Add RTSP Session "APT_SID_FMT,session->id.buf);
 		apr_hash_set(rtsp_connection->session_table,session->id.buf,session->id.length,session);
 	}
@@ -405,11 +412,19 @@ static apt_bool_t rtsp_server_session_request_process(rtsp_server_t *server, rts
 				message->header.session_id.buf,
 				message->header.session_id.length);
 	if(!session) {
-		/* error case */
+		/* error case, no such session */
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"No Such RTSP Session "APT_SID_FMT,message->header.session_id.buf);
 		return rtsp_server_error_respond(server,rtsp_connection,message,
 								RTSP_STATUS_CODE_NOT_FOUND,
 								RTSP_REASON_PHRASE_NOT_FOUND);
+	}
+	
+	if(session->terminating == TRUE) {
+		/* error case, session is being terminated */
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Not Acceptable Request "APT_SID_FMT,message->header.session_id.buf);
+		return rtsp_server_error_respond(server,rtsp_connection,message,
+								RTSP_STATUS_CODE_NOT_ACCEPTABLE,
+								RTSP_REASON_PHRASE_NOT_ACCEPTABLE);
 	}
 	
 	if(session->active_request) {
@@ -427,34 +442,62 @@ static apt_bool_t rtsp_server_session_request_process(rtsp_server_t *server, rts
 /* Process outgoing RTSP response */
 static apt_bool_t rtsp_server_session_response_process(rtsp_server_t *server, rtsp_server_session_t *session, rtsp_message_t *message)
 {
-	if(session->id.buf) {
-		message->header.session_id = session->id;
-		rtsp_header_property_add(&message->header.property_set,RTSP_HEADER_FIELD_SESSION_ID);
-	}
-
+	apt_bool_t terminate = FALSE;
+	rtsp_message_t *request = NULL;
 	if(message->start_line.message_type == RTSP_MESSAGE_TYPE_REQUEST) {
 		/* RTSP ANNOUNCE request (asynch event) */
-		message->start_line.common.request_line.url = session->url;
+		const char *resource_name = message->start_line.common.request_line.resource_name;
+		if(resource_name) {
+			request = apr_hash_get(session->resource_table,resource_name,APR_HASH_KEY_STRING);
+		}
+		if(!request) {
+			return FALSE;
+		}
+		message->start_line.common.request_line.url = request->start_line.common.request_line.url;
 		message->header.cseq = session->last_cseq;
 		rtsp_header_property_add(&message->header.property_set,RTSP_HEADER_FIELD_CSEQ);
 		
+		if(session->id.buf) {
+			message->header.session_id = session->id;
+			rtsp_header_property_add(&message->header.property_set,RTSP_HEADER_FIELD_SESSION_ID);
+		}
 		rtsp_server_message_send(server,session->connection->base,message);
 		return TRUE;
+	}
+
+	if(!session->active_request) {
+		/* unexpected response */
+		return FALSE;
+	}
+
+	request = session->active_request;
+	if(request->start_line.common.request_line.method_id == RTSP_METHOD_DESCRIBE) {
+		terminate = TRUE;
+	}
+	else {
+		if(session->id.buf) {
+			message->header.session_id = session->id;
+			rtsp_header_property_add(&message->header.property_set,RTSP_HEADER_FIELD_SESSION_ID);
+		}
+		if(request->start_line.common.request_line.method_id == RTSP_METHOD_SETUP) {
+			if(message->start_line.common.status_line.status_code == RTSP_STATUS_CODE_OK) {
+				/* add resource */
+				const char *resource_name = request->start_line.common.request_line.resource_name;
+				apr_hash_set(session->resource_table,resource_name,APR_HASH_KEY_STRING,request);
+			}
+			else if(apr_hash_count(session->resource_table) == 0) {
+				terminate = TRUE;
+			}
+		}
 	}
 
 	session->last_cseq = message->header.cseq;
 	rtsp_server_message_send(server,session->connection->base,message);
 
-	if(session->active_request) {
-		rtsp_message_t *request = session->active_request;
-		if(request->start_line.common.request_line.method_id == RTSP_METHOD_SETUP) {
-			if(message->start_line.common.status_line.status_code != RTSP_STATUS_CODE_OK) {
-				rtsp_server_session_terminate_request(server,session);
-			}
-		}
-		else if(request->start_line.common.request_line.method_id == RTSP_METHOD_DESCRIBE) {
-			rtsp_server_session_terminate_request(server,session);
-		}
+	if(terminate == TRUE) {
+		session->active_request = NULL;
+		rtsp_server_session_terminate_request(server,session);
+		return TRUE;
 	}
 
 	session->active_request = apt_list_pop_front(session->request_queue);

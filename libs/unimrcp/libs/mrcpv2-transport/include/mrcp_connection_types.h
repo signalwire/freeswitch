@@ -53,6 +53,8 @@ struct mrcp_connection_event_vtable_t {
 	apt_bool_t (*on_remove)(mrcp_control_channel_t *channel, apt_bool_t status);
 	/** Message receive event handler */
 	apt_bool_t (*on_receive)(mrcp_control_channel_t *channel, mrcp_message_t *message);
+	/** Disconnect event handler */
+	apt_bool_t (*on_disconnect)(mrcp_control_channel_t *channel);
 };
 
 /** MRCPv2 control channel */

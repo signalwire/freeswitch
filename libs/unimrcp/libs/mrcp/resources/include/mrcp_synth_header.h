@@ -291,7 +291,7 @@ struct mrcp_synth_header_t {
 };
 
 /** Get synthesizer header vtable */
-MRCP_DECLARE(const mrcp_header_vtable_t*) mrcp_synth_header_vtable_get(mrcp_version_e version);
+const mrcp_header_vtable_t* mrcp_synth_header_vtable_get(mrcp_version_e version);
 
 /** Get synthesizer completion cause string */
 MRCP_DECLARE(const apt_str_t*) mrcp_synth_completion_cause_get(mrcp_synth_completion_cause_e completion_cause, mrcp_version_e version);

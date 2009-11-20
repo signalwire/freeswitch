@@ -30,8 +30,9 @@ static apt_bool_t mpf_rtp_termination_destroy(mpf_termination_t *termination)
 	return TRUE;
 }
 
-static apt_bool_t mpf_rtp_termination_modify(mpf_termination_t *termination, void *descriptor)
+static apt_bool_t mpf_rtp_termination_add(mpf_termination_t *termination, void *descriptor)
 {
+	apt_bool_t status = TRUE;
 	mpf_rtp_termination_descriptor_t *rtp_descriptor = descriptor;
 	mpf_audio_stream_t *audio_stream = termination->audio_stream;
 	if(!audio_stream) {
@@ -43,12 +44,43 @@ static apt_bool_t mpf_rtp_termination_modify(mpf_termination_t *termination, voi
 		termination->audio_stream = audio_stream;
 	}
 
-	return mpf_rtp_stream_modify(audio_stream,&rtp_descriptor->audio);
+	status = mpf_rtp_stream_add(audio_stream);
+	if(rtp_descriptor) {
+		status = mpf_rtp_stream_modify(audio_stream,&rtp_descriptor->audio);
+	}
+	return status;
+}
+
+static apt_bool_t mpf_rtp_termination_modify(mpf_termination_t *termination, void *descriptor)
+{
+	apt_bool_t status = TRUE;
+	mpf_rtp_termination_descriptor_t *rtp_descriptor = descriptor;
+	mpf_audio_stream_t *audio_stream = termination->audio_stream;
+	if(!audio_stream) {
+		return FALSE;
+	}
+
+	if(rtp_descriptor) {
+		status = mpf_rtp_stream_modify(audio_stream,&rtp_descriptor->audio);
+	}
+	return status;
+}
+
+static apt_bool_t mpf_rtp_termination_subtract(mpf_termination_t *termination)
+{
+	mpf_audio_stream_t *audio_stream = termination->audio_stream;
+	if(!audio_stream) {
+		return FALSE;
+	}
+	
+	return mpf_rtp_stream_remove(audio_stream);
 }
 
 static const mpf_termination_vtable_t rtp_vtable = {
 	mpf_rtp_termination_destroy,
+	mpf_rtp_termination_add,
 	mpf_rtp_termination_modify,
+	mpf_rtp_termination_subtract
 };
 
 static mpf_termination_t* mpf_rtp_termination_create(mpf_termination_factory_t *termination_factory, void *obj, apr_pool_t *pool)

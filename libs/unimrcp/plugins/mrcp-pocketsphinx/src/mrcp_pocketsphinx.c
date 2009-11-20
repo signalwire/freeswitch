@@ -15,13 +15,16 @@
  */
 
 /* 
- * Some mandatory rules for plugin implementation.
- * 1. Each plugin MUST contain the following function as an entry point of the plugin
- *        MRCP_PLUGIN_DECLARE(mrcp_resource_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
- * 2. One and only one response MUST be sent back to the received request.
- * 3. Methods (callbacks) of the MRCP engine channel MUST not block.
- *   (asynch response can be sent from the context of other thread)
- * 4. Methods (callbacks) of the MPF engine stream MUST not block.
+ * Mandatory rules concerning plugin implementation.
+ * 1. Each plugin MUST implement a plugin/engine creator function
+ *    with the exact signature and name (the main entry point)
+ *        MRCP_PLUGIN_DECLARE(mrcp_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
+ * 2. Each plugin MUST declare its version number
+ *        MRCP_PLUGIN_VERSION_DECLARE
+ * 3. One and only one response MUST be sent back to the received request.
+ * 4. Methods (callbacks) of the MRCP engine channel MUST not block.
+ *   (asynchronous response can be sent from the context of other thread)
+ * 5. Methods (callbacks) of the MPF engine stream MUST not block.
  */
 
 #include <pocketsphinx.h>
@@ -29,11 +32,7 @@
 #include <apr_thread_proc.h>
 #include <apr_tables.h>
 #include <apr_file_io.h>
-#include "mrcp_resource_engine.h"
-#include "mrcp_recog_resource.h"
-#include "mrcp_recog_header.h"
-#include "mrcp_generic_header.h"
-#include "mrcp_message.h"
+#include "mrcp_recog_engine.h"
 #include "mpf_activity_detector.h"
 #include "pocketsphinx_properties.h"
 #include "apt_log.h"
@@ -46,10 +45,10 @@ typedef struct pocketsphinx_engine_t pocketsphinx_engine_t;
 typedef struct pocketsphinx_recognizer_t pocketsphinx_recognizer_t;
 
 /** Methods of recognition engine */
-static apt_bool_t pocketsphinx_engine_destroy(mrcp_resource_engine_t *engine);
-static apt_bool_t pocketsphinx_engine_open(mrcp_resource_engine_t *engine);
-static apt_bool_t pocketsphinx_engine_close(mrcp_resource_engine_t *engine);
-static mrcp_engine_channel_t* pocketsphinx_engine_recognizer_create(mrcp_resource_engine_t *engine, apr_pool_t *pool);
+static apt_bool_t pocketsphinx_engine_destroy(mrcp_engine_t *engine);
+static apt_bool_t pocketsphinx_engine_open(mrcp_engine_t *engine);
+static apt_bool_t pocketsphinx_engine_close(mrcp_engine_t *engine);
+static mrcp_engine_channel_t* pocketsphinx_engine_recognizer_create(mrcp_engine_t *engine, apr_pool_t *pool);
 
 static const struct mrcp_engine_method_vtable_t engine_vtable = {
 	pocketsphinx_engine_destroy,
@@ -87,8 +86,8 @@ static const mpf_audio_stream_vtable_t audio_stream_vtable = {
 
 /** Pocketsphinx engine (engine is an aggregation of recognizers) */
 struct pocketsphinx_engine_t {
-	/* Resource engine base */
-	mrcp_resource_engine_t   *base;
+	/* Engine base */
+	mrcp_engine_t   *base;
 	/** Properties loaded from config file */
 	pocketsphinx_properties_t properties;
 };
@@ -102,7 +101,7 @@ struct pocketsphinx_recognizer_t {
 	ps_decoder_t             *decoder;
 	/** Configuration */
 	cmd_ln_t                 *config;
-	/** Recognizer properties coppied from defualt engine properties */
+	/** Recognizer properties coppied from default engine properties */
 	pocketsphinx_properties_t properties;
 	/** Is input timer started */
 	apt_bool_t                is_input_timer_on;
@@ -141,60 +140,68 @@ struct pocketsphinx_recognizer_t {
 	mrcp_message_t           *stop_response;
 	/** Is recognition channel being closed */
 	apt_bool_t                close_requested;
+	/** Flag to prevent race condition when checking if a message is present */
+	apt_bool_t                message_waiting;
 };
+
+static void* APR_THREAD_FUNC pocketsphinx_recognizer_run(apr_thread_t *thread, void *data);
+
+/** Declare this macro to set plugin version */
+MRCP_PLUGIN_VERSION_DECLARE
 
 /** Declare this macro to use log routine of the server, plugin is loaded from */
 MRCP_PLUGIN_LOGGER_IMPLEMENT
 
-static void* APR_THREAD_FUNC pocketsphinx_recognizer_run(apr_thread_t *thread, void *data);
-
 /** Create pocketsphinx engine (engine is an aggregation of recognizers) */
-MRCP_PLUGIN_DECLARE(mrcp_resource_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
+MRCP_PLUGIN_DECLARE(mrcp_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
 {
 	pocketsphinx_engine_t *engine = apr_palloc(pool,sizeof(pocketsphinx_engine_t));
 	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Create PocketSphinx Engine");
 	
-	/* create resource engine base */
-	engine->base = mrcp_resource_engine_create(
+	/* create engine base */
+	engine->base = mrcp_engine_create(
 					MRCP_RECOGNIZER_RESOURCE,  /* MRCP resource identifier */
 					engine,                    /* object to associate */
-					&engine_vtable,            /* virtual methods table of resource engine */
+					&engine_vtable,            /* virtual methods table of engine */
 					pool);                     /* pool to allocate memory from */
 	return engine->base;
 }
 
 /** Destroy pocketsphinx engine */
-static apt_bool_t pocketsphinx_engine_destroy(mrcp_resource_engine_t *resource_engine)
+static apt_bool_t pocketsphinx_engine_destroy(mrcp_engine_t *engine_base)
 {
 	return TRUE;
 }
 
 /** Open pocketsphinx engine */
-static apt_bool_t pocketsphinx_engine_open(mrcp_resource_engine_t *resource_engine)
+static apt_bool_t pocketsphinx_engine_open(mrcp_engine_t *engine_base)
 {
-	pocketsphinx_engine_t *engine = resource_engine->obj;
-	const apt_dir_layout_t *dir_layout = resource_engine->dir_layout;
+	pocketsphinx_engine_t *engine = engine_base->obj;
+	const apt_dir_layout_t *dir_layout = engine_base->dir_layout;
 
 	char *file_path = NULL;
-	apr_filepath_merge(&file_path,dir_layout->conf_dir_path,POCKETSPHINX_CONFFILE_NAME,0,resource_engine->pool);
+	apr_filepath_merge(&file_path,dir_layout->conf_dir_path,POCKETSPHINX_CONFFILE_NAME,0,engine_base->pool);
 
 	/* load properties */
-	pocketsphinx_properties_load(&engine->properties,file_path,dir_layout,resource_engine->pool);
+	pocketsphinx_properties_load(&engine->properties,file_path,dir_layout,engine_base->pool);
 	return TRUE;
 }
 
 /** Close pocketsphinx engine */
-static apt_bool_t pocketsphinx_engine_close(mrcp_resource_engine_t *resource_engine)
+static apt_bool_t pocketsphinx_engine_close(mrcp_engine_t *engine_base)
 {
 	return TRUE;
 }
 
 /** Create pocketsphinx recognizer */
-static mrcp_engine_channel_t* pocketsphinx_engine_recognizer_create(mrcp_resource_engine_t *resource_engine, apr_pool_t *pool)
+static mrcp_engine_channel_t* pocketsphinx_engine_recognizer_create(mrcp_engine_t *engine_base, apr_pool_t *pool)
 {
+	mpf_stream_capabilities_t *capabilities;
+	mpf_termination_t *termination; 
 	mrcp_engine_channel_t *channel;
-	mpf_codec_descriptor_t *codec_descriptor;
-	pocketsphinx_engine_t *engine = resource_engine->obj;
+	pocketsphinx_engine_t *engine = engine_base->obj;
+
+	/* create pocketsphinx recognizer */
 	pocketsphinx_recognizer_t *recognizer = apr_palloc(pool,sizeof(pocketsphinx_recognizer_t));
 	recognizer->decoder = NULL;
 	recognizer->config = NULL;
@@ -215,27 +222,30 @@ static mrcp_engine_channel_t* pocketsphinx_engine_recognizer_create(mrcp_resourc
 	recognizer->grammar_id = NULL;
 	recognizer->grammar_table = apr_table_make(pool,1);
 	recognizer->waveform = NULL;
+	recognizer->message_waiting = FALSE;
 
 	/* copy default properties loaded from config */
 	recognizer->properties = engine->properties;
 
-	codec_descriptor = (mpf_codec_descriptor_t *) apr_palloc(pool,sizeof(mpf_codec_descriptor_t));
-	mpf_codec_descriptor_init(codec_descriptor);
-	codec_descriptor->channel_count = 1;
-	codec_descriptor->payload_type = 96;
-	apt_string_set(&codec_descriptor->name,"LPCM");
-	codec_descriptor->sampling_rate = 8000;
-	if(recognizer->properties.preferred_model == POCKETSPHINX_MODEL_WIDEBAND) {
-		codec_descriptor->sampling_rate = 16000;
-	}
+	capabilities = mpf_sink_stream_capabilities_create(pool);
+	mpf_codec_capabilities_add(
+			&capabilities->codecs,
+			MPF_SAMPLE_RATE_8000 | MPF_SAMPLE_RATE_16000,
+			"LPCM");
+
+	/* create media termination */
+	termination = mrcp_engine_audio_termination_create(
+			recognizer,           /* object to associate */
+			&audio_stream_vtable, /* virtual methods table of audio stream */
+			capabilities,         /* stream capabilities */
+			pool);                /* pool to allocate memory from */
 
 	/* create engine channel base */
-	channel = mrcp_engine_sink_channel_create(
-			resource_engine,      /* resource engine */
+	channel = mrcp_engine_channel_create(
+			engine_base,          /* engine */
 			&channel_vtable,      /* virtual methods table of engine channel */
-			&audio_stream_vtable, /* virtual methods table of audio stream */
 			recognizer,           /* object to associate */
-			NULL,                 /* codec descriptor might be NULL by default */
+			termination,          /* associated media termination */
 			pool);                /* pool to allocate memory from */
 
 	apr_thread_mutex_create(&recognizer->mutex,APR_THREAD_MUTEX_DEFAULT,channel->pool);
@@ -290,6 +300,7 @@ static apt_bool_t pocketsphinx_recognizer_close(mrcp_engine_channel_t *channel)
 	/* Signal recognition thread to terminate */
 	apr_thread_mutex_lock(recognizer->mutex);
 	recognizer->close_requested = TRUE;
+	recognizer->message_waiting = TRUE;
 	apr_thread_cond_signal(recognizer->wait_object);
 	apr_thread_mutex_unlock(recognizer->mutex);
 	return TRUE;
@@ -303,6 +314,7 @@ static apt_bool_t pocketsphinx_recognizer_request_process(mrcp_engine_channel_t 
 	/* Store request and signal recognition thread to process the request */
 	apr_thread_mutex_lock(recognizer->mutex);
 	recognizer->request = request;
+	recognizer->message_waiting = TRUE;
 	apr_thread_cond_signal(recognizer->wait_object);
 	apr_thread_mutex_unlock(recognizer->mutex);
 	return TRUE;
@@ -311,9 +323,10 @@ static apt_bool_t pocketsphinx_recognizer_request_process(mrcp_engine_channel_t 
 /** Initialize pocketsphinx decoder [RECOG] */
 static apt_bool_t pocketsphinx_decoder_init(pocketsphinx_recognizer_t *recognizer, const char *grammar)
 {
+	const mpf_codec_descriptor_t *descriptor = mrcp_engine_sink_stream_codec_get(recognizer->channel);
 	const char *model = recognizer->properties.model_8k;
 	const char *rate = "8000";
-	if(recognizer->properties.preferred_model == POCKETSPHINX_MODEL_WIDEBAND) {
+	if(descriptor && descriptor->sampling_rate == 16000) {
 		model = recognizer->properties.model_16k;
 		rate = "16000";
 	}
@@ -375,7 +388,6 @@ static apt_bool_t pocketsphinx_result_build(pocketsphinx_recognizer_t *recognize
 		recognizer->grammar_id,
 		recognizer->grammar_id,
 		99,
-		recognizer->last_result,
 		recognizer->last_result);
 	if(body->buf) {
 		mrcp_generic_header_t *generic_header;
@@ -409,16 +421,75 @@ static apt_bool_t pocketsphinx_grammars_clear(pocketsphinx_recognizer_t *recogni
 	return TRUE;
 }
 
+/** Load pocketsphinx grammar [RECOG] */
+static mrcp_status_code_e pocketsphinx_grammar_load(pocketsphinx_recognizer_t *recognizer, const char *content_id, const char *content_type, const apt_str_t *content)
+{
+	/* load grammar */
+	mrcp_engine_channel_t *channel = recognizer->channel;
+	const apt_dir_layout_t *dir_layout = channel->engine->dir_layout;
+	const char *grammar_file_path = NULL;
+	const char *grammar_file_name = NULL;
+	apr_file_t *fd = NULL;
+	apr_status_t rv;
+	apr_size_t size;
+
+	/* only JSGF grammar is supported */
+	if(strstr(content_type,"jsgf") == NULL) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Not Supported Content-Type [%s] "APT_SIDRES_FMT,
+			content_type,RECOGNIZER_SIDRES(recognizer));
+		return MRCP_STATUS_CODE_UNSUPPORTED_PARAM_VALUE;
+	}
+
+	grammar_file_name = apr_psprintf(channel->pool,"%s-%s.gram",channel->id.buf,content_id);
+	grammar_file_path = apt_datadir_filepath_get(dir_layout,grammar_file_name,channel->pool);
+
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Create Grammar File [%s] "APT_SIDRES_FMT,
+		grammar_file_path,RECOGNIZER_SIDRES(recognizer));
+	rv = apr_file_open(&fd,grammar_file_path,APR_CREATE|APR_TRUNCATE|APR_WRITE|APR_BINARY,
+		APR_OS_DEFAULT,channel->pool);
+	if(rv != APR_SUCCESS) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot Open Grammar File to Write [%s] "APT_SIDRES_FMT,
+			grammar_file_path,RECOGNIZER_SIDRES(recognizer));
+		return MRCP_STATUS_CODE_METHOD_FAILED;
+	}
+
+	size = content->length;
+	apr_file_write(fd,content->buf,&size);
+	apr_file_close(fd);
+
+	/* init pocketsphinx decoder */
+	if(pocketsphinx_decoder_init(recognizer,grammar_file_path) != TRUE) {
+		apr_file_remove(grammar_file_path,channel->pool);
+		return MRCP_STATUS_CODE_METHOD_FAILED;
+	}
+	recognizer->grammar_id = content_id;
+	apr_table_setn(recognizer->grammar_table,content_id,grammar_file_path);
+	return MRCP_STATUS_CODE_SUCCESS;
+}
+
+/** Unload pocketsphinx grammar [RECOG] */
+static mrcp_status_code_e pocketsphinx_grammar_unload(pocketsphinx_recognizer_t *recognizer, const char *content_id)
+{
+	/* unload grammar */
+	const char *grammar_file_path = apr_table_get(recognizer->grammar_table,content_id);
+	if(!grammar_file_path) {
+		return MRCP_STATUS_CODE_ILLEGAL_PARAM_VALUE;
+	}
+
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Remove Grammar File [%s] "APT_SIDRES_FMT,
+		grammar_file_path,RECOGNIZER_SIDRES(recognizer));
+	apr_file_remove(grammar_file_path,recognizer->channel->pool);
+	apr_table_unset(recognizer->grammar_table,content_id);
+	return MRCP_STATUS_CODE_SUCCESS;
+}
+
 /** Process DEFINE-GRAMMAR request [RECOG] */
 static apt_bool_t pocketsphinx_define_grammar(pocketsphinx_recognizer_t *recognizer, mrcp_message_t *request, mrcp_message_t *response)
 {
 	const char *content_type = NULL;
 	const char *content_id = NULL;
-	apt_str_t *grammar = NULL;
-
 	mrcp_engine_channel_t *channel = recognizer->channel;
 
-	/* get recognizer header */
 	mrcp_generic_header_t *generic_header = mrcp_generic_header_get(request);
 	mrcp_recog_header_t *recog_header = mrcp_resource_header_prepare(response);
 	if(!generic_header || !recog_header) {
@@ -427,7 +498,7 @@ static apt_bool_t pocketsphinx_define_grammar(pocketsphinx_recognizer_t *recogni
 
 	recog_header->completion_cause = RECOGNIZER_COMPLETION_CAUSE_SUCCESS;
 	mrcp_resource_header_property_add(response,RECOGNIZER_HEADER_COMPLETION_CAUSE);
-	
+
 	/* content-id must be specified */
 	if(mrcp_generic_header_property_check(request,GENERIC_HEADER_CONTENT_ID) == TRUE) {
 		content_id = generic_header->content_id.buf;
@@ -439,78 +510,31 @@ static apt_bool_t pocketsphinx_define_grammar(pocketsphinx_recognizer_t *recogni
 		return FALSE;
 	}
 
-	if(mrcp_generic_header_property_check(request,GENERIC_HEADER_CONTENT_LENGTH) == TRUE) {
-		grammar = &request->body;
-	}
-
-	if(grammar) {
-		/* load grammar */
-		const apt_dir_layout_t *dir_layout = channel->engine->dir_layout;
-		const char *grammar_file_path = NULL;
-		const char *grammar_file_name = NULL;
-		apr_file_t *fd = NULL;
-		apr_status_t rv;
-		apr_size_t size;
-
+	if(mrcp_generic_header_property_check(request,GENERIC_HEADER_CONTENT_LENGTH) == TRUE &&
+		generic_header->content_length) {
 		/* content-type must be specified */
 		if(mrcp_generic_header_property_check(request,GENERIC_HEADER_CONTENT_TYPE) == TRUE) {
 			content_type = generic_header->content_type.buf;
 		}
+
 		if(!content_type) {
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Missing Content-Type "APT_SIDRES_FMT,RECOGNIZER_SIDRES(recognizer));
 			response->start_line.status_code = MRCP_STATUS_CODE_MISSING_PARAM;
 			recog_header->completion_cause = RECOGNIZER_COMPLETION_CAUSE_GRAM_LOAD_FAILURE;
 			return FALSE;
 		}
-	
-		/* only JSGF grammar is supported */
-		if(strstr(content_type,"jsgf") == NULL) {
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Not Supported Content-Type [%s] "APT_SIDRES_FMT,
-				content_type,RECOGNIZER_SIDRES(recognizer));
-			response->start_line.status_code = MRCP_STATUS_CODE_UNSUPPORTED_PARAM_VALUE;
+
+		response->start_line.status_code = pocketsphinx_grammar_load(recognizer,content_id,content_type,&request->body);
+		if(response->start_line.status_code != MRCP_STATUS_CODE_SUCCESS) {
 			recog_header->completion_cause = RECOGNIZER_COMPLETION_CAUSE_GRAM_LOAD_FAILURE;
-			return FALSE;
-		}
-
-		grammar_file_name = apr_psprintf(channel->pool,"%s-%s.gram",channel->id.buf,content_id);
-		grammar_file_path = apt_datadir_filepath_get(dir_layout,grammar_file_name,channel->pool);
-
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Create Grammar File [%s] "APT_SIDRES_FMT,
-			grammar_file_path,RECOGNIZER_SIDRES(recognizer));
-		rv = apr_file_open(&fd,grammar_file_path,APR_CREATE|APR_TRUNCATE|APR_WRITE|APR_BINARY,
-			APR_OS_DEFAULT,channel->pool);
-		if(rv != APR_SUCCESS) {
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot Open Grammar File to Write [%s] "APT_SIDRES_FMT,
-				grammar_file_path,RECOGNIZER_SIDRES(recognizer));
-			response->start_line.status_code = MRCP_STATUS_CODE_METHOD_FAILED;
-			recog_header->completion_cause = RECOGNIZER_COMPLETION_CAUSE_GRAM_LOAD_FAILURE;
-			return FALSE;
-		}
-
-		size = grammar->length;
-		apr_file_write(fd,grammar->buf,&size);
-		apr_file_close(fd);
-
-		/* init pocketsphinx decoder */
-		if(pocketsphinx_decoder_init(recognizer,grammar_file_path) == TRUE) {
-			recognizer->grammar_id = content_id;
-			apr_table_setn(recognizer->grammar_table,content_id,grammar_file_path);
-		}
-		else {
-			response->start_line.status_code = MRCP_STATUS_CODE_METHOD_FAILED;
-			recog_header->completion_cause = RECOGNIZER_COMPLETION_CAUSE_GRAM_LOAD_FAILURE;
-			apr_file_remove(grammar_file_path,channel->pool);
 			return FALSE;
 		}
 	}
 	else {
-		/* unload grammar */
-		const char *grammar_file_path = apr_table_get(recognizer->grammar_table,content_id);
-		if(grammar_file_path) {
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Remove Grammar File [%s] "APT_SIDRES_FMT,
-				grammar_file_path,RECOGNIZER_SIDRES(recognizer));
-			apr_file_remove(grammar_file_path,channel->pool);
-			apr_table_unset(recognizer->grammar_table,content_id);
+		response->start_line.status_code = pocketsphinx_grammar_unload(recognizer,content_id);
+		if(response->start_line.status_code != MRCP_STATUS_CODE_SUCCESS) {
+			recog_header->completion_cause = RECOGNIZER_COMPLETION_CAUSE_GRAM_LOAD_FAILURE;
+			return FALSE;
 		}
 	}
 
@@ -522,11 +546,47 @@ static apt_bool_t pocketsphinx_define_grammar(pocketsphinx_recognizer_t *recogni
 /** Process RECOGNIZE request [RECOG] */
 static apt_bool_t pocketsphinx_recognize(pocketsphinx_recognizer_t *recognizer, mrcp_message_t *request, mrcp_message_t *response)
 {
+	const char *content_type = NULL;
 	mrcp_engine_channel_t *channel = recognizer->channel;
 	mrcp_recog_header_t *request_recog_header;
 	mrcp_recog_header_t *response_recog_header = mrcp_resource_header_prepare(response);
-	if(!response_recog_header) {
+	mrcp_generic_header_t *generic_header = mrcp_generic_header_get(request);
+	if(!generic_header || !response_recog_header) {
 		return FALSE;
+	}
+
+	/* content-type must be specified */
+	if(mrcp_generic_header_property_check(request,GENERIC_HEADER_CONTENT_TYPE) == TRUE) {
+		content_type = generic_header->content_type.buf;
+	}
+	if(!content_type) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Missing Content-Type "APT_SIDRES_FMT,RECOGNIZER_SIDRES(recognizer));
+		response->start_line.status_code = MRCP_STATUS_CODE_MISSING_PARAM;
+		response_recog_header->completion_cause = RECOGNIZER_COMPLETION_CAUSE_GRAM_LOAD_FAILURE;
+		return FALSE;
+	}
+
+	if(strcmp(content_type,"text/uri-list") == 0) {
+		/* assume the uri-list contains last defined (active) grammar for now */
+	}
+	else {
+		const char *content_id = NULL;
+		/* content-id must be specified */
+		if(mrcp_generic_header_property_check(request,GENERIC_HEADER_CONTENT_ID) == TRUE) {
+			content_id = generic_header->content_id.buf;
+		}
+		if(!content_id) {
+			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Missing Content-Id "APT_SIDRES_FMT,RECOGNIZER_SIDRES(recognizer));
+			response->start_line.status_code = MRCP_STATUS_CODE_MISSING_PARAM;
+			response_recog_header->completion_cause = RECOGNIZER_COMPLETION_CAUSE_GRAM_LOAD_FAILURE;
+			return FALSE;
+		}
+
+		response->start_line.status_code = pocketsphinx_grammar_load(recognizer,content_id,content_type,&request->body);
+		if(response->start_line.status_code != MRCP_STATUS_CODE_SUCCESS) {
+			response_recog_header->completion_cause = RECOGNIZER_COMPLETION_CAUSE_GRAM_LOAD_FAILURE;
+			return FALSE;
+		}
 	}
 
 	if(!recognizer->decoder || ps_start_utt(recognizer->decoder, NULL) < 0) {
@@ -557,8 +617,9 @@ static apt_bool_t pocketsphinx_recognize(pocketsphinx_recognizer_t *recognizer, 
 	/* check if waveform (utterance) should be saved */
 	if(recognizer->properties.save_waveform == TRUE) {
 		apr_status_t rv;
-		const char *waveform_file_name = apr_psprintf(channel->pool,"utter-%s-%d.pcm",
-			channel->id.buf,request->start_line.request_id);
+		const char *waveform_file_name = apr_psprintf(channel->pool,"utter-%s-%"MRCP_REQUEST_ID_FMT".pcm",
+			channel->id.buf,
+			request->start_line.request_id);
 		char *waveform_file_path = NULL;
 		apr_filepath_merge(&waveform_file_path,recognizer->properties.save_waveform_dir,
 			waveform_file_name,0,channel->pool);
@@ -730,11 +791,13 @@ static void* APR_THREAD_FUNC pocketsphinx_recognizer_run(apr_thread_t *thread, v
 	mrcp_engine_channel_open_respond(recognizer->channel,TRUE);
 
 	do {
+		apr_thread_mutex_lock(recognizer->mutex);
 		/** Wait for MRCP requests */
 		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Wait for incoming messages "APT_SIDRES_FMT, RECOGNIZER_SIDRES(recognizer));
-		apr_thread_mutex_lock(recognizer->mutex);
-		apr_thread_cond_wait(recognizer->wait_object,recognizer->mutex);
-		apr_thread_mutex_unlock(recognizer->mutex);
+		if (!recognizer->message_waiting) {
+			apr_thread_cond_wait(recognizer->wait_object,recognizer->mutex);
+		}
+		recognizer->message_waiting = FALSE;
 
 		if(recognizer->request) {
 			/* store request message and further dispatch it */
@@ -746,6 +809,7 @@ static void* APR_THREAD_FUNC pocketsphinx_recognizer_run(apr_thread_t *thread, v
 			/* end of input detected, get recognition result and raise recognition complete event */
 			pocketsphinx_recognition_complete(recognizer,recognizer->complete_event);
 		}
+		apr_thread_mutex_unlock(recognizer->mutex);
 	}
 	while(recognizer->close_requested == FALSE);
 
@@ -814,6 +878,7 @@ static apt_bool_t pocketsphinx_end_of_input(pocketsphinx_recognizer_t *recognize
 	/* signal recognition thread first */
 	apr_thread_mutex_lock(recognizer->mutex);
 	recognizer->complete_event = message;
+	recognizer->message_waiting = TRUE;
 	apr_thread_cond_signal(recognizer->wait_object);
 	apr_thread_mutex_unlock(recognizer->mutex);
 	return TRUE;

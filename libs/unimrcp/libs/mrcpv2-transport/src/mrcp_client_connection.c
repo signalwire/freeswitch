@@ -96,6 +96,7 @@ MRCP_DECLARE(mrcp_connection_agent_t*) mrcp_client_connection_agent_create(
 		vtable->terminate = mrcp_client_agent_task_terminate;
 		vtable->destroy = mrcp_client_agent_task_on_destroy;
 	}
+	apt_task_auto_ready_set(agent->task,FALSE);
 
 	agent->connection_list = apt_list_create(pool);
 
@@ -310,7 +311,8 @@ static mrcp_connection_t* mrcp_client_agent_connection_find(mrcp_connection_agen
 		connection = apt_list_elem_object_get(elem);
 		if(connection) {
 			if(apr_sockaddr_info_get(&sockaddr,descriptor->ip.buf,APR_INET,descriptor->port,0,connection->pool) == APR_SUCCESS) {
-				if(apr_sockaddr_equal(sockaddr,connection->r_sockaddr) != 0) {
+				if(apr_sockaddr_equal(sockaddr,connection->r_sockaddr) != 0 && 
+					descriptor->port == connection->r_sockaddr->port) {
 					return connection;
 				}
 			}
@@ -514,7 +516,7 @@ static apt_bool_t mrcp_client_agent_messsage_receive(mrcp_connection_agent_t *ag
 		apr_socket_close(connection->sock);
 		connection->sock = NULL;
 
-//		agent->vtable->on_disconnect(agent,connection);
+		mrcp_connection_disconnect_raise(connection,agent->vtable);
 		return TRUE;
 	}
 	/* calculate actual length of the stream */
@@ -587,6 +589,9 @@ static apt_bool_t mrcp_client_agent_task_run(apt_task_t *task)
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create Pollset");
 		return FALSE;
 	}
+
+	/* explicitly indicate task is ready to process messages */
+	apt_task_ready(agent->task);
 
 	while(running) {
 		status = apt_pollset_poll(agent->pollset, -1, &num, &ret_pfd);

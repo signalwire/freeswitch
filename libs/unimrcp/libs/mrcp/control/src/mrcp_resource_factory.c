@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <apr_hash.h>
 #include "mrcp_resource_factory.h"
 #include "mrcp_message.h"
 #include "mrcp_resource.h"
@@ -21,12 +22,12 @@
 
 /** Resource factory definition (aggregation of resources) */
 struct mrcp_resource_factory_t {
-	/** Array of MRCP resources */
-	mrcp_resource_t           **resource_array;
+	/** Array of MRCP resources (reference by id) */
+	mrcp_resource_t **resource_array;
 	/** Number of MRCP resources */
-	apr_size_t                  resource_count;
-	/** String table of MRCP resource names */
-	const apt_str_table_item_t *string_table;
+	apr_size_t        resource_count;
+	/** Hash of MRCP resources (reference by name) */
+	apr_hash_t       *resource_hash;
 };
 
 /** Create MRCP resource factory */
@@ -44,8 +45,7 @@ MRCP_DECLARE(mrcp_resource_factory_t*) mrcp_resource_factory_create(apr_size_t r
 	for(i=0; i<resource_count; i++) {
 		resource_factory->resource_array[i] = NULL;
 	}
-	resource_factory->string_table = NULL;
-	
+	resource_factory->resource_hash = apr_hash_make(pool);
 	return resource_factory;
 }
 
@@ -59,30 +59,23 @@ MRCP_DECLARE(apt_bool_t) mrcp_resource_factory_destroy(mrcp_resource_factory_t *
 	return TRUE;
 }
 
-/** Set MRCP resource string table */
-MRCP_DECLARE(apt_bool_t) mrcp_resource_string_table_set(mrcp_resource_factory_t *resource_factory, const apt_str_table_item_t *string_table)
-{
-	resource_factory->string_table = string_table;
-	return TRUE;
-}
-
 /** Register MRCP resource */
-MRCP_DECLARE(apt_bool_t) mrcp_resource_register(mrcp_resource_factory_t *resource_factory, mrcp_resource_t *resource, mrcp_resource_id resource_id)
+MRCP_DECLARE(apt_bool_t) mrcp_resource_register(mrcp_resource_factory_t *resource_factory, mrcp_resource_t *resource)
 {	
-	if(!resource || resource_id >= resource_factory->resource_count) {
+	if(!resource || resource->id >= resource_factory->resource_count) {
 		/* invalid params */
 		return FALSE;
 	}
-	if(resource_factory->resource_array[resource_id]) {
+	if(resource_factory->resource_array[resource->id]) {
 		/* resource with specified id already exists */
 		return FALSE;
 	}
-	resource->id = resource_id;
 	if(mrcp_resource_validate(resource) != TRUE) {
 		/* invalid resource */
 		return FALSE;
 	}
 	resource_factory->resource_array[resource->id] = resource;
+	apr_hash_set(resource_factory->resource_hash,resource->name.buf,resource->name.length,resource);
 	return TRUE;
 }
 
@@ -95,57 +88,12 @@ MRCP_DECLARE(mrcp_resource_t*) mrcp_resource_get(mrcp_resource_factory_t *resour
 	return resource_factory->resource_array[resource_id];
 }
 
-
-/** Set header accessor interface */
-static APR_INLINE void mrcp_generic_header_accessor_set(mrcp_message_t *message)
+/** Find MRCP resource by resource name */
+MRCP_DECLARE(mrcp_resource_t*) mrcp_resource_find(mrcp_resource_factory_t *resource_factory, const apt_str_t *name)
 {
-	message->header.generic_header_accessor.vtable = mrcp_generic_header_vtable_get(message->start_line.version);
-}
-
-/** Associate MRCP resource specific data by resource identifier */
-MRCP_DECLARE(apt_bool_t) mrcp_message_resourcify_by_id(mrcp_resource_factory_t *resource_factory, mrcp_message_t *message)
-{
-	mrcp_resource_t *resource;
-	const apt_str_t *name;
-	resource = mrcp_resource_get(resource_factory,message->channel_id.resource_id);
-	if(!resource) {
-		return FALSE;
-	}
-	name = mrcp_resource_name_get(resource_factory,resource->id);
-	if(!name) {
-		return FALSE;
-	}
-	/* associate resource_name and resource_id */
-	message->channel_id.resource_name = *name;
-
-	mrcp_generic_header_accessor_set(message);
-	return resource->resourcify_message_by_id(resource,message);
-}
-
-/** Associate MRCP resource specific data by resource name */
-MRCP_DECLARE(apt_bool_t) mrcp_message_resourcify_by_name(mrcp_resource_factory_t *resource_factory, mrcp_message_t *message)
-{
-	mrcp_resource_t *resource;
-	/* associate resource_name and resource_id */
-	const apt_str_t *name = &message->channel_id.resource_name;
-	message->channel_id.resource_id = mrcp_resource_id_find(resource_factory,name);
-	resource = mrcp_resource_get(resource_factory,message->channel_id.resource_id);
-	if(!resource) {
-		return FALSE;
+	if(!name->buf || !name->length) {
+		return NULL;
 	}
 
-	mrcp_generic_header_accessor_set(message);
-	return resource->resourcify_message_by_name(resource,message);
-}
-
-/** Get resource name associated with specified resource id */
-MRCP_DECLARE(const apt_str_t*) mrcp_resource_name_get(mrcp_resource_factory_t *resource_factory, mrcp_resource_id resource_id)
-{
-	return apt_string_table_str_get(resource_factory->string_table,resource_factory->resource_count,resource_id);
-}
-
-/** Find resource id associated with specified resource name */
-MRCP_DECLARE(mrcp_resource_id) mrcp_resource_id_find(mrcp_resource_factory_t *resource_factory, const apt_str_t *resource_name)
-{
-	return apt_string_table_id_find(resource_factory->string_table,resource_factory->resource_count,resource_name);
+	return apr_hash_get(resource_factory->resource_hash,name->buf,name->length);
 }

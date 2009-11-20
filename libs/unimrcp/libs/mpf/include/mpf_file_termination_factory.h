@@ -22,7 +22,7 @@
  * @brief MPF File Termination Factory
  */ 
 
-#include "mpf_types.h"
+#include "mpf_termination_factory.h"
 
 APT_BEGIN_EXTERN_C
 

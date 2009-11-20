@@ -55,8 +55,8 @@ APT_DECLARE(apt_task_t*) apt_task_create(
 APT_DECLARE(apt_bool_t) apt_task_destroy(apt_task_t *task);
 
 /**
- * Add slave task.
- * @param task the task to add slave task to
+ * Add child task.
+ * @param task the task to add child task to
  * @param child_task the child task to add
  */
 APT_DECLARE(apt_bool_t) apt_task_add(apt_task_t *task, apt_task_t *child_task);
@@ -156,6 +156,19 @@ APT_DECLARE(void) apt_task_name_set(apt_task_t *task, const char *name);
  * @param task the task to get name from
  */
 APT_DECLARE(const char*) apt_task_name_get(apt_task_t *task);
+
+/**
+ * Enable/disable auto ready mode.
+ * @param task the task to set mode for
+ * @param auto_ready the enabled/disabled auto ready mode
+ */
+APT_DECLARE(void) apt_task_auto_ready_set(apt_task_t *task, apt_bool_t auto_ready);
+
+/**
+ * Explicitly indicate task is ready to process messages.
+ * @param task the task
+ */
+APT_DECLARE(apt_bool_t) apt_task_ready(apt_task_t *task);
 
 /**
  * Hold task execution.

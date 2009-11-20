@@ -24,7 +24,7 @@
 
 #include <apr_hash.h>
 #include "mrcp_session.h"
-#include "mpf_message.h"
+#include "mpf_engine.h"
 #include "apt_task.h"
 #include "apt_obj_list.h"
 
@@ -61,45 +61,55 @@ struct mrcp_signaling_message_t {
 	mrcp_message_t               *message;
 };
 
+/** Server session states */
+typedef enum {
+	SESSION_STATE_NONE,              /**< initial state */
+	SESSION_STATE_GENERATING_ANSWER, /**< received offer, generating answer now */
+	SESSION_STATE_INITIALIZING,      /**< answer is ready, finally initializing channels now */
+	SESSION_STATE_DEACTIVATING,      /**< received session termination request, deinitializing channels now */
+	SESSION_STATE_TERMINATING        /**< finally terminating session */
+} mrcp_server_session_state_e;
+
 
 /** MRCP server session */
 struct mrcp_server_session_t {
 	/** Session base */
-	mrcp_session_t             base;
+	mrcp_session_t              base;
 	/** MRCP server */
-	mrcp_server_t             *server;
+	mrcp_server_t              *server;
 	/** MRCP profile */
-	mrcp_profile_t            *profile;
+	mrcp_profile_t             *profile;
 
 	/** Media context */
-	mpf_context_t             *context;
+	mpf_context_t              *context;
 
 	/** Media termination array */
-	apr_array_header_t        *terminations;
+	apr_array_header_t         *terminations;
 	/** MRCP control channel array */
-	apr_array_header_t        *channels;
+	apr_array_header_t         *channels;
 
 	/** In-progress signaling request */
-	mrcp_signaling_message_t  *active_request;
+	mrcp_signaling_message_t   *active_request;
 	/** Signaling request queue */
-	apt_obj_list_t            *request_queue;
+	apt_obj_list_t             *request_queue;
 
 	/** In-progress offer */
-	mrcp_session_descriptor_t *offer;
+	mrcp_session_descriptor_t  *offer;
 	/** In-progres answer */
-	mrcp_session_descriptor_t *answer;
+	mrcp_session_descriptor_t  *answer;
 
-	/** Number of in-progress answer requests (flags) */
-	apr_size_t                 answer_flag_count;
-	/** Number of in-progress terminate requests (flags) */
-	apr_size_t                 terminate_flag_count;
-	/** Number of in-progress deactivare requests (flags) */
-	apr_size_t                 deactivate_flag_count;
+	/** MPF task message, which construction is in progress */
+	mpf_task_msg_t             *mpf_task_msg;
+
+	/** Session state */
+	mrcp_server_session_state_e state;
+	/** Number of in-progress sub requests */
+	apr_size_t                  subrequest_count;
 };
 
 /** MRCP profile */
 struct mrcp_profile_t {
-	/** Table of resource engines (mrcp_resource_engine_t*) */
+	/** Table of engines (mrcp_engine_t*) */
 	apr_hash_t                *engine_table;
 	/** MRCP resource factory */
 	mrcp_resource_factory_t   *resource_factory;
@@ -114,12 +124,12 @@ struct mrcp_profile_t {
 };
 
 /** Create server session */
-mrcp_server_session_t* mrcp_server_session_create();
+mrcp_server_session_t* mrcp_server_session_create(void);
 
 /** Process signaling message */
 apt_bool_t mrcp_server_signaling_message_process(mrcp_signaling_message_t *signaling_message);
 /** Process MPF message */
-apt_bool_t mrcp_server_mpf_message_process(mpf_message_t *mpf_message);
+apt_bool_t mrcp_server_mpf_message_process(mpf_message_container_t *mpf_message_container);
 
 /** Process channel modify event */
 apt_bool_t mrcp_server_on_channel_modify(mrcp_channel_t *channel, mrcp_control_descriptor_t *answer, apt_bool_t status);
@@ -127,6 +137,8 @@ apt_bool_t mrcp_server_on_channel_modify(mrcp_channel_t *channel, mrcp_control_d
 apt_bool_t mrcp_server_on_channel_remove(mrcp_channel_t *channel, apt_bool_t status);
 /** Process channel message receive */
 apt_bool_t mrcp_server_on_channel_message(mrcp_channel_t *channel, mrcp_message_t *message);
+/** Process connection disconnect event */
+apt_bool_t mrcp_server_on_disconnect(mrcp_channel_t *channel);
 
 /** Process channel open event */
 apt_bool_t mrcp_server_on_engine_channel_open(mrcp_channel_t *channel, apt_bool_t status);

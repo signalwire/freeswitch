@@ -19,60 +19,90 @@
 
 /**
  * @file mpf_rtp_stat.h
- * @brief RTP Statistics
+ * @brief RTP/RTCP Statistics
  */ 
 
 #include "mpf.h"
 
 APT_BEGIN_EXTERN_C
 
-/** RTP transmit statistics declaration */
-typedef struct rtp_tx_stat_t rtp_tx_stat_t;
-/** RTP receive statistics declaration */
+/** RTP receiver statistics */
 typedef struct rtp_rx_stat_t rtp_rx_stat_t;
 
+/** RTCP statistics used in Sender Report (SR) */
+typedef struct rtcp_sr_stat_t rtcp_sr_stat_t;
+/** RTCP statistics used in Receiver Report (RR) */
+typedef struct rtcp_rr_stat_t rtcp_rr_stat_t;
 
-/** RTP transmit statistics */
-struct rtp_tx_stat_t {
-	/** number of RTP packets received */
-	apr_uint32_t    sent_packets;
 
-	/* more to come */
-};
-
-/** RTP receive statistics */
+/** RTP receiver statistics */
 struct rtp_rx_stat_t {
 	/** number of valid RTP packets received */
-	apr_uint32_t           received_packets;
+	apr_uint32_t received_packets;
 	/** number of invalid RTP packets received */
-	apr_uint32_t           invalid_packets;
+	apr_uint32_t invalid_packets;
 
 	/** number of discarded in jitter buffer packets */
-	apr_uint32_t           discarded_packets;
+	apr_uint32_t discarded_packets;
 	/** number of ignored packets */
-	apr_uint32_t           ignored_packets;
+	apr_uint32_t ignored_packets;
 
 	/** number of lost in network packets */
-	apr_uint32_t           lost_packets;
+	apr_uint32_t lost_packets;
 
 	/** number of restarts */
-	apr_byte_t             restarts;
+	apr_byte_t   restarts;
+};
 
-	/** network jitter (rfc3550) */
-	apr_uint32_t           jitter;
+/** RTCP statistics used in Sender Report (SR)  */
+struct rtcp_sr_stat_t {
+	/** sender source identifier */
+	apr_uint32_t ssrc;
+	/** NTP timestamp (seconds) */
+	apr_uint32_t ntp_sec;
+	/** NTP timestamp (fractions) */
+	apr_uint32_t ntp_frac;
+	/** RTP timestamp */
+	apr_uint32_t rtp_ts;
+	/* packets sent */
+	apr_uint32_t sent_packets;
+	/* octets (bytes) sent */
+	apr_uint32_t sent_octets;
+};
 
-	/** source id of received RTP stream */
-	apr_uint32_t           ssrc;
+/** RTCP statistics used in Receiver Report (RR) */
+struct rtcp_rr_stat_t {
+	/** source identifier of RTP stream being received */
+	apr_uint32_t ssrc;
+	/** fraction lost since last SR/RR */
+	apr_uint32_t fraction:8;
+	/** cumulative number of packets lost (signed!) */
+	apr_int32_t  lost:24;
+	/** extended last sequence number received */
+	apr_uint32_t last_seq;
+	/** interarrival jitter (RFC3550) */
+	apr_uint32_t jitter;
+	/** last SR packet from this source */
+	apr_uint32_t lsr;
+	/** delay since last SR packet */
+	apr_uint32_t dlsr;
 };
 
 
-/** Reset RTP transmit statistics */
-static APR_INLINE void mpf_rtp_tx_stat_reset(rtp_tx_stat_t *tx_stat)
+
+/** Reset RTCP SR statistics */
+static APR_INLINE void mpf_rtcp_sr_stat_reset(rtcp_sr_stat_t *sr_stat)
 {
-	memset(tx_stat,0,sizeof(rtp_tx_stat_t));
+	memset(sr_stat,0,sizeof(rtcp_sr_stat_t));
 }
 
-/** Reset RTP receive statistics */
+/** Reset RTCP RR statistics */
+static APR_INLINE void mpf_rtcp_rr_stat_reset(rtcp_rr_stat_t *rr_stat)
+{
+	memset(rr_stat,0,sizeof(rtcp_rr_stat_t));
+}
+
+/** Reset RTP receiver statistics */
 static APR_INLINE void mpf_rtp_rx_stat_reset(rtp_rx_stat_t *rx_stat)
 {
 	memset(rx_stat,0,sizeof(rtp_rx_stat_t));

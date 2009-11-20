@@ -23,8 +23,9 @@ static apt_bool_t mpf_file_termination_destroy(mpf_termination_t *termination)
 	return TRUE;
 }
 
-static apt_bool_t mpf_file_termination_modify(mpf_termination_t *termination, void *descriptor)
+static apt_bool_t mpf_file_termination_add(mpf_termination_t *termination, void *descriptor)
 {
+	apt_bool_t status = TRUE;
 	mpf_audio_stream_t *audio_stream = termination->audio_stream;
 	if(!audio_stream) {
 		audio_stream = mpf_file_stream_create(termination,termination->pool);
@@ -34,12 +35,36 @@ static apt_bool_t mpf_file_termination_modify(mpf_termination_t *termination, vo
 		termination->audio_stream = audio_stream;
 	}
 
-	return mpf_file_stream_modify(audio_stream,descriptor);
+	if(descriptor) {
+		status = mpf_file_stream_modify(audio_stream,descriptor);
+	}
+	return status;
+}
+
+static apt_bool_t mpf_file_termination_modify(mpf_termination_t *termination, void *descriptor)
+{
+	apt_bool_t status = TRUE;
+	mpf_audio_stream_t *audio_stream = termination->audio_stream;
+	if(!audio_stream) {
+		return FALSE;
+	}
+
+	if(descriptor) {
+		status = mpf_file_stream_modify(audio_stream,descriptor);
+	}
+	return status;
+}
+
+static apt_bool_t mpf_file_termination_subtract(mpf_termination_t *termination)
+{
+	return TRUE;
 }
 
 static const mpf_termination_vtable_t file_vtable = {
 	mpf_file_termination_destroy,
+	mpf_file_termination_add,
 	mpf_file_termination_modify,
+	mpf_file_termination_subtract
 };
 
 static mpf_termination_t* mpf_file_termination_create(

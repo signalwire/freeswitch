@@ -65,7 +65,7 @@ typedef struct apt_test_framework_t apt_test_framework_t;
 /**
  * Create test framework.
  */
-APT_DECLARE(apt_test_framework_t*) apt_test_framework_create();
+APT_DECLARE(apt_test_framework_t*) apt_test_framework_create(void);
 
 /**
  * Destroy test framework.

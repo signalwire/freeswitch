@@ -39,9 +39,6 @@ MPF_DECLARE(apt_bool_t) mpf_codec_manager_codec_register(mpf_codec_manager_t *co
 /** Get (allocate) codec by codec descriptor */
 MPF_DECLARE(mpf_codec_t*) mpf_codec_manager_codec_get(const mpf_codec_manager_t *codec_manager, mpf_codec_descriptor_t *descriptor, apr_pool_t *pool);
 
-/** Get (allocate) default codec */
-MPF_DECLARE(mpf_codec_t*) mpf_codec_manager_default_codec_get(const mpf_codec_manager_t *codec_manager, apr_pool_t *pool);
-
 /** Get (allocate) list of available codecs */
 MPF_DECLARE(apt_bool_t) mpf_codec_manager_codec_list_get(const mpf_codec_manager_t *codec_manager, mpf_codec_list_t *codec_list, apr_pool_t *pool);
 

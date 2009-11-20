@@ -10,6 +10,10 @@ if DEMORECOG_PLUGIN
 SUBDIRS               += demo-recog
 endif
 
+if RECORDER_PLUGIN
+SUBDIRS               += mrcp-recorder
+endif
+
 if CEPSTRAL_PLUGIN
 SUBDIRS               += mrcp-cepstral
 endif

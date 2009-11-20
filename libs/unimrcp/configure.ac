@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.57)
 
-AC_INIT([unimrcp],[0.6.0])
+AC_INIT([unimrcp],[0.8.0])
 
 AC_CONFIG_AUX_DIR([build])
 AC_CONFIG_MACRO_DIR([build/acmacros])
@@ -31,7 +31,7 @@ AC_PROG_LIBTOOL
 # Get version information
 get_version="build/get-version.sh"
 version_hdr="build/uni_version.h"
-plugin_version_hdr="libs/mrcp-engine/include/mrcp_resource_plugin.h"
+plugin_version_hdr="libs/mrcp-engine/include/mrcp_engine_plugin.h"
 UNI_DOTTED_VERSION="`$get_version all $version_hdr UNI`"
 UNI_LT_VERSION="-version-info `$get_version libtool $version_hdr UNI`"
 PLUGIN_LT_VERSION="-version-info `$get_version libtool $plugin_version_hdr PLUGIN`"
@@ -117,6 +117,15 @@ AC_ARG_ENABLE(demorecog-plugin,
 AM_CONDITIONAL([DEMORECOG_PLUGIN],[test "${enable_demorecog_plugin}" = "yes"])
 
 
+#Enable recorder plugin
+AC_ARG_ENABLE(recorder-plugin,
+    [AC_HELP_STRING([--disable-recorder-plugin  ],[exclude recorder plugin from build])],
+    [enable_recorder_plugin="$enableval"],
+    [enable_recorder_plugin="yes"])
+
+AM_CONDITIONAL([RECORDER_PLUGIN],[test "${enable_recorder_plugin}" = "yes"])
+
+
 #Enable Cepstral Swift plugin
 AC_ARG_ENABLE(cepstral-plugin,
     [AC_HELP_STRING([--disable-cepstral-plugin  ],[exclude cepstral plugin from build])],
@@ -182,6 +191,7 @@ AC_CONFIG_FILES([
   plugins/mrcp-cepstral/Makefile
   plugins/mrcp-pocketsphinx/Makefile
   plugins/mrcp-flite/Makefile
+  plugins/mrcp-recorder/Makefile
   plugins/demo-synth/Makefile
   plugins/demo-recog/Makefile
   platforms/Makefile
@@ -189,6 +199,9 @@ AC_CONFIG_FILES([
   platforms/libunimrcp-client/Makefile
   platforms/unimrcp-server/Makefile
   platforms/unimrcp-client/Makefile
+  platforms/libasr-client/Makefile
+  platforms/asr-client/Makefile
+  platforms/umc/Makefile
   tests/Makefile
   tests/apttest/Makefile
   tests/mpftest/Makefile

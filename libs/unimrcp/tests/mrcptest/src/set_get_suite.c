@@ -17,7 +17,8 @@
 #include "apt_test_suite.h"
 #include "apt_log.h"
 /* common includes */
-#include "mrcp_default_factory.h"
+#include "mrcp_resource_loader.h"
+#include "mrcp_resource_factory.h"
 #include "mrcp_message.h"
 #include "mrcp_generic_header.h"
 /* synthesizer includes */
@@ -38,9 +39,12 @@
 static mrcp_message_t* speak_request_create(mrcp_resource_factory_t *factory, apr_pool_t *pool)
 {
 	mrcp_message_t *message;
+	mrcp_resource_t *resource = mrcp_resource_get(factory,MRCP_SYNTHESIZER_RESOURCE);
+	if(!resource) {
+		return NULL;
+	}
 	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create SPEAK Request");
-	message = mrcp_request_create(MRCP_SYNTHESIZER_RESOURCE,SYNTHESIZER_SPEAK,pool);
-	mrcp_message_resourcify_by_id(factory,message);
+	message = mrcp_request_create(resource,MRCP_VERSION_2,SYNTHESIZER_SPEAK,pool);
 	if(message) {
 		mrcp_generic_header_t *generic_header;
 		mrcp_synth_header_t *synth_header;
@@ -156,9 +160,12 @@ static mrcp_message_t* speak_event_create(mrcp_resource_factory_t *factory, cons
 static mrcp_message_t* get_params_request_create(mrcp_resource_factory_t *factory, apr_pool_t *pool)
 {
 	mrcp_message_t *message;
+	mrcp_resource_t *resource = mrcp_resource_get(factory,MRCP_SYNTHESIZER_RESOURCE);
+	if(!resource) {
+		return NULL;
+	}
 	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create GET-PARAMS Request");
-	message = mrcp_request_create(MRCP_SYNTHESIZER_RESOURCE,SYNTHESIZER_GET_PARAMS,pool);
-	mrcp_message_resourcify_by_id(factory,message);
+	message = mrcp_request_create(resource,MRCP_VERSION_2,SYNTHESIZER_GET_PARAMS,pool);
 	if(message) {
 		apt_str_t param_name;
 		apt_str_t param_value;
@@ -289,7 +296,15 @@ static apt_bool_t get_params_test_run(apt_test_suite_t *suite, mrcp_resource_fac
 
 static apt_bool_t set_get_test_run(apt_test_suite_t *suite, int argc, const char * const *argv)
 {
-	mrcp_resource_factory_t *factory = mrcp_default_factory_create(suite->pool);
+	mrcp_resource_factory_t *factory;
+	mrcp_resource_loader_t *resource_loader;
+	resource_loader = mrcp_resource_loader_create(TRUE,suite->pool);
+	if(!resource_loader) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create Resource Loader");
+		return FALSE;
+	}
+	
+	factory = mrcp_resource_factory_get(resource_loader);
 	if(!factory) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create Resource Factory");
 		return FALSE;

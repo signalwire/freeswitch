@@ -27,10 +27,13 @@
 
 APT_BEGIN_EXTERN_C
 
+/** Macro to log session pointers */
 #define MRCP_SESSION_PTR(session) (session)
+/** Macro to log session string identifiers */
 #define MRCP_SESSION_SID(session) \
 	(session)->id.buf ? (session)->id.buf : "new"
 
+/** Macro to log session pointers and string identifiers */
 #define MRCP_SESSION_PTRSID(session) \
 	MRCP_SESSION_PTR(session), MRCP_SESSION_SID(session)
 

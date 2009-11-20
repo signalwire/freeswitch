@@ -23,7 +23,7 @@
  */ 
 
 #include "mpf_frame.h"
-#include "mpf_codec.h"
+#include "mpf_codec_descriptor.h"
 
 APT_BEGIN_EXTERN_C
 
@@ -51,8 +51,11 @@ MPF_DECLARE(void) mpf_activity_detector_level_set(mpf_activity_detector_t *detec
 /** Set noinput timeout */
 MPF_DECLARE(void) mpf_activity_detector_noinput_timeout_set(mpf_activity_detector_t *detector, apr_size_t noinput_timeout);
 
-/** Set transition complete timeout */
-MPF_DECLARE(void) mpf_activity_detector_complete_timeout_set(mpf_activity_detector_t *detector, apr_size_t complete_timeout);
+/** Set timeout required to trigger speech (transition from inactive to active state) */
+MPF_DECLARE(void) mpf_activity_detector_speech_timeout_set(mpf_activity_detector_t *detector, apr_size_t speech_timeout);
+
+/** Set timeout required to trigger silence (transition from active to inactive state) */
+MPF_DECLARE(void) mpf_activity_detector_silence_timeout_set(mpf_activity_detector_t *detector, apr_size_t silence_timeout);
 
 /** Process current frame, return detected event if any */
 MPF_DECLARE(mpf_detector_event_e) mpf_activity_detector_process(mpf_activity_detector_t *detector, const mpf_frame_t *frame);

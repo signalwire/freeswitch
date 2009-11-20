@@ -41,56 +41,58 @@ APT_BEGIN_EXTERN_C
 /** Deviation threshold is used to trigger drift in timestamps */
 #define DEVIATION_THRESHOLD 4000
 
-/** RTP receive history declaration */
+/** RTP receiver history declaration */
 typedef struct rtp_rx_history_t rtp_rx_history_t;
-/** RTP receive periodic history declaration */
+/** RTP receiver periodic history declaration */
 typedef struct rtp_rx_periodic_history_t rtp_rx_periodic_history_t;
 /** RTP receiver declaration */
 typedef struct rtp_receiver_t rtp_receiver_t;
 /** RTP transmitter declaration */
 typedef struct rtp_transmitter_t rtp_transmitter_t;
 
-/** History of RTP receive */
+/** History of RTP receiver */
 struct rtp_rx_history_t {
-	/** Updated on every seq num wrap around*/
-	apr_uint32_t           seq_cycles;
+	/** Updated on every seq num wrap around */
+	apr_uint32_t seq_cycles;
 
 	/** First seq num received */
-	apr_uint16_t           seq_num_base;
+	apr_uint16_t seq_num_base;
 	/** Max seq num received */
-	apr_uint16_t           seq_num_max;
+	apr_uint16_t seq_num_max;
 
 	/** Last timestamp received */
-	apr_uint32_t           ts_last;
+	apr_uint32_t ts_last;
 	/** Local time measured on last packet received */
-	apr_time_t             time_last;
+	apr_time_t   time_last;
 
 	/** New ssrc, which is in probation */
-	apr_uint32_t           ssrc_new;
+	apr_uint32_t ssrc_new;
 	/** Period of ssrc probation */
-	apr_byte_t             ssrc_probation;
+	apr_byte_t   ssrc_probation;
 };
 
-/** Periodic history of RTP receive (initialized after every N packets) */
+/** Periodic history of RTP receiver (initialized after every N packets) */
 struct rtp_rx_periodic_history_t {
 	/** Number of packets received */
-	apr_uint32_t           received_prior;
+	apr_uint32_t received_prior;
+	/** Number of packets expected */
+	apr_uint32_t expected_prior;
 	/** Number of packets discarded */
-	apr_uint32_t           discarded_prior;
+	apr_uint32_t discarded_prior;
 
 	/** Min jitter */
-	apr_uint32_t           jitter_min;
+	apr_uint32_t jitter_min;
 	/** Max jitter */
-	apr_uint32_t           jitter_max;
+	apr_uint32_t jitter_max;
 };
 
-/** Reset RTP receive history */
+/** Reset RTP receiver history */
 static APR_INLINE void mpf_rtp_rx_history_reset(rtp_rx_history_t *rx_history)
 {
 	memset(rx_history,0,sizeof(rtp_rx_history_t));
 }
 
-/** Reset RTP receive periodic history */
+/** Reset RTP receiver periodic history */
 static APR_INLINE void mpf_rtp_rx_periodic_history_reset(rtp_rx_periodic_history_t *rx_periodic_history)
 {
 	memset(rx_periodic_history,0,sizeof(rtp_rx_periodic_history_t));
@@ -98,13 +100,12 @@ static APR_INLINE void mpf_rtp_rx_periodic_history_reset(rtp_rx_periodic_history
 
 /** RTP receiver */
 struct rtp_receiver_t {
-	/** Payload type of named-event packets (RFC2833) */
-	apr_byte_t                event_pt;
-
 	/** Jitter buffer */
 	mpf_jitter_buffer_t      *jb;
 
-	/** RTP receive statistics to report */
+	/** RTCP statistics used in RR */
+	rtcp_rr_stat_t            rr_stat;
+	/** RTP receiver statistics */
 	rtp_rx_stat_t             stat;
 	/** RTP history */
 	rtp_rx_history_t          history;
@@ -115,10 +116,6 @@ struct rtp_receiver_t {
 
 /** RTP transmitter */
 struct rtp_transmitter_t {
-	/** RTP stream ssrc */
-	apr_uint32_t    ssrc;
-	/** Payload type of named-event packets (RFC2833) */
-	apr_byte_t      event_pt;
 	/** Packetization time in msec */
 	apr_uint16_t    ptime;
 
@@ -135,24 +132,25 @@ struct rtp_transmitter_t {
 	apr_uint16_t    last_seq_num;
 	/** Current timestamp (samples processed) */
 	apr_uint32_t    timestamp;
+	/** Event timestamp base */
+	apr_uint32_t    timestamp_base;
 
 	/** RTP packet payload */
 	char           *packet_data;
 	/** RTP packet payload size */
 	apr_size_t      packet_size;
 
-	/** RTP transmit statistics to report */
-	rtp_tx_stat_t   stat;
+	/** RTCP statistics used in SR */
+	rtcp_sr_stat_t  sr_stat;
 };
 
 
 /** Initialize RTP receiver */
 static APR_INLINE void rtp_receiver_init(rtp_receiver_t *receiver)
 {
-	receiver->event_pt = 0;
-
 	receiver->jb = NULL;
 
+	mpf_rtcp_rr_stat_reset(&receiver->rr_stat);
 	mpf_rtp_rx_stat_reset(&receiver->stat);
 	mpf_rtp_rx_history_reset(&receiver->history);
 	mpf_rtp_rx_periodic_history_reset(&receiver->periodic_history);
@@ -161,8 +159,6 @@ static APR_INLINE void rtp_receiver_init(rtp_receiver_t *receiver)
 /** Initialize RTP transmitter */
 static APR_INLINE void rtp_transmitter_init(rtp_transmitter_t *transmitter)
 {
-	transmitter->ssrc = 0;
-	transmitter->event_pt = 0;
 	transmitter->ptime = 0;
 
 	transmitter->packet_frames = 0;
@@ -172,11 +168,12 @@ static APR_INLINE void rtp_transmitter_init(rtp_transmitter_t *transmitter)
 	transmitter->inactivity = 0;
 	transmitter->last_seq_num = 0;
 	transmitter->timestamp = 0;
+	transmitter->timestamp_base = 0;
 
 	transmitter->packet_data = NULL;
 	transmitter->packet_size = 0;
 
-	mpf_rtp_tx_stat_reset(&transmitter->stat);
+	mpf_rtcp_sr_stat_reset(&transmitter->sr_stat);
 }
 
 APT_END_EXTERN_C

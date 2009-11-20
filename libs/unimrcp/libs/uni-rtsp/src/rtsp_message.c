@@ -46,18 +46,27 @@ RTSP_DECLARE(rtsp_message_t*) rtsp_response_create(const rtsp_message_t *request
 {
 	const apt_str_t *reason_str;
 	rtsp_status_line_t *status_line;
-	rtsp_message_t *response = rtsp_message_create(RTSP_MESSAGE_TYPE_RESPONSE,request->pool);
+	rtsp_message_t *response = rtsp_message_create(RTSP_MESSAGE_TYPE_RESPONSE,pool);
 	status_line = &response->start_line.common.status_line;
 	status_line->version = request->start_line.common.request_line.version;
 	status_line->status_code = status_code;
 	reason_str = rtsp_reason_phrase_get(reason);
 	if(reason_str) {
-		apt_string_copy(&status_line->reason,reason_str,request->pool);
+		apt_string_copy(&status_line->reason,reason_str,pool);
 	}
 
 	if(rtsp_header_property_check(&request->header.property_set,RTSP_HEADER_FIELD_CSEQ) == TRUE) {
 		response->header.cseq = request->header.cseq;
 		rtsp_header_property_add(&response->header.property_set,RTSP_HEADER_FIELD_CSEQ);
+	}
+
+	if(rtsp_header_property_check(&request->header.property_set,RTSP_HEADER_FIELD_TRANSPORT) == TRUE) {
+		const rtsp_transport_t *req_transport = &request->header.transport;
+		rtsp_transport_t *res_transport = &response->header.transport;
+		if(req_transport->mode.length) {
+			apt_string_copy(&res_transport->mode,&req_transport->mode,pool);
+			rtsp_header_property_add(&response->header.property_set,RTSP_HEADER_FIELD_TRANSPORT);
+		}
 	}
 
 	return response;

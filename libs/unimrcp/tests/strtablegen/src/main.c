@@ -15,6 +15,7 @@
  */
 
 #include <stdio.h>
+#include <ctype.h>
 #include "apt_pool.h"
 #include "apt_string_table.h"
 #include "apt_text_stream.h"

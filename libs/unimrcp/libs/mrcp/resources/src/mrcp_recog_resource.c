@@ -16,9 +16,7 @@
 
 #include "mrcp_recog_resource.h"
 #include "mrcp_recog_header.h"
-#include "mrcp_recog_state_machine.h"
 #include "mrcp_resource.h"
-#include "mrcp_message.h"
 
 /** String table of MRCP recognizer methods (mrcp_recognizer_method_id) */
 static const apt_str_table_item_t v1_recog_method_string_table[] = {
@@ -71,73 +69,15 @@ static APR_INLINE const apt_str_table_item_t* recog_event_string_table_get(mrcp_
 	return v2_recog_event_string_table;
 }
 
-/** Set resource specifica data */
-static apt_bool_t recog_message_resourcify_by_id(mrcp_resource_t *resource, mrcp_message_t *message)
-{
-	/* associate method_name and method_id */
-	if(message->start_line.message_type == MRCP_MESSAGE_TYPE_REQUEST) {
-		const apt_str_t *name = apt_string_table_str_get(
-			recog_method_string_table_get(message->start_line.version),
-			RECOGNIZER_METHOD_COUNT,
-			message->start_line.method_id);
-		if(!name) {
-			return FALSE;
-		}
-		message->start_line.method_name = *name;
-	}
-	else if(message->start_line.message_type == MRCP_MESSAGE_TYPE_EVENT) {
-		const apt_str_t *name = apt_string_table_str_get(
-			recog_event_string_table_get(message->start_line.version),
-			RECOGNIZER_EVENT_COUNT,
-			message->start_line.method_id);
-		if(!name) {
-			return FALSE;
-		}
-		message->start_line.method_name = *name;
-	}
-
-	message->header.resource_header_accessor.vtable = mrcp_recog_header_vtable_get(message->start_line.version);
-	return TRUE;
-}
-
-/** Set resource specifica data */
-static apt_bool_t recog_message_resourcify_by_name(mrcp_resource_t *resource, mrcp_message_t *message)
-{
-	/* associate method_name and method_id */
-	if(message->start_line.message_type == MRCP_MESSAGE_TYPE_REQUEST) {
-		message->start_line.method_id = apt_string_table_id_find(
-			recog_method_string_table_get(message->start_line.version),
-			RECOGNIZER_METHOD_COUNT,
-			&message->start_line.method_name);
-		if(message->start_line.method_id >= RECOGNIZER_METHOD_COUNT) {
-			return FALSE;
-		}
-	}
-	else if(message->start_line.message_type == MRCP_MESSAGE_TYPE_EVENT) {
-		message->start_line.method_id = apt_string_table_id_find(
-			recog_event_string_table_get(message->start_line.version),
-			RECOGNIZER_EVENT_COUNT,
-			&message->start_line.method_name);
-		if(message->start_line.method_id >= RECOGNIZER_EVENT_COUNT) {
-			return FALSE;
-		}
-	}
-
-	message->header.resource_header_accessor.vtable = mrcp_recog_header_vtable_get(message->start_line.version);
-	return TRUE;
-}
-
-
 /** Create MRCP recognizer resource */
 MRCP_DECLARE(mrcp_resource_t*) mrcp_recog_resource_create(apr_pool_t *pool)
 {
-	mrcp_resource_t *resource = apr_palloc(pool,sizeof(mrcp_resource_t));
-	mrcp_resource_init(resource);
+	mrcp_resource_t *resource = mrcp_resource_create(pool);
 
-	resource->resourcify_message_by_id = recog_message_resourcify_by_id;
-	resource->resourcify_message_by_name = recog_message_resourcify_by_name;
-
-	resource->create_client_state_machine = mrcp_recog_client_state_machine_create;
-	resource->create_server_state_machine = mrcp_recog_server_state_machine_create;
+	resource->method_count = RECOGNIZER_METHOD_COUNT;
+	resource->event_count = RECOGNIZER_EVENT_COUNT;
+	resource->get_method_str_table = recog_method_string_table_get;
+	resource->get_event_str_table = recog_event_string_table_get;
+	resource->get_resource_header_vtable = mrcp_recog_header_vtable_get;
 	return resource;
 }

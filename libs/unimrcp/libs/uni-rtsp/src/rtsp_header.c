@@ -53,11 +53,12 @@ static const apt_str_table_item_t rtsp_profile_string_table[] = {
 /** String table of RTSP transport attributes (rtsp_transport_attrib_e) */
 static const apt_str_table_item_t rtsp_transport_attrib_string_table[] = {
 	{{"client_port", 11},0},
-	{{"server_port", 11},1},
-	{{"source",      6}, 1},
+	{{"server_port", 11},2},
+	{{"source",       6},2},
 	{{"destination", 11},0},
-	{{"unicast",     7}, 0},
-	{{"multicast",   9}, 0}
+	{{"unicast",      7},0},
+	{{"multicast",    9},1},
+	{{"mode",         4},2}
 };
 
 /** Parse RTSP transport port range */
@@ -96,15 +97,15 @@ static apt_bool_t rtsp_port_range_generate(rtsp_transport_attrib_e attrib, const
 	return TRUE;
 }
 
-/** Parse RTSP source/destination address */
-static apt_bool_t rtsp_address_parse(apt_str_t *address, apt_text_stream_t *stream, apr_pool_t *pool)
+/** Parse text value of RTSP transport attrib (source/destination, e.t.c) */
+static apt_bool_t rtsp_transport_attrib_value_parse(apt_str_t *value, apt_text_stream_t *stream, apr_pool_t *pool)
 {
-	apt_str_t value;
-	/* read min value */
-	if(apt_text_field_read(stream,';',TRUE,&value) == FALSE) {
+	apt_str_t field;
+	/* read value */
+	if(apt_text_field_read(stream,';',TRUE,&field) == FALSE) {
 		return FALSE;
 	}
-	apt_string_copy(address,&value,pool);
+	apt_string_copy(value,&field,pool);
 	return TRUE;
 }
 
@@ -132,16 +133,19 @@ static apt_bool_t rtsp_transport_attrib_parse(rtsp_transport_t *transport, const
 			rtsp_port_range_parse(&transport->client_port_range,&stream);
 			break;
 		case RTSP_TRANSPORT_ATTRIB_SOURCE:
-			rtsp_address_parse(&transport->source,&stream,pool);
+			rtsp_transport_attrib_value_parse(&transport->source,&stream,pool);
 			break;
 		case RTSP_TRANSPORT_ATTRIB_DESTINATION:
-			rtsp_address_parse(&transport->destination,&stream,pool);
+			rtsp_transport_attrib_value_parse(&transport->destination,&stream,pool);
 			break;
 		case RTSP_TRANSPORT_ATTRIB_UNICAST:
 			transport->delivery = RTSP_DELIVERY_UNICAST;
 			break;
 		case RTSP_TRANSPORT_ATTRIB_MULTICAST:
 			transport->delivery = RTSP_DELIVERY_MULTICAST;
+			break;
+		case RTSP_TRANSPORT_ATTRIB_MODE:
+			rtsp_transport_attrib_value_parse(&transport->mode,&stream,pool);
 			break;
 		default:
 			break;
@@ -180,7 +184,7 @@ static apt_bool_t rtsp_transport_protocol_parse(rtsp_transport_t *transport, con
 	if(transport->profile >= RTSP_PROFILE_COUNT) {
 		return FALSE;
 	}
-		
+
 	/* read optional lower transport protocol (UDP) */
 	if(apt_text_field_read(&stream,'/',TRUE,&field) == TRUE) {
 		transport->lower_protocol = apt_string_table_id_find(rtsp_lower_transport_string_table,RTSP_LOWER_TRANSPORT_COUNT,&field);
@@ -255,6 +259,17 @@ static apt_bool_t rtsp_transport_generate(rtsp_transport_t *transport, apt_text_
 	if(rtsp_port_range_is_valid(&transport->server_port_range) == TRUE) {
 		apt_text_char_insert(text_stream,';');
 		rtsp_port_range_generate(RTSP_TRANSPORT_ATTRIB_SERVER_PORT,&transport->server_port_range,text_stream);
+	}
+
+	if(transport->mode.length) {
+		const apt_str_t *str;
+		str = apt_string_table_str_get(rtsp_transport_attrib_string_table,RTSP_TRANSPORT_ATTRIB_COUNT,RTSP_TRANSPORT_ATTRIB_MODE);
+		if(str) {
+			apt_text_char_insert(text_stream,';');
+			apt_string_value_generate(str,text_stream);
+			apt_text_char_insert(text_stream,'=');
+			apt_string_value_generate(&transport->mode,text_stream);
+		}
 	}
 	return TRUE;
 }

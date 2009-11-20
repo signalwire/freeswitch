@@ -33,6 +33,7 @@ struct mpf_frame_buffer_t {
 mpf_frame_buffer_t* mpf_frame_buffer_create(apr_size_t frame_size, apr_size_t frame_count, apr_pool_t *pool)
 {
 	apr_size_t i;
+	mpf_frame_t *frame;
 	mpf_frame_buffer_t *buffer = apr_palloc(pool,sizeof(mpf_frame_buffer_t));
 
 	buffer->frame_size = frame_size;
@@ -40,8 +41,10 @@ mpf_frame_buffer_t* mpf_frame_buffer_create(apr_size_t frame_size, apr_size_t fr
 	buffer->raw_data = apr_palloc(pool,buffer->frame_size*buffer->frame_count);
 	buffer->frames = apr_palloc(pool,sizeof(mpf_frame_t)*buffer->frame_count);
 	for(i=0; i<buffer->frame_count; i++) {
-		buffer->frames[i].type = MEDIA_FRAME_TYPE_NONE;
-		buffer->frames[i].codec_frame.buffer = buffer->raw_data + i*buffer->frame_size;
+		frame = &buffer->frames[i];
+		frame->type = MEDIA_FRAME_TYPE_NONE;
+		frame->marker = MPF_MARKER_NONE;
+		frame->codec_frame.buffer = buffer->raw_data + i*buffer->frame_size;
 	}
 
 	buffer->write_pos = buffer->read_pos = 0;
@@ -102,6 +105,7 @@ apt_bool_t mpf_frame_buffer_read(mpf_frame_buffer_t *buffer, mpf_frame_t *media_
 		/* normal read */
 		mpf_frame_t *src_media_frame = mpf_frame_buffer_frame_get(buffer,buffer->read_pos);
 		media_frame->type = src_media_frame->type;
+		media_frame->marker = src_media_frame->marker;
 		if(media_frame->type & MEDIA_FRAME_TYPE_AUDIO) {
 			media_frame->codec_frame.size = src_media_frame->codec_frame.size;
 			memcpy(
@@ -113,11 +117,13 @@ apt_bool_t mpf_frame_buffer_read(mpf_frame_buffer_t *buffer, mpf_frame_t *media_
 			media_frame->event_frame = src_media_frame->event_frame;
 		}
 		src_media_frame->type = MEDIA_FRAME_TYPE_NONE;
+		src_media_frame->marker = MPF_MARKER_NONE;
 		buffer->read_pos ++;
 	}
 	else {
 		/* underflow */
 		media_frame->type = MEDIA_FRAME_TYPE_NONE;
+		media_frame->marker = MPF_MARKER_NONE;
 	}
 	apr_thread_mutex_unlock(buffer->guard);
 	return TRUE;

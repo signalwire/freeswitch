@@ -33,3 +33,20 @@ apt_bool_t apt_ip_get(char **addr, apr_pool_t *pool)
 	}
 	return TRUE;
 }
+
+/** Seconds from  Jan 1 1900 to Jan 1 1970 */
+#define NTP_TIME_OFFSET 2208988800UL
+
+/** Get current NTP time */
+void apt_ntp_time_get(apr_uint32_t *sec, apr_uint32_t *frac)
+{
+	apr_uint32_t t;
+	apr_uint32_t usec;
+	
+	apr_time_t now = apr_time_now();
+	*sec = (apr_uint32_t)apr_time_sec(now) + NTP_TIME_OFFSET;
+
+	usec = (apr_uint32_t) apr_time_usec(now);
+	t = (usec * 1825) >> 5;
+	*frac = ((usec << 12) + (usec << 8) - t);
+}

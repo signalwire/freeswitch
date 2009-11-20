@@ -18,7 +18,8 @@
 #include <apr_file_io.h>
 #include "apt_test_suite.h"
 #include "apt_log.h"
-#include "mrcp_default_factory.h"
+#include "mrcp_resource_loader.h"
+#include "mrcp_resource_factory.h"
 #include "mrcp_message.h"
 #include "mrcp_stream.h"
 
@@ -173,7 +174,15 @@ static apt_bool_t test_dir_process(apt_test_suite_t *suite, mrcp_resource_factor
 
 static apt_bool_t parse_gen_test_run(apt_test_suite_t *suite, int argc, const char * const *argv)
 {
-	mrcp_resource_factory_t *factory = mrcp_default_factory_create(suite->pool);
+	mrcp_resource_factory_t *factory;
+	mrcp_resource_loader_t *resource_loader;
+	resource_loader = mrcp_resource_loader_create(TRUE,suite->pool);
+	if(!resource_loader) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create Resource Loader");
+		return FALSE;
+	}
+	
+	factory = mrcp_resource_factory_get(resource_loader);
 	if(!factory) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create Resource Factory");
 		return FALSE;

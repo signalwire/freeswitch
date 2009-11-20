@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="mrcptest"
 	ProjectGUID="{3CA97077-6210-4362-998A-D15A35EEAA08}"
 	RootNamespace="mrcptest"

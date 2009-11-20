@@ -22,31 +22,52 @@
  * @brief MPF Context
  */ 
 
-#include "mpf_object.h"
-#include "apt_obj_list.h"
+#include "mpf_types.h"
 
 APT_BEGIN_EXTERN_C
 
-/** Definition of table item used in context */
-typedef void* table_item_t;
+/** Opaque factory of media contexts */
+typedef struct mpf_context_factory_t mpf_context_factory_t;
+ 
+/**
+ * Create factory of media contexts.
+ */
+MPF_DECLARE(mpf_context_factory_t*) mpf_context_factory_create(apr_pool_t *pool); 
 
-/** Media processing context */
-struct mpf_context_t {
-    /** Pool to allocate memory from */
-	apr_pool_t        *pool;
-    /** External object */
-	void              *obj;
-    /** Set when context is addded to the list to ensure quick find on delete */
-	apt_list_elem_t   *elem;
+/**
+ * Destroy factory of media contexts.
+ */
+MPF_DECLARE(void) mpf_context_factory_destroy(mpf_context_factory_t *factory); 
 
-	/** Max number of terminations */
-	apr_size_t          max_termination_count;
-	/** Current number of terminations */
-	apr_size_t          termination_count;
-	/** Table, which holds terminations and topology */
-	table_item_t      **table;
-};
+/**
+ * Process factory of media contexts.
+ */
+MPF_DECLARE(apt_bool_t) mpf_context_factory_process(mpf_context_factory_t *factory);
 
+/**
+ * Create MPF context.
+ * @param factory the factory context belongs to
+ * @param obj the external object associated with context
+ * @param max_termination_count the max number of terminations in context
+ * @param pool the pool to allocate memory from
+ */
+MPF_DECLARE(mpf_context_t*) mpf_context_create(
+								mpf_context_factory_t *factory, 
+								void *obj, 
+								apr_size_t max_termination_count, 
+								apr_pool_t *pool);
+
+/**
+ * Destroy MPF context.
+ * @param context the context to destroy
+ */
+MPF_DECLARE(apt_bool_t) mpf_context_destroy(mpf_context_t *context);
+
+/**
+ * Get external object associated with MPF context.
+ * @param context the context to get object from
+ */
+MPF_DECLARE(void*) mpf_context_object_get(mpf_context_t *context);
 
 /**
  * Add termination to context.
@@ -63,22 +84,42 @@ MPF_DECLARE(apt_bool_t) mpf_context_termination_add(mpf_context_t *context, mpf_
 MPF_DECLARE(apt_bool_t) mpf_context_termination_subtract(mpf_context_t *context, mpf_termination_t *termination);
 
 /**
- * Apply topology.
- * @param context the context which holds the termination
- * @param termination the termination to apply toplogy for
+ * Add association between specified terminations.
+ * @param context the context to add association in the scope of
+ * @param termination1 the first termination to associate
+ * @param termination2 the second termination to associate
  */
-MPF_DECLARE(apt_bool_t) mpf_context_topology_apply(mpf_context_t *context, mpf_termination_t *termination);
+MPF_DECLARE(apt_bool_t) mpf_context_association_add(mpf_context_t *context, mpf_termination_t *termination1, mpf_termination_t *termination2);
+
+/**
+ * Remove association between specified terminations.
+ * @param context the context to remove association in the scope of
+ * @param termination1 the first termination
+ * @param termination2 the second termination
+ */
+MPF_DECLARE(apt_bool_t) mpf_context_association_remove(mpf_context_t *context, mpf_termination_t *termination1, mpf_termination_t *termination2);
+
+/**
+ * Reset assigned associations and destroy applied topology.
+ * @param context the context to reset associations for
+ */
+MPF_DECLARE(apt_bool_t) mpf_context_associations_reset(mpf_context_t *context);
+
+/**
+ * Apply topology.
+ * @param context the context to apply topology for
+ */
+MPF_DECLARE(apt_bool_t) mpf_context_topology_apply(mpf_context_t *context);
 
 /**
  * Destroy topology.
- * @param context the context which holds the termination
- * @param termination the termination to destroy toplogy for
+ * @param context the context to destroy topology for
  */
-MPF_DECLARE(apt_bool_t) mpf_context_topology_destroy(mpf_context_t *context, mpf_termination_t *termination);
+MPF_DECLARE(apt_bool_t) mpf_context_topology_destroy(mpf_context_t *context);
 
 /**
  * Process context.
- * @param context the context
+ * @param context the context to process
  */
 MPF_DECLARE(apt_bool_t) mpf_context_process(mpf_context_t *context);
 

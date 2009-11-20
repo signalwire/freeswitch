@@ -548,7 +548,7 @@ static const mrcp_header_vtable_t vtable = {
 	SYNTHESIZER_HEADER_COUNT
 };
 
-MRCP_DECLARE(const mrcp_header_vtable_t*) mrcp_synth_header_vtable_get(mrcp_version_e version)
+const mrcp_header_vtable_t* mrcp_synth_header_vtable_get(mrcp_version_e version)
 {
 	return &vtable;
 }

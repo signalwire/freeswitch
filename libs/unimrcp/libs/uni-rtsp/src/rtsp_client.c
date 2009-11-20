@@ -582,10 +582,12 @@ static apt_bool_t rtsp_client_session_response_process(rtsp_client_t *client, rt
 		apr_hash_set(session->resource_table,resource_name,APR_HASH_KEY_STRING,NULL);
 
 		if(apr_hash_count(session->resource_table) == 0) {
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Remove RTSP Session "APT_PTRSID_FMT,
-				session,
-				session->id.buf);
-			apr_hash_set(session->connection->session_table,session->id.buf,session->id.length,NULL);
+			if(session->connection) {
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Remove RTSP Session "APT_PTRSID_FMT,
+					session,
+					session->id.buf);
+				apr_hash_set(session->connection->session_table,session->id.buf,session->id.length,NULL);
+			}
 		}
 	}
 

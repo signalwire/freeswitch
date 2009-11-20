@@ -18,7 +18,7 @@
 #include <apr_xml.h>
 #include "unimrcp_server.h"
 #include "uni_version.h"
-#include "mrcp_default_factory.h"
+#include "mrcp_resource_loader.h"
 #include "mpf_engine.h"
 #include "mpf_codec_manager.h"
 #include "mpf_rtp_termination_factory.h"
@@ -57,8 +57,6 @@ MRCP_DECLARE(mrcp_server_t*) unimrcp_server_start(apt_dir_layout_t *dir_layout)
 {
 	apr_pool_t *pool;
 	apr_xml_doc *doc;
-	mrcp_resource_factory_t *resource_factory;
-	mpf_codec_manager_t *codec_manager;
 	mrcp_server_t *server;
 
 	if(!dir_layout) {
@@ -74,16 +72,6 @@ MRCP_DECLARE(mrcp_server_t*) unimrcp_server_start(apt_dir_layout_t *dir_layout)
 	pool = mrcp_server_memory_pool_get(server);
 	if(!pool) {
 		return NULL;
-	}
-
-	resource_factory = mrcp_default_factory_create(pool);
-	if(resource_factory) {
-		mrcp_server_resource_factory_register(server,resource_factory);
-	}
-
-	codec_manager = mpf_engine_codec_manager_create(pool);
-	if(codec_manager) {
-		mrcp_server_codec_manager_register(server,codec_manager);
 	}
 
 	doc = unimrcp_server_config_parse(dir_layout->conf_dir_path,pool);
@@ -134,7 +122,7 @@ static apr_xml_doc* unimrcp_server_config_parse(const char *dir_path, apr_pool_t
 	rv = apr_xml_parse_file(pool,&parser,&doc,fd,XML_FILE_BUFFER_LENGTH);
 	if(rv != APR_SUCCESS) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse Config File [%s]",file_path);
-		return NULL;
+		doc = NULL;
 	}
 
 	apr_file_close(fd);
@@ -452,6 +440,18 @@ static mpf_termination_factory_t* unimrcp_server_rtp_factory_load(mrcp_server_t 
 				else if(strcasecmp(attr_name->value,"own-preference") == 0) {
 					rtp_config->own_preferrence = atoi(attr_value->value);
 				}
+				else if(strcasecmp(attr_name->value,"rtcp") == 0) {
+					rtp_config->rtcp = atoi(attr_value->value);
+				}
+				else if(strcasecmp(attr_name->value,"rtcp-bye") == 0) {
+					rtp_config->rtcp_bye_policy = atoi(attr_value->value);
+				}
+				else if(strcasecmp(attr_name->value,"rtcp-tx-interval") == 0) {
+					rtp_config->rtcp_tx_interval = (apr_uint16_t)atoi(attr_value->value);
+				}
+				else if(strcasecmp(attr_name->value,"rtcp-rx-resolution") == 0) {
+					rtp_config->rtcp_rx_resolution = (apr_uint16_t)atol(attr_value->value);
+				}
 				else {
 					apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Attribute <%s>",attr_name->value);
 				}
@@ -469,22 +469,33 @@ static mpf_termination_factory_t* unimrcp_server_rtp_factory_load(mrcp_server_t 
 static apt_bool_t unimrcp_server_media_engines_load(mrcp_server_t *server, const apr_xml_elem *root, apr_pool_t *pool)
 {
 	const apr_xml_elem *elem;
+
+	/* create codec manager first */
+	mpf_codec_manager_t *codec_manager = mpf_engine_codec_manager_create(pool);
+	if(codec_manager) {
+		mrcp_server_codec_manager_register(server,codec_manager);
+	}
+
 	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Media Engines");
 	for(elem = root->first_child; elem; elem = elem->next) {
 		if(strcasecmp(elem->name,"engine") == 0) {
 			mpf_engine_t *media_engine;
+			unsigned long rate = 1;
 			const char *name = NULL;
 			const apr_xml_attr *attr;
 			for(attr = elem->attr; attr; attr = attr->next) {
 				if(strcasecmp(attr->name,"name") == 0) {
 					name = apr_pstrdup(pool,attr->value);
 				}
+				else if(strcasecmp(attr->name,"rate") == 0) {
+					rate = atol(attr->value);
+				}
 				else {
 					apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Attribute <%s>",attr->name);
 				}
 			}
 			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Media Engine");
-			media_engine = mpf_engine_create(pool);
+			media_engine = mpf_engine_create(rate,pool);
 			if(media_engine) {
 				mrcp_server_media_engine_register(server,media_engine,name);
 			}
@@ -513,18 +524,70 @@ static apt_bool_t unimrcp_server_media_engines_load(mrcp_server_t *server, const
 	return TRUE;
 }
 
+/** Load resource */
+static apt_bool_t unimrcp_server_resource_load(mrcp_server_t *server, mrcp_resource_loader_t *resource_loader, const apr_xml_elem *root, apr_pool_t *pool)
+{
+	apt_str_t resource_class;
+	apt_bool_t resource_enabled = TRUE;
+	const apr_xml_attr *attr;
+	apt_string_reset(&resource_class);
+	for(attr = root->attr; attr; attr = attr->next) {
+		if(strcasecmp(attr->name,"class") == 0) {
+			apt_string_set(&resource_class,attr->value);
+		}
+		else if(strcasecmp(attr->name,"enable") == 0) {
+			resource_enabled = atoi(attr->value);
+		}
+		else {
+			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Attribute <%s>",attr->name);
+		}
+	}
+
+	if(!resource_class.buf || !resource_enabled) {
+		return FALSE;
+	}
+
+	return mrcp_resource_load(resource_loader,&resource_class);
+}
+
+/** Load resources */
+static apt_bool_t unimrcp_server_resources_load(mrcp_server_t *server, const apr_xml_elem *root, apr_pool_t *pool)
+{
+	const apr_xml_elem *elem;
+	mrcp_resource_factory_t *resource_factory;
+	mrcp_resource_loader_t *resource_loader = mrcp_resource_loader_create(FALSE,pool);
+	if(!resource_loader) {
+		return FALSE;
+	}
+
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Resources");
+	for(elem = root->first_child; elem; elem = elem->next) {
+		if(strcasecmp(elem->name,"resource") == 0) {
+			unimrcp_server_resource_load(server,resource_loader,elem,pool);
+		}
+		else {
+			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Element <%s>",elem->name);
+		}
+	}    
+	
+	resource_factory = mrcp_resource_factory_get(resource_loader);
+	mrcp_server_resource_factory_register(server,resource_factory);
+	return TRUE;
+}
+
 /** Load plugin */
 static apt_bool_t unimrcp_server_plugin_load(mrcp_server_t *server, const char *plugin_dir_path, const apr_xml_elem *root, apr_pool_t *pool)
 {
-	const char *plugin_name = NULL;
+	mrcp_engine_config_t *config;
 	const char *plugin_class = NULL;
 	const char *plugin_ext = NULL;
 	const char *plugin_path = NULL;
 	apt_bool_t plugin_enabled = TRUE;
 	const apr_xml_attr *attr;
+	config = mrcp_engine_config_alloc(pool);
 	for(attr = root->attr; attr; attr = attr->next) {
 		if(strcasecmp(attr->name,"name") == 0) {
-			plugin_name = apr_pstrdup(pool,attr->value);
+			config->name = apr_pstrdup(pool,attr->value);
 		}
 		else if(strcasecmp(attr->name,"class") == 0) {
 			plugin_class = attr->value;
@@ -534,6 +597,9 @@ static apt_bool_t unimrcp_server_plugin_load(mrcp_server_t *server, const char *
 		}
 		else if(strcasecmp(attr->name,"enable") == 0) {
 			plugin_enabled = atoi(attr->value);
+		}
+		else if(strcasecmp(attr->name,"max-channel-count") == 0) {
+			config->max_channel_count = atol(attr->value);
 		}
 		else {
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Attribute <%s>",attr->name);
@@ -557,14 +623,31 @@ static apt_bool_t unimrcp_server_plugin_load(mrcp_server_t *server, const char *
 		plugin_path = apr_psprintf(pool,"%s/%s.%s",plugin_dir_path,plugin_class,plugin_ext);
 	}
 
-	return mrcp_server_plugin_register(server,plugin_path,plugin_name);
+	/* load optional name/value params */
+	if(root->first_child){
+		const apr_xml_attr *attr_name;
+		const apr_xml_attr *attr_value;
+		const apr_xml_elem *elem;
+		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Engine Params");
+		config->params = apr_table_make(pool,1);
+		for(elem = root->first_child; elem; elem = elem->next) {
+			if(strcasecmp(elem->name,"param") == 0) {
+				if(param_name_value_get(elem,&attr_name,&attr_value) == TRUE) {
+					apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Param %s:%s",attr_name->value,attr_value->value);
+					apr_table_set(config->params,attr_name->value,attr_value->value);
+				}
+			}
+		}
+	}
+
+	return mrcp_server_plugin_register(server,plugin_path,config);
 }
 
 /** Load plugins */
 static apt_bool_t unimrcp_server_plugins_load(mrcp_server_t *server, const char *plugin_dir_path, const apr_xml_elem *root, apr_pool_t *pool)
 {
 	const apr_xml_elem *elem;
-	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Plugins (Resource Engines)");
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Engine Plugins");
 	for(elem = root->first_child; elem; elem = elem->next) {
 		if(strcasecmp(elem->name,"engine") == 0) {
 			unimrcp_server_plugin_load(server,plugin_dir_path,elem,pool);
@@ -687,7 +770,10 @@ static apt_bool_t unimrcp_server_config_load(mrcp_server_t *server, const char *
 		return FALSE;
 	}
 	for(elem = root->first_child; elem; elem = elem->next) {
-		if(strcasecmp(elem->name,"settings") == 0) {
+		if(strcasecmp(elem->name,"resources") == 0) {
+			unimrcp_server_resources_load(server,elem,pool);
+		}
+		else if(strcasecmp(elem->name,"settings") == 0) {
 			unimrcp_server_settings_load(server,plugin_dir_path,elem,pool);
 		}
 		else if(strcasecmp(elem->name,"profiles") == 0) {

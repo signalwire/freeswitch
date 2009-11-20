@@ -40,6 +40,7 @@ struct apt_task_t {
 	apt_obj_list_t      *child_tasks;   /* list of the child (slave) tasks */
 	apr_size_t           pending_start; /* number of pending start requests */
 	apr_size_t           pending_term;  /* number of pending terminate requests */
+	apt_bool_t           auto_ready;    /* if TRUE, task is implicitly ready to process messages */
 	const char          *name;          /* name of the task */
 };
 
@@ -75,6 +76,7 @@ APT_DECLARE(apt_task_t*) apt_task_create(
 	task->child_tasks = apt_list_create(pool);
 	task->pending_start = 0;
 	task->pending_term = 0;
+	task->auto_ready = TRUE;
 	task->name = "Task";
 	return task;
 }
@@ -386,6 +388,23 @@ APT_DECLARE(apt_bool_t) apt_task_child_terminate(apt_task_t *task)
 	return TRUE;
 }
 
+APT_DECLARE(void) apt_task_auto_ready_set(apt_task_t *task, apt_bool_t auto_ready)
+{
+	task->auto_ready = auto_ready;
+}
+
+APT_DECLARE(apt_bool_t) apt_task_ready(apt_task_t *task)
+{
+	if(task->auto_ready == TRUE) {
+		return FALSE;
+	}
+
+	/* start child tasks (if any) */
+	apt_task_child_start(task);
+	return TRUE;
+}
+
+
 static void* APR_THREAD_FUNC apt_task_run(apr_thread_t *thread_handle, void *data)
 {
 	apt_task_t *task = data;
@@ -398,8 +417,10 @@ static void* APR_THREAD_FUNC apt_task_run(apr_thread_t *thread_handle, void *dat
 	task->state = TASK_STATE_RUNNING;
 	apr_thread_mutex_unlock(task->data_guard);
 
-	/* start child tasks (if any) */
-	apt_task_child_start(task);
+	if(task->auto_ready == TRUE) {
+		/* start child tasks (if any) */
+		apt_task_child_start(task);
+	}
 
 	/* run task */
 	if(task->vtable.run) {

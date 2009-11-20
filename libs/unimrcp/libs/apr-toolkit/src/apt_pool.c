@@ -16,7 +16,7 @@
 
 #include "apt_pool.h"
 
-//#define OWN_ALLOCATOR_PER_POOL
+#define OWN_ALLOCATOR_PER_POOL
 
 APT_DECLARE(apr_pool_t*) apt_pool_create()
 {
@@ -31,6 +31,7 @@ APT_DECLARE(apr_pool_t*) apt_pool_create()
 			apr_allocator_owner_set(allocator,pool);
 			apr_thread_mutex_create(&mutex,APR_THREAD_MUTEX_NESTED,pool);
 			apr_allocator_mutex_set(allocator,mutex);
+			apr_pool_mutex_set(pool,mutex); 
 		}
 	}
 #else

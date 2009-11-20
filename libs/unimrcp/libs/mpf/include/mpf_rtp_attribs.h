@@ -22,8 +22,7 @@
  * @brief RTP Attributes (SDP)
  */ 
 
-#include "mpf_media_descriptor.h"
-#include "mpf_stream_mode.h"
+#include "mpf_rtp_descriptor.h"
 
 APT_BEGIN_EXTERN_C
 
@@ -47,8 +46,8 @@ MPF_DECLARE(const apt_str_t*) mpf_rtp_attrib_str_get(mpf_rtp_attrib_e attrib_id)
 /** Find audio media attribute identifier by attribute name */
 MPF_DECLARE(mpf_rtp_attrib_e) mpf_rtp_attrib_id_find(const apt_str_t *attrib);
 
-/** Get string by stream mode (send/receive) */
-MPF_DECLARE(const apt_str_t*) mpf_stream_mode_str_get(mpf_stream_mode_e direction);
+/** Get string by RTP direction (send/receive) */
+MPF_DECLARE(const apt_str_t*) mpf_rtp_direction_str_get(mpf_stream_direction_e direction);
 
 APT_END_EXTERN_C
 

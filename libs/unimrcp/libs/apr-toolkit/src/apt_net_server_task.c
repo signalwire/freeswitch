@@ -89,6 +89,7 @@ APT_DECLARE(apt_net_server_task_t*) apt_net_server_task_create(
 		vtable->destroy = apt_net_server_task_on_destroy;
 		vtable->signal_msg = apt_net_server_task_msg_signal;
 	}
+	apt_task_auto_ready_set(task->base,FALSE);
 
 	task->msg_queue = apt_cyclic_queue_create(CYCLIC_QUEUE_DEFAULT_SIZE);
 	apr_thread_mutex_create(&task->guard,APR_THREAD_MUTEX_UNNESTED,pool);
@@ -323,6 +324,9 @@ static apt_bool_t apt_net_server_task_run(apt_task_t *base)
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create Pollset");
 		return FALSE;
 	}
+
+	/* explicitly indicate task is ready to process messages */
+	apt_task_ready(task->base);
 
 	while(running) {
 		status = apt_pollset_poll(task->pollset, -1, &num, &ret_pfd);

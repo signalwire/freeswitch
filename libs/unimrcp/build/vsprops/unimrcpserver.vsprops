@@ -15,6 +15,6 @@
 	/>
 	<UserMacro
 		Name="UniMRCPServerLibs"
-		Value="libunimrcpserver.lib mrcpserver.lib mrcpsignaling.lib mrcp.lib aprtoolkit.lib libaprutil-1.lib libapr-1.lib libsofia_sip_ua.lib ws2_32.lib winmm.lib"
+		Value="libunimrcpserver.lib mrcpserver.lib mrcpsignaling.lib mrcpengine.lib mrcp.lib aprtoolkit.lib libaprutil-1.lib libapr-1.lib libsofia_sip_ua.lib ws2_32.lib winmm.lib"
 	/>
 </VisualStudioPropertySheet>

@@ -61,6 +61,7 @@ typedef enum{
 	RTSP_TRANSPORT_ATTRIB_DESTINATION,
 	RTSP_TRANSPORT_ATTRIB_UNICAST,
 	RTSP_TRANSPORT_ATTRIB_MULTICAST,
+	RTSP_TRANSPORT_ATTRIB_MODE,
 
 	RTSP_TRANSPORT_ATTRIB_COUNT,
 	RTSP_TRANSPORT_ATTRIB_NONE = RTSP_TRANSPORT_ATTRIB_COUNT
@@ -135,6 +136,8 @@ struct rtsp_transport_t {
 	apt_str_t                source;
 	/** Destination IP address */
 	apt_str_t                destination;
+	/** Mode indicates the method to support (either PLAY or RECORD) */
+	apt_str_t                mode;
 };
 
 /** RTSP header */
@@ -181,6 +184,7 @@ static APR_INLINE void rtsp_transport_init(rtsp_transport_t *transport)
 	rtsp_port_range_init(&transport->server_port_range);
 	apt_string_reset(&transport->source);
 	apt_string_reset(&transport->destination);
+	apt_string_reset(&transport->mode);
 }
 
 /** Initialize header */

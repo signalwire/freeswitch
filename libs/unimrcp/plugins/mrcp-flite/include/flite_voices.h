@@ -29,11 +29,15 @@
 APT_BEGIN_EXTERN_C
 
 
+/** Opaque Flite voice declaration */
 typedef struct flite_voices_t flite_voices_t;
 
+/** Load Flite voices */
 flite_voices_t* flite_voices_load(apr_pool_t *pool);
+/** Unload Flite voices */
 void flite_voices_unload(flite_voices_t *voices);
 
+/** Get best matched voice */
 cst_voice* flite_voices_best_match_get(flite_voices_t *voices, mrcp_message_t *message);
 
 APT_END_EXTERN_C

@@ -1,21 +1,30 @@
 BUILD REQUIREMENTS
 ==================
-UniMRCP depends on a number of third party tools and libraries,
-which must be installed prior to UniMRCP build.
+UniMRCP depends on a number of third party tools and libraries, 
+which are required and must be installed first.
 
-1. Apache Portable Runtime [>=1.2.x] (http://apr.apache.org/)
-Whenever you want to build any part of UniMRCP, you need the
-Apache Portable Runtime (APR) and the APR Utility (APR-util)
+The easiest and recommended way is to install an appropriate 
+dependency package from the download area, which contains APR, 
+APR-Util and Sofia-SIP libraries prepackaged for UniMRCP use.
+
+http://code.google.com/p/unimrcp/downloads/
+
+Alternatively, the original packages of APR, APR-Util and
+Sofia-SIP libraries and patches for them can be downloaded from
+
+http://www.unimrcp.org/dependencies/
+
+References:
+  
+1. Apache Portable Runtime [>=1.2.x] (http://apr.apache.org/). 
+Whenever you want to build any part of UniMRCP, you need the 
+Apache Portable Runtime (APR) and the APR Utility (APR-util) 
 libraries.
 
-2. Sofia-SIP [>=1.12.6] (http://sofia-sip.sourceforge.net/)
-Sofia-SIP library is used to implement MRCPv2 specification
+2. Sofia-SIP [>=1.12.6] (http://sofia-sip.sourceforge.net/). 
+Sofia-SIP library is used to implement MRCPv2 specification 
 compliant SIP signaling. Sofia-SIP is an open-source SIP User-Agent
 library, compliant with the IETF RFC3261 specification.
-
-Use the link below to download one of known to work and 
-ready to use packages of APR and Sofia-SIP libraries.
-    http://www.unimrcp.org/dependencies/
 
 
 GNU BUILD
@@ -36,9 +45,11 @@ $ make install
 Installed directory layout
 bin      - binaries (unimrcpserver, unimrcpclient)
 conf     - configuration files
+data     - data files
 include  - header files
-libs     - shared (convenient) libraries
-plugins  - run-time loadable modules
+lib      - shared (convenient) libraries
+log      - log files
+plugin   - run-time loadable modules
 
 There are a couple of options to "./configure".
 To specify where to look for the APR and APR-util libraries
@@ -100,4 +111,6 @@ libraries and the default configuration to the output directory.
 Output directory layout
 bin      - binaries (unimrcpserver, unimrcpclient) and all the required dlls
 conf     - configuration files
-plugins  - run-time loadable modules
+data     - data files
+log      - log files
+plugin   - run-time loadable modules

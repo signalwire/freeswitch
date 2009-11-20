@@ -22,10 +22,15 @@
  * @brief MRCPv2 Control Descriptor
  */ 
 
+#include <apr_tables.h>
 #include "apt_string.h"
 #include "mrcp_connection_types.h"
 
 APT_BEGIN_EXTERN_C
+
+/** TCP discard port used in offer/answer */
+#define TCP_DISCARD_PORT 9
+
 
 /** MRCPv2 proto transport */
 typedef enum {
@@ -85,31 +90,27 @@ struct mrcp_control_descriptor_t {
 	apt_str_t              resource_name;
 	/** Session identifier */
 	apt_str_t              session_id;
-	/** Control media identifier */
-	apr_size_t             cmid;
+	/** Array of cmid attributes */
+	apr_array_header_t    *cmid_arr;
 	/** Base identifier */
 	apr_size_t             id;
 };
 
-/** Initialize MRCP control descriptor */
-static APR_INLINE void mrcp_control_descriptor_init(mrcp_control_descriptor_t *descriptor)
-{
-	apt_string_reset(&descriptor->ip);
-	descriptor->port = 0;
-	descriptor->proto = MRCP_PROTO_UNKNOWN;
-	descriptor->setup_type = MRCP_SETUP_TYPE_UNKNOWN;
-	descriptor->connection_type = MRCP_CONNECTION_TYPE_UNKNOWN;
-	apt_string_reset(&descriptor->resource_name);
-	apt_string_reset(&descriptor->session_id);
-	descriptor->cmid = 0;
-	descriptor->id = 0;
-}
+
+/** Create MRCP control descriptor */
+MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_descriptor_create(apr_pool_t *pool);
 
 /** Create MRCP control offer */
 MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_offer_create(apr_pool_t *pool);
 
 /** Create MRCP control answer */
 MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_answer_create(mrcp_control_descriptor_t *offer, apr_pool_t *pool);
+
+/** Add cmid to cmid_arr */
+MRCP_DECLARE(void) mrcp_cmid_add(apr_array_header_t *cmid_arr, apr_size_t cmid);
+
+/** Find cmid in cmid_arr */
+MRCP_DECLARE(apt_bool_t) mrcp_cmid_find(apr_array_header_t *cmid_arr, apr_size_t cmid);
 
 /** Get MRCP protocol transport name by identifier */
 MRCP_DECLARE(const apt_str_t*) mrcp_proto_get(mrcp_proto_type_e proto);

@@ -26,7 +26,7 @@
 
 APT_BEGIN_EXTERN_C
 
-/** Protocol version. */
+/** Protocol version */
 #define RTP_VERSION 2
 
 /** RTP header declaration */
@@ -74,8 +74,7 @@ struct rtp_header_t {
 };
 
 /** RTP extension header */
-struct rtp_extension_header_t
-{
+struct rtp_extension_header_t {
 	/** profile */
 	apr_uint16_t profile;
 	/** length */

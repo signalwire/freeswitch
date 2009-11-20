@@ -39,9 +39,6 @@ struct mpf_codec_t {
 	const mpf_codec_attribs_t    *attribs;
 	/** Optional static codec descriptor (pt < 96) */
 	const mpf_codec_descriptor_t *static_descriptor;
-	
-	/** Negotiated codec descriptor */
-	mpf_codec_descriptor_t       *descriptor;
 };
 
 /** Table of codec virtual methods */
@@ -77,7 +74,6 @@ static APR_INLINE mpf_codec_t* mpf_codec_create(
 	codec->vtable = vtable;
 	codec->attribs = attribs;
 	codec->static_descriptor = descriptor;
-	codec->descriptor = NULL;
 	return codec;
 }
 
@@ -92,7 +88,6 @@ static APR_INLINE mpf_codec_t* mpf_codec_clone(mpf_codec_t *src_codec, apr_pool_
 	codec->vtable = src_codec->vtable;
 	codec->attribs = src_codec->attribs;
 	codec->static_descriptor = src_codec->static_descriptor;
-	codec->descriptor = src_codec->descriptor;
 	return codec;
 }
 
@@ -100,13 +95,8 @@ static APR_INLINE mpf_codec_t* mpf_codec_clone(mpf_codec_t *src_codec, apr_pool_
 static APR_INLINE apt_bool_t mpf_codec_open(mpf_codec_t *codec)
 {
 	apt_bool_t rv = TRUE;
-	if(codec->descriptor) {
-		if(codec->vtable->open) {
-			rv = codec->vtable->open(codec);
-		}
-	}
-	else {
-		rv = FALSE;
+	if(codec->vtable->open) {
+		rv = codec->vtable->open(codec);
 	}
 	return rv;
 }

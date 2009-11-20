@@ -27,11 +27,15 @@
 
 APT_BEGIN_EXTERN_C
 
+/** MPF task message definition */
+typedef apt_task_msg_t mpf_task_msg_t;
+
 /**
  * Create MPF engine.
+ * @param rate the rate (n times faster than real-time)
  * @param pool the pool to allocate memory from
  */
-MPF_DECLARE(mpf_engine_t*) mpf_engine_create(apr_pool_t *pool);
+MPF_DECLARE(mpf_engine_t*) mpf_engine_create(unsigned long rate, apr_pool_t *pool);
 
 /**
  * Create MPF codec manager.
@@ -47,6 +51,31 @@ MPF_DECLARE(mpf_codec_manager_t*) mpf_engine_codec_manager_create(apr_pool_t *po
 MPF_DECLARE(apt_bool_t) mpf_engine_codec_manager_register(mpf_engine_t *engine, const mpf_codec_manager_t *codec_manager);
 
 /**
+ * Create MPF context.
+ * @param engine the engine to create context for
+ * @param obj the external object associated with context
+ * @param max_termination_count the max number of terminations in context
+ * @param pool the pool to allocate memory from
+ */
+MPF_DECLARE(mpf_context_t*) mpf_engine_context_create(
+								mpf_engine_t *engine, 
+								void *obj, 
+								apr_size_t max_termination_count, 
+								apr_pool_t *pool);
+
+/**
+ * Destroy MPF context.
+ * @param context the context to destroy
+ */
+MPF_DECLARE(apt_bool_t) mpf_engine_context_destroy(mpf_context_t *context);
+
+/**
+ * Get external object associated with MPF context.
+ * @param context the context to get object from
+ */
+MPF_DECLARE(void*) mpf_engine_context_object_get(mpf_context_t *context);
+
+/**
  * Get task.
  * @param engine the engine to get task from
  */
@@ -58,6 +87,60 @@ MPF_DECLARE(apt_task_t*) mpf_task_get(mpf_engine_t *engine);
  * @param type the type to set
  */
 MPF_DECLARE(void) mpf_engine_task_msg_type_set(mpf_engine_t *engine, apt_task_msg_type_e type);
+
+/**
+ * Create task message(if not created) and add MPF termination message to it.
+ * @param engine the engine task message belongs to
+ * @param command_id the MPF command identifier
+ * @param context the context to add termination to
+ * @param termination the termination to add
+ * @param descriptor the termination dependent descriptor
+ * @param task_msg the task message to create and add constructed MPF message to
+ */
+MPF_DECLARE(apt_bool_t) mpf_engine_termination_message_add(
+							mpf_engine_t *engine,
+							mpf_command_type_e command_id,
+							mpf_context_t *context,
+							mpf_termination_t *termination,
+							void *descriptor,
+							mpf_task_msg_t **task_msg);
+
+/**
+ * Create task message(if not created) and add MPF association message to it.
+ * @param engine the engine task message belongs to
+ * @param command_id the MPF command identifier
+ * @param context the context to add association of terminations for
+ * @param termination the termination to associate
+ * @param assoc_termination the termination to associate
+ * @param task_msg the task message to create and add constructed MPF message to
+ */
+MPF_DECLARE(apt_bool_t) mpf_engine_assoc_message_add(
+							mpf_engine_t *engine,
+							mpf_command_type_e command_id,
+							mpf_context_t *context,
+							mpf_termination_t *termination,
+							mpf_termination_t *assoc_termination,
+							mpf_task_msg_t **task_msg);
+
+/**
+ * Create task message(if not created) and add MPF topology message to it.
+ * @param engine the engine task message belongs to
+ * @param command_id the MPF command identifier
+ * @param context the context to modify topology for
+ * @param task_msg the task message to create and add constructed MPF message to
+ */
+MPF_DECLARE(apt_bool_t) mpf_engine_topology_message_add(
+							mpf_engine_t *engine,
+							mpf_command_type_e command_id,
+							mpf_context_t *context,
+							mpf_task_msg_t **task_msg);
+
+/**
+ * Send MPF task message.
+ * @param engine the engine to send task message to
+ * @param task_msg the task message to send
+ */
+MPF_DECLARE(apt_bool_t) mpf_engine_message_send(mpf_engine_t *engine, mpf_task_msg_t **task_msg);
 
 
 APT_END_EXTERN_C

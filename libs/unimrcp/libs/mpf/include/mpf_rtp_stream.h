@@ -36,6 +36,18 @@ APT_BEGIN_EXTERN_C
 MPF_DECLARE(mpf_audio_stream_t*) mpf_rtp_stream_create(mpf_termination_t *termination, mpf_rtp_config_t *config, apr_pool_t *pool);
 
 /**
+ * Add/enable RTP stream.
+ * @param stream RTP stream to add
+ */
+MPF_DECLARE(apt_bool_t) mpf_rtp_stream_add(mpf_audio_stream_t *stream);
+
+/**
+ * Subtract/disable RTP stream.
+ * @param stream RTP stream to subtract
+ */
+MPF_DECLARE(apt_bool_t) mpf_rtp_stream_remove(mpf_audio_stream_t *stream);
+
+/**
  * Modify RTP stream.
  * @param stream RTP stream to modify
  * @param descriptor the descriptor to modify stream according

@@ -16,25 +16,28 @@
 
 #include <stdlib.h>
 #include "mpf_codec_manager.h"
+#include "mpf_rtp_pt.h"
+#include "mpf_named_event.h"
 #include "apt_log.h"
 
 
 struct mpf_codec_manager_t {
 	/** Memory pool */
-	apr_pool_t   *pool;
+	apr_pool_t             *pool;
 
-	/** Dynamic array of codecs (mpf_codec_t*) */
-	apr_array_header_t *codec_arr;
+	/** Dynamic (resizable) array of codecs (mpf_codec_t*) */
+	apr_array_header_t     *codec_arr;
+	/** Default named event descriptor */
+	mpf_codec_descriptor_t *event_descriptor;
 };
 
-
-mpf_codec_descriptor_t* mpf_codec_lpcm_descriptor_create(apr_uint16_t sampling_rate, apr_byte_t channel_count, apr_pool_t *pool);
 
 MPF_DECLARE(mpf_codec_manager_t*) mpf_codec_manager_create(apr_size_t codec_count, apr_pool_t *pool)
 {
 	mpf_codec_manager_t *codec_manager = apr_palloc(pool,sizeof(mpf_codec_manager_t));
 	codec_manager->pool = pool;
 	codec_manager->codec_arr = apr_array_make(pool,(int)codec_count,sizeof(mpf_codec_t*));
+	codec_manager->event_descriptor = mpf_event_descriptor_create(8000,pool);
 	return codec_manager;
 }
 
@@ -45,62 +48,32 @@ MPF_DECLARE(void) mpf_codec_manager_destroy(mpf_codec_manager_t *codec_manager)
 
 MPF_DECLARE(apt_bool_t) mpf_codec_manager_codec_register(mpf_codec_manager_t *codec_manager, mpf_codec_t *codec)
 {
-	mpf_codec_t **slot;
 	if(!codec || !codec->attribs || !codec->attribs->name.buf) {
 		return FALSE;
 	}
 
 	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Register Codec [%s]",codec->attribs->name.buf);
 
-	slot = apr_array_push(codec_manager->codec_arr);
-	*slot = codec;
+	APR_ARRAY_PUSH(codec_manager->codec_arr,mpf_codec_t*) = codec;
 	return TRUE;
 }
 
 MPF_DECLARE(mpf_codec_t*) mpf_codec_manager_codec_get(const mpf_codec_manager_t *codec_manager, mpf_codec_descriptor_t *descriptor, apr_pool_t *pool)
 {
 	int i;
-	mpf_codec_t *codec = NULL;
-	mpf_codec_t *ret_codec = NULL;
+	mpf_codec_t *codec;
 	if(!descriptor) {
 		return NULL;
 	}
 
 	for(i=0; i<codec_manager->codec_arr->nelts; i++) {
-		codec = ((mpf_codec_t**)codec_manager->codec_arr->elts)[i];
-		if(descriptor->payload_type < 96) {
-			if(codec->static_descriptor && codec->static_descriptor->payload_type == descriptor->payload_type) {
-				descriptor->name = codec->static_descriptor->name;
-				descriptor->sampling_rate = codec->static_descriptor->sampling_rate;
-				descriptor->channel_count = codec->static_descriptor->channel_count;
-				break;
-			}
-		}
-		else {
-			if(apt_string_compare(&codec->attribs->name,&descriptor->name) == TRUE) {
-				/* sampling rate must be checked as well */
-				break;
-			}
+		codec = APR_ARRAY_IDX(codec_manager->codec_arr,i,mpf_codec_t*);
+		if(mpf_codec_descriptor_match_by_attribs(descriptor,codec->static_descriptor,codec->attribs) == TRUE) {
+			return mpf_codec_clone(codec,pool);
 		}
 	}
 
-	if(i == codec_manager->codec_arr->nelts) {
-		/* no match found */
-		return NULL;
-	}
-	if(codec) {
-		ret_codec = mpf_codec_clone(codec,pool);
-		ret_codec->descriptor = descriptor;
-	}
-	return ret_codec;
-}
-
-MPF_DECLARE(mpf_codec_t*) mpf_codec_manager_default_codec_get(const mpf_codec_manager_t *codec_manager, apr_pool_t *pool)
-{
-	mpf_codec_t *codec;
-	mpf_codec_descriptor_t *descriptor = mpf_codec_lpcm_descriptor_create(8000,1,pool);
-	codec = mpf_codec_manager_codec_get(codec_manager,descriptor,pool);
-	return codec;
+	return NULL;
 }
 
 MPF_DECLARE(apt_bool_t) mpf_codec_manager_codec_list_get(const mpf_codec_manager_t *codec_manager, mpf_codec_list_t *codec_list, apr_pool_t *pool)
@@ -112,13 +85,19 @@ MPF_DECLARE(apt_bool_t) mpf_codec_manager_codec_list_get(const mpf_codec_manager
 
 	mpf_codec_list_init(codec_list,codec_manager->codec_arr->nelts,pool);
 	for(i=0; i<codec_manager->codec_arr->nelts; i++) {
-		codec = ((mpf_codec_t**)codec_manager->codec_arr->elts)[i];
+		codec = APR_ARRAY_IDX(codec_manager->codec_arr,i,mpf_codec_t*);
 		static_descriptor = codec->static_descriptor;
 		if(static_descriptor) {
 			descriptor = mpf_codec_list_add(codec_list);
 			if(descriptor) {
 				*descriptor = *static_descriptor;
 			}
+		}
+	}
+	if(codec_manager->event_descriptor) {
+		descriptor = mpf_codec_list_add(codec_list);
+		if(descriptor) {
+			*descriptor = *codec_manager->event_descriptor;
 		}
 	}
 	return TRUE;
@@ -138,25 +117,34 @@ static apt_bool_t mpf_codec_manager_codec_parse(const mpf_codec_manager_t *codec
 		apt_string_assign(&name,str,pool);
 		/* find codec by name */
 		codec = mpf_codec_manager_codec_find(codec_manager,&name);
-		if(!codec) {
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"No Such Codec [%s]",str);
-			return FALSE;
-		}
+		if(codec) {
+			descriptor = mpf_codec_list_add(codec_list);
+			descriptor->name = name;
 
-		descriptor = mpf_codec_list_add(codec_list);
-		descriptor->name = name;
-
-		/* set defualt attributes */
-		if(codec->static_descriptor) {
-			descriptor->payload_type = codec->static_descriptor->payload_type;
-			descriptor->sampling_rate = codec->static_descriptor->sampling_rate;
-			descriptor->channel_count = codec->static_descriptor->channel_count;
+			/* set default attributes */
+			if(codec->static_descriptor) {
+				descriptor->payload_type = codec->static_descriptor->payload_type;
+				descriptor->sampling_rate = codec->static_descriptor->sampling_rate;
+				descriptor->channel_count = codec->static_descriptor->channel_count;
+			}
+			else {
+				descriptor->payload_type = RTP_PT_DYNAMIC;
+				descriptor->sampling_rate = 8000;
+				descriptor->channel_count = 1;
+			}
 		}
 		else {
-			descriptor->payload_type = 96;
-			descriptor->sampling_rate = 8000;
-			descriptor->channel_count = 1;
+			mpf_codec_descriptor_t *event_descriptor = codec_manager->event_descriptor;
+			if(event_descriptor && apt_string_compare(&event_descriptor->name,&name) == TRUE) {
+				descriptor = mpf_codec_list_add(codec_list);
+				*descriptor = *event_descriptor;
+			}
+			else {
+				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"No Such Codec [%s]",str);
+				return FALSE;
+			}
 		}
+
 
 		/* parse optional payload type */
 		str = apr_strtok(codec_desc_str, separator, &state);
@@ -200,7 +188,7 @@ MPF_DECLARE(const mpf_codec_t*) mpf_codec_manager_codec_find(const mpf_codec_man
 	int i;
 	mpf_codec_t *codec;
 	for(i=0; i<codec_manager->codec_arr->nelts; i++) {
-		codec = ((mpf_codec_t**)codec_manager->codec_arr->elts)[i];
+		codec = APR_ARRAY_IDX(codec_manager->codec_arr,i,mpf_codec_t*);
 		if(apt_string_compare(&codec->attribs->name,codec_name) == TRUE) {
 			return codec;
 		}

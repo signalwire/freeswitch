@@ -355,6 +355,9 @@ static apt_bool_t mrcp_unirtsp_on_session_control(mrcp_session_t *mrcp_session, 
 	else if(mrcp_message->start_line.message_type == MRCP_MESSAGE_TYPE_EVENT) {
 		/* send RTSP announce */
 		rtsp_message = rtsp_request_create(mrcp_session->pool);
+		rtsp_message->start_line.common.request_line.resource_name = rtsp_name_get_by_mrcp_name(
+									agent->config->resource_map,
+									mrcp_message->channel_id.resource_name.buf);
 		rtsp_message->start_line.common.request_line.method_id = RTSP_METHOD_ANNOUNCE;
 	}
 

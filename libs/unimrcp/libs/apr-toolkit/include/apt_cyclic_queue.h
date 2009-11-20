@@ -26,6 +26,7 @@
 
 APT_BEGIN_EXTERN_C
 
+/** Default size (number of elements) of cyclic queue */
 #define CYCLIC_QUEUE_DEFAULT_SIZE	100
 
 /** Opaque cyclic queue declaration */

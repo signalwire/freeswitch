@@ -23,7 +23,7 @@
  */ 
 
 #include "mrcp_server_types.h"
-#include "mrcp_resource_engine.h"
+#include "mrcp_engine_iface.h"
 #include "apt_task.h"
 
 APT_BEGIN_EXTERN_C
@@ -62,12 +62,12 @@ MRCP_DECLARE(apt_bool_t) mrcp_server_destroy(mrcp_server_t *server);
 MRCP_DECLARE(apt_bool_t) mrcp_server_resource_factory_register(mrcp_server_t *server, mrcp_resource_factory_t *resource_factory);
 
 /**
- * Register MRCP resource engine.
+ * Register MRCP engine.
  * @param server the MRCP server to set engine for
- * @param engine the resource engine to set
- * @param name the name of the resource engine
+ * @param engine the engine to set
+ * @param config the config of the engine
  */
-MRCP_DECLARE(apt_bool_t) mrcp_server_resource_engine_register(mrcp_server_t *server, mrcp_resource_engine_t *engine, const char *name);
+MRCP_DECLARE(apt_bool_t) mrcp_server_engine_register(mrcp_server_t *server, mrcp_engine_t *engine, mrcp_engine_config_t *config);
 
 /**
  * Register codec manager.
@@ -127,7 +127,7 @@ MRCP_DECLARE(mrcp_profile_t*) mrcp_server_profile_create(
  * Register MRCP profile.
  * @param server the MRCP server to set profile for
  * @param profile the profile to set
- * @param plugin_map the map of resource engines (plugins)
+ * @param plugin_map the map of engines (plugins)
  * @param name the name of the profile
  */
 MRCP_DECLARE(apt_bool_t) mrcp_server_profile_register(
@@ -137,25 +137,18 @@ MRCP_DECLARE(apt_bool_t) mrcp_server_profile_register(
 									const char *name);
 
 /**
- * Register resource engine plugin.
+ * Register MRCP engine plugin.
  * @param server the MRCP server to set engine for
  * @param path the path to plugin
- * @param name the name of the plugin
+ * @param config the config of the plugin
  */
-MRCP_DECLARE(apt_bool_t) mrcp_server_plugin_register(mrcp_server_t *server, const char *path, const char *name);
+MRCP_DECLARE(apt_bool_t) mrcp_server_plugin_register(mrcp_server_t *server, const char *path, mrcp_engine_config_t *config);
 
 /**
  * Get memory pool.
  * @param server the MRCP server to get memory pool from
  */
 MRCP_DECLARE(apr_pool_t*) mrcp_server_memory_pool_get(mrcp_server_t *server);
-
-/**
- * Get resource engine by name.
- * @param server the MRCP server to get resource engine from
- * @param name the name of the resource engine to lookup
- */
-MRCP_DECLARE(mrcp_resource_engine_t*) mrcp_server_resource_engine_get(mrcp_server_t *server, const char *name);
 
 /**
  * Get media engine by name.

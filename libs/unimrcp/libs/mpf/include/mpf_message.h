@@ -26,6 +26,9 @@
 
 APT_BEGIN_EXTERN_C
 
+/** Max number of messages grouped in a container */
+#define MAX_MPF_MESSAGE_COUNT 5
+
 /** Enumeration of MPF message types */
 typedef enum {
 	MPF_MESSAGE_TYPE_REQUEST,  /**< request message */
@@ -40,16 +43,22 @@ typedef enum {
 } mpf_status_code_e;
 
 
-/** Enumeration of commands */
+/** Enumeration of MPF commands */
 typedef enum {
-	MPF_COMMAND_ADD,     /**< add termination to context */
-	MPF_COMMAND_MODIFY,  /**< modify termination properties */
-	MPF_COMMAND_SUBTRACT,/**< subtract termination from context */ 
-	MPF_COMMAND_MOVE     /**< move termination to another context */
+	MPF_ADD_TERMINATION,     /**< add termination to context */
+	MPF_MODIFY_TERMINATION,  /**< modify termination properties */
+	MPF_SUBTRACT_TERMINATION,/**< subtract termination from context */
+	MPF_ADD_ASSOCIATION,     /**< add association between terminations */
+	MPF_REMOVE_ASSOCIATION,  /**< remove association between terminations */
+	MPF_RESET_ASSOCIATIONS,  /**< reset associations among terminations (also destroy topology) */
+	MPF_APPLY_TOPOLOGY,      /**< apply topology based on assigned associations */
+	MPF_DESTROY_TOPOLOGY     /**< destroy applied topology */
 } mpf_command_type_e;
 
 /** MPF message declaration */
 typedef struct mpf_message_t mpf_message_t;
+/** MPF message container declaration */
+typedef struct mpf_message_container_t mpf_message_container_t;
 
 /** MPF message definition */
 struct mpf_message_t {
@@ -64,8 +73,18 @@ struct mpf_message_t {
 	mpf_context_t     *context;
 	/** Termination */
 	mpf_termination_t *termination;
+	/** Associated termination */
+	mpf_termination_t *assoc_termination;
 	/** Termination type dependent descriptor */
 	void              *descriptor;
+};
+
+/** MPF message container definition */
+struct mpf_message_container_t {
+	/** Number of actual messages */
+	apr_size_t    count;
+	/** Array of messages */
+	mpf_message_t messages[MAX_MPF_MESSAGE_COUNT];
 };
 
 APT_END_EXTERN_C

@@ -257,7 +257,7 @@ static apt_bool_t apt_do_log(const char *file, int line, apt_log_priority_e prio
 	log_entry[offset++] = '\n';
 	log_entry[offset] = '\0';
 	if((apt_logger->mode & APT_LOG_OUTPUT_CONSOLE) == APT_LOG_OUTPUT_CONSOLE) {
-		printf(log_entry);
+		fwrite(log_entry,offset,1,stdout);
 	}
 	
 	if((apt_logger->mode & APT_LOG_OUTPUT_FILE) == APT_LOG_OUTPUT_FILE && apt_logger->file_data) {

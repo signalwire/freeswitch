@@ -98,12 +98,12 @@ APT_DECLARE(apt_bool_t) apt_log_instance_create(apt_log_output_e mode, apt_log_p
 /**
  * Destroy the singleton instance of the logger.
  */
-APT_DECLARE(apt_bool_t) apt_log_instance_destroy();
+APT_DECLARE(apt_bool_t) apt_log_instance_destroy(void);
 
 /**
  * Get the singleton instance of the logger.
  */
-APT_DECLARE(apt_logger_t*) apt_log_instance_get();
+APT_DECLARE(apt_logger_t*) apt_log_instance_get(void);
 
 /**
  * Set the singleton instance of the logger.
@@ -128,7 +128,7 @@ APT_DECLARE(apt_bool_t) apt_log_file_open(
 /**
  * Close the log file.
  */
-APT_DECLARE(apt_bool_t) apt_log_file_close();
+APT_DECLARE(apt_bool_t) apt_log_file_close(void);
 
 /**
  * Set the logging output.

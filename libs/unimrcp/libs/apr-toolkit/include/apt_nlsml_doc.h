@@ -30,16 +30,16 @@ APT_BEGIN_EXTERN_C
 /** Load NLSML document */
 APT_DECLARE(apr_xml_doc*) nlsml_doc_load(const apt_str_t *data, apr_pool_t *pool);
 
-/** Get the first <interpretation> element */
+/** Get the first interpretation element */
 APT_DECLARE(apr_xml_elem*) nlsml_first_interpret_get(const apr_xml_doc *doc);
 
-/** Get the next <interpretation> element */
+/** Get the next interpretation element */
 APT_DECLARE(apr_xml_elem*) nlsml_next_interpret_get(const apr_xml_elem *interpret);
 
-/** Get <instance> and <input> elements of <interpretation> element */
+/** Get instance and input elements of interpretation element */
 APT_DECLARE(apt_bool_t) nlsml_interpret_results_get(const apr_xml_elem *interpret, apr_xml_elem **instance, apr_xml_elem **input);
 
-/** Get specified atrribute of <input> */
+/** Get specified atrribute of input element */
 APT_DECLARE(const char *) nlsml_input_attrib_get(const apr_xml_elem *input, const char *attrib, apt_bool_t recursive);
 
 

@@ -34,8 +34,8 @@ APT_DECLARE(apt_pair_arr_t*) apt_pair_array_copy(const apt_pair_arr_t *src_arr, 
 	}
 	arr = apr_array_copy(pool,src_arr);
 	for(i=0; i<arr->nelts; i++) {
-		pair = (apt_pair_t*)arr->elts + i;
-		src_pair = (const apt_pair_t*)src_arr->elts + i;
+		pair = &APR_ARRAY_IDX(arr,i,apt_pair_t);
+		src_pair = &APR_ARRAY_IDX(src_arr,i,const apt_pair_t);
 		apt_pair_copy(pair,src_pair,pool);
 	}
 	return arr;
@@ -62,7 +62,7 @@ APT_DECLARE(const apt_pair_t*) apt_pair_array_find(const apt_pair_arr_t *arr, co
 	int i;
 	apt_pair_t *pair;
 	for(i=0; i<arr->nelts; i++) {
-		pair = (apt_pair_t*)arr->elts + i;
+		pair = &APR_ARRAY_IDX(arr,i,apt_pair_t);
 		if(apt_string_compare(&pair->name,name) == TRUE) {
 			return pair;
 		}

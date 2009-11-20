@@ -34,7 +34,7 @@ APT_BEGIN_EXTERN_C
 /**
  * Create APR pool
  */
-APT_DECLARE(apr_pool_t*) apt_pool_create();
+APT_DECLARE(apr_pool_t*) apt_pool_create(void);
 
 /**
  * Create APR subpool pool

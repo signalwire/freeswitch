@@ -15,6 +15,7 @@
  */
 
 #include "mpf_codec.h"
+#include "mpf_rtp_pt.h"
 #include "g711/g711.h"
 
 #define G711u_CODEC_NAME        "PCMU"
@@ -35,14 +36,14 @@ static apt_bool_t g711_close(mpf_codec_t *codec)
 
 static apt_bool_t g711u_encode(mpf_codec_t *codec, const mpf_codec_frame_t *frame_in, mpf_codec_frame_t *frame_out)
 {
-	const short *decode_buf;
+	const apr_int16_t *decode_buf;
 	unsigned char *encode_buf;
-	apr_uint32_t i;
+	apr_size_t i;
 
 	decode_buf = frame_in->buffer;
 	encode_buf = frame_out->buffer;
 
-	frame_out->size = frame_in->size / sizeof(short);
+	frame_out->size = frame_in->size / sizeof(apr_int16_t);
 
 	for(i=0; i<frame_out->size; i++) {
 		encode_buf[i] = linear_to_ulaw(decode_buf[i]);
@@ -53,14 +54,14 @@ static apt_bool_t g711u_encode(mpf_codec_t *codec, const mpf_codec_frame_t *fram
 
 static apt_bool_t g711u_decode(mpf_codec_t *codec, const mpf_codec_frame_t *frame_in, mpf_codec_frame_t *frame_out)
 {
-	short *decode_buf;
+	apr_int16_t *decode_buf;
 	const unsigned char *encode_buf;
-	apr_uint32_t i;
+	apr_size_t i;
 
 	decode_buf = frame_out->buffer;
 	encode_buf = frame_in->buffer;
 
-	frame_out->size = frame_in->size * sizeof(short);
+	frame_out->size = frame_in->size * sizeof(apr_int16_t);
 
 	for(i=0; i<frame_in->size; i++) {
 		decode_buf[i] = ulaw_to_linear(encode_buf[i]);
@@ -71,14 +72,14 @@ static apt_bool_t g711u_decode(mpf_codec_t *codec, const mpf_codec_frame_t *fram
 
 static apt_bool_t g711a_encode(mpf_codec_t *codec, const mpf_codec_frame_t *frame_in, mpf_codec_frame_t *frame_out)
 {
-	const short *decode_buf;
+	const apr_int16_t *decode_buf;
 	unsigned char *encode_buf;
-	apr_uint32_t i;
+	apr_size_t i;
 
 	decode_buf = frame_in->buffer;
 	encode_buf = frame_out->buffer;
 
-	frame_out->size = frame_in->size / sizeof(short);
+	frame_out->size = frame_in->size / sizeof(apr_int16_t);
 
 	for(i=0; i<frame_out->size; i++) {
 		encode_buf[i] = linear_to_alaw(decode_buf[i]);
@@ -89,14 +90,14 @@ static apt_bool_t g711a_encode(mpf_codec_t *codec, const mpf_codec_frame_t *fram
 
 static apt_bool_t g711a_decode(mpf_codec_t *codec, const mpf_codec_frame_t *frame_in, mpf_codec_frame_t *frame_out)
 {
-	short *decode_buf;
+	apr_int16_t *decode_buf;
 	const unsigned char *encode_buf;
-	apr_uint32_t i;
+	apr_size_t i;
 
 	decode_buf = frame_out->buffer;
 	encode_buf = frame_in->buffer;
 
-	frame_out->size = frame_in->size * sizeof(short);
+	frame_out->size = frame_in->size * sizeof(apr_int16_t);
 
 	for(i=0; i<frame_in->size; i++) {
 		decode_buf[i] = alaw_to_linear(encode_buf[i]);
@@ -122,20 +123,20 @@ static const mpf_codec_vtable_t g711a_vtable = {
 };
 
 static const mpf_codec_descriptor_t g711u_descriptor = {
-	0,
+	RTP_PT_PCMU,
 	{G711u_CODEC_NAME, G711u_CODEC_NAME_LENGTH},
 	8000,
 	1,
-	NULL,
+	{NULL, 0},
 	TRUE
 };
 
 static const mpf_codec_descriptor_t g711a_descriptor = {
-	8,
+	RTP_PT_PCMA,
 	{G711a_CODEC_NAME, G711a_CODEC_NAME_LENGTH},
 	8000,
 	1,
-	NULL,
+	{NULL,0},
 	TRUE
 };
 

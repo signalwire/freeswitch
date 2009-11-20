@@ -521,8 +521,11 @@ static void mrcp_sofia_event_callback(
 			mrcp_sofia_on_resource_discover(status,sofia_agent,nh,sofia_session,sip,tags);
 			break;
 		case nua_r_shutdown:
-			/* break main loop of sofia thread */
-			su_root_break(sofia_agent->root);
+			/* if status < 200, shutdown still in progress */
+			if(status >= 200) {
+				/* break main loop of sofia thread */
+				su_root_break(sofia_agent->root);
+			}
 			break;
 		default: 
 			break;

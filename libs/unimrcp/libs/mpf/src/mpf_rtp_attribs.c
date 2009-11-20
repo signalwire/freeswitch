@@ -38,17 +38,17 @@ MPF_DECLARE(mpf_rtp_attrib_e) mpf_rtp_attrib_id_find(const apt_str_t *attrib)
 	return apt_string_table_id_find(mpf_rtp_attrib_table,RTP_ATTRIB_COUNT,attrib);
 }
 
-MPF_DECLARE(const apt_str_t*) mpf_stream_mode_str_get(mpf_stream_mode_e direction)
+MPF_DECLARE(const apt_str_t*) mpf_rtp_direction_str_get(mpf_stream_direction_e direction)
 {
 	mpf_rtp_attrib_e attrib_id = RTP_ATTRIB_UNKNOWN;
 	switch(direction) {
-		case STREAM_MODE_SEND:
+		case STREAM_DIRECTION_SEND:
 			attrib_id = RTP_ATTRIB_SENDONLY;
 			break;
-		case STREAM_MODE_RECEIVE:
+		case STREAM_DIRECTION_RECEIVE:
 			attrib_id = RTP_ATTRIB_RECVONLY;
 			break;
-		case STREAM_MODE_SEND_RECEIVE:
+		case STREAM_DIRECTION_DUPLEX:
 			attrib_id = RTP_ATTRIB_SENDRECV;
 			break;
 		default:

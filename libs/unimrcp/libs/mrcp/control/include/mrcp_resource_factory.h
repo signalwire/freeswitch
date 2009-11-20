@@ -22,7 +22,6 @@
  * @brief Aggregation of MRCP Resources
  */ 
 
-#include "apt_string_table.h"
 #include "apt_text_stream.h"
 #include "mrcp_types.h"
 
@@ -34,27 +33,14 @@ MRCP_DECLARE(mrcp_resource_factory_t*) mrcp_resource_factory_create(apr_size_t r
 /** Destroy MRCP resource factory */
 MRCP_DECLARE(apt_bool_t) mrcp_resource_factory_destroy(mrcp_resource_factory_t *resource_factory);
 
-/** Set MRCP resource string table */
-MRCP_DECLARE(apt_bool_t) mrcp_resource_string_table_set(mrcp_resource_factory_t *resource_factory, const apt_str_table_item_t *string_table);
-
 /** Register MRCP resource */
-MRCP_DECLARE(apt_bool_t) mrcp_resource_register(mrcp_resource_factory_t *resource_factory, mrcp_resource_t *resource, mrcp_resource_id resource_id);
+MRCP_DECLARE(apt_bool_t) mrcp_resource_register(mrcp_resource_factory_t *resource_factory, mrcp_resource_t *resource);
 
 /** Get MRCP resource by resource id */
 MRCP_DECLARE(mrcp_resource_t*) mrcp_resource_get(mrcp_resource_factory_t *resource_factory, mrcp_resource_id resource_id);
 
-/** Get resource name associated with specified resource id */
-MRCP_DECLARE(const apt_str_t*) mrcp_resource_name_get(mrcp_resource_factory_t *resource_factory, mrcp_resource_id resource_id);
-
-/** Find resource id associated with specified resource name */
-MRCP_DECLARE(mrcp_resource_id) mrcp_resource_id_find(mrcp_resource_factory_t *resource_factory, const apt_str_t *resource_name);
-
-
-/** Associate MRCP resource specific data by resource identifier */
-MRCP_DECLARE(apt_bool_t) mrcp_message_resourcify_by_id(mrcp_resource_factory_t *resource_factory, mrcp_message_t *message);
-
-/** Associate MRCP resource specific data by resource name */
-MRCP_DECLARE(apt_bool_t) mrcp_message_resourcify_by_name(mrcp_resource_factory_t *resource_factory, mrcp_message_t *message);
+/** Find MRCP resource by resource name */
+MRCP_DECLARE(mrcp_resource_t*) mrcp_resource_find(mrcp_resource_factory_t *resource_factory, const apt_str_t *name);
 
 
 APT_END_EXTERN_C

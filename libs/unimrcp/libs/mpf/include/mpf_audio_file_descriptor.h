@@ -23,31 +23,30 @@
  */ 
 
 #include <stdio.h>
-#include "mpf_stream_mode.h"
-#include "mpf_codec_descriptor.h"
+#include "mpf_stream_descriptor.h"
 
 APT_BEGIN_EXTERN_C
 
-/** FILE_READER is defined as STREAM_MODE_RECEIVE */
-#define FILE_READER STREAM_MODE_RECEIVE
-/** FILE_WRITER is defined as STREAM_MODE_SEND */
-#define FILE_WRITER STREAM_MODE_SEND
+/** FILE_READER defined as a stream source */
+#define FILE_READER STREAM_DIRECTION_RECEIVE
+/** FILE_WRITER defined as a stream sink */
+#define FILE_WRITER STREAM_DIRECTION_SEND
 
 /** Audio file descriptor declaration */
 typedef struct mpf_audio_file_descriptor_t mpf_audio_file_descriptor_t;
 
 /** Audio file descriptor */
 struct mpf_audio_file_descriptor_t {
-	/** Indicate what descriptor for (reader and/or write) */
-	mpf_stream_mode_e      mask;
+	/** Indicate descriptor type (reader and/or writer) */
+	mpf_stream_direction_e  mask;
 	/** Codec descriptor to use for audio file read/write */
-	mpf_codec_descriptor_t codec_descriptor;
+	mpf_codec_descriptor_t *codec_descriptor;
 	/** File handle to read audio stream */
-	FILE                  *read_handle;
+	FILE                   *read_handle;
 	/** File handle to write audio stream */
-	FILE                  *write_handle;
+	FILE                   *write_handle;
 	/** Max size of file  */
-	apr_size_t             max_write_size;
+	apr_size_t              max_write_size;
 };
 
 APT_END_EXTERN_C

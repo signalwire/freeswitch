@@ -29,9 +29,10 @@ APT_BEGIN_EXTERN_C
 /**
  * Create audio stream decoder.
  * @param source the source to get encoded stream from
+ * @param codec the codec to use for decode
  * @param pool the pool to allocate memory from
  */
-MPF_DECLARE(mpf_audio_stream_t*) mpf_decoder_create(mpf_audio_stream_t *source, apr_pool_t *pool);
+MPF_DECLARE(mpf_audio_stream_t*) mpf_decoder_create(mpf_audio_stream_t *source, mpf_codec_t *codec, apr_pool_t *pool);
 
 
 APT_END_EXTERN_C

@@ -23,28 +23,50 @@
  */ 
 
 #include "mpf_types.h"
-#include "mpf_frame.h"
 
 APT_BEGIN_EXTERN_C
 
 /** MPF object declaration */
 typedef struct mpf_object_t mpf_object_t;
 
-/** Base for media processing objects */
+/** Media processing objects base */
 struct mpf_object_t {
-	/** Audio stream source */
-	mpf_audio_stream_t *source;
-	/** Audio stream sink */
-	mpf_audio_stream_t *sink;
-
-	/** Media frame used to read data from source and write it to sink */
-	mpf_frame_t         frame;
-
-	/** Virtual process */
-	apt_bool_t (*process)(mpf_object_t *object);
 	/** Virtual destroy */
 	apt_bool_t (*destroy)(mpf_object_t *object);
+	/** Virtual process */
+	apt_bool_t (*process)(mpf_object_t *object);
+	/** Virtual trace of media path */
+	void (*trace)(mpf_object_t *object);
 };
+
+/** Initialize object */
+static APR_INLINE void mpf_object_init(mpf_object_t *object)
+{
+	object->destroy = NULL;
+	object->process = NULL;
+	object->trace = NULL;
+}
+
+/** Destroy object */
+static APR_INLINE void mpf_object_destroy(mpf_object_t *object)
+{
+	if(object->destroy)
+		object->destroy(object);
+}
+
+/** Process object */
+static APR_INLINE void mpf_object_process(mpf_object_t *object)
+{
+	if(object->process)
+		object->process(object);
+}
+
+/** Trace media path */
+static APR_INLINE void mpf_object_trace(mpf_object_t *object)
+{
+	if(object->trace)
+		object->trace(object);
+}
 
 
 APT_END_EXTERN_C

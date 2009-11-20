@@ -78,3 +78,21 @@ apt_bool_t mrcp_connection_channel_remove(mrcp_connection_t *connection, mrcp_co
 	connection->access_count--;
 	return TRUE;
 }
+
+apt_bool_t mrcp_connection_disconnect_raise(mrcp_connection_t *connection, const mrcp_connection_event_vtable_t *vtable)
+{
+	if(vtable && vtable->on_disconnect) {
+		mrcp_control_channel_t *channel;
+		void *val;
+		apr_hash_index_t *it = apr_hash_first(connection->pool,connection->channel_table);
+		/* walk through the list of channels and raise disconnect event for them */
+		for(; it; it = apr_hash_next(it)) {
+			apr_hash_this(it,NULL,NULL,&val);
+			channel = val;
+			if(channel) {
+				vtable->on_disconnect(channel);
+			}
+		}
+	}
+	return TRUE;
+}

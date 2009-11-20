@@ -41,7 +41,7 @@ typedef struct mpf_jitter_buffer_t mpf_jitter_buffer_t;
 
 
 /** Create jitter buffer */
-mpf_jitter_buffer_t* mpf_jitter_buffer_create(mpf_jb_config_t *jb_config, mpf_codec_t *codec, apr_pool_t *pool);
+mpf_jitter_buffer_t* mpf_jitter_buffer_create(mpf_jb_config_t *jb_config, mpf_codec_descriptor_t *descriptor, mpf_codec_t *codec, apr_pool_t *pool);
 
 /** Destroy jitter buffer */
 void mpf_jitter_buffer_destroy(mpf_jitter_buffer_t *jb);
@@ -50,10 +50,10 @@ void mpf_jitter_buffer_destroy(mpf_jitter_buffer_t *jb);
 apt_bool_t mpf_jitter_buffer_restart(mpf_jitter_buffer_t *jb);
 
 /** Write audio data to jitter buffer */
-jb_result_t mpf_jitter_buffer_write(mpf_jitter_buffer_t *jb, mpf_codec_t *codec, void *buffer, apr_size_t size, apr_uint32_t ts);
+jb_result_t mpf_jitter_buffer_write(mpf_jitter_buffer_t *jb, void *buffer, apr_size_t size, apr_uint32_t ts);
 
 /** Write named event to jitter buffer */
-jb_result_t mpf_jitter_buffer_write_named_event(mpf_jitter_buffer_t *jb, mpf_named_event_frame_t *named_event, apr_uint32_t ts);
+jb_result_t mpf_jitter_buffer_event_write(mpf_jitter_buffer_t *jb, const mpf_named_event_frame_t *named_event, apr_uint32_t ts, apr_byte_t marker);
 
 /** Read media frame from jitter buffer */
 apt_bool_t mpf_jitter_buffer_read(mpf_jitter_buffer_t *jb, mpf_frame_t *media_frame);

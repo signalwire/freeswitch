@@ -56,14 +56,14 @@ MRCP_DECLARE(apr_size_t) sdp_string_generate_by_mrcp_descriptor(char *buffer, ap
 	count = mrcp_session_media_count_get(descriptor);
 	for(i=0; i<count; i++) {
 		audio_media = mrcp_session_audio_media_get(descriptor,audio_index);
-		if(audio_media && audio_media->base.id == i) {
+		if(audio_media && audio_media->id == i) {
 			/* generate audio media */
 			audio_index++;
 			offset += sdp_rtp_media_generate(buffer+offset,size-offset,descriptor,audio_media);
 			continue;
 		}
 		video_media = mrcp_session_video_media_get(descriptor,video_index);
-		if(video_media && video_media->base.id == i) {
+		if(video_media && video_media->id == i) {
 			/* generate video media */
 			video_index++;
 			offset += sdp_rtp_media_generate(buffer+offset,size-offset,descriptor,video_media);
@@ -106,7 +106,7 @@ MRCP_DECLARE(mrcp_session_descriptor_t*) mrcp_descriptor_generate_by_sdp_session
 			{
 				mpf_rtp_media_descriptor_t *media = apr_palloc(pool,sizeof(mpf_rtp_media_descriptor_t));
 				mpf_rtp_media_descriptor_init(media);
-				media->base.id = mrcp_session_audio_media_add(descriptor,media);
+				media->id = mrcp_session_audio_media_add(descriptor,media);
 				mpf_rtp_media_generate(media,sdp_media,&descriptor->ip,pool);
 				break;
 			}
@@ -114,14 +114,13 @@ MRCP_DECLARE(mrcp_session_descriptor_t*) mrcp_descriptor_generate_by_sdp_session
 			{
 				mpf_rtp_media_descriptor_t *media = apr_palloc(pool,sizeof(mpf_rtp_media_descriptor_t));
 				mpf_rtp_media_descriptor_init(media);
-				media->base.id = mrcp_session_video_media_add(descriptor,media);
+				media->id = mrcp_session_video_media_add(descriptor,media);
 				mpf_rtp_media_generate(media,sdp_media,&descriptor->ip,pool);
 				break;
 			}
 			case sdp_media_application:
 			{
-				mrcp_control_descriptor_t *control_media = apr_palloc(pool,sizeof(mrcp_control_descriptor_t));
-				mrcp_control_descriptor_init(control_media);
+				mrcp_control_descriptor_t *control_media = mrcp_control_descriptor_create(pool);
 				control_media->id = mrcp_session_control_media_add(descriptor,control_media);
 				mrcp_control_media_generate(control_media,sdp_media,&descriptor->ip,pool);
 				break;
@@ -147,31 +146,38 @@ static apr_size_t sdp_rtp_media_generate(char *buffer, apr_size_t size, const mr
 	}
 	offset += snprintf(buffer+offset,size-offset,
 		"m=audio %d RTP/AVP", 
-		audio_media->base.state == MPF_MEDIA_ENABLED ? audio_media->base.port : 0);
+		audio_media->state == MPF_MEDIA_ENABLED ? audio_media->port : 0);
 	for(i=0; i<descriptor_arr->nelts; i++) {
-		codec_descriptor = (mpf_codec_descriptor_t*)descriptor_arr->elts + i;
+		codec_descriptor = &APR_ARRAY_IDX(descriptor_arr,i,mpf_codec_descriptor_t);
 		if(codec_descriptor->enabled == TRUE) {
 			offset += snprintf(buffer+offset,size-offset," %d", codec_descriptor->payload_type);
 		}
 	}
 	offset += snprintf(buffer+offset,size-offset,"\r\n");
-	if(descriptor->ip.length && audio_media->base.ip.length && 
-		apt_string_compare(&descriptor->ip,&audio_media->base.ip) != TRUE) {
-		const char *media_ip = audio_media->base.ext_ip.buf ? audio_media->base.ext_ip.buf : audio_media->base.ip.buf;
+	if(descriptor->ip.length && audio_media->ip.length && 
+		apt_string_compare(&descriptor->ip,&audio_media->ip) != TRUE) {
+		const char *media_ip = audio_media->ext_ip.buf ? audio_media->ext_ip.buf : audio_media->ip.buf;
 		offset += sprintf(buffer+offset,"c=IN IP4 %s\r\n",media_ip);
 	}
-	if(audio_media->base.state == MPF_MEDIA_ENABLED) {
-		const apt_str_t *mode_str = mpf_stream_mode_str_get(audio_media->mode);
+	if(audio_media->state == MPF_MEDIA_ENABLED) {
+		const apt_str_t *direction_str = mpf_rtp_direction_str_get(audio_media->direction);
 		for(i=0; i<descriptor_arr->nelts; i++) {
-			codec_descriptor = (mpf_codec_descriptor_t*)descriptor_arr->elts + i;
+			codec_descriptor = &APR_ARRAY_IDX(descriptor_arr,i,mpf_codec_descriptor_t);
 			if(codec_descriptor->enabled == TRUE && codec_descriptor->name.buf) {
 				offset += snprintf(buffer+offset,size-offset,"a=rtpmap:%d %s/%d\r\n",
 					codec_descriptor->payload_type,
 					codec_descriptor->name.buf,
 					codec_descriptor->sampling_rate);
+				if(codec_descriptor->format.buf) {
+					offset += snprintf(buffer+offset,size-offset,"a=fmtp:%d %s\r\n",
+						codec_descriptor->payload_type,
+						codec_descriptor->format.buf);
+				}
 			}
 		}
-		offset += snprintf(buffer+offset,size-offset,"a=%s\r\n",mode_str ? mode_str->buf : "");
+		if(direction_str) {
+			offset += snprintf(buffer+offset,size-offset,"a=%s\r\n",direction_str->buf);
+		}
 		
 		if(audio_media->ptime) {
 			offset += snprintf(buffer+offset,size-offset,"a=ptime:%hu\r\n",audio_media->ptime);
@@ -184,6 +190,7 @@ static apr_size_t sdp_rtp_media_generate(char *buffer, apr_size_t size, const mr
 /** Generate SDP media by MRCP control media descriptor */
 static apr_size_t sdp_control_media_generate(char *buffer, apr_size_t size, const mrcp_session_descriptor_t *descriptor, const mrcp_control_descriptor_t *control_media, apt_bool_t offer)
 {
+	int i;
 	apr_size_t offset = 0;
 	const apt_str_t *proto;
 	const apt_str_t *setup_type;
@@ -197,24 +204,21 @@ static apr_size_t sdp_control_media_generate(char *buffer, apr_size_t size, cons
 				"m=application %d %s 1\r\n"
 				"a=setup:%s\r\n"
 				"a=connection:%s\r\n"
-				"a=resource:%s\r\n"
-				"a=cmid:%d\r\n",
+				"a=resource:%s\r\n",
 				control_media->port,
 				proto ? proto->buf : "",
 				setup_type ? setup_type->buf : "",
 				connection_type ? connection_type->buf : "",
-				control_media->resource_name.buf,
-				control_media->cmid);
+				control_media->resource_name.buf);
+
 		}
 		else {
 			offset += snprintf(buffer+offset,size-offset,
 				"m=application %d %s 1\r\n"
-				"a=resource:%s\r\n"
-				"a=cmid:%d\r\n",
+				"a=resource:%s\r\n",
 				control_media->port,
 				proto ? proto->buf : "",
-				control_media->resource_name.buf,
-				control_media->cmid);
+				control_media->resource_name.buf);
 		}
 	}
 	else { /* answer */
@@ -223,27 +227,30 @@ static apr_size_t sdp_control_media_generate(char *buffer, apr_size_t size, cons
 				"m=application %d %s 1\r\n"
 				"a=setup:%s\r\n"
 				"a=connection:%s\r\n"
-				"a=channel:%s@%s\r\n"
-				"a=cmid:%d\r\n",
+				"a=channel:%s@%s\r\n",
 				control_media->port,
 				proto ? proto->buf : "",
 				setup_type ? setup_type->buf : "",
 				connection_type ? connection_type->buf : "",
 				control_media->session_id.buf,
-				control_media->resource_name.buf,
-				control_media->cmid);
+				control_media->resource_name.buf);
 		}
 		else {
 			offset += sprintf(buffer+offset,
 				"m=application %d %s 1\r\n"
-				"a=channel:%s@%s\r\n"
-				"a=cmid:%d\r\n",
+				"a=channel:%s@%s\r\n",
 				control_media->port,
 				proto ? proto->buf : "",
 				control_media->session_id.buf,
-				control_media->resource_name.buf,
-				control_media->cmid);
+				control_media->resource_name.buf);
 		}
+	}
+
+	for(i=0; i<control_media->cmid_arr->nelts; i++) {
+		offset += snprintf(buffer+offset,size-offset,
+			"a=cmid:%d\r\n",
+			APR_ARRAY_IDX(control_media->cmid_arr,i,apr_size_t));
+
 	}
 
 	return offset;
@@ -285,31 +292,31 @@ static apt_bool_t mpf_rtp_media_generate(mpf_rtp_media_descriptor_t *rtp_media, 
 
 	switch(sdp_media->m_mode) {
 		case sdp_inactive:
-			rtp_media->mode = STREAM_MODE_NONE;
+			rtp_media->direction = STREAM_DIRECTION_NONE;
 			break;
 		case sdp_sendonly:
-			rtp_media->mode = STREAM_MODE_SEND;
+			rtp_media->direction = STREAM_DIRECTION_SEND;
 			break;
 		case sdp_recvonly:
-			rtp_media->mode = STREAM_MODE_RECEIVE;
+			rtp_media->direction = STREAM_DIRECTION_RECEIVE;
 			break;
 		case sdp_sendrecv:
-			rtp_media->mode = STREAM_MODE_SEND_RECEIVE;
+			rtp_media->direction = STREAM_DIRECTION_DUPLEX;
 			break;
 	}
 
 	if(sdp_media->m_connections) {
-		apt_string_assign(&rtp_media->base.ip,sdp_media->m_connections->c_address,pool);
+		apt_string_assign(&rtp_media->ip,sdp_media->m_connections->c_address,pool);
 	}
 	else {
-		rtp_media->base.ip = *ip;
+		rtp_media->ip = *ip;
 	}
 	if(sdp_media->m_port) {
-		rtp_media->base.port = (apr_port_t)sdp_media->m_port;
-		rtp_media->base.state = MPF_MEDIA_ENABLED;
+		rtp_media->port = (apr_port_t)sdp_media->m_port;
+		rtp_media->state = MPF_MEDIA_ENABLED;
 	}
 	else {
-		rtp_media->base.state = MPF_MEDIA_DISABLED;
+		rtp_media->state = MPF_MEDIA_DISABLED;
 	}
 	return TRUE;
 }
@@ -348,7 +355,7 @@ static apt_bool_t mrcp_control_media_generate(mrcp_control_descriptor_t *control
 				apt_id_resource_parse(&value,'@',&control_media->session_id,&control_media->resource_name,pool);
 				break;
 			case MRCP_ATTRIB_CMID:
-				control_media->cmid = atoi(attrib->a_value);
+				mrcp_cmid_add(control_media->cmid_arr,atoi(attrib->a_value));
 				break;
 			default:
 				break;
@@ -385,9 +392,11 @@ MRCP_DECLARE(apr_size_t) sdp_resource_discovery_string_generate(const char *ip, 
 			"m=application 0 TCP/MRCPv2 1\r\n"
 			"a=resource:speechsynth\r\n"
 			"a=resource:speechrecog\r\n"
-			"m=audio 0 RTP/AVP 0 8\r\n"
+			"m=audio 0 RTP/AVP 0 8 96 101\r\n"
 			"a=rtpmap:0 PCMU/8000\r\n"
-			"a=rtpmap:8 PCMA/8000\r\n",
+			"a=rtpmap:8 PCMA/8000\r\n"
+			"a=rtpmap:96 L16/8000\r\n"
+			"a=rtpmap:101 telephone-event/8000\r\n",
 			origin,
 			ip,
 			ip);

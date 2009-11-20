@@ -15,21 +15,20 @@
  */
 
 /* 
- * Some mandatory rules for plugin implementation.
- * 1. Each plugin MUST contain the following function as an entry point of the plugin
- *        MRCP_PLUGIN_DECLARE(mrcp_resource_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
- * 2. One and only one response MUST be sent back to the received request.
- * 3. Methods (callbacks) of the MRCP engine channel MUST not block.
- *   (asynch response can be sent from the context of other thread)
- * 4. Methods (callbacks) of the MPF engine stream MUST not block.
+ * Mandatory rules concerning plugin implementation.
+ * 1. Each plugin MUST implement a plugin/engine creator function
+ *    with the exact signature and name (the main entry point)
+ *        MRCP_PLUGIN_DECLARE(mrcp_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
+ * 2. Each plugin MUST declare its version number
+ *        MRCP_PLUGIN_VERSION_DECLARE
+ * 3. One and only one response MUST be sent back to the received request.
+ * 4. Methods (callbacks) of the MRCP engine channel MUST not block.
+ *   (asynchronous response can be sent from the context of other thread)
+ * 5. Methods (callbacks) of the MPF engine stream MUST not block.
  */
 
 #include "flite_voices.h"
-#include "mrcp_resource_engine.h"
-#include "mrcp_synth_resource.h"
-#include "mrcp_synth_header.h"
-#include "mrcp_generic_header.h"
-#include "mrcp_message.h"
+#include "mrcp_synth_engine.h"
 #include "mpf_buffer.h"
 #include "apr_time.h"
 #include "apt_consumer_task.h"
@@ -39,10 +38,10 @@ typedef struct flite_synth_engine_t flite_synth_engine_t;
 typedef struct flite_synth_channel_t flite_synth_channel_t;
 
 /** Declaration of synthesizer engine methods */
-static apt_bool_t flite_synth_engine_destroy(mrcp_resource_engine_t *engine);
-static apt_bool_t flite_synth_engine_open(mrcp_resource_engine_t *engine);
-static apt_bool_t flite_synth_engine_close(mrcp_resource_engine_t *engine);
-static mrcp_engine_channel_t* flite_synth_engine_channel_create(mrcp_resource_engine_t *engine, apr_pool_t *pool);
+static apt_bool_t flite_synth_engine_destroy(mrcp_engine_t *engine);
+static apt_bool_t flite_synth_engine_open(mrcp_engine_t *engine);
+static apt_bool_t flite_synth_engine_close(mrcp_engine_t *engine);
+static mrcp_engine_channel_t* flite_synth_engine_channel_create(mrcp_engine_t *engine, apr_pool_t *pool);
 
 static const struct mrcp_engine_method_vtable_t engine_vtable = {
 	flite_synth_engine_destroy,
@@ -119,36 +118,39 @@ typedef struct flite_speak_msg_t flite_speak_msg_t;
 /* we have a special task for the actual synthesis - 
    the task is created when a mrcp speak message is received */
 static apt_bool_t flite_speak(apt_task_t *task, apt_task_msg_t *msg);
-static apt_bool_t flite_on_start(apt_task_t *task);
-static apt_bool_t flite_on_terminate(apt_task_t *task);
+static void flite_on_start(apt_task_t *task);
+static void flite_on_terminate(apt_task_t *task);
+
+/** Declare this macro to set plugin version */
+MRCP_PLUGIN_VERSION_DECLARE
 
 /** Declare this macro to use log routine of the server where the plugin is loaded from */
 MRCP_PLUGIN_LOGGER_IMPLEMENT
 
 /** Create flite synthesizer engine */
-MRCP_PLUGIN_DECLARE(mrcp_resource_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
+MRCP_PLUGIN_DECLARE(mrcp_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
 {
 	/* create flite engine */
 	flite_synth_engine_t *flite_engine = (flite_synth_engine_t *) apr_palloc(pool,sizeof(flite_synth_engine_t));
 	flite_engine->iChannels = 0;
 
-	/* create resource engine base */
-	return mrcp_resource_engine_create(
-					MRCP_SYNTHESIZER_RESOURCE, /* MRCP resource identifier */
-					flite_engine,              /* object to associate */
-					&engine_vtable,            /* virtual methods table of resource engine */
-					pool);                     /* pool to allocate memory from */
+	/* create engine base */
+	return mrcp_engine_create(
+				MRCP_SYNTHESIZER_RESOURCE, /* MRCP resource identifier */
+				flite_engine,              /* object to associate */
+				&engine_vtable,            /* virtual methods table of engine */
+				pool);                     /* pool to allocate memory from */
 }
 
 /** Destroy synthesizer engine */
-static apt_bool_t flite_synth_engine_destroy(mrcp_resource_engine_t *engine)
+static apt_bool_t flite_synth_engine_destroy(mrcp_engine_t *engine)
 {
 	apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "flite_synth_engine_destroy");
 	return TRUE;
 }
 
 /** Open synthesizer engine */
-static apt_bool_t flite_synth_engine_open(mrcp_resource_engine_t *engine)
+static apt_bool_t flite_synth_engine_open(mrcp_engine_t *engine)
 {
 	flite_synth_engine_t *flite_engine = (flite_synth_engine_t *) engine->obj;
 	apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "flite_synth_engine_open");
@@ -162,7 +164,7 @@ static apt_bool_t flite_synth_engine_open(mrcp_resource_engine_t *engine)
 }
 
 /** Close synthesizer engine */
-static apt_bool_t flite_synth_engine_close(mrcp_resource_engine_t *engine)
+static apt_bool_t flite_synth_engine_close(mrcp_engine_t *engine)
 {
 	flite_synth_engine_t *flite_engine = (flite_synth_engine_t *) engine->obj;
 	apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "flite_synth_engine_close");
@@ -200,10 +202,12 @@ static apt_bool_t flite_synth_task_create(flite_synth_channel_t *synth_channel)
 }
 
 /** Create flite synthesizer channel derived from engine channel base */
-static mrcp_engine_channel_t* flite_synth_engine_channel_create(mrcp_resource_engine_t *engine, apr_pool_t *pool)
+static mrcp_engine_channel_t* flite_synth_engine_channel_create(mrcp_engine_t *engine, apr_pool_t *pool)
 {
+	mpf_stream_capabilities_t *capabilities;
+	mpf_termination_t *termination; 
+
 	/* create flite synth channel */
-	mpf_codec_descriptor_t *codec_descriptor = NULL;
 	flite_synth_channel_t *synth_channel = (flite_synth_channel_t *) apr_palloc(pool,sizeof(flite_synth_channel_t));
 
 	apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "flite_synth_engine_channel_create");
@@ -223,29 +227,32 @@ static mrcp_engine_channel_t* flite_synth_engine_channel_create(mrcp_resource_en
 		return NULL;
 	}
 
-#if 0
-	codec_descriptor = (mpf_codec_descriptor_t *) apr_palloc(pool,sizeof(mpf_codec_descriptor_t));
-	mpf_codec_descriptor_init(codec_descriptor);
-	codec_descriptor->channel_count = 1;
-	codec_descriptor->payload_type = 96;
-	apt_string_set(&codec_descriptor->name,"LPCM");
-	codec_descriptor->sampling_rate = 16000;
-#endif
+	capabilities = mpf_source_stream_capabilities_create(pool);
+	mpf_codec_capabilities_add(
+			&capabilities->codecs,
+			MPF_SAMPLE_RATE_8000 | MPF_SAMPLE_RATE_16000,
+			"LPCM");
+ 
+	/* create media termination */
+	termination = mrcp_engine_audio_termination_create(
+			synth_channel,        /* object to associate */
+			&audio_stream_vtable, /* virtual methods table of audio stream */
+			capabilities,         /* stream capabilities */
+			pool);                /* pool to allocate memory from */
 
 	/* create engine channel base */
-	synth_channel->channel = mrcp_engine_source_channel_create(
-			engine,               /* resource engine */
-			&channel_vtable,      /* virtual methods table of engine channel */
-			&audio_stream_vtable, /* virtual methods table of audio stream */
-			synth_channel,        /* object to associate */
-			codec_descriptor,     /* codec descriptor might be NULL by default */
-			pool);                /* pool to allocate memory from */
-	
-	if(!synth_channel->channel) {
-		apt_log(APT_LOG_MARK, APT_PRIO_WARNING, "flite_synth_engine_channel_create failed");
-		apt_task_destroy(synth_channel->task);
-		return NULL;		
-	}
+	synth_channel->channel = mrcp_engine_channel_create(
+ 			engine,               /* engine */
+ 			&channel_vtable,      /* virtual methods table of engine channel */
+ 			synth_channel,        /* object to associate */
+			termination,          /* associated media termination */
+ 			pool);                /* pool to allocate memory from */
+ 	
+ 	if(!synth_channel->channel) {
+ 		apt_log(APT_LOG_MARK, APT_PRIO_WARNING, "flite_synth_engine_channel_create failed");
+ 		apt_task_destroy(synth_channel->task);
+ 		return NULL;		
+ 	} 
 
 	synth_channel->audio_buffer = mpf_buffer_create(pool);
 	synth_channel->iId = ++synth_channel->flite_engine->iChannels;
@@ -423,8 +430,11 @@ static apt_bool_t flite_speak(apt_task_t *task, apt_task_msg_t *msg)
 	apt_str_t *body;
 	mrcp_message_t *response;
 
-	mpf_codec_t * codec = mrcp_engine_source_stream_codec_get(synth_channel->channel);
-	apr_uint16_t rate = codec->descriptor->sampling_rate;
+	apr_uint16_t rate = 8000;
+	const mpf_codec_descriptor_t * descriptor = mrcp_engine_source_stream_codec_get(synth_channel->channel);
+	if(descriptor) {
+		rate = descriptor->sampling_rate;
+	}
 	body = &synth_channel->speak_request->body;
 
 	response = synth_channel->speak_response;
@@ -498,18 +508,18 @@ static APR_INLINE flite_synth_channel_t* flite_synth_channel_get(apt_task_t *tas
 	return apt_consumer_task_object_get(consumer_task);
 }
 
-static apt_bool_t flite_on_start(apt_task_t *task)
+static void flite_on_start(apt_task_t *task)
 {
 	flite_synth_channel_t *synth_channel = flite_synth_channel_get(task);
 	apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "Speak task started - channel %d", synth_channel->iId);
-	return mrcp_engine_channel_open_respond(synth_channel->channel,TRUE);
+	mrcp_engine_channel_open_respond(synth_channel->channel,TRUE);
 }
 
-static apt_bool_t flite_on_terminate(apt_task_t *task)
+static void flite_on_terminate(apt_task_t *task)
 {
 	flite_synth_channel_t *synth_channel = flite_synth_channel_get(task);
 	apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "Speak task terminated - channel %d", synth_channel->iId);
-	return mrcp_engine_channel_close_respond(synth_channel->channel);
+	mrcp_engine_channel_close_respond(synth_channel->channel);
 }
 
 /** Process STOP request */

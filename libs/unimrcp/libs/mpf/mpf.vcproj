@@ -192,6 +192,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\mpf_dtmf_detector.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mpf_dtmf_generator.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\mpf_encoder.h"
 				>
 			</File>
@@ -216,15 +224,31 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\mpf_media_descriptor.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\mpf_message.h"
 				>
 			</File>
 			<File
+				RelativePath=".\include\mpf_mixer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mpf_multiplier.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mpf_named_event.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\mpf_object.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mpf_resampler.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mpf_rtcp_packet.h"
 				>
 			</File>
 			<File
@@ -244,6 +268,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\mpf_rtp_pt.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\mpf_rtp_stat.h"
 				>
 			</File>
@@ -256,11 +284,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\mpf_scheduler.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\mpf_stream.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\mpf_stream_mode.h"
+				RelativePath=".\include\mpf_stream_descriptor.h"
 				>
 			</File>
 			<File
@@ -268,15 +300,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\mpf_timer.h"
+				RelativePath=".\include\mpf_termination_factory.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mpf_timer_manager.h"
 				>
 			</File>
 			<File
 				RelativePath=".\include\mpf_types.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\mpf_user.h"
 				>
 			</File>
 		</Filter>
@@ -325,6 +357,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\mpf_dtmf_detector.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpf_dtmf_generator.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\mpf_encoder.c"
 				>
 			</File>
@@ -345,6 +385,22 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\mpf_mixer.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpf_multiplier.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpf_named_event.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpf_resampler.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\mpf_rtp_attribs.c"
 				>
 			</File>
@@ -357,11 +413,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\mpf_scheduler.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpf_stream.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\mpf_termination.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\mpf_timer.c"
+				RelativePath=".\src\mpf_termination_factory.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpf_timer_manager.c"
 				>
 			</File>
 		</Filter>

@@ -21,9 +21,16 @@ mrcppocketsphinx_la_LDFLAGS = -module $(PLUGIN_LT_VERSION)
 mrcppocketsphinx_la_LIBADD  = $(UNIMRCP_POCKETSPHINX_LIBS) $(UNIMRCP_SPHINXBASE_LIBS) -lm
 
 
+dictionary:
+	!(test -f $(UNIMRCP_POCKETSPHINX_MODELS)/lm/cmudict.0.6d) || \
+		$(INSTALL) -m 644 $(UNIMRCP_POCKETSPHINX_MODELS)/lm/cmudict.0.6d $(datadir)/default.dic
+
+model:
+	!(test -d $(UNIMRCP_POCKETSPHINX_MODELS)/hmm/wsj1/) || ($(mkinstalldirs) $(datadir)/wsj1; \
+		$(INSTALL) -m 644 $(UNIMRCP_POCKETSPHINX_MODELS)/hmm/wsj1/* $(datadir)/wsj1)
+
 install-data-local:
 	test -d $(confdir) || $(mkinstalldirs) $(confdir)
 	test -f $(confdir)/pocketsphinx.xml || $(INSTALL) -m 644 conf/pocketsphinx.xml $(confdir)
-	test -d $(datadir)/wsj1 || $(mkinstalldirs) $(datadir)/wsj1; \
-			$(INSTALL) -m 644 $(UNIMRCP_POCKETSPHINX_MODELS)/hmm/wsj1/* $(datadir)/wsj1; \
-			$(INSTALL) -m 644 $(UNIMRCP_POCKETSPHINX_MODELS)/lm/cmudict.0.6d $(datadir)/default.dic
+	test -f $(datadir)/default.dic || $(MAKE) dictionary
+	test -d $(datadir)/wsj1 || $(MAKE) model

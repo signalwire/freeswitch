@@ -85,14 +85,30 @@ MRCP_DECLARE(mrcp_connection_type_e) mrcp_connection_type_find(const apt_str_t *
 	return apt_string_table_id_find(mrcp_connection_value_table,MRCP_CONNECTION_TYPE_COUNT,attrib);
 }
 
+/** Create MRCP control descriptor */
+MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_descriptor_create(apr_pool_t *pool)
+{
+	mrcp_control_descriptor_t *descriptor;
+	descriptor = apr_palloc(pool,sizeof(mrcp_control_descriptor_t));
+
+	apt_string_reset(&descriptor->ip);
+	descriptor->port = 0;
+	descriptor->proto = MRCP_PROTO_UNKNOWN;
+	descriptor->setup_type = MRCP_SETUP_TYPE_UNKNOWN;
+	descriptor->connection_type = MRCP_CONNECTION_TYPE_UNKNOWN;
+	apt_string_reset(&descriptor->resource_name);
+	apt_string_reset(&descriptor->session_id);
+	descriptor->cmid_arr = apr_array_make(pool,1,sizeof(apr_size_t));
+	descriptor->id = 0;
+	return descriptor;
+}
+
 /** Create MRCP control offer */
 MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_offer_create(apr_pool_t *pool)
 {
-	mrcp_control_descriptor_t *offer;
-	offer = apr_palloc(pool,sizeof(mrcp_control_descriptor_t));
-	mrcp_control_descriptor_init(offer);
+	mrcp_control_descriptor_t *offer = mrcp_control_descriptor_create(pool);
 	offer->proto = MRCP_PROTO_TCP;
-	offer->port = 9;
+	offer->port = TCP_DISCARD_PORT;
 	offer->setup_type = MRCP_SETUP_TYPE_ACTIVE;
 	offer->connection_type = MRCP_CONNECTION_TYPE_EXISTING;
 	return offer;
@@ -101,12 +117,29 @@ MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_offer_create(apr_pool_t *p
 /** Create MRCP control answer */
 MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_answer_create(mrcp_control_descriptor_t *offer, apr_pool_t *pool)
 {
-	mrcp_control_descriptor_t *answer;
-	answer = apr_palloc(pool,sizeof(mrcp_control_descriptor_t));
-	mrcp_control_descriptor_init(answer);
+	mrcp_control_descriptor_t *answer = mrcp_control_descriptor_create(pool);
 	if(offer) {
 		*answer = *offer;
+		answer->cmid_arr = apr_array_copy(pool,offer->cmid_arr);
 	}
 	answer->setup_type = MRCP_SETUP_TYPE_PASSIVE;
 	return answer;
+}
+
+/** Add cmid to cmid_arr */
+MRCP_DECLARE(void) mrcp_cmid_add(apr_array_header_t *cmid_arr, apr_size_t cmid)
+{
+	APR_ARRAY_PUSH(cmid_arr, apr_size_t) = cmid;
+}
+
+/** Find cmid in cmid_arr */
+MRCP_DECLARE(apt_bool_t) mrcp_cmid_find(apr_array_header_t *cmid_arr, apr_size_t cmid)
+{
+	int i;
+	for(i=0; i<cmid_arr->nelts; i++) {
+		if(APR_ARRAY_IDX(cmid_arr,i,apr_size_t) == cmid) {
+			return TRUE;
+		}
+	}
+	return FALSE;
 }

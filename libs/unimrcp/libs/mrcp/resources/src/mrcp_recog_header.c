@@ -638,7 +638,7 @@ static const mrcp_header_vtable_t v2_vtable = {
 	RECOGNIZER_HEADER_COUNT
 };
 
-MRCP_DECLARE(const mrcp_header_vtable_t*) mrcp_recog_header_vtable_get(mrcp_version_e version)
+const mrcp_header_vtable_t* mrcp_recog_header_vtable_get(mrcp_version_e version)
 {
 	if(version == MRCP_VERSION_1) {
 		return &v1_vtable;

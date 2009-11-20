@@ -15,6 +15,7 @@
  */
 
 #include "mrcp_generic_header.h"
+#include "mrcp_start_line.h"
 
 /** String table of mrcp generic-header fields (mrcp_generic_header_id) */
 static const apt_str_table_item_t generic_header_string_table[] = {
@@ -36,7 +37,6 @@ static const apt_str_table_item_t generic_header_string_table[] = {
 	{{"Set-Cookie2",               11},10}
 };
 
-
 /** Parse mrcp request-id list */
 static apt_bool_t mrcp_request_id_list_parse(mrcp_request_id_list_t *request_id_list, const apt_str_t *value)
 {
@@ -49,7 +49,7 @@ static apt_bool_t mrcp_request_id_list_parse(mrcp_request_id_list_t *request_id_
 		if(apt_text_field_read(&stream,',',TRUE,&field) == FALSE) {
 			break;
 		}
-		request_id_list->ids[request_id_list->count] = apt_size_value_parse(&field);
+		request_id_list->ids[request_id_list->count] = mrcp_request_id_parse(&field);
 		request_id_list->count++;
 	}
 	return TRUE;
@@ -60,7 +60,7 @@ static apt_bool_t mrcp_request_id_list_generate(mrcp_request_id_list_t *request_
 {
 	size_t i;
 	for(i=0; i<request_id_list->count; i++) {
-		apt_size_value_generate(request_id_list->ids[i],stream);
+		mrcp_request_id_generate(request_id_list->ids[i],stream);
 		if(i < request_id_list->count-1) {
 			*stream->pos++ = ',';
 		}

@@ -206,7 +206,7 @@ struct mrcp_recog_header_t {
 
 
 /** Get recognizer header vtable */
-MRCP_DECLARE(const mrcp_header_vtable_t*) mrcp_recog_header_vtable_get(mrcp_version_e version);
+const mrcp_header_vtable_t* mrcp_recog_header_vtable_get(mrcp_version_e version);
 
 /** Get recognizer completion cause string */
 MRCP_DECLARE(const apt_str_t*) mrcp_recog_completion_cause_get(mrcp_recog_completion_cause_e completion_cause, mrcp_version_e version);

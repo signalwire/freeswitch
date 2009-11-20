@@ -22,9 +22,9 @@
  * @brief MPF RTP Stream Descriptor
  */ 
 
-#include "mpf_stream_mode.h"
-#include "mpf_media_descriptor.h"
-#include "mpf_codec_descriptor.h"
+#include <apr_network_io.h>
+#include "apt_string.h"
+#include "mpf_stream_descriptor.h"
 
 APT_BEGIN_EXTERN_C
 
@@ -39,23 +39,38 @@ typedef struct mpf_rtp_config_t mpf_rtp_config_t;
 /** Jitter buffer configuration declaration */
 typedef struct mpf_jb_config_t mpf_jb_config_t;
 
+/** MPF media state */
+typedef enum {
+	MPF_MEDIA_DISABLED, /**< disabled media */
+	MPF_MEDIA_ENABLED   /**< enabled media */
+} mpf_media_state_e;
 
 /** RTP media (local/remote) descriptor */
 struct mpf_rtp_media_descriptor_t {
-	/** Media descriptor base */
-	mpf_media_descriptor_t base;
+	/** Media state (disabled/enabled)*/
+	mpf_media_state_e      state;
+	/** Ip address */
+	apt_str_t              ip;
+	/** External (NAT) Ip address */
+	apt_str_t              ext_ip;
+	/** Port */
+	apr_port_t             port;
 	/** Stream mode (send/receive) */
-	mpf_stream_mode_e      mode;
+	mpf_stream_direction_e direction;
 	/** Packetization time */
 	apr_uint16_t           ptime;
 	/** Codec list */
 	mpf_codec_list_t       codec_list;
 	/** Media identifier */
 	apr_size_t             mid;
+	/** Position, order in SDP message (0,1,...) */
+	apr_size_t             id;
 };
 
 /** RTP stream descriptor */
 struct mpf_rtp_stream_descriptor_t {
+	/** Stream capabilities */
+	mpf_stream_capabilities_t  *capabilities;
 	/** Local media descriptor */
 	mpf_rtp_media_descriptor_t *local;
 	/** Remote media descriptor */
@@ -82,43 +97,62 @@ struct mpf_jb_config_t {
 	apr_byte_t adaptive;
 };
 
+typedef enum {
+	RTCP_BYE_DISABLE,       /**< disable RTCP BYE transmission */
+	RTCP_BYE_PER_SESSION,   /**< transmit RTCP BYE at the end of session */
+	RTCP_BYE_PER_TALKSPURT, /**< transmit RTCP BYE at the end of each talkspurt (input) */
+} rtcp_bye_policy_e;
+
 /** RTP config */
 struct mpf_rtp_config_t {
 	/** Local IP address to bind to */
-	apt_str_t ip;
+	apt_str_t         ip;
 	/** External (NAT) IP address */
-	apt_str_t ext_ip;
+	apt_str_t         ext_ip;
 	/** Min RTP port */
-	apr_port_t rtp_port_min;
+	apr_port_t        rtp_port_min;
 	/** Max RTP port */
-	apr_port_t rtp_port_max;
+	apr_port_t        rtp_port_max;
 	/** Current RTP port */
-	apr_port_t rtp_port_cur;
+	apr_port_t        rtp_port_cur;
 	/** Packetization time */
-	apr_uint16_t ptime;
+	apr_uint16_t      ptime;
 	/** Codec list */
-	mpf_codec_list_t codec_list;
-	/** Preference in offer/anser: 1 - own(local) preference, 0 - remote preference */
-	apt_bool_t own_preferrence;
+	mpf_codec_list_t  codec_list;
+	/** Preference in offer/anwser: 1 - own(local) preference, 0 - remote preference */
+	apt_bool_t        own_preferrence;
+	/** Enable/disable RTCP support */
+	apt_bool_t        rtcp;
+	/** RTCP BYE policy */
+	rtcp_bye_policy_e rtcp_bye_policy;
+	/** RTCP report transmission interval */
+	apr_uint16_t      rtcp_tx_interval;
+	/** RTCP rx resolution (timeout to check for a new RTCP message) */
+	apr_uint16_t      rtcp_rx_resolution;
 	/** Jitter buffer config */
-	mpf_jb_config_t jb_config;
+	mpf_jb_config_t   jb_config;
 };
 
 /** Initialize media descriptor */
 static APR_INLINE void mpf_rtp_media_descriptor_init(mpf_rtp_media_descriptor_t *media)
 {
-	mpf_media_descriptor_init(&media->base);
-	media->mode = STREAM_MODE_NONE;
+	media->state = MPF_MEDIA_DISABLED;
+	apt_string_reset(&media->ip);
+	apt_string_reset(&media->ext_ip);
+	media->port = 0;
+	media->direction = STREAM_DIRECTION_NONE;
 	media->ptime = 0;
 	mpf_codec_list_reset(&media->codec_list);
 	media->mid = 0;
+	media->id = 0;
 }
 
 /** Initialize stream descriptor */
-static APR_INLINE void mpf_rtp_stream_descriptor_init(mpf_rtp_stream_descriptor_t *stream)
+static APR_INLINE void mpf_rtp_stream_descriptor_init(mpf_rtp_stream_descriptor_t *descriptor)
 {
-	stream->local = NULL;
-	stream->remote = NULL;
+	descriptor->capabilities = NULL;
+	descriptor->local = NULL;
+	descriptor->remote = NULL;
 }
 
 /** Initialize RTP termination descriptor */
@@ -149,7 +183,12 @@ static APR_INLINE mpf_rtp_config_t* mpf_rtp_config_create(apr_pool_t *pool)
 	rtp_config->ptime = 0;
 	mpf_codec_list_init(&rtp_config->codec_list,0,pool);
 	rtp_config->own_preferrence = FALSE;
+	rtp_config->rtcp = FALSE;
+	rtp_config->rtcp_bye_policy = RTCP_BYE_DISABLE;
+	rtp_config->rtcp_tx_interval = 0;
+	rtp_config->rtcp_rx_resolution = 0;
 	mpf_jb_config_init(&rtp_config->jb_config);
+
 	return rtp_config;
 }
 

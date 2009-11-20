@@ -33,6 +33,14 @@ APT_BEGIN_EXTERN_C
  */
 apt_bool_t apt_ip_get(char **addr, apr_pool_t *pool);
 
+
+/**
+ * Get current NTP time
+ * @param sec the seconds of the NTP time to return
+ * @param frac the fractions of the NTP time to return
+ */
+void apt_ntp_time_get(apr_uint32_t *sec, apr_uint32_t *frac);
+
 APT_END_EXTERN_C
 
 #endif /*__APT_NET_H__*/

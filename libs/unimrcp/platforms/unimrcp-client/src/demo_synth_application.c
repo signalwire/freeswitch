@@ -31,7 +31,6 @@
 
 #include "demo_application.h"
 #include "demo_util.h"
-#include "mrcp_session.h"
 #include "mrcp_message.h"
 #include "mrcp_generic_header.h"
 #include "mrcp_synth_header.h"
@@ -68,7 +67,7 @@ static const mrcp_app_message_dispatcher_t synth_application_dispatcher = {
 
 /** Declaration of synthesizer audio stream methods */
 static apt_bool_t synth_app_stream_destroy(mpf_audio_stream_t *stream);
-static apt_bool_t synth_app_stream_open(mpf_audio_stream_t *stream);
+static apt_bool_t synth_app_stream_open(mpf_audio_stream_t *stream, mpf_codec_t *codec);
 static apt_bool_t synth_app_stream_close(mpf_audio_stream_t *stream);
 static apt_bool_t synth_app_stream_write(mpf_audio_stream_t *stream, const mpf_frame_t *frame);
 
@@ -99,25 +98,34 @@ static mrcp_channel_t* synth_application_channel_create(mrcp_session_t *session)
 {
 	mrcp_channel_t *channel;
 	mpf_termination_t *termination;
-	mpf_codec_descriptor_t *codec_descriptor = NULL;
+	mpf_stream_capabilities_t *capabilities;
+	apr_pool_t *pool = mrcp_application_session_pool_get(session);
 
 	/* create channel */
-	synth_app_channel_t *synth_channel = apr_palloc(session->pool,sizeof(synth_app_channel_t));
+	synth_app_channel_t *synth_channel = apr_palloc(pool,sizeof(synth_app_channel_t));
 	synth_channel->audio_out = NULL;
 
+	/* create sink stream capabilities */
+	capabilities = mpf_sink_stream_capabilities_create(pool);
+
+	/* add codec capabilities (Linear PCM) */
+	mpf_codec_capabilities_add(
+			&capabilities->codecs,
+			MPF_SAMPLE_RATE_8000 | MPF_SAMPLE_RATE_16000,
+			"LPCM");
+
 #if 0
-	codec_descriptor = apr_palloc(session->pool,sizeof(mpf_codec_descriptor_t));
-	mpf_codec_descriptor_init(codec_descriptor);
-	codec_descriptor->channel_count = 1;
-	codec_descriptor->payload_type = 0;
-	apt_string_set(&codec_descriptor->name,"PCMU");
-	codec_descriptor->sampling_rate = 8000;
+	/* more capabilities can be added or replaced */
+	mpf_codec_capabilities_add(
+			&capabilities->codecs,
+			MPF_SAMPLE_RATE_8000 | MPF_SAMPLE_RATE_16000,
+			"PCMU");
 #endif
 
-	termination = mrcp_application_sink_termination_create(
+	termination = mrcp_application_audio_termination_create(
 			session,                   /* session, termination belongs to */
 			&audio_stream_vtable,      /* virtual methods table of audio stream */
-			codec_descriptor,          /* codec descriptor of audio stream (NULL by default) */
+			capabilities,              /* capabilities of audio stream */
 			synth_channel);            /* object to associate */
 	
 	channel = mrcp_application_channel_create(
@@ -187,6 +195,7 @@ static apt_bool_t synth_application_on_session_terminate(mrcp_application_t *app
 static apt_bool_t synth_application_on_channel_add(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel, mrcp_sig_status_code_e status)
 {
 	synth_app_channel_t *synth_channel = mrcp_application_channel_object_get(channel);
+	apr_pool_t *pool = mrcp_application_session_pool_get(session);
 	if(status == MRCP_SIG_STATUS_CODE_SUCCESS) {
 		mrcp_message_t *mrcp_message;
 		const apt_dir_layout_t *dir_layout = mrcp_application_dir_layout_get(application);
@@ -197,8 +206,12 @@ static apt_bool_t synth_application_on_channel_add(mrcp_application_t *applicati
 		}
 
 		if(synth_channel && session) {
-			char *file_name = apr_pstrcat(session->pool,"synth-",session->id.buf,".pcm",NULL);
-			char *file_path = apt_datadir_filepath_get(dir_layout,file_name,session->pool);
+			const apt_str_t *id = mrcp_application_session_id_get(session);
+			const mpf_codec_descriptor_t *descriptor = mrcp_application_sink_descriptor_get(channel);
+			char *file_name = apr_psprintf(pool,"synth-%dkHz-%s.pcm",
+				descriptor ? descriptor->sampling_rate/1000 : 8,
+				id->buf);
+			char *file_path = apt_datadir_filepath_get(dir_layout,file_name,pool);
 			if(file_path) {
 				synth_channel->audio_out = fopen(file_path,"wb");
 			}
@@ -266,7 +279,7 @@ static apt_bool_t synth_app_stream_destroy(mpf_audio_stream_t *stream)
 }
 
 /** Callback is called from MPF engine context to perform application stream specific action before open */
-static apt_bool_t synth_app_stream_open(mpf_audio_stream_t *stream)
+static apt_bool_t synth_app_stream_open(mpf_audio_stream_t *stream, mpf_codec_t *codec)
 {
 	return TRUE;
 }
