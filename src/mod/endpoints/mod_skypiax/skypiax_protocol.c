@@ -38,6 +38,9 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 #else
 unsigned short start_port = 6001;
 #endif //WIN32
+	int sockbufsize=0;
+	unsigned int size = sizeof(int);
+
 
 	memset(&my_addr, 0, sizeof(my_addr));
 	my_addr.sin_family = AF_INET;
@@ -52,6 +55,7 @@ unsigned short start_port = 6001;
 		start_port = *which_port;
 
 	my_addr.sin_port = htons(start_port);
+	//fcntl(s, F_SETFL, O_NONBLOCK);
 	//tech_pvt->tcp_cli_port = start_port;
 	*which_port = start_port;
 	while (bind(s, (struct sockaddr *) &my_addr, sizeof(struct sockaddr)) < 0) {
@@ -73,6 +77,39 @@ unsigned short start_port = 6001;
 
 	DEBUGA_SKYPE("SUCCESS! *which_port=%d, tech_pvt->tcp_cli_port=%d, tech_pvt->tcp_srv_port=%d\n", SKYPIAX_P_LOG, *which_port, tech_pvt->tcp_cli_port,
 				 tech_pvt->tcp_srv_port);
+
+	sockbufsize=0;
+	size = sizeof(int);
+	getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, &size);
+	DEBUGA_SKYPE("1 SO_RCVBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
+	sockbufsize=0;
+	size = sizeof(int);
+	getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&sockbufsize, &size);
+	DEBUGA_SKYPE("1 SO_SNDBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
+
+
+
+	sockbufsize=SAMPLES_PER_FRAME * 8;
+	size = sizeof(int);
+	setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, size);
+
+	sockbufsize=0;
+	size = sizeof(int);
+	getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, &size);
+	DEBUGA_SKYPE("2 SO_RCVBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
+
+	sockbufsize=SAMPLES_PER_FRAME * 8;
+	size = sizeof(int);
+	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&sockbufsize, size);
+
+
+	sockbufsize=0;
+	size = sizeof(int);
+	getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&sockbufsize, &size);
+	DEBUGA_SKYPE("2 SO_SNDBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
+
+
+
 	return s;
 }
 
@@ -680,6 +717,8 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 	unsigned int kill_cli_size;
 	short kill_cli_buff[SAMPLES_PER_FRAME];
 	short totalbuf[SAMPLES_PER_FRAME];
+	int sockbufsize=0;
+	unsigned int size = sizeof(int);
 
 	s = skypiax_socket_create_and_bind(tech_pvt, &tech_pvt->tcp_srv_port);
 	if (s < 0) {
@@ -719,6 +758,17 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 
 			while (s > 0 && (fd = accept(s, (struct sockaddr *) &remote_addr, &sin_size)) > 0) {
 				DEBUGA_SKYPE("ACCEPTED here I send you %d\n", SKYPIAX_P_LOG, tech_pvt->tcp_srv_port);
+
+	sockbufsize=0;
+	size = sizeof(int);
+	getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, &size);
+	DEBUGA_SKYPE("3 SO_RCVBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
+	sockbufsize=0;
+	size = sizeof(int);
+	getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&sockbufsize, &size);
+	DEBUGA_SKYPE("3 SO_SNDBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
+
+
 				if (!(running && tech_pvt->running))
 					break;
 				while (tech_pvt->interface_state != SKYPIAX_STATE_DOWN
@@ -787,16 +837,21 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 								}
 								/* send the complete frame through the pipe to our code waiting for incoming audio */
 								//howmany = skypiax_pipe_write(tech_pvt->audiopipe_srv[1], totalbuf, SAMPLES_PER_FRAME * sizeof(short));
-					while(tech_pvt->flag_audio_srv == 1){
-						switch_sleep(100); //1 millisec
-						//NOTICA("write \n", SKYPIAX_P_LOG);
-						}
-						//WARNINGA("read \n", SKYPIAX_P_LOG);
+					//FIXME while(tech_pvt->flag_audio_srv == 1){
+						//FIXME switch_sleep(100); //1 millisec
+						//NOTICA("read now is 1\n", SKYPIAX_P_LOG);
+						//FIXME }
+						//WARNINGA("read is now 0\n", SKYPIAX_P_LOG);
 
 
 								howmany = SAMPLES_PER_FRAME * sizeof(short);
+								if(tech_pvt->flag_audio_srv == 1){
+									switch_sleep(1000); //1 millisec
+								}
+								if(tech_pvt->flag_audio_srv == 0){
 								memcpy(tech_pvt->audiobuf_srv, totalbuf, SAMPLES_PER_FRAME * sizeof(short));
 								tech_pvt->flag_audio_srv = 1;
+								}
 								//NOTICA("read \n", SKYPIAX_P_LOG);
 								if (howmany != SAMPLES_PER_FRAME * sizeof(short)) {
 									ERRORA("howmany is %d, but was expected to be %d\n", SKYPIAX_P_LOG,
@@ -870,6 +925,8 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 #else
 	unsigned int sin_size;
 #endif /* WIN32 */
+	int sockbufsize=0;
+	unsigned int size = sizeof(int);
 
 	s = skypiax_socket_create_and_bind(tech_pvt, &tech_pvt->tcp_cli_port);
 	if (s < 0) {
@@ -912,6 +969,18 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 
 			while (s > 0 && (fd = accept(s, (struct sockaddr *) &remote_addr, &sin_size)) > 0) {
 				DEBUGA_SKYPE("ACCEPTED here you send me %d\n", SKYPIAX_P_LOG, tech_pvt->tcp_cli_port);
+
+	sockbufsize=0;
+	size = sizeof(int);
+	getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, &size);
+	DEBUGA_SKYPE("4 SO_RCVBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
+	sockbufsize=0;
+	size = sizeof(int);
+	getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&sockbufsize, &size);
+	DEBUGA_SKYPE("4 SO_SNDBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
+
+
+
 #ifndef WIN32
 				fcntl(tech_pvt->audiopipe_cli[0], F_SETFL, O_NONBLOCK);
 				fcntl(tech_pvt->audiopipe_cli[1], F_SETFL, O_NONBLOCK);
@@ -949,12 +1018,12 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 					fdselect = fd;
 					FD_SET(fdselect, &fs);
 
-					//XXX rt = select(fdselect + 1, NULL, &fs, NULL, &to);
+					//FIXME rt = select(fdselect + 1, NULL, &fs, NULL, &to);
 					while(tech_pvt->flag_audio_cli == 0){
 						skypiax_sleep(100); //1 millisec
-						//NOTICA("write \n", SKYPIAX_P_LOG);
-						}
-						//ERRORA("write \n", SKYPIAX_P_LOG);
+						//WARNINGA("write now is 0\n", SKYPIAX_P_LOG);
+						 }
+						//ERRORA("write is now 1\n", SKYPIAX_P_LOG);
 
 					rt = 1;
 
@@ -1058,9 +1127,9 @@ int skypiax_audio_read(private_t * tech_pvt)
 
 	while(tech_pvt->flag_audio_srv == 0){
 		skypiax_sleep(100); //1 millisec
-		//NOTICA("read \n", SKYPIAX_P_LOG);
+		//WARNINGA("read now is 0\n", SKYPIAX_P_LOG);
 		}
-		//ERRORA("read \n", SKYPIAX_P_LOG);
+		//ERRORA("read is now 1\n", SKYPIAX_P_LOG);
 	//samples = skypiax_pipe_read(tech_pvt->audiopipe_srv[0], tech_pvt->read_frame.data, SAMPLES_PER_FRAME * sizeof(short));
 	samples = SAMPLES_PER_FRAME * sizeof(short);
 	memcpy(tech_pvt->read_frame.data, tech_pvt->audiobuf_srv, SAMPLES_PER_FRAME * sizeof(short));

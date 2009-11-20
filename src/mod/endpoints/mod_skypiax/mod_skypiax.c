@@ -745,16 +745,21 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 #else /* WIN32 */
 	//sent = write(tech_pvt->audiopipe_cli[1], frame->data, sent);
 #endif /* WIN32 */
-					while(tech_pvt->flag_audio_cli == 1){
-						switch_sleep(100); //1 millisec
-						//NOTICA("write \n", SKYPIAX_P_LOG);
-						}
-						//WARNINGA("write \n", SKYPIAX_P_LOG);
+					//FIXME while(tech_pvt->flag_audio_cli == 1){
+						//FIXME switch_sleep(100); //1 millisec
+						//NOTICA("write now is 1\n", SKYPIAX_P_LOG);
+						//FIXME }
+						//WARNINGA("write is now 0\n", SKYPIAX_P_LOG);
 
 
 	//memcpy(tech_pvt->audiobuf_cli, frame->data, frame->datalen);
+								if(tech_pvt->flag_audio_cli == 1){
+									switch_sleep(1000); //1 millisec
+								}
+								if(tech_pvt->flag_audio_cli == 0){
 	memcpy(tech_pvt->audiobuf_cli, frame->data, frame->datalen);
 	tech_pvt->flag_audio_cli = 1;
+								}
 	//NOTICA("write \n", SKYPIAX_P_LOG);
 
 	if (sent != frame->datalen && sent != -1) {
