@@ -172,7 +172,8 @@ typedef enum {
 	CFLAG_LOCKED = (1 << 4),
 	CFLAG_ANSWERED = (1 << 5),
 	CFLAG_BRIDGE_TO = (1 << 6),
-	CFLAG_WAIT_MOD = (1 << 7)
+	CFLAG_WAIT_MOD = (1 << 7),
+	CFLAG_VID_FLOOR = (1 << 8)
 } conf_flag_t;
 
 typedef enum {
@@ -881,7 +882,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 		}
 
 		if (!switch_channel_test_flag(switch_core_session_get_channel(conference->floor_holder->session), CF_VIDEO)) {
-			switch_cond_next();
+			yield = 100000;
 			goto do_continue;
 		}
 
@@ -934,10 +935,11 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 
 		last_member = conference->floor_holder->id;
 
-		
+		switch_mutex_unlock(conference->member_mutex);
+		switch_mutex_lock(conference->member_mutex);
 		has_vid = 0;
 		for (imember = conference->members; imember; imember = imember->next) {
-			if (switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
+			if (imember->session && switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
 				has_vid++;
 				switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
@@ -1873,9 +1875,11 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 						switch_event_t *event;
 						switch_set_flag_locked(member, MFLAG_TALKING);
 						switch_mutex_lock(member->conference->member_mutex);
-						if (!member->conference->floor_holder ||
-							!switch_test_flag(member->conference->floor_holder, MFLAG_TALKING) ||
-							((member->score_iir > SCORE_IIR_SPEAKING_MAX) && (member->conference->floor_holder->score_iir < SCORE_IIR_SPEAKING_MIN))) {
+						if ((!member->conference->floor_holder ||
+							 !switch_test_flag(member->conference->floor_holder, MFLAG_TALKING) ||
+							 ((member->score_iir > SCORE_IIR_SPEAKING_MAX) && (member->conference->floor_holder->score_iir < SCORE_IIR_SPEAKING_MIN))) &&
+							(!switch_test_flag(member->conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
+
 							if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE) &&
 								switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 								conference_add_event_member_data(member, event);
@@ -4773,6 +4777,8 @@ static void set_cflags(const char *flags, uint32_t *f)
 		for(i = 0; i < argc && argv[i]; i++) {
 			if (!strcasecmp(argv[i], "wait-mod")) {
 				*f |= CFLAG_WAIT_MOD;
+			} else if (!strcasecmp(argv[i], "video-floor-only")) {
+				*f |= CFLAG_VID_FLOOR;
 			}
 		}
 
