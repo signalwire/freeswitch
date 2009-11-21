@@ -314,8 +314,6 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 
 	if (err) *err = NULL;
 	
-
-
 	switch (dbh->type) {
 	case SCDB_TYPE_ODBC:
 		{
@@ -425,6 +423,63 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_hand
 	}
 
 	return status;
+
+}
+
+
+SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t *dbh, char *sql, char *str, size_t len, char **err)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+
+	switch (dbh->type) {
+	case SCDB_TYPE_CORE_DB:
+		{
+			switch_core_db_stmt_t *stmt;
+			
+			if (switch_core_db_prepare(dbh->native_handle.core_db_dbh, sql, -1, &stmt, 0)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Statement Error [%s]!\n", sql);
+				return NULL;
+			} else {
+				int running = 1;
+				int colcount;
+
+				while (running < 5000) {
+					int result = switch_core_db_step(stmt);
+					const unsigned char *txt;
+					
+					if (result == SWITCH_CORE_DB_ROW) {
+						if ((colcount = switch_core_db_column_count(stmt)) > 0) {
+							if ((txt = switch_core_db_column_text(stmt, 0))) {
+								switch_copy_string(str, (char *) txt, len);
+								status = SWITCH_STATUS_SUCCESS;
+							} else {
+								goto end;
+							}
+						}
+						break;
+					} else if (result == SWITCH_CORE_DB_BUSY) {
+						running++;
+						switch_cond_next();
+						continue;
+					}
+					break;
+				}
+				
+				switch_core_db_finalize(stmt);
+			}
+		}
+		break;
+	case SCDB_TYPE_ODBC:
+		{
+			status = switch_odbc_handle_exec_string(dbh->native_handle.odbc_dbh, sql, str, len);
+		}
+		break;
+	}
+
+ end:
+
+	return status == SWITCH_STATUS_SUCCESS ? str : NULL;
 
 }
 

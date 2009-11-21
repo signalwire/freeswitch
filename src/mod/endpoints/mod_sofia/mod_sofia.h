@@ -476,7 +476,6 @@ struct sofia_profile {
 	sofia_gateway_t *gateways;
 	su_home_t *home;
 	switch_hash_t *chat_hash;
-	switch_hash_t *db_hash;
 	//switch_core_db_t *master_db;
 	switch_thread_rwlock_t *rwlock;
 	switch_mutex_t *flag_mutex;
@@ -673,14 +672,6 @@ typedef struct {
         char *route_uri;
 } sofia_destination_t;
 
-typedef struct {
-	switch_core_db_t *db;
-	switch_odbc_handle_t *odbc_dbh;
-	time_t last_used;
-	switch_mutex_t *mutex;
-	switch_memory_pool_t *pool;
-} sofia_cache_db_handle_t;
-
 #define sofia_test_pflag(obj, flag) ((obj)->pflags[flag] ? 1 : 0)
 #define sofia_set_pflag(obj, flag) (obj)->pflags[flag] = 1
 #define sofia_set_pflag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
@@ -785,6 +776,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic);
 void sofia_glue_actually_execute_sql(sofia_profile_t *profile, char *sql, switch_mutex_t *mutex);
+void sofia_glue_actually_execute_sql_trans(sofia_profile_t *profile, char *sql, switch_mutex_t *mutex);
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot);
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now);

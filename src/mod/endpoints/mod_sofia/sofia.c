@@ -916,7 +916,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 				switch_mutex_lock(profile->ireg_mutex);
 			
-				sofia_glue_actually_execute_sql(profile, "begin;\n", NULL);
+				//sofia_glue_actually_execute_sql(profile, "begin;\n", NULL);
 
 				while (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 					char *sql = (char *) pop;
@@ -941,8 +941,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 				}
 
 				//printf("TRANS:\n%s\n", sqlbuf);
-				sofia_glue_actually_execute_sql(profile, sqlbuf, NULL);
-				sofia_glue_actually_execute_sql(profile, "commit;\n", NULL);
+				sofia_glue_actually_execute_sql_trans(profile, sqlbuf, NULL);
+				//sofia_glue_actually_execute_sql(profile, "commit;\n", NULL);
 
 
 				switch_mutex_unlock(profile->ireg_mutex);
@@ -963,7 +963,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 			if (++ireg_loops >= IREG_SECONDS) {
 				time_t now = switch_epoch_time_now(NULL);
 				sofia_reg_check_expire(profile, now, 0);
-				sofia_glue_sql_close(profile, now);
 				ireg_loops = 0;
 			}
 
@@ -1264,14 +1263,12 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		}
 	}
 
-	sofia_glue_sql_close(profile, 0);
 	su_home_unref(profile->home);
 	su_root_destroy(profile->s_root);
 	pool = profile->pool;
 
 	sofia_glue_del_profile(profile);
 	switch_core_hash_destroy(&profile->chat_hash);
-	switch_core_hash_destroy(&profile->db_hash);
 
 	switch_thread_rwlock_unlock(profile->rwlock);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write unlock %s\n", profile->name);
@@ -2393,7 +2390,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 				profile->dbname = switch_core_strdup(profile->pool, url);
 				switch_core_hash_init(&profile->chat_hash, profile->pool);
-				switch_core_hash_init(&profile->db_hash, profile->pool);
 				switch_thread_rwlock_create(&profile->rwlock, profile->pool);
 				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				profile->dtmf_duration = 100;
