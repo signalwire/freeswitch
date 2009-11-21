@@ -1392,6 +1392,11 @@ static void switch_load_core_config(const char *file)
 					rlp.rlim_max = RLIM_INFINITY;
 					setrlimit(RLIMIT_CORE, &rlp);
 #endif
+				} else if (!strcasecmp(var, "debug-level")) {
+					int tmp = atoi(val);
+					if (tmp > -1 && tmp < 11) {
+						switch_core_session_ctl(SCSC_DEBUG_LEVEL, &tmp);
+					}
 				} else if (!strcasecmp(var, "colorize-console") && switch_true(val)) {
 					runtime.colorize_console = SWITCH_TRUE;
 				} else if (!strcasecmp(var, "mailer-app") && !zstr(val)) {

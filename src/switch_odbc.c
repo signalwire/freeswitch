@@ -270,14 +270,14 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 		result = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &handle->env);
 
 		if ((result != SQL_SUCCESS) && (result != SQL_SUCCESS_WITH_INFO)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error AllocHandle\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error AllocHandle\n");
 			return SWITCH_ODBC_FAIL;
 		}
 
 		result = SQLSetEnvAttr(handle->env, SQL_ATTR_ODBC_VERSION, (void *) SQL_OV_ODBC3, 0);
 
 		if ((result != SQL_SUCCESS) && (result != SQL_SUCCESS_WITH_INFO)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error SetEnv\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error SetEnv\n");
 			SQLFreeHandle(SQL_HANDLE_ENV, handle->env);
 			return SWITCH_ODBC_FAIL;
 		}
@@ -285,7 +285,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 		result = SQLAllocHandle(SQL_HANDLE_DBC, handle->env, &handle->con);
 
 		if ((result != SQL_SUCCESS) && (result != SQL_SUCCESS_WITH_INFO)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error AllocHDB %d\n", result);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error AllocHDB %d\n", result);
 			SQLFreeHandle(SQL_HANDLE_ENV, handle->env);
 			return SWITCH_ODBC_FAIL;
 		}
@@ -293,10 +293,10 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 	}
 	if (handle->state == SWITCH_ODBC_STATE_CONNECTED) {
 		switch_odbc_handle_disconnect(handle);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-connecting %s\n", handle->dsn);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Re-connecting %s\n", handle->dsn);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connecting %s\n", handle->dsn);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Connecting %s\n", handle->dsn);
 
 	if (!strstr(handle->dsn, "DRIVER")) {
 		result = SQLConnect(handle->con, (SQLCHAR *) handle->dsn, SQL_NTS, (SQLCHAR *) handle->username, SQL_NTS, (SQLCHAR *) handle->password, SQL_NTS);
@@ -333,7 +333,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 		handle->is_firebird = FALSE;
 	}
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to [%s]\n", handle->dsn);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Connected to [%s]\n", handle->dsn);
 	handle->state = SWITCH_ODBC_STATE_CONNECTED;
 	return SWITCH_ODBC_SUCCESS;
 #else
