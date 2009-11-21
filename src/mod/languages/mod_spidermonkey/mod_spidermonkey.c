@@ -3597,6 +3597,10 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 	struct js_session *jss;
 	JSContext *cx = NULL;
 	jsval rval;
+	
+	if (zstr(input_code)) {
+		return;
+	}
 
 	if ((cx = JS_NewContext(globals.rt, globals.gStackChunkSize))) {
 		JS_BeginRequest(cx);
@@ -3620,24 +3624,26 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 
 	script = input_code;
 
-	if ((arg = strchr(script, ' '))) {
-		*arg++ = '\0';
-		argc = switch_separate_string(arg, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-	}
+	if (*script != '~') {	
+		if ((arg = strchr(script, ' '))) {
+			*arg++ = '\0';
+			argc = switch_separate_string(arg, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		}
 
-	if (!argc) {
-		switch_snprintf(buf, sizeof(buf), "~var argv = new Array();");
-		eval_some_js(buf, cx, javascript_global_object, &rval);
-	} else {
-		/* create a js doppleganger of this argc/argv */
-		switch_snprintf(buf, sizeof(buf), "~var argv = new Array(%d);", argc);
-		eval_some_js(buf, cx, javascript_global_object, &rval);
-		switch_snprintf(buf, sizeof(buf), "~var argc = %d", argc);
-		eval_some_js(buf, cx, javascript_global_object, &rval);
-
-		for (y = 0; y < argc; y++) {
-			switch_snprintf(buf, sizeof(buf), "~argv[%d] = \"%s\";", x++, argv[y]);
+		if (!argc) {
+			switch_snprintf(buf, sizeof(buf), "~var argv = new Array();");
 			eval_some_js(buf, cx, javascript_global_object, &rval);
+		} else {
+			/* create a js doppleganger of this argc/argv */
+			switch_snprintf(buf, sizeof(buf), "~var argv = new Array(%d);", argc);
+			eval_some_js(buf, cx, javascript_global_object, &rval);
+			switch_snprintf(buf, sizeof(buf), "~var argc = %d", argc);
+			eval_some_js(buf, cx, javascript_global_object, &rval);
+
+			for (y = 0; y < argc; y++) {
+				switch_snprintf(buf, sizeof(buf), "~argv[%d] = \"%s\";", x++, argv[y]);
+				eval_some_js(buf, cx, javascript_global_object, &rval);
+			}
 		}
 	}
 
