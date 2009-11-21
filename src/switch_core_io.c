@@ -332,8 +332,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		if (session->bugs && !switch_channel_test_flag(session->channel, CF_PAUSE_BUGS)) {
 			switch_media_bug_t *bp;
 			switch_bool_t ok = SWITCH_TRUE;
-			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			int prune = 0;
+			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			
 			for (bp = session->bugs; bp; bp = bp->next) {
 				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
