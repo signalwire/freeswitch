@@ -3259,6 +3259,10 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 			sofia_update_callee_id(session, profile, sip, SWITCH_FALSE);
 
+			if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING)) {
+				tech_pvt->check_frames = 0;
+			}
+
 		}
 		
 		if (channel && sip && (status == 300 || status == 302 || status == 305) && switch_channel_test_flag(channel, CF_OUTBOUND)) {

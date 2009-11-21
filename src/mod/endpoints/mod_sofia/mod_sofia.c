@@ -813,7 +813,9 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 					}
 					
 					if ((tech_pvt->read_frame.datalen % 10) == 0 &&
-						sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING) && tech_pvt->check_frames++ < MAX_CODEC_CHECK_FRAMES) {
+						sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING) && tech_pvt->check_frames < MAX_CODEC_CHECK_FRAMES) {
+						tech_pvt->check_frames++;
+						
 						if (!tech_pvt->read_impl.encoded_bytes_per_packet) {
 							tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
 							goto skip;
@@ -853,7 +855,8 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 													  "This issue has so far been identified to happen on the following broken platforms/devices:\n" 
 													  "Linksys/Sipura aka Cisco\n"
 													  "ShoreTel\n"
-													  "Sonus/L3\n"
+													  "Sonus/L3 (If you're really lucky, you may even get this message twice once they "
+													  "answer and change it back again!! Go Sonus!)\n"
 													  "We will try to fix it but some of the devices on this list are so broken who knows what will happen..\n"
 													  , 
 													  (int)tech_pvt->codec_ms, (int)codec_ms);

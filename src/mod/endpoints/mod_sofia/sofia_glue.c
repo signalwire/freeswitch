@@ -1094,6 +1094,9 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 						/* Reactivate the NAT buster flag. */
 						switch_rtp_set_flag(tech_pvt->video_rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 					}
+					if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING)) {
+						tech_pvt->check_frames = 0;
+					}
 				}
 			}
 		}
@@ -1119,6 +1122,9 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 				!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 				/* Reactivate the NAT buster flag. */
 				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);	
+			}
+			if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING)) {
+				tech_pvt->check_frames = 0;
 			}
 		}
 	}
