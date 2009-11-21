@@ -38,14 +38,14 @@
 typedef struct zap_queue {
 	zap_mutex_t *mutex;
 	zap_condition_t *condition;
+	zap_size_t capacity;
 	zap_size_t size;
-	zap_size_t num_elements;
 	unsigned rindex;
 	unsigned windex;
 	void **elements;
 } zap_queue_t;
 
-static zap_status_t zap_std_queue_create(zap_queue_t **outqueue, zap_size_t size);
+static zap_status_t zap_std_queue_create(zap_queue_t **outqueue, zap_size_t capacity);
 static zap_status_t zap_std_queue_enqueue(zap_queue_t *queue, void *obj);
 static void *zap_std_queue_dequeue(zap_queue_t *queue);
 static zap_status_t zap_std_queue_wait(zap_queue_t *queue, int ms);
@@ -74,10 +74,10 @@ OZ_DECLARE(zap_status_t) zap_global_set_queue_handler(zap_queue_handler_t *handl
 	return ZAP_SUCCESS;
 }
 
-static zap_status_t zap_std_queue_create(zap_queue_t **outqueue, zap_size_t size)
+static zap_status_t zap_std_queue_create(zap_queue_t **outqueue, zap_size_t capacity)
 {
 	zap_assert(outqueue, ZAP_FAIL, "Queue double pointer is null\n");
-	zap_assert(size > 0, ZAP_FAIL, "Queue size is not bigger than 0\n");
+	zap_assert(capacity > 0, ZAP_FAIL, "Queue capacity is not bigger than 0\n");
 
 	*outqueue = NULL;
 	zap_queue_t *queue = zap_calloc(1, sizeof(*queue));
@@ -85,11 +85,11 @@ static zap_status_t zap_std_queue_create(zap_queue_t **outqueue, zap_size_t size
 		return ZAP_FAIL;
 	}
 
-	queue->elements = zap_calloc(1, (sizeof(void*)*size));
+	queue->elements = zap_calloc(1, (sizeof(void*)*capacity));
 	if (!queue->elements) {
 		goto failed;
 	}
-	queue->size = size;
+	queue->capacity = capacity;
 
 	if (zap_mutex_create(&queue->mutex) != ZAP_SUCCESS) {
 		goto failed;
@@ -124,18 +124,20 @@ static zap_status_t zap_std_queue_enqueue(zap_queue_t *queue, void *obj)
 
 	zap_mutex_lock(queue->mutex);
 
-	if (queue->windex == queue->size) {
+	if (queue->windex == queue->capacity) {
 		/* try to see if we can wrap around */
 		queue->windex = 0;
 	}
 
-	if (queue->num_elements != 0 && queue->windex == queue->rindex) {
+	if (queue->size != 0 && queue->windex == queue->rindex) {
 		zap_log(ZAP_LOG_ERROR, "Failed to enqueue obj %p in queue %p, no more room! windex == rindex == %d!\n", obj, queue, queue->windex);
 		goto done;
 	}
+
 	queue->elements[queue->windex++] = obj;
+	queue->size++;
 	status = ZAP_SUCCESS;
-	queue->num_elements++;
+
 	/* wake up queue reader */
 	zap_condition_signal(queue->condition);
 
@@ -154,19 +156,21 @@ static void *zap_std_queue_dequeue(zap_queue_t *queue)
 
 	zap_mutex_lock(queue->mutex);
 
-	if (queue->num_elements == 0) {
+	if (queue->size == 0) {
 		goto done;
 	}
 	
 	obj = queue->elements[queue->rindex];
 	queue->elements[queue->rindex++] = NULL;
-	queue->num_elements--;
+	queue->size--;
 	if (queue->rindex == queue->size) {
 		queue->rindex = 0;
 	}
 
 done:
+
 	zap_mutex_unlock(queue->mutex);
+
 	return obj;
 }
 
@@ -177,13 +181,18 @@ static zap_status_t zap_std_queue_wait(zap_queue_t *queue, int ms)
 	
 	zap_mutex_lock(queue->mutex);
 
-	if (queue->elements[queue->rindex]) {
+	/* if there is elements in the queue, no need to wait */
+	if (queue->size != 0) {
 		zap_mutex_unlock(queue->mutex);
 		return ZAP_SUCCESS;
 	}
 
+	/* no elements on the queue, wait for someone to write an element */
 	ret = zap_condition_wait(queue->condition, ms);
+
+	/* got an element or timeout, bail out */
 	zap_mutex_unlock(queue->mutex);
+
 	return ret;
 }
 

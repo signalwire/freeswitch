@@ -1164,6 +1164,7 @@ static zap_status_t zap_boost_connection_open(zap_span_t *span)
 
 	sangoma_boost_data->pcon = sangoma_boost_data->mcon;
 
+	/* when sigmod is present, all arguments: local_ip etc, are ignored by sangomabc_connection_open */
 	if (sangomabc_connection_open(&sangoma_boost_data->mcon,
 								  sangoma_boost_data->mcon.cfg.local_ip,
 								  sangoma_boost_data->mcon.cfg.local_port,
@@ -1196,10 +1197,14 @@ static int zap_boost_wait_event(zap_span_t *span, int ms)
 		zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 
 		if (sangoma_boost_data->sigmod) {
-			int result;
-			result =  zap_queue_wait(sangoma_boost_data->boost_queue, ms);
-			if (result == ZAP_TIMEOUT) return 0;
-			if (result != ZAP_SUCCESS) return -1;
+			zap_status_t res;
+			res =  zap_queue_wait(sangoma_boost_data->boost_queue, ms);
+			if (ZAP_TIMEOUT == res) {
+				return 0;
+			}
+			if (ZAP_SUCCESS != res) {
+				return -1;
+			}
 			return 1;
 		}
 		mcon = &sangoma_boost_data->mcon;
@@ -1273,7 +1278,7 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 	}
 
 	if (zap_boost_connection_open(span) != ZAP_SUCCESS) {
-		zap_log(ZAP_LOG_ERROR, "zap_boost_connection failed\n");
+		zap_log(ZAP_LOG_ERROR, "zap_boost_connection_open failed\n");
 		goto end;
 	}
 
@@ -1299,45 +1304,27 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 							   SIGBOOST_EVENT_SYSTEM_RESTART,
 							   0);
 			zap_set_flag(mcon, MSU_FLAG_DOWN);
-			zap_log(ZAP_LOG_DEBUG, "OPENZAP is no longer running\n");
+			zap_log(ZAP_LOG_DEBUG, "zap is no longer running\n");
 			break;
 		}
 
 		if ((activity = zap_boost_wait_event(span, ms)) < 0) {
-			zap_log(ZAP_LOG_ERROR, "Zap boost waitevent failed\n");
+			zap_log(ZAP_LOG_ERROR, "zap_boost_wait_event failed\n");
 			goto error;
 		}
 		
 		if (activity) {
-
 			while ((event = zap_boost_read_event(span))) {
 				parse_sangoma_event(span, pcon, (sangomabc_short_event_t*)event);
 				sangoma_boost_data->iteration++;
 			}
-
 		}
 		
-
 		pcon->hb_elapsed += ms;
 
 		if (zap_test_flag(span, ZAP_SPAN_SUSPENDED) || zap_test_flag(mcon, MSU_FLAG_DOWN)) {
 			pcon->hb_elapsed = 0;
 		}
-
-
-#if 0
-		if (pcon->hb_elapsed >= too_long) {
-			zap_log(ZAP_LOG_CRIT, "Lost Heartbeat!\n");
-			zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
-			zap_set_flag(mcon, MSU_FLAG_DOWN);
-			sangomabc_exec_commandp(pcon,
-								0,
-								0,
-								-1,
-								SIGBOOST_EVENT_SYSTEM_RESTART,
-								0);
-		}
-#endif
 
 		if (zap_running()) {
 			check_state(span);
@@ -1346,10 +1333,10 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 
 	goto end;
 
- error:
+error:
 	zap_log(ZAP_LOG_CRIT, "Boost event processing Error!\n");
 
- end:
+end:
 	if (!sangoma_boost_data->sigmod) {
 		sangomabc_connection_close(&sangoma_boost_data->mcon);
 		sangomabc_connection_close(&sangoma_boost_data->pcon);

@@ -292,9 +292,8 @@ OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 	int res = 0;
 	if (ms > 0) {
 		struct timespec waitms; 
-		waitms.tv_sec = time(NULL)+(ms/1000);
-		waitms.tv_nsec = 1000*1000*(ms%1000);
-
+		waitms.tv_sec = time(NULL) + ( ms / 1000 );
+		waitms.tv_nsec = 1000 * 1000 * ( ms % 1000 );
 		res = pthread_cond_timedwait(&condition->condition, condition->mutex, &waitms);
 	} else {
 		res = pthread_cond_wait(&condition->condition, condition->mutex);

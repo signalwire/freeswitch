@@ -620,7 +620,7 @@ struct zap_io_interface {
 struct zap_queue;
 #define zap_queue_t struct zap_queue
 
-typedef zap_status_t (*zap_queue_create_func_t)(zap_queue_t **queue, zap_size_t);
+typedef zap_status_t (*zap_queue_create_func_t)(zap_queue_t **queue, zap_size_t capacity);
 typedef zap_status_t (*zap_queue_enqueue_func_t)(zap_queue_t *queue, void *obj);
 typedef void *(*zap_queue_dequeue_func_t)(zap_queue_t *queue);
 typedef zap_status_t (*zap_queue_wait_func_t)(zap_queue_t *queue, int ms);
@@ -635,7 +635,7 @@ typedef struct zap_queue_handler {
 OZ_DECLARE_DATA extern zap_queue_handler_t g_zap_queue_handler;
 
 /*! brief create a new queue */
-#define zap_queue_create(queue, size) g_zap_queue_handler.create(queue, size)
+#define zap_queue_create(queue, capacity) g_zap_queue_handler.create(queue, capacity)
 
 /*! Enqueue an object */
 #define zap_queue_enqueue(queue, obj) g_zap_queue_handler.enqueue(queue, obj)
