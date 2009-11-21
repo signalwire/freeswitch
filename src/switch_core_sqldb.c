@@ -80,11 +80,19 @@ static void sql_close(time_t prune)
 
 			if (switch_mutex_trylock(dbh->mutex) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Dropping idle DB connection %s\n", key);
-				if (dbh->db) {
-					switch_core_db_close(dbh->db);
-					dbh->db = NULL;
-				} else if (switch_odbc_available() && dbh->odbc_dbh) {
-					switch_odbc_handle_destroy(&dbh->odbc_dbh);
+
+				switch (dbh->type) {
+				case SCDB_TYPE_ODBC:
+					{
+						switch_odbc_handle_destroy(&dbh->native_handle.odbc_dbh);
+					}
+					break;
+				case SCDB_TYPE_CORE_DB:
+					{
+						switch_core_db_close(dbh->native_handle.core_db_dbh);
+						dbh->native_handle.core_db_dbh = NULL;	
+					}
+					break;
 				}
 
 				switch_core_hash_delete(dbh_hash, key);
@@ -121,12 +129,21 @@ SWITCH_DECLARE(void) switch_cache_db_destroy_db_handle(switch_cache_db_handle_t 
 	if (dbh && *dbh) {
 		switch_mutex_lock(dbh_mutex);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleting DB connection %s\n", (*dbh)->name);
-		if ((*dbh)->db) {
-			switch_core_db_close((*dbh)->db);
-			(*dbh)->db = NULL;
-		} else if (switch_odbc_available() && (*dbh)->odbc_dbh) {
-			switch_odbc_handle_destroy(&(*dbh)->odbc_dbh);
+
+		switch ((*dbh)->type) {
+		case SCDB_TYPE_ODBC:
+			{
+				switch_odbc_handle_destroy(&(*dbh)->native_handle.odbc_dbh);
+			}
+			break;
+		case SCDB_TYPE_CORE_DB:
+			{
+				switch_core_db_close((*dbh)->native_handle.core_db_dbh);
+				(*dbh)->native_handle.core_db_dbh = NULL;		
+			}
+			break;
 		}
+
 		
 		switch_core_hash_delete(dbh_hash, (*dbh)->name);		
 		switch_mutex_unlock((*dbh)->mutex);
@@ -165,21 +182,39 @@ SWITCH_DECLARE(void) switch_cache_db_detach(void)
 }
 
 SWITCH_DECLARE(switch_status_t)_switch_cache_db_get_db_handle(switch_cache_db_handle_t **dbh,
-															  const char *db_name, const char *odbc_user, const char *odbc_pass,
+															  switch_cache_db_handle_type_t type,
+															  switch_cache_db_connection_options_t *connection_options,
 															  const char *file, const char *func, int line)
 {
 	switch_thread_id_t self = switch_thread_self();
 	char thread_str[CACHE_DB_LEN] = "";
 	switch_cache_db_handle_t *new_dbh = NULL;
-	
-	switch_assert(db_name);
+	const char *db_name = NULL;
 
+	switch (type) {
+	case SCDB_TYPE_ODBC:
+		{
+			db_name = connection_options->odbc_options.dsn;
+		}
+		break;
+	case SCDB_TYPE_CORE_DB:
+		{
+			db_name = connection_options->core_db_options.db_path;
+		}
+		break;
+	}
+
+	if (!db_name) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+     
 	snprintf(thread_str, sizeof(thread_str) - 1, "%s_%lu", db_name, (unsigned long)(intptr_t)self);
 	
 	switch_mutex_lock(dbh_mutex);
 	if ((new_dbh = switch_core_hash_find(dbh_hash, thread_str))) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG1, 
-						  "Reuse Cached DB handle %s [%s]\n", thread_str, new_dbh->db ? "sqlite" : "ODBC");
+						  "Reuse Cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(new_dbh->type));
 	} else {
 		switch_hash_index_t *hi;
 		const void *var;
@@ -195,7 +230,7 @@ SWITCH_DECLARE(switch_status_t)_switch_cache_db_get_db_handle(switch_cache_db_ha
 					switch_set_flag(new_dbh, CDF_INUSE);
 					switch_set_string(new_dbh->name, thread_str);
 					switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG1, 
-									  "Reuse Unused Cached DB handle %s [%s]\n", thread_str, new_dbh->db ? "sqlite" : "ODBC");
+									  "Reuse Unused Cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(new_dbh->type));
 					break;
 				}
 			}
@@ -208,14 +243,34 @@ SWITCH_DECLARE(switch_status_t)_switch_cache_db_get_db_handle(switch_cache_db_ha
 		switch_core_db_t *db = NULL;
 		switch_odbc_handle_t *odbc_dbh = NULL;
 
-		if (switch_odbc_available() && db_name && odbc_user && odbc_pass) {
-			if ((odbc_dbh = switch_odbc_handle_new(db_name, odbc_user, odbc_pass))) {
-				if (switch_odbc_handle_connect(odbc_dbh) != SWITCH_STATUS_SUCCESS) {
-					switch_odbc_handle_destroy(&odbc_dbh);
+		switch (type) {
+		case SCDB_TYPE_ODBC:
+			{
+
+				if (!switch_odbc_available()) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure! OBDC NOT AVAILABLE!\n");
+					goto end;
 				}
+
+				if ((odbc_dbh = switch_odbc_handle_new(connection_options->odbc_options.dsn, 
+													   connection_options->odbc_options.user,
+													   connection_options->odbc_options.pass))) {
+					if (switch_odbc_handle_connect(odbc_dbh) != SWITCH_STATUS_SUCCESS) {
+						switch_odbc_handle_destroy(&odbc_dbh);
+					}
+				}
+				
+
 			}
-		} else {
-			db = switch_core_db_open_file(db_name);
+			break;
+		case SCDB_TYPE_CORE_DB:
+			{
+				db = switch_core_db_open_file(connection_options->core_db_options.db_path);
+			}
+			break;
+
+		default:
+			goto end;
 		}
 
 		if (!db && !odbc_dbh) {
@@ -229,10 +284,11 @@ SWITCH_DECLARE(switch_status_t)_switch_cache_db_get_db_handle(switch_cache_db_ha
 		switch_core_new_memory_pool(&pool);
 		new_dbh = switch_core_alloc(pool, sizeof(*new_dbh));
 		new_dbh->pool = pool;
+		new_dbh->type = type;
 		switch_set_string(new_dbh->name, thread_str);
 		switch_set_flag(new_dbh, CDF_INUSE);
 		
-		if (db) new_dbh->db = db; else new_dbh->odbc_dbh = odbc_dbh;
+		if (db) new_dbh->native_handle.core_db_dbh = db; else new_dbh->native_handle.odbc_dbh = odbc_dbh;
 		switch_mutex_init(&new_dbh->mutex, SWITCH_MUTEX_UNNESTED, new_dbh->pool);
 		switch_mutex_lock(new_dbh->mutex);
 
@@ -258,14 +314,23 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 
 	if (err) *err = NULL;
 	
-	if (switch_odbc_available() && dbh->odbc_dbh) {
-		switch_odbc_statement_handle_t stmt = NULL;
-		if ((status = switch_odbc_handle_exec(dbh->odbc_dbh, sql, &stmt)) != SWITCH_ODBC_SUCCESS) {
-			errmsg = switch_odbc_handle_get_error(dbh->odbc_dbh, stmt);
+
+
+	switch (dbh->type) {
+	case SCDB_TYPE_ODBC:
+		{
+			switch_odbc_statement_handle_t stmt = NULL;
+			if ((status = switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, sql, &stmt)) != SWITCH_ODBC_SUCCESS) {
+				errmsg = switch_odbc_handle_get_error(dbh->native_handle.odbc_dbh, stmt);
+			}
+			switch_odbc_statement_handle_free(&stmt);
 		}
-		switch_odbc_statement_handle_free(&stmt);
-	} else {
-        status = switch_core_db_exec(dbh->db, sql, NULL, NULL, &errmsg);
+		break;
+	case SCDB_TYPE_CORE_DB:
+		{
+			status = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, NULL, NULL, &errmsg);
+		}
+		break;
 	}
 
 	if (errmsg) {
@@ -285,12 +350,11 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 /**
    OMFG you cruel bastards.  Who chooses 64k as a max buffer len for a sql statement, have you ever heard of transactions?
  **/
-static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handle_t *dbh, const char *sql, uint32_t chunk_size, char **err)
+static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handle_t *dbh, char *sql, uint32_t chunk_size, char **err)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *p, *s, *e;
 	int chunk_count;
-	char *dup = NULL;
 	switch_size_t len;
 	
 	switch_assert(chunk_size);
@@ -307,11 +371,8 @@ static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handl
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	dup = strdup(sql);
-
-
-	e = end_of_p(dup);
-	s = dup;
+	e = end_of_p(sql);
+	s = sql;
 
 	while(s && s < e) {
 		p = s + chunk_size;
@@ -340,23 +401,29 @@ static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handl
 	
 	}
 
-	free(dup);
-
 	return status;
 
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, const char *sql, char **err)
+SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, char *sql, char **err)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (dbh->db) {
-		status = switch_cache_db_execute_sql_real(dbh, sql, err);
-	} else {
-		status = switch_cache_db_execute_sql_chunked(dbh, (char *)sql, 32000, err);
+
+	switch (dbh->type) {
+	case SCDB_TYPE_CORE_DB:
+		{
+			status = switch_cache_db_execute_sql_real(dbh, sql, err);
+		}
+		break;
+	default:
+		{
+			status = switch_cache_db_execute_sql_chunked(dbh, (char *)sql, 32000, err);
+		}
+		break;
 	}
-	
+
 	return status;
 
 }
@@ -373,7 +440,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_
 	}
 
 	while (retries > 0) {
-		switch_cache_db_execute_sql(dbh, sql, &errmsg);
+		switch_cache_db_execute_sql_real(dbh, sql, &errmsg);
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
 			switch_safe_free(errmsg);
@@ -392,7 +459,8 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries)
+
+SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, char *sql, uint32_t retries)
 {
 	char *errmsg = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -410,7 +478,7 @@ again:
 	while (begin_retries > 0) {
 		again = 0;
 
-		switch_cache_db_execute_sql(dbh,  "BEGIN", &errmsg);
+		switch_cache_db_execute_sql_real(dbh,  "BEGIN", &errmsg);
 
 		if (errmsg) {
 			begin_retries--;
@@ -423,7 +491,7 @@ again:
 			errmsg = NULL;
 
 			if (again) {
-				switch_cache_db_execute_sql(dbh,  "COMMIT", NULL);
+				switch_cache_db_execute_sql_real(dbh, "COMMIT", NULL);
 				goto again;
 			}
 
@@ -461,7 +529,7 @@ again:
 
 done:
 
-	switch_cache_db_execute_sql(dbh,  "COMMIT", NULL);
+	switch_cache_db_execute_sql_real(dbh,  "COMMIT", NULL);
 
 	return status;
 }
@@ -475,17 +543,26 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 
 	if (err) *err = NULL;
 
-	if (switch_odbc_available() && dbh->odbc_dbh) {
-		status = switch_odbc_handle_callback_exec(dbh->odbc_dbh, sql, callback, pdata, err);
-	} else {
-		status = switch_core_db_exec(dbh->db, sql, callback, pdata, &errmsg);
-		
-		if (errmsg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
-			free(errmsg);
-		}
-	}
 
+
+	switch (dbh->type) {
+	case SCDB_TYPE_ODBC:
+		{
+			status = switch_odbc_handle_callback_exec(dbh->native_handle.odbc_dbh, sql, callback, pdata, err);
+		}
+		break;
+	case SCDB_TYPE_CORE_DB:
+		{
+			status = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, callback, pdata, &errmsg);
+			
+			if (errmsg) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
+				free(errmsg);
+			}
+		}
+		break;
+	}
+	
 	return status;
 }
 
@@ -493,37 +570,43 @@ SWITCH_DECLARE(void) switch_cache_db_test_reactive(switch_cache_db_handle_t *dbh
 {
 	char *errmsg;
 
-	if (switch_odbc_available() && dbh->odbc_dbh) {
-		if (switch_odbc_handle_exec(dbh->odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(dbh->odbc_dbh, drop_sql, NULL);
-			switch_odbc_handle_exec(dbh->odbc_dbh, reactive_sql, NULL);
+	switch (dbh->type) {
+	case SCDB_TYPE_ODBC:
+		{
+			if (switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
+				switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, drop_sql, NULL);
+				switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, reactive_sql, NULL);
+			}
 		}
-	} else if (dbh->db) {
-		if (test_sql) {
-			switch_core_db_exec(dbh->db, test_sql, NULL, NULL, &errmsg);
+		break;
+	case SCDB_TYPE_CORE_DB:
+		{
+			if (test_sql) {
+				switch_core_db_exec(dbh->native_handle.core_db_dbh, test_sql, NULL, NULL, &errmsg);
 
-			if (errmsg) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\nAuto Generating Table!\n", errmsg, test_sql);
-				switch_core_db_free(errmsg);
-				errmsg = NULL;
-				if (drop_sql) {
-					switch_core_db_exec(dbh->db, drop_sql, NULL, NULL, &errmsg);
-				}
 				if (errmsg) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, reactive_sql);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\nAuto Generating Table!\n", errmsg, test_sql);
 					switch_core_db_free(errmsg);
 					errmsg = NULL;
-				}
-				switch_core_db_exec(dbh->db, reactive_sql, NULL, NULL, &errmsg);
-				if (errmsg) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, reactive_sql);
-					switch_core_db_free(errmsg);
-					errmsg = NULL;
+					if (drop_sql) {
+						switch_core_db_exec(dbh->native_handle.core_db_dbh, drop_sql, NULL, NULL, &errmsg);
+					}
+					if (errmsg) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, reactive_sql);
+						switch_core_db_free(errmsg);
+						errmsg = NULL;
+					}
+					switch_core_db_exec(dbh->native_handle.core_db_dbh, reactive_sql, NULL, NULL, &errmsg);
+					if (errmsg) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, reactive_sql);
+						switch_core_db_free(errmsg);
+						errmsg = NULL;
+					}
 				}
 			}
 		}
+		break;
 	}
-
 }
 
 
@@ -1016,25 +1099,33 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening DB\n");
-	if (dbh->db) {
-		switch_cache_db_execute_sql(dbh, "drop table channels", NULL);
-		switch_cache_db_execute_sql(dbh, "drop table calls", NULL);
-		switch_cache_db_execute_sql(dbh, "drop table interfaces", NULL);
-		switch_cache_db_execute_sql(dbh, "drop table tasks", NULL);
-		switch_cache_db_execute_sql(dbh, "PRAGMA synchronous=OFF;", NULL);
-		switch_cache_db_execute_sql(dbh, "PRAGMA count_changes=OFF;", NULL);
-		switch_cache_db_execute_sql(dbh, "PRAGMA cache_size=8000", NULL);
-		switch_cache_db_execute_sql(dbh, "PRAGMA temp_store=MEMORY;", NULL);
-	} else {
-		char sql[512] = "";
-		char *tables[] = {"channels", "calls", "interfaces", "tasks", NULL};
-		int i;
-		const char *hostname = switch_core_get_variable("hostname");
 
-		for(i = 0; tables[i]; i++) {
-			switch_snprintf(sql, sizeof(sql), "delete from %s where hostname='%s'", tables[i], hostname);
-			switch_cache_db_execute_sql(dbh, sql, NULL);
+	switch (dbh->type) {
+	case SCDB_TYPE_ODBC:
+		{
+			char sql[512] = "";
+			char *tables[] = {"channels", "calls", "interfaces", "tasks", NULL};
+			int i;
+			const char *hostname = switch_core_get_variable("hostname");
+
+			for(i = 0; tables[i]; i++) {
+				switch_snprintf(sql, sizeof(sql), "delete from %s where hostname='%s'", tables[i], hostname);
+				switch_cache_db_execute_sql(dbh, sql, NULL);
+			}
 		}
+		break;
+	case SCDB_TYPE_CORE_DB:
+		{
+			switch_cache_db_execute_sql(dbh, "drop table channels", NULL);
+			switch_cache_db_execute_sql(dbh, "drop table calls", NULL);
+			switch_cache_db_execute_sql(dbh, "drop table interfaces", NULL);
+			switch_cache_db_execute_sql(dbh, "drop table tasks", NULL);
+			switch_cache_db_execute_sql(dbh, "PRAGMA synchronous=OFF;", NULL);
+			switch_cache_db_execute_sql(dbh, "PRAGMA count_changes=OFF;", NULL);
+			switch_cache_db_execute_sql(dbh, "PRAGMA cache_size=8000", NULL);
+			switch_cache_db_execute_sql(dbh, "PRAGMA temp_store=MEMORY;", NULL);
+		}
+		break;
 	}
 
 		
@@ -1042,34 +1133,39 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_test_reactive(dbh, "select hostname from aliases", "DROP TABLE aliases", create_alias_sql);
 	switch_cache_db_test_reactive(dbh, "select hostname from nat", "DROP TABLE nat", create_nat_sql);
 
-	if (dbh->db) {
-		switch_cache_db_execute_sql(dbh, create_channels_sql, NULL);
-		switch_cache_db_execute_sql(dbh, create_calls_sql, NULL);
-		switch_cache_db_execute_sql(dbh, create_interfaces_sql, NULL);
-		switch_cache_db_execute_sql(dbh, create_tasks_sql, NULL);
-	} else {
-		switch_cache_db_test_reactive(dbh, "select hostname from channels", "DROP TABLE channels", create_channels_sql);
-		switch_cache_db_test_reactive(dbh, "select hostname from calls", "DROP TABLE calls", create_calls_sql);
-		switch_cache_db_test_reactive(dbh, "select hostname from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
-		switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
-		
-	}
 
-	if (dbh->odbc_dbh) {
-		char *err;
-
-		switch_cache_db_execute_sql(dbh, "begin;delete from channels where hostname='';delete from channels where hostname='';commit;", &err);
-
-		if (err) {
-			runtime.odbc_dsn = NULL;
-			runtime.odbc_user = NULL;
-			runtime.odbc_pass = NULL;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Transactions not supported on your DB, disabling ODBC\n");
-			switch_cache_db_release_db_handle(&dbh);
-			free(err);
-			goto top;
+	switch (dbh->type) {
+	case SCDB_TYPE_ODBC:
+		{
+			char *err;
+			switch_cache_db_test_reactive(dbh, "select hostname from channels", "DROP TABLE channels", create_channels_sql);
+			switch_cache_db_test_reactive(dbh, "select hostname from calls", "DROP TABLE calls", create_calls_sql);
+			switch_cache_db_test_reactive(dbh, "select hostname from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
+			switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
+			
+			switch_cache_db_execute_sql(dbh, "begin;delete from channels where hostname='';delete from channels where hostname='';commit;", &err);
+			
+			if (err) {
+				runtime.odbc_dsn = NULL;
+				runtime.odbc_user = NULL;
+				runtime.odbc_pass = NULL;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Transactions not supported on your DB, disabling ODBC\n");
+				switch_cache_db_release_db_handle(&dbh);
+				free(err);
+				goto top;
+			}
 		}
+		break;
+	case SCDB_TYPE_CORE_DB:
+		{
+			switch_cache_db_execute_sql(dbh, create_channels_sql, NULL);
+			switch_cache_db_execute_sql(dbh, create_calls_sql, NULL);
+			switch_cache_db_execute_sql(dbh, create_interfaces_sql, NULL);
+			switch_cache_db_execute_sql(dbh, create_tasks_sql, NULL);
+		}
+		break;
 	}
+	
 
 	switch_cache_db_execute_sql(dbh, "delete from complete where sticky=0", NULL);
 	switch_cache_db_execute_sql(dbh, "delete from aliases where sticky=0", NULL);

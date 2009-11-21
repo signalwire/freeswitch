@@ -1926,25 +1926,71 @@ typedef enum {
 	CDF_INUSE = (1 << 0)
 } cache_db_flag_t;
 
+typedef enum {
+	SCDB_TYPE_CORE_DB,
+	SCDB_TYPE_ODBC
+} switch_cache_db_handle_type_t;
+
+typedef union {
+	switch_core_db_t *core_db_dbh;
+	switch_odbc_handle_t *odbc_dbh;	
+} switch_cache_db_native_handle_t;
+
+typedef struct {
+	char *db_path;
+} switch_cache_db_core_db_options_t;
+
+typedef struct {
+	char *dsn;
+	char *user;
+	char *pass;
+} switch_cache_db_odbc_options_t;
+
+typedef union {
+	switch_cache_db_core_db_options_t core_db_options;
+	switch_cache_db_odbc_options_t odbc_options;
+} switch_cache_db_connection_options_t;
+
 typedef struct {
 	char name[CACHE_DB_LEN];
-	switch_core_db_t *db;
-	switch_odbc_handle_t *odbc_dbh;
+	switch_cache_db_handle_type_t type;
+	switch_cache_db_native_handle_t native_handle;
 	time_t last_used;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 	int32_t flags;
 } switch_cache_db_handle_t;
 
+
+static inline const char *switch_cache_db_type_name(switch_cache_db_handle_type_t type)
+{
+	const char *type_str = "INVALID";
+
+	switch (type) {
+	case SCDB_TYPE_ODBC:
+		{
+			type_str = "ODBC";
+		}
+		break;
+	case SCDB_TYPE_CORE_DB:
+		{
+			type_str = "CORE_DB";
+		}
+		break;
+	}
+
+	return type_str;
+}
+
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t **dbh);
 SWITCH_DECLARE(void) switch_cache_db_destroy_db_handle(switch_cache_db_handle_t **dbh);
 SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_handle_t **dbh, 
-															   const char *db_name, 
-															   const char *odbc_user, 
-															   const char *odbc_pass, const char *file, const char *func, int line);
-#define switch_cache_db_get_db_handle(_a, _b, _c, _d) _switch_cache_db_get_db_handle(_a, _b, _c, _d, __FILE__, __SWITCH_FUNC__, __LINE__)
+															   switch_cache_db_handle_type_t type,
+															   switch_cache_db_connection_options_t *connection_options,
+															   const char *file, const char *func, int line);
+#define switch_cache_db_get_db_handle(_a, _b) _switch_cache_db_get_db_handle(_a, _b, __FILE__, __SWITCH_FUNC__, __LINE__)
 
-SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, const char *sql, char **err);
+SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, char *sql, char **err);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cache_db_handle_t *dbh, const char *sql, 
 																	 switch_core_db_callback_func_t callback, void *pdata, char **err);
 
@@ -1953,7 +1999,7 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 
 SWITCH_DECLARE(void) switch_cache_db_test_reactive(switch_cache_db_handle_t *db, const char *test_sql, const char *drop_sql, const char *reactive_sql);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
-SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
+SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, char *sql, uint32_t retries);
 SWITCH_DECLARE(void) switch_cache_db_detach(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
 
