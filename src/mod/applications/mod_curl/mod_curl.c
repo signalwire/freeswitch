@@ -288,7 +288,6 @@ SWITCH_STANDARD_APP(curl_app_function)
 		switch_channel_set_variable(channel, "curl_response_data", print_json(pool, http_data));
 	} else {
 		SWITCH_STANDARD_STREAM(stream);
-		stream.write_function(&stream, "%ld\n", http_data->http_response_code);
 		if(do_headers) {
 			slist = http_data->headers;
 			while(slist) {
