@@ -408,7 +408,10 @@ touch .noversion
 # Add a freeswitch user with group daemon
 %pre
 %ifos linux
-/usr/sbin/useradd -r -g daemon -s /bin/false -c "The FreeSWITCH Open Source Voice Platform" -d %{prefix} freeswitch 2> /dev/null || :
+if ! /usr/bin/id freeswitch &>/dev/null; then
+       /usr/sbin/useradd -r -g daemon -s /bin/false -c "The FreeSWITCH Open Source Voice Platform" -d %{prefix} freeswitch || \
+                %logmsg "Unexpected error adding user \"freeswitch\". Aborting installation."
+fi
 %endif
 
 %post
@@ -421,7 +424,9 @@ chkconfig --add freeswitch
 
 %postun
 %{?run_ldconfig:%run_ldconfig}
-userdel freeswitch
+if [ $1 -eq 0 ]; then
+    userdel freeswitch || %logmsg "User \"freeswitch\" could not be deleted."
+fi
 
 %clean
 %{__rm} -rf $RPM_BUILD_ROOT
@@ -806,6 +811,8 @@ userdel freeswitch
 
 
 %changelog
+* Sat Nov 21 2009 - michal.bielicki@seventhsignal.de
+- added patch by Igor Neves <neves.igor@gmail.com>: Added some checkup in %post and %postun to prevent upgrades from removing freeswitch user
 * Thu Nov 18 2009 - michal.bielicki@seventhsignal.de
 - added new config files for diretory and distributor
 - removed sangoma boost from openzap for builds that do not inherit wanpipe while building.
