@@ -341,7 +341,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 #endif
 
 	if (level > 100) {
-		if (level - 100 > runtime.debug_level) {
+		if ((uint32_t)(level - 100) > runtime.debug_level) {
 			return;
 		}
 
