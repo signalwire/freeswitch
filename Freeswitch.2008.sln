@@ -1011,7 +1011,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_valet_parking", "src\mo
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libbroadvoice", "libs\broadvoice\src\broadvoice.vcproj", "{CF70F278-3364-4395-A2E1-23501C9B8AD2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libbroadvoice", "libs\broadvoice\src\libbroadvoice.2008.vcproj", "{CF70F278-3364-4395-A2E1-23501C9B8AD2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_bv", "src\mod\codecs\mod_bv\mod_bv.2008.vcproj", "{D5C87B19-150D-4EF3-A671-96589BD2D14A}"
 	ProjectSection(ProjectDependencies) = postProject
