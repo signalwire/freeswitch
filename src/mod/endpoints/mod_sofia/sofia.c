@@ -5035,6 +5035,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	int is_auth = 0, calling_myself = 0;
 	int network_port = 0;
 	char *is_nat = NULL;
+	char *aniii = NULL;
 	char acl_token[512] = "";
 	sofia_transport_t transport;
 	const char *gw_name = NULL;
@@ -5294,9 +5295,16 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	if (sip->sip_from && sip->sip_from->a_url) {
+		char * tmp;
 		from_user = sip->sip_from->a_url->url_user;
 		from_host = sip->sip_from->a_url->url_host;
 		channel_name = url_set_chanvars(session, sip->sip_from->a_url, sip_from);
+		if (sip->sip_from->a_url->url_params && (tmp = sofia_glue_find_parameter(sip->sip_from->a_url->url_params, "isup-oli="))) {
+			aniii = switch_core_session_strdup(session, tmp + 9);
+			if ((tmp = strchr(aniii, ';'))) {
+				tmp = '\0';
+			}
+		}
 
 		if (!zstr(from_user)) {
 			if (*from_user == '+') {
@@ -5725,7 +5733,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 														 from_user,
 														 dialplan,
-														 displayname, from_user, network_ip, NULL, NULL, NULL, MODNAME, context, destination_number);
+														 displayname, from_user, network_ip, from_user, aniii, NULL, MODNAME, context, destination_number);
 
 	if (tech_pvt->caller_profile) {
 
