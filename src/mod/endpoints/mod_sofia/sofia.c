@@ -3257,9 +3257,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 			sofia_glue_set_extra_headers(channel, sip, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
 
-			if (sip_p_asserted_identity(sip)) {
-				sofia_update_callee_id(session, profile, sip, SWITCH_FALSE);
-			}
+			sofia_update_callee_id(session, profile, sip, SWITCH_FALSE);
+
 		}
 		
 		if (channel && sip && (status == 300 || status == 302 || status == 305) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
