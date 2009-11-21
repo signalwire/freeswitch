@@ -217,6 +217,7 @@ SWITCH_DECLARE(void) switch_core_media_bug_set_read_replace_frame(_In_ switch_me
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(_In_ switch_core_session_t *session, _Inout_ switch_media_bug_t **bug);
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_prune(switch_core_session_t *session);
 
 /*!
   \brief Remove media bug callback

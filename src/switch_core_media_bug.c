@@ -437,6 +437,46 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 }
 
 
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_prune(switch_core_session_t *session)
+{
+	switch_media_bug_t *bp = NULL, *last = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	int ttl = 0;
+
+
+ top:
+
+	if (session->bugs) {
+		switch_thread_rwlock_wrlock(session->bug_rwlock);
+		for (bp = session->bugs; bp; bp = bp->next) {
+			if (switch_core_media_bug_test_flag(bp, SMBF_PRUNE)) {
+				if (last) {
+					last->next = bp->next;
+				} else {
+					session->bugs = bp->next;
+				}
+				break;
+			}
+
+			last = bp;
+		}
+		switch_thread_rwlock_unlock(session->bug_rwlock);
+		if (bp) {
+			status = switch_core_media_bug_close(&bp);
+			ttl++;
+			goto top;
+		}
+	}
+	
+	if (!session->bugs && switch_core_codec_ready(&session->bug_codec)) {
+		switch_core_codec_destroy(&session->bug_codec);
+		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
+	}
+
+	return ttl;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_core_session_t *session, switch_media_bug_callback_t callback)
 {
 	switch_media_bug_t *cur = NULL, *bp = NULL, *last = NULL;

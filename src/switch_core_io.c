@@ -330,11 +330,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		}
 
 		if (session->bugs && !switch_channel_test_flag(session->channel, CF_PAUSE_BUGS)) {
-			switch_media_bug_t *bp, *dp, *last = NULL;
+			switch_media_bug_t *bp;
 			switch_bool_t ok = SWITCH_TRUE;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
+			int prune = 0;
+			
 			for (bp = session->bugs; bp; bp = bp->next) {
 				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
+					continue;
+				}
+				if (switch_test_flag(bp, SMBF_PRUNE)) {
+					prune++;
 					continue;
 				}
 
@@ -358,28 +364,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					}
 				}
 				
-				if (bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL)) {
-					ok = SWITCH_FALSE;
+				if ((bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL)) || ok == SWITCH_FALSE) {
+					switch_set_flag(bp, SMBF_PRUNE);
+					prune++;
 				}
-
-				if (ok == SWITCH_FALSE) {
-					bp->ready = 0;
-					if (last) {
-						last->next = bp->next;
-					} else {
-						session->bugs = bp->next;
-					}
-					dp = bp;
-					bp = last;
-					switch_core_media_bug_close(&dp);
-					if (!bp) {
-						break;
-					}
-					continue;
-				}
-				last = bp;
+				
+				
 			}
 			switch_thread_rwlock_unlock(session->bug_rwlock);
+			if (prune) {
+				switch_core_media_bug_prune(session);
+			}
 		}
 
 		if (do_bugs) {
@@ -496,11 +491,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_set_flag((*frame), SFF_CNG);
 		}
 		if (session->bugs && !switch_channel_test_flag(session->channel, CF_PAUSE_BUGS)) {
-			switch_media_bug_t *bp, *dp, *last = NULL;
+			switch_media_bug_t *bp;
 			switch_bool_t ok = SWITCH_TRUE;
+			int prune = 0;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
 				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
+					continue;
+				}
+
+				if (switch_test_flag(bp, SMBF_PRUNE)) {
+					prune++;
 					continue;
 				}
 
@@ -516,23 +517,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				}
 
 				if (ok == SWITCH_FALSE) {
-					bp->ready = 0;
-					if (last) {
-						last->next = bp->next;
-					} else {
-						session->bugs = bp->next;
-					}
-					dp = bp;
-					bp = last;
-					switch_core_media_bug_close(&dp);
-					if (!bp) {
-						break;
-					}
-					continue;
+					switch_set_flag(bp, SMBF_PRUNE);
+                    prune++;
 				}
-				last = bp;
 			}
 			switch_thread_rwlock_unlock(session->bug_rwlock);
+			if (prune) {
+				switch_core_media_bug_prune(session);
+			}
 		}
 	}
 
@@ -760,8 +752,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	
 
 	if (session->bugs && !switch_channel_test_flag(session->channel, CF_PAUSE_BUGS)) {
-		switch_media_bug_t *bp, *dp, *last = NULL;
-		
+		switch_media_bug_t *bp;
+		int prune = 0;
+
 		switch_thread_rwlock_rdlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			switch_bool_t ok = SWITCH_TRUE;
@@ -770,6 +763,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			}
 
 			if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
+				continue;
+			}
+
+			if (switch_test_flag(bp, SMBF_PRUNE)) {
+				prune++;
 				continue;
 			}
 
@@ -800,23 +798,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 
 			if (ok == SWITCH_FALSE) {
-				bp->ready = 0;
-				if (last) {
-					last->next = bp->next;
-				} else {
-					session->bugs = bp->next;
-				}
-				dp = bp;
-				bp = last;
-				switch_core_media_bug_close(&dp);
-				if (!bp) {
-					break;
-				}
-				continue;
+				switch_set_flag(bp, SMBF_PRUNE);
+				prune++;
 			}
-			last = bp;
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
+		if (prune) {
+			switch_core_media_bug_prune(session);
+		}
 	}
 
 	if (do_bugs) {
