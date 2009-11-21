@@ -193,29 +193,33 @@ static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch
 
 static switch_status_t expire_listener(listener_t **listener)
 {
+	listener_t *l;
 
-	if (!(*listener)->expire_time) {
-		(*listener)->expire_time = switch_epoch_time_now(NULL);
+	if (!listener || !*listener) return SWITCH_STATUS_FALSE;
+	l = *listener;
+
+	if (!l->expire_time) {
+		l->expire_time = switch_epoch_time_now(NULL);
+	}
+
+	if (switch_thread_rwlock_trywrlock(l->rwlock) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_thread_rwlock_trywrlock((*listener)->rwlock) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
-	}
-	
-	if (globals.debug > 0) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG((*listener)->session), SWITCH_LOG_DEBUG, "Stateful Listener %u has expired\n", (*listener)->id);
-	}
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(l->session), SWITCH_LOG_CRIT, "Stateful Listener %u has expired\n", l->id);
 
 	flush_listener(*listener, SWITCH_TRUE, SWITCH_TRUE);
-	switch_core_hash_destroy(&(*listener)->event_hash);
-	switch_core_destroy_memory_pool(&(*listener)->pool);
-	switch_mutex_lock((*listener)->filter_mutex);
-	if ((*listener)->filters) {
-		switch_event_destroy(&(*listener)->filters);
+	switch_core_hash_destroy(&l->event_hash);
+
+	switch_mutex_lock(l->filter_mutex);
+	if (l->filters) {
+		switch_event_destroy(&l->filters);
 	}
-	switch_mutex_unlock((*listener)->filter_mutex);
-	switch_thread_rwlock_unlock((*listener)->rwlock);
+
+	switch_mutex_unlock(l->filter_mutex);
+	switch_thread_rwlock_unlock(l->rwlock);
+	switch_core_destroy_memory_pool(&l->pool);
+
 	*listener = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -224,6 +228,7 @@ static void event_handler(switch_event_t *event)
 {
 	switch_event_t *clone = NULL;
 	listener_t *l, *lp, *last = NULL;
+	time_t now = switch_epoch_time_now(NULL);
 
 	switch_assert(event != NULL);
 
@@ -236,29 +241,26 @@ static void event_handler(switch_event_t *event)
 	switch_mutex_lock(globals.listener_mutex);
 	while(lp) {
 		int send = 0;
-		time_t now = switch_epoch_time_now(NULL);
 
 		l = lp;
 		lp = lp->next;
-		
-		if (!switch_test_flag(l, LFLAG_EVENTS)) {
-			last = lp;
-			continue;
-		}
-		
-		if (switch_test_flag(l, LFLAG_STATEFUL) && l->timeout && now - l->last_flush > l->timeout) {
+
+		if (switch_test_flag(l, LFLAG_STATEFUL) && (l->expire_time || (l->timeout && now - l->last_flush > l->timeout))) {
 			if (expire_listener(&l) == SWITCH_STATUS_SUCCESS) {
 				if (last) {
 					last->next = lp;
 				} else {
 					listen_list.listeners = lp;
 				}
-				
 				continue;
 			}
 		}
 		
-		
+		if (l->expire_time || !switch_test_flag(l, LFLAG_EVENTS)) {
+			last = l;
+			continue;
+		}		
+
 		if (l->event_list[SWITCH_EVENT_ALL]) {
 			send = 1;
 		} else if ((l->event_list[event->event_id])) {
@@ -347,7 +349,7 @@ static void event_handler(switch_event_t *event)
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(l->session), SWITCH_LOG_ERROR, "Memory Error!\n");
 			}
 		}
-		last = lp;
+		last = l;
 	}
 	switch_mutex_unlock(globals.listener_mutex);
 }
