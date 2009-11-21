@@ -16,7 +16,7 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
+## $Id: Makefile.am,v 1.2 2009/11/21 17:19:22 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -26,6 +26,7 @@ noinst_SCRIPTS = broadvoice.spec
 MAINTAINERCLEANFILES = Makefile.in
 
 EXTRA_DIST = autogen.sh \
+             broadvoice.pc \
              broadvoice.spec \
              wrapper.xsl \
              doc/broadvoice-doxygen \
@@ -48,6 +49,9 @@ endif
 SUBDIRS = src $(MAYBE_DOC) $(MAYBE_TESTS)
 
 DIST_SUBDIRS = src doc tests test-data
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = broadvoice.pc
 
 faq: faq.xml
 	cd faq ; xsltproc ../wrapper.xsl ../faq.xml

@@ -16,17 +16,18 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
+## $Id: Makefile.am,v 1.4 2009/11/21 17:19:22 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
 
 MAINTAINERCLEANFILES = Makefile.in
 
-EXTRA_DIST = broadvoice/version.h.in \
-             broadvoice.dsp \
-             broadvoice.sln \
-             broadvoice.vcproj \
+EXTRA_DIST = libbroadvoice.dsp \
+             libbroadvoice.2005.sln \
+             libbroadvoice.2008.sln \
+             libbroadvoice.2005.vcproj \
+             libbroadvoice.2008.vcproj \
              msvc/gettimeofday.c \
              msvc/inttypes.h \
              msvc/tgmath.h \
@@ -35,10 +36,13 @@ EXTRA_DIST = broadvoice/version.h.in \
              msvc/broadvoice.def \
              msvc/msvcproj.head \
              msvc/msvcproj.foot \
+             msvc/vc8proj.foot \
              msvc/vc8proj.head \
-             msvc/vc8proj.foot
-
-INCLUDES = -I$(top_builddir) -Ifloating/common -Ifloating/bv16 -Ifloating/bv32
+             msvc/vc9proj.foot \
+             msvc/vc9proj.head \
+             broadvoice/version.h.in
+             
+INCLUDES = -I$(top_builddir) -I$(srcdir)/floating/common -I$(srcdir)/floating/bv16 -I$(srcdir)/floating/bv32
 
 lib_LTLIBRARIES = libbroadvoice.la
 
@@ -111,60 +115,80 @@ noinst_HEADERS = bitpack16.h \
 
 noinst_PROGRAMS =
 
-DSP = broadvoice.dsp
-VCPROJ = broadvoice.vcproj
+DSP = libbroadvoice.dsp
+VCPROJ8 = libbroadvoice.2005.vcproj
+VCPROJ9 = libbroadvoice.2008.vcproj
 
-WIN32SOURCES = $(libbroadvoice_la_SOURCES) msvc/gettimeofday.c
+WIN32SOURCES = $(libbroadvoice_la_SOURCES) .\\msvc\\gettimeofday.c
 WIN32HEADERS = $(nobase_include_HEADERS) broadvoice.h
 
 DSPOUT = | awk '{printf("%s\r\n", $$0)}' >> $(DSP)
-VCPROJOUT = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ)
+VCPROJOUT8 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ8)
+VCPROJOUT9 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ9)
 
 $(DSP): msvc/msvcproj.head msvc/msvcproj.foot Makefile.am
 	echo "creating $(DSP)"
 	@(cp $(srcdir)/msvc/msvcproj.head $(DSP); \
 	echo "# Begin Group \"Source Files\"" $(DSPOUT); \
 	for file in $(WIN32SOURCES); do \
-	myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
 	echo "# Begin Source File" $(DSPOUT); \
 	echo "" $(DSPOUT); \
-	echo "SOURCE=.\\"$$myfile $(DSPOUT); \
+	echo "SOURCE=.\\"$$file $(DSPOUT); \
 	echo "# End Source File" $(DSPOUT); \
 	done; \
 	echo "# End Group" $(DSPOUT); \
 	echo "# Begin Group \"Header Files\"" $(DSPOUT); \
 	for file in $(WIN32HEADERS); do \
-	myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
 	echo "# Begin Source File" $(DSPOUT); \
 	echo "" $(DSPOUT); \
-	echo "SOURCE=.\\"$$myfile $(DSPOUT); \
+	echo "SOURCE=.\\"$$file $(DSPOUT); \
 	echo "# End Source File" $(DSPOUT); \
 	done; \
 	echo "# End Group" $(DSPOUT); \
 	cat $(srcdir)/msvc/msvcproj.foot $(DSPOUT) )
 
-$(VCPROJ): msvc/vc8proj.head msvc/vc8proj.foot Makefile.am
-	echo "creating $(VCPROJ)"
-	@(cp $(srcdir)/msvc/vc8proj.head $(VCPROJ); \
+$(VCPROJ8): msvc/vc8proj.head msvc/vc8proj.foot Makefile.am
+	echo "creating $(VCPROJ8)"
+	@(cp $(srcdir)/msvc/vc8proj.head $(VCPROJ8); \
 	for file in $(WIN32SOURCES); do \
-		myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
-		echo "<File RelativePath=\""$$myfile"\"></File>" $(VCPROJOUT); \
+    myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
+    echo "<File RelativePath=\""$$myfile"\"></File>" $(VCPROJOUT8); \
 	done; \
-	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT); \
+	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT8); \
 	for file in $(WIN32HEADERS); do \
-		myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
-		echo "<File RelativePath=\""$$myfile"\"></File>" $(VCPROJOUT); \
+        myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
+		echo "<File RelativePath=\""$$myfile"\"></File>" $(VCPROJOUT8); \
 	done; \
-	cat $(srcdir)/msvc/vc8proj.foot $(VCPROJOUT) )
+	cat $(srcdir)/msvc/vc8proj.foot $(VCPROJOUT8) )
+
+$(VCPROJ9): msvc/vc9proj.head msvc/vc9proj.foot Makefile.am
+	echo "creating $(VCPROJ9)"
+	@(cp $(srcdir)/msvc/vc9proj.head $(VCPROJ9); \
+	for file in $(WIN32SOURCES); do \
+        myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
+		echo "<File RelativePath=\""$$myfile"\"></File>" $(VCPROJOUT9); \
+	done; \
+	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT9); \
+	for file in $(WIN32HEADERS); do \
+        myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
+		echo "<File RelativePath=\""$$myfile"\"></File>" $(VCPROJOUT9); \
+	done; \
+	cat $(srcdir)/msvc/vc9proj.foot $(VCPROJOUT9) )
+
+$(srcdir)/msvc/broadvoice.h: broadvoice.h.in
+	echo "creating $(srcdir)/msvc/broadvoice.h"
+	@sed -e "s/#define _BROADVOICE_H_/#define _BROADVOICE_H_\n\n#define __inline__ __inline\n#pragma warning(disable:4200)/" \
+	     -e "s/\@BROADVOICE_USE_FIXED_POINT\@/#undef BROADVOICE_USE_FIXED_POINT/" \
+	     -e "s/\@BROADVOICE_MISALIGNED_ACCESS_FAILS\@/#undef BROADVOICE_MISALIGNED_ACCESS_FAILS/" \
+	     -e "s/\@BROADVOICE_USE_EXPORT_CAPABILITY\@/#define BROADVOICE_USE_EXPORT_CAPABILITY 1/" \
+	     -e "s/\@INSERT_INTTYPES_HEADER\@/#include <msvc\/inttypes.h>/" \
+	     -e "s/\@INSERT_MATH_HEADER\@/#include <math.h>/" $(srcdir)/broadvoice.h.in > $(srcdir)/msvc/broadvoice.h
 
 broadvoice/version.h:
+	mkdir -p $(@D)
 	NOWDATE=`date --utc +"%Y%m%d"` ; \
 	NOWTIME=`date --utc +"%H%M%S"` ; \
 	sed 's/$$BROADVOICE_RELEASE_DATE/'$$NOWDATE'/;s/$$BROADVOICE_RELEASE_TIME/'$$NOWTIME'/' \
-		<broadvoice/version.h.in >broadvoice/version.h
+		<$(srcdir)/broadvoice/version.h.in >$@
 
-dist-hook:
-	NOWDATE=`date --utc +"%Y%m%d"` ; \
-	NOWTIME=`date --utc +"%H%M%S"` ; \
-	sed 's/$$BROADVOICE_RELEASE_DATE/'$$NOWDATE'/;s/$$BROADVOICE_RELEASE_TIME/'$$NOWTIME'/' \
-		<broadvoice/version.h.in >broadvoice/version.h
+dist-hook: broadvoice/version.h

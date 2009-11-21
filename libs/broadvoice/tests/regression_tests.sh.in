@@ -17,87 +17,69 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: regression_tests.sh.in,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
+# $Id: regression_tests.sh.in,v 1.2 2009/11/20 13:12:24 steveu Exp $
 #
 
 STDOUT_DEST=xyzzy
 STDERR_DEST=xyzzy2
-VECTOR_CLASS=@G722_1_VECTORS_FOR_TESTS@
+VECTOR_CLASS=@BROADVOICE_VECTORS_FOR_TESTS@
 TMP_FILE=tmp
 
-echo Performing basic G.722_1 regression tests
+echo Performing basic BroadVoice 16 and 32 regression tests
 echo
 
-./broadvoice_tests E I 32000 16000 ../test-data/itu/g722_1/$VECTOR_CLASS/g722_1_enc_in.pcm $TMP_FILE
-diff $TMP_FILE ../test-data/itu/g722_1/$VECTOR_CLASS/g722_1_enc_out_32000.itu
+./broadvoice_tests E I 32000 ../test-data/broadcom/$VECTOR_CLASS/bv32/tv.raw $TMP_FILE
+diff $TMP_FILE ../test-data/broadcom/$VECTOR_CLASS/bv32/tv.bv32.ref
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
-    echo broadvoice_tests E failed!
+    echo broadvoice_tests encode failed!
     exit $RETVAL
 fi
-./broadvoice_tests E I 24000 16000 ../test-data/itu/g722_1/$VECTOR_CLASS/g722_1_enc_in.pcm $TMP_FILE
-diff $TMP_FILE ../test-data/itu/g722_1/$VECTOR_CLASS/g722_1_enc_out_24000.itu
+./broadvoice_tests E I 16000 ../test-data/broadcom/$VECTOR_CLASS/bv16/tv.raw $TMP_FILE
+diff $TMP_FILE ../test-data/broadcom/$VECTOR_CLASS/bv16/tv.bv16.ref
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
-    echo broadvoice_tests E failed!
+    echo broadvoice_tests encode failed!
     exit $RETVAL
 fi
-echo broadvoice_tests E completed OK
+echo broadvoice_tests encode completed OK
 
-./broadvoice_tests D I 24000 16000 ../test-data/itu/g722_1/$VECTOR_CLASS/g722_1_enc_out_24000.itu $TMP_FILE
-diff $TMP_FILE ../test-data/itu/g722_1/$VECTOR_CLASS/g722_1_dec_out_24000.pcm
+./broadvoice_tests D I 32000 ../test-data/broadcom/$VECTOR_CLASS/bv32/tv.bv32.ref $TMP_FILE
+diff $TMP_FILE ../test-data/broadcom/$VECTOR_CLASS/bv32/tv.bv32.ref.raw
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
-    echo broadvoice_tests D failed!
+    echo broadvoice_tests decode failed!
     exit $RETVAL
 fi
-./broadvoice_tests D I 32000 16000 ../test-data/itu/g722_1/$VECTOR_CLASS/g722_1_enc_out_32000.itu $TMP_FILE
-diff $TMP_FILE ../test-data/itu/g722_1/$VECTOR_CLASS/g722_1_dec_out_32000.pcm
+./broadvoice_tests D I 16000 ../test-data/broadcom/$VECTOR_CLASS/bv16/tv.bv16.ref $TMP_FILE
+diff $TMP_FILE ../test-data/broadcom/$VECTOR_CLASS/bv16/tv.bv16.ref.raw
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
-    echo broadvoice_tests D failed!
+    echo broadvoice_tests decode failed!
     exit $RETVAL
 fi
 
-./broadvoice_tests D I 24000 16000 ../test-data/itu/g722_1/$VECTOR_CLASS/g722_1_dec_in_24000_fe.itu $TMP_FILE
-diff $TMP_FILE ../test-data/itu/g722_1/$VECTOR_CLASS/g722_1_dec_out_24000_fe.pcm
+./broadvoice_tests D I 32000 ../test-data/broadcom/$VECTOR_CLASS/bv32/tv.bfe10.bv32 $TMP_FILE
+diff $TMP_FILE ../test-data/broadcom/$VECTOR_CLASS/bv32/tv.bv32.bfe10.ref.raw
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
-    echo broadvoice_tests D failed!
+    echo broadvoice_tests decode failed!
     exit $RETVAL
 fi
-./broadvoice_tests D I 32000 16000 ../test-data/itu/g722_1/$VECTOR_CLASS/g722_1_dec_in_32000_fe.itu $TMP_FILE
-diff $TMP_FILE ../test-data/itu/g722_1/$VECTOR_CLASS/g722_1_dec_out_32000_fe.pcm
+./broadvoice_tests D I 16000 ../test-data/broadcom/$VECTOR_CLASS/bv16/tv.bfe10.bv16 $TMP_FILE
+diff $TMP_FILE ../test-data/broadcom/$VECTOR_CLASS/bv16/tv.bv16.bfe10.ref.raw
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
-    echo broadvoice_tests D failed!
+    echo broadvoice_tests decode failed!
     exit $RETVAL
 fi
-echo broadvoice_tests D completed OK
-
-./broadvoice_tests E I 32000 16000 ../test-data/local/short_wb_voice.wav $TMP_FILE
-RETVAL=$?
-if [ $RETVAL != 0 ]
-then
-    echo broadvoice_tests E failed!
-    exit $RETVAL
-fi
-echo broadvoice_tests E completed OK
-
-./broadvoice_tests D I 32000 16000 $TMP_FILE test.au
-RETVAL=$?
-if [ $RETVAL != 0 ]
-then
-    echo broadvoice_tests D failed!
-    exit $RETVAL
-fi
-echo broadvoice_tests D completed OK
+echo broadvoice_tests decode completed OK
 
 echo
 echo All regression tests successfully completed

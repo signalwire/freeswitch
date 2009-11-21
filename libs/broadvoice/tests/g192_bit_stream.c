@@ -20,7 +20,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g192_bit_stream.c,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
+ * $Id: g192_bit_stream.c,v 1.2 2009/11/20 13:12:24 steveu Exp $
  */
 
 /*! \file */
@@ -92,7 +92,7 @@ void itu_codec_bitstream_write(const uint8_t out_data[],
 /*- End of function --------------------------------------------------------*/
 
 int itu_codec_bitstream_read(uint8_t in_data[],
-                             int16_t *p_frame_error_flag,
+                             int16_t *frame_error_flag,
                              int number_of_bits,
                              int mode,
                              FILE *fp_bitstream)
@@ -107,6 +107,7 @@ int itu_codec_bitstream_read(uint8_t in_data[],
     int16_t bit;
     int16_t in_array[2 + number_of_bits];
 
+    *frame_error_flag = 0;
     if (mode == ITU_CODEC_BITSTREAM_PACKED)
         return fread(in_data, 1, number_of_bits/8, fp_bitstream)*8;
 
@@ -115,23 +116,22 @@ int itu_codec_bitstream_read(uint8_t in_data[],
         return -1;
     if (in_array[0] < G192_FRAME_ERASURE  ||  in_array[0] > G192_FRAME_SYNC_15)
     {
-        *p_frame_error_flag = 1;
+        *frame_error_flag = 1;
         return 0;
     }
     erased_frame = (in_array[0] == G192_FRAME_ERASURE);
     len = in_array[1];
     if (len > number_of_bits)
     {
-        *p_frame_error_flag = 1;
+        *frame_error_flag = 1;
         return 0;
     }
     nsamp = fread(in_array, sizeof(int16_t), len, fp_bitstream);
     if (nsamp != len)
     {
-        *p_frame_error_flag = 1;
+        *frame_error_flag = 1;
         return nsamp;
     }
-    *p_frame_error_flag = 0;
 
     for (i = 0, j = 0;  i < nsamp/8;  i++)
     {
@@ -152,14 +152,14 @@ int itu_codec_bitstream_read(uint8_t in_data[],
             else
             {
                 /* Bad bit */
-                *p_frame_error_flag = 1;
+                *frame_error_flag = 1;
             }
             bit_pos--;
         }
         in_data[i] = packed_word;
     }
     if (erased_frame)
-        *p_frame_error_flag = 1;
+        *frame_error_flag = 1;
     return nsamp;
 }
 /*- End of function --------------------------------------------------------*/

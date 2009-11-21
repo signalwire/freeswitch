@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: configure.ac,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
+# $Id: configure.ac,v 1.2 2009/11/21 17:19:22 steveu Exp $
 
 # @start 1
 
@@ -384,6 +384,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/broadvoice.h
                  tests/Makefile
+                 broadvoice.pc
                  broadvoice.spec])
 
 AC_CONFIG_FILES([tests/regression_tests.sh], [chmod +x tests/regression_tests.sh])

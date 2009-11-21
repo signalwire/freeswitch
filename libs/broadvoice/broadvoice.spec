@@ -9,8 +9,6 @@ BuildRoot:  %{_tmppath}/%{name}-%{version}-root
 Source:     http://www.soft-switch.org/downloads/codecs/broadvoice-0.0.1.tar.gz
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-Docdir:     %{_prefix}/doc
-
 BuildRequires: audiofile-devel
 BuildRequires: doxygen
 
@@ -47,14 +45,13 @@ rm -rf %{buildroot}
 
 %{_libdir}/libbroadvoice.so.*
 
-%{_datadir}/libbroadvoice
-
 %files devel
 %defattr(-,root,root,-)
 %doc doc/api
 %{_includedir}/broadvoice.h
 %{_includedir}/broadvoice
 %{_libdir}/libbroadvoice.so
+%{_libdir}/pkgconfig/broadvoice.pc
 
 %post -p /sbin/ldconfig
 

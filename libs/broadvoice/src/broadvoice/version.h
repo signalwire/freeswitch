@@ -31,7 +31,7 @@
 /* The date and time of the version are in UTC form. */
 
 #define BROADVOICE_RELEASE_DATE    20091119
-#define BROADVOICE_RELEASE_TIME    124304
+#define BROADVOICE_RELEASE_TIME    131751
 
 #endif
 /*- End of file ------------------------------------------------------------*/

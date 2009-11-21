@@ -16,18 +16,14 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
+## $Id: Makefile.am,v 1.2 2009/11/20 13:12:23 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
 
 LIBS += $(TESTLIBS)
 
-EXTRA_DIST = regression_tests.sh \
-             bv16_fixed_tests.sh \
-             bv32_fixed_tests.sh \
-             bv16_floating_tests.sh \
-             bv32_floating_tests.sh
+EXTRA_DIST = regression_tests.sh.in
 
 MAINTAINERCLEANFILES = Makefile.in
 
@@ -35,14 +31,10 @@ INCLUDES = -I$(top_builddir)/src -DDATADIR="\"$(pkgdatadir)\""
 
 LIBDIR = -L$(top_builddir)/src
 
-noinst_PROGRAMS = bv16_tests \
-                  bv32_tests
+noinst_PROGRAMS = broadvoice_tests
 
 noinst_HEADERS =  g192_bit_stream.h \
                   timing.h
 
-bv16_tests_SOURCES = bv16_tests.c g192_bit_stream.c
-bv16_tests_LDADD = $(LIBDIR) -lbroadvoice
-
-bv32_tests_SOURCES = bv32_tests.c g192_bit_stream.c
-bv32_tests_LDADD = $(LIBDIR) -lbroadvoice
+broadvoice_tests_SOURCES = broadvoice_tests.c g192_bit_stream.c
+broadvoice_tests_LDADD = $(LIBDIR) -lbroadvoice
