@@ -1,5 +1,5 @@
 /*
-	Version 0.0.12
+	Version 0.0.13
 */
 
 #include "mod_h323.h"
@@ -18,7 +18,7 @@ struct mod_h323_globals mod_h323_globals = { 0 };
 
 static switch_call_cause_t create_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
                                                    switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
-                                                   switch_memory_pool_t **pool, switch_originate_flag_t flags);
+                                                   switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
 
 static const char modulename[] = "h323";
 static const char* h323_formats[] = {
@@ -755,7 +755,7 @@ PBoolean FSH323Connection::OnCreateLogicalChannel(const H323Capability& capabili
 void FSH323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu){
 	PTRACE(4, "mod_h323\t======>FSH323Connection::OnReceivedReleaseComplete cause = "<<pdu.GetQ931().GetCause()<<" value = "<<(switch_call_cause_t)pdu.GetQ931().GetCause());
 	h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(m_fsSession);
-	
+	tech_pvt->me = NULL;
 	switch_channel_hangup(switch_core_session_get_channel(m_fsSession),(switch_call_cause_t)pdu.GetQ931().GetCause()); 
 	return H323Connection::OnReceivedReleaseComplete(pdu);
 }
@@ -903,7 +903,7 @@ void FSH323Connection::OnUserInputTone(char tone, unsigned duration, unsigned lo
 void FSH323Connection::OnUserInputString(const PString &value)
 {
 	PTRACE(4, "mod_h323\t======>FSH323Connection::OnUserInputString [" << *this<<"]");
-	switch_dtmf_t dtmf = { value[0], 0 };
+	switch_dtmf_t dtmf = { value[0], 500 };
     switch_channel_queue_dtmf(m_fsChannel, &dtmf);
 	H323Connection::OnUserInputString(value);
 }
@@ -1381,7 +1381,7 @@ FSH323Connection * FSH323EndPoint::FSMakeCall(const PString & dest, void *userDa
 static switch_call_cause_t create_outgoing_channel(switch_core_session_t *session,
                                                    switch_event_t *var_event,
                                                    switch_caller_profile_t *outbound_profile,
-                                                   switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags){
+                                                   switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause){
 	PTRACE(4, "mod_h323\t======>create_outgoing_channel DST NUMBER = "<<outbound_profile->destination_number);
 	
 	FSH323Connection * connection;

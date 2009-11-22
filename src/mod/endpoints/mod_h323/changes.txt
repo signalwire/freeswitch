@@ -1,4 +1,5 @@
 
+fix to build with trunk changes.
 remove SWITCH_RTP_FLAG_AUTOADJ because its not work correctly and not do anything reliable in our cases.
 fix faststart in progress handling
 fixxxxes
