@@ -6,6 +6,6 @@ LOCAL_LIBADD=$(BV_LA)
 include $(BASE)/build/modmake.rules
 
 $(BV_LA): $(BV_DIR)/.update	
-	cd $(BV_DIR) && ./configure  --disable-shared --with-pic  && $(MAKE)
+	cd $(BV_DIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
