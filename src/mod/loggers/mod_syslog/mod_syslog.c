@@ -64,10 +64,12 @@ switch_status_t set_global_facility(const char *facility)
 {
 	const struct _facility_table_entry facilities[] = {
 		{ "auth",     LOG_AUTH     },
+ #if !defined (__SVR4) && !defined (__sun)
 		{ "authpriv", LOG_AUTHPRIV },
+                { "ftp",      LOG_FTP      },
+#endif
 		{ "cron",     LOG_CRON     },
 		{ "daemon",   LOG_DAEMON   },
-		{ "ftp",      LOG_FTP      },
 		{ "kern",     LOG_KERN     },
 		{ "local0",   LOG_LOCAL0   },
 		{ "local1",   LOG_LOCAL1   },
