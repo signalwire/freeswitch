@@ -23,7 +23,7 @@ USAGE:
 -f --file <file>            Output file
 -pb --paste-bin <name>	    Post to FreeSWITCH Paste Bin
 -sp --sip-profiles <list>   List of SIP profiles to trace
--sd --sip-debug <leve>      Set SIP debug level
+-sd --sip-debug <level>      Set SIP debug level
 
 No arguments given will trace profile 'internal' to STDOUT
 ";
