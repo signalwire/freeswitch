@@ -171,6 +171,8 @@ SWITCH_DECLARE(void) switch_cache_db_detach(void)
 		if ((dbh = (switch_cache_db_handle_t *) val)) {
 			if (switch_mutex_trylock(dbh->mutex) == SWITCH_STATUS_SUCCESS) {
 				if (strstr(dbh->name, thread_str)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, 
+									  "Detach cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(dbh->type));
 					switch_clear_flag(dbh, CDF_INUSE);
 				} 
 				switch_mutex_unlock(dbh->mutex);
@@ -188,7 +190,10 @@ SWITCH_DECLARE(switch_status_t)_switch_cache_db_get_db_handle(switch_cache_db_ha
 {
 	switch_thread_id_t self = switch_thread_self();
 	char thread_str[CACHE_DB_LEN] = "";
+	char db_str[CACHE_DB_LEN] = "";
 	switch_cache_db_handle_t *new_dbh = NULL;
+	switch_ssize_t hlen = -1;
+
 	const char *db_name = NULL;
 
 	switch (type) {
@@ -208,28 +213,33 @@ SWITCH_DECLARE(switch_status_t)_switch_cache_db_get_db_handle(switch_cache_db_ha
 		return SWITCH_STATUS_FALSE;
 	}
 
-     
-	snprintf(thread_str, sizeof(thread_str) - 1, "%s_%lu", db_name, (unsigned long)(intptr_t)self);
+	snprintf(db_str, sizeof(db_str) - 1, "db=\"%s\"", db_name);
+	snprintf(thread_str, sizeof(thread_str) - 1, "%s;thread=\"%lu\"", db_str, (unsigned long)(intptr_t)self);
 	
 	switch_mutex_lock(dbh_mutex);
 	if ((new_dbh = switch_core_hash_find(dbh_hash, thread_str))) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG1, 
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10, 
 						  "Reuse Cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(new_dbh->type));
 	} else {
 		switch_hash_index_t *hi;
 		const void *var;
 		void *val;
 		char *key;
+		unsigned long hash = 0;
+		
+		hash = switch_ci_hashfunc_default(db_str, &hlen);
 
 		for (hi = switch_hash_first(NULL, dbh_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, &var, NULL, &val);
 			key = (char *) var;
 			
 			if ((new_dbh = (switch_cache_db_handle_t *) val)) {
-				if (!switch_test_flag(new_dbh, CDF_INUSE) && switch_mutex_trylock(new_dbh->mutex) == SWITCH_STATUS_SUCCESS) {
+				if (hash == new_dbh->hash && !strncasecmp(new_dbh->name, db_str, strlen(db_str)) && 
+					!switch_test_flag(new_dbh, CDF_INUSE) && switch_mutex_trylock(new_dbh->mutex) == SWITCH_STATUS_SUCCESS) {
 					switch_set_flag(new_dbh, CDF_INUSE);
 					switch_set_string(new_dbh->name, thread_str);
-					switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG1, 
+					new_dbh->hash = switch_ci_hashfunc_default(db_str, &hlen);
+					switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10, 
 									  "Reuse Unused Cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(new_dbh->type));
 					break;
 				}
@@ -278,8 +288,8 @@ SWITCH_DECLARE(switch_status_t)_switch_cache_db_get_db_handle(switch_cache_db_ha
 			goto end;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG1, 
-						  "Create Cached DB handle %s [%s]\n", thread_str, db ? "sqlite" : "ODBC");
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10, 
+						  "Create Cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(type));
 
 		switch_core_new_memory_pool(&pool);
 		new_dbh = switch_core_alloc(pool, sizeof(*new_dbh));
@@ -287,6 +297,8 @@ SWITCH_DECLARE(switch_status_t)_switch_cache_db_get_db_handle(switch_cache_db_ha
 		new_dbh->type = type;
 		switch_set_string(new_dbh->name, thread_str);
 		switch_set_flag(new_dbh, CDF_INUSE);
+		new_dbh->hash = switch_ci_hashfunc_default(db_str, &hlen);
+
 		
 		if (db) new_dbh->native_handle.core_db_dbh = db; else new_dbh->native_handle.odbc_dbh = odbc_dbh;
 		switch_mutex_init(&new_dbh->mutex, SWITCH_MUTEX_UNNESTED, new_dbh->pool);
@@ -1143,7 +1155,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			runtime.odbc_dsn = NULL;
 			runtime.odbc_user = NULL;
 			runtime.odbc_pass = NULL;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Falling back to sqlite.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Falling back to core_db.\n");
 			goto top;
 		}
 

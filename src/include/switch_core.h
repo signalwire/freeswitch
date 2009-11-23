@@ -1959,6 +1959,7 @@ typedef struct {
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 	int32_t flags;
+	unsigned long hash;
 } switch_cache_db_handle_t;
 
 
