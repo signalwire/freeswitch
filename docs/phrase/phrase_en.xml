@@ -316,11 +316,27 @@
       <prompt phrase="You are about to provision this phone permanently to your extension." filename="ivr-provision_phone_permanently_to_extension.wav"/>
       <prompt phrase="Please enter the extension number to which you would like to provision this phone, followed by the pound sign." filename="ivr-extension_to_provision_this_phone.wav"/>
       <prompt phrase="Thank you, this phone will now reboot." filename="ivr-this_phone_will_now_reboot.wav"/>
-      <!-- The following three phrases still need to be recorded -->
+      <!-- The following phrases still need to be recorded -->
       <prompt phrase="Thank you. Your recording has been saved." filename="ivr-recording_saved.wav" attr="Needs_to_be_recorded!"/>
       <prompt phrase="Press 1 to save your recording. Press 2 to review your recording. Press 3 to re-record." filename="ivr-save_review_record.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="The system is unable to save your sound file at this time. Please try again later." filename="ivr-unable_save" attr="Needs_to_be_recorded!"/>
-
+      <prompt phrase="The system is unable to save your sound file at this time. Please try again later." filename="ivr-unable_save.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="You are number" filename="ivr-you_are_number.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="In line." filename="ivr-in_line.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Thank you for holding." filename="ivr-thank_you_for_holding.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Your estimated hold time is..." filename="ivr-estimated_hold_time.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="More than..." filename="ivr-more_than.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Less than..." filename="ivr-less_than.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Begin recording." filename="ivr-begin_recording.wav " attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Call forwarding has been cancelled." filename="ivr-call_forwarding_has_been_cancelled.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Call forwarding has been set." filename="ivr-call_forwarding_has_been_set.wav " attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Please enter the phone number." filename="ivr-please_enter_the_phone_number.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Please state your name and the reason for your call." filename="ivr-please_state_your_name_and_reason_for_calling.wav " attr="Needs_to_be_recorded!"/>
+      <prompt phrase="To accept, press 1. To reject, press 2. To send to voicemail, press 3." filename="ivr-accept_reject_voicemail.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Incoming call." filename="ivr-incoming_call.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Thank you for calling." filename="ivr-thank_you_for_calling.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Please stay on the line. You call will be answered momentarily." filename="ivr-stay_on_line_call_answered_momentarily.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Your call is being transferred." filename="ivr-call_being_transferred.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Please enjoy the music while your call is being transferred." filename="ivr-enjoy_music_while_transfer.wav" attr="Needs_to_be_recorded!"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
