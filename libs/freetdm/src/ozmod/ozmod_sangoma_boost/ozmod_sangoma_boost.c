@@ -1524,13 +1524,27 @@ static zap_state_map_t boost_state_map = {
 
 static BOOST_WRITE_MSG_FUNCTION(zap_boost_write_msg)
 {
-	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
-	sangomabc_queue_element_t *element = zap_calloc(1, sizeof(*element));
+	sangomabc_short_event_t *shortmsg = NULL;
+	zap_sangoma_boost_data_t *sangoma_boost_data = NULL;
+	sangomabc_queue_element_t *element = NULL;
+
+	zap_assert(msg != NULL, ZAP_FAIL, "Boost message to write was null");
+
+	if (!span) {
+		shortmsg = msg;
+		zap_log(ZAP_LOG_ERROR, "Unexpected boost message %d\n", shortmsg->event_id);
+		return ZAP_FAIL;
+	}
+
+	/* duplicate the event and enqueue it */
+	element = zap_calloc(1, sizeof(*element));
 	if (!element) {
 		return ZAP_FAIL;
 	}
 	memcpy(&element->boostmsg, msg, msglen);
 	element->size = msglen;
+
+	sangoma_boost_data = span->signal_data;
 	return zap_queue_enqueue(sangoma_boost_data->boost_queue, element);
 }
 
