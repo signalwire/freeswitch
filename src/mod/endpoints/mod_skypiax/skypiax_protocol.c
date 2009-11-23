@@ -89,7 +89,7 @@ unsigned short start_port = 6001;
 
 
 
-	sockbufsize=SAMPLES_PER_FRAME * 8;
+	sockbufsize=SAMPLES_PER_FRAME * 8 * 3;
 	size = sizeof(int);
 	setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, size);
 
@@ -98,7 +98,7 @@ unsigned short start_port = 6001;
 	getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, &size);
 	DEBUGA_SKYPE("2 SO_RCVBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
 
-	sockbufsize=SAMPLES_PER_FRAME * 8;
+	sockbufsize=SAMPLES_PER_FRAME * 8 * 3;
 	size = sizeof(int);
 	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&sockbufsize, size);
 
