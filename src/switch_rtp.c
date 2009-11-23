@@ -2922,11 +2922,12 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 			send_msg->header.pt = rtp_session->payload;
-
-			if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, frame->packet, &bytes) != SWITCH_STATUS_SUCCESS) {
-				return -1;
-			}
 		}
+
+		if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, frame->packet, &bytes) != SWITCH_STATUS_SUCCESS) {
+			return -1;
+		}
+		
 
 		rtp_session->stats.outbound.raw_bytes += bytes;
 		rtp_session->stats.outbound.media_bytes += bytes;
