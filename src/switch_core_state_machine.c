@@ -28,7 +28,7 @@
  * Paul D. Tinsley <pdt at jackhammer.org>
  *
  *
- * switch_core_state_maching.c -- Main Core Library (state machine)
+ * switch_core_state_machine.c -- Main Core Library (state machine)
  *
  */
 
