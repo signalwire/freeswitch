@@ -55,11 +55,20 @@
 
 /* 4.2.13 .. 4.2.17  RPE ENCODING SECTION */
 
+#if defined(__GNUC__)  &&  defined(__i386__)
+#define SPANDSP_USE_I386_ASM
+#if (defined(__APPLE__) || defined(macintosh)) && defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+#if __MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
+#undef SPANDSP_USE_I386_ASM
+#endif
+#endif
+#endif
+
 /* 4.2.13 */
 static void weighting_filter(const int16_t *e,     // signal [-5..0.39.44] IN
                              int16_t x[40])
 {
-#if defined(__GNUC__)  &&  defined(__i386__)
+#if defined(SPANDSP_USE_I386_ASM)
     /* Table 4.4   Coefficients of the weighting filter */
     /* This must be padded to a multiple of 4 for MMX to work */
     static const union
