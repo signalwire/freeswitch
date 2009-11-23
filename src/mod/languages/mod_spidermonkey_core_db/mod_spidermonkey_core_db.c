@@ -168,7 +168,11 @@ static JSBool db_exec(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, 
 }
 
 
-static JSBool db_next(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+/* Evaluate a prepared statement
+  stepSuccessCode expected success code from switch_core_db_step() 
+  return true if step return expected success code, false otherwise
+*/
+static JSBool db_step_ex(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval, int stepSuccessCode)
 {
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
@@ -181,14 +185,17 @@ static JSBool db_next(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, 
 		int running = 1;
 		while (running < 5000) {
 			int result = switch_core_db_step(dbo->stmt);
-			if (result == SWITCH_CORE_DB_ROW) {
+			if (result == stepSuccessCode) {
 				*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 				break;
 			} else if (result == SWITCH_CORE_DB_BUSY) {
 				running++;
+				switch_cond_next(); /* wait a bit before retrying */
 				continue;
+			} 
+			if (switch_core_db_finalize(dbo->stmt) != SWITCH_CORE_DB_OK) {	
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", switch_core_db_errmsg(dbo->db));
 			}
-			switch_core_db_finalize(dbo->stmt);
 			dbo->stmt = NULL;
 			break;
 		}
@@ -196,6 +203,25 @@ static JSBool db_next(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, 
 
 	return JS_TRUE;
 }
+
+/* Evaluate a prepared statement, to be used with statements that return data 
+  return true while data is available, false when done or error
+*/
+static JSBool db_next(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+    /* return true until no more rows available */
+	return db_step_ex(cx, obj, argc, argv, rval, SWITCH_CORE_DB_ROW);
+}
+
+/* Evaluate a prepared statement, to be used with statements that return no data 
+  return true if statement has finished executing successfully, false otherwise 
+*/
+static JSBool db_step(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+    /* return true when the statement has finished executing successfully */
+	return db_step_ex(cx, obj, argc, argv, rval, SWITCH_CORE_DB_DONE);
+}
+
 
 static JSBool db_fetch(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
@@ -258,6 +284,100 @@ static JSBool db_prepare(JSContext * cx, JSObject * obj, uintN argc, jsval * arg
 	return JS_TRUE;
 }
 
+static JSBool db_bind_text(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct db_obj *dbo = JS_GetPrivate(cx, obj);
+	JSBool status;
+
+	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+
+	if (!dbo->db) {
+		return JS_FALSE;
+	}
+
+    /* db_prepare() must be called first */
+	if (!dbo->stmt) {
+		return JS_FALSE;
+	}
+
+	/* argv[0] = parameter index
+       argv[1] = parameter value
+     */
+	if (argc < 2) {
+		return JS_FALSE;
+	}
+
+	uint32 param_index = -1;
+    char *param_value = NULL;
+	
+
+	/* convert args */
+	status = JS_ValueToECMAUint32(cx, argv[0], &param_index);
+	switch_assert(status == JS_TRUE);
+    param_value = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+	if ((param_index < 1) || (NULL == param_value)) {
+		return  JS_FALSE;
+	}
+
+	/* bind param */
+	if (switch_core_db_bind_text(dbo->stmt, param_index, param_value, -1, SWITCH_CORE_DB_STATIC)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", switch_core_db_errmsg(dbo->db));
+		return JS_FALSE;
+	} else {
+		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
+	}
+
+	return JS_TRUE;
+}
+
+static JSBool db_bind_int(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct db_obj *dbo = JS_GetPrivate(cx, obj);
+	JSBool status;
+
+	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+
+	if (!dbo->db) {
+		return JS_FALSE;
+	}
+
+    /* db_prepare() must be called first */
+	if (!dbo->stmt) {
+		return JS_FALSE;
+	}
+
+	/* argv[0] = parameter index
+       argv[1] = parameter value
+     */
+	if (argc < 2) {
+		return JS_FALSE;
+	}
+
+	uint32 param_index = -1;
+	uint32 param_value = -1;
+  
+
+	/* convert args */
+	status = JS_ValueToECMAUint32(cx, argv[0], &param_index);
+	switch_assert(status == JS_TRUE);
+	status = JS_ValueToECMAUint32(cx, argv[1], &param_value);
+	switch_assert(status == JS_TRUE);
+
+	if (param_index < 1)  {
+		return  JS_FALSE;
+	}
+
+	/* bind param */
+	if (switch_core_db_bind_int(dbo->stmt, param_index, param_value)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", switch_core_db_errmsg(dbo->db));
+		return JS_FALSE;
+	} else {
+		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
+	}
+
+	return JS_TRUE;
+}
+
 enum db_tinyid {
 	DB_NAME
 };
@@ -266,8 +386,11 @@ static JSFunctionSpec db_methods[] = {
 	{"exec", db_exec, 1},
 	{"close", db_close, 0},
 	{"next", db_next, 0},
+	{"step", db_step, 0},
 	{"fetch", db_fetch, 1},
 	{"prepare", db_prepare, 0},
+	{"bindText", db_bind_text, 2},
+	{"bindInt", db_bind_int, 2},
 	{0}
 };
 
