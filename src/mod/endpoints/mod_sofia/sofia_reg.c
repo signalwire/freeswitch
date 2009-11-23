@@ -1588,7 +1588,11 @@ static int sofia_reg_nonce_callback(void *pArg, int argc, char **argv, char **co
 {
 	nonce_cb_t *cb = (nonce_cb_t *) pArg;
 	switch_copy_string(cb->nonce, argv[0], cb->nplen);
-	cb->last_nc = zstr(argv[1]) ? 0 : atoi(argv[1]);
+	if (argc == 2) {
+		cb->last_nc = zstr(argv[1]) ? 0 : atoi(argv[1]);
+	} else {
+		cb->last_nc = 0;
+	}
 	return 0;
 }
 
