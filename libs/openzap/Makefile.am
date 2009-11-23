@@ -33,7 +33,7 @@ PREFIX = $(prefix)
 SRC    = src
 
 moddir = @modinstdir@
-libdir = $(PREFIX)/lib/
+libdir = @libdir@
 library_includedir = $(PREFIX)/include
 
 INCS      = -I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include
