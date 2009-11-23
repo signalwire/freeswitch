@@ -95,7 +95,7 @@ static apt_bool_t mpf_test_run(apt_test_suite_t *suite, int argc, const char * c
 
 	suite_engine = apr_palloc(suite->pool,sizeof(mpf_suite_engine_t));
 
-	engine = mpf_engine_create(1,suite->pool);
+	engine = mpf_engine_create(suite->pool);
 	if(!engine) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create MPF Engine");
 		return FALSE;

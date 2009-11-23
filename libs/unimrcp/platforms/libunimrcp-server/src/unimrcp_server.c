@@ -495,8 +495,9 @@ static apt_bool_t unimrcp_server_media_engines_load(mrcp_server_t *server, const
 				}
 			}
 			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Media Engine");
-			media_engine = mpf_engine_create(rate,pool);
+			media_engine = mpf_engine_create(pool);
 			if(media_engine) {
+				mpf_engine_scheduler_rate_set(media_engine,rate);
 				mrcp_server_media_engine_register(server,media_engine,name);
 			}
 		}

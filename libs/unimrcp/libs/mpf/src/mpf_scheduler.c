@@ -38,7 +38,6 @@
 struct mpf_scheduler_t {
 	apr_pool_t          *pool;
 	unsigned long        resolution; /* scheduler resolution */
-	unsigned long        rate; /* faster than real-time simulation */
 
 	unsigned long        media_resolution;
 	mpf_scheduler_proc_f media_proc;
@@ -60,19 +59,12 @@ struct mpf_scheduler_t {
 static APR_INLINE void mpf_scheduler_init(mpf_scheduler_t *scheduler);
 
 /** Create scheduler */
-MPF_DECLARE(mpf_scheduler_t*) mpf_scheduler_create(unsigned long rate, apr_pool_t *pool)
+MPF_DECLARE(mpf_scheduler_t*) mpf_scheduler_create(apr_pool_t *pool)
 {
 	mpf_scheduler_t *scheduler = apr_palloc(pool,sizeof(mpf_scheduler_t));
 	mpf_scheduler_init(scheduler);
 	scheduler->pool = pool;
 	scheduler->resolution = 0;
-	if(rate == 0 || rate > 10) {
-		/* rate shows how many times scheduler should be faster than real-time,
-		1 is the defualt and probably the only reasonable value, 
-		however, the rates up to 10 times faster should be acceptable */
-		rate = 1;
-	}
-	scheduler->rate = rate;
 
 	scheduler->media_resolution = 0;
 	scheduler->media_obj = NULL;
@@ -98,7 +90,7 @@ MPF_DECLARE(apt_bool_t) mpf_scheduler_media_clock_set(
 								mpf_scheduler_proc_f proc,
 								void *obj)
 {
-	scheduler->media_resolution = resolution / scheduler->rate;
+	scheduler->media_resolution = resolution;
 	scheduler->media_proc = proc;
 	scheduler->media_obj = obj;
 	return TRUE;
@@ -111,10 +103,27 @@ MPF_DECLARE(apt_bool_t) mpf_scheduler_timer_clock_set(
 								mpf_scheduler_proc_f proc,
 								void *obj)
 {
-	scheduler->timer_resolution = resolution / scheduler->rate;
+	scheduler->timer_resolution = resolution;
 	scheduler->timer_elapsed_time = 0;
 	scheduler->timer_proc = proc;
 	scheduler->timer_obj = obj;
+	return TRUE;
+}
+
+/** Set scheduler rate (n times faster than real-time) */
+MPF_DECLARE(apt_bool_t) mpf_scheduler_rate_set(
+								mpf_scheduler_t *scheduler,
+								unsigned long rate)
+{
+	if(rate == 0 || rate > 10) {
+		/* rate shows how many times scheduler should be faster than real-time,
+		1 is the defualt and probably the only reasonable value, 
+		however, the rates up to 10 times faster should be acceptable */
+		rate = 1;
+	}
+	
+	scheduler->media_resolution /= rate;
+	scheduler->timer_resolution /= rate;
 	return TRUE;
 }
 

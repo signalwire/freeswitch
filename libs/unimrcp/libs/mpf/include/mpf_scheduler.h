@@ -30,7 +30,7 @@ APT_BEGIN_EXTERN_C
 typedef void (*mpf_scheduler_proc_f)(mpf_scheduler_t *scheduler, void *obj);
 
 /** Create scheduler */
-MPF_DECLARE(mpf_scheduler_t*) mpf_scheduler_create(unsigned long rate, apr_pool_t *pool);
+MPF_DECLARE(mpf_scheduler_t*) mpf_scheduler_create(apr_pool_t *pool);
 
 /** Destroy scheduler */
 MPF_DECLARE(void) mpf_scheduler_destroy(mpf_scheduler_t *scheduler);
@@ -48,6 +48,11 @@ MPF_DECLARE(apt_bool_t) mpf_scheduler_timer_clock_set(
 								unsigned long resolution,
 								mpf_scheduler_proc_f proc,
 								void *obj);
+
+/** Set scheduler rate (n times faster than real-time) */
+MPF_DECLARE(apt_bool_t) mpf_scheduler_rate_set(
+								mpf_scheduler_t *scheduler,
+								unsigned long rate);
 
 /** Start scheduler */
 MPF_DECLARE(apt_bool_t) mpf_scheduler_start(mpf_scheduler_t *scheduler);
