@@ -164,7 +164,8 @@ local_all local_depend local_clean depend_install local_install local_distclean 
 	@$(LTCXXCOMPILE) -c -o $@ $< || exit 1
 
 $(MODNAME).o $(MODNAME).lo: $(SOURCEFILE) \
-  $(switch_srcdir)/src/include/switch.h $(switch_srcdir)/src/include/switch_am_config.h \
+  $(switch_srcdir)/src/include/switch.h \
+  $(switch_builddir)/src/include/switch_am_config.h \
   $(switch_srcdir)/src/include/switch_types.h $(switch_srcdir)/src/include/switch_apr.h \
   $(switch_srcdir)/src/include/switch_core_db.h $(switch_srcdir)/src/include/switch_regex.h \
   $(switch_srcdir)/src/include/switch_core.h $(switch_srcdir)/src/include/switch_loadable_module.h \
@@ -179,7 +180,7 @@ $(MODNAME).o $(MODNAME).lo: $(SOURCEFILE) \
 
 $(switch_srcdir)/src/include/switch.h:
 
-$(switch_srcdir)/src/include/switch_am_config.h:
+$(switch_builddir)/src/include/switch_am_config.h: $(switch_srcdir)/src/include/switch_am_config.h.in
 
 $(switch_srcdir)/src/include/switch_types.h:
 
