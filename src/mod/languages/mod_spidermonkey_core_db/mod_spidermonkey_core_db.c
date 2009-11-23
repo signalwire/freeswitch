@@ -288,6 +288,8 @@ static JSBool db_bind_text(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 {
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
 	JSBool status;
+	uint32 param_index = -1;
+    char *param_value = NULL;
 
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 
@@ -307,8 +309,6 @@ static JSBool db_bind_text(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 		return JS_FALSE;
 	}
 
-	uint32 param_index = -1;
-    char *param_value = NULL;
 	
 
 	/* convert args */
@@ -334,6 +334,8 @@ static JSBool db_bind_int(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 {
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
 	JSBool status;
+	uint32 param_index = -1;
+	uint32 param_value = -1;
 
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 
@@ -352,10 +354,6 @@ static JSBool db_bind_int(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 	if (argc < 2) {
 		return JS_FALSE;
 	}
-
-	uint32 param_index = -1;
-	uint32 param_value = -1;
-  
 
 	/* convert args */
 	status = JS_ValueToECMAUint32(cx, argv[0], &param_index);
