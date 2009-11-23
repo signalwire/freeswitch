@@ -1225,6 +1225,10 @@ OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan)
 	zchan->pre_buffer_size = 0;
 	zap_mutex_unlock(zchan->pre_buffer_mutex);
 
+	if (!zchan->dtmf_buffer) {
+		zap_buffer_zero(zchan->dtmf_buffer);
+	}
+
 	zchan->init_state = ZAP_CHANNEL_STATE_DOWN;
 	zchan->state = ZAP_CHANNEL_STATE_DOWN;
 	zap_log(ZAP_LOG_DEBUG, "channel done %u:%u\n", zchan->span_id, zchan->chan_id);
