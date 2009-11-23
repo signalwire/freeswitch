@@ -162,14 +162,14 @@ libs/libteletone/src/libteletone_generate.h\
 libs/libteletone/src/libteletone.h\
 src/include/switch_odbc.h
 
-CORE_CFLAGS     = `$(switch_srcdir)/libs/apr/apr-1-config --cflags --cppflags --includes`
-CORE_CFLAGS    += `$(switch_srcdir)/libs/apr-util/apu-1-config --includes`
+CORE_CFLAGS     = `$(switch_builddir)/libs/apr/apr-1-config --cflags --cppflags --includes`
+CORE_CFLAGS    += `$(switch_builddir)/libs/apr-util/apu-1-config --includes`
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/stfu
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/sqlite
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/pcre
-CORE_CFLAGS    += -I$(switch_srcdir)/libs/speex/include
+CORE_CFLAGS    += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/include
-CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/crypto/include
+CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
 
 CORE_LIBS      = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
@@ -192,22 +192,22 @@ fs_ivrd_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_
 fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c libs/esl/src/esl_threadmutex.c libs/esl/fs_cli.c
 freeswitch_SOURCES = src/switch.c
 nodist_freeswitch_SOURCES = src/include/switch_version.h
-fs_cli_CFLAGS = $(AM_CFLAGS) -Ilibs/esl/src/include 
+fs_cli_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)libs/esl/src/include 
 fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
-fs_ivrd_CFLAGS = $(AM_CFLAGS) -Ilibs/esl/src/include 
+fs_ivrd_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)libs/esl/src/include 
 fs_ivrd_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
 freeswitch_CFLAGS = $(AM_CFLAGS) $(CORE_CFLAGS)
 freeswitch_LDFLAGS = $(AM_LDFLAGS) -lpthread -rpath $(libdir)
 freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la
 if ADD_LIBEDIT
-fs_cli_CFLAGS += -DHAVE_EDITLINE -Ilibs/libedit/src
+fs_cli_CFLAGS += -DHAVE_EDITLINE -I$(top_srcdir)libs/libedit/src
 fs_cli_LDADD = libs/libedit/src/.libs/libedit.a
 freeswitch_CFLAGS    += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
 freeswitch_LDADD      += libs/libedit/src/.libs/libedit.a
 endif
 
 if ADD_LIBEDIT
-CORE_CFLAGS    += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
+CORE_CFLAGS    += -I$(top_srcdir)libs/libedit/src -DSWITCH_HAVE_LIBEDIT
 CORE_LIBS      += libs/libedit/src/.libs/libedit.a
 endif
 
@@ -282,7 +282,7 @@ install-data-local:
 .version:
 	touch .version
 
-src/include/switch_version.h: $(top_srcdir)/src/include/switch_version.h.in .version $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
+src/include/switch_version.h: $(switch_builddir)/src/include/switch_version.h.in .version $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
 	@have_version=1 ; \
 	force=0 ; \
 	grep "@SWITCH_VERSION_REVISION@" src/include/switch_version.h.in > /dev/null  && have_version=0 ; \
@@ -491,12 +491,12 @@ scripts/fsxs: scripts/fsxs.in
 	    -e "s,@INSTALL\@,$(INSTALL)," \
 	    -e "s,@MKINSTALLDIRS\@,$(mkdir_p)," \
 	    \
-	    -e "s|@CFLAGS\@|$(CFLAGS) `$(switch_srcdir)/libs/apr/apr-1-config --cflags --cppflags`|" \
+	    -e "s|@CFLAGS\@|$(CFLAGS) `./libs/apr/apr-1-config --cflags --cppflags`|" \
 	    -e "s|@INCLUDES\@|-I$(PREFIX)/include|" \
 	    -e "s|@SOLINK\@|$(SOLINK)|" \
 	    -e "s|@LDFLAGS\@|-L$(PREFIX)/lib|" \
-	    -e "s|@LIBS\@|`$(switch_srcdir)/libs/apr/apr-1-config --libs` `$(switch_srcdir)/libs/apr-util/apu-1-config --libs`|" \
-	    scripts/fsxs.in > scripts/fsxs
+	    -e "s|@LIBS\@|`./libs/apr/apr-1-config --libs` `./libs/apr-util/apu-1-config --libs`|" \
+	    $(top_srcdir)/scripts/fsxs.in > scripts/fsxs
 
 eclean: clean
 	rm -f `find . -type f -name \*~`
