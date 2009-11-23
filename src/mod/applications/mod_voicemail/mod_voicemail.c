@@ -1058,6 +1058,38 @@ struct callback {
 };
 typedef struct callback callback_t;
 
+struct msg_cnt_callback {
+	char *buf;
+	size_t len;
+	int matches;
+	int total_new_messages;
+	int total_new_urgent_messages;
+	int total_saved_messages;
+	int total_saved_urgent_messages;
+};
+typedef struct msg_cnt_callback msg_cnt_callback_t;
+
+
+static int message_count_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	msg_cnt_callback_t *cbt = (msg_cnt_callback_t *) pArg;
+	if (atoi(argv[0]) == 0) { /* UnRead */
+		if (!strcasecmp(argv[1], "A_URGENT")) { /* Urgent */
+			cbt->total_new_urgent_messages = atoi(argv[2]);
+		} else { /* Normal */
+			cbt->total_new_messages = atoi(argv[2]);
+		}
+	} else { /* Already Read */
+		if (!strcasecmp(argv[1], "A_URGENT")) { /* Urgent */
+			cbt->total_saved_urgent_messages = atoi(argv[2]);
+		} else { /* Normal */
+			cbt->total_saved_messages = atoi(argv[2]);
+		}
+	}
+
+	return 0;
+}
+
 static int sql2str_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	callback_t *cbt = (callback_t *) pArg;
@@ -1290,42 +1322,35 @@ static char *resolve_id(const char *myid, const char *domain_name, const char *a
 	return ret;
 }
 
-static void message_count(vm_profile_t *profile, const char *id_in, const char *domain_name, const char *myfolder,
-						  int *total_new_messages, int *total_saved_messages, int *total_new_urgent_messages, int *total_saved_urgent_messages)
+static void message_count(vm_profile_t *profile, const char *id_in, const char *domain_name, const char *myfolder, int *total_new_messages, 
+		int *total_saved_messages, int *total_new_urgent_messages, int *total_saved_urgent_messages)
 {
 	char msg_count[80] = "";
-	callback_t cbt = { 0 };
+	msg_cnt_callback_t cbt = { 0 };
 	char sql[256];
 	char *myid = NULL;
 
+
 	cbt.buf = msg_count;
 	cbt.len = sizeof(msg_count);
-	
+
+	cbt.total_new_messages = 0;
+	cbt.total_new_urgent_messages = 0;
+	cbt.total_saved_messages = 0;
+	cbt.total_saved_urgent_messages = 0;
+
 	myid = resolve_id(id_in, domain_name, "message-count");
-	
-	switch_snprintf(sql, sizeof(sql),
-					"select count(*) from voicemail_msgs where username='%s' and domain='%s' and in_folder='%s' and read_epoch=0",
-					myid, domain_name, myfolder);
-	vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
-	*total_new_messages = atoi(msg_count);
 
 	switch_snprintf(sql, sizeof(sql),
-					"select count(*) from voicemail_msgs where username='%s' and domain='%s' and in_folder='%s' and read_epoch=0 and read_flags='%s'",
-					myid, domain_name, myfolder, URGENT_FLAG_STRING);
-	vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
-	*total_new_urgent_messages = atoi(msg_count);
+					"select read_epoch=0, read_flags, count(read_epoch) from voicemail_msgs where username='%s' and domain='%s' and in_folder='%s' group by read_epoch=0,read_flags;",
+						myid, domain_name, myfolder);
 
-	switch_snprintf(sql, sizeof(sql),
-					"select count(*) from voicemail_msgs where username='%s' and domain='%s' and in_folder='%s' and read_epoch!=0",
-					myid, domain_name, myfolder);
-	vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
-	*total_saved_messages = atoi(msg_count);
+	vm_execute_sql_callback(profile, profile->mutex, sql, message_count_callback, &cbt);
 
-	switch_snprintf(sql, sizeof(sql),
-					"select count(*) from voicemail_msgs where username='%s' and domain='%s' and in_folder='%s' and read_epoch!=0 and read_flags='%s'",
-					myid, domain_name, myfolder, URGENT_FLAG_STRING);
-	vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
-	*total_saved_urgent_messages = atoi(msg_count);
+	*total_new_messages = cbt.total_new_messages;
+	*total_new_urgent_messages = cbt.total_new_urgent_messages;
+	*total_saved_messages = cbt.total_saved_messages;
+	*total_saved_urgent_messages = cbt.total_saved_urgent_messages;
 
 	if (myid != id_in) {
 		free(myid);
