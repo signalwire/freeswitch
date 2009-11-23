@@ -88,7 +88,7 @@ say/mod_say_en
 #say/mod_say_nl
 say/mod_say_ru
 #say/mod_say_zh
-
+#say/mod_say_hu
 
 
 ## Experimental Modules (don't cry if they're broken)
