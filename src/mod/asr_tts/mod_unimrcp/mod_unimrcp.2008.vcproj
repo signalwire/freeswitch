@@ -108,6 +108,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				PreprocessorDefinitions="APT_STATIC_LIB;MPF_STATIC_LIB;MRCP_STATIC_LIB;LIBSOFIA_SIP_UA_STATIC"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -122,6 +123,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(SolutionDir)$(PlatformName)\$(ConfigurationName)/mod/$(ProjectName).dll"
+				AdditionalLibraryDirectories="$(SolutionDir)\$(PlatformName)Debug"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				TargetMachine="17"
@@ -171,6 +173,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				PreprocessorDefinitions="APT_STATIC_LIB;MPF_STATIC_LIB;MRCP_STATIC_LIB;LIBSOFIA_SIP_UA_STATIC"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -184,6 +187,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalLibraryDirectories="$(SolutionDir)Release/bin"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>
@@ -233,6 +237,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				PreprocessorDefinitions="APT_STATIC_LIB;MPF_STATIC_LIB;MRCP_STATIC_LIB;LIBSOFIA_SIP_UA_STATIC"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -247,6 +252,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(SolutionDir)$(PlatformName)\$(ConfigurationName)/mod/$(ProjectName).dll"
+				AdditionalLibraryDirectories="$(SolutionDir)\$(PlatformName)Debug"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				TargetMachine="17"
