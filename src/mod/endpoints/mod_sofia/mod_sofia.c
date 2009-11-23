@@ -1935,6 +1935,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				stream->write_function(stream, "Freq    \t%d\n", gp->freq);
 				stream->write_function(stream, "Ping    \t%d\n", gp->ping);
 				stream->write_function(stream, "PingFreq\t%d\n", gp->ping_freq);
+				stream->write_function(stream, "PingState\t%d/%d/%d\n", gp->ping_min, gp->ping_count, gp->ping_max);
 				stream->write_function(stream, "State   \t%s\n", sofia_state_names[gp->state]);
 				stream->write_function(stream, "Status  \t%s%s\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
 				stream->write_function(stream, "CallsIN \t%d\n", gp->ib_calls);

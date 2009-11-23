@@ -30,6 +30,7 @@
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  * Norman Brandinger
  * Raymond Chandler <intralanman@gmail.com>
+ * Nathan Patrick <npatrick at corp.sonic.net>
  *
  *
  * sofia.c -- SOFIA SIP Endpoint (sofia code)
@@ -1450,6 +1451,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			const char *sipip, *format;
 			switch_uuid_t uuid;
 			uint32_t ping_freq = 0, extension_in_contact = 0, distinct_to = 0;
+			int ping_max = 0, ping_min = 0;
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
 				*username = NULL,
@@ -1479,7 +1481,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->next = NULL;
 			gateway->ping = 0;
 			gateway->ping_freq = 0;
-			
+			gateway->ping_max = 1;
+			gateway->ping_min = -1;
+			gateway->ping_count = 0;
 			
 			if ((x_params = switch_xml_child(gateway_tag, "variables"))) {
 				param = switch_xml_child(x_params, "variable");
@@ -1551,6 +1555,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					extension = val;
 				} else if (!strcmp(var, "ping")) {
 					ping_freq = atoi(val);
+				} else if (!strcmp(var, "ping-max")) {
+					ping_max = atoi(val);
+				} else if (!strcmp(var, "ping-min")) {
+					ping_min = atoi(val);
 				} else if (!strcmp(var, "proxy")) {
 					proxy = val;
 				} else if (!strcmp(var, "context")) {
@@ -1590,6 +1598,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			if (ping_freq) {
 				if (ping_freq >= 5) {
 					gateway->ping_freq = ping_freq;
+					gateway->ping_max = ping_max;
+					gateway->ping_min = ping_min;
 					gateway->ping = switch_epoch_time_now(NULL) + ping_freq;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: invalid ping!\n");
@@ -3176,6 +3186,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 									   tagi_t tags[])
 {
 	sofia_gateway_t *gateway = NULL;
+	static const char *status_names[] = { "DOWN", "UP", NULL };
 
 	if (sofia_private && !zstr(sofia_private->gateway_name)) {
 		gateway = sofia_reg_find_gateway(sofia_private->gateway_name);
@@ -3187,15 +3198,35 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 			if (gateway->state == REG_STATE_FAILED) {
 				gateway->state = REG_STATE_UNREGED;
 			}
-			gateway->status = SOFIA_GATEWAY_UP;
+
+			if (gateway->ping_count < gateway->ping_max) {
+				gateway->ping_count++;
+
+				if (gateway->ping_count >= 0) gateway->status = SOFIA_GATEWAY_UP;
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+					"Ping succeeded %s with code %d - count %d/%d/%d, state %s\n",
+					gateway->name, status, gateway->ping_min, gateway->ping_count, gateway->ping_max,
+					status_names[gateway->status]);
+			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Ping failed %s\n", gateway->name);
-			gateway->status = SOFIA_GATEWAY_DOWN;
 			if (gateway->state == REG_STATE_REGED) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Unregister %s\n", gateway->name);
 				gateway->state = REG_STATE_FAILED;
 			}
+
+			if (gateway->ping_count > gateway->ping_min) {
+				gateway->ping_count--;
+
+				if (gateway->ping_count <= 0) gateway->status = SOFIA_GATEWAY_DOWN;
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+				"Ping failed %s with code %d - count %d/%d/%d, state %s\n",
+				gateway->name, status, gateway->ping_min, gateway->ping_count, gateway->ping_max,
+				status_names[gateway->status]);
 		}
+
 		gateway->ping = switch_epoch_time_now(NULL) + gateway->ping_freq;
 		sofia_reg_release_gateway(gateway);
 		gateway->pinging = 0;
