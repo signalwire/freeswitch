@@ -40,6 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="APT_STATIC_LIB;MPF_STATIC_LIB;MRCP_STATIC_LIB"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -160,6 +161,10 @@
 					RelativePath=".\message\include\mrcp_message.h"
 					>
 				</File>
+				<File
+					RelativePath=".\message\include\mrcp_start_line.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="src"
@@ -175,6 +180,10 @@
 				</File>
 				<File
 					RelativePath=".\message\src\mrcp_message.c"
+					>
+				</File>
+				<File
+					RelativePath=".\message\src\mrcp_start_line.c"
 					>
 				</File>
 			</Filter>
@@ -195,7 +204,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\control\include\mrcp_state_machine.h"
+					RelativePath=".\control\include\mrcp_resource_loader.h"
 					>
 				</File>
 				<File
@@ -212,6 +221,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\control\src\mrcp_resource_loader.c"
+					>
+				</File>
+				<File
 					RelativePath=".\control\src\mrcp_stream.c"
 					>
 				</File>
@@ -225,10 +238,6 @@
 				Filter="h;hpp;hxx;hm;inl;inc;xsd"
 				>
 				<File
-					RelativePath=".\resources\include\mrcp_default_factory.h"
-					>
-				</File>
-				<File
 					RelativePath=".\resources\include\mrcp_recog_header.h"
 					>
 				</File>
@@ -237,7 +246,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\resources\include\mrcp_recog_state_machine.h"
+					RelativePath=".\resources\include\mrcp_recorder_header.h"
+					>
+				</File>
+				<File
+					RelativePath=".\resources\include\mrcp_recorder_resource.h"
 					>
 				</File>
 				<File
@@ -248,23 +261,11 @@
 					RelativePath=".\resources\include\mrcp_synth_resource.h"
 					>
 				</File>
-				<File
-					RelativePath=".\resources\include\mrcp_synth_state_machine.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="src"
 				Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 				>
-				<File
-					RelativePath=".\resources\src\mrcp_default_factory.c"
-					>
-				</File>
-				<File
-					RelativePath=".\resources\src\mrcp_recog_client_state_machine.c"
-					>
-				</File>
 				<File
 					RelativePath=".\resources\src\mrcp_recog_header.c"
 					>
@@ -274,11 +275,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\resources\src\mrcp_recog_server_state_machine.c"
+					RelativePath=".\resources\src\mrcp_recorder_header.c"
 					>
 				</File>
 				<File
-					RelativePath=".\resources\src\mrcp_synth_client_state_machine.c"
+					RelativePath=".\resources\src\mrcp_recorder_resource.c"
 					>
 				</File>
 				<File
@@ -287,10 +288,6 @@
 				</File>
 				<File
 					RelativePath=".\resources\src\mrcp_synth_resource.c"
-					>
-				</File>
-				<File
-					RelativePath=".\resources\src\mrcp_synth_server_state_machine.c"
 					>
 				</File>
 			</Filter>

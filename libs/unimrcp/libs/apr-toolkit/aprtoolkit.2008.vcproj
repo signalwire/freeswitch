@@ -39,6 +39,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				PreprocessorDefinitions="APT_STATIC_LIB"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

@@ -40,6 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="codecs"
+				PreprocessorDefinitions="APT_STATIC_LIB"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

@@ -40,6 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="include"
+				PreprocessorDefinitions="APT_STATIC_LIB;RTSP_STATIC_LIB;MPF_STATIC_LIB;MRCP_STATIC_LIB;LIBSOFIA_SIP_UA_STATIC"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
