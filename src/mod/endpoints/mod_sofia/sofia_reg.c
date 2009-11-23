@@ -677,8 +677,7 @@ void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
 	switch_safe_free(sql);
 
-	//auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "");
-	auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=\"true\"," : "");
+	auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "");
 
 	if (regtype == REG_REGISTER) {
 		nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_IF(nua, NUTAG_WITH_THIS(nua)), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
