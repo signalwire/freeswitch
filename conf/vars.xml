@@ -51,6 +51,8 @@
        speex@8000h@20i  - Speex 8kHz using 20ms ptime.
        speex@16000h@20i - Speex 16kHz using 20ms ptime.
        speex@32000h@20i - Speex 32kHz using 20ms ptime.
+       BV16             - BroadVoice 16kb/s narrowband, 8kHz
+       BV32             - BroadVoice 32kb/s wideband, 16kHz
        G7221@16000h     - G722.1 16kHz (aka Siren 7)
        G7221@32000h     - G722.1C 32kHz (aka Siren 14)
        CELT@32000h      - CELT 32kHz, only 10ms supported
