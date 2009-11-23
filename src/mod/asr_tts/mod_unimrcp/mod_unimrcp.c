@@ -3510,11 +3510,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 	}
 
 	/* Set up the media engine that will be shared with all profiles */
-#if UNI_VERSION_AT_LEAST(0,8,0)
-	media_engine = mpf_engine_create(1, pool);
-#else
 	media_engine = mpf_engine_create(pool);
-#endif
 	if (media_engine) {
 		mrcp_client_media_engine_register(client, media_engine, "MediaEngine");
 	}
