@@ -1073,7 +1073,7 @@ typedef struct msg_cnt_callback msg_cnt_callback_t;
 static int message_count_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	msg_cnt_callback_t *cbt = (msg_cnt_callback_t *) pArg;
-	if (atoi(argv[0]) == 0) { /* UnRead */
+	if (atoi(argv[0]) == 1) { /* UnRead */
 		if (!strcasecmp(argv[1], "A_URGENT")) { /* Urgent */
 			cbt->total_new_urgent_messages = atoi(argv[2]);
 		} else { /* Normal */
