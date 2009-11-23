@@ -881,7 +881,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	struct record_helper *rh = NULL;
 	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 	
-    switch_core_session_get_read_impl(session, &read_impl);
+	switch_core_session_get_read_impl(session, &read_impl);
 
 	if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -2396,15 +2396,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_cor
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
+	switch_status_t status;
 
 	if (sth) {
-		if (switch_core_asr_load_grammar(sth->ah, grammar, name) != SWITCH_STATUS_SUCCESS) {
+		if ((status = switch_core_asr_load_grammar(sth->ah, grammar, name)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error loading Grammar\n");
 			switch_core_asr_close(sth->ah, &flags);
-			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			return SWITCH_STATUS_FALSE;
 		}
-		return SWITCH_STATUS_SUCCESS;
+		return status;
 	}
 	return SWITCH_STATUS_FALSE;
 }
@@ -2414,15 +2413,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_c
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
+	switch_status_t status;
 
 	if (sth) {
-		if (switch_core_asr_unload_grammar(sth->ah, name) != SWITCH_STATUS_SUCCESS) {
+		if ((status = switch_core_asr_unload_grammar(sth->ah, name)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error unloading Grammar\n");
 			switch_core_asr_close(sth->ah, &flags);
-			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			return SWITCH_STATUS_FALSE;
 		}
-		return SWITCH_STATUS_SUCCESS;
+		return status;
 	}
 	return SWITCH_STATUS_FALSE;
 }
@@ -2459,21 +2457,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (switch_core_asr_open(ah,
+	if ((status = switch_core_asr_open(ah,
 							 mod_name,
 							 "L16",
 							 read_impl.actual_samples_per_second, dest, &flags,
-							 switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+							 switch_core_session_get_pool(session))) == SWITCH_STATUS_SUCCESS) {
 
 		if (switch_core_asr_load_grammar(ah, grammar, name) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error loading Grammar\n");
 			switch_core_asr_close(ah, &flags);
-			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return SWITCH_STATUS_FALSE;
 		}
 	} else {
-		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		return SWITCH_STATUS_FALSE;
+		return status;
 	}
 
 	sth = switch_core_session_alloc(session, sizeof(*sth));
@@ -2487,7 +2483,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 
 	if ((status = switch_core_media_bug_add(session, speech_callback, sth, 0, SMBF_READ_STREAM, &sth->bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_core_asr_close(ah, &flags);
-		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return status;
 	}
 
