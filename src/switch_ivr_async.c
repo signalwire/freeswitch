@@ -628,7 +628,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		const char *macro_name = "eavesdrop_announce";
 		const char *id_name = NULL;
 		switch_codec_implementation_t tread_impl = {0}, read_impl = {0};
-
+		switch_core_session_message_t msg = { 0 };
 		
 		if (!switch_channel_media_ready(channel)) {
 			goto end;
@@ -734,6 +734,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			goto end;
 		}
 
+
+		msg.from = __FILE__;
+		
+		/* Tell the channel we are going to be in a bridge */
+		msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
+		switch_core_session_receive_message(session, &msg);
+		
+
 		while (switch_channel_ready(tchannel) && switch_channel_ready(channel)) {
 			uint32_t len = sizeof(buf);
 			switch_event_t *event = NULL;
@@ -743,7 +751,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				goto end;
+				goto end_loop;
 			}
 
 			if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
@@ -784,7 +792,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 						switch_clear_flag(ep, ED_MUX_WRITE);
 						break;
 					case '*':
-						goto end;
+						goto end_loop;
 					default:
 						z = 0;
 						break;
@@ -836,7 +844,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 		}
 
+	end_loop:
+
+		/* Tell the channel we are no longer going to be in a bridge */
+		msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
+		switch_core_session_receive_message(session, &msg);
+
+
+
 	  end:
+
 		if ( codec_initialized )
 			switch_core_codec_destroy(&codec);
 
