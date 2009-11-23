@@ -6,5 +6,5 @@ LOCAL_LIBADD=$(G722_1_LA)
 include $(BASE)/build/modmake.rules
 
 $(G722_1_LA): $(G722_1_DIR)/.update	
-	cd $(G722_1_DIR) && ./configure  --disable-shared --with-pic  && $(MAKE)
+	cd $(G722_1_DIR) && $(MAKE)
 	$(TOUCH_TARGET)
