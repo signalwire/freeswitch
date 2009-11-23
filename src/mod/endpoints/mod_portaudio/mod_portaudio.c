@@ -846,8 +846,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 	switch_console_set_complete("add pa indev");
 	switch_console_set_complete("add pa outdev");
 	switch_console_set_complete("add pa ringdev");
+	switch_console_set_complete("add pa ringfile");
 	switch_console_set_complete("add pa play");
-	switch_console_set_complete("add pa ringtest");
 	switch_console_set_complete("add pa looptest");
 
 	/* indicate that the module should continue to be loaded */
@@ -1833,6 +1833,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		"pa outdev #<num>|<partial name>\n"
 		"pa ringdev #<num>|<partial name>\n"
 		"pa play [ringtest|<filename>]\n"
+		"pa ringfile [filename]\n"
 		"pa looptest\n" "--------------------------------------------------------------------------------\n";
 
 
@@ -2058,6 +2059,27 @@ SWITCH_STANDARD_API(pa_cmd)
 			deactivate_audio_device();
 		} else {
 			stream->write_function(stream, "Failed to engage audio device\n");
+		}
+		goto done;
+	} else if (!strcasecmp(argv[0], "ringfile")) {
+		if (argv[1]) {
+			if (engage_device(0) == SWITCH_STATUS_SUCCESS) {
+				switch_file_handle_t fh = { 0 };
+				if (switch_core_file_open(&fh,
+							argv[1],
+							globals.read_codec.implementation->number_of_channels,
+							globals.read_codec.implementation->actual_samples_per_second,
+							SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) == SWITCH_STATUS_SUCCESS) {
+					switch_core_file_close(&fh);
+					set_global_ring_file(argv[1]);
+				} else {
+					stream->write_function(stream, "Unable to open ring file %s\n", argv[1]);
+				}
+			} else {
+				stream->write_function(stream, "Failed to engage audio device\n");
+			}
+		} else {
+			stream->write_function(stream, "%s", globals.ring_file);
 		}
 		goto done;
 	}
