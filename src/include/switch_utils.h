@@ -207,7 +207,7 @@ SWITCH_DECLARE(unsigned short) get_port(struct sockaddr *sa);
 enum switch_uri_flags {
 	SWITCH_URI_NUMERIC_HOST = 1,
 	SWITCH_URI_NUMERIC_PORT = 2,
-	SWITCH_URI_NO_SCOPE = 4,
+	SWITCH_URI_NO_SCOPE = 4
 };
 
 /*!
