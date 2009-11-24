@@ -1841,7 +1841,11 @@ static switch_status_t load_config(void)
 {
 	const char *cf = "openzap.conf";
 	switch_xml_t cfg, xml, settings, param, spans, myspan;
+	zap_span_t *boost_spans[ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN];
+	zap_span_t *boost_span = NULL;
+	unsigned boosti = 0;
 
+	memset(boost_spans, 0, sizeof(boost_spans));
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -2382,8 +2386,8 @@ static switch_status_t load_config(void)
 			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
 			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
 
-			zap_span_start(span);
 			switch_copy_string(SPAN_CONFIG[span->span_id].type, "Sangoma (boost)", sizeof(SPAN_CONFIG[span->span_id].type));
+			boost_spans[boosti++] = span;
 		}
 	}
 
@@ -2551,6 +2555,19 @@ static switch_status_t load_config(void)
 			}
 		}
 	}
+
+	/* start all boost spans now that we're done configuring. Unfortunately at this point boost modules have the limitation
+	 * of needing all spans to be configured before starting them */
+	unsigned i = 0;
+	for ( ; i < boosti; i++) {
+		boost_span = boost_spans[i];
+		zap_log(ZAP_LOG_DEBUG, "Starting boost span %d\n", boost_span->span_id);
+		if (zap_span_start(boost_span) == ZAP_FAIL) {
+				zap_log(ZAP_LOG_ERROR, "Error starting boost OpenZAP span %d, error: %s\n", boost_span->span_id, boost_span->last_error);
+				continue;
+		}
+	}
+
 
 	switch_xml_free(xml);
 
