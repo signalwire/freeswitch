@@ -833,7 +833,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 				}
 				
 				if (!revent) {
-					esl_event_create(&revent, ESL_EVENT_COMMAND);
+					esl_event_create(&revent, ESL_EVENT_CLONE);
 				}
 				
 				hname = beg;
@@ -910,7 +910,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 		}
 
 		if (!esl_safe_strcasecmp(hval, "text/event-plain") && revent->body) {
-			esl_event_types_t et = ESL_EVENT_COMMAND;
+			esl_event_types_t et = ESL_EVENT_CLONE;
 			char *body = strdup(revent->body);
 			
 			esl_event_create(&handle->last_ievent, et);
