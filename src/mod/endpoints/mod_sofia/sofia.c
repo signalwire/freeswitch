@@ -1845,7 +1845,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 			profile->ib_calls = 0;
 			profile->ob_calls = 0;
 			profile->ib_failed_calls = 0;
-			profile->ob_failed_calls = 0;
+			profile->ob_failed_calls = 0;		
 
 			if (xprofiledomain) {
 				profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
@@ -1887,6 +1887,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						profile->user_agent = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "auto-restart")) {
 						profile->auto_restart = switch_true(val);
+					} else if (!strcasecmp(var, "log-auth-failures")) {
+						profile->log_auth_failures = switch_true(val); 
 					} else if (!strcasecmp(var, "dtmf-type")) {
 						if (!strcasecmp(val, "rfc2833")) {
 							profile->dtmf_type = DTMF_2833;
@@ -2415,6 +2417,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
 				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 				sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
+				profile->log_auth_failures = 0;
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2442,6 +2445,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->user_agent = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "auto-restart")) {
 						profile->auto_restart = switch_true(val);
+					} else if (!strcasecmp(var, "log-auth-failures")) {
+						profile->log_auth_failures = switch_true(val); 						
 					} else if (!strcasecmp(var, "dtmf-type")) {
 						if (!strcasecmp(val, "rfc2833")) {
 							profile->dtmf_type = DTMF_2833;

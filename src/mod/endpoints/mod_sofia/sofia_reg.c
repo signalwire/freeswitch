@@ -446,10 +446,13 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const cha
 		event = "check-sync;reboot=true";
 	} else if (switch_stristr("linksys", user_agent)) {
 		event = "reboot_now";
+	} else if (switch_stristr("aastra", user_agent)) {
+		event = "aastra-check-cfg";
+	} else if (switch_stristr("polycom", user_agent)) {
+		event = "polycom-reboot";
 	}
 
 	sofia_glue_send_notify(profile, user, host, event, contenttype, body, contact, network_ip);
-
 }
 
 int sofia_sla_dialog_del_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -928,7 +931,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					if (*received_data && sofia_test_pflag(profile, PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
 						switch_snprintf(received_data, sizeof(received_data), ";received=%s:%d", url_ip, network_port);
 					}
-
 	
 					if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") ||
 						!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-tls-connectile-dysfunction")) {
@@ -972,6 +974,17 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 			if (auth_res == AUTH_FORBIDDEN) {
 				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
+				
+				/* Log line added to support Fail2Ban */
+				if ( profile->log_auth_failures ) {
+					if (regtype == REG_REGISTER) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth failure (REGISTER) on sofia profile '%s' "
+										  "for [%s@%s] from ip %s\n", profile->name, to_user, to_host, network_ip);
+					} else if (regtype == REG_INVITE) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth failure (INVITE) on sofia profile '%s' "
+										  "for [%s@%s] from ip %s\n", profile->name, to_user, to_host, network_ip);
+					}									  
+				}
 			} else {
 				nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
 			}

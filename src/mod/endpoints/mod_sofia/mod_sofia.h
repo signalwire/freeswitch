@@ -517,6 +517,7 @@ struct sofia_profile {
 	uint32_t timer_t4;
 	char *contact_user;
 	char *local_network;
+	int log_auth_failures;
 };
 
 struct private_object {
