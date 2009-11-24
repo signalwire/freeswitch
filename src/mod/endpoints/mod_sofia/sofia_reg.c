@@ -446,10 +446,6 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const cha
 		event = "check-sync;reboot=true";
 	} else if (switch_stristr("linksys", user_agent)) {
 		event = "reboot_now";
-	} else if (switch_stristr("aastra", user_agent)) {
-		event = "aastra-check-cfg";
-	} else if (switch_stristr("polycom", user_agent)) {
-		event = "polycom-reboot";
 	}
 
 	sofia_glue_send_notify(profile, user, host, event, contenttype, body, contact, network_ip);
