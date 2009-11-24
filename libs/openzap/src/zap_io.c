@@ -1225,7 +1225,7 @@ OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan)
 	zchan->pre_buffer_size = 0;
 	zap_mutex_unlock(zchan->pre_buffer_mutex);
 
-	if (!zchan->dtmf_buffer) {
+	if (zchan->dtmf_buffer) {
 		zap_buffer_zero(zchan->dtmf_buffer);
 	}
 
