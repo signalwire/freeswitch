@@ -3864,6 +3864,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 										switch_ivr_uuid_bridge(br_a, br_b);
 										switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
 										sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+										switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 										sofia_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
 										switch_channel_hangup(channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 									} else {
@@ -4007,10 +4008,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 							if (!switch_stristr("sendonly", r_sdp)) {
 								sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+								switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 								switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
 							}
 						} else if (switch_stristr("sendonly", r_sdp)) {
 							sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+							switch_channel_set_flag(channel, CF_LEG_HOLDING);
 							switch_channel_presence(tech_pvt->channel, "unknown", "hold", NULL);
 						}
 					
@@ -4530,6 +4533,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							
 							
 							sofia_clear_flag_locked(b_tech_pvt, TFLAG_SIP_HOLD);
+							switch_channel_clear_flag(channel_b, CF_LEG_HOLDING);
 							sofia_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
 
 							switch_channel_set_variable(channel_b, SWITCH_HOLDING_UUID_VARIABLE, br_a);
@@ -4598,6 +4602,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 									   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
 
 							sofia_clear_flag_locked(b_tech_pvt, TFLAG_SIP_HOLD);
+							switch_channel_clear_flag(channel_b, CF_LEG_HOLDING);
 							sofia_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
 							switch_channel_set_variable(channel_b, "park_timeout", "2");
 							switch_channel_set_state(channel_b, CS_PARK);
@@ -4621,7 +4626,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 									t_session = switch_core_session_locate(br_b);
 									hup_channel = channel_a;
 									sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+									switch_channel_clear_flag(tech_pvt->channel, CF_LEG_HOLDING);
 									sofia_clear_flag_locked(h_tech_pvt, TFLAG_SIP_HOLD);
+									switch_channel_clear_flag(h_tech_pvt->channel, CF_LEG_HOLDING);
 									switch_channel_hangup(channel_b, SWITCH_CAUSE_ATTENDED_TRANSFER);
 								}
 

@@ -121,10 +121,12 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 static switch_status_t sofia_on_routing(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_assert(tech_pvt != NULL);
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
 		sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+		switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA ROUTING\n", switch_channel_get_name(switch_core_session_get_channel(session)));
@@ -136,10 +138,12 @@ static switch_status_t sofia_on_routing(switch_core_session_t *session)
 static switch_status_t sofia_on_reset(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_assert(tech_pvt != NULL);
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
 		sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+		switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA RESET\n", switch_channel_get_name(switch_core_session_get_channel(session)));
@@ -151,10 +155,12 @@ static switch_status_t sofia_on_reset(switch_core_session_t *session)
 static switch_status_t sofia_on_hibernate(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_assert(tech_pvt != NULL);
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
 		sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+		switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA HIBERNATE\n", switch_channel_get_name(switch_core_session_get_channel(session)));
@@ -165,10 +171,12 @@ static switch_status_t sofia_on_hibernate(switch_core_session_t *session)
 static switch_status_t sofia_on_execute(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_assert(tech_pvt != NULL);
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
 		sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+		switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 	}
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA EXECUTE\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 
@@ -345,32 +353,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 							  switch_channel_get_name(channel), sip_cause, new_cause);
 			sip_cause = new_cause;
 		}
-	}
-
-	if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD) && cause != SWITCH_CAUSE_ATTENDED_TRANSFER) {
-		const char *buuid;
-		switch_core_session_t *bsession;
-		switch_channel_t *bchannel;
-		const char *lost_ext;
-
-		if (tech_pvt->max_missed_packets) {
-			switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
-		}
-		switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
-
-		if ((buuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
-			if ((bsession = switch_core_session_locate(buuid))) {
-				bchannel = switch_core_session_get_channel(bsession);
-				if (switch_channel_test_flag(bchannel, CF_BROADCAST)) {
-					if ((lost_ext = switch_channel_get_variable(bchannel, "left_hanging_extension"))) {
-						switch_ivr_session_transfer(bsession, lost_ext, NULL, NULL);
-					}
-					switch_channel_stop_broadcast(bchannel);
-				}
-				switch_core_session_rwunlock(bsession);
-			}
-		}
-		sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel %s hanging up, cause: %s\n",
@@ -665,6 +647,7 @@ static switch_status_t sofia_read_video_frame(switch_core_session_t *session, sw
 					if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 						sofia_glue_toggle_hold(tech_pvt, 0);
 						sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+						switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 					}
 					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
 				}
@@ -780,6 +763,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 					if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 						sofia_glue_toggle_hold(tech_pvt, 0);
 						sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+						switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 					}
 					
 					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
@@ -1446,6 +1430,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_HOLD:
 		{
 			sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+			switch_channel_set_flag(channel, CF_LEG_HOLDING);
 			sofia_glue_do_invite(session);
 			if (!zstr(msg->string_arg)) {
 				char message[256] = "";
@@ -1470,6 +1455,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_UNHOLD:
 		{
 			sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+			switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 			sofia_glue_do_invite(session);
 		}
 		break;

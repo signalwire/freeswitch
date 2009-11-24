@@ -2885,6 +2885,7 @@ void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 			const char *stream;
 
 			sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+			switch_channel_set_flag(tech_pvt->channel, CF_LEG_HOLDING);
 			switch_channel_presence(tech_pvt->channel, "unknown", "hold", NULL);
 
 			if (tech_pvt->max_missed_hold_packets) {
@@ -2909,6 +2910,7 @@ void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 	} else {
 		if (sofia_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
 			sofia_set_flag(tech_pvt, TFLAG_SIP_HOLD);
+			switch_channel_set_flag(tech_pvt->channel, CF_LEG_HOLDING);
 		}
 
 		sofia_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
@@ -2939,6 +2941,7 @@ void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 			}
 
 			sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+			switch_channel_clear_flag(tech_pvt->channel, CF_LEG_HOLDING);
 			switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
 		}
 	}
