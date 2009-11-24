@@ -1778,6 +1778,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_type, switch_frame_flag_t *flags, switch_io_flag_t io_flags)
 {
+	switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
+	switch_channel_t *channel = NULL;
 	switch_size_t bytes = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS, poll_status = SWITCH_STATUS_SUCCESS;
 	int check = 0;
@@ -1787,6 +1789,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	int poll_loop = 0;
 	int fdr = 0;
 	int hot_socket = 0;
+
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+	}
 
 	if (!switch_rtp_ready(rtp_session)) {
 		return -1;
@@ -1961,13 +1967,24 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					const char *tx_host;
 					const char *old_host;
 					char bufa[30], bufb[30];
-					
+					char adj_port[5];
+
 					tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
 					old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);			
 	
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 									  "Auto Changing port from %s:%u to %s:%u\n", old_host, old, tx_host,
 									  switch_sockaddr_get_port(rtp_session->from_addr));
+
+					if (channel) {
+						switch_channel_set_variable(channel, "remote_media_ip_reported", switch_channel_get_variable(channel, "remote_media_ip"));
+						switch_channel_set_variable(channel, "remote_media_ip", tx_host);
+						switch_snprintf (adj_port, sizeof(adj_port), "%u", switch_sockaddr_get_port(rtp_session->from_addr));
+						switch_channel_set_variable(channel, "remote_media_port_reported", switch_channel_get_variable(channel, "remote_media_port"));
+						switch_channel_set_variable(channel, "remote_media_port", adj_port);
+						switch_channel_set_variable(channel, "rtp_auto_adjust", "true");
+					}
+
 					switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), SWITCH_FALSE, &err);
 					switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 				}
