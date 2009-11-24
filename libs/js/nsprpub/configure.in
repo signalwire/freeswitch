@@ -617,7 +617,7 @@ OBJ_SUFFIX=o
 LIB_SUFFIX=a
 DLL_SUFFIX=so
 ASM_SUFFIX=s
-MKSHLIB='$(LD) $(DSO_LDOPTS) -o $@'
+MKSHLIB='$(LD) $(DSO_LDOPTS) $(OS_LDFLAGS) -o $@'
 PR_MD_ASFILES=
 PR_MD_CSRCS=
 PR_MD_ARCH_DIR=unix
@@ -986,7 +986,7 @@ case "$target" in
     DSO_LDOPTS='-dynamiclib -compatibility_version 1 -current_version 1 -all_load -install_name ${prefix}/lib/$@ -headerpad_max_install_names'
     # Use the standard preprocessor (cpp)
     CFLAGS="$CFLAGS -no-cpp-precomp"
-    MKSHLIB='$(CC) $(DSO_LDOPTS) -o $@'
+    MKSHLIB='$(CC) $(DSO_LDOPTS) $(OS_LDFLAGS) -o $@'
     STRIP="$STRIP -x -S"
     DLL_SUFFIX=dylib
     USE_PTHREADS=1
@@ -1132,7 +1132,7 @@ tools are selected during the Xcode/Developer Tools installation.])
     else
         DLL_SUFFIX=so.1
     fi
-    MKSHLIB='$(CC) $(DSO_LDOPTS) -o $@'
+    MKSHLIB='$(CC) $(DSO_LDOPTS) $(OS_LDFLAGS) -o $@'
     DSO_CFLAGS=-fPIC
     DSO_LDOPTS='-shared -Wl,-soname -Wl,$(notdir $@)'
     MDCPUCFG_H=_freebsd.cfg
@@ -1401,7 +1401,7 @@ tools are selected during the Xcode/Developer Tools installation.])
     esac
     MDCPUCFG_H=_linux.cfg
     PR_MD_CSRCS=linux.c
-    MKSHLIB='$(CC) $(DSO_LDOPTS) -o $@'
+    MKSHLIB='$(CC) $(DSO_LDOPTS) $(OS_LDFLAGS) -o $@'
     DSO_CFLAGS=-fPIC
     DSO_LDOPTS='-shared -Wl,-soname -Wl,$(notdir $@)'
     _OPTIMIZE_FLAGS=-O2
@@ -1660,7 +1660,7 @@ mips-nec-sysv*)
     DSO_CFLAGS='-fPIC -DPIC'
     CFLAGS="$CFLAGS -ansi -Wall"
     CXXFLAGS="$CXXFLAGS -ansi -Wall"
-    MKSHLIB='$(CC) -o $@ $(DSO_LDOPTS)'
+    MKSHLIB='$(CC) -o $@ $(DSO_LDOPTS) $(OS_LDFLAGS) '
 
     if test -z "$OBJECT_FMT"; then
         if echo __ELF__ | ${CC-cc} -E - | grep -q __ELF__ 2>/dev/null; then
@@ -1741,7 +1741,7 @@ mips-sony-newsos*)
         USE_PTHREADS=1
     fi
     DSO_LDOPTS='-shared -fPIC'
-    MKSHLIB='$(CC) $(DSO_LDOPTS) -o $@'
+    MKSHLIB='$(CC) $(DSO_LDOPTS) $(OS_LDFLAGS) -o $@'
     ;;
 
 *-openvms*)
@@ -1911,7 +1911,7 @@ mips-sony-newsos*)
     MDCPUCFG_H=_solaris.cfg
     PR_MD_CSRCS=solaris.c
     LD=/usr/ccs/bin/ld
-    MKSHLIB='$(CC) $(DSO_LDOPTS) -o $@'
+    MKSHLIB='$(CC) $(DSO_LDOPTS) $(OS_LDFLAGS) -o $@'
     RESOLVE_LINK_SYMBOLS=1
     if test -n "$GNU_CC"; then
         DSO_CFLAGS=-fPIC
