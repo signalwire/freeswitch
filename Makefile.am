@@ -192,22 +192,22 @@ fs_ivrd_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_
 fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c libs/esl/src/esl_threadmutex.c libs/esl/fs_cli.c
 freeswitch_SOURCES = src/switch.c
 nodist_freeswitch_SOURCES = src/include/switch_version.h
-fs_cli_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)libs/esl/src/include 
+fs_cli_CFLAGS = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
 fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
-fs_ivrd_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)libs/esl/src/include 
+fs_ivrd_CFLAGS = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
 fs_ivrd_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
 freeswitch_CFLAGS = $(AM_CFLAGS) $(CORE_CFLAGS)
 freeswitch_LDFLAGS = $(AM_LDFLAGS) -lpthread -rpath $(libdir)
 freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la
 if ADD_LIBEDIT
-fs_cli_CFLAGS += -DHAVE_EDITLINE -I$(top_srcdir)libs/libedit/src
+fs_cli_CFLAGS += -DHAVE_EDITLINE -I$(switch_srcdir)/libs/libedit/src
 fs_cli_LDADD = libs/libedit/src/.libs/libedit.a
 freeswitch_CFLAGS    += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
 freeswitch_LDADD      += libs/libedit/src/.libs/libedit.a
 endif
 
 if ADD_LIBEDIT
-CORE_CFLAGS    += -I$(top_srcdir)libs/libedit/src -DSWITCH_HAVE_LIBEDIT
+CORE_CFLAGS    += -I$(switch_srcdir)/libs/libedit/src -DSWITCH_HAVE_LIBEDIT
 CORE_LIBS      += libs/libedit/src/.libs/libedit.a
 endif
 
