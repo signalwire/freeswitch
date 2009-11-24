@@ -201,6 +201,7 @@ typedef enum {
 	PFLAG_SIPCOMPACT,
 	PFLAG_SQL_IN_TRANS,
 	PFLAG_PASS_CALLEE_ID,
+	PFLAG_LOG_AUTH_FAIL,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -517,7 +518,6 @@ struct sofia_profile {
 	uint32_t timer_t4;
 	char *contact_user;
 	char *local_network;
-	int log_auth_failures;
 };
 
 struct private_object {
