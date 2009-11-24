@@ -1966,7 +1966,9 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					}
 					stream->write_function(stream, "HOLD-MUSIC       \t%s\n", zstr(profile->hold_music) ? "N/A" : profile->hold_music);
 					stream->write_function(stream, "OUTBOUND-PROXY   \t%s\n", zstr(profile->outbound_proxy) ? "N/A" : profile->outbound_proxy);
-					stream->write_function(stream, "CODECS           \t%s\n", switch_str_nil(profile->codec_string));
+					stream->write_function(stream, "CODECS IN        \t%s\n", switch_str_nil(profile->inbound_codec_string));
+					stream->write_function(stream, "CODECS OUT       \t%s\n", switch_str_nil(profile->outbound_codec_string));
+
 					stream->write_function(stream, "TEL-EVENT        \t%d\n", profile->te);
 					if (profile->dtmf_type == DTMF_2833) {
 					stream->write_function(stream, "DTMF-MODE        \trfc2833\n");
@@ -2186,7 +2188,9 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <tls-bind-url>%s</tls-bind-url>\n", switch_str_nil(profile->tls_bindurl));
 					stream->write_function(stream, "    <hold-music>%s</hold-music>\n", zstr(profile->hold_music) ? "N/A" : profile->hold_music);
 					stream->write_function(stream, "    <outbound-proxy>%s</outbound-proxy>\n", zstr(profile->outbound_proxy) ? "N/A" : profile->outbound_proxy);
-					stream->write_function(stream, "    <codecs>%s</codecs>\n", switch_str_nil(profile->codec_string));
+					stream->write_function(stream, "    <inbound-codecs>%s</inbound-codecs>\n", switch_str_nil(profile->inbound_codec_string));
+					stream->write_function(stream, "    <outbound-codecs>%s</outbound-codecs>\n", switch_str_nil(profile->outbound_codec_string));
+
 					stream->write_function(stream, "    <tel-event>%d</tel-event>\n", profile->te);
 					stream->write_function(stream, "    <dtmf-mode>rfc2833</dtmf-mode>\n");
 					stream->write_function(stream, "    <dtmf-mode>info</dtmf-mode>\n");

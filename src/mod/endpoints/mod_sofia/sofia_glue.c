@@ -409,6 +409,19 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	sofia_glue_tech_set_local_sdp(tech_pvt, buf, SWITCH_TRUE);
 }
 
+const char *sofia_glue_get_codec_string(private_object_t *tech_pvt)
+{
+	const char *codec_string = NULL;
+	
+	if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !zstr(tech_pvt->profile->outbound_codec_string)) {
+		codec_string = tech_pvt->profile->outbound_codec_string ? tech_pvt->profile->outbound_codec_string : tech_pvt->profile->inbound_codec_string;
+	} else if (!zstr(tech_pvt->profile->inbound_codec_string)) {
+		codec_string = tech_pvt->profile->inbound_codec_string ? tech_pvt->profile->inbound_codec_string : tech_pvt->profile->outbound_codec_string;
+	}
+	
+	return codec_string;
+}
+
 void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 {
 	const char *abs, *codec_string = NULL;
@@ -426,24 +439,28 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 
 	if ((abs = switch_channel_get_variable(tech_pvt->channel, "absolute_codec_string"))) {
 		codec_string = abs;
-	} else {
-		if (!(codec_string = switch_channel_get_variable(tech_pvt->channel, "codec_string"))) {
-			if (tech_pvt->profile->codec_string) {
-				codec_string = tech_pvt->profile->codec_string;
-			}
-		}
+		goto ready;
+	}
 
-		if ((ocodec = switch_channel_get_variable(tech_pvt->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
-			if (!codec_string || sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_TRANSCODING)) {
-				codec_string = ocodec;
-			} else {
-				if (!(codec_string = switch_core_session_sprintf(tech_pvt->session, "%s,%s", ocodec, codec_string))) {
-					codec_string = ocodec;
-				}
-			}
+	if (!(codec_string = switch_channel_get_variable(tech_pvt->channel, "codec_string"))) {
+		codec_string = sofia_glue_get_codec_string(tech_pvt);
+		if (codec_string && *codec_string == '=') {
+			codec_string++;
+			goto ready;
 		}
 	}
 
+	if ((ocodec = switch_channel_get_variable(tech_pvt->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
+		if (!codec_string || sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_TRANSCODING)) {
+			codec_string = ocodec;
+		} else {
+			if (!(codec_string = switch_core_session_sprintf(tech_pvt->session, "%s,%s", ocodec, codec_string))) {
+				codec_string = ocodec;
+			}
+		}
+	}
+	
+ ready:
 
 	if (codec_string) {
 		char *tmp_codec_string;

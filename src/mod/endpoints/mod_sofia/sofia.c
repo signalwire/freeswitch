@@ -2179,7 +2179,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					} else if (!strcasecmp(var, "max-calls")) {
 						profile->max_calls = atoi(val);
 					} else if (!strcasecmp(var, "codec-prefs")) {
-						profile->codec_string = switch_core_strdup(profile->pool, val);
+						profile->inbound_codec_string = switch_core_strdup(profile->pool, val);
+						profile->outbound_codec_string = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "inbound-codec-prefs")) {
+						profile->inbound_codec_string = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "outbound-codec-prefs")) {
+						profile->outbound_codec_string = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "challenge-realm")) {
 						profile->challenge_realm = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "dtmf-duration")) {
@@ -2883,7 +2888,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "max-calls")) {
 						profile->max_calls = atoi(val);
 					} else if (!strcasecmp(var, "codec-prefs")) {
-						profile->codec_string = switch_core_strdup(profile->pool, val);
+						profile->inbound_codec_string = switch_core_strdup(profile->pool, val);
+						profile->outbound_codec_string = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "inbound-codec-prefs")) {
+						profile->inbound_codec_string = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "outbound-codec-prefs")) {
+						profile->outbound_codec_string = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "challenge-realm")) {
 						profile->challenge_realm = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "dtmf-duration")) {
@@ -3700,7 +3710,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 				if (sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) && (parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
 					if ((sdp = sdp_session(parser))) {
-						sofia_glue_set_r_sdp_codec_string(session, (tech_pvt->profile?tech_pvt->profile->codec_string:NULL), sdp);
+						sofia_glue_set_r_sdp_codec_string(session, sofia_glue_get_codec_string(tech_pvt), sdp);
 					}
 					sdp_parser_free(parser);
 				}

@@ -459,7 +459,8 @@ struct sofia_profile {
 	switch_port_t sip_port;
 	switch_port_t tls_sip_port;
 	int tls_version;
-	char *codec_string;
+	char *inbound_codec_string;
+	char *outbound_codec_string;
 	int running;
 	int dtmf_duration;
 	uint8_t flags[TFLAG_MAX];
@@ -704,6 +705,8 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt);
 void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32_t port, const char *sr, int force);
 
 void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt);
+
+const char *sofia_glue_get_codec_string(private_object_t *tech_pvt);
 
 void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *profile, private_object_t *tech_pvt, const char *channame);
 
