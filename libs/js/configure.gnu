@@ -1,2 +1,4 @@
 #! /bin/sh
-./configure "$@" --with-pic --with-nspr=yes
+srcpath=$(dirname $0 2>/dev/null )  || srcpath="." 
+$srcpath/configure "$@" --with-pic --with-nspr=yes
+

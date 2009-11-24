@@ -1,3 +1,4 @@
 #! /bin/sh
-./configure "$@" --with-pic --with-glib=no --disable-shared --without-doxygen
+srcpath=$(dirname $0 2>/dev/null )  || srcpath="." 
+$srcpath/configure "$@" --with-pic --with-glib=no --disable-shared  --without-doxygen
 

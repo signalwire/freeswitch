@@ -1,2 +1,4 @@
 #! /bin/sh
-./configure "$@" --without-libidn --disable-shared --with-pic
+srcpath=$(dirname $0 2>/dev/null )  || srcpath="." 
+$srcpath/configure "$@" --without-libidn --disable-shared --with-pic
+

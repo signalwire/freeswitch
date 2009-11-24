@@ -1,3 +1,4 @@
 #! /bin/sh
-./configure "$@"  --disable-shared --with-pic 
+srcpath=$(dirname $0 2>/dev/null )  || srcpath="." 
+$srcpath/configure "$@" --disable-shared --with-pic
 

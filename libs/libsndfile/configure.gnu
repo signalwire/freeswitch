@@ -1,2 +1,4 @@
 #! /bin/sh
-./configure "$@" --disable-sqlite --disable-shared --with-pic --disable-external-libs --disable-octave
+srcpath=$(dirname $0 2>/dev/null )  || srcpath="." 
+$srcpath/configure "$@" --disable-sqlite --disable-shared --with-pic --disable-external libs --disable-octave
+
