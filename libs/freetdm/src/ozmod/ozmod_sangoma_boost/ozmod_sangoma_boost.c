@@ -54,6 +54,10 @@ static time_t congestion_timeouts[MAX_TRUNK_GROUPS];
 
 #define BOOST_QUEUE_SIZE 500
 
+/* get openzap span and chan depending on the span mode */
+#define BOOST_SPAN(zchan) ((zap_sangoma_boost_data_t*)(zchan)->span->signal_data)->sigmod ? zchan->physical_span_id : zchan->physical_span_id-1
+#define BOOST_CHAN(zchan) ((zap_sangoma_boost_data_t*)(zchan)->span->signal_data)->sigmod ? zchan->physical_chan_id : zchan->physical_chan_id-1
+
 /**
  * \brief Strange flag
  */
@@ -408,9 +412,15 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(sangoma_boost_outgoing_call)
 static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
 	zap_channel_t *zchan;
-
+	uint32_t event_span = event->span+1;
+	uint32_t event_chan = event->chan+1;
 	if (nack_map[event->call_setup_id]) {
 		return;
+	}
+
+	if (mcon->sigmod) {
+		event_span = event->span;
+		event_chan = event->chan;
 	}
 
 	OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
@@ -423,7 +433,7 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 			zap_set_flag(zchan, ZAP_CHANNEL_OUTBOUND);
 			zap_set_flag_locked(zchan, ZAP_CHANNEL_INUSE);
 			zchan->extra_id = event->call_setup_id;
-			zap_log(ZAP_LOG_DEBUG, "Assign chan %d:%d (%d:%d) CSid=%d\n", zchan->span_id, zchan->chan_id, event->span+1,event->chan+1, event->call_setup_id);
+			zap_log(ZAP_LOG_DEBUG, "Assign chan %d:%d (%d:%d) CSid=%d\n", zchan->span_id, zchan->chan_id, event_span, event_chan, event->call_setup_id);
 			zchan->sflags = 0;
 			OUTBOUND_REQUESTS[event->call_setup_id].zchan = zchan;
 			OUTBOUND_REQUESTS[event->call_setup_id].status = BST_READY;
@@ -431,13 +441,7 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 		}
 	} 
 	
-	//printf("WTF BAD ACK CSid=%d span=%d chan=%d\n", event->call_setup_id, event->span+1,event->chan+1);
-	if ((zchan = find_zchan(OUTBOUND_REQUESTS[event->call_setup_id].span, event, 1))) {
-		//printf("WTF BAD ACK2 %d:%d (%d:%d) CSid=%d xtra_id=%d out=%d state=%s\n", zchan->span_id, zchan->chan_id, event->span+1,event->chan+1, event->call_setup_id, zchan->extra_id, zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND), zap_channel_state2str(zchan->state));
-	}
-
-
-	zap_log(ZAP_LOG_CRIT, "START ACK CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
+	zap_log(ZAP_LOG_CRIT, "START ACK CANT FIND A CHAN %d:%d\n", event_span, event_chan);
 	sangomabc_exec_command(mcon,
 					   event->span,
 					   event->chan,
@@ -445,7 +449,6 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 					   SIGBOOST_EVENT_CALL_STOPPED,
 					   ZAP_CAUSE_DESTINATION_OUT_OF_ORDER);
 	OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
-	
 }
 
 /**
@@ -912,8 +915,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 				}
 			} else {
 				sangomabc_exec_command(mcon,
-								   zchan->physical_span_id-1,
-								   zchan->physical_chan_id-1,								   
+								   BOOST_SPAN(zchan),
+								   BOOST_CHAN(zchan),								   
 								   0,
 								   SIGBOOST_EVENT_CALL_START_ACK,
 								   0);
@@ -950,16 +953,16 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			} else {
 				if (!(zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS) || zap_test_flag(zchan, ZAP_CHANNEL_MEDIA))) {
 					sangomabc_exec_command(mcon,
-									   zchan->physical_span_id-1,
-									   zchan->physical_chan_id-1,								   
+									   BOOST_SPAN(zchan),
+									   BOOST_CHAN(zchan),								   
 									   0,
 									   SIGBOOST_EVENT_CALL_START_ACK,
 									   0);
 				}
 				
 				sangomabc_exec_command(mcon,
-								   zchan->physical_span_id-1,
-								   zchan->physical_chan_id-1,								   
+								   BOOST_SPAN(zchan),
+								   BOOST_CHAN(zchan),								   
 								   0,
 								   SIGBOOST_EVENT_CALL_ANSWERED,
 								   0);
@@ -984,15 +987,15 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 				zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_RESPONSE);
 				if (zap_test_flag(zchan, ZAP_CHANNEL_ANSWERED) || zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS) || zap_test_flag(zchan, ZAP_CHANNEL_MEDIA)) {
 					sangomabc_exec_command(mcon,
-									   zchan->physical_span_id-1,
-									   zchan->physical_chan_id-1,
+									   BOOST_SPAN(zchan),
+									   BOOST_CHAN(zchan),
 									   0,
 									   SIGBOOST_EVENT_CALL_STOPPED,
 									   zchan->caller_data.hangup_cause);
 				} else {
 					sangomabc_exec_command(mcon,
-									   zchan->physical_span_id-1,
-									   zchan->physical_chan_id-1,								   
+									   BOOST_SPAN(zchan),
+									   BOOST_CHAN(zchan),								   
 									   0,
 									   SIGBOOST_EVENT_CALL_START_NACK,
 									   zchan->caller_data.hangup_cause);
@@ -1007,8 +1010,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 			zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_RESPONSE);
 			sangomabc_exec_command(mcon,
-							   zchan->physical_span_id-1,
-							   zchan->physical_chan_id-1,
+							   BOOST_SPAN(zchan),
+							   BOOST_CHAN(zchan),
 							   0,
 							   SIGBOOST_EVENT_CALL_START_NACK_ACK,
 							   0);
@@ -1021,8 +1024,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE);
 			zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_RESPONSE);
 			sangomabc_exec_command(mcon,
-							   zchan->physical_span_id-1,
-							   zchan->physical_chan_id-1,
+							   BOOST_SPAN(zchan),
+							   BOOST_CHAN(zchan),
 							   0,
 							   SIGBOOST_EVENT_CALL_STOPPED_ACK,
 							   0);
