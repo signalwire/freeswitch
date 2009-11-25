@@ -315,7 +315,7 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 PASSTHRU_CODEC_MODULES="codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr codecs/mod_amrwb"
 SPIDERMONKEY_MODULES="languages/mod_spidermonkey languages/mod_spidermonkey_curl languages/mod_spidermonkey_core_db languages/mod_spidermonkey_odbc languages/mod_spidermonkey_socket languages/mod_spidermonkey_teletone"
 APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit applications/mod_rss applications/mod_voicemail applications/mod_directory applications/mod_fsv applications/mod_lcr applications/mod_easyroute applications/mod_stress applications/mod_vmd applications/mod_limit applications/mod_soundtouch applications/mod_fax"
-CODECS_MODULES="codecs/mod_ilbc codecs/mod_h26x codecs/mod_voipcodecs codecs/mod_speex codecs/mod_celt codecs/mod_siren"
+CODECS_MODULES="codecs/mod_ilbc codecs/mod_h26x codecs/mod_voipcodecs codecs/mod_speex codecs/mod_celt codecs/mod_siren codecs/mod_bv"
 DIALPLANS_MODULES="dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
 DIRECTORIES_MODULES=""
 ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_iax endpoints/mod_portaudio endpoints/mod_sofia ../../libs/openzap/mod_openzap endpoints/mod_loopback"
@@ -580,6 +580,7 @@ fi
 %{prefix}/mod/mod_lcr.so
 %{prefix}/mod/mod_loopback.so
 %{prefix}/mod/mod_siren.so
+%{prefix}/mod/mod_bv.so
 %{prefix}/mod/mod_stress.so
 %{prefix}/mod/mod_shout.so
 %{prefix}/mod/mod_fax.so
@@ -811,6 +812,8 @@ fi
 
 
 %changelog
+* Wed Nov 25 2009 - brian@freeswitch.org
+- added mod_bv.so
 * Wed Nov 25 2009 - michal.bielicki@seventhsignal.de
 - Removed mod_yaml
 - added directory files to russian language
