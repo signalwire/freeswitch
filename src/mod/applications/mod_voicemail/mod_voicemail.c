@@ -1283,9 +1283,9 @@ static void message_count(vm_profile_t *profile, const char *id_in, const char *
 
 	vm_execute_sql_callback(profile, profile->mutex, sql, message_count_callback, &cbt);
 
-	*total_new_messages = cbt.total_new_messages;
+	*total_new_messages = cbt.total_new_messages + cbt.total_new_urgent_messages;
 	*total_new_urgent_messages = cbt.total_new_urgent_messages;
-	*total_saved_messages = cbt.total_saved_messages;
+	*total_saved_messages = cbt.total_saved_messages + cbt.total_saved_urgent_messages;
 	*total_saved_urgent_messages = cbt.total_saved_urgent_messages;
 
 	if (myid != id_in) {
