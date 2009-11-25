@@ -1708,10 +1708,13 @@ static ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(zap_sangoma_boost_configure_span)
  * \brief Openzap sangoma boost signaling module definition
  */
 zap_module_t zap_module = { 
-	.name = "sangoma_boost",
-	.sig_load = zap_sangoma_boost_init,
-	.sig_unload = zap_sangoma_boost_destroy,
-	.configure_span_signaling = zap_sangoma_boost_configure_span
+	/*.name =*/ "sangoma_boost",
+	/*.io_load =*/ NULL,
+	/*.io_unload =*/ NULL,
+	/*.sig_load = */ zap_sangoma_boost_init,
+	/*.sig_configure =*/ NULL,
+	/*.sig_unload = */zap_sangoma_boost_destroy,
+	/*.configure_span_signaling = */ zap_sangoma_boost_configure_span
 };
 
 /* For Emacs:

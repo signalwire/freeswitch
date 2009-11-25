@@ -547,8 +547,6 @@ typedef struct {
 	zio_sig_load_t sig_load;
 	zio_sig_configure_t sig_configure;
 	zio_sig_unload_t sig_unload;
-	zap_dso_lib_t lib;
-	char path[256];
 	/*! 
 	  \brief configure a given span signaling 
 	  \see sig_configure
@@ -558,6 +556,8 @@ typedef struct {
 	  all modules to use sigparam_configure
 	 */
 	zio_configure_span_signaling_t configure_span_signaling;
+	zap_dso_lib_t lib;
+	char path[256];
 } zap_module_t;
 
 #ifndef __FUNCTION__
