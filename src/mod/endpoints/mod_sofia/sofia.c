@@ -4333,11 +4333,11 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 {
 	nightmare_xfer_helper_t *nhelper = (nightmare_xfer_helper_t *) obj;
 	switch_memory_pool_t *pool;
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_core_session_t *session, *a_session;
 	
 	if ((a_session = switch_core_session_locate(nhelper->bridge_to_uuid))) {
-		switch_core_session_t *tsession;
+		switch_core_session_t *tsession = NULL;
 		switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		uint32_t timeout = 60;
 		char *tuuid_str;
@@ -4346,34 +4346,32 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 			private_object_t *tech_pvt = switch_core_session_get_private(session);
 			switch_channel_t *channel_a = switch_core_session_get_channel(session);
 
-			status = switch_ivr_originate(NULL, &tsession, &cause, nhelper->exten, timeout, NULL, NULL, NULL,
-                                          switch_channel_get_caller_profile(channel_a), nhelper->vars, SOF_NONE, NULL);
-
-			if ((switch_channel_up(channel_a))) {
-				if (status != SWITCH_STATUS_SUCCESS || cause != SWITCH_CAUSE_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! [%s]\n", nhelper->exten);
-					nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("messsage/sipfrag"),
-							   NUTAG_SUBSTATE(nua_substate_terminated),
-							   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
-					status = SWITCH_STATUS_FALSE;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Don't be sad.... I tried to warn you.\n");
-				} else {
+			if ((status = switch_ivr_originate(NULL, &tsession, &cause, nhelper->exten, timeout, NULL, NULL, NULL,
+											   switch_channel_get_caller_profile(channel_a), 
+											   nhelper->vars, SOF_NONE, NULL)) == SWITCH_STATUS_SUCCESS) {
+				if (switch_channel_up(channel_a)) {
 					tuuid_str = switch_core_session_get_uuid(tsession);
 					switch_ivr_uuid_bridge(nhelper->bridge_to_uuid, tuuid_str);
 					switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
 					sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
-					nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-							   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
-					switch_core_session_rwunlock(tsession);
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Congratulations! You have *no* idea how lucky you are!\n");
+				} else {
+					switch_channel_hangup(switch_core_session_get_channel(tsession), SWITCH_CAUSE_ORIGINATOR_CANCEL);
+					status = SWITCH_STATUS_FALSE;
 				}
-			} else {
-				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("messsage/sipfrag"),
-						   NUTAG_SUBSTATE(nua_substate_terminated),
-						   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
-				status = SWITCH_STATUS_FALSE;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Wow, This could not have turned out any worse...=/ Sorry...\n");
+				switch_core_session_rwunlock(tsession);
 			}
+
+			if (status == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "The nightmare is over.....\n");
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "1 .. 2 .. Freddie's commin' for you...\n");
+			}
+
+			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("messsage/sipfrag"),
+					   NUTAG_SUBSTATE(nua_substate_terminated),
+					   SIPTAG_PAYLOAD_STR(status == SWITCH_STATUS_SUCCESS ? "SIP/2.0 200 OK": 
+										  "SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
+
 			switch_core_session_rwunlock(session);
 		}
 
