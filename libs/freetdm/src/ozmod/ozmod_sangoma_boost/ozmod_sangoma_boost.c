@@ -246,13 +246,12 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	zap_status_t status = ZAP_FAIL;
 	sangoma_boost_request_id_t r;
 	sangomabc_event_t event = {0};
-	int sanity = 5000;
+	int boost_request_timeout = 5000;
 	sangoma_boost_request_status_t st;
 	char ani[128] = "";
 	char *gr = NULL;
 	uint32_t count = 0;
 	int tg=0;
-	
 	if (zap_test_flag(span, ZAP_SPAN_SUSPENDED)) {
 		zap_log(ZAP_LOG_CRIT, "SPAN is not online.\n");
 		*zchan = NULL;
@@ -340,12 +339,12 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 
 	while(zap_running() && OUTBOUND_REQUESTS[r].status == BST_WAITING) {
 		zap_sleep(1);
-		if (--sanity <= 0) {
+		if (--boost_request_timeout <= 0) {
 			status = ZAP_FAIL;
 			*zchan = NULL;
+			zap_log(ZAP_LOG_CRIT, "Timed out waiting for boost channel request response\n");
 			goto done;
 		}
-		//printf("WTF %d\n", sanity);
 	}
 
 	if (OUTBOUND_REQUESTS[r].status == BST_READY && OUTBOUND_REQUESTS[r].zchan) {
@@ -1160,6 +1159,9 @@ static zap_status_t zap_boost_connection_open(zap_span_t *span)
 		if (sangoma_boost_data->sigmod->start_span(span) != ZAP_SUCCESS) {
 			return ZAP_FAIL;
 		}
+		zap_clear_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RESTARTING);
+		zap_clear_flag_locked(span, ZAP_SPAN_SUSPENDED);
+		zap_clear_flag((&sangoma_boost_data->mcon), MSU_FLAG_DOWN);
 	} 
 
 	sangoma_boost_data->pcon = sangoma_boost_data->mcon;
@@ -1283,27 +1285,30 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 	}
 
 	init_outgoing_array();
-
-	sangomabc_exec_commandp(pcon,
-					   0,
-					   0,
-					   -1,
-					   SIGBOOST_EVENT_SYSTEM_RESTART,
-					   0);
-	zap_set_flag(mcon, MSU_FLAG_DOWN);
+	if (!sangoma_boost_data->sigmod) {
+		sangomabc_exec_commandp(pcon,
+						   0,
+						   0,
+						   -1,
+						   SIGBOOST_EVENT_SYSTEM_RESTART,
+						   0);
+		zap_set_flag(mcon, MSU_FLAG_DOWN);
+	}
 
 	while (zap_test_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING)) {
 		sangomabc_event_t *event = NULL;
 		int activity = 0;
 		
 		if (!zap_running()) {
-			sangomabc_exec_commandp(pcon,
-							   0,
-							   0,
-							   -1,
-							   SIGBOOST_EVENT_SYSTEM_RESTART,
-							   0);
-			zap_set_flag(mcon, MSU_FLAG_DOWN);
+			if (!sangoma_boost_data->sigmod) {
+				sangomabc_exec_commandp(pcon,
+								   0,
+								   0,
+								   -1,
+								   SIGBOOST_EVENT_SYSTEM_RESTART,
+								   0);
+				zap_set_flag(mcon, MSU_FLAG_DOWN);
+			}
 			zap_log(ZAP_LOG_DEBUG, "zap is no longer running\n");
 			break;
 		}

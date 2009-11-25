@@ -29,6 +29,13 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ * David Yatzin <davidy@sangoma.com>
+ * Nenad Corbic <ncorbic@sangoma.com>
+ *
  */
 
 #ifdef __sun
@@ -62,7 +69,7 @@
 #define sangoma_create_socket_intr sangoma_open_api_span_chan
 #endif
 
-/*! Starting with libsangoma 3 we can use the new libsangoma waitable API, the poor souls of those using a release were LIBSANGOMA version
+/*! Starting with libsangoma 3 we can use the new libsangoma waitable API, the poor souls of those using a release where LIBSANGOMA version
  * is defined but the version is not higher or equal to 3.0.0 will be forced to upgrade
  * */
 #ifdef LIBSANGOMA_VERSION 
