@@ -411,17 +411,17 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 const char *sofia_glue_get_codec_string(private_object_t *tech_pvt)
 {
-	const char *codec_string = NULL;
+	const char *codec_string = NULL, *preferred = NULL, *fallback = NULL;
 	
 	if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-		if (!zstr(tech_pvt->profile->outbound_codec_string)) {
-			codec_string = tech_pvt->profile->outbound_codec_string ? tech_pvt->profile->outbound_codec_string : tech_pvt->profile->inbound_codec_string;
-		}
+		preferred = tech_pvt->profile->outbound_codec_string;
+		fallback = tech_pvt->profile->inbound_codec_string;
 	} else {
-		if (!zstr(tech_pvt->profile->inbound_codec_string)) {
-			codec_string = tech_pvt->profile->inbound_codec_string ? tech_pvt->profile->inbound_codec_string : tech_pvt->profile->outbound_codec_string;
-		}
+		preferred = tech_pvt->profile->inbound_codec_string;
+		fallback = tech_pvt->profile->outbound_codec_string;
 	}
+
+	codec_string = !zstr(preferred) ? preferred : fallback;
 	
 	return codec_string;
 }
