@@ -413,10 +413,14 @@ const char *sofia_glue_get_codec_string(private_object_t *tech_pvt)
 {
 	const char *codec_string = NULL;
 	
-	if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !zstr(tech_pvt->profile->outbound_codec_string)) {
-		codec_string = tech_pvt->profile->outbound_codec_string ? tech_pvt->profile->outbound_codec_string : tech_pvt->profile->inbound_codec_string;
-	} else if (!zstr(tech_pvt->profile->inbound_codec_string)) {
-		codec_string = tech_pvt->profile->inbound_codec_string ? tech_pvt->profile->inbound_codec_string : tech_pvt->profile->outbound_codec_string;
+	if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+		if (!zstr(tech_pvt->profile->outbound_codec_string)) {
+			codec_string = tech_pvt->profile->outbound_codec_string ? tech_pvt->profile->outbound_codec_string : tech_pvt->profile->inbound_codec_string;
+		}
+	} else {
+		if (!zstr(tech_pvt->profile->inbound_codec_string)) {
+			codec_string = tech_pvt->profile->inbound_codec_string ? tech_pvt->profile->inbound_codec_string : tech_pvt->profile->outbound_codec_string;
+		}
 	}
 	
 	return codec_string;
