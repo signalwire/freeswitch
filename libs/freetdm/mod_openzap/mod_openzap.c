@@ -2742,35 +2742,64 @@ SWITCH_STANDARD_API(oz_function)
 		for (j = 0 ; j < ZAP_MAX_SPANS_INTERFACE; j++) {
 			if (SPAN_CONFIG[j].span) {
 				const char *flags = "none";
+				zap_channel_sig_status_t chanstatus;
 
 				if (SPAN_CONFIG[j].analog_options & ANALOG_OPTION_3WAY) {
 					flags = "3way";
 				} else if (SPAN_CONFIG[j].analog_options & ANALOG_OPTION_CALL_SWAP) {
 					flags = "call swap";
 				}
-
-				stream->write_function(stream,
-									   "+OK\n"
-									   "span: %u (%s)\n"
-									   "type: %s\n"
-									   "chan_count: %u\n"
-									   "dialplan: %s\n"
-									   "context: %s\n"
-									   "dial_regex: %s\n"
-									   "fail_dial_regex: %s\n"
-									   "hold_music: %s\n"
-									   "analog_options %s\n",
-									   j,
-									   SPAN_CONFIG[j].span->name,
-									   SPAN_CONFIG[j].type,
-									   SPAN_CONFIG[j].span->chan_count,
-									   SPAN_CONFIG[j].dialplan,
-									   SPAN_CONFIG[j].context,
-									   SPAN_CONFIG[j].dial_regex,
-									   SPAN_CONFIG[j].fail_dial_regex,
-									   SPAN_CONFIG[j].hold_music,
-									   flags
-									   );
+				
+				/* check signaling status just in the first span channel */
+				if ((ZAP_SUCCESS == zap_channel_get_sig_status(SPAN_CONFIG[j].span->channels[1], &chanstatus))) {
+					stream->write_function(stream,
+										   "+OK\n"
+										   "span: %u (%s)\n"
+										   "type: %s\n"
+										   "signaling_status: %s\n"
+										   "chan_count: %u\n"
+										   "dialplan: %s\n"
+										   "context: %s\n"
+										   "dial_regex: %s\n"
+										   "fail_dial_regex: %s\n"
+										   "hold_music: %s\n"
+										   "analog_options %s\n",
+										   j,
+										   SPAN_CONFIG[j].span->name,
+										   SPAN_CONFIG[j].type,
+										   zap_sig_status2str(chanstatus),
+										   SPAN_CONFIG[j].span->chan_count,
+										   SPAN_CONFIG[j].dialplan,
+										   SPAN_CONFIG[j].context,
+										   SPAN_CONFIG[j].dial_regex,
+										   SPAN_CONFIG[j].fail_dial_regex,
+										   SPAN_CONFIG[j].hold_music,
+										   flags
+										   );
+				} else {
+					stream->write_function(stream,
+										   "+OK\n"
+										   "span: %u (%s)\n"
+										   "type: %s\n"
+										   "chan_count: %u\n"
+										   "dialplan: %s\n"
+										   "context: %s\n"
+										   "dial_regex: %s\n"
+										   "fail_dial_regex: %s\n"
+										   "hold_music: %s\n"
+										   "analog_options %s\n",
+										   j,
+										   SPAN_CONFIG[j].span->name,
+										   SPAN_CONFIG[j].type,
+										   SPAN_CONFIG[j].span->chan_count,
+										   SPAN_CONFIG[j].dialplan,
+										   SPAN_CONFIG[j].context,
+										   SPAN_CONFIG[j].dial_regex,
+										   SPAN_CONFIG[j].fail_dial_regex,
+										   SPAN_CONFIG[j].hold_music,
+										   flags
+										   );
+				}
 			}
 		}
 	} else if (!strcasecmp(argv[0], "stop") || !strcasecmp(argv[0], "start")) {
