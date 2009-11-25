@@ -153,79 +153,87 @@ struct vm_profile {
 };
 typedef struct vm_profile vm_profile_t;
 
+
+switch_cache_db_handle_t *vm_get_db_handle(vm_profile_t *profile)
+{
+	switch_cache_db_connection_options_t options = { {0} };
+	switch_cache_db_handle_t *dbh = NULL;
+	
+	if (profile->odbc_dsn && profile->odbc_user && profile->odbc_pass) {
+		options.odbc_options.dsn = profile->odbc_dsn;
+		options.odbc_options.user = profile->odbc_user;
+		options.odbc_options.pass = profile->odbc_pass;
+
+		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS) dbh = NULL;
+		return dbh;
+	} else {
+		options.core_db_options.db_path = profile->dbname;
+		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS) dbh = NULL;
+		return dbh;
+	}
+}
+
+
 static switch_status_t vm_execute_sql(vm_profile_t *profile, char *sql, switch_mutex_t *mutex)
 {
-	switch_core_db_t *db;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_cache_db_handle_t *dbh = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (switch_odbc_available() && profile->odbc_dsn) {
-		switch_odbc_statement_handle_t stmt;
-		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
-			char *err_str;
-			err_str = switch_odbc_handle_get_error(profile->master_odbc, stmt);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
-			switch_safe_free(err_str);
-			status = SWITCH_STATUS_FALSE;
-		}
-		switch_odbc_statement_handle_free(&stmt);
-	} else {
-		if (!(db = switch_core_db_open_file(profile->dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-			status = SWITCH_STATUS_FALSE;
-			goto end;
-		}
-		status = switch_core_db_persistant_execute(db, sql, 1);
-		switch_core_db_close(db);
+	if (!(dbh = vm_get_db_handle(profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		goto end;
 	}
 
+	status = switch_cache_db_execute_sql(dbh, sql, NULL);
+
   end:
+	
+	switch_cache_db_release_db_handle(&dbh);
+
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
+
 	return status;
 }
-
 
 static switch_bool_t vm_execute_sql_callback(vm_profile_t *profile, switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
 	switch_bool_t ret = SWITCH_FALSE;
-	switch_core_db_t *db;
 	char *errmsg = NULL;
-
+	switch_cache_db_handle_t *dbh = NULL;
+	
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (switch_odbc_available() && profile->odbc_dsn) {
-		switch_odbc_handle_callback_exec(profile->master_odbc, sql, callback, pdata, NULL);
-	} else {
-		if (!(db = switch_core_db_open_file(profile->dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-			goto end;
-		}
+	if (!(dbh = vm_get_db_handle(profile))) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+        goto end;
+    }
+	
+	switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, &errmsg);
 
-		switch_core_db_exec(db, sql, callback, pdata, &errmsg);
-
-		if (errmsg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
-			free(errmsg);
-		}
-
-		if (db) {
-			switch_core_db_close(db);
-		}
+	if (errmsg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
+		free(errmsg);
 	}
 
   end:
+
+	switch_cache_db_release_db_handle(&dbh);
+
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
+
 	return ret;
 }
+
 
 
 static char vm_sql[] =
@@ -618,8 +626,9 @@ static vm_profile_t * load_profile(const char *profile_name)
 
 	if ((x_profile = switch_xml_find_child(x_profiles, "profile", "name", profile_name))) {
 		switch_memory_pool_t *pool;
-		switch_core_db_t *db = NULL;
+		switch_cache_db_handle_t *dbh;
 		int x, count;
+		char *errmsg;
 
 		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
@@ -679,96 +688,23 @@ static vm_profile_t * load_profile(const char *profile_name)
 		}
 
 		profile->dbname = switch_core_sprintf(profile->pool, "voicemail_%s", profile_name);
-		if (switch_odbc_available() && profile->odbc_dsn) {
-			if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-				goto end;
 
-			}
-			if (switch_odbc_handle_connect(profile->master_odbc) != SWITCH_ODBC_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-				goto end;
-			}
-
-			if (switch_odbc_handle_exec(profile->master_odbc, "select count(message_len) from voicemail_msgs", NULL) != SWITCH_ODBC_SUCCESS) {
-				switch_odbc_handle_exec(profile->master_odbc, "drop table voicemail_msgs", NULL);
-				switch_odbc_handle_exec(profile->master_odbc, vm_sql, NULL);
-			}
-
-			if (switch_odbc_handle_exec(profile->master_odbc, "select count(username) from voicemail_prefs", NULL) != SWITCH_ODBC_SUCCESS) {
-				switch_odbc_handle_exec(profile->master_odbc, "drop table voicemail_prefs", NULL);
-				switch_odbc_handle_exec(profile->master_odbc, vm_pref_sql, NULL);
-			}
-
-			if (switch_odbc_handle_exec(profile->master_odbc, "select count(password) from voicemail_prefs", NULL) != SWITCH_ODBC_SUCCESS) {
-				switch_odbc_handle_exec(profile->master_odbc, "alter table voicemail_prefs add password varchar(255)", NULL);
-			}
-
-			if (switch_odbc_handle_exec(profile->master_odbc, "select count(message_len) from voicemail_data", NULL) == SWITCH_ODBC_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Old table voicemail_data found, migrating data!\n");
-				/* XXX: Old table found.. migrating data into new table */
-				if (switch_odbc_handle_exec(profile->master_odbc,
-											"insert into voicemail_msgs (created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, "
-											"in_folder, file_path, message_len, flags, read_flags) "
-											"select created_epoch, read_epoch, user, domain, uuid, "
-											"cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags from voicemail_data",
-											NULL) != SWITCH_ODBC_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to migrate old voicemail_data to voicemail_msgs!\n");
-					goto end;
-				}
-				switch_odbc_handle_exec(profile->master_odbc, "drop table voicemail_data", NULL);
-			}
-
-			for (x = 0; vm_index_list[x]; x++) {
-				switch_odbc_handle_exec(profile->master_odbc, vm_index_list[x], NULL);
-			}
-		} else {
-			if ((db = switch_core_db_open_file(profile->dbname))) {
-				char *errmsg;
-				switch_core_db_test_reactive(db, "select count(message_len) from voicemail_msgs", "drop table voicemail_msgs", vm_sql);
-
-				switch_core_db_exec(db, "select count(message_len) from voicemail_data", NULL, NULL, &errmsg);
-				if (errmsg) {
-					switch_core_db_free(errmsg);
-					errmsg = NULL;
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Migrating data from voicemail_data to voicemail_msgs!\n");
-					switch_core_db_exec(db, "insert into voicemail_msgs (created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, "
-										"in_folder, file_path, message_len, flags, read_flags) "
-										"select created_epoch, read_epoch, user, domain, uuid, "
-										"cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags from voicemail_data",
-										NULL, NULL, &errmsg);
-					if (errmsg) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n", errmsg);
-						switch_core_db_free(errmsg);
-						errmsg = NULL;
-					}
-					switch_core_db_exec(db, "drop table voicemail_data", NULL, NULL, &errmsg);
-					if (errmsg) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n", errmsg);
-						switch_core_db_free(errmsg);
-						errmsg = NULL;
-					}
-				}
-
-
-				switch_core_db_test_reactive(db, "select count(username) from voicemail_prefs", "drop table voicemail_prefs", vm_pref_sql);
-				switch_core_db_test_reactive(db, "select count(password) from voicemail_prefs", NULL, 
-												 "alter table voicemail_prefs add password varchar(255)");
-
-				for (x = 0; vm_index_list[x]; x++) {
-					errmsg = NULL;
-					switch_core_db_exec(db, vm_index_list[x], NULL, NULL, &errmsg);
-					switch_safe_free(errmsg);
-				}
-
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-				goto end;
-			}
-			switch_core_db_close(db);
+		if (!(dbh = vm_get_db_handle(profile))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
+			goto end;
+		}
+		
+		switch_cache_db_test_reactive(dbh, "select count(message_len) from voicemail_msgs", "drop table voicemail_msgs", vm_sql);
+		switch_cache_db_test_reactive(dbh, "select count(username) from voicemail_prefs", "drop table voicemail_prefs", vm_pref_sql);
+		switch_cache_db_test_reactive(dbh, "select count(password) from voicemail_prefs", NULL, "alter table voicemail_prefs add password varchar(255)");
+		
+		for (x = 0; vm_index_list[x]; x++) {
+			errmsg = NULL;
+			switch_cache_db_execute_sql(dbh, vm_index_list[x], &errmsg);
+			switch_safe_free(errmsg);
 		}
 
+		switch_cache_db_release_db_handle(&dbh);
 
 		switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, profile->pool);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Added Profile %s\n", profile->name);
@@ -1496,8 +1432,9 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 
 		args.input_callback = cancel_on_dtmf;
 
-		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s:%s:%s", profile->listen_file_key, profile->save_file_key, 
-						profile->delete_file_key, profile->email_key, profile->callback_key, profile->forward_key);
+		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s:%s:%s%s%s", profile->listen_file_key, profile->save_file_key, 
+						profile->delete_file_key, profile->email_key, profile->callback_key, 
+						profile->forward_key, cbt->email ? ":" : "", cbt->email ? cbt->email : "");
 						
 
 		switch_snprintf(input, sizeof(input), "%s:%d", cbt->type == MSG_NEW ? "new" : "saved", cbt->want + 1);
@@ -1771,7 +1708,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	int total_new_urgent_messages = 0;
 	int total_saved_urgent_messages = 0;
 	int heard_auto_saved = 0, heard_auto_new = 0;
-	char *vm_email = NULL;
+	char *vm_email = NULL, *email_addr = NULL;
 	char *convert_cmd = profile->convert_cmd;
 	char *convert_ext = profile->convert_ext;
 	char *vm_storage_dir = NULL;
@@ -1888,7 +1825,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages,
 							  &total_new_urgent_messages, &total_saved_urgent_messages);
 				memset(&cbt, 0, sizeof(cbt));
-				cbt.email = vm_email;
+				cbt.email = vm_email ? vm_email : email_addr;
 				cbt.convert_cmd = convert_cmd;
 				cbt.convert_ext = convert_ext;
 				cbt.move = VM_MOVE_NEXT;
@@ -2204,6 +2141,9 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						}
 					} else if (!strcasecmp(var, "vm-mailto")) {
 						vm_email = switch_core_session_strdup(session, val);
+						email_addr = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "email-addr")) {
+						email_addr = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-convert-cmd")) {
 						convert_cmd = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-convert-ext")) {
