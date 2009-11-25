@@ -2297,6 +2297,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 	switch_socket_t *inbound_socket = NULL;
 	listener_t *listener;
 	uint32_t x = 0;
+	uint32_t errs = 0;
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
@@ -2342,15 +2343,23 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 			goto fail;
 		}
 
+		
 		if ((rv = switch_socket_accept(&inbound_socket, listen_list.sock, listener_pool))) {
 			if (prefs.done) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
+				goto end;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error\n");
+				/* I wish we could use strerror_r here but its not defined everywhere =/ */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error [%s]\n", strerror(errno));
+				if (++errs > 100) {
+					goto end;
+				}
 			}
-			break;
+		} else {
+			errs = 0;
 		}
 
+		
 		if (!(listener = switch_core_alloc(listener_pool, sizeof(*listener)))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error\n");
 			break;
@@ -2375,6 +2384,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		launch_listener_thread(listener);
 
 	}
+
+ end:
 
 	close_socket(&listen_list.sock);
 	
