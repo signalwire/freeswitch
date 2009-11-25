@@ -326,6 +326,9 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
     
 	event.calling_number_screening_ind = caller_data->screen;
 	event.calling_number_presentation = caller_data->pres;
+	if (sangoma_boost_data->sigmod) {
+		event.span = span->channels[1]->physical_span_id;
+	}
 
 	OUTBOUND_REQUESTS[r].status = BST_WAITING;
 	OUTBOUND_REQUESTS[r].span = span;

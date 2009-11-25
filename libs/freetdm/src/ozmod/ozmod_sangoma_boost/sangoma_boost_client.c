@@ -368,9 +368,11 @@ sangomabc_event_t *__sangomabc_connection_readp(sangomabc_connection_t *mcon, in
 
 	if (mcon->sigmod) {
 		e = zap_queue_dequeue(mcon->boost_queue);
-		bytes = e->size;
-		memcpy(&mcon->event, e->boostmsg, bytes);
-		zap_safe_free(e);
+		if (e) {
+			bytes = e->size;
+			memcpy(&mcon->event, e->boostmsg, bytes);
+			zap_safe_free(e);
+		}
 	} else {
 		bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, (struct sockaddr *) &mcon->local_addr, &fromlen);
 	}
