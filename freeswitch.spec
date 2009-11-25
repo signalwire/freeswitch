@@ -322,11 +322,11 @@ ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_iax endpoints/mod_porta
 ASR_TTS_MODULES="asr_tts/mod_pocketsphinx asr_tts/mod_flite asr_tts/mod_unimrcp"
 EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv"
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream formats/mod_shout"
-LANGUAGES_MODULES="languages/mod_perl languages/mod_lua languages/mod_python languages/mod_yaml"
+LANGUAGES_MODULES="languages/mod_perl languages/mod_lua languages/mod_python"
 LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
 SAY_MODULES="say/mod_say_en say/mod_say_de say/mod_say_fr"
 TIMERS_MODULES=
-DISABLED_MODULES="applications/mod_soundtouch languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf languages/mod_managed languages/mod_java say/mod_say_it say/mod_say_es say/mod_say_nl"
+DISABLED_MODULES="applications/mod_soundtouch languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf languages/mod_managed languages/mod_java say/mod_say_it say/mod_say_es say/mod_say_nl languages/mod_yaml"
 XML_INT_MODULES="xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr "
 MYMODULES="$PASSTHRU_CODEC_MODULES $SPIDERMONKEY_MODULES $APPLICATIONS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $ENDPOINTS_MODULES $ASR_TTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
 
@@ -581,7 +581,6 @@ fi
 %{prefix}/mod/mod_loopback.so
 %{prefix}/mod/mod_siren.so
 %{prefix}/mod/mod_stress.so
-%{prefix}/mod/mod_yaml.so
 %{prefix}/mod/mod_shout.so
 %{prefix}/mod/mod_fax.so
 %{prefix}/mod/mod_soundtouch.so
@@ -694,6 +693,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/demo/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/vm/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/dir/*.xml
 
 %files moh
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/music/8000
@@ -811,6 +811,9 @@ fi
 
 
 %changelog
+* Wed Nov 25 2009 - michal.bielicki@seventhsignal.de
+- Removed mod_yaml
+- added directory files to russian language
 * Sat Nov 21 2009 - michal.bielicki@seventhsignal.de
 - added patch by Igor Neves <neves.igor@gmail.com>: Added some checkup in %post and %postun to prevent upgrades from removing freeswitch user
 * Thu Nov 18 2009 - michal.bielicki@seventhsignal.de
