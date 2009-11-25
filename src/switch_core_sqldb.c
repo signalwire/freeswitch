@@ -366,7 +366,7 @@ static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handl
 	char *p, *s, *e;
 	int chunk_count;
 	switch_size_t len;
-	
+
 	switch_assert(chunk_size);
 
 	if (err) *err = NULL;
@@ -391,23 +391,25 @@ static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handl
 			p = e;
 		}
 		
-		while (p > s && *p != ';') {
+		while (p > s) {
+			if (*p == '\n' && *(p-1) == ';') {
+				*p = '\0';
+				*(p-1) = '\0';
+				break;
+			}
+			
 			p--;
 		}
 
-		if (p) {
-			*p = '\0';
-			while(p < e && (*p == '\n' || *p == ' ')) {
-				p++;
-			}
-		}
+		if (p <= s) break;
+		
 		
 		status = switch_cache_db_execute_sql_real(dbh, s, err);
 		if (status != SWITCH_STATUS_SUCCESS || (err && *err)) {
 			break;
 		}
 
-		s = p + 1;
+		s = p;
 	
 	}
 
@@ -422,14 +424,9 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_hand
 
 
 	switch (dbh->type) {
-	case SCDB_TYPE_CORE_DB:
-		{
-			status = switch_cache_db_execute_sql_real(dbh, sql, err);
-		}
-		break;
 	default:
 		{
-			status = switch_cache_db_execute_sql_chunked(dbh, (char *)sql, 32000, err);
+			status = switch_cache_db_execute_sql_chunked(dbh, (char *)sql, 32768, err);
 		}
 		break;
 	}
