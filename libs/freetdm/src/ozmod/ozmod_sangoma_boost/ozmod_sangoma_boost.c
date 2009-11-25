@@ -191,10 +191,18 @@ static zap_channel_t *find_zchan(zap_span_t *span, sangomabc_short_event_t *even
 {
 	int i;
 	zap_channel_t *zchan = NULL;
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+	int targetspan = event->span+1;
+	int targetchan = event->chan+1;
+	if (sangoma_boost_data->sigmod) {
+		/* span is not strictly needed here since we're supposed to get only events for our span */
+		targetspan = event->span;
+		targetchan = event->chan;
+	}
 
 	zap_mutex_lock(signal_mutex);
 	for(i = 1; i <= span->chan_count; i++) {
-		if (span->channels[i]->physical_span_id == event->span+1 && span->channels[i]->physical_chan_id == event->chan+1) {
+		if (span->channels[i]->physical_span_id == targetspan && span->channels[i]->physical_chan_id == targetchan) {
 			zchan = span->channels[i];
 			if (force || (zchan->state == ZAP_CHANNEL_STATE_DOWN && !zap_test_flag(zchan, ZAP_CHANNEL_INUSE))) {
 				break;
@@ -1549,7 +1557,7 @@ static BOOST_WRITE_MSG_FUNCTION(zap_boost_write_msg)
 	if (!element) {
 		return ZAP_FAIL;
 	}
-	memcpy(&element->boostmsg, msg, msglen);
+	memcpy(element->boostmsg, msg, msglen);
 	element->size = msglen;
 
 	sangoma_boost_data = span->signal_data;
