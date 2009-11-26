@@ -152,7 +152,7 @@ static switch_xml_config_item_t instructions[] = {
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("whitepages-apikey", CONFIG_RELOAD, &globals.whitepages_apikey, NULL, "api key for whitepages.com", "api key for whitepages.com"),
 	SWITCH_CONFIG_ITEM("cache", SWITCH_CONFIG_BOOL, CONFIG_RELOAD, &globals.cache, SWITCH_FALSE, NULL, "true|false", "whether to cache via cidlookup"),
 	SWITCH_CONFIG_ITEM("cache-expire", SWITCH_CONFIG_INT, CONFIG_RELOAD, &globals.cache_expire, (void *)300, NULL, "expire", "seconds to preserve num->name cache"),
-	SWITCH_CONFIG_ITEM("curl-timeout", SWITCH_CONFIG_INT, CONFIG_RELOAD, &globals.curl_timeout, (void *)1500, NULL, "timeout for curl", "milliseconds to timeout"),
+	SWITCH_CONFIG_ITEM("curl-timeout", SWITCH_CONFIG_INT, CONFIG_RELOAD, &globals.curl_timeout, (void *)2000, NULL, "timeout for curl", "milliseconds to timeout"),
 	SWITCH_CONFIG_ITEM("curl-warning-duration", SWITCH_CONFIG_INT, CONFIG_RELOAD, &globals.curl_warnduration, (void *)1000, NULL, "warning when curl queries are longer than specified time", "milliseconds"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("sql", CONFIG_RELOAD, &globals.sql, NULL, "sql whre number=${caller_id_number}", "SQL to run if overriding CID"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("citystate-sql", CONFIG_RELOAD, &globals.citystate_sql, NULL, "sql to look up city/state info", "SQL to run if overriding CID"),
@@ -384,7 +384,11 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 	curl_easy_setopt(curl_handle, CURLOPT_POST, SWITCH_FALSE);
 	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+	/*
+	 TIMEOUT_MS is introduced in 7.16.2, we have 7.16.0 in tree 
 	curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, globals.curl_timeout);
+	*/
+	curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, globals.curl_timeout/1000);
 	curl_easy_setopt(curl_handle, CURLOPT_URL, query);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &http_data);
