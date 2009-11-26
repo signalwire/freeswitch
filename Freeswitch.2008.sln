@@ -1022,6 +1022,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unimrcp", "unimrcp", "{62F27B1A-C919-4A70-8478-51F178F3B18F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aprtoolkit", "libs\unimrcp\libs\apr-toolkit\aprtoolkit.2008.vcproj", "{13DEECA0-BDD4-4744-A1A2-8EB0A44DF3D2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F057DA7F-79E5-4B00-845C-EF446EF055E3} = {F057DA7F-79E5-4B00-845C-EF446EF055E3}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpf", "libs\unimrcp\libs\mpf\mpf.2008.vcproj", "{B5A00BFA-6083-4FAE-A097-71642D6473B5}"
 EndProject
@@ -1036,6 +1039,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unirtsp", "libs\unimrcp\libs\uni-rtsp\unirtsp.2008.vcproj", "{504B3154-7A4F-459D-9877-B951021C3F1F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mrcpsofiasip", "libs\unimrcp\modules\mrcp-sofiasip\mrcpsofiasip.2008.vcproj", "{746F3632-5BB2-4570-9453-31D6D58A7D8E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{70A49BC2-7500-41D0-B75D-EDCC5BE987A0} = {70A49BC2-7500-41D0-B75D-EDCC5BE987A0}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mrcpunirtsp", "libs\unimrcp\modules\mrcp-unirtsp\mrcpunirtsp.2008.vcproj", "{DEB01ACB-D65F-4A62-AED9-58C1054499E9}"
 EndProject
