@@ -48,6 +48,8 @@ static char *SYNTAX = "cidlookup status|number [skipurl] [skipcitystate] [verbos
 
 static struct {
 	char *url;
+	int curl_timeout;
+	int curl_warnduration;
 	
 	char *whitepages_apikey;
 
@@ -127,7 +129,7 @@ static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, const
 				}
 			}
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connecting to dsn: %s\n", globals.odbc_dsn);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connecting to dsn: %s\n", globals.odbc_dsn);
 
 			if (!(dbh = cidlookup_get_db_handle())) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
@@ -150,6 +152,8 @@ static switch_xml_config_item_t instructions[] = {
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("whitepages-apikey", CONFIG_RELOAD, &globals.whitepages_apikey, NULL, "api key for whitepages.com", "api key for whitepages.com"),
 	SWITCH_CONFIG_ITEM("cache", SWITCH_CONFIG_BOOL, CONFIG_RELOAD, &globals.cache, SWITCH_FALSE, NULL, "true|false", "whether to cache via cidlookup"),
 	SWITCH_CONFIG_ITEM("cache-expire", SWITCH_CONFIG_INT, CONFIG_RELOAD, &globals.cache_expire, (void *)300, NULL, "expire", "seconds to preserve num->name cache"),
+	SWITCH_CONFIG_ITEM("curl-timeout", SWITCH_CONFIG_INT, CONFIG_RELOAD, &globals.curl_timeout, (void *)1500, NULL, "timeout for curl", "milliseconds to timeout"),
+	SWITCH_CONFIG_ITEM("curl-warning-duration", SWITCH_CONFIG_INT, CONFIG_RELOAD, &globals.curl_warnduration, (void *)1000, NULL, "warning when curl queries are longer than specified time", "milliseconds"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("sql", CONFIG_RELOAD, &globals.sql, NULL, "sql whre number=${caller_id_number}", "SQL to run if overriding CID"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("citystate-sql", CONFIG_RELOAD, &globals.citystate_sql, NULL, "sql to look up city/state info", "SQL to run if overriding CID"),
 	SWITCH_CONFIG_ITEM_CALLBACK("odbc-dsn", SWITCH_CONFIG_STRING, CONFIG_RELOAD, &globals.odbc_dsn, "", config_callback_dsn, &config_opt_dsn,
@@ -355,7 +359,8 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 
 static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, const char *query) {
 	char *name = NULL;
-	
+	switch_time_t start_time = switch_micro_time_now();
+	switch_time_t time_diff = 0;
 	CURL *curl_handle = NULL;
 	long httpRes = 0;
 	char hostname[256] = "";
@@ -379,6 +384,7 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 	curl_easy_setopt(curl_handle, CURLOPT_POST, SWITCH_FALSE);
 	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+	curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, globals.curl_timeout);
 	curl_easy_setopt(curl_handle, CURLOPT_URL, query);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &http_data);
@@ -397,6 +403,22 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 			strcmp("UNAVAILABLE", http_data.stream.data)) {
 			name = switch_core_strdup(pool, http_data.stream.data);
 		}
+	}
+	
+	time_diff = (switch_micro_time_now() - start_time); /* convert to milli from micro */
+	
+	if ((time_diff/1000) >= globals.curl_warnduration) {
+		switch_core_time_duration_t duration;
+		switch_core_measure_time(time_diff, &duration);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SLOW LOOKUP ("
+			"%um, "
+			"%us, "
+			"%ums"
+			"): url: %s\n", 
+			duration.min,
+			duration.sec,
+			duration.ms,
+			query);
 	}
 	
 	switch_safe_free(http_data.stream.data);
@@ -708,6 +730,9 @@ SWITCH_STANDARD_API(cidlookup_function)
 									globals.url ? globals.url : "(null)",
 									(globals.cache) ? "true" : "false",
 									globals.cache_expire);
+			stream->write_function(stream, " curl-timeout: %" SWITCH_TIME_T_FMT "\n curl-warn-duration: %" SWITCH_TIME_T_FMT "\n", 
+									globals.curl_timeout,
+									globals.curl_warnduration);
 									
 			stream->write_function(stream, " odbc-dsn: %s\n sql: %s\n citystate-sql: %s\n", 
 									globals.odbc_dsn ? globals.odbc_dsn : "(null)",
