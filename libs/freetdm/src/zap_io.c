@@ -181,31 +181,35 @@ static void default_logger(const char *file, const char *func, int line, int lev
 
 }
 
-static inline void *zap_std_malloc(void *pool, zap_size_t size)
+static __inline__ void *zap_std_malloc(void *pool, zap_size_t size)
 {
 	void *ptr = malloc(size);
+	pool = NULL; /* fix warning */
 	zap_assert(ptr != NULL, NULL, "Out of memory");
 	return ptr;
 }
 
-static inline void *zap_std_calloc(void *pool, zap_size_t elements, zap_size_t size)
+static __inline__ void *zap_std_calloc(void *pool, zap_size_t elements, zap_size_t size)
 {
 	void *ptr = calloc(elements, size);
+	pool = NULL;
 	zap_assert(ptr != NULL, NULL, "Out of memory");
 	return ptr;
 }
 
-static inline void zap_std_free(void *pool, void *ptr)
+static __inline__ void zap_std_free(void *pool, void *ptr)
 {
+	pool = NULL;
+	zap_assert(ptr != NULL, , "Attempted to free null pointer");
 	free(ptr);
 }
 
 OZ_DECLARE_DATA zap_memory_handler_t g_zap_mem_handler = 
 {
-	.pool = NULL,
-	.malloc = zap_std_malloc,
-	.calloc = zap_std_calloc,
-	.free = zap_std_free
+	/*.pool =*/ NULL,
+	/*.malloc =*/ zap_std_malloc,
+	/*.calloc =*/ zap_std_calloc,
+	/*.free =*/ zap_std_free
 };
 
 OZ_DECLARE_DATA zap_crash_policy_t g_zap_crash_policy = ZAP_CRASH_NEVER;
@@ -762,7 +766,7 @@ OZ_DECLARE(void) zap_channel_rotate_tokens(zap_channel_t *zchan)
 
 OZ_DECLARE(void) zap_channel_replace_token(zap_channel_t *zchan, const char *old_token, const char *new_token)
 {
-	int i;
+	unsigned int i;
 
 	if (zchan->token_count) {
 		for(i = 0; i < zchan->token_count; i++) {

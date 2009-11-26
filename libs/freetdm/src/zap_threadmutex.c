@@ -274,19 +274,20 @@ failed:
 
 OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 {
-	zap_assert(condition != NULL, ZAP_FAIL, "Condition is null!\n");
 #ifdef WIN32
 	DWORD res = 0;
-	res = WaitForSingleObject(condition->condition, waitms > 0 ? waitms : INFINITE);
+#endif
+	zap_assert(condition != NULL, ZAP_FAIL, "Condition is null!\n");
+#ifdef WIN32
+	res = WaitForSingleObject(condition->condition, ms > 0 ? ms : INFINITE);
 	switch (res) {
 	case WAIT_ABANDONED:
 	case WAIT_TIMEOUT:
 		return ZAP_TIMEOUT;
 	case WAIT_FAILED:
 		return ZAP_FAIL;
-	defaul:
-		zap_log(ZAP_LOG_ERROR, "Error waiting for openzap condition event\n");
-			return ZAP_FAIL;
+	default:
+		zap_log(ZAP_LOG_ERROR, "Error waiting for openzap condition event (WaitForSingleObject returned %d)\n", res);
 	}
 #else
 	int res = 0;

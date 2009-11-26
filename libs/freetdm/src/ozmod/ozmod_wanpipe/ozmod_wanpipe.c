@@ -271,14 +271,14 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 					chan->native_codec = chan->effective_codec = ZAP_CODEC_ULAW;
 				}
 
-				err = sangoma_tdm_get_hw_dtmf(chan->sockfd, &tdm_api);
-				if (err > 0) {
+				//err = sangoma_tdm_get_hw_dtmf(chan->sockfd, &tdm_api);
+				//if (err > 0) {
 					err = sangoma_tdm_enable_dtmf_events(chan->sockfd, &tdm_api);
 					if (err == 0) {
 						zap_channel_set_feature(chan, ZAP_CHANNEL_FEATURE_DTMF_DETECT);
 						dtmf = "hardware";
 					}
-				}
+				//}
 			}
 
 #if 0

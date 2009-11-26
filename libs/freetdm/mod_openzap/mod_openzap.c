@@ -1844,6 +1844,7 @@ static switch_status_t load_config(void)
 	zap_span_t *boost_spans[ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN];
 	zap_span_t *boost_span = NULL;
 	unsigned boosti = 0;
+	unsigned int i = 0;
 
 	memset(boost_spans, 0, sizeof(boost_spans));
 	memset(&globals, 0, sizeof(globals));
@@ -2558,7 +2559,6 @@ static switch_status_t load_config(void)
 
 	/* start all boost spans now that we're done configuring. Unfortunately at this point boost modules have the limitation
 	 * of needing all spans to be configured before starting them */
-	unsigned i = 0;
 	for ( ; i < boosti; i++) {
 		boost_span = boost_spans[i];
 		zap_log(ZAP_LOG_DEBUG, "Starting boost span %d\n", boost_span->span_id);
