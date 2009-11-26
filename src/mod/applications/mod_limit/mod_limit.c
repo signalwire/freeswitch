@@ -47,12 +47,13 @@ static struct {
 	char hostname[256];
 	char *dbname;
 	char *odbc_dsn;
+	char *odbc_user;
+	char *odbc_pass;
 	switch_mutex_t *mutex;
 	switch_mutex_t *limit_hash_mutex;
 	switch_hash_t *limit_hash;	
 	switch_mutex_t *db_hash_mutex;
 	switch_hash_t *db_hash;	
-	switch_odbc_handle_t *master_odbc;
 } globals;
 
 typedef struct  {
@@ -88,38 +89,47 @@ static char group_sql[] =
 	"   url        VARCHAR(255)\n"
 	");\n";
 
+
+switch_cache_db_handle_t *limit_get_db_handle(void)
+{
+	switch_cache_db_connection_options_t options = { {0} };
+	switch_cache_db_handle_t *dbh = NULL;
+	
+	if (globals.odbc_dsn && globals.odbc_user && globals.odbc_pass) {
+		options.odbc_options.dsn = globals.odbc_dsn;
+		options.odbc_options.user = globals.odbc_user;
+		options.odbc_options.pass = globals.odbc_pass;
+
+		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS) dbh = NULL;
+		return dbh;
+	} else {
+		options.core_db_options.db_path = globals.dbname;
+		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS) dbh = NULL;
+		return dbh;
+	}
+}
+
+
 static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 {
-	switch_core_db_t *db;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_cache_db_handle_t *dbh = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (switch_odbc_available() && globals.odbc_dsn) {
-		switch_odbc_statement_handle_t stmt;
-		if (switch_odbc_handle_exec(globals.master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
-			char *err_str;
-			err_str = switch_odbc_handle_get_error(globals.master_odbc, stmt);
-			if (!zstr(err_str)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
-			}
-			switch_safe_free(err_str);
-			status = SWITCH_STATUS_FALSE;
-		}
-		switch_odbc_statement_handle_free(&stmt);
-	} else {
-		if (!(db = switch_core_db_open_file(globals.dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", globals.dbname);
-			status = SWITCH_STATUS_FALSE;
-			goto end;
-		}
-		status = switch_core_db_persistant_execute(db, sql, 1);
-		switch_core_db_close(db);
+	if (!(dbh = limit_get_db_handle())) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		goto end;
 	}
 
+	status = switch_cache_db_execute_sql(dbh, sql, NULL);
+
   end:
+	
+	switch_cache_db_release_db_handle(&dbh);
+
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
@@ -130,40 +140,36 @@ static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 static switch_bool_t limit_execute_sql_callback(switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
 	switch_bool_t ret = SWITCH_FALSE;
-	switch_core_db_t *db;
 	char *errmsg = NULL;
-
+	switch_cache_db_handle_t *dbh = NULL;
+	
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (switch_odbc_available() && globals.odbc_dsn) {
-		switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata, NULL);
-	} else {
-		if (!(db = switch_core_db_open_file(globals.dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", globals.dbname);
-			goto end;
-		}
+	if (!(dbh = limit_get_db_handle())) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+        goto end;
+    }
+	
+	switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, &errmsg);
 
-		switch_core_db_exec(db, sql, callback, pdata, &errmsg);
-
-		if (errmsg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
-			free(errmsg);
-		}
-
-		if (db) {
-			switch_core_db_close(db);
-		}
+	if (errmsg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
+		free(errmsg);
 	}
 
   end:
+
+	switch_cache_db_release_db_handle(&dbh);
+
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
 
 	return ret;
 }
+
 
 static switch_xml_config_string_options_t limit_config_dsn = { NULL, 0, "[^:]+:[^:]+:.+" };
 
@@ -175,10 +181,8 @@ static switch_xml_config_item_t config_settings[] = {
 
 static switch_status_t do_config()
 {
-	switch_core_db_t *db;
+	switch_cache_db_handle_t *dbh;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char *odbc_user = NULL;
-	char *odbc_pass = NULL;
 	char *sql = NULL;
 	
 	limit_config_dsn.pool = globals.pool;
@@ -187,24 +191,28 @@ static switch_status_t do_config()
 		return SWITCH_STATUS_TERM;
 	}
 	
-	if (switch_odbc_available() && globals.odbc_dsn) {
-		if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
-			*odbc_user++ = '\0';
-			if ((odbc_pass = strchr(odbc_user, ':'))) {
-				*odbc_pass++ = '\0';
+	if (globals.odbc_dsn) {
+		if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
+			*globals.odbc_user++ = '\0';
+			if ((globals.odbc_pass = strchr(globals.odbc_user, ':'))) {
+				*globals.odbc_pass++ = '\0';
 			}
 		}
-	} else if (globals.odbc_dsn) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+
+		if (!(dbh = limit_get_db_handle())) {
+			globals.odbc_dsn = globals.odbc_user = globals.odbc_pass;
+		}
 	}
 	
 
-	if (zstr(globals.odbc_dsn) || zstr(odbc_user) || zstr(odbc_pass)) {
+	if (zstr(globals.odbc_dsn) || zstr(globals.odbc_user) || zstr(globals.odbc_pass)) {
 		globals.dbname = "call_limit";
+		dbh = limit_get_db_handle();
 	}
 
-	if (switch_odbc_available() && globals.odbc_dsn) {
-		int x;
+
+	if (dbh) {
+		int x = 0;
 		char *indexes[] = {
 			"create index ld_hostname on limit_data (hostname)",
 			"create index ld_uuid on limit_data (uuid)",
@@ -216,70 +224,23 @@ static switch_status_t do_config()
 			"create index gd_url on group_data (url)",
 			NULL
 		};
+
 		
 
-
-		if (!(globals.master_odbc = switch_odbc_handle_new(globals.odbc_dsn, odbc_user, odbc_pass))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-			status = SWITCH_STATUS_FALSE;
-			goto done;
-		}
-		if (switch_odbc_handle_connect(globals.master_odbc) != SWITCH_ODBC_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-			status = SWITCH_STATUS_FALSE;
-			goto done;
-		}
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", globals.odbc_dsn);
-		if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from limit_data", NULL) != SWITCH_STATUS_SUCCESS) {
-			if (switch_odbc_handle_exec(globals.master_odbc, limit_sql, NULL) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
-			}
-		}
-		if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from db_data", NULL) != SWITCH_STATUS_SUCCESS) {
-			if (switch_odbc_handle_exec(globals.master_odbc, db_sql, NULL) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
-			}
-		}
-		if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from group_data", NULL) != SWITCH_STATUS_SUCCESS) {
-			if (switch_odbc_handle_exec(globals.master_odbc, group_sql, NULL) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
-			}
-		}
-
+		switch_cache_db_test_reactive(dbh, "select * from limit_data", NULL, limit_sql);
+		switch_cache_db_test_reactive(dbh, "select * from db_data", NULL, db_sql);
+		switch_cache_db_test_reactive(dbh, "select * from group_data", NULL, group_sql);
+		
 		for (x = 0; indexes[x]; x++) {
-			switch_odbc_handle_exec(globals.master_odbc, indexes[x], NULL);
+			switch_cache_db_execute_sql(dbh, indexes[x], NULL);
 		}
-	} else {
-		if ((db = switch_core_db_open_file(globals.dbname))) {
-			switch_core_db_test_reactive(db, "select * from limit_data", NULL, limit_sql);
-			switch_core_db_test_reactive(db, "select * from db_data", NULL, db_sql);
-			switch_core_db_test_reactive(db, "select * from group_data", NULL, group_sql);
-			
-			switch_core_db_exec(db, "create index if not exists ld_hostname on limit_data (hostname)", NULL, NULL, NULL);
-			switch_core_db_exec(db, "create index if not exists ld_uuid on limit_data (uuid)", NULL, NULL, NULL);
-			switch_core_db_exec(db, "create index if not exists ld_realm on limit_data (realm)", NULL, NULL, NULL);
-			switch_core_db_exec(db, "create index if not exists ld_id on limit_data (id)", NULL, NULL, NULL);
+	
+		switch_cache_db_release_db_handle(&dbh);
 
-			switch_core_db_exec(db, "create index if not exists dd_realm on db_data (realm)", NULL, NULL, NULL);
-			switch_core_db_exec(db, "create index if not exists dd_data_key on db_data (data_key)", NULL, NULL, NULL);
-
-			switch_core_db_exec(db, "create index if not exists gd_groupname on group_data (groupname)", NULL, NULL, NULL);
-			switch_core_db_exec(db, "create index if not exists gd_url on group_data (url)", NULL, NULL, NULL);
-
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-			status = SWITCH_STATUS_FALSE;
-			goto done;
-		}
-		switch_core_db_close(db);
+		sql = switch_mprintf("delete from limit_data where hostname='%q';", globals.hostname);
+		limit_execute_sql(sql, globals.mutex);
+		switch_safe_free(sql);
 	}
-
-  done:
-
-	sql = switch_mprintf("delete from limit_data where hostname='%q';", globals.hostname);
-	limit_execute_sql(sql, globals.mutex);
-	switch_safe_free(sql);
 
 	return status;
 }
@@ -1718,10 +1679,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_limit_shutdown) 
 {
-	
-	if (globals.master_odbc) {
-		switch_odbc_handle_destroy(&globals.master_odbc);
-	}
 	
 	switch_event_free_subclass(LIMIT_EVENT_USAGE);
 	

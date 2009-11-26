@@ -638,7 +638,9 @@ SWITCH_DECLARE(void) switch_cache_db_test_reactive(switch_cache_db_handle_t *dbh
 	case SCDB_TYPE_ODBC:
 		{
 			if (switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-				switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, drop_sql, NULL);
+				if (drop_sql) {
+					switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, drop_sql, NULL);
+				}
 				switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, reactive_sql, NULL);
 			}
 		}

@@ -142,7 +142,6 @@ struct vm_profile {
 	uint32_t record_threshold;
 	uint32_t record_silence_hits;
 	uint32_t record_sample_rate;
-	switch_odbc_handle_t *master_odbc;
 	switch_bool_t auto_playback_recordings;
 	switch_thread_rwlock_t *rwlock;
 	switch_memory_pool_t *pool;
@@ -276,10 +275,6 @@ static char *vm_index_list[] = {
 static void free_profile(vm_profile_t *profile)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying Profile %s\n", profile->name);
-	if (switch_odbc_available() && profile->odbc_dsn && profile->master_odbc) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Closing ODBC Database! %s\n", profile->name);
-		switch_odbc_handle_destroy(&profile->master_odbc);
-	}
 	switch_core_destroy_memory_pool(&profile->pool);
 }
 
@@ -4122,10 +4117,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_voicemail_shutdown)
 		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying Profile %s\n", profile->name);
 
-		if (switch_odbc_available() && profile->odbc_dsn && profile->master_odbc) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Closing ODBC Database! %s\n", profile->name);
-			switch_odbc_handle_destroy(&profile->master_odbc);
-		}
 		switch_core_destroy_memory_pool(&profile->pool);
 		profile = NULL;
 	}
