@@ -55,12 +55,12 @@ static struct {
 	int cache_expire;
 	
 	char *odbc_dsn;
+	char *odbc_user;
+	char *odbc_pass;
 	char *sql;
 	char *citystate_sql;
 
-	switch_mutex_t *db_mutex;
 	switch_memory_pool_t *pool;
-	switch_odbc_handle_t *master_odbc;
 } globals;
 
 struct http_data {
@@ -84,71 +84,62 @@ struct callback_obj {
 };
 typedef struct callback_obj callback_t;
 
-
 static switch_event_node_t *reload_xml_event = NULL;
+
+static switch_cache_db_handle_t *cidlookup_get_db_handle(void)
+{
+	switch_cache_db_connection_options_t options = { {0} };
+	switch_cache_db_handle_t *dbh = NULL;
+	
+	if (globals.odbc_dsn && globals.odbc_user && globals.odbc_pass) {
+		options.odbc_options.dsn = globals.odbc_dsn;
+		options.odbc_options.user = globals.odbc_user;
+		options.odbc_options.pass = globals.odbc_pass;
+
+		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS) dbh = NULL;
+	}
+	return dbh;
+}
+
 
 static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, const char *newvalue, switch_config_callback_type_t callback_type, switch_bool_t changed)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char *odbc_user = NULL;
-	char *odbc_pass = NULL;
-	char *odbc_dsn = NULL;
 	
-	switch_odbc_handle_t *odbc = NULL;
+	switch_cache_db_handle_t *dbh = NULL;
 
 	if (!switch_odbc_available()) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC is not compiled in.  Do not configure odbc-dsn parameter!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (globals.db_mutex) {
-		switch_mutex_lock(globals.db_mutex);
-	}
-	
 	if ((callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD) && changed) {
 
 		if(zstr(newvalue)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No local database defined.\n");
 		} else {
-			odbc_dsn = strdup(newvalue);
-			if ((odbc_user = strchr(odbc_dsn, ':'))) {
-				*odbc_user++ = '\0';
-				if ((odbc_pass = strchr(odbc_user, ':'))) {
-					*odbc_pass++ = '\0';
+			switch_safe_free(globals.odbc_dsn);
+			globals.odbc_dsn = strdup(newvalue);
+			if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
+				*globals.odbc_user++ = '\0';
+				if ((globals.odbc_pass = strchr(globals.odbc_user, ':'))) {
+					*globals.odbc_pass++ = '\0';
 				}
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connecting to dsn: %s\n", globals.odbc_dsn);
-			
-			/* setup dsn */
-			
-			if (!(odbc = switch_odbc_handle_new(odbc_dsn, odbc_user, odbc_pass))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-				switch_goto_status(SWITCH_STATUS_FALSE, done);
-			}
-			if (switch_odbc_handle_connect(odbc) != SWITCH_ODBC_SUCCESS) {
+
+			if (!(dbh = cidlookup_get_db_handle())) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
 				switch_goto_status(SWITCH_STATUS_FALSE, done);
 			}
 		}
-		
-		/* ok, we have a new connection, tear down old one */
-		if (globals.master_odbc) {
-			switch_odbc_handle_disconnect(globals.master_odbc);
-			switch_odbc_handle_destroy(&globals.master_odbc);
-		}
-		
-		/* and swap in new connection */
-		globals.master_odbc = odbc;
 	}
 
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 	
 done:
-	if (globals.db_mutex) {
-		switch_mutex_unlock(globals.db_mutex);
-	}
-	switch_safe_free(odbc_dsn);
+	switch_cache_db_release_db_handle(&dbh);
 	return status;
 }
 
@@ -180,20 +171,23 @@ static void event_handler(switch_event_t *event)
 	do_config(SWITCH_TRUE);
 }
 
-static switch_bool_t cidlookup_execute_sql_callback(char *sql, switch_core_db_callback_func_t callback, void *pdata)
+static switch_bool_t cidlookup_execute_sql_callback(char *sql, switch_core_db_callback_func_t callback, callback_t *cbt, char **err)
 {
 	switch_bool_t retval = SWITCH_FALSE;
+	switch_cache_db_handle_t *dbh = NULL;
 	
-	switch_mutex_lock(globals.db_mutex);
-	if (globals.odbc_dsn) {
-		if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata, NULL)
+	if (globals.odbc_dsn && (dbh = cidlookup_get_db_handle())) {
+		if (switch_cache_db_execute_sql_callback(dbh, sql, callback, (void *)cbt, err)
 				== SWITCH_ODBC_FAIL) {
 			retval = SWITCH_FALSE;
 		} else {
 			retval = SWITCH_TRUE;
 		}
+	} else {
+		*err = switch_core_sprintf(cbt->pool, "Unable to get ODBC handle.  dsn: %s, dbh is %s\n", globals.odbc_dsn, dbh ? "not null" : "null");
 	}
-	switch_mutex_unlock(globals.db_mutex);
+	
+	switch_cache_db_release_db_handle(&dbh);
 	return retval;
 }
 
@@ -492,16 +486,17 @@ done:
 static char *do_db_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, const char *sql) {
 	char *name = NULL;
 	char *newsql = NULL;
+	char *err = NULL;
 	callback_t cbt = { 0 };
 	cbt.pool = pool;
 	
-	if (globals.master_odbc) {
+	if (globals.odbc_dsn) {
 		newsql = switch_event_expand_headers(event, sql);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL: %s\n", newsql);
-		if (cidlookup_execute_sql_callback(newsql, cidlookup_callback, &cbt)) {
+		if (cidlookup_execute_sql_callback(newsql, cidlookup_callback, &cbt, &err)) {
 			name = cbt.name;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to lookup cid\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to lookup cid: %s\n", err ? err : "(null)");
 		}
 	}
 	if (newsql != globals.sql) {
@@ -524,7 +519,7 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller_id_number", number);
 
 	/* database always wins */
-	if (switch_odbc_available() && globals.master_odbc && globals.sql) {
+	if (switch_odbc_available() && globals.odbc_dsn && globals.sql) {
 		name = do_db_lookup(pool, event, number, globals.sql);
 		if (name) {
 			cid->name = name;
@@ -572,7 +567,7 @@ done:
 	if (!cid->area &&
 		!skipcitystate && 
 		strlen(number) == 11 && number[0] == '1' &&
-		switch_odbc_available() && globals.master_odbc && globals.citystate_sql) {
+		switch_odbc_available() && globals.odbc_dsn && globals.citystate_sql) {
 		
 		/* yes, this is really area */
 		name = do_db_lookup(pool, event, number, globals.citystate_sql);
@@ -771,12 +766,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
 	
 	globals.pool = pool;
 
-	if (switch_odbc_available() && !globals.db_mutex) {
-		if (switch_mutex_init(&globals.db_mutex, SWITCH_MUTEX_UNNESTED, globals.pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to initialize db_mutex\n");
-		}
-	}
-
 	do_config(SWITCH_FALSE);
 	
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &reload_xml_event) != SWITCH_STATUS_SUCCESS)) {
@@ -797,15 +786,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
   Macro expands to: switch_status_t mod_cidlookup_shutdown() */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cidlookup_shutdown)
 {
-	/* Cleanup dynamically allocated config settings */
-
-	if (globals.db_mutex) {
-		switch_mutex_destroy(globals.db_mutex);
-	}
-	if (globals.master_odbc) {
-		switch_odbc_handle_disconnect(globals.master_odbc);
-		switch_odbc_handle_destroy(&globals.master_odbc);
-	}
 
 	switch_event_unbind(&reload_xml_event);
 	return SWITCH_STATUS_SUCCESS;
