@@ -161,6 +161,17 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(_In_ switch_core_se
 															 _In_ switch_caller_extension_t *caller_extension,
 															 _In_z_ const char *application_name, _In_z_ const char *extra_data);
 
+/*!
+  \brief Add an application (instruction) to the given extension
+  \param session session associated with the extension (bound by scope)
+  \param caller_extension extension to add the application to
+  \param application_name the name of the application
+  \param fmt optional argument to the application (printf format string)
+*/
+SWITCH_DECLARE(void) switch_caller_extension_add_application_printf(_In_ switch_core_session_t *session,
+															 _In_ switch_caller_extension_t *caller_extension,
+															 _In_z_ const char *application_name, _In_z_ const char *fmt, ...);
+
 
 /*!
   \brief Get the value of a field in a caller profile based on it's name

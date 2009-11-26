@@ -394,6 +394,25 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_c
 	return caller_extension;
 }
 
+
+SWITCH_DECLARE(void) switch_caller_extension_add_application_printf(switch_core_session_t *session,
+															 switch_caller_extension_t *caller_extension, const char *application_name,
+															 const char *fmt, ...)
+{
+	va_list ap;
+	char *data = NULL;
+	
+	va_start(ap, fmt);
+	switch_vasprintf(&data, fmt, ap);
+	va_end(ap);
+	
+	if (data) {
+		switch_caller_extension_add_application(session, caller_extension, application_name, data);	
+		free(data);
+	}
+}
+
+
 SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session_t *session,
 															 switch_caller_extension_t *caller_extension, const char *application_name,
 															 const char *application_data)
