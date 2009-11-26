@@ -148,9 +148,9 @@ static struct {
 	switch_memory_pool_t *pool;
 	char *dbname;
 	char *odbc_dsn;
+	char *odbc_user;
+	char *odbc_pass;
 	switch_mutex_t *mutex;
-	switch_mutex_t *db_mutex;
-	switch_odbc_handle_t *master_odbc;
 	switch_hash_t *profile_hash;
 	profile_t *default_profile;
 	void *filler1;
@@ -389,15 +389,34 @@ static switch_status_t process_max_lengths(max_obj_t *maxes, lcr_route routes, c
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_cache_db_handle_t *lcr_get_db_handle(void)
+{
+	switch_cache_db_connection_options_t options = { {0} };
+	switch_cache_db_handle_t *dbh = NULL;
+	
+	if (globals.odbc_dsn && globals.odbc_user && globals.odbc_pass) {
+		options.odbc_options.dsn = globals.odbc_dsn;
+		options.odbc_options.user = globals.odbc_user;
+		options.odbc_options.pass = globals.odbc_pass;
+
+		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS) dbh = NULL;
+	}
+	return dbh;
+}
+
 static switch_bool_t db_check(char *sql)
 {
-	if (globals.odbc_dsn) {
-		if (switch_odbc_handle_exec(globals.master_odbc, sql, NULL) == SWITCH_ODBC_SUCCESS) {
-			return SWITCH_TRUE;
+	switch_bool_t ret = SWITCH_FALSE;
+	switch_cache_db_handle_t *dbh = NULL;
+
+	if (globals.odbc_dsn && (dbh = lcr_get_db_handle())) {
+		if (switch_cache_db_execute_sql(dbh, sql, NULL) == SWITCH_ODBC_SUCCESS) {
+			ret = SWITCH_TRUE;
 		}
 	}
-	
-	return SWITCH_FALSE;
+
+	switch_cache_db_release_db_handle(&dbh);
+	return ret;
 }
 
 /* try each type of random until we suceed */
@@ -523,17 +542,17 @@ static char *format_custom_sql(const char *custom_sql, callback_t *cb_struct, co
 static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
 	switch_bool_t retval = SWITCH_FALSE;
+	switch_cache_db_handle_t *dbh = NULL;
 	
-	switch_mutex_lock(globals.db_mutex);
-	if (globals.odbc_dsn) {
-		if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata, NULL)
+	if (globals.odbc_dsn && (dbh = lcr_get_db_handle())) {
+		if (switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, NULL)
 				== SWITCH_ODBC_FAIL) {
 			retval = SWITCH_FALSE;
 		} else {
 			retval = SWITCH_TRUE;
 		}
 	}
-	switch_mutex_unlock(globals.db_mutex);
+	switch_cache_db_release_db_handle(&dbh);
 	return retval;
 }
 
@@ -847,9 +866,8 @@ static switch_status_t lcr_load_config()
 	switch_stream_handle_t sql_stream = { 0 };
 	switch_xml_t cfg, xml, settings, param, x_profile, x_profiles;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char *odbc_user = NULL;
-	char *odbc_pass = NULL;
 	profile_t *profile = NULL;
+	switch_cache_db_handle_t *dbh = NULL;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -864,11 +882,12 @@ static switch_status_t lcr_load_config()
 			val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "odbc_dsn is %s\n", val);
-				globals.odbc_dsn = switch_core_strdup(globals.pool, val);
-				if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
-					*odbc_user++ = '\0';
-					if ((odbc_pass = strchr(odbc_user, ':'))) {
-						*odbc_pass++ = '\0';
+				switch_safe_free(globals.odbc_dsn);
+				globals.odbc_dsn = strdup(val);
+				if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
+					*globals.odbc_user++ = '\0';
+					if ((globals.odbc_pass = strchr(globals.odbc_user, ':'))) {
+						*globals.odbc_pass++ = '\0';
 					}
 				}
 			}
@@ -877,19 +896,13 @@ static switch_status_t lcr_load_config()
 	
 	/* initialize sql here, 'cause we need to verify custom_sql for each profile below */
 	if (globals.odbc_dsn) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO
-						  , "dsn is \"%s\", user is \"%s\", and password is \"%s\"\n"
-						  , globals.odbc_dsn, odbc_user, odbc_pass
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG
+						  , "dsn is \"%s\", user is \"%s\"\n"
+						  , globals.odbc_dsn, globals.odbc_user
 						  );
-		if (!(globals.master_odbc = switch_odbc_handle_new(globals.odbc_dsn, odbc_user, odbc_pass))) {
+		if (!(dbh = lcr_get_db_handle())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-			status = SWITCH_STATUS_FALSE;
-			goto done;
-		}
-		if (switch_odbc_handle_connect(globals.master_odbc) != SWITCH_ODBC_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-			status = SWITCH_STATUS_FALSE;
-			goto done;
+			switch_goto_status(SWITCH_STATUS_FALSE, done);
 		}
 	}
 	
@@ -1089,7 +1102,8 @@ static switch_status_t lcr_load_config()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting system defined default profile.");
 	}
 
-	done:
+done:
+	switch_cache_db_release_db_handle(&dbh);
 	switch_xml_free(xml);
 	return status;
 }
@@ -1549,10 +1563,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 	if (switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to initialize mutex\n");
 	}
-	if (switch_mutex_init(&globals.db_mutex, SWITCH_MUTEX_UNNESTED, globals.pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to initialize db_mutex\n");
-	}
-
 	if (lcr_load_config() != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to load lcr config file\n");
 		return SWITCH_STATUS_FALSE;
@@ -1571,8 +1581,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lcr_shutdown)
 {
 
-	switch_odbc_handle_disconnect(globals.master_odbc);
-	switch_odbc_handle_destroy(&globals.master_odbc);
 	switch_core_hash_destroy(&globals.profile_hash);
 
 	return SWITCH_STATUS_SUCCESS;
