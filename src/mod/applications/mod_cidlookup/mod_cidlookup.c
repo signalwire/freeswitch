@@ -386,9 +386,12 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 	/*
 	 TIMEOUT_MS is introduced in 7.16.2, we have 7.16.0 in tree 
+	 */
+#ifdef CURLOPT_TIMEOUT_MS
 	curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, globals.curl_timeout);
-	*/
+#else
 	curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, globals.curl_timeout/1000);
+#endif
 	curl_easy_setopt(curl_handle, CURLOPT_URL, query);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &http_data);
