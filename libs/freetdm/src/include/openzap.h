@@ -776,7 +776,7 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw);
 	if (!(assertion)) { \
 		zap_log(ZAP_LOG_CRIT, msg); \
 		if (g_zap_crash_policy & ZAP_CRASH_ON_ASSERT) { \
-			abort();  \
+			zap_abort();  \
 		} \
 	}
 
@@ -787,7 +787,7 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw);
 	if (!(assertion)) { \
 		zap_log(ZAP_LOG_CRIT, msg); \
 		if (g_zap_crash_policy & ZAP_CRASH_ON_ASSERT) { \
-			abort();  \
+			zap_abort();  \
 		} else { \
 			return retval; \
 		} \
@@ -822,6 +822,15 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw);
   \command it the socket
 */
 #define zap_socket_close(it) if (it > -1) { close(it); it = -1;}
+
+static __inline__ void zap_abort(void)
+{
+#ifdef __cplusplus
+	::abort();
+#else
+	abort();
+#endif
+}
 
 static __inline__ void zap_set_state_all(zap_span_t *span, zap_channel_state_t state)
 {
