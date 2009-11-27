@@ -1331,6 +1331,7 @@ SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream)
 		key = (char *) var;
 
 		if ((dbh = (switch_cache_db_handle_t *) val)) {
+			char *needle = "pass=\"";
 			time_t diff = 0;
 
 			diff = now - dbh->last_used;
@@ -1344,7 +1345,6 @@ SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream)
 
 			/* sanitize password */
 			memset(cleankey_str, 0, sizeof(cleankey_str));
-			char *needle = "pass=\"";
 			pos1 = strstr(key, needle) + strlen(needle);
 			pos2 = strstr(pos1, "\"");
 			strncpy(cleankey_str, key, pos1-key);
