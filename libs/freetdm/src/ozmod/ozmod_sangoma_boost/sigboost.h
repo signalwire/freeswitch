@@ -16,8 +16,8 @@
 
 #define SIGBOOST_VERSION 100
 
-#include <stdint.h>
-#include <sys/time.h>
+// handy to define integer types that actually work on both Lin and Win
+#include <openzap.h>
 
 enum	e_sigboost_event_id_values
 {
