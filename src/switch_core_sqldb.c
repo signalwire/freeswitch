@@ -191,20 +191,27 @@ SWITCH_DECLARE(switch_status_t)_switch_cache_db_get_db_handle(switch_cache_db_ha
 	switch_thread_id_t self = switch_thread_self();
 	char thread_str[CACHE_DB_LEN] = "";
 	char db_str[CACHE_DB_LEN] = "";
+	char db_callsite_str[CACHE_DB_LEN] = "";
 	switch_cache_db_handle_t *new_dbh = NULL;
 	switch_ssize_t hlen = -1;
 
 	const char *db_name = NULL;
+	const char *db_user = NULL;
+	const char *db_pass = NULL;
 
 	switch (type) {
 	case SCDB_TYPE_ODBC:
 		{
 			db_name = connection_options->odbc_options.dsn;
+			db_user = connection_options->odbc_options.user;
+			db_pass = connection_options->odbc_options.pass;
 		}
 		break;
 	case SCDB_TYPE_CORE_DB:
 		{
 			db_name = connection_options->core_db_options.db_path;
+			db_user = "";
+			db_pass = "";
 		}
 		break;
 	}
@@ -213,11 +220,13 @@ SWITCH_DECLARE(switch_status_t)_switch_cache_db_get_db_handle(switch_cache_db_ha
 		return SWITCH_STATUS_FALSE;
 	}
 
-	snprintf(db_str, sizeof(db_str) - 1, "db=\"%s\"", db_name);
+	snprintf(db_str, sizeof(db_str) - 1, "db=\"%s\";user=\"%s\";pass=\"%s\"", db_name, db_user, db_pass);
 	snprintf(thread_str, sizeof(thread_str) - 1, "%s;thread=\"%lu\"", db_str, (unsigned long)(intptr_t)self);
+	snprintf(db_callsite_str, sizeof(db_callsite_str) - 1, "%s:%d", file, line);
 	
 	switch_mutex_lock(dbh_mutex);
 	if ((new_dbh = switch_core_hash_find(dbh_hash, thread_str))) {
+		switch_set_string(new_dbh->last_user, db_callsite_str);
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10, 
 						  "Reuse Cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(new_dbh->type));
 	} else {
@@ -239,6 +248,7 @@ SWITCH_DECLARE(switch_status_t)_switch_cache_db_get_db_handle(switch_cache_db_ha
 					switch_set_flag(new_dbh, CDF_INUSE);
 					switch_set_string(new_dbh->name, thread_str);
 					new_dbh->hash = switch_ci_hashfunc_default(db_str, &hlen);
+					switch_set_string(new_dbh->last_user, db_callsite_str);
 					switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10, 
 									  "Reuse Unused Cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(new_dbh->type));
 					break;
@@ -299,9 +309,10 @@ SWITCH_DECLARE(switch_status_t)_switch_cache_db_get_db_handle(switch_cache_db_ha
 		switch_set_flag(new_dbh, CDF_INUSE);
 		new_dbh->hash = switch_ci_hashfunc_default(db_str, &hlen);
 
-		
+
 		if (db) new_dbh->native_handle.core_db_dbh = db; else new_dbh->native_handle.odbc_dbh = odbc_dbh;
 		switch_mutex_init(&new_dbh->mutex, SWITCH_MUTEX_UNNESTED, new_dbh->pool);
+		switch_set_string(new_dbh->creator, db_callsite_str);
 		switch_mutex_lock(new_dbh->mutex);
 
 		switch_core_hash_insert(dbh_hash, new_dbh->name, new_dbh);
@@ -1297,6 +1308,61 @@ void switch_core_sqldb_stop(void)
 
 	switch_core_hash_destroy(&dbh_hash);
 
+}
+
+SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream)
+{
+	/* return some status info suitable for the cli */
+	switch_hash_index_t *hi;
+	switch_cache_db_handle_t *dbh = NULL;
+	void *val;
+	const void *var;
+	char *key;
+	switch_bool_t locked = SWITCH_FALSE;
+	time_t now = switch_epoch_time_now(NULL);
+	char cleankey_str[CACHE_DB_LEN];
+	char *pos1 = NULL;
+	char *pos2 = NULL;
+	
+	switch_mutex_lock(dbh_mutex);
+	
+	for (hi = switch_hash_first(NULL, dbh_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		key = (char *) var;
+
+		if ((dbh = (switch_cache_db_handle_t *) val)) {
+			time_t diff = 0;
+
+			diff = now - dbh->last_used;
+			
+			if (switch_mutex_trylock(dbh->mutex) == SWITCH_STATUS_SUCCESS) {
+				switch_mutex_unlock(dbh->mutex);
+				locked = SWITCH_FALSE;
+			} else {
+				locked = SWITCH_TRUE;
+			}
+
+			/* sanitize password */
+			memset(cleankey_str, 0, sizeof(cleankey_str));
+			char *needle = "pass=\"";
+			pos1 = strstr(key, needle) + strlen(needle);
+			pos2 = strstr(pos1, "\"");
+			strncpy(cleankey_str, key, pos1-key);
+			strcpy(&cleankey_str[pos1-key], pos2);
+			
+			
+			stream->write_function(stream, "%s\n\tType: %s\n\tLast used: %d\n\tFlags: %s, %s\n"
+											"\tCreator: %s\n\tLast User: %s\n",
+				cleankey_str,
+				switch_cache_db_type_name(dbh->type),
+				diff,
+				locked ? "Locked" : "Unlocked",
+				switch_test_flag(dbh, CDF_INUSE) ? "Attached" : "Detached",
+				dbh->creator,
+				dbh->last_user);
+		}
+	}
+	switch_mutex_unlock(dbh_mutex);
 }
 
 /* For Emacs:

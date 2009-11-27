@@ -1960,6 +1960,8 @@ typedef struct {
 	switch_memory_pool_t *pool;
 	int32_t flags;
 	unsigned long hash;
+	char creator[CACHE_DB_LEN];
+	char last_user[CACHE_DB_LEN];
 } switch_cache_db_handle_t;
 
 
@@ -1996,6 +1998,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_hand
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cache_db_handle_t *dbh, const char *sql, 
 																	 switch_core_db_callback_func_t callback, void *pdata, char **err);
 
+SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream);
 SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t **dbh, const char *file, const char *func, int line);
 #define switch_core_db_handle(_a) _switch_core_db_handle(_a, __FILE__, __SWITCH_FUNC__, __LINE__)
 

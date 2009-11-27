@@ -53,6 +53,34 @@ SWITCH_STANDARD_API(hostname_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(db_cache_function) {
+	int argc;
+	char *mydata = NULL, *argv[2];
+
+	if (zstr(cmd)) {
+		goto error;
+	}
+	
+	mydata = strdup(cmd);
+	switch_assert(mydata);
+
+	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 1) {
+		goto error;
+	}
+	if (argv[0] && switch_stristr("status", argv[0])) {
+		switch_cache_db_status(stream);
+		goto ok;
+	} else {
+		goto error;
+	}
+	
+error:
+		stream->write_function(stream, "%s", "parameter missing\n");
+ok:
+		return SWITCH_STATUS_SUCCESS;
+}
 
 SWITCH_STANDARD_API(host_lookup_function)
 {
@@ -3827,6 +3855,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "nat_map", "nat_map", nat_map_function, "[status|republish|reinit] | [add|del] <port> [tcp|udp] [static]");
 	SWITCH_ADD_API(commands_api_interface, "host_lookup", "host_lookup", host_lookup_function, "<hostname>");
 	SWITCH_ADD_API(commands_api_interface, "hostname", "Returns the system hostname", hostname_api_function, "");
+	SWITCH_ADD_API(commands_api_interface, "db_cache", "db cache management", db_cache_function, "status");
+	switch_console_set_complete("db_cache status");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
