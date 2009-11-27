@@ -57,6 +57,7 @@ typedef uint16_t sangoma_boost_request_id_t;
 typedef enum {
 	BST_FREE,
 	BST_WAITING,
+	BST_ACK,
 	BST_READY,
 	BST_FAIL
 } sangoma_boost_request_status_t;
@@ -217,6 +218,30 @@ static int check_congestion(int trunk_group)
 	return 0;
 }
 
+/**
+ * \brief determines whether media is ready
+ * \param event boost event
+ * \return 1 true, 0 for false
+ */
+
+static int boost_media_ready(sangomabc_event_t *event)
+{
+	/* FORMAT is of type: SMG003-EVI-1-MEDIA-# */
+	char* p = NULL;
+	p = strstr(event->isup_in_rdnis, "MEDIA");
+	if (p) {
+		int media_ready = 0;
+		if ((sscanf(p, "MEDIA-%d", &media_ready)) == 1) {
+			if (media_ready) {
+				return 1;
+			} else {
+			}
+		} else {
+			zap_log(ZAP_LOG_ERROR, "Invalid boost isup_rdnis MEDIA format %s\n", p);
+		}
+	}
+	return 0;
+}
 
 /**
  * \brief Requests an sangoma boost channel on a span (outgoing call)
@@ -334,11 +359,30 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		}
 		//printf("WTF %d\n", sanity);
 	}
+	
+	if (OUTBOUND_REQUESTS[r].status == BST_ACK && OUTBOUND_REQUESTS[r].zchan) {
+		*zchan = OUTBOUND_REQUESTS[r].zchan;
+		status = ZAP_SUCCESS;
+		(*zchan)->init_state = ZAP_CHANNEL_STATE_PROGRESS;
+		zap_log(ZAP_LOG_DEBUG, "Channel state changed to PROGRESS [Csid:%d]\n", r);
+	}
+
+	sanity = 5000;
+	while(zap_running() && OUTBOUND_REQUESTS[r].status == BST_ACK) {
+		zap_sleep(1);
+		if (--sanity <= 0) {
+		status = ZAP_FAIL;
+		*zchan = NULL;
+		goto done;
+		}
+		//printf("WTF %d\n", sanity);
+	}
 
 	if (OUTBOUND_REQUESTS[r].status == BST_READY && OUTBOUND_REQUESTS[r].zchan) {
 		*zchan = OUTBOUND_REQUESTS[r].zchan;
 		status = ZAP_SUCCESS;
 		(*zchan)->init_state = ZAP_CHANNEL_STATE_PROGRESS_MEDIA;
+		zap_log(ZAP_LOG_DEBUG, "Channel state changed to PROGRESS_MEDIA [Csid:%d]\n", r);
 	} else {
 		status = ZAP_FAIL;
         *zchan = NULL;
@@ -375,6 +419,66 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(sangoma_boost_outgoing_call)
 	zap_status_t status = ZAP_SUCCESS;
 
 	return status;
+}
+
+/**
+ * \brief Handler for call start ack no media event
+ * \param mcon sangoma boost connection
+ * \param event Event to handle
+ */
+static void handle_call_progress(sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
+{
+	zap_channel_t *zchan;
+
+	if (nack_map[event->call_setup_id]) {
+		return;
+	}
+
+	//if we received a progress for this device already
+	if (OUTBOUND_REQUESTS[event->call_setup_id].status == BST_ACK) {
+		if (boost_media_ready((sangomabc_event_t*) event)) {
+			OUTBOUND_REQUESTS[event->call_setup_id].status = BST_READY;
+			zap_log(ZAP_LOG_DEBUG, "chan media ready %d:%d CSid:%d\n", event->span+1, event->chan+1, event->call_setup_id);
+		}
+		return;
+	}
+
+	OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
+	SETUP_GRID[event->span][event->chan] = event->call_setup_id;
+
+	if ((zchan = find_zchan(OUTBOUND_REQUESTS[event->call_setup_id].span, (sangomabc_short_event_t*) event, 0))) {
+		if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
+			zap_log(ZAP_LOG_ERROR, "OPEN ERROR [%s]\n", zchan->last_error);
+		} else {
+			zap_set_flag(zchan, ZAP_CHANNEL_OUTBOUND);
+			zap_set_flag_locked(zchan, ZAP_CHANNEL_INUSE);
+			zchan->extra_id = event->call_setup_id;
+			zap_log(ZAP_LOG_DEBUG, "Assign chan %d:%d (%d:%d) CSid=%d\n", zchan->span_id, zchan->chan_id, event->span+1,event->chan+1, event->call_setup_id);
+			zchan->sflags = 0;
+			OUTBOUND_REQUESTS[event->call_setup_id].zchan = zchan;
+			if (boost_media_ready((sangomabc_event_t*)event)) {
+				OUTBOUND_REQUESTS[event->call_setup_id].status = BST_READY;
+			} else {
+				OUTBOUND_REQUESTS[event->call_setup_id].status = BST_ACK;
+			}
+			return;
+		}
+	} 
+	
+	//printf("WTF BAD ACK CSid=%d span=%d chan=%d\n", event->call_setup_id, event->span+1,event->chan+1);
+	if ((zchan = find_zchan(OUTBOUND_REQUESTS[event->call_setup_id].span, event, 1))) {
+		//printf("WTF BAD ACK2 %d:%d (%d:%d) CSid=%d xtra_id=%d out=%d state=%s\n", zchan->span_id, zchan->chan_id, event->span+1,event->chan+1, event->call_setup_id, zchan->extra_id, zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND), zap_channel_state2str(zchan->state));
+	}
+
+
+	zap_log(ZAP_LOG_CRIT, "START PROGRESS CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
+	sangomabc_exec_command(mcon,
+					   event->span,
+					   event->chan,
+					   event->call_setup_id,
+					   SIGBOOST_EVENT_CALL_STOPPED,
+					   ZAP_CAUSE_DESTINATION_OUT_OF_ORDER);
+	OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;	
 }
 
 /**
@@ -586,8 +690,8 @@ static void handle_call_stop(zap_span_t *span, sangomabc_connection_t *mcon, san
 					   0,
 					   SIGBOOST_EVENT_CALL_STOPPED_ACK,
 					   0);
-	
-	release_request_id_span_chan(event->span, event->chan);	
+
+	release_request_id_span_chan(event->span, event->chan);
 }
 
 /**
@@ -798,6 +902,9 @@ static int parse_sangoma_event(zap_span_t *span, sangomabc_connection_t *mcon, s
 		break;
     case SIGBOOST_EVENT_CALL_START_ACK:
 		handle_call_start_ack(mcon, event);
+		break;
+	case SIGBOOST_EVENT_CALL_PROGRESS:
+		handle_call_progress(mcon, event);
 		break;
     case SIGBOOST_EVENT_CALL_START_NACK:
 		handle_call_start_nack(span, mcon, event);
