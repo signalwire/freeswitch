@@ -76,8 +76,8 @@ OZ_DECLARE(zap_status_t) zap_global_set_queue_handler(zap_queue_handler_t *handl
 
 static zap_status_t zap_std_queue_create(zap_queue_t **outqueue, zap_size_t capacity)
 {
-	zap_assert(outqueue, ZAP_FAIL, "Queue double pointer is null\n");
-	zap_assert(capacity > 0, ZAP_FAIL, "Queue capacity is not bigger than 0\n");
+	zap_assert_return(outqueue, ZAP_FAIL, "Queue double pointer is null\n");
+	zap_assert_return(capacity > 0, ZAP_FAIL, "Queue capacity is not bigger than 0\n");
 
 	*outqueue = NULL;
 	zap_queue_t *queue = zap_calloc(1, sizeof(*queue));
@@ -120,7 +120,7 @@ static zap_status_t zap_std_queue_enqueue(zap_queue_t *queue, void *obj)
 {
 	zap_status_t status = ZAP_FAIL;
 
-	zap_assert(queue != NULL, ZAP_FAIL, "Queue is null!");
+	zap_assert_return(queue != NULL, ZAP_FAIL, "Queue is null!");
 
 	zap_mutex_lock(queue->mutex);
 
@@ -152,7 +152,7 @@ static void *zap_std_queue_dequeue(zap_queue_t *queue)
 {
 	void *obj = NULL;
 
-	zap_assert(queue != NULL, NULL, "Queue is null!");
+	zap_assert_return(queue != NULL, NULL, "Queue is null!");
 
 	zap_mutex_lock(queue->mutex);
 
@@ -177,7 +177,7 @@ done:
 static zap_status_t zap_std_queue_wait(zap_queue_t *queue, int ms)
 {
 	zap_status_t ret;
-	zap_assert(queue != NULL, ZAP_FAIL, "Queue is null!");
+	zap_assert_return(queue != NULL, ZAP_FAIL, "Queue is null!");
 	
 	zap_mutex_lock(queue->mutex);
 
@@ -199,8 +199,8 @@ static zap_status_t zap_std_queue_wait(zap_queue_t *queue, int ms)
 static zap_status_t zap_std_queue_destroy(zap_queue_t **inqueue)
 {
 	zap_queue_t *queue = NULL;
-	zap_assert(inqueue != NULL, ZAP_FAIL, "Queue is null!");
-	zap_assert(*inqueue != NULL, ZAP_FAIL, "Queue is null!");
+	zap_assert_return(inqueue != NULL, ZAP_FAIL, "Queue is null!");
+	zap_assert_return(*inqueue != NULL, ZAP_FAIL, "Queue is null!");
 
 	queue = *inqueue;
 	zap_condition_destroy(&queue->condition);

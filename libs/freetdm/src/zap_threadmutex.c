@@ -242,8 +242,8 @@ OZ_DECLARE(zap_status_t) zap_condition_create(zap_condition_t **incondition, zap
 {
 	zap_condition_t *condition = NULL;
 
-	zap_assert(incondition != NULL, ZAP_FAIL, "Condition double pointer is null!\n");
-	zap_assert(mutex != NULL, ZAP_FAIL, "Mutex for condition must not be null!\n");
+	zap_assert_return(incondition != NULL, ZAP_FAIL, "Condition double pointer is null!\n");
+	zap_assert_return(mutex != NULL, ZAP_FAIL, "Mutex for condition must not be null!\n");
 
 	condition = zap_calloc(1, sizeof(*condition));
 	if (!condition) {
@@ -277,7 +277,7 @@ OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 #ifdef WIN32
 	DWORD res = 0;
 #endif
-	zap_assert(condition != NULL, ZAP_FAIL, "Condition is null!\n");
+	zap_assert_return(condition != NULL, ZAP_FAIL, "Condition is null!\n");
 #ifdef WIN32
 	res = WaitForSingleObject(condition->condition, ms > 0 ? ms : INFINITE);
 	switch (res) {
@@ -311,7 +311,7 @@ OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 
 OZ_DECLARE(zap_status_t) zap_condition_signal(zap_condition_t *condition)
 {
-	zap_assert(condition != NULL, ZAP_FAIL, "Condition is null!\n");
+	zap_assert_return(condition != NULL, ZAP_FAIL, "Condition is null!\n");
 #ifdef WIN32
 	if (!SetEvent(condition->condition)) {
 		return ZAP_FAIL;
@@ -329,7 +329,7 @@ OZ_DECLARE(zap_status_t) zap_condition_signal(zap_condition_t *condition)
 OZ_DECLARE(zap_status_t) zap_condition_destroy(zap_condition_t **incondition)
 {
 	zap_condition_t *condition = NULL;
-	zap_assert(incondition != NULL, ZAP_FAIL, "Condition null when destroying!\n");
+	zap_assert_return(incondition != NULL, ZAP_FAIL, "Condition null when destroying!\n");
 	condition = *incondition;
 #ifdef WIN32
 	CloseHandle(condition->condition);

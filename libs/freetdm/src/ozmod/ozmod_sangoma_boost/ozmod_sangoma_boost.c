@@ -382,7 +382,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		if (--boost_request_timeout <= 0) {
 			status = ZAP_FAIL;
 			*zchan = NULL;
-			zap_log(ZAP_LOG_CRIT, "Timed out waiting for boost channel request response\n");
+			zap_log(ZAP_LOG_CRIT, "Timed out waiting for boost channel request response, current status: BST_WAITING\n");
 			goto done;
 		}
 	}
@@ -394,13 +394,14 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		zap_log(ZAP_LOG_DEBUG, "Channel state changed to PROGRESS [Csid:%d]\n", r);
 	}
 
-	sanity = 5000;
+	boost_request_timeout = 5000;
 	while(zap_running() && OUTBOUND_REQUESTS[r].status == BST_ACK) {
 		zap_sleep(1);
-		if (--sanity <= 0) {
-		status = ZAP_FAIL;
-		*zchan = NULL;
-		goto done;
+		if (--boost_request_timeout <= 0) {
+			status = ZAP_FAIL;
+			*zchan = NULL;
+			zap_log(ZAP_LOG_CRIT, "Timed out waiting for boost channel request response, current status: BST_ACK\n");
+			goto done;
 		}
 		//printf("WTF %d\n", sanity);
 	}
@@ -1654,7 +1655,7 @@ static BOOST_WRITE_MSG_FUNCTION(zap_boost_write_msg)
 	zap_sangoma_boost_data_t *sangoma_boost_data = NULL;
 	sangomabc_queue_element_t *element = NULL;
 
-	zap_assert(msg != NULL, ZAP_FAIL, "Boost message to write was null");
+	zap_assert_return(msg != NULL, ZAP_FAIL, "Boost message to write was null");
 
 	if (!span) {
 		shortmsg = msg;

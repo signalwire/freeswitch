@@ -263,7 +263,7 @@
 #define zap_set_state_locked(obj, s) if ( obj->state == s ) {			\
 		zap_log(ZAP_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
 	} else if (zap_test_flag(obj, ZAP_CHANNEL_READY)) {									\
-		int st = obj->state;											\
+		zap_channel_state_t st = obj->state;											\
 		zap_channel_set_state(obj, s, 1);									\
 		if (obj->state == s) zap_log(ZAP_LOG_DEBUG, "Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); \
 		else zap_log(ZAP_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); \
@@ -770,10 +770,20 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw);
 #endif
 
 /*!
-  \brief Allocate uninitialized memory
-  \command chunksize the chunk size
+  \brief Assert condition
 */
-#define zap_assert(assertion, retval, msg) \
+#define zap_assert(assertion, msg) \
+	if (!(assertion)) { \
+		zap_log(ZAP_LOG_CRIT, msg); \
+		if (g_zap_crash_policy & ZAP_CRASH_ON_ASSERT) { \
+			abort();  \
+		} \
+	}
+
+/*!
+  \brief Assert condition and return
+*/
+#define zap_assert_return(assertion, retval, msg) \
 	if (!(assertion)) { \
 		zap_log(ZAP_LOG_CRIT, msg); \
 		if (g_zap_crash_policy & ZAP_CRASH_ON_ASSERT) { \

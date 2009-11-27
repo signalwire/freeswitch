@@ -185,7 +185,7 @@ static __inline__ void *zap_std_malloc(void *pool, zap_size_t size)
 {
 	void *ptr = malloc(size);
 	pool = NULL; /* fix warning */
-	zap_assert(ptr != NULL, NULL, "Out of memory");
+	zap_assert_return(ptr != NULL, NULL, "Out of memory");
 	return ptr;
 }
 
@@ -193,14 +193,14 @@ static __inline__ void *zap_std_calloc(void *pool, zap_size_t elements, zap_size
 {
 	void *ptr = calloc(elements, size);
 	pool = NULL;
-	zap_assert(ptr != NULL, NULL, "Out of memory");
+	zap_assert_return(ptr != NULL, NULL, "Out of memory");
 	return ptr;
 }
 
 static __inline__ void zap_std_free(void *pool, void *ptr)
 {
 	pool = NULL;
-	zap_assert(ptr != NULL, , "Attempted to free null pointer");
+	zap_assert_return(ptr != NULL, , "Attempted to free null pointer");
 	free(ptr);
 }
 
@@ -1263,8 +1263,8 @@ OZ_DECLARE(zap_status_t) zap_channel_outgoing_call(zap_channel_t *zchan)
 
 OZ_DECLARE(zap_status_t) zap_channel_get_sig_status(zap_channel_t *zchan, zap_channel_sig_status_t *sigstatus)
 {
-	zap_assert(zchan != NULL, ZAP_FAIL, "Null channel\n");
-	zap_assert(sigstatus != NULL, ZAP_FAIL, "Null sig status");
+	zap_assert_return(zchan != NULL, ZAP_FAIL, "Null channel\n");
+	zap_assert_return(sigstatus != NULL, ZAP_FAIL, "Null sig status");
 	
 	if (zchan->span->get_sig_status) {
 		return zchan->span->get_sig_status(zchan, sigstatus);
@@ -2814,10 +2814,10 @@ OZ_DECLARE(zap_status_t) zap_configure_span_signaling(const char *type, zap_span
 	zap_module_t *mod = (zap_module_t *) hashtable_search(globals.module_hash, (void *)type);
 	zap_status_t status = ZAP_FAIL;
 
-	zap_assert(type != NULL, ZAP_FAIL, "No signaling type");
-	zap_assert(span != NULL, ZAP_FAIL, "No span");
-	zap_assert(sig_cb != NULL, ZAP_FAIL, "No signaling callback");
-	zap_assert(parameters != NULL, ZAP_FAIL, "No parameters");
+	zap_assert_return(type != NULL, ZAP_FAIL, "No signaling type");
+	zap_assert_return(span != NULL, ZAP_FAIL, "No span");
+	zap_assert_return(sig_cb != NULL, ZAP_FAIL, "No signaling callback");
+	zap_assert_return(parameters != NULL, ZAP_FAIL, "No parameters");
 
 	if (!mod) {
 		zap_load_module_assume(type);
