@@ -38,26 +38,26 @@
 
 #include <ctype.h>
 #include <string.h>
+#ifndef WIN32
 #include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #ifdef HAVE_NETINET_SCTP_H
 #include <netinet/sctp.h>
 #endif
 #include <arpa/inet.h>
-#include <stdarg.h>
 #include <netdb.h>
-#include <sigboost.h>
 #include <sys/time.h>
+#endif
+#include <stdlib.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <stdarg.h>
+#include "sigboost.h"
 
-#define sangomabc_test_flag(p,flag) 		({		\
-			((p)->flags & (flag));				\
-		})
+#define sangomabc_test_flag(p,flag) ((p)->flags & (flag))
 
 #define sangomabc_set_flag(p,flag) 		do {		\
 		((p)->flags |= (flag));					\
@@ -120,7 +120,7 @@ typedef struct sangomabc_queue_element {
 } sangomabc_queue_element_t;
 
 /* disable nagle's algorythm */
-static inline void sctp_no_nagle(int socket)
+static __inline__ void sctp_no_nagle(int socket)
 {
 #ifdef HAVE_NETINET_SCTP_H
     int flag = 1;
@@ -134,10 +134,10 @@ sangomabc_event_t *__sangomabc_connection_read(sangomabc_connection_t *mcon, int
 sangomabc_event_t *__sangomabc_connection_readp(sangomabc_connection_t *mcon, int iteration, const char *file, const char *func, int line);
 int __sangomabc_connection_write(sangomabc_connection_t *mcon, sangomabc_event_t *event, const char *file, const char *func, int line);
 int __sangomabc_connection_writep(sangomabc_connection_t *mcon, sangomabc_event_t *event, const char *file, const char *func, int line);
-#define sangomabc_connection_write(_m,_e) __sangomabc_connection_write(_m, _e, __FILE__, __func__, __LINE__)
-#define sangomabc_connection_writep(_m,_e) __sangomabc_connection_writep(_m, _e, __FILE__, __func__, __LINE__)
-#define sangomabc_connection_read(_m,_e) __sangomabc_connection_read(_m, _e, __FILE__, __func__, __LINE__)
-#define sangomabc_connection_readp(_m,_e) __sangomabc_connection_readp(_m, _e, __FILE__, __func__, __LINE__)
+#define sangomabc_connection_write(_m,_e) __sangomabc_connection_write(_m, _e, __FILE__, __FUNCTION__, __LINE__)
+#define sangomabc_connection_writep(_m,_e) __sangomabc_connection_writep(_m, _e, __FILE__, __FUNCTION__, __LINE__)
+#define sangomabc_connection_read(_m,_e) __sangomabc_connection_read(_m, _e, __FILE__, __FUNCTION__, __LINE__)
+#define sangomabc_connection_readp(_m,_e) __sangomabc_connection_readp(_m, _e, __FILE__, __FUNCTION__, __LINE__)
 void sangomabc_event_init(sangomabc_short_event_t *event, sangomabc_event_id_t event_id, int chan, int span);
 void sangomabc_call_init(sangomabc_event_t *event, const char *calling, const char *called, int setup_id);
 const char *sangomabc_event_id_name(uint32_t event_id);

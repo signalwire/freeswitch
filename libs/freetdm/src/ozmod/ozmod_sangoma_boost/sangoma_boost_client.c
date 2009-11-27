@@ -109,6 +109,7 @@ static void sangomabc_print_event_short(sangomabc_connection_t *mcon, sangomabc_
 
 static int create_conn_socket(sangomabc_connection_t *mcon, char *local_ip, int local_port, char *ip, int port)
 {
+#ifndef WIN32
 	int rc;
 	struct hostent *result, *local_result;
 	char buf[512], local_buf[512];
@@ -174,12 +175,15 @@ static int create_conn_socket(sangomabc_connection_t *mcon, char *local_ip, int 
 		}
 	}
 
-
 	return mcon->socket;
+#else
+	return 0;
+#endif // ifndef WIN32
 }
 
 int sangomabc_connection_close(sangomabc_connection_t *mcon)
 {
+#ifndef WIN32
 	if (mcon->sigmod) {
 		zap_log(ZAP_LOG_WARNING, "I should not be called on a sigmod-managed connection!\n");
 		return 0;
@@ -195,7 +199,7 @@ int sangomabc_connection_close(sangomabc_connection_t *mcon)
 	}
 	memset(mcon, 0, sizeof(*mcon));
 	mcon->socket = -1;
-
+#endif
 	return 0;
 }
 
@@ -206,8 +210,12 @@ int sangomabc_connection_open(sangomabc_connection_t *mcon, char *local_ip, int 
 		/*value of mcon->socket will be ignored in sigmod mode */
 		return 0;
 	}
+#ifndef WIN32
 	create_conn_socket(mcon, local_ip, local_port, ip, port);
 	return mcon->socket;
+#else
+	return 0;
+#endif
 }
 
 
@@ -217,7 +225,7 @@ int sangomabc_exec_command(sangomabc_connection_t *mcon, int span, int chan, int
     int retry = 5;
 
     sangomabc_event_init(&oevent, cmd, chan, span);
-    oevent.release_cause = cause;
+    oevent.release_cause = (uint8_t)cause;
 
 	if (cmd == SIGBOOST_EVENT_SYSTEM_RESTART || cmd == SIGBOOST_EVENT_SYSTEM_RESTART_ACK) {
 		mcon->rxseq_reset = 1;
@@ -227,7 +235,7 @@ int sangomabc_exec_command(sangomabc_connection_t *mcon, int span, int chan, int
 	}
 
     if (id >= 0) {
-        oevent.call_setup_id = id;
+        oevent.call_setup_id = (uint16_t)id;
     }
 
     while (sangomabc_connection_write(mcon, (sangomabc_event_t*)&oevent) <= 0) {
@@ -250,10 +258,10 @@ int sangomabc_exec_commandp(sangomabc_connection_t *pcon, int span, int chan, in
     int retry = 5;
 
     sangomabc_event_init(&oevent, cmd, chan, span);
-    oevent.release_cause = cause;
+    oevent.release_cause = (uint8_t)cause;
 
     if (id >= 0) {
-        oevent.call_setup_id = id;
+        oevent.call_setup_id = (uint16_t)id;
     }
 
     while (sangomabc_connection_writep(pcon, (sangomabc_event_t*)&oevent) <= 0) {
@@ -271,7 +279,9 @@ int sangomabc_exec_commandp(sangomabc_connection_t *pcon, int span, int chan, in
 
 sangomabc_event_t *__sangomabc_connection_read(sangomabc_connection_t *mcon, int iteration, const char *file, const char *func, int line)
 {
+#ifndef WIN32
 	unsigned int fromlen = sizeof(struct sockaddr_in);
+#endif
 	int bytes = 0;
 	int msg_ok = 0;
 	sangomabc_queue_element_t *e = NULL;
@@ -283,11 +293,13 @@ sangomabc_event_t *__sangomabc_connection_read(sangomabc_connection_t *mcon, int
 			memcpy(&mcon->event, e->boostmsg, bytes);
 			zap_safe_free(e);
 		}
-	} else {
+	} 
+#ifndef WIN32	
+	else {
 		bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, 
 						 (struct sockaddr *) &mcon->local_addr, &fromlen);
 	}
-
+#endif
 	if (bytes <= 0) {
 		return NULL;
 	}
@@ -365,16 +377,20 @@ sangomabc_event_t *__sangomabc_connection_read(sangomabc_connection_t *mcon, int
 
 sangomabc_event_t *__sangomabc_connection_readp(sangomabc_connection_t *mcon, int iteration, const char *file, const char *func, int line)
 {
+#ifndef WIN32
 	unsigned int fromlen = sizeof(struct sockaddr_in);
+#endif
 	int bytes = 0;
 
 	if (mcon->sigmod) {
 		/* priority stuff is handled just the same when there is a sigmod */
 		return sangomabc_connection_read(mcon, iteration);
-	} else {
+	} 
+#ifndef WIN32
+	else {
 		bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, (struct sockaddr *) &mcon->local_addr, &fromlen);
 	}
-	
+#endif	
 	if (bytes <= 0) {
 		return NULL;
 	}
@@ -405,14 +421,12 @@ sangomabc_event_t *__sangomabc_connection_readp(sangomabc_connection_t *mcon, in
 
 int __sangomabc_connection_write(sangomabc_connection_t *mcon, sangomabc_event_t *event, const char *file, const char *func, int line)
 {
-	int err;
+	int err = 0;
 	int event_size=MIN_SIZE_CALLSTART_MSG+event->isup_in_rdnis_size;
- 
-	if (!event || mcon->socket < 0 || !mcon->mutex) {
-		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: No Event Device\n");
-		return -EINVAL;
-		abort();
-	}
+
+	zap_assert_return(event != NULL, -1, "No event!");
+	zap_assert_return(mcon->socket >= 0, -1, "No mcon->socket!");
+	zap_assert_return(mcon->mutex != NULL, -1, "No mcon->mutex!");
 
 	if (event->span >= ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN || event->chan >= ZAP_MAX_CHANNELS_PHYSICAL_SPAN ) {
 		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: TX Cmd=%s Invalid Span=%i Chan=%i\n", sangomabc_event_id_name(event->event_id), event->span, event->chan);
@@ -448,16 +462,16 @@ int __sangomabc_connection_write(sangomabc_connection_t *mcon, sangomabc_event_t
 	if (mcon->sigmod) {
 		mcon->sigmod->write_msg(mcon->span, event, event_size);
 		err = event_size;
-	} else {
+	} 
+#ifndef WIN32
+	else {
 		err = sendto(mcon->socket, event, event_size, 0, (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
 	}
+#endif
 
 	zap_mutex_unlock(mcon->mutex);
 
-	if (err != event_size) {
-		err = -1;
-		abort();
-	}
+	zap_assert_return(err == event_size, -1, "Failed to send the boost message completely!");
 
 	if (boost_full_event(event->event_id)) {
 		sangomabc_print_event_call(mcon, event, 0, 1, file, func, line);
@@ -471,15 +485,13 @@ int __sangomabc_connection_write(sangomabc_connection_t *mcon, sangomabc_event_t
 
 int __sangomabc_connection_writep(sangomabc_connection_t *mcon, sangomabc_event_t *event, const char *file, const char *func, int line)
 {
-	int err;
+	int err = 0;
 	int event_size=sizeof(sangomabc_event_t);
 
 	if (!mcon->sigmod) {
-		if (!event || mcon->socket < 0 || !mcon->mutex) {
-			zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: No Event Device\n");
-			return -EINVAL;
-			abort();
-		}
+		zap_assert_return(event != NULL, -1, "No event!");
+		zap_assert_return(mcon->socket >= 0, -1, "No mcon->socket!");
+		zap_assert_return(mcon->mutex != NULL, -1, "No mcon->mutex!");
 	}
     
 	if (!boost_full_event(event->event_id)) {
@@ -492,15 +504,15 @@ int __sangomabc_connection_writep(sangomabc_connection_t *mcon, sangomabc_event_
 		mcon->sigmod->write_msg(mcon->span, event, event_size);
 	    err = event_size;
 
-	} else {
+	} 
+#ifndef WIN32
+	else {
 		err = sendto(mcon->socket, event, event_size, 0, (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
 	}
+#endif
 	zap_mutex_unlock(mcon->mutex);
 
-	if (err != event_size) {
-		err = -1;
-		abort();
-	}
+	zap_assert_return(err == event_size, -1, "Failed to send boost message completely!");
 
 	if (boost_full_event(event->event_id)) {
 		sangomabc_print_event_call(mcon, event, 1, 1, file, func, line);
@@ -519,15 +531,15 @@ void sangomabc_call_init(sangomabc_event_t *event, const char *calling, const ch
 
 	if (calling) {
 		strncpy((char*)event->calling_number_digits, calling, sizeof(event->calling_number_digits)-1);
-		event->calling_number_digits_count = strlen(calling);
+		event->calling_number_digits_count = (uint8_t)strlen(calling);
 	}
 
 	if (called) {
 		strncpy((char*)event->called_number_digits, called, sizeof(event->called_number_digits)-1);
-		event->called_number_digits_count = strlen(called);
+		event->called_number_digits_count = (uint8_t)strlen(called);
 	}
 		
-	event->call_setup_id = setup_id;
+	event->call_setup_id = (uint16_t)setup_id;
 	
 }
 
@@ -535,8 +547,8 @@ void sangomabc_event_init(sangomabc_short_event_t *event, sangomabc_event_id_t e
 {
 	memset(event, 0, sizeof(sangomabc_short_event_t));
 	event->event_id = event_id;
-	event->chan = chan;
-	event->span = span;
+	event->chan = (uint8_t)chan;
+	event->span = (uint8_t)span;
 }
 
 const char *sangomabc_event_id_name(uint32_t event_id)

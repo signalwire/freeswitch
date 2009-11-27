@@ -38,6 +38,11 @@
  *
  */
 
+/* NOTE:
+On WIN32 platform this code works with sigmod ONLY, don't try to make sense of any socket code for win32
+I basically ifdef out everything that the compiler complained about
+*/
+
 #include "openzap.h"
 #include "sangoma_boost_client.h"
 #include "zap_sangoma_boost.h"
@@ -194,11 +199,11 @@ static sangoma_boost_request_id_t __next_request_id(const char *func, int line)
  */
 static zap_channel_t *find_zchan(zap_span_t *span, sangomabc_short_event_t *event, int force)
 {
-	int i;
+	uint32_t i;
 	zap_channel_t *zchan = NULL;
 	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
-	int targetspan = event->span+1;
-	int targetchan = event->chan+1;
+	uint32_t targetspan = event->span+1;
+	uint32_t targetchan = event->chan+1;
 	if (sangoma_boost_data->sigmod) {
 		/* span is not strictly needed here since we're supposed to get only events for our span */
 		targetspan = event->span;
@@ -358,13 +363,13 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	zap_set_string(event.calling_name, caller_data->cid_name);
 	zap_set_string(event.isup_in_rdnis, caller_data->rdnis.digits);
     if (strlen(caller_data->rdnis.digits)) {
-        event.isup_in_rdnis_size = strlen(caller_data->rdnis.digits)+1;
+        event.isup_in_rdnis_size = (uint16_t)strlen(caller_data->rdnis.digits)+1;
     }
     
 	event.calling_number_screening_ind = caller_data->screen;
 	event.calling_number_presentation = caller_data->pres;
 	if (sangoma_boost_data->sigmod) {
-		event.span = span->channels[1]->physical_span_id;
+		event.span = (uint8_t)span->channels[1]->physical_span_id;
 	}
 
 	OUTBOUND_REQUESTS[r].status = BST_WAITING;
@@ -1315,9 +1320,11 @@ static zap_status_t zap_boost_connection_open(zap_span_t *span)
  */
 static int zap_boost_wait_event(zap_span_t *span, int ms)
 {
+#ifndef WIN32
 		struct timeval tv = { 0, ms * 1000 };
-		int max, activity;
 		sangomabc_connection_t *mcon, *pcon;
+		int max, activity;
+#endif
 		zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 
 		if (sangoma_boost_data->sigmod) {
@@ -1331,6 +1338,7 @@ static int zap_boost_wait_event(zap_span_t *span, int ms)
 			}
 			return 1;
 		}
+#ifndef WIN32
 		mcon = &sangoma_boost_data->mcon;
 		pcon = &sangoma_boost_data->pcon;
 
@@ -1352,6 +1360,8 @@ static int zap_boost_wait_event(zap_span_t *span, int ms)
 		}
 
 		return 1;
+#endif
+		return 0;
 }
 
 
