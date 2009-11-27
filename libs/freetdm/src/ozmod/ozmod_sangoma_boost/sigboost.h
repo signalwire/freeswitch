@@ -30,6 +30,7 @@ enum	e_sigboost_event_id_values
 	SIGBOOST_EVENT_CALL_STOPPED_ACK			= 0x86, /*134*/
 	SIGBOOST_EVENT_SYSTEM_RESTART			= 0x87, /*135*/
 	SIGBOOST_EVENT_SYSTEM_RESTART_ACK		= 0x88, /*136*/
+	SIGBOOST_EVENT_CALL_PROGRESS            = 0x50, /*decimal  80*/
 	/* Following IDs are ss7boost to sangoma_mgd only. */
 	SIGBOOST_EVENT_HEARTBEAT			= 0x89, /*137*/
 	SIGBOOST_EVENT_INSERT_CHECK_LOOP		= 0x8a, /*138*/
@@ -68,13 +69,21 @@ enum	e_sigboost_huntgroup_values
 	SIGBOOST_HUNTGRP_RR_DESC	= 0x03, /* round-robin with highest available first */
 };
 
+enum e_sigboost_event_info_par_values
+{
+  	SIGBOOST_EVI_SPARE 				   	 	= 0x00, 
+  	SIGBOOST_EVI_ALERTING 					= 0x01, 
+  	SIGBOOST_EVI_PROGRESS 					= 0x02, 
+};
+
+
 #define MAX_DIALED_DIGITS	31
 
 /* Next two defines are used to create the range of values for call_setup_id
  * in the t_sigboost structure.
  * 0..((CORE_MAX_SPANS * CORE_MAX_CHAN_PER_SPAN) - 1) */
 #define CORE_MAX_SPANS 		200
-#define CORE_MAX_CHAN_PER_SPAN 	30
+#define CORE_MAX_CHAN_PER_SPAN 	32
 #define MAX_PENDING_CALLS 	CORE_MAX_SPANS * CORE_MAX_CHAN_PER_SPAN
 /* 0..(MAX_PENDING_CALLS-1) is range of call_setup_id below */
 #define SIZE_RDNIS	900
@@ -99,6 +108,7 @@ typedef struct
 	uint32_t		trunk_group;
 	uint8_t			span;
 	uint8_t			chan;
+	/* struct timeval  	tv; */ 
 	uint8_t			called_number_digits_count;
 	char			called_number_digits [MAX_DIALED_DIGITS + 1]; /* it's a null terminated string */
 	uint8_t			calling_number_digits_count; /* it's an array */
@@ -126,15 +136,18 @@ typedef struct
 	uint32_t		trunk_group;
 	uint8_t			span;
 	uint8_t			chan;
+	/* struct timeval  	tv; */ 
 	uint8_t			release_cause;
 } t_sigboost_short;
 #pragma pack()
+
 
 static inline int boost_full_event(int event_id)
 {
         switch (event_id) {
         case SIGBOOST_EVENT_CALL_START:
         case SIGBOOST_EVENT_DIGIT_IN:
+		case SIGBOOST_EVENT_CALL_PROGRESS:
                 return 1;
         default:
                 return 0;
@@ -142,6 +155,5 @@ static inline int boost_full_event(int event_id)
 
         return 0;
 }
-
 
 #endif

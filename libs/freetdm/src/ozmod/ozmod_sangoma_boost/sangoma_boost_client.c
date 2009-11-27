@@ -53,9 +53,10 @@ struct sangomabc_map {
 };
 
 static struct sangomabc_map sangomabc_table[] = {
-	{SIGBOOST_EVENT_CALL_START, "CALL_START"}, 
+	{SIGBOOST_EVENT_CALL_START, "CALL_START"},
 	{SIGBOOST_EVENT_CALL_START_ACK, "CALL_START_ACK"}, 
-	{SIGBOOST_EVENT_CALL_START_NACK, "CALL_START_NACK"}, 
+	{SIGBOOST_EVENT_CALL_START_NACK, "CALL_START_NACK"},
+	{SIGBOOST_EVENT_CALL_PROGRESS, "CALL PROGRESS"},
 	{SIGBOOST_EVENT_CALL_START_NACK_ACK, "CALL_START_NACK_ACK"}, 
 	{SIGBOOST_EVENT_CALL_ANSWERED, "CALL_ANSWERED"}, 
 	{SIGBOOST_EVENT_CALL_STOPPED, "CALL_STOPPED"}, 
@@ -75,7 +76,7 @@ static void sangomabc_print_event_call(sangomabc_connection_t *mcon, sangomabc_e
 {
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
-	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT: %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s]\n", 
+	zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "%s EVENT: %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s] Rdnis=[%s]\n",
 		    dir ? "TX":"RX", 
 			sangomabc_event_id_name(event->event_id), 
 			event->event_id, 
@@ -85,8 +86,8 @@ static void sangomabc_print_event_call(sangomabc_connection_t *mcon, sangomabc_e
 			event->fseqno, 
 			strlen(event->calling_name)?event->calling_name:"N/A", 
 			(event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"), 
-			(event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A")
-			);
+			(event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A"),
+			event->isup_in_rdnis);
 
 }
 static void sangomabc_print_event_short(sangomabc_connection_t *mcon, sangomabc_short_event_t *event, int priority, int dir, const char *file, const char *func, int line)
