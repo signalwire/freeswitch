@@ -405,6 +405,17 @@ typedef enum {
 	ZAP_CHANNEL_ANSWERED = (1 << 23),
 	ZAP_CHANNEL_MUTE = (1 << 24)
 } zap_channel_flag_t;
+#if defined(__cplusplus) && defined(WIN32) 
+    // fix C2676 
+__inline__ zap_channel_flag_t operator|=(zap_channel_flag_t a, int32_t b) {
+    a = (zap_channel_flag_t)(a | b);
+    return a;
+}
+__inline__ zap_channel_flag_t operator&=(zap_channel_flag_t a, int32_t b) {
+    a = (zap_channel_flag_t)(a & b);
+    return a;
+}
+#endif
 
 typedef enum {
 	ZSM_NONE,

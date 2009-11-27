@@ -175,6 +175,10 @@
 #include "zap_buffer.h"
 #include "zap_threadmutex.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __WINDOWS__
 #define zap_sleep(x) Sleep(x)
 #else
@@ -227,7 +231,7 @@
 #define zap_set_flag(obj, flag) (obj)->flags |= (flag)
 #define zap_set_flag_locked(obj, flag) assert(obj->mutex != NULL);	\
 	zap_mutex_lock(obj->mutex);										\
-	(obj)->flags |= (flag);											\
+	(obj)->flags |= (flag);          	   	                        \
 	zap_mutex_unlock(obj->mutex);
 
 #define zap_set_pflag(obj, flag) (obj)->pflags |= (flag)
@@ -316,10 +320,6 @@
   \command flags the flags to copy
 */
 #define zap_copy_flags(dest, src, flags) (dest)->flags &= ~(flags);	(dest)->flags |= ((src)->flags & (flags))
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef enum {
 	ZAP_STATE_CHANGE_FAIL,
