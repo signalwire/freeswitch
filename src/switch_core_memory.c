@@ -569,12 +569,8 @@ void switch_core_memory_stop(void)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping memory pool queue.\n");
 
-	memory_manager.pool_thread_running = -1;
+	memory_manager.pool_thread_running = 0;
 	switch_thread_join(&st, pool_thread_p);
-	
-	while (memory_manager.pool_thread_running) {
-		switch_cond_next();
-	}
 #endif
 }
 
