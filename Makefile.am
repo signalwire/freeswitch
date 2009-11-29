@@ -228,10 +228,10 @@ src/include/switch_swigable_cpp.h: $(switch_srcdir)/src/include/switch_cpp.h
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
 
-$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool modules.conf 
+$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool $(switch_builddir)/modules.conf 
 
 $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
-	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > quiet_libtool
+	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > $(switch_builddir)/quiet_libtool
 
 
 yaml-files:
@@ -512,7 +512,7 @@ megaclean: eclean modclean
 libclean:
 	@for file in `ls ./libs`; do pushd "./libs/"$$file; make clean; rm -f .built; popd; done
 
-modules.conf:
+$(switch_builddir)/modules.conf:
 	if test -f $@; then touch $@; else cp $(switch_srcdir)/build/modules.conf.in $@ ;fi
 
 $(OUR_MODULES):

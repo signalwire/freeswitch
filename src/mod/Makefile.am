@@ -25,6 +25,7 @@ $(OUR_MODULES) $(OUR_CLEAN_MODULES) $(OUR_INSTALL_MODULES) $(OUR_UNINSTALL_MODUL
 	then echo ; echo "WARNING $$modname is not a valid FreeSWITCH module dir, skipping it....." ; else \
 		echo ;\
 		echo making $$target $$modname ;\
+		test -d "$$buildmoddir" || mkdir -p $$buildmoddir ; \
 		(if test -f "$$moddir/Makefile" ; then \
 			test -f "$$buildmoddir/Makefile" || cp $$moddir/Makefile $$buildmoddir/Makefile ; \
 			cd $$buildmoddir && MODDIR=$$moddir MODNAME=$$modname BASE=$(switch_srcdir) $(MAKE) $(AM_MAKEFLAGS) $$target; \
