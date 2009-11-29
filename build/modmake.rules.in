@@ -20,7 +20,7 @@ LIBCURL_DEPS=@LIBCURL_DEPS@
 LIBCURL=@LIBCURL@
 LIBCURL_CPPFLAGS=@LIBCURL_CPPFLAGS@
 CURL_DIR=$(switch_srcdir)/libs/curl
-CURLLA=$(CURL_DIR)/lib/libcurl.la
+CURLLA=$(switch_builddir)/libs/curl/lib/libcurl.la
 
 OPENSSL_LIBS=@openssl_LIBS@
 OPENSSL_CFLAGS=@openssl_CFLAGS@
@@ -50,14 +50,14 @@ CXXCOMPILE = $(CXX) $(ALL_CXXFLAGS) $(DEFS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile --tag=CXX $(CXXCOMPILE)
 CXXLINK = $(LIBTOOL) --mode=link --tag=CXX $(CXXLD) $(ALL_CXXFLAGS) $(LDFLAGS) -shared -module -avoid-version -rpath $(MODINSTDIR) -o $@
 
-CSOURCEFILE=$(MODNAME).c
-CXXSOURCEFILE=$(MODNAME).cpp
+CSOURCEFILE=$(MODDIR)/$(MODNAME).c
+CXXSOURCEFILE=$(MODDIR)/$(MODNAME).cpp
 TOUCH_TARGET=@TOUCH_TARGET@
 
 #MAKE_OPTS = `if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s" 2>&1 >/dev/null && echo -s;fi`
 MAKE_OPTS = `test -n "$(VERBOSE)" || echo -s`
 RECURSE_MODNAME=`pwd | sed -e 's|^.*/||'`
-RECURSE_SOURCEFILE=`if test -f $$modname.cpp; then echo $$modname.cpp; else echo $$modname.c; fi`
+RECURSE_SOURCEFILE=`if test -f "$(MODDIR)/$$modname.cpp"; then echo "$(MODDIR)/$$modname.cpp"; else echo "$(MODDIR)/$$modname.c"; fi`
 RECURSE_OUR_DEPS=`test -z "$(WANT_CURL)" || if test ! -z "$(LIBCURL_DEPS)"; then echo $(CURLLA); fi `
 RECURSE_OUR_CFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL_CPPFLAGS) ; $(LOCAL_INSERT_CFLAGS) `
 RECURSE_OUR_LDFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL) ; $(LOCAL_INSERT_LDFLAGS) `
@@ -68,7 +68,7 @@ RECURSE_MAKE=+modname="$(RECURSE_MODNAME)" ; \
 		ourcflags="$(RECURSE_OUR_CFLAGS)" ; \
 		ourldflags="$(RECURSE_OUR_LDFLAGS)" ; \
 		insertobjs="`$(LOCAL_INSERT_OBJS)`" ; \
-		$(MAKE) $(MAKE_OPTS) MODNAME="$$modname" SOURCEFILE="$$sourcefile" \
+		$(MAKE) $(MAKE_OPTS) MODNAME="$$modname" SOURCEFILE="$$sourcefile" MODDIR="$(MODDIR)" \
 			OUR_DEPS="$$ourdefs" OUR_CFLAGS="$$ourcflags" OUR_LDFLAGS="$$ourldflags" OUR_OBJS="$$insertobjs"
 
 all: Makefile
@@ -96,7 +96,7 @@ extraclean-modules: distclean local_extraclean
 
 Makefile:
 	@if test ! -f $@; then \
-	  if ! pwd | grep $(switch_srcdir)/src/mod ; then rulesdir=$(switch_srcdir) ; else rulesdir=../../../.. ; fi ; \
+	  if ! pwd | grep $(switch_builddir)/src/mod ; then rulesdir=$(switch_builddir) ; else rulesdir=../../../.. ; fi ; \
 	  echo BASE=$$rulesdir > Makefile ; \
 	  echo 'include $$(BASE)/build/modmake.rules' >> Makefile ; \
 	fi ;
