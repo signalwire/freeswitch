@@ -145,25 +145,25 @@ local_all local_depend local_clean depend_install local_install local_distclean 
 
 .c.o:
 	@echo Compiling $<...
-	@if test ! -z $(VERBOSE) ; then echo $(COMPILE) -c -o $@ $< ; fi
-	@$(COMPILE) -c -o $@ $< || exit 1
+	@if test ! -z $(VERBOSE) ; then echo $(COMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; fi
+	@$(COMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< || exit 1
 
 .c.lo:
 	@echo Compiling $<...
-	@if test ! -z $(VERBOSE) ; then echo $(LTCOMPILE) -c -o $@ $< ; fi
-	@$(LTCOMPILE) -c -o $@ $< || exit 1
+	@if test ! -z $(VERBOSE) ; then echo $(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; fi
+	@$(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< || exit 1
 
 .cpp.o:
 	@echo Compiling $<...
-	@if test ! -z $(VERBOSE) ; then echo $(CXXCOMPILE) -c -o $@ $< ; fi
-	@$(CXXCOMPILE) -c -o $@ $< || exit 1
+	@if test ! -z $(VERBOSE) ; then echo $(CXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; fi
+	@$(CXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< || exit 1
 
 .cpp.lo:
 	@echo Compiling $<...
-	@if test ! -z $(VERBOSE) ; then echo $(LTCXXCOMPILE) -c -o $@ $< ; fi
-	@$(LTCXXCOMPILE) -c -o $@ $< || exit 1
+	@if test ! -z $(VERBOSE) ; then echo $(LTCXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; fi
+	@$(LTCXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< || exit 1
 
-$(MODNAME).o $(MODNAME).lo: $(SOURCEFILE) \
+$(MODNAME).o: $(SOURCEFILE) \
   $(switch_srcdir)/src/include/switch.h \
   $(switch_builddir)/src/include/switch_am_config.h \
   $(switch_srcdir)/src/include/switch_types.h $(switch_srcdir)/src/include/switch_apr.h \
@@ -177,6 +177,37 @@ $(MODNAME).o $(MODNAME).lo: $(SOURCEFILE) \
   $(switch_srcdir)/src/include/switch_ivr.h $(switch_srcdir)/src/include/switch_rtp.h \
   $(switch_srcdir)/src/include/switch_stun.h $(switch_srcdir)/src/include/switch_log.h \
   $(switch_srcdir)/src/include/switch_xml.h
+	@echo Compiling $<...
+	if test -f "$(CSOURCEFILE)"; then \
+		if test ! -z $(VERBOSE) ; then echo $(COMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; fi ;\
+		$(COMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; \
+	else \
+		if test ! -z $(VERBOSE) ; then echo $(CXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; fi ;\
+		$(CXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; \
+	fi;
+
+$(MODNAME).lo: $(SOURCEFILE) \
+  $(switch_srcdir)/src/include/switch.h \
+  $(switch_builddir)/src/include/switch_am_config.h \
+  $(switch_srcdir)/src/include/switch_types.h $(switch_srcdir)/src/include/switch_apr.h \
+  $(switch_srcdir)/src/include/switch_core_db.h $(switch_srcdir)/src/include/switch_regex.h \
+  $(switch_srcdir)/src/include/switch_core.h $(switch_srcdir)/src/include/switch_loadable_module.h \
+  $(switch_srcdir)/src/include/switch_console.h $(switch_srcdir)/src/include/switch_utils.h \
+  $(switch_srcdir)/src/include/switch_caller.h $(switch_srcdir)/src/include/switch_config.h \
+  $(switch_srcdir)/src/include/switch_frame.h $(switch_srcdir)/src/include/switch_module_interfaces.h \
+  $(switch_srcdir)/src/include/switch_channel.h $(switch_srcdir)/src/include/switch_buffer.h \
+  $(switch_srcdir)/src/include/switch_event.h $(switch_srcdir)/src/include/switch_resample.h \
+  $(switch_srcdir)/src/include/switch_ivr.h $(switch_srcdir)/src/include/switch_rtp.h \
+  $(switch_srcdir)/src/include/switch_stun.h $(switch_srcdir)/src/include/switch_log.h \
+  $(switch_srcdir)/src/include/switch_xml.h
+	@echo Compiling $<...
+	if test -f "$(CSOURCEFILE)"; then \
+		if test ! -z $(VERBOSE) ; then echo $(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; fi ;\
+		$(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; \
+	else \
+		if test ! -z $(VERBOSE) ; then echo $(LTCXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; fi ;\
+		$(LTCXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; \
+	fi;
 
 $(switch_srcdir)/src/include/switch.h:
 
