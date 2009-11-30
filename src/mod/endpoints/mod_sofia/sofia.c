@@ -1302,9 +1302,11 @@ void launch_sofia_profile_thread(sofia_profile_t *profile)
 
 static void logger(void *logarg, char const *fmt, va_list ap)
 {
-	if (fmt && ap) {
+	if (!fmt) return;
+
+	if (ap) {
 		switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, mod_sofia_globals.tracelevel, fmt, ap);
-	} else if (fmt && !ap) {
+	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, mod_sofia_globals.tracelevel, "%s", fmt);
 	}
 }
