@@ -1810,7 +1810,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (rtp_session->timer.interval) {
 			if ((switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) &&
 				rtp_session->read_pollfd) {
-				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 1) == SWITCH_STATUS_SUCCESS) {
+				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
 					rtp_session->hot_hits += rtp_session->samples_per_interval;
 					
 					if (rtp_session->hot_hits >= rtp_session->samples_per_second * 5) {
@@ -2266,7 +2266,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
 			int fdr;
 			
-			if ((poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, 1)) == SWITCH_STATUS_SUCCESS) {
+			if ((poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, 0)) == SWITCH_STATUS_SUCCESS) {
 				goto recvfrom;
 			}
 
