@@ -22,15 +22,13 @@ LOCAL_SOURCES=$(MP3SOURCES)
 
 include $(switch_srcdir)/build/modmake.rules
 
-DEFAULT_ARGS=--prefix=$(PREFIX) --disable-shared --with-pic
-
 $(LOCAL_OBJS): $(LOCAL_SOURCES)
 
 $(MPG123_DIR):
 	$(GETLIB) $(MPG123).tar.gz
 
 $(MPG123_DIR)/Makefile: $(MPG123_DIR)
-	cd $(MPG123_DIR) && CFLAGS=$(AM_CFLAGS) CC=$(CC) CXX=$(CXX) ./configure --disable-shared --with-pic CPPFLAGS= LDFLAGS=
+	cd $(MPG123_DIR) && $(DEFAULT_VARS) ./configure $(DEFAULT_ARGS) CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
 $(MPG123LA): $(MPG123_DIR)/Makefile
@@ -41,7 +39,7 @@ $(LAME_DIR):
 	$(GETLIB) $(LAME).tar.gz
 
 $(LAME_DIR)/Makefile: $(LAME_DIR)
-	cd $(LAME_DIR) && CC=$(CC) CXX=$(CXX) ./configure $(DEFAULT_ARGS) --disable-decoder CPPFLAGS= LDFLAGS=
+	cd $(LAME_DIR) && $(DEFAULT_VARS) ./configure $(DEFAULT_ARGS) --disable-decoder CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
 $(LAMELA): $(LAME_DIR)/Makefile
@@ -52,7 +50,7 @@ $(SHOUT_DIR):
 	$(GETLIB) $(SHOUT).tar.gz
 
 $(SHOUT_DIR)/Makefile: $(SHOUT_DIR)
-	cd $(SHOUT_DIR) && CC=$(CC) CXX=$(CXX) ./configure $(DEFAULT_ARGS) --without-speex --without-vorbis --without-ogg CPPFLAGS= LDFLAGS=
+	cd $(SHOUT_DIR) && $(DEFAULT_VARS) ./configure $(DEFAULT_ARGS) --without-speex --without-vorbis --without-ogg CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
 $(SHOUTLA): $(SHOUT_DIR)/Makefile

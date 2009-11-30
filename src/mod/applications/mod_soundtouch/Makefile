@@ -5,13 +5,12 @@ LA=$(DIRECTORY)/source/SoundTouch/.libs/libSoundTouch.a
 BASE=../../../..
 LOCAL_CFLAGS += -I$(DIRECTORY)/include -DINTEGER_SAMPLES
 LOCAL_LIBADD=$(LA)
-DEFAULT_ARGS=--prefix=$(PREFIX) --disable-shared --with-pic
 
 include $(BASE)/build/modmake.rules
 
 $(DIRECTORY)/Makefile $(DIRECTORY)/config.status:
 	$(GETLIB) $(VERSION).tar.gz
-	cd $(DIRECTORY) && ./configure $(DEFAULT_ARGS) --enable-integer-samples
+	cd $(DIRECTORY) && $(DEFAULT_VARS) ./configure $(DEFAULT_ARGS) --enable-integer-samples
 	$(TOUCH_TARGET)
 
 $(LA): $(DIRECTORY)/Makefile $(DIRECTORY)/config.status

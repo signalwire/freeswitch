@@ -8,16 +8,15 @@ LIBLBERLA=$(LDAP_DIR)/libraries/liblber/liblber.la
 
 LOCAL_CFLAGS=-DWITH_OPENLDAP -DLDAP_DEPRECATED -I$(LDAP_DIR)/include
 
-DEFAULT_ARGS= --prefix=$(PREFIX) --disable-shared --with-pic --disable-slapd
-DEFAULT_ARGS+= --disable-bdb --disable-hdb
-
 LOCAL_LIBADD=$(LDAPLA) $(LIBLBERLA)
 
 include $(switch_srcdir)/build/modmake.rules
 
+DEFAULT_ARGS+= --disable-slapd --disable-bdb --disable-hdb
+
 $(LDAP_DIR):
 	$(GETLIB) $(LDAP).tar.gz
-	cd $(LDAP_DIR) && CFLAGS="`echo $(CFLAGS) | sed -e 's:-std=c99::'`" ./configure $(DEFAULT_ARGS)
+	cd $(LDAP_DIR) && $(DEFAULT_VARS) CFLAGS="`echo $(CFLAGS) | sed -e 's:-std=c99::'`" ./configure $(DEFAULT_ARGS)
 
 $(LDAPLA) $(LIBLBERLA): $(LDAP_DIR)
 	cd $(LDAP_DIR) && $(MAKE)

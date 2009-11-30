@@ -3,6 +3,10 @@
 switch_builddir=@switch_builddir@
 switch_srcdir=@switch_srcdir@
 
+build=@build@
+host=@host@
+target=$(host)
+
 CC=@CC@
 CXX=@CXX@
 AWK=@AWK@
@@ -37,10 +41,14 @@ DYNAMIC_LIB_EXTEN = @DYNAMIC_LIB_EXTEN@
 LIBTOOL_LIB_EXTEN = @LIBTOOL_LIB_EXTEN@
 SOLINK = @SOLINK@
 
+CFLAGS=@CFLAGS@
 LDFLAGS=@SWITCH_AM_LDFLAGS@ @LDFLAGS@ $(OUR_LDFLAGS)
 
 ALL_CFLAGS   = $(LOCAL_CFLAGS) $(MOD_CFLAGS) @SWITCH_AM_CFLAGS@ @CFLAGS@ -D_GNU_SOURCE $(OUR_CFLAGS)
 ALL_CXXFLAGS   = $(LOCAL_CFLAGS) $(MOD_CFLAGS) @SWITCH_AM_CXXFLAGS@ @CXXFLAGS@ -D_GNU_SOURCE $(OUR_CFLAGS)
+
+DEFAULT_ARGS:= --build=$(build) --host=$(host) --target=$(target) --prefix=$(PREFIX) --disable-shared --with-pic
+DEFAULT_VARS:= CFLAGS="$(ALL_CFLAGS)" CPPFLAGS="$(ALL_CXXFLAGS)" LDFLAGS="$(LDFLAGS)" CC="$(CC)" CXX="$(CXX)"
 
 COMPILE      = $(CC) $(ALL_CFLAGS) $(DEFS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
