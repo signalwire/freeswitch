@@ -46,7 +46,7 @@
 
     <!-- Example of routing based on holidays
 
-	This example covers all US Federal holidays except for inauguration day and memorial day.
+	This example covers all US Federal holidays except for inauguration day.
     -->
 
     <extension name="holiday_example" continue="true">
@@ -60,6 +60,10 @@
       </condition>
       <condition wday="2" mweek="3" mon="2">
 	<!-- president's day is the 3rd monday in february -->
+	<action application="set" data="open=false"/>
+      </condition>
+      <condition wday="2" mon="5" mday="25-31">
+	<!-- memorial day is the last monday in may (the only monday between the 25th and the 31st) -->
 	<action application="set" data="open=false"/>
       </condition>
       <condition mday="4" mon="6">
