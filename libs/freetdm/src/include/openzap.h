@@ -617,9 +617,7 @@ struct zap_io_interface {
 	zio_api_t api;
 };
 
-struct zap_queue;
-#define zap_queue_t struct zap_queue
-
+typedef struct zap_queue zap_queue_t;
 typedef zap_status_t (*zap_queue_create_func_t)(zap_queue_t **queue, zap_size_t capacity);
 typedef zap_status_t (*zap_queue_enqueue_func_t)(zap_queue_t *queue, void *obj);
 typedef void *(*zap_queue_dequeue_func_t)(zap_queue_t *queue);

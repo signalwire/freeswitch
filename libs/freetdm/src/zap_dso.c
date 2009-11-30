@@ -27,14 +27,14 @@
 #include <stdio.h>
 
 
-void zap_dso_destroy(zap_dso_lib_t *lib) {
+OZ_DECLARE(void) zap_dso_destroy(zap_dso_lib_t *lib) {
 	if (lib && *lib) {
 		FreeLibrary(*lib);
 		*lib = NULL;
 	}
 }
 
-zap_dso_lib_t zap_dso_open(const char *path, char **err) {
+OZ_DECLARE(zap_dso_lib_t) zap_dso_open(const char *path, char **err) {
     HINSTANCE lib;
 	
 	lib = LoadLibraryEx(path, NULL, 0);
@@ -53,7 +53,7 @@ zap_dso_lib_t zap_dso_open(const char *path, char **err) {
 	return lib;
 }
 
-void* zap_dso_func_sym(zap_dso_lib_t lib, const char *sym, char **err) {
+OZ_DECLARE(void*) zap_dso_func_sym(zap_dso_lib_t lib, const char *sym, char **err) {
 	FARPROC func = GetProcAddress(lib, sym);
 	if (!func) {
 		DWORD error = GetLastError();
@@ -78,14 +78,14 @@ void* zap_dso_func_sym(zap_dso_lib_t lib, const char *sym, char **err) {
 
 #include <dlfcn.h>
 
-void zap_dso_destroy(zap_dso_lib_t *lib) {
+OZ_DECLARE(void) zap_dso_destroy(zap_dso_lib_t *lib) {
 	if (lib && *lib) {
 		dlclose(*lib);
 		*lib = NULL;
 	}
 }
 
-zap_dso_lib_t zap_dso_open(const char *path, char **err) {
+OZ_DECLARE(zap_dso_lib_t) zap_dso_open(const char *path, char **err) {
 	void *lib = dlopen(path, RTLD_NOW | RTLD_LOCAL);
 	if (lib == NULL) {
 		*err = zap_strdup(dlerror());
@@ -93,7 +93,7 @@ zap_dso_lib_t zap_dso_open(const char *path, char **err) {
 	return lib;
 }
 
-void *zap_dso_func_sym(zap_dso_lib_t lib, const char *sym, char **err) {
+OZ_DECLARE(void*) zap_dso_func_sym(zap_dso_lib_t lib, const char *sym, char **err) {
 	void *func = dlsym(lib, sym);
 	if (!func) {
 		*err = zap_strdup(dlerror());

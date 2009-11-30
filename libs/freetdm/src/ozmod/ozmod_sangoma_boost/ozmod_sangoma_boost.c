@@ -1374,14 +1374,19 @@ static sangomabc_event_t *zap_boost_read_event(zap_span_t *span)
 	mcon = &sangoma_boost_data->mcon;
 	pcon = &sangoma_boost_data->pcon;
 
-	if (sangoma_boost_data->sigmod || FD_ISSET(pcon->socket, &sangoma_boost_data->rfds)) {
+	if (sangoma_boost_data->sigmod 
+#ifndef WIN32
+		|| FD_ISSET(pcon->socket, &sangoma_boost_data->rfds)
+#endif
+		) {
 		event = sangomabc_connection_readp(pcon, sangoma_boost_data->iteration);
 	}
-
+#ifndef WIN32
 	/* if there is no event and this is not a sigmod-driven span it's time to try the other connection for events */
 	if (!event && !sangoma_boost_data->sigmod && FD_ISSET(mcon->socket, &sangoma_boost_data->rfds)) {
 		event = sangomabc_connection_readp(mcon, sangoma_boost_data->iteration);
 	}
+#endif
 	return event;
 }
 

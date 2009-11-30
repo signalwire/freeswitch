@@ -34,8 +34,13 @@
 
 #include "openzap.h"
 
-#undef zap_queue_t
-typedef struct zap_queue {
+static zap_status_t zap_std_queue_create(zap_queue_t **outqueue, zap_size_t capacity);
+static zap_status_t zap_std_queue_enqueue(zap_queue_t *queue, void *obj);
+static void *zap_std_queue_dequeue(zap_queue_t *queue);
+static zap_status_t zap_std_queue_wait(zap_queue_t *queue, int ms);
+static zap_status_t zap_std_queue_destroy(zap_queue_t **inqueue);
+
+struct zap_queue {
 	zap_mutex_t *mutex;
 	zap_condition_t *condition;
 	zap_size_t capacity;
@@ -43,21 +48,15 @@ typedef struct zap_queue {
 	unsigned rindex;
 	unsigned windex;
 	void **elements;
-} zap_queue_t;
-
-static zap_status_t zap_std_queue_create(zap_queue_t **outqueue, zap_size_t capacity);
-static zap_status_t zap_std_queue_enqueue(zap_queue_t *queue, void *obj);
-static void *zap_std_queue_dequeue(zap_queue_t *queue);
-static zap_status_t zap_std_queue_wait(zap_queue_t *queue, int ms);
-static zap_status_t zap_std_queue_destroy(zap_queue_t **inqueue);
+};
 
 OZ_DECLARE_DATA zap_queue_handler_t g_zap_queue_handler = 
 {
-	.create = zap_std_queue_create,
-	.enqueue = zap_std_queue_enqueue,
-	.dequeue = zap_std_queue_dequeue,
-	.wait = zap_std_queue_wait,
-	.destroy = zap_std_queue_destroy
+	/*.create = */ zap_std_queue_create,
+	/*.enqueue = */ zap_std_queue_enqueue,
+	/*.dequeue = */ zap_std_queue_dequeue,
+	/*.wait = */ zap_std_queue_wait,
+	/*.destroy = */ zap_std_queue_destroy
 };
 
 OZ_DECLARE(zap_status_t) zap_global_set_queue_handler(zap_queue_handler_t *handler)
@@ -76,11 +75,12 @@ OZ_DECLARE(zap_status_t) zap_global_set_queue_handler(zap_queue_handler_t *handl
 
 static zap_status_t zap_std_queue_create(zap_queue_t **outqueue, zap_size_t capacity)
 {
+	zap_queue_t *queue = NULL;
 	zap_assert_return(outqueue, ZAP_FAIL, "Queue double pointer is null\n");
 	zap_assert_return(capacity > 0, ZAP_FAIL, "Queue capacity is not bigger than 0\n");
 
 	*outqueue = NULL;
-	zap_queue_t *queue = zap_calloc(1, sizeof(*queue));
+	queue = zap_calloc(1, sizeof(*queue));
 	if (!queue) {
 		return ZAP_FAIL;
 	}
