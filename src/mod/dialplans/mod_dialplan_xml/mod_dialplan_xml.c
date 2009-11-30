@@ -106,6 +106,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		const char *xmon = switch_xml_attr(xcond, "mon");
 		const char *xmday = switch_xml_attr(xcond, "mday");
 		const char *xweek = switch_xml_attr(xcond, "week");
+		const char *xmweek = switch_xml_attr(xcond, "mweek");
 		const char *xwday = switch_xml_attr(xcond, "wday");
 		const char *xhour = switch_xml_attr(xcond, "hour");
 		const char *xminute = switch_xml_attr(xcond, "minute");
@@ -158,6 +159,16 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			time_match = switch_number_cmp(xweek, test);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
 							  "Dialplan: week of year[%d] =~ %s (%s)\n", test, xweek, time_match ? "PASS" : "FAIL");
+		}
+
+		if (time_match && xmweek) {
+			/* calculate the day of the week of the first of the month (0-6) */
+			int firstdow = (int) (7 - (tm.tm_mday - (tm.tm_wday + 1)) % 7) % 7;
+			/* calculate the week of the month (1-6)*/
+			int test = (int) ceil((tm.tm_mday + firstdow) / 7.0);
+			time_match = switch_number_cmp(xmweek, test);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+							  "Dialplan: week of month[%d] =~ %s (%s)\n", test, xmweek, time_match ? "PASS" : "FAIL");
 		}
 
 		if (time_match && xwday) {

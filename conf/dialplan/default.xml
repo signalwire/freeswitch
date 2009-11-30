@@ -27,6 +27,7 @@
 	 mon = 1-12
 	 mday = 1-31
 	 week = 1-52
+	 mweek= 1-6
 	 wday = 1-7
 	 hour = 0-23
 	 minute = 0-59
@@ -40,6 +41,50 @@
     <extension name="tod_example" continue="true">
       <condition wday="2-6" hour="9-18">
 	<action application="set" data="open=true"/>
+      </condition>
+		</extension>
+
+    <!-- Example of routing based on holidays
+
+	This example covers all US Federal holidays except for inauguration day and memorial day.
+    -->
+
+    <extension name="holiday_example" continue="true">
+      <condition mday="1" mon="1">
+	<!-- new year's day -->
+	<action application="set" data="open=false"/>
+      </condition>
+      <condition wday="2" mweek="3" mon="1">
+	<!-- martin luther king day is the 3rd monday in january -->
+	<action application="set" data="open=false"/>
+      </condition>
+      <condition wday="2" mweek="3" mon="2">
+	<!-- president's day is the 3rd monday in february -->
+	<action application="set" data="open=false"/>
+      </condition>
+      <condition mday="4" mon="6">
+	<!-- independence day -->
+	<action application="set" data="open=false"/>
+      </condition>
+      <condition wday="2" mweek="1" mon="9">
+	<!-- labor day is the 1st monday in september -->
+	<action application="set" data="open=false"/>
+      </condition>
+      <condition wday="2" mweek="2" mon="10">
+	<!-- columbus day is the 2st monday in october -->
+	<action application="set" data="open=false"/>
+      </condition>
+      <condition mday="11" mon="11">
+	<!-- veteran's day -->
+	<action application="set" data="open=false"/>
+      </condition>
+      <condition wday="5-6" mweek="4" mon="11">
+	<!-- thanksgiving is the 4th thursday in november and usually there's an extension for black friday -->
+	<action application="set" data="open=false"/>
+      </condition>
+      <condition mday="25" mon="12">
+	<!-- Christmas -->
+	<action application="set" data="open=false"/>
       </condition>
     </extension>
 
