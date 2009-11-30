@@ -40,6 +40,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozmod_pika", "src\ozmod\ozm
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozmod_wanpipe", "src\ozmod\ozmod_wanpipe\ozmod_wanpipe.2008.vcproj", "{1A145EE9-BBD8-45E5-98CD-EB4BE99E1DCD}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozmod_sangoma_boost", "src\ozmod\ozmod_sangoma_boost\ozmod_sangoma_boost.2008.vcproj", "{D021EF2A-460D-4827-A0F7-41FDECF46F1B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -78,6 +80,10 @@ Global
 		{E886B4D5-AB4F-4092-B8F4-3B06E1E462EF}.Release|Win32.ActiveCfg = Release|Win32
 		{1A145EE9-BBD8-45E5-98CD-EB4BE99E1DCD}.Debug|Win32.ActiveCfg = Debug|Win32
 		{1A145EE9-BBD8-45E5-98CD-EB4BE99E1DCD}.Release|Win32.ActiveCfg = Release|Win32
+		{D021EF2A-460D-4827-A0F7-41FDECF46F1B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D021EF2A-460D-4827-A0F7-41FDECF46F1B}.Debug|Win32.Build.0 = Debug|Win32
+		{D021EF2A-460D-4827-A0F7-41FDECF46F1B}.Release|Win32.ActiveCfg = Release|Win32
+		{D021EF2A-460D-4827-A0F7-41FDECF46F1B}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
