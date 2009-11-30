@@ -11,8 +11,6 @@ LOCAL_LIBADD=$(JSONLA)
 
 include $(BASE)/build/modmake.rules
 
-$(LOCAL_OBJS): $(LOCAL_SOURCES)
-
 $(JSON_DIR):
 	$(GETLIB) $(json-c).tar.gz
 

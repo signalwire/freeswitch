@@ -5,7 +5,6 @@ SNDFILELA=$(SNDFILE_DIR)/src/libsndfile.la
 
 LOCAL_CFLAGS=-I$(SNDFILE_DIR)/src
 LOCAL_LIBADD=$(SNDFILELA)
-LOCAL_OBJS=
 
 include $(BASE)/build/modmake.rules
 

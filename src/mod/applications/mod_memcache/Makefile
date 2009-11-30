@@ -12,8 +12,6 @@ LOCAL_LIBADD=$(MEMCACHEDLA)
 
 include $(switch_srcdir)/build/modmake.rules
 
-$(LOCAL_OBJS): $(LOCAL_SOURCES)
-
 $(MEMCACHED_DIR):
 	$(GETLIB) $(MEMCACHED).tar.gz
 

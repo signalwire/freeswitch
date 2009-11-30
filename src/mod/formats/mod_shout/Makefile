@@ -17,12 +17,8 @@ LOCAL_CFLAGS=-I$(SHOUT_DIR)/include -I$(LAME_DIR)/include -I$(MPG123_DIR)/src
 LOCAL_LIBADD=$(LAMELA) $(SHOUTLA) $(MPG123LA)
 
 LOCAL_LDFLAGS=`cat ../../../../libs/libshout-2.2.2/Makefile | grep SPEEX_LIBS | sed -e 's|^SPEEX_LIBS =||'` 
-LOCAL_OBJS=$(MP3OBJS)
-LOCAL_SOURCES=$(MP3SOURCES)
 
 include $(switch_srcdir)/build/modmake.rules
-
-$(LOCAL_OBJS): $(LOCAL_SOURCES)
 
 $(MPG123_DIR):
 	$(GETLIB) $(MPG123).tar.gz
