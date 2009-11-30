@@ -107,7 +107,6 @@ src/switch_config.c\
 src/switch_time.c\
 src/switch_odbc.c \
 libs/stfu/stfu.c\
-src/switch_cpp.cpp\
 src/g711.c\
 src/switch_pcm.c\
 libs/libteletone/src/libteletone_detect.c\
@@ -123,6 +122,10 @@ libs/miniupnpc/minissdpc.c \
 libs/miniupnpc/upnperrors.c \
 libs/libnatpmp/natpmp.c \
 libs/libnatpmp/getgateway.c
+
+if ENABLE_CPP
+libfreeswitch_la_SOURCES += src/switch_cpp.cpp
+endif
 
 library_includedir      = $(PREFIX)/include
 
