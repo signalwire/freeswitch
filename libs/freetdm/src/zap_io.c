@@ -2826,10 +2826,15 @@ OZ_DECLARE(zap_status_t) zap_configure_span_signaling(const char *type, zap_span
 		}
 	}
 
-	if (mod && mod->configure_span_signaling) {
+	if (!mod) {
+		zap_log(ZAP_LOG_ERROR, "Failed to load module type: %s\n", type);
+		return ZAP_FAIL;
+	}
+
+	if (mod->configure_span_signaling) {
 		status = mod->configure_span_signaling(span, sig_cb, parameters);
 	} else {
-		zap_log(ZAP_LOG_ERROR, "can't find module '%s' or the module did not implement the signaling configuration method\n", type);
+		zap_log(ZAP_LOG_ERROR, "Module %s did not implement the signaling configuration method\n", type);
 	}
 
 	return status;

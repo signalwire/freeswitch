@@ -1211,7 +1211,7 @@ static __inline__ void check_state(zap_span_t *span)
  * \brief Checks for events on a span
  * \param span Span to check for events
  */
-static __inline__ void check_events(zap_span_t *span, int ms_timeout)
+static __inline__ zap_status_t check_events(zap_span_t *span, int ms_timeout)
 {
 	zap_status_t status;
 	zap_sigmsg_t sigmsg;
@@ -1252,14 +1252,18 @@ static __inline__ void check_events(zap_span_t *span, int ms_timeout)
 		break;
 	case ZAP_FAIL:
 		{
-			zap_log(ZAP_LOG_DEBUG, "Boost Check Event Failure Failure! %d\n", zap_running());
+			if (!zap_running()) {
+				break;
+			}
+			zap_log(ZAP_LOG_ERROR, "Boost Check Event Failure Failure: %s\n", span->last_error);
+			return ZAP_FAIL;
 		}
 		break;
 	default:
 		break;
 	}
 
-	return;
+	return ZAP_SUCCESS;
 }
 
 /**
@@ -1271,9 +1275,15 @@ static void *zap_sangoma_events_run(zap_thread_t *me, void *obj)
 {
     zap_span_t *span = (zap_span_t *) obj;
 	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+	unsigned errs = 0;
 
 	while (zap_test_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING) && zap_running()) {
-		check_events(span,100);
+		if (check_events(span,100) != ZAP_SUCCESS) {
+			if (errs++ > 50) {
+				zap_log(ZAP_LOG_ERROR, "Too many event errors, quitting sangoma events thread\n");
+				return NULL;
+			}
+		}
 	}
 
 	return NULL;
@@ -1844,7 +1854,7 @@ static ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(zap_sangoma_boost_configure_span)
 /**
  * \brief Openzap sangoma boost signaling module definition
  */
-zap_module_t zap_module = { 
+EX_DECLARE_DATA zap_module_t zap_module = { 
 	/*.name =*/ "sangoma_boost",
 	/*.io_load =*/ NULL,
 	/*.io_unload =*/ NULL,

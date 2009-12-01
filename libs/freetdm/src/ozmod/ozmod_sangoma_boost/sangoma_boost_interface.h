@@ -37,6 +37,11 @@
 
 #include "openzap.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*! 
   \brief Callback used to notify signaling status changes on a channel
   \param zchan The openzap channel where the signaling status just changed
@@ -188,11 +193,20 @@ typedef struct boost_sigmod_interface_s {
 	void *pvt;
 } boost_sigmod_interface_t;
 
+#ifdef __cplusplus
+} // extern C
+#endif
+
 #define BOOST_INTERFACE_NAME boost_sigmod_interface
 #define BOOST_INTERFACE_NAME_STR "boost_sigmod_interface"
 /* use this in your sig boost module to declare your interface */
+#ifndef WIN32
 #define BOOST_INTERFACE boost_sigmod_interface_t BOOST_INTERFACE_NAME
+#else
+#define BOOST_INTERFACE __declspec(dllexport) boost_sigmod_interface_t BOOST_INTERFACE_NAME
 #endif
+#endif
+
 
 /* For Emacs:
  * Local Variables:
