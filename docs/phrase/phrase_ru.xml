@@ -434,11 +434,11 @@
 	</voicemail>
 	<directory>
 		<!-- The following phrases still need to be recorded -->
-    		<prompt phrase="Пожалйста, введите первые буквы имени абонента" filename="dir-enter-person.wav"/> <!--Please enter the first few letters of the persons-->
+    		<prompt phrase="Пожалуйста, введите первые буквы имени абонента" filename="dir-enter-person.wav"/> <!--Please enter the first few letters of the persons-->
         	<prompt phrase="Фамилии" filename="dir-last_name.wav"/> <!--last name.-->
                 <prompt phrase="Искать по ..." filename="dir-to_search_by.wav"/><!--To search by-->
                 <prompt phrase="Имени" filename="dir-first_name.wav"/><!--first name.-->
-                <prompt phrase="По вашему поиску ничего не найдено, попробуйте еще раз" filename="dir-no_match_entry.wav"/><!--Your search matched no results, try again.-->
+                <prompt phrase="По вашему запросу ничего не найдено, попробуйте еще раз" filename="dir-no_match_entry.wav"/><!--Your search matched no results, try again.-->
                 <prompt phrase="результаты Вашего запроса" filename="dir-result_match.wav"/><!--results matched your search.-->
                 <prompt phrase="По вашему запросу найдено слишком много вариантов, пожалуйста, попробуйте уточнить запрос" filename="dir-to_many_result.wav"/><!--Your search returned too many results, please try again.-->
                 <prompt phrase="нет больше вариантов" filename="dir-no_more_result.wav"/><!--No more results.-->
