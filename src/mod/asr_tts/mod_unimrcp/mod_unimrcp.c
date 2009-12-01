@@ -308,6 +308,8 @@ struct speech_channel {
 	speech_channel_state_t state;
 	/** UniMRCP <--> FreeSWITCH audio buffer */
 	audio_queue_t *audio_queue;
+	/** True, if channel was opened successfully */
+	int channel_opened;
 	/** rate */
 	uint16_t rate;
 	/** silence sample */
@@ -565,7 +567,7 @@ static switch_status_t audio_queue_create(audio_queue_t **audio_queue, const cha
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) unable to create audio queue buffer\n", laudio_queue->name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
-    }
+	}
 
 	if (switch_mutex_init(&laudio_queue->mutex, SWITCH_MUTEX_UNNESTED, pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) unable to create audio queue mutex\n", laudio_queue->name);
@@ -784,6 +786,7 @@ static switch_status_t speech_channel_create(speech_channel_t **schannel, const 
 	schan->params = NULL;
 	schan->rate = rate;
 	schan->silence = 0; /* L16 silence sample */
+	schan->channel_opened = 0;
 
 	if (switch_mutex_init(&schan->mutex, SWITCH_MUTEX_UNNESTED, pool) != SWITCH_STATUS_SUCCESS || 
 		switch_thread_cond_create(&schan->cond, pool) != SWITCH_STATUS_SUCCESS ||
@@ -816,7 +819,7 @@ static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
 	/* destroy the channel and session if not already done */
 	switch_mutex_lock(schannel->mutex);
 	if (schannel->state != SPEECH_CHANNEL_CLOSED) {
-		mrcp_application_channel_remove(schannel->unimrcp_session, schannel->unimrcp_channel);
+		mrcp_application_session_terminate(schannel->unimrcp_session);
 		while(schannel->state != SPEECH_CHANNEL_CLOSED) {
 			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
 				break;
@@ -1667,8 +1670,24 @@ static apt_bool_t synth_message_handler(const mrcp_app_message_t *app_message)
 static apt_bool_t speech_on_session_terminate(mrcp_application_t *application, mrcp_session_t *session, mrcp_sig_status_code_e status)
 {
 	speech_channel_t *schannel = (speech_channel_t *)mrcp_application_session_object_get(session);
+	switch_event_t *event = NULL;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Destroying MRCP session\n", schannel->name);
 	mrcp_application_session_destroy(session);
+
+	/* notify of channel close */
+	if (schannel->channel_opened && globals.enable_profile_events) {
+		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_CLOSE);
+		if (event) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Profile", schannel->profile->name);
+			if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "TTS");
+			} else {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "ASR");
+			}
+			switch_event_fire(&event);
+		}
+	}
+
 	speech_channel_set_state(schannel, SPEECH_CHANNEL_CLOSED);
 
 	return TRUE;
@@ -1718,6 +1737,7 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
 			}
 			switch_event_fire(&event);
 		}
+		schannel->channel_opened = 1;
 	} else {
 		if (schannel) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) %s channel error!\n", schannel->name, speech_channel_type_to_string(schannel->type));
@@ -1745,24 +1765,9 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
  */
 static apt_bool_t speech_on_channel_remove(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel, mrcp_sig_status_code_e status)
 {
-	switch_event_t *event = NULL;
 	speech_channel_t *schannel = (speech_channel_t *)mrcp_application_channel_object_get(channel);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) %s channel is removed\n", schannel->name, speech_channel_type_to_string(schannel->type));
 	schannel->unimrcp_channel = NULL;
-
-	/* notify of channel close */
-	if (globals.enable_profile_events) {
-		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_CLOSE);
-		if (event) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Profile", schannel->profile->name);
-			if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "TTS");
-			} else {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "ASR");
-			}
-			switch_event_fire(&event);
-		}
-	}
 
 	if (session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Terminating MRCP session\n", schannel->name);
