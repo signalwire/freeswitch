@@ -406,6 +406,7 @@ static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handl
 			if (*p == '\n' && *(p-1) == ';') {
 				*p = '\0';
 				*(p-1) = '\0';
+				p++;
 				break;
 			}
 			
