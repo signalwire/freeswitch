@@ -475,7 +475,7 @@
 	<ivr>
 		<prompt phrase="Номер счета" filename="ivr-account_number.wav"/><!-- Account number   -->
 		<prompt phrase="Соединение с вызывающим абонентом" filename="ivr-connect_to_caller.wav"/><!--Connect to caller    -->
-		<prompt phrase="Если вам известен добавочный номер вызываемого абонента, пожалуйста введите его сейчас" filename="ivr-enter_ext_pound.wav"/><!-- If you know your party's extension, please enter it now   -->
+		<prompt phrase="Если Вам известен добавочный номер вызываемого абонента, пожалуйста введите его сейчас" filename="ivr-enter_ext_pound.wav"/><!-- If you know your party's extension, please enter it now   -->
 		<prompt phrase="Пожалуйста, введите добавочный номер абонента завершив нажатием на клавишу решётка" filename="ivr-enter_ext.wav"/><!-- Please enter an extension followed by the pound sign-->
 		<prompt phrase="Для этого абонента" filename="ivr-for_this_person.wav"/><!-- For this person   -->
 		<prompt phrase="Пожалуйста, оставайтесь на линии, идет соединение" filename="ivr-hold_connect_call.wav"/><!-- Please hold while I connect your call   -->
@@ -535,7 +535,25 @@
 		<prompt phrase="Спасибо. Ваше сообщение было записано." filename="ivr-recording_saved.wav"/> <!-- Thank you. Your recording has been saved. -->
 		<prompt phrase="Нажмите 1 что бы сохранить сообщение. Нажмите 2 что бы прослушать Ваше сообщение. Нажмите 3 что бы перезаписать" filename="ivr-save_review_record.wav"/><!-- Press 1 to save your recording. Press 2 to review your recording. Press 3 to re-record. -->
 	        <prompt phrase="Система не смогла сохранить ваше сообщение. Попробуйте позднее." filename="ivr-unable_save.wav"/><!-- The system is unable to save your sound file at this time. Please try again later. -->
-		
+    		
+    		<prompt phrase="The system is unable to save your sound file at this time. Please try again later." filename="ivr-unable_save.wav" attr="Needs_to_be_recorded!"/><!--The system is unable to save your sound file at this time. Please try again later. -->
+        	<prompt phrase="Вы являетесь номером ..." filename="ivr-you_are_number.wav" attr="Needs_to_be_recorded!"/><!-- "You are number-->
+                <prompt phrase="на линии" filename="ivr-in_line.wav" attr="Needs_to_be_recorded!"/><!-- "In line."-->
+                <prompt phrase="Спасибо Вам за ожидание" filename="ivr-thank_you_for_holding.wav" attr="Needs_to_be_recorded!"/><!--"Thank you for holding." -->
+                <prompt phrase="Ваше время ожидания примерно..." filename="ivr-estimated_hold_time.wav" attr="Needs_to_be_recorded!"/><!--"Your estimated hold time is..." -->
+                <prompt phrase="Больше чем..." filename="ivr-more_than.wav" attr="Needs_to_be_recorded!"/><!--"More than..." -->
+                <prompt phrase="Меньше чем..." filename="ivr-less_than.wav" attr="Needs_to_be_recorded!"/><!-- "Less than..."-->
+                <prompt phrase="Начать запись" filename="ivr-begin_recording.wav " attr="Needs_to_be_recorded!"/><!--"Begin recording." -->
+                <prompt phrase="перевод звонка был отменен" filename="ivr-call_forwarding_has_been_cancelled.wav" attr="Needs_to_be_recorded!"/><!--"Call forwarding has been cancelled."  -->
+                <prompt phrase="Перевод звонка был установлен" filename="ivr-call_forwarding_has_been_set.wav " attr="Needs_to_be_recorded!"/><!--"Call forwarding has been set." -->
+                <prompt phrase="Пожалуйста, введите номер телефона" filename="ivr-please_enter_the_phone_number.wav" attr="Needs_to_be_recorded!"/><!--"Please enter the phone number." -->
+                <prompt phrase="Пожалуйста, назовите свое имя и причину вашего звонка" filename="ivr-please_state_your_name_and_reason_for_calling.wav " attr="Needs_to_be_recorded!"/><!--"Please state your name and the reason for your call." -->
+                <prompt phrase="Для принятия звонка нажмите 1, Чтобы отклонить звонок нажмите 2. Для отправки голосовой почты нажмите 3" filename="ivr-accept_reject_voicemail.wav" attr="Needs_to_be_recorded!"/><!--"To accept, press 1. To reject, press 2. To send to voicemail, press 3." -->
+                <prompt phrase="Входящий звонок" filename="ivr-incoming_call.wav" attr="Needs_to_be_recorded!"/><!--"Incoming call." -->
+                <prompt phrase="Спасибо за Ваш звонок" filename="ivr-thank_you_for_calling.wav" attr="Needs_to_be_recorded!"/><!--"Thank you for calling." -->
+                <prompt phrase="Пожалуйста, оставайтесь на линии. Ваш звонок будет принят моментально" filename="ivr-stay_on_line_call_answered_momentarily.wav" attr="Needs_to_be_recorded!"/><!--"Please stay on the line. You call will be answered momentarily." -->
+                <prompt phrase="Ваш звонок был переведен" filename="ivr-call_being_transferred.wav" attr="Needs_to_be_recorded!"/><!--"Your call is being transferred." filename="ivr-call_being_transferred.wav" -->
+                <prompt phrase="Пожалуйста, наслаждайтесь музыкой, пока ваш вонок переводится" filename="ivr-enjoy_music_while_transfer.wav" attr="Needs_to_be_recorded!"/> <!--"Please enjoy the music while your call is being transferred." -->
 	</ivr>
 	<misc>
 		<prompt phrase="Этот звонок шифруется" filename="call_secured.wav"/><!-- This call has been secured   -->
@@ -1065,7 +1083,7 @@
       		<!-- Event prompts -->
       		<prompt phrase="Добро пожаловать в агента регистрации шифрования ZRTP" filename="zrtp-enroll_welcome.wav"/>
       		<!-- Welcome to the ZRTP security enrollment agent.   -->
-      		<prompt phrase="Вы должны выбрать строку аутентификации с партнером по разговору, Если она не совпадет, система сообщит вам разрывом линии." filename="zrtp-check_sas.wav"/>
+      		<prompt phrase="Вы должны выбрать строку аутентификации с партнером по разговору, Если она не совпадет, система сообщит Вам разрывом линии." filename="zrtp-check_sas.wav"/>
       		<!-- You must check the authentication string with your partner. If it doesn't match, it indicates the presence of a wire tapper.   -->
       		<prompt phrase="Только телефоны, прошедшие аутентификацию, могут быть сконфигурированы для доверия системе для обеспечения ZRTP шифрованных звонков, так что такой звонок не даст эффекта." filename="zrtp-enroll_not_sip_registered.wav"/>
       		<!-- Only phones that are authenticated can be configured to trust this system to relay ZRTP secured calls.  Your phone is not authenticated with this system, so this call will have no effect.  -->
