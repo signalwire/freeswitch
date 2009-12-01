@@ -171,19 +171,32 @@ SWITCH_DECLARE(char *) switch_core_session_sprintf(switch_core_session_t *sessio
 	va_list ap;
 	char *result = NULL;
 
+	va_start(ap, fmt);
+	result = switch_core_vsprintf(session->pool, fmt, ap);
+	va_end(ap);
+
+	return result;
+}
+
+SWITCH_DECLARE(char *) switch_core_session_vsprintf(switch_core_session_t *session, const char *fmt, va_list ap)
+{
+	return switch_core_vsprintf(session->pool, fmt, ap);
+}
+
+SWITCH_DECLARE(char *) switch_core_vsprintf(switch_memory_pool_t *pool, const char *fmt, va_list ap)
+{
+	char *result = NULL;
+
+	switch_assert(pool != NULL);
+
 #ifdef LOCK_MORE
 #ifdef USE_MEM_LOCK
 	switch_mutex_lock(memory_manager.mem_lock);
 #endif
 #endif
 
-	switch_assert(session != NULL);
-	switch_assert(session->pool != NULL);
-	va_start(ap, fmt);
-
-	result = apr_pvsprintf(session->pool, fmt, ap);
+	result = apr_pvsprintf(pool, fmt, ap);
 	switch_assert(result != NULL);
-	va_end(ap);
 
 #ifdef LOCK_MORE
 #ifdef USE_MEM_LOCK
@@ -197,28 +210,11 @@ SWITCH_DECLARE(char *) switch_core_session_sprintf(switch_core_session_t *sessio
 SWITCH_DECLARE(char *) switch_core_sprintf(switch_memory_pool_t *pool, const char *fmt, ...)
 {
 	va_list ap;
-	char *result = NULL;
-
-	switch_assert(pool != NULL);
-
-#ifdef LOCK_MORE
-#ifdef USE_MEM_LOCK
-	switch_mutex_lock(memory_manager.mem_lock);
-#endif
-#endif
-
+	char *result;
 	va_start(ap, fmt);
-
-	result = apr_pvsprintf(pool, fmt, ap);
-	switch_assert(result != NULL);
-	va_end(ap);
-
-#ifdef LOCK_MORE
-#ifdef USE_MEM_LOCK
-	switch_mutex_unlock(memory_manager.mem_lock);
-#endif
-#endif
-
+	result = switch_core_vsprintf(pool, fmt, ap);
+	va_end(ap);	
+	
 	return result;
 }
 
