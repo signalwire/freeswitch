@@ -1112,6 +1112,18 @@
       		<prompt phrase="Шифрованный вызов." filename="zrtp-status_securing.wav"/>
       		<!-- Securing call.   -->
     	</zrtp>
+    	<users>
+    		<prompt phrase="Для отправки факса" filename="to_send_a_fax.wav"/>
+    		<prompt phrase="Абонент с номером ... не отвечает, пожалуйста..." filename="no_answer_please.wav"/>
+    		<prompt phrase="для соединения с секретарем." filename="to_connect_secretary.wav"/>
+    		<prompt phrase="чтобы оставить голосовое сообщение..." filename="to_leave_a_voice_message.wav"/>
+    		<prompt phrase="для звонка на мобильный сотрудника" filename="to_call_the_mobile_employee.wav"/>
+    		<prompt phrase="Извините, сейчас все линии заняты, пожалуйста, перезвоните позже" filename="sorry_call_back_later.wav"/>
+    		<prompt phrase="Извините сейчас мы не можем принять ваш звонок, пожалуйста, перезвоните через несколько минут" filename=""/>
+    		<prompt phrase="Факс работает в автоматическом режиме " filename="sorry_call_back_later2.wav"/>
+    		<prompt phrase="Нажмите старт, для принятия факса." filename="press_start_to_receive_a_fax.wav"/>
+    		<prompt phrase="Нажмите старт, для отправки факса." filename="press_start_to_send_a_fax.wav"/>
+    	</users>
   </ru>                                                                                                                                                                      
 </language>                                                                                                                                                                  
 
