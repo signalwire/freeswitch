@@ -519,10 +519,10 @@
 		<prompt phrase="Оператор" filename="ivr-operator.wav"/><!-- Operator   -->
 		<prompt phrase="Вы набрали несуществующий добавочный номер" filename="ivr-you_have_dialed_an_invalid_extension.wav"/><!--You have dialed an invalid extension.    -->
 		<prompt phrase="Пожалйста, наберите добавочный номер и нажмите клавишу решетка" filename="ivr-please_enter_extension_followed_by_pound.wav"/><!--Please enter your extension, followed by the pound sign.    -->
-		<prompt phrase="Пожалуйста введите ваш пинкод и нажмите клавишу решётка" filename="ivr-please_enter_pin_followed_by_pound.wav"/><!-- Please enter your pin number, followed by the pound sign.   -->
+		<prompt phrase="Пожалуйста введите Ваш пинкод и нажмите клавишу решётка" filename="ivr-please_enter_pin_followed_by_pound.wav"/><!-- Please enter your pin number, followed by the pound sign.   -->
 		<prompt phrase="Ваш пин код или номер не верны" filename="ivr-pin_or_extension_is-invalid.wav"/><!--  Your pin number or extension is invalid.  -->
-		<prompt phrase="Вы закрепляете этот телефон за вашей учётной записью" filename="ivr-you_are_about_to_provision_this_phone.wav"/><!-- You are about to provision this phone to your account...   -->
-		<prompt phrase="Пожалуйста повторите ваш пин код для подтверждения" filename="ivr-please_reenter_your_pin.wav"/><!-- Please re-enter your pin number to confirm.   -->
+		<prompt phrase="Вы закрепляете этот телефон за Вашей учётной записью" filename="ivr-you_are_about_to_provision_this_phone.wav"/><!-- You are about to provision this phone to your account...   -->
+		<prompt phrase="Пожалуйста повторите Ваш пин код для подтверждения" filename="ivr-please_reenter_your_pin.wav"/><!-- Please re-enter your pin number to confirm.   -->
 		<prompt phrase="Для регистрации на clueCon , пожалуйста нажмите .." filename="ivr-register_for_cluecon.wav"/><!-- To register for ClueCon, please press...   -->
 		<prompt phrase="Для входа" filename="ivr-to_log_in.wav"/><!--   to log in -->
 		<prompt phrase="Для выхода" filename="ivr-to_log_out.wav"/><!--  to log out  -->
@@ -534,26 +534,26 @@
 		<prompt phrase="Спасибо, этот телефон сейчас перезагрузится" filename="ivr-this_phone_will_now_reboot.wav"/><!--   Thank you, this phone will now reboot. -->
 		<prompt phrase="Спасибо. Ваше сообщение было записано." filename="ivr-recording_saved.wav"/> <!-- Thank you. Your recording has been saved. -->
 		<prompt phrase="Нажмите 1 что бы сохранить сообщение. Нажмите 2 что бы прослушать Ваше сообщение. Нажмите 3 что бы перезаписать" filename="ivr-save_review_record.wav"/><!-- Press 1 to save your recording. Press 2 to review your recording. Press 3 to re-record. -->
-	        <prompt phrase="Система не смогла сохранить ваше сообщение. Попробуйте позднее." filename="ivr-unable_save.wav"/><!-- The system is unable to save your sound file at this time. Please try again later. -->
+	        <prompt phrase="Система не смогла сохранить Ваше сообщение. Попробуйте позднее." filename="ivr-unable_save.wav"/><!-- The system is unable to save your sound file at this time. Please try again later. -->
     		
-    		<prompt phrase="The system is unable to save your sound file at this time. Please try again later." filename="ivr-unable_save.wav" attr="Needs_to_be_recorded!"/><!--The system is unable to save your sound file at this time. Please try again later. -->
-        	<prompt phrase="Вы являетесь номером ..." filename="ivr-you_are_number.wav" attr="Needs_to_be_recorded!"/><!-- "You are number-->
+    		<prompt phrase="Системе не удается сохранить Ваш звуковой файл в данный момент. Пожалуйста, попробуйте позже" filename="ivr-unable_save.wav" attr="Needs_to_be_recorded!"/><!--The system is unable to save your sound file at this time. Please try again later. -->
+        	<prompt phrase="Ваш номер ..." filename="ivr-you_are_number.wav" attr="Needs_to_be_recorded!"/><!-- "You are number-->
                 <prompt phrase="на линии" filename="ivr-in_line.wav" attr="Needs_to_be_recorded!"/><!-- "In line."-->
                 <prompt phrase="Спасибо Вам за ожидание" filename="ivr-thank_you_for_holding.wav" attr="Needs_to_be_recorded!"/><!--"Thank you for holding." -->
-                <prompt phrase="Ваше время ожидания примерно..." filename="ivr-estimated_hold_time.wav" attr="Needs_to_be_recorded!"/><!--"Your estimated hold time is..." -->
+                <prompt phrase="Ваше время ожидания составит примерно ..." filename="ivr-estimated_hold_time.wav" attr="Needs_to_be_recorded!"/><!--"Your estimated hold time is..." -->
                 <prompt phrase="Больше чем..." filename="ivr-more_than.wav" attr="Needs_to_be_recorded!"/><!--"More than..." -->
                 <prompt phrase="Меньше чем..." filename="ivr-less_than.wav" attr="Needs_to_be_recorded!"/><!-- "Less than..."-->
                 <prompt phrase="Начать запись" filename="ivr-begin_recording.wav " attr="Needs_to_be_recorded!"/><!--"Begin recording." -->
-                <prompt phrase="перевод звонка был отменен" filename="ivr-call_forwarding_has_been_cancelled.wav" attr="Needs_to_be_recorded!"/><!--"Call forwarding has been cancelled."  -->
-                <prompt phrase="Перевод звонка был установлен" filename="ivr-call_forwarding_has_been_set.wav " attr="Needs_to_be_recorded!"/><!--"Call forwarding has been set." -->
+                <prompt phrase="Переадресация звонков была отменена" filename="ivr-call_forwarding_has_been_cancelled.wav" attr="Needs_to_be_recorded!"/><!--"Call forwarding has been cancelled."  -->
+                <prompt phrase="Переадресация звонков была настроена" filename="ivr-call_forwarding_has_been_set.wav " attr="Needs_to_be_recorded!"/><!--"Call forwarding has been set." -->
                 <prompt phrase="Пожалуйста, введите номер телефона" filename="ivr-please_enter_the_phone_number.wav" attr="Needs_to_be_recorded!"/><!--"Please enter the phone number." -->
-                <prompt phrase="Пожалуйста, назовите свое имя и причину вашего звонка" filename="ivr-please_state_your_name_and_reason_for_calling.wav " attr="Needs_to_be_recorded!"/><!--"Please state your name and the reason for your call." -->
-                <prompt phrase="Для принятия звонка нажмите 1, Чтобы отклонить звонок нажмите 2. Для отправки голосовой почты нажмите 3" filename="ivr-accept_reject_voicemail.wav" attr="Needs_to_be_recorded!"/><!--"To accept, press 1. To reject, press 2. To send to voicemail, press 3." -->
+                <prompt phrase="Пожалуйста, назовите свое имя и цель Вашего звонка" filename="ivr-please_state_your_name_and_reason_for_calling.wav " attr="Needs_to_be_recorded!"/><!--"Please state your name and the reason for your call." -->
+                <prompt phrase="Что бы принять звонок нажмите 1, чтобы отклонить звонок нажмите 2. Для отправки голосовой почты нажмите 3" filename="ivr-accept_reject_voicemail.wav" attr="Needs_to_be_recorded!"/><!--"To accept, press 1. To reject, press 2. To send to voicemail, press 3." -->
                 <prompt phrase="Входящий звонок" filename="ivr-incoming_call.wav" attr="Needs_to_be_recorded!"/><!--"Incoming call." -->
                 <prompt phrase="Спасибо за Ваш звонок" filename="ivr-thank_you_for_calling.wav" attr="Needs_to_be_recorded!"/><!--"Thank you for calling." -->
-                <prompt phrase="Пожалуйста, оставайтесь на линии. Ваш звонок будет принят моментально" filename="ivr-stay_on_line_call_answered_momentarily.wav" attr="Needs_to_be_recorded!"/><!--"Please stay on the line. You call will be answered momentarily." -->
+                <prompt phrase="Пожалуйста, оставайтесь на линии. Ваш звонок будет принят немедленно" filename="ivr-stay_on_line_call_answered_momentarily.wav" attr="Needs_to_be_recorded!"/><!--"Please stay on the line. You call will be answered momentarily." -->
                 <prompt phrase="Ваш звонок был переведен" filename="ivr-call_being_transferred.wav" attr="Needs_to_be_recorded!"/><!--"Your call is being transferred." filename="ivr-call_being_transferred.wav" -->
-                <prompt phrase="Пожалуйста, наслаждайтесь музыкой, пока ваш вонок переводится" filename="ivr-enjoy_music_while_transfer.wav" attr="Needs_to_be_recorded!"/> <!--"Please enjoy the music while your call is being transferred." -->
+                <prompt phrase="Пожалуйста, наслаждайтесь музыкой, пока Ваш вонок переводится" filename="ivr-enjoy_music_while_transfer.wav" attr="Needs_to_be_recorded!"/> <!--"Please enjoy the music while your call is being transferred." -->
 	</ivr>
 	<misc>
 		<prompt phrase="Этот звонок шифруется" filename="call_secured.wav"/><!-- This call has been secured   -->
@@ -1091,7 +1091,7 @@
       		<!-- Your phone indicates that it already trusts this system to relay ZRTP secured calls, so you do not need to do anything more. -->
       		<prompt phrase="Только телефоны, с поддержкой протокола ZRTP могут использовать такую функцию. Ваш телефон не поддерживает ZRTP протокол и звонок не даст эффекта ZRTP защиты." filename="zrtp-enroll_notzrtp.wav"/>
       		<!-- Only phones equipped with the ZRTP protocol can use this extension. Your phone is not a ZRTP-enable phone, so this call will have no effect.-->
-      		<prompt phrase="Система оборудована для проведения шифрованных ZRTP звонков. Вы должны решить, если вы хотите чтобы система была задействована для приема и возможно мониторинга ваших защищенных звонков. Вы можете повесить трубку после окончания разговора." filename="zrtp-enroll_confirmed.wav"/>
+      		<prompt phrase="Система оборудована для проведения шифрованных ZRTP звонков. Вы должны решить, если вы хотите чтобы система была задействована для приема и возможно мониторинга Ваших защищенных звонков. Вы можете повесить трубку после окончания разговора." filename="zrtp-enroll_confirmed.wav"/>
       		<!-- This system is equipped to handle ZRTP encrypted phone calls. You must decide if you want to allow this system to be in a position to intercept and possibly monitor your secure phone calls. You may hang up after you've done this. -->
       		<prompt phrase="Договоритесь с партнером по разговору о парольной фразе." filename="zrtp-is_secure.wav"/>
       		<!-- Verbally compare this authentication code with your partner.   -->
