@@ -432,6 +432,28 @@
 		<prompt phrase="Неправильный добавочный номер" filename="vm-that_was_an_invalid_ext.wav"/><!--    -->
 		<prompt phrase="Почтовый ящик переполнен. Пожалуйста перезвоните позже" filename="vm-mailbox_full.wav"/><!--  That mailbox is full. Please try your call again later.  -->
 	</voicemail>
+	<directory>
+		<!-- The following phrases still need to be recorded -->
+    		<prompt phrase="Пожалйста, введите первые буквы имени абонента" filename="dir-enter-person.wav"/> <!--Please enter the first few letters of the persons-->
+        	<prompt phrase="Фамилии" filename="dir-last_name.wav"/> <!--last name.-->
+                <prompt phrase="Искать по ..." filename="dir-to_search_by.wav"/><!--To search by-->
+                <prompt phrase="Имени" filename="dir-first_name.wav"/><!--first name.-->
+                <prompt phrase="По вашему поиску ничего не найдено, попробуйте еще раз" filename="dir-no_match_entry.wav"/><!--Your search matched no results, try again.-->
+                <prompt phrase="результаты Вашего запроса" filename="dir-result_match.wav"/><!--results matched your search.-->
+                <prompt phrase="По вашему запросу найдено слишком много вариантов, пожалуйста, попробуйте уточнить запрос" filename="dir-to_many_result.wav"/><!--Your search returned too many results, please try again.-->
+                <prompt phrase="нет больше вариантов" filename="dir-no_more_result.wav"/><!--No more results.-->
+                <prompt phrase="Номер варианта" filename="dir-result_number.wav"/><!--Result number.-->
+                <prompt phrase="добавочный номер" filename="dir-at_extension.wav"/><!--at extension-->
+                <prompt phrase="Для выбора этой записи" filename="dir-to_select_entry.wav"/><!--To select this entry-->
+                <prompt phrase="Для выбора следующей записи" filename="dir-for_next.wav"/><!--For the next entry-->
+                <prompt phrase="Для выбора предыдущей записи" filename="dir-for_prev.wav"/><!--For the previous entry-->
+                <prompt phrase="Для начала нового поиска" filename="dir-to_make_new_search.wav"/><!--To start a new search-->
+                <prompt phrase="Вым необходимо указать минимум ..." filename="dir-specify_mininum_first.wav"/><!--You need to specify a minimum of-->
+                <prompt phrase="букв имени абонента, попробуйте снова" filename="dir-letters_of_person_name.wav"/><!--letters of the person name, try again.-->
+                <prompt phrase="нажмите" filename="dir-press.wav"/> <!--press  vm-press.wav-->
+        </directory>
+                                                                                                      
+
 	<conference>
 		<prompt phrase="NULL" filename="conf-ack.wav" type="tone"/><!--    -->
 		<prompt phrase="NULL" filename="conf-nack.wav" type="tone"/><!--    -->
