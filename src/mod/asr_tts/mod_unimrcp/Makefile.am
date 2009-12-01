@@ -1,6 +1,6 @@
 MODNAME=mod_unimrcp
 
-AM_CFLAGS   = $(SWITCH_AM_CFLAGS)
+AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS)
 AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS)
 #AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
 #we should set all these vars from configure, no reason to have these in each Makefile.am
