@@ -575,7 +575,7 @@ int tport_tls_accept(tport_primary_t *pri, int events)
   /* Alloc a new transport object, then register socket events with it */
   if ((self = tport_alloc_secondary(pri, s, 1, &reason)) == NULL) {
     SU_DEBUG_3(("%s(%p): incoming secondary on "TPN_FORMAT
-                " failed. reason = %s\n", __func__, pri,
+                " failed. reason = %s\n", __func__, (void *)pri,
                 TPN_ARGS(pri->pri_primary->tp_name), reason));
     return 0;
   }
@@ -594,7 +594,7 @@ int tport_tls_accept(tport_primary_t *pri, int events)
       self->tp_is_connected = 0;
 
       SU_DEBUG_5(("%s(%p): new connection from " TPN_FORMAT "\n",
-		  __func__,  (void *)self, TPN_ARGS(self->tp_name)));
+		  __func__, (void *)self, TPN_ARGS(self->tp_name)));
 
       /* Return succesfully */
       return 0;

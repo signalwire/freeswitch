@@ -2252,7 +2252,7 @@ int tport_set_secondary_timer(tport_t *self)
   if (tport_is_closed(self)) {
     if (self->tp_refs == 0) {
       SU_DEBUG_7(("tport(%p): set timer at %u ms because %s\n",
-		  self, 0, "zap"));
+				  (void *)self, 0, "zap"));
       su_timer_set_interval(self->tp_timer, timer, self, 0);
     }
     else
@@ -2601,7 +2601,7 @@ int tport_accept(tport_primary_t *pri, int events)
   /* Alloc a new transport object, then register socket events with it */
   if ((self = tport_alloc_secondary(pri, s, 1, &reason)) == NULL) {
     SU_DEBUG_3(("%s(%p): incoming secondary on "TPN_FORMAT
-                " failed. reason = %s\n", __func__, pri, 
+                " failed. reason = %s\n", __func__, (void *)pri, 
                 TPN_ARGS(pri->pri_primary->tp_name), reason));
     return 0;
   }

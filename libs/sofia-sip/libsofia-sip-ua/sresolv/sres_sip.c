@@ -404,7 +404,7 @@ _sres_sip_destruct(void *_srs)
   sres_resolver_t *sres = srs->srs_resolver;
   struct srs_step *step;
 
-  SU_DEBUG_5(("srs(%p): destroyed\n", _srs));
+  SU_DEBUG_5(("srs(%p): destroyed\n", (void *) (_srs)));
 
   srs->srs_resolver = NULL;
 
@@ -565,7 +565,7 @@ sres_sip_graylist(sres_sip_t *srs,
   if (step->sp_otype != sres_type_srv)
     return;
 
-  SU_DEBUG_5(("srs(%p): graylisting %s:%u;transport=%s\n", target, step->sp_port, proto));
+  SU_DEBUG_5(("srs(%p): graylisting %s:%u;transport=%s\n", (void *) target, step->sp_port, proto));
 
   for (step = srs->srs_send; step; step = step->sp_next)
     if (step->sp_otype == sres_type_srv && step->sp_priority > maxprio)
@@ -1647,7 +1647,7 @@ sres_sip_append_result(sres_sip_t *srs,
     }
 
     SU_DEBUG_5(("srs(%p): %s result %s%s%s:%u;transport=%s\n",
-		srs, duplicate ? "duplicate" : "returning",
+				(void *)srs, duplicate ? "duplicate" : "returning",
 		lb , numeric, rb, port,
 		sres_sip_transport_name(result->ai_protocol)));
 

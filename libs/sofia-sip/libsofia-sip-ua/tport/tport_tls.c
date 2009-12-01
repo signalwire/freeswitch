@@ -494,7 +494,7 @@ int tls_post_connection_check(tport_t *self, tls_t *tls)
   cert = SSL_get_peer_certificate(tls->con);
   if (!cert) {
     SU_DEBUG_7(("%s(%p): Peer did not provide X.509 Certificate.\n", 
-                 __func__, self));
+				__func__, (void *) self));
     if (self->tp_accepted && tls->verify_incoming)
       return X509_V_ERR_CERT_UNTRUSTED;
     else if (!self->tp_accepted && tls->verify_outgoing)
@@ -572,10 +572,10 @@ int tls_post_connection_check(tport_t *self, tls_t *tls)
     int i, len = su_strlst_len(tls->subjects);
     for (i=0; i < len; i++)
       SU_DEBUG_7(("%s(%p): Peer Certificate Subject %i: %s\n", \
-	      __func__, self, i, su_strlst_item(tls->subjects, i)));
+				  __func__, (void *)self, i, su_strlst_item(tls->subjects, i)));
     if (i == 0)
       SU_DEBUG_7(("%s(%p): Peer Certificate provided no usable subjects.\n",
-                   __func__, self));
+				  __func__, (void *)self));
   }
 
   /* Verify incoming connections */
@@ -599,7 +599,7 @@ int tls_post_connection_check(tport_t *self, tls_t *tls)
 	  return X509_V_OK;
       }
       SU_DEBUG_3(("%s(%p): Peer Subject Mismatch (incoming connection)\n", \
-                   __func__, self));
+				  __func__, (void *)self));
 
       return X509_V_ERR_CERT_UNTRUSTED;
     }
@@ -617,7 +617,7 @@ int tls_post_connection_check(tport_t *self, tls_t *tls)
       if (tport_subject_search(subject, tls->subjects))
         return X509_V_OK; /* Subject match found in verified certificate chain */
       SU_DEBUG_3(("%s(%p): Peer Subject Mismatch (%s)\n", \
-                   __func__, self, subject));
+				  __func__, (void *)self, subject));
 
       return X509_V_ERR_CERT_UNTRUSTED;
     }
@@ -856,7 +856,7 @@ int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
 
   if ((tls = tlstp->tlstp_context) == NULL) {
     SU_DEBUG_3(("%s(%p): Error: no TLS context data for connected socket.\n",
-                __func__, tlstp));
+                __func__, (void *)tlstp));
     tport_close(self);
     tport_set_secondary_timer(self);
     return 0;
@@ -922,7 +922,7 @@ int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
 	  char errbuf[64];
 	  ERR_error_string_n(status, errbuf, 64);
           SU_DEBUG_3(("%s(%p): TLS setup failed (%s)\n",
-	            __func__, self, errbuf));
+					  __func__, (void *)self, errbuf));
         }
         break;
     }

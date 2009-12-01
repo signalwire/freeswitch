@@ -325,4 +325,7 @@ void tport_sctp_timer(tport_t *self, su_time_t now)
   tport_base_timer(self, now);
 }
 
+#else
+/* ISO c99 forbids empty source file */
+void *sofia_tport_type_sctp_dummy;
 #endif

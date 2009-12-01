@@ -1034,7 +1034,7 @@ void nua_register_connection_closed(tp_stack_t *sip_stack,
   tpn = tport_name(nr->nr_tport);
 
   SU_DEBUG_5(("nua_register(%p): tport to %s/%s:%s%s%s closed %s\n",
-	      du->du_dialog->ds_owner,
+		  (void *)du->du_dialog->ds_owner,
 	      tpn->tpn_proto, tpn->tpn_host, tpn->tpn_port,
 	      tpn->tpn_comp ? ";comp=" : "",
 	      tpn->tpn_comp ? tpn->tpn_comp : "",
