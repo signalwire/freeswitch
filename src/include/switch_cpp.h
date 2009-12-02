@@ -154,7 +154,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 virtual SWITCH_DECLARE_CONSTRUCTOR ~ Event();
 		 SWITCH_DECLARE(const char *) serialize(const char *format = NULL);
 		 SWITCH_DECLARE(bool) setPriority(switch_priority_t priority = SWITCH_PRIORITY_NORMAL);
-		 SWITCH_DECLARE(const char *) getHeader(char *header_name);
+		 SWITCH_DECLARE(const char *) getHeader(const char *header_name);
 		 SWITCH_DECLARE(char *) getBody(void);
 		 SWITCH_DECLARE(const char *) getType(void);
 		 SWITCH_DECLARE(bool) addBody(const char *value);

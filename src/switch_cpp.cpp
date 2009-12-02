@@ -341,7 +341,7 @@ SWITCH_DECLARE(bool) Event::setPriority(switch_priority_t priority)
 	return false;
 }
 
-SWITCH_DECLARE(const char *)Event::getHeader(char *header_name)
+SWITCH_DECLARE(const char *)Event::getHeader(const char *header_name)
 {
 	this_check("");
 
