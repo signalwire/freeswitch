@@ -791,6 +791,7 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 				err = sangoma_tdm_txsig_offhook(zchan->sockfd,&tdm_api);
 				if (err) {
 					snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring-off Failed");
+					zap_log(ZAP_LOG_ERROR, "sangoma_tdm_txsig_offhook failed\n");
 					return ZAP_FAIL;
 				}
 				zap_clear_pflag_locked(zchan, WP_RINGING);
@@ -799,6 +800,7 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 				err=sangoma_tdm_txsig_start(zchan->sockfd,&tdm_api);
 				if (err) {
 					snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring Failed");
+					zap_log(ZAP_LOG_ERROR, "sangoma_tdm_txsig_start failed\n");
 					return ZAP_FAIL;
 				}
 				zap_set_pflag_locked(zchan, WP_RINGING);
@@ -817,6 +819,7 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	} else if (SANG_STATUS_SUCCESS == sangstatus) {
 		r = 1; /* hopefully we never need how many changed -_- */
 	} else {
+		zap_log(ZAP_LOG_ERROR, "sangoma_waitfor_many failed: %d, %s\n", sangstatus, strerror(errno));
 		r = -1;
 	}
 #else

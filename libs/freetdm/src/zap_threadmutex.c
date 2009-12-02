@@ -251,7 +251,7 @@ OZ_DECLARE(zap_status_t) zap_condition_create(zap_condition_t **incondition, zap
 	}
 
 #ifdef WIN32
-	condition->condition = CreateEvent(NULL, TRUE, FALSE, NULL);
+	condition->condition = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if (!condition->condition) {
 		goto failed;
 	}
