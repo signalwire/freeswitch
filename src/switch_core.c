@@ -867,8 +867,27 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_
 	if ((list = switch_core_hash_find(IP_LIST.hash, list_name))) {
 		ok = switch_network_list_validate_ip_token(list, ip, token);
 	} else if (strchr(list_name, '/')) {
-		switch_parse_cidr(list_name, &net, &mask, &bits);
-		ok = switch_test_subnet(ip, net, mask);
+		if (strchr(list_name, ','))  {
+			char *list_name_dup = strdup(list_name);
+			char *argv[32];
+			int argc;
+
+			switch_assert(list_name_dup);
+
+			if ((argc = switch_separate_string(list_name_dup, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+				int i;
+				for (i = 0; i < argc; i++) {
+					switch_parse_cidr(argv[i], &net, &mask, &bits);
+					if ((ok = switch_test_subnet(ip, net, mask))) {
+						break;
+					}	
+				}
+			}
+			free(list_name_dup);
+		} else {
+			switch_parse_cidr(list_name, &net, &mask, &bits);
+			ok = switch_test_subnet(ip, net, mask);
+		}
 	}
 	switch_mutex_unlock(runtime.global_mutex);
 
@@ -1014,25 +1033,8 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 
 							if (id && user_cidr) {
 								char *token = switch_mprintf("%s@%s", id, domain);
-								char *argv[100] = { 0 };
-								char *dup_cidr = strdup(user_cidr);
-								int argc, i = 0;
-								
 								switch_assert(token);
-								switch_assert(dup_cidr);
-
-								if ((argc = switch_separate_string(dup_cidr, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-									for (i = 0; i < argc; i++) {
-										if (switch_network_list_add_cidr_token(list, argv[i], ok, token) == SWITCH_STATUS_SUCCESS) {
-											switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) [%s] to list %s\n", 
-															  argv[i], ok ? "allow" : "deny", switch_str_nil(token), name);
-										} else {
-											switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding %s (%s) [%s] to list %s\n",
-															  argv[i], ok ? "allow" : "deny", switch_str_nil(token), name);
-										}
-									}
-								}
-								free(dup_cidr);
+								switch_network_list_add_cidr_token(list, user_cidr, ok, token);
 								free(token);
 							}
 						}
@@ -1046,25 +1048,8 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 										
 										if (id && user_cidr) {
 											char *token = switch_mprintf("%s@%s", id, domain);
-											char *argv[100] = { 0 };
-											char *dup_cidr = strdup(user_cidr);
-											int argc, i = 0;
-											
-											switch_assert(token);
-											switch_assert(dup_cidr);
-
-											if ((argc = switch_separate_string(dup_cidr, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-												for (i = 0; i < argc; i++) {
-													if (switch_network_list_add_cidr_token(list, argv[i], ok, token) == SWITCH_STATUS_SUCCESS) {
-														switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) [%s] to list %s\n", 
-																		  argv[i], ok ? "allow" : "deny", switch_str_nil(token), name);
-													} else {
-														switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding %s (%s) [%s] to list %s\n",
-																		  argv[i], ok ? "allow" : "deny", switch_str_nil(token), name);
-													}
-												}
-											}
-											free(dup_cidr);
+											switch_assert(token);											
+											switch_network_list_add_cidr_token(list, user_cidr, ok, token);
 											free(token);
 										}
 									}

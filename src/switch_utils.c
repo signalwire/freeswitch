@@ -164,12 +164,14 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_netwo
 	return ok;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok, const char *token)
+SWITCH_DECLARE(switch_status_t) switch_network_list_perform_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok, const char *token)
 {
 	uint32_t ip, mask, bits;
 	switch_network_node_t *node;
 
 	if (switch_parse_cidr(cidr_str, &ip, &mask, &bits)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding %s (%s) [%s] to list %s\n",
+			cidr_str, ok ? "allow" : "deny", switch_str_nil(token), list->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -188,7 +190,37 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_networ
 	node->next = list->node_head;
 	list->node_head = node;
 
-	return SWITCH_STATUS_SUCCESS;	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) [%s] to list %s\n", 
+					  cidr_str, ok ? "allow" : "deny", switch_str_nil(token), list->name);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok, const char *token)
+{
+	char *cidr_str_dup = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	
+	if (strchr(cidr_str, ',')) {
+		cidr_str_dup = strdup(cidr_str);
+		char *argv[32] = { 0 };
+		int i,argc;
+		
+		switch_assert(cidr_str_dup);
+		if ((argc = switch_separate_string(cidr_str_dup, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {		
+			for (i = 0; i < argc; i++) {
+				switch_status_t this_status;
+				if ((this_status = switch_network_list_perform_add_cidr_token(list, argv[i], ok, token)) != SWITCH_STATUS_SUCCESS) {
+					status = this_status;
+				}
+			}
+		}
+	} else {
+		status = switch_network_list_perform_add_cidr_token(list, cidr_str, ok, token);
+	}
+	
+	switch_safe_free(cidr_str_dup);
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network_list_t *list, const char *host, const char *mask_str, switch_bool_t ok)
