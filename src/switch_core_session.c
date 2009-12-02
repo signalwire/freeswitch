@@ -865,15 +865,27 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_c
 	return status;
 }
 
+#define check_media(session)											\
+	{																	\
+		if (switch_channel_test_flag(session->channel, CF_BROADCAST_DROP_MEDIA)) { \
+			switch_channel_clear_flag(session->channel, CF_BROADCAST_DROP_MEDIA); \
+			switch_ivr_nomedia(session->uuid_str, SMF_REBRIDGE);		\
+		}																\
+	}																	\
+		
 SWITCH_DECLARE(uint32_t) switch_core_session_private_event_count(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-
+	uint32_t count = 0;
+	
 	if (!switch_channel_test_flag(channel, CF_EVENT_LOCK) && session->private_event_queue) {
-		return switch_queue_size(session->private_event_queue);
+		count = switch_queue_size(session->private_event_queue);
+		if (count == 0) {
+			check_media(session);
+		}
 	}
 
-	return 0;
+	return count;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch_core_session_t *session, switch_event_t **event)
@@ -889,6 +901,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 	if (session->private_event_queue) {
 		if ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
 			*event = (switch_event_t *) pop;
+		} else {
+			check_media(session);
 		}
 	}
 
@@ -905,6 +919,7 @@ SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_se
 		while ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
 			x++;
 		}
+		check_media(session);
 	}
 
 	return x;
@@ -1420,7 +1435,28 @@ SWITCH_DECLARE(switch_app_log_t *) switch_core_session_get_app_log(switch_core_s
 	return session->app_log;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_core_session_t *session, const char *app, const char *arg)
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_app_flags(const char *app, int32_t *flags)
+{
+	switch_application_interface_t *application_interface;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(flags);
+
+	*flags = 0;
+
+	if ((application_interface = switch_loadable_module_get_application_interface(app)) == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", app);
+	} else if (application_interface->flags) {
+		*flags = application_interface->flags;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+	return status;
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flags(switch_core_session_t *session, const char *app, 
+																				  const char *arg, int32_t *flags)
 {
 	switch_application_interface_t *application_interface;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -1440,6 +1476,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No Function for %s\n", app);
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_goto_status(SWITCH_STATUS_FALSE, done);
+	}
+
+	if (flags && application_interface->flags) {
+		*flags = application_interface->flags;
 	}
 
 	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {

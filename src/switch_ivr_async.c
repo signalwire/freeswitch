@@ -2662,7 +2662,6 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, const cha
 SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const char *path, switch_media_flag_t flags)
 {
 	switch_channel_t *channel;
-	int nomedia;
 	switch_core_session_t *session, *master;
 	switch_event_t *event;
 	switch_core_session_t *other_session = NULL;
@@ -2671,7 +2670,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	char *cause = NULL;
 	char *mypath;
 	char *p;
-	int custom = 0;
+	int app_flags = 0, nomedia = 1;
 
 	switch_assert(path);
 
@@ -2689,19 +2688,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 		*p++ = '\0';
 		*p++ = '\0';
 		path = p;
-		custom++;
 	}
 
-	if (!custom && (switch_channel_test_flag(channel, CF_EVENT_PARSE))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Channel [%s][%s] already broadcasting...broadcast aborted\n",
-						  switch_channel_get_name(channel), path);
-		switch_core_session_rwunlock(session);
-		switch_safe_free(mypath);		
-		return SWITCH_STATUS_FALSE;
-	}
-
-
-	if ((nomedia = switch_channel_test_flag(channel, CF_PROXY_MODE))) {
+	if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+		nomedia = 1;
 		switch_ivr_media(uuid, SMF_REBRIDGE);
 	}
 
@@ -2715,9 +2705,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	if ((flags & SMF_ECHO_BLEG) && (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 		&& (other_session = switch_core_session_locate(other_uuid))) {
 		if ((flags & SMF_EXEC_INLINE)) {
-			switch_core_session_execute_application(other_session, app, path);
+			switch_core_session_execute_application_get_flags(other_session, app, path, &app_flags);
 			nomedia = 0;
 		} else {
+			switch_core_session_get_app_flags(app, &app_flags);
 			if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
@@ -2735,21 +2726,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 				switch_core_session_queue_private_event(other_session, &event);
 			}
 		}
-
+		
 		switch_core_session_rwunlock(other_session);
 		master = other_session;
 		other_session = NULL;
 	}
 
-	if (switch_stristr("record", app)) {
+	if ((app_flags & SAF_MEDIA_TAP)) {
 		nomedia = 0;
 	}
 
-
 	if ((flags & SMF_ECHO_ALEG)) {
 		if ((flags & SMF_EXEC_INLINE)) {
-			switch_core_session_execute_application(session, app, path);
 			nomedia = 0;
+			switch_core_session_execute_application(session, app, path);
 		} else {
 			if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
@@ -2764,18 +2754,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
 				}
 				switch_core_session_queue_private_event(session, &event);
+				if (nomedia) switch_channel_set_flag(channel, CF_BROADCAST_DROP_MEDIA);
 			}
 		}
 		master = session;
-	}
-
-	if (nomedia) {
-		if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "nomedia");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "nomedia-uuid", uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-lock", "true");
-			switch_core_session_queue_private_event(master, &event);
-		}
 	}
 
 	if (cause) {

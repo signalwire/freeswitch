@@ -943,6 +943,7 @@ typedef enum {
 	CF_MEDIA_BRIDGE_TTL,
 	CF_BYPASS_MEDIA_AFTER_BRIDGE,
 	CF_LEG_HOLDING,
+	CF_BROADCAST_DROP_MEDIA,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CF_FLAG_MAX
 } switch_channel_flag_t;
@@ -983,7 +984,8 @@ typedef uint32_t switch_frame_flag_t;
 typedef enum {
 	SAF_NONE = 0,
 	SAF_SUPPORT_NOMEDIA = (1 << 0),
-	SAF_ROUTING_EXEC = (1 << 1)
+	SAF_ROUTING_EXEC = (1 << 1),
+	SAF_MEDIA_TAP = (1 << 2)
 } switch_application_flag_enum_t;
 typedef uint32_t switch_application_flag_t;
 

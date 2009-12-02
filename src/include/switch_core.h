@@ -826,11 +826,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(_In_ switch_core_sessio
   \param session the current session
   \param app the application's name
   \param arg application arguments
-  \warning Has to be called from the session's thread
+  \param flags pointer to a flags variable to set the applications flags to
   \return the application's return value
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(_In_ switch_core_session_t *session,
-																		_In_ const char *app, _In_opt_z_ const char *arg);
+SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flags(_In_ switch_core_session_t *session,
+																				  _In_ const char *app, _In_opt_z_ const char *arg, _Out_ int32_t *flags);
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_app_flags(const char *app, int32_t *flags);
+
+/*! 
+  \brief Execute an application on a session 
+  \param session the current session
+  \param app the application's name
+  \param arg application arguments
+  \return the application's return value
+*/
+#define switch_core_session_execute_application(_a, _b, _c) switch_core_session_execute_application_get_flags(_a, _b, _c, NULL)
+
 /*! 
   \brief Run a dialplan and execute an extension
   \param session the current session
