@@ -22,15 +22,7 @@ Source6:	http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
 Source7:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-latest.tar.gz
 Source8:	http://files.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
 Source9:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-latest.tar.gz
-Source10:	http://files.freeswitch.org/freeswitch-sounds-music-8000-1.0.8.tar.gz
-Source11:	http://files.freeswitch.org/freeswitch-sounds-music-16000-1.0.8.tar.gz
-Source12:	http://files.freeswitch.org/freeswitch-sounds-music-32000-1.0.8.tar.gz
-Source13:	http://files.freeswitch.org/freeswitch-sounds-music-48000-1.0.8.tar.gz
-Source14:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-8000-1.0.12.tar.gz
-Source15:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-16000-1.0.12.tar.gz
-Source16:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-32000-1.0.12.tar.gz
-Source17:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-48000-1.0.12.tar.gz
-Source18:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
+Source10:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Prefix:        %{prefix}
 
 #AutoReqProv:  no
@@ -208,78 +200,6 @@ Requires:        %{name} = %{version}-%{release}
 %description openzap
 OpenZAP
 
-%package moh
-Summary:        FreeSWITCH Music on hold files
-Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
-
-%description moh
-8khz music on hold files for FreeSWITCH
-
-
-%package hd-moh
-Summary:        High Definition FreeSWITCH Music on hold files
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description hd-moh
-16khz High Definition FreeSWITCH Music on hold files
-
-
-%package uhd-moh
-Summary:        Ultra High Definition FreeSWITCH Music on hold files
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description uhd-moh
-32khz Ultra High Definition FreeSWITCH Music on hold files
-
-
-%package cd-moh
-Summary:        CD Quality FreeSWITCH Musci on hold files
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description cd-moh
-48khz CD Quality FreeSWITCH Music on hold files
-
-
-%package sounds-en-callie
-Summary:        English prompts for FreeSWITCH
-Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
-
-%description sounds-en-callie
-8khz English prompts for FreeSWITCH
-
-
-%package hd-sounds-en-callie
-Summary:        High Density English prompts for FreeSWITCH
-Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
-
-%description hd-sounds-en-callie 
-16khz High Density English prompts for FreeSWITCH
-
-
-%package uhd-sounds-en-callie
-Summary:        Ultra High Density English prompts for FreeSWITCH
-Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
-
-%description uhd-sounds-en-callie
-32khz Ultra High Density English prompts for FreeSWITCH
-
-
-%package cd-sounds-en-callie
-Summary:        CD Quality English prompts for FreeSWITCH
-Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
-
-%description cd-sounds-en-callie
-48khz CD Quality English prompts for FreeSWITCH
-
-
 %prep
 %setup -b0 -q
 cp %{SOURCE1} libs/
@@ -291,15 +211,7 @@ cp %{SOURCE6} libs/
 cp %{SOURCE7} libs/
 cp %{SOURCE8} libs/
 cp %{SOURCE9} libs/
-cp %{SOURCE10} .
-cp %{SOURCE11} .
-cp %{SOURCE12} .
-cp %{SOURCE13} .
-cp %{SOURCE14} .
-cp %{SOURCE15} .
-cp %{SOURCE16} .
-cp %{SOURCE17} .
-cp %{SOURCE18} libs/
+cp %{SOURCE10} libs/
 
 
 %build
@@ -376,10 +288,6 @@ touch .noversion
 #rm -rf $RPM_BUILD_ROOT%{prefix}/conf/lang/fr
 
 %{__make} DESTDIR=$RPM_BUILD_ROOT install
-
-# Install Sound Files
-%{__make} DESTDIR=$RPM_BUILD_ROOT  cd-sounds-install
-%{__make} DESTDIR=$RPM_BUILD_ROOT  cd-moh-install
 
 # Create a log dir
 %{__mkdir} -p $RPM_BUILD_ROOT%{prefix}/log
@@ -696,122 +604,9 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/vm/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/dir/*.xml
 
-%files moh
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/music/8000
-%{prefix}/sounds/music/8000/*
-
-%files hd-moh
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/music/16000
-%{prefix}/sounds/music/16000/*
-
-%files uhd-moh
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/music/32000
-%{prefix}/sounds/music/32000/*
-
-%files cd-moh
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/music/48000
-%{prefix}/sounds/music/48000/*
-
-%files sounds-en-callie
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/ascii/8000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/base256/8000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/conference/8000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/currency/8000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/digits/8000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/ivr/8000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/misc/8000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/phonetic-ascii/8000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/time/8000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/voicemail/8000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/zrtp/8000
-%{prefix}/sounds/en/us/callie/ascii/8000/*
-%{prefix}/sounds/en/us/callie/base256/8000/*
-%{prefix}/sounds/en/us/callie/conference/8000/*
-%{prefix}/sounds/en/us/callie/currency/8000/*
-%{prefix}/sounds/en/us/callie/digits/8000/*
-%{prefix}/sounds/en/us/callie/ivr/8000/*
-%{prefix}/sounds/en/us/callie/misc/8000/*
-%{prefix}/sounds/en/us/callie/phonetic-ascii/8000/*
-%{prefix}/sounds/en/us/callie/time/8000/*
-%{prefix}/sounds/en/us/callie/voicemail/8000/*
-%{prefix}/sounds/en/us/callie/zrtp/8000/*
-
-%files hd-sounds-en-callie
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/ascii/16000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/base256/16000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/conference/16000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/currency/16000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/digits/16000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/ivr/16000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/misc/16000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/phonetic-ascii/16000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/time/16000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/voicemail/16000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/zrtp/16000
-%{prefix}/sounds/en/us/callie/ascii/16000/*
-%{prefix}/sounds/en/us/callie/base256/16000/*
-%{prefix}/sounds/en/us/callie/conference/16000/*
-%{prefix}/sounds/en/us/callie/currency/16000/*
-%{prefix}/sounds/en/us/callie/digits/16000/*
-%{prefix}/sounds/en/us/callie/ivr/16000/*
-%{prefix}/sounds/en/us/callie/misc/16000/*
-%{prefix}/sounds/en/us/callie/phonetic-ascii/16000/*
-%{prefix}/sounds/en/us/callie/time/16000/*
-%{prefix}/sounds/en/us/callie/voicemail/16000/*
-%{prefix}/sounds/en/us/callie/zrtp/16000/*
-
-
-%files uhd-sounds-en-callie
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/ascii/32000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/base256/32000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/conference/32000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/currency/32000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/digits/32000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/ivr/32000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/misc/32000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/phonetic-ascii/32000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/time/32000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/voicemail/32000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/zrtp/32000
-%{prefix}/sounds/en/us/callie/ascii/32000/*
-%{prefix}/sounds/en/us/callie/base256/32000/*
-%{prefix}/sounds/en/us/callie/conference/32000/*
-%{prefix}/sounds/en/us/callie/currency/32000/*
-%{prefix}/sounds/en/us/callie/digits/32000/*
-%{prefix}/sounds/en/us/callie/ivr/32000/*
-%{prefix}/sounds/en/us/callie/misc/32000/*
-%{prefix}/sounds/en/us/callie/phonetic-ascii/32000/*
-%{prefix}/sounds/en/us/callie/time/32000/*
-%{prefix}/sounds/en/us/callie/voicemail/32000/*
-%{prefix}/sounds/en/us/callie/zrtp/32000/*
-
-
-%files cd-sounds-en-callie
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/ascii/48000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/base256/48000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/conference/48000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/currency/48000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/digits/48000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/ivr/48000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/misc/48000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/phonetic-ascii/48000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/time/48000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/voicemail/48000
-%dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/zrtp/48000
-%{prefix}/sounds/en/us/callie/ascii/48000/*
-%{prefix}/sounds/en/us/callie/base256/48000/*
-%{prefix}/sounds/en/us/callie/conference/48000/*
-%{prefix}/sounds/en/us/callie/currency/48000/*
-%{prefix}/sounds/en/us/callie/digits/48000/*
-%{prefix}/sounds/en/us/callie/ivr/48000/*
-%{prefix}/sounds/en/us/callie/misc/48000/*
-%{prefix}/sounds/en/us/callie/phonetic-ascii/48000/*
-%{prefix}/sounds/en/us/callie/time/48000/*
-%{prefix}/sounds/en/us/callie/voicemail/48000/*
-%{prefix}/sounds/en/us/callie/zrtp/48000/*
-
-
 %changelog
+* Wed Dec 02 2009 - michal.bielicki@seventhsignal.de
+- Soundfiles are moving into a separate spec
 * Wed Nov 25 2009 - brian@freeswitch.org
 - added mod_bv.so
 * Wed Nov 25 2009 - michal.bielicki@seventhsignal.de
