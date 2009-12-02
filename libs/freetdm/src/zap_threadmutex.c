@@ -286,8 +286,11 @@ OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 		return ZAP_TIMEOUT;
 	case WAIT_FAILED:
 		return ZAP_FAIL;
+	case WAIT_OBJECT_0:
+		return ZAP_SUCCESS;
 	default:
 		zap_log(ZAP_LOG_ERROR, "Error waiting for openzap condition event (WaitForSingleObject returned %d)\n", res);
+		return ZAP_FAIL;
 	}
 #else
 	int res = 0;
@@ -305,8 +308,8 @@ OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 		}
 		return ZAP_FAIL;
 	}
-#endif
 	return ZAP_SUCCESS;
+#endif
 }
 
 OZ_DECLARE(zap_status_t) zap_condition_signal(zap_condition_t *condition)
