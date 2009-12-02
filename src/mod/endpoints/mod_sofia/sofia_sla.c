@@ -383,7 +383,7 @@ static int sofia_sla_sub_callback(void *pArg, int argc, char **argv, char **colu
 			}
 		}
 
-		if (sofia_test_pflag(helper->profile, PFLAG_AUTO_NAT)) {
+		if (helper->profile->extsipip) {
 			if (sofia_glue_check_nat(helper->profile, network_ip)) { 
 				fixup = switch_string_replace(helper->payload, helper->profile->sipip, helper->profile->extsipip);
 			} else  {

@@ -933,10 +933,7 @@ char *sofia_glue_strip_uri(const char *str)
 
 int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip)
 {
-	return (network_ip && 
-			profile->local_network && 
-			sofia_test_pflag(profile, PFLAG_AUTO_NAT) && 
-			!switch_check_network_list_ip(network_ip, profile->local_network));
+	return (profile->extsipip && !switch_check_network_list_ip(network_ip, profile->local_network));
 }
 
 int sofia_glue_transport_has_tls(const sofia_transport_t tp)

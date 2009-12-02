@@ -1943,7 +1943,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					if (strcasecmp(argv[1], profile->name)) {
 					stream->write_function(stream, "Alias Of         \t%s\n", switch_str_nil(profile->name));
 					}
-					stream->write_function(stream, "DBName           \t%s\n", switch_str_nil(profile->dbname));
+					stream->write_function(stream, "Auto-NAT         \t%s\n", sofia_test_pflag(profile, PFLAG_AUTO_NAT) ? "true" : "false");
+					stream->write_function(stream, "DBName           \t%s\n", profile->dbname ? profile->dbname : switch_str_nil(profile->odbc_dsn));
 					stream->write_function(stream, "Pres Hosts       \t%s\n", switch_str_nil(profile->presence_hosts));
 					stream->write_function(stream, "Dialplan         \t%s\n", switch_str_nil(profile->dialplan));
 					stream->write_function(stream, "Context          \t%s\n", switch_str_nil(profile->context));
@@ -2172,7 +2173,8 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					if (strcasecmp(argv[1], profile->name)) {
 						stream->write_function(stream, "    <alias-of>%s</alias-of>\n", switch_str_nil(profile->name));
 					}
-					stream->write_function(stream, "    <db-name>%s</db-name>\n", switch_str_nil(profile->dbname));
+					stream->write_function(stream, "    <auto-nat>%s</auto-nat>\n", sofia_test_pflag(profile, PFLAG_AUTO_NAT) ? "true" : "false");
+					stream->write_function(stream, "    <db-name>%s</db-name>\n", profile->dbname ? profile->dbname : switch_str_nil(profile->odbc_dsn));
 					stream->write_function(stream, "    <pres-hosts>%s</pres-hosts>\n", switch_str_nil(profile->presence_hosts));
 					stream->write_function(stream, "    <dialplan>%s</dialplan>\n", switch_str_nil(profile->dialplan));
 					stream->write_function(stream, "    <context>%s</context>\n", switch_str_nil(profile->context));

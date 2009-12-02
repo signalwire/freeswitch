@@ -3025,7 +3025,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				if (!profile->sipdomain) {
 					profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
 				}
-				if (profile->extsipip && sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+				if (profile->extsipip) {
 					char *ipv6 = strchr(profile->extsipip, ':');
 					profile->public_url = switch_core_sprintf(profile->pool,
 															  "sip:%s@%s%s%s:%d",
@@ -3036,7 +3036,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 															  profile->sip_port);
 				}
 
-				if (profile->extsipip && !sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+				if (profile->extsipip) {
 					char *ipv6 = strchr(profile->extsipip, ':');
 					profile->url = switch_core_sprintf(profile->pool,
 														"sip:%s@%s%s%s:%d",
@@ -3060,7 +3060,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 				profile->tcp_contact = switch_core_sprintf(profile->pool, "%s;transport=tcp", profile->url);
 
-				if (sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+				if (profile->public_url) {
 					profile->tcp_public_contact = switch_core_sprintf(profile->pool, "%s;transport=tcp", profile->public_url);
 				}
 
@@ -3077,7 +3077,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->tls_sip_port = (switch_port_t)atoi(SOFIA_DEFAULT_TLS_PORT);
 					}
 
-					if (profile->extsipip && sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+					if (profile->extsipip) {
 						char *ipv6 = strchr(profile->extsipip, ':');
 						profile->tls_public_url = switch_core_sprintf(profile->pool,
 																  "sip:%s@%s%s%s:%d",
@@ -3088,7 +3088,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 																  profile->tls_sip_port);
 					}
 					
-					if (profile->extsipip && !sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+					if (profile->extsipip) {
 						char *ipv6 = strchr(profile->extsipip, ':');
 						profile->tls_url = 
 							switch_core_sprintf(profile->pool,
@@ -3135,7 +3135,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->tls_cert_dir = switch_core_sprintf(profile->pool, "%s/ssl", SWITCH_GLOBAL_dirs.conf_dir);
 					}
 					profile->tls_contact = switch_core_sprintf(profile->pool, "%s;transport=tls", profile->tls_url);
-					if (sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+					if (profile->tls_public_url) {
 						profile->tls_public_contact = switch_core_sprintf(profile->pool, "%s;transport=tls", profile->tls_public_url);
 					}
 				}
