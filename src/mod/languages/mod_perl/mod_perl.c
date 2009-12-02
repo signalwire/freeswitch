@@ -38,6 +38,10 @@
 #pragma comment(lib, PERL_LIB)
 #endif
 
+#if defined (__SVR4) && defined (__sun)
+#include <uconfig.h>
+#endif
+
 #include <EXTERN.h>
 #include <perl.h>
 #include <switch.h>

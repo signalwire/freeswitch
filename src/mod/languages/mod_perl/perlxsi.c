@@ -1,4 +1,8 @@
+#if defined (__SVR4) && defined (__sun)
+#include <uconfig.h>
+#endif
 #include <EXTERN.h>
+#include <embed.h>
 #include <perl.h>
 
 EXTERN_C void xs_init(pTHX);
