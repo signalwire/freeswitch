@@ -76,12 +76,12 @@ static void sangomabc_print_event_call(sangomabc_connection_t *mcon, sangomabc_e
 {
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
-	zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "%s EVENT: %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s] Rdnis=[%s]\n",
+	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT: %s:(%X) [s%dc%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s] Rdnis=[%s]\n",
 		    dir ? "TX":"RX", 
 			sangomabc_event_id_name(event->event_id), 
 			event->event_id, 
-			event->span+1, 
-			event->chan+1, 
+			event->span, 
+			event->chan, 
 			event->call_setup_id, 
 			event->fseqno, 
 			strlen(event->calling_name)?event->calling_name:"N/A", 
@@ -94,13 +94,13 @@ static void sangomabc_print_event_short(sangomabc_connection_t *mcon, sangomabc_
 {
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
-	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT (%s): %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i \n", 
+	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT (%s): %s:(%X) [s%dc%d] Rc=%i CSid=%i Seq=%i \n", 
 			   dir ? "TX":"RX", 
 			   priority ? "P":"N", 	
                            sangomabc_event_id_name(event->event_id), 
                            event->event_id, 
-                           event->span+1, 
-                           event->chan+1, 
+                           event->span, 
+                           event->chan, 
                            event->release_cause, 
                            event->call_setup_id, 
                            event->fseqno);
@@ -240,10 +240,10 @@ int sangomabc_exec_command(sangomabc_connection_t *mcon, int span, int chan, int
 
     while (sangomabc_connection_write(mcon, (sangomabc_event_t*)&oevent) <= 0) {
         if (--retry <= 0) {
-            zap_log(ZAP_LOG_CRIT, "Failed to tx on ISUP socket: %s\n", strerror(errno));
+            zap_log(ZAP_LOG_CRIT, "Failed to tx on boost socket: %s\n", strerror(errno));
             return -1;
         } else {
-            zap_log(ZAP_LOG_WARNING, "Failed to tx on ISUP socket: %s :retry %i\n", strerror(errno), retry);
+            zap_log(ZAP_LOG_WARNING, "Failed to tx on boost socket: %s :retry %i\n", strerror(errno), retry);
 			zap_sleep(1);
         }
     }
@@ -266,10 +266,10 @@ int sangomabc_exec_commandp(sangomabc_connection_t *pcon, int span, int chan, in
 
     while (sangomabc_connection_writep(pcon, (sangomabc_event_t*)&oevent) <= 0) {
         if (--retry <= 0) {
-            zap_log(ZAP_LOG_CRIT, "Failed to tx on ISUP socket: %s\n", strerror(errno));
+            zap_log(ZAP_LOG_CRIT, "Failed to tx on boost socket: %s\n", strerror(errno));
             return -1;
         } else {
-            zap_log(ZAP_LOG_WARNING, "Failed to tx on ISUP socket: %s :retry %i\n", strerror(errno), retry);
+            zap_log(ZAP_LOG_WARNING, "Failed to tx on boost socket: %s :retry %i\n", strerror(errno), retry);
 			zap_sleep(1);
         }
     }

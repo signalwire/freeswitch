@@ -369,6 +369,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	event.calling_number_screening_ind = caller_data->screen;
 	event.calling_number_presentation = caller_data->pres;
 	if (sangoma_boost_data->sigmod) {
+		/* boost sigmods only know about physical spans, give them that and let them hunt there */
 		event.span = (uint8_t)span->channels[1]->physical_span_id;
 	}
 
@@ -777,6 +778,11 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 		goto error;
 	}
 	
+	zap_log(ZAP_LOG_DEBUG, "Got call start from s%dc%d mapped to openzap logical s%dc%d, physical s%dc%d\n", 
+			event->span, event->chan, 
+			zchan->span_id, zchan->chan_id,
+			zchan->physical_span_id, zchan->physical_chan_id);
+
 	zchan->sflags = 0;
 	zap_set_string(zchan->caller_data.cid_num.digits, (char *)event->calling_number_digits);
 	zap_set_string(zchan->caller_data.cid_name, (char *)event->calling_number_digits);
@@ -812,7 +818,7 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 
  error:
 
-	zap_log(ZAP_LOG_CRIT, "START CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
+	zap_log(ZAP_LOG_CRIT, "START CANT FIND A CHAN %d:%d\n", event->span,event->chan);
 
 	sangomabc_exec_command(mcon,
 					   event->span,
