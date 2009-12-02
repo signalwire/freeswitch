@@ -35,6 +35,28 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
+
+#define SWITCH_CORE_DB "core"
+/*!
+  \brief Open the default system database
+*/
+SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t **dbh, const char *file, const char *func, int line)
+{
+	switch_cache_db_connection_options_t options = { {0} };
+
+	if (runtime.odbc_dsn && runtime.odbc_user && runtime.odbc_pass) {
+		options.odbc_options.dsn = runtime.odbc_dsn;
+		options.odbc_options.user = runtime.odbc_user;
+		options.odbc_options.pass = runtime.odbc_pass;
+
+		return _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_ODBC, &options, file, func, line);
+	} else {
+		options.core_db_options.db_path = SWITCH_CORE_DB;
+		return _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_CORE_DB, &options, file, func, line);
+	}
+}
+
+
 static struct {
 	switch_cache_db_handle_t *event_db;
 	switch_queue_t *sql_queue[2];
