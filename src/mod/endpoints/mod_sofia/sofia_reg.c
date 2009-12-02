@@ -1363,7 +1363,8 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		goto end;
 	}
 	
-	if (is_nat && !sofia_glue_check_nat(profile, network_ip)) {
+	if (is_nat && profile->local_network && switch_check_network_list_ip(network_ip, profile->local_network)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s is on local network, not seting NAT mode.\n", network_ip);
 		is_nat = NULL;
 	}
 

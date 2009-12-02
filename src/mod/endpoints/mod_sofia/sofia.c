@@ -2148,7 +2148,11 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					} else if (!strcasecmp(var, "context")) {
 						profile->context = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "local-network-acl")) {
-						profile->local_network = switch_core_strdup(profile->pool, val);
+						if (!strcasecmp(var, "none")) {
+							profile->local_network = NULL;
+						} else {
+							profile->local_network = switch_core_strdup(profile->pool, val);
+						}
 					} else if (!strcasecmp(var, "force-register-domain")) {
 						profile->reg_domain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "force-subscription-domain")) {
@@ -2429,6 +2433,19 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 				sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
 
+				profile->local_network = "localnet.auto";
+
+				if (switch_core_get_variable("nat_type")) {
+					const char *ip = switch_core_get_variable("nat_public_addr");
+					if (ip) {
+						profile->extrtpip = switch_core_strdup(profile->pool, ip);
+						profile->extsipip = switch_core_strdup(profile->pool, ip);
+						sofia_set_pflag(profile, PFLAG_AUTO_NAT);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "NAT detected setting external ip to %s\n", ip);
+					}
+				}
+
+
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -2579,12 +2596,14 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							if (!strcmp(val, "0.0.0.0")) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
 							} else if (!strcasecmp(val, "auto-nat")) {
-								ip = mod_sofia_globals.auto_nat ? switch_core_get_variable("nat_public_addr") : mod_sofia_globals.guess_ip; 
+								ip = NULL;
 							} else {
 								ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
+								sofia_clear_pflag(profile, PFLAG_AUTO_NAT);
 							}
-							sofia_set_pflag(profile, PFLAG_AUTO_NAT);
-							profile->extrtpip = switch_core_strdup(profile->pool, ip);
+							if (ip) {
+								profile->extrtpip = switch_core_strdup(profile->pool, ip);
+							}
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-rtp-ip\n");
 						}
@@ -2617,22 +2636,28 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							if (!strcasecmp(val, "0.0.0.0")) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
 							} else if (!strcasecmp(val, "auto-nat")) {
-								ip = mod_sofia_globals.auto_nat ? switch_core_get_variable("nat_public_addr") : mod_sofia_globals.guess_ip;
+								ip = NULL;
 							} else if (strcasecmp(val, "auto")) {
 								switch_port_t port = 0;
 								if (sofia_glue_ext_address_lookup(profile, NULL, &myip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
 									ip = myip;
+									sofia_clear_pflag(profile, PFLAG_AUTO_NAT);
 								} else {
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get external ip.\n");
 								}
 							}
-							sofia_set_pflag(profile, PFLAG_AUTO_NAT);
-							profile->extsipip = switch_core_strdup(profile->pool, ip);
+							if (ip) {
+								profile->extsipip = switch_core_strdup(profile->pool, ip);
+							}
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-sip-ip\n");
 						}
 					} else if (!strcasecmp(var, "local-network-acl")) {
-						profile->local_network = switch_core_strdup(profile->pool, val);
+						if (!strcasecmp(var, "none")) {
+							profile->local_network = NULL;
+						} else {
+							profile->local_network = switch_core_strdup(profile->pool, val);
+						}
 					} else if (!strcasecmp(var, "force-register-domain")) {
 						profile->reg_domain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "force-register-db-domain")) {
