@@ -261,11 +261,11 @@ AC_ARG_ENABLE(debug,
 
 if test "${enable_debug}" = "yes"; then
         AC_DEFINE([DEBUG],[],[Enable extra debugging.])
-	saved_CFLAGS=$CFLAGS
+	saved_CFLAGS="$CFLAGS"
 	CFLAGS=
         AX_CFLAGS_WARN_ALL_ANSI
 	SWITCH_ANSI_CFLAGS=$CFLAGS
-	CFLAGS=$saved_CFLAGS	
+	CFLAGS="$saved_CFLAGS"	
 
 	if test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
 	    APR_ADDTO(SWITCH_AM_CFLAGS, -g -ggdb)
@@ -282,10 +282,10 @@ AM_CONDITIONAL([ENABLE_CPP],[test "${enable_cpp}" = "yes"])
 AC_ARG_ENABLE(zrtp,
 	[AS_HELP_STRING([--enable-zrtp], [Compile with zrtp Support])],,[enable_zrtp="no"])
 if test "x$enable_zrtp" = "xyes" ; then
-   saved_LIBS=$LIBS
+   saved_LIBS="$LIBS"
    LIBS="$saved_LIBS -L/usr/local/lib -lbn -lpthread"
    AC_CHECK_LIB(zrtp, zrtp_init, [has_zrtp="yes"], [has_zrtp="no"])
-   LIBS=$saved_LIBS
+   LIBS="$saved_LIBS"
    if test "x$has_zrtp" = "xno"; then
       AC_ERROR([Cannot locate zrtp libraries])
    fi
@@ -452,6 +452,7 @@ else
 fi
 AC_SUBST(VA_LIST_IS_ARRAY_DEFINE)
 
+
 AC_MSG_CHECKING(whether compiler has __attribute__)
 AC_TRY_COMPILE(, [int x __attribute__((__unused__));],
 compiler_has_attribute=yes,
@@ -465,7 +466,16 @@ fi
 AC_SUBST(ATTR_UNUSED)
 
 
-
+saved_CFLAGS="$CFLAGS"
+AC_CACHE_CHECK([whether compiler supports -Wdeclaration-after-statement], [ac_cv_gcc_declaration_after_statement], [
+CFLAGS="$CFLAGS -Wdeclaration-after-statement"
+AC_TRY_COMPILE([],[return 0;],[ac_cv_gcc_declaration_after_statement=yes],[ac_cv_gcc_declaration_after_statement=no])
+])
+AC_MSG_RESULT($ac_cv_gcc_declaration_after_statement)
+if test x"$ac_cv_gcc_declaration_after_statement" = xyes; then
+    APR_ADDTO(SWITCH_ANSI_CFLAGS, -Wdeclaration-after-statement)
+fi
+CFLAGS="$saved_CFLAGS"
 
 AC_C_BIGENDIAN(AC_DEFINE([SWITCH_BYTE_ORDER],__BIG_ENDIAN,[Big Endian]),AC_DEFINE([SWITCH_BYTE_ORDER],__LITTLE_ENDIAN,[Little Endian]))
 

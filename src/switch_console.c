@@ -584,12 +584,11 @@ static unsigned char complete(EditLine * el, int ch)
 
 	if (h.hits != 1) {
 		char *dupdup = strdup(dup);
-		switch_assert(dupdup);
 		int x, argc = 0;
 		char *argv[10] = { 0 };
 		switch_stream_handle_t stream = { 0 };
 		SWITCH_STANDARD_STREAM(stream);
-
+		switch_assert(dupdup);
 
 		argc = switch_separate_string(dupdup, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
