@@ -383,6 +383,7 @@ struct sofia_gateway {
 	int ping_min;
 	uint8_t flags[REG_FLAG_MAX];
 	int32_t retry_seconds;
+	int32_t failure_status;
 	reg_state_t state;
 	switch_memory_pool_t *pool;
 	int deleted;

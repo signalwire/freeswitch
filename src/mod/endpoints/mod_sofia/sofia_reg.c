@@ -323,7 +323,8 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			break;
 		case REG_STATE_UNREGED:
 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
-
+			gateway_ptr->retry = 0;
+			
 			if (!gateway_ptr->nh) sofia_reg_new_handle(gateway_ptr, now ? 1 : 0);
 
 			if (sofia_glue_check_nat(gateway_ptr->profile, gateway_ptr->register_proxy)) {
@@ -361,11 +362,24 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			break;
 
 		case REG_STATE_FAILED:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration, setting retry to %d seconds.\n", 
-								  gateway_ptr->name, gateway_ptr->retry_seconds * (gateway_ptr->failures + 1));
-			gateway_ptr->retry =  now + (gateway_ptr->retry_seconds * (gateway_ptr->failures + 1));
-			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
-			gateway_ptr->state = REG_STATE_FAIL_WAIT;
+			{
+				int sec;
+
+				if (gateway_ptr->failure_status == 503) {
+					sec = now + gateway_ptr->retry_seconds;
+				} else{
+					sec = gateway_ptr->retry_seconds * (gateway_ptr->failures + 1);
+				}
+				
+				gateway_ptr->retry = sec;
+				gateway_ptr->status = SOFIA_GATEWAY_DOWN;
+				gateway_ptr->state = REG_STATE_FAIL_WAIT;
+				gateway_ptr->failure_status = 0;
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration, setting retry to %d seconds.\n", 
+								  gateway_ptr->name, sec);
+
+			}
 			break;
 		case REG_STATE_FAIL_WAIT:
 			if (!gateway_ptr->retry || now >= gateway_ptr->retry) {
@@ -1440,6 +1454,7 @@ void sofia_reg_handle_sip_r_register(int status,
 			break;
 		default:
 			sofia_private->gateway->state = REG_STATE_FAILED;
+			sofia_private->gateway->failure_status = status;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Registration Failed with status %s [%d]. failure #%d\n", 
 							  sofia_private->gateway->name, switch_str_nil(phrase), status, ++sofia_private->gateway->failures);
 			break;
