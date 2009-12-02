@@ -202,9 +202,9 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_networ
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	
 	if (strchr(cidr_str, ',')) {
-		cidr_str_dup = strdup(cidr_str);
 		char *argv[32] = { 0 };
 		int i,argc;
+		cidr_str_dup = strdup(cidr_str);
 		
 		switch_assert(cidr_str_dup);
 		if ((argc = switch_separate_string(cidr_str_dup, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {		
