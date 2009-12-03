@@ -557,6 +557,9 @@ SWITCH_DECLARE(switch_bool_t) switch_ast2regex(const char *pat, char *rbuf, size
 */
 SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, const char *delim, char esc);
 
+SWITCH_DECLARE(char *) switch_escape_string(const char *in, char *out, switch_size_t outlen);
+SWITCH_DECLARE(char*) switch_escape_string_pool(const char *in, switch_memory_pool_t *pool);
+
 /*!
   \brief Wait for a socket
   \param poll the pollfd to wait on

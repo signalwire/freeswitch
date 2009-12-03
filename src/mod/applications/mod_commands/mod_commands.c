@@ -3697,6 +3697,17 @@ SWITCH_STANDARD_API(hupall_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(escape_function)
+{
+	int len = strlen(cmd)*2;
+	char *mycmd = malloc(strlen(cmd)*2);
+	
+	stream->write_function(stream, "%s", switch_escape_string(cmd, mycmd, len));
+	
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown)
 {
 	int x;
@@ -3856,6 +3867,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "host_lookup", "host_lookup", host_lookup_function, "<hostname>");
 	SWITCH_ADD_API(commands_api_interface, "hostname", "Returns the system hostname", hostname_api_function, "");
 	SWITCH_ADD_API(commands_api_interface, "db_cache", "db cache management", db_cache_function, "status");
+	SWITCH_ADD_API(commands_api_interface, "escape", "escape a string", escape_function, "<data>");
 	switch_console_set_complete("db_cache status");
 
 	/* indicate that the module should continue to be loaded */

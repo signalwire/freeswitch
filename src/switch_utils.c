@@ -1577,6 +1577,51 @@ static char unescape_char(char escaped)
 	return unescaped;
 }
 
+SWITCH_DECLARE(char *) switch_escape_string(const char *in, char *out, switch_size_t outlen)
+{
+	const char *p;
+	char *o = out;
+	
+	for(p = in; *p; p++) {
+		switch(*p) {
+			case '\n':
+				*o++ = '\\';
+				*o++ = 'n';
+				break;
+			case '\r':
+				*o++ = '\\';
+				*o++ = 'r';
+				break;
+			case '\t':
+				*o++ = '\\';
+				*o++ = 't';
+				break;
+			case ' ':
+				*o++ = '\\';
+				*o++ = 's';
+				break;
+			case '$':
+				*o++ = '\\';
+				*o++ = '$';
+				break;
+			default:
+				*o++ = *p;
+				break;
+		}
+	}
+
+	*o++ = '\0';
+
+	return out;	
+}
+
+SWITCH_DECLARE(char*) switch_escape_string_pool(const char *in, switch_memory_pool_t *pool)
+{
+	int len = strlen(in)*2;
+	char *buf = switch_core_alloc(pool, len);
+	return switch_escape_string(in, buf, len);
+}
+
 /* Helper function used when separating strings to remove quotes, leading /
    trailing spaces, and to convert escaped characters. */
 static char *cleanup_separated_string(char *str, char delim)
