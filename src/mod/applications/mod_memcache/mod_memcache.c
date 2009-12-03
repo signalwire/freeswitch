@@ -227,11 +227,12 @@ SWITCH_STANDARD_API(memcache_function)
 			}
 			switch_safe_free(val);
 		} else if ((!strcasecmp(subcmd, "increment") || !strcasecmp(subcmd, "decrement")) && argc > 1) {
-			key = argv[1];
 			uint64_t ivalue;
 			unsigned int offset = 1;
 			switch_bool_t increment = SWITCH_TRUE;
 			char *svalue = NULL;
+			key = argv[1];
+
 			if (argc > 2) {
 				offset = (unsigned int)strtol(argv[2], NULL, 10);
 				svalue = argv[2];
