@@ -45,6 +45,8 @@ If objArgs.Count >=3 Then
 			Wget objArgs(1), Showpath(objArgs(2))
 		Case "GetUnzip"		
 			WgetUnCompress objArgs(1), Showpath(objArgs(2))
+		Case "GetUnzipSounds"
+			WgetSounds objArgs(1), objArgs(2), Showpath(objArgs(3)), objArgs(4)
 		Case "Version"					
 			'CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 			CreateVersion Showpath(objArgs(1)), Showpath(objArgs(2)), objArgs(3), objArgs(4)
@@ -56,6 +58,23 @@ End If
 ' Utility Subroutines
 ' *******************
 
+Sub WgetSounds(PrimaryName, Freq, DestFolder, VersionFile)
+    BaseURL = "http://files.freeswitch.org/freeswitch-sounds"
+    Set objFSO = CreateObject("Scripting.FileSystemObject")
+    Set objTextFile = objFSO.OpenTextFile(VersionFile,1)
+    Do Until objTextFile.AtEndOfStream
+        strLine = objTextFile.Readline
+        versionPos = InstrRev(strLine, " ", -1, 1)
+        name = Left(strLine, versionPos-1)
+        if name = PrimaryName Then
+            version = Right(strLine, Len(strLine) - versionPos)
+            Wscript.Echo "Sound name: " & name & " Version " & version
+            URL = BaseURL & "-" & name & "-" & Freq &"-" & version & ".tar.gz"
+            Wscript.Echo "URL: " & URL
+            WgetUnCompress URL, Showpath(DestFolder)
+        End If
+    Loop
+End Sub
 
 Sub WgetUnCompress(URL, DestFolder)
 	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
