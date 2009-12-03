@@ -2057,21 +2057,24 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 	int ms;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int resetting = 0;
-	
+
 	if (!tech_pvt->iananame) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "No audio codec available\n");
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
-	if (tech_pvt->read_codec.implementation && switch_core_codec_ready(&tech_pvt->read_codec)) {
+	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
 		if (!force) {
 			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 		}
-		if (strcasecmp(tech_pvt->read_codec.implementation->iananame, tech_pvt->iananame) ||
-			tech_pvt->read_codec.implementation->samples_per_second != tech_pvt->rm_rate) {
+		if (strcasecmp(tech_pvt->read_impl.iananame, tech_pvt->iananame) ||
+			tech_pvt->read_impl.samples_per_second != tech_pvt->rm_rate ||
+			tech_pvt->codec_ms != tech_pvt->read_impl.microseconds_per_packet) {
+			
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Changing Codec from %s@%dms to %s@%dms\n",
+							  tech_pvt->read_impl.iananame, tech_pvt->read_impl.microseconds_per_packet / 1000, 
+							  tech_pvt->rm_encoding, tech_pvt->codec_ms);
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Changing Codec from %s to %s\n",
-							  tech_pvt->read_codec.implementation->iananame, tech_pvt->rm_encoding);
 			switch_core_session_lock_codec_write(tech_pvt->session);
 			switch_core_session_lock_codec_read(tech_pvt->session);
 			resetting = 1;
@@ -2079,7 +2082,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 			switch_core_session_reset(tech_pvt->session, SWITCH_TRUE, SWITCH_TRUE);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Already using %s\n", tech_pvt->read_codec.implementation->iananame);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Already using %s\n", tech_pvt->read_impl.iananame);
 			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 		}
 	}
@@ -2119,9 +2122,14 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		switch_assert(tech_pvt->read_codec.implementation);
-		switch_rtp_set_interval(tech_pvt->rtp_session,
-								   tech_pvt->write_codec.implementation->microseconds_per_packet,
-								   tech_pvt->read_impl.samples_per_packet);
+
+		if (switch_rtp_change_interval(tech_pvt->rtp_session, 
+									   tech_pvt->read_impl.microseconds_per_packet,
+									   tech_pvt->read_impl.samples_per_packet
+									   ) != SWITCH_STATUS_SUCCESS) {
+			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			switch_goto_status(SWITCH_STATUS_FALSE, end);				
+		}
 	}
 
 	tech_pvt->read_frame.rate = tech_pvt->rm_rate;

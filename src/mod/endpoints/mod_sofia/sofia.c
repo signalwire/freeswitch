@@ -3337,6 +3337,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 			if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING)) {
 				tech_pvt->check_frames = 0;
+				tech_pvt->last_ts = 0;
 			}
 
 		}

@@ -789,7 +789,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 			if (tech_pvt->read_frame.datalen > 0) {
 				uint32_t bytes = 0;
 				int frames = 1;
-				
+
 				if (!switch_test_flag((&tech_pvt->read_frame), SFF_CNG)) {
 					if (!tech_pvt->read_codec.implementation || !switch_core_codec_ready(&tech_pvt->read_codec)) {
 						*frame = NULL;
@@ -808,11 +808,13 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 						if (tech_pvt->last_ts && tech_pvt->read_frame.datalen != tech_pvt->read_impl.encoded_bytes_per_packet) {
 							uint32_t codec_ms = (int)(tech_pvt->read_frame.timestamp - 
 														   tech_pvt->last_ts) / (tech_pvt->read_impl.samples_per_second / 1000);
-							if ((codec_ms % 10) != 0) {
-								tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
+
+							if ((codec_ms % 10) != 0 || codec_ms > tech_pvt->read_impl.samples_per_packet * 10) {
+								tech_pvt->last_ts = 0;
 								goto skip;
 							}
 							
+
 							if (tech_pvt->last_codec_ms && tech_pvt->last_codec_ms == codec_ms) {
 								tech_pvt->mismatch_count++;
 							}
@@ -839,22 +841,18 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 													  "This issue has so far been identified to happen on the following broken platforms/devices:\n" 
 													  "Linksys/Sipura aka Cisco\n"
 													  "ShoreTel\n"
-													  "Sonus/L3 (If you're really lucky, you may even get this message twice once they "
-													  "answer and change it back again!! Go Sonus!)\n"
+													  "Sonus/L3\n"
 													  "We will try to fix it but some of the devices on this list are so broken who knows what will happen..\n"
 													  , 
 													  (int)tech_pvt->codec_ms, (int)codec_ms);
-									tech_pvt->codec_ms = codec_ms;
-									switch_core_session_lock_codec_write(session);
-									switch_core_session_lock_codec_read(session);
 
-									switch_core_codec_destroy(&tech_pvt->read_codec);									
-									switch_core_codec_destroy(&tech_pvt->write_codec);
+									switch_channel_set_variable_printf(channel, "sip_h_X-Broken-PTIME", "Adv=%d;Sent=%d", 
+																	   (int)tech_pvt->codec_ms, (int)codec_ms);
+
+									tech_pvt->codec_ms = codec_ms;
 									
 									if (sofia_glue_tech_set_codec(tech_pvt, 2) != SWITCH_STATUS_SUCCESS) {
 										*frame = NULL;
-										switch_core_session_unlock_codec_write(session);
-										switch_core_session_unlock_codec_read(session);
 										return SWITCH_STATUS_GENERR;
 									}
 									
@@ -887,19 +885,11 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 											tech_pvt->read_impl.samples_per_packet;
 									}
 									
-									if (switch_rtp_change_interval(tech_pvt->rtp_session, 
-																   tech_pvt->codec_ms * 1000,
-																   tech_pvt->read_impl.samples_per_packet
-																   ) != SWITCH_STATUS_SUCCESS) {
-										switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-										
-									}
-
-									tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
+									
+									tech_pvt->check_frames = 0;
+									tech_pvt->last_ts = 0;
 									/* inform them of the codec they are actually sending */
 									sofia_glue_do_invite(session);
-									switch_core_session_unlock_codec_write(session);
-									switch_core_session_unlock_codec_read(session);
 
 								}
 							
@@ -1182,10 +1172,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 
 
-
 			if ((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) && switch_true(var)) {
 				sofia_set_flag_locked(tech_pvt, TFLAG_SECURE);
 			}
+			
+			if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING)) {
+				tech_pvt->check_frames = 0;
+				tech_pvt->last_ts = 0;
+			}
+
 		}
 		break;
 	default:
