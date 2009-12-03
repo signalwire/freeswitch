@@ -1544,8 +1544,8 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 #else /* NOT WIN32 */
 int X11_errors_handler(Display * dpy, XErrorEvent * err)
 {
-	(void) dpy;
 	private_t *tech_pvt = NULL;
+	(void) dpy;
 
 	xerror = err->error_code;
 	ERRORA("Received error code %d from X Server\n\n", SKYPIAX_P_LOG, xerror);	///FIXME why crash the entire skypiax? just crash the interface, instead
@@ -1567,17 +1567,13 @@ static int X11_errors_untrap(void)
 
 int skypiax_send_message(private_t * tech_pvt, const char *message_P)
 {
-	struct SkypiaxHandles *SkypiaxHandles;
-	Window w_P;
-	Display *disp;
-	Window handle_P;
+	struct SkypiaxHandles *SkypiaxHandles = &tech_pvt->SkypiaxHandles;
+	Window w_P = SkypiaxHandles->skype_win;
+	Display *disp = SkypiaxHandles->disp;
+	Window handle_P = SkypiaxHandles->win;
 	int ok;
 	//private_t *tech_pvt = NULL;
 
-	SkypiaxHandles = &tech_pvt->SkypiaxHandles;
-	w_P = SkypiaxHandles->skype_win;
-	disp = SkypiaxHandles->disp;
-	handle_P = SkypiaxHandles->win;
 
 	Atom atom1 = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
 	Atom atom2 = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE", False);
@@ -1699,6 +1695,7 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 	Display *disp = NULL;
 	Window root = -1;
 	Window win = -1;
+	int xfd;
 
 	if (!strlen(tech_pvt->X11_display))
 		strcpy(tech_pvt->X11_display, getenv("DISPLAY"));
@@ -1723,7 +1720,6 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 		DEBUGA_SKYPE("X Display '%s' opened\n", SKYPIAX_P_LOG, tech_pvt->X11_display);
 	}
 
-	int xfd;
 	xfd = XConnectionNumber(disp);
 	fcntl(xfd, F_SETFD, FD_CLOEXEC);
 
@@ -1733,7 +1729,7 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 		root = DefaultRootWindow(disp);
 		win = XCreateSimpleWindow(disp, root, 0, 0, 1, 1, 0, BlackPixel(disp, DefaultScreen(disp)), BlackPixel(disp, DefaultScreen(disp)));
 
-		SkypiaxHandles->win = win;
+		SkypiaxHandles->win = win;	
 
 		snprintf(buf, 512, "NAME skypiax");
 
@@ -1754,97 +1750,99 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 			return NULL;
 		}
 
-		/* perform an events loop */
-		XEvent an_event;
-		char buf[21];			/*  can't be longer */
-		char buffer[17000];
-		char continuebuffer[17000];
-		char *b;
-		int i;
-		int continue_is_broken = 0;
-		int there_were_continues = 0;
-		Atom atom_begin = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
-		Atom atom_continue = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE", False);
+		{
+			/* perform an events loop */
+			XEvent an_event;
+			char buf[21];			/*  can't be longer */
+			char buffer[17000];
+			char continuebuffer[17000];
+			char *b;
+			int i;
+			int continue_is_broken = 0;
+			int there_were_continues = 0;
+			Atom atom_begin = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
+			Atom atom_continue = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE", False);
 
-		memset(buffer, '\0', 17000);
-		memset(continuebuffer, '\0', 17000);
-		b = buffer;
+			memset(buffer, '\0', 17000);
+			memset(continuebuffer, '\0', 17000);
+			b = buffer;
 
-		while (running && tech_pvt->running) {
-			XNextEvent(disp, &an_event);
-			if (!(running && tech_pvt->running))
-				break;
-			switch (an_event.type) {
-			case ClientMessage:
-
-				if (an_event.xclient.format != 8)
+			while (running && tech_pvt->running) {
+				XNextEvent(disp, &an_event);
+				if (!(running && tech_pvt->running))
 					break;
+				switch (an_event.type) {
+				case ClientMessage:
 
-				for (i = 0; i < 20 && an_event.xclient.data.b[i] != '\0'; ++i)
-					buf[i] = an_event.xclient.data.b[i];
+					if (an_event.xclient.format != 8)
+						break;
 
-				buf[i] = '\0';
+					for (i = 0; i < 20 && an_event.xclient.data.b[i] != '\0'; ++i)
+						buf[i] = an_event.xclient.data.b[i];
 
-				//DEBUGA_SKYPE ("BUF=|||%s|||\n", SKYPIAX_P_LOG, buf);
+					buf[i] = '\0';
 
-				if (an_event.xclient.message_type == atom_begin) {
-					//DEBUGA_SKYPE ("BEGIN BUF=|||%s|||\n", SKYPIAX_P_LOG, buf);
+					//DEBUGA_SKYPE ("BUF=|||%s|||\n", SKYPIAX_P_LOG, buf);
 
-					if (strlen(buffer)) {
-						unsigned int howmany;
-						howmany = strlen(b) + 1;
-						howmany = write(SkypiaxHandles->fdesc[1], b, howmany);
-						WARNINGA("A begin atom while the previous message is not closed???? value of previous message (between vertical bars) is=|||%s|||, will be lost\n", SKYPIAX_P_LOG, buffer);
-						memset(buffer, '\0', 17000);
+					if (an_event.xclient.message_type == atom_begin) {
+						//DEBUGA_SKYPE ("BEGIN BUF=|||%s|||\n", SKYPIAX_P_LOG, buf);
+
+						if (strlen(buffer)) {
+							unsigned int howmany;
+							howmany = strlen(b) + 1;
+							howmany = write(SkypiaxHandles->fdesc[1], b, howmany);
+							WARNINGA("A begin atom while the previous message is not closed???? value of previous message (between vertical bars) is=|||%s|||, will be lost\n", SKYPIAX_P_LOG, buffer);
+							memset(buffer, '\0', 17000);
+						}
+						if(continue_is_broken){
+							continue_is_broken=0;
+							there_were_continues = 1;
+						}
+					}
+					if (an_event.xclient.message_type == atom_continue) {
+						//DEBUGA_SKYPE ("CONTINUE BUF=|||%s|||\n", SKYPIAX_P_LOG, buf);
+
+						if (!strlen(buffer)) {
+							DEBUGA_SKYPE
+								("Got a 'continue' XAtom without a previous 'begin'. It's value (between vertical bars) is=|||%s|||, let's store it and hope next 'begin' will be the good one\n", SKYPIAX_P_LOG, buf);
+							strcat(continuebuffer, buf);
+							continue_is_broken = 1;
+							if (!strncmp(buf, "ognised identity", 15)) {
+								WARNINGA
+									("Got a 'continue' XAtom without a previous 'begin'. It's value (between vertical bars) is=|||%s|||. Let's introduce a 1 second delay.\n",
+									 SKYPIAX_P_LOG, buf);
+								skypiax_sleep(1000000);	//1 sec
+							}
+							break;
+						}
 					}
 					if(continue_is_broken){
-						continue_is_broken=0;
-						there_were_continues = 1;
+						continue;
 					}
-				}
-				if (an_event.xclient.message_type == atom_continue) {
-					//DEBUGA_SKYPE ("CONTINUE BUF=|||%s|||\n", SKYPIAX_P_LOG, buf);
 
-					if (!strlen(buffer)) {
-						DEBUGA_SKYPE
-							("Got a 'continue' XAtom without a previous 'begin'. It's value (between vertical bars) is=|||%s|||, let's store it and hope next 'begin' will be the good one\n", SKYPIAX_P_LOG, buf);
-						strcat(continuebuffer, buf);
-						continue_is_broken = 1;
-						if (!strncmp(buf, "ognised identity", 15)) {
-							WARNINGA
-								("Got a 'continue' XAtom without a previous 'begin'. It's value (between vertical bars) is=|||%s|||. Let's introduce a 1 second delay.\n",
-								 SKYPIAX_P_LOG, buf);
-							skypiax_sleep(1000000);	//1 sec
-						}
-						break;
+					//DEBUGA_SKYPE ("i=%d, buffer=|||%s|||\n", SKYPIAX_P_LOG, i, buffer);
+					strcat(buffer, buf);
+					//DEBUGA_SKYPE ("i=%d, buffer=|||%s|||\n", SKYPIAX_P_LOG, i, buffer);
+					strcat(buffer, continuebuffer);
+					//DEBUGA_SKYPE ("i=%d, buffer=|||%s|||\n", SKYPIAX_P_LOG, i, buffer);
+					memset(continuebuffer, '\0', 17000);
+
+					if (i < 20 || there_were_continues) {	/* last fragment */
+						unsigned int howmany;
+
+						howmany = strlen(b) + 1;
+
+						howmany = write(SkypiaxHandles->fdesc[1], b, howmany);
+						//DEBUGA_SKYPE ("RECEIVED=|||%s|||\n", SKYPIAX_P_LOG, buffer);
+						memset(buffer, '\0', 17000);
+						XFlush(disp);
+						there_were_continues = 0;
 					}
+
+					break;
+				default:
+					break;
 				}
-				if(continue_is_broken){
-					continue;
-				}
-
-				//DEBUGA_SKYPE ("i=%d, buffer=|||%s|||\n", SKYPIAX_P_LOG, i, buffer);
-				strcat(buffer, buf);
-				//DEBUGA_SKYPE ("i=%d, buffer=|||%s|||\n", SKYPIAX_P_LOG, i, buffer);
-				strcat(buffer, continuebuffer);
-				//DEBUGA_SKYPE ("i=%d, buffer=|||%s|||\n", SKYPIAX_P_LOG, i, buffer);
-				memset(continuebuffer, '\0', 17000);
-
-				if (i < 20 || there_were_continues) {	/* last fragment */
-					unsigned int howmany;
-
-					howmany = strlen(b) + 1;
-
-					howmany = write(SkypiaxHandles->fdesc[1], b, howmany);
-					//DEBUGA_SKYPE ("RECEIVED=|||%s|||\n", SKYPIAX_P_LOG, buffer);
-					memset(buffer, '\0', 17000);
-					XFlush(disp);
-					there_were_continues = 0;
-				}
-
-				break;
-			default:
-				break;
 			}
 		}
 	} else {
