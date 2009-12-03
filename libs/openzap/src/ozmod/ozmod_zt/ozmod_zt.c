@@ -371,8 +371,12 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 			}
 
 			if (zchan->type == ZAP_CHAN_TYPE_DQ921) {
-				if ((ztp.sig_type != ZT_SIG_HDLCRAW) && (ztp.sig_type != ZT_SIG_HDLCFCS)) {
-					zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", chanpath, zchan->span_id, zchan->chan_id, sockfd);
+				if (
+					(ztp.sig_type != ZT_SIG_HDLCRAW) &&
+					(ztp.sig_type != ZT_SIG_HDLCFCS) &&
+					(ztp.sig_type != ZT_SIG_HARDHDLC)
+					) {
+					zap_log(ZAP_LOG_ERROR, "Failure configuring device %s as OpenZAP device %d:%d fd:%d, hardware signaling is not HDLC, fix your Zap/DAHDI configuration!\n", chanpath, zchan->span_id, zchan->chan_id, sockfd);
 					close(sockfd);
 					continue;
 				}
