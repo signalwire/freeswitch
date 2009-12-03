@@ -470,9 +470,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	case ZAP_CHAN_TYPE_EM:
 	case ZAP_CHAN_TYPE_CAS:
 		{
-
 			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
-
 		}
 		break;
 	case ZAP_CHAN_TYPE_FXS:
@@ -488,10 +486,12 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		break;
 	case ZAP_CHAN_TYPE_B:
 		{
-			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN && tech_pvt->zchan->state != ZAP_CHANNEL_STATE_TERMINATING) {
-				tech_pvt->zchan->caller_data.hangup_cause = switch_channel_get_cause_q850(channel);
-				if (tech_pvt->zchan->caller_data.hangup_cause < 1 || tech_pvt->zchan->caller_data.hangup_cause > 127) {
-					tech_pvt->zchan->caller_data.hangup_cause = ZAP_CAUSE_DESTINATION_OUT_OF_ORDER;
+			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
+				if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_TERMINATING) {
+					tech_pvt->zchan->caller_data.hangup_cause = switch_channel_get_cause_q850(channel);
+					if (tech_pvt->zchan->caller_data.hangup_cause < 1 || tech_pvt->zchan->caller_data.hangup_cause > 127) {
+						tech_pvt->zchan->caller_data.hangup_cause = ZAP_CAUSE_DESTINATION_OUT_OF_ORDER;
+					}
 				}
 				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
 			}
