@@ -580,9 +580,9 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 #ifdef ENABLE_ZRTP
 	const char *zid_string = switch_core_get_variable("switch_serial");
 	const char *zrtp_enabled = switch_core_get_variable("zrtp_enabled");
-	zrtp_on = zrtp_enabled ? switch_true(zrtp_enabled) : 0;
 	zrtp_config_t zrtp_config;
 	char zrtp_cache_path[256] = "";
+	zrtp_on = zrtp_enabled ? switch_true(zrtp_enabled) : 0;
 #endif
 	if (global_init) {
 		return;
