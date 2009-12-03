@@ -64,15 +64,17 @@ Sub WgetSounds(PrimaryName, Freq, DestFolder, VersionFile)
     Set objTextFile = objFSO.OpenTextFile(VersionFile,1)
     Do Until objTextFile.AtEndOfStream
         strLine = objTextFile.Readline
-        versionPos = InstrRev(strLine, " ", -1, 1)
-        name = Left(strLine, versionPos-1)
-        if name = PrimaryName Then
-            version = Right(strLine, Len(strLine) - versionPos)
-            Wscript.Echo "Sound name: " & name & " Version " & version
-            URL = BaseURL & "-" & name & "-" & Freq &"-" & version & ".tar.gz"
-            Wscript.Echo "URL: " & URL
-            WgetUnCompress URL, Showpath(DestFolder)
-        End If
+        if Len(strLine) > 2 then
+            versionPos = InstrRev(strLine, " ", -1, 1)
+            name = Left(strLine, versionPos-1)
+            if name = PrimaryName Then
+                version = Right(strLine, Len(strLine) - versionPos)
+                Wscript.Echo "Sound name: " & name & " Version " & version
+                URL = BaseURL & "-" & name & "-" & Freq &"-" & version & ".tar.gz"
+                Wscript.Echo "URL: " & URL
+                WgetUnCompress URL, Showpath(DestFolder)
+            End If
+        End if
     Loop
 End Sub
 
