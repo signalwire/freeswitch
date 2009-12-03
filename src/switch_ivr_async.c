@@ -2670,7 +2670,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	char *cause = NULL;
 	char *mypath;
 	char *p;
-	int app_flags = 0, nomedia = 1;
+	int app_flags = 0, nomedia = 0;
 
 	switch_assert(path);
 
