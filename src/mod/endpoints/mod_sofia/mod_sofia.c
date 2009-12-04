@@ -815,7 +815,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 							}
 							
 
-							if (tech_pvt->last_codec_ms && tech_pvt->last_codec_ms != codec_ms) {
+							if (tech_pvt->last_codec_ms && tech_pvt->last_codec_ms == codec_ms) {
 								tech_pvt->mismatch_count++;
 							}
 
@@ -886,7 +886,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									}
 									
 									
-									tech_pvt->check_frames = 0;
+									tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
 									tech_pvt->last_ts = 0;
 									/* inform them of the codec they are actually sending */
 									sofia_glue_do_invite(session);
