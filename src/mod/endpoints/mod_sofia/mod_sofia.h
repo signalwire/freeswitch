@@ -644,6 +644,7 @@ struct private_object {
 	uint32_t check_frames;
 	uint32_t mismatch_count;
 	uint32_t last_codec_ms;
+	uint8_t codec_reinvites;
 	nua_event_t want_event;
 	switch_rtp_bug_flag_t rtp_bugs;
 	switch_codec_implementation_t read_impl;
