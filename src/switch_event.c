@@ -59,6 +59,8 @@ struct switch_event_subclass {
 	char *owner;
 	/*! the subclass name */
 	char *name;
+	/*! the subclass was reserved by a listener so it's ok for a module to reserve it still */
+	int bind;
 };
 
 #define MAX_DISPATCH_VAL 20
@@ -403,6 +405,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_free_subclass_detailed(const char *
 			FREE(subclass);
 			status = SWITCH_STATUS_SUCCESS;
 			switch_thread_rwlock_unlock(RWLOCK);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Subclass reservation %s inuse by listeners, detaching..\n", subclass_name);
+			subclass->bind = 1;
 		}
 	}
 	
@@ -412,11 +417,16 @@ SWITCH_DECLARE(switch_status_t) switch_event_free_subclass_detailed(const char *
 SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const char *owner, const char *subclass_name)
 {
 	switch_event_subclass_t *subclass;
-
+	
 	switch_assert(RUNTIME_POOL != NULL);
 	switch_assert(CUSTOM_HASH != NULL);
 
-	if (switch_core_hash_find(CUSTOM_HASH, subclass_name)) {
+	if ((subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name))) {
+		/* a listener reserved it for us, now we can lock it so nobody else can have it */
+		if (subclass->bind) { 
+			subclass->bind = 0;
+			return SWITCH_STATUS_SUCCESS;
+		}
 		return SWITCH_STATUS_INUSE;
 	}
 
@@ -1187,6 +1197,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, swit
 		if (!(subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name))) {
 			switch_event_reserve_subclass_detailed(id, subclass_name);
 			subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name);
+			subclass->bind = 1;
 		}
 		if (!subclass) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not reserve subclass. '%s'\n", subclass_name);
@@ -1241,7 +1252,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_unbind_callback(switch_event_callba
 	switch_thread_rwlock_wrlock(RWLOCK);
 	switch_mutex_lock(BLOCK);
 	/* <LOCKED> ----------------------------------------------- */
-	for (id = 0; id < SWITCH_EVENT_ALL; id++) {
+	for (id = 0; id <= SWITCH_EVENT_ALL; id++) {
 		lnp = NULL;
 
 		for (np = EVENT_NODES[id]; np;) {
@@ -1253,6 +1264,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_unbind_callback(switch_event_callba
 				} else {
 					EVENT_NODES[n->event_id] = n->next;
 				}
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Event Binding deleted for %s:%s\n", n->id, switch_event_name(n->event_id));
 				if (n->subclass) {
 					FREE(n->subclass->owner);
