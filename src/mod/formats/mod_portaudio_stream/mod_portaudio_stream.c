@@ -374,10 +374,7 @@ static switch_status_t portaudio_stream_file_open(switch_file_handle_t *handle, 
 	uint32_t rate = PREFERRED_RATE;
 	char *npath ;
 	int devNumber;
-
-
-
-
+	int tmp;
 
 	handle->pre_buffer_datalen = 0;
 
@@ -388,7 +385,7 @@ static switch_status_t portaudio_stream_file_open(switch_file_handle_t *handle, 
 
 	npath =  switch_core_strdup(module_pool, path);
 
-	int tmp = handle->samplerate;
+	tmp = handle->samplerate;
 	if (tmp == 8000 || tmp == 16000 || tmp == 32000 || tmp == 48000) {
 		rate = tmp;
 	}
@@ -399,8 +396,6 @@ static switch_status_t portaudio_stream_file_open(switch_file_handle_t *handle, 
 		devNumber = get_dev_by_name(npath , 1);
 	}
     npath = switch_mprintf("device-%d at %d",devNumber,rate);
-
-
 
 	switch_mutex_lock(globals.mutex);
 	source = switch_core_hash_find(globals.source_hash, npath);
@@ -426,22 +421,15 @@ static switch_status_t portaudio_stream_file_open(switch_file_handle_t *handle, 
 				source->ready = 0;
 				source->samples = switch_samples_per_packet(source->rate, source->interval);
 
-
-
 				switch_mutex_init(&source->mutex, SWITCH_MUTEX_NESTED, source->pool);
-
-
 
 				switch_threadattr_create(&thd_attr, source->pool);
 				switch_threadattr_detach_set(thd_attr, 1);
 
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 				switch_thread_create(&thread, thd_attr, read_stream_thread, source, source->pool);
-
 			}
-
 		}
-
 	}
 	switch_mutex_unlock(globals.mutex);
 	switch_yield(1000000);
@@ -449,18 +437,15 @@ static switch_status_t portaudio_stream_file_open(switch_file_handle_t *handle, 
 	if (source) {
 
 		/*wait for source to be ready*/
-
-		while(source->ready==0){switch_yield(100000);}
-
+		while(source->ready==0) {
+			switch_yield(100000);
+		}
 
 		if (switch_thread_rwlock_tryrdlock(source->rwlock) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " error rwlock !\n");
 			source = NULL;
 		}
-
 	}
-
-
 
 	if (source) {
 		status = SWITCH_STATUS_SUCCESS;
@@ -480,7 +465,6 @@ static switch_status_t portaudio_stream_file_open(switch_file_handle_t *handle, 
 			handle->private_info = context;
 			handle->interval = source->interval;
 
-
 			switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 			if (switch_buffer_create_dynamic(&context->audio_buffer, 512, 1024, 0) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
@@ -497,15 +481,12 @@ static switch_status_t portaudio_stream_file_open(switch_file_handle_t *handle, 
 				source->context_list = context;
 				source->total++;
 				switch_mutex_unlock(source->mutex);
-
 			}
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown source %s\n", path);
 		status = SWITCH_STATUS_FALSE;
 	}
-
-
 
 	return status;
 }
@@ -543,8 +524,6 @@ static switch_status_t portaudio_stream_file_read(switch_file_handle_t *handle, 
 	switch_size_t bytes = 0;
 	int bytesPerSample = context->source->audio_stream->bytesPerFrame;
 	size_t need = *len * bytesPerSample;
-
-
 
 	if (!context->source->ready) {
 		*len = 0;
