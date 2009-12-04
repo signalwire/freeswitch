@@ -815,7 +815,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 							}
 							
 
-							if (tech_pvt->last_codec_ms && tech_pvt->last_codec_ms == codec_ms) {
+							if (tech_pvt->last_codec_ms && tech_pvt->last_codec_ms != codec_ms) {
 								tech_pvt->mismatch_count++;
 							}
 
