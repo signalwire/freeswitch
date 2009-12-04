@@ -2191,6 +2191,7 @@ static switch_status_t load_config(void)
 								   "dialect", dialect,
 								   "digit_timeout", &to,
 								   "opts", opts,
+								   "tonemap", tonegroup,
 								   "q921loglevel", q921loglevel,
 								   "q931loglevel", q931loglevel,
 								   TAG_END) != ZAP_SUCCESS) {
