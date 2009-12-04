@@ -125,10 +125,10 @@ static switch_status_t tts_commandline_speech_close(switch_speech_handle_t *sh, 
 
 static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
 {
-	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
-	assert(info != NULL);
-
 	char *message, *tmp, *rate;
+	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
+
+	assert(info != NULL);
 	
 	message = switch_core_strdup(sh->memory_pool, globals.command);
 	
@@ -168,9 +168,9 @@ static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *s
 static switch_status_t tts_commandline_speech_read_tts(switch_speech_handle_t *sh, void *data, size_t *datalen, switch_speech_flag_t *flags)
 {
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
-	assert(info != NULL);
-	
 	size_t my_datalen = *datalen / 2;
+
+	assert(info != NULL);	
 	
 	if (switch_core_file_read(info->fh, data, &my_datalen) != SWITCH_STATUS_SUCCESS) {
 		*datalen = my_datalen * 2;

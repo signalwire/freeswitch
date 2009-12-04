@@ -512,9 +512,10 @@ static switch_status_t do_config(void)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_yaml_load)
 {
+	switch_dialplan_interface_t *dp_interface;
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	switch_dialplan_interface_t *dp_interface;
 
 	if (do_config() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
