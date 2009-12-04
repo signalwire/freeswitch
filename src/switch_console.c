@@ -723,7 +723,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 				sql = switch_mprintf("delete from aliases where alias='%q' and hostname='%q'", argv[1], switch_core_get_variable("hostname"));
 				switch_cache_db_persistant_execute(db, sql, 5);
 				switch_safe_free(sql);
-				sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (0, '%q','%q')", 
+				sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (0, '%q','%q','%q')", 
 									 argv[1], argv[2], switch_core_get_variable("hostname"));
 				switch_cache_db_persistant_execute(db, sql, 5);
 				status = SWITCH_STATUS_SUCCESS;
