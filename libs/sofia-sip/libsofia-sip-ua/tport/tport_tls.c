@@ -513,7 +513,11 @@ int tls_post_connection_check(tport_t *self, tls_t *tls)
   for (i = 0; i < extcount; i++) {
     X509_EXTENSION *ext;
     char const *name;
+#if OPENSSL_VERSION_NUMBER >  0x10000000L
+    const X509V3_EXT_METHOD *vp;
+#else
     X509V3_EXT_METHOD *vp;
+#endif
     STACK_OF(CONF_VALUE) *values;
     CONF_VALUE *value;
     void *d2i;
