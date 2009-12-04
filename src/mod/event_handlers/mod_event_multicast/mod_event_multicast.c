@@ -59,7 +59,6 @@ static struct {
 	switch_hash_t *event_hash;
 	uint8_t event_list[SWITCH_EVENT_ALL + 1];
 	int running;
-	switch_event_node_t *node;
 	uint8_t ttl;
 	char *psk;
 	switch_mutex_t *mutex;
@@ -373,6 +372,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 {
 	switch_api_interface_t *api_interface;
 	switch_ssize_t hlen = -1;
+	switch_status_t status = SWITCH_STATUS_GENERR;
 
 	memset(&globals, 0, sizeof(globals));
 
@@ -388,95 +388,96 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 
 	if (load_config() != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Configure\n");
-		return SWITCH_STATUS_TERM;
+		switch_goto_status(SWITCH_STATUS_TERM, fail);
 	}
 
 	if (switch_sockaddr_info_get(&globals.addr, globals.address, SWITCH_UNSPEC, globals.port, 0, module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find address\n");
-		return SWITCH_STATUS_TERM;
+		switch_goto_status(SWITCH_STATUS_TERM, fail);
 	}
 
 	if (switch_socket_create(&globals.udp_socket, AF_INET, SOCK_DGRAM, 0, module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error\n");
-		return SWITCH_STATUS_TERM;
+		switch_goto_status(SWITCH_STATUS_TERM, fail);
 	}
 
 	if (switch_socket_opt_set(globals.udp_socket, SWITCH_SO_REUSEADDR, 1) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Option Error\n");
-		switch_socket_close(globals.udp_socket);
-		return SWITCH_STATUS_TERM;
+		switch_goto_status(SWITCH_STATUS_TERM, fail);
 	}
 
 	if (switch_mcast_join(globals.udp_socket, globals.addr, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Multicast Error\n");
-		switch_socket_close(globals.udp_socket);
-		return SWITCH_STATUS_TERM;
+		switch_goto_status(SWITCH_STATUS_TERM, fail);
 	}
 
 	if (switch_mcast_hops(globals.udp_socket, globals.ttl) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set ttl to '%d'\n", globals.ttl);
-		switch_socket_close(globals.udp_socket);
-		return SWITCH_STATUS_TERM;
+		switch_goto_status(SWITCH_STATUS_TERM, fail);
 	}
 
 	if (switch_socket_bind(globals.udp_socket, globals.addr) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bind Error\n");
-		switch_socket_close(globals.udp_socket);
-		return SWITCH_STATUS_TERM;
+		switch_goto_status(SWITCH_STATUS_TERM, fail);
 	}
-
-	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-
+	
 	if (switch_event_reserve_subclass(MULTICAST_EVENT) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MULTICAST_EVENT);
-		return SWITCH_STATUS_GENERR;
+		switch_goto_status(SWITCH_STATUS_GENERR, fail);
 	}
 
 	if (switch_event_reserve_subclass(MULTICAST_PEERUP) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MULTICAST_PEERUP);
-		return SWITCH_STATUS_GENERR;
+		switch_goto_status(SWITCH_STATUS_GENERR, fail);
 	}
 
 	if (switch_event_reserve_subclass(MULTICAST_PEERDOWN) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MULTICAST_PEERDOWN);
-		return SWITCH_STATUS_GENERR;
+		switch_goto_status(SWITCH_STATUS_GENERR, fail);
 	}
 
 	if (switch_event_bind(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		switch_socket_close(globals.udp_socket);
-		return SWITCH_STATUS_GENERR;
+		switch_goto_status(SWITCH_STATUS_GENERR, fail);
 	}
 
+#ifdef USE_NONBLOCK
 	switch_socket_opt_set(globals.udp_socket, SWITCH_SO_NONBLOCK, TRUE);
+#endif
 
+	/* connect my internal structure to the blank pointer passed to me */
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_API(api_interface, "multicast_peers", "Show status of multicast peers", multicast_peers, "");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
+
+
+ fail:
+
+	if (globals.udp_socket) {
+		switch_socket_close(globals.udp_socket);
+	}
+
+	switch_event_free_subclass(MULTICAST_EVENT);
+	switch_event_free_subclass(MULTICAST_PEERUP);
+	switch_event_free_subclass(MULTICAST_PEERDOWN);
+
+	return status;
+
 }
 
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 {
-	int x = 0;
-
-	if (globals.running == 1) {
-		globals.running = -1;
-		while (x < 100000 && globals.running) {
-			x++;
-			switch_cond_next();
-		}
-	}
+	globals.running = 0;
+	switch_event_unbind_callback(event_handler);
 
 	if (globals.udp_socket) {
-		switch_socket_close(globals.udp_socket);
-		globals.udp_socket = NULL;
+		switch_socket_shutdown(globals.udp_socket, 2);
 	}
 
-	switch_event_unbind(&globals.node);
 	switch_event_free_subclass(MULTICAST_EVENT);
 	switch_event_free_subclass(MULTICAST_PEERUP);
 	switch_event_free_subclass(MULTICAST_PEERDOWN);
@@ -508,8 +509,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 		memset(buf, 0, len);
 
 		switch_sockaddr_ip_get(&myaddr, globals.addr);
-		status = switch_socket_recvfrom(addr, globals.udp_socket, 0, buf, &len);
+		if ((status = switch_socket_recvfrom(addr, globals.udp_socket, 0, buf, &len)) != SWITCH_STATUS_SUCCESS || !len || !globals.running) {
+			break;
+		}
 
+#ifdef USE_NONBLOCK
 		if (!len) {
 			if (SWITCH_STATUS_IS_BREAK(status)) {
 				switch_yield(100000);
@@ -518,6 +522,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 
 			break;
 		}
+#endif
 
 		memcpy(&host_hash, buf, sizeof(host_hash));
 		packet = buf + sizeof(host_hash);
@@ -604,6 +609,12 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 
 		}
 
+	}
+
+
+	if (globals.udp_socket) {
+		switch_socket_close(globals.udp_socket);
+		globals.udp_socket = NULL;
 	}
 
 	globals.running = 0;
