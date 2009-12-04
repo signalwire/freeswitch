@@ -3252,6 +3252,24 @@ OZ_DECLARE(char *) zap_strdup(const char *str)
 	return (char *)memcpy(new, str, len);
 }
 
+OZ_DECLARE(char *) zap_strndup(const char *str, zap_size_t inlen)
+{
+	char *new = NULL;
+	zap_size_t len = strlen(str) + 1;
+	if (len > (inlen+1)) {
+		len = inlen+1;
+	}
+	new = (char *)zap_malloc(len);
+
+	if (!new) {
+		return NULL;
+	}
+	
+	memcpy(new, str, len-1);
+	new[len-1] = 0;
+	return new;
+}
+
 
 /* For Emacs:
  * Local Variables:

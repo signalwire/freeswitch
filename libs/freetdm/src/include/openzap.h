@@ -652,6 +652,7 @@ OZ_DECLARE(zap_status_t) zap_global_set_queue_handler(zap_queue_handler_t *handl
 
 /*! \brief Duplicate string */
 OZ_DECLARE(char *) zap_strdup(const char *str);
+OZ_DECLARE(char *) zap_strndup(const char *str, zap_size_t inlen);
 
 OZ_DECLARE(zap_size_t) zap_fsk_modulator_generate_bit(zap_fsk_modulator_t *fsk_trans, int8_t bit, int16_t *buf, zap_size_t buflen);
 OZ_DECLARE(int32_t) zap_fsk_modulator_generate_carrier_bits(zap_fsk_modulator_t *fsk_trans, uint32_t bits);
