@@ -452,6 +452,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 	struct stat statbuf;
 	struct dahdi_transcoder_info info = { 0 };
 	int32_t fd, res;
+	int mpf = 20000; /* Algorithmic delay of 15ms with 5ms of look-ahead delay */
+	int spf = 160; 
+	int bpfd = 320; 
+	int bpfc = 20; 
+	int fpnp = 20;
 
 	total_encoders = 0;
 	total_encoders_usage = 0;
@@ -507,11 +512,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	
 	SWITCH_ADD_CODEC(codec_interface, "DAHDI G.729A 8.0k"); /* 8.0kbit */
-	int mpf = 20000; /* Algorithmic delay of 15ms with 5ms of look-ahead delay */
-	int spf = 160; 
-	int bpfd = 320; 
-	int bpfc = 20; 
-	int fpnp = 20; 
+
 	switch_core_codec_add_implementation(pool,
 	 codec_interface,
 	 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
