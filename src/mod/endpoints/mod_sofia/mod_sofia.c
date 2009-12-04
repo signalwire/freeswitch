@@ -886,10 +886,18 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									}
 									
 									
-									tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
+									tech_pvt->check_frames = 0;
 									tech_pvt->last_ts = 0;
+
 									/* inform them of the codec they are actually sending */
-									sofia_glue_do_invite(session);
+									if (++tech_pvt->codec_reinvites > 2) {
+										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+														  "Ok, some devices *cough* X-lite *cough*\n"
+														  "seem to continue to lie over and over again so I guess we'll\n"
+														  "leave well-enough alone and let them lie\n");
+									} else {
+										sofia_glue_do_invite(session);
+									}
 
 								}
 							
