@@ -1414,7 +1414,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 	switch_hash_index_t *hi;
 	void *val;
 	switch_codec_interface_t *codec_interface;
-	int i = 0;
+	int i = 0, lock = 0;
 	const switch_codec_implementation_t *imp;
 
 	switch_mutex_lock(loadable_modules.mutex);
@@ -1423,6 +1423,10 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 		codec_interface = (switch_codec_interface_t *) val;
 		/* Look for a 20ms implementation because it's the safest choice */
 		for (imp = codec_interface->implementations; imp; imp = imp->next) {
+			if (lock && imp->microseconds_per_packet != lock) {
+				continue;
+			}
+
 			if (imp->microseconds_per_packet / 1000 == 20) {
 				array[i++] = imp;
 				goto found;
@@ -1432,6 +1436,8 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 		array[i++] = codec_interface->implementations;
 
 	  found:
+
+		if (!lock) lock = array[i-1]->microseconds_per_packet;
 
 		if (i > arraylen) {
 			break;
@@ -1446,7 +1452,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 
 SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array, int arraylen, char **prefs, int preflen)
 {
-	int x, i = 0;
+	int x, i = 0, lock = 0;
 	switch_codec_interface_t *codec_interface;
 	const switch_codec_implementation_t *imp;
 
@@ -1482,48 +1488,55 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 		if ((codec_interface = switch_loadable_module_get_codec_interface(name)) != 0) {
 			/* If no specific codec interval is requested opt for 20ms above all else because lots of stuff assumes it */
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
-				uint8_t match = 1;
 				
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
+					if (lock && imp->microseconds_per_packet != lock) {
+						continue;
+					}
 
 					if ((!interval && (uint32_t) (imp->microseconds_per_packet / 1000) != 20) || 
 						(interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval)) {
-						match = 0;
+						continue;
 					}
 
-					if (match && ((!rate && (uint32_t) imp->samples_per_second != 8000) || (rate && (uint32_t) imp->samples_per_second != rate))) {
-						match = 0;
+					if (((!rate && (uint32_t) imp->samples_per_second != 8000) || (rate && (uint32_t) imp->samples_per_second != rate))) {
+						continue;
 					}
 				}
 
-				if (match) {
-					array[i++] = imp;
-					goto found;
-				}
+
+				array[i++] = imp;
+				goto found;
+
 			}
 
 			/* Either looking for a specific interval or there was no interval specified and there wasn't one @20ms available */
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
-				uint8_t match = 1;
-
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 
+					if (lock && imp->microseconds_per_packet != lock) {
+						continue;
+					}
+
 					if (interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval) {
-						match = 0;
+						continue;
 					}
 					
-					if (match && rate && (uint32_t) imp->samples_per_second != rate) {
-						match = 0;
+					if (rate && (uint32_t) imp->samples_per_second != rate) {
+						continue;
 					}
 				}
 
-				if (match) {
-					array[i++] = imp;
-					goto found;
-				}
+				array[i++] = imp;
+				goto found;
+
 			}
 
 		  found:
+
+			if (!lock) {
+				lock = array[i-1]->microseconds_per_packet;
+			}
 
 			UNPROTECT_INTERFACE(codec_interface);
 
