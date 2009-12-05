@@ -1987,6 +1987,7 @@ typedef struct {
 	switch_cache_db_native_handle_t native_handle;
 	time_t last_used;
 	switch_mutex_t *mutex;
+	switch_mutex_t *io_mutex;
 	switch_memory_pool_t *pool;
 	int32_t flags;
 	unsigned long hash;
