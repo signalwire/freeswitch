@@ -389,7 +389,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					switch_channel_cause2str(cause));
 		}
 
-		if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+		if (switch_channel_test_flag(channel, CF_ANSWERED) || sofia_test_flag(tech_pvt, TFLAG_ANS)) {
 			if (!tech_pvt->got_bye) {
 				switch_channel_set_variable(channel, "sip_hangup_disposition", "send_bye");
 			}
