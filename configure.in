@@ -789,6 +789,7 @@ AC_CONFIG_FILES([Makefile
                 src/mod/Makefile
                 src/mod/applications/mod_enum/Makefile
 		src/mod/applications/mod_expr/Makefile
+		src/mod/applications/mod_stress/Makefile
                 src/mod/endpoints/mod_sofia/Makefile
                 src/mod/asr_tts/mod_unimrcp/Makefile
                 src/mod/languages/mod_java/Makefile
