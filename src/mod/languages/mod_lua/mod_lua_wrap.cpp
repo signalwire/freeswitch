@@ -3259,14 +3259,14 @@ static int _wrap_Event_getHeader(lua_State* L) {
   
   SWIG_check_num_args("getHeader",2,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getHeader",1,"Event *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("getHeader",2,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("getHeader",2,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
     SWIG_fail_ptr("Event_getHeader",1,SWIGTYPE_p_Event);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  result = (char *)(arg1)->getHeader(arg2);
+  result = (char *)(arg1)->getHeader((char const *)arg2);
   SWIG_arg=0;
   lua_pushstring(L,(const char*)result); SWIG_arg++;
   return SWIG_arg;
