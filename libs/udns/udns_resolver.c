@@ -45,6 +45,9 @@ int udns_inet_pton(int, const char *, void *);
 # undef HAVE_POLL
 #else
 #define udns_inet_pton inet_pton
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 # include <sys/types.h>
 # include <sys/socket.h>
 # include <netinet/in.h>
