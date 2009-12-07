@@ -72,6 +72,7 @@ test "X$with_lib_subdir" = "Xno" && with_lib_subdir=
    ac_cv_cmu_lib_subdir=lib
    if test $ac_cv_sizeof_long -eq 4 ; then
      test -d /usr/lib32 && ac_cv_cmu_lib_subdir=lib32
+     test -r /usr/lib/libpcap.so && ac_cv_cmu_lib_subdir=lib
    fi
    if test $ac_cv_sizeof_long -eq 8 ; then
      test -d /usr/lib64 && ac_cv_cmu_lib_subdir=lib64
