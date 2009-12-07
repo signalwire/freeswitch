@@ -2500,7 +2500,6 @@ SWITCH_STANDARD_API(originate_function)
 	}
 
 	caller_channel = switch_core_session_get_channel(caller_session);
-	switch_channel_clear_state_handler(caller_channel, NULL);
 
 	if (*exten == '&' && *(exten + 1)) {
 		switch_caller_extension_t *extension = NULL;

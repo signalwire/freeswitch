@@ -1747,7 +1747,7 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channe
 		}
 	} else {
 		for (index = 0; index < i; index++) {
-			if (switch_test_flag(channel->state_handlers[index], SSH_FLAG_STICKY)) {
+			if (channel->state_handlers[index] && switch_test_flag(channel->state_handlers[index], SSH_FLAG_STICKY)) {
 				new_handlers[channel->state_handler_index++] = channel->state_handlers[index];
 			}
 		}
