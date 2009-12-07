@@ -28,9 +28,9 @@ $(OUR_MODULES) $(OUR_CLEAN_MODULES) $(OUR_INSTALL_MODULES) $(OUR_UNINSTALL_MODUL
 		test -d "$$buildmoddir" || mkdir -p $$buildmoddir ; \
 		(if test -f "$$moddir/Makefile" ; then \
 			test -f "$$buildmoddir/Makefile" || cp $$moddir/Makefile $$buildmoddir/Makefile ; \
-			cd $$buildmoddir && MODDIR=$$moddir MODNAME=$$modname BASE=$(switch_srcdir) $(MAKE) $(AM_MAKEFLAGS) $$target; \
+			cd $$buildmoddir && MODDIR=$$moddir MODNAME=$$modname BASE=$(switch_builddir) $(MAKE) $(AM_MAKEFLAGS) $$target; \
 		else\
-			cd $$buildmoddir && MODDIR=$$moddir MODNAME=$$modname BASE=$(switch_srcdir) $(MAKE) $(AM_MAKEFLAGS) -f $(switch_builddir)/build/modmake.rules $$target ;\
+			cd $$buildmoddir && MODDIR=$$moddir MODNAME=$$modname BASE=$(switch_builddir) $(MAKE) $(AM_MAKEFLAGS) -f $(switch_builddir)/build/modmake.rules $$target ;\
 		fi;) || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
 	fi; \
 	test -z "$$fail" ;
