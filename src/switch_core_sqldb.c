@@ -1348,7 +1348,6 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_execute_sql(dbh, "create index complete8 on complete (a8,hostname)", NULL);
 	switch_cache_db_execute_sql(dbh, "create index complete9 on complete (a9,hostname)", NULL);
 	switch_cache_db_execute_sql(dbh, "create index complete10 on complete (a10,hostname)", NULL);
-	switch_cache_db_execute_sql(dbh, "create unique index nat_map_port_proto on nat (port,proto,hostname)", NULL);
 	switch_cache_db_execute_sql(dbh, "create index channels1 on channels(hostname)", NULL);
 	switch_cache_db_execute_sql(dbh, "create index calls1 on calls(hostname)", NULL);
 
