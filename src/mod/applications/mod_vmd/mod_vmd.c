@@ -162,6 +162,8 @@ typedef struct vmd_session_info {
     /*! A count of how long a distinct beep was detected
      *  by the discreet energy separation algorithm. */
     switch_size_t timestamp;
+	/*! The MIN_TIME to use for this call */
+	int minTime;
 } vmd_session_info_t;
 
 static switch_bool_t process_data(vmd_session_info_t * vmd_info, switch_frame_t * frame);
@@ -312,7 +314,7 @@ static void find_beep(vmd_session_info_t * vmd_info, switch_frame_t * frame)
 
         if (c < (POINTS - MAX_CHIRP)) {
             vmd_info->state = BEEP_NOT_DETECTED;
-            if (vmd_info->timestamp < MIN_TIME) {
+            if (vmd_info->timestamp < vmd_info->minTime) {
                 break;
             }
 
@@ -541,6 +543,8 @@ SWITCH_STANDARD_APP(vmd_start_function)
     switch_channel_t *channel;
     vmd_session_info_t *vmd_info;
     int i;
+	const char *minTimeString;
+	int mintime = 0;
 
     if (session == NULL)
         return;
@@ -588,6 +592,13 @@ SWITCH_STANDARD_APP(vmd_start_function)
 
     switch_channel_set_private(channel, "_vmd_", bug);
 
+	if ((minTimeString = switch_channel_get_variable(channel, "vmd_min_time")) && (mintime = atoi(minTimeString))) {
+		vmd_info->minTime = mintime;
+	} else {
+		vmd_info->minTime = MIN_TIME;
+	}
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "MIN_TIME for call: %d\n",vmd_info->minTime);
 }
 
 /*! \brief Called when the module shuts down
