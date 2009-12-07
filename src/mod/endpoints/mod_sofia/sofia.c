@@ -2435,17 +2435,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 				profile->local_network = "localnet.auto";
 
-				if (switch_core_get_variable("nat_type")) {
-					const char *ip = switch_core_get_variable("nat_public_addr");
-					if (ip) {
-						profile->extrtpip = switch_core_strdup(profile->pool, ip);
-						profile->extsipip = switch_core_strdup(profile->pool, ip);
-						sofia_set_pflag(profile, PFLAG_AUTO_NAT);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "NAT detected setting external ip to %s\n", ip);
-					}
-				}
-
-
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -2994,6 +2983,20 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 				if (!profile->rtpip) {
 					profile->rtpip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
+				}
+
+				if (switch_core_get_variable("nat_type")) {
+					const char *ip = switch_core_get_variable("nat_public_addr");
+					if (ip && !strchr(profile->sipip, ':')) {
+						if (!profile->extrtpip) {
+							profile->extrtpip = switch_core_strdup(profile->pool, ip);
+						}
+						if (!profile->extsipip) {
+							profile->extsipip = switch_core_strdup(profile->pool, ip);
+						}
+						sofia_set_pflag(profile, PFLAG_AUTO_NAT);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "NAT detected setting external ip to %s\n", ip);
+					}
 				}
 
 				if (profile->nonce_ttl < 60) {
