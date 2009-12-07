@@ -1523,12 +1523,6 @@ SWITCH_STANDARD_API(pa_cmd)
 	char *wcmd = NULL, *action = NULL;
 	char cmd_buf[1024] = "";
 	char *http = NULL;
-
-	if (stream->param_event) {
-		http = switch_event_get_header(stream->param_event, "http-host");
-	}
-
-
 	const char *usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"alsa help\n"
@@ -1539,6 +1533,10 @@ SWITCH_STANDARD_API(pa_cmd)
 		"alsa switch [<call_id>|none]\n"
 		"alsa dtmf <digit string>\n"
 		"alsa flags [on|off] [ear] [mouth]\n" "--------------------------------------------------------------------------------\n";
+
+	if (stream->param_event) {
+		http = switch_event_get_header(stream->param_event, "http-host");
+	}
 
 	if (http) {
 #if 0
