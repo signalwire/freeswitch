@@ -457,13 +457,13 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 
 	if (switch_thread_self() != session->thread_id) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s thread mismatch skipping state handler.\n", 
-						  switch_channel_get_name(session_channel));
+						  switch_channel_get_name(session->channel));
 		return;
 	}
 
 	if (switch_test_flag(session, SSF_HANGUP)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s handler already called, skipping state handler.\n",
-						  switch_channel_get_name(session_channel));
+						  switch_channel_get_name(session->channel));
 		return;
 	}
 
