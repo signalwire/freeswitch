@@ -1,16 +1,6 @@
+include $(top_srcdir)/build/modmake.rulesam
+
 MODNAME=mod_unimrcp
-
-AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS)
-AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS)
-#AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
-#we should set all these vars from configure, no reason to have these in each Makefile.am
-LIBTOOL = echo "`link=\`echo $@|grep .la;echo $@|grep .so;echo $@|grep .dll\`;if test -n "$$link"; then echo Creating $@;fi`";`if test -z "$(VERBOSE)" ; \
-then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(SHELL) $(switch_builddir)/libtool;  fi`
-AM_MAKEFLAGS=`test -n "$(VERBOSE)" || echo -s`
-# Dirty trick to override the link output
-LIBS+=> $(MODNAME).log || error="yes";if test -n "$(VERBOSE)" -o "$$error" = "yes";then cat $(MODNAME).log;fi;if test "$$error" = "yes";then exit 1;fi
-
-moddir=@modinstdir@
 
 UNIMRCP_DIR=$(switch_builddir)/libs/unimrcp
 UNIMRCPLA=$(UNIMRCP_DIR)/platforms/libunimrcp-client/libunimrcpclient.la
