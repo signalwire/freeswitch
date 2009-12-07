@@ -1,0 +1,61 @@
+Source: freeswitch-sounds-en-us-callie
+Maintainer: Freeswitch Debian Team <debian@freeswitch.org>
+Section: net
+Priority: extra
+Build-Depends: debhelper (>= 5), fakeroot, sox
+Standards-Version: 3.7.3
+
+Package: freeswitch-sounds-en-us-callie-8000
+Architecture: all
+Conflicts: freeswitch-sounds-en-us-callie
+Description: English language sounds for the FreeSWITCH(TM) (8000)
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to
+ a soft-switch.  It can be used as a simple switching engine, a media gateway
+ or a media server to host IVR applications using simple scripts or XML to
+ control the callflow.
+
+Package: freeswitch-sounds-en-us-callie-16000
+Architecture: all
+Conflicts: freeswitch-sounds-en-us-callie
+Description: English language sounds for the FreeSWITCH(TM) (16000)
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to
+ a soft-switch.  It can be used as a simple switching engine, a media gateway
+ or a media server to host IVR applications using simple scripts or XML to
+ control the callflow.
+
+Package: freeswitch-sounds-en-us-callie-32000
+Architecture: all
+Conflicts: freeswitch-sounds-en-us-callie
+Description: English language sounds for FreeSWITCH(TM) (32000)
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to
+ a soft-switch.  It can be used as a simple switching engine, a media gateway
+ or a media server to host IVR applications using simple scripts or XML to
+ control the callflow.
+
+Package: freeswitch-sounds-en-us-callie-48000
+Architecture: all
+Description: English language sounds for the FreeSWITCH(TM) (48000)
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to
+ a soft-switch.  It can be used as a simple switching engine, a media gateway
+ or a media server to host IVR applications using simple scripts or XML to
+ control the callflow.
+
+Package: freeswitch-sounds-en-us-callie
+Architecture: all
+Depends: sox, freeswitch-sounds-en-us-callie-48000
+Conflicts: freeswitch-sounds-en-us-callie-omega, freeswitch-sounds-en-us-callie-8000, freeswitch-sounds-en-us-callie-16000, freeswitch-sounds-en-us-callie-32000
+Description: English language files for FreeSWITCH(TM)
+ This package generates the 8k, 16k, and 32k from the installed 48k
+ sounds. You can select which ones you want.
+
+Package: freeswitch-sounds-en-us-callie-omega
+Architecture: all
+Depends: freeswitch-sounds-en-us-callie-48000, freeswitch-sounds-en-us-callie-32000, freeswitch-sounds-en-us-callie-16000, freeswitch-sounds-en-us-callie-8000
+Conflicts: freeswitch-sounds-en-us-callie
+Description: English language files for FreeSWITCH(TM)
+ This package depends on the pregenerated 8khz, 16khz, 32khz, and 48khz sounds
+ which are downloaded from binary data files.

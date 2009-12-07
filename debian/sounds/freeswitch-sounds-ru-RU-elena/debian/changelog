@@ -1,0 +1,20 @@
+freeswitch-sounds-ru-ru-elena (1.0.12-0ubuntu3) jaunty; urgency=low
+
+  * Fixed: Empty binary package bug caused by the second ru folder being
+	capitalized. The sounds are in ru/RU/elena/*
+
+ -- William King <quentusrex@gmail.com>  Sun, 20 Sep 2009 08:21:58 -0700
+
+freeswitch-sounds-ru-ru-elena (1.0.12-0ubuntu2) jaunty; urgency=low
+
+  * Fixed: Fixed a copy/paste bug in the rules file which was trying to 
+	copy the en directory when it should have been copying the ru
+	directory.
+
+ -- William King <quentusrex@gmail.com>  Sun, 20 Sep 2009 07:59:20 -0700
+
+freeswitch-sounds-ru-ru-elena (1.0.12-0ubuntu1) jaunty; urgency=low
+
+  * Initial: This is the initial working build of the ru-ru-elena sounds
+
+ -- William King <quentusrex@gmail.com>  Sun, 20 Sep 2009 06:56:46 -0700

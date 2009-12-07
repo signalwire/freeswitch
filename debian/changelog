@@ -1,3 +1,9 @@
+freeswitch (1.0.4-1ubuntu1) karmic; urgency=low
+
+    * upgrade: Pulling out the sounds into separate source files for easier management.
+
+ -- William King <quentusrex@gmail.com>  Sun, 15 Nov 2009 16:38:13 -0800
+
 freeswitch (1.0.4-1) unstable; urgency=low
 
     * new

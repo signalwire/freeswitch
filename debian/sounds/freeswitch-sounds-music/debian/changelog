@@ -1,0 +1,11 @@
+freeswitch-sounds-music (1.0.8-0ubuntu3) jaunty; urgency=low
+
+  * Fixed: empty binary files for some packages
+
+ -- William King <quentusrex@gmail.com>  Thu, 24 Sep 2009 15:54:17 -0700
+
+freeswitch-sounds-music (1.0.8-0ubuntu2) jaunty; urgency=low
+
+  * Initial: This is the initial working build of the music on hold
+
+ -- William King <quentusrex@gmail.com>  Sun, 20 Sep 2009 08:28:48 -0700

@@ -1,0 +1,61 @@
+Source: freeswitch-sounds-music
+Maintainer: Freeswitch Debian Team <debian@freeswitch.org>
+Section: net
+Priority: extra
+Build-Depends: debhelper (>= 5), fakeroot, sox
+Standards-Version: 3.7.3
+
+Package: freeswitch-sounds-music-8000
+Architecture: all
+Conflicts: freeswitch-sounds-music
+Description: music for FreeSWITCH(TM) (8000)
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to
+ a soft-switch.  It can be used as a simple switching engine, a media gateway
+ or a media server to host IVR applications using simple scripts or XML to
+ control the callflow.
+
+Package: freeswitch-sounds-music-16000
+Architecture: all
+Conflicts: freeswitch-sounds-music
+Description: music for FreeSWITCH(TM) (16000)
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to
+ a soft-switch.  It can be used as a simple switching engine, a media gateway
+ or a media server to host IVR applications using simple scripts or XML to
+ control the callflow.
+
+Package: freeswitch-sounds-music-32000
+Architecture: all
+Conflicts: freeswitch-sounds-music
+Description: music for FreeSWITCH(TM) (32000)
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to
+ a soft-switch.  It can be used as a simple switching engine, a media gateway
+ or a media server to host IVR applications using simple scripts or XML to
+ control the callflow.
+
+Package: freeswitch-sounds-music-48000
+Architecture: all
+Description: music for FreeSWITCH(TM) (48000)
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to
+ a soft-switch.  It can be used as a simple switching engine, a media gateway
+ or a media server to host IVR applications using simple scripts or XML to
+ control the callflow.
+
+Package: freeswitch-sounds-music
+Architecture: all
+Depends: sox, freeswitch-sounds-music-48000
+Conflicts: freeswitch-sounds-music-omega, freeswitch-sounds-music-8000, freeswitch-sounds-music-16000, freeswitch-sounds-music-32000
+Description: Music for FreeSWITCH(TM)
+ This package generates the 8k, 16k, and 32k from the installed 48k
+ sounds. You can select which ones you want.
+
+Package: freeswitch-sounds-music-omega
+Architecture: all
+Depends: freeswitch-sounds-music-48000, freeswitch-sounds-music-32000, freeswitch-sounds-music-16000, freeswitch-sounds-music-8000
+Conflicts: freeswitch-sounds-music
+Description: Music for FreeSWITCH(TM)
+ This package depends on the pregenerated 8khz, 16khz, 32khz, and 48khz sounds
+ which are downloaded from binary data files.
