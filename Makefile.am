@@ -283,9 +283,6 @@ install-data-local:
 	test -d $(DESTDIR)@confdir@ || $(MAKE) samples-conf
 	test -d $(DESTDIR)$(prefix)/htdocs || $(MAKE) samples-htdocs
 
-.version:
-	touch .version
-
 src/include/switch_version.h: $(switch_builddir)/src/include/switch_version.h.in .version $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
 	@have_version=1 ; \
 	force=0 ; \
