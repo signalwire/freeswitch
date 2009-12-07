@@ -1345,8 +1345,13 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_session_execute_application(SWIGTYPE_p_switch_core_session session, string app, string arg) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_execute_application(SWIGTYPE_p_switch_core_session.getCPtr(session), app, arg);
+  public static switch_status_t switch_core_session_execute_application_get_flags(SWIGTYPE_p_switch_core_session session, string app, string arg, SWIGTYPE_p_int flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_execute_application_get_flags(SWIGTYPE_p_switch_core_session.getCPtr(session), app, arg, SWIGTYPE_p_int.getCPtr(flags));
+    return ret;
+  }
+
+  public static switch_status_t switch_core_session_get_app_flags(string app, SWIGTYPE_p_int flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_get_app_flags(app, SWIGTYPE_p_int.getCPtr(flags));
     return ret;
   }
 
@@ -2475,6 +2480,17 @@ public class freeswitch {
 
   public static string switch_escape_char(SWIGTYPE_p_apr_pool_t pool, string arg1, string delim, char esc) {
     string ret = freeswitchPINVOKE.switch_escape_char(SWIGTYPE_p_apr_pool_t.getCPtr(pool), arg1, delim, esc);
+    return ret;
+  }
+
+  public static string switch_escape_string(string arg0, string arg1, SWIGTYPE_p_switch_size_t outlen) {
+    string ret = freeswitchPINVOKE.switch_escape_string(arg0, arg1, SWIGTYPE_p_switch_size_t.getCPtr(outlen));
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
+  public static string switch_escape_string_pool(string arg0, SWIGTYPE_p_apr_pool_t pool) {
+    string ret = freeswitchPINVOKE.switch_escape_string_pool(arg0, SWIGTYPE_p_apr_pool_t.getCPtr(pool));
     return ret;
   }
 
@@ -6426,8 +6442,11 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_exec")]
   public static extern int switch_core_session_exec(HandleRef jarg1, HandleRef jarg2, string jarg3);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_execute_application")]
-  public static extern int switch_core_session_execute_application(HandleRef jarg1, string jarg2, string jarg3);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_execute_application_get_flags")]
+  public static extern int switch_core_session_execute_application_get_flags(HandleRef jarg1, string jarg2, string jarg3, HandleRef jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_app_flags")]
+  public static extern int switch_core_session_get_app_flags(string jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_execute_exten")]
   public static extern int switch_core_session_execute_exten(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
@@ -7002,6 +7021,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_handle_t_mutex_get")]
   public static extern IntPtr switch_cache_db_handle_t_mutex_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_handle_t_io_mutex_set")]
+  public static extern void switch_cache_db_handle_t_io_mutex_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_handle_t_io_mutex_get")]
+  public static extern IntPtr switch_cache_db_handle_t_io_mutex_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_handle_t_pool_set")]
   public static extern void switch_cache_db_handle_t_pool_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -7259,6 +7284,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_escape_char")]
   public static extern string switch_escape_char(HandleRef jarg1, string jarg2, string jarg3, char jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_escape_string")]
+  public static extern string switch_escape_string(string jarg1, string jarg2, HandleRef jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_escape_string_pool")]
+  public static extern string switch_escape_string_pool(string jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_socket_waitfor")]
   public static extern int switch_socket_waitfor(HandleRef jarg1, int jarg2);
@@ -16894,7 +16925,8 @@ namespace FreeSWITCH.Native {
 [System.Flags] public enum switch_application_flag_enum_t {
   SAF_NONE = 0,
   SAF_SUPPORT_NOMEDIA = (1 << 0),
-  SAF_ROUTING_EXEC = (1 << 1)
+  SAF_ROUTING_EXEC = (1 << 1),
+  SAF_MEDIA_TAP = (1 << 2)
 }
 
 }
@@ -18155,6 +18187,17 @@ public class switch_cache_db_handle_t : IDisposable {
     } 
   }
 
+  public SWIGTYPE_p_switch_mutex_t io_mutex {
+    set {
+      freeswitchPINVOKE.switch_cache_db_handle_t_io_mutex_set(swigCPtr, SWIGTYPE_p_switch_mutex_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_cache_db_handle_t_io_mutex_get(swigCPtr);
+      SWIGTYPE_p_switch_mutex_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_mutex_t(cPtr, false);
+      return ret;
+    } 
+  }
+
   public SWIGTYPE_p_apr_pool_t pool {
     set {
       freeswitchPINVOKE.switch_cache_db_handle_t_pool_set(swigCPtr, SWIGTYPE_p_apr_pool_t.getCPtr(value));
@@ -19162,6 +19205,7 @@ public enum switch_channel_flag_t {
   CF_MEDIA_BRIDGE_TTL,
   CF_BYPASS_MEDIA_AFTER_BRIDGE,
   CF_LEG_HOLDING,
+  CF_BROADCAST_DROP_MEDIA,
   CF_FLAG_MAX
 }
 
