@@ -9,3 +9,5 @@ AM_MAKEFLAGS=`test -n "$(VERBOSE)" || echo -s`
 LIBS+=> $(MODNAME).log || error="yes";if test -n "$(VERBOSE)" -o "$$error" = "yes";then cat $(MODNAME).log;fi;if test "$$error" = "yes";then exit 1;fi
 
 moddir=@modinstdir@
+
+all-modules: all
