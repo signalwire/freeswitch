@@ -3012,24 +3012,24 @@ SWITCH_STANDARD_API(show_function)
 		if (end_of(command) == 's') {
 			end_of(command) = '\0';
 		}
-		sprintf(sql, "select type, name, key from interfaces where type = '%s' order by type,name", command);
+		sprintf(sql, "select type, name, ikey from interfaces where type = '%s' order by type,name", command);
 	} else if (!strncasecmp(command, "module", 6)) {
 		if (argv[1]) {
-			sprintf(sql, "select distinct type, name, key, filename from interfaces where key = '%s' order by type,name", argv[1]);
+			sprintf(sql, "select distinct type, name, ikey, filename from interfaces where key = '%s' order by type,name", argv[1]);
 		} else {
-			sprintf(sql, "select distinct type, name, key, filename from interfaces order by type,name");
+			sprintf(sql, "select distinct type, name, ikey, filename from interfaces order by type,name");
 		}
 	} else if (!strcasecmp(command, "interfaces")) {
-		sprintf(sql, "select type, name, key from interfaces order by type,name");
+		sprintf(sql, "select type, name, ikey from interfaces order by type,name");
 	} else if (!strcasecmp(command, "interface_types")) {
 		sprintf(sql, "select type,count(type) as total from interfaces group by type order by type");
 	} else if (!strcasecmp(command, "tasks")) {
 		sprintf(sql, "select * from %s", command);
 	} else if (!strcasecmp(command, "application") || !strcasecmp(command, "api")) {
 		if (argv[1] && strcasecmp(argv[1], "as")) {
-			sprintf(sql, "select name, description, syntax, key from interfaces where type = '%s' and description != '' and name = '%s' order by type,name", command, argv[1]);
+			sprintf(sql, "select name, description, syntax, ikey from interfaces where type = '%s' and description != '' and name = '%s' order by type,name", command, argv[1]);
 		} else {
-			sprintf(sql, "select name, description, syntax, key from interfaces where type = '%s' and description != '' order by type,name", command);
+			sprintf(sql, "select name, description, syntax, ikey from interfaces where type = '%s' and description != '' order by type,name", command);
 		}
 	} else if (!strcasecmp(command, "calls")) {
 		sprintf(sql, "select * from calls order by call_created_epoch");
@@ -3087,10 +3087,10 @@ SWITCH_STANDARD_API(show_function)
 		holder.print_title = 0;
 		if ((cmdname = strchr(command, ' ')) && strcasecmp(cmdname, "as")) {
 			*cmdname++ = '\0';
-			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description, key from interfaces where type = 'api' and name = '%s' order by name",
+			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description, ikey from interfaces where type = 'api' and name = '%s' order by name",
 							cmdname);
 		} else {
-			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description, key from interfaces where type = 'api' order by name");
+			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description, ikey from interfaces where type = 'api' order by name");
 		}
 	} else if (!strcasecmp(command, "nat_map")) {
 			switch_snprintf(sql, sizeof(sql) - 1, 

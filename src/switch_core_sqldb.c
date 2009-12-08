@@ -1067,7 +1067,7 @@ static void core_event_handler(switch_event_t *event)
 			const char *filename = switch_event_get_header_nil(event, "filename");
 			if (!zstr(type) && !zstr(name)) {
 				sql =
-					switch_mprintf("insert into interfaces (type,name,description,syntax,key,filename,hostname) values('%q','%q','%q','%q','%q','%q','%q')",
+					switch_mprintf("insert into interfaces (type,name,description,syntax,ikey,filename,hostname) values('%q','%q','%q','%q','%q','%q','%q')",
 								   type, name, switch_str_nil(description), switch_str_nil(syntax), 
 								   switch_str_nil(key), switch_str_nil(filename), switch_core_get_variable("hostname")
 								   );
@@ -1211,7 +1211,7 @@ static char create_interfaces_sql[] =
 	"   type             VARCHAR(4096),\n"
 	"   name             VARCHAR(4096),\n" 
 	"   description      VARCHAR(4096),\n" 
-	"   key              VARCHAR(4096),\n" 
+	"   ikey             VARCHAR(4096),\n" 
 	"   filename         VARCHAR(4096),\n" 
 	"   syntax           VARCHAR(4096),\n" 
 	"   hostname VARCHAR(4096)\n" 
@@ -1307,7 +1307,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			char *err;
 			switch_cache_db_test_reactive(dbh, "select hostname from channels", "DROP TABLE channels", create_channels_sql);
 			switch_cache_db_test_reactive(dbh, "select hostname from calls", "DROP TABLE calls", create_calls_sql);
-			switch_cache_db_test_reactive(dbh, "select hostname from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
+			switch_cache_db_test_reactive(dbh, "select ikey from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
 			switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
 			
 			switch_cache_db_execute_sql(dbh, "begin;delete from channels where hostname='';delete from channels where hostname='';commit;", &err);
