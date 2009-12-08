@@ -94,6 +94,8 @@ static struct {
 
 typedef enum {
 	CALLER_CONTROL_MUTE,
+	CALLER_CONTROL_MUTE_ON,
+	CALLER_CONTROL_MUTE_OFF,
 	CALLER_CONTROL_DEAF_MUTE,
 	CALLER_CONTROL_ENERGY_UP,
 	CALLER_CONTROL_ENERGY_EQU_CONF,
@@ -1372,6 +1374,22 @@ static void conference_loop_fn_mute_toggle(conference_member_t *member, caller_c
 	}
 }
 
+static void conference_loop_fn_mute_on(conference_member_t *member, caller_control_action_t *action)
+{
+	if (switch_test_flag(member, MFLAG_CAN_SPEAK)) {
+		conf_api_sub_mute(member, NULL, NULL);
+	}
+}
+
+static void conference_loop_fn_mute_off(conference_member_t *member, caller_control_action_t *action)
+{
+	if (!switch_test_flag(member, MFLAG_CAN_SPEAK)) {
+		conf_api_sub_unmute(member, NULL, NULL);
+		if (!switch_test_flag(member, MFLAG_CAN_HEAR)) {
+			conf_api_sub_undeaf(member, NULL, NULL);
+		}
+	}
+}
 
 static void conference_loop_fn_lock_toggle(conference_member_t *member, caller_control_action_t *action)
 {
@@ -2008,6 +2026,8 @@ static void launch_conference_loop_input(conference_member_t *member, switch_mem
 
 static caller_control_fn_table_t ccfntbl[] = {
 	{"mute", "0", CALLER_CONTROL_MUTE, conference_loop_fn_mute_toggle},
+	{"mute on", NULL, CALLER_CONTROL_MUTE_ON, conference_loop_fn_mute_on},
+	{"mute off", NULL, CALLER_CONTROL_MUTE_OFF, conference_loop_fn_mute_off},
 	{"deaf mute", "*", CALLER_CONTROL_DEAF_MUTE, conference_loop_fn_deafmute_toggle},
 	{"energy up", "9", CALLER_CONTROL_ENERGY_UP, conference_loop_fn_energy_up},
 	{"energy equ", "8", CALLER_CONTROL_ENERGY_EQU_CONF, conference_loop_fn_energy_equ_conf},
