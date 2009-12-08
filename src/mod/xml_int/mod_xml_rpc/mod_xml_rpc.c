@@ -341,14 +341,18 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				
 				if (!domain_name) {
 					if (globals.virtual_host) {
-						domain_name = (char *) r->requestInfo.host;
-						if (!strncasecmp(domain_name, "www.", 3)) {
-							domain_name += 4;
+						if ((domain_name = (char *) r->requestInfo.host)) {
+							if (!strncasecmp(domain_name, "www.", 3)) {
+								domain_name += 4;
+							}
 						}
-					} else if (globals.default_domain) {
-						domain_name = globals.default_domain;
-					} else {
-						domain_name = switch_core_get_variable("domain");
+					}
+					if (!domain_name) {
+						if (globals.default_domain) {
+							domain_name = globals.default_domain;
+						} else {
+							domain_name = switch_core_get_variable("domain");
+						}
 					}
 				}
 
