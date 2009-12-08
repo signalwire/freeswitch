@@ -3015,7 +3015,7 @@ SWITCH_STANDARD_API(show_function)
 		sprintf(sql, "select type, name, ikey from interfaces where type = '%s' order by type,name", command);
 	} else if (!strncasecmp(command, "module", 6)) {
 		if (argv[1]) {
-			sprintf(sql, "select distinct type, name, ikey, filename from interfaces where key = '%s' order by type,name", argv[1]);
+			sprintf(sql, "select distinct type, name, ikey, filename from interfaces where ikey = '%s' order by type,name", argv[1]);
 		} else {
 			sprintf(sql, "select distinct type, name, ikey, filename from interfaces order by type,name");
 		}
