@@ -506,7 +506,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *chann
 
 	switch_mutex_lock(channel->profile_mutex);
 	if (!channel->variables || !(v = switch_event_get_header(channel->variables, varname))) {
-		switch_caller_profile_t *cp = switch_channel_get_caller_profile(channel);
+		switch_caller_profile_t *cp = channel->caller_profile;
 
 		if (cp) {
 			if (!strncmp(varname, "aleg_", 5)) {
@@ -1407,7 +1407,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 	
 	switch_mutex_lock(channel->profile_mutex);
 
-	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
+	if ((caller_profile = channel->caller_profile)) {
 		originator_caller_profile = caller_profile->originator_caller_profile;
 		originatee_caller_profile = caller_profile->originatee_caller_profile;
 	}
@@ -2632,13 +2632,15 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	char dtstr[SWITCH_DTMF_LOG_LEN+1] = "";
 	int x = 0;
 
+	switch_mutex_lock(channel->profile_mutex);
+
 	if (switch_channel_test_flag(channel, CF_TIMESTAMP_SET)) {
 		return SWITCH_STATUS_FALSE;
 	}
 	
 	switch_channel_set_flag(channel, CF_TIMESTAMP_SET);
 
-	if (!(caller_profile = switch_channel_get_caller_profile(channel)) || !channel->variables) {
+	if (!(caller_profile = channel->caller_profile) || !channel->variables) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -2844,6 +2846,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, legbillusec);
 	switch_channel_set_variable(channel, "flow_billusec", tmp);
 	
+	switch_mutex_unlock(channel->profile_mutex);
+
 	return status;
 }
 
