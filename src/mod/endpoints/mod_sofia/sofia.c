@@ -6060,7 +6060,16 @@ void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t 
 				} else {
 					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", acp->caller_id_name, acp->caller_id_number);
 				}
+
+				if (b_tech_pvt->local_crypto_key) {
+					sofia_glue_set_local_sdp(b_tech_pvt, NULL, 0, NULL, 0);
+				}
+
 				nua_update(b_tech_pvt->nh,
+						   SIPTAG_CONTACT_STR(b_tech_pvt->reply_contact),
+						   SOATAG_USER_SDP_STR(b_tech_pvt->local_sdp_str),
+						   SOATAG_REUSE_REJECTED(1),
+						   SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"),
 						   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 						   TAG_IF(!zstr(b_tech_pvt->user_via), SIPTAG_VIA_STR(b_tech_pvt->user_via)),
 						   TAG_END());
