@@ -337,6 +337,7 @@
       <prompt phrase="Please stay on the line. You call will be answered momentarily." filename="ivr-stay_on_line_call_answered_momentarily.wav" attr="Needs_to_be_recorded!"/>
       <prompt phrase="Your call is being transferred." filename="ivr-call_being_transferred.wav" attr="Needs_to_be_recorded!"/>
       <prompt phrase="Please enjoy the music while your call is being transferred." filename="ivr-enjoy_music_while_transfer.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="You have a call from..." filename="ivr-call_from.wav" attr="Needs_to_be_recorded!"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
