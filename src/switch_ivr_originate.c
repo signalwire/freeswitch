@@ -2465,7 +2465,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			} else {
 				oglobals.ringback_ok = 0;
 			}
-			
+
+			soft_holding = switch_channel_get_variable(caller_channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE);			
+
 			while ((!caller_channel || switch_channel_ready(caller_channel) || switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) &&
                    check_channel_status(&oglobals, originate_status, and_argc)) {
 				time_t elapsed = switch_epoch_time_now(NULL) - start;
@@ -2542,6 +2544,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (switch_channel_media_ready(caller_channel)) {
 						tstatus = switch_core_session_read_frame(oglobals.session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 						if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
+							if (soft_holding) {
+								switch_channel_set_flag(caller_channel, CF_XFER_ZOMBIE);
+							}
+
 							if (switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) {
 								continue;
 							}
@@ -2607,6 +2613,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(ringback.audio_buffer,
 																						  write_frame.data,
 																						  write_frame.codec->implementation->decoded_bytes_per_packet)) <= 0) {
+
+								if (soft_holding) {
+									switch_channel_set_flag(caller_channel, CF_XFER_ZOMBIE);
+									continue;
+								}
+
 								break;
 							}
 						} else if (ringback.silence) {
@@ -2623,6 +2635,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						}
 						
 						if (switch_core_session_write_frame(oglobals.session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+							if (soft_holding) {
+								switch_channel_set_flag(caller_channel, CF_XFER_ZOMBIE);
+							}
 							if (switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) {
 								continue;
 							}
@@ -2639,12 +2654,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		  notready:
 
 			if (caller_channel) {
-				soft_holding = switch_channel_get_variable(caller_channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE);
 				holding = switch_channel_get_variable(caller_channel, SWITCH_HOLDING_UUID_VARIABLE);
 				switch_channel_set_variable(caller_channel, SWITCH_HOLDING_UUID_VARIABLE, NULL);
 
 				if (soft_holding && switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) {
 					holding = soft_holding;
+					soft_holding = NULL;
 					switch_channel_set_variable(caller_channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, NULL);
 				}
 			}

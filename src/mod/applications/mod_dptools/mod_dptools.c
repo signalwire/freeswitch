@@ -1563,7 +1563,6 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	}
 
 	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, bond);
-	switch_channel_set_flag(channel, CF_XFER_ZOMBIE);
 
 	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL) 
 		!= SWITCH_STATUS_SUCCESS || !peer_session) {
