@@ -3291,6 +3291,10 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					ptime = maxptime;
 				}
 
+				if (!ptime) {
+					ptime = 20;
+				}
+
 				for (i = first; i < last && i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 					uint32_t codec_rate = imp->samples_per_second;

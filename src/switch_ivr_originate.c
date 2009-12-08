@@ -1566,6 +1566,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	int local_clobber = 0;
 	const char *cancel_key = NULL;
 	const char *holding = NULL;
+	const char *soft_holding = NULL;
 	const char *export_vars = NULL;
 
 
@@ -2638,7 +2639,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		  notready:
 
 			if (caller_channel) {
-				const char *soft_holding = switch_channel_get_variable(caller_channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE);
+				soft_holding = switch_channel_get_variable(caller_channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE);
 				holding = switch_channel_get_variable(caller_channel, SWITCH_HOLDING_UUID_VARIABLE);
 				switch_channel_set_variable(caller_channel, SWITCH_HOLDING_UUID_VARIABLE, NULL);
 
@@ -2757,7 +2758,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_core_session_rwunlock(peer_session);
 					}
 					force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
-				} else {
+				} else if (zstr(soft_holding)) {
 
 					if (peer_channel && switch_channel_ready(peer_channel)) {
 						switch_core_session_t *holding_session;
@@ -2845,9 +2846,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 			}
 			
+
+
 			if (oglobals.idx > IDX_NADA) {
-				peer_session = originate_status[oglobals.idx].peer_session;
-				peer_channel = originate_status[oglobals.idx].peer_channel;
+				if ((peer_session = originate_status[oglobals.idx].peer_session)) {
+					peer_channel = switch_core_session_get_channel(originate_status[oglobals.idx].peer_session);
+				}
 			} else {
 				status = SWITCH_STATUS_FALSE;
 				if (caller_channel && peer_channel) {
