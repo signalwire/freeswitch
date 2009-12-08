@@ -377,16 +377,20 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	if (tech_pvt->nh && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		char reason[128] = "";
 		char *bye_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_BYE_HEADER_PREFIX);
-		
-		if (cause > 0 && cause < 128) {
-			switch_snprintf(reason, sizeof(reason), "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
-		} else if (cause == SWITCH_CAUSE_PICKED_OFF || cause == SWITCH_CAUSE_LOSE_RACE) {
-			switch_snprintf(reason, sizeof(reason), "SIP;cause=200;text=\"Call completed elsewhere\"");
-		} else {
-			switch_snprintf(reason, sizeof(reason), "%s;cause=%d;text=\"%s\"",
-					tech_pvt->profile->username, 
-					cause,
-					switch_channel_cause2str(cause));
+		const char* val = NULL;
+
+		val = switch_channel_get_variable(tech_pvt->channel, "disable_q850_reason");
+		if(!val || switch_true(val)) {
+			if (cause > 0 && cause < 128) {
+				switch_snprintf(reason, sizeof(reason), "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
+			} else if (cause == SWITCH_CAUSE_PICKED_OFF || cause == SWITCH_CAUSE_LOSE_RACE) {
+				switch_snprintf(reason, sizeof(reason), "SIP;cause=200;text=\"Call completed elsewhere\"");
+			} else {
+				switch_snprintf(reason, sizeof(reason), "%s;cause=%d;text=\"%s\"",
+						tech_pvt->profile->username, 
+						cause,
+						switch_channel_cause2str(cause));
+			}
 		}
 
 		if (switch_channel_test_flag(channel, CF_ANSWERED) || sofia_test_flag(tech_pvt, TFLAG_ANS)) {
@@ -396,7 +400,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending BYE to %s\n", switch_channel_get_name(channel));
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				nua_bye(tech_pvt->nh, 
-						SIPTAG_REASON_STR(reason),
+						TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
 						TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 						TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
 						TAG_END());
@@ -409,7 +413,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				}
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					nua_cancel(tech_pvt->nh, 
-							   SIPTAG_REASON_STR(reason), 
+							   TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
 							   TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
 							   TAG_END());
 				}
@@ -420,7 +424,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				}
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause), 
-								SIPTAG_REASON_STR(reason), 
+							    TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
 								SIPTAG_HEADER_STR(generate_pai_str(session)),
 								TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
 								TAG_END());

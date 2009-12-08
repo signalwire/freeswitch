@@ -4611,9 +4611,15 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 										   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
 
 								if (b_tech_pvt) {
+									char* q850 = NULL;
+									const char* val = NULL;
 									sofia_set_flag_locked(b_tech_pvt, TFLAG_BYE);
+									val = switch_channel_get_variable(tech_pvt->channel, "disable_q850_reason");
+									if(!val || switch_true(val)) {
+										q850 = switch_core_session_sprintf(a_session, "Q.850;cause=16;text=\"normal_clearing\"");
+									} 
 									nua_bye(b_tech_pvt->nh, 
-											SIPTAG_REASON_STR("Q.850;cause=16;text=\"normal_clearing\""),
+											TAG_IF(!zstr(q850), SIPTAG_REASON_STR(q850)),
 											TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 											TAG_END());
 								}
