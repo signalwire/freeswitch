@@ -1,20 +1,22 @@
 BASE=../../../..
 
-TIFF_DIR=$(BASE)/libs/tiff-3.8.2
-TIFF_LA=$(TIFF_DIR)/libtiff/libtiff.la
+TIFF_DIR=$(switch_srcdir)/libs/tiff-3.8.2
+TIFF_BUILDDIR=$(switch_builddir)/libs/tiff-3.8.2
+TIFF_LA=$(TIFF_BUILDDIR)/libtiff/libtiff.la
 
-SPANDSP_DIR=$(BASE)/libs/spandsp
-SPANDSP_LA=$(SPANDSP_DIR)/src/libspandsp.la
+SPANDSP_DIR=$(switch_srcdir)/libs/spandsp
+SPANDSP_BUILDDIR=$(switch_builddir)/libs/spandsp
+SPANDSP_LA=$(SPANDSP_BUILDDIR)/src/libspandsp.la
 
-LOCAL_CFLAGS=-I$(SPANDSP_DIR)/src -I$(TIFF_DIR)/libtiff
+LOCAL_CFLAGS=-I$(SPANDSP_DIR)/src -I$(TIFF_DIR)/libtiff -I$(SPANDSP_BUILDDIR)/src -I$(TIFF_BUILDDIR)/libtiff
 LOCAL_LIBADD=$(SPANDSP_LA)
 
 include $(BASE)/build/modmake.rules
 
 $(SPANDSP_LA): $(TIFF_LA) $(SPANDSP_DIR) $(SPANDSP_DIR)/.update
-	cd $(SPANDSP_DIR) && $(MAKE)
+	cd $(SPANDSP_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
 $(TIFF_LA): $(TIFF_DIR) $(TIFF_DIR)/.update
-	cd $(TIFF_DIR) && $(MAKE)
+	cd $(TIFF_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
