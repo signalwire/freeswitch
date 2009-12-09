@@ -245,7 +245,11 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 			wanpipe_tdm_api_t tdm_api;
 			memset(&tdm_api, 0, sizeof(tdm_api));
 #ifdef LIBSANGOMA_VERSION
-			sangstatus = sangoma_wait_obj_create(&sangoma_wait_obj, sockfd, SANGOMA_DEVICE_WAIT_OBJ);
+			/* we need SANGOMA_DEVICE_WAIT_OBJ_SIG and not SANGOMA_DEVICE_WAIT_OBJ alone because we need to call 
+			 * sangoma_wait_obj_sig to wake up any I/O waiters when closing the channel (typically on zap shutdown)
+			 * this adds an extra pair of file descriptors to the waitable object
+			 * */
+			sangstatus = sangoma_wait_obj_create(&sangoma_wait_obj, sockfd, SANGOMA_DEVICE_WAIT_OBJ_SIG);
 			if (sangstatus != SANG_STATUS_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "failure create waitable object for s%dc%d\n", spanno, x);
 				continue;
@@ -493,6 +497,11 @@ static ZIO_OPEN_FUNCTION(wanpipe_open)
  */
 static ZIO_CLOSE_FUNCTION(wanpipe_close)
 {
+#ifdef LIBSANGOMA_VERSION
+	sangoma_wait_obj_t *waitobj = zchan->mod_data;
+	/* kick any I/O waiters */
+	sangoma_wait_obj_signal(waitobj);
+#endif
 	return ZAP_SUCCESS;
 }
 
@@ -1058,7 +1067,7 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 {
 #ifdef LIBSANGOMA_VERSION
 	if (zchan->mod_data) {
-	    sangoma_wait_obj_t *sangoma_wait_obj;
+		sangoma_wait_obj_t *sangoma_wait_obj;
 		sangoma_wait_obj = zchan->mod_data;
 		zchan->mod_data = NULL;
 		sangoma_wait_obj_delete(&sangoma_wait_obj);

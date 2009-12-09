@@ -1413,10 +1413,10 @@ static sangomabc_event_t *zap_boost_read_event(zap_span_t *span)
  */
 static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 {
-    zap_span_t *span = (zap_span_t *) obj;
+	zap_span_t *span = (zap_span_t *) obj;
 	sangomabc_connection_t *mcon, *pcon;
 	uint32_t ms = 10;
-    zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+  zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 
 	mcon = &sangoma_boost_data->mcon;
 	pcon = &sangoma_boost_data->pcon;	
@@ -1466,7 +1466,7 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 			break;
 		}
 
-		if ((activity = zap_boost_wait_event(span, ms)) < 0) {
+		if ((activity = zap_boost_wait_event(span, -1)) < 0) {
 			zap_log(ZAP_LOG_ERROR, "zap_boost_wait_event failed\n");
 			goto error;
 		}
@@ -1568,13 +1568,21 @@ static zap_status_t zap_sangoma_boost_start(zap_span_t *span)
 
 static zap_status_t zap_sangoma_boost_stop(zap_span_t *span)
 {
+	int cnt = 10;
 	zap_status_t status = ZAP_SUCCESS;
 	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	if (sangoma_boost_data->sigmod) {
+
 		/* FIXME: we should make sure the span thread is stopped (use pthread_kill or openzap thread kill function) */
 		/* I think stopping the span before destroying the queue makes sense
 		   otherwise may be boost events would still arrive when the queue is already destroyed! */
 		status = sangoma_boost_data->sigmod->stop_span(span);
+
+		zap_queue_enqueue(sangoma_boost_data->boost_queue, NULL);
+		while(zap_test_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING) && cnt-- > 0) {
+			zap_log(ZAP_LOG_DEBUG, "Waiting for boost thread\n");
+			zap_sleep(500);
+		}
 		zap_queue_destroy(&sangoma_boost_data->boost_queue);
 		return status;
 	}

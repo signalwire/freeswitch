@@ -276,26 +276,6 @@ OZ_DECLARE_NONSTD(uint32_t) zap_hash_hashfromstring(void *ky)
     return hash;
 }
 
-
-static zap_status_t zap_span_destroy(zap_span_t *span)
-{
-	zap_status_t status = ZAP_FAIL;
-	
-	if (zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
-		if (span->stop) {
-			span->stop(span);
-		}
-		if (span->zio && span->zio->span_destroy) {
-			zap_log(ZAP_LOG_INFO, "Destroying span %u type (%s)\n", span->span_id, span->type);
-			status = span->zio->span_destroy(span);
-			zap_safe_free(span->type);
-			zap_safe_free(span->dtmf_hangup);
-		}
-	}
-
-	return status;
-}
-
 static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 {
 
@@ -342,6 +322,48 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 	return ZAP_SUCCESS;
 }
 
+static zap_status_t zap_span_destroy(zap_span_t *span)
+{
+	zap_status_t status = ZAP_SUCCESS;
+	unsigned j;
+
+	zap_mutex_lock(span->mutex);
+
+	/* stop the signaling */
+	if (span->stop) {
+		status = span->stop(span);
+	} 
+
+	/* destroy the channels */
+	zap_clear_flag(span, ZAP_SPAN_CONFIGURED);
+	for(j = 1; j <= span->chan_count && span->channels[j]; j++) {
+		zap_channel_t *cur_chan = span->channels[j];
+		if (cur_chan) {
+			if (zap_test_flag(cur_chan, ZAP_CHANNEL_CONFIGURED)) {
+				zap_channel_destroy(cur_chan);
+			}
+			zap_safe_free(cur_chan);
+			cur_chan = NULL;
+		}
+	}
+
+	/* destroy the I/O for the span */
+	if (span->zio && span->zio->span_destroy) {
+		zap_log(ZAP_LOG_INFO, "Destroying span %u type (%s)\n", span->span_id, span->type);
+		if (span->zio->span_destroy(span) != ZAP_SUCCESS) {
+			status = ZAP_FAIL;
+		}
+		zap_safe_free(span->type);
+		zap_safe_free(span->dtmf_hangup);
+	}
+
+	/* destroy final basic resources of the span data structure */
+	zap_mutex_unlock(span->mutex);
+	zap_mutex_destroy(&span->mutex);
+	zap_safe_free(span->signal_data);
+
+	return status;
+}
 
 OZ_DECLARE(zap_status_t) zap_channel_get_alarms(zap_channel_t *zchan)
 {
@@ -481,7 +503,10 @@ OZ_DECLARE(zap_status_t) zap_span_close_all(void)
 	for (span = globals.spans; span; span = span->next) {
 		if (zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
 			for(j = 1; j <= span->chan_count && span->channels[j]; j++) {
-				zap_channel_destroy(span->channels[j]);
+				zap_channel_t *toclose = span->channels[j];
+				if (zap_test_flag(toclose, ZAP_CHANNEL_INUSE)) {
+					zap_channel_close(&toclose);
+				}
 				i++;
 			}
 		} 
@@ -1329,11 +1354,17 @@ OZ_DECLARE(zap_status_t) zap_channel_close(zap_channel_t **zchan)
 		return ZAP_FAIL;
 	}
 
+	if (!zap_test_flag(check, ZAP_CHANNEL_INUSE)) {
+		zap_log(ZAP_LOG_WARNING, "Called zap_channel_close but never zap_channel_open in chan %d:%d??\n", check->span_id, check->chan_id);
+		return ZAP_FAIL;
+	}
+
 	if (zap_test_flag(check, ZAP_CHANNEL_CONFIGURED)) {
 		zap_mutex_lock(check->mutex);
 		if (zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
 			status = check->zio->close(check);
 			if (status == ZAP_SUCCESS) {
+				zap_clear_flag(check, ZAP_CHANNEL_INUSE);
 				zap_channel_reset(check);
 				*zchan = NULL;
 			}
@@ -2889,7 +2920,6 @@ OZ_DECLARE(uint32_t) zap_running(void)
 
 OZ_DECLARE(zap_status_t) zap_global_destroy(void)
 {
-	unsigned int j;
 	zap_span_t *sp;
 
 	time_end();
@@ -2905,25 +2935,6 @@ OZ_DECLARE(zap_status_t) zap_global_destroy(void)
 
 		if (cur_span) {
 			if (zap_test_flag(cur_span, ZAP_SPAN_CONFIGURED)) {
-				zap_mutex_lock(cur_span->mutex);
-				zap_clear_flag(cur_span, ZAP_SPAN_CONFIGURED);
-				for(j = 1; j <= cur_span->chan_count && cur_span->channels[j]; j++) {
-					zap_channel_t *cur_chan = cur_span->channels[j];
-					if (cur_chan) {
-						if (zap_test_flag(cur_chan, ZAP_CHANNEL_CONFIGURED)) {
-							zap_channel_destroy(cur_chan);
-						}
-						zap_safe_free(cur_chan);
-						cur_chan = NULL;
-					}
-				}
-				zap_mutex_unlock(cur_span->mutex);
-
-				if (cur_span->mutex) {
-					zap_mutex_destroy(&cur_span->mutex);
-				}
-
-				zap_safe_free(cur_span->signal_data);
 				zap_span_destroy(cur_span);
 			}
 
