@@ -388,9 +388,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_dir_make_recursive(globals.log_dir, SWITCH_DEFAULT_DIR_PERMS, pool)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.log_dir);
+		return status;
+	}
+
+	if ((status = switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		return SWITCH_STATUS_GENERR;
+		return status;
 	}
 
 	switch_core_add_state_handler(&state_handlers);
@@ -398,9 +403,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load)
 
 	load_config(pool);
 
-	if ((status = switch_dir_make_recursive(globals.log_dir, SWITCH_DEFAULT_DIR_PERMS, pool)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.log_dir);
-	}
 
 	return status;
 }
