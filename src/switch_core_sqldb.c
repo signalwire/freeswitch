@@ -388,7 +388,7 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	}
 
 	if (errmsg) {
-		if (!switch_stristr("already exists", errmsg)) {
+		if (!switch_stristr("already exists", errmsg) && !switch_stristr("duplicate key name", errmsg)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n%s\n", errmsg, sql);
 		}
 		if (err) {
