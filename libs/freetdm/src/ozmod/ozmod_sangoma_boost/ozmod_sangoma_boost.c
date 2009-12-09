@@ -377,7 +377,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	OUTBOUND_REQUESTS[r].span = span;
 
 	if (sangomabc_connection_write(&sangoma_boost_data->mcon, &event) <= 0) {
-		zap_log(ZAP_LOG_CRIT, "Failed to tx on ISUP socket [%s]\n", strerror(errno));
+		zap_log(ZAP_LOG_CRIT, "Failed to tx boost event [%s]\n", strerror(errno));
 		status = ZAP_FAIL;
 		*zchan = NULL;
 		goto done;
@@ -1416,7 +1416,7 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 	zap_span_t *span = (zap_span_t *) obj;
 	sangomabc_connection_t *mcon, *pcon;
 	uint32_t ms = 10;
-  zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 
 	mcon = &sangoma_boost_data->mcon;
 	pcon = &sangoma_boost_data->pcon;	
@@ -1466,7 +1466,7 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 			break;
 		}
 
-		if ((activity = zap_boost_wait_event(span, -1)) < 0) {
+		if ((activity = zap_boost_wait_event(span, ms)) < 0) {
 			zap_log(ZAP_LOG_ERROR, "zap_boost_wait_event failed\n");
 			goto error;
 		}

@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include;../../../src/isdn/include;&quot;C:\Program Files\Sangoma&quot;"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/isdn/include;&quot;C:\Program Files\Sangoma\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -64,7 +64,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="openzap.lib libsangoma.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;C:\wanpipe\lib"
+				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;C:\Program Files\Sangoma\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				RandomizedBaseAddress="1"

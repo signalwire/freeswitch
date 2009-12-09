@@ -38,10 +38,6 @@ struct zap_mutex {
 	CRITICAL_SECTION mutex;
 };
 
-struct zap_condition {
-	HANDLE condition;
-};
-
 #else
 
 #include <pthread.h>
@@ -52,12 +48,17 @@ struct zap_mutex {
 	pthread_mutex_t mutex;
 };
 
+#endif
+
 struct zap_condition {
+#ifdef WIN32
+	HANDLE condition;
+#else
 	pthread_cond_t condition;
-	pthread_mutex_t *mutex;
+#endif
+	zap_mutex_t *mutex;
 };
 
-#endif
 
 struct zap_thread {
 #ifdef WIN32
@@ -250,13 +251,13 @@ OZ_DECLARE(zap_status_t) zap_condition_create(zap_condition_t **incondition, zap
 		return ZAP_FAIL;
 	}
 
+	condition->mutex = mutex;
 #ifdef WIN32
 	condition->condition = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if (!condition->condition) {
 		goto failed;
 	}
 #else
-	condition->mutex = &mutex->mutex;
 	if (pthread_cond_init(&condition->condition, NULL)) {
 		goto failed;
 	}
@@ -279,7 +280,9 @@ OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 #endif
 	zap_assert_return(condition != NULL, ZAP_FAIL, "Condition is null!\n");
 #ifdef WIN32
+	zap_mutex_unlock(condition->mutex);
 	res = WaitForSingleObject(condition->condition, ms > 0 ? ms : INFINITE);
+	zap_mutex_lock(condition->mutex);
 	switch (res) {
 	case WAIT_ABANDONED:
 	case WAIT_TIMEOUT:
@@ -298,9 +301,9 @@ OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 		struct timespec waitms; 
 		waitms.tv_sec = time(NULL) + ( ms / 1000 );
 		waitms.tv_nsec = 1000 * 1000 * ( ms % 1000 );
-		res = pthread_cond_timedwait(&condition->condition, condition->mutex, &waitms);
+		res = pthread_cond_timedwait(&condition->condition, condition->mutex->mutex, &waitms);
 	} else {
-		res = pthread_cond_wait(&condition->condition, condition->mutex);
+		res = pthread_cond_wait(&condition->condition, condition->mutex->mutex);
 	}
 	if (res != 0) {
 		if (res == ETIMEDOUT) {
@@ -340,8 +343,8 @@ OZ_DECLARE(zap_status_t) zap_condition_destroy(zap_condition_t **incondition)
 	if (pthread_cond_destroy(&condition->condition)) {
 		return ZAP_FAIL;
 	}
-	zap_safe_free(condition);
 #endif
+	zap_safe_free(condition);
 	*incondition = NULL;
 	return ZAP_SUCCESS;
 }
