@@ -423,6 +423,7 @@ struct sofia_profile {
 	char *dbname;
 	char *dialplan;
 	char *context;
+	char *shutdown_type;
 	char *extrtpip;
 	char *rtpip;
 	char *sipip;

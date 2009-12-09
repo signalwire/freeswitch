@@ -39,6 +39,8 @@
     <!--<param name="media-option" value="bypass-media-after-att-xfer"/>-->
     <!-- <param name="user-agent-string" value="FreeSWITCH Rocks!"/> -->
     <param name="debug" value="0"/>
+	<!-- If you want FreeSWITCH to shutdown if this profile fails to load, uncomment the next line. -->
+	<!-- <param name="shutdown-on-fail" value="true"/> -->
     <param name="sip-trace" value="no"/>
     <param name="log-auth-failures" value="true"/>
     <param name="context" value="public"/>

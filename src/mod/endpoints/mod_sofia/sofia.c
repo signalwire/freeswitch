@@ -882,6 +882,40 @@ end:
 	}
 }
 
+static void sofia_perform_profile_start_failure(sofia_profile_t *profile, char *profile_name, char* file, int line)
+{
+	int arg = 0;
+	switch_event_t *s_event;
+
+	if (profile) {
+		if (!strcasecmp(profile->shutdown_type, "true")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s could not load! Shutting down!\n", profile->name);
+			switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
+		} else if (!strcasecmp(profile->shutdown_type, "elegant")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s could not load! Waiting for calls to finish, then shutting down!\n", profile->name);
+			switch_core_session_ctl(SCSC_SHUTDOWN_ELEGANT, &arg);
+		} else if (!strcasecmp(profile->shutdown_type, "asap")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s could not load! Shutting down ASAP!\n", profile->name);
+			switch_core_session_ctl(SCSC_SHUTDOWN_ASAP, &arg);
+		}
+	}
+
+	if ((switch_event_create(&s_event, SWITCH_EVENT_FAILURE) == SWITCH_STATUS_SUCCESS)) {
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "module_name", "mod_sofia");
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_name", profile_name);
+		if (profile) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_uri", profile->url);
+		}
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "failure_message", "Profile failed to start.");
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "file", file);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "line", "%d", line);
+
+		switch_event_fire(&s_event);
+	}
+}
+#define sofia_profile_start_failure(p, xp) sofia_perform_profile_start_failure(p, xp, __FILE__, __LINE__)
+
+
 #define SQLLEN 1024 * 64
 void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread, void *obj)
 {
@@ -1039,6 +1073,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	if (!sofia_glue_init_sql(profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database [%s]!\n", profile->name);
+		sofia_profile_start_failure(profile, profile->name);
 		sofia_glue_del_profile(profile);
 		goto end;
 	}
@@ -1087,6 +1122,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	if (!profile->nua) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s\n", profile->name);
+		sofia_profile_start_failure(profile, profile->name);
 		sofia_glue_del_profile(profile);
 		goto end;
 	}
@@ -1848,6 +1884,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 			profile->ob_calls = 0;
 			profile->ib_failed_calls = 0;
 			profile->ob_failed_calls = 0;		
+			profile->shutdown_type = "false";
 
 			if (xprofiledomain) {
 				profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
@@ -1859,6 +1896,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					char *val = (char *) switch_xml_attr_soft(param, "value");
 					if (!strcasecmp(var, "debug")) {
 						profile->debug = atoi(val);
+					} else if (!strcasecmp(var, "shutdown-on-fail")) {
+						profile->shutdown_type = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "tracelevel")) {
 						mod_sofia_globals.tracelevel = switch_log_str2level(val);
 					} else if (!strcasecmp(var, "pass-callee-id")) {
@@ -2373,11 +2412,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 	if ((profiles = switch_xml_child(cfg, "profiles"))) {
 		for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
+			char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
+			char *xprofiledomain = (char *) switch_xml_attr(xprofile, "domain");
 			if (!(settings = switch_xml_child(xprofile, "settings"))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Settings, check the new config!\n");
+				sofia_profile_start_failure(NULL, xprofilename);
 			} else {
-				char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
-				char *xprofiledomain = (char *) switch_xml_attr(xprofile, "domain");
 				switch_memory_pool_t *pool = NULL;
 
 				if (!xprofilename) {
@@ -2395,11 +2435,13 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				/* Setup the pool */
 				if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+					sofia_profile_start_failure(NULL, xprofilename);
 					goto done;
 				}
 
 				if (!(profile = (sofia_profile_t *) switch_core_alloc(pool, sizeof(*profile)))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+					sofia_profile_start_failure(NULL, xprofilename);
 					goto done;
 				}
 
@@ -2432,7 +2474,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
 				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 				sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
-
+				profile->shutdown_type = "false";
 				profile->local_network = "localnet.auto";
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -2443,6 +2485,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 					if (!strcasecmp(var, "debug")) {
 						profile->debug = atoi(val);
+					} else if (!strcasecmp(var, "shutdown-on-fail")) {
+						profile->shutdown_type = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "sip-trace") && switch_true(val)) {
 						sofia_set_flag(profile, TFLAG_TPORT_LOG);
 					} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
@@ -3208,6 +3252,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Unable to start Profile %s due to no configured sip-ip\n", profile->name);
+					sofia_profile_start_failure(profile, profile->name);
 				}
 				profile = NULL;
 			}

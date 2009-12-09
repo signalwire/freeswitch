@@ -185,6 +185,7 @@ static char *EVENT_NAMES[] = {
 	"RECORD_START",
 	"RECORD_STOP",
 	"CALL_UPDATE",
+	"FAILURE",
 	"ALL"
 };
 

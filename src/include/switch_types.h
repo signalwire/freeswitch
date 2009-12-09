@@ -1255,7 +1255,8 @@ typedef uint32_t switch_io_flag_t;
 	SWITCH_EVENT_NOTIFY				- Notification
 	SWITCH_EVENT_SEND_MESSAGE		- Message
 	SWITCH_EVENT_RECV_MESSAGE		- Message
-  SWITCH_EVENT_NAT            - NAT Management (new/del/status)
+	SWITCH_EVENT_NAT            - NAT Management (new/del/status)
+	SWITCH_EVENT_FAILURE            - A failure occurred which might impact the normal functioning of the switch
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -1332,6 +1333,7 @@ typedef enum {
 	SWITCH_EVENT_RECORD_START,
 	SWITCH_EVENT_RECORD_STOP,
 	SWITCH_EVENT_CALL_UPDATE,
+	SWITCH_EVENT_FAILURE,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 
