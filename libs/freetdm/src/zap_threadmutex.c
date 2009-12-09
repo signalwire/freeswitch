@@ -39,7 +39,6 @@ struct zap_mutex {
 };
 
 #else
-
 #include <pthread.h>
 
 #define ZAP_THREAD_CALLING_CONVENTION
@@ -273,6 +272,8 @@ failed:
 	return ZAP_FAIL;
 }
 
+#define ONE_BILLION 1000000000
+
 OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 {
 #ifdef WIN32
@@ -298,17 +299,32 @@ OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 #else
 	int res = 0;
 	if (ms > 0) {
-		struct timespec waitms; 
-		waitms.tv_sec = time(NULL) + ( ms / 1000 );
-		waitms.tv_nsec = 1000 * 1000 * ( ms % 1000 );
-		res = pthread_cond_timedwait(&condition->condition, condition->mutex->mutex, &waitms);
+		struct timeval t;
+		
+		struct timespec waitms;
+
+		condition->cnt++;
+
+		gettimeofday(&t, NULL);
+
+		waitms.tv_sec = t.tv_sec + ( ms / 1000 );
+
+		waitms.tv_nsec = 1000*(t.tv_usec + (1000 * ( ms % 1000 )));
+
+		if (waitms.tv_nsec > ONE_BILLION) {
+				waitms.tv_sec++;
+				waitms.tv_nsec-= ONE_BILLION;
+		}
+
+		res = pthread_cond_timedwait(&condition->condition, &condition->mutex->mutex, &waitms);
 	} else {
-		res = pthread_cond_wait(&condition->condition, condition->mutex->mutex);
+		res = pthread_cond_wait(&condition->condition, &condition->mutex->mutex);
 	}
 	if (res != 0) {
 		if (res == ETIMEDOUT) {
 			return ZAP_TIMEOUT;
 		}
+		zap_log(ZAP_LOG_CRIT,"pthread_cond_timedwait failed (%d)\n", res);
 		return ZAP_FAIL;
 	}
 	return ZAP_SUCCESS;

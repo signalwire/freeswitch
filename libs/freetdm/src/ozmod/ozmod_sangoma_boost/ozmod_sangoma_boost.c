@@ -1586,7 +1586,7 @@ static zap_status_t zap_sangoma_boost_stop(zap_span_t *span)
 		zap_queue_destroy(&sangoma_boost_data->boost_queue);
 		return status;
 	}
-	return ZAP_SUCCESS;
+	return status;
 }
 
 static zap_state_map_t boost_state_map = {
