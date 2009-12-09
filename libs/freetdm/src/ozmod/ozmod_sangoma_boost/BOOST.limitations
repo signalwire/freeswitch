@@ -1,0 +1,30 @@
+== Boost sigmod current limitations ==
+- we don't support having openzap spans with physical channels
+  belonging to other physical spans. this is due to netborder sangoma abstraction, therefore
+  any openzap span using sigboost must have only channels belonging to the corresponding
+  physical span.
+
+- all spans must be configured and then started, cannot configure, start, configure start etc
+  this is due to netborder telesoft abstraction. that requires configuring everything and
+  then starting everything at once.
+
+- just per-span hunting for now. We must remove the hunting from sigmods and delegate to ozmod_sangoma_boost
+
+- sangoma_prid and sangoma_brid on Windows had to be compiled hacking make/Makefile.platform to comment all VC runtime checks, 
+  otherwise when running in debug mode exceptions are thrown due to loss of data ie short to char conversions.
+
+== TODO ==
+- proper upper layer management of HW alarms (this must be done in mod_openzap.c)
+
+- proper boost hunting done in openzap based on channels status
+
+- move all logging calls to macro-based logging to log the file name and line in sangoma prid
+
+- add zap_span_get_signaling_status that will check the overall span signaling status
+
+- fix segfault on unload of mod_openzap, probably due to threads in smgprid not being stopped
+
+- remove FORCE_SEGFAULT from sangoma_sprid and check if there is anything like that in sangoma_brid
+  we should be using zap_assert or zap_assert_return which will abort depending on the openzap
+  crash policy
+
