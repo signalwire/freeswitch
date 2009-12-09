@@ -388,6 +388,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	load_config(pool);
+
 	if ((status = switch_dir_make_recursive(globals.log_dir, SWITCH_DEFAULT_DIR_PERMS, pool)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.log_dir);
 		return status;
@@ -401,7 +403,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load)
 	switch_core_add_state_handler(&state_handlers);
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	load_config(pool);
+
 
 
 	return status;
