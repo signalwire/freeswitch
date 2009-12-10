@@ -122,7 +122,10 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream
 	}
 
 	va_start(ap, fmt);
-	ret = switch_vasprintf(&data, fmt, ap);
+	//ret = switch_vasprintf(&data, fmt, ap);
+	if (!(data = switch_vmprintf(fmt, ap))) {
+		ret = -1;
+	}
 	va_end(ap);
 
 	if (data) {
@@ -205,7 +208,12 @@ char *expand_alias(char *cmd, char *arg)
 
 	switch_core_db_handle(&db);
 
-	sql = switch_mprintf("select command from aliases where alias='%q'", cmd);
+
+	if (db->type == SCDB_TYPE_CORE_DB) {
+		sql = switch_mprintf("select command from aliases where alias='%q'", cmd);
+	} else {
+		sql = switch_mprintf("select command from aliases where alias='%w'", cmd);
+	}
 
 	switch_cache_db_execute_sql_callback(db, sql, alias_callback, &r, &errmsg);
 
@@ -217,7 +225,11 @@ char *expand_alias(char *cmd, char *arg)
 	switch_safe_free(sql);
 
 	if (!r) {
-		sql = switch_mprintf("select command from aliases where alias='%q %q'", cmd, arg);
+		if (db->type == SCDB_TYPE_CORE_DB) {
+			sql = switch_mprintf("select command from aliases where alias='%q %q'", cmd, arg);
+		} else {
+			sql = switch_mprintf("select command from aliases where alias='%w %w'", cmd, arg);
+		}
 
 		switch_cache_db_execute_sql_callback(db, sql, alias_callback, &r, &errmsg);
 
@@ -499,6 +511,7 @@ struct helper {
 	int hits;
 	int words;
 	char last[512];
+	char partial[512];
 	FILE *out;
 };
 
@@ -506,19 +519,37 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct helper *h = (struct helper *) pArg;
 	char *target = NULL;
-
+	switch_size_t x, y;
+	int i;
+	
 	target = argv[0];
 
 	if (!target) {
 		return -1;
 	}
 
-	fprintf(h->out, "[%20s]\t", target);
+	if (!zstr(target)) {
+		fprintf(h->out, "[%20s]\t", target);
+		switch_copy_string(h->last, target, sizeof(h->last));
+		h->hits++;
+	}
+	
+	x = strlen(h->last);
+	y = strlen(h->partial);
 
-	switch_copy_string(h->last, target, sizeof(h->last));
+	if (h->hits > 1) {
+		for(i = 0; i < x && i < y; i++) {
+			if (h->last[i] != h->partial[i]) {
+				h->partial[i] = '\0';
+				break;
+			}
+		}	
+	} else if (h->hits == 1) {
+		switch_copy_string(h->partial, target, sizeof(h->last));
+	}
 
 	if (!zstr(target)) {
-		if ((++h->hits % 4) == 0) {
+		if ((h->hits % 4) == 0) {
 			fprintf(h->out, "\n");
 		}
 	}
@@ -600,8 +631,20 @@ static unsigned char complete(EditLine * el, int ch)
 
 		}
 
-		for (x = 0; x < argc; x++) {
-			stream.write_function(&stream, "(a%d = '' or a%d like '%s%%')%s", x + 1, x + 1, switch_str_nil(argv[x]), x == argc - 1 ? "" : " and ");
+		for (x = 0; x < argc && x < 11; x++) {
+			if (h.words + 1 > argc) {
+				if (db->type == SCDB_TYPE_CORE_DB) {
+					stream.write_function(&stream, "(a%d = '' or a%d = '%q')%q", x + 1, x + 1, switch_str_nil(argv[x]), x == argc - 1 ? "" : " and ");
+				} else {
+					stream.write_function(&stream, "(a%d = '' or a%d = '%w')%w", x + 1, x + 1, switch_str_nil(argv[x]), x == argc - 1 ? "" : " and ");
+				}
+			} else {
+				if (db->type == SCDB_TYPE_CORE_DB) {
+					stream.write_function(&stream, "(a%d = '' or a%d like '%q%%')%q", x + 1, x + 1, switch_str_nil(argv[x]), x == argc - 1 ? "" : " and ");
+				} else {
+					stream.write_function(&stream, "(a%d = '' or a%d like '%w%%')%w", x + 1, x + 1, switch_str_nil(argv[x]), x == argc - 1 ? "" : " and ");
+				}
+			}
 		}
 
 		stream.write_function(&stream, " and hostname='%s'", switch_core_get_variable("hostname"));
@@ -624,9 +667,13 @@ static unsigned char complete(EditLine * el, int ch)
 
 	fprintf(h.out, "\n\n");
 
-	if (h.hits == 1) {
+	if (h.hits == 1 && !zstr(h.last)) {
 		el_deletestr(el, h.len);
 		el_insertstr(el, h.last);
+		el_insertstr(el, " ");
+	} else if (h.hits > 1 && !zstr(h.partial)) {
+		el_deletestr(el, h.len);
+		el_insertstr(el, h.partial);
 	}
 
   end:
@@ -655,11 +702,19 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 			SWITCH_STANDARD_STREAM(mystream);
 
 			switch_core_db_handle(&db);
-			
+
 			if (!strcasecmp(argv[0], "stickyadd")) {
 				mystream.write_function(&mystream, "insert into complete values (1,");
 				for (x = 0; x < 10; x++) {
-					mystream.write_function(&mystream, "'%s', ", switch_str_nil(argv[x + 1]));
+					if (argv[x + 1] && !strcasecmp(argv[x + 1], "_any_")) {
+						mystream.write_function(&mystream, "%s", "'', ");
+					} else {
+						if (db->type == SCDB_TYPE_CORE_DB) {
+							mystream.write_function(&mystream, "'%q', ", switch_str_nil(argv[x + 1]));
+						} else {
+							mystream.write_function(&mystream, "'%w', ", switch_str_nil(argv[x + 1]));
+						}
+					}
 				}
 				mystream.write_function(&mystream, " '%s')", switch_core_get_variable("hostname"));
 				switch_cache_db_persistant_execute(db, mystream.data, 5);
@@ -667,9 +722,18 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 			} else if (!strcasecmp(argv[0], "add")) {
 				mystream.write_function(&mystream, "insert into complete values (0,");
 				for (x = 0; x < 10; x++) {
-					mystream.write_function(&mystream, "'%s', ", switch_str_nil(argv[x + 1]));
+					if (argv[x + 1] && !strcasecmp(argv[x + 1], "_any_")) {
+						mystream.write_function(&mystream, "%s", "'', ");
+					} else {
+						if (db->type == SCDB_TYPE_CORE_DB) {
+							mystream.write_function(&mystream, "'%q', ", switch_str_nil(argv[x + 1]));
+						} else {
+							mystream.write_function(&mystream, "'%w', ", switch_str_nil(argv[x + 1]));
+						}
+					}
 				}
 				mystream.write_function(&mystream, " '%s')", switch_core_get_variable("hostname"));
+				
 				switch_cache_db_persistant_execute(db, mystream.data, 5);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "del")) {
@@ -679,13 +743,18 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 				} else {
 					mystream.write_function(&mystream, "delete from complete where ");
 					for (x = 0; x < argc - 1; x++) {
-						mystream.write_function(&mystream, "a%d = '%s'%s", x + 1, switch_str_nil(argv[x + 1]), x == argc - 2 ? "" : " and ");
+						if (db->type == SCDB_TYPE_CORE_DB) {
+							mystream.write_function(&mystream, "a%d = '%q'%q", x + 1, switch_str_nil(argv[x + 1]), x == argc - 2 ? "" : " and ");
+						} else {
+							mystream.write_function(&mystream, "a%d = '%w'%w", x + 1, switch_str_nil(argv[x + 1]), x == argc - 2 ? "" : " and ");
+						}
 					}
 					mystream.write_function(&mystream, " and hostname='%s'", switch_core_get_variable("hostname"));
 					switch_cache_db_persistant_execute(db, mystream.data, 1);
 				}
 				status = SWITCH_STATUS_SUCCESS;
 			}
+
 			switch_safe_free(mystream.data);
 			switch_cache_db_release_db_handle(&db);
 		}
@@ -715,16 +784,26 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 				sql = switch_mprintf("delete from aliases where alias='%q' and hostname='%q'", argv[1], switch_core_get_variable("hostname"));
 				switch_cache_db_persistant_execute(db, sql, 5);
 				switch_safe_free(sql);
-				sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (1, '%q','%q','%q')", 
-									 argv[1], argv[2], switch_core_get_variable("hostname"));
+				if (db->type == SCDB_TYPE_CORE_DB) {
+					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (1, '%q','%q','%q')", 
+										 argv[1], argv[2], switch_core_get_variable("hostname"));
+				} else {
+					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (1, '%w','%w','%w')", 
+										 argv[1], argv[2], switch_core_get_variable("hostname"));
+				}
 				switch_cache_db_persistant_execute(db, sql, 5);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "add") && argc == 3) {
 				sql = switch_mprintf("delete from aliases where alias='%q' and hostname='%q'", argv[1], switch_core_get_variable("hostname"));
 				switch_cache_db_persistant_execute(db, sql, 5);
 				switch_safe_free(sql);
-				sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (0, '%q','%q','%q')", 
-									 argv[1], argv[2], switch_core_get_variable("hostname"));
+				if (db->type == SCDB_TYPE_CORE_DB) {
+					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (0, '%q','%q','%q')", 
+										 argv[1], argv[2], switch_core_get_variable("hostname"));
+				} else {
+					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (0, '%w','%w','%w')", 
+										 argv[1], argv[2], switch_core_get_variable("hostname"));
+				}
 				switch_cache_db_persistant_execute(db, sql, 5);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "del") && argc == 2) {

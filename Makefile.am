@@ -67,6 +67,7 @@ src/switch_buffer.c \
 src/switch_caller.c \
 src/switch_channel.c \
 src/switch_console.c \
+src/switch_mprintf.c\
 src/switch_core_media_bug.c \
 src/switch_core_timer.c \
 src/switch_core_asr.c \
@@ -142,6 +143,7 @@ src/include/switch_core_event_hook.h\
 src/include/switch_scheduler.h\
 src/include/switch_core.h\
 src/include/switch_core_db.h\
+src/include/switch_mprintf.h\
 src/include/switch_config.h\
 src/include/switch_event.h\
 src/include/switch_frame.h\

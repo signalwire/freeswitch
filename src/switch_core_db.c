@@ -179,22 +179,6 @@ SWITCH_DECLARE(int) switch_core_db_changes(switch_core_db_t *db)
 	return sqlite3_changes(db);
 }
 
-SWITCH_DECLARE(char *) switch_mprintf(const char *zFormat, ...)
-{
-	va_list ap;
-	char *z;
-	va_start(ap, zFormat);
-	z = sqlite3_vmprintf(zFormat, ap);
-	va_end(ap);
-	return z;
-}
-
-SWITCH_DECLARE(char *) switch_vmprintf(const char *zFormat, va_list ap)
-{
-
-	return sqlite3_vmprintf(zFormat, ap);
-}
-
 SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename)
 {
 	switch_core_db_t *db;

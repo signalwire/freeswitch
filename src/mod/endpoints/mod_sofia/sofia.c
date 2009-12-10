@@ -1059,7 +1059,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	int sanity;
 	switch_thread_t *worker_thread;
 	switch_status_t st;
-
+	char cbuf[512] = "";
 	
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
@@ -1226,9 +1226,16 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	switch_yield(1000000);
 
+	switch_snprintf(cbuf, sizeof(cbuf), "add sofia profile %s", profile->name);
+	switch_console_set_complete(cbuf);
+
+
 	while (mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING) && sofia_test_pflag(profile, PFLAG_WORKER_RUNNING)) {
 		su_root_step(profile->s_root, 1000);
 	}
+
+	switch_snprintf(cbuf, sizeof(cbuf), "del sofia profile %s", profile->name);
+	switch_console_set_complete(cbuf);
 
 	sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
 

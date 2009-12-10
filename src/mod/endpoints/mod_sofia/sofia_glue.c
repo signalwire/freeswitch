@@ -3644,10 +3644,12 @@ void sofia_glue_release_profile__(const char *file, const char *func, int line, 
 switch_status_t sofia_glue_add_profile(char *key, sofia_profile_t *profile)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-
+	char cbuf[512] = "";
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (!switch_core_hash_find(mod_sofia_globals.profile_hash, key)) {
 		status = switch_core_hash_insert(mod_sofia_globals.profile_hash, key, profile);
+		switch_snprintf(cbuf, sizeof(cbuf), "add sofia profile %s", key);
+		switch_console_set_complete(cbuf);
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
@@ -3716,13 +3718,16 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 	const void *var;
 	void *val;
 	sofia_profile_t *pptr;
-
+	char cbuf[512] = "";
+	
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
 		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, &var, NULL, &val);
 			if ((pptr = (sofia_profile_t *) val) && pptr == profile) {
 				aliases[i++] = strdup((char *) var);
+				switch_snprintf(cbuf, sizeof(cbuf), "del sofia profile %s", var);
+				switch_console_set_complete(cbuf);
 				if (i == 512) {
 					abort();
 				}

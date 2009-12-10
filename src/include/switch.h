@@ -106,7 +106,7 @@
 #include "switch_platform.h"
 #include "switch_types.h"
 #include "switch_apr.h"
-
+#include "switch_mprintf.h"
 #include "switch_core_db.h"
 #include "switch_dso.h"
 #include "switch_regex.h"

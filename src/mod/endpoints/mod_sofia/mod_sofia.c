@@ -3744,6 +3744,18 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia profile");
 	switch_console_set_complete("add sofia profile restart all");
 
+	switch_console_set_complete("add sofia profile _any_ start reloadxml");
+	switch_console_set_complete("add sofia profile _any_ stop reloadxml");
+	switch_console_set_complete("add sofia profile _any_ rescan reloadxml");
+	switch_console_set_complete("add sofia profile _any_ restart reloadxml");
+
+	switch_console_set_complete("add sofia profile _any_ flush_inbound_reg");
+	switch_console_set_complete("add sofia profile _any_ register");
+	switch_console_set_complete("add sofia profile _any_ killgw");
+	switch_console_set_complete("add sofia profile _any_ siptrace on");
+	switch_console_set_complete("add sofia profile _any_ siptrace off");
+
+
 	SWITCH_ADD_API(api_interface, "sofia_contact", "Sofia Contacts", sofia_contact_function, "[profile/]<user>@<domain>");
 	SWITCH_ADD_CHAT(chat_interface, SOFIA_CHAT_PROTO, sofia_presence_chat_send);
 
@@ -3754,6 +3766,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 {
 	int sanity = 0;
+
+	switch_console_set_complete("del sofia");
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	if (mod_sofia_globals.running == 1) {
