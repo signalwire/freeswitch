@@ -463,6 +463,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	char *event_lock = switch_event_get_header(event, "event-lock");
 	char *event_lock_pri = switch_event_get_header(event, "event-lock-pri");
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	int el = 0, elp = 0;
 
 	if (zstr(cmd)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Command!\n");
@@ -475,10 +476,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 	if (switch_true(event_lock)) {
 		switch_channel_set_flag_recursive(channel, CF_EVENT_LOCK);
+		el = 1;
 	}
 
 	if (switch_true(event_lock_pri)) {
 		switch_channel_set_flag_recursive(channel, CF_EVENT_LOCK_PRI);
+		elp = 1;
 	}
 
 	if (lead_frames) {
@@ -609,9 +612,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	status = SWITCH_STATUS_SUCCESS;
 
   done:
+
 	switch_channel_clear_flag_recursive(channel, CF_EVENT_PARSE);
-	switch_channel_clear_flag_recursive(channel, CF_EVENT_LOCK);
-	switch_channel_clear_flag_recursive(channel, CF_EVENT_LOCK_PRI);
+
+	if (el) {
+		switch_channel_clear_flag_recursive(channel, CF_EVENT_LOCK);
+	}
+
+	if (elp) {
+		switch_channel_clear_flag_recursive(channel, CF_EVENT_LOCK_PRI);
+	}
 
 	return status;
 }
