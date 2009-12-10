@@ -743,6 +743,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_mprintf.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_nat.c"
 				>
 				<FileConfiguration
@@ -1446,6 +1450,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_module_interfaces.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_mprintf.h"
 				>
 			</File>
 			<File
