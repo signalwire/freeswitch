@@ -452,7 +452,7 @@ getSignatureList(xmlrpc_env *      const envP,
                      signatureP && !envP->fault_occurred;
                      signatureP = signatureP->nextP) {
                     
-                    xmlrpc_value * signatureVP;
+                    xmlrpc_value * signatureVP = NULL;
                     
                     buildSignatureValue(envP, signatureP, &signatureVP);
                     

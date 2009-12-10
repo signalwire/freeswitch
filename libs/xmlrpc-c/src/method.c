@@ -210,7 +210,7 @@ listSignatures(xmlrpc_env *               const envP,
     cursorP = &sigListString[0];
     
     while (!envP->fault_occurred && *cursorP != '\0') {
-        struct xmlrpc_signature * signatureP;
+        struct xmlrpc_signature * signatureP = NULL;
         
         parseOneSignature(envP, cursorP, &signatureP, &cursorP);
         

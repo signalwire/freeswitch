@@ -188,7 +188,7 @@ parseMember(xmlrpc_env *    const envP,
                       "<member> element has %u children.  Only one <name> and "
                       "one <value> make sense.", childCount);
     else {
-        xml_element * nameElemP;
+        xml_element * nameElemP = NULL;
 
         getNameChild(envP, memberP, &nameElemP);
 
@@ -196,7 +196,7 @@ parseMember(xmlrpc_env *    const envP,
             parseName(envP, nameElemP, keyPP);
 
             if (!envP->fault_occurred) {
-                xml_element * valueElemP;
+                xml_element * valueElemP = NULL;
 
                 getValueChild(envP, memberP, &valueElemP);
                 
@@ -242,7 +242,7 @@ parseStruct(xmlrpc_env *    const envP,
                 setParseFault(envP, "<%s> element found where only <member> "
                               "makes sense", elemName);
             else {
-                xmlrpc_value * keyP;
+                xmlrpc_value * keyP = NULL;
                 xmlrpc_value * valueP;
 
                 parseMember(envP, members[i], maxRecursion, &keyP, &valueP);
@@ -414,10 +414,10 @@ parseDoubleString(xmlrpc_env *  const envP,
        Design note: in my experiments, using strtod() was 10 times
        slower than using this function.
     */
-    const char * mantissa;
-    const char * mantissaEnd;
-    const char * fraction;
-    const char * fractionEnd;
+    const char * mantissa = NULL;
+    const char * mantissaEnd = NULL;
+    const char * fraction = NULL;
+    const char * fractionEnd = NULL;
 
     scanAndValidateDoubleString(envP, string, &mantissa, &mantissaEnd,
                                 &fraction, &fractionEnd);
@@ -500,7 +500,7 @@ parseDouble(xmlrpc_env *    const envP,
    'str' is that content.
 -----------------------------------------------------------------------------*/
     xmlrpc_env parseEnv;
-    double valueDouble;
+    double valueDouble = 0;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(str);

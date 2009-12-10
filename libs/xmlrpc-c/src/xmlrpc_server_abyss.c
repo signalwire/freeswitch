@@ -471,7 +471,7 @@ processCall(TSession *        const abyssSessionP,
             &env, XMLRPC_LIMIT_EXCEEDED_ERROR,
             "XML-RPC request too large (%d bytes)", contentSize);
     else {
-        xmlrpc_mem_block * body;
+        xmlrpc_mem_block * body = NULL;
         /* Read XML data off the wire. */
         getBody(&env, abyssSessionP, contentSize, trace, &body);
         if (!env.fault_occurred) {
@@ -890,8 +890,8 @@ createServerBare(xmlrpc_env *                      const envP,
    to use.
 -----------------------------------------------------------------------------*/
     bool socketBound;
-    unsigned int portNumber;
-    TOsSocket socketFd;
+    unsigned int portNumber = 0;
+    TOsSocket socketFd = NULL;
     const char * logFileName;
 
     extractServerCreateParms(envP, parmsP, parmSize,
