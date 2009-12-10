@@ -287,11 +287,11 @@ noinst_HEADERS =        faxfont.h \
                         v17_v32bis_tx_constellation_maps.h \
                         v29tx_constellation_maps.h
 
-make_at_dictionary$(EXEEXT): $(abs_srcdir)/make_at_dictionary.c
-	$(CC_FOR_BUILD) -o make_at_dictionary$(EXEEXT) $(abs_srcdir)/make_at_dictionary.c  -DHAVE_CONFIG_H 
+make_at_dictionary$(EXEEXT): $(top_srcdir)/src/make_at_dictionary.c
+	$(CC_FOR_BUILD) -o make_at_dictionary$(EXEEXT) $(top_srcdir)/src/make_at_dictionary.c  -DHAVE_CONFIG_H 
 
-make_modem_filter$(EXEEXT): $(abs_srcdir)/make_modem_filter.c $(abs_srcdir)/filter_tools.c 
-	$(CC_FOR_BUILD) -o make_modem_filter$(EXEEXT) $(abs_srcdir)/make_modem_filter.c $(abs_srcdir)/filter_tools.c -DHAVE_CONFIG_H
+make_modem_filter$(EXEEXT): $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c 
+	$(CC_FOR_BUILD) -o make_modem_filter$(EXEEXT) $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c -DHAVE_CONFIG_H
 
 # We need to run make_at_dictionary, so it generates the
 # at_interpreter_dictionary.h file
