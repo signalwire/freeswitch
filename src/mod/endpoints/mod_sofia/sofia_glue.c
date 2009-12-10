@@ -2938,7 +2938,8 @@ void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 					switch_channel_set_flag(tech_pvt->channel, CF_HOLD);
 					switch_ivr_hold_uuid(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), NULL, 0);
 				} else {
-					switch_ivr_broadcast(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), stream, SMF_ECHO_ALEG | SMF_LOOP);
+					switch_ivr_broadcast(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), stream, 
+										 SMF_ECHO_ALEG | SMF_LOOP | SMF_PRIORITY);
 					switch_yield(250000);
 				}
 			}

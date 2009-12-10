@@ -1655,7 +1655,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 		if (zstr(uuid) && listener->session) {
 			if (async) {
-				if ((status = switch_core_session_queue_private_event(listener->session, event)) == SWITCH_STATUS_SUCCESS) {
+				if ((status = switch_core_session_queue_private_event(listener->session, event, SWITCH_FALSE)) == SWITCH_STATUS_SUCCESS) {
 					switch_snprintf(reply, reply_len, "+OK");
 				} else {
 					switch_snprintf(reply, reply_len, "-ERR memory error");
@@ -1666,7 +1666,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			}
 		} else {
 			if (!zstr(uuid) && (session = switch_core_session_locate(uuid))) {
-				if ((status = switch_core_session_queue_private_event(session, event)) == SWITCH_STATUS_SUCCESS) {
+				if ((status = switch_core_session_queue_private_event(session, event, SWITCH_FALSE)) == SWITCH_STATUS_SUCCESS) {
 					switch_snprintf(reply, reply_len, "+OK");
 				} else {
 					switch_snprintf(reply, reply_len, "-ERR memory error");

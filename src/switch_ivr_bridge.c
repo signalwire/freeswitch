@@ -1059,7 +1059,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", data);
 					switch_event_add_header(execute_event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
 					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
-					switch_core_session_queue_private_event(session, &execute_event);
+					switch_core_session_queue_private_event(session, &execute_event, SWITCH_FALSE);
 					a_leg->skip_frames = DEFAULT_LEAD_FRAMES;
 				}
 
@@ -1074,7 +1074,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", data);
 					switch_event_add_header(execute_event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
 					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
-					switch_core_session_queue_private_event(peer_session, &execute_event);
+					switch_core_session_queue_private_event(peer_session, &execute_event, SWITCH_FALSE);
 					b_leg->skip_frames = DEFAULT_LEAD_FRAMES;
 				}
 			}

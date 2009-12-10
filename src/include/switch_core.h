@@ -986,9 +986,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(_In_ switch_co
   \brief Queue a private event on a given session
   \param session the session to queue the message on
   \param event the event to queue
+  \param priority event has high priority
   \return the status returned by the message handler
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(_In_ switch_core_session_t *session, _Inout_ switch_event_t **event);
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(_In_ switch_core_session_t *session, _Inout_ switch_event_t **event, switch_bool_t priority);
 
 
 /*! 

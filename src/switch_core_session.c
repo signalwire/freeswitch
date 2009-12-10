@@ -847,15 +847,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_se
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_core_session_t *session, switch_event_t **event)
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_core_session_t *session, switch_event_t **event, switch_bool_t priority)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_queue_t *queue;
 
 	switch_assert(session != NULL);
 
 	if (session->private_event_queue) {
+		queue = priority ? session->private_event_queue_pri : session->private_event_queue;
+		
 		(*event)->event_id = SWITCH_EVENT_PRIVATE_COMMAND;
-		if (switch_queue_trypush(session->private_event_queue, *event) == SWITCH_STATUS_SUCCESS) {
+		if (switch_queue_trypush(queue, *event) == SWITCH_STATUS_SUCCESS) {
 			*event = NULL;
 			switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
 			status = SWITCH_STATUS_SUCCESS;
@@ -878,8 +881,16 @@ SWITCH_DECLARE(uint32_t) switch_core_session_private_event_count(switch_core_ses
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	uint32_t count = 0;
 	
-	if (!switch_channel_test_flag(channel, CF_EVENT_LOCK) && session->private_event_queue) {
-		count = switch_queue_size(session->private_event_queue);
+	if (session->private_event_queue) {
+
+		if (!switch_channel_test_flag(channel, CF_EVENT_LOCK)) {
+			count = switch_queue_size(session->private_event_queue);
+		}
+
+		if (!switch_channel_test_flag(channel, CF_EVENT_LOCK_PRI)) {
+			count += switch_queue_size(session->private_event_queue_pri);
+		}
+
 		if (count == 0) {
 			check_media(session);
 		}
@@ -893,13 +904,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	void *pop;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-
-	if (switch_channel_test_flag(channel, CF_EVENT_LOCK)) {
-		return status;
-	}
-
+	switch_queue_t *queue;
+	
 	if (session->private_event_queue) {
-		if ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+		if (switch_queue_size(session->private_event_queue_pri)) {
+			queue = session->private_event_queue_pri;
+
+			if (switch_channel_test_flag(channel, CF_EVENT_LOCK_PRI)) {
+				return SWITCH_STATUS_FALSE;
+			}
+		} else {
+			queue = session->private_event_queue;
+			
+			if (switch_channel_test_flag(channel, CF_EVENT_LOCK)) {
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+
+		if ((status = (switch_status_t) switch_queue_trypop(queue, &pop)) == SWITCH_STATUS_SUCCESS) {
 			*event = (switch_event_t *) pop;
 		} else {
 			check_media(session);
@@ -916,6 +938,9 @@ SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_se
 	void *pop;
 
 	if (session->private_event_queue) {
+		while ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue_pri, &pop)) == SWITCH_STATUS_SUCCESS) {
+			x++;
+		}
 		while ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
 			x++;
 		}
@@ -1327,6 +1352,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	switch_queue_create(&session->message_queue, SWITCH_MESSAGE_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
+	switch_queue_create(&session->private_event_queue_pri, SWITCH_EVENT_QUEUE_LEN, session->pool);
 
 	switch_mutex_lock(runtime.session_hash_mutex);
 	switch_core_hash_insert(session_manager.session_table, session->uuid_str, session);
