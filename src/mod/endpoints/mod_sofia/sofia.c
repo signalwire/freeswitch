@@ -3074,6 +3074,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				if (!profile->sipdomain) {
 					profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
 				}
+
 				if (profile->extsipip) {
 					char *ipv6 = strchr(profile->extsipip, ':');
 					profile->public_url = switch_core_sprintf(profile->pool,
@@ -3085,7 +3086,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 															  profile->sip_port);
 				}
 
-				if (profile->extsipip) {
+				if (profile->extsipip && !sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
 					char *ipv6 = strchr(profile->extsipip, ':');
 					profile->url = switch_core_sprintf(profile->pool,
 														"sip:%s@%s%s%s:%d",
@@ -3137,7 +3138,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 																  profile->tls_sip_port);
 					}
 					
-					if (profile->extsipip) {
+					if (profile->extsipip && !sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
 						char *ipv6 = strchr(profile->extsipip, ':');
 						profile->tls_url = 
 							switch_core_sprintf(profile->pool,
