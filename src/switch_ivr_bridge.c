@@ -562,6 +562,24 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_channel_set_variable(chan_a, SWITCH_BRIDGE_VARIABLE, NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
 	switch_channel_clear_flag(chan_a, CF_BRIDGED);
+
+	if (switch_channel_test_flag(chan_a, CF_LEG_HOLDING)) {
+		const char *ext = switch_channel_get_variable(chan_a, "hold_hangup_xfer_exten");
+
+		switch_channel_stop_broadcast(chan_b);
+		
+		if (zstr(ext)) {
+			switch_call_cause_t cause = switch_channel_get_cause(chan_b);
+			if (cause == SWITCH_CAUSE_NONE) {
+				cause = SWITCH_CAUSE_NORMAL_CLEARING;
+			}
+			switch_channel_hangup(chan_b, cause);
+		} else {
+			switch_channel_set_variable(chan_b, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, ext);
+		}
+		switch_channel_clear_flag(chan_a, CF_LEG_HOLDING);
+	}
+
 	switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 	switch_core_session_rwunlock(session_b);
 	return NULL;
@@ -1083,22 +1101,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_set_state(peer_channel, CS_EXCHANGE_MEDIA);
 			audio_bridge_thread(NULL, (void *) a_leg);
 			
-			if (switch_channel_test_flag(caller_channel, CF_LEG_HOLDING)) {
-				const char *ext = switch_channel_get_variable(caller_channel, "hold_hangup_xfer_exten");
-				if (!zstr(ext)) {
-					switch_channel_set_variable(peer_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, ext);
-				}
-				switch_channel_clear_flag(caller_channel, CF_LEG_HOLDING);
-			}
-
-			if (switch_channel_test_flag(peer_channel, CF_LEG_HOLDING)) {
-				const char *ext = switch_channel_get_variable(peer_channel, "hold_hangup_xfer_exten");
-				if (!zstr(ext)) {
-					switch_channel_set_variable(caller_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, ext);
-				}
-				switch_channel_clear_flag(peer_channel, CF_LEG_HOLDING);
-			}
-
 			switch_channel_clear_flag_recursive(caller_channel, CF_BRIDGE_ORIGINATOR);
 			
 			switch_channel_stop_broadcast(peer_channel);
