@@ -303,8 +303,6 @@ OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 		
 		struct timespec waitms;
 
-		condition->cnt++;
-
 		gettimeofday(&t, NULL);
 
 		waitms.tv_sec = t.tv_sec + ( ms / 1000 );
