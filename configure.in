@@ -184,13 +184,15 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     APR_ADDTO(SWITCH_AM_CXXFLAGS, -fPIC)
     APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)
     if test "${enable_64}" = "yes"; then
-	LIBS="$LIBS -m64"
 	case "$host" in
-             *darwin10.*)
+             *darwin10.*|*darwin9.*|*darwin8.*)
 		APR_ADDTO(CFLAGS, -arch x86_64)
        		APR_ADDTO(LDFLAGS, -arch x86_64)
        		APR_ADDTO(CXXFLAGS, -arch x86_64)
 		;;
+	     *)
+	     	LIBS="$LIBS -m64"
+	     ;;
 	 esac
     fi
 fi
