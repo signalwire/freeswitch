@@ -1434,8 +1434,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_session_queue_private_event(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_event arg1) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_queue_private_event(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_event.getCPtr(arg1));
+  public static switch_status_t switch_core_session_queue_private_event(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_event arg1, switch_bool_t priority) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_queue_private_event(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_event.getCPtr(arg1), (int)priority);
     return ret;
   }
 
@@ -6497,7 +6497,7 @@ class freeswitchPINVOKE {
   public static extern int switch_core_session_dequeue_event(HandleRef jarg1, HandleRef jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_queue_private_event")]
-  public static extern int switch_core_session_queue_private_event(HandleRef jarg1, HandleRef jarg2);
+  public static extern int switch_core_session_queue_private_event(HandleRef jarg1, HandleRef jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_private_event_count")]
   public static extern uint switch_core_session_private_event_count(HandleRef jarg1);
@@ -19181,6 +19181,7 @@ public enum switch_channel_flag_t {
   CF_UNICAST,
   CF_VIDEO,
   CF_EVENT_LOCK,
+  CF_EVENT_LOCK_PRI,
   CF_RESET,
   CF_ORIGINATING,
   CF_STOP_BROADCAST,
@@ -24893,7 +24894,8 @@ namespace FreeSWITCH.Native {
   SMF_LOOP = (1 << 4),
   SMF_HOLD_BLEG = (1 << 5),
   SMF_IMMEDIATE = (1 << 6),
-  SMF_EXEC_INLINE = (1 << 7)
+  SMF_EXEC_INLINE = (1 << 7),
+  SMF_PRIORITY = (1 << 8)
 }
 
 }

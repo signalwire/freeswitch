@@ -6870,15 +6870,17 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_dequeue_event(void * jarg1
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_queue_private_event(void * jarg1, void * jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_queue_private_event(void * jarg1, void * jarg2, int jarg3) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   switch_event_t **arg2 = (switch_event_t **) 0 ;
+  switch_bool_t arg3 ;
   switch_status_t result;
   
   arg1 = (switch_core_session_t *)jarg1; 
   arg2 = (switch_event_t **)jarg2; 
-  result = (switch_status_t)switch_core_session_queue_private_event(arg1,arg2);
+  arg3 = (switch_bool_t)jarg3; 
+  result = (switch_status_t)switch_core_session_queue_private_event(arg1,arg2,arg3);
   jresult = result; 
   return jresult;
 }
