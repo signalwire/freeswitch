@@ -59,14 +59,14 @@ CXXCOMPILE = $(CXX) $(ALL_CXXFLAGS) $(DEFS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile --tag=CXX $(CXXCOMPILE)
 CXXLINK = $(LIBTOOL) --mode=link --tag=CXX $(CXXLD) $(ALL_CXXFLAGS) $(LDFLAGS) -shared -module -avoid-version -rpath $(MODINSTDIR) -o $@
 
-CSOURCEFILE=$(MODDIR)/$(MODNAME).c
-CXXSOURCEFILE=$(MODDIR)/$(MODNAME).cpp
+CSOURCEFILE=$(MODNAME).c
+CXXSOURCEFILE=$(MODNAME).cpp
 TOUCH_TARGET=@TOUCH_TARGET@
 
 #MAKE_OPTS = `if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s" 2>&1 >/dev/null && echo -s;fi`
 MAKE_OPTS = `test -n "$(VERBOSE)" || echo -s`
 RECURSE_MODNAME=`pwd | sed -e 's|^.*/||'`
-RECURSE_SOURCEFILE=`if test -f "$(MODDIR)/$$modname.cpp"; then echo "$(MODDIR)/$$modname.cpp"; else echo "$(MODDIR)/$$modname.c"; fi`
+RECURSE_SOURCEFILE=`if test -f "$$modname.cpp" -o  -f "$(MODDIR)/$$modname.cpp"; then echo "$$modname.cpp"; else echo "$$modname.c"; fi`
 RECURSE_OUR_DEPS=`test -z "$(WANT_CURL)" || if test ! -z "$(LIBCURL_DEPS)"; then echo $(CURLLA); fi `
 RECURSE_OUR_CFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL_CPPFLAGS) ; $(LOCAL_INSERT_CFLAGS) `
 RECURSE_OUR_LDFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL) ; $(LOCAL_INSERT_LDFLAGS) `
@@ -125,7 +125,7 @@ $(MODNAME).$(LIBTOOL_LIB_EXTEN): $(LIBS) $(LOCAL_LIBADD) $(OUR_DEPS) $(LOCAL_OBJ
 	@echo Creating $@...
 	@test -d .libs || mkdir .libs
 	@error="";\
-	if test -f $(CSOURCEFILE); then \
+	if test -f "$(CSOURCEFILE)" -o -f "$(MODDIR)/$(CSOURCEFILE)"; then \
 	$(LINK) $(SOLINK) $(MODNAME).lo $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS) $(OUR_OBJS) $(LOCAL_LIBADD) $(LOCAL_LDFLAGS_POST) $(LINK_OUTPUT_REDIR) ;\
 	else \
 	$(CXXLINK) $(SOLINK) $(MODNAME).lo $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS) $(OUR_OBJS) $(LOCAL_LIBADD) $(LOCAL_LDFLAGS_POST) $(LINK_OUTPUT_REDIR) ;\
@@ -187,7 +187,7 @@ $(MODNAME).o: $(SOURCEFILE) \
   $(switch_srcdir)/src/include/switch_stun.h $(switch_srcdir)/src/include/switch_log.h \
   $(switch_srcdir)/src/include/switch_xml.h
 	@echo Compiling $<...
-	if test -f "$(CSOURCEFILE)"; then \
+	if test -f "$(CSOURCEFILE)" -o -f "$(MODDIR)/$(CSOURCEFILE)"; then \
 		if test ! -z $(VERBOSE) ; then echo $(COMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; fi ;\
 		$(COMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; \
 	else \
@@ -210,7 +210,7 @@ $(MODNAME).lo: $(SOURCEFILE) \
   $(switch_srcdir)/src/include/switch_stun.h $(switch_srcdir)/src/include/switch_log.h \
   $(switch_srcdir)/src/include/switch_xml.h
 	@echo Compiling $<...
-	if test -f "$(CSOURCEFILE)"; then \
+	if test -f "$(CSOURCEFILE)" -o -f "$(MODDIR)/$(CSOURCEFILE)"; then \
 		if test ! -z $(VERBOSE) ; then echo $(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; fi ;\
 		$(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; \
 	else \
