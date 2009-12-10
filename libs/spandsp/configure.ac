@@ -22,6 +22,10 @@
 
 AC_INIT
 
+CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
+CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
+LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
+
 m4_include(config/ax_compiler_vendor.m4)
 m4_include(config/ax_check_real_file.m4)
 m4_include(config/ax_fixed_point_machine.m4)

@@ -27,6 +27,10 @@ AC_PREREQ(2.57)
 dnl We don't know the version number "staticly" so we use a dash here
 AC_INIT(curl, [-], [a suitable curl mailing list => http://curl.haxx.se/mail/])
 
+CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
+CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
+LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
+
 dnl configure script copyright
 AC_COPYRIGHT([Copyright (c) 1998 - 2006 Daniel Stenberg, <daniel@haxx.se>
 This configure script may be copied, distributed and modified under the 

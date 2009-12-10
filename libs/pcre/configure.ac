@@ -22,6 +22,10 @@ AC_CONFIG_SRCDIR([pcre.h.in])
 AM_INIT_AUTOMAKE([dist-bzip2 dist-zip])
 AC_CONFIG_HEADERS(config.h)
 
+CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
+CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
+LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
+
 # The default CFLAGS and CXXFLAGS in Autoconf are "-g -O2" for gcc and just
 # "-g" for any other compiler. There doesn't seem to be a standard way of
 # getting rid of the -g (which I don't think is needed for a production

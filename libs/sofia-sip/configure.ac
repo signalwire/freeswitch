@@ -12,6 +12,11 @@ dnl ---------------------------
 
 dnl update both the version for AC_INIT and the LIBSOFIA_SIP_UA_MAJOR_MINOR
 AC_INIT([sofia-sip], [1.12.10devel])
+
+CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
+CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
+LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
+
 AC_CONFIG_SRCDIR([libsofia-sip-ua/sip/sofia-sip/sip.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_SUBST(VER_LIBSOFIA_SIP_UA_MAJOR_MINOR, [1.12])

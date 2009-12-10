@@ -3,6 +3,10 @@ AC_INIT(srtp, 1.4.2, mcgrew@cisco.com)
 AC_CONFIG_AUX_DIR(build)
 AM_INIT_AUTOMAKE(libsrtp,1.4.2)
 
+CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
+CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
+LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
+
 #Set default language
 AC_LANG_C
 # Checks for programs.

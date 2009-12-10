@@ -145,6 +145,10 @@ VERSION_NUMBER=[`cat $srcdir/VERSION  \
 echo "Version number set to $VERSION_NUMBER"
 AC_SUBST(VERSION_NUMBER)
 
+CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
+CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
+LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
+
 #########
 # Check to see if the --with-hints=FILE option is used.  If there is none,
 # then check for a files named "$host.hints" and ../$hosts.hints where

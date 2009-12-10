@@ -8,6 +8,9 @@ AC_INIT([unimrcp],[0.8.0])
 AC_CONFIG_AUX_DIR([build])
 AC_CONFIG_MACRO_DIR([build/acmacros])
 AC_PREFIX_DEFAULT(/usr/local/unimrcp)
+CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
+CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
+LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
 
 plugindir='${prefix}/plugin'
 confdir='${prefix}/conf'

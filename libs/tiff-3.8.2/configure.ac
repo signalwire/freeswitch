@@ -29,6 +29,9 @@ AC_INIT([LibTIFF Software], 3.8.2, [tiff@lists.maptools.org], tiff)
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(m4)
 AC_LANG(C)
+CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
+CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
+LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
 
 dnl Compute the canonical target-system type variable
 AC_CANONICAL_TARGET
