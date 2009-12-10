@@ -1437,7 +1437,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 
 	  found:
 
-		if (!lock) lock = array[i-1]->microseconds_per_packet;
+		if (!lock && i > 0) lock = array[i-1]->microseconds_per_packet;
 
 		if (i > arraylen) {
 			break;
@@ -1534,7 +1534,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 		  found:
 
-			if (!lock) {
+			if (!lock && i > 0) {
 				lock = array[i-1]->microseconds_per_packet;
 			}
 
