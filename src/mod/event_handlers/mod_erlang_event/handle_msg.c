@@ -489,7 +489,7 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 					ei_x_encode_atom(rbuf, "badarg");
 				}
 				else {
-					if (switch_core_session_queue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+					if (switch_core_session_queue_private_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 						ei_x_encode_atom(rbuf, "ok");
 					} else {
 						ei_x_encode_tuple_header(rbuf, 2);
