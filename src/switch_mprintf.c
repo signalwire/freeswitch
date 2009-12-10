@@ -245,7 +245,7 @@ static int vxprintf(
   char buf[etBUFSIZE];       /* Conversion buffer */
   char prefix;               /* Prefix character.  "+" or "-" or " " or '\0'. */
   etByte errorflag = 0;      /* True if an error is encountered */
-  etByte xtype;              /* Conversion paradigm */
+  etByte xtype = 0;          /* Conversion paradigm */
   char *zExtra;              /* Extra memory used for etTCLESCAPE conversions */
   static const char spaces[] =
    "                                                                         ";
@@ -517,7 +517,7 @@ static int vxprintf(
           *(bufpt++) = '0';
         }else{
           for(; e2>=0; e2--){
-            *(bufpt++) = et_getdigit(&realvalue,&nsd);
+            *(bufpt++) = (char)et_getdigit(&realvalue,&nsd);
           }
         }
         /* The decimal point */
@@ -531,7 +531,7 @@ static int vxprintf(
         }
         /* Significant digits after the decimal point */
         while( (precision--)>0 ){
-          *(bufpt++) = et_getdigit(&realvalue,&nsd);
+          *(bufpt++) = (char)et_getdigit(&realvalue,&nsd);
         }
         /* Remove trailing zeros and the "." if no digits follow the "." */
         if( flag_rtz && flag_dp ){
@@ -554,10 +554,10 @@ static int vxprintf(
             *(bufpt++) = '+';
           }
           if( exp>=100 ){
-            *(bufpt++) = (exp/100)+'0';                /* 100's digit */
+            *(bufpt++) = (char)(exp/100)+'0';                /* 100's digit */
             exp %= 100;
           }
-          *(bufpt++) = exp/10+'0';                     /* 10's digit */
+          *(bufpt++) = (char)exp/10+'0';                     /* 10's digit */
           *(bufpt++) = exp%10+'0';                     /* 1's digit */
         }
         *bufpt = 0;
@@ -593,9 +593,9 @@ static int vxprintf(
         break;
       case etCHARLIT:
       case etCHARX:
-        c = buf[0] = (xtype==etCHARX ? va_arg(ap,int) : *++fmt);
+        c = buf[0] = (char)(xtype==etCHARX ? va_arg(ap,int) : *++fmt);
         if( precision>=0 ){
-          for(idx=1; idx<precision; idx++) buf[idx] = c;
+          for(idx=1; idx<precision; idx++) buf[idx] = (char)c;
           length = precision;
         }else{
           length =1;
@@ -635,8 +635,8 @@ static int vxprintf(
         j = 0;
         if( needQuote ) bufpt[j++] = '\'';
         for(i=0; (ch=escarg[i])!=0; i++){
-          bufpt[j++] = ch;
-          if( ch=='\'' || ( xtype==etSQLESCAPE3 && ch=='\\')) bufpt[j++] = ch;
+          bufpt[j++] = (char)ch;
+          if( ch=='\'' || ( xtype==etSQLESCAPE3 && ch=='\\')) bufpt[j++] = (char)ch;
         }
         if( needQuote ) bufpt[j++] = '\'';
         bufpt[j] = 0;
