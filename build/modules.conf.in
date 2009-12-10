@@ -26,6 +26,10 @@ applications/mod_fsv
 #applications/mod_spy
 applications/mod_cluechoo
 applications/mod_valet_parking
+#applications/mod_distributor
+#applications/mod_stress
+#applications/mod_snapshot
+#applications/mod_snipe_hunt
 codecs/mod_g723_1
 codecs/mod_amr
 #codecs/mod_amrwb
@@ -50,11 +54,14 @@ endpoints/mod_loopback
 #endpoints/mod_alsa
 #endpoints/mod_opal
 #endpoints/mod_skypiax
+#endpoints/mod_h323
+#endpoints/mod_loopback
 #../../libs/openzap/mod_openzap
 #asr_tts/mod_unimrcp
 #asr_tts/mod_flite
 #asr_tts/mod_pocketsphinx
 #asr_tts/mod_cepstral
+#asr_tts/mod_tts_commandline
 #event_handlers/mod_event_multicast
 event_handlers/mod_event_socket
 event_handlers/mod_cdr_csv
@@ -66,6 +73,8 @@ formats/mod_sndfile
 formats/mod_local_stream
 formats/mod_tone_stream
 formats/mod_file_string
+#formats/mod_portaudio_stream
+#formats/mod_mod_shell_stream
 #languages/mod_python
 languages/mod_spidermonkey
 languages/mod_spidermonkey_curl
@@ -76,6 +85,8 @@ languages/mod_spidermonkey_socket
 languages/mod_lua
 #languages/mod_perl
 #languages/mod_yaml
+#languages/mod_java
+#languages/mod_managed
 xml_int/mod_xml_rpc
 #xml_int/mod_xml_curl
 xml_int/mod_xml_cdr
@@ -89,7 +100,7 @@ say/mod_say_en
 say/mod_say_ru
 #say/mod_say_zh
 #say/mod_say_hu
-
+#say/mod_say_th
 
 ## Experimental Modules (don't cry if they're broken)
 #../../contrib/mod/endpoints/mod_khomp
