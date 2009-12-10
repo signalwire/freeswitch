@@ -194,13 +194,6 @@
       </condition>
     </extension>
 
-    <extension name="paranoia"> 
-      <condition field="destination_number" expression="^extension\-on\-answer\-(\d{2})$"> 
-	<action application="hash" data="delete/${domain_name}-last_dial/global/" /> 
-	<action application="hash" data="delete/${domain_name}-last_dial_ext/$1" /> 
-      </condition> 
-    </extension> 
-
     <extension name="call_return">
       <condition field="destination_number" expression="^\*69$|^869$|^lcr$">
 	<action application="transfer" data="${hash(select/${domain_name}-call_return/${caller_id_number})}"/>
@@ -256,7 +249,6 @@
 	<action application="bind_meta_app" data="1 b s execute_extension::dx XML features"/>
 	<action application="bind_meta_app" data="2 b s record_session::$${base_dir}/recordings/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
 	<action application="bind_meta_app" data="3 b s execute_extension::cf XML features"/>
-	<action application="export" data="nolocal:execute_on_answer=execute_extension extension-on-answer-$1 XML default"/> 
 	<action application="set" data="ringback=${us-ring}"/>
 	<action application="set" data="transfer_ringback=$${hold_music}"/>
 	<action application="set" data="call_timeout=30"/>
