@@ -610,7 +610,7 @@ static vm_profile_t * load_profile(const char *profile_name)
 	vm_profile_t *profile = NULL;
 	switch_xml_t x_profiles, x_profile, cfg, xml, x_email, param;
 	switch_event_t *event = NULL;
-	switch_cache_db_handle_t *dbh;
+	switch_cache_db_handle_t *dbh = NULL;
 
 	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
@@ -707,7 +707,9 @@ static vm_profile_t * load_profile(const char *profile_name)
 	}
 
   end:
+
 	switch_cache_db_release_db_handle(&dbh);
+
 	if (xml) {
 		switch_xml_free(xml);
 	}
