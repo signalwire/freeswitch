@@ -11,3 +11,9 @@ LIBS+=> $(MODNAME).log || error="yes";if test -n "$(VERBOSE)" -o "$$error" = "ye
 moddir=@modinstdir@
 
 all-modules: all
+depend-modules: depend
+clean-modules: clean
+install-modules: install
+uninstall-modules: uninstall
+distclean-modules: distclean
+extraclean-modules: extraclean
