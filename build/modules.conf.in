@@ -55,7 +55,6 @@ endpoints/mod_loopback
 #endpoints/mod_opal
 #endpoints/mod_skypiax
 #endpoints/mod_h323
-#endpoints/mod_loopback
 #../../libs/openzap/mod_openzap
 #asr_tts/mod_unimrcp
 #asr_tts/mod_flite
