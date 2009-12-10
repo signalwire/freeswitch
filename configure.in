@@ -865,6 +865,15 @@ AC_SUBST(OUR_DISABLED_INSTALL_MODS)
 AC_SUBST(OUR_DISABLED_UNINSTALL_MODS)
 AC_SUBST(AM_MAKEFLAGS)
 
+ac_configure_args="$ac_configure_args \"CFLAGS=$CFLAGS\" \"CXXFLAGS=$CXXFLAGS\" \"LDFLAGS=$LDFLAGS\""
+ac_cv_env_CFLAGS_set=set
+ac_cv_env_CFLAGS_value=$CFLAGS
+ac_cv_env_LDFLAGS_set=set
+ac_cv_env_LDFLAGS_value=$LDFLAGS
+ac_cv_env_CXXFLAGS_set=set
+ac_cv_env_CXXFLAGS_value=$CXXFLAGS
+
+
 # Run configure in all the subdirs
 AC_CONFIG_SUBDIRS(libs/srtp)
 AC_CONFIG_SUBDIRS(libs/sqlite)
