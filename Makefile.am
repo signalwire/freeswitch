@@ -12,7 +12,7 @@ OSARCH=`uname -s`
 
 DEFAULT_SOUNDS=en-us-callie-8000
 
-.DEFAULT:
+.DEFAULT: $(switch_builddir)/modules.conf
 	@target=`echo $@ | sed -e 's|^.*-||'`; \
 	 target_prefix=`echo $@ | sed -e 's|-.*$$||'`; \
 	 sound_perfix=`echo $@ | sed -e 's|-.*||'`; \
@@ -125,6 +125,8 @@ libs/miniupnpc/upnperrors.c \
 libs/libnatpmp/natpmp.c \
 libs/libnatpmp/getgateway.c
 
+$(top_builddir)/libfreeswitch_la-switch_console.lo: src/include/switch_version.h
+
 if ENABLE_CPP
 libfreeswitch_la_SOURCES += src/switch_cpp.cpp
 endif
@@ -234,7 +236,7 @@ src/include/switch_swigable_cpp.h: $(switch_srcdir)/src/include/switch_cpp.h
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
 
-$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool $(switch_builddir)/modules.conf 
+$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool $(switch_builddir)/modules.conf  
 
 $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > $(switch_builddir)/quiet_libtool
@@ -353,7 +355,7 @@ libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
 	@cd libs/srtp && $(MAKE)
 	@$(TOUCH_TARGET)
 
-core:
+core: $(switch_builddir)/modules.conf
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
 
 distclean: clean
@@ -458,20 +460,20 @@ speedy-current: is-svn update-clean
 
 wayclean: clean
 
-modules: libfreeswitch.la
+modules: libfreeswitch.la $(switch_builddir)/modules.conf 
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS)
 
-install_mod: libfreeswitch.la
+install_mod: libfreeswitch.la $(switch_builddir)/modules.conf
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) install
 
 mod_install: install_mod
 
-uninstall_mod:
+uninstall_mod: $(switch_builddir)/modules.conf
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) uninstall
 
 mod_uninstall: uninstall_mod
 
-modclean:
+modclean: $(switch_builddir)/modules.conf
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) clean
 
 modwipe:
@@ -518,7 +520,7 @@ libclean:
 $(switch_builddir)/modules.conf:
 	if test -f $@; then touch $@; else cp $(switch_srcdir)/build/modules.conf.in $@ ;fi
 
-$(OUR_MODULES):
+$(OUR_MODULES): $(switch_builddir)/modules.conf
 	@set fnord $$MAKEFLAGS; amf=$$2; \
 	(cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@) \
 	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
