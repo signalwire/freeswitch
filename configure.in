@@ -808,6 +808,7 @@ fi
 CHECK_ERLANG
 
 AC_CONFIG_FILES([Makefile
+                build/Makefile
                 src/Makefile
                 src/mod/Makefile
                 src/mod/applications/mod_enum/Makefile
