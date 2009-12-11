@@ -305,11 +305,19 @@ if test "x$enable_zrtp" = "xyes" ; then
    APR_ADDTO(SWITCH_AM_CFLAGS, -DENABLE_ZRTP)
 fi
 
+PA_LIBS=
+
+PKG_CHECK_MODULES(JACK, jack, have_jack=yes, have_jack=no)
+if test "x$have_jack" = "xyes" ; then
+PA_LIBS+=$JACK_LIBS
+fi
+
 AC_CHECK_LIB(asound, snd_pcm_open, have_alsa=yes, have_alsa=no)
 if test "x$have_alsa" = "xyes"  ; then
-ALSA_LIBS=-lasound
+PA_LIBS+=-lasound
 fi
-AC_SUBST(ALSA_LIBS)
+
+AC_SUBST(PA_LIBS)
 
 AM_CONDITIONAL([ENABLE_ZRTP],[test "x$enable_zrtp" != "xno"])
 
