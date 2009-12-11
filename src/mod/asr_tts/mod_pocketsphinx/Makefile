@@ -15,7 +15,7 @@ BASE=../../../..
 include $(BASE)/build/modmake.rules
 
 $(SPHINXBASE_DIR):
-	$(GETLIB) $(SPHINXBASE)-latest.tar.gz
+	$(GETLIB) $(SPHINXBASE)-20091212.tar.gz
 
 $(SPHINXBASE_DIR)/buildstamp: $(SPHINXBASE_DIR)
 	test -f $(SPHINXBASE_DIR)/Makefile || (cd $(SPHINXBASE_DIR) && ./configure --with-pic --without-python --disable-shared CFLAGS=)
@@ -26,7 +26,7 @@ $(SPHINXBASE_LA): $(SPHINXBASE_DIR)/buildstamp
 	$(TOUCH_TARGET)
 
 $(POCKETSPHINX_DIR):
-	$(GETLIB) $(POCKETSPHINX)-latest.tar.gz
+	$(GETLIB) $(POCKETSPHINX)-20091212.tar.gz
 
 $(POCKETSPHINX_DIR)/Makefile: $(POCKETSPHINX_DIR)
 	cd $(POCKETSPHINX_DIR) && ./configure --with-pic --without-python --disable-shared --with-sphinxbase=$(SPHINXBASE_DIR) CFLAGS=
