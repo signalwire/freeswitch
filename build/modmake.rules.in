@@ -70,6 +70,7 @@ RECURSE_SOURCEFILE=`if test -f "$$modname.cpp" -o  -f "$(MODDIR)/$$modname.cpp";
 RECURSE_OUR_DEPS=`test -z "$(WANT_CURL)" || if test ! -z "$(LIBCURL_DEPS)"; then echo $(CURLLA); fi `
 RECURSE_OUR_CFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL_CPPFLAGS) ; $(LOCAL_INSERT_CFLAGS) `
 RECURSE_OUR_LDFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL) ; $(LOCAL_INSERT_LDFLAGS) `
+RECURSE_MODDIR=`if test -z $(MODDIR); then pwd | sed -e 's|$(switch_builddir)|$(switch_srcdir)|'; else echo $(MODDIR); fi`
 RECURSE_MAKE=+modname="$(RECURSE_MODNAME)" ; \
 		sourcefile="$(RECURSE_SOURCEFILE)" ; \
 		osarch=`uname -s` ; \
@@ -77,7 +78,8 @@ RECURSE_MAKE=+modname="$(RECURSE_MODNAME)" ; \
 		ourcflags="$(RECURSE_OUR_CFLAGS)" ; \
 		ourldflags="$(RECURSE_OUR_LDFLAGS)" ; \
 		insertobjs="`$(LOCAL_INSERT_OBJS)`" ; \
-		$(MAKE) $(MAKE_OPTS) MODNAME="$$modname" SOURCEFILE="$$sourcefile" MODDIR="$(MODDIR)" \
+		moddir="$(RECURSE_MODDIR)" ; \
+		$(MAKE) $(MAKE_OPTS) MODNAME="$$modname" SOURCEFILE="$$sourcefile" MODDIR="$$moddir" \
 			OUR_DEPS="$$ourdefs" OUR_CFLAGS="$$ourcflags" OUR_LDFLAGS="$$ourldflags" OUR_OBJS="$$insertobjs"
 
 all: Makefile
@@ -121,7 +123,7 @@ LINK_OUTPUT_REDIR=> .libs/$(MODNAME).log || error="yes" ; \
 			  exit 1 ;\
 			 fi 
 
-$(MODNAME).$(LIBTOOL_LIB_EXTEN): $(LIBS) $(LOCAL_LIBADD) $(OUR_DEPS) $(LOCAL_OBJS) $(OUR_OBJS) $(SOURCEFILE) $(MODNAME).lo 
+$(MODNAME).$(LIBTOOL_LIB_EXTEN): $(LIBS) $(LOCAL_LIBADD) $(OUR_DEPS) $(LOCAL_OBJS) $(OUR_OBJS) $(MODDIR)/$(SOURCEFILE) $(MODNAME).lo 
 	@echo Creating $@...
 	@test -d .libs || mkdir .libs
 	@error="";\
@@ -172,7 +174,7 @@ local_all local_depend local_clean depend_install local_install local_distclean 
 	@if test ! -z $(VERBOSE) ; then echo $(LTCXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; fi
 	@$(LTCXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< || exit 1
 
-$(MODNAME).o: $(SOURCEFILE) \
+$(MODNAME).o: $(MODDIR)/$(SOURCEFILE) \
   $(switch_srcdir)/src/include/switch.h \
   $(switch_builddir)/src/include/switch_am_config.h \
   $(switch_srcdir)/src/include/switch_types.h $(switch_srcdir)/src/include/switch_apr.h \
@@ -195,7 +197,7 @@ $(MODNAME).o: $(SOURCEFILE) \
 		$(CXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; \
 	fi;
 
-$(MODNAME).lo: $(SOURCEFILE) \
+$(MODNAME).lo: $(MODDIR)/$(SOURCEFILE) \
   $(switch_srcdir)/src/include/switch.h \
   $(switch_builddir)/src/include/switch_am_config.h \
   $(switch_srcdir)/src/include/switch_types.h $(switch_srcdir)/src/include/switch_apr.h \
