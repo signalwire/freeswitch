@@ -560,7 +560,7 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 static unsigned char complete(EditLine * el, int ch)
 {
 	switch_cache_db_handle_t *db = NULL;
-	char *sql;
+	char *sql = NULL;
 	const LineInfo *lf = el_line(el);
 	char *dup = strdup(lf->buffer);
 	char *buf = dup;
@@ -568,10 +568,19 @@ static unsigned char complete(EditLine * el, int ch)
 	char *errmsg = NULL;
 	struct helper h = { el };
 	unsigned char ret = CC_REDISPLAY;
+	int pos = 0;
 
 	switch_core_db_handle(&db);
-
+	
+	if (!zstr(lf->cursor) && !zstr(lf->buffer)) {
+		pos = (lf->cursor - lf->buffer);
+	}
+	
 	h.out = switch_core_get_console();
+
+	if (pos > 0) {
+		*(buf + pos) = '\0';
+	}
 
 	if ((p = strchr(buf, '\r')) || (p = strchr(buf, '\n'))) {
 		*p = '\0';
@@ -593,27 +602,31 @@ static unsigned char complete(EditLine * el, int ch)
 	}
 
 	h.len = strlen(buf);
-
+	
 	fprintf(h.out, "\n\n");
 
 	if (h.words == 0) {
 		sql = switch_mprintf("select distinct name from interfaces where type='api' and name like '%q%%' and hostname='%q' order by name", 
 							 buf, switch_core_get_variable("hostname"));
-	} else {
+	} else if (h.words == 1) {
 		sql = switch_mprintf("select distinct uuid from channels where uuid like '%q%%' and hostname='%q' order by uuid", 
 							 buf, switch_core_get_variable("hostname"));
 	}
 
-	switch_cache_db_execute_sql_callback(db, sql, comp_callback, &h, &errmsg);
+	if (sql) {
+		switch_cache_db_execute_sql_callback(db, sql, comp_callback, &h, &errmsg);
 
-	if (errmsg) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", sql, errmsg);
-		free(errmsg);
-		ret = CC_ERROR;
-		goto end;
+		if (errmsg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", sql, errmsg);
+			free(errmsg);
+			ret = CC_ERROR;
+			goto end;
+		}
+		free(sql);
+		sql = NULL;
 	}
 
-	if (h.hits != 1) {
+	if (h.hits != -1) {
 		char *dupdup = strdup(dup);
 		int x, argc = 0;
 		char *argv[10] = { 0 };
@@ -648,9 +661,8 @@ static unsigned char complete(EditLine * el, int ch)
 		}
 
 		stream.write_function(&stream, " and hostname='%s'", switch_core_get_variable("hostname"));
-
 		switch_cache_db_execute_sql_callback(db, stream.data, comp_callback, &h, &errmsg);
-
+		
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", (char *) stream.data, errmsg);
 			free(errmsg);
