@@ -2305,6 +2305,7 @@ static void conference_loop_output(conference_member_t *member)
 						if (test_eflag(member->conference, EFLAG_PLAY_FILE) &&
 							switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 							conference_add_event_data(member->conference, event);
+							conference_add_event_member_data(member, event);
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member-done");
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", member->fnode->file);
 							switch_event_fire(&event);
