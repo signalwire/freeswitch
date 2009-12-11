@@ -173,7 +173,7 @@ src/include/switch_odbc.h
 CORE_CFLAGS     = `$(switch_builddir)/libs/apr/apr-1-config --cflags --cppflags --includes`
 CORE_CFLAGS    += `$(switch_builddir)/libs/apr-util/apu-1-config --includes`
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/stfu
-CORE_CFLAGS    += -I$(switch_srcdir)/libs/sqlite
+CORE_CFLAGS    += -I$(switch_builddir)/libs/sqlite
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/pcre
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/include
