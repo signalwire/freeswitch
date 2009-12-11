@@ -558,7 +558,9 @@ SWITCH_DECLARE(char *) switch_core_session_sprintf(_In_ switch_core_session_t *s
   \param ap The arguments to use while printing the data
   \return The new string
 */
+#ifndef SWIG
 SWITCH_DECLARE(char *) switch_core_session_vsprintf(switch_core_session_t *session, const char *fmt, va_list ap);
+#endif
 
 /*!
   \brief printf-style style printing routine.  The data is output to a string allocated from the pool
@@ -576,7 +578,9 @@ SWITCH_DECLARE(char *) switch_core_sprintf(_In_ switch_memory_pool_t *pool, _In_
   \param ap The arguments to use while printing the data
   \return The new string
 */
+#ifndef SWIG
 SWITCH_DECLARE(char *) switch_core_vsprintf(switch_memory_pool_t *pool, _In_z_ _Printf_format_string_ const char *fmt, va_list ap);
+#endif
 
 /*! 
   \brief Retrieve the memory pool from a session
