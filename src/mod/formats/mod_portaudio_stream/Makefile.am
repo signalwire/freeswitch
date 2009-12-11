@@ -10,7 +10,7 @@ mod_portaudio_stream_la_SOURCES = mod_portaudio_stream.c $(MODPA_DIR)/pablio.c $
 mod_portaudio_stream_la_CFLAGS  = $(AM_CFLAGS)
 mod_portaudio_stream_la_CFLAGS += -I. -I$(PA_DIR)/include -D__EXTENSION__=1 -I$(MODPA_DIR)
 mod_portaudio_stream_la_LIBADD = $(switch_builddir)/libfreeswitch.la $(PALA)
-mod_portaudio_stream_la_LDFLAGS = -avoid-version -module -no-undefined
+mod_portaudio_stream_la_LDFLAGS = -avoid-version -module -no-undefined -shared
 
 if ISMAC
 mod_portaudio_stream_la_LDFLAGS += -framework CoreAudio -framework AudioToolbox -framework AudioUnit -framework Carbon
