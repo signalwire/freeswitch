@@ -215,6 +215,7 @@ struct switch_rtp {
 	switch_rtp_stats_t stats;
 	uint32_t hot_hits;
 	uint32_t sync_packets;
+	uint32_t dtmf_wait;
 
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
@@ -1604,6 +1605,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 				rtp_session->next_write_samplecount = rtp_session->timer.samplecount + samples * 5;
 			}
 			rtp_session->dtmf_data.out_digit_dur = 0;
+			rtp_session->dtmf_wait = rtp_session->samples_per_interval ? ((rtp_session->samples_per_second / 4) / rtp_session->samples_per_interval) : 12;
 		}
 	}
 
@@ -1616,7 +1618,11 @@ static void do_2833(switch_rtp_t *rtp_session)
 			}
 		}
 
-		if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		if (rtp_session->dtmf_wait) {
+			rtp_session->dtmf_wait--;
+		}
+
+		if (!rtp_session->dtmf_wait && switch_queue_trypop(rtp_session->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_dtmf_t *rdigit = pop;
 			int64_t offset;
 			switch_size_t wrote;
