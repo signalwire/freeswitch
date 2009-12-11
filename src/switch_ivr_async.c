@@ -1554,7 +1554,7 @@ static switch_bool_t inband_dtmf_generate_callback(switch_media_bug_t *bug, void
 			}
 
 			if (!switch_buffer_inuse(pvt->audio_buffer)) {
-				while (switch_queue_trypop(pvt->digit_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+				if (switch_queue_trypop(pvt->digit_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 					switch_dtmf_t *dtmf = (switch_dtmf_t *) pop;
 					char buf[2] = "";
 					int duration = dtmf->duration;
@@ -1562,14 +1562,17 @@ static switch_bool_t inband_dtmf_generate_callback(switch_media_bug_t *bug, void
 					buf[0] = dtmf->digit;
 					if (duration > 8000) {
 						duration = 4000;
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_WARNING, "%s Truncating ridiculous DTMF duration %d ms to 1/2 second.\n",
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), 
+										  SWITCH_LOG_WARNING, "%s Truncating ridiculous DTMF duration %d ms to 1/2 second.\n",
 										  switch_channel_get_name(switch_core_session_get_channel(pvt->session)), dtmf->duration / 8);
 					}
 					pvt->ts.duration = duration;
 					teletone_run(&pvt->ts, buf);
 					free(pop);
 				}
-			} else if (switch_buffer_inuse(pvt->audio_buffer) && (bytes = switch_buffer_read(pvt->audio_buffer, frame->data, frame->datalen))) {
+			}
+
+			if (switch_buffer_inuse(pvt->audio_buffer) && (bytes = switch_buffer_read(pvt->audio_buffer, frame->data, frame->datalen))) {
 				if (bytes < frame->datalen) {
 					switch_byte_t *dp = frame->data;
 					memset(dp + bytes, 0, frame->datalen - bytes);
@@ -1581,6 +1584,7 @@ static switch_bool_t inband_dtmf_generate_callback(switch_media_bug_t *bug, void
 			} else {
 				switch_core_media_bug_set_write_replace_frame(bug, frame);
 			}
+
 			switch_mutex_unlock(pvt->mutex);
 		}
 		break;
