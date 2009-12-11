@@ -438,13 +438,15 @@ fi
 
 if test "$enable_builtin_tiff" = "yes" ; then
   abs_tiffdir="`cd $srcdir/../tiff-3.8.2/ && pwd`"
+  spandsp_builddir="`pwd`"
+  abs_tiffbuilddir="`cd $spandsp_builddir/../tiff-3.8.2/ && pwd`"
   save_CFLAGS=$CFLAGS
   CFLAGS="$CFLAGS -I$abs_tiffdir/libtiff"
   AC_CHECK_HEADERS([tiffio.h])
   CFLAGS="$save_CFLAGS"
   COMP_VENDOR_CFLAGS="-I$abs_tiffdir/libtiff $COMP_VENDOR_CFLAGS"
   COMP_VENDOR_LDFLAGS="-L$abs_tiffdir/libtiff $COMP_VENDOR_LDFLAGS"
-  LIBS="$LIBS $abs_tiffdir/libtiff/libtiff.la"
+  LIBS="$LIBS $abs_tiffbuilddir/libtiff/libtiff.la"
   AC_DEFINE([HAVE_LIBTIFF], [1], [Define to 1 if you have the `tiff' library (-ltiff).])
 else
   AC_CHECK_HEADERS([tiffio.h])
