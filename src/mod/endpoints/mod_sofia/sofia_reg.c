@@ -363,10 +363,10 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 		case REG_STATE_FAILED:
 			{
-				time_t sec;
+				int sec;
 
 				if (gateway_ptr->failure_status == 503) {
-					sec = now + gateway_ptr->retry_seconds;
+					sec = gateway_ptr->retry_seconds;
 				} else{
 					sec = gateway_ptr->retry_seconds * (gateway_ptr->failures + 1);
 				}
@@ -376,8 +376,8 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				gateway_ptr->state = REG_STATE_FAIL_WAIT;
 				gateway_ptr->failure_status = 0;
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration, setting retry to %ld seconds.\n", 
-								  gateway_ptr->name, (long)sec - now);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration, setting retry to %d seconds.\n", 
+								  gateway_ptr->name, sec);
 
 			}
 			break;
