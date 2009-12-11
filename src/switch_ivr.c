@@ -501,7 +501,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	}
 
 	if (cmd_hash == CMD_EXECUTE) {
-		switch_application_interface_t *application_interface;
 		char *app_name = switch_event_get_header(event, "execute-app-name");
 		char *app_arg = switch_event_get_header(event, "execute-app-arg");
 		char *loop_h = switch_event_get_header(event, "loops");
@@ -513,61 +512,60 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		}
 
 		if (app_name) {
-			if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
-				if (application_interface->application_function) {
-					int x;
-					const char *b_uuid = NULL;
-					switch_core_session_t *b_session = NULL;
+			int x;
+			const char *b_uuid = NULL;
+			switch_core_session_t *b_session = NULL;
 
-					switch_channel_clear_flag(channel, CF_STOP_BROADCAST);
-					switch_channel_set_flag(channel, CF_BROADCAST);
-					if (hold_bleg && switch_true(hold_bleg)) {
-						if ((b_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
-							const char *stream;
-							b_uuid = switch_core_session_strdup(session, b_uuid);
+			switch_channel_clear_flag(channel, CF_STOP_BROADCAST);
+			switch_channel_set_flag(channel, CF_BROADCAST);
+			if (hold_bleg && switch_true(hold_bleg)) {
+				if ((b_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+					const char *stream;
+					b_uuid = switch_core_session_strdup(session, b_uuid);
 
-							if (!(stream = switch_channel_get_variable_partner(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
-								stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
-							}
-
-							if (stream && switch_is_moh(stream)) {
-								if ((b_session = switch_core_session_locate(b_uuid))) {
-									switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
-									switch_ivr_broadcast(b_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
-									switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_TRUE, 5000, NULL);
-									switch_core_session_rwunlock(b_session);
-								}
-							} else {
-								b_uuid = NULL;
-							}
-						}
-					}
-					for (x = 0; x < loops || loops < 0; x++) {
-						switch_time_t b4, aftr;
-
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Command Execute %s(%s)\n",
-										  switch_channel_get_name(channel), app_name, switch_str_nil(app_arg));
-						b4 = switch_micro_time_now();
-						switch_core_session_exec(session, application_interface, app_arg);
-						aftr = switch_micro_time_now();
-						if (!switch_channel_ready(channel) || switch_channel_test_flag(channel, CF_STOP_BROADCAST) || aftr - b4 < 500000) {
-							break;
-						}
+					if (!(stream = switch_channel_get_variable_partner(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+						stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
 					}
 
-					if (b_uuid) {
+					if (stream && switch_is_moh(stream)) {
 						if ((b_session = switch_core_session_locate(b_uuid))) {
 							switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
-							switch_channel_stop_broadcast(b_channel);
-							switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
+							switch_ivr_broadcast(b_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
+							switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_TRUE, 5000, NULL);
 							switch_core_session_rwunlock(b_session);
 						}
+					} else {
+						b_uuid = NULL;
 					}
-
-					switch_channel_clear_flag(channel, CF_BROADCAST);
 				}
-				UNPROTECT_INTERFACE(application_interface);
 			}
+
+			for (x = 0; x < loops || loops < 0; x++) {
+				switch_time_t b4, aftr;
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Command Execute %s(%s)\n",
+								  switch_channel_get_name(channel), app_name, switch_str_nil(app_arg));
+				b4 = switch_micro_time_now();
+				if (switch_core_session_execute_application(session, app_name, app_arg) != SWITCH_STATUS_SUCCESS) {
+					goto done;
+				}
+
+				aftr = switch_micro_time_now();
+				if (!switch_channel_ready(channel) || switch_channel_test_flag(channel, CF_STOP_BROADCAST) || aftr - b4 < 500000) {
+					break;
+				}
+			}
+
+			if (b_uuid) {
+				if ((b_session = switch_core_session_locate(b_uuid))) {
+					switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+					switch_channel_stop_broadcast(b_channel);
+					switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
+					switch_core_session_rwunlock(b_session);
+				}
+			}
+			
+			switch_channel_clear_flag(channel, CF_BROADCAST);
 		}
 	} else if (cmd_hash == CMD_UNICAST) {
 		char *local_ip = switch_event_get_header(event, "local-ip");

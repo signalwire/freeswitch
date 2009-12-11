@@ -1472,10 +1472,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_app_flags(const char *ap
 
 	if ((application_interface = switch_loadable_module_get_application_interface(app)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", app);
+		goto end;
 	} else if (application_interface->flags) {
 		*flags = application_interface->flags;
 		status = SWITCH_STATUS_SUCCESS;
 	}
+
+	UNPROTECT_INTERFACE(application_interface);
+
+ end:
 
 	return status;
 
@@ -1524,6 +1529,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 	switch_core_session_exec(session, application_interface, arg);
 
 done:
+
 	UNPROTECT_INTERFACE(application_interface);
 	
 	return status;

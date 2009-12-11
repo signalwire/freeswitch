@@ -1578,31 +1578,40 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_channel_clear_flag(peer_channel, CF_INNER_BRIDGE);
 	switch_channel_clear_flag(channel, CF_INNER_BRIDGE);
 
-	if (switch_channel_down(peer_channel)) {
+	if (zstr(bond) && switch_channel_down(peer_channel)) {
 		switch_core_session_rwunlock(peer_session);
 		goto end;
 	}
 
 	if (bond) {
 		char buf[128] = "";
-
-		if (!switch_channel_ready(channel)) {
-			switch_ivr_uuid_bridge(switch_core_session_get_uuid(peer_session), bond);
-		} else if ((b_session = switch_core_session_locate(bond))) {
-			switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
-			switch_snprintf(buf, sizeof(buf), "%s %s", switch_core_session_get_uuid(peer_session), switch_core_session_get_uuid(session));
-			switch_channel_set_variable(b_channel, "xfer_uuids", buf);
-
-			switch_snprintf(buf, sizeof(buf), "%s %s", switch_core_session_get_uuid(peer_session), bond);
-			switch_channel_set_variable(channel, "xfer_uuids", buf);
-
-			switch_core_event_hook_add_state_change(session, hanguphook);
-			switch_core_event_hook_add_state_change(b_session, hanguphook);
-
-			switch_core_session_rwunlock(b_session);
-		}
+		int br = 0;
 
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
+
+		if (!switch_channel_down(peer_channel)) {
+			if (!switch_channel_ready(channel)) {
+				switch_ivr_uuid_bridge(switch_core_session_get_uuid(peer_session), bond);
+				br++;
+			} else if ((b_session = switch_core_session_locate(bond))) {
+				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+				switch_snprintf(buf, sizeof(buf), "%s %s", switch_core_session_get_uuid(peer_session), switch_core_session_get_uuid(session));
+				switch_channel_set_variable(b_channel, "xfer_uuids", buf);
+				
+				switch_snprintf(buf, sizeof(buf), "%s %s", switch_core_session_get_uuid(peer_session), bond);
+				switch_channel_set_variable(channel, "xfer_uuids", buf);
+				
+				switch_core_event_hook_add_state_change(session, hanguphook);
+				switch_core_event_hook_add_state_change(b_session, hanguphook);
+				
+				switch_core_session_rwunlock(b_session);
+			}
+		}
+
+		if (!br) {
+			switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), bond);
+		}
+		
 	}
 
 	switch_core_session_rwunlock(peer_session);
