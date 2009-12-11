@@ -1,3 +1,5 @@
+move faststart to callproceeding due to some broken hardware not anderstand 
+    correclty faststart in progress.
 fix rtp timer initialisation.
 implement alerting-indication option and channel variable.
 implement progress-indication option and channel variable.

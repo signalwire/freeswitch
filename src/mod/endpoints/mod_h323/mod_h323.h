@@ -213,8 +213,10 @@ class FSH323Connection:public H323Connection {
 	);
 	virtual PBoolean OnStartLogicalChannel(H323Channel& channel);
 	virtual PBoolean OnCreateLogicalChannel(const H323Capability& capability, H323Channel::Directions dir, unsigned& errorCode);
+	virtual	bool OnReceivedSignalSetup(const H323SignalPDU & setupPDU);
 	virtual void OnReceivedReleaseComplete(const H323SignalPDU & pdu);
 	virtual	bool OnReceivedProgress(const H323SignalPDU &);
+	virtual bool OnSendCallProceeding(H323SignalPDU & callProceedingPDU);
 	virtual bool OnSendReleaseComplete(H323SignalPDU & pdu);
 	virtual PBoolean OpenLogicalChannel(const H323Capability& capability, unsigned sessionID, H323Channel::Directions dir);
     void setRemoteAddress(const char* remoteIP, WORD remotePort);

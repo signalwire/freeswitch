@@ -1,5 +1,5 @@
 /*
-	Version 0.0.16
+	Version 0.0.17
 */
 
 #include "mod_h323.h"
@@ -777,6 +777,29 @@ bool FSH323Connection::OnReceivedProgress(const H323SignalPDU &pdu)
 	return true;
 }
 
+bool FSH323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU){
+
+	PTRACE(4, "mod_h323\t======>FSH323Connection::OnReceivedSignalSetup ["<<*this<<"]");
+	
+	if (!H323Connection::OnReceivedSignalSetup(setupPDU)) return false;
+	
+	H323SignalPDU callProceedingPDU;
+	H225_CallProceeding_UUIE & callProceeding = callProceedingPDU.BuildCallProceeding(*this);
+	
+	if (SendFastStartAcknowledge(callProceeding.m_fastStart))
+					callProceeding.IncludeOptionalField(H225_CallProceeding_UUIE::e_fastStart);
+	if (!WriteSignalPDU(callProceedingPDU))
+        return false;
+		
+	return true;		
+}
+
+bool FSH323Connection::OnSendCallProceeding(H323SignalPDU & callProceedingPDU){
+	PTRACE(4, "mod_h323\t======>FSH323Connection::OnSendCallProceeding fastStartState = "<<FastStartStateNames[fastStartState]<<" ["<<*this<<"]");
+	
+	return false;
+//	return true;
+}
 
 bool FSH323Connection::OnSendReleaseComplete(H323SignalPDU & pdu)
 {
@@ -840,10 +863,12 @@ void FSH323Connection::AnsweringCall(AnswerCallResponse response){
 				H323SignalPDU want245PDU;
 				H225_Progress_UUIE & prog = want245PDU.BuildProgress(*this);
 				PBoolean sendPDU = TRUE;
-
-				if (SendFastStartAcknowledge(prog.m_fastStart))
+				PTRACE(2, "H323\tmediaWaitForConnect = FALSE ");
+/*				if (SendFastStartAcknowledge(prog.m_fastStart)){
+					PTRACE(2, "H323\tSendFastStartAcknowledge = TRUE ");
 					prog.IncludeOptionalField(H225_Progress_UUIE::e_fastStart);
-				else {
+				} else {
+					PTRACE(2, "H323\tSendFastStartAcknowledge = FALSE ");
 					// See if aborted call
 					if (connectionState == ShuttingDownConnection){
 						Unlock();
@@ -863,6 +888,7 @@ void FSH323Connection::AnsweringCall(AnswerCallResponse response){
 					else
 						sendPDU = FALSE;
 				}
+*/				
 				const char *vpi = switch_channel_get_variable(m_fsChannel, "progress-indication"); 
 				unsigned pi = 8;
 				if (vpi){
