@@ -329,7 +329,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				goto done;
 			case CS_HANGUP:	/* Deactivate and end the thread */
 				{
-					switch_core_session_hangup_state(session);				
+					switch_core_session_hangup_state(session, SWITCH_TRUE);				
 					switch_channel_set_state(session->channel, CS_REPORTING);
 				}
 
@@ -437,7 +437,7 @@ SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *se
 }
 
 
-SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *session)
+SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *session, switch_bool_t force)
 {
 	const char *hook_var;
 	switch_core_session_t *use_session = NULL;
@@ -454,15 +454,21 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
 
+	
+	if (!force) {
+		if (!switch_channel_test_flag(session->channel, CF_EARLY_HANGUP) && !switch_test_flag((&runtime), SCF_EARLY_HANGUP)) {
+			return;
+		}
 
-	if (switch_thread_self() != session->thread_id) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s thread mismatch skipping state handler.\n", 
-						  switch_channel_get_name(session->channel));
-		return;
+		if (switch_thread_self() != session->thread_id) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "%s thread mismatch skipping state handler.\n", 
+							  switch_channel_get_name(session->channel));
+			return;
+		}
 	}
 
 	if (switch_test_flag(session, SSF_HANGUP)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s handler already called, skipping state handler.\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "%s handler already called, skipping state handler.\n",
 						  switch_channel_get_name(session->channel));
 		return;
 	}

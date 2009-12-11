@@ -241,7 +241,8 @@ typedef enum {
 	SCF_VG = (1 << 3),
 	SCF_RESTART = (1 << 4),
 	SCF_SHUTDOWN_REQUESTED = (1 << 5),
-	SCF_USE_AUTO_NAT = (1 << 6)
+	SCF_USE_AUTO_NAT = (1 << 6),
+	SCF_EARLY_HANGUP = (1 << 7)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -946,6 +947,7 @@ typedef enum {
 	CF_BYPASS_MEDIA_AFTER_BRIDGE,
 	CF_LEG_HOLDING,
 	CF_BROADCAST_DROP_MEDIA,
+	CF_EARLY_HANGUP,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CF_FLAG_MAX
 } switch_channel_flag_t;

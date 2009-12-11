@@ -3833,6 +3833,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	case nua_callstate_completed:
 	case nua_callstate_received:
 	case nua_callstate_proceeding:
+	case nua_callstate_completing:
 		if (!(session && channel && tech_pvt)) goto done;
 		break;
 	default:
@@ -3890,9 +3891,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		break;
 	case nua_callstate_completing:
 		nua_ack(nh,
-				TAG_IF(tech_pvt && !zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+				TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 				TAG_END());
-		break;
+		goto done;
 	case nua_callstate_received:
 		if (!sofia_test_flag(tech_pvt, TFLAG_SDP)) {
 			if (r_sdp && !sofia_test_flag(tech_pvt, TFLAG_SDP)) {

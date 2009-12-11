@@ -2787,6 +2787,11 @@ SWITCH_STANDARD_APP(verbose_events_function)
 	switch_channel_set_flag(switch_core_session_get_channel(session), CF_VERBOSE_EVENTS);
 }
 
+SWITCH_STANDARD_APP(early_hangup_function)
+{
+	switch_channel_set_flag(switch_core_session_get_channel(session), CF_EARLY_HANGUP);
+}
+
 #define WAIT_FOR_SILENCE_SYNTAX "<silence_thresh> <silence_hits> <listen_hits> <timeout_ms> [<file>]"
 SWITCH_STANDARD_APP(wait_for_silence_function)
 {
@@ -2939,6 +2944,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "check_acl", "Check an ip against an ACL list", "Check an ip against an ACL list", check_acl_function,
 				   "<ip> <acl | cidr> [<hangup_cause>]", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "verbose_events", "Make ALL Events verbose.", "Make ALL Events verbose.", verbose_events_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+	SWITCH_ADD_APP(app_interface, "early_hangup", "Enable early hangup", "", early_hangup_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "sleep", "Pause a channel", SLEEP_LONG_DESC, sleep_function, "<pausemilliseconds>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "delay_echo", "echo audio at a specified delay", "Delay n ms", delay_function, "<delay ms>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "strftime", "strftime", "strftime", strftime_function, "[<epoch>|]<format string>", SAF_SUPPORT_NOMEDIA);

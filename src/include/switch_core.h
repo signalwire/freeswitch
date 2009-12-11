@@ -615,7 +615,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(_Inout_ switch_core_ses
 
 SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *session);
-SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *session, switch_bool_t force);
 
 /*! 
   \brief Provide the total number of sessions

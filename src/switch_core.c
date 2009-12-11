@@ -1382,6 +1382,8 @@ static void switch_load_core_config(const char *file)
 					if (tmp > -1 && tmp < 11) {
 						switch_core_session_ctl(SCSC_DEBUG_LEVEL, &tmp);
 					}
+				} else if (!strcasecmp(var, "enable-early-hangup") && switch_true(val)) {
+					switch_set_flag((&runtime), SCF_EARLY_HANGUP);
 				} else if (!strcasecmp(var, "colorize-console") && switch_true(val)) {
 					runtime.colorize_console = SWITCH_TRUE;
 				} else if (!strcasecmp(var, "mailer-app") && !zstr(val)) {
