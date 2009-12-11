@@ -2644,7 +2644,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 								sofia_clear_pflag(profile, PFLAG_AUTO_NAT);
 							}
 							if (ip) {
-								profile->extrtpip = switch_core_strdup(profile->pool, ip);
+								if (!strncasecmp(ip, "autonat:", 8)) {
+									profile->extrtpip = switch_core_strdup(profile->pool, ip + 8);
+									sofia_set_pflag(profile, PFLAG_AUTO_NAT);
+								} else {
+									profile->extrtpip = switch_core_strdup(profile->pool, ip);
+								}
 							}
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-rtp-ip\n");
@@ -2689,7 +2694,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 								}
 							}
 							if (ip) {
-								profile->extsipip = switch_core_strdup(profile->pool, ip);
+								if (!strncasecmp(ip, "autonat:", 8)) {
+									profile->extsipip = switch_core_strdup(profile->pool, ip +  8);
+									sofia_set_pflag(profile, PFLAG_AUTO_NAT);
+								} else {
+									profile->extsipip = switch_core_strdup(profile->pool, ip);
+								}
 							}
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-sip-ip\n");
