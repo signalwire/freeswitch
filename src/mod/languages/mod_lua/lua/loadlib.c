@@ -192,7 +192,7 @@ static void *ll_load (lua_State *L, const char *path) {
   NSObjectFileImage img;
   NSObjectFileImageReturnCode ret;
   /* this would be a rare case, but prevents crashing if it happens */
-  if(!_dyld_present()) {
+  if (!_dyld_present()) {
     lua_pushliteral(L, "dyld not present");
     return NULL;
   }

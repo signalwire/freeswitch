@@ -1876,7 +1876,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 			member->score_iir = (int)(((1.0 - SCORE_DECAY) * (float)member->score) + (SCORE_DECAY * (float)member->score_iir));
 
-			if(member->score_iir > SCORE_MAX_IIR) {
+			if (member->score_iir > SCORE_MAX_IIR) {
 				member->score_iir = SCORE_MAX_IIR;
 			}
 
@@ -5197,11 +5197,11 @@ SWITCH_STANDARD_APP(conference_function)
 			switch_channel_set_variable(channel, "conference_name", conference->name);
 
 			/* Set MOH from variable if not set */
-			if(zstr(conference->moh_sound)) {
+			if (zstr(conference->moh_sound)) {
 				conference->moh_sound = switch_core_strdup(conference->pool, switch_channel_get_variable(channel, "conference_moh_sound"));
 			}
 			/* Set perpetual-sound from variable if not set */
-			if(zstr(conference->perpetual_sound)) {
+			if (zstr(conference->perpetual_sound)) {
 				conference->perpetual_sound = switch_core_strdup(conference->pool, switch_channel_get_variable(channel, "conference_perpetual_sound"));
 			}
 			

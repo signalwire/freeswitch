@@ -874,7 +874,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 	switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
 
-	if(globals.auto_nat && tech_pvt->profile->local_network && 
+	if (globals.auto_nat && tech_pvt->profile->local_network && 
 	   !switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network)) {
 		switch_port_t external_port = 0;
 		switch_nat_add_mapping((switch_port_t)tech_pvt->local_port, SWITCH_NAT_UDP, &external_port, SWITCH_FALSE);
@@ -1232,7 +1232,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 			tech_pvt->rtp_session = NULL;
 		}
 
-		if(globals.auto_nat && tech_pvt->profile->local_network && 
+		if (globals.auto_nat && tech_pvt->profile->local_network && 
 		   !switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network)) {
 			switch_nat_del_mapping((switch_port_t)tech_pvt->local_port, SWITCH_NAT_UDP);
 		}
@@ -1247,9 +1247,9 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 
 		switch_thread_rwlock_unlock(tech_pvt->profile->rwlock);
 
-		if(tech_pvt->profile->purge) {
+		if (tech_pvt->profile->purge) {
 			mdl_profile_t *profile = tech_pvt->profile;
-			if(switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s deleted successfully\n", profile->name);
 			}
 		}
@@ -1685,13 +1685,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				}
 			}
 
-			if(mdl_profile->purge) {
+			if (mdl_profile->purge) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile '%s' is marked for deletion, disallowing outgoing call\n", mdl_profile->name);
 				terminate_session(new_session, __LINE__, SWITCH_CAUSE_NORMAL_UNSPECIFIED);
 				return SWITCH_CAUSE_NORMAL_UNSPECIFIED;
 			}
 
-			if(switch_thread_rwlock_tryrdlock(mdl_profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+			if (switch_thread_rwlock_tryrdlock(mdl_profile->rwlock) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't do read lock on profile '%s'\n", mdl_profile->name);
 				terminate_session(new_session, __LINE__, SWITCH_CAUSE_NORMAL_UNSPECIFIED);
 				return SWITCH_CAUSE_NORMAL_UNSPECIFIED;
@@ -2270,11 +2270,11 @@ SWITCH_STANDARD_API(dl_login)
 
 static switch_bool_t match_profile(mdl_profile_t *profile, mdl_profile_t *new_profile)
 {
-	if(profile == new_profile) {
+	if (profile == new_profile) {
 		return SWITCH_TRUE;
 	}
 
-	if(
+	if (
 	((!new_profile->name && !profile->name) || 
 	 (new_profile->name && profile->name && !strcasecmp(new_profile->name, profile->name))) &&
 	((!new_profile->login && !profile->login) || 
@@ -2311,7 +2311,7 @@ static switch_bool_t match_profile(mdl_profile_t *profile, mdl_profile_t *new_pr
 	) {
 		int i;
 		if (switch_odbc_available()) {
-			if(!(
+			if (!(
 			((!new_profile->odbc_dsn && !profile->odbc_dsn) || 
 			 (new_profile->odbc_dsn && profile->odbc_dsn && !strcasecmp(new_profile->odbc_dsn, profile->odbc_dsn))) &&
 			((!new_profile->odbc_user && !profile->odbc_user) || 
@@ -2324,7 +2324,7 @@ static switch_bool_t match_profile(mdl_profile_t *profile, mdl_profile_t *new_pr
 		}
 
 		for(i=0; i<new_profile->acl_count; i++) {
-			if(strcasecmp(new_profile->acl[i], profile->acl[i]) != 0) {
+			if (strcasecmp(new_profile->acl[i], profile->acl[i]) != 0) {
 				return SWITCH_FALSE;
 			}
 		}
@@ -2337,7 +2337,7 @@ static switch_status_t destroy_profile(char *name)
 {
 	mdl_profile_t *profile = NULL;
 
-	if((profile = switch_core_hash_find(globals.profile_hash, name))) {
+	if ((profile = switch_core_hash_find(globals.profile_hash, name))) {
 		if (profile->user_flags & LDL_FLAG_COMPONENT) {
 			if (switch_odbc_available() && profile->odbc_dsn && profile->master_odbc) {
 				switch_odbc_handle_disconnect(profile->master_odbc);
@@ -2347,21 +2347,21 @@ static switch_status_t destroy_profile(char *name)
 			switch_mutex_destroy(profile->mutex);
 		}
 
-		if(switch_thread_rwlock_trywrlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+		if (switch_thread_rwlock_trywrlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s is busy\n", profile->name);
 			profile->purge = SWITCH_TRUE;
-			if(profile->handle) {
+			if (profile->handle) {
 				ldl_handle_stop(profile->handle);
 			}
 		} else {
 			switch_thread_rwlock_unlock(profile->rwlock);
 			profile->purge = SWITCH_TRUE;
 
-			if(profile->handle) {
+			if (profile->handle) {
 				ldl_handle_stop(profile->handle);
 			}
 
-			if(switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s deleted successfully\n", profile->name);
 			}
 		}
@@ -2448,8 +2448,8 @@ static switch_status_t soft_reload(void)
 		if (profile) {
 			switch_core_hash_insert(name_hash, profile->name, profile->login);
 
-			if((old_profile = switch_core_hash_find(globals.profile_hash, profile->name))) {
-				if(match_profile(old_profile, profile)) {
+			if ((old_profile = switch_core_hash_find(globals.profile_hash, profile->name))) {
+				if (match_profile(old_profile, profile)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found pre-existing profile %s [%s]\n", profile->name, profile->login);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Overwriting pre-existing profile %s [%s]\n", profile->name, profile->login);
@@ -2471,7 +2471,7 @@ static switch_status_t soft_reload(void)
 		switch_hash_this(hi, NULL, NULL, &data);
 		profile = (mdl_profile_t *) data;
 
-		if(switch_core_hash_find(name_hash, profile->name)) {
+		if (switch_core_hash_find(name_hash, profile->name)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "New profile %s [%s] activated\n", profile->name, profile->login);
 		} else {
 			switch_core_hash_insert(name_hash, profile->name, profile->name);
@@ -2481,7 +2481,7 @@ static switch_status_t soft_reload(void)
 	for (hi = switch_hash_first(NULL, name_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &data);
 
-		if((profile = switch_core_hash_find(globals.profile_hash, (char*)data))) {
+		if ((profile = switch_core_hash_find(globals.profile_hash, (char*)data))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleting unused profile %s [%s]\n", profile->name, profile->login);
 			destroy_profile(profile->name);
 		}
@@ -2928,13 +2928,13 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			goto done;
 		}
 
-		if(profile->purge) {
+		if (profile->purge) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile '%s' is marked for deletion, disallowing incoming call\n", profile->name);
 			status = LDL_STATUS_FALSE;
 			goto done;
 		}
 
-		if(switch_thread_rwlock_tryrdlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+		if (switch_thread_rwlock_tryrdlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't do read lock on profile '%s'\n", profile->name);
 			status = LDL_STATUS_FALSE;
 			goto done;

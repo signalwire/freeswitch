@@ -170,7 +170,7 @@ static const et_info fmtinfo[] = {
 static int et_getdigit(LONGDOUBLE_TYPE *val, int *cnt){
   int digit;
   LONGDOUBLE_TYPE d;
-  if( (*cnt)++ >= 16 ) return '0';
+  if ( (*cnt)++ >= 16 ) return '0';
   digit = (int)*val;
   d = digit;
   digit += '0';
@@ -263,16 +263,16 @@ static int vxprintf(
   count = length = 0;
   bufpt = 0;
   for(; (c=(*fmt))!=0; ++fmt){
-    if( c!='%' ){
+    if ( c!='%' ){
       int amt;
       bufpt = (char *)fmt;
       amt = 1;
       while( (c=(*++fmt))!='%' && c!=0 ) amt++;
       (*func)(arg,bufpt,amt);
       count += amt;
-      if( c==0 ) break;
+      if ( c==0 ) break;
     }
-    if( (c=(*++fmt))==0 ){
+    if ( (c=(*++fmt))==0 ){
       errorflag = 1;
       (*func)(arg,"%",1);
       count++;
@@ -295,9 +295,9 @@ static int vxprintf(
     }while( !done && (c=(*++fmt))!=0 );
     /* Get the field width */
     width = 0;
-    if( c=='*' ){
+    if ( c=='*' ){
       width = va_arg(ap,int);
-      if( width<0 ){
+      if ( width<0 ){
         flag_leftjustify = 1;
         width = -width;
       }
@@ -308,16 +308,16 @@ static int vxprintf(
         c = *++fmt;
       }
     }
-    if( width > etBUFSIZE-10 ){
+    if ( width > etBUFSIZE-10 ){
       width = etBUFSIZE-10;
     }
     /* Get the precision */
-    if( c=='.' ){
+    if ( c=='.' ){
       precision = 0;
       c = *++fmt;
-      if( c=='*' ){
+      if ( c=='*' ){
         precision = va_arg(ap,int);
-        if( precision<0 ) precision = -precision;
+        if ( precision<0 ) precision = -precision;
         c = *++fmt;
       }else{
         while( c>='0' && c<='9' ){
@@ -329,10 +329,10 @@ static int vxprintf(
       precision = -1;
     }
     /* Get the conversion type modifier */
-    if( c=='l' ){
+    if ( c=='l' ){
       flag_long = 1;
       c = *++fmt;
-      if( c=='l' ){
+      if ( c=='l' ){
         flag_longlong = 1;
         c = *++fmt;
       }else{
@@ -344,9 +344,9 @@ static int vxprintf(
     /* Fetch the info entry for the field */
     infop = 0;
     for(idx=0; idx<etNINFO; idx++){
-      if( c==fmtinfo[idx].fmttype ){
+      if ( c==fmtinfo[idx].fmttype ){
         infop = &fmtinfo[idx];
-        if( useExtended || (infop->flags & FLAG_INTERN)==0 ){
+        if ( useExtended || (infop->flags & FLAG_INTERN)==0 ){
           xtype = infop->type;
         }else{
           return -1;
@@ -355,13 +355,13 @@ static int vxprintf(
       }
     }
     zExtra = 0;
-    if( infop==0 ){
+    if ( infop==0 ){
       return -1;
     }
 
 
     /* Limit the precision to prevent overflowing buf[] during conversion */
-    if( precision>etBUFSIZE-40 && (infop->flags & FLAG_STRING)==0 ){
+    if ( precision>etBUFSIZE-40 && (infop->flags & FLAG_STRING)==0 ){
       precision = etBUFSIZE-40;
     }
 
@@ -392,28 +392,28 @@ static int vxprintf(
         flag_long = sizeof(char*)==sizeof(long int);
         /* Fall through into the next case */
       case etRADIX:
-        if( infop->flags & FLAG_SIGNED ){
+        if ( infop->flags & FLAG_SIGNED ){
           int64_t v;
-          if( flag_longlong )   v = va_arg(ap,int64_t);
-          else if( flag_long )  v = va_arg(ap,long int);
+          if ( flag_longlong )   v = va_arg(ap,int64_t);
+          else if ( flag_long )  v = va_arg(ap,long int);
           else                  v = va_arg(ap,int);
-          if( v<0 ){
+          if ( v<0 ){
             longvalue = -v;
             prefix = '-';
           }else{
             longvalue = v;
-            if( flag_plussign )        prefix = '+';
-            else if( flag_blanksign )  prefix = ' ';
+            if ( flag_plussign )        prefix = '+';
+            else if ( flag_blanksign )  prefix = ' ';
             else                       prefix = 0;
           }
         }else{
-          if( flag_longlong )   longvalue = va_arg(ap,uint64_t);
-          else if( flag_long )  longvalue = va_arg(ap,unsigned long int);
+          if ( flag_longlong )   longvalue = va_arg(ap,uint64_t);
+          else if ( flag_long )  longvalue = va_arg(ap,unsigned long int);
           else                  longvalue = va_arg(ap,unsigned int);
           prefix = 0;
         }
-        if( longvalue==0 ) flag_alternateform = 0;
-        if( flag_zeropad && precision<width-(prefix!=0) ){
+        if ( longvalue==0 ) flag_alternateform = 0;
+        if ( flag_zeropad && precision<width-(prefix!=0) ){
           precision = width-(prefix!=0);
         }
         bufpt = &buf[etBUFSIZE-1];
@@ -431,12 +431,12 @@ static int vxprintf(
         for(idx=precision-length; idx>0; idx--){
           *(--bufpt) = '0';                             /* Zero pad */
         }
-        if( prefix ) *(--bufpt) = prefix;               /* Add sign */
-        if( flag_alternateform && infop->prefix ){      /* Add "0" or "0x" */
+        if ( prefix ) *(--bufpt) = prefix;               /* Add sign */
+        if ( flag_alternateform && infop->prefix ){      /* Add "0" or "0x" */
           const char *pre;
           char x;
           pre = &aPrefix[infop->prefix];
-          if( *bufpt!=pre[0] ){
+          if ( *bufpt!=pre[0] ){
             for(; (x=(*pre))!=0; pre++) *(--bufpt) = x;
           }
         }
@@ -447,17 +447,17 @@ static int vxprintf(
       case etGENERIC:
         realvalue = va_arg(ap,double);
 #ifndef SWITCH_OMIT_FLOATING_POINT
-        if( precision<0 ) precision = 6;         /* Set default precision */
-        if( precision>etBUFSIZE/2-10 ) precision = etBUFSIZE/2-10;
-        if( realvalue<0.0 ){
+        if ( precision<0 ) precision = 6;         /* Set default precision */
+        if ( precision>etBUFSIZE/2-10 ) precision = etBUFSIZE/2-10;
+        if ( realvalue<0.0 ){
           realvalue = -realvalue;
           prefix = '-';
         }else{
-          if( flag_plussign )          prefix = '+';
-          else if( flag_blanksign )    prefix = ' ';
+          if ( flag_plussign )          prefix = '+';
+          else if ( flag_blanksign )    prefix = ' ';
           else                         prefix = 0;
         }
-        if( xtype==etGENERIC && precision>0 ) precision--;
+        if ( xtype==etGENERIC && precision>0 ) precision--;
 #if 0
         /* Rounding works like BSD when the constant 0.4999 is used.  Wierd! */
         for(idx=precision, rounder=0.4999; idx>0; idx--, rounder*=0.1);
@@ -465,16 +465,16 @@ static int vxprintf(
         /* It makes more sense to use 0.5 */
         for(idx=precision, rounder=0.5; idx>0; idx--, rounder*=0.1){}
 #endif
-        if( xtype==etFLOAT ) realvalue += rounder;
+        if ( xtype==etFLOAT ) realvalue += rounder;
         /* Normalize realvalue to within 10.0 > realvalue >= 1.0 */
         exp = 0;
-        if( realvalue>0.0 ){
+        if ( realvalue>0.0 ){
           while( realvalue>=1e32 && exp<=350 ){ realvalue *= 1e-32; exp+=32; }
           while( realvalue>=1e8 && exp<=350 ){ realvalue *= 1e-8; exp+=8; }
           while( realvalue>=10.0 && exp<=350 ){ realvalue *= 0.1; exp++; }
           while( realvalue<1e-8 && exp>=-350 ){ realvalue *= 1e8; exp-=8; }
           while( realvalue<1.0 && exp>=-350 ){ realvalue *= 10.0; exp--; }
-          if( exp>350 || exp<-350 ){
+          if ( exp>350 || exp<-350 ){
             bufpt = "NaN";
             length = 3;
             break;
@@ -486,13 +486,13 @@ static int vxprintf(
         ** or etFLOAT, as appropriate.
         */
         flag_exp = xtype==etEXP;
-        if( xtype!=etFLOAT ){
+        if ( xtype!=etFLOAT ){
           realvalue += rounder;
-          if( realvalue>=10.0 ){ realvalue *= 0.1; exp++; }
+          if ( realvalue>=10.0 ){ realvalue *= 0.1; exp++; }
         }
-        if( xtype==etGENERIC ){
+        if ( xtype==etGENERIC ){
           flag_rtz = !flag_alternateform;
-          if( exp<-4 || exp>precision ){
+          if ( exp<-4 || exp>precision ){
             xtype = etEXP;
           }else{
             precision = precision - exp;
@@ -501,7 +501,7 @@ static int vxprintf(
         }else{
           flag_rtz = 0;
         }
-        if( xtype==etEXP ){
+        if ( xtype==etEXP ){
           e2 = 0;
         }else{
           e2 = exp;
@@ -509,11 +509,11 @@ static int vxprintf(
         nsd = 0;
         flag_dp = (precision>0) | flag_alternateform | flag_altform2;
         /* The sign in front of the number */
-        if( prefix ){
+        if ( prefix ){
           *(bufpt++) = prefix;
         }
         /* Digits prior to the decimal point */
-        if( e2<0 ){
+        if ( e2<0 ){
           *(bufpt++) = '0';
         }else{
           for(; e2>=0; e2--){
@@ -521,7 +521,7 @@ static int vxprintf(
           }
         }
         /* The decimal point */
-        if( flag_dp ){
+        if ( flag_dp ){
           *(bufpt++) = '.';
         }
         /* "0" digits after the decimal point but before the first
@@ -534,11 +534,11 @@ static int vxprintf(
           *(bufpt++) = (char)et_getdigit(&realvalue,&nsd);
         }
         /* Remove trailing zeros and the "." if no digits follow the "." */
-        if( flag_rtz && flag_dp ){
+        if ( flag_rtz && flag_dp ){
           while( bufpt[-1]=='0' ) *(--bufpt) = 0;
           assert( bufpt>buf );
-          if( bufpt[-1]=='.' ){
-            if( flag_altform2 ){
+          if ( bufpt[-1]=='.' ){
+            if ( flag_altform2 ){
               *(bufpt++) = '0';
             }else{
               *(--bufpt) = 0;
@@ -546,14 +546,14 @@ static int vxprintf(
           }
         }
         /* Add the "eNNN" suffix */
-        if( flag_exp || (xtype==etEXP && exp) ){
+        if ( flag_exp || (xtype==etEXP && exp) ){
           *(bufpt++) = aDigits[infop->charset];
-          if( exp<0 ){
+          if ( exp<0 ){
             *(bufpt++) = '-'; exp = -exp;
           }else{
             *(bufpt++) = '+';
           }
-          if( exp>=100 ){
+          if ( exp>=100 ){
             *(bufpt++) = (char)(exp/100)+'0';                /* 100's digit */
             exp %= 100;
           }
@@ -570,7 +570,7 @@ static int vxprintf(
 
         /* Special case:  Add leading zeros if the flag_zeropad flag is
         ** set and we are not left justified */
-        if( flag_zeropad && !flag_leftjustify && length < width){
+        if ( flag_zeropad && !flag_leftjustify && length < width){
           int i;
           int nPad = width - length;
           for(i=width; i>=nPad; i--){
@@ -594,7 +594,7 @@ static int vxprintf(
       case etCHARLIT:
       case etCHARX:
         c = buf[0] = (char)(xtype==etCHARX ? va_arg(ap,int) : *++fmt);
-        if( precision>=0 ){
+        if ( precision>=0 ){
           for(idx=1; idx<precision; idx++) buf[idx] = (char)c;
           length = precision;
         }else{
@@ -605,13 +605,13 @@ static int vxprintf(
       case etSTRING:
       case etDYNSTRING:
         bufpt = va_arg(ap,char*);
-        if( bufpt==0 ){
+        if ( bufpt==0 ){
           bufpt = "";
-        }else if( xtype==etDYNSTRING ){
+        }else if ( xtype==etDYNSTRING ){
           zExtra = bufpt;
         }
         length = strlen(bufpt);
-        if( precision>=0 && precision<length ) length = precision;
+        if ( precision>=0 && precision<length ) length = precision;
         break;
       case etSQLESCAPE:
       case etSQLESCAPE2:
@@ -620,35 +620,35 @@ static int vxprintf(
         int needQuote;
         char *escarg = va_arg(ap,char*);
         isnull = escarg==0;
-        if( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
+        if ( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
         for(i=n=0; (ch=escarg[i])!=0; i++){
-			if( ch=='\'' || (xtype==etSQLESCAPE3 && ch=='\\')) n++;
+			if ( ch=='\'' || (xtype==etSQLESCAPE3 && ch=='\\')) n++;
         }
         needQuote = !isnull && xtype==etSQLESCAPE2;
         n += i + 1 + needQuote*2;
-        if( n>etBUFSIZE ){
+        if ( n>etBUFSIZE ){
           bufpt = zExtra = malloc( n );
-          if( bufpt==0 ) return -1;
+          if ( bufpt==0 ) return -1;
         }else{
           bufpt = buf;
         }
         j = 0;
-        if( needQuote ) bufpt[j++] = '\'';
+        if ( needQuote ) bufpt[j++] = '\'';
         for(i=0; (ch=escarg[i])!=0; i++){
           bufpt[j++] = (char)ch;
-          if( ch=='\'' || ( xtype==etSQLESCAPE3 && ch=='\\')) bufpt[j++] = (char)ch;
+          if ( ch=='\'' || ( xtype==etSQLESCAPE3 && ch=='\\')) bufpt[j++] = (char)ch;
         }
-        if( needQuote ) bufpt[j++] = '\'';
+        if ( needQuote ) bufpt[j++] = '\'';
         bufpt[j] = 0;
         length = j;
         /* The precision is ignored on %q and %Q */
-        /* if( precision>=0 && precision<length ) length = precision; */
+        /* if ( precision>=0 && precision<length ) length = precision; */
         break;
       }
 #ifdef __UNSUPPORTED__
       case etTOKEN: {
         Token *pToken = va_arg(ap, Token*);
-        if( pToken && pToken->z ){
+        if ( pToken && pToken->z ){
           (*func)(arg, (char*)pToken->z, pToken->n);
         }
         length = width = 0;
@@ -659,7 +659,7 @@ static int vxprintf(
         int k = va_arg(ap, int);
         struct SrcList_item *pItem = &pSrc->a[k];
         assert( k>=0 && k<pSrc->nSrc );
-        if( pItem->zDatabase && pItem->zDatabase[0] ){
+        if ( pItem->zDatabase && pItem->zDatabase[0] ){
           (*func)(arg, pItem->zDatabase, strlen(pItem->zDatabase));
           (*func)(arg, ".", 1);
         }
@@ -674,35 +674,35 @@ static int vxprintf(
     ** "length" characters long.  The field width is "width".  Do
     ** the output.
     */
-    if( !flag_leftjustify ){
+    if ( !flag_leftjustify ){
       register int nspace;
       nspace = width-length;
-      if( nspace>0 ){
+      if ( nspace>0 ){
         count += nspace;
         while( nspace>=etSPACESIZE ){
           (*func)(arg,spaces,etSPACESIZE);
           nspace -= etSPACESIZE;
         }
-        if( nspace>0 ) (*func)(arg,spaces,nspace);
+        if ( nspace>0 ) (*func)(arg,spaces,nspace);
       }
     }
-    if( length>0 ){
+    if ( length>0 ){
       (*func)(arg,bufpt,length);
       count += length;
     }
-    if( flag_leftjustify ){
+    if ( flag_leftjustify ){
       register int nspace;
       nspace = width-length;
-      if( nspace>0 ){
+      if ( nspace>0 ){
         count += nspace;
         while( nspace>=etSPACESIZE ){
           (*func)(arg,spaces,etSPACESIZE);
           nspace -= etSPACESIZE;
         }
-        if( nspace>0 ) (*func)(arg,spaces,nspace);
+        if ( nspace>0 ) (*func)(arg,spaces,nspace);
       }
     }
-    if( zExtra ){
+    if ( zExtra ){
       free(zExtra);
     }
   }/* End for loop over the format string */
@@ -731,27 +731,27 @@ struct sgMprintf {
 static void mout(void *arg, const char *zNewText, int nNewChar){
   struct sgMprintf *pM = (struct sgMprintf*)arg;
   pM->nTotal += nNewChar;
-  if( pM->nChar + nNewChar + 1 > pM->nAlloc ){
-    if( pM->xRealloc==0 ){
+  if ( pM->nChar + nNewChar + 1 > pM->nAlloc ){
+    if ( pM->xRealloc==0 ){
       nNewChar =  pM->nAlloc - pM->nChar - 1;
     }else{
       pM->nAlloc = pM->nChar + nNewChar*2 + 1;
-      if( pM->zText==pM->zBase ){
+      if ( pM->zText==pM->zBase ){
         pM->zText = pM->xRealloc(0, pM->nAlloc);
-        if( pM->zText && pM->nChar ){
+        if ( pM->zText && pM->nChar ){
           memcpy(pM->zText, pM->zBase, pM->nChar);
         }
       }else{
         char *zNew;
         zNew = pM->xRealloc(pM->zText, pM->nAlloc);
-        if( zNew ){
+        if ( zNew ){
           pM->zText = zNew;
         }
       }
     }
   }
-  if( pM->zText ){
-    if( nNewChar>0 ){
+  if ( pM->zText ){
+    if ( nNewChar>0 ){
       memcpy(&pM->zText[pM->nChar], zNewText, nNewChar);
       pM->nChar += nNewChar;
     }
@@ -777,15 +777,15 @@ static char *base_vprintf(
   sM.nAlloc = nInitBuf;
   sM.xRealloc = xRealloc;
   vxprintf(mout, &sM, useInternal, zFormat, ap);
-  if( xRealloc ){
-    if( sM.zText==sM.zBase ){
+  if ( xRealloc ){
+    if ( sM.zText==sM.zBase ){
       sM.zText = xRealloc(0, sM.nChar+1);
-      if( sM.zText ){
+      if ( sM.zText ){
         memcpy(sM.zText, sM.zBase, sM.nChar+1);
       }
-    }else if( sM.nAlloc>sM.nChar+10 ){
+    }else if ( sM.nAlloc>sM.nChar+10 ){
       char *zNew = xRealloc(sM.zText, sM.nChar+1);
-      if( zNew ){
+      if ( zNew ){
         sM.zText = zNew;
       }
     }

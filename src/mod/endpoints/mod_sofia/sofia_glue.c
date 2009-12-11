@@ -2848,7 +2848,7 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
-						if(map->rm_encoding) {
+						if (map->rm_encoding) {
 							match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
 						} else {
 							match = 0;
@@ -2856,7 +2856,7 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 					}
 
 					if (match) {
-						if(ptime > 0) {
+						if (ptime > 0) {
 							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%di", imp->iananame, (unsigned int) map->rm_rate, ptime);
 						} else {
 							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh", imp->iananame, (unsigned int) map->rm_rate);
@@ -4385,10 +4385,10 @@ sofia_destination_t* sofia_glue_get_destination(char *data)
 		goto mem_fail;
 	}
 
-	if((eoc = strstr(contact, ";fs_path="))) {
+	if ((eoc = strstr(contact, ";fs_path="))) {
 		*eoc = '\0';
 
-		if(!(route = strdup(eoc + 9))) {
+		if (!(route = strdup(eoc + 9))) {
 			goto mem_fail;
 		}
 
@@ -4415,7 +4415,7 @@ sofia_destination_t* sofia_glue_get_destination(char *data)
 		goto mem_fail;
 	}
 
-	if((eoc = strstr(to, ";fs_path="))) {
+	if ((eoc = strstr(to, ";fs_path="))) {
 		*eoc++ = '>';	
 		*eoc = '\0';	
 	}
@@ -4495,7 +4495,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 	dst = sofia_glue_get_destination((char*) o_contact);
 	switch_assert(dst);
 
-	if(dst->route_uri) {
+	if (dst->route_uri) {
 		route_uri = sofia_glue_strip_uri(dst->route_uri);
 	}
 

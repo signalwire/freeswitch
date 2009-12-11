@@ -177,7 +177,7 @@ static switch_status_t tts_commandline_speech_read_tts(switch_speech_handle_t *s
 		return SWITCH_STATUS_FALSE;
 	}
 	*datalen = my_datalen * 2;
-	if(datalen == 0) {
+	if (datalen == 0) {
 		return SWITCH_STATUS_BREAK;
 	} else {
 		return SWITCH_STATUS_SUCCESS;

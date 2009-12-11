@@ -183,11 +183,11 @@ SWITCH_STANDARD_API(memcache_function)
 			key = argv[1];
 			val = argv[2];
 
-			if(argc > 3) {
+			if (argc > 3) {
 				expires_str = argv[3];
 				expires = (time_t)strtol(expires_str, NULL, 10);
 			}
-			if(argc > 4) {
+			if (argc > 4) {
 				flags_str = argv[4];
 				flags = (uint32_t)strtol(flags_str, NULL, 16);
 			}
@@ -239,11 +239,11 @@ SWITCH_STANDARD_API(memcache_function)
 			} else {
 				svalue = "1";
 			}
-			if(argc > 3) {
+			if (argc > 3) {
 				expires_str = argv[3];
 				expires = (time_t)strtol(expires_str, NULL, 10);
 			}
-			if(argc > 4) {
+			if (argc > 4) {
 				flags_str = argv[4];
 				flags = (uint32_t)strtol(flags_str, NULL, 16);
 			}
@@ -280,7 +280,7 @@ SWITCH_STANDARD_API(memcache_function)
 			}
 		} else if (!strcasecmp(subcmd, "delete") && argc > 1) {
 			key = argv[1];
-			if(argc > 2) {
+			if (argc > 2) {
 				expires_str = argv[3];
 				expires = (time_t)strtol(expires_str, NULL, 10);
 			}
@@ -291,7 +291,7 @@ SWITCH_STANDARD_API(memcache_function)
 				switch_goto_status(SWITCH_STATUS_SUCCESS, mcache_error);
 			}
 		} else if (!strcasecmp(subcmd, "flush")) {
-			if(argc > 1) {
+			if (argc > 1) {
 				expires_str = argv[3];
 				expires = (time_t)strtol(expires_str, NULL, 10);
 			}

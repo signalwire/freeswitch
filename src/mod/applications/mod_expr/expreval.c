@@ -15,9 +15,9 @@
 /* Defines for error checking */
 #include <errno.h>
 
-#if(EXPR_ERROR_LEVEL >= EXPR_ERROR_LEVEL_CHECK)
+#if (EXPR_ERROR_LEVEL >= EXPR_ERROR_LEVEL_CHECK)
 #define EXPR_RESET_ERR() errno = 0
-#define EXPR_CHECK_ERR() if(errno) return EXPR_ERROR_OUTOFRANGE
+#define EXPR_CHECK_ERR() if (errno) return EXPR_ERROR_OUTOFRANGE
 #else
 #define EXPR_RESET_ERR()
 #define EXPR_CHECK_ERR()
@@ -136,7 +136,7 @@ int exprEvalNode(exprObj * obj, exprNode * nodes, int curnode, EXPRTYPE * val)
 				if (d2 != 0.0)
 					*val = d1 / d2;
 				else {
-#if(EXPR_ERROR_LEVEL >= EXPR_ERROR_LEVEL_CHECK)
+#if (EXPR_ERROR_LEVEL >= EXPR_ERROR_LEVEL_CHECK)
 					return EXPR_ERROR_DIVBYZERO;
 #else
 					*val = 0.0;

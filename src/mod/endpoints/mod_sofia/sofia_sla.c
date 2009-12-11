@@ -120,7 +120,7 @@ void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const
 
 	dst = sofia_glue_get_destination((char*) full_contact);
 
-	if(dst->route_uri) {
+	if (dst->route_uri) {
 		route_uri = sofia_glue_strip_uri(dst->route_uri);
 	}
 

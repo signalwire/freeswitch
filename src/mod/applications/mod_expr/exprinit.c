@@ -16,13 +16,13 @@
 /* Macro for adding a function node type */
 #define EXPR_ADDFUNC_TYPE(name, type, argmin, argmax, refmin, refmax) \
 err = exprFuncListAddType(flist, name, type, argmin, argmax, refmin, refmax); \
-if(err != EXPR_ERROR_NOERROR) \
+if (err != EXPR_ERROR_NOERROR) \
     return err;
 
 /* Macro for adding a constant */
 #define EXPR_ADDCONST(name, val) \
 err = exprValListAdd(vlist, name, val); \
-if(err != EXPR_ERROR_NOERROR) \
+if (err != EXPR_ERROR_NOERROR) \
     return err;
 
 /* Call this function to initialize these functions into a function list */

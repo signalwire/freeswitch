@@ -835,7 +835,7 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 	} else {
 		/* no data, so insert 1 second of silence */
 		newbytes = 2 * handle->samplerate;
-		if(newbytes < bytes) {
+		if (newbytes < bytes) {
 			bytes = newbytes;
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Padding mp3 stream with 1s of empty audio. (%s)\n", context->stream_url);

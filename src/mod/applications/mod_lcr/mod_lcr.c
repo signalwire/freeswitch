@@ -199,18 +199,18 @@ static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const cha
 	}
 
 	/* if a session is provided, check if the source part of the regex has any channel variables, then expand them */
-	if(session) {
+	if (session) {
 		channel = switch_core_session_get_channel(session);
 		switch_assert(channel);
 
-		if(switch_string_var_check_const(src) || switch_string_has_escaped_data(src)) {
+		if (switch_string_var_check_const(src) || switch_string_has_escaped_data(src)) {
 			tmp_regex = switch_channel_expand_variables(channel, src);
 			src_regex = switch_core_strdup(pool, tmp_regex);
 			switch_safe_free(tmp_regex);
 			src = src_regex;
 		}
 
-		if(switch_string_var_check_const(dst) || switch_string_has_escaped_data(dst)) {
+		if (switch_string_var_check_const(dst) || switch_string_has_escaped_data(dst)) {
 			tmp_regex = switch_channel_expand_variables(channel, dst);
 			dst_regex = switch_core_strdup(pool, tmp_regex);
 			switch_safe_free(tmp_regex);
@@ -426,7 +426,7 @@ static switch_bool_t set_db_random()
 		db_random = "rand()";
 		return SWITCH_TRUE;
 	}
-	if(db_check("SELECT random();") == SWITCH_TRUE) {
+	if (db_check("SELECT random();") == SWITCH_TRUE) {
 		db_random = "random()";
 		return SWITCH_TRUE;
 	}
@@ -1354,9 +1354,9 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 				if (!strcasecmp(argv[i], "intrastate")) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Select routes based on intrastate rates\n");
 					cb_struct.intrastate = SWITCH_TRUE;
-				} else if(!strcasecmp(argv[i], "as")) {
+				} else if (!strcasecmp(argv[i], "as")) {
 					i++;
-					if(argv[i] && !strcasecmp(argv[i], "xml")) {
+					if (argv[i] && !strcasecmp(argv[i], "xml")) {
 							as_xml = SWITCH_TRUE;
 						} else {
 							goto usage;

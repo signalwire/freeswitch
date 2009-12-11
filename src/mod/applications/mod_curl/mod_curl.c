@@ -130,7 +130,7 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	}
 	if (!strcasecmp(method, "head")) {
 		curl_easy_setopt(curl_handle, CURLOPT_NOBODY, SWITCH_TRUE);
-	} else if(!strcasecmp(method, "post")) {
+	} else if (!strcasecmp(method, "post")) {
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, strlen(data));
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, (void *) data);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Post data: %s\n", data);
@@ -288,7 +288,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 		switch_channel_set_variable(channel, "curl_response_data", print_json(pool, http_data));
 	} else {
 		SWITCH_STANDARD_STREAM(stream);
-		if(do_headers) {
+		if (do_headers) {
 			slist = http_data->headers;
 			while(slist) {
 				stream.write_function(&stream, "%s\n", slist->data);
@@ -376,7 +376,7 @@ SWITCH_STANDARD_API(curl_function)
 		if (do_json) {
 			stream->write_function(stream, "%s", print_json(pool, http_data));
 		} else {
-			if(do_headers) {
+			if (do_headers) {
 				slist = http_data->headers;
 				while(slist) {
 					stream->write_function(stream, "%s\n", slist->data);

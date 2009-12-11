@@ -790,7 +790,7 @@ abyss_bool handler_hook(TSession * r)
 	//SocketClose(&(r->conn->socket));
 
 	HTTPWriteEnd(r);
-	//if(r->conn->channelP)
+	//if (r->conn->channelP)
 	//ConnKill(r->conn);
 	//ChannelInterrupt(r->conn->channelP);
 	//ConnClose(r->conn);

@@ -607,7 +607,7 @@ static switch_status_t audio_queue_create(audio_queue_t **audio_queue, const cha
 
  done:
 
-	if(status != SWITCH_STATUS_SUCCESS) {
+	if (status != SWITCH_STATUS_SUCCESS) {
 		audio_queue_destroy(laudio_queue);
 	}
 	return status;
@@ -628,7 +628,7 @@ static switch_status_t audio_queue_write(audio_queue_t *queue, void *data, switc
 
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
 	switch_size_t len = *data_len;
-	if(queue->file_write) {
+	if (queue->file_write) {
 		switch_file_write(queue->file_write, data, &len);
 	}
 #endif
@@ -3275,7 +3275,7 @@ static switch_status_t mod_unimrcp_do_config()
  */
 static char *ip_addr_get(const char *value, apr_pool_t *pool)
 {
-	if(!value || strcasecmp(value,"auto") == 0) {
+	if (!value || strcasecmp(value,"auto") == 0) {
 		char *addr = DEFAULT_LOCAL_IP_ADDRESS;
 		apt_ip_get(&addr,pool);
 		return addr;
@@ -3337,19 +3337,19 @@ static int process_rtp_config(mrcp_client_t *client, mpf_rtp_config_t *rtp_confi
 		rtp_config->jb_config.max_playout_delay = atol(val);
 	} else if (strcasecmp(param, "codecs") == 0) {
 		const mpf_codec_manager_t *codec_manager = mrcp_client_codec_manager_get(client);
-		if(codec_manager) {
+		if (codec_manager) {
 			mpf_codec_manager_codec_list_load(codec_manager, &rtp_config->codec_list, val, pool);
 		}
 	} else if (strcasecmp(param, "ptime") == 0) {
 		rtp_config->ptime = (apr_uint16_t)atol(val);
 #if UNI_VERSION_AT_LEAST(0,8,0)
-	} else if(strcasecmp(param, "rtcp") == 0) {
+	} else if (strcasecmp(param, "rtcp") == 0) {
 		rtp_config->rtcp = atoi(val);
-	} else if(strcasecmp(param, "rtcp-bye") == 0) {
+	} else if (strcasecmp(param, "rtcp-bye") == 0) {
 		rtp_config->rtcp_bye_policy = atoi(val);
-	} else if(strcasecmp(param, "rtcp-tx-interval") == 0) {
+	} else if (strcasecmp(param, "rtcp-tx-interval") == 0) {
 		rtp_config->rtcp_tx_interval = (apr_uint16_t)atoi(val);
-	} else if(strcasecmp(param, "rtcp-rx-resolution") == 0) {
+	} else if (strcasecmp(param, "rtcp-rx-resolution") == 0) {
 		rtp_config->rtcp_rx_resolution = (apr_uint16_t)atol(val);
 #endif
 	} else {
@@ -3470,7 +3470,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 #if UNI_VERSION_AT_LEAST(0,8,0)
 	/* load the synthesizer and recognizer resources */	
 	resource_loader = mrcp_resource_loader_create(FALSE, pool);
-	if(resource_loader) {
+	if (resource_loader) {
 		apt_str_t synth_resource;
 		apt_str_t recog_resource;
 		apt_string_set(&synth_resource, "speechsynth");

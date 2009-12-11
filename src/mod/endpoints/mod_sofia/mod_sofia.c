@@ -380,7 +380,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		const char* val = NULL;
 
 		val = switch_channel_get_variable(tech_pvt->channel, "disable_q850_reason");
-		if(!val || switch_true(val)) {
+		if (!val || switch_true(val)) {
 			if (cause > 0 && cause < 128) {
 				switch_snprintf(reason, sizeof(reason), "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
 			} else if (cause == SWITCH_CAUSE_PICKED_OFF || cause == SWITCH_CAUSE_LOSE_RACE) {

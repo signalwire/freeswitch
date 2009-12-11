@@ -425,7 +425,7 @@ static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat
 	
 	if (proto == SWITCH_NAT_TCP) {
 		sendnewportmappingrequest(&natpmp, NATPMP_PROTOCOL_TCP, port, port, 31104000);
-	} else if(proto == SWITCH_NAT_UDP) {
+	} else if (proto == SWITCH_NAT_UDP) {
 		sendnewportmappingrequest(&natpmp, NATPMP_PROTOCOL_UDP, port, port, 31104000);
 	}
 
@@ -474,7 +474,7 @@ static switch_status_t switch_nat_add_mapping_upnp(switch_port_t port, switch_na
 	if (proto == SWITCH_NAT_TCP) {
 		r = UPNP_AddPortMapping(nat_globals.urls.controlURL, nat_globals.data.servicetype, port_str, port_str,
 								nat_globals.pvt_addr, "FreeSWITCH", "TCP", 0);
-	} else if(proto == SWITCH_NAT_UDP) {
+	} else if (proto == SWITCH_NAT_UDP) {
 		r = UPNP_AddPortMapping(nat_globals.urls.controlURL, nat_globals.data.servicetype, port_str, port_str,
 								nat_globals.pvt_addr, "FreeSWITCH", "UDP", 0);
 	}
@@ -499,7 +499,7 @@ static switch_status_t switch_nat_del_mapping_pmp(switch_port_t port, switch_nat
 
 	if (proto == SWITCH_NAT_TCP) {
 		sendnewportmappingrequest(&natpmp, NATPMP_PROTOCOL_TCP, port, port, 0);
-	} else if(proto == SWITCH_NAT_UDP) {
+	} else if (proto == SWITCH_NAT_UDP) {
 		sendnewportmappingrequest(&natpmp, NATPMP_PROTOCOL_UDP, port, port, 0);
 	}
 
@@ -537,7 +537,7 @@ static switch_status_t switch_nat_del_mapping_upnp(switch_port_t port, switch_na
 
 	if (proto == SWITCH_NAT_TCP) {
 		r = UPNP_DeletePortMapping(nat_globals.urls.controlURL, nat_globals.data.servicetype, port_str, "TCP", 0);
-	} else if(proto == SWITCH_NAT_UDP) {
+	} else if (proto == SWITCH_NAT_UDP) {
 		r = UPNP_DeletePortMapping(nat_globals.urls.controlURL, nat_globals.data.servicetype, port_str, "UDP", 0);
 	}
 

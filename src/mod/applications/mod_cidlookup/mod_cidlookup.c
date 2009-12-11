@@ -117,7 +117,7 @@ static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, const
 
 	if ((callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD) && changed) {
 
-		if(zstr(newvalue)) {
+		if (zstr(newvalue)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No local database defined.\n");
 		} else {
 			switch_safe_free(globals.odbc_dsn);
