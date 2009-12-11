@@ -306,7 +306,7 @@ if test "x$enable_zrtp" = "xyes" ; then
 fi
 
 AC_CHECK_LIB(asound, snd_pcm_open, have_alsa=yes, have_alsa=no)
-if [ $have_alsa = "yes" ] ; then
+if test "x$have_alsa" = "xyes"  ; then
 ALSA_LIBS=-lasound
 fi
 AC_SUBST(ALSA_LIBS)
