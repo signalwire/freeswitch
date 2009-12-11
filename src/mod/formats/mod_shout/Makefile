@@ -45,7 +45,7 @@ $(LAME_BUILDDIR)/Makefile: $(LAME_DIR)
 	$(TOUCH_TARGET)
 
 $(LAMELA): $(LAME_BUILDDIR)/Makefile
-	cd $(LAME_DIR) && $(MAKE)
+	cd $(LAME_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
 $(SHOUT_DIR):
