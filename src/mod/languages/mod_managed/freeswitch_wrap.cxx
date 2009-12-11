@@ -6112,28 +6112,6 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_session_sprintf(void * jarg1, c
 }
 
 
-SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_session_vsprintf(void * jarg1, char * jarg2, void * jarg3) {
-  char * jresult ;
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
-  char *arg2 = (char *) 0 ;
-  va_list arg3 ;
-  char *result = 0 ;
-  va_list *argp3 ;
-  
-  arg1 = (switch_core_session_t *)jarg1; 
-  arg2 = (char *)jarg2; 
-  argp3 = (va_list *)jarg3; 
-  if (!argp3) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null va_list", 0);
-    return 0;
-  }
-  arg3 = *argp3; 
-  result = (char *)switch_core_session_vsprintf(arg1,(char const *)arg2,arg3);
-  jresult = SWIG_csharp_string_callback((const char *)result); 
-  return jresult;
-}
-
-
 SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_sprintf(void * jarg1, char * jarg2) {
   char * jresult ;
   switch_memory_pool_t *arg1 = (switch_memory_pool_t *) 0 ;
@@ -6144,28 +6122,6 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_sprintf(void * jarg1, char * ja
   arg1 = (switch_memory_pool_t *)jarg1; 
   arg2 = (char *)jarg2; 
   result = (char *)switch_core_sprintf(arg1,(char const *)arg2,arg3);
-  jresult = SWIG_csharp_string_callback((const char *)result); 
-  return jresult;
-}
-
-
-SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_vsprintf(void * jarg1, char * jarg2, void * jarg3) {
-  char * jresult ;
-  switch_memory_pool_t *arg1 = (switch_memory_pool_t *) 0 ;
-  char *arg2 = (char *) 0 ;
-  va_list arg3 ;
-  char *result = 0 ;
-  va_list *argp3 ;
-  
-  arg1 = (switch_memory_pool_t *)jarg1; 
-  arg2 = (char *)jarg2; 
-  argp3 = (va_list *)jarg3; 
-  if (!argp3) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null va_list", 0);
-    return 0;
-  }
-  arg3 = *argp3; 
-  result = (char *)switch_core_vsprintf(arg1,(char const *)arg2,arg3);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
