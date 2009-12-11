@@ -852,11 +852,6 @@ public class freeswitch {
     return ret;
   }
 
-  public static string switch_mprintf(string zFormat) {
-    string ret = freeswitchPINVOKE.switch_mprintf(zFormat);
-    return ret;
-  }
-
   public static SWIGTYPE_p_real_pcre switch_regex_compile(string pattern, int options, ref string errorptr, SWIGTYPE_p_int erroroffset, SWIGTYPE_p_unsigned_char tables) {
     IntPtr cPtr = freeswitchPINVOKE.switch_regex_compile(pattern, options, ref errorptr, SWIGTYPE_p_int.getCPtr(erroroffset), SWIGTYPE_p_unsigned_char.getCPtr(tables));
     SWIGTYPE_p_real_pcre ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_real_pcre(cPtr, false);
@@ -1199,8 +1194,8 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_session_reporting_state(SWIGTYPE_p_switch_core_session.getCPtr(session));
   }
 
-  public static void switch_core_session_hangup_state(SWIGTYPE_p_switch_core_session session) {
-    freeswitchPINVOKE.switch_core_session_hangup_state(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  public static void switch_core_session_hangup_state(SWIGTYPE_p_switch_core_session session, switch_bool_t force) {
+    freeswitchPINVOKE.switch_core_session_hangup_state(SWIGTYPE_p_switch_core_session.getCPtr(session), (int)force);
   }
 
   public static uint switch_core_session_count() {
@@ -5911,9 +5906,6 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CORE_DB_DONE_get")]
   public static extern int SWITCH_CORE_DB_DONE_get();
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_mprintf")]
-  public static extern string switch_mprintf(string jarg1);
-
   [DllImport("mod_managed", EntryPoint="CSharp_switch_regex_compile")]
   public static extern IntPtr switch_regex_compile(string jarg1, int jarg2, ref string jarg3, HandleRef jarg4, HandleRef jarg5);
 
@@ -6353,7 +6345,7 @@ class freeswitchPINVOKE {
   public static extern void switch_core_session_reporting_state(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_hangup_state")]
-  public static extern void switch_core_session_hangup_state(HandleRef jarg1);
+  public static extern void switch_core_session_hangup_state(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_count")]
   public static extern uint switch_core_session_count();
@@ -19207,6 +19199,7 @@ public enum switch_channel_flag_t {
   CF_BYPASS_MEDIA_AFTER_BRIDGE,
   CF_LEG_HOLDING,
   CF_BROADCAST_DROP_MEDIA,
+  CF_EARLY_HANGUP,
   CF_FLAG_MAX
 }
 
@@ -20444,7 +20437,8 @@ namespace FreeSWITCH.Native {
   SCF_VG = (1 << 3),
   SCF_RESTART = (1 << 4),
   SCF_SHUTDOWN_REQUESTED = (1 << 5),
-  SCF_USE_AUTO_NAT = (1 << 6)
+  SCF_USE_AUTO_NAT = (1 << 6),
+  SCF_EARLY_HANGUP = (1 << 7)
 }
 
 }

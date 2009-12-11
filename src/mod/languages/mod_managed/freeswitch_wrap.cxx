@@ -4329,19 +4329,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_CORE_DB_DONE_get() {
 }
 
 
-SWIGEXPORT char * SWIGSTDCALL CSharp_switch_mprintf(char * jarg1) {
-  char * jresult ;
-  char *arg1 = (char *) 0 ;
-  void *arg2 = 0 ;
-  char *result = 0 ;
-  
-  arg1 = (char *)jarg1; 
-  result = (char *)switch_mprintf((char const *)arg1,arg2);
-  jresult = SWIG_csharp_string_callback((const char *)result); 
-  return jresult;
-}
-
-
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_regex_compile(char * jarg1, int jarg2, void * jarg3, void * jarg4, void * jarg5) {
   void * jresult ;
   char *arg1 = (char *) 0 ;
@@ -6258,11 +6245,13 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_reporting_state(void * ja
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_hangup_state(void * jarg1) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_hangup_state(void * jarg1, int jarg2) {
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_bool_t arg2 ;
   
   arg1 = (switch_core_session_t *)jarg1; 
-  switch_core_session_hangup_state(arg1);
+  arg2 = (switch_bool_t)jarg2; 
+  switch_core_session_hangup_state(arg1,arg2);
 }
 
 
