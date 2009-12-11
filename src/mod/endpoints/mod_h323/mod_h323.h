@@ -126,6 +126,7 @@ struct FSListener {
     PString gatekeeper;
 };
 class FSGkRegThread;
+
 class FSH323EndPoint:public H323EndPoint {
 
     PCLASSINFO(FSH323EndPoint, H323EndPoint);
@@ -156,7 +157,8 @@ class FSH323EndPoint:public H323EndPoint {
     }
 	FSH323Connection * FSMakeCall(const PString & dest,void *userData);
 	list <FSListener> m_listeners;
-	
+	int m_ai;
+	int m_pi;
 	protected:
 		PStringList m_gkPrefixes;
 		switch_endpoint_interface_t *m_freeswitch;
@@ -168,7 +170,6 @@ class FSH323EndPoint:public H323EndPoint {
 		bool m_h245insetup;
 		int m_gkretry;
 		FSGkRegThread* m_thread;
-		
 };
 
 
@@ -219,6 +220,7 @@ class FSH323Connection:public H323Connection {
     void setRemoteAddress(const char* remoteIP, WORD remotePort);
 	virtual void OnSetLocalCapabilities();
 	virtual bool OnAlerting(const H323SignalPDU &alertingPDU, const PString &user);
+	virtual void AnsweringCall(AnswerCallResponse response);
 	virtual void OnEstablished();
 	bool SetLocalCapabilities();
 	static bool decodeCapability(const H323Capability& capability, const char** dataFormat, int* payload = 0, PString* capabName = 0);

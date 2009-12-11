@@ -1,5 +1,7 @@
-
-fix to build with trunk changes.
+fix rtp timer initialisation.
+implement alerting-indication option and channel variable.
+implement progress-indication option and channel variable.
+fix short DTMF warnings.
 remove SWITCH_RTP_FLAG_AUTOADJ because its not work correctly and not do anything reliable in our cases.
 fix faststart in progress handling
 fixxxxes

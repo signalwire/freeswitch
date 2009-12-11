@@ -1,5 +1,5 @@
 /*
-	Version 0.0.13
+	Version 0.0.16
 */
 
 #include "mod_h323.h"
@@ -361,6 +361,8 @@ switch_status_t FSH323EndPoint::ReadConfig(int reload){
     }
 
     switch_xml_t xmlSettings = switch_xml_child(cfg, "settings");
+	m_pi = 8;
+	m_ai = 0;
     if (xmlSettings) {
         for (switch_xml_t xmlParam = switch_xml_child(xmlSettings, "param"); xmlParam != NULL; xmlParam = xmlParam->next) {
             const char *var = switch_xml_attr_soft(xmlParam, "name");
@@ -405,8 +407,11 @@ switch_status_t FSH323EndPoint::ReadConfig(int reload){
 				m_gkPrefixes.AppendString(val);
 			} else if (!strcasecmp(var, "gk-retry")) {
 				m_gkretry = atoi(val);
-			} 
-			
+			} else if (!strcasecmp(var, "progress-indication")) {
+				m_pi = atoi(val);
+			} else if (!strcasecmp(var, "alerting-indication")) {
+				m_ai = atoi(val);
+			}			
         }
     }
 
@@ -821,6 +826,89 @@ bool FSH323Connection::OnAlerting(const H323SignalPDU &alertingPDU, const PStrin
 	return ( status == SWITCH_STATUS_SUCCESS);
 }
 
+void FSH323Connection::AnsweringCall(AnswerCallResponse response){
+
+	PTRACE(4, "mod_h323\t======>FSH323Connection::AnsweringCall ["<<*this<<"]");
+	
+	switch (response) {
+		case AnswerCallDeferredWithMedia:{
+			PTRACE(2, "H323\tAnswering call: " << response);
+			if (!Lock())
+				return;
+			if (!mediaWaitForConnect) {
+				// create a new facility PDU if doing AnswerDeferredWithMedia
+				H323SignalPDU want245PDU;
+				H225_Progress_UUIE & prog = want245PDU.BuildProgress(*this);
+				PBoolean sendPDU = TRUE;
+
+				if (SendFastStartAcknowledge(prog.m_fastStart))
+					prog.IncludeOptionalField(H225_Progress_UUIE::e_fastStart);
+				else {
+					// See if aborted call
+					if (connectionState == ShuttingDownConnection){
+						Unlock();
+						return;
+					}
+					// Do early H.245 start
+					H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, FALSE, H225_FacilityReason::e_startH245);
+					earlyStart = TRUE;
+					if (!h245Tunneling && (controlChannel == NULL)) {
+						if (!StartControlChannel()){
+							Unlock();
+							return;
+						}
+						fac.IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
+						controlChannel->SetUpTransportPDU(fac.m_h245Address, TRUE);
+					} 
+					else
+						sendPDU = FALSE;
+				}
+				const char *vpi = switch_channel_get_variable(m_fsChannel, "progress-indication"); 
+				unsigned pi = 8;
+				if (vpi){
+					pi = atoi(vpi); 
+				}
+				else pi = m_endpoint->m_pi;
+				if ((pi< 1) || (pi > 8)||(pi == 7)) pi = 8;
+				want245PDU.GetQ931().SetProgressIndicator(pi);
+				if (sendPDU) {
+					HandleTunnelPDU(&want245PDU);
+					WriteSignalPDU(want245PDU);
+				}
+			}
+			InternalEstablishedConnectionCheck();
+			Unlock();
+			return;
+		} 
+		case AnswerCallPending :{
+			if (alertingPDU != NULL) {
+				if (!Lock())
+					return;
+				// send Q931 Alerting PDU
+				PTRACE(3, "H225\tSending Alerting PDU");
+				
+				const char *vai = switch_channel_get_variable(m_fsChannel, "alerting-indication"); 
+				unsigned ai = 0;
+				if (vai){
+					ai = atoi(vai); 
+				}
+				else ai = m_endpoint->m_ai;
+				if ((ai< 0) || (ai > 8)||(ai == 7)) ai = 8;
+				if (ai > 0)
+					(*alertingPDU).GetQ931().SetProgressIndicator(ai);
+				
+				HandleTunnelPDU(alertingPDU);
+				WriteSignalPDU(*alertingPDU);
+				alertingTime = PTime();
+				InternalEstablishedConnectionCheck();
+				Unlock();
+				return;
+			}
+		}
+		default :H323Connection::AnsweringCall(response);
+	} 
+}
+
 void FSH323Connection::OnEstablished(){
 
 	PTRACE(4, "mod_h323\t======>PFSH323Connection::OnEstablished ["<<*this<<"]");
@@ -1229,6 +1317,7 @@ PBoolean FSH323_ExternalRTPChannel::Start(){
                 m_switchCodec = NULL;
                 return false;
             }
+			switch_channel_set_variable(m_fsChannel,"timer_name","soft");
         } else {
             switch_core_session_set_video_read_codec(m_fsSession, m_switchCodec);
             switch_channel_set_flag(m_fsChannel, CF_VIDEO);
@@ -1278,11 +1367,13 @@ PBoolean FSH323_ExternalRTPChannel::Start(){
 	PTRACE(4, "mod_h323\t------------------->samples_per_packet = "<<m_switchCodec->implementation->samples_per_packet);
 	PTRACE(4, "mod_h323\t------------------->actual_samples_per_second = "<<m_switchCodec->implementation->actual_samples_per_second);
 	
-	if (!m_conn->m_startRTP) {			
-		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT|SWITCH_RTP_FLAG_AUTO_CNG|SWITCH_RTP_FLAG_RAW_WRITE);		
+	if ((!m_conn->m_startRTP)&&(GetDirection() == IsReceiver)) {			
+		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT|SWITCH_RTP_FLAG_AUTO_CNG|SWITCH_RTP_FLAG_RAW_WRITE);
+		PTRACE(4, "mod_h323\t------------------->timer_name = "<<switch_channel_get_variable(m_fsChannel, "timer_name"));
 		if ((var = switch_channel_get_variable(m_fsChannel, "timer_name"))) {
 			timer_name = (char *) var;
 		}
+		PTRACE(4, "mod_h323\t------------------->timer_name = "<<timer_name);
 		tech_pvt->rtp_session = switch_rtp_new((const char *)m_RTPlocalIP,
 											   m_RTPlocalPort,
 											   (const char *)m_RTPremoteIP,

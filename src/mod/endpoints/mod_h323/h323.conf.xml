@@ -12,6 +12,8 @@
     <param name="h245tunneling" value="true"/>  <!-- optional -->
     <param name="h245insetup" value="true"/>  <!-- optional -->
     <param name="jitter-size" value="60"/>  <!-- optional -->
+    <param name="progress-indication" value="8"/> <!-- optional - PI value in progress message-->
+    <param name="alerting-indication" value="8"/> <!-- optional - PI value in alerting message-->
   </settings>
   <listeners>
     <listener name="default">
