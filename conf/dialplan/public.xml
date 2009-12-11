@@ -1,7 +1,7 @@
 <!--
     NOTICE:
 
-    This context is usually accessed via the external sip profile sitting on port 5080.
+    This context is usually accessed via the external sip profile listening on port 5080.
     
     It is recommended to have separate inbound and outbound contexts.  Not only for security
     but clearing up why you would need to do such a thing.  You don't want outside un-authenticated
