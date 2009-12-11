@@ -12,10 +12,11 @@ include $(BASE)/build/modmake.rules
 $(CELT_DIR):
 	$(GETLIB) $(CELT).tar.gz
 
-$(CELT_DIR)/Makefile: $(CELT_DIR)
-	cd $(CELT_DIR) && $(DEFAULT_VARS) ./configure $(DEFAULT_ARGS)
+$(CELT_BUILDDIR)/Makefile: $(CELT_DIR)
+	mkdir -p $(CELT_BUILDDIR)
+	cd $(CELT_BUILDDIR) && $(DEFAULT_VARS) $(CELT_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(CELT_DIR)
 
-$(CELT_LA): $(CELT_DIR)/Makefile
+$(CELT_LA): $(CELT_BUILDDIR)/Makefile
 	cd $(CELT_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 

@@ -1,11 +1,13 @@
 SPHINXBASE=sphinxbase-0.4.99
 SPHINXBASE_DIR=$(switch_srcdir)/libs/$(SPHINXBASE)
+SPHINXBASE_BUILDDIR=$(switch_builddir)/libs/$(SPHINXBASE)
 POCKETSPHINX=pocketsphinx-0.5.99
 POCKETSPHINX_DIR=$(switch_srcdir)/libs/$(POCKETSPHINX)
-SPHINXBASE_LA=$(SPHINXBASE_DIR)/src/libsphinxbase/libsphinxbase.la
-SPHINXBASE_LA2=$(SPHINXBASE_DIR)/src/libsphinxad/libsphinxad.la
+POCKETSPHINX_BUILDDIR=$(switch_builddir)/libs/$(POCKETSPHINX)
+SPHINXBASE_LA=$(SPHINXBASE_BUILDDIR)/src/libsphinxbase/libsphinxbase.la
+SPHINXBASE_LA2=$(SPHINXBASE_BUILDDIR)/src/libsphinxad/libsphinxad.la
 
-POCKETSPHINX_LA=$(POCKETSPHINX_DIR)/src/libpocketsphinx/libpocketsphinx.la
+POCKETSPHINX_LA=$(POCKETSPHINX_BUILDDIR)/src/libpocketsphinx/libpocketsphinx.la
 
 SPHINXMODEL=communicator_semi_6000_20080321
 
@@ -17,26 +19,28 @@ include $(BASE)/build/modmake.rules
 $(SPHINXBASE_DIR):
 	$(GETLIB) $(SPHINXBASE)-20091212.tar.gz
 
-$(SPHINXBASE_DIR)/buildstamp: $(SPHINXBASE_DIR)
-	test -f $(SPHINXBASE_DIR)/Makefile || (cd $(SPHINXBASE_DIR) && ./configure --with-pic --without-python --disable-shared CFLAGS=)
-	test -f $(SPHINXBASE_DIR)/buildstamp || (touch $(SPHINXBASE_DIR)/buildstamp)
+$(SPHINXBASE_BUIDDIR)/buildstamp: $(SPHINXBASE_DIR)
+	mkdir -p $(SPHINXBASE_BUILDDIR)
+	test -f $(SPHINXBASE_BUILDDIR)/Makefile || (cd $(SPHINXBASE_BUILDDIR) && $(DEFAULT_VARS) $(SPHINXBASE_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(SPHINXBASE_DIR) --without-python CFLAGS=)
+	test -f $(SPHINXBASE_BUIDDIR)/buildstamp || (touch $(SPHINXBASE_BUIDDIR)/buildstamp)
 
-$(SPHINXBASE_LA): $(SPHINXBASE_DIR)/buildstamp
-	cd $(SPHINXBASE_DIR) && $(MAKE)
+$(SPHINXBASE_LA): $(SPHINXBASE_BUIDDIR)/buildstamp
+	cd $(SPHINXBASE_BUIDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
 $(POCKETSPHINX_DIR):
 	$(GETLIB) $(POCKETSPHINX)-20091212.tar.gz
 
-$(POCKETSPHINX_DIR)/Makefile: $(POCKETSPHINX_DIR)
-	cd $(POCKETSPHINX_DIR) && ./configure --with-pic --without-python --disable-shared --with-sphinxbase=$(SPHINXBASE_DIR) CFLAGS=
+$(POCKETSPHINX_BUILDDIR)/Makefile: $(POCKETSPHINX_DIR)
+	mkdir -p $(POCKETSPHINX_BUILDDIR)
+	cd $(POCKETSPHINX_BUILDDIR) && $(DEFAULT_VARS) $(POCKETSPHINX_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(POCKETSPHINX_DIR) --without-python --with-sphinxbase=$(SPHINXBASE_DIR) CFLAGS=
 	$(TOUCH_TARGET)
 
-$(POCKETSPHINX_DIR)/buildstamp: $(POCKETSPHINX_DIR)/Makefile
-	test -f $(POCKETSPHINX_DIR)/buildstamp || touch $(POCKETSPHINX_DIR)/buildstamp
+$(POCKETSPHINX_BUILDDIR)/buildstamp: $(POCKETSPHINX_BUILDDIR)/Makefile
+	test -f $(POCKETSPHINX_BUILDDIR)/buildstamp || touch $(POCKETSPHINX_BUILDDIR)/buildstamp
 
-$(POCKETSPHINX_LA): $(POCKETSPHINX_DIR)/Makefile 
-	cd $(POCKETSPHINX_DIR) && $(MAKE)
+$(POCKETSPHINX_LA): $(POCKETSPHINX_BUILDDIR)/Makefile 
+	cd $(POCKETSPHINX_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
 $(DESTDIR)$(PREFIX)/grammar/model:
@@ -45,7 +49,7 @@ $(DESTDIR)$(PREFIX)/grammar/model:
 $(DESTDIR)$(PREFIX)/grammar/model/communicator:
 	$(GETLIB) $(SPHINXMODEL).tar.gz
 	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model/communicator
-	cp -rp $(BASE)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(PREFIX)/grammar/model/communicator
+	cp -rp $(switch_srcdir)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(PREFIX)/grammar/model/communicator
 
 $(DESTDIR)$(PREFIX)/grammar/model/wsj1:
 	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model/wsj1

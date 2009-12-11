@@ -1,7 +1,7 @@
 LAME=lame-3.97
 SHOUT=libshout-2.2.2
 MPG123=mpg123
-switch_srcdir=../../../..
+BASE=../../../..
 
 WANT_CURL=yes
 
@@ -9,48 +9,55 @@ LAME_DIR=$(switch_srcdir)/libs/$(LAME)
 SHOUT_DIR=$(switch_srcdir)/libs/$(SHOUT)
 MPG123_DIR=$(switch_srcdir)/libs/$(MPG123)
 
-LAMELA=$(LAME_DIR)/libmp3lame/libmp3lame.la
-SHOUTLA=$(SHOUT_DIR)/src/libshout.la
-MPG123LA=$(MPG123_DIR)/src/libmpg123/libmpg123.la
+LAME_BUILDDIR=$(switch_builddir)/libs/$(LAME)
+SHOUT_BUILDDIR=$(switch_builddir)/libs/$(SHOUT)
+MPG123_BUILDDIR=$(switch_builddir)/libs/$(MPG123)
+
+LAMELA=$(LAME_BUILDDIR)/libmp3lame/libmp3lame.la
+SHOUTLA=$(SHOUT_BUILDDIR)/src/libshout.la
+MPG123LA=$(MPG123_BUILDDIR)/src/libmpg123/libmpg123.la
 
 LOCAL_CFLAGS=-I$(SHOUT_DIR)/include -I$(LAME_DIR)/include -I$(MPG123_DIR)/src
 LOCAL_LIBADD=$(LAMELA) $(SHOUTLA) $(MPG123LA)
 
-LOCAL_LDFLAGS=`cat ../../../../libs/libshout-2.2.2/Makefile | grep SPEEX_LIBS | sed -e 's|^SPEEX_LIBS =||'` 
+LOCAL_LDFLAGS=`cat $(SHOUT_BUILDDIR)/Makefile | grep SPEEX_LIBS | sed -e 's|^SPEEX_LIBS =||'` 
 
-include $(switch_srcdir)/build/modmake.rules
+include $(BASE)/build/modmake.rules
 
 $(MPG123_DIR):
 	$(GETLIB) $(MPG123).tar.gz
 
-$(MPG123_DIR)/Makefile: $(MPG123_DIR)
-	cd $(MPG123_DIR) && $(DEFAULT_VARS) ./configure $(DEFAULT_ARGS) CPPFLAGS= LDFLAGS=
+$(MPG123_BUILDDIR)/Makefile: $(MPG123_DIR)
+	mkdir -p $(MPG123_BUILDDIR)
+	cd $(MPG123_BUILDDIR) && $(DEFAULT_VARS) $(MPG123_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(MPG123_DIR) CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
-$(MPG123LA): $(MPG123_DIR)/Makefile
-	cd $(MPG123_DIR) && $(MAKE)
+$(MPG123LA): $(MPG123_BUILDDIR)/Makefile
+	cd $(MPG123_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
 $(LAME_DIR):
 	$(GETLIB) $(LAME).tar.gz
 
-$(LAME_DIR)/Makefile: $(LAME_DIR)
-	cd $(LAME_DIR) && $(DEFAULT_VARS) ./configure $(DEFAULT_ARGS) --disable-decoder CPPFLAGS= LDFLAGS=
+$(LAME_BUILDDIR)/Makefile: $(LAME_DIR)
+	mkdir -p $(LAME_BUILDDIR)
+	cd $(LAME_BUILDDIR) && $(DEFAULT_VARS) $(LAME_DIR)/configure $(DEFAULT_ARGS) --disable-decoder --srcdir=$(LAME_DIR) CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
-$(LAMELA): $(LAME_DIR)/Makefile
+$(LAMELA): $(LAME_BUILDDIR)/Makefile
 	cd $(LAME_DIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
 $(SHOUT_DIR):
 	$(GETLIB) $(SHOUT).tar.gz
 
-$(SHOUT_DIR)/Makefile: $(SHOUT_DIR)
-	cd $(SHOUT_DIR) && $(DEFAULT_VARS) ./configure $(DEFAULT_ARGS) --without-speex --without-vorbis --without-ogg CPPFLAGS= LDFLAGS=
+$(SHOUT_BUILDDIR)/Makefile: $(SHOUT_DIR)
+	mkdir -p $(SHOUT_BUILDDIR)
+	cd $(SHOUT_BUILDDIR) && $(DEFAULT_VARS) $(SHOUT_DIR)/configure $(DEFAULT_ARGS) --srcdir= $(SHOUT_DIR) --without-speex --without-vorbis --without-ogg CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
-$(SHOUTLA): $(SHOUT_DIR)/Makefile
-	cd $(SHOUT_DIR) && $(MAKE)
+$(SHOUTLA): $(SHOUT_BUILDDIR)/Makefile
+	cd $(SHOUT_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
 

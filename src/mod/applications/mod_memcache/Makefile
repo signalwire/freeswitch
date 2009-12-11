@@ -1,26 +1,28 @@
 MEMCACHED=libmemcached-0.32
-switch_srcdir=../../../..
+BASE=../../../..
 
 WANT_CURL=yes
 
 MEMCACHED_DIR=$(switch_srcdir)/libs/$(MEMCACHED)
+MEMCACHED_BUILDDIR=$(switch_builddir)/libs/$(MEMCACHED)
 
-MEMCACHEDLA=$(MEMCACHED_DIR)/libmemcached/libmemcached.la
+MEMCACHEDLA=$(MEMCACHED_BUILDDIR)/libmemcached/libmemcached.la
 
-LOCAL_CFLAGS=-I$(MEMCACHED_DIR)
+LOCAL_CFLAGS=-I$(MEMCACHED_DIR) -I$(MEMCACHED_BUILDDIR)
 LOCAL_LIBADD=$(MEMCACHEDLA)
 
-include $(switch_srcdir)/build/modmake.rules
+include $(BASE)/build/modmake.rules
 
 $(MEMCACHED_DIR):
 	$(GETLIB) $(MEMCACHED).tar.gz
 
-$(MEMCACHED_DIR)/Makefile: $(MEMCACHED_DIR)
-	cd $(MEMCACHED_DIR) && $(DEFAULT_VARS) ./configure $(DEFAULT_ARGS) --with-memcached=no CPPFLAGS= LDFLAGS=
+$(MEMCACHED_BUILDDIR)/Makefile: $(MEMCACHED_DIR)
+	mkdir -p $(MEMCACHED_BUILDDIR)
+	cd $(MEMCACHED_BUILDDIR) && $(DEFAULT_VARS) $(MEMCACHED_DIR)/configure $(DEFAULT_ARGS) --with-memcached=no --srcdir=$(MEMCACHED_DIR)  CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
-$(MEMCACHEDLA): $(MEMCACHED_DIR)/Makefile
-	cd $(MEMCACHED_DIR) && $(MAKE)
+$(MEMCACHEDLA): $(MEMCACHED_BUILDDIR)/Makefile
+	cd $(MEMCACHED_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
 

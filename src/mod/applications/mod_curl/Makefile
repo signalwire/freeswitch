@@ -15,10 +15,11 @@ include $(BASE)/build/modmake.rules
 $(JSON_DIR):
 	$(GETLIB) $(json-c).tar.gz
 
-$(JSON_DIR)/Makefile: $(JSON_DIR)
-	cd $(JSON_BUILDDIR) && $(DEFAULT_VARS) ./configure $(DEFAULT_ARGS) CPPFLAGS= LDFLAGS=
+$(JSON_BUILDDIR)/Makefile: $(JSON_DIR)
+	mkdir -p $(JSON_BUILDDIR)
+	cd $(JSON_BUILDDIR) && $(DEFAULT_VARS) $(JSON_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(JSON_DIR) CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
-$(JSONLA): $(JSON_DIR)/Makefile
+$(JSONLA): $(JSON_BUILDDIR)/Makefile
 	cd $(JSON_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
