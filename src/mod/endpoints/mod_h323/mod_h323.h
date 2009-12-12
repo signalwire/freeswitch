@@ -261,6 +261,8 @@ class FSH323Connection:public H323Connection {
 	bool m_txChennel;
 	bool m_ChennelAnswer;
 	bool m_ChennelProgress;
+	PSyncPoint m_rxAudioOpened;
+	PSyncPoint m_txAudioOpened;    
   protected:
 	FSH323EndPoint * m_endpoint;
 	PString m_remoteAddr;

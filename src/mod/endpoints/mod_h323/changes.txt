@@ -1,3 +1,4 @@
+fix slow start handling
 move faststart to callproceeding due to some broken hardware not anderstand 
     correclty faststart in progress.
 fix rtp timer initialisation.

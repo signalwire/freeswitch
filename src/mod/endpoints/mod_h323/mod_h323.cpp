@@ -1,5 +1,5 @@
 /*
-	Version 0.0.17
+	Version 0.0.18
 */
 
 #include "mod_h323.h"
@@ -786,8 +786,23 @@ bool FSH323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU){
 	H323SignalPDU callProceedingPDU;
 	H225_CallProceeding_UUIE & callProceeding = callProceedingPDU.BuildCallProceeding(*this);
 	
-	if (SendFastStartAcknowledge(callProceeding.m_fastStart))
+	if (SendFastStartAcknowledge(callProceeding.m_fastStart)){
 					callProceeding.IncludeOptionalField(H225_CallProceeding_UUIE::e_fastStart);
+	} else {
+		PTRACE(2, "H323\tSendFastStartAcknowledge = FALSE ");
+		if (connectionState == ShuttingDownConnection){
+			return true;
+		}
+		earlyStart = TRUE;
+		if (!h245Tunneling && (controlChannel == NULL)) {
+			if (!StartControlChannel()){
+				return true;
+			}
+			callProceeding.IncludeOptionalField(H225_CallProceeding_UUIE::e_h245Address);
+			controlChannel->SetUpTransportPDU(callProceeding.m_h245Address, TRUE);
+		}
+	}
+					
 	if (!WriteSignalPDU(callProceedingPDU))
         return false;
 		
@@ -984,6 +999,8 @@ switch_status_t FSH323Connection::kill_channel(int sig){
         break;
     case SWITCH_SIG_KILL:
     default:
+		m_rxAudioOpened.Signal();
+		m_txAudioOpened.Signal();        
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
 			switch_rtp_kill_socket(tech_pvt->rtp_session);
 		}
@@ -1038,37 +1055,48 @@ switch_status_t FSH323Connection::receive_message(switch_core_session_message_t 
     }
 
     switch (msg->message_id) {
-		case SWITCH_MESSAGE_INDICATE_RINGING:{
+		case SWITCH_MESSAGE_INDICATE_RINGING:	{
 			 AnsweringCall(AnswerCallPending);
 			break;
 		}
-		case SWITCH_MESSAGE_INDICATE_DEFLECT:{
+		case SWITCH_MESSAGE_INDICATE_DEFLECT:	{
 			break;
 		}
-		case SWITCH_MESSAGE_INDICATE_PROGRESS:{		
+		case SWITCH_MESSAGE_INDICATE_PROGRESS:	{		
 			AnsweringCall(AnswerCallPending);
 			AnsweringCall(AnswerCallDeferredWithMedia);
 			
-			if (m_txChennel && m_rxChennel)
+			if (m_txChennel && m_rxChennel){
 				if (!switch_channel_test_flag(m_fsChannel, CF_EARLY_MEDIA)) {
 					switch_channel_mark_pre_answered(m_fsChannel);
 				}
-			else m_callOnPreAnswer = true;
+			} else { 
+				m_callOnPreAnswer = true;
+				if (fastStartState == FastStartDisabled){
+					m_txAudioOpened.Wait();
+				}
+			}
 			break;
 		}
-		case SWITCH_MESSAGE_INDICATE_ANSWER:{
+		case SWITCH_MESSAGE_INDICATE_ANSWER:	{
 			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 				return SWITCH_STATUS_FALSE;
 			}
 			AnsweringCall(H323Connection::AnswerCallNow);
 			PTRACE(4, "mod_h323\tMedia started on connection " << *this);
 		
-			if (m_txChennel && m_rxChennel)
+			if (m_txChennel && m_rxChennel){
 				if (!switch_channel_test_flag(m_fsChannel, CF_EARLY_MEDIA)) {
 					PTRACE(4, "mod_h323\t-------------------->switch_channel_mark_answered(m_fsChannel) " << *this);
 					switch_channel_mark_answered(m_fsChannel);
 				}
-			else m_ChennelAnswer =  true;
+			} else{
+				m_ChennelAnswer =  true;
+				if (fastStartState == FastStartDisabled){
+					m_txAudioOpened.Wait();
+					m_rxAudioOpened.Wait();
+				}
+			}
 			break;
 		}
 		default:{
@@ -1393,7 +1421,7 @@ PBoolean FSH323_ExternalRTPChannel::Start(){
 	PTRACE(4, "mod_h323\t------------------->samples_per_packet = "<<m_switchCodec->implementation->samples_per_packet);
 	PTRACE(4, "mod_h323\t------------------->actual_samples_per_second = "<<m_switchCodec->implementation->actual_samples_per_second);
 	
-	if ((!m_conn->m_startRTP)&&(GetDirection() == IsReceiver)) {			
+	if ((!m_conn->m_startRTP)) {			
 		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT|SWITCH_RTP_FLAG_AUTO_CNG|SWITCH_RTP_FLAG_RAW_WRITE);
 		PTRACE(4, "mod_h323\t------------------->timer_name = "<<switch_channel_get_variable(m_fsChannel, "timer_name"));
 		if ((var = switch_channel_get_variable(m_fsChannel, "timer_name"))) {
@@ -1425,6 +1453,10 @@ PBoolean FSH323_ExternalRTPChannel::Start(){
 	
     PTRACE(4, "mod_h323\t------------->External RTP address "<<m_RTPremoteIP<<":"<<m_RTPremotePort);
 	switch_mutex_unlock(tech_pvt->h323_mutex);
+	
+	if (GetDirection() == IsReceiver) m_conn->m_rxAudioOpened.Signal();
+	else m_conn->m_txAudioOpened.Signal();                             
+	
 	if ( m_conn->m_ChennelAnswer && m_conn->m_rxChennel &&  m_conn->m_txChennel)
 		switch_channel_mark_answered(m_fsChannel);
 		
