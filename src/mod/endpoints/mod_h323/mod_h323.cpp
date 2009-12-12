@@ -1,5 +1,5 @@
 /*
-	Version 0.0.18
+	Version 0.0.19
 */
 
 #include "mod_h323.h"
@@ -857,10 +857,22 @@ bool FSH323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCa
 
 
 bool FSH323Connection::OnAlerting(const H323SignalPDU &alertingPDU, const PString &user){
-
+	
 	PTRACE(4, "mod_h323\t======>PFSH323Connection::OnAlerting user = "<<(const char *)user<<" ["<<*this<<"]");
+	unsigned pi;
 	switch_status_t status = switch_channel_mark_ring_ready(m_fsChannel);
 	PTRACE(4, "mod_h323\t----------->OnAlerting return = "<<status);
+	
+	if (!alertingPDU.GetQ931().GetProgressIndicator(pi))
+		pi = 0;
+	PTRACE(4, "mod_h323\t----------->OnAlerting PI = "<<pi);
+	if (pi > 0){
+		if ((m_rxChennel && m_txChennel) || (m_ChennelProgress && m_rxChennel))
+			switch_channel_mark_pre_answered(m_fsChannel);
+		else{
+			m_ChennelProgress = true;
+		}
+	}
 	return ( status == SWITCH_STATUS_SUCCESS);
 }
 
@@ -1530,7 +1542,7 @@ FSH323Connection * FSH323EndPoint::FSMakeCall(const PString & dest, void *userDa
 static switch_call_cause_t create_outgoing_channel(switch_core_session_t *session,
                                                    switch_event_t *var_event,
                                                    switch_caller_profile_t *outbound_profile,
-                                                   switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause){
+                                                   switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,switch_call_cause_t *cancel_cause){
 	PTRACE(4, "mod_h323\t======>create_outgoing_channel DST NUMBER = "<<outbound_profile->destination_number);
 	
 	FSH323Connection * connection;
