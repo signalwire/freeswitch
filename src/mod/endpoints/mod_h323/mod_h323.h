@@ -214,6 +214,7 @@ class FSH323Connection:public H323Connection {
 	virtual PBoolean OnStartLogicalChannel(H323Channel& channel);
 	virtual PBoolean OnCreateLogicalChannel(const H323Capability& capability, H323Channel::Directions dir, unsigned& errorCode);
 	virtual	bool OnReceivedSignalSetup(const H323SignalPDU & setupPDU);
+	virtual	bool OnReceivedCallProceeding(const H323SignalPDU & pdu);
 	virtual void OnReceivedReleaseComplete(const H323SignalPDU & pdu);
 	virtual	bool OnReceivedProgress(const H323SignalPDU &);
 	virtual bool OnSendCallProceeding(H323SignalPDU & callProceedingPDU);
