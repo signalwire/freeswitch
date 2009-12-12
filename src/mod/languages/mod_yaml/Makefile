@@ -1,4 +1,5 @@
 BASE=../../../..
+
 YAMLLIB=$(switch_srcdir)/libs/yaml
 YAMLBUILDLIB=$(switch_builddir)/libs/yaml
 LIBYAML_A=$(YAMLBUILDLIB)/src/.libs/libyaml.a
@@ -11,7 +12,8 @@ include $(BASE)/build/modmake.rules
 local_depend: $(LIBYAML_A)
 
 $(LIBYAML_A):
-	cd $(YAMLBUILDLIB) && $(DEFAULT_VARS) ./configure $(DEFAULT_ARGS)
+	mkdir -p $(YAMLBUILDLIB)
+	cd $(YAMLBUILDLIB) && $(DEFAULT_VARS) $(YAMLLIB)/configure $(DEFAULT_ARGS) --srcdir=$(YAMLLIB)
 	cd $(YAMLBUILDLIB) && $(MAKE)
 
 yamlclean:
