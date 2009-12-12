@@ -215,7 +215,6 @@ struct switch_rtp {
 	switch_rtp_stats_t stats;
 	uint32_t hot_hits;
 	uint32_t sync_packets;
-	uint32_t dtmf_wait;
 
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
@@ -1605,7 +1604,6 @@ static void do_2833(switch_rtp_t *rtp_session)
 				rtp_session->next_write_samplecount = rtp_session->timer.samplecount + samples * 5;
 			}
 			rtp_session->dtmf_data.out_digit_dur = 0;
-			rtp_session->dtmf_wait = rtp_session->samples_per_interval ? ((rtp_session->samples_per_second / 4) / rtp_session->samples_per_interval) : 12;
 		}
 	}
 
@@ -1618,11 +1616,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 			}
 		}
 
-		if (rtp_session->dtmf_wait) {
-			rtp_session->dtmf_wait--;
-		}
-
-		if (!rtp_session->dtmf_wait && switch_queue_trypop(rtp_session->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_dtmf_t *rdigit = pop;
 			int64_t offset;
 			switch_size_t wrote;
@@ -1824,6 +1818,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	while (switch_rtp_ready(rtp_session)) {
 		int do_cng = 0;
+		bytes = 0;
 
 		if (rtp_session->timer.interval) {
 			if ((switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) &&
@@ -1857,6 +1852,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 	recvfrom:
+		bytes = 0;
 
 		if (!switch_rtp_ready(rtp_session)) {
 			break;
@@ -1966,12 +1962,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (bytes) {
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ)) {
 				if (((rtp_session->cng_pt && rtp_session->recv_msg.header.pt == rtp_session->cng_pt) || rtp_session->recv_msg.header.pt == 13)) {
-					bytes = 0;
 					goto recvfrom;			 
 					
 				} 
 			} else if (!switch_cmp_addr(rtp_session->from_addr, rtp_session->remote_addr)) {
-				bytes = 0;
 				goto recvfrom;			 
 				
 			}
@@ -2274,8 +2268,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (!switch_rtp_ready(rtp_session)) {
 				goto end;
 			}
-			switch_cond_next();
-			goto recvfrom;
+			return_cng_frame();
 		}
 
 	timer_check:
