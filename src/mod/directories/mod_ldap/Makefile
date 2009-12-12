@@ -7,6 +7,7 @@ LDAP_BUILDDIR=$(switch_builddir)/libs/$(LDAP)
 LDAPLA=$(LDAP_BUILDDIR)/libraries/libldap_r/libldap_r.la
 LIBLBERLA=$(LDAP_BUILDDIR)/libraries/liblber/liblber.la
 
+
 LOCAL_CFLAGS=-DWITH_OPENLDAP -DLDAP_DEPRECATED -I$(LDAP_DIR)/include
 
 LOCAL_LIBADD=$(LDAPLA) $(LIBLBERLA)

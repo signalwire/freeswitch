@@ -18,9 +18,12 @@ DEFAULT_ARGS+= --disable-slapd --disable-slurpd --disable-relay --disable-bdb --
 
 $(LDAP_DIR):
 	$(GETLIB) $(LDAP).tar.gz
+
+$(LDAP_BUILDDIR)/Makefile: $(LDAP_DIR)
 	mkdir -p $(LDAP_BUILDDIR)
 	cd $(LDAP_BUILDDIR) && $(DEFAULT_VARS) $(LDAP_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(LDAP_DIR)
 
-$(LIBLUTILA) $(LDAPLA) $(LIBLBERLA): $(LDAP_DIR)
+$(LDAPLA) $(LIBLBERLA): $(LDAP_BUILDDIR)/Makefile
 	cd $(LDAP_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
+
