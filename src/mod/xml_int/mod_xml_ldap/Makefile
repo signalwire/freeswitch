@@ -22,6 +22,7 @@ $(LDAP_DIR):
 $(LDAP_BUILDDIR)/Makefile: $(LDAP_DIR)
 	mkdir -p $(LDAP_BUILDDIR)
 	cd $(LDAP_BUILDDIR) && $(DEFAULT_VARS) $(LDAP_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(LDAP_DIR)
+	$(TOUCH_TARGET)
 
 $(LDAPLA) $(LIBLBERLA): $(LDAP_BUILDDIR)/Makefile
 	cd $(LDAP_BUILDDIR) && $(MAKE)
