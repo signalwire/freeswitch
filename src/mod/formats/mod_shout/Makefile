@@ -17,7 +17,7 @@ LAMELA=$(LAME_BUILDDIR)/libmp3lame/libmp3lame.la
 SHOUTLA=$(SHOUT_BUILDDIR)/src/libshout.la
 MPG123LA=$(MPG123_BUILDDIR)/src/libmpg123/libmpg123.la
 
-LOCAL_CFLAGS=-I$(SHOUT_DIR)/include -I$(LAME_DIR)/include -I$(MPG123_DIR)/src
+LOCAL_CFLAGS=-I$(SHOUT_DIR)/include -I$(LAME_DIR)/include -I$(MPG123_DIR)/src  -I$(MPG123_BUILDDIR)/src -I$(SHOUT_BUILDDIR)/include 
 LOCAL_LIBADD=$(LAMELA) $(SHOUTLA) $(MPG123LA)
 
 LOCAL_LDFLAGS=`cat $(SHOUT_BUILDDIR)/Makefile | grep SPEEX_LIBS | sed -e 's|^SPEEX_LIBS =||'` 
@@ -53,7 +53,7 @@ $(SHOUT_DIR):
 
 $(SHOUT_BUILDDIR)/Makefile: $(SHOUT_DIR)
 	mkdir -p $(SHOUT_BUILDDIR)
-	cd $(SHOUT_BUILDDIR) && $(DEFAULT_VARS) $(SHOUT_DIR)/configure $(DEFAULT_ARGS) --srcdir= $(SHOUT_DIR) --without-speex --without-vorbis --without-ogg CPPFLAGS= LDFLAGS=
+	cd $(SHOUT_BUILDDIR) && $(DEFAULT_VARS) $(SHOUT_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(SHOUT_DIR) --without-speex --without-vorbis --without-ogg CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
 $(SHOUTLA): $(SHOUT_BUILDDIR)/Makefile
