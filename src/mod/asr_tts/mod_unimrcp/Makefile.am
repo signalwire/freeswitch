@@ -2,8 +2,9 @@ include $(top_srcdir)/build/modmake.rulesam
 
 MODNAME=mod_unimrcp
 
-UNIMRCP_DIR=$(switch_builddir)/libs/unimrcp
-UNIMRCPLA=$(UNIMRCP_DIR)/platforms/libunimrcp-client/libunimrcpclient.la
+UNIMRCP_DIR=$(switch_srcdir)/libs/unimrcp
+UNIMRCP_BUILDDIR=$(switch_builddir)/libs/unimrcp
+UNIMRCPLA=$(UNIMRCP_BUILDDIR)/platforms/libunimrcp-client/libunimrcpclient.la
 
 mod_LTLIBRARIES = mod_unimrcp.la
 mod_unimrcp_la_SOURCES = mod_unimrcp.c
@@ -11,6 +12,8 @@ mod_unimrcp_la_CFLAGS  = $(AM_CFLAGS)
 mod_unimrcp_la_CFLAGS += -I.
 mod_unimrcp_la_CFLAGS += -I$(switch_srcdir)/libs/apr/include
 mod_unimrcp_la_CFLAGS += -I$(switch_srcdir)/libs/apr-util/include
+mod_unimrcp_la_CFLAGS += -I$(switch_builddir)/libs/apr/include
+mod_unimrcp_la_CFLAGS += -I$(switch_builddir)/libs/apr-util/include
 mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/build
 mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/platforms/libunimrcp-client/include
 mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/modules/mrcp-sofiasip/include
@@ -35,7 +38,7 @@ endif
 BUILT_SOURCES = $(UNIMRCPLA)
 
 $(UNIMRCPLA): $(UNIMRCP_DIR) $(UNIMRCP_DIR)/.update
-	cd $(UNIMRCP_DIR) && $(MAKE)
+	cd $(UNIMRCP_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
 $(mod_unimrcp_la_SOURCES) : $(BUILT_SOURCES)
