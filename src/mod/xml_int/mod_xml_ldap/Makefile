@@ -1,6 +1,6 @@
 BASE=../../../..
 
-LDAP=openldap-2.4.11
+LDAP=openldap-2.4.19
 LDAP_DIR=$(switch_srcdir)/libs/$(LDAP)
 LDAP_BUILDDIR=$(switch_builddir)/libs/$(LDAP)
 
