@@ -1810,6 +1810,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   TAG_IF(!zstr(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
 			   TAG_IF(!zstr(route_uri), NUTAG_PROXY(route_uri)),
 			   TAG_IF(!zstr(route), SIPTAG_ROUTE_STR(route)),
+			   TAG_IF(tech_pvt->profile->minimum_session_expires, NUTAG_MIN_SE(tech_pvt->profile->minimum_session_expires)),
 			   SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
 			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 			   SOATAG_REUSE_REJECTED(1),

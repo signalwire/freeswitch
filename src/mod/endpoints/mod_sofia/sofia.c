@@ -1156,7 +1156,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_ALLOW("NOTIFY"),
 				   NUTAG_ALLOW_EVENTS("talk"),
 				   NUTAG_SESSION_TIMER(profile->session_timeout),
-				   TAG_IF(profile->minimum_session_expires, NUTAG_MIN_SE(profile->minimum_session_expires)),
 				   NTATAG_MAX_PROCEEDING(profile->max_proceeding),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW("PUBLISH")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW("SUBSCRIBE")),
