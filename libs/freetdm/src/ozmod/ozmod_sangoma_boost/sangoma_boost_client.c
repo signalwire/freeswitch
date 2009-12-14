@@ -38,7 +38,6 @@
 #include "openzap.h"
 #include "sangoma_boost_client.h"
 
-
 #ifndef HAVE_GETHOSTBYNAME_R
 extern int gethostbyname_r (const char *__name, 
 							struct hostent *__result_buf, 
@@ -76,16 +75,17 @@ static void sangomabc_print_event_call(sangomabc_connection_t *mcon, sangomabc_e
 {
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
-	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT: %s:(%X) [s%dc%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s] Rdnis=[%s]\n",
+
+	zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "%s EVENT: %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s] Rdnis=[%s]\n",
 		    dir ? "TX":"RX", 
-			sangomabc_event_id_name(event->event_id), 
-			event->event_id, 
-			event->span, 
-			event->chan, 
-			event->call_setup_id, 
-			event->fseqno, 
-			strlen(event->calling_name)?event->calling_name:"N/A", 
-			(event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"), 
+			sangomabc_event_id_name(event->event_id),
+			event->event_id,
+			event->span+1,
+			event->chan+1,
+			event->call_setup_id,
+			event->fseqno,
+			strlen(event->calling_name)?event->calling_name:"N/A",
+			(event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"),
 			(event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A"),
 			event->isup_in_rdnis);
 

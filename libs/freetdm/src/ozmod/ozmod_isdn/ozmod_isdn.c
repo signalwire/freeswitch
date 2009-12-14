@@ -992,7 +992,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 							}
 
 							/* TODO: make this more safe with strncat() */
-							pos = strlen(zchan->caller_data.dnis.digits);
+							pos = (int)strlen(zchan->caller_data.dnis.digits);
 							strcat(&zchan->caller_data.dnis.digits[pos],    (char *)callednum->Digit);
 
 							/* update timer */

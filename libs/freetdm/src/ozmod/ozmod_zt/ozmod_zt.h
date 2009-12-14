@@ -241,7 +241,8 @@ ZT_SIG_EM					= (1 << 6),					/* E&M */
 ZT_SIG_CLEAR				= (1 << 7),
 ZT_SIG_HDLCRAW				= ((1 << 8)  | ZT_SIG_CLEAR),
 ZT_SIG_HDLCFCS				= ((1 << 9)  | ZT_SIG_HDLCRAW),
-ZT_SIG_CAS                              = (1 << 15)
+ZT_SIG_CAS                  = (1 << 15),
+ZT_SIG_HARDHDLC				= (1 << 19),
 } zt_sigtype_t;
 
 typedef enum {

@@ -207,7 +207,7 @@ ie Q931AppendIE( L3UCHAR *pm, L3UCHAR *pi)
 	L3INT iISize = pIE->Size;
 
 	L3UCHAR *pBuf = &pMes->buf[0];
-	L3INT Off = pMes->Size - (pBuf - pm);
+	L3INT Off = (L3INT)(pMes->Size - (pBuf - pm));
 	IE = (ie)(Off | 0x8000);
 
 	memcpy(&pm[pMes->Size], pi, iISize);
