@@ -63,7 +63,7 @@ const unsigned sdp_struct_align_ = sizeof(void *) - STRUCT_ALIGN_;
 
 
 #define STRUCT_DUP(p, dst, src) \
-  ASSERT_STRUCT_ALIGN(p); assert(*(int*)(src) >= (int)sizeof(*src));	\
+  ASSERT_STRUCT_ALIGN(p); \ 
   ((*(int*)(src) >= (int)sizeof(*src)					\
     ? (dst = memcpy((p), (src), sizeof(*src)))				\
     : (dst = memcpy((p), (src), *(int*)(src))),				\
