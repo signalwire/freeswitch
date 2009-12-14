@@ -677,6 +677,7 @@ static void handle_call_stop(zap_span_t *span, sangomabc_connection_t *mcon, san
 						0,
 						SIGBOOST_EVENT_CALL_STOPPED_ACK,
 						0);
+			zap_mutex_unlock(zchan->mutex);
 			return;
 		} else {
 			zap_set_state_r(zchan, ZAP_CHANNEL_STATE_TERMINATING, 0, r);
@@ -909,7 +910,7 @@ static int parse_sangoma_event(zap_span_t *span, sangomabc_connection_t *mcon, s
     case SIGBOOST_EVENT_CALL_START_ACK:
 		handle_call_start_ack(mcon, event);
 		break;
-	case SIGBOOST_EVENT_CALL_PROGRESS:
+    case SIGBOOST_EVENT_CALL_PROGRESS:
 		handle_call_progress(mcon, event);
 		break;
     case SIGBOOST_EVENT_CALL_START_NACK:
