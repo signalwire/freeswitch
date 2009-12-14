@@ -1392,17 +1392,17 @@ static void switch_load_core_config(const char *file)
 					runtime.mailer_app_args = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "sessions-per-second") && !zstr(val)) {
 					switch_core_sessions_per_second(atoi(val));
-				} else if (!strcasecmp(var, "max_dtmf_duration") && !zstr(val)) {
+				} else if (!strcasecmp(var, "max-dtmf-duration") && !zstr(val)) {
 					int tmp = atoi(val);
 					if (tmp > 0) {
 						switch_core_max_dtmf_duration((uint32_t) tmp);
 					}
-				} else if (!strcasecmp(var, "min_dtmf_duration") && !zstr(val)) {
+				} else if (!strcasecmp(var, "min-dtmf-duration") && !zstr(val)) {
 					int tmp = atoi(val);
 					if (tmp > 0) {
 						switch_core_min_dtmf_duration((uint32_t) tmp);
 					}
-				} else if (!strcasecmp(var, "default_dtmf_duration") && !zstr(val)) {
+				} else if (!strcasecmp(var, "default-dtmf-duration") && !zstr(val)) {
 					int tmp = atoi(val);
 					if (tmp > 0) {
 						switch_core_default_dtmf_duration((uint32_t) tmp);

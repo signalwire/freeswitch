@@ -24,25 +24,25 @@
     <param name="sessions-per-second" value="30"/>
     <!-- Default Global Log Level - value is one of debug,info,notice,warning,err,crit,alert -->
     <param name="loglevel" value="debug"/>
-	<!-- The min_dtmf_duration specifies the minimum DTMF duration to use on 
+	<!-- The min-dtmf-duration specifies the minimum DTMF duration to use on 
 	     outgoing events. Events shorter than this will be increased in duration
 		 to match min_dtmf_duration. You cannot configure a dtmf duration on a 
 		 profile that is less than this setting. You may increase this value,
 		 but cannot set it lower than 400. This value cannot exceed 
-		 max_dtmf_duration. -->
-    <!--<param name="min_dtmf_duration" value="400"/>-->
-	<!-- The max_dtmf_duration caps the playout of a DTMF event at the specified
+		 max-dtmf-duration. -->
+    <!--<param name="min-dtmf-duration" value="400"/>-->
+	<!-- The max-dtmf-duration caps the playout of a DTMF event at the specified
 	     duration. Events exceeding this duration will be truncated to this
 		 duration. You cannot configure a duration on a profile that exceeds
 		 this setting. This setting can be lowered, but cannot exceed 192000. 
 		 This setting cannot be set lower than min_dtmf_duration. -->
-    <!--<param name="max_dtmf_duration" value="192000"/>-->
+    <!--<param name="max-dtmf-duration" value="192000"/>-->
 	<!-- The default_dtmf_duration specifies the DTMF duration to use on
 	     originated DTMF events or on events that are received without a
 		 duration specified. This value can be increased or lowered. This
 		 value is lower-bounded by min_dtmf_duration and upper-bounded by
-		 max_dtmf_duration. -->
-    <!--<param name="default_dtmf_duration" value="2000"/>-->
+		 max-dtmf-duration\. -->
+    <!--<param name="default-dtmf-duration" value="2000"/>-->
     <!--
          If you want to send out voicemail notifications via Windows you'll need to change the mailer-app
          variable to the setting below:
