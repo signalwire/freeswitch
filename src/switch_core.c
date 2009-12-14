@@ -1249,6 +1249,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_variable("base_dir", SWITCH_GLOBAL_dirs.base_dir);
 	switch_core_set_serial();
 
+	switch_console_init(runtime.memory_pool);
 	switch_event_init(runtime.memory_pool);
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
@@ -1740,6 +1741,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 		switch_nat_shutdown();
 	}
 	switch_xml_destroy();
+
+	switch_console_shutdown();
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Closing Event Engine.\n");
 	switch_event_shutdown();

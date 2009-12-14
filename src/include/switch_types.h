@@ -1484,6 +1484,21 @@ typedef struct switch_chat_interface switch_chat_interface_t;
 typedef struct switch_management_interface switch_management_interface_t;
 typedef struct switch_core_port_allocator switch_core_port_allocator_t;
 typedef struct switch_media_bug switch_media_bug_t;
+
+struct switch_console_callback_match_node {
+	char *val;
+	struct switch_console_callback_match_node *next;
+};
+typedef struct switch_console_callback_match_node switch_console_callback_match_node_t;
+
+struct switch_console_callback_match {
+	struct switch_console_callback_match_node *head;
+	struct switch_console_callback_match_node *end;
+	switch_memory_pool_t *pool;
+};
+typedef struct switch_console_callback_match switch_console_callback_match_t;
+
+typedef switch_status_t (*switch_console_complete_callback_t) (const char *, const char *, switch_console_callback_match_t **matches);
 typedef switch_bool_t (*switch_media_bug_callback_t) (switch_media_bug_t *, void *, switch_abc_type_t);
 typedef switch_bool_t (*switch_tone_detect_callback_t) (switch_core_session_t *, const char *, const char *);
 typedef struct switch_xml_binding switch_xml_binding_t;

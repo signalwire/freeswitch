@@ -3623,6 +3623,105 @@ static void general_event_handler(switch_event_t *event)
 	}
 }
 
+static switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	sofia_profile_t *profile = NULL;
+	switch_hash_index_t *hi;
+	void *val;
+	const void *vvar;
+	switch_console_callback_match_t *my_matches = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &vvar, NULL, &val);
+		profile = (sofia_profile_t *) val;
+		if (sofia_test_pflag(profile, PFLAG_RUNNING)) {
+			switch_console_push_match(&my_matches, (const char *)vvar);
+		}
+	}
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	if (my_matches) {
+		*matches = my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+
+	return status;
+}
+
+static switch_status_t list_gateways(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	sofia_profile_t *profile = NULL;
+	switch_hash_index_t *hi;
+	void *val;
+	const void *vvar;
+	switch_console_callback_match_t *my_matches = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &vvar, NULL, &val);
+		profile = (sofia_profile_t *) val;
+		if (sofia_test_pflag(profile, PFLAG_RUNNING)) {
+			sofia_gateway_t *gp;
+			for (gp = profile->gateways; gp; gp = gp->next) {
+				switch_console_push_match(&my_matches, gp->name);
+			}
+		}
+	}
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	if (my_matches) {
+		*matches = my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	
+	return status;
+}
+
+
+static switch_status_t list_profile_gateway(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	sofia_profile_t *profile = NULL;
+	switch_console_callback_match_t *my_matches = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *dup = NULL;
+	int argc;
+	char *argv[4] = { 0 };
+
+	if (zstr(line)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	dup = strdup(line);
+	argc = switch_split(dup, ' ', argv);
+	
+	if (!argv[2]) {
+		goto end;
+	}
+
+	if ((profile = sofia_glue_find_profile(argv[2]))) {
+		sofia_gateway_t *gp;
+		for (gp = profile->gateways; gp; gp = gp->next) {
+			switch_console_push_match(&my_matches, gp->name);
+		}
+		sofia_glue_release_profile(profile);
+	}
+
+	if (my_matches) {
+		*matches = my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	
+ end:
+
+	switch_safe_free(dup);
+
+	return status;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 {
 	switch_chat_interface_t *chat_interface;
@@ -3744,16 +3843,24 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia profile");
 	switch_console_set_complete("add sofia profile restart all");
 
-	switch_console_set_complete("add sofia profile _any_ start reloadxml");
-	switch_console_set_complete("add sofia profile _any_ stop reloadxml");
-	switch_console_set_complete("add sofia profile _any_ rescan reloadxml");
-	switch_console_set_complete("add sofia profile _any_ restart reloadxml");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles start reloadxml");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles stop reloadxml");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles rescan reloadxml");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles restart reloadxml");
 
-	switch_console_set_complete("add sofia profile _any_ flush_inbound_reg");
-	switch_console_set_complete("add sofia profile _any_ register");
-	switch_console_set_complete("add sofia profile _any_ killgw");
-	switch_console_set_complete("add sofia profile _any_ siptrace on");
-	switch_console_set_complete("add sofia profile _any_ siptrace off");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles flush_inbound_reg");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles register ::sofia::list_profile_gateway");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles unregister ::sofia::list_profile_gateway");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles killgw ::sofia::list_profile_gateway");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles siptrace on");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles siptrace off");
+
+	switch_console_set_complete("add sofia status profile ::sofia::list_profiles");
+	switch_console_set_complete("add sofia status gateway ::sofia::list_gateways");
+
+	switch_console_add_complete_func("::sofia::list_profiles", list_profiles);
+	switch_console_add_complete_func("::sofia::list_gateways", list_gateways);
+	switch_console_add_complete_func("::sofia::list_profile_gateway", list_profile_gateway);
 
 
 	SWITCH_ADD_API(api_interface, "sofia_contact", "Sofia Contacts", sofia_contact_function, "[profile/]<user>@<domain>");
@@ -3767,6 +3874,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 {
 	int sanity = 0;
 
+	switch_console_del_complete_func("::sofia::list_profiles");
 	switch_console_set_complete("del sofia");
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
