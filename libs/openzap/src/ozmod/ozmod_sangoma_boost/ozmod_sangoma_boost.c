@@ -473,9 +473,9 @@ static void handle_call_progress(sangomabc_connection_t *mcon, sangomabc_short_e
 
 
 	zap_log(ZAP_LOG_CRIT, "START PROGRESS CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
-
-	zap_set_sflag(zchan, SFLAG_SENT_FINAL_MSG);
-	
+	if (zchan) {
+		zap_set_sflag(zchan, SFLAG_SENT_FINAL_MSG);
+	}
 	sangomabc_exec_command(mcon,
 					   event->span,
 					   event->chan,
@@ -665,7 +665,22 @@ static void handle_call_stop(zap_span_t *span, sangomabc_connection_t *mcon, san
 		int r = 0;
 
 		zap_mutex_lock(zchan->mutex);
-		zap_set_state_r(zchan, ZAP_CHANNEL_STATE_TERMINATING, 0, r);
+		
+		if (zchan->state == ZAP_CHANNEL_STATE_HANGUP) {
+			/* racing condition where both sides initiated a hangup 
+			 * Do not change current state as channel is already clearing
+			 * itself through local initiated hangup */
+			
+			sangomabc_exec_command(mcon,
+						zchan->physical_span_id-1,
+						zchan->physical_chan_id-1,
+						0,
+						SIGBOOST_EVENT_CALL_STOPPED_ACK,
+						0);
+			return;
+		} else {
+			zap_set_state_r(zchan, ZAP_CHANNEL_STATE_TERMINATING, 0, r);
+		}
 
 		if (r == ZAP_STATE_CHANGE_SUCCESS) {
 			zchan->caller_data.hangup_cause = event->release_cause;
@@ -682,7 +697,6 @@ static void handle_call_stop(zap_span_t *span, sangomabc_connection_t *mcon, san
 	} /* else we have to do it ourselves.... */
 
 	zap_log(ZAP_LOG_WARNING, "We could not find chan: s%dc%d\n", event->span, event->chan);
-
 	release_request_id_span_chan(event->span, event->chan);
 }
 
@@ -1104,7 +1118,6 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		break;
 	case ZAP_CHANNEL_STATE_TERMINATING:
 		{
-
 			sig.event_id = ZAP_SIGEVENT_STOP;
 			status = sangoma_boost_data->signal_cb(&sig);
 		}
