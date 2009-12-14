@@ -361,6 +361,144 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 	fflush(handle);
 }
 
+struct match_helper {
+	switch_console_callback_match_t *my_matches;
+};
+
+static int uuid_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct match_helper *h = (struct match_helper *) pArg;
+
+	switch_console_push_match(&h->my_matches, argv[0]);
+	return 0;
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_console_list_uuid(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	char *sql;
+	struct match_helper h = { 0 };
+	switch_cache_db_handle_t *db = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *errmsg;
+	
+	switch_core_db_handle(&db);
+
+	if (!zstr(cursor)) {
+		sql = switch_mprintf("select distinct uuid from channels where uuid like '%q%%' and hostname='%q' order by uuid", 
+							 cursor, switch_core_get_variable("hostname"));
+	} else {
+		sql = switch_mprintf("select distinct uuid from channels where hostname='%q' order by uuid", 
+							 switch_core_get_variable("hostname"));
+	}
+
+	switch_cache_db_execute_sql_callback(db, sql, uuid_callback, &h, &errmsg);
+	free(sql);
+
+	switch_cache_db_release_db_handle(&db);
+
+	if (h.my_matches) {
+		*matches = h.my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+
+	return status;
+}
+
+
+static struct {
+	switch_hash_t *func_hash;
+	switch_mutex_t *func_mutex;
+} globals;
+
+SWITCH_DECLARE(switch_status_t) switch_console_init(switch_memory_pool_t *pool)
+{
+	switch_mutex_init(&globals.func_mutex, SWITCH_MUTEX_NESTED, pool);
+	switch_core_hash_init(&globals.func_hash, pool);
+	switch_console_add_complete_func("::console::list_uuid", switch_console_list_uuid);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_console_shutdown(void)
+{
+	return switch_core_hash_destroy(&globals.func_hash);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_console_add_complete_func(const char *name, switch_console_complete_callback_t cb)
+{
+	switch_status_t status;
+	
+	switch_mutex_lock(globals.func_mutex);
+	status = switch_core_hash_insert(globals.func_hash, name, (void *)(intptr_t)cb);
+	switch_mutex_unlock(globals.func_mutex);
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_console_del_complete_func(const char *name)
+{
+	switch_status_t status;
+	
+	switch_mutex_lock(globals.func_mutex);
+	status = switch_core_hash_insert(globals.func_hash, name, NULL);
+	switch_mutex_unlock(globals.func_mutex);
+
+    return status;
+}
+
+SWITCH_DECLARE(void) switch_console_free_matches(switch_console_callback_match_t **matches)
+{
+	switch_console_callback_match_t *my_match = *matches;
+	switch_console_callback_match_node_t *m, *cur;
+
+	/* Don't play with matches */
+	*matches = NULL;
+
+	m = my_match->head;
+	while(m) {
+		cur = m;
+		m = m->next;
+		free(cur->val);
+		free(cur);
+	}
+}
+
+SWITCH_DECLARE(void) switch_console_push_match(switch_console_callback_match_t **matches, const char *new_val)
+{
+	switch_console_callback_match_node_t *match;
+
+	if (!*matches) {
+		switch_zmalloc(*matches, sizeof(**matches));
+	}
+
+	switch_zmalloc(match, sizeof(*match));
+	match->val = strdup(new_val);
+
+	if ((*matches)->head) {
+		(*matches)->end->next = match;
+	} else {
+		(*matches)->head = match;
+	}
+
+	(*matches)->end = match;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_console_run_complete_func(const char *func, const char *line, const char *cursor,
+																 switch_console_callback_match_t **matches)
+{
+	switch_console_complete_callback_t cb;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_mutex_lock(globals.func_mutex);
+	if ((cb = (switch_console_complete_callback_t)(intptr_t)switch_core_hash_find(globals.func_hash, func))) {
+		status = cb(line, cursor, matches);
+	}
+	switch_mutex_unlock(globals.func_mutex);
+
+	return status;
+}
+
 static char hostname[256] = "";
 static int32_t running = 1;
 
@@ -584,53 +722,6 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 }
 
 
-
-struct match_helper {
-	switch_console_callback_match_t *my_matches;
-};
-
-static int uuid_callback(void *pArg, int argc, char **argv, char **columnNames)
-{
-	struct match_helper *h = (struct match_helper *) pArg;
-
-	switch_console_push_match(&h->my_matches, argv[0]);
-	return 0;
-
-}
-
-SWITCH_DECLARE(switch_status_t) switch_console_list_uuid(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	char *sql;
-	struct match_helper h = { 0 };
-	switch_cache_db_handle_t *db = NULL;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	char *errmsg;
-	
-	switch_core_db_handle(&db);
-
-	if (!zstr(cursor)) {
-		sql = switch_mprintf("select distinct uuid from channels where uuid like '%q%%' and hostname='%q' order by uuid", 
-							 cursor, switch_core_get_variable("hostname"));
-	} else {
-		sql = switch_mprintf("select distinct uuid from channels where hostname='%q' order by uuid", 
-							 switch_core_get_variable("hostname"));
-	}
-
-	switch_cache_db_execute_sql_callback(db, sql, uuid_callback, &h, &errmsg);
-	free(sql);
-
-	switch_cache_db_release_db_handle(&db);
-
-	if (h.my_matches) {
-		*matches = h.my_matches;
-		status = SWITCH_STATUS_SUCCESS;
-	}
-
-
-	return status;
-}
-
-
 static unsigned char complete(EditLine * el, int ch)
 {
 	switch_cache_db_handle_t *db = NULL;
@@ -776,98 +867,6 @@ static unsigned char complete(EditLine * el, int ch)
 	switch_cache_db_release_db_handle(&db);
 
 	return (ret);
-}
-
-static struct {
-	switch_hash_t *func_hash;
-	switch_mutex_t *func_mutex;
-} globals;
-
-SWITCH_DECLARE(switch_status_t) switch_console_init(switch_memory_pool_t *pool)
-{
-	switch_mutex_init(&globals.func_mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_core_hash_init(&globals.func_hash, pool);
-	switch_console_add_complete_func("::console::list_uuid", switch_console_list_uuid);
-	return SWITCH_STATUS_SUCCESS;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_console_shutdown(void)
-{
-	return switch_core_hash_destroy(&globals.func_hash);
-}
-
-SWITCH_DECLARE(switch_status_t) switch_console_add_complete_func(const char *name, switch_console_complete_callback_t cb)
-{
-	switch_status_t status;
-	
-	switch_mutex_lock(globals.func_mutex);
-	status = switch_core_hash_insert(globals.func_hash, name, (void *)(intptr_t)cb);
-	switch_mutex_unlock(globals.func_mutex);
-
-	return status;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_console_del_complete_func(const char *name)
-{
-	switch_status_t status;
-	
-	switch_mutex_lock(globals.func_mutex);
-	status = switch_core_hash_insert(globals.func_hash, name, NULL);
-	switch_mutex_unlock(globals.func_mutex);
-
-    return status;
-}
-
-SWITCH_DECLARE(void) switch_console_free_matches(switch_console_callback_match_t **matches)
-{
-	switch_console_callback_match_t *my_match = *matches;
-	switch_console_callback_match_node_t *m, *cur;
-
-	/* Don't play with matches */
-	*matches = NULL;
-
-	m = my_match->head;
-	while(m) {
-		cur = m;
-		m = m->next;
-		free(cur->val);
-		free(cur);
-	}
-}
-
-SWITCH_DECLARE(void) switch_console_push_match(switch_console_callback_match_t **matches, const char *new_val)
-{
-	switch_console_callback_match_node_t *match;
-
-	if (!*matches) {
-		switch_zmalloc(*matches, sizeof(**matches));
-	}
-
-	switch_zmalloc(match, sizeof(*match));
-	match->val = strdup(new_val);
-
-	if ((*matches)->head) {
-		(*matches)->end->next = match;
-	} else {
-		(*matches)->head = match;
-	}
-
-	(*matches)->end = match;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_console_run_complete_func(const char *func, const char *line, const char *cursor,
-																 switch_console_callback_match_t **matches)
-{
-	switch_console_complete_callback_t cb;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-
-	switch_mutex_lock(globals.func_mutex);
-	if ((cb = (switch_console_complete_callback_t)(intptr_t)switch_core_hash_find(globals.func_hash, func))) {
-		status = cb(line, cursor, matches);
-	}
-	switch_mutex_unlock(globals.func_mutex);
-
-	return status;
 }
 
 
