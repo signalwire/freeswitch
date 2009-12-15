@@ -2625,7 +2625,7 @@ static int _wrap_ESLconnection_execute(lua_State* L) {
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
-  int result;
+  ESLevent *result = 0 ;
   
   SWIG_check_num_args("execute",2,4)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"ESLconnection *");
@@ -2644,9 +2644,9 @@ static int _wrap_ESLconnection_execute(lua_State* L) {
   if(lua_gettop(L)>=4){
     arg4 = (char *)lua_tostring(L, 4);
   }
-  result = (int)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  result = (ESLevent *)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
   SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2663,7 +2663,7 @@ static int _wrap_ESLconnection_executeAsync(lua_State* L) {
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
-  int result;
+  ESLevent *result = 0 ;
   
   SWIG_check_num_args("executeAsync",2,4)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("executeAsync",1,"ESLconnection *");
@@ -2682,9 +2682,9 @@ static int _wrap_ESLconnection_executeAsync(lua_State* L) {
   if(lua_gettop(L)>=4){
     arg4 = (char *)lua_tostring(L, 4);
   }
-  result = (int)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  result = (ESLevent *)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
   SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;

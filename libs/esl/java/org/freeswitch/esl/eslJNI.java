@@ -44,8 +44,8 @@ class eslJNI {
   public final static native long ESLconnection_recvEventTimed(long jarg1, ESLconnection jarg1_, int jarg2);
   public final static native long ESLconnection_filter(long jarg1, ESLconnection jarg1_, String jarg2, String jarg3);
   public final static native int ESLconnection_events(long jarg1, ESLconnection jarg1_, String jarg2, String jarg3);
-  public final static native int ESLconnection_execute(long jarg1, ESLconnection jarg1_, String jarg2, String jarg3, String jarg4);
-  public final static native int ESLconnection_executeAsync(long jarg1, ESLconnection jarg1_, String jarg2, String jarg3, String jarg4);
+  public final static native long ESLconnection_execute(long jarg1, ESLconnection jarg1_, String jarg2, String jarg3, String jarg4);
+  public final static native long ESLconnection_executeAsync(long jarg1, ESLconnection jarg1_, String jarg2, String jarg3, String jarg4);
   public final static native int ESLconnection_setAsyncExecute(long jarg1, ESLconnection jarg1_, String jarg2);
   public final static native int ESLconnection_setEventLock(long jarg1, ESLconnection jarg1_, String jarg2);
   public final static native int ESLconnection_disconnect(long jarg1, ESLconnection jarg1_);

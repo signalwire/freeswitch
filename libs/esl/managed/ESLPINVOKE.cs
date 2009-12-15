@@ -290,10 +290,10 @@ class ESLPINVOKE {
   public static extern int ESLconnection_events(HandleRef jarg1, string jarg2, string jarg3);
 
   [DllImport("ESL", EntryPoint="CSharp_ESLconnection_execute")]
-  public static extern int ESLconnection_execute(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
+  public static extern IntPtr ESLconnection_execute(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
 
   [DllImport("ESL", EntryPoint="CSharp_ESLconnection_executeAsync")]
-  public static extern int ESLconnection_executeAsync(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
+  public static extern IntPtr ESLconnection_executeAsync(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
 
   [DllImport("ESL", EntryPoint="CSharp_ESLconnection_setAsyncExecute")]
   public static extern int ESLconnection_setAsyncExecute(HandleRef jarg1, string jarg2);

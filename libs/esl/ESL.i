@@ -19,6 +19,8 @@
 %newobject ESLconnection::filter;
 %newobject ESLconnection::recvEvent;
 %newobject ESLconnection::recvEventTimed;
+%newobject ESLconnection::execute;
+%newobject ESLconnection::executeAsync;
 #endif
 
 %include "esl_oop.h"

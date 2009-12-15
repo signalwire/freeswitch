@@ -747,38 +747,38 @@ SWIGEXPORT int SWIGSTDCALL CSharp_ESLconnection_events(void * jarg1, char * jarg
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_ESLconnection_execute(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_ESLconnection_execute(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
+  void * jresult ;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
-  int result;
+  ESLevent *result = 0 ;
   
   arg1 = (ESLconnection *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   arg4 = (char *)jarg4; 
-  result = (int)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
-  jresult = result; 
+  result = (ESLevent *)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  jresult = (void *)result; 
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_ESLconnection_executeAsync(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_ESLconnection_executeAsync(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
+  void * jresult ;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
-  int result;
+  ESLevent *result = 0 ;
   
   arg1 = (ESLconnection *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   arg4 = (char *)jarg4; 
-  result = (int)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
-  jresult = result; 
+  result = (ESLevent *)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  jresult = (void *)result; 
   return jresult;
 }
 

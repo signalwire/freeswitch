@@ -96,12 +96,14 @@ public class ESLconnection {
     return eslJNI.ESLconnection_events(swigCPtr, this, etype, value);
   }
 
-  public int execute(String app, String arg, String uuid) {
-    return eslJNI.ESLconnection_execute(swigCPtr, this, app, arg, uuid);
+  public ESLevent execute(String app, String arg, String uuid) {
+    long cPtr = eslJNI.ESLconnection_execute(swigCPtr, this, app, arg, uuid);
+    return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 
-  public int executeAsync(String app, String arg, String uuid) {
-    return eslJNI.ESLconnection_executeAsync(swigCPtr, this, app, arg, uuid);
+  public ESLevent executeAsync(String app, String arg, String uuid) {
+    long cPtr = eslJNI.ESLconnection_executeAsync(swigCPtr, this, app, arg, uuid);
+    return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 
   public int setAsyncExecute(String val) {

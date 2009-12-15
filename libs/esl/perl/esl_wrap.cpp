@@ -3221,7 +3221,7 @@ XS(_wrap_ESLconnection_execute) {
     char *arg2 = (char *) 0 ;
     char *arg3 = (char *) NULL ;
     char *arg4 = (char *) NULL ;
-    int result;
+    ESLevent *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int res2 ;
@@ -3263,8 +3263,8 @@ XS(_wrap_ESLconnection_execute) {
       }
       arg4 = reinterpret_cast< char * >(buf4);
     }
-    result = (int)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    result = (ESLevent *)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
@@ -3286,7 +3286,7 @@ XS(_wrap_ESLconnection_executeAsync) {
     char *arg2 = (char *) 0 ;
     char *arg3 = (char *) NULL ;
     char *arg4 = (char *) NULL ;
-    int result;
+    ESLevent *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int res2 ;
@@ -3328,8 +3328,8 @@ XS(_wrap_ESLconnection_executeAsync) {
       }
       arg4 = reinterpret_cast< char * >(buf4);
     }
-    result = (int)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    result = (ESLevent *)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;

@@ -887,13 +887,13 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1events(JNI
 }
 
 
-SWIGEXPORT jint JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1execute(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4) {
-  jint jresult = 0 ;
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1execute(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4) {
+  jlong jresult = 0 ;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
-  int result;
+  ESLevent *result = 0 ;
   
   (void)jenv;
   (void)jcls;
@@ -914,8 +914,8 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1execute(JN
     arg4 = (char *)jenv->GetStringUTFChars(jarg4, 0);
     if (!arg4) return 0;
   }
-  result = (int)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
-  jresult = (jint)result; 
+  result = (ESLevent *)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  *(ESLevent **)&jresult = result; 
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
   if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
   if (arg4) jenv->ReleaseStringUTFChars(jarg4, (const char *)arg4);
@@ -923,13 +923,13 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1execute(JN
 }
 
 
-SWIGEXPORT jint JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1executeAsync(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4) {
-  jint jresult = 0 ;
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1executeAsync(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4) {
+  jlong jresult = 0 ;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
-  int result;
+  ESLevent *result = 0 ;
   
   (void)jenv;
   (void)jcls;
@@ -950,8 +950,8 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1executeAsy
     arg4 = (char *)jenv->GetStringUTFChars(jarg4, 0);
     if (!arg4) return 0;
   }
-  result = (int)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
-  jresult = (jint)result; 
+  result = (ESLevent *)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  *(ESLevent **)&jresult = result; 
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
   if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
   if (arg4) jenv->ReleaseStringUTFChars(jarg4, (const char *)arg4);

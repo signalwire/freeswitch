@@ -4071,7 +4071,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_execute(PyObject *SWIGUNUSEDPARM(self),
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
-  int result;
+  ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
@@ -4113,8 +4113,8 @@ SWIGINTERN PyObject *_wrap_ESLconnection_execute(PyObject *SWIGUNUSEDPARM(self),
     }
     arg4 = reinterpret_cast< char * >(buf4);
   }
-  result = (int)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
-  resultobj = SWIG_From_int(static_cast< int >(result));
+  result = (ESLevent *)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
@@ -4133,7 +4133,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_executeAsync(PyObject *SWIGUNUSEDPARM(s
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
-  int result;
+  ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
@@ -4175,8 +4175,8 @@ SWIGINTERN PyObject *_wrap_ESLconnection_executeAsync(PyObject *SWIGUNUSEDPARM(s
     }
     arg4 = reinterpret_cast< char * >(buf4);
   }
-  result = (int)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
-  resultobj = SWIG_From_int(static_cast< int >(result));
+  result = (ESLevent *)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   if (alloc4 == SWIG_NEWOBJ) delete[] buf4;

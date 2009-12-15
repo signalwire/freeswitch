@@ -188,7 +188,7 @@ class ESLconnection {
 		case 2: $r=ESLconnection_execute($this->_cPtr,$app,$arg); break;
 		default: $r=ESLconnection_execute($this->_cPtr,$app,$arg,$uuid);
 		}
-		return $r;
+		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
 	function executeAsync($app,$arg=null,$uuid=null) {
@@ -197,7 +197,7 @@ class ESLconnection {
 		case 2: $r=ESLconnection_executeAsync($this->_cPtr,$app,$arg); break;
 		default: $r=ESLconnection_executeAsync($this->_cPtr,$app,$arg,$uuid);
 		}
-		return $r;
+		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
 	function setAsyncExecute($val) {

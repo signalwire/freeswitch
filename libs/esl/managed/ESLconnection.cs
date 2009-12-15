@@ -111,13 +111,15 @@ public class ESLconnection : IDisposable {
     return ret;
   }
 
-  public int execute(string app, string arg, string uuid) {
-    int ret = ESLPINVOKE.ESLconnection_execute(swigCPtr, app, arg, uuid);
+  public ESLevent execute(string app, string arg, string uuid) {
+    IntPtr cPtr = ESLPINVOKE.ESLconnection_execute(swigCPtr, app, arg, uuid);
+    ESLevent ret = (cPtr == IntPtr.Zero) ? null : new ESLevent(cPtr, true);
     return ret;
   }
 
-  public int executeAsync(string app, string arg, string uuid) {
-    int ret = ESLPINVOKE.ESLconnection_executeAsync(swigCPtr, app, arg, uuid);
+  public ESLevent executeAsync(string app, string arg, string uuid) {
+    IntPtr cPtr = ESLPINVOKE.ESLconnection_executeAsync(swigCPtr, app, arg, uuid);
+    ESLevent ret = (cPtr == IntPtr.Zero) ? null : new ESLevent(cPtr, true);
     return ret;
   }
 

@@ -148,13 +148,19 @@ int ESLconnection::setEventLock(const char *val)
 	return handle.event_lock;
 }
 
-int ESLconnection::execute(const char *app, const char *arg, const char *uuid)
+ESLevent *ESLconnection::execute(const char *app, const char *arg, const char *uuid)
 {
-	return esl_execute(&handle, app, arg, uuid);
+	if (esl_execute(&handle, app, arg, uuid) == ESL_SUCCESS) {
+		esl_event_t *event;
+		esl_event_dup(&event, handle.last_sr_event);
+		return new ESLevent(event, 1);
+	}
+
+	return NULL;
 }
 
 
-int ESLconnection::executeAsync(const char *app, const char *arg, const char *uuid)
+ESLevent *ESLconnection::executeAsync(const char *app, const char *arg, const char *uuid)
 {
 	int async = handle.async_execute;
 	int r;
@@ -163,7 +169,13 @@ int ESLconnection::executeAsync(const char *app, const char *arg, const char *uu
 	r = esl_execute(&handle, app, arg, uuid);
 	handle.async_execute = async;
 
-	return r;
+	if (r == ESL_SUCCESS) {
+		esl_event_t *event;
+		esl_event_dup(&event, handle.last_sr_event);
+		return new ESLevent(event, 1);
+	}
+
+	return NULL;
 }
 
 int ESLconnection::sendEvent(ESLevent *send_me)

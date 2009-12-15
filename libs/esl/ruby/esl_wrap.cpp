@@ -1902,7 +1902,7 @@ SWIG_ruby_failed(void)
 } 
 
 
-/*@SWIG:/usr/share/swig/1.3.35/ruby/rubyprimtypes.swg,23,%ruby_aux_method@*/
+/*@SWIG:/usr/local/share/swig/1.3.35/ruby/rubyprimtypes.swg,23,%ruby_aux_method@*/
 SWIGINTERN VALUE SWIG_AUX_NUM2LONG(VALUE *args)
 {
   VALUE obj = args[0];
@@ -3204,7 +3204,7 @@ _wrap_ESLconnection_execute(int argc, VALUE *argv, VALUE self) {
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
-  int result;
+  ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
@@ -3245,8 +3245,8 @@ _wrap_ESLconnection_execute(int argc, VALUE *argv, VALUE self) {
     }
     arg4 = reinterpret_cast< char * >(buf4);
   }
-  result = (int)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
-  vresult = SWIG_From_int(static_cast< int >(result));
+  result = (ESLevent *)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
@@ -3265,7 +3265,7 @@ _wrap_ESLconnection_executeAsync(int argc, VALUE *argv, VALUE self) {
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
-  int result;
+  ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
@@ -3306,8 +3306,8 @@ _wrap_ESLconnection_executeAsync(int argc, VALUE *argv, VALUE self) {
     }
     arg4 = reinterpret_cast< char * >(buf4);
   }
-  result = (int)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
-  vresult = SWIG_From_int(static_cast< int >(result));
+  result = (ESLevent *)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
