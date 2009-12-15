@@ -2189,6 +2189,44 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_console_init(SWIGTYPE_p_apr_pool_t pool) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_console_init(SWIGTYPE_p_apr_pool_t.getCPtr(pool));
+    return ret;
+  }
+
+  public static switch_status_t switch_console_shutdown() {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_console_shutdown();
+    return ret;
+  }
+
+  public static switch_status_t switch_console_add_complete_func(string name, SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_p_switch_console_callback_match__switch_status_t cb) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_console_add_complete_func(name, SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_p_switch_console_callback_match__switch_status_t.getCPtr(cb));
+    return ret;
+  }
+
+  public static switch_status_t switch_console_del_complete_func(string name) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_console_del_complete_func(name);
+    return ret;
+  }
+
+  public static switch_status_t switch_console_run_complete_func(string func, string line, string last_word, SWIGTYPE_p_p_switch_console_callback_match matches) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_console_run_complete_func(func, line, last_word, SWIGTYPE_p_p_switch_console_callback_match.getCPtr(matches));
+    return ret;
+  }
+
+  public static void switch_console_push_match(SWIGTYPE_p_p_switch_console_callback_match matches, string new_val) {
+    freeswitchPINVOKE.switch_console_push_match(SWIGTYPE_p_p_switch_console_callback_match.getCPtr(matches), new_val);
+  }
+
+  public static void switch_console_free_matches(SWIGTYPE_p_p_switch_console_callback_match matches) {
+    freeswitchPINVOKE.switch_console_free_matches(SWIGTYPE_p_p_switch_console_callback_match.getCPtr(matches));
+  }
+
+  public static byte switch_console_complete(string line, string last_word, SWIGTYPE_p_FILE console_out, switch_stream_handle stream, switch_xml xml) {
+    byte ret = freeswitchPINVOKE.switch_console_complete(line, last_word, SWIGTYPE_p_FILE.getCPtr(console_out), switch_stream_handle.getCPtr(stream), switch_xml.getCPtr(xml));
+    return ret;
+  }
+
   public static int switch_toupper(int c) {
     int ret = freeswitchPINVOKE.switch_toupper(c);
     return ret;
@@ -5672,6 +5710,48 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_t38_options_t")]
   public static extern void delete_switch_t38_options_t(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_callback_match_node_val_set")]
+  public static extern void switch_console_callback_match_node_val_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_callback_match_node_val_get")]
+  public static extern string switch_console_callback_match_node_val_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_callback_match_node_next_set")]
+  public static extern void switch_console_callback_match_node_next_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_callback_match_node_next_get")]
+  public static extern IntPtr switch_console_callback_match_node_next_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_console_callback_match_node")]
+  public static extern IntPtr new_switch_console_callback_match_node();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_console_callback_match_node")]
+  public static extern void delete_switch_console_callback_match_node(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_callback_match_head_set")]
+  public static extern void switch_console_callback_match_head_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_callback_match_head_get")]
+  public static extern IntPtr switch_console_callback_match_head_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_callback_match_end_set")]
+  public static extern void switch_console_callback_match_end_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_callback_match_end_get")]
+  public static extern IntPtr switch_console_callback_match_end_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_callback_match_dynamic_set")]
+  public static extern void switch_console_callback_match_dynamic_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_callback_match_dynamic_get")]
+  public static extern int switch_console_callback_match_dynamic_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_console_callback_match")]
+  public static extern IntPtr new_switch_console_callback_match();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_console_callback_match")]
+  public static extern void delete_switch_console_callback_match(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_input_args_t_input_callback_set")]
   public static extern void switch_input_args_t_input_callback_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -7090,6 +7170,30 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_stream_write_file_contents")]
   public static extern int switch_stream_write_file_contents(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_init")]
+  public static extern int switch_console_init(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_shutdown")]
+  public static extern int switch_console_shutdown();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_add_complete_func")]
+  public static extern int switch_console_add_complete_func(string jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_del_complete_func")]
+  public static extern int switch_console_del_complete_func(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_run_complete_func")]
+  public static extern int switch_console_run_complete_func(string jarg1, string jarg2, string jarg3, HandleRef jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_push_match")]
+  public static extern void switch_console_push_match(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_free_matches")]
+  public static extern void switch_console_free_matches(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_complete")]
+  public static extern byte switch_console_complete(string jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_toupper")]
   public static extern int switch_toupper(int jarg1);
@@ -12536,6 +12640,36 @@ namespace FreeSWITCH.Native {
 using System;
 using System.Runtime.InteropServices;
 
+public class SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_p_switch_console_callback_match__switch_status_t {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_p_switch_console_callback_match__switch_status_t(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_p_switch_console_callback_match__switch_status_t() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_p_switch_console_callback_match__switch_status_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
 public class SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char__switch_status_t {
   private HandleRef swigCPtr;
 
@@ -14828,6 +14962,36 @@ public class SWIGTYPE_p_p_switch_channel {
   }
 
   internal static HandleRef getCPtr(SWIGTYPE_p_p_switch_channel obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class SWIGTYPE_p_p_switch_console_callback_match {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_p_switch_console_callback_match(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_p_switch_console_callback_match() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_p_switch_console_callback_match obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -20366,6 +20530,153 @@ public class switch_config : IDisposable {
   }
 
   public switch_config() : this(freeswitchPINVOKE.new_switch_config(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class switch_console_callback_match : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_console_callback_match(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_console_callback_match obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_console_callback_match() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if(swigCPtr.Handle != IntPtr.Zero && swigCMemOwn) {
+        swigCMemOwn = false;
+        freeswitchPINVOKE.delete_switch_console_callback_match(swigCPtr);
+      }
+      swigCPtr = new HandleRef(null, IntPtr.Zero);
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public switch_console_callback_match_node head {
+    set {
+      freeswitchPINVOKE.switch_console_callback_match_head_set(swigCPtr, switch_console_callback_match_node.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_console_callback_match_head_get(swigCPtr);
+      switch_console_callback_match_node ret = (cPtr == IntPtr.Zero) ? null : new switch_console_callback_match_node(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_console_callback_match_node end {
+    set {
+      freeswitchPINVOKE.switch_console_callback_match_end_set(swigCPtr, switch_console_callback_match_node.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_console_callback_match_end_get(swigCPtr);
+      switch_console_callback_match_node ret = (cPtr == IntPtr.Zero) ? null : new switch_console_callback_match_node(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public int dynamic {
+    set {
+      freeswitchPINVOKE.switch_console_callback_match_dynamic_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_console_callback_match_dynamic_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_console_callback_match() : this(freeswitchPINVOKE.new_switch_console_callback_match(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class switch_console_callback_match_node : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_console_callback_match_node(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_console_callback_match_node obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_console_callback_match_node() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if(swigCPtr.Handle != IntPtr.Zero && swigCMemOwn) {
+        swigCMemOwn = false;
+        freeswitchPINVOKE.delete_switch_console_callback_match_node(swigCPtr);
+      }
+      swigCPtr = new HandleRef(null, IntPtr.Zero);
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public string val {
+    set {
+      freeswitchPINVOKE.switch_console_callback_match_node_val_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_console_callback_match_node_val_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_console_callback_match_node next {
+    set {
+      freeswitchPINVOKE.switch_console_callback_match_node_next_set(swigCPtr, switch_console_callback_match_node.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_console_callback_match_node_next_get(swigCPtr);
+      switch_console_callback_match_node ret = (cPtr == IntPtr.Zero) ? null : new switch_console_callback_match_node(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_console_callback_match_node() : this(freeswitchPINVOKE.new_switch_console_callback_match_node(), true) {
   }
 
 }
