@@ -767,6 +767,28 @@ SWITCH_STANDARD_API(expand_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(console_complete_function)
+{
+	const char *p, *cursor = NULL;
+	int c;
+
+	if (zstr(cmd)) {
+		cmd = " ";
+	}
+	
+	if ((p = strstr(cmd, "c="))) {
+		p += 2;
+		c = atoi(p);
+		if ((p = strchr(p, ';'))) {
+			cmd = p + 1;
+			cursor = cmd + c;
+		}
+	}
+
+	switch_console_complete(cmd, cursor, NULL, stream);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 SWITCH_STANDARD_API(eval_function)
 {
@@ -3791,6 +3813,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "break", "Break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "complete", "Complete", complete_function, COMPLETE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "cond", "Eval a conditional", cond_function, "<expr> ? <true val> : <false val>");
+	SWITCH_ADD_API(commands_api_interface, "console_complete", "", console_complete_function, "<line>");
 	SWITCH_ADD_API(commands_api_interface, "create_uuid", "Create a uuid", uuid_function, UUID_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "db_cache", "db cache management", db_cache_function, "status");
 	SWITCH_ADD_API(commands_api_interface, "domain_exists", "check if a domain exists", domain_exists_function, "<domain>");

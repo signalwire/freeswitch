@@ -428,6 +428,57 @@ static void set_fn_keys(cli_profile_t *profile)
 }
 
 
+#ifdef HAVE_EDITLINE
+
+static unsigned char complete(EditLine * el, int ch)
+{
+	const LineInfo *lf = el_line(el);
+	char cmd_str[2048] = "";
+	unsigned char ret = CC_REDISPLAY;
+
+	if (*lf->cursor) {
+		snprintf(cmd_str, sizeof(cmd_str), "api console_complete c=%ld;%s\n\n", lf->cursor - lf->buffer, lf->buffer);
+	} else {
+		snprintf(cmd_str, sizeof(cmd_str), "api console_complete %s\n\n", lf->buffer);
+	}
+
+	esl_send_recv(global_handle, cmd_str);
+
+
+	if (global_handle->last_sr_event && global_handle->last_sr_event->body) {
+		char *r = global_handle->last_sr_event->body;
+		char *w, *p;
+		
+		if (r) {
+			if ((w = strstr(r, "\n\nwrite="))) {
+				int len = 0;
+				*w = '\0';
+				w += 8;
+
+				len = atoi(w);
+
+				if ((p = strchr(w, ':'))) {
+					w = p + 1;
+				}
+				
+				printf("%s\n\n\n", r);
+
+				el_deletestr(el, len);
+				el_insertstr(el, w);
+				
+			} else {
+				printf("%s\n", r);
+			}
+		}
+
+		fflush(stdout);
+	}	
+
+	return ret;
+}
+#endif
+
+
 int main(int argc, char *argv[])
 {
 	esl_handle_t handle = {{0}};
@@ -673,6 +724,7 @@ int main(int argc, char *argv[])
 	el = el_init(__FILE__, stdout, stdout, stdout);
 	el_set(el, EL_PROMPT, &prompt);
 	el_set(el, EL_EDITOR, "emacs");
+
 	myhistory = history_init();
 
 	el_set(el, EL_ADDFN, "f1-key", "F1 KEY PRESS", console_f1key);
@@ -710,6 +762,9 @@ int main(int argc, char *argv[])
 	el_set(el, EL_BIND, "\033[24~", "f12-key", NULL);
 
 	el_set(el, EL_BIND, "\004", "EOF-key", NULL);
+
+	el_set(el, EL_ADDFN, "ed-complete", "Complete argument", complete);
+	el_set(el, EL_BIND, "^I", "ed-complete", NULL);
 
 	if (myhistory == 0) {
 		esl_log(ESL_LOG_ERROR, "history could not be initialized\n");
