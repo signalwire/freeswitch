@@ -1125,6 +1125,10 @@ SWITCH_DECLARE(void) switch_console_free_matches(switch_console_callback_match_t
 		free(cur->val);
 		free(cur);
 	}
+
+	if (my_match->dynamic) {
+		free(my_match);
+	}
 }
 
 SWITCH_DECLARE(void) switch_console_push_match(switch_console_callback_match_t **matches, const char *new_val)
@@ -1133,6 +1137,7 @@ SWITCH_DECLARE(void) switch_console_push_match(switch_console_callback_match_t *
 
 	if (!*matches) {
 		switch_zmalloc(*matches, sizeof(**matches));
+		(*matches)->dynamic = 1;
 	}
 
 	switch_zmalloc(match, sizeof(*match));
