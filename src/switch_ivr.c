@@ -503,9 +503,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	if (cmd_hash == CMD_EXECUTE) {
 		char *app_name = switch_event_get_header(event, "execute-app-name");
 		char *app_arg = switch_event_get_header(event, "execute-app-arg");
+		char *content_type = switch_event_get_header(event, "content-type");
 		char *loop_h = switch_event_get_header(event, "loops");
 		char *hold_bleg = switch_event_get_header(event, "hold-bleg");
 		int loops = 1;
+
+		if (zstr(app_arg) && !zstr(content_type) && !strcasecmp(content_type, "text/plain")) {
+			app_arg = switch_event_get_body(event);
+		}
 
 		if (loop_h) {
 			loops = atoi(loop_h);
