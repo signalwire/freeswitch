@@ -108,7 +108,7 @@ static void sql_close(time_t prune)
 			}
 
 			if (switch_mutex_trylock(dbh->mutex) == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Dropping idle DB connection %s\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Dropping idle DB connection %s\n", key);
 
 				switch (dbh->type) {
 				case SCDB_TYPE_ODBC:
@@ -157,7 +157,7 @@ SWITCH_DECLARE(void) switch_cache_db_destroy_db_handle(switch_cache_db_handle_t 
 {
 	if (dbh && *dbh) {
 		switch_mutex_lock(sql_manager.dbh_mutex);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleting DB connection %s\n", (*dbh)->name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Deleting DB connection %s\n", (*dbh)->name);
 
 		switch ((*dbh)->type) {
 		case SCDB_TYPE_ODBC:
