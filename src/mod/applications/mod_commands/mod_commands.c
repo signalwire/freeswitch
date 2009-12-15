@@ -3922,6 +3922,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add alias del");
 	switch_console_set_complete("add complete add");
 	switch_console_set_complete("add complete del");
+	switch_console_set_complete("add db_cache status");
 	switch_console_set_complete("add fsctl debug_level");
 	switch_console_set_complete("add fsctl default_dtmf_duration");
 	switch_console_set_complete("add fsctl hupall");
@@ -3991,7 +3992,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_setvar ::console::list_uuid");
 	switch_console_set_complete("add uuid_transfer ::console::list_uuid");
 	switch_console_set_complete("add uuid_warning ::console::list_uuid");
-	switch_console_set_complete("db_cache status");
 
 
 
