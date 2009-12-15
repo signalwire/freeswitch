@@ -85,7 +85,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_run_complete_func(const char *fun
 																 const char *last_word, switch_console_callback_match_t **matches);
 SWITCH_DECLARE(void) switch_console_push_match(switch_console_callback_match_t **matches, const char *new_val);
 SWITCH_DECLARE(void) switch_console_free_matches(switch_console_callback_match_t **matches);
-SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const char *last_word, FILE *console_out, switch_stream_handle_t *stream);
+SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const char *cursor, FILE *console_out, switch_stream_handle_t *stream, switch_xml_t xml);
 
 SWITCH_END_EXTERN_C
 #endif

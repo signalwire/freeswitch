@@ -395,6 +395,8 @@ struct helper {
 	char partial[512];
 	FILE *out;
 	switch_stream_handle_t *stream;
+	switch_xml_t xml;
+	int xml_off;
 };
 
 static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -442,6 +444,9 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 		}
 		if (h->stream) {
 			h->stream->write_function(h->stream, "[%20s]\t", target);
+		}
+		if (h->xml) {
+			switch_xml_set_txt_d(switch_xml_add_child_d(h->xml, "match", h->xml_off++), target);
 		}
 
 		switch_copy_string(h->last, target, sizeof(h->last));
@@ -524,7 +529,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_list_uuid(const char *line, const
 }
 
 
-SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const char *cursor, FILE *console_out, switch_stream_handle_t *stream)
+SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const char *cursor, FILE *console_out, switch_stream_handle_t *stream, switch_xml_t xml)
 {
 	switch_cache_db_handle_t *db = NULL;
 	char *sql = NULL;
@@ -550,6 +555,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	
 	h.out = console_out;
 	h.stream = stream;
+	h.xml = xml;
 
 	if (pos > 0) {
 		*(buf + pos) = '\0';
@@ -670,6 +676,20 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 			h.stream->write_function(h.stream, "write=%d:%s ", h.len, h.last);
 		} else if (h.hits > 1 && !zstr(h.partial)) {
 			h.stream->write_function(h.stream, "write=%d:%s", h.len, h.partial);
+		}
+	} 
+	
+	if (h.xml) {
+		switch_xml_t x_write = switch_xml_add_child_d(h.xml, "write", h.xml_off++);
+		char buf[32];
+		
+		snprintf(buf, sizeof(buf), "%d", h.len);
+		switch_xml_set_attr_d_buf(x_write, "length", buf);
+		
+		if (h.hits == 1 && !zstr(h.last)) {
+			switch_xml_set_txt_d(x_write, h.last);
+		} else if (h.hits > 1 && !zstr(h.partial)) {
+			switch_xml_set_txt_d(x_write, h.partial);
 		}
 	}
 
@@ -841,7 +861,7 @@ static unsigned char complete(EditLine * el, int ch)
 {
 	const LineInfo *lf = el_line(el);
 
-	return switch_console_complete(lf->buffer, lf->cursor, switch_core_get_console(), NULL);
+	return switch_console_complete(lf->buffer, lf->cursor, switch_core_get_console(), NULL, NULL);
 }
 
 
