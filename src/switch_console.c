@@ -401,8 +401,8 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct helper *h = (struct helper *) pArg;
 	char *target = NULL, *str = NULL, *cur = NULL;
-	switch_size_t x, y;
-	int i;
+	switch_size_t x, y, i;
+
 	
 	if (argc > 0) target = argv[0];
 	if (argc > 1) str = argv[1];
@@ -947,8 +947,11 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 {
 
 	char cmd[2048] = "";
-	int32_t x = 0, activity = 1;	
-	
+	int32_t activity = 1;	
+#ifndef _MSC_VER
+	int x = 0;
+#endif	
+
 	gethostname(hostname, sizeof(hostname));
 
 	while (running) {
@@ -1056,7 +1059,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_init(switch_memory_pool_t *pool)
 {
 	switch_mutex_init(&globals.func_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_core_hash_init(&globals.func_hash, pool);
-	switch_console_add_complete_func("::console::list_uuid", switch_console_list_uuid);
+	switch_console_add_complete_func("::console::list_uuid", (switch_console_complete_callback_t)switch_console_list_uuid);
 	return SWITCH_STATUS_SUCCESS;
 }
 
