@@ -1494,6 +1494,7 @@ typedef struct switch_console_callback_match_node switch_console_callback_match_
 struct switch_console_callback_match {
 	struct switch_console_callback_match_node *head;
 	struct switch_console_callback_match_node *end;
+	int count;
 	int dynamic;
 };
 typedef struct switch_console_callback_match switch_console_callback_match_t;

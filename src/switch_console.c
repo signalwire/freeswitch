@@ -422,9 +422,8 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 	}
 
 	if (!zstr(target) && *target == ':' && *(target+1) == ':') {
-		char *r_argv[3] = { 0 }, *r_cols[3] = { 0 };
+		char *r_argv[1] = { 0 }, *r_cols[1] = { 0 };
 		switch_console_callback_match_t *matches;
-		r_cols[0] = "match";
 		if (switch_console_run_complete_func(target, str, cur, &matches) == SWITCH_STATUS_SUCCESS) {
 			switch_console_callback_match_node_t *m;
 			for (m = matches->head; m; m = m->next) {
@@ -529,7 +528,8 @@ SWITCH_DECLARE(switch_status_t) switch_console_list_uuid(const char *line, const
 }
 
 
-SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const char *cursor, FILE *console_out, switch_stream_handle_t *stream, switch_xml_t xml)
+SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const char *cursor, FILE *console_out, 
+													  switch_stream_handle_t *stream, switch_xml_t xml)
 {
 	switch_cache_db_handle_t *db = NULL;
 	char *sql = NULL;
@@ -573,6 +573,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 		if (*p == ' ') {
 			lp = p;
 			h.words++;
+			while(*p == ' ') p++;
 		}
 	}
 
@@ -1131,6 +1132,58 @@ SWITCH_DECLARE(void) switch_console_free_matches(switch_console_callback_match_t
 	}
 }
 
+SWITCH_DECLARE(void) switch_console_sort_matches(switch_console_callback_match_t *matches)
+{
+	switch_console_callback_match_node_t *p = NULL, *sort[4] = { 0 };
+	int i, j;
+
+	switch_assert(matches);
+
+	if (matches->count < 2) {
+		return;
+	}
+	
+	for(i = 1; i < matches->count; i++) {
+		sort[0] = NULL;
+		sort[1] = matches->head;
+		sort[2] = sort[1] ? sort[1]->next : NULL;
+		sort[3] = sort[2] ? sort[2]->next : NULL;		
+
+		for(j = 1; j <= (matches->count - i); j++) {
+			if (strcmp(sort[1]->val, sort[2]->val) > 0) {
+				sort[1]->next = sort[3];
+				sort[2]->next = sort[1];
+
+				if (sort[0]) sort[0]->next = sort[2];
+				if (sort[1] == matches->head) matches->head = sort[2];
+				
+				
+
+
+				sort[0] = sort[2];
+				sort[2] = sort[1]->next;
+				if (sort[3] && sort[3]->next) sort[3] = sort[3]->next;
+				
+			} else {
+				sort[0] = sort[1];
+				sort[1] = sort[2];
+				sort[2] = sort[3];
+				if (sort[3] && sort[3]->next) sort[3] = sort[3]->next;
+			}
+			
+		}
+	}
+	
+	p = matches->head;
+
+	for(i = 1; i < matches->count; i++) p = p->next;
+
+	if (p) {
+		p->next = NULL;
+		matches->end = p;
+	}
+}
+
 SWITCH_DECLARE(void) switch_console_push_match(switch_console_callback_match_t **matches, const char *new_val)
 {
 	switch_console_callback_match_node_t *match;
@@ -1149,6 +1202,8 @@ SWITCH_DECLARE(void) switch_console_push_match(switch_console_callback_match_t *
 		(*matches)->head = match;
 	}
 
+	(*matches)->count++;
+
 	(*matches)->end = match;
 }
 
@@ -1160,7 +1215,9 @@ SWITCH_DECLARE(switch_status_t) switch_console_run_complete_func(const char *fun
 
 	switch_mutex_lock(globals.func_mutex);
 	if ((cb = (switch_console_complete_callback_t)(intptr_t)switch_core_hash_find(globals.func_hash, func))) {
-		status = cb(line, last_word, matches);
+		if ((status = cb(line, last_word, matches)) == SWITCH_STATUS_SUCCESS) {
+			switch_console_sort_matches(*matches);
+		}
 	}
 	switch_mutex_unlock(globals.func_mutex);
 

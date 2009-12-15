@@ -3698,7 +3698,7 @@ static switch_status_t list_profile_gateway(const char *line, const char *cursor
 	dup = strdup(line);
 	argc = switch_split(dup, ' ', argv);
 	
-	if (!argv[2]) {
+	if (zstr(argv[2]) || !strcmp(argv[2], " ")) {
 		goto end;
 	}
 
