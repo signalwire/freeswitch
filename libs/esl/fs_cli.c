@@ -437,7 +437,7 @@ static unsigned char complete(EditLine * el, int ch)
 	unsigned char ret = CC_REDISPLAY;
 
 	if (*lf->cursor) {
-		snprintf(cmd_str, sizeof(cmd_str), "api console_complete c=%ld;%s\n\n", lf->cursor - lf->buffer, lf->buffer);
+		snprintf(cmd_str, sizeof(cmd_str), "api console_complete c=%ld;%s\n\n", (long int)(lf->cursor - lf->buffer), lf->buffer);
 	} else {
 		snprintf(cmd_str, sizeof(cmd_str), "api console_complete %s\n\n", lf->buffer);
 	}
