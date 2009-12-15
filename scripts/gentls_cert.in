@@ -126,7 +126,7 @@ generate_cert() {
 remove_ca() {
 	echo "Removing CA"
 
-	if [ ! -d "${CONFDIR}/CA" ]; then
+	if [ -d "${CONFDIR}/CA" ]; then
 		rm "${CONFDIR}/CA/"*
 		rmdir "${CONFDIR}/CA"
 	fi
