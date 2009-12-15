@@ -1151,7 +1151,7 @@ static char create_complete_sql[] =
 	"   a8  VARCHAR(128),\n" 
 	"   a9  VARCHAR(128),\n" 
 	"   a10 VARCHAR(128),\n" 
-	"   hostname VARCHAR(1024)\n" 
+	"   hostname VARCHAR(256)\n" 
 	");\n";
 
 static char create_alias_sql[] =
@@ -1159,12 +1159,12 @@ static char create_alias_sql[] =
 	"   sticky  INTEGER,\n" 
 	"   alias  VARCHAR(128),\n" 
 	"   command  VARCHAR(4096),\n" 
-	"   hostname VARCHAR(1024)\n" 
+	"   hostname VARCHAR(256)\n" 
 	");\n";
 
 static char create_channels_sql[] =
 	"CREATE TABLE channels (\n"
-	"   uuid  VARCHAR(1024),\n"
+	"   uuid  VARCHAR(256),\n"
 	"   direction  VARCHAR(32),\n"
 	"   created  VARCHAR(128),\n"
 	"   created_epoch  INTEGER,\n"
@@ -1183,7 +1183,7 @@ static char create_channels_sql[] =
 	"   write_codec  VARCHAR(128),\n" 
 	"   write_rate  VARCHAR(32),\n" 
 	"   secure VARCHAR(32),\n"
-	"   hostname VARCHAR(1024),\n" 
+	"   hostname VARCHAR(256),\n" 
 	"   presence_id VARCHAR(4096),\n" 
 	"   presence_data VARCHAR(4096)\n" 
 	");\ncreate index uuindex on channels (uuid,hostname);\n";
@@ -1196,13 +1196,13 @@ static char create_calls_sql[] =
 	"   caller_cid_num   VARCHAR(256),\n"
 	"   caller_dest_num  VARCHAR(256),\n"
 	"   caller_chan_name VARCHAR(1024),\n"
-	"   caller_uuid      VARCHAR(1024),\n"
+	"   caller_uuid      VARCHAR(256),\n"
 	"   callee_cid_name  VARCHAR(1024),\n"
 	"   callee_cid_num   VARCHAR(256),\n"
 	"   callee_dest_num  VARCHAR(256),\n" 
 	"   callee_chan_name VARCHAR(1024),\n" 
-	"   callee_uuid      VARCHAR(4096),\n" 
-	"   hostname VARCHAR(1024)\n" 
+	"   callee_uuid      VARCHAR(256),\n" 
+	"   hostname VARCHAR(256)\n" 
 	");\n"
 	"create index eruuindex on calls (caller_uuid,hostname);\n"
 	"create index eeuuindex on calls (callee_uuid,hostname);\n";
@@ -1214,7 +1214,7 @@ static char create_interfaces_sql[] =
 	"   ikey             VARCHAR(1024),\n" 
 	"   filename         VARCHAR(4096),\n" 
 	"   syntax           VARCHAR(4096),\n" 
-	"   hostname VARCHAR(1024)\n" 
+	"   hostname VARCHAR(256)\n" 
 	");\n";
 static char create_tasks_sql[] =
 	"CREATE TABLE tasks (\n"
@@ -1222,14 +1222,14 @@ static char create_tasks_sql[] =
 	"   task_desc           VARCHAR(4096),\n" 
 	"   task_group          VARCHAR(1024),\n" 
 	"   task_sql_manager    INTEGER,\n" 
-	"   hostname VARCHAR(1024)\n" 
+	"   hostname VARCHAR(256)\n" 
 	");\n";
 static char create_nat_sql[] = 
 	"CREATE TABLE nat (\n"
 	"   sticky  INTEGER,\n" 
 	"	port	INTEGER,\n"
 	"	proto	INTEGER,\n"
-	"   hostname VARCHAR(1024)\n" 
+	"   hostname VARCHAR(256)\n" 
 	");\n";
 
 switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_t manage)
