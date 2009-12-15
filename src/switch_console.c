@@ -361,144 +361,6 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 	fflush(handle);
 }
 
-struct match_helper {
-	switch_console_callback_match_t *my_matches;
-};
-
-static int uuid_callback(void *pArg, int argc, char **argv, char **columnNames)
-{
-	struct match_helper *h = (struct match_helper *) pArg;
-
-	switch_console_push_match(&h->my_matches, argv[0]);
-	return 0;
-
-}
-
-SWITCH_DECLARE(switch_status_t) switch_console_list_uuid(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	char *sql;
-	struct match_helper h = { 0 };
-	switch_cache_db_handle_t *db = NULL;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	char *errmsg;
-	
-	switch_core_db_handle(&db);
-
-	if (!zstr(cursor)) {
-		sql = switch_mprintf("select distinct uuid from channels where uuid like '%q%%' and hostname='%q' order by uuid", 
-							 cursor, switch_core_get_variable("hostname"));
-	} else {
-		sql = switch_mprintf("select distinct uuid from channels where hostname='%q' order by uuid", 
-							 switch_core_get_variable("hostname"));
-	}
-
-	switch_cache_db_execute_sql_callback(db, sql, uuid_callback, &h, &errmsg);
-	free(sql);
-
-	switch_cache_db_release_db_handle(&db);
-
-	if (h.my_matches) {
-		*matches = h.my_matches;
-		status = SWITCH_STATUS_SUCCESS;
-	}
-
-
-	return status;
-}
-
-
-static struct {
-	switch_hash_t *func_hash;
-	switch_mutex_t *func_mutex;
-} globals;
-
-SWITCH_DECLARE(switch_status_t) switch_console_init(switch_memory_pool_t *pool)
-{
-	switch_mutex_init(&globals.func_mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_core_hash_init(&globals.func_hash, pool);
-	switch_console_add_complete_func("::console::list_uuid", switch_console_list_uuid);
-	return SWITCH_STATUS_SUCCESS;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_console_shutdown(void)
-{
-	return switch_core_hash_destroy(&globals.func_hash);
-}
-
-SWITCH_DECLARE(switch_status_t) switch_console_add_complete_func(const char *name, switch_console_complete_callback_t cb)
-{
-	switch_status_t status;
-	
-	switch_mutex_lock(globals.func_mutex);
-	status = switch_core_hash_insert(globals.func_hash, name, (void *)(intptr_t)cb);
-	switch_mutex_unlock(globals.func_mutex);
-
-	return status;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_console_del_complete_func(const char *name)
-{
-	switch_status_t status;
-	
-	switch_mutex_lock(globals.func_mutex);
-	status = switch_core_hash_insert(globals.func_hash, name, NULL);
-	switch_mutex_unlock(globals.func_mutex);
-
-    return status;
-}
-
-SWITCH_DECLARE(void) switch_console_free_matches(switch_console_callback_match_t **matches)
-{
-	switch_console_callback_match_t *my_match = *matches;
-	switch_console_callback_match_node_t *m, *cur;
-
-	/* Don't play with matches */
-	*matches = NULL;
-
-	m = my_match->head;
-	while(m) {
-		cur = m;
-		m = m->next;
-		free(cur->val);
-		free(cur);
-	}
-}
-
-SWITCH_DECLARE(void) switch_console_push_match(switch_console_callback_match_t **matches, const char *new_val)
-{
-	switch_console_callback_match_node_t *match;
-
-	if (!*matches) {
-		switch_zmalloc(*matches, sizeof(**matches));
-	}
-
-	switch_zmalloc(match, sizeof(*match));
-	match->val = strdup(new_val);
-
-	if ((*matches)->head) {
-		(*matches)->end->next = match;
-	} else {
-		(*matches)->head = match;
-	}
-
-	(*matches)->end = match;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_console_run_complete_func(const char *func, const char *line, const char *cursor,
-																 switch_console_callback_match_t **matches)
-{
-	switch_console_complete_callback_t cb;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-
-	switch_mutex_lock(globals.func_mutex);
-	if ((cb = (switch_console_complete_callback_t)(intptr_t)switch_core_hash_find(globals.func_hash, func))) {
-		status = cb(line, cursor, matches);
-	}
-	switch_mutex_unlock(globals.func_mutex);
-
-	return status;
-}
-
 static char hostname[256] = "";
 static int32_t running = 1;
 
@@ -644,12 +506,14 @@ static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *ob
 
 
 struct helper {
+	EditLine *el;
 	int len;
 	int hits;
 	int words;
 	char last[512];
 	char partial[512];
 	FILE *out;
+	switch_stream_handle_t *stream;
 };
 
 static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -692,7 +556,13 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 	}
 
 	if (!zstr(target)) {
-		fprintf(h->out, "[%20s]\t", target);
+		if (h->out) {
+			fprintf(h->out, "[%20s]\t", target);
+		}
+		if (h->stream) {
+			h->stream->write_function(h->stream, "[%20s]\t", target);
+		}
+
 		switch_copy_string(h->last, target, sizeof(h->last));
 		h->hits++;
 	}
@@ -713,7 +583,12 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 	if (!zstr(target)) {
 		if ((h->hits % 4) == 0) {
-			fprintf(h->out, "\n");
+			if (h->out) {
+				fprintf(h->out, "\n");
+			}
+			if (h->stream) {
+				h->stream->write_function(h->stream, "\n");
+			}
 		}
 	}
 
@@ -721,26 +596,73 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 }
 
 
-static unsigned char complete(EditLine * el, int ch)
+
+struct match_helper {
+	switch_console_callback_match_t *my_matches;
+};
+
+static int uuid_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct match_helper *h = (struct match_helper *) pArg;
+
+	switch_console_push_match(&h->my_matches, argv[0]);
+	return 0;
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_console_list_uuid(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	char *sql;
+	struct match_helper h = { 0 };
+	switch_cache_db_handle_t *db = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *errmsg;
+	
+	switch_core_db_handle(&db);
+
+	if (!zstr(cursor)) {
+		sql = switch_mprintf("select distinct uuid from channels where uuid like '%q%%' and hostname='%q' order by uuid", 
+							 cursor, switch_core_get_variable("hostname"));
+	} else {
+		sql = switch_mprintf("select distinct uuid from channels where hostname='%q' order by uuid", 
+							 switch_core_get_variable("hostname"));
+	}
+
+	switch_cache_db_execute_sql_callback(db, sql, uuid_callback, &h, &errmsg);
+	free(sql);
+
+	switch_cache_db_release_db_handle(&db);
+
+	if (h.my_matches) {
+		*matches = h.my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+
+	return status;
+}
+
+
+SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const char *cursor, FILE *console_out, switch_stream_handle_t *stream)
 {
 	switch_cache_db_handle_t *db = NULL;
 	char *sql = NULL;
-	const LineInfo *lf = el_line(el);
-	char *dup = strdup(lf->buffer);
+	char *dup = strdup(line);
 	char *buf = dup;
 	char *p, *lp = NULL;
 	char *errmsg = NULL;
-	struct helper h = {  0 };
+	struct helper h = { el };
 	unsigned char ret = CC_REDISPLAY;
 	int pos = 0;
 
 	switch_core_db_handle(&db);
 	
-	if (!zstr(lf->cursor) && !zstr(lf->buffer)) {
-		pos = (lf->cursor - lf->buffer);
+	if (!zstr(cursor) && !zstr(line)) {
+		pos = (cursor - line);
 	}
 	
-	h.out = switch_core_get_console();
+	h.out = console_out;
+	h.stream = stream;
 
 	if (pos > 0) {
 		*(buf + pos) = '\0';
@@ -767,7 +689,13 @@ static unsigned char complete(EditLine * el, int ch)
 
 	h.len = strlen(buf);
 	
-	fprintf(h.out, "\n\n");
+	if (h.out) {
+		fprintf(h.out, "\n\n");
+	}
+
+	if (h.stream) {
+		h.stream->write_function(h.stream, "\n\n");
+	}
 
 	if (h.words == 0) {
 		sql = switch_mprintf("select distinct name from interfaces where type='api' and name like '%q%%' and hostname='%q' order by name", 
@@ -845,20 +773,35 @@ static unsigned char complete(EditLine * el, int ch)
 		}
 	}
 
-	fprintf(h.out, "\n\n");
+	if (h.out) {
+		fprintf(h.out, "\n\n");
+	}
+	
+	if (h.stream) {
+		h.stream->write_function(h.stream, "\n\n");
+		if (h.hits == 1 && !zstr(h.last)) {
+			h.stream->write_function(h.stream, "write=%d:%s ", h.len, h.last);
+		} else if (h.hits > 1 && !zstr(h.partial)) {
+			h.stream->write_function(h.stream, "write=%d:%s", h.len, h.partial);
+		}
+	}
 
-	if (h.hits == 1 && !zstr(h.last)) {
-		el_deletestr(el, h.len);
-		el_insertstr(el, h.last);
-		el_insertstr(el, " ");
-	} else if (h.hits > 1 && !zstr(h.partial)) {
-		el_deletestr(el, h.len);
-		el_insertstr(el, h.partial);
+	if (h.out) {
+		if (h.hits == 1 && !zstr(h.last)) {
+			el_deletestr(el, h.len);
+			el_insertstr(el, h.last);
+			el_insertstr(el, " ");
+		} else if (h.hits > 1 && !zstr(h.partial)) {
+			el_deletestr(el, h.len);
+			el_insertstr(el, h.partial);
+		}
 	}
 
   end:
 
-	fflush(h.out);
+	if (h.out) {
+		fflush(h.out);
+	}
 
 	switch_safe_free(sql);
 	switch_safe_free(dup);
@@ -866,6 +809,105 @@ static unsigned char complete(EditLine * el, int ch)
 	switch_cache_db_release_db_handle(&db);
 
 	return (ret);
+}
+
+static unsigned char complete(EditLine * el, int ch)
+{
+	const LineInfo *lf = el_line(el);
+
+	return switch_console_complete(lf->buffer, lf->cursor, switch_core_get_console(), NULL);
+}
+
+static struct {
+	switch_hash_t *func_hash;
+	switch_mutex_t *func_mutex;
+} globals;
+
+SWITCH_DECLARE(switch_status_t) switch_console_init(switch_memory_pool_t *pool)
+{
+	switch_mutex_init(&globals.func_mutex, SWITCH_MUTEX_NESTED, pool);
+	switch_core_hash_init(&globals.func_hash, pool);
+	switch_console_add_complete_func("::console::list_uuid", switch_console_list_uuid);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_console_shutdown(void)
+{
+	return switch_core_hash_destroy(&globals.func_hash);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_console_add_complete_func(const char *name, switch_console_complete_callback_t cb)
+{
+	switch_status_t status;
+	
+	switch_mutex_lock(globals.func_mutex);
+	status = switch_core_hash_insert(globals.func_hash, name, (void *)(intptr_t)cb);
+	switch_mutex_unlock(globals.func_mutex);
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_console_del_complete_func(const char *name)
+{
+	switch_status_t status;
+	
+	switch_mutex_lock(globals.func_mutex);
+	status = switch_core_hash_insert(globals.func_hash, name, NULL);
+	switch_mutex_unlock(globals.func_mutex);
+
+    return status;
+}
+
+SWITCH_DECLARE(void) switch_console_free_matches(switch_console_callback_match_t **matches)
+{
+	switch_console_callback_match_t *my_match = *matches;
+	switch_console_callback_match_node_t *m, *cur;
+
+	/* Don't play with matches */
+	*matches = NULL;
+
+	m = my_match->head;
+	while(m) {
+		cur = m;
+		m = m->next;
+		free(cur->val);
+		free(cur);
+	}
+}
+
+SWITCH_DECLARE(void) switch_console_push_match(switch_console_callback_match_t **matches, const char *new_val)
+{
+	switch_console_callback_match_node_t *match;
+
+	if (!*matches) {
+		switch_zmalloc(*matches, sizeof(**matches));
+	}
+
+	switch_zmalloc(match, sizeof(*match));
+	match->val = strdup(new_val);
+
+	if ((*matches)->head) {
+		(*matches)->end->next = match;
+	} else {
+		(*matches)->head = match;
+	}
+
+	(*matches)->end = match;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_console_run_complete_func(const char *func, const char *line, const char *last_word,
+																 switch_console_callback_match_t **matches)
+{
+	switch_console_complete_callback_t cb;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_mutex_lock(globals.func_mutex);
+	if ((cb = (switch_console_complete_callback_t)(intptr_t)switch_core_hash_find(globals.func_hash, func))) {
+		status = cb(line, last_word, matches);
+	}
+	switch_mutex_unlock(globals.func_mutex);
+
+	return status;
 }
 
 
@@ -1120,9 +1162,8 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 
 	char cmd[2048] = "";
 	int32_t activity = 1;	
-	int x = 0;
 	gethostname(hostname, sizeof(hostname));
-	
+
 	while (running) {
 		int32_t arg;
 #ifdef _MSC_VER
