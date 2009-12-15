@@ -277,50 +277,53 @@ static struct {
 	char hostname[256];
 	char *dbname;
 	char *odbc_dsn;
+	char *odbc_user;
+	char *odbc_pass;
 	int node_thread_running;
 	switch_odbc_handle_t *master_odbc;
 } globals;
 
 
+switch_cache_db_handle_t *fifo_get_db_handle(void)
+{
+	switch_cache_db_connection_options_t options = { {0} };
+	switch_cache_db_handle_t *dbh = NULL;
+	
+	if (globals.odbc_dsn && globals.odbc_user && globals.odbc_pass) {
+		options.odbc_options.dsn = globals.odbc_dsn;
+		options.odbc_options.user = globals.odbc_user;
+		options.odbc_options.pass = globals.odbc_pass;
+
+		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS) dbh = NULL;
+		return dbh;
+	} else {
+		options.core_db_options.db_path = globals.dbname;
+		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS) dbh = NULL;
+		return dbh;
+	}
+}
+
+
 static switch_status_t fifo_execute_sql(char *sql, switch_mutex_t *mutex)
 {
-	switch_core_db_t *db;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char *err_str;
+	switch_cache_db_handle_t *dbh = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (switch_odbc_available() && globals.odbc_dsn) {
-		switch_odbc_statement_handle_t stmt;
-		if (switch_odbc_handle_exec(globals.master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
-			
-			err_str = switch_odbc_handle_get_error(globals.master_odbc, stmt);
-			if (!zstr(err_str)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
-			}
-			switch_safe_free(err_str);
-			status = SWITCH_STATUS_FALSE;
-		}
-		switch_odbc_statement_handle_free(&stmt);
-	} else {
-		if (!(db = switch_core_db_open_file(globals.dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", globals.dbname);
-			status = SWITCH_STATUS_FALSE;
-			goto end;
-		}
-
-		err_str = NULL;
-		switch_core_db_exec(db, sql, NULL, NULL, &err_str);
-		if (err_str) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error [%s]\n[%s]\n", sql, err_str);
-			free(err_str);
-		}
-		switch_core_db_close(db);
+	if (!(dbh = fifo_get_db_handle())) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		goto end;
 	}
 
+	status = switch_cache_db_execute_sql(dbh, sql, NULL);
+
   end:
+	
+	switch_cache_db_release_db_handle(&dbh);
+
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
@@ -331,34 +334,29 @@ static switch_status_t fifo_execute_sql(char *sql, switch_mutex_t *mutex)
 static switch_bool_t fifo_execute_sql_callback(switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
 	switch_bool_t ret = SWITCH_FALSE;
-	switch_core_db_t *db;
 	char *errmsg = NULL;
-
+	switch_cache_db_handle_t *dbh = NULL;
+	
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (switch_odbc_available() && globals.odbc_dsn) {
-		switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata, NULL);
-	} else {
-		if (!(db = switch_core_db_open_file(globals.dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", globals.dbname);
-			goto end;
-		}
+	if (!(dbh = fifo_get_db_handle())) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+        goto end;
+    }
+	
+	switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, &errmsg);
 
-		switch_core_db_exec(db, sql, callback, pdata, &errmsg);
-
-		if (errmsg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
-			free(errmsg);
-		}
-
-		if (db) {
-			switch_core_db_close(db);
-		}
+	if (errmsg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
+		free(errmsg);
 	}
 
   end:
+
+	switch_cache_db_release_db_handle(&dbh);
+
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
@@ -1877,10 +1875,10 @@ static switch_status_t load_config(int reload, int del_all)
 	switch_xml_t cfg, xml, fifo, fifos, member, settings, param;
 	char *odbc_user = NULL;
 	char *odbc_pass = NULL;
-	switch_core_db_t *db;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;	
 	char *sql;
 	switch_bool_t delete_all_outbound_member_on_startup = SWITCH_FALSE;
+	switch_cache_db_handle_t *dbh = NULL;
 
 	gethostname(globals.hostname, sizeof(globals.hostname));
 
@@ -1896,14 +1894,14 @@ static switch_status_t load_config(int reload, int del_all)
 
 			var = (char *) switch_xml_attr_soft(param, "name");
 			val = (char *) switch_xml_attr_soft(param, "value");
-
+			
 			if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 				if (switch_odbc_available()) {
 					globals.odbc_dsn = switch_core_strdup(globals.pool, val);
-					if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
+					if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
 						*odbc_user++ = '\0';
-						if ((odbc_pass = strchr(odbc_user, ':'))) {
-							*odbc_pass++ = '\0';
+						if ((globals.odbc_pass = strchr(globals.odbc_user, ':'))) {
+							*globals.odbc_pass++ = '\0';
 						}
 					}
 				} else {
@@ -1919,34 +1917,15 @@ static switch_status_t load_config(int reload, int del_all)
 		globals.dbname = "fifo";
 	}
 
-	if (switch_odbc_available() && globals.odbc_dsn) {
-		if (!(globals.master_odbc = switch_odbc_handle_new(globals.odbc_dsn, odbc_user, odbc_pass))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-			status = SWITCH_STATUS_FALSE;
-			goto done;
-		}
-		if (switch_odbc_handle_connect(globals.master_odbc) != SWITCH_ODBC_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-			status = SWITCH_STATUS_FALSE;
-			goto done;
-		}
+	
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", globals.odbc_dsn);
-		if (switch_odbc_handle_exec(globals.master_odbc, "delete from fifo_outbound", NULL) != SWITCH_STATUS_SUCCESS) {
-			if (switch_odbc_handle_exec(globals.master_odbc, (char *)outbound_sql, NULL) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
-			}
-		}
-	} else {
-		if ((db = switch_core_db_open_file(globals.dbname))) {
-			switch_core_db_test_reactive(db, "delete from fifo_outbound where static = 1", NULL, (char *)outbound_sql);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-			status = SWITCH_STATUS_FALSE;
-			goto done;
-		}
-		switch_core_db_close(db);
+	if (!(dbh = fifo_get_db_handle())) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
+		goto done;
 	}
+	
+	switch_cache_db_test_reactive(dbh, "delete from fifo_outbound where static = 1", "drop table fifo_outbound", outbound_sql);
+	switch_cache_db_release_db_handle(&dbh);
 
 	if (reload) {
 		switch_hash_index_t *hi;
