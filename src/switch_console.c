@@ -1121,8 +1121,9 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 
 	char cmd[2048] = "";
 	int32_t activity = 1;	
+	int x = 0;
 	gethostname(hostname, sizeof(hostname));
-
+	
 	while (running) {
 		int32_t arg;
 #ifdef _MSC_VER
