@@ -36,6 +36,14 @@
 #define CMD_BUFLEN 1024;
 
 #ifdef SWITCH_HAVE_LIBEDIT
+#include <histedit.h>
+
+static EditLine *el;
+static History *myhistory;
+static HistEvent ev;
+static char *hfile = NULL;
+
+
 /*
  * store a strdup() of the string configured in XML
  * bound to each of the 12 function key
@@ -83,6 +91,19 @@ static switch_status_t console_xml_config(void)
 
 	return SWITCH_STATUS_SUCCESS;
 }
+#else
+
+#define CC_NORM         0
+#define CC_NEWLINE      1
+#define CC_EOF          2
+#define CC_ARGHACK      3
+#define CC_REFRESH      4
+#define CC_CURSOR       5
+#define CC_ERROR        6
+#define CC_FATAL        7
+#define CC_REDISPLAY    8
+#define CC_REFRESH_BEEP 9
+
 #endif
 
 SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen)
@@ -364,145 +385,6 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 static char hostname[256] = "";
 static int32_t running = 1;
 
-#ifdef SWITCH_HAVE_LIBEDIT
-#include <histedit.h>
-static char prompt_str[512] = "";
-
-/*
- * If a fnkey is configured then process the command
- */
-static unsigned char console_fnkey_pressed(int i)
-{
-	char *c, *cmd;
-
-	assert((i > 0) && (i <= 12));
-
-	c = console_fnkeys[i - 1];
-
-	/* This new line is necessary to avoid output to begin after the ">" of the CLI's prompt */
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "\n");
-
-	if (c == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "FUNCTION KEY F%d IS NOT BOUND, please edit switch.conf XML file\n", i);
-		return CC_REDISPLAY;
-	}
-
-	cmd = strdup(c);
-	switch_console_process(cmd, 0);
-	free(cmd);
-
-	return CC_REDISPLAY;
-}
-
-static unsigned char console_f1key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(1);
-}
-static unsigned char console_f2key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(2);
-}
-static unsigned char console_f3key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(3);
-}
-static unsigned char console_f4key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(4);
-}
-static unsigned char console_f5key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(5);
-}
-static unsigned char console_f6key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(6);
-}
-static unsigned char console_f7key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(7);
-}
-static unsigned char console_f8key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(8);
-}
-static unsigned char console_f9key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(9);
-}
-static unsigned char console_f10key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(10);
-}
-static unsigned char console_f11key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(11);
-}
-static unsigned char console_f12key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(12);
-}
-
-
-char *prompt(EditLine * e)
-{
-	if (*prompt_str == '\0') {
-		switch_snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", hostname);
-	}
-
-	return prompt_str;
-}
-
-static EditLine *el;
-static History *myhistory;
-static HistEvent ev;
-static char *hfile = NULL;
-
-static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *obj)
-{
-	int count;
-	const char *line;
-	switch_memory_pool_t *pool = (switch_memory_pool_t *) obj;
-
-	while (running) {
-		int32_t arg = 0;
-
-		if (getppid() == 1) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "We've become an orphan, no more console for us.\n");
-			break;
-		}
-		
-		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
-		if (!arg) {
-			break;
-		}
-
-		line = el_gets(el, &count);
-
-		if (count > 1) {
-			if (!zstr(line)) {
-				char *cmd = strdup(line);
-				char *p;
-				const LineInfo *lf = el_line(el);
-				char *foo = (char *) lf->buffer;
-				if ((p = strrchr(cmd, '\r')) || (p = strrchr(cmd, '\n'))) {
-					*p = '\0';
-				}
-				assert(cmd != NULL);
-				history(myhistory, &ev, H_ENTER, line);
-				running = switch_console_process(cmd, 0);
-				el_deletestr(el, strlen(foo) + 1);
-				memset(foo, 0, strlen(foo));
-				free(cmd);
-			}
-		}
-		switch_cond_next();
-	}
-
-	switch_core_destroy_memory_pool(&pool);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Editline thread exiting\n");
-	return NULL;
-}
 
 
 struct helper {
@@ -654,6 +536,12 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	unsigned char ret = CC_REDISPLAY;
 	int pos = 0;
 
+#ifndef SWITCH_HAVE_LIBEDIT
+	if (!stream) {
+		return CC_ERROR;
+	}
+#endif
+
 	switch_core_db_handle(&db);
 	
 	if (!zstr(cursor) && !zstr(line)) {
@@ -785,6 +673,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 		}
 	}
 
+#ifdef SWITCH_HAVE_LIBEDIT
 	if (h.out) {
 		if (h.hits == 1 && !zstr(h.last)) {
 			el_deletestr(el, h.len);
@@ -795,6 +684,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 			el_insertstr(el, h.partial);
 		}
 	}
+#endif
 
   end:
 
@@ -810,12 +700,352 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	return (ret);
 }
 
+
+
+
+#ifdef SWITCH_HAVE_LIBEDIT
+static char prompt_str[512] = "";
+
+/*
+ * If a fnkey is configured then process the command
+ */
+static unsigned char console_fnkey_pressed(int i)
+{
+	char *c, *cmd;
+
+	assert((i > 0) && (i <= 12));
+
+	c = console_fnkeys[i - 1];
+
+	/* This new line is necessary to avoid output to begin after the ">" of the CLI's prompt */
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "\n");
+
+	if (c == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "FUNCTION KEY F%d IS NOT BOUND, please edit switch.conf XML file\n", i);
+		return CC_REDISPLAY;
+	}
+
+	cmd = strdup(c);
+	switch_console_process(cmd, 0);
+	free(cmd);
+
+	return CC_REDISPLAY;
+}
+
+static unsigned char console_f1key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(1);
+}
+static unsigned char console_f2key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(2);
+}
+static unsigned char console_f3key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(3);
+}
+static unsigned char console_f4key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(4);
+}
+static unsigned char console_f5key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(5);
+}
+static unsigned char console_f6key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(6);
+}
+static unsigned char console_f7key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(7);
+}
+static unsigned char console_f8key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(8);
+}
+static unsigned char console_f9key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(9);
+}
+static unsigned char console_f10key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(10);
+}
+static unsigned char console_f11key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(11);
+}
+static unsigned char console_f12key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(12);
+}
+
+
+char *prompt(EditLine * e)
+{
+	if (*prompt_str == '\0') {
+		switch_snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", hostname);
+	}
+
+	return prompt_str;
+}
+
+static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *obj)
+{
+	int count;
+	const char *line;
+	switch_memory_pool_t *pool = (switch_memory_pool_t *) obj;
+
+	while (running) {
+		int32_t arg = 0;
+
+		if (getppid() == 1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "We've become an orphan, no more console for us.\n");
+			break;
+		}
+		
+		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
+		if (!arg) {
+			break;
+		}
+
+		line = el_gets(el, &count);
+
+		if (count > 1) {
+			if (!zstr(line)) {
+				char *cmd = strdup(line);
+				char *p;
+				const LineInfo *lf = el_line(el);
+				char *foo = (char *) lf->buffer;
+				if ((p = strrchr(cmd, '\r')) || (p = strrchr(cmd, '\n'))) {
+					*p = '\0';
+				}
+				assert(cmd != NULL);
+				history(myhistory, &ev, H_ENTER, line);
+				running = switch_console_process(cmd, 0);
+				el_deletestr(el, strlen(foo) + 1);
+				memset(foo, 0, strlen(foo));
+				free(cmd);
+			}
+		}
+		switch_cond_next();
+	}
+
+	switch_core_destroy_memory_pool(&pool);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Editline thread exiting\n");
+	return NULL;
+}
+
 static unsigned char complete(EditLine * el, int ch)
 {
 	const LineInfo *lf = el_line(el);
 
 	return switch_console_complete(lf->buffer, lf->cursor, switch_core_get_console(), NULL);
 }
+
+
+SWITCH_DECLARE(void) switch_console_loop(void)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	switch_memory_pool_t *pool;
+
+	gethostname(hostname, sizeof(hostname));
+
+	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
+		return;
+	}
+
+	el = el_init(__FILE__, switch_core_get_console(), switch_core_get_console(), switch_core_get_console());
+	el_set(el, EL_PROMPT, &prompt);
+	el_set(el, EL_EDITOR, "emacs");
+	/* AGX: Bind Keyboard function keys. This has been tested with:
+	 * - linux console keyabord
+	 * - putty.exe connected via ssh to linux
+	 */
+	/* Load/Init the config first */
+	console_xml_config();
+	/* Bind the functions to the key */
+	el_set(el, EL_ADDFN, "f1-key", "F1 KEY PRESS", console_f1key);
+	el_set(el, EL_ADDFN, "f2-key", "F2 KEY PRESS", console_f2key);
+	el_set(el, EL_ADDFN, "f3-key", "F3 KEY PRESS", console_f3key);
+	el_set(el, EL_ADDFN, "f4-key", "F4 KEY PRESS", console_f4key);
+	el_set(el, EL_ADDFN, "f5-key", "F5 KEY PRESS", console_f5key);
+	el_set(el, EL_ADDFN, "f6-key", "F6 KEY PRESS", console_f6key);
+	el_set(el, EL_ADDFN, "f7-key", "F7 KEY PRESS", console_f7key);
+	el_set(el, EL_ADDFN, "f8-key", "F8 KEY PRESS", console_f8key);
+	el_set(el, EL_ADDFN, "f9-key", "F9 KEY PRESS", console_f9key);
+	el_set(el, EL_ADDFN, "f10-key", "F10 KEY PRESS", console_f10key);
+	el_set(el, EL_ADDFN, "f11-key", "F11 KEY PRESS", console_f11key);
+	el_set(el, EL_ADDFN, "f12-key", "F12 KEY PRESS", console_f12key);
+
+	el_set(el, EL_BIND, "\033OP", "f1-key", NULL);
+	el_set(el, EL_BIND, "\033OQ", "f2-key", NULL);
+	el_set(el, EL_BIND, "\033OR", "f3-key", NULL);
+	el_set(el, EL_BIND, "\033OS", "f4-key", NULL);
+
+
+	el_set(el, EL_BIND, "\033[11~", "f1-key", NULL);
+	el_set(el, EL_BIND, "\033[12~", "f2-key", NULL);
+	el_set(el, EL_BIND, "\033[13~", "f3-key", NULL);
+	el_set(el, EL_BIND, "\033[14~", "f4-key", NULL);
+	el_set(el, EL_BIND, "\033[15~", "f5-key", NULL);
+	el_set(el, EL_BIND, "\033[17~", "f6-key", NULL);
+	el_set(el, EL_BIND, "\033[18~", "f7-key", NULL);
+	el_set(el, EL_BIND, "\033[19~", "f8-key", NULL);
+	el_set(el, EL_BIND, "\033[20~", "f9-key", NULL);
+	el_set(el, EL_BIND, "\033[21~", "f10-key", NULL);
+	el_set(el, EL_BIND, "\033[23~", "f11-key", NULL);
+	el_set(el, EL_BIND, "\033[24~", "f12-key", NULL);
+
+
+	el_set(el, EL_ADDFN, "ed-complete", "Complete argument", complete);
+	el_set(el, EL_BIND, "^I", "ed-complete", NULL);
+
+	myhistory = history_init();
+	if (myhistory == 0) {
+		fprintf(stderr, "history could not be initialized\n");
+		return;
+	}
+
+	hfile = switch_mprintf("%s%sfreeswitch.history", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+	assert(hfile != NULL);
+
+	history(myhistory, &ev, H_SETSIZE, 800);
+	el_set(el, EL_HIST, history, myhistory);
+	history(myhistory, &ev, H_LOAD, hfile);
+
+	el_source(el, NULL);
+
+	switch_threadattr_create(&thd_attr, pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_thread_create(&thread, thd_attr, console_thread, pool, pool);
+
+	while (running) {
+		int32_t arg = 0;
+		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
+		if (!arg) {
+			break;
+		}
+		switch_yield(1000000);
+	}
+
+	history(myhistory, &ev, H_SAVE, hfile);
+	free(hfile);
+
+	/* Clean up our memory */
+	history_end(myhistory);
+	el_end(el);
+}
+
+#else
+
+SWITCH_DECLARE(void) switch_console_loop(void)
+{
+
+	char cmd[2048] = "";
+	int32_t x = 0, activity = 1;	
+	
+	gethostname(hostname, sizeof(hostname));
+
+	while (running) {
+		int32_t arg;
+#ifdef _MSC_VER
+		DWORD read, i;
+		HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
+		INPUT_RECORD in[128];
+#else
+		fd_set rfds, efds;
+		struct timeval tv = { 0, 20000 };
+#endif
+
+		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
+		if (!arg) {
+			break;
+		}
+
+		if (activity) {
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "\nfreeswitch@%s> ", hostname);
+		}
+#ifdef _MSC_VER
+		activity = 0;
+		PeekConsoleInput(stdinHandle, in, 128, &read);
+		for (i = 0; i < read; i++) {
+			if (in[i].EventType == KEY_EVENT && !in[i].Event.KeyEvent.bKeyDown) {
+				activity = 1;
+				break;
+			}
+		}
+
+		if (activity) {
+			DWORD bytes = 0;
+			char *end;
+			ReadConsole(stdinHandle, cmd, sizeof(cmd), &bytes, NULL);
+			FlushConsoleInputBuffer(stdinHandle);
+			end = end_of_p(cmd);
+			while(*end == '\r' || *end == '\n') {
+				*end-- = '\0';	
+			}
+		}
+
+		if (cmd[0]) {
+			running = switch_console_process(cmd, 0);
+			memset(cmd, 0, sizeof(cmd));
+		}
+		Sleep(20);
+#else
+		FD_ZERO(&rfds);
+		FD_ZERO(&efds);
+		FD_SET(fileno(stdin), &rfds);
+		FD_SET(fileno(stdin), &efds);
+		if ((activity = select(fileno(stdin) + 1, &rfds, NULL, &efds, &tv)) < 0) {
+			break;
+		}
+
+		if (FD_ISSET(fileno(stdin), &efds)) {
+			continue;
+		}
+		
+		if (!FD_ISSET(fileno(stdin), &rfds)) {
+			activity = 0;
+		}
+
+		if (activity == 0) {
+			fflush(stdout);
+			continue;
+		}
+
+		memset(&cmd, 0, sizeof(cmd));
+		for (x = 0; x < (sizeof(cmd) - 1); x++) {
+			int c = getchar();
+			if (c < 0) {
+				int y = read(fileno(stdin), cmd, sizeof(cmd) - 1);
+				cmd[y - 1] = '\0';
+				break;
+			}
+
+			cmd[x] = (char) c;
+
+			if (cmd[x] == '\n') {
+				cmd[x] = '\0';
+				break;
+			}
+		}
+
+		if (cmd[0]) {
+			running = switch_console_process(cmd, 0);
+		}
+#endif
+	}
+}
+
+
+
+#endif
+
 
 static struct {
 	switch_hash_t *func_hash;
@@ -1049,211 +1279,8 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 
 }
 
-SWITCH_DECLARE(void) switch_console_loop(void)
-{
-	switch_thread_t *thread;
-	switch_threadattr_t *thd_attr = NULL;
-	switch_memory_pool_t *pool;
-
-	gethostname(hostname, sizeof(hostname));
-
-	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
-		return;
-	}
-
-	el = el_init(__FILE__, switch_core_get_console(), switch_core_get_console(), switch_core_get_console());
-	el_set(el, EL_PROMPT, &prompt);
-	el_set(el, EL_EDITOR, "emacs");
-	/* AGX: Bind Keyboard function keys. This has been tested with:
-	 * - linux console keyabord
-	 * - putty.exe connected via ssh to linux
-	 */
-	/* Load/Init the config first */
-	console_xml_config();
-	/* Bind the functions to the key */
-	el_set(el, EL_ADDFN, "f1-key", "F1 KEY PRESS", console_f1key);
-	el_set(el, EL_ADDFN, "f2-key", "F2 KEY PRESS", console_f2key);
-	el_set(el, EL_ADDFN, "f3-key", "F3 KEY PRESS", console_f3key);
-	el_set(el, EL_ADDFN, "f4-key", "F4 KEY PRESS", console_f4key);
-	el_set(el, EL_ADDFN, "f5-key", "F5 KEY PRESS", console_f5key);
-	el_set(el, EL_ADDFN, "f6-key", "F6 KEY PRESS", console_f6key);
-	el_set(el, EL_ADDFN, "f7-key", "F7 KEY PRESS", console_f7key);
-	el_set(el, EL_ADDFN, "f8-key", "F8 KEY PRESS", console_f8key);
-	el_set(el, EL_ADDFN, "f9-key", "F9 KEY PRESS", console_f9key);
-	el_set(el, EL_ADDFN, "f10-key", "F10 KEY PRESS", console_f10key);
-	el_set(el, EL_ADDFN, "f11-key", "F11 KEY PRESS", console_f11key);
-	el_set(el, EL_ADDFN, "f12-key", "F12 KEY PRESS", console_f12key);
-
-	el_set(el, EL_BIND, "\033OP", "f1-key", NULL);
-	el_set(el, EL_BIND, "\033OQ", "f2-key", NULL);
-	el_set(el, EL_BIND, "\033OR", "f3-key", NULL);
-	el_set(el, EL_BIND, "\033OS", "f4-key", NULL);
 
 
-	el_set(el, EL_BIND, "\033[11~", "f1-key", NULL);
-	el_set(el, EL_BIND, "\033[12~", "f2-key", NULL);
-	el_set(el, EL_BIND, "\033[13~", "f3-key", NULL);
-	el_set(el, EL_BIND, "\033[14~", "f4-key", NULL);
-	el_set(el, EL_BIND, "\033[15~", "f5-key", NULL);
-	el_set(el, EL_BIND, "\033[17~", "f6-key", NULL);
-	el_set(el, EL_BIND, "\033[18~", "f7-key", NULL);
-	el_set(el, EL_BIND, "\033[19~", "f8-key", NULL);
-	el_set(el, EL_BIND, "\033[20~", "f9-key", NULL);
-	el_set(el, EL_BIND, "\033[21~", "f10-key", NULL);
-	el_set(el, EL_BIND, "\033[23~", "f11-key", NULL);
-	el_set(el, EL_BIND, "\033[24~", "f12-key", NULL);
-
-
-	el_set(el, EL_ADDFN, "ed-complete", "Complete argument", complete);
-	el_set(el, EL_BIND, "^I", "ed-complete", NULL);
-
-	myhistory = history_init();
-	if (myhistory == 0) {
-		fprintf(stderr, "history could not be initialized\n");
-		return;
-	}
-
-	hfile = switch_mprintf("%s%sfreeswitch.history", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
-	assert(hfile != NULL);
-
-	history(myhistory, &ev, H_SETSIZE, 800);
-	el_set(el, EL_HIST, history, myhistory);
-	history(myhistory, &ev, H_LOAD, hfile);
-
-	el_source(el, NULL);
-
-	switch_threadattr_create(&thd_attr, pool);
-	switch_threadattr_detach_set(thd_attr, 1);
-	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&thread, thd_attr, console_thread, pool, pool);
-
-	while (running) {
-		int32_t arg = 0;
-		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
-		if (!arg) {
-			break;
-		}
-		switch_yield(1000000);
-	}
-
-	history(myhistory, &ev, H_SAVE, hfile);
-	free(hfile);
-
-	/* Clean up our memory */
-	history_end(myhistory);
-	el_end(el);
-}
-
-#else
-SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
-{
-	return SWITCH_STATUS_FALSE;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
-{
-	return SWITCH_STATUS_FALSE;
-}
-
-SWITCH_DECLARE(void) switch_console_loop(void)
-{
-
-	char cmd[2048] = "";
-	int32_t activity = 1;	
-	gethostname(hostname, sizeof(hostname));
-
-	while (running) {
-		int32_t arg;
-#ifdef _MSC_VER
-		DWORD read, i;
-		HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
-		INPUT_RECORD in[128];
-#else
-		fd_set rfds, efds;
-		struct timeval tv = { 0, 20000 };
-#endif
-
-		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
-		if (!arg) {
-			break;
-		}
-
-		if (activity) {
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "\nfreeswitch@%s> ", hostname);
-		}
-#ifdef _MSC_VER
-		activity = 0;
-		PeekConsoleInput(stdinHandle, in, 128, &read);
-		for (i = 0; i < read; i++) {
-			if (in[i].EventType == KEY_EVENT && !in[i].Event.KeyEvent.bKeyDown) {
-				activity = 1;
-				break;
-			}
-		}
-
-		if (activity) {
-			DWORD bytes = 0;
-			char *end;
-			ReadConsole(stdinHandle, cmd, sizeof(cmd), &bytes, NULL);
-			FlushConsoleInputBuffer(stdinHandle);
-			end = end_of_p(cmd);
-			while(*end == '\r' || *end == '\n') {
-				*end-- = '\0';	
-			}
-		}
-
-		if (cmd[0]) {
-			running = switch_console_process(cmd, 0);
-			memset(cmd, 0, sizeof(cmd));
-		}
-		Sleep(20);
-#else
-		FD_ZERO(&rfds);
-		FD_ZERO(&efds);
-		FD_SET(fileno(stdin), &rfds);
-		FD_SET(fileno(stdin), &efds);
-		if ((activity = select(fileno(stdin) + 1, &rfds, NULL, &efds, &tv)) < 0) {
-			break;
-		}
-
-		if (FD_ISSET(fileno(stdin), &efds)) {
-			continue;
-		}
-		
-		if (!FD_ISSET(fileno(stdin), &rfds)) {
-			activity = 0;
-		}
-
-		if (activity == 0) {
-			fflush(stdout);
-			continue;
-		}
-
-		memset(&cmd, 0, sizeof(cmd));
-		for (x = 0; x < (sizeof(cmd) - 1); x++) {
-			int c = getchar();
-			if (c < 0) {
-				int y = read(fileno(stdin), cmd, sizeof(cmd) - 1);
-				cmd[y - 1] = '\0';
-				break;
-			}
-
-			cmd[x] = (char) c;
-
-			if (cmd[x] == '\n') {
-				cmd[x] = '\0';
-				break;
-			}
-		}
-
-		if (cmd[0]) {
-			running = switch_console_process(cmd, 0);
-		}
-#endif
-	}
-}
-#endif
 
 /* For Emacs:
  * Local Variables:
