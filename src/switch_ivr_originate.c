@@ -3100,7 +3100,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if (*bleg) {
-		if (session && caller_channel && !switch_channel_get_originatee_caller_profile(caller_channel)) {
+		if (session && caller_channel) {
 			switch_caller_profile_t *cloned_profile, *peer_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(*bleg));
 			
 			if (peer_profile) {
