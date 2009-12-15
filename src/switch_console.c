@@ -506,7 +506,6 @@ static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *ob
 
 
 struct helper {
-	EditLine *el;
 	int len;
 	int hits;
 	int words;
@@ -651,7 +650,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	char *buf = dup;
 	char *p, *lp = NULL;
 	char *errmsg = NULL;
-	struct helper h = { el };
+	struct helper h = { 0 };
 	unsigned char ret = CC_REDISPLAY;
 	int pos = 0;
 
