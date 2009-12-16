@@ -719,10 +719,11 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 	return status;
 }
 
-SWITCH_DECLARE(void) switch_cache_db_test_reactive(switch_cache_db_handle_t *dbh, const char *test_sql, const char *drop_sql, const char *reactive_sql)
+SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_handle_t *dbh, 
+															const char *test_sql, const char *drop_sql, const char *reactive_sql)
 {
 	char *errmsg;
-
+	switch_bool_t r = SWITCH_TRUE;
 
 	if (dbh->io_mutex) {
 		switch_mutex_lock(dbh->io_mutex);
@@ -732,6 +733,7 @@ SWITCH_DECLARE(void) switch_cache_db_test_reactive(switch_cache_db_handle_t *dbh
 	case SCDB_TYPE_ODBC:
 		{
 			if (switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
+				r = SWITCH_FALSE;
 				if (drop_sql) {
 					switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, drop_sql, NULL);
 				}
@@ -745,6 +747,7 @@ SWITCH_DECLARE(void) switch_cache_db_test_reactive(switch_cache_db_handle_t *dbh
 				switch_core_db_exec(dbh->native_handle.core_db_dbh, test_sql, NULL, NULL, &errmsg);
 
 				if (errmsg) {
+					r = SWITCH_FALSE;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\nAuto Generating Table!\n", errmsg, test_sql);
 					switch_core_db_free(errmsg);
 					errmsg = NULL;
@@ -772,6 +775,8 @@ SWITCH_DECLARE(void) switch_cache_db_test_reactive(switch_cache_db_handle_t *dbh
 	if (dbh->io_mutex) {
 		switch_mutex_unlock(dbh->io_mutex);
 	}
+
+	return r;
 }
 
 
