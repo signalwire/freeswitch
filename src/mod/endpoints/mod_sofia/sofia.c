@@ -1160,6 +1160,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF(profile->pres_type, NUTAG_ENABLEMESSAGE(1)),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("presence")),
 				   TAG_IF((profile->pres_type || sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)), NUTAG_ALLOW_EVENTS("dialog")),
+				   TAG_IF((profile->pres_type || sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)), NUTAG_ALLOW_EVENTS("line-seize")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("call-info")),
 				   TAG_IF((profile->pres_type || sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)), NUTAG_ALLOW_EVENTS("sla")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("include-session-description")),
