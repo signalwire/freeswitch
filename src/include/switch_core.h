@@ -134,6 +134,8 @@ SWITCH_DECLARE(void) switch_core_session_unsched_heartbeat(switch_core_session_t
 SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t *session, uint32_t seconds);
 SWITCH_DECLARE(void) switch_core_session_disable_heartbeat(switch_core_session_t *session);
 
+#define switch_core_session_get_name(_s) switch_channel_get_name(switch_core_session_get_channel(_s))
+
 /*!
   \brief Add a media bug to the session
   \param session the session to add the bug to

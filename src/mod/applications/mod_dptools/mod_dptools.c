@@ -419,6 +419,54 @@ SWITCH_STANDARD_APP(set_user_function)
 	switch_ivr_set_user(session, data);
 }
 
+#define SET_AUDIO_LEVEL_SYNTAX "[read|write] <vol>"
+SWITCH_STANDARD_APP(set_audio_level_function)
+{
+	char *argv[2] = { 0 };
+	int argc = 0;
+	char *mydata;
+	int level = 0;
+
+	mydata = switch_core_session_strdup(session, data);
+	argc = switch_split(mydata, ' ', argv);
+	
+	if (argc != 2) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Error. USAGE: %s\n", 
+						  switch_core_session_get_name(session), SET_AUDIO_LEVEL_SYNTAX);
+		return;
+	}
+
+	level = atoi(argv[1]);
+
+	switch_ivr_session_audio(session, "level", argv[0], level);
+	
+	
+}
+
+#define SET_MUTE_SYNTAX "[read|write] [true|false]"
+SWITCH_STANDARD_APP(set_mute_function)
+{
+	char *argv[2] = { 0 };
+	int argc = 0;
+	char *mydata;
+	int level = 0;
+
+	mydata = switch_core_session_strdup(session, data);
+	argc = switch_split(mydata, ' ', argv);
+	
+	if (argc != 2) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Error. USAGE: %s\n", 
+						  switch_core_session_get_name(session), SET_MUTE_SYNTAX);
+		return;
+	}
+
+	level = switch_true(argv[1]);
+	
+	switch_ivr_session_audio(session, "mute", argv[0], level);
+	
+}
+
+
 SWITCH_STANDARD_APP(ring_ready_function)
 {
 	switch_channel_ring_ready(switch_core_session_get_channel(session));
@@ -2944,6 +2992,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, PRESENCE_USAGE);
 	SWITCH_ADD_APP(app_interface, "privacy", "Set privacy on calls", "Set caller privacy on calls.", privacy_function, "off|on|name|full|number",
 				   SAF_SUPPORT_NOMEDIA);
+
+	SWITCH_ADD_APP(app_interface, "set_audio_level", "set volume", "set volume", set_audio_level_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "set_mute", "set mute", "set mute", set_mute_function, "", SAF_NONE);
 
 	SWITCH_ADD_APP(app_interface, "flush_dtmf", "flush any queued dtmf", "flush any queued dtmf", flush_dtmf_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "hold", "Send a hold message", "Send a hold message", hold_function, HOLD_SYNTAX, SAF_SUPPORT_NOMEDIA);
