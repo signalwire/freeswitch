@@ -127,6 +127,16 @@ libs/libnatpmp/getgateway.c
 
 $(top_builddir)/libfreeswitch_la-switch_console.lo: src/include/switch_version.h
 
+MY_RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
+	html-recursive info-recursive install-data-recursive \
+	install-dvi-recursive install-exec-recursive \
+	install-html-recursive install-info-recursive \
+	install-pdf-recursive install-ps-recursive install-recursive \
+	installcheck-recursive installdirs-recursive pdf-recursive \
+	ps-recursive uninstall-recursive
+
+$(MY_RECURSIVE_TARGETS): $(bin_PROGRAMS) $(lib_LTLIBRARIES)
+
 if ENABLE_CPP
 libfreeswitch_la_SOURCES += src/switch_cpp.cpp
 endif
