@@ -3067,7 +3067,7 @@ SWITCH_STANDARD_API(alias_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count]|distinct_channels|aliases|complete|chat|endpoint|management|modules|nat_map|say|interfaces|interface_types"
+#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count|like <match string>]|distinct_channels|aliases|complete|chat|endpoint|management|modules|nat_map|say|interfaces|interface_types"
 SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
