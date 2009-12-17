@@ -1462,9 +1462,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_audio(switch_core_session_t *
 	if (!strcasecmp(cmd, "mute")) {
 		if (c_read) {
 			pvt->read_mute = level;
+			pvt->read_level = 0;
 		}
 		if (c_write) {
 			pvt->write_mute = level;
+			pvt->write_level = 0;
 		}
 	} else if (!strcasecmp(cmd, "level")) {
 		if (level < 5 && level > -5) {
