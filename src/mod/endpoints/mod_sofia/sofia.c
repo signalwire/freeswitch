@@ -3454,7 +3454,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 					for (p_contact = sip->sip_contact; p_contact; p_contact = p_contact->m_next) {
 						if (p_contact->m_url) {
-							full_contact = sip_header_as_string(home, (void *) sip->sip_contact);
+							full_contact = sip_header_as_string(home, (void *) p_contact);
 							invite_contact = sofia_glue_strip_uri(full_contact);
 							
 							switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_%d", i);
