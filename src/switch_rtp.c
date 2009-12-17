@@ -551,7 +551,7 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 	}
 }
 
-static void zrtp_logger(int level, const char *data, int len)
+static void zrtp_logger(int level, const char *data, int len, int offset)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s", data);
 }
@@ -600,7 +600,7 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 		zrtp_config.cb.misc_cb.on_send_packet = zrtp_send_rtp_callback;
 		zrtp_config.cb.event_cb.on_zrtp_security_event = zrtp_event_callback;
 		
-		zrtp_log_set_log_engine(zrtp_logger);
+		zrtp_log_set_log_engine((zrtp_log_engine*)zrtp_logger);
 		zrtp_log_set_level(4);
 		if (zrtp_status_ok == zrtp_init(&zrtp_config, &zrtp_global)) {
 		
