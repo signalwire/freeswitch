@@ -540,7 +540,8 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	struct helper h = { 0 };
 	unsigned char ret = CC_REDISPLAY;
 	int pos = 0;
-
+	int sc = 0;
+	
 #ifndef SWITCH_HAVE_LIBEDIT
 	if (!stream) {
 		return CC_ERROR;
@@ -566,7 +567,32 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	}
 
 	while (*buf == ' ') {
+		sc++;
 		buf++;
+	}
+
+	if (!*buf) {
+#ifdef SWITCH_HAVE_LIBEDIT
+		if (h.out && sc) {
+			el_deletestr(el, sc);
+		}
+#endif
+	} 
+
+	sc = 0;
+	p = end_of_p(buf);
+	while(p >= buf && *p == ' ') {
+		sc++;
+		p--;
+	}
+
+	if (sc > 1) {
+#ifdef SWITCH_HAVE_LIBEDIT
+		if (h.out) {
+			el_deletestr(el, sc - 1);
+		}
+#endif
+		*(p + 2) = '\0';
 	}
 
 	for (p = buf; p && *p; p++) {
@@ -574,9 +600,10 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 			lp = p;
 			h.words++;
 			while(*p == ' ') p++;
+			if (!*p) break;
 		}
 	}
-
+	
 	if (lp) {
 		buf = lp + 1;
 	}
@@ -590,6 +617,8 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	if (h.stream) {
 		h.stream->write_function(h.stream, "\n\n");
 	}
+
+
 
 	if (h.words == 0) {
 		sql = switch_mprintf("select distinct name from interfaces where type='api' and name like '%q%%' and hostname='%q' order by name", 
@@ -670,7 +699,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	if (h.out) {
 		fprintf(h.out, "\n\n");
 	}
-	
+
 	if (h.stream) {
 		h.stream->write_function(h.stream, "\n\n");
 		if (h.hits == 1 && !zstr(h.last)) {

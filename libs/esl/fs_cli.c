@@ -429,17 +429,57 @@ static void set_fn_keys(cli_profile_t *profile)
 
 
 #ifdef HAVE_EDITLINE
+#define end_of_p(_s) (*_s == '\0' ? _s : _s + strlen(_s) - 1)
 
 static unsigned char complete(EditLine * el, int ch)
 {
 	const LineInfo *lf = el_line(el);
 	char cmd_str[2048] = "";
 	unsigned char ret = CC_REDISPLAY;
+	char *dup = strdup(lf->buffer);
+	char *buf = dup;
+	int pos = 0, sc = 0;
+	char *p;
+
+	if (!esl_strlen_zero(lf->cursor) && !esl_strlen_zero(lf->buffer)) {
+		pos = (lf->cursor - lf->buffer);
+	}
+	if (pos > 0) {
+		*(buf + pos) = '\0';
+	}
+
+	if ((p = strchr(buf, '\r')) || (p = strchr(buf, '\n'))) {
+		*p = '\0';
+	}
+
+	while (*buf == ' ') {
+		buf++;
+		sc++;
+	}
+	
+	if (!*buf && sc) {
+		el_deletestr(el, sc);
+	}
+
+	sc = 0;
+
+	p = end_of_p(buf);
+	while(p >= buf && *p == ' ') {
+		sc++;
+		p--;
+	}
+
+	if (sc > 1) {
+		el_deletestr(el, sc - 1);
+		*(p + 2) = '\0';
+	}
+
+	
 
 	if (*lf->cursor) {
-		snprintf(cmd_str, sizeof(cmd_str), "api console_complete c=%ld;%s\n\n", (long int)(lf->cursor - lf->buffer), lf->buffer);
+		snprintf(cmd_str, sizeof(cmd_str), "api console_complete c=%ld;%s\n\n", (long)pos, buf);
 	} else {
-		snprintf(cmd_str, sizeof(cmd_str), "api console_complete %s\n\n", lf->buffer);
+		snprintf(cmd_str, sizeof(cmd_str), "api console_complete %s\n\n", buf);
 	}
 
 	esl_send_recv(global_handle, cmd_str);
@@ -473,6 +513,8 @@ static unsigned char complete(EditLine * el, int ch)
 
 		fflush(stdout);
 	}	
+
+	esl_safe_free(dup);
 
 	return ret;
 }
