@@ -246,6 +246,7 @@ SWITCH_STANDARD_API(group_call_function)
 				break;
 			case 'A':
 				call_delim = ",";
+				break;
 			case 'E':
 				call_delim = SWITCH_ENT_ORIGINATE_DELIM;
 				break;
