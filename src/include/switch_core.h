@@ -202,6 +202,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_media_bug_get_session(_In_ s
   \return true value if the object has the flags defined
 */
 SWITCH_DECLARE(uint32_t) switch_core_media_bug_test_flag(_In_ switch_media_bug_t *bug, _In_ uint32_t flag);
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_set_flag(_In_ switch_media_bug_t *bug, _In_ uint32_t flag);
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_clear_flag(_In_ switch_media_bug_t *bug, _In_ uint32_t flag);
 
 /*!
   \brief Set a return replace frame

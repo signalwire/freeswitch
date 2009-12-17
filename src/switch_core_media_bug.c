@@ -61,6 +61,16 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_test_flag(switch_media_bug_t *bug
 	return switch_test_flag(bug, flag);
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_set_flag(switch_media_bug_t *bug, uint32_t flag)
+{
+	return switch_set_flag(bug, flag);
+}
+
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_clear_flag(switch_media_bug_t *bug, uint32_t flag)
+{
+	return switch_clear_flag(bug, flag);
+}
+
 SWITCH_DECLARE(switch_core_session_t *) switch_core_media_bug_get_session(switch_media_bug_t *bug)
 {
 	return bug->session;

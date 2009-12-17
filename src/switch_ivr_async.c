@@ -1355,6 +1355,146 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+typedef struct {
+	switch_core_session_t *session;
+	int mute;
+	int read_level;
+	int write_level;
+	int read_mute;
+	int write_mute;
+} switch_session_audio_t;
+
+static switch_bool_t session_audio_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	switch_session_audio_t *pvt = (switch_session_audio_t *) user_data;
+	switch_frame_t *frame = NULL;
+	int level = 0, mute = 0;
+
+	
+	if (type == SWITCH_ABC_TYPE_READ_REPLACE || type == SWITCH_ABC_TYPE_WRITE_REPLACE) {
+		if (!(pvt->read_level || pvt->write_level || pvt->read_mute || pvt->write_mute)) {
+			switch_channel_set_private(switch_core_session_get_channel(pvt->session), "__audio", NULL);
+			return SWITCH_FALSE;
+		}
+	}
+
+	if (type == SWITCH_ABC_TYPE_READ_REPLACE) {
+		level = pvt->read_level;
+		mute = pvt->read_mute;
+		frame = switch_core_media_bug_get_read_replace_frame(bug);
+	} else if (type == SWITCH_ABC_TYPE_WRITE_REPLACE) {
+		level = pvt->write_level;
+		mute = pvt->write_mute;
+		frame = switch_core_media_bug_get_write_replace_frame(bug);
+	}
+
+	if (frame) {
+		if (mute) {
+			switch_generate_sln_silence(frame->data, frame->datalen / 2, 400);
+		} else if (level) {
+			switch_change_sln_volume(frame->data, frame->datalen / 2, level);
+		}
+		
+		if (type == SWITCH_ABC_TYPE_READ_REPLACE) {
+			switch_core_media_bug_set_read_replace_frame(bug, frame);
+		} else if (type == SWITCH_ABC_TYPE_WRITE_REPLACE) {
+			switch_core_media_bug_set_write_replace_frame(bug, frame);
+		}
+	}
+
+	return SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_session_audio(switch_core_session_t *session)
+{
+	switch_media_bug_t *bug;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if ((bug = switch_channel_get_private(channel, "__audio"))) {
+		switch_channel_set_private(channel, "__audio", NULL);
+		switch_core_media_bug_remove(session, &bug);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_session_audio(switch_core_session_t *session, const char *cmd, const char *direction, int level)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_media_bug_t *bug;
+	switch_status_t status;
+	switch_session_audio_t *pvt;
+	switch_codec_implementation_t read_impl = {0};
+	int existing = 0, c_read = 0, c_write = 0, flags = 0;
+	
+	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+    switch_core_session_get_read_impl(session, &read_impl);
+
+
+	if ((bug = switch_channel_get_private(channel, "__audio"))) {
+		pvt = switch_core_media_bug_get_user_data(bug);
+		existing = 1;
+	} else {
+		if (!(pvt = switch_core_session_alloc(session, sizeof(*pvt)))) {
+			return SWITCH_STATUS_MEMERR;
+		}
+
+		pvt->session = session;
+	}
+	
+
+	if (!strcasecmp(direction, "write")) {
+		flags = SMBF_WRITE_REPLACE;
+		c_write = 1;
+	} else if (!strcasecmp(direction, "read")){
+		flags = SMBF_READ_REPLACE;
+		c_read = 1;
+	} else if (!strcasecmp(direction, "both")){
+		flags = SMBF_READ_REPLACE | SMBF_WRITE_REPLACE;
+		c_read = c_write = 1;
+	}
+
+
+	if (!strcasecmp(cmd, "mute")) {
+		if (c_read) {
+			pvt->read_mute = level;
+		}
+		if (c_write) {
+			pvt->write_mute = level;
+		}
+	} else if (!strcasecmp(cmd, "level")) {
+		if (level < 5 && level > -5) {
+			if (c_read) {
+				pvt->read_level = level;
+			}
+			if (c_write) {
+				pvt->write_level = level;
+			}
+		}
+	}
+	
+	if (existing) {
+		switch_core_media_bug_clear_flag(bug, SMBF_READ_REPLACE);
+		switch_core_media_bug_clear_flag(bug, SMBF_WRITE_REPLACE);
+		switch_core_media_bug_set_flag(bug, flags);
+		
+	} else {
+		if ((status = switch_core_media_bug_add(session, session_audio_callback, pvt, 0, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+
+		switch_channel_set_private(channel, "__audio", bug);
+	}
+
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 typedef struct {
 	switch_core_session_t *session;
 	teletone_dtmf_detect_state_t dtmf_detect;

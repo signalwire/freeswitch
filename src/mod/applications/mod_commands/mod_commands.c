@@ -2405,6 +2405,69 @@ SWITCH_STANDARD_API(session_displace_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+#define AUDIO_SYNTAX "<uuid> [start [read|write] [mute|level <level>]|stop]"
+SWITCH_STANDARD_API(session_audio_function)
+{
+	switch_core_session_t *u_session = NULL;
+	char *mycmd = NULL;
+	int fail = 0;
+	int argc = 0;
+	char *argv[5] = { 0 };
+	int level;
+
+	if (zstr(cmd)) {
+		fail++; goto done;
+	}
+
+	mycmd = strdup(cmd);
+	argc = switch_split(mycmd, ' ', argv);
+	
+	if (argc < 2) {
+		fail++; goto done;
+	}
+	
+	if (!(u_session = switch_core_session_locate(argv[0]))) {
+		stream->write_function(stream, "-ERR No Such Channel!\n");
+		goto done;
+	}
+	
+	if (!strcasecmp(argv[1], "stop")) {
+		switch_ivr_stop_session_audio(u_session);
+		goto done;
+	} 
+
+	if (strcasecmp(argv[1], "start") || argc < 5 || (strcasecmp(argv[2], "read") && strcasecmp(argv[2], "write"))) {
+		fail++; goto done;
+	}
+
+	level = atoi(argv[4]);
+	
+	if (!strcasecmp(argv[3], "mute")) {
+		switch_ivr_session_audio(u_session, "mute", argv[2], level);
+	} else if (!strcasecmp(argv[3], "level")) {
+		switch_ivr_session_audio(u_session, "level", argv[2], level);
+	} else {
+		fail++;
+	}
+
+ done:
+
+	if (u_session) {
+		switch_core_session_rwunlock(u_session);
+	}
+
+	switch_safe_free(mycmd);
+
+	if (fail) {
+		stream->write_function(stream, "-USAGE: %s\n", AUDIO_SYNTAX);
+	} else {
+		stream->write_function(stream, "+OK\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define BREAK_SYNTAX "<uuid> [all]"
 SWITCH_STANDARD_API(break_function)
 {
@@ -3895,6 +3958,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "url_encode", "url encode a string", url_encode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "user_data", "find user data", user_data_function, "<user>@<domain> [var|param|attr] <name>");
 	SWITCH_ADD_API(commands_api_interface, "user_exists", "find a user", user_exists_function, "<key> <user> <domain>");
+	SWITCH_ADD_API(commands_api_interface, "uuid_audio", "uuid_audio", session_audio_function, AUDIO_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_broadcast", "broadcast", uuid_broadcast_function, BROADCAST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_chat", "Send a chat message", uuid_chat, UUID_CHAT_SYNTAX);
@@ -3973,6 +4037,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add show nat_map");
 	switch_console_set_complete("add show say");
 	switch_console_set_complete("add show timer");
+	switch_console_set_complete("add uuid_audio ::console::list_uuid start read mute");
+	switch_console_set_complete("add uuid_audio ::console::list_uuid start read level");
+	switch_console_set_complete("add uuid_audio ::console::list_uuid start write mute");
+	switch_console_set_complete("add uuid_audio ::console::list_uuid start write level");
+	switch_console_set_complete("add uuid_audio ::console::list_uuid stop");
 	switch_console_set_complete("add uuid_bridge ::console::list_uuid ::console::list_uuid");
 	switch_console_set_complete("add uuid_broadcast ::console::list_uuid");
 	switch_console_set_complete("add uuid_chat ::console::list_uuid");

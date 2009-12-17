@@ -244,6 +244,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_displace_session(switch_core_ses
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_session_t *session, const char *file);
 
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_session_audio(switch_core_session_t *session, const char *cmd, const char *direction, int level);
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_session_audio(switch_core_session_t *session);
+
 /*!
   \brief Start looking for DTMF inband
   \param session the session to start looking
