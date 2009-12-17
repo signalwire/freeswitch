@@ -144,6 +144,13 @@ static void sql_close(time_t prune)
 }
 
 
+SWITCH_DECLARE(void) switch_cache_db_flush_handles(void)
+{
+	sql_close(switch_epoch_time_now(NULL) + SQL_CACHE_TIMEOUT + 1);
+}
+
+
+
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t **dbh)
 {
 	if (dbh && *dbh) {

@@ -1349,6 +1349,9 @@ SWITCH_STANDARD_API(ctl_function)
 			arg = 1;
 			switch_core_session_ctl(SCSC_HUPALL, &arg);
 			stream->write_function(stream, "+OK\n");
+		} else if (!strcasecmp(argv[0], "flush_db_handles")) {
+			switch_core_session_ctl(SCSC_FLUSH_DB_HANDLES, NULL);
+			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "pause")) {
 			arg = 1;
 			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
@@ -3944,6 +3947,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl shutdown restart elegant");
 	switch_console_set_complete("add fsctl sps");
  	switch_console_set_complete("add fsctl sync_clock");
+ 	switch_console_set_complete("add fsctl flush_db_handles");
 	switch_console_set_complete("add nat_map reinit");
 	switch_console_set_complete("add nat_map republish");
 	switch_console_set_complete("add nat_map status");

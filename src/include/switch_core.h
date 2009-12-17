@@ -2044,6 +2044,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, char *sql, uint32_t retries);
 SWITCH_DECLARE(void) switch_cache_db_detach(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
+SWITCH_DECLARE(void) switch_cache_db_flush_handles(void);
 
 SWITCH_END_EXTERN_C
 #endif

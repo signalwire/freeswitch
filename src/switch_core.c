@@ -1568,6 +1568,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 	}
 
 	switch (cmd) {
+	case SCSC_FLUSH_DB_HANDLES:
+		switch_cache_db_flush_handles();
+		break;
 	case SCSC_SEND_SIGHUP:
 		handle_SIGHUP(1);
 		break;
