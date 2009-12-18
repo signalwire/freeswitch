@@ -3,19 +3,20 @@
 # This file is public domain software, originally written by Joey Hess. 
 
 # Uncomment this to turn on verbose mode.
-# export DH_VERBOSE=1
+export DH_VERBOSE=1
 export DH_OPTIONS
 export DH_COMPAT=4
 export DEB_DH_INSTALL_SOURCEDIR=debian/tmp
 export PASSTHRU_CODEC_MODULES=codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr
 export SPIDERMONKEY_MODULES=languages/mod_spidermonkey languages/mod_spidermonkey_core_db languages/mod_spidermonkey_odbc \
 			    languages/mod_spidermonkey_socket languages/mod_spidermonkey_teletone
-export APPLICATIONS_MODULES=applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum \
-			    applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit \
-			    applications/mod_rss applications/mod_voicemail applications/mod_fsv \
-			    applications/mod_fax applications/mod_cidlookup applications/mod_curl applications/mod_easyroute \
+# Modules listed by those built by default, then those that are added in this package
+export APPLICATIONS_MODULES=applications/mod_cluechoo applications/mod_commands applications/mod_conference applications/mod_dptools \
+                            applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_fsv \
+                            applications/mod_limit applications/mod_valet_parking applications/mod_voicemail applications/mod_rss \
+                            applications/mod_fax applications/mod_cidlookup applications/mod_curl applications/mod_easyroute \
 			    applications/mod_lcr applications/mod_memcache applications/mod_nibblebill applications/mod_snom \
-			    applications/mod_spy applications/mod_vmd 
+			    applications/mod_spy applications/mod_vmd applications/mod_directory
 export ASR_TTS_MODULES=asr_tts/mod_tts_commandline
 export CODECS_MODULES=codecs/mod_ilbc codecs/mod_h26x codecs/mod_speex codecs/mod_voipcodecs codecs/mod_siren codecs/mod_celt
 export DIALPLANS_MODULES=dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml
@@ -106,7 +107,7 @@ install: build
 	dh_clean -k 
 	dh_installdirs -A --sourcedir=debian/tmp
 
-	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	VERBOSE=1 $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 
 
 # Build architecture-independent files here.

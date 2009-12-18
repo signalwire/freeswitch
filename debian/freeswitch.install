@@ -45,6 +45,9 @@ opt/freeswitch/mod/mod_iax.so*
 opt/freeswitch/mod/mod_portaudio.so*
 opt/freeswitch/mod/mod_sofia.so*
 opt/freeswitch/mod/mod_openzap.so
+opt/freeswitch/mod/mod_directory.so*
+opt/freeswitch/mod/mod_valet_parking.so*
+opt/freeswitch/mod/mod_cluechoo.so*
 opt/freeswitch/mod/ozmod_analog_em.so*
 opt/freeswitch/mod/ozmod_analog.so*
 opt/freeswitch/mod/ozmod_isdn.so*
