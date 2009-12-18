@@ -76,12 +76,13 @@ static void sangomabc_print_event_call(sangomabc_connection_t *mcon, sangomabc_e
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
 
-	zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "%s EVENT: %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s] Rdnis=[%s]\n",
-		    dir ? "TX":"RX", 
+	zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "%s EVENT (%s): %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s] Rdnis=[%s]\n",
+		    dir ? "TX":"RX",
+			priority ? "P":"N",
 			sangomabc_event_id_name(event->event_id),
 			event->event_id,
-			event->span+1,
-			event->chan+1,
+			event->span,
+			event->chan,
 			event->call_setup_id,
 			event->fseqno,
 			strlen(event->calling_name)?event->calling_name:"N/A",
@@ -94,9 +95,9 @@ static void sangomabc_print_event_short(sangomabc_connection_t *mcon, sangomabc_
 {
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
-	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT (%s): %s:(%X) [s%dc%d] Rc=%i CSid=%i Seq=%i \n", 
+	zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "%s EVENT (%s): %s:(%X) [s%dc%d] Rc=%i CSid=%i Seq=%i \n",
 			   dir ? "TX":"RX", 
-			   priority ? "P":"N", 	
+			   priority ? "P":"N",
                            sangomabc_event_id_name(event->event_id), 
                            event->event_id, 
                            event->span, 
@@ -322,8 +323,7 @@ sangomabc_event_t *__sangomabc_connection_read(sangomabc_connection_t *mcon, int
 		msg_ok=0;
 	}
 
-	if (msg_ok){
-
+	if (msg_ok) {
 		if (sangomabc_test_flag(mcon, MSU_FLAG_DOWN)) {
 			if (mcon->event.event_id != SIGBOOST_EVENT_SYSTEM_RESTART && 
 				mcon->event.event_id != SIGBOOST_EVENT_SYSTEM_RESTART_ACK && 
@@ -333,7 +333,7 @@ sangomabc_event_t *__sangomabc_connection_read(sangomabc_connection_t *mcon, int
 				return NULL;
 			}
 		}
-
+		
 		if  (boost_full_event(mcon->event.event_id)) {
 			sangomabc_print_event_call(mcon, &mcon->event, 0, 0, file, func, line);
 		} else {

@@ -33,7 +33,7 @@
  * Contributors: 
  *
  * Moises Silva <moy@sangoma.com>
- * David Yatzin <davidy@sangoma.com>
+ * David Yat Sin <dyatsin@sangoma.com>
  * Nenad Corbic <ncorbic@sangoma.com>
  *
  */
@@ -711,8 +711,8 @@ static void handle_call_stop(zap_span_t *span, sangomabc_connection_t *mcon, san
 			 * itself through local initiated hangup */
 			
 			sangomabc_exec_command(mcon,
-						zchan->physical_span_id-1,
-						zchan->physical_chan_id-1,
+						BOOST_SPAN(zchan),
+						BOOST_CHAN(zchan),
 						0,
 						SIGBOOST_EVENT_CALL_STOPPED_ACK,
 						0);
@@ -1036,8 +1036,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 				zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_MSG);
 
 				sangomabc_exec_command(mcon,
-							   zchan->physical_span_id-1,
-							   zchan->physical_chan_id-1,
+							   BOOST_SPAN(zchan),
+							   BOOST_CHAN(zchan),
 							   0,
 							   SIGBOOST_EVENT_CALL_STOPPED_ACK,
 							   0);
@@ -1058,8 +1058,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 				if (!zap_test_sflag(zchan, SFLAG_SENT_ACK)) {
 					zap_set_sflag(zchan, SFLAG_SENT_ACK);
 						sangomabc_exec_command(mcon,
-											zchan->physical_span_id-1,
-											zchan->physical_chan_id-1,
+											BOOST_SPAN(zchan),
+											BOOST_CHAN(zchan),
 											0,
 											SIGBOOST_EVENT_CALL_START_ACK,
 											0);
@@ -1716,7 +1716,6 @@ static BOOST_WRITE_MSG_FUNCTION(zap_boost_write_msg)
 		zap_log(ZAP_LOG_ERROR, "Unexpected boost message %d\n", shortmsg->event_id);
 		return ZAP_FAIL;
 	}
-
 	/* duplicate the event and enqueue it */
 	element = zap_calloc(1, sizeof(*element));
 	if (!element) {

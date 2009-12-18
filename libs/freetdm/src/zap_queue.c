@@ -163,7 +163,7 @@ static void *zap_std_queue_dequeue(zap_queue_t *queue)
 	obj = queue->elements[queue->rindex];
 	queue->elements[queue->rindex++] = NULL;
 	queue->size--;
-	if (queue->rindex == queue->size) {
+	if (queue->rindex == queue->capacity) {
 		queue->rindex = 0;
 	}
 
