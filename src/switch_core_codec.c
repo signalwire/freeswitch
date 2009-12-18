@@ -97,7 +97,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
+	
 	switch_mutex_lock(session->codec_read_mutex);
 
 	if (codec && (!codec->implementation || !switch_core_codec_ready(codec))) {
@@ -109,6 +109,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 			session->read_codec = session->real_read_codec = codec;
 			session->read_impl = *codec->implementation;
 		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Push codec %s:%d\n",
+							  switch_channel_get_name(session->channel), codec->implementation->iananame, codec->implementation->ianacode);
+			codec->next = session->read_codec;
 			session->read_codec = codec;
 			session->read_impl = *codec->implementation;
 		}
@@ -116,7 +119,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 		if (session->read_codec == session->real_read_codec) {
 			goto end;
 		}
-		if (session->real_read_codec) {
+		
+		if (session->read_codec->next) {
+			switch_codec_t *old = session->read_codec;
+			session->read_codec = session->read_codec->next;
+			session->read_impl = *session->read_codec->implementation;
+			old->next = NULL;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Restore previous codec %s:%d.\n",
+							  switch_channel_get_name(session->channel), 
+							  session->read_codec->implementation->iananame, session->read_codec->implementation->ianacode);
+			
+		} else if (session->real_read_codec) {
 			session->read_codec = session->real_read_codec;
 			session->read_impl = *session->real_read_codec->implementation;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Restore original codec.\n");

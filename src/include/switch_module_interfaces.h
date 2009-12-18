@@ -583,6 +583,7 @@ struct switch_codec {
 	void *private_info;
 	switch_payload_t agreed_pt;
 	switch_mutex_t *mutex;
+	struct switch_codec *next;
 };
 
 /*! \brief A table of settings and callbacks that define a paticular implementation of a codec */
