@@ -1391,7 +1391,11 @@ static switch_bool_t session_audio_callback(switch_media_bug_t *bug, void *user_
 
 	if (frame) {
 		if (mute) {
-			switch_generate_sln_silence(frame->data, frame->datalen / 2, 400);
+			if (mute > 1) {
+				switch_generate_sln_silence(frame->data, frame->datalen / 2, mute);
+			} else {
+				memset(frame->data, 0, frame->datalen);
+			}
 		} else if (level) {
 			switch_change_sln_volume(frame->data, frame->datalen / 2, level);
 		}

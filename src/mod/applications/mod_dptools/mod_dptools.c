@@ -443,7 +443,7 @@ SWITCH_STANDARD_APP(set_audio_level_function)
 	
 }
 
-#define SET_MUTE_SYNTAX "[read|write] [true|false]"
+#define SET_MUTE_SYNTAX "[read|write] [[true|cn level]|false]"
 SWITCH_STANDARD_APP(set_mute_function)
 {
 	char *argv[2] = { 0 };
@@ -459,8 +459,10 @@ SWITCH_STANDARD_APP(set_mute_function)
 						  switch_core_session_get_name(session), SET_MUTE_SYNTAX);
 		return;
 	}
-
-	level = switch_true(argv[1]);
+	
+	if ((level = atoi(argv[1])) <= 0) {
+		level = switch_true(argv[1]);
+	}
 	
 	switch_ivr_session_audio(session, "mute", argv[0], level);
 	
