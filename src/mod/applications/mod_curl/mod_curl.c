@@ -129,17 +129,18 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
 	if (!strcasecmp(method, "head")) {
-		curl_easy_setopt(curl_handle, CURLOPT_NOBODY, SWITCH_TRUE);
+		curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
 	} else if (!strcasecmp(method, "post")) {
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, strlen(data));
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, (void *) data);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Post data: %s\n", data);
 	} else {
-		curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, SWITCH_TRUE);
+		curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
 	}
 	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 0);
 	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 0);
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) http_data);
 	curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, header_callback);
