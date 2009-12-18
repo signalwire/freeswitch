@@ -237,6 +237,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 		if (binding->timeout) {
 			curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, binding->timeout);
+                        curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		}
 
 		if (binding->disable100continue) {
