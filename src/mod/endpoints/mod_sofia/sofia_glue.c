@@ -2075,13 +2075,12 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Changing Codec from %s@%dms to %s@%dms\n",
 							  tech_pvt->read_impl.iananame, tech_pvt->read_impl.microseconds_per_packet / 1000, 
 							  tech_pvt->rm_encoding, tech_pvt->codec_ms);
-
+			
 			switch_core_session_lock_codec_write(tech_pvt->session);
 			switch_core_session_lock_codec_read(tech_pvt->session);
 			resetting = 1;
 			switch_core_codec_destroy(&tech_pvt->read_codec);
 			switch_core_codec_destroy(&tech_pvt->write_codec);
-			switch_core_session_reset(tech_pvt->session, SWITCH_TRUE, SWITCH_TRUE);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Already using %s\n", tech_pvt->read_impl.iananame);
 			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
@@ -2162,8 +2161,6 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 
  end:
 	if (resetting) {
-		switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
-		switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
 		switch_core_session_unlock_codec_write(tech_pvt->session);
 		switch_core_session_unlock_codec_read(tech_pvt->session);
 	}
