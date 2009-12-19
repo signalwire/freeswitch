@@ -503,15 +503,28 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			/* Send the 200 OK */
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
-				nua_respond(tech_pvt->nh, SIP_200_OK,
-							SIPTAG_CONTACT_STR(tech_pvt->profile->url),
-							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-							SOATAG_REUSE_REJECTED(1),
-							SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
-							TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-							TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
-								   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
-							TAG_END());
+
+				if (sofia_use_soa(tech_pvt)) {
+					nua_respond(tech_pvt->nh, SIP_200_OK,
+								SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+								SOATAG_REUSE_REJECTED(1),
+								SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
+								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
+									   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
+								TAG_END());
+				} else {
+					nua_respond(tech_pvt->nh, SIP_200_OK,
+								NUTAG_MEDIA_ENABLE(0),
+								SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+								SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+								SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),								
+								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
+									   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
+								TAG_END());
+				}
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Sent a 200 OK, waiting for ACK\n");
 				switch_safe_free(extra_headers);
@@ -590,19 +603,36 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
-		nua_respond(tech_pvt->nh, SIP_200_OK,
-					NUTAG_AUTOANSWER(0),
-					TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
-					SIPTAG_HEADER_STR(generate_pai_str(session)),
-					NUTAG_SESSION_TIMER(session_timeout),
-					SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-					SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
-					SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-					SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
-					TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-					TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
-						   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
-					TAG_END());
+		if (sofia_use_soa(tech_pvt)) {
+			nua_respond(tech_pvt->nh, SIP_200_OK,
+						NUTAG_AUTOANSWER(0),
+						TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
+						SIPTAG_HEADER_STR(generate_pai_str(session)),
+						NUTAG_SESSION_TIMER(session_timeout),
+						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+						SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
+						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+						SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
+						TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+						TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
+							   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
+						TAG_END());
+		} else {
+			nua_respond(tech_pvt->nh, SIP_200_OK,
+						NUTAG_AUTOANSWER(0),
+						NUTAG_MEDIA_ENABLE(0),
+						TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
+						SIPTAG_HEADER_STR(generate_pai_str(session)),
+						NUTAG_SESSION_TIMER(session_timeout),
+						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+						SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
+						SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+						SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),						
+						TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+						TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
+							   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
+						TAG_END());
+		}
 		switch_safe_free(extra_headers);
 		sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
 	}
@@ -1235,10 +1265,20 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-				nua_respond(tech_pvt->nh, SIP_200_OK,
-							SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-							SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+				if (sofia_use_soa(tech_pvt)) {
+					nua_respond(tech_pvt->nh, SIP_200_OK,
+								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+								SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
+								TAG_END());
+				} else {
+					nua_respond(tech_pvt->nh, SIP_200_OK,
+								NUTAG_MEDIA_ENABLE(0),
+								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+								SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+								SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),								
+								TAG_END());
+				}
 				switch_channel_mark_answered(channel);
 			}
 		}
@@ -1604,12 +1644,21 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							sofia_glue_tech_patch_sdp(tech_pvt);
 							sofia_glue_tech_proxy_remote_addr(tech_pvt);
 						}
-						nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-									SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-									SOATAG_REUSE_REJECTED(1),
-									SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
-									TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-									TAG_END());
+						if (sofia_use_soa(tech_pvt)) {
+							nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+										SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+										SOATAG_REUSE_REJECTED(1),
+										SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
+										TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+										TAG_END());
+						} else {
+							nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+										NUTAG_MEDIA_ENABLE(0),
+										SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+										SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),							
+										TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+										TAG_END());
+						}
 					} else {
 						nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact), 
 									TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
@@ -1725,20 +1774,36 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
-					nua_respond(tech_pvt->nh,
-								SIP_183_SESSION_PROGRESS,
-								NUTAG_AUTOANSWER(0),
-								TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
-								SIPTAG_HEADER_STR(generate_pai_str(session)),
-								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-								SOATAG_REUSE_REJECTED(1),
-								SOATAG_ORDERED_USER(1),
-								SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
-								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), 
-								TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
-								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
-									   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
-								TAG_END());
+					if (sofia_use_soa(tech_pvt)) {
+						nua_respond(tech_pvt->nh,
+									SIP_183_SESSION_PROGRESS,
+									NUTAG_AUTOANSWER(0),
+									TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
+									SIPTAG_HEADER_STR(generate_pai_str(session)),
+									SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+									SOATAG_REUSE_REJECTED(1),
+									SOATAG_ORDERED_USER(1),
+									SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
+									SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), 
+									TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
+									TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
+										   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
+									TAG_END());
+					} else {
+						nua_respond(tech_pvt->nh,
+									SIP_183_SESSION_PROGRESS,
+									NUTAG_AUTOANSWER(0),
+									NUTAG_MEDIA_ENABLE(0),
+									TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
+									SIPTAG_HEADER_STR(generate_pai_str(session)),
+									SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+									SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+									SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),									
+									TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
+									TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
+										   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
+									TAG_END());
+					}
 					switch_safe_free(extra_header);
 				}
 			}

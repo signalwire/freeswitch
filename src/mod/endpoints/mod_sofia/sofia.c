@@ -2480,6 +2480,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
 				profile->shutdown_type = "false";
 				profile->local_network = "localnet.auto";
+				sofia_set_flag(profile, TFLAG_ENABLE_SOA);
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2913,6 +2914,13 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_SQL_IN_TRANS);
+						}
+
+					} else if (!strcasecmp(var, "enable-soa")) {
+						if (switch_true(val)) {
+							sofia_set_flag(profile, TFLAG_ENABLE_SOA);
+						} else {
+							sofia_clear_flag(profile, TFLAG_ENABLE_SOA);
 						}
 					} else if (!strcasecmp(var, "bitpacking")) {
 						if (!strcasecmp(val, "aal2")) {
@@ -3736,6 +3744,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	char st[80] = "";
 	int is_dup_sdp = 0;
 	switch_event_t *s_event = NULL;
+	char *p;
 
 	tl_gets(tags,
 			NUTAG_CALLSTATE_REF(ss_state),
@@ -3745,7 +3754,16 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			NUTAG_ANSWER_SENT_REF(answer_sent),
 			SIPTAG_REPLACES_STR_REF(replaces_str), SOATAG_LOCAL_SDP_STR_REF(l_sdp), SOATAG_REMOTE_SDP_STR_REF(r_sdp), TAG_END());
 	
-	
+	/* This marr in our code brought to you by people who can't read........*/
+	if (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME && r_sdp && (p = (char *) switch_stristr("g729a/8000", r_sdp))) {
+		p += 4;
+		*p++ = '/';
+		*p++ = '8';
+		*p++ = '0';
+		*p++ = '0';
+		*p++ = '0';
+		*p++ = ' ';
+	}
 
 	if (ss_state == nua_callstate_terminated) {
 
@@ -4000,12 +4018,21 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 						sofia_set_flag_locked(tech_pvt, TFLAG_3PCC);
 						switch_channel_set_state(channel, CS_HIBERNATE);
-						nua_respond(tech_pvt->nh, SIP_200_OK,
-									SIPTAG_CONTACT_STR(tech_pvt->profile->url),
-									SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-									SOATAG_REUSE_REJECTED(1),
-									SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), 
-									TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
+						if (sofia_use_soa(tech_pvt)) {
+							nua_respond(tech_pvt->nh, SIP_200_OK,
+										SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+										SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+										SOATAG_REUSE_REJECTED(1),
+										SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), 
+										TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
+						} else {
+							nua_respond(tech_pvt->nh, SIP_200_OK,
+										NUTAG_MEDIA_ENABLE(0),
+										SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+										SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+										SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),
+										TAG_END());
+						}
 					} else if (sofia_test_pflag(profile, PFLAG_3PCC_PROXY)) {
 						//3PCC proxy mode delays the 200 OK until the call is answered
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
@@ -4090,12 +4117,21 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							}
 							sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
 							
-							nua_respond(tech_pvt->nh, SIP_200_OK,
-										SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-										SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-										SOATAG_REUSE_REJECTED(1),
-										SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), 
-										TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
+							if (sofia_use_soa(tech_pvt)) {
+								nua_respond(tech_pvt->nh, SIP_200_OK,
+											SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+											SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+											SOATAG_REUSE_REJECTED(1),
+											SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), 
+											TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
+							} else {
+								nua_respond(tech_pvt->nh, SIP_200_OK,
+											NUTAG_MEDIA_ENABLE(0),
+											SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+											SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+											SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),
+											TAG_END());
+							}
 							launch_media_on_hold(session);
 							
 							switch_core_session_rwunlock(other_session);
@@ -4165,13 +4201,20 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					if (tech_pvt->local_crypto_key) {
 						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 					}
-					nua_respond(tech_pvt->nh, SIP_200_OK,
-								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-								SOATAG_REUSE_REJECTED(1),
-								SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), 
-								TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
-
+					if (sofia_use_soa(tech_pvt)) {
+						nua_respond(tech_pvt->nh, SIP_200_OK,
+									SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+									SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+									SOATAG_REUSE_REJECTED(1),
+									SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), 
+									TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
+					} else {
+						nua_respond(tech_pvt->nh, SIP_200_OK,
+									NUTAG_MEDIA_ENABLE(0),
+									SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+									SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+									TAG_END());
+					}
 					if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REINVITE) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
 						switch_event_fire(&s_event);
@@ -6127,14 +6170,24 @@ void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t 
 					sofia_glue_set_local_sdp(b_tech_pvt, NULL, 0, NULL, 0);
 				}
 
-				nua_update(b_tech_pvt->nh,
-						   SIPTAG_CONTACT_STR(b_tech_pvt->reply_contact),
-						   SOATAG_USER_SDP_STR(b_tech_pvt->local_sdp_str),
-						   SOATAG_REUSE_REJECTED(1),
-						   SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"),
-						   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
-						   TAG_IF(!zstr(b_tech_pvt->user_via), SIPTAG_VIA_STR(b_tech_pvt->user_via)),
-						   TAG_END());
+				if (sofia_use_soa(b_tech_pvt)) {
+					nua_update(b_tech_pvt->nh,
+							   SIPTAG_CONTACT_STR(b_tech_pvt->reply_contact),
+							   SOATAG_USER_SDP_STR(b_tech_pvt->local_sdp_str),
+							   SOATAG_REUSE_REJECTED(1),
+							   SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"),
+							   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
+							   TAG_IF(!zstr(b_tech_pvt->user_via), SIPTAG_VIA_STR(b_tech_pvt->user_via)),
+							   TAG_END());
+				} else {
+					nua_update(b_tech_pvt->nh,
+							   NUTAG_MEDIA_ENABLE(0),
+							   SIPTAG_CONTACT_STR(b_tech_pvt->reply_contact),
+							   SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+							   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
+							   TAG_IF(!zstr(b_tech_pvt->user_via), SIPTAG_VIA_STR(b_tech_pvt->user_via)),
+							   TAG_END());
+				}
 			}
 
 		}

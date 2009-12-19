@@ -254,6 +254,7 @@ typedef enum {
 	TFLAG_3PCC_HAS_ACK,
 	TFLAG_PASS_RFC2833,
 	TFLAG_UPDATING_DISPLAY,
+	TFLAG_ENABLE_SOA,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -834,6 +835,10 @@ sofia_gateway_subscription_t *sofia_find_gateway_subscription(sofia_gateway_t *g
 
 void sofia_reg_release_gateway__(const char *file, const char *func, int line, sofia_gateway_t *gateway);
 #define sofia_reg_release_gateway(x) sofia_reg_release_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__, x);
+
+#define sofia_use_soa(_t) (sofia_test_flag(_t, TFLAG_ENABLE_SOA)		\
+						   && !switch_channel_test_flag(_t->channel, CF_PROXY_MODE) \
+						   && !switch_channel_test_flag(_t->channel, CF_PROXY_MEDIA))
 
 #define check_decode(_var, _session) do {								\
 		assert(_session);												\
