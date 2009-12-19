@@ -3755,7 +3755,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			SIPTAG_REPLACES_STR_REF(replaces_str), SOATAG_LOCAL_SDP_STR_REF(l_sdp), SOATAG_REMOTE_SDP_STR_REF(r_sdp), TAG_END());
 	
 	/* This marr in our code brought to you by people who can't read........*/
-	if (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME && r_sdp && (p = (char *) switch_stristr("g729a/8000", r_sdp))) {
+	if (profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME && r_sdp && (p = (char *) switch_stristr("g729a/8000", r_sdp))) {
 		p += 4;
 		*p++ = '/';
 		*p++ = '8';
