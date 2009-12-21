@@ -1726,6 +1726,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   const char *digits_regex)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "enter to switch_play_and_get_digits.\n");
 
 	while(switch_channel_ready(channel) && max_tries) {
 		switch_status_t status;
@@ -1737,6 +1738,11 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		if (status == SWITCH_STATUS_TIMEOUT && strlen(digit_buffer) >= min_digits) {
 			status = SWITCH_STATUS_SUCCESS;
 		}
+
+                if (status == SWITCH_STATUS_TOO_SMALL && strlen(digit_buffer) == 0) {
+                        return SWITCH_STATUS_FALSE;
+                }
+                                                        
 
 		if (status == SWITCH_STATUS_SUCCESS) {
 			if (!zstr(digit_buffer)) {
