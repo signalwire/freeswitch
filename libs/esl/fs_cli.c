@@ -7,12 +7,39 @@
 #include <esl.h>
 #include <signal.h>
 
+#define CMD_BUFLEN 1024
+
 #ifdef WIN32
 #define strdup(src) _strdup(src)
 #define usleep(time) Sleep(time/1000)
 #define fileno _fileno
 #define read _read
 #include <io.h>
+
+#define CC_NORM         0
+#define CC_NEWLINE      1
+#define CC_EOF          2
+#define CC_ARGHACK      3
+#define CC_REFRESH      4
+#define CC_CURSOR       5
+#define CC_ERROR        6
+#define CC_FATAL        7
+#define CC_REDISPLAY    8
+#define CC_REFRESH_BEEP 9
+
+#define HISTLEN 10
+#define KEY_UP 1
+#define KEY_DOWN 2
+#define KEY_TAB 3
+#define CLEAR_OP 4
+#define DELETE_REFRESH_OP 5
+#define KEY_LEFT 6
+#define KEY_RIGHT 7
+#define KEY_INSERT 8
+#define PROMPT_OP 9
+
+static int console_bufferInput (char* buf, int len, char *cmd, int key);
+static unsigned char esl_console_complete(const char *buffer, const char *cursor);
 #else
 #include <sys/select.h>
 #include <unistd.h>
@@ -50,18 +77,6 @@ static int running = 1;
 static int thread_running = 0;
 
 
-#ifdef HAVE_EDITLINE
-static char *prompt(EditLine * e)
-{
-    return prompt_str;
-}
-
-static EditLine *el;
-static History *myhistory;
-static HistEvent ev;
-
-
-
 /*
  * If a fnkey is configured then process the command
  */
@@ -88,6 +103,16 @@ static unsigned char console_fnkey_pressed(int i)
 
 	return CC_REDISPLAY;
 }
+
+#ifdef HAVE_EDITLINE
+static char *prompt(EditLine * e)
+{
+    return prompt_str;
+}
+
+static EditLine *el;
+static History *myhistory;
+static HistEvent ev;
 
 static unsigned char console_f1key(EditLine * el, int ch)
 {
@@ -155,7 +180,354 @@ static unsigned char console_eofkey(EditLine * el, int ch)
 		return CC_REDISPLAY;
 	}
 }
+#else
+#ifdef _MSC_VER
+char history[HISTLEN][CMD_BUFLEN+1];
+int iHistory = 0;
+int iHistorySel = 0;
 
+static int console_history (char *cmd, int direction)
+{
+	int i;
+	static int first;
+
+	if (direction == 0) {
+		first = 1;
+		if (iHistory < HISTLEN) {
+			if (iHistory && strcmp(history[iHistory-1], cmd)) {
+				iHistorySel = iHistory;
+				strcpy(history[iHistory++], cmd);
+			}
+			else if (iHistory == 0) {
+				iHistorySel = iHistory;
+				strcpy(history[iHistory++], cmd);
+			}
+		}
+		else {
+			iHistory = HISTLEN-1;
+			for (i = 0; i < HISTLEN-1; i++)
+			{
+				strcpy(history[i], history[i+1]);
+			}
+			iHistorySel = iHistory;
+			strcpy(history[iHistory++], cmd);
+		}
+	}
+	else {
+		if (!first) {
+			iHistorySel += direction;
+		}
+		first = 0;
+		if (iHistorySel < 0) {
+			iHistorySel = 0;
+		}
+		if (iHistory && iHistorySel >= iHistory) {
+			iHistorySel = iHistory-1;
+		}
+		strcpy(cmd, history[iHistorySel]);
+	}
+	return (0);
+}
+
+static int console_bufferInput (char* addchars, int len, char *cmd, int key)
+{
+    static int iCmdBuffer = 0;
+	static int iCmdCursor = 0;
+    static int ignoreNext = 0;
+	static int insertMode = 1;
+	static COORD orgPosition;
+	static char prompt [80];
+    int iBuf;
+	int i;
+
+	HANDLE hOut;
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	COORD position;
+	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	GetConsoleScreenBufferInfo(hOut, &info);
+	position = info.dwCursorPosition;
+	if (iCmdCursor == 0) {
+		orgPosition = position;
+	}
+
+	if (key == PROMPT_OP) {
+		if (strlen(cmd) < sizeof(prompt)) {
+			strcpy(prompt, cmd);
+		}
+		return 0;
+	}
+
+	if (key == KEY_TAB) {
+		esl_console_complete(cmd, cmd+iCmdBuffer);
+		return 0;
+	}
+	if (key == KEY_UP || key == KEY_DOWN || key == CLEAR_OP) {
+		SetConsoleCursorPosition(hOut, orgPosition);
+		for (i = 0; i < (int)strlen(cmd); i++) {
+			printf(" ");
+		}
+		SetConsoleCursorPosition(hOut, orgPosition);
+		iCmdBuffer = 0;
+		iCmdCursor = 0;
+		memset(cmd, 0, CMD_BUFLEN);
+	}
+	if (key == DELETE_REFRESH_OP) {
+		int l = len < (int)strlen(cmd) ? len : (int)strlen(cmd);
+		for (i = 0; i < l; i++) {
+			cmd[--iCmdBuffer] = 0;
+		}
+		iCmdCursor = (int)strlen(cmd);
+		printf("%s", prompt);
+		GetConsoleScreenBufferInfo(hOut, &info);
+		orgPosition = info.dwCursorPosition;
+		printf("%s", cmd);
+		return 0;
+	}
+
+	if (key == KEY_LEFT) {
+		if (iCmdCursor) {
+			if (position.X == 0) {
+				position.Y -= 1;
+				position.X = info.dwSize.X-1;
+			}
+			else {
+				position.X -= 1;
+			}
+
+			SetConsoleCursorPosition(hOut, position);
+			iCmdCursor--;
+		}
+	}
+	if (key == KEY_RIGHT) {
+		if (iCmdCursor < (int)strlen(cmd)) {
+			if (position.X == info.dwSize.X-1) {
+				position.Y += 1;
+				position.X = 0;
+			}
+			else {
+				position.X += 1;
+			}
+
+			SetConsoleCursorPosition(hOut, position);
+			iCmdCursor++;
+		}
+	}
+	if (key == KEY_INSERT) {
+		insertMode = !insertMode;
+	}
+    for (iBuf = 0; iBuf < len; iBuf++) {
+		switch (addchars[iBuf]) {
+			case '\r':
+			case '\n':
+				if (ignoreNext) {
+					ignoreNext = 0;
+				}
+				else {
+					int ret = iCmdBuffer;
+					if (iCmdBuffer == 0) {
+						strcpy(cmd, "Empty");
+						ret = (int)strlen(cmd);
+					}
+					else {
+						console_history(cmd, 0);
+						cmd[iCmdBuffer] = 0;
+					}
+					iCmdBuffer = 0;
+					iCmdCursor = 0;
+					printf("\n");
+					return (ret);
+				}
+				break;
+			case '\b':
+				if (iCmdCursor) {
+					if (position.X == 0) {
+						position.Y -= 1;
+						position.X = info.dwSize.X-1;
+						SetConsoleCursorPosition(hOut, position);
+					}
+					else {
+						position.X -= 1;
+						SetConsoleCursorPosition(hOut, position);
+					}
+					printf(" ");
+					if (iCmdCursor < iCmdBuffer) {
+							int pos;
+							iCmdCursor--;
+							for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+								cmd[pos] = cmd[pos+1];
+							}
+							cmd[pos] = 0;
+							iCmdBuffer--;
+
+							SetConsoleCursorPosition(hOut, position);
+							for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+								printf("%c", cmd[pos]);
+							}
+							printf(" ");
+							SetConsoleCursorPosition(hOut, position);
+					}
+					else {
+						SetConsoleCursorPosition(hOut, position);
+						iCmdBuffer--;
+						iCmdCursor--;
+						cmd[iCmdBuffer] = 0;
+					}
+				}
+				break;
+			default:
+				if (!ignoreNext) {
+					if (iCmdCursor < iCmdBuffer) {
+						int pos;
+
+						if (position.X == info.dwSize.X-1) {
+							position.Y += 1;
+							position.X = 0;
+						}
+						else {
+							position.X += 1;
+						}
+
+						if (insertMode) {
+							for (pos = iCmdBuffer-1; pos >= iCmdCursor; pos--) {
+								cmd[pos+1] = cmd[pos];
+							}
+						}
+						iCmdBuffer++;
+						cmd[iCmdCursor++] = addchars[iBuf];
+						printf("%c", addchars[iBuf]);
+						for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+							GetConsoleScreenBufferInfo(hOut, &info);
+							if (info.dwCursorPosition.X == info.dwSize.X-1 && info.dwCursorPosition.Y == info.dwSize.Y-1) {
+								orgPosition.Y -= 1;
+								position.Y -= 1;
+							}
+							printf("%c", cmd[pos]);
+						}
+						SetConsoleCursorPosition(hOut, position);
+					}
+					else {
+						if (position.X == info.dwSize.X-1 && position.Y == info.dwSize.Y-1) {
+							orgPosition.Y -= 1;
+						}
+						cmd[iCmdBuffer++] = addchars[iBuf];
+						iCmdCursor++;
+						printf("%c", addchars[iBuf]);
+					}
+				}
+		}
+		if (iCmdBuffer == CMD_BUFLEN) {
+			printf("Read Console... BUFFER OVERRUN\n");
+			iCmdBuffer = 0;
+			ignoreNext = 1;
+		}
+    }
+    return (0);
+}
+
+
+static BOOL console_readConsole(HANDLE conIn, char* buf, int len, int* pRed, int *key)
+{
+    DWORD recordIndex, bufferIndex, toRead, red;
+    PINPUT_RECORD pInput;
+
+    GetNumberOfConsoleInputEvents(conIn, &toRead);
+	if (len < (int)toRead) {
+		toRead = len;
+	}
+	if (toRead == 0) {
+		return(FALSE);
+	}
+
+	if ((pInput = (PINPUT_RECORD) malloc(toRead * sizeof(INPUT_RECORD))) == NULL) {
+		return (FALSE);
+	}
+	*key = 0;
+    ReadConsoleInput(conIn, pInput, toRead, &red);
+
+    for (recordIndex = bufferIndex = 0; recordIndex < red; recordIndex++) {
+        KEY_EVENT_RECORD keyEvent = pInput[recordIndex].Event.KeyEvent;
+    	if (pInput[recordIndex].EventType == KEY_EVENT && keyEvent.bKeyDown) {
+			if (keyEvent.wVirtualKeyCode == 38 && keyEvent.wVirtualScanCode == 72) {
+				buf[0] = 0;
+				console_history(buf, -1);
+				*key = KEY_UP;
+				bufferIndex += (DWORD)strlen(buf);
+			}
+			if (keyEvent.wVirtualKeyCode == 40 && keyEvent.wVirtualScanCode == 80) {
+				buf[0] = 0;
+				console_history(buf, 1);
+				*key = KEY_DOWN;
+				bufferIndex += (DWORD)strlen(buf);
+			}
+			if (keyEvent.wVirtualKeyCode == 112 && keyEvent.wVirtualScanCode == 59) {
+				console_fnkey_pressed(1);
+			}
+			if (keyEvent.wVirtualKeyCode == 113 && keyEvent.wVirtualScanCode == 60) {
+				console_fnkey_pressed(2);
+			}
+			if (keyEvent.wVirtualKeyCode == 114 && keyEvent.wVirtualScanCode == 61) {
+				console_fnkey_pressed(3);
+			}
+			if (keyEvent.wVirtualKeyCode == 115 && keyEvent.wVirtualScanCode == 62) {
+				console_fnkey_pressed(4);
+			}
+			if (keyEvent.wVirtualKeyCode == 116 && keyEvent.wVirtualScanCode == 63) {
+				console_fnkey_pressed(5);
+			}
+			if (keyEvent.wVirtualKeyCode == 117 && keyEvent.wVirtualScanCode == 64) {
+				console_fnkey_pressed(6);
+			}
+			if (keyEvent.wVirtualKeyCode == 118 && keyEvent.wVirtualScanCode == 65) {
+				console_fnkey_pressed(7);
+			}
+			if (keyEvent.wVirtualKeyCode == 119 && keyEvent.wVirtualScanCode == 66) {
+				console_fnkey_pressed(8);
+			}
+			if (keyEvent.wVirtualKeyCode == 120 && keyEvent.wVirtualScanCode == 67) {
+				console_fnkey_pressed(9);
+			}
+			if (keyEvent.wVirtualKeyCode == 121 && keyEvent.wVirtualScanCode == 68) {
+				console_fnkey_pressed(10);
+			}
+			if (keyEvent.wVirtualKeyCode == 122 && keyEvent.wVirtualScanCode == 87) {
+				console_fnkey_pressed(11);
+			}
+			if (keyEvent.wVirtualKeyCode == 123 && keyEvent.wVirtualScanCode == 88) {
+				console_fnkey_pressed(12);
+			}
+			if (keyEvent.uChar.AsciiChar == 9) {
+				*key = KEY_TAB;
+				break;
+			}
+			if (keyEvent.uChar.AsciiChar == 27) {
+				*key = CLEAR_OP;
+				break;
+			}
+			if (keyEvent.wVirtualKeyCode == 37 && keyEvent.wVirtualScanCode == 75) {
+				*key = KEY_LEFT;
+			}
+			if (keyEvent.wVirtualKeyCode == 39 && keyEvent.wVirtualScanCode == 77) {
+				*key = KEY_RIGHT;
+			}
+			if (keyEvent.wVirtualKeyCode == 45 && keyEvent.wVirtualScanCode == 82) {
+				*key = KEY_INSERT;
+			}
+    	    while (keyEvent.wRepeatCount && keyEvent.uChar.AsciiChar) {
+    			buf[bufferIndex] = keyEvent.uChar.AsciiChar;
+				if (buf[bufferIndex] == '\r') {
+    				buf[bufferIndex] = '\n';
+				}
+    			bufferIndex++;
+    			keyEvent.wRepeatCount--;
+    	    }
+    	}
+    }
+
+    free(pInput);
+    *pRed = bufferIndex;
+    return (TRUE);
+}
+#endif
 #endif
 
 static void handle_SIGINT(int sig)
@@ -356,10 +728,11 @@ static int get_profile(const char *name, cli_profile_t **profile)
 }
 
 #ifndef HAVE_EDITLINE
-static char command_buf[2048] = "";
+static char command_buf[CMD_BUFLEN+1] = "";
 
 static const char *basic_gets(int *cnt)
 {
+#ifndef _MSC_VER
 	int x = 0;
 
 	printf("%s", prompt_str);
@@ -382,9 +755,29 @@ static const char *basic_gets(int *cnt)
 	}
 
 	*cnt = x;
+#else
+	int read, key;
+	char keys[80];
+	HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
+
+	console_bufferInput (0, 0, prompt_str, PROMPT_OP);
+	printf("%s", prompt_str);
+
+	*cnt = 0;
+	memset(&command_buf, 0, sizeof(command_buf));
+
+	while (!*cnt) {
+		if (console_readConsole(stdinHandle, keys, (int)sizeof(keys), &read, &key)) {
+			*cnt = console_bufferInput(keys, read, command_buf, key);
+			if (!strcmp(command_buf, "Empty")) {
+				command_buf[0] = 0;
+			}
+		}
+		Sleep(20);
+	}
 
 	return command_buf;
-
+#endif
 }
 #endif
 
@@ -427,22 +820,19 @@ static void set_fn_keys(cli_profile_t *profile)
 	profile->console_fnkeys[11] = "version";
 }
 
-
-#ifdef HAVE_EDITLINE
 #define end_of_p(_s) (*_s == '\0' ? _s : _s + strlen(_s) - 1)
 
-static unsigned char complete(EditLine * el, int ch)
+static unsigned char esl_console_complete(const char *buffer, const char *cursor)
 {
-	const LineInfo *lf = el_line(el);
 	char cmd_str[2048] = "";
 	unsigned char ret = CC_REDISPLAY;
-	char *dup = strdup(lf->buffer);
+	char *dup = strdup(buffer);
 	char *buf = dup;
 	int pos = 0, sc = 0;
 	char *p;
 
-	if (!esl_strlen_zero(lf->cursor) && !esl_strlen_zero(lf->buffer)) {
-		pos = (lf->cursor - lf->buffer);
+	if (!esl_strlen_zero(cursor) && !esl_strlen_zero(buffer)) {
+		pos = (int)(cursor - buffer);
 	}
 	if (pos > 0) {
 		*(buf + pos) = '\0';
@@ -456,10 +846,12 @@ static unsigned char complete(EditLine * el, int ch)
 		buf++;
 		sc++;
 	}
-	
+
+#ifdef HAVE_EDITLINE
 	if (!*buf && sc) {
 		el_deletestr(el, sc);
 	}
+#endif
 
 	sc = 0;
 
@@ -469,14 +861,15 @@ static unsigned char complete(EditLine * el, int ch)
 		p--;
 	}
 
+#ifdef HAVE_EDITLINE
 	if (sc > 1) {
 		el_deletestr(el, sc - 1);
 		*(p + 2) = '\0';
 	}
-
+#endif
 	
 
-	if (*lf->cursor) {
+	if (*cursor) {
 		snprintf(cmd_str, sizeof(cmd_str), "api console_complete c=%ld;%s\n\n", (long)pos, buf);
 	} else {
 		snprintf(cmd_str, sizeof(cmd_str), "api console_complete %s\n\n", buf);
@@ -503,11 +896,21 @@ static unsigned char complete(EditLine * el, int ch)
 				
 				printf("%s\n\n\n", r);
 
+#ifdef HAVE_EDITLINE
 				el_deletestr(el, len);
 				el_insertstr(el, w);
+#else
+#ifdef _MSC_VER
+				console_bufferInput(0, len, (char*)buffer, DELETE_REFRESH_OP);
+				console_bufferInput(w, (int)strlen(w), (char*)buffer, 0);
+#endif
+#endif
 				
 			} else {
 				printf("%s\n", r);
+#ifdef _MSC_VER
+				console_bufferInput(0, 0, (char*)buffer, DELETE_REFRESH_OP);
+#endif
 			}
 		}
 
@@ -517,6 +920,14 @@ static unsigned char complete(EditLine * el, int ch)
 	esl_safe_free(dup);
 
 	return ret;
+}
+
+#ifdef HAVE_EDITLINE
+static unsigned char complete(EditLine * el, int ch)
+{
+	const LineInfo *lf = el_line(el);
+
+	return esl_console_complete(lf->buffer, lf->cursor);
 }
 #endif
 

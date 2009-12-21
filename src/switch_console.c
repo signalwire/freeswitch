@@ -1123,7 +1123,10 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 			cmd[--iCmdBuffer] = 0;
 		}
 		iCmdCursor = (int)strlen(cmd);
-		printf("%s%s", prompt, cmd);
+		printf("%s", prompt);
+		GetConsoleScreenBufferInfo(hOut, &info);
+		orgPosition = info.dwCursorPosition;
+		printf("%s", cmd);
 		return 0;
 	}
 
