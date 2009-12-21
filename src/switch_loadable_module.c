@@ -53,6 +53,7 @@ struct switch_loadable_module {
 	switch_memory_pool_t *pool;
 	switch_status_t status;
 	switch_thread_t *thread;
+	switch_bool_t shutting_down;
 };
 
 struct switch_loadable_module_container {
@@ -90,7 +91,7 @@ static void *SWITCH_THREAD_FUNC switch_loadable_module_exec(switch_thread_t *thr
 	switch_assert(thread != NULL);
 	switch_assert(module != NULL);
 
-	for (restarts = 0; status != SWITCH_STATUS_TERM; restarts++) {
+	for (restarts = 0; status != SWITCH_STATUS_TERM && !module->shutting_down; restarts++) {
 		status = module->switch_module_runtime();
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Thread ended for %s\n", module->module_interface->module_name);
@@ -1256,6 +1257,8 @@ static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Module %s is in use, cannot unload.\n", module->module_interface->module_name);
 		return SWITCH_STATUS_FALSE;
 	}
+
+	module->shutting_down = SWITCH_TRUE;
 
 	if (shutdown) {
 		switch_loadable_module_unprocess(module);
