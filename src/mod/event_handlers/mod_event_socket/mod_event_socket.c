@@ -2016,7 +2016,6 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_assert(listener != NULL);
 	
 	if ((session = listener->session)) {
-		channel = switch_core_session_get_channel(session);
 		if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 			goto done;
 		}
@@ -2162,11 +2161,14 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	}
 	switch_mutex_unlock(listener->filter_mutex);
 
-	if (listener->session && (switch_test_flag(listener, LFLAG_RESUME) || 
-							  ((var = switch_channel_get_variable(channel, "socket_resume")) && switch_true(var)))) {
+	if (listener->session) {
 		channel = switch_core_session_get_channel(listener->session);
+	}
+	
+	if (channel && (switch_test_flag(listener, LFLAG_RESUME) || ((var = switch_channel_get_variable(channel, "socket_resume")) && switch_true(var)))) {
 		switch_channel_set_state(channel, CS_RESET);
 	}
+
 	if (listener->sock) {
 		char disco_buf[512] = "";
 		const char message[] = "Disconnected, goodbye.\nSee you at ClueCon! http://www.cluecon.com/\n";
