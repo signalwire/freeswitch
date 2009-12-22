@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 TESTDATADIR=../test-data/broadcom/floating/bv32
 

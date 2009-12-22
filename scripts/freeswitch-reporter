@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 email=traces@freeswitch.org
 errorlvl=1
 while [ $errorlvl -gt 0 ]

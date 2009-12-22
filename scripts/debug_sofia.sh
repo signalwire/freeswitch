@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 export SOFIA_DEBUG=9
 export NUA_DEBUG=9
