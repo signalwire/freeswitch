@@ -136,7 +136,7 @@ SWITCH_STANDARD_APP(bcast_function)
 		goto fail;
 	}
 
-	if (switch_mcast_hops(socket, mcast_ttl) != SWITCH_STATUS_SUCCESS) {
+	if (switch_mcast_hops(socket, (uint8_t)mcast_ttl) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Mutlicast TTL set failed\n");
 		goto fail;
 	}

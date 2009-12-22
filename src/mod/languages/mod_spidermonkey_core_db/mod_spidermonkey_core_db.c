@@ -288,7 +288,7 @@ static JSBool db_bind_text(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 {
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
 	JSBool status;
-	uint32 param_index = -1;
+	int32 param_index = -1;
     char *param_value = NULL;
 
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
@@ -312,7 +312,7 @@ static JSBool db_bind_text(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 	
 
 	/* convert args */
-	status = JS_ValueToECMAUint32(cx, argv[0], &param_index);
+	status = JS_ValueToECMAUint32(cx, argv[0], &(uint32)param_index);
 	switch_assert(status == JS_TRUE);
     param_value = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 	if ((param_index < 1) || (NULL == param_value)) {
@@ -334,8 +334,8 @@ static JSBool db_bind_int(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 {
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
 	JSBool status;
-	uint32 param_index = -1;
-	uint32 param_value = -1;
+	int32 param_index = -1;
+	int32 param_value = -1;
 
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 
@@ -356,9 +356,9 @@ static JSBool db_bind_int(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 	}
 
 	/* convert args */
-	status = JS_ValueToECMAUint32(cx, argv[0], &param_index);
+	status = JS_ValueToECMAUint32(cx, argv[0], &(uint32)param_index);
 	switch_assert(status == JS_TRUE);
-	status = JS_ValueToECMAUint32(cx, argv[1], &param_value);
+	status = JS_ValueToECMAUint32(cx, argv[1], &(uint32)param_value);
 	switch_assert(status == JS_TRUE);
 
 	if (param_index < 1)  {
