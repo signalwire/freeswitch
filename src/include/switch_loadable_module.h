@@ -339,10 +339,14 @@ static inline int switch_check_interval(uint32_t rate, uint32_t ptime)
 		ptime_div = 2;
 		break;
 	case 32000:
+	case 24000:
 	case 16000:
 		max_ms = 60;
 		ptime_div = 2;
 		break;
+	case 12000:
+		max_ms = 100;
+		ptime_div = 2;
 	case 8000:
 		max_ms = 120;
 		ptime_div = 2;

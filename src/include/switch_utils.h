@@ -92,7 +92,7 @@ static inline switch_bool_t switch_is_moh(const char *s)
 #define switch_arraylen(_a) (sizeof(_a) / sizeof(_a[0]))
 #define switch_split(_data, _delim, _array) switch_separate_string(_data, _delim, _array, switch_arraylen(_array))
 
-#define switch_is_valid_rate(_tmp) (_tmp == 8000 || _tmp == 16000 || _tmp == 32000 || _tmp == 11025 || _tmp == 22050 || _tmp == 44100 || _tmp == 48000)
+#define switch_is_valid_rate(_tmp) (_tmp == 8000 || _tmp == 12000 || _tmp == 16000 || _tmp == 24000 || _tmp == 32000 || _tmp == 11025 || _tmp == 22050 || _tmp == 44100 || _tmp == 48000)
 
 
 static inline int switch_string_has_escaped_data(const char *in)
