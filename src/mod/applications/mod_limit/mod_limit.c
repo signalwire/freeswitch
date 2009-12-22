@@ -723,7 +723,7 @@ static switch_bool_t do_limit(switch_core_session_t *session, const char *realm,
 
 	cbt.buf = buf;
 	cbt.len = sizeof(buf);
-	sql = switch_mprintf("select count(hostname) from limit_data where realm='%q' and id like '%q'", realm, id);
+	sql = switch_mprintf("select count(hostname) from limit_data where realm='%q' and id='%q'", realm, id);
 	limit_execute_sql_callback(NULL, sql, sql2str_callback, &cbt);
 	switch_safe_free(sql);
 	got = atoi(buf);
