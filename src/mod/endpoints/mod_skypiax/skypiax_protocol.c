@@ -1774,8 +1774,10 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 				switch (an_event.type) {
 				case ClientMessage:
 
-					if (an_event.xclient.format != 8)
+					if (an_event.xclient.format != 8){
+						skypiax_sleep(100);	//0.1 msec
 						break;
+					}
 
 					for (i = 0; i < 20 && an_event.xclient.data.b[i] != '\0'; ++i)
 						buf[i] = an_event.xclient.data.b[i];
@@ -1813,10 +1815,13 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 									 SKYPIAX_P_LOG, buf);
 								skypiax_sleep(1000000);	//1 sec
 							}
+							skypiax_sleep(100);	//0.1 msec
 							break;
 						}
 					}
 					if(continue_is_broken){
+						XFlush(disp);
+						skypiax_sleep(100);	//0.1 msec
 						continue;
 					}
 
@@ -1839,8 +1844,10 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 						there_were_continues = 0;
 					}
 
+					skypiax_sleep(100);	//0.1 msec
 					break;
 				default:
+					skypiax_sleep(100);	//0.1 msec
 					break;
 				}
 			}
