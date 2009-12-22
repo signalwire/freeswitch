@@ -1899,7 +1899,7 @@ static switch_status_t load_config(int reload, int del_all)
 				if (switch_odbc_available()) {
 					globals.odbc_dsn = switch_core_strdup(globals.pool, val);
 					if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
-						*odbc_user++ = '\0';
+						*globals.odbc_user++ = '\0';
 						if ((globals.odbc_pass = strchr(globals.odbc_user, ':'))) {
 							*globals.odbc_pass++ = '\0';
 						}
