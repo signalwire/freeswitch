@@ -1,0 +1,36 @@
+
+  OSSP uuid bindings for PostgreSQL
+  =================================
+
+  This is the OSSP uuid binding for the PostgreSQL RDBMS, providing
+  native UUID data type support.
+
+  Installation
+  ------------
+
+  In order to install the OSSP uuid binding into the PostgreSQL database
+  <database> one has run:
+
+  $ <prefix>/bin/psql \
+    -d <database> \
+    -U postgresql \
+    -f <prefix>/share/postgresql/uuid.sql
+
+  Usage
+  -----
+
+  psql -d <database>
+  psql> CREATE TABLE test (id UUID DEFAULT uuid(1), name TEXT);
+  psql> INSERT INTO test (name) VALUES
+        ('foo');
+  psql> INSERT INTO test (id, name) VALUES
+        (uuid(1), 'bar');
+  psql> INSERT INTO test (id, name) VALUES
+        (uuid(3, 'ns:URL', 'http://www.ossp.org/'), 'baz');
+  psql> INSERT INTO test (id, name) VALUES
+        (uuid(3, '6ba7b811-9dad-11d1-80b4-00c04fd430c8',
+                 'http://www.ossp.org/'), 'quux');
+  psql> SELECT uuid(4);
+  psql> SELECT * FROM test WHERE id = uuid(3, 'ns:URL', 'http://www.ossp.org/');
+  psql> DROP TABLE test;
+

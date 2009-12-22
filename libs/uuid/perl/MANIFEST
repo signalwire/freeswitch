@@ -1,0 +1,10 @@
+MANIFEST
+Makefile.PL
+uuid.xs
+uuid.tm
+uuid.pm
+uuid.pod
+uuid.ts
+uuid_compat.pm
+uuid_compat.pod
+uuid_compat.ts

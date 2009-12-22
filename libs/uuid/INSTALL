@@ -1,0 +1,23 @@
+   _        ___  ____ ____  ____                _     _
+  |_|_ _   / _ \/ ___/ ___||  _ \   _   _ _   _(_) __| |
+  _|_||_| | | | \___ \___ \| |_) | | | | | | | | |/ _` |
+ |_||_|_| | |_| |___) |__) |  __/  | |_| | |_| | | (_| |
+  |_|_|_|  \___/|____/____/|_|      \__,_|\__,_|_|\__,_|
+
+  OSSP uuid - Universally Unique Identifier
+
+  INSTALLATION
+
+  To install OSSP uuid into /path/to/uuid/ perform
+  the following steps in your shell:
+
+    $ ./configure
+         --prefix=/path/to/uuid
+        [--with-dce]
+        [--with-perl[=/path/to/[bin[/perl]
+         --with-perl-compat]]
+        [--with-php]
+    $ make
+    $ make check
+    $ make install [DESTDIR=/path/to/temp/root]
+

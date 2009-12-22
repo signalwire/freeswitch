@@ -1,0 +1,49 @@
+   _        ___  ____ ____  ____                _     _
+  |_|_ _   / _ \/ ___/ ___||  _ \   _   _ _   _(_) __| |
+  _|_||_| | | | \___ \___ \| |_) | | | | | | | | |/ _` |
+ |_||_|_| | |_| |___) |__) |  __/  | |_| | |_| | | (_| |
+  |_|_|_|  \___/|____/____/|_|      \__,_|\__,_|_|\__,_|
+
+  OSSP uuid - Universally Unique Identifier
+
+  USERS
+
+  OSSP uuid is known to be used by at least the following
+  Open Source software packages:
+
+  o PostgreSQL
+    Relational Database Management System (RDBMS)
+    http://www.postgresql.org/
+
+  o Aegis
+    Software Configuration Management (SCM) System
+    http://aegis.sourceforge.net/
+
+  o Heartbeat
+    Core component of the High-Availability Linux (Linux-HA) project
+    http://linux-ha.org/heartbeat/
+
+  o GAT
+    Grid Application Toolkit (GAT) 
+    https://www.gridlab.org/WorkPackages/wp-1/ 
+
+  o Menes
+    High-Level C++ Library for mutexes, networking, etc.
+    http://www.saurik.com/
+    http://svn.saurik.com/repos/menes/trunk/
+
+  o OpenAether OAPR
+    C++ wrapper for NSPR
+    http://www.openaether.org/oapr.html
+
+  o Gauche Scheme Interpreter, UUID extension
+    http://cvs.sourceforge.jp/cgi-bin/viewcvs.cgi/gauche/Gauche-uuid/
+    http://www.shiro.dreamhost.com/scheme/gauche/
+
+  o Guile Extension Examples (GEE)
+    https://gna.org/projects/gee
+
+  o CGI::Session::ID::uuid
+    UUID based ID generator backend for CGI::Session
+    http://www.cpan.org/modules/by-authors/id/RSE/ 
+

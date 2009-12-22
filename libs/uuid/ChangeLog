@@ -1,0 +1,624 @@
+   _        ___  ____ ____  ____                _     _
+  |_|_ _   / _ \/ ___/ ___||  _ \   _   _ _   _(_) __| |
+  _|_||_| | | | \___ \___ \| |_) | | | | | | | | |/ _` |
+ |_||_|_| | |_| |___) |__) |  __/  | |_| | |_| | | (_| |
+  |_|_|_|  \___/|____/____/|_|      \__,_|\__,_|_|\__,_|
+
+  OSSP uuid - Universally Unique Identifier
+
+  CHANGELOG
+
+  This is a list of all changes to OSSP uuid.
+  For a more brief summary please have a look at the NEWS file.
+
+  Changes between 1.6.1 and 1.6.2 (21-Feb-2008 to 04-Jul-2008)
+
+   o Adjust "devtool.func" for latest GNU Libtool compatibility.
+     [Ralf S. Engelschall]
+
+   o Improve PRNG under Win32.
+     [Hiroshi Saito]
+
+   o Consistently annotate "RFC-XXXX" with "IETF" to clearly
+     indicate from which standards body this comes from.
+     [Ralf S. Engelschall]
+
+   o Resolve namespace conflicts of recently introduced time_xxx()
+     functions by using a propoer "uuid_" prefix.
+     [Ralf S. Engelschall]
+
+   o Remove unused "struct timezone" from time_gettimeofday() in
+     order to simplify portability.
+     [Ralf S. Engelschall]
+
+   o Add support for POSIX clock_gettime(3) in case the Unix/POSIX
+     gettimeofday(3) is not available.
+     [Ralf S. Engelschall]
+
+   o Upgrade build environment to GNU autoconf 2.62.
+     [Ralf S. Engelschall]
+
+   o Upgrade build environment to GNU libtool 2.2.4.
+     [Ralf S. Engelschall]
+
+  Changes between 1.6.0 and 1.6.1 (19-May-2007 to 21-Feb-2008)
+
+   o Port to Win32 API.
+     [Hiroshi Saito, Wu Yongwei, Ralf S. Engelschall]
+
+   o Adjust copyright messages for new year 2008.
+     [Ralf S. Engelschall]
+   
+   o Fix __VA_COPY_USE_{CSP,CPP} fallback macros for va_copy.
+     [Mark A. Lindner <mark.a.lindner@gmail.com>]
+
+   o PostgreSQL bindings: use SET_VARSIZE() instead
+     of assigning to bytea->v_len under PostgreSQL >= 8.3
+     [Ralf S. Engelschall]
+
+   o Upgrade build environment to GNU libtool 1.5.26
+     [Ralf S. Engelschall]
+
+  Changes between 1.5.1 and 1.6.0 (31-Jul-2006 to 19-May-2007)
+
+   o Expand unused "datarootdir" in Makefile.in and uuid-config.in to
+     make newer GNU autoconf versions happy.
+     [Ralf S. Engelschall]
+
+   o Upgrade build environment to GNU shtool 2.0.7
+     [Ralf S. Engelschall]
+
+   o Make GNU autoconf procedure of PHP binding more robust by using
+     -Wl,-Bsymbolic only on platforms where uuid_create(3) actually
+     exists and where -Wl,-Bsymbolic is really accepted by the tool
+     chain. This especially unbreaks MacOS X.
+     [Ralf S. Engelschall]
+
+   o Fix "uuid_export" function in PHP bindings under
+     UUID_FMT_SIV, UUID_FMT_STR and UUID_FMT_TXT where the
+     NUL-termination character should be not passed back to PHP.
+     [Neil Caunt <retardis@gmail.com>, Ralf S. Engelschall]
+
+   o Adjust copyright messages for new year 2007.
+     [Ralf S. Engelschall]
+
+   o Upgrade build environment to GNU autoconf 2.61
+     [Ralf S. Engelschall]
+
+   o Disable PostgreSQL "(CSTRING AS uuid)" and "(uuid AS CSTRING)"
+     CASTS as PostgreSQL 8.2 and higher explicitly disallow this.
+     [David Wheeler <david@kineticode.com>, Ralf S. Engelschall]
+
+   o Fix PostgreSQL bindings by mapping the correct DSO symbol
+     to the functions "uuid_send" and "uuid_recv".
+     [Ralf S. Engelschall]
+
+   o Silence PostgreSQL processing messages
+     [David Wheeler <david@kineticode.com>]
+
+   o Support MacOS X (aka Darwin) in PostgreSQL bindings by passing
+     a "-bundle_loader" option to the linker in order to resolve the
+     "undefined symbols" problem.
+     [David Wheeler <david@kineticode.com>, Ralf S. Engelschall]
+
+   o Pass the correct type to PostgreSQL's errmsg().
+     [David Wheeler <david@kineticode.com>, Ralf S. Engelschall]
+
+   o Added PostgreSQL 8.2 PG_MODULE_MAGIC support.
+     [David Wheeler <david@kineticode.com>]
+
+   o Fix the Data::UUID::to_b64string() function of the Perl backward
+     compatibility API: an empty string was not supplied as the EOL
+     marker to MIME::Base64::encode_base64() and hence the returned
+     string ended with a newline character (which in turn breaks many
+     applications using Data::UUID).
+     [Piotr Roszatycki <dexter@debian.org>]
+
+   o Change type of "data_ptr" argument in uuid_export() API signature
+     from "void **" to "void *" as there is unfortunately no
+     "generic pointer to pointer type" in ISO C (see also
+     http://c-faq.com/ptrs/genericpp.html) and "void **" is just a
+     "pointer to a 'void *'".
+     
+     The "void **" especially had the nasty side-effect that it breaks
+     strict pointer aliasing rules of ISO C and hence would require
+     fiddling with temporary variables on all uuid_export() calls if
+     one would be 100% correct and avoid aliasing related compiler
+     warnings. Instead, as uuid_export() internally has to cast the
+     "data_ptr" to the particular expected type anyway, it is better
+     to have "data_ptr" just be a really generic "void *" in the API
+     signature.
+     
+     Keep in mind that although this is an API change, it doesn't cause
+     any incompatibilities as the function still expects the same
+     "pointer to a pointer of a particular type". This expected pointer
+     is just now passed the more correct although less intuitive way.
+     [Hrvoje Niksic <hniksic@xemacs.org>, Ralf S. Engelschall]
+
+   o Optional DMALLOC based memory debugging support.
+     [Ralf S. Engelschall]
+
+   o Consistently include "uuid_ac.h" in all source files to have GNU
+     autoconf results and standard system defines available everywhere.
+     [Ralf S. Engelschall]
+
+  Changes between 1.5.0 and 1.5.1 (28-Jul-2006 to 31-Jul-2006)
+
+   o Use "MODULE_PATHNAME" instead of "@MODULE_PATHNAME@" in
+     uuid.sql.in to be more aligned to the PostgreSQL styles.
+     [Simon "janus" Dassow <janus@errornet.de>]
+
+   o Use the available variables $(LIB_NAME), $(DCE_NAME) and
+     $(CXX_NAME) more consistently in Makefile.in to allow packagers to
+     override the library name with less patching.
+     [Piotr Roszatycki <dexter@debian.org>]
+
+   o Fix the "make distclean" target of php/Makefile.local
+     to make sure the ".deps" file is not left over.
+     [Ralf S. Engelschall]
+
+   o Fix the tarball rolling procedure to make sure we
+     do not distribute binary files again. This now especially uses
+     a MANIFEST file which explicitly lists all files which form the
+     distribution tarball. We compare the tarball and the MANIFEST file
+     for differences in the "devtool dist" now.
+     [Ralf S. Engelschall]
+
+  Changes between 1.4.2 and 1.5.0 (13-Mar-2006 to 28-Jul-2006)
+
+   o Fixed potential memory leak in uuid_create() as spotted by SPLINT.
+     [Ralf S. Engelschall]
+
+   o Cleanup source code according to complains by SPLINT.
+     [Ralf S. Engelschall]
+
+   o Cleanup internal uuid_mac.h header.
+     [Ralf S. Engelschall]
+   
+   o Numerous fixed to the error handling in the PostgreSQL bindings.
+     [Neil Conway <neilc@samurai.com>]
+
+   o Add Hash indexing support UUID data type of PostgreSQL bindings.
+     [Ralf S. Engelschall]
+
+   o Add comparison operators and B-Tree indexing support UUID data
+     type of PostgreSQL bindings.
+     [Roman Neuhauser <neuhauser@sigpipe.cz>]
+
+   o Fix PHP bindings: the wrong argument to uuid_create()
+     was forced to a reference
+     [Roman Neuhauser <neuhauser@sigpipe.cz>]
+
+   o Add full support for Single Integer Value (SIV) UUID representation
+     for both importing and exporting in C/C++/Perl/PHP APIs.
+     [Ralf S. Engelschall]
+   
+   o Upgrade build environment to GNU shtool 2.0.6 and GNU autoconf 2.60
+     [Ralf S. Engelschall]
+
+   o Added an "OVERVIEW" file which tries to give the "big picture"
+     about UUIDs and allows to survice during the nasty UUID bit fiddling.
+     [Ralf S. Engelschall]
+
+   o Replaced "clock_seq_and_reserved" with
+     "clock_seq_high_and_reserved" in uuid.pod to already reflect the
+     description in the forthcoming RFC.
+     [Ralf S. Engelschall]
+
+   o Speed up processing in uuid_str.c by reducing va_copy() calls from
+     two to just one per formatting.
+     [Ralf S. Engelschall]
+
+  Changes between 1.4.1 and 1.4.2 (07-Feb-2006 to 13-Mar-2006)
+
+   o Fix uuid_export() function by fixing the internal
+     uuid_s[ar]printf() functions which require the backup of va_list
+     arguments between subsequent processing.
+     [Ralf S. Engelschall, Thomas Lotterer <thomas@lotterer.net>]
+
+   o Fix Perl API's "export" function by not taking over NUL-termination
+     character under UUID_FMT_TXT.
+     [Thomas Lotterer <thomas@lotterer.net>]
+   
+   o Declare "install", "uninstall" and "clean" make(1) targets
+     ".PHONY". This especially workarounds problems on case insensitive
+     filesystems (like MacOS X' filesystem) where the "INSTALL" document
+     conflicts with the "install" target.
+     [Ralf S. Engelschall, David Wheeler <david@kineticode.com>]
+
+  Changes between 1.4.0 and 1.4.1 (15-Jan-2006 to 07-Feb-2006)
+
+   o Upgrade to GNU shtool 2.0.5
+     [Ralf S. Engelschall]
+
+   o Apply workaround to uuid.h to avoid conflicts with
+     vendor UUID implementations where uuid_t (Darwin/MacOSX)
+     or uuid_create/uuid_compare (POSIX) might exist.
+     [Ralf S. Engelschall]
+
+  Changes between 1.3.2 and 1.4.0 (06-Dec-2005 to 15-Jan-2006)
+
+   o Created a top-level Perl ExtUtils::MakeMaker wrapper script
+     [Ralf S. Engelschall]
+
+   o Adjust copyright messages for new year 2006.
+     [Ralf S. Engelschall]
+
+   o Added experimental PostgreSQL bindings.
+     [Ralf S. Engelschall]
+
+   o Fixed documentation of uuid_make() function.
+     [Ralf S. Engelschall]
+
+   o Upgrade build environment to GNU libtool 1.5.22
+     [Ralf S. Engelschall]
+
+  Changes between 1.3.1 and 1.3.2 (24-Sep-2005 to 06-Dec-2005)
+
+   o Cleaned up and speed optimized perl/uuid_compat.pm
+     (the Data::UUID compatibility module for Perl)
+     [David Wheeler <david@justatheory.com>]
+
+   o Upgrade to GNU shtool 2.0.3
+     [Ralf S. Engelschall]
+   
+   o Consistently use "return" in uuid++.cc
+     [Ralf S. Engelschall]
+
+  Changes between 1.3.0 and 1.3.1 (02-Sep-2005 to 24-Sep-2005)
+
+   o Fix two incorrect casts, detected by compiling the C code
+     under C++ constraints.
+     [Ralf S. Engelschall]
+
+   o Remove a compiler warning in the PHP bindings.
+     [Ralf S. Engelschall]
+
+   o Plug memory leak in PRNG sub-library.
+     [Ralf S. Engelschall]
+
+   o Add VPATH/srcdir support for at the default 
+     build procedure plus at least C++ and DCE build options.
+     [Ralf S. Engelschall]
+
+  Changes between 1.2.1 and 1.3.0 (30-Aug-2005 to 02-Sep-2005)
+
+   o Add an experimental PHP 4/5 language API binding which
+     can be enabled under build-time with opption --with-php.
+     [Ralf S. Engelschall]
+   
+   o Upgrade to GNU libtool 1.5.20
+     [Ralf S. Engelschall]
+
+   o Add missing "const" in manual page.
+     [Ralf S. Engelschall]
+
+   o Add an experimental C++ API binding which can be 
+     enabled under build-time with option --with-cxx.
+     [Ralf S. Engelschall]
+
+   o Cleanup the internals of the uuid_create() function and
+     add a new corresponding uuid_clone() API function.
+     [Ralf S. Engelschall]
+
+   o Cleanup some Makefile parts.
+     [Ralf S. Engelschall]
+
+   o Added a pkg-config(1) specification uuid.pc which is also
+     installed by default in addition to the old-style uuid-config tool.
+     [Ralf S. Engelschall]
+
+   o Added optional Data::UUID backward compatibility Perl API which can
+     be enabled with the build-time option --with-perl-compat.
+     [Piotr Roszatycki <dexter@debian.org>, Ralf S. Engelschall]
+
+   o Add a functionality-reduced TIE-style Perl API OSSP::uuid::tie,
+     intended for very high-level convenience programming.
+     [Ralf S. Engelschall]
+
+   o Reference the new officially published RFC 4122.
+     [Ralf S. Engelschall]
+
+  Changes between 1.2.0 and 1.2.1 (23-Jan-2005 to 30-Aug-2005)
+
+   o Add SEEALSO document which references all known
+     UUID implementations.
+     [Ralf S. Engelschall]
+
+   o Improve the PRNG in case no stronger system PRNG device is
+     available by passing time and rand(3) based entropy into the MD5
+     one-way hash function to achieve at least some sort of weaker PRN data.
+     [Ralf S. Engelschall]
+
+   o Fix MAC address determination under Solaris by using the result of
+     ioctl(...,SIOCGARP,...) only if arp_flags had ATF_COM set.
+     [Ralf S. Engelschall]
+
+   o Upgrade to GNU libtool 1.5.18 and GNU shtool 2.0.2.
+     [Ralf S. Engelschall]
+
+   o Cleanup the source code even more by following a large
+     set of FlexeLint's suggestions.
+     [Ralf S. Engelschall]
+
+   o Fixed generated "section" number in uuid-config(1).
+     [Piotr Roszatycki <dexter@debian.org>]
+
+  Changes between 1.1.2 and 1.2.0 (13-Jan-2005 to 23-Jan-2005)
+
+   o Added support for new version 5 UUIDs (name-based, SHA-1)
+     according to latest draft-mealling-uuid-urn-05.txt.
+     [Ralf S. Engelschall]
+
+   o Reference new ISO/IEC 9834-8:2004 / ITU-T Rec. X.667 2004 standard
+     and latest IETF draft-mealling-uuid-urn-05.txt.
+     [Ralf S. Engelschall]
+
+  Changes between 1.1.1 and 1.1.2 (18-Nov-2004 to 13-Jan-2005)
+
+   o Fix generation of v3 UUIDs by adding support for 64-bit platforms
+     to the underlying uuid_md5.c code (which internally is based on
+     the RFC reference code which in turn assumes a 32-bit environment).
+     [Ralf S. Engelschall, Piotr Roszatycki <Piotr_Roszatycki@netia.net.pl>]
+
+   o Optimize internal md5_store() function by directly finalizing MD5
+     calculation on buffer copy instead of finalizing original buffer
+     and having to restore it from the buffer copy.
+     [Ralf S. Engelschall]
+
+   o Adjust copyright messages for new year 2005.
+     [Ralf S. Engelschall]
+
+   o Do not rebuild the Perl API if there were no actual changes.
+     [Ralf S. Engelschall]
+
+  Changes between 1.1.0 and 1.1.1 (03-Nov-2004 to 18-Nov-2004)
+
+   o Apply the FreeBSD libc uuid_create() related workaround
+     in the Perl bindings also under FreeBSD 6.0-CURRENT. 
+     [Ralf S. Engelschall]
+
+   o Fix --with-perl configure option processing: Perl is
+     only required if --with-perl is used although we search for Perl
+     always in order to provide the PERL variable substitution.
+     [Ralf S. Engelschall]
+
+  Changes between 1.0.4 and 1.1.0 (16-Oct-2004 to 03-Nov-2004)
+
+   o Add --with-perl configure option for optionally enabling
+     the Perl language bindings.
+     [Ralf S. Engelschall]
+
+   o Add Perl language bindings providing both a C-style and OO-style API.
+     [Ralf S. Engelschall]
+
+  Changes between 1.0.3 and 1.0.4 (15-Oct-2004 to 16-Oct-2004)
+
+   o Fix version detection from uuid_vers.h
+     [Ralf S. Engelschall]
+
+  Changes between 1.0.2 and 1.0.3 (12-Sep-2004 to 15-Oct-2004)
+
+   o Support configuring/building/installing from an arbitrary
+     directory via srcdir/top_srcdir/VPATH.
+     [David Lee <t.d.lee@durham.ac.uk>, Ralf S. Engelschall]
+
+   o Upgrade build environment to GNU libtool 1.5.10.
+     [Ralf S. Engelschall]
+
+  Changes between 1.0.1 and 1.0.2 (16-Jul-2004 to 12-Sep-2004)
+
+   o Upgrade build environment to GNU libtool 1.5.8 and GNU shtool 2.0.1
+     [Ralf S. Engelschall]
+
+  Changes between 1.0.0 and 1.0.1 (16-Feb-2004 to 16-Jul-2004)
+
+   o Made documentation of uuid_export() more clear.
+     [Ralf S. Engelschall]
+
+   o Upgrade build environment to GNU libtool 1.5.6 and GNU shtool 2.0.0
+     [Ralf S. Engelschall]
+
+   o Remove some warnings occurring under GCC 3.5
+     [Ralf S. Engelschall]
+
+  Changes between 0.9.7 and 1.0.0 (13-Feb-2004 to 16-Feb-2004)
+
+   o Replace remaining (old) UUID_VERSIONX names with UUID_MAKE_VX
+     in the documentation (uuid.pod).
+     [Ralf S. Engelschall]
+
+   o Resolve namespace conflicts with GCC 3.4 internal pow10() and round()
+     functions within uuid_str.c.
+     [Ralf S. Engelschall]
+
+   o Fix buffer handling in "uuid_export(..., UUID_FMT_TXT, vp, ...)" in
+     case "vp" is not NULL.
+     [Fuyuki <fuyuki@nigredo.org>]
+
+  Changes between 0.9.6 and 0.9.7 (11-Feb-2004 to 13-Feb-2004)
+
+   o remove --with-rfc2518 option and functionality because
+     even the IETF/IESG has finally approved our report about the broken
+     random multicast MAC address generation in the standard (and
+     will fix it in new versions of the draft-mealling-uuid-urn). So,
+     finally get rid of this broken-by-design backward compatibility
+     functionality.
+     [Ralf S. Engelschall]
+
+   o Add support to uuid(1) CLI for decoding from stdin for
+     both binary and string representations.
+     [Ralf S. Engelschall]
+
+   o Add missing documentation entries for UUID_XXXX API constants and
+     uuid_version() function.
+     [Fuyuki <fuyuki@nigredo.org>]
+
+   o Adjust references for new draft-mealling-uuid-urn-02.txt.
+     [Fuyuki <fuyuki@nigredo.org>]
+
+   o Replaced overlooked references to old
+     uuid_{unpack,pack,parse,format,dump}() functions with their
+     current uuid_{import,export}() replacements.
+     [Fuyuki <fuyuki@nigredo.org>]
+
+   o Fixed "uuid -h" command.
+     [Fuyuki <fuyuki@nigredo.org>]
+
+  Changes between 0.9.5 and 0.9.6 (06-Feb-2004 to 11-Feb-2004)
+
+   o Added an experimental additional DCE 1.1 API for backward
+     compatibility with existing applications.
+     [Ralf S. Engelschall]
+
+  Changes between 0.9.4 and 0.9.5 (19-Jan-2004 to 06-Feb-2004)
+
+   o Fixed filedescriptor leak in the PRNG sub-API.
+     [Guerry Semones <guerry@tsunamiresearch.com>]
+
+   o Upgraded build environment to GNU libtool 1.5.2.
+     [Ralf S. Engelschall]
+
+  Changes between 0.9.3 and 0.9.4 (16-Jan-2004 to 19-Jan-2004)
+
+   o Include <string.h> in uuid.h because of size_t usage.
+     [Ralf S. Engelschall]
+
+   o INCOMPATIBILITY: Refactor the API and rename uuid_generate()
+     to uuid_make() and use a "uuid_t" pointer for the namespace
+     on UUID_VERSION3 generation. To allow access to the internal
+     pre-defined namespace UUIDs, provide a new uuid_load() function.
+     Because uuid_load() now also allows the loading of the "nil" UUID,
+     remove uuid_nil() from the API. After this second refactoring the
+     API is now the one we originally wished for the forthcoming version
+     1.0 of OSSP uuid.
+     [Ralf S. Engelschall]
+
+   o INCOMPATIBILITY: rename UUID_VERSIONx to UUID_MAKE_Vx and
+     UUID_MCASTRND to UUID_MAKE_MC to be more consistent throughout API.
+     [Ralf S. Engelschall]
+
+   o Add version support to API via UUID_VERSION (compile-time)
+     and uuid_version() (link-time).
+     [Ralf S. Engelschall]
+
+   o INCOMPATIBILITY: Refactor the API by merging
+     uuid_{unpack,pack,parse,format,dump}() functions into unified
+     uuid_{import,export}() functions. This allows us to easily add
+     support for other formats (e.g. XML) in the future without having
+     the change the API in principle.
+     [Ralf S. Engelschall]
+
+   o Document what DCE 1.1 UUID versions exist and what they are
+     intended for.
+     [Ralf S. Engelschall]
+
+   o Cleanup the C code to also pass warning-free a C++ compiler.
+     [Ralf S. Engelschall]
+
+   o Support C++ by enclosing the C API declarations in
+     'extern "C" {...}' within uuid.h.
+     [Guerry Semones <guerry@tsunamiresearch.com>]
+
+   o Improvide decoding in uuid_dump() by at least hex-dumping the
+     binary representation in case of v3, v4 and Nil UUIDs. Also,
+     annotate with better hints.
+     [Ralf S. Engelschall]
+
+   o Recognize special "Nil UUID" on decoding in uuid_dump().
+     [Ralf S. Engelschall]
+
+  Changes between 0.9.2 and 0.9.3 (15-Jan-2004 to 16-Jan-2004)
+
+   o Tested OSSP uuid on 16 particular Unix platforms and list
+     those in the new PORTING file.
+     [Ralf S. Engelschall]
+
+   o Fixed minor formatting bug in call to str_rsprintf().
+     [Ralf S. Engelschall]
+
+   o Fix syntax error in uuid.ac.
+     [Ralf S. Engelschall]
+
+  Changes between 0.9.1 and 0.9.2 (13-Jan-2004 to 15-Jan-2004)
+
+   o Provide both incorrect RFC2518-based and correct IEEE 802
+     multicast address generation. The default now is the correct
+     IEEE 802 multicast address generation but compile-time option
+     --with-rfc2518 selects the broken variant.
+     [Ralf S. Engelschall]
+
+   o Decode also the IEEE 802 MAC address local/global bit.
+     [Ralf S. Engelschall]
+
+   o Added missing documentation for uuid_dump().
+     [Ralf S. Engelschall]
+
+   o Fixed BM_POW2() macro implementation.
+     [Ralf S. Engelschall]
+
+   o Use BM_XXX() and str_xxx() APIs throughout internal implementation.
+     [Ralf S. Engelschall]
+
+   o Added missing manual page uuid-config(1).
+     [Ralf S. Engelschall]
+
+   o Fixed output of "uuid-config --version"
+     [Ralf S. Engelschall]
+
+   o Fixed typos in uuid.pod
+     [Ralf S. Engelschall]
+
+   o Cleanup uuid.ac for unused elements.
+     [Ralf S. Engelschall]
+
+   o Moved uuid_[u]int{8,16,32}_t auto-configuration into
+     own internal header uuid_ac.h.
+     [Ralf S. Engelschall]
+
+   o Fixed portability by replacing accidentally introduced
+     uint{8,16,32}_t with the portable uuid_uint{8,16,32}_t.
+     [Guerry Semones <guerry@tsunamiresearch.com>]
+
+   o Prefix all variable symbols in uuid.h with underscores
+     to avoid namespace conflicts.
+     [Ralf S. Engelschall]
+
+   o Add decoding examples to uuid(1) manual page.
+     [Ralf S. Engelschall]
+
+  Changes between 0.9.0 and 0.9.1 (11-Jan-2004 to 13-Jan-2004)
+
+   o Make "md5_init" and "mac_address" symbols namespace clean
+     by adding correct embedding support via "uuid_" prefix.
+     [Ralf S. Engelschall]
+
+   o Implement uuid_dump() and corresponding uuid CLI "-d"
+     option for dumping a given UUID into clear text. For convenience
+     reasons add uuid_bm.h (bit mask API) and uuid_str (string
+     formatting API) sub-modules.
+     [Ralf S. Engelschall]
+
+   o Add "-m" option to CLI for allowing to generate v1 UUIDs
+     with random multi-cast addresses (API UUID_MCASTRND option).
+     [Ralf S. Engelschall]
+
+   o Disable the C++ and F77 checks in GNU libtool.
+     [Ralf S. Engelschall]
+
+   o Print involved option character (instead of '?') on invalid
+     option for uuid(1) CLI.
+     [Matthias Andree <matthias.andree@gmx.de>]
+
+   o Fixed "make install" and "make uninstall": the uuid(1) CLI
+     has to be [un]installed through GNU libtool, too.
+     [Matthias Andree <matthias.andree@gmx.de>]
+
+   o Document in uuid(1) [uuid_cli.pod] that for version 3
+     UUIDs additional arguments are required and what pre-defined
+     namespace ids are known.
+     [Ralf S. Engelschall, M.Daniel <mdaniel@scdi.com>]
+
+   o cleaned up source tree documentation files.
+     [Ralf S. Engelschall]
+

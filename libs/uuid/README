@@ -1,0 +1,62 @@
+   _        ___  ____ ____  ____                _     _
+  |_|_ _   / _ \/ ___/ ___||  _ \   _   _ _   _(_) __| |
+  _|_||_| | | | \___ \___ \| |_) | | | | | | | | |/ _` |
+ |_||_|_| | |_| |___) |__) |  __/  | |_| | |_| | | (_| |
+  |_|_|_|  \___/|____/____/|_|      \__,_|\__,_|_|\__,_|
+
+  OSSP uuid - Universally Unique Identifier
+  Version 1.6.2 (04-Jul-2008)
+
+  ABSTRACT
+
+  OSSP uuid is a ISO-C:1999 application programming interface (API)
+  and corresponding command line interface (CLI) for the generation of
+  DCE 1.1, ISO/IEC 11578:1996 and IETF RFC-4122 compliant Universally
+  Unique Identifier (UUID). It supports DCE 1.1 variant UUIDs of version
+  1 (time and node based), version 3 (name based, MD5), version 4
+  (random number based) and version 5 (name based, SHA-1). Additional
+  API bindings are provided for the languages ISO-C++:1998, Perl:5 and
+  PHP:4/5. Optional backward compatibility exists for the ISO-C DCE-1.1
+  and Perl Data::UUID APIs.
+
+  UUIDs are 128 bit numbers which are intended to have a high likelihood
+  of uniqueness over space and time and are computationally difficult
+  to guess. They are globally unique identifiers which can be locally
+  generated without contacting a global registration authority. UUIDs
+  are intended as unique identifiers for both mass tagging objects
+  with an extremely short lifetime and to reliably identifying very
+  persistent objects across a network.
+
+  COPYRIGHT AND LICENSE
+
+  Copyright (c) 2004-2008 Ralf S. Engelschall <rse@engelschall.com>
+  Copyright (c) 2004-2008 The OSSP Project <http://www.ossp.org/>
+
+  This file is part of OSSP uuid, a library for the generation
+  of UUIDs which can found at http://www.ossp.org/pkg/lib/uuid/
+
+  Permission to use, copy, modify, and distribute this software for
+  any purpose with or without fee is hereby granted, provided that
+  the above copyright notice and this permission notice appear in all
+  copies.
+
+  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE AUTHORS AND COPYRIGHT HOLDERS AND THEIR
+  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+  USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  SUCH DAMAGE.
+
+  HOME AND DOCUMENTATION
+
+  The documentation and latest release can be found on
+
+  o http://www.ossp.org/pkg/lib/uuid/
+  o  ftp://ftp.ossp.org/pkg/lib/uuid/
+

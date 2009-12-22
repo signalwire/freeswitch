@@ -1,0 +1,71 @@
+##
+##  OSSP uuid - Universally Unique Identifier
+##  Copyright (c) 2004-2007 Ralf S. Engelschall <rse@engelschall.com>
+##  Copyright (c) 2004-2007 The OSSP Project <http://www.ossp.org/>
+##
+##  This file is part of OSSP uuid, a library for the generation
+##  of UUIDs which can found at http://www.ossp.org/pkg/lib/uuid/
+##
+##  Permission to use, copy, modify, and distribute this software for
+##  any purpose with or without fee is hereby granted, provided that
+##  the above copyright notice and this permission notice appear in all
+##  copies.
+##
+##  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+##  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+##  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+##  IN NO EVENT SHALL THE AUTHORS AND COPYRIGHT HOLDERS AND THEIR
+##  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+##  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+##  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+##  USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+##  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+##  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+##  OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+##  SUCH DAMAGE.
+##
+##  Makefile.local: PHP/Zend API build procedure (language: make)
+##
+
+PHP     = php
+EXTDIR  = `$(PHP)-config --extension-dir`
+DESTDIR =
+
+all: build
+
+config:
+	@if [ ! -f ./configure ]; then $(PHP)ize 2>/dev/null; fi
+	@if [ ! -f ./Makefile ]; then ./configure --with-php-config=$(PHP)-config; fi
+
+build: config
+	@$(MAKE) $(MFLAGS) -f Makefile
+
+test: build
+	@version=`$(PHP)-config --version | sed -e 's;^\([0-9]\).*$$;\1;'`; \
+	$(PHP) -q -d "safe_mode=0" -d "extension_dir=./" uuid.ts $$version
+
+install: build
+	@version=`$(PHP)-config --version | sed -e 's;^\([0-9]\).*$$;\1;'`; extdir="$(EXTDIR)"; \
+	echo "installing PHP$$version API into $$extdir"; \
+	./build/shtool mkdir -f -p -m 755 $(DESTDIR)$$extdir; \
+	./build/shtool install -c -m 755 modules/uuid.so $(DESTDIR)$$extdir/uuid.so; \
+	./build/shtool install -c -m 644 uuid.php$$version $(DESTDIR)$$extdir/uuid.php
+
+clean:
+	@$(MAKE) $(MFLAGS) -f Makefile clean || true
+
+distclean: clean
+	-rm -f Makefile .deps
+	-rm -f config.status configure.lineno
+	-rm -f config.h config.log
+	-rm -f *.core *~
+
+realclean: distclean
+	-rm -rf autom4te.cache build include modules
+	-rm -f Makefile.fragments Makefile.objects Makefile.global
+	-rm -f acinclude.m4 aclocal.m4
+	-rm -f config.guess config.h.in config.nice config.sub
+	-rm -f configure configure.in 
+	-rm -f install-sh libtool ltmain.sh missing mkinstalldirs
+	-rm -f run-tests.php
+
