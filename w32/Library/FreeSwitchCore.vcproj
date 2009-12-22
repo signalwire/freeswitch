@@ -69,6 +69,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="true"
+				AdditionalDependencies="rpcrt4.lib"
 				OutputFile="$(SolutionDir)$(ConfigurationName)/FreeSwitch.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
@@ -158,6 +159,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="true"
+				AdditionalDependencies="rpcrt4.lib"
 				OutputFile="$(SolutionDir)$(ConfigurationName)/FreeSwitch.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
