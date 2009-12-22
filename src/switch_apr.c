@@ -892,7 +892,7 @@ SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid)
 SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t *uuid, const char *uuid_str)
 {
 #ifndef WIN32
-	apr_uuid_parse((apr_uuid_t *) uuid, uuid_str);
+	return apr_uuid_parse((apr_uuid_t *) uuid, uuid_str);
 #else
 	return UuidFromString((RPC_CSTR)uuid_str, (UUID*)uuid);
 #endif
