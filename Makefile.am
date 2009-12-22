@@ -123,7 +123,16 @@ libs/miniupnpc/upnpcommands.c\
 libs/miniupnpc/minissdpc.c \
 libs/miniupnpc/upnperrors.c \
 libs/libnatpmp/natpmp.c \
-libs/libnatpmp/getgateway.c
+libs/libnatpmp/getgateway.c \
+libs/uuid/uuid.c \
+libs/uuid/uuid_md5.c \
+libs/uuid/uuid_sha1.c \
+libs/uuid/uuid_prng.c \
+libs/uuid/uuid_mac.c \
+libs/uuid/uuid_time.c \
+libs/uuid/uuid_ui64.c \
+libs/uuid/uuid_ui128.c \
+libs/uuid/uuid_str.c
 
 $(top_builddir)/libfreeswitch_la-switch_console.lo: src/include/switch_version.h
 
@@ -213,6 +222,8 @@ CORE_CFLAGS    += -I$(switch_srcdir)/libs/pcre
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
+CORE_CFLAGS    += -I$(switch_builddir)/libs/uuid
+CORE_CFLAGS    += -I$(switch_srcdir)/libs/uuid
 
 CORE_LIBS      = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
