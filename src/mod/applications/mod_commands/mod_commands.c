@@ -79,6 +79,7 @@ SWITCH_STANDARD_API(db_cache_function) {
 error:
 		stream->write_function(stream, "%s", "parameter missing\n");
 ok:
+		switch_safe_free(mydata);
 		return SWITCH_STATUS_SUCCESS;
 }
 
@@ -449,7 +450,7 @@ SWITCH_STANDARD_API(in_group_function)
 	stream->write_function(stream, "%s", rval);
 	
 	switch_xml_free(xml);
-	free(mydata);
+	switch_safe_free(mydata);
 	switch_event_destroy(&params);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -529,7 +530,7 @@ SWITCH_STANDARD_API(user_data_function)
 
   end:
 	switch_xml_free(xml);
-	free(mydata);
+	switch_safe_free(mydata);
 	switch_event_destroy(&params);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -607,7 +608,7 @@ static switch_status_t _find_user(const char *cmd, switch_core_session_t *sessio
 	
 	switch_xml_free(xml);
 			
-	free(mydata);
+	switch_safe_free(mydata);
 	return SWITCH_STATUS_SUCCESS;
 }
 
