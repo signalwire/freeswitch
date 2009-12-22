@@ -870,17 +870,32 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t **po
 
 SWITCH_DECLARE(void) switch_uuid_format(char *buffer, const switch_uuid_t *uuid)
 {
+#ifndef WIN32
 	apr_uuid_format(buffer, (const apr_uuid_t *) uuid);
+#else
+	RPC_CSTR buf;
+	UuidToString((const UUID*)uuid, &buf);
+	strcpy(buffer, (const char*)buf);
+	RpcStringFree(&buf);
+#endif
 }
 
 SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid)
 {
+#ifndef WIN32
 	apr_uuid_get((apr_uuid_t *) uuid);
+#else
+	UuidCreate((UUID*)uuid);
+#endif
 }
 
 SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t *uuid, const char *uuid_str)
 {
-	return apr_uuid_parse((apr_uuid_t *) uuid, uuid_str);
+#ifndef WIN32
+	apr_uuid_parse((apr_uuid_t *) uuid, uuid_str);
+#else
+	return UuidFromString((RPC_CSTR)uuid_str, (UUID*)uuid);
+#endif
 }
 
 SWITCH_DECLARE(switch_status_t) switch_md5(unsigned char digest[SWITCH_MD5_DIGESTSIZE], const void *input, switch_size_t inputLen)
