@@ -3866,8 +3866,15 @@ SWITCH_STANDARD_API(hupall_api_function)
 
 SWITCH_STANDARD_API(escape_function)
 {
-	int len = strlen(cmd)*2;
-	char *mycmd = malloc(strlen(cmd)*2);
+	int len;
+	char *mycmd;
+	
+	if (zstr(cmd)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	len = strlen(cmd)*2;
+	mycmd = malloc(len);
 	
 	stream->write_function(stream, "%s", switch_escape_string(cmd, mycmd, len));
 	
