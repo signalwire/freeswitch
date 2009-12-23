@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.h,v 1.40 2009/06/02 16:03:56 steveu Exp $
+ * $Id: fsk.h,v 1.41 2009/11/02 13:25:20 steveu Exp $
  */
 
 /*! \file */
@@ -115,6 +115,15 @@ enum
     FSK_WEITBRECHT50    /* 50 baud version, used for TDD (Telecom Device for the Deaf) */
 };
 
+enum
+{
+    FSK_FRAME_MODE_ASYNC = 0,
+    FSK_FRAME_MODE_SYNC = 1,
+    FSK_FRAME_MODE_5N1_FRAMES = 7,      /* 5 bits of data + start bit + stop bit */
+    FSK_FRAME_MODE_7N1_FRAMES = 9,      /* 7 bits of data + start bit + stop bit */
+    FSK_FRAME_MODE_8N1_FRAMES = 10      /* 8 bits of data + start bit + stop bit */
+};
+
 SPAN_DECLARE_DATA extern const fsk_spec_t preset_fsk_specs[];
 
 /*!
@@ -149,6 +158,8 @@ SPAN_DECLARE(fsk_tx_state_t *) fsk_tx_init(fsk_tx_state_t *s,
                                            get_bit_func_t get_bit,
                                            void *user_data);
 
+SPAN_DECLARE(int) fsk_tx_restart(fsk_tx_state_t *s, const fsk_spec_t *spec);
+    
 SPAN_DECLARE(int) fsk_tx_release(fsk_tx_state_t *s);
 
 SPAN_DECLARE(int) fsk_tx_free(fsk_tx_state_t *s);
@@ -202,6 +213,8 @@ SPAN_DECLARE(fsk_rx_state_t *) fsk_rx_init(fsk_rx_state_t *s,
                                            int framing_mode,
                                            put_bit_func_t put_bit,
                                            void *user_data);
+
+SPAN_DECLARE(int) fsk_rx_restart(fsk_rx_state_t *s, const fsk_spec_t *spec, int framing_mode);
 
 SPAN_DECLARE(int) fsk_rx_release(fsk_rx_state_t *s);
 

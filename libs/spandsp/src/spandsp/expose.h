@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: expose.h,v 1.14 2009/09/22 13:11:04 steveu Exp $
+ * $Id: expose.h,v 1.14.4.1 2009/12/19 09:47:56 steveu Exp $
  */
 
 /*! \file */
@@ -71,7 +71,8 @@
 #include <spandsp/private/modem_connect_tones.h>
 #include <spandsp/private/at_interpreter.h>
 #include <spandsp/private/fax_modems.h>
-#include <spandsp/private/t4.h>
+#include <spandsp/private/t4_rx.h>
+#include <spandsp/private/t4_tx.h>
 #include <spandsp/private/t30.h>
 #include <spandsp/private/fax.h>
 #include <spandsp/private/t38_core.h>

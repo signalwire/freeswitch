@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter_tests.c,v 1.23 2009/05/30 15:23:13 steveu Exp $
+ * $Id: at_interpreter_tests.c,v 1.24 2009/10/09 14:53:57 steveu Exp $
  */
 
 /*! \file */
@@ -234,6 +234,9 @@ static const struct command_response_s general_test_seq[] =
     {"AT+ETBM?\r", "\r\n+ETBM:0,0\r\n\r\nOK\r\n"},
     {"AT+EWIND=?\r", "\r\n+EWIND:(1-127),(1-127)\r\n\r\nOK\r\n"},   /* V.250 6.5.7 - Window size */ 
     {"AT+EWIND?\r", "\r\n+EWIND:0,0\r\n\r\nOK\r\n"},
+    {"AT+F34=?\r",  "\r\n+F34:(0-14),(0-14),(0-2),(0-14),(0-14)\r\n\r\nOK\r\n"},
+                                                                    /* T.31 B.6.1 - Initial V.34 rate controls for FAX */
+    {"AT+F34?\r", "\r\n+F34:0,0,0,0,0\r\n\r\nOK\r\n"},
     {"AT+FAR=?\r", "\r\n0,1\r\n\r\nOK\r\n"},                        /* T.31 8.5.1 - Adaptive reception control */ 
     {"AT+FAR?\r", "\r\n0\r\n\r\nOK\r\n"},
     {"AT+FCL=?\r", "\r\n(0-255)\r\n\r\nOK\r\n"},                    /* T.31 8.5.2 - Carrier loss timeout */ 

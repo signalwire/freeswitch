@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.h,v 1.5 2009/09/20 13:42:29 steveu Exp $
+ * $Id: t30.h,v 1.5.4.1 2009/12/19 09:47:56 steveu Exp $
  */
 
 /*! \file */
@@ -253,7 +253,7 @@ struct t30_state_s
     int tx_stop_page;
     /*! \brief The current completion status. */
     int current_status;
-    /*! \brief Internet Aware FAX mode bit mask. */
+    /*! \brief Internet aware FAX mode bit mask. */
     int iaf;
     /*! \brief A bit mask of the currently supported modem types. */
     int supported_modems;

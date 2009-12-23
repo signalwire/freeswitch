@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway.h,v 1.4 2009/05/16 03:34:45 steveu Exp $
+ * $Id: t38_gateway.h,v 1.5 2009/11/07 08:58:58 steveu Exp $
  */
 
 /*! \file */
@@ -163,8 +163,8 @@ typedef struct
     int ecm_mode;
     /*! \brief The current bit rate for the fast modem. */
     int fast_bit_rate;
-    /*! \brief The current fast modem type. */
-    int fast_modem;
+    /*! \brief The current fast receive modem type. */
+    int fast_rx_modem;
     /*! \brief The type of fast receive modem currently active, which may be T38_NONE */
     int fast_rx_active;
 

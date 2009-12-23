@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: super_tone_rx.c,v 1.33 2009/02/10 13:06:46 steveu Exp $
+ * $Id: super_tone_rx.c,v 1.33.4.1 2009/12/19 09:47:56 steveu Exp $
  */
 
 /*! \file */
@@ -218,8 +218,23 @@ SPAN_DECLARE(super_tone_rx_descriptor_t *) super_tone_rx_make_descriptor(super_t
 
 SPAN_DECLARE(int) super_tone_rx_free_descriptor(super_tone_rx_descriptor_t *desc)
 {
+    int i;
+
     if (desc)
+    {
+        for (i = 0; i < desc->tones; i++)
+        {
+            if (desc->tone_list[i])
+                free(desc->tone_list[i]);
+        }
+        if (desc->tone_list)
+            free(desc->tone_list);
+        if (desc->tone_segs)
+            free(desc->tone_segs);
+        if (desc->desc)
+            free(desc->desc);
         free(desc);
+    }
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

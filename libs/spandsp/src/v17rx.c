@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.c,v 1.153 2009/07/09 14:17:57 steveu Exp $
+ * $Id: v17rx.c,v 1.153.4.4 2009/12/19 14:18:13 steveu Exp $
  */
 
 /*! \file */
@@ -121,22 +121,28 @@ enum
 /* Coefficients for the band edge symbol timing synchroniser (alpha = 0.99) */
 /* low_edge = 2.0f*M_PI*(CARRIER_NOMINAL_FREQ - BAUD_RATE/2.0f)/SAMPLE_RATE; */
 /* high_edge = 2.0f*M_PI*(CARRIER_NOMINAL_FREQ + BAUD_RATE/2.0f)/SAMPLE_RATE; */
+#define SIN_LOW_BAND_EDGE               0.453990499f
+#define COS_LOW_BAND_EDGE               0.891006542f
+#define SIN_HIGH_BAND_EDGE              0.707106781f
+#define COS_HIGH_BAND_EDGE             -0.707106781f
+#define ALPHA                           0.99f
+
 #if defined(SPANDSP_USE_FIXED_POINTx)
-#define SYNC_LOW_BAND_EDGE_COEFF_0      ((int)(FP_FACTOR* 1.764193f))   /* 2*alpha*cos(low_edge) */
-#define SYNC_LOW_BAND_EDGE_COEFF_1      ((int)(FP_FACTOR*-0.980100f))   /* -alpha^2 */
-#define SYNC_HIGH_BAND_EDGE_COEFF_0     ((int)(FP_FACTOR*-1.400072f))   /* 2*alpha*cos(high_edge) */
-#define SYNC_HIGH_BAND_EDGE_COEFF_1     ((int)(FP_FACTOR*-0.980100f))   /* -alpha^2 */
-#define SYNC_CROSS_CORR_COEFF_A         ((int)(FP_FACTOR*-0.932131f))   /* -alpha^2*sin(freq_diff) */
-#define SYNC_CROSS_CORR_COEFF_B         ((int)(FP_FACTOR* 0.700036f))   /* alpha*sin(high_edge) */
-#define SYNC_CROSS_CORR_COEFF_C         ((int)(FP_FACTOR*-0.449451f))   /* -alpha*sin(low_edge) */
+#define SYNC_LOW_BAND_EDGE_COEFF_0      ((int)(FP_FACTOR*(2.0f*ALPHA*COS_LOW_BAND_EDGE)))
+#define SYNC_LOW_BAND_EDGE_COEFF_1      ((int)(FP_FACTOR*(-ALPHA*ALPHA)))
+#define SYNC_LOW_BAND_EDGE_COEFF_2      ((int)(FP_FACTOR*(-ALPHA*SIN_LOW_BAND_EDGE)))
+#define SYNC_HIGH_BAND_EDGE_COEFF_0     ((int)(FP_FACTOR*(2.0f*ALPHA*COS_HIGH_BAND_EDGE)))
+#define SYNC_HIGH_BAND_EDGE_COEFF_1     ((int)(FP_FACTOR*(-ALPHA*ALPHA)))
+#define SYNC_HIGH_BAND_EDGE_COEFF_2     ((int)(FP_FACTOR*(-ALPHA*SIN_HIGH_BAND_EDGE)))
+#define SYNC_MIXED_EDGES_COEFF_3        ((int)(FP_FACTOR*(-ALPHA*ALPHA*(SIN_HIGH_BAND_EDGE*COS_LOW_BAND_EDGE - SIN_LOW_BAND_EDGE*COS_HIGH_BAND_EDGE))))
 #else
-#define SYNC_LOW_BAND_EDGE_COEFF_0       1.764193f                      /* 2*alpha*cos(low_edge) */
-#define SYNC_LOW_BAND_EDGE_COEFF_1      -0.980100f                      /* -alpha^2 */
-#define SYNC_HIGH_BAND_EDGE_COEFF_0     -1.400072f                      /* 2*alpha*cos(high_edge) */
-#define SYNC_HIGH_BAND_EDGE_COEFF_1     -0.980100f                      /* -alpha^2 */
-#define SYNC_CROSS_CORR_COEFF_A         -0.932131f                      /* -alpha^2*sin(freq_diff) */
-#define SYNC_CROSS_CORR_COEFF_B          0.700036f                      /* alpha*sin(high_edge) */
-#define SYNC_CROSS_CORR_COEFF_C         -0.449451f                      /* -alpha*sin(low_edge) */
+#define SYNC_LOW_BAND_EDGE_COEFF_0      (2.0f*ALPHA*COS_LOW_BAND_EDGE)
+#define SYNC_LOW_BAND_EDGE_COEFF_1      (-ALPHA*ALPHA)
+#define SYNC_LOW_BAND_EDGE_COEFF_2      (-ALPHA*SIN_LOW_BAND_EDGE)
+#define SYNC_HIGH_BAND_EDGE_COEFF_0     (2.0f*ALPHA*COS_HIGH_BAND_EDGE)
+#define SYNC_HIGH_BAND_EDGE_COEFF_1     (-ALPHA*ALPHA)
+#define SYNC_HIGH_BAND_EDGE_COEFF_2     (-ALPHA*SIN_HIGH_BAND_EDGE)
+#define SYNC_MIXED_EDGES_COEFF_3        (-ALPHA*ALPHA*(SIN_HIGH_BAND_EDGE*COS_LOW_BAND_EDGE - SIN_LOW_BAND_EDGE*COS_HIGH_BAND_EDGE))
 #endif
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
@@ -533,12 +539,18 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
 
     /* This routine adapts the position of the half baud samples entering the equalizer. */
 
+    /* This symbol sync scheme is based on the technique first described by Dominique Godard in
+        Passband Timing Recovery in an All-Digital Modem Receiver
+        IEEE TRANSACTIONS ON COMMUNICATIONS, VOL. COM-26, NO. 5, MAY 1978 */
+
+    /* This is slightly rearranged for figure 3b of the Godard paper, as this saves a couple of
+       maths operations */
 #if defined(SPANDSP_USE_FIXED_POINTx)
     /* TODO: The scalings used here need more thorough evaluation, to see if overflows are possible. */
     /* Cross correlate */
-    v = (((s->symbol_sync_low[1] >> 5)*(s->symbol_sync_high[1] >> 4)) >> 15)*SYNC_CROSS_CORR_COEFF_A
-      + (((s->symbol_sync_low[0] >> 5)*(s->symbol_sync_high[1] >> 4)) >> 15)*SYNC_CROSS_CORR_COEFF_B
-      + (((s->symbol_sync_low[1] >> 5)*(s->symbol_sync_high[0] >> 4)) >> 15)*SYNC_CROSS_CORR_COEFF_C;
+    v = (((s->symbol_sync_low[1] >> 5)*(s->symbol_sync_high[0] >> 4)) >> 15)*SYNC_LOW_BAND_EDGE_COEFF_2
+      - (((s->symbol_sync_low[0] >> 5)*(s->symbol_sync_high[1] >> 4)) >> 15)*SYNC_HIGH_BAND_EDGE_COEFF_2
+      + (((s->symbol_sync_low[1] >> 5)*(s->symbol_sync_high[1] >> 4)) >> 15)*SYNC_MIXED_EDGES_COEFF_3;
     /* Filter away any DC component */
     p = v - s->symbol_sync_dc_filter[1];
     s->symbol_sync_dc_filter[1] = s->symbol_sync_dc_filter[0];
@@ -548,9 +560,9 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
     if (abs(s->baud_phase) > 100*FP_FACTOR)
     {
         if (s->baud_phase > 0)
-            i = (s->baud_phase > 1000*FP_FACTOR)  ?  5  :  1;
+            i = (s->baud_phase > 1000*FP_FACTOR)  ?  15  :  1;
         else
-            i = (s->baud_phase < -1000*FP_FACTOR)  ?  -5  :  -1;
+            i = (s->baud_phase < -1000*FP_FACTOR)  ?  -15  :  -1;
 
         //printf("v = %10.5f %5d - %f %f %d %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
         s->eq_put_step += i;
@@ -558,9 +570,9 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
     }
 #else
     /* Cross correlate */
-    v = s->symbol_sync_low[1]*s->symbol_sync_high[1]*SYNC_CROSS_CORR_COEFF_A
-      + s->symbol_sync_low[0]*s->symbol_sync_high[1]*SYNC_CROSS_CORR_COEFF_B
-      + s->symbol_sync_low[1]*s->symbol_sync_high[0]*SYNC_CROSS_CORR_COEFF_C;
+    v = s->symbol_sync_low[1]*s->symbol_sync_high[0]*SYNC_LOW_BAND_EDGE_COEFF_2
+      - s->symbol_sync_low[0]*s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_2
+      + s->symbol_sync_low[1]*s->symbol_sync_high[1]*SYNC_MIXED_EDGES_COEFF_3;
 
     /* Filter away any DC component  */
     p = v - s->symbol_sync_dc_filter[1];

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.c,v 1.59 2009/06/02 16:03:56 steveu Exp $
+ * $Id: fsk.c,v 1.60 2009/11/02 13:25:20 steveu Exp $
  */
 
 /*! \file */
@@ -128,6 +128,22 @@ const fsk_spec_t preset_fsk_specs[] =
     }
 };
 
+SPAN_DECLARE(int) fsk_tx_restart(fsk_tx_state_t *s, const fsk_spec_t *spec)
+{
+    s->baud_rate = spec->baud_rate;
+    s->phase_rates[0] = dds_phase_rate((float) spec->freq_zero);
+    s->phase_rates[1] = dds_phase_rate((float) spec->freq_one);
+    s->scaling = dds_scaling_dbm0((float) spec->tx_level);
+    /* Initialise fractional sample baud generation. */
+    s->phase_acc = 0;
+    s->baud_frac = 0;
+    s->current_phase_rate = s->phase_rates[1];
+    
+    s->shutdown = FALSE;
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(fsk_tx_state_t *) fsk_tx_init(fsk_tx_state_t *s,
                                            const fsk_spec_t *spec,
                                            get_bit_func_t get_bit,
@@ -138,20 +154,11 @@ SPAN_DECLARE(fsk_tx_state_t *) fsk_tx_init(fsk_tx_state_t *s,
         if ((s = (fsk_tx_state_t *) malloc(sizeof(*s))) == NULL)
             return NULL;
     }
+    memset(s, 0, sizeof(*s));
 
-    s->baud_rate = spec->baud_rate;
     s->get_bit = get_bit;
     s->get_bit_user_data = user_data;
-
-    s->phase_rates[0] = dds_phase_rate((float) spec->freq_zero);
-    s->phase_rates[1] = dds_phase_rate((float) spec->freq_one);
-    s->scaling = dds_scaling_dbm0((float) spec->tx_level);
-    /* Initialise fractional sample baud generation. */
-    s->phase_acc = 0;
-    s->baud_frac = 0;
-    s->current_phase_rate = s->phase_rates[1];
-    
-    s->shutdown = FALSE;
+    fsk_tx_restart(s, spec);
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -250,26 +257,13 @@ SPAN_DECLARE(void) fsk_rx_set_modem_status_handler(fsk_rx_state_t *s, modem_tx_s
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(fsk_rx_state_t *) fsk_rx_init(fsk_rx_state_t *s,
-                                           const fsk_spec_t *spec,
-                                           int framing_mode,
-                                           put_bit_func_t put_bit,
-                                           void *user_data)
+SPAN_DECLARE(int) fsk_rx_restart(fsk_rx_state_t *s, const fsk_spec_t *spec, int framing_mode)
 {
     int chop;
 
-    if (s == NULL)
-    {
-        if ((s = (fsk_rx_state_t *) malloc(sizeof(*s))) == NULL)
-            return NULL;
-    }
-
-    memset(s, 0, sizeof(*s));
     s->baud_rate = spec->baud_rate;
     s->framing_mode = framing_mode;
     fsk_rx_signal_cutoff(s, (float) spec->min_level);
-    s->put_bit = put_bit;
-    s->put_bit_user_data = user_data;
 
     /* Detect by correlating against the tones we want, over a period
        of one baud. The correlation must be quadrature. */
@@ -307,6 +301,26 @@ SPAN_DECLARE(fsk_rx_state_t *) fsk_rx_init(fsk_rx_state_t *s,
     /* Initialise a power detector, so sense when a signal is present. */
     power_meter_init(&(s->power), 4);
     s->signal_present = 0;
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(fsk_rx_state_t *) fsk_rx_init(fsk_rx_state_t *s,
+                                           const fsk_spec_t *spec,
+                                           int framing_mode,
+                                           put_bit_func_t put_bit,
+                                           void *user_data)
+{
+    if (s == NULL)
+    {
+        if ((s = (fsk_rx_state_t *) malloc(sizeof(*s))) == NULL)
+            return NULL;
+    }
+    memset(s, 0, sizeof(*s));
+
+    s->put_bit = put_bit;
+    s->put_bit_user_data = user_data;
+    fsk_rx_restart(s, spec, framing_mode);
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -421,7 +435,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
         baudstate = (sum[0] < sum[1]);
         switch (s->framing_mode)
         {
-        case 1:
+        case FSK_FRAME_MODE_SYNC:
             /* Synchronous serial operation - e.g. for HDLC */
             if (s->last_bit != baudstate)
             {
@@ -442,7 +456,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                 s->put_bit(s->put_bit_user_data, baudstate);
             }
             break;
-        case 0:
+        case FSK_FRAME_MODE_ASYNC:
             /* Fully asynchronous mode */
             if (s->last_bit != baudstate)
             {

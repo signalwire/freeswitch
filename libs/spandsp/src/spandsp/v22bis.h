@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis.h,v 1.45 2009/07/09 13:52:09 steveu Exp $
+ * $Id: v22bis.h,v 1.46 2009/11/04 15:52:06 steveu Exp $
  */
 
 /*! \file */
@@ -164,7 +164,7 @@ SPAN_DECLARE(int) v22bis_current_bit_rate(v22bis_state_t *s);
     \param s The modem context.
     \param bit_rate The bit rate of the modem. Valid values are 1200 and 2400.
     \param guard The guard tone option. 0 = none, 1 = 550Hz, 2 = 1800Hz.
-    \param caller TRUE if this is the calling modem.
+    \param calling_party TRUE if this is the calling modem.
     \param get_bit The callback routine used to get the data to be transmitted.
     \param put_bit The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer, passed in calls to the get and put routines.
@@ -172,7 +172,7 @@ SPAN_DECLARE(int) v22bis_current_bit_rate(v22bis_state_t *s);
 SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
                                            int bit_rate,
                                            int guard,
-                                           int caller,
+                                           int calling_party,
                                            get_bit_func_t get_bit,
                                            void *get_bit_user_data,
                                            put_bit_func_t put_bit,

@@ -16,12 +16,36 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.137 2009/09/22 14:52:31 steveu Exp $
+## $Id: Makefile.am,v 1.138.4.3 2009/12/19 10:30:10 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
 
 MAINTAINERCLEANFILES = Makefile.in
+
+DISTCLEANFILES = $(srcdir)/at_interpreter_dictionary.h \
+                 $(srcdir)/v17_v32bis_rx_fixed_rrc.h \
+                 $(srcdir)/v17_v32bis_rx_floating_rrc.h \
+                 $(srcdir)/v17_v32bis_tx_fixed_rrc.h \
+                 $(srcdir)/v17_v32bis_tx_floating_rrc.h \
+                 $(srcdir)/v22bis_rx_1200_fixed_rrc.h \
+                 $(srcdir)/v22bis_rx_2400_fixed_rrc.h \
+                 $(srcdir)/v22bis_rx_1200_floating_rrc.h \
+                 $(srcdir)/v22bis_rx_2400_floating_rrc.h \
+                 $(srcdir)/v22bis_tx_fixed_rrc.h \
+                 $(srcdir)/v22bis_tx_floating_rrc.h \
+                 $(srcdir)/v27ter_rx_2400_fixed_rrc.h \
+                 $(srcdir)/v27ter_rx_4800_fixed_rrc.h \
+                 $(srcdir)/v27ter_rx_2400_floating_rrc.h \
+                 $(srcdir)/v27ter_rx_4800_floating_rrc.h \
+                 $(srcdir)/v27ter_tx_2400_fixed_rrc.h \
+                 $(srcdir)/v27ter_tx_4800_fixed_rrc.h \
+                 $(srcdir)/v27ter_tx_2400_floating_rrc.h \
+                 $(srcdir)/v27ter_tx_4800_floating_rrc.h \
+                 $(srcdir)/v29rx_fixed_rrc.h \
+                 $(srcdir)/v29rx_floating_rrc.h \
+                 $(srcdir)/v29tx_fixed_rrc.h \
+                 $(srcdir)/v29tx_floating_rrc.h
 
 EXTRA_DIST = floating_fudge.h \
              libspandsp.dsp \
@@ -31,6 +55,9 @@ EXTRA_DIST = floating_fudge.h \
              libspandsp.2008.vcproj \
              libtiff.2005.vcproj \
              libtiff.2008.vcproj \
+             filter_tools.c \
+	         make_at_dictionary.c \
+	         make_modem_filter.c \
              msvc/config.h \
              msvc/Download_TIFF.2005.vcproj \
              msvc/Download_TIFF.2008.vcproj \
@@ -111,7 +138,8 @@ libspandsp_la_SOURCES = adsi.c \
                         super_tone_rx.c \
                         super_tone_tx.c \
                         swept_tone.c \
-                        t4.c \
+                        t4_rx.c \
+                        t4_tx.c \
                         t30.c \
                         t30_api.c \
                         t30_logging.c \
@@ -190,7 +218,8 @@ nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/super_tone_rx.h \
                          spandsp/super_tone_tx.h \
                          spandsp/swept_tone.h \
-                         spandsp/t4.h \
+                         spandsp/t4_rx.h \
+                         spandsp/t4_tx.h \
                          spandsp/t30.h \
                          spandsp/t30_api.h \
                          spandsp/t30_fcf.h \
@@ -252,12 +281,14 @@ nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/private/super_tone_tx.h \
                          spandsp/private/swept_tone.h \
                          spandsp/private/t30.h \
+                         spandsp/private/t30_dis_dtc_dcs_bits.h \
                          spandsp/private/t31.h \
                          spandsp/private/t38_core.h \
                          spandsp/private/t38_gateway.h \
                          spandsp/private/t38_non_ecm_buffer.h \
                          spandsp/private/t38_terminal.h \
-                         spandsp/private/t4.h \
+                         spandsp/private/t4_rx.h \
+                         spandsp/private/t4_tx.h \
                          spandsp/private/time_scale.h \
                          spandsp/private/tone_detect.h \
                          spandsp/private/tone_generate.h \
@@ -282,7 +313,7 @@ noinst_HEADERS =        faxfont.h \
                         lpc10_encdecs.h \
                         mmx_sse_decs.h \
                         t30_local.h \
-                        t4_states.h \
+                        t4_t6_decode_states.h \
                         v17_v32bis_rx_constellation_maps.h \
                         v17_v32bis_tx_constellation_maps.h \
                         v29tx_constellation_maps.h
@@ -290,7 +321,7 @@ noinst_HEADERS =        faxfont.h \
 make_at_dictionary$(EXEEXT): $(top_srcdir)/src/make_at_dictionary.c
 	$(CC_FOR_BUILD) -o make_at_dictionary$(EXEEXT) $(top_srcdir)/src/make_at_dictionary.c  -DHAVE_CONFIG_H -I$(top_builddir)/src
 
-make_modem_filter$(EXEEXT): $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c 
+make_modem_filter$(EXEEXT): $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c
 	$(CC_FOR_BUILD) -o make_modem_filter$(EXEEXT) $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
 
 # We need to run make_at_dictionary, so it generates the
@@ -489,13 +520,10 @@ $(srcdir)/msvc/spandsp.h: spandsp.h.in
 	     -e "s/\@INSERT_MATH_HEADER\@/#include <math.h>/" $(srcdir)/spandsp.h.in > $(srcdir)/msvc/spandsp.h
 
 spandsp/version.h:
+	mkdir -p $(@D)
 	NOWDATE=`date --utc +"%Y%m%d"` ; \
 	NOWTIME=`date --utc +"%H%M%S"` ; \
 	sed 's/$$SPANDSP_RELEASE_DATE/'$$NOWDATE'/;s/$$SPANDSP_RELEASE_TIME/'$$NOWTIME'/' \
-		<spandsp/version.h.in >spandsp/version.h
+		<$(srcdir)/spandsp/version.h.in >$@
 
-dist-hook:
-	NOWDATE=`date --utc +"%Y%m%d"` ; \
-	NOWTIME=`date --utc +"%H%M%S"` ; \
-	sed 's/$$SPANDSP_RELEASE_DATE/'$$NOWDATE'/;s/$$SPANDSP_RELEASE_TIME/'$$NOWTIME'/' \
-		<spandsp/version.h.in >spandsp/version.h
+dist-hook: spandsp/version.h

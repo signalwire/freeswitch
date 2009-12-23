@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4_tests.c,v 1.69 2009/05/16 03:34:45 steveu Exp $
+ * $Id: t4_tests.c,v 1.69.4.1 2009/12/19 09:47:57 steveu Exp $
  */
 
 /*! \file */
@@ -129,8 +129,8 @@ static void display_page_stats(t4_state_t *s)
 
     t4_get_transfer_statistics(s, &stats);
     printf("Pages = %d\n", stats.pages_transferred);
-    printf("Image size = %d x %d pixels\n", stats.width, stats.length);
-    printf("Image resolution = %d/m x %d/m\n", stats.x_resolution, stats.y_resolution);
+    printf("Image size = %d pels x %d pels\n", stats.width, stats.length);
+    printf("Image resolution = %d pels/m x %d pels/m\n", stats.x_resolution, stats.y_resolution);
     printf("Bad rows = %d\n", stats.bad_rows);
     printf("Longest bad row run = %d\n", stats.longest_bad_row_run);
     printf("Bits per row - min %d, max %d\n", s->min_row_bits, s->max_row_bits);
@@ -144,6 +144,7 @@ static int row_read_handler(void *user_data, uint8_t buf[], size_t len)
     const char *s;
     static int row = 0;
 
+    /* Send the test pattern. */
     s = t4_test_patterns[row++];
     if (row >= 16)
         return 0;
@@ -170,6 +171,7 @@ static int row_write_handler(void *user_data, const uint8_t buf[], size_t len)
     static int row = 0;
     uint8_t ref[8192];
 
+    /* Verify that what is received matches the test pattern. */
     if (len == 0)
         return 0;
     s = t4_test_patterns[row++];
@@ -280,9 +282,15 @@ int main(int argc, char *argv[])
 {
     static const int compression_sequence[] =
     {
+        //T4_COMPRESSION_NONE,
         T4_COMPRESSION_ITU_T4_1D,
         T4_COMPRESSION_ITU_T4_2D,
-        T4_COMPRESSION_ITU_T6
+        T4_COMPRESSION_ITU_T6,
+        //T4_COMPRESSION_ITU_T85,
+        //T4_COMPRESSION_ITU_T43,
+        //T4_COMPRESSION_ITU_T45,
+        //T4_COMPRESSION_ITU_T81,
+        //T4_COMPRESSION_ITU_SYCC_T81
     };
     int sends;
     int page_no;
@@ -486,11 +494,11 @@ int main(int argc, char *argv[])
         }
         span_log_set_level(&receive_state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
         t4_rx_set_row_write_handler(&receive_state, row_write_handler, NULL);
+        t4_rx_set_image_width(&receive_state, t4_tx_get_image_width(&send_state));
         t4_rx_set_x_resolution(&receive_state, t4_tx_get_x_resolution(&send_state));
         t4_rx_set_y_resolution(&receive_state, t4_tx_get_y_resolution(&send_state));
-        t4_rx_set_image_width(&receive_state, t4_tx_get_image_width(&send_state));
 
-        /* Now send and receive all the pages in the source TIFF file */
+        /* Now send and receive the test data with all compression modes. */
         page_no = 1;
         /* If we are stepping around the compression schemes, reset to the start of the sequence. */
         if (compression_step > 0)

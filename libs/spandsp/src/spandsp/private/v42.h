@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42.h,v 1.1 2008/11/15 14:43:08 steveu Exp $
+ * $Id: v42.h,v 1.2 2009/11/04 15:52:06 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V42_H_)
@@ -92,7 +92,7 @@ struct lapm_state_s
 struct v42_state_s
 {
     /*! TRUE if we are the calling party, otherwise FALSE */
-    int caller;
+    int calling_party;
     /*! TRUE if we should detect whether the far end is V.42 capable. FALSE if we go
         directly to protocol establishment */
     int detect;

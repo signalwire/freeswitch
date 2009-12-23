@@ -25,7 +25,7 @@
  * This code is based on the widely used GSM 06.10 code available from
  * http://kbs.cs.tu-berlin.de/~jutta/toast.html
  *
- * $Id: gsm0610_rpe.c,v 1.25 2009/02/03 16:28:39 steveu Exp $
+ * $Id: gsm0610_rpe.c,v 1.25.4.1 2009/12/19 09:47:56 steveu Exp $
  */
 
 /*! \file */
@@ -87,13 +87,13 @@ static void weighting_filter(const int16_t *e,     // signal [-5..0.39.44] IN
         " emms;\n"
         " addl $-10,%%ecx;\n"
         " movl $0x1000,%%eax;\n"
-        " movd %%eax,%%mm5;\n"              /* for rounding */
+        " movd %%eax,%%mm5;\n"              /* For rounding */
         " movq %[gsm_H],%%mm1;\n"
         " movq %[gsm_H8],%%mm2;\n"
         " movq %[gsm_H16],%%mm3;\n"
         " xorl %%esi,%%esi;\n"
         " .p2align 2;\n"
-        "1:;\n"
+        "1:\n"
         " movq (%%ecx,%%esi,2),%%mm0;\n"
         " pmaddwd %%mm1,%%mm0;\n"
  

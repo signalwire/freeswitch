@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_tx.c,v 1.63 2009/06/02 16:03:56 steveu Exp $
+ * $Id: v22bis_tx.c,v 1.64 2009/11/04 15:52:06 steveu Exp $
  */
 
 /*! \file */
@@ -346,7 +346,7 @@ static complexf_t training_get(v22bis_state_t *s)
         if (++s->tx.training_count >= ms_to_symbols(100))
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting S11 after U0011\n");
-            if (s->caller)
+            if (s->calling_party)
             {
                 s->tx.training_count = 0;
                 s->tx.training = V22BIS_TX_TRAINING_STAGE_S11;
@@ -523,7 +523,7 @@ static int v22bis_tx_restart(v22bis_state_t *s)
     s->tx.rrc_filter_step = 0;
     s->tx.scramble_reg = 0;
     s->tx.scrambler_pattern_count = 0;
-    if (s->caller)
+    if (s->calling_party)
         s->tx.training = V22BIS_TX_TRAINING_STAGE_INITIAL_SILENCE;
     else
         s->tx.training = V22BIS_TX_TRAINING_STAGE_INITIAL_TIMED_SILENCE;
@@ -634,7 +634,7 @@ SPAN_DECLARE(int) v22bis_current_bit_rate(v22bis_state_t *s)
 SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
                                            int bit_rate,
                                            int guard,
-                                           int caller,
+                                           int calling_party,
                                            get_bit_func_t get_bit,
                                            void *get_bit_user_data,
                                            put_bit_func_t put_bit,
@@ -657,14 +657,14 @@ SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "V.22bis");
     s->bit_rate = bit_rate;
-    s->caller = caller;
+    s->calling_party = calling_party;
 
     s->get_bit = get_bit;
     s->get_bit_user_data = get_bit_user_data;
     s->put_bit = put_bit;
     s->put_bit_user_data = put_bit_user_data;
 
-    if (s->caller)
+    if (s->calling_party)
     {
         s->tx.carrier_phase_rate = dds_phase_ratef(1200.0f);
     }

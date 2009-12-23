@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_core.c,v 1.53 2009/07/14 13:54:22 steveu Exp $
+ * $Id: t38_core.c,v 1.54 2009/10/09 14:53:57 steveu Exp $
  */
 
 /*! \file */
@@ -224,17 +224,17 @@ SPAN_DECLARE(const char *) t38_cm_profile_to_str(int profile)
     switch (profile)
     {
     case '1':
-        return "G3 Facsimile Terminal: (Sending Facsimile)";
+        return "G3 FAX sending terminal";
     case '2':
-        return "G3 Facsimile Terminal: (Receiving Facsimile)";
+        return "G3 FAX receiving terminal";
     case '3':
-        return "V.34 HDX and G3 Facsimile Terminal: (Sending Facsimile)";
+        return "V.34 HDX and G3 FAX sending terminal";
     case '4':
-        return "V.34 HDX and G3 Facsimile Terminal: (Receiving Facsimile)";
+        return "V.34 HDX and G3 FAX receiving terminal";
     case '5':
-        return "V.34 HDX-only Facsimile Terminal: (Sending Facsimile)";
+        return "V.34 HDX-only FAX sending terminal";
     case '6':
-        return "V.34 HDX-only Facsimile Terminal: (Receiving Facsimile)";
+        return "V.34 HDX-only FAX receiving terminal";
     }
     return "???";
 }
@@ -260,10 +260,10 @@ SPAN_DECLARE(const char *) t38_jm_to_str(const uint8_t *data, int len)
             return "NACK: No compatible mode available";
         case '1':
             /* Response for profiles 1 and 2 */
-            return "NACK: No V.34 fax, use G3 fax";
+            return "NACK: No V.34 FAX, use G3 FAX";
         case '2':
             /* Response for profiles 5 and 6 */
-            return "NACK: V.34 fax only.";
+            return "NACK: V.34 only FAX.";
         }
         break;
     }

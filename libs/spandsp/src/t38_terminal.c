@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_terminal.c,v 1.128 2009/09/04 14:38:46 steveu Exp $
+ * $Id: t38_terminal.c,v 1.129.4.2 2009/12/19 10:44:10 steveu Exp $
  */
 
 /*! \file */
@@ -63,7 +63,8 @@
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v17tx.h"
 #include "spandsp/v17rx.h"
-#include "spandsp/t4.h"
+#include "spandsp/t4_rx.h"
+#include "spandsp/t4_tx.h"
 #include "spandsp/t30_fcf.h"
 #include "spandsp/t35.h"
 #include "spandsp/t30.h"
@@ -73,7 +74,8 @@
 #include "spandsp/t38_terminal.h"
 
 #include "spandsp/private/logging.h"
-#include "spandsp/private/t4.h"
+#include "spandsp/private/t4_rx.h"
+#include "spandsp/private/t4_tx.h"
 #include "spandsp/private/t30.h"
 #include "spandsp/private/t38_core.h"
 #include "spandsp/private/t38_terminal.h"
@@ -231,8 +233,6 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
         front_end_status(s, T30_FRONT_END_CED_PRESENT);
         break;
     case T38_IND_V21_PREAMBLE:
-        /* Some T.38 implementations insert these preamble indicators between HDLC frames, so
-           we need to be tolerant of that. */
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
         front_end_status(s, T30_FRONT_END_SIGNAL_PRESENT);
         break;
@@ -248,6 +248,8 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
     case T38_IND_V17_12000_LONG_TRAINING:
     case T38_IND_V17_14400_SHORT_TRAINING:
     case T38_IND_V17_14400_LONG_TRAINING:
+    case T38_IND_V34_CNTL_CHANNEL_1200:
+    case T38_IND_V34_PRI_CHANNEL:
     case T38_IND_V33_12000_TRAINING:
     case T38_IND_V33_14400_TRAINING:
         /* We really don't care what kind of modem is delivering the following image data.
@@ -257,19 +259,27 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
         break;
     case T38_IND_V8_ANSAM:
     case T38_IND_V8_SIGNAL:
-    case T38_IND_V34_CNTL_CHANNEL_1200:
-    case T38_IND_V34_PRI_CHANNEL:
     case T38_IND_V34_CC_RETRAIN:
         /* V.34 support is a work in progress. */
-        front_end_status(s, T30_FRONT_END_SIGNAL_PRESENT);
         break;
     default:
         front_end_status(s, T30_FRONT_END_SIGNAL_ABSENT);
         break;
     }
+    /*endswitch*/
     fe->hdlc_rx.len = 0;
     fe->rx_data_missing = FALSE;
     return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int fake_rx_indicator(t38_core_state_t *t, t38_terminal_state_t *s, int indicator)
+{
+    int ret;
+
+    ret = process_rx_indicator(t, s, indicator);
+    t->current_rx_indicator = indicator;
+    return ret;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -285,29 +295,64 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
 
     s = (t38_terminal_state_t *) user_data;
     fe = &s->t38_fe;
-#if 0
-    /* In termination mode we don't care very much what the data type is. */
+    /* In termination mode we don't care very much what the data type is apart from a couple of
+       special cases. */
     switch (data_type)
     {
-    case T38_DATA_V21:
-    case T38_DATA_V27TER_2400:
-    case T38_DATA_V27TER_4800:
-    case T38_DATA_V29_7200:
-    case T38_DATA_V29_9600:
-    case T38_DATA_V17_7200:
-    case T38_DATA_V17_9600:
-    case T38_DATA_V17_12000:
-    case T38_DATA_V17_14400:
     case T38_DATA_V8:
+        switch (field_type)
+        {
+        case T38_FIELD_CM_MESSAGE:
+            if (len >= 1)
+                span_log(&s->logging, SPAN_LOG_FLOW, "CM profile %d - %s\n", buf[0] - '0', t38_cm_profile_to_str(buf[0]));
+            else
+                span_log(&s->logging, SPAN_LOG_FLOW, "Bad length for CM message - %d\n", len);
+            //front_end_status(s, T30_FRONT_END_RECEIVE_COMPLETE);
+            break;
+        case T38_FIELD_JM_MESSAGE:
+            if (len >= 2)
+                span_log(&s->logging, SPAN_LOG_FLOW, "JM - %s\n", t38_jm_to_str(buf, len));
+            else
+                span_log(&s->logging, SPAN_LOG_FLOW, "Bad length for JM message - %d\n", len);
+            //front_end_status(s, T30_FRONT_END_RECEIVE_COMPLETE);
+            break;
+        case T38_FIELD_CI_MESSAGE:
+            if (len >= 1)
+                span_log(&s->logging, SPAN_LOG_FLOW, "CI 0x%X\n", buf[0]);
+            else
+                span_log(&s->logging, SPAN_LOG_FLOW, "Bad length for CI message - %d\n", len);
+            //front_end_status(s, T30_FRONT_END_RECEIVE_COMPLETE);
+            break;
+        default:
+            break;
+        }
+        /*endswitch*/
+        return 0;
     case T38_DATA_V34_PRI_RATE:
-    case T38_DATA_V34_CC_1200:
-    case T38_DATA_V34_PRI_CH:
-    case T38_DATA_V33_12000:
-    case T38_DATA_V33_14400:
+        switch (field_type)
+        {
+        case T38_FIELD_V34RATE:
+            if (len >= 3)
+            {
+                /* Just get and store the rate. The front end has no real interest in the
+                   actual bit rate. */
+                fe->t38.v34_rate = t38_v34rate_to_bps(buf, len);
+                span_log(&s->logging, SPAN_LOG_FLOW, "V.34 rate %d bps\n", fe->t38.v34_rate);
+            }
+            else
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "Bad length for V34rate message - %d\n", len);
+            }
+            break;
+        default:
+            break;
+        }
+        /*endswitch*/
+        return 0;
     default:
         break;
     }
-#endif
+    /*endswitch*/
     switch (field_type)
     {
     case T38_FIELD_HDLC_DATA:
@@ -316,8 +361,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             /* HDLC can just start without any signal indicator on some platforms, even when
                there is zero packet lost. Nasty, but true. Its a good idea to be tolerant of
                loss, though, so accepting a sudden start of HDLC data is the right thing to do. */
-            fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
-            front_end_status(s, T30_FRONT_END_SIGNAL_PRESENT);
+            fake_rx_indicator(t, s, T38_IND_V21_PREAMBLE);
             /* All real HDLC messages in the FAX world start with 0xFF. If this one is not starting
                with 0xFF it would appear some octets must have been missed before this one. */
             if (len <= 0  ||  buf[0] != 0xFF)
@@ -386,7 +430,8 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         }
         fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
-        fe->timeout_rx_samples = 0;
+        /* Treat this like a no signal indicator has occurred, so if the no signal indicator is missing, we are still OK */
+        fake_rx_indicator(t, s, T38_IND_NO_SIGNAL);
         break;
     case T38_FIELD_HDLC_FCS_BAD_SIG_END:
         if (len > 0)
@@ -406,7 +451,8 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         }
         fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
-        fe->timeout_rx_samples = 0;
+        /* Treat this like a no signal indicator has occurred, so if the no signal indicator is missing, we are still OK */
+        fake_rx_indicator(t, s, T38_IND_NO_SIGNAL);
         break;
     case T38_FIELD_HDLC_SIG_END:
         if (len > 0)
@@ -428,9 +474,10 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                The other is because the HDLC signal drops unexpectedly - i.e. not just after a final frame. */
             fe->hdlc_rx.len = 0;
             fe->rx_data_missing = FALSE;
-            fe->timeout_rx_samples = 0;
             front_end_status(s, T30_FRONT_END_RECEIVE_COMPLETE);
         }
+        /* Treat this like a no signal indicator has occurred, so if the no signal indicator is missing, we are still OK */
+        fake_rx_indicator(t, s, T38_IND_NO_SIGNAL);
         break;
     case T38_FIELD_T4_NON_ECM_DATA:
         if (!fe->rx_signal_present)
@@ -468,40 +515,13 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             front_end_status(s, T30_FRONT_END_RECEIVE_COMPLETE);
         }
         fe->rx_signal_present = FALSE;
-        fe->timeout_rx_samples = 0;
-        break;
-    case T38_FIELD_CM_MESSAGE:
-        if (len >= 1)
-            span_log(&s->logging, SPAN_LOG_FLOW, "CM profile %d - %s\n", buf[0] - '0', t38_cm_profile_to_str(buf[0]));
-        else
-            span_log(&s->logging, SPAN_LOG_FLOW, "Bad length for CM message - %d\n", len);
-        break;
-    case T38_FIELD_JM_MESSAGE:
-        if (len >= 2)
-            span_log(&s->logging, SPAN_LOG_FLOW, "JM - %s\n", t38_jm_to_str(buf, len));
-        else
-            span_log(&s->logging, SPAN_LOG_FLOW, "Bad length for JM message - %d\n", len);
-        break;
-    case T38_FIELD_CI_MESSAGE:
-        if (len >= 1)
-            span_log(&s->logging, SPAN_LOG_FLOW, "CI 0x%X\n", buf[0]);
-        else
-            span_log(&s->logging, SPAN_LOG_FLOW, "Bad length for CI message - %d\n", len);
-        break;
-    case T38_FIELD_V34RATE:
-        if (len >= 3)
-        {
-            fe->t38.v34_rate = t38_v34rate_to_bps(buf, len);
-            span_log(&s->logging, SPAN_LOG_FLOW, "V.34 rate %d bps\n", fe->t38.v34_rate);
-        }
-        else
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Bad length for V34rate message - %d\n", len);
-        }
+        /* Treat this like a no signal indicator has occurred, so if the no signal indicator is missing, we are still OK */
+        fake_rx_indicator(t, s, T38_IND_NO_SIGNAL);
         break;
     default:
         break;
     }
+    /*endswitch*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

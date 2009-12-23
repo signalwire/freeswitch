@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_modems.c,v 1.7 2009/10/05 16:33:25 steveu Exp $
+ * $Id: fax_modems.c,v 1.8 2009/11/02 13:25:20 steveu Exp $
  */
 
 /*! \file */
@@ -45,6 +45,9 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <time.h>
+#if defined(LOG_FAX_AUDIO)
+#include <unistd.h>
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
@@ -280,7 +283,7 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
 
     hdlc_rx_init(&s->hdlc_rx, FALSE, FALSE, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept, user_data);
     hdlc_tx_init(&s->hdlc_tx, FALSE, 2, FALSE, hdlc_tx_underflow, user_data);
-    fsk_rx_init(&s->v21_rx, &preset_fsk_specs[FSK_V21CH2], TRUE, (put_bit_func_t) hdlc_rx_put_bit, &s->hdlc_rx);
+    fsk_rx_init(&s->v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) hdlc_rx_put_bit, &s->hdlc_rx);
     fsk_rx_signal_cutoff(&s->v21_rx, -39.09f);
     fsk_tx_init(&s->v21_tx, &preset_fsk_specs[FSK_V21CH2], (get_bit_func_t) hdlc_tx_get_bit, &s->hdlc_tx);
     v17_rx_init(&s->v17_rx, 14400, non_ecm_put_bit, user_data);

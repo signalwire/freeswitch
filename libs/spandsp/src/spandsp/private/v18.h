@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v18.h,v 1.4 2009/04/11 15:16:14 steveu Exp $
+ * $Id: v18.h,v 1.5 2009/11/04 15:52:06 steveu Exp $
  */
  
 #if !defined(_SPANDSP_PRIVATE_V18_H_)
@@ -31,7 +31,7 @@
 struct v18_state_s
 {
     /*! \brief TRUE if we are the calling modem */
-    int caller;
+    int calling_party;
     int mode;
     put_msg_func_t put_msg;
     void *user_data;

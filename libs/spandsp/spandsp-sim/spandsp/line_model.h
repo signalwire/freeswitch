@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: line_model.h,v 1.7 2009/09/23 16:02:59 steveu Exp $
+ * $Id: line_model.h,v 1.7.4.1 2009/12/19 10:16:44 steveu Exp $
  */
 
 /*! \file */
@@ -70,7 +70,7 @@ typedef struct
     codec_munge_state_t *munge;
 
     /*! The coefficients for the near end analogue section simulation filter */
-    float *near_filter;
+    const float *near_filter;
     /*! The number of coefficients for the near end analogue section simulation filter */
     int near_filter_len;
     /*! Last transmitted samples (ring buffer, used by the line filter) */
@@ -88,7 +88,7 @@ typedef struct
     int16_t bulk_delay_buf[8000];
 
     /*! The coefficients for the far end analogue section simulation filter */
-    float *far_filter;
+    const float *far_filter;
     /*! The number of coefficients for the far end analogue section simulation filter */
     int far_filter_len;
     /*! Last transmitted samples (ring buffer, used by the line filter) */

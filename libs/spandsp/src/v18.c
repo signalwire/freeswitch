@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v18.c,v 1.10 2009/06/02 16:03:56 steveu Exp $
+ * $Id: v18.c,v 1.12 2009/11/04 15:52:06 steveu Exp $
  */
  
 /*! \file */
@@ -738,7 +738,7 @@ SPAN_DECLARE(logging_state_t *) v18_get_logging_state(v18_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
-                                     int caller,
+                                     int calling_party,
                                      int mode,
                                      put_msg_func_t put_msg,
                                      void *user_data)
@@ -749,7 +749,7 @@ SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
             return NULL;
     }
     memset(s, 0, sizeof(*s));
-    s->caller = caller;
+    s->calling_party = calling_party;
     s->mode = mode;
     s->put_msg = put_msg;
     s->user_data = user_data;
@@ -763,7 +763,7 @@ SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
         s->baudot_tx_shift = 2;
         /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
            ride over the fraction. */
-        fsk_rx_init(&(s->fskrx), &preset_fsk_specs[FSK_WEITBRECHT], 7, v18_tdd_put_async_byte, s);
+        fsk_rx_init(&(s->fskrx), &preset_fsk_specs[FSK_WEITBRECHT], FSK_FRAME_MODE_5N1_FRAMES, v18_tdd_put_async_byte, s);
         s->baudot_rx_shift = 0;
         break;
     case V18_MODE_5BIT_50:
@@ -773,7 +773,7 @@ SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
         s->baudot_tx_shift = 2;
         /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
            ride over the fraction. */
-        fsk_rx_init(&(s->fskrx), &preset_fsk_specs[FSK_WEITBRECHT50], 7, v18_tdd_put_async_byte, s);
+        fsk_rx_init(&(s->fskrx), &preset_fsk_specs[FSK_WEITBRECHT50], FSK_FRAME_MODE_5N1_FRAMES, v18_tdd_put_async_byte, s);
         s->baudot_rx_shift = 0;
         break;
     case V18_MODE_DTMF:

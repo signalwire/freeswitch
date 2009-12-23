@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30_api.c,v 1.13 2009/02/03 16:28:40 steveu Exp $
+ * $Id: t30_api.c,v 1.13.4.2 2009/12/19 14:18:13 steveu Exp $
  */
 
 /*! \file */
@@ -60,7 +60,8 @@
 #include "spandsp/v29tx.h"
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v27ter_tx.h"
-#include "spandsp/t4.h"
+#include "spandsp/t4_rx.h"
+#include "spandsp/t4_tx.h"
 #include "spandsp/t30_fcf.h"
 #include "spandsp/t35.h"
 #include "spandsp/t30.h"
@@ -68,7 +69,8 @@
 #include "spandsp/t30_logging.h"
 
 #include "spandsp/private/logging.h"
-#include "spandsp/private/t4.h"
+#include "spandsp/private/t4_rx.h"
+#include "spandsp/private/t4_tx.h"
 #include "spandsp/private/t30.h"
 
 #include "t30_local.h"
@@ -83,7 +85,7 @@ SPAN_DECLARE(int) t30_set_tx_ident(t30_state_t *s, const char *id)
     if (strlen(id) > T30_MAX_IDENT_LEN)
         return -1;
     strcpy(s->tx_info.ident, id);
-    t4_tx_set_local_ident(&(s->t4), s->tx_info.ident);
+    t4_tx_set_local_ident(&s->t4, s->tx_info.ident);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -544,7 +546,7 @@ SPAN_DECLARE(int) t30_set_tx_page_header_info(t30_state_t *s, const char *info)
     if (strlen(info) > T30_MAX_PAGE_HEADER_INFO)
         return -1;
     strcpy(s->header_info, info);
-    t4_tx_set_header_info(&(s->t4), s->header_info);
+    t4_tx_set_header_info(&s->t4, s->header_info);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

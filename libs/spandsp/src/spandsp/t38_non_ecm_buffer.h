@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_non_ecm_buffer.h,v 1.7 2009/02/10 13:06:47 steveu Exp $
+ * $Id: t38_non_ecm_buffer.h,v 1.7.4.1 2009/12/19 06:43:28 steveu Exp $
  */
 
 /*! \file */
@@ -35,9 +35,38 @@
 \section t38_non_ecm_buffer_page_sec_1 What does it do?
 
 The T.38 rate adapting non-ECM image data buffer is used to buffer TCF and non-ECM
-FAX image data being gatewayed from a T.38 linke to an analogue FAX modem link.
+FAX image data being gatewayed from a T.38 link to an analogue FAX modem link.
+
+As well as rate adapting, the buffer has the ability to impose a minimum on the number
+of bits per row of image data. This allows any row padding zeros to be stripped from
+the data stream, to minimise the data sent as T.38 packets, and be reinserted before
+the data is sent to its final destination. Not all T.38 implementations support this
+feature, so it's use must be negotiated.
 
 \section t38_non_ecm_buffer_page_sec_2 How does it work?
+
+When inserting padding bits, whether to ensure a minimum row time or for flow control,
+it is important the right value is inserted at the right point in the data sequence.
+If we are in the optional initial period of all ones, we can insert a byte of extra
+ones at any time. Once we pass that initial stage, TCF and image data need separate
+handling.
+
+TCF data is all zeros. Once the period of all zeros has begun it is OK to insert
+additional bytes of zeros at any point.
+
+Image data consists of rows, separated by EOL (end of line) markers. Inserting
+zeros at arbitrary times would corrupt the image. However, it is OK to insert a
+considerable number of extra zeros just before an EOL. Therefore we track where the
+EOL markers occur as we fill the buffer. As we empty the buffer stop outputting real
+data, and start outputting bytes of zero, if we reach this last EOL marker location.
+The EOL marker is 11 zeros following by 1 (1D mode) or 2 (2D mode) ones. Therefore, it
+always spills across 2 bytes in the buffer, and there is always a point where we can
+insert our extra zeros between bytes.
+
+Padding between the group of successive EOL markers which for the RTC (return to control)
+marker that ends an image causes some FAX machines not to recognise them as an RTC condition.
+Therefore, our padding applies special protection so padding never occurs between two
+successive EOL markers, with no pixel data between them.
 */
 
 /*! The buffer length much be a power of two. The chosen length is big enough for

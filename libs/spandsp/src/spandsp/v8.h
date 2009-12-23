@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v8.h,v 1.28 2009/06/02 16:03:56 steveu Exp $
+ * $Id: v8.h,v 1.31 2009/11/04 16:10:14 steveu Exp $
  */
  
 /*! \file */
@@ -50,13 +50,13 @@ typedef void (v8_result_handler_t)(void *user_data, v8_result_t *result);
 enum v8_call_function_e
 {
     V8_CALL_TBS = 0,
-    V8_CALL_H324,
-    V8_CALL_V18,
-    V8_CALL_T101,
-    V8_CALL_T30_TX,
-    V8_CALL_T30_RX,
-    V8_CALL_V_SERIES,
-    V8_CALL_FUNCTION_EXTENSION
+    V8_CALL_H324 = 1,
+    V8_CALL_V18 = 2,
+    V8_CALL_T101 = 3,
+    V8_CALL_T30_TX = 4,
+    V8_CALL_T30_RX = 5,
+    V8_CALL_V_SERIES = 6,
+    V8_CALL_FUNCTION_EXTENSION = 7
 };
 
 enum v8_modulation_e
@@ -88,30 +88,33 @@ enum v8_protocol_e
 
 enum v8_pstn_access_e
 {
-    V8_PSTN_ACCESS_CALL_DCE_CELLULAR = 0x20,
-    V8_PSTN_ACCESS_ANSWER_DCE_CELLULAR = 0x40,
-    V8_PSTN_ACCESS_DCE_ON_DIGTIAL = 0x80
+    V8_PSTN_ACCESS_CALL_DCE_CELLULAR = 0x01,
+    V8_PSTN_ACCESS_ANSWER_DCE_CELLULAR = 0x02,
+    V8_PSTN_ACCESS_DCE_ON_DIGITAL = 0x04
 };
 
 enum v8_pcm_modem_availability_e
 {
-    V8_PSTN_PCM_MODEM_V90_V92_ANALOGUE = 0x20,
-    V8_PSTN_PCM_MODEM_V90_V92_DIGITAL = 0x40,
-    V8_PSTN_PCM_MODEM_V91 = 0x80
+    V8_PSTN_PCM_MODEM_V90_V92_ANALOGUE = 0x01,
+    V8_PSTN_PCM_MODEM_V90_V92_DIGITAL = 0x02,
+    V8_PSTN_PCM_MODEM_V91 = 0x04
 };
 
 typedef struct v8_state_s v8_state_t;
 
 struct v8_result_s
 {
+    int modem_connect_tone_detected;
     int call_function;
-    int available_modulations;
+    int far_end_modulations;
     int negotiated_modulation;
     int protocol;
     int pstn_access;
     int nsf_seen;
+    int nsf;
     int pcm_modem_availability;
     int t66_seen;
+    int t66;
 };
 
 #if defined(__cplusplus)
@@ -122,14 +125,16 @@ extern "C"
 /*! Initialise a V.8 context.
     \brief Initialise a V.8 context.
     \param s The V.8 context.
-    \param caller TRUE if caller mode, else answerer mode.
+    \param calling_party TRUE if caller mode, else answerer mode.
+    \param use_ansam_pr TRUE if ANSam/ is to be used, else ANSam will be used.
     \param available_modulations A bitwise list of the modulation schemes to be
            advertised as available here.
     \param result_handler The callback routine used to handle the results of negotiation.
     \param user_data An opaque pointer passed to the result_handler routine.
     \return A pointer to the V.8 context, or NULL if there was a problem. */
 SPAN_DECLARE(v8_state_t *) v8_init(v8_state_t *s,
-                                   int caller,
+                                   int calling_party,
+                                   int use_ansam_pr,
                                    int available_modulations,
                                    v8_result_handler_t *result_handler,
                                    void *user_data);
@@ -175,7 +180,9 @@ SPAN_DECLARE(const char *) v8_call_function_to_str(int call_function);
 SPAN_DECLARE(const char *) v8_modulation_to_str(int modulation_scheme);
 SPAN_DECLARE(const char *) v8_protocol_to_str(int protocol);
 SPAN_DECLARE(const char *) v8_pstn_access_to_str(int pstn_access);
+SPAN_DECLARE(const char *) v8_nsf_to_str(int nsf);
 SPAN_DECLARE(const char *) v8_pcm_modem_availability_to_str(int pcm_modem_availability);
+SPAN_DECLARE(const char *) v8_t66_to_str(int t66);
 
 #if defined(__cplusplus)
 }

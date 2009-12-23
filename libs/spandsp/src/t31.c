@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31.c,v 1.153 2009/10/05 16:33:25 steveu Exp $
+ * $Id: t31.c,v 1.155.4.1 2009/12/19 10:44:10 steveu Exp $
  */
 
 /*! \file */
@@ -74,7 +74,8 @@
 #include "spandsp/v17rx.h"
 #include "spandsp/super_tone_rx.h"
 #include "spandsp/modem_connect_tones.h"
-#include "spandsp/t4.h"
+#include "spandsp/t4_rx.h"
+#include "spandsp/t4_tx.h"
 #include "spandsp/t30.h"
 #include "spandsp/t30_logging.h"
 #include "spandsp/t38_core.h"
@@ -1293,12 +1294,12 @@ static int non_ecm_get_chunk(void *user_data, uint8_t buf[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void tone_detected(void *user_data, int on, int level, int delay)
+static void tone_detected(void *user_data, int tone, int level, int delay)
 {
     t31_state_t *s;
 
     s = (t31_state_t *) user_data;
-    span_log(&s->logging, SPAN_LOG_FLOW, "FAX tone declared %s (%ddBm0)\n", (on)  ?  "on"  :  "off", level);
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s detected (%ddBm0)\n", modem_connect_tone_to_str(tone), level);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1509,7 +1510,7 @@ static void t31_v21_rx(t31_state_t *s)
     s->hdlc_tx.len = 0;
     s->dled = FALSE;
     hdlc_rx_init(&(s->audio.modems.hdlc_rx), FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept_frame, s);
-    fsk_rx_init(&(s->audio.modems.v21_rx), &preset_fsk_specs[FSK_V21CH2], TRUE, (put_bit_func_t) hdlc_rx_put_bit, &(s->audio.modems.hdlc_rx));
+    fsk_rx_init(&(s->audio.modems.v21_rx), &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) hdlc_rx_put_bit, &(s->audio.modems.hdlc_rx));
     fsk_rx_signal_cutoff(&(s->audio.modems.v21_rx), -39.09f);
     s->at_state.transmit = TRUE;
 }

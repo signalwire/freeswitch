@@ -143,7 +143,8 @@
 <File RelativePath="super_tone_rx.c"></File>
 <File RelativePath="super_tone_tx.c"></File>
 <File RelativePath="swept_tone.c"></File>
-<File RelativePath="t4.c"></File>
+<File RelativePath="t4_rx.c"></File>
+<File RelativePath="t4_tx.c"></File>
 <File RelativePath="t30.c"></File>
 <File RelativePath="t30_api.c"></File>
 <File RelativePath="t30_logging.c"></File>
@@ -221,7 +222,8 @@
 <File RelativePath="spandsp/super_tone_rx.h"></File>
 <File RelativePath="spandsp/super_tone_tx.h"></File>
 <File RelativePath="spandsp/swept_tone.h"></File>
-<File RelativePath="spandsp/t4.h"></File>
+<File RelativePath="spandsp/t4_rx.h"></File>
+<File RelativePath="spandsp/t4_tx.h"></File>
 <File RelativePath="spandsp/t30.h"></File>
 <File RelativePath="spandsp/t30_api.h"></File>
 <File RelativePath="spandsp/t30_fcf.h"></File>
@@ -283,12 +285,14 @@
 <File RelativePath="spandsp/private/super_tone_tx.h"></File>
 <File RelativePath="spandsp/private/swept_tone.h"></File>
 <File RelativePath="spandsp/private/t30.h"></File>
+<File RelativePath="spandsp/private/t30_dis_dtc_dcs_bits.h"></File>
 <File RelativePath="spandsp/private/t31.h"></File>
 <File RelativePath="spandsp/private/t38_core.h"></File>
 <File RelativePath="spandsp/private/t38_gateway.h"></File>
 <File RelativePath="spandsp/private/t38_non_ecm_buffer.h"></File>
 <File RelativePath="spandsp/private/t38_terminal.h"></File>
-<File RelativePath="spandsp/private/t4.h"></File>
+<File RelativePath="spandsp/private/t4_rx.h"></File>
+<File RelativePath="spandsp/private/t4_tx.h"></File>
 <File RelativePath="spandsp/private/time_scale.h"></File>
 <File RelativePath="spandsp/private/tone_detect.h"></File>
 <File RelativePath="spandsp/private/tone_generate.h"></File>

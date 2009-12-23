@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_connect_tones.h,v 1.2 2009/01/29 18:30:14 steveu Exp $
+ * $Id: modem_connect_tones.h,v 1.3 2009/11/02 13:25:20 steveu Exp $
  */
  
 /*! \file */
@@ -66,12 +66,17 @@ struct modem_connect_tones_rx_state_s
     void *callback_data;
 
     /*! \brief The notch filter state. */
-    float z1;
-    float z2;
+    float znotch_1;
+    float znotch_2;
+    /*! \brief The 15Hz AM  filter state. */
+    float z15hz_1;
+    float z15hz_2;
     /*! \brief The in notch power estimate */
-    int notch_level;
+    int32_t notch_level;
     /*! \brief The total channel power estimate */
-    int channel_level;
+    int32_t channel_level;
+    /*! \brief The 15Hz AM power estimate */
+    int32_t am_level;
     /*! \brief Sample counter for the small chunks of samples, after which a test is conducted. */
     int chunk_remainder;
     /*! \brief TRUE is the tone is currently confirmed present in the audio. */

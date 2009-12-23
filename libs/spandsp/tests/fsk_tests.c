@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk_tests.c,v 1.58 2009/07/09 13:52:09 steveu Exp $
+ * $Id: fsk_tests.c,v 1.59 2009/11/02 13:25:20 steveu Exp $
  */
 
 /*! \page fsk_tests_page FSK modem tests
@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
             exit(2);
         }
-        caller_rx = fsk_rx_init(NULL, &preset_fsk_specs[modem_under_test_1], TRUE, put_bit, NULL);
+        caller_rx = fsk_rx_init(NULL, &preset_fsk_specs[modem_under_test_1], FSK_FRAME_MODE_SYNC, put_bit, NULL);
         fsk_rx_set_modem_status_handler(caller_rx, rx_status, (void *) &caller_rx);
         test_bps = preset_fsk_specs[modem_under_test_1].baud_rate;
 
@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
     else
     {
         printf("Test cutoff level\n");
-        caller_rx = fsk_rx_init(NULL, &preset_fsk_specs[modem_under_test_1], TRUE, cutoff_test_put_bit, NULL);
+        caller_rx = fsk_rx_init(NULL, &preset_fsk_specs[modem_under_test_1], FSK_FRAME_MODE_SYNC, cutoff_test_put_bit, NULL);
         fsk_rx_signal_cutoff(caller_rx, -30.0f);
         fsk_rx_set_modem_status_handler(caller_rx, cutoff_test_rx_status, (void *) &caller_rx);
         on_at = 0;
@@ -370,14 +370,14 @@ int main(int argc, char *argv[])
         {
             caller_tx = fsk_tx_init(NULL, &preset_fsk_specs[modem_under_test_1], (get_bit_func_t) bert_get_bit, &caller_bert);
             fsk_tx_set_modem_status_handler(caller_tx, tx_status, (void *) &caller_tx);
-            answerer_rx = fsk_rx_init(NULL, &preset_fsk_specs[modem_under_test_1], TRUE, (put_bit_func_t) bert_put_bit, &answerer_bert);
+            answerer_rx = fsk_rx_init(NULL, &preset_fsk_specs[modem_under_test_1], FSK_FRAME_MODE_SYNC, (put_bit_func_t) bert_put_bit, &answerer_bert);
             fsk_rx_set_modem_status_handler(answerer_rx, rx_status, (void *) &answerer_rx);
         }
         if (modem_under_test_2 >= 0)
         {
             answerer_tx = fsk_tx_init(NULL, &preset_fsk_specs[modem_under_test_2], (get_bit_func_t) bert_get_bit, &answerer_bert);
             fsk_tx_set_modem_status_handler(answerer_tx, tx_status, (void *) &answerer_tx);
-            caller_rx = fsk_rx_init(NULL, &preset_fsk_specs[modem_under_test_2], TRUE, (put_bit_func_t) bert_put_bit, &caller_bert);
+            caller_rx = fsk_rx_init(NULL, &preset_fsk_specs[modem_under_test_2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) bert_put_bit, &caller_bert);
             fsk_rx_set_modem_status_handler(caller_rx, rx_status, (void *) &caller_rx);
         }
         test_bps = preset_fsk_specs[modem_under_test_1].baud_rate;
@@ -477,14 +477,14 @@ int main(int argc, char *argv[])
                 {
                     caller_tx = fsk_tx_init(NULL, &preset_fsk_specs[modem_under_test_1], (get_bit_func_t) bert_get_bit, &caller_bert);
                     fsk_tx_set_modem_status_handler(caller_tx, tx_status, (void *) &caller_tx);
-                    answerer_rx = fsk_rx_init(NULL, &preset_fsk_specs[modem_under_test_1], TRUE, (put_bit_func_t) bert_put_bit, &answerer_bert);
+                    answerer_rx = fsk_rx_init(NULL, &preset_fsk_specs[modem_under_test_1], FSK_FRAME_MODE_SYNC, (put_bit_func_t) bert_put_bit, &answerer_bert);
                     fsk_rx_set_modem_status_handler(answerer_rx, rx_status, (void *) &answerer_rx);
                 }
                 if (modem_under_test_2 >= 0)
                 {
                     answerer_tx = fsk_tx_init(NULL, &preset_fsk_specs[modem_under_test_2], (get_bit_func_t) bert_get_bit, &answerer_bert);
                     fsk_tx_set_modem_status_handler(answerer_tx, tx_status, (void *) &answerer_tx);
-                    caller_rx = fsk_rx_init(NULL, &preset_fsk_specs[modem_under_test_2], TRUE, (put_bit_func_t) bert_put_bit, &caller_bert);
+                    caller_rx = fsk_rx_init(NULL, &preset_fsk_specs[modem_under_test_2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) bert_put_bit, &caller_bert);
                     fsk_rx_set_modem_status_handler(caller_rx, rx_status, (void *) &caller_rx);
                 }
                 noise_level++;

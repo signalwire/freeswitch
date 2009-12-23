@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42.c,v 1.50 2009/02/10 13:06:47 steveu Exp $
+ * $Id: v42.c,v 1.51 2009/11/04 15:52:06 steveu Exp $
  */
 
 /* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. */
@@ -1138,11 +1138,11 @@ static void negotiation_rx_bit(v42_state_t *s, int new_bit)
             break;
         /*endif*/
         s->rxstream &= 0x3FF;
-        if (s->caller  &&  s->rxstream == 0x145)
+        if (s->calling_party  &&  s->rxstream == 0x145)
         {
             s->rx_negotiation_step++;
         }
-        else if (!s->caller  &&  s->rxstream == 0x111)
+        else if (!s->calling_party  &&  s->rxstream == 0x111)
         {
             s->rx_negotiation_step++;
         }
@@ -1174,15 +1174,15 @@ static void negotiation_rx_bit(v42_state_t *s, int new_bit)
             break;
         /*endif*/
         s->rxstream &= 0x3FF;
-        if (s->caller  &&  s->rxstream == 0x185)
+        if (s->calling_party  &&  s->rxstream == 0x185)
         {
             s->rx_negotiation_step++;
         }
-        else if (s->caller  &&  s->rxstream == 0x001)
+        else if (s->calling_party  &&  s->rxstream == 0x001)
         {
             s->rx_negotiation_step++;
         }
-        else if (!s->caller  &&  s->rxstream == 0x113)
+        else if (!s->calling_party  &&  s->rxstream == 0x113)
         {
             s->rx_negotiation_step++;
         }
@@ -1206,7 +1206,7 @@ static void negotiation_rx_bit(v42_state_t *s, int new_bit)
             {
                 /* HIT */
                 s->rx_negotiation_step++;
-                if (s->caller)
+                if (s->calling_party)
                 {
                     if (s->t400_timer >= 0)
                     {
@@ -1252,7 +1252,7 @@ static int v42_support_negotiation_tx_bit(v42_state_t *s)
 {
     int bit;
 
-    if (s->caller)
+    if (s->calling_party)
     {
         if (s->txbits <= 0)
         {
@@ -1355,7 +1355,7 @@ SPAN_DECLARE(void) v42_restart(v42_state_t *s)
 {
     span_schedule_init(&s->lapm.sched);
 
-    s->lapm.we_are_originator = s->caller;
+    s->lapm.we_are_originator = s->calling_party;
     lapm_restart(&s->lapm);
     if (s->detect)
     {
@@ -1379,7 +1379,7 @@ fprintf(stderr, "Setting T400 i\n");
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *s, int caller, int detect, v42_frame_handler_t frame_handler, void *user_data)
+SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *s, int calling_party, int detect, v42_frame_handler_t frame_handler, void *user_data)
 {
     int alloced;
     
@@ -1394,7 +1394,7 @@ SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *s, int caller, int detect, v42
         alloced = TRUE;
     }
     memset(s, 0, sizeof(*s));
-    s->caller = caller;
+    s->calling_party = calling_party;
     s->detect = detect;
     s->lapm.iframe_receive = frame_handler;
     s->lapm.iframe_receive_user_data = user_data;

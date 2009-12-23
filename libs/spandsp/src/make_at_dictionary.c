@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: make_at_dictionary.c,v 1.5 2009/10/05 16:36:42 steveu Exp $
+ * $Id: make_at_dictionary.c,v 1.6 2009/10/09 14:53:57 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -231,6 +231,7 @@ const char *wordlist[] =
     "+ESR",     /* V.250 6.5.3 - Selective repeat */ 
     "+ETBM",    /* V.250 6.5.6 - Call termination buffer management */ 
     "+EWIND",   /* V.250 6.5.7 - Window size */ 
+    "+F34",     /* T.31 B.6.1 - Initial V.34 rate controls for FAX */
     "+FAA",     /* T.32 8.5.2.5 - Adaptive Answer parameter */
     "+FAP",     /* T.32 8.5.1.12 - Addressing and polling capabilities parameter */
     "+FAR",     /* T.31 8.5.1 - Adaptive reception control */ 

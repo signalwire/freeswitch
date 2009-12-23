@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_non_ecm_buffer.c,v 1.9 2009/10/05 16:33:25 steveu Exp $
+ * $Id: t38_non_ecm_buffer.c,v 1.9.4.1 2009/12/19 06:43:28 steveu Exp $
  */
 
 /*! \file */
@@ -57,13 +57,22 @@
 
 #include "spandsp/private/t38_non_ecm_buffer.h"
 
+/* Phases */
+enum
+{
+    TCF_AT_INITIAL_ALL_ONES = 0,
+    TCF_AT_ALL_ZEROS = 1,
+    IMAGE_WAITING_FOR_FIRST_EOL = 2,
+    IMAGE_IN_PROGRESS = 3
+};
+
 static void restart_buffer(t38_non_ecm_buffer_state_t *s)
 {
     /* This should be called when draining the buffer is complete, which should
        occur before any fresh data can possibly arrive to begin refilling it. */
     s->octet = 0xFF;
     s->flow_control_fill_octet = 0xFF;
-    s->at_initial_all_ones = TRUE;
+    s->input_phase = (s->image_data_mode)  ?  IMAGE_WAITING_FOR_FIRST_EOL  :  TCF_AT_INITIAL_ALL_ONES;
     s->bit_stream = 0xFFFF;
     s->out_ptr = 0;
     s->in_ptr = 0;
@@ -126,61 +135,164 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, cons
     int upper;
     int lower;
 
+    /* TCF consists of:
+            - zero or more ones, followed by
+            - about 1.5s of zeros
+       There may be a little junk at the end, as the modem shuts down.
+
+       We can stuff with extra ones in the initial period of all ones, and we can stuff with extra
+       zeros once the zeros start. The thing we need to be wary about is the odd zero bit in the
+       midst of the ones, due to a bit error. */
+
+    /* Non-ECM image data consists of:
+            - zero or more ones, followed by
+            - zero or more zeros, followed by
+            - an EOL (end of line), which marks the start of the image, followed by
+            - a succession of data rows, with an EOL at the end of each, followed by
+            - an RTC (return to control)
+       There may be a little junk at the end, as the modem shuts down.
+
+       An EOL 11 zeros followed by a one in a T.4 1D image or 11 zeros followed by a one followed
+       by a one or a zero in a T.4 2D image. An RTC consists of 6 EOLs in succession, with no
+       pixel data between them.
+    
+       We can stuff with ones until we get the first EOL into our buffer, then we can stuff with
+       zeros in front of each EOL at any point up the the RTC. We should not pad between the EOLs
+       which make up the RTC. Most FAX machines don't care about this, but a few will not recognise
+       the RTC if here is padding between the EOLs.
+    
+       We need to buffer whole rows before we output their beginning, so there is no possibility
+       of underflow mid-row. */
+
+    /* FoIP has latency issues, because of the fairly tight timeouts in the T.30 spec. We must
+       ensure our buffering does everything needed to avoid underflows, and to meet the minimum
+       row length requirements imposed by many mechanical FAX machines. We cannot, however,
+       afford to bulk up the data, by sending superfluous bytes. The resulting loop delay could
+       provoke an erroneous timeout of the acknowledgement signal. */
+
     i = 0;
-    if (s->at_initial_all_ones)
+    switch (s->input_phase)
     {
+    case TCF_AT_INITIAL_ALL_ONES:
         /* Dump initial 0xFF bytes. We will add enough of our own to makes things flow
            smoothly. If we don't strip these off, we might end up delaying the start of
-           forwarding by a large amount, as we could end up with a large block of 0xFF
+           forwarding by a substantial amount, as we could end up with a large block of 0xFF
            bytes before the real data begins. This is especially true with PC FAX
-           systems. This test is very simplistic, as a single bit error will throw it
-           off course. */
+           systems. This test is very simplistic, as bit errors could confuse it. */
         for (  ;  i < len;  i++)
         {
             if (buf[i] != 0xFF)
             {
-                s->at_initial_all_ones = FALSE;
+                s->input_phase = TCF_AT_ALL_ZEROS;
+                s->flow_control_fill_octet = 0x00;
                 break;
             }
         }
-    }
-    if (s->image_data_mode)
-    {
-        /* This is image data */
+        /* Fall through */
+    case TCF_AT_ALL_ZEROS:
         for (  ;  i < len;  i++)
         {
-            /* Check for EOLs, because at an EOL we can pause and pump out zeros while
-               waiting for more incoming data. */
+            s->data[s->in_ptr] = buf[i];
+            s->latest_eol_ptr = s->in_ptr;
+            /* TODO: We can't buffer overflow, since we wrap around. However, the tail could
+                     overwrite itself if things fall badly behind. */
+            s->in_ptr = (s->in_ptr + 1) & (T38_NON_ECM_TX_BUF_LEN - 1);
+            s->in_octets++;
+        }
+        break;
+    case IMAGE_WAITING_FOR_FIRST_EOL:
+        /* Dump anything up to the first EOL. Let the output side stuff with 0xFF bytes while waiting
+           for that first EOL. What occurs before the first EOL is expected to be a period of all ones
+           and then a period of all zeros. We really don't care what junk might be there. By definition,
+           the image only starts at the first EOL. */
+        for (  ;  i < len;  i++)
+        {
             if (buf[i])
             {
                 /* There might be an EOL here. Look for at least 11 zeros, followed by a one, split
                    between two octets. Between those two octets we can insert numerous zero octets
                    as a means of flow control. Note that we stuff in blocks of 8 bits, and not at
                    the minimal level. */
-                /* Or'ing with 0x800 here is simply to avoid zero words looking like they have -1
+                /* Or'ing with 0x800 here is to avoid zero words looking like they have -1
                    trailing zeros */
                 upper = bottom_bit(s->bit_stream | 0x800);
                 lower = top_bit(buf[i]);
-                if (upper - lower > 3)
+                if ((upper - lower) > (11 - 8))
                 {
+                    /* This is an EOL - our first row is beginning. */
+                    s->input_phase = IMAGE_IN_PROGRESS;
+                    /* Start a new row */
+                    s->row_bits = lower - 8;
+                    s->latest_eol_ptr = s->in_ptr;
+                    s->flow_control_fill_octet = 0x00;
+
+                    /* If we push out two bytes of zero, and our latest non-zero byte
+                       we should definitely form a proper EOL to begin things, with a
+                       few harmless extra zero bits at the front. */
+                    s->data[s->in_ptr] = 0x00;
+                    s->in_ptr = (s->in_ptr + 1) & (T38_NON_ECM_TX_BUF_LEN - 1);
+                    s->data[s->in_ptr] = 0x00;
+                    s->in_ptr = (s->in_ptr + 1) & (T38_NON_ECM_TX_BUF_LEN - 1);
+                    s->data[s->in_ptr] = buf[i];
+                    s->in_ptr = (s->in_ptr + 1) & (T38_NON_ECM_TX_BUF_LEN - 1);
+                    s->in_octets += 3;
+                    s->bit_stream = (s->bit_stream << 8) | buf[i];
+                    i++;
+                    break;
+                }
+            }
+            s->bit_stream = (s->bit_stream << 8) | buf[i];
+        }
+        if (i >= len)
+            break;
+        /* Fall through */
+    case IMAGE_IN_PROGRESS:
+        /* Now we have seen an EOL, we can stuff with zeros just in front of that EOL, or any
+           subsequent EOL that does not immediately follow a previous EOL (i.e. a candidate RTC).
+           We need to track our way through the image data, allowing the output side to only send
+           up to the last EOL. This prevents the possibility of underflow mid-row, where we cannot
+           safely stuff anything in the bit stream. */
+        for (  ;  i < len;  i++)
+        {
+            if (buf[i])
+            {
+                /* There might be an EOL here. Look for at least 11 zeros, followed by a one, split
+                   between two octets. Between those two octets we can insert numerous zero octets
+                   as a means of flow control. Note that we stuff in blocks of 8 bits, and not at
+                   the minimal level. */
+                /* Or'ing with 0x800 here is to avoid zero words looking like they have -1
+                   trailing zeros */
+                upper = bottom_bit(s->bit_stream | 0x800);
+                lower = top_bit(buf[i]);
+                if ((upper - lower) > (11 - 8))
+                {
+                    /* This is an EOL. */
                     s->row_bits += (8 - lower);
-                    /* If the row is too short, extend it in chunks of a whole byte. */
-                    /* TODO: extend by the precise amount we should, instead of this
-                             rough approach. */
-                    while (s->row_bits < s->min_row_bits)
+                    /* Make sure we don't stretch back to back EOLs, as that could spoil the RTC.
+                       This is a slightly crude check, as we don't know if we are processing a T.4 1D
+                       or T.4 2D image. Accepting 12 or 12 bits apart as meaning back to back is fine,
+                       as no 1D image row could be 1 bit long. */
+                    if (s->row_bits < 12  ||  s->row_bits > 13)
                     {
-                        s->min_row_bits_fill_octets++;
-                        s->data[s->in_ptr] = 0;
-                        s->row_bits += 8;
-                        /* TODO: We can't buffer overflow, since we wrap around. However, the tail could
-                                 overwrite itself if things fall badly behind. */
-                        s->in_ptr = (s->in_ptr + 1) & (T38_NON_ECM_TX_BUF_LEN - 1);
+                        /* If the row is too short, extend it in chunks of a whole byte. */
+                        /* TODO: extend by the precise amount we should, instead of this
+                                 rough approach. */
+                        while (s->row_bits < s->min_bits_per_row)
+                        {
+                            s->min_row_bits_fill_octets++;
+                            s->data[s->in_ptr] = 0;
+                            s->row_bits += 8;
+                            /* TODO: We can't buffer overflow, since we wrap around. However,
+                                     the tail could overwrite itself if things fall badly behind. */
+                            s->in_ptr = (s->in_ptr + 1) & (T38_NON_ECM_TX_BUF_LEN - 1);
+                        }
+                        /* This is now the limit for the output side, before it starts
+                           stuffing. */
+                        s->latest_eol_ptr = s->in_ptr;
                     }
                     /* Start a new row */
                     s->row_bits = lower - 8;
                     s->in_rows++;
-                    s->latest_eol_ptr = s->in_ptr;
-                    s->flow_control_fill_octet = 0x00;
                 }
             }
             s->bit_stream = (s->bit_stream << 8) | buf[i];
@@ -191,26 +303,7 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, cons
             s->in_ptr = (s->in_ptr + 1) & (T38_NON_ECM_TX_BUF_LEN - 1);
             s->in_octets++;
         }
-    }
-    else
-    {
-        /* This is TCF data */
-        for (  ;  i < len;  i++)
-        {
-            /* Check for zero bytes, as we can pause and pump out zeros while waiting
-               for more incoming data. Of course, the entire TCF data should be zero,
-               but it might not be, due to bit errors, or something weird happening. */
-            if (buf[i] == 0x00)
-            {
-                s->latest_eol_ptr = s->in_ptr;
-                s->flow_control_fill_octet = 0x00;
-            }
-            s->data[s->in_ptr] = buf[i];
-            /* TODO: We can't buffer overflow, since we wrap around. However, the tail could
-                     overwrite itself if things fall badly behind. */
-            s->in_ptr = (s->in_ptr + 1) & (T38_NON_ECM_TX_BUF_LEN - 1);
-            s->in_octets++;
-        }
+        break;
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -249,14 +342,14 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_report_output_status(t38_non_ecm_buffer_st
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t38_non_ecm_buffer_set_mode(t38_non_ecm_buffer_state_t *s, int mode, int min_row_bits)
+SPAN_DECLARE(void) t38_non_ecm_buffer_set_mode(t38_non_ecm_buffer_state_t *s, int mode, int min_bits_per_row)
 {
     s->image_data_mode = mode;
-    s->min_row_bits = min_row_bits;
+    s->min_bits_per_row = min_bits_per_row;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(t38_non_ecm_buffer_state_t *) t38_non_ecm_buffer_init(t38_non_ecm_buffer_state_t *s, int mode, int min_row_bits)
+SPAN_DECLARE(t38_non_ecm_buffer_state_t *) t38_non_ecm_buffer_init(t38_non_ecm_buffer_state_t *s, int mode, int min_bits_per_row)
 {
     if (s == NULL)
     {
@@ -264,12 +357,9 @@ SPAN_DECLARE(t38_non_ecm_buffer_state_t *) t38_non_ecm_buffer_init(t38_non_ecm_b
             return NULL;
     }
     memset(s, 0, sizeof(*s));
-    s->octet = 0xFF;
-    s->flow_control_fill_octet = 0xFF;
-    s->at_initial_all_ones = TRUE;
-    s->bit_stream = 0xFFFF;
     s->image_data_mode = mode;
-    s->min_row_bits = min_row_bits;
+    s->min_bits_per_row = min_bits_per_row;
+    restart_buffer(s);
     return s;
 }
 /*- End of function --------------------------------------------------------*/

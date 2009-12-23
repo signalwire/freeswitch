@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis.h,v 1.11 2009/07/09 13:52:09 steveu Exp $
+ * $Id: v22bis.h,v 1.12 2009/11/04 15:52:06 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V22BIS_H_)
@@ -76,7 +76,7 @@ struct v22bis_state_s
     /*! \brief The maximum permitted bit rate of the modem. Valid values are 1200 and 2400. */
     int bit_rate;
     /*! \brief TRUE is this is the calling side modem. */
-    int caller;
+    int calling_party;
     /*! \brief The callback function used to get the next bit to be transmitted. */
     get_bit_func_t get_bit;
     /*! \brief A user specified opaque pointer passed to the get_bit callback routine. */

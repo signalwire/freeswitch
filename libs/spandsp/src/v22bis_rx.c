@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_rx.c,v 1.68 2009/06/02 16:03:56 steveu Exp $
+ * $Id: v22bis_rx.c,v 1.69 2009/11/04 15:52:06 steveu Exp $
  */
 
 /*! \file */
@@ -490,7 +490,7 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
                error could be higher. */
             s->rx.gardner_step = 4;
             s->rx.pattern_repeats = 0;
-            if (s->caller)
+            if (s->calling_party)
                 s->rx.training = V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES;
             else
                 s->rx.training = V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200;
@@ -586,7 +586,7 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
                     span_log(&s->logging, SPAN_LOG_FLOW, "+++ S1 detected (%d long)\n", s->rx.pattern_repeats);
                     if (s->bit_rate == 2400)
                     {
-                        if (!s->caller)
+                        if (!s->calling_party)
                         {
                             /* Accept establishment at 2400bps */
                             span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting U0011 (S1) (Answerer)\n");
@@ -601,7 +601,7 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
             if (s->rx.training_count >= ms_to_symbols(270))
             {
                 /* If we haven't seen the S1 signal by now, we are committed to be in 1200bps mode */
-                if (s->caller)
+                if (s->calling_party)
                 {
                     span_log(&s->logging, SPAN_LOG_FLOW, "+++ Rx normal operation (1200)\n");
                     /* The transmit side needs to sustain the scrambled ones for a timed period */
@@ -625,7 +625,7 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
         }
         else
         {
-            if (s->caller)
+            if (s->calling_party)
             {
                 if (s->rx.training_count >= ms_to_symbols(100 + 450))
                 {
@@ -716,7 +716,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
         /* Calculate the I filter, with an arbitrary phase step, just so we can calculate
            the signal power of the required carrier, with any guard tone or spillback of our
            own transmitted signal suppressed. */
-        if (s->caller)
+        if (s->calling_party)
         {
             ii = rx_pulseshaper_2400_re[6][0]*s->rx.rrc_filter[s->rx.rrc_filter_step];
             for (j = 1;  j < V22BIS_RX_FILTER_STEPS;  j++)
@@ -769,7 +769,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
                 if (step > PULSESHAPER_COEFF_SETS - 1)
                     step = PULSESHAPER_COEFF_SETS - 1;
                 s->rx.eq_put_step += PULSESHAPER_COEFF_SETS*40/(3*2);
-                if (s->caller)
+                if (s->calling_party)
                 {
                     ii = rx_pulseshaper_2400_re[step][0]*s->rx.rrc_filter[s->rx.rrc_filter_step];
                     qq = rx_pulseshaper_2400_im[step][0]*s->rx.rrc_filter[s->rx.rrc_filter_step];
@@ -836,7 +836,7 @@ int v22bis_rx_restart(v22bis_state_t *s)
     s->rx.training_count = 0;
     s->rx.signal_present = FALSE;
 
-    s->rx.carrier_phase_rate = dds_phase_ratef((s->caller)  ?  2400.0f  :  1200.0f);
+    s->rx.carrier_phase_rate = dds_phase_ratef((s->calling_party)  ?  2400.0f  :  1200.0f);
     s->rx.carrier_phase = 0;
     power_meter_init(&(s->rx.rx_power), 5);
     v22bis_rx_signal_cutoff(s, -45.5f);
@@ -855,7 +855,7 @@ int v22bis_rx_restart(v22bis_state_t *s)
     s->rx.training_error = 0.0f;
     s->rx.total_baud_timing_correction = 0;
     /* We want the carrier to pull in faster on the answerer side, as it has very little time to adapt. */
-    s->rx.carrier_track_i = (s->caller)  ?  8000.0f  :  40000.0f;
+    s->rx.carrier_track_i = (s->calling_party)  ?  8000.0f  :  40000.0f;
     s->rx.carrier_track_p = 8000000.0f;
 
     s->negotiated_bit_rate = 1200;

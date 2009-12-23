@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30_logging.c,v 1.12 2009/04/12 09:12:10 steveu Exp $
+ * $Id: t30_logging.c,v 1.12.4.2 2009/12/19 10:44:10 steveu Exp $
  */
 
 /*! \file */
@@ -60,14 +60,16 @@
 #include "spandsp/v29tx.h"
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v27ter_tx.h"
-#include "spandsp/t4.h"
+#include "spandsp/t4_rx.h"
+#include "spandsp/t4_tx.h"
 #include "spandsp/t30_fcf.h"
 #include "spandsp/t35.h"
 #include "spandsp/t30.h"
 #include "spandsp/t30_logging.h"
 
 #include "spandsp/private/logging.h"
-#include "spandsp/private/t4.h"
+#include "spandsp/private/t4_rx.h"
+#include "spandsp/private/t4_tx.h"
 #include "spandsp/private/t30.h"
 
 #include "t30_local.h"
@@ -931,7 +933,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
     octet_bit_field(log, pkt, 121, "Flow control capability for T.38 communication", NULL, NULL);
     octet_bit_field(log, pkt, 122, "K>4", NULL, NULL);
     octet_bit_field(log, pkt, 123, "Internet aware T.38 mode fax (not affected by data signal rate bits)", NULL, NULL);
-    octet_field(log, pkt, 124, 126, "T.89 (Application profiles for ITU-T Rec T.8)", t89_profile_tags);
+    octet_field(log, pkt, 124, 126, "T.89 (Application profiles for ITU-T Rec T.88)", t89_profile_tags);
     octet_bit_field(log, pkt, 127, "sYCC-JPEG coding", NULL, NULL);
     octet_bit_field(log, pkt, 128, "Extension indicator", NULL, NULL);
     if (!(pkt[18] & DISBIT8))

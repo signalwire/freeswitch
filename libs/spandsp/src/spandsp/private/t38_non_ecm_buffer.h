@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_non_ecm_buffer.h,v 1.2 2008/10/13 14:19:18 steveu Exp $
+ * $Id: t38_non_ecm_buffer.h,v 1.2.4.1 2009/12/19 06:43:28 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_T38_NON_ECM_BUFFER_H_)
@@ -36,7 +36,7 @@ struct t38_non_ecm_buffer_state_s
 {
     /*! \brief Minimum number of bits per row, used when fill bits are being deleted on the
                link, and restored at the emitting gateway. */
-    int min_row_bits;
+    int min_bits_per_row;
 
     /*! \brief non-ECM modem transmit data buffer. */
     uint8_t data[T38_NON_ECM_TX_BUF_LEN];
@@ -55,8 +55,8 @@ struct t38_non_ecm_buffer_state_s
     /*! \brief The non-ECM flow control fill octet (0xFF before the first data, and 0x00
                once data has started). */
     uint8_t flow_control_fill_octet;
-    /*! \brief TRUE if we are in the initial all ones part of non-ECM transmission. */
-    int at_initial_all_ones;
+    /*! \brief A code for the phase of input buffering, from initial all ones to completion. */
+    int input_phase;
     /*! \brief TRUE is the end of non-ECM data indication has been received. */
     int data_finished;
     /*! \brief The current octet being transmitted from the buffer. */

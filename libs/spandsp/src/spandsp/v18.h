@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v18.h,v 1.5 2009/06/02 16:03:56 steveu Exp $
+ * $Id: v18.h,v 1.6 2009/11/04 15:52:06 steveu Exp $
  */
  
 /*! \file */
@@ -69,14 +69,14 @@ SPAN_DECLARE(logging_state_t *) v18_get_logging_state(v18_state_t *s);
 /*! Initialise a V.18 context.
     \brief Initialise a V.18 context.
     \param s The V.18 context.
-    \param caller TRUE if caller mode, else answerer mode.
+    \param calling_party TRUE if caller mode, else answerer mode.
     \param mode Mode of operation.
     \param put_msg A callback routine called to deliver the received text
            to the application.
     \param user_data An opaque pointer for the callback routine.
     \return A pointer to the V.18 context, or NULL if there was a problem. */
 SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
-                                     int caller,
+                                     int calling_party,
                                      int mode,
                                      put_msg_func_t put_msg,
                                      void *user_data);

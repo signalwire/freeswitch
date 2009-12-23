@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter.c,v 1.41 2009/10/03 04:37:25 steveu Exp $
+ * $Id: at_interpreter.c,v 1.42 2009/10/09 14:53:56 steveu Exp $
  */
 
 /*! \file */
@@ -3358,9 +3358,30 @@ static const char *at_cmd_plus_EWIND(at_state_t *s, const char *t)
 }
 /*- End of function --------------------------------------------------------*/
 
+static const char *at_cmd_plus_F34(at_state_t *s, const char *t)
+{
+    static const int maxes[5] =
+    {
+        14, 14, 2, 14, 14
+    };
+    int *locations[5];
+    int i;
+
+    /* T.31 B.6.1 - Initial V.34 rate controls for FAX */
+    /* Syntax: +F34=[<maxp>][,[<minp>][,<prefc>][,<maxp2>][,<minp2]] */
+    /* TODO */
+    t += 4;
+    for (i = 0;  i < 5;  i++)
+        locations[i] = NULL;
+    if (!parse_n_out(s, &t, locations, maxes, 5, "+F34:", "(0-14),(0-14),(0-2),(0-14),(0-14)"))
+        return NULL;
+    return t;
+}
+/*- End of function --------------------------------------------------------*/
+
 static const char *at_cmd_plus_FAA(at_state_t *s, const char *t)
 {
-    /* T.32 8.5.2.5 - Adaptive Answer parameter */
+    /* T.32 8.5.2.5 - Adaptive answer parameter */
     /* TODO */
     t += 4;
     return t;

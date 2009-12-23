@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.c,v 1.303 2009/09/21 15:51:18 steveu Exp $
+ * $Id: t30.c,v 1.305.4.3 2009/12/19 14:18:12 steveu Exp $
  */
 
 /*! \file */
@@ -60,7 +60,8 @@
 #include "spandsp/v29tx.h"
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v27ter_tx.h"
-#include "spandsp/t4.h"
+#include "spandsp/t4_rx.h"
+#include "spandsp/t4_tx.h"
 #include "spandsp/t30_fcf.h"
 #include "spandsp/t35.h"
 #include "spandsp/t30.h"
@@ -68,8 +69,10 @@
 #include "spandsp/t30_logging.h"
 
 #include "spandsp/private/logging.h"
-#include "spandsp/private/t4.h"
+#include "spandsp/private/t4_rx.h"
+#include "spandsp/private/t4_tx.h"
 #include "spandsp/private/t30.h"
+#include "spandsp/private/t30_dis_dtc_dcs_bits.h"
 
 #include "t30_local.h"
 
@@ -215,108 +218,108 @@ enum
 /* All timers specified in milliseconds */
 
 /*! Time-out T0 defines the amount of time an automatic calling terminal waits for the called terminal
-to answer the call.
-T0 begins after the dialling of the number is completed and is reset:
-a) when T0 times out; or
-b) when timer T1 is started; or
-c) if the terminal is capable of detecting any condition which indicates that the call will not be
-   successful, when such a condition is detected.
-The recommended value of T0 is 60+-5s. However, when it is anticipated that a long call set-up
-time may be encountered, an alternative value of up to 120s may be used.
-NOTE - National regulations may require the use of other values for T0. */
+    to answer the call.
+    T0 begins after the dialling of the number is completed and is reset:
+    a) when T0 times out; or
+    b) when timer T1 is started; or
+    c) if the terminal is capable of detecting any condition which indicates that the call will not be
+       successful, when such a condition is detected.
+    The recommended value of T0 is 60+-5s. However, when it is anticipated that a long call set-up
+    time may be encountered, an alternative value of up to 120s may be used.
+    NOTE - National regulations may require the use of other values for T0. */
 #define DEFAULT_TIMER_T0                60000
 
 /*! Time-out T1 defines the amount of time two terminals will continue to attempt to identify each
-other. T1 is 35+-5s, begins upon entering phase B, and is reset upon detecting a valid signal or
-when T1 times out.
-For operating methods 3 and 4 (see 3.1), the calling terminal starts time-out T1 upon reception of
-the V.21 modulation scheme.
-For operating method 4 bis a (see 3.1), the calling terminal starts time-out T1 upon starting
-transmission using the V.21 modulation scheme.
-Annex A says T1 is also the timeout to be used for the receipt of the first HDLC frame after the
-start of high speed flags in ECM mode. This seems a strange reuse of the T1 name, so we distinguish
-it here by calling it T1A. */
+    other. T1 is 35+-5s, begins upon entering phase B, and is reset upon detecting a valid signal or
+    when T1 times out.
+    For operating methods 3 and 4 (see 3.1), the calling terminal starts time-out T1 upon reception of
+    the V.21 modulation scheme.
+    For operating method 4 bis a (see 3.1), the calling terminal starts time-out T1 upon starting
+    transmission using the V.21 modulation scheme.
+    Annex A says T1 is also the timeout to be used for the receipt of the first HDLC frame after the
+    start of high speed flags in ECM mode. This seems a strange reuse of the T1 name, so we distinguish
+    it here by calling it T1A. */
 #define DEFAULT_TIMER_T1                35000
 #define DEFAULT_TIMER_T1A               35000
 
 /*! Time-out T2 makes use of the tight control between commands and responses to detect the loss of
-command/response synchronization. T2 is 6+-1s, and begins when initiating a command search
-(e.g., the first entrance into the "command received" subroutine, reference flow diagram in section 5.2).
-T2 is reset when an HDLC flag is received or when T2 times out. */
+    command/response synchronization. T2 is 6+-1s, and begins when initiating a command search
+    (e.g., the first entrance into the "command received" subroutine, reference flow diagram in section 5.2).
+    T2 is reset when an HDLC flag is received or when T2 times out. */
 #define DEFAULT_TIMER_T2                7000
 
 /*! Once HDLC flags begin, T2 is reset, and a 3s timer begins. This timer is unnamed in T.30. Here we
-term it T2A. No tolerance is specified for this timer. T2A specifies the maximum time to wait for the
-end of a frame, after the initial flag has been seen. */
+    term it T2A. No tolerance is specified for this timer. T2A specifies the maximum time to wait for the
+    end of a frame, after the initial flag has been seen. */
 #define DEFAULT_TIMER_T2A               3000
 
 /*! If the HDLC carrier falls during reception, we need to apply a minimum time before continuing. If we
-   don't, there are circumstances where we could continue and reply before the incoming signals have
-   really finished. E.g. if a bad DCS is received in a DCS-TCF sequence, we need wait for the TCF
-   carrier to pass, before continuing. This timer is specified as 200ms, but no tolerance is specified.
-   It is unnamed in T.30. Here we term it T2B */
+    don't, there are circumstances where we could continue and reply before the incoming signals have
+    really finished. E.g. if a bad DCS is received in a DCS-TCF sequence, we need wait for the TCF
+    carrier to pass, before continuing. This timer is specified as 200ms, but no tolerance is specified.
+    It is unnamed in T.30. Here we term it T2B */
 #define DEFAULT_TIMER_T2B               200
 
 /*! Time-out T3 defines the amount of time a terminal will attempt to alert the local operator in
-response to a procedural interrupt. Failing to achieve operator intervention, the terminal will
-discontinue this attempt and shall issue other commands or responses. T3 is 10+-5s, begins on the
-first detection of a procedural interrupt command/response signal (i.e., PIN/PIP or PRI-Q) and is
-reset when T3 times out or when the operator initiates a line request. */
+    response to a procedural interrupt. Failing to achieve operator intervention, the terminal will
+    discontinue this attempt and shall issue other commands or responses. T3 is 10+-5s, begins on the
+    first detection of a procedural interrupt command/response signal (i.e., PIN/PIP or PRI-Q) and is
+    reset when T3 times out or when the operator initiates a line request. */
 #define DEFAULT_TIMER_T3                15000
 
 /*! Time-out T4 defines the amount of time a terminal will wait for flags to begin, when waiting for a
-response from a remote terminal. T2 is 3s +-15%, and begins when initiating a response search
-(e.g., the first entrance into the "response received" subroutine, reference flow diagram in section 5.2).
-T4 is reset when an HDLC flag is received or when T4 times out.
-NOTE - For manual FAX units, the value of timer T4 may be either 3.0s +-15% or 4.5s +-15%.
-If the value of 4.5s is used, then after detection of a valid response to the first DIS, it may
-be reduced to 3.0s +-15%. T4 = 3.0s +-15% for automatic units. */
+    response from a remote terminal. T2 is 3s +-15%, and begins when initiating a response search
+    (e.g., the first entrance into the "response received" subroutine, reference flow diagram in section 5.2).
+    T4 is reset when an HDLC flag is received or when T4 times out.
+    NOTE - For manual FAX units, the value of timer T4 may be either 3.0s +-15% or 4.5s +-15%.
+    If the value of 4.5s is used, then after detection of a valid response to the first DIS, it may
+    be reduced to 3.0s +-15%. T4 = 3.0s +-15% for automatic units. */
 #define DEFAULT_TIMER_T4                3450
 
 /*! Once HDLC flags begin, T4 is reset, and a 3s timer begins. This timer is unnamed in T.30. Here we
-term it T4A. No tolerance is specified for this timer. T4A specifies the maximum time to wait for the
-end of a frame, after the initial flag has been seen. Note that a different timer is used for the fast
-HDLC in ECM mode, to provide time for physical paper handling. */
+    term it T4A. No tolerance is specified for this timer. T4A specifies the maximum time to wait for the
+    end of a frame, after the initial flag has been seen. Note that a different timer is used for the fast
+    HDLC in ECM mode, to provide time for physical paper handling. */
 #define DEFAULT_TIMER_T4A               3000
 
 /*! If the HDLC carrier falls during reception, we need to apply a minimum time before continuing. if we
-   don't, there are circumstances where we could continue and reply before the incoming signals have
-   really finished. E.g. if a bad DCS is received in a DCS-TCF sequence, we need wait for the TCF
-   carrier to pass, before continuing. This timer is specified as 200ms, but no tolerance is specified.
-   It is unnamed in T.30. Here we term it T4B */
+    don't, there are circumstances where we could continue and reply before the incoming signals have
+    really finished. E.g. if a bad DCS is received in a DCS-TCF sequence, we need wait for the TCF
+    carrier to pass, before continuing. This timer is specified as 200ms, but no tolerance is specified.
+    It is unnamed in T.30. Here we term it T4B */
 #define DEFAULT_TIMER_T4B               200
 
 /*! Time-out T5 is defined for the optional T.4 error correction mode. Time-out T5 defines the amount
-of time waiting for clearance of the busy condition of the receiving terminal. T5 is 60+-5s and
-begins on the first detection of the RNR response. T5 is reset when T5 times out or the MCF or PIP
-response is received or when the ERR or PIN response is received in the flow control process after
-transmitting the EOR command. If the timer T5 has expired, the DCN command is transmitted for
-call release. */
+    of time waiting for clearance of the busy condition of the receiving terminal. T5 is 60+-5s and
+    begins on the first detection of the RNR response. T5 is reset when T5 times out or the MCF or PIP
+    response is received or when the ERR or PIN response is received in the flow control process after
+    transmitting the EOR command. If the timer T5 has expired, the DCN command is transmitted for
+    call release. */
 #define DEFAULT_TIMER_T5                65000
 
 /*! (Annex C - ISDN) Time-out T6 defines the amount of time two terminals will continue to attempt to
-identify each other. T6 is 5+-0.5s. The timeout begins upon entering Phase B, and is reset upon
-detecting a valid signal, or when T6 times out. */
+    identify each other. T6 is 5+-0.5s. The timeout begins upon entering Phase B, and is reset upon
+    detecting a valid signal, or when T6 times out. */
 #define DEFAULT_TIMER_T6                5000
 
 /*! (Annex C - ISDN) Time-out T7 is used to detect loss of command/response synchronization. T7 is 6+-1s.
-The timeout begins when initiating a command search (e.g., the first entrance into the "command received"
-subroutine - see flow diagram in C.5) and is reset upon detecting a valid signal or when T7 times out. */
+    The timeout begins when initiating a command search (e.g., the first entrance into the "command received"
+    subroutine - see flow diagram in C.5) and is reset upon detecting a valid signal or when T7 times out. */
 #define DEFAULT_TIMER_T7                7000
 
 /*! (Annex C - ISDN) Time-out T8 defines the amount of time waiting for clearance of the busy condition
-of the receiving terminal. T8 is 10+-1s. The timeout begins on the first detection of the combination
-of no outstanding corrections and the RNR response. T8 is reset when T8 times out or MCF response is
-received. If the timer T8 expires, a DCN command is transmitted for call release. */
+    of the receiving terminal. T8 is 10+-1s. The timeout begins on the first detection of the combination
+    of no outstanding corrections and the RNR response. T8 is reset when T8 times out or MCF response is
+    received. If the timer T8 expires, a DCN command is transmitted for call release. */
 #define DEFAULT_TIMER_T8                10000
 
 /*! Final time we allow for things to flush through the system, before we disconnect, in milliseconds.
-   200ms should be fine for a PSTN call. For a T.38 call something longer is desirable. */
+    200ms should be fine for a PSTN call. For a T.38 call something longer is desirable. */
 #define FINAL_FLUSH_TIME                1000
 
 /*! The number of PPRs received before CTC or EOR is sent in ECM mode. T.30 defines this as 4,
-   but it could be varied, and the Japanese spec, for example, does make this value a
-   variable. */
+    but it could be varied, and the Japanese spec, for example, does make this value a
+    variable. */
 #define PPR_LIMIT_BEFORE_CTC_OR_EOR     4
 
 /* HDLC message header byte values */
@@ -401,10 +404,10 @@ static int terminate_operation_in_progress(t30_state_t *s)
     switch (s->operation_in_progress)
     {
     case OPERATION_IN_PROGRESS_T4_TX:
-        t4_tx_release(&(s->t4));
+        t4_tx_release(&s->t4);
         break;
     case OPERATION_IN_PROGRESS_T4_RX:
-        t4_rx_release(&(s->t4));
+        t4_rx_release(&s->t4);
         break;
     }
     s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
@@ -414,7 +417,7 @@ static int terminate_operation_in_progress(t30_state_t *s)
 
 static int tx_start_page(t30_state_t *s)
 {
-    if (t4_tx_start_page(&(s->t4)))
+    if (t4_tx_start_page(&s->t4))
     {
         terminate_operation_in_progress(s);
         return -1;
@@ -429,7 +432,7 @@ static int tx_start_page(t30_state_t *s)
 static int tx_end_page(t30_state_t *s)
 {
     s->retries = 0;
-    if (t4_tx_end_page(&(s->t4)) == 0)
+    if (t4_tx_end_page(&s->t4) == 0)
     {
         s->tx_page_number++;
         s->ecm_block = 0;
@@ -453,7 +456,7 @@ static int rx_start_page(t30_state_t *s)
     t4_rx_set_x_resolution(&s->t4, s->x_resolution);
     t4_rx_set_y_resolution(&s->t4, s->y_resolution);
 
-    if (t4_rx_start_page(&(s->t4)))
+    if (t4_rx_start_page(&s->t4))
         return -1;
     /* Clear the buffer */
     for (i = 0;  i < 256;  i++)
@@ -468,7 +471,7 @@ static int rx_start_page(t30_state_t *s)
 
 static int rx_end_page(t30_state_t *s)
 {
-    if (t4_rx_end_page(&(s->t4)) == 0)
+    if (t4_rx_end_page(&s->t4) == 0)
     {
         s->rx_page_number++;
         s->ecm_block = 0;
@@ -619,7 +622,7 @@ static uint8_t check_next_tx_step(t30_state_t *s)
     int res;
     int more;
 
-    res = t4_tx_next_page_has_different_format(&(s->t4));
+    res = t4_tx_next_page_has_different_format(&s->t4);
     if (res == 0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "More pages to come with the same format\n");
@@ -628,7 +631,7 @@ static uint8_t check_next_tx_step(t30_state_t *s)
     if (res > 0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "More pages to come with a different format\n");
-        s->tx_start_page = t4_tx_get_current_page_in_file(&(s->t4)) + 1;
+        s->tx_start_page = t4_tx_get_current_page_in_file(&s->t4) + 1;
         return (s->local_interrupt_pending)  ?  T30_PRI_EOM  :  T30_EOM;
     }
     /* Call a user handler, if one is set, to check if another document is to be sent.
@@ -640,7 +643,7 @@ static uint8_t check_next_tx_step(t30_state_t *s)
         more = FALSE;
     if (more)
     {
-        //if (test_ctrl_bit(s->far_dis_dtc_frame, 34))
+        //if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_MULTIPLE_SELECTIVE_POLLING_CAPABLE))
         //    return T30_EOS;
         return (s->local_interrupt_pending)  ?  T30_PRI_EOM  :  T30_EOM;
     }
@@ -690,7 +693,7 @@ static int get_partial_ecm_page(t30_state_t *s)
     /* We filled the entire buffer */
     s->ecm_frames = 256;
     span_log(&s->logging, SPAN_LOG_FLOW, "Partial page buffer full (%d per frame)\n", s->octets_per_ecm_frame);
-    s->ecm_at_page_end = ((t4_tx_check_bit(&(s->t4)) & 2) != 0);
+    s->ecm_at_page_end = ((t4_tx_check_bit(&s->t4) & 2) != 0);
     return 256;
 }
 /*- End of function --------------------------------------------------------*/
@@ -900,28 +903,28 @@ static int send_ident_frame(t30_state_t *s, uint8_t cmd)
 
 static int send_psa_frame(t30_state_t *s)
 {
-    if (test_ctrl_bit(s->far_dis_dtc_frame, 35)  &&  s->tx_info.polled_sub_address[0])
+    if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_POLLED_SUBADDRESSING_CAPABLE)  &&  s->tx_info.polled_sub_address[0])
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending polled sub-address '%s'\n", s->tx_info.polled_sub_address);
         send_20digit_msg_frame(s, T30_PSA, s->tx_info.polled_sub_address);
-        set_ctrl_bit(s->local_dis_dtc_frame, 35);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_POLLED_SUBADDRESSING_CAPABLE);
         return TRUE;
     }
-    clr_ctrl_bit(s->local_dis_dtc_frame, 35);
+    clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_POLLED_SUBADDRESSING_CAPABLE);
     return FALSE;
 }
 /*- End of function --------------------------------------------------------*/
 
 static int send_sep_frame(t30_state_t *s)
 {
-    if (test_ctrl_bit(s->far_dis_dtc_frame, 47)  &&  s->tx_info.selective_polling_address[0])
+    if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_SELECTIVE_POLLING_CAPABLE)  &&  s->tx_info.selective_polling_address[0])
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending selective polling address '%s'\n", s->tx_info.selective_polling_address);
         send_20digit_msg_frame(s, T30_SEP, s->tx_info.selective_polling_address);
-        set_ctrl_bit(s->local_dis_dtc_frame, 47);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SELECTIVE_POLLING_CAPABLE);
         return TRUE;
     }
-    clr_ctrl_bit(s->local_dis_dtc_frame, 47);
+    clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SELECTIVE_POLLING_CAPABLE);
     return FALSE;
 }
 /*- End of function --------------------------------------------------------*/
@@ -929,14 +932,14 @@ static int send_sep_frame(t30_state_t *s)
 static int send_sid_frame(t30_state_t *s)
 {
     /* Only send if there is an ID to send. */
-    if (test_ctrl_bit(s->far_dis_dtc_frame, 50)  &&  s->tx_info.sender_ident[0])
+    if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_PASSWORD)  &&  s->tx_info.sender_ident[0])
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending sender identification '%s'\n", s->tx_info.sender_ident);
         send_20digit_msg_frame(s, T30_SID, s->tx_info.sender_ident);
-        set_ctrl_bit(s->dcs_frame, 50);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_SENDER_ID_TRANSMISSION);
         return TRUE;
     }
-    clr_ctrl_bit(s->dcs_frame, 50);
+    clr_ctrl_bit(s->dcs_frame, T30_DCS_BIT_SENDER_ID_TRANSMISSION);
     return FALSE;
 }
 /*- End of function --------------------------------------------------------*/
@@ -944,14 +947,14 @@ static int send_sid_frame(t30_state_t *s)
 static int send_pwd_frame(t30_state_t *s)
 {
     /* Only send if there is a password to send. */
-    if (test_ctrl_bit(s->far_dis_dtc_frame, 50)  &&  s->tx_info.password[0])
+    if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_PASSWORD)  &&  s->tx_info.password[0])
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending password '%s'\n", s->tx_info.password);
         send_20digit_msg_frame(s, T30_PWD, s->tx_info.password);
-        set_ctrl_bit(s->local_dis_dtc_frame, 50);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_PASSWORD);
         return TRUE;
     }
-    clr_ctrl_bit(s->local_dis_dtc_frame, 50);
+    clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_PASSWORD);
     return FALSE;
 }
 /*- End of function --------------------------------------------------------*/
@@ -959,21 +962,21 @@ static int send_pwd_frame(t30_state_t *s)
 static int send_sub_frame(t30_state_t *s)
 {
     /* Only send if there is a sub-address to send. */
-    if (test_ctrl_bit(s->far_dis_dtc_frame, 49)  &&  s->tx_info.sub_address[0])
+    if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_SUBADDRESSING_CAPABLE)  &&  s->tx_info.sub_address[0])
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending sub-address '%s'\n", s->tx_info.sub_address);
         send_20digit_msg_frame(s, T30_SUB, s->tx_info.sub_address);
-        set_ctrl_bit(s->dcs_frame, 49);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_SUBADDRESS_TRANSMISSION);
         return TRUE;
     }
-    clr_ctrl_bit(s->dcs_frame, 49);
+    clr_ctrl_bit(s->dcs_frame, T30_DCS_BIT_SUBADDRESS_TRANSMISSION);
     return FALSE;
 }
 /*- End of function --------------------------------------------------------*/
 
 static int send_tsa_frame(t30_state_t *s)
 {
-    if ((test_ctrl_bit(s->far_dis_dtc_frame, 1)  ||  test_ctrl_bit(s->far_dis_dtc_frame, 3))  &&  0)
+    if ((test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T37)  ||  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38))  &&  0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending transmitting subscriber internet address '%s'\n", "");
         return TRUE;
@@ -984,20 +987,20 @@ static int send_tsa_frame(t30_state_t *s)
 
 static int send_ira_frame(t30_state_t *s)
 {
-    if (test_ctrl_bit(s->far_dis_dtc_frame, 102)  &&  0)
+    if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INTERNET_ROUTING_ADDRESS)  &&  0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending internet routing address '%s'\n", "");
-        set_ctrl_bit(s->dcs_frame, 102);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INTERNET_ROUTING_ADDRESS_TRANSMISSION);
         return TRUE;
     }
-    clr_ctrl_bit(s->dcs_frame, 102);
+    clr_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INTERNET_ROUTING_ADDRESS_TRANSMISSION);
     return FALSE;
 }
 /*- End of function --------------------------------------------------------*/
 
 static int send_cia_frame(t30_state_t *s)
 {
-    if ((test_ctrl_bit(s->far_dis_dtc_frame, 1)  ||  test_ctrl_bit(s->far_dis_dtc_frame, 3))  &&  0)
+    if ((test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T37)  ||  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38))  &&  0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending calling subscriber internet address '%s'\n", "");
         return TRUE;
@@ -1008,13 +1011,13 @@ static int send_cia_frame(t30_state_t *s)
 
 static int send_isp_frame(t30_state_t *s)
 {
-    if (test_ctrl_bit(s->far_dis_dtc_frame, 101)  &&  0)
+    if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INTERNET_SELECTIVE_POLLING_ADDRESS)  &&  0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending internet selective polling address '%s'\n", "");
-        set_ctrl_bit(s->local_dis_dtc_frame, 101);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INTERNET_SELECTIVE_POLLING_ADDRESS);
         return TRUE;
     }
-    clr_ctrl_bit(s->local_dis_dtc_frame, 101);
+    clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INTERNET_SELECTIVE_POLLING_ADDRESS);
     return FALSE;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1058,14 +1061,14 @@ static int set_dis_or_dtc(t30_state_t *s)
     s->local_dis_dtc_frame[2] = (uint8_t) (T30_DIS | s->dis_received);
     /* If we have a file name to receive into, then we are receive capable */
     if (s->rx_file[0])
-        set_ctrl_bit(s->local_dis_dtc_frame, 10);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_READY_TO_RECEIVE_FAX_DOCUMENT);
     else
-        clr_ctrl_bit(s->local_dis_dtc_frame, 10);
+        clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_READY_TO_RECEIVE_FAX_DOCUMENT);
     /* If we have a file name to transmit, then we are ready to transmit (polling) */
     if (s->tx_file[0])
-        set_ctrl_bit(s->local_dis_dtc_frame, 9);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_READY_TO_TRANSMIT_FAX_DOCUMENT);
     else
-        clr_ctrl_bit(s->local_dis_dtc_frame, 9);
+        clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_READY_TO_TRANSMIT_FAX_DOCUMENT);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1088,9 +1091,9 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     /* Always say 256 octets per ECM frame preferred, as 64 is never used in the
        real world. */
     if ((s->iaf & T30_IAF_MODE_T37))
-        set_ctrl_bit(s->local_dis_dtc_frame, 1);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T37);
     if ((s->iaf & T30_IAF_MODE_T38))
-        set_ctrl_bit(s->local_dis_dtc_frame, 3);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T38);
     /* No 3G mobile  */
     /* No V.8 */
     /* 256 octets preferred - don't bother making this optional, as everything uses 256 */
@@ -1121,57 +1124,67 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     /* No scan-line padding required, but some may be specified by the application. */
     set_ctrl_bits(s->local_dis_dtc_frame, s->local_min_scan_time_code, 21);
     if ((s->supported_compressions & T30_SUPPORT_NO_COMPRESSION))
-        set_ctrl_bit(s->local_dis_dtc_frame, 26);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_UNCOMPRESSED_CAPABLE);
     if (s->ecm_allowed)
     {
         /* ECM allowed */
-        set_ctrl_bit(s->local_dis_dtc_frame, 27);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_ECM_CAPABLE);
         /* Only offer the option of fancy compression schemes, if we are
            also offering the ECM option needed to support them. */
         if ((s->supported_compressions & T30_SUPPORT_T6_COMPRESSION))
-            set_ctrl_bit(s->local_dis_dtc_frame, 31);
+            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T6_CAPABLE);
         if ((s->supported_compressions & T30_SUPPORT_T43_COMPRESSION))
-            set_ctrl_bit(s->local_dis_dtc_frame, 36);
-        if ((s->supported_compressions & T30_SUPPORT_T85_COMPRESSION))
-            set_ctrl_bit(s->local_dis_dtc_frame, 78);
-        /* No T.85 optional L0. */
+            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T43_CAPABLE);
+#if 0
         if ((s->supported_compressions & T30_SUPPORT_T45_COMPRESSION))
-            set_ctrl_bit(s->local_dis_dtc_frame, 116);
+            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T45_CAPABLE);
+        if ((s->supported_compressions & T30_SUPPORT_T81_COMPRESSION))
+            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE);
+        if ((s->supported_compressions & T30_SUPPORT_SYCC_T81_COMPRESSION))
+            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SYCC_T81_CAPABLE);
+        if ((s->supported_compressions & T30_SUPPORT_T85_COMPRESSION))
+            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE);
+        /* No T.85 optional L0. */
+        //if ((s->supported_compressions & T30_SUPPORT_T85_L0_COMPRESSION))
+        //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T85_L0_CAPABLE);
+        //if ((s->supported_compressions & T30_SUPPORT_T89_COMPRESSION))
+        //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T89_CAPABLE);
+#endif
     }
     if ((s->supported_t30_features & T30_SUPPORT_FIELD_NOT_VALID))
-        set_ctrl_bit(s->local_dis_dtc_frame, 33);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_FNV_CAPABLE);
     if ((s->supported_t30_features & T30_SUPPORT_MULTIPLE_SELECTIVE_POLLING))
-        set_ctrl_bit(s->local_dis_dtc_frame, 34);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_MULTIPLE_SELECTIVE_POLLING_CAPABLE);
     if ((s->supported_t30_features & T30_SUPPORT_POLLED_SUB_ADDRESSING))
-        set_ctrl_bit(s->local_dis_dtc_frame, 35);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_POLLED_SUBADDRESSING_CAPABLE);
     /* No plane interleave */
     /* No G.726 */
     /* No extended voice coding */
     if ((s->supported_resolutions & T30_SUPPORT_SUPERFINE_RESOLUTION))
-        set_ctrl_bit(s->local_dis_dtc_frame, 41);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE);
     if ((s->supported_resolutions & T30_SUPPORT_300_300_RESOLUTION))
-        set_ctrl_bit(s->local_dis_dtc_frame, 42);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_300_300_CAPABLE);
     if ((s->supported_resolutions & (T30_SUPPORT_400_400_RESOLUTION | T30_SUPPORT_R16_RESOLUTION)))
-        set_ctrl_bit(s->local_dis_dtc_frame, 43);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_400_400_CAPABLE);
     /* Metric */ 
-    set_ctrl_bit(s->local_dis_dtc_frame, 45);
+    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_METRIC_RESOLUTION_PREFERRED);
     /* Superfine minimum scan line time pattern follows fine */
     if ((s->supported_t30_features & T30_SUPPORT_SELECTIVE_POLLING))
-        set_ctrl_bit(s->local_dis_dtc_frame, 47);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SELECTIVE_POLLING_CAPABLE);
     if ((s->supported_t30_features & T30_SUPPORT_SUB_ADDRESSING))
-        set_ctrl_bit(s->local_dis_dtc_frame, 49);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SUBADDRESSING_CAPABLE);
     if ((s->supported_t30_features & T30_SUPPORT_IDENTIFICATION))
-        set_ctrl_bit(s->local_dis_dtc_frame, 50);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_PASSWORD);
     /* Ready to transmit a data file (polling) */
     if (s->tx_file[0])
-        set_ctrl_bit(s->local_dis_dtc_frame, 51);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_READY_TO_TRANSMIT_DATA_FILE);
     /* No Binary file transfer (BFT) */
     /* No Document transfer mode (DTM) */
     /* No Electronic data interchange (EDI) */
     /* No Basic transfer mode (BTM) */
     /* No mixed mode (polling) */
     /* No character mode */
-    /* No mixed mode (Annex E/T.4) */
+    /* No mixed mode (T.4/Annex E) */
     /* No mode 26 (T.505) */
     /* No digital network capability */
     /* No duplex operation */
@@ -1182,9 +1195,9 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     /* No custom illuminant */
     /* No custom gamut range */
     if ((s->supported_image_sizes & T30_SUPPORT_US_LETTER_LENGTH))
-        set_ctrl_bit(s->local_dis_dtc_frame, 76);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NORTH_AMERICAN_LETTER_CAPABLE);
     if ((s->supported_image_sizes & T30_SUPPORT_US_LEGAL_LENGTH))
-        set_ctrl_bit(s->local_dis_dtc_frame, 77);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NORTH_AMERICAN_LEGAL_CAPABLE);
     /* No HKM key management */
     /* No RSA key management */
     /* No override */
@@ -1201,19 +1214,19 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     /* No simple phase C BFT negotiations */
     /* No extended BFT negotiations */
     if ((s->supported_t30_features & T30_SUPPORT_INTERNET_SELECTIVE_POLLING_ADDRESS))
-        set_ctrl_bit(s->local_dis_dtc_frame, 101);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INTERNET_SELECTIVE_POLLING_ADDRESS);
     if ((s->supported_t30_features & T30_SUPPORT_INTERNET_ROUTING_ADDRESS))
-        set_ctrl_bit(s->local_dis_dtc_frame, 102);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INTERNET_ROUTING_ADDRESS);
     if ((s->supported_resolutions & T30_SUPPORT_600_600_RESOLUTION))
-        set_ctrl_bit(s->local_dis_dtc_frame, 105);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_600_600_CAPABLE);
     if ((s->supported_resolutions & T30_SUPPORT_1200_1200_RESOLUTION))
-        set_ctrl_bit(s->local_dis_dtc_frame, 106);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_1200_1200_CAPABLE);
     if ((s->supported_resolutions & T30_SUPPORT_300_600_RESOLUTION))
-        set_ctrl_bit(s->local_dis_dtc_frame, 107);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_300_600_CAPABLE);
     if ((s->supported_resolutions & T30_SUPPORT_400_800_RESOLUTION))
-        set_ctrl_bit(s->local_dis_dtc_frame, 108);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_400_800_CAPABLE);
     if ((s->supported_resolutions & T30_SUPPORT_600_1200_RESOLUTION))
-        set_ctrl_bit(s->local_dis_dtc_frame, 109);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_600_1200_CAPABLE);
     /* No colour/grey scale 600x600 */
     /* No colour/grey scale 1200x1200 */
     /* No double sided printing (alternate mode) */
@@ -1222,10 +1235,10 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     /* No shared data memory */
     /* No T.44 colour space */
     if ((s->iaf & T30_IAF_MODE_FLOW_CONTROL))
-        set_ctrl_bit(s->local_dis_dtc_frame, 121);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T38_FLOW_CONTROL_CAPABLE);
     /* No k > 4 */
     if ((s->iaf & T30_IAF_MODE_CONTINUOUS_FLOW))
-        set_ctrl_bit(s->local_dis_dtc_frame, 123);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T38_FAX_CAPABLE);
     /* No T.89 profile */
     s->local_dis_dtc_len = 19;
     //t30_decode_dis_dtc_dcs(s, s->local_dis_dtc_frame, s->local_dis_dtc_len);
@@ -1271,11 +1284,11 @@ static int build_dcs(t30_state_t *s)
 
 #if 0
     /* Check for T.37 simple mode. */
-    if (test_ctrl_bit(s->far_dis_dtc_frame, 1))
-        set_ctrl_bit(s->dcs_frame, 1);
+    if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T37))
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T37);
     /* Check for T.38 mode. */
-    if (test_ctrl_bit(s->far_dis_dtc_frame, 3))
-        set_ctrl_bit(s->dcs_frame, 3);
+    if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38))
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T38);
 #endif
 
     /* Set to required modem rate */
@@ -1284,12 +1297,19 @@ static int build_dcs(t30_state_t *s)
     /* Select the compression to use. */
     switch (s->line_encoding)
     {
+#if 0
+    case T4_COMPRESSION_ITU_T85:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_MODE);
+        //set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_L0_MODE);
+        set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
+        break;
+#endif
     case T4_COMPRESSION_ITU_T6:
-        set_ctrl_bit(s->dcs_frame, 31);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T6_MODE);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
         break;
     case T4_COMPRESSION_ITU_T4_2D:
-        set_ctrl_bit(s->dcs_frame, 16);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_2D_CODING);
         set_ctrl_bits(s->dcs_frame, s->min_scan_time_code, 21);
         break;
     case T4_COMPRESSION_ITU_T4_1D:
@@ -1300,7 +1320,7 @@ static int build_dcs(t30_state_t *s)
         break;
     }
     /* We have a file to send, so tell the far end to go into receive mode. */
-    set_ctrl_bit(s->dcs_frame, 10);
+    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_RECEIVE_FAX_DOCUMENT);
     /* Set the Y resolution bits */
     bad = T30_ERR_OK;
     switch (s->y_resolution)
@@ -1312,13 +1332,13 @@ static int build_dcs(t30_state_t *s)
             if (!(s->supported_resolutions & T30_SUPPORT_600_1200_RESOLUTION))
                 bad = T30_ERR_NORESSUPPORT;
             else
-                set_ctrl_bit(s->dcs_frame, 109);
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_1200);
             break;
         case T4_X_RESOLUTION_1200:
             if (!(s->supported_resolutions & T30_SUPPORT_1200_1200_RESOLUTION))
                 bad = T30_ERR_NORESSUPPORT;
             else
-                set_ctrl_bit(s->dcs_frame, 106);
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_1200_1200);
             break;
         default:
             bad = T30_ERR_NORESSUPPORT;
@@ -1332,7 +1352,7 @@ static int build_dcs(t30_state_t *s)
             if (!(s->supported_resolutions & T30_SUPPORT_400_800_RESOLUTION))
                 bad = T30_ERR_NORESSUPPORT;
             else
-                set_ctrl_bit(s->dcs_frame, 108);
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_800);
             break;
         default:
             bad = T30_ERR_NORESSUPPORT;
@@ -1346,13 +1366,13 @@ static int build_dcs(t30_state_t *s)
             if (!(s->supported_resolutions & T30_SUPPORT_300_600_RESOLUTION))
                 bad = T30_ERR_NORESSUPPORT;
             else
-                set_ctrl_bit(s->dcs_frame, 107);
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_600);
             break;
         case T4_X_RESOLUTION_600:
             if (!(s->supported_resolutions & T30_SUPPORT_600_600_RESOLUTION))
                 bad = T30_ERR_NORESSUPPORT;
             else
-                set_ctrl_bit(s->dcs_frame, 105);
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_600);
             break;
         default:
             bad = T30_ERR_NORESSUPPORT;
@@ -1369,10 +1389,10 @@ static int build_dcs(t30_state_t *s)
             switch (s->x_resolution)
             {
             case T4_X_RESOLUTION_R8:
-                set_ctrl_bit(s->dcs_frame, 41);
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
                 break;
             case T4_X_RESOLUTION_R16:
-                set_ctrl_bit(s->dcs_frame, 43);
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
                 break;
             default:
                 bad = T30_ERR_NORESSUPPORT;
@@ -1387,7 +1407,7 @@ static int build_dcs(t30_state_t *s)
             if (!(s->supported_resolutions & T30_SUPPORT_300_300_RESOLUTION))
                 bad = T30_ERR_NORESSUPPORT;
             else
-                set_ctrl_bit(s->dcs_frame, 42);
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_300);
             break;
         default:
             bad = T30_ERR_NORESSUPPORT;
@@ -1404,7 +1424,7 @@ static int build_dcs(t30_state_t *s)
             switch (s->x_resolution)
             {
             case T4_X_RESOLUTION_R8:
-                set_ctrl_bit(s->dcs_frame, 15);
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
                 break;
             default:
                 bad = T30_ERR_NORESSUPPORT;
@@ -1434,6 +1454,8 @@ static int build_dcs(t30_state_t *s)
     /* Deal with the image width. The X resolution will fall in line with any valid width. */
     /* Low (R4) res widths are not supported in recent versions of T.30 */
     bad = T30_ERR_OK;
+    /* The following treats a width field of 11 like 10, which does what note 6 of Table 2/T.30
+       says we should do with the invalid value 11. */
     switch (s->image_width)
     {
     case T4_WIDTH_R8_A4:
@@ -1451,7 +1473,7 @@ static int build_dcs(t30_state_t *s)
         if ((s->far_dis_dtc_frame[5] & (DISBIT2 | DISBIT1)) < 1)
             bad = T30_ERR_NOSIZESUPPORT;
         else if (!(s->supported_image_sizes & T30_SUPPORT_255MM_WIDTH))
-            bad = T30_ERR_BADTIFF;
+            bad = T30_ERR_NOSIZESUPPORT;
         else
             set_ctrl_bit(s->dcs_frame, 17);
         break;
@@ -1463,19 +1485,19 @@ static int build_dcs(t30_state_t *s)
         if ((s->far_dis_dtc_frame[5] & (DISBIT2 | DISBIT1)) < 2)
             bad = T30_ERR_NOSIZESUPPORT;
         else if (!(s->supported_image_sizes & T30_SUPPORT_303MM_WIDTH))    
-            bad = T30_ERR_BADTIFF;
+            bad = T30_ERR_NOSIZESUPPORT;
         else
             set_ctrl_bit(s->dcs_frame, 18);
         break;
     default:
         /* T.30 does not support this width */
-        bad = T30_ERR_BADTIFF;
+        bad = T30_ERR_NOSIZESUPPORT;
         break;
     }
     if (bad != T30_ERR_OK)
     {
         s->current_status = bad;
-        span_log(&s->logging, SPAN_LOG_FLOW, "Image width (%d pixels) not a valid FAX image width\n", s->image_width);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Image width (%d pixels) not an acceptable FAX image width\n", s->image_width);
         return -1;
     }
     switch (s->image_width)
@@ -1488,36 +1510,36 @@ static int build_dcs(t30_state_t *s)
     case T4_WIDTH_300_A4:
     case T4_WIDTH_300_B4:
     case T4_WIDTH_300_A3:
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, 42)  &&  !test_ctrl_bit(s->far_dis_dtc_frame, 107))
+        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_300_300_CAPABLE)  &&  !test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_300_600_CAPABLE))
             bad = T30_ERR_NOSIZESUPPORT;
         break;
     case T4_WIDTH_R16_A4:
     case T4_WIDTH_R16_B4:
     case T4_WIDTH_R16_A3:
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, 43))
+        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_400_400_CAPABLE))
             bad = T30_ERR_NOSIZESUPPORT;
         break;
     case T4_WIDTH_600_A4:
     case T4_WIDTH_600_B4:
     case T4_WIDTH_600_A3:
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, 105)  &&  !test_ctrl_bit(s->far_dis_dtc_frame, 109))
+        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_600_600_CAPABLE)  &&  !test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_600_1200_CAPABLE))
             bad = T30_ERR_NOSIZESUPPORT;
         break;
     case T4_WIDTH_1200_A4:
     case T4_WIDTH_1200_B4:
     case T4_WIDTH_1200_A3:
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, 106))
+        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_1200_1200_CAPABLE))
             bad = T30_ERR_NOSIZESUPPORT;
         break;
     default:
         /* T.30 does not support this width */
-        bad = T30_ERR_BADTIFF;
+        bad = T30_ERR_NOSIZESUPPORT;
         break;
     }
     if (bad != T30_ERR_OK)
     {
         s->current_status = bad;
-        span_log(&s->logging, SPAN_LOG_FLOW, "Image width (%d pixels) not a valid FAX image width\n", s->image_width);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Image width (%d pixels) not an acceptable FAX image width\n", s->image_width);
         return -1;
     }
     /* Deal with the image length */
@@ -1529,12 +1551,19 @@ static int build_dcs(t30_state_t *s)
         set_ctrl_bit(s->dcs_frame, 19);
 
     if (s->error_correcting_mode)
-        set_ctrl_bit(s->dcs_frame, 27);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_ECM);
 
-    if ((s->iaf & T30_IAF_MODE_FLOW_CONTROL)  &&  test_ctrl_bit(s->far_dis_dtc_frame, 121))
-        set_ctrl_bit(s->dcs_frame, 121);
-    if ((s->iaf & T30_IAF_MODE_CONTINUOUS_FLOW)  &&  test_ctrl_bit(s->far_dis_dtc_frame, 123))
-        set_ctrl_bit(s->dcs_frame, 123);
+    if ((s->iaf & T30_IAF_MODE_FLOW_CONTROL)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38_FLOW_CONTROL_CAPABLE))
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T38_FLOW_CONTROL_CAPABLE);
+    if ((s->iaf & T30_IAF_MODE_CONTINUOUS_FLOW)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38_FAX_CAPABLE))
+    {
+        /* Clear the modem type bits, in accordance with note 77 of Table 2/T.30 */
+        clr_ctrl_bit(s->local_dis_dtc_frame, 11);
+        clr_ctrl_bit(s->local_dis_dtc_frame, 12);
+        clr_ctrl_bit(s->local_dis_dtc_frame, 13);
+        clr_ctrl_bit(s->local_dis_dtc_frame, 14);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T38_FAX_MODE);
+    }
     s->dcs_len = 19;
     //t30_decode_dis_dtc_dcs(s, s->dcs_frame, s->dcs_len);
     return 0;
@@ -1814,10 +1843,10 @@ static void disconnect(t30_state_t *s)
     switch (s->operation_in_progress)
     {
     case OPERATION_IN_PROGRESS_T4_TX:
-        t4_tx_release(&(s->t4));
+        t4_tx_release(&s->t4);
         break;
     case OPERATION_IN_PROGRESS_T4_RX:
-        t4_rx_release(&(s->t4));
+        t4_rx_release(&s->t4);
         break;
     }
     s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
@@ -1855,16 +1884,16 @@ static int set_min_scan_time_code(t30_state_t *s)
     switch (s->y_resolution)
     {
     case T4_Y_RESOLUTION_SUPERFINE:
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, 41))
+        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE))
         {
             s->current_status = T30_ERR_NORESSUPPORT;
             span_log(&s->logging, SPAN_LOG_FLOW, "Remote FAX does not support super-fine resolution.\n");
             return -1;
         }
-        s->min_scan_time_code = translate_min_scan_time[(test_ctrl_bit(s->far_dis_dtc_frame, 46))  ?  2  :  1][min_bits_field];
+        s->min_scan_time_code = translate_min_scan_time[(test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_MIN_SCAN_TIME_HALVES))  ?  2  :  1][min_bits_field];
         break;
     case T4_Y_RESOLUTION_FINE:
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, 15))
+        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE))
         {
             s->current_status = T30_ERR_NORESSUPPORT;
             span_log(&s->logging, SPAN_LOG_FLOW, "Remote FAX does not support fine resolution.\n");
@@ -1912,7 +1941,7 @@ static int start_sending_document(t30_state_t *s)
        must be evaluated before the minimum scan row bits can be evaluated. */
     if ((min_row_bits = set_min_scan_time_code(s)) < 0)
     {
-        t4_tx_release(&(s->t4));
+        t4_tx_release(&s->t4);
         s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
         return -1;
     }
@@ -1921,7 +1950,7 @@ static int start_sending_document(t30_state_t *s)
 
     if (tx_start_page(s))
         return -1;
-    s->image_width = t4_tx_get_image_width(&(s->t4));
+    s->image_width = t4_tx_get_image_width(&s->t4);
     if (s->error_correcting_mode)
     {
         if (get_partial_ecm_page(s) == 0)
@@ -1933,7 +1962,7 @@ static int start_sending_document(t30_state_t *s)
 
 static int restart_sending_document(t30_state_t *s)
 {
-    t4_tx_restart_page(&(s->t4));
+    t4_tx_restart_page(&s->t4);
     s->retries = 0;
     s->ecm_block = 0;
     send_dcs_sequence(s, TRUE);
@@ -2006,11 +2035,19 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     /* 256 octets per ECM frame */
     s->octets_per_ecm_frame = 256;
     /* Select the compression to use. */
-    if (s->error_correcting_mode  &&  (s->supported_compressions & T30_SUPPORT_T6_COMPRESSION)  &&  test_ctrl_bit(s->far_dis_dtc_frame, 31))
+#if 0
+    if (s->error_correcting_mode  &&  (s->supported_compressions & T30_SUPPORT_T85_COMPRESSION)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE))
+    {
+        s->line_encoding = T4_COMPRESSION_ITU_T85;
+    }
+    else if (s->error_correcting_mode  &&  (s->supported_compressions & T30_SUPPORT_T6_COMPRESSION)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T6_CAPABLE))
+#else
+    if (s->error_correcting_mode  &&  (s->supported_compressions & T30_SUPPORT_T6_COMPRESSION)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T6_CAPABLE))
+#endif
     {
         s->line_encoding = T4_COMPRESSION_ITU_T6;
     }
-    else if ((s->supported_compressions & T30_SUPPORT_T4_2D_COMPRESSION)  &&  test_ctrl_bit(s->far_dis_dtc_frame, 16))
+    else if ((s->supported_compressions & T30_SUPPORT_T4_2D_COMPRESSION)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE))
     {
         s->line_encoding = T4_COMPRESSION_ITU_T4_2D;
     }
@@ -2018,7 +2055,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     {
         s->line_encoding = T4_COMPRESSION_ITU_T4_1D;
     }
-    span_log(&s->logging, SPAN_LOG_FLOW, "Selected compression %d\n", s->line_encoding);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Selected compression %s (%d)\n", t4_encoding_to_str(s->line_encoding), s->line_encoding);
     switch (s->far_dis_dtc_frame[4] & (DISBIT6 | DISBIT5 | DISBIT4 | DISBIT3))
     {
     case (DISBIT6 | DISBIT4 | DISBIT3):
@@ -2077,7 +2114,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     if (s->tx_file[0])
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Trying to send file '%s'\n", s->tx_file);
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, 10))
+        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_READY_TO_RECEIVE_FAX_DOCUMENT))
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "%s far end cannot receive\n", t30_frametype(msg[2]));
             s->current_status = T30_ERR_RX_INCAPABLE;
@@ -2103,7 +2140,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     if (s->rx_file[0])
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Trying to receive file '%s'\n", s->rx_file);
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, 9))
+        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_READY_TO_TRANSMIT_FAX_DOCUMENT))
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "%s far end cannot transmit\n", t30_frametype(msg[2]));
             s->current_status = T30_ERR_TX_INCAPABLE;
@@ -2174,30 +2211,30 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
             memset(dcs_frame + len, 0, T30_MAX_DIS_DTC_DCS_LEN - len);
     }
 
-    s->octets_per_ecm_frame = test_ctrl_bit(dcs_frame, 28)  ?  256  :  64;
+    s->octets_per_ecm_frame = test_ctrl_bit(dcs_frame, T30_DCS_BIT_64_OCTET_ECM_FRAMES)  ?  256  :  64;
 
-    if (test_ctrl_bit(dcs_frame, 106))
+    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_1200_1200))
         s->x_resolution = T4_X_RESOLUTION_1200;
-    else if (test_ctrl_bit(dcs_frame, 105)  ||  test_ctrl_bit(dcs_frame, 109))
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_600)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_1200))
         s->x_resolution = T4_X_RESOLUTION_600;
-    else if (test_ctrl_bit(dcs_frame, 43)  ||  test_ctrl_bit(dcs_frame, 108))
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_400_400)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_400_800))
         s->x_resolution = T4_X_RESOLUTION_R16;
-    else if (test_ctrl_bit(dcs_frame, 42)  ||  test_ctrl_bit(dcs_frame, 107))
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_300)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_600))
         s->x_resolution = T4_X_RESOLUTION_300;
     else
         s->x_resolution = T4_X_RESOLUTION_R8;
 
-    if (test_ctrl_bit(dcs_frame, 106)  ||  test_ctrl_bit(dcs_frame, 109))
+    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_1200_1200)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_1200))
         s->y_resolution = T4_Y_RESOLUTION_1200;
-    else if (test_ctrl_bit(dcs_frame, 108))
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_400_800))
         s->y_resolution = T4_Y_RESOLUTION_800;
-    else if (test_ctrl_bit(dcs_frame, 105)  ||  test_ctrl_bit(dcs_frame, 107))
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_600)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_600))
         s->y_resolution = T4_Y_RESOLUTION_600;
-    else if (test_ctrl_bit(dcs_frame, 41)  ||  test_ctrl_bit(dcs_frame, 43))
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_200_400)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_400_400))
         s->y_resolution = T4_Y_RESOLUTION_SUPERFINE;
-    else if (test_ctrl_bit(dcs_frame, 42))
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_300))
         s->y_resolution = T4_Y_RESOLUTION_300;
-    else if (test_ctrl_bit(dcs_frame, 15))
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_200_200))
         s->y_resolution = T4_Y_RESOLUTION_FINE;
     else
         s->y_resolution = T4_Y_RESOLUTION_STANDARD;
@@ -2218,14 +2255,20 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     s->image_width = widths[i][dcs_frame[5] & (DISBIT2 | DISBIT1)];
 
     /* Check which compression we will use. */
-    if (test_ctrl_bit(dcs_frame, 31))
+#if 0
+    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_MODE))
+        s->line_encoding = T4_COMPRESSION_ITU_T85;
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T6_MODE))
+#else
+    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T6_MODE))
+#endif
         s->line_encoding = T4_COMPRESSION_ITU_T6;
-    else if (test_ctrl_bit(dcs_frame, 16))
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_2D_CODING))
         s->line_encoding = T4_COMPRESSION_ITU_T4_2D;
     else
         s->line_encoding = T4_COMPRESSION_ITU_T4_1D;
     span_log(&s->logging, SPAN_LOG_FLOW, "Selected compression %d\n", s->line_encoding);
-    if (!test_ctrl_bit(dcs_frame, 10))
+    if (!test_ctrl_bit(dcs_frame, T30_DCS_BIT_RECEIVE_FAX_DOCUMENT))
         span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Remote is not requesting receive in DCS\n");
 
     if ((s->current_fallback = find_fallback_entry(dcs_frame[4] & (DISBIT6 | DISBIT5 | DISBIT4 | DISBIT3))) < 0)
@@ -2233,7 +2276,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         span_log(&s->logging, SPAN_LOG_FLOW, "Remote asked for a modem standard we do not support\n");
         return -1;
     }
-    s->error_correcting_mode = (test_ctrl_bit(dcs_frame, 27) != 0);
+    s->error_correcting_mode = (test_ctrl_bit(dcs_frame, T30_DCS_BIT_ECM) != 0);
 
     if (s->phase_b_handler)
     {
@@ -2671,7 +2714,6 @@ static void process_state_b(t30_state_t *s, const uint8_t *msg, int len)
 {
     uint8_t fcf;
 
-    /* We should be sending the TCF data right now */
     fcf = msg[2] & 0xFE;
     switch (fcf)
     {
@@ -3055,14 +3097,14 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
         case T30_COPY_QUALITY_PERFECT:
         case T30_COPY_QUALITY_GOOD:
             rx_end_page(s);
-            t4_rx_release(&(s->t4));
+            t4_rx_release(&s->t4);
             s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
             s->in_message = FALSE;
             set_state(s, T30_STATE_III_Q_MCF);
             break;
         case T30_COPY_QUALITY_POOR:
             rx_end_page(s);
-            t4_rx_release(&(s->t4));
+            t4_rx_release(&s->t4);
             s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
             s->in_message = FALSE;
             set_state(s, T30_STATE_III_Q_RTP);
@@ -3113,14 +3155,14 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
         case T30_COPY_QUALITY_PERFECT:
         case T30_COPY_QUALITY_GOOD:
             rx_end_page(s);
-            t4_rx_release(&(s->t4));
+            t4_rx_release(&s->t4);
             s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
             s->in_message = FALSE;
             set_state(s, T30_STATE_III_Q_MCF);
             break;
         case T30_COPY_QUALITY_POOR:
             rx_end_page(s);
-            t4_rx_release(&(s->t4));
+            t4_rx_release(&s->t4);
             s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
             s->in_message = FALSE;
             set_state(s, T30_STATE_III_Q_RTP);
@@ -3140,7 +3182,7 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
         case T30_COPY_QUALITY_PERFECT:
         case T30_COPY_QUALITY_GOOD:
             rx_end_page(s);
-            t4_rx_release(&(s->t4));
+            t4_rx_release(&s->t4);
             s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
             s->in_message = FALSE;
             set_state(s, T30_STATE_III_Q_MCF);
@@ -3148,7 +3190,7 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
             break;
         case T30_COPY_QUALITY_POOR:
             rx_end_page(s);
-            t4_rx_release(&(s->t4));
+            t4_rx_release(&s->t4);
             s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
             s->in_message = FALSE;
             set_state(s, T30_STATE_III_Q_RTP);
@@ -3172,14 +3214,14 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
         case T30_COPY_QUALITY_PERFECT:
         case T30_COPY_QUALITY_GOOD:
             rx_end_page(s);
-            t4_rx_release(&(s->t4));
+            t4_rx_release(&s->t4);
             s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
             s->in_message = FALSE;
             set_state(s, T30_STATE_III_Q_MCF);
             break;
         case T30_COPY_QUALITY_POOR:
             rx_end_page(s);
-            t4_rx_release(&(s->t4));
+            t4_rx_release(&s->t4);
             s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
             s->in_message = FALSE;
             set_state(s, T30_STATE_III_Q_RTP);
@@ -3516,7 +3558,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             tx_end_page(s);
             if (s->phase_d_handler)
                 s->phase_d_handler(s, s->phase_d_user_data, fcf);
-            t4_tx_release(&(s->t4));
+            t4_tx_release(&s->t4);
             s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
             if (span_log_test(&s->logging, SPAN_LOG_FLOW))
             {
@@ -3530,7 +3572,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             tx_end_page(s);
             if (s->phase_d_handler)
                 s->phase_d_handler(s, s->phase_d_user_data, fcf);
-            t4_tx_release(&(s->t4));
+            t4_tx_release(&s->t4);
             s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
             send_dcn(s);
             if (span_log_test(&s->logging, SPAN_LOG_FLOW))
@@ -3575,7 +3617,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             tx_end_page(s);
             if (s->phase_d_handler)
                 s->phase_d_handler(s, s->phase_d_user_data, fcf);
-            t4_tx_release(&(s->t4));
+            t4_tx_release(&s->t4);
             /* TODO: should go back to T, and resend */
             return_to_phase_b(s, TRUE);
             break;
@@ -3584,7 +3626,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             tx_end_page(s);
             if (s->phase_d_handler)
                 s->phase_d_handler(s, s->phase_d_user_data, fcf);
-            t4_tx_release(&(s->t4));
+            t4_tx_release(&s->t4);
             send_dcn(s);
             break;
         }
@@ -3895,7 +3937,7 @@ static void process_state_iv_pps_null(t30_state_t *s, const uint8_t *msg, int le
                 tx_end_page(s);
                 if (s->phase_d_handler)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
-                t4_tx_release(&(s->t4));
+                t4_tx_release(&s->t4);
                 s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
                 if (span_log_test(&s->logging, SPAN_LOG_FLOW))
                 {
@@ -3909,7 +3951,7 @@ static void process_state_iv_pps_null(t30_state_t *s, const uint8_t *msg, int le
                 tx_end_page(s);
                 if (s->phase_d_handler)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
-                t4_tx_release(&(s->t4));
+                t4_tx_release(&s->t4);
                 s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
                 send_dcn(s);
                 if (span_log_test(&s->logging, SPAN_LOG_FLOW))
@@ -3999,7 +4041,7 @@ static void process_state_iv_pps_q(t30_state_t *s, const uint8_t *msg, int len)
                 tx_end_page(s);
                 if (s->phase_d_handler)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
-                t4_tx_release(&(s->t4));
+                t4_tx_release(&s->t4);
                 s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
                 if (span_log_test(&s->logging, SPAN_LOG_FLOW))
                 {
@@ -4013,7 +4055,7 @@ static void process_state_iv_pps_q(t30_state_t *s, const uint8_t *msg, int len)
                 tx_end_page(s);
                 if (s->phase_d_handler)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
-                t4_tx_release(&(s->t4));
+                t4_tx_release(&s->t4);
                 s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
                 send_dcn(s);
                 if (span_log_test(&s->logging, SPAN_LOG_FLOW))
@@ -4119,7 +4161,7 @@ static void process_state_iv_pps_rnr(t30_state_t *s, const uint8_t *msg, int len
                 tx_end_page(s);
                 if (s->phase_d_handler)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
-                t4_tx_release(&(s->t4));
+                t4_tx_release(&s->t4);
                 s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
                 if (span_log_test(&s->logging, SPAN_LOG_FLOW))
                 {
@@ -4133,7 +4175,7 @@ static void process_state_iv_pps_rnr(t30_state_t *s, const uint8_t *msg, int len
                 tx_end_page(s);
                 if (s->phase_d_handler)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
-                t4_tx_release(&(s->t4));
+                t4_tx_release(&s->t4);
                 s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;
                 send_dcn(s);
                 if (span_log_test(&s->logging, SPAN_LOG_FLOW))
@@ -5395,7 +5437,7 @@ SPAN_DECLARE_NONSTD(int) t30_non_ecm_get_bit(void *user_data)
         break;
     case T30_STATE_I:
         /* Transferring real data. */
-        bit = t4_tx_get_bit(&(s->t4));
+        bit = t4_tx_get_bit(&s->t4);
         break;
     case T30_STATE_D_POST_TCF:
     case T30_STATE_II_Q:
@@ -5430,7 +5472,7 @@ SPAN_DECLARE(int) t30_non_ecm_get_byte(void *user_data)
         break;
     case T30_STATE_I:
         /* Transferring real data. */
-        byte = t4_tx_get_byte(&(s->t4));
+        byte = t4_tx_get_byte(&s->t4);
         break;
     case T30_STATE_D_POST_TCF:
     case T30_STATE_II_Q:
@@ -5813,9 +5855,8 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
             }
             break;
         case T30_STATE_B:
-            /* We have now allowed time for the last message to flush
-               through the system, so it is safe to report the end of the
-               call. */
+            /* We have now allowed time for the last message to flush through
+               the system, so it is safe to report the end of the call. */
             if (s->phase_e_handler)
                 s->phase_e_handler(s, s->phase_e_user_data, s->current_status);
             set_state(s, T30_STATE_CALL_FINISHED);
@@ -5989,10 +6030,13 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
 
 SPAN_DECLARE(void) t30_timer_update(t30_state_t *s, int samples)
 {
+    int previous;
+
     if (s->timer_t0_t1 > 0)
     {
         if ((s->timer_t0_t1 -= samples) <= 0)
         {
+            s->timer_t0_t1 = 0;
             if (s->far_end_detected)
                 timer_t1_expired(s);
             else
@@ -6002,13 +6046,21 @@ SPAN_DECLARE(void) t30_timer_update(t30_state_t *s, int samples)
     if (s->timer_t3 > 0)
     {
         if ((s->timer_t3 -= samples) <= 0)
+        {
+            s->timer_t3 = 0;
             timer_t3_expired(s);
+        }
     }
     if (s->timer_t2_t4 > 0)
     {
         if ((s->timer_t2_t4 -= samples) <= 0)
         {
-            switch (s->timer_t2_t4_is)
+            previous = s->timer_t2_t4_is;
+            /* Don't allow the count to be left at a small negative number.
+               It looks cosmetically bad in the logs. */
+            s->timer_t2_t4 = 0;
+            s->timer_t2_t4_is = TIMER_IS_IDLE;
+            switch (previous)
             {
             case TIMER_IS_T1A:
                 timer_t1a_expired(s);
@@ -6037,7 +6089,10 @@ SPAN_DECLARE(void) t30_timer_update(t30_state_t *s, int samples)
     if (s->timer_t5 > 0)
     {
         if ((s->timer_t5 -= samples) <= 0)
+        {
+            s->timer_t5 = 0;
             timer_t5_expired(s);
+        }
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -6199,10 +6254,10 @@ SPAN_DECLARE(int) t30_release(t30_state_t *s)
     switch (s->operation_in_progress)
     {
     case OPERATION_IN_PROGRESS_T4_TX:
-        t4_tx_release(&(s->t4));
+        t4_tx_release(&s->t4);
         break;
     case OPERATION_IN_PROGRESS_T4_RX:
-        t4_rx_release(&(s->t4));
+        t4_rx_release(&s->t4);
         break;
     }
     s->operation_in_progress = OPERATION_IN_PROGRESS_NONE;

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: telephony.h,v 1.18 2009/03/23 14:17:42 steveu Exp $
+ * $Id: telephony.h,v 1.18.4.2 2009/12/21 18:38:06 steveu Exp $
  */
 
 #if !defined(_SPANDSP_TELEPHONY_H_)
@@ -69,8 +69,8 @@ typedef int (span_rx_fillin_handler_t)(void *s, int len);
 /*! \brief A handler for transmit, where the buffer will be filled. */
 typedef int (span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 
-#define ms_to_samples(t)            (((t)*SAMPLE_RATE)/1000)
-#define us_to_samples(t)            (((t)*SAMPLE_RATE)/1000000)
+#define ms_to_samples(t)            ((t)*(SAMPLE_RATE/1000))
+#define us_to_samples(t)            ((t)/(1000000/SAMPLE_RATE))
 
 #if !defined(FALSE)
 #define FALSE 0
