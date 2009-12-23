@@ -1,3 +1,5 @@
+# disable rpath checking
+%define __arch_install_post /usr/lib/rpm/check-buildroot
 %define _prefix   /opt/freeswitch
 %define prefix    %{_prefix}
 %define sysconfdir	/opt/freeswitch/conf
