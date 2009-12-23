@@ -338,6 +338,30 @@
       <prompt phrase="Your call is being transferred." filename="ivr-call_being_transferred.wav" attr="Needs_to_be_recorded!"/>
       <prompt phrase="Please enjoy the music while your call is being transferred." filename="ivr-enjoy_music_while_transfer.wav" attr="Needs_to_be_recorded!"/>
       <prompt phrase="You have a call from..." filename="ivr-call_from.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="This menu has no items. Please contact the administrator." filename="ivr-no_menu_items.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="For a directory, press..." filename="ivr-for_directory_press.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Using your telephone keypad..." filename="ivr-using_telephone_keypad.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Enter the first few letters of the person's last name." filename="ivr-enter_letters_last_name.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Enter the first few letters of the person's first name." filename="ivr-enter_letters_first_name.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Enter the first few letters of the person's first or last name." filename="ivr-enter_letters_first_or_last_name.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="If this is correct, press..." filename="ivr-if_correct_press.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="If not, press..." filename="ivr-if_not_press.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="When you are finished, press the pound or hash key." filename="ivr-finished_pound_hash_key.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Do not disturb now activated." filename="ivr-dnd_activated.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Do not disturb has been cancelled." filename="ivr-dnd_cancelled.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="" filename="ivr-.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Welcome to your new voicemail. To listen to a tutorial and setup your voice mail box, press 1. To skip, press 2." filename="vm-tutorial_yes_no.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
+
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
