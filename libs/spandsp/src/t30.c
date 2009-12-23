@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.c,v 1.305.4.3 2009/12/19 14:18:12 steveu Exp $
+ * $Id: t30.c,v 1.305.4.4 2009/12/23 14:23:49 steveu Exp $
  */
 
 /*! \file */
@@ -83,9 +83,6 @@
     is not specified in T.30. However, if you don't apply some limit a messed up FAX
     terminal could keep you retrying all day. Its a backstop protection. */
 #define MAX_RESPONSE_TRIES  6
-
-/*! Conversion between milliseconds and audio samples. */
-#define ms_to_samples(t)    (((t)*SAMPLE_RATE)/1000)
 
 /* T.30 defines the following call phases:
    Phase A: Call set-up.

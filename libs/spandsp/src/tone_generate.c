@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_generate.c,v 1.53 2009/06/02 16:03:56 steveu Exp $
+ * $Id: tone_generate.c,v 1.53.4.1 2009/12/23 14:23:49 steveu Exp $
  */
 
 /*! \file */
@@ -58,8 +58,6 @@
 /* C99 systems may not define M_PI */
 #define M_PI 3.14159265358979323846264338327
 #endif
-
-#define ms_to_samples(t)            (((t)*SAMPLE_RATE)/1000)
 
 SPAN_DECLARE(void) make_tone_gen_descriptor(tone_gen_descriptor_t *s,
                                             int f1,

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: plc.c,v 1.27 2009/02/10 13:06:46 steveu Exp $
+ * $Id: plc.c,v 1.27.4.1 2009/12/23 14:23:49 steveu Exp $
  */
 
 /*! \file */
@@ -51,8 +51,6 @@
 
 /* We do a straight line fade to zero volume in 50ms when we are filling in for missing data. */
 #define ATTENUATION_INCREMENT       0.0025f     /* Attenuation per sample */
-
-#define ms_to_samples(t)            (((t)*SAMPLE_RATE)/1000)
 
 static void save_history(plc_state_t *s, int16_t *buf, int len)
 {

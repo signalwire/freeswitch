@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter.c,v 1.42 2009/10/09 14:53:56 steveu Exp $
+ * $Id: at_interpreter.c,v 1.42.4.1 2009/12/23 14:18:32 steveu Exp $
  */
 
 /*! \file */
@@ -63,8 +63,6 @@
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/at_interpreter.h"
-
-#define ms_to_samples(t)        (((t)*SAMPLE_RATE)/1000)
 
 #define MANUFACTURER            "www.soft-switch.org"
 #define SERIAL_NUMBER           "42"

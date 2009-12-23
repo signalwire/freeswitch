@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v8.c,v 1.42 2009/11/04 16:10:14 steveu Exp $
+ * $Id: v8.c,v 1.42.4.1 2009/12/23 14:23:49 steveu Exp $
  */
  
 /*! \file */
@@ -62,8 +62,6 @@
 #include "spandsp/private/fsk.h"
 #include "spandsp/private/modem_connect_tones.h"
 #include "spandsp/private/v8.h"
-
-#define ms_to_samples(t)    (((t)*SAMPLE_RATE)/1000)
 
 enum
 {
