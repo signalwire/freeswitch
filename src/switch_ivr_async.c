@@ -1313,7 +1313,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 			if (mutex) switch_mutex_unlock(mutex);
 
 			if (err) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Syntax error parsing preprossor commands\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Syntax error parsing preprocessor commands\n");
 			}
 
 		} else {
