@@ -278,15 +278,32 @@ SWITCH_STANDARD_API(group_call_function)
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "group_call");
 		
 		if (switch_xml_locate_group(group_name, domain, &xml, &x_domain, &x_group, params) == SWITCH_STATUS_SUCCESS) {
-			switch_xml_t x_user, x_users, x_param, x_params;
+			switch_xml_t x_user, x_users, x_param, x_params, my_x_user;
 			
 			if ((x_users = switch_xml_child(x_group, "users"))) {
 				ok++;
 				
 				for(x_user = switch_xml_child(x_users, "user"); x_user; x_user = x_user->next) {
 					const char *id = switch_xml_attr_soft(x_user, "id");
+					const char *x_user_type = switch_xml_attr_soft(x_user, "type");
 					const char *dest = NULL;
 					char *d_dest = NULL;
+					switch_xml_t xml_for_pointer, x_domain_for_pointer, x_group_for_pointer, x_user_for_pointer;
+					static switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+
+					my_x_user = x_user;
+
+					if (!strcmp(x_user_type,"pointer")) {
+						if (switch_xml_locate_user("id", id, domain, NULL,
+												   &xml_for_pointer, &x_domain_for_pointer,
+												   &x_user_for_pointer, &x_group_for_pointer,
+												   params) != SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", id, domain);
+							cause = SWITCH_CAUSE_SUBSCRIBER_ABSENT;
+							goto done_x_user;
+						}
+						my_x_user = x_user_for_pointer;
+					}
 					
 					if ((x_params = switch_xml_child(x_domain, "params"))) {
 						for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
@@ -320,7 +337,7 @@ SWITCH_STANDARD_API(group_call_function)
 						}
 					}
 
-					if ((x_params = switch_xml_child(x_user, "params"))) {
+					if ((x_params = switch_xml_child(my_x_user, "params"))) {
 						for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 							const char *var = switch_xml_attr(x_param, "name");
 							const char *val = switch_xml_attr(x_param, "value");
@@ -362,6 +379,11 @@ SWITCH_STANDARD_API(group_call_function)
 							free(d_dest);
 						}
 					}
+
+  				done_x_user:
+
+        				switch_xml_free(xml_for_pointer);
+					xml_for_pointer = NULL;
 				}
 
 				if (ok && dstream.data) {
