@@ -1254,13 +1254,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 						speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_AGC, &tr);
 						speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_AGC_LEVEL, &l);
 
-					} else if (!strcasecmp(var, "noise_supress")) {
+					} else if (!strcasecmp(var, "noise_suppress")) {
 						int db = atoi(val);
 						if (db < 0) {
 							r = speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_NOISE_SUPPRESS, &db);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting NOISE_SUPRESS on %c to %d [%d]\n", rw, db, r);
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Syntax error noise_supress should be in -db\n");
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Syntax error noise_suppress should be in -db\n");
 						}
 					} else if (!strcasecmp(var, "echo_cancel")) {
 						int tail = 1024;
@@ -1296,13 +1296,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 						}
 
 
-					} else if (!strcasecmp(var, "echo_supress")) {
+					} else if (!strcasecmp(var, "echo_suppress")) {
 						int db = atoi(val);
 						if (db < 0) {
 							speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_ECHO_SUPPRESS, &db);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting ECHO_SUPRESS on %c to %d [%d]\n", rw, db, r);
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Syntax error echo_supress should be in -db\n");
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Syntax error echo_suppress should be in -db\n");
 						}
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Warning unknown parameter [%s] \n", var);
