@@ -289,7 +289,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 						}
 					}
 					if(!found){
-						ERRORA("why we do not have a chats slot free? we have more than %d chats in parallel?\n", SKYPIAX_P_LOG, MAX_CHATS);
+						DEBUGA_SKYPE("why we do not have a chats slot free? we have more than %d chats in parallel?\n", SKYPIAX_P_LOG, MAX_CHATS);
 					} 
 
 					DEBUGA_SKYPE("CHAT %s is in position %d in the chats array, chatname=%s, dialog_partner=%s\n", SKYPIAX_P_LOG, id, i, tech_pvt->chats[i].chatname, tech_pvt->chats[i].dialog_partner);
@@ -356,7 +356,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 						}
 					}
 					if(!found){
-						ERRORA("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
+						DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
 					} 
 				}
 				if (!strcasecmp(prop, "FROM_HANDLE")) {
@@ -370,7 +370,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 						}
 					}
 					if(!found){
-						ERRORA("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
+						DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
 					} 
 
 				}
@@ -385,7 +385,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 						}
 					}
 					if(!found){
-						ERRORA("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
+						DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
 					} 
 
 				}
@@ -400,7 +400,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 						}
 					}
 					if(!found){
-						ERRORA("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
+						DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
 					}else {
 						DEBUGA_SKYPE("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s, chatname=%s, from_handle=%s, from_dispname=%s, body=%s\n", SKYPIAX_P_LOG, id, i, tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id, tech_pvt->chatmessages[i].chatname, tech_pvt->chatmessages[i].from_handle, tech_pvt->chatmessages[i].from_dispname, tech_pvt->chatmessages[i].body);
 						if(strcmp(tech_pvt->chatmessages[i].from_handle, tech_pvt->skype_user)){ //if the message was not sent by myself
