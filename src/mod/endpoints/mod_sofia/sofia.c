@@ -1492,7 +1492,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			const char *sipip, *format;
 			switch_uuid_t uuid;
 			uint32_t ping_freq = 0, extension_in_contact = 0, distinct_to = 0;
-			int ping_max = 0, ping_min = 0;
+			int ping_max = 1, ping_min = -1;
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
 				*username = NULL,
@@ -1522,8 +1522,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->next = NULL;
 			gateway->ping = 0;
 			gateway->ping_freq = 0;
-			gateway->ping_max = 1;
-			gateway->ping_min = -1;
+			gateway->ping_max = 0;
+			gateway->ping_min = 0;
 			gateway->ping_count = 0;
 			
 			if ((x_params = switch_xml_child(gateway_tag, "variables"))) {
