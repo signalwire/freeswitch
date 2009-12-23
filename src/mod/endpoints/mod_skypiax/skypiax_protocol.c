@@ -328,7 +328,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 						}
 					}
 					if(!found){
-						ERRORA("why we do not have a chatmessages slot free? we have more than %d chatmessages in parallel?\n", SKYPIAX_P_LOG, MAX_CHATMESSAGES);
+						DEBUGA_SKYPE("why we do not have a chatmessages slot free? we have more than %d chatmessages in parallel?\n", SKYPIAX_P_LOG, MAX_CHATMESSAGES);
 					} else {
 						DEBUGA_SKYPE("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s\n", SKYPIAX_P_LOG, id, i, tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id);
 						sprintf(msg_to_skype, "GET CHATMESSAGE %s CHATNAME", id);
