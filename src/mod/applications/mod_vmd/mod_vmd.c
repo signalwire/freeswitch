@@ -314,7 +314,7 @@ static void find_beep(vmd_session_info_t * vmd_info, switch_frame_t * frame)
 
         if (c < (POINTS - MAX_CHIRP)) {
             vmd_info->state = BEEP_NOT_DETECTED;
-            if (vmd_info->timestamp < vmd_info->minTime) {
+            if (vmd_info->timestamp < (switch_size_t)vmd_info->minTime) {
                 break;
             }
 

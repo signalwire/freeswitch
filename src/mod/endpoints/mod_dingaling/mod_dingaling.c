@@ -2309,7 +2309,7 @@ static switch_bool_t match_profile(mdl_profile_t *profile, mdl_profile_t *new_pr
 	 (new_profile->context && profile->context && !strcasecmp(new_profile->context, profile->context))) &&
 	(new_profile->user_flags == profile->user_flags) && (new_profile->acl_count == profile->acl_count)
 	) {
-		int i;
+		uint32_t i;
 		if (switch_odbc_available()) {
 			if (!(
 			((!new_profile->odbc_dsn && !profile->odbc_dsn) || 

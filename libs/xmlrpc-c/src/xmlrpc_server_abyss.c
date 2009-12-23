@@ -891,7 +891,7 @@ createServerBare(xmlrpc_env *                      const envP,
 -----------------------------------------------------------------------------*/
     bool socketBound;
     unsigned int portNumber = 0;
-    TOsSocket socketFd = NULL;
+    TOsSocket socketFd = 0;
     const char * logFileName;
 
     extractServerCreateParms(envP, parmsP, parmSize,

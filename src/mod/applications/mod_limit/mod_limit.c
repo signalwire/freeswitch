@@ -181,7 +181,7 @@ static switch_xml_config_item_t config_settings[] = {
 
 static switch_status_t do_config()
 {
-	switch_cache_db_handle_t *dbh;
+	switch_cache_db_handle_t *dbh = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *sql = NULL;
 	
