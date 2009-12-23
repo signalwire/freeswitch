@@ -1258,7 +1258,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 						int db = atoi(val);
 						if (db < 0) {
 							r = speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_NOISE_SUPPRESS, &db);
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting NOISE_SUPRESS on %c to %d [%d]\n", rw, db, r);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting NOISE_SUPPRESS on %c to %d [%d]\n", rw, db, r);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Syntax error noise_suppress should be in -db\n");
 						}
@@ -1300,7 +1300,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 						int db = atoi(val);
 						if (db < 0) {
 							speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_ECHO_SUPPRESS, &db);
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting ECHO_SUPRESS on %c to %d [%d]\n", rw, db, r);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting ECHO_SUPPRESS on %c to %d [%d]\n", rw, db, r);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Syntax error echo_suppress should be in -db\n");
 						}
