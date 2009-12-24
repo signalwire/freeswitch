@@ -211,7 +211,7 @@ char *generate_pai_str(switch_core_session_t *session)
 		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, tech_pvt->profile->sipip);
 	}
 	
-	header = (tech_pvt->cid_type == CID_TYPE_RPID) ? "Remote-Party-ID" : "P-Asserted-Identity";
+	header = (tech_pvt->cid_type == CID_TYPE_RPID && !switch_stristr("aastra", ua)) ? "Remote-Party-ID" : "P-Asserted-Identity";
 
 	if (!zstr(callee_name) && !zstr(callee_number)) {
 		if (switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote)) {
@@ -394,6 +394,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		}
 
 		if (switch_channel_test_flag(channel, CF_ANSWERED) || sofia_test_flag(tech_pvt, TFLAG_ANS)) {
+			const char *call_info = switch_channel_get_variable(channel, "presence_call_info");
 			if (!tech_pvt->got_bye) {
 				switch_channel_set_variable(channel, "sip_hangup_disposition", "send_bye");
 			}
@@ -401,6 +402,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				nua_bye(tech_pvt->nh, 
 						TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
+						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 						TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 						TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
 						TAG_END());
@@ -472,6 +474,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	const char *b_sdp = NULL;
 	int is_proxy = 0;
 	char *sticky = NULL;
+	const char *call_info = switch_channel_get_variable(channel, "presence_call_info");
 
 	if (sofia_test_flag(tech_pvt, TFLAG_ANS) || switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -508,6 +511,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 					nua_respond(tech_pvt->nh, SIP_200_OK,
 								SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+								TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 								SOATAG_REUSE_REJECTED(1),
 								SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), 
 								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
@@ -519,6 +523,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 								NUTAG_MEDIA_ENABLE(0),
 								SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+								TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 								SIPTAG_CONTENT_TYPE_STR("application/sdp"),
 								SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),								
 								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
@@ -1448,6 +1453,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 									   TAG_END());
+						} else if ((ua && (switch_stristr("aastra", ua)))) {
+							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->sipip);
+							
+							sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
+							nua_update(tech_pvt->nh,
+									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
+									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+									   TAG_END());
 						}
 
 						tech_pvt->last_sent_callee_id_name = switch_core_session_strdup(tech_pvt->session, name);
@@ -1683,9 +1696,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (!switch_channel_test_flag(channel, CF_RING_READY) && !sofia_test_flag(tech_pvt, TFLAG_BYE) &&
 			!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
 			char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+			const char *call_info = switch_channel_get_variable(channel, "presence_call_info");
+
 			nua_respond(tech_pvt->nh, SIP_180_RINGING,
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_HEADER_STR(generate_pai_str(session)), 
+						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 						TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
 						TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
 							   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
@@ -1701,6 +1717,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			char *sticky = NULL;
 			const char *val = NULL;
+			const char *call_info = switch_channel_get_variable(channel, "presence_call_info");
 
 			if (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC)) {
 				sofia_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
@@ -1774,6 +1791,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+					
 					if (sofia_use_soa(tech_pvt)) {
 						nua_respond(tech_pvt->nh,
 									SIP_183_SESSION_PROGRESS,
@@ -1785,6 +1803,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									SOATAG_ORDERED_USER(1),
 									SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
 									SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), 
+									TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 									TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
 									TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
 										   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),
@@ -1799,6 +1818,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 									SIPTAG_CONTENT_TYPE_STR("application/sdp"),
 									SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),									
+									TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 									TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
 									TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote), 
 										   SIPTAG_HEADER_STR("X-FS-Support: "FREESWITCH_SUPPORT)),

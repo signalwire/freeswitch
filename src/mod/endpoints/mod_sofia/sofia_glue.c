@@ -3806,7 +3806,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
         "   hostname        VARCHAR(255),\n"
         "   contact         VARCHAR(255),\n"
         "   presence_id     VARCHAR(255),\n"
-        "   presence_data   VARCHAR(255)\n"
+        "   presence_data   VARCHAR(255),\n"
+        "   call_info  VARCHAR(255)\n"
 		");\n";
 
 	char sub_sql[] =
@@ -3880,7 +3881,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			"create index sr_sip_realm on sip_registrations (sip_realm)",
 			"create index ss_call_id on sip_subscriptions (call_id)",
 			"create index ss_hostname on sip_subscriptions (hostname)",
-			"create index ss_hostname on sip_subscriptions (network_ip)",
+			"create index ss_network_ip on sip_subscriptions (network_ip)",
 			"create index ss_sip_user on sip_subscriptions (sip_user)",
 			"create index ss_sip_host on sip_subscriptions (sip_host)",
 			"create index ss_presence_hosts on sip_subscriptions (presence_hosts)",
@@ -3890,11 +3891,13 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			"create index ss_sub_to_host on sip_subscriptions (sub_to_host)",
 			"create index sd_uuid on sip_dialogs (uuid)",
 			"create index sd_hostname on sip_dialogs (hostname)",
+			"create index sd_presence_data on sip_dialogs (presence_data)",
+			"create index sd_call_info on sip_dialogs (call_info)",
 			"create index sp_hostname on sip_presence (hostname)",
 			"create index sa_nonce on sip_authentication (nonce)",
 			"create index sa_hostname on sip_authentication (hostname)",
 			"create index ssa_hostname on sip_shared_appearance_subscriptions (hostname)",
-			"create index ssa_hostname on sip_shared_appearance_subscriptions (network_ip)",
+			"create index ssa_network_ip on sip_shared_appearance_subscriptions (network_ip)",
 			"create index ssa_subscriber on sip_shared_appearance_subscriptions (subscriber)",
 			"create index ssa_profile_name on sip_shared_appearance_subscriptions (profile_name)",
 			"create index ssa_aor on sip_shared_appearance_subscriptions (aor)",
@@ -3959,14 +3962,14 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 
 		free(test_sql);
-		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and contact like '%%'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and call_info like '%%'", mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_dialogs", NULL);
 			switch_odbc_handle_exec(odbc_dbh, dialog_sql, NULL);
 		}
 
-		test_sql = switch_mprintf("delete from sip_presence where hostname='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' ", mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_presence", NULL);
@@ -4026,11 +4029,11 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
 		free(test_sql);
 
-		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and contact like '%%'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and call_info like '%%'", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_dialogs", dialog_sql);
 		free(test_sql);
 
-		test_sql = switch_mprintf("delete from sip_presence where hostname='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' ", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_presence", pres_sql);
 		free(test_sql);
 
@@ -4061,7 +4064,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 							NULL, NULL, NULL);
 		switch_core_db_exec(db, "create index if not exists ssd_hostname on sip_shared_appearance_dialogs (hostname)", 
 							NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ssd_hostname on sip_shared_appearance_dialogs (network_ip)", 
+		switch_core_db_exec(db, "create index if not exists ssd_network_ip on sip_shared_appearance_dialogs (network_ip)", 
 							NULL, NULL, NULL);
 		switch_core_db_exec(db, "create index if not exists ssd_contact_str on sip_shared_appearance_dialogs (contact_str)",  
 							NULL, NULL, NULL);
@@ -4089,7 +4092,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 		switch_core_db_exec(db, "create index if not exists ss_call_id on sip_subscriptions (call_id)", NULL, NULL, NULL);
 		switch_core_db_exec(db, "create index if not exists ss_hostname on sip_subscriptions (hostname)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ss_hostname on sip_subscriptions (network_ip)", NULL, NULL, NULL);
+		switch_core_db_exec(db, "create index if not exists ss_network_ip on sip_subscriptions (network_ip)", NULL, NULL, NULL);
 		switch_core_db_exec(db, "create index if not exists ss_sip_user on sip_subscriptions (sip_user)", NULL, NULL, NULL);
 		switch_core_db_exec(db, "create index if not exists ss_sip_host on sip_subscriptions (sip_host)", NULL, NULL, NULL);
 		switch_core_db_exec(db, "create index if not exists ss_presence_hosts on sip_subscriptions (presence_hosts)", NULL, NULL, NULL);
@@ -4100,9 +4103,10 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 		switch_core_db_exec(db, "create index if not exists sd_uuid on sip_dialogs (uuid)", NULL, NULL, NULL);
 		switch_core_db_exec(db, "create index if not exists sd_hostname on sip_dialogs (hostname)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sd_hostname on sip_dialogs (contact)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sd_hostname on sip_dialogs (presence_id)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sd_hostname on sip_dialogs (presence_data)", NULL, NULL, NULL);
+		switch_core_db_exec(db, "create index if not exists sd_contact on sip_dialogs (contact)", NULL, NULL, NULL);
+		switch_core_db_exec(db, "create index if not exists sd_presence_id on sip_dialogs (presence_id)", NULL, NULL, NULL);
+		switch_core_db_exec(db, "create index if not exists sd_presence_data on sip_dialogs (presence_data)", NULL, NULL, NULL);
+		switch_core_db_exec(db, "create index if not exists sd_call_info on sip_dialogs (call_info)", NULL, NULL, NULL);
 
 		switch_core_db_exec(db, "create index if not exists sp_hostname on sip_presence (hostname)", NULL, NULL, NULL);
 
@@ -4500,12 +4504,13 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 
 	nua_notify(nh,
-			NUTAG_NEWSUB(1),
-			TAG_IF(dst->route_uri, NUTAG_PROXY(route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
-			TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
-			SIPTAG_EVENT_STR(event),
-			SIPTAG_CONTENT_TYPE_STR(contenttype),
-			SIPTAG_PAYLOAD_STR(body), TAG_END());
+			   NUTAG_NEWSUB(1),
+			   TAG_IF(dst->route_uri, NUTAG_PROXY(route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
+			   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
+			   TAG_IF(event, SIPTAG_EVENT_STR(event)),
+			   TAG_IF(contenttype, SIPTAG_CONTENT_TYPE_STR(contenttype)),
+			   TAG_IF(body, SIPTAG_PAYLOAD_STR(body)), 
+			   TAG_END());
 
 	switch_safe_free(contact);
 	switch_safe_free(route_uri);

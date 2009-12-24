@@ -41,6 +41,12 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, char **columnNames);
 static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char **columnNames);
 static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char **columnNames);
+static int broadsoft_sla_callback(void *pArg, int argc, char **argv, char **columnNames);
+
+struct resub_helper {
+	sofia_profile_t *profile;
+	switch_event_t *event;
+};
 
 struct presence_helper {
 	sofia_profile_t *profile;
@@ -201,16 +207,18 @@ void sofia_presence_cancel(void)
 
 void sofia_presence_establish_presence(sofia_profile_t *profile)
 {
-
+	struct resub_helper h = { 0 };
+	h.profile = profile;
+	
 	if (sofia_glue_execute_sql_callback(profile, profile->ireg_mutex,
 										"select sip_user,sip_host,'Registered','unknown','' from sip_registrations",
-										sofia_presence_resub_callback, profile) != SWITCH_TRUE) {
+										sofia_presence_resub_callback, &h) != SWITCH_TRUE) {
 		return;
 	}
 
 	if (sofia_glue_execute_sql_callback(profile, profile->ireg_mutex,
 										"select sub_to_user,sub_to_host,'Online','unknown',proto from sip_subscriptions "
-										"where proto='ext' or proto='user' or proto='conf'", sofia_presence_resub_callback, profile) != SWITCH_TRUE) {
+										"where proto='ext' or proto='user' or proto='conf'", sofia_presence_resub_callback, &h) != SWITCH_TRUE) {
 		return;
 	}
 }
@@ -380,8 +388,13 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 	char *status = switch_event_get_header(event, "status");
 	char *event_type = switch_event_get_header(event, "event_type");
 	char *alt_event_type = switch_event_get_header(event, "alt_event_type");
+	//char *event_subtype = switch_event_get_header(event, "event_subtype");
 	char *sql = NULL;
 	char *euser = NULL, *user = NULL, *host = NULL;
+	char *call_info = switch_event_get_header(event, "presence-call-info");
+	char *call_info_state = switch_event_get_header(event, "presence-call-info-state");
+	struct resub_helper h = { 0 };
+
 
 	if (!mod_sofia_globals.running) {
 		return;
@@ -534,7 +547,8 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s DUMP PRESENCE_PROBE_SQL:\n%s\n", profile->name, sql);
 				}
 
-				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_resub_callback, profile);
+				h.profile = profile;
+				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_resub_callback, &h);
 				if (mod_sofia_globals.debug_presence > 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s END_PRESENCE_PROBE_SQL\n\n", profile->name);
 				}
@@ -573,6 +587,53 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			}
 			continue;
 		}
+
+		if (call_info) {
+			sql = switch_mprintf("select sip_subscriptions.call_id,sip_subscriptions.expires,'%q',3, sip_dialogs.state,sip_dialogs.call_info, "
+								 "sip_subscriptions.sub_to_host,'%q',event "
+								 "from sip_subscriptions left join sip_dialogs on sip_subscriptions.sub_to_user=sip_dialogs.sip_from_user "
+								 "and sip_subscriptions.sub_to_host=sip_dialogs.sip_from_host "
+								 "where sip_subscriptions.hostname='%q' "
+								 "and sub_to_user='%q' and sub_to_host='%q' "
+								 "and (event='call-info' or event='line-seize') and sip_dialogs.call_info='%q'",
+								 call_info,
+								 call_info_state,
+								 mod_sofia_globals.hostname,
+								 euser,
+								 host,
+								 call_info
+								 );
+			
+			if (mod_sofia_globals.debug_presence > 1) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PRES SQL %s\n", sql);
+			}
+			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, broadsoft_sla_callback, profile);
+			switch_safe_free(sql);
+
+
+
+			sql = switch_mprintf("select sip_subscriptions.call_id,sip_subscriptions.expires,'',3, sip_dialogs.state,sip_dialogs.call_info, "
+								 "sip_subscriptions.sub_to_host,'',event "
+								 "from sip_subscriptions inner join sip_dialogs on sip_subscriptions.sub_to_user=sip_dialogs.sip_from_user "
+								 "and sip_subscriptions.sub_to_host=sip_dialogs.sip_from_host "
+								 "where sip_subscriptions.hostname='%q' "
+								 "and sub_to_user='%q' and sub_to_host='%q' "
+								 "and event='call-info' and sip_dialogs.call_info!='%q'",
+								 mod_sofia_globals.hostname,
+								 euser,
+								 host,
+								 call_info
+								 );
+			
+			if (mod_sofia_globals.debug_presence > 1) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"PRES SQL %s\n", sql);
+			}
+
+			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, broadsoft_sla_callback, profile);
+			switch_safe_free(sql);
+
+		}
+
 
 		if ((sql = switch_mprintf(
 							 
@@ -815,7 +876,8 @@ static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, ch
 
 static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
-	sofia_profile_t *profile = (sofia_profile_t *) pArg;
+	struct resub_helper *h = (struct resub_helper *) pArg;
+	sofia_profile_t *profile = h->profile;
 	char *user = argv[0];
 	char *host = argv[1];
 	char *status = argv[2];
@@ -828,6 +890,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 	char *direction = NULL;
 	switch_event_t *event;
 	char to_buf[128] = "";
+	switch_event_header_t *hp;
 
 	if (argc > 5) {
 		uuid = switch_str_nil(argv[5]);
@@ -877,6 +940,15 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "astate", state);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", direction);
 		}
+
+		if (h->event) {
+			for (hp = h->event->headers; hp; hp = hp->next) {
+				if (!strncasecmp(hp->name, "fwd-", 4)) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, hp->name + 4, hp->value);
+				}
+			}
+		}
+
 
 		switch_event_fire(&event);
 	}
@@ -1391,6 +1463,114 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	return 0;
 }
 
+static int broadsoft_sla_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	char *call_id = argv[0];
+	char *expires = argv[1];
+	char *header = argv[2];
+	char *onoff = argv[3];
+	char *state = NULL;
+	char *call_info = NULL;
+	char *call_info_state = NULL;
+	char *event = NULL;
+	char *host = NULL;
+	sofia_profile_t *profile = (sofia_profile_t *) pArg;
+	nua_handle_t *nh;
+	char sstr[128] = "", expires_str[128] = "";	
+	time_t exptime = 3600;
+	int on = atoi(onoff);
+	char buf[512] = "";
+	const char *r_state = "idle";
+	int i;
+
+	if (mod_sofia_globals.debug_presence > 1) {
+		for(i = 0; i < argc; i++) {
+			printf("COL [%s]=[%s]\n", columnNames[i], argv[i]);
+		}
+		printf("\non=%d\n\n", on);
+	}
+
+	if (on >= 2 && argc >= 7) {
+		state = argv[4];
+		call_info = argv[5];
+		host = argv[6];
+		call_info_state = argv[7];
+		if (argc > 8) event = argv[8];
+	} else {
+		call_info = header;
+	}
+	
+	if (zstr(event)) {
+		event = "call-info";
+	}
+
+	if (expires) {
+		long tmp = atol(expires);
+		exptime = tmp - switch_epoch_time_now(NULL);
+	}
+
+	if (exptime > 0) {
+		switch_snprintf(sstr, sizeof(sstr), "active;expires=%u", (unsigned)exptime);
+	} else {
+		switch_snprintf(sstr, sizeof(sstr), "terminated;reason=noresource");
+	}
+
+	switch_snprintf(expires_str, sizeof(expires_str), "%u", (unsigned)exptime);
+
+	if (zstr(call_info)) {
+		call_info = header;
+	}
+
+	if (on == 3) {
+		if (!zstr(call_info_state)) {
+			r_state = call_info_state;
+		} else if (!zstr(argv[4])) {
+			r_state = "active";
+		} else {
+			r_state = "idle";
+		}
+	} else if (on) {
+		r_state = "seized";
+	}
+	
+
+	if (zstr(call_info)) {
+		switch_snprintf(buf, sizeof(buf), "<sip:%s>;apperance-index=*", host);
+		call_info = buf;
+	}
+	
+	if (mod_sofia_globals.debug_presence > 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[%s][%s][%s][%s]\n", event, call_info, call_id, r_state);
+	}
+
+	if (!strcasecmp(event, "line-seize") && (nh = nua_handle_by_call_id(profile->nua, call_id))) {
+		if (strcasecmp(r_state, "seized")) {
+			char *new_header = switch_mprintf("%s;appearance-state=%s", call_info, r_state);
+			nua_notify(nh,
+					   SIPTAG_EXPIRES_STR("0"),
+					   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
+					   SIPTAG_EVENT_STR("line-seize"), SIPTAG_CALL_INFO_STR(new_header), TAG_END());
+			switch_safe_free(new_header);
+
+		}
+			return 0;
+	}
+
+	if (profile && call_id && call_info && (nh = nua_handle_by_call_id(profile->nua, call_id))) {
+		char *new_header = switch_mprintf("%s;appearance-state=%s", call_info, r_state);
+		
+		nua_notify(nh,
+				   TAG_IF(*expires_str, SIPTAG_EXPIRES_STR(expires_str)),
+				   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
+				   SIPTAG_EVENT_STR("call-info"), SIPTAG_CALL_INFO_STR(new_header), TAG_END());
+
+		switch_safe_free(new_header);
+	}
+	
+
+	return 0;
+}
+
 void sofia_presence_handle_sip_i_subscribe(int status,
 										   char const *phrase,
 										   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
@@ -1456,7 +1636,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 					display = "\"user\"";
 				}
 			}
-		} else {
+		} else { 
 			display = "\"user\"";
 		}
 
@@ -1494,6 +1674,13 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 		}
 
+		if (is_nat && profile->local_network && switch_check_network_list_ip(network_ip, profile->local_network)) {
+			if (profile->debug) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s is on local network, not seting NAT mode.\n", network_ip);
+			}
+			is_nat = NULL;
+		}
+
 		if (is_nat) {
 			contact_host = network_ip;
 			switch_snprintf(new_port, sizeof(new_port), ":%d", network_port);
@@ -1514,7 +1701,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 										ipv6 ? "]" : "",
 										new_port,
 										contact->m_url->url_params,
-										is_nat ? ";fs_nat" : "");
+										is_nat ? ";fs_nat=yes" : "");
 		} else {
 			contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s>%s",
 										display,
@@ -1523,7 +1710,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 										contact_host,
 										ipv6 ? "]" : "",
 										new_port,
-										is_nat ?  ";fs_nat" : "");
+										is_nat ?  ";fs_nat=yes" : "");
 		}
 
 
@@ -1743,8 +1930,134 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 						TAG_IF(sticky, NUTAG_PROXY(sticky)), TAG_END());
 
 			switch_safe_free(sticky);
+			
+		}
+
+
+
+
+		
+		if (sub_state == nua_substate_terminated) {
+			char *full_call_info = NULL;
+
+			if (sip->sip_call_info) {
+				full_call_info = sip_header_as_string(profile->home, (void *) sip->sip_call_info);
+			}
+
+			nua_notify(nh,
+					   SIPTAG_EXPIRES_STR("0"),
+					   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
+					   TAG_IF(full_call_info, SIPTAG_CALL_INFO_STR(full_call_info)),
+					   TAG_END());
+
+			
+			if (!strcasecmp(event, "line-seize")) {
+				if (full_call_info) {
+					sql = switch_mprintf("select call_id,expires,'%q',0 from sip_subscriptions where hostname='%q' "
+										 "and sub_to_user='%q' and sub_to_host='%q' "
+										 "and event='call-info' and contact != '%q'",
+										 full_call_info,
+										 mod_sofia_globals.hostname,
+										 to_user,
+										 to_host,
+										 contact_str
+										 );
+					if (mod_sofia_globals.debug_presence > 1) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "UNSEIZE SQL %s\n", sql);
+					}
+
+					sofia_glue_execute_sql_callback(profile, NULL, sql, broadsoft_sla_callback, profile);
+					switch_safe_free(sql);
+				}
+			}
+				
+			if (full_call_info) {
+				su_free(profile->home, full_call_info);
+			}
+				
+
+
+		} else {
+			if (!strcasecmp(event, "line-seize")) {
+				char *full_call_info = NULL;
+
+				if (sip->sip_call_info) {
+					full_call_info = sip_header_as_string(profile->home, (void *) sip->sip_call_info);
+				}
+				
+
+				nua_notify(nh,
+						   SIPTAG_EXPIRES_STR(exp_delta_str),
+						   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
+						   SIPTAG_EVENT_STR("line-seize"), SIPTAG_CALL_INFO_STR(full_call_info), TAG_END());
+
+				if (full_call_info) {
+					sql = switch_mprintf("select sip_subscriptions.call_id,sip_subscriptions.expires,'%q',4, sip_dialogs.state,sip_dialogs.call_info, "
+										 "sip_subscriptions.sub_to_host,'','call-info' "
+										 "from sip_subscriptions left join sip_dialogs on sip_subscriptions.sub_to_user=sip_dialogs.sip_from_user "
+										 "and sip_subscriptions.sub_to_host=sip_dialogs.sip_from_host "
+										 "where sip_subscriptions.hostname='%q' "
+										 "and sub_to_user='%q' and sub_to_host='%q' "
+										 "and event='call-info'and sip_subscriptions.contact != '%q'",
+										 full_call_info,
+										 mod_sofia_globals.hostname,
+										 to_user,
+										 to_host,
+										 contact_str
+										 );
+			
+					if (mod_sofia_globals.debug_presence > 1) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SEIZE SQL %s\n", sql);
+					}
+
+					sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, broadsoft_sla_callback, profile);
+					switch_safe_free(sql);
+					su_free(profile->home, full_call_info);
+				}
+			}
+
+				
+
+			if (!strcasecmp(event, "call-info")) {
+
+#if 0
+				int x = 0;
+				for (x = 1; x < 5; x++) {
+					char tmp[128] = "";
+					
+					switch_snprintf(tmp, sizeof(tmp), "<sip:%s>;apperance-index=%d;appearance-state=idle", to_host, x);
+					nua_notify(nh,
+							   SIPTAG_EXPIRES_STR(exp_delta_str),
+							   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
+							   SIPTAG_EVENT_STR("call-info"), SIPTAG_CALL_INFO_STR(tmp), TAG_END());
+				}
+#endif
+
+					
+
+				sql = switch_mprintf("select sip_subscriptions.call_id,sip_subscriptions.expires,'',2, sip_dialogs.state,sip_dialogs.call_info, "
+									 "sip_subscriptions.sub_to_host "
+									 "from sip_subscriptions inner join sip_dialogs on sip_subscriptions.sub_to_user=sip_dialogs.sip_from_user "
+									 "and sip_subscriptions.sub_to_host=sip_dialogs.sip_from_host "
+									 "where sip_subscriptions.hostname='%q' "
+									 "and sub_to_user='%q' and sub_to_host='%q' "
+									 "and event='call-info' and sip_subscriptions.contact != '%q'",
+									 mod_sofia_globals.hostname,
+									 to_user,
+									 to_host,
+									 contact_str
+									 );
+
+				if (mod_sofia_globals.debug_presence > 1) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "CALL-INFO SQL %s\n", sql);
+				}
+				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, broadsoft_sla_callback, profile);
+				switch_safe_free(sql);
+			}
 
 		}
+		
+		
 
 		sent_reply++;
 
@@ -1758,14 +2071,16 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		switch_safe_free(sstr);
 
-		if ((sql = switch_mprintf(
-								  "select proto,sip_user,'%q',sub_to_user,sub_to_host,event,contact,call_id,full_from,"
-								  "full_via,expires,user_agent,accept,profile_name,network_ip"
-								  " from sip_subscriptions where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')", 
-								  to_host, to_user, to_host, to_host))) {
-			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_reg_callback, profile);
-			
-			switch_safe_free(sql);
+		if (!strcasecmp(event, "message-summary")) {		
+			if ((sql = switch_mprintf(
+									  "select proto,sip_user,'%q',sub_to_user,sub_to_host,event,contact,call_id,full_from,"
+									  "full_via,expires,user_agent,accept,profile_name,network_ip"
+									  " from sip_subscriptions where event='message-summary' and sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')", 
+									  to_host, to_user, to_host, to_host))) {
+				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_reg_callback, profile);
+				
+				switch_safe_free(sql);
+			}
 		}
 	  end:
 

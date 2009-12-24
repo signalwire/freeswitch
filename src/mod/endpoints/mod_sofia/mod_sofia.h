@@ -522,6 +522,7 @@ struct sofia_profile {
 	uint32_t timer_t4;
 	char *contact_user;
 	char *local_network;
+	uint32_t trans_timeout;
 };
 
 struct private_object {

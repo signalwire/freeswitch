@@ -467,6 +467,7 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const ch
 {
 	switch_event_t *event;
 	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
+	const char *call_info = NULL;
 
 	if (!status) {
 		type = SWITCH_EVENT_PRESENCE_OUT;
@@ -479,6 +480,8 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const ch
 	if (!id) {
 		return;
 	}
+
+	call_info = switch_channel_get_variable(channel, "presence_call_info");
 
 	if (switch_event_create(&event, type) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
@@ -494,6 +497,29 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const ch
 		}
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		
+		if (call_info) {
+			char *call_info_state = "active";
+
+			if (!switch_channel_up(channel)) {
+				call_info_state = "idle";
+			} else if (!strcasecmp(status, "hold")) {
+				call_info_state = "held";
+			} else if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+				if (channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
+					call_info_state = "progressing";
+				} else {
+					call_info_state = "alerting";
+				}
+			}
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-info-state", call_info_state);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-info", call_info);
+		}
+
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction",
+									   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
+
+
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", channel->event_count++);
 		switch_event_fire(&event);
 	}
@@ -2190,6 +2216,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 						  channel->name, app, switch_str_nil(arg), (char *)stream.data);
 		free(stream.data);
 	}
+
+	switch_channel_presence(channel, "unknown", "answered", NULL);
 
 	switch_channel_audio_sync(channel);
 
