@@ -288,8 +288,8 @@ SWITCH_STANDARD_API(group_call_function)
 					const char *x_user_type = switch_xml_attr_soft(x_user, "type");
 					const char *dest = NULL;
 					char *d_dest = NULL;
-					switch_xml_t xml_for_pointer, x_domain_for_pointer, x_group_for_pointer, x_user_for_pointer;
-					static switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+					switch_xml_t xml_for_pointer = NULL, x_domain_for_pointer = NULL, x_group_for_pointer = NULL, x_user_for_pointer = NULL;
+					switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 
 					my_x_user = x_user;
 
@@ -381,9 +381,10 @@ SWITCH_STANDARD_API(group_call_function)
 					}
 
   				done_x_user:
-
-        				switch_xml_free(xml_for_pointer);
-					xml_for_pointer = NULL;
+					if (xml_for_pointer) {
+	        				switch_xml_free(xml_for_pointer);
+						xml_for_pointer = NULL;
+					}
 				}
 
 				if (ok && dstream.data) {
