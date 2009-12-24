@@ -289,7 +289,6 @@ SWITCH_STANDARD_API(group_call_function)
 					const char *dest = NULL;
 					char *d_dest = NULL;
 					switch_xml_t xml_for_pointer = NULL, x_domain_for_pointer = NULL, x_group_for_pointer = NULL, x_user_for_pointer = NULL;
-					switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 
 					my_x_user = x_user;
 
@@ -299,7 +298,6 @@ SWITCH_STANDARD_API(group_call_function)
 												   &x_user_for_pointer, &x_group_for_pointer,
 												   params) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", id, domain);
-							cause = SWITCH_CAUSE_SUBSCRIBER_ABSENT;
 							goto done_x_user;
 						}
 						my_x_user = x_user_for_pointer;
