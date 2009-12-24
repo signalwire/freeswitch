@@ -490,13 +490,13 @@ iks-reconf:
 	$(MAKE) mod_dingaling-clean
 
 uuid-reconf:
-	cd libs/uuid && $(MAKE) clean
+	cd libs/uuid && $(MAKE) clean || echo
 	cd libs/uuid && autoreconf -fi
 	cd libs/uuid && sh ./configure.gnu --prefix=$(PREFIX)
 	cd libs/uuid && $(MAKE)
 
 spandsp-reconf:
-	cd libs/spandsp && $(MAKE) clean
+	cd libs/spandsp && $(MAKE) clean || echo
 	cd libs/spandsp && autoreconf -fi
 	cd libs/spandsp && sh ./configure.gnu --prefix=$(PREFIX)
 	cd libs/spandsp && $(MAKE)
