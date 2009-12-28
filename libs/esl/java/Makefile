@@ -10,7 +10,10 @@ esl_wrap.cpp:
 esl_wrap.o: esl_wrap.cpp
 	$(CXX) $(CXX_CFLAGS) $(LOCAL_CFLAGS) $(CXXFLAGS) $(GCC_WARNING_JUNK) $(PERL_INC) -c esl_wrap.cpp -o esl_wrap.o
 
-esl.jar: esl_wrap.o
+libesljni.so: esl_wrap.o
+	$(CXX) $(SOLINK) -o libesljni.so esl_wrap.o $(MYLIB)
+
+esl.jar: libesljni.so
 	mkdir -p classes
 	javac -sourcepath org -d classes $(CLASSES)
 	jar cf esl.jar -C classes org
