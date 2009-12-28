@@ -1484,8 +1484,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_audio(switch_core_session_t *
 	}
 	
 	if (existing) {
-		switch_core_media_bug_clear_flag(bug, SMBF_READ_REPLACE);
-		switch_core_media_bug_clear_flag(bug, SMBF_WRITE_REPLACE);
 		switch_core_media_bug_set_flag(bug, flags);
 		
 	} else {
