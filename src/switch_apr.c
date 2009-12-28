@@ -883,7 +883,8 @@ SWITCH_DECLARE(void) switch_uuid_format(char *buffer, const switch_uuid_t *uuid)
 SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid)
 {
 #ifndef WIN32
-	apr_uuid_get((apr_uuid_t *) uuid);
+	//apr_uuid_get((apr_uuid_t *) uuid);
+	switch_core_uuid_get(uuid);
 #else
 	UuidCreate((UUID*)uuid);
 #endif
