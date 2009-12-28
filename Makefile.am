@@ -123,16 +123,7 @@ libs/miniupnpc/upnpcommands.c\
 libs/miniupnpc/minissdpc.c \
 libs/miniupnpc/upnperrors.c \
 libs/libnatpmp/natpmp.c \
-libs/libnatpmp/getgateway.c \
-libs/uuid/uuid.c \
-libs/uuid/uuid_md5.c \
-libs/uuid/uuid_sha1.c \
-libs/uuid/uuid_prng.c \
-libs/uuid/uuid_mac.c \
-libs/uuid/uuid_time.c \
-libs/uuid/uuid_ui64.c \
-libs/uuid/uuid_ui128.c \
-libs/uuid/uuid_str.c
+libs/libnatpmp/getgateway.c
 
 $(top_builddir)/libfreeswitch_la-switch_console.lo: src/include/switch_version.h
 
@@ -143,7 +134,9 @@ $(top_builddir)/libfreeswitch_la-switch_console.lo: src/include/switch_version.h
 # (1) if the variable is set in `config.status', edit `config.status'
 #     (which will cause the Makefiles to be regenerated when you run `make');
 # (2) otherwise, pass the desired values on the `make' command line.
-$(RECURSIVE_TARGETS): $(bin_PROGRAMS) $(lib_LTLIBRARIES)
+all-recursive: libfreeswitch.la
+clean-recusive: clean_core
+$(RECURSIVE_TARGETS):
 	@failcom='exit 1'; \
 	for f in x $$MAKEFLAGS; do \
 	  case $$f in \
