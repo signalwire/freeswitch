@@ -57,6 +57,7 @@ BuildRequires: libtiff-devel
 BuildRequires: alsa-lib-devel
 BuildRequires: which
 BuildRequires: zlib-devel
+BuildRequires: e2fsprogs-devel
 
 %if %{?suse_version:1}0
 %if 0%{?suse_version} > 910
