@@ -1368,6 +1368,8 @@ static su_log_t *sofia_get_logger(const char *name)
 		return nth_server_log;
 	} else if (!strcasecmp(name, "nua")) {
 		return nua_log;
+	} else if (!strcasecmp(name, "soa")) {
+		return soa_log;
 	} else if (!strcasecmp(name, "sresolv")) {
 		return sresolv_log;
 	} else if (!strcasecmp(name, "stun")) {
