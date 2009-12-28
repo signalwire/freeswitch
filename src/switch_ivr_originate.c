@@ -198,10 +198,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 			switch_input_args_t args = { 0 };
 			args.buf = buf;
 			args.buflen = sizeof(buf);
-			if (switch_ivr_play_file(collect->session, NULL, collect->file, &args) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(collect->session), SWITCH_LOG_ERROR, "%s Error Playing File!", switch_channel_get_name(channel));
-				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			}
+			switch_ivr_play_file(collect->session, NULL, collect->file, &args);
 		} else {
 			switch_ivr_collect_digits_count(collect->session, buf, sizeof(buf), 1, SWITCH_BLANK_STRING, &term, 0, 0, 0);
 		}

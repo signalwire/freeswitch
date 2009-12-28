@@ -74,8 +74,6 @@
 #endif
 #endif
 
-#include "uuid.h"
-
 /* #define DEBUG_ALLOC */
 #define DO_EVENTS
 
@@ -194,7 +192,6 @@ struct switch_runtime {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	uint32_t flags;
 	switch_time_t timestamp;
-	switch_mutex_t *uuid_mutex;
 	switch_mutex_t *throttle_mutex;
 	switch_mutex_t *session_hash_mutex;
 	switch_mutex_t *global_mutex;
@@ -215,7 +212,6 @@ struct switch_runtime {
 	char *odbc_user;
 	char *odbc_pass;
 	uint32_t debug_level;
-	uuid_t *uuid;
 };
 
 extern struct switch_runtime runtime;
