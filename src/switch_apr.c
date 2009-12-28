@@ -34,6 +34,7 @@
 #ifndef WIN32
 #include <switch_private.h>
 #endif
+#include "private/switch_core_pvt.h"
 
 /* apr headers*/
 #include <apr.h>
@@ -882,11 +883,13 @@ SWITCH_DECLARE(void) switch_uuid_format(char *buffer, const switch_uuid_t *uuid)
 
 SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid)
 {
+	switch_mutex_lock(runtime.uuid_mutex);
 #ifndef WIN32
 	apr_uuid_get((apr_uuid_t *) uuid);
 #else
 	UuidCreate((UUID*)uuid);
 #endif
+	switch_mutex_unlock(runtime.uuid_mutex);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t *uuid, const char *uuid_str)

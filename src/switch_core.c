@@ -1165,7 +1165,6 @@ static void switch_core_set_serial(void)
 	switch_core_set_variable("switch_serial", buf);
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
 	switch_uuid_t uuid;
@@ -1176,7 +1175,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	char hostname[256] = "";
 
 	memset(&runtime, 0, sizeof(runtime));
-
+	
 	runtime.dummy_cng_frame.data = runtime.dummy_data;
 	runtime.dummy_cng_frame.datalen = sizeof(runtime.dummy_data);
 	runtime.dummy_cng_frame.buflen = sizeof(runtime.dummy_data);
@@ -1202,6 +1201,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	}
 	switch_assert(runtime.memory_pool != NULL);
 
+	
 	dir_path = switch_mprintf("%s%ssounds", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
 	switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_safe_free(dir_path);
@@ -1216,6 +1216,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.temp_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 
+	switch_mutex_init(&runtime.uuid_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 
 	switch_mutex_init(&runtime.throttle_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 	switch_mutex_init(&runtime.session_hash_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
