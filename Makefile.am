@@ -220,7 +220,7 @@ CORE_CFLAGS    += -I$(switch_srcdir)/libs/uuid
 
 CORE_LIBS      = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
-CORE_LIBS     += libs/srtp/libsrtp.la
+CORE_LIBS     += libs/srtp/libsrtp.la libs/uuid/libuuid.la
 
 lib_LTLIBRARIES	          = libfreeswitch.la
 libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)
@@ -369,6 +369,18 @@ nodepends: .nodepends
 
 yesdepends:
 	rm .nodepends
+
+libs/uuid/configure: 
+	test -f $@ || $(MAKE) uuid-reconf
+	@$(TOUCH_TARGET)
+
+libs/uuid/Makefile: libs/uuid/configure
+	test -f $@ || cd $(top_builddir)/libs/uuid && $(SHELL) ./config.status Makefile
+	@$(TOUCH_TARGET)
+
+libs/uuid/libuuid.la: libs/uuid libs/uuid/.update libs/uuid/Makefile
+	@cd libs/uuid && $(MAKE)
+	@$(TOUCH_TARGET)
 
 libs/apr/libapr-1.la: libs/apr libs/apr/.update
 	@cd libs/apr && $(MAKE)
