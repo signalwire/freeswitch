@@ -70,6 +70,7 @@ SWITCH_MODULE_DEFINITION(CORE_SOFTTIMER_MODULE, softtimer_load, softtimer_shutdo
 #define IDLE_SPEED 100
 #define STEP_MS 1
 #define STEP_MIC 1000
+#define TICK_PER_SEC 1000
 
 struct timer_private {
 	switch_size_t reference;
@@ -85,6 +86,7 @@ struct timer_matrix {
 	uint32_t roll;
 	switch_mutex_t *mutex;
 	switch_thread_cond_t *cond;
+	switch_thread_rwlock_t *rwlock;
 };
 typedef struct timer_matrix timer_matrix_t;
 
@@ -92,21 +94,37 @@ static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS + 1];
 
 static void do_sleep(switch_interval_time_t t)
 {
+#if defined(HAVE_CLOCK_NANOSLEEP) || defined(DARWIN)
+	struct timespec ts;
+#endif
+
 #if defined(WIN32)
 	if (t < 1000) {
 		t = 1000;
 	}
 #endif
 
-#if defined(DARWIN)
-	struct timespec ts;
+#if !defined(DARWIN)
+	if (t > 100000) {
+		apr_sleep(t);
+	}
+#endif
+	
+
+#if defined(HAVE_CLOCK_NANOSLEEP)
+	ts.tv_sec = t / APR_USEC_PER_SEC;
+	ts.tv_nsec = ((t % APR_USEC_PER_SEC) * 1000) - 1000000;
+	clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
+#elif defined(DARWIN)
 	ts.tv_sec = t / APR_USEC_PER_SEC;
 	ts.tv_nsec = (t % APR_USEC_PER_SEC) * 1000;
-	
 	nanosleep(&ts, NULL);
-	sched_yield();
 #else
 	apr_sleep(t);
+#endif
+
+#if defined(DARWIN)
+sched_yield();
 #endif
 
 }
@@ -132,11 +150,22 @@ static int MONO = 1;
 static int MONO = 0;
 #endif
 
+#if defined(HAVE_CLOCK_NANOSLEEP)
+static int NANO = 1;
+#else
+static int NANO = 0;
+#endif
+
 
 SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable)
 {
 	MONO = enable ? 1 : 0;
 	switch_time_sync();
+}
+
+SWITCH_DECLARE(void) switch_time_set_nanosleep(switch_bool_t enable)
+{
+	NANO = enable ? 1 : 0;
 }
 
 static switch_time_t time_now(int64_t offset)
@@ -334,17 +363,26 @@ static switch_status_t timer_next(switch_timer_t *timer)
 
 	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
+			
+		if (NANO) {
+			do_sleep(1000 * timer->interval);
+			continue;
+		}
+
 		if (globals.use_cond_yield == 1) {
-			switch_mutex_lock(TIMER_MATRIX[cond_index].mutex);		
-			if (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
-				switch_thread_cond_wait(TIMER_MATRIX[cond_index].cond, TIMER_MATRIX[cond_index].mutex);	
+			if (switch_mutex_lock(TIMER_MATRIX[cond_index].mutex) == SWITCH_STATUS_SUCCESS) {
+				if (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
+					switch_thread_cond_wait(TIMER_MATRIX[cond_index].cond, TIMER_MATRIX[cond_index].mutex);	
+				}
+				switch_mutex_unlock(TIMER_MATRIX[cond_index].mutex);
+			} else {
+				do_sleep(1000);
 			}
-			switch_mutex_unlock(TIMER_MATRIX[cond_index].mutex);
 		} else {
 			do_sleep(1000);
 		}
 	}
-	
+
 	if (globals.RUNNING == 1) {
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -406,6 +444,13 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	switch_time_t ts = 0, last = 0;
 	int fwd_errs = 0, rev_errs = 0;
 
+#ifdef HAVE_SCHED_SETAFFINITY
+	cpu_set_t set;
+	CPU_ZERO(&set);
+	CPU_SET(0, &set);
+	sched_setaffinity(0, sizeof(set), &set);
+#endif
+
 	switch_time_sync();
 
 	globals.STARTED = globals.RUNNING = 1;
@@ -421,6 +466,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			if (ts == last) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Broken MONOTONIC Clock Detected!, Support Disabled.\n");
 				MONO = 0;
+				NANO = 0;
 				runtime.reference = switch_time_now();
 				runtime.initiated = runtime.reference;
 				break;
@@ -435,15 +481,16 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	fwd_errs = rev_errs = 0;
 
 #ifndef DISABLE_1MS_COND
-	switch_mutex_init(&TIMER_MATRIX[1].mutex, SWITCH_MUTEX_NESTED, module_pool);
-	switch_thread_cond_create(&TIMER_MATRIX[1].cond, module_pool);
+	if (!NANO) {
+		switch_mutex_init(&TIMER_MATRIX[1].mutex, SWITCH_MUTEX_NESTED, module_pool);
+		switch_thread_cond_create(&TIMER_MATRIX[1].cond, module_pool);
+	}
 #endif
 
-	globals.use_cond_yield = globals.RUNNING == 1;
-
+	globals.use_cond_yield = globals.RUNNING = 1;
+	
 	while (globals.RUNNING == 1) {
 		runtime.reference += STEP_MIC;
-
 		while ((ts = time_now(runtime.offset)) < runtime.reference) {
 			if (ts < last) {
 				if (MONO) {
@@ -461,10 +508,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			} else {
 				rev_errs = 0;
 			}
-			do_sleep(STEP_MIC);
+			do_sleep(STEP_MIC);		
 			last = ts;
 		}
-
 
 		if (ts > (runtime.reference + too_late)) {
 			if (MONO) {
@@ -495,7 +541,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		current_ms += STEP_MS;
 		tick += STEP_MS;
 
-		if (tick >= 1000) {
+		if (tick >= TICK_PER_SEC) {
 			if (runtime.sps <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Rate of %d!\n", runtime.sps_total);
 			}
@@ -525,9 +571,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 					if (TIMER_MATRIX[x].count) {
 						TIMER_MATRIX[x].tick++;
 #ifdef DISABLE_1MS_COND
-						if (TIMER_MATRIX[x].mutex && switch_mutex_trylock(TIMER_MATRIX[x].mutex) == SWITCH_STATUS_SUCCESS) {
-							switch_thread_cond_broadcast(TIMER_MATRIX[x].cond);
-							switch_mutex_unlock(TIMER_MATRIX[x].mutex);
+						if (!NANO) {
+							if (TIMER_MATRIX[x].mutex && switch_mutex_trylock(TIMER_MATRIX[x].mutex) == SWITCH_STATUS_SUCCESS) {
+								switch_thread_cond_broadcast(TIMER_MATRIX[x].cond);
+								switch_mutex_unlock(TIMER_MATRIX[x].mutex);
+							}
 						}
 #endif
 						if (TIMER_MATRIX[x].tick == MAX_TICK) {

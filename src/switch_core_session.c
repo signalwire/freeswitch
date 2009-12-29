@@ -1281,13 +1281,13 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	switch_mutex_unlock(runtime.throttle_mutex);
 
 	if (sps <= 0) {
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Throttle Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Throttle Error! %d\n", session_manager.session_count);
 		UNPROTECT_INTERFACE(endpoint_interface);
 		return NULL;
 	}
 
 	if ((count + 1) > session_manager.session_limit) {
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Limit!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Limit! %d\n", session_manager.session_limit);
 		UNPROTECT_INTERFACE(endpoint_interface);
 		return NULL;
 	}
