@@ -811,7 +811,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_subclass_name(switch_event_t *e
 	switch_safe_free(event->subclass_name);
 	event->subclass_name = DUP(subclass_name);
 	switch_event_del_header(event, "Event-Subclass");
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Subclass", subclass_name);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Subclass", event->subclass_name);
 	return SWITCH_STATUS_SUCCESS;
 }
 
