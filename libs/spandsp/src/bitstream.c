@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bitstream.c,v 1.18 2009/02/10 13:06:46 steveu Exp $
+ * $Id: bitstream.c,v 1.18.4.1 2009/12/28 12:20:46 steveu Exp $
  */
 
 /*! \file */
@@ -44,64 +44,33 @@
 SPAN_DECLARE(void) bitstream_put(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits)
 {
     value &= ((1 << bits) - 1);
-    if (s->residue + bits <= 32)
+    if (s->lsb_first)
     {
-        s->bitstream |= (value << s->residue);
-        s->residue += bits;
+        if (s->residue + bits <= 32)
+        {
+            s->bitstream |= (value << s->residue);
+            s->residue += bits;
+        }
+        while (s->residue >= 8)
+        {
+            s->residue -= 8;
+            *(*c)++ = (uint8_t) (s->bitstream & 0xFF);
+            s->bitstream >>= 8;
+        }
     }
-    while (s->residue >= 8)
+    else
     {
-        s->residue -= 8;
-        *(*c)++ = (uint8_t) (s->bitstream & 0xFF);
-        s->bitstream >>= 8;
+        if (s->residue + bits <= 32)
+        {
+            s->bitstream = (s->bitstream << bits) | value;
+            s->residue += bits;
+        }
+        while (s->residue >= 8)
+        {
+            s->residue -= 8;
+            *(*c)++ = (uint8_t) ((s->bitstream >> s->residue) & 0xFF);
+        }
     }
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(void) bitstream_put2(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits)
-{
-    value &= ((1 << bits) - 1);
-    if (s->residue + bits <= 32)
-    {
-        s->bitstream = (s->bitstream << bits) | value;
-        s->residue += bits;
-    }
-    while (s->residue >= 8)
-    {
-        s->residue -= 8;
-        *(*c)++ = (uint8_t) ((s->bitstream >> s->residue) & 0xFF);
-    }
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(uint32_t) bitstream_get(bitstream_state_t *s, const uint8_t **c, int bits)
-{
-    uint32_t x;
-
-    while (s->residue < bits)
-    {
-        s->bitstream |= (((uint32_t) *(*c)++) << s->residue);
-        s->residue += 8;
-    }
-    s->residue -= bits;
-    x = s->bitstream & ((1 << bits) - 1);
-    s->bitstream >>= bits;
-    return x;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(uint32_t) bitstream_get2(bitstream_state_t *s, const uint8_t **c, int bits)
-{
-    uint32_t x;
-
-    while (s->residue < bits)
-    {
-        s->bitstream = (s->bitstream << 8) | ((uint32_t) *(*c)++);
-        s->residue += 8;
-    }
-    s->residue -= bits;
-    x = (s->bitstream >> s->residue) & ((1 << bits) - 1);
-    return x;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -109,23 +78,47 @@ SPAN_DECLARE(void) bitstream_flush(bitstream_state_t *s, uint8_t **c)
 {
     if (s->residue > 0)
     {
-        *(*c)++ = (uint8_t) ((s->bitstream << (8 - s->residue)) & 0xFF);
+        s->bitstream &= ((1 << s->residue) - 1);
+        if (s->lsb_first)
+            *(*c)++ = (uint8_t) s->bitstream;
+        else
+            *(*c)++ = (uint8_t) (s->bitstream << (8 - s->residue));
         s->residue = 0;
     }
+    s->bitstream = 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) bitstream_flush2(bitstream_state_t *s, uint8_t **c)
+SPAN_DECLARE(uint32_t) bitstream_get(bitstream_state_t *s, const uint8_t **c, int bits)
 {
-    if (s->residue > 0)
+    uint32_t x;
+
+    if (s->lsb_first)
     {
-        *(*c)++ = (uint8_t) ((s->bitstream << (8 - s->residue)) & 0xFF);
-        s->residue = 0;
+        while (s->residue < bits)
+        {
+            s->bitstream |= (((uint32_t) *(*c)++) << s->residue);
+            s->residue += 8;
+        }
+        s->residue -= bits;
+        x = s->bitstream & ((1 << bits) - 1);
+        s->bitstream >>= bits;
     }
+    else
+    {
+        while (s->residue < bits)
+        {
+            s->bitstream = (s->bitstream << 8) | ((uint32_t) *(*c)++);
+            s->residue += 8;
+        }
+        s->residue -= bits;
+        x = (s->bitstream >> s->residue) & ((1 << bits) - 1);
+    }
+    return x;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(bitstream_state_t *) bitstream_init(bitstream_state_t *s)
+SPAN_DECLARE(bitstream_state_t *) bitstream_init(bitstream_state_t *s, int lsb_first)
 {
     if (s == NULL)
     {
@@ -134,6 +127,7 @@ SPAN_DECLARE(bitstream_state_t *) bitstream_init(bitstream_state_t *s)
     }
     s->bitstream = 0;
     s->residue = 0;
+    s->lsb_first = lsb_first;
     return s;
 }
 /*- End of function --------------------------------------------------------*/

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v8.h,v 1.31 2009/11/04 16:10:14 steveu Exp $
+ * $Id: v8.h,v 1.31.4.1 2009/12/28 12:20:47 steveu Exp $
  */
  
 /*! \file */
@@ -43,9 +43,9 @@ being negotiating and training with their chosen modem standard.
 #if !defined(_SPANDSP_V8_H_)
 #define _SPANDSP_V8_H_
 
-typedef struct v8_result_s v8_result_t;
+typedef struct v8_parms_s v8_parms_t;
 
-typedef void (v8_result_handler_t)(void *user_data, v8_result_t *result);
+typedef void (v8_result_handler_t)(void *user_data, v8_parms_t *result);
 
 enum v8_call_function_e
 {
@@ -102,18 +102,15 @@ enum v8_pcm_modem_availability_e
 
 typedef struct v8_state_s v8_state_t;
 
-struct v8_result_s
+struct v8_parms_s
 {
-    int modem_connect_tone_detected;
+    int modem_connect_tone;
     int call_function;
-    int far_end_modulations;
-    int negotiated_modulation;
+    unsigned int modulations;
     int protocol;
     int pstn_access;
-    int nsf_seen;
-    int nsf;
     int pcm_modem_availability;
-    int t66_seen;
+    int nsf;
     int t66;
 };
 
@@ -122,20 +119,21 @@ extern "C"
 {
 #endif
 
+SPAN_DECLARE(int) v8_restart(v8_state_t *s,
+                             int calling_party,
+                             v8_parms_t *parms);
+
 /*! Initialise a V.8 context.
     \brief Initialise a V.8 context.
     \param s The V.8 context.
     \param calling_party TRUE if caller mode, else answerer mode.
-    \param use_ansam_pr TRUE if ANSam/ is to be used, else ANSam will be used.
-    \param available_modulations A bitwise list of the modulation schemes to be
-           advertised as available here.
+    \param parms The allowed parameters for the call.
     \param result_handler The callback routine used to handle the results of negotiation.
     \param user_data An opaque pointer passed to the result_handler routine.
     \return A pointer to the V.8 context, or NULL if there was a problem. */
 SPAN_DECLARE(v8_state_t *) v8_init(v8_state_t *s,
                                    int calling_party,
-                                   int use_ansam_pr,
-                                   int available_modulations,
+                                   v8_parms_t *parms,
                                    v8_result_handler_t *result_handler,
                                    void *user_data);
 

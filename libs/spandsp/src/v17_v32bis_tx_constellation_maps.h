@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17_v32bis_tx_constellation_maps.h,v 1.1 2009/06/02 11:51:57 steveu Exp $
+ * $Id: v17_v32bis_tx_constellation_maps.h,v 1.1.4.1 2009/12/24 16:52:30 steveu Exp $
  */
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
@@ -299,16 +299,30 @@ static const complexf_t v17_v32bis_7200_constellation[16] =
     {-2, -2}        /* 0x0F */
 };
 
+/* This one does not exist in V.17 as a data constellation. It is only
+   the equaliser training constellation. In V.32/V.32bis it is a data mode. */
 #if defined(SPANDSP_USE_FIXED_POINTx)
 static const complexi16_t v17_v32bis_4800_constellation[4] =
 #else
 static const complexf_t v17_v32bis_4800_constellation[4] =
 #endif
 {
-    {-6, -2},
-    { 2, -6},
-    { 6,  2},
-    {-2,  6}
+    {-6, -2},       /* 0x00 */
+    {-2,  6},       /* 0x01 */
+    { 2, -6},       /* 0x02 */
+    { 6,  2}        /* 0x03 */
+};
+
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static const complexi16_t v17_v32bis_abcd_constellation[4] =
+#else
+static const complexf_t v17_v32bis_abcd_constellation[4] =
+#endif
+{
+    {-6, -2},       /* A */
+    { 2, -6},       /* B */
+    { 6,  2},       /* C */
+    {-2,  6}        /* D */
 };
 
 /*- End of file ------------------------------------------------------------*/

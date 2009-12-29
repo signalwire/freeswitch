@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.c,v 1.167.4.4 2009/12/19 14:18:13 steveu Exp $
+ * $Id: v29rx.c,v 1.167.4.5 2009/12/28 12:20:47 steveu Exp $
  */
 
 /*! \file */
@@ -511,7 +511,7 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
     p = v - s->symbol_sync_dc_filter[1];
     s->symbol_sync_dc_filter[1] = s->symbol_sync_dc_filter[0];
     s->symbol_sync_dc_filter[0] = v;
-    /* A little integration will now filter away much of the noise */
+    /* A little integration will now filter away much of the HF noise */
     s->baud_phase -= p;
     if (abs(s->baud_phase) > 30*FP_FACTOR)
     {
@@ -519,7 +519,6 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
             i = (s->baud_phase > 1000*FP_FACTOR)  ?  5  :  1;
         else
             i = (s->baud_phase < -1000*FP_FACTOR)  ?  -5  :  -1;
-
         //printf("v = %10.5f %5d - %f %f %d %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
         s->eq_put_step += i;
         s->total_baud_timing_correction += i;
@@ -533,19 +532,14 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
     p = v - s->symbol_sync_dc_filter[1];
     s->symbol_sync_dc_filter[1] = s->symbol_sync_dc_filter[0];
     s->symbol_sync_dc_filter[0] = v;
-    /* A little integration will now filter away much of the noise */
+    /* A little integration will now filter away much of the HF noise */
     s->baud_phase -= p;
-#if 0
-    if (fabsf(s->baud_phase) > 100.0f)
-#else
     if (fabsf(s->baud_phase) > 30.0f)
-#endif
     {
         if (s->baud_phase > 0.0f)
             i = (s->baud_phase > 1000.0f)  ?  5  :  1;
         else
             i = (s->baud_phase < -1000.0f)  ?  -5  :  -1;
-
         //printf("v = %10.5f %5d - %f %f %d %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
         s->eq_put_step += i;
         s->total_baud_timing_correction += i;
@@ -586,8 +580,7 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
 
     /* This routine processes every half a baud, as we put things into the equalizer at the T/2 rate. */
 
-    /* Add a sample to the equalizer's circular buffer, but don't calculate anything
-       at this time. */
+    /* Add a sample to the equalizer's circular buffer, but don't calculate anything at this time. */
     s->eq_buf[s->eq_step] = *sample;
     if (++s->eq_step >= V29_EQUALIZER_LEN)
         s->eq_step = 0;
@@ -1082,6 +1075,8 @@ SPAN_DECLARE(logging_state_t *) v29_rx_get_logging_state(v29_rx_state_t *s)
 
 SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, int old_train)
 {
+    int i;
+
     switch (bit_rate)
     {
     case 9600:
@@ -1153,20 +1148,20 @@ SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, int old_train)
 
     /* Initialise the working data for symbol timing synchronisation */
 #if defined(SPANDSP_USE_FIXED_POINT)
-    s->symbol_sync_low[0] = 0;
-    s->symbol_sync_low[1] = 0;
-    s->symbol_sync_high[0] = 0;
-    s->symbol_sync_high[1] = 0;
-    s->symbol_sync_dc_filter[0] = 0;
-    s->symbol_sync_dc_filter[1] = 0;
+    for (i = 0;  i < 2;  i++)
+    {
+        s->symbol_sync_low[i] = 0;
+        s->symbol_sync_high[i] = 0;
+        s->symbol_sync_dc_filter[i] = 0;
+    }
     s->baud_phase = 0;
 #else
-    s->symbol_sync_low[0] = 0.0f;
-    s->symbol_sync_low[1] = 0.0f;
-    s->symbol_sync_high[0] = 0.0f;
-    s->symbol_sync_high[1] = 0.0f;
-    s->symbol_sync_dc_filter[0] = 0.0f;
-    s->symbol_sync_dc_filter[1] = 0.0f;
+    for (i = 0;  i < 2;  i++)
+    {
+        s->symbol_sync_low[i] = 0.0f;
+        s->symbol_sync_high[i] = 0.0f;
+        s->symbol_sync_dc_filter[i] = 0.0f;
+    }
     s->baud_phase = 0.0f;
 #endif
     s->baud_half = 0;

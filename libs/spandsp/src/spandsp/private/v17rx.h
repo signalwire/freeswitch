@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.h,v 1.2 2009/07/09 13:52:09 steveu Exp $
+ * $Id: v17rx.h,v 1.2.4.1 2009/12/24 16:52:30 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V17RX_H_)
@@ -84,7 +84,10 @@ struct v17_rx_state_s
     /*! \brief The state of the differential decoder */
     int diff;
     /*! \brief The register for the data scrambler. */
-    unsigned int scramble_reg;
+    uint32_t scramble_reg;
+    /*! \brief Scrambler tap */
+    //int scrambler_tap;
+
     /*! \brief TRUE if the short training sequence is to be used. */
     int short_train;
     /*! \brief The section of the training data we are currently in. */

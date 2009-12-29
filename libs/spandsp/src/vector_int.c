@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_int.c,v 1.26 2009/07/12 09:23:09 steveu Exp $
+ * $Id: vector_int.c,v 1.26.4.1 2009/12/28 11:54:59 steveu Exp $
  */
 
 /*! \file */
@@ -53,8 +53,7 @@ SPAN_DECLARE(int32_t) vec_dot_prodi16(const int16_t x[], const int16_t y[], int 
 {
     int32_t z;
 
-#if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)
-#if defined(__x86_64__)
+#if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)  &&  defined(__x86_64__)
     __asm__ __volatile__(
         " emms;\n"
         " pxor %%mm0,%%mm0;\n"
@@ -152,7 +151,7 @@ SPAN_DECLARE(int32_t) vec_dot_prodi16(const int16_t x[], const int16_t y[], int 
         : "S" (x), "D" (y), "a" (n)
         : "cc"
     );
-#else
+#elif defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)  &&  defined(__i386__)
     __asm__ __volatile__(
         " emms;\n"
         " pxor %%mm0,%%mm0;\n"
@@ -250,7 +249,6 @@ SPAN_DECLARE(int32_t) vec_dot_prodi16(const int16_t x[], const int16_t y[], int 
         : "S" (x), "D" (y), "a" (n)
         : "cc"
     );
-#endif
 #else
     int i;
 
@@ -290,12 +288,11 @@ SPAN_DECLARE(void) vec_circular_lmsi16(const int16_t x[], int16_t y[], int n, in
 
 SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
 {
-#if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)
+#if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)  &&  defined(__x86_64__)
     static const int32_t lower_bound = 0x80008000;
     static const int32_t upper_bound = 0x7FFF7FFF;
     int32_t max;
 
-#if defined(__x86_64__)
     __asm__ __volatile__(
         " emms;\n"
         " pushq %%rdx;\n"
@@ -443,7 +440,11 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         : "S" (x), "a" (n), "d" (out), [lower] "m" (lower_bound), [upper] "m" (upper_bound)
         : "ecx"
     );
-#else
+#elif defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)  &&  defined(__i386__)
+    static const int32_t lower_bound = 0x80008000;
+    static const int32_t upper_bound = 0x7FFF7FFF;
+    int32_t max;
+
     __asm__ __volatile__(
         " emms;\n"
         " pushl %%edx;\n"
@@ -592,8 +593,6 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         : "S" (x), "a" (n), "d" (out), [lower] "m" (lower_bound), [upper] "m" (upper_bound)
         : "ecx"
     );
-#endif
-    return max;
 #else
     int i;
     int16_t min;
@@ -622,8 +621,8 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
     z = abs(min);
     if (z > max)
         return z;
-    return max;
 #endif
+    return max;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

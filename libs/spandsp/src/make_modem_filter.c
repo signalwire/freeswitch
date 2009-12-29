@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: make_modem_filter.c,v 1.17 2009/10/03 04:37:25 steveu Exp $
+ * $Id: make_modem_filter.c,v 1.17.4.1 2009/12/28 12:20:46 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -356,7 +356,7 @@ int main(int argc, char **argv)
             break;
         }
     }
-    if (strcmp(modem, "V.17") == 0)
+    if (strcmp(modem, "V.17") == 0  ||  strcmp(modem, "V.32bis") == 0)
     {
         /* This applies to V.32bis as well as V.17 */
         rx_coeff_sets = 192;

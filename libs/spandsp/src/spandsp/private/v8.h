@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v8.h,v 1.3 2009/11/04 15:52:06 steveu Exp $
+ * $Id: v8.h,v 1.3.4.1 2009/12/28 12:20:47 steveu Exp $
  */
  
 #if !defined(_SPANDSP_PRIVATE_V8_H_)
@@ -50,10 +50,10 @@ struct v8_state_s
     modem_connect_tones_rx_state_t ansam_rx;
 
     /*! \brief Modulation schemes available at this end. */
-    int local_end_modulations;
-    int common_modulations;
+    unsigned int far_end_modulations;
 
-    v8_result_t result;
+    v8_parms_t parms;
+    v8_parms_t result;
 
     /* V.8 data parsing */
     uint32_t bit_stream;

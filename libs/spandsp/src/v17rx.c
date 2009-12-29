@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.c,v 1.153.4.4 2009/12/19 14:18:13 steveu Exp $
+ * $Id: v17rx.c,v 1.153.4.6 2009/12/28 12:20:46 steveu Exp $
  */
 
 /*! \file */
@@ -297,7 +297,8 @@ static int descramble(v17_rx_state_t *s, int in_bit)
 {
     int out_bit;
 
-    out_bit = (in_bit ^ (s->scramble_reg >> 17) ^ (s->scramble_reg >> 22)) & 1;
+    //out_bit = (in_bit ^ (s->scramble_reg >> s->scrambler_tap) ^ (s->scramble_reg >> (23 - 1))) & 1;
+    out_bit = (in_bit ^ (s->scramble_reg >> (18 - 1)) ^ (s->scramble_reg >> (23 - 1))) & 1;
     s->scramble_reg <<= 1;
     if (s->training_stage > TRAINING_STAGE_NORMAL_OPERATION  &&  s->training_stage < TRAINING_STAGE_TCM_WINDUP)
         s->scramble_reg |= out_bit;
@@ -361,11 +362,21 @@ static __inline__ float dist_sq(const complexf_t *x, const complexf_t *y)
 
 static int decode_baud(v17_rx_state_t *s, complexf_t *z)
 {
-    static const int diff_code[16] =
+    static const uint8_t v32bis_4800_differential_decoder[4][4] =
     {
-        0, 3, 2, 1, 1, 0, 3, 2, 2, 1, 0, 3, 3, 2, 1, 0                         
+        {2, 3, 0, 1},
+        {0, 2, 1, 3},
+        {3, 1, 2, 0},
+        {1, 0, 3, 2}
     };
-    static const int tcm_paths[8][4] =
+    static const uint8_t v17_differential_decoder[4][4] =
+    {
+        {0, 1, 2, 3},
+        {3, 0, 1, 2},
+        {2, 3, 0, 1},
+        {1, 2, 3, 0}
+    };
+    static const uint8_t tcm_paths[8][4] =
     {
         {0, 6, 2, 4},
         {6, 0, 4, 2},
@@ -407,6 +418,17 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
         im = 35;
     else if (im < 0)
         im = 0;
+
+    if (s->bits_per_symbol == 2)
+    {
+        /* 4800bps V.32bis mode, without trellis coding */
+        nearest = constel_map_4800[re][im];
+        raw = v32bis_4800_differential_decoder[s->diff][nearest];
+        s->diff = nearest;
+        put_bit(s, raw);
+        put_bit(s, raw >> 1);
+        return nearest;
+    }
 
     /* Find a set of 8 candidate constellation positions, that are the closest
        to the target, with different patterns in the last 3 bits. */
@@ -515,7 +537,7 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
     nearest = s->full_path_to_past_state_locations[j][k] >> 1;
 
     /* Differentially decode */
-    raw = (nearest & 0x3C) | diff_code[((nearest & 0x03) << 2) | s->diff];
+    raw = (nearest & 0x3C) | v17_differential_decoder[s->diff][nearest & 0x03];
     s->diff = nearest & 0x03;
     for (i = 0;  i < s->bits_per_symbol;  i++)
     {
@@ -555,7 +577,7 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
     p = v - s->symbol_sync_dc_filter[1];
     s->symbol_sync_dc_filter[1] = s->symbol_sync_dc_filter[0];
     s->symbol_sync_dc_filter[0] = v;
-    /* A little integration will now filter away much of the noise */
+    /* A little integration will now filter away much of the HF noise */
     s->baud_phase -= p;
     if (abs(s->baud_phase) > 100*FP_FACTOR)
     {
@@ -563,7 +585,6 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
             i = (s->baud_phase > 1000*FP_FACTOR)  ?  15  :  1;
         else
             i = (s->baud_phase < -1000*FP_FACTOR)  ?  -15  :  -1;
-
         //printf("v = %10.5f %5d - %f %f %d %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
         s->eq_put_step += i;
         s->total_baud_timing_correction += i;
@@ -573,14 +594,12 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
     v = s->symbol_sync_low[1]*s->symbol_sync_high[0]*SYNC_LOW_BAND_EDGE_COEFF_2
       - s->symbol_sync_low[0]*s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_2
       + s->symbol_sync_low[1]*s->symbol_sync_high[1]*SYNC_MIXED_EDGES_COEFF_3;
-
     /* Filter away any DC component  */
     p = v - s->symbol_sync_dc_filter[1];
     s->symbol_sync_dc_filter[1] = s->symbol_sync_dc_filter[0];
     s->symbol_sync_dc_filter[0] = v;
     /* A little integration will now filter away much of the HF noise */
     s->baud_phase -= p;
-
     if (fabsf(s->baud_phase) > 100.0f)
     {
         if (s->baud_phase > 0.0f)
@@ -588,7 +607,6 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
         else
             i = (s->baud_phase < -1000.0f)  ?  -15  :  -1;
         //printf("v = %10.5f %5d - %f %f %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
-
         s->eq_put_step += i;
         s->total_baud_timing_correction += i;
     }
@@ -624,8 +642,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
 
     /* This routine processes every half a baud, as we put things into the equalizer at the T/2 rate. */
 
-    /* Add a sample to the equalizer's circular buffer, but don't calculate anything
-       at this time. */
+    /* Add a sample to the equalizer's circular buffer, but don't calculate anything at this time. */
     s->eq_buf[s->eq_step] = *sample;
     if (++s->eq_step >= V17_EQUALIZER_LEN)
         s->eq_step = 0;
@@ -880,7 +897,18 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         {
             s->training_count = 0;
             s->training_error = 0.0f;
-            s->training_stage = TRAINING_STAGE_TCM_WINDUP;
+            if (s->bits_per_symbol == 2)
+            {
+                /* Restart the differential decoder */
+                /* There is no trellis, so go straight to processing decoded data */
+                s->diff = (s->short_train)  ?  0  :  1;
+                s->training_stage = TRAINING_STAGE_TEST_ONES;
+            }
+            else
+            {
+                /* Wait for the trellis to wind up */
+                s->training_stage = TRAINING_STAGE_TCM_WINDUP;
+            }
         }
         break;
     case TRAINING_STAGE_SHORT_WAIT_FOR_CDBA:
@@ -937,7 +965,19 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             if (s->training_error < (V17_TRAINING_SHORT_SEG_2_LEN - 8)*4.0f*constellation_spacing[s->space_map])
             {
                 s->training_count = 0;
-                s->training_stage = TRAINING_STAGE_TCM_WINDUP;
+                if (s->bits_per_symbol == 2)
+                {
+                    /* There is no trellis, so go straight to processing decoded data */
+                    /* Restart the differential decoder */
+                    s->diff = (s->short_train)  ?  0  :  1;
+                    s->training_error = 0.0f;
+                    s->training_stage = TRAINING_STAGE_TEST_ONES;
+                }
+                else
+                {
+                    /* Wait for the trellis to wind up */
+                    s->training_stage = TRAINING_STAGE_TCM_WINDUP;
+                }
                 report_status_change(s, SIG_STATUS_TRAINING_IN_PROGRESS);
             }
             else
@@ -1254,6 +1294,13 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
         s->space_map = 3;
         s->bits_per_symbol = 3;
         break;
+    case 4800:
+        /* This does not exist in the V.17 spec as a valid mode of operation.
+           However, it does exist in V.32bis, so it is here for completeness. */
+        s->constellation = v17_v32bis_4800_constellation;
+        s->space_map = 0;
+        s->bits_per_symbol = 2;
+        break;
     default:
         return -1;
     }
@@ -1306,28 +1353,50 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
         s->agc_scaling = s->agc_scaling_save;
         equalizer_restore(s);
         /* Don't allow any frequency correction at all, until we start to pull the phase in. */
+#if defined(SPANDSP_USE_FIXED_POINTx)
+        s->carrier_track_i = 0;
+        s->carrier_track_p = 40000;
+#else
         s->carrier_track_i = 0.0f;
         s->carrier_track_p = 40000.0f;
+#endif
     }
     else
     {
         s->carrier_phase_rate = dds_phase_ratef(CARRIER_NOMINAL_FREQ);
+        equalizer_reset(s);
+#if defined(SPANDSP_USE_FIXED_POINTx)
+        s->agc_scaling_save = 0;
+        s->agc_scaling = (float) FP_FACTOR*32768.0f*0.0017f/RX_PULSESHAPER_GAIN;
+        s->carrier_track_i = 5000;
+        s->carrier_track_p = 40000;
+#else
         s->agc_scaling_save = 0.0f;
         s->agc_scaling = 0.0017f/RX_PULSESHAPER_GAIN;
-        equalizer_reset(s);
         s->carrier_track_i = 5000.0f;
         s->carrier_track_p = 40000.0f;
+#endif
     }
     s->last_sample = 0;
 
     /* Initialise the working data for symbol timing synchronisation */
-    s->symbol_sync_low[0] = 0.0f;
-    s->symbol_sync_low[1] = 0.0f;
-    s->symbol_sync_high[0] = 0.0f;
-    s->symbol_sync_high[1] = 0.0f;
-    s->symbol_sync_dc_filter[0] = 0.0f;
-    s->symbol_sync_dc_filter[1] = 0.0f;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    for (i = 0;  i < 2;  i++)
+    {
+        s->symbol_sync_low[i] = 0;
+        s->symbol_sync_high[i] = 0;
+        s->symbol_sync_dc_filter[i] = 0;
+    }
+    s->baud_phase = 0;
+#else
+    for (i = 0;  i < 2;  i++)
+    {
+        s->symbol_sync_low[i] = 0.0f;
+        s->symbol_sync_high[i] = 0.0f;
+        s->symbol_sync_dc_filter[i] = 0.0f;
+    }
     s->baud_phase = 0.0f;
+#endif
     s->baud_half = 0;
     
     s->total_baud_timing_correction = 0;
@@ -1344,6 +1413,8 @@ SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_
     case 12000:
     case 9600:
     case 7200:
+    case 4800:
+        /* 4800 is an extension of V.17, to provide full converage of the V.32bis modes */
         break;
     default:
         return NULL;
@@ -1359,11 +1430,11 @@ SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_
     s->put_bit = put_bit;
     s->put_bit_user_data = user_data;
     s->short_train = FALSE;
+    //s->scrambler_tap = 18 - 1;
     v17_rx_signal_cutoff(s, -45.5f);
     s->agc_scaling = 0.0017f/RX_PULSESHAPER_GAIN;
     s->agc_scaling_save = 0.0f;
     s->carrier_phase_rate_save = dds_phase_ratef(CARRIER_NOMINAL_FREQ);
-
     v17_rx_restart(s, bit_rate, s->short_train);
     return s;
 }

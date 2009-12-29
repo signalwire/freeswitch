@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17tx.h,v 1.2 2009/07/09 13:52:09 steveu Exp $
+ * $Id: v17tx.h,v 1.2.4.1 2009/12/24 16:52:30 steveu Exp $
  */
 
 /*! \file */
@@ -71,9 +71,13 @@ struct v17_tx_state_s
     int diff;
     /*! \brief The current state of the convolutional encoder. */
     int convolution;
+    /*! \brief The code number for the current position in the constellation. */
+    int constellation_state;
 
     /*! \brief The register for the data scrambler. */
-    unsigned int scramble_reg;
+    uint32_t scramble_reg;
+    /*! \brief Scrambler tap */
+    //int scrambler_tap;
     /*! \brief TRUE if transmitting the training sequence. FALSE if transmitting user data. */
     int in_training;
     /*! \brief TRUE if the short training sequence is to be used. */
@@ -87,8 +91,6 @@ struct v17_tx_state_s
     int32_t carrier_phase_rate;
     /*! \brief The current fractional phase of the baud timing. */
     int baud_phase;
-    /*! \brief The code number for the current position in the constellation. */
-    int constellation_state;
     
     /*! \brief A pointer to the constellation currently in use. */
 #if defined(SPANDSP_USE_FIXED_POINT)

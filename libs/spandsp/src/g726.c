@@ -48,7 +48,7 @@
  * 2550 Garcia Avenue
  * Mountain View, California  94043
  *
- * $Id: g726.c,v 1.28 2009/02/10 13:06:46 steveu Exp $
+ * $Id: g726.c,v 1.28.4.1 2009/12/28 12:20:46 steveu Exp $
  */
 
 /*! \file */
@@ -1052,7 +1052,7 @@ SPAN_DECLARE(g726_state_t *) g726_init(g726_state_t *s, int bit_rate, int ext_co
         s->bits_per_sample = 5;
         break;
     }
-    bitstream_init(&s->bs);
+    bitstream_init(&s->bs, (s->packing != G726_PACKING_LEFT));
     return s;
 }
 /*- End of function --------------------------------------------------------*/
