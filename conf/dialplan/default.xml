@@ -666,7 +666,7 @@
     <extension name="milliwatt">
       <condition field="destination_number" expression="^9997$">
 	<action application="answer"/>
-	<action application="playback" data="tone_stream://%(10000,0,1004);loops=-1"/>
+	<action application="playback" data="tone_stream://%(251,0,1004);loops=-1"/>
       </condition>
     </extension>
 
