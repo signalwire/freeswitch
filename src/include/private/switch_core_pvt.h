@@ -74,7 +74,6 @@
 #endif
 #endif
 
-#include "uuid.h"
 
 /* #define DEBUG_ALLOC */
 #define DO_EVENTS
