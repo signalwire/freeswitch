@@ -214,7 +214,6 @@ struct switch_runtime {
 	char *odbc_user;
 	char *odbc_pass;
 	uint32_t debug_level;
-	uuid_t *uuid;
 };
 
 extern struct switch_runtime runtime;
