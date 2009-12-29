@@ -217,6 +217,84 @@ SWITCH_STANDARD_API(time_test_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define TIMER_TEST_SYNTAX "<10|20|40|60|120> [<1..200>] [<timer_name>]"
+
+SWITCH_STANDARD_API(timer_test_function)
+{
+	switch_time_t now, then, start, end;
+	int x;
+	int mss = 20;
+	uint32_t total = 0;
+	int diff;
+	int max = 50;
+	switch_timer_t timer = { 0 };
+	int argc = 0;
+	char *argv[5] = { 0 };
+	const char *timer_name = "soft";
+	switch_memory_pool_t *pool;
+	char *mycmd = NULL;
+	
+	switch_core_new_memory_pool(&pool);
+
+	if (zstr(cmd)) {
+		mycmd = "";
+	} else {
+		mycmd = switch_core_strdup(pool, cmd);
+	}
+
+	argc = switch_split(mycmd, ' ', argv);
+	
+	if (argc > 0) {
+		mss = atoi(argv[0]);
+	}
+
+	if (argc > 1) {
+		int tmp = atoi(argv[1]);
+		if (tmp > 0 && tmp <= 400) {
+			max = tmp;
+		}
+	}
+
+	if (argc > 2) {
+		timer_name = argv[2];
+	}
+
+	if (mss != 10 && mss != 20 && mss != 30 && mss != 40 && mss != 60 && mss != 120) {
+		stream->write_function(stream, "parameter missing: %s\n", TIMER_TEST_SYNTAX);
+		goto end;
+	}
+	
+	if (switch_core_timer_init(&timer, 
+							   timer_name, mss, 
+							   1, pool) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "Timer Error!\n");
+		goto end;
+	}
+						  
+	start = switch_time_now();
+	for (x = 1; x <= max; x++) {
+		then = switch_time_now();
+		switch_core_timer_next(&timer);
+		now = switch_time_now();
+		diff = (int) (now - then);
+		//stream->write_function(stream, "test %d sleep %ld %d\n", x, mss, diff);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer Test: %d sleep %d %d\n", x, mss, diff);
+		total += diff;
+	}
+	end = switch_time_now();
+	
+	switch_yield(250000);
+
+	stream->write_function(stream, "Avg: %0.3fms Total Time: %0.3fms\n", (float)((float)(total / (x > 1 ? x - 1 : 1)) / 1000), (float)((float)(end - start)/1000));
+
+ end:
+	
+	switch_core_destroy_memory_pool(&pool);
+		
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(group_call_function)
 {
 	char *domain;
@@ -3980,6 +4058,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "stun", "stun", stun_function, "<stun_server>[:port]");
 	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "time_test", "time_test", time_test_function, "<mss>");
+	SWITCH_ADD_API(commands_api_interface, "timer_test", "timer_test", timer_test_function, TIMER_TEST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "tone_detect", "Start Tone Detection on a channel", tone_detect_session_function, TONE_DETECT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "unload", "Unload Module", unload_function, UNLOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "unsched_api", "Unschedule an api command", unsched_api_function, UNSCHED_SYNTAX);
