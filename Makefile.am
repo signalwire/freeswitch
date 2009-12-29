@@ -215,12 +215,10 @@ CORE_CFLAGS    += -I$(switch_srcdir)/libs/pcre
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
-CORE_CFLAGS    += -I$(switch_builddir)/libs/uuid
-CORE_CFLAGS    += -I$(switch_srcdir)/libs/uuid
 
 CORE_LIBS      = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
-CORE_LIBS     += libs/srtp/libsrtp.la libs/uuid/libuuid.la
+CORE_LIBS     += libs/srtp/libsrtp.la
 
 lib_LTLIBRARIES	          = libfreeswitch.la
 libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)
@@ -370,18 +368,6 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
-libs/uuid/configure: 
-	test -f $@ || $(MAKE) uuid-reconf
-	@$(TOUCH_TARGET)
-
-libs/uuid/Makefile: libs/uuid/configure
-	test -f $@ || cd $(top_builddir)/libs/uuid && $(SHELL) ./config.status Makefile
-	@$(TOUCH_TARGET)
-
-libs/uuid/libuuid.la: libs/uuid libs/uuid/.update libs/uuid/Makefile
-	@cd libs/uuid && $(MAKE)
-	@$(TOUCH_TARGET)
-
 libs/apr/libapr-1.la: libs/apr libs/apr/.update
 	@cd libs/apr && $(MAKE)
 	@$(TOUCH_TARGET)
@@ -493,12 +479,6 @@ iks-reconf:
 	cd libs/iksemel && autoreconf -fi
 	cd libs/iksemel && sh ./configure.gnu --prefix=$(PREFIX)
 	$(MAKE) mod_dingaling-clean
-
-uuid-reconf:
-	cd libs/uuid && $(MAKE) clean || echo
-	cd libs/uuid && autoreconf -fi
-	cd libs/uuid && sh ./configure.gnu --prefix=$(PREFIX)
-	cd libs/uuid && $(MAKE)
 
 spandsp-reconf:
 	cd libs/spandsp && $(MAKE) clean || echo
