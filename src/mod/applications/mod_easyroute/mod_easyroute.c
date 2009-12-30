@@ -124,7 +124,7 @@ static switch_status_t load_config(void)
 		}
 	}
 	
-done:
+ done:
 	if (zstr(globals.db_username)) {
 		set_global_db_username("root");
 	}
@@ -163,7 +163,7 @@ done:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Connection (did you enable it?!)\n");
 	}
 
-reallydone:
+ reallydone:
 
 	if (xml) {
 		switch_xml_free(xml);
@@ -179,7 +179,7 @@ reallydone:
 
 static char SQL_LOOKUP[] = "SELECT gateways.gateway_ip, gateways.group, gateways.limit, gateways.techprofile, numbers.acctcode, numbers.translated from gateways, numbers where numbers.number = '%q' and numbers.gateway_id = gateways.gateway_id limit 1;";
 
-static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int noat, char *seperator)
+static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int noat, char *separator)
 {	
 	switch_status_t sstatus = SWITCH_STATUS_SUCCESS;
 	char *sql = NULL;
@@ -233,8 +233,8 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int 
 		}
 		if (noat) {
 			switch_snprintf(results->dialstring, 256, "%s/%s%s", tmp_profile , results->translated, tmp_gateway);
-		} else if (seperator) {
-			switch_snprintf(results->dialstring, 256, "%s/%s%s%s", tmp_profile , results->translated, seperator, tmp_gateway);
+		} else if (separator) {
+			switch_snprintf(results->dialstring, 256, "%s/%s%s%s", tmp_profile , results->translated, separator, tmp_gateway);
 		} else {
 			switch_snprintf(results->dialstring, 256, "%s/%s@%s", tmp_profile , results->translated, tmp_gateway);
 		}
@@ -256,8 +256,8 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int 
 		switch_set_string(results->limit, "9999");
 		if (noat){
 			switch_snprintf(results->dialstring, 256, "%s/%s%s", globals.default_techprofile, dn, globals.default_gateway);
-		} else if (seperator){
-			switch_snprintf(results->dialstring, 256, "%s/%s%s%s", globals.default_techprofile, dn, seperator, globals.default_gateway);
+		} else if (separator){
+			switch_snprintf(results->dialstring, 256, "%s/%s%s%s", globals.default_techprofile, dn, separator, globals.default_gateway);
 		} else { 
 			switch_snprintf(results->dialstring, 256, "%s/%s@%s", globals.default_techprofile, dn, globals.default_gateway);
 		}
@@ -281,7 +281,7 @@ SWITCH_STANDARD_APP(easyroute_app_function)
 	char *destnum = NULL; 
 
 	int noat = 0;
-	char *seperator = NULL;
+	char *separator = NULL;
 
 	easyroute_results_t results;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -299,13 +299,13 @@ SWITCH_STANDARD_APP(easyroute_app_function)
 		if (argc == 2) {
 			if (!strcasecmp(argv[1], "noat")) {
 				noat = 1;
-                        } else if (!strcasecmp(argv[1], "seperator")) {
-                                if (argc == 3){
-					switch_set_string(seperator, argv[2]);
+			} else if (!strcasecmp(argv[1], "separator")) {
+				if (argc == 3){
+					switch_set_string(separator, argv[2]);
 				}
 			}
 		}
-		route_lookup(destnum, &results, noat, seperator);
+		route_lookup(destnum, &results, noat, separator);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "EASY ROUTE DEST: [%s]\n", results.dialstring);
 		switch_channel_set_variable(channel, "easy_destnum", destnum);
 		switch_channel_set_variable(channel, "easy_dialstring", results.dialstring);
@@ -321,7 +321,7 @@ SWITCH_STANDARD_API(easyroute_function)
 	char *argv[4] = { 0 };
 	char *mydata = NULL;
 	char *destnum = NULL;
-	char *seperator = NULL;
+	char *separator = NULL;
 	int noat = 0;
 	easyroute_results_t results;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -355,14 +355,14 @@ SWITCH_STANDARD_API(easyroute_function)
 			if (!strcasecmp(argv[1], "noat")) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Entering noat.\n");
 				noat = 1;
-                        } else if (!strcasecmp(argv[1], "seperator")) {
-                                if (argc == 3){
-					switch_set_string(seperator, argv[2]);
+			} else if (!strcasecmp(argv[1], "separator")) {
+				if (argc == 3){
+					switch_set_string(separator, argv[2]);
 				}
 			}
 		}
 		
-		if (!route_lookup(destnum, &results, noat, seperator) == SWITCH_STATUS_SUCCESS) {
+		if (!route_lookup(destnum, &results, noat, separator) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "No Match!\n");
 			status = SWITCH_STATUS_SUCCESS;
 			goto done;
