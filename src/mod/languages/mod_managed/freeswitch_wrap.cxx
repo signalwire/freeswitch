@@ -8825,6 +8825,30 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_time_set_monotonic(int jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_time_set_nanosleep(int jarg1) {
+  switch_bool_t arg1 ;
+  
+  arg1 = (switch_bool_t)jarg1; 
+  switch_time_set_nanosleep(arg1);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_time_set_matrix(int jarg1) {
+  switch_bool_t arg1 ;
+  
+  arg1 = (switch_bool_t)jarg1; 
+  switch_time_set_matrix(arg1);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_time_set_cond_yield(int jarg1) {
+  switch_bool_t arg1 ;
+  
+  arg1 = (switch_bool_t)jarg1; 
+  switch_time_set_cond_yield(arg1);
+}
+
+
 SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_core_min_dtmf_duration(unsigned long jarg1) {
   unsigned long jresult ;
   uint32_t arg1 ;

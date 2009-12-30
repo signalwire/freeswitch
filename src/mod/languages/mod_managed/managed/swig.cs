@@ -2070,6 +2070,18 @@ public class freeswitch {
     freeswitchPINVOKE.switch_time_set_monotonic((int)enable);
   }
 
+  public static void switch_time_set_nanosleep(switch_bool_t enable) {
+    freeswitchPINVOKE.switch_time_set_nanosleep((int)enable);
+  }
+
+  public static void switch_time_set_matrix(switch_bool_t enable) {
+    freeswitchPINVOKE.switch_time_set_matrix((int)enable);
+  }
+
+  public static void switch_time_set_cond_yield(switch_bool_t enable) {
+    freeswitchPINVOKE.switch_time_set_cond_yield((int)enable);
+  }
+
   public static uint switch_core_min_dtmf_duration(uint duration) {
     uint ret = freeswitchPINVOKE.switch_core_min_dtmf_duration(duration);
     return ret;
@@ -6980,6 +6992,15 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_time_set_monotonic")]
   public static extern void switch_time_set_monotonic(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_time_set_nanosleep")]
+  public static extern void switch_time_set_nanosleep(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_time_set_matrix")]
+  public static extern void switch_time_set_matrix(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_time_set_cond_yield")]
+  public static extern void switch_time_set_cond_yield(int jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_min_dtmf_duration")]
   public static extern uint switch_core_min_dtmf_duration(uint jarg1);
