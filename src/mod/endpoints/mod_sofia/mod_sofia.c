@@ -3139,7 +3139,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			tech_pvt->dest = switch_core_session_strdup(nsession, dest);
 		} else if ((host = strchr(dest, '%'))) {
 			char buf[1024];
-			*dest++ = '\0';
 			*host = '@';
 			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
 			*host++ = '\0';
