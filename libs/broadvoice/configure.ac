@@ -376,18 +376,8 @@ AC_SUBST(INSERT_MATH_HEADER)
 
 AC_CONFIG_FILES([Makefile
                  doc/Makefile
-                 test-data/Makefile
-                 test-data/local/Makefile
-                 test-data/broadcom/Makefile
-                 test-data/broadcom/fixed/Makefile
-                 test-data/broadcom/floating/Makefile
-                 test-data/broadcom/fixed/bv16/Makefile
-                 test-data/broadcom/fixed/bv32/Makefile
-                 test-data/broadcom/floating/bv16/Makefile
-                 test-data/broadcom/floating/bv32/Makefile
                  src/Makefile
                  src/broadvoice.h
-                 tests/Makefile
                  broadvoice.pc
                  broadvoice.spec])
 
