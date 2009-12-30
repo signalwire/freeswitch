@@ -36,13 +36,7 @@
 #include "switch_core.h"
 #include "private/switch_core_pvt.h"
 
-static struct {
-	switch_memory_pool_t *memory_pool;
-	switch_hash_t *session_table;
-	uint32_t session_count;
-	uint32_t session_limit;
-	switch_size_t session_id;
-} session_manager;
+struct switch_session_manager session_manager;
 
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const char *uuid_str, const char *file, const char *func, int line)

@@ -218,6 +218,19 @@ struct switch_runtime {
 
 extern struct switch_runtime runtime;
 
+
+struct switch_session_manager {
+	switch_memory_pool_t *memory_pool;
+	switch_hash_t *session_table;
+	uint32_t session_count;
+	uint32_t session_limit;
+	switch_size_t session_id;
+};
+
+extern struct switch_session_manager session_manager;
+
+
+
 switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_t manage);
 void switch_core_sqldb_stop(void);
 void switch_core_session_init(switch_memory_pool_t *pool);

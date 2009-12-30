@@ -1415,6 +1415,8 @@ static void switch_load_core_config(const char *file)
 					switch_time_set_nanosleep(switch_true(var));
 				} else if (!strcasecmp(var, "enable-cond-yield")) {
 					switch_time_set_cond_yield(switch_true(var));
+				} else if (!strcasecmp(var, "enable-timer-matrix")) {
+					switch_time_set_matrix(switch_true(var));
 				} else if (!strcasecmp(var, "max-sessions") && !zstr(val)) {
 					switch_core_session_limit(atoi(val));
 				} else if (!strcasecmp(var, "rtp-start-port") && !zstr(val)) {
