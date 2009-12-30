@@ -1879,8 +1879,16 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			poll_loop = 1;
-			rtp_session->missed_count += (poll_sec * 1000 ) / (rtp_session->ms_per_packet ? rtp_session->ms_per_packet : 20 / 1000);
+			rtp_session->missed_count += (poll_sec * 1000 ) / (rtp_session->ms_per_packet ? rtp_session->ms_per_packet / 1000 : 20 );
 			bytes = 0;
+
+			if (rtp_session->max_missed_packets) {
+				if (rtp_session->missed_count >= rtp_session->max_missed_packets) {
+					ret = -2;
+					goto end;
+				}
+			}
+
 			if (rtp_session->dtmf_data.out_digit_dur == 0 || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 				return_cng_frame();
 			}
