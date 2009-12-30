@@ -168,6 +168,11 @@ SWITCH_DECLARE(void) switch_time_set_nanosleep(switch_bool_t enable)
 	NANO = enable ? 1 : 0;
 }
 
+SWITCH_DECLARE(void) switch_time_set_cond_yield(switch_bool_t enable)
+{
+	globals.use_cond_yield = enable ? 1 : 0;
+}
+
 static switch_time_t time_now(int64_t offset)
 {
 	switch_time_t now;
