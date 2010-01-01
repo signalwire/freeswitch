@@ -69,7 +69,7 @@ static int MATRIX = 1;
 
 static int STEP_MS = 10;
 static int STEP_MIC = 10000;
-static int TICK_PER_SEC = 100;
+static uint32_t TICK_PER_SEC = 100;
 
 static int MS_PER_TICK = 10;
 
@@ -185,7 +185,7 @@ static void calibrate_clock(void)
 	for (x = 0; x < 500; x++) {
 		avg = average_time(val, 100);
 		
-		if (abs(want - avg) <= 2) {
+		if (abs((int)(want - avg)) <= 2) {
 			if (++good > 10) {
 				break;
 			}
@@ -198,7 +198,7 @@ static void calibrate_clock(void)
 		}
 	}
 
-	OFFSET = want - val;
+	OFFSET = (int)(want - val);
 }
 
 
