@@ -1152,168 +1152,93 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			has_file_data = 1;
 		}
 
-		if (!conference->relationship_total) {
-			/* If there are no relationships meaning (user x can specificly not speal to and/or hear user y), use a more efficient muxing technique. */
-			if (ready || has_file_data) {
-				/* Use more bits in the main_frame to preserve the exact sum of the audio samples. */
-				int main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
-				int16_t write_frame[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
+
+		if (ready || has_file_data) {
+			/* Use more bits in the main_frame to preserve the exact sum of the audio samples. */
+			int main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
+			int16_t write_frame[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
 
 
-				/* Init the main frame with file data if there is any. */
-				bptr = (int16_t *) file_frame;
-				if (has_file_data && file_sample_len) {
-					for (x = 0; x < bytes / 2; x++) {
-						if (x <= file_sample_len) {
-							main_frame[x] = (int32_t) bptr[x];
-						} else {
-							main_frame[x] = 255;
-						}
-					}
-				}
-
-				/* Copy audio from every member known to be producing audio into the main frame. */
-				for (omember = conference->members; omember; omember = omember->next) {
-					if (!(switch_test_flag(omember, MFLAG_RUNNING) && switch_test_flag(omember, MFLAG_HAS_AUDIO))) {
-						continue;
-					}
-					bptr = (int16_t *) omember->frame;
-					for (x = 0; x < omember->read / 2; x++) {
-						main_frame[x] += (int32_t) bptr[x];
-					}
-				}
-
-				/* Create write frame once per member who is not deaf for each sample in the main frame
-				   check if our audio is involved and if so, subtract it from the sample so we don't hear ourselves.
-				   Since main frame was 32 bit int, we did not lose any detail, now that we have to convert to 16 bit we can
-				   cut it off at the min and max range if need be and write the frame to the output buffer.
-				*/
-				for (omember = conference->members; omember; omember = omember->next) {
-					switch_size_t ok = 1;
-
-					if (!switch_test_flag(omember, MFLAG_RUNNING)) {
-						continue;
-					}
-
-					if (!switch_test_flag(omember, MFLAG_CAN_HEAR) && !switch_test_flag(omember, MFLAG_WASTE_BANDWIDTH) 
-						&& !switch_test_flag(conference, CFLAG_WASTE_BANDWIDTH)) {
-						continue;
-					}
-
-					bptr = (int16_t *) omember->frame;
-					for (x = 0; x < bytes / 2; x++) {
-						z = main_frame[x];
-						/* bptr[x] represents my own contribution to this audio sample */
-						if (switch_test_flag(omember, MFLAG_HAS_AUDIO) && x <= omember->read / 2) {
-							z -= (int32_t) bptr[x];
-						}
-						/* Now we can convert to 16 bit.*/
-						switch_normalize_to_16bit(z);
-						write_frame[x] = (int16_t) z;
-					}
-				
-					switch_mutex_lock(omember->audio_out_mutex);
-					ok = switch_buffer_write(omember->mux_buffer, write_frame, bytes);
-					switch_mutex_unlock(omember->audio_out_mutex);
-				
-					if (!ok) {
-						goto end;
-					}
-				}
-
-			}
-		} else {
-			if (ready || has_file_data) {
-				/* Build a muxed frame for every member that contains the mixed audio of everyone else */
-
-				for (omember = conference->members; omember; omember = omember->next) {
-					if (has_file_data && file_sample_len) {
-						uint32_t sample_bytes = file_sample_len * 2;
-						memcpy(omember->mux_frame, file_frame, sample_bytes);
-						if (sample_bytes < bytes) {
-							if (conference->comfort_noise_level) {
-								switch_generate_sln_silence((int16_t *) omember->mux_frame + sample_bytes,
-															(bytes - sample_bytes) / 2, conference->comfort_noise_level);
-							} else {
-								memset(omember->mux_frame + sample_bytes, 255, bytes - sample_bytes);
-							}
-						}
+			/* Init the main frame with file data if there is any. */
+			bptr = (int16_t *) file_frame;
+			if (has_file_data && file_sample_len) {
+				for (x = 0; x < bytes / 2; x++) {
+					if (x <= file_sample_len) {
+						main_frame[x] = (int32_t) bptr[x];
 					} else {
-						if (conference->comfort_noise_level) {
-							switch_generate_sln_silence((int16_t *) omember->mux_frame, bytes / 2, conference->comfort_noise_level);
-						} else {
-							memset(omember->mux_frame, 255, bytes);
-						}
-					}
-					for (imember = conference->members; imember; imember = imember->next) {
-						uint32_t x;
-						int16_t *muxed;
-
-						if (imember == omember || !imember->read) {
-							/* Don't add audio from yourself or if you didn't read any */
-							continue;
-						}
-
-						/* If they are not supposed to talk to us then don't let them */
-						if (omember->relationships) {
-							conference_relationship_t *rel;
-
-							if ((rel = member_get_relationship(omember, imember))) {
-								if (!switch_test_flag(rel, RFLAG_CAN_HEAR)) {
-									continue;
-								}
-							}
-						}
-
-						/* If we are not supposed to hear them then don't let it happen */
-						if (imember->relationships) {
-							conference_relationship_t *rel;
-
-							if ((rel = member_get_relationship(imember, omember))) {
-								if (!switch_test_flag(rel, RFLAG_CAN_SPEAK)) {
-									continue;
-								}
-							}
-						}
-#if 0
-						if (nt && conference->not_talking_buf_len && !switch_test_flag(omember, MFLAG_HAS_AUDIO)) {
-							memcpy(omember->mux_frame, conference->not_talking_buf, conference->not_talking_buf_len);
-							continue;
-						}
-#endif
-						bptr = (int16_t *) imember->frame;
-						muxed = (int16_t *) omember->mux_frame;
-
-						for (x = 0; x < imember->read / 2; x++) {
-							int32_t z = muxed[x] + bptr[x];
-							switch_normalize_to_16bit(z);
-							muxed[x] = (int16_t) z;
-						}
-#if 0
-						if (total - ready > 1) {
-							conference->not_talking_buf_len = imember->read;
-							if (!conference->not_talking_buf) {
-								conference->not_talking_buf = switch_core_alloc(conference->pool, imember->read + 128);
-							}
-							memcpy(conference->not_talking_buf, muxed, conference->not_talking_buf_len);
-							nt++;
-						}
-#endif
+						main_frame[x] = 255;
 					}
 				}
-				if (bytes) {
-					/* Go back and write each member his dedicated copy of the audio frame that does not contain his own audio. */
-					for (imember = conference->members; imember; imember = imember->next) {
-						if (switch_test_flag(imember, MFLAG_RUNNING)) {
-							switch_size_t ok = 1;
-							switch_mutex_lock(imember->audio_out_mutex);
-							ok = switch_buffer_write(imember->mux_buffer, imember->mux_frame, bytes);
-							switch_mutex_unlock(imember->audio_out_mutex);
-							if (!ok) {
-								goto end;
+			}
+
+			/* Copy audio from every member known to be producing audio into the main frame. */
+			for (omember = conference->members; omember; omember = omember->next) {
+				if (!(switch_test_flag(omember, MFLAG_RUNNING) && switch_test_flag(omember, MFLAG_HAS_AUDIO))) {
+					continue;
+				}
+				bptr = (int16_t *) omember->frame;
+				for (x = 0; x < omember->read / 2; x++) {
+					main_frame[x] += (int32_t) bptr[x];
+				}
+			}
+
+			/* Create write frame once per member who is not deaf for each sample in the main frame
+			   check if our audio is involved and if so, subtract it from the sample so we don't hear ourselves.
+			   Since main frame was 32 bit int, we did not lose any detail, now that we have to convert to 16 bit we can
+			   cut it off at the min and max range if need be and write the frame to the output buffer.
+			*/
+			for (omember = conference->members; omember; omember = omember->next) {
+				switch_size_t ok = 1;
+
+				if (!switch_test_flag(omember, MFLAG_RUNNING)) {
+					continue;
+				}
+
+				if (!switch_test_flag(omember, MFLAG_CAN_HEAR) && !switch_test_flag(omember, MFLAG_WASTE_BANDWIDTH) 
+					&& !switch_test_flag(conference, CFLAG_WASTE_BANDWIDTH)) {
+					continue;
+				}
+
+				bptr = (int16_t *) omember->frame;
+				for (x = 0; x < bytes / 2; x++) {
+					z = main_frame[x];
+					/* bptr[x] represents my own contribution to this audio sample */
+					if (switch_test_flag(omember, MFLAG_HAS_AUDIO) && x <= omember->read / 2) {
+						z -= (int32_t) bptr[x];
+					}
+						
+					/* when there are relationships, we have to do more work by scouring all the members to see if there are any 
+					   reasons why we should not be hearing a paticular member, and if not, delete their samples as well.
+					*/
+					if (conference->relationship_total) {
+						for (imember = conference->members; imember; imember = imember->next) {
+							conference_relationship_t *rel;
+							for (rel = imember->relationships; rel; rel = rel->next) {
+								if (imember != omember && switch_test_flag(imember, MFLAG_HAS_AUDIO)) {
+									int16_t *rptr = (int16_t *) imember->frame;
+									if ((rel->id == omember->id || rel->id == 0) && !switch_test_flag(rel, RFLAG_CAN_SPEAK)) {
+										z -= (int32_t) rptr[x];
+									}
+									if ((rel->id == imember->id || rel->id == 0) && !switch_test_flag(rel, RFLAG_CAN_HEAR)) {
+										z -= (int32_t) rptr[x];
+									}
+								}
+
 							}
 						}
 					}
+
+					/* Now we can convert to 16 bit.*/
+					switch_normalize_to_16bit(z);
+					write_frame[x] = (int16_t) z;
+				}
+				
+				switch_mutex_lock(omember->audio_out_mutex);
+				ok = switch_buffer_write(omember->mux_buffer, write_frame, bytes);
+				switch_mutex_unlock(omember->audio_out_mutex);
+				
+				if (!ok) {
+					goto end;
 				}
 			}
 		}
