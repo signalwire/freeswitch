@@ -39,6 +39,8 @@
 #include <string.h>
 
 #define MY_EVENT_RINGING "portaudio::ringing"
+#define MY_EVENT_MAKE_CALL "portaudio::makecall"
+#define SWITCH_PA_CALL_ID_VARIABLE "pa_call_id"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown);
@@ -401,6 +403,7 @@ static void add_pvt(private_t *tech_pvt, int master)
 	if (*tech_pvt->call_id == '\0') {
 		switch_mutex_lock(globals.pa_mutex);
 		switch_snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", ++globals.call_id);
+                switch_channel_set_variable(switch_core_session_get_channel(tech_pvt->session), SWITCH_PA_CALL_ID_VARIABLE, tech_pvt->call_id);
 		switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);
 		switch_core_session_set_read_codec(tech_pvt->session, &globals.read_codec);
 		switch_core_session_set_write_codec(tech_pvt->session, &globals.write_codec);
@@ -1788,16 +1791,40 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 			switch_channel_mark_answered(channel);
 			switch_channel_set_state(channel, CS_INIT);
 			if (switch_core_session_thread_launch(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
+                                switch_event_t *event;
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error spawning thread\n");
 				switch_core_session_destroy(&session);
 				stream->write_function(stream, "FAIL:Thread Error!\n");
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_MAKE_CALL) == SWITCH_STATUS_SUCCESS) {
+					char buf[512];
+					switch_channel_event_set_data(channel, event);
+					switch_snprintf(buf, sizeof(buf), "Thread error!.\n");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "error", buf);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fail", "true");
+					switch_event_fire(&event);
+				}
 			} else {
+				switch_event_t *event;
 				add_pvt(tech_pvt, PA_MASTER);
 				stream->write_function(stream, "SUCCESS:%s:%s\n", tech_pvt->call_id, switch_core_session_get_uuid(tech_pvt->session));
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_MAKE_CALL) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(channel, event);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fail", "false");
+					switch_event_fire(&event);
+				}
 			}
 		} else {
+			switch_event_t *event;
 			switch_core_session_destroy(&session);
 			stream->write_function(stream, "FAIL:Device Error!\n");
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_MAKE_CALL) == SWITCH_STATUS_SUCCESS) {
+				char buf[512];
+				switch_channel_event_set_data(channel, event);
+				switch_snprintf(buf, sizeof(buf), "Device fail.\n");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "error", buf);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fail", "true");
+				switch_event_fire(&event);
+			}
 		}
 	}
 
