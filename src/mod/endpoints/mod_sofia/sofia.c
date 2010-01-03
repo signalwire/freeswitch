@@ -143,9 +143,12 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	if (s_event != NULL) {
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event-package", sip->sip_event->o_type);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event-id", sip->sip_event->o_id);
+		
+		if (sip->sip_contact && sip->sip_contact->m_url) {
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s@%s", 
+									sip->sip_contact->m_url->url_user, sip->sip_contact->m_url->url_host);
+		}
 
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s@%s", 
-								sip->sip_contact->m_url->url_user, sip->sip_contact->m_url->url_host);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", 
 								sip->sip_from->a_url->url_user, sip->sip_from->a_url->url_host);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-tag", sip->sip_from->a_tag);
