@@ -130,6 +130,7 @@ static const char *EVENT_NAMES[] = {
 	"RECORD_STOP",
 	"CALL_UPDATE",
 	"FAILURE",
+	"SOCKET_DATA",
 	"ALL"
 };
 

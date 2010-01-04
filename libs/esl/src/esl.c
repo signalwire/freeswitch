@@ -834,6 +834,9 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 				
 				if (!revent) {
 					esl_event_create(&revent, ESL_EVENT_CLONE);
+					revent->event_id = ESL_EVENT_SOCKET_DATA;
+					esl_event_add_header_string(revent, ESL_STACK_BOTTOM, "Event-Name", "SOCKET_DATA");
+
 				}
 				
 				hname = beg;
