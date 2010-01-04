@@ -6,13 +6,13 @@ contains(QT_VERSION, ^4\.[0-5]\..*) {
     error("Use at least Qt 4.6.")
 }
 QT += xml
-TARGET = fsphone
-macx:TARGET = FSPhone
+TARGET = fscomm
+macx:TARGET = FSComm
 TEMPLATE = app
-INCLUDEPATH = ../../../src/include \
-    ../../../libs/apr/include \
-    ../../../libs/libteletone/src
-LIBS = -L../../../.libs \
+INCLUDEPATH = ../src/include \
+    ../libs/apr/include \
+    ../libs/libteletone/src
+LIBS = -L../.libs \
     -lfreeswitch \
     -lm
 !win32:!macx { 
