@@ -33,6 +33,7 @@
  * Contributors: 
  *
  * Moises Silva <moy@sangoma.com>
+ * David Yat Sin <dyatsin@sangoma.com>
  *
  */
 
@@ -81,11 +82,15 @@ static struct {
 	zap_hash_t *interface_hash;
 	zap_hash_t *module_hash;
 	zap_hash_t *span_hash;
+	zap_hash_t *group_hash;
 	zap_mutex_t *mutex;
 	zap_mutex_t *span_mutex;
+	zap_mutex_t *group_mutex;
 	uint32_t span_index;
+	uint32_t group_index;
 	uint32_t running;
 	zap_span_t *spans;
+	zap_group_t *groups;
 } globals;
 
 
@@ -1008,6 +1013,113 @@ OZ_DECLARE(zap_status_t) zap_channel_set_state(zap_channel_t *zchan, zap_channel
 	return ok ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
+
+OZ_DECLARE(zap_status_t) zap_group_channel_use_count(zap_group_t *group, uint32_t *count)
+{
+	uint32_t j;
+
+	*count = 0;
+	
+	if (!group) {
+		return ZAP_FAIL;
+	}
+	
+	for(j = 0; j < group->chan_count && group->channels[j]; j++) {
+		if (group->channels[j]) {
+			if (zap_test_flag(group->channels[j], ZAP_CHANNEL_INUSE)) {
+				(*count)++;
+			}
+		}
+	}
+	
+	return ZAP_SUCCESS;
+}
+
+OZ_DECLARE(zap_status_t) zap_channel_open_by_group(uint32_t group_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan)
+{
+	zap_status_t status = ZAP_FAIL;
+	zap_channel_t *check;
+	uint32_t i, count;
+	zap_group_t *group = NULL;
+
+	if (group_id) {
+		zap_group_find(group_id, &group);
+	}
+
+	if (!group ) {
+		zap_log(ZAP_LOG_CRIT, "GROUP NOT DEFINED!\n");
+		*zchan = NULL;
+		return ZAP_FAIL;
+	}
+
+	zap_group_channel_use_count(group, &count);
+
+	if (count >= group->chan_count) {
+		zap_log(ZAP_LOG_CRIT, "All circuits are busy.\n");
+		*zchan = NULL;
+		return ZAP_FAIL;
+	}
+
+	
+	if (direction == ZAP_TOP_DOWN) {
+		i = 0;
+	} else {
+		i = group->chan_count-1;
+	}
+
+	zap_mutex_lock(group->mutex);
+	for (;;) {
+		if (direction == ZAP_TOP_DOWN) {
+			if (i >= group->chan_count) {
+				break;
+			}
+		} else {
+			if (i < 0) {
+				break;
+			}
+		}
+	
+		if (!(check = group->channels[i])) {
+			status = ZAP_FAIL;
+			break;
+		}
+
+		if (zap_test_flag(check, ZAP_CHANNEL_READY) && 
+			!zap_test_flag(check, ZAP_CHANNEL_INUSE) && 
+			!zap_test_flag(check, ZAP_CHANNEL_SUSPENDED) && 
+			check->state == ZAP_CHANNEL_STATE_DOWN && 
+			check->type != ZAP_CHAN_TYPE_DQ921 &&
+			check->type != ZAP_CHAN_TYPE_DQ931
+			
+			) {
+			zap_span_t* span = NULL;
+			zap_span_find(check->span_id, &span);
+			if (span && span->channel_request) {
+				status = span->channel_request(span, check->physical_chan_id, direction, caller_data, zchan);
+				break;
+			}
+
+			status = check->zio->open(check);
+				
+			if (status == ZAP_SUCCESS) {
+				zap_set_flag(check, ZAP_CHANNEL_INUSE);
+				zap_channel_open_chan(check);
+				*zchan = check;
+				break;
+			}
+		}
+		
+		if (direction == ZAP_TOP_DOWN) {
+			i++;
+		} else {
+			i--;
+		}	
+	}
+	zap_mutex_unlock(group->mutex);
+	return status;
+}
+
+
 OZ_DECLARE(zap_status_t) zap_span_channel_use_count(zap_span_t *span, uint32_t *count)
 {
 	uint32_t j;
@@ -1029,7 +1141,7 @@ OZ_DECLARE(zap_status_t) zap_span_channel_use_count(zap_span_t *span, uint32_t *
 	return ZAP_SUCCESS;
 }
 
-OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan)
+OZ_DECLARE(zap_status_t) zap_channel_open_by_span(uint32_t span_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan)
 {
 	zap_status_t status = ZAP_FAIL;
 	zap_channel_t *check;
@@ -1172,7 +1284,6 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 
 OZ_DECLARE(zap_status_t) zap_channel_init(zap_channel_t *zchan)
 {
-
 	if (zchan->init_state != ZAP_CHANNEL_STATE_DOWN) {
 		zap_set_state_locked(zchan, zchan->init_state);
 		zchan->init_state = ZAP_CHANNEL_STATE_DOWN;
@@ -2438,6 +2549,7 @@ static zap_status_t load_config(void)
 	unsigned configured = 0, d = 0;
 	char name[80] = "";
 	char number[25] = "";
+	char group_name[80] = "default";
 	zap_io_interface_t *zio = NULL;
 	zap_analog_start_type_t tmp;
 
@@ -2572,6 +2684,9 @@ static zap_status_t load_config(void)
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
 				configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_B, name, number);
+				if (zap_group_add_channels(group_name, span, val) != ZAP_SUCCESS) {
+					zap_log(ZAP_LOG_ERROR, "Failed to add channels (%d:%s) to group\n", number, val);
+				}
 			} else if (!strcasecmp(var, "d-channel")) {
 				if (d) {
 					zap_log(ZAP_LOG_WARNING, "ignoring extra d-channel\n");
@@ -2591,6 +2706,9 @@ static zap_status_t load_config(void)
 			} else if (!strcasecmp(var, "dtmf_hangup")) {
 				span->dtmf_hangup = zap_strdup(val);
 				span->dtmf_hangup_len = strlen(val);
+			} else if (!strcasecmp(var, "group")) {
+				memset(group_name, 0, sizeof(group_name));
+				memcpy(group_name, val, sizeof(group_name));
 			} else {
 				zap_log(ZAP_LOG_ERROR, "unknown span variable '%s'\n", var);
 			}
@@ -2880,6 +2998,190 @@ OZ_DECLARE(zap_status_t) zap_span_start(zap_span_t *span)
 	return ZAP_FAIL;
 }
 
+OZ_DECLARE(zap_status_t) zap_channel_add_to_group(const char* name, zap_channel_t* zchan)
+{
+	int i;
+	zap_group_t* group = NULL;
+	
+	zap_mutex_lock(globals.group_mutex);
+
+	if (zap_group_find_by_name(name, &group) != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_DEBUG, "Creating new group:%s\n", name);
+		zap_group_create(&group, name);
+	}
+
+	/*verify that group does not already include this channel first */
+	for(i=0; i < group->chan_count; i++) {
+		if (group->channels[i]->physical_span_id == zchan->physical_span_id &&
+				group->channels[i]->physical_chan_id == zchan->physical_chan_id) {
+
+			zap_mutex_unlock(globals.group_mutex);
+			return ZAP_SUCCESS;
+		}
+	}
+
+	if (group->chan_count >= ZAP_MAX_CHANNELS_GROUP) {
+		zap_log(ZAP_LOG_CRIT, "Max number of channels exceeded (max:%d)\n", ZAP_MAX_CHANNELS_GROUP);
+		zap_mutex_unlock(globals.group_mutex);
+		return ZAP_FAIL;
+	}
+
+	group->channels[group->chan_count++] = zchan;
+	zap_mutex_unlock(globals.group_mutex);
+	return ZAP_SUCCESS;
+}
+
+OZ_DECLARE(zap_status_t) zap_channel_remove_from_group(zap_group_t* group, zap_channel_t* zchan)
+{
+	//Need to test this function
+	zap_mutex_lock(globals.group_mutex);
+	int i, j;
+
+	for (i=0; i < group->chan_count; i++) {
+			if (group->channels[i]->physical_span_id == zchan->physical_span_id &&
+					group->channels[i]->physical_chan_id == zchan->physical_chan_id) {
+
+				j=i;
+				while(j < group->chan_count-1) {
+					group->channels[j] = group->channels[j+1];
+					j++;
+				}
+				group->channels[group->chan_count--] = NULL;
+				if (group->chan_count <=0) {
+					/* Delete group if it is empty */
+					hashtable_remove(globals.group_hash, (void *)group->name);
+				}
+				zap_mutex_unlock(globals.group_mutex);
+				return ZAP_SUCCESS;
+			}
+	}
+
+	zap_mutex_unlock(globals.group_mutex);
+	//Group does not contain this channel
+	return ZAP_FAIL;
+}
+
+OZ_DECLARE(zap_status_t) zap_group_add_channels(const char* name, zap_span_t* span, const char* val)
+{
+	char *p, *mydata, *item_list[10];
+	int items, i;
+	
+	assert(strlen(name) > 0);
+
+	p = strchr(val, ':');
+	mydata = zap_strdup(++p);
+	
+	assert(mydata != NULL);
+
+	items = zap_separate_string(mydata, ',', item_list, (sizeof(item_list) / sizeof(item_list[0])));
+
+	for(i=0; i < items; i++) {
+		if (!strchr(item_list[i], '-')) {
+			int chan_no;
+
+			chan_no = atoi (item_list[i]);
+			assert(chan_no > 0);
+
+			if (zap_channel_add_to_group(name, span->channels[chan_no]) != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_CRIT, "Failed to add chan:%d to group:%s\n", chan_no, name);
+			}
+		} else {
+			int chan_no_start, chan_no_end;
+
+			if (sscanf(item_list[i], "%d-%d", &chan_no_start, &chan_no_end) == 2) {
+				while (chan_no_start <= chan_no_end) {
+					if (zap_channel_add_to_group(name, span->channels[chan_no_start++])) {
+						zap_log(ZAP_LOG_CRIT, "Failed to add chan:%d to group:%s\n", chan_no_start-1, name);
+					}
+				}
+			}
+		}
+	}
+	return ZAP_SUCCESS;
+}
+
+OZ_DECLARE(zap_status_t) zap_group_find(uint32_t id, zap_group_t **group)
+{
+	zap_group_t *fgroup = NULL, *grp;
+
+	if (id > ZAP_MAX_GROUPS_INTERFACE) {
+		return ZAP_FAIL;
+	}
+
+	
+	zap_mutex_lock(globals.group_mutex);
+	for (grp = globals.groups; grp; grp = grp->next) {
+		if (grp->group_id == id) {
+			fgroup = grp;
+			break;
+		}
+	}
+	zap_mutex_unlock(globals.group_mutex);
+
+	if (!fgroup) {
+		return ZAP_FAIL;
+	}
+
+	*group = fgroup;
+
+	return ZAP_SUCCESS;
+	
+}
+
+OZ_DECLARE(zap_status_t) zap_group_find_by_name(const char *name, zap_group_t **group)
+{
+	zap_status_t status = ZAP_FAIL;
+
+	zap_mutex_lock(globals.group_mutex);
+	if (!zap_strlen_zero(name)) {
+		if ((*group = hashtable_search(globals.group_hash, (void *) name))) {
+			status = ZAP_SUCCESS;
+		}
+	}
+	zap_mutex_unlock(globals.group_mutex);
+	return status;
+}
+
+static void zap_group_add(zap_group_t *group)
+{
+	zap_group_t *grp;
+	zap_mutex_lock(globals.group_mutex);
+	
+	for (grp = globals.groups; grp && grp->next; grp = grp->next);
+
+	if (grp) {
+		grp->next = group;
+	} else {
+		globals.groups = group;
+	}
+	hashtable_insert(globals.group_hash, (void *)group->name, group, HASHTABLE_FLAG_NONE);
+
+	zap_mutex_unlock(globals.group_mutex);
+}
+
+
+OZ_DECLARE(zap_status_t) zap_group_create(zap_group_t **group, const char *name)
+{
+	zap_group_t *new_group = NULL;
+	zap_status_t status = ZAP_FAIL;
+
+	zap_mutex_lock(globals.mutex);
+	if (globals.group_index < ZAP_MAX_GROUPS_INTERFACE) {
+		new_group = zap_malloc(sizeof(*new_group));
+		assert(new_group);
+		memset(new_group, 0, sizeof(*new_group));
+		status = zap_mutex_create(&new_group->mutex);
+		assert(status == ZAP_SUCCESS);
+
+		new_group->group_id = ++globals.group_index;
+		new_group->name = zap_strdup(name);
+		zap_group_add(new_group);
+		*group = new_group;
+		status = ZAP_SUCCESS;
+	}
+	zap_mutex_unlock(globals.mutex);
+	return status;
+}
 
 OZ_DECLARE(zap_status_t) zap_global_init(void)
 {
@@ -2893,8 +3195,10 @@ OZ_DECLARE(zap_status_t) zap_global_init(void)
 	globals.interface_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 	globals.module_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 	globals.span_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
+	globals.group_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 	zap_mutex_create(&globals.mutex);
 	zap_mutex_create(&globals.span_mutex);
+	zap_mutex_create(&globals.group_mutex);
 	globals.running = 1;
 	return ZAP_SUCCESS;
 }

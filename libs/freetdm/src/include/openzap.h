@@ -195,6 +195,9 @@ extern "C" {
 #define ZAP_MAX_CHANNELS_SPAN ZAP_MAX_CHANNELS_PHYSICAL_SPAN * ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN
 #define ZAP_MAX_SPANS_INTERFACE 128
 
+#define ZAP_MAX_CHANNELS_GROUP 1024
+#define ZAP_MAX_GROUPS_INTERFACE ZAP_MAX_SPANS_INTERFACE
+
 #define GOTO_STATUS(label,st) status = st; goto label ;
 
 #define zap_copy_string(x,y,z) strncpy(x, y, z - 1) 
@@ -578,6 +581,16 @@ struct zap_span {
 	struct zap_span *next;
 };
 
+struct zap_group {
+	char *name;
+	uint32_t group_id;
+	uint32_t chan_count;
+	zap_channel_t *channels[ZAP_MAX_CHANNELS_GROUP];
+	uint32_t last_used_index;
+	zap_mutex_t *mutex;
+	struct zap_group *next;
+};
+
 OZ_DECLARE_DATA extern zap_logger_t zap_log;
 
 typedef enum {
@@ -706,11 +719,19 @@ OZ_DECLARE(zap_status_t) zap_span_create(zap_io_interface_t *zio, zap_span_t **s
 OZ_DECLARE(zap_status_t) zap_span_close_all(void);
 OZ_DECLARE(zap_status_t) zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan);
 OZ_DECLARE(zap_status_t) zap_span_set_event_callback(zap_span_t *span, zio_event_cb_t event_callback);
+OZ_DECLARE(zap_status_t) zap_channel_add_to_group(const char* name, zap_channel_t* zchan);
+OZ_DECLARE(zap_status_t) zap_group_add_channels(const char* name, zap_span_t* span, const char* val);
+OZ_DECLARE(zap_status_t) zap_channel_remove_from_group(zap_group_t* group, zap_channel_t* zchan);
+OZ_DECLARE(zap_status_t) zap_group_find(uint32_t id, zap_group_t **group);
+OZ_DECLARE(zap_status_t) zap_group_find_by_name(const char *name, zap_group_t **group);
+OZ_DECLARE(zap_status_t) zap_group_create(zap_group_t **group, const char *name);
 OZ_DECLARE(zap_status_t) zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t event_callback);
 OZ_DECLARE(zap_status_t) zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan);
 OZ_DECLARE(zap_status_t) zap_channel_open_chan(zap_channel_t *zchan);
 OZ_DECLARE(zap_status_t) zap_span_channel_use_count(zap_span_t *span, uint32_t *count);
-OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan);
+OZ_DECLARE(zap_status_t) zap_group_channel_use_count(zap_group_t *group, uint32_t *count);
+OZ_DECLARE(zap_status_t) zap_channel_open_by_span(uint32_t span_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan);
+OZ_DECLARE(zap_status_t) zap_channel_open_by_group(uint32_t group_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan);
 OZ_DECLARE(zap_status_t) zap_channel_close(zap_channel_t **zchan);
 OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan);
 OZ_DECLARE(zap_status_t) zap_channel_use(zap_channel_t *zchan);

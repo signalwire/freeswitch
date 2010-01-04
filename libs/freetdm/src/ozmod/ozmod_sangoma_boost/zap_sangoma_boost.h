@@ -36,6 +36,8 @@
 #include "sangoma_boost_client.h"
 #include "openzap.h"
 
+#define MAX_CHANS_PER_TRUNKGROUP 1024
+
 typedef enum {
 	ZAP_SANGOMA_BOOST_RUNNING = (1 << 0),
 	ZAP_SANGOMA_BOOST_RESTARTING = (1 << 1)
@@ -50,9 +52,16 @@ typedef struct zap_sangoma_boost_data {
 	zio_signal_cb_t signal_cb;
 	uint32_t flags;
 	boost_sigmod_interface_t *sigmod;
-	zap_queue_t *boost_queue;
+	zap_queue_t *boost_queue;	
 } zap_sangoma_boost_data_t;
 
+typedef struct zap_sangoma_boost_trunkgroup {
+	zap_mutex_t *mutex;
+	zap_size_t size;			/* Number of b-channels in group */	
+	unsigned int last_used_index; /* index of last b-channel used */
+	zap_channel_t* zchans[MAX_CHANS_PER_TRUNKGROUP];
+	//DAVIDY need to merge congestion timeouts to this struct
+} zap_sangoma_boost_trunkgroup_t;
 #endif
 
 /* For Emacs:

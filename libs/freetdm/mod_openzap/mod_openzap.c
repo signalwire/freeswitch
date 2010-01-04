@@ -1033,7 +1033,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	const char *dest = NULL;
 	char *data = NULL;
-	int span_id = -1, chan_id = 0;
+	int span_id = -1, group_id = -1,chan_id = 0;
 	zap_channel_t *zchan = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	char name[128];
@@ -1085,7 +1085,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	if (span_id == 0 && chan_id != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Span 0 is used to pick the first available span, selecting a channel is not supported (and doesn't make sense)\n");
-        return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
 	if (span_id == -1 && !zstr(span_name)) {
@@ -1097,11 +1097,18 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 	if (span_id == -1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing span\n");
-		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		//Look for a group
+		zap_group_t *group;
+		zap_status_t zstatus = zap_group_find_by_name(span_name, &group);
+		if (zstatus == ZAP_SUCCESS && group) {
+			group_id = group->group_id;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing span\n");
+			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		}
 	}
 
-	if (chan_id < 0) {
+	if (group_id < 0 && chan_id < 0) {
 		direction = ZAP_BOTTOM_UP;
 		chan_id = 0;
 	}
@@ -1143,11 +1150,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	zap_set_string(caller_data.cid_name, outbound_profile->caller_id_name);
 	zap_set_string(caller_data.cid_num.digits, outbound_profile->caller_id_number);
-	
-	if (chan_id) {
+
+	if (group_id >= 0) {
+		status = zap_channel_open_by_group(group_id, direction, &caller_data, &zchan);
+	} else if (chan_id) {
 		status = zap_channel_open(span_id, chan_id, &zchan);
 	} else {
-		status = zap_channel_open_any(span_id, direction, &caller_data, &zchan);
+		status = zap_channel_open_by_span(span_id, direction, &caller_data, &zchan);
 	}
 	
 	if (status != ZAP_SUCCESS) {
@@ -1753,7 +1762,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 			}
 		}
 		break;
-    case ZAP_SIGEVENT_PROGRESS:
+	case ZAP_SIGEVENT_PROGRESS:
 		{
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
@@ -1766,8 +1775,6 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 					sigmsg->channel->span_id, sigmsg->channel->chan_id, (uuid) ? uuid : "N/A");
 			}
 		}
-		break;
-
 	default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type %d for channel %d:%d\n",

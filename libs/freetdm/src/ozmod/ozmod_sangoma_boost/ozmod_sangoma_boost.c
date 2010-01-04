@@ -55,7 +55,10 @@ zap_mutex_t *g_boost_modules_mutex = NULL;
 zap_hash_t *g_boost_modules_hash = NULL;
 
 #define MAX_TRUNK_GROUPS 64
+//DAVIDY need to merge congestion_timeouts with zap_sangoma_boost_trunkgroups
 static time_t congestion_timeouts[MAX_TRUNK_GROUPS];
+
+static zap_sangoma_boost_trunkgroup_t *g_trunkgroups[MAX_TRUNK_GROUPS];
 
 #define BOOST_QUEUE_SIZE 500
 
@@ -303,76 +306,80 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	
 	zap_set_string(ani, caller_data->ani.digits);
 
-	if ((gr = strchr(ani, '@'))) {
-		*gr++ = '\0';
-	}
-
-	if (gr && *(gr+1)) {
-		tg = atoi(gr+1);
-		if (tg > 0) {
-			tg--;
-		}
-	}
-	event.trunk_group = tg;
-
-	if (check_congestion(tg)) {
-		zap_log(ZAP_LOG_CRIT, "All circuits are busy. Trunk Group=%i (BOOST REQUESTED BACK OFF)\n",tg+1);
-		*zchan = NULL;
-		return ZAP_FAIL;
-	}
-
-	zap_span_channel_use_count(span, &count);
-
-	if (count >= span->chan_count) {
-		zap_log(ZAP_LOG_CRIT, "All circuits are busy.\n");
-		*zchan = NULL;
-		return ZAP_FAIL;
-	}
-
 	r = next_request_id();
 	if (r == 0) {
 		zap_log(ZAP_LOG_CRIT, "All tanks ids are busy.\n");
 		*zchan = NULL;
 		return ZAP_FAIL;
 	}
-
 	sangomabc_call_init(&event, caller_data->cid_num.digits, ani, r);
-	//sangoma_bc_call_init will clear the trunk_group val so we need to set it again	
-	event.trunk_group=tg;
-	
-	if (gr && *(gr+1)) {
 
-		switch(*gr) {
-        case 'g':
-            event.hunt_group = SIGBOOST_HUNTGRP_SEQ_ASC;
-            break;
-        case 'G':
-            event.hunt_group = SIGBOOST_HUNTGRP_SEQ_DESC;
-            break;
-        case 'r':
-            event.hunt_group = SIGBOOST_HUNTGRP_RR_ASC;
-            break;
-        case 'R':
-            event.hunt_group = SIGBOOST_HUNTGRP_RR_DESC;
-            break;
-        default:
-			zap_log(ZAP_LOG_WARNING, "Failed to determine huntgroup (%s)\n", gr);
-            event.hunt_group = SIGBOOST_HUNTGRP_SEQ_ASC;
+	if (sangoma_boost_data->sigmod) {
+		*zchan = span->channels[chan_id];
+
+		event.span = (uint8_t) (*zchan)->physical_span_id;
+		event.chan = (uint8_t) (*zchan)->physical_chan_id;
+
+		zap_set_flag((*zchan), ZAP_CHANNEL_OUTBOUND);
+		zap_set_flag_locked((*zchan), ZAP_CHANNEL_INUSE);
+
+		OUTBOUND_REQUESTS[r].zchan = *zchan;
+	} else {
+		if ((gr = strchr(ani, '@'))) {
+			*gr++ = '\0';
+		}
+
+		if (gr && *(gr+1)) {
+			tg = atoi(gr+1);
+			if (tg > 0) {
+				tg--;
+			}
+		}
+		event.trunk_group = tg;
+
+		if (check_congestion(tg)) {
+			zap_log(ZAP_LOG_CRIT, "All circuits are busy. Trunk Group=%i (BOOST REQUESTED BACK OFF)\n",tg+1);
+			*zchan = NULL;
+			return ZAP_FAIL;
+		}
+
+		zap_span_channel_use_count(span, &count);
+
+		if (count >= span->chan_count) {
+			zap_log(ZAP_LOG_CRIT, "All circuits are busy.\n");
+			*zchan = NULL;
+			return ZAP_FAIL;
+		}	
+	
+		if (gr && *(gr+1)) {
+			switch(*gr) {
+					case 'g':
+							event.hunt_group = SIGBOOST_HUNTGRP_SEQ_ASC;
+							break;
+					case 'G':
+							event.hunt_group = SIGBOOST_HUNTGRP_SEQ_DESC;
+							break;
+					case 'r':
+							event.hunt_group = SIGBOOST_HUNTGRP_RR_ASC;
+							break;
+					case 'R':
+							event.hunt_group = SIGBOOST_HUNTGRP_RR_DESC;
+							break;
+					default:
+				zap_log(ZAP_LOG_WARNING, "Failed to determine huntgroup (%s)\n", gr);
+							event.hunt_group = SIGBOOST_HUNTGRP_SEQ_ASC;
+			}
 		}
 	}
 
 	zap_set_string(event.calling_name, caller_data->cid_name);
 	zap_set_string(event.isup_in_rdnis, caller_data->rdnis.digits);
-    if (strlen(caller_data->rdnis.digits)) {
-        event.isup_in_rdnis_size = (uint16_t)strlen(caller_data->rdnis.digits)+1;
-    }
+	if (strlen(caller_data->rdnis.digits)) {
+			event.isup_in_rdnis_size = (uint16_t)strlen(caller_data->rdnis.digits)+1;
+	}
     
 	event.calling_number_screening_ind = caller_data->screen;
 	event.calling_number_presentation = caller_data->pres;
-	if (sangoma_boost_data->sigmod) {
-		/* boost sigmods only know about physical spans, give them that and let them hunt there */
-		event.span = (uint8_t)span->channels[1]->physical_span_id;
-	}
 
 	OUTBOUND_REQUESTS[r].status = BST_WAITING;
 	OUTBOUND_REQUESTS[r].span = span;
@@ -380,7 +387,9 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	if (sangomabc_connection_write(&sangoma_boost_data->mcon, &event) <= 0) {
 		zap_log(ZAP_LOG_CRIT, "Failed to tx boost event [%s]\n", strerror(errno));
 		status = ZAP_FAIL;
-		*zchan = NULL;
+		if (!sangoma_boost_data->sigmod) {
+			*zchan = NULL;
+		}
 		goto done;
 	}
 
@@ -388,8 +397,11 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		zap_sleep(1);
 		if (--boost_request_timeout <= 0) {
 			status = ZAP_FAIL;
-			*zchan = NULL;
+			if (!sangoma_boost_data->sigmod) {
+				*zchan = NULL;
+			}
 			zap_log(ZAP_LOG_CRIT, "Timed out waiting for boost channel request response, current status: BST_WAITING\n");
+			zap_log(ZAP_LOG_CRIT, "DYDBG s%dc%d: Csid:%d Timed out waiting for boost channel request response, current status: BST_WAITING\n", (*zchan)->physical_span_id, (*zchan)->physical_chan_id, r);
 			goto done;
 		}
 	}
@@ -406,7 +418,9 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		zap_sleep(1);
 		if (--boost_request_timeout <= 0) {
 			status = ZAP_FAIL;
-			*zchan = NULL;
+			if (!sangoma_boost_data->sigmod) {
+				*zchan = NULL;
+			}
 			zap_log(ZAP_LOG_CRIT, "Timed out waiting for boost channel request response, current status: BST_ACK\n");
 			goto done;
 		}
@@ -420,7 +434,9 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		zap_log(ZAP_LOG_DEBUG, "Channel state changed to PROGRESS_MEDIA [Csid:%d]\n", r);
 	} else {
 		status = ZAP_FAIL;
-        *zchan = NULL;
+		if (!sangoma_boost_data->sigmod) {
+			*zchan = NULL;
+		}
 	}
 
  done:
@@ -433,12 +449,21 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	} else if (st != BST_READY) {
 		assert(r <= MAX_REQ_ID);
 		nack_map[r] = 1;
-		sangomabc_exec_command(&sangoma_boost_data->mcon,
-						   0,
-						   0,
-						   r,
-						   SIGBOOST_EVENT_CALL_START_NACK,
-						   0);
+		if (sangoma_boost_data->sigmod) {
+			sangomabc_exec_command(&sangoma_boost_data->mcon,
+								(*zchan)->physical_span_id,
+								(*zchan)->physical_chan_id,
+								r,
+								SIGBOOST_EVENT_CALL_START_NACK,
+								0);
+		} else {
+			sangomabc_exec_command(&sangoma_boost_data->mcon,
+								0,
+								0,
+								r,
+								SIGBOOST_EVENT_CALL_START_NACK,
+								0);
+		}
 	}
 
 	return status;
@@ -526,9 +551,11 @@ static void handle_call_progress(sangomabc_connection_t *mcon, sangomabc_short_e
  */
 static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
+	
 	zap_channel_t *zchan;
 	uint32_t event_span = event->span+1;
 	uint32_t event_chan = event->chan+1;
+
 	if (nack_map[event->call_setup_id]) {
 		return;
 	}
@@ -541,12 +568,19 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 	OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
 	SETUP_GRID[event->span][event->chan] = event->call_setup_id;
 
-	if ((zchan = find_zchan(OUTBOUND_REQUESTS[event->call_setup_id].span, event, 0))) {
+	if (mcon->sigmod) {
+		zchan = OUTBOUND_REQUESTS[event->call_setup_id].zchan;
+		zap_set_flag(zchan, ZAP_CHANNEL_OUTBOUND);
+		zap_set_flag_locked(zchan, ZAP_CHANNEL_INUSE);
+	} else {
+		zchan = find_zchan(OUTBOUND_REQUESTS[event->call_setup_id].span, event, 0);
+	}
+
+
+	if (zchan) {
 		if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
 			zap_log(ZAP_LOG_ERROR, "OPEN ERROR [%s]\n", zchan->last_error);
 		} else {
-			zap_set_flag(zchan, ZAP_CHANNEL_OUTBOUND);
-			zap_set_flag_locked(zchan, ZAP_CHANNEL_INUSE);
 			zchan->extra_id = event->call_setup_id;
 			zap_log(ZAP_LOG_DEBUG, "Assign chan %d:%d (%d:%d) CSid=%d\n", zchan->span_id, zchan->chan_id, event_span, event_chan, event->call_setup_id);
 			zchan->sflags = 0;
@@ -620,6 +654,7 @@ static void handle_call_done(zap_span_t *span, sangomabc_connection_t *mcon, san
 static void handle_call_start_nack(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
 	zap_channel_t *zchan;
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 
 	if (event->release_cause == SIGBOOST_CALL_SETUP_NACK_ALL_CKTS_BUSY) {
 		uint32_t count = 0;
@@ -648,8 +683,10 @@ static void handle_call_start_nack(zap_span_t *span, sangomabc_connection_t *mco
 		event->release_cause = 17;
 	}
 
-	if (event->call_setup_id) {
-
+	zap_log(ZAP_LOG_CRIT, "DYDBG setting event->call_setup_id:%d to BST_FAIL\n", event->call_setup_id);
+	OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
+	OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
+	if (!sangoma_boost_data->sigmod) {
 		sangomabc_exec_command(mcon,
 						   0,
 						   0,
@@ -657,8 +694,6 @@ static void handle_call_start_nack(zap_span_t *span, sangomabc_connection_t *mco
 						   SIGBOOST_EVENT_CALL_START_NACK_ACK,
 						   0);
 
-		OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
-		OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
 		return;
 	} else {
 		if ((zchan = find_zchan(span, event, 1))) {
@@ -677,6 +712,7 @@ static void handle_call_start_nack(zap_span_t *span, sangomabc_connection_t *mco
 		}
 	}
 
+#if 0
 	if (zchan) {
 		zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_MSG);
 	}
@@ -688,6 +724,7 @@ static void handle_call_start_nack(zap_span_t *span, sangomabc_connection_t *mco
 					   0,
 					   SIGBOOST_EVENT_CALL_START_NACK_ACK,
 					   0);
+#endif
 }
 
 /**
@@ -1528,6 +1565,7 @@ end:
  */
 static ZIO_SIG_LOAD_FUNCTION(zap_sangoma_boost_init)
 {
+	int i;
 	g_boost_modules_hash = create_hashtable(10, zap_hash_hashfromstring, zap_hash_equalkeys);
 	if (!g_boost_modules_hash) {
 		return ZAP_FAIL;
@@ -1535,6 +1573,10 @@ static ZIO_SIG_LOAD_FUNCTION(zap_sangoma_boost_init)
 	zap_mutex_create(&request_mutex);
 	zap_mutex_create(&signal_mutex);
 	zap_mutex_create(&g_boost_modules_mutex);
+
+	for(i=0;i< MAX_TRUNK_GROUPS;i++) {
+		g_trunkgroups[i]=NULL;
+	}
 	return ZAP_SUCCESS;
 }
 
@@ -1805,7 +1847,6 @@ static ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(zap_sangoma_boost_configure_span)
 			FAIL_CONFIG_RETURN(ZAP_FAIL);
 		}
 	}
-
 
 	if (!sigmod) {
 		if (!local_ip && local_port && remote_ip && remote_port && sig_cb) {

@@ -458,6 +458,7 @@ typedef struct zap_channel zap_channel_t;
 typedef struct zap_event zap_event_t;
 typedef struct zap_sigmsg zap_sigmsg_t;
 typedef struct zap_span zap_span_t;
+typedef struct zap_group zap_group_t;
 typedef struct zap_caller_data zap_caller_data_t;
 typedef struct zap_io_interface zap_io_interface_t;
 
