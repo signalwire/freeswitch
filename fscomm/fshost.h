@@ -35,17 +35,17 @@
 
 class Call;
 
-#define FSPHONE_GW_STATE_TRYING 0
-#define FSPHONE_GW_STATE_REGISTER 1
-#define FSPHONE_GW_STATE_REGED 2
-#define FSPHONE_GW_STATE_UNREGED 3
-#define FSPHONE_GW_STATE_UNREGISTER 4
-#define FSPHONE_GW_STATE_FAILED 5
-#define FSPHONE_GW_STATE_FAIL_WAIT 6
-#define FSPHONE_GW_STATE_EXPIRED 7
-#define FSPHONE_GW_STATE_NOREG 8
+#define FSCOMM_GW_STATE_TRYING 0
+#define FSCOMM_GW_STATE_REGISTER 1
+#define FSCOMM_GW_STATE_REGED 2
+#define FSCOMM_GW_STATE_UNREGED 3
+#define FSCOMM_GW_STATE_UNREGISTER 4
+#define FSCOMM_GW_STATE_FAILED 5
+#define FSCOMM_GW_STATE_FAIL_WAIT 6
+#define FSCOMM_GW_STATE_EXPIRED 7
+#define FSCOMM_GW_STATE_NOREG 8
 
-static const char *fsphone_gw_state_names[] = {
+static const char *fscomm_gw_state_names[] = {
     "TRYING",
     "REGISTER",
     "REGED",
@@ -65,7 +65,7 @@ public:
     switch_status_t sendCmd(const char *cmd, const char *args, QString *res);
     void generalEventHandler(switch_event_t *event);
     Call * getCallByUUID(QString uuid) { return _active_calls.value(uuid, NULL); }
-    QString getGwStateName(int id) { return fsphone_gw_state_names[id]; }
+    QString getGwStateName(int id) { return fscomm_gw_state_names[id]; }
 
 protected:
     void run(void);

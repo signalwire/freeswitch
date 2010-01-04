@@ -257,7 +257,7 @@ void MainWindow::answered(QString uuid)
         QListWidgetItem *item = ui->listCalls->item(i);
         if (item->data(Qt::UserRole).toString() == uuid)
         {
-            if (call->getDirection() == FSPHONE_CALL_DIRECTION_INBOUND)
+            if (call->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
             {
                 item->setText(tr("%1 (%2) - Active").arg(call->getCidName(), call->getCidNumber()));
                 break;

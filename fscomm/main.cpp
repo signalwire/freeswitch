@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     QCoreApplication::setOrganizationName("FreeSWITCH");
     QCoreApplication::setOrganizationDomain("freeswitch.org");
-    QCoreApplication::setApplicationName("FSPhone");
+    QCoreApplication::setApplicationName("FSComm");
 
     QPixmap image(":/images/splash.png");
     QSplashScreen *splash = new QSplashScreen(image);

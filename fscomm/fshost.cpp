@@ -56,21 +56,21 @@ void FSHost::run(void)
 
     /* Create directory structure for softphone with default configs */
     QDir conf_dir = QDir(QDir::home());
-    if (!conf_dir.exists(".fsphone"))
+    if (!conf_dir.exists(".fscomm"))
     {
-        conf_dir.mkpath(".fsphone/conf/accounts");
-        conf_dir.mkpath(".fsphone/templates");
+        conf_dir.mkpath(".fscomm/conf/accounts");
+        conf_dir.mkpath(".fscomm/templates");
         QFile rootXML(":/confs/freeswitch.xml");
-        QString dest = QString("%1/.fsphone/conf/freeswitch.xml").arg(conf_dir.absolutePath());
+        QString dest = QString("%1/.fscomm/conf/freeswitch.xml").arg(conf_dir.absolutePath());
         rootXML.copy(dest);
 
         QFile defaultAccount(":/confs/example.xml");
-        dest = QString("%1/.fsphone/conf/accounts/example.xml").arg(conf_dir.absolutePath());
+        dest = QString("%1/.fscomm/conf/accounts/example.xml").arg(conf_dir.absolutePath());
         defaultAccount.copy(dest);
     }
 
     /* Set all directories to the home user directory */
-    if (conf_dir.cd(".fsphone"))
+    if (conf_dir.cd(".fscomm"))
     {
         SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(strlen(QString("%1/conf").arg(conf_dir.absolutePath()).toAscii().constData()) + 1);
         if (!SWITCH_GLOBAL_dirs.conf_dir) {
@@ -152,14 +152,14 @@ switch_status_t FSHost::processAlegEvent(switch_event_t * event, QString uuid)
     switch_status_t status = SWITCH_STATUS_SUCCESS;
     Call * call = _active_calls.value(uuid);
     /* Inbound call */
-    if (call->getDirection() == FSPHONE_CALL_DIRECTION_INBOUND)
+    if (call->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
     {
         switch(event->event_id) {
         case SWITCH_EVENT_CHANNEL_ANSWER:
             {
                 call->setbUUID(switch_event_get_header_nil(event, "Other-Leg-Unique-ID"));
                 _bleg_uuids.insert(switch_event_get_header_nil(event, "Other-Leg-Unique-ID"), uuid);
-                call->setState(FSPHONE_CALL_STATE_ANSWERED);
+                call->setState(FSCOMM_CALL_STATE_ANSWERED);
                 emit answered(uuid);
                 break;
             }
@@ -192,7 +192,7 @@ switch_status_t FSHost::processAlegEvent(switch_event_t * event, QString uuid)
             }
         case SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE:
             {
-                if (call->getState() == FSPHONE_CALL_STATE_TRYING)
+                if (call->getState() == FSCOMM_CALL_STATE_TRYING)
                 {
                     emit callFailed(uuid);
                     _active_calls.take(uuid);
@@ -213,7 +213,7 @@ switch_status_t FSHost::processBlegEvent(switch_event_t * event, QString buuid)
     switch_status_t status = SWITCH_STATUS_SUCCESS;
     Call * call = _active_calls.value(uuid);
     /* Inbound call */
-    if (call->getDirection() == FSPHONE_CALL_DIRECTION_INBOUND)
+    if (call->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
     {
         qDebug() << " Inbound call";
     }
@@ -237,7 +237,7 @@ switch_status_t FSHost::processBlegEvent(switch_event_t * event, QString buuid)
             {
                 if (QString(switch_event_get_header_nil(event, "Answer-State")) == "early")
                 {
-                    call->setState(FSPHONE_CALL_STATE_RINGING);
+                    call->setState(FSCOMM_CALL_STATE_RINGING);
                     emit ringing(uuid);
                 }
                 //printEventHeaders(event);
@@ -280,20 +280,20 @@ void FSHost::generalEventHandler(switch_event_t *event)
                 Call *call = new Call(atoi(switch_event_get_header_nil(event, "call_id")),
                                       switch_event_get_header_nil(event, "Caller-Caller-ID-Name"),
                                       switch_event_get_header_nil(event, "Caller-Caller-ID-Number"),
-                                      FSPHONE_CALL_DIRECTION_INBOUND,
+                                      FSCOMM_CALL_DIRECTION_INBOUND,
                                       uuid);
                 _active_calls.insert(uuid, call);
-                call->setState(FSPHONE_CALL_STATE_RINGING);
+                call->setState(FSCOMM_CALL_STATE_RINGING);
                 emit ringing(uuid);
             }
             else if (strcmp(event->subclass_name, "portaudio::makecall") == 0)
             {
                 Call *call = new Call(atoi(switch_event_get_header_nil(event, "call_id")),NULL,
                                       switch_event_get_header_nil(event, "Caller-Destination-Number"),
-                                      FSPHONE_CALL_DIRECTION_OUTBOUND,
+                                      FSCOMM_CALL_DIRECTION_OUTBOUND,
                                       uuid);
                 _active_calls.insert(uuid, call);
-                call->setState(FSPHONE_CALL_STATE_TRYING);
+                call->setState(FSCOMM_CALL_STATE_TRYING);
                 emit newOutgoingCall(uuid);
             }
             else if (strcmp(event->subclass_name, "sofia::gateway_state") == 0)
@@ -301,23 +301,23 @@ void FSHost::generalEventHandler(switch_event_t *event)
                 QString state = switch_event_get_header_nil(event, "State");
                 QString gw = switch_event_get_header_nil(event, "Gateway");
                 if (state == "TRYING")
-                    emit gwStateChange(gw, FSPHONE_GW_STATE_TRYING);
+                    emit gwStateChange(gw, FSCOMM_GW_STATE_TRYING);
                 else if (state == "REGISTER")
-                    emit gwStateChange(gw, FSPHONE_GW_STATE_REGISTER);
+                    emit gwStateChange(gw, FSCOMM_GW_STATE_REGISTER);
                 else if (state == "REGED")
-                    emit gwStateChange(gw, FSPHONE_GW_STATE_REGED);
+                    emit gwStateChange(gw, FSCOMM_GW_STATE_REGED);
                 else if (state == "UNREGED")
-                    emit gwStateChange(gw, FSPHONE_GW_STATE_UNREGED);
+                    emit gwStateChange(gw, FSCOMM_GW_STATE_UNREGED);
                 else if (state == "UNREGISTER")
-                    emit gwStateChange(gw, FSPHONE_GW_STATE_UNREGISTER);
+                    emit gwStateChange(gw, FSCOMM_GW_STATE_UNREGISTER);
                 else if (state =="FAILED")
-                    emit gwStateChange(gw, FSPHONE_GW_STATE_FAILED);
+                    emit gwStateChange(gw, FSCOMM_GW_STATE_FAILED);
                 else if (state == "FAIL_WAIT")
-                    emit gwStateChange(gw, FSPHONE_GW_STATE_FAIL_WAIT);
+                    emit gwStateChange(gw, FSCOMM_GW_STATE_FAIL_WAIT);
                 else if (state == "EXPIRED")
-                    emit gwStateChange(gw, FSPHONE_GW_STATE_EXPIRED);
+                    emit gwStateChange(gw, FSCOMM_GW_STATE_EXPIRED);
                 else if (state == "NOREG")
-                    emit gwStateChange(gw, FSPHONE_GW_STATE_NOREG);
+                    emit gwStateChange(gw, FSCOMM_GW_STATE_NOREG);
             }
             else
             {
