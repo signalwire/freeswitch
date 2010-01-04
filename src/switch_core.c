@@ -52,7 +52,7 @@
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
 
 /* The main runtime obj we keep this hidden for ourselves */
-struct switch_runtime runtime;
+struct switch_runtime runtime = { 0 };
 static void switch_load_core_config(const char *file);
 
 static void send_heartbeat(void)
@@ -1174,8 +1174,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	struct in_addr in;
 	char hostname[256] = "";
 
-	memset(&runtime, 0, sizeof(runtime));
-	
+	if (runtime.runlevel > 0) {
+		/* one per customer */
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	runtime.runlevel++;
+
 	runtime.dummy_cng_frame.data = runtime.dummy_data;
 	runtime.dummy_cng_frame.datalen = sizeof(runtime.dummy_data);
 	runtime.dummy_cng_frame.buflen = sizeof(runtime.dummy_data);
@@ -1466,6 +1471,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	if (switch_core_init(flags, console, err) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
+
+	if (runtime.runlevel > 1) {
+		/* one per customer */
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	runtime.runlevel++;
 
 	/* set signal handlers */
 	signal(SIGINT, SIG_IGN);
