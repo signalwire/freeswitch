@@ -69,7 +69,7 @@ static int MATRIX = 1;
 
 static int STEP_MS = 10;
 static int STEP_MIC = 10000;
-static uint32_t TICK_PER_SEC = 100;
+static uint32_t TICK_PER_SEC = 1000;
 
 static int MS_PER_TICK = 10;
 
@@ -230,11 +230,11 @@ SWITCH_DECLARE(void) switch_time_set_matrix(switch_bool_t enable)
 	if (MATRIX) {
 		STEP_MS = 1;
 		STEP_MIC = 1000;
-		TICK_PER_SEC = 1000;
+		TICK_PER_SEC = 10000;
 	} else {
 		STEP_MS = 10;
 		STEP_MIC = 10000;
-		TICK_PER_SEC = 100;
+		TICK_PER_SEC = 1000;
 	}
 	switch_time_sync();
 }
@@ -379,7 +379,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 			MS_PER_TICK = timer->interval;
 			STEP_MS = 1;
 			STEP_MIC = 1000;
-			TICK_PER_SEC = 1000;
+			TICK_PER_SEC = 10000;
 			switch_time_sync();
 		}
 
