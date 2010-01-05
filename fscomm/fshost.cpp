@@ -112,7 +112,7 @@ void FSHost::run(void)
     /* If you need to override configuration directories, you need to change them in the SWITCH_GLOBAL_dirs global structure */
     printf("Initializing core...\n");
     /* Initialize the core and load modules, that will startup FS completely */
-    if (switch_core_init_and_modload(flags, console, &err) != SWITCH_STATUS_SUCCESS) {
+    if (switch_core_init(flags, console, &err) != SWITCH_STATUS_SUCCESS) {
         fprintf(stderr, "Failed to initialize FreeSWITCH's core: %s\n", err);
         emit coreLoadingError(err);
     }
@@ -124,13 +124,16 @@ void FSHost::run(void)
     }
 
     /* Load our QSettings module */
-    if (switch_loadable_module_build_dynamic("mod_qsettings",mod_qsettings_load,NULL,mod_qsettings_shutdown,SWITCH_FALSE) != SWITCH_STATUS_SUCCESS)
+    if (mod_qsettings_load() != SWITCH_STATUS_SUCCESS)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't load mod_qsettings\n");
     }
-    QString res;
-    sendCmd("load", "mod_event_socket", &res);
-    sendCmd("load", "mod_portaudio", &res);
+
+    if (switch_core_init_and_modload(flags, console, &err) != SWITCH_STATUS_SUCCESS) {
+        fprintf(stderr, "Failed to initialize FreeSWITCH's core: %s\n", err);
+        emit coreLoadingError(err);
+    }
+
     emit ready();
     /* Go into the runtime loop. If the argument is true, this basically sets runtime.running = 1 and loops while that is set
      * If its false, it initializes the libedit for the console, then does the same thing

@@ -35,10 +35,6 @@
 #include <QDir>
 #include "mod_qsettings/mod_qsettings.h"
 
-static struct {
-    switch_memory_pool_t* pool;
-} globals;
-
 switch_xml_t XMLBinding::getConfigXML(QString tmpl)
 {
     switch_event_t *e;
@@ -129,30 +125,15 @@ static switch_status_t do_config(void)
     return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_qsettings_load)
+switch_status_t mod_qsettings_load(void)
 {
-    /*switch_api_interface_t *qsettings_api_interface;*/
-
-    /* connect my internal structure to the blank pointer passed to me */
-    *module_interface = switch_loadable_module_create_module_interface(pool, "mod_qsettings");
-
-    memset(&globals,0,sizeof(globals));
-    globals.pool = pool;
 
     if (do_config() == SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sucessfully configured.\n");
     } else {
         return SWITCH_STATUS_FALSE;
     }
-
-
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "We loaded mod_qsettings.\n");
-    /* indicate that the module should continue to be loaded */
-    return SWITCH_STATUS_SUCCESS;
-}
 
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_qsettings_shutdown)
-{
-    switch_xml_unbind_search_function_ptr(xml_url_fetch);
     return SWITCH_STATUS_SUCCESS;
 }

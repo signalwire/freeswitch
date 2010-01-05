@@ -34,8 +34,7 @@
 #include <QSettings>
 #include <switch.h>
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_qsettings_load);
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_qsettings_shutdown);
+switch_status_t mod_qsettings_load(void);
 
 class XMLBinding
 {
