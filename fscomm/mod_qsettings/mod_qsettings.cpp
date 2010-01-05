@@ -45,19 +45,25 @@ switch_xml_t XMLBinding::getConfigXML(QString tmpl)
     switch_event_create_plain(&e, SWITCH_EVENT_REQUEST_PARAMS);
     switch_assert(e);
 
-    QFile tmplFile(QString("%1/templates/%2.xml").arg(QApplication::applicationDirPath(),tmpl));
-
-    if (!tmplFile.exists()) {
+    if (QFile::exists(QString("%1/.fscomm/templates/%2.xml").arg(QDir::homePath(),tmpl))) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-                          "Template %s.xml, doesn't exist on directory, falling back to embedded template.\n",
+                          "Using template %s.xml on .fscomm/.\n",
                           tmpl.toAscii().constData());
-        tmplFile.setFileName(QString(":/confs/%1.xml").arg(tmpl));
-        return NULL;
+    }
+    else if(QFile::exists(QString(":/confs/%1.xml").arg(tmpl)))
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+                          "Template %s.xml, doesn't exist on directory, copying embedded template.\n",
+                          tmpl.toAscii().constData());
+        QString dest = QString("%1/.fscomm/templates/%2.xml").arg(QDir::homePath(),tmpl);
+        QString orig = QString(":/confs/%1.xml").arg(tmpl);
+        QFile::copy(orig, dest);
     }
 
-    if (tmplFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    QFile tmplFile(QString("%1/.fscomm/templates/%2.xml").arg(QDir::homePath(),tmpl));
+    if (!tmplFile.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Template %s could not be read.!\n", tmpl.toAscii().constData());
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Template %s could not be read!\n", tmpl.toAscii().constData());
         return NULL;
     }
 
@@ -72,6 +78,7 @@ switch_xml_t XMLBinding::getConfigXML(QString tmpl)
     }
 
     char *res = switch_event_expand_headers(e, tmplContents.toAscii().constData());
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Template %s as follows:\n%s", tmpl.toAscii().constData(), res);
     switch_safe_free(e);
     return switch_xml_parse_str(res, strlen(res));
 }
@@ -81,6 +88,8 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 {
     XMLBinding *binding = (XMLBinding *) user_data;
 
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "We are being requested -> section: %s | tag_name: %s | key_name: %s | key_value: %s!\n",
+                      section, tag_name, key_name, key_value);
     if (!binding) {
         return NULL;
     }

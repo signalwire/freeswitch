@@ -130,6 +130,7 @@ void FSHost::run(void)
     }
     QString res;
     sendCmd("load", "mod_event_socket", &res);
+    sendCmd("load", "mod_portaudio", &res);
     emit ready();
     /* Go into the runtime loop. If the argument is true, this basically sets runtime.running = 1 and loops while that is set
      * If its false, it initializes the libedit for the console, then does the same thing

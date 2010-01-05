@@ -49,7 +49,7 @@
     </configuration>
 
     <configuration name="qsettings.conf" description="configures our mod_qsettings">
-		<bindings value="dialplan" />
+                <bindings value="configuration" />
     </configuration>
 
     <configuration name="local_stream.conf" description="stream files from local dir">
@@ -83,7 +83,6 @@
 	<load module="mod_logfile"/>
 	<load module="mod_enum"/>
 	<load module="mod_cdr_csv"/>
-	<load module="mod_portaudio"/>
 	<load module="mod_sofia"/>
 	<load module="mod_loopback"/>
 	<load module="mod_commands"/>
