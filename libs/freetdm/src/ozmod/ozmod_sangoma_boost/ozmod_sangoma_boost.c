@@ -401,7 +401,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 				*zchan = NULL;
 			}
 			zap_log(ZAP_LOG_CRIT, "Timed out waiting for boost channel request response, current status: BST_WAITING\n");
-			zap_log(ZAP_LOG_CRIT, "DYDBG s%dc%d: Csid:%d Timed out waiting for boost channel request response, current status: BST_WAITING\n", (*zchan)->physical_span_id, (*zchan)->physical_chan_id, r);
+			zap_log(ZAP_LOG_CRIT, "s%dc%d: Csid:%d Timed out waiting for boost channel request response, current status: BST_WAITING\n", (*zchan)->physical_span_id, (*zchan)->physical_chan_id, r);
 			goto done;
 		}
 	}
@@ -683,7 +683,7 @@ static void handle_call_start_nack(zap_span_t *span, sangomabc_connection_t *mco
 		event->release_cause = 17;
 	}
 
-	zap_log(ZAP_LOG_CRIT, "DYDBG setting event->call_setup_id:%d to BST_FAIL\n", event->call_setup_id);
+	zap_log(ZAP_LOG_DEBUG, "setting event->call_setup_id:%d to BST_FAIL\n", event->call_setup_id);
 	OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
 	OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
 	if (!sangoma_boost_data->sigmod) {
@@ -1565,7 +1565,6 @@ end:
  */
 static ZIO_SIG_LOAD_FUNCTION(zap_sangoma_boost_init)
 {
-	int i;
 	g_boost_modules_hash = create_hashtable(10, zap_hash_hashfromstring, zap_hash_equalkeys);
 	if (!g_boost_modules_hash) {
 		return ZAP_FAIL;
@@ -1573,10 +1572,7 @@ static ZIO_SIG_LOAD_FUNCTION(zap_sangoma_boost_init)
 	zap_mutex_create(&request_mutex);
 	zap_mutex_create(&signal_mutex);
 	zap_mutex_create(&g_boost_modules_mutex);
-
-	for(i=0;i< MAX_TRUNK_GROUPS;i++) {
-		g_trunkgroups[i]=NULL;
-	}
+	memset(&g_trunkgroups[0], 0, sizeof(g_trunkgroups));
 	return ZAP_SUCCESS;
 }
 

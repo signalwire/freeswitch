@@ -2552,6 +2552,7 @@ static zap_status_t load_config(void)
 	char group_name[80] = "default";
 	zap_io_interface_t *zio = NULL;
 	zap_analog_start_type_t tmp;
+	zap_size_t len = 0;
 
 	if (!zap_config_open_file(&cfg, cfg_name)) {
 		return ZAP_FAIL;
@@ -2707,8 +2708,13 @@ static zap_status_t load_config(void)
 				span->dtmf_hangup = zap_strdup(val);
 				span->dtmf_hangup_len = strlen(val);
 			} else if (!strcasecmp(var, "group")) {
-				memset(group_name, 0, sizeof(group_name));
-				memcpy(group_name, val, sizeof(group_name));
+				len = strlen(val);
+				if (len >= sizeof(group_name)) {
+					len = sizeof(group_name) - 1;
+					zap_log(ZAP_LOG_WARNING, "Truncating group name %s to %zd length\n", val, len);
+				}
+				zap_copy_string(group_name, val, len);
+				group_name[len] = '\0';
 			} else {
 				zap_log(ZAP_LOG_ERROR, "unknown span variable '%s'\n", var);
 			}
@@ -2728,7 +2734,8 @@ static zap_status_t process_module_config(zap_io_interface_t *zio)
 	zap_config_t cfg;
 	char *var, *val;
 	char filename[256] = "";
-	assert(zio != NULL);
+	
+	zap_assert_return(zio != NULL, ZAP_FAIL, "zio argument is null\n");
 
 	snprintf(filename, sizeof(filename), "%s.conf", zio->name);
 
@@ -3071,7 +3078,7 @@ OZ_DECLARE(zap_status_t) zap_group_add_channels(const char* name, zap_span_t* sp
 	p = strchr(val, ':');
 	mydata = zap_strdup(++p);
 	
-	assert(mydata != NULL);
+	zap_assert_return(mydata != NULL, ZAP_FAIL, "zap_strdup failed when adding channels\n");
 
 	items = zap_separate_string(mydata, ',', item_list, (sizeof(item_list) / sizeof(item_list[0])));
 
@@ -3080,14 +3087,13 @@ OZ_DECLARE(zap_status_t) zap_group_add_channels(const char* name, zap_span_t* sp
 			int chan_no;
 
 			chan_no = atoi (item_list[i]);
-			assert(chan_no > 0);
+			zap_assert(chan_no > 0, "Channel number is not bigger than zero, expect a nasty failure!\n");
 
 			if (zap_channel_add_to_group(name, span->channels[chan_no]) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_CRIT, "Failed to add chan:%d to group:%s\n", chan_no, name);
 			}
 		} else {
 			int chan_no_start, chan_no_end;
-
 			if (sscanf(item_list[i], "%d-%d", &chan_no_start, &chan_no_end) == 2) {
 				while (chan_no_start <= chan_no_end) {
 					if (zap_channel_add_to_group(name, span->channels[chan_no_start++])) {
@@ -3097,6 +3103,7 @@ OZ_DECLARE(zap_status_t) zap_group_add_channels(const char* name, zap_span_t* sp
 			}
 		}
 	}
+	zap_safe_free(mydata);
 	return ZAP_SUCCESS;
 }
 
@@ -3131,7 +3138,7 @@ OZ_DECLARE(zap_status_t) zap_group_find(uint32_t id, zap_group_t **group)
 OZ_DECLARE(zap_status_t) zap_group_find_by_name(const char *name, zap_group_t **group)
 {
 	zap_status_t status = ZAP_FAIL;
-
+	*group = NULL;
 	zap_mutex_lock(globals.group_mutex);
 	if (!zap_strlen_zero(name)) {
 		if ((*group = hashtable_search(globals.group_hash, (void *) name))) {
@@ -3167,17 +3174,21 @@ OZ_DECLARE(zap_status_t) zap_group_create(zap_group_t **group, const char *name)
 
 	zap_mutex_lock(globals.mutex);
 	if (globals.group_index < ZAP_MAX_GROUPS_INTERFACE) {
-		new_group = zap_malloc(sizeof(*new_group));
-		assert(new_group);
-		memset(new_group, 0, sizeof(*new_group));
+		new_group = zap_calloc(1, sizeof(*new_group));
+		
+		zap_assert(new_group != NULL, "Failed to create new zap group, expect a crash\n");
+
 		status = zap_mutex_create(&new_group->mutex);
-		assert(status == ZAP_SUCCESS);
+
+		zap_assert(status == ZAP_SUCCESS, "Failed to create group mutex, expect a crash\n");
 
 		new_group->group_id = ++globals.group_index;
 		new_group->name = zap_strdup(name);
 		zap_group_add(new_group);
 		*group = new_group;
 		status = ZAP_SUCCESS;
+	} else {
+		zap_log(ZAP_LOG_CRIT, "Group %s was not added, we exceeded the max number of groups\n", name);
 	}
 	zap_mutex_unlock(globals.mutex);
 	return status;
