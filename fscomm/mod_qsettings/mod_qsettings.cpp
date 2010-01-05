@@ -68,7 +68,7 @@ switch_xml_t XMLBinding::getConfigXML(QString tmpl)
     }
 
     /* Open template file and expand all strings based on QSettings */
-    QString tmplContents(tmplFile.readAll());
+    QByteArray tmplContents(tmplFile.readAll());
     tmplFile.close();
     _settings->beginGroup("FreeSIWTCH/conf");
     _settings->beginGroup(tmpl);
@@ -77,7 +77,7 @@ switch_xml_t XMLBinding::getConfigXML(QString tmpl)
         switch_event_add_header_string(e, SWITCH_STACK_BOTTOM, k.toAscii().constData(), _settings->value(k).toByteArray().constData());
     }
 
-    char *res = switch_event_expand_headers(e, tmplContents.toAscii().constData());
+    char *res = switch_event_expand_headers(e, tmplContents.data());
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Template %s as follows:\n%s", tmpl.toAscii().constData(), res);
     switch_safe_free(e);
     return switch_xml_parse_str(res, strlen(res));
