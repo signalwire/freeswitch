@@ -53,6 +53,9 @@
 #ifdef HAVE_LIBPCAP
 /*-------------------------------------------------------------------------*/
 /*Q931ToPcap functions*/
+#ifndef WIN32
+#include <sys/socket.h>
+#endif
 #include <pcap.h>
 #endif
 
