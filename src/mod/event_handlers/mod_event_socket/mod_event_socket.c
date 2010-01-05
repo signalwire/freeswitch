@@ -54,6 +54,9 @@ typedef enum {
 	LFLAG_HANDLE_DISCO = (1 << 11),
 	LFLAG_CONNECTED = (1 << 12),
 	LFLAG_RESUME = (1 << 13),
+	LFLAG_AUTH_EVENTS = (1 << 14),
+	LFLAG_ALL_EVENTS_AUTHED = (1 << 15),
+	LFLAG_ALLOW_LOG = (1 << 16)
 } event_flag_t;
 
 typedef enum {
@@ -73,7 +76,10 @@ struct listener {
 	switch_log_level_t level;
 	char *ebuf;
 	uint8_t event_list[SWITCH_EVENT_ALL + 1];
+	uint8_t allowed_event_list[SWITCH_EVENT_ALL + 1];
 	switch_hash_t *event_hash;
+	switch_hash_t *allowed_event_hash;
+	switch_hash_t *allowed_api_hash;
 	switch_thread_rwlock_t *rwlock;
 	switch_core_session_t *session;
 	int lost_events;
@@ -210,6 +216,15 @@ static switch_status_t expire_listener(listener_t **listener)
 
 	flush_listener(*listener, SWITCH_TRUE, SWITCH_TRUE);
 	switch_core_hash_destroy(&l->event_hash);
+
+	if (l->allowed_event_hash) {
+        switch_core_hash_destroy(&l->allowed_event_hash);
+    }
+
+	if (l->allowed_api_hash) {
+        switch_core_hash_destroy(&l->allowed_api_hash);
+    }
+
 
 	switch_mutex_lock(l->filter_mutex);
 	if (l->filters) {
@@ -429,6 +444,7 @@ SWITCH_STANDARD_APP(socket_function)
 	listener->pool = switch_core_session_get_pool(session);
 	listener->format = EVENT_FORMAT_PLAIN;
 	listener->session = session;
+	switch_set_flag(listener, LFLAG_ALLOW_LOG);
 
 	switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 	switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
@@ -753,6 +769,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		switch_core_hash_init(&listener->event_hash, listener->pool);
 		switch_set_flag(listener, LFLAG_AUTHED);
 		switch_set_flag(listener, LFLAG_STATEFUL);
+		switch_set_flag(listener, LFLAG_ALLOW_LOG);
 		switch_queue_create(&listener->event_queue, SWITCH_CORE_QUEUE_LEN, listener->pool);
 		switch_queue_create(&listener->log_queue, SWITCH_CORE_QUEUE_LEN, listener->pool);
 
@@ -1390,6 +1407,60 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	return NULL;
 
 }
+
+static switch_bool_t auth_api_command(listener_t *listener, const char *api_cmd, const char *arg)
+{
+	const char *check_cmd = api_cmd;
+	char *sneaky_commands[] = { "bgapi", "sched_api", "eval", "expand", NULL };
+	int x = 0;
+	char *dup_arg = NULL;
+	char *next = NULL;
+	switch_bool_t ok = SWITCH_TRUE;
+
+ top:
+
+	if (!switch_core_hash_find(listener->allowed_api_hash, check_cmd)) {
+		ok = SWITCH_FALSE;
+		goto end;
+	}
+	
+	while(check_cmd) {
+		for (x = 0; sneaky_commands[x]; x++) {
+			if (!strcasecmp(sneaky_commands[x], check_cmd)) {
+				if (check_cmd == api_cmd) {
+					if (arg) {
+						dup_arg = strdup(arg);
+						check_cmd = dup_arg;
+						if ((next = strchr(check_cmd, ' '))) {
+							*next++ = '\0';
+						}
+					} else {
+						break;
+					}
+				} else {
+					if (next) {
+						check_cmd = next;
+					} else {
+						check_cmd = dup_arg;
+					}
+					
+					if ((next = strchr(check_cmd, ' '))) {
+						*next++ = '\0';
+					}
+				}
+				goto top;
+			}
+		}
+		break;
+	}
+
+ end:
+
+	switch_safe_free(dup_arg);
+	return ok;
+	
+}
+
 static switch_status_t parse_command(listener_t *listener, switch_event_t **event, char *reply, uint32_t reply_len)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -1405,7 +1476,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		cmd = reload_cheat;
 	} 
 
-	if (!strncasecmp(cmd, "exit", 4)) {
+	if (!strncasecmp(cmd, "exit", 4) || !strncasecmp(cmd, "...", 3)) {
 		switch_clear_flag_locked(listener, LFLAG_RUNNING);
 		switch_snprintf(reply, reply_len, "+OK bye");
 		goto done;
@@ -1427,6 +1498,196 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			}
 
 			goto done;
+		}
+
+		if (!strncasecmp(cmd, "userauth ", 9)) {
+			const char *passwd;
+			const char *allowed_api;
+			const char *allowed_events;
+			switch_event_t *params;
+			char *user, *domain_name, *pass;
+			switch_xml_t x_domain = NULL, x_domain_root, x_user = NULL, x_params, x_param, x_group = NULL;
+			int authed = 0;
+			char *edup = NULL;
+			char event_reply[512] = "Allowed-Events: all\n";
+			char api_reply[512] = "Allowed-API: all\n";
+			char log_reply[512] = "";
+			int allowed_log = 1;
+			
+
+			switch_clear_flag(listener, LFLAG_ALLOW_LOG);
+
+			strip_cr(cmd);
+
+			user = cmd + 9;
+
+			if ((pass = strchr(user, ':'))) {
+				*pass++ = '\0';
+			}
+
+			if ((domain_name = strchr(user, '@'))) {
+				*domain_name++ = '\0';
+			}
+
+			if (zstr(user) || zstr(domain_name)) {
+				switch_snprintf(reply, reply_len, "-ERR invalid");
+				switch_clear_flag_locked(listener, LFLAG_RUNNING);
+				goto done;
+			}
+
+
+			passwd = NULL;
+			allowed_events = NULL;
+			allowed_api = NULL;
+			
+			params = NULL;
+			x_domain_root = NULL;
+			
+
+			switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+			switch_assert(params);
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "event_socket_auth");
+
+			if (switch_xml_locate_user("id", user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, &x_group, params) == SWITCH_STATUS_SUCCESS) {
+				switch_xml_t list[3];
+				int x = 0;
+
+				list[0] = x_domain;
+				list[1] = x_group;
+				list[2] = x_user;
+
+				for (x = 0 ; x < 3; x++) {
+					if ((x_params = switch_xml_child(list[x], "params"))) {
+						for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+							const char *var = switch_xml_attr_soft(x_param, "name");
+							const char *val = switch_xml_attr_soft(x_param, "value");
+
+							if (!strcasecmp(var, "esl-password")) {
+								passwd = val;
+							} else if (!strcasecmp(var, "esl-allowed-log")) {
+								allowed_log = switch_true(val);
+							} else if (!strcasecmp(var, "esl-allowed-events")) {
+								allowed_events = val;
+							} else if (!strcasecmp(var, "esl-allowed-api")) {
+								allowed_api = val;
+							}
+						}
+					}
+				}
+			} else {
+				authed = 0;
+				goto bot;
+			}
+			
+			if (!zstr(passwd) && !zstr(pass) && !strcmp(passwd, pass)) {
+				authed = 1;
+				
+				if (allowed_events) {
+					char delim = ',';
+					char *cur, *next;
+					int count = 0, custom = 0, key_count = 0;
+
+					switch_set_flag(listener, LFLAG_AUTH_EVENTS);
+
+					switch_snprintf(event_reply, sizeof(event_reply), "Allowed-Events: %s\n", allowed_events);
+
+					switch_core_hash_init(&listener->allowed_event_hash, listener->pool);
+					
+					edup = strdup(allowed_events);
+					cur = edup;
+
+					if (strchr(edup, ' ')) {
+						delim = ' ';
+					}
+					
+					for (cur = edup; cur; count++) {
+						switch_event_types_t type;
+						
+						if ((next = strchr(cur, delim))) {
+							*next++ = '\0';
+						}
+						
+						if (custom) {
+							switch_core_hash_insert(listener->allowed_event_hash, cur, MARKER);
+						} else if (switch_name_event(cur, &type) == SWITCH_STATUS_SUCCESS) {
+							key_count++;
+							if (type == SWITCH_EVENT_ALL) {
+								uint32_t x = 0;
+								switch_set_flag(listener, LFLAG_ALL_EVENTS_AUTHED);
+								for (x = 0; x < SWITCH_EVENT_ALL; x++) {
+									listener->allowed_event_list[x] = 1;
+								}
+							}
+							if (type <= SWITCH_EVENT_ALL) {
+								listener->allowed_event_list[type] = 1;
+							}
+							if (type == SWITCH_EVENT_CUSTOM) {
+								custom++;
+							}
+						}
+						
+						cur = next;
+					}
+		
+					switch_safe_free(edup);
+				}
+
+				switch_snprintf(log_reply, sizeof(log_reply), "Allowed-LOG: %s\n", allowed_log ? "true" : "false");
+
+				if (allowed_log) {
+					switch_set_flag(listener, LFLAG_ALLOW_LOG);
+				}
+
+				if (allowed_api) {
+					char delim = ',';
+					char *cur, *next;
+					int count = 0;
+
+					switch_snprintf(api_reply, sizeof(api_reply), "Allowed-API: %s\n", allowed_api);
+
+					switch_core_hash_init(&listener->allowed_api_hash, listener->pool);
+					
+					edup = strdup(allowed_api);
+					cur = edup;
+
+					if (strchr(edup, ' ')) {
+						delim = ' ';
+					}
+					
+					for (cur = edup; cur; count++) {
+						if ((next = strchr(cur, delim))) {
+							*next++ = '\0';
+						}
+
+						switch_core_hash_insert(listener->allowed_api_hash, cur, MARKER);
+
+						cur = next;
+					}
+		
+					switch_safe_free(edup);
+				}
+
+			}
+
+			
+		bot:
+
+			if (params) {
+				switch_event_destroy(&params);
+			}
+			
+			if (authed) {
+				switch_set_flag_locked(listener, LFLAG_AUTHED);
+				switch_snprintf(reply, reply_len, "~Reply-Text: +OK accepted\n%s%s%s\n", event_reply, api_reply, log_reply);
+			} else {
+				switch_snprintf(reply, reply_len, "-ERR invalid");
+				switch_clear_flag_locked(listener, LFLAG_RUNNING);
+			}
+			
+			if (x_domain_root) {
+				switch_xml_free(x_domain_root);
+			}			
+
 		}
 
 		goto done;
@@ -1737,6 +1998,15 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			*arg++ = '\0';
 		}
 
+		if (listener->allowed_api_hash) {
+			if (!auth_api_command(listener, api_cmd, arg)) {
+				switch_snprintf(reply, reply_len, "-ERR permission denied");
+				status = SWITCH_STATUS_SUCCESS;
+				goto done;
+			}
+		}
+		
+
 		acs.listener = listener;
 		acs.api_cmd = api_cmd;
 		acs.arg = arg;
@@ -1761,6 +2031,14 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 		if ((arg = strchr(api_cmd, ' '))) {
 			*arg++ = '\0';
+		}
+
+		if (listener->allowed_api_hash) {
+			if (!auth_api_command(listener, api_cmd, arg)) {
+				switch_snprintf(reply, reply_len, "-ERR permission denied");
+				status = SWITCH_STATUS_SUCCESS;
+				goto done;
+			}
 		}
 
 		switch_core_new_memory_pool(&pool);
@@ -1803,6 +2081,11 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 		char *level_s;
 		switch_log_level_t ltype = SWITCH_LOG_DEBUG;
+
+		if (!switch_test_flag(listener, LFLAG_ALLOW_LOG)) {
+			switch_snprintf(reply, reply_len, "-ERR permission denied");
+			goto done;
+		}
 
 		//pull off the first newline/carriage return
 		strip_cr(cmd);
@@ -1874,10 +2157,22 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 						goto end;
 					}
 				}
-
+				
+				
 				if (custom) {
-					switch_core_hash_insert(listener->event_hash, cur, MARKER);
+					if (listener->allowed_event_hash && switch_core_hash_find(listener->allowed_event_hash, cur)) {
+						switch_core_hash_insert(listener->event_hash, cur, MARKER);
+					} else {
+						switch_snprintf(reply, reply_len, "-ERR permission denied");
+						goto done;
+					}
 				} else if (switch_name_event(cur, &type) == SWITCH_STATUS_SUCCESS) {
+					if (switch_test_flag(listener, LFLAG_AUTH_EVENTS) && !listener->allowed_event_list[type] && 
+						!switch_test_flag(listener, LFLAG_ALL_EVENTS_AUTHED)) {
+						switch_snprintf(reply, reply_len, "-ERR permission denied");
+						goto done;
+					}
+
 					key_count++;
 					if (type == SWITCH_EVENT_ALL) {
 						uint32_t x = 0;
@@ -2199,6 +2494,14 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	switch_core_hash_destroy(&listener->event_hash);
 
+	if (listener->allowed_event_hash) {
+		switch_core_hash_destroy(&listener->allowed_event_hash);
+	}
+
+	if (listener->allowed_api_hash) {
+		switch_core_hash_destroy(&listener->allowed_api_hash);
+	}
+
 	if (listener->session) {
 		switch_channel_clear_flag(switch_core_session_get_channel(listener->session), CF_CONTROLLED);
 		switch_clear_flag_locked(listener, LFLAG_SESSION);
@@ -2376,6 +2679,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		listener_pool = NULL;
 		listener->format = EVENT_FORMAT_PLAIN;
 		switch_set_flag(listener, LFLAG_FULL);
+		switch_set_flag(listener, LFLAG_ALLOW_LOG);
+
 		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 		switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 

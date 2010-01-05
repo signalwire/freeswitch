@@ -227,18 +227,19 @@ static abyss_bool user_attributes (const char *user, const char *domain_name,
 		}
 	}
 
+	if (ppasswd)
+		*ppasswd = strdup(passwd);
+	if (pvm_passwd)
+		*pvm_passwd = strdup(vm_passwd);
+	if (palias)
+		*palias = strdup(alias);
+	if (pallowed_commands)
+		*pallowed_commands = strdup(allowed_commands);
+	
+
 	if (x_domain_root) {
 		switch_xml_free(x_domain_root);
 	}
-
-	if (ppasswd)
-		*ppasswd = passwd;
-	if (pvm_passwd)
-		*pvm_passwd = vm_passwd;
-	if (palias)
-		*palias = alias;
-	if (pallowed_commands)
-		*pallowed_commands = allowed_commands;
 
 	return TRUE;
 }
@@ -293,7 +294,7 @@ static abyss_bool is_authorized (const TSession *r, const char *command)
 	if (!allowed_commands)
 		return FALSE;
 
-	dup = strdup (allowed_commands);
+	dup = allowed_commands;
 	argc = switch_separate_string (dup, ',', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	for (i = 0; i < argc; i++) {
@@ -319,7 +320,8 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 	const char *box = NULL;
 	int at = 0;
 	char *dp;
-
+	abyss_bool rval = FALSE;
+	
 	p = RequestHeaderValue(r, "authorization");
 
 	if (p) {
@@ -445,18 +447,25 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 
 				ResponseAddField(r, "freeswitch-user", (box ? box : user));
 				ResponseAddField(r, "freeswitch-domain", domain_name);
-
-				return TRUE;
+				rval = TRUE;
+				goto done;
 			}
 		}
 	}
 
-  fail:
+ fail:
 
 	switch_snprintf(z, sizeof(z), "Basic realm=\"%s\"", domain_name ? domain_name : globals.realm);
 	ResponseAddField(r, "WWW-Authenticate", z);
 	ResponseStatus(r, 401);
-	return FALSE;
+
+ done:
+
+	switch_safe_free(mypass1);
+	switch_safe_free(mypass2);
+	switch_safe_free(box);
+	
+	return rval;
 }
 
 abyss_bool auth_hook(TSession * r)
