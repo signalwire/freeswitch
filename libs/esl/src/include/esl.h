@@ -379,9 +379,10 @@ ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event
     \param handle Handle to connect
     \param host Host to be connected
     \param port Port to be connected
+    \param password FreeSWITCH server username (optional)
     \param password FreeSWITCH server password
 */
-ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *password);
+ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password);
 /*!
     \brief Disconnect a handle
     \param handle Handle to be disconnected

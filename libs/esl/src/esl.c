@@ -580,7 +580,7 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 
 }
 
-ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *password)
+ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password)
 {
 
 	struct hostent *result;
@@ -651,7 +651,12 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 		goto fail;
 	}
 
-	snprintf(sendbuf, sizeof(sendbuf), "auth %s\n\n", password);
+	if (esl_strlen_zero(user)) {
+		snprintf(sendbuf, sizeof(sendbuf), "auth %s\n\n", password);
+	} else {
+		snprintf(sendbuf, sizeof(sendbuf), "userauth %s:%s\n\n", user,  password);
+	}
+
 	esl_send(handle, sendbuf);
 
 	

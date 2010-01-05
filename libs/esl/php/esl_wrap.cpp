@@ -1709,6 +1709,53 @@ ZEND_NAMED_FUNCTION(_wrap_new_ESLconnection__SWIG_0) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  ESLconnection *result = 0 ;
+  zval **args[4];
+  
+  SWIG_ResetError();
+  if(ZEND_NUM_ARGS() != 4 || zend_get_parameters_array_ex(4, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  convert_to_string_ex(args[0]);
+  arg1 = (char *) Z_STRVAL_PP(args[0]);
+  /*@SWIG@*/;
+  
+  
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  convert_to_string_ex(args[1]);
+  arg2 = (char *) Z_STRVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  convert_to_string_ex(args[2]);
+  arg3 = (char *) Z_STRVAL_PP(args[2]);
+  /*@SWIG@*/;
+  
+  
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  convert_to_string_ex(args[3]);
+  arg4 = (char *) Z_STRVAL_PP(args[3]);
+  /*@SWIG@*/;
+  
+  result = (ESLconnection *)new ESLconnection((char const *)arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4);
+  {
+    SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_ESLconnection, 1);
+  }
+  return;
+fail:
+  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_new_ESLconnection__SWIG_1) {
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
   ESLconnection *result = 0 ;
   zval **args[3];
   
@@ -1745,7 +1792,7 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_new_ESLconnection__SWIG_1) {
+ZEND_NAMED_FUNCTION(_wrap_new_ESLconnection__SWIG_2) {
   int arg1 ;
   ESLconnection *result = 0 ;
   zval **args[1];
@@ -1773,7 +1820,7 @@ fail:
 
 ZEND_NAMED_FUNCTION(_wrap_new_ESLconnection) {
   int argc;
-  zval **argv[3];
+  zval **argv[4];
   
   argc = ZEND_NUM_ARGS();
   zend_get_parameters_array_ex(argc,argv);
@@ -1781,7 +1828,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_ESLconnection) {
     int _v;
     _v = (Z_TYPE_PP(argv[0]) == IS_LONG); 
     if (_v) {
-      return _wrap_new_ESLconnection__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+      return _wrap_new_ESLconnection__SWIG_2(INTERNAL_FUNCTION_PARAM_PASSTHRU);
     }
   }
   if (argc == 3) {
@@ -1792,7 +1839,23 @@ ZEND_NAMED_FUNCTION(_wrap_new_ESLconnection) {
       if (_v) {
         _v = (Z_TYPE_PP(argv[2]) == IS_STRING); 
         if (_v) {
-          return _wrap_new_ESLconnection__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+          return _wrap_new_ESLconnection__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+        }
+      }
+    }
+  }
+  if (argc == 4) {
+    int _v;
+    _v = (Z_TYPE_PP(argv[0]) == IS_STRING); 
+    if (_v) {
+      _v = (Z_TYPE_PP(argv[1]) == IS_STRING); 
+      if (_v) {
+        _v = (Z_TYPE_PP(argv[2]) == IS_STRING); 
+        if (_v) {
+          _v = (Z_TYPE_PP(argv[3]) == IS_STRING); 
+          if (_v) {
+            return _wrap_new_ESLconnection__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+          }
         }
       }
     }

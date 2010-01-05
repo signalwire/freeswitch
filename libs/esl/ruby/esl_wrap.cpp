@@ -2646,6 +2646,65 @@ _wrap_new_ESLconnection__SWIG_0(int argc, VALUE *argv, VALUE self) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  ESLconnection *result = 0 ;
+  int res1 ;
+  char *buf1 = 0 ;
+  int alloc1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  int res4 ;
+  char *buf4 = 0 ;
+  int alloc4 = 0 ;
+  
+  if ((argc < 4) || (argc > 4)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 4)",argc); SWIG_fail;
+  }
+  res1 = SWIG_AsCharPtrAndSize(argv[0], &buf1, NULL, &alloc1);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "char const *","ESLconnection", 1, argv[0] ));
+  }
+  arg1 = reinterpret_cast< char * >(buf1);
+  res2 = SWIG_AsCharPtrAndSize(argv[1], &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","ESLconnection", 2, argv[1] ));
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  res3 = SWIG_AsCharPtrAndSize(argv[2], &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "char const *","ESLconnection", 3, argv[2] ));
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
+  res4 = SWIG_AsCharPtrAndSize(argv[3], &buf4, NULL, &alloc4);
+  if (!SWIG_IsOK(res4)) {
+    SWIG_exception_fail(SWIG_ArgError(res4), Ruby_Format_TypeError( "", "char const *","ESLconnection", 4, argv[3] ));
+  }
+  arg4 = reinterpret_cast< char * >(buf4);
+  result = (ESLconnection *)new ESLconnection((char const *)arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4);DATA_PTR(self) = result;
+  
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  return self;
+fail:
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_new_ESLconnection__SWIG_1(int argc, VALUE *argv, VALUE self) {
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
   ESLconnection *result = 0 ;
   int res1 ;
   char *buf1 = 0 ;
@@ -2707,7 +2766,7 @@ _wrap_ESLconnection_allocate(VALUE self) {
   
 
 SWIGINTERN VALUE
-_wrap_new_ESLconnection__SWIG_1(int argc, VALUE *argv, VALUE self) {
+_wrap_new_ESLconnection__SWIG_2(int argc, VALUE *argv, VALUE self) {
   int arg1 ;
   ESLconnection *result = 0 ;
   int val1 ;
@@ -2731,11 +2790,11 @@ fail:
 
 SWIGINTERN VALUE _wrap_new_ESLconnection(int nargs, VALUE *args, VALUE self) {
   int argc;
-  VALUE argv[3];
+  VALUE argv[4];
   int ii;
   
   argc = nargs;
-  if (argc > 3) SWIG_fail;
+  if (argc > 4) SWIG_fail;
   for (ii = 0; (ii < argc); ++ii) {
     argv[ii] = args[ii];
   }
@@ -2746,7 +2805,7 @@ SWIGINTERN VALUE _wrap_new_ESLconnection(int nargs, VALUE *args, VALUE self) {
       _v = SWIG_CheckState(res);
     }
     if (_v) {
-      return _wrap_new_ESLconnection__SWIG_1(nargs, args, self);
+      return _wrap_new_ESLconnection__SWIG_2(nargs, args, self);
     }
   }
   if (argc == 3) {
@@ -2760,14 +2819,35 @@ SWIGINTERN VALUE _wrap_new_ESLconnection(int nargs, VALUE *args, VALUE self) {
         int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
         _v = SWIG_CheckState(res);
         if (_v) {
-          return _wrap_new_ESLconnection__SWIG_0(nargs, args, self);
+          return _wrap_new_ESLconnection__SWIG_1(nargs, args, self);
+        }
+      }
+    }
+  }
+  if (argc == 4) {
+    int _v;
+    int res = SWIG_AsCharPtrAndSize(argv[0], 0, NULL, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          int res = SWIG_AsCharPtrAndSize(argv[3], 0, NULL, 0);
+          _v = SWIG_CheckState(res);
+          if (_v) {
+            return _wrap_new_ESLconnection__SWIG_0(nargs, args, self);
+          }
         }
       }
     }
   }
   
 fail:
-  Ruby_Format_OverloadedError( argc, 3, "ESLconnection.new", 
+  Ruby_Format_OverloadedError( argc, 4, "ESLconnection.new", 
+    "    ESLconnection.new(char const *host, char const *port, char const *user, char const *password)\n"
     "    ESLconnection.new(char const *host, char const *port, char const *password)\n"
     "    ESLconnection.new(int socket)\n");
   

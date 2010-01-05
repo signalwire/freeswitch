@@ -14,7 +14,15 @@ ESLconnection::ESLconnection(const char *host, const char *port, const char *pas
 	connection_construct_common();
 	int x_port = atoi(port);
 
-	esl_connect(&handle, host, x_port, password);
+	esl_connect(&handle, host, x_port, NULL, password);
+}
+
+ESLconnection::ESLconnection(const char *host, const char *port, const char *user, const char *password)
+{
+	connection_construct_common();
+	int x_port = atoi(port);
+
+	esl_connect(&handle, host, x_port, user, password);
 }
 
 

@@ -38,10 +38,13 @@ public class ESLconnection : IDisposable {
     }
   }
 
-  public ESLconnection(string host, string port, string password) : this(ESLPINVOKE.new_ESLconnection__SWIG_0(host, port, password), true) {
+  public ESLconnection(string host, string port, string user, string password) : this(ESLPINVOKE.new_ESLconnection__SWIG_0(host, port, user, password), true) {
   }
 
-  public ESLconnection(int socket) : this(ESLPINVOKE.new_ESLconnection__SWIG_1(socket), true) {
+  public ESLconnection(string host, string port, string password) : this(ESLPINVOKE.new_ESLconnection__SWIG_1(host, port, password), true) {
+  }
+
+  public ESLconnection(int socket) : this(ESLPINVOKE.new_ESLconnection__SWIG_2(socket), true) {
   }
 
   public int socketDescriptor() {

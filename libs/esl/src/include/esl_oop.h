@@ -72,6 +72,7 @@ class ESLconnection {
  private:
 	esl_handle_t handle;
  public:
+	ESLconnection(const char *host, const char *port, const char *user, const char *password);
 	ESLconnection(const char *host, const char *port, const char *password);
 	ESLconnection(int socket);
 	virtual ~ESLconnection();

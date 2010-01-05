@@ -112,11 +112,12 @@ class ESLevent {
 class ESLconnection {
 	public $_cPtr=null;
 
-	function __construct($host_or_socket,$port=null,$password=null) {
+	function __construct($host_or_socket,$port=null,$user_or_password=null,$password=null) {
 		switch (func_num_args()) {
 		case 1: $r=new_ESLconnection($host_or_socket); break;
 		case 2: $r=new_ESLconnection($host_or_socket,$port); break;
-		default: $r=new_ESLconnection($host_or_socket,$port,$password);
+		case 3: $r=new_ESLconnection($host_or_socket,$port,$user_or_password); break;
+		default: $r=new_ESLconnection($host_or_socket,$port,$user_or_password,$password);
 		}
 		$this->_cPtr=$r;
 	}

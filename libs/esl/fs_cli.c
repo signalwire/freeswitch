@@ -57,6 +57,7 @@ typedef struct {
 	char name[128];
 	char host[128];
 	esl_port_t port;
+	char user[256];
 	char pass[128];
 	int debug;
 	const char *console_fnkeys[12];
@@ -559,6 +560,7 @@ static int usage(char *name){
 	printf("  -?,-h --help                    Usage Information\n");
 	printf("  -H, --host=hostname             Host to connect\n");
 	printf("  -P, --port=port                 Port to connect (1 - 65535)\n");
+	printf("  -u, --user=user@domain          user@domain\n");
 	printf("  -p, --password=password         Password\n");
 	printf("  -x, --execute=command           Execute Command and Exit\n");
 	printf("  -l, --loglevel=command          Log Level\n");
@@ -699,11 +701,16 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 		printf("Unknown command [%s]\n", cmd);
 	} else {
 		char cmd_str[1024] = "";
-
+		const char *err = NULL;
+		
 		snprintf(cmd_str, sizeof(cmd_str), "api %s\n\n", cmd);
 		esl_send_recv(handle, cmd_str);
-		if (handle->last_sr_event && handle->last_sr_event->body) {
-			printf("%s\n", handle->last_sr_event->body);
+		if (handle->last_sr_event) {
+			if (handle->last_sr_event->body) {
+				printf("%s\n", handle->last_sr_event->body);
+			} else if ((err = esl_event_get_header(handle->last_sr_event, "reply-text")) && !strncasecmp(err, "-err", 3)) {
+				printf("Error: %s!\n", err + 4);
+			}
 		}
 	}
 	
@@ -958,6 +965,7 @@ int main(int argc, char *argv[])
 		{"help", 0, 0, 'h'},
 		{"host", 1, 0, 'H'},
 		{"port", 1, 0, 'P'},
+		{"user", 1, 0, 'u'},
 		{"password", 1, 0, 'p'},
 		{"debug", 1, 0, 'd'},
 		{"execute", 1, 0, 'x'},
@@ -968,8 +976,10 @@ int main(int argc, char *argv[])
 
 	char temp_host[128];
 	int argv_host = 0;
+	char temp_user[256];
 	char temp_pass[128];
 	int argv_pass = 0 ;
+	int argv_user = 0 ;
 	int temp_port = 0;
 	int argv_port = 0;
 	int temp_log = -1;
@@ -1000,7 +1010,7 @@ int main(int argc, char *argv[])
 	
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:U:P:S:p:d:x:l:qh?", options, &option_index);
+		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:qh?", options, &option_index);
 		if (opt == -1) break;
 		switch (opt)
 		{
@@ -1016,6 +1026,10 @@ int main(int argc, char *argv[])
 					printf("ERROR: Port must be in range 1 - 65535\n");
 					argv_error = 1;
 				}
+				break;
+			case 'u':
+				esl_set_string(temp_user, optarg);
+				argv_user = 1;
 				break;
 			case 'p':
 				esl_set_string(temp_pass, optarg);
@@ -1078,6 +1092,8 @@ int main(int argc, char *argv[])
 			
 			if (!strcasecmp(var, "host")) {
 				esl_set_string(profiles[pcount-1].host, val);
+			} else if (!strcasecmp(var, "user")) {
+				esl_set_string(profiles[pcount-1].user, val);
 			} else if (!strcasecmp(var, "password")) {
 				esl_set_string(profiles[pcount-1].pass, val);
 			} else if (!strcasecmp(var, "port")) {
@@ -1130,6 +1146,11 @@ int main(int argc, char *argv[])
 	if (argv_port) {
 		profile->port = (esl_port_t)temp_port;
 	}
+
+	if (argv_user) {
+		esl_set_string(profile->user, temp_user);
+	}
+
 	if (argv_pass) {
 		esl_set_string(profile->pass, temp_pass);
 	}
@@ -1151,7 +1172,7 @@ int main(int argc, char *argv[])
 		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->name);
 	}
 
-	if (esl_connect(&handle, profile->host, profile->port, profile->pass)) {
+	if (esl_connect(&handle, profile->host, profile->port, profile->user, profile->pass)) {
 		esl_global_set_default_logger(7);
 		esl_log(ESL_LOG_ERROR, "Error Connecting [%s]\n", handle.err);
 		if (!argv_exec) usage(argv[0]);
@@ -1160,11 +1181,18 @@ int main(int argc, char *argv[])
 
 
 	if (argv_exec){
+		const char *err = NULL;
+
 		snprintf(cmd_str, sizeof(cmd_str), "api %s\n\n", argv_command);
 		esl_send_recv(&handle, cmd_str);
-		if (handle.last_sr_event && handle.last_sr_event->body) {
-			printf("%s\n", handle.last_sr_event->body);
+		if (handle.last_sr_event) {
+			if (handle.last_sr_event->body) {
+				printf("%s\n", handle.last_sr_event->body);
+			} else if ((err = esl_event_get_header(handle.last_sr_event, "reply-text")) && !strncasecmp(err, "-err", 3)) {
+				printf("Error: %s!\n", err + 4);
+			}
 		}
+
 		esl_disconnect(&handle);
 		return 0;
 	} 

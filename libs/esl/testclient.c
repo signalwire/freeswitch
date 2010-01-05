@@ -7,7 +7,7 @@ int main(void)
 {
 	esl_handle_t handle = {{0}};
 
-	esl_connect(&handle, "localhost", 8021, "ClueCon");
+	esl_connect(&handle, "localhost", 8021, NULL, "ClueCon");
 
 	esl_send_recv(&handle, "api status\n\n");
 
