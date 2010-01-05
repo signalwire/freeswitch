@@ -8,11 +8,11 @@
                 <!--<param name="ringdev" value="${ringdev}"/>-->
                 <param name="ring-file" value="${ring-file}"/>
                 <param name="ring-interval" value="${ring-interval}"/>
-                <param name="hold-file" value="$${hold_music}"/>
+                <param name="hold-file" value="${hold-file}"/>
                 <!--<param name="timer-name" value="soft"/>-->
                 <param name="dialplan" value="XML"/>
-                <param name="cid-name" value="$${outbound_caller_name}"/>
-                <param name="cid-num" value="$${outbound_caller_number}"/>
+                <param name="cid-name" value="${cid-name}"/>
+                <param name="cid-num" value="${cid-num}"/>
                 <param name="sample-rate" value="48000"/>
                 <param name="codec-ms" value="10"/>
             </settings>

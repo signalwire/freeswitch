@@ -7,12 +7,33 @@ PrefDialog::PrefDialog(QWidget *parent) :
     ui(new Ui::PrefDialog)
 {
     ui->setupUi(this);
+    _settings = new QSettings();
+    connect(this, SIGNAL(accepted()), this, SLOT(configAccepted()));
     getPaDevlist();
 }
 
 PrefDialog::~PrefDialog()
 {
     delete ui;
+}
+
+void PrefDialog::configAccepted()
+{
+    _settings->beginGroup("FreeSWITCH/conf");
+
+    _settings->beginGroup("portaudio.conf");
+    _settings->setValue("cid-name", ui->PaCallerIdNameEdit->text());
+    _settings->setValue("cid-num", ui->PaCallerIdNumEdit->text());
+    _settings->setValue("indev", ui->PaIndevCombo->currentIndex());
+    _settings->setValue("outdev", ui->PaOutdevCombo->currentIndex());
+    _settings->setValue("ringdev", ui->PaRingdevCombo->currentIndex());
+    _settings->setValue("ring-file", ui->PaRingFileEdit->text());
+    _settings->setValue("ring-interval", ui->PaRingIntervalSpin->value());
+    _settings->setValue("hold-file", ui->PaHoldFileEdit->text());
+    _settings->endGroup();
+
+    _settings->endGroup();
+
 }
 
 void PrefDialog::getPaDevlist()

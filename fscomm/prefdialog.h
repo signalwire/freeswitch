@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QDomDocument>
+#include <QSettings>
 #include <fshost.h>
 
 namespace Ui {
@@ -18,10 +19,14 @@ public:
 protected:
     void changeEvent(QEvent *e);
 
+private slots:
+    void configAccepted();
+
 private:
     void getPaDevlist(void);
     Ui::PrefDialog *ui;
     QDomDocument _xmlPaDevList;
+    QSettings *_settings;
 };
 
 #endif // PREFDIALOG_H

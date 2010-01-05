@@ -3,6 +3,7 @@
         <file alias="splash.png">resources/splash.png</file>
         <file alias="pref_sip.png">resources/pref_sip.png</file>
         <file alias="pref_audio.gif">resources/pref_audio.gif</file>
+        <file alias="pref_general.jpg">resources/pref_general.jpg</file>
     </qresource>
     <qresource prefix="/confs">
         <file alias="freeswitch.xml">conf/freeswitch.xml</file>
