@@ -6,6 +6,8 @@
 #include <QSettings>
 #include <fshost.h>
 
+class PrefPortaudio;
+
 namespace Ui {
     class PrefDialog;
 }
@@ -20,13 +22,14 @@ protected:
     void changeEvent(QEvent *e);
 
 private slots:
-    void configAccepted();
+    void writeConfig();
 
 private:
-    void getPaDevlist(void);
-    Ui::PrefDialog *ui;
-    QDomDocument _xmlPaDevList;
+    void readConfig();
     QSettings *_settings;
+    Ui::PrefDialog *ui;
+    PrefPortaudio *_mod_portaudio;
 };
+
 
 #endif // PREFDIALOG_H

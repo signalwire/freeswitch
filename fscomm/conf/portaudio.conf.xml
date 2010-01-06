@@ -2,10 +2,11 @@
     <section name="configuration">
         <configuration name="portaudio.conf" description="Soundcard Endpoint">
             <settings>
-                <param name="indev" value="${indev}"/>
+                <!-- DO NOT take the # off the devices config -->
+                <param name="indev" value="#${indev}"/>
                 <!-- device to use for output -->
-                <param name="outdev" value="${outdev}"/>
-                <!--<param name="ringdev" value="${ringdev}"/>-->
+                <param name="outdev" value="#${outdev}"/>
+                <param name="ringdev" value="#${ringdev}"/>
                 <param name="ring-file" value="${ring-file}"/>
                 <param name="ring-interval" value="${ring-interval}"/>
                 <param name="hold-file" value="${hold-file}"/>
