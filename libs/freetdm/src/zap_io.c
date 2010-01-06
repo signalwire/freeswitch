@@ -119,8 +119,8 @@ ZAP_STR2ENUM(zap_str2zap_mdmf_type, zap_mdmf_type2str, zap_mdmf_type_t, MDMF_TYP
 ZAP_ENUM_NAMES(CHAN_TYPE_NAMES, CHAN_TYPE_STRINGS)
 ZAP_STR2ENUM(zap_str2zap_chan_type, zap_chan_type2str, zap_chan_type_t, CHAN_TYPE_NAMES, ZAP_CHAN_TYPE_COUNT)
 
-ZAP_ENUM_NAMES(CHAN_SIG_STATUS_NAMES, SIGSTATUS_STRINGS)
-ZAP_STR2ENUM(zap_str2zap_channel_sig_status, zap_sig_status2str, zap_channel_sig_status_t, CHAN_SIG_STATUS_NAMES, ZAP_SIG_STATE_INVALID)
+ZAP_ENUM_NAMES(SIGNALING_STATUS_NAMES, SIGSTATUS_STRINGS)
+ZAP_STR2ENUM(zap_str2zap_signaling_status, zap_signaling_status2str, zap_signaling_status_t, SIGNALING_STATUS_NAMES, ZAP_SIG_STATE_INVALID)
 
 static const char *cut_path(const char *in)
 {
@@ -1397,15 +1397,54 @@ OZ_DECLARE(zap_status_t) zap_channel_outgoing_call(zap_channel_t *zchan)
 	return ZAP_FAIL;
 }
 
-OZ_DECLARE(zap_status_t) zap_channel_get_sig_status(zap_channel_t *zchan, zap_channel_sig_status_t *sigstatus)
+OZ_DECLARE(zap_status_t) zap_channel_set_sig_status(zap_channel_t *zchan, zap_signaling_status_t sigstatus)
 {
 	zap_assert_return(zchan != NULL, ZAP_FAIL, "Null channel\n");
-	zap_assert_return(sigstatus != NULL, ZAP_FAIL, "Null sig status");
+	zap_assert_return(zchan->span != NULL, ZAP_FAIL, "Null span\n");
 	
-	if (zchan->span->get_sig_status) {
-		return zchan->span->get_sig_status(zchan, sigstatus);
+	if (zchan->span->set_channel_sig_status) {
+		return zchan->span->set_channel_sig_status(zchan, sigstatus);
 	} else {
-		zap_log(ZAP_LOG_ERROR, "get_sig_status method not implemented!\n");
+		zap_log(ZAP_LOG_ERROR, "set_channel_sig_status method not implemented!\n");
+		return ZAP_FAIL;
+	}
+}
+
+OZ_DECLARE(zap_status_t) zap_channel_get_sig_status(zap_channel_t *zchan, zap_signaling_status_t *sigstatus)
+{
+	zap_assert_return(zchan != NULL, ZAP_FAIL, "Null channel\n");
+	zap_assert_return(zchan->span != NULL, ZAP_FAIL, "Null span\n");
+	zap_assert_return(sigstatus != NULL, ZAP_FAIL, "Null sig status parameter\n");
+	
+	if (zchan->span->get_channel_sig_status) {
+		return zchan->span->get_channel_sig_status(zchan, sigstatus);
+	} else {
+		zap_log(ZAP_LOG_ERROR, "get_channel_sig_status method not implemented!\n");
+		return ZAP_FAIL;
+	}
+}
+
+OZ_DECLARE(zap_status_t) zap_span_set_sig_status(zap_span_t *span, zap_signaling_status_t sigstatus)
+{
+	zap_assert_return(span != NULL, ZAP_FAIL, "Null span\n");
+	
+	if (span->set_span_sig_status) {
+		return span->set_span_sig_status(span, sigstatus);
+	} else {
+		zap_log(ZAP_LOG_ERROR, "set_span_sig_status method not implemented!\n");
+		return ZAP_FAIL;
+	}
+}
+
+OZ_DECLARE(zap_status_t) zap_span_get_sig_status(zap_span_t *span, zap_signaling_status_t *sigstatus)
+{
+	zap_assert_return(span != NULL, ZAP_FAIL, "Null span\n");
+	zap_assert_return(sigstatus != NULL, ZAP_FAIL, "Null sig status parameter\n");
+	
+	if (span->get_span_sig_status) {
+		return span->get_span_sig_status(span, sigstatus);
+	} else {
+		zap_log(ZAP_LOG_ERROR, "get_span_sig_status method not implemented!\n");
 		return ZAP_FAIL;
 	}
 }

@@ -1770,7 +1770,7 @@ static BOOST_SIG_STATUS_CB_FUNCTION(zap_boost_sig_status_change)
 {
 	zap_sigmsg_t sig;
 	zap_sangoma_boost_data_t *sangoma_boost_data = zchan->span->signal_data;
-	zap_log(ZAP_LOG_DEBUG, "%d:%d Signaling link status changed to %s\n", zchan->span_id, zchan->chan_id, zap_sig_status2str(status));
+	zap_log(ZAP_LOG_NOTICE, "%d:%d Signaling link status changed to %s\n", zchan->span_id, zchan->chan_id, zap_signaling_status2str(status));
 	
 	memset(&sig, 0, sizeof(sig));
 	sig.chan_id = zchan->chan_id;
@@ -1782,14 +1782,60 @@ static BOOST_SIG_STATUS_CB_FUNCTION(zap_boost_sig_status_change)
 	return;
 }
 
-static ZIO_CHANNEL_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_sig_status)
+static ZIO_CHANNEL_SET_SIG_STATUS_FUNCTION(sangoma_boost_set_channel_sig_status)
+{
+	zap_sangoma_boost_data_t *sangoma_boost_data = zchan->span->signal_data;
+	if (!sangoma_boost_data->sigmod) {
+		zap_log(ZAP_LOG_ERROR, "Cannot set signaling status in boost channel with no signaling module configured\n");
+		return ZAP_FAIL;
+	}
+	if (!sangoma_boost_data->sigmod->set_channel_sig_status) {
+		zap_log(ZAP_LOG_ERROR, "Cannot set signaling status in boost channel: method not implemented\n");
+		return ZAP_NOTIMPL;
+	}
+	return sangoma_boost_data->sigmod->set_channel_sig_status(zchan, status);
+}
+
+static ZIO_CHANNEL_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_channel_sig_status)
 {
 	zap_sangoma_boost_data_t *sangoma_boost_data = zchan->span->signal_data;
 	if (!sangoma_boost_data->sigmod) {
 		zap_log(ZAP_LOG_ERROR, "Cannot get signaling status in boost channel with no signaling module configured\n");
 		return ZAP_FAIL;
 	}
-	return sangoma_boost_data->sigmod->get_sig_status(zchan, status);
+	if (!sangoma_boost_data->sigmod->get_channel_sig_status) {
+		zap_log(ZAP_LOG_ERROR, "Cannot get signaling status in boost channel: method not implemented\n");
+		return ZAP_NOTIMPL;
+	}
+	return sangoma_boost_data->sigmod->get_channel_sig_status(zchan, status);
+}
+
+static ZIO_SPAN_SET_SIG_STATUS_FUNCTION(sangoma_boost_set_span_sig_status)
+{
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+	if (!sangoma_boost_data->sigmod) {
+		zap_log(ZAP_LOG_ERROR, "Cannot set signaling status in boost span with no signaling module configured\n");
+		return ZAP_FAIL;
+	}
+	if (!sangoma_boost_data->sigmod->set_span_sig_status) {
+		zap_log(ZAP_LOG_ERROR, "Cannot set signaling status in boost span: method not implemented\n");
+		return ZAP_NOTIMPL;
+	}
+	return sangoma_boost_data->sigmod->set_span_sig_status(span, status);
+}
+
+static ZIO_SPAN_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_span_sig_status)
+{
+	zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+	if (!sangoma_boost_data->sigmod) {
+		zap_log(ZAP_LOG_ERROR, "Cannot get signaling status in boost span with no signaling module configured\n");
+		return ZAP_FAIL;
+	}
+	if (!sangoma_boost_data->sigmod->get_span_sig_status) {
+		zap_log(ZAP_LOG_ERROR, "Cannot get signaling status in boost span: method not implemented\n");
+		return ZAP_NOTIMPL;
+	}
+	return sangoma_boost_data->sigmod->get_span_sig_status(span, status);
 }
 
 /**
@@ -1910,7 +1956,10 @@ static ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(zap_sangoma_boost_configure_span)
     span->signal_type = ZAP_SIGTYPE_SANGOMABOOST;
     span->outgoing_call = sangoma_boost_outgoing_call;
 	span->channel_request = sangoma_boost_channel_request;
-	span->get_sig_status = sangoma_boost_get_sig_status;
+	span->get_channel_sig_status = sangoma_boost_get_channel_sig_status;
+	span->set_channel_sig_status = sangoma_boost_set_channel_sig_status;
+	span->get_span_sig_status = sangoma_boost_get_span_sig_status;
+	span->set_span_sig_status = sangoma_boost_set_span_sig_status;
 	span->state_map = &boost_state_map;
 	zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
 	return ZAP_SUCCESS;

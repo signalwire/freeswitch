@@ -47,7 +47,7 @@ extern "C" {
   \param zchan The openzap channel where the signaling status just changed
   \param status The new signaling status
  */
-#define BOOST_SIG_STATUS_CB_ARGS (zap_channel_t *zchan, zap_channel_sig_status_t status)
+#define BOOST_SIG_STATUS_CB_ARGS (zap_channel_t *zchan, zap_signaling_status_t status)
 typedef void (*boost_sig_status_cb_func_t) BOOST_SIG_STATUS_CB_ARGS;
 #define BOOST_SIG_STATUS_CB_FUNCTION(name) void name BOOST_SIG_STATUS_CB_ARGS
 
@@ -79,6 +79,16 @@ typedef void (*boost_set_write_msg_cb_func_t) BOOST_SET_WRITE_MSG_CB_ARGS;
 #define BOOST_SET_WRITE_MSG_CB_FUNCTION(name) void name BOOST_SET_WRITE_MSG_CB_ARGS
 
 /*! 
+  \brief Notify hardware status change
+  \param zchan The openzap channel
+  \param status The hw status 
+  \return ZAP_SUCCESS or ZAP_FAIL 
+ */
+#define BOOST_ON_HW_LINK_STATUS_CHANGE_ARGS (zap_channel_t *zchan, zap_channel_hw_link_status_t status)
+typedef void (*boost_on_hw_link_status_change_func_t) BOOST_ON_HW_LINK_STATUS_CHANGE_ARGS;
+#define BOOST_ON_HW_LINK_STATUS_CHANGE_FUNCTION(name) void name BOOST_ON_HW_LINK_STATUS_CHANGE_ARGS
+
+/*! 
   \brief Set signaling status callback used by the signaling module to report signaling status changes
   \param callback The callback to be used by the signaling module
 
@@ -90,23 +100,13 @@ typedef void (*boost_set_sig_status_cb_func_t) BOOST_SET_SIG_STATUS_CB_ARGS;
 #define BOOST_SET_SIG_STATUS_CB_FUNCTION(name) void name BOOST_SET_SIG_STATUS_CB_ARGS
 
 /*! 
-  \brief Notify hardware status change
-  \param zchan The openzap channel
-  \param status The hw status 
-  \return ZAP_SUCCESS or ZAP_FAIL 
- */
-#define BOOST_GET_SIG_STATUS_ARGS (zap_channel_t *zchan, zap_channel_sig_status_t *status)
-typedef zap_status_t (*boost_get_sig_status_func_t) BOOST_GET_SIG_STATUS_ARGS;
-#define BOOST_GET_SIG_STATUS_FUNCTION(name) zap_status_t name BOOST_GET_SIG_STATUS_ARGS
-
-/*! 
   \brief Get the signaling status on the given channel.
   \param zchan The openzap channel
   \param status The status pointer where the current signaling status will be set
  */
-#define BOOST_ON_HW_LINK_STATUS_CHANGE_ARGS (zap_channel_t *zchan, zap_channel_hw_link_status_t status)
-typedef void (*boost_on_hw_link_status_change_func_t) BOOST_ON_HW_LINK_STATUS_CHANGE_ARGS;
-#define BOOST_ON_HW_LINK_STATUS_CHANGE_FUNCTION(name) void name BOOST_ON_HW_LINK_STATUS_CHANGE_ARGS
+#define BOOST_GET_CHANNEL_SIG_STATUS_ARGS (zap_channel_t *zchan, zap_signaling_status_t *status)
+typedef zap_status_t (*boost_get_channel_sig_status_func_t) BOOST_GET_CHANNEL_SIG_STATUS_ARGS;
+#define BOOST_GET_CHANNEL_SIG_STATUS_FUNCTION(name) zap_status_t name BOOST_GET_CHANNEL_SIG_STATUS_ARGS
 
 /*! 
   \brief Set the signaling status on the given channel.
@@ -114,9 +114,28 @@ typedef void (*boost_on_hw_link_status_change_func_t) BOOST_ON_HW_LINK_STATUS_CH
   \param status The new status for the channel
   \return ZAP_SUCCESS or ZAP_FAIL 
  */
-#define BOOST_SET_SIG_STATUS_ARGS (zap_channel_t *zchan, zap_channel_sig_status_t status)
-typedef zap_status_t (*boost_set_sig_status_func_t) BOOST_SET_SIG_STATUS_ARGS;
-#define BOOST_SET_SIG_STATUS_FUNCTION(name) zap_status_t name BOOST_SET_SIG_STATUS_ARGS
+#define BOOST_SET_CHANNEL_SIG_STATUS_ARGS (zap_channel_t *zchan, zap_signaling_status_t status)
+typedef zap_status_t (*boost_set_channel_sig_status_func_t) BOOST_SET_CHANNEL_SIG_STATUS_ARGS;
+#define BOOST_SET_CHANNEL_SIG_STATUS_FUNCTION(name) zap_status_t name BOOST_SET_CHANNEL_SIG_STATUS_ARGS
+
+/*! 
+  \brief Get the signaling status on the given span.
+  \param span The openzap span 
+  \param status The status pointer where the current signaling status will be set
+ */
+#define BOOST_GET_SPAN_SIG_STATUS_ARGS (zap_span_t *span, zap_signaling_status_t *status)
+typedef zap_status_t (*boost_get_span_sig_status_func_t) BOOST_GET_SPAN_SIG_STATUS_ARGS;
+#define BOOST_GET_SPAN_SIG_STATUS_FUNCTION(name) zap_status_t name BOOST_GET_SPAN_SIG_STATUS_ARGS
+
+/*! 
+  \brief Set the signaling status on the given span.
+  \param zchan The openzap span
+  \param status The new status for the span
+  \return ZAP_SUCCESS or ZAP_FAIL 
+ */
+#define BOOST_SET_SPAN_SIG_STATUS_ARGS (zap_span_t *span, zap_signaling_status_t status)
+typedef zap_status_t (*boost_set_span_sig_status_func_t) BOOST_SET_SPAN_SIG_STATUS_ARGS;
+#define BOOST_SET_SPAN_SIG_STATUS_FUNCTION(name) zap_status_t name BOOST_SET_SPAN_SIG_STATUS_ARGS
 
 /*! 
   \brief Configure the given span signaling
@@ -174,9 +193,13 @@ typedef struct boost_sigmod_interface_s {
 	/*! \brief set the user signaling status function */
 	boost_set_sig_status_cb_func_t set_sig_status_cb;
 	/*! \brief get channel signaling status */
-	boost_get_sig_status_func_t get_sig_status;
+	boost_get_channel_sig_status_func_t get_channel_sig_status;
 	/*! \brief set channel signaling status */
-	boost_set_sig_status_func_t set_sig_status;
+	boost_set_channel_sig_status_func_t set_channel_sig_status;
+	/*! \brief get span signaling status */
+	boost_get_span_sig_status_func_t get_span_sig_status;
+	/*! \brief set span signaling status */
+	boost_set_span_sig_status_func_t set_span_sig_status;
 	/*! \brief set notify hardware link status change */
 	boost_on_hw_link_status_change_func_t on_hw_link_status_change;
 	/*! \brief configure span signaling */
