@@ -1606,7 +1606,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 						if ((next = strchr(cur, delim))) {
 							*next++ = '\0';
 						}
-						
+
 						if (custom) {
 							switch_core_hash_insert(listener->allowed_event_hash, cur, MARKER);
 						} else if (switch_name_event(cur, &type) == SWITCH_STATUS_SUCCESS) {
@@ -1621,6 +1621,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 							if (type <= SWITCH_EVENT_ALL) {
 								listener->allowed_event_list[type] = 1;
 							}
+							
 							if (type == SWITCH_EVENT_CUSTOM) {
 								custom++;
 							}
@@ -2160,7 +2161,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				
 				
 				if (custom) {
-					if (listener->allowed_event_hash && switch_core_hash_find(listener->allowed_event_hash, cur)) {
+					if (!listener->allowed_event_hash || switch_core_hash_find(listener->allowed_event_hash, cur)) {
 						switch_core_hash_insert(listener->event_hash, cur, MARKER);
 					} else {
 						switch_snprintf(reply, reply_len, "-ERR permission denied");
