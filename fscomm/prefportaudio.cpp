@@ -17,7 +17,7 @@ PrefPortaudio::PrefPortaudio(Ui::PrefDialog *ui, QObject *parent) :
 void PrefPortaudio::ringdevTest()
 {
     QString result;
-    if (g_FSHost.sendCmd("pa", QString("play %1/.fscomm/sounds/test.wav").arg(QDir::homePath()).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
+    if (g_FSHost.sendCmd("pa", QString("play %1/.fscomm/sounds/test.wav 0").arg(QDir::homePath()).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error testing ringdev on mod_portaudio! %s\n",
                           result.toAscii().constData());
@@ -225,11 +225,11 @@ void PrefPortaudio::getPaDevlist()
             inputs = child.attribute("inputs","0");
             outputs = child.attribute("outputs","0");
             if (inputs.toInt() != 0)
-                _ui->PaIndevCombo->addItem(name,inputs.toInt());
+                _ui->PaIndevCombo->addItem(name,id.toInt());
             if (outputs.toInt() != 0)
             {
-                _ui->PaOutdevCombo->addItem(name,inputs.toInt());
-                _ui->PaRingdevCombo->addItem(name,inputs.toInt());
+                _ui->PaOutdevCombo->addItem(name,id.toInt());
+                _ui->PaRingdevCombo->addItem(name,id.toInt());
             }
         }
         child = child.nextSiblingElement();
@@ -257,11 +257,27 @@ void PrefPortaudio::getPaDevlist()
     {
         QString id = child.attribute("device","-1");
         if (child.tagName() == "ring")
-            _ui->PaRingdevCombo->setCurrentIndex(id.toInt());
+        {
+            for(int itemId=0; itemId<_ui->PaRingdevCombo->count(); itemId++)
+            {
+                if (itemId == _ui->PaRingdevCombo->itemData(itemId,Qt::UserRole).toInt())
+                {
+                    _ui->PaRingdevCombo->setCurrentIndex(itemId);
+                    break;
+                }
+            }
+        }
         else if (child.tagName() == "input")
             _ui->PaIndevCombo->setCurrentIndex(id.toInt());
         else if (child.tagName() == "output")
-            _ui->PaOutdevCombo->setCurrentIndex(id.toInt());
+            for(int itemId=0; itemId<_ui->PaOutdevCombo->count(); itemId++)
+            {
+                if (itemId == _ui->PaOutdevCombo->itemData(itemId,Qt::UserRole).toInt())
+                {
+                    _ui->PaOutdevCombo->setCurrentIndex(itemId);
+                    break;
+                }
+            }
 
         child = child.nextSiblingElement();
     }
