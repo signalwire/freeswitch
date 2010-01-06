@@ -1484,10 +1484,11 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	int fd = -1, write_fd = -1;
 	switch_xml_t xml = NULL;
 	char *new_file = NULL;
-	const char *abs;
+	const char *abs, *absw;
 
-	if ((abs = strrchr(file, '/')) || (abs = strrchr(file, '\\'))) {
-		abs++;
+	abs = strrchr(file, '/'); absw = strrchr(file, '\\');
+	if (abs || absw) {
+		abs > absw ? abs++ : (abs = ++absw);
 	} else {
 		abs = file;
 	}
