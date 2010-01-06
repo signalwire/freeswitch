@@ -2010,7 +2010,8 @@ SWITCH_STANDARD_API(pa_cmd)
 		char *playfile = NULL;
 		int samples = 0;
 		int seconds = 5;
-
+		int wrote = 0;
+		
 		if (globals.call_list) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ERROR: Cannot use this command this while a call is in progress\n");
 			goto done;
@@ -2034,27 +2035,32 @@ SWITCH_STANDARD_API(pa_cmd)
 				
 				if (argv[2]) {
 					int i = atoi(argv[2]);
-					if (i > 0) {
+					if (i >= 0) {
 						seconds = i;
 					}
 				}
 
 				samples = globals.read_codec.implementation->actual_samples_per_second * seconds;
-				stream->write_function(stream, "playback test [%s] %d second(s) %d samples @%dkhz", 
-									   playfile, seconds, samples, globals.read_codec.implementation->actual_samples_per_second);
-				
 				while (switch_core_file_read(&fh, abuf, &olen) == SWITCH_STATUS_SUCCESS) {
 					WriteAudioStream(globals.audio_stream, abuf, (long) olen, &globals.read_timer);
-					switch_core_timer_next(&globals.read_timer);
-					samples -= (int) olen;
-					if (samples <= 0) {
-						break;
+					wrote += (int) olen;
+					if (samples) {
+						samples -= (int) olen;
+						if (samples <= 0) {
+							break;
+						}
 					}
 					olen = globals.read_codec.implementation->samples_per_packet;
 				} 
-
+				
 				switch_core_file_close(&fh);
 				deactivate_audio_device();
+
+				seconds = wrote / globals.read_codec.implementation->actual_samples_per_second;
+				stream->write_function(stream, "playback test [%s] %d second(s) %d samples @%dkhz", 
+									   playfile, seconds, wrote, globals.read_codec.implementation->actual_samples_per_second);
+				
+
 			} else {
 				stream->write_function(stream, "Cannot play requested file %s\n", argv[1]);
 			}
