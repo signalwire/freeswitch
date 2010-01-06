@@ -73,6 +73,7 @@ struct zap_io_interface;
 
 #define ZAP_COMMAND_OBJ_INT *((int *)obj)
 #define ZAP_COMMAND_OBJ_CHAR_P (char *)obj
+#define ZAP_COMMAND_OBJ_FLOAT *(float *)obj
 #define ZAP_FSK_MOD_FACTOR 0x10000
 #define ZAP_DEFAULT_DTMF_ON 250
 #define ZAP_DEFAULT_DTMF_OFF 50
@@ -403,7 +404,9 @@ typedef enum {
 	ZAP_CHANNEL_PROGRESS = (1 << 21),
 	ZAP_CHANNEL_MEDIA = (1 << 22),
 	ZAP_CHANNEL_ANSWERED = (1 << 23),
-	ZAP_CHANNEL_MUTE = (1 << 24)
+	ZAP_CHANNEL_MUTE = (1 << 24),
+	ZAP_CHANNEL_USE_RX_GAIN = (1 << 25),
+	ZAP_CHANNEL_USE_TX_GAIN = (1 << 26),
 } zap_channel_flag_t;
 #if defined(__cplusplus) && defined(WIN32) 
     // fix C2676 

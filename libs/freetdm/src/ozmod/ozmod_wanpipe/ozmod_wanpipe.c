@@ -33,7 +33,7 @@
  * Contributors: 
  *
  * Moises Silva <moy@sangoma.com>
- * David Yatzin <davidy@sangoma.com>
+ * David Yat Sin <davidy@sangoma.com>
  * Nenad Corbic <ncorbic@sangoma.com>
  *
  */
