@@ -152,74 +152,30 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_celt_load)
 	
 	SWITCH_ADD_CODEC(codec_interface, "CELT ultra-low delay"); 
 
-	/* register 10ms to 60ms */
-    ms_per_frame = 10000;
-    samples_per_frame = 320;
-    bytes_per_frame = 640;
-
-	for (x = 0; x < 6; x++) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 114,						/* the IANA code number */
-											 "CELT",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 32000,						/* samples transferred per second */
-											 32000,						/* actual samples transferred per second */
-											 32000,						/* bits transferred per second */
-											 ms_per_frame,				/* number of microseconds per frame */
-											 samples_per_frame,			/* number of samples per frame */
-											 bytes_per_frame,			/* number of bytes per frame decompressed */
-											 0,							/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 1,							/* number of frames per network packet */
-											 switch_celt_init,			/* function to initialize a codec handle using this implementation */
-											 switch_celt_encode,		/* function to encode raw data into encoded data */
-											 switch_celt_decode,		/* function to decode encoded data into raw data */
-											 switch_celt_destroy);		/* deinitalize a codec handle using this implementation */
-	
-		ms_per_frame += 10000;
-		samples_per_frame += 320;
-		bytes_per_frame += 640;
-	}
-
-	/* register 10ms to 40ms */
-	ms_per_frame = 10000;
-	samples_per_frame = 480;
-	bytes_per_frame = 960;
-	
-	for (x = 0; x < 4; x++) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 114,						/* the IANA code number */
-											 "CELT",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 48000,						/* samples transferred per second */
-											 48000,						/* actual samples transferred per second */
-											 48000,						/* bits transferred per second */
-											 ms_per_frame,				/* number of microseconds per frame */
-											 samples_per_frame,			/* number of samples per frame */
-											 bytes_per_frame,			/* number of bytes per frame decompressed */
-											 0,							/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 1,							/* number of frames per network packet */
-											 switch_celt_init,			/* function to initialize a codec handle using this implementation */
-											 switch_celt_encode,		/* function to encode raw data into encoded data */
-											 switch_celt_decode,		/* function to decode encoded data into raw data */
-											 switch_celt_destroy);		/* deinitalize a codec handle using this implementation */
-		
-		ms_per_frame += 10000;
-		samples_per_frame += 480;
-		bytes_per_frame += 960;
-	}
-
-	/* register 2ms to 8ms */
+	switch_core_codec_add_implementation(pool,
+										 codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 114,						/* the IANA code number */
+										 "CELT",					/* the IANA code name */
+										 NULL,						/* default fmtp to send (can be overridden by the init function) */
+										 32000,						/* samples transferred per second */
+										 32000,						/* actual samples transferred per second */
+										 32000,						/* bits transferred per second */
+										 10000,						/* number of microseconds per frame */
+										 320,						/* number of samples per frame */
+										 640,						/* number of bytes per frame decompressed */
+										 0,							/* number of bytes per frame compressed */
+										 1,							/* number of channels represented */
+										 1,							/* number of frames per network packet */
+										 switch_celt_init,			/* function to initialize a codec handle using this implementation */
+										 switch_celt_encode,		/* function to encode raw data into encoded data */
+										 switch_celt_decode,		/* function to decode encoded data into raw data */
+										 switch_celt_destroy);		/* deinitalize a codec handle using this implementation */
 	ms_per_frame = 2000;
 	samples_per_frame = 96;
 	bytes_per_frame = 192;
 	
-	for (x = 0; x < 4; x++) {
+	for (x = 0; x < 5; x++) {
 		switch_core_codec_add_implementation(pool,
 											 codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
