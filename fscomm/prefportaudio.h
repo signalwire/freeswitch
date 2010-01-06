@@ -15,6 +15,12 @@ public:
     void writeConfig();
     void readConfig();
 
+private slots:
+    void ringFileChoose();
+    void holdFileChoose();
+    void outdevChangeDev(int);
+    void ringdevChangeDev(int);
+
 private:
     void getPaDevlist(void);
     QSettings *_settings;

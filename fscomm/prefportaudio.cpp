@@ -7,6 +7,55 @@ PrefPortaudio::PrefPortaudio(Ui::PrefDialog *ui, QObject *parent) :
         _ui(ui)
 {
     _settings = new QSettings();
+    connect(_ui->PaRingFileBtn, SIGNAL(clicked()), this, SLOT(ringFileChoose()));
+    connect(_ui->PaHoldFileBtn, SIGNAL(clicked()), this, SLOT(holdFileChoose()));
+    connect(_ui->PaOutdevCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(outdevChangeDev(int)));
+    connect(_ui->PaRingdevCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(ringdevChangeDev(int)));
+}
+
+void PrefPortaudio::ringdevChangeDev(int dev)
+{
+    QString result;
+    if (g_FSHost.sendCmd("pa", QString("ringdev #%1").arg(dev).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting ringdev to #%d on mod_portaudio!\n", dev);
+        QMessageBox::critical(0, tr("Unable to change device."),
+                              tr("There was an error changing the ringdev.\nPlease report this bug."),
+                              QMessageBox::Ok);
+
+    }
+}
+
+void PrefPortaudio::outdevChangeDev(int dev)
+{
+    QString result;
+    if (g_FSHost.sendCmd("pa", QString("outdev #%1").arg(dev).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting outdev to #%d on mod_portaudio!\n", dev);
+        QMessageBox::critical(0, tr("Unable to change device."),
+                              tr("There was an error changing the outdev.\nPlease report this bug."),
+                              QMessageBox::Ok);
+    }
+}
+
+void PrefPortaudio::holdFileChoose()
+{
+    QString fileName = QFileDialog::getOpenFileName(0,
+                                                    tr("Select file"),
+                                                    QDir::homePath(),
+                                                    NULL);
+    if (!fileName.isNull())
+        _ui->PaHoldFileEdit->setText(fileName);
+}
+
+void PrefPortaudio::ringFileChoose()
+{
+    QString fileName = QFileDialog::getOpenFileName(0,
+                                                    tr("Select file"),
+                                                    QDir::homePath(),
+                                                    NULL);
+    if (!fileName.isNull())
+        _ui->PaRingFileEdit->setText(fileName);
 }
 
 void PrefPortaudio::writeConfig()
@@ -79,33 +128,11 @@ void PrefPortaudio::writeConfig()
 
     if (noutdev!= outdev)
     {
-        if (g_FSHost.sendCmd("pa", QString("outdev #%1").arg(noutdev).toAscii().constData(), &result) == SWITCH_STATUS_SUCCESS)
-        {
-            _settings->setValue("outdev", noutdev);
-        }
-        else
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting outdev from #%d to #%d on mod_portaudio!\n",
-                              outdev, noutdev);
-            QMessageBox::critical(0, tr("Unable to save settings"),
-                                  tr("There was an error changing the outdev.\nPlease report this bug."),
-                                  QMessageBox::Ok);
-        }
+        _settings->setValue("outdev", noutdev);
     }
     if (nringdev != ringdev)
     {
-        if (g_FSHost.sendCmd("pa", QString("ringdev #%1").arg(nringdev).toAscii().constData(), &result) == SWITCH_STATUS_SUCCESS)
-        {
-            _settings->setValue("ringdev", nringdev);
-        }
-        else
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting ringdev from #%d to #%d on mod_portaudio!\n",
-                              nringdev, nringdev);
-            QMessageBox::critical(0, tr("Unable to save settings"),
-                                  tr("There was an error changing the ringdev.\nPlease report this bug."),
-                                  QMessageBox::Ok);
-        }
+        _settings->setValue("ringdev", nringdev);
     }
 
     _settings->endGroup();

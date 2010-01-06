@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>661</width>
+    <width>711</width>
     <height>437</height>
    </rect>
   </property>
@@ -197,7 +197,27 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QComboBox" name="PaOutdevCombo"/>
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <item>
+             <widget class="QComboBox" name="PaOutdevCombo"/>
+            </item>
+            <item>
+             <widget class="QPushButton" name="PaOutdevTestBtn">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>86</width>
+                <height>27</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Test</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="label_9">
@@ -207,7 +227,27 @@
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QComboBox" name="PaRingdevCombo"/>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QComboBox" name="PaRingdevCombo"/>
+            </item>
+            <item>
+             <widget class="QPushButton" name="PaRingdevTestBtn">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>86</width>
+                <height>27</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Test</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
          </layout>
         </widget>
@@ -217,7 +257,7 @@
          <property name="title">
           <string>Files</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout">
+         <layout class="QFormLayout" name="formLayout_5">
           <item row="0" column="0">
            <widget class="QLabel" name="label_10">
             <property name="text">
@@ -226,11 +266,22 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QLineEdit" name="PaRingFileEdit">
-            <property name="text">
-             <string>tone_stream://%(2000,4000,440.0,480.0);loops=20</string>
-            </property>
-           </widget>
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <widget class="QLineEdit" name="PaRingFileEdit">
+              <property name="text">
+               <string>tone_stream://%(2000,4000,440.0,480.0);loops=20</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="PaRingFileBtn">
+              <property name="text">
+               <string>Open</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item row="1" column="0">
            <widget class="QLabel" name="label_12">
@@ -240,7 +291,11 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QSpinBox" name="PaRingIntervalSpin"/>
+           <widget class="QSpinBox" name="PaRingIntervalSpin">
+            <property name="value">
+             <number>5</number>
+            </property>
+           </widget>
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="label_11">
@@ -250,7 +305,22 @@
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QLineEdit" name="PaHoldFileEdit"/>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <widget class="QLineEdit" name="PaHoldFileEdit">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="PaHoldFileBtn">
+              <property name="text">
+               <string>Open</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
          </layout>
         </widget>
