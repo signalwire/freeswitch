@@ -50,6 +50,7 @@ static struct {
 	char *ident;
 	char *format;
 	int   facility;
+	switch_bool_t log_uuid;
 } globals;
 
 struct _facility_table_entry {
@@ -146,7 +147,11 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 
 	/* don't log blank lines */
 	if (!zstr(node->data) && (strspn(node->data, " \t\r\n") < strlen(node->data))) {
-		syslog(syslog_level, "%s", node->data);
+		if (globals.log_uuid && !zstr(node->userdata)) {
+			syslog(syslog_level, "%s %s", node->userdata, node->data);	
+		} else {
+			syslog(syslog_level, "%s", node->data);
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -182,6 +187,8 @@ static switch_status_t load_config(void)
 					if (log_level == SWITCH_LOG_INVALID) {
 						log_level = SWITCH_LOG_WARNING;
 					}
+				} else if (!strcasecmp(var, "uuid")) {
+					globals.log_uuid = switch_true(val);
 				}
 			}
 		}
