@@ -59,6 +59,8 @@ void FSHost::run(void)
     if (!conf_dir.exists(".fscomm"))
     {
         conf_dir.mkpath(".fscomm/conf/accounts");
+        conf_dir.mkpath(".fscomm/sounds");
+        QFile::copy(":/sounds/test.wav", QString("%1/.fscomm/sounds/test.wav").arg(QDir::homePath()));
         conf_dir.mkpath(".fscomm/templates");
         QFile rootXML(":/confs/freeswitch.xml");
         QString dest = QString("%1/.fscomm/conf/freeswitch.xml").arg(conf_dir.absolutePath());

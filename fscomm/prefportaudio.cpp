@@ -11,6 +11,17 @@ PrefPortaudio::PrefPortaudio(Ui::PrefDialog *ui, QObject *parent) :
     connect(_ui->PaHoldFileBtn, SIGNAL(clicked()), this, SLOT(holdFileChoose()));
     connect(_ui->PaOutdevCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(outdevChangeDev(int)));
     connect(_ui->PaRingdevCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(ringdevChangeDev(int)));
+    connect(_ui->PaRingdevTestBtn, SIGNAL(clicked()), this, SLOT(ringdevTest()));
+}
+
+void PrefPortaudio::ringdevTest()
+{
+    QString result;
+    if (g_FSHost.sendCmd("pa", QString("play %1/.fscomm/sounds/test.wav").arg(QDir::homePath()).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error testing ringdev on mod_portaudio! %s\n",
+                          result.toAscii().constData());
+    }
 }
 
 void PrefPortaudio::ringdevChangeDev(int dev)

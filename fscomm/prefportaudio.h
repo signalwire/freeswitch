@@ -20,6 +20,7 @@ private slots:
     void holdFileChoose();
     void outdevChangeDev(int);
     void ringdevChangeDev(int);
+    void ringdevTest();
 
 private:
     void getPaDevlist(void);

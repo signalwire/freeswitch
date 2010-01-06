@@ -11,4 +11,7 @@
         <file alias="event_socket.conf.xml">conf/event_socket.conf.xml</file>
         <file alias="portaudio.conf.xml">conf/portaudio.conf.xml</file>
     </qresource>
+    <qresource prefix="/sounds">
+        <file alias="test.wav">resources/test.wav</file>
+    </qresource>
 </RCC>
