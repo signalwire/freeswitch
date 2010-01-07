@@ -60,7 +60,7 @@
        <string>General</string>
       </property>
       <property name="icon">
-       <iconset resource="resources.qrc">
+       <iconset resource="../resources.qrc">
         <normaloff>:/images/pref_general.jpg</normaloff>:/images/pref_general.jpg</iconset>
       </property>
      </item>
@@ -69,7 +69,7 @@
        <string>Sofia</string>
       </property>
       <property name="icon">
-       <iconset resource="resources.qrc">
+       <iconset resource="../resources.qrc">
         <normaloff>:/images/pref_sip.png</normaloff>:/images/pref_sip.png</iconset>
       </property>
      </item>
@@ -78,7 +78,7 @@
        <string>PortAudio</string>
       </property>
       <property name="icon">
-       <iconset resource="resources.qrc">
+       <iconset resource="../resources.qrc">
         <normaloff>:/images/pref_audio.gif</normaloff>:/images/pref_audio.gif</iconset>
       </property>
      </item>
@@ -270,7 +270,7 @@
                </widget>
               </item>
               <item row="3" column="1">
-               <widget class="QLineEdit" name="lineEdit">
+               <widget class="QLineEdit" name="sofiaDialplanEdit">
                 <property name="text">
                  <string>XML</string>
                 </property>
@@ -346,7 +346,7 @@
               <item row="2" column="1">
                <widget class="QLineEdit" name="sofiaRtpIpEdit">
                 <property name="text">
-                 <string>$${local_ip_v4}</string>
+                 <string>auto</string>
                 </property>
                </widget>
               </item>
@@ -360,7 +360,7 @@
               <item row="3" column="1">
                <widget class="QLineEdit" name="sofiaSipIpEdit">
                 <property name="text">
-                 <string>$${local_ip_v4}</string>
+                 <string>auto</string>
                 </property>
                </widget>
               </item>
@@ -517,7 +517,7 @@
                </widget>
               </item>
               <item row="3" column="1">
-               <widget class="QSpinBox" name="spinBox">
+               <widget class="QSpinBox" name="sofiaDtmfDurationSpin">
                 <property name="maximum">
                  <number>1000</number>
                 </property>
@@ -887,7 +887,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>

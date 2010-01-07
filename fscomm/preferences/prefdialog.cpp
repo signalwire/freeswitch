@@ -2,6 +2,7 @@
 #include "prefdialog.h"
 #include "ui_prefdialog.h"
 #include "prefportaudio.h"
+#include "prefsofia.h"
 
 PrefDialog::PrefDialog(QWidget *parent) :
     QDialog(parent),
@@ -12,6 +13,7 @@ PrefDialog::PrefDialog(QWidget *parent) :
     connect(this, SIGNAL(accepted()), this, SLOT(writeConfig()));
 
     _mod_portaudio = new PrefPortaudio(ui, this);
+    _mod_sofia = new PrefSofia(ui, this);
     readConfig();
 }
 
@@ -23,6 +25,7 @@ PrefDialog::~PrefDialog()
 void PrefDialog::writeConfig()
 {    
     _mod_portaudio->writeConfig();
+    /*_mod_sofia->writeConfig();*/
 }
 
 void PrefDialog::changeEvent(QEvent *e)
@@ -40,4 +43,5 @@ void PrefDialog::changeEvent(QEvent *e)
 void PrefDialog::readConfig()
 {
     _mod_portaudio->readConfig();
+    /*_mod_sofia->readConfig();*/
 }

@@ -10,117 +10,33 @@
 			<profiles>
 				<profile name="softphone">
 					<settings>
-						<param name="debug" value="${debug}" />
-						<param name="shutdown-on-fail" value="${shutdown-on-fail}" />
-						<param name="sip-trace" value="${sip-trace}" />
-						<param name="odbc-dsn" value="${odbc-dsn}" />
-						<param name="user-agent-string" value="${user-agent-string}" />
-						<param name="auto-restart" value="${auto-restart}" />
-						<param name="log-auth-failures" value="${log-auth-failures}" />
-						<param name="dtmf-type" value="${dtmf-type}" />
-						<param name="NDLB-force-rport" value="${NDLB-force-rport}" />
-						<param name="auto-rtp-bugs" value="${auto-rtp-bugs}" />
-						<param name="dbname" value="${dbname}" />
-						<param name="presence-hosts" value="${presence-hosts}" />
-						<param name="caller-id-type" value="${caller-id-type}" />
-						<param name="record-template" value="${record-template}" />
-						<param name="record-path" value="${record-path}" />
-						<param name="inbound-bypass-media" value="${inbound-bypass-media}" />
-						<param name="inbound-late-negotiation" value="${inbound-late-negotiation}" />
-						<param name="rtp-autoflush-during-bridge" value="${rtp-autoflush-during-bridge}" />
-						<param name="manual-redirect" value="${manual-redirect}" />
-						<param name="inbound-proxy-media" value="${inbound-proxy-media}" />
-						<param name="force-subscription-expires" value="${force-subscription-expires}" />
-						<param name="send-message-query-on-register" value="${send-message-query-on-register}" />
-						<param name="inbound-use-callid-as-uuid" value="${inbound-use-callid-as-uuid}" />
-						<param name="outbound-use-uuid-as-callid" value="${outbound-use-uuid-as-callid}" />
-						<param name="NDLB-received-in-nat-reg-contact" value="${NDLB-received-in-nat-reg-contact}" />
-						<param name="aggressive-nat-detection" value="${aggressive-nat-detection}" />
-						<param name="disable-rtp-auto-adjust" value="${disable-rtp-auto-adjust}" />
-						<param name="NDLB-support-asterisk-missing-srtp-auth" value="${NDLB-support-asterisk-missing-srtp-auth}" />
-						<param name="NDLB-funny-stun" value="${NDLB-funny-stun}" />
-						<param name="stun-enabled" value="${stun-enabled}" />
-						<param name="stun-auto-disable" value="${stun-auto-disable}" />
-						<param name="rfc2833-pt" value="${rfc2833-pt}" />						
-						<param name="cng-pt" value="${cng-pt}" />
-						<param name="sip-port" value="${sip-port}" />
-						<param name="vad" value="${vad}" />
-						<param name="ext-rtp-ip" value="${ext-rtp-ip}" />
-						<param name="rtp-ip" value="${rtp-ip}" />
-						<param name="ext-sip-ip" value="${ext-sip-ip}" />
-						<param name="local-network-acl" value="${local-network-acl}" />
-						<param name="force-register-domain" value="${force-register-domain}" />
-						<param name="force-register-db-domain" value="${force-register-db-domain}" />
-						<param name="bind-params" value="${bind-params}" />
-						<param name="sip-domain" value="${sip-domain}" />
-						<param name="rtp-timer-name" value="${rtp-timer-name}" />
-						<param name="hold-music" value="${hold-music}" />
-						<param name="outbound-proxy" value="${outbound-proxy}" />
-						<param name="session-timeout" value="${session-timeout}" />
-						<param name="max-proceeding" value="${max-proceeding}" />
-						<param name="rtp-timeout-sec" value="${rtp-timeout-sec}" />
-						<param name="rtp-hold-timeout-sec" value="${rtp-hold-timeout-sec}" />
-						<param name="disable-transfer" value="${disable-transfer}" />
-						<param name="disable-register" value="${disable-register}" />
-						<param name="media-option" value="${media-option}" />
-						<param name="manage-presence" value="${manage-presence}" />
-						<param name="manage-shared-appearance" value="${manage-shared-appearance}" />
-						<param name="disable-srv" value="${disable-srv}" />
-						<param name="disable-naptr" value="${disable-naptr}" />
-						<param name="unregister-on-options-fail" value="${unregister-on-options-fail}" />
-						<param name="require-secure-rtp" value="${require-secure-rtp}" />
-						<param name="multiple-registrations" value="${multiple-registrations}" />
-						<param name="suppress-cng" value="${suppress-cng}" />
-						<param name="NDLB-broken-auth-hash" value="${NDLB-broken-auth-hash}" />
-						<param name="NDLB-sendrecv-in-session" value="${NDLB-sendrecv-in-session}" />
-						<param name="NDLB-allow-bad-iananame" value="${NDLB-allow-bad-iananame}" />
-						<param name="pass-rfc2833" value="${pass-rfc2833}" />
-						<param name="rtp-autoflush" value="${rtp-autoflush}" />
-						<param name="rtp-autofix-timing" value="${rtp-autofix-timing}" />
-						<param name="contact-user" value="${contact-user}" />
-						<param name="nat-options-ping" value="${nat-options-ping}" />
-						<param name="inbound-codec-negotiation" value="${inbound-codec-negotiation}" />
-						<param name="disable-transcoding" value="${disable-transcoding}" />
-						<param name="rtp-rewrite-timestamps" value="${rtp-rewrite-timestamps}" />
-						<param name="auth-calls" value="${auth-calls}" />
-						<param name="nonce-ttl" value="${nonce-ttl}" />
-						<param name="accept-blind-reg" value="${accept-blind-reg}" />
-						<param name="enable-3pcc" value="${enable-3pcc}" />
-						<param name="accept-blind-auth" value="${accept-blind-auth}" />
-						<param name="auth-all-packets" value="${auth-all-packets}" />
-						<param name="full-id-in-dialplan" value="${full-id-in-dialplan}" />
-						<param name="inbound-reg-force-matching-username" value="${inbound-reg-force-matching-username}" />
-						<param name="enable-timer" value="${enable-timer}" />
-						<param name="minimum-session-expires" value="${minimum-session-expires}" />
-						<param name="enable-100rel" value="${enable-100rel}" />
-						<param name="enable-compact-headers" value="${enable-compact-headers}" />
-						<param name="pass-callee-id" value="${pass-callee-id}" />
-						<param name="sql-in-transactions" value="${sql-in-transactions}" />
-						<param name="enable-soa" value="${enable-soa}" />
-						<param name="bitpacking" value="${bitpacking}" />
-						<param name="username" value="${username}" />
-						<param name="context" value="${context}" />
-						<param name="apply-nat-acl" value="${apply-nat-acl}" />
-						<param name="apply-inbound-acl" value="${apply-inbound-acl}" />
-						<param name="apply-proxy-acl" value="${apply-proxy-acl}" />
-						<param name="apply-register-acl" value="${apply-register-acl}" />
-						<param name="alias" value="${alias}" />
-						<param name="dialplan" value="${dialplan}" />
-						<param name="max-calls" value="${max-calls}" />
-						<param name="codec-prefs" value="${codec-prefs}" />
-						<param name="inbound-codec-prefs" value="${inbound-codec-prefs}" />
-						<param name="outbound-codec-prefs" value="${outbound-codec-prefs}" />
-						<param name="challenge-realm" value="${challenge-realm}" />
-						<param name="dtmf-duration" value="${dtmf-duration}" />
-						<param name="tls" value="${tls}" />
-						<param name="tls-bind-params" value="${tls-bind-params}" />
-						<param name="tls-sip-port" value="${tls-sip-port}" />
-						<param name="tls-cert-dir" value="${tls-cert-dir}" />
-						<param name="tls-version" value="${tls-version}" />
-						<param name="timer-T1" value="${timer-T1}" />
-						<param name="timer-T1X64" value="${timer-T1X64}" />
-						<param name="timer-T2" value="${timer-T2}" />
-						<param name="timer-T4" value="${timer-T4}" />
+                                         <param name="user-agent-string" value="${user-agent-string)"/>
+                                         <param name="debug" value="${debug}"/>
+                                         <param name="sip-trace" value="${sip-trace}"/>
+                                         <param name="context" value="${context}"/>
+                                         <param name="rfc2833-pt" value="${rfc2833-pt}"/>
+                                         <param name="sip-port" value="${sip-port}"/>
+                                         <param name="dialplan" value="${dialplan}"/>
+                                         <param name="dtmf-duration" value="${dtmf-duration}"/>
+                                         <param name="codec-prefs" value="${codec_prefs}"/>
+                                         <param name="use-rtp-timer" value="${use-rtp-timer}"/>
+                                         <param name="rtp-timer-name" value="${rtp-timer-name}"/>
+                                         <param name="rtp-ip" value="${rtp-ip}"/>
+                                         <param name="sip-ip" value="${sip-ip}"/>
+                                         <param name="hold-music" value="${hold-music}"/>
+                                         <param name="apply-nat-acl" value="${apply-nat-acl}"/>
+                                         <param name="manage-presence" value="${manage-presence}"/>
+                                         <param name="max-proceeding" value="${max-proceeding}"/>
+                                         <param name="inbound-codec-negotiation" value="${inbound-codec-negotiation}"/>
+                                         <param name="nonce-ttl" value="${nonce-ttl}"/>
+                                         <param name="auth-calls" value="${auth-calls}"/>
+                                         <param name="auth-all-packets" value="${auth-all-packets}"/>
+                                         <param name="ext-rtp-ip" value="${ext-rtp-ip}"/>
+                                         <param name="ext-sip-ip" value="${ext-sip-ip}"/>
+                                         <param name="rtp-timeout-sec" value="${rtp-timeout-sec}"/>
+                                         <param name="rtp-hold-timeout-sec" value="${rtp-hold-timeout-sec}"/>
+                                         <param name="disable-register" value="${disable-register}"/>
+                                         <param name="challenge-realm" value="${challenge-realm}"/>
 					</settings>
 				</profile>
 			</profiles>

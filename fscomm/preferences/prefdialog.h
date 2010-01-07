@@ -7,6 +7,7 @@
 #include <fshost.h>
 
 class PrefPortaudio;
+class PrefSofia;
 
 namespace Ui {
     class PrefDialog;
@@ -29,6 +30,7 @@ private:
     QSettings *_settings;
     Ui::PrefDialog *ui;
     PrefPortaudio *_mod_portaudio;
+    PrefSofia *_mod_sofia;
 };
 
 

@@ -37,7 +37,7 @@
 #include <switch.h>
 #include <fshost.h>
 #include <call.h>
-#include <prefdialog.h>
+#include "preferences/prefdialog.h"
 
 namespace Ui {
     class MainWindow;
