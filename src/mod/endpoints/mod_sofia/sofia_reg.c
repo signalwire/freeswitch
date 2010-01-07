@@ -1365,7 +1365,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		if (ok && !sofia_test_pflag(profile, PFLAG_BLIND_REG)) {
 			type = REG_AUTO_REGISTER;
 		} else if (!ok) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", network_ip, profile->reg_acl[x]);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by register acl \"%s\"\n", network_ip, profile->reg_acl[x]);
 			nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
 			goto end;
 		}
@@ -1656,6 +1656,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	switch_event_t *params = NULL;
 	const char *auth_acl = NULL;
 	long ncl = 0;
+	sip_unknown_t *un;
 
 	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
 
@@ -1784,6 +1785,17 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_request_host", sip->sip_request->rq_url->url_host);
 		if (sip->sip_request->rq_url->url_port) {
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_request_port", sip->sip_request->rq_url->url_port);
+		}
+	}
+
+	for (un = sip->sip_unknown; un; un = un->un_next) {
+		if (!strncasecmp(un->un_name, "X-", 2)) {
+			if (!zstr(un->un_value)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "adding %s => %s to xml_curl request\n", un->un_name, un->un_value);
+				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, un->un_name, un->un_value);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "skipping %s => %s from xml_curl request\n", un->un_name, un->un_value);
 		}
 	}
 
@@ -1927,17 +1939,77 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 	if (auth_acl) {
 		if (!switch_check_network_list_ip(ip, auth_acl)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by user acl %s\n", ip, auth_acl);
-			ret = AUTH_FORBIDDEN;
-			goto end;
+			int network_ip_is_proxy, x = 0;
+			char *last_acl = NULL;
+			if (profile->proxy_acl_count == 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by user acl [%s] and no proxy acl present\n", ip, auth_acl);
+				ret = AUTH_FORBIDDEN;
+				goto end;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Rejected by user acl [%s] checking proxy ACLs now\n", ip, auth_acl);
+			}
+			/* Check if network_ip is a proxy allowed to send us calls */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d acls to check for proxy\n", profile->proxy_acl_count);
+			
+			for (x = 0; x < profile->proxy_acl_count; x++) {
+				last_acl = profile->proxy_acl[x];
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+								  "checking %s against acl %s\n",
+								  ip, last_acl
+								  );
+				if (switch_check_network_list_ip(ip, last_acl)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+									  "%s is a proxy according to the %s acl\n",
+									  ip, last_acl
+									  );
+					network_ip_is_proxy = 1;
+					break;
+				}
+			}
+			/*
+			 * if network_ip is a proxy allowed to send traffic, check for auth
+			 * ip header and see if it matches against the auth acl
+			 */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "network ip is a proxy [%d]\n", network_ip_is_proxy);
+			if (network_ip_is_proxy) {
+				int x_auth_ip = 0;
+				for (un = sip->sip_unknown; un; un = un->un_next) {
+					if (!strcasecmp(un->un_name, "X-AUTH-IP")) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+										  "found auth ip [%s] header of [%s]\n",
+										  un->un_name, un->un_value
+										  );
+						if (!zstr(un->un_value)) {
+							if (!switch_check_network_list_ip(un->un_value, auth_acl)) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by user acl %s\n", un->un_value, auth_acl);
+								ret = AUTH_FORBIDDEN;
+								goto end;
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+												  "IP %s allowed by acl %s, checking credentials\n",
+												  un->un_value, auth_acl
+												  );
+								x_auth_ip = 1;
+								break;
+							}
+						}
+					}
+				}
+				if (!x_auth_ip) {
+					ret = AUTH_FORBIDDEN;
+					goto end;
+				}
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP [%s] passed ACL check [%s]\n", ip, auth_acl);
 		}
 	}
-
+	
 	if (zstr(passwd) && zstr(a1_hash)) {
 		ret = AUTH_OK;
 		goto skip_auth;
 	}
-
+	
 	if (!a1_hash) {
 		input = switch_mprintf("%s:%s:%s", username, realm, passwd);
 		su_md5_init(&ctx);
@@ -2013,12 +2085,12 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			if (mwi_account) {
 				switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "mwi-account", mwi_account);
 			}
-
+			
 			if ((uparams = switch_xml_child(user, "params"))) {
 				xparams_type[i] = 0;
 				xparams[i++] = uparams;
 			}
-
+			
 			if (group && (gparams = switch_xml_child(group, "params"))) {
 				xparams_type[i] = 0;
 				xparams[i++] = gparams;
