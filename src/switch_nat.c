@@ -103,7 +103,7 @@ static int init_upnp (void)
 		}
 		if (!dev) {
 			dev = devlist; /* defaulting to first device */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No InternetGatewayDevice, using first entry as default.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No InternetGatewayDevice, using first entry as default (%s).\n", dev->descURL);
 		}
 		
 		descXML = miniwget(dev->descURL, &descXMLsize);
@@ -114,6 +114,8 @@ static int init_upnp (void)
 			parserootdesc (descXML, descXMLsize, &nat_globals.data);
 			free (descXML); descXML = 0;
 			GetUPNPUrls (&nat_globals.urls, &nat_globals.data, dev->descURL);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unable to retrieve device description XML (%s).\n", dev->descURL);
 		}
 
 		freeUPNPDevlist(devlist);
