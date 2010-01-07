@@ -26,18 +26,18 @@ SOURCES += main.cpp \
     fshost.cpp \
     call.cpp \
     mod_qsettings/mod_qsettings.cpp \
-    prefdialog.cpp \
-    prefportaudio.cpp \
-    prefsofia.cpp
+    preferences/prefdialog.cpp \
+    preferences/prefportaudio.cpp \
+    preferences/prefsofia.cpp
 HEADERS += mainwindow.h \
     fshost.h \
     call.h \
     mod_qsettings/mod_qsettings.h \
-    prefdialog.h \
-    prefportaudio.h \
-    prefsofia.h
+    preferences/prefdialog.h \
+    preferences/prefportaudio.h \
+    preferences/prefsofia.h
 FORMS += mainwindow.ui \
-    prefdialog.ui
+    preferences/prefdialog.ui
 RESOURCES += resources.qrc
 OTHER_FILES += conf/portaudio.conf.xml \
     conf/event_socket.conf.xml \
