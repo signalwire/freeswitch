@@ -855,9 +855,8 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 			k++;
 		}
 	}
-	
-
-	return k ? ZAP_SUCCESS : ZAP_FAIL;
+	/* when k is 0 it might be that an async wanpipe device signal was delivered */	
+	return ZAP_SUCCESS;
 }
 
 /**
