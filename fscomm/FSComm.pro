@@ -39,4 +39,5 @@ FORMS += mainwindow.ui \
 RESOURCES += resources.qrc
 OTHER_FILES += conf/portaudio.conf.xml \
     conf/event_socket.conf.xml \
-    conf/freeswitch.xml
+    conf/freeswitch.xml \
+    conf/sofia.conf.xml
