@@ -4241,6 +4241,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									NUTAG_MEDIA_ENABLE(0),
 									SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 									SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+									SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),
 									TAG_END());
 					}
 					if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REINVITE) == SWITCH_STATUS_SUCCESS) {
@@ -6237,6 +6238,7 @@ void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t 
 							   NUTAG_MEDIA_ENABLE(0),
 							   SIPTAG_CONTACT_STR(b_tech_pvt->reply_contact),
 							   SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+							   SIPTAG_PAYLOAD_STR(b_tech_pvt->local_sdp_str),
 							   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 							   TAG_IF(!zstr(b_tech_pvt->user_via), SIPTAG_VIA_STR(b_tech_pvt->user_via)),
 							   TAG_END());
