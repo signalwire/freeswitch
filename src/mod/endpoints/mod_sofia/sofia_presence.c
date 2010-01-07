@@ -2027,27 +2027,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			
 				if (!strcasecmp(event, "line-seize")) {
 					sync_sla(profile, to_user, to_host, SWITCH_FALSE, SWITCH_TRUE);
-
-#if 0
-				
-					
-					sql = switch_mprintf("select call_id,expires,'%q',0,sub_to_host from sip_subscriptions where hostname='%q' "
-										 "and sub_to_user='%q' and sub_to_host='%q' "
-										 "and event='call-info' ",
-										 switch_str_nil(p),
-										 mod_sofia_globals.hostname,
-										 to_user,
-										 to_host
-										 );
-					if (mod_sofia_globals.debug_sla > 1) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "UNSEIZE SQL %s\n", sql);
-					}
-
-					sofia_glue_execute_sql_callback(profile, NULL, sql, broadsoft_sla_callback, profile);
-					switch_safe_free(sql);
-#endif
 				}
-		
+
 				su_free(profile->home, full_call_info);
 
 			}
@@ -2070,6 +2051,18 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 							   TAG_IF(full_call_info, SIPTAG_CALL_INFO_STR(full_call_info)),
 							   TAG_END());
 
+
+					
+					sql = switch_mprintf("delete from sip_dialogs where sip_from_user='%q' and sip_from_host='%q' and call_info_state='seized'",
+										 to_user,
+										 to_host
+										 );
+
+					
+					if (mod_sofia_globals.debug_sla > 1) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "CLEAR SQL %s\n", sql);
+					}
+					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
 					sql = switch_mprintf("insert into sip_dialogs (sip_from_user,sip_from_host,call_info,call_info_state,hostname) "
 										 "values ('%q','%q','%q','seized','%q')",
