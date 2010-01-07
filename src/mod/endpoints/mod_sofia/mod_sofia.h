@@ -283,6 +283,7 @@ struct mod_sofia_globals {
 	int guess_mask;
 	char guess_mask_str[16];
 	int debug_presence;
+	int debug_sla;
 	int auto_restart;
 	int auto_nat;
 	int tracelevel;

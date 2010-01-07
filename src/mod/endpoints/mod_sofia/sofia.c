@@ -2413,6 +2413,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				su_log_set_level(NULL, atoi(val));
 			} else if (!strcasecmp(var, "debug-presence")) {
 				mod_sofia_globals.debug_presence = atoi(val);
+			} else if (!strcasecmp(var, "debug-sla")) {
+				mod_sofia_globals.debug_sla = atoi(val);
 			} else if (!strcasecmp(var, "auto-restart")) {
 				mod_sofia_globals.auto_restart = switch_true(val);
 			} else if (!strcasecmp(var, "rewrite-multicasted-fs-path")) {
@@ -2771,6 +2773,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE);
 							profile->pres_type = PRES_TYPE_FULL;
+							sofia_set_pflag(profile, PFLAG_MULTIREG);
 							profile->sla_contact = switch_core_sprintf(profile->pool, "sla-agent");
 						}
 					} else if (!strcasecmp(var, "disable-srv")) {
@@ -3384,6 +3387,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
 									  tagi_t tags[])
 {
+	char *call_info = NULL;
+
 	if (sip && session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *uuid;
@@ -3392,8 +3397,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		char network_ip[80];
 		int network_port = 0;
 		switch_caller_profile_t *caller_profile = NULL;
-		char *call_info = NULL;
-
 
 		sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
 
@@ -3405,6 +3408,51 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		}
 
 		switch_channel_clear_flag(channel, CF_REQ_MEDIA);
+
+		if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
+			if (channel && sip->sip_call_info) {
+				char *p;
+				call_info = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info);
+				if ((p = strchr(call_info, ';'))) {
+					switch_channel_set_variable(channel, "presence_call_info", p+1);
+				}
+			} else if ((status == 180 || status == 183 || status == 200)) {
+				char buf[128] = "";
+				char *sql;
+				char *state = "active";
+
+				if (status != 200) {
+					state = "progressing";
+				}
+
+				if (sip && 
+					sip->sip_from && sip->sip_from->a_url && sip->sip_from->a_url->url_user && sip->sip_from->a_url->url_host &&
+					sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host) {
+					sql = switch_mprintf("select 'appearance-index=1' from sip_subscriptions where hostname='%q' and event='call-info' and "
+										 "sub_to_user='%q' and sub_to_host='%q'", 
+										 mod_sofia_globals.hostname, sip->sip_to->a_url->url_user, sip->sip_from->a_url->url_host);
+					sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
+				
+					if (mod_sofia_globals.debug_sla > 1) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "QUERY SQL %s [%s]\n", sql, buf);
+					}
+					free(sql);
+
+					if (!zstr(buf)) {
+						sql = switch_mprintf("update sip_dialogs set call_info='%q',call_info_state='%q' "
+											 "where uuid='%q'", buf, state, 
+											 switch_core_session_get_uuid(session));
+
+						if (mod_sofia_globals.debug_sla > 1) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "QUERY SQL %s\n", sql);
+						}
+					
+						sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
+						switch_safe_free(sql);
+					}
+				}
+			}
+		}
 
 		if ((status == 180 || status == 183 || status == 200)) { 
 			const char *x_freeswitch_support;
@@ -3443,12 +3491,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			
 			if (!p_contact) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing contact header in redirect request\n");
-				return;
-			}
-
-			if (sip->sip_call_info) {
-				call_info = sip_header_as_string(profile->home, (void *) sip->sip_call_info);
-				switch_channel_set_variable(channel, "presence_call_info", call_info);
+				goto end;
 			}
 
 			if ((br = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
@@ -3579,7 +3622,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 
 			if (!sofia_test_flag(tech_pvt, TFLAG_SENT_UPDATE)) {
-				return;
+				goto end;
 			}
 
 			sofia_clear_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
@@ -3610,7 +3653,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				switch_core_session_queue_message(other_session, msg);
 				switch_core_session_rwunlock(other_session);
 			}
-			return;
+			goto end;
 		}
 
 		if ((status == 180 || status == 183 || status == 200)) {
@@ -3664,11 +3707,15 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					const char *presence_data = switch_channel_get_variable(channel, "presence_data");
 					const char *presence_id = switch_channel_get_variable(channel, "presence_id");
 					char *full_contact = "";
-					
+					char *p = NULL;
+
 					if (sip->sip_contact) {
 						full_contact = sip_header_as_string(nua_handle_home(tech_pvt->nh), (void *) sip->sip_contact);
 					}
-					
+
+					if (call_info && (p = strchr(call_info, ';'))) {
+						p++;
+					}
 					sql = switch_mprintf("insert into sip_dialogs "
 										 "(call_id,uuid,sip_to_user,sip_to_host,sip_from_user,sip_from_host,contact_user,"
 										 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,call_info) "
@@ -3678,18 +3725,13 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 										 to_user, to_host, from_user, from_host, contact_user, 
 										 contact_host, astate, "outbound", user_agent,
 										 profile->name, mod_sofia_globals.hostname, switch_str_nil(full_contact),
-										 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(call_info));
+										 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p));
 					
 					switch_assert(sql);
 
 					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
-				}
-				
-				if (call_info) {
-					su_free(profile->home, call_info);
-				}
-
+				}				
 			} else if (status == 200 && (profile->pres_type)) {
 				char *sql = NULL;
 				const char *presence_data = switch_channel_get_variable(channel, "presence_data");
@@ -3703,6 +3745,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			}
 		}
 
+	}
+
+ end:
+
+	if (call_info) {
+		su_free(nua_handle_home(nh), call_info);
 	}
 
 	if (!session && (status == 180 || status == 183 || status == 200)) {
@@ -5891,10 +5939,16 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		char *sql;
 		char cid[512] = "";
 		char *str;
+		char *p = NULL;
+
 
 		if (sip->sip_to && sip->sip_to->a_url) {
+			if ((p = strchr(call_info_str, ';'))) {
+				p++;
+			}
+
 			sql = switch_mprintf("select call_id from sip_dialogs where call_info='%q' and sip_from_user='%q' and sip_from_host='%q'", 
-								 call_info_str, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
+								 switch_str_nil(p), sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
 			
 			if ((str = sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, cid, sizeof(cid)))) {
 				bnh = nua_handle_by_call_id(nua, str);
@@ -5930,6 +5984,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					}
 
 					if ((uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+						switch_channel_set_variable(b_channel, "presence_call_info", NULL);
 						one_leg = 0;
 					} else {
 						uuid = switch_core_session_get_uuid(b_session);
@@ -5952,7 +6007,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 							if (!one_leg && 
 								(!b_tech_pvt || !sofia_test_flag(b_tech_pvt, TFLAG_SIP_HOLD)) && 
 								(!c_tech_pvt || !sofia_test_flag(c_tech_pvt, TFLAG_SIP_HOLD))) {
-								char *ext = switch_core_session_sprintf(b_session, "conference:%s@sla+flags{mintwo}", uuid);
+								char *ext = switch_core_session_sprintf(b_session, "answer,conference:%s@sla+flags{mintwo}", uuid);
 								
 								switch_channel_set_flag(c_channel, CF_REDIRECT);
 								switch_ivr_session_transfer(b_session, ext, "inline", NULL);
@@ -6117,13 +6172,18 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			const char *presence_data = switch_channel_get_variable(channel, "presence_data");
 			const char *presence_id = switch_channel_get_variable(channel, "presence_id");
 			char *full_contact = "";
+			char *p = NULL;
+
 
 			if (sip->sip_contact) {
 				full_contact = sip_header_as_string(nua_handle_home(tech_pvt->nh), (void *) sip->sip_contact);
 			}
 			
 			if (call_info_str) {
-				switch_channel_set_variable(channel, "presence_call_info", call_info_str);
+				if ((p = strchr(call_info_str, ';'))) {
+					p++;
+					switch_channel_set_variable(channel, "presence_call_info", p);
+				}
 			}
 
 
@@ -6136,7 +6196,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 								 to_user, to_host, dialog_from_user, dialog_from_host, 
 								 contact_user, contact_host, "confirmed", "inbound", user_agent,
 								 profile->name, mod_sofia_globals.hostname, switch_str_nil(full_contact), 
-								 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(call_info_str));
+								 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p));
 
 			switch_assert(sql);
 			

@@ -512,6 +512,7 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const ch
 					call_info_state = "alerting";
 				}
 			}
+
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-info-state", call_info_state);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-info", call_info);
 		}
@@ -1919,6 +1920,10 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	if (channel->state < CS_HANGUP) {
 		switch_channel_state_t last_state;
 		switch_event_t *event;
+
+		if (hangup_cause == SWITCH_CAUSE_LOSE_RACE) {
+			switch_channel_set_variable(channel, "presence_call_info", NULL);
+		}
 
 		switch_mutex_lock(channel->state_mutex);
 		last_state = channel->state;

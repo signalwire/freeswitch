@@ -3831,7 +3831,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
         "   contact         VARCHAR(255),\n"
         "   presence_id     VARCHAR(255),\n"
         "   presence_data   VARCHAR(255),\n"
-        "   call_info  VARCHAR(255)\n"
+        "   call_info  VARCHAR(255),\n"
+        "   call_info_state  VARCHAR(255)\n"
 		");\n";
 
 	char sub_sql[] =
@@ -3917,6 +3918,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			"create index sd_hostname on sip_dialogs (hostname)",
 			"create index sd_presence_data on sip_dialogs (presence_data)",
 			"create index sd_call_info on sip_dialogs (call_info)",
+			"create index sd_call_info on sip_dialogs (call_info_state)",
 			"create index sp_hostname on sip_presence (hostname)",
 			"create index sa_nonce on sip_authentication (nonce)",
 			"create index sa_hostname on sip_authentication (hostname)",
@@ -3986,7 +3988,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 
 		free(test_sql);
-		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and call_info like '%%'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and call_info_state like '%%'", mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_dialogs", NULL);
@@ -4053,7 +4055,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
 		free(test_sql);
 
-		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and call_info like '%%'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and call_info_state like '%%'", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_dialogs", dialog_sql);
 		free(test_sql);
 
@@ -4131,6 +4133,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_exec(db, "create index if not exists sd_presence_id on sip_dialogs (presence_id)", NULL, NULL, NULL);
 		switch_core_db_exec(db, "create index if not exists sd_presence_data on sip_dialogs (presence_data)", NULL, NULL, NULL);
 		switch_core_db_exec(db, "create index if not exists sd_call_info on sip_dialogs (call_info)", NULL, NULL, NULL);
+		switch_core_db_exec(db, "create index if not exists sd_call_info on sip_dialogs (call_info_state)", NULL, NULL, NULL);
 
 		switch_core_db_exec(db, "create index if not exists sp_hostname on sip_presence (hostname)", NULL, NULL, NULL);
 
