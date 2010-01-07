@@ -1939,7 +1939,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 	if (auth_acl) {
 		if (!switch_check_network_list_ip(ip, auth_acl)) {
-			int network_ip_is_proxy, x = 0;
+			int network_ip_is_proxy = 0, x = 0;
 			char *last_acl = NULL;
 			if (profile->proxy_acl_count == 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by user acl [%s] and no proxy acl present\n", ip, auth_acl);
