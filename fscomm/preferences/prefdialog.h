@@ -8,6 +8,7 @@
 
 class PrefPortaudio;
 class PrefSofia;
+class AccountDialog;
 
 namespace Ui {
     class PrefDialog;
@@ -23,11 +24,13 @@ protected:
     void changeEvent(QEvent *e);
 
 private slots:
+    void addAccountBtnClicked();
     void writeConfig();
 
 private:
     void readConfig();
     QSettings *_settings;
+    AccountDialog *_accDlg;
     Ui::PrefDialog *ui;
     PrefPortaudio *_mod_portaudio;
     PrefSofia *_mod_sofia;

@@ -3,6 +3,7 @@
 #include "ui_prefdialog.h"
 #include "prefportaudio.h"
 #include "prefsofia.h"
+#include "accountdialog.h"
 
 PrefDialog::PrefDialog(QWidget *parent) :
     QDialog(parent),
@@ -11,7 +12,9 @@ PrefDialog::PrefDialog(QWidget *parent) :
     ui->setupUi(this);
     _settings = new QSettings();
     connect(this, SIGNAL(accepted()), this, SLOT(writeConfig()));
+    connect(ui->sofiaGwAddBtn, SIGNAL(clicked()), this, SLOT(addAccountBtnClicked()));
 
+    _accDlg = NULL;
     _mod_portaudio = new PrefPortaudio(ui, this);
     _mod_sofia = new PrefSofia(ui, this);
     readConfig();
@@ -20,6 +23,16 @@ PrefDialog::PrefDialog(QWidget *parent) :
 PrefDialog::~PrefDialog()
 {
     delete ui;
+}
+
+void PrefDialog::addAccountBtnClicked()
+{
+    if (!_accDlg)
+        _accDlg = new AccountDialog();
+
+    _accDlg->show();
+    _accDlg->raise();
+    _accDlg->activateWindow();
 }
 
 void PrefDialog::writeConfig()

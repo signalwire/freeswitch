@@ -1,0 +1,17 @@
+<gateway name="${name}">
+  <param name="username" value="${username}"/>
+  <param name="realm" value="${realm}"/>
+  <param name="from-user" value="${from-user}"/>
+  <param name="from-domain" value="${from-domain}"/>
+  <param name="password" value="${password}"/>
+  <param name="extension" value="${extension}"/>
+  <param name="proxy" value="${proxy}"/>
+  <param name="register-proxy" value="${register-proxy}"/>
+  <param name="expire-seconds" value="${expire-seconds}"/>
+  <param name="register" value="${register}"/>
+  <param name="register-transport" value="${register-transport}"/>
+  <param name="retry-seconds" value="${retry-seconds}"/>
+  <param name="caller-id-in-from" value="${caller-id-in-from}"/>
+  <param name="contact-params" value="${contact-params}"/>
+  <param name="ping" value="${ping}"/>
+</gateway>
