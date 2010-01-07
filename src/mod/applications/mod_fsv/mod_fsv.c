@@ -219,7 +219,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	0};
 	int fd = -1;
 	int bytes;
-	switch_codec_t *read_codec = NULL, codec = { 0 }, vid_codec = {
+	switch_codec_t codec = { 0 }, vid_codec = {
 	0}, *read_vid_codec;
 	unsigned char *aud_buffer;
 	unsigned char *vid_buffer;
@@ -264,6 +264,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	vid_frame.data = vid_buffer + 12;
 	vid_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
 	switch_set_flag((&vid_frame), SFF_RAW_RTP);
+	switch_set_flag((&vid_frame), SFF_PROXY_PACKET);
 
 	if (switch_core_timer_init(&timer, "soft", read_impl.microseconds_per_packet / 1000,
 							   read_impl.samples_per_packet, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -317,6 +318,10 @@ SWITCH_STANDARD_APP(play_fsv_function)
 				hdr->pt = pt;
 			}
 			if (switch_channel_test_flag(channel, CF_VIDEO)) {
+				switch_byte_t *data = (switch_byte_t *) vid_frame.packet;
+
+				vid_frame.data = data + 12;
+				vid_frame.datalen = vid_frame.packetlen - 12;
 				switch_core_session_write_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 			if (ts && last && last != ts) {
@@ -342,9 +347,9 @@ SWITCH_STANDARD_APP(play_fsv_function)
 		switch_core_timer_destroy(&timer);
 	}
 
-	if (read_codec) {
-		switch_core_session_set_read_codec(session, read_codec);
-	}
+
+	switch_core_session_set_read_codec(session, NULL);
+
 
 	if (switch_core_codec_ready(&codec)) {
 		switch_core_codec_destroy(&codec);
