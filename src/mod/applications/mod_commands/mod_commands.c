@@ -4113,6 +4113,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl resume");
 	switch_console_set_complete("add fsctl shutdown");
 	switch_console_set_complete("add fsctl shutdown asap");
+	switch_console_set_complete("add fsctl shutdown now");
 	switch_console_set_complete("add fsctl shutdown asap restart");
 	switch_console_set_complete("add fsctl shutdown cancel");
 	switch_console_set_complete("add fsctl shutdown elegant");
