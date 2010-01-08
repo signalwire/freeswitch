@@ -7,6 +7,8 @@ namespace Ui {
     class AccountDialog;
 }
 
+class QSettings;
+
 class AccountDialog : public QDialog {
     Q_OBJECT
 public:
@@ -21,6 +23,7 @@ protected:
 
 private:
     Ui::AccountDialog *ui;
+    QSettings *_settings;
 };
 
 #endif // ACCOUNTDIALOG_H
