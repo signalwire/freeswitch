@@ -1431,7 +1431,7 @@ SWITCH_STANDARD_API(status_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[send_sighup|hupall|pause|resume|shutdown [cancel|elegant|asap|restart]|sps|sync_clock|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|loglevel [level]|debug_level [level]]"
+#define CTL_SYNTAX "[send_sighup|hupall|pause|resume|shutdown [cancel|elegant|asap|now|restart]|sps|sync_clock|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|loglevel [level]|debug_level [level]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
