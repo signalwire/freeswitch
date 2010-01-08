@@ -4140,6 +4140,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add show file");
 	switch_console_set_complete("add show interfaces");
 	switch_console_set_complete("add show interface_types");
+	switch_console_set_complete("add show tasks");
 	switch_console_set_complete("add show management");
 	switch_console_set_complete("add show modules");
 	switch_console_set_complete("add show nat_map");
