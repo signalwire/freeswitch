@@ -3148,10 +3148,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					profile->bindurl = profile->url;
 				}
 
-				profile->tcp_contact = switch_core_sprintf(profile->pool, "%s;transport=tcp", profile->url);
+				profile->tcp_contact = switch_core_sprintf(profile->pool, "<%s;transport=tcp>", profile->url);
 
 				if (profile->public_url) {
-					profile->tcp_public_contact = switch_core_sprintf(profile->pool, "%s;transport=tcp", profile->public_url);
+					profile->tcp_public_contact = switch_core_sprintf(profile->pool, "<%s;transport=tcp>", profile->public_url);
 				}
 
 				if (profile->bind_params) {
@@ -3224,9 +3224,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					if (!profile->tls_cert_dir) {
 						profile->tls_cert_dir = switch_core_sprintf(profile->pool, "%s/ssl", SWITCH_GLOBAL_dirs.conf_dir);
 					}
-					profile->tls_contact = switch_core_sprintf(profile->pool, "%s;transport=tls", profile->tls_url);
+					profile->tls_contact = switch_core_sprintf(profile->pool, "<%s;transport=tls>", profile->tls_url);
 					if (profile->tls_public_url) {
-						profile->tls_public_contact = switch_core_sprintf(profile->pool, "%s;transport=tls", profile->tls_public_url);
+						profile->tls_public_contact = switch_core_sprintf(profile->pool, "<%s;transport=tls>", profile->tls_public_url);
 					}
 				}
 			}
