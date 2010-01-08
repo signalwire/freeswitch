@@ -1230,22 +1230,22 @@ static __inline__ void check_state(zap_span_t *span)
 		susp = 0;
 	}
 
-    if (zap_test_flag(span, ZAP_SPAN_STATE_CHANGE) || susp) {
-        uint32_t j;
-        zap_clear_flag_locked(span, ZAP_SPAN_STATE_CHANGE);
-        for(j = 1; j <= span->chan_count; j++) {
-            if (zap_test_flag((span->channels[j]), ZAP_CHANNEL_STATE_CHANGE) || susp) {
+	if (zap_test_flag(span, ZAP_SPAN_STATE_CHANGE) || susp) {
+		uint32_t j;
+		zap_clear_flag_locked(span, ZAP_SPAN_STATE_CHANGE);
+		for(j = 1; j <= span->chan_count; j++) {
+			if (zap_test_flag((span->channels[j]), ZAP_CHANNEL_STATE_CHANGE) || susp) {
 				zap_mutex_lock(span->channels[j]->mutex);
-                zap_clear_flag((span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
+				zap_clear_flag((span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
 				if (susp && span->channels[j]->state != ZAP_CHANNEL_STATE_DOWN) {
 					zap_channel_set_state(span->channels[j], ZAP_CHANNEL_STATE_RESTART, 0);
 				}
-                state_advance(span->channels[j]);
-                zap_channel_complete_state(span->channels[j]);
+				state_advance(span->channels[j]);
+				zap_channel_complete_state(span->channels[j]);
 				zap_mutex_unlock(span->channels[j]->mutex);
-            }
-        }
-    }
+			}
+		}
+	}
 
 	if (zap_test_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RESTARTING)) {
 		if (zap_check_state_all(span, ZAP_CHANNEL_STATE_DOWN)) {
@@ -1953,14 +1953,15 @@ static ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(zap_sangoma_boost_configure_span)
 	span->start = zap_sangoma_boost_start;
 	span->stop = zap_sangoma_boost_stop;
 	span->signal_data = sangoma_boost_data;
-    span->signal_type = ZAP_SIGTYPE_SANGOMABOOST;
-    span->outgoing_call = sangoma_boost_outgoing_call;
+	span->signal_type = ZAP_SIGTYPE_SANGOMABOOST;
+	span->outgoing_call = sangoma_boost_outgoing_call;
 	span->channel_request = sangoma_boost_channel_request;
 	span->get_channel_sig_status = sangoma_boost_get_channel_sig_status;
 	span->set_channel_sig_status = sangoma_boost_set_channel_sig_status;
 	span->get_span_sig_status = sangoma_boost_get_span_sig_status;
 	span->set_span_sig_status = sangoma_boost_set_span_sig_status;
 	span->state_map = &boost_state_map;
+	span->suggest_chan_id = 1;
 	zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
 	return ZAP_SUCCESS;
 }

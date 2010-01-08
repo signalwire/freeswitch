@@ -76,7 +76,7 @@ static void sangomabc_print_event_call(sangomabc_connection_t *mcon, sangomabc_e
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
 
-	zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "%s EVENT (%s): %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s] Rdnis=[%s]\n",
+	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT (%s): %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s] Rdnis=[%s]\n",
 		    dir ? "TX":"RX",
 			priority ? "P":"N",
 			sangomabc_event_id_name(event->event_id),
@@ -95,7 +95,7 @@ static void sangomabc_print_event_short(sangomabc_connection_t *mcon, sangomabc_
 {
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
-	zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "%s EVENT (%s): %s:(%X) [s%dc%d] Rc=%i CSid=%i Seq=%i \n",
+	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT (%s): %s:(%X) [s%dc%d] Rc=%i CSid=%i Seq=%i \n",
 			   dir ? "TX":"RX", 
 			   priority ? "P":"N",
                            sangomabc_event_id_name(event->event_id), 
@@ -305,9 +305,9 @@ sangomabc_event_t *__sangomabc_connection_read(sangomabc_connection_t *mcon, int
 		return NULL;
 	}
 
-    if (mcon->event.version != SIGBOOST_VERSION) {
+	if (mcon->event.version != SIGBOOST_VERSION) {
 		zap_log(ZAP_LOG_CRIT, "Invalid Boost Version %i  Expecting %i\n",mcon->event.version, SIGBOOST_VERSION);
-    }   
+	}   
 
 	/* Must check for < 0 cannot rely on bytes > MIN_SIZE_... compiler issue */
 	if (bytes < 0) {

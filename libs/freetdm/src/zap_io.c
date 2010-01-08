@@ -1149,7 +1149,7 @@ OZ_DECLARE(zap_status_t) zap_channel_open_by_group(uint32_t group_id, zap_direct
 			zap_span_t* span = NULL;
 			zap_span_find(check->span_id, &span);
 			if (span && span->channel_request) {
-				status = span->channel_request(span, check->physical_chan_id, direction, caller_data, zchan);
+				status = span->channel_request(span, check->chan_id, direction, caller_data, zchan);
 				break;
 			}
 
@@ -1209,7 +1209,7 @@ OZ_DECLARE(zap_status_t) zap_channel_open_by_span(uint32_t span_id, zap_directio
 		if (!span || !zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
 			zap_log(ZAP_LOG_CRIT, "SPAN NOT DEFINED!\n");
 			*zchan = NULL;
-            return ZAP_FAIL;
+            		return ZAP_FAIL;
 		}
 
 		zap_span_channel_use_count(span, &count);
