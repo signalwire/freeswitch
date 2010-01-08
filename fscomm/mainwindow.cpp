@@ -31,6 +31,7 @@
 #include <QMessageBox>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <switch_version.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -88,6 +89,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->listCalls, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(callListDoubleClick(QListWidgetItem*)));
     connect(ui->action_Preferences, SIGNAL(triggered()), this, SLOT(prefTriggered()));
     connect(ui->action_Exit, SIGNAL(triggered()), this, SLOT(close()));
+    connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
 }
 
 MainWindow::~MainWindow()
@@ -331,4 +333,19 @@ void MainWindow::changeEvent(QEvent *e)
     default:
         break;
     }
+}
+
+void MainWindow::showAbout()
+{
+    QString result;
+    g_FSHost.sendCmd("version", "", &result);
+
+    QMessageBox::about(this, tr("About FSComm"),
+                       tr("<h2>FSComm</h2>"
+                          "<p>Author: Jo&atilde;o Mesquita &lt;jmesquita@freeswitch.org>"
+                          "<p>FsComm is a softphone based on libfreeswitch."
+                          "<p>The FreeSWITCH&trade; images and name are trademark of"
+                          " Anthony Minessale II, primary author of FreeSWITCH&trade;."
+                          "<p>Compiled FSComm version: %1"
+                          "<p>%2").arg(SWITCH_VERSION_FULL, result));
 }

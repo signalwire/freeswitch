@@ -43,6 +43,7 @@ namespace Ui {
     class MainWindow;
 }
 
+
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
@@ -56,6 +57,7 @@ signals:
     void dtmfDialed(QString);
 
 private slots:
+    void showAbout();
     void prefTriggered();
     void coreLoadingError(QString);
     void gwStateChanged(QString, int);

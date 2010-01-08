@@ -13,6 +13,11 @@ AccountDialog::~AccountDialog()
     delete ui;
 }
 
+void AccountDialog::writeConfig()
+{
+
+}
+
 void AccountDialog::changeEvent(QEvent *e)
 {
     QDialog::changeEvent(e);

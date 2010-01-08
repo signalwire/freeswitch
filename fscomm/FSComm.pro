@@ -40,7 +40,8 @@ HEADERS += mainwindow.h \
     preferences/accountdialog.h
 FORMS += mainwindow.ui \
     preferences/prefdialog.ui \
-    preferences/accountdialog.ui
+    preferences/accountdialog.ui \
+    ../aboutdialog.ui
 RESOURCES += resources.qrc
 OTHER_FILES += conf/portaudio.conf.xml \
     conf/event_socket.conf.xml \

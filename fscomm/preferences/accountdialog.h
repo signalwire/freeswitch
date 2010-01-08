@@ -13,6 +13,9 @@ public:
     AccountDialog(QWidget *parent = 0);
     ~AccountDialog();
 
+private slots:
+    void writeConfig();
+
 protected:
     void changeEvent(QEvent *e);
 
