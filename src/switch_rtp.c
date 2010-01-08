@@ -1763,12 +1763,18 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		rtp_session->stats.inbound.packet_count++;
 	}
 
+	if (rtp_session->te && rtp_session->recv_msg.header.pt == rtp_session->te) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+
 	if (rtp_session->jb && rtp_session->recv_msg.header.version == 2 && *bytes) {
 		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->te) {
 			stfu_n_reset(rtp_session->jb);
 		}
 		
-		stfu_n_eat(rtp_session->jb, ntohl(rtp_session->recv_msg.header.ts), rtp_session->recv_msg.body, *bytes - rtp_header_len);				
+		stfu_n_eat(rtp_session->jb, ntohl(rtp_session->recv_msg.header.ts), rtp_session->recv_msg.header.pt, 
+				   rtp_session->recv_msg.body, *bytes - rtp_header_len);				
 		*bytes = 0;
 		status = SWITCH_STATUS_FALSE;
 	}
@@ -1783,7 +1789,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			}
 			*bytes = jb_frame->dlen + rtp_header_len;
 			rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
-			rtp_session->recv_msg.header.pt = rtp_session->payload;
+			rtp_session->recv_msg.header.pt = jb_frame->pt;
+
 			status = SWITCH_STATUS_SUCCESS;
 		}
 	}

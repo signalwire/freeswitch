@@ -178,7 +178,7 @@ static int16_t stfu_n_process(stfu_instance_t *i, stfu_queue_t *queue)
 	return 0;
 }
 
-stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, void *data, size_t datalen, int last)
+stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void *data, size_t datalen, int last)
 {
 	uint32_t index;
 	stfu_frame_t *frame;
@@ -203,10 +203,7 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, void *data, size_
 		if (stfu_n_process(i, i->out_queue) < 0) {
             if (i->in_queue->array_len == i->in_queue->array_size && i->out_queue->array_len == i->out_queue->array_size) {
                 stfu_n_resize(i, i->out_queue->array_size * 2);
-                printf("DOH RESIZE\n");
             }
-
-
 			//return STFU_IT_FAILED;
 		}
 		for(index = 0; index < i->out_queue->array_len; index++) {
@@ -226,6 +223,7 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, void *data, size_
 	}
 
 	memcpy(frame->data, data, cplen);
+    frame->pt = pt;
 	frame->ts = ts;
 	frame->dlen = cplen;
 	frame->was_read = 0;	
