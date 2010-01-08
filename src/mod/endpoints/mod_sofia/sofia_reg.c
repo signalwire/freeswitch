@@ -371,7 +371,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 					sec = gateway_ptr->retry_seconds * (gateway_ptr->failures + 1);
 				}
 				
-				gateway_ptr->retry = sec;
+				gateway_ptr->retry = switch_epoch_time_now(NULL) + sec;
 				gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 				gateway_ptr->state = REG_STATE_FAIL_WAIT;
 				gateway_ptr->failure_status = 0;
