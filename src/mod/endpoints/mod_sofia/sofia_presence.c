@@ -33,6 +33,7 @@
  *
  */
 #include "mod_sofia.h"
+#include "switch_stun.h"
 
 #define SUB_OVERLAP 300
 struct state_helper {
@@ -2225,6 +2226,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 		char *rpid = "unknown";
 		sip_payload_t *payload = sip->sip_payload;
 		char *event_type;
+		char etag[9] = "";
 
 		/* the following could instead be refactored back to the calling event handler in sofia.c XXX MTK */
 		if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
@@ -2337,8 +2339,10 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 				switch_xml_free(xml);
 			}
 		}
+
+		switch_stun_random_string(etag, 8, NULL);
+		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), SIPTAG_ETAG_STR(etag), TAG_END());
 	}
-	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 }
 
 void sofia_presence_set_hash_key(char *hash_key, int32_t len, sip_t const *sip)
