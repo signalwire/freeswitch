@@ -5,7 +5,7 @@
 # Authors: (and wish lists)
 #
 # Brian West <brian@freeswitch.org> http://www.amazon.com/gp/registry/wishlist/1BWDJUX5LYQE0
-# Raymond Chandler <intralanman@freeswitch.org> http://www.amazon.com/gp/registry/wishlist/1BWDJUX5LYQE0
+# Raymond Chandler <intralanman@freeswitch.org> http://www.amazon.com/gp/registry/wishlist/27XDISBBI4NOU
 #
 #
 
