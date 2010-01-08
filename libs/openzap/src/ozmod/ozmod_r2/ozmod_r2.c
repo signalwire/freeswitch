@@ -166,7 +166,7 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 	zap_mutex_lock(zchan->mutex);
 
 	/* the channel may be down but the thread not quite done */
-	zap_locked_wait_for_flag_cleared(zchan, ZAP_CHANNEL_INTHREAD, 200);
+	zap_wait_for_flag_cleared(zchan, ZAP_CHANNEL_INTHREAD, 200);
 
 	if (zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {
 		zap_log(ZAP_LOG_ERROR, "%d:%d Yay! R2 outgoing call in channel that is already in thread.\n", 
@@ -217,7 +217,7 @@ static void zap_r2_on_call_init(openr2_chan_t *r2chan)
 	}
 
 	/* the channel may be down but the thread not quite done */
-	zap_locked_wait_for_flag_cleared(zchan, ZAP_CHANNEL_INTHREAD, 200);
+	zap_wait_for_flag_cleared(zchan, ZAP_CHANNEL_INTHREAD, 200);
 
 	if (zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {
 		zap_log(ZAP_LOG_ERROR, "Cannot handle request to start call in channel %d, already in thread!\n", 

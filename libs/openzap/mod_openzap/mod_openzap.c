@@ -817,50 +817,57 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 			
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-	
+	assert(tech_pvt->zchan != NULL);
+
+	zap_mutex_lock(tech_pvt->zchan->mutex);	
+	if (tech_pvt->zchan->state == ZAP_CHANNEL_STATE_TERMINATING) {
+		zap_mutex_unlock(tech_pvt->zchan->mutex);	
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		{
 			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
+				zap_set_flag(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
 			} else {
-				zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
+				zap_set_state_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
 			}
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
 			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
-				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_MEDIA);
+				zap_set_flag(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
+				zap_set_flag(tech_pvt->zchan, ZAP_CHANNEL_MEDIA);
 			} else {
 				/* Don't skip messages in the ISDN call setup
 				 * TODO: make the isdn stack smart enough to handle that itself
 				 *       until then, this is here for safety...
 				 */
 				if (tech_pvt->zchan->state < ZAP_CHANNEL_STATE_PROGRESS) {
-					zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
+					zap_set_state_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
 				}
-				zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
+				zap_set_state_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
 			}
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		{
 			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_ANSWERED);
+				zap_set_flag(tech_pvt->zchan, ZAP_CHANNEL_ANSWERED);
 			} else {
 				/* Don't skip messages in the ISDN call setup
 				 * TODO: make the isdn stack smart enough to handle that itself
 				 *       until then, this is here for safety...
 				 */
 				if (tech_pvt->zchan->state < ZAP_CHANNEL_STATE_PROGRESS) {
-					zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
+					zap_set_state_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
 				}
 				if (tech_pvt->zchan->state < ZAP_CHANNEL_STATE_PROGRESS_MEDIA) {
-					zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
+					zap_set_state_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
 				}
-				zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
+				zap_set_state_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
 			}
 		}
 		break;
@@ -868,6 +875,7 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 		break;
 	}
 
+	zap_mutex_unlock(tech_pvt->zchan->mutex);	
 	return SWITCH_STATUS_SUCCESS;
 }
 
