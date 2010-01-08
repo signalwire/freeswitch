@@ -136,7 +136,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="-Zm200 -w34100 -w34189 -w34100 -w34189"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;$(QTDIR)\include\QtCore&quot;,&quot;$(QTDIR)\include\QtGui&quot;,&quot;$(QTDIR)\include&quot;,&quot;.&quot;,&quot;$(QTDIR)\include\ActiveQt&quot;,&quot;release&quot;,&quot;.&quot;,$(QTDIR)\mkspecs\win32-msvc2008"
+				AdditionalIncludeDirectories="&quot;$(QTDIR)\include\QtCore&quot;,&quot;$(QTDIR)\include\QtGui&quot;,&quot;$(QTDIR)\include&quot;,&quot;.&quot;,&quot;$(QTDIR)\include\ActiveQt&quot;,&quot;release&quot;,&quot;.&quot;,$(QTDIR)\mkspecs\win32-msvc2008;$(QTDIR)\include\QtXml"
 				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT,NDEBUG"
 				GeneratePreprocessedFile="0"
 				ExceptionHandling="1"
@@ -207,6 +207,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\preferences\accountdialog.cpp"
+				>
+			</File>
+			<File
 				RelativePath="call.cpp"
 				>
 			</File>
@@ -227,11 +231,15 @@
 				>
 			</File>
 			<File
-				RelativePath="prefdialog.cpp"
+				RelativePath="preferences\prefdialog.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\prefportaudio.cpp"
+				RelativePath="preferences\prefportaudio.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\preferences\prefsofia.cpp"
 				>
 			</File>
 		</Filter>
@@ -240,6 +248,32 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="preferences\accountdialog.h"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC accountdialog.h"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile debug\moc_accountdialog.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 preferences\accountdialog.h -o debug\moc_accountdialog.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;accountdialog.h"
+						Outputs="debug\moc_accountdialog.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC accountdialog.h"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile release\moc_accountdialog.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 preferences\accountdialog.h -o release\moc_accountdialog.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;accountdialog.h"
+						Outputs="release\moc_accountdialog.cpp"
+					/>
+				</FileConfiguration>
+			</File>
 			<File
 				RelativePath="call.h"
 				>
@@ -301,7 +335,7 @@
 				>
 			</File>
 			<File
-				RelativePath="prefdialog.h"
+				RelativePath="preferences\prefdialog.h"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -309,7 +343,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC prefdialog.h"
-						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile debug\moc_prefdialog.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 prefdialog.h -o debug\moc_prefdialog.cpp&#x0D;&#x0A;"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile debug\moc_prefdialog.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 preferences\prefdialog.h -o debug\moc_prefdialog.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="Rem;prefdialog.h"
 						Outputs="debug\moc_prefdialog.cpp"
 					/>
@@ -320,14 +354,14 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC prefdialog.h"
-						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile release\moc_prefdialog.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 prefdialog.h -o release\moc_prefdialog.cpp&#x0D;&#x0A;"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile release\moc_prefdialog.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 preferences\prefdialog.h -o release\moc_prefdialog.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="Rem;prefdialog.h"
 						Outputs="release\moc_prefdialog.cpp"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\prefportaudio.h"
+				RelativePath="preferences\prefportaudio.h"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -335,7 +369,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC prefportaudio.h"
-						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile debug\moc_prefportaudio.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 prefportaudio.h -o debug\moc_prefportaudio.cpp&#x0D;&#x0A;"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile debug\moc_prefportaudio.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 preferences\prefportaudio.h -o debug\moc_prefportaudio.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="Rem;prefportaudio.h"
 						Outputs="debug\moc_prefportaudio.cpp"
 					/>
@@ -346,9 +380,35 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC prefportaudio.h"
-						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile release\moc_prefportaudio.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 prefportaudio.h -o release\moc_prefportaudio.cpp&#x0D;&#x0A;"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile release\moc_prefportaudio.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 preferences\prefportaudio.h -o release\moc_prefportaudio.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="Rem;prefportaudio.h"
 						Outputs="release\moc_prefportaudio.cpp"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="preferences\prefsofia.h"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC prefsofia.h"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile debug\moc_prefsofia.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 preferences\prefsofia.h -o debug\moc_prefsofia.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;prefsofia.h"
+						Outputs="debug\moc_prefsofia.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC prefportaudio.h"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile release\moc_prefsofia.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 preferences\prefsofia.h -o release\moc_prefsofia.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;prefsofia.h"
+						Outputs="release\moc_prefsofia.cpp"
 					/>
 				</FileConfiguration>
 			</File>
@@ -358,6 +418,30 @@
 			Filter="cpp;c;cxx;moc;h;def;odl;idl;res;"
 			UniqueIdentifier="{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}"
 			>
+			<File
+				RelativePath="debug\moc_accountdialog.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="release\moc_accountdialog.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
 			<File
 				RelativePath="release\moc_fshost.cpp"
 				>
@@ -383,6 +467,18 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="debug\moc_mainwindow.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="release\moc_mainwindow.cpp"
 				>
 				<FileConfiguration
@@ -395,10 +491,22 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="debug\moc_mainwindow.cpp"
+				RelativePath="release\moc_prefdialog.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="release\moc_prefdialog.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -419,10 +527,10 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="release\moc_prefdialog.cpp"
+				RelativePath="debug\moc_prefdialog.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -447,6 +555,30 @@
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="release\moc_prefsofia.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="debug\moc_prefsofia.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -494,6 +626,32 @@
 			ParseFiles="false"
 			>
 			<File
+				RelativePath="preferences\accountdialog.ui"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="UIC accountdialog.ui"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_accountdialog.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe preferences\accountdialog.ui -o ui_accountdialog.h&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;accountdialog.ui"
+						Outputs="ui_accountdialog.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="UIC accountdialog.ui"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_accountdialog.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe preferences\accountdialog.ui -o ui_accountdialog.h&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;accountdialog.ui"
+						Outputs="ui_accountdialog.h"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="mainwindow.ui"
 				>
 				<FileConfiguration
@@ -520,7 +678,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="prefdialog.ui"
+				RelativePath="preferences\prefdialog.ui"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -528,7 +686,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC prefdialog.ui"
-						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_prefdialog.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe prefdialog.ui -o ui_prefdialog.h&#x0D;&#x0A;"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_prefdialog.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe preferences\prefdialog.ui -o ui_prefdialog.h&#x0D;&#x0A;"
 						AdditionalDependencies="Rem;prefdialog.ui"
 						Outputs="ui_prefdialog.h"
 					/>
@@ -539,7 +697,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC prefdialog.ui"
-						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_prefdialog.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe prefdialog.ui -o ui_prefdialog.h&#x0D;&#x0A;"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_prefdialog.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe preferences\prefdialog.ui -o ui_prefdialog.h&#x0D;&#x0A;"
 						AdditionalDependencies="Rem;prefdialog.ui"
 						Outputs="ui_prefdialog.h"
 					/>
