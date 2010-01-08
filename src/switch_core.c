@@ -1610,6 +1610,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 	case SCSC_CANCEL_SHUTDOWN:
 		switch_clear_flag((&runtime), SCF_SHUTDOWN_REQUESTED);
 		break;
+	case SCSC_SHUTDOWN_NOW:
+		exit(0);
+		break;
 	case SCSC_SHUTDOWN_ELEGANT:
 	case SCSC_SHUTDOWN_ASAP:
 		{

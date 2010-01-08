@@ -1477,6 +1477,8 @@ SWITCH_STANDARD_API(ctl_function)
 						break;
 					} else if (!strcasecmp(argv[x], "elegant")) {
 						command = SCSC_SHUTDOWN_ELEGANT;
+					} else if (!strcasecmp(argv[x], "now")) {
+						command = SCSC_SHUTDOWN_NOW;
 					} else if (!strcasecmp(argv[x], "asap")) {
 						command = SCSC_SHUTDOWN_ASAP;
 					} else if (!strcasecmp(argv[x], "restart")) {
