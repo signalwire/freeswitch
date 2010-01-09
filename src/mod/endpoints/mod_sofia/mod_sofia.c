@@ -365,7 +365,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	if (session && tech_pvt->profile->pres_type) {
 		char *sql = switch_mprintf("delete from sip_dialogs where call_id='%q'", tech_pvt->call_id);
 		switch_assert(sql);
-		sofia_glue_execute_sql(tech_pvt->profile, &sql, SWITCH_TRUE);
+		sofia_glue_execute_sql_now(tech_pvt->profile, &sql, SWITCH_TRUE);
 	}
 
 	if (tech_pvt->kick && (a_session = switch_core_session_locate(tech_pvt->kick))) {
@@ -1215,7 +1215,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									 "where uuid='%s';\n", switch_str_nil(presence_id), switch_str_nil(presence_data), 
 									 switch_core_session_get_uuid(session));
 				switch_assert(sql);
-				sofia_glue_execute_sql(tech_pvt->profile, &sql, SWITCH_TRUE);
+				sofia_glue_execute_sql_now(tech_pvt->profile, &sql, SWITCH_TRUE);
 			}
 
 

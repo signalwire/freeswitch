@@ -610,19 +610,30 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 
 
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "select call_id from sip_subscriptions where expires > 0 and expires <= %ld and hostname='%s'", 
+		switch_snprintf(sql, sizeof(sql), "select call_id from sip_subscriptions where (expires = -1 or (expires > 0 and expires <= %ld)) and hostname='%s'", 
 						(long) now, mod_sofia_globals.hostname);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "select call_id from sip_subscriptions where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
+		switch_snprintf(sql, sizeof(sql), "select call_id from sip_subscriptions where expires >= -1 and hostname='%s'", 
+						mod_sofia_globals.hostname);
 	}
 
 	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_sub_del_callback, profile);
 
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and expires <= %ld and hostname='%s'", 
+		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where (expires = -1 or (expires > 0 and expires <= %ld)) and hostname='%s'", 
 						(long) now, mod_sofia_globals.hostname);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
+		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires >= -1 and hostname='%s'", mod_sofia_globals.hostname);
+	}
+
+	sofia_glue_actually_execute_sql(profile, sql, NULL);
+
+
+	if (now) {
+		switch_snprintf(sql, sizeof(sql), "delete from sip_dialogs where (expires = -1 or (expires > 0 and expires <= %ld)) and hostname='%s'", 
+						(long) now, mod_sofia_globals.hostname);
+	} else {
+		switch_snprintf(sql, sizeof(sql), "delete from sip_dialogs where expires >= -1 and hostname='%s'", mod_sofia_globals.hostname);
 	}
 
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
@@ -1268,7 +1279,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_fire(&s_event);
 		}
 		
-		if (*contact_str && sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE) && sofia_sla_supported(sip)) {
+		if (*contact_str && sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE_SYLANTRO)) {
 			sofia_sla_handle_register(nua, profile, sip, exptime, contact_str);
 		}
 

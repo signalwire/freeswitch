@@ -2774,7 +2774,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE);
 							profile->pres_type = PRES_TYPE_FULL;
 							sofia_set_pflag(profile, PFLAG_MULTIREG);
+
+						} else if (!strcasecmp(val, "sylantro")) {
 							profile->sla_contact = switch_core_sprintf(profile->pool, "sla-agent");
+							sofia_set_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE_SYLANTRO);
 						}
 					} else if (!strcasecmp(var, "disable-srv")) {
 						if (switch_true(val)) {
@@ -3428,7 +3431,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				if (sip && 
 					sip->sip_from && sip->sip_from->a_url && sip->sip_from->a_url->url_user && sip->sip_from->a_url->url_host &&
 					sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host) {
-					sql = switch_mprintf("select 'appearance-index=1' from sip_subscriptions where hostname='%q' and event='call-info' and "
+					sql = switch_mprintf("select 'appearance-index=1' from sip_subscriptions where expires > -1 && hostname='%q' and event='call-info' and "
 										 "sub_to_user='%q' and sub_to_host='%q'", 
 										 mod_sofia_globals.hostname, sip->sip_to->a_url->url_user, sip->sip_from->a_url->url_host);
 					sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
@@ -3447,8 +3450,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "QUERY SQL %s\n", sql);
 						}
 					
-						sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
-						switch_safe_free(sql);
+						sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 					}
 				}
 			}
@@ -3729,7 +3731,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					
 					switch_assert(sql);
 
-					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+					sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
+					switch_safe_free(sql);
 
 				}				
 			} else if (status == 200 && (profile->pres_type)) {
@@ -3741,7 +3744,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 									 "where uuid='%s';\n", astate, switch_str_nil(presence_id), switch_str_nil(presence_data), 
 									 switch_core_session_get_uuid(session));
 				switch_assert(sql);
-				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 			}
 		}
 
@@ -6200,8 +6203,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 			switch_assert(sql);
 			
-			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-
+			sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
+			switch_safe_free(sql);
+			
 		}
 
 		if (is_nat) {

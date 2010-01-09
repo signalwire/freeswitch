@@ -188,6 +188,7 @@ typedef enum {
 	PFLAG_UUID_AS_CALLID,
 	PFLAG_SCROOGE,
 	PFLAG_MANAGE_SHARED_APPEARANCE,
+	PFLAG_MANAGE_SHARED_APPEARANCE_SYLANTRO,
 	PFLAG_DISABLE_SRV,
 	PFLAG_DISABLE_NAPTR,
 	PFLAG_AUTOFLUSH,
@@ -790,6 +791,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic);
 void sofia_glue_actually_execute_sql(sofia_profile_t *profile, char *sql, switch_mutex_t *mutex);
 void sofia_glue_actually_execute_sql_trans(sofia_profile_t *profile, char *sql, switch_mutex_t *mutex);
+void sofia_glue_execute_sql_now(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic);
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot);
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now);
