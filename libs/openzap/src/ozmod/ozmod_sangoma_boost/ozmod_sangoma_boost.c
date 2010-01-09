@@ -626,7 +626,7 @@ static void handle_call_start_nack(zap_span_t *span, sangomabc_connection_t *mco
 			int r = 0;
 			assert(!zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND));
 	
-			zchan->call_data = (void*)event->event_id;
+			zchan->call_data = (void*)(intptr_t)event->event_id;
 
 			zap_mutex_lock(zchan->mutex);
 			zap_set_state_r(zchan, ZAP_CHANNEL_STATE_TERMINATING, 0, r);
@@ -992,7 +992,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			if (!zap_test_sflag(zchan, SFLAG_SENT_FINAL_MSG)) {
 				zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_MSG);
 
-				if (zchan->call_data && ((uint32_t)zchan->call_data == SIGBOOST_EVENT_CALL_START_NACK)) {
+				if (zchan->call_data && ((uint32_t)(intptr_t)zchan->call_data == SIGBOOST_EVENT_CALL_START_NACK)) {
 					sangomabc_exec_command(mcon,
 									zchan->physical_span_id-1,
 									zchan->physical_chan_id-1,
