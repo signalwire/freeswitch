@@ -11,4 +11,4 @@ mod_enum_la_SOURCES += $(UDNS_DIR)/udns_rr_a.c $(UDNS_DIR)/udns_rr_ptr.c $(UDNS_
 mod_enum_la_SOURCES += $(UDNS_DIR)/udns_rr_srv.c $(UDNS_DIR)/udns_rr_naptr.c $(UDNS_DIR)/udns_codes.c $(UDNS_DIR)/udns_resolver.c
 mod_enum_la_CFLAGS   = $(AM_CFLAGS)
 mod_enum_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
-mod_enum_la_LDFLAGS  = -avoid-version -module -no-undefined
+mod_enum_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
