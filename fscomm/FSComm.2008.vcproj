@@ -136,7 +136,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="-Zm200 -w34100 -w34189 -w34100 -w34189"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;$(QTDIR)\include\QtCore&quot;,&quot;$(QTDIR)\include\QtGui&quot;,&quot;$(QTDIR)\include&quot;,&quot;.&quot;,&quot;$(QTDIR)\include\ActiveQt&quot;,&quot;release&quot;,&quot;.&quot;,$(QTDIR)\mkspecs\win32-msvc2008;$(QTDIR)\include\QtXml"
+				AdditionalIncludeDirectories="&quot;$(QTDIR)\include\QtCore&quot;;&quot;$(QTDIR)\include\QtGui&quot;;&quot;$(QTDIR)\include&quot;;.;&quot;$(QTDIR)\include\ActiveQt&quot;;release;&quot;$(QTDIR)\mkspecs\win32-msvc2008&quot;;..\src\include;&quot;$(QTDIR)\include\QtXml&quot;"
 				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT,NDEBUG"
 				GeneratePreprocessedFile="0"
 				ExceptionHandling="1"
@@ -165,8 +165,8 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalOptions="&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot; &quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot;"
-				AdditionalDependencies="$(QTDIR)\lib\qtmain.lib $(QTDIR)\lib\QtGui4.lib $(QTDIR)\lib\QtCore4.lib"
-				OutputFile="release)\FSComm.exe"
+				AdditionalDependencies="$(QTDIR)\lib\qtmain.lib $(QTDIR)\lib\QtGui4.lib $(QTDIR)\lib\QtCore4.lib $(QTDIR)\lib\QtXml4.lib"
+				OutputFile="release\FSComm.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="$(QTDIR)\lib"
@@ -419,7 +419,7 @@
 			UniqueIdentifier="{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}"
 			>
 			<File
-				RelativePath="debug\moc_accountdialog.cpp"
+				RelativePath="release\moc_accountdialog.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -431,7 +431,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="release\moc_accountdialog.cpp"
+				RelativePath="debug\moc_accountdialog.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -446,6 +446,18 @@
 				RelativePath="release\moc_fshost.cpp"
 				>
 				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="Debug\moc_fshost.cpp"
+				>
+				<FileConfiguration
 					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
@@ -455,7 +467,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="debug\moc_fshost.cpp"
+				RelativePath="release\moc_mainwindow.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -470,18 +482,6 @@
 				RelativePath="debug\moc_mainwindow.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="release\moc_mainwindow.cpp"
-				>
-				<FileConfiguration
 					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
@@ -494,30 +494,6 @@
 				RelativePath="release\moc_prefdialog.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="release\moc_prefdialog.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="debug\moc_prefdialog.cpp"
-				>
-				<FileConfiguration
 					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
@@ -527,7 +503,19 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="debug\moc_prefdialog.cpp"
+				RelativePath="Debug\moc_prefdialog.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="release\moc_prefportaudio.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -542,18 +530,6 @@
 				RelativePath="debug\moc_prefportaudio.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="release\moc_prefportaudio.cpp"
-				>
-				<FileConfiguration
 					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
@@ -566,7 +542,7 @@
 				RelativePath="release\moc_prefsofia.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -578,7 +554,7 @@
 				RelativePath="debug\moc_prefsofia.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -590,7 +566,7 @@
 				RelativePath="release\qrc_resources.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -602,7 +578,7 @@
 				RelativePath="debug\qrc_resources.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
