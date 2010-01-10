@@ -122,7 +122,7 @@ static void weighting_filter(int16_t x[40],
     static const union
     {
         int16_t gsm_H[12];
-        __m64_t x[3];
+        __m64 x[3];
     } gsm_H =
     {
         {
