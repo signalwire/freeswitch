@@ -44,18 +44,23 @@ $(POCKETSPHINX_LA): $(POCKETSPHINX_BUILDDIR)/Makefile
 	$(TOUCH_TARGET)
 
 $(DESTDIR)$(grammardir)/model:
+	@echo "Grammar directory: '$(grammardir)'"
 	mkdir -p $(DESTDIR)$(grammardir)/model
 
 $(DESTDIR)$(grammardir)/model/communicator:
 	$(GETLIB) $(SPHINXMODEL).tar.gz
+	@echo "Grammar directory: '$(grammardir)'"
 	mkdir -p $(DESTDIR)$(grammardir)/model/communicator
 	cp -rp $(switch_srcdir)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(grammardir)/model/communicator
 
 $(DESTDIR)$(grammardir)/model/wsj1:
+	@echo "Grammar directory: '$(grammardir)'"
 	mkdir -p $(DESTDIR)$(grammardir)/model/wsj1
 	cp -rp $(POCKETSPHINX_DIR)/model/hmm/wsj1/* $(DESTDIR)$(grammardir)/model/wsj1
 
 dictionary:
+	@echo "Grammar directory: '$(grammardir)'"
 	@cp -f $(POCKETSPHINX_DIR)/model/lm/cmudict.0.6d $(DESTDIR)$(grammardir)/default.dic
 
 local_install: $(DESTDIR)$(grammardir)/model $(DESTDIR)$(grammardir)/model/communicator $(DESTDIR)$(grammardir)/model/wsj1 dictionary
+	@echo "Grammar directory: '$(grammardir)'"
