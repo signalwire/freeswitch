@@ -349,6 +349,7 @@ fi
 %endif
 %dir %attr(0750, freeswitch, daemon) %{prefix}/db
 %dir %attr(0750, freeswitch, daemon) %{prefix}/log
+%dir %attr(0750, freeswitch, daemon) %{prefix}/run
 %dir %attr(0750, freeswitch, daemon) %{prefix}/log/xml_cdr
 %dir %attr(0750, freeswitch, daemon) %{prefix}/htdocs
 %dir %attr(0750, freeswitch, daemon) %{prefix}/scripts
