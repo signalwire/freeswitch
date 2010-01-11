@@ -45,6 +45,7 @@ class Call;
 #define FSCOMM_GW_STATE_EXPIRED 7
 #define FSCOMM_GW_STATE_NOREG 8
 
+
 static const char *fscomm_gw_state_names[] = {
     "TRYING",
     "REGISTER",
@@ -83,6 +84,7 @@ signals:
 private:
     switch_status_t processBlegEvent(switch_event_t *, QString);
     switch_status_t processAlegEvent(switch_event_t *, QString);
+    void createFolders();
     void printEventHeaders(switch_event_t *event);
     QHash<QString, Call*> _active_calls;
     QHash<QString, QString> _bleg_uuids;

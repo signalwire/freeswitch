@@ -47,15 +47,10 @@ FSHost::FSHost(QObject *parent) :
 
 }
 
-void FSHost::run(void)
+void FSHost::createFolders()
 {
-    switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT;
-    const char *err = NULL;
-    switch_bool_t console = SWITCH_FALSE;
-    switch_status_t destroy_status;
-
     /* Create directory structure for softphone with default configs */
-    QDir conf_dir = QDir(QDir::home());
+    QDir conf_dir = QDir::home();
     if (!conf_dir.exists(".fscomm"))
     {
         conf_dir.mkpath(".fscomm/conf/accounts");
@@ -66,8 +61,8 @@ void FSHost::run(void)
         QString dest = QString("%1/.fscomm/conf/freeswitch.xml").arg(conf_dir.absolutePath());
         rootXML.copy(dest);
 
-        QFile defaultAccount(":/confs/example.xml");
-        dest = QString("%1/.fscomm/conf/accounts/example.xml").arg(conf_dir.absolutePath());
+        QFile defaultAccount(":/confs/template.xml");
+        dest = QString("%1/.fscomm/conf/accounts/template.xml").arg(conf_dir.absolutePath());
         defaultAccount.copy(dest);
     }
 
@@ -110,6 +105,16 @@ void FSHost::run(void)
         }
         strcpy(SWITCH_GLOBAL_dirs.htdocs_dir, QString("%1/htdocs").arg(conf_dir.absolutePath()).toAscii().constData());
     }
+}
+
+void FSHost::run(void)
+{
+    switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT;
+    const char *err = NULL;
+    switch_bool_t console = SWITCH_FALSE;
+    switch_status_t destroy_status;
+
+    createFolders();
 
     /* If you need to override configuration directories, you need to change them in the SWITCH_GLOBAL_dirs global structure */
     printf("Initializing core...\n");

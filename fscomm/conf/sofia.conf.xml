@@ -9,6 +9,8 @@
 			</global_settings>
 			<profiles>
 				<profile name="softphone">
+                                        <gateways>
+                                        </gateways>
 					<settings>
                                          <param name="user-agent-string" value="${user-agent-string)"/>
                                          <param name="debug" value="${debug}"/>

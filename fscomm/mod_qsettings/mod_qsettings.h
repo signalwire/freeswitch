@@ -43,6 +43,7 @@ public:
     QString getBinding(void) { return _binding; }
     switch_xml_t getConfigXML(QString);
 private:
+    switch_xml_t proccessAccounts(QString, QByteArray);
     QString _binding;
     QSettings* _settings;
 };

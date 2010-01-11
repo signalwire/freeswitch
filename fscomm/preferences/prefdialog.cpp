@@ -4,6 +4,7 @@
 #include "prefportaudio.h"
 #include "prefsofia.h"
 #include "accountdialog.h"
+#include "prefaccounts.h"
 
 PrefDialog::PrefDialog(QWidget *parent) :
     QDialog(parent),
@@ -15,8 +16,9 @@ PrefDialog::PrefDialog(QWidget *parent) :
     connect(ui->sofiaGwAddBtn, SIGNAL(clicked()), this, SLOT(addAccountBtnClicked()));
 
     _accDlg = NULL;
+    /*_pref_accounts = new PrefAccounts(ui);*/
     _mod_portaudio = new PrefPortaudio(ui, this);
-    _mod_sofia = new PrefSofia(ui, this);
+    /*_mod_sofia = new PrefSofia(ui, this);*/
     readConfig();
 }
 
@@ -55,6 +57,7 @@ void PrefDialog::changeEvent(QEvent *e)
 
 void PrefDialog::readConfig()
 {
+    /*_pref_accounts->readConfig();*/
     _mod_portaudio->readConfig();
     /*_mod_sofia->readConfig();*/
 }

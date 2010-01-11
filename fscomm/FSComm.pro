@@ -29,7 +29,8 @@ SOURCES += main.cpp \
     preferences/prefdialog.cpp \
     preferences/prefportaudio.cpp \
     preferences/prefsofia.cpp \
-    preferences/accountdialog.cpp
+    preferences/accountdialog.cpp \
+    preferences/prefaccounts.cpp
 HEADERS += mainwindow.h \
     fshost.h \
     call.h \

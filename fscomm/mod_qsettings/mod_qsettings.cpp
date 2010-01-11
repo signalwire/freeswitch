@@ -33,6 +33,8 @@
 #include <QString>
 #include <QtGui>
 #include <QDir>
+#include <QDomDocument>
+#include <QDomNodeList>
 #include "mod_qsettings/mod_qsettings.h"
 
 switch_xml_t XMLBinding::getConfigXML(QString tmpl)
@@ -79,7 +81,80 @@ switch_xml_t XMLBinding::getConfigXML(QString tmpl)
     char *res = switch_event_expand_headers(e, tmplContents.data());
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Template %s as follows:\n%s", tmpl.toAscii().constData(), res);
     switch_safe_free(e);
+    if (tmpl == "sofia.conf")
+    {
+        return proccessAccounts(tmpl, res);
+    }
     return switch_xml_parse_str(res, strlen(res));
+}
+
+switch_xml_t XMLBinding::proccessAccounts(QString tmpl, QByteArray xml)
+{
+    char *res = NULL;
+
+    QDomDocument xmlDom;
+
+    /* Process sofia accounts */
+    if (tmpl == "sofia.conf")
+    {
+        int errorLine, errorColumn;
+        QString errorMsg;
+
+        if (!xmlDom.setContent(xml, &errorMsg, &errorLine, &errorColumn))
+        {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not parse the xml template from sofia.conf.xml to add the accounts!\n");
+        }
+        QDomNodeList gatewaysNodeList = xmlDom.elementsByTagName("gateways");
+        if (gatewaysNodeList.isEmpty() || gatewaysNodeList.count() > 1)
+        {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Where is my gateways tag? Or do we have more then one match?\n");
+        }
+
+        QDomNode gatewaysNode = gatewaysNodeList.at(0);
+
+        _settings->beginGroup("FreeSWITCH/conf/accounts");
+        foreach (QString account, _settings->childGroups())
+        {
+            switch_event_t *e;
+            switch_event_create_plain(&e, SWITCH_EVENT_REQUEST_PARAMS);
+            switch_assert(e);
+
+            _settings->beginGroup(account);
+            switch_event_add_header_string(e, SWITCH_STACK_BOTTOM, "name", account.toAscii().data());
+            foreach (QString k, _settings->childKeys())
+            {
+                switch_event_add_header_string(e, SWITCH_STACK_BOTTOM, k.toAscii().constData(), _settings->value(k).toByteArray().constData());
+            }
+            _settings->endGroup();
+
+            /* Open template file and expand all strings based on QSettings */
+            QFile tmplFile(QString("%1/.fscomm/templates/account.conf.xml").arg(QDir::homePath()));
+            if (!tmplFile.open(QIODevice::ReadOnly | QIODevice::Text))
+            {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Template for accounts could not be read!\n");
+                return NULL;
+            }
+
+            QByteArray tmplContents(tmplFile.readAll());
+            tmplFile.close();
+
+            res = switch_event_expand_headers(e, tmplContents.data());
+
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Template of account %s as follows:\n%s", account.toAscii().data(), res);
+
+            QDomDocument gatewayXML;
+            if (!gatewayXML.setContent(QByteArray(res), &errorMsg, &errorLine, &errorColumn))
+            {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "We could not parse the XML for the account!\n");
+            }
+
+            gatewaysNode.appendChild(gatewayXML);
+            switch_safe_free(e);
+        }
+        _settings->endGroup();
+    }
+
+    return switch_xml_parse_str(xmlDom.toByteArray().data(), strlen(xmlDom.toByteArray().data()));
 }
 
 static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,

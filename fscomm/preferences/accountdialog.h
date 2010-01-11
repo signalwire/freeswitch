@@ -17,6 +17,8 @@ public:
 
 private slots:
     void writeConfig();
+    void addExtraParam();
+    void remExtraParam();
 
 protected:
     void changeEvent(QEvent *e);
