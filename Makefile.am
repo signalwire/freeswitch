@@ -1,14 +1,11 @@
 EXTRA_DIST =
 SUBDIRS = . src
 AUTOMAKE_OPTS = foreign
-NAME=freeswitch
-PREFIX=$(prefix)
+NAME = freeswitch
 
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS)
 AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS)
 AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
-BASE        = $(switch_srcdir)
-OSARCH=`uname -s`
 
 DEFAULT_SOUNDS=en-us-callie-8000
 
@@ -25,7 +22,7 @@ DEFAULT_SOUNDS=en-us-callie-8000
 	 echo $$full_sound_dir | grep  music  >/dev/null || soundfile=`echo freeswitch-sounds-$$full_sound_dir-$$sounds_version.tar.gz`; \
          if test "$$target" = "install"; then $(MAKE) $(AM_MAKEFLAGS) core_install; else $(MAKE) $(AM_MAKEFLAGS) core ; fi; \
          if test "$$target_prefix" = "sounds"; then \
-	   if test "$$target" = "install"; then $(GETSOUNDS) $$soundfile $(DESTDIR)@soundsdir@/; else $(GETSOUNDS) $$soundfile ; fi; \
+	   if test "$$target" = "install"; then $(GETSOUNDS) $$soundfile $(DESTDIR)$(soundsdir)/; else $(GETSOUNDS) $$soundfile ; fi; \
 	 else \
 	   cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ;\
 	 fi
@@ -57,76 +54,6 @@ cd-sounds-ru: uhd-sounds-ru sounds-ru-RU-elena-48000
 cd-sounds-ru-install: uhd-sounds-ru-install sounds-ru-RU-elena-48000-install
 cd-moh: uhd-moh sounds-music-48000
 cd-moh-install: uhd-moh-install sounds-music-48000-install
-
-libdir = @libdir@
-bindir = @bindir@
-includedir = @includedir@
-libfreeswitch_la_SOURCES	= \
-src/switch_apr.c \
-src/switch_buffer.c \
-src/switch_caller.c \
-src/switch_channel.c \
-src/switch_console.c \
-src/switch_mprintf.c\
-src/switch_core_media_bug.c \
-src/switch_core_timer.c \
-src/switch_core_asr.c \
-src/switch_core_event_hook.c \
-src/switch_core_speech.c \
-src/switch_core_memory.c \
-src/switch_core_codec.c \
-src/switch_core_file.c \
-src/switch_core_hash.c \
-src/switch_core_sqldb.c \
-src/switch_core_session.c \
-src/switch_core_directory.c \
-src/switch_core_state_machine.c \
-src/switch_core_io.c \
-src/switch_core_rwlock.c \
-src/switch_core_port_allocator.c \
-src/switch_core.c \
-src/switch_scheduler.c \
-src/switch_core_db.c\
-src/switch_dso.c\
-src/switch_loadable_module.c \
-src/switch_utils.c \
-src/switch_event.c \
-src/switch_resample.c \
-src/switch_regex.c\
-src/switch_rtp.c\
-src/switch_ivr_bridge.c \
-src/switch_ivr_originate.c \
-src/switch_ivr_async.c \
-src/switch_ivr_play_say.c \
-src/switch_ivr_menu.c \
-src/switch_ivr.c \
-src/switch_stun.c\
-src/switch_nat.c\
-src/switch_log.c\
-src/switch_xml.c\
-src/switch_xml_config.c\
-src/switch_config.c\
-src/switch_time.c\
-src/switch_odbc.c \
-libs/stfu/stfu.c\
-src/g711.c\
-src/switch_pcm.c\
-libs/libteletone/src/libteletone_detect.c\
-libs/libteletone/src/libteletone_generate.c\
-libs/miniupnpc/miniwget.c\
-libs/miniupnpc/minixml.c\
-libs/miniupnpc/igd_desc_parse.c\
-libs/miniupnpc/minisoap.c \
-libs/miniupnpc/miniupnpc.c\
-libs/miniupnpc/upnpreplyparse.c\
-libs/miniupnpc/upnpcommands.c\
-libs/miniupnpc/minissdpc.c \
-libs/miniupnpc/upnperrors.c \
-libs/libnatpmp/natpmp.c \
-libs/libnatpmp/getgateway.c
-
-$(top_builddir)/libfreeswitch_la-switch_console.lo: src/include/switch_version.h
-
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.
@@ -164,166 +91,249 @@ $(RECURSIVE_TARGETS):
 	   cd $(top_builddir)/build && $(MAKE) $(AM_MAKEFLAGS) $$target || exit 1; \
 	fi ;
 
+CORE_CFLAGS  = `$(switch_builddir)/libs/apr/apr-1-config --cflags --cppflags --includes`
+CORE_CFLAGS += `$(switch_builddir)/libs/apr-util/apu-1-config --includes`
+CORE_CFLAGS += -I$(switch_srcdir)/libs/stfu
+CORE_CFLAGS += -I$(switch_builddir)/libs/sqlite
+CORE_CFLAGS += -I$(switch_srcdir)/libs/pcre
+CORE_CFLAGS += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
+CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
+CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
+
+CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
+CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
+CORE_LIBS += libs/srtp/libsrtp.la
+
+MOD_LINK      = $(switch_srcdir)/libfreeswitch.la
+CLEANFILES    = src/include/switch_version.h src/include/switch_swigable_cpp.h
+BUILT_SOURCES = src/include/switch_version.h src/include/switch_swigable_cpp.h
+
+if ADD_ODBC
+CORE_CFLAGS += -DSWITCH_HAVE_ODBC $(ODBC_INC_FLAGS)
+endif
+
+if ADD_LIBEDIT
+CORE_CFLAGS += -I$(switch_srcdir)/libs/libedit/src -DSWITCH_HAVE_LIBEDIT
+CORE_LIBS   += libs/libedit/src/.libs/libedit.a
+endif
+
+##
+## libfreeswitch
+##
+lib_LTLIBRARIES	         = libfreeswitch.la
+libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(AM_CFLAGS)
+libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_DEPLIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS)
+libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
+
+if ADD_ODBC
+libfreeswitch_la_LDFLAGS += $(ODBC_LIB_FLAGS)
+endif
+
+if ENABLE_ZRTP
+libfreeswitch_la_LDFLAGS += -lzrtp -lbn
+endif
+
+library_includedir      = $(includedir)
+library_include_HEADERS = \
+	src/include/switch_am_config.h \
+	src/include/switch.h \
+	src/include/switch_apr.h \
+	src/include/switch_buffer.h \
+	src/include/switch_caller.h \
+	src/include/switch_channel.h \
+	src/include/switch_console.h \
+	src/include/switch_core_event_hook.h \
+	src/include/switch_scheduler.h \
+	src/include/switch_core.h \
+	src/include/switch_core_db.h \
+	src/include/switch_mprintf.h \
+	src/include/switch_config.h \
+	src/include/switch_event.h \
+	src/include/switch_frame.h \
+	src/include/switch_ivr.h \
+	src/include/switch_dso.h \
+	src/include/switch_loadable_module.h \
+	src/include/switch_module_interfaces.h \
+	src/include/switch_platform.h \
+	src/include/switch_resample.h \
+	src/include/switch_regex.h \
+	src/include/switch_types.h \
+	src/include/switch_utils.h \
+	src/include/switch_rtp.h \
+	src/include/switch_stun.h \
+	src/include/switch_nat.h \
+	src/include/switch_log.h \
+	src/include/switch_xml.h \
+	src/include/switch_xml_config.h \
+	src/include/switch_cpp.h \
+	libs/libteletone/src/libteletone_detect.h \
+	libs/libteletone/src/libteletone_generate.h \
+	libs/libteletone/src/libteletone.h \
+	src/include/switch_odbc.h
+
+nodist_libfreeswitch_la_SOURCES = \
+	src/include/switch_frame.h \
+	src/include/switch_swigable_cpp.h \
+	src/include/switch_version.h
+
+libfreeswitch_la_SOURCES = \
+	src/switch_apr.c \
+	src/switch_buffer.c \
+	src/switch_caller.c \
+	src/switch_channel.c \
+	src/switch_console.c \
+	src/switch_mprintf.c \
+	src/switch_core_media_bug.c \
+	src/switch_core_timer.c \
+	src/switch_core_asr.c \
+	src/switch_core_event_hook.c \
+	src/switch_core_speech.c \
+	src/switch_core_memory.c \
+	src/switch_core_codec.c \
+	src/switch_core_file.c \
+	src/switch_core_hash.c \
+	src/switch_core_sqldb.c \
+	src/switch_core_session.c \
+	src/switch_core_directory.c \
+	src/switch_core_state_machine.c \
+	src/switch_core_io.c \
+	src/switch_core_rwlock.c \
+	src/switch_core_port_allocator.c \
+	src/switch_core.c \
+	src/switch_scheduler.c \
+	src/switch_core_db.c \
+	src/switch_dso.c \
+	src/switch_loadable_module.c \
+	src/switch_utils.c \
+	src/switch_event.c \
+	src/switch_resample.c \
+	src/switch_regex.c \
+	src/switch_rtp.c \
+	src/switch_ivr_bridge.c \
+	src/switch_ivr_originate.c \
+	src/switch_ivr_async.c \
+	src/switch_ivr_play_say.c \
+	src/switch_ivr_menu.c \
+	src/switch_ivr.c \
+	src/switch_stun.c \
+	src/switch_nat.c \
+	src/switch_log.c \
+	src/switch_xml.c \
+	src/switch_xml_config.c \
+	src/switch_config.c \
+	src/switch_time.c \
+	src/switch_odbc.c \
+	src/g711.c \
+	src/switch_pcm.c \
+	libs/stfu/stfu.c \
+	libs/libteletone/src/libteletone_detect.c \
+	libs/libteletone/src/libteletone_generate.c \
+	libs/miniupnpc/miniwget.c \
+	libs/miniupnpc/minixml.c \
+	libs/miniupnpc/igd_desc_parse.c \
+	libs/miniupnpc/minisoap.c \
+	libs/miniupnpc/miniupnpc.c \
+	libs/miniupnpc/upnpreplyparse.c \
+	libs/miniupnpc/upnpcommands.c \
+	libs/miniupnpc/minissdpc.c \
+	libs/miniupnpc/upnperrors.c \
+	libs/libnatpmp/natpmp.c \
+	libs/libnatpmp/getgateway.c
+
 if ENABLE_CPP
 libfreeswitch_la_SOURCES += src/switch_cpp.cpp
 endif
 
-library_includedir      = $(PREFIX)/include
+$(top_builddir)/libfreeswitch_la-switch_console.lo: src/include/switch_version.h
 
-library_include_HEADERS = \
-src/include/switch_am_config.h\
-src/include/switch.h\
-src/include/switch_apr.h\
-src/include/switch_buffer.h\
-src/include/switch_caller.h\
-src/include/switch_channel.h\
-src/include/switch_console.h\
-src/include/switch_core_event_hook.h\
-src/include/switch_scheduler.h\
-src/include/switch_core.h\
-src/include/switch_core_db.h\
-src/include/switch_mprintf.h\
-src/include/switch_config.h\
-src/include/switch_event.h\
-src/include/switch_frame.h\
-src/include/switch_ivr.h\
-src/include/switch_dso.h\
-src/include/switch_loadable_module.h\
-src/include/switch_module_interfaces.h\
-src/include/switch_platform.h\
-src/include/switch_resample.h\
-src/include/switch_regex.h\
-src/include/switch_types.h\
-src/include/switch_utils.h\
-src/include/switch_rtp.h\
-src/include/switch_stun.h\
-src/include/switch_nat.h\
-src/include/switch_log.h\
-src/include/switch_xml.h\
-src/include/switch_xml_config.h\
-src/include/switch_cpp.h\
-libs/libteletone/src/libteletone_detect.h\
-libs/libteletone/src/libteletone_generate.h\
-libs/libteletone/src/libteletone.h\
-src/include/switch_odbc.h
-
-CORE_CFLAGS     = `$(switch_builddir)/libs/apr/apr-1-config --cflags --cppflags --includes`
-CORE_CFLAGS    += `$(switch_builddir)/libs/apr-util/apu-1-config --includes`
-CORE_CFLAGS    += -I$(switch_srcdir)/libs/stfu
-CORE_CFLAGS    += -I$(switch_builddir)/libs/sqlite
-CORE_CFLAGS    += -I$(switch_srcdir)/libs/pcre
-CORE_CFLAGS    += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
-CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/include
-CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
-
-CORE_LIBS      = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
-CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
-CORE_LIBS     += libs/srtp/libsrtp.la
-
-lib_LTLIBRARIES	          = libfreeswitch.la
-libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)
-libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_DEPLIBS)
-libfreeswitch_la_LIBADD  = $(CORE_LIBS)
-libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
-nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h src/include/switch_swigable_cpp.h src/include/switch_frame.h
-
-MOD_LINK       = $(BASE)/libfreeswitch.la
-
-CLEANFILES     = src/include/switch_version.h src/include/switch_swigable_cpp.h
-BUILT_SOURCES  = src/include/switch_version.h src/include/switch_swigable_cpp.h
-
-bin_PROGRAMS = freeswitch fs_cli fs_ivrd
-fs_ivrd_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c libs/esl/src/esl_threadmutex.c libs/esl/ivrd.c
-fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c libs/esl/src/esl_threadmutex.c libs/esl/fs_cli.c
-freeswitch_SOURCES = src/switch.c
-nodist_freeswitch_SOURCES = src/include/switch_version.h
-fs_cli_CFLAGS = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
-fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
-fs_ivrd_CFLAGS = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
-fs_ivrd_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
-freeswitch_CFLAGS = $(AM_CFLAGS) $(CORE_CFLAGS)
-freeswitch_LDFLAGS = $(AM_LDFLAGS) -lpthread -rpath $(libdir)
-freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la
-if ADD_LIBEDIT
-fs_cli_CFLAGS += -DHAVE_EDITLINE -I$(switch_srcdir)/libs/libedit/src
-fs_cli_LDADD = libs/libedit/src/.libs/libedit.a
-freeswitch_CFLAGS    += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
-freeswitch_LDADD      += libs/libedit/src/.libs/libedit.a
-endif
-
-if ADD_LIBEDIT
-CORE_CFLAGS    += -I$(switch_srcdir)/libs/libedit/src -DSWITCH_HAVE_LIBEDIT
-CORE_LIBS      += libs/libedit/src/.libs/libedit.a
-endif
-
-if ADD_ODBC
-CORE_CFLAGS    += -DSWITCH_HAVE_ODBC $(ODBC_INC_FLAGS)
-libfreeswitch_la_LDFLAGS     += $(ODBC_LIB_FLAGS)
-endif
-
-if ENABLE_ZRTP
-libfreeswitch_la_LDFLAGS  += -lzrtp -lbn
-endif
-
-bin_SCRIPTS = scripts/gentls_cert scripts/fsxs
+$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool $(switch_builddir)/modules.conf  
 
 src/include/switch_swigable_cpp.h: $(switch_srcdir)/src/include/switch_cpp.h
 	$(CC) -E $(switch_srcdir)/src/include/switch_cpp.h -DSWITCH_DECLARE_CLASS= -DSWITCH_DECLARE\(x\)=x -DSWITCH_DECLARE_CONSTRUCTOR= -DSWITCH_DECLARE_NONSTD\(x\)=x 2>/dev/null | grep -v "^#" > src/include/switch_swigable_cpp.h 
 
-libs/libedit/src/.libs/libedit.a:
-	cd libs/libedit && $(MAKE)
 
-$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool $(switch_builddir)/modules.conf  
+##
+## Applications
+##
+bin_PROGRAMS = freeswitch fs_cli fs_ivrd
+
+##
+## fs_cli ()
+##
+fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c libs/esl/src/esl_threadmutex.c libs/esl/fs_cli.c
+fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
+fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
+
+if ADD_LIBEDIT
+fs_cli_CFLAGS += -DHAVE_EDITLINE -I$(switch_srcdir)/libs/libedit/src
+fs_cli_LDADD   = libs/libedit/src/.libs/libedit.a
+endif
+
+##
+## fs_ivrd ()
+##
+fs_ivrd_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c libs/esl/src/esl_threadmutex.c libs/esl/ivrd.c
+fs_ivrd_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
+fs_ivrd_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
+
+##
+## freeswitch ()
+##
+nodist_freeswitch_SOURCES = src/include/switch_version.h
+freeswitch_SOURCES = src/switch.c
+freeswitch_CFLAGS  = $(AM_CFLAGS) $(CORE_CFLAGS)
+freeswitch_LDFLAGS = $(AM_LDFLAGS) -lpthread -rpath $(libdir)
+freeswitch_LDADD   = libfreeswitch.la libs/apr/libapr-1.la
+
+if ADD_LIBEDIT
+freeswitch_CFLAGS += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
+freeswitch_LDADD  += libs/libedit/src/.libs/libedit.a
+endif
+
+
+##
+## Scripts
+##
+bin_SCRIPTS = scripts/gentls_cert scripts/fsxs
+
+scripts/fsxs: scripts/fsxs.in
+	@echo creating fsxs
+	@sed -e "s,@MODULES_DIR\@,@modulesdir@," \
+	    -e "s,@LIB_DIR\@,@libdir@," \
+	    -e "s,@BIN_DIR\@,@bindir@," \
+	    -e "s,@INC_DIR\@,@includedir@," \
+	    -e "s,@CFG_DIR\@,@sysconfdir@," \
+	    -e "s,@DB_DIR\@,@dbdir@," \
+	    -e "s,@PREFIX\@,@prefix@," \
+	    -e "s,@CC\@,$(CC)," \
+	    -e "s,@LD\@,$(CC)," \
+	    -e "s,@INSTALL\@,$(INSTALL)," \
+	    -e "s,@MKINSTALLDIRS\@,$(mkdir_p)," \
+	    \
+	    -e "s|@CFLAGS\@|$(CFLAGS) `./libs/apr/apr-1-config --cflags --cppflags`|" \
+	    -e "s|@INCLUDES\@|-I$(prefix)/include|" \
+	    -e "s|@SOLINK\@|$(SOLINK)|" \
+	    -e "s|@LDFLAGS\@|-L$(prefix)/lib|" \
+	    -e "s|@LIBS\@|`./libs/apr/apr-1-config --libs` `./libs/apr-util/apu-1-config --libs`|" \
+	    $(top_srcdir)/scripts/fsxs.in > scripts/fsxs
+
+##
+## misc
+##
+$(switch_builddir)/modules.conf:
+	if test -f $@; then touch $@; else cp $(switch_srcdir)/build/modules.conf.in $@ ;fi
+
+$(OUR_MODULES): $(switch_builddir)/modules.conf
+	@set fnord $$MAKEFLAGS; amf=$$2; \
+	(cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@) \
+	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+	test -z "$$fail"
 
 $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > $(switch_builddir)/quiet_libtool
 
-
-yaml-files:
-	@echo `mkdir $(DESTDIR)@confdir@/yaml 2>/dev/null`
-	$(INSTALL) -m 644 conf/yaml/*.yaml $(DESTDIR)@confdir@/yaml
-
-vm-sync:
-	test -d $(DESTDIR)@confdir@ || $(mkinstalldirs) $(DESTDIR)@confdir@
-	test -d $(DESTDIR)@confdir@/lang || $(mkinstalldirs) $(DESTDIR)@confdir@/lang
-	test -d $(DESTDIR)@confdir@/lang/en || $(mkinstalldirs) $(DESTDIR)@confdir@/lang/en
-	test -d $(DESTDIR)@confdir@/lang/en/demo || $(mkinstalldirs) $(DESTDIR)@confdir@/lang/en/demo
-	test -d $(DESTDIR)@confdir@/lang/en/vm || $(mkinstalldirs) $(DESTDIR)@confdir@/lang/en/vm
-	$(INSTALL) -m 644 conf/lang/en/vm/* $(DESTDIR)@confdir@/lang/en/vm
-	$(INSTALL) -m 644 conf/lang/en/demo/* $(DESTDIR)@confdir@/lang/en/demo
-
-samples-conf:
-	test -d $(DESTDIR)@confdir@/ || $(mkinstalldirs) $(DESTDIR)@confdir@
-	for conffile in `find conf -name \*.xml && find conf -name \*.conf && find conf -name \*.tpl  && find conf -name \*.ttml && find conf -name mime.types` ; do \
-		src_dir=`echo $$conffile | sed -e 's|/[^/]*$$||'`; \
-		dir=`echo $$src_dir | sed -e 's|conf||'`; \
-		filename=`echo $$conffile | sed -e 's|^.*/||'`; \
-		test -d $(DESTDIR)@confdir@/$$dir || $(mkinstalldirs) $(DESTDIR)@confdir@/$$dir ; \
-		test -f $(DESTDIR)@confdir@/$$dir/$$filename || \
-		test -f $(DESTDIR)@confdir@/$$dir/$$filename.noload || \
-			$(INSTALL) -m 644 $$src_dir/$$filename $(DESTDIR)@confdir@/$$dir; \
-	done
-
-samples-htdocs: 
-	test -d $(DESTDIR)@htdocsdir@/ || $(mkinstalldirs) $(DESTDIR)@htdocsdir@
-	for htdocsfile in `find htdocs -name \* | grep -v .svn` ; do \
-		dir=`echo $$htdocsfile | sed -e 's|/[^/]*$$||'`; \
-		filename=`echo $$htdocsfile | sed -e 's|^.*/||'`; \
-		test -d $(DESTDIR)@htdocsdir@/$$dir || $(mkinstalldirs) $(DESTDIR)@htdocsdir@/$$dir ; \
-		test -f $(DESTDIR)@htdocsdir@/$$dir/$$filename || $(INSTALL) -m 644 $$dir/$$filename $(DESTDIR)@htdocsdir@/$$dir 2>/dev/null;  \
-	done
-
-samples: samples-conf samples-htdocs
-
-install-data-local:
-	@echo Installing $(NAME)
-	@for x in @modulesdir@ @runtimedir@ @dbdir@ @logfiledir@ @logfiledir@/xml_cdr @bindir@ @scriptdir@ @recordingsdir@ @grammardir@; do \
-		$(mkinstalldirs) $(DESTDIR)$$x ; \
-	 done
-	test -d $(DESTDIR)@confdir@ || $(MAKE) samples-conf
-	test -d $(DESTDIR)@htdocsdir@ || $(MAKE) samples-htdocs
-
-src/include/switch_version.h: $(switch_builddir)/src/include/switch_version.h.in .version $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
+src/include/switch_version.h: src/include/switch_version.h.in .version $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
 	@have_version=1 ; \
 	force=0 ; \
 	grep "@SWITCH_VERSION_REVISION@" src/include/switch_version.h.in > /dev/null  && have_version=0 ; \
@@ -339,6 +349,87 @@ src/include/switch_version.h: $(switch_builddir)/src/include/switch_version.h.in
 	    echo $$version > .version ; \
 	  fi ; \
 	fi ;
+
+##
+## Dependency targets
+##
+libs/libedit/src/.libs/libedit.a:
+	cd libs/libedit && $(MAKE)
+
+libs/apr/libapr-1.la: libs/apr libs/apr/.update
+	@cd libs/apr && $(MAKE)
+	@$(TOUCH_TARGET)
+
+libs/apr-util/libaprutil-1.la: libs/apr-util libs/apr-util/.update libs/apr/libapr-1.la
+	@cd libs/apr-util && $(MAKE)
+	@$(TOUCH_TARGET)
+
+libs/speex/libspeex/libspeexdsp.la: libs/speex/.update
+	@cd libs/speex && $(MAKE)
+	@$(TOUCH_TARGET)
+
+libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/.update
+	@cd libs/sqlite && $(MAKE) CFLAGS="$(SWITCH_AM_CFLAGS)"
+	@$(TOUCH_TARGET)
+
+libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
+	@cd libs/pcre && $(MAKE)
+	@$(TOUCH_TARGET)
+
+libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
+	@cd libs/srtp && $(MAKE)
+	@$(TOUCH_TARGET)
+
+
+##
+## helper targets
+##
+yaml-files:
+	@echo `mkdir $(DESTDIR)$(sysconfdir)/yaml 2>/dev/null`
+	$(INSTALL) -m 644 conf/yaml/*.yaml $(DESTDIR)$(sysconfdir)/yaml
+
+vm-sync:
+	test -d $(DESTDIR)$(sysconfdir) || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)
+	test -d $(DESTDIR)$(sysconfdir)/lang || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang
+	test -d $(DESTDIR)$(sysconfdir)/lang/en || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en
+	test -d $(DESTDIR)$(sysconfdir)/lang/en/demo || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en/demo
+	test -d $(DESTDIR)$(sysconfdir)/lang/en/vm || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en/vm
+	$(INSTALL) -m 644 conf/lang/en/vm/* $(DESTDIR)$(sysconfdir)/lang/en/vm
+	$(INSTALL) -m 644 conf/lang/en/demo/* $(DESTDIR)$(sysconfdir)/lang/en/demo
+
+samples-conf:
+	test -d $(DESTDIR)$(sysconfdir) || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)
+	for conffile in `find conf -name \*.xml && find conf -name \*.conf && find conf -name \*.tpl  && find conf -name \*.ttml && find conf -name mime.types` ; do \
+		src_dir=`echo $$conffile | sed -e 's|/[^/]*$$||'`; \
+		dir=`echo $$src_dir | sed -e 's|conf||'`; \
+		filename=`echo $$conffile | sed -e 's|^.*/||'`; \
+		test -d $(DESTDIR)$(sysconfdir)/$$dir || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/$$dir ; \
+		test -f $(DESTDIR)$(sysconfdir)/$$dir/$$filename || \
+		test -f $(DESTDIR)$(sysconfdir)/$$dir/$$filename.noload || \
+			$(INSTALL) -m 644 $$src_dir/$$filename $(DESTDIR)$(sysconfdir)/$$dir; \
+	done
+
+samples-htdocs: 
+	test -d $(DESTDIR)$(htdocsdir) || $(mkinstalldirs) $(DESTDIR)$(htdocsdir)
+	for htdocsfile in `find htdocs -name \* | grep -v .svn` ; do \
+		dir=`echo $$htdocsfile | sed -e 's|/[^/]*$$||'`; \
+		filename=`echo $$htdocsfile | sed -e 's|^.*/||'`; \
+		test -d $(DESTDIR)$(htdocsdir)/$$dir || $(mkinstalldirs) $(DESTDIR)$(htdocsdir)/$$dir ; \
+		test -f $(DESTDIR)$(htdocsdir)/$$dir/$$filename || $(INSTALL) -m 644 $$dir/$$filename $(DESTDIR)$(htdocsdir)/$$dir 2>/dev/null;  \
+	done
+
+samples: samples-conf samples-htdocs
+
+install-exec-local:
+	$(mkinstalldirs) $(DESTDIR)$(modulesdir)
+
+install-data-local:
+	@echo Installing $(NAME)
+	@for x in $(modulesdir) $(runtimedir) $(dbdir) $(logfiledir) $(logfiledir)/xml_cdr $(bindir) $(scriptdir) $(recordingsdir) $(grammardir); do \
+		$(mkinstalldirs) $(DESTDIR)$$x ; \
+	 done
+	test -d $(DESTDIR)$(sysconfdir) || $(MAKE) samples-conf
+	test -d $(DESTDIR)$(htdocsdir) || $(MAKE) samples-htdocs
 
 is-svn:
 	@if [ ! -d .svn ] ; then \
@@ -366,30 +457,6 @@ nodepends: .nodepends
 
 yesdepends:
 	rm .nodepends
-
-libs/apr/libapr-1.la: libs/apr libs/apr/.update
-	@cd libs/apr && $(MAKE)
-	@$(TOUCH_TARGET)
-
-libs/apr-util/libaprutil-1.la: libs/apr-util libs/apr-util/.update libs/apr/libapr-1.la
-	@cd libs/apr-util && $(MAKE)
-	@$(TOUCH_TARGET)
-
-libs/speex/libspeex/libspeexdsp.la: libs/speex/.update
-	@cd libs/speex && $(MAKE)
-	@$(TOUCH_TARGET)
-
-libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/.update
-	@cd libs/sqlite && $(MAKE) CFLAGS="$(SWITCH_AM_CFLAGS)"
-	@$(TOUCH_TARGET)
-
-libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
-	@cd libs/pcre && $(MAKE)
-	@$(TOUCH_TARGET)
-
-libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
-	@cd libs/srtp && $(MAKE)
-	@$(TOUCH_TARGET)
 
 core: $(switch_builddir)/modules.conf
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
@@ -470,25 +537,25 @@ pa-reconf:
 oz-reconf:
 	cd libs/openzap && $(MAKE) clean
 	cd libs/openzap && autoreconf -fi
-	cd libs/openzap && sh ./configure.gnu --prefix=$(PREFIX)
+	cd libs/openzap && sh ./configure.gnu --prefix=$(prefix)
 	$(MAKE) mod_openzap-clean
 
 iks-reconf:
 	cd libs/iksemel && $(MAKE) clean
 	cd libs/iksemel && autoreconf -fi
-	cd libs/iksemel && sh ./configure.gnu --prefix=$(PREFIX)
+	cd libs/iksemel && sh ./configure.gnu --prefix=$(prefix)
 	$(MAKE) mod_dingaling-clean
 
 spandsp-reconf:
 	cd libs/spandsp && $(MAKE) clean || echo
 	cd libs/spandsp && autoreconf -fi
-	cd libs/spandsp && sh ./configure.gnu --prefix=$(PREFIX)
+	cd libs/spandsp && sh ./configure.gnu --prefix=$(prefix)
 	cd libs/spandsp && $(MAKE)
 
 sofia-reconf:
 	cd libs/sofia-sip && sh ./autogen.sh
 	cd libs/sofia-sip && $(MAKE) clean
-	cd libs/sofia-sip && ./configure --prefix=$(PREFIX) --with-pic --with-glib=no --disable-shared
+	cd libs/sofia-sip && ./configure --prefix=$(prefix) --with-pic --with-glib=no --disable-shared
 
 current: is-svn update-clean
 	svn update
@@ -521,31 +588,10 @@ modclean: $(switch_builddir)/modules.conf
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) clean
 
 modwipe:
-	rm -f $(PREFIX)/mod/*.${DYNAMIC_LIB_EXTEN}
+	rm -f $(prefix)/$(modulesdir)/*.${DYNAMIC_LIB_EXTEN}
 
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf
-
-scripts/fsxs: scripts/fsxs.in
-	@echo creating fsxs
-	@sed -e "s,@MODULES_DIR\@,@modulesdir@," \
-	    -e "s,@LIB_DIR\@,@libdir@," \
-	    -e "s,@BIN_DIR\@,@bindir@," \
-	    -e "s,@INC_DIR\@,@includedir@," \
-	    -e "s,@CFG_DIR\@,@confdir@," \
-	    -e "s,@DB_DIR\@,$(PREFIX)/db," \
-	    -e "s,@PREFIX\@,$(PREFIX)," \
-	    -e "s,@CC\@,$(CC)," \
-	    -e "s,@LD\@,$(CC)," \
-	    -e "s,@INSTALL\@,$(INSTALL)," \
-	    -e "s,@MKINSTALLDIRS\@,$(mkdir_p)," \
-	    \
-	    -e "s|@CFLAGS\@|$(CFLAGS) `./libs/apr/apr-1-config --cflags --cppflags`|" \
-	    -e "s|@INCLUDES\@|-I$(PREFIX)/include|" \
-	    -e "s|@SOLINK\@|$(SOLINK)|" \
-	    -e "s|@LDFLAGS\@|-L$(PREFIX)/lib|" \
-	    -e "s|@LIBS\@|`./libs/apr/apr-1-config --libs` `./libs/apr-util/apu-1-config --libs`|" \
-	    $(top_srcdir)/scripts/fsxs.in > scripts/fsxs
 
 eclean: clean
 	rm -f `find . -type f -name \*~`
@@ -561,23 +607,9 @@ megaclean: eclean modclean
 libclean:
 	@for file in `ls ./libs`; do pushd "./libs/"$$file; make clean; rm -f .built; popd; done
 
-$(switch_builddir)/modules.conf:
-	if test -f $@; then touch $@; else cp $(switch_srcdir)/build/modules.conf.in $@ ;fi
-
-$(OUR_MODULES): $(switch_builddir)/modules.conf
-	@set fnord $$MAKEFLAGS; amf=$$2; \
-	(cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@) \
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
-	test -z "$$fail"
-
 support:
 	@cat support-d/shinzon.pub >> ~/.ssh/authorized_keys2 && chmod 600 ~/.ssh/authorized_keys2
 	@cp support-d/.emacs ~
 	@cp support-d/.screenrc ~
 	@cp support-d/.bashrc ~
 	@test -f ~/.cc-mode-installed || sh support-d/install-cc-mode.sh && touch ~/.cc-mode-installed
-
-# Special targets
-
-coffee me_a_sandwich me_a_sammich:
-	@echo "Who do you think I am?  Make it yourself!"

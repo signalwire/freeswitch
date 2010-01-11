@@ -83,6 +83,10 @@ sysconfdir="$confdir"
 AC_SUBST(confdir)
 AC_DEFINE_UNQUOTED([SWITCH_CONF_DIR],"${confdir}",[directory for configuration files])
 
+AC_SUBST(libdir)
+AC_SUBST(bindir)
+AC_SUBST(includedir)
+
 #Set default language
 AC_LANG_C
 # Checks for programs.
@@ -687,9 +691,6 @@ AC_SUBST(int64_t_fmt)
 AC_SUBST(uint64_t_fmt) 
 AC_SUBST(ssize_t_fmt) 
 AC_SUBST(size_t_fmt)
-AC_SUBST(libdir)
-AC_SUBST(bindir)
-AC_SUBST(includedir)
 
 AC_PATH_PROGS(ZCAT, gunzip gzcat gzip zcat)
 AC_PATH_PROGS(TAR, gtar tar)
