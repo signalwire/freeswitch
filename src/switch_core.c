@@ -454,7 +454,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #ifdef SWITCH_RUN_DIR
 		switch_snprintf(SWITCH_GLOBAL_dirs.run_dir, BUFSIZE, "%s", SWITCH_RUN_DIR);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.run_dir, BUFSIZE, "%s%slog", base_dir, SWITCH_PATH_SEPARATOR);
+		switch_snprintf(SWITCH_GLOBAL_dirs.run_dir, BUFSIZE, "%s%srun", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
 	}
 

@@ -7,6 +7,17 @@ build=@build@
 host=@host@
 target=$(host)
 
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+libexecdir=@libexecdir@
+includedir=@includedir@
+modulesdir=@modulesdir@
+runtimedir=@runtimedir@
+logfiledir=@logfiledir@
+sysconfdir=@sysconfdir@
+localstatedir=@localstatedir@
+
 CC=@CC@
 CXX=@CXX@
 AWK=@AWK@
@@ -31,8 +42,6 @@ OPENSSL_CFLAGS=@openssl_CFLAGS@
 
 LIBS=$(switch_builddir)/libfreeswitch.la
 DEFS=@DEFS@
-PREFIX = @prefix@
-MODINSTDIR = @modinstdir@
 
 DYLD_LIBRARY_PATH=@libdir@:$DYLD_LIBRARY_PATH
 LD_LIBRARY_PATH=@libdir@:$LD_LIBRARY_PATH
@@ -46,18 +55,20 @@ CXXFLAGS=@CXXFLAGS@
 LDFLAGS=@SWITCH_AM_LDFLAGS@ @LDFLAGS@ $(OUR_LDFLAGS)
 
 ALL_CFLAGS   = $(LOCAL_CFLAGS) $(MOD_CFLAGS) @SWITCH_AM_CFLAGS@ @CFLAGS@ @SWITCH_ANSI_CFLAGS@ -D_GNU_SOURCE $(OUR_CFLAGS)
-ALL_CXXFLAGS   = $(LOCAL_CFLAGS) $(MOD_CFLAGS) @SWITCH_AM_CXXFLAGS@ @CXXFLAGS@ -D_GNU_SOURCE $(OUR_CFLAGS)
+ALL_CXXFLAGS = $(LOCAL_CFLAGS) $(MOD_CFLAGS) @SWITCH_AM_CXXFLAGS@ @CXXFLAGS@ -D_GNU_SOURCE $(OUR_CFLAGS)
 
-DEFAULT_ARGS:= --build=$(build) --host=$(host) --target=$(target) --prefix=$(PREFIX) --disable-shared --with-pic
 DEFAULT_VARS:= CFLAGS="$(CFLAGS)" CPPFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" CC="$(CC)" CXX="$(CXX)"
+DEFAULT_ARGS:= --build=$(build) --host=$(host) --target=$(target) \
+	--prefix="$(prefix)" --exec_prefix="$(exec_prefix)" --libdir="$(libdir)" \
+	--disable-shared --with-pic
 
-COMPILE      = $(CC) $(ALL_CFLAGS) $(DEFS)
+COMPILE = $(CC) $(ALL_CFLAGS) $(DEFS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
-LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(ALL_CFLAGS) $(LDFLAGS) -shared -module -avoid-version -rpath $(MODINSTDIR) -o $@
+LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(ALL_CFLAGS) $(LDFLAGS) -shared -module -avoid-version -rpath $(modulesdir) -o $@
 
 CXXCOMPILE = $(CXX) $(ALL_CXXFLAGS) $(DEFS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile --tag=CXX $(CXXCOMPILE)
-CXXLINK = $(LIBTOOL) --mode=link --tag=CXX $(CXXLD) $(ALL_CXXFLAGS) $(LDFLAGS) -shared -module -avoid-version -rpath $(MODINSTDIR) -o $@
+CXXLINK = $(LIBTOOL) --mode=link --tag=CXX $(CXXLD) $(ALL_CXXFLAGS) $(LDFLAGS) -shared -module -avoid-version -rpath $(modulesdir) -o $@
 
 CSOURCEFILE=$(MODNAME).c
 CXXSOURCEFILE=$(MODNAME).cpp
@@ -128,22 +139,22 @@ $(MODNAME).$(LIBTOOL_LIB_EXTEN): $(LIBS) $(LOCAL_LIBADD) $(OUR_DEPS) $(LOCAL_OBJ
 	@test -d .libs || mkdir .libs
 	@error="";\
 	if test -f "$(CSOURCEFILE)" -o -f "$(MODDIR)/$(CSOURCEFILE)"; then \
-	$(LINK) $(SOLINK) $(MODNAME).lo $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS) $(OUR_OBJS) $(LOCAL_LIBADD) $(LOCAL_LDFLAGS_POST) $(LINK_OUTPUT_REDIR) ;\
+		$(LINK) $(SOLINK) $(MODNAME).lo $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS) $(OUR_OBJS) $(LOCAL_LIBADD) $(LOCAL_LDFLAGS_POST) $(LINK_OUTPUT_REDIR) ;\
 	else \
-	$(CXXLINK) $(SOLINK) $(MODNAME).lo $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS) $(OUR_OBJS) $(LOCAL_LIBADD) $(LOCAL_LDFLAGS_POST) $(LINK_OUTPUT_REDIR) ;\
+		$(CXXLINK) $(SOLINK) $(MODNAME).lo $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS) $(OUR_OBJS) $(LOCAL_LIBADD) $(LOCAL_LDFLAGS_POST) $(LINK_OUTPUT_REDIR) ;\
 	fi;
 
 mod_clean:
 	@rm -fr *.$(LIBTOOL_LIB_EXTEN) *.o *.lo *~ .libs $(LOCAL_OBJS)
 
-mod_install: $(DESTDIR)$(MODINSTDIR)/$(MODNAME).$(LIBTOOL_LIB_EXTEN)
+mod_install: $(DESTDIR)$(modulesdir)/$(MODNAME).$(LIBTOOL_LIB_EXTEN)
 
-$(DESTDIR)$(MODINSTDIR)/$(MODNAME).$(LIBTOOL_LIB_EXTEN):$(MODNAME).$(LIBTOOL_LIB_EXTEN)
+$(DESTDIR)$(modulesdir)/$(MODNAME).$(LIBTOOL_LIB_EXTEN):$(MODNAME).$(LIBTOOL_LIB_EXTEN)
 	@echo installing $<
-	@$(LTINSTALL) $(MODNAME).$(LIBTOOL_LIB_EXTEN) $(DESTDIR)$(MODINSTDIR) >/dev/null
+	@$(LTINSTALL) $(MODNAME).$(LIBTOOL_LIB_EXTEN) $(DESTDIR)$(modulesdir) >/dev/null
 
 mod_uninstall:
-	@$(LTUNINSTALL) $(DESTDIR)$(MODINSTDIR)/$(MODNAME).$(LIBTOOL_LIB_EXTEN)
+	@$(LTUNINSTALL) $(DESTDIR)$(modulesdir)/$(MODNAME).$(LIBTOOL_LIB_EXTEN)
 
 # define these in your makefile if you wish
 local_all local_depend local_clean depend_install local_install local_distclean local_extraclean local_uninstall:

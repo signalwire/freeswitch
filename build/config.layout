@@ -1,0 +1,66 @@
+##
+##  config.layout -- Pre-defined Installation Path Layouts
+##
+##  Hints:
+##  - layouts can be loaded with configure's --enable-layout=ID option
+##  - when no --enable-layout option is given, the default layout is `FreeSWITCH'
+##  - a trailing plus character (`+') on paths is replaced with a 
+##    `/<target>' suffix where <target> is currently hardcoded to 'freeswitch'.
+##    (This may become a configurable parameter at some point.)
+##
+
+#   Default FreeSWITCH path layout.
+<Layout FreeSWITCH>
+    prefix:         /usr/local/freeswitch
+    exec_prefix:    ${prefix}
+    bindir:         ${exec_prefix}/bin
+    sbindir:        ${exec_prefix}/bin
+    libdir:         ${exec_prefix}/lib
+    libexecdir:     ${exec_prefix}/modules
+    modulesdir:     ${exec_prefix}/modules
+    mandir:         ${prefix}/man
+    sysconfdir:     ${prefix}/conf
+    datadir:        ${prefix}
+    includedir:     ${prefix}/include
+    localstatedir:  ${prefix}
+    runtimedir:     ${localstatedir}/log
+    logfiledir:     ${localstatedir}/log
+</Layout>
+
+#   GNU standards conforming path layout.
+#   See FSF's GNU project `make-stds' document for details.
+<Layout GNU>
+    prefix:         /usr/local
+    exec_prefix:    ${prefix}
+    bindir:         ${exec_prefix}/bin
+    sbindir:        ${exec_prefix}/sbin
+    libdir:         ${exec_prefix}/lib
+    libexecdir:     ${exec_prefix}/libexec
+    modulesdir:     ${libdir}/freeswitch/modules
+    mandir:         ${prefix}/man
+    sysconfdir:     ${prefix}/etc/freeswitch
+    datadir:        ${prefix}/share/freeswitch
+    includedir:     ${prefix}/include/freeswitch
+    localstatedir:  ${prefix}/var/freeswitch
+    runtimedir:     ${localstatedir}/run
+    logfiledir:     ${localstatedir}/log
+</Layout>
+
+# Linux FHS (File Hierarchy Standard) layout
+# see 
+<Layout FHS>
+    prefix:         /usr
+    exec_prefix:    ${prefix}
+    bindir:         ${exec_prefix}/bin
+    sbindir:        ${exec_prefix}/sbin
+    libdir:         ${exec_prefix}/lib/freeswitch
+    libexecdir:     ${exec_prefix}/libexec
+    modulesdir:     ${libdir}/modules
+    mandir:         ${prefix}/man
+    sysconfdir:     /etc/freeswitch
+    datadir:        ${prefix}/share/freeswitch
+    includedir:     ${prefix}/include/freeswitch
+    localstatedir:  /var/lib/freeswitch
+    runtimedir:     /var/run/freeswitch
+    logfiledir:     /var/log/freeswitch
+</Layout>

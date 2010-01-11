@@ -34,17 +34,27 @@ AC_SUBST(switch_builddir)
 
 # Where to install the modules
 AC_ARG_WITH([modinstdir],
-	[AS_HELP_STRING([--with-modinstdir=DIR], [Install modules into this location (default: $prefix/mod)])], [modinstdir="$withval"], [modinstdir="${prefix}/mod"])
-
-AC_SUBST(modinstdir)
-AC_DEFINE_UNQUOTED([SWITCH_MOD_DIR],"${modinstdir}",[where to install the modules to])
+	[AS_HELP_STRING([--with-modinstdir=DIR], [Install modules into this location (default: $prefix/mod)])], [modulesdir="$withval"], [modulesdir="${prefix}/mod"])
+AC_SUBST(modulesdir)
+AC_DEFINE_UNQUOTED([SWITCH_MOD_DIR],"${modulesdir}",[where to install the modules to])
 
 # Where to put pidfile
 AC_ARG_WITH([rundir],
-	[AS_HELP_STRING([--with-rundir=DIR], [Put pidfile into this location (default: $prefix/log)])], [rundir="$withval"], [rundir="${prefix}/log"])
+	[AS_HELP_STRING([--with-rundir=DIR], [Put pidfile into this location (default: $prefix/run)])], [runtimedir="$withval"], [runtimedir="${prefix}/run"])
+AC_SUBST(runtimedir)
+AC_DEFINE_UNQUOTED([SWITCH_RUN_DIR],"${runtimedir}",[where to put pidfile to])
 
-AC_SUBST(rundir)
-AC_DEFINE_UNQUOTED([SWITCH_RUN_DIR],"${rundir}",[where to put pidfile to])
+logfiledir="${prefix}/log"
+AC_SUBST(logfiledir)
+AC_DEFINE_UNQUOTED([SWITCH_LOG_DIR],"${logfiledir}",[where to put log files])
+
+dbdir="${prefix}/db"
+AC_SUBST(dbdir)
+AC_DEFINE_UNQUOTED([SWITCH_DB_DIR],"${dbdir}",[where to put db files])
+
+scriptdir="${prefix}/scripts"
+AC_SUBST(scriptdir)
+AC_DEFINE_UNQUOTED([SWITCH_SCRIPT_DIR],"${scriptdir}",[where to put script files])
 
 recordingsdir="${prefix}/recordings"
 AC_SUBST(recordingsdir)
@@ -55,6 +65,8 @@ if test "$sysconfdir" = "\${prefix}/etc" ; then
 else
     confdir="$sysconfdir"
 fi
+
+sysconfdir="$confdir"
 
 AC_SUBST(confdir)
 AC_DEFINE_UNQUOTED([SWITCH_CONF_DIR],"${confdir}",[directory for configuration files])
@@ -887,33 +899,56 @@ AC_SUBST(OUR_DISABLED_INSTALL_MODS)
 AC_SUBST(OUR_DISABLED_UNINSTALL_MODS)
 AC_SUBST(AM_MAKEFLAGS)
 
-ac_configure_args="$ac_configure_args \"CONFIGURE_CFLAGS=$CFLAGS\" \"CONFIGURE_CXXFLAGS=$CXXFLAGS\" \"CONFIGURE_LDFLAGS=$LDFLAGS\""
+ac_configure_args="$ac_configure_args \"CONFIGURE_CFLAGS=$CFLAGS\" \"CONFIGURE_CXXFLAGS=$CXXFLAGS\" \"CONFIGURE_LDFLAGS=$LDFLAGS\" \
+	--prefix='$prefix' --exec_prefix='$exec_prefix' --libdir='$libdir' --libexecdir='$libexecdir' --bindir='$bindir' --sbindir='$sbindir' \
+	--localstatedir='$localstatedir' --datadir='$datadir'"
 
 # Run configure in all the subdirs
-AC_CONFIG_SUBDIRS(libs/srtp)
-AC_CONFIG_SUBDIRS(libs/sqlite)
+AC_CONFIG_SUBDIRS([libs/srtp])
+AC_CONFIG_SUBDIRS([libs/sqlite])
 if test "$enable_core_libedit_support" = "yes" ; then
-    AC_CONFIG_SUBDIRS(libs/libedit)
+    AC_CONFIG_SUBDIRS([libs/libedit])
 fi
 
-AC_CONFIG_SUBDIRS(libs/pcre)
-AC_CONFIG_SUBDIRS(libs/apr)
-AC_CONFIG_SUBDIRS(libs/apr-util)
-AC_CONFIG_SUBDIRS(libs/ilbc)
-AC_CONFIG_SUBDIRS(libs/curl)
-AC_CONFIG_SUBDIRS(libs/iksemel)
-AC_CONFIG_SUBDIRS(libs/js/nsprpub)
-AC_CONFIG_SUBDIRS(libs/js)
-AC_CONFIG_SUBDIRS(libs/libdingaling)
-AC_CONFIG_SUBDIRS(libs/libsndfile)
-AC_CONFIG_SUBDIRS(libs/sofia-sip)
-AC_CONFIG_SUBDIRS(libs/speex)
-AC_CONFIG_SUBDIRS(libs/portaudio)
-AC_CONFIG_SUBDIRS(libs/openzap)
-AC_CONFIG_SUBDIRS(libs/unimrcp)
-AC_CONFIG_SUBDIRS(libs/tiff-3.8.2)
-AC_CONFIG_SUBDIRS(libs/spandsp)
-AC_CONFIG_SUBDIRS(libs/broadvoice)
-AC_CONFIG_SUBDIRS(libs/libg722_1)
+AC_CONFIG_SUBDIRS([libs/pcre])
+AC_CONFIG_SUBDIRS([libs/apr])
+AC_CONFIG_SUBDIRS([libs/apr-util])
+AC_CONFIG_SUBDIRS([libs/ilbc])
+AC_CONFIG_SUBDIRS([libs/curl])
+AC_CONFIG_SUBDIRS([libs/iksemel])
+AC_CONFIG_SUBDIRS([libs/js/nsprpub])
+AC_CONFIG_SUBDIRS([libs/js])
+AC_CONFIG_SUBDIRS([libs/libdingaling])
+AC_CONFIG_SUBDIRS([libs/libsndfile])
+AC_CONFIG_SUBDIRS([libs/sofia-sip])
+AC_CONFIG_SUBDIRS([libs/speex])
+AC_CONFIG_SUBDIRS([libs/portaudio])
+AC_CONFIG_SUBDIRS([libs/openzap])
+AC_CONFIG_SUBDIRS([libs/unimrcp])
+AC_CONFIG_SUBDIRS([libs/tiff-3.8.2])
+AC_CONFIG_SUBDIRS([libs/spandsp])
+AC_CONFIG_SUBDIRS([libs/broadvoice])
+AC_CONFIG_SUBDIRS([libs/libg722_1])
 
 AC_OUTPUT
+
+##
+## Configuration summary
+##
+
+echo
+echo "-------------------------- FreeSWITCH configuration ------------------------"
+echo ""
+echo "  Locations:"
+echo "      Selected layout: ${layout_name}"
+echo ""
+echo "      prefix:          ${prefix}"
+echo "      exec_prefix:     ${exec_prefix}"
+echo "      bindir:          ${bindir}"
+echo "      libdir:          ${libdir}"
+echo "      modulesdir:      ${modulesdir}"
+echo "      sysconfdir:      ${sysconfdir}"
+echo "      runtimedir:      ${runtimedir}"
+echo "      logfiledir:      ${logfiledir}"
+echo ""
+echo "----------------------------------------------------------------------------"

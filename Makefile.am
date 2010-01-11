@@ -317,11 +317,10 @@ samples: samples-conf samples-htdocs
 
 install-data-local:
 	@echo Installing $(NAME)
-	@for x in mod db log log/xml_cdr bin scripts grammar recordings ; do \
-		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
+	@for x in @modulesdir@ @runtimedir@ @dbdir@ @logfiledir@ @logfiledir@/xml_cdr @bindir@ @scriptdir@ @recordingsdir@ ; do \
+		$(mkinstalldirs) $(DESTDIR)$$x ; \
 	 done
-	$(mkinstalldirs) $(DESTDIR)@recordingsdir@
-	$(mkinstalldirs) $(DESTDIR)@modinstdir@
+	$(mkinstalldirs) $(DESTDIR)$(prefix)/grammar
 	test -d $(DESTDIR)@confdir@ || $(MAKE) samples-conf
 	test -d $(DESTDIR)$(prefix)/htdocs || $(MAKE) samples-htdocs
 
@@ -530,7 +529,7 @@ dox:
 
 scripts/fsxs: scripts/fsxs.in
 	@echo creating fsxs
-	@sed -e "s,@MODULES_DIR\@,@modinstdir@," \
+	@sed -e "s,@MODULES_DIR\@,@modulesdir@," \
 	    -e "s,@LIB_DIR\@,@libdir@," \
 	    -e "s,@BIN_DIR\@,@bindir@," \
 	    -e "s,@INC_DIR\@,@includedir@," \
