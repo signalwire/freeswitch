@@ -63,6 +63,7 @@ cd-moh-install: uhd-moh-install sounds-music-48000-install
 # (2) otherwise, pass the desired values on the `make' command line.
 all-recursive: libfreeswitch.la
 clean-recusive: clean_core
+install-recursive: install-libLTLIBRARIES install-binPROGRAMS
 $(RECURSIVE_TARGETS):
 	@failcom='exit 1'; \
 	for f in x $$MAKEFLAGS; do \
