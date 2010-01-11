@@ -43,19 +43,19 @@ $(POCKETSPHINX_LA): $(POCKETSPHINX_BUILDDIR)/Makefile
 	cd $(POCKETSPHINX_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
-$(DESTDIR)$(PREFIX)/grammar/model:
-	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model
+$(DESTDIR)$(grammardir)/model:
+	mkdir -p $(DESTDIR)$(grammardir)/model
 
-$(DESTDIR)$(PREFIX)/grammar/model/communicator:
+$(DESTDIR)$(grammardir)/model/communicator:
 	$(GETLIB) $(SPHINXMODEL).tar.gz
-	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model/communicator
-	cp -rp $(switch_srcdir)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(PREFIX)/grammar/model/communicator
+	mkdir -p $(DESTDIR)$(grammardir)/model/communicator
+	cp -rp $(switch_srcdir)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(grammardir)/model/communicator
 
-$(DESTDIR)$(PREFIX)/grammar/model/wsj1:
-	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model/wsj1
-	cp -rp $(POCKETSPHINX_DIR)/model/hmm/wsj1/* $(DESTDIR)$(PREFIX)/grammar/model/wsj1
+$(DESTDIR)$(grammardir)/model/wsj1:
+	mkdir -p $(DESTDIR)$(grammardir)/model/wsj1
+	cp -rp $(POCKETSPHINX_DIR)/model/hmm/wsj1/* $(DESTDIR)$(grammardir)/model/wsj1
 
 dictionary:
-	@cp -f $(POCKETSPHINX_DIR)/model/lm/cmudict.0.6d $(DESTDIR)$(PREFIX)/grammar/default.dic
+	@cp -f $(POCKETSPHINX_DIR)/model/lm/cmudict.0.6d $(DESTDIR)$(grammardir)/default.dic
 
-local_install: $(DESTDIR)$(PREFIX)/grammar/model $(DESTDIR)$(PREFIX)/grammar/model/communicator $(DESTDIR)$(PREFIX)/grammar/model/wsj1 dictionary
+local_install: $(DESTDIR)$(grammardir)/model $(DESTDIR)$(grammardir)/model/communicator $(DESTDIR)$(grammardir)/model/wsj1 dictionary

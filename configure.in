@@ -52,6 +52,14 @@ dbdir="${prefix}/db"
 AC_SUBST(dbdir)
 AC_DEFINE_UNQUOTED([SWITCH_DB_DIR],"${dbdir}",[where to put db files])
 
+htdocsdir="${prefix}/htdocs"
+AC_SUBST(htdocsdir)
+AC_DEFINE_UNQUOTED([SWITCH_HTDOCS_DIR],"${htdocsdir}",[where to put htdocs files])
+
+grammardir="${prefix}/grammar"
+AC_SUBST(grammardir)
+AC_DEFINE_UNQUOTED([SWITCH_GRAMMAR_DIR],"${grammardir}",[where to put grammar files])
+
 scriptdir="${prefix}/scripts"
 AC_SUBST(scriptdir)
 AC_DEFINE_UNQUOTED([SWITCH_SCRIPT_DIR],"${scriptdir}",[where to put script files])

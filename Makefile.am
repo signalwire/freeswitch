@@ -305,24 +305,23 @@ samples-conf:
 	done
 
 samples-htdocs: 
-	test -d $(DESTDIR)$(prefix)/htdocs || $(mkinstalldirs) $(DESTDIR)$(prefix)/htdocs
+	test -d $(DESTDIR)@htdocsdir@/ || $(mkinstalldirs) $(DESTDIR)@htdocsdir@
 	for htdocsfile in `find htdocs -name \* | grep -v .svn` ; do \
 		dir=`echo $$htdocsfile | sed -e 's|/[^/]*$$||'`; \
 		filename=`echo $$htdocsfile | sed -e 's|^.*/||'`; \
-		test -d $(DESTDIR)$(PREFIX)/$$dir || $(mkinstalldirs) $(DESTDIR)$(prefix)/$$dir ; \
-		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename || $(INSTALL) -m 644 $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir 2>/dev/null;  \
+		test -d $(DESTDIR)@htdocsdir@/$$dir || $(mkinstalldirs) $(DESTDIR)@htdocsdir@/$$dir ; \
+		test -f $(DESTDIR)@htdocsdir@/$$dir/$$filename || $(INSTALL) -m 644 $$dir/$$filename $(DESTDIR)@htdocsdir@/$$dir 2>/dev/null;  \
 	done
 
 samples: samples-conf samples-htdocs
 
 install-data-local:
 	@echo Installing $(NAME)
-	@for x in @modulesdir@ @runtimedir@ @dbdir@ @logfiledir@ @logfiledir@/xml_cdr @bindir@ @scriptdir@ @recordingsdir@ ; do \
+	@for x in @modulesdir@ @runtimedir@ @dbdir@ @logfiledir@ @logfiledir@/xml_cdr @bindir@ @scriptdir@ @recordingsdir@ @grammardir@; do \
 		$(mkinstalldirs) $(DESTDIR)$$x ; \
 	 done
-	$(mkinstalldirs) $(DESTDIR)$(prefix)/grammar
 	test -d $(DESTDIR)@confdir@ || $(MAKE) samples-conf
-	test -d $(DESTDIR)$(prefix)/htdocs || $(MAKE) samples-htdocs
+	test -d $(DESTDIR)@htdocsdir@ || $(MAKE) samples-htdocs
 
 src/include/switch_version.h: $(switch_builddir)/src/include/switch_version.h.in .version $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
 	@have_version=1 ; \
