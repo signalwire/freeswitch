@@ -376,6 +376,7 @@ struct switch_directories {
 	char *htdocs_dir;
 	char *grammar_dir;
 	char *storage_dir;
+	char *recordings_dir;
 };
 
 typedef struct switch_directories switch_directories;
