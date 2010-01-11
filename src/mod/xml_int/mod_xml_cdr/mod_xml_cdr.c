@@ -60,6 +60,7 @@ static struct {
 	int prefix_a;
 	int disable100continue;
 	int rotate;
+	int auth_scheme;
 	switch_memory_pool_t *pool;
 } globals;
 
@@ -281,7 +282,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		}
 
 		if (!zstr(globals.cred)) {
-			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, globals.auth_scheme);
 			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, globals.cred);
 		}
 
@@ -461,6 +462,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	globals.log_b = 1;
 	globals.disable100continue = 0;
 	globals.pool = pool;
+	globals.auth_scheme = CURLAUTH_BASIC;
+	
 	switch_thread_rwlock_create(&globals.log_path_lock, pool);
 
 	/* parse the config */
@@ -534,8 +537,25 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.ssl_cacert_file = val;
 			} else if (!strcasecmp(var, "enable-ssl-verifyhost") && switch_true(val)) {
 				globals.enable_ssl_verifyhost = 1;
+			} else if (!strcasecmp(var, "auth-scheme")) {
+				if (*val == '=') {
+					globals.auth_scheme = 0;
+					val++;
+				}
+				
+				if (!strcasecmp(val, "basic")) {
+					globals.auth_scheme |= CURLAUTH_BASIC;
+				} else if (!strcasecmp(val, "digest")) {
+					globals.auth_scheme |= CURLAUTH_DIGEST;
+				} else if (!strcasecmp(val, "NTLM")) {
+					globals.auth_scheme |= CURLAUTH_NTLM;
+				} else if (!strcasecmp(val, "GSS-NEGOTIATE")) {
+					globals.auth_scheme |= CURLAUTH_GSSNEGOTIATE;
+				} else if (!strcasecmp(val, "any")) {
+					globals.auth_scheme = CURLAUTH_ANY;
+				}
 			}
-		
+
 			if (zstr(globals.base_err_log_dir)) {
 				if (!zstr(globals.base_log_dir)) {
 					globals.base_err_log_dir = switch_core_strdup(globals.pool, globals.base_log_dir);
