@@ -159,8 +159,8 @@ static switch_status_t do_snap(switch_core_session_t *session)
 		switch_time_exp_lt(&tm, switch_time_make(switch_epoch_time_now(NULL), 0));
 		switch_strftime(date, &retsize, sizeof(date), "%Y_%m_%d_%H_%M_%S", &tm);
 			
-		file = switch_core_session_sprintf(session, "%s%ssounds%s%s_%s.wav", SWITCH_GLOBAL_dirs.base_dir, 
-										   SWITCH_PATH_SEPARATOR, SWITCH_PATH_SEPARATOR, cb->base, date);
+		file = switch_core_session_sprintf(session, "%s%s%s_%s.wav", SWITCH_GLOBAL_dirs.sounds_dir, 
+										   SWITCH_PATH_SEPARATOR, cb->base, date);
 
 		switch_core_session_get_read_impl(session, &read_impl);
 		fh.channels = 0;

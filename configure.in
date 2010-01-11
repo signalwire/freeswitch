@@ -56,6 +56,10 @@ htdocsdir="${prefix}/htdocs"
 AC_SUBST(htdocsdir)
 AC_DEFINE_UNQUOTED([SWITCH_HTDOCS_DIR],"${htdocsdir}",[where to put htdocs files])
 
+soundsdir="${prefix}/sounds"
+AC_SUBST(soundsdir)
+AC_DEFINE_UNQUOTED([SWITCH_SOUNDS_DIR],"${soundsdir}",[where to put sounds files])
+
 grammardir="${prefix}/grammar"
 AC_SUBST(grammardir)
 AC_DEFINE_UNQUOTED([SWITCH_GRAMMAR_DIR],"${grammardir}",[where to put grammar files])

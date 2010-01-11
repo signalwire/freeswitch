@@ -25,7 +25,7 @@ DEFAULT_SOUNDS=en-us-callie-8000
 	 echo $$full_sound_dir | grep  music  >/dev/null || soundfile=`echo freeswitch-sounds-$$full_sound_dir-$$sounds_version.tar.gz`; \
          if test "$$target" = "install"; then $(MAKE) $(AM_MAKEFLAGS) core_install; else $(MAKE) $(AM_MAKEFLAGS) core ; fi; \
          if test "$$target_prefix" = "sounds"; then \
-	   if test "$$target" = "install"; then $(GETSOUNDS) $$soundfile $(DESTDIR)$(PREFIX)/sounds/; else $(GETSOUNDS) $$soundfile ; fi; \
+	   if test "$$target" = "install"; then $(GETSOUNDS) $$soundfile $(DESTDIR)@soundsdir@/; else $(GETSOUNDS) $$soundfile ; fi; \
 	 else \
 	   cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ;\
 	 fi

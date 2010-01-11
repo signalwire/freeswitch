@@ -1,6 +1,6 @@
 <configuration name="local_stream.conf" description="stream files from local dir">
   <!-- fallback to default if requested moh class isn't found -->
-  <directory name="default" path="$${base_dir}/sounds/music/8000">
+  <directory name="default" path="$${sounds_dir}/music/8000">
     <param name="rate" value="8000"/>
     <param name="shuffle" value="true"/>
     <param name="channels" value="1"/>
@@ -14,7 +14,7 @@
     <!--<param name="chime-max" value="500"/>-->
   </directory>
 
-  <directory name="moh/8000" path="$${base_dir}/sounds/music/8000">
+  <directory name="moh/8000" path="$${sounds_dir}/music/8000">
     <param name="rate" value="8000"/>
     <param name="shuffle" value="true"/>
     <param name="channels" value="1"/>
@@ -22,7 +22,7 @@
     <param name="timer-name" value="soft"/>
   </directory>
 
-  <directory name="moh/16000" path="$${base_dir}/sounds/music/16000">
+  <directory name="moh/16000" path="$${sounds_dir}/music/16000">
     <param name="rate" value="16000"/>
     <param name="shuffle" value="true"/>
     <param name="channels" value="1"/>
@@ -30,7 +30,7 @@
     <param name="timer-name" value="soft"/>
   </directory>
 
-  <directory name="moh/32000" path="$${base_dir}/sounds/music/32000">
+  <directory name="moh/32000" path="$${sounds_dir}/music/32000">
     <param name="rate" value="32000"/>
     <param name="shuffle" value="true"/>
     <param name="channels" value="1"/>
@@ -38,7 +38,7 @@
     <param name="timer-name" value="soft"/>
   </directory>
   <!--
-  <directory name="moh/48000" path="$${base_dir}/sounds/music/48000">
+  <directory name="moh/48000" path="$${sounds_dir}/music/48000">
     <param name="rate" value="48000"/>
     <param name="shuffle" value="true"/>
     <param name="channels" value="1"/>

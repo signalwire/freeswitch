@@ -2136,12 +2136,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 
 	if (sound_path) {
 		switch_channel_set_variable(channel, "sound_prefix", sound_path);
-	} else {
-		switch_channel_set_variable_printf(channel, "sound_prefix", "%s%ssounds%s%s", 
-										   SWITCH_GLOBAL_dirs.base_dir,
-										   SWITCH_PATH_SEPARATOR,
-										   SWITCH_PATH_SEPARATOR,
-										   chan_lang);
 	}
 
 	if ((si = switch_loadable_module_get_say_interface(module_name))) {
