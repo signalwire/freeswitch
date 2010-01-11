@@ -17,7 +17,7 @@ runtimedir=@runtimedir@
 logfiledir=@logfiledir@
 sysconfdir=@sysconfdir@
 localstatedir=@localstatedir@
-garmmardir=@grammardir@
+grammardir=@grammardir@
 
 CC=@CC@
 CXX=@CXX@
