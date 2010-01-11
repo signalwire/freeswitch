@@ -458,6 +458,14 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #endif
 	}
 
+	if (!SWITCH_GLOBAL_dirs.recordings_dir && (SWITCH_GLOBAL_dirs.recordings_dir = (char *) malloc(BUFSIZE))) {
+#ifdef SWITCH_RECORDINGS_DIR
+		switch_snprintf(SWITCH_GLOBAL_dirs.recordings_dir, BUFSIZE, "%s", SWITCH_RECORDINGS_DIR);
+#else
+		switch_snprintf(SWITCH_GLOBAL_dirs.recordings_dir, BUFSIZE, "%s%srecordings", base_dir, SWITCH_PATH_SEPARATOR);
+#endif
+	}
+
 	if (!SWITCH_GLOBAL_dirs.storage_dir && (SWITCH_GLOBAL_dirs.storage_dir = (char *) malloc(BUFSIZE))) {
 #ifdef SWITCH_STORAGE_DIR
 		switch_snprintf(SWITCH_GLOBAL_dirs.storage_dir, BUFSIZE, "%s", SWITCH_STORAGE_DIR);
@@ -520,6 +528,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	switch_assert(SWITCH_GLOBAL_dirs.script_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.htdocs_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.grammar_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.recordings_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.temp_dir);
 }
 
@@ -1219,6 +1228,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.script_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.htdocs_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.recordings_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.temp_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 
 	switch_mutex_init(&runtime.uuid_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
@@ -1253,6 +1263,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), NULL, AF_INET6);
 	switch_core_set_variable("local_ip_v6", guess_ip);
 	switch_core_set_variable("base_dir", SWITCH_GLOBAL_dirs.base_dir);
+	switch_core_set_variable("recordings_dir", SWITCH_GLOBAL_dirs.recordings_dir);
 	switch_core_set_serial();
 
 	switch_console_init(runtime.memory_pool);
@@ -1791,6 +1802,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_safe_free(SWITCH_GLOBAL_dirs.script_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.htdocs_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.grammar_dir);
+	switch_safe_free(SWITCH_GLOBAL_dirs.recordings_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.temp_dir);
 
 	switch_core_hash_destroy(&runtime.global_vars);

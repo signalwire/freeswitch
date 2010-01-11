@@ -320,6 +320,7 @@ install-data-local:
 	@for x in mod db log log/xml_cdr bin scripts grammar recordings ; do \
 		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
 	 done
+	$(mkinstalldirs) $(DESTDIR)@recordingsdir@
 	$(mkinstalldirs) $(DESTDIR)@modinstdir@
 	test -d $(DESTDIR)@confdir@ || $(MAKE) samples-conf
 	test -d $(DESTDIR)$(prefix)/htdocs || $(MAKE) samples-htdocs

@@ -5144,7 +5144,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				if (!strcasecmp(rec_header, "on")) {
 					char *file = NULL, *tmp = NULL;
 
-					tmp = switch_mprintf("%s%s%s", profile->record_path ? profile->record_path : "${base_dir}/recordings",
+					tmp = switch_mprintf("%s%s%s", profile->record_path ? profile->record_path : "${recordings_dir}",
 										 SWITCH_PATH_SEPARATOR, profile->record_template);
 					file = switch_channel_expand_variables(channel, tmp);
 					switch_ivr_record_session(session, file, 0, NULL);

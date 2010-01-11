@@ -46,6 +46,10 @@ AC_ARG_WITH([rundir],
 AC_SUBST(rundir)
 AC_DEFINE_UNQUOTED([SWITCH_RUN_DIR],"${rundir}",[where to put pidfile to])
 
+recordingsdir="${prefix}/recordings"
+AC_SUBST(recordingsdir)
+AC_DEFINE_UNQUOTED([SWITCH_RECORDINGS_DIR],"${recordingsdir}",[where to put recording files])
+
 if test "$sysconfdir" = "\${prefix}/etc" ; then
     confdir="$prefix/conf"
 else
