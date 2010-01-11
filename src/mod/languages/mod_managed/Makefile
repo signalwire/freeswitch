@@ -40,4 +40,4 @@ freeswitch_wrap.cxx:
 	rm -f *.cs
 
 depend_install:
-	mkdir -p $(DESTDIR)$(PREFIX)/mod/managed
+	mkdir -p $(DESTDIR)$(modulesdir)/managed

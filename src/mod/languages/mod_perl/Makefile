@@ -37,6 +37,6 @@ local_clean:
 	rm -fr *~ .perlok .libs freeswitch.$(LIBTOOL_LIB_EXTEN) 2>/dev/null
 
 depend_install:
-	mkdir -p $(DESTDIR)$(PREFIX)/perl
-	$(LTINSTALL) freeswitch.$(LIBTOOL_LIB_EXTEN) freeswitch.pm $(DESTDIR)$(PREFIX)/perl
-	if [ ! -f $(DESTDIR)$(PREFIX)/perl/freeswitch.pm ] ; then $(LTINSTALL) freeswitch.pm $(DESTDIR)$(PREFIX)/perl ; fi
+	mkdir -p $(DESTDIR)$(prefix)/perl
+	$(LTINSTALL) freeswitch.$(LIBTOOL_LIB_EXTEN) freeswitch.pm $(DESTDIR)$(prefix)/perl
+	if [ ! -f $(DESTDIR)$(prefix)/perl/freeswitch.pm ] ; then $(LTINSTALL) freeswitch.pm $(DESTDIR)$(prefix)/perl ; fi
