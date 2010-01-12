@@ -1817,7 +1817,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   SOATAG_REUSE_REJECTED(1),
 				   SOATAG_ORDERED_USER(1),
 				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
-				   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
+				   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), 
+				   TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), 
+				   SOATAG_HOLD(holdstr), 
+				   TAG_END());
 	} else {
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
@@ -1839,7 +1842,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   SIPTAG_CONTENT_TYPE_STR("application/sdp"),
 				   SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),
 				   TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), 
-				   TAG_END());
+				   SOATAG_HOLD(holdstr), 
+				   TAG_END());		
 	}
 
 	sofia_glue_free_destination(dst);

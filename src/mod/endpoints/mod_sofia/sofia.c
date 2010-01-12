@@ -3412,6 +3412,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 		switch_channel_clear_flag(channel, CF_REQ_MEDIA);
 
+		tech_pvt->last_sdp_str = NULL;
+		if (!sofia_use_soa(tech_pvt) && sip->sip_payload && sip->sip_payload->pl_data) {
+			tech_pvt->last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+		}
+
 		if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
 			if (channel && sip->sip_call_info) {
 				char *p;
@@ -3832,6 +3837,20 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			NUTAG_OFFER_SENT_REF(offer_sent),
 			NUTAG_ANSWER_SENT_REF(answer_sent),
 			SIPTAG_REPLACES_STR_REF(replaces_str), SOATAG_LOCAL_SDP_STR_REF(l_sdp), SOATAG_REMOTE_SDP_STR_REF(r_sdp), TAG_END());
+
+
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+		tech_pvt = switch_core_session_get_private(session);
+
+		if (!tech_pvt || !tech_pvt->nh) {
+			goto done;
+		}
+	}
+
+	if (status > 100 && status < 300 && tech_pvt && !sofia_use_soa(tech_pvt) && !r_sdp && tech_pvt->last_sdp_str) {
+		r_sdp = tech_pvt->last_sdp_str;
+	}
 	
 	/* This marr in our code brought to you by people who can't read........*/
 	if (profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME && r_sdp && (p = (char *) switch_stristr("g729a/8000", r_sdp))) {
@@ -3867,13 +3886,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	}
 
 	if (session) {
-		channel = switch_core_session_get_channel(session);
-		tech_pvt = switch_core_session_get_private(session);
-
-		if (!tech_pvt || !tech_pvt->nh) {
-			goto done;
-		}
-
 		if ((switch_channel_test_flag(channel, CF_EARLY_MEDIA) || switch_channel_test_flag(channel, CF_ANSWERED)) && 
 			(status == 180 || status == 183)) {
 			/* Must you send 180 after 183 w/sdp ? sheesh */
