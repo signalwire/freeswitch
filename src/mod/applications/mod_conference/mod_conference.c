@@ -3452,6 +3452,7 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 	}
 
 	if (conference == NULL) {
+		switch_mutex_lock(globals.hash_mutex);
 		for (hi = switch_hash_first(NULL, globals.conference_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			conference = (conference_obj_t *) val;
@@ -3471,6 +3472,7 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 				}
 			}
 		}
+		switch_mutex_unlock(globals.hash_mutex);
 	} else {
 		count++;
 		if (pretty) {
@@ -3630,6 +3632,7 @@ static switch_status_t conf_api_sub_xml_list(conference_obj_t *conference, switc
 	switch_assert(x_conferences);
 	
 	if (conference == NULL) {
+		switch_mutex_lock(globals.hash_mutex);
 		for (hi = switch_hash_first(NULL, globals.conference_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			conference = (conference_obj_t *) val;
@@ -3641,6 +3644,7 @@ static switch_status_t conf_api_sub_xml_list(conference_obj_t *conference, switc
 			conference_xlist(conference, x_conference, off);
 
 		}
+		switch_mutex_unlock(globals.hash_mutex);
 	} else {
 		x_conference = switch_xml_add_child_d(x_conferences, "conference", off++);
 		switch_assert(conference);
@@ -6088,7 +6092,9 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	switch_mutex_init(&conference->flag_mutex, SWITCH_MUTEX_NESTED, conference->pool);
 	switch_thread_rwlock_create(&conference->rwlock, conference->pool);
 	switch_mutex_init(&conference->member_mutex, SWITCH_MUTEX_NESTED, conference->pool);
+	switch_mutex_lock(globals.hash_mutex);
 	switch_core_hash_insert(globals.conference_hash, conference->name, conference);
+	switch_mutex_unlock(globals.hash_mutex);
 
  end:
 
