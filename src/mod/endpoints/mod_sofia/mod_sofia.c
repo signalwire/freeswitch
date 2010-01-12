@@ -2852,8 +2852,8 @@ SWITCH_STANDARD_API(sofia_function)
 		"--------------------------------------------------------------------------------\n"
 		"sofia help\n"
 		"sofia profile <profile_name> [[start|stop|restart|rescan] [reloadxml]|flush_inbound_reg [<call_id>] [reboot]|[register|unregister] [<gateway name>|all]|killgw <gateway name>|[stun-auto-disable|stun-enabled] [true|false]]|siptrace [on|off]\n"
-		"sofia status profile <name> [ reg <contact str> ] | [ pres <pres str> ] | [ user <user@domain> ]\n"
-		"sofia status gateway <name>\n"
+		"sofia status|xmlstatus profile <name> [ reg <contact str> ] | [ pres <pres str> ] | [ user <user@domain> ]\n"
+		"sofia status|xmlstatus gateway <name>\n"
 		"sofia loglevel <all|default|tport|iptsec|nea|nta|nth_client|nth_server|nua|soa|sresolv|stun> [0-9]\n"
 		"--------------------------------------------------------------------------------\n";
 
@@ -3924,6 +3924,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	SWITCH_ADD_API(api_interface, "sofia_gateway_data", "Get data from a sofia gateway", sofia_gateway_data_function, "<gateway_name> [ivar|ovar|var] <name>");
 	switch_console_set_complete("add sofia help");
 	switch_console_set_complete("add sofia status");
+	switch_console_set_complete("add sofia xmlstatus");
 	switch_console_set_complete("add sofia loglevel");
 	switch_console_set_complete("add sofia profile");
 	switch_console_set_complete("add sofia profile restart all");
@@ -3942,6 +3943,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	switch_console_set_complete("add sofia status profile ::sofia::list_profiles");
 	switch_console_set_complete("add sofia status gateway ::sofia::list_gateways");
+	switch_console_set_complete("add sofia xmlstatus profile ::sofia::list_profiles");
+	switch_console_set_complete("add sofia xmlstatus gateway ::sofia::list_gateways");
 
 	switch_console_add_complete_func("::sofia::list_profiles", list_profiles);
 	switch_console_add_complete_func("::sofia::list_gateways", list_gateways);
