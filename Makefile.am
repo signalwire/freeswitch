@@ -417,7 +417,7 @@ samples-conf:
 samples-htdocs: 
 	test -d $(DESTDIR)$(htdocsdir) || $(mkinstalldirs) $(DESTDIR)$(htdocsdir)
 	for htdocsfile in `find htdocs -name \* | grep -v .svn` ; do \
-		dir=`echo $$htdocsfile | sed -e 's|/[^/]*$$||'`; \
+		dir=`echo $$htdocsfile | sed -e 's|/[^/]*$$||' | sed -e 's|^htdocs/||'`; \
 		filename=`echo $$htdocsfile | sed -e 's|^.*/||'`; \
 		test -d $(DESTDIR)$(htdocsdir)/$$dir || $(mkinstalldirs) $(DESTDIR)$(htdocsdir)/$$dir ; \
 		test -f $(DESTDIR)$(htdocsdir)/$$dir/$$filename || $(INSTALL) -m 644 $$dir/$$filename $(DESTDIR)$(htdocsdir)/$$dir 2>/dev/null;  \
