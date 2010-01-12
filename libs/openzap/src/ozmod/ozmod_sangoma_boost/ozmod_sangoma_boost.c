@@ -189,7 +189,7 @@ static zap_channel_t *find_zchan(zap_span_t *span, sangomabc_short_event_t *even
 				break;
 			} else {
 				zchan = NULL;
-				zap_log(ZAP_LOG_ERROR, "Channel %d:%d ~ %d:%d is already in use.\n",
+				zap_log(ZAP_LOG_DEBUG, "Channel %d:%d ~ %d:%d is already in use.\n",
 						span->channels[i]->span_id,
 						span->channels[i]->chan_id,
 						span->channels[i]->physical_span_id,
@@ -736,6 +736,8 @@ static void handle_call_answer(zap_span_t *span, sangomabc_connection_t *mcon, s
 	}
 }
 
+static __inline__ void advance_chan_states(zap_channel_t *zchan);
+
 /**
  * \brief Handler for call start event
  * \param span Span where event was fired
@@ -747,10 +749,19 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 	zap_channel_t *zchan;
 
 	if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 0))) {
-		goto error;
+		if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 1))) {
+			zap_log(ZAP_LOG_CRIT, "START CANT FIND CHAN %d:%d AT ALL\n", event->span+1,event->chan+1);
+			goto error;
+		}
+		advance_chan_states(zchan);
+		if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 0))) {
+			zap_log(ZAP_LOG_CRIT, "START CANT FIND CHAN %d:%d EVEN AFTER STATE ADVANCE\n", event->span+1,event->chan+1);
+			goto error;
+		}
 	}
 
 	if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_CRIT, "START CANT OPEN CHAN %d:%d\n", event->span+1,event->chan+1);
 		goto error;
 	}
 	
@@ -788,8 +799,9 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 	return;
 
  error:
-
-	zap_log(ZAP_LOG_CRIT, "START CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
+	if (!zchan) {
+		zap_log(ZAP_LOG_CRIT, "START CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
+	}
 
 	sangomabc_exec_command(mcon,
 					   event->span,
@@ -1123,6 +1135,17 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	default:
 		break;
 	}
+}
+
+static __inline__ void advance_chan_states(zap_channel_t *zchan)
+{
+	zap_mutex_lock(zchan->mutex);
+	while (zap_test_flag(zchan, ZAP_CHANNEL_STATE_CHANGE)) {
+		zap_clear_flag(zchan, ZAP_CHANNEL_STATE_CHANGE);
+		state_advance(zchan);
+		zap_channel_complete_state(zchan);
+	}
+	zap_mutex_unlock(zchan->mutex);
 }
 
 /**
