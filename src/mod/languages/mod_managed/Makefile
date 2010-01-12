@@ -20,12 +20,12 @@ reswig: swigclean freeswitch_wrap.cxx
 local_depend:
 	cd managed && $(MAKE)
 
-local_install: $(DESTDIR)$(MODINSTDIR)/mod_managed.$(LIBTOOL_LIB_EXTEN)
-	cd managed && $(MAKE) INSTALL="$(LTINSTALL)" MODINSTDIR=$(MODINSTDIR) DESTDIR=$(DESTDIR) install
+local_install: $(DESTDIR)$(modulesdir)/mod_managed.$(LIBTOOL_LIB_EXTEN)
+	cd managed && $(MAKE) INSTALL="$(LTINSTALL)" MODINSTDIR=$(modulesdir) DESTDIR=$(DESTDIR) install
 
 local_uninstall:
-	rm -fr $(MODINSTDIR)/mod_managed.so
-	cd managed && $(MAKE) UNINSTALL="$(LTUNINSTALL)" MODINSTDIR=$(MODINSTDIR) uninstall
+	rm -fr $(DESTDIR)$(modulesdir)/mod_managed.so
+	cd managed && $(MAKE) UNINSTALL="$(LTUNINSTALL)" MODINSTDIR=$(modulesdir) uninstall
 
 local_clean:
 	cd managed && $(MAKE) clean
