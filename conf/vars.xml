@@ -84,6 +84,41 @@
        H263-1998        - H.263-1998 Video
        H263-2000        - H.263-2000 Video
        H264             - H.264 Video
+       
+       RTP Dynamic Payload Numbers currently used in FreeSWITCH and what for.
+
+       96  - AMR
+       97  - iLBC (30)
+       98  - iLBC (20)
+       99  - Speex 8kHz, 16kHz, 32kHz
+       100 -
+       101 - telephone-event
+       102 -
+       103 - 
+       104 - 
+       105 - 
+       106 - BV16
+       107 - G722.1 (16kHz)
+       108 -
+       109 -
+       110 -
+       111 -
+       112 -
+       113 -
+       114 - CELT 32kHz, 48kHz
+       115 - G722.1C (32kHz)
+       116 -
+       117 - SILK 8kHz
+       118 - SILK 12kHz
+       119 - SILK 16kHz
+       120 - SILK 24kHz
+       121 - AAL2-G726-40 && G726-40
+       122 - AAL2-G726-32 && G726-32
+       123 - AAL2-G726-24 && G726-24
+       124 - AAL2-G726-16 && G726-16
+       125 - 
+       126 -
+       127 - BV32
 
   -->
   <X-PRE-PROCESS cmd="set" data="global_codec_prefs=G7221@32000h,G7221@16000h,G722,PCMU,PCMA,GSM"/>
