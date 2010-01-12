@@ -89,6 +89,10 @@ SWITCH_DECLARE(void) switch_nat_reinit(void);
 */
 SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t *external_port, switch_bool_t sticky);
 /*!
+ \brief Has the NAT subsystem been initialized
+*/
+SWITCH_DECLARE(switch_bool_t) switch_nat_is_initialized(void);
+/*!
  \brief Deletes a NAT mapping
  \param proto Protocol
 */

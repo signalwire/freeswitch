@@ -2399,6 +2399,66 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_directories_storage_dir_get(void * j
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_directories_recordings_dir_set(void * jarg1, char * jarg2) {
+  switch_directories *arg1 = (switch_directories *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_directories *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg1->recordings_dir) delete [] arg1->recordings_dir;
+    if (arg2) {
+      arg1->recordings_dir = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->recordings_dir, (const char *)arg2);
+    } else {
+      arg1->recordings_dir = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_directories_recordings_dir_get(void * jarg1) {
+  char * jresult ;
+  switch_directories *arg1 = (switch_directories *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_directories *)jarg1; 
+  result = (char *) ((arg1)->recordings_dir);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_directories_sounds_dir_set(void * jarg1, char * jarg2) {
+  switch_directories *arg1 = (switch_directories *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_directories *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg1->sounds_dir) delete [] arg1->sounds_dir;
+    if (arg2) {
+      arg1->sounds_dir = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->sounds_dir, (const char *)arg2);
+    } else {
+      arg1->sounds_dir = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_directories_sounds_dir_get(void * jarg1) {
+  char * jresult ;
+  switch_directories *arg1 = (switch_directories *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_directories *)jarg1; 
+  result = (char *) ((arg1)->sounds_dir);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_directories() {
   void * jresult ;
   switch_directories *result = 0 ;

@@ -5490,6 +5490,18 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_directories_storage_dir_get")]
   public static extern string switch_directories_storage_dir_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_directories_recordings_dir_set")]
+  public static extern void switch_directories_recordings_dir_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_directories_recordings_dir_get")]
+  public static extern string switch_directories_recordings_dir_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_directories_sounds_dir_set")]
+  public static extern void switch_directories_sounds_dir_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_directories_sounds_dir_get")]
+  public static extern string switch_directories_sounds_dir_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_directories")]
   public static extern IntPtr new_switch_directories();
 
@@ -21594,6 +21606,26 @@ public class switch_directories : IDisposable {
     } 
   }
 
+  public string recordings_dir {
+    set {
+      freeswitchPINVOKE.switch_directories_recordings_dir_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_directories_recordings_dir_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public string sounds_dir {
+    set {
+      freeswitchPINVOKE.switch_directories_sounds_dir_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_directories_sounds_dir_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public switch_directories() : this(freeswitchPINVOKE.new_switch_directories(), true) {
   }
 
@@ -22473,6 +22505,7 @@ public enum switch_event_types_t {
   SWITCH_EVENT_RECORD_STOP,
   SWITCH_EVENT_CALL_UPDATE,
   SWITCH_EVENT_FAILURE,
+  SWITCH_EVENT_SOCKET_DATA,
   SWITCH_EVENT_ALL
 }
 
@@ -26256,7 +26289,8 @@ public enum switch_session_ctl_t {
   SCSC_CANCEL_SHUTDOWN,
   SCSC_SEND_SIGHUP,
   SCSC_DEBUG_LEVEL,
-  SCSC_FLUSH_DB_HANDLES
+  SCSC_FLUSH_DB_HANDLES,
+  SCSC_SHUTDOWN_NOW
 }
 
 }

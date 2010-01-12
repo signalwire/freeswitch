@@ -63,6 +63,7 @@ typedef struct {
 static nat_globals_perm_t nat_globals_perm;
 
 static switch_bool_t first_init = SWITCH_TRUE;
+static switch_bool_t initialized = SWITCH_FALSE;
 
 static switch_status_t get_upnp_pubaddr(char *pub_addr)
 {
@@ -414,6 +415,7 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No PMP or UPnP NAT devices detected!\n");
 	}
 	first_init = SWITCH_FALSE;
+	initialized = SWITCH_TRUE;
 }
 
 static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t *external_port)
@@ -630,7 +632,6 @@ SWITCH_DECLARE(void) switch_nat_republish(void)
 	if (!(natxml = switch_xml_parse_str_dup(stream.data))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to parse XML: %s\n", (char *) stream.data);
 		switch_safe_free(stream.data);
-		return;
 	}
 	
 	/* iterate the xml and publish the mappings */
@@ -677,6 +678,10 @@ SWITCH_DECLARE(char *) switch_nat_status(void)
 	return stream.data; /* caller frees */
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_nat_is_initialized(void)
+{
+	return initialized;
+}
 
 SWITCH_DECLARE(void) switch_nat_shutdown(void)
 {

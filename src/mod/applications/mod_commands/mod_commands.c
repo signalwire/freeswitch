@@ -112,6 +112,11 @@ SWITCH_STANDARD_API(nat_map_function)
 	if (!cmd) {
 		goto error;
 	}
+	
+	if (!switch_nat_is_initialized()) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "nat_map API called while NAT not initialized\n");
+		goto error;
+	}
 
 	mydata = strdup(cmd);
 	switch_assert(mydata);
