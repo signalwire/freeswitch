@@ -2827,9 +2827,7 @@ static zap_status_t load_config(void)
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
 				configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_B, name, number);
-				if (zap_group_add_channels(group_name, span, val) != ZAP_SUCCESS) {
-					zap_log(ZAP_LOG_ERROR, "Failed to add channels (%d:%s) to group\n", number, val);
-				}
+				zap_group_add_channels(group_name, span, val);
 			} else if (!strcasecmp(var, "d-channel")) {
 				if (d) {
 					zap_log(ZAP_LOG_WARNING, "ignoring extra d-channel\n");
@@ -2855,7 +2853,7 @@ static zap_status_t load_config(void)
 					len = sizeof(group_name) - 1;
 					zap_log(ZAP_LOG_WARNING, "Truncating group name %s to %zd length\n", val, len);
 				}
-				zap_copy_string(group_name, val, len);
+				memcpy(group_name, val, len);
 				group_name[len] = '\0';
 			} else {
 				zap_log(ZAP_LOG_ERROR, "unknown span variable '%s'\n", var);

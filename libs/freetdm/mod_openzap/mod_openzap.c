@@ -1103,7 +1103,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (zstatus == ZAP_SUCCESS && group) {
 			group_id = group->group_id;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing span\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing zap span or group: %s\n", span_name);
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
 	}
