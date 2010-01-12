@@ -309,7 +309,7 @@ OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 
 		waitms.tv_nsec = 1000*(t.tv_usec + (1000 * ( ms % 1000 )));
 
-		if (waitms.tv_nsec > ONE_BILLION) {
+		if (waitms.tv_nsec >= ONE_BILLION) {
 				waitms.tv_sec++;
 				waitms.tv_nsec-= ONE_BILLION;
 		}
@@ -322,6 +322,7 @@ OZ_DECLARE(zap_status_t) zap_condition_wait(zap_condition_t *condition, int ms)
 		if (res == ETIMEDOUT) {
 			return ZAP_TIMEOUT;
 		}
+
 		zap_log(ZAP_LOG_CRIT,"pthread_cond_timedwait failed (%d)\n", res);
 		return ZAP_FAIL;
 	}
