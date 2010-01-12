@@ -692,7 +692,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 		switch_core_codec_add_implementation(pool,
 											 codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 127,						/* the IANA code number */
+											 124,						/* the IANA code number */
 											 "G726-16",					/* the IANA code name */
 											 NULL,						/* default fmtp to send (can be overridden by the init function) */
 											 8000,						/* samples transferred per second */
@@ -765,7 +765,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 		switch_core_codec_add_implementation(pool,
 											 codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 2,							/* the IANA code number */
+											 122,						/* the IANA code number */
 											 "AAL2-G726-32",			/* the IANA code name */
 											 NULL,						/* default fmtp to send (can be overridden by the init function) */
 											 8000,						/* samples transferred per second */
@@ -787,7 +787,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 		switch_core_codec_add_implementation(pool,
 											 codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 2,							/* the IANA code number */
+											 122,						/* the IANA code number */
 											 "G726-32",					/* the IANA code name */
 											 NULL,						/* default fmtp to send (can be overridden by the init function) */
 											 8000,						/* samples transferred per second */
@@ -812,7 +812,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 		switch_core_codec_add_implementation(pool,
 											 codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 122,						/* the IANA code number */
+											 121,						/* the IANA code number */
 											 "AAL2-G726-40",			/* the IANA code name */
 											 NULL,						/* default fmtp to send (can be overridden by the init function) */
 											 8000,						/* samples transferred per second */
@@ -834,7 +834,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 		switch_core_codec_add_implementation(pool,
 											 codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 125,						/* the IANA code number */
+											 121,						/* the IANA code number */
 											 "G726-40",					/* the IANA code name */
 											 NULL,						/* default fmtp to send (can be overridden by the init function) */
 											 8000,						/* samples transferred per second */
