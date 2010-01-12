@@ -537,7 +537,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	switch_time_t ts = 0, last = 0;
 	int fwd_errs = 0, rev_errs = 0;
 
-#ifdef HAVE_SCHED_SETAFFINITY
+#ifdef HAVE_CPU_SET_MACROS
 	cpu_set_t set;
 	CPU_ZERO(&set);
 	CPU_SET(0, &set);
