@@ -322,6 +322,10 @@ scripts/fsxs: scripts/fsxs.in
 ##
 ## misc
 ##
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = build/freeswitch.pc
+
 $(switch_builddir)/modules.conf:
 	if test -f $@; then touch $@; else cp $(switch_srcdir)/build/modules.conf.in $@ ;fi
 

@@ -1,0 +1,23 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+libexecdir=@libexecdir@
+includedir=@includedir@
+modulesdir=@modulesdir@
+runtimedir=@runtimedir@
+logfiledir=@logfiledir@
+sysconfdir=@sysconfdir@
+dbdir=@dbdir@
+htdocsdir=@htdocsdir@
+localstatedir=@localstatedir@
+grammardir=@grammardir@
+soundsdir=@soundsdir@
+scriptdir=@scriptdir@
+recordingsdir=@recordingsdir@
+bindir=@bindir@
+
+Name: freeswitch
+Version: @PACKAGE_VERSION@
+Description: FreeSWITCH open source telephony platform
+Libs: -L${libdir} -lfreeswitch
+Cflags: -I${includedir}
