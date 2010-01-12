@@ -730,6 +730,7 @@ int main(int argc, char *argv[])
 
 	apr_pool_create(&pool, NULL);
 	
+	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.run_dir, SWITCH_DEFAULT_DIR_PERMS, pool);
 
 	if (switch_file_open(&fd,
 						 pid_path,
