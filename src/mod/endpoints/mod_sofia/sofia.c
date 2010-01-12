@@ -5420,7 +5420,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		} else {
 			int network_ip_is_proxy = 0;
 			/* Check if network_ip is a proxy allowed to send us calls */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d acls to check for proxy\n", profile->proxy_acl_count);
+			if (profile->proxy_acl_count) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d acls to check for proxy\n", profile->proxy_acl_count);
+			}
 			
 			for (x = 0; x < profile->proxy_acl_count; x++) {
 				last_acl = profile->proxy_acl[x];
@@ -5438,9 +5440,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			 * if network_ip is a proxy allowed to send calls, check for auth
 			 * ip header and see if it matches against the inbound acl
 			 */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "network ip is a proxy [%d]\n", network_ip_is_proxy);
-			
 			if (network_ip_is_proxy) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "network ip is a proxy\n");
+				
 				for (un = sip->sip_unknown; un; un = un->un_next) {
 					if (!strcasecmp(un->un_name, "X-AUTH-IP")) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
