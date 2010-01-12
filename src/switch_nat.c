@@ -632,6 +632,7 @@ SWITCH_DECLARE(void) switch_nat_republish(void)
 	if (!(natxml = switch_xml_parse_str_dup(stream.data))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to parse XML: %s\n", (char *) stream.data);
 		switch_safe_free(stream.data);
+		return;
 	}
 	
 	/* iterate the xml and publish the mappings */
