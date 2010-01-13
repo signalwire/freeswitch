@@ -181,13 +181,31 @@ static void calibrate_clock(void)
 {
 	int x;
 	switch_interval_time_t avg, val = 1000, want = 1000;
-	int over = 0, under = 0, good = 0, step = 50;
+	int over = 0, under = 0, good = 0, step = 50, diff = 0;
+
+#ifdef HAVE_CLOCK_GETRES
+	struct timespec ts;
+	clock_getres(CLOCK_MONOTONIC, &ts);
+	if (ts.tv_nsec / 1000 > 1500) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+						  "Timer resolution of %ld microseconds detected do you have your kernel timer set to higher than 1khz?\n", ts.tv_nsec / 1000);
+		return;
+	}
+#endif
 
 	for (x = 0; x < 500; x++) {
 		avg = average_time(val, 100);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Test: %ld Average: %ld Step: %d\n", val, avg, step);
 
-		if (abs((int)(want - avg)) <= 2) {
+		diff = abs((int)(want - avg));
+		if (diff > 1500) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+							  "Abnormally large timer gap detected, do you have your kernel timer set to higher than 1khz?\n");
+			return;
+		}
+
+
+		if (diff <= 2) {
 			under = over = 0;
 			if (++good > 10) {
 				break;
