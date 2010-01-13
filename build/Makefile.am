@@ -1,4 +1,4 @@
-MK=`echo $(MAKE) | awk '{printf "%5s\n", $$0}' `
+MK=`echo $(MAKE) | $(AWK) '{printf "%5s\n", $$0}' `
 
 all:
 	@echo " +---------- FreeSWITCH Build Complete ----------+"
