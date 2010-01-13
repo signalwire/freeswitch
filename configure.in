@@ -953,7 +953,7 @@ AC_OUTPUT
 ##
 
 echo
-echo "-------------------------- FreeSWITCH configuration ------------------------"
+echo "-------------------------- FreeSWITCH configuration --------------------------"
 echo ""
 echo "  Locations:"
 echo "      Selected layout: ${layout_name}"
@@ -967,4 +967,4 @@ echo "      sysconfdir:      ${sysconfdir}"
 echo "      runtimedir:      ${runtimedir}"
 echo "      logfiledir:      ${logfiledir}"
 echo ""
-echo "----------------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
