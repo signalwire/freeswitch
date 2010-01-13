@@ -176,7 +176,7 @@ static switch_interval_time_t average_time(switch_interval_time_t t, int reps)
 	
 }
 
-#define calc_step() if ((step - 10) > 10) step -= 10; else if (step > 1) step--
+#define calc_step() if (step > 11) step -= 10; else if (step > 1) step--
 static void calibrate_clock(void)
 {
 	int x;
@@ -187,8 +187,10 @@ static void calibrate_clock(void)
 	struct timespec ts;
 	clock_getres(CLOCK_MONOTONIC, &ts);
 	if (ts.tv_nsec / 1000 > 1500) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-						  "Timer resolution of %ld microseconds detected do you have your kernel timer set to higher than 1khz?\n", ts.tv_nsec / 1000);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+						"Timer resolution of %ld microseconds detected!\n"
+						"Do you have your kernel timer set to higher than 1khz? You may experience audio problems.\n", ts.tv_nsec / 1000);
+		sleep(5);
 		return;
 	}
 #endif
@@ -200,7 +202,9 @@ static void calibrate_clock(void)
 		diff = abs((int)(want - avg));
 		if (diff > 1500) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-							  "Abnormally large timer gap detected, do you have your kernel timer set to higher than 1khz?\n");
+							  "Abnormally large timer gap %d detected!\n"
+							  "Do you have your kernel timer set to higher than 1khz? You may experience audio problems.\n", diff);
+			sleep(5);
 			return;
 		}
 
@@ -211,17 +215,15 @@ static void calibrate_clock(void)
 				break;
 			}
 		} else if (avg > want) {
+			if (under) {calc_step();}
 			under = 0;
 			val -= step;
-			if (++over > 3) {
-				calc_step();
-			}
+			over++;
 		} else if (avg < want) {
+			if (over) {calc_step();}
 			over = 0;
 			val += step;
-			if (++under > 3) {
-				calc_step();
-			}
+			under++;
 		}
 	}
 
