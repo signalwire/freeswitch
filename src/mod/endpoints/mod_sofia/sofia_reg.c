@@ -458,6 +458,8 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const cha
 
 	if (switch_stristr("snom", user_agent)) {
 		event = "check-sync;reboot=true";
+	} else if (switch_stristr("spa", user_agent)) {
+		event = "reboot";
 	} else if (switch_stristr("linksys", user_agent)) {
 		event = "reboot_now";
 	}
