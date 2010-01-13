@@ -3945,6 +3945,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia status profile ::sofia::list_profiles reg");
 	switch_console_set_complete("add sofia status gateway ::sofia::list_gateways");
 	switch_console_set_complete("add sofia xmlstatus profile ::sofia::list_profiles");
+	switch_console_set_complete("add sofia xmlstatus profile ::sofia::list_profiles reg");
 	switch_console_set_complete("add sofia xmlstatus gateway ::sofia::list_gateways");
 
 	switch_console_add_complete_func("::sofia::list_profiles", list_profiles);
