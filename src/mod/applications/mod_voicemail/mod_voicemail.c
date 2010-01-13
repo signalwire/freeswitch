@@ -1525,7 +1525,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 
 				TRY_CODE(switch_ivr_read(session, 0, sizeof(vm_cc), macro_buf, NULL, vm_cc, sizeof(vm_cc), profile->digit_timeout, profile->terminator_key));
 				
-				cmd = switch_core_session_sprintf(session, "%s@%s %s %s %s", vm_cc, cbt->domain, new_file_path, cbt->cid_number, cbt->cid_name);
+				cmd = switch_core_session_sprintf(session, "%s@%s %s %s '%s'", vm_cc, cbt->domain, new_file_path, cbt->cid_number, cbt->cid_name);
 
 				if (voicemail_inject(cmd) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
@@ -2625,10 +2625,11 @@ static switch_status_t voicemail_inject(const char *data)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int isgroup = 0, isall = 0;
 	int argc = 0;
-	char *argv[5] = { 0 };
+	char *argv[6] = { 0 };
 	char *box, *path, *cid_num, *cid_name;
 	switch_memory_pool_t *pool = NULL;
 	char *forwarded_by = NULL;
+	char *read_flags = "B";
 
 	if (zstr(data)) {
 		status = SWITCH_STATUS_FALSE;
@@ -2649,6 +2650,9 @@ static switch_status_t voicemail_inject(const char *data)
 	cid_num = argv[2] ? argv[2] : "anonymous";
 	cid_name = argv[3] ? argv[3] : "anonymous";
 	forwarded_by = argv[4];
+	if (!zstr(argv[5])) {
+		read_flags = argv[5];
+	}
 
 	user = box;
 	
@@ -2736,14 +2740,14 @@ static switch_status_t voicemail_inject(const char *data)
 
 								if (switch_xml_locate_user_in_domain(uname, x_domain, &ux, NULL) == SWITCH_STATUS_SUCCESS) {
 									switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
-									status = deliver_vm(profile, ux, domain, path, 0, "B", my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE);
+									status = deliver_vm(profile, ux, domain, path, 0, read_flags, my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE);
 									switch_event_destroy(&my_params);
 								}
 								continue;
 							}
 							
 							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
-							status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE);
+							status = deliver_vm(profile, ut, domain, path, 0, read_flags, my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE);
 							switch_event_destroy(&my_params);
 						}
 					}
@@ -2764,7 +2768,7 @@ static switch_status_t voicemail_inject(const char *data)
 							}
 
 							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
-							status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE);
+							status = deliver_vm(profile, ut, domain, path, 0, read_flags, my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE);
 							switch_event_destroy(&my_params);
 						}
 					}
@@ -2776,7 +2780,7 @@ static switch_status_t voicemail_inject(const char *data)
 
 			if ((status = switch_xml_locate_user_in_domain(user, x_domain, &ut, &x_group)) == SWITCH_STATUS_SUCCESS) {
 				switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
-				status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE);
+				status = deliver_vm(profile, ut, domain, path, 0, read_flags, my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE);
 				switch_event_destroy(&my_params);
 			} else {
 				status = SWITCH_STATUS_FALSE;
@@ -3116,7 +3120,8 @@ greet_key_press:
 		switch_event_destroy(&vars);
 		if (status == SWITCH_STATUS_SUCCESS) {
 			if ((vm_cc = switch_channel_get_variable(channel, "vm_cc"))) {
-				char *cmd = switch_core_session_sprintf(session, "%s %s %s %s %s@%s", vm_cc, file_path, caller_id_number, caller_id_name, id, domain_name);
+				char *cmd = switch_core_session_sprintf(session, "%s %s %s %s %s@%s %s", 
+														vm_cc, file_path, caller_id_number, caller_id_name, id, domain_name, read_flags);
 				
 				if (voicemail_inject(cmd) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
