@@ -257,10 +257,10 @@ int nua_subscribe_server_preprocess(nua_server_request_t *sr)
   }
   else {
     /* Refresh existing subscription */
-    if (su_strmatch(event, "refer"))
+	  if (su_strmatch(event, "refer")){
       expires = NH_PGET(nh, refer_expires);
 
-    SR_STATUS1(sr, SIP_200_OK);
+	  SR_STATUS1(sr, SIP_200_OK);}
   }
 
   nu = nua_dialog_usage_private(du);
