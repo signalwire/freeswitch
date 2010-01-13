@@ -195,7 +195,7 @@ static void calibrate_clock(void)
 
 	for (x = 0; x < 500; x++) {
 		avg = average_time(val, 100);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Test: %ld Average: %ld Step: %d\n", val, avg, step);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Test: %ld Average: %ld Step: %d\n", (long)val, (long)avg, step);
 
 		diff = abs((int)(want - avg));
 		if (diff > 1500) {
