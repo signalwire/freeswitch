@@ -248,7 +248,8 @@ static char vm_sql[] =
 	"   file_path     VARCHAR(255),\n" 
 	"   message_len   INTEGER,\n" 
 	"   flags         VARCHAR(255),\n" 
-	"   read_flags    VARCHAR(255)\n" 
+	"   read_flags    VARCHAR(255),\n" 
+	"   forwarded_by  VARCHAR(255)\n" 
 	");\n";
 
 static char vm_pref_sql[] =
@@ -267,6 +268,7 @@ static char *vm_index_list[] = {
 	"create index voicemail_msgs_idx4 on voicemail_msgs(uuid)",
 	"create index voicemail_msgs_idx5 on voicemail_msgs(in_folder)",
 	"create index voicemail_msgs_idx6 on voicemail_msgs(read_flags)",
+	"create index voicemail_msgs_idx7 on voicemail_msgs(forwarded_by)",
 	"create index voicemail_prefs_idx1 on voicemail_prefs(username)",
 	"create index voicemail_prefs_idx2 on voicemail_prefs(domain)",
 	NULL
@@ -299,7 +301,7 @@ static void destroy_profile(const char *profile_name, switch_bool_t block)
 		if (switch_thread_rwlock_trywrlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
 			/* Lock failed, set the destroy flag so it'll be destroyed whenever its not in use anymore */
 			switch_set_flag(profile, PFLAG_DESTROY);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] Profile is in use, memory will be freed whenever its not longer in use\n", profile->name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] Profile is in use, memory will be freed whenever its no longer in use\n", profile->name);
 			return;
 		}
 	}
@@ -689,7 +691,9 @@ static vm_profile_t * load_profile(const char *profile_name)
 			goto end;
 		}
 		
-		switch_cache_db_test_reactive(dbh, "select count(message_len) from voicemail_msgs", "drop table voicemail_msgs", vm_sql);
+		switch_cache_db_test_reactive(dbh, "select count(forwarded_by) from voicemail_msgs", NULL, "alter table voicemail_msgs add forwarded_by varchar(255)");
+		switch_cache_db_test_reactive(dbh, "select count(forwarded_by) from voicemail_msgs", "drop table voicemail_msgs", vm_sql);
+		
 		switch_cache_db_test_reactive(dbh, "select count(username) from voicemail_prefs", "drop table voicemail_prefs", vm_pref_sql);
 		switch_cache_db_test_reactive(dbh, "select count(password) from voicemail_prefs", NULL, "alter table voicemail_prefs add password varchar(255)");
 		
@@ -1203,6 +1207,7 @@ struct listen_callback {
 	char message_len[255];
 	char flags[255];
 	char read_flags[255];
+	char forwarded_by[255];
 	char *email;
 	int index;
 	int want;
@@ -1233,6 +1238,7 @@ static int listen_callback(void *pArg, int argc, char **argv, char **columnNames
 	switch_copy_string(cbt->message_len, argv[9], 255);
 	switch_copy_string(cbt->flags, argv[10], 255);
 	switch_copy_string(cbt->read_flags, argv[11], 255);
+	switch_copy_string(cbt->forwarded_by, argv[12], 255);
 
 	return -1;
 }
@@ -2264,16 +2270,17 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 
 
 static switch_status_t deliver_vm(vm_profile_t *profile, 
-								switch_xml_t x_user, 
-								const char *domain_name, 
-								const char *path, 
-								uint32_t message_len,
-								const char *read_flags,
-								switch_event_t *params, 
-								switch_memory_pool_t *pool, 
-								const char *caller_id_name, 
-								const char *caller_id_number,
-								switch_bool_t copy)
+								  switch_xml_t x_user, 
+								  const char *domain_name, 
+								  const char *path, 
+								  uint32_t message_len,
+								  const char *read_flags,
+								  switch_event_t *params, 
+								  switch_memory_pool_t *pool, 
+								  const char *caller_id_name, 
+								  const char *caller_id_number,
+								  const char *forwarded_by,
+								  switch_bool_t copy)
 {
 	char *file_path = NULL, *dir_path = NULL;
 	const char *myid = switch_xml_attr(x_user, "id");
@@ -2413,10 +2420,10 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		switch_event_fire(&message_event);
 
 		usql = switch_mprintf("insert into voicemail_msgs(created_epoch, read_epoch, username, domain, uuid, cid_name, "
-							  "cid_number, in_folder, file_path, message_len, flags, read_flags) "
-							  "values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%u','','%q')", (long) switch_epoch_time_now(NULL),
+							  "cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by) "
+							  "values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%u','','%q','%q')", (long) switch_epoch_time_now(NULL),
 							  myid, domain_name, uuid_str, caller_id_name, caller_id_number,
-							  myfolder, file_path, message_len, read_flags);
+							  myfolder, file_path, message_len, read_flags, switch_str_nil(forwarded_by));
 
 		vm_execute_sql(profile, usql, profile->mutex);
 		switch_safe_free(usql);
@@ -2618,9 +2625,10 @@ static switch_status_t voicemail_inject(const char *data)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int isgroup = 0, isall = 0;
 	int argc = 0;
-	char *argv[4];
+	char *argv[5] = { 0 };
 	char *box, *path, *cid_num, *cid_name;
 	switch_memory_pool_t *pool = NULL;
+	char *forwarded_by = NULL;
 
 	if (zstr(data)) {
 		status = SWITCH_STATUS_FALSE;
@@ -2640,6 +2648,7 @@ static switch_status_t voicemail_inject(const char *data)
 	path = argv[1];
 	cid_num = argv[2] ? argv[2] : "anonymous";
 	cid_name = argv[3] ? argv[3] : "anonymous";
+	forwarded_by = argv[4];
 
 	user = box;
 	
@@ -2695,6 +2704,9 @@ static switch_status_t voicemail_inject(const char *data)
 			}
 		}
 
+		if (forwarded_by) {
+			switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "Forwarded-By", forwarded_by);
+		}
 		switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "domain", domain);
 		switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "purpose", "publish-vm");
 		
@@ -2724,14 +2736,14 @@ static switch_status_t voicemail_inject(const char *data)
 
 								if (switch_xml_locate_user_in_domain(uname, x_domain, &ux, NULL) == SWITCH_STATUS_SUCCESS) {
 									switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
-									status = deliver_vm(profile, ux, domain, path, 0, "B", my_params, pool, cid_name, cid_num, SWITCH_TRUE);
+									status = deliver_vm(profile, ux, domain, path, 0, "B", my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE);
 									switch_event_destroy(&my_params);
 								}
 								continue;
 							}
 							
 							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
-							status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, SWITCH_TRUE);
+							status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE);
 							switch_event_destroy(&my_params);
 						}
 					}
@@ -2752,7 +2764,7 @@ static switch_status_t voicemail_inject(const char *data)
 							}
 
 							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
-							status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, SWITCH_TRUE);
+							status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE);
 							switch_event_destroy(&my_params);
 						}
 					}
@@ -2764,7 +2776,7 @@ static switch_status_t voicemail_inject(const char *data)
 
 			if ((status = switch_xml_locate_user_in_domain(user, x_domain, &ut, &x_group)) == SWITCH_STATUS_SUCCESS) {
 				switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
-				status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, SWITCH_TRUE);
+				status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE);
 				switch_event_destroy(&my_params);
 			} else {
 				status = SWITCH_STATUS_FALSE;
@@ -3100,11 +3112,12 @@ greet_key_press:
 	if (x_domain_root) {
 		switch_channel_get_variables(channel, &vars);
 		status = deliver_vm(profile, x_user, domain_name, file_path, message_len, read_flags, vars, 
-							switch_core_session_get_pool(session), caller_id_name, caller_id_number, SWITCH_FALSE);
+							switch_core_session_get_pool(session), caller_id_name, caller_id_number, NULL, SWITCH_FALSE);
 		switch_event_destroy(&vars);
 		if (status == SWITCH_STATUS_SUCCESS) {
 			if ((vm_cc = switch_channel_get_variable(channel, "vm_cc"))) {
-				char *cmd = switch_core_session_sprintf(session, "%s %s %s %s", vm_cc, file_path, caller_id_number, caller_id_name);
+				char *cmd = switch_core_session_sprintf(session, "%s %s %s %s %s@%s", vm_cc, file_path, caller_id_number, caller_id_name, id, domain_name);
+				
 				if (voicemail_inject(cmd) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
 				} else {
