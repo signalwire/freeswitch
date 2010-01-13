@@ -1,9 +1,9 @@
 # #####################################
 # version check qt
 # #####################################
-contains(QT_VERSION, ^4\.[0-5]\..*) { 
+contains(QT_VERSION, ^4\.[0-4]\..*) {
     message("Cannot build FsGui with Qt version $$QT_VERSION.")
-    error("Use at least Qt 4.6.")
+    error("Use at least Qt 4.5.")
 }
 QT += xml
 TARGET = fscomm
