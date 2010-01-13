@@ -31,6 +31,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * Workaround for missing u_int / u_short types on solaris
+ */
+#if defined(HAVE_LIBPCAP) && defined(__SunOS)
+#define __EXTENSIONS__
+#endif
+
 #include "openzap.h"
 #include "Q931.h"
 #include "Q921.h"

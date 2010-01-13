@@ -280,6 +280,7 @@ extern "C" {
 /* The while(0) below throws a conditional expression is constant warning */
 #pragma warning(disable:4127) 
 #endif
+
 #define zap_set_state_locked_wait(obj, s) 						\
 	do {										\
 		int __safety = 100;							\
@@ -292,17 +293,31 @@ extern "C" {
 		}									\
 	} while(0);
 
-#define zap_locked_wait_for_flag_cleared(obj, flag, time) 						\
+#define zap_wait_for_flag_cleared(obj, flag, time) 					\
 	do {										\
 		int __safety = time;							\
-		while(__safety-- && zap_test_flag(obj, flag)) {	\
+		while(__safety-- && zap_test_flag(obj, flag)) { 			\
+			zap_mutex_unlock(obj->mutex);					\
 			zap_sleep(10);							\
+			zap_mutex_lock(obj->mutex);					\
 		}									\
 		if(!__safety) {								\
-			zap_log(ZAP_LOG_CRIT, "flag %d was never cleared\n", flag);		\
+			zap_log(ZAP_LOG_CRIT, "flag %d was never cleared\n", flag);	\
 		}									\
 	} while(0);
 
+#define zap_set_state_wait(obj, s) 						\
+	do {										\
+		zap_channel_set_state(obj, s, 0);					\
+		zap_wait_for_flag_cleared(obj, ZAP_CHANNEL_STATE_CHANGE, 100);     \
+	} while(0);
+
+
+typedef enum {
+	ZAP_STATE_CHANGE_FAIL,
+	ZAP_STATE_CHANGE_SUCCESS,
+	ZAP_STATE_CHANGE_SAME,
+} zap_state_change_result_t;
 
 #define zap_set_state_r(obj, s, l, r) if ( obj->state == s ) {	\
 		zap_log(ZAP_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(obj->state), zap_channel_state2str(s)); r = ZAP_STATE_CHANGE_SAME;	\
@@ -323,12 +338,6 @@ extern "C" {
   \command flags the flags to copy
 */
 #define zap_copy_flags(dest, src, flags) (dest)->flags &= ~(flags);	(dest)->flags |= ((src)->flags & (flags))
-
-typedef enum {
-	ZAP_STATE_CHANGE_FAIL,
-	ZAP_STATE_CHANGE_SUCCESS,
-	ZAP_STATE_CHANGE_SAME,
-} zap_state_change_result_t;
 
 struct zap_stream_handle {
 	zap_stream_handle_write_function_t write_function;
