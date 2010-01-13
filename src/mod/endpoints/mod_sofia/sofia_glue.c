@@ -3934,9 +3934,6 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			"create index ssa_profile_name on sip_shared_appearance_subscriptions (profile_name)",
 			"create index ssa_aor on sip_shared_appearance_subscriptions (aor)",
 			"create index ssd_profile_name on sip_shared_appearance_dialogs (profile_name)",
-			"create index ssd_contact on sip_shared_appearance_dialogs (contact)",
-			"create index ssd_presence_id on sip_shared_appearance_dialogs (presence_id)",
-			"create index ssd_presence_data on sip_shared_appearance_dialogs (presence_data)",
 			"create index ssd_hostname on sip_shared_appearance_dialogs (hostname)",
 			"create index ssd_contact_str on sip_shared_appearance_dialogs (contact_str)",
 			"create index ssd_call_id on sip_shared_appearance_dialogs (call_id)",
@@ -3963,9 +3960,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 								  "like '%%' and mwi_user  like '%%' and mwi_host like '%%'", 
 								  mod_sofia_globals.hostname);
 
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_registrations", NULL);
-			switch_odbc_handle_exec(odbc_dbh, reg_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_registrations", NULL, NULL);
+			switch_odbc_handle_exec(odbc_dbh, reg_sql, NULL, NULL);
 		}
 
 
@@ -3973,7 +3970,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
 			char *test2 = switch_mprintf("%s;%s", test_sql, test_sql);
 
-			if (switch_odbc_handle_exec(odbc_dbh, test2, NULL) != SWITCH_ODBC_SUCCESS) {
+			if (switch_odbc_handle_exec(odbc_dbh, test2, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "GREAT SCOTT!!! Cannot execute batched statements!\n"
 								  "If you are using mysql, make sure you are using MYODBC 3.51.18 or higher and enable FLAG_MULTI_STATEMENTS\n");
 				sofia_clear_pflag(profile, PFLAG_SQL_IN_TRANS);
@@ -3988,55 +3985,55 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' and network_ip like '%%' and network_port like '%%'", 
 								  mod_sofia_globals.hostname);
 
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_subscriptions", NULL);
-			switch_odbc_handle_exec(odbc_dbh, sub_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_subscriptions", NULL, NULL);
+			switch_odbc_handle_exec(odbc_dbh, sub_sql, NULL, NULL);
 		}
 
 		free(test_sql);
 		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and expires > 0", mod_sofia_globals.hostname);
 
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_dialogs", NULL);
-			switch_odbc_handle_exec(odbc_dbh, dialog_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_dialogs", NULL, NULL);
+			switch_odbc_handle_exec(odbc_dbh, dialog_sql, NULL, NULL);
 		}
 
 		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' ", mod_sofia_globals.hostname);
 
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_presence", NULL);
-			switch_odbc_handle_exec(odbc_dbh, pres_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_presence", NULL, NULL);
+			switch_odbc_handle_exec(odbc_dbh, pres_sql, NULL, NULL);
 		}
 
 		free(test_sql);
 		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q' or last_nc >= 0", mod_sofia_globals.hostname);
 
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_authentication", NULL);
-			switch_odbc_handle_exec(odbc_dbh, auth_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_authentication", NULL, NULL);
+			switch_odbc_handle_exec(odbc_dbh, auth_sql, NULL, NULL);
 		}
 		free(test_sql);
 
 		test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where contact_str='' or hostname='%q' and network_ip like '%%'",
 								  mod_sofia_globals.hostname);
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_shared_appearance_subscriptions", NULL);
-			switch_odbc_handle_exec(odbc_dbh, shared_appearance_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_shared_appearance_subscriptions", NULL, NULL);
+			switch_odbc_handle_exec(odbc_dbh, shared_appearance_sql, NULL, NULL);
 		}
 		free(test_sql);
 
 
 		test_sql = switch_mprintf("delete from sip_shared_appearance_dialogs where contact_str='' or hostname='%q' and network_ip like '%%'",
 								  mod_sofia_globals.hostname);
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_shared_appearance_dialogs", NULL);
-			switch_odbc_handle_exec(odbc_dbh, shared_appearance_dialogs_sql, NULL);
+		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_shared_appearance_dialogs", NULL, NULL);
+			switch_odbc_handle_exec(odbc_dbh, shared_appearance_dialogs_sql, NULL, NULL);
 		}
 		free(test_sql);
 
 
 		for (x = 0; indexes[x]; x++) {
-			switch_odbc_handle_exec(odbc_dbh, indexes[x], NULL);
+			switch_odbc_handle_exec(odbc_dbh, indexes[x], NULL, NULL);
 		}
 
 

@@ -344,7 +344,8 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_handle_t *handle,
 																	const char *sql,
 																	char *resbuf,
-																	size_t len)
+																	size_t len,
+																	char **err)
 {
 #ifdef SWITCH_HAVE_ODBC
 	switch_odbc_status_t sstatus = SWITCH_ODBC_FAIL;
@@ -352,21 +353,27 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_
 	SQLCHAR name[1024];
 	SQLLEN m = 0;
 
-	if (switch_odbc_handle_exec(handle, sql, &stmt) == SWITCH_ODBC_SUCCESS) {
+	if (switch_odbc_handle_exec(handle, sql, &stmt, err) == SWITCH_ODBC_SUCCESS) {
 		SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
 		SQLULEN ColumnSize;
+		int result;
+		
 		SQLRowCount(stmt, &m);
 
 		if (m <= 0) {
 			goto done;
 		}
 
-		if (SQLFetch(stmt) != SQL_SUCCESS) {
+		result = SQLExecute(stmt);
+		result = SQLFetch(stmt);
+		
+		if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO && result != SQL_NO_DATA) {
 			goto done;
 		}
-
+		
 		SQLDescribeCol(stmt, 1, name, sizeof(name), &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
 		SQLGetData(stmt, 1, SQL_C_CHAR, (SQLCHAR *) resbuf, (SQLLEN) len, NULL);
+		
 		sstatus = SWITCH_ODBC_SUCCESS;
 	} else {
 		return sstatus;
@@ -380,11 +387,12 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_
 #endif
 }
 
-SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, const char *sql, switch_odbc_statement_handle_t * rstmt)
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, const char *sql, switch_odbc_statement_handle_t *rstmt, char **err)
 {
 #ifdef SWITCH_HAVE_ODBC
 	SQLHSTMT stmt = NULL;
 	int result;
+	char *err_str = NULL;
 
 	if (!db_is_up(handle)) {
 		goto error;
@@ -413,6 +421,22 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 	return SWITCH_ODBC_SUCCESS;
 
   error:
+
+	if (stmt) {
+		err_str = switch_odbc_handle_get_error(handle, stmt);
+	}
+
+	if (err_str) {
+		if (!switch_stristr("already exists", err_str)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
+		}
+		if (err) {
+			*err = err_str;
+		} else {
+			free(err_str);
+		}
+	}
+
 	if (rstmt) {
 		*rstmt = stmt;
 	} else if (stmt) {

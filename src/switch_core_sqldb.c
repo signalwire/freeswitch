@@ -380,7 +380,7 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	case SCDB_TYPE_ODBC:
 		{
 			switch_odbc_statement_handle_t stmt = NULL;
-			if ((status = switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, sql, &stmt)) != SWITCH_ODBC_SUCCESS) {
+			if ((status = switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, sql, &stmt, NULL)) != SWITCH_ODBC_SUCCESS) {
 				errmsg = switch_odbc_handle_get_error(dbh->native_handle.odbc_dbh, stmt);
 			}
 			switch_odbc_statement_handle_free(&stmt);
@@ -548,7 +548,7 @@ SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t 
 		break;
 	case SCDB_TYPE_ODBC:
 		{
-			status = switch_odbc_handle_exec_string(dbh->native_handle.odbc_dbh, sql, str, len);
+			status = switch_odbc_handle_exec_string(dbh->native_handle.odbc_dbh, sql, str, len, err);
 		}
 		break;
 	}
@@ -738,12 +738,12 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 	switch (dbh->type) {
 	case SCDB_TYPE_ODBC:
 		{
-			if (switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
+			if (switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
 				r = SWITCH_FALSE;
 				if (drop_sql) {
-					switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, drop_sql, NULL);
+					switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, drop_sql, NULL, NULL);
 				}
-				switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, reactive_sql, NULL);
+				switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, reactive_sql, NULL, NULL);
 			}
 		}
 		break;

@@ -599,25 +599,37 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 		}
 
 		if (call_info) {
+			const char *uuid = switch_event_get_header(event, "unique-id");
 			
+
 #if 0
 			if (mod_sofia_globals.debug_sla > 1) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SLA EVENT:\n");
 				DUMP_EVENT(event);
 			}
 #endif
-			
-			sql = switch_mprintf("update sip_dialogs set call_info_state='%q' where hostname='%q' and sip_dialogs.sip_from_user='%q' "
-								 "and sip_dialogs.sip_from_host='%q' and call_info='%q'", 
-								 call_info_state, 
-								 mod_sofia_globals.hostname,
-								 euser, host, call_info);
+
+			if (uuid) {
+				sql = switch_mprintf("update sip_dialogs set call_info_state='%q' where hostname='%q' and uuid='%q'",
+									 call_info_state, 
+									 mod_sofia_globals.hostname,
+									 uuid);
+			} else {
+				sql = switch_mprintf("update sip_dialogs set call_info_state='%q' where hostname='%q' and sip_dialogs.sip_from_user='%q' "
+									 "and sip_dialogs.sip_from_host='%q' and call_info='%q'", 
+									 call_info_state, 
+									 mod_sofia_globals.hostname,
+									 euser, host, call_info);
+				
+			}
 
 			if (mod_sofia_globals.debug_sla > 1) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STATE SQL %s\n", sql);
 			}
 			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 			
+
+
 			if (mod_sofia_globals.debug_sla > 1) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PROCESS PRESENCE EVENT\n");
 			}

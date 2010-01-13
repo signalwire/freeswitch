@@ -271,7 +271,7 @@ static void mdl_execute_sql(mdl_profile_t *profile, char *sql, switch_mutex_t *m
 
 	if (switch_odbc_available() && profile->odbc_dsn) {
 		switch_odbc_statement_handle_t stmt;
-		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
+		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt, NULL) != SWITCH_ODBC_SUCCESS) {
 			char *err_str;
 			err_str = switch_odbc_handle_get_error(profile->master_odbc, stmt);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
@@ -2432,7 +2432,7 @@ static switch_status_t soft_reload(void)
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
-				switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL);
+				switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL, NULL);
 				//mdl_execute_sql(profile, sub_sql, NULL);
 			} else {
 				if ((db = switch_core_db_open_file(profile->dbname))) {
@@ -2581,7 +2581,7 @@ static switch_status_t load_config(void)
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
-				switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL);
+				switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL, NULL);
 				//mdl_execute_sql(profile, sub_sql, NULL);
 			} else {
 				if ((db = switch_core_db_open_file(profile->dbname))) {

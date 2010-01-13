@@ -768,27 +768,29 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	authorization = sip->sip_authorization;
 	contact = sip->sip_contact;
 	to = sip->sip_to;
+	from = sip->sip_from;
 
+	if (from) {
+		from_user = from->a_url->url_user;
+		from_host = from->a_url->url_host;
+	}
+	
 	if (to) {
 		to_user = to->a_url->url_user;
 		to_host = to->a_url->url_host;
 	}
 
+	if (!to_user) to_user = from_user;
+	if (!to_host) to_host = from_host;
+
 	if (!to_user || !to_host) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not do authorization without a complete from header\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not do authorization without a complete header\n");
 		nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
 		switch_goto_int(r, 1, end);
 	}
 
 	if (!reg_host) {
 		reg_host = to_host;
-	}
-
-	from = sip->sip_from;
-
-	if (from) {
-		from_user = from->a_url->url_user;
-		from_host = from->a_url->url_host;
 	}
 
 	if (contact->m_url) {

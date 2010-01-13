@@ -3436,7 +3436,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				if (sip && 
 					sip->sip_from && sip->sip_from->a_url && sip->sip_from->a_url->url_user && sip->sip_from->a_url->url_host &&
 					sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host) {
-					sql = switch_mprintf("select 'appearance-index=1' from sip_subscriptions where expires > -1 && hostname='%q' and event='call-info' and "
+					sql = switch_mprintf("select 'appearance-index=1' from sip_subscriptions where expires > -1 and hostname='%q' and event='call-info' and "
 										 "sub_to_user='%q' and sub_to_host='%q'", 
 										 mod_sofia_globals.hostname, sip->sip_to->a_url->url_user, sip->sip_from->a_url->url_host);
 					sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
@@ -4242,9 +4242,20 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
 							}
 						} else if (switch_stristr("sendonly", r_sdp)) {
+							const char *msg = "hold";
+							
+							if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
+								const char *info = switch_channel_get_variable(channel, "presence_call_info");
+								if (info) {
+									if (switch_stristr("private", info)) {
+										msg = "hold-private";
+									}
+								}
+							}
+
 							sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 							switch_channel_set_flag(channel, CF_LEG_HOLDING);
-							switch_channel_presence(tech_pvt->channel, "unknown", "hold", NULL);
+							switch_channel_presence(tech_pvt->channel, "unknown", msg, NULL);
 						}
 					
 						switch_core_session_queue_message(other_session, msg);
@@ -5693,6 +5704,11 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	if (!destination_number && sip->sip_to && sip->sip_to->a_url) {
 		destination_number = sip->sip_to->a_url->url_user;
 	}
+
+	/* The human network, OH THE HUMANITY!!! lets send invites with no number! */
+	if (!destination_number && sip->sip_from && sip->sip_from->a_url) {
+		destination_number = sip->sip_from->a_url->url_user;
+	}
 	
 	if (destination_number) {
 		check_decode(destination_number, session);
@@ -5957,20 +5973,36 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		char cid[512] = "";
 		char *str;
 		char *p = NULL;
-
-
+		const char *user = NULL, *host = NULL;
+		
 		if (sip->sip_to && sip->sip_to->a_url) {
+			user = sip->sip_to->a_url->url_user;
+			host = sip->sip_to->a_url->url_host;
+		}
+
+		if (!user || !host) {
+			if (sip->sip_from && sip->sip_from->a_url) {
+				if (!user) user = sip->sip_from->a_url->url_user;
+				if (!host) host = sip->sip_from->a_url->url_host;
+			}
+		}
+
+		if (user && host) {
 			if ((p = strchr(call_info_str, ';'))) {
 				p++;
 			}
-
-			sql = switch_mprintf("select call_id from sip_dialogs where call_info='%q' and sip_from_user='%q' and sip_from_host='%q'", 
-								 switch_str_nil(p), sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
 			
+			sql = switch_mprintf("select call_id from sip_dialogs where call_info='%q' and sip_from_user='%q' and sip_from_host='%q' and call_id is not null", 
+								 switch_str_nil(p), user, host);
+
 			if ((str = sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, cid, sizeof(cid)))) {
 				bnh = nua_handle_by_call_id(nua, str);
 			}
 
+			if (mod_sofia_globals.debug_sla > 1) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PICK SQL %s [%s] [%s] %d\n", sql, str, cid, !!bnh);
+			}
+			
 			free(sql);
 		}
 	}
@@ -5991,7 +6023,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				private_object_t *b_tech_pvt = NULL;
 				const char *app = switch_channel_get_variable(b_channel, SWITCH_CURRENT_APPLICATION_VARIABLE);
 				const char *data = switch_channel_get_variable(b_channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE);
-			
+
 				if (app && data && !strcasecmp(app, "conference")) {
 					destination_number = switch_core_session_sprintf(b_session, "answer,conference:%s", data);
 					dialplan = "inline";
@@ -5999,7 +6031,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					if (switch_core_session_check_interface(b_session, sofia_endpoint_interface)) {
 						b_tech_pvt = switch_core_session_get_private(b_session);
 					}
-
+					
 					if ((uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 						switch_channel_set_variable(b_channel, "presence_call_info", NULL);
 						one_leg = 0;

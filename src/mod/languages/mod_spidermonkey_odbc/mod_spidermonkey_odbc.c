@@ -215,7 +215,7 @@ static JSBool odbc_execute(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 
 	sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 
-	if (switch_odbc_handle_exec(odbc_obj->handle, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
+	if (switch_odbc_handle_exec(odbc_obj->handle, sql, &stmt, NULL) != SWITCH_ODBC_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[ODBC] Execute failed for: %s\n", sql);
 		goto done;
 	}
@@ -253,7 +253,7 @@ static JSBool odbc_exec(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 
 	sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 
-	if (switch_odbc_handle_exec(odbc_obj->handle, sql, &odbc_obj->stmt) != SWITCH_ODBC_SUCCESS) {
+	if (switch_odbc_handle_exec(odbc_obj->handle, sql, &odbc_obj->stmt, NULL) != SWITCH_ODBC_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[ODBC] query failed: %s\n", sql);
 		goto done;
 	}
