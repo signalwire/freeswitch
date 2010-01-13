@@ -2947,10 +2947,20 @@ void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 	if (sendonly && switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED)) {
 		if (!sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 			const char *stream;
+			const char *msg = "hold";
+			
+			if (sofia_test_pflag(tech_pvt->profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
+				const char *info = switch_channel_get_variable(tech_pvt->channel, "presence_call_info");
+				if (info) {
+					if (switch_stristr("private", info)) {
+						msg = "hold-private";
+					}
+				}
+			}
 
 			sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 			switch_channel_set_flag(tech_pvt->channel, CF_LEG_HOLDING);
-			switch_channel_presence(tech_pvt->channel, "unknown", "hold", NULL);
+			switch_channel_presence(tech_pvt->channel, "unknown", msg, NULL);
 
 			if (tech_pvt->max_missed_hold_packets) {
 				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_hold_packets);
