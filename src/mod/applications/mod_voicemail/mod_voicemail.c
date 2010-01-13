@@ -158,7 +158,7 @@ switch_cache_db_handle_t *vm_get_db_handle(vm_profile_t *profile)
 	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
 	
-	if (profile->odbc_dsn && profile->odbc_user && profile->odbc_pass) {
+	if (!zstr(profile->odbc_dsn)) {
 		options.odbc_options.dsn = profile->odbc_dsn;
 		options.odbc_options.user = profile->odbc_user;
 		options.odbc_options.pass = profile->odbc_pass;

@@ -93,7 +93,7 @@ static switch_cache_db_handle_t *cidlookup_get_db_handle(void)
 	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
 	
-	if (globals.odbc_dsn && globals.odbc_user && globals.odbc_pass) {
+	if (!zstr(globals.odbc_dsn)) {
 		options.odbc_options.dsn = globals.odbc_dsn;
 		options.odbc_options.user = globals.odbc_user;
 		options.odbc_options.pass = globals.odbc_pass;

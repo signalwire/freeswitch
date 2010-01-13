@@ -289,7 +289,7 @@ switch_cache_db_handle_t *fifo_get_db_handle(void)
 	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
 	
-	if (globals.odbc_dsn && globals.odbc_user && globals.odbc_pass) {
+	if (!zstr(globals.odbc_dsn)) {
 		options.odbc_options.dsn = globals.odbc_dsn;
 		options.odbc_options.user = globals.odbc_user;
 		options.odbc_options.pass = globals.odbc_pass;
@@ -1873,8 +1873,6 @@ static switch_status_t load_config(int reload, int del_all)
 {
 	char *cf = "fifo.conf";
 	switch_xml_t cfg, xml, fifo, fifos, member, settings, param;
-	char *odbc_user = NULL;
-	char *odbc_pass = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;	
 	char *sql;
 	switch_bool_t delete_all_outbound_member_on_startup = SWITCH_FALSE;
@@ -1913,7 +1911,7 @@ static switch_status_t load_config(int reload, int del_all)
 		}
 	}
 
-	if (zstr(globals.odbc_dsn) || zstr(odbc_user) || zstr(odbc_pass)) {
+	if (zstr(globals.odbc_dsn)) {
 		globals.dbname = "fifo";
 	}
 

@@ -176,29 +176,39 @@ static switch_interval_time_t average_time(switch_interval_time_t t, int reps)
 	
 }
 
+#define calc_step() if ((step - 10) > 10) step -= 10; else if (step > 1) step--
 static void calibrate_clock(void)
 {
 	int x;
 	switch_interval_time_t avg, val = 1000, want = 1000;
-	int over = 0, under = 0, good = 0;
+	int over = 0, under = 0, good = 0, step = 50;
 
 	for (x = 0; x < 500; x++) {
 		avg = average_time(val, 100);
-		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Test: %ld Average: %ld Step: %d\n", val, avg, step);
+
 		if (abs((int)(want - avg)) <= 2) {
+			under = over = 0;
 			if (++good > 10) {
 				break;
 			}
 		} else if (avg > want) {
-			val--;
-			over++;
+			under = 0;
+			val -= step;
+			if (++over > 3) {
+				calc_step();
+			}
 		} else if (avg < want) {
-			val++;
-			under++;
+			over = 0;
+			val += step;
+			if (++under > 3) {
+				calc_step();
+			}
 		}
 	}
 
 	OFFSET = (int)(want - val);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer offset of %d calculated\n", OFFSET);
 }
 
 
@@ -289,7 +299,7 @@ SWITCH_DECLARE(void) switch_micro_sleep(switch_interval_time_t t)
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 {
 
-	if (!globals.RUNNING || t < 1000 || t >= 10000) {
+	if (globals.RUNNING != 1 || t < 1000 || t >= 10000) {
 		do_sleep(t);
 		return;
 	}
@@ -580,7 +590,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	}
 #endif
 
-	calibrate_clock();
+
 	switch_time_sync();
 	
 	globals.use_cond_yield = COND;
@@ -916,6 +926,9 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 	timer_interface->timer_sync = timer_sync;
 	timer_interface->timer_check = timer_check;
 	timer_interface->timer_destroy = timer_destroy;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Calibrating timer, please wait...\n");
+	calibrate_clock();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

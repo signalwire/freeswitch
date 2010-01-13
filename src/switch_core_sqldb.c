@@ -58,7 +58,7 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 	switch_cache_db_connection_options_t options = { {0} };
 	switch_status_t r;
 	
-	if (runtime.odbc_dsn && runtime.odbc_user && runtime.odbc_pass) {
+	if (!zstr(runtime.odbc_dsn)) {
 		options.odbc_options.dsn = runtime.odbc_dsn;
 		options.odbc_options.user = runtime.odbc_user;
 		options.odbc_options.pass = runtime.odbc_pass;
