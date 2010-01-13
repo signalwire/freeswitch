@@ -329,7 +329,7 @@ pkgconfig_DATA = build/freeswitch.pc
 $(switch_builddir)/modules.conf:
 	if test -f $@; then touch $@; else cp $(switch_srcdir)/build/modules.conf.in $@ ;fi
 
-$(OUR_MODULES): $(switch_builddir)/modules.conf
+$(OUR_MODULES): $(switch_builddir)/modules.conf libfreeswitch.la
 	@set fnord $$MAKEFLAGS; amf=$$2; \
 	(cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@) \
 	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
