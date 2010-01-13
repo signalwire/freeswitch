@@ -391,7 +391,7 @@ libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
 ##
 yaml-files:
 	@echo `mkdir $(DESTDIR)$(sysconfdir)/yaml 2>/dev/null`
-	$(INSTALL) -m 644 conf/yaml/*.yaml $(DESTDIR)$(sysconfdir)/yaml
+	$(INSTALL) -m 644 $(switch_srcdir)/conf/yaml/*.yaml $(DESTDIR)$(sysconfdir)/yaml
 
 vm-sync:
 	test -d $(DESTDIR)$(sysconfdir) || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)
@@ -399,28 +399,27 @@ vm-sync:
 	test -d $(DESTDIR)$(sysconfdir)/lang/en || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en
 	test -d $(DESTDIR)$(sysconfdir)/lang/en/demo || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en/demo
 	test -d $(DESTDIR)$(sysconfdir)/lang/en/vm || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en/vm
-	$(INSTALL) -m 644 conf/lang/en/vm/* $(DESTDIR)$(sysconfdir)/lang/en/vm
-	$(INSTALL) -m 644 conf/lang/en/demo/* $(DESTDIR)$(sysconfdir)/lang/en/demo
+	$(INSTALL) -m 644 $(switch_srcdir)/conf/lang/en/vm/* $(DESTDIR)$(sysconfdir)/lang/en/vm
+	$(INSTALL) -m 644 $(switch_srcdir)/conf/lang/en/demo/* $(DESTDIR)$(sysconfdir)/lang/en/demo
 
 samples-conf:
 	test -d $(DESTDIR)$(sysconfdir) || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)
-	for conffile in `find conf -name \*.xml && find conf -name \*.conf && find conf -name \*.tpl  && find conf -name \*.ttml && find conf -name mime.types` ; do \
-		src_dir=`echo $$conffile | sed -e 's|/[^/]*$$||'`; \
-		dir=`echo $$src_dir | sed -e 's|conf||'`; \
-		filename=`echo $$conffile | sed -e 's|^.*/||'`; \
-		test -d $(DESTDIR)$(sysconfdir)/$$dir || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/$$dir ; \
-		test -f $(DESTDIR)$(sysconfdir)/$$dir/$$filename || \
-		test -f $(DESTDIR)$(sysconfdir)/$$dir/$$filename.noload || \
-			$(INSTALL) -m 644 $$src_dir/$$filename $(DESTDIR)$(sysconfdir)/$$dir; \
+	for conffile in `cd $(switch_srcdir)/conf && find . -name \*.xml && find . -name \*.conf && find . -name \*.tpl  && find . -name \*.ttml && find . -name mime.types` ; do \
+		dir=`echo $$conffile | sed -e 's|^\.||' | sed -e 's|/[^/]*$$||'`; \
+		filename=`echo $$conffile | sed -e 's|^\.||' | sed -e 's|^.*/||'`; \
+		test -d $(DESTDIR)$(sysconfdir)$$dir || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)$$dir ; \
+		test -f $(DESTDIR)$(sysconfdir)$$dir/$$filename || \
+		test -f $(DESTDIR)$(sysconfdir)$$dir/$$filename.noload || \
+			$(INSTALL) -m 644 $(switch_srcdir)/conf/$$dir/$$filename $(DESTDIR)$(sysconfdir)$$dir; \
 	done
 
 samples-htdocs: 
 	test -d $(DESTDIR)$(htdocsdir) || $(mkinstalldirs) $(DESTDIR)$(htdocsdir)
-	for htdocsfile in `find htdocs -name \* | grep -v .svn` ; do \
-		dir=`echo $$htdocsfile | sed -e 's|/[^/]*$$||' | sed -e 's|^htdocs/||'`; \
+	for htdocsfile in `cd $(switch_srcdir)/htdocs && find . -type f -name \* | grep -v .svn | sed -e 's|^\.||' ` ; do \
+		dir=`echo $$htdocsfile | sed -e 's|/[^/]*$$||'`; \
 		filename=`echo $$htdocsfile | sed -e 's|^.*/||'`; \
-		test -d $(DESTDIR)$(htdocsdir)/$$dir || $(mkinstalldirs) $(DESTDIR)$(htdocsdir)/$$dir ; \
-		test -f $(DESTDIR)$(htdocsdir)/$$dir/$$filename || $(INSTALL) -m 644 $$dir/$$filename $(DESTDIR)$(htdocsdir)/$$dir 2>/dev/null;  \
+		test -d $(DESTDIR)$(htdocsdir)$$dir || $(mkinstalldirs) $(DESTDIR)$(htdocsdir)$$dir ; \
+		test -f $(DESTDIR)$(htdocsdir)$$dir/$$filename || $(INSTALL) -m 644 $(switch_srcdir)/htdocs/$$dir/$$filename $(DESTDIR)$(htdocsdir)$$dir 2>/dev/null;  \
 	done
 
 samples: samples-conf samples-htdocs
