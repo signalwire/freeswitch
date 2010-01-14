@@ -71,4 +71,6 @@ void PrefSofia::writeConfig()
 
     _settings->endGroup();
     _settings->endGroup();
+    _settings->endGroup();
+    _settings->endGroup();
 }

@@ -91,6 +91,8 @@ void AccountDialog::writeConfig()
 
     _settings->endGroup();
 
+    _settings->endGroup();
+
     QString res;
     if (g_FSHost.sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
     {
