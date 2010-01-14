@@ -72,7 +72,7 @@ void PrefPortaudio::ringFileChoose()
 void PrefPortaudio::writeConfig()
 {
     _settings->beginGroup("FreeSWITCH/conf");
-    _settings->beginGroup("portaudio.conf");
+    _settings->beginGroup("portaudio.conf/settings/params");
 
     QString cid_name = _settings->value("cid-name").toString();
     QString ncid_name = _ui->PaCallerIdNameEdit->text();
@@ -155,7 +155,7 @@ void PrefPortaudio::readConfig()
     getPaDevlist();
     _settings->beginGroup("FreeSWITCH/conf");
 
-    _settings->beginGroup("portaudio.conf");
+    _settings->beginGroup("portaudio.conf/settings/params");
     _ui->PaCallerIdNameEdit->setText(_settings->value("cid-name").toString());
     _ui->PaCallerIdNumEdit->setText(_settings->value("cid-num").toString());
     _ui->PaHoldFileEdit->setText(_settings->value("hold-file").toString());

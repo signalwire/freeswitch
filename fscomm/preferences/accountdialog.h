@@ -12,8 +12,11 @@ class QSettings;
 class AccountDialog : public QDialog {
     Q_OBJECT
 public:
-    AccountDialog(QWidget *parent = 0);
+    AccountDialog(int accId, QWidget *parent = 0);
     ~AccountDialog();
+
+signals:
+    void gwAdded();
 
 private slots:
     void writeConfig();
@@ -24,6 +27,7 @@ protected:
     void changeEvent(QEvent *e);
 
 private:
+    int _accId;
     Ui::AccountDialog *ui;
     QSettings *_settings;
 };

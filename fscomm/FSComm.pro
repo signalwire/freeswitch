@@ -1,7 +1,7 @@
 # #####################################
 # version check qt
 # #####################################
-contains(QT_VERSION, ^4\.[0-4]\..*) {
+contains(QT_VERSION, ^4\.[0-4]\..*) { 
     message("Cannot build FsGui with Qt version $$QT_VERSION.")
     error("Use at least Qt 4.5.")
 }
@@ -38,13 +38,10 @@ HEADERS += mainwindow.h \
     preferences/prefdialog.h \
     preferences/prefportaudio.h \
     preferences/prefsofia.h \
-    preferences/accountdialog.h
+    preferences/accountdialog.h \
+    preferences/prefaccounts.h
 FORMS += mainwindow.ui \
     preferences/prefdialog.ui \
     preferences/accountdialog.ui
 RESOURCES += resources.qrc
-OTHER_FILES += conf/portaudio.conf.xml \
-    conf/event_socket.conf.xml \
-    conf/freeswitch.xml \
-    conf/sofia.conf.xml \
-    conf/account.conf.xml
+OTHER_FILES += conf/freeswitch.xml

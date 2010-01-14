@@ -5,16 +5,23 @@
 #include "ui_prefdialog.h"
 
 class QSettings;
+class AccountDialog;
 
-class PrefAccounts
-{
+class PrefAccounts : public QObject {
+    Q_OBJECT
 public:
     explicit PrefAccounts(Ui::PrefDialog *ui);
-    void readConfig();
     void writeConfig();
+
+public slots:
+    void readConfig();
+
+private slots:
+    void addAccountBtnClicked();
 
 private:
     Ui::PrefDialog *_ui;
+    AccountDialog *_accDlg;
     QSettings *_settings;
 };
 

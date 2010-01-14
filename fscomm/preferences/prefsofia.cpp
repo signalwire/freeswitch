@@ -24,12 +24,22 @@ void PrefSofia::writeConfig()
     _settings->beginGroup("sofia.conf");
 
     /* General Settings */
+    _settings->beginGroup("global_settings/params");
     _settings->setValue("log-level", _ui->sofiaLogLevelSpin->value());
     _settings->setValue("auto-restart", _ui->sofiaAutoRestartCombo->currentText());
     _settings->setValue("debug-presence", _ui->sofiaDebugPresenceSpin->value());
     _settings->setValue("rewrite-multicasted-fs-path", _ui->sofiaRewriteMulticastedFsPathCombo->currentText());
+    _settings->endGroup();
 
     /* Profile settings */
+    _settings->beginGroup("profiles");
+    _settings->beginGroup("profile");
+
+    _settings->beginGroup("attrs");
+    _settings->setValue("name", "softphone");
+    _settings->endGroup();
+
+    _settings->beginGroup("settings/params");
     _settings->setValue("user-agent-string", _ui->sofiaUserAgentStringEdit->text());
     _settings->setValue("debug", _ui->sofiaDebugSpin->value());
     _settings->setValue("sip-trace", _ui->sofiaSipTraceCombo->currentText());
@@ -57,7 +67,7 @@ void PrefSofia::writeConfig()
     _settings->setValue("rtp-hold-timeout-sec", _ui->sofiaRtpHoldTimeoutSecSpin->value());
     _settings->setValue("disable-register", _ui->sofiaDisableRegisterCombo->currentText());
     _settings->setValue("challenge-realm", _ui->sofiaChallengeRealmCombo->currentText());
-
+    _settings->endGroup();
 
     _settings->endGroup();
     _settings->endGroup();

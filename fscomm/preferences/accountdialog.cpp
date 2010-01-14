@@ -2,9 +2,11 @@
 #include <QtGui>
 #include "accountdialog.h"
 #include "ui_accountdialog.h"
+#include "fshost.h"
 
-AccountDialog::AccountDialog(QWidget *parent) :
+AccountDialog::AccountDialog(int accId, QWidget *parent) :
     QDialog(parent),
+    _accId(accId),
     ui(new Ui::AccountDialog)
 {
     ui->setupUi(this);
@@ -57,9 +59,16 @@ void AccountDialog::addExtraParam()
 
 void AccountDialog::writeConfig()
 {
-    _settings->beginGroup("FreeSWITCH/conf/accounts");
+    _settings->beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways");
 
-    _settings->beginGroup(ui->sofiaGwNameEdit->text());
+    _settings->beginGroup(QString::number(_accId));
+    
+    _settings->beginGroup("gateway/attrs");
+    _settings->setValue("name", ui->sofiaGwNameEdit->text());
+    _settings->endGroup();
+
+
+    _settings->beginGroup("gateway/params");
     _settings->setValue("username", ui->sofiaGwUsernameEdit->text());
     _settings->setValue("realm", ui->sofiaGwRealmEdit->text());
     _settings->setValue("password", ui->sofiaGwPasswordEdit->text());
@@ -67,9 +76,7 @@ void AccountDialog::writeConfig()
     _settings->setValue("expire-seconds", ui->sofiaGwExpireSecondsSpin->value());
     _settings->setValue("register", ui->sofiaGwRegisterCombo->currentText());
     _settings->setValue("register-transport", ui->sofiaGwRegisterTransportCombo->currentText());
-    _settings->setValue("retry-seconds", ui->sofiaGwRetrySecondsSpin->value());
-
-    _settings->beginGroup("customParams");
+    _settings->setValue("retry-seconds", ui->sofiaGwRetrySecondsSpin->value());    
     for (int i = 0; i< ui->sofiaExtraParamTable->rowCount(); i++)
     {
         _settings->setValue(ui->sofiaExtraParamTable->item(i, 0)->text(),
@@ -80,6 +87,14 @@ void AccountDialog::writeConfig()
     _settings->endGroup();
 
     _settings->endGroup();
+
+    QString res;
+    if (g_FSHost.sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rescan the softphone profile.\n");
+        return;
+    }
+    emit gwAdded();
 }
 
 void AccountDialog::changeEvent(QEvent *e)

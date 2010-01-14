@@ -72,9 +72,6 @@
        <iconset resource="../resources.qrc">
         <normaloff>:/images/pref_accounts.jpg</normaloff>:/images/pref_accounts.jpg</iconset>
       </property>
-      <property name="flags">
-       <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsUserCheckable</set>
-      </property>
      </item>
      <item>
       <property name="text">
@@ -83,9 +80,6 @@
       <property name="icon">
        <iconset resource="../resources.qrc">
         <normaloff>:/images/pref_sip.png</normaloff>:/images/pref_sip.png</iconset>
-      </property>
-      <property name="flags">
-       <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsUserCheckable</set>
       </property>
      </item>
      <item>
