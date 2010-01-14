@@ -847,7 +847,8 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 					transfer_after_bridge(other_session, var);
 				}
 				
-				if (switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR) &&
+				if (switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR) && 
+					switch_channel_test_flag(channel, CF_ANSWERED) &&
 					switch_true(switch_channel_get_variable(other_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
 					switch_channel_hangup(other_channel, switch_channel_get_cause(channel));	
 				} else {
@@ -1178,7 +1179,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				switch_ivr_park_session(session);
 			} else if ((var = switch_channel_get_variable(caller_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
 				transfer_after_bridge(session, var);
-			} else if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
+			} else if (switch_channel_test_flag(peer_channel, CF_ANSWERED) && 
+					   switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
 				switch_channel_hangup(caller_channel, switch_channel_get_cause(peer_channel));
 			}
 		}
