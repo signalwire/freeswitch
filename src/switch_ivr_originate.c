@@ -235,7 +235,8 @@ static void launch_collect_thread(struct key_collect *collect)
 static int check_per_channel_timeouts(originate_global_t *oglobals,
 									  originate_status_t *originate_status, 
 									  int max,
-									  time_t start)
+									  time_t start,
+									  switch_call_cause_t *force_reason)
 {
 	int x = 0,i,delayed_channels=0,active_channels=0;
 	uint32_t early_exit_time=0, delayed_min=0;
@@ -304,6 +305,7 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 				  )
 				) {
 				switch_channel_hangup(originate_status[i].peer_channel, SWITCH_CAUSE_PROGRESS_TIMEOUT);
+				*force_reason = SWITCH_CAUSE_PROGRESS_TIMEOUT;
 				x++;
 			}
 			if (originate_status[i].per_channel_timelimit_sec && elapsed > originate_status[i].per_channel_timelimit_sec) {
@@ -2444,13 +2446,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						!oglobals.progress && (progress_timelimit_sec && elapsed > (time_t) progress_timelimit_sec)) {
 						to++;
 						oglobals.idx = IDX_TIMEOUT;
+						force_reason = SWITCH_CAUSE_PROGRESS_TIMEOUT;
 						goto notready;
 					}
 					
 					switch_cond_next();
 				}
 
-				check_per_channel_timeouts(&oglobals, originate_status, and_argc, start);
+				check_per_channel_timeouts(&oglobals, originate_status, and_argc, start, &force_reason);
 
 
 				if (valid_channels == 0) {
@@ -2498,7 +2501,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					goto notready;
 				}
 
-				check_per_channel_timeouts(&oglobals, originate_status, and_argc, start);
+				check_per_channel_timeouts(&oglobals, originate_status, and_argc, start, &force_reason);
 
 				if (oglobals.session) {
 					switch_ivr_parse_all_events(oglobals.session);
