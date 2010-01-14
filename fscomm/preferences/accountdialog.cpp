@@ -57,6 +57,45 @@ void AccountDialog::addExtraParam()
     ui->sofiaExtraParamTable->setItem(ui->sofiaExtraParamTable->rowCount()-1,1,paramValItem);
 }
 
+void AccountDialog::readConfig()
+{
+    _settings->beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways");
+    _settings->beginGroup(_accId);
+
+    _settings->beginGroup("gateway/attrs");
+    ui->sofiaGwNameEdit->setText(_settings->value("name").toString());
+    _settings->endGroup();
+
+    _settings->beginGroup("gateway/params");
+    ui->sofiaGwUsernameEdit->setText(_settings->value("username").toString());
+    ui->sofiaGwRealmEdit->setText(_settings->value("realm").toString());
+    ui->sofiaGwPasswordEdit->setText(_settings->value("password").toString());
+    ui->sofiaGwExtensionEdit->setText(_settings->value("extension").toString());
+    ui->sofiaGwExpireSecondsSpin->setValue(_settings->value("expire-seconds").toInt());
+    ui->sofiaGwRegisterCombo->setCurrentIndex(ui->sofiaGwRegisterCombo->findText(_settings->value("register").toString(),
+                                                                                 Qt::MatchExactly));
+    ui->sofiaGwRegisterTransportCombo->setCurrentIndex(ui->sofiaGwRegisterTransportCombo->findText(_settings->value("register-transport").toString(),
+                                                                                                   Qt::MatchExactly));
+    ui->sofiaGwRetrySecondsSpin->setValue(_settings->value("retry-seconds").toInt());
+    _settings->endGroup();
+
+    _settings->beginGroup("gateway/customParams");
+    int row = 0;
+    foreach(QString k, _settings->childKeys())
+    {
+        row++;
+        ui->sofiaExtraParamTable->setRowCount(row);
+        QTableWidgetItem *varName = new QTableWidgetItem(k);
+        QTableWidgetItem *varVal = new QTableWidgetItem(_settings->value(k).toString());
+        ui->sofiaExtraParamTable->setItem(row-1, 0,varName);
+        ui->sofiaExtraParamTable->setItem(row-1, 1,varVal);
+    }
+    _settings->endGroup();
+
+    _settings->endGroup();
+    _settings->endGroup();
+}
+
 void AccountDialog::writeConfig()
 {
     _settings->beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways");
@@ -85,8 +124,6 @@ void AccountDialog::writeConfig()
         _settings->setValue(ui->sofiaExtraParamTable->item(i, 0)->text(),
                             ui->sofiaExtraParamTable->item(i, 1)->text());
     }
-    _settings->endGroup();
-
     _settings->endGroup();
 
     _settings->endGroup();

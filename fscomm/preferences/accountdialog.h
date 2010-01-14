@@ -16,6 +16,7 @@ public:
     ~AccountDialog();
     void clear();
     void setAccId(QString);
+    void readConfig();
 
 signals:
     void gwAdded();

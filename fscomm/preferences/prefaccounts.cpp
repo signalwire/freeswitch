@@ -10,6 +10,7 @@ PrefAccounts::PrefAccounts(Ui::PrefDialog *ui) :
     _accDlg = NULL;
     connect(_ui->sofiaGwAddBtn, SIGNAL(clicked()), this, SLOT(addAccountBtnClicked()));
     connect(_ui->sofiaGwRemBtn, SIGNAL(clicked()), this, SLOT(remAccountBtnClicked()));
+    connect(_ui->sofiaGwEditBtn, SIGNAL(clicked()), this, SLOT(editAccountBtnClicked()));
 }
 
 void PrefAccounts::addAccountBtnClicked()
@@ -36,6 +37,33 @@ void PrefAccounts::addAccountBtnClicked()
         _accDlg->setAccId(uuid);
         _accDlg->clear();
     }
+
+    _accDlg->show();
+    _accDlg->raise();
+    _accDlg->activateWindow();
+}
+
+void PrefAccounts::editAccountBtnClicked()
+{
+    QList<QTableWidgetSelectionRange> selList = _ui->accountsTable->selectedRanges();
+
+    if (selList.isEmpty())
+        return;
+    QTableWidgetSelectionRange range = selList[0];
+
+    QString uuid = _ui->accountsTable->item(range.topRow(),0)->data(Qt::UserRole).toString();
+
+    if (!_accDlg)
+    {
+        _accDlg = new AccountDialog(uuid);
+        connect(_accDlg, SIGNAL(gwAdded()), this, SLOT(readConfig()));
+    }
+    else
+    {
+        _accDlg->setAccId(uuid);
+    }
+
+    _accDlg->readConfig();
 
     _accDlg->show();
     _accDlg->raise();
