@@ -1238,6 +1238,8 @@ SWITCH_DECLARE(void) switch_hash_this(_In_ switch_hash_index_t *hi, _Out_opt_ptr
 SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, const char *timer_name, int interval, int samples,
 													   switch_memory_pool_t *pool);
 
+SWITCH_DECLARE(void) switch_time_calibrate_clock(void);
+
 /*! 
   \brief Wait for one cycle on an existing timer
   \param timer the timer to wait on

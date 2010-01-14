@@ -1301,7 +1301,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_rtp_init(runtime.memory_pool);
 
 	runtime.running = 1;
-
+	runtime.tipping_point = 1000;
 	runtime.initiated = switch_time_now();
 
 	switch_scheduler_add_task(switch_epoch_time_now(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
@@ -1442,6 +1442,8 @@ static void switch_load_core_config(const char *file)
 					switch_time_set_matrix(switch_true(var));
 				} else if (!strcasecmp(var, "max-sessions") && !zstr(val)) {
 					switch_core_session_limit(atoi(val));
+				} else if (!strcasecmp(var, "tipping-point") && !zstr(val)) {
+					runtime.tipping_point = atoi(val);
 				} else if (!strcasecmp(var, "rtp-start-port") && !zstr(val)) {
 					switch_rtp_set_start_port((switch_port_t) atoi(val));
 				} else if (!strcasecmp(var, "rtp-end-port") && !zstr(val)) {
@@ -1605,6 +1607,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 	}
 
 	switch (cmd) {
+	case SCSC_CALIBRATE_CLOCK:
+		switch_time_calibrate_clock();
+		break;
 	case SCSC_FLUSH_DB_HANDLES:
 		switch_cache_db_flush_handles();
 		break;

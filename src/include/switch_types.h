@@ -1436,7 +1436,8 @@ typedef enum {
 	SCSC_SEND_SIGHUP,
 	SCSC_DEBUG_LEVEL,
 	SCSC_FLUSH_DB_HANDLES,
-	SCSC_SHUTDOWN_NOW
+	SCSC_SHUTDOWN_NOW,
+	SCSC_CALIBRATE_CLOCK
 } switch_session_ctl_t;
 
 typedef enum {

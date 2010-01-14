@@ -1470,6 +1470,8 @@ SWITCH_STANDARD_API(ctl_function)
 			arg = 0;
 			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
 			stream->write_function(stream, "+OK\n");
+		} else if (!strcasecmp(argv[0], "calibrate_clock")) {
+			switch_core_session_ctl(SCSC_CALIBRATE_CLOCK, NULL);
 		} else if (!strcasecmp(argv[0], "shutdown")) {
 			switch_session_ctl_t command = SCSC_SHUTDOWN;
 			int x = 0;

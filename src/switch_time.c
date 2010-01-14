@@ -177,7 +177,7 @@ static switch_interval_time_t average_time(switch_interval_time_t t, int reps)
 }
 
 #define calc_step() if (step > 11) step -= 10; else if (step > 1) step--
-static void calibrate_clock(void)
+SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 {
 	int x;
 	switch_interval_time_t avg, val = 1000, want = 1000;
@@ -188,15 +188,18 @@ static void calibrate_clock(void)
 	clock_getres(CLOCK_MONOTONIC, &ts);
 	if (ts.tv_nsec / 1000 > 1500) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-						"Timer resolution of %ld microseconds detected!\n"
-						"Do you have your kernel timer set to higher than 1khz? You may experience audio problems.\n", ts.tv_nsec / 1000);
-		sleep(5);
+						  "Timer resolution of %ld microseconds detected!\n"
+						  "Do you have your kernel timer set to higher than 1khz? You may experience audio problems.\n", ts.tv_nsec / 1000);
+		do_sleep(5000000);
+		switch_time_set_cond_yield(SWITCH_TRUE);
 		return;
 	}
 #endif
 
+	OFFSET = 0;
+	
 	for (x = 0; x < 500; x++) {
-		avg = average_time(val, 100);
+		avg = average_time(val, 50);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Test: %ld Average: %ld Step: %d\n", (long)val, (long)avg, step);
 
 		diff = abs((int)(want - avg));
@@ -204,11 +207,8 @@ static void calibrate_clock(void)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
 							  "Abnormally large timer gap %d detected!\n"
 							  "Do you have your kernel timer set to higher than 1khz? You may experience audio problems.\n", diff);
-#ifdef WIN32
-			Sleep(5*1000);
-#else
-			sleep(5);
-#endif
+			do_sleep(5000000);
+			switch_time_set_cond_yield(SWITCH_TRUE);
 			return;
 		}
 
@@ -220,12 +220,12 @@ static void calibrate_clock(void)
 			}
 		} else if (avg > want) {
 			if (under) {calc_step();}
-			under = 0;
+			under = good = 0;
 			val -= step;
 			over++;
 		} else if (avg < want) {
 			if (over) {calc_step();}
-			over = 0;
+			over = good = 0;
 			val += step;
 			under++;
 		}
@@ -261,15 +261,6 @@ SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable)
 SWITCH_DECLARE(void) switch_time_set_matrix(switch_bool_t enable)
 {
 	MATRIX = enable ? 1 : 0;
-	if (MATRIX) {
-		STEP_MS = 1;
-		STEP_MIC = 1000;
-		TICK_PER_SEC = 10000;
-	} else {
-		STEP_MS = 10;
-		STEP_MIC = 10000;
-		TICK_PER_SEC = 1000;
-	}
 	switch_time_sync();
 }
 
@@ -286,6 +277,7 @@ SWITCH_DECLARE(void) switch_time_set_cond_yield(switch_bool_t enable)
 	if (COND) {
 		MATRIX = 1;
 	}
+	switch_time_sync();
 }
 
 static switch_time_t time_now(int64_t offset)
@@ -498,15 +490,15 @@ static switch_status_t timer_next(switch_timer_t *timer)
 	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
 		
-		if (globals.use_cond_yield == 1) {
-			switch_mutex_lock(TIMER_MATRIX[cond_index].mutex);
-			if (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
-				switch_thread_cond_wait(TIMER_MATRIX[cond_index].cond, TIMER_MATRIX[cond_index].mutex);	
-			}
-			switch_mutex_unlock(TIMER_MATRIX[cond_index].mutex);
+		if (session_manager.session_count > runtime.tipping_point) {
+			os_yield();
 		} else {
-			if (session_manager.session_count > 1000) {
-				os_yield();
+			if (globals.use_cond_yield == 1) {
+				switch_mutex_lock(TIMER_MATRIX[cond_index].mutex);
+				if (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
+					switch_thread_cond_wait(TIMER_MATRIX[cond_index].cond, TIMER_MATRIX[cond_index].mutex);	
+				}
+				switch_mutex_unlock(TIMER_MATRIX[cond_index].mutex);
 			} else {
 				do_sleep(1000);
 			}
@@ -640,10 +632,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				rev_errs = 0;
 			}
 
-			if (session_manager.session_count > 1000) {
+			if (session_manager.session_count > runtime.tipping_point) {
 				os_yield();
 			} else {
-				do_sleep(STEP_MIC);
+				do_sleep(1000);
 			}
 
 			last = ts;
@@ -952,7 +944,7 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 	timer_interface->timer_destroy = timer_destroy;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Calibrating timer, please wait...\n");
-	calibrate_clock();
+	switch_time_calibrate_clock();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
