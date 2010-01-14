@@ -1472,6 +1472,13 @@ SWITCH_STANDARD_API(ctl_function)
 			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "calibrate_clock")) {
 			switch_core_session_ctl(SCSC_CALIBRATE_CLOCK, NULL);
+			stream->write_function(stream, "+OK\n");
+		} else if (!strcasecmp(argv[0], "crash")) {
+			switch_core_session_ctl(SCSC_CRASH, NULL);
+			stream->write_function(stream, "+OK\n");
+		} else if (!strcasecmp(argv[0], "save_history")) {
+			switch_core_session_ctl(SCSC_SAVE_HISTORY, NULL);
+			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "shutdown")) {
 			switch_session_ctl_t command = SCSC_SHUTDOWN;
 			int x = 0;

@@ -1633,7 +1633,16 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 	case SCSC_CANCEL_SHUTDOWN:
 		switch_clear_flag((&runtime), SCF_SHUTDOWN_REQUESTED);
 		break;
+	case SCSC_SAVE_HISTORY:
+		switch_console_save_history();
+		break;
+	case SCSC_CRASH:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Declinatio Mortuus Obfirmo!\n");
+		switch_console_save_history();
+		abort();
+		break;
 	case SCSC_SHUTDOWN_NOW:
+		switch_console_save_history();
 		exit(0);
 		break;
 	case SCSC_SHUTDOWN_ELEGANT:

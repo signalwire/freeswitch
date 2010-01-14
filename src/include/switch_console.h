@@ -88,6 +88,7 @@ SWITCH_DECLARE(void) switch_console_free_matches(switch_console_callback_match_t
 SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const char *last_word, 
 													  FILE *console_out, switch_stream_handle_t *stream, switch_xml_t xml);
 SWITCH_DECLARE(void) switch_console_sort_matches(switch_console_callback_match_t *matches);
+SWITCH_DECLARE(void) switch_console_save_history(void);
 
 SWITCH_END_EXTERN_C
 #endif

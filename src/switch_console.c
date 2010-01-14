@@ -842,6 +842,15 @@ static unsigned char console_fnkey_pressed(int i)
 	return CC_REDISPLAY;
 }
 
+SWITCH_DECLARE(void) switch_console_save_history(void)
+{
+#ifdef SWITCH_HAVE_LIBEDIT
+	history(myhistory, &ev, H_SAVE, hfile);
+#else
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "NOT IMPLEMENTED!\n");
+#endif
+}
+
 #ifdef SWITCH_HAVE_LIBEDIT
 static char prompt_str[512] = "";
 
