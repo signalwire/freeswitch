@@ -204,7 +204,11 @@ static void calibrate_clock(void)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
 							  "Abnormally large timer gap %d detected!\n"
 							  "Do you have your kernel timer set to higher than 1khz? You may experience audio problems.\n", diff);
+#ifdef WIN32
+			Sleep(5*1000);
+#else
 			sleep(5);
+#endif
 			return;
 		}
 
