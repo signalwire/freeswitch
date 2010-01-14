@@ -508,12 +508,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	}
 
 
-	if (switch_channel_down(chan_b)) {
-		if (originator && switch_channel_ready(chan_a) && !switch_channel_test_flag(chan_a, CF_ANSWERED)) {
-			switch_channel_hangup(chan_a, switch_channel_get_cause(chan_b));
-		}
-	}
-
 	msg.string_arg = data->b_uuid;
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 	msg.from = __FILE__;
