@@ -1602,8 +1602,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
 			} else {
 				if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
-					switch_ivr_media(switch_core_session_get_uuid(session), SMF_REBRIDGE);
-					switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
+					switch_channel_set_variable(caller_channel, SWITCH_B_SDP_VARIABLE, NULL);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
 									  "Channel is already up, delaying proxy mode 'till both legs are answered.\n");
