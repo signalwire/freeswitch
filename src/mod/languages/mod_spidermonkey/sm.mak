@@ -9,6 +9,5 @@ LOCAL_LIBADD+=$(JSLA)
 include $(switch_srcdir)/build/modmake.rules
 
 $(JSLA): $(JS_DIR) $(JS_DIR)/.update
-	cd $(JS_DIR)/nsprpub && $(MAKE)
-	cd $(JS_DIR) && $(MAKE)
+	cd $(JS_DIR)/nsprpub && $(MAKE) -j1 && cd $(JS_DIR) && $(MAKE) -j1
 	$(TOUCH_TARGET)
