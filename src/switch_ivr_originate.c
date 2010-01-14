@@ -116,6 +116,7 @@ typedef struct {
 	int continue_on_timeout;
 	int ringback_ok;
 	int sending_ringback;
+	int bridge_early_media;
 } originate_global_t;
 
 
@@ -413,6 +414,11 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 		}
 
 		if (switch_channel_test_flag(originate_status[i].peer_channel, CF_EARLY_MEDIA)) {
+
+			if (oglobals->ignore_early_media == 3 && oglobals->bridge_early_media == -1) {
+				oglobals->bridge_early_media = i;
+				oglobals->ringback_ok = 1;
+			}
 
 			if (oglobals->sending_ringback == 1) {
 				send_ringback++;
@@ -1018,10 +1024,6 @@ static switch_status_t setup_ringback(originate_global_t *oglobals,
 	switch_codec_t *read_codec = NULL;
 	char *tmp_data = NULL;
 
-	if (!ringback_data) {
-		switch_goto_status(SWITCH_STATUS_GENERR, end);
-	}
-
 	if (!switch_channel_test_flag(caller_channel, CF_ANSWERED)
 		&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
 		if ((status = switch_channel_pre_answer(caller_channel)) != SWITCH_STATUS_SUCCESS) {
@@ -1032,7 +1034,7 @@ static switch_status_t setup_ringback(originate_global_t *oglobals,
 	}
 
 	if (oglobals->session && (read_codec = switch_core_session_get_read_codec(oglobals->session))) {
-		if (switch_is_file_path(ringback_data)) {
+		if (ringback_data && switch_is_file_path(ringback_data)) {
 			if (!(strrchr(ringback_data, '.') || strstr(ringback_data, SWITCH_URL_SEPARATOR))) {
 				ringback->asis++;
 			}
@@ -1072,6 +1074,10 @@ static switch_status_t setup_ringback(originate_global_t *oglobals,
 		}	
 
 		oglobals->gen_ringback = 1;
+		
+		if (zstr(ringback_data)) {
+			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
+		}
 
 		if (switch_is_file_path(ringback_data)) {
 			char *ext;
@@ -1579,6 +1585,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	oglobals.ringback_ok = 1;
+	oglobals.bridge_early_media = -1;
 
 	if (session) {
 		const char *to_var;
@@ -1772,6 +1779,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "ignore_early_media")) {
 					ok = 1;
+				} else if (!strcasecmp((char *) hi->name, "bridge_early_media")) {
+					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "originate_continue_on_timeout")) {
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "ignore_ring_ready")) {
@@ -1870,6 +1879,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if ((*oglobals.file != '\0') && (!strcmp(oglobals.file, "undef"))) {
 		*oglobals.file = '\0';
+	}
+
+	if ((var_val = switch_event_get_header(var_event, "bridge_early_media"))) {
+		if (switch_true(var_val)) {
+			oglobals.early_ok = 0;
+			oglobals.ignore_early_media = 3;
+		}
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "ignore_early_media"))) {
@@ -2560,8 +2576,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					} else {
 						read_frame = NULL;
 					}
-					
-					if (oglobals.ringback_ok && (oglobals.ring_ready || oglobals.instant_ringback || oglobals.sending_ringback > 1)) {
+
+					if (oglobals.ringback_ok && (oglobals.ring_ready || oglobals.instant_ringback || 
+												 oglobals.sending_ringback > 1 || oglobals.bridge_early_media > -1)) {
 						if (oglobals.ringback_ok == 1) {
 							switch_status_t rst = setup_ringback(&oglobals, ringback_data, &ringback, &write_frame, &write_codec);
 
@@ -2585,7 +2602,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							continue;
 						}
 							
-						if (ringback.fh) {
+						if (oglobals.bridge_early_media > -1)  {
+							switch_channel_t *b_channel = originate_status[oglobals.bridge_early_media].peer_channel;
+							switch_core_session_t *b_session = originate_status[oglobals.bridge_early_media].peer_session;
+							switch_status_t b_status = SWITCH_STATUS_FALSE;
+							switch_frame_t *b_frame;
+							
+							if (b_channel && b_session) {
+								b_status = switch_core_session_read_frame(b_session, &b_frame, SWITCH_IO_FLAG_NONE, 0);
+							}
+							
+							if (!SWITCH_READ_ACCEPTABLE(status)) {
+								oglobals.bridge_early_media = -1;
+							} else {
+								if (switch_core_session_write_frame(oglobals.session, b_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+									oglobals.bridge_early_media = -1;
+								}
+								continue;
+							}
+							
+						} else if (ringback.fh) {
 							switch_size_t mlen, olen;
 							unsigned int pos = 0;
 
