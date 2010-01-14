@@ -9,9 +9,12 @@ PrefPortaudio::PrefPortaudio(Ui::PrefDialog *ui, QObject *parent) :
     _settings = new QSettings();
     connect(_ui->PaRingFileBtn, SIGNAL(clicked()), this, SLOT(ringFileChoose()));
     connect(_ui->PaHoldFileBtn, SIGNAL(clicked()), this, SLOT(holdFileChoose()));
+    connect(_ui->PaIndevCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(indevChangeDev(int)));
     connect(_ui->PaOutdevCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(outdevChangeDev(int)));
     connect(_ui->PaRingdevCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(ringdevChangeDev(int)));
     connect(_ui->PaRingdevTestBtn, SIGNAL(clicked()), this, SLOT(ringdevTest()));
+    connect(_ui->PaLoopTestBtn, SIGNAL(clicked()), this, SLOT(loopTest()));
+    connect(_ui->PaRefreshDevListBtn, SIGNAL(clicked()), this, SLOT(refreshDevList()));
 }
 
 void PrefPortaudio::ringdevTest()
@@ -24,9 +27,51 @@ void PrefPortaudio::ringdevTest()
     }
 }
 
-void PrefPortaudio::ringdevChangeDev(int dev)
+void PrefPortaudio::loopTest()
 {
     QString result;
+    _ui->PaLoopTestBtn->setEnabled(false);
+    if (g_FSHost.sendCmd("pa", "looptest", &result) != SWITCH_STATUS_SUCCESS)
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error running looptest on mod_portaudio! %s\n",
+                          result.toAscii().constData());
+    }
+    _ui->PaLoopTestBtn->setEnabled(true);
+}
+
+void PrefPortaudio::refreshDevList()
+{
+    QString result;
+    if (g_FSHost.sendCmd("pa", "rescan", &result) != SWITCH_STATUS_SUCCESS)
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error rescaning sound device on mod_portaudio! %s\n",
+                          result.toAscii().constData());
+    }
+    //clear combox
+    _ui->PaIndevCombo->clear();
+    _ui->PaOutdevCombo->clear();
+    _ui->PaRingdevCombo->clear();
+    getPaDevlist();
+}
+
+void PrefPortaudio::indevChangeDev(int index)
+{
+    QString result;
+    int dev = _ui->PaIndevCombo->itemData(index, Qt::UserRole).toInt();
+    if (g_FSHost.sendCmd("pa", QString("indev #%1").arg(dev).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting ringdev to #%d on mod_portaudio!\n", dev);
+        QMessageBox::critical(0, tr("Unable to change device."),
+                              tr("There was an error changing the ringdev.\nPlease report this bug."),
+                              QMessageBox::Ok);
+
+    }
+}
+
+void PrefPortaudio::ringdevChangeDev(int index)
+{
+    QString result;
+    int dev = _ui->PaRingdevCombo->itemData(index, Qt::UserRole).toInt();
     if (g_FSHost.sendCmd("pa", QString("ringdev #%1").arg(dev).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting ringdev to #%d on mod_portaudio!\n", dev);
@@ -37,9 +82,10 @@ void PrefPortaudio::ringdevChangeDev(int dev)
     }
 }
 
-void PrefPortaudio::outdevChangeDev(int dev)
+void PrefPortaudio::outdevChangeDev(int index)
 {
     QString result;
+    int dev = _ui->PaRingdevCombo->itemData(index, Qt::UserRole).toInt();
     if (g_FSHost.sendCmd("pa", QString("outdev #%1").arg(dev).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting outdev to #%d on mod_portaudio!\n", dev);
@@ -89,13 +135,21 @@ void PrefPortaudio::writeConfig()
     int ring_interval = _settings->value("ring-interval").toInt();
     int nring_interval = _ui->PaRingIntervalSpin->value();
 
+    QString sample_rate = _settings->value("sample-rate").toString();
+    QString nsample_rate = _ui->PaSampleRateEdit->text();
+
+    QString codec_ms = _settings->value("codec-ms").toString();
+    QString ncodec_ms = _ui->PaCodecMSEdit->text();
+
     QString result;
 
     if (cid_name != ncid_name ||
         cid_num != ncid_num ||
         hold_file != nhold_file ||
         ring_file != nring_file ||
-        ring_interval != nring_interval)
+        ring_interval != nring_interval ||
+        sample_rate != nsample_rate||
+        codec_ms != ncodec_ms)
     {
         if (g_FSHost.sendCmd("reload", "mod_portaudio", &result) == SWITCH_STATUS_SUCCESS)
         {
@@ -104,6 +158,8 @@ void PrefPortaudio::writeConfig()
             _settings->setValue("ring-file", nring_file);
             _settings->setValue("ring-interval", nring_interval);
             _settings->setValue("hold-file", nhold_file);
+            _settings->setValue("sample-rate", nsample_rate);
+            _settings->setValue("codec-ms", ncodec_ms);
         }
         else
         {
@@ -114,11 +170,11 @@ void PrefPortaudio::writeConfig()
         }
     }
 
-    int nindev = _ui->PaIndevCombo->currentIndex();
+    int nindev = _ui->PaIndevCombo->itemData(_ui->PaIndevCombo->currentIndex(), Qt::UserRole).toInt();
     int indev = _settings->value("indev").toInt();
-    int noutdev = _ui->PaOutdevCombo->currentIndex();
+    int noutdev = _ui->PaOutdevCombo->itemData(_ui->PaOutdevCombo->currentIndex(), Qt::UserRole).toInt();
     int outdev = _settings->value("outdev").toInt();
-    int nringdev = _ui->PaRingdevCombo->currentIndex();
+    int nringdev = _ui->PaRingdevCombo->itemData(_ui->PaRingdevCombo->currentIndex(), Qt::UserRole).toInt();
     int ringdev = _settings->value("ringdev").toInt();
 
     if (nindev != indev)
@@ -161,6 +217,8 @@ void PrefPortaudio::readConfig()
     _ui->PaHoldFileEdit->setText(_settings->value("hold-file").toString());
     _ui->PaRingFileEdit->setText(_settings->value("ring-file").toString());
     _ui->PaRingIntervalSpin->setValue(_settings->value("ring-interval").toInt());
+    _ui->PaSampleRateEdit->setText(_settings->value("sample-rate").toString());
+    _ui->PaCodecMSEdit->setText(_settings->value("codec-ms").toString());
     _settings->endGroup();
 
     _settings->endGroup();
@@ -260,19 +318,29 @@ void PrefPortaudio::getPaDevlist()
         {
             for(int itemId=0; itemId<_ui->PaRingdevCombo->count(); itemId++)
             {
-                if (itemId == _ui->PaRingdevCombo->itemData(itemId,Qt::UserRole).toInt())
+                if (id == _ui->PaRingdevCombo->itemData(itemId,Qt::UserRole))
                 {
+                    //setCurrentIndex triggers currentIndexChanged signal, hmmm...
                     _ui->PaRingdevCombo->setCurrentIndex(itemId);
                     break;
                 }
             }
         }
         else if (child.tagName() == "input")
-            _ui->PaIndevCombo->setCurrentIndex(id.toInt());
+        {
+            for(int itemId=0; itemId<_ui->PaRingdevCombo->count(); itemId++)
+            {
+                if (id == _ui->PaIndevCombo->itemData(itemId,Qt::UserRole))
+                {
+                    _ui->PaIndevCombo->setCurrentIndex(itemId);
+                    break;
+                }
+            }
+        }
         else if (child.tagName() == "output")
             for(int itemId=0; itemId<_ui->PaOutdevCombo->count(); itemId++)
             {
-                if (itemId == _ui->PaOutdevCombo->itemData(itemId,Qt::UserRole).toInt())
+                if (id == _ui->PaOutdevCombo->itemData(itemId,Qt::UserRole))
                 {
                     _ui->PaOutdevCombo->setCurrentIndex(itemId);
                     break;

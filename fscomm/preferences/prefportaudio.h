@@ -18,10 +18,12 @@ public:
 private slots:
     void ringFileChoose();
     void holdFileChoose();
+    void indevChangeDev(int);
     void outdevChangeDev(int);
     void ringdevChangeDev(int);
     void ringdevTest();
-
+    void loopTest();
+    void refreshDevList();
 private:
     void getPaDevlist(void);
     QSettings *_settings;
