@@ -34,6 +34,9 @@
     <!-- either an absolute path, a relative path assuming ${prefix}/logs or a blank or omitted value will default to ${prefix}/logs/xml_cdr -->
     <!-- <param name="err-log-dir" value="/tmp"/> -->
 
+    <!-- which auhtentification scheme to use. Supported values are: basic, digest, NTLM, GSS-NEGOTIATE or "any" for automatic detection -->
+    <!--<param name="auth-scheme" value="basic"/>--> 
+
     <!-- optional: this will enable the CA root certificate check by libcurl to
          verify that the certificate was issued by a major Certificate Authority.
          note: default value is disabled. only enable if you want this! -->
