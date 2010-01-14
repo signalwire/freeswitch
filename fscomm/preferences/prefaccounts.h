@@ -18,6 +18,8 @@ public slots:
 
 private slots:
     void addAccountBtnClicked();
+    void editAccountBtnClicked();
+    void remAccountBtnClicked();
 
 private:
     Ui::PrefDialog *_ui;

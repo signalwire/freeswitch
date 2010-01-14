@@ -4,7 +4,7 @@
 #include "ui_accountdialog.h"
 #include "fshost.h"
 
-AccountDialog::AccountDialog(int accId, QWidget *parent) :
+AccountDialog::AccountDialog(QString accId, QWidget *parent) :
     QDialog(parent),
     _accId(accId),
     ui(new Ui::AccountDialog)
@@ -61,7 +61,7 @@ void AccountDialog::writeConfig()
 {
     _settings->beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways");
 
-    _settings->beginGroup(QString::number(_accId));
+    _settings->beginGroup(_accId);
     
     _settings->beginGroup("gateway/attrs");
     _settings->setValue("name", ui->sofiaGwNameEdit->text());
@@ -77,6 +77,9 @@ void AccountDialog::writeConfig()
     _settings->setValue("register", ui->sofiaGwRegisterCombo->currentText());
     _settings->setValue("register-transport", ui->sofiaGwRegisterTransportCombo->currentText());
     _settings->setValue("retry-seconds", ui->sofiaGwRetrySecondsSpin->value());    
+    _settings->endGroup();
+
+    _settings->beginGroup("gateway/customParams");
     for (int i = 0; i< ui->sofiaExtraParamTable->rowCount(); i++)
     {
         _settings->setValue(ui->sofiaExtraParamTable->item(i, 0)->text(),
@@ -95,6 +98,27 @@ void AccountDialog::writeConfig()
         return;
     }
     emit gwAdded();
+}
+
+void AccountDialog::clear()
+{
+    ui->sofiaExtraParamTable->clearContents();
+    ui->sofiaExtraParamTable->setRowCount(0);
+
+    ui->sofiaGwNameEdit->clear();
+    ui->sofiaGwUsernameEdit->clear();
+    ui->sofiaGwRealmEdit->clear();
+    ui->sofiaGwPasswordEdit->clear();
+    ui->sofiaGwExtensionEdit->clear();
+    ui->sofiaGwExpireSecondsSpin->setValue(60);
+    ui->sofiaGwRegisterCombo->setCurrentIndex(0);
+    ui->sofiaGwRegisterTransportCombo->setCurrentIndex(0);
+    ui->sofiaGwRetrySecondsSpin->setValue(30);
+}
+
+void AccountDialog::setAccId(QString accId)
+{
+    _accId = accId;
 }
 
 void AccountDialog::changeEvent(QEvent *e)

@@ -96,7 +96,7 @@
    <item row="0" column="1">
     <widget class="QStackedWidget" name="stackedWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="generalPage">
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -168,6 +168,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="sofiaGwEditBtn">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>Edit</string>
            </property>

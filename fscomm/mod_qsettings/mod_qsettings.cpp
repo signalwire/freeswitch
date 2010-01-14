@@ -91,7 +91,7 @@ void XMLBinding::parseGroup(QXmlStreamWriter *streamWriter, QString group)
         return;
     }
 
-    if (group == "params")
+    if (group == "params" || group == "customParams")
     {
         _settings->beginGroup(group);
         foreach(QString param, _settings->childKeys())
