@@ -451,8 +451,8 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		nack_map[r] = 1;
 		if (sangoma_boost_data->sigmod) {
 			sangomabc_exec_command(&sangoma_boost_data->mcon,
-								(*zchan)->physical_span_id,
-								(*zchan)->physical_chan_id,
+								BOOST_SPAN((*zchan)),
+								BOOST_CHAN((*zchan)),
 								r,
 								SIGBOOST_EVENT_CALL_START_NACK,
 								0);
@@ -616,9 +616,21 @@ static void handle_call_done(zap_span_t *span, sangomabc_connection_t *mcon, san
 {
 	zap_channel_t *zchan;
 	int r = 0;
-
+	
 	if ((zchan = find_zchan(span, event, 1))) {
+		zap_sangoma_boost_data_t *sangoma_boost_data = zchan->span->signal_data;
 		zap_mutex_lock(zchan->mutex);
+
+		if (sangoma_boost_data->sigmod) {
+			/* not really completely done, but if we ever get an incoming call before moving to HANGUP_COMPLETE
+			 * handle_incoming_call() will take care of moving the state machine to release the channel */
+			sangomabc_exec_command(&sangoma_boost_data->mcon,
+								BOOST_SPAN(zchan),
+								BOOST_CHAN(zchan),
+								0,
+								SIGBOOST_EVENT_CALL_RELEASED,
+								0);
+		}
 
 		if (zchan->state == ZAP_CHANNEL_STATE_DOWN || zchan->state == ZAP_CHANNEL_STATE_HANGUP_COMPLETE) {
 			goto done;
@@ -729,6 +741,18 @@ static void handle_call_start_nack(zap_span_t *span, sangomabc_connection_t *mco
 #endif
 }
 
+static void handle_call_released(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
+{
+	zap_channel_t *zchan;
+	
+	if ((zchan = find_zchan(span, event, 1))) {
+		zap_log(ZAP_LOG_DEBUG, "Releasing completely chan s%dc%d\n", event->span, event->chan);
+		zap_channel_done(zchan);
+	} else {
+		zap_log(ZAP_LOG_ERROR, "Odd, We could not find chan: s%dc%d to release the call completely!!\n", event->span, event->chan);
+	}
+}
+
 /**
  * \brief Handler for call stop event
  * \param span Span where event was fired
@@ -773,10 +797,10 @@ static void handle_call_stop(zap_span_t *span, sangomabc_connection_t *mcon, san
 		if (r) {
 			return;
 		}
-	} /* else we have to do it ourselves.... */
-
-	zap_log(ZAP_LOG_WARNING, "We could not find chan: s%dc%d\n", event->span, event->chan);
-	release_request_id_span_chan(event->span, event->chan);
+	} else { /* we have to do it ourselves.... */
+		zap_log(ZAP_LOG_ERROR, "Odd, We could not find chan: s%dc%d\n", event->span, event->chan);
+		release_request_id_span_chan(event->span, event->chan);
+	}
 }
 
 /**
@@ -829,6 +853,9 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 			zap_log(ZAP_LOG_CRIT, "START CANT FIND CHAN %d:%d AT ALL\n", event->span+1,event->chan+1);
 			goto error;
 		}
+		/* this handles race conditions where state handlers are still pending to be executed for finished calls
+		   but an incoming call arrives first, we must complete the channel states and then try again to get the 
+		   zap channel */
 		advance_chan_states(zchan);
 		if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 0))) {
 			zap_log(ZAP_LOG_CRIT, "START CANT FIND CHAN %d:%d EVEN AFTER STATE ADVANCE\n", event->span+1,event->chan+1);
@@ -996,6 +1023,9 @@ static int parse_sangoma_event(zap_span_t *span, sangomabc_connection_t *mcon, s
     case SIGBOOST_EVENT_CALL_STOPPED:
 		handle_call_stop(span, mcon, event);
 		break;
+    case SIGBOOST_EVENT_CALL_RELEASED:
+		handle_call_released(span, mcon, event);
+		break;
     case SIGBOOST_EVENT_CALL_START_ACK:
 		handle_call_start_ack(mcon, event);
 		break;
@@ -1070,6 +1100,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	switch (zchan->state) {
 	case ZAP_CHANNEL_STATE_DOWN:
 		{
+			int call_stopped_ack_sent = 0;
+			zap_sangoma_boost_data_t *sangoma_boost_data = zchan->span->signal_data;
 			if (zchan->extra_id) {
 				zchan->extra_id = 0;
 			}
@@ -1083,24 +1115,32 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 
 				if (zchan->call_data && ((uint32_t)(intptr_t)zchan->call_data == SIGBOOST_EVENT_CALL_START_NACK)) {
 					sangomabc_exec_command(mcon,
-									zchan->physical_span_id-1,
-									zchan->physical_chan_id-1,
+									BOOST_SPAN(zchan),
+									BOOST_CHAN(zchan),
 									0,
 									SIGBOOST_EVENT_CALL_START_NACK_ACK,
 									0);
 					
 				} else {
+					/* we got a call stop msg, time to reply with call stopped ack  */
 					sangomabc_exec_command(mcon,
-									zchan->physical_span_id-1,
-									zchan->physical_chan_id-1,
+									BOOST_SPAN(zchan),
+									BOOST_CHAN(zchan),
 									0,
 									SIGBOOST_EVENT_CALL_STOPPED_ACK,
 									0);
+					call_stopped_ack_sent = 1;
 				}
 			}
 			zchan->sflags = 0;
 			zchan->call_data = NULL;
-			zap_channel_done(zchan);
+			if (sangoma_boost_data->sigmod && call_stopped_ack_sent) {
+				/* we dont want to call zap_channel_done just yet until call released is received */
+				zap_log(ZAP_LOG_DEBUG, "Waiting for call release confirmation before declaring chan %d:%d as available \n", 
+						zchan->span_id, zchan->chan_id);
+			} else {
+				zap_channel_done(zchan);
+			}
 		}
 		break;
 	case ZAP_CHANNEL_STATE_PROGRESS_MEDIA:

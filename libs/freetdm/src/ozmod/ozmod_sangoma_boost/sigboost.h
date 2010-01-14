@@ -28,6 +28,19 @@ enum	e_sigboost_event_id_values
 	SIGBOOST_EVENT_CALL_ANSWERED			= 0x84, /*132*/
 	SIGBOOST_EVENT_CALL_STOPPED			= 0x85, /*133*/
 	SIGBOOST_EVENT_CALL_STOPPED_ACK			= 0x86, /*134*/
+	/* CALL_RELEASED is aimed to fix a race condition that became obvious
+	 * when the boost socket was replaced by direct function calls
+	 * and the channel hunting was moved to openzap, the problem is
+	 * we can get CALL_STOPPED msg and reply with CALL_STOPPED_ACK
+	 * but the signaling module will still (in PRI) send RELEASE and
+	 * wait for RELEASE_COMPLETE from the isdn network before
+	 * marking the channel as available, therefore openzap should
+	 * also not mark the channel as available until CALL_RELEASED
+	 * is received, for socket mode we can continue working as usual
+	 * with CALL_STOPPED being the last step because the hunting is
+	 * done in the signaling module.
+	 * */
+	SIGBOOST_EVENT_CALL_RELEASED			= 0x51, /* 81 */
 	SIGBOOST_EVENT_SYSTEM_RESTART			= 0x87, /*135*/
 	SIGBOOST_EVENT_SYSTEM_RESTART_ACK		= 0x88, /*136*/
 	SIGBOOST_EVENT_CALL_PROGRESS            = 0x50, /*decimal  80*/

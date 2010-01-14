@@ -1507,22 +1507,24 @@ OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan)
 {
 	assert(zchan != NULL);
 
+	zap_mutex_lock(zchan->mutex);
+
 	memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_INUSE);
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_OUTBOUND);
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_WINK);
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_FLASH);
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_STATE_CHANGE);
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_HOLD);
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_OFFHOOK);
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_RINGING);
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_PROGRESS_DETECT);
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_CALLERID_DETECT);
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_3WAY);
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_PROGRESS);
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_MEDIA);
-	zap_clear_flag_locked(zchan, ZAP_CHANNEL_ANSWERED);
+	zap_clear_flag(zchan, ZAP_CHANNEL_INUSE);
+	zap_clear_flag(zchan, ZAP_CHANNEL_OUTBOUND);
+	zap_clear_flag(zchan, ZAP_CHANNEL_WINK);
+	zap_clear_flag(zchan, ZAP_CHANNEL_FLASH);
+	zap_clear_flag(zchan, ZAP_CHANNEL_STATE_CHANGE);
+	zap_clear_flag(zchan, ZAP_CHANNEL_HOLD);
+	zap_clear_flag(zchan, ZAP_CHANNEL_OFFHOOK);
+	zap_clear_flag(zchan, ZAP_CHANNEL_RINGING);
+	zap_clear_flag(zchan, ZAP_CHANNEL_PROGRESS_DETECT);
+	zap_clear_flag(zchan, ZAP_CHANNEL_CALLERID_DETECT);
+	zap_clear_flag(zchan, ZAP_CHANNEL_3WAY);
+	zap_clear_flag(zchan, ZAP_CHANNEL_PROGRESS);
+	zap_clear_flag(zchan, ZAP_CHANNEL_MEDIA);
+	zap_clear_flag(zchan, ZAP_CHANNEL_ANSWERED);
 	zap_mutex_lock(zchan->pre_buffer_mutex);
 	zap_buffer_destroy(&zchan->pre_buffer);
 	zchan->pre_buffer_size = 0;
@@ -1530,7 +1532,10 @@ OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan)
 
 	zchan->init_state = ZAP_CHANNEL_STATE_DOWN;
 	zchan->state = ZAP_CHANNEL_STATE_DOWN;
+
 	zap_log(ZAP_LOG_DEBUG, "channel done %u:%u\n", zchan->span_id, zchan->chan_id);
+
+	zap_mutex_unlock(zchan->mutex);
 
 	return ZAP_SUCCESS;
 }

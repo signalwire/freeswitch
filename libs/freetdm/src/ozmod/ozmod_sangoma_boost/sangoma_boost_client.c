@@ -60,6 +60,7 @@ static struct sangomabc_map sangomabc_table[] = {
 	{SIGBOOST_EVENT_CALL_ANSWERED, "CALL_ANSWERED"}, 
 	{SIGBOOST_EVENT_CALL_STOPPED, "CALL_STOPPED"}, 
 	{SIGBOOST_EVENT_CALL_STOPPED_ACK, "CALL_STOPPED_ACK"}, 
+	{SIGBOOST_EVENT_CALL_RELEASED, "CALL_RELEASED"}, 
 	{SIGBOOST_EVENT_SYSTEM_RESTART, "SYSTEM_RESTART"}, 
 	{SIGBOOST_EVENT_SYSTEM_RESTART_ACK, "SYSTEM_RESTART_ACK"}, 
 	{SIGBOOST_EVENT_HEARTBEAT, "HEARTBEAT"}, 
@@ -457,7 +458,13 @@ int __sangomabc_connection_write(sangomabc_connection_t *mcon, sangomabc_event_t
 		event->fseqno = mcon->txseq++;
 	}
 	event->bseqno = mcon->rxseq;
-    event->version = SIGBOOST_VERSION; 
+    	event->version = SIGBOOST_VERSION; 
+
+	if (boost_full_event(event->event_id)) {
+		sangomabc_print_event_call(mcon, event, 0, 1, file, func, line);
+	} else {
+		sangomabc_print_event_short(mcon, (sangomabc_short_event_t*)event, 0, 1, file, func, line);
+	}
 
 	if (mcon->sigmod) {
 		mcon->sigmod->write_msg(mcon->span, event, event_size);
@@ -472,12 +479,6 @@ int __sangomabc_connection_write(sangomabc_connection_t *mcon, sangomabc_event_t
 	zap_mutex_unlock(mcon->mutex);
 
 	zap_assert_return(err == event_size, -1, "Failed to send the boost message completely!");
-
-	if (boost_full_event(event->event_id)) {
-		sangomabc_print_event_call(mcon, event, 0, 1, file, func, line);
-	} else {
-		sangomabc_print_event_short(mcon, (sangomabc_short_event_t*)event, 0, 1, file, func, line);
-	}
 
 	return err;
 }
