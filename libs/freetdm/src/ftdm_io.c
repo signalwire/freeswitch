@@ -3381,7 +3381,7 @@ FT_DECLARE(ftdm_status_t) ftdm_global_configuration(void)
 
 	if (load_config() != FTDM_SUCCESS) {
 		globals.running = 0;
-		ftdm_log(FTDM_LOG_ERROR, "OpenZap global configuration failed!\n");
+		ftdm_log(FTDM_LOG_ERROR, "FreeTDM global configuration failed!\n");
 		return FTDM_FAIL;
 	}
 	return FTDM_SUCCESS;
