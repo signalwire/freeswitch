@@ -1025,7 +1025,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 				/*
 				 * !! HACK ALERT !!
 				 *
-				 * Map OpenFTDM channel states to Q.931 states
+				 * Map FreeTDM channel states to Q.931 states
 				 */
 				Q931ie_CallState state;
 				Q931ie_Cause cause;

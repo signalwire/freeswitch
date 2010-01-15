@@ -27,7 +27,7 @@
  * Moises Silva <moy@sangoma.com>
  *
  *
- * mod_freetdm.c -- OPENFTDM Endpoint Module
+ * mod_freetdm.c -- FreeTDM Endpoint Module
  *
  */
 #include <switch.h>
@@ -37,8 +37,8 @@
 #define __FUNCTION__ __SWITCH_FUNC__
 #endif
 
-#define OPENFTDM_VAR_PREFIX "freetdm_"
-#define OPENFTDM_VAR_PREFIX_LEN 8
+#define FREETDM_VAR_PREFIX "freetdm_"
+#define FREETDM_VAR_PREFIX_LEN 8
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_freetdm_shutdown);
@@ -1181,8 +1181,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	ftdm_channel_clear_vars(ftdmchan);
 	for (h = var_event->headers; h; h = h->next) {
-		if (!strncasecmp(h->name, OPENFTDM_VAR_PREFIX, OPENFTDM_VAR_PREFIX_LEN)) {
-			char *v = h->name + OPENFTDM_VAR_PREFIX_LEN;
+		if (!strncasecmp(h->name, FREETDM_VAR_PREFIX, FREETDM_VAR_PREFIX_LEN)) {
+			char *v = h->name + FREETDM_VAR_PREFIX_LEN;
 			if (!zstr(v)) {
 				ftdm_channel_add_var(ftdmchan, v, h->value);
 			}
@@ -1204,7 +1204,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			goto fail;
 		}
 
-		snprintf(name, sizeof(name), "OpenFTDM/%u:%u/%s", ftdmchan->span_id, ftdmchan->chan_id, dest);
+		snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", ftdmchan->span_id, ftdmchan->chan_id, dest);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
 		switch_channel_set_name(channel, name);
 		switch_channel_set_variable(channel, "freetdm_span_name", ftdmchan->span->name);
@@ -1293,7 +1293,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	}
 
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-														 "OpenFTDM",
+														 "FreeTDM",
 														 SPAN_CONFIG[sigmsg->channel->span_id].dialplan,
 														 sigmsg->channel->caller_data.cid_name,
 														 sigmsg->channel->caller_data.cid_num.digits,
@@ -1315,7 +1315,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 	}
 	
-	snprintf(name, sizeof(name), "OpenFTDM/%u:%u/%s", sigmsg->channel->span_id, sigmsg->channel->chan_id, tech_pvt->caller_profile->destination_number);
+	snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", sigmsg->channel->span_id, sigmsg->channel->chan_id, tech_pvt->caller_profile->destination_number);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect inbound channel %s\n", name);
 	switch_channel_set_name(channel, name);
 	switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
@@ -1966,7 +1966,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding OpenFTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -1981,7 +1981,7 @@ static switch_status_t load_config(void)
 								   "hotline", hotline,
 								   "enable_callerid", enable_callerid,
 								   TAG_END) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting OpenFTDM span %d\n", span_id);
+				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d\n", span_id);
 				continue;
 			}
 
@@ -2081,7 +2081,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding OpenFTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -2095,7 +2095,7 @@ static switch_status_t load_config(void)
 								   "digit_timeout", &to,
 								   "max_dialstr", &max,
 								   TAG_END) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting OpenFTDM span %d\n", span_id);
+				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d\n", span_id);
 				continue;
 			}
 
@@ -2194,7 +2194,7 @@ static switch_status_t load_config(void)
 			}
 			
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding OpenFTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 
@@ -2215,7 +2215,7 @@ static switch_status_t load_config(void)
 								   "q921loglevel", q921loglevel,
 								   "q931loglevel", q931loglevel,
 								   TAG_END) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting OpenFTDM span %d mode: %s dialect: %s error: %s\n", span_id, mode, dialect, span->last_error);
+				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d mode: %s dialect: %s error: %s\n", span_id, mode, dialect, span->last_error);
 				continue;
 			}
 
@@ -2291,7 +2291,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding OpenFTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 
@@ -2308,7 +2308,7 @@ static switch_status_t load_config(void)
 								   "debug", o_debug,
 								   "opts", opts,
 								   TAG_END) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting OpenFTDM span %d node: %s switch: %s dp: %s l1: %s debug: %s error: %s\n", 
+				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d node: %s switch: %s dp: %s l1: %s debug: %s error: %s\n", 
 						span_id, switch_str_nil(o_node), switch_str_nil(o_switch), switch_str_nil(o_dp), switch_str_nil(o_l1), switch_str_nil(o_debug),
 						span->last_error);
 				continue;
@@ -2386,7 +2386,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding OpenFTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -2395,7 +2395,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (ftdm_configure_span_signaling("sangoma_boost", span, on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting OpenFTDM span %d error: %s\n", span_id, span->last_error);
+				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d error: %s\n", span_id, span->last_error);
 				continue;
 			}
 
@@ -2521,7 +2521,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding OpenFTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 
@@ -2548,7 +2548,7 @@ static switch_status_t load_config(void)
 				"mfback_timeout", mfback_timeout,
 				"metering_pulse_timeout", metering_pulse_timeout, 
 				TAG_END) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error configuring R2 OpenFTDM span %d, error: %s\n", 
+				ftdm_log(FTDM_LOG_ERROR, "Error configuring R2 FreeTDM span %d, error: %s\n", 
 				span_id, span->last_error);
 				continue;
 			}
@@ -2567,7 +2567,7 @@ static switch_status_t load_config(void)
 			switch_copy_string(SPAN_CONFIG[span->span_id].type, "r2", sizeof(SPAN_CONFIG[span->span_id].type));
 
 			if (ftdm_span_start(span) == FTDM_FAIL) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting R2 OpenFTDM span %d, error: %s\n", span_id, span->last_error);
+				ftdm_log(FTDM_LOG_ERROR, "Error starting R2 FreeTDM span %d, error: %s\n", span_id, span->last_error);
 				continue;
 			}
 		}
@@ -2579,7 +2579,7 @@ static switch_status_t load_config(void)
 		boost_span = boost_spans[i];
 		ftdm_log(FTDM_LOG_DEBUG, "Starting boost span %d\n", boost_span->span_id);
 		if (ftdm_span_start(boost_span) == FTDM_FAIL) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting boost OpenFTDM span %d, error: %s\n", boost_span->span_id, boost_span->last_error);
+				ftdm_log(FTDM_LOG_ERROR, "Error starting boost FreeTDM span %d, error: %s\n", boost_span->span_id, boost_span->last_error);
 				continue;
 		}
 	}
@@ -2954,7 +2954,7 @@ SWITCH_STANDARD_APP(disable_ec_function)
 	int x = 0;
 
 	if (!switch_core_session_check_interface(session, freetdm_endpoint_interface)) {
-		ftdm_log(FTDM_LOG_ERROR, "This application is only for OpenFTDM channels.\n");
+		ftdm_log(FTDM_LOG_ERROR, "This application is only for FreeTDM channels.\n");
 		return;
 	}
 	
@@ -2976,12 +2976,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	ftdm_global_set_logger(ftdm_logger);
 	
 	if (ftdm_global_init() != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "Error loading OpenFTDM\n");
+		ftdm_log(FTDM_LOG_ERROR, "Error loading FreeTDM\n");
 		return SWITCH_STATUS_TERM;
 	}
 
 	if (ftdm_global_configuration() != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "Error configuring OpenFTDM\n");
+		ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM\n");
 		return SWITCH_STATUS_TERM;
 	}
 	
@@ -2996,7 +2996,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	freetdm_endpoint_interface->io_routines = &freetdm_io_routines;
 	freetdm_endpoint_interface->state_handler = &freetdm_state_handlers;
 	
-	SWITCH_ADD_API(commands_api_interface, "ft", "OpenFTDM commands", ft_function, FT_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "ft", "FreeTDM commands", ft_function, FT_SYNTAX);
 
 	SWITCH_ADD_APP(app_interface, "disable_ec", "Disable Echo Canceller", "Disable Echo Canceller", disable_ec_function, "", SAF_NONE);
 

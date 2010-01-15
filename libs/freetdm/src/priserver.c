@@ -282,11 +282,11 @@ int main(int argc, char *argv[])
 
 	ftdm_global_set_default_logger(FTDM_LOG_LEVEL_DEBUG);
 	if (ftdm_global_init() != FTDM_SUCCESS) {
-        fprintf(stderr, "Error loading OpenFTDM\n");
+        fprintf(stderr, "Error loading FreeTDM\n");
         exit(-1);
     }
 
-    printf("OpenFTDM loaded\n");
+    printf("FreeTDM loaded\n");
 
 
 	debug = PRI_DEBUG_Q931_DUMP | PRI_DEBUG_Q931_STATE;

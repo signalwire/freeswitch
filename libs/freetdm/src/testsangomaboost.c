@@ -29,19 +29,19 @@ int main(int argc, char *argv[])
 	}
 
 	if (ftdm_global_init() != FTDM_SUCCESS) {
-		fprintf(stderr, "Error loading OpenFTDM\n");
+		fprintf(stderr, "Error loading FreeTDM\n");
 		exit(-1);
 	}
 
 	if (ftdm_global_configuration() != FTDM_SUCCESS) {
-		fprintf(stderr, "Error configuring OpenFTDM\n");
+		fprintf(stderr, "Error configuring FreeTDM\n");
 		exit(-1);
 	}
 
-	printf("OpenFTDM loaded\n");
+	printf("FreeTDM loaded\n");
 
 	if (ftdm_span_find(atoi(argv[1]), &span) != FTDM_SUCCESS) {
-		fprintf(stderr, "Error finding OpenFTDM span\n");
+		fprintf(stderr, "Error finding FreeTDM span\n");
 		goto done;
 	}
 

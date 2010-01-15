@@ -279,7 +279,7 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
 				binfo.numbufs = 32;
 				binfo.bufsize = 1024;
 				if (ioctl(sockfd, codes.SET_BUFINFO, &binfo)) {
-					ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as OpenFTDM device %d:%d fd:%d\n", chanpath, ftdmchan->span_id, ftdmchan->chan_id, sockfd);
+					ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as FreeTDM device %d:%d fd:%d\n", chanpath, ftdmchan->span_id, ftdmchan->chan_id, sockfd);
 					close(sockfd);
 					continue;
 				}
@@ -341,7 +341,7 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
 				cc.sigtype = ZT_SIG_CAS;
 				cc.idlebits = cas_bits;
 				if (ioctl(CONTROL_FD, codes.CHANCONFIG, &cc)) {
-					ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as OpenFTDM device %d:%d fd:%d err:%s", chanpath, ftdmchan->span_id, ftdmchan->chan_id, sockfd, strerror(errno));
+					ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as FreeTDM device %d:%d fd:%d err:%s", chanpath, ftdmchan->span_id, ftdmchan->chan_id, sockfd, strerror(errno));
 					close(sockfd);
 					continue;
 				}
@@ -350,7 +350,7 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
 			if (ftdmchan->type != FTDM_CHAN_TYPE_DQ921 && ftdmchan->type != FTDM_CHAN_TYPE_DQ931) {
 				len = zt_globals.codec_ms * 8;
 				if (ioctl(ftdmchan->sockfd, codes.SET_BLOCKSIZE, &len)) {
-					ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as OpenFTDM device %d:%d fd:%d err:%s\n", 
+					ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as FreeTDM device %d:%d fd:%d err:%s\n", 
 							chanpath, ftdmchan->span_id, ftdmchan->chan_id, sockfd, strerror(errno));
 					close(sockfd);
 					continue;
@@ -365,7 +365,7 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
 			}
 			
 			if (ioctl(sockfd, codes.GET_PARAMS, &ztp) < 0) {
-				ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as OpenFTDM device %d:%d fd:%d\n", chanpath, ftdmchan->span_id, ftdmchan->chan_id, sockfd);
+				ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as FreeTDM device %d:%d fd:%d\n", chanpath, ftdmchan->span_id, ftdmchan->chan_id, sockfd);
 				close(sockfd);
 				continue;
 			}
@@ -376,13 +376,13 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
 					(ztp.sig_type != ZT_SIG_HDLCFCS) &&
 					(ztp.sig_type != ZT_SIG_HARDHDLC)
 					) {
-					ftdm_log(FTDM_LOG_ERROR, "Failure configuring device %s as OpenFTDM device %d:%d fd:%d, hardware signaling is not HDLC, fix your Zap/DAHDI configuration!\n", chanpath, ftdmchan->span_id, ftdmchan->chan_id, sockfd);
+					ftdm_log(FTDM_LOG_ERROR, "Failure configuring device %s as FreeTDM device %d:%d fd:%d, hardware signaling is not HDLC, fix your Zap/DAHDI configuration!\n", chanpath, ftdmchan->span_id, ftdmchan->chan_id, sockfd);
 					close(sockfd);
 					continue;
 				}
 			}
 
-			ftdm_log(FTDM_LOG_INFO, "configuring device %s channel %d as OpenFTDM device %d:%d fd:%d\n", chanpath, x, ftdmchan->span_id, ftdmchan->chan_id, sockfd);
+			ftdm_log(FTDM_LOG_INFO, "configuring device %s channel %d as FreeTDM device %d:%d fd:%d\n", chanpath, x, ftdmchan->span_id, ftdmchan->chan_id, sockfd);
 			
 			ftdmchan->rate = 8000;
 			ftdmchan->physical_span_id = ztp.span_no;
@@ -411,7 +411,7 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
 			ztp.flash_time = zt_globals.flash_ms;
 
 			if (ioctl(sockfd, codes.SET_PARAMS, &ztp) < 0) {
-				ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as OpenFTDM device %d:%d fd:%d\n", chanpath, ftdmchan->span_id, ftdmchan->chan_id, sockfd);
+				ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as FreeTDM device %d:%d fd:%d\n", chanpath, ftdmchan->span_id, ftdmchan->chan_id, sockfd);
 				close(sockfd);
 				continue;
 			}
@@ -632,7 +632,7 @@ static ZIO_OPEN_FUNCTION(zt_open)
                 ftdm_log(FTDM_LOG_INFO, "Setting txgain to %f on channel %d\n", zt_globals.txgain, gains.chan_no);
 
 			if (ioctl(ftdmchan->sockfd, codes.SETGAINS, &gains) < 0) {
-				ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as OpenFTDM device %d:%d fd:%d\n", chanpath, ftdmchan->span_id, ftdmchan->chan_id, ftdmchan->sockfd);
+				ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as FreeTDM device %d:%d fd:%d\n", chanpath, ftdmchan->span_id, ftdmchan->chan_id, ftdmchan->sockfd);
    			}
         }
 

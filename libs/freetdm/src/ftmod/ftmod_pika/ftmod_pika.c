@@ -524,7 +524,7 @@ static unsigned pika_open_range(ftdm_span_t *span, unsigned boardno, unsigned sp
 		chan_data->play_config.encoding = PKH_RECORD_ENCODING_MU_LAW;
 		chan_data->play_config.samplingRate = PKH_RECORD_SAMPLING_RATE_8KHZ;
 		chan_data->play_config.AGC.enabled = PK_FALSE;
-		ftdm_log(FTDM_LOG_INFO, "configuring device b%ds%dc%d as OpenFTDM device %d:%d\n", boardno, spanno, x, chan->span_id, chan->chan_id);
+		ftdm_log(FTDM_LOG_INFO, "configuring device b%ds%dc%d as FreeTDM device %d:%d\n", boardno, spanno, x, chan->span_id, chan->chan_id);
 
 		if (profile) {
 			ftdm_log(FTDM_LOG_INFO, "applying config profile %s to device %d:%d\n", profile->name, chan->span_id, chan->chan_id);

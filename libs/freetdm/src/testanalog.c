@@ -85,14 +85,14 @@ int main(int argc, char *argv[])
 	ftdm_global_set_default_logger(FTDM_LOG_LEVEL_DEBUG);
 
 	if (ftdm_global_init() != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "Error loading OpenFTDM\n");
+		ftdm_log(FTDM_LOG_ERROR, "Error loading FreeTDM\n");
 		exit(-1);
 	}
 
-	ftdm_log(FTDM_LOG_DEBUG, "OpenFTDM loaded\n");
+	ftdm_log(FTDM_LOG_DEBUG, "FreeTDM loaded\n");
 
 	if (ftdm_span_find(span_id, &span) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "Error finding OpenFTDM span\n");
+		ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span\n");
 		goto done;
 	}
 	
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 						   "max_dialstr", &max_dialstr,
 						   TAG_END
 						   ) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "Error configuring OpenFTDM span\n");
+		ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM span\n");
 		goto done;
 	}
 	ftdm_span_start(span);

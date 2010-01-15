@@ -334,7 +334,7 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 				ftdm_copy_string(chan->chan_number, number, sizeof(chan->chan_number));
 			}
 			configured++;
-			ftdm_log(FTDM_LOG_INFO, "configuring device s%dc%d as OpenFTDM device %d:%d fd:%d DTMF: %s\n",
+			ftdm_log(FTDM_LOG_INFO, "configuring device s%dc%d as FreeTDM device %d:%d fd:%d DTMF: %s\n",
 				spanno, x, chan->span_id, chan->chan_id, sockfd, dtmf);
 
 		} else {

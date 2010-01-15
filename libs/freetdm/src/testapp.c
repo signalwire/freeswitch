@@ -10,11 +10,11 @@ int main(int argc, char *argv[])
 
 
 	if (ftdm_global_init() != FTDM_SUCCESS) {
-		fprintf(stderr, "Error loading OpenFTDM\n");
+		fprintf(stderr, "Error loading FreeTDM\n");
 		exit(-1);
 	}
 
-	printf("OpenFTDM loaded\n");
+	printf("FreeTDM loaded\n");
 
  top:
 	//if (ftdm_channel_open_any("wanpipe", 0, FTDM_TOP_DOWN, &chan) == FTDM_SUCCESS) {

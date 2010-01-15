@@ -31,18 +31,18 @@ int main(int argc, char *argv[])
 #endif
 
 	if (ftdm_global_init() != FTDM_SUCCESS) {
-		fprintf(stderr, "Error loading OpenFTDM\n");
+		fprintf(stderr, "Error loading FreeTDM\n");
 		exit(-1);
 	}
 	if (ftdm_global_configuration() != FTDM_SUCCESS) {
-		fprintf(stderr, "Error configuring OpenFTDM\n");
+		fprintf(stderr, "Error configuring FreeTDM\n");
 		exit(-1);
 	}
 
-	printf("OpenFTDM loaded\n");
+	printf("FreeTDM loaded\n");
 
 	if (ftdm_span_find_by_name("wp1", &span) != FTDM_SUCCESS) {
-		fprintf(stderr, "Error finding OpenFTDM span %s\n", argv[1]);
+		fprintf(stderr, "Error finding FreeTDM span %s\n", argv[1]);
 		goto done;
 	}
 	parameters[0].var = "sigmod";	
