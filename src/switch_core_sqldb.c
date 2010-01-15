@@ -1256,6 +1256,9 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	
 	switch_core_hash_init(&sql_manager.dbh_hash, sql_manager.memory_pool);
 
+	if (!manage) {
+		return SWITCH_STATUS_SUCCESS;
+	}
  top:
 	
 	/* Activate SQL database */
