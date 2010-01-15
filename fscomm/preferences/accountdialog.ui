@@ -159,6 +159,9 @@
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
         <widget class="QTableWidget" name="sofiaExtraParamTable">
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
          <column>
           <property name="text">
            <string>Param Name</string>
