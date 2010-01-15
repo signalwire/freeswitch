@@ -1,17 +1,16 @@
 # renaming main header and build file
-move="cp -r"
+move="mv"
 $move src/include/openzap.h src/include/freetdm.h
 $move openzap.pc.in freetdm.pc.in
 $move mod_openzap/mod_openzap.c mod_openzap/mod_freetdm.c
 $move mod_openzap mod_freetdm
 
 # rename anything ozmod to ftmod, including directories first
-mkdir -p src/ftmod
+$move ozmod ftmod
 for file in `find ./ -name *ozmod_* -type d`
 do
 	$move $file ${file//ozmod/ftmod}
 done
-$move ozmod ftmod
 
 # move ozmod c files
 for file in `find ./ -name *ozmod_*.c`
