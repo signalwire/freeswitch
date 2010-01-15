@@ -6,7 +6,7 @@ $move mod_openzap/mod_openzap.c mod_openzap/mod_freetdm.c
 $move mod_openzap mod_freetdm
 
 # rename anything ozmod to ftmod, including directories first
-$move ozmod ftmod
+$move src/ozmod src/ftmod
 for file in `find ./ -name *ozmod_* -type d`
 do
 	$move $file ${file//ozmod/ftmod}
