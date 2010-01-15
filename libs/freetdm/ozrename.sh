@@ -44,6 +44,8 @@ sed -i 's,openzap,freetdm,g' Makefile.am
 
 sed -i 's,openzap,freetdm,g' configure.ac
 
+sed -i 's,openzap,freetdm,g' mod_freetdm/Makefile.in
+
 # replace inside files
 find ./ -name *.c -exec sed -i 's,oz,ft,g' {} \;
 find ./ -name *.c -exec sed -i 's,OZ,FT,g' {} \;
@@ -69,4 +71,9 @@ sed -i 's,zap,ftdm,g' configure.ac
 sed -i 's,ZAP,FTDM,g' configure.ac
 sed -i 's,zchan,ftdmchan,g' configure.ac
 
+sed -i 's,oz,ft,g' mod_freetdm/Makefile.in
+sed -i 's,OZ,FT,g' mod_freetdm/Makefile.in
+sed -i 's,zap,ftdm,g' mod_freetdm/Makefile.in
+sed -i 's,ZAP,FTDM,g' mod_freetdm/Makefile.in
+sed -i 's,zchan,ftdmchan,g' mod_freetdm/Makefile.in
 
