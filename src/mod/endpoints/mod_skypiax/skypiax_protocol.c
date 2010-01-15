@@ -89,6 +89,10 @@ unsigned short start_port = 6001;
 
 
 
+/* for virtual machines, eg: Linux domU-12-31-39-02-68-28 2.6.18-xenU-ec2-v1.0 #2 SMP Tue Feb 19 10:51:53 EST 2008 i686 athlon i386 GNU/Linux
+ * use:
+ * sockbufsize=SAMPLES_PER_FRAME * 8;
+ */
 	sockbufsize=SAMPLES_PER_FRAME * 8 * 3;
 	size = sizeof(int);
 	setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, size);
@@ -98,6 +102,10 @@ unsigned short start_port = 6001;
 	getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, &size);
 	DEBUGA_SKYPE("2 SO_RCVBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
 
+/* for virtual machines, eg: Linux domU-12-31-39-02-68-28 2.6.18-xenU-ec2-v1.0 #2 SMP Tue Feb 19 10:51:53 EST 2008 i686 athlon i386 GNU/Linux
+ * use:
+ * sockbufsize=SAMPLES_PER_FRAME * 8;
+ */
 	sockbufsize=SAMPLES_PER_FRAME * 8 * 3;
 	size = sizeof(int);
 	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&sockbufsize, size);
