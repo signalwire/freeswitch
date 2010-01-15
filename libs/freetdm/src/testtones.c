@@ -1,4 +1,4 @@
-#include "openzap.h"
+#include "freetdm.h"
 
 struct ttmp {
 	int fd;

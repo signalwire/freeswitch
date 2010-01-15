@@ -31,7 +31,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "openzap.h"
+#include "freetdm.h"
 #include "hashtable.h"
 #include "hashtable_private.h"
 #include "hashtable_itr.h"
@@ -44,7 +44,7 @@ struct hashtable_itr *
 hashtable_iterator(struct hashtable *h)
 {
     unsigned int i, tablelength;
-    struct hashtable_itr *itr = zap_malloc(sizeof(struct hashtable_itr));
+    struct hashtable_itr *itr = ftdm_malloc(sizeof(struct hashtable_itr));
     if (NULL == itr) return NULL;
     itr->h = h;
     itr->e = NULL;
@@ -138,7 +138,7 @@ hashtable_iterator_remove(struct hashtable_itr *itr)
     remember_parent = itr->parent;
     ret = hashtable_iterator_advance(itr);
     if (itr->parent == remember_e) { itr->parent = remember_parent; }
-    zap_safe_free(remember_e);
+    ftdm_safe_free(remember_e);
     return ret;
 }
 

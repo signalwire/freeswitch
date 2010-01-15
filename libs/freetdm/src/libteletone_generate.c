@@ -34,7 +34,7 @@
  */
 
 #include <libteletone.h>
-#include "openzap.h"
+#include "freetdm.h"
 
 #define SMAX 32767
 #define SMIN -32768
@@ -111,7 +111,7 @@ TELETONE_API(int) teletone_init_session(teletone_generation_session_t *ts, int b
 	ts->decay_step = 0;
 	ts->decay_factor = 1;
 	if (buflen) {
-		if ((ts->buffer = zap_calloc(buflen, sizeof(teletone_audio_t))) == 0) {
+		if ((ts->buffer = ftdm_calloc(buflen, sizeof(teletone_audio_t))) == 0) {
 			return -1;
 		}
 		ts->datalen = buflen;
@@ -142,7 +142,7 @@ TELETONE_API(int) teletone_init_session(teletone_generation_session_t *ts, int b
 TELETONE_API(int) teletone_destroy_session(teletone_generation_session_t *ts)
 {
 	if (ts->buffer) {
-		zap_safe_free(ts->buffer);
+		ftdm_safe_free(ts->buffer);
 		ts->buffer = NULL;
 		ts->samples = 0;
 	}
@@ -280,7 +280,7 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 	}
 
 	do {
-		if (!(data = zap_strdup(cmd))) {
+		if (!(data = ftdm_strdup(cmd))) {
 			return -1;
 		}
 
@@ -429,7 +429,7 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 			}
 		}
 	bottom:
-		zap_safe_free(data);
+		ftdm_safe_free(data);
 		data = NULL;
 		if (ts->LOOPS > 0) {
 			ts->LOOPS--;

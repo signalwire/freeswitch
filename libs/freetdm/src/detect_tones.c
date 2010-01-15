@@ -1,4 +1,4 @@
-//#include "openzap.h"
+//#include "freetdm.h"
 #include "libteletone_detect.h"
 
 int main(int argc, char *argv[])

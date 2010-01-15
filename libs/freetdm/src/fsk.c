@@ -32,7 +32,7 @@
  *
  *	2005 03 20	R. Krten		created
 */
-#include <openzap.h>
+#include <freetdm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -134,7 +134,7 @@ dsp_fsk_handle_t *dsp_fsk_create(dsp_fsk_attr_t *attr)
 	double					phi_mark, phi_space;
 	dsp_fsk_handle_t	*handle;
 
-	handle = zap_malloc(sizeof(*handle));
+	handle = ftdm_malloc(sizeof(*handle));
 	if (!handle) {
 		return NULL;
 	}
@@ -157,7 +157,7 @@ dsp_fsk_handle_t *dsp_fsk_create(dsp_fsk_attr_t *attr)
 
 	/* allocate the correlation sin/cos arrays and initialize */
 	for (i = 0; i < 4; i++) {
-		handle->correlates[i] = zap_malloc(sizeof(double) * handle->corrsize);
+		handle->correlates[i] = ftdm_malloc(sizeof(double) * handle->corrsize);
 		if (handle->correlates[i] == NULL) {
 			/* some failed, back out memory allocations */
 			dsp_fsk_destroy(&handle);
@@ -177,7 +177,7 @@ dsp_fsk_handle_t *dsp_fsk_create(dsp_fsk_attr_t *attr)
 	}
 
 	/* initialize the ring buffer */
-	handle->buffer = zap_malloc(sizeof(double) * handle->corrsize);
+	handle->buffer = ftdm_malloc(sizeof(double) * handle->corrsize);
 	if (!handle->buffer) {				/* failed; back out memory allocations */
 		dsp_fsk_destroy(&handle);
 		return NULL;
@@ -226,13 +226,13 @@ void dsp_fsk_destroy(dsp_fsk_handle_t **handle)
 
 	for (i = 0; i < 4; i++) {
 		if ((*handle)->correlates[i] != NULL) {
-			zap_safe_free((*handle)->correlates[i]);
+			ftdm_safe_free((*handle)->correlates[i]);
 			(*handle)->correlates[i] = NULL;
 		}
 	}
 
 	if ((*handle)->buffer != NULL) {
-		zap_safe_free((*handle)->buffer);
+		ftdm_safe_free((*handle)->buffer);
 		(*handle)->buffer = NULL;
 	}
 
@@ -241,7 +241,7 @@ void dsp_fsk_destroy(dsp_fsk_handle_t **handle)
 		dsp_uart_destroy(dhandle);
 	}
 
-	zap_safe_free(*handle);
+	ftdm_safe_free(*handle);
 	*handle = NULL;
 }
 

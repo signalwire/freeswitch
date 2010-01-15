@@ -31,7 +31,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "openzap.h"
+#include "freetdm.h"
 #include "hashtable.h"
 #include "hashtable_private.h"
 #include <stdlib.h>
@@ -57,7 +57,7 @@ const unsigned int prime_table_length = sizeof(primes)/sizeof(primes[0]);
 const float max_load_factor = 0.65f;
 
 /*****************************************************************************/
-OZ_DECLARE(struct hashtable *)
+FT_DECLARE(struct hashtable *)
 create_hashtable(unsigned int minsize,
                  unsigned int (*hashf) (void*),
                  int (*eqf) (void*,void*))
@@ -70,10 +70,10 @@ create_hashtable(unsigned int minsize,
     for (pindex=0; pindex < prime_table_length; pindex++) {
         if (primes[pindex] > minsize) { size = primes[pindex]; break; }
     }
-    h = (struct hashtable *)zap_malloc(sizeof(struct hashtable));
+    h = (struct hashtable *)ftdm_malloc(sizeof(struct hashtable));
     if (NULL == h) return NULL; /*oom*/
-    h->table = (struct entry **)zap_malloc(sizeof(struct entry*) * size);
-    if (NULL == h->table) { zap_safe_free(h); return NULL; } /*oom*/
+    h->table = (struct entry **)ftdm_malloc(sizeof(struct entry*) * size);
+    if (NULL == h->table) { ftdm_safe_free(h); return NULL; } /*oom*/
     memset(h->table, 0, size * sizeof(struct entry *));
     h->tablelength  = size;
     h->primeindex   = pindex;
@@ -111,7 +111,7 @@ hashtable_expand(struct hashtable *h)
     if (h->primeindex == (prime_table_length - 1)) return 0;
     newsize = primes[++(h->primeindex)];
 
-    newtable = (struct entry **)zap_malloc(sizeof(struct entry*) * newsize);
+    newtable = (struct entry **)ftdm_malloc(sizeof(struct entry*) * newsize);
     if (NULL != newtable)
 		{
 			memset(newtable, 0, newsize * sizeof(struct entry *));
@@ -125,7 +125,7 @@ hashtable_expand(struct hashtable *h)
 					newtable[index] = e;
 				}
 			}
-			zap_safe_free(h->table);
+			ftdm_safe_free(h->table);
 			h->table = newtable;
 		}
     /* Plan B: realloc instead */
@@ -158,14 +158,14 @@ hashtable_expand(struct hashtable *h)
 }
 
 /*****************************************************************************/
-OZ_DECLARE(unsigned int)
+FT_DECLARE(unsigned int)
 hashtable_count(struct hashtable *h)
 {
     return h->entrycount;
 }
 
 /*****************************************************************************/
-OZ_DECLARE(int)
+FT_DECLARE(int)
 hashtable_insert(struct hashtable *h, void *k, void *v, hashtable_flag_t flags)
 {
     /* This method allows duplicate keys - but they shouldn't be used */
@@ -179,7 +179,7 @@ hashtable_insert(struct hashtable *h, void *k, void *v, hashtable_flag_t flags)
 			 * element may be ok. Next time we insert, we'll try expanding again.*/
 			hashtable_expand(h);
 		}
-    e = (struct entry *)zap_malloc(sizeof(struct entry));
+    e = (struct entry *)ftdm_malloc(sizeof(struct entry));
     if (NULL == e) { --(h->entrycount); return 0; } /*oom*/
     e->h = hash(h,k);
     index = indexFor(h->tablelength,e->h);
@@ -192,7 +192,7 @@ hashtable_insert(struct hashtable *h, void *k, void *v, hashtable_flag_t flags)
 }
 
 /*****************************************************************************/
-OZ_DECLARE(void *) /* returns value associated with key */
+FT_DECLARE(void *) /* returns value associated with key */
 hashtable_search(struct hashtable *h, void *k)
 {
     struct entry *e;
@@ -210,7 +210,7 @@ hashtable_search(struct hashtable *h, void *k)
 }
 
 /*****************************************************************************/
-OZ_DECLARE(void *) /* returns value associated with key */
+FT_DECLARE(void *) /* returns value associated with key */
 hashtable_remove(struct hashtable *h, void *k)
 {
     /* TODO: consider compacting the table when the load factor drops enough,
@@ -236,7 +236,7 @@ hashtable_remove(struct hashtable *h, void *k)
 					if (e->flags & HASHTABLE_FLAG_FREE_KEY) {
 						freekey(e->k);
 					}
-					zap_safe_free(e);
+					ftdm_safe_free(e);
 					return v;
 				}
 			pE = &(e->next);
@@ -247,7 +247,7 @@ hashtable_remove(struct hashtable *h, void *k)
 
 /*****************************************************************************/
 /* destroy */
-OZ_DECLARE(void)
+FT_DECLARE(void)
 hashtable_destroy(struct hashtable *h)
 {
     unsigned int i;
@@ -258,14 +258,14 @@ hashtable_destroy(struct hashtable *h)
         {
             e = table[i];
             while (NULL != e)
-				{ f = e; e = e->next; if (f->flags & HASHTABLE_FLAG_FREE_KEY) freekey(f->k); if (f->flags & HASHTABLE_FLAG_FREE_VALUE) zap_safe_free(f->v); zap_safe_free(f); }
+				{ f = e; e = e->next; if (f->flags & HASHTABLE_FLAG_FREE_KEY) freekey(f->k); if (f->flags & HASHTABLE_FLAG_FREE_VALUE) ftdm_safe_free(f->v); ftdm_safe_free(f); }
         }
     
-    zap_safe_free(h->table);
-    zap_safe_free(h);
+    ftdm_safe_free(h->table);
+    ftdm_safe_free(h);
 }
 
-OZ_DECLARE(struct hashtable_iterator *) hashtable_next(struct hashtable_iterator *i)
+FT_DECLARE(struct hashtable_iterator *) hashtable_next(struct hashtable_iterator *i)
 {
 
 	if (i->e) {
@@ -291,7 +291,7 @@ OZ_DECLARE(struct hashtable_iterator *) hashtable_next(struct hashtable_iterator
 	return NULL;
 }
 
-OZ_DECLARE(struct hashtable_iterator *) hashtable_first(struct hashtable *h)
+FT_DECLARE(struct hashtable_iterator *) hashtable_first(struct hashtable *h)
 {
 	h->iterator.pos = 0;
 	h->iterator.e = NULL;
@@ -301,7 +301,7 @@ OZ_DECLARE(struct hashtable_iterator *) hashtable_first(struct hashtable *h)
 
 
 
-OZ_DECLARE(void) hashtable_this(struct hashtable_iterator *i, const void **key, int *klen, void **val)
+FT_DECLARE(void) hashtable_this(struct hashtable_iterator *i, const void **key, int *klen, void **val)
 {
 	if (i->e) {
 		if (key) {

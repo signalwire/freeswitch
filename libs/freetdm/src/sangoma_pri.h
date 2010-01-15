@@ -79,7 +79,7 @@ struct sangoma_pri {
 	void *private_info;
 	event_handler eventmap[MAX_EVENT+1];
 	loop_handler on_loop;
-	zap_channel_t *zdchan;
+	ftdm_channel_t *zdchan;
 };
 
 struct sangoma_pri_event_list {

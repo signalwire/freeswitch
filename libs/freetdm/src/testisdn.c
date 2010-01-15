@@ -1,10 +1,10 @@
-#include "openzap.h"
+#include "freetdm.h"
 #include <signal.h>
 
 
 static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 {
-	return ZAP_FAIL;
+	return FTDM_FAIL;
 }
 
 static int R = 0;
@@ -17,32 +17,32 @@ static void handle_SIGINT(int sig)
 
 int main(int argc, char *argv[])
 {
-	zap_span_t *span;
+	ftdm_span_t *span;
 	
-	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
+	ftdm_global_set_default_logger(FTDM_LOG_LEVEL_DEBUG);
 
 	if (argc < 2) {
 		printf("umm no\n");
 		exit(-1);
 	}
 
-	if (zap_global_init() != ZAP_SUCCESS) {
-		fprintf(stderr, "Error loading OpenZAP\n");
+	if (ftdm_global_init() != FTDM_SUCCESS) {
+		fprintf(stderr, "Error loading OpenFTDM\n");
 		exit(-1);
 	}
 
-	printf("OpenZAP loaded\n");
+	printf("OpenFTDM loaded\n");
 
-	if (zap_span_find(atoi(argv[1]), &span) != ZAP_SUCCESS) {
-		fprintf(stderr, "Error finding OpenZAP span\n");
+	if (ftdm_span_find(atoi(argv[1]), &span) != FTDM_SUCCESS) {
+		fprintf(stderr, "Error finding OpenFTDM span\n");
 		goto done;
 	}
 	
-	if (zap_configure_span("isdn", span, on_signal, 
+	if (ftdm_configure_span("isdn", span, on_signal, 
 						   "mode", "te", 
 						   "dialect", "national",
-						   TAG_END) == ZAP_SUCCESS) {
-		zap_span_start(span);
+						   TAG_END) == FTDM_SUCCESS) {
+		ftdm_span_start(span);
 	} else {
 		fprintf(stderr, "Error starting ISDN D-Channel\n");
 		goto done;
@@ -51,12 +51,12 @@ int main(int argc, char *argv[])
 	signal(SIGINT, handle_SIGINT);
 	R = 1;
 	while(R) {
-		zap_sleep(1 * 1000);
+		ftdm_sleep(1 * 1000);
 	}
 
  done:
 
-	zap_global_destroy();
+	ftdm_global_destroy();
 
 	return 1;
 

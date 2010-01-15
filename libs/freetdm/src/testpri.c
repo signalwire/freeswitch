@@ -1,29 +1,29 @@
-#include "openzap.h"
+#include "freetdm.h"
 #include <signal.h>
 
 static int THREADS[4][31] = { {0} };
 static int R = 0;
 static int T = 0;
-static zap_mutex_t *mutex = NULL;
+static ftdm_mutex_t *mutex = NULL;
 
 
-static void *channel_run(zap_thread_t *me, void *obj)
+static void *channel_run(ftdm_thread_t *me, void *obj)
 {
-	zap_channel_t *zchan = obj;
+	ftdm_channel_t *ftdmchan = obj;
 	int fd = -1;
 	short buf[160];
 
-	zap_mutex_lock(mutex);
+	ftdm_mutex_lock(mutex);
 	T++;
-	zap_mutex_unlock(mutex);
+	ftdm_mutex_unlock(mutex);
 
-	zap_set_state_locked_wait(zchan, ZAP_CHANNEL_STATE_UP);
+	ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_UP);
 
 	if ((fd = open("test.raw", O_RDONLY, 0)) < 0) {
 		goto end;
 	}
 
-	while(R == 1 && THREADS[zchan->span_id][zchan->chan_id] == 1) {
+	while(R == 1 && THREADS[ftdmchan->span_id][ftdmchan->chan_id] == 1) {
 		ssize_t bytes = read(fd, buf, sizeof(buf));
 		size_t bbytes;
 
@@ -35,7 +35,7 @@ static void *channel_run(zap_thread_t *me, void *obj)
 
 		zio_slin2alaw(buf, sizeof(buf), &bbytes);
 
-		if (zap_channel_write(zchan, buf, sizeof(buf), &bbytes) != ZAP_SUCCESS) {
+		if (ftdm_channel_write(ftdmchan, buf, sizeof(buf), &bbytes) != FTDM_SUCCESS) {
 			break;
 		}
 	}
@@ -44,31 +44,31 @@ static void *channel_run(zap_thread_t *me, void *obj)
 
  end:
 
-	zap_set_state_locked_wait(zchan, ZAP_CHANNEL_STATE_HANGUP);
+	ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 
-	THREADS[zchan->span_id][zchan->chan_id] = 0;
+	THREADS[ftdmchan->span_id][ftdmchan->chan_id] = 0;
 
-	zap_mutex_lock(mutex);
+	ftdm_mutex_lock(mutex);
 	T = 0;
-	zap_mutex_unlock(mutex);
+	ftdm_mutex_unlock(mutex);
 	
 	return NULL;
 }
 
 static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 {
-	zap_log(ZAP_LOG_DEBUG, "got sig %d:%d [%s]\n", sigmsg->channel->span_id, sigmsg->channel->chan_id, zap_signal_event2str(sigmsg->event_id));
+	ftdm_log(FTDM_LOG_DEBUG, "got sig %d:%d [%s]\n", sigmsg->channel->span_id, sigmsg->channel->chan_id, ftdm_signal_event2str(sigmsg->event_id));
 
     switch(sigmsg->event_id) {
 
-	case ZAP_SIGEVENT_STOP:
+	case FTDM_SIGEVENT_STOP:
 		THREADS[sigmsg->channel->span_id][sigmsg->channel->chan_id] = -1;
 		break;
 
-	case ZAP_SIGEVENT_START:
+	case FTDM_SIGEVENT_START:
 		if (!THREADS[sigmsg->channel->span_id][sigmsg->channel->chan_id]) {
 			THREADS[sigmsg->channel->span_id][sigmsg->channel->chan_id] = 1;
-			zap_thread_create_detached(channel_run, sigmsg->channel);
+			ftdm_thread_create_detached(channel_run, sigmsg->channel);
 		}
 		
 		break;
@@ -76,7 +76,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 		break;
 	}
 	
-	return ZAP_SUCCESS;
+	return FTDM_SUCCESS;
 }
 
 
@@ -84,40 +84,40 @@ static void handle_SIGINT(int sig)
 {
 	if (sig);
 
-	zap_mutex_lock(mutex);
+	ftdm_mutex_lock(mutex);
 	R = 0;
-	zap_mutex_unlock(mutex);
+	ftdm_mutex_unlock(mutex);
 
 	return;
 }
 
 int main(int argc, char *argv[])
 {
-	zap_span_t *span;
-	zap_mutex_create(&mutex);
+	ftdm_span_t *span;
+	ftdm_mutex_create(&mutex);
 
-	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
+	ftdm_global_set_default_logger(FTDM_LOG_LEVEL_DEBUG);
 
 	if (argc < 2) {
 		printf("umm no\n");
 		exit(-1);
 	}
 
-	if (zap_global_init() != ZAP_SUCCESS) {
-		fprintf(stderr, "Error loading OpenZAP\n");
+	if (ftdm_global_init() != FTDM_SUCCESS) {
+		fprintf(stderr, "Error loading OpenFTDM\n");
 		exit(-1);
 	}
 
-	printf("OpenZAP loaded\n");
+	printf("OpenFTDM loaded\n");
 
-	if (zap_span_find(atoi(argv[1]), &span) != ZAP_SUCCESS) {
-		fprintf(stderr, "Error finding OpenZAP span\n");
+	if (ftdm_span_find(atoi(argv[1]), &span) != FTDM_SUCCESS) {
+		fprintf(stderr, "Error finding OpenFTDM span\n");
 		goto done;
 	}
 	
 
 
-	if (zap_configure_span(
+	if (ftdm_configure_span(
 						   "libpri", span, on_signal,
 						   "node", "cpe",
 						   "switch", "euroisdn",
@@ -125,26 +125,26 @@ int main(int argc, char *argv[])
 						   "l1", "alaw",
 						   "debug", NULL,
 						   "opts", 0,
-						   TAG_END) == ZAP_SUCCESS) {
+						   TAG_END) == FTDM_SUCCESS) {
 						   
 
-		zap_span_start(span);
+		ftdm_span_start(span);
 	} else {
 		fprintf(stderr, "Error starting ISDN D-Channel\n");
 		goto done;
 	}
 
 	signal(SIGINT, handle_SIGINT);
-	zap_mutex_lock(mutex);
+	ftdm_mutex_lock(mutex);
 	R = 1;
-	zap_mutex_unlock(mutex);
+	ftdm_mutex_unlock(mutex);
 	while(R || T) {
-		zap_sleep(1 * 1000);
+		ftdm_sleep(1 * 1000);
 	}
 
  done:
 
-	zap_global_destroy();
+	ftdm_global_destroy();
 
 	return 1;
 

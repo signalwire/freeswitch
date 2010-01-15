@@ -13,7 +13,7 @@
  * ============================================================================
  */
 
-#include "openzap.h"
+#include "freetdm.h"
 #include <sangoma_pri.h>
 #ifndef HAVE_GETTIMEOFDAY
 
@@ -92,12 +92,12 @@ char *sangoma_pri_event_str(sangoma_pri_event_t event_id)
 static int __pri_sangoma_read(struct pri *pri, void *buf, int buflen)
 {
 	struct sangoma_pri *spri = (struct sangoma_pri *) pri->userdata;
-	zap_size_t len = buflen;
+	ftdm_size_t len = buflen;
 	int res;
 	char bb[4096] = "";
 
 
-	if (zap_channel_read(spri->zdchan, buf, &len) != ZAP_SUCCESS) {
+	if (ftdm_channel_read(spri->zdchan, buf, &len) != FTDM_SUCCESS) {
 		printf("D-READ FAIL! [%s]\n", spri->zdchan->last_error);
 		return 0;
 	}
@@ -106,7 +106,7 @@ static int __pri_sangoma_read(struct pri *pri, void *buf, int buflen)
 	res+=2;
 
 	//print_bits(buf, res-2, bb, sizeof(bb), 1, 0);
-	//zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", res-2, LINE, bb);
+	//ftdm_log(FTDM_LOG_DEBUG, "READ %d\n%s\n%s\n\n", res-2, LINE, bb);
 
 	return res;
 }
@@ -115,16 +115,16 @@ static int __pri_sangoma_write(struct pri *pri, void *buf, int buflen)
 {
 	struct sangoma_pri *spri = (struct sangoma_pri *) pri->userdata;
 	int res;
-	zap_size_t len = buflen -2;
+	ftdm_size_t len = buflen -2;
 	char bb[4096] = "";
 
-	if (zap_channel_write(spri->zdchan, buf, buflen, &len) != ZAP_SUCCESS) {
+	if (ftdm_channel_write(spri->zdchan, buf, buflen, &len) != FTDM_SUCCESS) {
 		printf("D-WRITE FAIL! [%s]\n", spri->zdchan->last_error);
         return 0;
 	}
 	
 	//print_bits(buf, (int)buflen-2, bb, sizeof(bb), 1, 0);
-	//zap_log(ZAP_LOG_DEBUG, "WRITE %d\n%s\n%s\n\n", (int)buflen-2, LINE, bb);
+	//ftdm_log(FTDM_LOG_DEBUG, "WRITE %d\n%s\n%s\n\n", (int)buflen-2, LINE, bb);
 
 	return (int) buflen;
 }
@@ -132,11 +132,11 @@ static int __pri_sangoma_write(struct pri *pri, void *buf, int buflen)
 int sangoma_init_pri(struct sangoma_pri *spri, int span, int dchan, int swtype, int node, int debug)
 {
 	int ret = -1;
-	zap_socket_t dfd = 0;
+	ftdm_socket_t dfd = 0;
 
 	memset(spri, 0, sizeof(struct sangoma_pri));
 
-	if (zap_channel_open(span, dchan, &spri->zdchan) != ZAP_SUCCESS) {
+	if (ftdm_channel_open(span, dchan, &spri->zdchan) != FTDM_SUCCESS) {
 		fprintf(stderr, "Unable to open DCHAN %d for span %d (%s)\n", dchan, span, strerror(errno));
 	} else {
 		if ((spri->pri = pri_new_cb(spri->zdchan->sockfd, node, swtype, __pri_sangoma_read, __pri_sangoma_write, spri))){

@@ -2,28 +2,28 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([openzap],[pre-alpha],[bugs@freeswitch.org])
-AC_CONFIG_SRCDIR([src/zap_io.c])
+AC_INIT([freetdm],[pre-alpha],[bugs@freeswitch.org])
+AC_CONFIG_SRCDIR([src/ftdm_io.c])
 
 AC_CONFIG_AUX_DIR(build)
-AM_INIT_AUTOMAKE(libopenzap,0.1)
+AM_INIT_AUTOMAKE(libfreetdm,0.1)
 
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_MAKE_SET
 AM_PROG_CC_C_O
 
-AC_PREFIX_DEFAULT(/usr/local/openzap)
+AC_PREFIX_DEFAULT(/usr/local/freetdm)
 # AC_PREFIX_DEFAULT does not get expanded until too late so we need to do this to use prefix in this script                                                     
 if test "x$prefix" = "xNONE" ; then
-    prefix='/usr/local/openzap'
+    prefix='/usr/local/freetdm'
 fi
 
 # Absolute source/build directory
-OZ_SRCDIR=`(cd $srcdir && pwd)`
-oz_builddir=`pwd`
-AC_SUBST(OZ_SRCDIR)
-AC_SUBST(oz_builddir)
+FT_SRCDIR=`(cd $srcdir && pwd)`
+ft_builddir=`pwd`
+AC_SUBST(FT_SRCDIR)
+AC_SUBST(ft_builddir)
 
 if test "$sysconfdir" = "\${prefix}/etc" ; then
     confdir="$prefix/conf"
@@ -162,7 +162,7 @@ AC_SUBST(modinstdir)
 
 # libpri?
 AC_ARG_WITH([libpri],
- [AS_HELP_STRING([--with-libpri], [Install ozmod_libpri])], [enable_libpri="yes"], [enable_libpri="no"])
+ [AS_HELP_STRING([--with-libpri], [Install ftmod_libpri])], [enable_libpri="yes"], [enable_libpri="no"])
 AC_SUBST(enable_libpri)
 
 AC_CHECK_LIB([sangoma], [sangoma_span_chan_toif], [have_libsangoma="yes"])
@@ -176,6 +176,6 @@ AM_CONDITIONAL([OPENR2],[test "${have_openr2}" = "yes"])
 COMP_VENDOR_CFLAGS="$COMP_VENDOR_CFLAGS"
 AC_SUBST(COMP_VENDOR_CFLAGS)
 AC_CONFIG_FILES([Makefile
-		openzap.pc
-		mod_openzap/Makefile])
+		freetdm.pc
+		mod_freetdm/Makefile])
 AC_OUTPUT

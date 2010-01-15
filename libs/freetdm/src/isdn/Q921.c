@@ -79,7 +79,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "openzap.h"
+#include "freetdm.h"
 #include "Q921.h"
 #include "Q921priv.h"
 #include "mfifo.h"
@@ -398,7 +398,7 @@ int Q921_InitTrunk(L2TRUNK trunk,
 		/*
 		 * Allocate space for per-link context(s)
 		 */
-		trunk->context = zap_malloc(numlinks * sizeof(struct Q921_Link));
+		trunk->context = ftdm_malloc(numlinks * sizeof(struct Q921_Link));
 		if(!trunk->context)
 			return -1;
 

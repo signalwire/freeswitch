@@ -13,7 +13,7 @@
  * ============================================================================
  */
 
-#include "openzap.h"
+#include "freetdm.h"
 #include <sangoma_pri.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -33,9 +33,9 @@ typedef struct {
 
 static call_info_t pidmap[SANGOMA_MAX_CHAN_PER_SPAN];
 
-ZIO_EVENT_CB_FUNCTION(my_zap_event_handler)
+ZIO_EVENT_CB_FUNCTION(my_ftdm_event_handler)
 {
-	if (event->e_type = ZAP_EVENT_DTMF) {
+	if (event->e_type = FTDM_EVENT_DTMF) {
 		char *dtmf = event->data;
 		printf("DTMF %s\n", dtmf);
 	}
@@ -64,12 +64,12 @@ static void launch_channel(struct sangoma_pri *spri, int channo)
 	fd_set readfds;
 	int mtu_mru=BYTES / 2;
 	int err;
-	zap_channel_t *chan;
-	zap_codec_t codec = ZAP_CODEC_SLIN;
+	ftdm_channel_t *chan;
+	ftdm_codec_t codec = FTDM_CODEC_SLIN;
 	unsigned ms = 20;
 	unsigned int lead = 50;
 	int ifd = -1;
-	zap_tone_type_t tt = ZAP_TONE_DTMF;
+	ftdm_tone_type_t tt = FTDM_TONE_DTMF;
 	char dtmf[] = "1234567890";
 	int loops = 0;
 
@@ -88,47 +88,47 @@ static void launch_channel(struct sangoma_pri *spri, int channo)
 	memset(inframe, 0, MAX_BYTES);
 	memset(outframe, 0, MAX_BYTES);
 		
-	if (zap_channel_open(spri->span, channo, &chan) != ZAP_SUCCESS) {
+	if (ftdm_channel_open(spri->span, channo, &chan) != FTDM_SUCCESS) {
 		printf("DEBUG cant open fd!\n");
 	}
 	
 
 
 #if 1
-	if (zap_channel_command(chan, ZAP_COMMAND_SET_CODEC, &codec) != ZAP_SUCCESS) {
+	if (ftdm_channel_command(chan, FTDM_COMMAND_SET_CODEC, &codec) != FTDM_SUCCESS) {
 		printf("Critical Error: Failed to set driver codec!\n");
-		zap_channel_close(&chan);
+		ftdm_channel_close(&chan);
 		exit(-1);
 	}
 #endif
 	
 #if 1
-	if (zap_channel_command(chan, ZAP_COMMAND_ENABLE_DTMF_DETECT, &tt) != ZAP_SUCCESS) {
+	if (ftdm_channel_command(chan, FTDM_COMMAND_ENABLE_DTMF_DETECT, &tt) != FTDM_SUCCESS) {
 		printf("Critical Error: Failed to set dtmf detect!\n");
-		zap_channel_close(&chan);
+		ftdm_channel_close(&chan);
 		exit(-1);
 	}
-	zap_channel_set_event_callback(chan, my_zap_event_handler);
+	ftdm_channel_set_event_callback(chan, my_ftdm_event_handler);
 #endif
 
 
-	if (zap_channel_command(chan, ZAP_COMMAND_SET_INTERVAL, &ms) != ZAP_SUCCESS) {
+	if (ftdm_channel_command(chan, FTDM_COMMAND_SET_INTERVAL, &ms) != FTDM_SUCCESS) {
 		printf("Critical Error: Failed to set codec interval!\n");
-		zap_channel_close(&chan);
+		ftdm_channel_close(&chan);
 		exit(-1);
 	}
 		
 	file = open("sound.raw", O_RDONLY);
 	if (file < 0){
 		printf("Critical Error: Failed to open sound file!\n");
-		zap_channel_close(&chan);
+		ftdm_channel_close(&chan);
 		exit(-1);
 	}
 
 
 	while(ready) {
-		zap_wait_flag_t flags = ZAP_READ;
-		zap_size_t len;
+		ftdm_wait_flag_t flags = FTDM_READ;
+		ftdm_size_t len;
 		loops++;
 
 		if (lead) {
@@ -137,23 +137,23 @@ static void launch_channel(struct sangoma_pri *spri, int channo)
 
 		if (!lead && loops == 300) {
 #if 1
-			if (zap_channel_command(chan, ZAP_COMMAND_SEND_DTMF, dtmf) != ZAP_SUCCESS) {
+			if (ftdm_channel_command(chan, FTDM_COMMAND_SEND_DTMF, dtmf) != FTDM_SUCCESS) {
 				printf("Critical Error: Failed to send dtmf\n");
-				zap_channel_close(&chan);
+				ftdm_channel_close(&chan);
 				exit(-1);
 			}
 #endif
 
 		}
 
-		if (zap_channel_wait(chan, &flags, 2000) != ZAP_SUCCESS) {
+		if (ftdm_channel_wait(chan, &flags, 2000) != FTDM_SUCCESS) {
 			printf("wait FAIL! [%s]\n", chan->last_error);
 			break;
 		}
 	
-		if (flags & ZAP_READ) {
+		if (flags & FTDM_READ) {
 			len = MAX_BYTES;
-			if (zap_channel_read(chan, inframe, &len) == ZAP_SUCCESS) {
+			if (ftdm_channel_read(chan, inframe, &len) == FTDM_SUCCESS) {
 				//printf("READ: %d\n", len);
 				//write(ifd, inframe, len);
 				if(!lead && (outlen = read(file, outframe, len)) <= 0) {
@@ -167,7 +167,7 @@ static void launch_channel(struct sangoma_pri *spri, int channo)
 			if (lead) {
 				continue;
 			} 
-			zap_channel_write(chan, outframe, sizeof(outframe), &len);
+			ftdm_channel_write(chan, outframe, sizeof(outframe), &len);
 		} else {
 			printf("BREAK");
 			break;
@@ -181,7 +181,7 @@ static void launch_channel(struct sangoma_pri *spri, int channo)
 	//close(ifd);
 
 	pri_hangup(spri->pri, channo, 16);
-	if (zap_channel_close(&chan) != ZAP_SUCCESS) {
+	if (ftdm_channel_close(&chan) != FTDM_SUCCESS) {
 		printf("Critical Error: Failed to close channel [%s]\n", chan->last_error);
 	}
 
@@ -280,13 +280,13 @@ int main(int argc, char *argv[])
 		debug = atoi(argv[1]);
 	}
 
-	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
-	if (zap_global_init() != ZAP_SUCCESS) {
-        fprintf(stderr, "Error loading OpenZAP\n");
+	ftdm_global_set_default_logger(FTDM_LOG_LEVEL_DEBUG);
+	if (ftdm_global_init() != FTDM_SUCCESS) {
+        fprintf(stderr, "Error loading OpenFTDM\n");
         exit(-1);
     }
 
-    printf("OpenZAP loaded\n");
+    printf("OpenFTDM loaded\n");
 
 
 	debug = PRI_DEBUG_Q931_DUMP | PRI_DEBUG_Q931_STATE;

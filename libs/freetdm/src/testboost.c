@@ -1,8 +1,8 @@
-#include "openzap.h"
+#include "freetdm.h"
 
 static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 {
-	return ZAP_FAIL;
+	return FTDM_FAIL;
 }
 
 static int R = 0;
@@ -16,13 +16,13 @@ static void handle_SIGINT(int sig)
 #endif
 int main(int argc, char *argv[])
 {
-	zap_conf_parameter_t parameters[20];
-	zap_span_t *span;
+	ftdm_conf_parameter_t parameters[20];
+	ftdm_span_t *span;
 	int local_port, remote_port;
 
 	local_port = remote_port = 53000;
 
-	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
+	ftdm_global_set_default_logger(FTDM_LOG_LEVEL_DEBUG);
 #if 0
 	if (argc < 2) {
 		printf("invalid arguments\n");
@@ -30,19 +30,19 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	if (zap_global_init() != ZAP_SUCCESS) {
-		fprintf(stderr, "Error loading OpenZAP\n");
+	if (ftdm_global_init() != FTDM_SUCCESS) {
+		fprintf(stderr, "Error loading OpenFTDM\n");
 		exit(-1);
 	}
-	if (zap_global_configuration() != ZAP_SUCCESS) {
-		fprintf(stderr, "Error configuring OpenZAP\n");
+	if (ftdm_global_configuration() != FTDM_SUCCESS) {
+		fprintf(stderr, "Error configuring OpenFTDM\n");
 		exit(-1);
 	}
 
-	printf("OpenZAP loaded\n");
+	printf("OpenFTDM loaded\n");
 
-	if (zap_span_find_by_name("wp1", &span) != ZAP_SUCCESS) {
-		fprintf(stderr, "Error finding OpenZAP span %s\n", argv[1]);
+	if (ftdm_span_find_by_name("wp1", &span) != FTDM_SUCCESS) {
+		fprintf(stderr, "Error finding OpenFTDM span %s\n", argv[1]);
 		goto done;
 	}
 	parameters[0].var = "sigmod";	
@@ -52,20 +52,20 @@ int main(int argc, char *argv[])
 	parameters[1].var = "signalling";	
 	parameters[1].val = "pri_cpe";	
 	parameters[2].var = NULL;
-	if (zap_configure_span_signaling("sangoma_boost", span, on_signal, parameters) == ZAP_SUCCESS) {
-		zap_span_start(span);
+	if (ftdm_configure_span_signaling("sangoma_boost", span, on_signal, parameters) == FTDM_SUCCESS) {
+		ftdm_span_start(span);
 	} else {
 		fprintf(stderr, "Error starting SS7_BOOST\n");
 		goto done;
 	}
 
-	while(zap_running() && R) {
-		zap_sleep(1 * 1000);
+	while(ftdm_running() && R) {
+		ftdm_sleep(1 * 1000);
 	}
 
  done:
 
-	zap_global_destroy();
+	ftdm_global_destroy();
 
 	return 0;
 }

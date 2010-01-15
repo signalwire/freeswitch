@@ -1,6 +1,6 @@
 /*
  *  testm3ua.c
- *  openzap
+ *  freetdm
  *
  *  Created by Shane Burrell on 4/8/08.
  *  Copyright 2008 __MyCompanyName__. All rights reserved.
@@ -8,53 +8,53 @@
  */
 
 #include "testm3ua.h"
-#include "openzap.h"
-#include "zap_m3ua.h"
+#include "freetdm.h"
+#include "ftdm_m3ua.h"
 
 static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 {
-	return ZAP_FAIL;
+	return FTDM_FAIL;
 }
 
 int main(int argc, char *argv[])
 {
-	zap_span_t *span;
+	ftdm_span_t *span;
 	//m3ua_data_t *data;
 
-	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
+	ftdm_global_set_default_logger(FTDM_LOG_LEVEL_DEBUG);
 
 	if (argc < 5) {
 		printf("more args needed\n");
 		exit(-1);
 	}
 
-	if (zap_global_init() != ZAP_SUCCESS) {
-		fprintf(stderr, "Error loading OpenZAP\n");
+	if (ftdm_global_init() != FTDM_SUCCESS) {
+		fprintf(stderr, "Error loading OpenFTDM\n");
 		exit(-1);
 	}
 
-	printf("OpenZAP loaded\n");
+	printf("OpenFTDM loaded\n");
 
-	if (zap_span_find(atoi(argv[1]), &span) != ZAP_SUCCESS) {
-		fprintf(stderr, "Error finding OpenZAP span\n");
+	if (ftdm_span_find(atoi(argv[1]), &span) != FTDM_SUCCESS) {
+		fprintf(stderr, "Error finding OpenFTDM span\n");
 		goto done;
 	}
 	
 
-	if (zap_m3ua_configure_span(span) == ZAP_SUCCESS) {
+	if (ftdm_m3ua_configure_span(span) == FTDM_SUCCESS) {
 		//data = span->signal_data;
-		zap_m3ua_start(span);
+		ftdm_m3ua_start(span);
 	} else {
 		fprintf(stderr, "Error starting M3UA\n");
 		goto done;
 	}
 
-	//while(zap_test_flag(data, ZAP_M3UA_RUNNING)) {
-	//	zap_sleep(1 * 1000);
+	//while(ftdm_test_flag(data, FTDM_M3UA_RUNNING)) {
+	//	ftdm_sleep(1 * 1000);
 	//}
 
  done:
 
-	zap_global_destroy();
+	ftdm_global_destroy();
 
 }

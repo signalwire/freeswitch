@@ -7,8 +7,8 @@
  * Exception:
  * The author hereby grants the use of this source code under the 
  * following license if and only if the source code is distributed
- * as part of the openzap library.	Any use or distribution of this
- * source code outside the scope of the openzap library will nullify the
+ * as part of the freetdm library.	Any use or distribution of this
+ * source code outside the scope of the freetdm library will nullify the
  * following license and reinact the MPL 1.1 as stated above.
  *
  * Copyright (c) 2007, Anthony Minessale II

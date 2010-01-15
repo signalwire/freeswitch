@@ -1,6 +1,6 @@
 /*
  *  m3ua_client.h
- *  openzap
+ *  freetdm
  *
  *  Created by Shane Burrell on 4/3/08.
  *  Copyright 2008 Shane Burrell. All rights reserved.
@@ -109,14 +109,14 @@ typedef struct m3uac_ip_cfg
 }m3uac_ip_cfg_t;
 
 struct m3uac_connection {
-	zap_socket_t socket;
+	ftdm_socket_t socket;
 	struct sockaddr_in local_addr;
 	struct sockaddr_in remote_addr;
 	m3uac_event_t event;
 	struct hostent remote_hp;
 	struct hostent local_hp;
 	unsigned int flags;
-	zap_mutex_t *mutex;
+	ftdm_mutex_t *mutex;
 	FILE *log;
 	unsigned int txseq;
 	unsigned int rxseq;

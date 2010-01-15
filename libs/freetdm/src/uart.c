@@ -32,7 +32,7 @@
  *	2005 06 11	R. Krten		created
 */
 
-#include <openzap.h>
+#include <freetdm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -77,7 +77,7 @@ dsp_uart_handle_t *dsp_uart_create(dsp_uart_attr_t *attr)
 {
 	dsp_uart_handle_t *handle;
 
-	handle = zap_malloc(sizeof (*handle));
+	handle = ftdm_malloc(sizeof (*handle));
 	if (handle) {
 		memset(handle, 0, sizeof (*handle));
 
@@ -90,7 +90,7 @@ dsp_uart_handle_t *dsp_uart_create(dsp_uart_attr_t *attr)
 void dsp_uart_destroy(dsp_uart_handle_t **handle)
 {
 	if (*handle) {
-		zap_safe_free(*handle);
+		ftdm_safe_free(*handle);
 		*handle = NULL;
 	}
 }

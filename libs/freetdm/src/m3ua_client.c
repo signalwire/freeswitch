@@ -1,6 +1,6 @@
 /*
  *  m3ua_client.c
- *  openzap
+ *  freetdm
  *
  *  Created by Shane Burrell on 4/3/08.
  *  Copyright 2008 Shane Burrell. All rights reserved.
@@ -40,7 +40,7 @@
 #include <netdb.h>
 #endif
 
-#include "openzap.h"
+#include "freetdm.h"
 #include <m3ua_client.h>
 
 
@@ -85,7 +85,7 @@ static int create_conn_socket(m3uac_connection_t *mcon, char *local_ip, int loca
 	memset(&mcon->local_hp, 0, sizeof(mcon->local_hp));
 	mcon->socket = socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP);
  
-	zap_log(ZAP_LOG_DEBUG, "Creating L=%s:%d R=%s:%d\n",
+	ftdm_log(FTDM_LOG_DEBUG, "Creating L=%s:%d R=%s:%d\n",
 			local_ip,local_port,ip,port);
 
 	if (mcon->socket >= 0) {
@@ -115,7 +115,7 @@ static int create_conn_socket(m3uac_connection_t *mcon, char *local_ip, int loca
 		}
 	}
 
-	zap_mutex_create(&mcon->mutex);
+	ftdm_mutex_create(&mcon->mutex);
 
 	return mcon->socket;
 }
@@ -126,9 +126,9 @@ int m3uac_connection_close(m3uac_connection_t *mcon)
 		close(mcon->socket);
 	}
 
-	zap_mutex_lock(mcon->mutex);
-	zap_mutex_unlock(mcon->mutex);
-	zap_mutex_destroy(&mcon->mutex);
+	ftdm_mutex_lock(mcon->mutex);
+	ftdm_mutex_unlock(mcon->mutex);
+	ftdm_mutex_destroy(&mcon->mutex);
 	memset(mcon, 0, sizeof(*mcon));
 	mcon->socket = -1;
 
@@ -163,11 +163,11 @@ int m3uac_exec_command(m3uac_connection_t *mcon, int span, int chan, int id, int
 
     while (m3uac_connection_write(mcon, &oevent) <= 0) {
         if (--retry <= 0) {
-            zap_log(ZAP_LOG_CRIT, "Failed to tx on M3UA socket: %s\n", strerror(errno));
+            ftdm_log(FTDM_LOG_CRIT, "Failed to tx on M3UA socket: %s\n", strerror(errno));
             return -1;
         } else {
-            zap_log(ZAP_LOG_WARNING, "Failed to tx on M3UA socket: %s :retry %i\n", strerror(errno), retry);
-			zap_sleep(1);
+            ftdm_log(FTDM_LOG_WARNING, "Failed to tx on M3UA socket: %s :retry %i\n", strerror(errno), retry);
+			ftdm_sleep(1);
         }
     }
 
@@ -188,12 +188,12 @@ m3uac_event_t *m3uac_connection_read(m3uac_connection_t *mcon, int iteration)
 
 		if (mcon->rxseq_reset) {
 			if (mcon->event.event_id == SIGBOOST_EVENT_SYSTEM_RESTART_ACK) {
-				zap_log(ZAP_LOG_DEBUG, "Rx sync ok\n");
+				ftdm_log(FTDM_LOG_DEBUG, "Rx sync ok\n");
 				mcon->rxseq = mcon->event.fseqno;
 				return &mcon->event;
 			}
 			errno=EAGAIN;
-			zap_log(ZAP_LOG_DEBUG, "Waiting for rx sync...\n");
+			ftdm_log(FTDM_LOG_DEBUG, "Waiting for rx sync...\n");
 			return NULL;
 		}
 		
@@ -201,14 +201,14 @@ m3uac_event_t *m3uac_connection_read(m3uac_connection_t *mcon, int iteration)
 		mcon->rxseq++;
 
 		if (mcon->rxseq != mcon->event.fseqno) {
-			zap_log(ZAP_LOG_CRIT, "Invalid Sequence Number Expect=%i Rx=%i\n", mcon->rxseq, mcon->event.fseqno);
+			ftdm_log(FTDM_LOG_CRIT, "Invalid Sequence Number Expect=%i Rx=%i\n", mcon->rxseq, mcon->event.fseqno);
 			return NULL;
 		}
 
 		return &mcon->event;
 	} else {
 		if (iteration == 0) {
-			zap_log(ZAP_LOG_CRIT, "Invalid Event length from boost rxlen=%i evsz=%i\n", bytes, sizeof(mcon->event));
+			ftdm_log(FTDM_LOG_CRIT, "Invalid Event length from boost rxlen=%i evsz=%i\n", bytes, sizeof(mcon->event));
 			return NULL;
 		}
 	}
@@ -227,7 +227,7 @@ m3uac_event_t *m3uac_connection_readp(m3uac_connection_t *mcon, int iteration)
 		return &mcon->event;
 	} else {
 		if (iteration == 0) {
-			zap_log(ZAP_LOG_CRIT, "Critical Error: PQ Invalid Event lenght from boost rxlen=%i evsz=%i\n", bytes, sizeof(mcon->event));
+			ftdm_log(FTDM_LOG_CRIT, "Critical Error: PQ Invalid Event lenght from boost rxlen=%i evsz=%i\n", bytes, sizeof(mcon->event));
 			return NULL;
 		}
 	}
@@ -241,28 +241,28 @@ int m3uac_connection_write(m3uac_connection_t *mcon, ss7bc_event_t *event)
 	int err;
 
 	if (!event || mcon->socket < 0 || !mcon->mutex) {
-		zap_log(ZAP_LOG_DEBUG,  "Critical Error: No Event Device\n");
+		ftdm_log(FTDM_LOG_DEBUG,  "Critical Error: No Event Device\n");
 		return -EINVAL;
 	}
 
 	if (event->span > 16 || event->chan > 31) {
-		zap_log(ZAP_LOG_CRIT, "Critical Error: TX Cmd=%s Invalid Span=%i Chan=%i\n", m3uac_event_id_name(event->event_id), event->span,event->chan);
+		ftdm_log(FTDM_LOG_CRIT, "Critical Error: TX Cmd=%s Invalid Span=%i Chan=%i\n", m3uac_event_id_name(event->event_id), event->span,event->chan);
 		return -1;
 	}
 
 	gettimeofday(&event->tv,NULL);
 	
-	zap_mutex_lock(mcon->mutex);
+	ftdm_mutex_lock(mcon->mutex);
 	event->fseqno = mcon->txseq++;
 	event->bseqno = mcon->rxseq;
 	err = sendto(mcon->socket, event, sizeof(m3uac_event_t), 0, (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
-	zap_mutex_unlock(mcon->mutex);
+	ftdm_mutex_unlock(mcon->mutex);
 
 	if (err != sizeof(m3uac_event_t)) {
 		err = -1;
 	}
 	
- 	zap_log(ZAP_LOG_DEBUG, "TX EVENT: %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i Cd=[%s] Ci=[%s]\n",
+ 	ftdm_log(FTDM_LOG_DEBUG, "TX EVENT: %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i Cd=[%s] Ci=[%s]\n",
 			m3uac_event_id_name(event->event_id),
 			event->event_id,
 			event->span+1,

@@ -1,8 +1,8 @@
-#include "openzap.h"
+#include "freetdm.h"
 
 static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 {
-	return ZAP_FAIL;
+	return FTDM_FAIL;
 }
 
 static int R = 0;
@@ -16,44 +16,44 @@ static void handle_SIGINT(int sig)
 #endif
 int main(int argc, char *argv[])
 {
-	zap_span_t *span;
+	ftdm_span_t *span;
 	int local_port, remote_port;
 
 	local_port = remote_port = 53000;
 
-	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
+	ftdm_global_set_default_logger(FTDM_LOG_LEVEL_DEBUG);
 
 	if (argc < 2) {
 		printf("umm no\n");
 		exit(-1);
 	}
 
-	if (zap_global_init() != ZAP_SUCCESS) {
-		fprintf(stderr, "Error loading OpenZAP\n");
+	if (ftdm_global_init() != FTDM_SUCCESS) {
+		fprintf(stderr, "Error loading OpenFTDM\n");
 		exit(-1);
 	}
 
-	if (zap_global_configuration() != ZAP_SUCCESS) {
-		fprintf(stderr, "Error configuring OpenZAP\n");
+	if (ftdm_global_configuration() != FTDM_SUCCESS) {
+		fprintf(stderr, "Error configuring OpenFTDM\n");
 		exit(-1);
 	}
 
-	printf("OpenZAP loaded\n");
+	printf("OpenFTDM loaded\n");
 
-	if (zap_span_find(atoi(argv[1]), &span) != ZAP_SUCCESS) {
-		fprintf(stderr, "Error finding OpenZAP span\n");
+	if (ftdm_span_find(atoi(argv[1]), &span) != FTDM_SUCCESS) {
+		fprintf(stderr, "Error finding OpenFTDM span\n");
 		goto done;
 	}
 
 #if 1
 	if (1) {
-		if (zap_configure_span("sangoma_boost", span, on_signal,
+		if (ftdm_configure_span("sangoma_boost", span, on_signal,
 							"sigmod", "sangoma_brid",
 							"local_port", &local_port,
 							"remote_ip", "127.0.0.66",
 							"remote_port", &remote_port,
-							TAG_END) == ZAP_SUCCESS) {
-			zap_span_start(span);
+							TAG_END) == FTDM_SUCCESS) {
+			ftdm_span_start(span);
 
 		} else {
 			fprintf(stderr, "Error starting sangoma_boost\n");
@@ -62,13 +62,13 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	while(zap_running() && R) {
-		zap_sleep(1 * 1000);
+	while(ftdm_running() && R) {
+		ftdm_sleep(1 * 1000);
 	}
 
  done:
 
-	zap_global_destroy();
+	ftdm_global_destroy();
 
 	return 0;
 }
