@@ -117,6 +117,7 @@ typedef struct {
 	int ringback_ok;
 	int sending_ringback;
 	int bridge_early_media;
+	switch_thread_t *ethread;
 } originate_global_t;
 
 
@@ -1518,6 +1519,91 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 }
 
+struct early_state {
+	originate_global_t *oglobals;
+	originate_status_t *originate_status;
+	switch_mutex_t *mutex;
+	switch_buffer_t *buffer;
+	int ready;
+};
+typedef struct early_state early_state_t;
+
+
+static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *obj)
+{
+	early_state_t *state = (early_state_t *) obj;
+	originate_status_t originate_status[MAX_PEERS] = { { 0 }};
+	int16_t mux_data[SWITCH_RECOMMENDED_BUFFER_SIZE/2] = { 0 };
+	int32_t sample;
+	switch_core_session_t *session;
+	switch_codec_t *read_codec, read_codecs[MAX_PEERS] = { { 0 } };
+	int i,x;
+	int16_t *data;
+	uint32_t datalen = 0;
+	switch_status_t status;
+	switch_frame_t *read_frame;
+	
+	for(i = 0; i < MAX_PEERS && (session = state->originate_status[i].peer_session); i++) {
+		originate_status[i].peer_session = session;
+		switch_core_session_read_lock(session);
+	}
+
+	while (state->ready) {
+		datalen = 0;
+		memset(mux_data, 0, sizeof(mux_data));
+		
+		for(i = 0; i < MAX_PEERS && (session = originate_status[i].peer_session); i++) {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			if (switch_channel_media_ready(channel)) {
+				if (!switch_core_codec_ready((&read_codecs[i]))) {
+					read_codec = switch_core_session_get_read_codec(session);
+					
+					if (switch_core_codec_init(&read_codecs[i],
+											   "L16",
+											   NULL,
+											   read_codec->implementation->actual_samples_per_second,
+											   read_codec->implementation->microseconds_per_packet / 1000,
+											   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+											   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error!\n");
+					} else {
+						switch_core_session_set_read_codec(session, &read_codecs[i]);
+					}
+				}
+				status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+				if (SWITCH_READ_ACCEPTABLE(status)) {
+					data = (int16_t *) read_frame->data;
+					if (datalen < read_frame->datalen) {
+						datalen = read_frame->datalen;
+					}
+					for (x = 0; x < read_frame->datalen / 2; x++) {
+						sample = data[x] + mux_data[x];
+						switch_normalize_to_16bit(sample);
+						mux_data[x] = sample;
+					}
+					
+				}
+			}
+		}
+		if (datalen) {
+			switch_mutex_lock(state->mutex);
+			switch_buffer_write(state->buffer, mux_data, datalen);
+			switch_mutex_unlock(state->mutex);
+		}
+	}
+
+
+	for(i = 0; i < MAX_PEERS && (session = originate_status[i].peer_session); i++) {
+		if (switch_core_codec_ready((&read_codecs[i]))) {
+			switch_core_codec_destroy(&read_codecs[i]);
+		}
+		switch_core_session_reset(session, SWITCH_FALSE, SWITCH_TRUE);
+		switch_core_session_rwunlock(session);
+	}
+
+	return NULL;
+}
+
 #define peer_eligible(_peer) (_peer && !(switch_channel_test_flag(_peer, CF_TRANSFER) || \
 										 switch_channel_test_flag(_peer, CF_REDIRECT) || \
 										 switch_channel_test_flag(_peer, CF_BRIDGED) || \
@@ -1579,7 +1665,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	const char *holding = NULL;
 	const char *soft_holding = NULL;
 	const char *export_vars = NULL;
-
+	early_state_t early_state = { 0 };
 
 	if (strstr(bridgeto, SWITCH_ENT_ORIGINATE_DELIM)) {
 		return switch_ivr_enterprise_originate(session, bleg, cause, bridgeto, timelimit_sec, table, cid_name_override, cid_num_override,
@@ -2580,11 +2666,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						read_frame = NULL;
 					}
 
+					
 					if (oglobals.ringback_ok && (oglobals.ring_ready || oglobals.instant_ringback || 
 												 oglobals.sending_ringback > 1 || oglobals.bridge_early_media > -1)) {
 						if (oglobals.ringback_ok == 1) {
 							switch_status_t rst = setup_ringback(&oglobals, ringback_data, &ringback, &write_frame, &write_codec);
 
+							
+							if (oglobals.bridge_early_media > -1) {
+								switch_threadattr_t *thd_attr = NULL;
+								switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
+								switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+								early_state.oglobals = &oglobals;
+								early_state.originate_status = originate_status;
+								early_state.ready = 1;
+								switch_mutex_init(&early_state.mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+								switch_buffer_create_dynamic(&early_state.buffer, 1024, 1024, 0);
+								switch_thread_create(&oglobals.ethread, thd_attr, early_thread_run, &early_state, switch_core_session_get_pool(session));
+							}
+							
+							
 							switch (rst) {
 							case SWITCH_STATUS_SUCCESS:
 								oglobals.ringback_ok++;
@@ -2606,24 +2707,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						}
 							
 						if (oglobals.bridge_early_media > -1)  {
-							switch_channel_t *b_channel = originate_status[oglobals.bridge_early_media].peer_channel;
-							switch_core_session_t *b_session = originate_status[oglobals.bridge_early_media].peer_session;
-							switch_status_t b_status = SWITCH_STATUS_FALSE;
-							switch_frame_t *b_frame = NULL;
-							
-							if (b_channel && b_session) {
-								b_status = switch_core_session_read_frame(b_session, &b_frame, SWITCH_IO_FLAG_NONE, 0);
+							write_frame.datalen = 0;
+							switch_mutex_lock(early_state.mutex);
+							if (switch_buffer_inuse(early_state.buffer) >= write_frame.codec->implementation->decoded_bytes_per_packet) {
+								write_frame.datalen = switch_buffer_read(early_state.buffer, write_frame.data, 
+																		 write_frame.codec->implementation->decoded_bytes_per_packet);
 							}
-							
-							if (!SWITCH_READ_ACCEPTABLE(status)) {
-								oglobals.bridge_early_media = -1;
-							} else {
-								if (switch_core_session_write_frame(oglobals.session, b_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-									oglobals.bridge_early_media = -1;
-								}
-								continue;
-							}
-							
+							switch_mutex_unlock(early_state.mutex);
 						} else if (ringback.fh) {
 							switch_size_t mlen, olen;
 							unsigned int pos = 0;
@@ -2671,7 +2761,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						silence = 600;
 					}
 					
-					if ((ringback.fh || silence || ringback.audio_buffer) && write_frame.codec && write_frame.datalen) {
+					if ((ringback.fh || silence || ringback.audio_buffer || oglobals.bridge_early_media > -1) && write_frame.codec && write_frame.datalen) {
 						if (silence) {
 							write_frame.datalen = write_frame.codec->implementation->decoded_bytes_per_packet;
 							switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.datalen / 2, silence);
@@ -3054,6 +3144,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			if (caller_channel) {
 				switch_channel_set_variable(caller_channel, "originate_disposition", switch_channel_cause2str(*cause));
+			}
+
+			early_state.ready = 0;
+				
+			if (oglobals.ethread) {
+				switch_status_t st;
+				switch_thread_join(&st, oglobals.ethread);
+			}
+
+			if (early_state.buffer) {
+				switch_buffer_destroy(&early_state.buffer);
 			}
 
 			if (ringback.fh) {
