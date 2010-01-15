@@ -31,9 +31,9 @@
 
 #include <QThread>
 #include <QHash>
+#include <QSharedPointer>
 #include <switch.h>
-
-class Call;
+#include "call.h"
 
 #define FSCOMM_GW_STATE_TRYING 0
 #define FSCOMM_GW_STATE_REGISTER 1
@@ -65,7 +65,7 @@ public:
     explicit FSHost(QObject *parent = 0);
     switch_status_t sendCmd(const char *cmd, const char *args, QString *res);
     void generalEventHandler(switch_event_t *event);
-    Call * getCallByUUID(QString uuid) { return _active_calls.value(uuid, NULL); }
+    QSharedPointer<Call> getCallByUUID(QString uuid) { return _active_calls.value(uuid); }
     QString getGwStateName(int id) { return fscomm_gw_state_names[id]; }
 
 protected:
@@ -74,11 +74,11 @@ protected:
 signals:
     void coreLoadingError(QString);
     void ready(void);
-    void ringing(QString);
-    void answered(QString);
-    void newOutgoingCall(QString);
-    void callFailed(QString);
-    void hungup(Call*);
+    void ringing(QSharedPointer<Call>);
+    void answered(QSharedPointer<Call>);
+    void newOutgoingCall(QSharedPointer<Call>);
+    void callFailed(QSharedPointer<Call>);
+    void hungup(QSharedPointer<Call>);
     void gwStateChange(QString, int);
 
 private:
@@ -86,7 +86,7 @@ private:
     switch_status_t processAlegEvent(switch_event_t *, QString);
     void createFolders();
     void printEventHeaders(switch_event_t *event);
-    QHash<QString, Call*> _active_calls;
+    QHash<QString, QSharedPointer<Call> > _active_calls;
     QHash<QString, QString> _bleg_uuids;
 };
 

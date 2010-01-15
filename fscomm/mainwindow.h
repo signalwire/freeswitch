@@ -68,10 +68,10 @@ private slots:
     void paAnswer();
     void paCall(QString);
     void paHangup();
-    void newOutgoingCall(QString);
-    void ringing(QString);
-    void answered(QString);
-    void hungup(Call*);
+    void newOutgoingCall(QSharedPointer<Call>);
+    void ringing(QSharedPointer<Call>);
+    void answered(QSharedPointer<Call>);
+    void hungup(QSharedPointer<Call>);
 
 private:
     Ui::MainWindow *ui;

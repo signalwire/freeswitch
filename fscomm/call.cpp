@@ -28,6 +28,7 @@
  */
 
 #include "call.h"
+#include <fshost.h>
 
 Call::Call()
 {

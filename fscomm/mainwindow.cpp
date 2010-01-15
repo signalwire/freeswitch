@@ -76,10 +76,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(dialpadMapper, SIGNAL(mapped(QString)), this, SLOT(dialDTMF(QString)));
 
     connect(&g_FSHost, SIGNAL(ready()),this, SLOT(fshostReady()));
-    connect(&g_FSHost, SIGNAL(ringing(QString)), this, SLOT(ringing(QString)));
-    connect(&g_FSHost, SIGNAL(answered(QString)), this, SLOT(answered(QString)));
-    connect(&g_FSHost, SIGNAL(hungup(Call*)), this, SLOT(hungup(Call*)));
-    connect(&g_FSHost, SIGNAL(newOutgoingCall(QString)), this, SLOT(newOutgoingCall(QString)));
+    connect(&g_FSHost, SIGNAL(ringing(QSharedPointer<Call>)), this, SLOT(ringing(QSharedPointer<Call>)));
+    connect(&g_FSHost, SIGNAL(answered(QSharedPointer<Call>)), this, SLOT(answered(QSharedPointer<Call>)));
+    connect(&g_FSHost, SIGNAL(hungup(QSharedPointer<Call>)), this, SLOT(hungup(QSharedPointer<Call>)));
+    connect(&g_FSHost, SIGNAL(newOutgoingCall(QSharedPointer<Call>)), this, SLOT(newOutgoingCall(QSharedPointer<Call>)));
     connect(&g_FSHost, SIGNAL(gwStateChange(QString,int)), this, SLOT(gwStateChanged(QString,int)));
     /*connect(&g_FSHost, SIGNAL(coreLoadingError(QString)), this, SLOT(coreLoadingError(QString)));*/
 
@@ -152,11 +152,11 @@ void MainWindow::dialDTMF(QString dtmf)
 
 void MainWindow::callListDoubleClick(QListWidgetItem *item)
 {
-    Call *call = g_FSHost.getCallByUUID(item->data(Qt::UserRole).toString());
-    QString switch_str = QString("switch %1").arg(call->getCallID());
+    QSharedPointer<Call> call = g_FSHost.getCallByUUID(item->data(Qt::UserRole).toString());
+    QString switch_str = QString("switch %1").arg(call.data()->getCallID());
     QString result;
     if (g_FSHost.sendCmd("pa", switch_str.toAscii(), &result) == SWITCH_STATUS_FALSE) {
-        ui->textEdit->setText(QString("Error switching to call %1").arg(call->getCallID()));
+        ui->textEdit->setText(QString("Error switching to call %1").arg(call.data()->getCallID()));
         return;
     }
     ui->hangupBtn->setEnabled(true);
@@ -219,54 +219,51 @@ void MainWindow::paHangup()
     ui->hangupBtn->setEnabled(false);
 }
 
-void MainWindow::newOutgoingCall(QString uuid)
+void MainWindow::newOutgoingCall(QSharedPointer<Call> call)
 {
-    Call *call = g_FSHost.getCallByUUID(uuid);
-    ui->textEdit->setText(QString("Calling %1 (%2)").arg(call->getCidName(), call->getCidNumber()));
-    QListWidgetItem *item = new QListWidgetItem(tr("%1 (%2) - Calling").arg(call->getCidName(), call->getCidNumber()));
-    item->setData(Qt::UserRole, uuid);
+    ui->textEdit->setText(QString("Calling %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+    QListWidgetItem *item = new QListWidgetItem(tr("%1 (%2) - Calling").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+    item->setData(Qt::UserRole, call.data()->getUUID());
     ui->listCalls->addItem(item);
     ui->hangupBtn->setEnabled(true);
 }
 
-void MainWindow::ringing(QString uuid)
+void MainWindow::ringing(QSharedPointer<Call> call)
 {
 
-    Call *call = g_FSHost.getCallByUUID(uuid);
     for (int i=0; i<ui->listCalls->count(); i++)
     {
         QListWidgetItem *item = ui->listCalls->item(i);
-        if (item->data(Qt::UserRole).toString() == uuid)
+        if (item->data(Qt::UserRole).toString() == call.data()->getUUID())
         {
-            item->setText(tr("%1 - Ringing").arg(call->getCidNumber()));
-            ui->textEdit->setText(QString("Call from %1 (%2)").arg(call->getCidName(), call->getCidNumber()));
+            item->setText(tr("%1 - Ringing").arg(call.data()->getCidNumber()));
+            ui->textEdit->setText(QString("Call from %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
             return;
         }
     }
 
-    ui->textEdit->setText(QString("Call from %1 (%2)").arg(call->getCidName(), call->getCidNumber()));
-    QListWidgetItem *item = new QListWidgetItem(tr("%1 (%2) - Ringing").arg(call->getCidName(), call->getCidNumber()));
-    item->setData(Qt::UserRole, uuid);
+    ui->textEdit->setText(QString("Call from %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+    QListWidgetItem *item = new QListWidgetItem(tr("%1 (%2) - Ringing").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+    item->setData(Qt::UserRole, call.data()->getUUID());
     ui->listCalls->addItem(item);
     ui->answerBtn->setEnabled(true);
 }
 
-void MainWindow::answered(QString uuid)
+void MainWindow::answered(QSharedPointer<Call> call)
 {
-    Call *call = g_FSHost.getCallByUUID(uuid);
     for (int i=0; i<ui->listCalls->count(); i++)
     {
         QListWidgetItem *item = ui->listCalls->item(i);
-        if (item->data(Qt::UserRole).toString() == uuid)
+        if (item->data(Qt::UserRole).toString() == call.data()->getUUID())
         {
-            if (call->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
+            if (call.data()->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
             {
-                item->setText(tr("%1 (%2) - Active").arg(call->getCidName(), call->getCidNumber()));
+                item->setText(tr("%1 (%2) - Active").arg(call.data()->getCidName(), call.data()->getCidNumber()));
                 break;
             }
             else
             {
-                item->setText(tr("%1 - Active").arg(call->getCidNumber()));
+                item->setText(tr("%1 - Active").arg(call.data()->getCidNumber()));
                 break;
             }
         }
@@ -289,18 +286,18 @@ void MainWindow::answered(QString uuid)
     ui->dtmfPoundBtn->setEnabled(true);
 }
 
-void MainWindow::hungup(Call* call)
+void MainWindow::hungup(QSharedPointer<Call> call)
 {
     for (int i=0; i<ui->listCalls->count(); i++)
     {
         QListWidgetItem *item = ui->listCalls->item(i);
-        if (item->data(Qt::UserRole).toString() == call->getUUID())
+        if (item->data(Qt::UserRole).toString() == call.data()->getUUID())
         {
             delete ui->listCalls->takeItem(i);
             break;
         }
     }
-    ui->textEdit->setText(tr("Call with %1 (%2) hungup.").arg(call->getCidName(), call->getCidNumber()));
+    ui->textEdit->setText(tr("Call with %1 (%2) hungup.").arg(call.data()->getCidName(), call.data()->getCidNumber()));
     /* TODO: Will cause problems if 2 calls are received at the same time */
     ui->answerBtn->setEnabled(false);
     ui->hangupBtn->setEnabled(false);
@@ -320,7 +317,6 @@ void MainWindow::hungup(Call* call)
     ui->dtmfDBtn->setEnabled(false);
     ui->dtmfAstBtn->setEnabled(false);
     ui->dtmfPoundBtn->setEnabled(false);
-    delete call;
 }
 
 void MainWindow::changeEvent(QEvent *e)

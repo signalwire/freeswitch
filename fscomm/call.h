@@ -31,12 +31,12 @@
 
 #include <QtCore>
 #include <QString>
-#include <fshost.h>
 
 typedef enum {
     FSCOMM_CALL_STATE_RINGING = 0,
     FSCOMM_CALL_STATE_TRYING  = 1,
-    FSCOMM_CALL_STATE_ANSWERED = 2
+    FSCOMM_CALL_STATE_ANSWERED = 2,
+    FSCOMM_CALL_STATE_FAILED = 3
 } fscomm_call_state_t;
 
 typedef enum {
@@ -57,11 +57,14 @@ public:
     fscomm_call_direction_t getDirection() { return _direction; }
     fscomm_call_state_t getState() { return _state; }
     void setState(fscomm_call_state_t state) { _state = state; }
+    void setCause(QString cause) { _cause = cause; }
+    QString getCause() { return _cause; }
 
 private:
     int _call_id;
     QString _cid_name;
     QString _cid_number;
+    QString _cause;
     fscomm_call_direction_t _direction;
     QString _uuid;
     QString _buuid;
