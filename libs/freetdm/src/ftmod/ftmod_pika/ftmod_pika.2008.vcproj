@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="ozmod_pika"
+	Name="ftmod_pika"
 	ProjectGUID="{E886B4D5-AB4F-4092-B8F4-3B06E1E462EF}"
-	RootNamespace="ozmod_pika"
+	RootNamespace="ftmod_pika"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\isdn\include;..\..\include;..\..\..\pika\aoh\inc"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;OZMOD_PIKA_EXPORTS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FTMOD_PIKA_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -118,7 +118,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\..\isdn\include;..\..\include;..\..\..\pika\aoh\inc"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;OZMOD_PIKA_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FTMOD_PIKA_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -177,7 +177,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\ozmod_pika.c"
+				RelativePath=".\ftmod_pika.c"
 				>
 			</File>
 		</Filter>
@@ -187,7 +187,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\zap_pika.h"
+				RelativePath=".\ftdm_pika.h"
 				>
 			</File>
 		</Filter>

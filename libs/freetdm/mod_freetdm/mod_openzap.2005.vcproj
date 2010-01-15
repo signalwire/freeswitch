@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="mod_openzap"
+	Name="mod_freetdm"
 	ProjectGUID="{FE3540C5-3303-46E0-A69E-D92F775687F1}"
-	RootNamespace="mod_openzap"
+	RootNamespace="mod_freetdm"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -70,7 +70,7 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_openzap.lib"
+				ImportLibrary="$(OutDir)/mod_freetdm.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -153,7 +153,7 @@
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				LinkTimeCodeGeneration="1"
-				ImportLibrary="$(OutDir)/mod_openzap.lib"
+				ImportLibrary="$(OutDir)/mod_freetdm.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -191,7 +191,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\mod_openzap.c"
+				RelativePath=".\mod_freetdm.c"
 				>
 			</File>
 		</Filter>

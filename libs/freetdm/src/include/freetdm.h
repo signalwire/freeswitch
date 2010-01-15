@@ -36,8 +36,8 @@
  *
  */
 
-#ifndef OPENFTDM_H
-#define OPENFTDM_H
+#ifndef FREETDM_H
+#define FREETDM_H
 
 
 #if !defined(_XOPEN_SOURCE) && !defined(__FreeBSD__)
@@ -62,7 +62,7 @@
 #define FT_DECLARE(type)			type __stdcall
 #define FT_DECLARE_NONSTD(type)		type __cdecl
 #define FT_DECLARE_DATA
-#elif defined(OPENFTDM_EXPORTS)
+#elif defined(FREETDM_EXPORTS)
 #define FT_DECLARE(type)			__declspec(dllexport) type __stdcall
 #define FT_DECLARE_NONSTD(type)		__declspec(dllexport) type __cdecl
 #define FT_DECLARE_DATA				__declspec(dllexport)

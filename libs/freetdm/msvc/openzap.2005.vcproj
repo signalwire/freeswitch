@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="openzap"
+	Name="freetdm"
 	ProjectGUID="{93B8812C-3EC4-4F78-8970-FFBFC99E167D}"
-	RootNamespace="openzap"
+	RootNamespace="freetdm"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -21,7 +21,7 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="2"
-			BuildLogFile="$(IntDir)\BuildLog-openzap.htm"
+			BuildLogFile="$(IntDir)\BuildLog-freetdm.htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../src/include;../src/isdn/include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;OPENZAP_EXPORTS;TELETONE_EXPORTS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;FREETDM_EXPORTS;TELETONE_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -99,7 +99,7 @@
 			ConfigurationType="2"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
-			BuildLogFile="$(IntDir)\BuildLog-openzap.htm"
+			BuildLogFile="$(IntDir)\BuildLog-freetdm.htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -119,7 +119,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="../src/include;../src/isdn/include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;OPENZAP_EXPORTS;TELETONE_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;FREETDM_EXPORTS;TELETONE_EXPORTS"
 				RuntimeLibrary="2"
 				DisableLanguageExtensions="false"
 				RuntimeTypeInfo="false"
@@ -205,27 +205,27 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\zap_buffer.c"
+				RelativePath="..\src\ftdm_buffer.c"
 				>
 			</File>
 			<File
-				RelativePath="..\src\zap_callerid.c"
+				RelativePath="..\src\ftdm_callerid.c"
 				>
 			</File>
 			<File
-				RelativePath="..\src\zap_config.c"
+				RelativePath="..\src\ftdm_config.c"
 				>
 			</File>
 			<File
-				RelativePath="..\src\zap_dso.c"
+				RelativePath="..\src\ftdm_dso.c"
 				>
 			</File>
 			<File
-				RelativePath="..\src\zap_io.c"
+				RelativePath="..\src\ftdm_io.c"
 				>
 			</File>
 			<File
-				RelativePath="..\src\zap_threadmutex.c"
+				RelativePath="..\src\ftdm_threadmutex.c"
 				>
 			</File>
 		</Filter>
@@ -267,7 +267,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\include\openzap.h"
+				RelativePath="..\src\include\freetdm.h"
 				>
 			</File>
 			<File
@@ -275,23 +275,23 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\include\zap_buffer.h"
+				RelativePath="..\src\include\ftdm_buffer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\include\zap_config.h"
+				RelativePath="..\src\include\ftdm_config.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\include\zap_dso.h"
+				RelativePath="..\src\include\ftdm_dso.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\include\zap_threadmutex.h"
+				RelativePath="..\src\include\ftdm_threadmutex.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\include\zap_types.h"
+				RelativePath="..\src\include\ftdm_types.h"
 				>
 			</File>
 		</Filter>

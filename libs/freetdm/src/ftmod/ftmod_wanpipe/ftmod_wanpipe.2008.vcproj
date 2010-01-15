@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="ozmod_wanpipe"
+	Name="ftmod_wanpipe"
 	ProjectGUID="{1A145EE9-BBD8-45E5-98CD-EB4BE99E1DCD}"
-	RootNamespace="ozmod_wanpipe"
+	RootNamespace="ftmod_wanpipe"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -65,7 +65,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="openzap.lib libsangoma.lib"
+				AdditionalDependencies="freetdm.lib libsangoma.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;C:\Program Files\Sangoma\lib&quot;"
 				GenerateDebugInformation="true"
@@ -143,7 +143,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="openzap.lib libsangoma.lib"
+				AdditionalDependencies="freetdm.lib libsangoma.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;../../../wanpipe/api/lib/x64"
 				GenerateDebugInformation="true"
@@ -218,7 +218,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="openzap.lib libsangoma.lib"
+				AdditionalDependencies="freetdm.lib libsangoma.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;../../../wanpipe/api/lib/x86"
 				GenerateDebugInformation="true"
@@ -296,7 +296,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="openzap.lib libsangoma.lib"
+				AdditionalDependencies="freetdm.lib libsangoma.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;../../../wanpipe/api/lib/x64"
 				GenerateDebugInformation="true"
@@ -339,7 +339,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\ozmod_wanpipe.c"
+				RelativePath=".\ftmod_wanpipe.c"
 				>
 			</File>
 		</Filter>

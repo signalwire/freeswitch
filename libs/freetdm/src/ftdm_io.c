@@ -592,7 +592,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_load_tones(ftdm_span_t *span, const char *ma
 static void reset_gain_table(unsigned char *gain_table, float new_gain, ftdm_codec_t codec_gain)
 {
 	/* sample value */
-	unsigned sv = 0;
+	unsigned char sv = 0;
 	/* linear gain factor */
 	float lingain = 0;
 	/* linear value for each table sample */
@@ -615,10 +615,10 @@ static void reset_gain_table(unsigned char *gain_table, float new_gain, ftdm_cod
 	}
 
 	/* use the 20log rule to increase the gain: http://en.wikipedia.org/wiki/Gain, http:/en.wipedia.org/wiki/20_log_rule#Definitions */
-	lingain = pow(10.0, new_gain/ 20.0);
+	lingain = (float)pow(10.0, new_gain/ 20.0);
 	for (sv = 0; sv < FTDM_GAINS_TABLE_SIZE; sv++) {
 		/* get the linear value for this alaw/ulaw sample value */
-		linvalue = codec_gain == FTDM_CODEC_ALAW ? alaw_to_linear(sv) : ulaw_to_linear(sv);
+		linvalue = codec_gain == FTDM_CODEC_ALAW ? (float)alaw_to_linear(sv) : (float)ulaw_to_linear(sv);
 
 		/* multiply the linear value and the previously calculated linear gain */
 		ampvalue = (int)(linvalue * lingain);
@@ -637,7 +637,7 @@ static void reset_gain_table(unsigned char *gain_table, float new_gain, ftdm_cod
 
 FT_DECLARE(ftdm_status_t) ftdm_span_add_channel(ftdm_span_t *span, ftdm_socket_t sockfd, ftdm_chan_type_t type, ftdm_channel_t **chan)
 {
-	unsigned i = 0;
+	unsigned char i = 0;
 	if (span->chan_count < FTDM_MAX_CHANNELS_SPAN) {
 		ftdm_channel_t *new_chan = span->channels[++span->chan_count];
 
@@ -3152,7 +3152,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span)
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_add_to_group(const char* name, ftdm_channel_t* ftdmchan)
 {
-	int i;
+	unsigned int i;
 	ftdm_group_t* group = NULL;
 	
 	ftdm_mutex_lock(globals.group_mutex);
@@ -3163,7 +3163,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_add_to_group(const char* name, ftdm_chann
 	}
 
 	/*verify that group does not already include this channel first */
-	for(i=0; i < group->chan_count; i++) {
+	for(i = 0; i < group->chan_count; i++) {
 		if (group->channels[i]->physical_span_id == ftdmchan->physical_span_id &&
 				group->channels[i]->physical_chan_id == ftdmchan->physical_chan_id) {
 
@@ -3185,9 +3185,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_add_to_group(const char* name, ftdm_chann
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_remove_from_group(ftdm_group_t* group, ftdm_channel_t* ftdmchan)
 {
+	unsigned int i, j;
 	//Need to test this function
 	ftdm_mutex_lock(globals.group_mutex);
-	int i, j;
 
 	for (i=0; i < group->chan_count; i++) {
 			if (group->channels[i]->physical_span_id == ftdmchan->physical_span_id &&

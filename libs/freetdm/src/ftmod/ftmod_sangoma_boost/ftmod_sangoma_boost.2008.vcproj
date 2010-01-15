@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="ozmod_sangoma_boost"
+	Name="ftmod_sangoma_boost"
 	ProjectGUID="{D021EF2A-460D-4827-A0F7-41FDECF46F1B}"
-	RootNamespace="ozmod_sangoma_boost"
+	RootNamespace="ftmod_sangoma_boost"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\include;..\..\isdn\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;OZMOD_SANGOMA_BOOST_EXPORTS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FTMOD_SANGOMA_BOOST_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="openzap.lib"
+				AdditionalDependencies="freetdm.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -120,7 +120,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\..\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;OZMOD_SANGOMA_BOOST_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FTMOD_SANGOMA_BOOST_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -179,7 +179,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="ozmod_sangoma_boost.c"
+				RelativePath="ftmod_sangoma_boost.c"
 				>
 			</File>
 			<File
@@ -205,7 +205,7 @@
 				>
 			</File>
 			<File
-				RelativePath="zap_sangoma_boost.h"
+				RelativePath="ftdm_sangoma_boost.h"
 				>
 			</File>
 		</Filter>

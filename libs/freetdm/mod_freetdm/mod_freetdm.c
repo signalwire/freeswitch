@@ -2891,7 +2891,7 @@ SWITCH_STANDARD_API(ft_function)
 		}
 
 	} else if (!strcasecmp(argv[0], "gains")) {
-		int i = 0;
+		unsigned int i = 0;
 		float txgain = 0.0;
 		float rxgain = 0.0;
 		uint32_t chan_id = 0;

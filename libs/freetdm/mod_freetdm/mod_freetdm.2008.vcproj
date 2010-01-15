@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="mod_openzap"
+	Name="mod_freetdm"
 	ProjectGUID="{FE3540C5-3303-46E0-A69E-D92F775687F1}"
-	RootNamespace="mod_openzap"
+	RootNamespace="mod_freetdm"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -68,7 +68,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="FreeSwitchCore.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/mod_openzap.dll"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/mod_freetdm.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;../../../w32/Library/$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -76,7 +76,7 @@
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary="$(OutDir)/mod_openzap.lib"
+				ImportLibrary="$(OutDir)/mod_freetdm.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -147,7 +147,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="FreeSwitchCore.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/mod_openzap.dll"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/mod_freetdm.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;../../../w32/Library/$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -158,7 +158,7 @@
 				LinkTimeCodeGeneration="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary="$(OutDir)/mod_openzap.lib"
+				ImportLibrary="$(OutDir)/mod_freetdm.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -233,7 +233,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="FreeSwitchCore.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/mod_openzap.dll"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/mod_freetdm.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;../../../w32/Library/$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -241,7 +241,7 @@
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary="$(OutDir)/mod_openzap.lib"
+				ImportLibrary="$(OutDir)/mod_freetdm.lib"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -313,7 +313,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="FreeSwitchCore.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/mod_openzap.dll"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/mod_freetdm.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;../../../w32/Library/$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -324,7 +324,7 @@
 				LinkTimeCodeGeneration="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary="$(OutDir)/mod_openzap.lib"
+				ImportLibrary="$(OutDir)/mod_freetdm.lib"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -359,7 +359,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\mod_openzap.c"
+				RelativePath=".\mod_freetdm.c"
 				>
 			</File>
 		</Filter>

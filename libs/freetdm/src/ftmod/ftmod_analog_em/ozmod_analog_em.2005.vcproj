@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="ozmod_analog_em"
+	Name="ftmod_analog_em"
 	ProjectGUID="{C539D7C8-26A8-4A94-B938-77672165C130}"
-	RootNamespace="ozmod_analog_em"
+	RootNamespace="ftmod_analog_em"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\include;..\..\isdn\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;OZMOD_ANALOG_EM_EXPORTS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FTMOD_ANALOG_EM_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -120,7 +120,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\..\include;..\..\isdn\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;OZMOD_ANALOG_EM_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FTMOD_ANALOG_EM_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -182,7 +182,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="ozmod_analog_em.c"
+				RelativePath="ftmod_analog_em.c"
 				>
 			</File>
 		</Filter>
@@ -192,7 +192,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="zap_analog_em.h"
+				RelativePath="ftdm_analog_em.h"
 				>
 			</File>
 		</Filter>
