@@ -2996,7 +2996,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	freetdm_endpoint_interface->io_routines = &freetdm_io_routines;
 	freetdm_endpoint_interface->state_handler = &freetdm_state_handlers;
 	
-	SWITCH_ADD_API(commands_api_interface, "ft", "FreeTDM commands", ft_function, FT_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "ftdm", "FreeTDM commands", ft_function, FT_SYNTAX);
 
 	SWITCH_ADD_APP(app_interface, "disable_ec", "Disable Echo Canceller", "Disable Echo Canceller", disable_ec_function, "", SAF_NONE);
 
