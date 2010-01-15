@@ -198,7 +198,7 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 
 	OFFSET = 0;
 	
-	for (x = 0; x < 500; x++) {
+	for (x = 0; x < 100; x++) {
 		avg = average_time(val, 50);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Test: %ld Average: %ld Step: %d\n", (long)val, (long)avg, step);
 
@@ -231,8 +231,12 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 		}
 	}
 
-	OFFSET = (int)(want - val);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer offset of %d calculated\n", OFFSET);
+	if (good >= 10) {
+		OFFSET = (int)(want - val);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer offset of %d calculated\n", OFFSET);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer offset of NOT calculated\n");
+	}
 }
 
 
@@ -943,8 +947,20 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 	timer_interface->timer_check = timer_check;
 	timer_interface->timer_destroy = timer_destroy;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Calibrating timer, please wait...\n");
-	switch_time_calibrate_clock();
+	if (!switch_test_flag((&runtime), SCF_USE_CLOCK_RT)) {
+		switch_time_set_nanosleep(SWITCH_FALSE);
+	}
+	
+	if (!switch_test_flag((&runtime), SCF_USE_COND_TIMING)) {
+		switch_time_set_cond_yield(SWITCH_TRUE);
+	}
+
+	if (switch_test_flag((&runtime), SCF_CALIBRATE_CLOCK)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Calibrating timer, please wait...\n");
+		switch_time_calibrate_clock();
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clock calibration disabled.\n");
+	}
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

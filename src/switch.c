@@ -171,7 +171,7 @@ void WINAPI ServiceCtrlHandler(DWORD control)
 /* the main service entry point */
 void WINAPI service_main(DWORD numArgs, char **args)
 {
-	switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT;
+	switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT | SCF_CALIBRATE_CLOCK | SCF_USE_CLOCK_RT;
 	const char *err = NULL;		/* error value for return from freeswitch initialization */
 	/*  we have to initialize the service-specific stuff */
 	memset(&status, 0, sizeof(SERVICE_STATUS));
@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
 #ifdef __sun
 	switch_core_flag_t flags = SCF_USE_SQL;
 #else
-	switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT;
+	switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT | SCF_CALIBRATE_CLOCK | SCF_USE_CLOCK_RT;
 #endif
 	int ret = 0;
 	switch_status_t destroy_status;
@@ -328,7 +328,10 @@ int main(int argc, char *argv[])
 		"\t-hp                    -- enable high priority settings\n"
 		"\t-vg                    -- run under valgrind\n"
 		"\t-nosql                 -- disable internal sql scoreboard\n"
+		"\t-vm                    -- use possibly more vm-friendly timing code.\n"
 		"\t-nonat                 -- disable auto nat detection\n"
+		"\t-nocal                 -- disable clock calibration\n"
+		"\t-nort                  -- disable clock clock_realtime\n"
 		"\t-stop                  -- stop freeswitch\n"
 		"\t-nc                    -- do not output to a console and background\n"
 		"\t-c                     -- output to a console and stay in the foreground\n"
@@ -489,6 +492,21 @@ int main(int argc, char *argv[])
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-nonat")) {
 			flags &= ~SCF_USE_AUTO_NAT;
+			known_opt++;
+		}
+
+		if (local_argv[x] && !strcmp(local_argv[x], "-vm")) {
+			flags |= SCF_USE_COND_TIMING;
+			known_opt++;
+		}
+
+		if (local_argv[x] && !strcmp(local_argv[x], "-nort")) {
+			flags &= ~SCF_USE_CLOCK_RT;
+			known_opt++;
+		}
+
+		if (local_argv[x] && !strcmp(local_argv[x], "-nocal")) {
+			flags &= ~SCF_CALIBRATE_CLOCK;
 			known_opt++;
 		}
 
