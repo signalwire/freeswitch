@@ -80,6 +80,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&g_FSHost, SIGNAL(answered(QSharedPointer<Call>)), this, SLOT(answered(QSharedPointer<Call>)));
     connect(&g_FSHost, SIGNAL(hungup(QSharedPointer<Call>)), this, SLOT(hungup(QSharedPointer<Call>)));
     connect(&g_FSHost, SIGNAL(newOutgoingCall(QSharedPointer<Call>)), this, SLOT(newOutgoingCall(QSharedPointer<Call>)));
+    connect(&g_FSHost, SIGNAL(callFailed(QSharedPointer<Call>)), this, SLOT(callFailed(QSharedPointer<Call>)));
     connect(&g_FSHost, SIGNAL(gwStateChange(QString,int)), this, SLOT(gwStateChanged(QString,int)));
     /*connect(&g_FSHost, SIGNAL(coreLoadingError(QString)), this, SLOT(coreLoadingError(QString)));*/
 
@@ -284,6 +285,42 @@ void MainWindow::answered(QSharedPointer<Call> call)
     ui->dtmfDBtn->setEnabled(true);
     ui->dtmfAstBtn->setEnabled(true);
     ui->dtmfPoundBtn->setEnabled(true);
+}
+
+void MainWindow::callFailed(QSharedPointer<Call> call)
+{
+    for (int i=0; i<ui->listCalls->count(); i++)
+    {
+        QListWidgetItem *item = ui->listCalls->item(i);
+        if (item->data(Qt::UserRole).toString() == call.data()->getUUID())
+        {
+            delete ui->listCalls->takeItem(i);
+            break;
+        }
+    }
+    ui->textEdit->setText(tr("Call with %1 (%2) failed with reason %3.").arg(call.data()->getCidName(),
+                                                                             call.data()->getCidNumber(),
+                                                                             call.data()->getCause()));
+    /* TODO: Will cause problems if 2 calls are received at the same time */
+    ui->answerBtn->setEnabled(false);
+    ui->hangupBtn->setEnabled(false);
+    ui->dtmf0Btn->setEnabled(false);
+    ui->dtmf1Btn->setEnabled(false);
+    ui->dtmf2Btn->setEnabled(false);
+    ui->dtmf3Btn->setEnabled(false);
+    ui->dtmf4Btn->setEnabled(false);
+    ui->dtmf5Btn->setEnabled(false);
+    ui->dtmf6Btn->setEnabled(false);
+    ui->dtmf7Btn->setEnabled(false);
+    ui->dtmf8Btn->setEnabled(false);
+    ui->dtmf9Btn->setEnabled(false);
+    ui->dtmfABtn->setEnabled(false);
+    ui->dtmfBBtn->setEnabled(false);
+    ui->dtmfCBtn->setEnabled(false);
+    ui->dtmfDBtn->setEnabled(false);
+    ui->dtmfAstBtn->setEnabled(false);
+    ui->dtmfPoundBtn->setEnabled(false);
+
 }
 
 void MainWindow::hungup(QSharedPointer<Call> call)
