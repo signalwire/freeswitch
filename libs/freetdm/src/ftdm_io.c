@@ -608,15 +608,21 @@ static void reset_gain_table(unsigned char *gain_table, float new_gain, ftdm_cod
 
 	if (!new_gain) {
 		/* for a 0.0db gain table, each alaw/ulaw sample value is left untouched (0 ==0, 1 == 1, 2 == 2 etc)*/
-		for (sv = 0; sv < FTDM_GAINS_TABLE_SIZE; sv++) {
+		sv = 0;
+		while (1) {
 			gain_table[sv] = sv;
+			if (sv == (FTDM_GAINS_TABLE_SIZE-1)) {
+				break;
+			}
+			sv++;
 		}
 		return;
 	}
 
 	/* use the 20log rule to increase the gain: http://en.wikipedia.org/wiki/Gain, http:/en.wipedia.org/wiki/20_log_rule#Definitions */
 	lingain = (float)pow(10.0, new_gain/ 20.0);
-	for (sv = 0; sv < FTDM_GAINS_TABLE_SIZE; sv++) {
+	sv = 0;
+	while (1) {
 		/* get the linear value for this alaw/ulaw sample value */
 		linvalue = codec_gain == FTDM_CODEC_ALAW ? (float)alaw_to_linear(sv) : (float)ulaw_to_linear(sv);
 
@@ -632,6 +638,10 @@ static void reset_gain_table(unsigned char *gain_table, float new_gain, ftdm_cod
 			ampvalue = FTDM_SLINEAR_MIN_VALUE;
 		}
 		gain_table[sv] = codec_gain == FTDM_CODEC_ALAW ? linear_to_alaw(ampvalue) : linear_to_ulaw(ampvalue);
+		if (sv == (FTDM_GAINS_TABLE_SIZE-1)) {
+			break;
+		}
+		sv++;
 	}
 }
 
@@ -675,9 +685,14 @@ FT_DECLARE(ftdm_status_t) ftdm_span_add_channel(ftdm_span_t *span, ftdm_socket_t
 		new_chan->dtmf_hangup_buf = ftdm_calloc (span->dtmf_hangup_len + 1, sizeof (char));
 
 		/* set 0.0db gain table */
-		for (i = 0; i < sizeof(new_chan->txgain_table); i++) {
+		i = 0;
+		while (1) {
 			new_chan->txgain_table[i] = i;
 			new_chan->rxgain_table[i] = i;
+			if (i == (sizeof(new_chan->txgain_table)-1)) {
+				break;
+			}
+			i++;
 		}
 
 		ftdm_set_flag(new_chan, FTDM_CHANNEL_CONFIGURED | FTDM_CHANNEL_READY);
