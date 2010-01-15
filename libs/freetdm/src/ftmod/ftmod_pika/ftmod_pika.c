@@ -305,14 +305,14 @@ PK_VOID PK_CALLBACK media_out_callback(PKH_TPikaEvent *event)
 
 /**
  * \brief Initialises a range of pika channels
- * \param span Openftdm span
+ * \param span FreeTDM span
  * \param boardno Pika board number
  * \param spanno Pika span number
  * \param start Initial pika channel number
  * \param end Final pika channel number
- * \param type Openftdm channel type
- * \param name Openftdm span name
- * \param number Openftdm span number
+ * \param type FreeTDM channel type
+ * \param name FreeTDM span name
+ * \param number FreeTDM span number
  * \param profile Pika channel profile
  * \return number of spans configured
  */
@@ -583,11 +583,11 @@ static unsigned pika_open_range(ftdm_span_t *span, unsigned boardno, unsigned sp
 
 /**
  * \brief Initialises an freetdm pika span from a configuration string
- * \param span Openftdm span
+ * \param span FreeTDM span
  * \param str Configuration string
- * \param type Openftdm span type
- * \param name Openftdm span name
- * \param number Openftdm span number
+ * \param type FreeTDM span type
+ * \param name FreeTDM span name
+ * \param number FreeTDM span number
  * \return Success or failure
  */
 static ZIO_CONFIGURE_SPAN_FUNCTION(pika_configure_span)
@@ -813,9 +813,9 @@ static ZIO_WRITE_FUNCTION(pika_write)
 }
 
 /**
- * \brief Executes an Openftdm command on a Pika channel
+ * \brief Executes an FreeTDM command on a Pika channel
  * \param ftdmchan Channel to execute command on
- * \param command Openftdm command to execute
+ * \param command FreeTDM command to execute
  * \param obj Object (unused)
  * \return Success or failure
  */
@@ -1059,7 +1059,7 @@ static ZIO_SPAN_POLL_EVENT_FUNCTION(pika_poll_event)
 /**
  * \brief Retrieves an event from a Pika span
  * \param span Span to retrieve event from
- * \param event Openftdm event to return
+ * \param event FreeTDM event to return
  * \return Success or failure
  */
 static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
@@ -1280,7 +1280,7 @@ static ftdm_io_interface_t pika_interface;
 
 /**
  * \brief Loads Pika IO module
- * \param zio Openftdm IO interface
+ * \param zio FreeTDM IO interface
  * \return Success or failure
  */
 static ZIO_IO_LOAD_FUNCTION(pika_init)

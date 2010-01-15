@@ -676,7 +676,7 @@ static void *ftdm_analog_em_run(ftdm_thread_t *me, void *obj)
 }
 
 /**
- * \brief Openftdm analog EM module initialisation
+ * \brief FreeTDM analog EM module initialisation
  * \return Success
  */
 static ZIO_SIG_LOAD_FUNCTION(ftdm_analog_em_init)
@@ -685,7 +685,7 @@ static ZIO_SIG_LOAD_FUNCTION(ftdm_analog_em_init)
 }
 
 /**
- * \brief Openftdm analog EM module definition
+ * \brief FreeTDM analog EM module definition
  */
 EX_DECLARE_DATA ftdm_module_t ftdm_module = {
 	"analog_em",

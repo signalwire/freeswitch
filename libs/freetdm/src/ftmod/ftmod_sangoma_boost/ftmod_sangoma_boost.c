@@ -1617,7 +1617,7 @@ end:
 
 /**
  * \brief Loads sangoma boost signaling module
- * \param zio Openftdm IO interface
+ * \param zio FreeTDM IO interface
  * \return Success
  */
 static ZIO_SIG_LOAD_FUNCTION(ftdm_sangoma_boost_init)
@@ -2024,7 +2024,7 @@ static ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 }
 
 /**
- * \brief Openftdm sangoma boost signaling module definition
+ * \brief FreeTDM sangoma boost signaling module definition
  */
 EX_DECLARE_DATA ftdm_module_t ftdm_module = { 
 	/*.name =*/ "sangoma_boost",

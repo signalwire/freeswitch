@@ -238,12 +238,12 @@ static void zt_build_gains(struct zt_gains *g, float rxgain, float txgain, int c
 
 /**
  * \brief Initialises a range of ftdmtel channels
- * \param span Openftdm span
+ * \param span FreeTDM span
  * \param start Initial wanpipe channel number
  * \param end Final wanpipe channel number
- * \param type Openftdm channel type
- * \param name Openftdm span name
- * \param number Openftdm span number
+ * \param type FreeTDM channel type
+ * \param name FreeTDM span name
+ * \param number FreeTDM span number
  * \param cas_bits CAS bits
  * \return number of spans configured
  */
@@ -435,11 +435,11 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
 
 /**
  * \brief Initialises an freetdm ftdmtel span from a configuration string
- * \param span Openftdm span
+ * \param span FreeTDM span
  * \param str Configuration string
- * \param type Openftdm span type
- * \param name Openftdm span name
- * \param number Openftdm span number
+ * \param type FreeTDM span type
+ * \param name FreeTDM span name
+ * \param number FreeTDM span number
  * \return Success or failure
  */
 static ZIO_CONFIGURE_SPAN_FUNCTION(zt_configure_span)
@@ -662,9 +662,9 @@ static ZIO_CLOSE_FUNCTION(zt_close)
 }
 
 /**
- * \brief Executes an Openftdm command on a ftdmtel channel
+ * \brief Executes an FreeTDM command on a ftdmtel channel
  * \param ftdmchan Channel to execute command on
- * \param command Openftdm command to execute
+ * \param command FreeTDM command to execute
  * \param obj Object (unused)
  * \return Success or failure
  */
@@ -969,7 +969,7 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 /**
  * \brief Retrieves an event from a ftdmtel span
  * \param span Span to retrieve event from
- * \param event Openftdm event to return
+ * \param event FreeTDM event to return
  * \return Success or failure
  */
 ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
@@ -1141,13 +1141,13 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(zt_channel_destroy)
 }
 
 /**
- * \brief Global Openftdm IO interface for ftdmtel
+ * \brief Global FreeTDM IO interface for ftdmtel
  */
 static ftdm_io_interface_t zt_interface;
 
 /**
  * \brief Loads ftdmtel IO module
- * \param zio Openftdm IO interface
+ * \param zio FreeTDM IO interface
  * \return Success or failure
  */
 static ZIO_IO_LOAD_FUNCTION(zt_init)
@@ -1212,7 +1212,7 @@ static ZIO_IO_UNLOAD_FUNCTION(zt_destroy)
 }
 
 /**
- * \brief Openftdm ftdmtel IO module definition
+ * \brief FreeTDM ftdmtel IO module definition
  */
 ftdm_module_t ftdm_module = { 
 	"zt",

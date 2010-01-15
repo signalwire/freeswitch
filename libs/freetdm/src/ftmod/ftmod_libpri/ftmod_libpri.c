@@ -270,7 +270,7 @@ static ZIO_API_FUNCTION(ftdm_libpri_api)
 
 /**
  * \brief Loads libpri IO module
- * \param zio Openftdm IO interface
+ * \param zio FreeTDM IO interface
  * \return Success
  */
 static ZIO_IO_LOAD_FUNCTION(ftdm_libpri_io_init)
@@ -288,7 +288,7 @@ static ZIO_IO_LOAD_FUNCTION(ftdm_libpri_io_init)
 
 /**
  * \brief Loads libpri signaling module
- * \param zio Openftdm IO interface
+ * \param zio FreeTDM IO interface
  * \return Success
  */
 static ZIO_SIG_LOAD_FUNCTION(ftdm_libpri_init)
@@ -1354,7 +1354,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(ftdm_libpri_configure_span)
 }
 
 /**
- * \brief Openftdm libpri signaling and IO module definition
+ * \brief FreeTDM libpri signaling and IO module definition
  */
 ftdm_module_t ftdm_module = { 
 	"libpri",

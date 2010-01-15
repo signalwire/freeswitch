@@ -201,13 +201,13 @@ static unsigned char wanpipe_swap_bits(unsigned char cas_bits)
 
 /**
  * \brief Initialises a range of wanpipe channels
- * \param span Openftdm span
+ * \param span FreeTDM span
  * \param spanno Wanpipe span number
  * \param start Initial wanpipe channel number
  * \param end Final wanpipe channel number
- * \param type Openftdm channel type
- * \param name Openftdm span name
- * \param number Openftdm span number
+ * \param type FreeTDM channel type
+ * \param name FreeTDM span name
+ * \param number FreeTDM span number
  * \param cas_bits CAS bits
  * \return number of spans configured
  */
@@ -387,11 +387,11 @@ static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 
 /**
  * \brief Initialises an freetdm Wanpipe span from a configuration string
- * \param span Openftdm span
+ * \param span FreeTDM span
  * \param str Configuration string
- * \param type Openftdm span type
- * \param name Openftdm span name
- * \param number Openftdm span number
+ * \param type FreeTDM span type
+ * \param name FreeTDM span name
+ * \param number FreeTDM span number
  * \return Success or failure
  */
 static ZIO_CONFIGURE_SPAN_FUNCTION(wanpipe_configure_span)
@@ -506,9 +506,9 @@ static ZIO_CLOSE_FUNCTION(wanpipe_close)
 }
 
 /**
- * \brief Executes an Openftdm command on a Wanpipe channel
+ * \brief Executes an FreeTDM command on a Wanpipe channel
  * \param ftdmchan Channel to execute command on
- * \param command Openftdm command to execute
+ * \param command FreeTDM command to execute
  * \param obj Object (unused)
  * \return Success or failure
  */
@@ -896,7 +896,7 @@ static ZIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 /**
  * \brief Retrieves an event from a wanpipe span
  * \param span Span to retrieve event from
- * \param event Openftdm event to return
+ * \param event FreeTDM event to return
  * \return Success or failure
  */
 ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
@@ -1083,7 +1083,7 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 
 /**
  * \brief Loads wanpipe IO module
- * \param zio Openftdm IO interface
+ * \param zio FreeTDM IO interface
  * \return Success
  */
 static ZIO_IO_LOAD_FUNCTION(wanpipe_init)
@@ -1125,7 +1125,7 @@ static ZIO_IO_UNLOAD_FUNCTION(wanpipe_destroy)
 }
 
 /**
- * \brief Openftdm wanpipe IO module definition
+ * \brief FreeTDM wanpipe IO module definition
  */
 EX_DECLARE_DATA ftdm_module_t ftdm_module = { 
 	"wanpipe",

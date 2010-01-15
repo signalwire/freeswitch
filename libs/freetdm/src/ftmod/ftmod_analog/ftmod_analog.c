@@ -944,7 +944,7 @@ static void *ftdm_analog_run(ftdm_thread_t *me, void *obj)
 }
 
 /**
- * \brief Openftdm analog signaling module initialisation
+ * \brief FreeTDM analog signaling module initialisation
  * \return Success
  */
 static ZIO_SIG_LOAD_FUNCTION(ftdm_analog_init)
@@ -953,7 +953,7 @@ static ZIO_SIG_LOAD_FUNCTION(ftdm_analog_init)
 }
 
 /**
- * \brief Openftdm analog signaling module definition
+ * \brief FreeTDM analog signaling module definition
  */
 EX_DECLARE_DATA ftdm_module_t ftdm_module = {
 	"analog",

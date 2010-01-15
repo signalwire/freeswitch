@@ -1505,7 +1505,7 @@ static __inline__ void check_state(ftdm_span_t *span)
 }
 
 /**
- * \brief Processes Openftdm event on a span
+ * \brief Processes FreeTDM event on a span
  * \param span Span to process event on
  * \param event Event to process
  * \return Success or failure
@@ -1906,7 +1906,7 @@ static void *ftdm_isdn_run(ftdm_thread_t *me, void *obj)
 }
 
 /**
- * \brief Openftdm ISDN signaling module initialisation
+ * \brief FreeTDM ISDN signaling module initialisation
  * \return Success
  */
 static ZIO_SIG_LOAD_FUNCTION(ftdm_isdn_init)
@@ -2409,7 +2409,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(ftdm_isdn_configure_span)
 }
 
 /**
- * \brief Openftdm ISDN signaling module definition
+ * \brief FreeTDM ISDN signaling module definition
  */
 EX_DECLARE_DATA ftdm_module_t ftdm_module = {
 	"isdn",
