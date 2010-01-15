@@ -266,7 +266,7 @@ static ftdm_status_t writeQ931PacketToPcap(L3UCHAR* q931buf, L3USHORT q931size, 
  * \brief Unloads pcap IO
  * \return Success or failure
  */
-static ZIO_IO_UNLOAD_FUNCTION(close_pcap)
+static FIO_IO_UNLOAD_FUNCTION(close_pcap)
 {
 #ifdef HAVE_LIBPCAP
 	return closePcapFile();
@@ -292,7 +292,7 @@ static L2ULONG ftdm_time_now(void)
  * \param ftdmchan Channel to initiate call on
  * \return Success or failure
  */
-static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
+static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
 {
 	ftdm_status_t status = FTDM_SUCCESS;
 	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
@@ -309,7 +309,7 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
  * \param ftdmchan Channel to initialise
  * \return Success or failure
  */
-static ZIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
+static FIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 {
 	Q931mes_Generic *gen = (Q931mes_Generic *) caller_data->raw_data;
 	Q931ie_BearerCap BearerCap;
@@ -1767,12 +1767,12 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 			rlen = ftdm_buffer_read_loop(dt_buffer, frame, len);
 
 			if (ftdmchan->effective_codec != FTDM_CODEC_SLIN) {
-				zio_codec_t codec_func = NULL;
+				fio_codec_t codec_func = NULL;
 
 				if (ftdmchan->native_codec == FTDM_CODEC_ULAW) {
-					codec_func = zio_slin2ulaw;
+					codec_func = fio_slin2ulaw;
 				} else if (ftdmchan->native_codec == FTDM_CODEC_ALAW) {
-					codec_func = zio_slin2alaw;
+					codec_func = fio_slin2alaw;
 				}
 
 				if (codec_func) {
@@ -1909,7 +1909,7 @@ static void *ftdm_isdn_run(ftdm_thread_t *me, void *obj)
  * \brief FreeTDM ISDN signaling module initialisation
  * \return Success
  */
-static ZIO_SIG_LOAD_FUNCTION(ftdm_isdn_init)
+static FIO_SIG_LOAD_FUNCTION(ftdm_isdn_init)
 {
 	Q931Initialize();
 
@@ -2198,7 +2198,7 @@ static uint32_t parse_opts(const char *in)
  * \param ap List of configuration variables
  * \return Success or failure
  */
-static ZIO_SIG_CONFIGURE_FUNCTION(ftdm_isdn_configure_span)
+static FIO_SIG_CONFIGURE_FUNCTION(ftdm_isdn_configure_span)
 {
 	uint32_t i, x = 0;
 	ftdm_channel_t *dchans[2] = {0};

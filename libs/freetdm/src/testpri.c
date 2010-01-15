@@ -33,7 +33,7 @@ static void *channel_run(ftdm_thread_t *me, void *obj)
 
 		bbytes = (size_t) bytes;
 
-		zio_slin2alaw(buf, sizeof(buf), &bbytes);
+		fio_slin2alaw(buf, sizeof(buf), &bbytes);
 
 		if (ftdm_channel_write(ftdmchan, buf, sizeof(buf), &bbytes) != FTDM_SUCCESS) {
 			break;
@@ -55,7 +55,7 @@ static void *channel_run(ftdm_thread_t *me, void *obj)
 	return NULL;
 }
 
-static ZIO_SIGNAL_CB_FUNCTION(on_signal)
+static FIO_SIGNAL_CB_FUNCTION(on_signal)
 {
 	ftdm_log(FTDM_LOG_DEBUG, "got sig %d:%d [%s]\n", sigmsg->channel->span_id, sigmsg->channel->chan_id, ftdm_signal_event2str(sigmsg->event_id));
 

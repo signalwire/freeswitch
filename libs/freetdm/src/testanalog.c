@@ -41,7 +41,7 @@ static void *test_call(ftdm_thread_t *me, void *obj)
 	return NULL;
 }
 
-static ZIO_SIGNAL_CB_FUNCTION(on_signal)
+static FIO_SIGNAL_CB_FUNCTION(on_signal)
 {
 	ftdm_log(FTDM_LOG_DEBUG, "got sig [%s]\n", ftdm_signal_event2str(sigmsg->event_id));
 

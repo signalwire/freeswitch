@@ -2,7 +2,7 @@
 #include <signal.h>
 
 
-static ZIO_SIGNAL_CB_FUNCTION(on_signal)
+static FIO_SIGNAL_CB_FUNCTION(on_signal)
 {
 	return FTDM_FAIL;
 }

@@ -51,7 +51,7 @@ struct ftdm_analog_data {
 	uint32_t flags;
 	uint32_t max_dialstr;
 	uint32_t digit_timeout;
-	zio_signal_cb_t sig_cb;
+	fio_signal_cb_t sig_cb;
 };
 
 static void *ftdm_analog_em_run(ftdm_thread_t *me, void *obj);

@@ -35,76 +35,76 @@
 #include "freetdm.h"
 //#include "ftdm_skel.h"
 
-static ZIO_CONFIGURE_FUNCTION(skel_configure)
+static FIO_CONFIGURE_FUNCTION(skel_configure)
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_CONFIGURE_SPAN_FUNCTION(skel_configure_span)
+static FIO_CONFIGURE_SPAN_FUNCTION(skel_configure_span)
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_OPEN_FUNCTION(skel_open) 
+static FIO_OPEN_FUNCTION(skel_open) 
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_CLOSE_FUNCTION(skel_close)
+static FIO_CLOSE_FUNCTION(skel_close)
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_WAIT_FUNCTION(skel_wait)
+static FIO_WAIT_FUNCTION(skel_wait)
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_READ_FUNCTION(skel_read)
+static FIO_READ_FUNCTION(skel_read)
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_WRITE_FUNCTION(skel_write)
+static FIO_WRITE_FUNCTION(skel_write)
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_COMMAND_FUNCTION(skel_command)
+static FIO_COMMAND_FUNCTION(skel_command)
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_SPAN_POLL_EVENT_FUNCTION(skel_poll_event)
+static FIO_SPAN_POLL_EVENT_FUNCTION(skel_poll_event)
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_SPAN_NEXT_EVENT_FUNCTION(skel_next_event)
+static FIO_SPAN_NEXT_EVENT_FUNCTION(skel_next_event)
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_CHANNEL_DESTROY_FUNCTION(skel_channel_destroy)
+static FIO_CHANNEL_DESTROY_FUNCTION(skel_channel_destroy)
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_SPAN_DESTROY_FUNCTION(skel_span_destroy)
+static FIO_SPAN_DESTROY_FUNCTION(skel_span_destroy)
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_GET_ALARMS_FUNCTION(skel_get_alarms)
+static FIO_GET_ALARMS_FUNCTION(skel_get_alarms)
 {
 	return FTDM_FAIL;
 }
 
 static ftdm_io_interface_t skel_interface;
 
-static ZIO_IO_LOAD_FUNCTION(skel_init)
+static FIO_IO_LOAD_FUNCTION(skel_init)
 {
-	assert(zio != NULL);
+	assert(fio != NULL);
 	memset(&skel_interface, 0, sizeof(skel_interface));
 
 	skel_interface.name = "skel";
@@ -121,12 +121,12 @@ static ZIO_IO_LOAD_FUNCTION(skel_init)
 	skel_interface.channel_destroy = skel_channel_destroy;
 	skel_interface.span_destroy = skel_span_destroy;
 	skel_interface.get_alarms = skel_get_alarms;
-	*zio = &skel_interface;
+	*fio = &skel_interface;
 
 	return FTDM_SUCCESS;
 }
 
-static ZIO_IO_UNLOAD_FUNCTION(skel_destroy)
+static FIO_IO_UNLOAD_FUNCTION(skel_destroy)
 {
 	return FTDM_SUCCESS;
 }

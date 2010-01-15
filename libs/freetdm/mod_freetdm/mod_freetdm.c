@@ -1342,7 +1342,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 }
 
 
-static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
+static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
@@ -1402,7 +1402,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 	return FTDM_SUCCESS;
 }
 
-static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
+static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
@@ -1609,7 +1609,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 	return status;
 }
 
-static ZIO_SIGNAL_CB_FUNCTION(on_r2_signal)
+static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
@@ -1709,7 +1709,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 	return status;
 }
 
-static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
+static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
@@ -1795,7 +1795,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 }
 
 
-static ZIO_SIGNAL_CB_FUNCTION(on_analog_signal)
+static FIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 

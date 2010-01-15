@@ -4,7 +4,7 @@
 static int R = 0;
 static ftdm_mutex_t *mutex = NULL;
 
-static ZIO_SIGNAL_CB_FUNCTION(on_r2_signal)
+static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 {
     ftdm_log(FTDM_LOG_DEBUG, "Got R2 channel sig [%s] in channel\n", ftdm_signal_event2str(sigmsg->event_id), sigmsg->channel->physical_chan_id);
     return FTDM_SUCCESS;

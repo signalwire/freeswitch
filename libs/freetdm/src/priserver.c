@@ -33,7 +33,7 @@ typedef struct {
 
 static call_info_t pidmap[SANGOMA_MAX_CHAN_PER_SPAN];
 
-ZIO_EVENT_CB_FUNCTION(my_ftdm_event_handler)
+FIO_EVENT_CB_FUNCTION(my_ftdm_event_handler)
 {
 	if (event->e_type = FTDM_EVENT_DTMF) {
 		char *dtmf = event->data;

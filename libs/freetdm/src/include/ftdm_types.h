@@ -471,106 +471,106 @@ typedef struct ftdm_stream_handle ftdm_stream_handle_t;
 typedef ftdm_status_t (*ftdm_stream_handle_raw_write_function_t) (ftdm_stream_handle_t *handle, uint8_t *data, ftdm_size_t datalen);
 typedef ftdm_status_t (*ftdm_stream_handle_write_function_t) (ftdm_stream_handle_t *handle, const char *fmt, ...);
 
-#define ZIO_CHANNEL_REQUEST_ARGS (ftdm_span_t *span, uint32_t chan_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
-#define ZIO_CHANNEL_OUTGOING_CALL_ARGS (ftdm_channel_t *ftdmchan)
-#define ZIO_CHANNEL_SET_SIG_STATUS_ARGS (ftdm_channel_t *ftdmchan, ftdm_signaling_status_t status)
-#define ZIO_CHANNEL_GET_SIG_STATUS_ARGS (ftdm_channel_t *ftdmchan, ftdm_signaling_status_t *status)
-#define ZIO_SPAN_SET_SIG_STATUS_ARGS (ftdm_span_t *span, ftdm_signaling_status_t status)
-#define ZIO_SPAN_GET_SIG_STATUS_ARGS (ftdm_span_t *span, ftdm_signaling_status_t *status)
-#define ZIO_SPAN_POLL_EVENT_ARGS (ftdm_span_t *span, uint32_t ms)
-#define ZIO_SPAN_NEXT_EVENT_ARGS (ftdm_span_t *span, ftdm_event_t **event)
-#define ZIO_SIGNAL_CB_ARGS (ftdm_sigmsg_t *sigmsg)
-#define ZIO_EVENT_CB_ARGS (ftdm_channel_t *ftdmchan, ftdm_event_t *event)
-#define ZIO_CODEC_ARGS (void *data, ftdm_size_t max, ftdm_size_t *datalen)
-#define ZIO_CONFIGURE_SPAN_ARGS (ftdm_span_t *span, const char *str, ftdm_chan_type_t type, char *name, char *number)
-#define ZIO_CONFIGURE_ARGS (const char *category, const char *var, const char *val, int lineno)
-#define ZIO_OPEN_ARGS (ftdm_channel_t *ftdmchan)
-#define ZIO_CLOSE_ARGS (ftdm_channel_t *ftdmchan)
-#define ZIO_CHANNEL_DESTROY_ARGS (ftdm_channel_t *ftdmchan)
-#define ZIO_SPAN_DESTROY_ARGS (ftdm_span_t *span)
-#define ZIO_COMMAND_ARGS (ftdm_channel_t *ftdmchan, ftdm_command_t command, void *obj)
-#define ZIO_WAIT_ARGS (ftdm_channel_t *ftdmchan, ftdm_wait_flag_t *flags, int32_t to)
-#define ZIO_GET_ALARMS_ARGS (ftdm_channel_t *ftdmchan)
-#define ZIO_READ_ARGS (ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
-#define ZIO_WRITE_ARGS (ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
-#define ZIO_IO_LOAD_ARGS (ftdm_io_interface_t **zio)
-#define ZIO_IO_UNLOAD_ARGS (void)
-#define ZIO_SIG_LOAD_ARGS (void)
-#define ZIO_SIG_CONFIGURE_ARGS (ftdm_span_t *span, zio_signal_cb_t sig_cb, va_list ap)
-#define ZIO_CONFIGURE_SPAN_SIGNALING_ARGS (ftdm_span_t *span, zio_signal_cb_t sig_cb, ftdm_conf_parameter_t *ftdm_parameters)
-#define ZIO_SIG_UNLOAD_ARGS (void)
-#define ZIO_API_ARGS (ftdm_stream_handle_t *stream, const char *data)
+#define FIO_CHANNEL_REQUEST_ARGS (ftdm_span_t *span, uint32_t chan_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
+#define FIO_CHANNEL_OUTGOING_CALL_ARGS (ftdm_channel_t *ftdmchan)
+#define FIO_CHANNEL_SET_SIG_STATUS_ARGS (ftdm_channel_t *ftdmchan, ftdm_signaling_status_t status)
+#define FIO_CHANNEL_GET_SIG_STATUS_ARGS (ftdm_channel_t *ftdmchan, ftdm_signaling_status_t *status)
+#define FIO_SPAN_SET_SIG_STATUS_ARGS (ftdm_span_t *span, ftdm_signaling_status_t status)
+#define FIO_SPAN_GET_SIG_STATUS_ARGS (ftdm_span_t *span, ftdm_signaling_status_t *status)
+#define FIO_SPAN_POLL_EVENT_ARGS (ftdm_span_t *span, uint32_t ms)
+#define FIO_SPAN_NEXT_EVENT_ARGS (ftdm_span_t *span, ftdm_event_t **event)
+#define FIO_SIGNAL_CB_ARGS (ftdm_sigmsg_t *sigmsg)
+#define FIO_EVENT_CB_ARGS (ftdm_channel_t *ftdmchan, ftdm_event_t *event)
+#define FIO_CODEC_ARGS (void *data, ftdm_size_t max, ftdm_size_t *datalen)
+#define FIO_CONFIGURE_SPAN_ARGS (ftdm_span_t *span, const char *str, ftdm_chan_type_t type, char *name, char *number)
+#define FIO_CONFIGURE_ARGS (const char *category, const char *var, const char *val, int lineno)
+#define FIO_OPEN_ARGS (ftdm_channel_t *ftdmchan)
+#define FIO_CLOSE_ARGS (ftdm_channel_t *ftdmchan)
+#define FIO_CHANNEL_DESTROY_ARGS (ftdm_channel_t *ftdmchan)
+#define FIO_SPAN_DESTROY_ARGS (ftdm_span_t *span)
+#define FIO_COMMAND_ARGS (ftdm_channel_t *ftdmchan, ftdm_command_t command, void *obj)
+#define FIO_WAIT_ARGS (ftdm_channel_t *ftdmchan, ftdm_wait_flag_t *flags, int32_t to)
+#define FIO_GET_ALARMS_ARGS (ftdm_channel_t *ftdmchan)
+#define FIO_READ_ARGS (ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
+#define FIO_WRITE_ARGS (ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
+#define FIO_IO_LOAD_ARGS (ftdm_io_interface_t **fio)
+#define FIO_IO_UNLOAD_ARGS (void)
+#define FIO_SIG_LOAD_ARGS (void)
+#define FIO_SIG_CONFIGURE_ARGS (ftdm_span_t *span, fio_signal_cb_t sig_cb, va_list ap)
+#define FIO_CONFIGURE_SPAN_SIGNALING_ARGS (ftdm_span_t *span, fio_signal_cb_t sig_cb, ftdm_conf_parameter_t *ftdm_parameters)
+#define FIO_SIG_UNLOAD_ARGS (void)
+#define FIO_API_ARGS (ftdm_stream_handle_t *stream, const char *data)
 
-typedef ftdm_status_t (*zio_channel_request_t) ZIO_CHANNEL_REQUEST_ARGS ;
-typedef ftdm_status_t (*zio_channel_outgoing_call_t) ZIO_CHANNEL_OUTGOING_CALL_ARGS ;
-typedef ftdm_status_t (*zio_channel_set_sig_status_t) ZIO_CHANNEL_SET_SIG_STATUS_ARGS;
-typedef ftdm_status_t (*zio_channel_get_sig_status_t) ZIO_CHANNEL_GET_SIG_STATUS_ARGS;
-typedef ftdm_status_t (*zio_span_set_sig_status_t) ZIO_SPAN_SET_SIG_STATUS_ARGS;
-typedef ftdm_status_t (*zio_span_get_sig_status_t) ZIO_SPAN_GET_SIG_STATUS_ARGS;
-typedef ftdm_status_t (*zio_span_poll_event_t) ZIO_SPAN_POLL_EVENT_ARGS ;
-typedef ftdm_status_t (*zio_span_next_event_t) ZIO_SPAN_NEXT_EVENT_ARGS ;
-typedef ftdm_status_t (*zio_signal_cb_t) ZIO_SIGNAL_CB_ARGS ;
-typedef ftdm_status_t (*zio_event_cb_t) ZIO_EVENT_CB_ARGS ;
-typedef ftdm_status_t (*zio_codec_t) ZIO_CODEC_ARGS ;
-typedef ftdm_status_t (*zio_configure_span_t) ZIO_CONFIGURE_SPAN_ARGS ;
-typedef ftdm_status_t (*zio_configure_t) ZIO_CONFIGURE_ARGS ;
-typedef ftdm_status_t (*zio_open_t) ZIO_OPEN_ARGS ;
-typedef ftdm_status_t (*zio_close_t) ZIO_CLOSE_ARGS ;
-typedef ftdm_status_t (*zio_channel_destroy_t) ZIO_CHANNEL_DESTROY_ARGS ;
-typedef ftdm_status_t (*zio_span_destroy_t) ZIO_SPAN_DESTROY_ARGS ;
-typedef ftdm_status_t (*zio_get_alarms_t) ZIO_GET_ALARMS_ARGS ;
-typedef ftdm_status_t (*zio_command_t) ZIO_COMMAND_ARGS ;
-typedef ftdm_status_t (*zio_wait_t) ZIO_WAIT_ARGS ;
-typedef ftdm_status_t (*zio_read_t) ZIO_READ_ARGS ;
-typedef ftdm_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
-typedef ftdm_status_t (*zio_io_load_t) ZIO_IO_LOAD_ARGS ;
-typedef ftdm_status_t (*zio_sig_load_t) ZIO_SIG_LOAD_ARGS ;
-typedef ftdm_status_t (*zio_sig_configure_t) ZIO_SIG_CONFIGURE_ARGS ;
-typedef ftdm_status_t (*zio_configure_span_signaling_t) ZIO_CONFIGURE_SPAN_SIGNALING_ARGS ;
-typedef ftdm_status_t (*zio_io_unload_t) ZIO_IO_UNLOAD_ARGS ;
-typedef ftdm_status_t (*zio_sig_unload_t) ZIO_SIG_UNLOAD_ARGS ;
-typedef ftdm_status_t (*zio_api_t) ZIO_API_ARGS ;
+typedef ftdm_status_t (*fio_channel_request_t) FIO_CHANNEL_REQUEST_ARGS ;
+typedef ftdm_status_t (*fio_channel_outgoing_call_t) FIO_CHANNEL_OUTGOING_CALL_ARGS ;
+typedef ftdm_status_t (*fio_channel_set_sig_status_t) FIO_CHANNEL_SET_SIG_STATUS_ARGS;
+typedef ftdm_status_t (*fio_channel_get_sig_status_t) FIO_CHANNEL_GET_SIG_STATUS_ARGS;
+typedef ftdm_status_t (*fio_span_set_sig_status_t) FIO_SPAN_SET_SIG_STATUS_ARGS;
+typedef ftdm_status_t (*fio_span_get_sig_status_t) FIO_SPAN_GET_SIG_STATUS_ARGS;
+typedef ftdm_status_t (*fio_span_poll_event_t) FIO_SPAN_POLL_EVENT_ARGS ;
+typedef ftdm_status_t (*fio_span_next_event_t) FIO_SPAN_NEXT_EVENT_ARGS ;
+typedef ftdm_status_t (*fio_signal_cb_t) FIO_SIGNAL_CB_ARGS ;
+typedef ftdm_status_t (*fio_event_cb_t) FIO_EVENT_CB_ARGS ;
+typedef ftdm_status_t (*fio_codec_t) FIO_CODEC_ARGS ;
+typedef ftdm_status_t (*fio_configure_span_t) FIO_CONFIGURE_SPAN_ARGS ;
+typedef ftdm_status_t (*fio_configure_t) FIO_CONFIGURE_ARGS ;
+typedef ftdm_status_t (*fio_open_t) FIO_OPEN_ARGS ;
+typedef ftdm_status_t (*fio_close_t) FIO_CLOSE_ARGS ;
+typedef ftdm_status_t (*fio_channel_destroy_t) FIO_CHANNEL_DESTROY_ARGS ;
+typedef ftdm_status_t (*fio_span_destroy_t) FIO_SPAN_DESTROY_ARGS ;
+typedef ftdm_status_t (*fio_get_alarms_t) FIO_GET_ALARMS_ARGS ;
+typedef ftdm_status_t (*fio_command_t) FIO_COMMAND_ARGS ;
+typedef ftdm_status_t (*fio_wait_t) FIO_WAIT_ARGS ;
+typedef ftdm_status_t (*fio_read_t) FIO_READ_ARGS ;
+typedef ftdm_status_t (*fio_write_t) FIO_WRITE_ARGS ;
+typedef ftdm_status_t (*fio_io_load_t) FIO_IO_LOAD_ARGS ;
+typedef ftdm_status_t (*fio_sig_load_t) FIO_SIG_LOAD_ARGS ;
+typedef ftdm_status_t (*fio_sig_configure_t) FIO_SIG_CONFIGURE_ARGS ;
+typedef ftdm_status_t (*fio_configure_span_signaling_t) FIO_CONFIGURE_SPAN_SIGNALING_ARGS ;
+typedef ftdm_status_t (*fio_io_unload_t) FIO_IO_UNLOAD_ARGS ;
+typedef ftdm_status_t (*fio_sig_unload_t) FIO_SIG_UNLOAD_ARGS ;
+typedef ftdm_status_t (*fio_api_t) FIO_API_ARGS ;
 
 
-#define ZIO_CHANNEL_REQUEST_FUNCTION(name) ftdm_status_t name ZIO_CHANNEL_REQUEST_ARGS
-#define ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(name) ftdm_status_t name ZIO_CHANNEL_OUTGOING_CALL_ARGS
-#define ZIO_CHANNEL_SET_SIG_STATUS_FUNCTION(name) ftdm_status_t name ZIO_CHANNEL_SET_SIG_STATUS_ARGS
-#define ZIO_CHANNEL_GET_SIG_STATUS_FUNCTION(name) ftdm_status_t name ZIO_CHANNEL_GET_SIG_STATUS_ARGS
-#define ZIO_SPAN_SET_SIG_STATUS_FUNCTION(name) ftdm_status_t name ZIO_SPAN_SET_SIG_STATUS_ARGS
-#define ZIO_SPAN_GET_SIG_STATUS_FUNCTION(name) ftdm_status_t name ZIO_SPAN_GET_SIG_STATUS_ARGS
-#define ZIO_SPAN_POLL_EVENT_FUNCTION(name) ftdm_status_t name ZIO_SPAN_POLL_EVENT_ARGS
-#define ZIO_SPAN_NEXT_EVENT_FUNCTION(name) ftdm_status_t name ZIO_SPAN_NEXT_EVENT_ARGS
-#define ZIO_SIGNAL_CB_FUNCTION(name) ftdm_status_t name ZIO_SIGNAL_CB_ARGS
-#define ZIO_EVENT_CB_FUNCTION(name) ftdm_status_t name ZIO_EVENT_CB_ARGS
-#define ZIO_CODEC_FUNCTION(name) FT_DECLARE_NONSTD(ftdm_status_t) name ZIO_CODEC_ARGS
-#define ZIO_CONFIGURE_SPAN_FUNCTION(name) ftdm_status_t name ZIO_CONFIGURE_SPAN_ARGS
-#define ZIO_CONFIGURE_FUNCTION(name) ftdm_status_t name ZIO_CONFIGURE_ARGS
-#define ZIO_OPEN_FUNCTION(name) ftdm_status_t name ZIO_OPEN_ARGS
-#define ZIO_CLOSE_FUNCTION(name) ftdm_status_t name ZIO_CLOSE_ARGS
-#define ZIO_CHANNEL_DESTROY_FUNCTION(name) ftdm_status_t name ZIO_CHANNEL_DESTROY_ARGS
-#define ZIO_SPAN_DESTROY_FUNCTION(name) ftdm_status_t name ZIO_SPAN_DESTROY_ARGS
-#define ZIO_GET_ALARMS_FUNCTION(name) ftdm_status_t name ZIO_GET_ALARMS_ARGS
-#define ZIO_COMMAND_FUNCTION(name) ftdm_status_t name ZIO_COMMAND_ARGS
-#define ZIO_WAIT_FUNCTION(name) ftdm_status_t name ZIO_WAIT_ARGS
-#define ZIO_READ_FUNCTION(name) ftdm_status_t name ZIO_READ_ARGS
-#define ZIO_WRITE_FUNCTION(name) ftdm_status_t name ZIO_WRITE_ARGS
-#define ZIO_IO_LOAD_FUNCTION(name) ftdm_status_t name ZIO_IO_LOAD_ARGS
-#define ZIO_SIG_LOAD_FUNCTION(name) ftdm_status_t name ZIO_SIG_LOAD_ARGS
-#define ZIO_SIG_CONFIGURE_FUNCTION(name) ftdm_status_t name ZIO_SIG_CONFIGURE_ARGS
-#define ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(name) ftdm_status_t name ZIO_CONFIGURE_SPAN_SIGNALING_ARGS
-#define ZIO_IO_UNLOAD_FUNCTION(name) ftdm_status_t name ZIO_IO_UNLOAD_ARGS
-#define ZIO_SIG_UNLOAD_FUNCTION(name) ftdm_status_t name ZIO_SIG_UNLOAD_ARGS
-#define ZIO_API_FUNCTION(name) ftdm_status_t name ZIO_API_ARGS
+#define FIO_CHANNEL_REQUEST_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_REQUEST_ARGS
+#define FIO_CHANNEL_OUTGOING_CALL_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_OUTGOING_CALL_ARGS
+#define FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_SET_SIG_STATUS_ARGS
+#define FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_GET_SIG_STATUS_ARGS
+#define FIO_SPAN_SET_SIG_STATUS_FUNCTION(name) ftdm_status_t name FIO_SPAN_SET_SIG_STATUS_ARGS
+#define FIO_SPAN_GET_SIG_STATUS_FUNCTION(name) ftdm_status_t name FIO_SPAN_GET_SIG_STATUS_ARGS
+#define FIO_SPAN_POLL_EVENT_FUNCTION(name) ftdm_status_t name FIO_SPAN_POLL_EVENT_ARGS
+#define FIO_SPAN_NEXT_EVENT_FUNCTION(name) ftdm_status_t name FIO_SPAN_NEXT_EVENT_ARGS
+#define FIO_SIGNAL_CB_FUNCTION(name) ftdm_status_t name FIO_SIGNAL_CB_ARGS
+#define FIO_EVENT_CB_FUNCTION(name) ftdm_status_t name FIO_EVENT_CB_ARGS
+#define FIO_CODEC_FUNCTION(name) FT_DECLARE_NONSTD(ftdm_status_t) name FIO_CODEC_ARGS
+#define FIO_CONFIGURE_SPAN_FUNCTION(name) ftdm_status_t name FIO_CONFIGURE_SPAN_ARGS
+#define FIO_CONFIGURE_FUNCTION(name) ftdm_status_t name FIO_CONFIGURE_ARGS
+#define FIO_OPEN_FUNCTION(name) ftdm_status_t name FIO_OPEN_ARGS
+#define FIO_CLOSE_FUNCTION(name) ftdm_status_t name FIO_CLOSE_ARGS
+#define FIO_CHANNEL_DESTROY_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_DESTROY_ARGS
+#define FIO_SPAN_DESTROY_FUNCTION(name) ftdm_status_t name FIO_SPAN_DESTROY_ARGS
+#define FIO_GET_ALARMS_FUNCTION(name) ftdm_status_t name FIO_GET_ALARMS_ARGS
+#define FIO_COMMAND_FUNCTION(name) ftdm_status_t name FIO_COMMAND_ARGS
+#define FIO_WAIT_FUNCTION(name) ftdm_status_t name FIO_WAIT_ARGS
+#define FIO_READ_FUNCTION(name) ftdm_status_t name FIO_READ_ARGS
+#define FIO_WRITE_FUNCTION(name) ftdm_status_t name FIO_WRITE_ARGS
+#define FIO_IO_LOAD_FUNCTION(name) ftdm_status_t name FIO_IO_LOAD_ARGS
+#define FIO_SIG_LOAD_FUNCTION(name) ftdm_status_t name FIO_SIG_LOAD_ARGS
+#define FIO_SIG_CONFIGURE_FUNCTION(name) ftdm_status_t name FIO_SIG_CONFIGURE_ARGS
+#define FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(name) ftdm_status_t name FIO_CONFIGURE_SPAN_SIGNALING_ARGS
+#define FIO_IO_UNLOAD_FUNCTION(name) ftdm_status_t name FIO_IO_UNLOAD_ARGS
+#define FIO_SIG_UNLOAD_FUNCTION(name) ftdm_status_t name FIO_SIG_UNLOAD_ARGS
+#define FIO_API_FUNCTION(name) ftdm_status_t name FIO_API_ARGS
 
 #include "ftdm_dso.h"
 
 typedef struct {
 	char name[256];
-	zio_io_load_t io_load;
-	zio_io_unload_t io_unload;
-	zio_sig_load_t sig_load;
-	zio_sig_configure_t sig_configure;
-	zio_sig_unload_t sig_unload;
+	fio_io_load_t io_load;
+	fio_io_unload_t io_unload;
+	fio_sig_load_t sig_load;
+	fio_sig_configure_t sig_configure;
+	fio_sig_unload_t sig_unload;
 	/*! 
 	  \brief configure a given span signaling 
 	  \see sig_configure
@@ -579,7 +579,7 @@ typedef struct {
 	  I'd like to deprecate sig_configure and move
 	  all modules to use sigparam_configure
 	 */
-	zio_configure_span_signaling_t configure_span_signaling;
+	fio_configure_span_signaling_t configure_span_signaling;
 	ftdm_dso_lib_t lib;
 	char path[256];
 } ftdm_module_t;

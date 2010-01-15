@@ -98,8 +98,8 @@ static struct {
 
 /* a bunch of this stuff should go into the wanpipe_tdm_api_iface.h */
 
-ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event);
-ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event);
+FIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event);
+FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event);
 
 #define WP_INVALID_SOCKET -1 
 
@@ -353,7 +353,7 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
  * \param lineno Line number from configuration file
  * \return Success
  */
-static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
+static FIO_CONFIGURE_FUNCTION(wanpipe_configure)
 {
 	int num;
 
@@ -394,7 +394,7 @@ static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
  * \param number FreeTDM span number
  * \return Success or failure
  */
-static ZIO_CONFIGURE_SPAN_FUNCTION(wanpipe_configure_span)
+static FIO_CONFIGURE_SPAN_FUNCTION(wanpipe_configure_span)
 {
 	int items, i;
 	char *mydata, *item_list[10];
@@ -468,7 +468,7 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(wanpipe_configure_span)
  * \param ftdmchan Channel to open
  * \return Success or failure
  */
-static ZIO_OPEN_FUNCTION(wanpipe_open) 
+static FIO_OPEN_FUNCTION(wanpipe_open) 
 {
 
 	wanpipe_tdm_api_t tdm_api;
@@ -495,7 +495,7 @@ static ZIO_OPEN_FUNCTION(wanpipe_open)
  * \param ftdmchan Channel to close
  * \return Success
  */
-static ZIO_CLOSE_FUNCTION(wanpipe_close)
+static FIO_CLOSE_FUNCTION(wanpipe_close)
 {
 #ifdef LIBSANGOMA_VERSION
 	sangoma_wait_obj_t *waitobj = ftdmchan->mod_data;
@@ -512,7 +512,7 @@ static ZIO_CLOSE_FUNCTION(wanpipe_close)
  * \param obj Object (unused)
  * \return Success or failure
  */
-static ZIO_COMMAND_FUNCTION(wanpipe_command)
+static FIO_COMMAND_FUNCTION(wanpipe_command)
 {
 	wanpipe_tdm_api_t tdm_api;
 	int err = 0;
@@ -647,7 +647,7 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
  * \param datalen Size of data buffer
  * \return Success, failure or timeout
  */
-static ZIO_READ_FUNCTION(wanpipe_read)
+static FIO_READ_FUNCTION(wanpipe_read)
 {
 	int rx_len = 0;
 	wp_tdm_api_rx_hdr_t hdrframe;
@@ -677,7 +677,7 @@ static ZIO_READ_FUNCTION(wanpipe_read)
  * \param datalen Size of data buffer
  * \return Success or failure
  */
-static ZIO_WRITE_FUNCTION(wanpipe_write)
+static FIO_WRITE_FUNCTION(wanpipe_write)
 {
 	int bsent;
 	wp_tdm_api_tx_hdr_t hdrframe;
@@ -703,7 +703,7 @@ static ZIO_WRITE_FUNCTION(wanpipe_write)
  * \return Success, failure or timeout
  */
 
-static ZIO_WAIT_FUNCTION(wanpipe_wait)
+static FIO_WAIT_FUNCTION(wanpipe_wait)
 {
 	int32_t inflags = 0;
 	int result;
@@ -754,7 +754,7 @@ static ZIO_WAIT_FUNCTION(wanpipe_wait)
  * \param ms Time to wait for event
  * \return Success if event is waiting or failure if not
  */
-ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
+FIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 {
 #ifdef LIBSANGOMA_VERSION
 	sangoma_status_t sangstatus;
@@ -864,7 +864,7 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
  * \param ftdmchan Channel to get alarms from
  * \return Success or failure
  */
-static ZIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
+static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 {
 	wanpipe_tdm_api_t tdm_api;
 	unsigned int alarms = 0;
@@ -899,7 +899,7 @@ static ZIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
  * \param event FreeTDM event to return
  * \return Success or failure
  */
-ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
+FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 {
 	uint32_t i,err;
 	ftdm_oob_event_t event_id;
@@ -1062,7 +1062,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
  * \param ftdmchan Channel to destroy
  * \return Success
  */
-static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
+static FIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 {
 #ifdef LIBSANGOMA_VERSION
 	if (ftdmchan->mod_data) {
@@ -1083,12 +1083,12 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 
 /**
  * \brief Loads wanpipe IO module
- * \param zio FreeTDM IO interface
+ * \param fio FreeTDM IO interface
  * \return Success
  */
-static ZIO_IO_LOAD_FUNCTION(wanpipe_init)
+static FIO_IO_LOAD_FUNCTION(wanpipe_init)
 {
-	assert(zio != NULL);
+	assert(fio != NULL);
 	memset(&wanpipe_interface, 0, sizeof(wanpipe_interface));
 
 	wp_globals.codec_ms = 20;
@@ -1109,7 +1109,7 @@ static ZIO_IO_LOAD_FUNCTION(wanpipe_init)
 	wanpipe_interface.next_event = wanpipe_next_event;
 	wanpipe_interface.channel_destroy = wanpipe_channel_destroy;
 	wanpipe_interface.get_alarms = wanpipe_get_alarms;
-	*zio = &wanpipe_interface;
+	*fio = &wanpipe_interface;
 
 	return FTDM_SUCCESS;
 }
@@ -1118,7 +1118,7 @@ static ZIO_IO_LOAD_FUNCTION(wanpipe_init)
  * \brief Unloads wanpipe IO module
  * \return Success
  */
-static ZIO_IO_UNLOAD_FUNCTION(wanpipe_destroy)
+static FIO_IO_UNLOAD_FUNCTION(wanpipe_destroy)
 {
 	memset(&wanpipe_interface, 0, sizeof(wanpipe_interface));
 	return FTDM_SUCCESS;

@@ -47,7 +47,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj);
  *
  * Initialises state, starts tone progress detection and runs the channel in a new a thread.
  */
-static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)
+static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)
 {
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK) && !ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INTHREAD)) {		
 		ftdm_channel_clear_needed_tones(ftdmchan);
@@ -71,7 +71,7 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)
  *
  * Indicates call waiting if channel is already in use, otherwise runs the channel in a new thread.
  */
-static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxs_outgoing_call)
+static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxs_outgoing_call)
 {
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INTHREAD)) {
@@ -103,8 +103,8 @@ static ftdm_status_t ftdm_analog_start(ftdm_span_t *span)
  * \param ap List of configuration variables
  * \return Success or failure
  */
-static ZIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
-//ftdm_status_t ftdm_analog_configure_span(ftdm_span_t *span, char *tonemap, uint32_t digit_timeout, uint32_t max_dialstr, zio_signal_cb_t sig_cb)
+static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
+//ftdm_status_t ftdm_analog_configure_span(ftdm_span_t *span, char *tonemap, uint32_t digit_timeout, uint32_t max_dialstr, fio_signal_cb_t sig_cb)
 {
 	ftdm_analog_data_t *analog_data;
 	const char *tonemap = "us";
@@ -715,12 +715,12 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 		rlen = ftdm_buffer_read_loop(dt_buffer, frame, len);					
 		
 		if (ftdmchan->effective_codec != FTDM_CODEC_SLIN) {
-			zio_codec_t codec_func = NULL;
+			fio_codec_t codec_func = NULL;
 
 			if (ftdmchan->native_codec == FTDM_CODEC_ULAW) {
-				codec_func = zio_slin2ulaw;
+				codec_func = fio_slin2ulaw;
 			} else if (ftdmchan->native_codec == FTDM_CODEC_ALAW) {
-				codec_func = zio_slin2alaw;
+				codec_func = fio_slin2alaw;
 			}
 
 			if (codec_func) {
@@ -947,7 +947,7 @@ static void *ftdm_analog_run(ftdm_thread_t *me, void *obj)
  * \brief FreeTDM analog signaling module initialisation
  * \return Success
  */
-static ZIO_SIG_LOAD_FUNCTION(ftdm_analog_init)
+static FIO_SIG_LOAD_FUNCTION(ftdm_analog_init)
 {
 	return FTDM_SUCCESS;
 }

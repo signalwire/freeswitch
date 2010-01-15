@@ -91,7 +91,7 @@ typedef struct ft_r2_conf_s {
 /* r2 configuration stored in span->signal_data */
 typedef struct ftdm_r2_data_s {
 	/* signaling callback */
-	zio_signal_cb_t sig_cb;
+	fio_signal_cb_t sig_cb;
 	/* span flags */
 	ftdm_r2_flag_t flags;
 	/* openr2 handle for the R2 variant context */
@@ -159,7 +159,7 @@ static void ft_r2_answer_call(ftdm_channel_t *ftdmchan)
 	R2CALL(ftdmchan)->answer_pending = 0;
 }
 
-static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
+static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 {
 	ftdm_status_t status;
 	ftdm_mutex_lock(ftdmchan->mutex);
@@ -645,8 +645,8 @@ static openr2_io_interface_t ftdm_r2_io_iface = {
 	.get_oob_event = ftdm_r2_io_get_oob_event /* never called */
 };
 
-static ZIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
-	//ftdm_status_t (ftdm_span_t *span, zio_signal_cb_t sig_cb, va_list ap)
+static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
+	//ftdm_status_t (ftdm_span_t *span, fio_signal_cb_t sig_cb, va_list ap)
 {
 	int i = 0;
 	int conf_failure = 0;
@@ -1176,7 +1176,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 
 }
 
-static ZIO_API_FUNCTION(ftdm_r2_api)
+static FIO_API_FUNCTION(ftdm_r2_api)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
 	int argc = 0;
@@ -1303,20 +1303,20 @@ done:
 
 }
 
-static ZIO_IO_LOAD_FUNCTION(ftdm_r2_io_init)
+static FIO_IO_LOAD_FUNCTION(ftdm_r2_io_init)
 {
-	assert(zio != NULL);
+	assert(fio != NULL);
 	memset(&g_ftdm_r2_interface, 0, sizeof(g_ftdm_r2_interface));
 
 	g_ftdm_r2_interface.name = "r2";
 	g_ftdm_r2_interface.api = ftdm_r2_api;
 
-	*zio = &g_ftdm_r2_interface;
+	*fio = &g_ftdm_r2_interface;
 
 	return FTDM_SUCCESS;
 }
 
-static ZIO_SIG_LOAD_FUNCTION(ftdm_r2_init)
+static FIO_SIG_LOAD_FUNCTION(ftdm_r2_init)
 {
 	g_mod_data_hash = create_hashtable(10, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
 	if (!g_mod_data_hash) {
@@ -1326,7 +1326,7 @@ static ZIO_SIG_LOAD_FUNCTION(ftdm_r2_init)
 	return FTDM_SUCCESS;
 }
 
-static ZIO_SIG_UNLOAD_FUNCTION(ftdm_r2_destroy)
+static FIO_SIG_UNLOAD_FUNCTION(ftdm_r2_destroy)
 {
 	ftdm_hash_iterator_t *i = NULL;
 	ftdm_r2_span_pvt_t *spanpvt = NULL;

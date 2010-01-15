@@ -311,9 +311,9 @@ static ftdm_status_t ftdm_channel_destroy(ftdm_channel_t *ftdmchan)
 		}
 
 		
-		if (ftdmchan->span->zio->channel_destroy) {
+		if (ftdmchan->span->fio->channel_destroy) {
 			ftdm_log(FTDM_LOG_INFO, "Closing channel %s:%u:%u fd:%d\n", ftdmchan->span->type, ftdmchan->span_id, ftdmchan->chan_id, ftdmchan->sockfd);
-			if (ftdmchan->span->zio->channel_destroy(ftdmchan) == FTDM_SUCCESS) {
+			if (ftdmchan->span->fio->channel_destroy(ftdmchan) == FTDM_SUCCESS) {
 				ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_CONFIGURED);
 			} else {
 				ftdm_log(FTDM_LOG_ERROR, "Error Closing channel %u:%u fd:%d\n", ftdmchan->span_id, ftdmchan->chan_id, ftdmchan->sockfd);
@@ -353,9 +353,9 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 	}
 
 	/* destroy the I/O for the span */
-	if (span->zio && span->zio->span_destroy) {
+	if (span->fio && span->fio->span_destroy) {
 		ftdm_log(FTDM_LOG_INFO, "Destroying span %u type (%s)\n", span->span_id, span->type);
-		if (span->zio->span_destroy(span) != FTDM_SUCCESS) {
+		if (span->fio->span_destroy(span) != FTDM_SUCCESS) {
 			status = FTDM_FAIL;
 		}
 		ftdm_safe_free(span->type);
@@ -375,8 +375,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_alarms(ftdm_channel_t *ftdmchan)
 	ftdm_status_t status = FTDM_FAIL;
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CONFIGURED)) {
-		if (ftdmchan->span->zio->get_alarms) {
-			if ((status = ftdmchan->span->zio->get_alarms(ftdmchan)) == FTDM_SUCCESS) {
+		if (ftdmchan->span->fio->get_alarms) {
+			if ((status = ftdmchan->span->fio->get_alarms(ftdmchan)) == FTDM_SUCCESS) {
 				*ftdmchan->last_error = '\0';
 				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_RED)) {
 					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "RED/");
@@ -452,12 +452,12 @@ FT_DECLARE(ftdm_status_t) ftdm_span_stop(ftdm_span_t *span)
 	return FTDM_FAIL;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_span_create(ftdm_io_interface_t *zio, ftdm_span_t **span, const char *name)
+FT_DECLARE(ftdm_status_t) ftdm_span_create(ftdm_io_interface_t *fio, ftdm_span_t **span, const char *name)
 {
 	ftdm_span_t *new_span = NULL;
 	ftdm_status_t status = FTDM_FAIL;
 
-	assert(zio != NULL);
+	assert(fio != NULL);
 
 	ftdm_mutex_lock(globals.mutex);
 
@@ -470,7 +470,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_create(ftdm_io_interface_t *zio, ftdm_span_t
 		
 		ftdm_set_flag(new_span, FTDM_SPAN_CONFIGURED);
 		new_span->span_id = ++globals.span_index;
-		new_span->zio = zio;
+		new_span->fio = fio;
 		ftdm_copy_string(new_span->tone_map[FTDM_TONEMAP_DIAL], "%(1000,0,350,440)", FTDM_TONEMAP_LEN);
 		ftdm_copy_string(new_span->tone_map[FTDM_TONEMAP_RING], "%(2000,4000,440,480)", FTDM_TONEMAP_LEN);
 		ftdm_copy_string(new_span->tone_map[FTDM_TONEMAP_BUSY], "%(500,500,480,620)", FTDM_TONEMAP_LEN);
@@ -650,7 +650,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_add_channel(ftdm_span_t *span, ftdm_socket_t
 
 		new_chan->type = type;
 		new_chan->sockfd = sockfd;
-		new_chan->zio = span->zio;
+		new_chan->fio = span->fio;
 		new_chan->span_id = span->span_id;
 		new_chan->chan_id = span->chan_count;
 		new_chan->span = span;
@@ -737,7 +737,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_find(uint32_t id, ftdm_span_t **span)
 	
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_span_set_event_callback(ftdm_span_t *span, zio_event_cb_t event_callback)
+FT_DECLARE(ftdm_status_t) ftdm_span_set_event_callback(ftdm_span_t *span, fio_event_cb_t event_callback)
 {
 	ftdm_mutex_lock(span->mutex);
 	span->event_callback = event_callback;
@@ -748,12 +748,12 @@ FT_DECLARE(ftdm_status_t) ftdm_span_set_event_callback(ftdm_span_t *span, zio_ev
 
 FT_DECLARE(ftdm_status_t) ftdm_span_poll_event(ftdm_span_t *span, uint32_t ms)
 {
-	assert(span->zio != NULL);
+	assert(span->fio != NULL);
 
-	if (span->zio->poll_event) {
-		return span->zio->poll_event(span, ms);
+	if (span->fio->poll_event) {
+		return span->fio->poll_event(span, ms);
 	} else {
-		ftdm_log(FTDM_LOG_ERROR, "poll_event method not implemented in module %s!", span->zio->name);
+		ftdm_log(FTDM_LOG_ERROR, "poll_event method not implemented in module %s!", span->fio->name);
 	}
 
 	return FTDM_NOTIMPL;
@@ -761,12 +761,12 @@ FT_DECLARE(ftdm_status_t) ftdm_span_poll_event(ftdm_span_t *span, uint32_t ms)
 
 FT_DECLARE(ftdm_status_t) ftdm_span_next_event(ftdm_span_t *span, ftdm_event_t **event)
 {
-	assert(span->zio != NULL);
+	assert(span->fio != NULL);
 
-	if (span->zio->next_event) {
-		return span->zio->next_event(span, event);
+	if (span->fio->next_event) {
+		return span->fio->next_event(span, event);
 	} else {
-		ftdm_log(FTDM_LOG_ERROR, "next_event method not implemented in module %s!", span->zio->name);
+		ftdm_log(FTDM_LOG_ERROR, "next_event method not implemented in module %s!", span->fio->name);
 	}
 	
 	return FTDM_NOTIMPL;
@@ -802,7 +802,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_send_fsk_data(ftdm_channel_t *ftdmchan, f
 }
 
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_set_event_callback(ftdm_channel_t *ftdmchan, zio_event_cb_t event_callback)
+FT_DECLARE(ftdm_status_t) ftdm_channel_set_event_callback(ftdm_channel_t *ftdmchan, fio_event_cb_t event_callback)
 {
 	ftdm_mutex_lock(ftdmchan->mutex);
 	ftdmchan->event_callback = event_callback;
@@ -1153,7 +1153,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 				break;
 			}
 
-			status = check->zio->open(check);
+			status = check->fio->open(check);
 				
 			if (status == FTDM_SUCCESS) {
 				ftdm_set_flag(check, FTDM_CHANNEL_INUSE);
@@ -1271,7 +1271,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 				break;
 			}
 
-			status = check->zio->open(check);
+			status = check->fio->open(check);
 				
 			if (status == FTDM_SUCCESS) {
 				ftdm_set_flag(check, FTDM_CHANNEL_INUSE);
@@ -1365,7 +1365,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan)
 	status = FTDM_FAIL;
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_READY)) {
-		status = ftdmchan->span->zio->open(ftdmchan);
+		status = ftdmchan->span->fio->open(ftdmchan);
 		if (status == FTDM_SUCCESS) {
 			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OPEN | FTDM_CHANNEL_INUSE);
 		}
@@ -1415,7 +1415,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 	if (ftdm_test_flag(check, FTDM_CHANNEL_READY) && (!ftdm_test_flag(check, FTDM_CHANNEL_INUSE) || 
 													(check->type == FTDM_CHAN_TYPE_FXS && check->token_count == 1))) {
 		if (!ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
-			status = check->zio->open(check);
+			status = check->fio->open(check);
 			if (status == FTDM_SUCCESS) {
 				ftdm_set_flag(check, FTDM_CHANNEL_OPEN);
 			}
@@ -1571,7 +1571,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_close(ftdm_channel_t **ftdmchan)
 	if (ftdm_test_flag(check, FTDM_CHANNEL_CONFIGURED)) {
 		ftdm_mutex_lock(check->mutex);
 		if (ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
-			status = check->zio->close(check);
+			status = check->fio->close(check);
 			if (status == FTDM_SUCCESS) {
 				ftdm_clear_flag(check, FTDM_CHANNEL_INUSE);
 				ftdm_channel_reset(check);
@@ -1623,7 +1623,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	ftdm_status_t status = FTDM_FAIL;
 	
 	assert(ftdmchan != NULL);
-	assert(ftdmchan->zio != NULL);
+	assert(ftdmchan->fio != NULL);
 
 	ftdm_mutex_lock(ftdmchan->mutex);
 
@@ -1930,13 +1930,13 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		break;
 	}
 
-	if (!ftdmchan->zio->command) {
+	if (!ftdmchan->fio->command) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "method not implemented");
 		ftdm_log(FTDM_LOG_ERROR, "no command function defined by the I/O freetdm module!\n");	
 		GOTO_STATUS(done, FTDM_FAIL);
 	}
 
-    status = ftdmchan->zio->command(ftdmchan, command, obj);
+    status = ftdmchan->fio->command(ftdmchan, command, obj);
 
 	if (status == FTDM_NOTIMPL) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "I/O command %d not implemented in backend", command);
@@ -1951,24 +1951,24 @@ done:
 FT_DECLARE(ftdm_status_t) ftdm_channel_wait(ftdm_channel_t *ftdmchan, ftdm_wait_flag_t *flags, int32_t to)
 {
 	assert(ftdmchan != NULL);
-	assert(ftdmchan->zio != NULL);
+	assert(ftdmchan->fio != NULL);
 
     if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "channel not open");
         return FTDM_FAIL;
     }
 
-	if (!ftdmchan->zio->wait) {
+	if (!ftdmchan->fio->wait) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "method not implemented");
 		return FTDM_FAIL;
 	}
 
-    return ftdmchan->zio->wait(ftdmchan, flags, to);
+    return ftdmchan->fio->wait(ftdmchan, flags, to);
 
 }
 
 /*******************************/
-ZIO_CODEC_FUNCTION(zio_slin2ulaw)
+FIO_CODEC_FUNCTION(fio_slin2ulaw)
 {
 	int16_t sln_buf[512] = {0}, *sln = sln_buf;
 	uint8_t *lp = data;
@@ -1992,7 +1992,7 @@ ZIO_CODEC_FUNCTION(zio_slin2ulaw)
 }
 
 
-ZIO_CODEC_FUNCTION(zio_ulaw2slin)
+FIO_CODEC_FUNCTION(fio_ulaw2slin)
 {
 	int16_t *sln = data;
 	uint8_t law[1024] = {0}, *lp = law;
@@ -2014,7 +2014,7 @@ ZIO_CODEC_FUNCTION(zio_ulaw2slin)
 	return FTDM_SUCCESS;
 }
 
-ZIO_CODEC_FUNCTION(zio_slin2alaw)
+FIO_CODEC_FUNCTION(fio_slin2alaw)
 {
 	int16_t sln_buf[512] = {0}, *sln = sln_buf;
 	uint8_t *lp = data;
@@ -2038,7 +2038,7 @@ ZIO_CODEC_FUNCTION(zio_slin2alaw)
 }
 
 
-ZIO_CODEC_FUNCTION(zio_alaw2slin)
+FIO_CODEC_FUNCTION(fio_alaw2slin)
 {
 	int16_t *sln = data;
 	uint8_t law[1024] = {0}, *lp = law;
@@ -2060,7 +2060,7 @@ ZIO_CODEC_FUNCTION(zio_alaw2slin)
 	return FTDM_SUCCESS;
 }
 
-ZIO_CODEC_FUNCTION(zio_ulaw2alaw)
+FIO_CODEC_FUNCTION(fio_ulaw2alaw)
 {
 	ftdm_size_t len = *datalen;
 	uint32_t i;
@@ -2078,7 +2078,7 @@ ZIO_CODEC_FUNCTION(zio_ulaw2alaw)
 	return FTDM_SUCCESS;
 }
 
-ZIO_CODEC_FUNCTION(zio_alaw2ulaw)
+FIO_CODEC_FUNCTION(fio_alaw2ulaw)
 {
 	ftdm_size_t len = *datalen;
 	uint32_t i;
@@ -2263,13 +2263,13 @@ static ftdm_status_t handle_dtmf(ftdm_channel_t *ftdmchan, ftdm_size_t datalen)
 
 		if (ftdmchan->native_codec != FTDM_CODEC_SLIN) {
 			if (ftdmchan->native_codec == FTDM_CODEC_ULAW) {
-				zio_slin2ulaw(auxbuf, max, &dlen);
+				fio_slin2ulaw(auxbuf, max, &dlen);
 			} else if (ftdmchan->native_codec == FTDM_CODEC_ALAW) {
-				zio_slin2alaw(auxbuf, max, &dlen);
+				fio_slin2alaw(auxbuf, max, &dlen);
 			}
 		}
 		
-		return ftdmchan->zio->write(ftdmchan, auxbuf, &dlen);
+		return ftdmchan->fio->write(ftdmchan, auxbuf, &dlen);
 	} 
 
 	return FTDM_SUCCESS;
@@ -2303,24 +2303,24 @@ FT_DECLARE(void) ftdm_generate_sln_silence(int16_t *data, uint32_t samples, uint
 FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
 {
 	ftdm_status_t status = FTDM_FAIL;
-	zio_codec_t codec_func = NULL;
+	fio_codec_t codec_func = NULL;
 	ftdm_size_t max = *datalen;
 	unsigned i = 0;
 
 	assert(ftdmchan != NULL);
-	assert(ftdmchan->zio != NULL);
+	assert(ftdmchan->fio != NULL);
 	
     if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "channel not open");
         return FTDM_FAIL;
     }
 
-	if (!ftdmchan->zio->read) {
+	if (!ftdmchan->fio->read) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "method not implemented");
 		return FTDM_FAIL;
 	}
 
-    status = ftdmchan->zio->read(ftdmchan, data, datalen);
+    status = ftdmchan->fio->read(ftdmchan, data, datalen);
 	if (ftdmchan->fds[0] > -1) {
 		int dlen = (int) *datalen;
 		if (write(ftdmchan->fds[0], data, dlen) != dlen) {
@@ -2342,13 +2342,13 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 
 	if (status == FTDM_SUCCESS && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE) && ftdmchan->effective_codec != ftdmchan->native_codec) {
 		if (ftdmchan->native_codec == FTDM_CODEC_ULAW && ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
-			codec_func = zio_ulaw2slin;
+			codec_func = fio_ulaw2slin;
 		} else if (ftdmchan->native_codec == FTDM_CODEC_ULAW && ftdmchan->effective_codec == FTDM_CODEC_ALAW) {
-			codec_func = zio_ulaw2alaw;
+			codec_func = fio_ulaw2alaw;
 		} else if (ftdmchan->native_codec == FTDM_CODEC_ALAW && ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
-			codec_func = zio_alaw2slin;
+			codec_func = fio_alaw2slin;
 		} else if (ftdmchan->native_codec == FTDM_CODEC_ALAW && ftdmchan->effective_codec == FTDM_CODEC_ULAW) {
-			codec_func = zio_alaw2ulaw;
+			codec_func = fio_alaw2ulaw;
 		}
 
 		if (codec_func) {
@@ -2469,7 +2469,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 			teletone_dtmf_get(&ftdmchan->dtmf_detect, digit_str, sizeof(digit_str));
 
 			if(*digit_str) {
-				zio_event_cb_t event_callback = NULL;
+				fio_event_cb_t event_callback = NULL;
 
 				if (ftdmchan->state == FTDM_CHANNEL_STATE_CALLWAITING && (*digit_str == 'D' || *digit_str == 'A')) {
 					ftdmchan->detected_tones[FTDM_TONEMAP_CALLWAITING_ACK]++;
@@ -2533,12 +2533,12 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t datasize, ftdm_size_t *datalen)
 {
 	ftdm_status_t status = FTDM_FAIL;
-	zio_codec_t codec_func = NULL;
+	fio_codec_t codec_func = NULL;
 	ftdm_size_t max = datasize;
 	unsigned int i = 0;
 
 	assert(ftdmchan != NULL);
-	assert(ftdmchan->zio != NULL);
+	assert(ftdmchan->fio != NULL);
 
 	if (!ftdmchan->buffer_delay && 
 		((ftdmchan->dtmf_buffer && ftdm_buffer_inuse(ftdmchan->dtmf_buffer)) ||
@@ -2553,20 +2553,20 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
         return FTDM_FAIL;
     }
 
-	if (!ftdmchan->zio->write) {
+	if (!ftdmchan->fio->write) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "method not implemented");
 		return FTDM_FAIL;
 	}
 	
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE) && ftdmchan->effective_codec != ftdmchan->native_codec) {
 		if (ftdmchan->native_codec == FTDM_CODEC_ULAW && ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
-			codec_func = zio_slin2ulaw;
+			codec_func = fio_slin2ulaw;
 		} else if (ftdmchan->native_codec == FTDM_CODEC_ULAW && ftdmchan->effective_codec == FTDM_CODEC_ALAW) {
-			codec_func = zio_alaw2ulaw;
+			codec_func = fio_alaw2ulaw;
 		} else if (ftdmchan->native_codec == FTDM_CODEC_ALAW && ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
-			codec_func = zio_slin2alaw;
+			codec_func = fio_slin2alaw;
 		} else if (ftdmchan->native_codec == FTDM_CODEC_ALAW && ftdmchan->effective_codec == FTDM_CODEC_ULAW) {
-			codec_func = zio_ulaw2alaw;
+			codec_func = fio_ulaw2alaw;
 		}
 
 		if (codec_func) {
@@ -2592,7 +2592,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 			wdata[i] = ftdmchan->txgain_table[wdata[i]];
 		}
 	}
-    status = ftdmchan->zio->write(ftdmchan, data, datalen);
+    status = ftdmchan->fio->write(ftdmchan, data, datalen);
 
 	return status;
 }
@@ -2644,7 +2644,7 @@ static struct {
 
 FT_DECLARE(char *) ftdm_api_execute(const char *type, const char *cmd)
 {
-	ftdm_io_interface_t *zio = NULL;
+	ftdm_io_interface_t *fio = NULL;
 	char *dup = NULL, *p;
 	char *rval = NULL;
 
@@ -2659,19 +2659,19 @@ FT_DECLARE(char *) ftdm_api_execute(const char *type, const char *cmd)
 	}
 	
 	ftdm_mutex_lock(globals.mutex);
-	if (!(zio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)type))) {
+	if (!(fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)type))) {
 		ftdm_load_module_assume(type);
-		if ((zio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)type))) {
+		if ((fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)type))) {
 			ftdm_log(FTDM_LOG_INFO, "auto-loaded '%s'\n", type);
 		}
 	}
 	ftdm_mutex_unlock(globals.mutex);
 
-	if (zio && zio->api) {
+	if (fio && fio->api) {
 		ftdm_stream_handle_t stream = { 0 };
 		ftdm_status_t status;
 		FTDM_STANDARD_STREAM(stream);
-		status = zio->api(&stream, cmd);
+		status = fio->api(&stream, cmd);
 		
 		if (status != FTDM_SUCCESS) {
 			ftdm_safe_free(stream.data);
@@ -2697,7 +2697,7 @@ static ftdm_status_t load_config(void)
 	char name[80] = "";
 	char number[25] = "";
 	char group_name[80] = "default";
-	ftdm_io_interface_t *zio = NULL;
+	ftdm_io_interface_t *fio = NULL;
 	ftdm_analog_start_type_t tmp;
 	ftdm_size_t len = 0;
 
@@ -2734,27 +2734,27 @@ static ftdm_status_t load_config(void)
 				}
 
 				ftdm_mutex_lock(globals.mutex);
-				if (!(zio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, type))) {
+				if (!(fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, type))) {
 					ftdm_load_module_assume(type);
-					if ((zio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, type))) {
+					if ((fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, type))) {
 						ftdm_log(FTDM_LOG_INFO, "auto-loaded '%s'\n", type);
 					}
 				}
 				ftdm_mutex_unlock(globals.mutex);
 
-				if (!zio) {
+				if (!fio) {
 					ftdm_log(FTDM_LOG_CRIT, "failure creating span, no such type '%s'\n", type);
 					span = NULL;
 					continue;
 				}
 
-				if (!zio->configure_span) {
+				if (!fio->configure_span) {
 					ftdm_log(FTDM_LOG_CRIT, "failure creating span, no configure_span method for '%s'\n", type);
 					span = NULL;
 					continue;
 				}
 
-				if (ftdm_span_create(zio, &span, name) == FTDM_SUCCESS) {
+				if (ftdm_span_create(fio, &span, name) == FTDM_SUCCESS) {
 					span->type = ftdm_strdup(type);
 					d = 0;
 
@@ -2804,7 +2804,7 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_FXO) {
-					configured += zio->configure_span(span, val, FTDM_CHAN_TYPE_FXO, name, number);
+					configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_FXO, name, number);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXO channels to an FXS trunk!\n");
 				}
@@ -2815,7 +2815,7 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_FXS) {
-					configured += zio->configure_span(span, val, FTDM_CHAN_TYPE_FXS, name, number);
+					configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_FXS, name, number);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
 				}
@@ -2826,12 +2826,12 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_EM) {
-					configured += zio->configure_span(span, val, FTDM_CHAN_TYPE_EM, name, number);
+					configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_EM, name, number);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add EM channels to a non-EM trunk!\n");
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
-				configured += zio->configure_span(span, val, FTDM_CHAN_TYPE_B, name, number);
+				configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_B, name, number);
 				ftdm_group_add_channels(group_name, span, val);
 			} else if (!strcasecmp(var, "d-channel")) {
 				if (d) {
@@ -2844,11 +2844,11 @@ static ftdm_status_t load_config(void)
 					} else {
 						qtype = FTDM_CHAN_TYPE_DQ921;
 					}
-					configured += zio->configure_span(span, val, qtype, name, number);
+					configured += fio->configure_span(span, val, qtype, name, number);
 					d++;
 				}
 			} else if (!strcasecmp(var, "cas-channel")) {
-				configured += zio->configure_span(span, val, FTDM_CHAN_TYPE_CAS, name, number);	
+				configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_CAS, name, number);	
 			} else if (!strcasecmp(var, "dtmf_hangup")) {
 				span->dtmf_hangup = ftdm_strdup(val);
 				span->dtmf_hangup_len = strlen(val);
@@ -2874,18 +2874,18 @@ static ftdm_status_t load_config(void)
 	return configured ? FTDM_SUCCESS : FTDM_FAIL;
 }
 
-static ftdm_status_t process_module_config(ftdm_io_interface_t *zio)
+static ftdm_status_t process_module_config(ftdm_io_interface_t *fio)
 {
 	ftdm_config_t cfg;
 	char *var, *val;
 	char filename[256] = "";
 	
-	ftdm_assert_return(zio != NULL, FTDM_FAIL, "zio argument is null\n");
+	ftdm_assert_return(fio != NULL, FTDM_FAIL, "fio argument is null\n");
 
-	snprintf(filename, sizeof(filename), "%s.conf", zio->name);
+	snprintf(filename, sizeof(filename), "%s.conf", fio->name);
 
-	if (!zio->configure) {
-		ftdm_log(FTDM_LOG_DEBUG, "Module %s does not support configuration.\n", zio->name);	
+	if (!fio->configure) {
+		ftdm_log(FTDM_LOG_DEBUG, "Module %s does not support configuration.\n", fio->name);	
 		return FTDM_FAIL;
 	}
 
@@ -2895,7 +2895,7 @@ static ftdm_status_t process_module_config(ftdm_io_interface_t *zio)
 	}
 
 	while (ftdm_config_next_pair(&cfg, &var, &val)) {
-		zio->configure(cfg.category, var, val, cfg.lineno);
+		fio->configure(cfg.category, var, val, cfg.lineno);
 	}
 
 	ftdm_config_close_file(&cfg);	
@@ -3085,7 +3085,7 @@ FT_DECLARE(ftdm_status_t) ftdm_unload_modules(void)
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_configure_span(const char *type, ftdm_span_t *span, zio_signal_cb_t sig_cb, ...)
+FT_DECLARE(ftdm_status_t) ftdm_configure_span(const char *type, ftdm_span_t *span, fio_signal_cb_t sig_cb, ...)
 {
 	ftdm_module_t *mod = (ftdm_module_t *) hashtable_search(globals.module_hash, (void *)type);
 	ftdm_status_t status = FTDM_FAIL;
@@ -3110,7 +3110,7 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span(const char *type, ftdm_span_t *spa
 	return status;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(const char *type, ftdm_span_t *span, zio_signal_cb_t sig_cb, ftdm_conf_parameter_t *parameters) 
+FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(const char *type, ftdm_span_t *span, fio_signal_cb_t sig_cb, ftdm_conf_parameter_t *parameters) 
 {
 	ftdm_module_t *mod = (ftdm_module_t *) hashtable_search(globals.module_hash, (void *)type);
 	ftdm_status_t status = FTDM_FAIL;

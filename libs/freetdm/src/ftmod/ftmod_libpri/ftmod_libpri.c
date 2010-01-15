@@ -38,7 +38,7 @@
  * \brief Unloads libpri IO module
  * \return Success
  */
-static ZIO_IO_UNLOAD_FUNCTION(ftdm_libpri_unload)
+static FIO_IO_UNLOAD_FUNCTION(ftdm_libpri_unload)
 {
 	return FTDM_SUCCESS;
 }
@@ -48,7 +48,7 @@ static ZIO_IO_UNLOAD_FUNCTION(ftdm_libpri_unload)
  * \param ftdmchan Channel to initiate call on
  * \return Success or failure
  */
-static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
+static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
 {
 	ftdm_status_t status = FTDM_SUCCESS;
 	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
@@ -65,7 +65,7 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
  * \param ftdmchan Channel to initialise (unused)
  * \return Failure
  */
-static ZIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
+static FIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 {
 	return FTDM_FAIL;
 }
@@ -204,7 +204,7 @@ static ftdm_status_t ftdm_libpri_start(ftdm_span_t *span);
  * \param data String containing argurments
  * \return Flags
  */
-static ZIO_API_FUNCTION(ftdm_libpri_api)
+static FIO_API_FUNCTION(ftdm_libpri_api)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
     int argc = 0;
@@ -270,28 +270,28 @@ static ZIO_API_FUNCTION(ftdm_libpri_api)
 
 /**
  * \brief Loads libpri IO module
- * \param zio FreeTDM IO interface
+ * \param fio FreeTDM IO interface
  * \return Success
  */
-static ZIO_IO_LOAD_FUNCTION(ftdm_libpri_io_init)
+static FIO_IO_LOAD_FUNCTION(ftdm_libpri_io_init)
 {
-	assert(zio != NULL);
+	assert(fio != NULL);
 	memset(&ftdm_libpri_interface, 0, sizeof(ftdm_libpri_interface));
 
 	ftdm_libpri_interface.name = "libpri";
 	ftdm_libpri_interface.api = ftdm_libpri_api;
 
-	*zio = &ftdm_libpri_interface;
+	*fio = &ftdm_libpri_interface;
 
 	return FTDM_SUCCESS;
 }
 
 /**
  * \brief Loads libpri signaling module
- * \param zio FreeTDM IO interface
+ * \param fio FreeTDM IO interface
  * \return Success
  */
-static ZIO_SIG_LOAD_FUNCTION(ftdm_libpri_init)
+static FIO_SIG_LOAD_FUNCTION(ftdm_libpri_init)
 {
 	pri_set_error(s_pri_error);
 	pri_set_message(s_pri_message);
@@ -1237,7 +1237,7 @@ static int str2dp(char *dp)
  * \param ap List of configuration variables
  * \return Success or failure
  */
-static ZIO_SIG_CONFIGURE_FUNCTION(ftdm_libpri_configure_span)
+static FIO_SIG_CONFIGURE_FUNCTION(ftdm_libpri_configure_span)
 {
 	uint32_t i, x = 0;
 	//ftdm_channel_t *dchans[2] = {0};

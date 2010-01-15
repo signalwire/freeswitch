@@ -392,7 +392,7 @@ static int parse_ss7_event(ftdm_span_t *span, m3uac_connection_t *mcon, m3uac_ev
 	return 0;
 }
 
-static ZIO_CONFIGURE_FUNCTION(m3ua_configure)
+static FIO_CONFIGURE_FUNCTION(m3ua_configure)
 {
 	m3ua_channel_profile_t *profile = NULL;
 
@@ -424,65 +424,65 @@ static ZIO_CONFIGURE_FUNCTION(m3ua_configure)
 	return FTDM_SUCCESS;
 }
 
-static ZIO_CONFIGURE_SPAN_FUNCTION(m3ua_configure_span)
+static FIO_CONFIGURE_SPAN_FUNCTION(m3ua_configure_span)
 {
 
 	return FTDM_FAIL;
 }
 
-static ZIO_OPEN_FUNCTION(m3ua_open) 
-{
-	
-	return FTDM_FAIL;
-}
-
-static ZIO_CLOSE_FUNCTION(m3ua_close)
+static FIO_OPEN_FUNCTION(m3ua_open) 
 {
 	
 	return FTDM_FAIL;
 }
 
-/*static ZIO_SET_INTERVAL_FUNCTION(m3ua_set_interval)
+static FIO_CLOSE_FUNCTION(m3ua_close)
+{
+	
+	return FTDM_FAIL;
+}
+
+/*static FIO_SET_INTERVAL_FUNCTION(m3ua_set_interval)
 {
 	
 	return 0;
 }*/
 
-static ZIO_WAIT_FUNCTION(m3ua_wait)
+static FIO_WAIT_FUNCTION(m3ua_wait)
 {
 	
 	return FTDM_FAIL;
 }
 
-static ZIO_READ_FUNCTION(m3ua_read)
+static FIO_READ_FUNCTION(m3ua_read)
 {
 	
 	return FTDM_FAIL;
 }
 
-static ZIO_WRITE_FUNCTION(m3ua_write)
+static FIO_WRITE_FUNCTION(m3ua_write)
 {
 	
 	return FTDM_FAIL;
 }
 
-static ZIO_COMMAND_FUNCTION(m3ua_command)
+static FIO_COMMAND_FUNCTION(m3ua_command)
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_SPAN_POLL_EVENT_FUNCTION(m3ua_poll_event)
+static FIO_SPAN_POLL_EVENT_FUNCTION(m3ua_poll_event)
 {
 	return FTDM_FAIL;
 }
 
-static ZIO_SPAN_NEXT_EVENT_FUNCTION(m3ua_next_event)
+static FIO_SPAN_NEXT_EVENT_FUNCTION(m3ua_next_event)
 {
 	return FTDM_FAIL;
 }
 
 
-static ZIO_SPAN_DESTROY_FUNCTION(m3ua_span_destroy)
+static FIO_SPAN_DESTROY_FUNCTION(m3ua_span_destroy)
 {
 	m3ua_span_data_t *span_data = (m3ua_span_data_t *) span->mod_data;
 	
@@ -492,7 +492,7 @@ static ZIO_SPAN_DESTROY_FUNCTION(m3ua_span_destroy)
 	
 	return FTDM_SUCCESS;
 }
-static ZIO_CHANNEL_DESTROY_FUNCTION(m3ua_channel_destroy)
+static FIO_CHANNEL_DESTROY_FUNCTION(m3ua_channel_destroy)
 {
 	m3ua_chan_data_t *chan_data = (m3ua_chan_data_t *) ftdmchan->mod_data;
 	m3ua_span_data_t *span_data = (m3ua_span_data_t *) ftdmchan->span->mod_data;
@@ -522,7 +522,7 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(m3ua_channel_destroy)
 
 
 
-static ZIO_GET_ALARMS_FUNCTION(m3ua_get_alarms)
+static FIO_GET_ALARMS_FUNCTION(m3ua_get_alarms)
 {
 	return FTDM_FAIL;
 }

@@ -175,8 +175,8 @@ static const char zt_chanpath[] = "/dev/ftdm/channel";
 
 static ftdm_socket_t CONTROL_FD = ZT_INVALID_SOCKET;
 
-ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event);
-ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event);
+FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event);
+FIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event);
 
 /**
  * \brief Initialises codec, and rx/tx gains
@@ -442,7 +442,7 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
  * \param number FreeTDM span number
  * \return Success or failure
  */
-static ZIO_CONFIGURE_SPAN_FUNCTION(zt_configure_span)
+static FIO_CONFIGURE_SPAN_FUNCTION(zt_configure_span)
 {
 
 	int items, i;
@@ -511,7 +511,7 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(zt_configure_span)
  * \param lineno Line number from configuration file
  * \return Success
  */
-static ZIO_CONFIGURE_FUNCTION(zt_configure)
+static FIO_CONFIGURE_FUNCTION(zt_configure)
 {
 
 	int num;
@@ -576,7 +576,7 @@ static ZIO_CONFIGURE_FUNCTION(zt_configure)
  * \param ftdmchan Channel to open
  * \return Success or failure
  */
-static ZIO_OPEN_FUNCTION(zt_open) 
+static FIO_OPEN_FUNCTION(zt_open) 
 {
 	ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_INTERVAL);
 
@@ -656,7 +656,7 @@ static ZIO_OPEN_FUNCTION(zt_open)
  * \param ftdmchan Channel to close
  * \return Success
  */
-static ZIO_CLOSE_FUNCTION(zt_close)
+static FIO_CLOSE_FUNCTION(zt_close)
 {
 	return FTDM_SUCCESS;
 }
@@ -668,7 +668,7 @@ static ZIO_CLOSE_FUNCTION(zt_close)
  * \param obj Object (unused)
  * \return Success or failure
  */
-static ZIO_COMMAND_FUNCTION(zt_command)
+static FIO_COMMAND_FUNCTION(zt_command)
 {
 	zt_params_t ztp;
 	int err = 0;
@@ -838,7 +838,7 @@ static ZIO_COMMAND_FUNCTION(zt_command)
  * \param ftdmchan Channel to get alarms from
  * \return Success or failure
  */
-static ZIO_GET_ALARMS_FUNCTION(zt_get_alarms)
+static FIO_GET_ALARMS_FUNCTION(zt_get_alarms)
 {
 	struct zt_spaninfo info;
 
@@ -863,7 +863,7 @@ static ZIO_GET_ALARMS_FUNCTION(zt_get_alarms)
  * \param to Time to wait (in ms)
  * \return Success, failure or timeout
  */
-static ZIO_WAIT_FUNCTION(zt_wait)
+static FIO_WAIT_FUNCTION(zt_wait)
 {
 	int32_t inflags = 0;
 	int result;
@@ -929,7 +929,7 @@ static ZIO_WAIT_FUNCTION(zt_wait)
  * \param ms Time to wait for event
  * \return Success if event is waiting or failure if not
  */
-ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
+FIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 {
 	struct pollfd pfds[FTDM_MAX_CHANNELS_SPAN];
 	uint32_t i, j = 0, k = 0;
@@ -972,7 +972,7 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
  * \param event FreeTDM event to return
  * \return Success or failure
  */
-ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
+FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 {
 	uint32_t i, event_id = 0;
 	ftdm_oob_event_t zt_event_id = 0;
@@ -1074,7 +1074,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
  * \param datalen Size of data buffer
  * \return Success, failure or timeout
  */
-static ZIO_READ_FUNCTION(zt_read)
+static FIO_READ_FUNCTION(zt_read)
 {
 	ftdm_ssize_t r = 0;
 	int errs = 0;
@@ -1107,7 +1107,7 @@ static ZIO_READ_FUNCTION(zt_read)
  * \param datalen Size of data buffer
  * \return Success or failure
  */
-static ZIO_WRITE_FUNCTION(zt_write)
+static FIO_WRITE_FUNCTION(zt_write)
 {
 	ftdm_ssize_t w = 0;
 	ftdm_size_t bytes = *datalen;
@@ -1132,7 +1132,7 @@ static ZIO_WRITE_FUNCTION(zt_write)
  * \param ftdmchan Channel to destroy
  * \return Success
  */
-static ZIO_CHANNEL_DESTROY_FUNCTION(zt_channel_destroy)
+static FIO_CHANNEL_DESTROY_FUNCTION(zt_channel_destroy)
 {
 	close(ftdmchan->sockfd);
 	ftdmchan->sockfd = ZT_INVALID_SOCKET;
@@ -1147,12 +1147,12 @@ static ftdm_io_interface_t zt_interface;
 
 /**
  * \brief Loads ftdmtel IO module
- * \param zio FreeTDM IO interface
+ * \param fio FreeTDM IO interface
  * \return Success or failure
  */
-static ZIO_IO_LOAD_FUNCTION(zt_init)
+static FIO_IO_LOAD_FUNCTION(zt_init)
 {
-	assert(zio != NULL);
+	assert(fio != NULL);
     struct stat statbuf;
 	memset(&zt_interface, 0, sizeof(zt_interface));
 	memset(&zt_globals, 0, sizeof(zt_globals));
@@ -1195,7 +1195,7 @@ static ZIO_IO_LOAD_FUNCTION(zt_init)
 	zt_interface.next_event = zt_next_event;
 	zt_interface.channel_destroy = zt_channel_destroy;
 	zt_interface.get_alarms = zt_get_alarms;
-	*zio = &zt_interface;
+	*fio = &zt_interface;
 
 	return FTDM_SUCCESS;
 }
@@ -1204,7 +1204,7 @@ static ZIO_IO_LOAD_FUNCTION(zt_init)
  * \brief Unloads ftdmtel IO module
  * \return Success
  */
-static ZIO_IO_UNLOAD_FUNCTION(zt_destroy)
+static FIO_IO_UNLOAD_FUNCTION(zt_destroy)
 {
 	close(CONTROL_FD);
 	memset(&zt_interface, 0, sizeof(zt_interface));

@@ -286,7 +286,7 @@ static int boost_media_ready(sangomabc_event_t *event)
  * \param ftdmchan Channel to initialise
  * \return Success or failure
  */
-static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
+static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 {
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	ftdm_status_t status = FTDM_FAIL;
@@ -474,7 +474,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
  * \param ftdmchan Channel to initiate call on
  * \return Success
  */
-static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(sangoma_boost_outgoing_call)
+static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(sangoma_boost_outgoing_call)
 {
 	ftdm_status_t status = FTDM_SUCCESS;
 
@@ -1617,10 +1617,10 @@ end:
 
 /**
  * \brief Loads sangoma boost signaling module
- * \param zio FreeTDM IO interface
+ * \param fio FreeTDM IO interface
  * \return Success
  */
-static ZIO_SIG_LOAD_FUNCTION(ftdm_sangoma_boost_init)
+static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_boost_init)
 {
 	g_boost_modules_hash = create_hashtable(10, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
 	if (!g_boost_modules_hash) {
@@ -1633,7 +1633,7 @@ static ZIO_SIG_LOAD_FUNCTION(ftdm_sangoma_boost_init)
 	return FTDM_SUCCESS;
 }
 
-static ZIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_boost_destroy)
+static FIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_boost_destroy)
 {
 	ftdm_hash_iterator_t *i = NULL;
 	boost_sigmod_interface_t *sigmod = NULL;
@@ -1839,7 +1839,7 @@ static BOOST_SIG_STATUS_CB_FUNCTION(ftdm_boost_sig_status_change)
 	return;
 }
 
-static ZIO_CHANNEL_SET_SIG_STATUS_FUNCTION(sangoma_boost_set_channel_sig_status)
+static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(sangoma_boost_set_channel_sig_status)
 {
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = ftdmchan->span->signal_data;
 	if (!sangoma_boost_data->sigmod) {
@@ -1853,7 +1853,7 @@ static ZIO_CHANNEL_SET_SIG_STATUS_FUNCTION(sangoma_boost_set_channel_sig_status)
 	return sangoma_boost_data->sigmod->set_channel_sig_status(ftdmchan, status);
 }
 
-static ZIO_CHANNEL_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_channel_sig_status)
+static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_channel_sig_status)
 {
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = ftdmchan->span->signal_data;
 	if (!sangoma_boost_data->sigmod) {
@@ -1867,7 +1867,7 @@ static ZIO_CHANNEL_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_channel_sig_status)
 	return sangoma_boost_data->sigmod->get_channel_sig_status(ftdmchan, status);
 }
 
-static ZIO_SPAN_SET_SIG_STATUS_FUNCTION(sangoma_boost_set_span_sig_status)
+static FIO_SPAN_SET_SIG_STATUS_FUNCTION(sangoma_boost_set_span_sig_status)
 {
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	if (!sangoma_boost_data->sigmod) {
@@ -1881,7 +1881,7 @@ static ZIO_SPAN_SET_SIG_STATUS_FUNCTION(sangoma_boost_set_span_sig_status)
 	return sangoma_boost_data->sigmod->set_span_sig_status(span, status);
 }
 
-static ZIO_SPAN_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_span_sig_status)
+static FIO_SPAN_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_span_sig_status)
 {
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	if (!sangoma_boost_data->sigmod) {
@@ -1902,7 +1902,7 @@ static ZIO_SPAN_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_span_sig_status)
  * \param ap List of configuration variables
  * \return Success or failure
  */
-static ZIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
+static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 {
 #define FAIL_CONFIG_RETURN(retstatus) \
 		if (sangoma_boost_data) \

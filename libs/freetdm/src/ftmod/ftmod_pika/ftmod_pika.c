@@ -150,7 +150,7 @@ static const char *pika_board_type_string(PK_UINT type)
  * \param lineno Line number from configuration file (unused)
  * \return Success
  */
-static ZIO_CONFIGURE_FUNCTION(pika_configure)
+static FIO_CONFIGURE_FUNCTION(pika_configure)
 {
 	pika_channel_profile_t *profile = NULL;
 	int ok = 1;
@@ -590,7 +590,7 @@ static unsigned pika_open_range(ftdm_span_t *span, unsigned boardno, unsigned sp
  * \param number FreeTDM span number
  * \return Success or failure
  */
-static ZIO_CONFIGURE_SPAN_FUNCTION(pika_configure_span)
+static FIO_CONFIGURE_SPAN_FUNCTION(pika_configure_span)
 {
 	int items, i;
     char *mydata, *item_list[10];
@@ -678,7 +678,7 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(pika_configure_span)
  * \param ftdmchan Channel to open
  * \return Success or failure
  */
-static ZIO_OPEN_FUNCTION(pika_open) 
+static FIO_OPEN_FUNCTION(pika_open) 
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
 
@@ -701,7 +701,7 @@ static ZIO_OPEN_FUNCTION(pika_open)
  * \param ftdmchan Channel to close
  * \return Success
  */
-static ZIO_CLOSE_FUNCTION(pika_close)
+static FIO_CLOSE_FUNCTION(pika_close)
 {
 	return FTDM_SUCCESS;
 }
@@ -713,7 +713,7 @@ static ZIO_CLOSE_FUNCTION(pika_close)
  * \param to Time to wait (in ms)
  * \return Success, failure or timeout
  */
-static ZIO_WAIT_FUNCTION(pika_wait)
+static FIO_WAIT_FUNCTION(pika_wait)
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
 	PK_STATUS status;
@@ -752,7 +752,7 @@ static ZIO_WAIT_FUNCTION(pika_wait)
  * \param datalen Size of data buffer
  * \return Success or failure
  */
-static ZIO_READ_FUNCTION(pika_read)
+static FIO_READ_FUNCTION(pika_read)
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
 	PK_STATUS status;
@@ -793,7 +793,7 @@ static ZIO_READ_FUNCTION(pika_read)
  * \param datalen Size of data buffer
  * \return Success or failure
  */
-static ZIO_WRITE_FUNCTION(pika_write)
+static FIO_WRITE_FUNCTION(pika_write)
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
 	PK_STATUS status;
@@ -819,7 +819,7 @@ static ZIO_WRITE_FUNCTION(pika_write)
  * \param obj Object (unused)
  * \return Success or failure
  */
-static ZIO_COMMAND_FUNCTION(pika_command)
+static FIO_COMMAND_FUNCTION(pika_command)
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
 	//pika_span_data_t *span_data = (pika_span_data_t *) ftdmchan->span->mod_data;
@@ -954,7 +954,7 @@ static ZIO_COMMAND_FUNCTION(pika_command)
  * \param ms Time to wait for event
  * \return Success if event is waiting or failure if not
  */
-static ZIO_SPAN_POLL_EVENT_FUNCTION(pika_poll_event)
+static FIO_SPAN_POLL_EVENT_FUNCTION(pika_poll_event)
 {
 	pika_span_data_t *span_data = (pika_span_data_t *) span->mod_data;
 	PK_STATUS status;
@@ -1062,7 +1062,7 @@ static ZIO_SPAN_POLL_EVENT_FUNCTION(pika_poll_event)
  * \param event FreeTDM event to return
  * \return Success or failure
  */
-static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
+static FIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
 {
 	uint32_t i, event_id = 0;
 	
@@ -1205,7 +1205,7 @@ static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
  * \param span Span to destroy
  * \return Success
  */
-static ZIO_SPAN_DESTROY_FUNCTION(pika_span_destroy)
+static FIO_SPAN_DESTROY_FUNCTION(pika_span_destroy)
 {
 	pika_span_data_t *span_data = (pika_span_data_t *) span->mod_data;
 	
@@ -1222,7 +1222,7 @@ static ZIO_SPAN_DESTROY_FUNCTION(pika_span_destroy)
  * \param ftdmchan Channel to destroy
  * \return Success or failure
  */
-static ZIO_CHANNEL_DESTROY_FUNCTION(pika_channel_destroy)
+static FIO_CHANNEL_DESTROY_FUNCTION(pika_channel_destroy)
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
 	pika_span_data_t *span_data = (pika_span_data_t *) ftdmchan->span->mod_data;
@@ -1271,7 +1271,7 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(pika_channel_destroy)
  * \param ftdmchan Channel to get alarms from
  * \return Failure
  */
-static ZIO_GET_ALARMS_FUNCTION(pika_get_alarms)
+static FIO_GET_ALARMS_FUNCTION(pika_get_alarms)
 {
 	return FTDM_FAIL;
 }
@@ -1280,10 +1280,10 @@ static ftdm_io_interface_t pika_interface;
 
 /**
  * \brief Loads Pika IO module
- * \param zio FreeTDM IO interface
+ * \param fio FreeTDM IO interface
  * \return Success or failure
  */
-static ZIO_IO_LOAD_FUNCTION(pika_init)
+static FIO_IO_LOAD_FUNCTION(pika_init)
 {
 
 	PK_STATUS status;
@@ -1293,7 +1293,7 @@ static ZIO_IO_LOAD_FUNCTION(pika_init)
 	PKH_TLogMasks m;
 	TPikaHandle tmpHandle;
 
-	assert(zio != NULL);
+	assert(fio != NULL);
 	memset(&pika_interface, 0, sizeof(pika_interface));
 	memset(&globals, 0, sizeof(globals));
 	globals.general_config.region = PKH_TRUNK_NA;
@@ -1375,7 +1375,7 @@ static ZIO_IO_LOAD_FUNCTION(pika_init)
 	pika_interface.channel_destroy = pika_channel_destroy;
 	pika_interface.span_destroy = pika_span_destroy;
 	pika_interface.get_alarms = pika_get_alarms;
-	*zio = &pika_interface;
+	*fio = &pika_interface;
 
 
 	ftdm_log(FTDM_LOG_INFO, "Dumping Default configs:\n");
@@ -1421,7 +1421,7 @@ static ZIO_IO_LOAD_FUNCTION(pika_init)
  * \brief Unloads Pika IO module
  * \return Success
  */
-static ZIO_IO_UNLOAD_FUNCTION(pika_destroy)
+static FIO_IO_UNLOAD_FUNCTION(pika_destroy)
 {
 	uint32_t x;
 	PK_STATUS status;

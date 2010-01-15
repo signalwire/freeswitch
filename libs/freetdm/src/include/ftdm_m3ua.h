@@ -100,7 +100,7 @@ typedef enum {
 /*typedef struct m3ua_data {
 	m3uac_connection_t mcon;
 	m3uac_connection_t pcon;
-	zio_signal_cb_t signal_cb;
+	fio_signal_cb_t signal_cb;
 	uint32_t flags;
 } m3ua_data_t;
 
@@ -108,7 +108,7 @@ typedef enum {
 /*typedef struct mu3a_link {
 	ss7bc_connection_t mcon;
 	ss7bc_connection_t pcon;
-	zio_signal_cb_t signal_cb;
+	fio_signal_cb_t signal_cb;
 	uint32_t flags;
 } ftdm_m3ua_data_t;
 */
