@@ -503,10 +503,10 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const ch
 
 			if (!switch_channel_up(channel)) {
 				call_info_state = "idle";
-			} else if (!strcasecmp(status, "hold")) {
-				call_info_state = "held";
 			} else if (!strcasecmp(status, "hold-private")) {
 				call_info_state = "held-private";
+			} else if (!strcasecmp(status, "hold")) {
+				call_info_state = "held";
 			} else if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 				if (channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
 					call_info_state = "progressing";

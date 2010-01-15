@@ -51,6 +51,10 @@ extern su_log_t sresolv_log[];
 extern su_log_t stun_log[];
 extern su_log_t su_log_default[];
 
+
+void sofia_handle_sip_i_reinvite(switch_core_session_t *session, 
+								 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
+
 static void set_variable_sip_param(switch_channel_t *channel, char *header_type, sip_param_t const *params);
 
 
@@ -671,7 +675,11 @@ void sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_options(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 	case nua_i_invite:
-		if (!session) sofia_handle_sip_i_invite(nua, profile, nh, sofia_private, sip, tags);
+		if (session) {
+			sofia_handle_sip_i_reinvite(session, nua, profile, nh, sofia_private, sip, tags);
+		} else {
+			sofia_handle_sip_i_invite(nua, profile, nh, sofia_private, sip, tags);
+		}
 		break;
 	case nua_i_publish:
 		sofia_presence_handle_sip_i_publish(nua, profile, nh, sofia_private, sip, tags);
@@ -5309,6 +5317,25 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 	}
 
 	return uri;
+}
+
+void sofia_handle_sip_i_reinvite(switch_core_session_t *session, 
+							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
+{
+	char *call_info = NULL;
+
+	if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		if (channel && sip->sip_call_info) {
+			char *p;
+			if ((call_info = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info))) {
+				if ((p = strchr(call_info, ';'))) {
+					switch_channel_set_variable(channel, "presence_call_info", p+1);
+				}
+				su_free(nua_handle_home(nh), call_info);
+			}
+		}
+	}
 }
 
 void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])

@@ -189,7 +189,7 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 	if (ts.tv_nsec / 1000 > 1500) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 						  "Timer resolution of %ld microseconds detected!\n"
-						  "Do you have your kernel timer set to higher than 1khz? You may experience audio problems.\n", ts.tv_nsec / 1000);
+						  "Do you have your kernel timer set to higher than 1 kHz? You may experience audio problems.\n", ts.tv_nsec / 1000);
 		do_sleep(5000000);
 		switch_time_set_cond_yield(SWITCH_TRUE);
 		return;
@@ -206,7 +206,7 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 		if (diff > 1500) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
 							  "Abnormally large timer gap %d detected!\n"
-							  "Do you have your kernel timer set to higher than 1khz? You may experience audio problems.\n", diff);
+							  "Do you have your kernel timer set to higher than 1 kHz? You may experience audio problems.\n", diff);
 			do_sleep(5000000);
 			switch_time_set_cond_yield(SWITCH_TRUE);
 			return;
