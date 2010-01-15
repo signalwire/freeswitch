@@ -2609,7 +2609,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							switch_channel_t *b_channel = originate_status[oglobals.bridge_early_media].peer_channel;
 							switch_core_session_t *b_session = originate_status[oglobals.bridge_early_media].peer_session;
 							switch_status_t b_status = SWITCH_STATUS_FALSE;
-							switch_frame_t *b_frame = NULL;
+							switch_frame_t *b_frame;
 							
 							if (b_channel && b_session) {
 								b_status = switch_core_session_read_frame(b_session, &b_frame, SWITCH_IO_FLAG_NONE, 0);
