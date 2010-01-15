@@ -803,7 +803,7 @@ static void print_banner(FILE *stream)
 			"*******************************************************\n"
 			"* Anthony Minessale II, Ken Rice, Michael Jerris      *\n"
 			"* FreeSWITCH (http://www.freeswitch.org)              *\n"
-			"* Paypal Donations Appriciated: paypal@freeswitch.org *\n" 
+			"* Paypal Donations Appreciated: paypal@freeswitch.org *\n" 
 			"* Brought to you by ClueCon http://www.cluecon.com/   *\n"
 			"*******************************************************\n"
 			"\n"
