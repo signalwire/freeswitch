@@ -93,7 +93,11 @@ unsigned short start_port = 6001;
  * use:
  * sockbufsize=SAMPLES_PER_FRAME * 8;
  */
+#ifdef WIN32
 	sockbufsize=SAMPLES_PER_FRAME * 8 * 3;
+#else
+	sockbufsize=SAMPLES_PER_FRAME * 8;
+#endif //WIN32
 	size = sizeof(int);
 	setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, size);
 
@@ -106,7 +110,11 @@ unsigned short start_port = 6001;
  * use:
  * sockbufsize=SAMPLES_PER_FRAME * 8;
  */
+#ifdef WIN32
 	sockbufsize=SAMPLES_PER_FRAME * 8 * 3;
+#else
+	sockbufsize=SAMPLES_PER_FRAME * 8;
+#endif //WIN32
 	size = sizeof(int);
 	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&sockbufsize, size);
 
@@ -1028,7 +1036,11 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 
 					//FIXME rt = select(fdselect + 1, NULL, &fs, NULL, &to);
 					while(tech_pvt->flag_audio_cli == 0){
-						skypiax_sleep(100); //1 millisec
+#ifdef WIN32
+						skypiax_sleep(100); //0.1 millisec
+#else
+						skypiax_sleep(1000); //1 millisec
+#endif //WIN32
 						//WARNINGA("write now is 0\n", SKYPIAX_P_LOG);
 						 }
 						//ERRORA("write is now 1\n", SKYPIAX_P_LOG);
@@ -1134,9 +1146,14 @@ int skypiax_audio_read(private_t * tech_pvt)
 	unsigned int samples;
 
 	while(tech_pvt->flag_audio_srv == 0){
-		skypiax_sleep(100); //1 millisec
+#ifdef WIN32
+		skypiax_sleep(100); //0.1 millisec
+#else
+		skypiax_sleep(1000); //1 millisec
+#endif //WIN32
+
 		//WARNINGA("read now is 0\n", SKYPIAX_P_LOG);
-		}
+	}
 		//ERRORA("read is now 1\n", SKYPIAX_P_LOG);
 	//samples = skypiax_pipe_read(tech_pvt->audiopipe_srv[0], tech_pvt->read_frame.data, SAMPLES_PER_FRAME * sizeof(short));
 	samples = SAMPLES_PER_FRAME * sizeof(short);
