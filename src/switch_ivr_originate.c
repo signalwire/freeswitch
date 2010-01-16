@@ -87,6 +87,7 @@ typedef struct {
 	uint8_t ring_ready;
 	uint8_t early_media;
 	uint8_t answered;
+	uint8_t tagged;
 	uint32_t per_channel_timelimit_sec;
 	uint32_t per_channel_progress_timelimit_sec;
 	uint32_t per_channel_delay_start;
@@ -389,6 +390,24 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 
 	for (i = 0; i < len; i++) {
 		switch_channel_state_t state;
+
+		if (originate_status[i].tagged && originate_status[i].peer_session) {
+			switch_channel_t *channel = switch_core_session_get_channel(originate_status[i].peer_session);
+			int j;
+			
+			if (switch_channel_down(channel)) {
+				switch_call_cause_t cause = switch_channel_get_cause(channel);
+				
+				for (j = 0; j < len; j++) {
+					channel = switch_core_session_get_channel(originate_status[j].peer_session);
+					switch_channel_hangup(channel, cause);
+				}
+				oglobals->hups = len;
+				rval = 0;
+				goto end;
+			}
+		}
+		
 		if (!(originate_status[i].peer_channel && originate_status[i].peer_session)) {
 			oglobals->hups++;
 			continue;
@@ -1537,7 +1556,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 	int32_t sample;
 	switch_core_session_t *session;
 	switch_codec_t *read_codec, read_codecs[MAX_PEERS] = { { 0 } };
-	int i,x;
+	int i, x, ready = 0, answered = 0;
 	int16_t *data;
 	uint32_t datalen = 0;
 	switch_status_t status;
@@ -1547,14 +1566,22 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 		originate_status[i].peer_session = session;
 		switch_core_session_read_lock(session);
 	}
-
+	
 	while (state->ready) {
 		datalen = 0;
 		memset(mux_data, 0, sizeof(mux_data));
-		
+		ready = 0;
+		answered = 0;
+
 		for(i = 0; i < MAX_PEERS && (session = originate_status[i].peer_session); i++) {
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			if (switch_channel_media_ready(channel)) {
+				ready++;
+
+				if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+					answered++;
+				}
+				
 				if (!switch_core_codec_ready((&read_codecs[i]))) {
 					read_codec = switch_core_session_get_read_codec(session);
 					
@@ -1590,6 +1617,10 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 			switch_buffer_write(state->buffer, mux_data, datalen);
 			switch_mutex_unlock(state->mutex);
 		}
+		
+		if (!ready || answered) {
+			break;
+		}
 	}
 
 
@@ -1600,6 +1631,8 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 		switch_core_session_reset(session, SWITCH_FALSE, SWITCH_TRUE);
 		switch_core_session_rwunlock(session);
 	}
+
+	state->oglobals->early_ok = 1;
 
 	return NULL;
 }
@@ -2426,7 +2459,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (originate_status[i].peer_channel) {
 					const char *vvar;
-					
+
+					if (switch_true(switch_channel_get_variable(originate_status[i].peer_channel, "leg_required"))) {
+						originate_status[i].tagged = 1;
+					}
+
 					if ((vvar = switch_channel_get_variable(originate_status[i].peer_channel, "origination_callee_id_name"))) {
 						switch_channel_set_profile_var(originate_status[i].peer_channel, "callee_id_name", vvar);
 					}
