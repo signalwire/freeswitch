@@ -32,10 +32,6 @@ mod_sofia_la_CFLAGS += -I$(SOFIAUA_DIR)/url -I$(SOFIAUA_BUILDDIR)/url
 mod_sofia_la_LIBADD = $(switch_builddir)/libfreeswitch.la $(SOFIALA)
 mod_sofia_la_LDFLAGS = -avoid-version -module -no-undefined -shared
 
-if ADD_ODBC
-mod_sofia_la_CFLAGS += -DSWITCH_HAVE_ODBC
-endif
-
 if ISMAC
 mod_sofia_la_LDFLAGS += -framework CoreFoundation -framework SystemConfiguration
 endif

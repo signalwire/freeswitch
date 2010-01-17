@@ -727,8 +727,8 @@ fi
 AX_CHECK_JAVA
 
 
-AM_CONDITIONAL([ADD_ODBC],[test "x$enable_core_odbc_support" != "xno"])
-AM_CONDITIONAL([ADD_LIBEDIT],[test "x$enable_core_libedit_support" != "xno"])
+AM_CONDITIONAL([HAVE_ODBC],[test "x$enable_core_odbc_support" != "xno"])
+AM_CONDITIONAL([HAVE_LIBEDIT],[test "x$enable_core_libedit_support" != "xno"])
 AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])
 
 #

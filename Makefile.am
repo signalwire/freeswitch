@@ -109,11 +109,11 @@ MOD_LINK      = $(switch_srcdir)/libfreeswitch.la
 CLEANFILES    = src/include/switch_version.h src/include/switch_swigable_cpp.h
 BUILT_SOURCES = src/include/switch_version.h src/include/switch_swigable_cpp.h
 
-if ADD_ODBC
+if HAVE_ODBC
 CORE_CFLAGS += -DSWITCH_HAVE_ODBC $(ODBC_INC_FLAGS)
 endif
 
-if ADD_LIBEDIT
+if HAVE_LIBEDIT
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libedit/src -DSWITCH_HAVE_LIBEDIT
 CORE_LIBS   += libs/libedit/src/.libs/libedit.a
 endif
@@ -127,7 +127,7 @@ libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_DEP
 libfreeswitch_la_LIBADD  = $(CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
-if ADD_ODBC
+if HAVE_ODBC
 libfreeswitch_la_LDFLAGS += $(ODBC_LIB_FLAGS)
 endif
 
@@ -266,7 +266,7 @@ fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_e
 fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
 fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
 
-if ADD_LIBEDIT
+if HAVE_LIBEDIT
 fs_cli_CFLAGS += -DHAVE_EDITLINE -I$(switch_srcdir)/libs/libedit/src
 fs_cli_LDADD   = libs/libedit/src/.libs/libedit.a
 endif
@@ -287,7 +287,7 @@ freeswitch_CFLAGS  = $(AM_CFLAGS) $(CORE_CFLAGS)
 freeswitch_LDFLAGS = $(AM_LDFLAGS) -lpthread -rpath $(libdir)
 freeswitch_LDADD   = libfreeswitch.la libs/apr/libapr-1.la
 
-if ADD_LIBEDIT
+if HAVE_LIBEDIT
 freeswitch_CFLAGS += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
 freeswitch_LDADD  += libs/libedit/src/.libs/libedit.a
 endif
