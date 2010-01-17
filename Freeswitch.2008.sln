@@ -589,7 +589,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_native_file", "src\mod\
 		{F6C55D93-B927-4483-BB69-15AEF3DD2DFF} = {F6C55D93-B927-4483-BB69-15AEF3DD2DFF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_core_db", "src\mod\languages\mod_spidermonkey_core_db\mod_spidermonkey_core_db.2008.vcproj", "{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_core_db", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_core_db.2008.vcproj", "{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F} = {1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
@@ -597,7 +597,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_core_db", 
 		{204FA0DE-305D-4414-AE2E-F195A23F390D} = {204FA0DE-305D-4414-AE2E-F195A23F390D}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_teletone", "src\mod\languages\mod_spidermonkey_teletone\mod_spidermonkey_teletone.2008.vcproj", "{8F992C49-6C51-412F-B2A3-34EAB708EB65}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_teletone", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_teletone.2008.vcproj", "{8F992C49-6C51-412F-B2A3-34EAB708EB65}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F} = {1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
@@ -614,7 +614,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_enum", "src\mod\applica
 		{4043FC6A-9A30-4577-8AD5-9B233C9575D8} = {4043FC6A-9A30-4577-8AD5-9B233C9575D8}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_odbc", "src\mod\languages\mod_spidermonkey_odbc\mod_spidermonkey_odbc.2008.vcproj", "{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_odbc", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_odbc.2008.vcproj", "{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F} = {1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
@@ -663,7 +663,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_local_stream", "src\mod
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_socket", "src\mod\languages\mod_spidermonkey_socket\mod_spidermonkey_socket.2008.vcproj", "{028C7278-05D7-4E18-82FE-BE231B844F41}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_socket", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_socket.2008.vcproj", "{028C7278-05D7-4E18-82FE-BE231B844F41}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F} = {1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
@@ -748,7 +748,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_fsv", "src\mod\applicat
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_curl", "src\mod\languages\mod_spidermonkey_curl\mod_spidermonkey_curl.2008.vcproj", "{36E854E3-CE12-4348-A125-CCF3F9D74813}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_curl", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_curl.2008.vcproj", "{36E854E3-CE12-4348-A125-CCF3F9D74813}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F} = {1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}

@@ -35,11 +35,6 @@ $(OUR_MODULES) $(OUR_CLEAN_MODULES) $(OUR_INSTALL_MODULES) $(OUR_UNINSTALL_MODUL
 	fi; \
 	test -z "$$fail" ;
 
-JS_DIR=$(switch_srcdir)/libs/js
-JSLA=$(JS_DIR)/libjs.la
-$(JSLA): mod_spidermonkey-all
-mod_spidermonkey_curl-all mod_spidermonkey_teletone-all mod_spidermonkey_core_db-all mod_spidermonkey_socket-all mod_spidermonky_odbc-all mod_spidermonkey_curl-install mod_spidermonkey_teletone-install mod_spidermonkey_core_db-install mod_spidermonkey_socket-install mod_spidermonky_odbc-install: $(JSLA)
-
 .DEFAULT:
 	@if test -z "`echo $@ | grep all`"; then  $(MAKE) $(AM_MAKEFLAGS) $@-all ; else echo Unknown target `echo $@ | sed -e 's|-all||'`; exit 1; fi
 

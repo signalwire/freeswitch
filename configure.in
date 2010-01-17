@@ -705,7 +705,7 @@ GETSOUNDS="${SHELL} $switch_builddir/build/getsounds.sh"
 AC_SUBST(GETSOUNDS)
 
 
-LIBCURL_CHECK_CONFIG([yes], [7.13.0], [LIBCURL_DEPS=''], [LIBCURL_DEPS='${switch_srcdir}/libs/curl/lib/libcurl.la';LIBCURL='${switch_srcdir}/libs/curl/lib/libcurl.la';LIBCURL_CPPFLAGS='-I${switch_srcdir}/libs/curl/include'])
+LIBCURL_CHECK_CONFIG([yes], [7.13.0], [LIBCURL_DEPS=''], [LIBCURL_DEPS='${switch_builddir}/libs/curl/lib/libcurl.la';LIBCURL='${switch_builddir}/libs/curl/lib/libcurl.la';LIBCURL_CPPFLAGS='-I${switch_srcdir}/libs/curl/include'])
 AC_SUBST(LIBCURL_DEPS)
 
 
@@ -870,6 +870,7 @@ AC_CONFIG_FILES([Makefile
                 src/mod/asr_tts/mod_unimrcp/Makefile
                 src/mod/languages/mod_java/Makefile
                 src/mod/languages/mod_python/Makefile
+		src/mod/languages/mod_spidermonkey/Makefile
                 src/mod/event_handlers/mod_erlang_event/Makefile
                 src/include/switch_am_config.h
                 build/getsounds.sh

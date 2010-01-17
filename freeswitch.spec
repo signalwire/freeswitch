@@ -228,7 +228,6 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 %endif
 
 PASSTHRU_CODEC_MODULES="codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr codecs/mod_amrwb"
-SPIDERMONKEY_MODULES="languages/mod_spidermonkey languages/mod_spidermonkey_curl languages/mod_spidermonkey_core_db languages/mod_spidermonkey_odbc languages/mod_spidermonkey_socket languages/mod_spidermonkey_teletone"
 APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit applications/mod_rss applications/mod_voicemail applications/mod_directory applications/mod_fsv applications/mod_lcr applications/mod_easyroute applications/mod_stress applications/mod_vmd applications/mod_limit applications/mod_soundtouch applications/mod_fax"
 CODECS_MODULES="codecs/mod_ilbc codecs/mod_h26x codecs/mod_voipcodecs codecs/mod_speex codecs/mod_celt codecs/mod_siren codecs/mod_bv"
 DIALPLANS_MODULES="dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
@@ -237,13 +236,13 @@ ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_iax endpoints/mod_porta
 ASR_TTS_MODULES="asr_tts/mod_pocketsphinx asr_tts/mod_flite asr_tts/mod_unimrcp"
 EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv"
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream formats/mod_shout"
-LANGUAGES_MODULES="languages/mod_perl languages/mod_lua languages/mod_python"
+LANGUAGES_MODULES="languages/mod_spidermonkey languages/mod_perl languages/mod_lua languages/mod_python"
 LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
 SAY_MODULES="say/mod_say_en say/mod_say_de say/mod_say_fr"
 TIMERS_MODULES=
-DISABLED_MODULES="applications/mod_soundtouch languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf languages/mod_managed languages/mod_java say/mod_say_it say/mod_say_es say/mod_say_nl languages/mod_yaml"
+DISABLED_MODULES="applications/mod_soundtouch asr_tts/mod_cepstral asr_tts/mod_lumenvox event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf languages/mod_managed languages/mod_java say/mod_say_it say/mod_say_es say/mod_say_nl languages/mod_yaml"
 XML_INT_MODULES="xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr "
-MYMODULES="$PASSTHRU_CODEC_MODULES $SPIDERMONKEY_MODULES $APPLICATIONS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $ENDPOINTS_MODULES $ASR_TTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
+MYMODULES="$PASSTHRU_CODEC_MODULES $APPLICATIONS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $ENDPOINTS_MODULES $ASR_TTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
 
 export MODULES=$MYMODULES
 test ! -f  modules.conf || rm -f modules.conf
