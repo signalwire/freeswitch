@@ -16,7 +16,7 @@ $(mod_lua_la_SOURCES) : $(BUILT_SOURCES)
 $(LIBLUA_A):
 	cd lua && $(MAKE) CC="$(CC)" AR="$(AR) rcu" CFLAGS="$(ALL_CFLAGS) -DLUA_USE_LINUX -w" liblua.a
 
-reswig: swigclean mod_lua_wrap.cpp
+reswig: swigclean lua_wrap
 
 luaclean:
 	cd lua && $(MAKE) clean
@@ -26,7 +26,7 @@ allclean: clean luaclean
 swigclean: clean
 	rm -f mod_lua_wrap.*
 
-mod_lua_wrap.cpp: mod_lua_extra.c
+lua_wrap: mod_lua_extra.c
 	swig -lua -c++ -I../../../../src/include -oh mod_lua_wrap.h -o mod_lua_wrap.cpp freeswitch.i
 	echo "#include \"mod_lua_extra.c\"" >> mod_lua_wrap.cpp
 	patch -s -p0 -i hack.diff
