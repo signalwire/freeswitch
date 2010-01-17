@@ -19,7 +19,7 @@ MPG123LA=$(MPG123_BUILDDIR)/src/libmpg123/libmpg123.la
 
 LOCAL_CFLAGS=-I$(SHOUT_DIR)/include -I$(LAME_DIR)/include -I$(MPG123_DIR)/src  -I$(MPG123_BUILDDIR)/src -I$(SHOUT_BUILDDIR)/include 
 LOCAL_LIBADD=$(LAMELA) $(SHOUTLA) $(MPG123LA)
-
+$(MODNAME).lo: $(LOCAL_LIBADD)
 LOCAL_LDFLAGS=`cat $(SHOUT_BUILDDIR)/Makefile | grep SPEEX_LIBS | sed -e 's|^SPEEX_LIBS =||'`  `cat $(SHOUTLA) | grep dependency_libs  | sed -e 's|^dependency_libs=||' | sed -e "s|'||g"`
 
 include $(BASE)/build/modmake.rules
