@@ -1,14 +1,17 @@
-BASE=../../../..
-LOCAL_CFLAGS=-Ilua
+include $(top_srcdir)/build/modmake.rulesam
+
+MODNAME=mod_lua
+
 LIBLUA_A=lua/liblua.a
-LOCAL_LIBADD=$(LIBLUA_A)
-LOCAL_LDFLAGS=-lm
-LOCAL_OBJS=freeswitch_lua.o mod_lua_wrap.o
-VERBOSE=1
 
-include $(BASE)/build/modmake.rules
+mod_LTLIBRARIES = mod_lua.la
+mod_lua_la_SOURCES = mod_lua.cpp freeswitch_lua.cpp mod_lua_wrap.cpp
+mod_lua_la_CXXFLAGS = -Ilua $(AM_CPPFLAGS)
+mod_lua_la_LIBADD = $(switch_builddir)/libfreeswitch.la 
+mod_lua_la_LDFLAGS = -avoid-version -module -no-undefined -shared -lm $(LIBLUA_A)
 
-local_depend: $(LOCAL_OBJS)
+BUILT_SOURCES = $(LIBLUA_A)
+$(mod_lua_la_SOURCES) : $(BUILT_SOURCES)
 
 $(LIBLUA_A):
 	cd lua && $(MAKE) CC="$(CC)" AR="$(AR) rcu" CFLAGS="$(ALL_CFLAGS) -DLUA_USE_LINUX -w" liblua.a
@@ -18,10 +21,7 @@ reswig: swigclean mod_lua_wrap.cpp
 luaclean:
 	cd lua && $(MAKE) clean
 
-freeswitch_lua.o: freeswitch_lua.h
-
 allclean: clean luaclean
-	rm -f mod_lua_wrap.* freeswitch_lua.$(DYNAMIC_LIB_EXTEN)
 
 swigclean: clean
 	rm -f mod_lua_wrap.*
@@ -31,5 +31,3 @@ mod_lua_wrap.cpp: mod_lua_extra.c
 	echo "#include \"mod_lua_extra.c\"" >> mod_lua_wrap.cpp
 	patch -s -p0 -i hack.diff
 
-freeswitch_lua.$(DYNAMIC_LIB_EXTEN): $(LOCAL_OBJS) $(LOCAL_LIBADD)
-	$(LINK) $(SOLINK) -o freeswitch_lua.$(DYNAMIC_LIB_EXTEN)  $(LOCAL_OBJS) $(LOCAL_LIBADD) $(LDFLAGS)
