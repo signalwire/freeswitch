@@ -393,7 +393,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 
 		if (originate_status[i].tagged && originate_status[i].peer_session) {
 			switch_channel_t *channel = switch_core_session_get_channel(originate_status[i].peer_session);
-			int j;
+			uint32_t j;
 			
 			if (switch_channel_down(channel)) {
 				switch_call_cause_t cause = switch_channel_get_cause(channel);
@@ -1603,7 +1603,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 					if (datalen < read_frame->datalen) {
 						datalen = read_frame->datalen;
 					}
-					for (x = 0; x < read_frame->datalen / 2; x++) {
+					for (x = 0; x < (int)read_frame->datalen / 2; x++) {
 						sample = data[x] + mux_data[x];
 						switch_normalize_to_16bit(sample);
 						mux_data[x] = sample;
