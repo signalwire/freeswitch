@@ -936,7 +936,7 @@ static switch_status_t load_config(void)
 	}
 
 	if (!globals.dialplan) {
-		set_global_dialplan("default");
+		set_global_dialplan("XML");
 	}
 	
 	if (!globals.context) {
