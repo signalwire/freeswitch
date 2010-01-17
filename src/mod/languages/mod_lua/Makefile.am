@@ -1,3 +1,4 @@
+VERBOSE=1
 include $(top_srcdir)/build/modmake.rulesam
 
 MODNAME=mod_lua
