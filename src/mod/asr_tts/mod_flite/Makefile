@@ -16,6 +16,7 @@ LOCAL_LIBADD=$(FLITE_A)
 BASE=../../../..
 include $(BASE)/build/modmake.rules
 
+$(MODNAME).lo: $(FLITE_A)
 $(FLITE_DIR):
 	$(GETLIB) $(FLITE)-latest.tar.gz
 
@@ -25,7 +26,7 @@ $(FLITE_BUILDDIR)/Makefile: $(FLITE_DIR)
 	$(TOUCH_TARGET)
 
 $(FLITE_A): $(FLITE_DIR) $(FLITE_BUILDDIR)/Makefile
-	cd $(FLITE_BUILDDIR) && $(MAKE)
+	cd $(FLITE_BUILDDIR) && $(MAKE) -j1
 	test -d $(FLITE_LIBDIR) || mkdir $(FLITE_LIBDIR)
 	TARGET_OS=`grep TARGET_OS $(FLITE_BUILDDIR)/config/config | sed "s/^.*= //"` ;\
 	TARGET_CPU=`grep TARGET_CPU $(FLITE_BUILDDIR)/config/config | sed "s/^.*= //"` ;\
