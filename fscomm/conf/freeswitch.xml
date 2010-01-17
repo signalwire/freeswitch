@@ -7,7 +7,6 @@
 	<X-PRE-PROCESS cmd="set" data="external_rtp_ip=stun:stun.freeswitch.org"/>
 	<X-PRE-PROCESS cmd="set" data="external_sip_ip=stun:stun.freeswitch.org"/>
 	<X-PRE-PROCESS cmd="set" data="console_loglevel=info"/>
-	<X-PRE-PROCESS cmd="set" data="default_gateway=default"/>
 	<X-PRE-PROCESS cmd="set" data="us-ring=%(2000, 4000, 440.0, 480.0)"/>
 	<X-PRE-PROCESS cmd="set" data="bong-ring=v=-7;%(100,0,941.0,1477.0);v=-7;>=2;+=.1;%(1400,0,350,440)"/>
 	<X-PRE-PROCESS cmd="set" data="sit=%(274,0,913.8);%(274,0,1370.6);%(380,0,1776.7)"/>
@@ -255,6 +254,7 @@
 			</extension>
 			<extension name="number">
 				<condition field="destination_number" expression="^(.*)$">
+                                 <!-- Default gateway is set by FSComm when default account is selected -->
 					<action application="bridge" data="sofia/gateway/${default_gateway}/$1"/>
 				</condition>
 			</extension>

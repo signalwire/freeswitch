@@ -130,13 +130,7 @@ void AccountDialog::writeConfig()
 
     _settings->endGroup();
 
-    QString res;
-    if (g_FSHost.sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
-    {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rescan the softphone profile.\n");
-        return;
-    }
-    emit gwAdded();
+    emit gwAdded(_accId);
 }
 
 void AccountDialog::clear()

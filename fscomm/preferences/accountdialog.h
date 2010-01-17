@@ -19,7 +19,7 @@ public:
     void readConfig();
 
 signals:
-    void gwAdded();
+    void gwAdded(QString);
 
 private slots:
     void writeConfig();

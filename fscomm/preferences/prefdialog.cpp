@@ -28,6 +28,7 @@ void PrefDialog::writeConfig()
 {    
     _mod_portaudio->writeConfig();
     _mod_sofia->writeConfig();
+
 }
 
 void PrefDialog::changeEvent(QEvent *e)
