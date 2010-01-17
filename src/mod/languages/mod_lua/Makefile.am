@@ -4,6 +4,7 @@ MODNAME=mod_lua
 
 LIBLUA_A=lua/liblua.a
 
+AM_CFLAGS += $(CFLAGS) -D_GNU_SOURCE
 mod_LTLIBRARIES = mod_lua.la
 mod_lua_la_SOURCES = mod_lua.cpp freeswitch_lua.cpp mod_lua_wrap.cpp
 mod_lua_la_CXXFLAGS = -Ilua $(AM_CPPFLAGS)
@@ -14,7 +15,7 @@ BUILT_SOURCES = $(LIBLUA_A)
 $(mod_lua_la_SOURCES) : $(BUILT_SOURCES)
 
 $(LIBLUA_A):
-	cd lua && $(MAKE) CC="$(CC)" AR="$(AR) rcu" CFLAGS="$(ALL_CFLAGS) -DLUA_USE_LINUX -w" liblua.a
+	cd lua && $(MAKE) CC="$(CC)" AR="$(AR) rcu" CFLAGS="$(AM_CFLAGS) -DLUA_USE_LINUX -w" liblua.a
 
 reswig: swigclean lua_wrap
 
