@@ -12,11 +12,12 @@ LOCAL_CFLAGS=-I$(SPANDSP_DIR)/src -I$(TIFF_DIR)/libtiff -I$(SPANDSP_BUILDDIR)/sr
 LOCAL_LIBADD=$(SPANDSP_LA)
 
 include $(BASE)/build/modmake.rules
+$(MODNAME).lo: $(SPANDSP_LA) $(TIFF_LA)
 
 $(SPANDSP_LA): $(TIFF_LA) $(SPANDSP_DIR) $(SPANDSP_DIR)/.update
-	cd $(SPANDSP_BUILDDIR) && $(MAKE)
+	cd $(SPANDSP_BUILDDIR) && $(MAKE) -j1
 	$(TOUCH_TARGET)
 
 $(TIFF_LA): $(TIFF_DIR) $(TIFF_DIR)/.update
-	cd $(TIFF_BUILDDIR) && $(MAKE)
+	cd $(TIFF_BUILDDIR) && $(MAKE) -j1
 	$(TOUCH_TARGET)
