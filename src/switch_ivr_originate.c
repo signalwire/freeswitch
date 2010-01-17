@@ -2569,7 +2569,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						!oglobals.progress && (progress_timelimit_sec && elapsed > (time_t) progress_timelimit_sec)) {
 						to++;
 						oglobals.idx = IDX_TIMEOUT;
-						force_reason = SWITCH_CAUSE_PROGRESS_TIMEOUT;
+						if (force_reason == SWITCH_CAUSE_NONE) {
+							force_reason = SWITCH_CAUSE_PROGRESS_TIMEOUT;
+						}
 						goto notready;
 					}
 					
@@ -2619,7 +2621,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				time_t elapsed = switch_epoch_time_now(NULL) - start;
 				
 				if (cancel_cause && *cancel_cause > 0) {
-					force_reason = *cancel_cause;
+					if (force_reason == SWITCH_CAUSE_NONE) {
+						force_reason = *cancel_cause;
+					}
 					oglobals.idx = IDX_CANCEL;
 					goto notready;
 				}
@@ -2632,6 +2636,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (!oglobals.sent_ring && !oglobals.progress && (progress_timelimit_sec && elapsed > (time_t) progress_timelimit_sec)) {
 					oglobals.idx = IDX_TIMEOUT;
+					if (force_reason == SWITCH_CAUSE_NONE) {
+						force_reason = SWITCH_CAUSE_PROGRESS_TIMEOUT;
+					}
 					goto notready;
 				}
 
@@ -2942,13 +2949,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_channel_hangup(peer_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 						switch_core_session_rwunlock(peer_session);
 					}
-					force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
+					if (force_reason == SWITCH_CAUSE_NONE) {
+						force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
+					}
 				} else if (zstr(soft_holding)) {
 
 					if (peer_channel && switch_channel_ready(peer_channel)) {
 						switch_core_session_t *holding_session;
 
-						force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
+						if (force_reason == SWITCH_CAUSE_NONE) {
+							force_reason = SWITCH_CAUSE_ATTENDED_TRANSFER;
+						}
 
 						if ((holding_session = switch_core_session_locate(holding))) {
 							switch_channel_set_variable(switch_core_session_get_channel(holding_session), SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
