@@ -165,6 +165,8 @@ src/js.o: src/js.c
 src/perlconnect/jsperl.o: src/perlconnect/jsperl.c
 	$(CC) $(CPPFLAGS) $(CLI_CPPFLAGS) $(CFLAGS) $(CLI_CFLAGS) -o $@ -c $<
 
+src/js.c: src/jstypes.h
+src/jstypes.h: src/jsautocfg.h
 $(LIB_OBJS): src/jsautocfg.h
 src/jsautocfg.h: jscpucfg
 	-rm -f $@ src/jsautocfg.h
