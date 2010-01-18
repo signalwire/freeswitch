@@ -1241,6 +1241,16 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_core_session_set_loglevel(SWIGTYPE_p_switch_core_session session, switch_log_level_t loglevel) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_set_loglevel(SWIGTYPE_p_switch_core_session.getCPtr(session), (int)loglevel);
+    return ret;
+  }
+
+  public static switch_log_level_t switch_core_session_get_loglevel(SWIGTYPE_p_switch_core_session session) {
+    switch_log_level_t ret = (switch_log_level_t)freeswitchPINVOKE.switch_core_session_get_loglevel(SWIGTYPE_p_switch_core_session.getCPtr(session));
+    return ret;
+  }
+
   public static string switch_core_get_uuid() {
     string ret = freeswitchPINVOKE.switch_core_get_uuid();
     return ret;
@@ -3102,6 +3112,12 @@ public class freeswitch {
 
   public static switch_call_direction_t switch_channel_direction(SWIGTYPE_p_switch_channel channel) {
     switch_call_direction_t ret = (switch_call_direction_t)freeswitchPINVOKE.switch_channel_direction(SWIGTYPE_p_switch_channel.getCPtr(channel));
+    return ret;
+  }
+
+  public static SWIGTYPE_p_switch_core_session switch_channel_get_session(SWIGTYPE_p_switch_channel channel) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_channel_get_session(SWIGTYPE_p_switch_channel.getCPtr(channel));
+    SWIGTYPE_p_switch_core_session ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_core_session(cPtr, false);
     return ret;
   }
 
@@ -6508,6 +6524,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_uuid")]
   public static extern string switch_core_session_get_uuid(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_set_loglevel")]
+  public static extern int switch_core_session_set_loglevel(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_loglevel")]
+  public static extern int switch_core_session_get_loglevel(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_get_uuid")]
   public static extern string switch_core_get_uuid();
@@ -10150,6 +10172,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_direction")]
   public static extern int switch_channel_direction(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_session")]
+  public static extern IntPtr switch_channel_get_session(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_buffer_create")]
   public static extern int switch_buffer_create(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
@@ -27389,7 +27414,8 @@ namespace FreeSWITCH.Native {
 public enum switch_text_channel_t {
   SWITCH_CHANNEL_ID_LOG,
   SWITCH_CHANNEL_ID_LOG_CLEAN,
-  SWITCH_CHANNEL_ID_EVENT
+  SWITCH_CHANNEL_ID_EVENT,
+  SWITCH_CHANNEL_ID_SESSION
 }
 
 }

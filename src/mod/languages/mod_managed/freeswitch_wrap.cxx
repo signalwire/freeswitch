@@ -6582,6 +6582,32 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_session_get_uuid(void * jarg1) 
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_set_loglevel(void * jarg1, int jarg2) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_log_level_t arg2 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (switch_log_level_t)jarg2; 
+  result = (switch_status_t)switch_core_session_set_loglevel(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_get_loglevel(void * jarg1) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_log_level_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  result = (switch_log_level_t)switch_core_session_get_loglevel(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_get_uuid() {
   char * jresult ;
   char *result = 0 ;
@@ -21767,6 +21793,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_direction(void * jarg1) {
   arg1 = (switch_channel_t *)jarg1; 
   result = (switch_call_direction_t)switch_channel_direction(arg1);
   jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_session(void * jarg1) {
+  void * jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_core_session_t *result = 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  result = (switch_core_session_t *)switch_channel_get_session(arg1);
+  jresult = (void *)result; 
   return jresult;
 }
 
