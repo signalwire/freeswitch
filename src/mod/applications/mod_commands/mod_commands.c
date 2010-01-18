@@ -3997,6 +3997,41 @@ SWITCH_STANDARD_API(escape_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UUID_LOGLEVEL_SYNTAX "<uuid> <level>"
+SWITCH_STANDARD_API(uuid_loglevel)
+{
+	switch_core_session_t *tsession = NULL;
+	char *uuid = NULL, *text = NULL;
+
+	if (!zstr(cmd) && (uuid = strdup(cmd))) {
+		if ((text = strchr(uuid, ' '))) {
+			*text++ = '\0';
+		}
+	}
+
+	if (zstr(uuid) || zstr(text)) {
+		stream->write_function(stream, "-USAGE: %s\n", UUID_LOGLEVEL_SYNTAX);
+	} else {
+		switch_log_level_t level = switch_log_str2level(text);
+
+		if (level == SWITCH_LOG_INVALID) {
+			stream->write_function(stream, "-ERR Invalid log level!\n");
+		}
+		else if ((tsession = switch_core_session_locate(uuid))) {
+
+			switch_core_session_set_loglevel(tsession, level);
+			stream->write_function(stream, "+OK\n");
+			switch_core_session_rwunlock(tsession);
+		}
+		else {
+			stream->write_function(stream, "-ERR No Such Channel %s!\n", uuid);
+		}
+	}
+
+	switch_safe_free(uuid);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown)
 {
 	int x;
@@ -4096,6 +4131,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_getvar", "uuid_getvar", uuid_getvar_function, GETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_hold", "hold", uuid_hold_function, HOLD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill Channel", kill_function, KILL_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_loglevel", "set loglevel on session", uuid_loglevel, UUID_LOGLEVEL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "media", uuid_media_function, MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_park", "Park Channel", park_function, PARK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_preprocess", "Pre-process Channel", preprocess_function, PREPROCESS_SYNTAX);
@@ -4119,6 +4155,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl default_dtmf_duration");
 	switch_console_set_complete("add fsctl hupall");
 	switch_console_set_complete("add fsctl loglevel");
+	switch_console_set_complete("add fsctl loglevel console");
+	switch_console_set_complete("add fsctl loglevel alert");
+	switch_console_set_complete("add fsctl loglevel crit");
+	switch_console_set_complete("add fsctl loglevel err");
+	switch_console_set_complete("add fsctl loglevel warning");
+	switch_console_set_complete("add fsctl loglevel notice");
+	switch_console_set_complete("add fsctl loglevel info");
+	switch_console_set_complete("add fsctl loglevel debug");
 	switch_console_set_complete("add fsctl max_dtmf_duration");
 	switch_console_set_complete("add fsctl max_sessions");
 	switch_console_set_complete("add fsctl min_dtmf_duration");
@@ -4181,6 +4225,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_getvar ::console::list_uuid");
 	switch_console_set_complete("add uuid_hold ::console::list_uuid");
 	switch_console_set_complete("add uuid_kill ::console::list_uuid");
+	switch_console_set_complete("add uuid_loglevel ::console::list_uuid console");
+	switch_console_set_complete("add uuid_loglevel ::console::list_uuid alert");
+	switch_console_set_complete("add uuid_loglevel ::console::list_uuid crit");
+	switch_console_set_complete("add uuid_loglevel ::console::list_uuid err");
+	switch_console_set_complete("add uuid_loglevel ::console::list_uuid warning");
+	switch_console_set_complete("add uuid_loglevel ::console::list_uuid notice");
+	switch_console_set_complete("add uuid_loglevel ::console::list_uuid info");
+	switch_console_set_complete("add uuid_loglevel ::console::list_uuid debug");
 	switch_console_set_complete("add uuid_media ::console::list_uuid");
 	switch_console_set_complete("add uuid_park ::console::list_uuid");
 	switch_console_set_complete("add uuid_preprocess ::console::list_uuid");
