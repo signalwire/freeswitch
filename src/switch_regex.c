@@ -154,9 +154,6 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 				num = -1;
 			}
 			
-			/* make $1 start where it matched in | sep list */
-			num += (match_count-2);
-			
 			if (pcre_copy_substring(field_data, ovector, match_count, num, replace, sizeof(replace)) > 0) {
 				switch_size_t r;
 				for (r = 0; r < strlen(replace); r++) {
