@@ -25,9 +25,9 @@ def main(argv):
 		con = ESLconnection(options.server, options.port, options.auth)
 	#are we connected?
 
-		if con.connected:
+		if con.connected():
 			#run command
-			e=con.sendRecv("api "+  options.command)
+			e = con.api(options.command)
 			print e.getBody()
 
 		else:
