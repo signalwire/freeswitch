@@ -429,11 +429,8 @@ int __sangomabc_connection_write(sangomabc_connection_t *mcon, sangomabc_event_t
 	ftdm_assert_return(mcon->socket >= 0, -1, "No mcon->socket!");
 	ftdm_assert_return(mcon->mutex != NULL, -1, "No mcon->mutex!");
 
-	if (event->span >= FTDM_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN || event->chan >= FTDM_MAX_CHANNELS_PHYSICAL_SPAN ) {
-		ftdm_log(file, func, line, FTDM_LOG_LEVEL_CRIT, "Critical Error: TX Cmd=%s Invalid Span=%i Chan=%i\n", sangomabc_event_id_name(event->event_id), event->span, event->chan);
-		abort();
-		return -1;
-	}
+	ftdm_assert_return(event->span <= FTDM_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN, -1, "Invalid span when writing boost event\n");
+	ftdm_assert_return(event->chan <= FTDM_MAX_CHANNELS_PHYSICAL_SPAN, -1, "Invalid chan when writing boost event\n");
 
 	if (!boost_full_event(event->event_id)) {
 		event_size=sizeof(sangomabc_short_event_t);
