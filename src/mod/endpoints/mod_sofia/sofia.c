@@ -85,11 +85,13 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 #endif
 }
 
+#define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri", #varprefix "_params")
 
-static void _set_chanvars(switch_core_session_t *session, url_t *url, const char *user_var,
+static const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const char *user_var,
 							  const char *host_var, const char *port_var, const char *uri_var, const char *params_var)
 {
 	const char *user = NULL, *host = NULL, *port = NULL;
+	char *uri = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char new_port[25] = "";
 
@@ -122,9 +124,18 @@ static void _set_chanvars(switch_core_session_t *session, url_t *url, const char
 	}
 
 	switch_channel_set_variable(channel, port_var, port);
-	
+	if (host) {
+		if (user) {
+			uri = switch_core_session_sprintf(session, "%s@%s%s", user, host, new_port);
+		} else {
+			uri = switch_core_session_sprintf(session, "%s%s", host, new_port);
+		}
+		switch_channel_set_variable(channel, uri_var, uri);
+		switch_channel_set_variable(channel, host_var, host);
+	}
+
+	return uri;
 }
-#define set_chanvars(session, url, varprefix) _set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri", #varprefix "_params")
 
 
 static void extract_vars(sip_t const *sip, switch_core_session_t *session)
@@ -132,11 +143,11 @@ static void extract_vars(sip_t const *sip, switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (sip) {
-		if (sip->sip_from && sip->sip_from->a_url) set_chanvars(session, sip->sip_from->a_url, sip_from);
-		if (sip->sip_request && sip->sip_request->rq_url) set_chanvars(session, sip->sip_request->rq_url, sip_req);
-		if (sip->sip_to && sip->sip_to->a_url) set_chanvars(session, sip->sip_to->a_url, sip_to);
-		if (sip->sip_contact && sip->sip_contact->m_url) set_chanvars(session, sip->sip_contact->m_url, sip_contact);
-		if (sip->sip_referred_by && sip->sip_referred_by->b_url) set_chanvars(session, sip->sip_referred_by->b_url, sip_referred_by);
+		if (sip->sip_from && sip->sip_from->a_url) url_set_chanvars(session, sip->sip_from->a_url, sip_from);
+		if (sip->sip_request && sip->sip_request->rq_url) url_set_chanvars(session, sip->sip_request->rq_url, sip_req);
+		if (sip->sip_to && sip->sip_to->a_url) url_set_chanvars(session, sip->sip_to->a_url, sip_to);
+		if (sip->sip_contact && sip->sip_contact->m_url) url_set_chanvars(session, sip->sip_contact->m_url, sip_contact);
+		if (sip->sip_referred_by && sip->sip_referred_by->b_url) url_set_chanvars(session, sip->sip_referred_by->b_url, sip_referred_by);
 		if (sip->sip_to && sip->sip_to->a_tag) {
 					switch_channel_set_variable(channel, "sip_to_tag", sip->sip_to->a_tag);
 		}
@@ -5342,59 +5353,6 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	return;
 
 }
-
-#define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri", #varprefix "_params")
-
-static const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const char *user_var,
-							  const char *host_var, const char *port_var, const char *uri_var, const char *params_var)
-{
-	const char *user = NULL, *host = NULL, *port = NULL;
-	char *uri = NULL;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char new_port[25] = "";
-
-	if (url) {
-		user = url->url_user;
-		host = url->url_host;
-		port = url->url_port;
-		if (!zstr(url->url_params)) {
-			switch_channel_set_variable(channel, params_var, url->url_params);
-		}
-	}
-
-	if (zstr(user)) {
-		user = "nobody";
-	}
-
-	if (zstr(host)) {
-		host = "nowhere";
-	}
-
-	check_decode(user, session);
-
-	if (user) {
-		switch_channel_set_variable(channel, user_var, user);
-	}
-
-
-	if (port) {
-		switch_snprintf(new_port, sizeof(new_port), ":%s", port);
-	}
-
-	switch_channel_set_variable(channel, port_var, port);
-	if (host) {
-		if (user) {
-			uri = switch_core_session_sprintf(session, "%s@%s%s", user, host, new_port);
-		} else {
-			uri = switch_core_session_sprintf(session, "%s%s", host, new_port);
-		}
-		switch_channel_set_variable(channel, uri_var, uri);
-		switch_channel_set_variable(channel, host_var, host);
-	}
-
-	return uri;
-}
-
 
 void sofia_handle_sip_i_reinvite(switch_core_session_t *session, 
 							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
