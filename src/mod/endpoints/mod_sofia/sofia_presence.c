@@ -1926,17 +1926,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				ap = ap->ac_next;
 			}
 			
-			/* negative in exptime means keep bumping up sub time to avoid a snafu where every device has it's own rules about subscriptions
-			   that somehow barely resemble the RFC not that I blame them because the RFC MAY be amibiguous and SHOULD be deleted.
-			   So to avoid the problem we keep resetting the expiration date of the subscription so it never expires.
-
-			   Eybeam completely ignores this option and most other subscription-state: directives from rfc3265 and still expires.
-			   Polycom is happy to keep upping the subscription expiry back to the original time on each new notify.
-			   The rest ... who knows...?
-
-			*/
-
-
 			sql = switch_mprintf("insert into sip_subscriptions "
 								 "(proto,sip_user,sip_host,sub_to_user,sub_to_host,presence_hosts,event,contact,call_id,full_from,"
 								 "full_via,expires,user_agent,accept,profile_name,hostname,network_port,network_ip) "
@@ -2017,10 +2006,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			
 		}
 
-
-
-
-		
 		if (sub_state == nua_substate_terminated) {
 			char *full_call_info = NULL;
 			char *p = NULL;
@@ -2062,7 +2047,18 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 
 		} else {
-			if (!strcasecmp(event, "line-seize")) {
+			if (!strcasecmp(event, "dialog")) {
+				switch_event_t *pevent;
+				if (switch_event_create(&pevent, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "login", profile->url);
+					switch_event_add_header(pevent, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, to_host);
+					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "event_type", "presence");
+					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "event_subtype", "probe");
+					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "proto-specific-event-name", event);
+					switch_event_fire(&pevent);
+				}
+			} else if (!strcasecmp(event, "line-seize")) {
 				char *full_call_info = NULL;
 				char *p;
 				
@@ -2247,6 +2243,8 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 		sip_payload_t *payload = sip->sip_payload;
 		char *event_type;
 		char etag[9] = "";
+		char expstr[30] = "";
+		long exp = 0, exp_delta = 3600;
 
 		/* the following could instead be refactored back to the calling event handler in sofia.c XXX MTK */
 		if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
@@ -2268,7 +2266,6 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 			uint8_t in = 0;
 			char *sql;
 			char *full_agent = NULL;
-			long exp, exp_delta;
 
 			if ((xml = switch_xml_parse_str(payload->pl_data, strlen(payload->pl_data)))) {
 				char *status_txt = "", *note_txt = "";
@@ -2360,8 +2357,9 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 			}
 		}
 
+		switch_snprintf(expstr, sizeof(expstr), "%d", exp_delta);
 		switch_stun_random_string(etag, 8, NULL);
-		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), SIPTAG_ETAG_STR(etag), TAG_END());
+		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), SIPTAG_ETAG_STR(etag), SIPTAG_EXPIRES_STR(expstr), TAG_END());
 	}
 }
 
