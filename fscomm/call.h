@@ -31,6 +31,7 @@
 
 #include <QtCore>
 #include <QString>
+#include <switch.h>
 
 typedef enum {
     FSCOMM_CALL_STATE_RINGING = 0,
@@ -59,6 +60,9 @@ public:
     void setState(fscomm_call_state_t state) { _state = state; }
     void setCause(QString cause) { _cause = cause; }
     QString getCause() { return _cause; }
+    void setActive(bool isActive) { _isActive = isActive; }
+    bool isActive() { return _isActive == true; }
+    switch_status_t toggleRecord(bool);
 
 private:
     int _call_id;
@@ -68,6 +72,8 @@ private:
     fscomm_call_direction_t _direction;
     QString _uuid;
     QString _buuid;
+    bool _isActive;
+    QString _recording_filename;
     fscomm_call_state_t _state;
 };
 

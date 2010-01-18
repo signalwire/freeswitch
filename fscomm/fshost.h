@@ -66,6 +66,7 @@ public:
     switch_status_t sendCmd(const char *cmd, const char *args, QString *res);
     void generalEventHandler(switch_event_t *event);
     QSharedPointer<Call> getCallByUUID(QString uuid) { return _active_calls.value(uuid); }
+    QSharedPointer<Call> getCurrentActiveCall();
     QString getGwStateName(int id) { return fscomm_gw_state_names[id]; }
 
 protected:

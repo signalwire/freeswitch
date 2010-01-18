@@ -73,6 +73,7 @@ private slots:
     void answered(QSharedPointer<Call>);
     void hungup(QSharedPointer<Call>);
     void callFailed(QSharedPointer<Call>);
+    void recordCall(bool);
 
 private:
     Ui::MainWindow *ui;

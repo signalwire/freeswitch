@@ -87,6 +87,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->newCallBtn, SIGNAL(clicked()), this, SLOT(makeCall()));
     connect(ui->answerBtn, SIGNAL(clicked()), this, SLOT(paAnswer()));
     connect(ui->hangupBtn, SIGNAL(clicked()), this, SLOT(paHangup()));
+    connect(ui->recoredCallBtn, SIGNAL(toggled(bool)), SLOT(recordCall(bool)));
     connect(ui->listCalls, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(callListDoubleClick(QListWidgetItem*)));
     connect(ui->action_Preferences, SIGNAL(triggered()), this, SLOT(prefTriggered()));
     connect(ui->action_Exit, SIGNAL(triggered()), this, SLOT(close()));
@@ -153,6 +154,7 @@ void MainWindow::dialDTMF(QString dtmf)
 
 void MainWindow::callListDoubleClick(QListWidgetItem *item)
 {
+    QSharedPointer<Call> lastCall = g_FSHost.getCurrentActiveCall();
     QSharedPointer<Call> call = g_FSHost.getCallByUUID(item->data(Qt::UserRole).toString());
     QString switch_str = QString("switch %1").arg(call.data()->getCallID());
     QString result;
@@ -161,6 +163,8 @@ void MainWindow::callListDoubleClick(QListWidgetItem *item)
         return;
     }
     ui->hangupBtn->setEnabled(true);
+    lastCall.data()->setActive(false);
+    call.data()->setActive(true);
 }
 
 void MainWindow::makeCall()
@@ -220,6 +224,31 @@ void MainWindow::paHangup()
     ui->hangupBtn->setEnabled(false);
 }
 
+void MainWindow::recordCall(bool pressed)
+{
+    QSharedPointer<Call> call = g_FSHost.getCurrentActiveCall();
+
+    if (call.isNull())
+    {
+        QMessageBox::warning(this,tr("Record call"),
+                             tr("<p>FSComm reports that there are no active calls to be recorded."
+                                "<p>Please report this bug."),
+                             QMessageBox::Ok);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not record call because there is not current active call!.\n");
+        return;
+    }
+
+    if (call.data()->toggleRecord(pressed) != SWITCH_STATUS_SUCCESS)
+    {
+        QMessageBox::warning(this,tr("Record call"),
+                             tr("<p>Could not get active call to start/stop recording."
+                                "<p>Please report this bug."),
+                             QMessageBox::Ok);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not record call [%s].\n", call.data()->getUUID().toAscii().data());
+        return;
+    }
+}
+
 void MainWindow::newOutgoingCall(QSharedPointer<Call> call)
 {
     ui->textEdit->setText(QString("Calling %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
@@ -227,6 +256,7 @@ void MainWindow::newOutgoingCall(QSharedPointer<Call> call)
     item->setData(Qt::UserRole, call.data()->getUUID());
     ui->listCalls->addItem(item);
     ui->hangupBtn->setEnabled(true);
+    call.data()->setActive(true);
 }
 
 void MainWindow::ringing(QSharedPointer<Call> call)
@@ -248,6 +278,7 @@ void MainWindow::ringing(QSharedPointer<Call> call)
     item->setData(Qt::UserRole, call.data()->getUUID());
     ui->listCalls->addItem(item);
     ui->answerBtn->setEnabled(true);
+    call.data()->setActive(true);
 }
 
 void MainWindow::answered(QSharedPointer<Call> call)
@@ -301,6 +332,7 @@ void MainWindow::callFailed(QSharedPointer<Call> call)
     ui->textEdit->setText(tr("Call with %1 (%2) failed with reason %3.").arg(call.data()->getCidName(),
                                                                              call.data()->getCidNumber(),
                                                                              call.data()->getCause()));
+    call.data()->setActive(false);
     /* TODO: Will cause problems if 2 calls are received at the same time */
     ui->answerBtn->setEnabled(false);
     ui->hangupBtn->setEnabled(false);
@@ -334,6 +366,7 @@ void MainWindow::hungup(QSharedPointer<Call> call)
             break;
         }
     }
+    call.data()->setActive(false);
     ui->textEdit->setText(tr("Call with %1 (%2) hungup.").arg(call.data()->getCidName(), call.data()->getCidNumber()));
     /* TODO: Will cause problems if 2 calls are received at the same time */
     ui->answerBtn->setEnabled(false);

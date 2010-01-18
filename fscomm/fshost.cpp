@@ -51,17 +51,18 @@ void FSHost::createFolders()
     /* Create directory structure for softphone with default configs */
     QDir conf_dir = QDir::home();
     if (!conf_dir.exists(".fscomm"))
-    {
-        conf_dir.mkpath(".fscomm/conf/accounts");
+        conf_dir.mkpath(".fscomm");
+    if (!conf_dir.exists(".fscomm/recordings"))
+        conf_dir.mkpath(".fscomm/recordings");
+    if (!conf_dir.exists(".fscomm/sounds")) {
         conf_dir.mkpath(".fscomm/sounds");
         QFile::copy(":/sounds/test.wav", QString("%1/.fscomm/sounds/test.wav").arg(QDir::homePath()));
+    }
+    if(!QFile::exists(QString("%1/.fscomm/conf/freeswitch.xml").arg(conf_dir.absolutePath()))) {
+        conf_dir.mkdir(".fscomm/conf");
         QFile rootXML(":/confs/freeswitch.xml");
         QString dest = QString("%1/.fscomm/conf/freeswitch.xml").arg(conf_dir.absolutePath());
         rootXML.copy(dest);
-
-        QFile defaultAccount(":/confs/template.xml");
-        dest = QString("%1/.fscomm/conf/accounts/template.xml").arg(conf_dir.absolutePath());
-        defaultAccount.copy(dest);
     }
 
     /* Set all directories to the home user directory */
@@ -351,11 +352,22 @@ switch_status_t FSHost::sendCmd(const char *cmd, const char *args, QString *res)
     switch_status_t status = SWITCH_STATUS_FALSE;
     switch_stream_handle_t stream = { 0 };
     SWITCH_STANDARD_STREAM(stream);
+    qDebug() << "Sending command: " << cmd << args << endl;
     status = switch_api_execute(cmd, args, NULL, &stream);
     *res = switch_str_nil((char *) stream.data);
     switch_safe_free(stream.data);
 
     return status;
+}
+
+QSharedPointer<Call> FSHost::getCurrentActiveCall()
+{
+    foreach(QSharedPointer<Call> call, _active_calls.values())
+    {
+        if (call.data()->isActive())
+            return call;
+    }
+    return QSharedPointer<Call>();
 }
 
 void FSHost::printEventHeaders(switch_event_t *event)

@@ -41,4 +41,29 @@ Call::Call(int call_id, QString cid_name, QString cid_number, fscomm_call_direct
         _direction(direction),
         _uuid (uuid)
 {
+    _isActive = false;
+}
+
+switch_status_t Call::toggleRecord(bool startRecord)
+{
+    QDir conf_dir = QDir::home();
+    QString result;
+    switch_status_t status;
+
+    if (startRecord)
+    {
+        _recording_filename = QString("%1/.fscomm/recordings/%2_%3.wav").arg(
+                                         conf_dir.absolutePath(),
+                                         QDateTime::currentDateTime().toString("yyyyMMddhhmmss"),
+                                         _cid_number);
+        status = g_FSHost.sendCmd("uuid_record", QString("%1 start %2").arg(_uuid, _recording_filename).toAscii().data(),&result);
+    }
+    else
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stopping call recording on call [%s]\n",
+                          _uuid.toAscii().data());
+        status = g_FSHost.sendCmd("uuid_record", QString("%1 stop %2").arg(_uuid, _recording_filename).toAscii().data(),&result);
+    }
+
+    return status;
 }
