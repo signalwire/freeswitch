@@ -146,7 +146,6 @@ void PrefAccounts::readConfig()
     {
         QString default_gateway = _settings->value(QString("/FreeSWITCH/conf/sofia.conf/profiles/profile/gateways/%1/gateway/attrs/name").arg(_ui->accountsTable->item(0,0)->data(Qt::UserRole).toString())).toString();
         _settings->beginGroup("FreeSWITCH/conf/globals");
-        qDebug() << QString("Fucking gw: %1").arg(default_gateway);
         _settings->setValue("default_gateway", default_gateway);
         _settings->endGroup();
         switch_core_set_variable("default_gateway", default_gateway.toAscii().data());
