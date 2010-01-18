@@ -1574,6 +1574,10 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_time_calibrate_clock() {
+    freeswitchPINVOKE.switch_time_calibrate_clock();
+  }
+
   public static switch_status_t switch_core_timer_next(switch_timer timer) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_timer_next(switch_timer.getCPtr(timer));
     return ret;
@@ -2256,6 +2260,10 @@ public class freeswitch {
 
   public static void switch_console_sort_matches(switch_console_callback_match matches) {
     freeswitchPINVOKE.switch_console_sort_matches(switch_console_callback_match.getCPtr(matches));
+  }
+
+  public static void switch_console_save_history() {
+    freeswitchPINVOKE.switch_console_save_history();
   }
 
   public static int switch_toupper(int c) {
@@ -6702,6 +6710,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_timer_init")]
   public static extern int switch_core_timer_init(HandleRef jarg1, string jarg2, int jarg3, int jarg4, HandleRef jarg5);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_time_calibrate_clock")]
+  public static extern void switch_time_calibrate_clock();
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_timer_next")]
   public static extern int switch_core_timer_next(HandleRef jarg1);
 
@@ -7274,6 +7285,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_console_sort_matches")]
   public static extern void switch_console_sort_matches(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_save_history")]
+  public static extern void switch_console_save_history();
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_toupper")]
   public static extern int switch_toupper(int jarg1);
@@ -20814,7 +20828,10 @@ namespace FreeSWITCH.Native {
   SCF_RESTART = (1 << 4),
   SCF_SHUTDOWN_REQUESTED = (1 << 5),
   SCF_USE_AUTO_NAT = (1 << 6),
-  SCF_EARLY_HANGUP = (1 << 7)
+  SCF_EARLY_HANGUP = (1 << 7),
+  SCF_CALIBRATE_CLOCK = (1 << 8),
+  SCF_USE_COND_TIMING = (1 << 9),
+  SCF_USE_CLOCK_RT = (1 << 10)
 }
 
 }
@@ -26290,7 +26307,10 @@ public enum switch_session_ctl_t {
   SCSC_SEND_SIGHUP,
   SCSC_DEBUG_LEVEL,
   SCSC_FLUSH_DB_HANDLES,
-  SCSC_SHUTDOWN_NOW
+  SCSC_SHUTDOWN_NOW,
+  SCSC_CALIBRATE_CLOCK,
+  SCSC_SAVE_HISTORY,
+  SCSC_CRASH
 }
 
 }

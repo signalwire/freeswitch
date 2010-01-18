@@ -7524,6 +7524,11 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_timer_init(void * jarg1, char * ja
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_time_calibrate_clock() {
+  switch_time_calibrate_clock();
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_timer_next(void * jarg1) {
   int jresult ;
   switch_timer_t *arg1 = (switch_timer_t *) 0 ;
@@ -9988,6 +9993,11 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_console_sort_matches(void * jarg1) {
   
   arg1 = (switch_console_callback_match_t *)jarg1; 
   switch_console_sort_matches(arg1);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_console_save_history() {
+  switch_console_save_history();
 }
 
 
