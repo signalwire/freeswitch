@@ -178,7 +178,101 @@ static switch_status_t do_config(void)
     binding = NULL;
 
     switch_xml_free(xml);
+
+    QSettings settings;
+    if (!settings.allKeys().contains("FreeSWITCH/conf"))
+        setQSettingsDefaults();
+    setGlobals();
+
     return SWITCH_STATUS_SUCCESS;
+}
+
+void setQSettingsDefaults()
+{
+    QSettings settings;
+    settings.beginGroup("FreeSWITCH/conf");
+
+    /* Globals config */
+    /* Sofia config */
+    settings.beginGroup("sofia.conf");
+
+    /* General Settings */
+    settings.beginGroup("global_settings/params");
+    settings.setValue("log-level", 0);
+    settings.setValue("auto-restart", "true");
+    settings.setValue("debug-presence", 0);
+    settings.endGroup();
+
+    /* Profile settings */
+    settings.beginGroup("profiles");
+    settings.beginGroup("profile");
+
+    settings.beginGroup("attrs");
+    settings.setValue("name", "softphone");
+    settings.endGroup();
+
+    settings.beginGroup("settings/params");
+    settings.setValue("user-agent-string", "FreeSWITCH/FSComm");
+    settings.setValue("debug", 0);
+    settings.setValue("sip-trace", "no");
+    settings.setValue("context", "public");
+    settings.setValue("rfc2833-pt", 101);
+    settings.setValue("sip-port", 12345);
+    settings.setValue("dialplan", "XML");
+    settings.setValue("dtmf-duration", 100);
+    settings.setValue("codec-prefs", "CELT@48000h,G7221@32000h,G7221@16000h,G722,PCMU,PCMA,GSM");
+    settings.setValue("use-rtp-timer", "true");
+    settings.setValue("rtp-timer-name", "soft");
+    settings.setValue("rtp-ip", "auto");
+    settings.setValue("sip-ip", "auto");
+    settings.setValue("hold-music", "local_stream://moh");
+    settings.setValue("apply-nat-acl", "rfc1918");
+    settings.setValue("manage-presence", "false");
+    settings.setValue("max-proceeding", 3);
+    settings.setValue("inbound-codec-negotiation", "generous");
+    settings.setValue("nonce-ttl", 60);
+    settings.setValue("auth-calls", "false");
+    settings.setValue("auth-all-packets", "false");
+    settings.setValue("ext-rtp-ip", "stun:stun.freeswitch.org");
+    settings.setValue("ext-sip-ip", "stun:stun.freeswitch.org");
+    settings.setValue("rtp-timeout-sec", 300);
+    settings.setValue("rtp-hold-timeout-sec", 1800);
+    settings.setValue("disable-register", "true");
+    settings.setValue("challenge-realm", "auto_from");
+    settings.endGroup();
+
+    settings.endGroup();
+    settings.endGroup();
+    settings.endGroup();
+
+    /* PortAudio config */
+    settings.beginGroup("portaudio.conf/settings/params");
+    settings.setValue("cid-name", "FSComm");
+    settings.setValue("cid-num", "00000000");
+    settings.setValue("ring-file", "tone_stream://%(2000,4000,440.0,480.0);loops=20");
+    settings.setValue("dialplan", "XML");
+    settings.setValue("ring-interval", 5);
+    settings.setValue("hold-file", "local_stream://moh");
+    settings.setValue("sample-rate", 48000);
+    settings.setValue("codec-ms", 10);
+    settings.setValue("indev", "");
+    settings.setValue("outdev", "");
+    settings.setValue("ringdev", "");
+    settings.endGroup();
+
+    /* Finish configs */
+    settings.endGroup();
+}
+
+void setGlobals()
+{
+    QSettings settings;
+    settings.beginGroup("FreeSWITCH/conf/globals");
+    foreach (QString k, settings.childKeys())
+    {
+        switch_core_set_variable(k.toAscii().data(), settings.value(k).toByteArray().data());
+    }
+    settings.endGroup();
 }
 
 switch_status_t mod_qsettings_load(void)

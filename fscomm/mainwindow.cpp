@@ -300,6 +300,8 @@ void MainWindow::answered(QSharedPointer<Call> call)
             }
         }
     }
+    ui->recoredCallBtn->setEnabled(true);
+    ui->recoredCallBtn->setChecked(false);
     ui->dtmf0Btn->setEnabled(true);
     ui->dtmf1Btn->setEnabled(true);
     ui->dtmf2Btn->setEnabled(true);
@@ -334,6 +336,8 @@ void MainWindow::callFailed(QSharedPointer<Call> call)
                                                                              call.data()->getCause()));
     call.data()->setActive(false);
     /* TODO: Will cause problems if 2 calls are received at the same time */
+    ui->recoredCallBtn->setEnabled(false);
+    ui->recoredCallBtn->setChecked(false);
     ui->answerBtn->setEnabled(false);
     ui->hangupBtn->setEnabled(false);
     ui->dtmf0Btn->setEnabled(false);
@@ -369,6 +373,8 @@ void MainWindow::hungup(QSharedPointer<Call> call)
     call.data()->setActive(false);
     ui->textEdit->setText(tr("Call with %1 (%2) hungup.").arg(call.data()->getCidName(), call.data()->getCidNumber()));
     /* TODO: Will cause problems if 2 calls are received at the same time */
+    ui->recoredCallBtn->setEnabled(false);
+    ui->recoredCallBtn->setChecked(false);
     ui->answerBtn->setEnabled(false);
     ui->hangupBtn->setEnabled(false);
     ui->dtmf0Btn->setEnabled(false);

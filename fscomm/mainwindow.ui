@@ -41,6 +41,9 @@
         </item>
         <item>
          <widget class="QPushButton" name="recoredCallBtn">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>Record</string>
           </property>
@@ -273,7 +276,7 @@
             <bool>false</bool>
            </property>
            <property name="selectionMode">
-            <enum>QAbstractItemView::NoSelection</enum>
+            <enum>QAbstractItemView::SingleSelection</enum>
            </property>
            <property name="selectionBehavior">
             <enum>QAbstractItemView::SelectRows</enum>

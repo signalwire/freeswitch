@@ -20,7 +20,6 @@ private slots:
     void addAccountBtnClicked();
     void editAccountBtnClicked();
     void remAccountBtnClicked();
-    void applyNewGw(QString);
 
 private:
     Ui::PrefDialog *_ui;

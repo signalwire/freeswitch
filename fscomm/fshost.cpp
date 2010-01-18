@@ -237,6 +237,7 @@ switch_status_t FSHost::processBlegEvent(switch_event_t * event, QString buuid)
         {
         case SWITCH_EVENT_CHANNEL_ANSWER:
             {
+                /* When do we get here? */
                 emit answered(call);
                 break;
             }
@@ -254,7 +255,11 @@ switch_status_t FSHost::processBlegEvent(switch_event_t * event, QString buuid)
                     call.data()->setState(FSCOMM_CALL_STATE_RINGING);
                     emit ringing(call);
                 }
-                //printEventHeaders(event);
+                else if (QString(switch_event_get_header_nil(event, "Answer-State")) == "answered")
+                {
+                    call.data()->setState(FSCOMM_CALL_STATE_ANSWERED);
+                    emit answered(call);
+                }
                 break;
             }
 

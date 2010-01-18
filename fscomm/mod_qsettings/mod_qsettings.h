@@ -34,7 +34,7 @@
 #include <QSettings>
 #include <switch.h>
 
-switch_status_t mod_qsettings_load(void);
+class QXmlStreamWriter;
 
 class XMLBinding
 {
@@ -47,5 +47,9 @@ private:
     QString _binding;
     QSettings* _settings;
 };
+
+switch_status_t mod_qsettings_load(void);
+void setQSettingsDefaults(void);
+void setGlobals(void);
 
 #endif // MOD_QSETTINGS_H

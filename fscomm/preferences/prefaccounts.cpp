@@ -25,7 +25,6 @@ void PrefAccounts::addAccountBtnClicked()
         }
         _accDlg = new AccountDialog(uuid);
         connect(_accDlg, SIGNAL(gwAdded(QString)), this, SLOT(readConfig()));
-        connect(_accDlg, SIGNAL(gwAdded(QString)), this, SLOT(applyNewGw(QString)));
     }
     else
     {
@@ -42,26 +41,6 @@ void PrefAccounts::addAccountBtnClicked()
     _accDlg->show();
     _accDlg->raise();
     _accDlg->activateWindow();
-}
-
-void PrefAccounts::applyNewGw(QString accId)
-{
-    QString res;
-    if (g_FSHost.sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
-    {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rescan the softphone profile.\n");
-        return;
-    }
-
-    if (_ui->accountsTable->rowCount() == 1)
-    {
-        _settings->beginGroup("FreeSWITCH/conf/globals");
-        _settings->setValue("default_gateway",_settings->value("/attrs/name"));
-        _settings->endGroup();
-        _settings->beginGroup(QString("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways/%1/gateway").arg(accId));
-        switch_core_set_variable("default_gateway",_settings->value("/attrs/name").toByteArray().data());
-        _settings->endGroup();
-    }
 }
 
 void PrefAccounts::editAccountBtnClicked()
@@ -113,6 +92,7 @@ void PrefAccounts::remAccountBtnClicked()
     if (offset > 0)
     {
         QString res;
+        _settings->sync();
         if (g_FSHost.sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
         {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rescan the softphone profile.\n");
@@ -153,4 +133,23 @@ void PrefAccounts::readConfig()
     }
 
     _settings->endGroup();
+
+    QString res;
+    _settings->sync();
+    if (g_FSHost.sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rescan the softphone profile.\n");
+        return;
+    }
+
+    if (_ui->accountsTable->rowCount() == 1)
+    {
+        QString default_gateway = _settings->value(QString("/FreeSWITCH/conf/sofia.conf/profiles/profile/gateways/%1/gateway/attrs/name").arg(_ui->accountsTable->item(0,0)->data(Qt::UserRole).toString())).toString();
+        _settings->beginGroup("FreeSWITCH/conf/globals");
+        qDebug() << QString("Fucking gw: %1").arg(default_gateway);
+        _settings->setValue("default_gateway", default_gateway);
+        _settings->endGroup();
+        switch_core_set_variable("default_gateway", default_gateway.toAscii().data());
+    }
+
 }
