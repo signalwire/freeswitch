@@ -1709,7 +1709,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	oglobals.bridge_early_media = -1;
 
 	if (session) {
-		const char *to_var;
+		const char *to_var, bypass_media = NULL, proxy_media = NULL;
 		caller_channel = switch_core_session_get_channel(session);
 		switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 		oglobals.session = session;
@@ -1719,27 +1719,39 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			timelimit_sec = atoi(to_var);
 		}
 
-		if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_PROXY_MEDIA_VARIABLE))) {
+		proxy_media = switch_channel_get_variable(caller_channel, SWITCH_PROXY_MEDIA_VARIABLE);
+		bypass_media = switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE);
+
+		if (switch_true(proxy_media)) {
 			switch_channel_set_flag(caller_channel, CF_PROXY_MEDIA);
+		} else {
+			switch_channel_clear_flag(caller_channel, CF_PROXY_MEDIA);
+		}
+		
+		if (switch_true(bypass_media)) {
+			switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
+		} else {
+			switch_channel_clear_flag(caller_channel, CF_PROXY_MODE);
 		}
 
-		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)
-			|| (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE)))) {
-			if (!switch_channel_test_flag(caller_channel, CF_ANSWERED)
-				&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
-				switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
-			} else {
-				if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
-					switch_channel_set_variable(caller_channel, SWITCH_B_SDP_VARIABLE, NULL);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
-									  "Channel is already up, delaying proxy mode 'till both legs are answered.\n");
-					switch_channel_set_variable(caller_channel, "bypass_media_after_bridge", "true");
-					switch_channel_set_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE, NULL);
-					switch_channel_clear_flag(caller_channel, CF_PROXY_MODE);
-				}
-			}
+		switch_channel_set_variable(caller_channel, SWITCH_B_SDP_VARIABLE, NULL);
+		
+		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) && switch_channel_media_ready(caller_channel)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+							  "Channel is already up, delaying proxy mode 'till both legs are answered.\n");
+			switch_channel_set_variable(caller_channel, "bypass_media_after_bridge", "true");
+			switch_channel_set_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE, NULL);
+			switch_channel_clear_flag(caller_channel, CF_PROXY_MODE);
 		}
+
+
+		if (switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) && switch_channel_media_ready(caller_channel)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+							  "Channel is already up, proxy media cannot be used anymore\n");
+			switch_channel_set_variable(caller_channel, SWITCH_PROXY_MEDIA_VARIABLE, NULL);
+			switch_channel_clear_flag(caller_channel, CF_PROXY_MEDIA);
+		}
+		
 	}
 
 	if (timelimit_sec <= 0) {
