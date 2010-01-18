@@ -40,6 +40,7 @@
 
 #define MY_EVENT_RINGING "portaudio::ringing"
 #define MY_EVENT_MAKE_CALL "portaudio::makecall"
+#define MY_EVENT_ERROR_AUDIO_DEV "portaudio::audio_dev_error"
 #define SWITCH_PA_CALL_ID_VARIABLE "pa_call_id"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load);
@@ -827,6 +828,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 		return SWITCH_STATUS_GENERR;
 	}
 
+	if (switch_event_reserve_subclass(MY_EVENT_MAKE_CALL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_ERROR_AUDIO_DEV) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -1002,6 +1013,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown)
 	switch_core_hash_destroy(&globals.call_hash);
 
 	switch_event_free_subclass(MY_EVENT_RINGING);
+	switch_event_free_subclass(MY_EVENT_MAKE_CALL);
+	switch_event_free_subclass(MY_EVENT_ERROR_AUDIO_DEV);
 	
 	switch_safe_free(globals.dialplan);
 	switch_safe_free(globals.context);
@@ -1299,6 +1312,7 @@ static switch_status_t engage_device(int restart)
 	PaError err;
 	int sample_rate = globals.sample_rate;
 	int codec_ms = globals.codec_ms;
+	switch_event_t *event;
 
 	switch_mutex_lock(globals.device_lock);
 	while (globals.deactivate_timer > switch_epoch_time_now(NULL)) {
@@ -1422,6 +1436,10 @@ static switch_status_t engage_device(int restart)
 		switch_core_timer_destroy(&globals.read_timer);
 		switch_core_timer_destroy(&globals.write_timer);
 		switch_core_timer_destroy(&globals.hold_timer);
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_ERROR_AUDIO_DEV) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Reason", Pa_GetErrorText(err));
+			switch_event_fire(&event);
+		}
 		return SWITCH_STATUS_FALSE;
 	}
 	
