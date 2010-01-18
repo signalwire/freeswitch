@@ -590,19 +590,18 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		tech_pvt->cng_frame.datalen = tech_pvt->read_codec.implementation->decoded_bytes_per_packet;
 
 		memset(tech_pvt->cng_frame.data, 0, tech_pvt->cng_frame.datalen);
-		memset(&data, 0, sizeof(data));
+		memset(&data, 0, tech_pvt->read_codec.implementation->decoded_bytes_per_packet);
 
 		if (strcasecmp(tech_pvt->read_codec.implementation->iananame, "L16")) {
 			encode_status = switch_core_codec_encode(&tech_pvt->read_codec,
-											  NULL,
-											  data,
-											  sizeof(data),
-											  tech_pvt->read_codec.implementation->actual_samples_per_second,
-
-											  tech_pvt->cng_frame.data,
-											  &tech_pvt->cng_frame.datalen,											  
-											  &rate,
-											  &flag);
+													 NULL,
+													 data,
+													 tech_pvt->read_codec.implementation->decoded_bytes_per_packet,
+													 tech_pvt->read_codec.implementation->actual_samples_per_second,
+													 tech_pvt->cng_frame.data,
+													 &tech_pvt->cng_frame.datalen,											  
+													 &rate,
+													 &flag);
 			if (encode_status != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
@@ -612,7 +611,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		//switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
 		switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
 	}
-
+	
 
 	if (*frame) {
 		status = SWITCH_STATUS_SUCCESS;
