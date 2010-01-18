@@ -1427,13 +1427,11 @@ void sofia_reg_handle_sip_r_register(int status,
 		if (sofia_private && sofia_private->gateway) {
 			nua_handle_destroy(sofia_private->gateway->nh);
 			sofia_private->gateway->nh = NULL;
-			sofia_private->gateway->state = REG_STATE_UNREGED;
 		} else {
 			nua_handle_destroy(nh);
 		}
-		return;
 	}
-
+	
 	if (sofia_private && sofia_private->gateway) {
 		reg_state_t ostate = sofia_private->gateway->state;
 		switch (status) {
