@@ -188,7 +188,9 @@ switch_status_t loadRuntime()
 
 #ifndef WIN32 	
 	// So linux can find the .so
-	mono_config_parse_memory("<configuration><dllmap dll=\"mod_managed\" target=\"mod_managed.so\"/></configuration>");
+	char xmlConfig[300];
+	switch_snprintf(xmlConfig, 300, "<configuration><dllmap dll=\"mod_managed\" target=\"%s%smod_managed.so\"/></configuration>", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR);
+	mono_config_parse_memory(xmlConfig);
 #endif
 
 	switch_snprintf(filename, 256, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_MANAGED_DLL);
