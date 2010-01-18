@@ -1709,7 +1709,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	oglobals.bridge_early_media = -1;
 
 	if (session) {
-		const char *to_var, bypass_media = NULL, proxy_media = NULL;
+		const char *to_var, *bypass_media = NULL, *proxy_media = NULL;
 		caller_channel = switch_core_session_get_channel(session);
 		switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 		oglobals.session = session;
