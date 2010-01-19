@@ -14,6 +14,8 @@ AccountDialog::AccountDialog(QString accId, QWidget *parent) :
     connect(this, SIGNAL(accepted()), this, SLOT(writeConfig()));
     connect(ui->sofiaExtraParamAddBtn, SIGNAL(clicked()), this, SLOT(addExtraParam()));
     connect(ui->sofiaExtraParamRemBtn, SIGNAL(clicked()), this, SLOT(remExtraParam()));
+
+    ui->sofiaExtraParamTable->horizontalHeader()->setStretchLastSection(true);
 }
 
 AccountDialog::~AccountDialog()
@@ -55,6 +57,9 @@ void AccountDialog::addExtraParam()
     ui->sofiaExtraParamTable->setRowCount(ui->sofiaExtraParamTable->rowCount()+1);
     ui->sofiaExtraParamTable->setItem(ui->sofiaExtraParamTable->rowCount()-1,0,paramNameItem);
     ui->sofiaExtraParamTable->setItem(ui->sofiaExtraParamTable->rowCount()-1,1,paramValItem);
+    ui->sofiaExtraParamTable->resizeColumnsToContents();
+    ui->sofiaExtraParamTable->resizeRowsToContents();
+    ui->sofiaExtraParamTable->horizontalHeader()->setStretchLastSection(true);
 }
 
 void AccountDialog::readConfig()
@@ -95,6 +100,10 @@ void AccountDialog::readConfig()
 
     _settings->endGroup();
     _settings->endGroup();
+
+    ui->sofiaExtraParamTable->resizeColumnsToContents();
+    ui->sofiaExtraParamTable->resizeRowsToContents();
+    ui->sofiaExtraParamTable->horizontalHeader()->setStretchLastSection(true);
 }
 
 void AccountDialog::writeConfig()

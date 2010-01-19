@@ -366,7 +366,7 @@ void FSHost::generalEventHandler(switch_event_t *event)
             }
             else
             {
-                //qDebug() << QString("We got a not treated custom event: %1\n").arg(!zstr(event->subclass_name) ? event->subclass_name : "NULL"));
+                printEventHeaders(event);
             }
             break;
         }

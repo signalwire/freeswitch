@@ -98,6 +98,9 @@ MainWindow::MainWindow(QWidget *parent) :
     /* Set the context menus */
     ui->tableAccounts->addAction(ui->actionSetDefaultAccount);
 
+    /* Set other properties */
+    ui->tableAccounts->horizontalHeader()->setStretchLastSection(true);
+
 }
 
 MainWindow::~MainWindow()

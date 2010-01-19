@@ -180,8 +180,13 @@ static switch_status_t do_config(void)
     switch_xml_free(xml);
 
     QSettings settings;
-    if (!settings.allKeys().contains("FreeSWITCH/conf"))
+    settings.beginGroup("FreeSWITCH/conf");
+    if (settings.childGroups().isEmpty())
+    {
+        qDebug() << "We are settings default.";
         setQSettingsDefaults();
+    }
+    settings.endGroup();
     setGlobals();
 
     return SWITCH_STATUS_SUCCESS;

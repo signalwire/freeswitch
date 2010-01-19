@@ -11,6 +11,8 @@ PrefAccounts::PrefAccounts(Ui::PrefDialog *ui) :
     connect(_ui->sofiaGwAddBtn, SIGNAL(clicked()), this, SLOT(addAccountBtnClicked()));
     connect(_ui->sofiaGwRemBtn, SIGNAL(clicked()), this, SLOT(remAccountBtnClicked()));
     connect(_ui->sofiaGwEditBtn, SIGNAL(clicked()), this, SLOT(editAccountBtnClicked()));
+
+    _ui->accountsTable->horizontalHeader()->setStretchLastSection(true);
 }
 
 void PrefAccounts::addAccountBtnClicked()
@@ -131,6 +133,9 @@ void PrefAccounts::readConfig()
         _ui->accountsTable->setItem(_ui->accountsTable->rowCount()-1, 0, item0);
         _ui->accountsTable->setItem(_ui->accountsTable->rowCount()-1, 1, item1);
     }
+    _ui->accountsTable->resizeRowsToContents();
+    _ui->accountsTable->resizeColumnsToContents();
+    _ui->accountsTable->horizontalHeader()->setStretchLastSection(true);
 
     _settings->endGroup();
 
