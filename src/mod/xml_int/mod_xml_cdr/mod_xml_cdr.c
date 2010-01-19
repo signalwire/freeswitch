@@ -224,7 +224,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		logdir = globals.log_dir;
 	}
 
-	if (!zstr(logdir)) {
+	if (!zstr(logdir) && !globals.url_count) {
 		path = switch_mprintf("%s%s%s%s.cdr.xml", logdir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session));
 		switch_thread_rwlock_unlock(globals.log_path_lock);
 		if (path) {
