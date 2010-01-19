@@ -429,6 +429,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/public/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/directory/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/directory/default/*
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/ivr_menus/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/internal/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/external/*.xml
