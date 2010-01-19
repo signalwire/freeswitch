@@ -2031,6 +2031,82 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	return NULL;
 }
 
+
+static void member_add_file_data(conference_member_t *member, int16_t *data, switch_size_t file_data_len)
+{
+	switch_size_t file_sample_len = file_data_len / 2;
+	int16_t file_frame[SWITCH_RECOMMENDED_BUFFER_SIZE/2] = {0};
+
+	if (!member->fnode) {
+		return;
+	}
+
+	/* if we are done, clean it up */
+	if (member->fnode->done) {
+		conference_file_node_t *fnode;
+		switch_memory_pool_t *pool;
+
+		if (member->fnode->type != NODE_TYPE_SPEECH) {
+			switch_core_file_close(&member->fnode->fh);
+		}
+
+		fnode = member->fnode;
+		member->fnode = member->fnode->next;
+
+		pool = fnode->pool;
+		fnode = NULL;
+		switch_core_destroy_memory_pool(&pool);
+	} else {
+		/* skip this frame until leadin time has expired */
+		if (member->fnode->leadin) {
+			member->fnode->leadin--;
+		} else {
+			if (member->fnode->type == NODE_TYPE_SPEECH) {
+				switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
+						
+				if (switch_core_speech_read_tts(member->fnode->sh, file_frame, &file_data_len, &flags) == SWITCH_STATUS_SUCCESS) {
+					file_sample_len = file_data_len / 2;
+				} else {
+					file_sample_len = file_data_len = 0;
+				}
+			} else if (member->fnode->type == NODE_TYPE_FILE) {
+				switch_core_file_read(&member->fnode->fh, file_frame, &file_sample_len);
+				file_data_len = file_sample_len * 2;
+			}
+
+			if (file_sample_len <= 0) {
+				switch_event_t *event;
+				member->fnode->done++;
+				
+				if (test_eflag(member->conference, EFLAG_PLAY_FILE) &&
+					switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+					conference_add_event_data(member->conference, event);
+					conference_add_event_member_data(member, event);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member-done");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", member->fnode->file);
+					switch_event_fire(&event);
+				}
+			} else {	/* there is file node data to mix into the frame */
+				int32_t i, sample;
+				
+				/* Check for output volume adjustments */
+				if (member->volume_out_level) {
+					switch_change_sln_volume(file_frame, file_sample_len, member->volume_out_level);
+				}
+				
+				for(i = 0; i < file_sample_len; i++) {
+					sample = data[i] + file_frame[i];
+					switch_normalize_to_16bit(sample);
+					data[i] = sample;
+				}
+				
+			}
+		}
+	}
+}
+
+
+
 /* launch an input thread for the call leg */
 static void launch_conference_loop_input(conference_member_t *member, switch_memory_pool_t *pool)
 {
@@ -2196,14 +2272,12 @@ static void conference_loop_output(conference_member_t *member)
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(member, MFLAG_ITHREAD)
 		   && switch_channel_ready(channel)) {
 		char dtmf[128] = "";
-		uint8_t file_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 		char *digit;
 		switch_event_t *event;
 		caller_control_action_t *caller_action = NULL;
 		int use_timer = 0;
-		switch_size_t file_sample_len = csamples;
-		switch_size_t file_data_len = file_sample_len * 2;
-
+		switch_buffer_t *use_buffer = NULL;
+		uint32_t mux_used = 0;
 
 		switch_mutex_lock(member->write_mutex);
 
@@ -2287,121 +2361,67 @@ static void conference_loop_output(conference_member_t *member)
 			caller_action = NULL;
 		}
 
-		/* handle file and TTS frames */
-		if (member->fnode) {
-			/* if we are done, clean it up */
-			if (member->fnode->done) {
-				conference_file_node_t *fnode;
-				switch_memory_pool_t *pool;
+		
+		use_buffer = NULL;
+		mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
 
-				if (member->fnode->type != NODE_TYPE_SPEECH) {
-					switch_core_file_close(&member->fnode->fh);
-				}
-
-				fnode = member->fnode;
-				member->fnode = member->fnode->next;
-
-				pool = fnode->pool;
-				fnode = NULL;
-				switch_core_destroy_memory_pool(&pool);
-			} else {
-				/* skip this frame until leadin time has expired */
-				if (member->fnode->leadin) {
-					member->fnode->leadin--;
-				} else {		/* send the node frame instead of the conference frame to the call leg */
-					if (member->fnode->type == NODE_TYPE_SPEECH) {
-						switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
-						
-						if (switch_core_speech_read_tts(member->fnode->sh, file_frame, &file_data_len, &flags) == SWITCH_STATUS_SUCCESS) {
-							file_sample_len = file_data_len / 2;
-						} else {
-							file_sample_len = file_data_len = 0;
-						}
-					} else if (member->fnode->type == NODE_TYPE_FILE) {
-						switch_core_file_read(&member->fnode->fh, file_frame, &file_sample_len);
-						file_data_len = file_sample_len * 2;
-					}
-
-					if (file_sample_len <= 0) {
-						member->fnode->done++;
-
-						if (test_eflag(member->conference, EFLAG_PLAY_FILE) &&
-							switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-							conference_add_event_data(member->conference, event);
-							conference_add_event_member_data(member, event);
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member-done");
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", member->fnode->file);
-							switch_event_fire(&event);
-						}
-					} else {	/* there is file node data to deliver */
-						write_frame.data = file_frame;
-						write_frame.datalen = (uint32_t) file_data_len;
-						write_frame.samples = (uint32_t) file_sample_len;
-						/* Check for output volume adjustments */
-						if (member->volume_out_level) {
-							switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
-						}
-						write_frame.timestamp = timer.samplecount;
-						switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
-						switch_core_timer_next(&timer);
-
-
-						/* forget the conference data we played file node data instead */
-						switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
-					}
-				}
-			}
-		} else {
-			switch_buffer_t *use_buffer = NULL;
-			uint32_t mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
-
-			if (mux_used) {
-				if (mux_used < bytes) {
-					if (++low_count >= 5) {
-						/* partial frame sitting around this long is useless and builds delay */
-						switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
-					}
-				} else if (mux_used > flush_len) {
-					/* getting behind, clear the buffer */
+		if (mux_used) {
+			if (mux_used < bytes) {
+				if (++low_count >= 5) {
+					/* partial frame sitting around this long is useless and builds delay */
 					switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 				}
+			} else if (mux_used > flush_len) {
+				/* getting behind, clear the buffer */
+				switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 			}
+		}
+			
 
+		use_timer = 1;
+		
+		if (mux_used) {
+			/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
+			switch_mutex_lock(member->audio_out_mutex);
+			write_frame.data = data;
+			use_buffer = member->mux_buffer;
+			low_count = 0;
+			if ((write_frame.datalen = (uint32_t) switch_buffer_read(use_buffer, write_frame.data, bytes))) {
+				if (write_frame.datalen && switch_test_flag(member, MFLAG_CAN_HEAR)) {
+					write_frame.samples = write_frame.datalen / 2;
 
-			use_timer = 1;
-
-			if (mux_used) {
-				/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
-				switch_mutex_lock(member->audio_out_mutex);
-				write_frame.data = data;
-				use_buffer = member->mux_buffer;
-				low_count = 0;
-				if ((write_frame.datalen = (uint32_t) switch_buffer_read(use_buffer, write_frame.data, bytes))) {
-					if (write_frame.datalen && switch_test_flag(member, MFLAG_CAN_HEAR)) {
-						write_frame.samples = write_frame.datalen / 2;
-
-						/* Check for output volume adjustments */
-						if (member->volume_out_level) {
-							switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
-						}
-						write_frame.timestamp = timer.samplecount;
-						switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
+					/* Check for output volume adjustments */
+					if (member->volume_out_level) {
+						switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
 					}
-				}
-
-				switch_mutex_unlock(member->audio_out_mutex);
-			} else if (!switch_test_flag(member->conference, CFLAG_WASTE_BANDWIDTH)) {
-				if (switch_test_flag(member, MFLAG_WASTE_BANDWIDTH)) {
-					if (member->conference->comfort_noise_level) {
-						switch_generate_sln_silence(write_frame.data, samples, member->conference->comfort_noise_level);
-					} else {
-						memset(write_frame.data, 255, bytes);
-					}
-					write_frame.datalen = bytes;
-					write_frame.samples = samples;
 					write_frame.timestamp = timer.samplecount;
+					if (member->fnode) {
+						member_add_file_data(member, write_frame.data, write_frame.datalen);
+					}
 					switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 				}
+			}
+
+			switch_mutex_unlock(member->audio_out_mutex);
+		} else if (member->fnode) {
+			write_frame.datalen = bytes;
+			write_frame.samples = samples;
+			memset(write_frame.data, 255, write_frame.datalen);
+			member_add_file_data(member, write_frame.data, write_frame.datalen);
+			switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
+		} else if (!switch_test_flag(member->conference, CFLAG_WASTE_BANDWIDTH)) {
+			if (switch_test_flag(member, MFLAG_WASTE_BANDWIDTH)) {
+				if (member->conference->comfort_noise_level) {
+						switch_generate_sln_silence(write_frame.data, samples, member->conference->comfort_noise_level);
+				} else {
+					memset(write_frame.data, 255, bytes);
+				}
+
+				write_frame.datalen = bytes;
+				write_frame.samples = samples;
+				write_frame.timestamp = timer.samplecount;
+				
+				switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 		}
 
