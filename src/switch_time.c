@@ -181,7 +181,7 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 {
 	int x;
 	switch_interval_time_t avg, val = 1000, want = 1000;
-	int over = 0, under = 0, good = 0, step = 50, diff = 0;
+	int over = 0, under = 0, good = 0, step = 50, diff = 0, retry = 0;
 
 #ifdef HAVE_CLOCK_GETRES
 	struct timespec ts;
@@ -196,6 +196,10 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 	}
 #endif
 
+ top:
+	val = 1000;
+	step = 50;
+	over = under = good = 0;
 	OFFSET = 0;
 	
 	for (x = 0; x < 100; x++) {
@@ -221,11 +225,19 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 		} else if (avg > want) {
 			if (under) {calc_step();}
 			under = good = 0;
+			if ((val - step) < 0) {
+				if (++retry > 2) break;
+				goto top;
+			}
 			val -= step;
 			over++;
 		} else if (avg < want) {
 			if (over) {calc_step();}
 			over = good = 0;
+			if ((val - step) < 0) {
+				if (++retry > 2) break;
+				goto top;
+			}
 			val += step;
 			under++;
 		}
