@@ -55,7 +55,9 @@
   <!-- phrases section (under development still) -->
   <section name="phrases" description="Speech Phrase Management">
     <macros>
+      <X-PRE-PROCESS cmd="include" data="lang/de/*.xml"/>
       <X-PRE-PROCESS cmd="include" data="lang/en/*.xml"/>
+      <X-PRE-PROCESS cmd="include" data="lang/fr/*.xml"/>
       <X-PRE-PROCESS cmd="include" data="lang/ru/*.xml"/>
     </macros>
   </section>
