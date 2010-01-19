@@ -368,6 +368,20 @@ static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 			} else {
 				wp_globals.flash_ms = num;
 			}
+		} else if (!strcasecmp(var, "ring_on_ms")) {
+			num = atoi(val);
+			if (num < 500 || num > 5000) {
+				zap_log(ZAP_LOG_WARNING, "invalid ring_on_ms at line %d (valid range 500 to 5000)\n", lineno);
+			} else {
+				wp_globals.ring_on_ms = num;
+			}
+		} else if (!strcasecmp(var, "ring_off_ms")) {
+			num = atoi(val);
+			if (num < 500 || num > 5000) {
+				zap_log(ZAP_LOG_WARNING, "invalid ring_off_ms at line %d (valid range 500 to 5000)\n", lineno);
+			} else {
+				wp_globals.ring_off_ms = num;
+			}
 		}
 	}
 
