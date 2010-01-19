@@ -154,6 +154,11 @@ static void extract_vars(sip_t const *sip, switch_core_session_t *session)
 		if (sip->sip_from && sip->sip_from->a_tag) {
 			switch_channel_set_variable(channel, "sip_from_tag", sip->sip_from->a_tag);
 		}
+		if (sip->sip_cseq && sip->sip_cseq->cs_seq) {
+			char sip_cseq[40] = "";
+			switch_snprintf(sip_cseq, sizeof(sip_cseq), "%d", sip->sip_cseq->cs_seq);
+			switch_channel_set_variable(channel, "sip_cseq", sip_cseq);
+		}
 	}
 }
 
@@ -726,6 +731,12 @@ void sofia_event_callback(nua_event_t event,
 				
 				if (sip->sip_from && sip->sip_from->a_tag) {
 					switch_channel_set_variable(channel, "sip_from_tag", sip->sip_from->a_tag);
+				}
+
+				if (sip->sip_cseq && sip->sip_cseq->cs_seq) {
+					char sip_cseq[40] = "";
+					switch_snprintf(sip_cseq, sizeof(sip_cseq), "%d", sip->sip_cseq->cs_seq);
+					switch_channel_set_variable(channel, "sip_cseq", sip_cseq);
 				}
 			}
 		}
