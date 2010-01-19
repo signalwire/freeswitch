@@ -1887,11 +1887,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (oglobals.session) {
 		switch_event_header_t *hi;
 		const char *cdr_total_var;
+		const char *cdr_var;
 
-		if ((cdr_total_var = switch_channel_get_variable(caller_channel, "failed_xml_cdr_total"))) {
-			int tmp = atoi(cdr_total_var);
-			if (tmp > 0) {
-				cdr_total = tmp;
+		if (cdr_var = switch_channel_get_variable(caller_channel, "failed_xml_cdr_prefix")) {
+			char buf[128] = "";
+			switch_snprintf(buf, sizeof(buf), "%s_total", cdr_var);
+			if ((cdr_total_var = switch_channel_get_variable(caller_channel, buf))) {
+				int tmp = atoi(cdr_total_var);
+				if (tmp > 0) {
+					cdr_total = tmp;
+				}
 			}
 		}
 		
