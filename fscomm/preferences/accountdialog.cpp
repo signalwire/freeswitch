@@ -81,6 +81,7 @@ void AccountDialog::readConfig()
 
     _settings->beginGroup("gateway/customParams");
     int row = 0;
+    ui->sofiaExtraParamTable->clearContents();
     foreach(QString k, _settings->childKeys())
     {
         row++;
