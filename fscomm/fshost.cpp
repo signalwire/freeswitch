@@ -43,6 +43,7 @@ FSHost::FSHost(QObject *parent) :
     switch_core_set_globals();
 
     qRegisterMetaType<QSharedPointer<Call> >("QSharedPointer<Call>");
+    qRegisterMetaType<QSharedPointer<Account> >("QSharedPointer<Account>");
 
 }
 
@@ -322,24 +323,46 @@ void FSHost::generalEventHandler(switch_event_t *event)
             {
                 QString state = switch_event_get_header_nil(event, "State");
                 QString gw = switch_event_get_header_nil(event, "Gateway");
-                if (state == "TRYING")
-                    emit gwStateChange(gw, FSCOMM_GW_STATE_TRYING);
-                else if (state == "REGISTER")
-                    emit gwStateChange(gw, FSCOMM_GW_STATE_REGISTER);
-                else if (state == "REGED")
-                    emit gwStateChange(gw, FSCOMM_GW_STATE_REGED);
-                else if (state == "UNREGED")
-                    emit gwStateChange(gw, FSCOMM_GW_STATE_UNREGED);
-                else if (state == "UNREGISTER")
-                    emit gwStateChange(gw, FSCOMM_GW_STATE_UNREGISTER);
-                else if (state =="FAILED")
-                    emit gwStateChange(gw, FSCOMM_GW_STATE_FAILED);
-                else if (state == "FAIL_WAIT")
-                    emit gwStateChange(gw, FSCOMM_GW_STATE_FAIL_WAIT);
-                else if (state == "EXPIRED")
-                    emit gwStateChange(gw, FSCOMM_GW_STATE_EXPIRED);
-                else if (state == "NOREG")
-                    emit gwStateChange(gw, FSCOMM_GW_STATE_NOREG);
+                QSharedPointer<Account> acc;
+                if (!_accounts.contains(gw))
+                {
+                    Account * accPtr = new Account();
+                    accPtr->setName(gw);
+                    acc = QSharedPointer<Account>(accPtr);
+                    _accounts.insert(gw, acc);
+                    emit newAccount(acc);
+                }
+                else
+                    acc = _accounts.value(gw);
+
+                if (state == "TRYING") {
+                    acc.data()->setState(FSCOMM_GW_STATE_TRYING);
+                    emit accountStateChange(acc);
+                } else if (state == "REGISTER") {
+                    acc.data()->setState(FSCOMM_GW_STATE_REGISTER);
+                    emit accountStateChange(acc);
+                } else if (state == "REGED") {
+                    acc.data()->setState(FSCOMM_GW_STATE_REGED);
+                    emit accountStateChange(acc);
+                } else if (state == "UNREGED") {
+                    acc.data()->setState(FSCOMM_GW_STATE_UNREGED);
+                    emit accountStateChange(acc);
+                } else if (state == "UNREGISTER") {
+                    acc.data()->setState(FSCOMM_GW_STATE_UNREGISTER);
+                    emit accountStateChange(acc);
+                } else if (state =="FAILED") {
+                    acc.data()->setState(FSCOMM_GW_STATE_FAILED);
+                    emit accountStateChange(acc);
+                } else if (state == "FAIL_WAIT") {
+                    acc.data()->setState(FSCOMM_GW_STATE_FAIL_WAIT);
+                    emit accountStateChange(acc);
+                } else if (state == "EXPIRED") {
+                    acc.data()->setState(FSCOMM_GW_STATE_EXPIRED);
+                    emit accountStateChange(acc);
+                } else if (state == "NOREG") {
+                    acc.data()->setState(FSCOMM_GW_STATE_NOREG);
+                    emit accountStateChange(acc);
+                }
             }
             else
             {

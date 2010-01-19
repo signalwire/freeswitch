@@ -30,7 +30,8 @@ SOURCES += main.cpp \
     preferences/prefportaudio.cpp \
     preferences/prefsofia.cpp \
     preferences/accountdialog.cpp \
-    preferences/prefaccounts.cpp
+    preferences/prefaccounts.cpp \
+    account.cpp
 HEADERS += mainwindow.h \
     fshost.h \
     call.h \
@@ -39,7 +40,8 @@ HEADERS += mainwindow.h \
     preferences/prefportaudio.h \
     preferences/prefsofia.h \
     preferences/accountdialog.h \
-    preferences/prefaccounts.h
+    preferences/prefaccounts.h \
+    account.h
 FORMS += mainwindow.ui \
     preferences/prefdialog.ui \
     preferences/accountdialog.ui

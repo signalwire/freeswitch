@@ -34,29 +34,7 @@
 #include <QSharedPointer>
 #include <switch.h>
 #include "call.h"
-
-#define FSCOMM_GW_STATE_TRYING 0
-#define FSCOMM_GW_STATE_REGISTER 1
-#define FSCOMM_GW_STATE_REGED 2
-#define FSCOMM_GW_STATE_UNREGED 3
-#define FSCOMM_GW_STATE_UNREGISTER 4
-#define FSCOMM_GW_STATE_FAILED 5
-#define FSCOMM_GW_STATE_FAIL_WAIT 6
-#define FSCOMM_GW_STATE_EXPIRED 7
-#define FSCOMM_GW_STATE_NOREG 8
-
-
-static const char *fscomm_gw_state_names[] = {
-    "TRYING",
-    "REGISTER",
-    "REGED",
-    "UNREGED",
-    "UNREGISTER",
-    "FAILED",
-    "FAIL_WAIT",
-    "EXPIRED",
-    "NOREG"
-};
+#include "account.h"
 
 class FSHost : public QThread
 {
@@ -67,7 +45,7 @@ public:
     void generalEventHandler(switch_event_t *event);
     QSharedPointer<Call> getCallByUUID(QString uuid) { return _active_calls.value(uuid); }
     QSharedPointer<Call> getCurrentActiveCall();
-    QString getGwStateName(int id) { return fscomm_gw_state_names[id]; }
+    QList<QSharedPointer<Account> > getAccounts() { return _accounts.values(); }
 
 protected:
     void run(void);
@@ -80,7 +58,8 @@ signals:
     void newOutgoingCall(QSharedPointer<Call>);
     void callFailed(QSharedPointer<Call>);
     void hungup(QSharedPointer<Call>);
-    void gwStateChange(QString, int);
+    void accountStateChange(QSharedPointer<Account>);
+    void newAccount(QSharedPointer<Account>);
 
 private:
     switch_status_t processBlegEvent(switch_event_t *, QString);
@@ -88,6 +67,7 @@ private:
     void createFolders();
     void printEventHeaders(switch_event_t *event);
     QHash<QString, QSharedPointer<Call> > _active_calls;
+    QHash<QString, QSharedPointer<Account> > _accounts;
     QHash<QString, QString> _bleg_uuids;
 };
 

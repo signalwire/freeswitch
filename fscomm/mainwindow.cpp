@@ -81,7 +81,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&g_FSHost, SIGNAL(hungup(QSharedPointer<Call>)), this, SLOT(hungup(QSharedPointer<Call>)));
     connect(&g_FSHost, SIGNAL(newOutgoingCall(QSharedPointer<Call>)), this, SLOT(newOutgoingCall(QSharedPointer<Call>)));
     connect(&g_FSHost, SIGNAL(callFailed(QSharedPointer<Call>)), this, SLOT(callFailed(QSharedPointer<Call>)));
-    connect(&g_FSHost, SIGNAL(gwStateChange(QString,int)), this, SLOT(gwStateChanged(QString,int)));
+    connect(&g_FSHost, SIGNAL(accountStateChange(QSharedPointer<Account>)), this, SLOT(accountStateChanged(QSharedPointer<Account>)));
+    connect(&g_FSHost, SIGNAL(newAccount(QSharedPointer<Account>)), this, SLOT(accountAdd(QSharedPointer<Account>)));
     /*connect(&g_FSHost, SIGNAL(coreLoadingError(QString)), this, SLOT(coreLoadingError(QString)));*/
 
     connect(ui->newCallBtn, SIGNAL(clicked()), this, SLOT(makeCall()));
@@ -92,6 +93,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->action_Preferences, SIGNAL(triggered()), this, SLOT(prefTriggered()));
     connect(ui->action_Exit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
+    connect(ui->actionSetDefaultAccount, SIGNAL(triggered(bool)), this, SLOT(setDefaultAccount()));
+
+    /* Set the context menus */
+    ui->tableAccounts->addAction(ui->actionSetDefaultAccount);
+
 }
 
 MainWindow::~MainWindow()
@@ -100,6 +106,20 @@ MainWindow::~MainWindow()
     QString res;
     g_FSHost.sendCmd("fsctl", "shutdown", &res);
     g_FSHost.wait();
+}
+
+void MainWindow::setDefaultAccount()
+{
+    QString accName = ui->tableAccounts->item(ui->tableAccounts->selectedRanges()[0].topRow(), 0)->text();
+
+    if (accName.isEmpty())
+        return;
+
+    QSettings settings;
+    settings.beginGroup("FreeSWITCH/conf/globals");
+    switch_core_set_variable("default_gateway", accName.toAscii().data());
+    settings.setValue("default_gateway", accName);
+    settings.endGroup();
 }
 
 void MainWindow::prefTriggered()
@@ -118,29 +138,32 @@ void MainWindow::coreLoadingError(QString err)
     QApplication::exit(255);
 }
 
-void MainWindow::gwStateChanged(QString gw, int state)
+void MainWindow::accountAdd(QSharedPointer<Account> acc)
 {
-    ui->statusBar->showMessage(tr("Account %1 is %2").arg(gw, g_FSHost.getGwStateName(state)));
-
-    /* TODO: This should be placed somewhere else when the config handler is here... */
-    QList<QTableWidgetItem *> match = ui->tableAccounts->findItems(gw, Qt::MatchExactly);
-    if (match.isEmpty())
-    {
-        /* Create the damn thing */
-        ui->tableAccounts->setRowCount(ui->tableAccounts->rowCount()+1);
-        QTableWidgetItem *gwField = new QTableWidgetItem(gw);
-        QTableWidgetItem *stField = new QTableWidgetItem(g_FSHost.getGwStateName(state));
-        ui->tableAccounts->setItem(0,0,gwField);
-        ui->tableAccounts->setItem(0,1,stField);
-        ui->tableAccounts->resizeColumnsToContents();
-        return;
-    }
-
-    QTableWidgetItem *gwField = match.at(0);
-    QTableWidgetItem *stField = ui->tableAccounts->item(gwField->row(),1);
-    stField->setText(g_FSHost.getGwStateName(state));
+    ui->tableAccounts->setRowCount(ui->tableAccounts->rowCount()+1);
+    QTableWidgetItem *gwField = new QTableWidgetItem(acc.data()->getName());
+    QTableWidgetItem *stField = new QTableWidgetItem(acc.data()->getStateName());
+    ui->tableAccounts->setItem(ui->tableAccounts->rowCount()-1,0,gwField);
+    ui->tableAccounts->setItem(ui->tableAccounts->rowCount()-1,1,stField);
     ui->tableAccounts->resizeColumnsToContents();
+    ui->tableAccounts->resizeRowsToContents();
+    ui->tableAccounts->horizontalHeader()->setStretchLastSection(true);
+}
 
+void MainWindow::accountStateChanged(QSharedPointer<Account> acc)
+{
+    ui->statusBar->showMessage(tr("Account %1 is %2").arg(acc.data()->getName(), acc.data()->getStateName()));
+    foreach (QTableWidgetItem *i, ui->tableAccounts->findItems(acc.data()->getName(), Qt::MatchExactly))
+    {
+        if (i->text() == acc.data()->getName())
+        {
+            ui->tableAccounts->item(i->row(), 1)->setText(acc.data()->getStateName());
+            ui->tableAccounts->resizeColumnsToContents();
+            ui->tableAccounts->resizeRowsToContents();
+            ui->tableAccounts->horizontalHeader()->setStretchLastSection(true);
+            return;
+        }
+    }
 }
 
 void MainWindow::dialDTMF(QString dtmf)

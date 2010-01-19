@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
     QObject::connect(&g_FSHost, SIGNAL(ready()), splash, SLOT(close()));
     MainWindow w;    
     QObject::connect(&g_FSHost, SIGNAL(ready()), &w, SLOT(show()));
+    QObject::connect(&g_FSHost, SIGNAL(ready()), &w, SLOT(print()));
     g_FSHost.start();
     return a.exec();
 }

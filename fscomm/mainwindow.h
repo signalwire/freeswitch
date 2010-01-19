@@ -37,6 +37,7 @@
 #include <switch.h>
 #include <fshost.h>
 #include <call.h>
+#include <account.h>
 #include "preferences/prefdialog.h"
 
 namespace Ui {
@@ -60,7 +61,6 @@ private slots:
     void showAbout();
     void prefTriggered();
     void coreLoadingError(QString);
-    void gwStateChanged(QString, int);
     void dialDTMF(QString);
     void callListDoubleClick(QListWidgetItem *);
     void makeCall();
@@ -74,6 +74,9 @@ private slots:
     void hungup(QSharedPointer<Call>);
     void callFailed(QSharedPointer<Call>);
     void recordCall(bool);
+    void setDefaultAccount();
+    void accountAdd(QSharedPointer<Account>);
+    void accountStateChanged(QSharedPointer<Account>);
 
 private:
     Ui::MainWindow *ui;

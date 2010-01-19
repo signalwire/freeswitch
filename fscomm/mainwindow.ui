@@ -269,6 +269,9 @@
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
           <widget class="QTableWidget" name="tableAccounts">
+           <property name="contextMenuPolicy">
+            <enum>Qt::ActionsContextMenu</enum>
+           </property>
            <property name="editTriggers">
             <set>QAbstractItemView::NoEditTriggers</set>
            </property>
@@ -369,6 +372,14 @@
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="actionSetDefaultAccount">
+   <property name="text">
+    <string>Set Default Account</string>
+   </property>
+   <property name="toolTip">
+    <string>Set the default account for dialing out.</string>
    </property>
   </action>
  </widget>
