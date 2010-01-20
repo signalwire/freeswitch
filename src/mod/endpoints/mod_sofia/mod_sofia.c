@@ -1151,59 +1151,25 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		goto end;
 
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
-		{
-			const char *network_addr_a, *network_addr_b, *simplify_a, *simplify_b;
-			int s_ok = 0;
+		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			const char *val;
+			int ok = 0;
 
-			simplify_a = switch_channel_get_variable(channel, "sip_auto_simplify");
-			simplify_b = switch_channel_get_variable_partner(channel, "sip_auto_simplify");
-			
-			if (switch_true(simplify_a)) {
-				if (switch_true(simplify_b) && !switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
-					s_ok = 0;
-				} else {
-					s_ok = 1;
-				}
+			if (sofia_test_flag(tech_pvt, TFLAG_PASS_RFC2833) && switch_channel_test_flag_partner(channel, CF_FS_RTP)) {
+				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s activate passthru 2833 mode.\n", switch_channel_get_name(channel));
 			}
 
-			if (s_ok) {
-				network_addr_a = switch_channel_get_variable(channel, "network_addr");
-				network_addr_b = switch_channel_get_variable_partner(channel, "network_addr");
-				
-				if (!zstr(network_addr_a) && !zstr(network_addr_b) && !strcmp(network_addr_a, network_addr_b)) {
-					if (strcmp(network_addr_a, switch_str_nil(tech_pvt->profile->sipip)) && 
-						strcmp(network_addr_a, switch_str_nil(tech_pvt->profile->extsipip))) {
-						switch_core_session_message_t smsg = { 0 };
-					
-						smsg.message_id = SWITCH_MESSAGE_INDICATE_SIMPLIFY;
-						smsg.from = __FILE__;
-						
-						status = switch_core_session_receive_message(session, &smsg);
-					}
-				}
+			if ((val = switch_channel_get_variable(channel, "rtp_autoflush_during_bridge"))) {
+				ok = switch_true(val);
+			} else {
+				ok = sofia_test_pflag(tech_pvt->profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 			}
 			
-			if (switch_rtp_ready(tech_pvt->rtp_session)) {
-				const char *val;
-				int ok = 0;
-
-				if (sofia_test_flag(tech_pvt, TFLAG_PASS_RFC2833) && switch_channel_test_flag_partner(channel, CF_FS_RTP)) {
-					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833);
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
-									  "%s activate passthru 2833 mode.\n", switch_channel_get_name(channel));
-				}
-
-				if ((val = switch_channel_get_variable(channel, "rtp_autoflush_during_bridge"))) {
-					ok = switch_true(val);
-				} else {
-					ok = sofia_test_pflag(tech_pvt->profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
-				}
-			
-				if (ok) {
-					rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_STICK);
-				} else {
-					rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_ONCE);
-				}
+			if (ok) {
+				rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_STICK);
+			} else {
+				rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_ONCE);
 			}
 		}
 		goto end;
@@ -1416,48 +1382,25 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 
-	case SWITCH_MESSAGE_INDICATE_SIMPLIFY:
+	case SWITCH_MESSAGE_INDICATE_WARNING:
 		{
-			char *ref_to, *ref_by;
-			const char *uuid;
-			const char *call_id = NULL, *to_user = NULL, *to_host = NULL, *to_tag = NULL, *from_tag = NULL, *from_user, *from_host;
-			
-			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
-				switch_core_session_t *rsession;
-				if ((rsession = switch_core_session_locate(uuid))) {
-					switch_channel_t *rchannel = switch_core_session_get_channel(rsession);
-					call_id = switch_channel_get_variable(rchannel, "sip_call_id");
-
-					to_user = switch_channel_get_variable(rchannel, "sip_to_user");
-
-					if (switch_channel_direction(rchannel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-						to_host = switch_channel_get_variable(rchannel, "sip_to_host");
-						from_user = switch_channel_get_variable(channel, "sip_from_user");
-						from_host = switch_channel_get_variable(channel, "sip_from_host");
-					} else {
-						to_host = switch_channel_get_variable(channel, "sip_to_host");
-						from_user = switch_channel_get_variable(rchannel, "sip_from_user");
-						from_host = switch_channel_get_variable(rchannel, "sip_from_host");
+			char *message;
+			if (!zstr(msg->string_arg)) {
+				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
+				
+				if (!sofia_test_flag(tech_pvt, TFLAG_UPDATING_DISPLAY)) {
+						
+					if ((ua && (switch_stristr("polycom", ua)))) {
+						message = switch_mprintf("Warning: 399 devnull \"%s\"", msg->string_arg);
+						sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
+						nua_update(tech_pvt->nh, 
+								   TAG_IF(!zstr(message), SIPTAG_HEADER_STR(message)),
+								   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+								   TAG_END());
+						free(message);
 					}
 
-					to_tag = switch_channel_get_variable(rchannel, "sip_to_tag");
-					from_tag = switch_channel_get_variable(rchannel, "sip_from_tag");
-					switch_core_session_rwunlock(rsession);
 				}
-			}
-			
-			if (to_user && to_host && from_user && from_host && call_id && to_tag && from_tag) {
-				char in[512] = "", out[1536] = "";
-
-				switch_snprintf(in, sizeof(in), "%s;to-tag=%s;from-tag=%s", call_id, to_tag, from_tag);
-				switch_url_encode(in, out, sizeof(out));
-
-				ref_to = switch_mprintf("<sip:%s@%s?Replaces=%s>", to_user, to_host, out); 
-				ref_by = switch_mprintf("<sip:%s@%s>", from_user, from_host);
-
-				nua_refer(tech_pvt->nh, SIPTAG_REFER_TO_STR(ref_to), SIPTAG_REFERRED_BY_STR(ref_by), TAG_END());
-				switch_safe_free(ref_to);
-				switch_safe_free(ref_by);
 			}
 		}
 		break;

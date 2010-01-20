@@ -4774,40 +4774,6 @@ static switch_status_t xfer_hanguphook(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-nua_handle_t *sofia_global_nua_handle_by_replaces(sip_replaces_t *replaces)
-{
-	nua_handle_t *nh = NULL;
-	switch_hash_index_t *hi;
-	const void *var;
-    void *val;
-    sofia_profile_t *profile;
-	switch_xml_t xml_root;
-	const char *err;
-
-	if ((xml_root = switch_xml_open_root(1, &err))) {
-		switch_xml_free(xml_root);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Reload XML [%s]\n", err);
-	}
-
-	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	if (mod_sofia_globals.profile_hash) {
-        for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
-            if ((profile = (sofia_profile_t *) val)) {
-				if (!(nh = nua_handle_by_replaces(profile->nua, replaces))) {
-					nh = nua_handle_by_call_id(profile->nua, replaces->rp_call_id);
-				}
-				if (nh) break;
-			}
-		}
-	}
-	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
-	
-	return nh;
-
-}
-
-
 void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
 {
 	/* Incoming refer */
@@ -4862,7 +4828,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 		if (refer_to->r_url->url_headers && (rep = (char *)switch_stristr("Replaces=", refer_to->r_url->url_headers))) {
 			sip_replaces_t *replaces;
-			nua_handle_t *bnh = NULL;
+			nua_handle_t *bnh;
 			
 			if (rep) {
 				const char *br_a = NULL, *br_b = NULL;
@@ -4882,16 +4848,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
 					goto done;
 				}
-				
-				if ((replaces = sip_replaces_make(home, rep))) {
-					if (!(bnh = nua_handle_by_replaces(nua, replaces))) {
-						if (!(bnh = nua_handle_by_call_id(nua, replaces->rp_call_id))) {
-							bnh = sofia_global_nua_handle_by_replaces(replaces);
-						}
-					}
-				}
 
-				if (bnh) {
+				if ((replaces = sip_replaces_make(home, rep))
+					&& (bnh = nua_handle_by_replaces(nua, replaces))) {
 					sofia_private_t *b_private = NULL;
 					private_object_t *b_tech_pvt = NULL;
 					switch_core_session_t *b_session = NULL;
@@ -6121,12 +6080,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 	}
 
-	if (!bnh && sip->sip_replaces) {
-		if (!(bnh = nua_handle_by_replaces(nua, sip->sip_replaces))) {
-			if (!(bnh = nua_handle_by_call_id(nua, sip->sip_replaces->rp_call_id))) {
-				bnh = sofia_global_nua_handle_by_replaces(sip->sip_replaces);
-			}
-		}
+	if (sip->sip_replaces) {
+		bnh = nua_handle_by_replaces(nua, sip->sip_replaces);
 	}
 
 	if (bnh) {
