@@ -4,6 +4,8 @@
 #include <QObject>
 #include "ui_prefdialog.h"
 
+#define FSCOMM_EVENT_ACC_REMOVED "fscomm::acc_removed"
+
 class QSettings;
 class AccountDialog;
 

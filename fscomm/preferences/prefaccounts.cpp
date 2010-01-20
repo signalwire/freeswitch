@@ -13,6 +13,11 @@ PrefAccounts::PrefAccounts(Ui::PrefDialog *ui) :
     connect(_ui->sofiaGwEditBtn, SIGNAL(clicked()), this, SLOT(editAccountBtnClicked()));
 
     _ui->accountsTable->horizontalHeader()->setStretchLastSection(true);
+
+    if (switch_event_reserve_subclass(FSCOMM_EVENT_ACC_REMOVED) != SWITCH_STATUS_SUCCESS) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+    }
+
 }
 
 void PrefAccounts::addAccountBtnClicked()
@@ -86,6 +91,17 @@ void PrefAccounts::remAccountBtnClicked()
             _settings->beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways");
             _settings->remove(item->data(Qt::UserRole).toString());
             _settings->endGroup();
+            /* Fire event to remove account */
+            switch_event_t *event;
+            if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FSCOMM_EVENT_ACC_REMOVED) == SWITCH_STATUS_SUCCESS) {
+                QSharedPointer<Account> acc = g_FSHost.getAccountByUUID(item->data(Qt::UserRole).toString());
+                if (!acc.isNull())
+                {
+                    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "acc_name", acc.data()->getName().toAscii().data());
+                    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "acc_uuid", acc.data()->getUUID().toAscii().data());
+                    switch_event_fire(&event);
+                }
+            }
             _ui->accountsTable->removeRow(row-offset);
             offset++;
         }

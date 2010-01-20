@@ -1,7 +1,7 @@
 #ifndef ACCOUNT_H
 #define ACCOUNT_H
 
-#include <QObject>
+#include <QString>
 
 #define FSCOMM_GW_STATE_TRYING 0
 #define FSCOMM_GW_STATE_REGISTER 1
@@ -26,20 +26,20 @@ static QString fscomm_gw_state_names[] = {
     QString("Not applicable")
 };
 
-class Account : public QObject
-{
-Q_OBJECT
+class Account {
 public:
-    explicit Account(QObject *parent = 0);
+    explicit Account(QString name);
     void setName(QString name) { _name = name; }
     QString getName() { return _name; }
     void setState(int state) { _state = state; }
     int getState() { return _state; }
     QString getStateName() { return fscomm_gw_state_names[_state]; }
+    QString getUUID() { return _uuid; }
 
 private:
     QString _name;
     int _state;
+    QString _uuid;
 };
 
 #endif // ACCOUNT_H

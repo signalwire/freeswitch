@@ -76,6 +76,7 @@ private slots:
     void recordCall(bool);
     void setDefaultAccount();
     void accountAdd(QSharedPointer<Account>);
+    void accountDel(QSharedPointer<Account>);
     void accountStateChanged(QSharedPointer<Account>);
 
 private:

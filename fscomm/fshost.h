@@ -46,6 +46,7 @@ public:
     QSharedPointer<Call> getCallByUUID(QString uuid) { return _active_calls.value(uuid); }
     QSharedPointer<Call> getCurrentActiveCall();
     QList<QSharedPointer<Account> > getAccounts() { return _accounts.values(); }
+    QSharedPointer<Account> getAccountByUUID(QString uuid);
 
 protected:
     void run(void);
@@ -60,6 +61,7 @@ signals:
     void hungup(QSharedPointer<Call>);
     void accountStateChange(QSharedPointer<Account>);
     void newAccount(QSharedPointer<Account>);
+    void delAccount(QSharedPointer<Account>);
 
 private:
     switch_status_t processBlegEvent(switch_event_t *, QString);

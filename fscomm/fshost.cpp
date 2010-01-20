@@ -326,8 +326,7 @@ void FSHost::generalEventHandler(switch_event_t *event)
                 QSharedPointer<Account> acc;
                 if (!_accounts.contains(gw))
                 {
-                    Account * accPtr = new Account();
-                    accPtr->setName(gw);
+                    Account * accPtr = new Account(gw);
                     acc = QSharedPointer<Account>(accPtr);
                     _accounts.insert(gw, acc);
                     emit newAccount(acc);
@@ -364,6 +363,11 @@ void FSHost::generalEventHandler(switch_event_t *event)
                     emit accountStateChange(acc);
                 }
             }
+            else if (strcmp(event->subclass_name, "fscomm::acc_removed") == 0)
+            {
+                QSharedPointer<Account> acc = _accounts.take(switch_event_get_header_nil(event, "acc_name"));
+                emit delAccount(acc);
+            }
             else
             {
                 printEventHeaders(event);
@@ -386,6 +390,16 @@ switch_status_t FSHost::sendCmd(const char *cmd, const char *args, QString *res)
     switch_safe_free(stream.data);
 
     return status;
+}
+
+QSharedPointer<Account> FSHost::getAccountByUUID(QString uuid)
+{
+    foreach(QSharedPointer<Account> acc, _accounts.values())
+    {
+        if (acc.data()->getUUID() == uuid)
+            return acc;
+    }
+    return QSharedPointer<Account>();
 }
 
 QSharedPointer<Call> FSHost::getCurrentActiveCall()

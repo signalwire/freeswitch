@@ -83,6 +83,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&g_FSHost, SIGNAL(callFailed(QSharedPointer<Call>)), this, SLOT(callFailed(QSharedPointer<Call>)));
     connect(&g_FSHost, SIGNAL(accountStateChange(QSharedPointer<Account>)), this, SLOT(accountStateChanged(QSharedPointer<Account>)));
     connect(&g_FSHost, SIGNAL(newAccount(QSharedPointer<Account>)), this, SLOT(accountAdd(QSharedPointer<Account>)));
+    connect(&g_FSHost, SIGNAL(delAccount(QSharedPointer<Account>)), this, SLOT(accountDel(QSharedPointer<Account>)));
     /*connect(&g_FSHost, SIGNAL(coreLoadingError(QString)), this, SLOT(coreLoadingError(QString)));*/
 
     connect(ui->newCallBtn, SIGNAL(clicked()), this, SLOT(makeCall()));
@@ -151,6 +152,22 @@ void MainWindow::accountAdd(QSharedPointer<Account> acc)
     ui->tableAccounts->resizeColumnsToContents();
     ui->tableAccounts->resizeRowsToContents();
     ui->tableAccounts->horizontalHeader()->setStretchLastSection(true);
+}
+
+void MainWindow::accountDel(QSharedPointer<Account> acc)
+{
+    foreach (QTableWidgetItem *i, ui->tableAccounts->findItems(acc.data()->getName(), Qt::MatchExactly))
+    {
+        if (i->text() == acc.data()->getName())
+        {
+            ui->tableAccounts->removeRow(i->row());
+            ui->tableAccounts->setRowCount(ui->tableAccounts->rowCount()-1);
+            ui->tableAccounts->resizeColumnsToContents();
+            ui->tableAccounts->resizeRowsToContents();
+            ui->tableAccounts->horizontalHeader()->setStretchLastSection(true);
+            return;
+        }
+    }
 }
 
 void MainWindow::accountStateChanged(QSharedPointer<Account> acc)
