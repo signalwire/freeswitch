@@ -2649,6 +2649,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *c
 	return status;
 }
 
+SWITCH_DECLARE(switch_core_session_t*) switch_channel_get_session(switch_channel_t *channel)
+{
+	switch_assert(channel);
+	return channel->session;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *channel)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;

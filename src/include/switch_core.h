@@ -676,6 +676,22 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(_In_ switch_core_se
 */
 SWITCH_DECLARE(char *) switch_core_session_get_uuid(_In_ switch_core_session_t *session);
 
+
+/*! 
+  \brief Sets the log level for a session
+  \param session the session to set the log level on 
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_loglevel(switch_core_session_t *session, switch_log_level_t loglevel);
+
+
+/*! 
+  \brief Get the log level for a session
+  \param session the session to get the log level from 
+  \return the log level
+*/
+SWITCH_DECLARE(switch_log_level_t) switch_core_session_get_loglevel(switch_core_session_t *session);
+
 /*! 
   \brief Retrieve the unique identifier from the core
   \return a string representing the uuid

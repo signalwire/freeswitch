@@ -2948,6 +2948,24 @@ static switch_status_t api_chat_send(const char *proto, const char *from, const 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+#define SESSION_LOGLEVEL_SYNTAX "<level>"
+SWITCH_STANDARD_APP(session_loglevel_function)
+{
+	if (!zstr(data)) {
+		switch_log_level_t level = switch_log_str2level(data);
+
+		if (level == SWITCH_LOG_INVALID) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid log level: %s\n", data);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting log level \"%s\" on session\n", switch_log_level2str(level));
+			switch_core_session_set_loglevel(session, level);
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No log level specified\n");
+	}
+}
+
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
 #define SESS_REC_DESC "Starts a background recording of the entire session"
@@ -3108,6 +3126,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "say", "say", "say", say_function, SAY_SYNTAX, SAF_NONE);
 
 	SWITCH_ADD_APP(app_interface, "wait_for_silence", "wait_for_silence", "wait_for_silence", wait_for_silence_function, WAIT_FOR_SILENCE_SYNTAX, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "session_loglevel", "session_loglevel", "session_loglevel", session_loglevel_function, SESSION_LOGLEVEL_SYNTAX, SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_DIALPLAN(dp_interface, "inline", inline_dialplan_hunt);
 
