@@ -231,7 +231,7 @@ static int alias_callback(void *pArg, int argc, char **argv, char **columnNames)
 	return -1;
 }
 
-char *expand_alias(char *cmd, char *arg)
+SWITCH_DECLARE(char *) switch_console_expand_alias(char *cmd, char *arg)
 {
 	char *errmsg = NULL;
 	char *r = NULL;
@@ -295,18 +295,49 @@ char *expand_alias(char *cmd, char *arg)
 	return exp;
 }
 
-static int switch_console_process(char *xcmd, int rec)
+
+static int switch_console_process(char *xcmd) {
+	switch_stream_handle_t stream = { 0 };
+	switch_status_t status;
+	FILE *handle = switch_core_get_console();
+	
+	SWITCH_STANDARD_STREAM(stream);
+	switch_assert(stream.data);
+
+	status = switch_console_execute(xcmd, 0, &stream);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		if (handle) {
+			fprintf(handle, "\n%s\n", (char *) stream.data);
+			fflush(handle);
+		}
+	} else {
+		if (handle) {
+			fprintf(handle, "Unknown Command: %s\n", xcmd);
+			fflush(handle);
+		}
+	}
+
+	switch_safe_free(stream.data);
+
+	return 1;
+	
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_console_execute(char *xcmd, int rec, switch_stream_handle_t *istream)
 {
 	char *arg = NULL, *alias = NULL;
-	switch_stream_handle_t stream = { 0 };
+
 	char *delim = ";;";
-	FILE *handle = switch_core_get_console();
 	int argc;
 	char *argv[128];
 	int x;
 	char *dup = strdup(xcmd);
 	char *cmd;
-	int r = 1;
+
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
 	
 	if (rec > 100) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Too much recursion!\n");
@@ -322,17 +353,6 @@ static int switch_console_process(char *xcmd, int rec)
 
 	for (x = 0; x < argc; x++) {
 		cmd = argv[x];
-
-		if (!strcmp(cmd, "shutdown") || !strcmp(cmd, "...")) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bye!\n");
-			r = 0;
-			goto end;
-		}
-		if (!strcmp(cmd, "version")) {
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "FreeSWITCH Version %s\n", SWITCH_VERSION_FULL);
-			r = 1;
-			goto end;
-		}
 		if ((arg = strchr(cmd, '\r')) != 0 || (arg = strchr(cmd, '\n')) != 0) {
 			*arg = '\0';
 			arg = NULL;
@@ -341,37 +361,22 @@ static int switch_console_process(char *xcmd, int rec)
 			*arg++ = '\0';
 		}
 
-		if ((alias = expand_alias(cmd, arg)) && alias != cmd) {
-			switch_console_process(alias, ++rec);
+		if ((alias = switch_console_expand_alias(cmd, arg)) && alias != cmd) {
+			istream->write_function(istream, "\nExpand Alias [%s]->[%s]\n\n", cmd, alias);
+			status = switch_console_execute(alias, ++rec, istream);
 			free(alias);
 			continue;
 		}
 
 
-		SWITCH_STANDARD_STREAM(stream);
-		switch_assert(stream.data);
-
-		if (switch_api_execute(cmd, arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-			if (handle) {
-				fprintf(handle, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", (char *) stream.data);
-				fflush(handle);
-			}
-		} else {
-			if (handle) {
-				fprintf(handle, "Unknown Command: %s\n", cmd);
-				fflush(handle);
-			}
-		}
-		
-		free(stream.data);
-
+		status = switch_api_execute(cmd, arg, NULL, istream);		
 	}
 
  end:
 
 	switch_safe_free(dup);
 
-	return r;
+	return status;
 }
 
 SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const char *file, const char *func, int line, const char *fmt, ...)
@@ -836,7 +841,7 @@ static unsigned char console_fnkey_pressed(int i)
 	}
 
 	cmd = strdup(c);
-	switch_console_process(cmd, 0);
+	switch_console_process(cmd);
 	free(cmd);
 
 	return CC_REDISPLAY;
@@ -945,7 +950,7 @@ static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *ob
 				}
 				assert(cmd != NULL);
 				history(myhistory, &ev, H_ENTER, line);
-				running = switch_console_process(cmd, 0);
+				running = switch_console_process(cmd);
 				el_deletestr(el, strlen(foo) + 1);
 				memset(foo, 0, strlen(foo));
 				free(cmd);

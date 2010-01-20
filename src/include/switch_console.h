@@ -89,6 +89,8 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 													  FILE *console_out, switch_stream_handle_t *stream, switch_xml_t xml);
 SWITCH_DECLARE(void) switch_console_sort_matches(switch_console_callback_match_t *matches);
 SWITCH_DECLARE(void) switch_console_save_history(void);
+SWITCH_DECLARE(char *) switch_console_expand_alias(char *cmd, char *arg);
+SWITCH_DECLARE(switch_status_t) switch_console_execute(char *xcmd, int rec, switch_stream_handle_t *istream);
 
 SWITCH_END_EXTERN_C
 #endif

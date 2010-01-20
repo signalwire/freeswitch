@@ -53,6 +53,22 @@ SWITCH_STANDARD_API(hostname_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_STANDARD_API(shutdown_function)
+{
+	switch_session_ctl_t command = SCSC_SHUTDOWN;
+	int arg = 0;
+	switch_core_session_ctl(command, &arg);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(version_function)
+{
+	stream->write_function(stream, "FreeSWITCH Version %s\n", SWITCH_VERSION_FULL);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(db_cache_function) {
 	int argc;
 	char *mydata = NULL, *argv[2];
@@ -3421,15 +3437,6 @@ SWITCH_STANDARD_API(show_function)
 	return status;
 }
 
-SWITCH_STANDARD_API(version_function)
-{
-	char version_string[1024];
-	switch_snprintf(version_string, sizeof(version_string) - 1, "FreeSWITCH Version %s\n", SWITCH_VERSION_FULL);
-
-	stream->write_function(stream, version_string);
-	return SWITCH_STATUS_SUCCESS;
-}
-
 SWITCH_STANDARD_API(help_function)
 {
 	char showcmd[1024];
@@ -4079,6 +4086,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "expand", "expand vars and execute", expand_function, "[uuid:<uuid> ]<cmd> <args>");
 	SWITCH_ADD_API(commands_api_interface, "find_user_xml", "find a user", find_user_function, "<key> <user> <domain>");
 	SWITCH_ADD_API(commands_api_interface, "fsctl", "control messages", ctl_function, CTL_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "...", "shutdown", shutdown_function, "");
+	SWITCH_ADD_API(commands_api_interface, "shutdown", "shutdown", shutdown_function, "");
+	SWITCH_ADD_API(commands_api_interface, "version", "version", version_function, "");
 	SWITCH_ADD_API(commands_api_interface, "global_getvar", "global_getvar", global_getvar_function, GLOBAL_GETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "global_setvar", "global_setvar", global_setvar_function, GLOBAL_SETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "group_call", "Generate a dial string to call a group", group_call_function, "<group>[@<domain>]");
@@ -4143,7 +4153,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar", "uuid_setvar", uuid_setvar_function, SETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_transfer", "Transfer a session", transfer_function, TRANSFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_warning", "send popup", uuid_warning_function, WARNING_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "version", "Show version of the switch", version_function, "");
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
 	switch_console_set_complete("add alias add");
@@ -4207,6 +4216,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add show nat_map");
 	switch_console_set_complete("add show say");
 	switch_console_set_complete("add show timer");
+	switch_console_set_complete("add shutdown");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start read mute");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start read level");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start write mute");
@@ -4243,8 +4253,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_setvar_multi ::console::list_uuid");
 	switch_console_set_complete("add uuid_setvar ::console::list_uuid");
 	switch_console_set_complete("add uuid_transfer ::console::list_uuid");
+	switch_console_set_complete("add version");
 	switch_console_set_complete("add uuid_warning ::console::list_uuid");
-
+	switch_console_set_complete("add ...");
 
 
 	/* indicate that the module should continue to be loaded */

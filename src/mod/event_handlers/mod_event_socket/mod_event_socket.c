@@ -1304,6 +1304,7 @@ struct api_command_struct {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	int bg;
 	int ack;
+	int console_execute;
 	switch_memory_pool_t *pool;
 };
 
@@ -1336,7 +1337,15 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	
 	SWITCH_STANDARD_STREAM(stream);
 	
-	if ((status = switch_api_execute(acs->api_cmd, acs->arg, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
+	if (acs->console_execute) {
+		if ((status = switch_console_execute(acs->api_cmd, 0, &stream)) != SWITCH_STATUS_SUCCESS) {
+			stream.write_function(&stream, "%s: Command not found!\n", acs->api_cmd);
+		}
+	} else {
+		status = switch_api_execute(acs->api_cmd, acs->arg, NULL, &stream);
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
 		reply = stream.data;
 	} else {
 		freply = switch_mprintf("%s: Command not found!\n", acs->api_cmd);
@@ -1991,12 +2000,16 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		goto done;
 	} else if (!strncasecmp(cmd, "api ", 4)) {
 		struct api_command_struct acs = { 0 };
+		char *console_execute = switch_event_get_header(*event, "console_execute");
+		
 		char *api_cmd = cmd + 4;
 		char *arg = NULL;
 		strip_cr(api_cmd);
 
-		if ((arg = strchr(api_cmd, ' '))) {
-			*arg++ = '\0';
+		if (!(acs.console_execute = switch_true(console_execute))) {
+			if ((arg = strchr(api_cmd, ' '))) {
+				*arg++ = '\0';
+			}
 		}
 
 		if (listener->allowed_api_hash) {
@@ -2012,6 +2025,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		acs.api_cmd = api_cmd;
 		acs.arg = arg;
 		acs.bg = 0;
+		
 
 		api_exec(NULL, (void *) &acs);
 
@@ -2047,6 +2061,8 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		switch_assert(acs);
 		acs->pool = pool;
 		acs->listener = listener;
+		acs->console_execute = 0;
+
 		if (api_cmd) {
 			acs->api_cmd = switch_core_strdup(acs->pool, api_cmd);
 		}

@@ -703,8 +703,11 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 		char cmd_str[1024] = "";
 		const char *err = NULL;
 		
-		snprintf(cmd_str, sizeof(cmd_str), "api %s\n\n", cmd);
-		esl_send_recv(handle, cmd_str);
+		snprintf(cmd_str, sizeof(cmd_str), "api %s\nconsole_execute: true\n\n", cmd);
+		if (esl_send_recv(handle, cmd_str)) {
+			printf("Socket Interrupted, bye!\n");
+			return 1;
+		}
 		if (handle->last_sr_event) {
 			if (handle->last_sr_event->body) {
 				printf("%s\n", handle->last_sr_event->body);
