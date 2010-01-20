@@ -56,7 +56,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(SolutionDir)$(PlatformName)\$(ConfigurationName)/mod/$(ProjectName).dll"
+				OutputFile="$(SolutionDir)Debug/mod/$(ProjectName).dll"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>
@@ -186,7 +186,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(SolutionDir)$(PlatformName)\$(ConfigurationName)/mod/$(ProjectName).dll"
+				OutputFile="$(SolutionDir)Release/mod/$(ProjectName).dll"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>
@@ -279,7 +279,6 @@
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
-
 	</Configurations>
 	<References>
 	</References>
