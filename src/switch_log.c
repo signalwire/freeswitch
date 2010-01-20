@@ -339,14 +339,6 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 #else
 	const char *extra_fmt = "%s [%s] %s:%d%c%s";
 #endif
-	switch_log_level_t limit_level = runtime.hard_log_level;
-
-	if (channel == SWITCH_CHANNEL_ID_SESSION && userdata) {
-		switch_core_session_t *session = (switch_core_session_t*)userdata;
-		if (limit_level < session->loglevel) {
-			limit_level = session->loglevel;
-		}
-	}
 
 	if (level > 100) {
 		if ((uint32_t)(level - 100) > runtime.debug_level) {
@@ -356,7 +348,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 		level = 7;
 	}
 
-	if (level > limit_level) {
+	if (level > runtime.hard_log_level) {
 		return;
 	}
 
@@ -474,11 +466,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 		node->content = content;
 		node->timestamp = now;
 		node->channel = channel;
-		if (channel == SWITCH_CHANNEL_ID_SESSION) {
-			node->userdata = userdata ? strdup(switch_core_session_get_uuid((switch_core_session_t*)userdata)) : NULL;
-		} else {
-			node->userdata = !zstr(userdata) ? strdup(userdata) : NULL;
-		}
+		node->userdata = !zstr(userdata) ? strdup(userdata) : NULL;
 
 		if (switch_queue_trypush(LOG_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
 			switch_log_node_free(&node);

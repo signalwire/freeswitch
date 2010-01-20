@@ -156,7 +156,6 @@ struct switch_core_session {
 	uint32_t read_frame_count;
 	uint32_t track_duration;
 	uint32_t track_id;
-	switch_log_level_t loglevel;
 };
 
 struct switch_media_bug {

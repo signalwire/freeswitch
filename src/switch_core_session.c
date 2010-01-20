@@ -1712,19 +1712,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_loglevel(switch_core_session_t *session, switch_log_level_t loglevel)
-{
-       switch_assert(session != NULL);
-       session->loglevel = loglevel;
-       return SWITCH_STATUS_SUCCESS;
-}
-
-SWITCH_DECLARE(switch_log_level_t) switch_core_session_get_loglevel(switch_core_session_t *session)
-{
-       switch_assert(session != NULL);
-       return session->loglevel;
-}
-
 /* For Emacs:
  * Local Variables:
  * mode:c
