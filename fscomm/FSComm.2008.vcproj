@@ -207,6 +207,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\account.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\preferences\accountdialog.cpp"
 				>
 			</File>
@@ -252,6 +256,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\account.h"
+				>
+			</File>
 			<File
 				RelativePath="preferences\accountdialog.h"
 				>
