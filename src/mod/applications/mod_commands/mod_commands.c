@@ -58,6 +58,8 @@ SWITCH_STANDARD_API(shutdown_function)
 {
 	switch_session_ctl_t command = SCSC_SHUTDOWN;
 	int arg = 0;
+
+	stream->write_function(stream, "+OK\n");
 	switch_core_session_ctl(command, &arg);
 
 	return SWITCH_STATUS_SUCCESS;
