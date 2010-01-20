@@ -334,10 +334,10 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 
 	zap_set_string(event.calling_name, caller_data->cid_name);
 	zap_set_string(event.isup_in_rdnis, caller_data->rdnis.digits);
-    if (strlen(caller_data->rdnis.digits)) {
-        event.isup_in_rdnis_size = strlen(caller_data->rdnis.digits)+1;
-    }
-    
+	if (strlen(caller_data->rdnis.digits)) {
+			event.isup_in_rdnis_size = strlen(caller_data->rdnis.digits)+1;
+	}
+
 	event.calling_number_screening_ind = caller_data->screen;
 	event.calling_number_presentation = caller_data->pres;
 
@@ -368,7 +368,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		zap_log(ZAP_LOG_DEBUG, "Channel state changed to PROGRESS [Csid:%d]\n", r);
 	}
 
-	sanity = 5000;
+	sanity = 60000;
 	while(zap_running() && OUTBOUND_REQUESTS[r].status == BST_ACK) {
 		zap_sleep(1);
 		if (--sanity <= 0) {
