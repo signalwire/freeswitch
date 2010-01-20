@@ -1166,8 +1166,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	
 	if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && !switch_channel_test_flag(caller_channel, CF_REDIRECT) && 
 		!switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE) && !a_leg->clean_exit && !inner_bridge) {
-		if ((state != CS_EXECUTE && state != CS_SOFT_EXECUTE && state != CS_PARK && state != CS_ROUTING) ||
-			(switch_channel_test_flag(peer_channel, CF_ANSWERED) && state < CS_HANGUP)) {
+		if ((state != CS_EXECUTE && state != CS_SOFT_EXECUTE && state != CS_PARK && state != CS_ROUTING) &&
+			switch_channel_test_flag(peer_channel, CF_ANSWERED) && state < CS_HANGUP) {
 
 			if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
 				switch_ivr_park_session(session);
