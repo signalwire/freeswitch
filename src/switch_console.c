@@ -1465,7 +1465,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 					cmd[1] = 0;
 				}
 				activity = 1;
-				running = switch_console_process(cmd, 0);
+				running = switch_console_process(cmd);
 				memset(cmd, 0, sizeof(cmd));
 			}
 		}
@@ -1510,7 +1510,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		}
 
 		if (cmd[0]) {
-			running = switch_console_process(cmd, 0);
+			running = switch_console_process(cmd);
 		}
 #endif
 	}
