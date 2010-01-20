@@ -758,17 +758,6 @@ SWITCH_STANDARD_APP(display_function)
 	switch_core_session_receive_message(session, &msg);
 }
 
-SWITCH_STANDARD_APP(warning_function)
-{
-	switch_core_session_message_t msg = { 0 };
-
-	/* Tell the channel to redirect */
-	msg.from = __FILE__;
-	msg.string_arg = data;
-	msg.message_id = SWITCH_MESSAGE_INDICATE_WARNING;
-	switch_core_session_receive_message(session, &msg);
-}
-
 SWITCH_STANDARD_APP(respond_function)
 {
 	switch_core_session_message_t msg = { 0 };
@@ -3055,8 +3044,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "redirect", "Send session redirect", "Send a redirect message to a session.", redirect_function, "<redirect_data>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_display", "Send session a new display", "Send session a new display.", display_function, "<text>",
-				   SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "send_warning", "Send session a popup", "Send session a popup.", warning_function, "<text>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "respond", "Send session respond", "Send a respond message to a session.", respond_function, "<respond_data>",
 				   SAF_SUPPORT_NOMEDIA);

@@ -2295,28 +2295,22 @@ SWITCH_STANDARD_API(uuid_display_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define WARNING_SYNTAX "<uuid> <warning>"
-SWITCH_STANDARD_API(uuid_warning_function)
+#define SIMPLIFY_SYNTAX "<uuid>"
+SWITCH_STANDARD_API(uuid_simplify_function)
 {
-	char *mycmd = NULL, *argv[2] = { 0 };
-	int argc = 0;
-	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-	}
-
-	if (zstr(cmd) || argc < 2 || zstr(argv[0]) || zstr(argv[1])) {
-		stream->write_function(stream, "-USAGE: %s\n", WARNING_SYNTAX);
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-USAGE: %s\n", SIMPLIFY_SYNTAX);
 	} else {
 		switch_core_session_message_t msg = { 0 };
 		switch_core_session_t *lsession = NULL;
 
-		msg.message_id = SWITCH_MESSAGE_INDICATE_WARNING;
-		msg.string_arg = argv[1];
+		msg.message_id = SWITCH_MESSAGE_INDICATE_SIMPLIFY;
+		msg.string_arg = cmd;
 		msg.from = __FILE__;
 
-		if ((lsession = switch_core_session_locate(argv[0]))) {
+		if ((lsession = switch_core_session_locate(cmd))) {
 			status = switch_core_session_receive_message(lsession, &msg);
 			switch_core_session_rwunlock(lsession);
 		}
@@ -2328,7 +2322,6 @@ SWITCH_STANDARD_API(uuid_warning_function)
 		stream->write_function(stream, "-ERR Operation Failed\n");
 	}
 
-	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -4154,7 +4147,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar_multi", "uuid_setvar_multi", uuid_setvar_multi_function, SETVAR_MULTI_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar", "uuid_setvar", uuid_setvar_function, SETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_transfer", "Transfer a session", transfer_function, TRANSFER_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "uuid_warning", "send popup", uuid_warning_function, WARNING_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_simplify", "Try to cut out of a call path / attended xfer", uuid_simplify_function, SIMPLIFY_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
 	switch_console_set_complete("add alias add");
