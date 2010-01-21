@@ -142,6 +142,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 	switch_channel_t *channel = switch_core_session_get_channel(collect->session);
 	char buf[10] = SWITCH_BLANK_STRING;
 	char *p, term;
+	switch_application_interface_t *application_interface = NULL;
 
 	if (collect->session) {
 		if (switch_core_session_read_lock(collect->session) != SWITCH_STATUS_SUCCESS) {
@@ -155,7 +156,6 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 	
 	if (!strcasecmp(collect->key, "exec")) {
 		char *data;
-		switch_application_interface_t *application_interface;
 		char *app_name, *app_data;
 
 		if (!(data = collect->file)) {
@@ -171,7 +171,6 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		if ((application_interface = switch_loadable_module_get_application_interface(app_name)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(collect->session), SWITCH_LOG_ERROR, "Invalid Application %s\n", app_name);
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			UNPROTECT_INTERFACE(application_interface);
 			goto wbreak;
 		}
 
@@ -198,10 +197,12 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		memset(buf, 0, sizeof(buf));
 
 		if (collect->file) {
+			switch_status_t status;
 			switch_input_args_t args = { 0 };
 			args.buf = buf;
 			args.buflen = sizeof(buf);
-			if (switch_ivr_play_file(collect->session, NULL, collect->file, &args) != SWITCH_STATUS_SUCCESS) {
+			status = switch_ivr_play_file(collect->session, NULL, collect->file, &args);
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(collect->session), SWITCH_LOG_ERROR, "%s Error Playing File!", switch_channel_get_name(channel));
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
@@ -219,7 +220,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
  wbreak:
 
 	switch_core_session_rwunlock(collect->session);
-
+	UNPROTECT_INTERFACE(application_interface);	
 	return NULL;
 }
 
