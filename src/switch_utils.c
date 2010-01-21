@@ -1571,6 +1571,9 @@ static char unescape_char(char escaped)
 	case 's':
 		unescaped = ' ';
 		break;
+	case '\\':
+		unescaped = 1; /* 1 means double esc */
+		break;
 	default:
 		unescaped = escaped;
 	}
@@ -1644,7 +1647,11 @@ static char *cleanup_separated_string(char *str, char delim)
 			e = *(ptr + 1);
 			if (e == '\'' || e == '"' || (delim && e == delim) || (e = unescape_char(*(ptr + 1))) != *(ptr + 1)) {
 				++ptr;
-				*dest++ = e;
+				if (e == 1) {
+					*dest++ = '\\';
+				} else {
+					*dest++ = e;
+				}
 				end = dest;
 				esc++;
 			}
