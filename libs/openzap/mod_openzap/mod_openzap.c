@@ -1160,7 +1160,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	
 	if (status != ZAP_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channels available\n");
-		return SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION;
+
+		if (caller_data.hangup_cause == SWITCH_CAUSE_NONE) {
+			caller_data.hangup_cause = SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION;
+		}
+
+		return caller_data.hangup_cause;
 	}
 
 	if ((var = switch_event_get_header(var_event, "openzap_pre_buffer_size"))) {

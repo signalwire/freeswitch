@@ -71,6 +71,7 @@ typedef struct {
 	sangomabc_short_event_t event;
 	zap_span_t *span;
 	zap_channel_t *zchan;
+	int hangup_cause;
 } sangoma_boost_request_t;
 
 //#define MAX_REQ_ID ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN * ZAP_MAX_CHANNELS_PHYSICAL_SPAN
@@ -395,18 +396,26 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	if (OUTBOUND_REQUESTS[r].zchan && OUTBOUND_REQUESTS[r].status != BST_READY && zap_test_flag((OUTBOUND_REQUESTS[r].zchan), ZAP_CHANNEL_INUSE)) {
 		status = ZAP_FAIL;
 		*zchan = NULL;
-		OUTBOUND_REQUESTS[event->call_setup_id].zchan = NULL;
-		if (zchan->extra_id) {                                                                                                                              
-			zchan->extra_id = 0;                                                                                                                            
+		if (OUTBOUND_REQUESTS[r].zchan->extra_id) {
+			OUTBOUND_REQUESTS[r].zchan->extra_id = 0;
 		}
-		zchan->sflags = 0;                                                                                                                                  
-		zchan->call_data = NULL;                                                                                                                            
-		zap_channel_done(zchan);
-	} 
+		(OUTBOUND_REQUESTS[r].zchan)->sflags = 0;
+		(OUTBOUND_REQUESTS[r].zchan)->call_data = NULL;
+		zap_channel_done((OUTBOUND_REQUESTS[r].zchan));
+		OUTBOUND_REQUESTS[r].zchan = NULL;
+	}
 
 	st = OUTBOUND_REQUESTS[r].status;
 	OUTBOUND_REQUESTS[r].status = BST_FREE;	
-	
+
+	if (status == ZAP_FAIL) {
+		if (st == BST_FAIL) {
+			caller_data->hangup_cause = OUTBOUND_REQUESTS[r].hangup_cause;
+		} else {
+			caller_data->hangup_cause = ZAP_CAUSE_RECOVERY_ON_TIMER_EXPIRE;
+		}
+	}
+
 	if (st == BST_FAIL) {
 		release_request_id(r);
 	} else if (st != BST_READY) {
@@ -495,7 +504,8 @@ static void handle_call_progress(sangomabc_connection_t *mcon, sangomabc_short_e
 					   event->call_setup_id,
 					   SIGBOOST_EVENT_CALL_STOPPED,
 					   ZAP_CAUSE_DESTINATION_OUT_OF_ORDER);
-	OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;	
+	OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
+	OUTBOUND_REQUESTS[event->call_setup_id].hangup_cause = ZAP_CAUSE_DESTINATION_OUT_OF_ORDER;
 }
 
 /**
@@ -543,6 +553,7 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 					   SIGBOOST_EVENT_CALL_STOPPED,
 					   ZAP_CAUSE_DESTINATION_OUT_OF_ORDER);
 	OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
+	OUTBOUND_REQUESTS[event->call_setup_id].hangup_cause = ZAP_CAUSE_DESTINATION_OUT_OF_ORDER;
 	
 }
 
@@ -633,6 +644,7 @@ static void handle_call_start_nack(zap_span_t *span, sangomabc_connection_t *mco
 
 		OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
 		OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
+		OUTBOUND_REQUESTS[event->call_setup_id].hangup_cause = event->release_cause;
 		return;
 	} else {
 		if ((zchan = find_zchan(span, event, 1))) {
