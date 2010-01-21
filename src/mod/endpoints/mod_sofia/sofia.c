@@ -4964,10 +4964,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 										   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
-
-								if (b_tech_pvt) {
+								
+								if (b_tech_pvt && !sofia_test_flag(b_tech_pvt, TFLAG_BYE)) {
 									char* q850 = NULL;
 									const char* val = NULL;
+
 									sofia_set_flag_locked(b_tech_pvt, TFLAG_BYE);
 									val = switch_channel_get_variable(tech_pvt->channel, "disable_q850_reason");
 									if (!val || switch_true(val)) {
@@ -4977,6 +4978,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 											TAG_IF(!zstr(q850), SIPTAG_REASON_STR(q850)),
 											TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 											TAG_END());
+								
 								}
 							} else {
 								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
@@ -5721,6 +5723,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		from_user = sip->sip_from->a_url->url_user;
 		from_host = sip->sip_from->a_url->url_host;
 		channel_name = url_set_chanvars(session, sip->sip_from->a_url, sip_from);
+
 		if (sip->sip_from->a_url->url_params && (tmp = sofia_glue_find_parameter(sip->sip_from->a_url->url_params, "isup-oli="))) {
 			aniii = switch_core_session_strdup(session, tmp + 9);
 			if ((tmp = strchr(aniii, ';'))) {

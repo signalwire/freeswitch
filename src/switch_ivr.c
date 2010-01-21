@@ -736,7 +736,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			break;
 		} else {
 			if (expires && switch_epoch_time_now(NULL) >= expires) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE);
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				break;
 			}
 
