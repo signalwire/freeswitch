@@ -1435,8 +1435,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	char *route_uri = NULL;
 	sofia_destination_t *dst = NULL;
 	sofia_cid_type_t cid_type = tech_pvt->profile->cid_type;
-	char *d_url = NULL, *url = NULL, *dest_host = NULL, *url_str = NULL;
-
+	
 	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
 	switch_assert(tech_pvt != NULL);
@@ -1452,50 +1451,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	check_decode(cid_name, session);
 	check_decode(cid_num, session);
 
-	if (zstr(tech_pvt->dest)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "URL Error!\n");
-		return SWITCH_STATUS_FALSE;
-	}
 	
-	if ((d_url = sofia_glue_get_url_from_contact(tech_pvt->dest, 1))) {
-		url = d_url;
-	} else {
-		url = tech_pvt->dest;
-	}
-	
-	url_str = url;
-
-	if ((dest_host = strchr(url_str, '@'))) {
-		dest_host++;
-	}
-
-
-	if (!tech_pvt->from_str) {
-		const char* sipip;
-		const char* format;
-		const char *alt = NULL;
-
-		sipip = tech_pvt->profile->sipip;
-
-		if (sofia_glue_check_nat(tech_pvt->profile, dest_host)) {
-			sipip = tech_pvt->profile->extsipip;
-		}
-
-		format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s]>" : "\"%s\" <sip:%s%s%s>";
-
-		if ((alt = switch_channel_get_variable(channel, "sip_invite_domain"))) {
-			sipip = alt;
-		}
-			
-		tech_pvt->from_str = 
-			switch_core_session_sprintf(tech_pvt->session,
-										format,
-										cid_name,
-										cid_num,
-										!zstr(cid_num) ? "@" : "",
-										sipip);
-	}
-
 	if ((alertbuf = switch_channel_get_variable(channel, "alert_info"))) {
 		alert_info = switch_core_session_sprintf(tech_pvt->session, "Alert-Info: %s", alertbuf);
 	}
@@ -1511,7 +1467,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	sofia_set_flag_locked(tech_pvt, TFLAG_READY);
 
 	if (!tech_pvt->nh) {
-
+		char *d_url = NULL, *url = NULL, *dest_host = NULL, *url_str = NULL;
 		sofia_private_t *sofia_private;
 		char *invite_contact = NULL, *to_str, *use_from_str, *from_str;
 		const char *t_var;
@@ -1525,6 +1481,52 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		const char *invite_from_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_from_params");
 		const char *from_var = switch_channel_get_variable(tech_pvt->channel, "sip_from_uri");
 		const char *from_display = switch_channel_get_variable(tech_pvt->channel, "sip_from_display");
+
+
+		if (zstr(tech_pvt->dest)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "URL Error!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+	
+		if ((d_url = sofia_glue_get_url_from_contact(tech_pvt->dest, 1))) {
+			url = d_url;
+		} else {
+			url = tech_pvt->dest;
+		}
+	
+		url_str = url;
+
+		if ((dest_host = strchr(url_str, '@'))) {
+			dest_host++;
+		}
+
+
+		if (!tech_pvt->from_str) {
+			const char* sipip;
+			const char* format;
+			const char *alt = NULL;
+			
+			sipip = tech_pvt->profile->sipip;
+			
+			if (sofia_glue_check_nat(tech_pvt->profile, dest_host)) {
+				sipip = tech_pvt->profile->extsipip;
+			}
+			
+			format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s]>" : "\"%s\" <sip:%s%s%s>";
+			
+			if ((alt = switch_channel_get_variable(channel, "sip_invite_domain"))) {
+				sipip = alt;
+			}
+			
+			tech_pvt->from_str = 
+				switch_core_session_sprintf(tech_pvt->session,
+											format,
+											cid_name,
+											cid_num,
+											!zstr(cid_num) ? "@" : "",
+											sipip);
+		}
+
 		
 		if (from_var) {
 			if (strncasecmp(from_var, "sip:", 4) || strncasecmp(from_var, "sips:", 5)) {

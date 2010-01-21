@@ -962,6 +962,7 @@ SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_c
 	switch_assert(channel->flag_mutex);
 
 	switch_mutex_lock(channel->flag_mutex);
+	
 	channel->flags[flag] = 1;
 	switch_mutex_unlock(channel->flag_mutex);
 
@@ -1051,6 +1052,7 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 	switch_mutex_lock(channel->flag_mutex);
 	channel->flags[flag] = 0;
 	switch_mutex_unlock(channel->flag_mutex);
+	
 	if (flag == CF_OUTBOUND) {
 		switch_channel_set_variable(channel, "is_outbound", NULL);
 	}

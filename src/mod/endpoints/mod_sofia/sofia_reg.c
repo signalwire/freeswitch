@@ -1810,11 +1810,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	for (un = sip->sip_unknown; un; un = un->un_next) {
 		if (!strncasecmp(un->un_name, "X-", 2)) {
 			if (!zstr(un->un_value)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "adding %s => %s to xml_curl request\n", un->un_name, un->un_value);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "adding %s => %s to xml_curl request\n", un->un_name, un->un_value);
 				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, un->un_name, un->un_value);
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "skipping %s => %s from xml_curl request\n", un->un_name, un->un_value);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "skipping %s => %s from xml_curl request\n", un->un_name, un->un_value);
 		}
 	}
 

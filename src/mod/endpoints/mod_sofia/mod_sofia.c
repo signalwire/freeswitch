@@ -505,7 +505,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			
 			/* Send the 200 OK */
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
 
 				if (sofia_use_soa(tech_pvt)) {
 					nua_respond(tech_pvt->nh, SIP_200_OK,
@@ -1243,6 +1243,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			const char *var;
 			const char *presence_data = switch_channel_get_variable(channel, "presence_data");
 			const char *presence_id = switch_channel_get_variable(channel, "presence_id");
+
+
+			if ((var = switch_channel_get_variable(channel, "sip_enable_soa"))) {
+				if (switch_true(var)) {
+					sofia_set_flag(tech_pvt, TFLAG_ENABLE_SOA);
+				} else {
+					sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
+				}
+			}
+
 			
 			if (presence_id || presence_data) {
 				char *sql = switch_mprintf("update sip_dialogs set presence_id='%q',presence_data='%q' "
@@ -1382,7 +1392,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			uint32_t send_invite = 1;
 
-			switch_channel_clear_flag(channel, CF_PROXY_MODE);
 			sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
 
 			if (!(switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
@@ -1411,6 +1420,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			if (send_invite) {
 				switch_channel_set_flag(channel, CF_REQ_MEDIA);
+				switch_channel_clear_flag(channel, CF_PROXY_MODE);
 				sofia_glue_do_invite(session);
 			}
 		}
@@ -3287,6 +3297,14 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	*new_session = nsession;
 	cause = SWITCH_CAUSE_SUCCESS;
 
+	if ((hval = switch_event_get_header(var_event, "sip_enable_soa"))) {
+		if (switch_true(hval)) {
+			sofia_set_flag(tech_pvt, TFLAG_ENABLE_SOA);
+		} else {
+			sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
+		}
+	}
+
 	if ((hval = switch_event_get_header(var_event, "sip_auto_answer")) && switch_true(hval)) {
 		switch_channel_set_variable_printf(nchannel, "sip_h_Call-Info", "<sip:%s>;answer-after=0", profile->sipip);
 		switch_channel_set_variable(nchannel, "sip_invite_params", "intercom=true");
@@ -3331,6 +3349,12 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			tech_pvt->bte = ctech_pvt->te;
 			tech_pvt->bcng_pt = ctech_pvt->cng_pt;
 			tech_pvt->cid_type = ctech_pvt->cid_type;
+			
+			if (sofia_test_flag(tech_pvt, TFLAG_ENABLE_SOA)) {
+				sofia_set_flag(ctech_pvt, TFLAG_ENABLE_SOA);
+			} else {
+				sofia_clear_flag(ctech_pvt, TFLAG_ENABLE_SOA);
+			}
 		}
 
 		if (switch_channel_test_flag(o_channel, CF_PROXY_MEDIA)) {
