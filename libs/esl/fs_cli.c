@@ -705,7 +705,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 		
 		snprintf(cmd_str, sizeof(cmd_str), "api %s\nconsole_execute: true\n\n", cmd);
 		if (esl_send_recv(handle, cmd_str)) {
-			printf("Socket Interrupted, bye!\n");
+			printf("Socket interrupted, bye!\n");
 			return 1;
 		}
 		if (handle->last_sr_event) {
