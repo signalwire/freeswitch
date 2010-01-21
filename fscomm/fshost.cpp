@@ -162,6 +162,15 @@ switch_status_t FSHost::processAlegEvent(switch_event_t * event, QString uuid)
 {
     switch_status_t status = SWITCH_STATUS_SUCCESS;
     QSharedPointer<Call> call = _active_calls.value(uuid);
+
+    if (call.isNull())
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "We don't have a call object for A leg on event %s.\n", switch_event_name(event->event_id));
+        qDebug() << _active_calls.keys();
+        printEventHeaders(event);
+        return SWITCH_STATUS_FALSE;
+    }
+
     /* Inbound call */
     if (call.data()->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
     {
@@ -226,6 +235,15 @@ switch_status_t FSHost::processBlegEvent(switch_event_t * event, QString buuid)
     QString uuid = _bleg_uuids.value(buuid);
     switch_status_t status = SWITCH_STATUS_SUCCESS;
     QSharedPointer<Call> call = _active_calls.value(uuid);
+
+    if (call.isNull())
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "We don't have a call object for B leg on event %s.\n", switch_event_name(event->event_id));
+        qDebug() << _active_calls.keys();
+        printEventHeaders(event);
+        return SWITCH_STATUS_FALSE;
+    }
+
     /* Inbound call */
     if (call.data()->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
     {

@@ -211,7 +211,9 @@ void MainWindow::callTableDoubleClick(QTableWidgetItem *item)
         return;
     }
     ui->hangupBtn->setEnabled(true);
-    lastCall.data()->setActive(false);
+    /* Last call was hungup and we are switching */
+    if (!lastCall.isNull())
+        lastCall.data()->setActive(false);
     call.data()->setActive(true);
 }
 
