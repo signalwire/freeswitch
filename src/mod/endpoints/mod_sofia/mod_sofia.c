@@ -1119,6 +1119,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	/* ones that do not need to lock sofia mutex */
 	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_PROXY_MEDIA:
+		{
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				if (msg->numeric_arg) {
+					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
+				} else {
+					switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
+				}
+			}
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_DEBUG_AUDIO:
 		{
 			if (switch_rtp_ready(tech_pvt->rtp_session) && !zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
