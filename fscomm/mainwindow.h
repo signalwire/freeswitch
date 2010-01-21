@@ -32,7 +32,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QListWidgetItem>
+#include <QTableWidgetItem>
 #include <QSignalMapper>
 #include <QSystemTrayIcon>
 #include <switch.h>
@@ -62,7 +62,7 @@ private slots:
     void prefTriggered();
     void coreLoadingError(QString);
     void sendDTMF(QString);
-    void callListDoubleClick(QListWidgetItem *);
+    void callTableDoubleClick(QTableWidgetItem*);
     void makeCall();
     void fshostReady();
     void paAnswer();

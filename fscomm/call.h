@@ -45,10 +45,9 @@ typedef enum {
         FSCOMM_CALL_DIRECTION_OUTBOUND = 1
 } fscomm_call_direction_t;
 
-class Call
-{
+class Call {
 public:
-    Call(void);
+    Call();
     Call(int call_id, QString cid_name, QString cid_number, fscomm_call_direction_t direction, QString uuid);
     QString getCidName(void) { return _cid_name; }
     QString getCidNumber(void) { return _cid_number; }

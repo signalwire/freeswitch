@@ -97,7 +97,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->answerBtn, SIGNAL(clicked()), this, SLOT(paAnswer()));
     connect(ui->hangupBtn, SIGNAL(clicked()), this, SLOT(paHangup()));
     connect(ui->recoredCallBtn, SIGNAL(toggled(bool)), SLOT(recordCall(bool)));
-    connect(ui->listCalls, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(callListDoubleClick(QListWidgetItem*)));
+    connect(ui->tableCalls, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), this, SLOT(callTableDoubleClick(QTableWidgetItem*)));
     connect(ui->action_Preferences, SIGNAL(triggered()), this, SLOT(prefTriggered()));
     connect(ui->action_Exit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
@@ -199,7 +199,8 @@ void MainWindow::sendDTMF(QString dtmf)
     g_FSHost.getCurrentActiveCall().data()->sendDTMF(dtmf);
 }
 
-void MainWindow::callListDoubleClick(QListWidgetItem *item)
+/* TODO: Update the timers and the item text! */
+void MainWindow::callTableDoubleClick(QTableWidgetItem *item)
 {
     QSharedPointer<Call> lastCall = g_FSHost.getCurrentActiveCall();
     QSharedPointer<Call> call = g_FSHost.getCallByUUID(item->data(Qt::UserRole).toString());
@@ -301,9 +302,20 @@ void MainWindow::recordCall(bool pressed)
 void MainWindow::newOutgoingCall(QSharedPointer<Call> call)
 {
     ui->textEdit->setText(QString("Calling %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
-    QListWidgetItem *item = new QListWidgetItem(tr("%1 (%2) - Calling").arg(call.data()->getCidName(), call.data()->getCidNumber()));
-    item->setData(Qt::UserRole, call.data()->getUUID());
-    ui->listCalls->addItem(item);
+
+    ui->tableCalls->setRowCount(ui->tableCalls->rowCount()+1);
+    QTableWidgetItem *item0 = new QTableWidgetItem(QString("%1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+    item0->setData(Qt::UserRole, call.data()->getUUID());
+    ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,0,item0);
+
+    QTableWidgetItem *item1 = new QTableWidgetItem(tr("Dialing..."));
+    item1->setData(Qt::UserRole, call.data()->getUUID());
+    ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,1,item1);
+
+    ui->tableCalls->resizeColumnsToContents();
+    ui->tableCalls->resizeRowsToContents();
+    ui->tableCalls->horizontalHeader()->setStretchLastSection(true);
+
     ui->hangupBtn->setEnabled(true);
     call.data()->setActive(true);
 }
@@ -311,42 +323,48 @@ void MainWindow::newOutgoingCall(QSharedPointer<Call> call)
 void MainWindow::ringing(QSharedPointer<Call> call)
 {
 
-    for (int i=0; i<ui->listCalls->count(); i++)
+    for (int i=0; i<ui->tableCalls->rowCount(); i++)
     {
-        QListWidgetItem *item = ui->listCalls->item(i);
+        QTableWidgetItem *item = ui->tableCalls->item(i, 1);
         if (item->data(Qt::UserRole).toString() == call.data()->getUUID())
         {
-            item->setText(tr("%1 - Ringing").arg(call.data()->getCidNumber()));
+            item->setText(tr("Ringing"));
             ui->textEdit->setText(QString("Call from %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
             return;
         }
     }
 
     ui->textEdit->setText(QString("Call from %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
-    QListWidgetItem *item = new QListWidgetItem(tr("%1 (%2) - Ringing").arg(call.data()->getCidName(), call.data()->getCidNumber()));
-    item->setData(Qt::UserRole, call.data()->getUUID());
-    ui->listCalls->addItem(item);
+
+    ui->tableCalls->setRowCount(ui->tableCalls->rowCount()+1);
+    QTableWidgetItem *item0 = new QTableWidgetItem(QString("%1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+    item0->setData(Qt::UserRole, call.data()->getUUID());
+    ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,0,item0);
+
+    QTableWidgetItem *item1 = new QTableWidgetItem(tr("Ringing"));
+    item1->setData(Qt::UserRole, call.data()->getUUID());
+    ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,1,item1);
+
+    ui->tableCalls->resizeColumnsToContents();
+    ui->tableCalls->resizeRowsToContents();
+    ui->tableCalls->horizontalHeader()->setStretchLastSection(true);
+
     ui->answerBtn->setEnabled(true);
     call.data()->setActive(true);
 }
 
 void MainWindow::answered(QSharedPointer<Call> call)
 {
-    for (int i=0; i<ui->listCalls->count(); i++)
+    for (int i=0; i<ui->tableCalls->rowCount(); i++)
     {
-        QListWidgetItem *item = ui->listCalls->item(i);
+        QTableWidgetItem *item = ui->tableCalls->item(i, 1);
         if (item->data(Qt::UserRole).toString() == call.data()->getUUID())
         {
-            if (call.data()->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
-            {
-                item->setText(tr("%1 (%2) - Active").arg(call.data()->getCidName(), call.data()->getCidNumber()));
-                break;
-            }
-            else
-            {
-                item->setText(tr("%1 - Active").arg(call.data()->getCidNumber()));
-                break;
-            }
+            item->setText(tr("Answered"));
+            ui->tableCalls->resizeColumnsToContents();
+            ui->tableCalls->resizeRowsToContents();
+            ui->tableCalls->horizontalHeader()->setStretchLastSection(true);
+            break;
         }
     }
     ui->recoredCallBtn->setEnabled(true);
@@ -371,12 +389,15 @@ void MainWindow::answered(QSharedPointer<Call> call)
 
 void MainWindow::callFailed(QSharedPointer<Call> call)
 {
-    for (int i=0; i<ui->listCalls->count(); i++)
+    for (int i=0; i<ui->tableCalls->rowCount(); i++)
     {
-        QListWidgetItem *item = ui->listCalls->item(i);
+        QTableWidgetItem *item = ui->tableCalls->item(i, 1);
         if (item->data(Qt::UserRole).toString() == call.data()->getUUID())
         {
-            delete ui->listCalls->takeItem(i);
+            ui->tableCalls->removeRow(i);
+            ui->tableCalls->resizeColumnsToContents();
+            ui->tableCalls->resizeRowsToContents();
+            ui->tableCalls->horizontalHeader()->setStretchLastSection(true);
             break;
         }
     }
@@ -410,12 +431,15 @@ void MainWindow::callFailed(QSharedPointer<Call> call)
 
 void MainWindow::hungup(QSharedPointer<Call> call)
 {
-    for (int i=0; i<ui->listCalls->count(); i++)
+    for (int i=0; i<ui->tableCalls->rowCount(); i++)
     {
-        QListWidgetItem *item = ui->listCalls->item(i);
+        QTableWidgetItem *item = ui->tableCalls->item(i, 1);
         if (item->data(Qt::UserRole).toString() == call.data()->getUUID())
         {
-            delete ui->listCalls->takeItem(i);
+            ui->tableCalls->removeRow(i);
+            ui->tableCalls->resizeColumnsToContents();
+            ui->tableCalls->resizeRowsToContents();
+            ui->tableCalls->horizontalHeader()->setStretchLastSection(true);
             break;
         }
     }
