@@ -358,7 +358,6 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 			*zchan = NULL;
 			goto done;
 		}
-		//printf("WTF %d\n", sanity);
 	}
 	
 	if (OUTBOUND_REQUESTS[r].status == BST_ACK && OUTBOUND_REQUESTS[r].zchan) {
@@ -368,15 +367,14 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		zap_log(ZAP_LOG_DEBUG, "Channel state changed to PROGRESS [Csid:%d]\n", r);
 	}
 
+	/* This is blocking the channel thread in openzap */
+	/* Once we know the channel we need to get out of here and move to a state */
 	sanity = 60000;
 	while(zap_running() && OUTBOUND_REQUESTS[r].status == BST_ACK) {
 		zap_sleep(1);
 		if (--sanity <= 0) {
-			status = ZAP_FAIL;
-			*zchan = NULL;
-			goto done;
+			break;
 		}
-		//printf("WTF %d\n", sanity);
 	}
 
 	if (OUTBOUND_REQUESTS[r].status == BST_READY && OUTBOUND_REQUESTS[r].zchan) {
@@ -390,7 +388,22 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	}
 
  done:
-	
+
+	/* We failed to ever setup media, we need to let go of the channel */
+	/* All of this early media stuff should not be in this function at all */
+	/* Everything after we know the channel should be moved to a new state */
+	if (OUTBOUND_REQUESTS[r].zchan && OUTBOUND_REQUESTS[r].status != BST_READY && zap_test_flag((OUTBOUND_REQUESTS[r].zchan), ZAP_CHANNEL_INUSE)) {
+		status = ZAP_FAIL;
+		*zchan = NULL;
+		OUTBOUND_REQUESTS[event->call_setup_id].zchan = NULL;
+		if (zchan->extra_id) {                                                                                                                              
+			zchan->extra_id = 0;                                                                                                                            
+		}
+		zchan->sflags = 0;                                                                                                                                  
+		zchan->call_data = NULL;                                                                                                                            
+		zap_channel_done(zchan);
+	} 
+
 	st = OUTBOUND_REQUESTS[r].status;
 	OUTBOUND_REQUESTS[r].status = BST_FREE;	
 	
