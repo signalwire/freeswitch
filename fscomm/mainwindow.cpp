@@ -40,6 +40,11 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    /* Setup the taskbar icon */
+    sysTray = new QSystemTrayIcon(QIcon(":/images/taskbar_icon"), this);
+    sysTray->setToolTip(tr("FSComm"));
+
+    /* Connect DTMF buttons */
     dialpadMapper = new QSignalMapper(this);
     connect(ui->dtmf0Btn, SIGNAL(clicked()), dialpadMapper, SLOT(map()));
     connect(ui->dtmf1Btn, SIGNAL(clicked()), dialpadMapper, SLOT(map()));
@@ -73,8 +78,9 @@ MainWindow::MainWindow(QWidget *parent) :
     dialpadMapper->setMapping(ui->dtmfDBtn, QString("D"));
     dialpadMapper->setMapping(ui->dtmfAstBtn, QString("*"));
     dialpadMapper->setMapping(ui->dtmfPoundBtn, QString("#"));
-    connect(dialpadMapper, SIGNAL(mapped(QString)), this, SLOT(dialDTMF(QString)));
+    connect(dialpadMapper, SIGNAL(mapped(QString)), this, SLOT(sendDTMF(QString)));
 
+    /* Connect events related to FreeSWITCH */
     connect(&g_FSHost, SIGNAL(ready()),this, SLOT(fshostReady()));
     connect(&g_FSHost, SIGNAL(ringing(QSharedPointer<Call>)), this, SLOT(ringing(QSharedPointer<Call>)));
     connect(&g_FSHost, SIGNAL(answered(QSharedPointer<Call>)), this, SLOT(answered(QSharedPointer<Call>)));
@@ -86,6 +92,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&g_FSHost, SIGNAL(delAccount(QSharedPointer<Account>)), this, SLOT(accountDel(QSharedPointer<Account>)));
     /*connect(&g_FSHost, SIGNAL(coreLoadingError(QString)), this, SLOT(coreLoadingError(QString)));*/
 
+    /* Connect call commands */
     connect(ui->newCallBtn, SIGNAL(clicked()), this, SLOT(makeCall()));
     connect(ui->answerBtn, SIGNAL(clicked()), this, SLOT(paAnswer()));
     connect(ui->hangupBtn, SIGNAL(clicked()), this, SLOT(paHangup()));
@@ -95,6 +102,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->action_Exit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
     connect(ui->actionSetDefaultAccount, SIGNAL(triggered(bool)), this, SLOT(setDefaultAccount()));
+    connect(sysTray, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(sysTrayActivated(QSystemTrayIcon::ActivationReason)));
 
     /* Set the context menus */
     ui->tableAccounts->addAction(ui->actionSetDefaultAccount);
@@ -186,13 +194,9 @@ void MainWindow::accountStateChanged(QSharedPointer<Account> acc)
     }
 }
 
-void MainWindow::dialDTMF(QString dtmf)
+void MainWindow::sendDTMF(QString dtmf)
 {
-    QString result;
-    QString dtmf_string = QString("dtmf %1").arg(dtmf);
-    if (g_FSHost.sendCmd("pa", dtmf_string.toAscii(), &result) == SWITCH_STATUS_FALSE) {
-        ui->textEdit->setText("Error sending that command");
-    }
+    g_FSHost.getCurrentActiveCall().data()->sendDTMF(dtmf);
 }
 
 void MainWindow::callListDoubleClick(QListWidgetItem *item)
@@ -228,6 +232,8 @@ void MainWindow::fshostReady()
     ui->newCallBtn->setEnabled(true);
     ui->textEdit->setEnabled(true);
     ui->textEdit->setText("Ready to dial and receive calls!");
+    sysTray->show();
+    sysTray->showMessage(tr("Status"), tr("FSComm has initialized!"), QSystemTrayIcon::Information, 5000);
 }
 
 void MainWindow::paAnswer()
@@ -463,4 +469,24 @@ void MainWindow::showAbout()
                           " Anthony Minessale II, primary author of FreeSWITCH&trade;."
                           "<p>Compiled FSComm version: %1"
                           "<p>%2").arg(SWITCH_VERSION_FULL, result));
+}
+
+void MainWindow::sysTrayActivated(QSystemTrayIcon::ActivationReason reason)
+{
+    switch(reason)
+    {
+    case QSystemTrayIcon::Trigger:
+        {
+            if (this->isVisible())
+                this->hide();
+            else {
+                this->show();
+                this->activateWindow();
+                this->raise();
+            }
+            break;
+        }
+    default:
+        break;
+    }
 }

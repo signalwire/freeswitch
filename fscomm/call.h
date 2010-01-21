@@ -63,6 +63,7 @@ public:
     void setActive(bool isActive) { _isActive = isActive; }
     bool isActive() { return _isActive == true; }
     switch_status_t toggleRecord(bool);
+    void sendDTMF(QString digit);
 
 private:
     int _call_id;

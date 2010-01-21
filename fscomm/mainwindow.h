@@ -34,6 +34,7 @@
 #include <QMainWindow>
 #include <QListWidgetItem>
 #include <QSignalMapper>
+#include <QSystemTrayIcon>
 #include <switch.h>
 #include <fshost.h>
 #include <call.h>
@@ -43,7 +44,6 @@
 namespace Ui {
     class MainWindow;
 }
-
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -61,7 +61,7 @@ private slots:
     void showAbout();
     void prefTriggered();
     void coreLoadingError(QString);
-    void dialDTMF(QString);
+    void sendDTMF(QString);
     void callListDoubleClick(QListWidgetItem *);
     void makeCall();
     void fshostReady();
@@ -78,11 +78,13 @@ private slots:
     void accountAdd(QSharedPointer<Account>);
     void accountDel(QSharedPointer<Account>);
     void accountStateChanged(QSharedPointer<Account>);
+    void sysTrayActivated(QSystemTrayIcon::ActivationReason reason);
 
 private:
     Ui::MainWindow *ui;
     QSignalMapper *dialpadMapper;
     PrefDialog *preferences;
+    QSystemTrayIcon *sysTray;
 };
 
 #endif // MAINWINDOW_H

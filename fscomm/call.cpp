@@ -28,6 +28,7 @@
  */
 
 #include "call.h"
+#include <QtGui>
 #include <fshost.h>
 
 Call::Call()
@@ -66,4 +67,14 @@ switch_status_t Call::toggleRecord(bool startRecord)
     }
 
     return status;
+}
+
+void Call::sendDTMF(QString digit)
+{
+    QString result;
+    QString dtmf_string = QString("dtmf %1").arg(digit);
+    if (g_FSHost.sendCmd("pa", dtmf_string.toAscii(), &result) == SWITCH_STATUS_FALSE) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not send DTMF digit %s on call[%s]", digit.toAscii().data(), _uuid.toAscii().data());
+        QMessageBox::critical(0, QWidget::tr("DTMF Error"), QWidget::tr("There was an error sending DTMF, please report this bug."), QMessageBox::Ok);
+    }
 }
