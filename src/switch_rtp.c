@@ -1594,7 +1594,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 							  rtp_session->dtmf_data.timestamp_dtmf,
 							  rtp_session->dtmf_data.out_digit_sofar,
 							  rtp_session->dtmf_data.out_digit_sub_sofar, rtp_session->dtmf_data.out_digit_dur, rtp_session->seq);
-			if (rtp_session->rtp_bugs & RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833) {
+			if (loops == 1 && rtp_session->rtp_bugs & RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833) {
 				rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts + samples;
 			}
 		}
