@@ -1468,7 +1468,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	sofia_set_flag_locked(tech_pvt, TFLAG_READY);
 
 	if (!tech_pvt->nh) {
-		char *d_url = NULL, *url = NULL, *dest_host = NULL, *url_str = NULL;
+		char *d_url = NULL, *url = NULL, *url_str = NULL;
 		sofia_private_t *sofia_private;
 		char *invite_contact = NULL, *to_str, *use_from_str, *from_str;
 		const char *t_var;
@@ -1497,11 +1497,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	
 		url_str = url;
 
-		if ((dest_host = strchr(url_str, '@'))) {
-			dest_host++;
-		}
-
-
 		if (!tech_pvt->from_str) {
 			const char* sipip;
 			const char* format;
@@ -1509,7 +1504,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			
 			sipip = tech_pvt->profile->sipip;
 			
-			if (sofia_glue_check_nat(tech_pvt->profile, dest_host)) {
+			if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 				sipip = tech_pvt->profile->extsipip;
 			}
 			
@@ -1527,7 +1522,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 											!zstr(cid_num) ? "@" : "",
 											sipip);
 		}
-
 		
 		if (from_var) {
 			if (strncasecmp(from_var, "sip:", 4) || strncasecmp(from_var, "sips:", 5)) {
@@ -1557,6 +1551,14 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		if (!rpid_domain) {
 			rpid_domain = "cluecon.com";
+		}
+
+		if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTO_NAT)) {
+			if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+				rpid_domain = tech_pvt->profile->extsipip;
+			} else {
+				rpid_domain = tech_pvt->profile->sipip;
+			}
 		}
 
 		/*
@@ -1592,7 +1594,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			if ((contact = switch_channel_get_variable(channel, "sip_contact_user"))) {
 				char *ip_addr;
 				char *ipv6;
-				
+
 				if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) { 
 					ip_addr = (switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network)) 
 						? tech_pvt->profile->sipip : tech_pvt->profile->extsipip;
@@ -1628,7 +1630,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, 0, SWITCH_TRUE, invite_from_params);
 		to_str = sofia_overcome_sip_uri_weakness(session, invite_to_uri ? invite_to_uri : tech_pvt->dest_to, 0, SWITCH_FALSE, invite_to_params);
 
-
 		/*
 		   Does the "genius" who wanted SIP to be "text-based" so it was "easier to read" even use it now,
 		   or did he just suggest it to make our lives miserable?
@@ -1646,7 +1647,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				call_id = switch_core_session_get_uuid(session);
 			}
 		}
-		
+
 		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 								  NUTAG_URL(url_str),
 								  TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
