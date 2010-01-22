@@ -4717,7 +4717,6 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 
 			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("messsage/sipfrag"),
 					   NUTAG_SUBSTATE(nua_substate_terminated),
-					   SIPTAG_HEADER_STR(status == SWITCH_STATUS_SUCCESS ? "Status-Line: SIP/2.0 200 OK\n" : "Status-Line: SIP/2.0 403 Forbidden\n"),
 					   SIPTAG_PAYLOAD_STR(status == SWITCH_STATUS_SUCCESS ? "SIP/2.0 200 OK\r\n": 
 										  "SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
 
