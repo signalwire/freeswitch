@@ -181,7 +181,7 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 {
 	int x;
 	switch_interval_time_t avg, val = 1000, want = 1000;
-	int over = 0, under = 0, good = 0, step = 50, diff = 0, retry = 0;
+	int over = 0, under = 0, good = 0, step = 50, diff = 0, retry = 0, lastgood = 0;
 
 #ifdef HAVE_CLOCK_GETRES
 	struct timespec ts;
@@ -207,7 +207,7 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Test: %ld Average: %ld Step: %d\n", (long)val, (long)avg, step);
 
 		diff = abs((int)(want - avg));
-		if (diff > 1500) {
+		if (diff > 2500) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
 							  "Abnormally large timer gap %d detected!\n"
 							  "Do you have your kernel timer set to higher than 1 kHz? You may experience audio problems.\n", diff);
@@ -215,10 +215,14 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 			switch_time_set_cond_yield(SWITCH_TRUE);
 			return;
 		}
-
+		
+		if (diff <= 100) {
+			lastgood = val;
+		} 
 
 		if (diff <= 2) {
 			under = over = 0;
+			lastgood = val;
 			if (++good > 10) {
 				break;
 			}
@@ -246,6 +250,9 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 	if (good >= 10) {
 		OFFSET = (int)(want - val);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer offset of %d calculated\n", OFFSET);
+	} else if (lastgood) {
+		OFFSET = (int)(want - lastgood);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer offset of %d calculated (fallback)\n", OFFSET);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer offset of NOT calculated\n");
 	}
