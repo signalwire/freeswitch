@@ -47,7 +47,7 @@
 #include <float.h>
 #define ISNAN(x) (!!(_isnan(x)))
 #else
-#define ISNAN(x) ((x)== NAN)
+#define ISNAN(x) (isnan(x))
 #endif
 
 /*! Number of points for beep detection. */
