@@ -217,12 +217,12 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 		}
 		
 		if (diff <= 100) {
-			lastgood = val;
+			lastgood = (int) val;
 		} 
 
 		if (diff <= 2) {
 			under = over = 0;
-			lastgood = val;
+			lastgood = (int) val;
 			if (++good > 10) {
 				break;
 			}
