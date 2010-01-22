@@ -4300,6 +4300,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
 										switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 										status = SWITCH_STATUS_FALSE;
+										switch_core_session_rwunlock(other_session);
 										goto done;
 									}
 								}
@@ -4309,6 +4310,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								sofia_glue_tech_prepare_codecs(tech_pvt);
 								if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 									switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+									switch_core_session_rwunlock(other_session);
 									goto done;
 								}
 							}
@@ -4715,8 +4717,9 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 
 			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("messsage/sipfrag"),
 					   NUTAG_SUBSTATE(nua_substate_terminated),
-					   SIPTAG_PAYLOAD_STR(status == SWITCH_STATUS_SUCCESS ? "SIP/2.0 200 OK": 
-										  "SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
+					   SIPTAG_HEADER_STR(status == SWITCH_STATUS_SUCCESS ? "Status-Line: SIP/2.0 200 OK\n" : "Status-Line: SIP/2.0 403 Forbidden\n"),
+					   SIPTAG_PAYLOAD_STR(status == SWITCH_STATUS_SUCCESS ? "SIP/2.0 200 OK\r\n": 
+										  "SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
 
 			switch_core_session_rwunlock(session);
 		}
@@ -4962,8 +4965,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								
 								switch_core_session_rwunlock(a_session);
 
-								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-										   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
+								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
+										   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
 								
 								if (b_tech_pvt && !sofia_test_flag(b_tech_pvt, TFLAG_BYE)) {
 									char* q850 = NULL;
@@ -4981,9 +4984,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								
 								}
 							} else {
-								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
 										   NUTAG_SUBSTATE(nua_substate_terminated),
-										   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
+										   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
 							}
 
 						} else if (br_a && br_b) {
@@ -5001,8 +5004,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							
 							switch_ivr_uuid_bridge(br_b, br_a);
 							switch_channel_set_variable(channel_b, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
-							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-									   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
+							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
+									   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
 
 							sofia_clear_flag_locked(b_tech_pvt, TFLAG_SIP_HOLD);
 							switch_channel_clear_flag(channel_b, CF_LEG_HOLDING);
@@ -5013,9 +5016,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						} else {
 							if (!br_a && !br_b) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot transfer channels that are not in a bridge.\n");
-								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
 										   NUTAG_SUBSTATE(nua_substate_terminated),
-										   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
+										   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
 							} else {
 								switch_core_session_t *t_session;
 								switch_channel_t *hup_channel;
@@ -5056,16 +5059,16 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 									
 									nua_notify(tech_pvt->nh,
 											   NUTAG_NEWSUB(1),
-											   SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+											   SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
 											   NUTAG_SUBSTATE(nua_substate_terminated),
-											   SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
+											   SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
 									switch_core_session_rwunlock(t_session);
 									switch_channel_hangup(hup_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 								} else {
 									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session to transfer to not found.\n");
-									nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+									nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
 											   NUTAG_SUBSTATE(nua_substate_terminated),
-											   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
+											   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
 								}
 							}
 						}
@@ -5150,8 +5153,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 					  error:
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Transfer! [%s]\n", br_a);
 						switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
-						nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-								   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp),
+						nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
+								   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(etmp),
 								   TAG_END());
 					}
 				}
@@ -5188,14 +5191,14 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 			}
 
 			switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "BLIND_TRANSFER");
-			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-					   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
+			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
+					   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
 
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot Blind Transfer 1 Legged calls\n");
 			switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
-			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-					   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
+			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
+					   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
 		}
 	}
 
@@ -6441,7 +6444,7 @@ void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t 
 					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", acp->caller_id_name, acp->caller_id_number);
 				}
 				nua_info(b_tech_pvt->nh,
-						 SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+						 SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
 						 TAG_IF(!zstr(b_tech_pvt->user_via), SIPTAG_VIA_STR(b_tech_pvt->user_via)),
 						 SIPTAG_PAYLOAD_STR(message), TAG_END());
 			} else if (ua && switch_stristr("polycom", ua)) {

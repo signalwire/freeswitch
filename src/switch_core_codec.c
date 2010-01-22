@@ -167,6 +167,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 
  end:
 
+	if (session->read_codec) {
+		switch_channel_set_flag(channel, CF_MEDIA_SET);
+	}
+
 	switch_mutex_unlock(session->codec_read_mutex);
 	return status;
 

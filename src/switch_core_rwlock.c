@@ -47,6 +47,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_sessio
 	if (session->rwlock) {
 		if (switch_test_flag(session, SSF_DESTROYED) || switch_channel_down(session->channel)) {
 			status = SWITCH_STATUS_FALSE;
+			if (switch_thread_rwlock_tryrdlock(session->rwlock) == SWITCH_STATUS_SUCCESS) {
+				if (switch_channel_test_flag(session->channel, CF_THREAD_SLEEPING)) {
+#ifdef SWITCH_DEBUG_RWLOCKS
+					switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s Ping thread\n",
+									  switch_channel_get_name(session->channel));
+#endif
+					switch_core_session_wake_session_thread(session);
+				}
+				switch_thread_rwlock_unlock(session->rwlock);
+			}
 #ifdef SWITCH_DEBUG_RWLOCKS
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s Read lock FAIL\n",
 							  switch_channel_get_name(session->channel));

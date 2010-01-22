@@ -1459,6 +1459,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 
 	if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Port Error!\n");
 		return status;
 	}
 
@@ -1802,6 +1803,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s Setting proxy route to %s\n", route_uri, switch_channel_get_name(channel));
 		tech_pvt->route_uri = switch_core_session_strdup(tech_pvt->session, route_uri);
 	}
+
+	switch_channel_clear_flag(channel, CF_MEDIA_ACK);
 
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
@@ -2200,6 +2203,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		switch_core_session_unlock_codec_write(tech_pvt->session);
 		switch_core_session_unlock_codec_read(tech_pvt->session);
 	}
+
 
 	return status;
 }

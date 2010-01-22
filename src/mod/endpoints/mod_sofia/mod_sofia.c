@@ -1410,7 +1410,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			if (!(switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
 				if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
 					const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
-
 					tech_pvt->num_codecs = 0;
 					sofia_glue_tech_prepare_codecs(tech_pvt);
 					if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {

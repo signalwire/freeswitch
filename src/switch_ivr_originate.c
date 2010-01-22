@@ -2988,7 +2988,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							switch_channel_set_variable(switch_core_session_get_channel(holding_session), SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 							switch_core_session_rwunlock(holding_session);
 						}
-						
 						switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(peer_session));
 						holding = NULL;
 						oglobals.idx = IDX_NADA;
@@ -3055,7 +3054,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								switch_channel_set_variable(switch_core_session_get_channel(holding_session), SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 								switch_core_session_rwunlock(holding_session);
 							}
-							
                             switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(originate_status[i].peer_session));
 							holding = NULL;
                         } else {

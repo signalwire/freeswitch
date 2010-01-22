@@ -1202,8 +1202,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 				switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 250, NULL);
 				switch_yield(250000);
 			} else {
+				switch_status_t st;
 				switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
-				switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+				switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
+				switch_channel_wait_for_flag(channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
+				st = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 
 			if ((flags & SMF_REBRIDGE)

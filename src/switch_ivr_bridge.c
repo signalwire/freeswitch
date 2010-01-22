@@ -33,6 +33,8 @@
 #define DEFAULT_LEAD_FRAMES 5
 
 static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
+static void cleanup_proxy_mode_a(switch_core_session_t *session);
+static void cleanup_proxy_mode_b(switch_core_session_t *session);
 
 /* Bridge Related Stuff*/
 /*********************************************************************************/
@@ -693,6 +695,8 @@ static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 
 	switch_channel_clear_flag(channel, CF_ORIGINATING);
 
+	cleanup_proxy_mode_b(session);
+
 	if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 		switch_channel_set_state(channel, CS_SOFT_EXECUTE);
 	}
@@ -780,7 +784,8 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(session));
 			switch_event_fire(&event);
 		}
-
+		printf("DAMMIT %d %d   %d %d\n", switch_channel_ready(channel), switch_channel_ready(other_channel), 
+			   switch_channel_media_ready(channel), switch_channel_media_ready(other_channel));
 		switch_ivr_multi_threaded_bridge(session, other_session, NULL, NULL, NULL);
 		
 		state = switch_channel_get_state(channel);
@@ -1197,7 +1202,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	return status;
 }
 
-static void cleanup_proxy_mode(switch_core_session_t *session)
+static void cleanup_proxy_mode_b(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+
+	if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+		switch_ivr_media(switch_core_session_get_uuid(session), SMF_NONE);
+	}
+}
+
+
+static void cleanup_proxy_mode_a(switch_core_session_t *session)
 {
 	switch_core_session_t *sbsession;
 
@@ -1206,10 +1222,6 @@ static void cleanup_proxy_mode(switch_core_session_t *session)
 
 	if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 		const char *sbv = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
-		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Restore media to %s\n", switch_channel_get_name(channel));
-		switch_ivr_media(switch_core_session_get_uuid(session), SMF_IMMEDIATE);
-
 		if (!zstr(sbv) && (sbsession = switch_core_session_locate(sbv))) {
 			switch_channel_t *sbchannel = switch_core_session_get_channel(sbsession);
 			switch_channel_hangup(sbchannel, SWITCH_CAUSE_ATTENDED_TRANSFER);
@@ -1262,8 +1274,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 				}
 			}
 
-			cleanup_proxy_mode(originator_session);
-			cleanup_proxy_mode(originatee_session);
+			cleanup_proxy_mode_a(originator_session);
+			cleanup_proxy_mode_a(originatee_session);
 			
 			/* override transmit state for originator_channel to bridge to originatee_channel 
 			 * install pointer to originatee_session into originator_channel
