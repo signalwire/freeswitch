@@ -357,8 +357,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
-static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, const char *query) {
-	char *name = NULL;
+static long do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, char **response, const char *query, struct curl_httppost *post, struct curl_slist *headers, int timeout) {
 	switch_time_t start_time = switch_micro_time_now();
 	switch_time_t time_diff = 0;
 	CURL *curl_handle = NULL;
@@ -377,20 +376,38 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "url: %s\n", query);
 	curl_handle = curl_easy_init();
 	
+	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0);
+	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	
 	if (!strncasecmp(query, "https", 5)) {
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
-	curl_easy_setopt(curl_handle, CURLOPT_POST, SWITCH_FALSE);
+	if (post) {
+		curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, post);
+	} else {
+		curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
+	}
+	if (headers) {
+		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+	}
 	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 	/*
 	 TIMEOUT_MS is introduced in 7.16.2, we have 7.16.0 in tree 
 	 */
 #ifdef CURLOPT_TIMEOUT_MS
-	curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, globals.curl_timeout);
+	if (timeout > 0) {
+		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, timeout);
+	} else {
+		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, globals.curl_timeout);
+	}
 #else
-	curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, globals.curl_timeout/1000);
+	if (timeout > 0) {
+		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, timeout);
+	} else {
+		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, globals.curl_timeout/1000);
+	}
 #endif
 	curl_easy_setopt(curl_handle, CURLOPT_URL, query);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
@@ -408,7 +425,7 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 		/* don't return UNKNOWN */
 		if (strcmp("UNKNOWN", http_data.stream.data) ||
 			strcmp("UNAVAILABLE", http_data.stream.data)) {
-			name = switch_core_strdup(pool, http_data.stream.data);
+			*response = switch_core_strdup(pool, http_data.stream.data);
 		}
 	}
 	
@@ -429,7 +446,7 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, co
 	}
 	
 	switch_safe_free(http_data.stream.data);
-	return name;
+	return httpRes;
 }
 
 static cid_data_t *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num)
@@ -455,7 +472,7 @@ static cid_data_t *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "whitepages-api-key", globals.whitepages_apikey);
 	
 	query = switch_event_expand_headers(event, "http://api.whitepages.com/reverse_phone/1.0/?phone=${whitepages-cid};api_key=${whitepages-api-key}");
-	xml_s = do_lookup_url(pool, event, query);
+	do_lookup_url(pool, event, &xml_s, query, NULL, NULL, 0);
 	
 	xml = switch_xml_parse_str_dup(xml_s);
 	
@@ -564,7 +581,7 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 			goto done;
 		}
 	}
-
+	
 	if (!skipurl && globals.whitepages_apikey) {
 		cid = do_whitepages_lookup(pool, event, number);
 		if (cid && cid->name) { /* only cache if we have a name */
@@ -575,7 +592,7 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 		
 	if (!skipurl && globals.url) {
 		url_query = switch_event_expand_headers(event, globals.url);
-		name = do_lookup_url(pool, event, url_query);
+		do_lookup_url(pool, event, &name, url_query, NULL, NULL, 0);
 		if (name) {
 			cid->name = name;
 			cid->src = "url";
@@ -746,7 +763,7 @@ SWITCH_STANDARD_API(cidlookup_function)
 									globals.sql ? globals.sql : "(null)",
 									globals.citystate_sql ? globals.citystate_sql : "(null)");
 			stream->write_function(stream, " ODBC Compiled: %s\n", switch_odbc_available() ? "true" : "false");
-
+			
 			switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 		}
 		for (i = 1; i < argc; i++) {
