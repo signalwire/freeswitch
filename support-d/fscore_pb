@@ -15,7 +15,7 @@ fi
 if [ "$arg" = "gcore" ] ; then
 	user=$1
 	shift
-	fspid=`cat $prefix/log/freeswitch.pid`
+	fspid=`cat $prefix/run/freeswitch.pid`
 	echo "pulling gcore $fspid"
 	gcore -o core $fspid
 else
