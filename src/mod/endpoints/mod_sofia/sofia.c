@@ -3958,16 +3958,21 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		r_sdp = tech_pvt->last_sdp_str;
 	}
 	
-	/* This marr in our code brought to you by people who can't read........*/
-	if (profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME && r_sdp && (p = (char *) switch_stristr("g729a/8000", r_sdp))) {
-		p += 4;
-		*p++ = '/';
-		*p++ = '8';
-		*p++ = '0';
-		*p++ = '0';
-		*p++ = '0';
-		*p++ = ' ';
+	if ((channel && (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA))) || 
+		(sofia_test_flag(profile, TFLAG_INB_NOMEDIA) || sofia_test_flag(profile, TFLAG_PROXY_MEDIA))) {
+
+		/* This marr in our code brought to you by people who can't read........*/
+		if (profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME && r_sdp && (p = (char *) switch_stristr("g729a/8000", r_sdp))) {
+			p += 4;
+			*p++ = '/';
+			*p++ = '8';
+			*p++ = '0';
+			*p++ = '0';
+			*p++ = '0';
+			*p++ = ' ';
+		}
 	}
+
 
 	if (ss_state == nua_callstate_terminated) {
 
