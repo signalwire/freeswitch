@@ -39,10 +39,19 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ftmod_pika", "src\ftmod\ftm
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ftmod_wanpipe", "src\ftmod\ftmod_wanpipe\ftmod_wanpipe.2008.vcproj", "{1A145EE9-BBD8-45E5-98CD-EB4BE99E1DCD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ftmod_sangoma_boost", "src\ftmod\ftmod_sangoma_boost\ftmod_sangoma_boost.2008.vcproj", "{D021EF2A-460D-4827-A0F7-41FDECF46F1B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testboost", "msvc\testboost\testboost.2008.vcproj", "{2B1BAF36-0241-43E7-B865-A8338AD48E2E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
