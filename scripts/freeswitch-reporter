@@ -6,7 +6,7 @@ do
 	/usr/local/freeswitch/bin/freeswitch -core
 	errorlvl=$?
 	if [ $errorlvl -gt 0 ]; then
-		pid=$(cat /usr/local/freeswitch/log/freeswitch.pid)
+		pid=$(cat /usr/local/freeswitch/run/freeswitch.pid)
 		corefile=core.$pid
 		tempfile=$(tempfile)
 		if [ -f $corefile ]; then
