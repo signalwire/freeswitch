@@ -404,7 +404,7 @@ static long do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, cha
 	}
 #else
 	if (timeout > 0) {
-		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, timeout);
+		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, timeout);
 	} else {
 		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, globals.curl_timeout/1000);
 	}
