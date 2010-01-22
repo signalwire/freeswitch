@@ -1958,7 +1958,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
 	char *app;
 	switch_event_t *event;
 
-	if (!switch_channel_test_flag(channel, CF_RING_READY)) {
+	if (!switch_channel_test_flag(channel, CF_RING_READY) && !switch_channel_test_flag(channel, CF_EARLY_MEDIA && 
+																					   !switch_channel_test_flag(channel, CF_ANSWERED))) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Ring-Ready %s!\n", channel->name);
 		switch_channel_set_flag(channel, CF_RING_READY);
 		if (channel->caller_profile && channel->caller_profile->times) {
@@ -2007,7 +2008,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 	const char *var = NULL;
 	char *app;
 
-	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
 		const char *uuid;
 		switch_core_session_t *other_session;
 
