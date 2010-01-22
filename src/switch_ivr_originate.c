@@ -2945,7 +2945,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_status_t mstatus = SWITCH_STATUS_FALSE;
 
 						if (caller_channel) {
-							if ((mstatus = switch_channel_caller_extension_masquerade(caller_channel, holding_channel, 1)) == SWITCH_STATUS_SUCCESS) {
+							if ((mstatus = switch_channel_caller_extension_masquerade(caller_channel, holding_channel, 0)) == SWITCH_STATUS_SUCCESS) {
 								switch_channel_restart(holding_channel);
 							}
 						}
