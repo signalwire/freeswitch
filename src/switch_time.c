@@ -207,7 +207,7 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Test: %ld Average: %ld Step: %d\n", (long)val, (long)avg, step);
 
 		diff = abs((int)(want - avg));
-		if (diff > 2500) {
+		if (diff > 1500) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
 							  "Abnormally large timer gap %d detected!\n"
 							  "Do you have your kernel timer set to higher than 1 kHz? You may experience audio problems.\n", diff);
@@ -253,8 +253,10 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 	} else if (lastgood) {
 		OFFSET = (int)(want - lastgood);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer offset of %d calculated (fallback)\n", OFFSET);
+		switch_time_set_cond_yield(SWITCH_TRUE);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer offset of NOT calculated\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer offset NOT calculated\n");
+		switch_time_set_cond_yield(SWITCH_TRUE);
 	}
 }
 
