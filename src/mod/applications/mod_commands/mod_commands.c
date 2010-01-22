@@ -4040,6 +4040,18 @@ SWITCH_STANDARD_API(uuid_loglevel)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define SQL_ESCAPE_SYNTAX "<string>"
+SWITCH_STANDARD_API(sql_escape)
+{
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-USAGE: %s\n", SQL_ESCAPE_SYNTAX);
+	} else {
+		stream->write_function(stream, "%q", cmd);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown)
 {
 	int x;
@@ -4116,6 +4128,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "sched_hangup", "Schedule a running call to hangup", sched_hangup_function, SCHED_HANGUP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sched_transfer", "Schedule a transfer for a running call", sched_transfer_function, SCHED_TRANSFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "show", "Show", show_function, SHOW_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "sql_escape", "Escape a string to prevent sql injection", sql_escape, SQL_ESCAPE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "status", "status", status_function, "");
 	SWITCH_ADD_API(commands_api_interface, "strftime_tz", "strftime_tz", strftime_tz_api_function, "<Timezone_name> [format string]");
 	SWITCH_ADD_API(commands_api_interface, "stun", "stun", stun_function, "<stun_server>[:port]");
@@ -4219,6 +4232,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add show say");
 	switch_console_set_complete("add show timer");
 	switch_console_set_complete("add shutdown");
+	switch_console_set_complete("add sql_escape");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start read mute");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start read level");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start write mute");
