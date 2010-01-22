@@ -545,7 +545,7 @@ static const char *message_names[] = {
 	"AUDIO_SYNC",
 	"REQUEST_IMAGE_MEDIA",
 	"UUID_CHANGE",
-	"WARNING",
+	"SIMPLIFY",
 	"DEBUG_AUDIO",
 	"PROXY_MEDIA",
 	"INVALID"
