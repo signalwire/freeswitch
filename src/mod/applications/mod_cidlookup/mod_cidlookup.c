@@ -696,6 +696,11 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 		cid = do_lookup(pool, event, number, skipurl, skipcitystate);
 	}
 	
+	if (switch_string_var_check_const(cid->name)) {
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "Invalid CID data {%s} contains a variable\n", cid->name);	
+		switch_goto_status(SWITCH_STATUS_GENERR, done);
+	}
+	
 	if (cid && channel) {
 		switch_channel_set_variable(channel, "original_caller_id_name", switch_core_strdup(pool, profile->caller_id_name));
 		if (!zstr(cid->src)) {
@@ -778,6 +783,11 @@ SWITCH_STANDARD_API(cidlookup_function)
 
 		cid = do_lookup(pool, event, argv[0], skipurl, skipcitystate);
 		if (cid) {
+			if (switch_string_var_check_const(cid->name)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid CID data {%s} contains a variable\n", cid->name);	
+				stream->write_function(stream, "-ERR Invalid CID data {%s} contains a variable\n", cid->name);
+				switch_goto_status(SWITCH_STATUS_SUCCESS, done);
+			}
 			stream->write_function(stream, cid->name);
 			if (verbose) {
 				stream->write_function(stream, " (%s) [%s]", cid->area, cid->src);
