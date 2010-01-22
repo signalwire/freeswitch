@@ -1484,25 +1484,25 @@ static void switch_load_core_config(const char *file)
 
 }
 
-static void print_banner(void)
+SWITCH_DECLARE(const char *) switch_core_banner(void)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-					  "\n"
-					  "   _____              ______        _____ _____ ____ _   _  \n"
-					  "  |  ___| __ ___  ___/ ___\\ \\      / /_ _|_   _/ ___| | | | \n"
-					  "  | |_ | '__/ _ \\/ _ \\___ \\\\ \\ /\\ / / | |  | || |   | |_| | \n"
-					  "  |  _|| | |  __/  __/___) |\\ V  V /  | |  | || |___|  _  | \n"
-					  "  |_|  |_|  \\___|\\___|____/  \\_/\\_/  |___| |_| \\____|_| |_| \n"
-					  "\n"
-					  "************************************************************\n"
-					  "* Anthony Minessale II, Michael Jerris, Brian West, Others *\n"
-					  "* FreeSWITCH (http://www.freeswitch.org)                   *\n"
-					  "* Paypal Donations Appreciated: paypal@freeswitch.org      *\n"
-					  "* Brought to you by ClueCon http://www.cluecon.com/        *\n"
-					  "************************************************************\n"
-					  "\n"
-					  );
+
+	return ("\n"
+			"   _____              ______        _____ _____ ____ _   _  \n"
+			"  |  ___| __ ___  ___/ ___\\ \\      / /_ _|_   _/ ___| | | | \n"
+			"  | |_ | '__/ _ \\/ _ \\___ \\\\ \\ /\\ / / | |  | || |   | |_| | \n"
+			"  |  _|| | |  __/  __/___) |\\ V  V /  | |  | || |___|  _  | \n"
+			"  |_|  |_|  \\___|\\___|____/  \\_/\\_/  |___| |_| \\____|_| |_| \n"
+			"\n"
+			"************************************************************\n"
+			"* Anthony Minessale II, Michael Jerris, Brian West, Others *\n"
+			"* FreeSWITCH (http://www.freeswitch.org)                   *\n"
+			"* Paypal Donations Appreciated: paypal@freeswitch.org      *\n"
+			"* Brought to you by ClueCon http://www.cluecon.com/        *\n"
+			"************************************************************\n"
+			"\n"
+			);
 }
 
 
@@ -1560,7 +1560,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Ready");
 		switch_event_fire(&event);
 	}
-	print_banner();
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s", switch_core_banner());
+					
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
 					  "\nFreeSWITCH Version %s Started.\nMax Sessions[%u]\nSession Rate[%d]\nSQL [%s]\n", SWITCH_VERSION_FULL,

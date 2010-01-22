@@ -2070,6 +2070,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 SWITCH_DECLARE(void) switch_cache_db_detach(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
 SWITCH_DECLARE(void) switch_cache_db_flush_handles(void);
+SWITCH_DECLARE(const char *) switch_core_banner(void);
 
 SWITCH_END_EXTERN_C
 #endif

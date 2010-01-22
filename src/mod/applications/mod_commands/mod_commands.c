@@ -45,11 +45,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown);
 SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, mod_commands_shutdown, NULL);
 
+SWITCH_STANDARD_API(banner_function)
+{
+	stream->write_function(stream, "%s", switch_core_banner());
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(hostname_api_function)
 {
 	char hostname[256]="";
 	gethostname(hostname, sizeof(hostname));
-	stream->write_function(stream, "%s",hostname);
+	stream->write_function(stream, "%s", hostname);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -4065,6 +4071,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 
 	SWITCH_ADD_API(commands_api_interface, "acl", "compare an ip to an acl list", acl_function, "<ip> <list_name>");
 	SWITCH_ADD_API(commands_api_interface, "alias", "Alias", alias_function, ALIAS_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "banner", "Returns the system banner", banner_function, "");
 	SWITCH_ADD_API(commands_api_interface, "bgapi", "Execute an api command in a thread", bgapi_function, "<command>[ <arg>]");
 	SWITCH_ADD_API(commands_api_interface, "bg_system", "Execute a system command in the background", bg_system_function, SYSTEM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "break", "Break", break_function, BREAK_SYNTAX);
