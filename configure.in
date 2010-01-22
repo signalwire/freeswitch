@@ -862,7 +862,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_expr/Makefile
 		src/mod/applications/mod_stress/Makefile
 		src/mod/applications/mod_t38gateway/Makefile
-		src/mod/endpoints/mod_iax/Makefile
 		src/mod/endpoints/mod_portaudio/Makefile
 		src/mod/endpoints/mod_skypiax/Makefile
                 src/mod/endpoints/mod_sofia/Makefile
