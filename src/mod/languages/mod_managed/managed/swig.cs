@@ -2215,6 +2215,11 @@ public class freeswitch {
     freeswitchPINVOKE.switch_cache_db_flush_handles();
   }
 
+  public static string switch_core_banner() {
+    string ret = freeswitchPINVOKE.switch_core_banner();
+    return ret;
+  }
+
   public static void switch_console_loop() {
     freeswitchPINVOKE.switch_console_loop();
   }
@@ -2274,6 +2279,16 @@ public class freeswitch {
 
   public static void switch_console_save_history() {
     freeswitchPINVOKE.switch_console_save_history();
+  }
+
+  public static string switch_console_expand_alias(string cmd, string arg) {
+    string ret = freeswitchPINVOKE.switch_console_expand_alias(cmd, arg);
+    return ret;
+  }
+
+  public static switch_status_t switch_console_execute(string xcmd, int rec, switch_stream_handle istream) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_console_execute(xcmd, rec, switch_stream_handle.getCPtr(istream));
+    return ret;
   }
 
   public static int switch_toupper(int c) {
@@ -7269,6 +7284,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_flush_handles")]
   public static extern void switch_cache_db_flush_handles();
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_banner")]
+  public static extern string switch_core_banner();
+
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CMD_CHUNK_LEN_get")]
   public static extern int SWITCH_CMD_CHUNK_LEN_get();
 
@@ -7310,6 +7328,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_console_save_history")]
   public static extern void switch_console_save_history();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_expand_alias")]
+  public static extern string switch_console_expand_alias(string jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_console_execute")]
+  public static extern int switch_console_execute(string jarg1, int jarg2, HandleRef jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_toupper")]
   public static extern int switch_toupper(int jarg1);
@@ -19447,6 +19471,7 @@ public enum switch_channel_flag_t {
   CF_LEG_HOLDING,
   CF_BROADCAST_DROP_MEDIA,
   CF_EARLY_HANGUP,
+  CF_MEDIA_SET,
   CF_FLAG_MAX
 }
 
@@ -21151,8 +21176,9 @@ public enum switch_core_session_message_types_t {
   SWITCH_MESSAGE_INDICATE_AUDIO_SYNC,
   SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA,
   SWITCH_MESSAGE_INDICATE_UUID_CHANGE,
-  SWITCH_MESSAGE_INDICATE_WARNING,
+  SWITCH_MESSAGE_INDICATE_SIMPLIFY,
   SWITCH_MESSAGE_INDICATE_DEBUG_AUDIO,
+  SWITCH_MESSAGE_INDICATE_PROXY_MEDIA,
   SWITCH_MESSAGE_INVALID
 }
 

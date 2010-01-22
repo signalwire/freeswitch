@@ -9858,6 +9858,16 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_cache_db_flush_handles() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_banner() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)switch_core_banner();
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_CMD_CHUNK_LEN_get() {
   int jresult ;
   int result;
@@ -10024,6 +10034,36 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_console_sort_matches(void * jarg1) {
 
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_console_save_history() {
   switch_console_save_history();
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_console_expand_alias(char * jarg1, char * jarg2) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (char *)switch_console_expand_alias(arg1,arg2);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_console_execute(char * jarg1, int jarg2, void * jarg3) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  int arg2 ;
+  switch_stream_handle_t *arg3 = (switch_stream_handle_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (int)jarg2; 
+  arg3 = (switch_stream_handle_t *)jarg3; 
+  result = (switch_status_t)switch_console_execute(arg1,arg2,arg3);
+  jresult = result; 
+  return jresult;
 }
 
 
