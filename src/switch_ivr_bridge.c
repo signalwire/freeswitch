@@ -784,8 +784,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(session));
 			switch_event_fire(&event);
 		}
-		printf("DAMMIT %d %d   %d %d\n", switch_channel_ready(channel), switch_channel_ready(other_channel), 
-			   switch_channel_media_ready(channel), switch_channel_media_ready(other_channel));
+
 		switch_ivr_multi_threaded_bridge(session, other_session, NULL, NULL, NULL);
 		
 		state = switch_channel_get_state(channel);
