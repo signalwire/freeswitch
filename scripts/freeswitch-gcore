@@ -1,5 +1,5 @@
 #!/bin/sh
-fspid=$(cat /usr/local/freeswitch/log/freeswitch.pid)
+fspid=$(cat /usr/local/freeswitch/run/freeswitch.pid)
 gcore -o /usr/local/freeswitch/log/freeswitch.gcore $fspid && \
 	gdb /usr/local/freeswitch/bin/freeswitch \
 	-c /usr/local/freeswitch/log/freeswitch.gcore.$fspid \
