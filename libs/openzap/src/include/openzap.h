@@ -256,12 +256,12 @@
 
 
 #define zap_set_state_locked(obj, s) if ( obj->state == s ) {			\
-		zap_log(ZAP_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
+		if (s != ZAP_CHANNEL_STATE_HANGUP) zap_log(ZAP_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
 	} else if (zap_test_flag(obj, ZAP_CHANNEL_READY)) {									\
 		int st = obj->state;											\
 		zap_channel_set_state(obj, s, 1);									\
 		if (obj->state == s) zap_log(ZAP_LOG_DEBUG, "Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); \
-		else zap_log(ZAP_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); \
+		else if (!((obj->state == ZAP_CHANNEL_STATE_HANGUP && s == ZAP_CHANNEL_STATE_TERMINATING) || (obj->state == ZAP_CHANNEL_STATE_HANGUP_COMPLETE && s == ZAP_CHANNEL_STATE_HANGUP) || (obj->state == ZAP_CHANNEL_STATE_TERMINATING && s == ZAP_CHANNEL_STATE_HANGUP))) zap_log(ZAP_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); \
 	}
 
 #ifdef _MSC_VER
@@ -308,12 +308,12 @@ typedef enum {
 } zap_state_change_result_t;
 
 #define zap_set_state_r(obj, s, l, r) if ( obj->state == s ) {	\
-		zap_log(ZAP_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(obj->state), zap_channel_state2str(s)); r = ZAP_STATE_CHANGE_SAME;	\
+		if (s != ZAP_CHANNEL_STATE_HANGUP) zap_log(ZAP_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(obj->state), zap_channel_state2str(s)); r = ZAP_STATE_CHANGE_SAME; \
 	} else if (zap_test_flag(obj, ZAP_CHANNEL_READY)) {					\
 		int st = obj->state;											\
 		r = (zap_channel_set_state(obj, s, l) == ZAP_SUCCESS) ? ZAP_STATE_CHANGE_SUCCESS : ZAP_STATE_CHANGE_FAIL; \
 		if (obj->state == s) {zap_log(ZAP_LOG_DEBUG, "Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s));} \
-		else {zap_log(ZAP_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); } \
+		else { if (!((obj->state == ZAP_CHANNEL_STATE_HANGUP && s == ZAP_CHANNEL_STATE_TERMINATING) || (obj->state == ZAP_CHANNEL_STATE_HANGUP_COMPLETE && s == ZAP_CHANNEL_STATE_HANGUP) || (obj->state == ZAP_CHANNEL_STATE_TERMINATING && s == ZAP_CHANNEL_STATE_HANGUP))) zap_log(ZAP_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); } \
 	}
 
 
