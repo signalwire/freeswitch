@@ -385,7 +385,6 @@ void FSHost::generalEventHandler(switch_event_t *event)
             }
             else if (strcmp(event->subclass_name, "sofia::gateway_del") == 0)
             {
-                qDebug() << "We are deleted...";
                 QSharedPointer<Account> acc = _accounts.take(switch_event_get_header_nil(event, "Gateway"));
                 if (!acc.isNull())
                     emit delAccount(acc);
@@ -414,8 +413,6 @@ void FSHost::accountReloadCmd(QSharedPointer<Account> acc)
                           acc.data()->getName().toAscii().data());
     }
     _reloading_Accounts.append(acc.data()->getName());
-
-    qDebug() << "We are reloading...";
 }
 
 void FSHost::accountReloadSlot(QSharedPointer<Account> acc)
@@ -431,7 +428,6 @@ void FSHost::accountReloadSlot(QSharedPointer<Account> acc)
         }
         if (_reloading_Accounts.isEmpty())
             disconnect(this, SLOT(accountReloadSlot(QSharedPointer<Account>)));
-        qDebug() << "We are rescanning...";
     }
 }
 
