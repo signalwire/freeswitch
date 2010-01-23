@@ -58,7 +58,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 	}
 
 	if (zstr(caller_id_name)) {
-		caller_id_name = "FreeSWITCH";
+		caller_id_name = SWITCH_DEFAULT_CLID_NAME;
 	}
 
 	if (zstr(caller_id_number)) {

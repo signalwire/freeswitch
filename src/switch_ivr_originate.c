@@ -2287,7 +2287,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						new_profile->chan_name = SWITCH_BLANK_STRING;
 					} else {
 						if (!cid_name_override) {
-							cid_name_override = "FreeSWITCH";
+							cid_name_override = SWITCH_DEFAULT_CLID_NAME;
 						}
 						if (!cid_num_override) {
 							cid_num_override = "0000000000";
