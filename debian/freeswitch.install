@@ -41,7 +41,6 @@ opt/freeswitch/mod/mod_voipcodecs.so*
 opt/freeswitch/mod/mod_speex.so*
 opt/freeswitch/mod/mod_dialplan*.so*
 opt/freeswitch/mod/mod_dingaling.so*
-opt/freeswitch/mod/mod_iax.so*
 opt/freeswitch/mod/mod_portaudio.so*
 opt/freeswitch/mod/mod_sofia.so*
 opt/freeswitch/mod/mod_openzap.so
@@ -141,7 +140,6 @@ opt/freeswitch/conf/autoload_configs/conference.conf.xml
 opt/freeswitch/conf/autoload_configs/event_socket.conf.xml
 opt/freeswitch/conf/autoload_configs/modules.conf.xml
 opt/freeswitch/conf/autoload_configs/dingaling.conf.xml
-opt/freeswitch/conf/autoload_configs/iax.conf.xml
 opt/freeswitch/conf/autoload_configs/post_load_modules.conf.xml
 opt/freeswitch/conf/autoload_configs/pocketsphinx.conf.xml
 opt/freeswitch/conf/autoload_configs/xml_cdr.conf.xml

@@ -20,7 +20,7 @@ export CODECS_MODULES=codecs/mod_ilbc codecs/mod_h26x codecs/mod_speex codecs/mo
 export DIALPLANS_MODULES=dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml
 export DIRECTORIES_MODULES=
 export DOTNET_MODULES=
-export ENDPOINTS_MODULES=endpoints/mod_dingaling endpoints/mod_iax endpoints/mod_portaudio endpoints/mod_sofia \
+export ENDPOINTS_MODULES=endpoints/mod_dingaling endpoints/mod_portaudio endpoints/mod_sofia \
 			 endpoints/mod_loopback ../../libs/openzap/mod_openzap endpoints/mod_skypiax
 export EVENT_HANDLERS_MODULES=event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv
 export FORMATS_MODULES=formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream formats/mod_shout

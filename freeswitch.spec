@@ -78,7 +78,7 @@ and chat driven products scaling from a soft-phone up to a soft-switch.  It can 
 simple switching engine, a media gateway or a media server to host IVR applications using 
 simple scripts or XML to control the callflow. 
 
-We support various communication technologies such as SIP, H.323, IAX2 and GoogleTalk making 
+We support various communication technologies such as SIP, H.323 and GoogleTalk making 
 it easy to interface with other open source PBX systems such as sipX, OpenPBX, Bayonne, YATE or Asterisk.
 
 We also support both wide and narrow band codecs making it an ideal solution to bridge legacy 
@@ -232,7 +232,7 @@ APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference appl
 CODECS_MODULES="codecs/mod_ilbc codecs/mod_h26x codecs/mod_voipcodecs codecs/mod_speex codecs/mod_celt codecs/mod_siren codecs/mod_bv"
 DIALPLANS_MODULES="dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
 DIRECTORIES_MODULES=""
-ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_iax endpoints/mod_portaudio endpoints/mod_sofia ../../libs/openzap/mod_openzap endpoints/mod_loopback"
+ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_portaudio endpoints/mod_sofia ../../libs/openzap/mod_openzap endpoints/mod_loopback"
 ASR_TTS_MODULES="asr_tts/mod_pocketsphinx asr_tts/mod_flite asr_tts/mod_unimrcp"
 EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv"
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream formats/mod_shout"
@@ -394,7 +394,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/fifo.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/shout.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/timezones.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/iax.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/ivr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/java.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/limit.conf.xml
@@ -473,7 +472,6 @@ fi
 %{prefix}/mod/mod_dialplan_xml.so* 
 %{prefix}/mod/mod_dialplan_asterisk.so* 
 %{prefix}/mod/mod_dingaling.so* 
-%{prefix}/mod/mod_iax.so* 
 %{prefix}/mod/mod_portaudio.so* 
 %{prefix}/mod/mod_sofia.so* 
 %{prefix}/mod/mod_cdr_csv.so*
