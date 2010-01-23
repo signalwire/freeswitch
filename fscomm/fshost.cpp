@@ -383,7 +383,7 @@ void FSHost::generalEventHandler(switch_event_t *event)
                 _accounts.insert(gw, acc);
                 emit newAccount(acc);
             }
-            else if (strcmp(event->subclass_name, "sofia::gateway_del") == 0)
+            else if (strcmp(event->subclass_name, "sofia::gateway_delete") == 0)
             {
                 QSharedPointer<Account> acc = _accounts.take(switch_event_get_header_nil(event, "Gateway"));
                 if (!acc.isNull())
