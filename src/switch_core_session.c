@@ -985,10 +985,16 @@ SWITCH_DECLARE(switch_channel_t *) switch_core_session_get_channel(switch_core_s
 
 SWITCH_DECLARE(void) switch_core_session_wake_session_thread(switch_core_session_t *session)
 {
+	int x = 5;
 	/* If trylock fails the signal is already awake so we needn't bother */
-	if (switch_mutex_trylock(session->mutex) == SWITCH_STATUS_SUCCESS) {
-		switch_thread_cond_signal(session->cond);
-		switch_mutex_unlock(session->mutex);
+	for(;;) {
+		if (switch_mutex_trylock(session->mutex) == SWITCH_STATUS_SUCCESS) {
+			switch_thread_cond_signal(session->cond);
+			switch_mutex_unlock(session->mutex);
+			return;
+		}
+		if (!--x) return;
+		switch_yield(1000);
 	}
 }
 

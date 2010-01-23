@@ -1216,6 +1216,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 				switch_assert(other_channel != NULL);
 				switch_core_session_receive_message(other_session, &msg);
 				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
+				switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
+				switch_channel_wait_for_flag(other_channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
 				switch_core_session_read_frame(other_session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 				switch_channel_clear_state_handler(other_channel, NULL);
 				switch_core_session_rwunlock(other_session);
@@ -1262,25 +1264,43 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 		}
 
 		if ((flags & SMF_FORCE) || !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+			switch_channel_set_flag(channel, CF_REDIRECT);
+			switch_channel_set_state(channel, CS_PARK);
+			switch_channel_set_flag(channel, CF_TRANSFER);
+
 			switch_core_session_receive_message(session, &msg);
 
 			if ((flags & SMF_REBRIDGE) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&
 				(other_session = switch_core_session_locate(other_uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
 
+				switch_channel_set_flag(other_channel, CF_REDIRECT);
+				switch_channel_set_state(other_channel, CS_PARK);
+				switch_channel_set_flag(other_channel, CF_TRANSFER);
+				
+				
 				switch_core_session_receive_message(other_session, &msg);
 				switch_channel_clear_state_handler(other_channel, NULL);
 			}
 
 			if (other_channel) {
+				switch_channel_wait_for_state(other_channel, channel, CS_PARK);
+			}
+			switch_channel_wait_for_state_timeout(channel, CS_PARK, 5000000);
+			
+			switch_channel_clear_flag(channel, CF_NOT_READY);
+
+			if (other_channel) {
+				switch_channel_clear_flag(other_channel, CF_NOT_READY);
+				
 				switch_channel_clear_state_handler(channel, NULL);
 				if (swap) {
 					switch_ivr_signal_bridge(other_session, session);
 				} else {
 					switch_ivr_signal_bridge(session, other_session);
 				}
-				switch_channel_wait_for_flag(channel, CF_BRIDGED, SWITCH_TRUE, 1000, NULL);
-				switch_channel_wait_for_flag(other_channel, CF_BRIDGED, SWITCH_TRUE, 1000, NULL);
+				switch_channel_wait_for_state(other_channel, channel, CS_HIBERNATE);
+				switch_channel_wait_for_state(channel, other_channel, CS_HIBERNATE);
 				switch_core_session_rwunlock(other_session);
 			}
 		}

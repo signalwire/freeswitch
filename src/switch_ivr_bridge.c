@@ -891,7 +891,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!switch_channel_ready(caller_channel)) {
+	if (!switch_channel_up(caller_channel)) {
 		switch_channel_hangup(peer_channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1192,9 +1192,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
     }
 
 	if (switch_channel_test_flag(caller_channel, CF_REDIRECT)) {
-		state = switch_channel_get_state(caller_channel);
-		if (!(state == CS_RESET || state == CS_PARK || state == CS_ROUTING)) {
-			switch_channel_set_state(caller_channel, CS_RESET);
+		if (switch_channel_test_flag(caller_channel, CF_RESET)) {
+			switch_channel_clear_flag(caller_channel, CF_RESET);
+		} else {
+			state = switch_channel_get_state(caller_channel);
+			if (!(state == CS_RESET || state == CS_PARK || state == CS_ROUTING)) {
+				switch_channel_set_state(caller_channel, CS_RESET);
+			}
 		}
 	}
 	
