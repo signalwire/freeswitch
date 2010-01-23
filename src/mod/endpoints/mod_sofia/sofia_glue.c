@@ -51,10 +51,20 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 		}
 	}
 
+	if (!ip) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s NO IP!\n", switch_channel_get_name(tech_pvt->channel));
+		return;
+	}
+
 	if (!port) {
 		if (!(port = tech_pvt->adv_sdp_audio_port)) {
 			port = tech_pvt->proxy_sdp_audio_port;
 		}
+	}
+
+	if (!port) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s NO PORT!\n", switch_channel_get_name(tech_pvt->channel));
+		return;
 	}
 
 	if (!tech_pvt->owner_id) {
@@ -141,10 +151,21 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 			ip = tech_pvt->proxy_sdp_audio_ip;
 		}
 	}
+
+	if (!ip) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s NO IP!\n", switch_channel_get_name(tech_pvt->channel));
+		return;
+	}
+
 	if (!port) {
 		if (!(port = tech_pvt->adv_sdp_audio_port)) {
 			port = tech_pvt->proxy_sdp_audio_port;
 		}
+	}
+
+	if (!port) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s NO PORT!\n", switch_channel_get_name(tech_pvt->channel));
+		return;
 	}
 
 	if (!sr) {

@@ -1403,40 +1403,41 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_MEDIA:
 		{
-			uint32_t send_invite = 1;
+            uint32_t send_invite = 1;
 
+			switch_channel_clear_flag(channel, CF_PROXY_MODE);
 			sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
 
-			if (!(switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
-				if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
-					const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
-					tech_pvt->num_codecs = 0;
-					sofia_glue_tech_prepare_codecs(tech_pvt);
-					if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
-						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
-						status = SWITCH_STATUS_FALSE;
-						goto end_lock;
-					}
-					send_invite = 0;
-				}
-			}
+            if (!(switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
+                if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+                    const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 
-			if (!switch_rtp_ready(tech_pvt->rtp_session)) {
+                    tech_pvt->num_codecs = 0;
+					sofia_glue_tech_prepare_codecs(tech_pvt);
+                    if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
+                        status = SWITCH_STATUS_FALSE;
+                        goto end_lock;
+                    }
+                    send_invite = 0;
+                }
+            }
+
+            if (!switch_rtp_ready(tech_pvt->rtp_session)) {
 				sofia_glue_tech_prepare_codecs(tech_pvt);
-				if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
+                if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					goto end_lock;
-				}
-			}
+                    goto end_lock;
+                }
+            }
 			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
 
-			if (send_invite) {
+            if (send_invite) {
 				switch_channel_set_flag(channel, CF_REQ_MEDIA);
-				switch_channel_clear_flag(channel, CF_PROXY_MODE);
 				sofia_glue_do_invite(session);
-			}
-		}
-		break;
+            }
+        }
+        break;
 
 	case SWITCH_MESSAGE_INDICATE_SIMPLIFY:
 		{
