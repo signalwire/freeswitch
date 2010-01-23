@@ -110,6 +110,11 @@ MainWindow::MainWindow(QWidget *parent) :
     /* Set other properties */
     ui->tableAccounts->horizontalHeader()->setStretchLastSection(true);
 
+    /* Set the call timer */
+    callTimer = new QTimer(this);
+    callTimer->setInterval(1000);
+    connect(callTimer, SIGNAL(timeout()), this, SLOT(updateCallTimers()));
+    callTimer->start();
 }
 
 MainWindow::~MainWindow()
@@ -118,6 +123,17 @@ MainWindow::~MainWindow()
     QString res;
     g_FSHost.sendCmd("fsctl", "shutdown", &res);
     g_FSHost.wait();
+}
+
+void MainWindow::updateCallTimers()
+{
+    for(int row=0; row<ui->tableCalls->rowCount(); row++)
+    {
+        QTableWidgetItem* item = ui->tableCalls->item(row, 2);
+        QTime time = QTime::fromString(item->text(),"hh:mm:ss");
+        time = time.addSecs(1);
+        item->setText(time.toString("hh:mm:ss"));
+    }
 }
 
 void MainWindow::setDefaultAccount()
@@ -199,7 +215,6 @@ void MainWindow::sendDTMF(QString dtmf)
     g_FSHost.getCurrentActiveCall().data()->sendDTMF(dtmf);
 }
 
-/* TODO: Update the timers and the item text! */
 void MainWindow::callTableDoubleClick(QTableWidgetItem *item)
 {
     QSharedPointer<Call> lastCall = g_FSHost.getCurrentActiveCall();
@@ -314,6 +329,10 @@ void MainWindow::newOutgoingCall(QSharedPointer<Call> call)
     item1->setData(Qt::UserRole, call.data()->getUUID());
     ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,1,item1);
 
+    QTableWidgetItem *item2 = new QTableWidgetItem("00:00:00");
+    item2->setData(Qt::UserRole, call.data()->getUUID());
+    ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,2,item2);
+
     ui->tableCalls->resizeColumnsToContents();
     ui->tableCalls->resizeRowsToContents();
     ui->tableCalls->horizontalHeader()->setStretchLastSection(true);
@@ -346,6 +365,10 @@ void MainWindow::ringing(QSharedPointer<Call> call)
     QTableWidgetItem *item1 = new QTableWidgetItem(tr("Ringing"));
     item1->setData(Qt::UserRole, call.data()->getUUID());
     ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,1,item1);
+
+    QTableWidgetItem *item2 = new QTableWidgetItem("00:00:00");
+    item2->setData(Qt::UserRole, call.data()->getUUID());
+    ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,2,item2);
 
     ui->tableCalls->resizeColumnsToContents();
     ui->tableCalls->resizeRowsToContents();

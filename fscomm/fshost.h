@@ -65,6 +65,7 @@ signals:
     void delAccount(QSharedPointer<Account>);
 
 private slots:
+    /* We need to wait for the gateway deletion before reloading it */
     void accountReloadSlot(QSharedPointer<Account>);
 
 private:

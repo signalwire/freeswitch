@@ -79,12 +79,14 @@ private slots:
     void accountDel(QSharedPointer<Account>);
     void accountStateChanged(QSharedPointer<Account>);
     void sysTrayActivated(QSystemTrayIcon::ActivationReason reason);
+    void updateCallTimers();
 
 private:
     Ui::MainWindow *ui;
     QSignalMapper *dialpadMapper;
     PrefDialog *preferences;
     QSystemTrayIcon *sysTray;
+    QTimer *callTimer;
 };
 
 #endif // MAINWINDOW_H
