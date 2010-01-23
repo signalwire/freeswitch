@@ -81,6 +81,8 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_GATEWAY_STATE "sofia::gateway_state"
 #define MY_EVENT_NOTIFY_REFER "sofia::notify_refer"
 #define MY_EVENT_REINVITE "sofia::reinvite"
+#define MY_EVENT_GATEWAY_ADD "sofia::gateway_add"
+#define MY_EVENT_GATEWAY_DEL "sofia::gateway_delete"
 
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
