@@ -2512,7 +2512,6 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 	char *profile_name = argv[0];
 	const char *err;
 	switch_xml_t xml_root;
-	switch_event_t *event;
 
 	if (argc < 2) {
 		stream->write_function(stream, "Invalid Args!\n");
@@ -2555,10 +2554,6 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 			sofia_glue_del_gateway(gateway_ptr);
 			sofia_reg_release_gateway(gateway_ptr);
 			stream->write_function(stream, "+OK gateway marked for deletion.\n");
-			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_DEL) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Gateway", argv[2]);
-				switch_event_fire(&event);
-			}
 		} else {
 			stream->write_function(stream, "-ERR no such gateway.\n");
 		}

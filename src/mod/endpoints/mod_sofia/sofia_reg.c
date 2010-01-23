@@ -237,6 +237,7 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 {
 	sofia_gateway_t *gateway_ptr, *last = NULL;
+	switch_event_t *event;
 
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 		if (gateway_ptr->deleted && gateway_ptr->state == REG_STATE_NOREG) {
@@ -250,6 +251,11 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->register_from);
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->register_contact);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleted gateway %s\n", gateway_ptr->name);
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_DEL) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile-name", gateway_ptr->profile->name);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Gateway", gateway_ptr->name);
+				switch_event_fire(&event);
+			}
 			if (gateway_ptr->ob_vars) {
 				switch_event_destroy(&gateway_ptr->ob_vars);
 			}
@@ -2359,6 +2365,7 @@ switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Added gateway '%s' to profile '%s'\n", gateway->name, gateway->profile->name);
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_ADD) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Gateway", gateway->name);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", gateway->profile->name);
 			switch_event_fire(&s_event);
 		}
 	}
