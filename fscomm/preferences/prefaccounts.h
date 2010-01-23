@@ -16,7 +16,7 @@ public:
     void writeConfig();
 
 public slots:
-    void readConfig();
+    void readConfig(bool reload=true);
 
 private slots:
     void addAccountBtnClicked();

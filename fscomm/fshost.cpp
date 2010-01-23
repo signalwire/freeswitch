@@ -341,16 +341,9 @@ void FSHost::generalEventHandler(switch_event_t *event)
             {
                 QString state = switch_event_get_header_nil(event, "State");
                 QString gw = switch_event_get_header_nil(event, "Gateway");
-                QSharedPointer<Account> acc;
-                if (!_accounts.contains(gw))
-                {
-                    Account * accPtr = new Account(gw);
-                    acc = QSharedPointer<Account>(accPtr);
-                    _accounts.insert(gw, acc);
-                    emit newAccount(acc);
-                }
-                else
-                    acc = _accounts.value(gw);
+                QSharedPointer<Account> acc = _accounts.value(gw);
+                if (acc.isNull())
+                    return;
 
                 if (state == "TRYING") {
                     acc.data()->setState(FSCOMM_GW_STATE_TRYING);
@@ -381,10 +374,20 @@ void FSHost::generalEventHandler(switch_event_t *event)
                     emit accountStateChange(acc);
                 }
             }
-            else if (strcmp(event->subclass_name, "fscomm::acc_removed") == 0)
+            else if (strcmp(event->subclass_name, "sofia::gateway_add") == 0)
             {
-                QSharedPointer<Account> acc = _accounts.take(switch_event_get_header_nil(event, "acc_name"));
-                emit delAccount(acc);
+                QString gw = switch_event_get_header_nil(event, "Gateway");
+                Account * accPtr = new Account(gw);
+                QSharedPointer<Account> acc = QSharedPointer<Account>(accPtr);
+                acc.data()->setState(FSCOMM_GW_STATE_NOAVAIL);
+                _accounts.insert(gw, acc);
+                emit newAccount(acc);
+            }
+            else if (strcmp(event->subclass_name, "sofia::gateway_del") == 0)
+            {
+                QSharedPointer<Account> acc = _accounts.take(switch_event_get_header_nil(event, "Gateway"));
+                if (!acc.isNull())
+                    emit delAccount(acc);
             }
             else
             {

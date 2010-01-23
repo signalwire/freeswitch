@@ -12,6 +12,7 @@
 #define FSCOMM_GW_STATE_FAIL_WAIT 6
 #define FSCOMM_GW_STATE_EXPIRED 7
 #define FSCOMM_GW_STATE_NOREG 8
+#define FSCOMM_GW_STATE_NOAVAIL 9
 
 
 static QString fscomm_gw_state_names[] = {
@@ -23,7 +24,8 @@ static QString fscomm_gw_state_names[] = {
     QString("Failed"),
     QString("Failed"),
     QString("Expired"),
-    QString("Not applicable")
+    QString("Not applicable"),
+    QString("Not available")
 };
 
 class Account {

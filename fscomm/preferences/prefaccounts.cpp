@@ -13,11 +13,6 @@ PrefAccounts::PrefAccounts(Ui::PrefDialog *ui) :
     connect(_ui->sofiaGwEditBtn, SIGNAL(clicked()), this, SLOT(editAccountBtnClicked()));
 
     _ui->accountsTable->horizontalHeader()->setStretchLastSection(true);
-
-    if (switch_event_reserve_subclass(FSCOMM_EVENT_ACC_REMOVED) != SWITCH_STATUS_SUCCESS) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
-    }
-
 }
 
 void PrefAccounts::addAccountBtnClicked()
@@ -97,9 +92,14 @@ void PrefAccounts::remAccountBtnClicked()
                 QSharedPointer<Account> acc = g_FSHost.getAccountByUUID(item->data(Qt::UserRole).toString());
                 if (!acc.isNull())
                 {
-                    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "acc_name", acc.data()->getName().toAscii().data());
-                    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "acc_uuid", acc.data()->getUUID().toAscii().data());
-                    switch_event_fire(&event);
+                    QString res;
+                    QString arg = QString("profile softphone killgw %1").arg(acc.data()->getName());
+
+                    if (g_FSHost.sendCmd("sofia", arg.toAscii().data() , &res) != SWITCH_STATUS_SUCCESS)
+                    {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not killgw %s from profile softphone.\n",
+                                          acc.data()->getName().toAscii().data());
+                    }
                 }
             }
             _ui->accountsTable->removeRow(row-offset);
@@ -108,16 +108,7 @@ void PrefAccounts::remAccountBtnClicked()
     }
 
     if (offset > 0)
-    {
-        QString res;
-        _settings->sync();
-        if (g_FSHost.sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rescan the softphone profile.\n");
-            return;
-        }
-        readConfig();
-    }
+        readConfig(false);
 }
 
 void PrefAccounts::writeConfig()
@@ -125,7 +116,7 @@ void PrefAccounts::writeConfig()
     return;
 }
 
-void PrefAccounts::readConfig()
+void PrefAccounts::readConfig(bool reload)
 {
 
     _ui->accountsTable->clearContents();
@@ -155,12 +146,15 @@ void PrefAccounts::readConfig()
 
     _settings->endGroup();
 
-    QString res;
-    _settings->sync();
-    if (g_FSHost.sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
+    if (reload)
     {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rescan the softphone profile.\n");
-        return;
+        QString res;
+        _settings->sync();
+        if (g_FSHost.sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
+        {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rescan the softphone profile.\n");
+            return;
+        }
     }
 
     if (_ui->accountsTable->rowCount() == 1)
