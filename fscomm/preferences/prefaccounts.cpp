@@ -149,7 +149,6 @@ void PrefAccounts::readConfig(bool reload)
     if (reload)
     {
         QString res;
-        _settings->sync();
         if (g_FSHost.sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
         {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rescan the softphone profile.\n");

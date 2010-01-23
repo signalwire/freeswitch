@@ -47,6 +47,7 @@ public:
     QSharedPointer<Call> getCurrentActiveCall();
     QList<QSharedPointer<Account> > getAccounts() { return _accounts.values(); }
     QSharedPointer<Account> getAccountByUUID(QString uuid);
+    void accountReloadCmd(QSharedPointer<Account> acc);
 
 protected:
     void run(void);
@@ -63,6 +64,9 @@ signals:
     void newAccount(QSharedPointer<Account>);
     void delAccount(QSharedPointer<Account>);
 
+private slots:
+    void accountReloadSlot(QSharedPointer<Account>);
+
 private:
     switch_status_t processBlegEvent(switch_event_t *, QString);
     switch_status_t processAlegEvent(switch_event_t *, QString);
@@ -71,6 +75,7 @@ private:
     QHash<QString, QSharedPointer<Call> > _active_calls;
     QHash<QString, QSharedPointer<Account> > _accounts;
     QHash<QString, QString> _bleg_uuids;
+    QList<QString> _reloading_Accounts;
 };
 
 extern FSHost g_FSHost;

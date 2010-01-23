@@ -108,21 +108,15 @@ void AccountDialog::readConfig()
 
 void AccountDialog::writeConfig()
 {
+    QSharedPointer<Account> acc = g_FSHost.getAccountByUUID(_accId);
+    if (!acc.isNull())
+    {
+        g_FSHost.accountReloadCmd(acc);
+    }
+
     _settings->beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways");
 
     _settings->beginGroup(_accId);
-
-    if (!g_FSHost.getAccountByUUID(_accId).isNull())
-    {
-        QString res;
-        QString arg = QString("profile softphone killgw %1").arg(g_FSHost.getAccountByUUID(_accId).data()->getName());
-
-        if (g_FSHost.sendCmd("sofia", arg.toAscii().data() , &res) != SWITCH_STATUS_SUCCESS)
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not killgw %s from profile softphone.\n",
-                              g_FSHost.getAccountByUUID(_accId).data()->getName().toAscii().data());
-        }
-    }
     
     _settings->beginGroup("gateway/attrs");
     _settings->setValue("name", ui->sofiaGwNameEdit->text());
