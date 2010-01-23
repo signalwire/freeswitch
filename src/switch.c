@@ -44,6 +44,7 @@
 #endif
 
 #include <switch.h>
+#include <switch_version.h>
 #include "private/switch_core_pvt.h"
 
 /* pid filename: Stores the process id of the freeswitch process */
@@ -321,6 +322,7 @@ int main(int argc, char *argv[])
 		"\t-g [group]             -- specify group to switch to\n"
 #endif
 		"\t-help                  -- this message\n"
+		"\t-version               -- print the version and exit\n"
 #ifdef HAVE_SETRLIMIT
 		"\t-waste                 -- allow memory waste\n"
 		"\t-core                  -- dump cores\n"
@@ -464,6 +466,13 @@ int main(int argc, char *argv[])
 			nf++;
 			known_opt++;
 		}
+
+		if (local_argv[x] && !strcmp(local_argv[x], "-version")) {
+			fprintf(stdout, "FreeSWITCH version: %s\n", SWITCH_VERSION_FULL);
+			return 0;
+			known_opt++;
+		}
+
 #endif
 #ifdef HAVE_SETRLIMIT
 		if (local_argv[x] && !strcmp(local_argv[x], "-core")) {
