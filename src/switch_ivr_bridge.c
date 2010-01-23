@@ -30,7 +30,7 @@
  */
 
 #include <switch.h>
-#define DEFAULT_LEAD_FRAMES 5
+#define DEFAULT_LEAD_FRAMES 10
 
 static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
 static void cleanup_proxy_mode_a(switch_core_session_t *session);
@@ -839,18 +839,22 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
             switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
 			
             if (switch_channel_up(other_channel)) {
+
 				if (switch_true(switch_channel_get_variable(other_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
 					switch_ivr_park_session(other_session);
 				} else if ((var = switch_channel_get_variable(other_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
 					transfer_after_bridge(other_session, var);
 				}
-				
-				if (switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR) && 
-					switch_channel_test_flag(channel, CF_ANSWERED) &&
-					switch_true(switch_channel_get_variable(other_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
-					switch_channel_hangup(other_channel, switch_channel_get_cause(channel));	
+
+				if (switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR)) {
+					if (switch_channel_test_flag(channel, CF_ANSWERED) &&
+						switch_true(switch_channel_get_variable(other_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
+						switch_channel_hangup(other_channel, switch_channel_get_cause(channel));	
+					} else {
+						switch_channel_set_state(other_channel, CS_EXECUTE);
+					}
 				} else {
-					switch_channel_set_state(other_channel, CS_EXECUTE);
+					switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
 				}
             }
         }

@@ -1286,7 +1286,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 			if (other_channel) {
 				switch_channel_wait_for_state(other_channel, channel, CS_PARK);
 			}
-			switch_channel_wait_for_state_timeout(channel, CS_PARK, 5000000);
+			if (switch_core_session_in_thread(session)) {
+				switch_yield(100000);
+			}
 			
 			switch_channel_clear_flag(channel, CF_NOT_READY);
 
@@ -1300,7 +1302,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 					switch_ivr_signal_bridge(session, other_session);
 				}
 				switch_channel_wait_for_state(other_channel, channel, CS_HIBERNATE);
-				switch_channel_wait_for_state(channel, other_channel, CS_HIBERNATE);
+				if (switch_core_session_in_thread(session)) {
+					switch_yield(100000);
+				}
 				switch_core_session_rwunlock(other_session);
 			}
 		}

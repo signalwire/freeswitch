@@ -2071,6 +2071,7 @@ SWITCH_DECLARE(void) switch_cache_db_detach(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
 SWITCH_DECLARE(void) switch_cache_db_flush_handles(void);
 SWITCH_DECLARE(const char *) switch_core_banner(void);
+SWITCH_DECLARE(switch_bool_t) switch_core_session_in_thread(switch_core_session_t *session);
 
 SWITCH_END_EXTERN_C
 #endif
