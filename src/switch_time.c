@@ -972,7 +972,7 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 		switch_time_set_nanosleep(SWITCH_FALSE);
 	}
 	
-	if (!switch_test_flag((&runtime), SCF_USE_COND_TIMING)) {
+	if (switch_test_flag((&runtime), SCF_USE_COND_TIMING)) {
 		switch_time_set_cond_yield(SWITCH_TRUE);
 	}
 
