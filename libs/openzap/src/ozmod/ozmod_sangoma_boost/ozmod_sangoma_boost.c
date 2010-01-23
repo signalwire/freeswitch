@@ -47,7 +47,10 @@ static time_t congestion_timeouts[MAX_TRUNK_GROUPS];
 typedef enum {
 	SFLAG_FREE_REQ_ID = (1 << 0),
 	SFLAG_SENT_FINAL_MSG = (1 << 1),
-	SFLAG_SENT_ACK = (1 << 2)
+	SFLAG_SENT_ACK = (1 << 2),
+	SFLAG_RECVD_ACK = (1 << 3),
+	SFLAG_HANGUP = (1 << 4),
+	SFLAG_TERMINATING = (1 << 5)
 } sflag_t;
 
 typedef uint16_t sangoma_boost_request_id_t;
@@ -72,6 +75,7 @@ typedef struct {
 	zap_span_t *span;
 	zap_channel_t *zchan;
 	int hangup_cause;
+	int flags;
 } sangoma_boost_request_t;
 
 //#define MAX_REQ_ID ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN * ZAP_MAX_CHANNELS_PHYSICAL_SPAN
@@ -220,30 +224,6 @@ static int check_congestion(int trunk_group)
 	return 0;
 }
 
-/**
- * \brief determines whether media is ready
- * \param event boost event
- * \return 1 true, 0 for false
- */
-
-static int boost_media_ready(sangomabc_event_t *event)
-{
-	/* FORMAT is of type: SMG003-EVI-1-MEDIA-# */
-	char* p = NULL;
-	p = strstr(event->isup_in_rdnis, "MEDIA");
-	if (p) {
-		int media_ready = 0;
-		if ((sscanf(p, "MEDIA-%d", &media_ready)) == 1) {
-			if (media_ready) {
-				return 1;
-			} else {
-			}
-		} else {
-			zap_log(ZAP_LOG_ERROR, "Invalid boost isup_rdnis MEDIA format %s\n", p);
-		}
-	}
-	return 0;
-}
 
 /**
  * \brief Requests an sangoma boost channel on a span (outgoing call)
@@ -361,49 +341,15 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		}
 	}
 	
-	if (OUTBOUND_REQUESTS[r].status == BST_ACK && OUTBOUND_REQUESTS[r].zchan) {
-		*zchan = OUTBOUND_REQUESTS[r].zchan;
-		status = ZAP_SUCCESS;
-		(*zchan)->init_state = ZAP_CHANNEL_STATE_PROGRESS;
-		zap_log(ZAP_LOG_DEBUG, "Channel state changed to PROGRESS [Csid:%d]\n", r);
-	}
-
-	/* This is blocking the channel thread in openzap */
-	/* Once we know the channel we need to get out of here and move to a state */
-	sanity = 60000;
-	while(zap_running() && OUTBOUND_REQUESTS[r].status == BST_ACK) {
-		zap_sleep(1);
-		if (--sanity <= 0) {
-			break;
-		}
-	}
-
 	if (OUTBOUND_REQUESTS[r].status == BST_READY && OUTBOUND_REQUESTS[r].zchan) {
 		*zchan = OUTBOUND_REQUESTS[r].zchan;
 		status = ZAP_SUCCESS;
-		(*zchan)->init_state = ZAP_CHANNEL_STATE_PROGRESS_MEDIA;
-		zap_log(ZAP_LOG_DEBUG, "Channel state changed to PROGRESS_MEDIA [Csid:%d]\n", r);
 	} else {
 		status = ZAP_FAIL;
         *zchan = NULL;
 	}
 
  done:
-
-	/* We failed to ever setup media, we need to let go of the channel */
-	/* All of this early media stuff should not be in this function at all */
-	/* Everything after we know the channel should be moved to a new state */
-	if (OUTBOUND_REQUESTS[r].zchan && OUTBOUND_REQUESTS[r].status != BST_READY && zap_test_flag((OUTBOUND_REQUESTS[r].zchan), ZAP_CHANNEL_INUSE)) {
-		status = ZAP_FAIL;
-		*zchan = NULL;
-		if (OUTBOUND_REQUESTS[r].zchan->extra_id) {
-			OUTBOUND_REQUESTS[r].zchan->extra_id = 0;
-		}
-		(OUTBOUND_REQUESTS[r].zchan)->sflags = 0;
-		(OUTBOUND_REQUESTS[r].zchan)->call_data = NULL;
-		zap_channel_done((OUTBOUND_REQUESTS[r].zchan));
-		OUTBOUND_REQUESTS[r].zchan = NULL;
-	}
 
 	st = OUTBOUND_REQUESTS[r].status;
 	OUTBOUND_REQUESTS[r].status = BST_FREE;	
@@ -422,11 +368,12 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		assert(r <= MAX_REQ_ID);
 		nack_map[r] = 1;
 		sangomabc_exec_command(&sangoma_boost_data->mcon,
-						   0,
-						   0,
-						   r,
-						   SIGBOOST_EVENT_CALL_START_NACK,
-						   0);
+							   0,
+							   0,
+							   r,
+							   SIGBOOST_EVENT_CALL_START_NACK,
+							   0,
+							   0);
 	}
 
 	return status;
@@ -449,63 +396,35 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(sangoma_boost_outgoing_call)
  * \param mcon sangoma boost connection
  * \param event Event to handle
  */
-static void handle_call_progress(sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
+static void handle_call_progress(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
 	zap_channel_t *zchan;
 
-	if (nack_map[event->call_setup_id]) {
-		return;
-	}
 
-	//if we received a progress for this device already
-	if (OUTBOUND_REQUESTS[event->call_setup_id].status == BST_ACK) {
-		if (boost_media_ready((sangomabc_event_t*) event)) {
-			OUTBOUND_REQUESTS[event->call_setup_id].status = BST_READY;
-			zap_log(ZAP_LOG_DEBUG, "chan media ready %d:%d CSid:%d\n", event->span+1, event->chan+1, event->call_setup_id);
-		}
-		return;
-	}
-
-	OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
-	SETUP_GRID[event->span][event->chan] = event->call_setup_id;
-
-	if ((zchan = find_zchan(OUTBOUND_REQUESTS[event->call_setup_id].span, (sangomabc_short_event_t*) event, 0))) {
-		if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
-			zap_log(ZAP_LOG_ERROR, "OPEN ERROR [%s]\n", zchan->last_error);
-		} else {
-			zap_set_flag(zchan, ZAP_CHANNEL_OUTBOUND);
-			zap_set_flag_locked(zchan, ZAP_CHANNEL_INUSE);
-			zchan->extra_id = event->call_setup_id;
-			zap_log(ZAP_LOG_DEBUG, "Assign chan %d:%d (%d:%d) CSid=%d\n", zchan->span_id, zchan->chan_id, event->span+1,event->chan+1, event->call_setup_id);
-			zchan->sflags = 0;
-			OUTBOUND_REQUESTS[event->call_setup_id].zchan = zchan;
-			if (boost_media_ready((sangomabc_event_t*)event)) {
-				OUTBOUND_REQUESTS[event->call_setup_id].status = BST_READY;
+	if ((zchan = find_zchan(span, event, 1))) {
+		zap_mutex_lock(zchan->mutex);
+		if (zchan->state == ZAP_CHANNEL_STATE_HOLD) {
+			if ((event->flags & SIGBOOST_PROGRESS_MEDIA)) {
+				zchan->init_state = ZAP_CHANNEL_STATE_PROGRESS_MEDIA;
+				zap_log(ZAP_LOG_DEBUG, "Channel init state updated to PROGRESS_MEDIA [Csid:%d]\n", event->call_setup_id);
+			} else if ((event->flags & SIGBOOST_PROGRESS_RING)) {
+				zchan->init_state = ZAP_CHANNEL_STATE_PROGRESS;
+				zap_log(ZAP_LOG_DEBUG, "Channel init state updated to PROGRESS [Csid:%d]\n", event->call_setup_id);
 			} else {
-				OUTBOUND_REQUESTS[event->call_setup_id].status = BST_ACK;
+				zchan->init_state = ZAP_CHANNEL_STATE_IDLE;
+				zap_log(ZAP_LOG_DEBUG, "Channel init state updated to IDLE [Csid:%d]\n", event->call_setup_id);
+			}			
+		} else {
+			if ((event->flags & SIGBOOST_PROGRESS_MEDIA)) {
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
+			} else if ((event->flags & SIGBOOST_PROGRESS_RING)) {
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS);
+			} else {
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_IDLE);
 			}
-			return;
 		}
-	} 
-	
-	//printf("WTF BAD ACK CSid=%d span=%d chan=%d\n", event->call_setup_id, event->span+1,event->chan+1);
-	if ((zchan = find_zchan(OUTBOUND_REQUESTS[event->call_setup_id].span, event, 1))) {
-		//printf("WTF BAD ACK2 %d:%d (%d:%d) CSid=%d xtra_id=%d out=%d state=%s\n", zchan->span_id, zchan->chan_id, event->span+1,event->chan+1, event->call_setup_id, zchan->extra_id, zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND), zap_channel_state2str(zchan->state));
+		zap_mutex_unlock(zchan->mutex);
 	}
-
-
-	zap_log(ZAP_LOG_CRIT, "START PROGRESS CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
-	if (zchan) {
-		zap_set_sflag(zchan, SFLAG_SENT_FINAL_MSG);
-	}
-	sangomabc_exec_command(mcon,
-					   event->span,
-					   event->chan,
-					   event->call_setup_id,
-					   SIGBOOST_EVENT_CALL_STOPPED,
-					   ZAP_CAUSE_DESTINATION_OUT_OF_ORDER);
-	OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
-	OUTBOUND_REQUESTS[event->call_setup_id].hangup_cause = ZAP_CAUSE_DESTINATION_OUT_OF_ORDER;
 }
 
 /**
@@ -532,7 +451,22 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 			zap_set_flag_locked(zchan, ZAP_CHANNEL_INUSE);
 			zchan->extra_id = event->call_setup_id;
 			zap_log(ZAP_LOG_DEBUG, "Assign chan %d:%d (%d:%d) CSid=%d\n", zchan->span_id, zchan->chan_id, event->span+1,event->chan+1, event->call_setup_id);
-			zchan->sflags = 0;
+			zchan->sflags = SFLAG_RECVD_ACK;
+
+			if ((event->flags & SIGBOOST_PROGRESS_MEDIA)) {
+				zchan->init_state = ZAP_CHANNEL_STATE_PROGRESS_MEDIA;
+				zap_log(ZAP_LOG_DEBUG, "Channel init state changed to PROGRESS_MEDIA [Csid:%d]\n", event->call_setup_id);
+			} else if ((event->flags & SIGBOOST_PROGRESS_RING)) {
+				zchan->init_state = ZAP_CHANNEL_STATE_PROGRESS;
+				zap_log(ZAP_LOG_DEBUG, "Channel init state changed to PROGRESS [Csid:%d]\n", event->call_setup_id);
+			} else {
+				zchan->init_state = ZAP_CHANNEL_STATE_IDLE;
+				zap_log(ZAP_LOG_DEBUG, "Channel init state changed to IDLE [Csid:%d]\n", event->call_setup_id);
+			}
+			
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HOLD);
+
+			OUTBOUND_REQUESTS[event->call_setup_id].flags = event->flags;
 			OUTBOUND_REQUESTS[event->call_setup_id].zchan = zchan;
 			OUTBOUND_REQUESTS[event->call_setup_id].status = BST_READY;
 			return;
@@ -547,11 +481,11 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 	zap_set_sflag(zchan, SFLAG_SENT_FINAL_MSG);
 	zap_log(ZAP_LOG_CRIT, "START ACK CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
 	sangomabc_exec_command(mcon,
-					   event->span,
-					   event->chan,
-					   event->call_setup_id,
-					   SIGBOOST_EVENT_CALL_STOPPED,
-					   ZAP_CAUSE_DESTINATION_OUT_OF_ORDER);
+						   event->span,
+						   event->chan,
+						   event->call_setup_id,
+						   SIGBOOST_EVENT_CALL_STOPPED,
+						   ZAP_CAUSE_DESTINATION_OUT_OF_ORDER, 0);
 	OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
 	OUTBOUND_REQUESTS[event->call_setup_id].hangup_cause = ZAP_CAUSE_DESTINATION_OUT_OF_ORDER;
 	
@@ -571,7 +505,7 @@ static void handle_call_done(zap_span_t *span, sangomabc_connection_t *mcon, san
 	if ((zchan = find_zchan(span, event, 1))) {
 		zap_mutex_lock(zchan->mutex);
 
-		if (zchan->state == ZAP_CHANNEL_STATE_DOWN || zchan->state == ZAP_CHANNEL_STATE_HANGUP_COMPLETE) {
+		if (zchan->state == ZAP_CHANNEL_STATE_DOWN || zchan->state == ZAP_CHANNEL_STATE_HANGUP_COMPLETE || zap_test_sflag(zchan, SFLAG_TERMINATING)) {
 			goto done;
 		}
 
@@ -636,12 +570,12 @@ static void handle_call_start_nack(zap_span_t *span, sangomabc_connection_t *mco
 	if (event->call_setup_id) {
 
 		sangomabc_exec_command(mcon,
-						   0,
-						   0,
-						   event->call_setup_id,
-						   SIGBOOST_EVENT_CALL_START_NACK_ACK,
-						   0);
-
+							   0,
+							   0,
+							   event->call_setup_id,
+							   SIGBOOST_EVENT_CALL_START_NACK_ACK,
+							   0, 0);
+		
 		OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
 		OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
 		OUTBOUND_REQUESTS[event->call_setup_id].hangup_cause = event->release_cause;
@@ -671,11 +605,11 @@ static void handle_call_start_nack(zap_span_t *span, sangomabc_connection_t *mco
 
 	/* nobody else will do it so we have to do it ourselves */
 	sangomabc_exec_command(mcon,
-					   event->span,
-					   event->chan,
-					   0,
-					   SIGBOOST_EVENT_CALL_START_NACK_ACK,
-					   0);
+						   event->span,
+						   event->chan,
+						   0,
+						   SIGBOOST_EVENT_CALL_START_NACK_ACK,
+						   0, 0);
 }
 
 /**
@@ -692,22 +626,31 @@ static void handle_call_stop(zap_span_t *span, sangomabc_connection_t *mcon, san
 		int r = 0;
 
 		zap_mutex_lock(zchan->mutex);
-		
-		if (zchan->state == ZAP_CHANNEL_STATE_HANGUP) {
+
+		if (zap_test_sflag(zchan, SFLAG_HANGUP)) {
 			/* racing condition where both sides initiated a hangup 
 			 * Do not change current state as channel is already clearing
 			 * itself through local initiated hangup */
 			
 			sangomabc_exec_command(mcon,
-						zchan->physical_span_id-1,
-						zchan->physical_chan_id-1,
-						0,
-						SIGBOOST_EVENT_CALL_STOPPED_ACK,
-						0);
+								   zchan->physical_span_id-1,
+								   zchan->physical_chan_id-1,
+								   0,
+								   SIGBOOST_EVENT_CALL_STOPPED_ACK,
+								   0, 0);
 			zap_mutex_unlock(zchan->mutex);
 			return;
 		} else {
-			zap_set_state_r(zchan, ZAP_CHANNEL_STATE_TERMINATING, 0, r);
+			if (zchan->state == ZAP_CHANNEL_STATE_HOLD) {
+				zchan->init_state = ZAP_CHANNEL_STATE_TERMINATING;
+				zap_log(ZAP_LOG_DEBUG, "Channel init state updated to TERMINATING [Csid:%d]\n", event->call_setup_id);			
+				OUTBOUND_REQUESTS[event->call_setup_id].hangup_cause = event->release_cause;  
+				zchan->caller_data.hangup_cause = event->release_cause;
+				zap_mutex_unlock(zchan->mutex);
+				return;
+			} else {
+				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_TERMINATING, 0, r);
+			}
 		}
 
 		if (r == ZAP_STATE_CHANGE_SUCCESS) {
@@ -719,6 +662,7 @@ static void handle_call_stop(zap_span_t *span, sangomabc_connection_t *mcon, san
 		}
 
 		zap_mutex_unlock(zchan->mutex);
+
 		if (r) {
 			return;
 		}
@@ -739,25 +683,22 @@ static void handle_call_answer(zap_span_t *span, sangomabc_connection_t *mcon, s
 	zap_channel_t *zchan;
 	
 	if ((zchan = find_zchan(span, event, 1))) {
-		int r = 0;
-
-		if (zchan->extra_id == event->call_setup_id && zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
-			zap_mutex_lock(zchan->mutex);
-			if (zchan->state == ZAP_CHANNEL_STATE_DOWN && zchan->init_state != ZAP_CHANNEL_STATE_UP) {
-				zchan->init_state = ZAP_CHANNEL_STATE_UP;
-				r = 1;
-			} else {
-				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_UP, 0, r);
-			}
-			zap_mutex_unlock(zchan->mutex);
-		} 
-#if 0
-		if (!r) {
-			printf("WTF BAD ANSWER %d:%d (%d:%d) CSid=%d xtra_id=%d out=%d state=%s\n", zchan->span_id, zchan->chan_id, event->span+1,event->chan+1, event->call_setup_id, zchan->extra_id, zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND), zap_channel_state2str(zchan->state));
+		zap_mutex_lock(zchan->mutex);
+		if (zchan->state == ZAP_CHANNEL_STATE_HOLD) {
+			zchan->init_state = ZAP_CHANNEL_STATE_UP;
+		} else {
+			int r = 0;
+			zap_set_state_r(zchan, ZAP_CHANNEL_STATE_UP, 0, r);
 		}
-#endif
+		zap_mutex_unlock(zchan->mutex);
 	} else {
 		zap_log(ZAP_LOG_CRIT, "ANSWER CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
+		sangomabc_exec_command(mcon,
+							   event->span,
+							   event->chan,
+							   event->call_setup_id,
+							   SIGBOOST_EVENT_CALL_STOPPED,
+							   ZAP_CAUSE_DESTINATION_OUT_OF_ORDER, 0);
 	}
 }
 
@@ -829,11 +770,11 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 	}
 
 	sangomabc_exec_command(mcon,
-					   event->span,
-					   event->chan,
-					   0,
-					   SIGBOOST_EVENT_CALL_START_NACK,
-					   0);
+						   event->span,
+						   event->chan,
+						   0,
+						   SIGBOOST_EVENT_CALL_START_NACK,
+						   0, 0);
 		
 }
 
@@ -948,7 +889,7 @@ static int parse_sangoma_event(zap_span_t *span, sangomabc_connection_t *mcon, s
 		handle_call_start_ack(mcon, event);
 		break;
     case SIGBOOST_EVENT_CALL_PROGRESS:
-		handle_call_progress(mcon, event);
+		handle_call_progress(span, mcon, event);
 		break;
     case SIGBOOST_EVENT_CALL_START_NACK:
 		handle_call_start_nack(span, mcon, event);
@@ -1018,10 +959,6 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	switch (zchan->state) {
 	case ZAP_CHANNEL_STATE_DOWN:
 		{
-			if (zchan->extra_id) {
-				zchan->extra_id = 0;
-			}
-
 			if (zap_test_sflag(zchan, SFLAG_FREE_REQ_ID)) {
 				release_request_id_span_chan(zchan->physical_span_id-1, zchan->physical_chan_id-1);
 			}
@@ -1031,20 +968,24 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 
 				if (zchan->call_data && ((uint32_t)(intptr_t)zchan->call_data == SIGBOOST_EVENT_CALL_START_NACK)) {
 					sangomabc_exec_command(mcon,
-									zchan->physical_span_id-1,
-									zchan->physical_chan_id-1,
-									0,
-									SIGBOOST_EVENT_CALL_START_NACK_ACK,
-									0);
+										   zchan->physical_span_id-1,
+										   zchan->physical_chan_id-1,
+										   0,
+										   SIGBOOST_EVENT_CALL_START_NACK_ACK,
+										   0, 0);
 					
 				} else {
 					sangomabc_exec_command(mcon,
-									zchan->physical_span_id-1,
-									zchan->physical_chan_id-1,
-									0,
-									SIGBOOST_EVENT_CALL_STOPPED_ACK,
-									0);
+										   zchan->physical_span_id-1,
+										   zchan->physical_chan_id-1,
+										   0,
+										   SIGBOOST_EVENT_CALL_STOPPED_ACK,
+										   0, 0);
 				}
+			}
+
+			if (zchan->extra_id) {
+				zchan->extra_id = 0;
 			}
 			zchan->sflags = 0;
 			zchan->call_data = NULL;
@@ -1052,7 +993,6 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		}
 		break;
 	case ZAP_CHANNEL_STATE_PROGRESS_MEDIA:
-	case ZAP_CHANNEL_STATE_PROGRESS:
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_PROGRESS_MEDIA;
@@ -1062,15 +1002,41 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			} else {
 				if (!zap_test_sflag(zchan, SFLAG_SENT_ACK)) {
 					zap_set_sflag(zchan, SFLAG_SENT_ACK);
-						sangomabc_exec_command(mcon,
-											zchan->physical_span_id-1,
-											zchan->physical_chan_id-1,
-											0,
-											SIGBOOST_EVENT_CALL_START_ACK,
-											0);
+					sangomabc_exec_command(mcon,
+										   zchan->physical_span_id-1,
+										   zchan->physical_chan_id-1,
+										   0,
+										   SIGBOOST_EVENT_CALL_START_ACK,
+										   0,
+										   SIGBOOST_PROGRESS_MEDIA);
 				}
 			}
 		}
+		break;
+	case ZAP_CHANNEL_STATE_PROGRESS:
+		{
+			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
+				sig.event_id = ZAP_SIGEVENT_PROGRESS;
+				if ((status = sangoma_boost_data->signal_cb(&sig) != ZAP_SUCCESS)) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+				}
+			} else {
+				if (!zap_test_sflag(zchan, SFLAG_SENT_ACK)) {
+					zap_set_sflag(zchan, SFLAG_SENT_ACK);
+					sangomabc_exec_command(mcon,
+										   zchan->physical_span_id-1,
+										   zchan->physical_chan_id-1,
+										   0,
+										   SIGBOOST_EVENT_CALL_START_ACK,
+										   0,
+										   SIGBOOST_PROGRESS_RING);
+				}
+			}
+		}
+		break;
+	case ZAP_CHANNEL_STATE_IDLE:
+	case ZAP_CHANNEL_STATE_HOLD:
+		/* twiddle */
 		break;
 	case ZAP_CHANNEL_STATE_RING:
 		{
@@ -1100,19 +1066,19 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			} else {
 				if (!(zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS) || zap_test_flag(zchan, ZAP_CHANNEL_MEDIA))) {
 					sangomabc_exec_command(mcon,
-									   zchan->physical_span_id-1,
-									   zchan->physical_chan_id-1,
-									   0,
-									   SIGBOOST_EVENT_CALL_START_ACK,
-									   0);
+										   zchan->physical_span_id-1,
+										   zchan->physical_chan_id-1,
+										   0,
+										   SIGBOOST_EVENT_CALL_START_ACK,
+										   0, 0);
 				}
 				
 				sangomabc_exec_command(mcon,
-								   zchan->physical_span_id-1,
-								   zchan->physical_chan_id-1,
-								   0,
-								   SIGBOOST_EVENT_CALL_ANSWERED,
-								   0);
+									   zchan->physical_span_id-1,
+									   zchan->physical_chan_id-1,
+									   0,
+									   SIGBOOST_EVENT_CALL_ANSWERED,
+									   0, 0);
 			}
 		}
 		break;
@@ -1127,34 +1093,40 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		break;
 	case ZAP_CHANNEL_STATE_HANGUP:
 		{
-			if (zchan->last_state == ZAP_CHANNEL_STATE_TERMINATING ||
-				zap_test_sflag(zchan, SFLAG_SENT_FINAL_MSG)) {
+			zap_set_sflag_locked(zchan, SFLAG_HANGUP);
+
+			if (zap_test_sflag(zchan, SFLAG_SENT_FINAL_MSG)) {
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE);
 			} else {
 				zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_MSG);
-				if (zap_test_flag(zchan, ZAP_CHANNEL_ANSWERED) || zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS) || zap_test_flag(zchan, ZAP_CHANNEL_MEDIA)) {
-
+				
+				if (zap_test_flag(zchan, ZAP_CHANNEL_ANSWERED) || 
+					zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS) || 
+					zap_test_flag(zchan, ZAP_CHANNEL_MEDIA) || zap_test_sflag(zchan, SFLAG_RECVD_ACK)) {
+					
 					sangomabc_exec_command(mcon,
-									   zchan->physical_span_id-1,
-									   zchan->physical_chan_id-1,
-									   0,
-									   SIGBOOST_EVENT_CALL_STOPPED,
-									   zchan->caller_data.hangup_cause);
+										   zchan->physical_span_id-1,
+										   zchan->physical_chan_id-1,
+										   0,
+										   SIGBOOST_EVENT_CALL_STOPPED,
+										   zchan->caller_data.hangup_cause, 0);
 				} else {
 					sangomabc_exec_command(mcon,
-									   zchan->physical_span_id-1,
-									   zchan->physical_chan_id-1,								   
-									   0,
-									   SIGBOOST_EVENT_CALL_START_NACK,
-									   zchan->caller_data.hangup_cause);
+										   zchan->physical_span_id-1,
+										   zchan->physical_chan_id-1,								   
+										   0,
+										   SIGBOOST_EVENT_CALL_START_NACK,
+										   zchan->caller_data.hangup_cause, 0);
 				}
 			}
 		}
 		break;
 	case ZAP_CHANNEL_STATE_TERMINATING:
 		{
+			zap_set_sflag_locked(zchan, SFLAG_TERMINATING);
 			sig.event_id = ZAP_SIGEVENT_STOP;
 			status = sangoma_boost_data->signal_cb(&sig);
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE);
 		}
 		break;
 	default:
@@ -1215,11 +1187,11 @@ static __inline__ void check_state(zap_span_t *span)
 	if (zap_test_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RESTARTING)) {
 		if (zap_check_state_all(span, ZAP_CHANNEL_STATE_DOWN)) {
 			sangomabc_exec_command(&sangoma_boost_data->mcon,
-							   0,
-							   0,
-							   -1,
-							   SIGBOOST_EVENT_SYSTEM_RESTART_ACK,
-							   0);	
+								   0,
+								   0,
+								   -1,
+								   SIGBOOST_EVENT_SYSTEM_RESTART_ACK,
+								   0, 0);	
 			zap_clear_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RESTARTING);
 			zap_clear_flag_locked(span, ZAP_SPAN_SUSPENDED);
 			zap_clear_flag((&sangoma_boost_data->mcon), MSU_FLAG_DOWN);
@@ -1471,19 +1443,32 @@ static zap_state_map_t boost_state_map = {
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
 			{ZAP_CHANNEL_STATE_DOWN, ZAP_END},
+			{ZAP_CHANNEL_STATE_PROGRESS_MEDIA, ZAP_CHANNEL_STATE_PROGRESS, ZAP_CHANNEL_STATE_IDLE, ZAP_CHANNEL_STATE_HOLD, ZAP_END}
+		},
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_HOLD, ZAP_END},
+			{ZAP_CHANNEL_STATE_PROGRESS_MEDIA, ZAP_CHANNEL_STATE_PROGRESS, 
+			 ZAP_CHANNEL_STATE_IDLE, ZAP_CHANNEL_STATE_TERMINATING, ZAP_CHANNEL_STATE_UP, ZAP_END}
+		},
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_IDLE, ZAP_END},
 			{ZAP_CHANNEL_STATE_PROGRESS_MEDIA, ZAP_CHANNEL_STATE_PROGRESS, ZAP_END}
 		},
 		{
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
-			{ZAP_CHANNEL_STATE_PROGRESS_MEDIA, ZAP_CHANNEL_STATE_PROGRESS, ZAP_END},
+			{ZAP_CHANNEL_STATE_PROGRESS_MEDIA, ZAP_CHANNEL_STATE_PROGRESS, ZAP_CHANNEL_STATE_IDLE, ZAP_END},
 			{ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_TERMINATING, ZAP_CHANNEL_STATE_UP, ZAP_END}
 		},
 		{
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
 			{ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_TERMINATING, ZAP_END},
-			{ZAP_CHANNEL_STATE_HANGUP_COMPLETE, ZAP_CHANNEL_STATE_HANGUP, ZAP_END}
+			{ZAP_CHANNEL_STATE_HANGUP_COMPLETE, ZAP_END}
 		},
 		{
 			ZSD_OUTBOUND,

@@ -14,7 +14,7 @@
 #ifndef _SIGBOOST_H_
 #define _SIGBOOST_H_
 
-#define SIGBOOST_VERSION 100
+#define SIGBOOST_VERSION 101
 
 #include <stdint.h>
 #include <sys/time.h>
@@ -76,6 +76,11 @@ enum e_sigboost_event_info_par_values
   	SIGBOOST_EVI_PROGRESS 					= 0x02, 
 };
 
+enum e_sigboost_progress_flags
+{
+	SIGBOOST_PROGRESS_RING = (1 << 0),
+	SIGBOOST_PROGRESS_MEDIA = (1 << 1)
+};
 
 #define MAX_DIALED_DIGITS	31
 
@@ -108,6 +113,7 @@ typedef struct
 	uint32_t		trunk_group;
 	uint8_t			span;
 	uint8_t			chan;
+	uint32_t		flags;
 	/* struct timeval  	tv; */ 
 	uint8_t			called_number_digits_count;
 	char			called_number_digits [MAX_DIALED_DIGITS + 1]; /* it's a null terminated string */
@@ -136,6 +142,7 @@ typedef struct
 	uint32_t		trunk_group;
 	uint8_t			span;
 	uint8_t			chan;
+	uint32_t		flags;
 	/* struct timeval  	tv; */ 
 	uint8_t			release_cause;
 } t_sigboost_short;

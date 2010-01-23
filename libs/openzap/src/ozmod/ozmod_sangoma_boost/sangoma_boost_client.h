@@ -130,7 +130,7 @@ int __sangomabc_connection_writep(sangomabc_connection_t *mcon, sangomabc_event_
 void sangomabc_event_init(sangomabc_short_event_t *event, sangomabc_event_id_t event_id, int chan, int span);
 void sangomabc_call_init(sangomabc_event_t *event, const char *calling, const char *called, int setup_id);
 const char *sangomabc_event_id_name(uint32_t event_id);
-int sangomabc_exec_command(sangomabc_connection_t *mcon, int span, int chan, int id, int cmd, int cause);
+int sangomabc_exec_command(sangomabc_connection_t *mcon, int span, int chan, int id, int cmd, int cause, int flags);
 int sangomabc_exec_commandp(sangomabc_connection_t *pcon, int span, int chan, int id, int cmd, int cause);
 
 #endif
