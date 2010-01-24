@@ -2367,7 +2367,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 					}
 					if (!x) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
-										  "Failiure causes [%s]:  Cause: %s\n", failure_causes, cause_str);
+										  "Failure causes [%s]:  Cause: %s\n", failure_causes, cause_str);
 						return;
 					}
 				}
