@@ -49,7 +49,6 @@ class Call {
 public:
     Call();
     Call(int call_id, QString cid_name, QString cid_number, fscomm_call_direction_t direction, QString uuid);
-    /*~Call() { qDebug() << "I am being freed uuid: " << _uuid; }*/
     QString getCidName(void) { return _cid_name; }
     QString getCidNumber(void) { return _cid_number; }
     int getCallID(void) { return _call_id; }

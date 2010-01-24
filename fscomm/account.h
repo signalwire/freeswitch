@@ -35,13 +35,17 @@ public:
     QString getName() { return _name; }
     void setState(int state) { _state = state; }
     int getState() { return _state; }
-    QString getStateName() { return fscomm_gw_state_names[_state]; }
+    QString getStateName();
     QString getUUID() { return _uuid; }
+    void setStausCode(QString code) { _statusCode = code; }
+    void setStatusPhrase(QString phrase) { _statusPhrase = phrase; }
 
 private:
     QString _name;
     int _state;
     QString _uuid;
+    QString _statusCode;
+    QString _statusPhrase;
 };
 
 #endif // ACCOUNT_H

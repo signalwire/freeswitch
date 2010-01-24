@@ -346,30 +346,38 @@ void FSHost::generalEventHandler(switch_event_t *event)
                     return;
 
                 if (state == "TRYING") {
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_TRYING);
                     emit accountStateChange(acc);
                 } else if (state == "REGISTER") {
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_REGISTER);
                     emit accountStateChange(acc);
                 } else if (state == "REGED") {
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_REGED);
                     emit accountStateChange(acc);
                 } else if (state == "UNREGED") {
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_UNREGED);
                     emit accountStateChange(acc);
                 } else if (state == "UNREGISTER") {
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_UNREGISTER);
                     emit accountStateChange(acc);
                 } else if (state =="FAILED") {
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_FAILED);
                     emit accountStateChange(acc);
                 } else if (state == "FAIL_WAIT") {
                     acc.data()->setState(FSCOMM_GW_STATE_FAIL_WAIT);
                     emit accountStateChange(acc);
                 } else if (state == "EXPIRED") {
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_EXPIRED);
                     emit accountStateChange(acc);
                 } else if (state == "NOREG") {
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_NOREG);
                     emit accountStateChange(acc);
                 }

@@ -183,7 +183,6 @@ static switch_status_t do_config(void)
     settings.beginGroup("FreeSWITCH/conf");
     if (settings.childGroups().isEmpty())
     {
-        qDebug() << "We are settings default.";
         setQSettingsDefaults();
     }
     settings.endGroup();
