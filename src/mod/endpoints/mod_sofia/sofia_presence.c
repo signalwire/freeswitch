@@ -1957,6 +1957,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		if (status < 200) {
 			char *sticky = NULL;
 			char *contactstr = profile->url;
+			char *p = NULL, *new_contactstr = NULL; 
 			
 			if (is_nat) {
 				char params[128] = "";
@@ -1995,19 +1996,24 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 
 			if (nh && nh->nh_ds && nh->nh_ds->ds_usage) {
-				//nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta + SUB_OVERLAP, exp_delta + SUB_OVERLAP);
+				/* nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta + SUB_OVERLAP, exp_delta + SUB_OVERLAP); */
 				nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta * 2, exp_delta * 2);
 			}
-			
+
+			if ((p = strchr(contactstr, '@'))) {
+				new_contactstr = switch_mprintf("sip:%s%s", to_user, p);
+			} 
+
 			nua_respond(nh, SIP_202_ACCEPTED,
-						SIPTAG_CONTACT_STR(contactstr),
+						SIPTAG_CONTACT_STR(new_contactstr),
 						NUTAG_WITH_THIS(nua), 
 						SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
 						SIPTAG_EXPIRES_STR(exp_delta_str),
-						TAG_IF(sticky, NUTAG_PROXY(sticky)), TAG_END());
-			
+						TAG_IF(sticky, NUTAG_PROXY(sticky)),
+						TAG_END());
+
+			switch_safe_free(new_contactstr);
 			switch_safe_free(sticky);
-			
 		}
 
 		if (sub_state == nua_substate_terminated) {
