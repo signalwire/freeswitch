@@ -79,6 +79,16 @@ SWITCH_DECLARE(switch_thread_id_t) switch_thread_self(void)
 #endif
 }
 
+SWITCH_DECLARE(int) switch_thread_equal(switch_thread_id_t tid1, switch_thread_id_t tid2)
+{
+#ifdef WIN32 
+	return (tid1 == tid2);
+#else
+	return apr_os_thread_equal(tid1, tid2);
+#endif
+
+}
+
 SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p)
 {
 	apr_pool_clear(p);

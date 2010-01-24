@@ -50,6 +50,12 @@ typedef pthread_t             switch_thread_id_t;
 
 SWITCH_DECLARE(switch_thread_id_t) switch_thread_self(void);
 
+/*! \brief Compare two thread ids 
+ *  \param tid1 1st Thread ID to compare
+ *  \param tid2 2nd Thread ID to compare
+*/
+SWITCH_DECLARE(int) switch_thread_equal(switch_thread_id_t tid1, switch_thread_id_t tid2);
+
 
 /*
    The pieces of apr we allow ppl to pass around between modules we typedef into our namespace and wrap all the functions

@@ -1143,10 +1143,7 @@ SWITCH_DECLARE(void) switch_core_session_disable_heartbeat(switch_core_session_t
 
 SWITCH_DECLARE(switch_bool_t) switch_core_session_in_thread(switch_core_session_t *session)
 {
-	if (switch_thread_self() == session->thread_id) {
-		return SWITCH_TRUE;
-	}
-	return SWITCH_FALSE;
+	return switch_thread_equal(switch_thread_self(), session->thread_id) ? SWITCH_TRUE : SWITCH_FALSE;
 }
 
 static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thread, void *obj)
