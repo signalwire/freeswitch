@@ -490,7 +490,7 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 	}
 
 	for (s = r;;) {
-		while (*s && *s != '&' && (*s != '%' || t != '%') && !isspace((int) (*s)))
+		while (*s && *s != '&' && (*s != '%' || t != '%') && !isspace((unsigned char) (*s)))
 			s++;
 
 		if (!*s)
