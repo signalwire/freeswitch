@@ -499,7 +499,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 						break;
 					case SWITCH_IVR_ACTION_PLAYSOUND:
 						status = switch_ivr_play_file(session, NULL, aptr, NULL);
-						running = 0;
 						break;
 					case SWITCH_IVR_ACTION_EXECMENU:
 						if (!strcmp(aptr, menu->name)) {
@@ -507,7 +506,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 						} else {
 							reps = -1;
 							status = switch_ivr_menu_execute(session, stack, aptr, obj);
-							running = 0;
 						}
 						break;
 					case SWITCH_IVR_ACTION_EXECAPP:
@@ -528,7 +526,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 									switch_core_session_exec(session, application_interface, app_arg);
 									UNPROTECT_INTERFACE(application_interface);
 									status = SWITCH_STATUS_SUCCESS;
-									running = 0;
 								}
 							}
 						}
