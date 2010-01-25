@@ -1068,6 +1068,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	data = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
 
+	outbound_profile->destination_number = switch_sanitize_number(outbound_profile->destination_number);
+
 	if ((argc = switch_separate_string(data, '/', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
         return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
