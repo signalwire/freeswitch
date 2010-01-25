@@ -4720,7 +4720,7 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "1 .. 2 .. Freddie's commin' for you...\n");
 			}
 
-			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("messsage/sipfrag"),
+			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 					   NUTAG_SUBSTATE(nua_substate_terminated),
 					   SIPTAG_PAYLOAD_STR(status == SWITCH_STATUS_SUCCESS ? "SIP/2.0 200 OK\r\n": 
 										  "SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
