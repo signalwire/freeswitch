@@ -740,7 +740,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_close_all(void);
 FT_DECLARE(ftdm_status_t) ftdm_span_add_channel(ftdm_span_t *span, ftdm_socket_t sockfd, ftdm_chan_type_t type, ftdm_channel_t **chan);
 FT_DECLARE(ftdm_status_t) ftdm_span_set_event_callback(ftdm_span_t *span, fio_event_cb_t event_callback);
 FT_DECLARE(ftdm_status_t) ftdm_channel_add_to_group(const char* name, ftdm_channel_t* ftdmchan);
-FT_DECLARE(ftdm_status_t) ftdm_group_add_channels(const char* name, ftdm_span_t* span, const char* val);
 FT_DECLARE(ftdm_status_t) ftdm_channel_remove_from_group(ftdm_group_t* group, ftdm_channel_t* ftdmchan);
 FT_DECLARE(ftdm_status_t) ftdm_group_find(uint32_t id, ftdm_group_t **group);
 FT_DECLARE(ftdm_status_t) ftdm_group_find_by_name(const char *name, ftdm_group_t **group);

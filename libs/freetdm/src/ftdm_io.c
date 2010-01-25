@@ -2701,12 +2701,14 @@ FT_DECLARE(char *) ftdm_api_execute(const char *type, const char *cmd)
 }
 
 
+static ftdm_status_t ftdm_group_add_channels(const char* name, ftdm_span_t* span, int currindex);
 static ftdm_status_t load_config(void)
 {
 	char cfg_name[] = "freetdm.conf";
 	ftdm_config_t cfg;
 	char *var, *val;
 	int catno = -1;
+	int currindex = 0;
 	ftdm_span_t *span = NULL;
 	unsigned configured = 0, d = 0;
 	char name[80] = "";
@@ -2819,7 +2821,9 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_FXO) {
+					currindex = span->chan_count;
 					configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_FXO, name, number);
+					ftdm_group_add_channels(group_name, span, currindex);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXO channels to an FXS trunk!\n");
 				}
@@ -2830,7 +2834,9 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_FXS) {
+					currindex = span->chan_count;
 					configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_FXS, name, number);
+					ftdm_group_add_channels(group_name, span, currindex);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
 				}
@@ -2841,13 +2847,16 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_EM) {
+					currindex = span->chan_count;
 					configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_EM, name, number);
+					ftdm_group_add_channels(group_name, span, currindex);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add EM channels to a non-EM trunk!\n");
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
+				currindex = span->chan_count;
 				configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_B, name, number);
-				ftdm_group_add_channels(group_name, span, val);
+				ftdm_group_add_channels(group_name, span, currindex);
 			} else if (!strcasecmp(var, "d-channel")) {
 				if (d) {
 					ftdm_log(FTDM_LOG_WARNING, "ignoring extra d-channel\n");
@@ -2863,7 +2872,9 @@ static ftdm_status_t load_config(void)
 					d++;
 				}
 			} else if (!strcasecmp(var, "cas-channel")) {
+				currindex = span->chan_count;
 				configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_CAS, name, number);	
+				ftdm_group_add_channels(group_name, span, currindex);
 			} else if (!strcasecmp(var, "dtmf_hangup")) {
 				span->dtmf_hangup = ftdm_strdup(val);
 				span->dtmf_hangup_len = strlen(val);
@@ -3228,42 +3239,22 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_remove_from_group(ftdm_group_t* group, ft
 	return FTDM_FAIL;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_group_add_channels(const char* name, ftdm_span_t* span, const char* val)
+static ftdm_status_t ftdm_group_add_channels(const char* name, ftdm_span_t* span, int currindex)
 {
-	char *p, *mydata, *item_list[10];
-	int items, i;
-	
-	assert(strlen(name) > 0);
+	int chan_index = 0;
 
-	p = strchr(val, ':');
-	mydata = ftdm_strdup(++p);
-	
-	ftdm_assert_return(mydata != NULL, FTDM_FAIL, "ftdm_strdup failed when adding channels\n");
+	ftdm_assert_return(strlen(name) > 0, FTDM_FAIL, "Invalid group name provided\n");
+	ftdm_assert_return(currindex >= 0, FTDM_FAIL, "Invalid current channel index provided\n");
 
-	items = ftdm_separate_string(mydata, ',', item_list, (sizeof(item_list) / sizeof(item_list[0])));
+	if (!span->chan_count) {
+		return FTDM_SUCCESS;
+	}
 
-	for(i=0; i < items; i++) {
-		if (!strchr(item_list[i], '-')) {
-			int chan_no;
-
-			chan_no = atoi (item_list[i]);
-			ftdm_assert(chan_no > 0, "Channel number is not bigger than zero, expect a nasty failure!\n");
-
-			if (ftdm_channel_add_to_group(name, span->channels[chan_no]) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_CRIT, "Failed to add chan:%d to group:%s\n", chan_no, name);
-			}
-		} else {
-			int chan_no_start, chan_no_end;
-			if (sscanf(item_list[i], "%d-%d", &chan_no_start, &chan_no_end) == 2) {
-				while (chan_no_start <= chan_no_end) {
-					if (ftdm_channel_add_to_group(name, span->channels[chan_no_start++])) {
-						ftdm_log(FTDM_LOG_CRIT, "Failed to add chan:%d to group:%s\n", chan_no_start-1, name);
-					}
-				}
-			}
+	for (chan_index = (span->chan_count - currindex); chan_index <= span->chan_count; chan_index++) {
+		if (ftdm_channel_add_to_group(name, span->channels[chan_index])) {
+			ftdm_log(FTDM_LOG_CRIT, "Failed to add chan:%d to group:%s\n", chan_index, name);
 		}
 	}
-	ftdm_safe_free(mydata);
 	return FTDM_SUCCESS;
 }
 
