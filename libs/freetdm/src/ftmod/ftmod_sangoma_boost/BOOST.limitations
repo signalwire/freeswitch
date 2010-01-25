@@ -18,11 +18,3 @@
 == TODO ==
 - proper upper layer management of HW alarms (this must be done in mod_openzap.c)
 
-- proper boost hunting done in openzap based on channels status
-
-- move all logging calls to macro-based logging to log the file name and line in sangoma prid
-
-- remove FORCE_SEGFAULT from sangoma_sprid and check if there is anything like that in sangoma_brid
-  we should be using zap_assert or zap_assert_return which will abort depending on the openzap
-  crash policy
-
