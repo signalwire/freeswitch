@@ -168,7 +168,6 @@ void MainWindow::coreLoadingError(QString err)
 
 void MainWindow::accountAdd(QSharedPointer<Account> acc)
 {
-    qDebug() << "Adding: " << acc.data()->getName();
     ui->tableAccounts->setRowCount(ui->tableAccounts->rowCount()+1);
     QTableWidgetItem *gwField = new QTableWidgetItem(acc.data()->getName());
     QTableWidgetItem *stField = new QTableWidgetItem(acc.data()->getStateName());
@@ -181,7 +180,6 @@ void MainWindow::accountAdd(QSharedPointer<Account> acc)
 
 void MainWindow::accountDel(QSharedPointer<Account> acc)
 {
-    qDebug() << "Deleting: " << acc.data()->getName();
     foreach (QTableWidgetItem *i, ui->tableAccounts->findItems(acc.data()->getName(), Qt::MatchExactly))
     {
         if (i->text() == acc.data()->getName())

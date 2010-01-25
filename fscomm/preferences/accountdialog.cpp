@@ -8,19 +8,40 @@ AccountDialog::AccountDialog(QString accId, QWidget *parent) :
     QDialog(parent),
     _accId(accId),
     ui(new Ui::AccountDialog)
-{
+{    
     ui->setupUi(this);
     _settings = new QSettings;
     connect(this, SIGNAL(accepted()), this, SLOT(writeConfig()));
     connect(ui->sofiaExtraParamAddBtn, SIGNAL(clicked()), this, SLOT(addExtraParam()));
     connect(ui->sofiaExtraParamRemBtn, SIGNAL(clicked()), this, SLOT(remExtraParam()));
+    connect(ui->clidSettingsCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(clidSettingsComboChanged(int)));
+    connect(ui->codecSettingsCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(codecSettingsComboChanged(int)));
 
     ui->sofiaExtraParamTable->horizontalHeader()->setStretchLastSection(true);
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->codecPage));
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->clidPage));
 }
 
 AccountDialog::~AccountDialog()
 {
     delete ui;
+}
+
+void AccountDialog::codecSettingsComboChanged(int index)
+{
+    if (index == 0)
+        ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->codecPage));
+    else
+        ui->tabWidget->insertTab(1,ui->codecPage,tr("Codecs"));
+
+}
+
+void AccountDialog::clidSettingsComboChanged(int index)
+{
+    if (index == 0)
+        ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->clidPage));
+    else
+        ui->tabWidget->insertTab(1,ui->clidPage,tr("Caller ID"));
 }
 
 void AccountDialog::remExtraParam()
@@ -75,7 +96,6 @@ void AccountDialog::readConfig()
     ui->sofiaGwUsernameEdit->setText(_settings->value("username").toString());
     ui->sofiaGwRealmEdit->setText(_settings->value("realm").toString());
     ui->sofiaGwPasswordEdit->setText(_settings->value("password").toString());
-    ui->sofiaGwExtensionEdit->setText(_settings->value("extension").toString());
     ui->sofiaGwExpireSecondsSpin->setValue(_settings->value("expire-seconds").toInt());
     ui->sofiaGwRegisterCombo->setCurrentIndex(ui->sofiaGwRegisterCombo->findText(_settings->value("register").toString(),
                                                                                  Qt::MatchExactly));
@@ -127,7 +147,6 @@ void AccountDialog::writeConfig()
     _settings->setValue("username", ui->sofiaGwUsernameEdit->text());
     _settings->setValue("realm", ui->sofiaGwRealmEdit->text());
     _settings->setValue("password", ui->sofiaGwPasswordEdit->text());
-    _settings->setValue("extension", ui->sofiaGwExtensionEdit->text());
     _settings->setValue("expire-seconds", ui->sofiaGwExpireSecondsSpin->value());
     _settings->setValue("register", ui->sofiaGwRegisterCombo->currentText());
     _settings->setValue("register-transport", ui->sofiaGwRegisterTransportCombo->currentText());
@@ -158,7 +177,6 @@ void AccountDialog::clear()
     ui->sofiaGwUsernameEdit->clear();
     ui->sofiaGwRealmEdit->clear();
     ui->sofiaGwPasswordEdit->clear();
-    ui->sofiaGwExtensionEdit->clear();
     ui->sofiaGwExpireSecondsSpin->setValue(60);
     ui->sofiaGwRegisterCombo->setCurrentIndex(0);
     ui->sofiaGwRegisterTransportCombo->setCurrentIndex(0);

@@ -25,6 +25,8 @@ private slots:
     void writeConfig();
     void addExtraParam();
     void remExtraParam();
+    void codecSettingsComboChanged(int);
+    void clidSettingsComboChanged(int);
 
 protected:
     void changeEvent(QEvent *e);
