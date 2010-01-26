@@ -60,6 +60,10 @@ typedef struct file_string_context file_string_context_t;
 static int next_file(switch_file_handle_t *handle)
 {
 	file_string_context_t *context = handle->private_info;
+	char *file;
+	const char *prefix = handle->prefix;
+
+ top:
 
 	context->index++;
 	
@@ -71,12 +75,25 @@ static int next_file(switch_file_handle_t *handle)
 		return 0;
 	}
 
+
+	if (!prefix) {
+		if (!(prefix = switch_core_get_variable("sound_prefix"))) {
+			prefix = SWITCH_GLOBAL_dirs.sounds_dir;
+		}
+	}
+
+	if (!prefix || switch_is_file_path(context->argv[context->index])) {
+		file = context->argv[context->index];
+	} else {
+		file = switch_core_sprintf(handle->memory_pool, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, context->argv[context->index]);
+	}
+
 	if (switch_core_file_open(&context->fh,
-							  context->argv[context->index],
+							  file,
 							  handle->channels,
 							  handle->samplerate,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-		return 0;
+		goto top;
 	}
 	
 	handle->samples = context->fh.samples;

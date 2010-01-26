@@ -1571,9 +1571,6 @@ static char unescape_char(char escaped)
 	case 's':
 		unescaped = ' ';
 		break;
-	case '\\':
-		unescaped = 1; /* 1 means double esc */
-		break;
 	default:
 		unescaped = escaped;
 	}
@@ -1642,16 +1639,12 @@ static char *cleanup_separated_string(char *str, char delim)
 	for (start = dest = ptr; *ptr; ++ptr) {
 		char e;
 		int esc = 0;
-
+		
 		if (*ptr == ESCAPE_META) {
 			e = *(ptr + 1);
-			if (e == '\'' || e == '"' || (delim && e == delim) || (e = unescape_char(*(ptr + 1))) != *(ptr + 1)) {
+			if (e == '\'' || e == '"' || (delim && e == delim) || e == ESCAPE_META || (e = unescape_char(*(ptr + 1))) != *(ptr + 1)) {
 				++ptr;
-				if (e == 1) {
-					*dest++ = '\\';
-				} else {
-					*dest++ = e;
-				}
+				*dest++ = e;
 				end = dest;
 				esc++;
 			}
@@ -1670,6 +1663,7 @@ static char *cleanup_separated_string(char *str, char delim)
 	if (end) {
 		*end = '\0';
 	}
+
 	return start;
 }
 
@@ -1727,8 +1721,10 @@ static unsigned int separate_string_char_delim(char *buf, char delim, char **arr
 		}
 	}
 	/* strip quotes, escaped chars and leading / trailing spaces */
-	for (i = 0; i < count; ++i) {
-		array[i] = cleanup_separated_string(array[i], delim);
+	if (count > 1) {
+		for (i = 0; i < count; ++i) {
+			array[i] = cleanup_separated_string(array[i], delim);
+		}
 	}
 	return count;
 }
@@ -1785,8 +1781,10 @@ static unsigned int separate_string_blank_delim(char *buf, char **array, unsigne
 		}
 	}
 	/* strip quotes, escaped chars and leading / trailing spaces */
-	for (i = 0; i < count; ++i) {
-		array[i] = cleanup_separated_string(array[i], 0);
+	if (count > 1) {
+		for (i = 0; i < count; ++i) {
+			array[i] = cleanup_separated_string(array[i], 0);
+		}
 	}
 	return count;
 }

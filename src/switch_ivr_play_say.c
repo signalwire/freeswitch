@@ -399,6 +399,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	switch_event_t *event;
 	int divisor = 0;
 	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
+	const char *prefix;
+	
+	prefix = switch_channel_get_variable(channel, "sound_prefix");
+	
+	if (!prefix) {
+		prefix = SWITCH_GLOBAL_dirs.sounds_dir;
+	}
 
     switch_core_session_get_read_impl(session, &read_impl);
 
@@ -468,14 +475,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	
 	if (!strstr(file, SWITCH_URL_SEPARATOR)) {
 		char *ext;
-		const char *prefix;
 
-		prefix = switch_channel_get_variable(channel, "sound_prefix");
-
-		if (!prefix) {
-			prefix = SWITCH_GLOBAL_dirs.base_dir;
-		}
-		
 		if (!switch_is_file_path(file)) {
 			char *tfile = NULL;
 			char *e;
@@ -510,7 +510,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		file_flags |= SWITCH_FILE_WRITE_APPEND;
 	}
 
-
+	if (!fh->prefix) {
+		fh->prefix = prefix;
+	}
+	
 	if (switch_core_file_open(fh,
 							  file,
 							  fh->channels,
@@ -1076,6 +1079,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 		}
 		
+
+		if (!fh->prefix) {
+			fh->prefix = prefix;
+		}
+
 		if (switch_core_file_open(fh,
 								  file,
 								  read_impl.number_of_channels,
