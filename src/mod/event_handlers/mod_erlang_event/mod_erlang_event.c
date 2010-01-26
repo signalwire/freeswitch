@@ -532,14 +532,20 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 	while(sp) {
 		removed = NULL;
 		if (switch_test_flag(sp, LFLAG_WAITING_FOR_PID)) {
-			break;
+			sp = sp->next;
+			continue;
 		}
 
 		if (!switch_test_flag(sp, LFLAG_OUTBOUND_INIT)) {
 			status = notify_new_session(listener, sp);
 			if (status != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(sp->uuid_str), SWITCH_LOG_DEBUG, "Notifying new session failed\n");
-				break;
+				removed = sp;
+				sp = removed->next;
+
+				remove_session_elem_from_listener(listener, removed);
+				destroy_session_elem(removed);
+				continue;
 			}
 			switch_set_flag(sp, LFLAG_OUTBOUND_INIT);
 		}
@@ -610,7 +616,11 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 		sp = sp->next;
 	}
 	switch_mutex_unlock(listener->session_mutex);
-	return status;
+	if (prefs.done) {
+		return SWITCH_STATUS_FALSE; /* we're shutting down */
+	} else {
+		return SWITCH_STATUS_SUCCESS;
+	}
 }
 
 static void check_log_queue(listener_t *listener)
