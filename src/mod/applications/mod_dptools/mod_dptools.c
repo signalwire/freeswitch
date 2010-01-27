@@ -46,6 +46,7 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 	int x = 0;
 	char *lbuf;
 	char *target = arg;
+	char delim = ',';
 
 	if (!caller_profile) {
 		caller_profile = switch_channel_get_caller_profile(channel);
@@ -59,12 +60,19 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 		target = caller_profile->destination_number;
 	}
 
-	if (!zstr(target) && (lbuf = switch_core_session_strdup(session, target))
-		&& (argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-	} else {
+
+	if (zstr(target)) {
 		return NULL;
+	} else {
+		lbuf = switch_core_session_strdup(session, target);
 	}
 
+	if (*lbuf == 'm' && *(lbuf + 1) == ':' && *(lbuf + 3) == ':') {
+		delim = *(lbuf + 2);
+		lbuf += 4;
+	}
+
+	argc = switch_separate_string(lbuf, delim, argv, (sizeof(argv) / sizeof(argv[0])));
 
 	for (x = 0; x < argc; x++) {
 		char *app = argv[x];
