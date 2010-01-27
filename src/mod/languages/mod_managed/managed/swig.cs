@@ -2220,6 +2220,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_bool_t switch_core_session_in_thread(SWIGTYPE_p_switch_core_session session) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_core_session_in_thread(SWIGTYPE_p_switch_core_session.getCPtr(session));
+    return ret;
+  }
+
   public static void switch_console_loop() {
     freeswitchPINVOKE.switch_console_loop();
   }
@@ -4663,6 +4668,7 @@ public class freeswitch {
   public static readonly string SWITCH_SEQ_CLEARLINE = freeswitchPINVOKE.SWITCH_SEQ_CLEARLINE_get();
   public static readonly string SWITCH_SEQ_CLEARLINEEND = freeswitchPINVOKE.SWITCH_SEQ_CLEARLINEEND_get();
   public static readonly string SWITCH_SEQ_CLEARSCR = freeswitchPINVOKE.SWITCH_SEQ_CLEARSCR_get();
+  public static readonly string SWITCH_DEFAULT_CLID_NAME = freeswitchPINVOKE.SWITCH_DEFAULT_CLID_NAME_get();
   public static readonly int SWITCH_DEFAULT_DTMF_DURATION = freeswitchPINVOKE.SWITCH_DEFAULT_DTMF_DURATION_get();
   public static readonly int SWITCH_MIN_DTMF_DURATION = freeswitchPINVOKE.SWITCH_MIN_DTMF_DURATION_get();
   public static readonly int SWITCH_MAX_DTMF_DURATION = freeswitchPINVOKE.SWITCH_MAX_DTMF_DURATION_get();
@@ -5144,6 +5150,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_SEQ_CLEARSCR_get")]
   public static extern string SWITCH_SEQ_CLEARSCR_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_DEFAULT_CLID_NAME_get")]
+  public static extern string SWITCH_DEFAULT_CLID_NAME_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_DEFAULT_DTMF_DURATION_get")]
   public static extern int SWITCH_DEFAULT_DTMF_DURATION_get();
@@ -7287,6 +7296,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_banner")]
   public static extern string switch_core_banner();
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_in_thread")]
+  public static extern int switch_core_session_in_thread(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CMD_CHUNK_LEN_get")]
   public static extern int SWITCH_CMD_CHUNK_LEN_get();
 
@@ -8759,6 +8771,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_file_handle_spool_path_get")]
   public static extern string switch_file_handle_spool_path_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_file_handle_prefix_set")]
+  public static extern void switch_file_handle_prefix_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_file_handle_prefix_get")]
+  public static extern string switch_file_handle_prefix_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_file_handle")]
   public static extern IntPtr new_switch_file_handle();
@@ -23046,6 +23064,16 @@ public class switch_file_handle : IDisposable {
     } 
     get {
       string ret = freeswitchPINVOKE.switch_file_handle_spool_path_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public string prefix {
+    set {
+      freeswitchPINVOKE.switch_file_handle_prefix_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_file_handle_prefix_get(swigCPtr);
       return ret;
     } 
   }

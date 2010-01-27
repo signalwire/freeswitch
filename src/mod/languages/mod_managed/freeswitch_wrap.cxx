@@ -894,6 +894,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_SEQ_CLEARSCR_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_DEFAULT_CLID_NAME_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "\0";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_DEFAULT_DTMF_DURATION_get() {
   int jresult ;
   int result;
@@ -9868,6 +9879,18 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_banner() {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_in_thread(void * jarg1) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_bool_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  result = (switch_bool_t)switch_core_session_in_thread(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_CMD_CHUNK_LEN_get() {
   int jresult ;
   int result;
@@ -16037,6 +16060,35 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_file_handle_spool_path_get(void * ja
   
   arg1 = (switch_file_handle *)jarg1; 
   result = (char *) ((arg1)->spool_path);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_prefix_set(void * jarg1, char * jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->prefix = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->prefix, (const char *)arg2);
+    } else {
+      arg1->prefix = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_file_handle_prefix_get(void * jarg1) {
+  char * jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result = (char *) ((arg1)->prefix);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
