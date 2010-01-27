@@ -5095,10 +5095,6 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								port = refer_to->r_url->url_port;
 							}
 
-							if (zstr(port)) {
-								port = "5060";
-							}
-							
 							channel = switch_core_session_get_channel(a_session);
 							
 							if (refer_to->r_params) {
@@ -5121,9 +5117,10 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								}
 							}
 
-							exten = switch_core_session_sprintf(session, "sofia/%s/sip:%s@%s", 
+							exten = switch_core_session_sprintf(session, "sofia/%s/sip:%s@%s%s%s", 
 																profile->name, refer_to->r_url->url_user, 
-																refer_to->r_url->url_host);
+																refer_to->r_url->url_host,
+																port ? ":" : "", port ? port : "");
 
 							switch_core_new_memory_pool(&npool);
 							nightmare_xfer_helper = switch_core_alloc(npool, sizeof(*nightmare_xfer_helper));
