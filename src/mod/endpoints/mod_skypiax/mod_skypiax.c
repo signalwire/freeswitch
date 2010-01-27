@@ -274,7 +274,7 @@ switch_status_t skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *s
 	}
 
 	switch_core_timer_sync(&tech_pvt->timer_write);
-#endif// TIMER_WRITE
+#endif // TIMER_WRITE
 
 	DEBUGA_SKYPE("skypiax_tech_init SUCCESS\n", SKYPIAX_P_LOG);
 	return SWITCH_STATUS_SUCCESS;
@@ -486,7 +486,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 #ifdef TIMER_WRITE
 
 		switch_core_timer_destroy(&tech_pvt->timer_write);
-#endif// TIMER_WRITE
+#endif // TIMER_WRITE
 
 
 		*tech_pvt->session_uuid_str = '\0';
@@ -783,7 +783,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 #ifdef TIMER_WRITE
 
 		switch_core_timer_next(&tech_pvt->timer_write);
-#endif// TIMER_WRITE
+#endif // TIMER_WRITE
 
 		memcpy(tech_pvt->audiobuf_cli, frame->data, frame->datalen);
 		tech_pvt->flag_audio_cli = 1;
@@ -829,12 +829,12 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		{
 			DEBUGA_SKYPE("MSG_ID=%d, TO BE ANSWERED!\n", SKYPIAX_P_LOG, msg->message_id);
-	
-		switch_core_timer_sync(&tech_pvt->timer_read);
+
+			switch_core_timer_sync(&tech_pvt->timer_read);
 #ifdef TIMER_WRITE
-		switch_core_timer_sync(&tech_pvt->timer_write);
-#endif// TIMER_WRITE
-		channel_answer_channel(session);
+			switch_core_timer_sync(&tech_pvt->timer_write);
+#endif // TIMER_WRITE
+			channel_answer_channel(session);
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
@@ -844,18 +844,18 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		switch_core_timer_sync(&tech_pvt->timer_read);
 #ifdef TIMER_WRITE
 		switch_core_timer_sync(&tech_pvt->timer_write);
-#endif// TIMER_WRITE
+#endif // TIMER_WRITE
 		break;
 	default:
 		{
-	
-		switch_core_timer_sync(&tech_pvt->timer_read);
+
+			switch_core_timer_sync(&tech_pvt->timer_read);
 #ifdef TIMER_WRITE
 
-		switch_core_timer_sync(&tech_pvt->timer_write);
-#endif// TIMER_WRITE
+			switch_core_timer_sync(&tech_pvt->timer_write);
+#endif // TIMER_WRITE
 
-		DEBUGA_SKYPE("MSG_ID=%d\n", SKYPIAX_P_LOG, msg->message_id);
+			DEBUGA_SKYPE("MSG_ID=%d\n", SKYPIAX_P_LOG, msg->message_id);
 		}
 		break;
 	}
