@@ -29,16 +29,16 @@ int xerror = 0;
 int skypiax_socket_create_and_bind(private_t * tech_pvt, int *which_port)
 #else
 int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_port)
-#endif //WIN32
+#endif							//WIN32
 {
 	int s = -1;
 	struct sockaddr_in my_addr;
 #ifndef WIN32
 	int start_port = 6001;
 #else
-unsigned short start_port = 6001;
+	unsigned short start_port = 6001;
 #endif //WIN32
-	int sockbufsize=0;
+	int sockbufsize = 0;
 	unsigned int size = sizeof(int);
 
 
@@ -78,13 +78,13 @@ unsigned short start_port = 6001;
 	DEBUGA_SKYPE("SUCCESS! *which_port=%d, tech_pvt->tcp_cli_port=%d, tech_pvt->tcp_srv_port=%d\n", SKYPIAX_P_LOG, *which_port, tech_pvt->tcp_cli_port,
 				 tech_pvt->tcp_srv_port);
 
-	sockbufsize=0;
+	sockbufsize = 0;
 	size = sizeof(int);
-	getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, &size);
+	getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &sockbufsize, &size);
 	DEBUGA_SKYPE("1 SO_RCVBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
-	sockbufsize=0;
+	sockbufsize = 0;
 	size = sizeof(int);
-	getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&sockbufsize, &size);
+	getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &sockbufsize, &size);
 	DEBUGA_SKYPE("1 SO_SNDBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
 
 
@@ -94,16 +94,16 @@ unsigned short start_port = 6001;
  * sockbufsize=SAMPLES_PER_FRAME * 8;
  */
 #ifdef WIN32
-	sockbufsize=SAMPLES_PER_FRAME * 8 * 3;
+	sockbufsize = SAMPLES_PER_FRAME * 8 * 3;
 #else
-	sockbufsize=SAMPLES_PER_FRAME * 8;
+	sockbufsize = SAMPLES_PER_FRAME * 8;
 #endif //WIN32
 	size = sizeof(int);
-	setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, size);
+	setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &sockbufsize, size);
 
-	sockbufsize=0;
+	sockbufsize = 0;
 	size = sizeof(int);
-	getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, &size);
+	getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &sockbufsize, &size);
 	DEBUGA_SKYPE("2 SO_RCVBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
 
 /* for virtual machines, eg: Linux domU-12-31-39-02-68-28 2.6.18-xenU-ec2-v1.0 #2 SMP Tue Feb 19 10:51:53 EST 2008 i686 athlon i386 GNU/Linux
@@ -111,17 +111,17 @@ unsigned short start_port = 6001;
  * sockbufsize=SAMPLES_PER_FRAME * 8;
  */
 #ifdef WIN32
-	sockbufsize=SAMPLES_PER_FRAME * 8 * 3;
+	sockbufsize = SAMPLES_PER_FRAME * 8 * 3;
 #else
-	sockbufsize=SAMPLES_PER_FRAME * 8;
+	sockbufsize = SAMPLES_PER_FRAME * 8;
 #endif //WIN32
 	size = sizeof(int);
-	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&sockbufsize, size);
+	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &sockbufsize, size);
 
 
-	sockbufsize=0;
+	sockbufsize = 0;
 	size = sizeof(int);
-	getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&sockbufsize, &size);
+	getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &sockbufsize, &size);
 	DEBUGA_SKYPE("2 SO_SNDBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
 
 
@@ -295,20 +295,21 @@ int skypiax_signaling_read(private_t * tech_pvt)
 
 				if (!strcasecmp(prop, "DIALOG_PARTNER")) {
 					DEBUGA_SKYPE("CHAT %s has DIALOG_PARTNER %s\n", SKYPIAX_P_LOG, id, value);
-					found=0;
-					for(i=0; i<MAX_CHATS; i++){
-						if(strlen(tech_pvt->chats[i].chatname) == 0 || !strcmp(tech_pvt->chats[i].chatname, id) ){
+					found = 0;
+					for (i = 0; i < MAX_CHATS; i++) {
+						if (strlen(tech_pvt->chats[i].chatname) == 0 || !strcmp(tech_pvt->chats[i].chatname, id)) {
 							strncpy(tech_pvt->chats[i].chatname, id, sizeof(tech_pvt->chats[i].chatname));
 							strncpy(tech_pvt->chats[i].dialog_partner, value, sizeof(tech_pvt->chats[i].dialog_partner));
-							found=1;
+							found = 1;
 							break;
 						}
 					}
-					if(!found){
+					if (!found) {
 						DEBUGA_SKYPE("why we do not have a chats slot free? we have more than %d chats in parallel?\n", SKYPIAX_P_LOG, MAX_CHATS);
-					} 
+					}
 
-					DEBUGA_SKYPE("CHAT %s is in position %d in the chats array, chatname=%s, dialog_partner=%s\n", SKYPIAX_P_LOG, id, i, tech_pvt->chats[i].chatname, tech_pvt->chats[i].dialog_partner);
+					DEBUGA_SKYPE("CHAT %s is in position %d in the chats array, chatname=%s, dialog_partner=%s\n", SKYPIAX_P_LOG, id, i,
+								 tech_pvt->chats[i].chatname, tech_pvt->chats[i].dialog_partner);
 				}
 
 			}
@@ -334,28 +335,30 @@ int skypiax_signaling_read(private_t * tech_pvt)
 
 				if (!strcasecmp(prop, "TYPE") && !strcasecmp(value, "SAID")) {
 					DEBUGA_SKYPE("CHATMESSAGE %s is of type SAID, let's get the other infos\n", SKYPIAX_P_LOG, id);
-					found=0;
-					for(i=0; i<MAX_CHATMESSAGES; i++){
-						if(strlen(tech_pvt->chatmessages[i].id) == 0){
+					found = 0;
+					for (i = 0; i < MAX_CHATMESSAGES; i++) {
+						if (strlen(tech_pvt->chatmessages[i].id) == 0) {
 							strncpy(tech_pvt->chatmessages[i].id, id, sizeof(tech_pvt->chatmessages[i].id));
 							strncpy(tech_pvt->chatmessages[i].type, value, sizeof(tech_pvt->chatmessages[i].type));
-							found=1;
+							found = 1;
 							break;
 						}
 					}
-					if(!found){
-						DEBUGA_SKYPE("why we do not have a chatmessages slot free? we have more than %d chatmessages in parallel?\n", SKYPIAX_P_LOG, MAX_CHATMESSAGES);
+					if (!found) {
+						DEBUGA_SKYPE("why we do not have a chatmessages slot free? we have more than %d chatmessages in parallel?\n", SKYPIAX_P_LOG,
+									 MAX_CHATMESSAGES);
 					} else {
-						DEBUGA_SKYPE("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s\n", SKYPIAX_P_LOG, id, i, tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id);
+						DEBUGA_SKYPE("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s\n", SKYPIAX_P_LOG, id, i,
+									 tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id);
 						sprintf(msg_to_skype, "GET CHATMESSAGE %s CHATNAME", id);
 						skypiax_signaling_write(tech_pvt, msg_to_skype);
-						skypiax_sleep(100);
+						skypiax_sleep(1000);
 						sprintf(msg_to_skype, "GET CHATMESSAGE %s FROM_HANDLE", id);
 						skypiax_signaling_write(tech_pvt, msg_to_skype);
-						skypiax_sleep(100);
+						skypiax_sleep(1000);
 						sprintf(msg_to_skype, "GET CHATMESSAGE %s FROM_DISPNAME", id);
 						skypiax_signaling_write(tech_pvt, msg_to_skype);
-						skypiax_sleep(100);
+						skypiax_sleep(1000);
 						sprintf(msg_to_skype, "GET CHATMESSAGE %s BODY", id);
 						skypiax_signaling_write(tech_pvt, msg_to_skype);
 					}
@@ -363,63 +366,66 @@ int skypiax_signaling_read(private_t * tech_pvt)
 
 				if (!strcasecmp(prop, "CHATNAME")) {
 					DEBUGA_SKYPE("CHATMESSAGE %s belongs to the CHAT %s\n", SKYPIAX_P_LOG, id, value);
-					found=0;
-					for(i=0; i<MAX_CHATMESSAGES; i++){
-						if(!strcmp(tech_pvt->chatmessages[i].id, id)){
+					found = 0;
+					for (i = 0; i < MAX_CHATMESSAGES; i++) {
+						if (!strcmp(tech_pvt->chatmessages[i].id, id)) {
 							strncpy(tech_pvt->chatmessages[i].chatname, value, sizeof(tech_pvt->chatmessages[i].chatname));
-							found=1;
+							found = 1;
 							break;
 						}
 					}
-					if(!found){
+					if (!found) {
 						DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
-					} 
+					}
 				}
 				if (!strcasecmp(prop, "FROM_HANDLE")) {
 					DEBUGA_SKYPE("CHATMESSAGE %s was sent by FROM_HANDLE %s\n", SKYPIAX_P_LOG, id, value);
-					found=0;
-					for(i=0; i<MAX_CHATMESSAGES; i++){
-						if(!strcmp(tech_pvt->chatmessages[i].id, id)){
+					found = 0;
+					for (i = 0; i < MAX_CHATMESSAGES; i++) {
+						if (!strcmp(tech_pvt->chatmessages[i].id, id)) {
 							strncpy(tech_pvt->chatmessages[i].from_handle, value, sizeof(tech_pvt->chatmessages[i].from_handle));
-							found=1;
+							found = 1;
 							break;
 						}
 					}
-					if(!found){
+					if (!found) {
 						DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
-					} 
+					}
 
 				}
 				if (!strcasecmp(prop, "FROM_DISPNAME")) {
 					DEBUGA_SKYPE("CHATMESSAGE %s was sent by FROM_DISPNAME %s\n", SKYPIAX_P_LOG, id, value);
-					found=0;
-					for(i=0; i<MAX_CHATMESSAGES; i++){
-						if(!strcmp(tech_pvt->chatmessages[i].id, id)){
+					found = 0;
+					for (i = 0; i < MAX_CHATMESSAGES; i++) {
+						if (!strcmp(tech_pvt->chatmessages[i].id, id)) {
 							strncpy(tech_pvt->chatmessages[i].from_dispname, value, sizeof(tech_pvt->chatmessages[i].from_dispname));
-							found=1;
+							found = 1;
 							break;
 						}
 					}
-					if(!found){
+					if (!found) {
 						DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
-					} 
+					}
 
 				}
 				if (!strcasecmp(prop, "BODY")) {
 					DEBUGA_SKYPE("CHATMESSAGE %s has BODY %s\n", SKYPIAX_P_LOG, id, value);
-					found=0;
-					for(i=0; i<MAX_CHATMESSAGES; i++){
-						if(!strcmp(tech_pvt->chatmessages[i].id, id)){
+					found = 0;
+					for (i = 0; i < MAX_CHATMESSAGES; i++) {
+						if (!strcmp(tech_pvt->chatmessages[i].id, id)) {
 							strncpy(tech_pvt->chatmessages[i].body, value, sizeof(tech_pvt->chatmessages[i].body));
-							found=1;
+							found = 1;
 							break;
 						}
 					}
-					if(!found){
+					if (!found) {
 						DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPIAX_P_LOG, id);
-					}else {
-						DEBUGA_SKYPE("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s, chatname=%s, from_handle=%s, from_dispname=%s, body=%s\n", SKYPIAX_P_LOG, id, i, tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id, tech_pvt->chatmessages[i].chatname, tech_pvt->chatmessages[i].from_handle, tech_pvt->chatmessages[i].from_dispname, tech_pvt->chatmessages[i].body);
-						if(strcmp(tech_pvt->chatmessages[i].from_handle, tech_pvt->skype_user)){ //if the message was not sent by myself
+					} else {
+						DEBUGA_SKYPE
+							("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s, chatname=%s, from_handle=%s, from_dispname=%s, body=%s\n",
+							 SKYPIAX_P_LOG, id, i, tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id, tech_pvt->chatmessages[i].chatname,
+							 tech_pvt->chatmessages[i].from_handle, tech_pvt->chatmessages[i].from_dispname, tech_pvt->chatmessages[i].body);
+						if (strcmp(tech_pvt->chatmessages[i].from_handle, tech_pvt->skype_user)) {	//if the message was not sent by myself
 							incoming_chatmessage(tech_pvt, i);
 						}
 					}
@@ -535,7 +541,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 						tech_pvt->skype_callflow = CALLFLOW_STATUS_EARLYMEDIA;
 						tech_pvt->interface_state = SKYPIAX_STATE_DIALING;
 						DEBUGA_SKYPE("Our remote party in skype_call %s is EARLYMEDIA\n", SKYPIAX_P_LOG, id);
-						if(tech_pvt->tcp_cli_thread == NULL){
+						if (tech_pvt->tcp_cli_thread == NULL) {
 							DEBUGA_SKYPE("START start_audio_threads\n", SKYPIAX_P_LOG);
 							if (start_audio_threads(tech_pvt)) {
 								ERRORA("start_audio_threads FAILED\n", SKYPIAX_P_LOG);
@@ -627,7 +633,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 									tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
 									tech_pvt->interface_state = SKYPIAX_STATE_UP;
 
-									if(tech_pvt->tcp_cli_thread == NULL){
+									if (tech_pvt->tcp_cli_thread == NULL) {
 										DEBUGA_SKYPE("START start_audio_threads\n", SKYPIAX_P_LOG);
 										if (start_audio_threads(tech_pvt)) {
 											ERRORA("start_audio_threads FAILED\n", SKYPIAX_P_LOG);
@@ -733,7 +739,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 	unsigned int kill_cli_size;
 	short kill_cli_buff[SAMPLES_PER_FRAME];
 	short totalbuf[SAMPLES_PER_FRAME];
-	int sockbufsize=0;
+	int sockbufsize = 0;
 	unsigned int size = sizeof(int);
 
 	s = skypiax_socket_create_and_bind(tech_pvt, &tech_pvt->tcp_srv_port);
@@ -775,14 +781,14 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 			while (s > 0 && (fd = accept(s, (struct sockaddr *) &remote_addr, &sin_size)) > 0) {
 				DEBUGA_SKYPE("ACCEPTED here I send you %d\n", SKYPIAX_P_LOG, tech_pvt->tcp_srv_port);
 
-	sockbufsize=0;
-	size = sizeof(int);
-	getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, &size);
-	DEBUGA_SKYPE("3 SO_RCVBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
-	sockbufsize=0;
-	size = sizeof(int);
-	getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&sockbufsize, &size);
-	DEBUGA_SKYPE("3 SO_SNDBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
+				sockbufsize = 0;
+				size = sizeof(int);
+				getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &sockbufsize, &size);
+				DEBUGA_SKYPE("3 SO_RCVBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
+				sockbufsize = 0;
+				size = sizeof(int);
+				getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &sockbufsize, &size);
+				DEBUGA_SKYPE("3 SO_SNDBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
 
 
 				if (!(running && tech_pvt->running))
@@ -853,20 +859,20 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 								}
 								/* send the complete frame through the pipe to our code waiting for incoming audio */
 								//howmany = skypiax_pipe_write(tech_pvt->audiopipe_srv[1], totalbuf, SAMPLES_PER_FRAME * sizeof(short));
-					//FIXME while(tech_pvt->flag_audio_srv == 1){
-						//FIXME switch_sleep(100); //1 millisec
-						//NOTICA("read now is 1\n", SKYPIAX_P_LOG);
-						//FIXME }
-						//WARNINGA("read is now 0\n", SKYPIAX_P_LOG);
+								//FIXME while(tech_pvt->flag_audio_srv == 1){
+								//FIXME switch_sleep(100); //1 millisec
+								//NOTICA("read now is 1\n", SKYPIAX_P_LOG);
+								//FIXME }
+								//WARNINGA("read is now 0\n", SKYPIAX_P_LOG);
 
 
 								howmany = SAMPLES_PER_FRAME * sizeof(short);
-								if(tech_pvt->flag_audio_srv == 1){
-									switch_sleep(1000); //1 millisec
+								if (tech_pvt->flag_audio_srv == 1) {
+									switch_sleep(1000);	//1 millisec
 								}
-								if(tech_pvt->flag_audio_srv == 0){
-								memcpy(tech_pvt->audiobuf_srv, totalbuf, SAMPLES_PER_FRAME * sizeof(short));
-								tech_pvt->flag_audio_srv = 1;
+								if (tech_pvt->flag_audio_srv == 0) {
+									memcpy(tech_pvt->audiobuf_srv, totalbuf, SAMPLES_PER_FRAME * sizeof(short));
+									tech_pvt->flag_audio_srv = 1;
 								}
 								//NOTICA("read \n", SKYPIAX_P_LOG);
 								if (howmany != SAMPLES_PER_FRAME * sizeof(short)) {
@@ -902,14 +908,14 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 				kill_cli_size = SAMPLES_PER_FRAME * sizeof(short);
 				len = skypiax_pipe_write(tech_pvt->audiopipe_cli[1], kill_cli_buff, kill_cli_size);
 
-				tech_pvt->flag_audio_cli = 1; //let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
+				tech_pvt->flag_audio_cli = 1;	//let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
 				skypiax_sleep(200);
-				tech_pvt->flag_audio_srv = 1; //let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
+				tech_pvt->flag_audio_srv = 1;	//let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
 				skypiax_sleep(200);
 				tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
-				tech_pvt->flag_audio_cli = 1; //let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
+				tech_pvt->flag_audio_cli = 1;	//let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
 				skypiax_sleep(200);
-				tech_pvt->flag_audio_srv = 1; //let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
+				tech_pvt->flag_audio_srv = 1;	//let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
 				skypiax_sleep(200);
 				DEBUGA_SKYPE("Skype incoming audio GONE\n", SKYPIAX_P_LOG);
 				skypiax_close_socket(fd);
@@ -919,7 +925,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 
 	DEBUGA_SKYPE("incoming audio server (I am it) EXITING\n", SKYPIAX_P_LOG);
 	skypiax_close_socket(s);
-	s=-1;
+	s = -1;
 	return NULL;
 }
 
@@ -941,7 +947,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 #else
 	unsigned int sin_size;
 #endif /* WIN32 */
-	int sockbufsize=0;
+	int sockbufsize = 0;
 	unsigned int size = sizeof(int);
 
 	s = skypiax_socket_create_and_bind(tech_pvt, &tech_pvt->tcp_cli_port);
@@ -986,14 +992,14 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 			while (s > 0 && (fd = accept(s, (struct sockaddr *) &remote_addr, &sin_size)) > 0) {
 				DEBUGA_SKYPE("ACCEPTED here you send me %d\n", SKYPIAX_P_LOG, tech_pvt->tcp_cli_port);
 
-	sockbufsize=0;
-	size = sizeof(int);
-	getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sockbufsize, &size);
-	DEBUGA_SKYPE("4 SO_RCVBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
-	sockbufsize=0;
-	size = sizeof(int);
-	getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&sockbufsize, &size);
-	DEBUGA_SKYPE("4 SO_SNDBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
+				sockbufsize = 0;
+				size = sizeof(int);
+				getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &sockbufsize, &size);
+				DEBUGA_SKYPE("4 SO_RCVBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
+				sockbufsize = 0;
+				size = sizeof(int);
+				getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &sockbufsize, &size);
+				DEBUGA_SKYPE("4 SO_SNDBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
 
 
 
@@ -1035,15 +1041,15 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 					FD_SET(fdselect, &fs);
 
 					//FIXME rt = select(fdselect + 1, NULL, &fs, NULL, &to);
-					while(tech_pvt->flag_audio_cli == 0){
+					while (tech_pvt->flag_audio_cli == 0) {
 #ifdef WIN32
-						skypiax_sleep(100); //0.1 millisec
+						skypiax_sleep(100);	//0.1 millisec
 #else
-						skypiax_sleep(1000); //1 millisec
+						skypiax_sleep(1000);	//1 millisec
 #endif //WIN32
 						//WARNINGA("write now is 0\n", SKYPIAX_P_LOG);
-						 }
-						//ERRORA("write is now 1\n", SKYPIAX_P_LOG);
+					}
+					//ERRORA("write is now 1\n", SKYPIAX_P_LOG);
 
 					rt = 1;
 
@@ -1137,7 +1143,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 
 	DEBUGA_SKYPE("outbound audio server (I am it) EXITING\n", SKYPIAX_P_LOG);
 	skypiax_close_socket(s);
-	s=-1;
+	s = -1;
 	return NULL;
 }
 
@@ -1145,16 +1151,16 @@ int skypiax_audio_read(private_t * tech_pvt)
 {
 	unsigned int samples;
 
-	while(tech_pvt->flag_audio_srv == 0){
+	while (tech_pvt->flag_audio_srv == 0) {
 #ifdef WIN32
-		skypiax_sleep(100); //0.1 millisec
+		skypiax_sleep(100);		//0.1 millisec
 #else
-		skypiax_sleep(1000); //1 millisec
+		skypiax_sleep(1000);	//1 millisec
 #endif //WIN32
 
 		//WARNINGA("read now is 0\n", SKYPIAX_P_LOG);
 	}
-		//ERRORA("read is now 1\n", SKYPIAX_P_LOG);
+	//ERRORA("read is now 1\n", SKYPIAX_P_LOG);
 	//samples = skypiax_pipe_read(tech_pvt->audiopipe_srv[0], tech_pvt->read_frame.data, SAMPLES_PER_FRAME * sizeof(short));
 	samples = SAMPLES_PER_FRAME * sizeof(short);
 	memcpy(tech_pvt->read_frame.data, tech_pvt->audiobuf_srv, SAMPLES_PER_FRAME * sizeof(short));
@@ -1256,7 +1262,7 @@ int skypiax_pipe_read(int pipe, short *buf, int howmany)
 
 int skypiax_pipe_write(int pipe, short *buf, int howmany)
 {
-	if(buf){
+	if (buf) {
 		howmany = write(pipe, buf, howmany);
 		return howmany;
 	} else {
@@ -1628,7 +1634,7 @@ int skypiax_send_message(private_t * tech_pvt, const char *message_P)
 	XSync(disp, False);
 	ok = X11_errors_untrap();
 
-	if (!ok){
+	if (!ok) {
 		ERRORA("Sending message failed with status %d\n", SKYPIAX_P_LOG, xerror);
 		tech_pvt->running = 0;
 		return 0;
@@ -1754,7 +1760,7 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 		root = DefaultRootWindow(disp);
 		win = XCreateSimpleWindow(disp, root, 0, 0, 1, 1, 0, BlackPixel(disp, DefaultScreen(disp)), BlackPixel(disp, DefaultScreen(disp)));
 
-		SkypiaxHandles->win = win;	
+		SkypiaxHandles->win = win;
 
 		snprintf(buf, 512, "NAME skypiax");
 
@@ -1762,7 +1768,7 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 			ERRORA("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch Skypiax again\n", SKYPIAX_P_LOG);
 			running = 0;
 			//if(disp)
-				//XCloseDisplay(disp);
+			//XCloseDisplay(disp);
 			return NULL;
 		}
 
@@ -1771,14 +1777,14 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 			ERRORA("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch Skypiax again\n", SKYPIAX_P_LOG);
 			running = 0;
 			//if(disp)
-				//XCloseDisplay(disp);
+			//XCloseDisplay(disp);
 			return NULL;
 		}
 
 		{
 			/* perform an events loop */
 			XEvent an_event;
-			char buf[21];			/*  can't be longer */
+			char buf[21];		/*  can't be longer */
 			char buffer[17000];
 			char continuebuffer[17000];
 			char *b;
@@ -1799,8 +1805,8 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 				switch (an_event.type) {
 				case ClientMessage:
 
-					if (an_event.xclient.format != 8){
-						skypiax_sleep(100);	//0.1 msec
+					if (an_event.xclient.format != 8) {
+						skypiax_sleep(1000);	//0.1 msec
 						break;
 					}
 
@@ -1818,11 +1824,13 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 							unsigned int howmany;
 							howmany = strlen(b) + 1;
 							howmany = write(SkypiaxHandles->fdesc[1], b, howmany);
-							WARNINGA("A begin atom while the previous message is not closed???? value of previous message (between vertical bars) is=|||%s|||, will be lost\n", SKYPIAX_P_LOG, buffer);
+							WARNINGA
+								("A begin atom while the previous message is not closed???? value of previous message (between vertical bars) is=|||%s|||, will be lost\n",
+								 SKYPIAX_P_LOG, buffer);
 							memset(buffer, '\0', 17000);
 						}
-						if(continue_is_broken){
-							continue_is_broken=0;
+						if (continue_is_broken) {
+							continue_is_broken = 0;
 							there_were_continues = 1;
 						}
 					}
@@ -1831,7 +1839,8 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 
 						if (!strlen(buffer)) {
 							DEBUGA_SKYPE
-								("Got a 'continue' XAtom without a previous 'begin'. It's value (between vertical bars) is=|||%s|||, let's store it and hope next 'begin' will be the good one\n", SKYPIAX_P_LOG, buf);
+								("Got a 'continue' XAtom without a previous 'begin'. It's value (between vertical bars) is=|||%s|||, let's store it and hope next 'begin' will be the good one\n",
+								 SKYPIAX_P_LOG, buf);
 							strcat(continuebuffer, buf);
 							continue_is_broken = 1;
 							if (!strncmp(buf, "ognised identity", 15)) {
@@ -1840,16 +1849,15 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 									 SKYPIAX_P_LOG, buf);
 								skypiax_sleep(1000000);	//1 sec
 							}
-							skypiax_sleep(100);	//0.1 msec
+							skypiax_sleep(1000);	//0.1 msec
 							break;
 						}
 					}
-					if(continue_is_broken){
+					if (continue_is_broken) {
 						XFlush(disp);
-						skypiax_sleep(100);	//0.1 msec
+						skypiax_sleep(1000);	//0.1 msec
 						continue;
 					}
-
 					//DEBUGA_SKYPE ("i=%d, buffer=|||%s|||\n", SKYPIAX_P_LOG, i, buffer);
 					strcat(buffer, buf);
 					//DEBUGA_SKYPE ("i=%d, buffer=|||%s|||\n", SKYPIAX_P_LOG, i, buffer);
@@ -1869,10 +1877,10 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 						there_were_continues = 0;
 					}
 
-					skypiax_sleep(100);	//0.1 msec
+					skypiax_sleep(1000);	//0.1 msec
 					break;
 				default:
-					skypiax_sleep(100);	//0.1 msec
+					skypiax_sleep(1000);	//0.1 msec
 					break;
 				}
 			}
@@ -1881,12 +1889,12 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 		ERRORA("Skype is not running, maybe crashed. Please run/restart Skype and relaunch Skypiax\n", SKYPIAX_P_LOG);
 		running = 0;
 		//if(disp)
-			//XCloseDisplay(disp);
+		//XCloseDisplay(disp);
 		return NULL;
 	}
 	//running = 0;
 	//if(disp)
-		//XCloseDisplay(disp);
+	//XCloseDisplay(disp);
 	return NULL;
 
 }
