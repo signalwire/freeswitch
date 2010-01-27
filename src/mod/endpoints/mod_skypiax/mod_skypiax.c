@@ -776,8 +776,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 #else /* WIN32 */
 	//sent = write(tech_pvt->audiopipe_cli[1], frame->data, sent);
 #endif /* WIN32 */
-
-	//memcpy(tech_pvt->audiobuf_cli, frame->data, frame->datalen);
 	if (tech_pvt->flag_audio_cli == 1) {
 		switch_sleep(1000);		//1 millisec
 	}
