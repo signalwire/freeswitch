@@ -1263,48 +1263,39 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 			swap = 1;
 		}
 
+		switch_channel_set_flag(channel, CF_REDIRECT);
+		switch_channel_set_flag(channel, CF_RESET);
+		
 		if ((flags & SMF_FORCE) || !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-			switch_channel_set_flag(channel, CF_RESET);
-			switch_channel_set_flag(channel, CF_REDIRECT);
-			switch_channel_set_state(channel, CS_PARK);
-			switch_channel_set_flag(channel, CF_TRANSFER);
-
-			switch_core_session_receive_message(session, &msg);
-
 			if ((flags & SMF_REBRIDGE) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&
 				(other_session = switch_core_session_locate(other_uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
+
 				switch_channel_set_flag(other_channel, CF_RESET);
 				switch_channel_set_flag(other_channel, CF_REDIRECT);
 				switch_channel_set_state(other_channel, CS_PARK);
-				switch_channel_set_flag(other_channel, CF_TRANSFER);
-				
-				
-				switch_core_session_receive_message(other_session, &msg);
-				switch_channel_clear_state_handler(other_channel, NULL);
-			}
-
-			if (other_channel) {
 				switch_channel_wait_for_state(other_channel, channel, CS_PARK);
-			}
-			if (switch_core_session_in_thread(session)) {
-				switch_yield(100000);
+				switch_core_session_receive_message(other_session, &msg);
 			}
 			
-			switch_channel_clear_flag(channel, CF_NOT_READY);
+			switch_core_session_receive_message(session, &msg);
 
+			if (!switch_core_session_in_thread(session)) {
+				switch_channel_set_state(channel, CS_PARK);
+				switch_channel_wait_for_state(channel, channel, CS_PARK);
+			}
+			
 			if (other_channel) {
-				switch_channel_clear_flag(other_channel, CF_NOT_READY);
-				
-				switch_channel_clear_state_handler(channel, NULL);
 				if (swap) {
 					switch_ivr_signal_bridge(other_session, session);
 				} else {
 					switch_ivr_signal_bridge(session, other_session);
 				}
+
 				switch_channel_wait_for_state(other_channel, channel, CS_HIBERNATE);
-				if (switch_core_session_in_thread(session)) {
-					switch_yield(100000);
+
+				if (!switch_core_session_in_thread(session)) {
+					switch_channel_wait_for_state(channel, other_channel, CS_HIBERNATE);
 				}
 				switch_core_session_rwunlock(other_session);
 			}
