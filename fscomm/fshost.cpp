@@ -177,6 +177,8 @@ switch_status_t FSHost::processAlegEvent(switch_event_t * event, QString uuid)
         switch(event->event_id) {
         case SWITCH_EVENT_CHANNEL_ANSWER:
             {
+                QString answeredEpoch = switch_event_get_header_nil(event, "Caller-Channel-Answered-Time");
+                call.data()->setAnsweredEpoch(answeredEpoch.toLong());
                 call.data()->setbUUID(switch_event_get_header_nil(event, "Other-Leg-Unique-ID"));
                 _bleg_uuids.insert(switch_event_get_header_nil(event, "Other-Leg-Unique-ID"), uuid);
                 call.data()->setState(FSCOMM_CALL_STATE_ANSWERED);
@@ -257,6 +259,8 @@ switch_status_t FSHost::processBlegEvent(switch_event_t * event, QString buuid)
         case SWITCH_EVENT_CHANNEL_ANSWER:
             {
                 /* When do we get here? */
+                QString answeredEpoch = switch_event_get_header_nil(event, "Caller-Channel-Answered-Time");
+                call.data()->setAnsweredEpoch(answeredEpoch.toULongLong());
                 emit answered(call);
                 break;
             }

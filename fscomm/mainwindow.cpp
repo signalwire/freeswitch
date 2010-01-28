@@ -130,9 +130,10 @@ void MainWindow::updateCallTimers()
     for(int row=0; row<ui->tableCalls->rowCount(); row++)
     {
         QTableWidgetItem* item = ui->tableCalls->item(row, 2);
-        QTime time = QTime::fromString(item->text(),"hh:mm:ss");
-        time = time.addSecs(1);
+        QSharedPointer<Call> call = g_FSHost.getCallByUUID(item->data(Qt::UserRole).toString());
+        QTime time = call.data()->getCurrentStateTime();
         item->setText(time.toString("hh:mm:ss"));
+        item->setTextAlignment(Qt::AlignRight);
     }
 }
 

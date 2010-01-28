@@ -78,3 +78,9 @@ void Call::sendDTMF(QString digit)
         QMessageBox::critical(0, QWidget::tr("DTMF Error"), QWidget::tr("There was an error sending DTMF, please report this bug."), QMessageBox::Ok);
     }
 }
+
+QTime Call::getCurrentStateTime()
+{
+    int now = QDateTime::fromTime_t(_answered_epoch).secsTo(QDateTime::currentDateTime());
+    return QTime::fromString(QString::number(now), "s");
+}
