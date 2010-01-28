@@ -1264,6 +1264,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 		}
 
 		if ((flags & SMF_FORCE) || !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+			switch_channel_set_flag(channel, CF_RESET);
 			switch_channel_set_flag(channel, CF_REDIRECT);
 			switch_channel_set_state(channel, CS_PARK);
 			switch_channel_set_flag(channel, CF_TRANSFER);
@@ -1273,7 +1274,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 			if ((flags & SMF_REBRIDGE) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&
 				(other_session = switch_core_session_locate(other_uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
-
+				switch_channel_set_flag(other_channel, CF_RESET);
 				switch_channel_set_flag(other_channel, CF_REDIRECT);
 				switch_channel_set_state(other_channel, CS_PARK);
 				switch_channel_set_flag(other_channel, CF_TRANSFER);
