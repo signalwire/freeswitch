@@ -3525,7 +3525,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			if (channel && sip->sip_call_info) {
 				char *p;
 				call_info = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info);
-				if (!switch_stristr("appearance", call_info)) {
+				if (switch_stristr("appearance", call_info)) {
 					switch_channel_set_variable(channel, "presence_call_info_full", call_info);
 					if ((p = strchr(call_info, ';'))) {
 						switch_channel_set_variable(channel, "presence_call_info", p+1);
@@ -5425,7 +5425,7 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 		if (channel && sip->sip_call_info) {
 			char *p;
 			if ((call_info = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info))) {
-				if (!switch_stristr("appearance", call_info)) {
+				if (switch_stristr("appearance", call_info)) {
 					switch_channel_set_variable(channel, "presence_call_info_full", call_info);
 					if ((p = strchr(call_info, ';'))) {
 						switch_channel_set_variable(channel, "presence_call_info", p+1);
@@ -6360,7 +6360,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				full_contact = sip_header_as_string(nua_handle_home(tech_pvt->nh), (void *) sip->sip_contact);
 			}
 			
-			if (call_info_str && !switch_stristr("appearance", call_info_str)) {
+			if (call_info_str && switch_stristr("appearance", call_info_str)) {
 				switch_channel_set_variable(channel, "presence_call_info_full", call_info_str);
 				if ((p = strchr(call_info_str, ';'))) {
 					p++;
