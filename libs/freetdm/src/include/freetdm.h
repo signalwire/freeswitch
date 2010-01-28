@@ -276,6 +276,15 @@ extern "C" {
 		else ftdm_log(FTDM_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s)); \
 	}
 
+#define ftdm_set_state(obj, s) if ( obj->state == s ) {			\
+		ftdm_log(FTDM_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(obj->state), ftdm_channel_state2str(s)); \
+	} else if (ftdm_test_flag(obj, FTDM_CHANNEL_READY)) {									\
+		ftdm_channel_state_t st = obj->state;											\
+		ftdm_channel_set_state(obj, s, 0);									\
+		if (obj->state == s) ftdm_log(FTDM_LOG_DEBUG, "Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s)); \
+		else ftdm_log(FTDM_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s)); \
+	}
+
 #ifdef _MSC_VER
 /* The while(0) below throws a conditional expression is constant warning */
 #pragma warning(disable:4127) 
