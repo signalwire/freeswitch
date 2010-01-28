@@ -328,10 +328,6 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 	Py_XDECREF(arglist);
 	Py_XDECREF(io);
 
-	if (cb_arg) {
-		Py_XDECREF(cb_arg);
-	}
-
 	if (ts) {
 		begin_allow_threads();
 	}
