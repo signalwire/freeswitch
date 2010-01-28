@@ -137,6 +137,17 @@ void AccountDialog::writeConfig()
     _settings->beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways");
 
     _settings->beginGroup(_accId);
+
+    _settings->beginGroup("gateway/global_vars");
+    if (ui->clidSettingsCombo->currentIndex() == 0)
+    {
+        _settings->remove("caller_id_name");
+        _settings->remove("caller_id_num");
+    } else {
+        _settings->setValue("caller_id_name", ui->sofiaCallerIDName->text());
+        _settings->setValue("caller_id_num", ui->sofiaCallerIDNum->text());
+    }
+    _settings->endGroup();
     
     _settings->beginGroup("gateway/attrs");
     _settings->setValue("name", ui->sofiaGwNameEdit->text());

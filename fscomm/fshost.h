@@ -47,6 +47,8 @@ public:
     QSharedPointer<Call> getCurrentActiveCall();
     QList<QSharedPointer<Account> > getAccounts() { return _accounts.values(); }
     QSharedPointer<Account> getAccountByUUID(QString uuid);
+    QSharedPointer<Account> getCurrentDefaultAccount();
+    QSharedPointer<Account> getAccountByName(QString accStr);
     void accountReloadCmd(QSharedPointer<Account> acc);
 
 protected:

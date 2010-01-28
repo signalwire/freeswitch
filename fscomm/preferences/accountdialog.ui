@@ -193,7 +193,7 @@
        <item row="9" column="1">
         <widget class="QComboBox" name="clidSettingsCombo">
          <property name="enabled">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <item>
           <property name="text">

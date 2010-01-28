@@ -485,3 +485,22 @@ void FSHost::printEventHeaders(switch_event_t *event)
     }
     qDebug() << "\n\n";
 }
+
+QSharedPointer<Account> FSHost::getAccountByName(QString accStr)
+{
+    foreach(QSharedPointer<Account> acc, _accounts.values())
+    {
+        if (acc.data()->getName() == accStr)
+            return acc;
+    }
+    return QSharedPointer<Account>();
+}
+
+QSharedPointer<Account> FSHost::getCurrentDefaultAccount()
+{
+    QSettings settings;
+    settings.beginGroup("FreeSWITCH/conf/globals");
+    QString accString = settings.value("default_gateway").toString();
+    settings.endGroup();
+    return getAccountByName(accString);
+}
