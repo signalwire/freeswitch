@@ -1705,36 +1705,44 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 	if (!strncasecmp(cmd, "filter ", 7)) {
 		char *header_name = cmd + 7;
-		char *header_val;
+		char *header_val = NULL;
 
 		strip_cr(header_name);
 
 		while(header_name && *header_name && *header_name == ' ') header_name++;
 		
-		if (!(header_val = strchr(header_name, ' '))) {
-			switch_snprintf(reply, reply_len, "-ERR invalid syntax");
-			goto done;
+		if ((header_val = strchr(header_name, ' '))) {
+			*header_val++ = '\0';
 		}
-
-		*header_val++ = '\0';
-
-
+		
 		switch_mutex_lock(listener->filter_mutex);		
 		if (!listener->filters) {
 			switch_event_create_plain(&listener->filters, SWITCH_EVENT_CHANNEL_DATA);
 		}
 		
 		if (!strcasecmp(header_name, "delete")) {
-			if (!strcasecmp(header_val, "all")) {
+			header_name = header_val;
+			if ((header_val = strchr(header_name, ' '))) {
+				*header_val++ = '\0';
+			}
+			if (!strcasecmp(header_name, "all")) {
 				switch_event_destroy(&listener->filters);
 				switch_event_create_plain(&listener->filters, SWITCH_EVENT_CHANNEL_DATA);
 			} else {
-				switch_event_del_header(listener->filters, header_val);
+				switch_event_del_header_val(listener->filters, header_name, header_val);
 			}
-			switch_snprintf(reply, reply_len, "+OK filter deleted. [%s]", header_val);
-		} else {
+			switch_snprintf(reply, reply_len, "+OK filter deleted. [%s][%s]", header_name, switch_str_nil(header_val));
+		} else if (header_val) {
+			if (!strcasecmp(header_name, "add")) {
+				header_name = header_val;
+				if ((header_val = strchr(header_name, ' '))) {
+					*header_val++ = '\0';
+				}
+			}
 			switch_event_add_header_string(listener->filters, SWITCH_STACK_BOTTOM, header_name, header_val);
 			switch_snprintf(reply, reply_len, "+OK filter added. [%s]=[%s]", header_name, header_val);
+		} else {
+			switch_snprintf(reply, reply_len, "-ERR invalid syntax");
 		}
 		switch_mutex_unlock(listener->filter_mutex);
 

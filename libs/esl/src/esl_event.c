@@ -254,7 +254,7 @@ ESL_DECLARE(char *)esl_event_get_body(esl_event_t *event)
 	return (event ? event->body : NULL);
 }
 
-ESL_DECLARE(esl_status_t) esl_event_del_header(esl_event_t *event, const char *header_name)
+ESL_DECLARE(esl_status_t) esl_event_del_header_val(esl_event_t *event, const char *header_name, const char *val)
 {
 	esl_event_header_t *hp, *lp = NULL, *tp;
 	esl_status_t status = ESL_FAIL;
@@ -271,7 +271,7 @@ ESL_DECLARE(esl_status_t) esl_event_del_header(esl_event_t *event, const char *h
 		esl_assert(x < 1000);
 		hash = esl_ci_hashfunc_default(header_name, &hlen);
 
-		if (hp->name && (!hp->hash || hash == hp->hash) && !strcasecmp(header_name, hp->name)) {
+		if (hp->name && (!hp->hash || hash == hp->hash) && !strcasecmp(header_name, hp->name) && (esl_strlen_zero(val) || !strcmp(hp->value, val))) {
 			if (lp) {
 				lp->next = hp->next;
 			} else {

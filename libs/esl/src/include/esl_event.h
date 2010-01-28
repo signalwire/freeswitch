@@ -226,7 +226,8 @@ ESL_DECLARE(esl_status_t) esl_event_add_header(esl_event_t *event, esl_stack_t s
 */
 ESL_DECLARE(esl_status_t) esl_event_add_header_string(esl_event_t *event, esl_stack_t stack, const char *header_name, const char *data);
 
-ESL_DECLARE(esl_status_t) esl_event_del_header(esl_event_t *event, const char *header_name);
+ESL_DECLARE(esl_status_t) esl_event_del_header_val(esl_event_t *event, const char *header_name, const char *var);
+#define esl_event_del_header(_e, _h) esl_event_del_header_val(_e, _h, NULL)
 
 /*!
   \brief Destroy an event

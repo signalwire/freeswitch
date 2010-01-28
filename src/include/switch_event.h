@@ -182,7 +182,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_subclass_name(switch_event_t *e
 */
 SWITCH_DECLARE(switch_status_t) switch_event_add_header_string(switch_event_t *event, switch_stack_t stack, const char *header_name, const char *data);
 
-SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, const char *header_name);
+SWITCH_DECLARE(switch_status_t) switch_event_del_header_val(switch_event_t *event, const char *header_name, const char *val);
+#define switch_event_del_header(_e, _h) switch_event_del_header_val(_e, _h, NULL)
 
 /*!
   \brief Destroy an event

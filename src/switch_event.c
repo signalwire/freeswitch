@@ -697,7 +697,7 @@ SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event)
 	return (event ? event->body : NULL);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, const char *header_name)
+SWITCH_DECLARE(switch_status_t) switch_event_del_header_val(switch_event_t *event, const char *header_name, const char *val)
 {
 	switch_event_header_t *hp, *lp = NULL, *tp;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -714,7 +714,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, c
 		switch_assert(x < 1000);
 		hash = switch_ci_hashfunc_default(header_name, &hlen);
 
-		if ((!hp->hash || hash == hp->hash) && !strcasecmp(header_name, hp->name)) {
+		if ((!hp->hash || hash == hp->hash) && !strcasecmp(header_name, hp->name) && (zstr(val) || !strcmp(hp->value, val))) {
 			if (lp) {
 				lp->next = hp->next;
 			} else {
