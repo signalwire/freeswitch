@@ -3935,7 +3935,7 @@ int nua_bye_server_report(nua_server_request_t *sr, tagi_t const *tags)
 
   retval = nua_base_server_report(sr, tags);
 
-  assert(2 <= retval && retval < 4);
+  //assert(2 <= retval && retval < 4);
 
 #if 0
   if (ss) {

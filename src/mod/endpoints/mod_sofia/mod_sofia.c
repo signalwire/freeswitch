@@ -394,7 +394,8 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		}
 
 		if (switch_channel_test_flag(channel, CF_ANSWERED) || sofia_test_flag(tech_pvt, TFLAG_ANS)) {
-			const char *call_info = switch_channel_get_variable(channel, "presence_call_info");
+			const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
+
 			if (!tech_pvt->got_bye) {
 				switch_channel_set_variable(channel, "sip_hangup_disposition", "send_bye");
 			}
@@ -474,7 +475,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	const char *b_sdp = NULL;
 	int is_proxy = 0;
 	char *sticky = NULL;
-	const char *call_info = switch_channel_get_variable(channel, "presence_call_info");
+	const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 
 	if (sofia_test_flag(tech_pvt, TFLAG_ANS) || switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -506,7 +507,6 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			/* Send the 200 OK */
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
-
 				if (sofia_use_soa(tech_pvt)) {
 					nua_respond(tech_pvt->nh, SIP_200_OK,
 								SIPTAG_CONTACT_STR(tech_pvt->profile->url),
@@ -611,6 +611,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		if (sofia_use_soa(tech_pvt)) {
 			nua_respond(tech_pvt->nh, SIP_200_OK,
 						NUTAG_AUTOANSWER(0),
+						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 						TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 						SIPTAG_HEADER_STR(generate_pai_str(session)),
 						NUTAG_SESSION_TIMER(session_timeout),
@@ -626,6 +627,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			nua_respond(tech_pvt->nh, SIP_200_OK,
 						NUTAG_AUTOANSWER(0),
 						NUTAG_MEDIA_ENABLE(0),
+						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 						TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 						SIPTAG_HEADER_STR(generate_pai_str(session)),
 						NUTAG_SESSION_TIMER(session_timeout),
@@ -1776,7 +1778,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (!switch_channel_test_flag(channel, CF_RING_READY) && !sofia_test_flag(tech_pvt, TFLAG_BYE) &&
 			!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
 			char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
-			const char *call_info = switch_channel_get_variable(channel, "presence_call_info");
+			const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 
 			nua_respond(tech_pvt->nh, SIP_180_RINGING,
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
@@ -1797,7 +1799,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			char *sticky = NULL;
 			const char *val = NULL;
-			const char *call_info = switch_channel_get_variable(channel, "presence_call_info");
+			const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 
 			if (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC)) {
 				sofia_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);

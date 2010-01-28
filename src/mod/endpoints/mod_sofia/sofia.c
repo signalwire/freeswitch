@@ -387,7 +387,7 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	phrase = "OK";
 	
 	sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
-	call_info = switch_channel_get_variable(channel, "presence_call_info");
+	call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 
 	if (sip->sip_reason && sip->sip_reason->re_protocol &&
 		(!strcasecmp(sip->sip_reason->re_protocol, "Q.850") 
@@ -3525,8 +3525,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			if (channel && sip->sip_call_info) {
 				char *p;
 				call_info = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info);
-				if ((p = strchr(call_info, ';'))) {
-					switch_channel_set_variable(channel, "presence_call_info", p+1);
+				if (!switch_stristr("appearance", call_info)) {
+					switch_channel_set_variable(channel, "presence_call_info_full", call_info);
+					if ((p = strchr(call_info, ';'))) {
+						switch_channel_set_variable(channel, "presence_call_info", p+1);
+					}
 				}
 			} else if ((status == 180 || status == 183 || status == 200)) {
 				char buf[128] = "";
@@ -5422,8 +5425,11 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 		if (channel && sip->sip_call_info) {
 			char *p;
 			if ((call_info = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info))) {
-				if ((p = strchr(call_info, ';'))) {
-					switch_channel_set_variable(channel, "presence_call_info", p+1);
+				if (!switch_stristr("appearance", call_info)) {
+					switch_channel_set_variable(channel, "presence_call_info_full", call_info);
+					if ((p = strchr(call_info, ';'))) {
+						switch_channel_set_variable(channel, "presence_call_info", p+1);
+					}
 				}
 				su_free(nua_handle_home(nh), call_info);
 			}
@@ -6159,6 +6165,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					
 					if ((uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 						switch_channel_set_variable(b_channel, "presence_call_info", NULL);
+						switch_channel_set_variable(b_channel, "presence_call_info_full", NULL);
 						one_leg = 0;
 					} else {
 						uuid = switch_core_session_get_uuid(b_session);
@@ -6353,7 +6360,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				full_contact = sip_header_as_string(nua_handle_home(tech_pvt->nh), (void *) sip->sip_contact);
 			}
 			
-			if (call_info_str) {
+			if (call_info_str && !switch_stristr("appearance", call_info_str)) {
+				switch_channel_set_variable(channel, "presence_call_info_full", call_info_str);
 				if ((p = strchr(call_info_str, ';'))) {
 					p++;
 					switch_channel_set_variable(channel, "presence_call_info", p);
