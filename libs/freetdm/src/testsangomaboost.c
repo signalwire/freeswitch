@@ -250,6 +250,17 @@ int main(int argc, char *argv[])
 	parameters[2].var = "signalling";
 	parameters[2].val = "pri_cpe";
 
+	/*
+	 * parameters[3].var = "nfas_primary";
+	 * parameters[3].val = "4"; //span number
+	 *
+	 * parameters[4].var = "nfas_secondary";
+	 * parameters[4].val = "2"; //span number
+	 *
+	 * parameters[5].var = "nfas_group";
+	 * parameters[5].val = "1";
+	 * */
+
 	/* the last parameter .var member must be NULL! */
 	parameters[3].var = NULL;
 
