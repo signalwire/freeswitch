@@ -803,12 +803,49 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session)
+static switch_status_t sb_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
 {
 	switch_channel_t *channel = NULL;
+	char *key;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+	
+	if ((key = (char *) switch_channel_get_private(channel, "__bridge_term_key")) && dtmf->digit == *key) {
+		const char *uuid;
+		switch_core_session_t *other_session;
+
+		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
+			switch_channel_set_state(channel, CS_EXECUTE);
+		} else {
+			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+				switch_channel_set_state(other_channel, CS_EXECUTE);
+				switch_core_session_rwunlock(other_session);
+			} else {
+				return SWITCH_STATUS_SUCCESS;
+			}
+		}
+		
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session)
+{
+	switch_channel_t *channel = NULL;
+	const char *key;
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+	if ((key = switch_channel_get_variable(channel, "bridge_terminate_key"))) {
+		switch_channel_set_private(channel, "__bridge_term_key", switch_core_session_strdup(session, key));
+		switch_core_event_hook_add_recv_dtmf(session, sb_on_dtmf);
+	}
 
 	switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE));
 
@@ -824,6 +861,11 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))) {
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
+	}
+
+	if (switch_channel_get_private(channel, "__bridge_term_key")) {
+		switch_core_event_hook_remove_recv_dtmf(session, sb_on_dtmf);
+		switch_channel_set_private(channel, "__bridge_term_key", NULL);
 	}
 
 	switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);

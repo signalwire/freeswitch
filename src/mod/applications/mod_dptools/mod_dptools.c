@@ -2439,8 +2439,8 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
 				switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 			}
-
-			switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, a_key);
+			
+			switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, b_key);
 		}
 		
 		if (peer_session) {
