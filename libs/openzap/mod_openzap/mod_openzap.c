@@ -462,6 +462,9 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if (!tech_pvt->zchan) {
+		goto end;
+	} 
 
 	zap_channel_clear_token(tech_pvt->zchan, switch_core_session_get_uuid(session));
 	
@@ -504,6 +507,8 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		}
 		break;
 	}
+
+ end:
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	
@@ -1358,7 +1363,10 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 		break;
     case ZAP_SIGEVENT_STOP:
 		{
+			private_t *tech_pvt = NULL;
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				tech_pvt = switch_core_session_get_private(session);
+				tech_pvt->zchan = NULL;
 				zap_channel_clear_token(sigmsg->channel, 0);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
@@ -1435,6 +1443,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 		break;
     case ZAP_SIGEVENT_STOP:
 		{
+			private_t *tech_pvt = NULL;
 			switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 			if (sigmsg->channel->token_count) {
 				switch_core_session_t *session_a, *session_b, *session_t = NULL;
@@ -1490,6 +1499,8 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			}
 
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				tech_pvt = switch_core_session_get_private(session);
+				tech_pvt->zchan = NULL;
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, cause);
 				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
@@ -1616,7 +1627,10 @@ static ZIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		/* on_call_disconnect from the R2 side */
 		case ZAP_SIGEVENT_STOP: 
 		{	
+			private_t *tech_pvt = NULL;
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				tech_pvt = switch_core_session_get_private(session);
+				tech_pvt->zchan = NULL;
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
 				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
@@ -1726,7 +1740,10 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
     case ZAP_SIGEVENT_STOP:
     case ZAP_SIGEVENT_RESTART:
 		{
+			private_t *tech_pvt = NULL;
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				tech_pvt = switch_core_session_get_private(session);
+				tech_pvt->zchan = NULL;
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
 				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
