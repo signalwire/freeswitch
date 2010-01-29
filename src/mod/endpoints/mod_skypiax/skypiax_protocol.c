@@ -909,14 +909,14 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 				len = skypiax_pipe_write(tech_pvt->audiopipe_cli[1], kill_cli_buff, kill_cli_size);
 
 				tech_pvt->flag_audio_cli = 1;	//let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
-				skypiax_sleep(200);
+				skypiax_sleep(2000);
 				tech_pvt->flag_audio_srv = 1;	//let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
-				skypiax_sleep(200);
+				skypiax_sleep(2000);
 				tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
 				tech_pvt->flag_audio_cli = 1;	//let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
-				skypiax_sleep(200);
+				skypiax_sleep(2000);
 				tech_pvt->flag_audio_srv = 1;	//let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die
-				skypiax_sleep(200);
+				skypiax_sleep(2000);
 				DEBUGA_SKYPE("Skype incoming audio GONE\n", SKYPIAX_P_LOG);
 				skypiax_close_socket(fd);
 			}

@@ -599,7 +599,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	switch (sig) {
 	case SWITCH_SIG_KILL:
 		DEBUGA_SKYPE("%s CHANNEL got SWITCH_SIG_KILL\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
-		//switch_mutex_lock(tech_pvt->flag_mutex);
+		switch_mutex_lock(tech_pvt->flag_mutex);
 		switch_clear_flag(tech_pvt, TFLAG_IO);
 		switch_clear_flag(tech_pvt, TFLAG_VOICE);
 		switch_set_flag(tech_pvt, TFLAG_HANGUP);
@@ -615,14 +615,14 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 			ERRORA("FYI %s CHANNEL in %d state got SWITCH_SIG_KILL\n", SKYPIAX_P_LOG, switch_channel_get_name(channel), switch_channel_get_state(channel));
 			channel_on_hangup(session);
 		}
-		//switch_mutex_unlock(tech_pvt->flag_mutex);
+		switch_mutex_unlock(tech_pvt->flag_mutex);
 		break;
 	case SWITCH_SIG_BREAK:
 		DEBUGA_SKYPE("%s CHANNEL got SWITCH_SIG_BREAK\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
 		//switch_set_flag(tech_pvt, TFLAG_BREAK);
-		//switch_mutex_lock(tech_pvt->flag_mutex);
+		switch_mutex_lock(tech_pvt->flag_mutex);
 		switch_set_flag(tech_pvt, TFLAG_BREAK);
-		//switch_mutex_unlock(tech_pvt->flag_mutex);
+		switch_mutex_unlock(tech_pvt->flag_mutex);
 		break;
 	default:
 		break;
