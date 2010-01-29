@@ -42,7 +42,7 @@
       <condition wday="2-6" hour="9-18">
 	<action application="set" data="open=true"/>
       </condition>
-		</extension>
+    </extension>
 
     <!-- Example of routing based on holidays
 
@@ -75,7 +75,7 @@
 	<action application="set" data="open=false"/>
       </condition>
       <condition wday="2" mweek="2" mon="10">
-	<!-- columbus day is the 2st monday in october -->
+	<!-- columbus day is the 2nd monday in october -->
 	<action application="set" data="open=false"/>
       </condition>
       <condition mday="11" mon="11">
