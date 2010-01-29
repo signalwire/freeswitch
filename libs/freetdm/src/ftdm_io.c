@@ -1121,8 +1121,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 		ftdm_group_find(group_id, &group);
 	}
 
-	if (!group ) {
-		ftdm_log(FTDM_LOG_CRIT, "GROUP NOT DEFINED!\n");
+	if (!group) {
+		ftdm_log(FTDM_LOG_ERROR, "Group %d not defined!\n", group_id);
 		*ftdmchan = NULL;
 		return FTDM_FAIL;
 	}
@@ -1130,7 +1130,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 	ftdm_group_channel_use_count(group, &count);
 
 	if (count >= group->chan_count) {
-		ftdm_log(FTDM_LOG_CRIT, "All circuits are busy.\n");
+		ftdm_log(FTDM_LOG_ERROR, "All circuits are busy (%d channels used out of %d available).\n", count, group->chan_count);
 		*ftdmchan = NULL;
 		return FTDM_FAIL;
 	}
@@ -1163,9 +1163,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 			!ftdm_test_flag(check, FTDM_CHANNEL_INUSE) && 
 			!ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) && 
 			check->state == FTDM_CHANNEL_STATE_DOWN && 
-			check->type != FTDM_CHAN_TYPE_DQ921 &&
-			check->type != FTDM_CHAN_TYPE_DQ931
-			
+			FTDM_IS_VOICE_CHANNEL(check)
 			) {
 			ftdm_span_t* span = NULL;
 			ftdm_span_find(check->span_id, &span);
@@ -1282,9 +1280,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 			!ftdm_test_flag(check, FTDM_CHANNEL_INUSE) && 
 			!ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) && 
 			check->state == FTDM_CHANNEL_STATE_DOWN && 
-			check->type != FTDM_CHAN_TYPE_DQ921 &&
-			check->type != FTDM_CHAN_TYPE_DQ931
-			
+			FTDM_IS_VOICE_CHANNEL(check)
 			) {
 
 			if (span && span->channel_request) {
@@ -3189,6 +3185,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_add_to_group(const char* name, ftdm_chann
 	
 	ftdm_mutex_lock(globals.group_mutex);
 
+	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "Cannot add a null channel to a group\n");
+
 	if (ftdm_group_find_by_name(name, &group) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_DEBUG, "Creating new group:%s\n", name);
 		ftdm_group_create(&group, name);
@@ -3200,12 +3198,16 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_add_to_group(const char* name, ftdm_chann
 				group->channels[i]->physical_chan_id == ftdmchan->physical_chan_id) {
 
 			ftdm_mutex_unlock(globals.group_mutex);
+			ftdm_log(FTDM_LOG_DEBUG, "Channel %d:%d is already added to group %s\n", 
+					group->channels[i]->physical_span_id,
+					group->channels[i]->physical_chan_id,
+					name);
 			return FTDM_SUCCESS;
 		}
 	}
 
 	if (group->chan_count >= FTDM_MAX_CHANNELS_GROUP) {
-		ftdm_log(FTDM_LOG_CRIT, "Max number of channels exceeded (max:%d)\n", FTDM_MAX_CHANNELS_GROUP);
+		ftdm_log(FTDM_LOG_ERROR, "Max number of channels exceeded (max:%d)\n", FTDM_MAX_CHANNELS_GROUP);
 		ftdm_mutex_unlock(globals.group_mutex);
 		return FTDM_FAIL;
 	}
@@ -3256,9 +3258,12 @@ static ftdm_status_t ftdm_group_add_channels(const char* name, ftdm_span_t* span
 		return FTDM_SUCCESS;
 	}
 
-	for (chan_index = (span->chan_count - currindex); chan_index <= span->chan_count; chan_index++) {
+	for (chan_index = currindex+1; chan_index <= span->chan_count; chan_index++) {
+		if (!FTDM_IS_VOICE_CHANNEL(span->channels[chan_index])) {
+			continue;
+		}
 		if (ftdm_channel_add_to_group(name, span->channels[chan_index])) {
-			ftdm_log(FTDM_LOG_CRIT, "Failed to add chan:%d to group:%s\n", chan_index, name);
+			ftdm_log(FTDM_LOG_ERROR, "Failed to add chan:%d to group:%s\n", chan_index, name);
 		}
 	}
 	return FTDM_SUCCESS;
@@ -3345,7 +3350,7 @@ FT_DECLARE(ftdm_status_t) ftdm_group_create(ftdm_group_t **group, const char *na
 		*group = new_group;
 		status = FTDM_SUCCESS;
 	} else {
-		ftdm_log(FTDM_LOG_CRIT, "Group %s was not added, we exceeded the max number of groups\n", name);
+		ftdm_log(FTDM_LOG_ERROR, "Group %s was not added, we exceeded the max number of groups\n", name);
 	}
 	ftdm_mutex_unlock(globals.mutex);
 	return status;
