@@ -14,7 +14,7 @@
 #ifndef _SIGBOOST_H_
 #define _SIGBOOST_H_
 
-#define SIGBOOST_VERSION 100
+#define SIGBOOST_VERSION 102
 
 // handy to define integer types that actually work on both Lin and Win
 #include <freetdm.h>
@@ -28,22 +28,22 @@ enum	e_sigboost_event_id_values
 	SIGBOOST_EVENT_CALL_ANSWERED			= 0x84, /*132*/
 	SIGBOOST_EVENT_CALL_STOPPED			= 0x85, /*133*/
 	SIGBOOST_EVENT_CALL_STOPPED_ACK			= 0x86, /*134*/
-	/* CALL_RELEASED is aimed to fix a race condition that became obvious
-	 * when the boost socket was replaced by direct function calls
-	 * and the channel hunting was moved to freetdm, the problem is
-	 * we can get CALL_STOPPED msg and reply with CALL_STOPPED_ACK
-	 * but the signaling module will still (in PRI) send RELEASE and
-	 * wait for RELEASE_COMPLETE from the isdn network before
-	 * marking the channel as available, therefore freetdm should
-	 * also not mark the channel as available until CALL_RELEASED
-	 * is received, for socket mode we can continue working as usual
-	 * with CALL_STOPPED being the last step because the hunting is
-	 * done in the signaling module.
-	 * */
-	SIGBOOST_EVENT_CALL_RELEASED			= 0x51, /* 81 */
 	SIGBOOST_EVENT_SYSTEM_RESTART			= 0x87, /*135*/
 	SIGBOOST_EVENT_SYSTEM_RESTART_ACK		= 0x88, /*136*/
-	SIGBOOST_EVENT_CALL_PROGRESS            = 0x50, /*decimal  80*/
+       /* CALL_RELEASED is aimed to fix a race condition that became obvious
+        * when the boost socket was replaced by direct function calls
+        * and the channel hunting was moved to freetdm, the problem is
+        * we can get CALL_STOPPED msg and reply with CALL_STOPPED_ACK
+        * but the signaling module will still (in PRI) send RELEASE and
+        * wait for RELEASE_COMPLETE from the isdn network before
+        * marking the channel as available, therefore freetdm should
+        * also not mark the channel as available until CALL_RELEASED
+        * is received, for socket mode we can continue working as usual
+        * with CALL_STOPPED being the last step because the hunting is
+        * done in the signaling module.
+        * */
+	SIGBOOST_EVENT_CALL_RELEASED                    = 0x51, /* 81 */
+	SIGBOOST_EVENT_CALL_PROGRESS            	= 0x50, /*decimal  80*/
 	/* Following IDs are ss7boost to sangoma_mgd only. */
 	SIGBOOST_EVENT_HEARTBEAT			= 0x89, /*137*/
 	SIGBOOST_EVENT_INSERT_CHECK_LOOP		= 0x8a, /*138*/
@@ -89,6 +89,11 @@ enum e_sigboost_event_info_par_values
   	SIGBOOST_EVI_PROGRESS 					= 0x02, 
 };
 
+enum e_sigboost_progress_flags
+{
+	SIGBOOST_PROGRESS_RING = (1 << 0),
+	SIGBOOST_PROGRESS_MEDIA = (1 << 1)
+};
 
 #define MAX_DIALED_DIGITS	31
 
@@ -121,6 +126,7 @@ typedef struct
 	uint32_t		trunk_group;
 	uint8_t			span;
 	uint8_t			chan;
+	uint32_t		flags;
 	/* struct timeval  	tv; */ 
 	uint8_t			called_number_digits_count;
 	char			called_number_digits [MAX_DIALED_DIGITS + 1]; /* it's a null terminated string */
@@ -149,13 +155,14 @@ typedef struct
 	uint32_t		trunk_group;
 	uint8_t			span;
 	uint8_t			chan;
+	uint32_t		flags;
 	/* struct timeval  	tv; */ 
 	uint8_t			release_cause;
 } t_sigboost_short;
 #pragma pack()
 
 
-static __inline__ int boost_full_event(int event_id)
+static inline int boost_full_event(int event_id)
 {
         switch (event_id) {
         case SIGBOOST_EVENT_CALL_START:
@@ -163,9 +170,10 @@ static __inline__ int boost_full_event(int event_id)
 	case SIGBOOST_EVENT_CALL_PROGRESS:
                 return 1;
         default:
-			break;
+                break;
         }
-		return 0;
+
+        return 0;
 }
 
 #endif
