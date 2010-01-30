@@ -741,7 +741,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 
 switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, char *data);
 
-SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channel_t *channel, const char *varname,  const char *fmt, ...)
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channel_t *channel, const char *varname, const char *fmt, ...)
 {
 	int ret = 0;
 	char *data;
@@ -763,10 +763,39 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channe
 			return SWITCH_STATUS_MEMERR;
 		}
 
-		switch_event_base_add_header(channel->variables, SWITCH_STACK_BOTTOM, varname, data);
-
-		status = SWITCH_STATUS_SUCCESS;
+		status = switch_channel_set_variable(channel, varname, data);
+		free(data);
 	}
+	switch_mutex_unlock(channel->profile_mutex);
+	
+	return status;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_name_printf(switch_channel_t *channel, const char *val, const char *fmt, ...)
+{
+	int ret = 0;
+	char *varname;
+	va_list ap;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(channel != NULL);
+
+	switch_mutex_lock(channel->profile_mutex);
+
+	va_start(ap, fmt);
+	ret = switch_vasprintf(&varname, fmt, ap);
+	va_end(ap);
+	
+	if (ret == -1) {
+		switch_mutex_unlock(channel->profile_mutex);
+		return SWITCH_STATUS_MEMERR;
+	}
+	
+	status = switch_channel_set_variable(channel, varname, val);
+
+	free(varname);
+
 	switch_mutex_unlock(channel->profile_mutex);
 
 	return status;
@@ -863,7 +892,7 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 		state = switch_channel_get_running_state(other_channel);
 		mystate = switch_channel_get_running_state(channel);
 
-		if (mystate != ostate || state >= CS_HANGUP || state >= want_state) {
+		if (mystate != ostate || state >= CS_HANGUP || mystate == want_state) {
 			break;
 		}
 		switch_cond_next();
