@@ -67,6 +67,9 @@ static dummy_timer_t g_timers[MAX_CALLS];
 /* mutex to protect the timers (both, the test thread and the signaling thread may modify them) */
 static ftdm_mutex_t *g_schedule_mutex;
 
+/* unique outgoing channel */
+static ftdm_channel_t *g_outgoing_channel = NULL;
+
 static void interrupt_requested(int signal)
 {
 	app_running = 0;
@@ -174,10 +177,17 @@ static FIO_SIGNAL_CB_FUNCTION(on_signaling_event)
 	/* This event signals answer in an outgoing call */
 	case FTDM_SIGEVENT_UP:
 		ftdm_log(FTDM_LOG_NOTICE, "Answer received in channel %d:%d\n", sigmsg->span_id, sigmsg->chan_id);
+		/* now the channel is answered and we can use 
+		 * ftdm_channel_wait() to wait for input/output in a channel (equivalent to poll() or select())
+		 * ftdm_channel_read() to read available data in a channel
+		 * ftdm_channel_write() to write to the channel */
 		break;
 	/* This event signals hangup from the other end */
 	case FTDM_SIGEVENT_STOP:
 		ftdm_log(FTDM_LOG_NOTICE, "Hangup received in channel %d:%d\n", sigmsg->span_id, sigmsg->chan_id);
+		if (g_outgoing_channel == sigmsg->channel) {
+			g_outgoing_channel = NULL;
+		}
 		/* release any timer for this channel */
 		release_timers(sigmsg->channel);
 		break;
@@ -189,19 +199,60 @@ static FIO_SIGNAL_CB_FUNCTION(on_signaling_event)
 	return FTDM_SUCCESS;
 }
 
+static void place_call(const ftdm_span_t *span, const char *number)
+{
+	ftdm_channel_t *ftdmchan = NULL;
+	ftdm_caller_data_t caller_data = {{ 0 }};
+	ftdm_status_t status = FTDM_FAIL;
+
+	caller_data.ani.type = FTDM_TON_NATIONAL;
+
+	/* set destiny number (FIXME: this should be DNIS member in FreeTDM core and signaling module) */
+	ftdm_set_string(caller_data.ani.digits, number);
+
+	/* set callerid */
+	ftdm_set_string(caller_data.cid_name, "testsangomaboost");
+	ftdm_set_string(caller_data.cid_num.digits, "1234");
+
+	/* request to search for an outgoing channel top down with the given caller data */
+	status = ftdm_channel_open_by_span(span->span_id, FTDM_TOP_DOWN, &caller_data, &ftdmchan);
+	if (status != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to originate call\n");
+		return;
+	}
+
+	status = ftdm_channel_outgoing_call(ftdmchan);
+	if (status != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to originate call\n");
+		return;
+	}
+
+	ftdm_channel_init(ftdmchan);
+}
+
 int main(int argc, char *argv[])
 {
 	ftdm_conf_parameter_t parameters[20];
 	ftdm_span_t *span;
+	char *todial = NULL;
+	int32_t ticks = 0;
 
 	if (argc < 2) {
-		fprintf(stderr, "Usage: %s <span name>\n", argv[0]);
+		fprintf(stderr, "Usage: %s <span name> [number to dial if any]\n", argv[0]);
 		exit(-1);
 	}
 
+	/* register a handler to shutdown things properly */
 	if (signal(SIGINT, interrupt_requested) == SIG_ERR) {
 		fprintf(stderr, "Could not set the SIGINT signal handler: %s\n", strerror(errno));
 		exit(-1);
+	}
+
+	if (argc >= 3) {
+		todial = argv[2];
+		if (!strlen(todial)) {
+			todial = NULL;
+		}
 	}
 
 	/* clear any outstanding timers */
@@ -282,8 +333,13 @@ int main(int argc, char *argv[])
 
 	/* The application thread can go on and do anything else, like waiting for a shutdown signal */
 	while(ftdm_running() && app_running) {
-		ftdm_sleep(1 * 1000);
+		ftdm_sleep(1000);
 		run_timers();
+		ticks++;
+		if (!(ticks % 10) && todial && !g_outgoing_channel) {
+			ftdm_log(FTDM_LOG_NOTICE, "Originating call to number %s\n", todial);
+			place_call(span, todial);
+		}
 	}
 	printf("Shutting down FreeTDM ...\n");
  done:
