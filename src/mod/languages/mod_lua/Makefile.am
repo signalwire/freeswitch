@@ -10,7 +10,7 @@ mod_LTLIBRARIES = mod_lua.la
 mod_lua_la_SOURCES = mod_lua.cpp freeswitch_lua.cpp mod_lua_wrap.cpp
 mod_lua_la_CXXFLAGS = -Ilua $(AM_CPPFLAGS)
 mod_lua_la_LIBADD = $(switch_builddir)/libfreeswitch.la 
-mod_lua_la_LDFLAGS = -avoid-version -module -no-undefined -shared -lm $(LIBLUA_A) $(SOLINK) $(LUA_LDFLAGS)
+mod_lua_la_LDFLAGS = -avoid-version -module -no-undefined -shared -lm $(AM_LDFLAGS) $(LIBLUA_A) $(SOLINK)
 
 BUILT_SOURCES = $(LIBLUA_A)
 $(mod_lua_la_SOURCES) : $(BUILT_SOURCES)
