@@ -385,6 +385,10 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
+	if (!tech_pvt->zchan) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+		return SWITCH_STATUS_SUCCESS;
+	} 
 	
 	/* Move channel's state machine to ROUTING */
 	switch_channel_set_state(channel, CS_ROUTING);
@@ -569,6 +573,11 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if (!tech_pvt->zchan) {
+		switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
+		return SWITCH_STATUS_FALSE;
+	} 
+
 	tmp[0] = dtmf->digit;
 	zap_channel_command(tech_pvt->zchan, ZAP_COMMAND_SEND_DTMF, tmp);
 		
@@ -594,7 +603,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	assert(tech_pvt->zchan != NULL);
+	if (!tech_pvt->zchan) {
+		return SWITCH_STATUS_FALSE;
+	} 
 
 	/* Digium Cards sometimes timeout several times in a row here. 
 	   Yes, we support digium cards, ain't we nice.......
@@ -703,7 +714,9 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	assert(tech_pvt->zchan != NULL);
+	if (!tech_pvt->zchan) {
+		return SWITCH_STATUS_FALSE;
+	} 
 
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
 		return SWITCH_STATUS_FALSE;
@@ -762,6 +775,11 @@ static switch_status_t channel_receive_message_cas(switch_core_session_t *sessio
 			
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
+	
+	if (!tech_pvt->zchan) {
+        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+        return SWITCH_STATUS_FALSE;
+    }
 	
 	zap_log(ZAP_LOG_DEBUG, "Got Freeswitch message in R2 channel %d [%d]\n", tech_pvt->zchan->physical_chan_id, 
             msg->message_id);
@@ -822,7 +840,11 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 			
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-	assert(tech_pvt->zchan != NULL);
+
+	if (!tech_pvt->zchan) {
+        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+        return SWITCH_STATUS_FALSE;
+    }
 
 	zap_mutex_lock(tech_pvt->zchan->mutex);	
 	if (tech_pvt->zchan->state == ZAP_CHANNEL_STATE_TERMINATING) {
@@ -895,6 +917,11 @@ static switch_status_t channel_receive_message_fxo(switch_core_session_t *sessio
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if (!tech_pvt->zchan) {
+        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+        return SWITCH_STATUS_FALSE;
+    }
+	
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
@@ -924,6 +951,11 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if (!tech_pvt->zchan) {
+        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+        return SWITCH_STATUS_FALSE;
+    }
+	
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
@@ -2891,6 +2923,12 @@ SWITCH_STANDARD_APP(disable_ec_function)
 	}
 	
 	tech_pvt = switch_core_session_get_private(session);
+
+	if (!tech_pvt->zchan) {
+        switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
+        return;
+    }
+	
 	zap_channel_command(tech_pvt->zchan, ZAP_COMMAND_DISABLE_ECHOCANCEL, &x);
 	zap_channel_command(tech_pvt->zchan, ZAP_COMMAND_DISABLE_ECHOTRAIN, &x);
 	zap_log(ZAP_LOG_INFO, "Echo Canceller Disabled\n");
