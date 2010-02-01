@@ -60,7 +60,6 @@ struct zap_isdn_data {
 	zap_channel_t *dchan;
 	zap_channel_t *dchans[2];
 	struct zap_sigmsg sigmsg;
-	zio_signal_cb_t sig_cb;
 	uint32_t flags;
 	int32_t mode;
 	int32_t digit_timeout;

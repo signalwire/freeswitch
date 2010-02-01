@@ -145,7 +145,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_em_configure_span)
 	span->start = zap_analog_em_start;
 	analog_data->digit_timeout = digit_timeout;
 	analog_data->max_dialstr = max_dialstr;
-	analog_data->sig_cb = sig_cb;
+	span->signal_cb = sig_cb;
 	span->signal_type = ZAP_SIGTYPE_ANALOG;
 	span->signal_data = analog_data;
 	span->outgoing_call = analog_em_outgoing_call;
@@ -349,7 +349,7 @@ static void *zap_analog_em_channel_run(zap_thread_t *me, void *obj)
 
 					sig.event_id = ZAP_SIGEVENT_UP;
 
-					analog_data->sig_cb(&sig);
+					zap_span_send_signal(zchan->span, &sig);
 					continue;
 				}
 				break;
@@ -370,14 +370,14 @@ static void *zap_analog_em_channel_run(zap_thread_t *me, void *obj)
 
 					sig.event_id = ZAP_SIGEVENT_START;
 
-					analog_data->sig_cb(&sig);
+					zap_span_send_signal(zchan->span, &sig);
 					continue;
 				}
 				break;
 			case ZAP_CHANNEL_STATE_DOWN:
 				{
 					sig.event_id = ZAP_SIGEVENT_STOP;
-					analog_data->sig_cb(&sig);
+					zap_span_send_signal(zchan->span, &sig);
 					goto done;
 				}
 				break;
@@ -440,7 +440,7 @@ static void *zap_analog_em_channel_run(zap_thread_t *me, void *obj)
 				last_digit = elapsed;
 				sig.event_id = ZAP_SIGEVENT_COLLECTED_DIGIT;
 				sig.raw_data = dtmf;
-				if (analog_data->sig_cb(&sig) == ZAP_BREAK) {
+				if (zap_span_send_signal(zchan->span, &sig) == ZAP_BREAK) {
 					collecting = 0;
 				}
 			}
@@ -480,9 +480,7 @@ static void *zap_analog_em_channel_run(zap_thread_t *me, void *obj)
 				if (zchan->detected_tones[i]) {
 					zap_log(ZAP_LOG_DEBUG, "Detected tone %s on %d:%d\n", zap_tonemap2str(i), zchan->span_id, zchan->chan_id);
 					sig.raw_data = &i;
-					if (analog_data->sig_cb) {
-						analog_data->sig_cb(&sig);
-					}
+					zap_span_send_signal(zchan->span, &sig);
 				}
 			}
 			

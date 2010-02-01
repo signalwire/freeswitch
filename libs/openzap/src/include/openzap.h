@@ -567,6 +567,7 @@ struct zap_span {
 	zap_analog_start_type_t start_type;
 	zap_signal_type_t signal_type;
 	void *signal_data;
+	zio_signal_cb_t signal_cb;
 	zap_event_t event_header;
 	char last_error[256];
 	char tone_map[ZAP_TONEMAP_INVALID+1][ZAP_TONEMAP_LEN];
@@ -692,6 +693,7 @@ OZ_DECLARE(zap_status_t) zap_unload_modules(void);
 OZ_DECLARE(zap_status_t) zap_configure_span(const char *type, zap_span_t *span, zio_signal_cb_t sig_cb, ...);
 OZ_DECLARE(zap_status_t) zap_span_start(zap_span_t *span);
 OZ_DECLARE(zap_status_t) zap_span_stop(zap_span_t *span);
+OZ_DECLARE(zap_status_t) zap_span_send_signal(zap_span_t *span, zap_sigmsg_t *sigmsg);
 OZ_DECLARE(int) zap_load_module(const char *name);
 OZ_DECLARE(int) zap_load_module_assume(const char *name);
 OZ_DECLARE(zap_status_t) zap_span_find_by_name(const char *name, zap_span_t **span);

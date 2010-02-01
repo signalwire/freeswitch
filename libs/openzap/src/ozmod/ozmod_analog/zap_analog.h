@@ -48,7 +48,6 @@ struct zap_analog_data {
 	uint32_t max_dialstr;
 	uint32_t digit_timeout;
 	char hotline[ZAP_MAX_HOTLINE_STR];
-	zio_signal_cb_t sig_cb;
 };
 
 

@@ -91,8 +91,6 @@ typedef struct oz_r2_conf_s {
 
 /* r2 configuration stored in span->signal_data */
 typedef struct zap_r2_data_s {
-	/* signaling callback */
-	zio_signal_cb_t sig_cb;
 	/* span flags */
 	zap_r2_flag_t flags;
 	/* openr2 handle for the R2 variant context */
@@ -254,7 +252,7 @@ static void zap_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, const
 	sigev.channel = zchan;
 	sigev.event_id = ZAP_SIGEVENT_START;
 
-	if (r2data->sig_cb(&sigev) != ZAP_SUCCESS) {
+	if (zap_span_send_signal(zchan->span, &sigev) != ZAP_SUCCESS) {
 		zap_log(ZAP_LOG_NOTICE, "Failed to handle call offered on chan %d\n", openr2_chan_get_number(r2chan));
 		openr2_chan_disconnect_call(r2chan, OR2_CAUSE_OUT_OF_ORDER);
 		zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_CANCEL);
@@ -324,7 +322,7 @@ static void zap_r2_on_call_disconnect(openr2_chan_t *r2chan, openr2_call_disconn
 	sigev.event_id = ZAP_SIGEVENT_STOP;
 	r2data = zchan->span->signal_data;
 
-	r2data->sig_cb(&sigev);
+	zap_span_send_signal(zchan->span, &sigev);
 }
 
 static void zap_r2_on_call_end(openr2_chan_t *r2chan)
@@ -378,7 +376,7 @@ static void zap_r2_on_protocol_error(openr2_chan_t *r2chan, openr2_protocol_erro
 	sigev.event_id = ZAP_SIGEVENT_STOP;
 	r2data = zchan->span->signal_data;
 
-	r2data->sig_cb(&sigev);
+	zap_span_send_signal(zchan->span, &sigev);
 }
 
 static void zap_r2_on_line_blocked(openr2_chan_t *r2chan)
@@ -461,7 +459,7 @@ static int zap_r2_on_dnis_digit_received(openr2_chan_t *r2chan, char digit)
 	sigev.channel = zchan;
 	sigev.event_id = ZAP_SIGEVENT_COLLECTED_DIGIT;
 	r2data = zchan->span->signal_data;
-	if (r2data->sig_cb(&sigev) == ZAP_BREAK) {
+	if (zap_span_send_signal(zchan->span, &sigev) == ZAP_BREAK) {
 		zap_log(ZAP_LOG_NOTICE, "Requested to stop getting DNIS. Current DNIS = %s on chan %d\n", zchan->caller_data.dnis.digits, openr2_chan_get_number(r2chan));
 		return OR2_STOP_DNIS_REQUEST; 
 	}
@@ -885,7 +883,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_r2_configure_span)
 
 	span->start = zap_r2_start;
 	r2data->flags = 0;
-	r2data->sig_cb = sig_cb;
+	span->signal_cb = sig_cb;
 	span->signal_type = ZAP_SIGTYPE_R2;
 	span->signal_data = r2data;
 	span->outgoing_call = r2_outgoing_call;
@@ -1005,7 +1003,7 @@ static void *zap_r2_channel_run(zap_thread_t *me, void *obj)
 						} else {
 							zap_log(ZAP_LOG_DEBUG, "PROGRESS: Notifying progress in channel %d\n", zchan->physical_chan_id);
 							sigev.event_id = ZAP_SIGEVENT_PROGRESS;
-							if (r2data->sig_cb(&sigev) != ZAP_SUCCESS) {
+							if (zap_span_send_signal(zchan->span, &sigev) != ZAP_SUCCESS) {
 								zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 							}
 						}
@@ -1028,7 +1026,7 @@ static void *zap_r2_channel_run(zap_thread_t *me, void *obj)
 						} else {
 							zap_log(ZAP_LOG_DEBUG, "UP: Notifying of call answered in channel %d\n", zchan->physical_chan_id);
 							sigev.event_id = ZAP_SIGEVENT_UP;
-							if (r2data->sig_cb(&sigev) != ZAP_SUCCESS) {
+							if (zap_span_send_signal(zchan->span, &sigev) != ZAP_SUCCESS) {
 								zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 							}
 						}

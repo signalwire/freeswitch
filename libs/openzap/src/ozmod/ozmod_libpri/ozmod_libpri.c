@@ -454,7 +454,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_PROGRESS;
-				if ((status = isdn_data->sig_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = zap_span_send_signal(zchan->span, &sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else if (call) {
@@ -468,7 +468,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_PROGRESS_MEDIA;
-				if ((status = isdn_data->sig_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = zap_span_send_signal(zchan->span, &sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else if (call) {
@@ -484,7 +484,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 				if (call) {
 					pri_acknowledge(isdn_data->spri.pri, call, zchan->chan_id, 0);
 					sig.event_id = ZAP_SIGEVENT_START;
-					if ((status = isdn_data->sig_cb(&sig) != ZAP_SUCCESS)) {
+					if ((status = zap_span_send_signal(zchan->span, &sig) != ZAP_SUCCESS)) {
 						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 					}
 				} else {
@@ -497,7 +497,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			zchan->caller_data.hangup_cause = ZAP_CAUSE_NORMAL_UNSPECIFIED;
 			sig.event_id = ZAP_SIGEVENT_RESTART;
-			status = isdn_data->sig_cb(&sig);
+			status = zap_span_send_signal(zchan->span, &sig);
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 		}
 		break;
@@ -505,7 +505,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_UP;
-				if ((status = isdn_data->sig_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = zap_span_send_signal(zchan->span, &sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else if (call) {
@@ -579,7 +579,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	case ZAP_CHANNEL_STATE_TERMINATING:
 		{
 			sig.event_id = ZAP_SIGEVENT_STOP;
-			status = isdn_data->sig_cb(&sig);
+			status = zap_span_send_signal(zchan->span, &sig);
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 
 		}
@@ -807,7 +807,6 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 {
 	zap_sigmsg_t sig;
-	zap_libpri_data_t *isdn_data = span->signal_data;
 
 	memset(&sig, 0, sizeof(sig));
 	sig.chan_id = event->channel->chan_id;
@@ -832,7 +831,7 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 
 			
 			zap_channel_get_alarms(event->channel);
-			isdn_data->sig_cb(&sig);
+			zap_span_send_signal(span, &sig);
 			zap_log(ZAP_LOG_WARNING, "channel %d:%d (%d:%d) has alarms! [%s]\n", 
 					event->channel->span_id, event->channel->chan_id, 
 					event->channel->physical_span_id, event->channel->physical_chan_id, 
@@ -848,7 +847,7 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 			sig.event_id = ZAP_OOB_ALARM_CLEAR;
 			zap_clear_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
 			zap_channel_get_alarms(event->channel);
-			isdn_data->sig_cb(&sig);
+			zap_span_send_signal(span, &sig);
 		}
 		break;
 	}
@@ -1329,7 +1328,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
     
 	span->start = zap_libpri_start;
 	span->stop = zap_libpri_stop;
-	isdn_data->sig_cb = sig_cb;
+	span->signal_cb = sig_cb;
 	//isdn_data->dchans[0] = dchans[0];
 	//isdn_data->dchans[1] = dchans[1];
 	//isdn_data->dchan = isdn_data->dchans[0];

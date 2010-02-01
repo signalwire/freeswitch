@@ -2735,6 +2735,26 @@ OZ_DECLARE(zap_status_t) zap_span_start(zap_span_t *span)
 	return ZAP_FAIL;
 }
 
+OZ_DECLARE(zap_status_t) zap_span_send_signal(zap_span_t *span, zap_sigmsg_t *sigmsg)
+{
+	zap_status_t status = ZAP_FAIL;
+
+	if (span->signal_cb) {
+
+		if (sigmsg->channel) {
+			zap_mutex_lock(sigmsg->channel->mutex);
+		}
+
+		status = span->signal_cb(sigmsg);
+
+		if (sigmsg->channel) {
+			zap_mutex_unlock(sigmsg->channel->mutex);
+		}
+	}
+
+	return status;
+}
+
 
 OZ_DECLARE(zap_status_t) zap_global_init(void)
 {

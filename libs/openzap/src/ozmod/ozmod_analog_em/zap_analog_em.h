@@ -51,7 +51,6 @@ struct zap_analog_data {
 	uint32_t flags;
 	uint32_t max_dialstr;
 	uint32_t digit_timeout;
-	zio_signal_cb_t sig_cb;
 };
 
 static void *zap_analog_em_run(zap_thread_t *me, void *obj);

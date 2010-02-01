@@ -996,7 +996,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_PROGRESS_MEDIA;
-				if ((status = sangoma_boost_data->signal_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = zap_span_send_signal(zchan->span, &sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else {
@@ -1017,7 +1017,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_PROGRESS;
-				if ((status = sangoma_boost_data->signal_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = zap_span_send_signal(zchan->span, &sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else {
@@ -1042,7 +1042,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (!zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_START;
-				if ((status = sangoma_boost_data->signal_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = zap_span_send_signal(zchan->span, &sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			}
@@ -1051,7 +1051,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	case ZAP_CHANNEL_STATE_RESTART:
 		{
 			sig.event_id = ZAP_SIGEVENT_RESTART;
-			status = sangoma_boost_data->signal_cb(&sig);
+			status = zap_span_send_signal(zchan->span, &sig);
 			zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_MSG);
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 		}
@@ -1060,7 +1060,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_UP;
-				if ((status = sangoma_boost_data->signal_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = zap_span_send_signal(zchan->span, &sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else {
@@ -1125,7 +1125,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			zap_set_sflag_locked(zchan, SFLAG_TERMINATING);
 			sig.event_id = ZAP_SIGEVENT_STOP;
-			status = sangoma_boost_data->signal_cb(&sig);
+			status = zap_span_send_signal(zchan->span, &sig);
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE);
 		}
 		break;
@@ -1593,7 +1593,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_sangoma_boost_configure_span)
 	sangoma_boost_data->mcon.cfg.local_port = local_port;
 	zap_set_string(sangoma_boost_data->mcon.cfg.remote_ip, remote_ip);
 	sangoma_boost_data->mcon.cfg.remote_port = remote_port;
-	sangoma_boost_data->signal_cb = sig_cb;
+	span->signal_cb = sig_cb;
 	span->start = zap_sangoma_boost_start;
 	span->signal_data = sangoma_boost_data;
     span->signal_type = ZAP_SIGTYPE_SANGOMABOOST;

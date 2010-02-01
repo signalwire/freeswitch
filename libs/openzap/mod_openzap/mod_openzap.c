@@ -846,7 +846,6 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
         return SWITCH_STATUS_FALSE;
     }
 
-	zap_mutex_lock(tech_pvt->zchan->mutex);	
 	if (tech_pvt->zchan->state == ZAP_CHANNEL_STATE_TERMINATING) {
 		zap_mutex_unlock(tech_pvt->zchan->mutex);	
 		return SWITCH_STATUS_SUCCESS;
@@ -902,7 +901,6 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 		break;
 	}
 
-	zap_mutex_unlock(tech_pvt->zchan->mutex);	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -992,11 +990,25 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	switch_status_t status;
 	switch_channel_t *channel;
 	const char *var;
+	zap_channel_t *zchan = NULL;
 
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
 	channel = switch_core_session_get_channel(session);
+
+	if (!(zchan = tech_pvt->zchan)) {
+        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+        return SWITCH_STATUS_FALSE;
+    }
+
+	zap_mutex_lock(zchan->mutex);	
+
+	if (!tech_pvt->zchan) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+		status = SWITCH_STATUS_FALSE;
+		goto end;
+	}
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
@@ -1037,6 +1049,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		status = SWITCH_STATUS_FALSE;
 		break;
 	}
+
+ end:
+
+	zap_mutex_unlock(zchan->mutex);	
 
 	return status;
 

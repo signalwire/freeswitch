@@ -44,7 +44,6 @@ typedef enum {
 typedef struct zap_sangoma_boost_data {
 	sangomabc_connection_t mcon;
 	sangomabc_connection_t pcon;
-	zio_signal_cb_t signal_cb;
 	uint32_t flags;
 } zap_sangoma_boost_data_t;
 
