@@ -984,7 +984,7 @@ static void *ftdm_r2_channel_run(ftdm_thread_t *me, void *obj)
 						// FIXME: use user defined calling party
 						ftdm_channel_use(ftdmchan);
 						ftdm_log(FTDM_LOG_DEBUG, "DIALING: Starting processing of outgoing call in channel %d with interval %d\n", ftdmchan->physical_chan_id, interval);
-						if (openr2_chan_make_call(r2chan, ftdmchan->caller_data.cid_num.digits, ftdmchan->caller_data.ani.digits, OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER)) {
+						if (openr2_chan_make_call(r2chan, ftdmchan->caller_data.cid_num.digits, ftdmchan->caller_data.dnis.digits, OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER)) {
 							ftdm_log(FTDM_LOG_ERROR, "%d:%d Failed to make call in R2 channel, openr2_chan_make_call failed\n", ftdmchan->span_id, ftdmchan->chan_id);
 							ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
 							ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);

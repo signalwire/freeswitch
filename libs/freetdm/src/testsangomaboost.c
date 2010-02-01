@@ -190,6 +190,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_signaling_event)
 		}
 		/* release any timer for this channel */
 		release_timers(sigmsg->channel);
+		/* acknowledge the hangup */
+		ftdm_set_state_locked(sigmsg->channel, FTDM_CHANNEL_STATE_HANGUP);
 		break;
 	default:
 		ftdm_log(FTDM_LOG_WARNING, "Unhandled event %s in channel %d:%d\n", ftdm_signal_event2str(sigmsg->event_id), 
@@ -205,21 +207,24 @@ static void place_call(const ftdm_span_t *span, const char *number)
 	ftdm_caller_data_t caller_data = {{ 0 }};
 	ftdm_status_t status = FTDM_FAIL;
 
-	caller_data.ani.type = FTDM_TON_NATIONAL;
-
-	/* set destiny number (FIXME: this should be DNIS member in FreeTDM core and signaling module) */
-	ftdm_set_string(caller_data.ani.digits, number);
+	/* set destiny number */
+	ftdm_set_string(caller_data.dnis.digits, number);
 
 	/* set callerid */
 	ftdm_set_string(caller_data.cid_name, "testsangomaboost");
 	ftdm_set_string(caller_data.cid_num.digits, "1234");
 
-	/* request to search for an outgoing channel top down with the given caller data */
+	/* request to search for an outgoing channel top down with the given caller data.
+	 * it is also an option to use ftdm_channel_open_by_group to let freetdm hunt
+	 * an available channel in a given group instead of per span
+	 * */
 	status = ftdm_channel_open_by_span(span->span_id, FTDM_TOP_DOWN, &caller_data, &ftdmchan);
 	if (status != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to originate call\n");
 		return;
 	}
+
+	g_outgoing_channel = ftdmchan;
 
 	status = ftdm_channel_outgoing_call(ftdmchan);
 	if (status != FTDM_SUCCESS) {
@@ -227,6 +232,7 @@ static void place_call(const ftdm_span_t *span, const char *number)
 		return;
 	}
 
+	/* this is required to initialize the outgoing channel */
 	ftdm_channel_init(ftdmchan);
 }
 

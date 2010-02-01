@@ -411,10 +411,10 @@ static FIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 	Q931InitIECalledNum(&CalledNum);
 	CalledNum.TypNum    = Q931_TON_UNKNOWN;
 	CalledNum.NumPlanID = Q931_NUMPLAN_E164;
-	CalledNum.Size = CalledNum.Size + (unsigned char)strlen(caller_data->ani.digits);
+	CalledNum.Size = CalledNum.Size + (unsigned char)strlen(caller_data->dnis.digits);
 	gen->CalledNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CalledNum);
 	ptrCalledNum = Q931GetIEPtr(gen->CalledNum, gen->buf);
-	ftdm_copy_string((char *)ptrCalledNum->Digit, caller_data->ani.digits, strlen(caller_data->ani.digits)+1);
+	ftdm_copy_string((char *)ptrCalledNum->Digit, caller_data->dnis.digits, strlen(caller_data->dnis.digits)+1);
 
 	/*
 	 * High-Layer Compatibility IE   (Note: Required for AVM FritzBox)
@@ -1374,12 +1374,12 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			 * CalledNum IE
 			 */
 			Q931InitIECalledNum(&CalledNum);
-			CalledNum.TypNum    = Q931_TON_UNKNOWN;
+			CalledNum.TypNum    = ftdmchan->caller_data.dnis.type;
 			CalledNum.NumPlanID = Q931_NUMPLAN_E164;
-			CalledNum.Size = CalledNum.Size + (unsigned char)strlen(ftdmchan->caller_data.ani.digits);
+			CalledNum.Size = CalledNum.Size + (unsigned char)strlen(ftdmchan->caller_data.dnis.digits);
 			gen->CalledNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CalledNum);
 			ptrCalledNum = Q931GetIEPtr(gen->CalledNum, gen->buf);
-			ftdm_copy_string((char *)ptrCalledNum->Digit, ftdmchan->caller_data.ani.digits, strlen(ftdmchan->caller_data.ani.digits)+1);
+			ftdm_copy_string((char *)ptrCalledNum->Digit, ftdmchan->caller_data.dnis.digits, strlen(ftdmchan->caller_data.dnis.digits)+1);
 
 			/*
 			 * High-Layer Compatibility IE   (Note: Required for AVM FritzBox)

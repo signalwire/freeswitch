@@ -294,7 +294,7 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	sangomabc_event_t event = {0};
 	int boost_request_timeout = 5000;
 	sangoma_boost_request_status_t st;
-	char ani[128] = "";
+	char dnis[128] = "";
 	char *gr = NULL;
 	uint32_t count = 0;
 	int tg=0;
@@ -304,7 +304,7 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		return FTDM_FAIL;
 	}
 	
-	ftdm_set_string(ani, caller_data->ani.digits);
+	ftdm_set_string(dnis, caller_data->dnis.digits);
 
 	r = next_request_id();
 	if (r == 0) {
@@ -312,7 +312,7 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		*ftdmchan = NULL;
 		return FTDM_FAIL;
 	}
-	sangomabc_call_init(&event, caller_data->cid_num.digits, ani, r);
+	sangomabc_call_init(&event, caller_data->cid_num.digits, dnis, r);
 
 	if (sangoma_boost_data->sigmod) {
 		*ftdmchan = span->channels[chan_id];
@@ -325,7 +325,7 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 
 		OUTBOUND_REQUESTS[r].ftdmchan = *ftdmchan;
 	} else {
-		if ((gr = strchr(ani, '@'))) {
+		if ((gr = strchr(dnis, '@'))) {
 			*gr++ = '\0';
 		}
 

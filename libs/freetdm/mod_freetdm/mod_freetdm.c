@@ -1130,24 +1130,24 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 	if (!zstr(dest)) {
-		ftdm_set_string(caller_data.ani.digits, dest);
+		ftdm_set_string(caller_data.dnis.digits, dest);
 	}
 	
 	if ((var = switch_event_get_header(var_event, "freetdm_outbound_ton")) || (var = switch_core_get_variable("freetdm_outbound_ton"))) {
 		if (!strcasecmp(var, "national")) {
-			caller_data.ani.type = FTDM_TON_NATIONAL;
+			caller_data.dnis.type = FTDM_TON_NATIONAL;
 		} else if (!strcasecmp(var, "international")) {
-			caller_data.ani.type = FTDM_TON_INTERNATIONAL;
+			caller_data.dnis.type = FTDM_TON_INTERNATIONAL;
 		} else if (!strcasecmp(var, "local")) {
-			caller_data.ani.type = FTDM_TON_SUBSCRIBER_NUMBER;
+			caller_data.dnis.type = FTDM_TON_SUBSCRIBER_NUMBER;
 		} else if (!strcasecmp(var, "unknown")) {
-			caller_data.ani.type = FTDM_TON_UNKNOWN;
+			caller_data.dnis.type = FTDM_TON_UNKNOWN;
 		}
 	} else {
-		caller_data.ani.type = outbound_profile->destination_number_ton;
+		caller_data.dnis.type = outbound_profile->destination_number_ton;
 	}
 	
-	caller_data.ani.plan = outbound_profile->destination_number_numplan;
+	caller_data.dnis.plan = outbound_profile->destination_number_numplan;
 
 
 #if 0

@@ -526,7 +526,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			}
 
 			
-			dp = ftdmchan->caller_data.ani.type;
+			dp = ftdmchan->caller_data.dnis.type;
 			switch(dp) {
 			case FTDM_TON_NATIONAL:
 				dp = PRI_NATIONAL_ISDN;
@@ -546,7 +546,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			assert(sr);
 			pri_sr_set_channel(sr, ftdmchan->chan_id, 0, 0);
 			pri_sr_set_bearer(sr, 0, isdn_data->l1);
-			pri_sr_set_called(sr, ftdmchan->caller_data.ani.digits, dp, 1);
+			pri_sr_set_called(sr, ftdmchan->caller_data.dnis.digits, dp, 1);
 			pri_sr_set_caller(sr, ftdmchan->caller_data.cid_num.digits, (isdn_data->opts & FTMOD_LIBPRI_OPT_OMIT_DISPLAY_IE ? NULL : ftdmchan->caller_data.cid_name),
 						dp, (ftdmchan->caller_data.pres != 1 ? PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN : PRES_PROHIB_USER_NUMBER_NOT_SCREENED));
 

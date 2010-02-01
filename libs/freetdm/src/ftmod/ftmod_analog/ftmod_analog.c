@@ -669,11 +669,11 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 				ftdm_log(FTDM_LOG_ERROR, "Failure indication detected!\n");
 				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
 			} else if (ftdmchan->detected_tones[FTDM_TONEMAP_DIAL]) {
-				if (ftdm_strlen_zero(ftdmchan->caller_data.ani.digits)) {
+				if (ftdm_strlen_zero(ftdmchan->caller_data.dnis.digits)) {
 					ftdm_log(FTDM_LOG_ERROR, "No Digits to send!\n");
 					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
 				} else {
-					if (ftdm_channel_command(ftdmchan, FTDM_COMMAND_SEND_DTMF, ftdmchan->caller_data.ani.digits) != FTDM_SUCCESS) {
+					if (ftdm_channel_command(ftdmchan, FTDM_COMMAND_SEND_DTMF, ftdmchan->caller_data.dnis.digits) != FTDM_SUCCESS) {
 						ftdm_log(FTDM_LOG_ERROR, "Send Digits Failed [%s]\n", ftdmchan->last_error);
 						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
 					} else {
@@ -683,7 +683,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 						ftdmchan->needed_tones[FTDM_TONEMAP_FAIL1] = 1;
 						ftdmchan->needed_tones[FTDM_TONEMAP_FAIL2] = 1;
 						ftdmchan->needed_tones[FTDM_TONEMAP_FAIL3] = 1;
-						dial_timeout = ((ftdmchan->dtmf_on + ftdmchan->dtmf_off) * strlen(ftdmchan->caller_data.ani.digits)) + 2000;
+						dial_timeout = ((ftdmchan->dtmf_on + ftdmchan->dtmf_off) * strlen(ftdmchan->caller_data.dnis.digits)) + 2000;
 					}
 				}
 			} else if (ftdmchan->detected_tones[FTDM_TONEMAP_RING]) {
