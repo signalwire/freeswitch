@@ -3,6 +3,7 @@
 
 ;;; You can either fine-tune the bells and whistles of this mode or
 ;;; bulk enable them by putting
+set -o emacs
 
 ;(setq cperl-hairy t)
 (global-unset-key "\C-h")
