@@ -385,7 +385,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	if (!tech_pvt->zchan) {
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
 		return SWITCH_STATUS_SUCCESS;
 	} 
@@ -573,7 +573,7 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (!tech_pvt->zchan) {
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
 		switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
 		return SWITCH_STATUS_FALSE;
 	} 
@@ -599,11 +599,11 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 	
-
+	
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (!tech_pvt->zchan) {
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
 		return SWITCH_STATUS_FALSE;
 	} 
 
@@ -612,10 +612,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	   6 double length intervals should compensate */
 	chunk = tech_pvt->zchan->effective_interval * 2;
 	total_to = chunk * 6;
-
-	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
-		return SWITCH_STATUS_FALSE;
-	}
 
  top:
 
@@ -776,7 +772,7 @@ static switch_status_t channel_receive_message_cas(switch_core_session_t *sessio
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 	
-	if (!tech_pvt->zchan) {
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
         switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
         return SWITCH_STATUS_FALSE;
     }
@@ -841,7 +837,7 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (!tech_pvt->zchan) {
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
         switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
         return SWITCH_STATUS_FALSE;
     }
@@ -915,7 +911,7 @@ static switch_status_t channel_receive_message_fxo(switch_core_session_t *sessio
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (!tech_pvt->zchan) {
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
         switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
         return SWITCH_STATUS_FALSE;
     }
@@ -949,7 +945,7 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (!tech_pvt->zchan) {
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
         switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
         return SWITCH_STATUS_FALSE;
     }
@@ -996,6 +992,11 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	assert(tech_pvt != NULL);
 
 	channel = switch_core_session_get_channel(session);
+
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+        return SWITCH_STATUS_FALSE;
+	}
 
 	if (!(zchan = tech_pvt->zchan)) {
         switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
@@ -1414,7 +1415,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			private_t *tech_pvt = NULL;
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				tech_pvt = switch_core_session_get_private(session);
-				tech_pvt->zchan = NULL;
+				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				zap_channel_clear_token(sigmsg->channel, 0);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
@@ -1548,7 +1549,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				tech_pvt = switch_core_session_get_private(session);
-				tech_pvt->zchan = NULL;
+				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, cause);
 				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
@@ -1678,7 +1679,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 			private_t *tech_pvt = NULL;
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				tech_pvt = switch_core_session_get_private(session);
-				tech_pvt->zchan = NULL;
+				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
 				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
@@ -1791,7 +1792,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 			private_t *tech_pvt = NULL;
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				tech_pvt = switch_core_session_get_private(session);
-				tech_pvt->zchan = NULL;
+				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
 				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
@@ -2940,7 +2941,7 @@ SWITCH_STANDARD_APP(disable_ec_function)
 	
 	tech_pvt = switch_core_session_get_private(session);
 
-	if (!tech_pvt->zchan) {
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
         switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
         return;
     }
