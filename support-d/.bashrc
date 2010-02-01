@@ -12,6 +12,8 @@ if [ ! -f ~/.inputrc ]; then
     export INPUTRC="/etc/inputrc"
 fi
 
+set -o emacs
+
 export LESSCHARSET="latin1"
 export LESS="-R"
 export CHARSET="ISO-8859-1"
