@@ -39,9 +39,14 @@
  * compile this program linking to the freetdm library (ie -lfreetdm)
  **/
 
+#ifndef __linux__
+#define _CRT_SECURE_NO_WARNINGS 1
+#endif
+
 #include <signal.h>
 
 #include "freetdm.h"
+
 
 /* arbitrary limit for max calls in this sample program */
 #define MAX_CALLS 255

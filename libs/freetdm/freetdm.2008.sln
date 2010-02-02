@@ -53,6 +53,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testboost", "msvc\testboost
 		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testsangomaboost", "msvc\testboost\testsangomaboost.2008.vcproj", "{0DA69C18-4FA1-4E8C-89CE-12498637C5BE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -99,6 +101,10 @@ Global
 		{2B1BAF36-0241-43E7-B865-A8338AD48E2E}.Debug|Win32.Build.0 = Debug|Win32
 		{2B1BAF36-0241-43E7-B865-A8338AD48E2E}.Release|Win32.ActiveCfg = Release|Win32
 		{2B1BAF36-0241-43E7-B865-A8338AD48E2E}.Release|Win32.Build.0 = Release|Win32
+		{0DA69C18-4FA1-4E8C-89CE-12498637C5BE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0DA69C18-4FA1-4E8C-89CE-12498637C5BE}.Debug|Win32.Build.0 = Debug|Win32
+		{0DA69C18-4FA1-4E8C-89CE-12498637C5BE}.Release|Win32.ActiveCfg = Release|Win32
+		{0DA69C18-4FA1-4E8C-89CE-12498637C5BE}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
