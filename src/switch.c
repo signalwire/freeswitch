@@ -267,6 +267,8 @@ int main(int argc, char *argv[])
 	int nf = 0;					/* TRUE if we are running in nofork mode */
 	char *runas_user = NULL;
 	char *runas_group = NULL;
+#else
+	int win32_service = 0;
 #endif
 	int nc = 0;					/* TRUE if we are running in noconsole mode */
 	pid_t pid = 0;
@@ -357,19 +359,9 @@ int main(int argc, char *argv[])
 				} else {
 					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
 				}
-				{ /* Attempt to start service */
-					SERVICE_TABLE_ENTRY dispatchTable[] = {
-						{service_name, &service_main},
-						{NULL, NULL}
-					};
-					known_opt++;
-					if (StartServiceCtrlDispatcher(dispatchTable) == 0) {
-						/* Not loaded as a service */
-						fprintf(stderr, "Error Freeswitch loaded as a console app with -service option\n");
-						fprintf(stderr, "To install the service load freeswitch with -install\n");
-					}
-					exit(0);
-				}
+				known_opt++;
+				win32_service++;
+				continue;
 			}
 			if (local_argv[x] && !strcmp(local_argv[x], "-install")) {
 				char exePath[1024];
@@ -742,6 +734,21 @@ int main(int argc, char *argv[])
 		if (change_user_group(runas_user, runas_group) < 0) {
 			fprintf(stderr, "Failed to switch user / group\n" );
 			return 255;
+		}
+	}
+#else
+	if (win32_service) {
+		{ /* Attempt to start service */
+			SERVICE_TABLE_ENTRY dispatchTable[] = {
+				{service_name, &service_main},
+				{NULL, NULL}
+			};
+			if (StartServiceCtrlDispatcher(dispatchTable) == 0) {
+				/* Not loaded as a service */
+				fprintf(stderr, "Error Freeswitch loaded as a console app with -service option\n");
+				fprintf(stderr, "To install the service load freeswitch with -install\n");
+			}
+			exit(0);
 		}
 	}
 #endif
