@@ -427,7 +427,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 	}
 
 	if (err_str) {
-		if (!switch_stristr("already exists", err_str)) {
+		if (!switch_stristr("already exists", err_str) || !switch_stristr("duplicate key name", err_str)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
 		}
 		if (err) {
