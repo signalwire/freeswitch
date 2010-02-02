@@ -2725,7 +2725,10 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			}
 
 			/******************************************************************************************/
-
+			
+			if (tech_pvt->video_rtp_session) {
+				goto video_up;
+			}
 
 
 			if (!tech_pvt->local_sdp_video_port) {
