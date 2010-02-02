@@ -515,6 +515,8 @@ struct sofia_profile {
 	sofia_presence_type_t pres_type;
 	sofia_media_options_t media_options;
 	uint32_t force_subscription_expires;
+	char *user_agent_filter;
+	uint32_t max_registrations_perext;
 	switch_rtp_bug_flag_t auto_rtp_bugs;
 	uint32_t ib_calls;
 	uint32_t ob_calls;

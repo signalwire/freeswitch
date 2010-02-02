@@ -1647,6 +1647,15 @@ static int sofia_reg_nonce_callback(void *pArg, int argc, char **argv, char **co
 	return 0;
 }
 
+static int sofia_reg_regcount_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	int *ret = (int *) pArg;
+	if (argc == 1) {
+		*ret = atoi(argv[0]);
+	}
+	return 0;
+}
+
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, 
 								sip_authorization_t const *authorization, 
 								sip_t const *sip, 
@@ -1682,6 +1691,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	const char *auth_acl = NULL;
 	long ncl = 0;
 	sip_unknown_t *un;
+	const char *user_agent = NULL;
+	const char *user_agent_filter = profile->user_agent_filter;
+	uint32_t max_registrations_perext = profile->max_registrations_perext;
 
 	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
 
@@ -1741,6 +1753,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		}
 	}
 
+	user_agent = (sip && sip->sip_user_agent) ? sip->sip_user_agent->g_string : "unknown";
+
 	if (zstr(np)) {
 		nonce_cb_t cb = { 0 };
 		long nc_long = 0;
@@ -1777,8 +1791,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "sip_auth");
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_profile", profile->name);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_user_agent",
-								   (sip && sip->sip_user_agent) ? sip->sip_user_agent->g_string : "unknown");
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_user_agent", user_agent);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_username", username);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_realm", realm);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_nonce", nonce);
@@ -1905,6 +1918,13 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			if (!strcasecmp(var, "mwi-account")) {
 				mwi_account = val;
 			}
+			
+			if (!strcasecmp(var, "user-agent-filter")) {
+				user_agent_filter = val;
+			}
+			if (!strcasecmp(var, "max-registrations-per-extension")) {
+				max_registrations_perext = atoi(val);
+			}
 		}
 	}
 
@@ -1932,6 +1952,13 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			if (!strcasecmp(var, "mwi-account")) {
 				mwi_account = val;
 			}
+
+			if (!strcasecmp(var, "user-agent-filter")) {
+				user_agent_filter = val;
+			}
+			if (!strcasecmp(var, "max-registrations-per-extension")) {
+				max_registrations_perext = atoi(val);
+			}
 		}
 	}
 
@@ -1958,6 +1985,12 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			}
 			if (!strcasecmp(var, "mwi-account")) {
 				mwi_account = val;
+			}
+			if (!strcasecmp(var, "user-agent-filter")) {
+				user_agent_filter = val;
+			}
+			if (!strcasecmp(var, "max-registrations-per-extension")) {
+				max_registrations_perext = atoi(val);
 			}
 		}
 	}
@@ -2046,6 +2079,41 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 	}
 
+	if (user_agent_filter) {
+		if (switch_regex_match(user_agent, user_agent_filter) == SWITCH_STATUS_SUCCESS) {
+			if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SIP auth OK (REGISTER) due to user-agent-filter.  Filter \"%s\" User-Agent \"%s\"\n", user_agent_filter, user_agent);
+			}
+		} else {
+			ret = AUTH_FORBIDDEN;
+			if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth failure (REGISTER) due to user-agent-filter.  Filter \"%s\" User-Agent \"%s\"\n", user_agent_filter, user_agent);
+			}
+			goto end;
+		}
+	}
+
+	if (max_registrations_perext > 0 && 
+	   (sip && sip->sip_contact && 
+	   (sip->sip_contact->m_expires == NULL || atol(sip->sip_contact->m_expires) > 0))) {
+	   /* if expires is null still process */
+	   /* expires == 0 means the phone is going to unregiser, so don't count against max */
+		int count = 0;
+				
+		sql = switch_mprintf("select count(sip_user) from sip_registrations where sip_user='%q'", username);
+		switch_assert(sql != NULL);
+		sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_regcount_callback, &count);
+		free(sql);
+		
+		if (count+1 > max_registrations_perext) {
+			ret = AUTH_FORBIDDEN;
+			if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth failure (REGISTER) due to reaching max allowed registrations.  Count: %d\n", count);
+			}
+			goto end;
+		}
+	}
+	
   for_the_sake_of_interop:
 
 	if ((input = switch_mprintf("%s:%q", regstr, uri))) {

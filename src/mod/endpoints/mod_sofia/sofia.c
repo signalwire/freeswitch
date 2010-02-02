@@ -2191,6 +2191,10 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
+					} else if (!strcasecmp(var, "user-agent-filter")) {
+						profile->user_agent_filter = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "max-registrations-per-extension")) {
+						profile->max_registrations_perext = atoi(val);
 					} else if (!strcasecmp(var, "rfc2833-pt")) {
 						profile->te = (switch_payload_t) atoi(val);
 					} else if (!strcasecmp(var, "cng-pt") && !(sofia_test_pflag(profile, PFLAG_SUPPRESS_CNG))) {
@@ -2726,6 +2730,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_STUN_AUTO_DISABLE); 
 						}
+					} else if (!strcasecmp(var, "user-agent-filter")) {
+						profile->user_agent_filter = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "max-registrations-per-extension")) {
+						profile->max_registrations_perext = atoi(val);
 					} else if (!strcasecmp(var, "rfc2833-pt")) {
 						profile->te = (switch_payload_t) atoi(val);
 					} else if (!strcasecmp(var, "cng-pt") && !sofia_test_pflag(profile, PFLAG_SUPPRESS_CNG)) {

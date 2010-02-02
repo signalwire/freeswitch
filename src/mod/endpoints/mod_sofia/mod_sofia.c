@@ -2161,6 +2161,12 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "AGGRESSIVENAT    \t%s\n", sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
 					stream->write_function(stream, "STUN-ENABLED     \t%s\n", sofia_test_pflag(profile, PFLAG_STUN_ENABLED) ? "true" : "false");
 					stream->write_function(stream, "STUN-AUTO-DISABLE\t%s\n", sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
+					if (profile->user_agent_filter) {
+					stream->write_function(stream, "USER-AGENT-FILTER\t%s\n", switch_str_nil(profile->user_agent_filter));
+					}
+					if (profile->max_registrations_perext > 0) {
+					stream->write_function(stream, "MAX-REG-PEREXT   \t%d\n", profile->max_registrations_perext);
+					}
 					stream->write_function(stream, "CALLS-IN         \t%d\n", profile->ib_calls);
 					stream->write_function(stream, "FAILED-CALLS-IN  \t%d\n", profile->ib_failed_calls);
 					stream->write_function(stream, "CALLS-OUT        \t%d\n", profile->ob_calls);
@@ -2382,6 +2388,8 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <stun-enabled>%s</stun-enabled>\n", sofia_test_pflag(profile, PFLAG_STUN_ENABLED) ? "true" : "false");
 					stream->write_function(stream, "    <stun-auto-disable>%s</stun-auto-disable>\n", 
 										   sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
+					stream->write_function(stream, "    <user-agent-filter>%s</user-agent-filter>\n", switch_str_nil(profile->user_agent_filter));
+					stream->write_function(stream, "    <max-registrations-per-extension>%d</max-registrations-per-extension>\n", profile->max_registrations_perext);
 					stream->write_function(stream, "    <calls-in>%d</calls-in>\n", profile->ib_calls);
 					stream->write_function(stream, "    <calls-out>%d</calls-out>\n", profile->ob_calls);
 					stream->write_function(stream, "    <failed-calls-in>%d</failed-calls-in>\n", profile->ib_failed_calls);
