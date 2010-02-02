@@ -3249,7 +3249,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_remove_from_group(ftdm_group_t* group, ft
 
 static ftdm_status_t ftdm_group_add_channels(const char* name, ftdm_span_t* span, int currindex)
 {
-	int chan_index = 0;
+	unsigned chan_index = 0;
 
 	ftdm_assert_return(strlen(name) > 0, FTDM_FAIL, "Invalid group name provided\n");
 	ftdm_assert_return(currindex >= 0, FTDM_FAIL, "Invalid current channel index provided\n");

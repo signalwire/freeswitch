@@ -162,12 +162,12 @@ typedef struct
 #pragma pack()
 
 
-static inline int boost_full_event(int event_id)
+static __inline__ int boost_full_event(int event_id)
 {
         switch (event_id) {
         case SIGBOOST_EVENT_CALL_START:
         case SIGBOOST_EVENT_DIGIT_IN:
-	case SIGBOOST_EVENT_CALL_PROGRESS:
+		case SIGBOOST_EVENT_CALL_PROGRESS:
                 return 1;
         default:
                 break;
