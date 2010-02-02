@@ -733,7 +733,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 
 		switch_channel_set_variable(channel, SWITCH_UUID_BRIDGE, NULL);
 
-		switch_channel_wait_for_state(channel, other_channel, CS_RESET);
+		switch_channel_wait_for_state(other_channel, channel, CS_RESET);
 
 		if (switch_ivr_wait_for_answer(session, other_session) != SWITCH_STATUS_SUCCESS) {
 			switch_core_session_rwunlock(other_session);
@@ -745,7 +745,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 			switch_channel_set_state(other_channel, CS_SOFT_EXECUTE);
 		}
 
-		switch_channel_wait_for_state(channel, other_channel, CS_SOFT_EXECUTE);
+		switch_channel_wait_for_state(other_channel, channel, CS_SOFT_EXECUTE);
 
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
@@ -833,14 +833,40 @@ static switch_status_t sb_on_dtmf(switch_core_session_t *session, const switch_d
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t hanguphook(switch_core_session_t *session)
+{
+	switch_core_session_message_t msg = { 0 };
+	switch_channel_t *channel = NULL;
+
+	channel = switch_core_session_get_channel(session); 
+
+	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
+	msg.from = __FILE__;
+	msg.string_arg = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
+	
+	switch_core_session_receive_message(session, &msg);
+	switch_core_event_hook_remove_state_change(session, hanguphook);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
 
 static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	const char *key;
+	switch_core_session_message_t msg = { 0 };
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+
+	msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
+	msg.from = __FILE__;
+	msg.string_arg = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
+
+	switch_core_event_hook_add_state_change(session, hanguphook);
+
+	switch_core_session_receive_message(session, &msg);
 
 	if ((key = switch_channel_get_variable(channel, "bridge_terminate_key"))) {
 		switch_channel_set_private(channel, "__bridge_term_key", switch_core_session_strdup(session, key));
@@ -1180,7 +1206,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				switch_xml_t cdr;
 				char *xml_text;
 				
-				switch_channel_wait_for_state(caller_channel, peer_channel, CS_DESTROY);
+				switch_channel_wait_for_state(peer_channel, caller_channel, CS_DESTROY);
 
 				if (switch_ivr_generate_xml_cdr(peer_session, &cdr) == SWITCH_STATUS_SUCCESS) {
 					if ((xml_text = switch_xml_toxml(cdr, SWITCH_FALSE))) {
