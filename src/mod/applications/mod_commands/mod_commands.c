@@ -4133,7 +4133,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "strftime_tz", "strftime_tz", strftime_tz_api_function, "<Timezone_name> [format string]");
 	SWITCH_ADD_API(commands_api_interface, "stun", "stun", stun_function, "<stun_server>[:port]");
 	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "time_test", "time_test", time_test_function, "<mss>");
+	SWITCH_ADD_API(commands_api_interface, "time_test", "time_test", time_test_function, "<mss> [count]");
 	SWITCH_ADD_API(commands_api_interface, "timer_test", "timer_test", timer_test_function, TIMER_TEST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "tone_detect", "Start Tone Detection on a channel", tone_detect_session_function, TONE_DETECT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "unload", "Unload Module", unload_function, UNLOAD_SYNTAX);
