@@ -1,11 +1,11 @@
 BASE=../../../..
 
-CELT=celt-0.7.0-1
+CELT=celt-0.7.1
 
 CELT_DIR=$(switch_srcdir)/libs/$(CELT)
 CELT_BUILDDIR=$(switch_builddir)/libs/$(CELT)
 LOCAL_CFLAGS=-I$(CELT_DIR)/libcelt
-CELT_LA=$(CELT_BUILDDIR)/libcelt/.libs/libcelt.la
+CELT_LA=$(CELT_BUILDDIR)/libcelt/.libs/libcelt0.la
 LOCAL_LIBADD=$(CELT_LA)
 include $(BASE)/build/modmake.rules
 
