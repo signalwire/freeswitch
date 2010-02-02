@@ -174,7 +174,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, c
 	int error_offset = 0;		/* Holds the offset of an error                                      */
 	pcre *pcre_prepared = NULL;	/* Holds the compiled regex                                          */
 	int match_count = 0;		/* Number of times the regex was matched                             */
-	int offset_vectors[2];		/* not used, but has to exist or pcre won't even try to find a match */
+	int offset_vectors[255];	/* not used, but has to exist or pcre won't even try to find a match */
 	int pcre_flags = 0;
 	
 	/* Compile the expression */
