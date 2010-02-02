@@ -1,6 +1,6 @@
 ## no idea how to simply ask ruby which one to use
 LOCAL_CFLAGS=-I$(shell ruby -e 'require "rbconfig"; puts RbConfig::CONFIG["topdir"]')
-LOCAL_LDFLAGS=$(shell ruby -e 'require "rbconfig"; puts RbConfig::CONFIG["LIBRUBYARG"]')
+LOCAL_LDFLAGS=$(shell ruby -e 'require "rbconfig"; puts RbConfig::CONFIG["LIBS"]')
 
 all: ESL.so
 
