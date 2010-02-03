@@ -4686,6 +4686,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 typedef struct {
 	char *exten;
+	char *exten_with_params;
 	char *event;
 	char *reply_uuid;
 	char *bridge_to_uuid;
@@ -4710,7 +4711,7 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 			private_object_t *tech_pvt = switch_core_session_get_private(session);
 			switch_channel_t *channel_a = switch_core_session_get_channel(session);
 
-			if ((status = switch_ivr_originate(NULL, &tsession, &cause, nhelper->exten, timeout, NULL, NULL, NULL,
+			if ((status = switch_ivr_originate(NULL, &tsession, &cause, nhelper->exten_with_params, timeout, NULL, NULL, NULL,
 											   switch_channel_get_caller_profile(channel_a), 
 											   nhelper->vars, SOF_NONE, NULL)) == SWITCH_STATUS_SUCCESS) {
 				if (switch_channel_up(channel_a)) {
@@ -5099,8 +5100,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 						if ((a_session = switch_core_session_locate(br_a))) {
 							const char *port = NULL;
-							char *param_string = "";
-							int count = 0, bytes = 0;
+							const char *rep_h = NULL;
 
 							if (refer_to && refer_to->r_url && refer_to->r_url->url_port) {
 								port = refer_to->r_url->url_port;
@@ -5108,26 +5108,6 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 							channel = switch_core_session_get_channel(a_session);
 							
-							if (refer_to->r_params) {
-								for (count = 0; refer_to->r_params[count] ; count++) {
-									bytes += strlen(refer_to->r_params[count]) + 1;
-								}
-
-								if (bytes) {
-									bytes += 2;
-
-									param_string = switch_core_session_alloc(session, bytes);
-									*param_string = ';';
-									for (count = 0; refer_to->r_params[count] ; count++) {
-										switch_snprintf(param_string + strlen(param_string), bytes - strlen(param_string), "%s;", refer_to->r_params[count]);
-									}
-								
-									if (end_of(param_string) == ';') {
-										end_of(param_string) = '\0';
-									}
-								}
-							}
-
 							exten = switch_core_session_sprintf(session, "sofia/%s/sip:%s@%s%s%s", 
 																profile->name, refer_to->r_url->url_user, 
 																refer_to->r_url->url_host,
@@ -5136,14 +5116,64 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							switch_core_new_memory_pool(&npool);
 							nightmare_xfer_helper = switch_core_alloc(npool, sizeof(*nightmare_xfer_helper));
 							nightmare_xfer_helper->exten = switch_core_strdup(npool, exten);
+
+							if (refer_to->r_url && (refer_to->r_url->url_params || refer_to->r_url->url_headers) ) {
+								if (refer_to->r_url->url_headers) {
+									nightmare_xfer_helper->exten_with_params = switch_core_sprintf(npool, 
+										"{sip_invite_params=%s?%s}%s", refer_to->r_url->url_params ? refer_to->r_url->url_params : "", 
+										refer_to->r_url->url_headers, exten);
+								} else {
+									nightmare_xfer_helper->exten_with_params = switch_core_sprintf(npool, 
+										"{sip_invite_params=%s}%s", refer_to->r_url->url_params, exten);
+								}
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "INVITE RURI '%s'\n", 
+									nightmare_xfer_helper->exten_with_params);
+							} else {
+								nightmare_xfer_helper->exten_with_params = nightmare_xfer_helper->exten;
+							}
+
 							nightmare_xfer_helper->event = switch_core_strdup(npool, etmp);
 							nightmare_xfer_helper->reply_uuid = switch_core_strdup(npool, switch_core_session_get_uuid(session));
 							nightmare_xfer_helper->bridge_to_uuid = switch_core_strdup(npool, br_a);
 							nightmare_xfer_helper->pool = npool;
+
+							if (refer_to->r_url && refer_to->r_url->url_headers) {
+								char *h, *v, *hp;
+								p = switch_core_session_strdup(session, refer_to->r_url->url_headers);
+								while (p && *p) {
+									h = p;   
+									if ((p = strchr(p, '='))) {
+										*p++ = '\0';
+										v = p;
+										if ((p = strchr(p, '&'))) {
+											*p++ = '\0';
+										}
+										 
+										url_unescape(h, (const char *)h);
+										url_unescape(v, (const char *)v);
+										if (strcasecmp("Replaces",h)) {  
+											hp = switch_core_session_sprintf(session, "%s%s", SOFIA_SIP_HEADER_PREFIX, h);
+											switch_channel_set_variable(channel, hp, v);
+										} else {
+											// use this one instead of rep value from above to keep all parameters
+											switch_channel_set_variable(channel, SOFIA_REPLACES_HEADER, v);
+										}
+										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Exporting replaces URL header [%s:%s]\n", h, v);
+									} 
+								}
+							}
+
+
 							switch_event_create(&nightmare_xfer_helper->vars, SWITCH_EVENT_CHANNEL_DATA);
 
-							switch_event_add_header_string(nightmare_xfer_helper->vars, SWITCH_STACK_BOTTOM, SOFIA_REPLACES_HEADER, rep);
+							rep_h = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
+							if (rep_h) {
+								switch_event_add_header_string(nightmare_xfer_helper->vars, SWITCH_STACK_BOTTOM, SOFIA_REPLACES_HEADER, rep_h);
+							} else {
+								switch_event_add_header_string(nightmare_xfer_helper->vars, SWITCH_STACK_BOTTOM, SOFIA_REPLACES_HEADER, rep);
+							}
 							
+	
 							if (!zstr(full_ref_by)) {
 								switch_event_add_header_string(nightmare_xfer_helper->vars, SWITCH_STACK_BOTTOM, "Referred-By", full_ref_by);
 							}
