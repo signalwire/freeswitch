@@ -274,6 +274,15 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 				}
 			}
 
+#ifdef LIBSANGOMA_VERSION
+			if (type == ZAP_CHAN_TYPE_FXS) {
+				if (sangoma_tdm_disable_ring_trip_detect_events(chan->sockfd, &tdm_api)) {
+					/* we had problems of on-hook/off-hook detection due to how ring trip events were handled
+					 * if this fails, I believe we will still work ok as long as we dont handle them incorrectly */
+					zap_log(ZAP_LOG_WARNING, "Failed to disable ring trip events in channel s%dc%d\n", spanno, x);
+				}
+			}
+#endif
 #if 0
             if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
                 /* Enable FLASH/Wink Events */
@@ -990,11 +999,14 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? ZAP_OOB_RING_START : ZAP_OOB_RING_STOP;
 				}
 				break;
+				/*
+				disabled this ones when configuring, we don't need them, do we?
 			case WP_TDMAPI_EVENT_RING_TRIP_DETECT:
 				{
 					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? ZAP_OOB_ONHOOK : ZAP_OOB_OFFHOOK;
 				}
 				break;
+				*/
 			case WP_TDMAPI_EVENT_RBS:
 				{
 					event_id = ZAP_OOB_CAS_BITS_CHANGE;
