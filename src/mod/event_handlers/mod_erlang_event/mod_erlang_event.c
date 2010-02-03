@@ -414,7 +414,11 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	_ei_x_encode_string(&buf, key_name ? key_name : "undefined");
 	_ei_x_encode_string(&buf, key_value ? key_value : "undefined");
 	_ei_x_encode_string(&buf, uuid_str);
-	ei_encode_switch_event_headers(&buf, params);
+	if (params) {
+		ei_encode_switch_event_headers(&buf, params);
+	} else {
+		ei_x_encode_empty_list(&buf);
+	}
 
 	switch_core_hash_insert(ptr->listener->fetch_reply_hash, uuid_str, &globals.WAITING);
 
