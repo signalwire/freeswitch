@@ -2032,16 +2032,6 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 		}
 	}
 
-	if (tech_pvt->rtp_session) {
-		switch_rtp_destroy(&tech_pvt->rtp_session);
-	} else if (tech_pvt->local_sdp_audio_port) {
-		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_audio_port);
-	}
-
-	if (tech_pvt->local_sdp_audio_port > 0 && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) { 
-		switch_nat_del_mapping((switch_port_t)tech_pvt->local_sdp_audio_port, SWITCH_NAT_UDP);
-	}
-	
 	if (tech_pvt->video_rtp_session) {
 		switch_rtp_destroy(&tech_pvt->video_rtp_session);
 	} else if (tech_pvt->local_sdp_video_port) {
@@ -2052,6 +2042,18 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 	if (tech_pvt->local_sdp_video_port > 0 && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) { 
 		switch_nat_del_mapping((switch_port_t)tech_pvt->local_sdp_video_port, SWITCH_NAT_UDP);
 	}
+
+
+	if (tech_pvt->rtp_session) {
+		switch_rtp_destroy(&tech_pvt->rtp_session);
+	} else if (tech_pvt->local_sdp_audio_port) {
+		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_audio_port);
+	}
+
+	if (tech_pvt->local_sdp_audio_port > 0 && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) { 
+		switch_nat_del_mapping((switch_port_t)tech_pvt->local_sdp_audio_port, SWITCH_NAT_UDP);
+	}
+	
 }
 
 switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force)
@@ -2749,7 +2751,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			sofia_glue_tech_set_video_codec(tech_pvt, 0);
 
 			flags &= ~(SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_NOBLOCK);
-			flags |= SWITCH_RTP_FLAG_VIDEO | SWITCH_RTP_FLAG_PROXY_MEDIA;
+			flags |= SWITCH_RTP_FLAG_VIDEO;
 
 			tech_pvt->video_rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
 														 tech_pvt->local_sdp_video_port,

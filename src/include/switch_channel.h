@@ -434,6 +434,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *cha
   \return void pointer to channel's private data
 */
 SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, const char *key);
+SWITCH_DECLARE(void *) switch_channel_get_private_partner(switch_channel_t *channel, const char *key);
 
 /*!
   \brief Assign a name to a given channel

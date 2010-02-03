@@ -21111,6 +21111,23 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_set_variable_printf(void * jarg
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_set_variable_name_printf(void * jarg1, char * jarg2, char * jarg3) {
+  int jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  void *arg4 = 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (switch_status_t)switch_channel_set_variable_name_printf(arg1,(char const *)arg2,(char const *)arg3,arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_set_variable_partner_var_check(void * jarg1, char * jarg2, char * jarg3, int jarg4) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
@@ -21562,6 +21579,20 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_private(void * jarg1, ch
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (char *)jarg2; 
   result = (void *)switch_channel_get_private(arg1,(char const *)arg2);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_private_partner(void * jarg1, char * jarg2) {
+  void * jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  void *result = 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (void *)switch_channel_get_private_partner(arg1,(char const *)arg2);
   jresult = (void *)result; 
   return jresult;
 }
@@ -22746,15 +22777,17 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_add_header_string(void * jarg1, i
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_del_header(void * jarg1, char * jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_del_header_val(void * jarg1, char * jarg2, char * jarg3) {
   int jresult ;
   switch_event_t *arg1 = (switch_event_t *) 0 ;
   char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
   switch_status_t result;
   
   arg1 = (switch_event_t *)jarg1; 
   arg2 = (char *)jarg2; 
-  result = (switch_status_t)switch_event_del_header(arg1,(char const *)arg2);
+  arg3 = (char *)jarg3; 
+  result = (switch_status_t)switch_event_del_header_val(arg1,(char const *)arg2,(char const *)arg3);
   jresult = result; 
   return jresult;
 }

@@ -623,6 +623,24 @@ SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, con
 	return val;
 }
 
+SWITCH_DECLARE(void *) switch_channel_get_private_partner(switch_channel_t *channel, const char *key)
+{
+	const char *uuid;
+	void *val = NULL;
+
+	switch_assert(channel != NULL);
+
+	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+		switch_core_session_t *session;
+		if ((session = switch_core_session_locate(uuid))) {
+			val = switch_core_hash_find_locked(channel->private_hash, key, channel->profile_mutex);
+			switch_core_session_rwunlock(session);
+		}
+	}
+
+	return val;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_set_name(switch_channel_t *channel, const char *name)
 {
 	const char *old = NULL;
