@@ -511,6 +511,25 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", argv[7]);
 			switch_event_fire(&s_event);
 		}
+
+		if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", "away");
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->url);
+
+			if (argv[4]) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", argv[4]);
+			}
+
+			if (argv[1] && argv[2]) {
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", argv[1], argv[2]);
+			}
+
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", "Unregistered");
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_fire(&s_event);
+		}
+
 	}
 	return 0;
 }
@@ -1190,7 +1209,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 
 	} else {
-
+		
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
