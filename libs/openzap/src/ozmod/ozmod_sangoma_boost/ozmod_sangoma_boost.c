@@ -1095,7 +1095,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			zap_set_sflag_locked(zchan, SFLAG_HANGUP);
 
-			if (zap_test_sflag(zchan, SFLAG_SENT_FINAL_MSG)) {
+			if (zap_test_sflag(zchan, SFLAG_SENT_FINAL_MSG) || zap_test_sflag(zchan, SFLAG_TERMINATING)) {
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE);
 			} else {
 				zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_MSG);
@@ -1126,7 +1126,6 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			zap_set_sflag_locked(zchan, SFLAG_TERMINATING);
 			sig.event_id = ZAP_SIGEVENT_STOP;
 			status = zap_span_send_signal(zchan->span, &sig);
-			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE);
 		}
 		break;
 	default:
@@ -1468,7 +1467,7 @@ static zap_state_map_t boost_state_map = {
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
 			{ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_TERMINATING, ZAP_END},
-			{ZAP_CHANNEL_STATE_HANGUP_COMPLETE, ZAP_END}
+			{ZAP_CHANNEL_STATE_HANGUP_COMPLETE, ZAP_CHANNEL_STATE_HANGUP, ZAP_END}
 		},
 		{
 			ZSD_OUTBOUND,
