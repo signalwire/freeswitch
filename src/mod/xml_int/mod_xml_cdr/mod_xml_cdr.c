@@ -35,6 +35,11 @@
 #include <curl/curl.h>
 #define MAX_URLS 20
 
+#define ENCODING_NONE 0
+#define ENCODING_DEFAULT 1
+#define ENCODING_BASE64 2
+#define ENCODING_TEXTXML 2
+
 static struct {
 	char *cred;
 	char *urls[MAX_URLS+1];
@@ -255,15 +260,18 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 	/* try to post it to the web server */
 	if (globals.url_count) {
+		char* destUrl = NULL;
 		curl_handle = curl_easy_init();
 
-		if (globals.encode) {
+		if (globals.encode == ENCODING_TEXTXML) {
+			headers = curl_slist_append(headers, "Content-Type: text/xml");
+		} else if (globals.encode) {
 			switch_size_t need_bytes = strlen(xml_text) * 3;
 
 			xml_text_escaped = malloc(need_bytes);
 			switch_assert(xml_text_escaped);
 			memset(xml_text_escaped, 0, need_bytes);
-			if (globals.encode == 1) {
+			if (globals.encode == ENCODING_DEFAULT) {
 				headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
 				switch_url_encode(xml_text, xml_text_escaped, need_bytes);
 			} else {
@@ -276,7 +284,9 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			headers = curl_slist_append(headers, "Content-Type: application/x-www-form-plaintext");
 		}
 
-		if (!(curl_xml_text = switch_mprintf("cdr=%s", xml_text))) {
+		if (globals.encode == ENCODING_TEXTXML) {
+			curl_xml_text = xml_text;
+		} else if (!(curl_xml_text = switch_mprintf("cdr=%s", xml_text))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			goto error;
 		}
@@ -331,9 +341,10 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				switch_yield(globals.delay * 1000000);
 			}
 			
-			curl_easy_setopt(curl_handle, CURLOPT_URL, globals.urls[globals.url_index]);
+			destUrl = switch_mprintf("%s?uuid=%s", globals.urls[globals.url_index], switch_core_session_get_uuid(session));
+			curl_easy_setopt(curl_handle, CURLOPT_URL, destUrl);
 
-			if (!strncasecmp(globals.urls[globals.url_index], "https", 5)) {
+			if (!strncasecmp(destUrl, "https", 5)) {
 				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 			}
@@ -348,6 +359,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 			curl_easy_perform(curl_handle);
 			curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+			switch_safe_free(destUrl);
 			if (httpRes == 200) {
 				goto success;
 			} else {
@@ -409,7 +421,9 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	if (slist) {
 		curl_slist_free_all(slist);
 	}
-	switch_safe_free(curl_xml_text);
+	if (curl_xml_text != xml_text) {
+		switch_safe_free(curl_xml_text);
+	}
 	switch_safe_free(xml_text);
 	switch_safe_free(path);
 	switch_xml_free(cdr);
@@ -495,9 +509,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.disable100continue = 1;
 			} else if (!strcasecmp(var, "encode") && !zstr(val)) {
 				if (!strcasecmp(val, "base64")) {
-					globals.encode = 2;
+					globals.encode = ENCODING_BASE64;
+				} else if (!strcasecmp(val, "textxml")) {
+					globals.encode = ENCODING_TEXTXML;
 				} else {
-					globals.encode = switch_true(val) ? 1 : 0;
+					globals.encode = switch_true(val) ? ENCODING_DEFAULT : ENCODING_NONE;
 				}
 			} else if (!strcasecmp(var, "retries") && !zstr(val)) {
 				globals.retries = (uint32_t) atoi(val);
