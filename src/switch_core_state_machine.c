@@ -184,7 +184,9 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 	}
 
 	if (switch_channel_ready(session->channel) && switch_channel_get_state(session->channel) == CS_EXECUTE) {
-		switch_channel_hangup(session->channel, SWITCH_CAUSE_NORMAL_CLEARING);		
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s has executed the last dialplan instruction, hanging up.\n", 
+						  switch_channel_get_name(session->channel));
+		switch_channel_hangup(session->channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	}
 }
 
