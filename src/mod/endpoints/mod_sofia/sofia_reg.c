@@ -1701,6 +1701,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	const char *passwd = NULL;
 	const char *a1_hash = NULL;
 	const char *mwi_account = NULL;
+	const char *call_id = NULL;
 	char *sql;
 	char *number_alias = NULL;
 	switch_xml_t domain, xml = NULL, user, param, uparams, dparams, group = NULL, gparams = NULL;
@@ -2118,8 +2119,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	   /* if expires is null still process */
 	   /* expires == 0 means the phone is going to unregiser, so don't count against max */
 		int count = 0;
-				
-		sql = switch_mprintf("select count(sip_user) from sip_registrations where sip_user='%q'", username);
+
+		call_id = sip->sip_call_id->i_id;
+		switch_assert(call_id);
+		
+		sql = switch_mprintf("select count(sip_user) from sip_registrations where sip_user='%q' AND call_id <> '%q'", username, call_id);
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_regcount_callback, &count);
 		free(sql);
