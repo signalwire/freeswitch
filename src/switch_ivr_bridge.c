@@ -735,12 +735,6 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 
 		switch_channel_wait_for_state(other_channel, channel, CS_RESET);
 
-		if (switch_ivr_wait_for_answer(session, other_session) != SWITCH_STATUS_SUCCESS) {
-			switch_core_session_rwunlock(other_session);
-			switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
-			return SWITCH_STATUS_FALSE;
-		}
-
 		if (switch_channel_get_state(other_channel) == CS_RESET) {
 			switch_channel_set_state(other_channel, CS_SOFT_EXECUTE);
 		}
@@ -749,6 +743,11 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
+		if (switch_ivr_wait_for_answer(session, other_session) != SWITCH_STATUS_SUCCESS) {
+			switch_core_session_rwunlock(other_session);
+			switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+			return SWITCH_STATUS_FALSE;
+		}
 
 		ready_a = switch_channel_ready(channel);
 		ready_b = switch_channel_ready(other_channel);
