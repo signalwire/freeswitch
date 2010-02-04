@@ -55,7 +55,6 @@
 				WarnAsError="true"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100;6053;4706"
-				EnablePREfast="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -138,7 +137,6 @@
 				WarnAsError="true"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100;6053;4706"
-				EnablePREfast="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

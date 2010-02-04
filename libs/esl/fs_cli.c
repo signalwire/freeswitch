@@ -891,7 +891,7 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 
 	if (global_handle->last_sr_event && global_handle->last_sr_event->body) {
 		char *r = global_handle->last_sr_event->body;
-		char *w, *p;
+		char *w, *p1;
 		
 		if (r) {
 			if ((w = strstr(r, "\n\nwrite="))) {
@@ -901,8 +901,8 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 
 				len = atoi(w);
 
-				if ((p = strchr(w, ':'))) {
-					w = p + 1;
+				if ((p1= strchr(w, ':'))) {
+					w = p1+ 1;
 				}
 				
 				printf("%s\n\n\n", r);
