@@ -1720,7 +1720,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			switch_event_create_plain(&listener->filters, SWITCH_EVENT_CHANNEL_DATA);
 		}
 		
-		if (!strcasecmp(header_name, "delete")) {
+		if (!strcasecmp(header_name, "delete") && header_val) {
 			header_name = header_val;
 			if ((header_val = strchr(header_name, ' '))) {
 				*header_val++ = '\0';
