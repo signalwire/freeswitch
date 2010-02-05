@@ -2860,6 +2860,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		int ok = 1;
 		switch_event_t *locate_params = NULL;
 		const char *email_addr = NULL;
+		char *x;
+		
 
 		switch_event_create(&locate_params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(locate_params);
@@ -2867,6 +2869,13 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		if (switch_xml_locate_user("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
 								   &x_domain_root, &x_domain, &x_user, NULL, locate_params) == SWITCH_STATUS_SUCCESS) {
 			id = switch_core_session_strdup(session, switch_xml_attr(x_user, "id"));
+
+			x = switch_xml_toxml(x_user, SWITCH_FALSE);
+			x_user = switch_xml_parse_str_dynamic(x, SWITCH_FALSE);
+			x_domain = NULL;
+			switch_xml_free(x_domain_root);
+			x_domain_root = NULL;
+			
 			if ((x_params = switch_xml_child(x_user, "params"))) {
 				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");
@@ -3111,13 +3120,7 @@ greet_key_press:
 		}
 	}
 	
-	if (!x_domain_root) {
-		switch_xml_locate_user("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
-							   &x_domain_root, &x_domain, &x_user, NULL, NULL);
-		id = switch_core_session_strdup(session, switch_xml_attr(x_user, "id"));
-	}
-
-	if (x_domain_root) {
+	if (x_user) {
 		switch_channel_get_variables(channel, &vars);
 		status = deliver_vm(profile, x_user, domain_name, file_path, message_len, read_flags, vars, 
 							switch_core_session_get_pool(session), caller_id_name, caller_id_number, NULL, SWITCH_FALSE);
@@ -3142,9 +3145,9 @@ greet_key_press:
 
   end:
 
-	if (x_domain_root) {
-		switch_xml_free(x_domain_root);
-		x_domain_root = NULL;
+	if (x_user) {
+		switch_xml_free(x_user);
+		x_user = NULL;
 	}
 
 	switch_safe_free(file_path);
