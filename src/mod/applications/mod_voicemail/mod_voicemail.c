@@ -2892,6 +2892,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 						disk_quota = atoi(val);
 					} else if (!strcasecmp(var, "vm-alternate-greet-id")) {
 						read_id = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "vm-message-ext")) {
+						vm_ext = switch_core_session_strdup(session, val);
 					}
 				}
 			}
@@ -2952,7 +2954,9 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_snprintf(sql, sizeof(sql), "select * from voicemail_prefs where username='%s' and domain='%s'", id, domain_name);
 	vm_execute_sql_callback(profile, profile->mutex, sql, prefs_callback, &cbt);
 
-	vm_ext = profile->file_ext;
+	if (!vm_ext) {
+		vm_ext = profile->file_ext;
+	}
 	if ((vtmp = switch_channel_get_variable(channel, "vm_message_ext"))) {
 		vm_ext = vtmp;
 	}
