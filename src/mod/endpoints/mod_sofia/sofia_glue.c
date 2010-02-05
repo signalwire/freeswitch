@@ -3835,25 +3835,27 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 	char reg_sql[] =
 		"CREATE TABLE sip_registrations (\n"
-		"   call_id         VARCHAR(255),\n"
-		"   sip_user        VARCHAR(255),\n"
-		"   sip_host        VARCHAR(255),\n"
-		"   presence_hosts  VARCHAR(255),\n"
-		"   contact         VARCHAR(1024),\n"
-		"   status          VARCHAR(255),\n"
-		"   rpid            VARCHAR(255),\n" 
-		"   expires         INTEGER,\n" 
-		"   user_agent      VARCHAR(255),\n" 
-		"   server_user     VARCHAR(255),\n"
-		"   server_host     VARCHAR(255),\n" 
-		"   profile_name    VARCHAR(255),\n" 
-		"   hostname        VARCHAR(255),\n" 
-		"   network_ip      VARCHAR(255),\n" 
-		"   network_port    VARCHAR(6),\n" 
-		"   sip_username    VARCHAR(255),\n" 
-		"   sip_realm       VARCHAR(255),\n"
-		"   mwi_user        VARCHAR(255),\n"
-		"   mwi_host        VARCHAR(255)\n"
+		"   call_id          VARCHAR(255),\n"
+		"   sip_user         VARCHAR(255),\n"
+		"   sip_host         VARCHAR(255),\n"
+		"   presence_hosts   VARCHAR(255),\n"
+		"   contact          VARCHAR(1024),\n"
+		"   status           VARCHAR(255),\n"
+		"   rpid             VARCHAR(255),\n" 
+		"   expires          INTEGER,\n" 
+		"   user_agent       VARCHAR(255),\n" 
+		"   server_user      VARCHAR(255),\n"
+		"   server_host      VARCHAR(255),\n" 
+		"   profile_name     VARCHAR(255),\n" 
+		"   hostname         VARCHAR(255),\n" 
+		"   network_ip       VARCHAR(255),\n" 
+		"   network_port     VARCHAR(6),\n" 
+		"   sip_username     VARCHAR(255),\n" 
+		"   sip_realm        VARCHAR(255),\n"
+		"   mwi_user         VARCHAR(255),\n"
+		"   mwi_host         VARCHAR(255),\n"
+		"   orig_server_host VARCHAR(255),\n"
+		"   orig_hostname    VARCHAR(255)\n"
 		");\n";
 
 
@@ -3963,6 +3965,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			"create index sr_network_port on sip_registrations (network_port)",
 			"create index sr_sip_username on sip_registrations (sip_username)",
 			"create index sr_sip_realm on sip_registrations (sip_realm)",
+			"create index sr_orig_server_host on sip_registrations (orig_server_host)",
+			"create index sr_orig_hostname on sip_registrations (orig_hostname)",
 			"create index ss_call_id on sip_subscriptions (call_id)",
 			"create index ss_hostname on sip_subscriptions (hostname)",
 			"create index ss_network_ip on sip_subscriptions (network_ip)",
@@ -4011,7 +4015,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
 								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q' "
 								  "and network_ip like '%%' and network_port like '%%' and sip_username "
-								  "like '%%' and mwi_user  like '%%' and mwi_host like '%%'", 
+								  "like '%%' and mwi_user  like '%%' and mwi_host like '%%' "
+								  "and orig_server_host like '%%' and orig_hostname like '%%'", 
 								  mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
@@ -4101,7 +4106,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
 								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q' "
 								  "and network_ip like '%%' and network_port like '%%' and sip_username "
-								  "like '%%' and mwi_user like '%%' and mwi_host like '%%'",
+								  "like '%%' and mwi_user like '%%' and mwi_host like '%%'"
+								  "and orig_server_host like '%%' and orig_hostname like '%%'", 
 								  mod_sofia_globals.hostname);
 		
 		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_registrations", reg_sql);
@@ -4171,6 +4177,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_exec(db, "create index if not exists sr_network_port on sip_registrations (network_port)", NULL, NULL, NULL);
 		switch_core_db_exec(db, "create index if not exists sr_sip_username on sip_registrations (sip_username)", NULL, NULL, NULL);
 		switch_core_db_exec(db, "create index if not exists sr_sip_realm on sip_registrations (sip_realm)", NULL, NULL, NULL);
+		switch_core_db_exec(db, "create index if not exists sr_orig_server_host on sip_registrations (orig_server_host)", NULL, NULL, NULL);
+		switch_core_db_exec(db, "create index if not exists sr_orig_hostname on sip_registrations (orig_hostname)", NULL, NULL, NULL);
 
 
 		switch_core_db_exec(db, "create index if not exists ss_call_id on sip_subscriptions (call_id)", NULL, NULL, NULL);

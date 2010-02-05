@@ -888,24 +888,63 @@ void sofia_event_callback(nua_event_t event,
 void event_handler(switch_event_t *event)
 {
 	char *subclass, *sql;
+	char *class;
+	switch_event_t *pevent;
 
-	if ((subclass = switch_event_get_header(event, "orig-event-subclass")) && !strcasecmp(subclass, MY_EVENT_REGISTER)) {
-		char *from_user = switch_event_get_header(event, "orig-from-user");
-		char *from_host = switch_event_get_header(event, "orig-from-host");
-		char *to_host = switch_event_get_header(event, "orig-to-host");
-		char *contact_str = switch_event_get_header(event, "orig-contact");
-		char *exp_str = switch_event_get_header(event, "orig-expires");
-		char *rpid = switch_event_get_header(event, "orig-rpid");
-		char *call_id = switch_event_get_header(event, "orig-call-id");
-		char *user_agent = switch_event_get_header(event, "orig-user-agent");
+	/* Get Original Event Name */
+	class = switch_event_get_header_nil(event, "orig-event-name");
+	if (!strcasecmp(class, "PRESENCE_IN")) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nGot Presence IN event via MultiCast\n");
+		if (switch_event_create(&pevent, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+		        		switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "proto", switch_event_get_header_nil(event, "orig-proto"));
+                        switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "login", switch_event_get_header_nil(event, "orig-login"));
+                        switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "from", switch_event_get_header_nil(event, "orig-from"));
+                        switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "rpid", switch_event_get_header_nil(event, "orig-rpid"));
+                        switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "status", switch_event_get_header_nil(event, "orig-status"));
+                        switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "answer-state", switch_event_get_header_nil(event, "orig-answer-state"));
+                        switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "alt_event_type", switch_event_get_header_nil(event, "orig-alt_event_type"));
+                        switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "presence-call-direction", switch_event_get_header_nil(event, "orig-presence-call-direction"));
+                        switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "channel-state", switch_event_get_header_nil(event, "orig-channel-state"));
+                        switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "call-direction", switch_event_get_header_nil(event, "orig-call-direction"));
+			/* we cannot use switch_event_fire, or otherwise we'll start an endless loop */
+			sofia_presence_event_handler(pevent);
+			return;
+		} else {		
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nCannot inject PRESENCE_IN event\n");
+			return;
+		}
+	} else if (!strcasecmp(class, "MESSAGE_WAITING")) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nGot MWI event via MultiCast\n");
+		if (switch_event_create(&pevent, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", switch_event_get_header_nil(event, "orig-MWI-Messages-Waiting"));
+			switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "MWI-Message-Account", switch_event_get_header_nil(event, "orig-MWI-Message-Account"));
+			switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", switch_event_get_header_nil(event, "orig-MWI-Voice-Message"));
+			/* we cannot use switch_event_fire, or otherwise we'll start an endless loop */
+			sofia_presence_mwi_event_handler(pevent);
+			return;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nCannot inject MWI event\n");
+			return;
+		}
+	} else if ((subclass = switch_event_get_header_nil(event, "orig-event-subclass")) && !strcasecmp(subclass, MY_EVENT_REGISTER)) {
+		char *from_user = switch_event_get_header_nil(event, "orig-from-user");
+		char *from_host = switch_event_get_header_nil(event, "orig-from-host");
+		char *to_host = switch_event_get_header_nil(event, "orig-to-host");
+		char *contact_str = switch_event_get_header_nil(event, "orig-contact");
+		char *exp_str = switch_event_get_header_nil(event, "orig-expires");
+		char *rpid = switch_event_get_header_nil(event, "orig-rpid");
+		char *call_id = switch_event_get_header_nil(event, "orig-call-id");
+		char *user_agent = switch_event_get_header_nil(event, "orig-user-agent");
 		long expires = (long) switch_epoch_time_now(NULL);
-		char *profile_name = switch_event_get_header(event, "orig-profile-name");
-		char *to_user = switch_event_get_header(event, "orig-to-user");
-		char *presence_hosts = switch_event_get_header(event, "orig-presence-hosts");
-		char *network_ip = switch_event_get_header(event, "orig-network-ip");
-		char *network_port = switch_event_get_header(event, "orig-network-port");
-		char *username = switch_event_get_header(event, "orig-username");
-		char *realm = switch_event_get_header(event, "orig-realm");
+		char *profile_name = switch_event_get_header_nil(event, "orig-profile-name");
+		char *to_user = switch_event_get_header_nil(event, "orig-to-user");
+		char *presence_hosts = switch_event_get_header_nil(event, "orig-presence-hosts");
+		char *network_ip = switch_event_get_header_nil(event, "orig-network-ip");
+		char *network_port = switch_event_get_header_nil(event, "orig-network-port");
+		char *username = switch_event_get_header_nil(event, "orig-username");
+		char *realm = switch_event_get_header_nil(event, "orig-realm");
+		char *orig_server_host = switch_event_get_header_nil(event, "orig-FreeSWITCH-IPv4");
+		char *orig_hostname = switch_event_get_header_nil(event, "orig-FreeSWITCH-Hostname");
 		char *fixed_contact_str = NULL;
 
 		sofia_profile_t *profile = NULL;
@@ -916,7 +955,7 @@ void event_handler(switch_event_t *event)
 		char *mwi_user = NULL;
 		char *mwi_host = NULL;
 
-		if ((mwi_account = switch_event_get_header(event, "orig-mwi-account"))) {
+		if ((mwi_account = switch_event_get_header_nil(event, "orig-mwi-account"))) {
 			dup_mwi_account = strdup(mwi_account);
 			switch_assert(dup_mwi_account != NULL);
 			sofia_glue_get_user_host(dup_mwi_account, &mwi_user, &mwi_host);
@@ -963,7 +1002,20 @@ void event_handler(switch_event_t *event)
 				sptr = strchr(fixed_contact_str, '\0') - 1;
 			}
 
-			switch_snprintf(sptr, len - (sptr - fixed_contact_str), ";fs_path=sip:%s%s", to_host, eptr ? eptr : ">");
+			switch (mod_sofia_globals.rewrite_multicasted_fs_path) {
+				case 1:
+					switch_snprintf(sptr, len - (sptr - fixed_contact_str), ";fs_path=sip:%s%s", to_host, eptr ? eptr : ">");
+				break;
+				case 2:
+					switch_snprintf(sptr, len - (sptr - fixed_contact_str), ";fs_path=sip:%s%s", orig_server_host, eptr ? eptr : ">");
+				break;
+				case 3:
+					switch_snprintf(sptr, len - (sptr - fixed_contact_str), ";fs_path=sip:%s%s", orig_hostname, eptr ? eptr : ">");
+				break;
+				default:
+					switch_snprintf(sptr, len - (sptr - fixed_contact_str), ";fs_path=sip:%s%s", to_host, eptr ? eptr : ">");
+				break;
+			}
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Rewrote contact string from '%s' to '%s'\n", contact_str, fixed_contact_str);
 			contact_str = fixed_contact_str;
@@ -975,10 +1027,12 @@ void event_handler(switch_event_t *event)
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
 		sql = switch_mprintf("insert into sip_registrations "
 							 "(call_id, sip_user, sip_host, presence_hosts, contact, status, rpid, expires,"
-							 "user_agent, server_user, server_host, profile_name, hostname, network_ip, network_port, sip_username, sip_realm, mwi_user, mwi_host) "
-							 "values ('%q','%q','%q','%q','%q','Registered','%q',%ld, '%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+							 "user_agent, server_user, server_host, profile_name, hostname, network_ip, network_port, sip_username, sip_realm," 
+							 "mwi_user, mwi_host, orig_server_host, orig_hostname) "
+							 "values ('%q','%q','%q','%q','%q','Registered','%q',%ld, '%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
 							 call_id, from_user, from_host, presence_hosts, contact_str, rpid, expires, user_agent, to_user, guess_ip4, 
-							 profile_name, mod_sofia_globals.hostname, network_ip, network_port, username, realm, mwi_user, mwi_host);
+							 profile_name, mod_sofia_globals.hostname, network_ip, network_port, username, realm, mwi_user, mwi_host,
+							 orig_server_host, orig_hostname);
 
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
@@ -2526,7 +2580,16 @@ switch_status_t config_sofia(int reload, char *profile_name)
 			} else if (!strcasecmp(var, "auto-restart")) {
 				mod_sofia_globals.auto_restart = switch_true(val);
 			} else if (!strcasecmp(var, "rewrite-multicasted-fs-path")) {
-				mod_sofia_globals.rewrite_multicasted_fs_path = switch_true(val);
+				if( (!strcasecmp(val, "to_host")) || (!strcasecmp(val, "1")) ) {
+					/* old behaviour */
+                                	mod_sofia_globals.rewrite_multicasted_fs_path = 1;
+				} else if (!strcasecmp(val, "original_server_host")) {
+                                	mod_sofia_globals.rewrite_multicasted_fs_path = 2;
+				} else if (!strcasecmp(val, "original_hostname")) {
+                                	mod_sofia_globals.rewrite_multicasted_fs_path = 3;
+				} else {
+					mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
+				}
 			}
 		}
 	}
