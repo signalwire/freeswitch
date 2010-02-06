@@ -2254,7 +2254,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					rtp_session->dtmf_data.in_digit_sanity = 2000;
 				}
 
-				if (rtp_session->dtmf_data.last_duration > duration && ts == rtp_session->dtmf_data.in_digit_ts) {
+				if (rtp_session->dtmf_data.last_duration > duration && rtp_session->dtmf_data.last_duration > 0xFC17 && ts == rtp_session->dtmf_data.in_digit_ts) {
 					rtp_session->dtmf_data.flip++;
 				}
 				
