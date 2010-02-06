@@ -6421,6 +6421,22 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_session_get_pool(void * jarg1) 
 }
 
 
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_session_request_xml(void * jarg1, void * jarg2, void * jarg3) {
+  void * jresult ;
+  switch_endpoint_interface_t *arg1 = (switch_endpoint_interface_t *) 0 ;
+  switch_memory_pool_t **arg2 = (switch_memory_pool_t **) 0 ;
+  switch_xml_t arg3 = (switch_xml_t) 0 ;
+  switch_core_session_t *result = 0 ;
+  
+  arg1 = (switch_endpoint_interface_t *)jarg1; 
+  arg2 = (switch_memory_pool_t **)jarg2; 
+  arg3 = (switch_xml_t)jarg3; 
+  result = (switch_core_session_t *)switch_core_session_request_xml(arg1,arg2,arg3);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_session_request_uuid(void * jarg1, int jarg2, void * jarg3, char * jarg4) {
   void * jresult ;
   switch_endpoint_interface_t *arg1 = (switch_endpoint_interface_t *) 0 ;
@@ -20680,6 +20696,35 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_timetable_transferred_get(vo
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_timetable_resurrected_set(void * jarg1, void * jarg2) {
+  switch_channel_timetable *arg1 = (switch_channel_timetable *) 0 ;
+  switch_time_t arg2 ;
+  switch_time_t *argp2 ;
+  
+  arg1 = (switch_channel_timetable *)jarg1; 
+  argp2 = (switch_time_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_time_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->resurrected = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_timetable_resurrected_get(void * jarg1) {
+  void * jresult ;
+  switch_channel_timetable *arg1 = (switch_channel_timetable *) 0 ;
+  switch_time_t result;
+  
+  arg1 = (switch_channel_timetable *)jarg1; 
+  result =  ((arg1)->resurrected);
+  jresult = new switch_time_t((switch_time_t &)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_timetable_next_set(void * jarg1, void * jarg2) {
   switch_channel_timetable *arg1 = (switch_channel_timetable *) 0 ;
   switch_channel_timetable *arg2 = (switch_channel_timetable *) 0 ;
@@ -20746,15 +20791,17 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_get_running_state(void * jarg1)
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_test_ready(void * jarg1, int jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_test_ready(void * jarg1, int jarg2, int jarg3) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   switch_bool_t arg2 ;
+  switch_bool_t arg3 ;
   int result;
   
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (switch_bool_t)jarg2; 
-  result = (int)switch_channel_test_ready(arg1,arg2);
+  arg3 = (switch_bool_t)jarg3; 
+  result = (int)switch_channel_test_ready(arg1,arg2,arg3);
   jresult = result; 
   return jresult;
 }
@@ -21160,15 +21207,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_variable_partner(void * 
 }
 
 
-SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_variable(void * jarg1, char * jarg2) {
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_variable_dup(void * jarg1, char * jarg2, int jarg3) {
   char * jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   char *arg2 = (char *) 0 ;
+  switch_bool_t arg3 ;
   char *result = 0 ;
   
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (char *)jarg2; 
-  result = (char *)switch_channel_get_variable(arg1,(char const *)arg2);
+  arg3 = (switch_bool_t)jarg3; 
+  result = (char *)switch_channel_get_variable_dup(arg1,(char const *)arg2,arg3);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
@@ -21282,13 +21331,15 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_channel_test_flag(void * jarg
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_flag(void * jarg1, int jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_flag_value(void * jarg1, int jarg2, unsigned long jarg3) {
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   switch_channel_flag_t arg2 ;
+  uint32_t arg3 ;
   
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (switch_channel_flag_t)jarg2; 
-  switch_channel_set_flag(arg1,arg2);
+  arg3 = (uint32_t)jarg3; 
+  switch_channel_set_flag_value(arg1,arg2,arg3);
 }
 
 
@@ -21302,13 +21353,15 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_flag_recursive(void * jarg
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_cap(void * jarg1, int jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_cap_value(void * jarg1, int jarg2, unsigned long jarg3) {
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   switch_channel_cap_t arg2 ;
+  uint32_t arg3 ;
   
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (switch_channel_cap_t)jarg2; 
-  switch_channel_set_cap(arg1,arg2);
+  arg3 = (uint32_t)jarg3; 
+  switch_channel_set_cap_value(arg1,arg2,arg3);
 }
 
 
@@ -21928,6 +21981,30 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_session(void * jarg1) {
   arg1 = (switch_channel_t *)jarg1; 
   result = (switch_core_session_t *)switch_channel_get_session(arg1);
   jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_flag_string(void * jarg1) {
+  char * jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  result = (char *)switch_channel_get_flag_string(arg1);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_cap_string(void * jarg1) {
+  char * jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  result = (char *)switch_channel_get_cap_string(arg1);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
 
@@ -25739,6 +25816,20 @@ SWIGEXPORT unsigned short SWIGSTDCALL CSharp_switch_rtp_set_start_port(unsigned 
   
   arg1 = (switch_port_t)jarg1; 
   result = (switch_port_t)switch_rtp_set_start_port(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_set_ssrc(void * jarg1, unsigned long jarg2) {
+  int jresult ;
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  uint32_t arg2 ;
+  switch_status_t result;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  result = (switch_status_t)switch_rtp_set_ssrc(arg1,arg2);
   jresult = result; 
   return jresult;
 }
