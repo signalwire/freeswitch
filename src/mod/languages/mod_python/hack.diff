@@ -1,26 +1,28 @@
---- mod_python_wrap.cpp.orig	2009-03-21 11:37:16.000000000 +0100
-+++ mod_python_wrap.cpp	2009-03-21 11:33:18.000000000 +0100
-@@ -5469,7 +5469,9 @@
+Index: mod_python_wrap.cpp
+===================================================================
+--- mod_python_wrap.cpp	(revision 16581)
++++ mod_python_wrap.cpp	(working copy)
+@@ -5555,7 +5555,9 @@
      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "EventConsumer_pop" "', argument " "2"" of type '" "int""'");
    } 
    arg2 = static_cast< int >(val2);
 +  Py_BEGIN_ALLOW_THREADS;
    result = (Event *)(arg1)->pop(arg2);
 +  Py_END_ALLOW_THREADS;
-   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, 0 |  0 );
+   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_POINTER_OWN |  0 );
    return resultobj;
  fail:
-@@ -5491,7 +5493,9 @@
+@@ -5577,7 +5579,9 @@
      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_pop" "', argument " "1"" of type '" "EventConsumer *""'"); 
    }
    arg1 = reinterpret_cast< EventConsumer * >(argp1);
 +  Py_BEGIN_ALLOW_THREADS;
    result = (Event *)(arg1)->pop();
 +  Py_END_ALLOW_THREADS;
-   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, 0 |  0 );
+   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_POINTER_OWN |  0 );
    return resultobj;
  fail:
-@@ -9206,20 +9210,20 @@
+@@ -9560,20 +9564,20 @@
  }
  
  
@@ -44,7 +46,7 @@
    PyObject *resultobj = 0;
    char *arg1 = (char *) 0 ;
    CoreSession *arg2 = (CoreSession *) 0 ;
-@@ -9244,7 +9248,7 @@
+@@ -9598,7 +9602,7 @@
    }
    arg2 = reinterpret_cast< CoreSession * >(argp2);
    result = (PYTHON::Session *)new PYTHON::Session(arg1,arg2);
@@ -53,7 +55,7 @@
    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
    return resultobj;
  fail:
-@@ -9253,7 +9257,7 @@
+@@ -9607,7 +9611,7 @@
  }
  
  
@@ -62,7 +64,7 @@
    PyObject *resultobj = 0;
    char *arg1 = (char *) 0 ;
    PYTHON::Session *result = 0 ;
-@@ -9269,7 +9273,7 @@
+@@ -9623,7 +9627,7 @@
    }
    arg1 = reinterpret_cast< char * >(buf1);
    result = (PYTHON::Session *)new PYTHON::Session(arg1);
@@ -71,7 +73,7 @@
    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
    return resultobj;
  fail:
-@@ -9278,7 +9282,7 @@
+@@ -9632,7 +9636,7 @@
  }
  
  
@@ -80,7 +82,7 @@
    PyObject *resultobj = 0;
    switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
    PYTHON::Session *result = 0 ;
-@@ -9293,7 +9297,7 @@
+@@ -9647,7 +9651,7 @@
    }
    arg1 = reinterpret_cast< switch_core_session_t * >(argp1);
    result = (PYTHON::Session *)new PYTHON::Session(arg1);
