@@ -1101,7 +1101,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 								/* send the 16khz frame to the Skype client waiting for incoming audio to be sent to the remote party */
 								if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
 									len = send(fd, (char *) cli_out, got, 0);
-									//skypiax_sleep(5000);	//5 msec
+									//skypiax_sleep(5000);  //5 msec
 
 									if (len == -1) {
 										break;

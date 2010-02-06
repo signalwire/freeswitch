@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -151,7 +151,8 @@ static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 static switch_status_t channel_on_soft_execute(switch_core_session_t *session);
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
+													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
+													switch_call_cause_t *cancel_cause);
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
@@ -730,12 +731,12 @@ static switch_state_handler_table_t channel_event_handlers = {
 	/*.on_hangup */ channel_on_hangup,
 	/*.on_exchange_media */ channel_on_exchange_media,
 	/*.on_soft_execute */ channel_on_soft_execute,
-	/*.on_consume_media*/ NULL,
-    /*.on_hibernate*/ NULL,
-    /*.on_reset*/ NULL,
-    /*.on_park*/ NULL,
-    /*.on_reporting*/ NULL,
-    /*.on_destroy*/ channel_on_destroy
+	/*.on_consume_media */ NULL,
+	/*.on_hibernate */ NULL,
+	/*.on_reset */ NULL,
+	/*.on_park */ NULL,
+	/*.on_reporting */ NULL,
+	/*.on_destroy */ channel_on_destroy
 };
 
 static switch_io_routines_t channel_io_routines = {
@@ -761,7 +762,8 @@ static switch_endpoint_interface_t channel_endpoint_interface = {
 */
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
+													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
+													switch_call_cause_t *cancel_cause)
 {
 
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool)) != 0) {
@@ -799,7 +801,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
 
-		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
 		return SWITCH_CAUSE_SUCCESS;
@@ -824,7 +825,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_alsa_load)
 	alsa_endpoint_interface->state_handler = &channel_event_handlers;
 
 	SWITCH_ADD_API(api_interface, "alsa", "Alsa", pa_cmd, "<command> [<args>]");
-	
+
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
@@ -954,7 +955,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_alsa_shutdown)
 		switch_core_codec_destroy(&globals.write_codec);
 	}
 	switch_core_hash_destroy(&globals.call_hash);
-	
+
 	switch_safe_free(globals.dialplan);
 	switch_safe_free(globals.cid_name);
 	switch_safe_free(globals.cid_num);
@@ -1013,7 +1014,8 @@ static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
 	}
 
 	if (switch_core_timer_init(&globals.timer,
-							   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_packet, module_pool) != SWITCH_STATUS_SUCCESS) {
+							   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_packet,
+							   module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
 		switch_core_codec_destroy(&globals.read_codec);
 		switch_core_codec_destroy(&globals.write_codec);

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -33,7 +33,7 @@
 #include <switch.h>
 #include <g711.h>
 #include <poll.h>
-#include <linux/types.h> /* __u32 */
+#include <linux/types.h>		/* __u32 */
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -75,8 +75,8 @@ static uint32_t total_decoders_usage = 0;
 #define DAHDI_FORMAT_G729A   (1 << 8)
 
 struct dahdi_transcoder_formats {
-	__u32   srcfmt;
-	__u32   dstfmt;
+	__u32 srcfmt;
+	__u32 dstfmt;
 };
 
 struct dahdi_transcoder_info {
@@ -108,15 +108,11 @@ static int32_t switch_dahdi_get_transcoder(struct dahdi_transcoder_formats *fmts
 	int32_t fdflags;
 	int32_t fd = open(transcoding_device, O_RDWR);
 	if (fd < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-				"Failed to open %s transcoder device: %s.\n", 
-				transcoder_name, strerror(errno));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open %s transcoder device: %s.\n", transcoder_name, strerror(errno));
 		return -1;
 	}
 	if (ioctl(fd, DAHDI_TC_ALLOCATE, fmts)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-				"Failed to attach to transcoder: %s.\n", 
-				strerror(errno));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to attach to transcoder: %s.\n", strerror(errno));
 		close(fd);
 		return -1;
 	}
@@ -124,15 +120,14 @@ static int32_t switch_dahdi_get_transcoder(struct dahdi_transcoder_formats *fmts
 	if (fdflags > -1) {
 		fdflags |= O_NONBLOCK;
 		if (fcntl(fd, F_SETFL, fdflags)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not set non-block mode in %s transcoder FD: %s\n", 
-					transcoder_name, strerror(errno));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not set non-block mode in %s transcoder FD: %s\n",
+							  transcoder_name, strerror(errno));
 			/* should we abort? this may cause channels to hangup when overruning the device 
 			 * see jira dahdi codec issue MODCODEC-8 (Hung Calls and Codec DAHDI G.729A 8.0k decoder error!)
 			 * */
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not get flags from %s transcoder FD: %s\n", 
-				transcoder_name, strerror(errno));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not get flags from %s transcoder FD: %s\n", transcoder_name, strerror(errno));
 	}
 
 	if (fmts->srcfmt & DAHDI_FORMAT_ULAW) {
@@ -154,19 +149,17 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	struct dahdi_context *context = codec->private_info;
 
 	fmts.srcfmt = DAHDI_FORMAT_ULAW;
-	fmts.dstfmt = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
+	fmts.dstfmt = (codec->implementation->ianacode == CODEC_G729_IANA_CODE)
 		? DAHDI_FORMAT_G729A : DAHDI_FORMAT_G723_1;
 	context->encoding_fd = switch_dahdi_get_transcoder(&fmts);
 	if (context->encoding_fd < 0) {
 #ifdef DEBUG_DAHDI_CODEC
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "encoding requested and denied with %d/%d.\n",
-						  fmts.srcfmt, fmts.dstfmt);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "encoding requested and denied with %d/%d.\n", fmts.srcfmt, fmts.dstfmt);
 #endif
 		return SWITCH_STATUS_FALSE;
 	}
 #ifdef DEBUG_DAHDI_CODEC
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Encoding requested and granted with %d/%d.\n",
-					  fmts.srcfmt, fmts.dstfmt);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Encoding requested and granted with %d/%d.\n", fmts.srcfmt, fmts.dstfmt);
 #endif
 
 
@@ -176,23 +169,21 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 
 static switch_status_t init_decoder(switch_codec_t *codec)
 {
-    struct dahdi_transcoder_formats fmts;
-    struct dahdi_context *context = codec->private_info;
+	struct dahdi_transcoder_formats fmts;
+	struct dahdi_context *context = codec->private_info;
 
 	fmts.dstfmt = DAHDI_FORMAT_ULAW;
-	fmts.srcfmt = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
+	fmts.srcfmt = (codec->implementation->ianacode == CODEC_G729_IANA_CODE)
 		? DAHDI_FORMAT_G729A : DAHDI_FORMAT_G723_1;
 	context->decoding_fd = switch_dahdi_get_transcoder(&fmts);
 	if (context->decoding_fd < 0) {
 #ifdef DEBUG_DAHDI_CODEC
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Decoding requested and denied with %d/%d.\n",
-				fmts.srcfmt, fmts.dstfmt);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Decoding requested and denied with %d/%d.\n", fmts.srcfmt, fmts.dstfmt);
 #endif
 		return SWITCH_STATUS_FALSE;
 	}
 #ifdef DEBUG_DAHDI_CODEC
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Decoding requested and granted with %d/%d.\n",
-				fmts.srcfmt, fmts.dstfmt);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Decoding requested and granted with %d/%d.\n", fmts.srcfmt, fmts.dstfmt);
 #endif
 
 	return SWITCH_STATUS_SUCCESS;
@@ -228,7 +219,7 @@ static switch_status_t switch_dahdi_init(switch_codec_t *codec, switch_codec_fla
 	/* ulaw requires 8 times more storage than g729 and 12 times more than G723, right? 
 	 * this can be used to calculate the target buffer when encoding and decoding
 	 * */
-	context->codec_r = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
+	context->codec_r = (codec->implementation->ianacode == CODEC_G729_IANA_CODE)
 		? 8 : 12;
 
 
@@ -238,7 +229,7 @@ static switch_status_t switch_dahdi_init(switch_codec_t *codec, switch_codec_fla
 static int wait_for_transcoder(int fd)
 {
 	/* let's wait a bit for the transcoder, if in 20msthe driver does not notify us that its ready to give us something
-	then just bail out with 0 bytes encoded/decoded as result, I'd expect the card to hold that buffer and return it later */
+	   then just bail out with 0 bytes encoded/decoded as result, I'd expect the card to hold that buffer and return it later */
 	int res = 0;
 	struct pollfd readpoll;
 	memset(&readpoll, 0, sizeof(readpoll));
@@ -246,21 +237,21 @@ static int wait_for_transcoder(int fd)
 	readpoll.events = POLLIN;
 	/* my testing shows that it does not take more than 1ms to encode a 160 bytes frame ulaw to g729,
 	   I dont think there is much difference decoding and for g723, waiting 10ms seems more than reasonable */
-	res = poll(&readpoll, 1, 10); 
+	res = poll(&readpoll, 1, 10);
 	return res;
 }
 
 static switch_status_t switch_dahdi_encode(switch_codec_t *codec,
-					   switch_codec_t *other_codec,
-					   void *decoded_data,
-					   uint32_t decoded_data_len,
-					   uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
-					   unsigned int *flag)
+										   switch_codec_t *other_codec,
+										   void *decoded_data,
+										   uint32_t decoded_data_len,
+										   uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
+										   unsigned int *flag)
 {
 	int32_t res;
 	short *dbuf_linear;
 	unsigned char *ebuf_g729;
-	unsigned char ebuf_ulaw[decoded_data_len/2];
+	unsigned char ebuf_ulaw[decoded_data_len / 2];
 	uint32_t i;
 	struct dahdi_context *context = NULL;
 	switch_status_t status;
@@ -290,7 +281,8 @@ static switch_status_t switch_dahdi_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 	if (i != res) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Requested to write %d bytes to %s encoder device, but only wrote %d bytes.\n", i, transcoder_name, res);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Requested to write %d bytes to %s encoder device, but only wrote %d bytes.\n", i,
+						  transcoder_name, res);
 		return SWITCH_STATUS_FALSE;
 	}
 	res = wait_for_transcoder(context->encoding_fd);
@@ -333,7 +325,7 @@ static switch_status_t switch_dahdi_decode(switch_codec_t *codec,
 	int32_t res;
 	short *dbuf_linear;
 	// we only can decode up to half ulaw bytes of whatever their destiny linear buffer is
-	unsigned char dbuf_ulaw[*decoded_data_len/2]; 
+	unsigned char dbuf_ulaw[*decoded_data_len / 2];
 	unsigned char *ebuf_g729;
 	uint32_t i;
 	struct dahdi_context *context;
@@ -360,7 +352,7 @@ static switch_status_t switch_dahdi_decode(switch_codec_t *codec,
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Switch DAHDI decode in silence returned %d bytes.\n", *decoded_data_len);
 #endif
 		return SWITCH_STATUS_SUCCESS;
-	} 
+	}
 #ifdef DEBUG_DAHDI_CODEC
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Writing %d bytes to decode.\n", encoded_data_len);
 #endif
@@ -370,12 +362,12 @@ static switch_status_t switch_dahdi_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 	if (encoded_data_len != res) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Requested to write %d bytes to %s decoder device, but only wrote %d bytes.\n", encoded_data_len, transcoder_name, res);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Requested to write %d bytes to %s decoder device, but only wrote %d bytes.\n",
+						  encoded_data_len, transcoder_name, res);
 		return SWITCH_STATUS_FALSE;
 	}
 #ifdef DEBUG_DAHDI_CODEC
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attempting to read from device %d bytes of decoded ulaw data.\n", 
-			sizeof(dbuf_ulaw));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attempting to read from device %d bytes of decoded ulaw data.\n", sizeof(dbuf_ulaw));
 #endif
 	res = wait_for_transcoder(context->decoding_fd);
 	if (-1 == res) {
@@ -386,7 +378,8 @@ static switch_status_t switch_dahdi_decode(switch_codec_t *codec,
 		memset(dbuf_linear, 0, codec->implementation->decoded_bytes_per_packet);
 		*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
 #ifdef DEBUG_DAHDI_CODEC
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output on %s decoder device, returning silence frame of %d bytes.\n", transcoder_name, *decoded_data_len);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output on %s decoder device, returning silence frame of %d bytes.\n", transcoder_name,
+						  *decoded_data_len);
 #endif
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -437,10 +430,8 @@ SWITCH_STANDARD_API(dahdi_transcode_usage)
 		return SWITCH_STATUS_SUCCESS;
 	}
 	switch_mutex_lock(transcoder_counter_mutex);
-	stream->write_function(stream, "Using %d encoders of a total of %d available.\n",
-			total_encoders_usage, total_encoders);
-	stream->write_function(stream, "Using %d decoders of a total of %d available.\n",
-			total_decoders_usage, total_decoders);
+	stream->write_function(stream, "Using %d encoders of a total of %d available.\n", total_encoders_usage, total_encoders);
+	stream->write_function(stream, "Using %d decoders of a total of %d available.\n", total_decoders_usage, total_decoders);
 	switch_mutex_unlock(transcoder_counter_mutex);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -452,10 +443,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 	struct stat statbuf;
 	struct dahdi_transcoder_info info = { 0 };
 	int32_t fd, res;
-	int mpf = 20000; /* Algorithmic delay of 15ms with 5ms of look-ahead delay */
-	int spf = 160; 
-	int bpfd = 320; 
-	int bpfc = 20; 
+	int mpf = 20000;			/* Algorithmic delay of 15ms with 5ms of look-ahead delay */
+	int spf = 160;
+	int bpfd = 320;
+	int bpfc = 20;
 	int fpnp = 20;
 
 	total_encoders = 0;
@@ -479,8 +470,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 
 	fd = open(transcoding_device, O_RDWR);
 	if (fd < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open %s transcoder device: %s.\n", 
-				transcoder_name, strerror(errno));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open %s transcoder device: %s.\n", transcoder_name, strerror(errno));
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -491,14 +481,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 			continue;
 		}
 		if ((info.dstfmts & DAHDI_FORMAT_ULAW) && (info.srcfmts & (DAHDI_FORMAT_G729A | DAHDI_FORMAT_G723_1))) {
-			total_decoders  += info.numchannels;
+			total_decoders += info.numchannels;
 			continue;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 
-				"Not using transcoder %s, we just support ULAW and G723.1/G729A", info.name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Not using transcoder %s, we just support ULAW and G723.1/G729A", info.name);
 	}
 	close(fd);
-	
+
 	if (!total_encoders && !total_decoders) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No DAHDI transcoders found.\n");
 		return SWITCH_STATUS_FALSE;
@@ -510,79 +499,73 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	
-	SWITCH_ADD_CODEC(codec_interface, "DAHDI G.729A 8.0k"); /* 8.0kbit */
 
-	switch_core_codec_add_implementation(pool,
-	 codec_interface,
-	 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-	 18,				/* the IANA code number */
-	 "G729",  			/* the IANA code name */
-	 NULL,				/* default fmtp to send (can be overridden by the init function) */
-	 8000,				/* samples transferred per second */
-	 8000,				/* actual samples transferred per second */
-	 8000,				/* bits transferred per second */
-	 mpf,				/* number of microseconds per frame */
-	 spf,				/* number of samples per frame */
-	 bpfd,				/* number of bytes per frame decompressed */
-	 bpfc,				/* number of bytes per frame compressed */
-	 1,				/* number of channels represented */
-	 fpnp,				/* number of frames per network packet */
-	 switch_dahdi_init, 		/* function to initialize a codec handle using this implementation */
-	 switch_dahdi_encode,		/* function to encode raw data into encoded data */
-	 switch_dahdi_decode,		/* function to decode encoded data into raw data */
-	 switch_dahdi_destroy);		/* deinitalize a codec handle using this implementation */
+	SWITCH_ADD_CODEC(codec_interface, "DAHDI G.729A 8.0k");	/* 8.0kbit */
 
-	mpf = 30000; 
-	spf = 240; 
-	bpfd = 480; 
-	bpfc = 30; 
-	fpnp = 30; 
-	switch_core_codec_add_implementation(pool,
-	 codec_interface,
-	 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-	 18,				/* the IANA code number */
-	 "G729",  			/* the IANA code name */
-	 NULL,				/* default fmtp to send (can be overridden by the init function) */
-	 8000,				/* samples transferred per second */
-	 8000,				/* actual samples transferred per second */
-	 8000,				/* bits transferred per second */
-	 mpf,				/* number of microseconds per frame */
-	 spf,				/* number of samples per frame */
-	 bpfd,				/* number of bytes per frame decompressed */
-	 bpfc,				/* number of bytes per frame compressed */
-	 1,				/* number of channels represented */
-	 fpnp,				/* number of frames per network packet */
-	 switch_dahdi_init, 		/* function to initialize a codec handle using this implementation */
-	 switch_dahdi_encode,		/* function to encode raw data into encoded data */
-	 switch_dahdi_decode,		/* function to decode encoded data into raw data */
-	 switch_dahdi_destroy);		/* deinitalize a codec handle using this implementation */
+	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 18,	/* the IANA code number */
+										 "G729",	/* the IANA code name */
+										 NULL,	/* default fmtp to send (can be overridden by the init function) */
+										 8000,	/* samples transferred per second */
+										 8000,	/* actual samples transferred per second */
+										 8000,	/* bits transferred per second */
+										 mpf,	/* number of microseconds per frame */
+										 spf,	/* number of samples per frame */
+										 bpfd,	/* number of bytes per frame decompressed */
+										 bpfc,	/* number of bytes per frame compressed */
+										 1,	/* number of channels represented */
+										 fpnp,	/* number of frames per network packet */
+										 switch_dahdi_init,	/* function to initialize a codec handle using this implementation */
+										 switch_dahdi_encode,	/* function to encode raw data into encoded data */
+										 switch_dahdi_decode,	/* function to decode encoded data into raw data */
+										 switch_dahdi_destroy);	/* deinitalize a codec handle using this implementation */
 
-	SWITCH_ADD_CODEC(codec_interface, "DAHDI G.723.1 5.3k"); /* 5.3kbit */
-	mpf = 30000; /* Algorithmic delay of 37.5ms with 7.5ms of look-ahead delay */
+	mpf = 30000;
+	spf = 240;
+	bpfd = 480;
+	bpfc = 30;
+	fpnp = 30;
+	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 18,	/* the IANA code number */
+										 "G729",	/* the IANA code name */
+										 NULL,	/* default fmtp to send (can be overridden by the init function) */
+										 8000,	/* samples transferred per second */
+										 8000,	/* actual samples transferred per second */
+										 8000,	/* bits transferred per second */
+										 mpf,	/* number of microseconds per frame */
+										 spf,	/* number of samples per frame */
+										 bpfd,	/* number of bytes per frame decompressed */
+										 bpfc,	/* number of bytes per frame compressed */
+										 1,	/* number of channels represented */
+										 fpnp,	/* number of frames per network packet */
+										 switch_dahdi_init,	/* function to initialize a codec handle using this implementation */
+										 switch_dahdi_encode,	/* function to encode raw data into encoded data */
+										 switch_dahdi_decode,	/* function to decode encoded data into raw data */
+										 switch_dahdi_destroy);	/* deinitalize a codec handle using this implementation */
+
+	SWITCH_ADD_CODEC(codec_interface, "DAHDI G.723.1 5.3k");	/* 5.3kbit */
+	mpf = 30000;				/* Algorithmic delay of 37.5ms with 7.5ms of look-ahead delay */
 	spf = 240;
 	bpfd = 480;
 	bpfc = 20;
 	fpnp = 10;
-	switch_core_codec_add_implementation(pool,
-	 codec_interface,
-	 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-	 4,				/* the IANA code number */
-	 "G723",  			/* the IANA code name */
-	 NULL,				/* default fmtp to send (can be overridden by the init function) */
-	 8000,				/* samples transferred per second */
-	 8000,				/* actual samples transferred per second */
-	 8000,				/* bits transferred per second */
-	 mpf,				/* number of microseconds per frame */
-	 spf,				/* number of samples per frame */
-	 bpfd,				/* number of bytes per frame decompressed */
-	 bpfc,				/* number of bytes per frame compressed */
-	 1,				/* number of channels represented */
-	 fpnp,				/* number of frames per network packet */
-	 switch_dahdi_init, 		/* function to initialize a codec handle using this implementation */
-	 switch_dahdi_encode,		/* function to encode raw data into encoded data */
-	 switch_dahdi_decode,		/* function to decode encoded data into raw data */
-	 switch_dahdi_destroy);		/* deinitalize a codec handle using this implementation */
+	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 4,	/* the IANA code number */
+										 "G723",	/* the IANA code name */
+										 NULL,	/* default fmtp to send (can be overridden by the init function) */
+										 8000,	/* samples transferred per second */
+										 8000,	/* actual samples transferred per second */
+										 8000,	/* bits transferred per second */
+										 mpf,	/* number of microseconds per frame */
+										 spf,	/* number of samples per frame */
+										 bpfd,	/* number of bytes per frame decompressed */
+										 bpfc,	/* number of bytes per frame compressed */
+										 1,	/* number of channels represented */
+										 fpnp,	/* number of frames per network packet */
+										 switch_dahdi_init,	/* function to initialize a codec handle using this implementation */
+										 switch_dahdi_encode,	/* function to encode raw data into encoded data */
+										 switch_dahdi_decode,	/* function to decode encoded data into raw data */
+										 switch_dahdi_destroy);	/* deinitalize a codec handle using this implementation */
 
 	SWITCH_ADD_API(api_interface, "dahdi_transcode", "DAHDI Transcode", dahdi_transcode_usage, NULL);
 	switch_console_set_complete("add dahdi_transcode");

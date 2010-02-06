@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -71,7 +71,7 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 			expression = abuf;
 		}
 	}
-	
+
 	if (*expression == '/') {
 		char *opts = NULL;
 		tmp = strdup(expression + 1);
@@ -153,7 +153,7 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 			if (num < 0 || num > 256) {
 				num = -1;
 			}
-			
+
 			if (pcre_copy_substring(field_data, ovector, match_count, num, replace, sizeof(replace)) > 0) {
 				switch_size_t r;
 				for (r = 0; r < strlen(replace); r++) {
@@ -168,7 +168,7 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 	substituted[y++] = '\0';
 }
 
-SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, const char *expression, int * partial)
+SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, const char *expression, int *partial)
 {
 	const char *error = NULL;	/* Used to hold any errors                                           */
 	int error_offset = 0;		/* Holds the offset of an error                                      */
@@ -176,7 +176,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, c
 	int match_count = 0;		/* Number of times the regex was matched                             */
 	int offset_vectors[255];	/* not used, but has to exist or pcre won't even try to find a match */
 	int pcre_flags = 0;
-	
+
 	/* Compile the expression */
 	pcre_prepared = pcre_compile(expression, 0, &error, &error_offset, NULL);
 
@@ -194,13 +194,14 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, c
 		/* We definitely didn't match anything */
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	if (*partial) {
 		pcre_flags = PCRE_PARTIAL;
 	}
-	
+
 	/* So far so good, run the regex */
-	match_count = pcre_exec(pcre_prepared, NULL, target, (int) strlen(target), 0, pcre_flags, offset_vectors, sizeof(offset_vectors) / sizeof(offset_vectors[0]));
+	match_count =
+		pcre_exec(pcre_prepared, NULL, target, (int) strlen(target), 0, pcre_flags, offset_vectors, sizeof(offset_vectors) / sizeof(offset_vectors[0]));
 
 	/* Clean up */
 	if (pcre_prepared) {

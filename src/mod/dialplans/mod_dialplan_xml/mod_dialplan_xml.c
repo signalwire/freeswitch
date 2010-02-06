@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -72,10 +72,10 @@ static switch_status_t exec_app(switch_core_session_t *session, const char *app,
 
 	switch_core_session_exec(session, application_interface, arg);
 
-done:
-	
+  done:
+
 	UNPROTECT_INTERFACE(application_interface);
-	
+
 	return status;
 }
 
@@ -100,7 +100,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		int ovector[30];
 		switch_bool_t anti_action = SWITCH_TRUE;
 		break_t do_break_i = BREAK_ON_FALSE;
-		
+
 		const char *xyear = switch_xml_attr(xcond, "year");
 		const char *xyday = switch_xml_attr(xcond, "yday");
 		const char *xmon = switch_xml_attr(xcond, "mon");
@@ -125,7 +125,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		}
 
 		switch_time_exp_lt(&tm, ts);
-		
+
 		if (time_match && xyear) {
 			int test = tm.tm_year + 1900;
 			time_match = switch_number_cmp(xyear, test);
@@ -164,7 +164,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		if (time_match && xmweek) {
 			/* calculate the day of the week of the first of the month (0-6) */
 			int firstdow = (int) (7 - (tm.tm_mday - (tm.tm_wday + 1)) % 7) % 7;
-			/* calculate the week of the month (1-6)*/
+			/* calculate the week of the month (1-6) */
 			int test = (int) ceil((tm.tm_mday + firstdow) / 7.0);
 			time_match = switch_number_cmp(xmweek, test);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
@@ -198,7 +198,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
 							  "Dialplan: minute of day[%d] =~ %s (%s)\n", test, xminday, time_match ? "PASS" : "FAIL");
 		}
-		
+
 		field = (char *) switch_xml_attr(xcond, "field");
 
 		if ((xexpression = switch_xml_child(xcond, "expression"))) {
@@ -229,13 +229,13 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 		if (time_match == 1) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-					"Dialplan: %s Date/Time Match (PASS) [%s] break=%s\n",
-					switch_channel_get_name(channel), exten_name, do_break_a ? do_break_a : "on-false");
+							  "Dialplan: %s Date/Time Match (PASS) [%s] break=%s\n",
+							  switch_channel_get_name(channel), exten_name, do_break_a ? do_break_a : "on-false");
 			anti_action = SWITCH_FALSE;
 		} else if (time_match == 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-					"Dialplan: %s Date/Time Match (FAIL) [%s] break=%s\n",
-					switch_channel_get_name(channel), exten_name, do_break_a ? do_break_a : "on-false");
+							  "Dialplan: %s Date/Time Match (FAIL) [%s] break=%s\n",
+							  switch_channel_get_name(channel), exten_name, do_break_a ? do_break_a : "on-false");
 		}
 
 		if (field) {
@@ -252,21 +252,20 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			if (!field_data) {
 				field_data = "";
 			}
-			
+
 			if ((proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, 
-								  "Dialplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ break=%s\n", 
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+								  "Dialplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ break=%s\n",
 								  switch_channel_get_name(channel), exten_name, field, field_data, expression, do_break_a ? do_break_a : "on-false");
 				anti_action = SWITCH_FALSE;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, 
-								  "Dialplan: %s Regex (FAIL) [%s] %s(%s) =~ /%s/ break=%s\n", 
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+								  "Dialplan: %s Regex (FAIL) [%s] %s(%s) =~ /%s/ break=%s\n",
 								  switch_channel_get_name(channel), exten_name, field, field_data, expression, do_break_a ? do_break_a : "on-false");
 			}
 		} else if (time_match == -1) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, 
-							  "Dialplan: %s Absolute Condition [%s]\n", 
-							  switch_channel_get_name(channel), exten_name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+							  "Dialplan: %s Absolute Condition [%s]\n", switch_channel_get_name(channel), exten_name);
 			anti_action = SWITCH_FALSE;
 		}
 
@@ -275,7 +274,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				const char *application = switch_xml_attr_soft(xaction, "application");
 				const char *data;
 				const char *inline_ = switch_xml_attr_soft(xaction, "inline");
-				int xinline = switch_true(inline_);				
+				int xinline = switch_true(inline_);
 
 				if (!zstr(xaction->txt)) {
 					data = xaction->txt;
@@ -284,8 +283,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-								  "Dialplan: %s ANTI-Action %s(%s) %s\n",
-								  switch_channel_get_name(channel), application, data, xinline ? "INLINE" : "");
+								  "Dialplan: %s ANTI-Action %s(%s) %s\n", switch_channel_get_name(channel), application, data, xinline ? "INLINE" : "");
 
 				if (!*extension) {
 					if ((*extension = switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
@@ -340,9 +338,8 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					}
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, 
-								  "Dialplan: %s Action %s(%s) %s\n", 
-								  switch_channel_get_name(channel), application, app_data, xinline ? "INLINE" : "");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+								  "Dialplan: %s Action %s(%s) %s\n", switch_channel_get_name(channel), application, app_data, xinline ? "INLINE" : "");
 
 
 				if (xinline) {
@@ -356,9 +353,8 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		}
 		switch_regex_safe_free(re);
 
-		if (((anti_action == SWITCH_FALSE && do_break_i == BREAK_ON_TRUE) || 
-			 (anti_action == SWITCH_TRUE && do_break_i == BREAK_ON_FALSE))  ||
-			do_break_i == BREAK_ALWAYS) {
+		if (((anti_action == SWITCH_FALSE && do_break_i == BREAK_ON_TRUE) ||
+			 (anti_action == SWITCH_TRUE && do_break_i == BREAK_ON_FALSE)) || do_break_i == BREAK_ALWAYS) {
 			break;
 		}
 	}
@@ -370,7 +366,8 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	return proceed;
 }
 
-static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t *root, switch_xml_t *node)
+static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t *root,
+										   switch_xml_t *node)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_GENERR;
@@ -457,8 +454,8 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 			exten_name = "UNKNOWN";
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, 
-						  "Dialplan: %s parsing [%s->%s] continue=%s\n", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+						  "Dialplan: %s parsing [%s->%s] continue=%s\n",
 						  switch_channel_get_name(channel), caller_profile->context, exten_name, cont ? cont : "false");
 
 		proceed = parse_exten(session, caller_profile, xexten, &extension);

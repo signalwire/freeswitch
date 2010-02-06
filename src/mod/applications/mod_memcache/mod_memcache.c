@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -42,11 +42,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_memcache_load);
 SWITCH_MODULE_DEFINITION(mod_memcache, mod_memcache_load, mod_memcache_shutdown, NULL);
 
 static char *SYNTAX = "memcache <set|replace|add> <key> <value> [expiration [flags]]\n"
-  "memcache <get|getflags> <key>\n"
-  "memcache <delete> <key>\n"
-  "memcache <increment|decrement> <key> [offset [expires [flags]]]\n"
-  "memcache <flush>\n"
-  "memcache <status> [verbose]\n";
+	"memcache <get|getflags> <key>\n"
+	"memcache <delete> <key>\n" "memcache <increment|decrement> <key> [offset [expires [flags]]]\n" "memcache <flush>\n" "memcache <status> [verbose]\n";
 
 static struct {
 	memcached_st *memcached;
@@ -55,7 +52,8 @@ static struct {
 
 static switch_event_node_t *NODE = NULL;
 
-static switch_status_t config_callback_memcached(switch_xml_config_item_t *data, const char *newvalue, switch_config_callback_type_t callback_type, switch_bool_t changed) 
+static switch_status_t config_callback_memcached(switch_xml_config_item_t *data, const char *newvalue, switch_config_callback_type_t callback_type,
+												 switch_bool_t changed)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	memcached_server_st *memcached_server = NULL;
@@ -64,23 +62,23 @@ static switch_status_t config_callback_memcached(switch_xml_config_item_t *data,
 	const char *memcached_str = NULL;
 	memcached_return rc;
 	unsigned int servercount;
-	
+
 	if ((callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD) && changed) {
 		memcached_str = newvalue;
-		
+
 		/* initialize main ptr */
 		memcached_server = memcached_servers_parse(memcached_str);
 		if (!memcached_server) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to initialize memcached data structure (server_list).\n");
 			switch_goto_status(SWITCH_STATUS_GENERR, end);
 		}
-		
+
 		if ((servercount = memcached_server_list_count(memcached_server)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No memcache servers defined.  Server string: %s.\n", memcached_str);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u servers defined (%s).\n", servercount, memcached_str);
 		}
-		
+
 		/* setup memcached */
 		newmemcached = memcached_create(NULL);
 		if (!newmemcached) {
@@ -93,16 +91,16 @@ static switch_status_t config_callback_memcached(switch_xml_config_item_t *data,
 			switch_goto_status(SWITCH_STATUS_GENERR, end);
 		}
 		/* memcached_behavior_set(newmemcached, MEMCACHED_BEHAVIOR_BINARY_PROTOCOL, 1); */
-		
+
 		/* swap pointers */
 		oldmemcached = globals.memcached;
 		globals.memcached = newmemcached;
 		newmemcached = NULL;
 	}
-	
+
 	switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 
-end:
+  end:
 	if (memcached_server) {
 		memcached_server_list_free(memcached_server);
 	}
@@ -115,12 +113,13 @@ end:
 	return status;
 }
 
-static switch_xml_config_string_options_t config_opt_memcache_servers = {NULL, 0, NULL}; /* anything ok */
+static switch_xml_config_string_options_t config_opt_memcache_servers = { NULL, 0, NULL };	/* anything ok */
 
 static switch_xml_config_item_t instructions[] = {
 	/* parameter name        type                 reloadable   pointer                         default value     options structure */
-	SWITCH_CONFIG_ITEM_CALLBACK("memcache-servers", SWITCH_CONFIG_STRING, CONFIG_REQUIRED | CONFIG_RELOAD, &globals.memcached_str, "", config_callback_memcached, &config_opt_memcache_servers,
-		"host,host:port,host", "List of memcached servers."),
+	SWITCH_CONFIG_ITEM_CALLBACK("memcache-servers", SWITCH_CONFIG_STRING, CONFIG_REQUIRED | CONFIG_RELOAD, &globals.memcached_str, "",
+								config_callback_memcached, &config_opt_memcache_servers,
+								"host,host:port,host", "List of memcached servers."),
 	SWITCH_CONFIG_ITEM_END()
 };
 
@@ -129,8 +128,8 @@ static switch_status_t do_config(switch_bool_t reload)
 	if (switch_xml_config_parse_module_settings("memcache.conf", reload, instructions) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
-	
-	
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -154,42 +153,42 @@ SWITCH_STANDARD_API(memcache_function)
 	time_t expires = 0;
 	uint32_t flags = 0;
 	unsigned int server_count = 0;
-	
+
 	memcached_return rc;
 	memcached_st *memcached = NULL;
 	memcached_stat_st *stat = NULL;
 	memcached_server_st *server_list;
-	
+
 	if (zstr(cmd)) {
 		goto usage;
 	}
-	
+
 	mydata = strdup(cmd);
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (argc < 1) {
 			goto usage;
 		}
-		
+
 		/* clone memcached struct so we're thread safe */
 		memcached = memcached_clone(NULL, globals.memcached);
 		if (!memcached) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error cloning memcached object");
 			stream->write_function(stream, "-ERR Error cloning memcached object\n");
 		}
-		
+
 		subcmd = argv[0];
-		
+
 		if ((!strcasecmp(subcmd, "set") || !strcasecmp(subcmd, "replace") || !strcasecmp(subcmd, "add")) && argc > 2) {
 			key = argv[1];
 			val = argv[2];
 
 			if (argc > 3) {
 				expires_str = argv[3];
-				expires = (time_t)strtol(expires_str, NULL, 10);
+				expires = (time_t) strtol(expires_str, NULL, 10);
 			}
 			if (argc > 4) {
 				flags_str = argv[4];
-				flags = (uint32_t)strtol(flags_str, NULL, 16);
+				flags = (uint32_t) strtol(flags_str, NULL, 16);
 			}
 			if (!strcasecmp(subcmd, "set")) {
 				rc = memcached_set(memcached, key, strlen(key), val, strlen(val), expires, flags);
@@ -198,7 +197,7 @@ SWITCH_STANDARD_API(memcache_function)
 			} else if (!strcasecmp(subcmd, "add")) {
 				rc = memcached_add(memcached, key, strlen(key), val, strlen(val), expires, flags);
 			}
-			
+
 			if (rc == MEMCACHED_SUCCESS) {
 				stream->write_function(stream, "+OK\n");
 			} else {
@@ -206,10 +205,10 @@ SWITCH_STANDARD_API(memcache_function)
 			}
 		} else if (!strcasecmp(subcmd, "get") && argc > 1) {
 			key = argv[1];
-			
+
 			val = memcached_get(memcached, key, strlen(key), &string_length, &flags, &rc);
 			if (rc == MEMCACHED_SUCCESS) {
-				stream->write_function(stream, "%.*s", (int)string_length, val);
+				stream->write_function(stream, "%.*s", (int) string_length, val);
 			} else {
 				switch_safe_free(val);
 				switch_goto_status(SWITCH_STATUS_SUCCESS, mcache_error);
@@ -217,7 +216,7 @@ SWITCH_STANDARD_API(memcache_function)
 			switch_safe_free(val);
 		} else if (!strcasecmp(subcmd, "getflags") && argc > 1) {
 			key = argv[1];
-			
+
 			val = memcached_get(memcached, key, strlen(key), &string_length, &flags, &rc);
 			if (rc == MEMCACHED_SUCCESS) {
 				stream->write_function(stream, "%x", flags);
@@ -234,20 +233,20 @@ SWITCH_STANDARD_API(memcache_function)
 			key = argv[1];
 
 			if (argc > 2) {
-				offset = (unsigned int)strtol(argv[2], NULL, 10);
+				offset = (unsigned int) strtol(argv[2], NULL, 10);
 				svalue = argv[2];
 			} else {
 				svalue = "1";
 			}
 			if (argc > 3) {
 				expires_str = argv[3];
-				expires = (time_t)strtol(expires_str, NULL, 10);
+				expires = (time_t) strtol(expires_str, NULL, 10);
 			}
 			if (argc > 4) {
 				flags_str = argv[4];
-				flags = (uint32_t)strtol(flags_str, NULL, 16);
+				flags = (uint32_t) strtol(flags_str, NULL, 16);
 			}
-			
+
 			if (!strcasecmp(subcmd, "increment")) {
 				increment = SWITCH_TRUE;
 				rc = memcached_increment(memcached, key, strlen(key), offset, &ivalue);
@@ -259,18 +258,20 @@ SWITCH_STANDARD_API(memcache_function)
 				/* ok, trying to incr / decr a value that doesn't exist yet.
 				   Try to add an appropriate initial value.  If someone else beat
 				   us to it, then redo incr/decr.  Otherwise we're good.
-				*/
+				 */
 				rc = memcached_add(memcached, key, strlen(key), (increment) ? svalue : "0", strlen(svalue), expires, flags);
 				if (rc == MEMCACHED_SUCCESS) {
 					ivalue = (increment) ? offset : 0;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Initialized inc/dec memcache key: %s to value %d\n", key, offset);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Initialized inc/dec memcache key: %s to value %d\n", key,
+									  offset);
 				} else {
 					if (increment) {
 						rc = memcached_increment(memcached, key, strlen(key), offset, &ivalue);
 					} else {
 						rc = memcached_decrement(memcached, key, strlen(key), offset, &ivalue);
 					}
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Someone else created incr/dec memcache key, resubmitting inc/dec request.\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									  "Someone else created incr/dec memcache key, resubmitting inc/dec request.\n");
 				}
 			}
 			if (rc == MEMCACHED_SUCCESS) {
@@ -282,7 +283,7 @@ SWITCH_STANDARD_API(memcache_function)
 			key = argv[1];
 			if (argc > 2) {
 				expires_str = argv[3];
-				expires = (time_t)strtol(expires_str, NULL, 10);
+				expires = (time_t) strtol(expires_str, NULL, 10);
 			}
 			rc = memcached_delete(memcached, key, strlen(key), expires);
 			if (rc == MEMCACHED_SUCCESS) {
@@ -293,7 +294,7 @@ SWITCH_STANDARD_API(memcache_function)
 		} else if (!strcasecmp(subcmd, "flush")) {
 			if (argc > 1) {
 				expires_str = argv[3];
-				expires = (time_t)strtol(expires_str, NULL, 10);
+				expires = (time_t) strtol(expires_str, NULL, 10);
 			}
 			rc = memcached_flush(memcached, expires);
 			if (rc == MEMCACHED_SUCCESS) {
@@ -310,7 +311,7 @@ SWITCH_STANDARD_API(memcache_function)
 					verbose = SWITCH_TRUE;
 				}
 			}
-			
+
 			stream->write_function(stream, "Lib version: %s\n", memcached_lib_version());
 			stat = memcached_stat(memcached, NULL, &rc);
 			if (rc != MEMCACHED_SUCCESS && rc != MEMCACHED_SOME_ERRORS) {
@@ -320,13 +321,14 @@ SWITCH_STANDARD_API(memcache_function)
 			server_count = memcached_server_count(memcached);
 			stream->write_function(stream, "Servers: %d\n", server_count);
 			for (x = 0; x < server_count; x++) {
-				stream->write_function(stream, "  %s (%u)\n", memcached_server_name(memcached, server_list[x]), memcached_server_port(memcached, server_list[x]));
+				stream->write_function(stream, "  %s (%u)\n", memcached_server_name(memcached, server_list[x]),
+									   memcached_server_port(memcached, server_list[x]));
 				if (verbose == SWITCH_TRUE) {
 					char **list;
 					char **ptr;
 					char *value;
 					memcached_return rc2;
-					
+
 					list = memcached_stat_get_keys(memcached, &stat[x], &rc);
 					for (ptr = list; *ptr; ptr++) {
 						value = memcached_stat_get_value(memcached, &stat[x], *ptr, &rc2);
@@ -343,25 +345,26 @@ SWITCH_STANDARD_API(memcache_function)
 	}
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 
-mcache_error:
+  mcache_error:
 	if (rc != MEMCACHED_NOTFOUND) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error while running command %s: %s\n", subcmd, memcached_strerror(memcached, rc));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error while running command %s: %s\n", subcmd,
+						  memcached_strerror(memcached, rc));
 	}
 	stream->write_function(stream, "-ERR %s\n", memcached_strerror(memcached, rc));
 	goto done;
-	
-usage:
+
+  usage:
 	stream->write_function(stream, "-ERR\n%s\n", SYNTAX);
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
-	
-done: 
+
+  done:
 	if (memcached) {
 		memcached_quit(memcached);
 		memcached_free(memcached);
 	}
 	switch_safe_free(mydata);
 	switch_safe_free(stat);
-	
+
 	return status;
 }
 
@@ -375,12 +378,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_memcache_load)
 	memset(&globals, 0, sizeof(globals));
 
 	do_config(SWITCH_FALSE);
-	
+
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &NODE) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind event!\n");
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	SWITCH_ADD_API(api_interface, "memcache", "Memcache API", memcache_function, "syntax");
 
 	/* indicate that the module should continue to be loaded */
@@ -397,9 +400,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_memcache_shutdown)
 	if (globals.memcached) {
 		memcached_free(globals.memcached);
 	}
-	
+
 	switch_event_unbind(&NODE);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

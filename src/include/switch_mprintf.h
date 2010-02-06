@@ -14,7 +14,6 @@
 #define SWITCH_MPRINTF_H
 
 SWITCH_BEGIN_EXTERN_C
-
 /**
  * This routine is a variant of the "sprintf()" from the
  * standard C library.  The resulting string is written into memory

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -80,7 +80,7 @@ static JSBool teletone_construct(JSContext * cx, JSObject * obj, uintN argc, jsv
 	struct js_session *jss = NULL;
 	switch_memory_pool_t *pool;
 	char *timer_name = NULL;
-    switch_codec_implementation_t read_impl = {0};
+	switch_codec_implementation_t read_impl = { 0 };
 
 
 
@@ -109,15 +109,14 @@ static JSBool teletone_construct(JSContext * cx, JSObject * obj, uintN argc, jsv
 		return JS_FALSE;
 	}
 
-    switch_core_session_get_read_impl(jss->session, &read_impl);
+	switch_core_session_get_read_impl(jss->session, &read_impl);
 
 	if (switch_core_codec_init(&tto->codec,
 							   "L16",
 							   NULL,
 							   read_impl.actual_samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
-							   read_impl.number_of_channels,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
+							   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed\n");
@@ -127,10 +126,7 @@ static JSBool teletone_construct(JSContext * cx, JSObject * obj, uintN argc, jsv
 	if (timer_name) {
 		unsigned int ms = read_impl.microseconds_per_packet / 1000;
 		if (switch_core_timer_init(&tto->timer_base,
-								   timer_name,
-								   ms,
-								   (read_impl.samples_per_second / 50) *
-								   read_impl.number_of_channels, pool) == SWITCH_STATUS_SUCCESS) {
+								   timer_name, ms, (read_impl.samples_per_second / 50) * read_impl.number_of_channels, pool) == SWITCH_STATUS_SUCCESS) {
 			tto->timer = &tto->timer_base;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Timer INIT Success %u\n", ms);
 		} else {
@@ -347,7 +343,7 @@ const sm_module_interface_t teletone_module_interface = {
 	/*.next */ NULL
 };
 
-SWITCH_MOD_DECLARE_NONSTD(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
+SWITCH_MOD_DECLARE_NONSTD(switch_status_t) spidermonkey_init(const sm_module_interface_t ** module_interface)
 {
 	*module_interface = &teletone_module_interface;
 	return SWITCH_STATUS_SUCCESS;

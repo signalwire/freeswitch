@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -42,7 +42,8 @@ SWITCH_MODULE_DEFINITION(mod_radius_cdr, mod_radius_cdr_load, mod_radius_cdr_shu
 static struct {
 	int shutdown;
 	switch_thread_rwlock_t *rwlock;
-} globals = { 0 };
+} globals = {
+0};
 
 static char cf[] = "mod_radius_cdr.conf";
 static char my_dictionary[PATH_MAX];
@@ -346,9 +347,7 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 				}
 			}
 
-			if (profile->caller_extension && 
-				profile->caller_extension->last_application && 
-				profile->caller_extension->last_application->application_name) {
+			if (profile->caller_extension && profile->caller_extension->last_application && profile->caller_extension->last_application->application_name) {
 				if (rc_avpair_add(rad_config, &send, PW_FS_LASTAPP,
 								  (void *) profile->caller_extension->last_application->application_name, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed adding Freeswitch-Lastapp: %s\n", profile->source);
@@ -369,8 +368,8 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 		retval = SWITCH_STATUS_TERM;
 	}
 	rc_avpair_free(send);
-        rc_destroy(rad_config);
- end:
+	rc_destroy(rad_config);
+  end:
 	switch_xml_free(cdr);
 	switch_thread_rwlock_unlock(globals.rwlock);
 	return (retval);
@@ -562,8 +561,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 					goto end;
 				}
 			}
-			if (profile->caller_extension && profile->caller_extension->last_application && 
-			    profile->caller_extension->last_application->application_name) {
+			if (profile->caller_extension && profile->caller_extension->last_application && profile->caller_extension->last_application->application_name) {
 				if (rc_avpair_add(rad_config, &send, PW_FS_LASTAPP,
 								  (void *) profile->caller_extension->last_application->application_name, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed adding Freeswitch-Lastapp: %s\n", profile->source);
@@ -643,9 +641,9 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		retval = SWITCH_STATUS_TERM;
 	}
 	rc_avpair_free(send);
-        rc_destroy(rad_config);
+	rc_destroy(rad_config);
 
- end:
+  end:
 	switch_xml_free(cdr);
 	switch_thread_rwlock_unlock(globals.rwlock);
 	return (retval);
@@ -718,11 +716,11 @@ static const switch_state_handler_table_t state_handlers = {
 	/*.on_hangup */ NULL,
 	/*.on_exchange_media */ NULL,
 	/*.on_soft_execute */ NULL,
-	/*.on_consume_media*/ NULL,
-	/*.on_hibernate*/ NULL,
-	/*.on_reset*/ NULL,
-	/*.on_park*/ NULL,
-	/*.on_reporting*/ my_on_reporting
+	/*.on_consume_media */ NULL,
+	/*.on_hibernate */ NULL,
+	/*.on_reset */ NULL,
+	/*.on_park */ NULL,
+	/*.on_reporting */ my_on_reporting
 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_radius_cdr_load)

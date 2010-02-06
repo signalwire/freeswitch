@@ -719,7 +719,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				DEBUGA_SKYPE("CHANNEL READ CONTINUE\n", SKYPIAX_P_LOG);
 				continue;
 			}
-	switch_core_timer_check(&tech_pvt->timer_read, SWITCH_TRUE);
+			switch_core_timer_check(&tech_pvt->timer_read, SWITCH_TRUE);
 			*frame = &tech_pvt->read_frame;
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 			if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {

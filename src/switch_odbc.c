@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -45,7 +45,7 @@
 
 #if (ODBCVER < 0x0300)
 #define SQL_NO_DATA SQL_SUCCESS
-#endif 
+#endif
 
 struct switch_odbc_handle {
 	char *dsn;
@@ -98,7 +98,6 @@ SWITCH_DECLARE(switch_odbc_handle_t *) switch_odbc_handle_new(const char *dsn, c
 		switch_safe_free(new_handle->password);
 		switch_safe_free(new_handle);
 	}
-
 #endif
 	return NULL;
 }
@@ -177,10 +176,10 @@ static int db_is_up(switch_odbc_handle_t *handle)
 		code = __LINE__;
 		goto error;
 	}
-	
-	SQLRowCount (stmt, &m);
-	rc = SQLNumResultCols (stmt, &nresultcols);
-	if (rc != SQL_SUCCESS){
+
+	SQLRowCount(stmt, &m);
+	rc = SQLNumResultCols(stmt, &nresultcols);
+	if (rc != SQL_SUCCESS) {
 		code = __LINE__;
 		goto error;
 	}
@@ -241,9 +240,9 @@ static int db_is_up(switch_odbc_handle_t *handle)
 }
 #endif
 
-SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_statement_handle_free(switch_odbc_statement_handle_t * stmt)
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_statement_handle_free(switch_odbc_statement_handle_t *stmt)
 {
-	if (!stmt || ! *stmt) {
+	if (!stmt || !*stmt) {
 		return SWITCH_ODBC_FAIL;
 	}
 #ifdef SWITCH_HAVE_ODBC
@@ -332,7 +331,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 	} else {
 		handle->is_firebird = FALSE;
 	}
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Connected to [%s]\n", handle->dsn);
 	handle->state = SWITCH_ODBC_STATE_CONNECTED;
 	return SWITCH_ODBC_SUCCESS;
@@ -341,11 +340,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 #endif
 }
 
-SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_handle_t *handle,
-																	const char *sql,
-																	char *resbuf,
-																	size_t len,
-																	char **err)
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_handle_t *handle, const char *sql, char *resbuf, size_t len, char **err)
 {
 #ifdef SWITCH_HAVE_ODBC
 	switch_odbc_status_t sstatus = SWITCH_ODBC_FAIL;
@@ -357,7 +352,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_
 		SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
 		SQLULEN ColumnSize;
 		int result;
-		
+
 		SQLRowCount(stmt, &m);
 
 		if (m <= 0) {
@@ -366,20 +361,20 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_
 
 		result = SQLExecute(stmt);
 		result = SQLFetch(stmt);
-		
+
 		if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO && result != SQL_NO_DATA) {
 			goto done;
 		}
-		
+
 		SQLDescribeCol(stmt, 1, name, sizeof(name), &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
 		SQLGetData(stmt, 1, SQL_C_CHAR, (SQLCHAR *) resbuf, (SQLLEN) len, NULL);
-		
+
 		sstatus = SWITCH_ODBC_SUCCESS;
 	} else {
 		return sstatus;
 	}
 
- done:
+  done:
 	switch_odbc_statement_handle_free(&stmt);
 	return sstatus;
 #else
@@ -387,7 +382,8 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_
 #endif
 }
 
-SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, const char *sql, switch_odbc_statement_handle_t *rstmt, char **err)
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, const char *sql, switch_odbc_statement_handle_t *rstmt,
+															 char **err)
 {
 #ifdef SWITCH_HAVE_ODBC
 	SQLHSTMT stmt = NULL;
@@ -448,7 +444,8 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(const char *file, const char *func, int line,
 																			   switch_odbc_handle_t *handle,
-																			   const char *sql, switch_core_db_callback_func_t callback, void *pdata, char **err)
+																			   const char *sql, switch_core_db_callback_func_t callback, void *pdata,
+																			   char **err)
 {
 #ifdef SWITCH_HAVE_ODBC
 	SQLHSTMT stmt = NULL;
@@ -485,16 +482,16 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 	SQLRowCount(stmt, &m);
 
 
-	while(!done) {
+	while (!done) {
 		int name_len = 256;
 		char **names;
 		char **vals;
 		int y = 0;
-		
+
 		result = SQLFetch(stmt);
 
 		if (result != SQL_SUCCESS) {
-			if (result != SQL_NO_DATA){
+			if (result != SQL_NO_DATA) {
 				err_cnt++;
 			}
 			break;
@@ -535,14 +532,14 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 		free(names);
 		free(vals);
 	}
-	
+
 	SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 
 	if (!err_cnt) {
 		return SWITCH_ODBC_SUCCESS;
 	}
 
- error:
+  error:
 
 	if (stmt) {
 		err_str = switch_odbc_handle_get_error(handle, stmt);
@@ -557,7 +554,6 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 			free(err_str);
 		}
 	}
-	
 
 #endif
 	return SWITCH_ODBC_FAIL;

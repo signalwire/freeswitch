@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -28,7 +28,7 @@
  * mod_curl.c -- API for performing http queries
  *
  */
- 
+
 #include <switch.h>
 #include <curl/curl.h>
 #include <json.h>
@@ -75,13 +75,12 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	http_data->bytes += realsize;
 
 	if (http_data->bytes > http_data->max_bytes) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oversized file detected [%d bytes]\n", (int)http_data->bytes);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oversized file detected [%d bytes]\n", (int) http_data->bytes);
 		http_data->err = 1;
 		return 0;
 	}
 
-	http_data->stream.write_function(
-		&http_data->stream, "%.*s",  realsize, ptr);
+	http_data->stream.write_function(&http_data->stream, "%.*s", realsize, ptr);
 	return realsize;
 }
 
@@ -90,18 +89,19 @@ static size_t header_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	register unsigned int realsize = (unsigned int) (size * nmemb);
 	http_data_t *http_data = data;
 	char *header = NULL;
-	
-	header = switch_core_alloc(http_data->pool, realsize+1);
+
+	header = switch_core_alloc(http_data->pool, realsize + 1);
 	switch_copy_string(header, ptr, realsize);
 	header[realsize] = '\0';
 
 	http_data->headers = curl_slist_append(http_data->headers, header);
-	
+
 	return realsize;
 }
 
-static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, const char *method, const char *data) {
-	
+static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, const char *method, const char *data)
+{
+
 	CURL *curl_handle = NULL;
 	long httpRes = 0;
 	char hostname[256] = "";
@@ -111,19 +111,19 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	http_data = switch_core_alloc(pool, sizeof(http_data_t));
 	memset(http_data, 0, sizeof(http_data_t));
 	http_data->pool = pool;
-	
+
 	http_data->max_bytes = 64000;
 	SWITCH_STANDARD_STREAM(http_data->stream);
 
 	gethostname(hostname, sizeof(hostname));
-	
+
 	if (!method) {
 		method = "get";
 	}
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "method: %s, url: %s\n", method, url);
 	curl_handle = curl_easy_init();
-	
+
 	if (!strncasecmp(url, "https", 5)) {
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
@@ -150,54 +150,53 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	curl_easy_perform(curl_handle);
 	curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 	curl_easy_cleanup(curl_handle);
-	
-	if (	http_data->stream.data &&
-			!zstr((char *)http_data->stream.data) &&
-			strcmp(" ", http_data->stream.data) ) {
-		
+
+	if (http_data->stream.data && !zstr((char *) http_data->stream.data) && strcmp(" ", http_data->stream.data)) {
+
 		http_data->http_response = switch_core_strdup(pool, http_data->stream.data);
 	}
-	
+
 	http_data->http_response_code = httpRes;
-	
+
 	switch_safe_free(http_data->stream.data);
 	return http_data;
 }
 
 
-static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data) {
+static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data)
+{
 	struct json_object *top = NULL;
 	struct json_object *headers = NULL;
 	char *data = NULL;
 	struct curl_slist *header = http_data->headers;
-	
+
 	top = json_object_new_object();
 	headers = json_object_new_array();
 	json_object_object_add(top, "status_code", json_object_new_int(http_data->http_response_code));
 	if (http_data->http_response) {
 		json_object_object_add(top, "body", json_object_new_string(http_data->http_response));
 	}
-	
+
 	/* parse header data */
-	while(header) {
+	while (header) {
 		struct json_object *obj = NULL;
 		/* remove trailing \r */
-		if ((data=rindex(header->data, '\r'))) {
+		if ((data = rindex(header->data, '\r'))) {
 			*data = '\0';
 		}
-		
+
 		if (zstr(header->data)) {
 			header = header->next;
 			continue;
 		}
-		
+
 		if ((data = index(header->data, ':'))) {
 			*data = '\0';
 			data++;
-			while(*data == ' ' && *data != '\0') {
+			while (*data == ' ' && *data != '\0') {
 				data++;
 			}
-			obj = json_object_new_object(); 
+			obj = json_object_new_object();
 			json_object_object_add(obj, "key", json_object_new_string(header->data));
 			json_object_object_add(obj, "value", json_object_new_string(data));
 			json_object_array_add(headers, obj);
@@ -223,15 +222,15 @@ static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data) {
 	}
 	json_object_object_add(top, "headers", headers);
 	data = switch_core_strdup(pool, json_object_to_json_string(top));
-	json_object_put(top); /* should free up all children */
-	
+	json_object_put(top);		/* should free up all children */
+
 	return data;
 }
 
 SWITCH_STANDARD_APP(curl_app_function)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
+
 	char *argv[10] = { 0 };
 	int argc;
 	char *mydata = NULL;
@@ -247,8 +246,8 @@ SWITCH_STANDARD_APP(curl_app_function)
 	struct curl_slist *slist = NULL;
 	switch_stream_handle_t stream = { 0 };
 	int i = 0;
-	
-	
+
+
 	if (session) {
 		pool = switch_core_session_get_pool(session);
 	} else {
@@ -257,24 +256,23 @@ SWITCH_STANDARD_APP(curl_app_function)
 	if (!(mydata = switch_core_session_strdup(session, data))) {
 		return;
 	}
-	
+
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (argc == 0) {
 			switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
 		}
-		
+
 		url = switch_core_strdup(pool, argv[0]);
 
-		for (i =1; i < argc; i++) {
+		for (i = 1; i < argc; i++) {
 			if (!strcasecmp("headers", argv[i])) {
 				do_headers = SWITCH_TRUE;
 			} else if (!strcasecmp("json", argv[i])) {
 				do_json = SWITCH_TRUE;
-			} else if ( !strcasecmp("get", argv[i]) || 
-						!strcasecmp("head", argv[i])) {
+			} else if (!strcasecmp("get", argv[i]) || !strcasecmp("head", argv[i])) {
 				method = switch_core_strdup(pool, argv[i]);
 			} else if (!strcasecmp("post", argv[i])) {
-				if ( ++i < argc) { 
+				if (++i < argc) {
 					postdata = switch_core_strdup(pool, argv[i]);
 					switch_url_decode(postdata);
 				} else {
@@ -283,7 +281,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 			}
 		}
 	}
-	
+
 	http_data = do_lookup_url(pool, url, method, postdata);
 	if (do_json) {
 		switch_channel_set_variable(channel, "curl_response_data", print_json(pool, http_data));
@@ -291,7 +289,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 		SWITCH_STANDARD_STREAM(stream);
 		if (do_headers) {
 			slist = http_data->headers;
-			while(slist) {
+			while (slist) {
 				stream.write_function(&stream, "%s\n", slist->data);
 				slist = slist->next;
 			}
@@ -300,17 +298,16 @@ SWITCH_STANDARD_APP(curl_app_function)
 		stream.write_function(&stream, "%s", http_data->http_response ? http_data->http_response : "");
 		switch_channel_set_variable(channel, "curl_response_data", stream.data);
 	}
-	switch_channel_set_variable(channel, "curl_response_code", 
-	switch_core_sprintf(pool, "%ld", http_data->http_response_code));
+	switch_channel_set_variable(channel, "curl_response_code", switch_core_sprintf(pool, "%ld", http_data->http_response_code));
 	switch_channel_set_variable(channel, "curl_method", method);
 
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
-	
-usage:
+
+  usage:
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", SYNTAX);
 	switch_goto_status(status, done);
-	
-done:
+
+  done:
 	switch_safe_free(stream.data);
 	if (http_data && http_data->headers) {
 		curl_slist_free_all(http_data->headers);
@@ -319,6 +316,7 @@ done:
 		switch_core_destroy_memory_pool(&pool);
 	}
 }
+
 SWITCH_STANDARD_API(curl_function)
 {
 	switch_status_t status;
@@ -335,7 +333,7 @@ SWITCH_STANDARD_API(curl_function)
 	int i = 0;
 
 	switch_memory_pool_t *pool = NULL;
-	
+
 	if (zstr(cmd)) {
 		switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
 	}
@@ -351,20 +349,19 @@ SWITCH_STANDARD_API(curl_function)
 		if (argc < 1) {
 			switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
 		}
-		
+
 		url = switch_core_strdup(pool, argv[0]);
-		
-		for (i =1; i < argc; i++) {
+
+		for (i = 1; i < argc; i++) {
 			if (!strcasecmp("headers", argv[i])) {
 				do_headers = SWITCH_TRUE;
 			} else if (!strcasecmp("json", argv[i])) {
 				do_json = SWITCH_TRUE;
-			} else if ( !strcasecmp("get", argv[i]) || 
-						!strcasecmp("head", argv[i])) {
+			} else if (!strcasecmp("get", argv[i]) || !strcasecmp("head", argv[i])) {
 				method = switch_core_strdup(pool, argv[i]);
 			} else if (!strcasecmp("post", argv[i])) {
 				method = "post";
-				if ( ++i < argc) { 
+				if (++i < argc) {
 					postdata = switch_core_strdup(pool, argv[i]);
 					switch_url_decode(postdata);
 				} else {
@@ -372,14 +369,14 @@ SWITCH_STANDARD_API(curl_function)
 				}
 			}
 		}
-		
+
 		http_data = do_lookup_url(pool, url, method, postdata);
 		if (do_json) {
 			stream->write_function(stream, "%s", print_json(pool, http_data));
 		} else {
 			if (do_headers) {
 				slist = http_data->headers;
-				while(slist) {
+				while (slist) {
 					stream->write_function(stream, "%s\n", slist->data);
 					slist = slist->next;
 				}
@@ -390,11 +387,11 @@ SWITCH_STANDARD_API(curl_function)
 	}
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 
-usage:
+  usage:
 	stream->write_function(stream, "-ERR\n%s\n", SYNTAX);
 	switch_goto_status(status, done);
-	
-done: 
+
+  done:
 	if (http_data && http_data->headers) {
 		curl_slist_free_all(http_data->headers);
 	}
@@ -414,7 +411,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	memset(&globals, 0, sizeof(globals));
-	
+
 	globals.pool = pool;
 
 	SWITCH_ADD_API(api_interface, "curl", "curl API", curl_function, SYNTAX);

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -121,7 +121,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	
+
 	/* extract params */
 	if (*data == '{') {
 		param_string = data + 1;
@@ -150,10 +150,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle
 
 	status = sh->speech_interface->speech_feed_tts(sh, data, flags);
 
- done:
+  done:
 
 	switch_safe_free(ltext);
-	return status;	
+	return status;
 }
 
 SWITCH_DECLARE(void) switch_core_speech_flush_tts(switch_speech_handle_t *sh)
@@ -192,17 +192,16 @@ SWITCH_DECLARE(void) switch_core_speech_float_param_tts(switch_speech_handle_t *
 	}
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle_t *sh,
-															void *data, switch_size_t *datalen, switch_speech_flag_t *flags)
+SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle_t *sh, void *data, switch_size_t *datalen, switch_speech_flag_t *flags)
 {
 	switch_status_t status;
 	switch_size_t want, orig_len = *datalen;
-	
+
 	switch_assert(sh != NULL);
-	
+
 	want = *datalen;
 
- top:
+  top:
 
 	if (sh->buffer && (switch_buffer_inuse(sh->buffer) >= orig_len || switch_test_flag(sh, SWITCH_SPEECH_FLAG_DONE))) {
 		if ((*datalen = switch_buffer_read(sh->buffer, data, orig_len))) {
@@ -216,14 +215,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle
 		return SWITCH_STATUS_BREAK;
 	}
 
- more:
+  more:
 
 	if ((status = sh->speech_interface->speech_read_tts(sh, data, datalen, flags)) != SWITCH_STATUS_SUCCESS) {
 		switch_set_flag(sh, SWITCH_SPEECH_FLAG_DONE);
 		goto top;
 	}
 
-	
+
 	if (sh->native_rate && sh->samplerate && sh->native_rate != sh->samplerate) {
 		if (!sh->resampler) {
 			if (switch_resample_create(&sh->resampler,
@@ -239,16 +238,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle
 				int factor = sh->resampler->to_len * sh->samplerate / 1000;
 				switch_buffer_create_dynamic(&sh->buffer, factor, factor, 0);
 				switch_assert(sh->buffer);
-			}			
+			}
 			if (!sh->dbuf || sh->dbuflen < sh->resampler->to_len * 2) {
 				sh->dbuflen = sh->resampler->to_len * 2;
 				sh->dbuf = switch_core_alloc(sh->memory_pool, sh->dbuflen);
 			}
 			switch_assert(sh->resampler->to_len <= sh->dbuflen);
-		
+
 			memcpy((int16_t *) sh->dbuf, sh->resampler->to, sh->resampler->to_len * 2);
 			switch_buffer_write(sh->buffer, sh->dbuf, sh->resampler->to_len * 2);
-			
+
 			if (switch_buffer_inuse(sh->buffer) < want) {
 				*datalen = want;
 				goto more;
@@ -270,7 +269,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle
 SWITCH_DECLARE(switch_status_t) switch_core_speech_close(switch_speech_handle_t *sh, switch_speech_flag_t *flags)
 {
 	switch_status_t status = sh->speech_interface->speech_close(sh, flags);
-	
+
 	if (!switch_test_flag(sh, SWITCH_SPEECH_FLAG_OPEN)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -288,7 +287,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_close(switch_speech_handle_t 
 	}
 
 	switch_clear_flag(sh, SWITCH_SPEECH_FLAG_OPEN);
-	
+
 	return status;
 }
 

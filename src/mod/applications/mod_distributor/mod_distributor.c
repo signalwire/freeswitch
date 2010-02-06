@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -64,7 +64,7 @@ struct dist_list {
 static void destroy_node(struct dist_node *node)
 {
 	struct dist_node *old;
-	while(node) {
+	while (node) {
 		old = node;
 		node = node->next;
 		if (old->name) {
@@ -78,7 +78,7 @@ static void destroy_list(struct dist_list *list)
 {
 	struct dist_list *old;
 
-	while(list) {
+	while (list) {
 		old = list;
 		list = list->next;
 		destroy_node(old->nodes);
@@ -97,14 +97,14 @@ static struct {
 
 
 
-static int load_config(int reloading) 
+static int load_config(int reloading)
 {
-	struct dist_list *main_list=NULL, *new_list, *old_list=NULL, *lp=NULL;
+	struct dist_list *main_list = NULL, *new_list, *old_list = NULL, *lp = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *cf = "distributor.conf";
 	switch_xml_t cfg, xml, lists, list, param;
-	
-	
+
+
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
@@ -120,7 +120,7 @@ static int load_config(int reloading)
 	for (list = switch_xml_child(lists, "list"); list; list = list->next) {
 		const char *name = switch_xml_attr(list, "name");
 		const char *tweight = switch_xml_attr(list, "total-weight");
-		struct dist_node *node, *np=NULL;
+		struct dist_node *node, *np = NULL;
 		int target_weight = 10;
 		int accum = 0;
 
@@ -128,30 +128,30 @@ static int load_config(int reloading)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing NAME!\n");
 			continue;
 		}
-		
+
 		if (!zstr(tweight)) {
 			target_weight = atoi(tweight);
 		}
 
 		switch_zmalloc(new_list, sizeof(*new_list));
-		
+
 		new_list->name = strdup(name);
 		new_list->last = -1;
 		new_list->target_weight = target_weight;
-		
+
 		if (lp) {
 			lp->next = new_list;
 		} else {
 			main_list = new_list;
 		}
-		
+
 		lp = new_list;
-		
+
 		for (param = switch_xml_child(list, "node"); param; param = param->next) {
 			char *name = (char *) switch_xml_attr_soft(param, "name");
 			char *weight_val = (char *) switch_xml_attr_soft(param, "weight");
 			int weight = 0, tmp;
-			
+
 			if ((tmp = atoi(weight_val)) < 1) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Weight %d value incorrect, must be > 0\n", tmp);
 				continue;
@@ -163,23 +163,25 @@ static int load_config(int reloading)
 			}
 
 			if (accum + tmp > lp->target_weight) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Target Weight %d already met, ignoring subsequent entries.\n", lp->target_weight);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Target Weight %d already met, ignoring subsequent entries.\n",
+								  lp->target_weight);
 				continue;
 			}
 
 			accum += tmp;
 
 			weight = lp->target_weight - tmp;
-				
+
 			if (weight < 0 || weight > lp->target_weight) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Weight %d value incorrect, must be between 1 and %d\n", weight, lp->target_weight);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Weight %d value incorrect, must be between 1 and %d\n", weight,
+								  lp->target_weight);
 				continue;
 			}
-			
+
 			switch_zmalloc(node, sizeof(*node));
 			node->name = strdup(name);
 			node->weight = node->cur_weight = weight;
-			
+
 
 			if (np) {
 				np->next = node;
@@ -198,7 +200,7 @@ static int load_config(int reloading)
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Total weight does not add up to total weight %d\n", lp->target_weight);
 
-			for(np1 = lp->nodes; np1; np1 = np1->next) {
+			for (np1 = lp->nodes; np1; np1 = np1->next) {
 				np1->weight += lp->target_weight - ea;
 			}
 
@@ -230,7 +232,7 @@ static int reset_list(struct dist_list *list)
 {
 	struct dist_node *np;
 
-	for(np = list->nodes; np; np = np->next) {
+	for (np = list->nodes; np; np = np->next) {
 		np->cur_weight = np->weight;
 	}
 	list->last = -1;
@@ -243,8 +245,8 @@ static struct dist_node *find_next(struct dist_list *list)
 	struct dist_node *np, *match = NULL;
 	int x = 0, mx = 0;
 	int matches = 0, loops = 0;
-	
-	for(;;) {
+
+	for (;;) {
 
 		if (++loops > 1000) {
 			break;
@@ -255,7 +257,7 @@ static struct dist_node *find_next(struct dist_list *list)
 			list->last = -1;
 		}
 		match = NULL;
-		for(np = list->nodes; np; np = np->next) {
+		for (np = list->nodes; np; np = np->next) {
 			if (np->cur_weight < list->target_weight) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s %d/%d\n", np->name, np->cur_weight, list->target_weight);
 				matches++;
@@ -274,7 +276,7 @@ static struct dist_node *find_next(struct dist_list *list)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choose %s\n", match->name);
 			return match;
 		}
-		
+
 		if (matches) {
 			list->last = -1;
 		} else {
@@ -294,7 +296,7 @@ static char *dist_engine(const char *name)
 	char *str = NULL;
 
 	switch_mutex_lock(globals.mod_lock);
-	for(lp = globals.list; lp; lp = lp->next) {
+	for (lp = globals.list; lp; lp = lp->next) {
 		if (!strcasecmp(name, lp->name)) {
 			np = find_next(lp);
 			break;
@@ -307,14 +309,14 @@ static char *dist_engine(const char *name)
 	switch_mutex_unlock(globals.mod_lock);
 
 	return str;
-	
+
 }
 
 SWITCH_STANDARD_APP(distributor_exec)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *ret = NULL;
-	
+
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "distributor requires an argument\n");
 		return;
@@ -370,11 +372,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_distributor_load)
 	globals.pool = pool;
 
 	load_config(SWITCH_FALSE);
-	
+
 
 	SWITCH_ADD_API(api_interface, "distributor", "Distributor API", distributor_function, "<list name>");
 	SWITCH_ADD_API(api_interface, "distributor_ctl", "Distributor API", distributor_ctl_function, "[reload]");
-	SWITCH_ADD_APP(app_interface, "distributor", "Distributor APP", "Distributor APP", distributor_exec, "<list name>", SAF_SUPPORT_NOMEDIA|SAF_ROUTING_EXEC);
+	SWITCH_ADD_APP(app_interface, "distributor", "Distributor APP", "Distributor APP", distributor_exec, "<list name>",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 
 
 	/* indicate that the module should continue to be loaded */

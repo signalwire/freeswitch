@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -93,7 +93,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_fr
 	new_frame = malloc(sizeof(*new_frame));
 
 	switch_assert(new_frame);
-	
+
 	*new_frame = *orig;
 	switch_set_flag(new_frame, SFF_DYNAMIC);
 
@@ -102,7 +102,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_fr
 
 	memcpy(new_frame->data, orig->data, orig->datalen);
 	new_frame->codec = NULL;
-	
+
 	*clone = new_frame;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -113,7 +113,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame)
 	if (!frame || !*frame || !switch_test_flag((*frame), SFF_DYNAMIC)) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	switch_safe_free((*frame)->data);
 	free(*frame);
 	*frame = NULL;
@@ -121,7 +121,8 @@ SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, const char *name, switch_bool_t default_type, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, const char *name, switch_bool_t default_type,
+														   switch_memory_pool_t *pool)
 {
 	switch_network_list_t *new_list;
 
@@ -164,14 +165,15 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_netwo
 	return ok;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_network_list_perform_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok, const char *token)
+SWITCH_DECLARE(switch_status_t) switch_network_list_perform_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok,
+																		   const char *token)
 {
 	uint32_t ip, mask, bits;
 	switch_network_node_t *node;
 
 	if (switch_parse_cidr(cidr_str, &ip, &mask, &bits)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding %s (%s) [%s] to list %s\n",
-			cidr_str, ok ? "allow" : "deny", switch_str_nil(token), list->name);
+						  cidr_str, ok ? "allow" : "deny", switch_str_nil(token), list->name);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -186,11 +188,11 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_perform_add_cidr_token(switc
 	if (!zstr(token)) {
 		node->token = switch_core_strdup(list->pool, token);
 	}
-	
+
 	node->next = list->node_head;
 	list->node_head = node;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) [%s] to list %s\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) [%s] to list %s\n",
 					  cidr_str, ok ? "allow" : "deny", switch_str_nil(token), list->name);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -200,14 +202,14 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_networ
 {
 	char *cidr_str_dup = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
+
 	if (strchr(cidr_str, ',')) {
 		char *argv[32] = { 0 };
-		int i,argc;
+		int i, argc;
 		cidr_str_dup = strdup(cidr_str);
-		
+
 		switch_assert(cidr_str_dup);
-		if ((argc = switch_separate_string(cidr_str_dup, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {		
+		if ((argc = switch_separate_string(cidr_str_dup, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 			for (i = 0; i < argc; i++) {
 				switch_status_t this_status;
 				if ((this_status = switch_network_list_perform_add_cidr_token(list, argv[i], ok, token)) != SWITCH_STATUS_SUCCESS) {
@@ -218,7 +220,7 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_networ
 	} else {
 		status = switch_network_list_perform_add_cidr_token(list, cidr_str, ok, token);
 	}
-	
+
 	switch_safe_free(cidr_str_dup);
 	return status;
 }
@@ -242,7 +244,7 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network
 	mask = (mask & 0x33333333) + ((mask >> 2) & 0x33333333);
 	node->bits = (((mask + (mask >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
 	node->str = switch_core_sprintf(list->pool, "%s:%s", host, mask_str);
-	
+
 	node->next = list->node_head;
 	list->node_head = node;
 
@@ -461,13 +463,10 @@ static int write_buf(int fd, const char *buf)
 	return 1;
 }
 
-SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, 
-												  const char *from, 
-												  const char *headers, 
-												  const char *body, 
-												  const char *file,
-												  const char *convert_cmd,
-												  const char *convert_ext)
+SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
+												  const char *from,
+												  const char *headers,
+												  const char *body, const char *file, const char *convert_cmd, const char *convert_ext)
 {
 	char *bound = "XXXX_boundary_XXXX";
 	const char *mime_type = "audio/inline";
@@ -489,7 +488,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 				newfile = switch_mprintf("%s.%s", dupfile, convert_ext);
 			}
 		}
-		
+
 		if (newfile) {
 			char cmd[1024] = "";
 			switch_snprintf(cmd, sizeof(cmd), "%s %s %s", convert_cmd, file, newfile);
@@ -531,7 +530,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 			switch_snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
 		}
 		if (!write_buf(fd, buf)) {
-			rval = SWITCH_FALSE; 
+			rval = SWITCH_FALSE;
 			goto end;
 		}
 
@@ -615,7 +614,6 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	if (zstr(from)) {
 		from = "freeswitch";
 	}
-
 #ifdef WIN32
 	switch_snprintf(buf, B64BUFFLEN, "type %s | %s -f %s %s %s", filename, runtime.mailer_app, from, runtime.mailer_app_args, to);
 #else
@@ -637,8 +635,8 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 
 	rval = SWITCH_TRUE;
 
- end:	
-	
+  end:
+
 	if (newfile) {
 		unlink(newfile);
 		free(newfile);
@@ -840,11 +838,11 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 
 	if (!me || getifaddrs(&ifaddrs) < 0) {
 		return -1;
-	}	
+	}
 
-	for(i = ifaddrs; i; i = i->ifa_next) {
-		struct sockaddr_in *s = (struct sockaddr_in *)i->ifa_addr;
-		struct sockaddr_in *m = (struct sockaddr_in *)i->ifa_netmask;
+	for (i = ifaddrs; i; i = i->ifa_next) {
+		struct sockaddr_in *s = (struct sockaddr_in *) i->ifa_addr;
+		struct sockaddr_in *m = (struct sockaddr_in *) i->ifa_netmask;
 
 		if (s && m && s->sin_addr.s_addr == me->sin_addr.s_addr) {
 			*mask = m->sin_addr.s_addr;
@@ -852,9 +850,9 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 			return 0;
 		}
 	}
-	
+
 	freeifaddrs(ifaddrs);
-	
+
 	return -2;
 }
 #elif defined(__linux__)
@@ -866,16 +864,16 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 
 	static struct ifreq ifreqs[20] = { {{{0}}} };
 	struct ifconf ifconf;
-	int  nifaces, i;
+	int nifaces, i;
 	int sock;
 	int r = -1;
-	
-	memset(&ifconf,0,sizeof(ifconf));
-	ifconf.ifc_buf = (char*) (ifreqs);
-	ifconf.ifc_len = sizeof(ifreqs);
-	
 
-	if ((sock = socket(AF_INET,SOCK_STREAM, 0)) < 0) {
+	memset(&ifconf, 0, sizeof(ifconf));
+	ifconf.ifc_buf = (char *) (ifreqs);
+	ifconf.ifc_len = sizeof(ifreqs);
+
+
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		goto end;
 	}
 
@@ -885,17 +883,17 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 
 	nifaces = ifconf.ifc_len / sizeof(struct ifreq);
 
-	for(i = 0; i < nifaces; i++) {
+	for (i = 0; i < nifaces; i++) {
 		struct sockaddr_in *sin = NULL;
 		struct in_addr ip;
 
 		ioctl(sock, SIOCGIFADDR, &ifreqs[i]);
-		sin = (struct sockaddr_in *)&ifreqs[i].ifr_addr;
+		sin = (struct sockaddr_in *) &ifreqs[i].ifr_addr;
 		ip = sin->sin_addr;
 
 		if (ip.s_addr == me->sin_addr.s_addr) {
 			ioctl(sock, SIOCGIFNETMASK, &ifreqs[i]);
-			sin = (struct sockaddr_in *)&ifreqs[i].ifr_addr;
+			sin = (struct sockaddr_in *) &ifreqs[i].ifr_addr;
 			//mask = sin->sin_addr;
 			*mask = sin->sin_addr.s_addr;
 			r = 0;
@@ -903,9 +901,9 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 		}
 
 	}
-	
- end:
-	
+
+  end:
+
 	close(sock);
 	return r;
 
@@ -932,20 +930,20 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 		goto end;
 	}
 
-    interface_count = bytes / sizeof(INTERFACE_INFO);
+	interface_count = bytes / sizeof(INTERFACE_INFO);
 
 	for (x = 0; x < interface_count; ++x) {
-		struct sockaddr_in *addr = (struct sockaddr_in *) & (interfaces[x].iiAddress);
+		struct sockaddr_in *addr = (struct sockaddr_in *) &(interfaces[x].iiAddress);
 
 		if (addr->sin_addr.s_addr == me->sin_addr.s_addr) {
-			struct sockaddr_in *netmask = (struct sockaddr_in *) & (interfaces[x].iiNetmask);
+			struct sockaddr_in *netmask = (struct sockaddr_in *) &(interfaces[x].iiNetmask);
 			*mask = netmask->sin_addr.s_addr;
 			r = 0;
 			break;
 		}
-    }
+	}
 
-end:
+  end:
 	closesocket(sock);
 	return r;
 }
@@ -963,18 +961,18 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 SWITCH_DECLARE(switch_status_t) switch_resolve_host(const char *host, char *buf, size_t buflen)
 {
 
-    struct addrinfo *ai;
-    int err;
-	
-    if ((err = getaddrinfo(host, 0, 0, &ai))) {
-        return SWITCH_STATUS_FALSE;
-    }
+	struct addrinfo *ai;
+	int err;
+
+	if ((err = getaddrinfo(host, 0, 0, &ai))) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	get_addr(buf, buflen, ai->ai_addr, sizeof(*ai->ai_addr));
 
-    freeaddrinfo(ai);
+	freeaddrinfo(ai);
 
-    return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -1001,7 +999,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 	if (len < 16) {
 		return status;
 	}
-	
+
 	switch (family) {
 	case AF_INET:
 		switch_copy_string(buf, "127.0.0.1", len);
@@ -1009,7 +1007,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 		break;
 	case AF_INET6:
 		switch_copy_string(buf, "::1", len);
-		base = "2001:503:BA3E::2:30"; // DNS Root server A 
+		base = "2001:503:BA3E::2:30";	// DNS Root server A 
 		break;
 	default:
 		base = "127.0.0.1";
@@ -1037,7 +1035,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 	freeaddrinfo(address_info);
 
 	if (!getnameinfo((const struct sockaddr *) &l_address, l_address_len, buf, len, NULL, 0, NI_NUMERICHOST)) {
-		status = SWITCH_STATUS_SUCCESS;	
+		status = SWITCH_STATUS_SUCCESS;
 		if (mask) {
 			get_netmask((struct sockaddr_in *) &l_address, mask);
 		}
@@ -1075,9 +1073,9 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 				goto doh;
 			}
 
-			switch_copy_string(buf, get_addr(abuf, sizeof(abuf), (struct sockaddr*)&iface_out, sizeof(iface_out)), len);
+			switch_copy_string(buf, get_addr(abuf, sizeof(abuf), (struct sockaddr *) &iface_out, sizeof(iface_out)), len);
 			if (mask) {
-				get_netmask((struct sockaddr_in*)&iface_out, mask);
+				get_netmask((struct sockaddr_in *) &iface_out, mask);
 			}
 
 			status = SWITCH_STATUS_SUCCESS;
@@ -1372,9 +1370,9 @@ static const char *switch_inet_ntop6(unsigned char const *src, char *dst, size_t
 
 SWITCH_DECLARE(int) get_addr_int(switch_sockaddr_t *sa)
 {
-	struct sockaddr_in *s = (struct sockaddr_in *)&sa->sa;
+	struct sockaddr_in *s = (struct sockaddr_in *) &sa->sa;
 
-	return ntohs((unsigned short)s->sin_addr.s_addr);
+	return ntohs((unsigned short) s->sin_addr.s_addr);
 }
 
 SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2)
@@ -1388,37 +1386,41 @@ SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *s
 	struct sockaddr *ss1;
 	struct sockaddr *ss2;
 
-	if (!(sa1 && sa2)) return 0;
+	if (!(sa1 && sa2))
+		return 0;
 
-	s1 = (struct sockaddr_in *)&sa1->sa;
-	s2 = (struct sockaddr_in *)&sa2->sa;
+	s1 = (struct sockaddr_in *) &sa1->sa;
+	s2 = (struct sockaddr_in *) &sa2->sa;
 
-	s16 = (struct sockaddr_in6 *)&sa1->sa;
-	s26 = (struct sockaddr_in6 *)&sa2->sa;
+	s16 = (struct sockaddr_in6 *) &sa1->sa;
+	s26 = (struct sockaddr_in6 *) &sa2->sa;
 
-	ss1 = (struct sockaddr *)&sa1->sa;
-	ss2 = (struct sockaddr *)&sa2->sa;
-	
-	if (ss1->sa_family != ss2->sa_family) return 0;
+	ss1 = (struct sockaddr *) &sa1->sa;
+	ss2 = (struct sockaddr *) &sa2->sa;
+
+	if (ss1->sa_family != ss2->sa_family)
+		return 0;
 
 	switch (ss1->sa_family) {
 	case AF_INET:
-		return (s1->sin_addr.s_addr == s2->sin_addr.s_addr && s1->sin_port == s2->sin_port);	
+		return (s1->sin_addr.s_addr == s2->sin_addr.s_addr && s1->sin_port == s2->sin_port);
 	case AF_INET6:
 		if (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr) {
 			int i;
 
-			if (s16->sin6_port != s26->sin6_port) return 0;
+			if (s16->sin6_port != s26->sin6_port)
+				return 0;
 
-			for(i = 0; i < 4; i++) {
-				if (*((int32_t *)s16->sin6_addr.s6_addr + i) != *((int32_t *)s26->sin6_addr.s6_addr + i)) return 0;
+			for (i = 0; i < 4; i++) {
+				if (*((int32_t *) s16->sin6_addr.s6_addr + i) != *((int32_t *) s26->sin6_addr.s6_addr + i))
+					return 0;
 			}
 
 			return 1;
 		}
 	}
-	
-	return 0;	
+
+	return 0;
 }
 
 
@@ -1428,7 +1430,7 @@ SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct sockaddr *s
 	*buf = '\0';
 
 	if (sa) {
-		getnameinfo(sa, salen, buf, (socklen_t)len, NULL, 0, NI_NUMERICHOST);
+		getnameinfo(sa, salen, buf, (socklen_t) len, NULL, 0, NI_NUMERICHOST);
 	}
 	return buf;
 }
@@ -1438,23 +1440,18 @@ SWITCH_DECLARE(unsigned short) get_port(struct sockaddr *sa)
 	unsigned short port = 0;
 	if (sa) {
 		switch (sa->sa_family) {
-			case AF_INET:
-				port = ntohs(((struct sockaddr_in*)sa)->sin_port);
-				break;
-			case AF_INET6:
-				port = ntohs(((struct sockaddr_in6*)sa)->sin6_port);
-				break;
+		case AF_INET:
+			port = ntohs(((struct sockaddr_in *) sa)->sin_port);
+			break;
+		case AF_INET6:
+			port = ntohs(((struct sockaddr_in6 *) sa)->sin6_port);
+			break;
 		}
 	}
 	return port;
 }
 
-SWITCH_DECLARE(int) switch_build_uri(char *uri,
-									 switch_size_t size,
-									 const char *scheme,
-									 const char *user,
-									 const switch_sockaddr_t *sa,
-									 int flags)
+SWITCH_DECLARE(int) switch_build_uri(char *uri, switch_size_t size, const char *scheme, const char *user, const switch_sockaddr_t *sa, int flags)
 {
 	char host[NI_MAXHOST], serv[NI_MAXSERV];
 	struct sockaddr_in6 si6;
@@ -1465,22 +1462,20 @@ SWITCH_DECLARE(int) switch_build_uri(char *uri,
 		memcpy(&si6, &sa->sa, sa->salen);
 		si6.sin6_scope_id = 0;
 
-		addr = (const struct sockaddr*) &si6;
+		addr = (const struct sockaddr *) &si6;
 	} else {
-		addr = (const struct sockaddr*) (intptr_t)&sa->sa;
+		addr = (const struct sockaddr *) (intptr_t) & sa->sa;
 	}
 
 	if (getnameinfo(addr, sa->salen, host, sizeof(host), serv, sizeof(serv),
-		((flags & SWITCH_URI_NUMERIC_HOST) ? NI_NUMERICHOST : 0) | ((flags & SWITCH_URI_NUMERIC_PORT) ? NI_NUMERICSERV : 0)) != 0) {
-			return 0;
+					((flags & SWITCH_URI_NUMERIC_HOST) ? NI_NUMERICHOST : 0) | ((flags & SWITCH_URI_NUMERIC_PORT) ? NI_NUMERICSERV : 0)) != 0) {
+		return 0;
 	}
 
 	colon = strchr(host, ':');
 
 	return switch_snprintf(uri, size, "%s:%s%s%s%s%s%s%s", scheme,
-		user ? user : "", user ? "@" : "",
-		colon ? "[" : "", host, colon ? "]" : "",
-		serv[0] ? ":" : "", serv[0] ? serv : "");
+						   user ? user : "", user ? "@" : "", colon ? "[" : "", host, colon ? "]" : "", serv[0] ? ":" : "", serv[0] ? serv : "");
 }
 
 SWITCH_DECLARE(char) switch_rfc2833_to_char(int event)
@@ -1581,43 +1576,43 @@ SWITCH_DECLARE(char *) switch_escape_string(const char *in, char *out, switch_si
 {
 	const char *p;
 	char *o = out;
-	
-	for(p = in; *p; p++) {
-		switch(*p) {
-			case '\n':
-				*o++ = '\\';
-				*o++ = 'n';
-				break;
-			case '\r':
-				*o++ = '\\';
-				*o++ = 'r';
-				break;
-			case '\t':
-				*o++ = '\\';
-				*o++ = 't';
-				break;
-			case ' ':
-				*o++ = '\\';
-				*o++ = 's';
-				break;
-			case '$':
-				*o++ = '\\';
-				*o++ = '$';
-				break;
-			default:
-				*o++ = *p;
-				break;
+
+	for (p = in; *p; p++) {
+		switch (*p) {
+		case '\n':
+			*o++ = '\\';
+			*o++ = 'n';
+			break;
+		case '\r':
+			*o++ = '\\';
+			*o++ = 'r';
+			break;
+		case '\t':
+			*o++ = '\\';
+			*o++ = 't';
+			break;
+		case ' ':
+			*o++ = '\\';
+			*o++ = 's';
+			break;
+		case '$':
+			*o++ = '\\';
+			*o++ = '$';
+			break;
+		default:
+			*o++ = *p;
+			break;
 		}
 	}
 
 	*o++ = '\0';
 
-	return out;	
+	return out;
 }
 
-SWITCH_DECLARE(char*) switch_escape_string_pool(const char *in, switch_memory_pool_t *pool)
+SWITCH_DECLARE(char *) switch_escape_string_pool(const char *in, switch_memory_pool_t *pool)
 {
-	int len = strlen(in)*2;
+	int len = strlen(in) * 2;
 	char *buf = switch_core_alloc(pool, len);
 	return switch_escape_string(in, buf, len);
 }
@@ -1639,7 +1634,7 @@ static char *cleanup_separated_string(char *str, char delim)
 	for (start = dest = ptr; *ptr; ++ptr) {
 		char e;
 		int esc = 0;
-		
+
 		if (*ptr == ESCAPE_META) {
 			e = *(ptr + 1);
 			if (e == '\'' || e == '"' || (delim && e == delim) || e == ESCAPE_META || (e = unescape_char(*(ptr + 1))) != *(ptr + 1)) {
@@ -1672,15 +1667,16 @@ SWITCH_DECLARE(unsigned int) switch_separate_string_string(char *buf, char *deli
 	unsigned int count = 0;
 	char *d;
 	size_t dlen = strlen(delim);
-	
+
 	array[count++] = buf;
 
-	while (count < arraylen && array[count-1]) {
-		if ((d = strstr(array[count-1], delim))) {
+	while (count < arraylen && array[count - 1]) {
+		if ((d = strstr(array[count - 1], delim))) {
 			*d = '\0';
 			d += dlen;
 			array[count++] = d;
-		} else break;
+		} else
+			break;
 	}
 
 	return count;
@@ -1876,7 +1872,7 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg(const char *string)
 	size_t string_len = strlen(string);
 	size_t i;
 	size_t n = 0;
-	size_t dest_len = string_len + 1; /* +1 for the opening quote  */
+	size_t dest_len = string_len + 1;	/* +1 for the opening quote  */
 	char *dest, *tmp;
 
 	dest = (char *) malloc(sizeof(char) * dest_len);
@@ -1898,7 +1894,7 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg(const char *string)
 #else
 		case '\'':
 			/* We replace ' by '\'' */
-			dest_len+=3;
+			dest_len += 3;
 			tmp = (char *) realloc(dest, sizeof(char) * (dest_len));
 			switch_assert(tmp);
 			dest = tmp;
@@ -1911,9 +1907,9 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg(const char *string)
 		default:
 			dest[n++] = string[i];
 		}
-  }
-  
-	dest_len += 2; /* +2 for the closing quote and the null character */
+	}
+
+	dest_len += 2;				/* +2 for the closing quote and the null character */
 	tmp = (char *) realloc(dest, sizeof(char) * (dest_len));
 	switch_assert(tmp);
 	dest = tmp;
@@ -2000,96 +1996,96 @@ SWITCH_DECLARE(char *) switch_url_decode(char *s)
 
 const short _switch_C_toupper_[1 + SWITCH_CTYPE_NUM_CHARS] = {
 	EOF,
-	0x00,	0x01,	0x02,	0x03,	0x04,	0x05,	0x06,	0x07,
-	0x08,	0x09,	0x0a,	0x0b,	0x0c,	0x0d,	0x0e,	0x0f,
-	0x10,	0x11,	0x12,	0x13,	0x14,	0x15,	0x16,	0x17,
-	0x18,	0x19,	0x1a,	0x1b,	0x1c,	0x1d,	0x1e,	0x1f,
-	0x20,	0x21,	0x22,	0x23,	0x24,	0x25,	0x26,	0x27,
-	0x28,	0x29,	0x2a,	0x2b,	0x2c,	0x2d,	0x2e,	0x2f,
-	0x30,	0x31,	0x32,	0x33,	0x34,	0x35,	0x36,	0x37,
-	0x38,	0x39,	0x3a,	0x3b,	0x3c,	0x3d,	0x3e,	0x3f,
-	0x40,	0x41,	0x42,	0x43,	0x44,	0x45,	0x46,	0x47,
-	0x48,	0x49,	0x4a,	0x4b,	0x4c,	0x4d,	0x4e,	0x4f,
-	0x50,	0x51,	0x52,	0x53,	0x54,	0x55,	0x56,	0x57,
-	0x58,	0x59,	0x5a,	0x5b,	0x5c,	0x5d,	0x5e,	0x5f,
-	0x60,	'A',	'B',	'C',	'D',	'E',	'F',	'G',
-	'H',	'I',	'J',	'K',	'L',	'M',	'N',	'O',
-	'P',	'Q',	'R',	'S',	'T',	'U',	'V',	'W',
-	'X',	'Y',	'Z',	0x7b,	0x7c,	0x7d,	0x7e,	0x7f,
-	0x80,	0x81,	0x82,	0x83,	0x84,	0x85,	0x86,	0x87,
-	0x88,	0x89,	0x8a,	0x8b,	0x8c,	0x8d,	0x8e,	0x8f,
-	0x90,	0x91,	0x92,	0x93,	0x94,	0x95,	0x96,	0x97,
-	0x98,	0x99,	0x9a,	0x9b,	0x9c,	0x9d,	0x9e,	0x9f,
-	0xa0,	0xa1,	0xa2,	0xa3,	0xa4,	0xa5,	0xa6,	0xa7,
-	0xa8,	0xa9,	0xaa,	0xab,	0xac,	0xad,	0xae,	0xaf,
-	0xb0,	0xb1,	0xb2,	0xb3,	0xb4,	0xb5,	0xb6,	0xb7,
-	0xb8,	0xb9,	0xba,	0xbb,	0xbc,	0xbd,	0xbe,	0xbf,
-	0xc0,	0xc1,	0xc2,	0xc3,	0xc4,	0xc5,	0xc6,	0xc7,
-	0xc8,	0xc9,	0xca,	0xcb,	0xcc,	0xcd,	0xce,	0xcf,
-	0xd0,	0xd1,	0xd2,	0xd3,	0xd4,	0xd5,	0xd6,	0xd7,
-	0xd8,	0xd9,	0xda,	0xdb,	0xdc,	0xdd,	0xde,	0xdf,
-	0xe0,	0xe1,	0xe2,	0xe3,	0xe4,	0xe5,	0xe6,	0xe7,
-	0xe8,	0xe9,	0xea,	0xeb,	0xec,	0xed,	0xee,	0xef,
-	0xf0,	0xf1,	0xf2,	0xf3,	0xf4,	0xf5,	0xf6,	0xf7,
-	0xf8,	0xf9,	0xfa,	0xfb,	0xfc,	0xfd,	0xfe,	0xff
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+	0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+	0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+	0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+	0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
+	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+	0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
+	0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
+	0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
+	0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
+	0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f,
+	0x60, 'A', 'B', 'C', 'D', 'E', 'F', 'G',
+	'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
+	'X', 'Y', 'Z', 0x7b, 0x7c, 0x7d, 0x7e, 0x7f,
+	0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
+	0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f,
+	0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
+	0x98, 0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
+	0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
+	0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf,
+	0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7,
+	0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf,
+	0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7,
+	0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf,
+	0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7,
+	0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf,
+	0xe0, 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7,
+	0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xee, 0xef,
+	0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
+	0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff
 };
 
 const short *_switch_toupper_tab_ = _switch_C_toupper_;
 
 SWITCH_DECLARE(int) switch_toupper(int c)
 {
-	if ((unsigned int)c > 255)
-		return(c);
+	if ((unsigned int) c > 255)
+		return (c);
 	if (c < -1)
 		return EOF;
-	return((_switch_toupper_tab_ + 1)[c]);
+	return ((_switch_toupper_tab_ + 1)[c]);
 }
 
 const short _switch_C_tolower_[1 + SWITCH_CTYPE_NUM_CHARS] = {
 	EOF,
-	0x00,	0x01,	0x02,	0x03,	0x04,	0x05,	0x06,	0x07,
-	0x08,	0x09,	0x0a,	0x0b,	0x0c,	0x0d,	0x0e,	0x0f,
-	0x10,	0x11,	0x12,	0x13,	0x14,	0x15,	0x16,	0x17,
-	0x18,	0x19,	0x1a,	0x1b,	0x1c,	0x1d,	0x1e,	0x1f,
-	0x20,	0x21,	0x22,	0x23,	0x24,	0x25,	0x26,	0x27,
-	0x28,	0x29,	0x2a,	0x2b,	0x2c,	0x2d,	0x2e,	0x2f,
-	0x30,	0x31,	0x32,	0x33,	0x34,	0x35,	0x36,	0x37,
-	0x38,	0x39,	0x3a,	0x3b,	0x3c,	0x3d,	0x3e,	0x3f,
-	0x40,	'a',	'b',	'c',	'd',	'e',	'f',	'g',
-	'h',	'i',	'j',	'k',	'l',	'm',	'n',	'o',
-	'p',	'q',	'r',	's',	't',	'u',	'v',	'w',
-	'x',	'y',	'z',	0x5b,	0x5c,	0x5d,	0x5e,	0x5f,
-	0x60,	0x61,	0x62,	0x63,	0x64,	0x65,	0x66,	0x67,
-	0x68,	0x69,	0x6a,	0x6b,	0x6c,	0x6d,	0x6e,	0x6f,
-	0x70,	0x71,	0x72,	0x73,	0x74,	0x75,	0x76,	0x77,
-	0x78,	0x79,	0x7a,	0x7b,	0x7c,	0x7d,	0x7e,	0x7f,
-	0x80,	0x81,	0x82,	0x83,	0x84,	0x85,	0x86,	0x87,
-	0x88,	0x89,	0x8a,	0x8b,	0x8c,	0x8d,	0x8e,	0x8f,
-	0x90,	0x91,	0x92,	0x93,	0x94,	0x95,	0x96,	0x97,
-	0x98,	0x99,	0x9a,	0x9b,	0x9c,	0x9d,	0x9e,	0x9f,
-	0xa0,	0xa1,	0xa2,	0xa3,	0xa4,	0xa5,	0xa6,	0xa7,
-	0xa8,	0xa9,	0xaa,	0xab,	0xac,	0xad,	0xae,	0xaf,
-	0xb0,	0xb1,	0xb2,	0xb3,	0xb4,	0xb5,	0xb6,	0xb7,
-	0xb8,	0xb9,	0xba,	0xbb,	0xbc,	0xbd,	0xbe,	0xbf,
-	0xc0,	0xc1,	0xc2,	0xc3,	0xc4,	0xc5,	0xc6,	0xc7,
-	0xc8,	0xc9,	0xca,	0xcb,	0xcc,	0xcd,	0xce,	0xcf,
-	0xd0,	0xd1,	0xd2,	0xd3,	0xd4,	0xd5,	0xd6,	0xd7,
-	0xd8,	0xd9,	0xda,	0xdb,	0xdc,	0xdd,	0xde,	0xdf,
-	0xe0,	0xe1,	0xe2,	0xe3,	0xe4,	0xe5,	0xe6,	0xe7,
-	0xe8,	0xe9,	0xea,	0xeb,	0xec,	0xed,	0xee,	0xef,
-	0xf0,	0xf1,	0xf2,	0xf3,	0xf4,	0xf5,	0xf6,	0xf7,
-	0xf8,	0xf9,	0xfa,	0xfb,	0xfc,	0xfd,	0xfe,	0xff
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+	0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+	0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+	0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+	0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
+	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+	0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
+	0x40, 'a', 'b', 'c', 'd', 'e', 'f', 'g',
+	'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
+	'x', 'y', 'z', 0x5b, 0x5c, 0x5d, 0x5e, 0x5f,
+	0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
+	0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,
+	0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
+	0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f,
+	0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
+	0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f,
+	0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
+	0x98, 0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
+	0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
+	0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf,
+	0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7,
+	0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf,
+	0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7,
+	0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf,
+	0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7,
+	0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf,
+	0xe0, 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7,
+	0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xee, 0xef,
+	0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
+	0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff
 };
 
 const short *_switch_tolower_tab_ = _switch_C_tolower_;
 
 SWITCH_DECLARE(int) switch_tolower(int c)
 {
-	if ((unsigned int)c > 255)
-		return(c);
+	if ((unsigned int) c > 255)
+		return (c);
 	if (c < -1)
 		return EOF;
-	return((_switch_tolower_tab_ + 1)[c]);
+	return ((_switch_tolower_tab_ + 1)[c]);
 }
 
 /*
@@ -2146,136 +2142,136 @@ SWITCH_DECLARE(int) switch_tolower(int c)
 
 const int _switch_C_ctype_[1 + SWITCH_CTYPE_NUM_CHARS] = {
 	0,
-	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C,
-	_C,	_C|_S,	_C|_S,	_C|_S,	_C|_S,	_C|_S,	_C,	_C,
-	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C,
-	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C,
-   _S|_B,	_P,	_P,	_P,	_P,	_P,	_P,	_P,
-	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P,
-	_N,	_N,	_N,	_N,	_N,	_N,	_N,	_N,
-	_N,	_N,	_P,	_P,	_P,	_P,	_P,	_P,
-	_P,	_U|_X,	_U|_X,	_U|_X,	_U|_X,	_U|_X,	_U|_X,	_U,
-	_U,	_U,	_U,	_U,	_U,	_U,	_U,	_U,
-	_U,	_U,	_U,	_U,	_U,	_U,	_U,	_U,
-	_U,	_U,	_U,	_P,	_P,	_P,	_P,	_P,
-	_P,	_L|_X,	_L|_X,	_L|_X,	_L|_X,	_L|_X,	_L|_X,	_L,
-	_L,	_L,	_L,	_L,	_L,	_L,	_L,	_L,
-	_L,	_L,	_L,	_L,	_L,	_L,	_L,	_L,
+	_C, _C, _C, _C, _C, _C, _C, _C,
+	_C, _C | _S, _C | _S, _C | _S, _C | _S, _C | _S, _C, _C,
+	_C, _C, _C, _C, _C, _C, _C, _C,
+	_C, _C, _C, _C, _C, _C, _C, _C,
+	_S | _B, _P, _P, _P, _P, _P, _P, _P,
+	_P, _P, _P, _P, _P, _P, _P, _P,
+	_N, _N, _N, _N, _N, _N, _N, _N,
+	_N, _N, _P, _P, _P, _P, _P, _P,
+	_P, _U | _X, _U | _X, _U | _X, _U | _X, _U | _X, _U | _X, _U,
+	_U, _U, _U, _U, _U, _U, _U, _U,
+	_U, _U, _U, _U, _U, _U, _U, _U,
+	_U, _U, _U, _P, _P, _P, _P, _P,
+	_P, _L | _X, _L | _X, _L | _X, _L | _X, _L | _X, _L | _X, _L,
+	_L, _L, _L, _L, _L, _L, _L, _L,
+	_L, _L, _L, _L, _L, _L, _L, _L,
 /* determine printability based on the IS0 8859 8-bit standard */
-	_L,	_L,	_L,	_P,	_P,	_P,	_P,	_C,
+	_L, _L, _L, _P, _P, _P, _P, _C,
 
-	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C, /* 80 */
-	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C, /* 88 */
-	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C, /* 90 */
-	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C, /* 98 */
-	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* A0 */
-	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* A8 */
-	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* B0 */
-	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* B8 */
-	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* C0 */
-	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* C8 */
-	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* D0 */
-	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* D8 */
-	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* E0 */
-	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* E8 */
-	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* F0 */
-	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P  /* F8 */
+	_C, _C, _C, _C, _C, _C, _C, _C,	/* 80 */
+	_C, _C, _C, _C, _C, _C, _C, _C,	/* 88 */
+	_C, _C, _C, _C, _C, _C, _C, _C,	/* 90 */
+	_C, _C, _C, _C, _C, _C, _C, _C,	/* 98 */
+	_P, _P, _P, _P, _P, _P, _P, _P,	/* A0 */
+	_P, _P, _P, _P, _P, _P, _P, _P,	/* A8 */
+	_P, _P, _P, _P, _P, _P, _P, _P,	/* B0 */
+	_P, _P, _P, _P, _P, _P, _P, _P,	/* B8 */
+	_P, _P, _P, _P, _P, _P, _P, _P,	/* C0 */
+	_P, _P, _P, _P, _P, _P, _P, _P,	/* C8 */
+	_P, _P, _P, _P, _P, _P, _P, _P,	/* D0 */
+	_P, _P, _P, _P, _P, _P, _P, _P,	/* D8 */
+	_P, _P, _P, _P, _P, _P, _P, _P,	/* E0 */
+	_P, _P, _P, _P, _P, _P, _P, _P,	/* E8 */
+	_P, _P, _P, _P, _P, _P, _P, _P,	/* F0 */
+	_P, _P, _P, _P, _P, _P, _P, _P	/* F8 */
 };
 
 const int *_switch_ctype_ = _switch_C_ctype_;
 
 SWITCH_DECLARE(int) switch_isalnum(int c)
 {
-	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & (_U|_L|_N)));
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & (_U | _L | _N)));
 }
 
 SWITCH_DECLARE(int) switch_isalpha(int c)
 {
-	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & (_U|_L)));
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & (_U | _L)));
 }
 
 SWITCH_DECLARE(int) switch_iscntrl(int c)
 {
-	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & _C));
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & _C));
 }
 
 SWITCH_DECLARE(int) switch_isdigit(int c)
 {
-	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & _N));
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & _N));
 }
 
 SWITCH_DECLARE(int) switch_isgraph(int c)
 {
-	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & (_P|_U|_L|_N)));
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & (_P | _U | _L | _N)));
 }
 
 SWITCH_DECLARE(int) switch_islower(int c)
 {
-	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & _L));
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & _L));
 }
 
 SWITCH_DECLARE(int) switch_isprint(int c)
 {
-	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & (_P|_U|_L|_N|_B)));
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & (_P | _U | _L | _N | _B)));
 }
 
 SWITCH_DECLARE(int) switch_ispunct(int c)
 {
-	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & _P));
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & _P));
 }
 
 SWITCH_DECLARE(int) switch_isspace(int c)
 {
-	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & _S));
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & _S));
 }
 
 SWITCH_DECLARE(int) switch_isupper(int c)
 {
-	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & _U));
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & _U));
 }
 
 SWITCH_DECLARE(int) switch_isxdigit(int c)
 {
-	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & (_N|_X)));
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & (_N | _X)));
 }
 
 SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val)
 {
-    char *p;
-	
-    if ((p=strchr(exp, '-'))) {
-        int min;
-        int max;
+	char *p;
 
-        min = atol(exp);
-        p++;
-        max = atol(p);
+	if ((p = strchr(exp, '-'))) {
+		int min;
+		int max;
 
-        if (val >= min && val <= max) {
-            return 1;
-        }
-    } else if ((p=strchr(exp, ','))) {
-        const char *cur = exp;
+		min = atol(exp);
 		p++;
-        while(cur) {
-            if (atol(cur) == val) {
-                return 1;
-            }
-			
-            cur = p;
-			if (p && p+1) {
-				if ((p = strchr((p+1), ','))) {
+		max = atol(p);
+
+		if (val >= min && val <= max) {
+			return 1;
+		}
+	} else if ((p = strchr(exp, ','))) {
+		const char *cur = exp;
+		p++;
+		while (cur) {
+			if (atol(cur) == val) {
+				return 1;
+			}
+
+			cur = p;
+			if (p && p + 1) {
+				if ((p = strchr((p + 1), ','))) {
 					p++;
 				}
 			}
-        }
-    } else {
-        if (atol(exp) == val) {
-            return 1;
-        }
-    }
+		}
+	} else {
+		if (atol(exp) == val) {
+			return 1;
+		}
+	}
 
-    return 0;
+	return 0;
 
 }
 

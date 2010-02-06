@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -89,7 +89,8 @@ static void send_heartbeat(void)
 static char main_ip4[256] = "";
 static char main_ip6[256] = "";
 
-static void check_ip(void) {
+static void check_ip(void)
+{
 	char guess_ip4[256] = "";
 	char guess_ip6[256] = "";
 	char old_ip4[256] = "";
@@ -127,7 +128,7 @@ static void check_ip(void) {
 			switch_core_set_variable("local_ip_v6", guess_ip6);
 		}
 	}
-	
+
 	if (!ok4 || !ok6) {
 		switch_event_t *event;
 
@@ -191,8 +192,8 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel)
 SWITCH_DECLARE(void) switch_core_remove_state_handler(const switch_state_handler_table_t *state_handler)
 {
 	int index, tmp_index = 0;
-	const switch_state_handler_table_t *tmp[SWITCH_MAX_STATE_HANDLERS+1] = { 0 };
-	
+	const switch_state_handler_table_t *tmp[SWITCH_MAX_STATE_HANDLERS + 1] = { 0 };
+
 	switch_mutex_lock(runtime.global_mutex);
 
 	for (index = 0; index < runtime.state_handler_index; index++) {
@@ -268,8 +269,8 @@ SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname)
 static void switch_core_unset_variables(void)
 {
 	switch_hash_index_t *hi;
-    const void *var;
-    void *val;
+	const void *var;
+	void *val;
 
 	switch_mutex_lock(runtime.global_var_mutex);
 	for (hi = switch_hash_first(NULL, runtime.global_vars); hi; hi = switch_hash_next(hi)) {
@@ -312,8 +313,8 @@ static void *switch_core_service_thread(switch_thread_t *thread, void *obj)
 	switch_channel_t *channel;
 	switch_frame_t *read_frame;
 
-//	switch_assert(thread != NULL);
-//	switch_assert(session != NULL);
+//  switch_assert(thread != NULL);
+//  switch_assert(session != NULL);
 
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
@@ -346,7 +347,7 @@ SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_session_t *sessi
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel);
-	
+
 	switch_channel_clear_flag(channel, CF_SERVICE);
 }
 
@@ -357,7 +358,7 @@ SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session)
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel);
-	
+
 	switch_core_session_launch_thread(session, switch_core_service_thread, session);
 }
 
@@ -783,7 +784,7 @@ static void load_mime_types(void)
 	if (fd <= 0) {
 		goto end;
 	}
-	
+
 	while ((switch_fd_read_line(fd, line_buf, sizeof(line_buf)))) {
 		char *p;
 		char *type = line_buf;
@@ -813,7 +814,7 @@ static void load_mime_types(void)
 		fd = -1;
 	}
 
- end:
+  end:
 
 	switch_safe_free(mime_path);
 
@@ -885,7 +886,7 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_
 	if ((list = switch_core_hash_find(IP_LIST.hash, list_name))) {
 		ok = switch_network_list_validate_ip_token(list, ip, token);
 	} else if (strchr(list_name, '/')) {
-		if (strchr(list_name, ','))  {
+		if (strchr(list_name, ',')) {
 			char *list_name_dup = strdup(list_name);
 			char *argv[32];
 			int argc;
@@ -898,7 +899,7 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_
 					switch_parse_cidr(argv[i], &net, &mask, &bits);
 					if ((ok = switch_test_subnet(ip, net, mask))) {
 						break;
-					}	
+					}
 				}
 			}
 			free(list_name_dup);
@@ -926,7 +927,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), &mask, AF_INET);
 	in.s_addr = mask;
 	switch_set_string(guess_mask, inet_ntoa(in));
-	
+
 	switch_mutex_lock(runtime.global_mutex);
 
 	if (IP_LIST.hash) {
@@ -948,7 +949,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_add_cidr(rfc_list, "10.0.0.0/8", SWITCH_TRUE);
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_TRUE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_TRUE);
-	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);	
+	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
 	tmp_name = "wan.auto";
 	switch_network_list_create(&rfc_list, tmp_name, SWITCH_TRUE, IP_LIST.pool);
@@ -956,19 +957,18 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_add_cidr(rfc_list, "10.0.0.0/8", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_FALSE);
-	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);	
+	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
 	tmp_name = "nat.auto";
 	switch_network_list_create(&rfc_list, tmp_name, SWITCH_FALSE, IP_LIST.pool);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Created ip list %s default (deny)\n", tmp_name);
 	if (switch_network_list_add_host_mask(rfc_list, guess_ip, guess_mask, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-						  "Adding %s/%s (deny) to list %s\n", guess_ip, guess_mask, tmp_name);
-        }
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s/%s (deny) to list %s\n", guess_ip, guess_mask, tmp_name);
+	}
 	switch_network_list_add_cidr(rfc_list, "10.0.0.0/8", SWITCH_TRUE);
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_TRUE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_TRUE);
-	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);	
+	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
 	tmp_name = "loopback.auto";
 	switch_network_list_create(&rfc_list, tmp_name, SWITCH_FALSE, IP_LIST.pool);
@@ -979,14 +979,13 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	tmp_name = "localnet.auto";
 	switch_network_list_create(&list, tmp_name, SWITCH_FALSE, IP_LIST.pool);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Created ip list %s default (deny)\n", tmp_name);
-	
-	if (switch_network_list_add_host_mask(list, guess_ip, guess_mask, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-						  "Adding %s/%s (allow) to list %s\n", guess_ip, guess_mask, tmp_name);
-	}
-	switch_core_hash_insert(IP_LIST.hash, tmp_name, list);	
 
-	
+	if (switch_network_list_add_host_mask(list, guess_ip, guess_mask, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s/%s (allow) to list %s\n", guess_ip, guess_mask, tmp_name);
+	}
+	switch_core_hash_insert(IP_LIST.hash, tmp_name, list);
+
+
 	if ((xml = switch_xml_open_cfg("acl.conf", &cfg, NULL))) {
 		if ((x_lists = switch_xml_child(cfg, "network-lists"))) {
 			for (x_list = switch_xml_child(x_lists, "list"); x_list; x_list = x_list->next) {
@@ -1036,13 +1035,13 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 						switch_assert(my_params);
 						switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "domain", domain);
 						switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "purpose", "network-list");
-						
+
 						if (switch_xml_locate_domain(domain, my_params, &xml_root, &x_domain) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate domain %s\n", domain);
 							switch_event_destroy(&my_params);
 							continue;
 						}
-						
+
 						switch_event_destroy(&my_params);
 
 						for (ut = switch_xml_child(x_domain, "user"); ut; ut = ut->next) {
@@ -1063,10 +1062,10 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 									for (ut = switch_xml_child(uts, "user"); ut; ut = ut->next) {
 										const char *user_cidr = switch_xml_attr(ut, "cidr");
 										const char *id = switch_xml_attr(ut, "id");
-										
+
 										if (id && user_cidr) {
 											char *token = switch_mprintf("%s@%s", id, domain);
-											switch_assert(token);											
+											switch_assert(token);
 											switch_network_list_add_cidr_token(list, user_cidr, ok, token);
 											free(token);
 										}
@@ -1074,7 +1073,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 								}
 							}
 						}
-						
+
 						switch_xml_free(xml_root);
 					} else if (cidr) {
 						if (switch_network_list_add_cidr(list, cidr, ok) == SWITCH_STATUS_SUCCESS) {
@@ -1088,7 +1087,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 											  "Adding %s/%s (%s) to list %s\n", host, mask, ok ? "allow" : "deny", name);
 						}
-					} 
+					}
 
 					switch_core_hash_insert(IP_LIST.hash, name, list);
 				}
@@ -1146,7 +1145,7 @@ static void switch_core_set_serial(void)
 {
 	char buf[13] = "";
 	char path[256];
-	
+
 	int fd = -1, write_fd = -1;
 	switch_ssize_t bytes = 0;
 
@@ -1160,9 +1159,9 @@ static void switch_core_set_serial(void)
 		int i = 0;
 
 		switch_inet_pton(AF_INET, ip, &ipi);
-		byte = (switch_byte_t *) &ipi;
+		byte = (switch_byte_t *) & ipi;
 
-		for(i = 0; i < 8; i += 2) {
+		for (i = 0; i < 8; i += 2) {
 			switch_snprintf(buf + i, sizeof(buf) - i, "%0.2x", *byte);
 			byte++;
 		}
@@ -1179,7 +1178,7 @@ static void switch_core_set_serial(void)
 		close(fd);
 		fd = -1;
 	}
-	
+
 	switch_core_set_variable("switch_serial", buf);
 }
 
@@ -1284,7 +1283,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	if (switch_test_flag((&runtime), SCF_USE_AUTO_NAT)) {
 		switch_nat_init(runtime.memory_pool);
 	}
-	
+
 	switch_log_init(runtime.memory_pool, runtime.colorize_console);
 
 	switch_load_core_config("switch.conf");
@@ -1374,10 +1373,10 @@ static void handle_SIGHUP(int sig)
 static void switch_load_core_config(const char *file)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
-	
+
 	if ((xml = switch_xml_open_cfg(file, &cfg, NULL))) {
 		switch_xml_t settings, param;
-		
+
 		if ((settings = switch_xml_child(cfg, "settings"))) {
 			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 				const char *var = switch_xml_attr_soft(param, "name");
@@ -1499,10 +1498,7 @@ SWITCH_DECLARE(const char *) switch_core_banner(void)
 			"* Anthony Minessale II, Michael Jerris, Brian West, Others *\n"
 			"* FreeSWITCH (http://www.freeswitch.org)                   *\n"
 			"* Paypal Donations Appreciated: paypal@freeswitch.org      *\n"
-			"* Brought to you by ClueCon http://www.cluecon.com/        *\n"
-			"************************************************************\n"
-			"\n"
-			);
+			"* Brought to you by ClueCon http://www.cluecon.com/        *\n" "************************************************************\n" "\n");
 }
 
 
@@ -1562,7 +1558,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s", switch_core_banner());
-					
+
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
 					  "\nFreeSWITCH Version %s Started.\nMax Sessions[%u]\nSession Rate[%d]\nSQL [%s]\n", SWITCH_VERSION_FULL,
@@ -1601,15 +1597,15 @@ SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 #ifdef _MSC_VER
 static void win_shutdown(void)
 {
-	
-	HANDLE shutdown_event;	
+
+	HANDLE shutdown_event;
 	char path[512];
 	/* for windows we need the event to signal for shutting down a background FreeSWITCH */
 	snprintf(path, sizeof(path), "Global\\Freeswitch.%d", getpid());
-	
+
 	/* open the event so we can signal it */
 	shutdown_event = OpenEvent(EVENT_MODIFY_STATE, FALSE, path);
-	
+
 	if (shutdown_event) {
 		/* signal the event to shutdown */
 		SetEvent(shutdown_event);
@@ -1681,17 +1677,16 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 				switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 			}
 
-			while(runtime.running && switch_test_flag((&runtime), SCF_SHUTDOWN_REQUESTED) && (count = switch_core_session_count())) {
+			while (runtime.running && switch_test_flag((&runtime), SCF_SHUTDOWN_REQUESTED) && (count = switch_core_session_count())) {
 				switch_yield(500000);
 				if (++x == 20) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-									  "Shutdown in progress, %u session(s) remain.\nShutting down %s\n", 
-									  count,
-									  cmd == SCSC_SHUTDOWN_ASAP ? "ASAP" : "once there are no active calls.");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+									  "Shutdown in progress, %u session(s) remain.\nShutting down %s\n",
+									  count, cmd == SCSC_SHUTDOWN_ASAP ? "ASAP" : "once there are no active calls.");
 					x = 0;
 				}
 			}
-			
+
 			if (switch_test_flag((&runtime), SCF_SHUTDOWN_REQUESTED)) {
 				switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 #ifdef _MSC_VER
@@ -1746,7 +1741,8 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 		break;
 	case SCSC_DEBUG_LEVEL:
 		if (*val > -1) {
-			if (*val > 10) *val = 10;
+			if (*val > 10)
+				*val = 10;
 			runtime.debug_level = *val;
 		}
 		*val = runtime.debug_level;
@@ -1806,18 +1802,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 	switch_set_flag((&runtime), SCF_SHUTTING_DOWN);
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "End existing sessions\n");
 	switch_core_session_hupall(SWITCH_CAUSE_SYSTEM_SHUTDOWN);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
 
 	switch_loadable_module_shutdown();
-	
+
 	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
 		switch_core_sqldb_stop();
 	}
 	switch_scheduler_task_thread_stop();
-	
+
 	switch_rtp_shutdown();
 	if (switch_test_flag((&runtime), SCF_USE_AUTO_NAT)) {
 		switch_nat_shutdown();
@@ -1859,11 +1855,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 		apr_pool_destroy(runtime.memory_pool);
 		apr_terminate();
 	}
-	
+
 	return switch_test_flag((&runtime), SCF_RESTART) ? SWITCH_STATUS_RESTART : SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *name, const char *proto, const char *from, const char *to, 
+SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *name, const char *proto, const char *from, const char *to,
 													  const char *subject, const char *body, const char *type, const char *hint)
 {
 	switch_chat_interface_t *ci;
@@ -1902,18 +1898,18 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void)
 
 
 struct system_thread_handle {
-	const char * cmd;
+	const char *cmd;
 	switch_thread_cond_t *cond;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 	int ret;
 };
 
-static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj) 
+static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj)
 {
-	struct system_thread_handle *sth = (struct system_thread_handle *)obj;
+	struct system_thread_handle *sth = (struct system_thread_handle *) obj;
 
-#if 0 // if we are a luser we can never turn this back down, didn't we already set the stack size?
+#if 0							// if we are a luser we can never turn this back down, didn't we already set the stack size?
 #if defined(HAVE_SETRLIMIT) && !defined(__FreeBSD__)
 	struct rlimit rlim;
 
@@ -1930,11 +1926,10 @@ static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj
 #if 0
 #if defined(HAVE_SETRLIMIT) && !defined(__FreeBSD__)
 	rlim.rlim_cur = SWITCH_THREAD_STACKSIZE;
-	rlim.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE; 
+	rlim.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE;
 	if (setrlimit(RLIMIT_STACK, &rlim) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setting stack size failed! (%s)\n", strerror(errno));
 	}
-
 #endif
 #endif
 

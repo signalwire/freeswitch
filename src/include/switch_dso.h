@@ -25,10 +25,10 @@ typedef int (*switch_dso_func_t) (void);
 #ifdef WIN32
 typedef HINSTANCE switch_dso_lib_t;
 #else
-typedef void * switch_dso_lib_t;
+typedef void *switch_dso_lib_t;
 #endif
 
-typedef void * switch_dso_data_t;
+typedef void *switch_dso_data_t;
 
 SWITCH_DECLARE(void) switch_dso_destroy(switch_dso_lib_t *lib);
 SWITCH_DECLARE(switch_dso_lib_t) switch_dso_open(const char *path, int global, char **err);
@@ -48,4 +48,3 @@ SWITCH_DECLARE(void *) switch_dso_data_sym(switch_dso_lib_t lib, const char *sym
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4
  */
-

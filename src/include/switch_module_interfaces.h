@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -45,7 +45,7 @@
 SWITCH_BEGIN_EXTERN_C
 /*! \brief A table of functions to execute at various states 
  */
-typedef enum {
+	typedef enum {
 	SWITCH_SHN_ON_INIT,
 	SWITCH_SHN_ON_ROUTING,
 	SWITCH_SHN_ON_EXECUTE,
@@ -106,7 +106,27 @@ struct switch_io_event_hooks;
 
 
 typedef switch_call_cause_t (*switch_io_outgoing_channel_t)
-(switch_core_session_t *, switch_event_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **, switch_originate_flag_t, switch_call_cause_t *);
+ 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	(switch_core_session_t *, switch_event_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **, switch_originate_flag_t,
+	 switch_call_cause_t *);
 typedef switch_status_t (*switch_io_read_frame_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_write_frame_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_kill_channel_t) (switch_core_session_t *, int);
@@ -441,7 +461,7 @@ struct switch_speech_handle {
 	switch_audio_resampler_t *resampler;
 	switch_buffer_t *buffer;
 	switch_byte_t *dbuf;
-	switch_size_t dbuflen;	
+	switch_size_t dbuflen;
 	/*! the current samplerate */
 	uint32_t samplerate;
 	/*! the current native samplerate */
@@ -470,7 +490,7 @@ struct switch_chat_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to open the directory interface */
-	switch_status_t (*chat_send) (const char *proto, const char *from, const char *to, 
+	switch_status_t (*chat_send) (const char *proto, const char *from, const char *to,
 								  const char *subject, const char *body, const char *type, const char *hint);
 	switch_thread_rwlock_t *rwlock;
 	int refs;
@@ -680,8 +700,8 @@ struct switch_api_interface {
 	struct switch_api_interface *next;
 };
 
-#define PROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); switch_thread_rwlock_rdlock(_it->parent->rwlock); switch_thread_rwlock_rdlock(_it->rwlock); _it->refs++; _it->parent->refs++; switch_mutex_unlock(_it->reflock);} //if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "+++++++++++LOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
-#define UNPROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); switch_thread_rwlock_unlock(_it->rwlock); switch_thread_rwlock_unlock(_it->parent->rwlock); _it->refs--; _it->parent->refs--; switch_mutex_unlock(_it->reflock);} //if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "---------UNLOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
+#define PROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); switch_thread_rwlock_rdlock(_it->parent->rwlock); switch_thread_rwlock_rdlock(_it->rwlock); _it->refs++; _it->parent->refs++; switch_mutex_unlock(_it->reflock);}	//if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "+++++++++++LOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
+#define UNPROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); switch_thread_rwlock_unlock(_it->rwlock); switch_thread_rwlock_unlock(_it->parent->rwlock); _it->refs--; _it->parent->refs--; switch_mutex_unlock(_it->reflock);}	//if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "---------UNLOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
 
 
 SWITCH_END_EXTERN_C

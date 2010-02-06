@@ -24,16 +24,18 @@
 
 #ifdef WIN32
 
-SWITCH_DECLARE(void) switch_dso_destroy(switch_dso_lib_t *lib) {
+SWITCH_DECLARE(void) switch_dso_destroy(switch_dso_lib_t *lib)
+{
 	if (lib && *lib) {
 		FreeLibrary(*lib);
 		*lib = NULL;
 	}
 }
 
-SWITCH_DECLARE(switch_dso_lib_t) switch_dso_open(const char *path, int global, char **err) {
-    HINSTANCE lib;
-	
+SWITCH_DECLARE(switch_dso_lib_t) switch_dso_open(const char *path, int global, char **err)
+{
+	HINSTANCE lib;
+
 	lib = LoadLibraryEx(path, NULL, 0);
 
 	if (!lib) {
@@ -48,22 +50,24 @@ SWITCH_DECLARE(switch_dso_lib_t) switch_dso_open(const char *path, int global, c
 	return lib;
 }
 
-SWITCH_DECLARE(switch_dso_func_t) switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, char **err) {
+SWITCH_DECLARE(switch_dso_func_t) switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, char **err)
+{
 	FARPROC func = GetProcAddress(lib, sym);
 	if (!func) {
 		DWORD error = GetLastError();
 		*err = switch_mprintf("dll sym error [%ul]\n", error);
 	}
-	return (switch_dso_func_t)func;
+	return (switch_dso_func_t) func;
 }
 
-SWITCH_DECLARE(void *) switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err) {
+SWITCH_DECLARE(void *) switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err)
+{
 	FARPROC addr = GetProcAddress(lib, sym);
 	if (!addr) {
 		DWORD error = GetLastError();
 		*err = switch_mprintf("dll sym error [%ul]\n", error);
 	}
-	return (void *)(intptr_t)addr;
+	return (void *) (intptr_t) addr;
 }
 
 
@@ -80,16 +84,18 @@ SWITCH_DECLARE(void *) switch_dso_data_sym(switch_dso_lib_t lib, const char *sym
 
 #include <dlfcn.h>
 
-void switch_dso_destroy(switch_dso_lib_t *lib) {
+void switch_dso_destroy(switch_dso_lib_t *lib)
+{
 	if (lib && *lib) {
 		dlclose(*lib);
 		*lib = NULL;
 	}
 }
 
-switch_dso_lib_t switch_dso_open(const char *path, int global, char **err) {
+switch_dso_lib_t switch_dso_open(const char *path, int global, char **err)
+{
 	void *lib;
-	
+
 	if (global) {
 		lib = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
 	} else {
@@ -108,15 +114,17 @@ switch_dso_lib_t switch_dso_open(const char *path, int global, char **err) {
 	return lib;
 }
 
-switch_dso_func_t switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, char **err) {
+switch_dso_func_t switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, char **err)
+{
 	void *func = dlsym(lib, sym);
 	if (!func) {
 		*err = strdup(dlerror());
 	}
-	return (switch_dso_func_t)(intptr_t)func;
+	return (switch_dso_func_t) (intptr_t) func;
 }
 
-void *switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err) {
+void *switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err)
+{
 	void *addr = dlsym(lib, sym);
 	if (!addr) {
 		*err = strdup(dlerror());

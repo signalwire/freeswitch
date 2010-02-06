@@ -56,12 +56,14 @@
 /************************************************************************/
 
 static int iblockingIOCallback(const void *inputBuffer, void *outputBuffer,
-							  unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
-static int oblockingIOCallback(const void *inputBuffer, void *outputBuffer,
-							  unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
+							   unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags,
+							   void *userData);
+static int oblockingIOCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo,
+							   PaStreamCallbackFlags statusFlags, void *userData);
 
 static int ioblockingIOCallback(const void *inputBuffer, void *outputBuffer,
-								unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
+								unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags,
+								void *userData);
 
 static PaError PABLIO_InitFIFO(PaUtilRingBuffer * rbuf, long numFrames, long bytesPerFrame);
 static PaError PABLIO_TermFIFO(PaUtilRingBuffer * rbuf);
@@ -74,7 +76,7 @@ static PaError PABLIO_TermFIFO(PaUtilRingBuffer * rbuf);
  * Read and write data 
  */
 static int iblockingIOCallback(const void *inputBuffer, void *outputBuffer,
-							  unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData)
+							   unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData)
 {
 	PABLIO_Stream *data = (PABLIO_Stream *) userData;
 	long numBytes = data->bytesPerFrame * framesPerBuffer;
@@ -91,7 +93,7 @@ static int iblockingIOCallback(const void *inputBuffer, void *outputBuffer,
 }
 
 static int oblockingIOCallback(const void *inputBuffer, void *outputBuffer,
-							  unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData)
+							   unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData)
 {
 	PABLIO_Stream *data = (PABLIO_Stream *) userData;
 	long numBytes = data->bytesPerFrame * framesPerBuffer;
@@ -109,7 +111,8 @@ static int oblockingIOCallback(const void *inputBuffer, void *outputBuffer,
 }
 
 static int ioblockingIOCallback(const void *inputBuffer, void *outputBuffer,
-							  unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData)
+								unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags,
+								void *userData)
 {
 	iblockingIOCallback(inputBuffer, outputBuffer, framesPerBuffer, timeInfo, statusFlags, userData);
 	oblockingIOCallback(inputBuffer, outputBuffer, framesPerBuffer, timeInfo, statusFlags, userData);
@@ -151,7 +154,7 @@ long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switc
 	bytesWritten = PaUtil_WriteRingBuffer(&aStream->outFIFO, p, numBytes);
 	numBytes -= bytesWritten;
 	p += bytesWritten;
-	
+
 	if (numBytes > 0) {
 		PaUtil_FlushRingBuffer(&aStream->outFIFO);
 		return 0;
@@ -172,7 +175,7 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch
 
 	switch_core_timer_next(timer);
 
-	while(totalBytes < neededBytes && --max > 0) {
+	while (totalBytes < neededBytes && --max > 0) {
 
 		avail = PaUtil_GetRingBufferReadAvailable(&aStream->inFIFO);
 		//printf("AVAILABLE BYTES %ld pass %d\n", avail, 5000 - max);
@@ -182,7 +185,7 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch
 		} else {
 
 			bytesRead = 0;
-			
+
 			if (totalBytes < neededBytes && avail >= neededBytes) {
 				bytesRead = PaUtil_ReadRingBuffer(&aStream->inFIFO, p, neededBytes);
 				totalBytes += bytesRead;
@@ -241,10 +244,7 @@ static unsigned long RoundUpToNextPowerOf2(unsigned long n)
  */
 PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 						const PaStreamParameters * inputParameters,
-						const PaStreamParameters * outputParameters, 
-						double sampleRate, PaStreamFlags streamFlags, 
-						long samples_per_packet,
-						int do_dual)
+						const PaStreamParameters * outputParameters, double sampleRate, PaStreamFlags streamFlags, long samples_per_packet, int do_dual)
 {
 	long bytesPerSample = 2;
 	PaError err;
@@ -261,7 +261,7 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 	aStream = (PABLIO_Stream *) malloc(sizeof(PABLIO_Stream));
 	switch_assert(aStream);
 	memset(aStream, 0, sizeof(PABLIO_Stream));
-	
+
 	if (inputParameters) {
 		channels = inputParameters->channelCount;
 	} else if (outputParameters) {
@@ -278,7 +278,7 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 		if (err != paNoError) {
 			goto error;
 		}
-		aStream-> has_in = 1;
+		aStream->has_in = 1;
 	}
 
 	if (outputParameters) {
@@ -286,13 +286,13 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 		if (err != paNoError) {
 			goto error;
 		}
-		aStream-> has_out = 1;
+		aStream->has_out = 1;
 	}
 
 	/* Open a PortAudio stream that we will use to communicate with the underlying
 	 * audio drivers. */
 
-	aStream->do_dual = do_dual;	
+	aStream->do_dual = do_dual;
 
 	if (aStream->do_dual) {
 		err = Pa_OpenStream(&aStream->istream, inputParameters, NULL, sampleRate, samples_per_packet, streamFlags, iblockingIOCallback, aStream);
@@ -304,16 +304,18 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 			goto error;
 		}
 	} else {
-		err = Pa_OpenStream(&aStream->iostream, inputParameters, outputParameters, sampleRate, samples_per_packet, streamFlags, ioblockingIOCallback, aStream);
+		err =
+			Pa_OpenStream(&aStream->iostream, inputParameters, outputParameters, sampleRate, samples_per_packet, streamFlags, ioblockingIOCallback,
+						  aStream);
 	}
 
 	if (err != paNoError) {
 		goto error;
 	}
-	
+
 	if (aStream->do_dual) {
 		err = Pa_StartStream(aStream->istream);
-		
+
 		if (err != paNoError) {
 			goto error;
 		}
@@ -335,7 +337,7 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 	*rwblPtr = aStream;
 
 	switch_yield(500000);
-	
+
 	return paNoError;
 
   error:
@@ -352,7 +354,7 @@ PaError CloseAudioStream(PABLIO_Stream * aStream)
 	int bytesEmpty;
 	int byteSize;
 
-	
+
 	byteSize = aStream->outFIFO.bufferSize;
 
 	if (aStream->has_out) {
@@ -375,7 +377,7 @@ PaError CloseAudioStream(PABLIO_Stream * aStream)
 			Pa_CloseStream(aStream->istream);
 			aStream->istream = NULL;
 		}
-		
+
 		if (aStream->has_out && aStream->ostream) {
 			if (Pa_IsStreamActive(aStream->ostream)) {
 				Pa_StopStream(aStream->ostream);
@@ -384,7 +386,7 @@ PaError CloseAudioStream(PABLIO_Stream * aStream)
 			Pa_CloseStream(aStream->ostream);
 			aStream->ostream = NULL;
 		}
-		
+
 	} else {
 		if (aStream->iostream) {
 			if (Pa_IsStreamActive(aStream->iostream)) {
@@ -396,10 +398,10 @@ PaError CloseAudioStream(PABLIO_Stream * aStream)
 		}
 	}
 
-	if (aStream->has_in) {	
+	if (aStream->has_in) {
 		PABLIO_TermFIFO(&aStream->inFIFO);
 	}
-	
+
 	if (aStream->has_out) {
 		PABLIO_TermFIFO(&aStream->outFIFO);
 	}
@@ -409,4 +411,3 @@ PaError CloseAudioStream(PABLIO_Stream * aStream)
 
 	return paNoError;
 }
-

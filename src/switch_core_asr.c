@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -115,7 +115,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	
+
 	/* extract params */
 	if (*data == '{') {
 		param_string = data + 1;
@@ -123,7 +123,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
 		if (zstr(data)) {
 			status = SWITCH_STATUS_FALSE;
 			goto done;
-		} else {	
+		} else {
 			*data = '\0';
 			data++;
 		}
@@ -144,7 +144,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
 
 	status = ah->asr_interface->asr_load_grammar(ah, data, name);
 
- done:
+  done:
 
 	switch_safe_free(lgrammar);
 	return status;

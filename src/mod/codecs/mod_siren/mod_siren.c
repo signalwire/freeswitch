@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -56,7 +56,7 @@ static switch_status_t switch_siren_init(switch_codec_t *codec, switch_codec_fla
 
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context))))) {
 		return SWITCH_STATUS_FALSE;
-	} 
+	}
 
 	if (codec->fmtp_in) {
 		int x, argc;
@@ -77,9 +77,9 @@ static switch_status_t switch_siren_init(switch_codec_t *codec, switch_codec_fla
 			}
 		}
 	}
-	
+
 	codec->fmtp_out = switch_core_sprintf(codec->memory_pool, "bitrate=%d", bit_rate);
-	
+
 	if (encoding) {
 		g722_1_encode_init(&context->encoder_object, bit_rate, codec->implementation->samples_per_second);
 	}
@@ -87,7 +87,7 @@ static switch_status_t switch_siren_init(switch_codec_t *codec, switch_codec_fla
 	if (decoding) {
 		g722_1_decode_init(&context->decoder_object, bit_rate, codec->implementation->samples_per_second);
 	}
-	
+
 	codec->private_info = context;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -99,11 +99,11 @@ static switch_status_t switch_siren_destroy(switch_codec_t *codec)
 }
 
 static switch_status_t switch_siren_encode(switch_codec_t *codec,
-										  switch_codec_t *other_codec,
-										  void *decoded_data,
-										  uint32_t decoded_data_len,
-										  uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
-										  unsigned int *flag)
+										   switch_codec_t *other_codec,
+										   void *decoded_data,
+										   uint32_t decoded_data_len,
+										   uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
+										   unsigned int *flag)
 {
 	struct siren_context *context = codec->private_info;
 
@@ -116,14 +116,14 @@ static switch_status_t switch_siren_encode(switch_codec_t *codec,
 }
 
 static switch_status_t switch_siren_decode(switch_codec_t *codec,
-										  switch_codec_t *other_codec,
-										  void *encoded_data,
-										  uint32_t encoded_data_len,
-										  uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
-										  unsigned int *flag)
+										   switch_codec_t *other_codec,
+										   void *encoded_data,
+										   uint32_t encoded_data_len,
+										   uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
+										   unsigned int *flag)
 {
 	struct siren_context *context = codec->private_info;
-	
+
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -148,47 +148,43 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_siren_load)
 
 	spf = 320, bpf = 640;
 	for (count = 3; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 107,						/* the IANA code number */
-											 "G7221",					/* the IANA code name */
-											 "bitrate=32000",			/* default fmtp to send (can be overridden by the init function) */
-											 16000,						/* samples transferred per second */
-											 16000,						/* actual samples transferred per second */
-											 32000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 0,							/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 1,							/* number of frames per network packet */
-											 switch_siren_init,			/* function to initialize a codec handle using this implementation */
-											 switch_siren_encode,		/* function to encode raw data into encoded data */
-											 switch_siren_decode,		/* function to decode encoded data into raw data */
-											 switch_siren_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 107,	/* the IANA code number */
+											 "G7221",	/* the IANA code name */
+											 "bitrate=32000",	/* default fmtp to send (can be overridden by the init function) */
+											 16000,	/* samples transferred per second */
+											 16000,	/* actual samples transferred per second */
+											 32000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 0,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 1,	/* number of frames per network packet */
+											 switch_siren_init,	/* function to initialize a codec handle using this implementation */
+											 switch_siren_encode,	/* function to encode raw data into encoded data */
+											 switch_siren_decode,	/* function to decode encoded data into raw data */
+											 switch_siren_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 	spf = 640, bpf = 1280;
 	for (count = 3; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 115,						/* the IANA code number */
-											 "G7221",					/* the IANA code name */
-											 "bitrate=48000",			/* default fmtp to send (can be overridden by the init function) */
-											 32000,						/* samples transferred per second */
-											 32000,						/* actual samples transferred per second */
-											 48000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 0,							/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 1,							/* number of frames per network packet */
-											 switch_siren_init,			/* function to initialize a codec handle using this implementation */
-											 switch_siren_encode,		/* function to encode raw data into encoded data */
-											 switch_siren_decode,		/* function to decode encoded data into raw data */
-											 switch_siren_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 115,	/* the IANA code number */
+											 "G7221",	/* the IANA code name */
+											 "bitrate=48000",	/* default fmtp to send (can be overridden by the init function) */
+											 32000,	/* samples transferred per second */
+											 32000,	/* actual samples transferred per second */
+											 48000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 0,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 1,	/* number of frames per network packet */
+											 switch_siren_init,	/* function to initialize a codec handle using this implementation */
+											 switch_siren_encode,	/* function to encode raw data into encoded data */
+											 switch_siren_decode,	/* function to decode encoded data into raw data */
+											 switch_siren_destroy);	/* deinitalize a codec handle using this implementation */
 
 	}
 	/* indicate that the module should continue to be loaded */

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -59,7 +59,8 @@ static switch_status_t switch_raw_encode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
-										 uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
+										 uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
+										 unsigned int *flag)
 {
 	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary. */
 	if (codec && other_codec && codec->implementation && other_codec->implementation &&
@@ -75,7 +76,8 @@ static switch_status_t switch_raw_decode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
-										 uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
+										 uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
+										 unsigned int *flag)
 {
 	if (codec && other_codec && codec->implementation && other_codec->implementation &&
 		codec->implementation->actual_samples_per_second != other_codec->implementation->actual_samples_per_second) {
@@ -266,55 +268,51 @@ static switch_status_t switch_g711a_destroy(switch_codec_t *codec)
 }
 
 
-static void mod_g711_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
+static void mod_g711_load(switch_loadable_module_interface_t ** module_interface, switch_memory_pool_t *pool)
 {
 	switch_codec_interface_t *codec_interface;
 	int mpf = 10000, spf = 80, bpf = 160, ebpf = 80, count;
 
 	SWITCH_ADD_CODEC(codec_interface, "G.711 ulaw");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 0,							/* the IANA code number */
-											 "PCMU",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 64000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 spf * count,				/* number of frames per network packet */
-											 switch_g711u_init,			/* function to initialize a codec handle using this implementation */
-											 switch_g711u_encode,		/* function to encode raw data into encoded data */
-											 switch_g711u_decode,		/* function to decode encoded data into raw data */
-											 switch_g711u_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 0,	/* the IANA code number */
+											 "PCMU",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 64000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 spf * count,	/* number of frames per network packet */
+											 switch_g711u_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g711u_encode,	/* function to encode raw data into encoded data */
+											 switch_g711u_decode,	/* function to decode encoded data into raw data */
+											 switch_g711u_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 
 	SWITCH_ADD_CODEC(codec_interface, "G.711 alaw");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 8,							/* the IANA code number */
-											 "PCMA",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 64000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 spf * count,				/* number of frames per network packet */
-											 switch_g711a_init,			/* function to initialize a codec handle using this implementation */
-											 switch_g711a_encode,		/* function to encode raw data into encoded data */
-											 switch_g711a_decode,		/* function to decode encoded data into raw data */
-											 switch_g711a_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 8,	/* the IANA code number */
+											 "PCMA",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 64000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 spf * count,	/* number of frames per network packet */
+											 switch_g711a_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g711a_encode,	/* function to encode raw data into encoded data */
+											 switch_g711a_decode,	/* function to decode encoded data into raw data */
+											 switch_g711a_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 }
 
@@ -328,45 +326,43 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_CODEC(codec_interface, "PROXY VIDEO PASS-THROUGH");
-	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_VIDEO,	/* enumeration defining the type of the codec */
-										 31,						/* the IANA code number */
-										 "PROXY-VID",				/* the IANA code name */
-										 NULL,						/* default fmtp to send (can be overridden by the init function) */
-										 90000,						/* samples transferred per second */
-										 90000,						/* actual samples transferred per second */
-										 0,							/* bits transferred per second */ 
-										 0,							/* number of microseconds per frame */
-										 0,							/* number of samples per frame */
-										 0,							/* number of bytes per frame decompressed */
-										 0,							/* number of bytes per frame compressed */
-										 1,							/* number of channels represented */ 
-										 1,							/* number of frames per network packet */
-										 switch_proxy_init,			/* function to initialize a codec handle using this implementation */
-										 switch_proxy_encode,		/* function to encode raw data into encoded data */
-										 switch_proxy_decode,		/* function to encode raw data into encoded data */
-										 switch_proxy_destroy);		/* deinitalize a codec handle using this implementation */
+	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_VIDEO,	/* enumeration defining the type of the codec */
+										 31,	/* the IANA code number */
+										 "PROXY-VID",	/* the IANA code name */
+										 NULL,	/* default fmtp to send (can be overridden by the init function) */
+										 90000,	/* samples transferred per second */
+										 90000,	/* actual samples transferred per second */
+										 0,	/* bits transferred per second */
+										 0,	/* number of microseconds per frame */
+										 0,	/* number of samples per frame */
+										 0,	/* number of bytes per frame decompressed */
+										 0,	/* number of bytes per frame compressed */
+										 1,	/* number of channels represented */
+										 1,	/* number of frames per network packet */
+										 switch_proxy_init,	/* function to initialize a codec handle using this implementation */
+										 switch_proxy_encode,	/* function to encode raw data into encoded data */
+										 switch_proxy_decode,	/* function to encode raw data into encoded data */
+										 switch_proxy_destroy);	/* deinitalize a codec handle using this implementation */
 
 
 	SWITCH_ADD_CODEC(codec_interface, "PROXY PASS-THROUGH");
-	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 0,							/* the IANA code number */
-										 "PROXY",					/* the IANA code name */
-										 NULL,						/* default fmtp to send (can be overridden by the init function) */
-										 8000,						/* samples transferred per second */
-										 8000,						/* actual samples transferred per second */
-										 0,							/* bits transferred per second */
-										 20000,						/* number of microseconds per frame */
-										 160,						/* number of samples per frame */
-										 320,						/* number of bytes per frame decompressed */
-										 320,						/* number of bytes per frame compressed */
-										 1,							/* number of channels represented */
-										 1,							/* number of frames per network packet */
-										 switch_proxy_init,			/* function to initialize a codec handle using this implementation */
-										 switch_proxy_encode,		/* function to encode raw data into encoded data */
-										 switch_proxy_decode,		/* function to decode encoded data into raw data */
-										 switch_proxy_destroy);		/* deinitalize a codec handle using this implementation */
+	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 0,	/* the IANA code number */
+										 "PROXY",	/* the IANA code name */
+										 NULL,	/* default fmtp to send (can be overridden by the init function) */
+										 8000,	/* samples transferred per second */
+										 8000,	/* actual samples transferred per second */
+										 0,	/* bits transferred per second */
+										 20000,	/* number of microseconds per frame */
+										 160,	/* number of samples per frame */
+										 320,	/* number of bytes per frame decompressed */
+										 320,	/* number of bytes per frame compressed */
+										 1,	/* number of channels represented */
+										 1,	/* number of frames per network packet */
+										 switch_proxy_init,	/* function to initialize a codec handle using this implementation */
+										 switch_proxy_encode,	/* function to encode raw data into encoded data */
+										 switch_proxy_decode,	/* function to decode encoded data into raw data */
+										 switch_proxy_destroy);	/* deinitalize a codec handle using this implementation */
 
 	SWITCH_ADD_CODEC(codec_interface, "RAW Signed Linear (16 bit)");
 
@@ -394,29 +390,28 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 	ms_per_frame = 20000;
 
 	for (x = 0; x < 5; x++) {
-		switch_core_codec_add_implementation(pool, codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 10, 						/* the IANA code number */
-											 "L16",						/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 12000,						/* samples transferred per second */
-											 12000,						/* actual samples transferred per second */
-											 192000,					/* bits transferred per second */
-											 ms_per_frame,				/* number of microseconds per frame */
-											 samples_per_frame,			/* number of samples per frame */
-											 bytes_per_frame,			/* number of bytes per frame decompressed */
-											 bytes_per_frame,			/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 1,							/* number of frames per network packet */
-											 switch_raw_init,			/* function to initialize a codec handle using this implementation */
-											 switch_raw_encode,			/* function to encode raw data into encoded data */
-											 switch_raw_decode,			/* function to decode encoded data into raw data */
-											 switch_raw_destroy);		/* deinitalize a codec handle using this implementation */
-		
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 10,	/* the IANA code number */
+											 "L16",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 12000,	/* samples transferred per second */
+											 12000,	/* actual samples transferred per second */
+											 192000,	/* bits transferred per second */
+											 ms_per_frame,	/* number of microseconds per frame */
+											 samples_per_frame,	/* number of samples per frame */
+											 bytes_per_frame,	/* number of bytes per frame decompressed */
+											 bytes_per_frame,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 1,	/* number of frames per network packet */
+											 switch_raw_init,	/* function to initialize a codec handle using this implementation */
+											 switch_raw_encode,	/* function to encode raw data into encoded data */
+											 switch_raw_decode,	/* function to decode encoded data into raw data */
+											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
+
 		samples_per_frame += 240;
 		bytes_per_frame += 480;
 		ms_per_frame += 20000;
-		
+
 	}
 
 	samples_per_frame = 480;
@@ -424,29 +419,28 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 	ms_per_frame = 20000;
 
 	for (x = 0; x < 3; x++) {
-		switch_core_codec_add_implementation(pool, codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 10, 						/* the IANA code number */
-											 "L16",						/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 24000,						/* samples transferred per second */
-											 24000,						/* actual samples transferred per second */
-											 384000,					/* bits transferred per second */
-											 ms_per_frame,				/* number of microseconds per frame */
-											 samples_per_frame,			/* number of samples per frame */
-											 bytes_per_frame,			/* number of bytes per frame decompressed */
-											 bytes_per_frame,			/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 1,							/* number of frames per network packet */
-											 switch_raw_init,			/* function to initialize a codec handle using this implementation */
-											 switch_raw_encode,			/* function to encode raw data into encoded data */
-											 switch_raw_decode,			/* function to decode encoded data into raw data */
-											 switch_raw_destroy);		/* deinitalize a codec handle using this implementation */
-		
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 10,	/* the IANA code number */
+											 "L16",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 24000,	/* samples transferred per second */
+											 24000,	/* actual samples transferred per second */
+											 384000,	/* bits transferred per second */
+											 ms_per_frame,	/* number of microseconds per frame */
+											 samples_per_frame,	/* number of samples per frame */
+											 bytes_per_frame,	/* number of bytes per frame decompressed */
+											 bytes_per_frame,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 1,	/* number of frames per network packet */
+											 switch_raw_init,	/* function to initialize a codec handle using this implementation */
+											 switch_raw_encode,	/* function to encode raw data into encoded data */
+											 switch_raw_decode,	/* function to decode encoded data into raw data */
+											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
+
 		samples_per_frame += 480;
 		bytes_per_frame += 960;
 		ms_per_frame += 20000;
-		
+
 	}
 
 	/* these formats below are for file playing. */
@@ -456,29 +450,28 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 	ms_per_frame = 2000;
 
 	for (x = 0; x < 5; x++) {
-		switch_core_codec_add_implementation(pool, codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 10, 						/* the IANA code number */
-											 "L16",						/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 48000,						/* samples transferred per second */
-											 48000,						/* actual samples transferred per second */
-											 768000,					/* bits transferred per second */
-											 ms_per_frame,				/* number of microseconds per frame */
-											 samples_per_frame,			/* number of samples per frame */
-											 bytes_per_frame,			/* number of bytes per frame decompressed */
-											 bytes_per_frame,			/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 1,							/* number of frames per network packet */
-											 switch_raw_init,			/* function to initialize a codec handle using this implementation */
-											 switch_raw_encode,			/* function to encode raw data into encoded data */
-											 switch_raw_decode,			/* function to decode encoded data into raw data */
-											 switch_raw_destroy);		/* deinitalize a codec handle using this implementation */
-		
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 10,	/* the IANA code number */
+											 "L16",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 48000,	/* samples transferred per second */
+											 48000,	/* actual samples transferred per second */
+											 768000,	/* bits transferred per second */
+											 ms_per_frame,	/* number of microseconds per frame */
+											 samples_per_frame,	/* number of samples per frame */
+											 bytes_per_frame,	/* number of bytes per frame decompressed */
+											 bytes_per_frame,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 1,	/* number of frames per network packet */
+											 switch_raw_init,	/* function to initialize a codec handle using this implementation */
+											 switch_raw_encode,	/* function to encode raw data into encoded data */
+											 switch_raw_decode,	/* function to decode encoded data into raw data */
+											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
+
 		samples_per_frame += 96;
 		bytes_per_frame += 192;
 		ms_per_frame += 2000;
-		
+
 	}
 
 
@@ -487,29 +480,28 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 	ms_per_frame = 2000;
 
 	for (x = 0; x < 4; x++) {
-		switch_core_codec_add_implementation(pool, codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 10, 						/* the IANA code number */
-											 "L16",						/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 128000,					/* bits transferred per second */
-											 ms_per_frame,				/* number of microseconds per frame */
-											 samples_per_frame,			/* number of samples per frame */
-											 bytes_per_frame,			/* number of bytes per frame decompressed */
-											 bytes_per_frame,			/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 1,							/* number of frames per network packet */
-											 switch_raw_init,			/* function to initialize a codec handle using this implementation */
-											 switch_raw_encode,			/* function to encode raw data into encoded data */
-											 switch_raw_decode,			/* function to decode encoded data into raw data */
-											 switch_raw_destroy);		/* deinitalize a codec handle using this implementation */
-		
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 10,	/* the IANA code number */
+											 "L16",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 128000,	/* bits transferred per second */
+											 ms_per_frame,	/* number of microseconds per frame */
+											 samples_per_frame,	/* number of samples per frame */
+											 bytes_per_frame,	/* number of bytes per frame decompressed */
+											 bytes_per_frame,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 1,	/* number of frames per network packet */
+											 switch_raw_init,	/* function to initialize a codec handle using this implementation */
+											 switch_raw_encode,	/* function to encode raw data into encoded data */
+											 switch_raw_decode,	/* function to decode encoded data into raw data */
+											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
+
 		samples_per_frame += 16;
 		bytes_per_frame += 32;
 		ms_per_frame += 2000;
-		
+
 	}
 
 	samples_per_frame = 32;
@@ -517,60 +509,58 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 	ms_per_frame = 2000;
 
 	for (x = 0; x < 4; x++) {
-		switch_core_codec_add_implementation(pool, codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 10, 						/* the IANA code number */
-											 "L16",						/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 16000,						/* samples transferred per second */
-											 16000,						/* actual samples transferred per second */
-											 256000,					/* bits transferred per second */
-											 ms_per_frame,				/* number of microseconds per frame */
-											 samples_per_frame,			/* number of samples per frame */
-											 bytes_per_frame,			/* number of bytes per frame decompressed */
-											 bytes_per_frame,			/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 1,							/* number of frames per network packet */
-											 switch_raw_init,			/* function to initialize a codec handle using this implementation */
-											 switch_raw_encode,			/* function to encode raw data into encoded data */
-											 switch_raw_decode,			/* function to decode encoded data into raw data */
-											 switch_raw_destroy);		/* deinitalize a codec handle using this implementation */
-		
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 10,	/* the IANA code number */
+											 "L16",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 16000,	/* samples transferred per second */
+											 16000,	/* actual samples transferred per second */
+											 256000,	/* bits transferred per second */
+											 ms_per_frame,	/* number of microseconds per frame */
+											 samples_per_frame,	/* number of samples per frame */
+											 bytes_per_frame,	/* number of bytes per frame decompressed */
+											 bytes_per_frame,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 1,	/* number of frames per network packet */
+											 switch_raw_init,	/* function to initialize a codec handle using this implementation */
+											 switch_raw_encode,	/* function to encode raw data into encoded data */
+											 switch_raw_decode,	/* function to decode encoded data into raw data */
+											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
+
 		samples_per_frame += 32;
 		bytes_per_frame += 64;
 		ms_per_frame += 2000;
-		
+
 	}
 
 
 	samples_per_frame = 64;
 	bytes_per_frame = 128;
 	ms_per_frame = 2000;
-	
+
 	for (x = 0; x < 4; x++) {
-		switch_core_codec_add_implementation(pool, codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 10, 						/* the IANA code number */
-											 "L16",						/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 32000,						/* samples transferred per second */
-											 32000,						/* actual samples transferred per second */
-											 512000,					/* bits transferred per second */
-											 ms_per_frame,				/* number of microseconds per frame */
-											 samples_per_frame,			/* number of samples per frame */
-											 bytes_per_frame,			/* number of bytes per frame decompressed */
-											 bytes_per_frame,			/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 1,							/* number of frames per network packet */
-											 switch_raw_init,			/* function to initialize a codec handle using this implementation */
-											 switch_raw_encode,			/* function to encode raw data into encoded data */
-											 switch_raw_decode,			/* function to decode encoded data into raw data */
-											 switch_raw_destroy);		/* deinitalize a codec handle using this implementation */
-		
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 10,	/* the IANA code number */
+											 "L16",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 32000,	/* samples transferred per second */
+											 32000,	/* actual samples transferred per second */
+											 512000,	/* bits transferred per second */
+											 ms_per_frame,	/* number of microseconds per frame */
+											 samples_per_frame,	/* number of samples per frame */
+											 bytes_per_frame,	/* number of bytes per frame decompressed */
+											 bytes_per_frame,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 1,	/* number of frames per network packet */
+											 switch_raw_init,	/* function to initialize a codec handle using this implementation */
+											 switch_raw_encode,	/* function to encode raw data into encoded data */
+											 switch_raw_decode,	/* function to decode encoded data into raw data */
+											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
+
 		samples_per_frame += 64;
 		bytes_per_frame += 128;
 		ms_per_frame += 2000;
-		
+
 	}
 
 	samples_per_frame = 960;
@@ -578,66 +568,63 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 	ms_per_frame = 20000;
 	/* 10ms is already registered */
 	for (x = 0; x < 3; x++) {
-		switch_core_codec_add_implementation(pool, codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 10, 						/* the IANA code number */
-											 "L16",						/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 48000,						/* samples transferred per second */
-											 48000,						/* actual samples transferred per second */
-											 768000,					/* bits transferred per second */
-											 ms_per_frame,				/* number of microseconds per frame */
-											 samples_per_frame,			/* number of samples per frame */
-											 bytes_per_frame,			/* number of bytes per frame decompressed */
-											 bytes_per_frame,			/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 1,							/* number of frames per network packet */
-											 switch_raw_init,			/* function to initialize a codec handle using this implementation */
-											 switch_raw_encode,			/* function to encode raw data into encoded data */
-											 switch_raw_decode,			/* function to decode encoded data into raw data */
-											 switch_raw_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 10,	/* the IANA code number */
+											 "L16",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 48000,	/* samples transferred per second */
+											 48000,	/* actual samples transferred per second */
+											 768000,	/* bits transferred per second */
+											 ms_per_frame,	/* number of microseconds per frame */
+											 samples_per_frame,	/* number of samples per frame */
+											 bytes_per_frame,	/* number of bytes per frame decompressed */
+											 bytes_per_frame,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 1,	/* number of frames per network packet */
+											 switch_raw_init,	/* function to initialize a codec handle using this implementation */
+											 switch_raw_encode,	/* function to encode raw data into encoded data */
+											 switch_raw_decode,	/* function to decode encoded data into raw data */
+											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 		samples_per_frame += 480;
 		bytes_per_frame += 960;
 		ms_per_frame += 10000;
 	}
 
-	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 10,						/* the IANA code number */
-										 "L16", 					/* the IANA code name */
-										 NULL, 						/* default fmtp to send (can be overridden by the init function) */
-										 22050, 					/* samples transferred per second */
-										 22050, 					/* actual samples transferred per second */
-										 352800,					/* bits transferred per second */
-										 20000, 					/* number of microseconds per frame */
-										 441, 						/* number of samples per frame */
-										 882, 						/* number of bytes per frame decompressed */
-										 882, 						/* number of bytes per frame compressed */
-										 1, 						/* number of channels represented */
-										 1, 						/* number of frames per network packet */
-										 switch_raw_init, 			/* function to initialize a codec handle using this implementation */
-										 switch_raw_encode, 		/* function to encode raw data into encoded data */
-										 switch_raw_decode, 		/* function to decode encoded data into raw data */
-										 switch_raw_destroy);		/* deinitalize a codec handle using this implementation */
+	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 10,	/* the IANA code number */
+										 "L16",	/* the IANA code name */
+										 NULL,	/* default fmtp to send (can be overridden by the init function) */
+										 22050,	/* samples transferred per second */
+										 22050,	/* actual samples transferred per second */
+										 352800,	/* bits transferred per second */
+										 20000,	/* number of microseconds per frame */
+										 441,	/* number of samples per frame */
+										 882,	/* number of bytes per frame decompressed */
+										 882,	/* number of bytes per frame compressed */
+										 1,	/* number of channels represented */
+										 1,	/* number of frames per network packet */
+										 switch_raw_init,	/* function to initialize a codec handle using this implementation */
+										 switch_raw_encode,	/* function to encode raw data into encoded data */
+										 switch_raw_decode,	/* function to decode encoded data into raw data */
+										 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 
-	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO, 	/* enumeration defining the type of the codec */
-										 10, 						/* the IANA code number */
-										 "L16", 					/* the IANA code name */
-										 NULL, 						/* default fmtp to send (can be overridden by the init function) */
-										 11025, 					/* samples transferred per second */
-										 11025, 					/* actual samples transferred per second */
-										 176400,					/* bits transferred per second */
-										 40000, 					/* number of microseconds per frame */
-										 441, 						/* number of samples per frame */
-										 882, 						/* number of bytes per frame decompressed */
-										 882, 						/* number of bytes per frame compressed */
-										 1, 						/* number of channels represented */
-										 1, 						/* number of frames per network packet */
-										 switch_raw_init, 			/* function to initialize a codec handle using this implementation */
-										 switch_raw_encode, 		/* function to encode raw data into encoded data */
-										 switch_raw_decode, 		/* function to decode encoded data into raw data */
-										 switch_raw_destroy);		/* deinitalize a codec handle using this implementation */
+	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 10,	/* the IANA code number */
+										 "L16",	/* the IANA code name */
+										 NULL,	/* default fmtp to send (can be overridden by the init function) */
+										 11025,	/* samples transferred per second */
+										 11025,	/* actual samples transferred per second */
+										 176400,	/* bits transferred per second */
+										 40000,	/* number of microseconds per frame */
+										 441,	/* number of samples per frame */
+										 882,	/* number of bytes per frame decompressed */
+										 882,	/* number of bytes per frame compressed */
+										 1,	/* number of channels represented */
+										 1,	/* number of frames per network packet */
+										 switch_raw_init,	/* function to initialize a codec handle using this implementation */
+										 switch_raw_encode,	/* function to encode raw data into encoded data */
+										 switch_raw_decode,	/* function to decode encoded data into raw data */
+										 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 
 
 

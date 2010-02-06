@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -46,10 +46,10 @@ static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag
 	int encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	int decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 	int mode = codec->implementation->microseconds_per_packet / 1000;
-	
+
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context))))) {
 		return SWITCH_STATUS_FALSE;
-	} 
+	}
 
 	if (codec->fmtp_in) {
 		int x, argc;
@@ -70,9 +70,9 @@ static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag
 			}
 		}
 	}
-	
+
 	codec->fmtp_out = switch_core_sprintf(codec->memory_pool, "mode=%d", mode);
-	
+
 	if (encoding) {
 		ilbc_encode_init(&context->encoder_object, mode);
 	}
@@ -80,7 +80,7 @@ static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag
 	if (decoding) {
 		ilbc_decode_init(&context->decoder_object, mode, 0);
 	}
-	
+
 	codec->private_info = context;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -122,7 +122,7 @@ static switch_status_t switch_ilbc_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*decoded_data_len = (2 *ilbc_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
+	*decoded_data_len = (2 * ilbc_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -137,45 +137,41 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_ilbc_load)
 
 	SWITCH_ADD_CODEC(codec_interface, "iLBC");
 
-	switch_core_codec_add_implementation(pool,
-										 codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 98,						/* the IANA code number */
-										 "iLBC",					/* the IANA code name */
-										 "mode=20",					/* default fmtp to send (can be overridden by the init function) */
-										 8000,						/* samples transferred per second */
-										 8000,						/* actual samples transferred per second */
-										 15200,						/* bits transferred per second */
-										 20000,						/* number of microseconds per frame */
-										 ILBC_BLOCK_LEN_20MS,		/* number of samples per frame */
+	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 98,	/* the IANA code number */
+										 "iLBC",	/* the IANA code name */
+										 "mode=20",	/* default fmtp to send (can be overridden by the init function) */
+										 8000,	/* samples transferred per second */
+										 8000,	/* actual samples transferred per second */
+										 15200,	/* bits transferred per second */
+										 20000,	/* number of microseconds per frame */
+										 ILBC_BLOCK_LEN_20MS,	/* number of samples per frame */
 										 ILBC_BLOCK_LEN_20MS * 2,	/* number of bytes per frame decompressed */
-										 ILBC_NO_OF_BYTES_20MS,		/* number of bytes per frame compressed */
-										 1,							/* number of channels represented */
-										 1,							/* number of frames per network packet */
-										 switch_ilbc_init,			/* function to initialize a codec handle using this implementation */
-										 switch_ilbc_encode,		/* function to encode raw data into encoded data */
-										 switch_ilbc_decode,		/* function to decode encoded data into raw data */
-										 switch_ilbc_destroy);		/* deinitalize a codec handle using this implementation */
+										 ILBC_NO_OF_BYTES_20MS,	/* number of bytes per frame compressed */
+										 1,	/* number of channels represented */
+										 1,	/* number of frames per network packet */
+										 switch_ilbc_init,	/* function to initialize a codec handle using this implementation */
+										 switch_ilbc_encode,	/* function to encode raw data into encoded data */
+										 switch_ilbc_decode,	/* function to decode encoded data into raw data */
+										 switch_ilbc_destroy);	/* deinitalize a codec handle using this implementation */
 
-	switch_core_codec_add_implementation(pool,
-										 codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 97,						/* the IANA code number */
-										 "iLBC",					/* the IANA code name */
-										 "mode=30",					/* default fmtp to send (can be overridden by the init function) */
-										 8000,						/* samples transferred per second */
-										 8000,						/* actual samples transferred per second */
-										 13300,						/* bits transferred per second */
-										 30000,						/* number of microseconds per frame */
-										 ILBC_BLOCK_LEN_30MS,		/* number of samples per frame */
+	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 97,	/* the IANA code number */
+										 "iLBC",	/* the IANA code name */
+										 "mode=30",	/* default fmtp to send (can be overridden by the init function) */
+										 8000,	/* samples transferred per second */
+										 8000,	/* actual samples transferred per second */
+										 13300,	/* bits transferred per second */
+										 30000,	/* number of microseconds per frame */
+										 ILBC_BLOCK_LEN_30MS,	/* number of samples per frame */
 										 ILBC_BLOCK_LEN_30MS * 2,	/* number of bytes per frame decompressed */
-										 ILBC_NO_OF_BYTES_30MS,		/* number of bytes per frame compressed */
-										 1,							/* number of channels represented */
-										 1,							/* number of frames per network packet */
-										 switch_ilbc_init,			/* function to initialize a codec handle using this implementation */
-										 switch_ilbc_encode,		/* function to encode raw data into encoded data */
-										 switch_ilbc_decode,		/* function to decode encoded data into raw data */
-										 switch_ilbc_destroy);		/* deinitalize a codec handle using this implementation */
+										 ILBC_NO_OF_BYTES_30MS,	/* number of bytes per frame compressed */
+										 1,	/* number of channels represented */
+										 1,	/* number of frames per network packet */
+										 switch_ilbc_init,	/* function to initialize a codec handle using this implementation */
+										 switch_ilbc_encode,	/* function to encode raw data into encoded data */
+										 switch_ilbc_decode,	/* function to decode encoded data into raw data */
+										 switch_ilbc_destroy);	/* deinitalize a codec handle using this implementation */
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -55,12 +55,12 @@ static struct {
 	uint32_t outscale;
 } globals;
 
-mpg123_handle *our_mpg123_new(const char* decoder, int *error) 
+mpg123_handle *our_mpg123_new(const char *decoder, int *error)
 {
 	mpg123_handle *mh;
 	const char *arch = "auto";
 	int x64 = 0;
-	
+
 	if (*globals.decoder || globals.outscale || globals.vol) {
 		if (*globals.decoder) {
 			arch = globals.decoder;
@@ -159,17 +159,17 @@ static inline void free_context(shout_context_t *context)
 			mpg123_close(context->mh);
 			mpg123_delete(context->mh);
 		}
-		
+
 		if (context->fp) {
 			unsigned char mp3buffer[8192];
 			int len;
-			int16_t blank[2048] = {0}, *r = NULL;
-			
-			
+			int16_t blank[2048] = { 0 }, *r = NULL;
+
+
 			if (context->channels == 2) {
 				r = blank;
 			}
-			
+
 			len = lame_encode_buffer(context->gfp, blank, r, sizeof(blank) / 2, mp3buffer, sizeof(mp3buffer));
 
 			if (len) {
@@ -182,7 +182,7 @@ static inline void free_context(shout_context_t *context)
 					break;
 				}
 			}
-			
+
 			lame_mp3_tags_fid(context->gfp, context->fp);
 
 			fclose(context->fp);
@@ -292,7 +292,7 @@ static void decode_fd(shout_context_t *context, void *data, size_t bytes)
 {
 	int decode_status = 0;
 	size_t usedlen;
-	
+
 	while (!context->err && !context->eof && switch_buffer_inuse(context->audio_buffer) < bytes) {
 		usedlen = 0;
 
@@ -332,8 +332,8 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	shout_context_t *context = data;
 	int decode_status = 0;
 	size_t usedlen;
-	uint32_t used, buf_size = 1024 * 128; /* do not make this 64 or less, stutter will ensue after 
-	                                         first 64k buffer is dry */
+	uint32_t used, buf_size = 1024 * 128;	/* do not make this 64 or less, stutter will ensue after 
+											   first 64k buffer is dry */
 
 	if (context->prebuf) {
 		buf_size = context->prebuf;
@@ -387,7 +387,7 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	if (context->err) {
 		goto error;
 	}
-	
+
 	return realsize;
 
   error:
@@ -405,7 +405,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	CURL *curl_handle = NULL;
 	CURLcode cc;
 	shout_context_t *context = (shout_context_t *) obj;
-	
+
 	switch_thread_rwlock_rdlock(context->rwlock);
 
 	curl_handle = curl_easy_init();
@@ -416,13 +416,14 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) context);
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "FreeSWITCH(mod_shout)/1.0");
 	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 30); /* eventually timeout connect */
-	curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_LIMIT, 100); /* handle trickle connections */
+	curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 30);	/* eventually timeout connect */
+	curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_LIMIT, 100);	/* handle trickle connections */
 	curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_TIME, 30);
 	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, context->curl_error_buff);
 	cc = curl_easy_perform(curl_handle);
-	if (cc && cc != CURLE_WRITE_ERROR) { /* write error is ok, we just exited from callback early */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "CURL returned error:[%d] %s : %s [%s]\n", cc, curl_easy_strerror(cc), context->curl_error_buff, context->stream_url);
+	if (cc && cc != CURLE_WRITE_ERROR) {	/* write error is ok, we just exited from callback early */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "CURL returned error:[%d] %s : %s [%s]\n", cc, curl_easy_strerror(cc),
+						  context->curl_error_buff, context->stream_url);
 	}
 	curl_easy_cleanup(curl_handle);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read Thread Done\n");
@@ -453,7 +454,7 @@ static void launch_read_stream_thread(shout_context_t *context)
 		switch_mutex_unlock(context->audio_mutex);
 
 		if (used >= (2 * context->samplerate)) {
-			 break;
+			break;
 		}
 
 		switch_yield(500000);
@@ -566,7 +567,8 @@ static void launch_write_stream_thread(shout_context_t *context)
 
 	while (context->thread_running && context->thread_running != 2) {
 		switch_yield(100000);
-		if (!--sanity) break;
+		if (!--sanity)
+			break;
 	}
 }
 
@@ -590,9 +592,9 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 	context->memory_pool = handle->memory_pool;
 	context->samplerate = handle->samplerate;
 	context->handle = handle;
-	
+
 	switch_thread_rwlock_create(&(context->rwlock), context->memory_pool);
-	
+
 	switch_thread_rwlock_rdlock(context->rwlock);
 
 	switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, context->memory_pool);
@@ -605,10 +607,10 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 
 		context->mh = our_mpg123_new(NULL, NULL);
 		mpg123_format_all(context->mh);
-		mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);		
+		mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);
 
 		if (handle->handler) {
-			mpg123_param(context->mh, MPG123_FLAGS, MPG123_SEEKBUFFER|MPG123_MONO_MIX, 0);
+			mpg123_param(context->mh, MPG123_FLAGS, MPG123_SEEKBUFFER | MPG123_MONO_MIX, 0);
 			if (mpg123_open_feed(context->mh) != MPG123_OK) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening mpg feed\n");
 				goto error;
@@ -800,7 +802,7 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 		}
 
 		switch_buffer_zero(context->audio_buffer);
-		*cur_sample = mpg123_seek (context->mh, (off_t)samples, whence);
+		*cur_sample = mpg123_seek(context->mh, (off_t) samples, whence);
 
 		return *cur_sample >= 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 	}
@@ -827,9 +829,9 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 	if (!rb && (context->eof || context->err)) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "rb: %d, bytes: %d\n", (int) rb, (int) bytes); */
-	
+
 	if (rb) {
 		*len = rb / sizeof(int16_t);
 	} else {
@@ -839,7 +841,7 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 			bytes = newbytes;
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Padding mp3 stream with 1s of empty audio. (%s)\n", context->stream_url);
-		
+
 		memset(data, 255, bytes);
 		*len = bytes / sizeof(int16_t);
 	}
@@ -918,18 +920,18 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 
 	if (handle->channels == 2) {
 		switch_size_t i, j = 0;
-		
+
 		if (context->llen < nsamples) {
 			context->l = switch_core_alloc(context->memory_pool, nsamples * 2);
 			context->r = switch_core_alloc(context->memory_pool, nsamples * 2);
 			context->llen = context->rlen = nsamples;
 		}
-		
+
 		for (i = 0; i < nsamples; i++) {
 			context->l[i] = audio[j++];
 			context->r[i] = audio[j++];
 		}
-		
+
 		if ((rlen = lame_encode_buffer(context->gfp, context->l, context->r, nsamples, context->mp3buf, context->mp3buflen)) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
 			return SWITCH_STATUS_FALSE;
@@ -1130,7 +1132,7 @@ void do_telecast(switch_stream_handle_t *stream)
 		switch_mutex_t *mutex;
 		switch_channel_t *channel = switch_core_session_get_channel(tsession);
 		lame_global_flags *gfp = NULL;
-		switch_codec_implementation_t read_impl = {0};
+		switch_codec_implementation_t read_impl = { 0 };
 		switch_core_session_get_read_impl(tsession, &read_impl);
 
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
@@ -1322,7 +1324,7 @@ void do_broadcast(switch_stream_handle_t *stream)
 
 void do_index(switch_stream_handle_t *stream)
 {
-	switch_cache_db_handle_t *db; 
+	switch_cache_db_handle_t *db;
 	const char *sql = "select * from channels";
 	struct holder holder;
 	char *errmsg;
@@ -1407,7 +1409,7 @@ static switch_status_t load_config(void)
 	switch_xml_t cfg, xml, settings, param;
 
 	memset(&globals, 0, sizeof(globals));
-	
+
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
@@ -1417,11 +1419,11 @@ static switch_status_t load_config(void)
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
-			
+
 			if (!strcmp(var, "decoder")) {
 				switch_set_string(globals.decoder, val);
 			} else if (!strcmp(var, "volume")) {
-				globals.vol = (float)atof(val);
+				globals.vol = (float) atof(val);
 			} else if (!strcmp(var, "outscale")) {
 				int tmp = atoi(val);
 				if (tmp > 0) {
@@ -1430,7 +1432,7 @@ static switch_status_t load_config(void)
 			}
 		}
 	}
-	
+
 
 	switch_xml_free(xml);
 

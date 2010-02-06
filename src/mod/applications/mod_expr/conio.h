@@ -20,25 +20,24 @@ extern "C" {
 
 #define BLINK 0
 
-typedef enum
-{
-    BLACK,
-    BLUE,
-    GREEN,
-    CYAN,
-    RED,
-    MAGENTA,
-    BROWN,
-    LIGHTGRAY,
-    DARKGRAY,
-    LIGHTBLUE,
-    LIGHTGREEN,
-    LIGHTCYAN,
-    LIGHTRED,
-    LIGHTMAGENTA,
-    YELLOW,
-    WHITE
-} COLORS;
+	typedef enum {
+		BLACK,
+		BLUE,
+		GREEN,
+		CYAN,
+		RED,
+		MAGENTA,
+		BROWN,
+		LIGHTGRAY,
+		DARKGRAY,
+		LIGHTBLUE,
+		LIGHTGREEN,
+		LIGHTCYAN,
+		LIGHTRED,
+		LIGHTMAGENTA,
+		YELLOW,
+		WHITE
+	} COLORS;
 
 
 #define cgets	_cgets
@@ -49,17 +48,16 @@ typedef enum
 
 /* blinkvideo */
 
-void clreol (void);
-void clrscr (void);
+	void clreol(void);
+	void clrscr(void);
 
-int _conio_gettext (int left, int top, int right, int bottom,
-                    char *str);
+	int _conio_gettext(int left, int top, int right, int bottom, char *str);
 /* _conio_kbhit */
 
-void delline (void);
+	void delline(void);
 
 /* gettextinfo */
-void gotoxy(int x, int y);
+	void gotoxy(int x, int y);
 /*
 highvideo
 insline
@@ -69,9 +67,9 @@ movetext
 normvideo
 */
 
-void gotoxy(int x, int y);
+	void gotoxy(int x, int y);
 
-void puttext (int left, int top, int right, int bottom, char *str);
+	void puttext(int left, int top, int right, int bottom, char *str);
 
 // Screen Variables
 
@@ -89,19 +87,19 @@ ScreenUpdateLine
 ScreenVisualBell
 _set_screen_lines */
 
-void _setcursortype (int type);
+	void _setcursortype(int type);
 
-void textattr (int _attr);
+	void textattr(int _attr);
 
-void textbackground (int color);
+	void textbackground(int color);
 
-void textcolor (int color);
+	void textcolor(int color);
 
 /* textmode */
 
-int wherex (void);
+	int wherex(void);
 
-int wherey (void);
+	int wherey(void);
 
 /* window */
 
@@ -135,27 +133,26 @@ int wherey (void);
  *
  */
 
-char*	_cgets (char*);
-int	_cprintf (const char*, ...);
-int	_cputs (const char*);
-int	_cscanf (char*, ...);
+	char *_cgets(char *);
+	int _cprintf(const char *, ...);
+	int _cputs(const char *);
+	int _cscanf(char *, ...);
 
-int	_getch (void);
-int	_getche (void);
-int	_kbhit (void);
-int	_putch (int);
-int	_ungetch (int);
+	int _getch(void);
+	int _getche(void);
+	int _kbhit(void);
+	int _putch(int);
+	int _ungetch(int);
 
 
-int	getch (void);
-int	getche (void);
-int	kbhit (void);
-int	putch (int);
-int	ungetch (int);
+	int getch(void);
+	int getche(void);
+	int kbhit(void);
+	int putch(int);
+	int ungetch(int);
 
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _CONIO_H_ */
+#endif							/* _CONIO_H_ */

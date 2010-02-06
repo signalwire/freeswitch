@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -63,13 +63,13 @@
 #include <apr_file_io.h>
 
 typedef struct {
-	size_t gl_pathc;	/* Count of total paths so far. */
-	size_t gl_matchc;	/* Count of paths matching pattern. */
-	size_t gl_offs;		/* Reserved at beginning of gl_pathv. */
-	int gl_flags;		/* Copy of flags parameter to glob. */
-	char **gl_pathv;	/* List of paths matching pattern. */
+	size_t gl_pathc;			/* Count of total paths so far. */
+	size_t gl_matchc;			/* Count of paths matching pattern. */
+	size_t gl_offs;				/* Reserved at beginning of gl_pathv. */
+	int gl_flags;				/* Copy of flags parameter to glob. */
+	char **gl_pathv;			/* List of paths matching pattern. */
 	/* Copy of errfunc parameter to glob. */
-	int (*gl_errfunc)(const char *, int);	
+	int (*gl_errfunc) (const char *, int);
 } glob_t;
 
 /* Believed to have been introduced in 1003.2-1992 */
@@ -92,7 +92,7 @@ typedef struct {
 #define	GLOB_QUOTE		0x0400	/* Quote special chars with \. */
 #define	GLOB_LIMIT		0x1000	/* limit number of returned paths */
 
-int	glob(const char *, int, int (*)(const char *, int), glob_t *);
+int glob(const char *, int, int (*)(const char *, int), glob_t *);
 void globfree(glob_t *);
 
 #endif
@@ -105,7 +105,7 @@ extern int madvise(caddr_t, size_t, int);
 #endif
 
 #define SWITCH_XML_WS   "\t\r\n "	/* whitespace */
-#define SWITCH_XML_ERRL 128			/* maximum error string length */
+#define SWITCH_XML_ERRL 128		/* maximum error string length */
 
 static int preprocess(const char *cwd, const char *file, int write_fd, int rlevel);
 
@@ -166,7 +166,7 @@ SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(const char 
 	char buf[1024] = "";
 	/*switch_xml_section_t sections = SWITCH_XML_SECTION_RESULT; */
 	uint32_t sections = SWITCH_XML_SECTION_RESULT;
-	
+
 	if (str) {
 		for (x = 0; x < strlen(str); x++) {
 			buf[x] = (char) tolower((int) str[x]);
@@ -252,8 +252,7 @@ SWITCH_DECLARE(void *) switch_xml_get_binding_user_data(switch_xml_binding_t *bi
 }
 
 SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_ret(switch_xml_search_function_t function,
-																	switch_xml_section_t sections, void *user_data,
-																	switch_xml_binding_t **ret_binding)
+																	switch_xml_section_t sections, void *user_data, switch_xml_binding_t **ret_binding)
 {
 	switch_xml_binding_t *binding = NULL, *ptr = NULL;
 	assert(function != NULL);
@@ -302,18 +301,18 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char
 	return p;
 }
 
-SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(switch_xml_t node, const char *childname, ...)
+SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(switch_xml_t node, const char *childname,...)
 {
 	switch_xml_t p = NULL;
-	const char *names[256] = {0};
-	const char *vals[256] = {0};
+	const char *names[256] = { 0 };
+	const char *vals[256] = { 0 };
 	int x, i = 0;
 	va_list ap;
 	const char *attrname, *value = NULL;
 
 	va_start(ap, childname);
-	
-	while(i < 255) {
+
+	while (i < 255) {
 		if ((attrname = va_arg(ap, const char *))) {
 			value = va_arg(ap, const char *);
 		}
@@ -331,7 +330,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(switch_xml_t node, cons
 	if (!(childname && i)) {
 		return node;
 	}
-	
+
 	for (p = switch_xml_child(node, childname); p; p = p->next) {
 		for (x = 0; x < i; x++) {
 			if (names[x] && vals[x]) {
@@ -353,7 +352,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(switch_xml_t node, cons
 		}
 	}
 
- done:
+  done:
 
 	return p;
 }
@@ -481,7 +480,7 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 	char *e, *r = s, *m = s;
 	long b, c, d, l;
 
-	for (; *s; s++) {	/* normalize line endings */
+	for (; *s; s++) {			/* normalize line endings */
 		while (*s == '\r') {
 			*(s++) = '\n';
 			if (*s == '\n')
@@ -503,13 +502,13 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 			if (!c || *e != ';') {
 				s++;
 				continue;
-			}					/* not a character ref */
-
+			}
+			/* not a character ref */
 			if (c < 0x80)
 				*(s++) = (char) c;	/* US-ASCII subset */
-			else {					/* multi-byte UTF-8 sequence */
+			else {				/* multi-byte UTF-8 sequence */
 				for (b = 0, d = c; d; d /= 2)
-					b++;			/* number of bits in c */
+					b++;		/* number of bits in c */
 				b = (b - 2) / 5;	/* number of bytes in payload */
 				*(s++) = (char) ((0xFF << (7 - b)) | (c >> (6 * b)));	/* head */
 				while (b)
@@ -525,19 +524,21 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 					l = (d = (long) (s - r)) + c + (long) strlen(e);	/* new length */
 					if (l) {
 						if (r == m) {
-							char *tmp = (char *)malloc(l);
+							char *tmp = (char *) malloc(l);
 							if (tmp) {
 								r = strcpy(tmp, r);
 							} else {
-								if (r) free(r);
+								if (r)
+									free(r);
 								return NULL;
 							}
 						} else {
-							char *tmp = (char *)realloc(r, l);
+							char *tmp = (char *) realloc(r, l);
 							if (tmp) {
 								r = tmp;
 							} else {
-								if (r) free(r);
+								if (r)
+									free(r);
 								return NULL;
 							}
 						}
@@ -598,15 +599,15 @@ static void switch_xml_char_content(switch_xml_root_t root, char *s, switch_size
 	if (!*(xml->txt))
 		xml->txt = s;			/* initial character content */
 	else {						/* allocate our own memory and make a copy */
-		if ((xml->flags & SWITCH_XML_TXTM)) { /* allocate some space */
-			char *tmp = (char *)realloc(xml->txt, (l = strlen(xml->txt)) + len);
+		if ((xml->flags & SWITCH_XML_TXTM)) {	/* allocate some space */
+			char *tmp = (char *) realloc(xml->txt, (l = strlen(xml->txt)) + len);
 			if (tmp) {
 				xml->txt = tmp;
 			} else {
 				return;
 			}
 		} else {
-			char *tmp = (char *)malloc((l = strlen(xml->txt)) + len);
+			char *tmp = (char *) malloc((l = strlen(xml->txt)) + len);
 			if (tmp) {
 				xml->txt = strcpy(tmp, xml->txt);
 			} else {
@@ -665,7 +666,8 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 		s += strspn(s + 1, SWITCH_XML_WS) + 1;	/* skip whitespace after target */
 	}
 
-	if (!root) return;
+	if (!root)
+		return;
 
 	if (!strcmp(target, "xml")) {	/* <?xml ... ?> */
 		if ((s = strstr(s, "standalone")) && !strncmp(s + strspn(s + 10, SWITCH_XML_WS "='\"") + 10, "yes", 3))
@@ -674,20 +676,24 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 	}
 
 	if (!root->pi[0]) {
-		root->pi = (char ***)malloc(sizeof(char **));
-		if (!root->pi) return;
-		*(root->pi) = NULL;	/* first pi */
+		root->pi = (char ***) malloc(sizeof(char **));
+		if (!root->pi)
+			return;
+		*(root->pi) = NULL;		/* first pi */
 	}
 
 	while (root->pi[i] && strcmp(target, root->pi[i][0]))
 		i++;					/* find target */
 	if (!root->pi[i]) {			/* new target */
-		char ***ssstmp = (char ***)realloc(root->pi, sizeof(char **) * (i + 2));
-		if (!ssstmp) return;
-		root->pi = ssstmp; 
-		if (!root->pi) return;
-		root->pi[i] = (char **)malloc(sizeof(char *) * 3);
-		if (!root->pi[i]) return;
+		char ***ssstmp = (char ***) realloc(root->pi, sizeof(char **) * (i + 2));
+		if (!ssstmp)
+			return;
+		root->pi = ssstmp;
+		if (!root->pi)
+			return;
+		root->pi[i] = (char **) malloc(sizeof(char *) * 3);
+		if (!root->pi[i])
+			return;
 		root->pi[i][0] = target;
 		root->pi[i][1] = (char *) (root->pi[i + 1] = NULL);	/* terminate pi list */
 		root->pi[i][2] = strdup("");	/* empty document position list */
@@ -695,12 +701,14 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 
 	while (root->pi[i][j])
 		j++;					/* find end of instruction list for this target */
-	sstmp = (char **)realloc(root->pi[i], sizeof(char *) * (j + 3));
-	if (!sstmp) return;
+	sstmp = (char **) realloc(root->pi[i], sizeof(char *) * (j + 3));
+	if (!sstmp)
+		return;
 	root->pi[i] = sstmp;
-	stmp = (char *)realloc(root->pi[i][j + 1], j + 1);
-	if (!stmp) return;
-	root->pi[i][j + 2] = stmp; 
+	stmp = (char *) realloc(root->pi[i][j + 1], j + 1);
+	if (!stmp)
+		return;
+	root->pi[i][j + 2] = stmp;
 	strcpy(root->pi[i][j + 2] + j - 1, (root->xml.name) ? ">" : "<");
 	root->pi[i][j + 1] = NULL;	/* null terminate pi list for this target */
 	root->pi[i][j] = s;			/* set instruction */
@@ -713,27 +721,27 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 	int i, j;
 	char **sstmp;
 
-	pe = (char **)memcpy(malloc(sizeof(SWITCH_XML_NIL)), SWITCH_XML_NIL, sizeof(SWITCH_XML_NIL));
-	
+	pe = (char **) memcpy(malloc(sizeof(SWITCH_XML_NIL)), SWITCH_XML_NIL, sizeof(SWITCH_XML_NIL));
+
 	for (s[len] = '\0'; s;) {
 		while (*s && *s != '<' && *s != '%')
 			s++;				/* find next declaration */
 
 		if (!*s)
 			break;
-		else if (!strncmp(s, "<!ENTITY", 8)) {			/* parse entity definitions */
+		else if (!strncmp(s, "<!ENTITY", 8)) {	/* parse entity definitions */
 			c = s += strspn(s + 8, SWITCH_XML_WS) + 8;	/* skip white space separator */
-			n = s + strspn(s, SWITCH_XML_WS "%");		/* find name */
+			n = s + strspn(s, SWITCH_XML_WS "%");	/* find name */
 			*(s = n + strcspn(n, SWITCH_XML_WS)) = ';';	/* append ; to name */
 
 			v = s + strspn(s + 1, SWITCH_XML_WS) + 1;	/* find value */
-			if ((q = *(v++)) != '"' && q != '\'') {		/* skip externals */
+			if ((q = *(v++)) != '"' && q != '\'') {	/* skip externals */
 				s = strchr(s, '>');
 				continue;
 			}
 
 			for (i = 0, ent = (*c == '%') ? pe : root->ent; ent[i]; i++);
-			sstmp = (char **)realloc(ent, (i + 3) * sizeof(char *));	/* space for next ent */
+			sstmp = (char **) realloc(ent, (i + 3) * sizeof(char *));	/* space for next ent */
 			if (!sstmp) {
 				switch_xml_err(root, v, "Allocation Error!");
 				break;
@@ -770,7 +778,7 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 
 			//while (*(n = ++s + strspn(s, SWITCH_XML_WS)) && *n != '>') {
 			// gcc 4.4 you are a creep
-			for(;;) {
+			for (;;) {
 				s++;
 				if (!(*(n = s + strspn(s, SWITCH_XML_WS)) && *n != '>')) {
 					break;
@@ -783,7 +791,7 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 				}
 
 				s += strspn(s + 1, SWITCH_XML_WS) + 1;	/* find next token */
-				c = (strncmp(s, "CDATA", 5)) ? (char *)"*" : (char *)" ";	/* is it cdata? */
+				c = (strncmp(s, "CDATA", 5)) ? (char *) "*" : (char *) " ";	/* is it cdata? */
 				if (!strncmp(s, "NOTATION", 8))
 					s += strspn(s + 8, SWITCH_XML_WS) + 8;
 				s = (*s == '(') ? strchr(s, ')') : s + strcspn(s, SWITCH_XML_WS);
@@ -809,15 +817,15 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 				}
 
 				if (!root->attr[i]) {	/* new tag name */
-					root->attr = (!i) ? (char ***)malloc(2 * sizeof(char **))
-						: (char ***)realloc(root->attr, (i + 2) * sizeof(char **));
-					root->attr[i] = (char **)malloc(2 * sizeof(char *));
+					root->attr = (!i) ? (char ***) malloc(2 * sizeof(char **))
+						: (char ***) realloc(root->attr, (i + 2) * sizeof(char **));
+					root->attr[i] = (char **) malloc(2 * sizeof(char *));
 					root->attr[i][0] = t;	/* set tag name */
 					root->attr[i][1] = (char *) (root->attr[i + 1] = NULL);
 				}
 
 				for (j = 1; root->attr[i][j]; j += 3);	/* find end of list */
-				sstmp = (char **)realloc(root->attr[i], (j + 4) * sizeof(char *));
+				sstmp = (char **) realloc(root->attr[i], (j + 4) * sizeof(char *));
 
 				if (!sstmp) {
 					switch_xml_err(root, t, "Allocation Error!");
@@ -826,17 +834,17 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 
 				root->attr[i] = sstmp;
 				root->attr[i][j + 3] = NULL;	/* null terminate list */
-				root->attr[i][j + 2] = c;		/* is it cdata? */
+				root->attr[i][j + 2] = c;	/* is it cdata? */
 				root->attr[i][j + 1] = (v) ? switch_xml_decode(v, root->ent, *c) : NULL;
-				root->attr[i][j] = n;			/* attribute name  */
+				root->attr[i][j] = n;	/* attribute name  */
 			}
 		} else if (!strncmp(s, "<!--", 4))
-			s = strstr(s + 4, "-->");			/* comments */
-		else if (!strncmp(s, "<?", 2)) {		/* processing instructions */
+			s = strstr(s + 4, "-->");	/* comments */
+		else if (!strncmp(s, "<?", 2)) {	/* processing instructions */
 			if ((s = strstr(c = s + 2, "?>")))
 				switch_xml_proc_inst(root, c, s++ - c);
 		} else if (*s == '<')
-			s = strchr(s, '>');					/* skip other declarations */
+			s = strchr(s, '>');	/* skip other declarations */
 		else if (*(s++) == '%' && !root->standalone)
 			break;
 	}
@@ -857,10 +865,10 @@ static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 	if (be == -1)
 		return NULL;			/* not UTF-16 */
 
-	u = (char *)malloc(max);
+	u = (char *) malloc(max);
 	for (sl = 2; sl < *len - 1; sl += 2) {
 		c = (be) ? (((*s)[sl] & 0xFF) << 8) | ((*s)[sl + 1] & 0xFF)	/* UTF-16BE */
-			: (((*s)[sl + 1] & 0xFF) << 8) | ((*s)[sl] & 0xFF);		/* UTF-16LE */
+			: (((*s)[sl + 1] & 0xFF) << 8) | ((*s)[sl] & 0xFF);	/* UTF-16LE */
 		if (c >= 0xD800 && c <= 0xDFFF && (sl += 2) < *len - 1) {	/* high-half */
 			d = (be) ? (((*s)[sl] & 0xFF) << 8) | ((*s)[sl + 1] & 0xFF)
 				: (((*s)[sl + 1] & 0xFF) << 8) | ((*s)[sl] & 0xFF);
@@ -869,8 +877,9 @@ static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 
 		while (l + 6 > max) {
 			char *tmp;
-			tmp = (char *)realloc(u, max += SWITCH_XML_BUFSIZE);
-			if (!tmp) return NULL;
+			tmp = (char *) realloc(u, max += SWITCH_XML_BUFSIZE);
+			if (!tmp)
+				return NULL;
 			u = tmp;
 		}
 		if (c < 0x80)
@@ -884,7 +893,7 @@ static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 				u[l++] = (char) (0x80 | ((c >> (6 * --b)) & 0x3F));	/* payload */
 		}
 	}
-	return *s = (char *)realloc(u, *len = l);
+	return *s = (char *) realloc(u, *len = l);
 }
 
 /* frees a tag attribute list */
@@ -908,16 +917,16 @@ static void switch_xml_free_attr(char **attr)
 	free(attr);
 }
 
-SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(char *s, switch_bool_t dup) 
+SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(char *s, switch_bool_t dup)
 {
 	switch_xml_root_t root;
 	char *data;
-	
+
 	switch_assert(s);
 	data = dup ? strdup(s) : s;
-	
+
 	if ((root = (switch_xml_root_t) switch_xml_parse_str(data, strlen(data)))) {
-		root->dynamic = 1; /* Make sure we free the memory is switch_xml_free() */
+		root->dynamic = 1;		/* Make sure we free the memory is switch_xml_free() */
 		return &root->xml;
 	} else {
 		if (dup) {
@@ -926,7 +935,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(char *s, switch_bool_t
 		return NULL;
 	}
 }
-	
+
 /* parse the given xml string and return an switch_xml structure */
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 {
@@ -952,26 +961,26 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 		attr = (char **) SWITCH_XML_NIL;
 		d = ++s;
 
-		if (isalpha((int) (*s)) || *s == '_' || *s == ':' || (int8_t) *s < '\0') {	/* new tag */
+		if (isalpha((int) (*s)) || *s == '_' || *s == ':' || (int8_t) * s < '\0') {	/* new tag */
 			if (!root->cur)
 				return switch_xml_err(root, d, "markup outside of root element");
 
 			s += strcspn(s, SWITCH_XML_WS "/>");
 			while (isspace((int) (*s)))
-			*(s++) = '\0';	/* null terminate tag name */
+				*(s++) = '\0';	/* null terminate tag name */
 
 			if (*s && *s != '/' && *s != '>')	/* find tag in default attr list */
 				for (i = 0; (a = root->attr[i]) && strcmp(a[0], d); i++);
 
 			for (l = 0; *s && *s != '/' && *s != '>'; l += 2) {	/* new attrib */
-				attr = (l) ? (char **)realloc(attr, (l + 4) * sizeof(char *))
-					: (char **)malloc(4 * sizeof(char *));	/* allocate space */
-				attr[l + 3] = (l) ? (char *)realloc(attr[l + 1], (l / 2) + 2)
-					: (char *)malloc(2);					/* mem for list of maloced vals */
-				strcpy(attr[l + 3] + (l / 2), " ");			/* value is not malloced */
-				attr[l + 2] = NULL;							/* null terminate list */
-				attr[l + 1] = (char *)"";					/* temporary attribute value */
-				attr[l] = s;								/* set attribute name */
+				attr = (l) ? (char **) realloc(attr, (l + 4) * sizeof(char *))
+					: (char **) malloc(4 * sizeof(char *));	/* allocate space */
+				attr[l + 3] = (l) ? (char *) realloc(attr[l + 1], (l / 2) + 2)
+					: (char *) malloc(2);	/* mem for list of maloced vals */
+				strcpy(attr[l + 3] + (l / 2), " ");	/* value is not malloced */
+				attr[l + 2] = NULL;	/* null terminate list */
+				attr[l + 1] = (char *) "";	/* temporary attribute value */
+				attr[l] = s;	/* set attribute name */
 
 				s += strcspn(s, SWITCH_XML_WS "=/>");
 				if (*s == '=' || isspace((int) (*s))) {
@@ -1084,12 +1093,12 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE * fp)
 	switch_size_t l, len = 0;
 	char *s;
 
-	if (!(s = (char *)malloc(SWITCH_XML_BUFSIZE)))
+	if (!(s = (char *) malloc(SWITCH_XML_BUFSIZE)))
 		return NULL;
 	do {
 		len += (l = fread((s + len), 1, SWITCH_XML_BUFSIZE, fp));
 		if (l == SWITCH_XML_BUFSIZE) {
-			char *tmp = (char *)realloc(s, len + SWITCH_XML_BUFSIZE);
+			char *tmp = (char *) realloc(s, len + SWITCH_XML_BUFSIZE);
 			if (!tmp) {
 				free(s);
 				return NULL;
@@ -1128,9 +1137,10 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 	} else {					/* mmap failed, read file into memory */
 #endif /* HAVE_MMAP */
 		m = malloc(st.st_size);
-		if (!m) return NULL;
+		if (!m)
+			return NULL;
 		l = read(fd, m, st.st_size);
-		root = (switch_xml_root_t) switch_xml_parse_str((char *)m, l);
+		root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l);
 		root->dynamic = 1;		/* so we know to free s in switch_xml_free() */
 #ifdef HAVE_MMAP
 	}
@@ -1188,20 +1198,19 @@ static int preprocess_exec(const char *cwd, const char *command, int write_fd, i
 	if (write(write_fd, message, sizeof(message)) < 0) {
 		goto end;
 	}
-
 #else
 	int fds[2], pid = 0;
 
 	if (pipe(fds)) {
 		goto end;
-	} else { /* good to go*/
+	} else {					/* good to go */
 		pid = fork();
 
-		if (pid < 0) { /* ok maybe not */
+		if (pid < 0) {			/* ok maybe not */
 			close(fds[0]);
 			close(fds[1]);
 			goto end;
-		} else if (pid) { /* parent */
+		} else if (pid) {		/* parent */
 			char buf[1024] = "";
 			int bytes;
 			close(fds[1]);
@@ -1211,7 +1220,7 @@ static int preprocess_exec(const char *cwd, const char *command, int write_fd, i
 				}
 			}
 			close(fds[0]);
-		} else { /*  child */
+		} else {				/*  child */
 			close(fds[0]);
 			dup2(fds[1], STDOUT_FILENO);
 			switch_system(command, SWITCH_TRUE);
@@ -1220,25 +1229,25 @@ static int preprocess_exec(const char *cwd, const char *command, int write_fd, i
 		}
 	}
 #endif
- end:
+  end:
 
 	return write_fd;
-	
+
 }
 
 static int preprocess_glob(const char *cwd, const char *pattern, int write_fd, int rlevel)
 {
 	char *full_path = NULL;
 	char *dir_path = NULL, *e = NULL;
-    glob_t glob_data;
+	glob_t glob_data;
 	size_t n;
 
 	if (!switch_is_file_path(pattern)) {
 		full_path = switch_mprintf("%s%s%s", cwd, SWITCH_PATH_SEPARATOR, pattern);
 		pattern = full_path;
 	}
-	
-    if (glob(pattern, GLOB_NOCHECK, NULL, &glob_data) != 0) {
+
+	if (glob(pattern, GLOB_NOCHECK, NULL, &glob_data) != 0) {
 		if (stderr) {
 			fprintf(stderr, "Error including %s\n", pattern);
 		}
@@ -1260,9 +1269,9 @@ static int preprocess_glob(const char *cwd, const char *pattern, int write_fd, i
 		}
 		free(dir_path);
 	}
-    globfree(&glob_data);
+	globfree(&glob_data);
 
- end:
+  end:
 
 	switch_safe_free(full_path);
 
@@ -1276,7 +1285,7 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 	char *q, *cmd, buf[2048], ebuf[8192];
 	char *tcmd, *targ;
 	int line = 0;
-	
+
 	if ((read_fd = open(file, O_RDONLY, 0)) < 0) {
 		const char *reason = strerror(errno);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldnt open %s (%s)\n", file, reason);
@@ -1292,7 +1301,7 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 		const char *err = NULL;
 		char *bp = expand_vars(buf, ebuf, sizeof(ebuf), &cur, &err);
 		line++;
-		
+
 		if (err) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error [%s] in file %s line %d\n", err, file, line);
 		}
@@ -1312,8 +1321,8 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 			}
 		}
 
-		if ((tcmd = (char *)switch_stristr("X-pre-process", bp))) {
-			if (*(tcmd-1) != '<') {
+		if ((tcmd = (char *) switch_stristr("X-pre-process", bp))) {
+			if (*(tcmd - 1) != '<') {
 				continue;
 			}
 			if ((e = strstr(tcmd, "/>"))) {
@@ -1323,35 +1332,35 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
 				}
 			}
-			
-			if (!(tcmd = (char *)switch_stristr("cmd", tcmd))) {
+
+			if (!(tcmd = (char *) switch_stristr("cmd", tcmd))) {
 				continue;
 			}
 
-			if (!(tcmd = (char *)switch_stristr("=", tcmd))) {
+			if (!(tcmd = (char *) switch_stristr("=", tcmd))) {
 				continue;
 			}
 
-			if (!(tcmd = (char *)switch_stristr("\"", tcmd))) {
+			if (!(tcmd = (char *) switch_stristr("\"", tcmd))) {
 				continue;
 			}
-			
+
 			tcmd++;
 
-			
+
 			if ((e = strchr(tcmd, '"'))) {
 				*e++ = '\0';
 			}
 
-			if (!(targ = (char *)switch_stristr("data", e))) {
+			if (!(targ = (char *) switch_stristr("data", e))) {
 				continue;
 			}
 
-			if (!(targ = (char *)switch_stristr("=", targ))) {
+			if (!(targ = (char *) switch_stristr("=", targ))) {
 				continue;
 			}
 
-			if (!(targ = (char *)switch_stristr("\"", targ))) {
+			if (!(targ = (char *) switch_stristr("\"", targ))) {
 				continue;
 			}
 
@@ -1360,26 +1369,26 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 			if ((e = strchr(targ, '"'))) {
 				*e++ = '\0';
 			}
-			
+
 			if (!strcasecmp(tcmd, "set")) {
-				char *name = (char *)targ;
+				char *name = (char *) targ;
 				char *val = strchr(name, '=');
-				
+
 				if (val) {
 					char *ve = val++;
 					while (*val && *val == ' ') {
-							val++;
+						val++;
 					}
 					*ve-- = '\0';
 					while (*ve && *ve == ' ') {
 						*ve-- = '\0';
 					}
 				}
-				
+
 				if (name && val) {
 					switch_core_set_variable(name, val);
 				}
-				
+
 			} else if (!strcasecmp(tcmd, "include")) {
 				preprocess_glob(cwd, targ, write_fd, rlevel + 1);
 			} else if (!strcasecmp(tcmd, "exec")) {
@@ -1388,7 +1397,7 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 
 			continue;
 		}
-		
+
 		if ((cmd = strstr(bp, "<!--#"))) {
 			if (write(write_fd, bp, (unsigned) (cmd - bp)) != (cmd - bp)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
@@ -1470,12 +1479,12 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 		m = malloc(st.st_size);
 		switch_assert(m);
 		l = read(fd, m, st.st_size);
-		root = (switch_xml_root_t) switch_xml_parse_str((char *)m, l);
+		root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l);
 		root->dynamic = 1;
 		close(fd);
 		return &root->xml;
 	}
-	
+
 	return NULL;
 }
 
@@ -1486,13 +1495,14 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	char *new_file = NULL;
 	const char *abs, *absw;
 
-	abs = strrchr(file, '/'); absw = strrchr(file, '\\');
+	abs = strrchr(file, '/');
+	absw = strrchr(file, '\\');
 	if (abs || absw) {
 		abs > absw ? abs++ : (abs = ++absw);
 	} else {
 		abs = file;
 	}
-	
+
 	if (!(new_file = switch_mprintf("%s%s%s.fsxml", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs))) {
 		return NULL;
 	}
@@ -1527,12 +1537,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *tag_name,
-												  const char *key_name, 
-												  const char *key_value, 
-												  switch_xml_t *root, 
-												  switch_xml_t *node,
-												  switch_event_t *params,
-												  switch_bool_t clone)
+												  const char *key_name,
+												  const char *key_value,
+												  switch_xml_t *root, switch_xml_t *node, switch_event_t *params, switch_bool_t clone)
 {
 	switch_xml_t conf = NULL;
 	switch_xml_t tag = NULL;
@@ -1589,7 +1596,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 			if (clone) {
 				char *x = switch_xml_toxml(tag, SWITCH_FALSE);
 				switch_assert(x);
-				*node = *root = switch_xml_parse_str_dynamic(x, SWITCH_FALSE); /* x will be free()'d in switch_xml_free() */
+				*node = *root = switch_xml_parse_str_dynamic(x, SWITCH_FALSE);	/* x will be free()'d in switch_xml_free() */
 				switch_xml_free(xml);
 			} else {
 				*node = tag;
@@ -1610,8 +1617,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, switch_event_t *params,
-														 switch_xml_t *root, switch_xml_t *domain)
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, switch_event_t *params, switch_xml_t *root, switch_xml_t *domain)
 {
 	switch_event_t *my_params = NULL;
 	switch_status_t status;
@@ -1632,11 +1638,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name
 }
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_group(const char *group_name,
-														const char *domain_name, 
-														switch_xml_t *root,
-														switch_xml_t *domain,
-														switch_xml_t *group,
-														switch_event_t *params)
+														const char *domain_name,
+														switch_xml_t *root, switch_xml_t *domain, switch_xml_t *group, switch_event_t *params)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *my_params = NULL;
@@ -1663,7 +1666,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_group(const char *group_name,
 	if ((status = switch_xml_locate_domain(domain_name, params, root, domain)) != SWITCH_STATUS_SUCCESS) {
 		goto end;
 	}
-	
+
 	status = SWITCH_STATUS_FALSE;
 
 	if ((groups = switch_xml_child(*domain, "groups"))) {
@@ -1672,7 +1675,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_group(const char *group_name,
 		}
 	}
 
- end:
+  end:
 
 	if (my_params) {
 		switch_event_destroy(&my_params);
@@ -1699,7 +1702,7 @@ static switch_status_t find_user_in_tag(switch_xml_t tag, const char *ip, const 
 		if ((*user = switch_xml_find_child_multi(tag, "user", "ip", ip, "type", type, NULL))) {
 			return SWITCH_STATUS_SUCCESS;
 		}
-	} 
+	}
 
 	if (user_name) {
 		if (!strcasecmp(key, "id")) {
@@ -1712,19 +1715,16 @@ static switch_status_t find_user_in_tag(switch_xml_t tag, const char *ip, const 
 			}
 		}
 	}
-	
+
 	return SWITCH_STATUS_FALSE;
-	
+
 }
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(const char *user_name,
-																 switch_xml_t domain,
-																 switch_xml_t *user,
-																 switch_xml_t *ingroup)
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(const char *user_name, switch_xml_t domain, switch_xml_t *user, switch_xml_t *ingroup)
 {
 	switch_xml_t group = NULL, groups = NULL, users = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+
 	if ((groups = switch_xml_child(domain, "groups"))) {
 		for (group = switch_xml_child(groups, "group"); group; group = group->next) {
 			if ((users = switch_xml_child(group, "users"))) {
@@ -1743,18 +1743,15 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(const char *use
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   const char *user_name,
-													   const char *domain_name, 
-													   const char *ip, 
+													   const char *domain_name,
+													   const char *ip,
 													   switch_xml_t *root,
-													   switch_xml_t *domain,
-													   switch_xml_t *user,
-													   switch_xml_t *ingroup,
-													   switch_event_t *params)
+													   switch_xml_t *domain, switch_xml_t *user, switch_xml_t *ingroup, switch_event_t *params)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *my_params = NULL, *search_params = NULL;
 	switch_xml_t group = NULL, groups = NULL, users = NULL;
-	
+
 	*root = NULL;
 	*user = NULL;
 	*domain = NULL;
@@ -1782,11 +1779,11 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 	if (ip) {
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "ip", ip);
 	}
-	
+
 	if ((status = switch_xml_locate_domain(domain_name, params, root, domain)) != SWITCH_STATUS_SUCCESS) {
 		goto end;
 	}
-	
+
 	status = SWITCH_STATUS_FALSE;
 
 	if (params != my_params) {
@@ -1809,8 +1806,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 	if (status != SWITCH_STATUS_SUCCESS) {
 		status = find_user_in_tag(*domain, ip, user_name, key, params, user);
 	}
-	
- end:
+
+  end:
 
 	if (my_params) {
 		switch_event_destroy(&my_params);
@@ -1848,16 +1845,16 @@ static void *SWITCH_THREAD_FUNC destroy_thread(switch_thread_t *thread, void *ob
 SWITCH_DECLARE(void) switch_xml_free_in_thread(switch_xml_t xml, int stacksize)
 {
 	switch_thread_t *thread;
-    switch_threadattr_t *thd_attr;
+	switch_threadattr_t *thd_attr;
 	switch_memory_pool_t *pool = NULL;
 	struct destroy_xml *dx;
 
 	switch_core_new_memory_pool(&pool);
 
 	switch_threadattr_create(&thd_attr, pool);
-    switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_detach_set(thd_attr, 1);
 	/* TBD figure out how much space we need by looking at the xml_t when stacksize == 0 */
-    switch_threadattr_stacksize_set(thd_attr, stacksize);
+	switch_threadattr_stacksize_set(thd_attr, stacksize);
 
 	dx = switch_core_alloc(pool, sizeof(*dx));
 	dx->pool = pool;
@@ -1923,7 +1920,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 		r = switch_xml_root();
 	}
 
- done:
+  done:
 
 	switch_mutex_unlock(XML_LOCK);
 
@@ -1955,7 +1952,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_mutex_lock(XML_LOCK);
-	
+
 	if (MAIN_XML_ROOT) {
 		switch_xml_t xml = MAIN_XML_ROOT;
 		MAIN_XML_ROOT = NULL;
@@ -1991,7 +1988,8 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 	const char *e = NULL;
 	int immune = 0;
 
-	if (!(s && *s)) return *dst;	
+	if (!(s && *s))
+		return *dst;
 
 	if (len) {
 		e = s + len;
@@ -1999,8 +1997,9 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 
 	while (s != e) {
 		while (*dlen + 10 > *max) {
-			char *tmp = (char *)realloc(*dst, *max += SWITCH_XML_BUFSIZE);
-			if (!tmp) return *dst;
+			char *tmp = (char *) realloc(*dst, *max += SWITCH_XML_BUFSIZE);
+			if (!tmp)
+				return *dst;
 			*dst = tmp;
 		}
 
@@ -2009,39 +2008,39 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 				return *dst;
 			}
 			(*dst)[(*dlen)++] = *s;
-		} else 
+		} else
 			switch (*s) {
-		case '\0':
-			return *dst;
-		case '&':
-			*dlen += sprintf(*dst + *dlen, "&amp;");
-			break;
-		case '<':
-			if (*(s+1) == '!') {
-				(*dst)[(*dlen)++] = *s;
-				immune++;
+			case '\0':
+				return *dst;
+			case '&':
+				*dlen += sprintf(*dst + *dlen, "&amp;");
 				break;
+			case '<':
+				if (*(s + 1) == '!') {
+					(*dst)[(*dlen)++] = *s;
+					immune++;
+					break;
+				}
+				*dlen += sprintf(*dst + *dlen, "&lt;");
+				break;
+			case '>':
+				*dlen += sprintf(*dst + *dlen, "&gt;");
+				break;
+			case '"':
+				*dlen += sprintf(*dst + *dlen, (a) ? "&quot;" : "\"");
+				break;
+			case '\n':
+				*dlen += sprintf(*dst + *dlen, (a) ? "&#xA;" : "\n");
+				break;
+			case '\t':
+				*dlen += sprintf(*dst + *dlen, (a) ? "&#x9;" : "\t");
+				break;
+			case '\r':
+				*dlen += sprintf(*dst + *dlen, "&#xD;");
+				break;
+			default:
+				(*dst)[(*dlen)++] = *s;
 			}
-			*dlen += sprintf(*dst + *dlen, "&lt;");
-			break;
-		case '>':
-			*dlen += sprintf(*dst + *dlen, "&gt;");
-			break;
-		case '"':
-			*dlen += sprintf(*dst + *dlen, (a) ? "&quot;" : "\"");
-			break;
-		case '\n':
-			*dlen += sprintf(*dst + *dlen, (a) ? "&#xA;" : "\n");
-			break;
-		case '\t':
-			*dlen += sprintf(*dst + *dlen, (a) ? "&#x9;" : "\t");
-			break;
-		case '\r':
-			*dlen += sprintf(*dst + *dlen, "&#xD;");
-			break;
-		default:
-			(*dst)[(*dlen)++] = *s;
-		}
 		s++;
 	}
 	return *dst;
@@ -2051,24 +2050,25 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 /* Recursively converts each tag to xml appending it to *s. Reallocates *s if
    its length exceeds max. start is the location of the previous tag in the
    parent tag's character content. Returns *s. */
-static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max, switch_size_t start, char ***attr, uint32_t * count)
+static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max, switch_size_t start, char ***attr, uint32_t *count)
 {
 	int i, j;
 	char *txt;
 	switch_size_t off;
 	uint32_t lcount;
 
-tailrecurse:
+  tailrecurse:
 	off = 0;
 	lcount = 0;
-	txt = (char *)(xml->parent) ? xml->parent->txt : (char *)"";
+	txt = (char *) (xml->parent) ? xml->parent->txt : (char *) "";
 
 	/* parent character content up to this tag */
 	*s = switch_xml_ampencode(txt + start, xml->off - start, s, len, max, 0);
 
 	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) + 1 > *max) {	/* reallocate s */
-		char *tmp = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
-		if (!tmp) return *s;
+		char *tmp = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
+		if (!tmp)
+			return *s;
 		*s = tmp;
 	}
 
@@ -2084,8 +2084,9 @@ tailrecurse:
 		if (switch_xml_attr(xml, xml->attr[i]) != xml->attr[i + 1])
 			continue;
 		while (*len + strlen(xml->attr[i]) + 7 + (strlen(XML_INDENT) * (*count)) > *max) {	/* reallocate s */
-			char *tmp = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
-			if (!tmp) return *s;
+			char *tmp = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
+			if (!tmp)
+				return *s;
 			*s = tmp;
 		}
 
@@ -2099,8 +2100,9 @@ tailrecurse:
 		if (!attr[i][j + 1] || switch_xml_attr(xml, attr[i][j]) != attr[i][j + 1])
 			continue;			/* skip duplicates and non-values */
 		while (*len + strlen(attr[i][j]) + 8 + (strlen(XML_INDENT) * (*count)) > *max) {	/* reallocate s */
-			char *tmp = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
-			if (!tmp) return *s;
+			char *tmp = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
+			if (!tmp)
+				return *s;
 			*s = tmp;
 		}
 
@@ -2120,10 +2122,11 @@ tailrecurse:
 	}
 
 	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) > *max) {	/* reallocate s */
-			char *tmp = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
-			if (!tmp) return *s;
-			*s = tmp;
-		}
+		char *tmp = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
+		if (!tmp)
+			return *s;
+		*s = tmp;
+	}
 
 	if (xml->child || xml->txt) {
 		if (*(*s + (*len) - 1) == '\n') {
@@ -2155,7 +2158,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml, switch_bool_t prn_head
 {
 	char *r, *s;
 	switch_mutex_lock(XML_GEN_LOCK);
-	s = (char *)malloc(SWITCH_XML_BUFSIZE);
+	s = (char *) malloc(SWITCH_XML_BUFSIZE);
 	switch_assert(s);
 	r = switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
 	switch_mutex_unlock(XML_GEN_LOCK);
@@ -2172,7 +2175,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 	char *s, *t, *n, *r;
 	int i, j, k;
 	uint32_t count = 0;
-	
+
 	s = buf;
 	assert(s != NULL);
 	memset(s, 0, max);
@@ -2180,9 +2183,9 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 	if (prn_header) {
 		len += sprintf(s + len, "<?xml version=\"1.0\"?>\n");
 	}
-	
+
 	if (!xml || !xml->name) {
-		if (!(r = (char *)realloc(s, len + 1))) {
+		if (!(r = (char *) realloc(s, len + 1))) {
 			abort();
 		}
 		return r;
@@ -2199,7 +2202,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 				continue;		/* not pre-root */
 			}
 			while (len + strlen(t = root->pi[i][0]) + strlen(n) + 7 > max) {
-				if (!(r = (char *)realloc(s, max += SWITCH_XML_BUFSIZE))) {
+				if (!(r = (char *) realloc(s, max += SWITCH_XML_BUFSIZE))) {
 					abort();
 				}
 				s = r;
@@ -2220,7 +2223,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 				continue;		/* not post-root */
 			}
 			while (len + strlen(t = root->pi[i][0]) + strlen(n) + 7 > max) {
-				if (!(r = (char *)realloc(s, max += SWITCH_XML_BUFSIZE))) {
+				if (!(r = (char *) realloc(s, max += SWITCH_XML_BUFSIZE))) {
 					abort();
 				}
 				s = r;
@@ -2229,7 +2232,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 		}
 	}
 
-	if (!(r = (char *)realloc(s, len + 1))) {
+	if (!(r = (char *) realloc(s, len + 1))) {
 		abort();
 	}
 
@@ -2244,8 +2247,8 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 	char **a, *s;
 	switch_xml_t orig_xml;
 
-tailrecurse:
- 	root = (switch_xml_root_t) xml;
+  tailrecurse:
+	root = (switch_xml_root_t) xml;
 	if (!xml) {
 		return;
 	}
@@ -2265,11 +2268,11 @@ tailrecurse:
 	}
 
 	switch_xml_free(xml->child);
-	/*switch_xml_free(xml->ordered);*/
+	/*switch_xml_free(xml->ordered); */
 
 	if (!xml->parent) {			/* free root tag allocations */
 #if (_MSC_VER >= 1400)			// VC8+
-		__analysis_assume(sizeof(root->ent) > 44); /* tail recursion confuses code analysis */
+		__analysis_assume(sizeof(root->ent) > 44);	/* tail recursion confuses code analysis */
 #endif
 		for (i = 10; root->ent[i]; i += 2)	/* 0 - 9 are default entities (<>&"') */
 			if ((s = root->ent[i + 1]) < root->s || s > root->e)
@@ -2332,12 +2335,13 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 		"apos;", "&#39;", "amp;", "&#38;", NULL
 	};
 	switch_xml_root_t root = (switch_xml_root_t) malloc(sizeof(struct switch_xml_root));
-	if (!root) return NULL;
+	if (!root)
+		return NULL;
 	memset(root, '\0', sizeof(struct switch_xml_root));
 	root->xml.name = (char *) name;
 	root->cur = &root->xml;
-	strcpy(root->err, root->xml.txt = (char *)"");
-	root->ent = (char **)memcpy(malloc(sizeof(ent)), ent, sizeof(ent));
+	strcpy(root->err, root->xml.txt = (char *) "");
+	root->ent = (char **) memcpy(malloc(sizeof(ent)), ent, sizeof(ent));
 	root->attr = root->pi = (char ***) (root->xml.attr = SWITCH_XML_NIL);
 	return &root->xml;
 }
@@ -2388,14 +2392,16 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(switch_xml_t xml, const char *
 {
 	switch_xml_t child;
 
-	if (!xml) return NULL;
-	if (!(child = (switch_xml_t) malloc(sizeof(struct switch_xml)))) return NULL;
+	if (!xml)
+		return NULL;
+	if (!(child = (switch_xml_t) malloc(sizeof(struct switch_xml))))
+		return NULL;
 	memset(child, '\0', sizeof(struct switch_xml));
 	child->name = (char *) name;
 	child->attr = SWITCH_XML_NIL;
 	child->off = off;
 	child->parent = xml;
-	child->txt = (char *)"";
+	child->txt = (char *) "";
 
 	return switch_xml_insert(child, xml, off);
 }
@@ -2426,18 +2432,20 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 		if (!value)
 			return xml;			/* nothing to do */
 		if (xml->attr == SWITCH_XML_NIL) {	/* first attribute */
-			xml->attr = (char **)malloc(4 * sizeof(char *));
-			if (!xml->attr) return NULL;
+			xml->attr = (char **) malloc(4 * sizeof(char *));
+			if (!xml->attr)
+				return NULL;
 			xml->attr[1] = strdup("");	/* empty list of malloced names/vals */
 		} else {
-			char **tmp = (char **)realloc(xml->attr, (l + 4) * sizeof(char *));
-			if (!tmp) return xml;
+			char **tmp = (char **) realloc(xml->attr, (l + 4) * sizeof(char *));
+			if (!tmp)
+				return xml;
 			xml->attr = tmp;
 		}
 
 		xml->attr[l] = (char *) name;	/* set attribute name */
 		xml->attr[l + 2] = NULL;	/* null terminate attribute list */
-		xml->attr[l + 3] = (char *)realloc(xml->attr[l + 1], (c = (int) strlen(xml->attr[l + 1])) + 2);
+		xml->attr[l + 3] = (char *) realloc(xml->attr[l + 1], (c = (int) strlen(xml->attr[l + 1])) + 2);
 		strcpy(xml->attr[l + 3] + c, " ");	/* set name/value as not malloced */
 		if (xml->flags & SWITCH_XML_DUP)
 			xml->attr[l + 3][c] = SWITCH_XML_NAMEM;
@@ -2459,8 +2467,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 		if (xml->attr[c + 1][l / 2] & SWITCH_XML_NAMEM)
 			free(xml->attr[l]);
 		memmove(xml->attr + l, xml->attr + l + 2, (c - l + 2) * sizeof(char *));
-		tmp =(char **)realloc(xml->attr, (c + 2) * sizeof(char *));
-		if (!tmp) return xml;
+		tmp = (char **) realloc(xml->attr, (c + 2) * sizeof(char *));
+		if (!tmp)
+			return xml;
 		xml->attr = tmp;
 		memmove(xml->attr[c + 1] + (l / 2), xml->attr[c + 1] + (l / 2) + 1, (c / 2) - (l / 2));	/* fix list of which name/vals are malloced */
 	}
@@ -2591,24 +2600,24 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_cut(switch_xml_t xml)
 #define MAXPATHLEN 256
 #endif
 
-static int	 compare(const void *, const void *);
-static int	 glob0(const char *, glob_t *, size_t *);
-static int	 glob1(char *, glob_t *, size_t *);
-static int	 glob2(char *, char *, char *, char *, glob_t *, size_t *);
-static int	 glob3(char *, char *, char *, char *, char *, glob_t *, size_t *);
-static int	 globextend(const char *, glob_t *, size_t *);
-static int	 match(char *, char *, char *);
+static int compare(const void *, const void *);
+static int glob0(const char *, glob_t *, size_t *);
+static int glob1(char *, glob_t *, size_t *);
+static int glob2(char *, char *, char *, char *, glob_t *, size_t *);
+static int glob3(char *, char *, char *, char *, char *, glob_t *, size_t *);
+static int globextend(const char *, glob_t *, size_t *);
+static int match(char *, char *, char *);
 
 #pragma warning(push)
 #pragma warning(disable:4310)
 
-int glob(const char *pattern, int flags, int (*errfunc)(const char *, int), glob_t *pglob)
+int glob(const char *pattern, int flags, int (*errfunc) (const char *, int), glob_t *pglob)
 {
 	const unsigned char *patnext;
 	size_t limit;
 	char c;
 	char *bufnext, *bufend, patbuf[MAXPATHLEN];
-	
+
 	patnext = (unsigned char *) pattern;
 	if (!(flags & GLOB_APPEND)) {
 		pglob->gl_pathc = 0;
@@ -2625,13 +2634,13 @@ int glob(const char *pattern, int flags, int (*errfunc)(const char *, int), glob
 	pglob->gl_flags = flags & ~GLOB_MAGCHAR;
 	pglob->gl_errfunc = errfunc;
 	pglob->gl_matchc = 0;
-	
+
 	bufnext = patbuf;
 	bufend = bufnext + MAXPATHLEN - 1;
 	while (bufnext < bufend && (c = *patnext++) != EOS)
 		*bufnext++ = c;
 	*bufnext = EOS;
-	
+
 	return glob0(patbuf, pglob, &limit);
 }
 
@@ -2647,66 +2656,64 @@ static int glob0(const char *pattern, glob_t *pglob, size_t *limit)
 	int c, err;
 	size_t oldpathc;
 	char *bufnext, patbuf[MAXPATHLEN];
-	
+
 	qpatnext = pattern;
 	oldpathc = pglob->gl_pathc;
 	bufnext = patbuf;
-	
+
 	/* We don't need to check for buffer overflow any more. */
 	while ((c = *qpatnext++) != EOS) {
 		switch (c) {
-			case SEP:
-				*bufnext++ = WIN_SEP;
-				break;
-			case LBRACKET:
-				c = *qpatnext;
+		case SEP:
+			*bufnext++ = WIN_SEP;
+			break;
+		case LBRACKET:
+			c = *qpatnext;
+			if (c == NOT)
+				++qpatnext;
+			if (*qpatnext == EOS || strchr((char *) qpatnext + 1, RBRACKET) == NULL) {
+				*bufnext++ = LBRACKET;
 				if (c == NOT)
-					++qpatnext;
-				if (*qpatnext == EOS ||
-					strchr((char *) qpatnext+1, RBRACKET) == NULL) {
-					*bufnext++ = LBRACKET;
-					if (c == NOT)
-						--qpatnext;
-					break;
-				}
-				*bufnext++ = M_SET;
-				if (c == NOT)
-					*bufnext++ = M_NOT;
-				c = *qpatnext++;
-				do {
-					*bufnext++ = CHAR(c);
-					if (*qpatnext == RANGE &&
-						(c = qpatnext[1]) != RBRACKET) {
-						*bufnext++ = M_RNG;
-						*bufnext++ = CHAR(c);
-						qpatnext += 2;
-					}
-				} while ((c = *qpatnext++) != RBRACKET);
-				pglob->gl_flags |= GLOB_MAGCHAR;
-				*bufnext++ = M_END;
+					--qpatnext;
 				break;
-			case QUESTION:
-				pglob->gl_flags |= GLOB_MAGCHAR;
-				*bufnext++ = M_ONE;
-				break;
-			case STAR:
-				pglob->gl_flags |= GLOB_MAGCHAR;
-				/* collapse adjacent stars to one,
-				 * to avoid exponential behavior
-				 */
-				if (bufnext == patbuf || bufnext[-1] != M_ALL)
-					*bufnext++ = M_ALL;
-				break;
-			default:
+			}
+			*bufnext++ = M_SET;
+			if (c == NOT)
+				*bufnext++ = M_NOT;
+			c = *qpatnext++;
+			do {
 				*bufnext++ = CHAR(c);
-				break;
+				if (*qpatnext == RANGE && (c = qpatnext[1]) != RBRACKET) {
+					*bufnext++ = M_RNG;
+					*bufnext++ = CHAR(c);
+					qpatnext += 2;
+				}
+			} while ((c = *qpatnext++) != RBRACKET);
+			pglob->gl_flags |= GLOB_MAGCHAR;
+			*bufnext++ = M_END;
+			break;
+		case QUESTION:
+			pglob->gl_flags |= GLOB_MAGCHAR;
+			*bufnext++ = M_ONE;
+			break;
+		case STAR:
+			pglob->gl_flags |= GLOB_MAGCHAR;
+			/* collapse adjacent stars to one,
+			 * to avoid exponential behavior
+			 */
+			if (bufnext == patbuf || bufnext[-1] != M_ALL)
+				*bufnext++ = M_ALL;
+			break;
+		default:
+			*bufnext++ = CHAR(c);
+			break;
 		}
 	}
 	*bufnext = EOS;
-	
+
 	if ((err = glob1(patbuf, pglob, limit)) != 0)
-		return(err);
-	
+		return (err);
+
 	/*
 	 * If there was no match we are going to append the pattern
 	 * if GLOB_NOCHECK was specified or if GLOB_NOMAGIC was specified
@@ -2714,33 +2721,29 @@ static int glob0(const char *pattern, glob_t *pglob, size_t *limit)
 	 * GLOB_NOMAGIC is there just for compatibility with csh.
 	 */
 	if (pglob->gl_pathc == oldpathc) {
-		if (((pglob->gl_flags & GLOB_NOCHECK) ||
-			 ((pglob->gl_flags & GLOB_NOMAGIC) &&
-			  !(pglob->gl_flags & GLOB_MAGCHAR))))
-			return(globextend(pattern, pglob, limit));
+		if (((pglob->gl_flags & GLOB_NOCHECK) || ((pglob->gl_flags & GLOB_NOMAGIC) && !(pglob->gl_flags & GLOB_MAGCHAR))))
+			return (globextend(pattern, pglob, limit));
 		else
-			return(GLOB_NOMATCH);
+			return (GLOB_NOMATCH);
 	}
 	if (!(pglob->gl_flags & GLOB_NOSORT))
-		qsort(pglob->gl_pathv + pglob->gl_offs + oldpathc,
-			  pglob->gl_pathc - oldpathc, sizeof(char *), compare);
-	return(0);
+		qsort(pglob->gl_pathv + pglob->gl_offs + oldpathc, pglob->gl_pathc - oldpathc, sizeof(char *), compare);
+	return (0);
 }
 
 static int compare(const void *p, const void *q)
 {
-	return(strcmp(*(char **)p, *(char **)q));
+	return (strcmp(*(char **) p, *(char **) q));
 }
 
 static int glob1(char *pattern, glob_t *pglob, size_t *limit)
 {
 	char pathbuf[MAXPATHLEN];
-	
+
 	/* A null pathname is invalid -- POSIX 1003.1 sect. 2.4. */
 	if (*pattern == EOS)
-		return(0);
-	return(glob2(pathbuf, pathbuf, pathbuf + MAXPATHLEN - 1,
-				 pattern, pglob, limit));
+		return (0);
+	return (glob2(pathbuf, pathbuf, pathbuf + MAXPATHLEN - 1, pattern, pglob, limit));
 }
 
 /*
@@ -2753,27 +2756,27 @@ static int glob2(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 	struct stat sb;
 	char *p, *q;
 	int anymeta;
-	
+
 	/*
 	 * Loop over pattern segments until end of pattern or until
 	 * segment with meta character found.
 	 */
 	for (anymeta = 0;;) {
-		if (*pattern == EOS) {		/* End of pattern? */
+		if (*pattern == EOS) {	/* End of pattern? */
 			*pathend = EOS;
 			if (stat(pathbuf, &sb))
-				return(0);
-			
-			if (((pglob->gl_flags & GLOB_MARK) && pathend[-1] != SEP && pathend[-1] != WIN_SEP) && (_S_IFDIR & sb.st_mode) ) {
+				return (0);
+
+			if (((pglob->gl_flags & GLOB_MARK) && pathend[-1] != SEP && pathend[-1] != WIN_SEP) && (_S_IFDIR & sb.st_mode)) {
 				if (pathend + 1 > pathend_last)
 					return (GLOB_ABORTED);
 				*pathend++ = WIN_SEP;
 				*pathend = EOS;
 			}
 			++pglob->gl_matchc;
-			return(globextend(pathbuf, pglob, limit));
+			return (globextend(pathbuf, pglob, limit));
 		}
-		
+
 		/* Find end of next segment, copy tentatively to pathend. */
 		q = pathend;
 		p = pattern;
@@ -2784,8 +2787,8 @@ static int glob2(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 				return (GLOB_ABORTED);
 			*q++ = *p++;
 		}
-		
-		if (!anymeta) {		/* No expansion, do next segment. */
+
+		if (!anymeta) {			/* No expansion, do next segment. */
 			pathend = q;
 			pattern = p;
 			while (*pattern == SEP || *pattern == WIN_SEP) {
@@ -2793,9 +2796,8 @@ static int glob2(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 					return (GLOB_ABORTED);
 				*pathend++ = *pattern++;
 			}
-		} else			/* Need expansion, recurse. */
-			return(glob3(pathbuf, pathend, pathend_last, pattern, p,
-						 pglob, limit));
+		} else					/* Need expansion, recurse. */
+			return (glob3(pathbuf, pathend, pathend_last, pattern, p, pglob, limit));
 	}
 	/* NOTREACHED */
 }
@@ -2803,63 +2805,60 @@ static int glob2(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern, char *restpattern, glob_t *pglob, size_t *limit)
 {
 	int err;
-	apr_dir_t * dirp;
-	apr_pool_t * pool;
-	
+	apr_dir_t *dirp;
+	apr_pool_t *pool;
+
 	apr_pool_create(&pool, NULL);
-	
+
 	if (pathend > pathend_last)
 		return (GLOB_ABORTED);
 	*pathend = EOS;
 	errno = 0;
-	
-	if (apr_dir_open (&dirp, pathbuf, pool) != APR_SUCCESS) {
+
+	if (apr_dir_open(&dirp, pathbuf, pool) != APR_SUCCESS) {
 		/* TODO: don't call for ENOENT or ENOTDIR? */
 		apr_pool_destroy(pool);
 		if (pglob->gl_errfunc) {
-			if (pglob->gl_errfunc(pathbuf, errno) ||
-			    pglob->gl_flags & GLOB_ERR)
+			if (pglob->gl_errfunc(pathbuf, errno) || pglob->gl_flags & GLOB_ERR)
 				return (GLOB_ABORTED);
 		}
-		return(0);
+		return (0);
 	}
-	
+
 	err = 0;
-	
+
 	/* Search directory for matching names. */
-	while (dirp)
-	{
+	while (dirp) {
 		apr_finfo_t dp;
 		unsigned char *sc;
 		char *dc;
-		
+
 		if (apr_dir_read(&dp, APR_FINFO_NAME, dirp) != APR_SUCCESS)
 			break;
 		if (!(dp.valid & APR_FINFO_NAME) || !(dp.name) || !strlen(dp.name))
 			break;
-		
+
 		/* Initial DOT must be matched literally. */
 		if (dp.name[0] == DOT && *pattern != DOT)
 			continue;
 		dc = pathend;
 		sc = (unsigned char *) dp.name;
-		
+
 		while (dc < pathend_last && (*dc++ = *sc++) != EOS);
-		
+
 		if (!match(pathend, pattern, restpattern)) {
 			*pathend = EOS;
 			continue;
 		}
-		err = glob2(pathbuf, --dc, pathend_last, restpattern,
-					pglob, limit);
+		err = glob2(pathbuf, --dc, pathend_last, restpattern, pglob, limit);
 		if (err)
 			break;
 	}
-	
-	if (dirp) 
-		apr_dir_close (dirp);
+
+	if (dirp)
+		apr_dir_close(dirp);
 	apr_pool_destroy(pool);
-	return(err);
+	return (err);
 }
 
 
@@ -2880,45 +2879,43 @@ static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 static int globextend(const char *path, glob_t *pglob, size_t *limit)
 {
 	char **pathv;
-	char * copy;
+	char *copy;
 	size_t i;
 	size_t newsize, len;
 	const char *p;
-	
+
 	if (*limit && pglob->gl_pathc > *limit) {
 		errno = 0;
 		return (GLOB_NOSPACE);
 	}
-	
+
 	newsize = sizeof(*pathv) * (2 + pglob->gl_pathc + pglob->gl_offs);
-	pathv = pglob->gl_pathv ?
-	realloc((char *)pglob->gl_pathv, newsize) :
-	malloc(newsize);
+	pathv = pglob->gl_pathv ? realloc((char *) pglob->gl_pathv, newsize) : malloc(newsize);
 	if (pathv == NULL) {
 		if (pglob->gl_pathv) {
 			free(pglob->gl_pathv);
 			pglob->gl_pathv = NULL;
 		}
-		return(GLOB_NOSPACE);
+		return (GLOB_NOSPACE);
 	}
-	
+
 	if (pglob->gl_pathv == NULL && pglob->gl_offs > 0) {
 		/* first time around -- clear initial gl_offs items */
 		pathv += pglob->gl_offs;
-		for (i = pglob->gl_offs; i-- > 0; )
+		for (i = pglob->gl_offs; i-- > 0;)
 			*--pathv = NULL;
 	}
 	pglob->gl_pathv = pathv;
-	
+
 	for (p = path; *p++;)
 		continue;
-	len = (size_t)(p - path);
+	len = (size_t) (p - path);
 	if ((copy = malloc(len)) != NULL) {
 		memcpy(copy, path, len);
 		pathv[pglob->gl_offs + pglob->gl_pathc++] = copy;
 	}
 	pathv[pglob->gl_offs + pglob->gl_pathc] = NULL;
-	return(copy == NULL ? GLOB_NOSPACE : 0);
+	return (copy == NULL ? GLOB_NOSPACE : 0);
 }
 
 /*
@@ -2930,49 +2927,49 @@ static int match(char *name, char *pat, char *patend)
 	int ok, negate_range;
 	char c, k;
 	char s1[6];
-	
+
 	while (pat < patend) {
 		c = *pat++;
 		switch (c & M_MASK) {
-			case M_ALL:
-				if (pat == patend)
-					return(1);
-				do
-					if (match(name, pat, patend))
-						return(1);
-				while (*name++ != EOS);
-				return(0);
-			case M_ONE:
-				if (*name++ == EOS)
-					return(0);
-				break;
-			case M_SET:
-				ok = 0;
-				if ((k = *name++) == EOS)
-					return(0);
-				if ((negate_range = ((*pat & M_MASK) == M_NOT)) != EOS)
-					++pat;
-				while (((c = *pat++) & M_MASK) != M_END)
-					if ((*pat & M_MASK) == M_RNG) {
-						memset(s1, 0, sizeof(s1));
-						s1[0] = c;
-						s1[2] = k;
-						s1[4] = pat[1];
-						if (strcoll(&s1[0], &s1[2]) <= 0 && strcoll(&s1[2], &s1[4]) <= 0)
-							ok = 1;
-						pat += 2;
-					} else if (c == k)
+		case M_ALL:
+			if (pat == patend)
+				return (1);
+			do
+				if (match(name, pat, patend))
+					return (1);
+			while (*name++ != EOS);
+			return (0);
+		case M_ONE:
+			if (*name++ == EOS)
+				return (0);
+			break;
+		case M_SET:
+			ok = 0;
+			if ((k = *name++) == EOS)
+				return (0);
+			if ((negate_range = ((*pat & M_MASK) == M_NOT)) != EOS)
+				++pat;
+			while (((c = *pat++) & M_MASK) != M_END)
+				if ((*pat & M_MASK) == M_RNG) {
+					memset(s1, 0, sizeof(s1));
+					s1[0] = c;
+					s1[2] = k;
+					s1[4] = pat[1];
+					if (strcoll(&s1[0], &s1[2]) <= 0 && strcoll(&s1[2], &s1[4]) <= 0)
 						ok = 1;
-				if (ok == negate_range)
-					return(0);
-				break;
-			default:
-				if (*name++ != c)
-					return(0);
-				break;
+					pat += 2;
+				} else if (c == k)
+					ok = 1;
+			if (ok == negate_range)
+				return (0);
+			break;
+		default:
+			if (*name++ != c)
+				return (0);
+			break;
 		}
 	}
-	return(*name == EOS);
+	return (*name == EOS);
 }
 
 /* Free allocated data belonging to a glob_t structure. */
@@ -2980,7 +2977,7 @@ void globfree(glob_t *pglob)
 {
 	size_t i;
 	char **pp;
-	
+
 	if (pglob->gl_pathv != NULL) {
 		pp = pglob->gl_pathv + pglob->gl_offs;
 		for (i = pglob->gl_pathc; i--; ++pp)
@@ -2990,6 +2987,7 @@ void globfree(glob_t *pglob)
 		pglob->gl_pathv = NULL;
 	}
 }
+
 #pragma warning(pop)
 #endif
 

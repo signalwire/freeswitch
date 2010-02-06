@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -47,14 +47,17 @@ SWITCH_DECLARE(void) switch_core_session_unset_read_codec(switch_core_session_t 
 	switch_mutex_t *mutex = NULL;
 
 	switch_mutex_lock(session->codec_read_mutex);
-	if (session->read_codec) mutex = session->read_codec->mutex;
-	if (mutex) switch_mutex_lock(mutex);
+	if (session->read_codec)
+		mutex = session->read_codec->mutex;
+	if (mutex)
+		switch_mutex_lock(mutex);
 	session->real_read_codec = session->read_codec = NULL;
 	session->raw_read_frame.codec = session->read_codec;
 	session->raw_write_frame.codec = session->read_codec;
 	session->enc_read_frame.codec = session->read_codec;
 	session->enc_write_frame.codec = session->read_codec;
-	if (mutex) switch_mutex_unlock(mutex);
+	if (mutex)
+		switch_mutex_unlock(mutex);
 	switch_mutex_unlock(session->codec_read_mutex);
 }
 
@@ -79,14 +82,17 @@ SWITCH_DECLARE(void) switch_core_session_unlock_codec_read(switch_core_session_t
 }
 
 SWITCH_DECLARE(void) switch_core_session_unset_write_codec(switch_core_session_t *session)
-{	
+{
 	switch_mutex_t *mutex = NULL;
 
 	switch_mutex_lock(session->codec_write_mutex);
-	if (session->write_codec) mutex = session->write_codec->mutex;
-	if (mutex) switch_mutex_lock(mutex);
+	if (session->write_codec)
+		mutex = session->write_codec->mutex;
+	if (mutex)
+		switch_mutex_lock(mutex);
 	session->real_write_codec = session->write_codec = NULL;
-	if (mutex) switch_mutex_unlock(mutex);
+	if (mutex)
+		switch_mutex_unlock(mutex);
 	switch_mutex_unlock(session->codec_write_mutex);
 }
 
@@ -97,13 +103,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
+
 	switch_mutex_lock(session->codec_read_mutex);
 
 	if (codec && (!codec->implementation || !switch_core_codec_ready(codec))) {
 		codec = NULL;
 	}
-	
+
 	if (codec) {
 		if (!session->real_read_codec) {
 			session->read_codec = session->real_read_codec = codec;
@@ -119,16 +125,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 		if (session->read_codec == session->real_read_codec) {
 			goto end;
 		}
-		
+
 		if (session->read_codec->next) {
 			switch_codec_t *old = session->read_codec;
 			session->read_codec = session->read_codec->next;
 			session->read_impl = *session->read_codec->implementation;
 			old->next = NULL;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Restore previous codec %s:%d.\n",
-							  switch_channel_get_name(session->channel), 
+							  switch_channel_get_name(session->channel),
 							  session->read_codec->implementation->iananame, session->read_codec->implementation->ianacode);
-			
+
 		} else if (session->real_read_codec) {
 			session->read_codec = session->real_read_codec;
 			session->read_impl = *session->real_read_codec->implementation;
@@ -138,10 +144,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 			goto end;
 		}
 	}
-	
+
 	if (!session->read_codec) {
-        status = SWITCH_STATUS_FALSE;
-        goto end;
+		status = SWITCH_STATUS_FALSE;
+		goto end;
 	}
 
 	if (session->read_codec && session->read_impl.decoded_bytes_per_packet) {
@@ -158,14 +164,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 		switch_channel_set_variable(channel, "read_codec", session->read_impl.iananame);
 		switch_snprintf(tmp, sizeof(tmp), "%d", session->read_impl.actual_samples_per_second);
 		switch_channel_set_variable(channel, "read_rate", tmp);
-		
+
 		session->raw_read_frame.codec = session->read_codec;
 		session->raw_write_frame.codec = session->read_codec;
 		session->enc_read_frame.codec = session->read_codec;
 		session->enc_write_frame.codec = session->read_codec;
 	}
 
- end:
+  end:
 
 	if (session->read_codec) {
 		switch_channel_set_flag(channel, CF_MEDIA_SET);
@@ -178,17 +184,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 
 SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_effective_read_codec(switch_core_session_t *session)
 {
-	switch_codec_t *codec;	codec = session->read_codec;
+	switch_codec_t *codec;
+	codec = session->read_codec;
 	return codec;
 }
 
 SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_read_codec(switch_core_session_t *session)
 {
-	switch_codec_t *codec;	codec = session->real_read_codec ? session->real_read_codec : session->read_codec;
+	switch_codec_t *codec;
+	codec = session->real_read_codec ? session->real_read_codec : session->read_codec;
 	return codec;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_get_read_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp)
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_read_impl(switch_core_session_t *session, switch_codec_implementation_t *impp)
 {
 	if (session->read_impl.decoded_bytes_per_packet) {
 		*impp = session->read_impl;
@@ -198,7 +206,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_read_impl(switch_core_se
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_get_write_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp)
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_write_impl(switch_core_session_t *session, switch_codec_implementation_t *impp)
 {
 	if (session->write_impl.decoded_bytes_per_packet) {
 		*impp = session->write_impl;
@@ -208,7 +216,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_write_impl(switch_core_s
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_read_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp)
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_read_impl(switch_core_session_t *session, switch_codec_implementation_t *impp)
 {
 	if (session->video_read_impl.decoded_bytes_per_packet) {
 		*impp = session->video_read_impl;
@@ -218,7 +226,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_read_impl(switch_c
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_write_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp)
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_write_impl(switch_core_session_t *session, switch_codec_implementation_t *impp)
 {
 	if (session->video_write_impl.decoded_bytes_per_packet) {
 		*impp = session->video_write_impl;
@@ -229,25 +237,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_write_impl(switch_
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_impl(switch_core_session_t *session,  const switch_codec_implementation_t *impp)
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_impl(switch_core_session_t *session, const switch_codec_implementation_t *impp)
 {
-	session->read_impl =*impp;
+	session->read_impl = *impp;
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_impl(switch_core_session_t *session,  const switch_codec_implementation_t *impp)
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_impl(switch_core_session_t *session, const switch_codec_implementation_t *impp)
 {
 	session->write_impl = *impp;
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_impl(switch_core_session_t *session,  const switch_codec_implementation_t *impp)
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_impl(switch_core_session_t *session, const switch_codec_implementation_t *impp)
 {
 	session->video_read_impl = *impp;
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_impl(switch_core_session_t *session,  const switch_codec_implementation_t *impp)
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_impl(switch_core_session_t *session, const switch_codec_implementation_t *impp)
 {
 	session->video_write_impl = *impp;
 	return SWITCH_STATUS_SUCCESS;
@@ -311,7 +319,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 		switch_channel_set_variable(channel, "write_rate", tmp);
 	}
 
- end:
+  end:
 	switch_mutex_unlock(session->codec_write_mutex);
 
 	return status;
@@ -346,7 +354,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_codec(switch_
 	if (!codec || !codec->implementation || !switch_core_codec_ready(codec)) {
 		if (session->video_read_codec) {
 			session->video_read_codec = NULL;
-        	status = SWITCH_STATUS_SUCCESS;
+			status = SWITCH_STATUS_SUCCESS;
 			goto end;
 		}
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
@@ -367,7 +375,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_codec(switch_
 
 	session->video_read_codec = codec;
 	session->video_read_impl = *codec->implementation;
- end:
+  end:
 
 	return status;
 }
@@ -376,7 +384,7 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_read_codec(switch
 {
 	switch_codec_t *codec;
 	codec = session->video_read_codec;
-	
+
 	return codec;
 
 }
@@ -390,7 +398,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_codec(switch
 	if (!codec || !codec->implementation || !switch_core_codec_ready(codec)) {
 		if (session->video_write_codec) {
 			session->video_write_codec = NULL;
-        	status = SWITCH_STATUS_SUCCESS;
+			status = SWITCH_STATUS_SUCCESS;
 			goto end;
 		}
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
@@ -398,7 +406,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_codec(switch
 		goto end;
 	}
 
-    if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
+	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-video-write-codec-name", codec->implementation->iananame);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-video-write-codec-rate", "%d", codec->implementation->actual_samples_per_second);
@@ -412,8 +420,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_codec(switch
 	session->video_write_codec = codec;
 	session->video_write_impl = *codec->implementation;
 
- end:
-	
+  end:
+
 	return status;
 }
 
@@ -570,13 +578,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
-	if (codec->mutex) switch_mutex_lock(codec->mutex);
-	status = codec->implementation->encode(codec, other_codec, decoded_data, decoded_data_len, 
+	if (codec->mutex)
+		switch_mutex_lock(codec->mutex);
+	status = codec->implementation->encode(codec, other_codec, decoded_data, decoded_data_len,
 										   decoded_rate, encoded_data, encoded_data_len, encoded_rate, flag);
-	if (codec->mutex) switch_mutex_unlock(codec->mutex);
+	if (codec->mutex)
+		switch_mutex_unlock(codec->mutex);
 
 	return status;
-										   
+
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
@@ -602,10 +612,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
-	if (codec->mutex) switch_mutex_lock(codec->mutex);
-	status = codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate, 
+	if (codec->mutex)
+		switch_mutex_lock(codec->mutex);
+	status = codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate,
 										   decoded_data, decoded_data_len, decoded_rate, flag);
-	if (codec->mutex) switch_mutex_unlock(codec->mutex);
+	if (codec->mutex)
+		switch_mutex_unlock(codec->mutex);
 
 	return status;
 }
@@ -615,9 +627,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 	int free_pool = 0;
-	
-	switch_assert(codec != NULL);	
-	
+
+	switch_assert(codec != NULL);
+
 	if (!codec->implementation || !switch_core_codec_ready(codec)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec is not initialized!\n");
 		return SWITCH_STATUS_NOT_INITALIZED;
@@ -630,14 +642,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 	pool = codec->memory_pool;
 	mutex = codec->mutex;
 
-	if (mutex) switch_mutex_lock(mutex);
+	if (mutex)
+		switch_mutex_lock(mutex);
 
 	codec->implementation->destroy(codec);
 	switch_clear_flag(codec, SWITCH_CODEC_FLAG_READY);
 
 	UNPROTECT_INTERFACE(codec->codec_interface);
 
-	if (mutex) switch_mutex_unlock(mutex);
+	if (mutex)
+		switch_mutex_unlock(mutex);
 
 	if (free_pool) {
 		switch_core_destroy_memory_pool(&pool);

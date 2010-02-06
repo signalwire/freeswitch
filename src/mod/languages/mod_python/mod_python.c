@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -61,7 +61,7 @@ static struct {
 } globals;
 
 struct switch_py_thread {
-	struct switch_py_thread *prev, *next; 
+	struct switch_py_thread *prev, *next;
 	char *cmd;
 	char *args;
 	switch_memory_pool_t *pool;
@@ -70,7 +70,8 @@ struct switch_py_thread {
 struct switch_py_thread *thread_pool_head = NULL;
 static switch_mutex_t *THREAD_POOL_LOCK = NULL;
 
-static void eval_some_python(const char *funcname, char *args, switch_core_session_t *session, switch_stream_handle_t *stream, switch_event_t *params, char **str, struct switch_py_thread *pt)
+static void eval_some_python(const char *funcname, char *args, switch_core_session_t *session, switch_stream_handle_t *stream, switch_event_t *params,
+							 char **str, struct switch_py_thread *pt)
 {
 	PyThreadState *tstate = NULL;
 	char *dupargs = NULL;
@@ -103,7 +104,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	}
 
 	script = strdup(switch_str_nil(argv[0]));
-	
+
 	lead = 1;
 
 	if ((p = strstr(script, "::"))) {
@@ -115,13 +116,13 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Invoking py module: %s\n", script);
-	
+
 	tstate = PyThreadState_New(mainThreadState->interp);
 	if (!tstate) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error acquiring tstate\n");
 		goto done;
 	}
-	
+
 	/* Save state in thread struct so we can terminate it later if needed */
 	if (pt)
 		pt->tstate = tstate;
@@ -146,9 +147,8 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 		PyErr_Clear();
 		goto done_swap_out;
 	}
-
 	// get the handler function to be called
-	function = PyObject_GetAttrString(module, (char *)funcname);
+	function = PyObject_GetAttrString(module, (char *) funcname);
 	if (!function) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Module does not define %s\n", funcname);
 		PyErr_Print();
@@ -183,13 +183,13 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	} else {
 		arg = Py_BuildValue("(s)", switch_str_nil(argv[1]));
 	}
-	
+
 	// invoke the handler 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call python script \n");
 	result = PyEval_CallObjectWithKeywords(function, arg, (PyObject *) NULL);
 	Py_DECREF(function);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Finished calling python script \n");
-	
+
 	// check the result and print out any errors
 	if (result) {
 		if (str) {
@@ -204,24 +204,24 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 		PyGC_Collect();
 	}
 
- done_swap_out:
+  done_swap_out:
 
 	if (arg) {
 		Py_DECREF(arg);
 	}
-	
+
 	if (sp) {
 		Py_DECREF(sp);
 	}
-	
+
 	if (tstate) {
 		// thread state must be cleared explicitly or we'll get memory leaks
 		PyThreadState_Clear(tstate);
 		PyEval_ReleaseThread(tstate);
 		PyThreadState_Delete(tstate);
 	}
-	
- done:
+
+  done:
 
 	switch_safe_free(dupargs);
 	switch_safe_free(script);
@@ -231,7 +231,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 
 
 static switch_xml_t python_fetch(const char *section,
-							  const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params, void *user_data)
+								 const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params, void *user_data)
 {
 
 	switch_xml_t xml = NULL;
@@ -300,20 +300,20 @@ static switch_status_t do_config(void)
  * we must decrease the default python recursion limit accordingly.  Otherwise, python can easily blow
  * up the stack and the whole switch crashes.  See modlang-134
  */
-static void set_max_recursion_depth(void) {
+static void set_max_recursion_depth(void)
+{
 
 	// assume that a stack frame is approximately 1K, so divide thread stack size (eg, 240K) by
 	// 1K to get the approx number of stack frames we can hold before blowing up.
 	int newMaxRecursionDepth = SWITCH_THREAD_STACKSIZE / 1024;
-	
+
 	PyObject *sysModule = PyImport_ImportModule("sys");
 	PyObject *setRecursionLimit = PyObject_GetAttrString(sysModule, "setrecursionlimit");
-	PyObject *recLimit = Py_BuildValue("(i)",newMaxRecursionDepth);
+	PyObject *recLimit = Py_BuildValue("(i)", newMaxRecursionDepth);
 	PyObject *setrecursion_result = PyEval_CallObjectWithKeywords(setRecursionLimit, recLimit, (PyObject *) NULL);
 	if (setrecursion_result) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set python recursion limit to %d\n", newMaxRecursionDepth);
-	}
-	else {
+	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set recursion limit to %d\n", newMaxRecursionDepth);
 		PyErr_Print();
 		PyErr_Clear();
@@ -365,7 +365,7 @@ static void *SWITCH_THREAD_FUNC py_thread_run(switch_thread_t *thread, void *obj
 
 SWITCH_STANDARD_API(api_python)
 {
-	
+
 	eval_some_python("fsapi", (char *) cmd, session, stream, NULL, NULL, NULL);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -430,7 +430,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 
 		// initialize python system
 		Py_Initialize();
-		
+
 		// create GIL and a threadstate
 		PyEval_InitThreads();
 
@@ -479,11 +479,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 	pt = thread_pool_head;
 	PyEval_AcquireLock();
 	while (pt) {
-		thread_cnt ++;
+		thread_cnt++;
 		nextpt = pt->next;
-		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-						  "Forcibly terminating script [%s]\n", pt->args);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Forcibly terminating script [%s]\n", pt->args);
 
 		/* Kill python script */
 		PyThreadState_Swap(pt->tstate);
@@ -495,13 +494,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 	PyEval_ReleaseLock();
 	switch_yield(1000000);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-					  "Had to kill %d threads\n", thread_cnt);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Had to kill %d threads\n", thread_cnt);
 
 	/* Give threads a few seconds to terminate. 
 	   Not using switch_thread_join() since if threads refuse to die
 	   then freeswitch will hang */
-	for (i=0; i < 10 && thread_pool_head; i++) {
+	for (i = 0; i < 10 && thread_pool_head; i++) {
 		switch_yield(1000000);
 	}
 	if (thread_pool_head) {
@@ -509,12 +507,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 		pt = thread_pool_head;
 		while (pt) {
 			nextpt = pt->next;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-						  "Script [%s] didn't exit in time\n", pt->args);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Script [%s] didn't exit in time\n", pt->args);
 			pt = nextpt;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-						  "Forcing python shutdown. This might cause freeswitch to crash!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Forcing python shutdown. This might cause freeswitch to crash!\n");
 	}
 
 

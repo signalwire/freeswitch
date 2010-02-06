@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -78,10 +78,10 @@ SWITCH_STANDARD_APP(bcast_function)
 	switch_port_t mcast_control_port = 6061;
 	char *mcast_port_str = "34567";
 	const char *esf_broadcast_ip = NULL, *var;
-	switch_codec_implementation_t read_impl = {0};
+	switch_codec_implementation_t read_impl = { 0 };
 	int mcast_ttl = 1;
 
-    switch_core_session_get_read_impl(session, &read_impl);
+	switch_core_session_get_read_impl(session, &read_impl);
 
 	if (!zstr((char *) data)) {
 		mydata = switch_core_session_strdup(session, data);
@@ -105,7 +105,7 @@ SWITCH_STANDARD_APP(bcast_function)
 		if (!zstr(argv[2])) {
 			mcast_control_port = (switch_port_t) atoi(argv[2]);
 		}
-		
+
 		if (!zstr(argv[3])) {
 			mcast_ttl = atoi(argv[3]);
 			if (mcast_ttl < 1 || mcast_ttl > 255) {
@@ -136,7 +136,7 @@ SWITCH_STANDARD_APP(bcast_function)
 		goto fail;
 	}
 
-	if (switch_mcast_hops(socket, (uint8_t)mcast_ttl) != SWITCH_STATUS_SUCCESS) {
+	if (switch_mcast_hops(socket, (uint8_t) mcast_ttl) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Mutlicast TTL set failed\n");
 		goto fail;
 	}
@@ -201,8 +201,7 @@ SWITCH_STANDARD_APP(bcast_function)
 									 mcast_port,
 									 read_impl.ianacode,
 									 read_impl.samples_per_packet,
-									 read_impl.microseconds_per_packet,
-									 (switch_rtp_flag_t) flags, "soft", &err, switch_core_session_get_pool(session));
+									 read_impl.microseconds_per_packet, (switch_rtp_flag_t) flags, "soft", &err, switch_core_session_get_pool(session));
 
 		if (!switch_rtp_ready(rtp_session)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error\n");

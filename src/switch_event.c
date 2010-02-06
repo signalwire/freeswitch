@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -193,15 +193,15 @@ static char *EVENT_NAMES[] = {
 static int switch_events_match(switch_event_t *event, switch_event_node_t *node)
 {
 	int match = 0;
-	
+
 	if (node->event_id == SWITCH_EVENT_ALL) {
 		match++;
-		
+
 		if (!node->subclass) {
 			return match;
 		}
 	}
-	
+
 	if (match || event->event_id == node->event_id) {
 
 		if (event->subclass_name && node->subclass) {
@@ -349,7 +349,7 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event)
 					node->callback(*event);
 				}
 			}
-			
+
 			if (e == SWITCH_EVENT_ALL) {
 				break;
 			}
@@ -412,20 +412,20 @@ SWITCH_DECLARE(switch_status_t) switch_event_free_subclass_detailed(const char *
 			subclass->bind = 1;
 		}
 	}
-	
+
 	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const char *owner, const char *subclass_name)
 {
 	switch_event_subclass_t *subclass;
-	
+
 	switch_assert(RUNTIME_POOL != NULL);
 	switch_assert(CUSTOM_HASH != NULL);
 
 	if ((subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name))) {
 		/* a listener reserved it for us, now we can lock it so nobody else can have it */
-		if (subclass->bind) { 
+		if (subclass->bind) {
 			subclass->bind = 0;
 			return SWITCH_STATUS_SUCCESS;
 		}
@@ -436,7 +436,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const cha
 
 	subclass->owner = DUP(owner);
 	subclass->name = DUP(subclass_name);
-	
+
 	switch_core_hash_insert(CUSTOM_HASH, subclass->name, subclass);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -473,7 +473,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	int last = 0;
 	switch_hash_index_t *hi;
 	const void *var;
-    void *val;
+	void *val;
 
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
 	SYSTEM_RUNNING = 0;
@@ -498,10 +498,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 		}
 		last = THREAD_COUNT;
 	}
-	
+
 	for (x = 0; x < SOFT_MAX_DISPATCH; x++) {
 		void *pop = NULL;
-        switch_event_t *event = NULL;
+		switch_event_t *event = NULL;
 		switch_status_t st;
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch thread %d\n", x);
@@ -510,12 +510,12 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 		while (switch_queue_trypop(EVENT_DISPATCH_QUEUE[x], &pop) == SWITCH_STATUS_SUCCESS && pop) {
 			event = (switch_event_t *) pop;
 			switch_event_destroy(&event);
-        }
+		}
 	}
 
 	for (x = 0; x < NUMBER_OF_QUEUES; x++) {
 		void *pop = NULL;
-        switch_event_t *event = NULL;
+		switch_event_t *event = NULL;
 		switch_status_t st;
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping queue thread %d\n", x);
@@ -524,9 +524,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 		while (switch_queue_trypop(EVENT_QUEUE[x], &pop) == SWITCH_STATUS_SUCCESS && pop) {
 			event = (switch_event_t *) pop;
 			switch_event_destroy(&event);
-        }
+		}
 	}
-	
+
 	for (hi = switch_hash_first(NULL, CUSTOM_HASH); hi; hi = switch_hash_next(hi)) {
 		switch_event_subclass_t *subclass;
 		switch_hash_this(hi, &var, NULL, &val);
@@ -634,7 +634,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 	if ((event_id != SWITCH_EVENT_CLONE && event_id != SWITCH_EVENT_CUSTOM) && subclass_name) {
 		return SWITCH_STATUS_GENERR;
 	}
-
 #ifdef SWITCH_EVENT_RECYCLE
 	if (switch_queue_trypop(EVENT_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		*event = (switch_event_t *) pop;
@@ -680,12 +679,13 @@ SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, const char
 
 	switch_assert(event);
 
-	if (!header_name) return NULL;
-	
+	if (!header_name)
+		return NULL;
+
 	hash = switch_ci_hashfunc_default(header_name, &hlen);
-	
+
 	for (hp = event->headers; hp; hp = hp->next) {
-		if ((!hp->hash || hash == hp->hash) && !strcasecmp(hp->name, header_name) ) {
+		if ((!hp->hash || hash == hp->hash) && !strcasecmp(hp->name, header_name)) {
 			return hp->value;
 		}
 	}
@@ -709,7 +709,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header_val(switch_event_t *even
 	while (tp) {
 		hp = tp;
 		tp = tp->next;
-		
+
 		x++;
 		switch_assert(x < 1000);
 		hash = switch_ci_hashfunc_default(header_name, &hlen);
@@ -768,7 +768,7 @@ switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack
 	header->name = DUP(header_name);
 	header->value = data;
 	header->hash = switch_ci_hashfunc_default(header->name, &hlen);
-	
+
 	if (stack == SWITCH_STACK_TOP) {
 		header->next = event->headers;
 		event->headers = header;
@@ -807,8 +807,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, s
 
 SWITCH_DECLARE(switch_status_t) switch_event_set_subclass_name(switch_event_t *event, const char *subclass_name)
 {
-	if (!event || !subclass_name) return SWITCH_STATUS_GENERR;
-	
+	if (!event || !subclass_name)
+		return SWITCH_STATUS_GENERR;
+
 	switch_safe_free(event->subclass_name);
 	event->subclass_name = DUP(subclass_name);
 	switch_event_del_header(event, "Event-Subclass");
@@ -1030,23 +1031,23 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 static switch_xml_t add_xml_header(switch_xml_t xml, char *name, char *value, int offset)
 {
 	switch_xml_t header = switch_xml_add_child_d(xml, name, offset);
-	
+
 	if (header) {
 		switch_size_t encode_len = (strlen(value) * 3) + 1;
 		char *encode_buf = malloc(encode_len);
-		
+
 		switch_assert(encode_buf);
- 
+
 		memset(encode_buf, 0, encode_len);
 		switch_url_encode((char *) value, encode_buf, encode_len);
 		switch_xml_set_txt_d(header, encode_buf);
 		free(encode_buf);
 	}
-	
+
 	return header;
 }
 
-SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const char *fmt, ...)
+SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const char *fmt,...)
 {
 	switch_event_header_t *hp;
 	char *data = NULL, *body = NULL;
@@ -1170,19 +1171,19 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 				goto end;
 			}
 		}
-		
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event queue is full!\n");
 		switch_yield(100000);
 	}
 
- end:
+  end:
 
 	*event = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, switch_event_types_t event, const char *subclass_name, 
+SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, switch_event_types_t event, const char *subclass_name,
 															switch_event_callback_t callback, void *user_data, switch_event_node_t **node)
 {
 	switch_event_node_t *event_node;
@@ -1206,7 +1207,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, swit
 			return SWITCH_STATUS_FALSE;
 		}
 	}
-	
+
 	if (event <= SWITCH_EVENT_ALL) {
 		switch_zmalloc(event_node, sizeof(*event_node));
 		switch_mutex_lock(BLOCK);
@@ -1238,8 +1239,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, swit
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_types_t event, const char *subclass_name, 
-												  switch_event_callback_t callback, void *user_data) 
+SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_types_t event, const char *subclass_name,
+												  switch_event_callback_t callback, void *user_data)
 {
 	return switch_event_bind_removable(id, event, subclass_name, callback, user_data, NULL);
 }

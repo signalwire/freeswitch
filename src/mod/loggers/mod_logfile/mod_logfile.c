@@ -154,11 +154,11 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 		}
 		break;
 	}
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New log started.\n");
 
   end:
-	
+
 	if (pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
@@ -231,7 +231,7 @@ static switch_status_t process_node(const switch_log_node_t *node, switch_log_le
 		if (ok) {
 			if (profile->log_uuid && !zstr(node->userdata)) {
 				char buf[2048];
-				switch_snprintf(buf, sizeof(buf), "%s %s", node->userdata, node->data);	
+				switch_snprintf(buf, sizeof(buf), "%s %s", node->userdata, node->data);
 				mod_logfile_raw_write(profile, buf);
 			} else {
 				mod_logfile_raw_write(profile, node->data);
@@ -387,7 +387,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_logfile_shutdown)
 {
 	switch_hash_index_t *hi;
 	const void *var;
-    void *val;
+	void *val;
 
 	switch_log_unbind_logger(mod_logfile_logger);
 	switch_event_unbind(&globals.node);

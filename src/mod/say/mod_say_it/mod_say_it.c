@@ -181,65 +181,66 @@ static switch_status_t it_say_general_count(switch_core_session_t *session,
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
-    
-    /* Get in */
-	in = atoi(tosay);
-    
-    /* Check if number too big */
-    if (in > 999999999) {
-        /* Fail */
-        return SWITCH_STATUS_FALSE;
-    }
 
-    /* Check if number isin't zero */
+	/* Get in */
+	in = atoi(tosay);
+
+	/* Check if number too big */
+	if (in > 999999999) {
+		/* Fail */
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* Check if number isin't zero */
 	if (in != 0) {
-        
-        /* Init x to 0 */
-        places_count = 0;
-        
-        /* Loop until in is greater than zero */
-        do {
-            /* Get last digit */
-            places[places_count] = in % 10;
-            
-            /* Drop last digit */
-            in = in / 10;
-        }
-        while(in > 0 && ++places_count > 0 /* fake check to put in while */);
-        
+
+		/* Init x to 0 */
+		places_count = 0;
+
+		/* Loop until in is greater than zero */
+		do {
+			/* Get last digit */
+			places[places_count] = in % 10;
+
+			/* Drop last digit */
+			in = in / 10;
+		}
+		while (in > 0 && ++places_count > 0 /* fake check to put in while */ );
+
 		switch (method) {
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
-            
-            /* Check for milions */
-            if (places_count > 5) {
-                /* Check if the millions digit is one (digit 6 = 1, digit 7 and 8 = 0) */
-                if (places[6] == 1 && places[7] == 0 && places[8] == 0) {
-                    say_file("digits/un.wav");
-                    say_file("digits/million.wav");
-                } else {
-                    /* Play millions group (digits/million.wav should be digits/millions.wav) */
-                    if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
-                        return status;
-                    }
-                }
-                
-            }
-			
-            /* Check for thousands */
-            if (places_count > 2) {
-                if (places[3] == 1 && places[4] == 0 && places[5] == 0) {
-                    say_file("digits/thousand.wav");
-                } else {
-                    /* Play thousand group */
-                    if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3],
+
+			/* Check for milions */
+			if (places_count > 5) {
+				/* Check if the millions digit is one (digit 6 = 1, digit 7 and 8 = 0) */
+				if (places[6] == 1 && places[7] == 0 && places[8] == 0) {
+					say_file("digits/un.wav");
+					say_file("digits/million.wav");
+				} else {
+					/* Play millions group (digits/million.wav should be digits/millions.wav) */
+					if ((status =
+						 play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
+						return status;
+					}
+				}
+
+			}
+
+			/* Check for thousands */
+			if (places_count > 2) {
+				if (places[3] == 1 && places[4] == 0 && places[5] == 0) {
+					say_file("digits/thousand.wav");
+				} else {
+					/* Play thousand group */
+					if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3],
 											 "digits/thousands.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
-                        return status;
-                    }
-                }
-            }
-            
-            /* Play last group */
+						return status;
+					}
+				}
+			}
+
+			/* Play last group */
 			if ((status = play_group(method, places[2], places[1], places[0], NULL, session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
@@ -417,11 +418,11 @@ static switch_status_t it_say_time(switch_core_session_t *session, char *tosay, 
 	}
 
 	if (say_time) {
-        say_file("time/hours.wav");
+		say_file("time/hours.wav");
 		say_num(tm.tm_hour, SSM_PRONOUNCED);
 
 		if (tm.tm_min) {
-            say_file("time/and.wav");
+			say_file("time/and.wav");
 			say_num(tm.tm_min, SSM_PRONOUNCED);
 		}
 	}

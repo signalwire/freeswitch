@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -51,43 +51,43 @@ static switch_status_t switch_celt_init(switch_codec_t *codec, switch_codec_flag
 
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context))))) {
 		return SWITCH_STATUS_FALSE;
-	} 
+	}
 
-	context->mode_object = celt_mode_create(codec->implementation->actual_samples_per_second, codec->implementation->samples_per_packet, NULL); 
+	context->mode_object = celt_mode_create(codec->implementation->actual_samples_per_second, codec->implementation->samples_per_packet, NULL);
 	celt_mode_info(context->mode_object, CELT_GET_FRAME_SIZE, &context->frame_size);
-	context->bytes_per_packet = (codec->implementation->bits_per_second * context->frame_size/codec->implementation->actual_samples_per_second + 4) / 8;
+	context->bytes_per_packet = (codec->implementation->bits_per_second * context->frame_size / codec->implementation->actual_samples_per_second + 4) / 8;
 
 	/*
-	if (codec->fmtp_in) {
-		int x, argc;
-		char *argv[10];
-		argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
-		for (x = 0; x < argc; x++) {
-			char *data = argv[x];
-			char *arg;
-			switch_assert(data);
-			while (*data == ' ') {
-				data++;
-			}
-			if ((arg = strchr(data, '='))) {
-				*arg++ = '\0';
-				if (!strcasecmp(data, "bitrate")) {
-					bit_rate = atoi(arg);
-				}
-			}
-		}
-	}
-	
-	codec->fmtp_out = switch_core_sprintf(codec->memory_pool, "bitrate=%d", bit_rate);
-	*/
+	   if (codec->fmtp_in) {
+	   int x, argc;
+	   char *argv[10];
+	   argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+	   for (x = 0; x < argc; x++) {
+	   char *data = argv[x];
+	   char *arg;
+	   switch_assert(data);
+	   while (*data == ' ') {
+	   data++;
+	   }
+	   if ((arg = strchr(data, '='))) {
+	   *arg++ = '\0';
+	   if (!strcasecmp(data, "bitrate")) {
+	   bit_rate = atoi(arg);
+	   }
+	   }
+	   }
+	   }
+
+	   codec->fmtp_out = switch_core_sprintf(codec->memory_pool, "bitrate=%d", bit_rate);
+	 */
 	if (encoding) {
 		context->encoder_object = celt_encoder_create(context->mode_object, 1, NULL);
 	}
-	
+
 	if (decoding) {
 		context->decoder_object = celt_decoder_create(context->mode_object, 1, NULL);
 	}
-	
+
 	codec->private_info = context;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -111,8 +111,8 @@ static switch_status_t switch_celt_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len = (uint32_t) celt_encode(context->encoder_object, (void *)decoded_data, NULL,
-											   (unsigned char *)encoded_data, context->bytes_per_packet);
+	*encoded_data_len = (uint32_t) celt_encode(context->encoder_object, (void *) decoded_data, NULL,
+											   (unsigned char *) encoded_data, context->bytes_per_packet);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -149,52 +149,48 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_celt_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	
-	SWITCH_ADD_CODEC(codec_interface, "CELT ultra-low delay"); 
 
-	switch_core_codec_add_implementation(pool,
-										 codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 114,						/* the IANA code number */
-										 "CELT",					/* the IANA code name */
-										 NULL,						/* default fmtp to send (can be overridden by the init function) */
-										 32000,						/* samples transferred per second */
-										 32000,						/* actual samples transferred per second */
-										 32000,						/* bits transferred per second */
-										 10000,						/* number of microseconds per frame */
-										 320,						/* number of samples per frame */
-										 640,						/* number of bytes per frame decompressed */
-										 0,							/* number of bytes per frame compressed */
-										 1,							/* number of channels represented */
-										 1,							/* number of frames per network packet */
-										 switch_celt_init,			/* function to initialize a codec handle using this implementation */
-										 switch_celt_encode,		/* function to encode raw data into encoded data */
-										 switch_celt_decode,		/* function to decode encoded data into raw data */
-										 switch_celt_destroy);		/* deinitalize a codec handle using this implementation */
+	SWITCH_ADD_CODEC(codec_interface, "CELT ultra-low delay");
+
+	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 114,	/* the IANA code number */
+										 "CELT",	/* the IANA code name */
+										 NULL,	/* default fmtp to send (can be overridden by the init function) */
+										 32000,	/* samples transferred per second */
+										 32000,	/* actual samples transferred per second */
+										 32000,	/* bits transferred per second */
+										 10000,	/* number of microseconds per frame */
+										 320,	/* number of samples per frame */
+										 640,	/* number of bytes per frame decompressed */
+										 0,	/* number of bytes per frame compressed */
+										 1,	/* number of channels represented */
+										 1,	/* number of frames per network packet */
+										 switch_celt_init,	/* function to initialize a codec handle using this implementation */
+										 switch_celt_encode,	/* function to encode raw data into encoded data */
+										 switch_celt_decode,	/* function to decode encoded data into raw data */
+										 switch_celt_destroy);	/* deinitalize a codec handle using this implementation */
 	ms_per_frame = 2000;
 	samples_per_frame = 96;
 	bytes_per_frame = 192;
-	
+
 	for (x = 0; x < 5; x++) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 114,						/* the IANA code number */
-											 "CELT",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 48000,						/* samples transferred per second */
-											 48000,						/* actual samples transferred per second */
-											 48000,						/* bits transferred per second */
-											 ms_per_frame,				/* number of microseconds per frame */
-											 samples_per_frame,			/* number of samples per frame */
-											 bytes_per_frame,			/* number of bytes per frame decompressed */
-											 0,							/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 1,							/* number of frames per network packet */
-											 switch_celt_init,			/* function to initialize a codec handle using this implementation */
-											 switch_celt_encode,		/* function to encode raw data into encoded data */
-											 switch_celt_decode,		/* function to decode encoded data into raw data */
-											 switch_celt_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 114,	/* the IANA code number */
+											 "CELT",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 48000,	/* samples transferred per second */
+											 48000,	/* actual samples transferred per second */
+											 48000,	/* bits transferred per second */
+											 ms_per_frame,	/* number of microseconds per frame */
+											 samples_per_frame,	/* number of samples per frame */
+											 bytes_per_frame,	/* number of bytes per frame decompressed */
+											 0,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 1,	/* number of frames per network packet */
+											 switch_celt_init,	/* function to initialize a codec handle using this implementation */
+											 switch_celt_encode,	/* function to encode raw data into encoded data */
+											 switch_celt_decode,	/* function to decode encoded data into raw data */
+											 switch_celt_destroy);	/* deinitalize a codec handle using this implementation */
 		ms_per_frame += 2000;
 		samples_per_frame += 96;
 		bytes_per_frame += 192;

@@ -6,7 +6,7 @@
 #define SKYPIAX_SVN_VERSION "????NO_REVISION???"
 #endif
 
-#include <asterisk/version.h>   /* needed here for conditional compilation on version.h */
+#include <asterisk/version.h>	/* needed here for conditional compilation on version.h */
   /* the following #defs are for LINUX */
 #ifndef __CYGWIN__
 #ifndef ASTERISK_VERSION_1_6
@@ -40,7 +40,7 @@
 
 /* INCLUDES */
 #ifdef ASTERISK_VERSION_1_6
-#include <asterisk.h>           /* some asterisk-devel package do not contains asterisk.h, but seems that is needed for the 1.6 series, at least from trunk */
+#include <asterisk.h>			/* some asterisk-devel package do not contains asterisk.h, but seems that is needed for the 1.6 series, at least from trunk */
 #endif /* ASTERISK_VERSION_1_6 */
 #include <unistd.h>
 #include <termios.h>
@@ -102,10 +102,10 @@
 #warning Please review Skypiax AST_DIGIT_ANYDIG
 #endif
 #ifndef _ASTERISK_H
-#define AST_CONFIG_MAX_PATH 255 /* defined in asterisk.h, but some asterisk-devel package do not contains asterisk.h */
+#define AST_CONFIG_MAX_PATH 255	/* defined in asterisk.h, but some asterisk-devel package do not contains asterisk.h */
 extern char ast_config_AST_CONFIG_DIR[AST_CONFIG_MAX_PATH];
-int ast_register_atexit(void (*func) (void));   /* in asterisk.h, but some asterisk-devel package do not contains asterisk.h */
-void ast_unregister_atexit(void (*func) (void));    /* in asterisk.h, but some asterisk-devel package do not contains asterisk.h */
+int ast_register_atexit(void (*func) (void));	/* in asterisk.h, but some asterisk-devel package do not contains asterisk.h */
+void ast_unregister_atexit(void (*func) (void));	/* in asterisk.h, but some asterisk-devel package do not contains asterisk.h */
 #endif
 
 /* DEFINITIONS */
@@ -118,7 +118,7 @@ void ast_unregister_atexit(void (*func) (void));    /* in asterisk.h, but some a
  * be representable in 16 bits to avoid overflows.
  */
 #define	BOOST_SCALE	(1<<9)
-#define	BOOST_MAX	40          /* slightly less than 7 bits */
+#define	BOOST_MAX	40			/* slightly less than 7 bits */
 /* call flow from the device */
 #define 	CALLFLOW_CALL_IDLE  AST_STATE_DOWN
 #define 	CALLFLOW_INCOMING_RING  AST_STATE_RING
@@ -199,38 +199,38 @@ void ast_unregister_atexit(void (*func) (void));    /* in asterisk.h, but some a
  */
 #ifdef WANT_SKYPE_X11
 struct AsteriskHandles {
-  Window skype_win;
-  Display *disp;
-  Window win;
-  int fdesc[2];
+	Window skype_win;
+	Display *disp;
+	Window win;
+	int fdesc[2];
 };
 #else /* WANT_SKYPE_X11 */
 struct AsteriskHandles {
-  HWND win32_hInit_MainWindowHandle;
-  HWND win32_hGlobal_SkypeAPIWindowHandle;
-  int fdesc[2];
+	HWND win32_hInit_MainWindowHandle;
+	HWND win32_hGlobal_SkypeAPIWindowHandle;
+	int fdesc[2];
 };
 #endif /* WANT_SKYPE_X11 */
 
 #ifndef WIN32
 struct SkypiaxHandles {
-  Window skype_win;
-  Display *disp;
-  Window win;
-  int api_connected;
-  int fdesc[2];
+	Window skype_win;
+	Display *disp;
+	Window win;
+	int api_connected;
+	int fdesc[2];
 };
 #else //WIN32
 
 struct SkypiaxHandles {
-  HWND win32_hInit_MainWindowHandle;
-  HWND win32_hGlobal_SkypeAPIWindowHandle;
-  HINSTANCE win32_hInit_ProcessHandle;
-  char win32_acInit_WindowClassName[128];
-  UINT win32_uiGlobal_MsgID_SkypeControlAPIAttach;
-  UINT win32_uiGlobal_MsgID_SkypeControlAPIDiscover;
-  int api_connected;
-  int fdesc[2];
+	HWND win32_hInit_MainWindowHandle;
+	HWND win32_hGlobal_SkypeAPIWindowHandle;
+	HINSTANCE win32_hInit_ProcessHandle;
+	char win32_acInit_WindowClassName[128];
+	UINT win32_uiGlobal_MsgID_SkypeControlAPIAttach;
+	UINT win32_uiGlobal_MsgID_SkypeControlAPIDiscover;
+	int api_connected;
+	int fdesc[2];
 };
 
 #endif //WIN32
@@ -239,65 +239,65 @@ struct SkypiaxHandles {
  * \brief PVT structure for a skypiax interface (channel), created by skypiax_mkif
  */
 struct skypiax_pvt {
-  char *name;                   /*!< \brief 'name' of the interface (channel) */
-  int interface_state;          /*!< \brief 'state' of the interface (channel) */
-  struct ast_channel *owner;    /*!< \brief channel we belong to, possibly NULL */
-  struct skypiax_pvt *next;     /*!< \brief Next interface (channel) in list */
-  char context[AST_MAX_EXTENSION];  /*!< \brief default Asterisk dialplan context for this interface */
-  char language[MAX_LANGUAGE];  /*!< \brief default Asterisk dialplan language for this interface */
-  char exten[AST_MAX_EXTENSION];    /*!< \brief default Asterisk dialplan extension for this interface */
-  int skypiax_sound_rate;       /*!< \brief rate of the sound device, in Hz, eg: 8000 */
-  int skypiax_sound_capt_fd;    /*!< \brief file descriptor for sound capture dev */
-  char callid_name[50];
-  char callid_number[50];
-  pthread_t controldev_thread;  /*!< \brief serial control thread for this interface, running during the call */
-  double playback_boost;
-  double capture_boost;
-  int stripmsd;
-  pthread_t skype_thread;
-  struct AsteriskHandles AsteriskHandlesAst;
-  struct SkypiaxHandles SkypiaxHandles;
-  char skype_call_id[512];
-  int skype_call_ongoing;
-  char skype_friends[4096];
-  char skype_fullname[512];
-  char skype_displayname[512];
-  int skype_callflow;           /*!< \brief 'callflow' of the skype interface (as opposed to phone interface) */
-  int skype;                    /*!< \brief config flag, bool, Skype support on this interface (0 if false, -1 if true) */
-  int control_to_send;
-  int audiopipe[2];
-  int audioskypepipe[2];
-  pthread_t tcp_srv_thread;
-  pthread_t tcp_cli_thread;
-  short audiobuf[160];
-  int audiobuf_is_loaded;
+	char *name;					/*!< \brief 'name' of the interface (channel) */
+	int interface_state;		/*!< \brief 'state' of the interface (channel) */
+	struct ast_channel *owner;	/*!< \brief channel we belong to, possibly NULL */
+	struct skypiax_pvt *next;	/*!< \brief Next interface (channel) in list */
+	char context[AST_MAX_EXTENSION];	/*!< \brief default Asterisk dialplan context for this interface */
+	char language[MAX_LANGUAGE];	/*!< \brief default Asterisk dialplan language for this interface */
+	char exten[AST_MAX_EXTENSION];	/*!< \brief default Asterisk dialplan extension for this interface */
+	int skypiax_sound_rate;		/*!< \brief rate of the sound device, in Hz, eg: 8000 */
+	int skypiax_sound_capt_fd;	/*!< \brief file descriptor for sound capture dev */
+	char callid_name[50];
+	char callid_number[50];
+	pthread_t controldev_thread;	/*!< \brief serial control thread for this interface, running during the call */
+	double playback_boost;
+	double capture_boost;
+	int stripmsd;
+	pthread_t skype_thread;
+	struct AsteriskHandles AsteriskHandlesAst;
+	struct SkypiaxHandles SkypiaxHandles;
+	char skype_call_id[512];
+	int skype_call_ongoing;
+	char skype_friends[4096];
+	char skype_fullname[512];
+	char skype_displayname[512];
+	int skype_callflow;			/*!< \brief 'callflow' of the skype interface (as opposed to phone interface) */
+	int skype;					/*!< \brief config flag, bool, Skype support on this interface (0 if false, -1 if true) */
+	int control_to_send;
+	int audiopipe[2];
+	int audioskypepipe[2];
+	pthread_t tcp_srv_thread;
+	pthread_t tcp_cli_thread;
+	short audiobuf[160];
+	int audiobuf_is_loaded;
 
-  //int phonebook_listing;
-  //int phonebook_querying;
-  //int phonebook_listing_received_calls;
+	//int phonebook_listing;
+	//int phonebook_querying;
+	//int phonebook_listing_received_calls;
 
-  //int phonebook_first_entry;
-  //int phonebook_last_entry;
-  //int phonebook_number_lenght;
-  //int phonebook_text_lenght;
-  FILE *phonebook_writing_fp;
-  int skypiax_dir_entry_extension_prefix;
+	//int phonebook_first_entry;
+	//int phonebook_last_entry;
+	//int phonebook_number_lenght;
+	//int phonebook_text_lenght;
+	FILE *phonebook_writing_fp;
+	int skypiax_dir_entry_extension_prefix;
 #ifdef WIN32
-  unsigned short tcp_cli_port;
-  unsigned short tcp_srv_port;
+	unsigned short tcp_cli_port;
+	unsigned short tcp_srv_port;
 #else
-  int tcp_cli_port;
-  int tcp_srv_port;
+	int tcp_cli_port;
+	int tcp_srv_port;
 #endif
-  char X11_display[256];
+	char X11_display[256];
 
-  struct ast_frame read_frame;
+	struct ast_frame read_frame;
 
-  char skype_user[256];
-  char skype_password[256];
-  char destination[256];
-  char session_uuid_str[512 + 1];
-  pthread_t signaling_thread;
+	char skype_user[256];
+	char skype_password[256];
+	char destination[256];
+	char session_uuid_str[512 + 1];
+	pthread_t signaling_thread;
 };
 
 typedef struct skypiax_pvt private_t;
@@ -363,8 +363,7 @@ int skypiax_digitsend(struct ast_channel *ast, char digit);
 
 /* chan_skypiax internal functions */
 
-struct skypiax_pvt *skypiax_mkif(struct ast_config *cfg, char *ctg,
-                                 int is_first_category);
+struct skypiax_pvt *skypiax_mkif(struct ast_config *cfg, char *ctg, int is_first_category);
 struct ast_channel *skypiax_new(struct skypiax_pvt *p, int state, char *context);
 int skypiax_restart_monitor(void);
 void *skypiax_do_monitor(void *data);

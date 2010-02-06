@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -58,7 +58,7 @@ static switch_status_t silence_stream_file_open(switch_file_handle_t *handle, co
 		sh->samples = 0;
 		sh->forever = 1;
 	}
-		
+
 	if ((p = strchr(path, ','))) {
 		p++;
 		ms = atoi(p);
@@ -80,19 +80,19 @@ static switch_status_t silence_stream_file_close(switch_file_handle_t *handle)
 static switch_status_t silence_stream_file_read(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	struct silence_handle *sh = handle->private_info;
-	
+
 	if (!sh->forever) {
 		if (sh->samples <= 0) {
 			return SWITCH_STATUS_FALSE;
 		}
 
-		if (*len > (size_t)sh->samples) {
+		if (*len > (size_t) sh->samples) {
 			*len = sh->samples;
 		}
 
 		sh->samples -= *len;
 	}
-	
+
 	if (sh->silence) {
 		switch_generate_sln_silence((int16_t *) data, *len, sh->silence);
 	} else {

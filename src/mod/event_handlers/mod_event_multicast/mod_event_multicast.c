@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -37,7 +37,7 @@
 #define MULTICAST_BUFFSIZE 65536
 
 /* magic byte sequence */
-static unsigned char MAGIC[] = {226, 132, 177, 197, 152, 198, 142, 211, 172, 197, 158, 208, 169, 208, 135, 197, 166, 207, 154, 196, 166};
+static unsigned char MAGIC[] = { 226, 132, 177, 197, 152, 198, 142, 211, 172, 197, 158, 208, 169, 208, 135, 197, 166, 207, 154, 196, 166 };
 static char *MARKER = "1";
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load);
@@ -87,7 +87,7 @@ static switch_status_t load_config(void)
 	uint32_t count = 0;
 	uint8_t custom = 0;
 
-	
+
 	globals.ttl = 1;
 	globals.key_count = 0;
 
@@ -116,7 +116,7 @@ static switch_status_t load_config(void)
 #endif
 			} else if (!strcasecmp(var, "ttl")) {
 				int ttl = atoi(val);
-				if ((ttl && ttl <= 255)  || !strcmp(val, "0")) {
+				if ((ttl && ttl <= 255) || !strcmp(val, "0")) {
 					globals.ttl = (uint8_t) ttl;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid ttl '%s' specified, using default of 1\n", val);
@@ -176,22 +176,20 @@ static void event_handler(switch_event_t *event)
 	}
 
 	if (event->subclass_name && (!strcmp(event->subclass_name, MULTICAST_EVENT) ||
-				!strcmp(event->subclass_name, MULTICAST_PEERUP) ||
-				!strcmp(event->subclass_name, MULTICAST_PEERDOWN))) {
-		char * event_name, *sender;
+								 !strcmp(event->subclass_name, MULTICAST_PEERUP) || !strcmp(event->subclass_name, MULTICAST_PEERDOWN))) {
+		char *event_name, *sender;
 		if ((event_name = switch_event_get_header(event, "orig-event-name")) &&
-			!strcasecmp(event_name, "HEARTBEAT") && 
-			(sender = switch_event_get_header(event, "orig-multicast-sender"))) {
+			!strcasecmp(event_name, "HEARTBEAT") && (sender = switch_event_get_header(event, "orig-multicast-sender"))) {
 			struct peer_status *p;
 			time_t now = switch_epoch_time_now(NULL);
-			
+
 			if (!(p = switch_core_hash_find(globals.peer_hash, sender))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Host %s not already in hash\n", sender);
 				p = switch_core_alloc(module_pool, sizeof(struct peer_status));
 				p->active = SWITCH_FALSE;
 				p->lastseen = 0;
-			/*} else {*/
-				/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Host %s last seen %d seconds ago\n", sender, now - p->lastseen);*/
+				/*} else { */
+				/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Host %s last seen %d seconds ago\n", sender, now - p->lastseen); */
 			}
 
 			if (!p->active) {
@@ -200,7 +198,7 @@ static void event_handler(switch_event_t *event)
 					char lastseen[21];
 					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Peer", sender);
 					if (p->lastseen) {
-						switch_snprintf(lastseen, sizeof(lastseen), "%d", (int)p->lastseen);
+						switch_snprintf(lastseen, sizeof(lastseen), "%d", (int) p->lastseen);
 					} else {
 						switch_snprintf(lastseen, sizeof(lastseen), "%s", "Never");
 					}
@@ -246,11 +244,11 @@ static void event_handler(switch_event_t *event)
 		time_t now = switch_epoch_time_now(NULL);
 		struct peer_status *last;
 		char *host;
-		
+
 		for (cur = switch_hash_first(NULL, globals.peer_hash); cur; cur = switch_hash_next(cur)) {
 			switch_hash_this(cur, &key, &keylen, &value);
-			host = (char*) key;
-			last = (struct peer_status*) value;
+			host = (char *) key;
+			last = (struct peer_status *) value;
 			if (last->active && (now - (last->lastseen)) > 60) {
 				switch_event_t *local_event;
 
@@ -258,7 +256,7 @@ static void event_handler(switch_event_t *event)
 				if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_PEERDOWN) == SWITCH_STATUS_SUCCESS) {
 					char lastseen[21];
 					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Peer", host);
-					switch_snprintf(lastseen, sizeof(lastseen), "%d", (int)last->lastseen);
+					switch_snprintf(lastseen, sizeof(lastseen), "%d", (int) last->lastseen);
 					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Lastseen", lastseen);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Peer %s has gone down; last seen: %s\n", host, lastseen);
 
@@ -292,14 +290,14 @@ static void event_handler(switch_event_t *event)
 #ifdef HAVE_OPENSSL
 				int outlen, tmplen;
 				EVP_CIPHER_CTX ctx;
-				char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
+				char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 				switch_uuid_t uuid;
 
 				switch_uuid_get(&uuid);
 				switch_uuid_format(uuid_str, &uuid);
-				len = strlen(packet) + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + EVP_MAX_IV_LENGTH + strlen((char*)MAGIC);
+				len = strlen(packet) + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + EVP_MAX_IV_LENGTH + strlen((char *) MAGIC);
 #else
-				len = strlen(packet) + sizeof(globals.host_hash) + strlen((char*) MAGIC);
+				len = strlen(packet) + sizeof(globals.host_hash) + strlen((char *) MAGIC);
 #endif
 				buf = malloc(len + 1);
 				memset(buf, 0, len + 1);
@@ -313,20 +311,20 @@ static void event_handler(switch_event_t *event)
 					EVP_CIPHER_CTX_init(&ctx);
 					EVP_EncryptInit(&ctx, EVP_bf_cbc(), NULL, NULL);
 					EVP_CIPHER_CTX_set_key_length(&ctx, strlen(globals.psk));
-					EVP_EncryptInit(&ctx, NULL, (unsigned char*) globals.psk, (unsigned char*) uuid_str);
-					EVP_EncryptUpdate(&ctx, (unsigned char*) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH,
-							&outlen, (unsigned char*) packet, (int) strlen(packet));
-					EVP_EncryptUpdate(&ctx, (unsigned char*) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + outlen,
-							&tmplen, (unsigned char*) MAGIC, (int) strlen((char *) MAGIC));
+					EVP_EncryptInit(&ctx, NULL, (unsigned char *) globals.psk, (unsigned char *) uuid_str);
+					EVP_EncryptUpdate(&ctx, (unsigned char *) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH,
+									  &outlen, (unsigned char *) packet, (int) strlen(packet));
+					EVP_EncryptUpdate(&ctx, (unsigned char *) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + outlen,
+									  &tmplen, (unsigned char *) MAGIC, (int) strlen((char *) MAGIC));
 					outlen += tmplen;
-					EVP_EncryptFinal(&ctx, (unsigned char*) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + outlen, &tmplen);
+					EVP_EncryptFinal(&ctx, (unsigned char *) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + outlen, &tmplen);
 					outlen += tmplen;
 					len = (size_t) outlen + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH;
 					*(buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + outlen) = '\0';
 				} else {
 #endif
 					switch_copy_string(buf + sizeof(globals.host_hash), packet, len - sizeof(globals.host_hash));
-					switch_copy_string(buf + sizeof(globals.host_hash) + strlen(packet), (char *) MAGIC, strlen((char*) MAGIC)+1);
+					switch_copy_string(buf + sizeof(globals.host_hash) + strlen(packet), (char *) MAGIC, strlen((char *) MAGIC) + 1);
 #ifdef HAVE_OPENSSL
 				}
 #endif
@@ -354,8 +352,8 @@ SWITCH_STANDARD_API(multicast_peers)
 
 	for (cur = switch_hash_first(NULL, globals.peer_hash); cur; cur = switch_hash_next(cur)) {
 		switch_hash_this(cur, &key, &keylen, &value);
-		host = (char*) key;
-		last = (struct peer_status*) value;
+		host = (char *) key;
+		last = (struct peer_status *) value;
 
 		stream->write_function(stream, "Peer %s %s; last seen %d seconds ago\n", host, last->active ? "UP" : "DOWN", now - last->lastseen);
 		i++;
@@ -420,7 +418,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bind Error\n");
 		switch_goto_status(SWITCH_STATUS_TERM, fail);
 	}
-	
+
 	if (switch_event_reserve_subclass(MULTICAST_EVENT) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MULTICAST_EVENT);
 		switch_goto_status(SWITCH_STATUS_GENERR, fail);
@@ -440,7 +438,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		switch_goto_status(SWITCH_STATUS_GENERR, fail);
 	}
-
 #ifdef USE_NONBLOCK
 	switch_socket_opt_set(globals.udp_socket, SWITCH_SO_NONBLOCK, TRUE);
 #endif
@@ -454,7 +451,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 	return SWITCH_STATUS_SUCCESS;
 
 
- fail:
+  fail:
 
 	if (globals.udp_socket) {
 		switch_socket_close(globals.udp_socket);
@@ -512,7 +509,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 		if ((status = switch_socket_recvfrom(addr, globals.udp_socket, 0, buf, &len)) != SWITCH_STATUS_SUCCESS || !len || !globals.running) {
 			break;
 		}
-
 #ifdef USE_NONBLOCK
 		if (!len) {
 			if (SWITCH_STATUS_IS_BREAK(status)) {
@@ -532,7 +528,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 		}
 #ifdef HAVE_OPENSSL
 		if (globals.psk) {
-			char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
+			char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 			char *tmp;
 			int outl, tmplen;
 			EVP_CIPHER_CTX ctx;
@@ -549,22 +545,21 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 			EVP_CIPHER_CTX_init(&ctx);
 			EVP_DecryptInit(&ctx, EVP_bf_cbc(), NULL, NULL);
 			EVP_CIPHER_CTX_set_key_length(&ctx, strlen(globals.psk));
-			EVP_DecryptInit(&ctx, NULL, (unsigned char*) globals.psk, (unsigned char*) uuid_str);
-			EVP_DecryptUpdate(&ctx, (unsigned char*) tmp,
-					&outl, (unsigned char*) packet, (int) len);
-			EVP_DecryptFinal(&ctx, (unsigned char*) tmp + outl, &tmplen);
+			EVP_DecryptInit(&ctx, NULL, (unsigned char *) globals.psk, (unsigned char *) uuid_str);
+			EVP_DecryptUpdate(&ctx, (unsigned char *) tmp, &outl, (unsigned char *) packet, (int) len);
+			EVP_DecryptFinal(&ctx, (unsigned char *) tmp + outl, &tmplen);
 
 			*(tmp + outl + tmplen) = '\0';
 
-			/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "decrypted event as %s\n----------\n of actual length %d (%d) %d\n", tmp, outl + tmplen, (int) len, (int) strlen(tmp));*/
+			/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "decrypted event as %s\n----------\n of actual length %d (%d) %d\n", tmp, outl + tmplen, (int) len, (int) strlen(tmp)); */
 			packet = tmp;
 
 		}
 #endif
 		if ((m = strchr(packet, (int) MAGIC[0])) != 0) {
-			/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found start of magic string\n");*/
-			if (!strncmp((char*) MAGIC, m, strlen((char*) MAGIC))) {
-				/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found entire magic string\n");*/
+			/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found start of magic string\n"); */
+			if (!strncmp((char *) MAGIC, m, strlen((char *) MAGIC))) {
+				/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found entire magic string\n"); */
 				*m = '\0';
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failed to find entire magic string\n");
@@ -575,7 +570,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 			continue;
 		}
 
-		/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT %d\n--------------------------------\n%s\n", (int) len, packet);*/
+		/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT %d\n--------------------------------\n%s\n", (int) len, packet); */
 		if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT) == SWITCH_STATUS_SUCCESS) {
 			char *var, *val, *term = NULL, tmpname[128];
 			switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Multicast", "yes");

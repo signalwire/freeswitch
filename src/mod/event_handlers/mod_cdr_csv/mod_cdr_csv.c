@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -161,7 +161,7 @@ static void write_cdr(const char *path, const char *log_line)
 		do_rotate(fd);
 		switch_yield(250000);
 	}
-	
+
 	if (bytes_in > 0) {
 		fd->bytes += bytes_in;
 	}
@@ -215,15 +215,16 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			free(buf);
 		}
 	}
-	
+
 	g_template_str = (const char *) switch_core_hash_find(globals.template_hash, globals.default_template);
 
 	if ((accountcode = switch_channel_get_variable(channel, "ACCOUNTCODE"))) {
 		a_template_str = (const char *) switch_core_hash_find(globals.template_hash, accountcode);
 	}
-	
+
 	if (!g_template_str) {
-		g_template_str = "\"${accountcode}\",\"${caller_id_number}\",\"${destination_number}\",\"${context}\",\"${caller_id}\",\"${channel_name}\",\"${bridge_channel}\",\"${last_app}\",\"${last_arg}\",\"${start_stamp}\",\"${answer_stamp}\",\"${end_stamp}\",\"${duration}\",\"${billsec}\",\"${hangup_cause}\",\"${amaflags}\",\"${uuid}\",\"${userfield}\";";
+		g_template_str =
+			"\"${accountcode}\",\"${caller_id_number}\",\"${destination_number}\",\"${context}\",\"${caller_id}\",\"${channel_name}\",\"${bridge_channel}\",\"${last_app}\",\"${last_arg}\",\"${start_stamp}\",\"${answer_stamp}\",\"${end_stamp}\",\"${duration}\",\"${billsec}\",\"${hangup_cause}\",\"${amaflags}\",\"${uuid}\",\"${userfield}\";";
 	}
 
 	if (!a_template_str) {
@@ -295,11 +296,11 @@ static switch_state_handler_table_t state_handlers = {
 	/*.on_hangup */ NULL,
 	/*.on_exchange_media */ NULL,
 	/*.on_soft_execute */ NULL,
-	/*.on_consume_media*/ NULL,
-	/*.on_hibernate*/ NULL,
-	/*.on_reset*/ NULL,
-	/*.on_park*/ NULL,
-	/*.on_reporting*/ my_on_reporting
+	/*.on_consume_media */ NULL,
+	/*.on_hibernate */ NULL,
+	/*.on_reset */ NULL,
+	/*.on_park */ NULL,
+	/*.on_reporting */ my_on_reporting
 };
 
 
@@ -315,11 +316,11 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	switch_core_hash_init(&globals.template_hash, pool);
 
 	globals.pool = pool;
-	
+
 	switch_core_hash_insert(globals.template_hash, "default", default_template);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding default template.\n");
 	globals.legs = CDR_LEG_A;
-	
+
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 
 		if ((settings = switch_xml_child(cfg, "settings"))) {
@@ -345,8 +346,8 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 				} else if (!strcasecmp(var, "default-template")) {
 					globals.default_template = switch_core_strdup(pool, val);
 				} else if (!strcasecmp(var, "master-file-only")) {
-					globals.masterfileonly = switch_true(val);
-				}
+					globals.masterfileonly = switch_true(val);
+				}
 			}
 		}
 
@@ -413,7 +414,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_csv_shutdown)
 {
 
-	globals.shutdown = 1;	
+	globals.shutdown = 1;
 	switch_event_unbind_callback(event_handler);
 	switch_core_remove_state_handler(&state_handlers);
 

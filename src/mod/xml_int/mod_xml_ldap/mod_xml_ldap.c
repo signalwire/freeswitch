@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -111,7 +111,8 @@ SWITCH_STANDARD_API(xml_ldap_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t xml_ldap_result(void *ldap_connection, xml_binding_t *binding, switch_xml_t *xml, int *off, const xml_ldap_query_type_t query_type)
+static switch_status_t xml_ldap_result(void *ldap_connection, xml_binding_t *binding, switch_xml_t *xml, int *off,
+									   const xml_ldap_query_type_t query_type)
 {
 	switch (query_type) {
 	case XML_LDAP_DIRECTORY:
@@ -334,7 +335,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 
 
 
-	if ((ldap->ld = (LDAP*)ldap_init(binding->host, LDAP_PORT)) == NULL) {
+	if ((ldap->ld = (LDAP *) ldap_init(binding->host, LDAP_PORT)) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to connect to ldap server.%s\n", binding->host);
 		goto cleanup;
 	}
@@ -343,7 +344,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 		goto cleanup;
 	}
 
-	ldap_set_option( ldap->ld, LDAP_OPT_X_SASL_SECPROPS, &ldap->sp );
+	ldap_set_option(ldap->ld, LDAP_OPT_X_SASL_SECPROPS, &ldap->sp);
 
 
 
@@ -353,8 +354,11 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 			goto cleanup;
 		}
 	} else {
-		if (ldap_sasl_interactive_bind_s(ldap->ld, NULL, binding->defaults->mech, NULL, NULL, (unsigned)(intptr_t)LDAP_SASL_SIMPLE, lutil_sasl_interact, binding->defaults ) != LDAP_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to sasl_bind to ldap server %s as %s\n", binding->host, binding->defaults->authcid);
+		if (ldap_sasl_interactive_bind_s
+			(ldap->ld, NULL, binding->defaults->mech, NULL, NULL, (unsigned) (intptr_t) LDAP_SASL_SIMPLE, lutil_sasl_interact,
+			 binding->defaults) != LDAP_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to sasl_bind to ldap server %s as %s\n", binding->host,
+							  binding->defaults->authcid);
 			goto cleanup;
 		}
 	}
@@ -459,8 +463,7 @@ static switch_status_t do_config(void)
 		}
 
 		if (!binding->basedn || !binding->filter) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-							  "You must define \"basedn\", and \"filter\" in mod_xml_ldap.conf.xml\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "You must define \"basedn\", and \"filter\" in mod_xml_ldap.conf.xml\n");
 			continue;
 		}
 

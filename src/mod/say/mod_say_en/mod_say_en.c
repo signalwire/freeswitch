@@ -101,11 +101,11 @@ static switch_status_t play_group(switch_say_method_t method, int a, int b, int 
 
 	if (b) {
 		if (b > 1) {
-		   if ((c==0) && (method == SSM_COUNTED)) {
-		     say_file("digits/h-%d0.wav", b);
-		   } else {
-		     say_file("digits/%d0.wav", b);
-		   }
+			if ((c == 0) && (method == SSM_COUNTED)) {
+				say_file("digits/h-%d0.wav", b);
+			} else {
+				say_file("digits/%d0.wav", b);
+			}
 		} else {
 			say_file("digits/%d%d.wav", b, c);
 			c = 0;
@@ -277,7 +277,7 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0, say_today = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *tz = switch_channel_get_variable(channel, "timezone");
-	
+
 	if (type == SST_TIME_MEASUREMENT) {
 		int64_t hours = 0;
 		int64_t minutes = 0;
@@ -365,7 +365,7 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 		target = switch_micro_time_now();
 		target_now = switch_micro_time_now();
 	}
-	
+
 	if (tz) {
 		int check = atoi(tz);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Timezone is [%s]\n", tz);
@@ -415,7 +415,7 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 		}
 
 		say_month = say_day = say_dow = 1;
-		
+
 		break;
 	default:
 		break;
@@ -449,9 +449,9 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 	if (say_time) {
 		int32_t hour = tm.tm_hour, pm = 0;
 
-		 if (say_date || say_today || say_yesterday || say_dow) {
+		if (say_date || say_today || say_yesterday || say_dow) {
 			say_file("time/at.wav");
-		 }
+		}
 
 		if (hour > 12) {
 			hour -= 12;

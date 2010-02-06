@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -38,7 +38,7 @@
 #include <curl/curl.h>
 #endif
 static int foo = 0;
-static jsval check_hangup_hook(struct js_session *jss, jsval *rp);
+static jsval check_hangup_hook(struct js_session *jss, jsval * rp);
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown);
@@ -924,7 +924,7 @@ static switch_status_t sm_load_file(char *filename)
 		err = "Could not allocate memory\n";
 	}
 
- err:
+  err:
 
 	if (err || !module) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Loading module %s\n**%s**\n", filename, switch_str_nil(err));
@@ -1104,7 +1104,7 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	char var_name[SWITCH_UUID_FORMATTED_LENGTH + 25];
 	char *p;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+
 	if (!jss || !jss->session) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1117,13 +1117,13 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
-	
+
 	switch_snprintf(var_name, sizeof(var_name), "__event_%s", uuid_str);
-	for(p = var_name; p && *p; p++) {
+	for (p = var_name; p && *p; p++) {
 		if (*p == '-') {
 			*p = '_';
 		}
-	}	
+	}
 
 	JS_ResumeRequest(cb_state->cx, cb_state->saveDepth);
 	METHOD_SANITY_CHECK();
@@ -1151,7 +1151,7 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	case SWITCH_INPUT_TYPE_DTMF:
 		{
 			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
-			
+
 			if (dtmf) {
 				if ((Event = new_js_dtmf(dtmf, var_name, cb_state->cx, cb_state->obj))) {
 					argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, "dtmf"));
@@ -1175,7 +1175,7 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	}
 
 	status = SWITCH_STATUS_SUCCESS;
-done:
+  done:
 	cb_state->saveDepth = JS_SuspendRequest(cb_state->cx);
 	jss->stack_depth--;
 	return status;
@@ -1450,7 +1450,7 @@ static JSBool session_recordfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	
+
 	switch_ivr_record_file(jss->session, &fh, file_name, &args, limit);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	check_hangup_hook(jss, &ret);
@@ -1594,7 +1594,7 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 	return ret;
 }
 
-static jsval check_hangup_hook(struct js_session *jss, jsval *rp)
+static jsval check_hangup_hook(struct js_session *jss, jsval * rp)
 {
 	jsval argv[3] = { 0 };
 	int argc = 0;
@@ -1753,7 +1753,7 @@ static JSBool session_sleep(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	int32 ms = 0;
 	jsval ret = JS_TRUE;
 	int32 sync = 0;
-	
+
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
 	CHANNEL_SANITY_CHECK();
@@ -2123,7 +2123,9 @@ static JSBool session_answered(JSContext * cx, JSObject * obj, uintN argc, jsval
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 
-	*rval = BOOLEAN_TO_JSVAL((jss && jss->session && switch_channel_test_flag(switch_core_session_get_channel(jss->session), CF_ANSWERED)) ? JS_TRUE : JS_FALSE);
+	*rval =
+		BOOLEAN_TO_JSVAL((jss && jss->session
+						  && switch_channel_test_flag(switch_core_session_get_channel(jss->session), CF_ANSWERED)) ? JS_TRUE : JS_FALSE);
 
 	return JS_TRUE;
 }
@@ -2186,7 +2188,7 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 	int32 timeout = 60000;
 	jsrefcount saveDepth;
 	jsval ret = JS_TRUE;
-	
+
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
 
@@ -2200,8 +2202,8 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 	}
 
 	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
-        return JS_FALSE;
-    }
+		return JS_FALSE;
+	}
 
 	saveDepth = JS_SuspendRequest(cx);
 	for (;;) {
@@ -2245,7 +2247,7 @@ static JSBool session_detach(JSContext * cx, JSObject * obj, uintN argc, jsval *
 				cause = switch_channel_str2cause(cause_name);
 			}
 		}
-		
+
 		if (cause) {
 			channel = switch_core_session_get_channel(session);
 			switch_channel_hangup(channel, cause);
@@ -2289,7 +2291,7 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 				if (check_hangup_hook(jss, NULL) != JS_TRUE) {
 					return JS_FALSE;
 				}
-				
+
 				saveDepth = JS_SuspendRequest(cx);
 				switch_core_session_exec(jss->session, application_interface, app_arg);
 				JS_ResumeRequest(cx, saveDepth);
@@ -2826,7 +2828,7 @@ static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsva
 {
 	struct js_session *jss = NULL;
 	JSObject *session_obj = NULL;
-	
+
 	jss = malloc(sizeof(*jss));
 	switch_assert(jss);
 	memset(jss, 0, sizeof(*jss));
@@ -2835,7 +2837,7 @@ static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsva
 	JS_SetPrivate(cx, obj, jss);
 
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-	
+
 	if (argc > 0) {
 		char *uuid = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 
@@ -2851,7 +2853,7 @@ static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsva
 					old_jss = JS_GetPrivate(cx, session_obj);
 				}
 			}
-			if (switch_ivr_originate(old_jss ? old_jss->session : NULL, 
+			if (switch_ivr_originate(old_jss ? old_jss->session : NULL,
 									 &jss->session, &jss->cause, uuid, 60, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL) == SWITCH_STATUS_SUCCESS) {
 				switch_set_flag(jss, S_HUP);
 				switch_channel_set_state(switch_core_session_get_channel(jss->session), CS_SOFT_EXECUTE);
@@ -2948,18 +2950,18 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		if (JS_ValueToObject(cx, argv[0], &session_obj)) {
 			struct js_session *old_jss = NULL;
 			if (session_obj && (old_jss = JS_GetPrivate(cx, session_obj))) {
-				
+
 				if (old_jss == jss) {
 					eval_some_js("~throw new Error(\"Supplied a_leg session is the same as our session\");", cx, obj, rval);
 					return JS_FALSE;
-					
+
 				};
-				
+
 				if (!old_jss->session) {
 					eval_some_js("~throw new Error(\"Supplied a_leg session is not initilaized!\");", cx, obj, rval);
 					return JS_FALSE;
 				}
-				
+
 				session = old_jss->session;
 				orig_caller_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(session));
 				dialplan = orig_caller_profile->dialplan;
@@ -3013,7 +3015,8 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		caller_profile = switch_caller_profile_new(pool, username, dialplan, cid_name, cid_num, network_addr, ani, aniii, rdnis, modname, context, dest);
 
 		saveDepth = JS_SuspendRequest(cx);
-		status = switch_ivr_originate(session, &peer_session, &jss->cause, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile, NULL, SOF_NONE, NULL);
+		status =
+			switch_ivr_originate(session, &peer_session, &jss->cause, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile, NULL, SOF_NONE, NULL);
 		JS_ResumeRequest(cx, saveDepth);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
@@ -3374,7 +3377,7 @@ static JSBool js_api_sleep(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 
 	if (argc > 0) {
 		JS_ValueToInt32(cx, argv[0], &msec);
-	} 
+	}
 
 	if (msec) {
 		switch_yield(msec * 1000);
@@ -3437,7 +3440,7 @@ static JSBool js_api_execute(JSContext * cx, JSObject * obj, uintN argc, jsval *
 		SWITCH_STANDARD_STREAM(stream);
 		switch_api_execute(cmd, arg, session, &stream);
 
-		*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, switch_str_nil((char *)stream.data)));
+		*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, switch_str_nil((char *) stream.data)));
 		switch_safe_free(stream.data);
 
 	} else {
@@ -3597,7 +3600,7 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 	struct js_session *jss;
 	JSContext *cx = NULL;
 	jsval rval;
-	
+
 	if (zstr(input_code)) {
 		return;
 	}
@@ -3624,7 +3627,7 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 
 	script = input_code;
 
-	if (*script != '~') {	
+	if (*script != '~') {
 		if ((arg = strchr(script, ' '))) {
 			*arg++ = '\0';
 			argc = switch_separate_string(arg, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -3771,7 +3774,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown)
 {
 	// this causes a crash
 	//JS_DestroyRuntime(globals.rt);
-	
+
 	curl_global_cleanup();
 
 	switch_core_hash_destroy(&module_manager.mod_hash);

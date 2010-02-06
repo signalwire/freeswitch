@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -68,7 +68,7 @@ static char *hfile = NULL;
 #define KEY_INSERT 8
 #define PROMPT_OP 9
 
-static int console_bufferInput (char* buf, int len, char *cmd, int key);
+static int console_bufferInput(char *buf, int len, char *cmd, int key);
 #endif
 #endif
 
@@ -123,7 +123,7 @@ static switch_status_t console_xml_config(void)
 SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen)
 {
 	switch_size_t need = handle->data_len + datalen;
-	
+
 	if (need >= handle->data_size) {
 		void *new_data;
 		need += handle->alloc_chunk;
@@ -139,7 +139,7 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_raw_write(switch_st
 	memcpy((uint8_t *) (handle->data) + handle->data_len, data, datalen);
 	handle->data_len += datalen;
 	handle->end = (uint8_t *) (handle->data) + handle->data_len;
-	*(uint8_t *)handle->end = '\0';
+	*(uint8_t *) handle->end = '\0';
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -205,12 +205,12 @@ SWITCH_DECLARE(switch_status_t) switch_stream_write_file_contents(switch_stream_
 	char *dpath = NULL;
 	int fd;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+
 	if (!switch_is_file_path(path)) {
 		dpath = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, path);
 		path = dpath;
 	}
-	
+
 	if ((fd = open(path, O_RDONLY)) > -1) {
 		char buf[2048] = { 0 };
 		while (switch_fd_read_line(fd, buf, sizeof(buf))) {
@@ -219,7 +219,7 @@ SWITCH_DECLARE(switch_status_t) switch_stream_write_file_contents(switch_stream_
 		close(fd);
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	switch_safe_free(dpath);
 	return status;
 }
@@ -296,11 +296,12 @@ SWITCH_DECLARE(char *) switch_console_expand_alias(char *cmd, char *arg)
 }
 
 
-static int switch_console_process(char *xcmd) {
+static int switch_console_process(char *xcmd)
+{
 	switch_stream_handle_t stream = { 0 };
 	switch_status_t status;
 	FILE *handle = switch_core_get_console();
-	
+
 	SWITCH_STANDARD_STREAM(stream);
 	switch_assert(stream.data);
 
@@ -321,7 +322,7 @@ static int switch_console_process(char *xcmd) {
 	switch_safe_free(stream.data);
 
 	return 1;
-	
+
 }
 
 
@@ -338,7 +339,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_execute(char *xcmd, int rec, swit
 
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	
+
 	if (rec > 100) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Too much recursion!\n");
 		goto end;
@@ -369,10 +370,10 @@ SWITCH_DECLARE(switch_status_t) switch_console_execute(char *xcmd, int rec, swit
 		}
 
 
-		status = switch_api_execute(cmd, arg, NULL, istream);		
+		status = switch_api_execute(cmd, arg, NULL, istream);
 	}
 
- end:
+  end:
 
 	switch_safe_free(dup);
 
@@ -453,24 +454,31 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char *target = NULL, *str = NULL, *cur = NULL;
 	switch_size_t x, y, i;
 
-	
-	if (argc > 0) target = argv[0];
-	if (argc > 1) str = argv[1];
-	if (argc > 2) cur = argv[2];
+
+	if (argc > 0)
+		target = argv[0];
+	if (argc > 1)
+		str = argv[1];
+	if (argc > 2)
+		cur = argv[2];
 
 	if (cur) {
-		while (*cur == ' ') cur++;
+		while (*cur == ' ')
+			cur++;
 	}
 
-	if (zstr(cur)) cur = NULL;
-	if (zstr(str)) str = NULL;
+	if (zstr(cur))
+		cur = NULL;
+	if (zstr(str))
+		str = NULL;
 
 	if (!target) {
 		return -1;
 	}
 
-	if (!zstr(target) && *target == ':' && *(target+1) == ':') {
-		char *r_argv[1] = { 0 }, *r_cols[1] = { 0 };
+	if (!zstr(target) && *target == ':' && *(target + 1) == ':') {
+		char *r_argv[1] = { 0 }, *r_cols[1] = {
+		0};
 		switch_console_callback_match_t *matches;
 		if (switch_console_run_complete_func(target, str, cur, &matches) == SWITCH_STATUS_SUCCESS) {
 			switch_console_callback_match_node_t *m;
@@ -499,17 +507,17 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 		switch_copy_string(h->last, target, sizeof(h->last));
 		h->hits++;
 	}
-	
+
 	x = strlen(h->last);
 	y = strlen(h->partial);
 
 	if (h->hits > 1) {
-		for(i = 0; i < x && i < y; i++) {
+		for (i = 0; i < x && i < y; i++) {
 			if (h->last[i] != h->partial[i]) {
 				h->partial[i] = '\0';
 				break;
 			}
-		}	
+		}
 	} else if (h->hits == 1) {
 		switch_copy_string(h->partial, target, sizeof(h->last));
 	}
@@ -554,15 +562,14 @@ SWITCH_DECLARE(switch_status_t) switch_console_list_uuid(const char *line, const
 	switch_cache_db_handle_t *db = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg;
-	
+
 	switch_core_db_handle(&db);
 
 	if (!zstr(cursor)) {
-		sql = switch_mprintf("select distinct uuid from channels where uuid like '%q%%' and hostname='%q' order by uuid", 
+		sql = switch_mprintf("select distinct uuid from channels where uuid like '%q%%' and hostname='%q' order by uuid",
 							 cursor, switch_core_get_variable("hostname"));
 	} else {
-		sql = switch_mprintf("select distinct uuid from channels where hostname='%q' order by uuid", 
-							 switch_core_get_variable("hostname"));
+		sql = switch_mprintf("select distinct uuid from channels where hostname='%q' order by uuid", switch_core_get_variable("hostname"));
 	}
 
 	switch_cache_db_execute_sql_callback(db, sql, uuid_callback, &h, &errmsg);
@@ -580,7 +587,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_list_uuid(const char *line, const
 }
 
 
-SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const char *cursor, FILE *console_out, 
+SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const char *cursor, FILE * console_out,
 													  switch_stream_handle_t *stream, switch_xml_t xml)
 {
 	switch_cache_db_handle_t *db = NULL;
@@ -593,7 +600,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	unsigned char ret = CC_REDISPLAY;
 	int pos = 0;
 	int sc = 0;
-	
+
 #ifndef SWITCH_HAVE_LIBEDIT
 #ifndef _MSC_VER
 	if (!stream) {
@@ -603,11 +610,11 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 #endif
 
 	switch_core_db_handle(&db);
-	
+
 	if (!zstr(cursor) && !zstr(line)) {
 		pos = (cursor - line);
 	}
-	
+
 	h.out = console_out;
 	h.stream = stream;
 	h.xml = xml;
@@ -631,11 +638,11 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 			el_deletestr(el, sc);
 		}
 #endif
-	} 
+	}
 
 	sc = 0;
 	p = end_of_p(buf);
-	while(p >= buf && *p == ' ') {
+	while (p >= buf && *p == ' ') {
 		sc++;
 		p--;
 	}
@@ -653,17 +660,19 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 		if (*p == ' ') {
 			lp = p;
 			h.words++;
-			while(*p == ' ') p++;
-			if (!*p) break;
+			while (*p == ' ')
+				p++;
+			if (!*p)
+				break;
 		}
 	}
-	
+
 	if (lp) {
 		buf = lp + 1;
 	}
 
 	h.len = strlen(buf);
-	
+
 	if (h.out) {
 		fprintf(h.out, "\n\n");
 	}
@@ -675,10 +684,10 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 
 
 	if (h.words == 0) {
-		sql = switch_mprintf("select distinct name from interfaces where type='api' and name like '%q%%' and hostname='%q' order by name", 
+		sql = switch_mprintf("select distinct name from interfaces where type='api' and name like '%q%%' and hostname='%q' order by name",
 							 buf, switch_core_get_variable("hostname"));
 	}
-	
+
 	if (sql) {
 		switch_cache_db_execute_sql_callback(db, sql, comp_callback, &h, &errmsg);
 
@@ -703,7 +712,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 		argc = switch_separate_string(dupdup, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 		if (h.words == 0) {
-			stream.write_function(&stream, "select distinct a1 from complete where " "a1 not in (select name from interfaces where hostname='%s') %s ", 
+			stream.write_function(&stream, "select distinct a1 from complete where " "a1 not in (select name from interfaces where hostname='%s') %s ",
 								  switch_core_get_variable("hostname"), argc ? "and" : "");
 		} else {
 			if (db->type == SCDB_TYPE_CORE_DB) {
@@ -716,10 +725,10 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 		for (x = 0; x < argc && x < 11; x++) {
 			if (h.words + 1 > argc) {
 				if (db->type == SCDB_TYPE_CORE_DB) {
-					stream.write_function(&stream, "(a%d like '::%%' or a%d = '' or a%d = '%q')%q", 
+					stream.write_function(&stream, "(a%d like '::%%' or a%d = '' or a%d = '%q')%q",
 										  x + 1, x + 1, x + 1, switch_str_nil(argv[x]), x == argc - 1 ? "" : " and ");
 				} else {
-					stream.write_function(&stream, "(a%d like '::%%' or a%d = '' or a%d = '%w')%w", 
+					stream.write_function(&stream, "(a%d like '::%%' or a%d = '' or a%d = '%w')%w",
 										  x + 1, x + 1, x + 1, switch_str_nil(argv[x]), x == argc - 1 ? "" : " and ");
 				}
 			} else {
@@ -735,7 +744,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 
 		stream.write_function(&stream, " and hostname='%s'", switch_core_get_variable("hostname"));
 		switch_cache_db_execute_sql_callback(db, stream.data, comp_callback, &h, &errmsg);
-		
+
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", (char *) stream.data, errmsg);
 			free(errmsg);
@@ -761,22 +770,21 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 		} else if (h.hits > 1 && !zstr(h.partial)) {
 			h.stream->write_function(h.stream, "write=%d:%s", h.len, h.partial);
 		}
-	} 
-	
+	}
+
 	if (h.xml) {
 		switch_xml_t x_write = switch_xml_add_child_d(h.xml, "write", h.xml_off++);
 		char buf[32];
-		
+
 		snprintf(buf, sizeof(buf), "%d", h.len);
 		switch_xml_set_attr_d_buf(x_write, "length", buf);
-		
+
 		if (h.hits == 1 && !zstr(h.last)) {
 			switch_xml_set_txt_d(x_write, h.last);
 		} else if (h.hits > 1 && !zstr(h.partial)) {
 			switch_xml_set_txt_d(x_write, h.partial);
 		}
 	}
-
 #ifdef SWITCH_HAVE_LIBEDIT
 	if (h.out) {
 		if (h.hits == 1 && !zstr(h.last)) {
@@ -792,14 +800,14 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 #ifdef _MSC_VER
 	if (h.out) {
 		if (h.hits == 1 && !zstr(h.last)) {
-			console_bufferInput(0, h.len, (char*)line, DELETE_REFRESH_OP);
-			console_bufferInput(h.last, (int)strlen(h.last), (char*)line, 0);
-			console_bufferInput(" ", 1, (char*)line, 0);
+			console_bufferInput(0, h.len, (char *) line, DELETE_REFRESH_OP);
+			console_bufferInput(h.last, (int) strlen(h.last), (char *) line, 0);
+			console_bufferInput(" ", 1, (char *) line, 0);
 		} else if (h.hits > 1 && !zstr(h.partial)) {
-			console_bufferInput(0, h.len, (char*)line, DELETE_REFRESH_OP);
-			console_bufferInput(h.partial, (int)strlen(h.partial), (char*)line, 0);
+			console_bufferInput(0, h.len, (char *) line, DELETE_REFRESH_OP);
+			console_bufferInput(h.partial, (int) strlen(h.partial), (char *) line, 0);
 		} else {
-			console_bufferInput(0, 0, (char*)line, DELETE_REFRESH_OP);
+			console_bufferInput(0, 0, (char *) line, DELETE_REFRESH_OP);
 		}
 	}
 #endif
@@ -931,7 +939,7 @@ static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *ob
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "We've become an orphan, no more console for us.\n");
 			break;
 		}
-		
+
 		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
 		if (!arg) {
 			break;
@@ -1071,11 +1079,11 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 #else
 
 #ifdef _MSC_VER
-char history[HISTLEN][CMD_BUFLEN+1];
+char history[HISTLEN][CMD_BUFLEN + 1];
 int iHistory = 0;
 int iHistorySel = 0;
 
-static int console_history (char *cmd, int direction)
+static int console_history(char *cmd, int direction)
 {
 	int i;
 	static int first;
@@ -1083,26 +1091,22 @@ static int console_history (char *cmd, int direction)
 	if (direction == 0) {
 		first = 1;
 		if (iHistory < HISTLEN) {
-			if (iHistory && strcmp(history[iHistory-1], cmd)) {
+			if (iHistory && strcmp(history[iHistory - 1], cmd)) {
+				iHistorySel = iHistory;
+				strcpy(history[iHistory++], cmd);
+			} else if (iHistory == 0) {
 				iHistorySel = iHistory;
 				strcpy(history[iHistory++], cmd);
 			}
-			else if (iHistory == 0) {
-				iHistorySel = iHistory;
-				strcpy(history[iHistory++], cmd);
-			}
-		}
-		else {
-			iHistory = HISTLEN-1;
-			for (i = 0; i < HISTLEN-1; i++)
-			{
-				strcpy(history[i], history[i+1]);
+		} else {
+			iHistory = HISTLEN - 1;
+			for (i = 0; i < HISTLEN - 1; i++) {
+				strcpy(history[i], history[i + 1]);
 			}
 			iHistorySel = iHistory;
 			strcpy(history[iHistory++], cmd);
 		}
-	}
-	else {
+	} else {
 		if (!first) {
 			iHistorySel += direction;
 		}
@@ -1111,22 +1115,22 @@ static int console_history (char *cmd, int direction)
 			iHistorySel = 0;
 		}
 		if (iHistory && iHistorySel >= iHistory) {
-			iHistorySel = iHistory-1;
+			iHistorySel = iHistory - 1;
 		}
 		strcpy(cmd, history[iHistorySel]);
 	}
 	return (SWITCH_STATUS_SUCCESS);
 }
 
-static int console_bufferInput (char* addchars, int len, char *cmd, int key)
+static int console_bufferInput(char *addchars, int len, char *cmd, int key)
 {
-    static int iCmdBuffer = 0;
+	static int iCmdBuffer = 0;
 	static int iCmdCursor = 0;
-    static int ignoreNext = 0;
+	static int ignoreNext = 0;
 	static int insertMode = 1;
 	static COORD orgPosition;
-	static char prompt [80];
-    int iBuf;
+	static char prompt[80];
+	int iBuf;
 	int i;
 
 	HANDLE hOut;
@@ -1147,12 +1151,12 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 	}
 
 	if (key == KEY_TAB) {
-		switch_console_complete(cmd, cmd+iCmdBuffer, switch_core_get_console(), NULL, NULL);
+		switch_console_complete(cmd, cmd + iCmdBuffer, switch_core_get_console(), NULL, NULL);
 		return 0;
 	}
 	if (key == KEY_UP || key == KEY_DOWN || key == CLEAR_OP) {
 		SetConsoleCursorPosition(hOut, orgPosition);
-		for (i = 0; i < (int)strlen(cmd); i++) {
+		for (i = 0; i < (int) strlen(cmd); i++) {
 			printf(" ");
 		}
 		SetConsoleCursorPosition(hOut, orgPosition);
@@ -1161,11 +1165,11 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 		memset(cmd, 0, CMD_BUFLEN);
 	}
 	if (key == DELETE_REFRESH_OP) {
-		int l = len < (int)strlen(cmd) ? len : (int)strlen(cmd);
+		int l = len < (int) strlen(cmd) ? len : (int) strlen(cmd);
 		for (i = 0; i < l; i++) {
 			cmd[--iCmdBuffer] = 0;
 		}
-		iCmdCursor = (int)strlen(cmd);
+		iCmdCursor = (int) strlen(cmd);
 		printf("%s", prompt);
 		GetConsoleScreenBufferInfo(hOut, &info);
 		orgPosition = info.dwCursorPosition;
@@ -1177,9 +1181,8 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 		if (iCmdCursor) {
 			if (position.X == 0) {
 				position.Y -= 1;
-				position.X = info.dwSize.X-1;
-			}
-			else {
+				position.X = info.dwSize.X - 1;
+			} else {
 				position.X -= 1;
 			}
 
@@ -1188,12 +1191,11 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 		}
 	}
 	if (key == KEY_RIGHT) {
-		if (iCmdCursor < (int)strlen(cmd)) {
-			if (position.X == info.dwSize.X-1) {
+		if (iCmdCursor < (int) strlen(cmd)) {
+			if (position.X == info.dwSize.X - 1) {
 				position.Y += 1;
 				position.X = 0;
-			}
-			else {
+			} else {
 				position.X += 1;
 			}
 
@@ -1204,149 +1206,143 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 	if (key == KEY_INSERT) {
 		insertMode = !insertMode;
 	}
-    for (iBuf = 0; iBuf < len; iBuf++) {
+	for (iBuf = 0; iBuf < len; iBuf++) {
 		switch (addchars[iBuf]) {
-			case '\r':
-			case '\n':
-				if (ignoreNext) {
-					ignoreNext = 0;
+		case '\r':
+		case '\n':
+			if (ignoreNext) {
+				ignoreNext = 0;
+			} else {
+				int ret = iCmdBuffer;
+				if (iCmdBuffer == 0) {
+					strcpy(cmd, "Empty");
+					ret = (int) strlen(cmd);
+				} else {
+					console_history(cmd, 0);
+					cmd[iCmdBuffer] = 0;
 				}
-				else {
-					int ret = iCmdBuffer;
-					if (iCmdBuffer == 0) {
-						strcpy(cmd, "Empty");
-						ret = (int)strlen(cmd);
-					}
-					else {
-						console_history(cmd, 0);
-						cmd[iCmdBuffer] = 0;
-					}
-					iCmdBuffer = 0;
-					iCmdCursor = 0;
-					printf("\n");
-					return (ret);
+				iCmdBuffer = 0;
+				iCmdCursor = 0;
+				printf("\n");
+				return (ret);
+			}
+			break;
+		case '\b':
+			if (iCmdCursor) {
+				if (position.X == 0) {
+					position.Y -= 1;
+					position.X = info.dwSize.X - 1;
+					SetConsoleCursorPosition(hOut, position);
+				} else {
+					position.X -= 1;
+					SetConsoleCursorPosition(hOut, position);
 				}
-				break;
-			case '\b':
-				if (iCmdCursor) {
-					if (position.X == 0) {
-						position.Y -= 1;
-						position.X = info.dwSize.X-1;
-						SetConsoleCursorPosition(hOut, position);
+				printf(" ");
+				if (iCmdCursor < iCmdBuffer) {
+					int pos;
+					iCmdCursor--;
+					for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+						cmd[pos] = cmd[pos + 1];
 					}
-					else {
-						position.X -= 1;
-						SetConsoleCursorPosition(hOut, position);
+					cmd[pos] = 0;
+					iCmdBuffer--;
+
+					SetConsoleCursorPosition(hOut, position);
+					for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+						printf("%c", cmd[pos]);
 					}
 					printf(" ");
-					if (iCmdCursor < iCmdBuffer) {
-							int pos;
-							iCmdCursor--;
-							for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
-								cmd[pos] = cmd[pos+1];
-							}
-							cmd[pos] = 0;
-							iCmdBuffer--;
-
-							SetConsoleCursorPosition(hOut, position);
-							for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
-								printf("%c", cmd[pos]);
-							}
-							printf(" ");
-							SetConsoleCursorPosition(hOut, position);
-					}
-					else {
-						SetConsoleCursorPosition(hOut, position);
-						iCmdBuffer--;
-						iCmdCursor--;
-						cmd[iCmdBuffer] = 0;
-					}
+					SetConsoleCursorPosition(hOut, position);
+				} else {
+					SetConsoleCursorPosition(hOut, position);
+					iCmdBuffer--;
+					iCmdCursor--;
+					cmd[iCmdBuffer] = 0;
 				}
-				break;
-			default:
-				if (!ignoreNext) {
-					if (iCmdCursor < iCmdBuffer) {
-						int pos;
+			}
+			break;
+		default:
+			if (!ignoreNext) {
+				if (iCmdCursor < iCmdBuffer) {
+					int pos;
 
-						if (position.X == info.dwSize.X-1) {
-							position.Y += 1;
-							position.X = 0;
-						}
-						else {
-							position.X += 1;
-						}
-
-						if (insertMode) {
-							for (pos = iCmdBuffer-1; pos >= iCmdCursor; pos--) {
-								cmd[pos+1] = cmd[pos];
-							}
-						}
-						iCmdBuffer++;
-						cmd[iCmdCursor++] = addchars[iBuf];
-						printf("%c", addchars[iBuf]);
-						for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
-							GetConsoleScreenBufferInfo(hOut, &info);
-							if (info.dwCursorPosition.X == info.dwSize.X-1 && info.dwCursorPosition.Y == info.dwSize.Y-1) {
-								orgPosition.Y -= 1;
-								position.Y -= 1;
-							}
-							printf("%c", cmd[pos]);
-						}
-						SetConsoleCursorPosition(hOut, position);
+					if (position.X == info.dwSize.X - 1) {
+						position.Y += 1;
+						position.X = 0;
+					} else {
+						position.X += 1;
 					}
-					else {
-						if (position.X == info.dwSize.X-1 && position.Y == info.dwSize.Y-1) {
+
+					if (insertMode) {
+						for (pos = iCmdBuffer - 1; pos >= iCmdCursor; pos--) {
+							cmd[pos + 1] = cmd[pos];
+						}
+					}
+					iCmdBuffer++;
+					cmd[iCmdCursor++] = addchars[iBuf];
+					printf("%c", addchars[iBuf]);
+					for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+						GetConsoleScreenBufferInfo(hOut, &info);
+						if (info.dwCursorPosition.X == info.dwSize.X - 1 && info.dwCursorPosition.Y == info.dwSize.Y - 1) {
 							orgPosition.Y -= 1;
+							position.Y -= 1;
 						}
-						cmd[iCmdBuffer++] = addchars[iBuf];
-						iCmdCursor++;
-						printf("%c", addchars[iBuf]);
+						printf("%c", cmd[pos]);
 					}
+					SetConsoleCursorPosition(hOut, position);
+				} else {
+					if (position.X == info.dwSize.X - 1 && position.Y == info.dwSize.Y - 1) {
+						orgPosition.Y -= 1;
+					}
+					cmd[iCmdBuffer++] = addchars[iBuf];
+					iCmdCursor++;
+					printf("%c", addchars[iBuf]);
 				}
+			}
 		}
 		if (iCmdBuffer == CMD_BUFLEN) {
 			printf("Read Console... BUFFER OVERRUN\n");
 			iCmdBuffer = 0;
 			ignoreNext = 1;
 		}
-    }
-    return (SWITCH_STATUS_SUCCESS);
+	}
+	return (SWITCH_STATUS_SUCCESS);
 }
 
 
-static BOOL console_readConsole(HANDLE conIn, char* buf, int len, int* pRed, int *key)
+static BOOL console_readConsole(HANDLE conIn, char *buf, int len, int *pRed, int *key)
 {
-    DWORD recordIndex, bufferIndex, toRead, red;
-    PINPUT_RECORD pInput;
+	DWORD recordIndex, bufferIndex, toRead, red;
+	PINPUT_RECORD pInput;
 
-    GetNumberOfConsoleInputEvents(conIn, &toRead);
-	if (len < (int)toRead) {
+	GetNumberOfConsoleInputEvents(conIn, &toRead);
+	if (len < (int) toRead) {
 		toRead = len;
 	}
 	if (toRead == 0) {
-		return(FALSE);
+		return (FALSE);
 	}
 
 	if ((pInput = (PINPUT_RECORD) malloc(toRead * sizeof(INPUT_RECORD))) == NULL) {
 		return (FALSE);
 	}
 	*key = 0;
-    ReadConsoleInput(conIn, pInput, toRead, &red);
+	ReadConsoleInput(conIn, pInput, toRead, &red);
 
-    for (recordIndex = bufferIndex = 0; recordIndex < red; recordIndex++) {
-        KEY_EVENT_RECORD keyEvent = pInput[recordIndex].Event.KeyEvent;
-    	if (pInput[recordIndex].EventType == KEY_EVENT && keyEvent.bKeyDown) {
+	for (recordIndex = bufferIndex = 0; recordIndex < red; recordIndex++) {
+		KEY_EVENT_RECORD keyEvent = pInput[recordIndex].Event.KeyEvent;
+		if (pInput[recordIndex].EventType == KEY_EVENT && keyEvent.bKeyDown) {
 			if (keyEvent.wVirtualKeyCode == 38 && keyEvent.wVirtualScanCode == 72) {
 				buf[0] = 0;
 				console_history(buf, -1);
 				*key = KEY_UP;
-				bufferIndex += (DWORD)strlen(buf);
+				bufferIndex += (DWORD) strlen(buf);
 			}
 			if (keyEvent.wVirtualKeyCode == 40 && keyEvent.wVirtualScanCode == 80) {
 				buf[0] = 0;
 				console_history(buf, 1);
 				*key = KEY_DOWN;
-				bufferIndex += (DWORD)strlen(buf);
+				bufferIndex += (DWORD) strlen(buf);
 			}
 			if (keyEvent.wVirtualKeyCode == 112 && keyEvent.wVirtualScanCode == 59) {
 				console_fnkey_pressed(1);
@@ -1401,40 +1397,40 @@ static BOOL console_readConsole(HANDLE conIn, char* buf, int len, int* pRed, int
 			if (keyEvent.wVirtualKeyCode == 45 && keyEvent.wVirtualScanCode == 82) {
 				*key = KEY_INSERT;
 			}
-    	    while (keyEvent.wRepeatCount && keyEvent.uChar.AsciiChar) {
-    			buf[bufferIndex] = keyEvent.uChar.AsciiChar;
+			while (keyEvent.wRepeatCount && keyEvent.uChar.AsciiChar) {
+				buf[bufferIndex] = keyEvent.uChar.AsciiChar;
 				if (buf[bufferIndex] == '\r') {
-    				buf[bufferIndex] = '\n';
+					buf[bufferIndex] = '\n';
 				}
-    			bufferIndex++;
-    			keyEvent.wRepeatCount--;
-    	    }
-    	}
-    }
+				bufferIndex++;
+				keyEvent.wRepeatCount--;
+			}
+		}
+	}
 
-    free(pInput);
-    *pRed = bufferIndex;
-    return (TRUE);
+	free(pInput);
+	*pRed = bufferIndex;
+	return (TRUE);
 }
 #endif
 
 
 SWITCH_DECLARE(void) switch_console_loop(void)
 {
-	char cmd[CMD_BUFLEN+1] = "";
-	int32_t activity = 1;	
+	char cmd[CMD_BUFLEN + 1] = "";
+	int32_t activity = 1;
 #ifndef _MSC_VER
 	int x = 0;
 #else
 	char keys[80];
-#endif	
+#endif
 
 	/* Load/Init the config first */
 	console_xml_config();
 	gethostname(hostname, sizeof(hostname));
 #ifdef _MSC_VER
 	sprintf(cmd, "\nfreeswitch@%s> ", hostname);
-	console_bufferInput (0, 0, cmd, PROMPT_OP);
+	console_bufferInput(0, 0, cmd, PROMPT_OP);
 	memset(cmd, 0, sizeof(cmd));
 #endif
 
@@ -1458,7 +1454,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		}
 #ifdef _MSC_VER
 		activity = 0;
-		if (console_readConsole(stdinHandle, keys, (int)sizeof(keys), &read, &key)) {
+		if (console_readConsole(stdinHandle, keys, (int) sizeof(keys), &read, &key)) {
 			if (console_bufferInput(keys, read, cmd, key)) {
 				if (!strcmp(cmd, "Empty")) {
 					cmd[0] = '\n';
@@ -1482,7 +1478,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		if (FD_ISSET(fileno(stdin), &efds)) {
 			continue;
 		}
-		
+
 		if (!FD_ISSET(fileno(stdin), &rfds)) {
 			activity = 0;
 		}
@@ -1530,7 +1526,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_init(switch_memory_pool_t *pool)
 {
 	switch_mutex_init(&globals.func_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_core_hash_init(&globals.func_hash, pool);
-	switch_console_add_complete_func("::console::list_uuid", (switch_console_complete_callback_t)switch_console_list_uuid);
+	switch_console_add_complete_func("::console::list_uuid", (switch_console_complete_callback_t) switch_console_list_uuid);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1542,9 +1538,9 @@ SWITCH_DECLARE(switch_status_t) switch_console_shutdown(void)
 SWITCH_DECLARE(switch_status_t) switch_console_add_complete_func(const char *name, switch_console_complete_callback_t cb)
 {
 	switch_status_t status;
-	
+
 	switch_mutex_lock(globals.func_mutex);
-	status = switch_core_hash_insert(globals.func_hash, name, (void *)(intptr_t)cb);
+	status = switch_core_hash_insert(globals.func_hash, name, (void *) (intptr_t) cb);
 	switch_mutex_unlock(globals.func_mutex);
 
 	return status;
@@ -1553,12 +1549,12 @@ SWITCH_DECLARE(switch_status_t) switch_console_add_complete_func(const char *nam
 SWITCH_DECLARE(switch_status_t) switch_console_del_complete_func(const char *name)
 {
 	switch_status_t status;
-	
+
 	switch_mutex_lock(globals.func_mutex);
 	status = switch_core_hash_insert(globals.func_hash, name, NULL);
 	switch_mutex_unlock(globals.func_mutex);
 
-    return status;
+	return status;
 }
 
 SWITCH_DECLARE(void) switch_console_free_matches(switch_console_callback_match_t **matches)
@@ -1570,7 +1566,7 @@ SWITCH_DECLARE(void) switch_console_free_matches(switch_console_callback_match_t
 	*matches = NULL;
 
 	m = my_match->head;
-	while(m) {
+	while (m) {
 		cur = m;
 		m = m->next;
 		free(cur->val);
@@ -1592,41 +1588,46 @@ SWITCH_DECLARE(void) switch_console_sort_matches(switch_console_callback_match_t
 	if (matches->count < 2) {
 		return;
 	}
-	
-	for(i = 1; i < matches->count; i++) {
+
+	for (i = 1; i < matches->count; i++) {
 		sort[0] = NULL;
 		sort[1] = matches->head;
 		sort[2] = sort[1] ? sort[1]->next : NULL;
-		sort[3] = sort[2] ? sort[2]->next : NULL;		
+		sort[3] = sort[2] ? sort[2]->next : NULL;
 
-		for(j = 1; j <= (matches->count - i); j++) {
+		for (j = 1; j <= (matches->count - i); j++) {
 			if (strcmp(sort[1]->val, sort[2]->val) > 0) {
 				sort[1]->next = sort[3];
 				sort[2]->next = sort[1];
 
-				if (sort[0]) sort[0]->next = sort[2];
-				if (sort[1] == matches->head) matches->head = sort[2];
-				
-				
+				if (sort[0])
+					sort[0]->next = sort[2];
+				if (sort[1] == matches->head)
+					matches->head = sort[2];
+
+
 
 
 				sort[0] = sort[2];
 				sort[2] = sort[1]->next;
-				if (sort[3] && sort[3]->next) sort[3] = sort[3]->next;
-				
+				if (sort[3] && sort[3]->next)
+					sort[3] = sort[3]->next;
+
 			} else {
 				sort[0] = sort[1];
 				sort[1] = sort[2];
 				sort[2] = sort[3];
-				if (sort[3] && sort[3]->next) sort[3] = sort[3]->next;
+				if (sort[3] && sort[3]->next)
+					sort[3] = sort[3]->next;
 			}
-			
+
 		}
 	}
-	
+
 	p = matches->head;
 
-	for(i = 1; i < matches->count; i++) p = p->next;
+	for (i = 1; i < matches->count; i++)
+		p = p->next;
 
 	if (p) {
 		p->next = NULL;
@@ -1664,7 +1665,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_run_complete_func(const char *fun
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	switch_mutex_lock(globals.func_mutex);
-	if ((cb = (switch_console_complete_callback_t)(intptr_t)switch_core_hash_find(globals.func_hash, func))) {
+	if ((cb = (switch_console_complete_callback_t) (intptr_t) switch_core_hash_find(globals.func_hash, func))) {
 		if ((status = cb(line, last_word, matches)) == SWITCH_STATUS_SUCCESS) {
 			switch_console_sort_matches(*matches);
 		}
@@ -1719,7 +1720,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 					}
 				}
 				mystream.write_function(&mystream, " '%s')", switch_core_get_variable("hostname"));
-				
+
 				switch_cache_db_persistant_execute(db, mystream.data, 5);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "del")) {
@@ -1771,10 +1772,10 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 				switch_cache_db_persistant_execute(db, sql, 5);
 				switch_safe_free(sql);
 				if (db->type == SCDB_TYPE_CORE_DB) {
-					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (1, '%q','%q','%q')", 
+					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (1, '%q','%q','%q')",
 										 argv[1], argv[2], switch_core_get_variable("hostname"));
 				} else {
-					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (1, '%w','%w','%w')", 
+					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (1, '%w','%w','%w')",
 										 argv[1], argv[2], switch_core_get_variable("hostname"));
 				}
 				switch_cache_db_persistant_execute(db, sql, 5);
@@ -1784,10 +1785,10 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 				switch_cache_db_persistant_execute(db, sql, 5);
 				switch_safe_free(sql);
 				if (db->type == SCDB_TYPE_CORE_DB) {
-					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (0, '%q','%q','%q')", 
+					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (0, '%q','%q','%q')",
 										 argv[1], argv[2], switch_core_get_variable("hostname"));
 				} else {
-					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (0, '%w','%w','%w')", 
+					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (0, '%w','%w','%w')",
 										 argv[1], argv[2], switch_core_get_variable("hostname"));
 				}
 				switch_cache_db_persistant_execute(db, sql, 5);

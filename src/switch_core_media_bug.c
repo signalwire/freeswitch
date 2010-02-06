@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -139,7 +139,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	size_t rlen = 0;
 	size_t wlen = 0;
 	uint32_t blen;
-	switch_codec_implementation_t read_impl = {0};
+	switch_codec_implementation_t read_impl = { 0 };
 	int16_t *tp;
 
 	switch_core_session_get_read_impl(bug->session, &read_impl);
@@ -147,12 +147,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	bytes = read_impl.decoded_bytes_per_packet;
 
 	if (frame->buflen < bytes) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "%s frame buffer too small!\n", switch_channel_get_name(bug->session->channel));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "%s frame buffer too small!\n",
+						  switch_channel_get_name(bug->session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	if (!(bug->raw_read_buffer && (bug->raw_write_buffer || !switch_test_flag(bug, SMBF_WRITE_STREAM)))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "%s Buffer Error\n", switch_channel_get_name(bug->session->channel));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "%s Buffer Error\n",
+						  switch_channel_get_name(bug->session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -167,14 +169,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	frame->datalen = (uint32_t) switch_buffer_read(bug->raw_read_buffer, frame->data, bytes);
 	ttl += frame->datalen;
 	switch_mutex_unlock(bug->read_mutex);
-	
+
 	if (switch_test_flag(bug, SMBF_WRITE_STREAM)) {
 		switch_assert(bug->raw_write_buffer);
 		switch_mutex_lock(bug->write_mutex);
 		datalen = (uint32_t) switch_buffer_read(bug->raw_write_buffer, bug->data, bytes);
 		ttl += datalen;
 		if (fill && datalen < bytes) {
-			memset(((unsigned char *)bug->data) + datalen, 0, bytes - datalen);
+			memset(((unsigned char *) bug->data) + datalen, 0, bytes - datalen);
 			datalen = bytes;
 		}
 		switch_mutex_unlock(bug->write_mutex);
@@ -194,7 +196,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		frame->codec = NULL;
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	if (switch_test_flag(bug, SMBF_STEREO)) {
 		for (x = 0; x < blen; x++) {
 			if (x < rlen) {
@@ -214,10 +216,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 			int32_t z = 0;
 
 			if (x < rlen) {
-				z += (int32_t) *(fp + x);
+				z += (int32_t) * (fp + x);
 			}
 			if (x < wlen) {
-				z += (int32_t) *(dp + x);
+				z += (int32_t) * (dp + x);
 			}
 			switch_normalize_to_16bit(z);
 			*(fp + x) = (int16_t) z / 2;
@@ -232,7 +234,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	frame->samples = bytes / sizeof(int16_t);
 	frame->rate = read_impl.actual_samples_per_second;
 	frame->codec = NULL;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -243,8 +245,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 {
 	switch_media_bug_t *bug;	//, *bp;
 	switch_size_t bytes;
-	switch_codec_implementation_t read_impl = {0};
-	switch_codec_implementation_t write_impl = {0};
+	switch_codec_implementation_t read_impl = { 0 };
+	switch_codec_implementation_t write_impl = { 0 };
 	const char *p;
 
 	if (!switch_channel_media_ready(session->channel)) {
@@ -262,7 +264,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	if ((p = switch_channel_get_variable(session->channel, "media_bug_answer_req")) && switch_true(p)) {
 		flags |= SMBF_ANSWER_REQ;
 	}
-
 #if 0
 	if (flags & SMBF_WRITE_REPLACE) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
@@ -325,7 +326,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		switch_bool_t result = bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_INIT);
 		if (result == SWITCH_FALSE) {
 			switch_core_media_bug_destroy(bug);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error attaching BUG to %s\n", switch_channel_get_name(session->channel));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error attaching BUG to %s\n",
+							  switch_channel_get_name(session->channel));
 			return SWITCH_STATUS_GENERR;
 		}
 	}
@@ -405,7 +407,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t *
 			bp->ready = 0;
 		}
 		switch_core_media_bug_destroy(bp);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(*bug)), SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(bp->session->channel));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(*bug)), SWITCH_LOG_DEBUG, "Removing BUG from %s\n",
+						  switch_channel_get_name(bp->session->channel));
 		*bug = NULL;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -437,7 +440,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 			status = switch_core_media_bug_close(&bp);
 		}
 	}
-	
+
 	if (!session->bugs && switch_core_codec_ready(&session->bug_codec)) {
 		switch_core_codec_destroy(&session->bug_codec);
 		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
@@ -454,7 +457,7 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_prune(switch_core_session_t *sess
 	int ttl = 0;
 
 
- top:
+  top:
 
 	if (session->bugs) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
@@ -477,7 +480,7 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_prune(switch_core_session_t *sess
 			goto top;
 		}
 	}
-	
+
 	if (!session->bugs && switch_core_codec_ready(&session->bug_codec)) {
 		switch_core_codec_destroy(&session->bug_codec);
 		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
@@ -494,7 +497,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_cor
 
 	if (session->bugs) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
-		
+
 		bp = session->bugs;
 		while (bp) {
 			cur = bp;
@@ -515,7 +518,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_cor
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
 	}
-	
+
 	if (!session->bugs && switch_core_codec_ready(&session->bug_codec)) {
 		switch_core_codec_destroy(&session->bug_codec);
 		memset(&session->bug_codec, 0, sizeof(session->bug_codec));

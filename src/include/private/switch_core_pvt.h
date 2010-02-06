@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -115,7 +115,7 @@ struct switch_core_session {
 	switch_codec_implementation_t write_impl;
 	switch_codec_implementation_t video_read_impl;
 	switch_codec_implementation_t video_write_impl;
-	
+
 	switch_audio_resampler_t *read_resampler;
 	switch_audio_resampler_t *write_resampler;
 
@@ -130,7 +130,7 @@ struct switch_core_session {
 	void *streams[SWITCH_MAX_STREAMS];
 	int stream_count;
 
-	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	void *private_info;
 	switch_queue_t *event_queue;
 	switch_queue_t *message_queue;

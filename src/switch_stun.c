@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -343,7 +343,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_s
 	char *p = ipstr;
 
 	ip = (switch_stun_ip_t *) attribute->value;
-	i = (uint8_t *) &ip->address;
+	i = (uint8_t *) & ip->address;
 	*ipstr = 0;
 	for (x = 0; x < 4; x++) {
 		sprintf(p, "%u%s", i[x], x == 3 ? "" : ".");
@@ -386,14 +386,14 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_s
 	uint8_t *i, x;
 	char *p = ipstr;
 
-	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) &packet->first_attribute + ntohs(packet->header.length));
+	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
 	attribute->type = htons(SWITCH_STUN_ATTR_MAPPED_ADDRESS);
 	attribute->length = htons(8);
 	ip = (switch_stun_ip_t *) attribute->value;
 
 	ip->port = htons(port);
 	ip->family = 1;
-	i = (uint8_t *) &ip->address;
+	i = (uint8_t *) & ip->address;
 
 	for (x = 0; x < 4; x++) {
 		i[x] = (uint8_t) atoi(p);
@@ -415,7 +415,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_pa
 	if (ulen % 4 != 0) {
 		return 0;
 	}
-	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) &packet->first_attribute + ntohs(packet->header.length));
+	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
 	attribute->type = htons(SWITCH_STUN_ATTR_USERNAME);
 	attribute->length = htons(ulen);
 	if (username) {
@@ -432,10 +432,10 @@ SWITCH_DECLARE(char *) switch_stun_host_lookup(const char *host, switch_memory_p
 {
 	switch_sockaddr_t *addr = NULL;
 	char buf[30];
-	
+
 	switch_sockaddr_info_get(&addr, host, SWITCH_UNSPEC, 0, 0, pool);
 	return switch_core_strdup(pool, switch_str_nil(switch_get_addr(buf, sizeof(buf), addr)));
-	
+
 }
 
 SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
@@ -508,7 +508,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 		buf[bytes++] = 0;
 		buf[bytes++] = 0;
 	}
-	
+
 	switch_socket_sendto(sock, remote_addr, 0, (void *) packet, &bytes);
 	started = switch_micro_time_now();
 
@@ -549,7 +549,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:
 			if (attr->type) {
 				if (funny) {
-					switch_stun_ip_t *tmp = (switch_stun_ip_t *)attr->value;
+					switch_stun_ip_t *tmp = (switch_stun_ip_t *) attr->value;
 					tmp->address ^= ntohl(0xabcdabcd);
 				}
 				switch_stun_packet_attribute_get_mapped_address(attr, rip, &rport);

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -57,14 +57,14 @@ SWITCH_DECLARE(int) switch_core_db_close(switch_core_db_t *db)
 
 SWITCH_DECLARE(const unsigned char *) switch_core_db_column_text(switch_core_db_stmt_t *stmt, int iCol)
 {
-    const unsigned char *txt = sqlite3_column_text(stmt, iCol);
+	const unsigned char *txt = sqlite3_column_text(stmt, iCol);
 
-    if (!strcasecmp((char *)stmt, "(null)")) {
+	if (!strcasecmp((char *) stmt, "(null)")) {
 		memset(stmt, 0, 1);
 		txt = NULL;
-    }
+	}
 
-    return txt;
+	return txt;
 
 }
 
@@ -91,7 +91,6 @@ SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db, const char *sql, s
 
 	while (--sane > 0) {
 		ret = sqlite3_exec(db, sql, callback, data, &err);
-
 		if (ret == SQLITE_BUSY || ret == SQLITE_LOCKED) {
 			if (sane > 1) {
 				switch_safe_free(err);
@@ -239,7 +238,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute_trans(switch_c
 		retries = 1000;
 	}
 
-again:
+  again:
 
 	while (begin_retries > 0) {
 		again = 0;
@@ -290,7 +289,7 @@ again:
 		}
 	}
 
-done:
+  done:
 
 	switch_core_db_exec(db, "COMMIT", NULL, NULL, NULL);
 

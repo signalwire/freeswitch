@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -87,10 +87,11 @@ static int next_id(valet_lot_t *lot, int min, int max, int in)
 	int i, r = 0, m;
 	char buf[128] = "";
 
-	if (!min) min = 1;
+	if (!min)
+		min = 1;
 
 	switch_mutex_lock(globals.mutex);
-	for(i = min ; (i < max || max == 0) ; i++) {
+	for (i = min; (i < max || max == 0); i++) {
 		switch_snprintf(buf, sizeof(buf), "%d", i);
 		m = !!switch_core_hash_find(lot->hash, buf);
 
@@ -131,7 +132,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		lot = valet_find_lot(lot_name);
 		switch_assert(lot);
 
-		if (!strcasecmp(ext, "auto")) {		
+		if (!strcasecmp(ext, "auto")) {
 			const char *io = argv[2];
 			const char *min = argv[3];
 			const char *max = argv[4];
@@ -165,7 +166,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 				switch_mutex_unlock(lot->mutex);
 				return;
 			}
-			
+
 			switch_snprintf(dtmf_buf, sizeof(dtmf_buf), "%d", id);
 			ext = dtmf_buf;
 		} else if (!strcasecmp(ext, "ask")) {
@@ -174,28 +175,28 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			int max = 11;
 			int to = 10000;
 			int i;
-			
+
 			tmp = argv[2] ? argv[2] : switch_channel_get_variable(channel, "valet_ext_min");
 			if (tmp) {
 				if ((i = atoi(tmp)) > 0) {
 					min = i;
 				}
 			}
-			
+
 			tmp = argv[3] ? argv[3] : switch_channel_get_variable(channel, "valet_ext_max");
 			if (tmp) {
 				if ((i = atoi(tmp)) > 0) {
 					max = i;
 				}
 			}
-			
+
 			tmp = argv[4] ? argv[4] : switch_channel_get_variable(channel, "valet_ext_to");
 			if (tmp) {
 				if ((i = atoi(tmp)) > 0) {
 					to = i;
 				}
 			}
-			
+
 			tmp = argv[5] ? argv[5] : switch_channel_get_variable(channel, "valet_ext_prompt");
 			if (tmp) {
 				prompt = tmp;
@@ -211,7 +212,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
 		}
-		
+
 		switch_mutex_lock(lot->mutex);
 		if ((uuid = switch_core_hash_find(lot->hash, ext))) {
 			switch_core_session_t *b_session;
@@ -224,7 +225,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 					switch_channel_event_set_data(switch_core_session_get_channel(b_session), event);
 					switch_event_fire(&event);
 					switch_core_session_rwunlock(b_session);
-					
+
 					switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), uuid);
 					switch_mutex_unlock(lot->mutex);
 					return;
@@ -241,7 +242,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 
 			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 				switch_core_session_t *b_session;
-				
+
 				if ((b_session = switch_core_session_locate(uuid))) {
 					switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
 					switch_ivr_session_transfer(b_session, dest, "inline", NULL);
@@ -254,8 +255,8 @@ SWITCH_STANDARD_APP(valet_parking_function)
 
 			switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
 		}
-		
-			
+
+
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VALET_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
@@ -263,14 +264,15 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			switch_event_fire(&event);
 		}
 
-		
+
 		if (!(tmp = switch_channel_get_variable(channel, "valet_hold_music"))) {
 			tmp = switch_channel_get_variable(channel, "hold_music");
 		}
-		if (tmp) music = tmp;
-		
+		if (tmp)
+			music = tmp;
+
 		switch_core_hash_insert(lot->hash, ext, switch_core_session_get_uuid(session));
-		
+
 		args.input_callback = valet_on_dtmf;
 		args.buf = dbuf;
 		args.buflen = sizeof(dbuf);
@@ -293,7 +295,7 @@ SWITCH_STANDARD_API(valet_info_function)
 {
 	switch_hash_index_t *hi;
 	const void *var;
-    void *val;
+	void *val;
 	char *name;
 	valet_lot_t *lot;
 
@@ -310,9 +312,10 @@ SWITCH_STANDARD_API(valet_info_function)
 		switch_hash_this(hi, &var, NULL, &val);
 		name = (char *) var;
 		lot = (valet_lot_t *) val;
-		
-		if (!zstr(cmd) && strcasecmp(cmd, name)) continue;
-		
+
+		if (!zstr(cmd) && strcasecmp(cmd, name))
+			continue;
+
 		stream->write_function(stream, "  <lot name=\"%s\">\n", name);
 
 		for (i_hi = switch_hash_first(NULL, lot->hash); i_hi; i_hi = switch_hash_next(i_hi)) {

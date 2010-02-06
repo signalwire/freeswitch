@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -114,9 +114,8 @@ SWITCH_DECLARE(void) switch_log_printf(_In_ switch_text_channel_t channel, _In_z
   \see switch_types.h
 */
 SWITCH_DECLARE(void) switch_log_vprintf(_In_ switch_text_channel_t channel, _In_z_ const char *file,
-									   _In_z_ const char *func, _In_ int line,
-									   _In_opt_z_ const char *userdata, _In_ switch_log_level_t level,
-										const char *fmt, va_list ap);
+										_In_z_ const char *func, _In_ int line,
+										_In_opt_z_ const char *userdata, _In_ switch_log_level_t level, const char *fmt, va_list ap);
 
 #endif
 /*! 
@@ -144,7 +143,7 @@ SWITCH_DECLARE(uint32_t) switch_log_str2mask(_In_z_ const char *str);
 #define switch_log_check_mask(_mask, _level) (_mask & (1 << _level))
 
 
-SWITCH_DECLARE(switch_log_node_t*) switch_log_node_dup(const switch_log_node_t *node);
+SWITCH_DECLARE(switch_log_node_t *) switch_log_node_dup(const switch_log_node_t *node);
 SWITCH_DECLARE(void) switch_log_node_free(switch_log_node_t **pnode);
 
 ///\}

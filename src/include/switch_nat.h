@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -38,9 +38,7 @@
 #ifndef _SWITCH_NAT_H
 #define _SWITCH_NAT_H
 
-SWITCH_BEGIN_EXTERN_C
-
-typedef enum {
+SWITCH_BEGIN_EXTERN_C typedef enum {
 	SWITCH_NAT_TYPE_NONE,
 	SWITCH_NAT_TYPE_PMP,
 	SWITCH_NAT_TYPE_UPNP
@@ -87,7 +85,8 @@ SWITCH_DECLARE(void) switch_nat_reinit(void);
  \param external_port [out] Mapped external port 
  \param sticky make the mapping permanent
 */
-SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t *external_port, switch_bool_t sticky);
+SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t *external_port,
+													   switch_bool_t sticky);
 /*!
  \brief Has the NAT subsystem been initialized
 */

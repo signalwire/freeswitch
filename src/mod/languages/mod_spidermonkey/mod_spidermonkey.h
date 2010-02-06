@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -150,7 +150,7 @@ struct js_session {
 	struct js_session_speech *speech;
 };
 
-JSBool DEFAULT_SET_PROPERTY(JSContext * cx, JSObject *obj, jsval id, jsval *vp)
+JSBool DEFAULT_SET_PROPERTY(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
 	eval_some_js("~throw new Error(\"this property cannot be changed!\");", cx, obj, vp);
 	return JS_FALSE;

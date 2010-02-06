@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -64,7 +64,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *alt_path = NULL, *last, *ldup = NULL;
 	size_t alt_len = 0;
-	int rates[4] = {8000, 16000, 32000, 48000};
+	int rates[4] = { 8000, 16000, 32000, 48000 };
 	int i;
 #ifdef WIN32
 	char ps = '\\';
@@ -161,12 +161,12 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	/* This block attempts to add the sample rate to the path
 	   if the sample rate is already present in the path it does nothing
 	   and reverts to the original file name.
-	*/
+	 */
 	if ((last = strrchr(alt_path, ps))) {
 		last++;
 #ifdef WIN32
 		if (strrchr(last, '/')) {
-			last = strrchr(alt_path, '/'); /* do not swallow a forward slash if they are intermixed under windows*/
+			last = strrchr(alt_path, '/');	/* do not swallow a forward slash if they are intermixed under windows */
 			last++;
 		}
 #endif
@@ -178,7 +178,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		} else {
 			/* Try to find the file at the highest rate possible if we can't find one that matches the exact rate.
 			   If we don't find any, we will default back to the original file name.
-			*/
+			 */
 			for (i = 3; i >= 0; i--) {
 				switch_snprintf(last, alt_len - (last - alt_path), "%d%s%s", rates[i], SWITCH_PATH_SEPARATOR, ldup);
 				if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {

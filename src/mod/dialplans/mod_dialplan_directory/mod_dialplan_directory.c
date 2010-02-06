@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -150,7 +150,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dialplan_directory_shutdown)
 	switch_safe_free(globals.dn);
 	switch_safe_free(globals.pass);
 	switch_safe_free(globals.base);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -161,7 +161,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_directory_load)
 
 	memset(&globals, 0, sizeof(globals));
 	load_config();
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_DIALPLAN(dp_interface, "directory", directory_dialplan_hunt);

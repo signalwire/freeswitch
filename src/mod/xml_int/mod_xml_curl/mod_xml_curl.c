@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -74,14 +74,14 @@ struct config_data {
 };
 
 typedef struct hash_node {
-    switch_hash_t* hash;
-    struct hash_node* next;
+	switch_hash_t *hash;
+	struct hash_node *next;
 } hash_node_t;
 
 static struct {
-    switch_memory_pool_t* pool;
-    hash_node_t* hash_root;
-    hash_node_t* hash_tail;
+	switch_memory_pool_t *pool;
+	hash_node_t *hash_root;
+	hash_node_t *hash_tail;
 } globals;
 
 #define XML_CURL_SYNTAX "[debug_on|debug_off]"
@@ -120,7 +120,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	config_data->bytes += realsize;
 
 	if (config_data->bytes > config_data->max_bytes) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oversized file detected [%d bytes]\n", (int)config_data->bytes);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oversized file detected [%d bytes]\n", (int) config_data->bytes);
 		config_data->err = 1;
 		return 0;
 	}
@@ -154,7 +154,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	char basic_data[512];
 	char *uri = NULL;
 	char *dynamic_url = NULL;
-	
+
 	gethostname(hostname, sizeof(hostname));
 
 	if (!binding) {
@@ -170,7 +170,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 		return xml;
 	}
-	
+
 	switch_snprintf(basic_data, sizeof(basic_data), "hostname=%s&section=%s&tag_name=%s&key_name=%s&key_value=%s",
 					hostname, section, switch_str_nil(tag_name), switch_str_nil(key_name), switch_str_nil(key_value));
 
@@ -198,7 +198,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		uri = malloc(strlen(data) + strlen(dynamic_url) + 16);
 		switch_assert(uri);
 		sprintf(uri, "%s%c%s", dynamic_url, strchr(dynamic_url, '?') != NULL ? '&' : '?', data);
-	} 
+	}
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
@@ -237,7 +237,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 		if (binding->timeout) {
 			curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, binding->timeout);
-                        curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+			curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		}
 
 		if (binding->disable100continue) {
@@ -248,19 +248,19 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		if (binding->enable_cacert_check) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, TRUE);
 		}
-	
+
 		if (binding->ssl_cert_file) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, binding->ssl_cert_file);
 		}
-		
+
 		if (binding->ssl_key_file) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSLKEY, binding->ssl_key_file);
 		}
-		
+
 		if (binding->ssl_key_password) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSLKEYPASSWD, binding->ssl_key_password);
 		}
-		
+
 		if (binding->ssl_version) {
 			if (!strcasecmp(binding->ssl_version, "SSLv3")) {
 				curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
@@ -268,15 +268,15 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 				curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
 			}
 		}
-		
+
 		if (binding->ssl_cacert_file) {
 			curl_easy_setopt(curl_handle, CURLOPT_CAINFO, binding->ssl_cacert_file);
 		}
-		
+
 		if (binding->enable_ssl_verifyhost) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2);
 		}
-	
+
 		if (binding->cookie_file) {
 			curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, binding->cookie_file);
 			curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, binding->cookie_file);
@@ -301,7 +301,8 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result!\n");
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received HTTP error %ld trying to fetch %s\ndata: [%s]\n", httpRes, binding->url, data);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received HTTP error %ld trying to fetch %s\ndata: [%s]\n", httpRes, binding->url,
+							  data);
 			xml = NULL;
 		}
 	}
@@ -359,7 +360,7 @@ static switch_status_t do_config(void)
 		char *ssl_cacert_file = NULL;
 		uint32_t enable_ssl_verifyhost = 0;
 		char *cookie_file = NULL;
-		hash_node_t* hash_node;
+		hash_node_t *hash_node;
 		int auth_scheme = CURLAUTH_BASIC;
 		need_vars_map = 0;
 		vars_map = NULL;
@@ -381,7 +382,7 @@ static switch_status_t do_config(void)
 					auth_scheme = 0;
 					val++;
 				}
-				
+
 				if (!strcasecmp(val, "basic")) {
 					auth_scheme |= CURLAUTH_BASIC;
 				} else if (!strcasecmp(val, "digest")) {
@@ -442,13 +443,13 @@ static switch_status_t do_config(void)
 		if (!url) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Binding has no url!\n");
 			if (vars_map)
-			    switch_core_hash_destroy(&vars_map);
+				switch_core_hash_destroy(&vars_map);
 			continue;
 		}
 
 		if (!(binding = malloc(sizeof(*binding)))) {
 			if (vars_map)
-			    switch_core_hash_destroy(&vars_map);
+				switch_core_hash_destroy(&vars_map);
 			goto done;
 		}
 		memset(binding, 0, sizeof(*binding));
@@ -472,53 +473,53 @@ static switch_status_t do_config(void)
 		}
 
 		binding->disable100continue = disable100continue;
-		binding->use_get_style = method != NULL && strcasecmp(method,"post") != 0;
+		binding->use_get_style = method != NULL && strcasecmp(method, "post") != 0;
 		binding->use_dynamic_url = use_dynamic_url;
 		binding->enable_cacert_check = enable_cacert_check;
-		
+
 		if (ssl_cert_file) {
 			binding->ssl_cert_file = strdup(ssl_cert_file);
 		}
-		
+
 		if (ssl_key_file) {
 			binding->ssl_key_file = strdup(ssl_key_file);
 		}
-		
+
 		if (ssl_key_password) {
 			binding->ssl_key_password = strdup(ssl_key_password);
 		}
-		
+
 		if (ssl_version) {
 			binding->ssl_version = strdup(ssl_version);
 		}
-		
+
 		if (ssl_cacert_file) {
 			binding->ssl_cacert_file = strdup(ssl_cacert_file);
 		}
-		
+
 		binding->enable_ssl_verifyhost = enable_ssl_verifyhost;
-		
+
 		if (cookie_file) {
 			binding->cookie_file = strdup(cookie_file);
 		}
 
 		binding->vars_map = vars_map;
-		
+
 		if (vars_map) {
-		    switch_zmalloc(hash_node,sizeof(hash_node_t));
-		    hash_node->hash = vars_map;
-		    hash_node->next = NULL;
-		    
-		    if (!globals.hash_root) {
-			globals.hash_root = hash_node;
-			globals.hash_tail = globals.hash_root;
-		    }
-		    
-		    else {
-			globals.hash_tail->next = hash_node;
-			globals.hash_tail = globals.hash_tail->next;
-		    }
-			
+			switch_zmalloc(hash_node, sizeof(hash_node_t));
+			hash_node->hash = vars_map;
+			hash_node->next = NULL;
+
+			if (!globals.hash_root) {
+				globals.hash_root = hash_node;
+				globals.hash_tail = globals.hash_root;
+			}
+
+			else {
+				globals.hash_tail->next = hash_node;
+				globals.hash_tail = globals.hash_tail->next;
+			}
+
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n",
@@ -541,7 +542,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	memset(&globals,0,sizeof(globals));
+	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 	globals.hash_root = NULL;
 	globals.hash_tail = NULL;
@@ -562,15 +563,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_curl_shutdown)
 {
-	hash_node_t* ptr = NULL;
+	hash_node_t *ptr = NULL;
 
-	while(globals.hash_root) {
-	    ptr = globals.hash_root;
-	    switch_core_hash_destroy(&ptr->hash);
-	    globals.hash_root = ptr->next;
-	    switch_safe_free(ptr);
+	while (globals.hash_root) {
+		ptr = globals.hash_root;
+		switch_core_hash_destroy(&ptr->hash);
+		globals.hash_root = ptr->next;
+		switch_safe_free(ptr);
 	}
-	
+
 	switch_xml_unbind_search_function_ptr(xml_url_fetch);
 	curl_global_cleanup();
 	return SWITCH_STATUS_SUCCESS;

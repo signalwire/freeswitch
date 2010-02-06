@@ -76,7 +76,7 @@ static int load_tts_commandline_config(void)
 	}
 
 	if (zstr(globals.command)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No command set, please edit %s\n", cf);   
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No command set, please edit %s\n", cf);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -96,7 +96,7 @@ static switch_status_t tts_commandline_speech_open(switch_speech_handle_t *sh, c
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	char outfile[512] = "";
-	
+
 	tts_commandline_t *info = switch_core_alloc(sh->memory_pool, sizeof(*info));
 
 	info->voice_name = switch_core_strdup(sh->memory_pool, voice_name);
@@ -107,11 +107,11 @@ static switch_status_t tts_commandline_speech_open(switch_speech_handle_t *sh, c
 	switch_uuid_format(uuid_str, &uuid);
 	switch_snprintf(outfile, sizeof(outfile), "%s%s.tmp.wav", SWITCH_GLOBAL_dirs.temp_dir, uuid_str);
 	info->file = switch_core_strdup(sh->memory_pool, outfile);
-	
+
 	info->fh = (switch_file_handle_t *) switch_core_alloc(sh->memory_pool, sizeof(switch_file_handle_t));
-	
+
 	sh->private_info = info;
-  
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -119,7 +119,7 @@ static switch_status_t tts_commandline_speech_close(switch_speech_handle_t *sh, 
 {
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	assert(info != NULL);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -129,37 +129,35 @@ static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *s
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 
 	assert(info != NULL);
-	
+
 	message = switch_core_strdup(sh->memory_pool, globals.command);
-	
+
 	tmp = switch_util_quote_shell_arg(text);
 	message = switch_string_replace(message, "${text}", tmp);
-	
+
 	tmp = switch_util_quote_shell_arg(info->voice_name);
 	message = switch_string_replace(message, "${voice}", tmp);
-	
+
 	rate = switch_core_sprintf(sh->memory_pool, "%d", info->rate);
 	message = switch_string_replace(message, "${rate}", rate);
-	
+
 	tmp = switch_util_quote_shell_arg(info->file);
 	message = switch_string_replace(message, "${file}", tmp);
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Executing: %s\n", message);
-	
+
 	if (switch_system(message, SWITCH_TRUE) < 0) {
-	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute command: %s\n", message);
-	   return SWITCH_STATUS_FALSE;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute command: %s\n", message);
+		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_core_file_open(info->fh,
-							info->file,
-							0, //number_of_channels,
-							0, //samples_per_second,
-							SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file: %s\n", info->file);
-	   return SWITCH_STATUS_FALSE;
+	if (switch_core_file_open(info->fh, info->file, 0,	//number_of_channels,
+							  0,	//samples_per_second,
+							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file: %s\n", info->file);
+		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	sh->private_info = info;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -170,8 +168,8 @@ static switch_status_t tts_commandline_speech_read_tts(switch_speech_handle_t *s
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	size_t my_datalen = *datalen / 2;
 
-	assert(info != NULL);	
-	
+	assert(info != NULL);
+
 	if (switch_core_file_read(info->fh, data, &my_datalen) != SWITCH_STATUS_SUCCESS) {
 		*datalen = my_datalen * 2;
 		return SWITCH_STATUS_FALSE;
@@ -188,7 +186,7 @@ static void tts_commandline_speech_flush_tts(switch_speech_handle_t *sh)
 {
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	assert(info != NULL);
-	
+
 	switch_core_file_close(info->fh);
 	if (unlink(info->file) != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Sound file [%s] delete failed\n", info->file);

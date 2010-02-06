@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -94,15 +94,14 @@ static switch_status_t switch_skel_init(switch_codec_t *codec, switch_codec_flag
  * SWITCH_STATUS_NOOP, NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary.
  * SWITCH_STATUS_NOT_INITALIZED, failure to init, you can use this to init on first usage and no in switch_skel_init?
  * */
-static switch_status_t switch_skel_encode(switch_codec_t *codec,
-					   switch_codec_t *other_codec, /* codec that was used by the other side */
-					   void *decoded_data, /* decoded data that we must encode */
-					   uint32_t decoded_data_len /* decoded data length */,
-					   uint32_t decoded_rate /* rate of the decoded data */, 
-					   void *encoded_data, /* here we will store the encoded data */ 
-					   uint32_t *encoded_data_len, /* here we will set the length of the encoded data */ 
-					   uint32_t *encoded_rate /* here we will set the rate of the encoded data */,
-					   unsigned int *flag /* frame flag, see switch_frame_flag_enum_t */)
+static switch_status_t switch_skel_encode(switch_codec_t *codec, switch_codec_t *other_codec,	/* codec that was used by the other side */
+										  void *decoded_data,	/* decoded data that we must encode */
+										  uint32_t decoded_data_len /* decoded data length */ ,
+										  uint32_t decoded_rate /* rate of the decoded data */ ,
+										  void *encoded_data,	/* here we will store the encoded data */
+										  uint32_t *encoded_data_len,	/* here we will set the length of the encoded data */
+										  uint32_t *encoded_rate /* here we will set the rate of the encoded data */ ,
+										  unsigned int *flag /* frame flag, see switch_frame_flag_enum_t */ )
 {
 	struct skel_context *context = codec->private_info;
 	/* FS core checks the actual samples per second and microseconds per packet to determine the buffer size in the worst case scenario, no need to check
@@ -123,15 +122,15 @@ static switch_status_t switch_skel_encode(switch_codec_t *codec,
  * SWITCH_STATUS_NOOP, NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary.
  * SWITCH_STATUS_NOT_INITALIZED, failure to init, you can use this to init on first usage and no in switch_skel_init?
  * */
-static switch_status_t switch_skel_decode(switch_codec_t *codec, /* codec session handle */
-										   switch_codec_t *other_codec, /* what is this? */
-										   void *encoded_data, /* data that we must decode into slinear and put it in decoded_data */
-										   uint32_t encoded_data_len, /* length in bytes of the encoded data */
-										   uint32_t encoded_rate,  /* at which rate was the data encoded */
-										   void *decoded_data,  /* buffer where we must put the decoded data */
-										   uint32_t *decoded_data_len,  /* we must set this value to the size of the decoded data */
-										   uint32_t *decoded_rate, /* rate of the decoded data */
-										   unsigned int *flag /* frame flag, see switch_frame_flag_enum_t */)
+static switch_status_t switch_skel_decode(switch_codec_t *codec,	/* codec session handle */
+										  switch_codec_t *other_codec,	/* what is this? */
+										  void *encoded_data,	/* data that we must decode into slinear and put it in decoded_data */
+										  uint32_t encoded_data_len,	/* length in bytes of the encoded data */
+										  uint32_t encoded_rate,	/* at which rate was the data encoded */
+										  void *decoded_data,	/* buffer where we must put the decoded data */
+										  uint32_t *decoded_data_len,	/* we must set this value to the size of the decoded data */
+										  uint32_t *decoded_rate,	/* rate of the decoded data */
+										  unsigned int *flag /* frame flag, see switch_frame_flag_enum_t */ )
 {
 	struct skel_context *context = codec->private_info;
 	/* FS core checks the actual samples per second and microseconds per packet to determine the buffer size in the worst case scenario, no need to check
@@ -150,7 +149,7 @@ static switch_status_t switch_skel_destroy(switch_codec_t *codec)
 	 * no need to free memory allocated from the pool though, the owner of the pool takes care of that */
 	struct skel_context *context = codec->private_info;
 	context->encodes = 0;
-	context->decodes = 0; /* silly, context was allocated in the pool and therefore will be destroyed soon, exact time is not guaranteed though */
+	context->decodes = 0;		/* silly, context was allocated in the pool and therefore will be destroyed soon, exact time is not guaranteed though */
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -180,32 +179,31 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skel_codec_load)
 	/* SWITCH_ADD_CODEC allocates a codec interface structure from the pool the core gave us and adds it to the internal interface list the core keeps, 
 	 * gets a codec id and set the given codec name to it.
 	 * At this point there is an empty shell codec interface registered, but not yet implementations */
-	SWITCH_ADD_CODEC(codec_interface, "SKEL 8.0k"); /* 8.0kbit */
+	SWITCH_ADD_CODEC(codec_interface, "SKEL 8.0k");	/* 8.0kbit */
 
 	/* Now add as many codec implementations as needed, typically this is done inside a for loop where the packetization size is 
 	 * incremented (10ms, 20ms, 30ms etc) as needed */
-	switch_core_codec_add_implementation(pool,
-	 codec_interface, /* the codec interface we allocated and we want to register with the core */
-	 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-	 0,				    /* the IANA code number, ie http://www.iana.org/assignments/rtp-parameters */
-	 "SKEL",  			/* the IANA code name */
-	 NULL,				/* default fmtp to send (can be overridden by the init function), fmtp is used in SDP for format specific parameters */
-	 8000,				/* samples transferred per second */
-	 8000,				/* actual samples transferred per second */
-	 8000,				/* bits transferred per second */
-	 20000,				/* for 20ms (milliseconds) frames, 20,000 microseconds and so on, you can register the same codec with different packetization */
-	 160,				/* number of samples per frame, for this dummy implementation is 160, which is the number of samples in 20ms at 8000 samples per second */
-	 320,				/* number of bytes per frame decompressed */
-	 320,				/* number of bytes per frame compressed, since we dont really compress anything, is the same number as per frame decompressed */
-	 1,				    /* number of channels represented */
-	 20,				/* number of frames per network packet */
-	 switch_skel_init, 		/* function to initialize a codec session using this implementation */
-	 switch_skel_encode,		/* function to encode slinear data into encoded data */
-	 switch_skel_decode,		/* function to decode encoded data into slinear data */
-	 switch_skel_destroy);		/* deinitalize a codec handle using this implementation */
+	switch_core_codec_add_implementation(pool, codec_interface,	/* the codec interface we allocated and we want to register with the core */
+										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 0,	/* the IANA code number, ie http://www.iana.org/assignments/rtp-parameters */
+										 "SKEL",	/* the IANA code name */
+										 NULL,	/* default fmtp to send (can be overridden by the init function), fmtp is used in SDP for format specific parameters */
+										 8000,	/* samples transferred per second */
+										 8000,	/* actual samples transferred per second */
+										 8000,	/* bits transferred per second */
+										 20000,	/* for 20ms (milliseconds) frames, 20,000 microseconds and so on, you can register the same codec with different packetization */
+										 160,	/* number of samples per frame, for this dummy implementation is 160, which is the number of samples in 20ms at 8000 samples per second */
+										 320,	/* number of bytes per frame decompressed */
+										 320,	/* number of bytes per frame compressed, since we dont really compress anything, is the same number as per frame decompressed */
+										 1,	/* number of channels represented */
+										 20,	/* number of frames per network packet */
+										 switch_skel_init,	/* function to initialize a codec session using this implementation */
+										 switch_skel_encode,	/* function to encode slinear data into encoded data */
+										 switch_skel_decode,	/* function to decode encoded data into slinear data */
+										 switch_skel_destroy);	/* deinitalize a codec handle using this implementation */
 
 	SWITCH_ADD_API(api_interface, "skel_sayhi", "Skel Codec Says Hi", skel_sayhi, NULL);
-	switch_console_set_complete("add skel_sayhi"); /* For CLI completion */
+	switch_console_set_complete("add skel_sayhi");	/* For CLI completion */
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

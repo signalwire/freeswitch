@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -102,8 +102,8 @@ static int freeswitch_kill_background()
 	}
 
 	/* pull the pid from the file */
-	if (fscanf(f, "%d", (int *)(intptr_t)&pid)!=1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Unable to get the pid!\n");
+	if (fscanf(f, "%d", (int *) (intptr_t) & pid) != 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to get the pid!\n");
 	}
 
 	/* if we have a valid pid */
@@ -203,19 +203,20 @@ void WINAPI service_main(DWORD numArgs, char **args)
 
 #else
 
-void daemonize(void) {
+void daemonize(void)
+{
 	int fd;
 	pid_t pid;
 
 	switch (fork()) {
-		case 0:
-			break;
-		case -1:
-			fprintf(stderr, "Error Backgrounding (fork)! %d - %s\n", errno, strerror(errno));
-			exit(0);
-			break;
-		default:
-			exit(0);
+	case 0:
+		break;
+	case -1:
+		fprintf(stderr, "Error Backgrounding (fork)! %d - %s\n", errno, strerror(errno));
+		exit(0);
+		break;
+	default:
+		exit(0);
 	}
 
 	if (setsid() < 0) {
@@ -224,15 +225,15 @@ void daemonize(void) {
 	}
 	pid = fork();
 	switch (pid) {
-		case 0:
-			break;
-		case -1:
-			fprintf(stderr, "Error Backgrounding (fork2)! %d - %s\n", errno, strerror(errno));
-			exit(0);
-			break;
-		default:
-			fprintf(stderr, "%d Backgrounding.\n", (int) pid);
-			exit(0);
+	case 0:
+		break;
+	case -1:
+		fprintf(stderr, "Error Backgrounding (fork2)! %d - %s\n", errno, strerror(errno));
+		exit(0);
+		break;
+	default:
+		fprintf(stderr, "%d Backgrounding.\n", (int) pid);
+		exit(0);
 	}
 
 	/* redirect std* to null */
@@ -272,7 +273,7 @@ int main(int argc, char *argv[])
 #endif
 	int nc = 0;					/* TRUE if we are running in noconsole mode */
 	pid_t pid = 0;
-	int i,x;
+	int i, x;
 	char *opts;
 	char opts_str[1024] = "";
 	char *local_argv[1024] = { 0 };
@@ -320,14 +321,11 @@ int main(int argc, char *argv[])
 		"\t-uninstall             -- remove freeswitch as a service\n"
 #else
 		"\t-nf                    -- no forking\n"
-		"\t-u [user]              -- specify user to switch to\n"
-		"\t-g [group]             -- specify group to switch to\n"
+		"\t-u [user]              -- specify user to switch to\n" "\t-g [group]             -- specify group to switch to\n"
 #endif
-		"\t-help                  -- this message\n"
-		"\t-version               -- print the version and exit\n"
+		"\t-help                  -- this message\n" "\t-version               -- print the version and exit\n"
 #ifdef HAVE_SETRLIMIT
-		"\t-waste                 -- allow memory waste\n"
-		"\t-core                  -- dump cores\n"
+		"\t-waste                 -- allow memory waste\n" "\t-core                  -- dump cores\n"
 #endif
 		"\t-hp                    -- enable high priority settings\n"
 		"\t-vg                    -- run under valgrind\n"
@@ -344,8 +342,7 @@ int main(int argc, char *argv[])
 		"\t-run [rundir]          -- specify an alternate run dir\n"
 		"\t-db [dbdir]            -- specify an alternate db dir\n"
 		"\t-mod [moddir]          -- specify an alternate mod dir\n"
-		"\t-htdocs [htdocsdir]    -- specify an alternate htdocs dir\n"
-		"\t-scripts [scriptsdir]  -- specify an alternate scripts dir\n";
+		"\t-htdocs [htdocsdir]    -- specify an alternate htdocs dir\n" "\t-scripts [scriptsdir]  -- specify an alternate scripts dir\n";
 
 	for (x = 1; x < local_argc; x++) {
 		known_opt = 0;
@@ -375,20 +372,14 @@ int main(int argc, char *argv[])
 				known_opt++;
 				GetModuleFileName(NULL, exePath, 1024);
 				snprintf(servicePath, sizeof(servicePath), "%s -service %s", exePath, service_name);
-				{ /* Perform service installation */
-					SC_HANDLE hService; 
+				{				/* Perform service installation */
+					SC_HANDLE hService;
 					SC_HANDLE hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 					if (!hSCManager) {
 						fprintf(stderr, "Could not open service manager (%d).\n", GetLastError());
 						exit(1);
 					}
-					hService = CreateService(hSCManager,
-							 				 service_name,
-											 service_name,
-											 GENERIC_READ | GENERIC_EXECUTE | SERVICE_CHANGE_CONFIG,
-											 SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, 
-											 servicePath, NULL, NULL, NULL,
-											 NULL,  /* Service start name */
+					hService = CreateService(hSCManager, service_name, service_name, GENERIC_READ | GENERIC_EXECUTE | SERVICE_CHANGE_CONFIG, SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, servicePath, NULL, NULL, NULL, NULL,	/* Service start name */
 											 NULL);
 					if (!hService) {
 						fprintf(stderr, "Error creating freeswitch service (%d).\n", GetLastError());
@@ -413,7 +404,7 @@ int main(int argc, char *argv[])
 				} else {
 					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
 				}
-				{ /* Do the uninstallation */
+				{				/* Do the uninstallation */
 					SC_HANDLE hService;
 					SC_HANDLE hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 					if (!hSCManager) {
@@ -436,7 +427,6 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-
 #else
 		if (local_argv[x] && !strcmp(local_argv[x], "-u")) {
 			x++;
@@ -464,7 +454,6 @@ int main(int argc, char *argv[])
 			return 0;
 			known_opt++;
 		}
-
 #endif
 #ifdef HAVE_SETRLIMIT
 		if (local_argv[x] && !strcmp(local_argv[x], "-core")) {
@@ -563,7 +552,7 @@ int main(int argc, char *argv[])
 			}
 			known_opt++;
 		}
-				
+
 		if (local_argv[x] && !strcmp(local_argv[x], "-log")) {
 			x++;
 			if (local_argv[x] && strlen(local_argv[x])) {
@@ -653,7 +642,7 @@ int main(int argc, char *argv[])
 			exit(0);
 		}
 	}
-	
+
 	if (log_set && !run_set) {
 		SWITCH_GLOBAL_dirs.run_dir = (char *) malloc(strlen(SWITCH_GLOBAL_dirs.log_dir) + 1);
 		if (!SWITCH_GLOBAL_dirs.run_dir) {
@@ -689,7 +678,6 @@ int main(int argc, char *argv[])
 		}
 #endif
 	}
-
 #if defined(HAVE_SETRLIMIT) && !defined(__sun)
 	if (!waste && !(flags & SCF_VG)) {
 		memset(&rlp, 0, sizeof(rlp));
@@ -698,8 +686,8 @@ int main(int argc, char *argv[])
 			char buf[1024] = "";
 			int i = 0;
 
-			fprintf(stderr, "Error: stacksize %d is too large: run ulimit -s %d or run %s -waste.\nauto-adjusting stack size for optimal performance...\n", 
-					(int)(rlp.rlim_max / 1024), SWITCH_THREAD_STACKSIZE / 1024, local_argv[0]);
+			fprintf(stderr, "Error: stacksize %d is too large: run ulimit -s %d or run %s -waste.\nauto-adjusting stack size for optimal performance...\n",
+					(int) (rlp.rlim_max / 1024), SWITCH_THREAD_STACKSIZE / 1024, local_argv[0]);
 
 			memset(&rlp, 0, sizeof(rlp));
 			rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
@@ -707,14 +695,14 @@ int main(int argc, char *argv[])
 			setrlimit(RLIMIT_STACK, &rlp);
 
 			apr_terminate();
-			ret = (int)execv(argv[0], argv);
-			
-			for(i = 0; i < argc; i++) {
+			ret = (int) execv(argv[0], argv);
+
+			for (i = 0; i < argc; i++) {
 				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[i]);
 			}
 
 			return system(buf);
-					
+
 		}
 	}
 #endif
@@ -732,15 +720,16 @@ int main(int argc, char *argv[])
 #ifndef WIN32
 	if (runas_user || runas_group) {
 		if (change_user_group(runas_user, runas_group) < 0) {
-			fprintf(stderr, "Failed to switch user / group\n" );
+			fprintf(stderr, "Failed to switch user / group\n");
 			return 255;
 		}
 	}
 #else
 	if (win32_service) {
-		{ /* Attempt to start service */
+		{						/* Attempt to start service */
 			SERVICE_TABLE_ENTRY dispatchTable[] = {
-				{service_name, &service_main},
+				{service_name, &service_main}
+				,
 				{NULL, NULL}
 			};
 			if (StartServiceCtrlDispatcher(dispatchTable) == 0) {
@@ -763,14 +752,10 @@ int main(int argc, char *argv[])
 	pid_len = strlen(pid_buffer);
 
 	apr_pool_create(&pool, NULL);
-	
+
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.run_dir, SWITCH_DEFAULT_DIR_PERMS, pool);
 
-	if (switch_file_open(&fd,
-						 pid_path,
-						 SWITCH_FOPEN_READ,
-						 SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
-						 pool) == SWITCH_STATUS_SUCCESS) {
+	if (switch_file_open(&fd, pid_path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, pool) == SWITCH_STATUS_SUCCESS) {
 
 		old_pid_len = sizeof(old_pid_buffer);
 		switch_file_read(fd, old_pid_buffer, &old_pid_len);
@@ -780,8 +765,7 @@ int main(int argc, char *argv[])
 	if (switch_file_open(&fd,
 						 pid_path,
 						 SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE | SWITCH_FOPEN_TRUNCATE,
-						 SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
-						 pool) != SWITCH_STATUS_SUCCESS) {
+						 SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, pool) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot open pid file %s.\n", pid_path);
 		return 255;
 	}
@@ -805,7 +789,7 @@ int main(int argc, char *argv[])
 	switch_core_runtime_loop(nc);
 
 	destroy_status = switch_core_destroy();
-	
+
 	switch_file_close(fd);
 
 	if (unlink(pid_path) != 0) {
@@ -815,12 +799,12 @@ int main(int argc, char *argv[])
 	if (destroy_status == SWITCH_STATUS_RESTART) {
 		char buf[1024] = "";
 		int j = 0;
-		
+
 		switch_sleep(1000000);
-		ret = (int)execv(argv[0], argv);
+		ret = (int) execv(argv[0], argv);
 		fprintf(stderr, "Restart Failed [%s] resorting to plan b\n", strerror(errno));
 
-		for(j = 0; j < argc; j++) {
+		for (j = 0; j < argc; j++) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[j]);
 		}
 

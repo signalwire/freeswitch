@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -86,7 +86,7 @@ switch_odbc_status_t odbc_obj_connect(odbc_obj_t *obj)
 	return switch_odbc_handle_connect(obj->handle);
 }
 
-static void destroy_odbc_obj(odbc_obj_t **objp)
+static void destroy_odbc_obj(odbc_obj_t ** objp)
 {
 	odbc_obj_t *obj = *objp;
 	if (obj == NULL)
@@ -271,7 +271,7 @@ static JSBool odbc_num_rows(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 {
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 	SQLLEN row_count = 0;
-	
+
 	if (!odbc_obj || switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
 		goto done;
@@ -401,7 +401,7 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 			return JS_TRUE;
 		}
 
-		if ( SQLNumResultCols( odbc_obj->stmt, &nColumns ) != SQL_SUCCESS )
+		if (SQLNumResultCols(odbc_obj->stmt, &nColumns) != SQL_SUCCESS)
 			return JS_FALSE;
 
 		for (x = 1; x <= nColumns; x++) {
@@ -431,7 +431,7 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 
 		JS_GetProperty(cx, obj, "_oDbC_dB_RoW_DaTa_", rval);
 		return JS_TRUE;
-		
+
 
 	}
 
@@ -466,7 +466,7 @@ static JSBool odbc_disconnect(JSContext * cx, JSObject * obj, uintN argc, jsval 
 
 	switch_odbc_handle_disconnect(odbc_obj->handle);
 
- done:
+  done:
 
 	return JS_TRUE;
 }
@@ -543,7 +543,7 @@ const sm_module_interface_t odbc_module_interface = {
 	/*.next */ NULL
 };
 
-SWITCH_MOD_DECLARE_NONSTD(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
+SWITCH_MOD_DECLARE_NONSTD(switch_status_t) spidermonkey_init(const sm_module_interface_t ** module_interface)
 {
 	*module_interface = &odbc_module_interface;
 	return SWITCH_STATUS_SUCCESS;

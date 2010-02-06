@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -43,11 +43,17 @@ static HANDLE hStdout;
 static WORD wOldColorAttrs;
 static CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
 
-static WORD 
+static WORD
 #else
-static const char*
+static const char *
 #endif
-COLORS[] = { SWITCH_SEQ_DEFAULT_COLOR, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN, SWITCH_SEQ_FGREEN, SWITCH_SEQ_FYELLOW };
+ 
+	
+	
+	
+	COLORS[] =
+	{ SWITCH_SEQ_DEFAULT_COLOR, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN, SWITCH_SEQ_FGREEN,
+SWITCH_SEQ_FYELLOW };
 
 
 static switch_memory_pool_t *module_pool = NULL;
@@ -261,8 +267,7 @@ SWITCH_STANDARD_API(console_api_function)
 		"--------------------------------------------------------------------------------\n"
 		"console help\n"
 		"console loglevel [[0-7] | <loglevel_string>]\n"
-		"console colorize [on|off|toggle]\n"
-		"--------------------------------------------------------------------------------\n";
+		"console colorize [on|off|toggle]\n" "--------------------------------------------------------------------------------\n";
 	const char *loglevel_usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"console loglevel [[0-7] | <loglevel_string>]\n"
@@ -274,17 +279,11 @@ SWITCH_STANDARD_API(console_api_function)
 		"  1 alert\n"
 		"  2 crit\n"
 		"  3 err\n"
-		"  4 warning\n"
-		"  5 notice\n"
-		"  6 info\n"
-		"  7 debug\n"
-		"--------------------------------------------------------------------------------\n";
+		"  4 warning\n" "  5 notice\n" "  6 info\n" "  7 debug\n" "--------------------------------------------------------------------------------\n";
 	const char *colorize_usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"console colorize [on|off|toggle]\n"
-		"\n"
-		"Enable, disable, or toggle console coloring.\n"
-		"--------------------------------------------------------------------------------\n";
+		"\n" "Enable, disable, or toggle console coloring.\n" "--------------------------------------------------------------------------------\n";
 
 	if (session)
 		return SWITCH_STATUS_FALSE;
@@ -315,10 +314,10 @@ SWITCH_STANDARD_API(console_api_function)
 				level = atoi(argv[1]);
 			} else {
 				level = switch_log_str2level(argv[1]);
-			} 
+			}
 		}
 		if (level == SWITCH_LOG_INVALID) {
-			stream->write_function(stream, "-ERR Invalid console loglevel (%s)!\n\n", argc>1? argv[1] : "");
+			stream->write_function(stream, "-ERR Invalid console loglevel (%s)!\n\n", argc > 1 ? argv[1] : "");
 		} else {
 			hard_log_level = level;
 			stream->write_function(stream, "+OK console log level set to %s\n", switch_log_level2str(hard_log_level));
@@ -337,11 +336,11 @@ SWITCH_STANDARD_API(console_api_function)
 		}
 		stream->write_function(stream, "+OK console color %s\n", COLORIZE ? "enabled" : "disabled");
 
-	} else { /* if (!strcasecmp(argv[0], "help")) { */
+	} else {					/* if (!strcasecmp(argv[0], "help")) { */
 		stream->write_function(stream, "%s", usage_string);
 	}
 
-done:
+  done:
 	switch_safe_free(mycmd);
 	return status;
 }

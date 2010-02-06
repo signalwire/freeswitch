@@ -91,67 +91,67 @@ static switch_status_t es_spell(switch_core_session_t *session, char *tosay, swi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t play_group(switch_say_method_t method, int a, int b, int c, char *what, switch_core_session_t *session,switch_input_args_t *args) 
-{ 
-	if (a) { 
-		switch(a) { 
-			case 1: 
-				if (b || c) { 
-					say_file("digits/hundred.wav"); 
-				} else { 
-					say_file("digits/100.wav"); 
-				} 
-				break; 
-			case 5: 
-				say_file("digits/500.wav"); 
-				break; 
-			case 7: 
-				say_file("digits/700.wav"); 
-				break; 
-			case 9: 
-				say_file("digits/900.wav"); 
-				break; 
-			default: 
-				say_file("digits/%d.wav", a); 
-				say_file("digits/hundred.wav"); 
-				break; 
-		} 
-	} 
+static switch_status_t play_group(switch_say_method_t method, int a, int b, int c, char *what, switch_core_session_t *session, switch_input_args_t *args)
+{
+	if (a) {
+		switch (a) {
+		case 1:
+			if (b || c) {
+				say_file("digits/hundred.wav");
+			} else {
+				say_file("digits/100.wav");
+			}
+			break;
+		case 5:
+			say_file("digits/500.wav");
+			break;
+		case 7:
+			say_file("digits/700.wav");
+			break;
+		case 9:
+			say_file("digits/900.wav");
+			break;
+		default:
+			say_file("digits/%d.wav", a);
+			say_file("digits/hundred.wav");
+			break;
+		}
+	}
 
-	if (b) { 
-		if (b > 1) { 
-			switch (b) { 
-						case 2: if (c) { 
-							say_file("digits/veinti.wav"); 
-														} else { 
-															say_file("digits/20.wav"); 
-														} 
-														break; 
-						default: 
-							say_file("digits/%d0.wav", b); 
-							if (c) 
-							{ 
-								say_file("currency/and.wav"); 
-							} 
-							break; 
-			} 
-		} else { 
-			say_file("digits/%d%d.wav", b, c); 
-			c = 0; 
-		} 
-	} 
-	if (c) { 
-		if (method == SSM_COUNTED) { 
-			say_file("digits/h-%d.wav", c); 
-		} else { 
-			say_file("digits/%d.wav", c); 
-		} 
-	} 
-	if (what && (a || b || c)) { 
-		say_file(what); 
-	} 
-	return SWITCH_STATUS_SUCCESS; 
-} 
+	if (b) {
+		if (b > 1) {
+			switch (b) {
+			case 2:
+				if (c) {
+					say_file("digits/veinti.wav");
+				} else {
+					say_file("digits/20.wav");
+				}
+				break;
+			default:
+				say_file("digits/%d0.wav", b);
+				if (c) {
+					say_file("currency/and.wav");
+				}
+				break;
+			}
+		} else {
+			say_file("digits/%d%d.wav", b, c);
+			c = 0;
+		}
+	}
+	if (c) {
+		if (method == SSM_COUNTED) {
+			say_file("digits/h-%d.wav", c);
+		} else {
+			say_file("digits/%d.wav", c);
+		}
+	}
+	if (what && (a || b || c)) {
+		say_file(what);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
 
 static char *strip_commas(char *in, char *out, switch_size_t len)
 {

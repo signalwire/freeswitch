@@ -67,12 +67,11 @@ static switch_bool_t initialized = SWITCH_FALSE;
 
 static switch_status_t get_upnp_pubaddr(char *pub_addr)
 {
-	if (UPNP_GetExternalIPAddress(nat_globals.urls.controlURL,
-								   nat_globals.data.servicetype,
-								   pub_addr) == UPNPCOMMAND_SUCCESS) {
+	if (UPNP_GetExternalIPAddress(nat_globals.urls.controlURL, nat_globals.data.servicetype, pub_addr) == UPNPCOMMAND_SUCCESS) {
 		if (!strcmp(pub_addr, "0.0.0.0") || zstr_buf(pub_addr)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-							  "uPNP Device (url: %s) returned an invalid external address of '%s'.  Disabling uPNP\n", nat_globals.urls.controlURL, pub_addr);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							  "uPNP Device (url: %s) returned an invalid external address of '%s'.  Disabling uPNP\n", nat_globals.urls.controlURL,
+							  pub_addr);
 			return SWITCH_STATUS_GENERR;
 		}
 	} else {
@@ -81,11 +80,11 @@ static switch_status_t get_upnp_pubaddr(char *pub_addr)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static int init_upnp (void)
+static int init_upnp(void)
 {
 	struct UPNPDev *devlist;
 	struct UPNPDev *dev;
-	char * descXML;
+	char *descXML;
 	int descXMLsize = 0;
 	const char *multicastif = 0;
 	const char *minissdpdpath = 0;
@@ -97,24 +96,25 @@ static int init_upnp (void)
 	if (devlist) {
 		dev = devlist;
 		while (dev) {
-			if (strstr (dev->st, "InternetGatewayDevice")) {
+			if (strstr(dev->st, "InternetGatewayDevice")) {
 				break;
 			}
 			dev = dev->pNext;
 		}
 		if (!dev) {
-			dev = devlist; /* defaulting to first device */
+			dev = devlist;		/* defaulting to first device */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No InternetGatewayDevice, using first entry as default (%s).\n", dev->descURL);
 		}
-		
+
 		descXML = miniwget(dev->descURL, &descXMLsize);
-		
+
 		nat_globals.descURL = strdup(dev->descURL);
-		
+
 		if (descXML) {
-			parserootdesc (descXML, descXMLsize, &nat_globals.data);
-			free (descXML); descXML = 0;
-			GetUPNPUrls (&nat_globals.urls, &nat_globals.data, dev->descURL);
+			parserootdesc(descXML, descXMLsize, &nat_globals.data);
+			free(descXML);
+			descXML = 0;
+			GetUPNPUrls(&nat_globals.urls, &nat_globals.data, dev->descURL);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unable to retrieve device description XML (%s).\n", dev->descURL);
 		}
@@ -138,7 +138,7 @@ static int get_pmp_pubaddr(char *pub_addr)
 	fd_set fds;
 	natpmp_t natpmp;
 	const char *err = NULL;
-	
+
 	if ((r = initnatpmp(&natpmp)) < 0) {
 		err = "init failed";
 		goto end;
@@ -150,7 +150,7 @@ static int get_pmp_pubaddr(char *pub_addr)
 	}
 
 	do {
-		struct timeval timeout = { 1, 0};
+		struct timeval timeout = { 1, 0 };
 		i++;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for PMP %d/%d\n", i, max);
 
@@ -167,7 +167,7 @@ static int get_pmp_pubaddr(char *pub_addr)
 			goto end;
 		}
 		r = readnatpmpresponseorretry(&natpmp, &response);
-	} while(r == NATPMP_TRYAGAIN && i < max);
+	} while (r == NATPMP_TRYAGAIN && i < max);
 
 	if (r < 0) {
 		err = "general error";
@@ -177,10 +177,10 @@ static int get_pmp_pubaddr(char *pub_addr)
 	pubaddr = inet_ntoa(response.pnu.publicaddress.addr);
 	switch_copy_string(pub_addr, pubaddr, IP_LEN);
 	nat_globals.nat_type = SWITCH_NAT_TYPE_PMP;
-	
+
 	closenatpmp(&natpmp);
 
- end:
+  end:
 
 	if (err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error checking for PMP [%s]\n", err);
@@ -203,7 +203,7 @@ switch_status_t init_nat_monitor(switch_memory_pool_t *pool)
 {
 	char *addr = NULL;
 	switch_port_t port = 0;
-	
+
 	if (nat_globals.nat_type == SWITCH_NAT_TYPE_UPNP) {
 		addr = "239.255.255.250";
 		port = 1900;
@@ -245,13 +245,13 @@ switch_status_t init_nat_monitor(switch_memory_pool_t *pool)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t * thread, void *obj)
 {
 	char *buf = NULL;
 	char newip[16] = "";
 	char *pos;
 	switch_event_t *event = NULL;
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NAT thread started\n");
 
 	buf = (char *) malloc(MULTICAST_BUFFSIZE);
@@ -274,13 +274,13 @@ static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t *th
 
 			break;
 		}
-		
+
 		if (nat_globals.nat_type == SWITCH_NAT_TYPE_UPNP) {
 			/* look for our desc URL and servicetype in the packet */
 			if (strstr(buf, nat_globals.descURL) && (buf == NULL || strstr(buf, nat_globals.data.servicetype))) {
 				if ((pos = strstr(buf, "NTS:"))) {
 					pos = pos + 4;
-					while(*pos && *pos == ' ') {
+					while (*pos && *pos == ' ') {
 						pos++;
 					}
 					if (!strncmp(pos, "ssdp:alive", 10)) {
@@ -288,10 +288,12 @@ static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t *th
 						/* did pub ip change */
 						newip[0] = '\0';
 						if (get_upnp_pubaddr(newip) != SWITCH_STATUS_SUCCESS) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to get current pubaddr after receiving UPnP keep alive packet.\n");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+											  "Unable to get current pubaddr after receiving UPnP keep alive packet.\n");
 						}
 					} else if (!strncmp(pos, "ssdp:byebye", 11)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "got UPnP signoff packet.  Your NAT gateway is probably going offline.\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+										  "got UPnP signoff packet.  Your NAT gateway is probably going offline.\n");
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got UPnP signoff packet: \n%s\n", buf);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got UNKNOWN UPnP keep alive packet: \n%s\n", buf);
@@ -304,31 +306,31 @@ static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t *th
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to get current pubaddr after receiving UPnP keep alive packet.\n");
 			}
 		}
-		
+
 		if ((strlen(newip) > 0) && strcmp(newip, "0.0.0.0") && strcmp(newip, nat_globals.pub_addr)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Public IP changed from '%s' to '%s'.\n", nat_globals.pub_addr, newip);
 			do_repub = SWITCH_TRUE;
-			
+
 			switch_event_create(&event, SWITCH_EVENT_TRAP);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "network-address-change");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-previous-v4", nat_globals.pub_addr);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-change-v4", newip);
 			switch_event_fire(&event);
-			
+
 			switch_set_string(nat_globals.pub_addr, newip);
 			switch_nat_reinit();
 		}
-		
+
 		if (do_repub) {
 			switch_nat_republish();
-		} 
+		}
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NAT thread ending\n");
 	nat_globals_perm.running = 0;
 
 	switch_safe_free(buf);
-	
+
 	return NULL;
 }
 
@@ -343,7 +345,7 @@ SWITCH_DECLARE(void) switch_nat_thread_start(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to initialize NAT thread\n");
 		return;
 	}
-	
+
 	switch_threadattr_create(&thd_attr, nat_globals_perm.pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_thread_create(&nat_thread_p, thd_attr, switch_nat_multicast_runtime, NULL, nat_globals_perm.pool);
@@ -352,7 +354,7 @@ SWITCH_DECLARE(void) switch_nat_thread_start(void)
 SWITCH_DECLARE(void) switch_nat_thread_stop(void)
 {
 	/* don't do anything if no thread ptr */
-	if (!nat_thread_p ) {
+	if (!nat_thread_p) {
 		return;
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping NAT Task Thread\n");
@@ -361,18 +363,18 @@ SWITCH_DECLARE(void) switch_nat_thread_stop(void)
 		switch_status_t st;
 
 		nat_globals_perm.running = -1;
-		
+
 		switch_thread_join(&st, nat_thread_p);
 
 		while (nat_globals_perm.running) {
-			switch_yield(1000000); /* can take up to 5s for the thread to terminate, so wait for 10 */
+			switch_yield(1000000);	/* can take up to 5s for the thread to terminate, so wait for 10 */
 			if (++sanity > 10) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out waiting for NAT Task Thread to stop\n");
 				break;
 			}
 		}
 	}
-	
+
 	nat_thread_p = NULL;
 }
 
@@ -380,16 +382,16 @@ SWITCH_DECLARE(void) switch_nat_thread_stop(void)
 SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 {
 	/* try free dynamic data structures prior to resetting to 0 */
-	FreeUPNPUrls(&nat_globals.urls); 
+	FreeUPNPUrls(&nat_globals.urls);
 	switch_safe_free(nat_globals.descURL);
 
 	memset(&nat_globals, 0, sizeof(nat_globals));
-	
+
 	if (first_init) {
 		memset(&nat_globals_perm, 0, sizeof(nat_globals_perm));
 		nat_globals_perm.pool = pool;
 	}
-	
+
 	switch_find_local_ip(nat_globals.pvt_addr, sizeof(nat_globals.pvt_addr), NULL, AF_INET);
 
 
@@ -401,12 +403,13 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for UPnP\n");
 		init_upnp();
 	}
-	
+
 	if (nat_globals.nat_type) {
 		switch_core_set_variable("nat_public_addr", nat_globals.pub_addr);
 		switch_core_set_variable("nat_private_addr", nat_globals.pvt_addr);
 		switch_core_set_variable("nat_type", nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "pmp" : "upnp");
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "NAT detected type: %s, ExtIP: '%s'\n", nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "pmp" : "upnp", nat_globals.pub_addr);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "NAT detected type: %s, ExtIP: '%s'\n",
+						  nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "pmp" : "upnp", nat_globals.pub_addr);
 
 		if (!nat_thread_p) {
 			switch_nat_thread_start();
@@ -418,7 +421,7 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 	initialized = SWITCH_TRUE;
 }
 
-static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t *external_port)
+static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t * external_port)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	natpmpresp_t response;
@@ -426,7 +429,7 @@ static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat
 	natpmp_t natpmp;
 
 	initnatpmp(&natpmp);
-	
+
 	if (proto == SWITCH_NAT_TCP) {
 		sendnewportmappingrequest(&natpmp, NATPMP_PROTOCOL_TCP, port, port, 31104000);
 	} else if (proto == SWITCH_NAT_UDP) {
@@ -441,29 +444,27 @@ static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat
 		getnatpmprequesttimeout(&natpmp, &timeout);
 		select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
 		r = readnatpmpresponseorretry(&natpmp, &response);
-	} while(r == NATPMP_TRYAGAIN);
+	} while (r == NATPMP_TRYAGAIN);
 
 	if (r == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mapped public port %hu protocol %s to localport %hu\n",
 						  response.pnu.newportmapping.mappedpublicport,
 						  response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
-						  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"),
-						  response.pnu.newportmapping.privateport);
+						  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"), response.pnu.newportmapping.privateport);
 		if (external_port) {
 			*external_port = response.pnu.newportmapping.mappedpublicport;
 		} else if (response.pnu.newportmapping.mappedpublicport != response.pnu.newportmapping.privateport) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "External port %hu protocol %s was not available, it was instead mapped to %hu",
-				response.pnu.newportmapping.privateport,
-				response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
-			  	(response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"),
-				response.pnu.newportmapping.mappedpublicport);
+							  response.pnu.newportmapping.privateport,
+							  response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
+							  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"), response.pnu.newportmapping.mappedpublicport);
 		}
-						
+
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	closenatpmp(&natpmp);
-	
+
 	return status;
 }
 
@@ -486,7 +487,7 @@ static switch_status_t switch_nat_add_mapping_upnp(switch_port_t port, switch_na
 	if (r == UPNPCOMMAND_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mapped public port %s protocol %s to localport %s\n", port_str,
 						  (proto == SWITCH_NAT_TCP) ? "TCP" : (proto == SWITCH_NAT_UDP ? "UDP" : "UNKNOWN"), port_str);
-						  status = SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
 	}
 
 	return status;
@@ -498,7 +499,7 @@ static switch_status_t switch_nat_del_mapping_pmp(switch_port_t port, switch_nat
 	natpmpresp_t response;
 	int r;
 	natpmp_t natpmp;
-	
+
 	initnatpmp(&natpmp);
 
 	if (proto == SWITCH_NAT_TCP) {
@@ -515,17 +516,15 @@ static switch_status_t switch_nat_del_mapping_pmp(switch_port_t port, switch_nat
 		getnatpmprequesttimeout(&natpmp, &timeout);
 		select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
 		r = readnatpmpresponseorretry(&natpmp, &response);
-	} while(r == NATPMP_TRYAGAIN);
+	} while (r == NATPMP_TRYAGAIN);
 
 	if (r == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unmapped public port %hu protocol %s to localport %hu\n",
-						  response.pnu.newportmapping.privateport, /* This might be wrong but its so 0 isn't displayed */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unmapped public port %hu protocol %s to localport %hu\n", response.pnu.newportmapping.privateport,	/* This might be wrong but its so 0 isn't displayed */
 						  response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
-						  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"),
-						  response.pnu.newportmapping.privateport);
+						  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"), response.pnu.newportmapping.privateport);
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	closenatpmp(&natpmp);
 
 	return status;
@@ -553,11 +552,12 @@ static switch_status_t switch_nat_del_mapping_upnp(switch_port_t port, switch_na
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping_internal(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t *external_port, switch_bool_t sticky, switch_bool_t publish)
+SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping_internal(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t * external_port,
+																switch_bool_t sticky, switch_bool_t publish)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event = NULL;
-	
+
 	switch (nat_globals.nat_type) {
 	case SWITCH_NAT_TYPE_PMP:
 		status = switch_nat_add_mapping_pmp(port, proto, external_port);
@@ -572,9 +572,9 @@ SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping_internal(switch_port_t po
 	default:
 		break;
 	}
-	
+
 	if (publish && status == SWITCH_STATUS_SUCCESS) {
-		switch_event_create(&event, SWITCH_EVENT_NAT);	
+		switch_event_create(&event, SWITCH_EVENT_NAT);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "op", "add");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "port", "%d", port);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "%d", proto);
@@ -585,7 +585,8 @@ SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping_internal(switch_port_t po
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t *external_port, switch_bool_t sticky)
+SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t * external_port,
+													   switch_bool_t sticky)
 {
 	return switch_nat_add_mapping_internal(port, proto, external_port, sticky, SWITCH_TRUE);
 }
@@ -607,13 +608,13 @@ SWITCH_DECLARE(switch_status_t) switch_nat_del_mapping(switch_port_t port, switc
 	}
 
 	if (status == SWITCH_STATUS_SUCCESS) {
-		switch_event_create(&event, SWITCH_EVENT_NAT);	
+		switch_event_create(&event, SWITCH_EVENT_NAT);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "op", "del");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "port", "%d", port);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "%d", proto);
 		switch_event_fire(&event);
 	}
-	
+
 	return status;
 }
 
@@ -626,15 +627,15 @@ SWITCH_DECLARE(void) switch_nat_republish(void)
 	SWITCH_STANDARD_STREAM(stream);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Refreshing nat maps\n");
-	
+
 	switch_api_execute("show", "nat_map as xml", NULL, &stream);
-	
+
 	if (!(natxml = switch_xml_parse_str_dup(stream.data))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to parse XML: %s\n", (char *) stream.data);
 		switch_safe_free(stream.data);
 		return;
 	}
-	
+
 	/* iterate the xml and publish the mappings */
 	row = switch_xml_find_child(natxml, "row", "row_id", "1");
 	while (row != NULL) {
@@ -649,18 +650,18 @@ SWITCH_DECLARE(void) switch_nat_republish(void)
 		if ((child = switch_xml_child(row, "proto_num"))) {
 			sproto = child->txt;
 		}
-		
+
 		if (sport && sproto) {
-			port = (switch_port_t)(atoi(sport));
-			proto = (switch_nat_ip_proto_t)(atoi(sproto));
-			switch_nat_add_mapping_internal(port, proto, NULL, SWITCH_FALSE, SWITCH_FALSE); 
+			port = (switch_port_t) (atoi(sport));
+			proto = (switch_nat_ip_proto_t) (atoi(sproto));
+			switch_nat_add_mapping_internal(port, proto, NULL, SWITCH_FALSE, SWITCH_FALSE);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to parse port/proto info: XML: %s\n", (char *) stream.data);
 		}
-	
+
 		row = switch_xml_next(row);
 	}
-	
+
 	switch_safe_free(stream.data);
 	switch_xml_free(natxml);
 }
@@ -669,14 +670,14 @@ SWITCH_DECLARE(char *) switch_nat_status(void)
 {
 	switch_stream_handle_t stream = { 0 };
 	SWITCH_STANDARD_STREAM(stream);
-	
-	stream.write_function(&stream, "Nat Type: %s, ExtIP: %s\n", 
-							(nat_globals.nat_type == SWITCH_NAT_TYPE_UPNP) ? "UPNP" : (nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "NAT-PMP" : "UNKNOWN"),
-							nat_globals.pub_addr);
+
+	stream.write_function(&stream, "Nat Type: %s, ExtIP: %s\n",
+						  (nat_globals.nat_type == SWITCH_NAT_TYPE_UPNP) ? "UPNP" : (nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "NAT-PMP" : "UNKNOWN"),
+						  nat_globals.pub_addr);
 
 	switch_api_execute("show", "nat_map", NULL, &stream);
-	
-	return stream.data; /* caller frees */
+
+	return stream.data;			/* caller frees */
 }
 
 SWITCH_DECLARE(switch_bool_t) switch_nat_is_initialized(void)

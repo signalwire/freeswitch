@@ -302,13 +302,17 @@ template < class SOCHAR > struct SimpleGlobBase {
 
 	const char *GetFileNameS(char) const {
 		return m_oFindDataA.cFileName;
-	} const wchar_t *GetFileNameS(wchar_t) const {
+	}
+	const wchar_t *GetFileNameS(wchar_t) const {
 		return m_oFindDataW.cFileName;
-	} bool IsDirS(char) const {
+	}
+	bool IsDirS(char) const {
 		return GetFileTypeS(m_oFindDataA.dwFileAttributes) == SG_FILETYPE_DIR;
-	} bool IsDirS(wchar_t) const {
+	}
+	bool IsDirS(wchar_t) const {
 		return GetFileTypeS(m_oFindDataW.dwFileAttributes) == SG_FILETYPE_DIR;
-	} SG_FileType GetFileTypeS(const char *a_pszPath) {
+	}
+	SG_FileType GetFileTypeS(const char *a_pszPath) {
 		return GetFileTypeS(GetFileAttributesA(a_pszPath));
 	}
 	SG_FileType GetFileTypeS(const wchar_t *a_pszPath) {
@@ -390,10 +394,12 @@ template < class SOCHAR > struct SimpleGlobBase {
 	const char *GetFileNameS(char) const {
 		SG_ASSERT(m_uiCurr != (size_t) -1);
 		return m_glob.gl_pathv[m_uiCurr];
-	} bool IsDirS(char) const {
+	}
+	bool IsDirS(char) const {
 		SG_ASSERT(m_uiCurr != (size_t) -1);
 		return m_bIsDir;
-	} SG_FileType GetFileTypeS(const char *a_pszPath) const {
+	}
+	SG_FileType GetFileTypeS(const char *a_pszPath) const {
 		struct stat sb;
 		if   (0 != stat(a_pszPath, &sb)) {
 			return SG_FILETYPE_INVALID;
@@ -777,7 +783,7 @@ template < class SOCHAR > int CSimpleGlobTempl < SOCHAR >::fileSortCompare(const
 // ---------------------------------------------------------------------------
 
 typedef CSimpleGlobTempl < char >CSimpleGlobA;	/*!< @brief ASCII/MBCS version of CSimpleGlob */
-typedef CSimpleGlobTempl < wchar_t >CSimpleGlobW;	/*!< @brief wchar_t version of CSimpleGlob */
+typedef CSimpleGlobTempl < wchar_t > CSimpleGlobW;	/*!< @brief wchar_t version of CSimpleGlob */
 #if defined(_UNICODE)
 # define CSimpleGlob CSimpleGlobW	/*!< @brief TCHAR version dependent on if _UNICODE is defined */
 #else

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -171,8 +171,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_g723_1_load)
 {
 	switch_codec_interface_t *codec_interface;
 	int ompf = 30000, ospf = 240, obpf = 480, oebpf = 24, count = 0;
-	int mpf = ompf , spf = ospf , bpf = obpf , ebpf = oebpf ;
-	
+	int mpf = ompf, spf = ospf, bpf = obpf, ebpf = oebpf;
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_CODEC(codec_interface, "G.723.1 6.3k");
@@ -180,8 +180,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_g723_1_load)
 	for (count = 0; count < 4; count++) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 4, "G723", NULL, 8000, 8000, 6300,
-											 mpf , spf , bpf , ebpf , 1, count,
-											 switch_g723_init, switch_g723_encode, switch_g723_decode, switch_g723_destroy);
+											 mpf, spf, bpf, ebpf, 1, count, switch_g723_init, switch_g723_encode, switch_g723_decode, switch_g723_destroy);
 		mpf += ompf;
 		spf += ospf;
 		bpf += obpf;

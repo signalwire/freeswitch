@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -154,9 +154,9 @@ static int get_dev_by_name(char *name, int in)
 	return -1;
 }
 
-static switch_status_t engage_device(portaudio_stream_source_t *source,int restart)
+static switch_status_t engage_device(portaudio_stream_source_t *source, int restart)
 {
-	PaStreamParameters inputParameters,outputParameters;
+	PaStreamParameters inputParameters, outputParameters;
 	PaError err;
 	int sample_rate = source->rate;
 	int codec_ms = source->interval;
@@ -187,8 +187,7 @@ static switch_status_t engage_device(portaudio_stream_source_t *source,int resta
 		if (switch_core_codec_init(&source->write_codec,
 								   "L16",
 								   NULL,
-								   sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-								   NULL) != SWITCH_STATUS_SUCCESS) {
+								   sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 			switch_core_codec_destroy(&source->read_codec);
 			return SWITCH_STATUS_FALSE;
@@ -198,7 +197,7 @@ static switch_status_t engage_device(portaudio_stream_source_t *source,int resta
 
 	if (!source->timer.timer_interface) {
 		if (switch_core_timer_init(&source->timer,
-									source->timer_name, codec_ms, source->read_codec.implementation->samples_per_packet,
+								   source->timer_name, codec_ms, source->read_codec.implementation->samples_per_packet,
 								   module_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
 			switch_core_codec_destroy(&source->read_codec);
@@ -224,14 +223,13 @@ static switch_status_t engage_device(portaudio_stream_source_t *source,int resta
 	outputParameters.hostApiSpecificStreamInfo = NULL;
 
 
-	err = OpenAudioStream(&source->audio_stream, &inputParameters, NULL, sample_rate, paClipOff,
-			source->read_codec.implementation->samples_per_packet, 0);
+	err = OpenAudioStream(&source->audio_stream, &inputParameters, NULL, sample_rate, paClipOff, source->read_codec.implementation->samples_per_packet, 0);
 	/* UNLOCKED ************************************************************************************************* */
 	if (err != paNoError) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening audio device retrying\n");
 		switch_yield(1000000);
 		err = OpenAudioStream(&source->audio_stream, &inputParameters, &outputParameters, sample_rate, paClipOff,
-					source->read_codec.implementation->samples_per_packet, 0);
+							  source->read_codec.implementation->samples_per_packet, 0);
 	}
 
 	switch_mutex_unlock(source->device_lock);
@@ -251,7 +249,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	portaudio_stream_source_t *source = obj;
 	portaudio_stream_context_t *cp;
 	int samples = 0;
-	int  bused, bytesToWrite;
+	int bused, bytesToWrite;
 
 
 	switch_mutex_lock(globals.mutex);
@@ -271,14 +269,14 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 	switch_thread_rwlock_create(&source->rwlock, source->pool);
 
-	if (engage_device(source,0)!=SWITCH_STATUS_SUCCESS){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Dev %d cant be engaged !\n",(int) source->sourcedev);
+	if (engage_device(source, 0) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Dev %d cant be engaged !\n", (int) source->sourcedev);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " Dev %d engaged at %d rate!\n",(int) source->sourcedev, (int) source->rate);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " Dev %d engaged at %d rate!\n", (int) source->sourcedev, (int) source->rate);
 		if (globals.running && !source->stopped) {
 			source->ready = 1;
 
-			if (!source->audio_stream){
+			if (!source->audio_stream) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Audio Stream wops!\n");
 				source->stopped = 0;
 				source->ready = 0;
@@ -287,7 +285,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					samples = 0;
 					switch_mutex_lock(source->device_lock);
 					samples = ReadAudioStream(source->audio_stream, source->databuf,
-									source->read_codec.implementation->samples_per_packet  , &source->timer);
+											  source->read_codec.implementation->samples_per_packet, &source->timer);
 					switch_mutex_unlock(source->device_lock);
 
 
@@ -306,9 +304,9 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 								switch_mutex_lock(cp->audio_mutex);
 
 								bused = switch_buffer_inuse(cp->audio_buffer);
-								if (bused > source->samples * 768 ) {
-									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Leaking stream handle! [%s() %s:%d] %d used %d max\n", cp->func, cp->file,
-													  cp->line,(int) bused, (int) ( source->samples * 768));
+								if (bused > source->samples * 768) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Leaking stream handle! [%s() %s:%d] %d used %d max\n",
+													  cp->func, cp->file, cp->line, (int) bused, (int) (source->samples * 768));
 									switch_buffer_zero(cp->audio_buffer);
 								} else {
 									switch_buffer_write(cp->audio_buffer, source->databuf, bytesToWrite);
@@ -357,7 +355,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_mutex_unlock(globals.mutex);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " thread ending succesfully !\n");
-	switch_thread_exit(thread,SWITCH_STATUS_SUCCESS);
+	switch_thread_exit(thread, SWITCH_STATUS_SUCCESS);
 
 	return NULL;
 }
@@ -365,14 +363,14 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 static switch_status_t portaudio_stream_file_open(switch_file_handle_t *handle, const char *path)
 {
-	portaudio_stream_context_t *context ;
+	portaudio_stream_context_t *context;
 	portaudio_stream_source_t *source;
 	switch_memory_pool_t *pool;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	uint32_t rate = PREFERRED_RATE;
-	char *npath ;
+	char *npath;
 	int devNumber;
 	int tmp;
 
@@ -383,7 +381,7 @@ static switch_status_t portaudio_stream_file_open(switch_file_handle_t *handle, 
 		return status;
 	}
 
-	npath =  switch_core_strdup(module_pool, path);
+	npath = switch_core_strdup(module_pool, path);
 
 	tmp = handle->samplerate;
 	if (tmp == 8000 || tmp == 16000 || tmp == 32000 || tmp == 48000) {
@@ -391,11 +389,11 @@ static switch_status_t portaudio_stream_file_open(switch_file_handle_t *handle, 
 	}
 
 	if (*path == '#') {
-		devNumber = get_dev_by_number(npath  + 1, 1);
+		devNumber = get_dev_by_number(npath + 1, 1);
 	} else {
-		devNumber = get_dev_by_name(npath , 1);
+		devNumber = get_dev_by_name(npath, 1);
 	}
-    npath = switch_mprintf("device-%d at %d",devNumber,rate);
+	npath = switch_mprintf("device-%d at %d", devNumber, rate);
 
 	switch_mutex_lock(globals.mutex);
 	source = switch_core_hash_find(globals.source_hash, npath);
@@ -408,7 +406,7 @@ static switch_status_t portaudio_stream_file_open(switch_file_handle_t *handle, 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, " :S no pool\n");
 		} else {
 			source = switch_core_alloc(pool, sizeof(*source));
-			if (source!=NULL){
+			if (source != NULL) {
 				source->pool = pool;
 				source->sourcedev = devNumber;
 				source->sourcename = switch_core_strdup(source->pool, npath);
@@ -436,8 +434,8 @@ static switch_status_t portaudio_stream_file_open(switch_file_handle_t *handle, 
 	/* dev already engaged */
 	if (source) {
 
-		/*wait for source to be ready*/
-		while(source->ready==0) {
+		/*wait for source to be ready */
+		while (source->ready == 0) {
 			switch_yield(100000);
 		}
 
@@ -596,7 +594,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_stream_shutdown)
 	globals.running = 0;
 	switch_event_unbind_callback(shutdown_event_handler);
 
-	while(globals.threads > 0) {
+	while (globals.threads > 0) {
 		switch_yield(100000);
 	}
 

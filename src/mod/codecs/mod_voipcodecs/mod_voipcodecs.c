@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -80,9 +80,11 @@ static switch_status_t switch_lpc10_destroy(switch_codec_t *codec)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (context->encoder_object) lpc10_encode_free(context->encoder_object);
+	if (context->encoder_object)
+		lpc10_encode_free(context->encoder_object);
 	context->encoder_object = NULL;
-	if (context->decoder_object) lpc10_decode_free(context->decoder_object);
+	if (context->decoder_object)
+		lpc10_decode_free(context->decoder_object);
 	context->decoder_object = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -160,7 +162,8 @@ static switch_status_t switch_gsm_encode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
-										 uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
+										 uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
+										 unsigned int *flag)
 {
 	struct gsm_context *context = codec->private_info;
 
@@ -177,7 +180,8 @@ static switch_status_t switch_gsm_decode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
-										 uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
+										 uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
+										 unsigned int *flag)
 {
 	struct gsm_context *context = codec->private_info;
 
@@ -200,9 +204,11 @@ static switch_status_t switch_gsm_destroy(switch_codec_t *codec)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (context->decoder_object) gsm0610_free(context->decoder_object);
+	if (context->decoder_object)
+		gsm0610_free(context->decoder_object);
 	context->decoder_object = NULL;
-	if (context->encoder_object) gsm0610_free(context->encoder_object);
+	if (context->encoder_object)
+		gsm0610_free(context->encoder_object);
 	context->encoder_object = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -433,9 +439,11 @@ static switch_status_t switch_g722_destroy(switch_codec_t *codec)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (context->decoder_object) g722_decode_free(context->decoder_object);
+	if (context->decoder_object)
+		g722_decode_free(context->decoder_object);
 	context->decoder_object = NULL;
-	if (context->encoder_object) g722_encode_free(context->encoder_object);
+	if (context->encoder_object)
+		g722_encode_free(context->encoder_object);
 	context->encoder_object = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -456,14 +464,14 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 
 	if (!(encoding || decoding)) {
 		return SWITCH_STATUS_FALSE;
-	} 
+	}
 
 	if ((flags & SWITCH_CODEC_FLAG_AAL2 || strstr(codec->implementation->iananame, "AAL2"))) {
 		packing = G726_PACKING_LEFT;
 	}
-	
+
 	context = g726_init(context, codec->implementation->bits_per_second, G726_ENCODING_LINEAR, packing);
-	
+
 	codec->private_info = context;
 	return SWITCH_STATUS_SUCCESS;
 
@@ -597,9 +605,11 @@ static switch_status_t switch_adpcm_destroy(switch_codec_t *codec)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (context->decoder_object) ima_adpcm_free(context->decoder_object);
+	if (context->decoder_object)
+		ima_adpcm_free(context->decoder_object);
 	context->decoder_object = NULL;
-	if (context->encoder_object) ima_adpcm_free(context->encoder_object);
+	if (context->encoder_object)
+		ima_adpcm_free(context->encoder_object);
 	context->encoder_object = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -620,260 +630,238 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	mpf = 10000, spf = 80, bpf = 160, ebpf = 80;
 	SWITCH_ADD_CODEC(codec_interface, "ADPCM (IMA)");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 5,							/* the IANA code number */
-											 "DVI4",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 32000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 (ebpf * count) + 4,		/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 spf * count,				/* number of frames per network packet */
-											 switch_adpcm_init,			/* function to initialize a codec handle using this implementation */
-											 switch_adpcm_encode,		/* function to encode raw data into encoded data */
-											 switch_adpcm_decode,		/* function to decode encoded data into raw data */
-											 switch_adpcm_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 5,	/* the IANA code number */
+											 "DVI4",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 32000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 (ebpf * count) + 4,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 spf * count,	/* number of frames per network packet */
+											 switch_adpcm_init,	/* function to initialize a codec handle using this implementation */
+											 switch_adpcm_encode,	/* function to encode raw data into encoded data */
+											 switch_adpcm_decode,	/* function to decode encoded data into raw data */
+											 switch_adpcm_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 	mpf = 10000, spf = 160, bpf = 320, ebpf = 160;
 	for (count = 6; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 6,							/* the IANA code number */
-											 "DVI4",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 16000,						/* samples transferred per second */
-											 16000,						/* actual samples transferred per second */
-											 64000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 (ebpf * count) + 4,		/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 spf * count,				/* number of frames per network packet */
-											 switch_adpcm_init,			/* function to initialize a codec handle using this implementation */
-											 switch_adpcm_encode,		/* function to encode raw data into encoded data */
-											 switch_adpcm_decode,		/* function to decode encoded data into raw data */
-											 switch_adpcm_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 6,	/* the IANA code number */
+											 "DVI4",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 16000,	/* samples transferred per second */
+											 16000,	/* actual samples transferred per second */
+											 64000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 (ebpf * count) + 4,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 spf * count,	/* number of frames per network packet */
+											 switch_adpcm_init,	/* function to initialize a codec handle using this implementation */
+											 switch_adpcm_encode,	/* function to encode raw data into encoded data */
+											 switch_adpcm_decode,	/* function to decode encoded data into raw data */
+											 switch_adpcm_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 
 	/* G726 */
 	mpf = 10000, spf = 80, bpf = 160, ebpf = 20;
 	SWITCH_ADD_CODEC(codec_interface, "G.726 16k (AAL2)");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 124,						/* the IANA code number */
-											 "AAL2-G726-16",			/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 16000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 count * 10,				/* number of frames per network packet */
-											 switch_g726_init,			/* function to initialize a codec handle using this implementation */
-											 switch_g726_encode,		/* function to encode raw data into encoded data */
-											 switch_g726_decode,		/* function to decode encoded data into raw data */
-											 switch_g726_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 124,	/* the IANA code number */
+											 "AAL2-G726-16",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 16000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 count * 10,	/* number of frames per network packet */
+											 switch_g726_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g726_encode,	/* function to encode raw data into encoded data */
+											 switch_g726_decode,	/* function to decode encoded data into raw data */
+											 switch_g726_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 	SWITCH_ADD_CODEC(codec_interface, "G.726 16k");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 124,						/* the IANA code number */
-											 "G726-16",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 16000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 count * 10,				/* number of frames per network packet */
-											 switch_g726_init,			/* function to initialize a codec handle using this implementation */
-											 switch_g726_encode,		/* function to encode raw data into encoded data */
-											 switch_g726_decode,		/* function to decode encoded data into raw data */
-											 switch_g726_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 124,	/* the IANA code number */
+											 "G726-16",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 16000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 count * 10,	/* number of frames per network packet */
+											 switch_g726_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g726_encode,	/* function to encode raw data into encoded data */
+											 switch_g726_decode,	/* function to decode encoded data into raw data */
+											 switch_g726_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 	/* Increase encoded bytes per frame by 10 */
 	ebpf = ebpf + 10;
 
 	SWITCH_ADD_CODEC(codec_interface, "G.726 24k (AAL2)");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 123,						/* the IANA code number */
-											 "AAL2-G726-24",			/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 24000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 count * 10,				/* number of frames per network packet */
-											 switch_g726_init,			/* function to initialize a codec handle using this implementation */
-											 switch_g726_encode,		/* function to encode raw data into encoded data */
-											 switch_g726_decode,		/* function to decode encoded data into raw data */
-											 switch_g726_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 123,	/* the IANA code number */
+											 "AAL2-G726-24",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 24000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 count * 10,	/* number of frames per network packet */
+											 switch_g726_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g726_encode,	/* function to encode raw data into encoded data */
+											 switch_g726_decode,	/* function to decode encoded data into raw data */
+											 switch_g726_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 
 	SWITCH_ADD_CODEC(codec_interface, "G.726 24k");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 123,						/* the IANA code number */
-											 "G726-24",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 24000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 count * 10,				/* number of frames per network packet */
-											 switch_g726_init,			/* function to initialize a codec handle using this implementation */
-											 switch_g726_encode,		/* function to encode raw data into encoded data */
-											 switch_g726_decode,		/* function to decode encoded data into raw data */
-											 switch_g726_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 123,	/* the IANA code number */
+											 "G726-24",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 24000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 count * 10,	/* number of frames per network packet */
+											 switch_g726_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g726_encode,	/* function to encode raw data into encoded data */
+											 switch_g726_decode,	/* function to decode encoded data into raw data */
+											 switch_g726_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 	/* Increase encoded bytes per frame by 10 */
 	ebpf = ebpf + 10;
 
 	SWITCH_ADD_CODEC(codec_interface, "G.726 32k (AAL2)");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 122,						/* the IANA code number */
-											 "AAL2-G726-32",			/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 32000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 count * 10,				/* number of frames per network packet */
-											 switch_g726_init,			/* function to initialize a codec handle using this implementation */
-											 switch_g726_encode,		/* function to encode raw data into encoded data */
-											 switch_g726_decode,		/* function to decode encoded data into raw data */
-											 switch_g726_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 122,	/* the IANA code number */
+											 "AAL2-G726-32",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 32000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 count * 10,	/* number of frames per network packet */
+											 switch_g726_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g726_encode,	/* function to encode raw data into encoded data */
+											 switch_g726_decode,	/* function to decode encoded data into raw data */
+											 switch_g726_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 	SWITCH_ADD_CODEC(codec_interface, "G.726 32k");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 122,						/* the IANA code number */
-											 "G726-32",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 32000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 count * 10,				/* number of frames per network packet */
-											 switch_g726_init,			/* function to initialize a codec handle using this implementation */
-											 switch_g726_encode,		/* function to encode raw data into encoded data */
-											 switch_g726_decode,		/* function to decode encoded data into raw data */
-											 switch_g726_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 122,	/* the IANA code number */
+											 "G726-32",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 32000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 count * 10,	/* number of frames per network packet */
+											 switch_g726_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g726_encode,	/* function to encode raw data into encoded data */
+											 switch_g726_decode,	/* function to decode encoded data into raw data */
+											 switch_g726_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 	/* Increase encoded bytes per frame by 10 */
 	ebpf = ebpf + 10;
 
 	SWITCH_ADD_CODEC(codec_interface, "G.726 40k (AAL2)");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 121,						/* the IANA code number */
-											 "AAL2-G726-40",			/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 40000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 count * 10,				/* number of frames per network packet */
-											 switch_g726_init,			/* function to initialize a codec handle using this implementation */
-											 switch_g726_encode,		/* function to encode raw data into encoded data */
-											 switch_g726_decode,		/* function to decode encoded data into raw data */
-											 switch_g726_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 121,	/* the IANA code number */
+											 "AAL2-G726-40",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 40000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 count * 10,	/* number of frames per network packet */
+											 switch_g726_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g726_encode,	/* function to encode raw data into encoded data */
+											 switch_g726_decode,	/* function to decode encoded data into raw data */
+											 switch_g726_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 	SWITCH_ADD_CODEC(codec_interface, "G.726 40k");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 121,						/* the IANA code number */
-											 "G726-40",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 40000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 count * 10,				/* number of frames per network packet */
-											 switch_g726_init,			/* function to initialize a codec handle using this implementation */
-											 switch_g726_encode,		/* function to encode raw data into encoded data */
-											 switch_g726_decode,		/* function to decode encoded data into raw data */
-											 switch_g726_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 121,	/* the IANA code number */
+											 "G726-40",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 40000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 count * 10,	/* number of frames per network packet */
+											 switch_g726_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g726_encode,	/* function to encode raw data into encoded data */
+											 switch_g726_decode,	/* function to decode encoded data into raw data */
+											 switch_g726_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 	/* G722 */
 	mpf = 10000, spf = 80, bpf = 320, ebpf = 80;
 	SWITCH_ADD_CODEC(codec_interface, "G.722");
 	for (count = 6; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 9,							/* the IANA code number */
-											 "G722",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 16000,						/* actual samples transferred per second */
-											 64000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 spf * count,				/* number of frames per network packet */
-											 switch_g722_init,			/* function to initialize a codec handle using this implementation */
-											 switch_g722_encode,		/* function to encode raw data into encoded data */
-											 switch_g722_decode,		/* function to decode encoded data into raw data */
-											 switch_g722_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 9,	/* the IANA code number */
+											 "G722",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 16000,	/* actual samples transferred per second */
+											 64000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 spf * count,	/* number of frames per network packet */
+											 switch_g722_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g722_encode,	/* function to encode raw data into encoded data */
+											 switch_g722_decode,	/* function to decode encoded data into raw data */
+											 switch_g722_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 
 #ifdef ENABLE_G711
@@ -881,48 +869,44 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	mpf = 10000, spf = 80, bpf = 160, ebpf = 80;
 	SWITCH_ADD_CODEC(codec_interface, "G.711 ulaw");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 0,							/* the IANA code number */
-											 "PCMU",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 64000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 spf * count,				/* number of frames per network packet */
-											 switch_g711u_init,			/* function to initialize a codec handle using this implementation */
-											 switch_g711u_encode,		/* function to encode raw data into encoded data */
-											 switch_g711u_decode,		/* function to decode encoded data into raw data */
-											 switch_g711u_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 0,	/* the IANA code number */
+											 "PCMU",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 64000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 spf * count,	/* number of frames per network packet */
+											 switch_g711u_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g711u_encode,	/* function to encode raw data into encoded data */
+											 switch_g711u_decode,	/* function to decode encoded data into raw data */
+											 switch_g711u_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 
 	SWITCH_ADD_CODEC(codec_interface, "G.711 alaw");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 8,							/* the IANA code number */
-											 "PCMA",					/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 64000,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 spf * count,				/* number of frames per network packet */
-											 switch_g711a_init,			/* function to initialize a codec handle using this implementation */
-											 switch_g711a_encode,		/* function to encode raw data into encoded data */
-											 switch_g711a_decode,		/* function to decode encoded data into raw data */
-											 switch_g711a_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 8,	/* the IANA code number */
+											 "PCMA",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 64000,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 spf * count,	/* number of frames per network packet */
+											 switch_g711a_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g711a_encode,	/* function to encode raw data into encoded data */
+											 switch_g711a_decode,	/* function to decode encoded data into raw data */
+											 switch_g711a_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 #endif
 
@@ -930,47 +914,44 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	mpf = 20000, spf = 160, bpf = 320, ebpf = 33;
 	SWITCH_ADD_CODEC(codec_interface, "GSM");
 	for (count = 6; count > 0; count--) {
-		switch_core_codec_add_implementation(pool,
-											 codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 3,							/* the IANA code number */
-											 "GSM",						/* the IANA code name */
-											 NULL,						/* default fmtp to send (can be overridden by the init function) */
-											 8000,						/* samples transferred per second */
-											 8000,						/* actual samples transferred per second */
-											 13200,						/* bits transferred per second */
-											 mpf * count,				/* number of microseconds per frame */
-											 spf * count,				/* number of samples per frame */
-											 bpf * count,				/* number of bytes per frame decompressed */
-											 ebpf * count,				/* number of bytes per frame compressed */
-											 1,							/* number of channels represented */
-											 count,						/* number of frames per network packet */
-											 switch_gsm_init,			/* function to initialize a codec handle using this implementation */
-											 switch_gsm_encode,			/* function to encode raw data into encoded data */
-											 switch_gsm_decode,			/* function to decode encoded data into raw data */
-											 switch_gsm_destroy);		/* deinitalize a codec handle using this implementation */
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 3,	/* the IANA code number */
+											 "GSM",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 8000,	/* samples transferred per second */
+											 8000,	/* actual samples transferred per second */
+											 13200,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count,	/* number of samples per frame */
+											 bpf * count,	/* number of bytes per frame decompressed */
+											 ebpf * count,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 count,	/* number of frames per network packet */
+											 switch_gsm_init,	/* function to initialize a codec handle using this implementation */
+											 switch_gsm_encode,	/* function to encode raw data into encoded data */
+											 switch_gsm_decode,	/* function to decode encoded data into raw data */
+											 switch_gsm_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 	/* LPC10 */
 #if SWITCH_MAX_INTERVAL >= 90
 	SWITCH_ADD_CODEC(codec_interface, "LPC-10");
-	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 7,							/* the IANA code number */
-										 "LPC",						/* the IANA code name */
-										 NULL,						/* default fmtp to send (can be overridden by the init function) */
-										 8000,						/* samples transferred per second */
-										 8000,						/* actual samples transferred per second */
-										 2400,						/* bits transferred per second */
-										 90000,						/* number of microseconds per frame */
-										 720,						/* number of samples per frame */
-										 1440,						/* number of bytes per frame decompressed */
-										 28,						/* number of bytes per frame compressed */
-										 1,							/* number of channels represented */
-										 4,							/* number of frames per network packet */
-										 switch_lpc10_init,			/* function to initialize a codec handle using this implementation */
-										 switch_lpc10_encode,		/* function to encode raw data into encoded data */
-										 switch_lpc10_decode,		/* function to decode encoded data into raw data */
-										 switch_lpc10_destroy);		/* deinitalize a codec handle using this implementation */
+	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 7,	/* the IANA code number */
+										 "LPC",	/* the IANA code name */
+										 NULL,	/* default fmtp to send (can be overridden by the init function) */
+										 8000,	/* samples transferred per second */
+										 8000,	/* actual samples transferred per second */
+										 2400,	/* bits transferred per second */
+										 90000,	/* number of microseconds per frame */
+										 720,	/* number of samples per frame */
+										 1440,	/* number of bytes per frame decompressed */
+										 28,	/* number of bytes per frame compressed */
+										 1,	/* number of channels represented */
+										 4,	/* number of frames per network packet */
+										 switch_lpc10_init,	/* function to initialize a codec handle using this implementation */
+										 switch_lpc10_encode,	/* function to encode raw data into encoded data */
+										 switch_lpc10_decode,	/* function to decode encoded data into raw data */
+										 switch_lpc10_destroy);	/* deinitalize a codec handle using this implementation */
 #endif
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

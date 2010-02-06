@@ -103,11 +103,11 @@ static switch_status_t th_spell(switch_core_session_t *session, char *tosay, swi
 static char *strip_commas(char *in, char *out, switch_size_t len)
 {
 	char *p = in;
-    char *q = out;
+	char *q = out;
 	char *ret = out;
 	switch_size_t x = 0;
 
-	for ( ; p && *p; p++) {
+	for (; p && *p; p++) {
 		if ((*p >= '0' && *p <= '9')) {
 			*q++ = *p;
 		} else if (*p != ',') {
@@ -127,7 +127,7 @@ static char *strip_commas(char *in, char *out, switch_size_t len)
 static char *strip_nonnumerics(char *in, char *out, switch_size_t len)
 {
 	char *p = in;
-    char *q = out;
+	char *q = out;
 	char *ret = out;
 	switch_size_t x = 0;
 
@@ -151,8 +151,8 @@ static switch_status_t th_say_general_count(switch_core_session_t *session,
 {
 	int in;
 	char sbuf[13] = "";
-    char digits[11];
-    int i;
+	char digits[11];
+	int i;
 
 	if (!(tosay = strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
@@ -163,123 +163,108 @@ static switch_status_t th_say_general_count(switch_core_session_t *session,
 
 	if (in != 0) {
 		snprintf(digits, sizeof(digits), "%10.10d", in);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Say: %s \n",digits);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Say: %s \n", digits);
 		switch (method) {
 		case SSM_COUNTED:
 			say_file("digits/ordinal.wav");
 			/* Fall through */
 		case SSM_PRONOUNCED:
-            for (i = 0;  i <= 9;  i++)
-            {
-                switch (i)
-                {
-                case 0:
-                    /* Billions column */
-                    if (digits[i] != '0')
-                    {
-                        if (digits[i] != '1')
-                    		say_file("digits/%c.wav", digits[i]);
-                  		say_file("digits/10.wav");
-                    }
-                    break;
-                case 1:
-                    /* Hundred millions columns */
-                    if (digits[i] != '0')
-                   		say_file("digits/%c.wav", digits[i]);
-                    if (memcmp (digits, "00", 2) != 0)
-                  		say_file("digits/100000000.wav");
-                    break;
-                case 2:
-                    /* ten Millions column */
-                    if (digits[i] != '0')
-                    {
-                   		say_file("digits/%c.wav", digits[i]);
-                   		say_file("digits/10000000.wav");
-                    }
-                    break;
-                case 3:
-                    /* Millions column */
-                    if (digits[i] != '0')
-                    {
-                   		say_file("digits/%c.wav", digits[i]);
-                   		say_file("digits/1000000.wav");
-                    }
-                    break;
-                case 4:
-                    /* Hundred thousands column */
-                    if (digits[i] != '0')
-                    {
-                   		say_file("digits/%c.wav", digits[i]);
-                        if (memcmp (digits + 2, "00000", 4) != 0)
-                       		say_file("digits/100000.wav");
-                    }
+			for (i = 0; i <= 9; i++) {
+				switch (i) {
+				case 0:
+					/* Billions column */
+					if (digits[i] != '0') {
+						if (digits[i] != '1')
+							say_file("digits/%c.wav", digits[i]);
+						say_file("digits/10.wav");
+					}
+					break;
+				case 1:
+					/* Hundred millions columns */
+					if (digits[i] != '0')
+						say_file("digits/%c.wav", digits[i]);
+					if (memcmp(digits, "00", 2) != 0)
+						say_file("digits/100000000.wav");
+					break;
+				case 2:
+					/* ten Millions column */
+					if (digits[i] != '0') {
+						say_file("digits/%c.wav", digits[i]);
+						say_file("digits/10000000.wav");
+					}
+					break;
+				case 3:
+					/* Millions column */
+					if (digits[i] != '0') {
+						say_file("digits/%c.wav", digits[i]);
+						say_file("digits/1000000.wav");
+					}
+					break;
+				case 4:
+					/* Hundred thousands column */
+					if (digits[i] != '0') {
+						say_file("digits/%c.wav", digits[i]);
+						if (memcmp(digits + 2, "00000", 4) != 0)
+							say_file("digits/100000.wav");
+					}
 
-                    break;
-        
-                case 5:
-                    /* Ten thousands column */
-                    if (digits[i] != '0')
-                    {
-                   		say_file("digits/%c.wav", digits[i]);
-                        if (memcmp (digits + 2, "0000", 4) != 0)
-                       		say_file("digits/10000.wav");
-                    }
-                    break;
-                case 6:
-                    /* Ten millions or thousands column */
-                    if (digits[i] != '0')
-                    {
-                   		say_file("digits/%c.wav", digits[i]);
-                  		say_file("digits/1000.wav");
-                    }
-                    break;
-                case 7:
-                    /* hundreds column */
-                    if (digits[i] != '0')
-                    {
-                   		say_file("digits/%c.wav", digits[i]);
-                   		say_file("digits/100.wav");
-                    }
-                    break;
-                case 8:
-                    /* Tens column */
-                    if (digits[i] != '0')
-                    {
-                        if (digits[i] == '2')
-                        {
-                       		say_file("digits/20.wav");
-				break;
-                        }
-                        if (digits[i] == '1')
-                        {
-                       		say_file("digits/10.wav");
-				break;
-                        }
-                        if (digits[i] != '1'
-                            ||
-                            memcmp (digits, "00000000", 8) != 0)
-                        {
-                       		say_file("digits/%c.wav", digits[i]);
-                        }
-                    }
-                    if (digits[8] != '0')
-                   		say_file("digits/10.wav");
-                    break;
-                case 9:
-                    /* Units column */
-                    if (digits[9] == '1'){
-                	    if (digits[8] != '0'){
-                   		say_file("digits/ed.wav", digits[i]);
-			    }else{	
-                   		say_file("digits/%c.wav", digits[i]);
-			    }	
-                	    break;
-		    }
-                    if (digits[9] != '0')
-                   		say_file("digits/%c.wav", digits[i]);
-                    break;
-                }
-            }
+					break;
+
+				case 5:
+					/* Ten thousands column */
+					if (digits[i] != '0') {
+						say_file("digits/%c.wav", digits[i]);
+						if (memcmp(digits + 2, "0000", 4) != 0)
+							say_file("digits/10000.wav");
+					}
+					break;
+				case 6:
+					/* Ten millions or thousands column */
+					if (digits[i] != '0') {
+						say_file("digits/%c.wav", digits[i]);
+						say_file("digits/1000.wav");
+					}
+					break;
+				case 7:
+					/* hundreds column */
+					if (digits[i] != '0') {
+						say_file("digits/%c.wav", digits[i]);
+						say_file("digits/100.wav");
+					}
+					break;
+				case 8:
+					/* Tens column */
+					if (digits[i] != '0') {
+						if (digits[i] == '2') {
+							say_file("digits/20.wav");
+							break;
+						}
+						if (digits[i] == '1') {
+							say_file("digits/10.wav");
+							break;
+						}
+						if (digits[i] != '1' || memcmp(digits, "00000000", 8) != 0) {
+							say_file("digits/%c.wav", digits[i]);
+						}
+					}
+					if (digits[8] != '0')
+						say_file("digits/10.wav");
+					break;
+				case 9:
+					/* Units column */
+					if (digits[9] == '1') {
+						if (digits[8] != '0') {
+							say_file("digits/ed.wav", digits[i]);
+						} else {
+							say_file("digits/%c.wav", digits[i]);
+						}
+						break;
+					}
+					if (digits[9] != '0')
+						say_file("digits/%c.wav", digits[i]);
+					break;
+				}
+			}
 			break;
 		case SSM_ITERATED:
 			{
@@ -338,10 +323,7 @@ static switch_status_t th_ip(switch_core_session_t *session, char *tosay, switch
 }
 
 static switch_status_t th_say_time(switch_core_session_t *session,
-								   char *tosay,
-								   switch_say_type_t type,
-								   switch_say_method_t method,
-								   switch_input_args_t *args)
+								   char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 	int32_t t;
 	switch_time_t target = 0;
@@ -351,7 +333,7 @@ static switch_status_t th_say_time(switch_core_session_t *session,
 	switch_time_exp_t tm2;
 #endif
 	uint8_t say_date = 0;
-    uint8_t say_time = 0;
+	uint8_t say_time = 0;
 
 	if (type == SST_TIME_MEASUREMENT) {
 		int64_t hours = 0;
@@ -397,16 +379,16 @@ static switch_status_t th_say_time(switch_core_session_t *session,
 		if (hours) {
 			if (hours == 2) {
 				say_file("time/2s.wav");
- 			} else {
-			    say_num(hours, SSM_PRONOUNCED);
+			} else {
+				say_num(hours, SSM_PRONOUNCED);
 			}
 			say_file("time/hours.wav");
 		}
 		if (minutes) {
 			if (minutes == 2) {
 				say_file("time/2s.wav");
- 			} else {
-			    say_num(minutes, SSM_PRONOUNCED);
+			} else {
+				say_num(minutes, SSM_PRONOUNCED);
 			}
 			say_file("time/minute.wav");
 		} else {
@@ -419,12 +401,12 @@ static switch_status_t th_say_time(switch_core_session_t *session,
 		if (seconds) {
 			if (seconds == 2) {
 				say_file("time/2s.wav");
- 			} else {
-			    say_num(hours, SSM_PRONOUNCED);
+			} else {
+				say_num(hours, SSM_PRONOUNCED);
 			}
 			say_file("time/seconds.wav");
 		} else {
-			if (hours  ||  minutes) {
+			if (hours || minutes) {
 				say_file("digits/0.wav");
 				say_file("time/second.wav");
 			}
@@ -441,8 +423,7 @@ static switch_status_t th_say_time(switch_core_session_t *session,
 
 	switch (type) {
 	case SST_CURRENT_DATE_TIME:
-		say_date =
-		say_time = 1;
+		say_date = say_time = 1;
 		break;
 	case SST_CURRENT_DATE:
 		say_date = 1;
@@ -455,7 +436,7 @@ static switch_status_t th_say_time(switch_core_session_t *session,
 	}
 
 	if (say_date) {
-        say_num(tm.tm_year + 1900, SSM_ITERATED);
+		say_num(tm.tm_year + 1900, SSM_ITERATED);
 		say_file("time/year.wav");
 		say_num(tm.tm_mon + 1, SSM_PRONOUNCED);
 		say_file("time/month.wav");
@@ -464,52 +445,39 @@ static switch_status_t th_say_time(switch_core_session_t *session,
 		say_file("time/day-%d.wav", tm.tm_wday);
 
 #if 0
-        tm = *localtime(&then);
+		tm = *localtime(&then);
 
-        this_morning = switch_micro_time_now();
-    	switch_time_exp_lt(&tm2, this_morning);
-        tm2->tm_hour = 0;
-        tm2->tm_min = 0;
-        tm2->tm_sec = 0;
-        this_morning = mktime(tm2);
+		this_morning = switch_micro_time_now();
+		switch_time_exp_lt(&tm2, this_morning);
+		tm2->tm_hour = 0;
+		tm2->tm_min = 0;
+		tm2->tm_sec = 0;
+		this_morning = mktime(tm2);
 
-        if (this_morning <= then  &&  then < (this_morning + 86400L))
-        {
+		if (this_morning <= then && then < (this_morning + 86400L)) {
 			say_file("time/today.wav");
-        }
-        else if ((this_morning - 86400L) <= then  &&  then < this_morning)
-        {
+		} else if ((this_morning - 86400L) <= then && then < this_morning) {
 			say_file("time/yesterday.wav");
-        }
-        else if ((this_morning + 86400L) <= then  &&  then < (this_morning + 2*86400L))
-        {
+		} else if ((this_morning + 86400L) <= then && then < (this_morning + 2 * 86400L)) {
 			say_file("time/tomorrow.wav");
-        }
-        else if ((this_morning - 7*86400L) <= then  &&  then < this_morning)
-        {
-    		say_file("time/day-%d.wav", tm.tm_wday);
-        }
-        else
-        {
-            if (tm2->tm_year != tm.tm_year)
-            {
-                say_num(tm.tm_year + 1900, SSM_ITERATED);
-		        say_file("time/year.wav");
-            }
-            /*endif*/
-            if (tm2->tm_year != tm.tm_year
-                ||
-                tm2->tm_mon != tm.tm_mon)
-            {
-        		say_num(tm.tm_mon + 1, SSM_PRONOUNCED);
-        		say_file("time/month.wav");
-            }
-            /*endif*/
-            /* Always say the day and the day of the week */
-    		say_num(tm.tm_mday, SSM_PRONOUNCED);
-	    	say_file("time/day.wav");
-    		say_file("time/day-%d.wav", tm.tm_wday);
-        }
+		} else if ((this_morning - 7 * 86400L) <= then && then < this_morning) {
+			say_file("time/day-%d.wav", tm.tm_wday);
+		} else {
+			if (tm2->tm_year != tm.tm_year) {
+				say_num(tm.tm_year + 1900, SSM_ITERATED);
+				say_file("time/year.wav");
+			}
+			/*endif */
+			if (tm2->tm_year != tm.tm_year || tm2->tm_mon != tm.tm_mon) {
+				say_num(tm.tm_mon + 1, SSM_PRONOUNCED);
+				say_file("time/month.wav");
+			}
+			/*endif */
+			/* Always say the day and the day of the week */
+			say_num(tm.tm_mday, SSM_PRONOUNCED);
+			say_file("time/day.wav");
+			say_file("time/day-%d.wav", tm.tm_wday);
+		}
 #endif
 	}
 
@@ -517,13 +485,13 @@ static switch_status_t th_say_time(switch_core_session_t *session,
 		int32_t hour = tm.tm_hour;
 
 		if (hour < 6) {
-            say_file("time/morning.wav");
+			say_file("time/morning.wav");
 		} else if (hour < 12) {
-            say_file("time/am.wav");
+			say_file("time/am.wav");
 		} else if (tm.tm_hour < 18) {
-            say_file("time/pm.wav");
+			say_file("time/pm.wav");
 		} else {
-            say_file("time/evening.wav");
+			say_file("time/evening.wav");
 		}
 		if (hour > 12)
 			hour -= 12;
@@ -541,7 +509,7 @@ static switch_status_t th_say_time(switch_core_session_t *session,
 		} else {
 			say_num(tm.tm_min, SSM_PRONOUNCED);
 		}
-		say_file("time/minute.wav");  
+		say_file("time/minute.wav");
 	}
 	return SWITCH_STATUS_SUCCESS;
 }

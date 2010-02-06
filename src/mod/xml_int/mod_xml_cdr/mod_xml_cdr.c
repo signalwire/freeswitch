@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -42,7 +42,7 @@
 
 static struct {
 	char *cred;
-	char *urls[MAX_URLS+1];
+	char *urls[MAX_URLS + 1];
 	int url_count;
 	int url_index;
 	switch_thread_rwlock_t *log_path_lock;
@@ -110,27 +110,23 @@ static switch_status_t set_xml_cdr_log_dirs()
 					switch_safe_free(globals.log_dir);
 					globals.log_dir = path;
 					switch_thread_rwlock_unlock(globals.log_path_lock);
-				}
-				else {
+				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create new mod_xml_cdr log_dir path\n");
 					switch_safe_free(path);
 					status = SWITCH_STATUS_FALSE;
 				}
-			}
-			else {
+			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to generate new mod_xml_cdr log_dir path\n");
 				status = SWITCH_STATUS_FALSE;
 			}
-		}
-		else {
+		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Setting log file path to %s\n", globals.base_log_dir);
 			if ((path = switch_safe_strdup(globals.base_log_dir))) {
 				switch_thread_rwlock_wrlock(globals.log_path_lock);
 				switch_safe_free(globals.log_dir);
 				globals.log_dir = path;
 				switch_thread_rwlock_unlock(globals.log_path_lock);
-			}
-			else {
+			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set log_dir path\n");
 				status = SWITCH_STATUS_FALSE;
 			}
@@ -152,27 +148,23 @@ static switch_status_t set_xml_cdr_log_dirs()
 					switch_safe_free(globals.err_log_dir);
 					globals.err_log_dir = path;
 					switch_thread_rwlock_unlock(globals.log_path_lock);
-				}
-				else {
+				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create new mod_xml_cdr err_log_dir path\n");
 					switch_safe_free(path);
 					status = SWITCH_STATUS_FALSE;
 				}
-			}
-			else {
+			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to generate new mod_xml_cdr err_log_dir path\n");
 				status = SWITCH_STATUS_FALSE;
 			}
-		}
-		else {
+		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Setting err log file path to %s\n", globals.base_err_log_dir);
 			if ((path = switch_safe_strdup(globals.base_err_log_dir))) {
 				switch_thread_rwlock_wrlock(globals.log_path_lock);
 				switch_safe_free(globals.err_log_dir);
 				globals.err_log_dir = path;
 				switch_thread_rwlock_unlock(globals.log_path_lock);
-			}
-			else {
+			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set err_log_dir path\n");
 				status = SWITCH_STATUS_FALSE;
 			}
@@ -199,7 +191,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int is_b;
-	const char * a_prefix = "";
+	const char *a_prefix = "";
 
 	if (globals.shutdown) {
 		return SWITCH_STATUS_SUCCESS;
@@ -209,7 +201,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	if (!globals.log_b && is_b) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-	if (!is_b && globals.prefix_a) a_prefix = "a_";
+	if (!is_b && globals.prefix_a)
+		a_prefix = "a_";
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Generating Data!\n");
@@ -236,7 +229,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 #ifdef _MSC_VER
 			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 #else
-			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR| S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
+			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
 #endif
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
@@ -253,14 +246,13 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			}
 			switch_safe_free(path);
 		}
-	}
-	else {
+	} else {
 		switch_thread_rwlock_unlock(globals.log_path_lock);
 	}
 
 	/* try to post it to the web server */
 	if (globals.url_count) {
-		char* destUrl = NULL;
+		char *destUrl = NULL;
 		curl_handle = curl_easy_init();
 
 		if (globals.encode == ENCODING_TEXTXML) {
@@ -306,19 +298,19 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			slist = curl_slist_append(slist, "Expect:");
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
 		}
-		
+
 		if (globals.ssl_cert_file) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, globals.ssl_cert_file);
 		}
-		
+
 		if (globals.ssl_key_file) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSLKEY, globals.ssl_key_file);
 		}
-		
+
 		if (globals.ssl_key_password) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSLKEYPASSWD, globals.ssl_key_password);
 		}
-		
+
 		if (globals.ssl_version) {
 			if (!strcasecmp(globals.ssl_version, "SSLv3")) {
 				curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
@@ -326,7 +318,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
 			}
 		}
-		
+
 		if (globals.ssl_cacert_file) {
 			curl_easy_setopt(curl_handle, CURLOPT_CAINFO, globals.ssl_cacert_file);
 		}
@@ -340,7 +332,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			if (cur_try > 0) {
 				switch_yield(globals.delay * 1000000);
 			}
-			
+
 			destUrl = switch_mprintf("%s?uuid=%s", globals.urls[globals.url_index], switch_core_session_get_uuid(session));
 			curl_easy_setopt(curl_handle, CURLOPT_URL, destUrl);
 
@@ -348,11 +340,11 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 			}
-			
+
 			if (globals.enable_cacert_check) {
 				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, TRUE);
 			}
-			
+
 			if (globals.enable_ssl_verifyhost) {
 				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2);
 			}
@@ -363,7 +355,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			if (httpRes == 200) {
 				goto success;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n", 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n",
 								  httpRes, globals.urls[globals.url_index]);
 				globals.url_index++;
 				switch_assert(globals.url_count <= MAX_URLS);
@@ -449,11 +441,11 @@ static switch_state_handler_table_t state_handlers = {
 	/*.on_hangup */ NULL,
 	/*.on_exchange_media */ NULL,
 	/*.on_soft_execute */ NULL,
-	/*.on_consume_media*/ NULL,
-	/*.on_hibernate*/ NULL,
-	/*.on_reset*/ NULL,
-	/*.on_park*/ NULL,
-	/*.on_reporting*/ my_on_reporting
+	/*.on_consume_media */ NULL,
+	/*.on_hibernate */ NULL,
+	/*.on_reset */ NULL,
+	/*.on_park */ NULL,
+	/*.on_reporting */ my_on_reporting
 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
@@ -477,7 +469,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	globals.disable100continue = 0;
 	globals.pool = pool;
 	globals.auth_scheme = CURLAUTH_BASIC;
-	
+
 	switch_thread_rwlock_create(&globals.log_path_lock, pool);
 
 	/* parse the config */
@@ -558,7 +550,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 					globals.auth_scheme = 0;
 					val++;
 				}
-				
+
 				if (!strcasecmp(val, "basic")) {
 					globals.auth_scheme |= CURLAUTH_BASIC;
 				} else if (!strcasecmp(val, "digest")) {
@@ -603,7 +595,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_cdr_shutdown)
 {
 
 	globals.shutdown = 1;
-	
+
 	switch_core_remove_state_handler(&state_handlers);
 	return SWITCH_STATUS_SUCCESS;
 }

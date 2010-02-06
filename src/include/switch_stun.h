@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -41,8 +41,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_STUN_DEFAULT_PORT 3478
 #define SWITCH_STUN_PACKET_MIN_LEN 20
 #define SWITCH_STUN_ATTRIBUTE_MIN_LEN 8
-
-typedef enum {
+	typedef enum {
 	SWITCH_STUN_BINDING_REQUEST = 0x0001,
 	SWITCH_STUN_BINDING_RESPONSE = 0x0101,
 	SWITCH_STUN_BINDING_ERROR_RESPONSE = 0x0111,

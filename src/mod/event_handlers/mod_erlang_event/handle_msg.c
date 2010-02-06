@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -37,7 +37,7 @@
 
 static char *MARKER = "1";
 
-static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf);
+static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buff * rbuf);
 
 static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 {
@@ -131,7 +131,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 		} else {
 			ei_x_encode_atom(&rbuf, "error");
 		}
-		
+
 		_ei_x_encode_string(&rbuf, reply);
 
 
@@ -163,7 +163,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 
 }
 
-static switch_status_t  handle_msg_fetch_reply(listener_t *listener, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_msg_fetch_reply(listener_t *listener, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	void *p;
@@ -207,26 +207,24 @@ static switch_status_t  handle_msg_fetch_reply(listener_t *listener, ei_x_buff *
 			ei_x_encode_atom(rbuf, "invalid_uuid");
 		}
 
-		/*switch_core_hash_insert(listener->fetch_reply_hash, uuid_str, nbuf);*/
+		/*switch_core_hash_insert(listener->fetch_reply_hash, uuid_str, nbuf); */
 		switch_safe_free(nbuf->buff);
 		switch_safe_free(nbuf);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t handle_msg_set_log_level(listener_t *listener, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_msg_set_log_level(listener_t *listener, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	switch_log_level_t ltype = SWITCH_LOG_DEBUG;
 	char loglevelstr[MAXATOMLEN];
-	if (arity != 2 ||
-		ei_decode_atom(buf->buff, &buf->index, loglevelstr)) {
+	if (arity != 2 || ei_decode_atom(buf->buff, &buf->index, loglevelstr)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
-	}
-	else {
+	} else {
 		ltype = switch_log_str2level(loglevelstr);
-		
+
 		if (ltype && ltype != SWITCH_LOG_INVALID) {
 			listener->level = ltype;
 			ei_x_encode_atom(rbuf, "ok");
@@ -239,7 +237,7 @@ static switch_status_t handle_msg_set_log_level(listener_t *listener, int arity,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t handle_msg_event(listener_t *listener, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_msg_event(listener_t *listener, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char atom[MAXATOMLEN];
 
@@ -247,19 +245,18 @@ static switch_status_t handle_msg_event(listener_t *listener, int arity, ei_x_bu
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
-	}
-	else {
+	} else {
 		int custom = 0;
 		switch_event_types_t type;
 		int i = 0;
-		
+
 		if (!switch_test_flag(listener, LFLAG_EVENTS)) {
 			switch_set_flag_locked(listener, LFLAG_EVENTS);
 		}
-		
+
 		for (i = 1; i < arity; i++) {
 			if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
-				
+
 				if (custom) {
 					switch_core_hash_insert(listener->event_hash, atom, MARKER);
 				} else if (switch_name_event(atom, &type) == SWITCH_STATUS_SUCCESS) {
@@ -277,7 +274,7 @@ static switch_status_t handle_msg_event(listener_t *listener, int arity, ei_x_bu
 					if (type == SWITCH_EVENT_CUSTOM) {
 						custom++;
 					}
-					
+
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "enable event %s\n", atom);
 			}
@@ -287,7 +284,7 @@ static switch_status_t handle_msg_event(listener_t *listener, int arity, ei_x_bu
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t handle_msg_nixevent(listener_t *listener, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_msg_nixevent(listener_t *listener, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char atom[MAXATOMLEN];
 
@@ -295,20 +292,19 @@ static switch_status_t handle_msg_nixevent(listener_t *listener, int arity, ei_x
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
-	}
-	else {
+	} else {
 		int custom = 0;
 		int i = 0;
 		switch_event_types_t type;
-		
+
 		for (i = 1; i < arity; i++) {
 			if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
-				
+
 				if (custom) {
 					switch_core_hash_delete(listener->event_hash, atom);
 				} else if (switch_name_event(atom, &type) == SWITCH_STATUS_SUCCESS) {
 					uint32_t x = 0;
-					
+
 					if (type == SWITCH_EVENT_CUSTOM) {
 						custom++;
 					} else if (type == SWITCH_EVENT_ALL) {
@@ -332,19 +328,16 @@ static switch_status_t handle_msg_nixevent(listener_t *listener, int arity, ei_x
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t handle_msg_api(listener_t *listener, erlang_msg *msg, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_msg_api(listener_t *listener, erlang_msg * msg, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char api_cmd[MAXATOMLEN];
 	char arg[1024];
-	if (arity < 3 ||
-		ei_decode_atom(buf->buff, &buf->index, api_cmd) ||
-		ei_decode_string(buf->buff, &buf->index, arg)) {
+	if (arity < 3 || ei_decode_atom(buf->buff, &buf->index, api_cmd) || ei_decode_string(buf->buff, &buf->index, arg)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
 		return SWITCH_STATUS_SUCCESS;
-	}
-	else {
+	} else {
 		struct api_command_struct acs = { 0 };
 		acs.listener = listener;
 		acs.api_cmd = api_cmd;
@@ -357,24 +350,21 @@ static switch_status_t handle_msg_api(listener_t *listener, erlang_msg *msg, int
 	}
 }
 
-static switch_status_t handle_msg_bgapi(listener_t *listener, erlang_msg *msg, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_msg_bgapi(listener_t *listener, erlang_msg * msg, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char api_cmd[MAXATOMLEN];
 	char arg[1024];
-	if (arity < 3 ||
-		ei_decode_atom(buf->buff, &buf->index, api_cmd) ||
-		ei_decode_string(buf->buff, &buf->index, arg)) {
+	if (arity < 3 || ei_decode_atom(buf->buff, &buf->index, api_cmd) || ei_decode_string(buf->buff, &buf->index, arg)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
-	}
-	else {
+	} else {
 		struct api_command_struct *acs = NULL;
 		switch_memory_pool_t *pool;
 		switch_thread_t *thread;
 		switch_threadattr_t *thd_attr = NULL;
 		switch_uuid_t uuid;
-		
+
 		switch_core_new_memory_pool(&pool);
 		acs = switch_core_alloc(pool, sizeof(*acs));
 		switch_assert(acs);
@@ -384,15 +374,15 @@ static switch_status_t handle_msg_bgapi(listener_t *listener, erlang_msg *msg, i
 		acs->arg = switch_core_strdup(acs->pool, arg);
 		acs->bg = 1;
 		acs->pid = msg->from;
-		
+
 		switch_threadattr_create(&thd_attr, acs->pool);
 		switch_threadattr_detach_set(thd_attr, 1);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		
+
 		switch_uuid_get(&uuid);
 		switch_uuid_format(acs->uuid_str, &uuid);
 		switch_thread_create(&thread, thd_attr, api_exec, acs, acs->pool);
-		
+
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "ok");
 		_ei_x_encode_string(rbuf, acs->uuid_str);
@@ -400,18 +390,17 @@ static switch_status_t handle_msg_bgapi(listener_t *listener, erlang_msg *msg, i
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t handle_msg_sendevent(listener_t *listener, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_msg_sendevent(listener_t *listener, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
-	char ename[MAXATOMLEN+1];
-	char esname[MAXATOMLEN+1];
+	char ename[MAXATOMLEN + 1];
+	char esname[MAXATOMLEN + 1];
 	int headerlength;
 
 	memset(esname, 0, MAXATOMLEN);
-	
+
 	if (ei_decode_atom(buf->buff, &buf->index, ename) ||
 		(!strncasecmp(ename, "CUSTOM", MAXATOMLEN) &&
-		 ei_decode_atom(buf->buff, &buf->index, esname)) ||
-		ei_decode_list_header(buf->buff, &buf->index, &headerlength)) {
+		 ei_decode_atom(buf->buff, &buf->index, esname)) || ei_decode_list_header(buf->buff, &buf->index, &headerlength)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
@@ -420,29 +409,27 @@ static switch_status_t handle_msg_sendevent(listener_t *listener, int arity, ei_
 		if (switch_name_event(ename, &etype) == SWITCH_STATUS_SUCCESS) {
 			switch_event_t *event;
 			if ((strlen(esname) && switch_event_create_subclass(&event, etype, esname) == SWITCH_STATUS_SUCCESS) ||
-					switch_event_create(&event, etype) == SWITCH_STATUS_SUCCESS) {
+				switch_event_create(&event, etype) == SWITCH_STATUS_SUCCESS) {
 				char key[1024];
 				char value[1024];
 				int i = 0;
 				switch_bool_t fail = SWITCH_FALSE;
 
-				while(!ei_decode_tuple_header(buf->buff, &buf->index, &arity) && arity == 2) {
+				while (!ei_decode_tuple_header(buf->buff, &buf->index, &arity) && arity == 2) {
 					i++;
-					if (ei_decode_string(buf->buff, &buf->index, key) ||
-						ei_decode_string(buf->buff, &buf->index, value)) {
+					if (ei_decode_string(buf->buff, &buf->index, key) || ei_decode_string(buf->buff, &buf->index, value)) {
 						fail = SWITCH_TRUE;
 						break;
 					}
-					
+
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, key, value);
 				}
-				
+
 				if (headerlength != i || fail) {
 					ei_x_encode_tuple_header(rbuf, 2);
 					ei_x_encode_atom(rbuf, "error");
 					ei_x_encode_atom(rbuf, "badarg");
-				}
-				else {
+				} else {
 					switch_event_fire(&event);
 					ei_x_encode_atom(rbuf, "ok");
 				}
@@ -452,43 +439,40 @@ static switch_status_t handle_msg_sendevent(listener_t *listener, int arity, ei_
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	int headerlength;
-			
+
 	if (ei_decode_string_or_binary(buf->buff, &buf->index, SWITCH_UUID_FORMATTED_LENGTH, uuid) ||
 		ei_decode_list_header(buf->buff, &buf->index, &headerlength)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
-	}
-	else {
+	} else {
 		switch_core_session_t *session;
 		if (!zstr_buf(uuid) && (session = switch_core_session_locate(uuid))) {
-			switch_event_t *event;	  
+			switch_event_t *event;
 			if (switch_event_create(&event, SWITCH_EVENT_SEND_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-				
+
 				char key[1024];
 				char value[1024];
 				int i = 0;
 				switch_bool_t fail = SWITCH_FALSE;
-				while(!ei_decode_tuple_header(buf->buff, &buf->index, &arity) && arity == 2) {
+				while (!ei_decode_tuple_header(buf->buff, &buf->index, &arity) && arity == 2) {
 					i++;
-					if (ei_decode_string(buf->buff, &buf->index, key) ||
-						ei_decode_string(buf->buff, &buf->index, value)) {
+					if (ei_decode_string(buf->buff, &buf->index, key) || ei_decode_string(buf->buff, &buf->index, value)) {
 						fail = SWITCH_TRUE;
 						break;
-					}					
+					}
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, key, value);
 				}
-				
+
 				if (headerlength != i || fail) {
 					ei_x_encode_tuple_header(rbuf, 2);
 					ei_x_encode_atom(rbuf, "error");
 					ei_x_encode_atom(rbuf, "badarg");
-				}
-				else {
+				} else {
 					if (switch_core_session_queue_private_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 						ei_x_encode_atom(rbuf, "ok");
 					} else {
@@ -496,7 +480,7 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 						ei_x_encode_atom(rbuf, "error");
 						ei_x_encode_atom(rbuf, "badmem");
 					}
-					
+
 				}
 			}
 			/* release the lock returned by session locate */
@@ -511,19 +495,17 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t handle_msg_bind(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_msg_bind(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	/* format is (result|config|directory|dialplan|phrases)  */
 	char sectionstr[MAXATOMLEN];
 	switch_xml_section_t section;
 
-	if (ei_decode_atom(buf->buff, &buf->index, sectionstr) ||
-		!(section = switch_xml_parse_section_string(sectionstr))) {
+	if (ei_decode_atom(buf->buff, &buf->index, sectionstr) || !(section = switch_xml_parse_section_string(sectionstr))) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
-	}
-	else {
+	} else {
 		struct erlang_binding *binding, *ptr;
 
 		if (!(binding = switch_core_alloc(listener->pool, sizeof(*binding)))) {
@@ -531,8 +513,7 @@ static switch_status_t handle_msg_bind(listener_t *listener, erlang_msg *msg, ei
 			ei_x_encode_tuple_header(rbuf, 2);
 			ei_x_encode_atom(rbuf, "error");
 			ei_x_encode_atom(rbuf, "badmem");
-		}
-		else {
+		} else {
 			binding->section = section;
 			binding->process.type = ERLANG_PID;
 			binding->process.pid = msg->from;
@@ -547,7 +528,7 @@ static switch_status_t handle_msg_bind(listener_t *listener, erlang_msg *msg, ei
 			} else {
 				bindings.head = binding;
 			}
-			
+
 			switch_xml_set_binding_sections(bindings.search_binding, switch_xml_get_binding_sections(bindings.search_binding) | section);
 			switch_mutex_unlock(globals.listener_mutex);
 
@@ -564,13 +545,13 @@ static switch_status_t handle_msg_bind(listener_t *listener, erlang_msg *msg, ei
    or
    {handlecall,<uuid>} to send messages back to the sender
  */
-static switch_status_t handle_msg_handlecall(listener_t *listener, erlang_msg *msg, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_msg_handlecall(listener_t *listener, erlang_msg * msg, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char reg_name[MAXATOMLEN];
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 
 	if (arity < 2 || arity > 3 ||
-		(arity==3 && ei_decode_atom(buf->buff, &buf->index, reg_name)) ||
+		(arity == 3 && ei_decode_atom(buf->buff, &buf->index, reg_name)) ||
 		ei_decode_string_or_binary(buf->buff, &buf->index, SWITCH_UUID_FORMATTED_LENGTH, uuid_str)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
@@ -580,8 +561,8 @@ static switch_status_t handle_msg_handlecall(listener_t *listener, erlang_msg *m
 		if (!zstr_buf(uuid_str)) {
 			if ((session = switch_core_session_locate(uuid_str))) {
 				/* create a new session list element and attach it to this listener */
-				if ((arity==2 && attach_call_to_pid(listener, &msg->from, session)) ||
-						(arity==3 && attach_call_to_registered_process(listener, reg_name, session))) {
+				if ((arity == 2 && attach_call_to_pid(listener, &msg->from, session)) ||
+					(arity == 3 && attach_call_to_registered_process(listener, reg_name, session))) {
 					ei_x_encode_atom(rbuf, "ok");
 				} else {
 					ei_x_encode_tuple_header(rbuf, 2);
@@ -607,17 +588,17 @@ static switch_status_t handle_msg_handlecall(listener_t *listener, erlang_msg *m
 /* catch the response to ei_rpc_to (which comes back as {rex, {Ref, Pid}}
    The {Ref,Pid} bit can be handled by handle_ref_tuple
  */
-static switch_status_t handle_msg_rpcresponse(listener_t *listener, erlang_msg *msg, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_msg_rpcresponse(listener_t *listener, erlang_msg * msg, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	int type, size, arity2, tmpindex;
 
 	ei_get_type(buf->buff, &buf->index, &type, &size);
-	switch(type) {
-	case ERL_SMALL_TUPLE_EXT :
-	case ERL_LARGE_TUPLE_EXT :
+	switch (type) {
+	case ERL_SMALL_TUPLE_EXT:
+	case ERL_LARGE_TUPLE_EXT:
 		tmpindex = buf->index;
 		ei_decode_tuple_header(buf->buff, &tmpindex, &arity2);
-		return handle_ref_tuple(listener,msg,buf,rbuf);
+		return handle_ref_tuple(listener, msg, buf, rbuf);
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unknown rpc response\n");
 		break;
@@ -626,7 +607,7 @@ static switch_status_t handle_msg_rpcresponse(listener_t *listener, erlang_msg *
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t handle_msg_tuple(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_msg_tuple(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char tupletag[MAXATOMLEN];
 	int arity;
@@ -637,30 +618,29 @@ static switch_status_t handle_msg_tuple(listener_t *listener, erlang_msg *msg, e
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
-	}
-	else {
+	} else {
 		if (!strncmp(tupletag, "fetch_reply", MAXATOMLEN)) {
-			ret = handle_msg_fetch_reply(listener,buf,rbuf);
+			ret = handle_msg_fetch_reply(listener, buf, rbuf);
 		} else if (!strncmp(tupletag, "set_log_level", MAXATOMLEN)) {
-			ret = handle_msg_set_log_level(listener,arity,buf,rbuf);
+			ret = handle_msg_set_log_level(listener, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "event", MAXATOMLEN)) {
-			ret = handle_msg_event(listener,arity,buf,rbuf);
+			ret = handle_msg_event(listener, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "nixevent", MAXATOMLEN)) {
-			ret = handle_msg_nixevent(listener,arity,buf,rbuf);
+			ret = handle_msg_nixevent(listener, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "api", MAXATOMLEN)) {
-			ret = handle_msg_api(listener,msg,arity,buf,rbuf);
+			ret = handle_msg_api(listener, msg, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "bgapi", MAXATOMLEN)) {
-			ret = handle_msg_bgapi(listener,msg,arity,buf,rbuf);
+			ret = handle_msg_bgapi(listener, msg, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "sendevent", MAXATOMLEN)) {
-			ret = handle_msg_sendevent(listener,arity,buf,rbuf);
+			ret = handle_msg_sendevent(listener, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "sendmsg", MAXATOMLEN)) {
-			ret = handle_msg_sendmsg(listener,arity,buf,rbuf);
+			ret = handle_msg_sendmsg(listener, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "bind", MAXATOMLEN)) {
-			ret = handle_msg_bind(listener,msg,buf,rbuf);
+			ret = handle_msg_bind(listener, msg, buf, rbuf);
 		} else if (!strncmp(tupletag, "handlecall", MAXATOMLEN)) {
-			ret = handle_msg_handlecall(listener,msg,arity,buf,rbuf);
+			ret = handle_msg_handlecall(listener, msg, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "rex", MAXATOMLEN)) {
-			ret = handle_msg_rpcresponse(listener,msg,arity,buf,rbuf);
+			ret = handle_msg_rpcresponse(listener, msg, arity, buf, rbuf);
 		} else {
 			ei_x_encode_tuple_header(rbuf, 2);
 			ei_x_encode_atom(rbuf, "error");
@@ -670,7 +650,7 @@ static switch_status_t handle_msg_tuple(listener_t *listener, erlang_msg *msg, e
 	return ret;
 }
 
-static switch_status_t  handle_msg_atom(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_msg_atom(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char atom[MAXATOMLEN];
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
@@ -679,8 +659,7 @@ static switch_status_t  handle_msg_atom(listener_t *listener, erlang_msg *msg, e
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
-	}
-	else if (!strncmp(atom, "nolog", MAXATOMLEN)) {
+	} else if (!strncmp(atom, "nolog", MAXATOMLEN)) {
 		if (switch_test_flag(listener, LFLAG_LOG)) {
 			void *pop;
 			/*purge the log queue */
@@ -707,7 +686,7 @@ static switch_status_t  handle_msg_atom(listener_t *listener, erlang_msg *msg, e
 		void *pop;
 		/*purge the event queue */
 		while (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS);
-		
+
 		if (switch_test_flag(listener, LFLAG_EVENTS)) {
 			uint8_t x = 0;
 			switch_clear_flag_locked(listener, LFLAG_EVENTS);
@@ -739,12 +718,12 @@ static switch_status_t  handle_msg_atom(listener_t *listener, erlang_msg *msg, e
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "undef");
 	}
-	
+
 	return ret;
 }
 
 
-static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	erlang_ref ref;
 	erlang_pid *pid;
@@ -765,17 +744,17 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, e
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badmem");
 		return SWITCH_STATUS_SUCCESS;
-	}
+	}
 
 	if (ei_decode_pid(buf->buff, &buf->index, pid)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid pid in a reference/pid tuple\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	ei_hash_ref(&ref, hash);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hashed ref to %s\n", hash);
-	
+
 	if ((p = switch_core_hash_find(listener->spawn_pid_hash, hash))) {
 		if (p == &globals.TIMEOUT) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handler for %s timed out\n", hash);
@@ -788,7 +767,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, e
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found waiting slot for %s\n", hash);
 			switch_core_hash_delete(listener->spawn_pid_hash, hash);
 			switch_core_hash_insert(listener->spawn_pid_hash, hash, pid);
-			return SWITCH_STATUS_FALSE; /*no reply */
+			return SWITCH_STATUS_FALSE;	/*no reply */
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found filled slot for %s\n", hash);
 			ei_x_encode_tuple_header(rbuf, 2);
@@ -803,7 +782,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, e
 		ei_x_encode_atom(rbuf, "invalid_ref");
 	}
 
-	switch_safe_free(pid); /* don't need it */
+	switch_safe_free(pid);		/* don't need it */
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -811,7 +790,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, e
 
 /* fake enough of the net_kernel module to be able to respond to net_adm:ping */
 /* {'$gen_call', {<cpx@freecpx.128.0>, #Ref<254770.4.0>}, {is_auth, cpx@freecpx} */
-static switch_status_t handle_net_kernel_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
+static switch_status_t handle_net_kernel_msg(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	int version, size, type, arity;
 	char atom[MAXATOMLEN];
@@ -881,7 +860,7 @@ static switch_status_t handle_net_kernel_msg(listener_t *listener, erlang_msg *m
 	ei_x_encode_tuple_header(rbuf, 2);
 	ei_x_encode_ref(rbuf, &ref);
 	ei_x_encode_atom(rbuf, "yes");
-	
+
 	switch_mutex_lock(listener->sock_mutex);
 	ei_send(listener->sockfd, &pid, rbuf->buff, rbuf->index);
 	switch_mutex_unlock(listener->sock_mutex);
@@ -893,7 +872,7 @@ static switch_status_t handle_net_kernel_msg(listener_t *listener, erlang_msg *m
 }
 
 
-int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
+int handle_msg(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	int type, type2, size, version, arity, tmpindex;
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
@@ -905,37 +884,37 @@ int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff 
 		buf->index = 0;
 		ei_decode_version(buf->buff, &buf->index, &version);
 		ei_get_type(buf->buff, &buf->index, &type, &size);
-		switch(type) {
-		case ERL_SMALL_TUPLE_EXT :
-		case ERL_LARGE_TUPLE_EXT :
+		switch (type) {
+		case ERL_SMALL_TUPLE_EXT:
+		case ERL_LARGE_TUPLE_EXT:
 			tmpindex = buf->index;
 			ei_decode_tuple_header(buf->buff, &tmpindex, &arity);
 			ei_get_type(buf->buff, &tmpindex, &type2, &size);
 
-			switch(type2) {
-				case ERL_ATOM_EXT:
-					ret = handle_msg_tuple(listener,msg,buf,rbuf);
-					break;
-				case ERL_REFERENCE_EXT :
-				case ERL_NEW_REFERENCE_EXT :
-					ret = handle_ref_tuple(listener, msg, buf, rbuf);
-					break;
-				default :
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WEEEEEEEE %d %d\n", type, type2);
-					/* some other kind of erlang term */
-					ei_x_encode_tuple_header(rbuf, 2);
-					ei_x_encode_atom(rbuf, "error");
-					ei_x_encode_atom(rbuf, "undef");
-					break;
+			switch (type2) {
+			case ERL_ATOM_EXT:
+				ret = handle_msg_tuple(listener, msg, buf, rbuf);
+				break;
+			case ERL_REFERENCE_EXT:
+			case ERL_NEW_REFERENCE_EXT:
+				ret = handle_ref_tuple(listener, msg, buf, rbuf);
+				break;
+			default:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WEEEEEEEE %d %d\n", type, type2);
+				/* some other kind of erlang term */
+				ei_x_encode_tuple_header(rbuf, 2);
+				ei_x_encode_atom(rbuf, "error");
+				ei_x_encode_atom(rbuf, "undef");
+				break;
 			}
-			
-			break;
-							
-		case ERL_ATOM_EXT :
-			ret = handle_msg_atom(listener,msg,buf,rbuf);
+
 			break;
 
-		default :
+		case ERL_ATOM_EXT:
+			ret = handle_msg_atom(listener, msg, buf, rbuf);
+			break;
+
+		default:
 			/* some other kind of erlang term */
 			ei_x_encode_tuple_header(rbuf, 2);
 			ei_x_encode_atom(rbuf, "error");
@@ -944,7 +923,7 @@ int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff 
 		}
 	}
 
-	if (SWITCH_STATUS_FALSE==ret) {
+	if (SWITCH_STATUS_FALSE == ret) {
 		return 0;
 	} else if (rbuf->index > 1) {
 		switch_mutex_lock(listener->sock_mutex);
@@ -954,9 +933,9 @@ int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff 
 		ei_x_print_msg(rbuf, &msg->from, 1);
 #endif
 
-		if (SWITCH_STATUS_SUCCESS==ret)
+		if (SWITCH_STATUS_SUCCESS == ret)
 			return 0;
-		else /* SWITCH_STATUS_TERM */
+		else					/* SWITCH_STATUS_TERM */
 			return 1;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Empty reply, supressing\n");

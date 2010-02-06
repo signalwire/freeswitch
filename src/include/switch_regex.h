@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -68,7 +68,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const cha
  \param partial If non-zero returns SUCCESS if the target is a partial match, on successful return, this is set to non-zero if the match was partial and zero if it was a full match
  \return Boolean if a match was found or not
 */
-SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, const char *expression, int * partial_match);
+SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, const char *expression, int *partial_match);
 
 
 #define switch_regex_safe_free(re)	if (re) {\

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -87,23 +87,23 @@ static switch_status_t pocketsphinx_asr_open(switch_asr_handle_t *ah, const char
 	if (!(ps = (pocketsphinx_t *) switch_core_alloc(ah->memory_pool, sizeof(*ps)))) {
 		return SWITCH_STATUS_MEMERR;
 	}
-	
+
 	switch_mutex_init(&ps->flag_mutex, SWITCH_MUTEX_NESTED, ah->memory_pool);
 	ah->private_info = ps;
 
-	if (rate == 8000) { 
+	if (rate == 8000) {
 		ah->rate = 8000;
 	} else if (rate == 16000) {
 		ah->rate = 16000;
-	} else {  
+	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid rate %d. Only 8000 and 16000 are supported.\n", rate);
 	}
 
 	codec = "L16";
 
-	ah->codec = switch_core_strdup(ah->memory_pool, codec); 
+	ah->codec = switch_core_strdup(ah->memory_pool, codec);
 
-	
+
 	ps->thresh = globals.thresh;
 	ps->silence_hits = globals.silence_hits;
 	ps->listen_hits = globals.listen_hits;
@@ -139,34 +139,28 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 	dic = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, globals.dictionary);
 
 	if (switch_file_exists(dic, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open dictionary %s.\n", dic); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open dictionary %s.\n", dic);
 		goto end;
 	}
 
 	if (switch_file_exists(model, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't open speech model %s.\n", model); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't open speech model %s.\n", model);
 		goto end;
 	}
 
 	if (switch_file_exists(jsgf, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't open grammar file %s.\n", jsgf); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't open grammar file %s.\n", jsgf);
 		goto end;
 	}
 
-	rate = switch_mprintf("%d", ah->rate); 
+	rate = switch_mprintf("%d", ah->rate);
 
 	switch_assert(jsgf && dic && model);
-	
+
 	ps->config = cmd_ln_init(ps->config, ps_args(), FALSE,
 							 "-samprate", rate,
-							 "-hmm", model,
-							 "-jsgf", jsgf, 
-							 "-lw", globals.language_weight,
-							 "-dict", dic,
-							 "-frate", "50",
-							 "-silprob", "0.005",
-							 NULL);
-	  
+							 "-hmm", model, "-jsgf", jsgf, "-lw", globals.language_weight, "-dict", dic, "-frate", "50", "-silprob", "0.005", NULL);
+
 	if (ps->config == NULL) {
 		status = SWITCH_STATUS_GENERR;
 		goto end;
@@ -185,19 +179,19 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 	switch_mutex_unlock(ps->flag_mutex);
 
 	ps_start_utt(ps->ps, NULL);
-	switch_set_flag(ps, PSFLAG_READY);	
+	switch_set_flag(ps, PSFLAG_READY);
 	switch_safe_free(ps->grammar);
 	ps->grammar = strdup(grammar);
 
 	status = SWITCH_STATUS_SUCCESS;
 
- end:
-	
+  end:
+
 	switch_safe_free(rate);
 	switch_safe_free(jsgf);
 	switch_safe_free(dic);
 	switch_safe_free(model);
-	
+
 	return status;
 }
 
@@ -224,7 +218,7 @@ static switch_status_t pocketsphinx_asr_close(switch_asr_handle_t *ah, switch_as
 	switch_mutex_unlock(ps->flag_mutex);
 	switch_clear_flag(ps, PSFLAG_HAS_TEXT);
 	switch_clear_flag(ps, PSFLAG_READY);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Port Closed.\n"); 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Port Closed.\n");
 	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -233,7 +227,7 @@ static switch_bool_t stop_detect(pocketsphinx_t *ps, int16_t *data, unsigned int
 {
 	uint32_t score, count = 0, j = 0;
 	double energy = 0;
-	
+
 	if (ps->countdown) {
 		if (!--ps->countdown) {
 			ps->silence_hits = ps->org_silence_hits;
@@ -242,12 +236,12 @@ static switch_bool_t stop_detect(pocketsphinx_t *ps, int16_t *data, unsigned int
 		}
 		return SWITCH_FALSE;
 	}
-	
+
 
 	for (count = 0; count < samples; count++) {
 		energy += abs(data[j]);
 	}
-	
+
 	score = (uint32_t) (energy / samples);
 
 	if (score >= ps->thresh) {
@@ -274,20 +268,21 @@ static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
 	int rv = 0;
 
-	if (switch_test_flag(ah, SWITCH_ASR_FLAG_CLOSED)) return SWITCH_STATUS_BREAK; 
-	
+	if (switch_test_flag(ah, SWITCH_ASR_FLAG_CLOSED))
+		return SWITCH_STATUS_BREAK;
+
 	if (!switch_test_flag(ps, PSFLAG_HAS_TEXT) && switch_test_flag(ps, PSFLAG_READY)) {
-		if (stop_detect(ps, (int16_t *)data, len / 2)) {
+		if (stop_detect(ps, (int16_t *) data, len / 2)) {
 			char const *hyp;
 
-			switch_mutex_lock(ps->flag_mutex); 
+			switch_mutex_lock(ps->flag_mutex);
 			if ((hyp = ps_get_hyp(ps->ps, &ps->score, &ps->uttid))) {
 				if (!zstr(hyp)) {
 					ps_end_utt(ps->ps);
 					switch_clear_flag(ps, PSFLAG_READY);
 					if ((hyp = ps_get_hyp(ps->ps, &ps->score, &ps->uttid))) {
 						if (zstr(hyp)) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Lost the text, never mind....\n");   
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Lost the text, never mind....\n");
 							ps_start_utt(ps->ps, NULL);
 							switch_set_flag(ps, PSFLAG_READY);
 						} else {
@@ -303,7 +298,7 @@ static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data
 		/* only feed ps_process_raw when we are listening */
 		if (ps->listening) {
 			switch_mutex_lock(ps->flag_mutex);
-			rv = ps_process_raw(ps->ps, (int16 *)data, len / 2 , FALSE, FALSE);
+			rv = ps_process_raw(ps->ps, (int16 *) data, len / 2, FALSE, FALSE);
 			switch_mutex_unlock(ps->flag_mutex);
 		}
 
@@ -321,13 +316,13 @@ static switch_status_t pocketsphinx_asr_pause(switch_asr_handle_t *ah)
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_mutex_lock(ps->flag_mutex);		
+	switch_mutex_lock(ps->flag_mutex);
 	if (switch_test_flag(ps, PSFLAG_READY)) {
 		ps_end_utt(ps->ps);
 		switch_clear_flag(ps, PSFLAG_READY);
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	switch_mutex_unlock(ps->flag_mutex);		
+	switch_mutex_unlock(ps->flag_mutex);
 
 	return status;
 }
@@ -337,19 +332,19 @@ static switch_status_t pocketsphinx_asr_resume(switch_asr_handle_t *ah)
 {
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
-	switch_mutex_lock(ps->flag_mutex);		
+
+	switch_mutex_lock(ps->flag_mutex);
 	switch_clear_flag(ps, PSFLAG_HAS_TEXT);
-	if (!switch_test_flag(ps, PSFLAG_READY)) { 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Manually Resuming\n");   
-		
+	if (!switch_test_flag(ps, PSFLAG_READY)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Manually Resuming\n");
+
 		if (ps_start_utt(ps->ps, NULL)) {
 			status = SWITCH_STATUS_GENERR;
 		} else {
-			switch_set_flag(ps, PSFLAG_READY); 
+			switch_set_flag(ps, PSFLAG_READY);
 		}
 	}
-	switch_mutex_unlock(ps->flag_mutex);		
+	switch_mutex_unlock(ps->flag_mutex);
 
 	return status;
 }
@@ -365,7 +360,7 @@ static switch_status_t pocketsphinx_asr_check_results(switch_asr_handle_t *ah, s
 /*! function to read results from the ASR*/
 static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags)
 {
-	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info; 
+	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int32_t conf;
 
@@ -375,7 +370,7 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 	}
 
 	if (switch_test_flag(ps, PSFLAG_HAS_TEXT)) {
-		switch_mutex_lock(ps->flag_mutex); 
+		switch_mutex_lock(ps->flag_mutex);
 		switch_clear_flag(ps, PSFLAG_HAS_TEXT);
 		conf = ps_get_prob(ps->ps, &ps->uttid);
 
@@ -386,20 +381,18 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recognized: %s, Confidence: %d\n", ps->hyp, ps->confidence);
-		switch_mutex_unlock(ps->flag_mutex); 
+		switch_mutex_unlock(ps->flag_mutex);
 
 		*xmlstr = switch_mprintf("<?xml version=\"1.0\"?>\n"
 								 "<result grammar=\"%s\">\n"
 								 "  <interpretation grammar=\"%s\" confidence=\"%d\">\n"
 								 "    <input mode=\"speech\">%s</input>\n"
-								 "  </interpretation>\n"
-								 "</result>\n",
-								 ps->grammar, ps->grammar, ps->confidence, ps->hyp);
+								 "  </interpretation>\n" "</result>\n", ps->grammar, ps->grammar, ps->confidence, ps->hyp);
 
 		if (switch_test_flag(ps, SWITCH_ASR_FLAG_AUTO_RESUME)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Auto Resuming\n");
 			switch_set_flag(ps, PSFLAG_READY);
-		
+
 			ps_start_utt(ps->ps, NULL);
 		}
 
@@ -467,7 +460,7 @@ static switch_status_t load_config(void)
 		globals.language_weight = switch_core_strdup(globals.pool, "6.5");
 	}
 
- done:
+  done:
 	if (xml) {
 		switch_xml_free(xml);
 	}
@@ -495,7 +488,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_pocketsphinx_load)
 	switch_asr_interface_t *asr_interface;
 
 	switch_mutex_init(&MUTEX, SWITCH_MUTEX_NESTED, pool);
-	
+
 	globals.pool = pool;
 
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &NODE) != SWITCH_STATUS_SUCCESS)) {

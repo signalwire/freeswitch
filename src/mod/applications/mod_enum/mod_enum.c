@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -251,7 +251,7 @@ static void add_result(enum_query_t *q, int order, int preference, char *service
 	}
 }
 
-static void free_results(enum_record_t **results)
+static void free_results(enum_record_t ** results)
 {
 	enum_record_t *fp, *rp;
 
@@ -447,7 +447,7 @@ static void dnscb(struct dns_ctx *ctx, void *result, void *data)
 	free(result);
 }
 
-static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results)
+static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** results)
 {
 	switch_status_t sstatus = SWITCH_STATUS_SUCCESS;
 	char *name = NULL;
@@ -829,7 +829,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load)
 
 	memset(&globals, 0, sizeof(globals));
 	do_load();
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_API(api_interface, "enum", "ENUM", enum_function, "");
@@ -850,7 +850,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
 	if (globals.pool) {
 		switch_core_destroy_memory_pool(&globals.pool);
 	}
-	
+
 	switch_safe_free(globals.root);
 	switch_safe_free(globals.isn_root);
 

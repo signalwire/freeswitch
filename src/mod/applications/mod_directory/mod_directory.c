@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -40,19 +40,16 @@ SWITCH_MODULE_DEFINITION(mod_directory, mod_directory_load, mod_directory_shutdo
 static const char *global_cf = "directory.conf";
 
 static char dir_sql[] =
-"CREATE TABLE directory_search (\n"
-"   hostname         VARCHAR(255),\n"
-"   uuid             VARCHAR(255),\n"
-"   extension        VARCHAR(255),\n"
-"   full_name        VARCHAR(255),\n"
-"   full_name_digit  VARCHAR(255),\n"
-"   first_name       VARCHAR(255),\n"
-"   first_name_digit VARCHAR(255),\n"
-"   last_name        VARCHAR(255),\n"
-"   last_name_digit  VARCHAR(255),\n"
-"   name_visible          INTEGER,\n"
-"   exten_visible         INTEGER\n"
-");\n";
+	"CREATE TABLE directory_search (\n"
+	"   hostname         VARCHAR(255),\n"
+	"   uuid             VARCHAR(255),\n"
+	"   extension        VARCHAR(255),\n"
+	"   full_name        VARCHAR(255),\n"
+	"   full_name_digit  VARCHAR(255),\n"
+	"   first_name       VARCHAR(255),\n"
+	"   first_name_digit VARCHAR(255),\n"
+	"   last_name        VARCHAR(255),\n"
+	"   last_name_digit  VARCHAR(255),\n" "   name_visible          INTEGER,\n" "   exten_visible         INTEGER\n" ");\n";
 
 #define DIR_RESULT_ITEM "directory_result_item"
 #define DIR_RESULT_SAY_NAME "directory_result_say_name"
@@ -113,51 +110,52 @@ typedef enum {
 	PFLAG_DESTROY = 1 << 0
 } dir_flags_t;
 
-static int digit_matching_keypad(char letter) {
+static int digit_matching_keypad(char letter)
+{
 	int result = -1;
-	switch(toupper(letter)) {
-		case 'A':
-		case 'B':
-		case 'C':
-			result = 2;
-			break;
-		case 'D':
-		case 'E':
-		case 'F':
-			result = 3;
-			break;
-		case 'G':
-		case 'H':
-		case 'I':
-			result = 4;
-			break;
-		case 'J':
-		case 'K':
-		case 'L':
-			result = 5;
-			break;
-		case 'M':
-		case 'N':
-		case 'O':
-			result = 6;
-			break;
-		case 'P':
-		case 'Q':
-		case 'R':
-		case 'S':
-			result = 7;
-			break;
-		case 'T':
-		case 'U':
-		case 'V':
-			result = 8;
-			break;
-		case 'W':
-		case 'X':
-		case 'Y':
-		case 'Z':
-			result = 9;
-			break;
+	switch (toupper(letter)) {
+	case 'A':
+	case 'B':
+	case 'C':
+		result = 2;
+		break;
+	case 'D':
+	case 'E':
+	case 'F':
+		result = 3;
+		break;
+	case 'G':
+	case 'H':
+	case 'I':
+		result = 4;
+		break;
+	case 'J':
+	case 'K':
+	case 'L':
+		result = 5;
+		break;
+	case 'M':
+	case 'N':
+	case 'O':
+		result = 6;
+		break;
+	case 'P':
+	case 'Q':
+	case 'R':
+	case 'S':
+		result = 7;
+		break;
+	case 'T':
+	case 'U':
+	case 'V':
+		result = 8;
+		break;
+	case 'W':
+	case 'X':
+	case 'Y':
+	case 'Z':
+		result = 9;
+		break;
 	}
 
 
@@ -185,7 +183,7 @@ char *string_to_keypad_digit(const char *in)
 		if (*d) {
 			*d = '\0';
 		}
-	}	
+	}
 	return dst;
 }
 
@@ -206,7 +204,7 @@ static switch_status_t directory_execute_sql(char *sql, switch_mutex_t *mutex)
 	status = switch_core_db_persistant_execute(db, sql, 1);
 	switch_core_db_close(db);
 
-end:
+  end:
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
@@ -304,7 +302,7 @@ static switch_bool_t directory_execute_sql_callback(switch_mutex_t *mutex, char 
 		switch_core_db_close(db);
 	}
 
-end:
+  end:
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
@@ -337,34 +335,32 @@ dir_profile_t *profile_set_config(dir_profile_t *profile)
 
 	profile->config_str_pool.pool = profile->pool;
 
-	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "next-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
-			&profile->next_key, "6", &config_dtmf, NULL, NULL);
-	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "prev-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
-			&profile->prev_key, "4", &config_dtmf, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "next-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->next_key, "6", &config_dtmf, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "prev-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->prev_key, "4", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "terminator-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
-			&profile->terminator_key, "#", &config_dtmf, NULL, NULL);
+						   &profile->terminator_key, "#", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "switch-order-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
-			&profile->switch_order_key, "*", &config_dtmf, NULL, NULL);
+						   &profile->switch_order_key, "*", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "select-name-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
-			&profile->select_name_key, "1", &config_dtmf, NULL, NULL);
+						   &profile->select_name_key, "1", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "new-search-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
-			&profile->new_search_key, "3", &config_dtmf, NULL, NULL);
+						   &profile->new_search_key, "3", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "search-order", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
-			&profile->search_order, "last_name", &profile->config_str_pool, NULL, NULL);
+						   &profile->search_order, "last_name", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "digit-timeout", SWITCH_CONFIG_INT, CONFIG_RELOADABLE,
-			&profile->digit_timeout, 3000, &config_int_digit_timeout, NULL, NULL);
+						   &profile->digit_timeout, 3000, &config_int_digit_timeout, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "min-search-digits", SWITCH_CONFIG_INT, CONFIG_RELOADABLE,
-			&profile->min_search_digits, 3, &config_int_ht_0, NULL, NULL);
+						   &profile->min_search_digits, 3, &config_int_ht_0, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "max-menu-attempts", SWITCH_CONFIG_INT, CONFIG_RELOADABLE,
-			&profile->max_menu_attempt, 3, &config_int_ht_0, NULL, NULL);
+						   &profile->max_menu_attempt, 3, &config_int_ht_0, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "max-result", SWITCH_CONFIG_INT, CONFIG_RELOADABLE,
-			&profile->max_result, 5, &config_int_ht_0, NULL, NULL);
+						   &profile->max_result, 5, &config_int_ht_0, NULL, NULL);
 
 	return profile;
 
 }
 
-static dir_profile_t * load_profile(const char *profile_name)
+static dir_profile_t *load_profile(const char *profile_name)
 {
 	dir_profile_t *profile = NULL;
 	switch_xml_t x_profiles, x_profile, cfg, xml = NULL;
@@ -413,7 +409,7 @@ static dir_profile_t * load_profile(const char *profile_name)
 		switch_core_hash_insert(globals.profile_hash, profile->name, profile);
 	}
 
-end:
+  end:
 	switch_xml_free(xml);
 
 	return profile;
@@ -451,7 +447,7 @@ static switch_status_t load_config(switch_bool_t reload)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static dir_profile_t * get_profile(const char *profile_name)
+static dir_profile_t *get_profile(const char *profile_name)
 {
 	dir_profile_t *profile = NULL;
 
@@ -469,7 +465,8 @@ static dir_profile_t * get_profile(const char *profile_name)
 	return profile;
 }
 
-static switch_status_t populate_database(switch_core_session_t *session, dir_profile_t * profile, const char *domain_name) {
+static switch_status_t populate_database(switch_core_session_t *session, dir_profile_t *profile, const char *domain_name)
+{
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	char *sql = NULL;
@@ -561,8 +558,9 @@ static switch_status_t populate_database(switch_core_session_t *session, dir_pro
 					firstNameDigit = string_to_keypad_digit(firstName);
 
 					/* add user into DB */
-					sql = switch_mprintf("insert into directory_search values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%d','%d')", 
-							globals.hostname, switch_core_session_get_uuid(session), id, fullName, fullNameDigit, firstName, firstNameDigit, lastName, lastNameDigit, name_visible, exten_visible);
+					sql = switch_mprintf("insert into directory_search values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%d','%d')",
+										 globals.hostname, switch_core_session_get_uuid(session), id, fullName, fullNameDigit, firstName, firstNameDigit,
+										 lastName, lastNameDigit, name_visible, exten_visible);
 
 					if (sqlvalues) {
 						sqltmp = sqlvalues;
@@ -580,10 +578,10 @@ static switch_status_t populate_database(switch_core_session_t *session, dir_pro
 			}
 		}
 	}
-	sql = switch_mprintf("BEGIN;%s;COMMIT;",sqlvalues);
+	sql = switch_mprintf("BEGIN;%s;COMMIT;", sqlvalues);
 	directory_execute_sql(sql, profile->mutex);
 
-end:
+  end:
 	switch_safe_free(sql);
 	switch_safe_free(sqlvalues);
 	switch_event_destroy(&xml_params);
@@ -603,27 +601,27 @@ typedef struct cb_result cbr_t;
 static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 	switch (itype) {
-		case SWITCH_INPUT_TYPE_DTMF:
-			{
-				switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
-				cbr_t *cbr = (cbr_t *) buf;
-				cbr->digit = dtmf->digit;
-				if (dtmf->digit == *cbr->profile->terminator_key || dtmf->digit == *cbr->profile->switch_order_key) {
-					return SWITCH_STATUS_BREAK;
-				}
-
-				if (strlen(cbr->digits) < sizeof(cbr->digits) - 2) {
-					int at = strlen(cbr->digits);
-					cbr->digits[at++] = dtmf->digit;
-					cbr->digits[at] = '\0';
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "DTMF buffer is full\n");
-					return SWITCH_STATUS_BREAK;
-				}
+	case SWITCH_INPUT_TYPE_DTMF:
+		{
+			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+			cbr_t *cbr = (cbr_t *) buf;
+			cbr->digit = dtmf->digit;
+			if (dtmf->digit == *cbr->profile->terminator_key || dtmf->digit == *cbr->profile->switch_order_key) {
+				return SWITCH_STATUS_BREAK;
 			}
-			break;
-		default:
-			break;
+
+			if (strlen(cbr->digits) < sizeof(cbr->digits) - 2) {
+				int at = strlen(cbr->digits);
+				cbr->digits[at++] = dtmf->digit;
+				cbr->digits[at] = '\0';
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "DTMF buffer is full\n");
+				return SWITCH_STATUS_BREAK;
+			}
+		}
+		break;
+	default:
+		break;
 	}
 
 	return SWITCH_STATUS_BREAK;
@@ -650,12 +648,12 @@ static switch_status_t listen_entry(switch_core_session_t *session, dir_profile_
 	}
 
 	if (zstr_buf(buf)) {
-		switch_snprintf(macro, sizeof(macro), "phrase:%s:%d", DIR_RESULT_ITEM, cbt->want+1);
+		switch_snprintf(macro, sizeof(macro), "phrase:%s:%d", DIR_RESULT_ITEM, cbt->want + 1);
 		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), 1, profile->terminator_key);
 	}
 
 	if (!zstr_buf(recorded_name) && zstr_buf(buf)) {
-        switch_ivr_read(session, 0, 1, recorded_name, NULL, buf, sizeof(buf), 1, profile->terminator_key);
+		switch_ivr_read(session, 0, 1, recorded_name, NULL, buf, sizeof(buf), 1, profile->terminator_key);
 
 	}
 	if (zstr_buf(recorded_name) && zstr_buf(buf)) {
@@ -667,7 +665,8 @@ static switch_status_t listen_entry(switch_core_session_t *session, dir_profile_
 		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), 1, profile->terminator_key);
 	}
 	if (zstr_buf(buf)) {
-		switch_snprintf(macro, sizeof(macro), "phrase:%s:%c,%c,%c,%c", DIR_RESULT_MENU, *profile->select_name_key, *profile->next_key, *profile->prev_key, *profile->new_search_key);
+		switch_snprintf(macro, sizeof(macro), "phrase:%s:%c,%c,%c,%c", DIR_RESULT_MENU, *profile->select_name_key, *profile->next_key, *profile->prev_key,
+						*profile->new_search_key);
 		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), profile->digit_timeout, profile->terminator_key);
 	}
 
@@ -688,7 +687,8 @@ static switch_status_t listen_entry(switch_core_session_t *session, dir_profile_
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t gather_name_digit(switch_core_session_t *session, dir_profile_t *profile, search_params_t *params) {
+switch_status_t gather_name_digit(switch_core_session_t *session, dir_profile_t *profile, search_params_t *params)
+{
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	cbr_t cbr;
@@ -707,7 +707,7 @@ switch_status_t gather_name_digit(switch_core_session_t *session, dir_profile_t 
 
 		/* Gather the user Name */
 
-		switch_snprintf(macro, sizeof(macro), "%s:%c", (params->search_by_last_name?"last_name":"first_name"), *profile->switch_order_key);
+		switch_snprintf(macro, sizeof(macro), "%s:%c", (params->search_by_last_name ? "last_name" : "first_name"), *profile->switch_order_key);
 		switch_ivr_phrase_macro(session, DIR_INTRO, macro, NULL, &args);
 
 		while (switch_channel_ready(channel)) {
@@ -737,7 +737,8 @@ switch_status_t gather_name_digit(switch_core_session_t *session, dir_profile_t 
 	return status;
 }
 
-switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *profile, search_params_t *params) {
+switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *profile, search_params_t *params)
+{
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *sql = NULL;
 	char entry_count[80] = "";
@@ -749,7 +750,10 @@ switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *p
 	cbt.buf = entry_count;
 	cbt.len = sizeof(entry_count);
 
-	sql = switch_mprintf("select count(*) from directory_search where hostname = '%q' and uuid = '%q' and name_visible = 1 and %s like '%q%%'", globals.hostname, switch_core_session_get_uuid(session), (params->search_by_last_name?"last_name_digit":"first_name_digit"), params->digits);
+	sql =
+		switch_mprintf("select count(*) from directory_search where hostname = '%q' and uuid = '%q' and name_visible = 1 and %s like '%q%%'",
+					   globals.hostname, switch_core_session_get_uuid(session), (params->search_by_last_name ? "last_name_digit" : "first_name_digit"),
+					   params->digits);
 
 	directory_execute_sql_callback(profile->mutex, sql, sql2str_callback, &cbt);
 	switch_safe_free(sql);
@@ -773,7 +777,10 @@ switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *p
 	memset(&listing_cbt, 0, sizeof(listing_cbt));
 	listing_cbt.params = params;
 
-	sql = switch_mprintf("select extension, full_name, last_name, first_name, name_visible, exten_visible from directory_search where hostname = '%q' and uuid = '%q' and name_visible = 1 and %s like '%q%%' order by last_name, first_name", globals.hostname, switch_core_session_get_uuid(session), (params->search_by_last_name?"last_name_digit":"first_name_digit"), params->digits);
+	sql =
+		switch_mprintf
+		("select extension, full_name, last_name, first_name, name_visible, exten_visible from directory_search where hostname = '%q' and uuid = '%q' and name_visible = 1 and %s like '%q%%' order by last_name, first_name",
+		 globals.hostname, switch_core_session_get_uuid(session), (params->search_by_last_name ? "last_name_digit" : "first_name_digit"), params->digits);
 
 	for (cur_entry = 0; cur_entry < result_count; cur_entry++) {
 		listing_cbt.index = 0;
@@ -812,7 +819,7 @@ switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *p
 		}
 	}
 
-end:
+  end:
 	switch_safe_free(sql);
 	return status;
 
@@ -825,8 +832,8 @@ SWITCH_STANDARD_APP(directory_function)
 	char *argv[6] = { 0 };
 	char *mydata = NULL;
 	const char *profile_name = NULL;
-	const char *domain_name = NULL; 
-	dir_profile_t * profile = NULL;
+	const char *domain_name = NULL;
+	dir_profile_t *profile = NULL;
 	int x = 0;
 	char *sql = NULL;
 	search_params_t s_param;
@@ -866,7 +873,7 @@ SWITCH_STANDARD_APP(directory_function)
 		s_param.search_by_last_name = 0;
 	}
 	attempts = profile->max_menu_attempt;
-	s_param.try_again = 1;	
+	s_param.try_again = 1;
 	while (switch_channel_ready(channel) && (s_param.try_again && attempts-- > 0)) {
 		s_param.try_again = 0;
 		gather_name_digit(session, profile, &s_param);
@@ -895,7 +902,7 @@ SWITCH_STANDARD_APP(directory_function)
 	sql = switch_mprintf("delete from directory_search where hostname = '%q' and uuid = '%q'", globals.hostname, switch_core_session_get_uuid(session));
 	directory_execute_sql(sql, profile->mutex);
 	switch_safe_free(sql);
-	profile_rwunlock(profile);	
+	profile_rwunlock(profile);
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_directory_load)
@@ -954,7 +961,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_directory_shutdown)
 
 	switch_mutex_lock(globals.mutex);
 
-	while((hi = switch_hash_first(NULL, globals.profile_hash))) {
+	while ((hi = switch_hash_first(NULL, globals.profile_hash))) {
 		switch_hash_this(hi, &key, &keylen, &val);
 		profile = (dir_profile_t *) val;
 

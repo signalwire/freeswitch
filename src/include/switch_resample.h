@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -51,7 +51,7 @@ SWITCH_BEGIN_EXTERN_C
   \{ 
 */
 /*! \brief An audio resampling handle */
-typedef struct {
+	typedef struct {
 	/*! a pointer to store the resampler object */
 	void *resampler;
 	/*! the rate to resample from in hz */
@@ -61,11 +61,11 @@ typedef struct {
 	/*! the factor to resample by (from / to) */
 	double factor;
 	double rfactor;
-    int16_t *to;
-    /*! the size of the to buffer used */
-    uint32_t to_len;
-    /*! the total size of the to buffer */
-    uint32_t to_size;
+	int16_t *to;
+	/*! the size of the to buffer used */
+	uint32_t to_len;
+	/*! the total size of the to buffer */
+	uint32_t to_size;
 
 } switch_audio_resampler_t;
 
@@ -79,9 +79,7 @@ typedef struct {
  */
 SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resampler_t **new_resampler,
 															   uint32_t from_rate, uint32_t to_rate, uint32_t to_size,
-															   int quality,
-															   uint32_t channels,
-															   const char *file, const char *func, int line);
+															   int quality, uint32_t channels, const char *file, const char *func, int line);
 
 
 #define switch_resample_create(_n, _fr, _tr, _ts, _q, _c) switch_resample_perform_create(_n, _fr, _tr, _ts, _q, _c, __FILE__, __SWITCH_FUNC__, __LINE__)

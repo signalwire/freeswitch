@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -37,65 +37,56 @@ SWITCH_MODULE_DEFINITION(mod_yaml, mod_yaml_load, NULL, NULL);
 
 static void print_error(yaml_parser_t *parser)
 {
-    switch (parser->error)
-		{
-		case YAML_MEMORY_ERROR:
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory error: Not enough memory for parsing\n");
-            break;
+	switch (parser->error) {
+	case YAML_MEMORY_ERROR:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory error: Not enough memory for parsing\n");
+		break;
 
-        case YAML_READER_ERROR:
-            if (parser->problem_value != -1) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Reader error: %s: #%X at %d\n", parser->problem,
-								  parser->problem_value, (int) parser->problem_offset);
-            }
-            else {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Reader error: %s at %d\n", parser->problem,
-								  (int) parser->problem_offset);
-            }
-            break;
-
-        case YAML_SCANNER_ERROR:
-            if (parser->context) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Scanner error: %s at line %d, column %d\n"
-								  "%s at line %d, column %d\n", parser->context,
-								  (int)parser->context_mark.line+1, (int)parser->context_mark.column+1,
-								  parser->problem, (int)parser->problem_mark.line+1,
-								  (int)parser->problem_mark.column+1);
-            }
-            else {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Scanner error: %s at line %d, column %d\n",
-								  parser->problem, (int)parser->problem_mark.line+1,
-								  (int)parser->problem_mark.column+1);
-            }
-            break;
-
-        case YAML_PARSER_ERROR:
-            if (parser->context) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parser error: %s at line %d, column %d\n"
-								  "%s at line %d, column %d\n", parser->context,
-								  (int)parser->context_mark.line+1, (int)parser->context_mark.column+1,
-								  parser->problem, (int)parser->problem_mark.line+1,
-								  (int)parser->problem_mark.column+1);
-            }
-            else {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parser error: %s at line %d, column %d\n",
-								  parser->problem, (int)parser->problem_mark.line+1,
-								  (int)parser->problem_mark.column+1);
-            }
-            break;
-
-        default:
-            /* Couldn't happen. */
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Internal error\n");
-            break;
+	case YAML_READER_ERROR:
+		if (parser->problem_value != -1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Reader error: %s: #%X at %d\n", parser->problem,
+							  parser->problem_value, (int) parser->problem_offset);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Reader error: %s at %d\n", parser->problem, (int) parser->problem_offset);
 		}
+		break;
+
+	case YAML_SCANNER_ERROR:
+		if (parser->context) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Scanner error: %s at line %d, column %d\n"
+							  "%s at line %d, column %d\n", parser->context,
+							  (int) parser->context_mark.line + 1, (int) parser->context_mark.column + 1,
+							  parser->problem, (int) parser->problem_mark.line + 1, (int) parser->problem_mark.column + 1);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Scanner error: %s at line %d, column %d\n",
+							  parser->problem, (int) parser->problem_mark.line + 1, (int) parser->problem_mark.column + 1);
+		}
+		break;
+
+	case YAML_PARSER_ERROR:
+		if (parser->context) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parser error: %s at line %d, column %d\n"
+							  "%s at line %d, column %d\n", parser->context,
+							  (int) parser->context_mark.line + 1, (int) parser->context_mark.column + 1,
+							  parser->problem, (int) parser->problem_mark.line + 1, (int) parser->problem_mark.column + 1);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parser error: %s at line %d, column %d\n",
+							  parser->problem, (int) parser->problem_mark.line + 1, (int) parser->problem_mark.column + 1);
+		}
+		break;
+
+	default:
+		/* Couldn't happen. */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Internal error\n");
+		break;
+	}
 }
 
 
-static switch_xml_t parse_file(FILE *input, const char *file_name)
+static switch_xml_t parse_file(FILE * input, const char *file_name)
 {
 	yaml_parser_t parser;
-	yaml_event_t event = {0};
+	yaml_event_t event = { 0 };
 	char *scalar_data;
 	int done = 0;
 	int depth = 0;
@@ -108,7 +99,7 @@ static switch_xml_t parse_file(FILE *input, const char *file_name)
 	yaml_parser_initialize(&parser);
 	yaml_parser_set_input_file(&parser, input);
 
-	
+
 	if (!(xml = switch_xml_new("document"))) {
 		return NULL;
 	}
@@ -119,7 +110,7 @@ static switch_xml_t parse_file(FILE *input, const char *file_name)
 
 	top = switch_xml_add_child_d(current, "configuration", 0);
 	switch_xml_set_attr_d(top, "name", file_name);
-	
+
 	while (!done) {
 		if (!yaml_parser_parse(&parser, &event)) {
 			print_error(&parser);
@@ -139,7 +130,7 @@ static switch_xml_t parse_file(FILE *input, const char *file_name)
 				scalar_data = (char *) event.data.scalar.value;
 				switch (depth) {
 				case 1:
-					if (!(current = switch_xml_add_child_d(top, scalar_data, depth-1))) {
+					if (!(current = switch_xml_add_child_d(top, scalar_data, depth - 1))) {
 						done = 1;
 					}
 					switch_set_string(category, scalar_data);
@@ -161,7 +152,7 @@ static switch_xml_t parse_file(FILE *input, const char *file_name)
 					}
 					break;
 				}
-				
+
 				break;
 			default:
 				break;
@@ -169,14 +160,13 @@ static switch_xml_t parse_file(FILE *input, const char *file_name)
 		}
 
 		yaml_event_delete(&event);
-	} 
+	}
 
 	yaml_parser_delete(&parser);
 
 	if (input) {
 		fclose(input);
 	}
-
 #ifdef DEBUG_XML
 	if (xml) {
 		char *foo = switch_xml_toxml(xml, SWITCH_FALSE);
@@ -186,11 +176,11 @@ static switch_xml_t parse_file(FILE *input, const char *file_name)
 #endif
 
 	return xml;
-	
+
 }
 
 static switch_xml_t yaml_fetch(const char *section,
-							  const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params, void *user_data)
+							   const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params, void *user_data)
 {
 	char *path;
 	FILE *input;
@@ -201,17 +191,17 @@ static switch_xml_t yaml_fetch(const char *section,
 		xml = parse_file(input, key_value);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cannot open %s\n", path);
-	} 
-	
+	}
+
 	switch_safe_free(path);
 	return xml;
 }
 
 
-static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *session, switch_caller_profile_t *caller_profile)
+static switch_caller_extension_t *parse_dp(FILE * input, switch_core_session_t *session, switch_caller_profile_t *caller_profile)
 {
 	yaml_parser_t parser;
-	yaml_event_t event = {0};
+	yaml_event_t event = { 0 };
 	char *scalar_data;
 	int done = 0;
 	int depth = 0;
@@ -221,7 +211,7 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 	char *last_field = NULL;
 	int nv = 0;
 	switch_caller_extension_t *extension = NULL;
-    switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int context_hit = 0;
 	int proceed = 0;
 	switch_regex_t *re = NULL;
@@ -244,7 +234,7 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 
 	yaml_parser_initialize(&parser);
 	yaml_parser_set_input_file(&parser, input);
-	
+
 	while (!done) {
 		if (!yaml_parser_parse(&parser, &event)) {
 			print_error(&parser);
@@ -273,19 +263,19 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 						char *field = switch_core_session_strdup(session, scalar_data);
 						char *p, *e, *expression = NULL, *field_expanded = NULL, *expression_expanded = NULL;
 						const char *field_data = NULL;
-						
+
 						parens = 0;
 						proceed = 0;
 						switch_regex_safe_free(re);
 
 						if ((p = strstr(field, "=~"))) {
 							*p = '\0';
-							e = p-1;
-							while(*e == ' ') {
+							e = p - 1;
+							while (*e == ' ') {
 								*e-- = '\0';
 							}
-							e = p+2;
-							while(*e == ' ') {
+							e = p + 2;
+							while (*e == ' ') {
 								*e++ = '\0';
 							}
 							expression = e;
@@ -313,7 +303,7 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 							}
 							switch_safe_free(last_field);
 							last_field = strdup(field_data);
-							
+
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test conditions %s(%s) =~ /%s/\n", field, field_data, expression);
 							if (!(proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Regex mismatch\n");
@@ -344,12 +334,12 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 							char *substituted = NULL;
 							char *app_data;
 
-							
+
 							if (!extension) {
 								extension = switch_caller_extension_new(session, "YAML", caller_profile->destination_number);
 								switch_assert(extension);
 							}
-							
+
 							if (parens) {
 								len = (uint32_t) (strlen(value) + strlen(last_field) + 10) * proceed;
 								switch_zmalloc(substituted, len);
@@ -358,14 +348,14 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 							} else {
 								app_data = value;
 							}
-							
+
 							switch_caller_extension_add_application(session, extension, name, app_data);
 							switch_safe_free(substituted);
 						}
 					}
 					break;
-									}
-				
+				}
+
 				break;
 			default:
 				break;
@@ -375,7 +365,7 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 		yaml_event_delete(&event);
 	}
 
- end:
+  end:
 
 	switch_safe_free(last_field);
 	switch_regex_safe_free(re);
@@ -384,7 +374,6 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 	if (input) {
 		fclose(input);
 	}
-
 #ifdef DEBUG_XML
 	if (xml) {
 		char *foo = switch_xml_toxml(xml, SWITCH_FALSE);
@@ -394,7 +383,7 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 #endif
 
 	return extension;
-	
+
 }
 
 SWITCH_STANDARD_DIALPLAN(yaml_dialplan_hunt)
@@ -414,9 +403,9 @@ SWITCH_STANDARD_DIALPLAN(yaml_dialplan_hunt)
 		extension = parse_dp(input, session, caller_profile);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
-	} 
-	
-	switch_safe_free(path);	
+	}
+
+	switch_safe_free(path);
 	return extension;
 }
 
@@ -424,7 +413,7 @@ SWITCH_STANDARD_DIALPLAN(yaml_dialplan_hunt)
 static switch_status_t do_config(void)
 {
 	yaml_parser_t parser;
-	yaml_event_t event = {0};
+	yaml_event_t event = { 0 };
 	char *path;
 	const char *cfg = "mod_yaml.yaml";
 	FILE *input;
@@ -438,7 +427,7 @@ static switch_status_t do_config(void)
 	int nv = 0;
 
 	path = switch_mprintf("%s/yaml/%s", SWITCH_GLOBAL_dirs.conf_dir, cfg);
-	
+
 	if (!(input = fopen(path, "r"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
 		goto end;
@@ -485,7 +474,7 @@ static switch_status_t do_config(void)
 					}
 					break;
 				}
-				
+
 				break;
 			default:
 				break;
@@ -493,21 +482,21 @@ static switch_status_t do_config(void)
 		}
 
 		yaml_event_delete(&event);
-	} 
+	}
 
 	yaml_parser_delete(&parser);
 	status = SWITCH_STATUS_SUCCESS;
 
- end:
+  end:
 
 	if (input) {
 		fclose(input);
 	}
-	
+
 	switch_safe_free(path);
 
 	return status;
-	
+
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_yaml_load)

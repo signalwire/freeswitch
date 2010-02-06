@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, James Martelletti <james@nerdc0re.com>
+ * Copyright (C) 2005-2010, James Martelletti <james@nerdc0re.com>
  *
  * Version: MPL 1.1
  *
@@ -49,13 +49,13 @@ static switch_log_level_t log_level;
 static struct {
 	char *ident;
 	char *format;
-	int   facility;
+	int facility;
 	switch_bool_t log_uuid;
 } globals;
 
 struct _facility_table_entry {
 	char *description;
-	int  facility;
+	int facility;
 };
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ident, globals.ident);
@@ -64,33 +64,33 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_format, globals.format);
 switch_status_t set_global_facility(const char *facility)
 {
 	const struct _facility_table_entry facilities[] = {
-		{ "auth",     LOG_AUTH     },
- #if !defined (__SVR4) && !defined (__sun)
-		{ "authpriv", LOG_AUTHPRIV },
-                { "ftp",      LOG_FTP      },
+		{"auth", LOG_AUTH},
+#if !defined (__SVR4) && !defined (__sun)
+		{"authpriv", LOG_AUTHPRIV},
+		{"ftp", LOG_FTP},
 #endif
-		{ "cron",     LOG_CRON     },
-		{ "daemon",   LOG_DAEMON   },
-		{ "kern",     LOG_KERN     },
-		{ "local0",   LOG_LOCAL0   },
-		{ "local1",   LOG_LOCAL1   },
-		{ "local2",   LOG_LOCAL2   },
-		{ "local3",   LOG_LOCAL3   },
-		{ "local4",   LOG_LOCAL4   },
-		{ "local5",   LOG_LOCAL5   },
-		{ "local6",   LOG_LOCAL6   },
-		{ "local7",   LOG_LOCAL7   },
-		{ "lpr",      LOG_LPR      },
-		{ "mail",     LOG_MAIL     },
-		{ "news",     LOG_NEWS     },
-		{ "syslog",   LOG_SYSLOG   },
-		{ "user",     LOG_USER     },
-		{ "uucp",     LOG_UUCP     },
-		{ NULL,       0            }
+		{"cron", LOG_CRON},
+		{"daemon", LOG_DAEMON},
+		{"kern", LOG_KERN},
+		{"local0", LOG_LOCAL0},
+		{"local1", LOG_LOCAL1},
+		{"local2", LOG_LOCAL2},
+		{"local3", LOG_LOCAL3},
+		{"local4", LOG_LOCAL4},
+		{"local5", LOG_LOCAL5},
+		{"local6", LOG_LOCAL6},
+		{"local7", LOG_LOCAL7},
+		{"lpr", LOG_LPR},
+		{"mail", LOG_MAIL},
+		{"news", LOG_NEWS},
+		{"syslog", LOG_SYSLOG},
+		{"user", LOG_USER},
+		{"uucp", LOG_UUCP},
+		{NULL, 0}
 	};
 	const struct _facility_table_entry *entry = facilities;
 
-	while(!zstr(entry->description)) {
+	while (!zstr(entry->description)) {
 		if (!strcasecmp(entry->description, facility)) {
 			globals.facility = entry->facility;
 			return SWITCH_STATUS_SUCCESS;
@@ -148,7 +148,7 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 	/* don't log blank lines */
 	if (!zstr(node->data) && (strspn(node->data, " \t\r\n") < strlen(node->data))) {
 		if (globals.log_uuid && !zstr(node->userdata)) {
-			syslog(syslog_level, "%s %s", node->userdata, node->data);	
+			syslog(syslog_level, "%s %s", node->userdata, node->data);
 		} else {
 			syslog(syslog_level, "%s", node->data);
 		}
@@ -161,9 +161,9 @@ static switch_status_t load_config(void)
 {
 	char *cf = "syslog.conf";
 	switch_xml_t cfg, xml, settings, param;
-    
-    /* default log level */
-    log_level = SWITCH_LOG_WARNING;
+
+	/* default log level */
+	log_level = SWITCH_LOG_WARNING;
 
 	/* default facility */
 	globals.facility = DEFAULT_FACILITY;
@@ -208,7 +208,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_syslog_load)
 {
 	switch_status_t status;
 	*module_interface = &console_module_interface;
-	
+
 	memset(&globals, 0, sizeof(globals));
 
 	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {

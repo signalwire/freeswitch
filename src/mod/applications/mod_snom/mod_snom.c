@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -33,14 +33,9 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_snom_load);
 SWITCH_MODULE_DEFINITION(mod_snom, mod_snom_load, NULL, NULL);
 
-static switch_bool_t snom_bind_key(const char *key, 
-								   const char *light, 
-								   const char *label,
-								   const char *user, 
-								   const char *host, 
-								   const char *profile, 
-								   const char *action_name, 
-								   const char *action)
+static switch_bool_t snom_bind_key(const char *key,
+								   const char *light,
+								   const char *label, const char *user, const char *host, const char *profile, const char *action_name, const char *action)
 {
 	switch_event_t *event;
 
@@ -61,7 +56,7 @@ static switch_bool_t snom_bind_key(const char *key,
 		}
 		return SWITCH_TRUE;
 	}
-	
+
 	return SWITCH_FALSE;
 }
 
@@ -92,17 +87,17 @@ SWITCH_STANDARD_API(snom_bind_key_api_function)
 	if (argc < 6) {
 		goto err;
 	}
-	
+
 	if (snom_bind_key(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7])) {
 		stream->write_function(stream, "+OK %s\n", cmd);
 		goto end;
 	}
-	
- err:
+
+  err:
 
 	stream->write_function(stream, "-Error %s\n", KEY_BIND_SYNTAX);
 
- end:
+  end:
 
 	free(mydata);
 
@@ -122,7 +117,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_snom_load)
 	SWITCH_ADD_API(commands_api_interface, "snom_bind_key", "Bind a key", snom_bind_key_api_function, KEY_BIND_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "snom_url", "url", snom_url_api_function, URL_SYNTAX);
 
-	
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

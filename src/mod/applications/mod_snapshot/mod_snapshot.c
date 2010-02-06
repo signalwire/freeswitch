@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -65,17 +65,18 @@ static switch_bool_t capture_callback(switch_media_bug_t *bug, void *user_data, 
 
 		break;
 	case SWITCH_ABC_TYPE_READ:
-		
+
 		if (cb->buffer) {
 			uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 			switch_frame_t frame = { 0 };
 
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-			
+
 			if (switch_mutex_trylock(cb->mutex) == SWITCH_STATUS_SUCCESS) {
 				while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS && !switch_test_flag((&frame), SFF_CNG)) {
-					if (frame.datalen) switch_buffer_slide_write(cb->buffer, frame.data, frame.datalen);
+					if (frame.datalen)
+						switch_buffer_slide_write(cb->buffer, frame.data, frame.datalen);
 				}
 				switch_mutex_unlock(cb->mutex);
 			}
@@ -95,7 +96,7 @@ static switch_status_t start_capture(switch_core_session_t *session, unsigned in
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_media_bug_t *bug;
 	switch_status_t status;
-	switch_codec_implementation_t read_impl = {0};
+	switch_codec_implementation_t read_impl = { 0 };
 	struct cap_cb *cb;
 	switch_size_t bytes;
 	switch_bind_flag_t bind_flags = 0;
@@ -109,8 +110,8 @@ static switch_status_t start_capture(switch_core_session_t *session, unsigned in
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Must be at least 5 seconds!\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	
-    switch_core_session_get_read_impl(session, &read_impl);
+
+	switch_core_session_get_read_impl(session, &read_impl);
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -118,7 +119,7 @@ static switch_status_t start_capture(switch_core_session_t *session, unsigned in
 
 	cb = switch_core_session_alloc(session, sizeof(*cb));
 	cb->base = switch_core_session_strdup(session, base);
-	
+
 	bytes = read_impl.samples_per_second * seconds * 2;
 
 	switch_buffer_create_dynamic(&cb->buffer, bytes, bytes, bytes);
@@ -132,7 +133,7 @@ static switch_status_t start_capture(switch_core_session_t *session, unsigned in
 	switch_ivr_bind_dtmf_meta_session(session, 7, bind_flags, "snapshot::snap");
 
 	switch_channel_set_private(channel, "snapshot", bug);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -141,11 +142,11 @@ static switch_status_t do_snap(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_media_bug_t *bug = switch_channel_get_private(channel, "snapshot");
 	char *file;
-	switch_file_handle_t fh = {0};
-	switch_codec_implementation_t read_impl = {0};
+	switch_file_handle_t fh = { 0 };
+	switch_codec_implementation_t read_impl = { 0 };
 	switch_size_t bytes_read;
-	int16_t pdata[4096] = {0};
-		
+	int16_t pdata[4096] = { 0 };
+
 	if (bug) {
 		switch_time_exp_t tm;
 		switch_size_t retsize;
@@ -158,19 +159,17 @@ static switch_status_t do_snap(switch_core_session_t *session)
 
 		switch_time_exp_lt(&tm, switch_time_make(switch_epoch_time_now(NULL), 0));
 		switch_strftime(date, &retsize, sizeof(date), "%Y_%m_%d_%H_%M_%S", &tm);
-			
-		file = switch_core_session_sprintf(session, "%s%s%s_%s.wav", SWITCH_GLOBAL_dirs.sounds_dir, 
-										   SWITCH_PATH_SEPARATOR, cb->base, date);
+
+		file = switch_core_session_sprintf(session, "%s%s%s_%s.wav", SWITCH_GLOBAL_dirs.sounds_dir, SWITCH_PATH_SEPARATOR, cb->base, date);
 
 		switch_core_session_get_read_impl(session, &read_impl);
 		fh.channels = 0;
 		fh.native_rate = read_impl.actual_samples_per_second;
-			
+
 		if (switch_core_file_open(&fh,
 								  file,
 								  0,
-								  read_impl.actual_samples_per_second,
-								  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+								  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error opening %s\n", file);
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
@@ -180,7 +179,7 @@ static switch_status_t do_snap(switch_core_session_t *session)
 		switch_mutex_lock(cb->mutex);
 		while ((bytes_read = switch_buffer_read(cb->buffer, pdata, sizeof(pdata)))) {
 			switch_size_t samples = bytes_read / 2;
-				
+
 			if (switch_core_file_write(&fh, pdata, &samples) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
@@ -205,8 +204,8 @@ SWITCH_STANDARD_APP(snapshot_app_function)
 
 	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-	} 
-	
+	}
+
 	if (argc < 1) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", SNAP_SYNTAX);
 		return;
@@ -240,7 +239,7 @@ SWITCH_STANDARD_APP(snapshot_app_function)
 		}
 
 		start_capture(session, seconds, flags, base);
-		
+
 	}
 
 	if (!strcasecmp(argv[0], "snap")) {
@@ -276,7 +275,7 @@ SWITCH_STANDARD_API(snapshot_function)
 				const char *base = argv[3];
 				int seconds = 5;
 				switch_media_bug_flag_t flags = SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_PING;
-				
+
 				if (sec) {
 					int tmp = atoi(sec);
 					if (tmp > 5) {
@@ -297,7 +296,7 @@ SWITCH_STANDARD_API(snapshot_function)
 				if (!base) {
 					base = "mod_snapshot";
 				}
-				
+
 				status = start_capture(lsession, seconds, flags, base);
 			}
 
@@ -311,7 +310,7 @@ SWITCH_STANDARD_API(snapshot_function)
 		stream->write_function(stream, "-ERR Operation Failed\n");
 	}
 
- done:
+  done:
 
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
@@ -327,7 +326,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_snapshot_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hello World!\n");
-	
+
 	SWITCH_ADD_API(api_interface, "uuid_snapshot", "Snapshot API", snapshot_function, SNAP_API_SYNTAX);
 	SWITCH_ADD_APP(app_interface, "snapshot", "", "", snapshot_app_function, SNAP_SYNTAX, SAF_SUPPORT_NOMEDIA);
 

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -297,14 +297,16 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 switch_endpoint_interface_t *sip_endpoint_interface;
 static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												switch_caller_profile_t *outbound_profile,
-												switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
+												switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
+												switch_call_cause_t *cancel_cause);
 switch_io_routines_t sip_io_routines = {
 	/*.outgoing_channel */ sip_outgoing_channel
 };
 
 static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												switch_caller_profile_t *outbound_profile,
-												switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
+												switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
+												switch_call_cause_t *cancel_cause)
 {
 	const char *profile;
 
@@ -331,14 +333,16 @@ static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session, 
 switch_endpoint_interface_t *iax2_endpoint_interface;
 static switch_call_cause_t iax2_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												 switch_caller_profile_t *outbound_profile,
-												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
+												 switch_call_cause_t *cancel_cause);
 switch_io_routines_t iax2_io_routines = {
 	/*.outgoing_channel */ iax2_outgoing_channel
 };
 
 static switch_call_cause_t iax2_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												 switch_caller_profile_t *outbound_profile,
-												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
+												 switch_call_cause_t *cancel_cause)
 {
 	UNPROTECT_INTERFACE(iax2_endpoint_interface);
 

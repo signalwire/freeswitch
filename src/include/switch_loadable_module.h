@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -268,7 +268,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
   \param filename the path to the module's dll or so file
   \return SWITCH_STATUS_SUCCESS on a successful load
 */
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(switch_loadable_module_interface_t **module_interface, char *filename);
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(switch_loadable_module_interface_t ** module_interface, char *filename);
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void);
 
 /*!
@@ -325,14 +325,15 @@ SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void);
 		break;															\
 	}
 
-static inline int switch_check_interval(uint32_t rate, uint32_t ptime)
+	 static inline int switch_check_interval(uint32_t rate, uint32_t ptime)
 {
 	uint32_t max_ms = 0, ptime_div = 0;
 
 	switch (rate) {
 	case 22050:
 	case 11025:
-		if (ptime < 120) return 1;
+		if (ptime < 120)
+			return 1;
 		break;
 	case 48000:
 		max_ms = 40;
@@ -350,13 +351,13 @@ static inline int switch_check_interval(uint32_t rate, uint32_t ptime)
 	case 8000:
 		max_ms = 120;
 		ptime_div = 2;
-		break;		
+		break;
 	}
 
 	if (max_ms && ptime_div && (ptime <= max_ms && (ptime % ptime_div) == 0) && ((rate / 1000) * ptime) < SWITCH_RECOMMENDED_BUFFER_SIZE) {
 		return 1;
 	}
-	
+
 	return 0;
 }
 
@@ -420,7 +421,7 @@ static inline void switch_core_codec_add_implementation(switch_memory_pool_t *po
 		impl->impl_id = switch_core_codec_next_id();
 		codec_interface->implementations = impl;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Rejected codec name: %s rate: %u ptime: %u\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Rejected codec name: %s rate: %u ptime: %u\n",
 						  iananame, actual_samples_per_second, microseconds_per_packet / 1000);
 	}
 }

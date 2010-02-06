@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -190,10 +190,10 @@ static JSBool db_step_ex(JSContext * cx, JSObject * obj, uintN argc, jsval * arg
 				break;
 			} else if (result == SWITCH_CORE_DB_BUSY) {
 				running++;
-				switch_cond_next(); /* wait a bit before retrying */
+				switch_cond_next();	/* wait a bit before retrying */
 				continue;
-			} 
-			if (switch_core_db_finalize(dbo->stmt) != SWITCH_CORE_DB_OK) {	
+			}
+			if (switch_core_db_finalize(dbo->stmt) != SWITCH_CORE_DB_OK) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", switch_core_db_errmsg(dbo->db));
 			}
 			dbo->stmt = NULL;
@@ -209,7 +209,7 @@ static JSBool db_step_ex(JSContext * cx, JSObject * obj, uintN argc, jsval * arg
 */
 static JSBool db_next(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
-    /* return true until no more rows available */
+	/* return true until no more rows available */
 	return db_step_ex(cx, obj, argc, argv, rval, SWITCH_CORE_DB_ROW);
 }
 
@@ -218,7 +218,7 @@ static JSBool db_next(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, 
 */
 static JSBool db_step(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
-    /* return true when the statement has finished executing successfully */
+	/* return true when the statement has finished executing successfully */
 	return db_step_ex(cx, obj, argc, argv, rval, SWITCH_CORE_DB_DONE);
 }
 
@@ -242,7 +242,7 @@ static JSBool db_fetch(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 	for (x = 0; x < colcount; x++) {
 		const char *var = (char *) switch_core_db_column_name(dbo->stmt, x);
 		const char *val = (char *) switch_core_db_column_text(dbo->stmt, x);
-		
+
 		if (var && val) {
 			switch_snprintf(code, sizeof(code), "~_dB_RoW_DaTa_[\"%s\"] = \"%s\"", var, val);
 			eval_some_js(code, dbo->cx, dbo->obj, rval);
@@ -289,7 +289,7 @@ static JSBool db_bind_text(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
 	JSBool status;
 	int32 param_index = -1;
-    char *param_value = NULL;
+	char *param_value = NULL;
 
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 
@@ -297,26 +297,26 @@ static JSBool db_bind_text(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 		return JS_FALSE;
 	}
 
-    /* db_prepare() must be called first */
+	/* db_prepare() must be called first */
 	if (!dbo->stmt) {
 		return JS_FALSE;
 	}
 
 	/* argv[0] = parameter index
-       argv[1] = parameter value
-     */
+	   argv[1] = parameter value
+	 */
 	if (argc < 2) {
 		return JS_FALSE;
 	}
 
-	
+
 
 	/* convert args */
-	status = JS_ValueToECMAUint32(cx, argv[0], (uint32*)&param_index);
+	status = JS_ValueToECMAUint32(cx, argv[0], (uint32 *) & param_index);
 	switch_assert(status == JS_TRUE);
-    param_value = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+	param_value = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 	if ((param_index < 1) || (NULL == param_value)) {
-		return  JS_FALSE;
+		return JS_FALSE;
 	}
 
 	/* bind param */
@@ -343,26 +343,26 @@ static JSBool db_bind_int(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 		return JS_FALSE;
 	}
 
-    /* db_prepare() must be called first */
+	/* db_prepare() must be called first */
 	if (!dbo->stmt) {
 		return JS_FALSE;
 	}
 
 	/* argv[0] = parameter index
-       argv[1] = parameter value
-     */
+	   argv[1] = parameter value
+	 */
 	if (argc < 2) {
 		return JS_FALSE;
 	}
 
 	/* convert args */
-	status = JS_ValueToECMAUint32(cx, argv[0], (uint32*)&param_index);
+	status = JS_ValueToECMAUint32(cx, argv[0], (uint32 *) & param_index);
 	switch_assert(status == JS_TRUE);
-	status = JS_ValueToECMAUint32(cx, argv[1], (uint32*)&param_value);
+	status = JS_ValueToECMAUint32(cx, argv[1], (uint32 *) & param_value);
 	switch_assert(status == JS_TRUE);
 
-	if (param_index < 1)  {
-		return  JS_FALSE;
+	if (param_index < 1) {
+		return JS_FALSE;
 	}
 
 	/* bind param */
@@ -456,7 +456,7 @@ const sm_module_interface_t DB_module_interface = {
 	/*.next */ NULL
 };
 
-SWITCH_MOD_DECLARE_NONSTD(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
+SWITCH_MOD_DECLARE_NONSTD(switch_status_t) spidermonkey_init(const sm_module_interface_t ** module_interface)
 {
 	*module_interface = &DB_module_interface;
 	return SWITCH_STATUS_SUCCESS;

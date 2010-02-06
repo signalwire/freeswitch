@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -98,7 +98,7 @@ struct listener {
 typedef struct listener listener_t;
 
 static struct {
-	switch_mutex_t *listener_mutex;	
+	switch_mutex_t *listener_mutex;
 	switch_event_node_t *node;
 	int debug;
 } globals;
@@ -133,8 +133,8 @@ static uint32_t next_id(void)
 {
 	uint32_t id;
 	switch_mutex_lock(globals.listener_mutex);
-    id = ++prefs.id;
-    switch_mutex_unlock(globals.listener_mutex);
+	id = ++prefs.id;
+	switch_mutex_unlock(globals.listener_mutex);
 	return id;
 }
 
@@ -147,12 +147,12 @@ static void launch_listener_thread(listener_t *listener);
 static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	listener_t *l;
-	
+
 	switch_mutex_lock(globals.listener_mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
 		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level) {
-			switch_log_node_t *dnode = switch_log_node_dup(node);			
-			
+			switch_log_node_t *dnode = switch_log_node_dup(node);
+
 			if (switch_queue_trypush(l->log_queue, dnode) == SWITCH_STATUS_SUCCESS) {
 				if (l->lost_logs) {
 					int ll = l->lost_logs;
@@ -191,17 +191,19 @@ static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch
 	if (listener->event_queue) {
 		while (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_event_t *pevent = (switch_event_t *) pop;
-			if (!pop) continue;
+			if (!pop)
+				continue;
 			switch_event_destroy(&pevent);
 		}
 	}
 }
 
-static switch_status_t expire_listener(listener_t **listener)
+static switch_status_t expire_listener(listener_t ** listener)
 {
 	listener_t *l;
 
-	if (!listener || !*listener) return SWITCH_STATUS_FALSE;
+	if (!listener || !*listener)
+		return SWITCH_STATUS_FALSE;
 	l = *listener;
 
 	if (!l->expire_time) {
@@ -218,12 +220,12 @@ static switch_status_t expire_listener(listener_t **listener)
 	switch_core_hash_destroy(&l->event_hash);
 
 	if (l->allowed_event_hash) {
-        switch_core_hash_destroy(&l->allowed_event_hash);
-    }
+		switch_core_hash_destroy(&l->allowed_event_hash);
+	}
 
 	if (l->allowed_api_hash) {
-        switch_core_hash_destroy(&l->allowed_api_hash);
-    }
+		switch_core_hash_destroy(&l->allowed_api_hash);
+	}
 
 
 	switch_mutex_lock(l->filter_mutex);
@@ -250,11 +252,11 @@ static void event_handler(switch_event_t *event)
 	if (!listen_list.ready) {
 		return;
 	}
-	
+
 	lp = listen_list.listeners;
 
 	switch_mutex_lock(globals.listener_mutex);
-	while(lp) {
+	while (lp) {
 		int send = 0;
 
 		l = lp;
@@ -270,11 +272,11 @@ static void event_handler(switch_event_t *event)
 				continue;
 			}
 		}
-		
+
 		if (l->expire_time || !switch_test_flag(l, LFLAG_EVENTS)) {
 			last = l;
 			continue;
-		}		
+		}
 
 		if (l->event_list[SWITCH_EVENT_ALL]) {
 			send = 1;
@@ -283,7 +285,7 @@ static void event_handler(switch_event_t *event)
 				send = 1;
 			}
 		}
-		
+
 		if (send && l->filters && l->filters->headers) {
 			switch_event_header_t *hp;
 			const char *hval;
@@ -313,12 +315,12 @@ static void event_handler(switch_event_t *event)
 					if (!comp_to) {
 						continue;
 					}
-					
+
 					if (*hp->value == '/') {
 						switch_regex_t *re = NULL;
 						int ovector[30];
 						cmp = !!switch_regex_perform(hval, comp_to, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
-						switch_regex_safe_free(re);						
+						switch_regex_safe_free(re);
 					} else {
 						cmp = !strcasecmp(hval, comp_to);
 					}
@@ -335,7 +337,7 @@ static void event_handler(switch_event_t *event)
 			}
 			switch_mutex_unlock(l->filter_mutex);
 		}
-		
+
 		if (send && switch_test_flag(l, LFLAG_MYEVENTS)) {
 			char *uuid = switch_event_get_header(event, "unique-id");
 			if (!uuid || strcmp(uuid, switch_core_session_get_uuid(l->session))) {
@@ -460,19 +462,19 @@ SWITCH_STANDARD_APP(socket_function)
 		}
 	}
 
-	if (switch_test_flag(listener, LFLAG_ASYNC)) {		
+	if (switch_test_flag(listener, LFLAG_ASYNC)) {
 		const char *var;
-		
+
 		launch_listener_thread(listener);
 
-		while(switch_channel_ready(channel) && !switch_test_flag(listener, LFLAG_CONNECTED)) {
+		while (switch_channel_ready(channel) && !switch_test_flag(listener, LFLAG_CONNECTED)) {
 			switch_cond_next();
 		}
-		
+
 		switch_ivr_park(session, NULL);
 
 		switch_ivr_parse_all_events(session);
-		
+
 		if (switch_test_flag(listener, LFLAG_RESUME) || ((var = switch_channel_get_variable(channel, "socket_resume")) && switch_true(var))) {
 			switch_channel_set_state(channel, CS_EXECUTE);
 		}
@@ -491,7 +493,7 @@ SWITCH_STANDARD_APP(socket_function)
 }
 
 
-static void close_socket(switch_socket_t **sock)
+static void close_socket(switch_socket_t ** sock)
 {
 	switch_mutex_lock(listen_list.sock_mutex);
 	if (*sock) {
@@ -524,7 +526,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 	switch_event_unbind(&globals.node);
 
 	switch_safe_free(prefs.ip);
-	switch_safe_free(prefs.password);	
+	switch_safe_free(prefs.password);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -616,25 +618,25 @@ SWITCH_STANDARD_API(event_sink_function)
 	listener_t *listener = NULL;
 
 	if (stream->param_event) {
-        http = switch_event_get_header(stream->param_event, "http-host");
+		http = switch_event_get_header(stream->param_event, "http-host");
 		wcmd = switch_event_get_header(stream->param_event, "command");
 		format = switch_event_get_header(stream->param_event, "format");
-    }
+	}
 
 	if (!http) {
 		stream->write_function(stream, "This is a web application!\n");
-        return SWITCH_STATUS_SUCCESS;
+		return SWITCH_STATUS_SUCCESS;
 	}
 	stream->write_function(stream, "Content-Type: text/xml\n\n");
-	
+
 	stream->write_function(stream, "<?xml version=\"1.0\"?>\n");
 	stream->write_function(stream, "<root>\n");
-	
+
 	if (!wcmd) {
 		stream->write_function(stream, "<data><reply type=\"error\">Missing command parameter!</reply></data>\n");
 		goto end;
 	}
-	
+
 	if (!format) {
 		format = "xml";
 	}
@@ -653,15 +655,15 @@ SWITCH_STANDARD_API(event_sink_function)
 
 		if (!(listener = find_listener(idl))) {
 			stream->write_function(stream, "<data><reply type=\"error\">Invalid Listen-ID</reply></data>\n");
-            goto end;
+			goto end;
 		}
 
 		if (zstr(action)) {
 			stream->write_function(stream, "<data><reply type=\"error\">Invalid Syntax</reply></data>\n");
-            goto end;
+			goto end;
 		}
 
-		switch_mutex_lock(listener->filter_mutex);		
+		switch_mutex_lock(listener->filter_mutex);
 		if (!listener->filters) {
 			switch_event_create_plain(&listener->filters, SWITCH_EVENT_CHANNEL_DATA);
 		}
@@ -690,7 +692,7 @@ SWITCH_STANDARD_API(event_sink_function)
 			stream->write_function(stream, "<data><reply type=\"error\">Invalid Syntax</reply></data>\n");
 		}
 
-	filter_end:
+	  filter_end:
 
 		switch_mutex_unlock(listener->filter_mutex);
 
@@ -704,7 +706,7 @@ SWITCH_STANDARD_API(event_sink_function)
 
 		if (!(listener = find_listener(idl))) {
 			stream->write_function(stream, "<data><reply type=\"error\">Invalid Listen-ID</reply></data>\n");
-            goto end;
+			goto end;
 		}
 
 		if (switch_test_flag(listener, LFLAG_LOG)) {
@@ -727,7 +729,7 @@ SWITCH_STANDARD_API(event_sink_function)
 
 		if (!(listener = find_listener(idl))) {
 			stream->write_function(stream, "<data><reply type=\"error\">Invalid Listen-ID</reply></data>\n");
-            goto end;
+			goto end;
 		}
 
 		if (loglevel) {
@@ -753,7 +755,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		uint32_t count = 0, key_count = 0;
 		uint8_t custom = 0;
 		char *edup;
-		
+
 		if (zstr(events) && zstr(loglevel)) {
 			stream->write_function(stream, "<data><reply type=\"error\">Missing parameter!</reply></data>\n");
 			goto end;
@@ -784,7 +786,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		listener->id = next_id();
 		listener->timeout = 60;
 		listener->last_flush = switch_epoch_time_now(NULL);
-		
+
 		if (events) {
 			char delim = ',';
 
@@ -793,7 +795,7 @@ SWITCH_STANDARD_API(event_sink_function)
 			} else {
 				listener->format = EVENT_FORMAT_PLAIN;
 			}
-			
+
 			edup = strdup(events);
 
 			if (strchr(edup, ' ')) {
@@ -802,7 +804,7 @@ SWITCH_STANDARD_API(event_sink_function)
 
 			for (cur = edup; cur; count++) {
 				switch_event_types_t type;
-				
+
 				if ((next = strchr(cur, delim))) {
 					*next++ = '\0';
 				}
@@ -824,10 +826,10 @@ SWITCH_STANDARD_API(event_sink_function)
 						custom++;
 					}
 				}
-				
+
 				cur = next;
 			}
-		
+
 
 			switch_safe_free(edup);
 
@@ -849,9 +851,9 @@ SWITCH_STANDARD_API(event_sink_function)
 		if (globals.debug > 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Creating event-sink listener [%u]\n", listener->id);
 		}
-		
+
 		goto end;
-	} else if (!strcasecmp(wcmd, "destroy-listener")) {		
+	} else if (!strcasecmp(wcmd, "destroy-listener")) {
 		char *id = switch_event_get_header(stream->param_event, "listen-id");
 		uint32_t idl = 0;
 
@@ -881,7 +883,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		uint32_t idl = 0;
 		void *pop;
 		switch_event_t *pevent = NULL;
-		
+
 		if (id) {
 			idl = (uint32_t) atol(id);
 		}
@@ -892,7 +894,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		}
 
 		listener->last_flush = switch_epoch_time_now(NULL);
-		stream->write_function(stream, "<data>\n <reply type=\"success\">Current Events Follow</reply>\n");			
+		stream->write_function(stream, "<data>\n <reply type=\"success\">Current Events Follow</reply>\n");
 		xmlize_listener(listener, stream);
 
 		if (switch_test_flag(listener, LFLAG_LOG)) {
@@ -902,22 +904,16 @@ SWITCH_STANDARD_API(event_sink_function)
 				switch_log_node_t *dnode = (switch_log_node_t *) pop;
 				int encode_len = (strlen(dnode->data) * 3) + 1;
 				char *encode_buf = malloc(encode_len);
-				
+
 				switch_assert(encode_buf);
-				
+
 				memset(encode_buf, 0, encode_len);
 				switch_url_encode((char *) dnode->data, encode_buf, encode_len);
-				
 
-				stream->write_function(stream, "<log log-level=\"%d\" text-channel=\"%d\" log-file=\"%s\" log-func=\"%s\" log-line=\"%d\" user-data=\"%s\">%s</log>\n",
-									   dnode->level,
-									   dnode->channel,
-									   dnode->file,
-									   dnode->func,
-									   dnode->line,
-									   switch_str_nil(dnode->userdata),
-									   encode_buf
-									   );
+
+				stream->write_function(stream,
+									   "<log log-level=\"%d\" text-channel=\"%d\" log-file=\"%s\" log-func=\"%s\" log-line=\"%d\" user-data=\"%s\">%s</log>\n",
+									   dnode->level, dnode->channel, dnode->file, dnode->func, dnode->line, switch_str_nil(dnode->userdata), encode_buf);
 				free(encode_buf);
 				switch_log_node_free(&dnode);
 			}
@@ -949,7 +945,7 @@ SWITCH_STANDARD_API(event_sink_function)
 
 				stream->write_function(stream, "%s\n", listener->ebuf);
 			}
-			
+
 			switch_safe_free(listener->ebuf);
 			switch_event_destroy(&pevent);
 		}
@@ -965,7 +961,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		char *api_command = switch_event_get_header(stream->param_event, "fsapi-command");
 		char *api_args = switch_event_get_header(stream->param_event, "fsapi-args");
 		switch_event_t *event, *oevent;
-		
+
 		if (!(api_command)) {
 			stream->write_function(stream, "<data><reply type=\"error\">INVALID API COMMAND!</reply></data>\n");
 			goto end;
@@ -991,10 +987,10 @@ SWITCH_STANDARD_API(event_sink_function)
 		stream->write_function(stream, "<data><reply type=\"error\">INVALID COMMAND!</reply></data\n");
 	}
 
- end:
+  end:
 
 	stream->write_function(stream, "</root>\n\n");
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1015,7 +1011,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
-	
+
 	switch_log_bind_logger(socket_logger, SWITCH_LOG_DEBUG, SWITCH_FALSE);
 
 	/* connect my internal structure to the blank pointer passed to me */
@@ -1062,7 +1058,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		mlen = 1;
 
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
-		
+
 		if (prefs.done || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
 			return SWITCH_STATUS_FALSE;
 		}
@@ -1119,34 +1115,34 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 								switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, var, val);
 								if (!strcasecmp(var, "content-length")) {
 									clen = atoi(val);
-									
+
 									if (clen > 0) {
 										char *body;
 										char *p;
-										
+
 										switch_zmalloc(body, clen + 1);
 
 										p = body;
-										while(clen > 0) {
+										while (clen > 0) {
 											mlen = clen;
-											
+
 											status = switch_socket_recv(listener->sock, p, &mlen);
 
 											if (prefs.done || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
 												return SWITCH_STATUS_FALSE;
 											}
-											
+
 											/*
-											if (channel && !switch_channel_ready(channel)) {
-												status = SWITCH_STATUS_FALSE;
-												break;
-											}
-											*/
+											   if (channel && !switch_channel_ready(channel)) {
+											   status = SWITCH_STATUS_FALSE;
+											   break;
+											   }
+											 */
 
 											clen -= (int) mlen;
 											p += mlen;
 										}
-										
+
 										switch_event_add_body(*event, "%s", body);
 										free(body);
 									}
@@ -1154,13 +1150,13 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 							}
 						}
 					}
-					
+
 					cur = next;
 				}
 				break;
 			}
 		}
-		
+
 		if (timeout) {
 			elapsed = (uint32_t) (switch_epoch_time_now(NULL) - start);
 			if (elapsed >= timeout) {
@@ -1173,9 +1169,9 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			if (switch_test_flag(listener, LFLAG_LOG)) {
 				if (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 					switch_log_node_t *dnode = (switch_log_node_t *) pop;
-					
+
 					if (dnode->data) {
-						switch_snprintf(buf, sizeof(buf), 
+						switch_snprintf(buf, sizeof(buf),
 										"Content-Type: log/data\n"
 										"Content-Length: %" SWITCH_SSIZE_T_FMT "\n"
 										"Log-Level: %d\n"
@@ -1186,24 +1182,19 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 										"User-Data: %s\n"
 										"\n",
 										strlen(dnode->data),
-										dnode->level,
-										dnode->channel,
-										dnode->file,
-										dnode->func,
-										dnode->line,
-										switch_str_nil(dnode->userdata)
-										);
+										dnode->level, dnode->channel, dnode->file, dnode->func, dnode->line, switch_str_nil(dnode->userdata)
+							);
 						len = strlen(buf);
 						switch_socket_send(listener->sock, buf, &len);
 						len = strlen(dnode->data);
 						switch_socket_send(listener->sock, dnode->data, &len);
 					}
-					
+
 					switch_log_node_free(&dnode);
 					do_sleep = 0;
 				}
 			}
-			
+
 
 			if (listener->session) {
 				switch_channel_t *chan = switch_core_session_get_channel(listener->session);
@@ -1223,7 +1214,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 					char hbuf[512];
 					switch_event_t *pevent = (switch_event_t *) pop;
 					char *etype;
-					
+
 					do_sleep = 0;
 					if (listener->format == EVENT_FORMAT_PLAIN) {
 						etype = "plain";
@@ -1242,7 +1233,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 					}
 
 					switch_assert(listener->ebuf);
-					
+
 					len = strlen(listener->ebuf);
 
 					switch_snprintf(hbuf, sizeof(hbuf), "Content-Length: %" SWITCH_SSIZE_T_FMT "\n" "Content-Type: text/event-%s\n" "\n", len, etype);
@@ -1252,10 +1243,10 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 
 					len = strlen(listener->ebuf);
 					switch_socket_send(listener->sock, listener->ebuf, &len);
-					
+
 					switch_safe_free(listener->ebuf);
 
-				endloop:
+				  endloop:
 
 					switch_event_destroy(&pevent);
 				}
@@ -1268,15 +1259,13 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 				char message[128] = "";
 				char disco_buf[512] = "";
 
-				switch_snprintf(message, sizeof(message), 
+				switch_snprintf(message, sizeof(message),
 								"Channel %s has disconnected, lingering by request from remote.\n", switch_channel_get_name(channel));
 				mlen = strlen(message);
 
 				switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
 								"Controlled-Session-UUID: %s\n"
-								"Content-Disposition: linger\n"
-								"Content-Length: %d\n\n", 
-								switch_core_session_get_uuid(listener->session), (int)mlen);
+								"Content-Disposition: linger\n" "Content-Length: %d\n\n", switch_core_session_get_uuid(listener->session), (int) mlen);
 
 				len = strlen(disco_buf);
 				switch_socket_send(listener->sock, disco_buf, &len);
@@ -1287,7 +1276,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 				break;
 			}
 		}
-		
+
 		if (do_sleep) {
 			switch_cond_next();
 		}
@@ -1320,7 +1309,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	prefs.threads++;
 	switch_mutex_unlock(globals.listener_mutex);
 
-	
+
 	if (!acs) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Internal error.\n");
 		goto cleanup;
@@ -1332,11 +1321,11 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 		acs->ack = -1;
 		goto done;
 	}
-	
+
 	acs->ack = 1;
-	
+
 	SWITCH_STANDARD_STREAM(stream);
-	
+
 	if (acs->console_execute) {
 		if ((status = switch_console_execute(acs->api_cmd, 0, &stream)) != SWITCH_STATUS_SUCCESS) {
 			stream.write_function(&stream, "%s: Command not found!\n", acs->api_cmd);
@@ -1396,19 +1385,20 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 		switch_memory_pool_t *pool = acs->pool;
 		if (acs->ack == -1) {
 			int sanity = 2000;
-			while(acs->ack == -1) {
+			while (acs->ack == -1) {
 				switch_cond_next();
-				if (--sanity <= 0) break;
+				if (--sanity <= 0)
+					break;
 			}
 		}
 
 		acs = NULL;
 		switch_core_destroy_memory_pool(&pool);
 		pool = NULL;
-			
+
 	}
 
- cleanup:
+  cleanup:
 	switch_mutex_lock(globals.listener_mutex);
 	prefs.threads--;
 	switch_mutex_unlock(globals.listener_mutex);
@@ -1426,14 +1416,14 @@ static switch_bool_t auth_api_command(listener_t *listener, const char *api_cmd,
 	char *next = NULL;
 	switch_bool_t ok = SWITCH_TRUE;
 
- top:
+  top:
 
 	if (!switch_core_hash_find(listener->allowed_api_hash, check_cmd)) {
 		ok = SWITCH_FALSE;
 		goto end;
 	}
-	
-	while(check_cmd) {
+
+	while (check_cmd) {
 		for (x = 0; sneaky_commands[x]; x++) {
 			if (!strcasecmp(sneaky_commands[x], check_cmd)) {
 				if (check_cmd == api_cmd) {
@@ -1452,7 +1442,7 @@ static switch_bool_t auth_api_command(listener_t *listener, const char *api_cmd,
 					} else {
 						check_cmd = dup_arg;
 					}
-					
+
 					if ((next = strchr(check_cmd, ' '))) {
 						*next++ = '\0';
 					}
@@ -1463,11 +1453,11 @@ static switch_bool_t auth_api_command(listener_t *listener, const char *api_cmd,
 		break;
 	}
 
- end:
+  end:
 
 	switch_safe_free(dup_arg);
 	return ok;
-	
+
 }
 
 static switch_status_t parse_command(listener_t *listener, switch_event_t **event, char *reply, uint32_t reply_len)
@@ -1476,14 +1466,14 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 	char *cmd = switch_event_get_header(*event, "command");
 	char unload_cheat[] = "api bgapi unload mod_event_socket";
 	char reload_cheat[] = "api bgapi reload mod_event_socket";
-	
+
 	*reply = '\0';
 
 	if (switch_stristr("unload", cmd) && switch_stristr("mod_event_socket", cmd)) {
 		cmd = unload_cheat;
 	} else if (switch_stristr("reload", cmd) && switch_stristr("mod_event_socket", cmd)) {
 		cmd = reload_cheat;
-	} 
+	}
 
 	if (!strncasecmp(cmd, "exit", 4) || !strncasecmp(cmd, "...", 3)) {
 		switch_clear_flag_locked(listener, LFLAG_RUNNING);
@@ -1522,7 +1512,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			char api_reply[512] = "Allowed-API: all\n";
 			char log_reply[512] = "";
 			int allowed_log = 1;
-			
+
 
 			switch_clear_flag(listener, LFLAG_ALLOW_LOG);
 
@@ -1548,10 +1538,10 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			passwd = NULL;
 			allowed_events = NULL;
 			allowed_api = NULL;
-			
+
 			params = NULL;
 			x_domain_root = NULL;
-			
+
 
 			switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 			switch_assert(params);
@@ -1565,7 +1555,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				list[1] = x_group;
 				list[2] = x_user;
 
-				for (x = 0 ; x < 3; x++) {
+				for (x = 0; x < 3; x++) {
 					if ((x_params = switch_xml_child(list[x], "params"))) {
 						for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 							const char *var = switch_xml_attr_soft(x_param, "name");
@@ -1587,10 +1577,10 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				authed = 0;
 				goto bot;
 			}
-			
+
 			if (!zstr(passwd) && !zstr(pass) && !strcmp(passwd, pass)) {
 				authed = 1;
-				
+
 				if (allowed_events) {
 					char delim = ',';
 					char *cur, *next;
@@ -1601,17 +1591,17 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 					switch_snprintf(event_reply, sizeof(event_reply), "Allowed-Events: %s\n", allowed_events);
 
 					switch_core_hash_init(&listener->allowed_event_hash, listener->pool);
-					
+
 					edup = strdup(allowed_events);
 					cur = edup;
 
 					if (strchr(edup, ' ')) {
 						delim = ' ';
 					}
-					
+
 					for (cur = edup; cur; count++) {
 						switch_event_types_t type;
-						
+
 						if ((next = strchr(cur, delim))) {
 							*next++ = '\0';
 						}
@@ -1630,15 +1620,15 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 							if (type <= SWITCH_EVENT_ALL) {
 								listener->allowed_event_list[type] = 1;
 							}
-							
+
 							if (type == SWITCH_EVENT_CUSTOM) {
 								custom++;
 							}
 						}
-						
+
 						cur = next;
 					}
-		
+
 					switch_safe_free(edup);
 				}
 
@@ -1656,14 +1646,14 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 					switch_snprintf(api_reply, sizeof(api_reply), "Allowed-API: %s\n", allowed_api);
 
 					switch_core_hash_init(&listener->allowed_api_hash, listener->pool);
-					
+
 					edup = strdup(allowed_api);
 					cur = edup;
 
 					if (strchr(edup, ' ')) {
 						delim = ' ';
 					}
-					
+
 					for (cur = edup; cur; count++) {
 						if ((next = strchr(cur, delim))) {
 							*next++ = '\0';
@@ -1673,19 +1663,19 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 						cur = next;
 					}
-		
+
 					switch_safe_free(edup);
 				}
 
 			}
 
-			
-		bot:
+
+		  bot:
 
 			if (params) {
 				switch_event_destroy(&params);
 			}
-			
+
 			if (authed) {
 				switch_set_flag_locked(listener, LFLAG_AUTHED);
 				switch_snprintf(reply, reply_len, "~Reply-Text: +OK accepted\n%s%s%s\n", event_reply, api_reply, log_reply);
@@ -1693,10 +1683,10 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				switch_snprintf(reply, reply_len, "-ERR invalid");
 				switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			}
-			
+
 			if (x_domain_root) {
 				switch_xml_free(x_domain_root);
-			}			
+			}
 
 		}
 
@@ -1709,17 +1699,18 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 		strip_cr(header_name);
 
-		while(header_name && *header_name && *header_name == ' ') header_name++;
-		
+		while (header_name && *header_name && *header_name == ' ')
+			header_name++;
+
 		if ((header_val = strchr(header_name, ' '))) {
 			*header_val++ = '\0';
 		}
-		
-		switch_mutex_lock(listener->filter_mutex);		
+
+		switch_mutex_lock(listener->filter_mutex);
 		if (!listener->filters) {
 			switch_event_create_plain(&listener->filters, SWITCH_EVENT_CHANNEL_DATA);
 		}
-		
+
 		if (!strcasecmp(header_name, "delete") && header_val) {
 			header_name = header_val;
 			if ((header_val = strchr(header_name, ' '))) {
@@ -1748,9 +1739,9 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 		goto done;
 	}
-	
+
 	if (listener->session && !strncasecmp(cmd, "resume", 6)) {
-		switch_set_flag_locked(listener, LFLAG_RESUME);			
+		switch_set_flag_locked(listener, LFLAG_RESUME);
 		switch_channel_set_variable(switch_core_session_get_channel(listener->session), "socket_resume", "true");
 		switch_snprintf(reply, reply_len, "+OK");
 		goto done;
@@ -1768,9 +1759,9 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			char *event_str;
 			switch_size_t len;
 
-			switch_set_flag_locked(listener, LFLAG_CONNECTED);			
+			switch_set_flag_locked(listener, LFLAG_CONNECTED);
 			switch_event_create(&call_event, SWITCH_EVENT_CHANNEL_DATA);
-			
+
 			if (channel) {
 				switch_caller_profile_event_set_data(switch_channel_get_caller_profile(channel), "Channel", call_event);
 				switch_channel_event_set_data(channel, call_event);
@@ -1811,10 +1802,10 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 			if (!listener->session) {
 				char *uuid;
-				
+
 				if ((uuid = cmd + 9)) {
 					strip_cr(uuid);
-					
+
 					if (!(listener->session = switch_core_session_locate(uuid))) {
 						switch_snprintf(reply, reply_len, "-ERR invalid uuid");
 						goto done;
@@ -1823,7 +1814,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 					switch_set_flag_locked(listener, LFLAG_SESSION);
 					switch_set_flag_locked(listener, LFLAG_ASYNC);
 				}
-				
+
 
 			}
 
@@ -1864,19 +1855,19 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 	if (!strncasecmp(cmd, "divert_events", 13)) {
 		char *onoff = cmd + 13;
 		switch_channel_t *channel;
-		
+
 		if (!listener->session) {
 			switch_snprintf(reply, reply_len, "-ERR not controlling a session.");
 			goto done;
 		}
 
 		channel = switch_core_session_get_channel(listener->session);
-		
+
 		if (onoff) {
-			while(*onoff == ' ') {
+			while (*onoff == ' ') {
 				onoff++;
 			}
-			
+
 			if (*onoff == '\r' || *onoff == '\n') {
 				onoff = NULL;
 			} else {
@@ -1889,7 +1880,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			goto done;
 		}
 
-		
+
 		if (!strcasecmp(onoff, "on")) {
 			switch_snprintf(reply, reply_len, "+OK events diverted");
 			switch_channel_set_flag(channel, CF_DIVERT_EVENTS);
@@ -1907,11 +1898,11 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		char *uuid = cmd + 7;
 		const char *async_var = switch_event_get_header(*event, "async");
 		int async = switch_test_flag(listener, LFLAG_ASYNC);
-		
+
 		if (switch_true(async_var)) {
 			async = 1;
 		}
-		
+
 		if (uuid) {
 			while (*uuid == ' ') {
 				uuid++;
@@ -1923,7 +1914,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				strip_cr(uuid);
 			}
 		}
-		
+
 		if (zstr(uuid)) {
 			uuid = switch_event_get_header(*event, "session-id");
 		}
@@ -1955,11 +1946,11 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				switch_snprintf(reply, reply_len, "-ERR invalid session id [%s]", switch_str_nil(uuid));
 			}
 		}
-		
+
 		goto done;
 
 	}
-	
+
 	if (switch_test_flag(listener, LFLAG_OUTBOUND) && !switch_test_flag(listener, LFLAG_FULL)) {
 		goto done;
 	}
@@ -2000,7 +1991,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				switch_core_session_rwunlock(dsession);
 			}
 		}
-		
+
 		if (*event) {
 			switch_event_fire(event);
 		}
@@ -2009,7 +2000,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 	} else if (!strncasecmp(cmd, "api ", 4)) {
 		struct api_command_struct acs = { 0 };
 		char *console_execute = switch_event_get_header(*event, "console_execute");
-		
+
 		char *api_cmd = cmd + 4;
 		char *arg = NULL;
 		strip_cr(api_cmd);
@@ -2027,13 +2018,13 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				goto done;
 			}
 		}
-		
+
 
 		acs.listener = listener;
 		acs.api_cmd = api_cmd;
 		acs.arg = arg;
 		acs.bg = 0;
-		
+
 
 		api_exec(NULL, (void *) &acs);
 
@@ -2092,9 +2083,10 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		switch_snprintf(reply, reply_len, "~Reply-Text: +OK Job-UUID: %s\nJob-UUID: %s\n\n", acs->uuid_str, acs->uuid_str);
 		switch_thread_create(&thread, thd_attr, api_exec, acs, acs->pool);
 		sanity = 2000;
-		while(!acs->ack) {
+		while (!acs->ack) {
 			switch_cond_next();
-			if (--sanity <= 0) break;
+			if (--sanity <= 0)
+				break;
 		}
 		if (acs->ack == -1) {
 			acs->ack--;
@@ -2111,7 +2103,6 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			switch_snprintf(reply, reply_len, "-ERR permission denied");
 			goto done;
 		}
-
 		//pull off the first newline/carriage return
 		strip_cr(cmd);
 
@@ -2182,8 +2173,8 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 						goto end;
 					}
 				}
-				
-				
+
+
 				if (custom) {
 					if (!listener->allowed_event_hash || switch_core_hash_find(listener->allowed_event_hash, cur)) {
 						switch_core_hash_insert(listener->event_hash, cur, MARKER);
@@ -2192,7 +2183,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 						goto done;
 					}
 				} else if (switch_name_event(cur, &type) == SWITCH_STATUS_SUCCESS) {
-					if (switch_test_flag(listener, LFLAG_AUTH_EVENTS) && !listener->allowed_event_list[type] && 
+					if (switch_test_flag(listener, LFLAG_AUTH_EVENTS) && !listener->allowed_event_list[type] &&
 						!switch_test_flag(listener, LFLAG_ALL_EVENTS_AUTHED)) {
 						switch_snprintf(reply, reply_len, "-ERR permission denied");
 						goto done;
@@ -2301,13 +2292,13 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		}
 	}
 
- done:
+  done:
 
 	if (zstr(reply)) {
 		switch_snprintf(reply, reply_len, "-ERR command not found");
 	}
 
- done_noreply:
+  done_noreply:
 
 	if (event) {
 		switch_event_destroy(event);
@@ -2332,9 +2323,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_mutex_lock(globals.listener_mutex);
 	prefs.threads++;
 	switch_mutex_unlock(globals.listener_mutex);
-	
+
 	switch_assert(listener != NULL);
-	
+
 	if ((session = listener->session)) {
 		if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 			goto done;
@@ -2352,7 +2343,8 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 				const char message[] = "Access Denied, go away.\n";
 				int mlen = strlen(message);
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", listener->remote_ip, prefs.acl[x]);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", listener->remote_ip,
+								  prefs.acl[x]);
 
 				switch_snprintf(buf, sizeof(buf), "Content-Type: text/rude-rejection\nContent-Length: %d\n\n", mlen);
 				len = strlen(buf);
@@ -2363,12 +2355,13 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 			}
 		}
 	}
-	
+
 	if (globals.debug > 0) {
 		if (zstr(listener->remote_ip)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Connection Open\n");
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Connection Open from %s:%d\n", listener->remote_ip, listener->remote_port);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Connection Open from %s:%d\n", listener->remote_ip,
+							  listener->remote_port);
 		}
 	}
 
@@ -2378,7 +2371,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	if (session && switch_test_flag(listener, LFLAG_AUTHED)) {
 		switch_event_t *ievent = NULL;
-		
+
 		switch_set_flag_locked(listener, LFLAG_SESSION);
 		status = read_packet(listener, &ievent, 25);
 
@@ -2387,7 +2380,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			goto done;
 		}
-		
+
 
 		if (parse_command(listener, &ievent, reply, sizeof(reply)) != SWITCH_STATUS_SUCCESS) {
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
@@ -2462,11 +2455,11 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	}
 
   done:
-	
+
 	if (revent) {
 		switch_event_destroy(&revent);
 	}
-	
+
 	remove_listener(listener);
 
 	if (globals.debug > 0) {
@@ -2484,7 +2477,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	if (listener->session) {
 		channel = switch_core_session_get_channel(listener->session);
 	}
-	
+
 	if (channel && (switch_test_flag(listener, LFLAG_RESUME) || ((var = switch_channel_get_variable(channel, "socket_resume")) && switch_true(var)))) {
 		switch_channel_set_state(channel, CS_RESET);
 	}
@@ -2493,13 +2486,11 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		char disco_buf[512] = "";
 		const char message[] = "Disconnected, goodbye.\nSee you at ClueCon! http://www.cluecon.com/\n";
 		int mlen = strlen(message);
-		
+
 		if (listener->session) {
 			switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
 							"Controlled-Session-UUID: %s\n"
-							"Content-Disposition: disconnect\n"
-							"Content-Length: %d\n\n", 
-							switch_core_session_get_uuid(listener->session), mlen);
+							"Content-Disposition: disconnect\n" "Content-Length: %d\n\n", switch_core_session_get_uuid(listener->session), mlen);
 		} else {
 			switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length: %d\n\n", mlen);
 		}
@@ -2636,7 +2627,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 
 	config();
 
-	while(!prefs.done) {
+	while (!prefs.done) {
 		rv = switch_sockaddr_info_get(&sa, prefs.ip, SWITCH_INET, prefs.port, 0, pool);
 		if (rv)
 			goto fail;
@@ -2667,13 +2658,13 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 	listen_list.ready = 1;
 
 
-	while(!prefs.done) {
+	while (!prefs.done) {
 		if (switch_core_new_memory_pool(&listener_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
 			goto fail;
 		}
 
-		
+
 		if ((rv = switch_socket_accept(&inbound_socket, listen_list.sock, listener_pool))) {
 			if (prefs.done) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
@@ -2689,7 +2680,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 			errs = 0;
 		}
 
-		
+
 		if (!(listener = switch_core_alloc(listener_pool, sizeof(*listener)))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error\n");
 			break;
@@ -2717,10 +2708,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 
 	}
 
- end:
+  end:
 
 	close_socket(&listen_list.sock);
-	
+
 	if (prefs.nat_map && switch_core_get_variable("nat_type")) {
 		switch_nat_del_mapping(prefs.port, SWITCH_NAT_TCP);
 	}

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -71,7 +71,7 @@ static switch_status_t flite_speech_open(switch_speech_handle_t *sh, const char 
 	flite_t *flite = switch_core_alloc(sh->memory_pool, sizeof(*flite));
 
 	sh->native_rate = 16000;
-	
+
 	if (!strcasecmp(voice_name, "awb")) {
 		flite->v = globals.awb;
 	} else if (!strcasecmp(voice_name, "kal")) {
@@ -108,9 +108,9 @@ static switch_status_t flite_speech_close(switch_speech_handle_t *sh, switch_spe
 static switch_status_t flite_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
 {
 	flite_t *flite = (flite_t *) sh->private_info;
-	
+
 	flite->w = flite_text_to_wave(text, flite->v);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -128,10 +128,10 @@ static switch_status_t flite_speech_read_tts(switch_speech_handle_t *sh, void *d
 {
 	size_t bytes_read;
 	flite_t *flite = (flite_t *) sh->private_info;
-	
+
 	if (!flite->audio_buffer) {
 		int32_t len;
-		
+
 		if (flite->w) {
 			len = flite->w->num_samples * 2;
 		} else {
@@ -146,28 +146,28 @@ static switch_status_t flite_speech_read_tts(switch_speech_handle_t *sh, void *d
 		switch_buffer_write(flite->audio_buffer, flite->w->samples, flite->w->num_samples * 2);
 		free_wave(flite->w);
 	}
-	
+
 	if ((bytes_read = switch_buffer_read(flite->audio_buffer, data, *datalen))) {
 		*datalen = bytes_read;
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	return SWITCH_STATUS_FALSE;
 }
 
 static void flite_text_param_tts(switch_speech_handle_t *sh, char *param, const char *val)
 {
-	
+
 }
 
 static void flite_numeric_param_tts(switch_speech_handle_t *sh, char *param, int val)
 {
-	
+
 }
 
 static void flite_float_param_tts(switch_speech_handle_t *sh, char *param, double val)
 {
-	
+
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_flite_load)
@@ -179,7 +179,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_flite_load)
 	globals.kal = register_cmu_us_kal();
 	globals.rms = register_cmu_us_rms();
 	globals.slt = register_cmu_us_slt();
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	speech_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SPEECH_INTERFACE);

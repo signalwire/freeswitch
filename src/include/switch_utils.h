@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -40,9 +40,7 @@
 
 #include <switch.h>
 
-SWITCH_BEGIN_EXTERN_C
-
-SWITCH_DECLARE(int) switch_toupper(int c);
+SWITCH_BEGIN_EXTERN_C SWITCH_DECLARE(int) switch_toupper(int c);
 SWITCH_DECLARE(int) switch_tolower(int c);
 SWITCH_DECLARE(int) switch_isalnum(int c);
 SWITCH_DECLARE(int) switch_isalpha(int c);
@@ -74,7 +72,8 @@ SWITCH_DECLARE(int) switch_isxdigit(int c);
   \param s the string to test
   \return true value if the string is NULL or zero length
 */
-static inline int zstr(const char *s) {
+	 static inline int zstr(const char *s)
+{
 	return !s || *s == '\0';
 }
 
@@ -106,7 +105,7 @@ static inline int switch_string_has_escaped_data(const char *in)
 		}
 		i = strchr(i, '\\');
 	}
-	
+
 	return 0;
 }
 
@@ -208,11 +207,11 @@ SWITCH_DECLARE(unsigned short) get_port(struct sockaddr *sa);
 /*!
   \brief flags to be used with switch_build_uri()
  */
-enum switch_uri_flags {
-	SWITCH_URI_NUMERIC_HOST = 1,
-	SWITCH_URI_NUMERIC_PORT = 2,
-	SWITCH_URI_NO_SCOPE = 4
-};
+	 enum switch_uri_flags {
+		 SWITCH_URI_NUMERIC_HOST = 1,
+		 SWITCH_URI_NUMERIC_PORT = 2,
+		 SWITCH_URI_NO_SCOPE = 4
+	 };
 
 /*!
   \brief build a URI string from components
@@ -224,12 +223,7 @@ enum switch_uri_flags {
   \param flags logical OR-ed combination of flags from \ref switch_uri_flags
   \return number of characters printed (not including the trailing null)
  */
-SWITCH_DECLARE(int) switch_build_uri(char *uri,
-									 switch_size_t size,
-									 const char *scheme,
-									 const char *user,
-									 const switch_sockaddr_t *sa,
-									 int flags);
+SWITCH_DECLARE(int) switch_build_uri(char *uri, switch_size_t size, const char *scheme, const char *user, const switch_sockaddr_t *sa, int flags);
 
 #define SWITCH_STATUS_IS_BREAK(x) (x == SWITCH_STATUS_BREAK || x == 730035 || x == 35)
 
@@ -313,7 +307,7 @@ switch_mutex_unlock(obj->flag_mutex);
 #define switch_set_string(_dst, _src) switch_copy_string(_dst, _src, sizeof(_dst))
 
 
-static inline char *switch_sanitize_number(char *number)
+	 static inline char *switch_sanitize_number(char *number)
 {
 	char *p = number, *q;
 	char warp[] = "/:";
@@ -323,10 +317,12 @@ static inline char *switch_sanitize_number(char *number)
 		return number;
 	}
 
-	while((q = strrchr(p, '@'))) *q = '\0';
- 
-	for(i = 0; i < (int)strlen(warp); i++) {
-		while(p && (q = strchr(p, warp[i]))) p = q + 1;
+	while ((q = strrchr(p, '@')))
+		*q = '\0';
+
+	for (i = 0; i < (int) strlen(warp); i++) {
+		while (p && (q = strchr(p, warp[i])))
+			p = q + 1;
 	}
 
 	return p;
@@ -334,46 +330,46 @@ static inline char *switch_sanitize_number(char *number)
 
 static inline switch_bool_t switch_string_var_check(char *s, switch_bool_t disable)
 {
-    char *p;
+	char *p;
 	char *dol = NULL;
 
-    for (p = s; p && *p; p++) {
-        if (*p == '$') {
-            dol = p;
-        } else if (dol) {
-            if (*p == '{') {
+	for (p = s; p && *p; p++) {
+		if (*p == '$') {
+			dol = p;
+		} else if (dol) {
+			if (*p == '{') {
 				if (disable) {
 					*dol = '%';
 					dol = NULL;
 				} else {
 					return SWITCH_TRUE;
 				}
-            } else if (*p != '\\') {
-                dol = NULL;
-            }
-        }
-    }
-    return SWITCH_FALSE;
+			} else if (*p != '\\') {
+				dol = NULL;
+			}
+		}
+	}
+	return SWITCH_FALSE;
 }
 
 
 static inline switch_bool_t switch_string_var_check_const(const char *s)
 {
-    const char *p;
+	const char *p;
 	int dol = 0;
 
-    for (p = s; p && *p; p++) {
-        if (*p == '$') {
-            dol = 1;
-        } else if (dol) {
-            if (*p == '{') {
-					return SWITCH_TRUE;
-            } else if (*p != '\\') {
-                dol = 0;
-            }
-        }
-    }
-    return SWITCH_FALSE;
+	for (p = s; p && *p; p++) {
+		if (*p == '$') {
+			dol = 1;
+		} else if (dol) {
+			if (*p == '{') {
+				return SWITCH_TRUE;
+			} else if (*p != '\\') {
+				dol = 0;
+			}
+		}
+	}
+	return SWITCH_FALSE;
 }
 
 static inline char *switch_var_clean_string(char *s)
@@ -386,7 +382,7 @@ static inline char *switch_clean_string(char *s)
 {
 	char *p;
 	for (p = s; p && *p; p++) {
-		uint8_t x = (uint8_t) *p;
+		uint8_t x = (uint8_t) * p;
 		if ((x < 32) && x != '\n' && x != '\r') {
 			*p = ' ';
 		}
@@ -403,7 +399,7 @@ static inline char *switch_clean_string(char *s)
 */
 #define switch_safe_free(it) if (it) {free(it);it=NULL;}
 
-static inline char *switch_safe_strdup(const char *it) 
+static inline char *switch_safe_strdup(const char *it)
 {
 	if (it) {
 		return strdup(it);
@@ -413,14 +409,14 @@ static inline char *switch_safe_strdup(const char *it)
 }
 
 
-static inline char *switch_lc_strdup(const char *it) 
+static inline char *switch_lc_strdup(const char *it)
 {
 	char *dup;
 	char *p;
 
 	if (it) {
 		dup = strdup(it);
-		for(p = dup; p && *p; p++) {
+		for (p = dup; p && *p; p++) {
 			*p = (char) switch_tolower(*p);
 		}
 		return dup;
@@ -430,14 +426,14 @@ static inline char *switch_lc_strdup(const char *it)
 }
 
 
-static inline char *switch_uc_strdup(const char *it) 
+static inline char *switch_uc_strdup(const char *it)
 {
 	char *dup;
 	char *p;
 
 	if (it) {
 		dup = strdup(it);
-		for(p = dup; p && *p; p++) {
+		for (p = dup; p && *p; p++) {
 			*p = (char) switch_toupper(*p);
 		}
 		return dup;
@@ -562,7 +558,7 @@ SWITCH_DECLARE(switch_bool_t) switch_ast2regex(const char *pat, char *rbuf, size
 SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, const char *delim, char esc);
 
 SWITCH_DECLARE(char *) switch_escape_string(const char *in, char *out, switch_size_t outlen);
-SWITCH_DECLARE(char*) switch_escape_string_pool(const char *in, switch_memory_pool_t *pool);
+SWITCH_DECLARE(char *) switch_escape_string_pool(const char *in, switch_memory_pool_t *pool);
 
 /*!
   \brief Wait for a socket
@@ -591,17 +587,14 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg(const char *string);
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK)
 SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len);
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
-SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, 
-												  const char *from, 
-												  const char *headers, 
-												  const char *body, 
-												  const char *file,
-												  const char *convert_cmd,
-												  const char *convert_ext);
+SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
+												  const char *from,
+												  const char *headers,
+												  const char *body, const char *file, const char *convert_cmd, const char *convert_ext);
 SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char close);
 
 
-static inline switch_bool_t switch_is_file_path(const char *file)
+	 static inline switch_bool_t switch_is_file_path(const char *file)
 {
 	const char *e;
 	int r;
@@ -611,21 +604,21 @@ static inline switch_bool_t switch_is_file_path(const char *file)
 			file = e + 1;
 		}
 	}
-
 #ifdef WIN32
-	r = (file && (*file == '\\' || *(file +1) == ':' || *file == '/' || strstr(file, SWITCH_URL_SEPARATOR)));
+	r = (file && (*file == '\\' || *(file + 1) == ':' || *file == '/' || strstr(file, SWITCH_URL_SEPARATOR)));
 #else
 	r = (file && ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR)));
 #endif
 
 	return r ? SWITCH_TRUE : SWITCH_FALSE;
-	
+
 }
 
 
 
 SWITCH_DECLARE(int) switch_parse_cidr(const char *string, uint32_t *ip, uint32_t *mask, uint32_t *bitp);
-SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, const char *name, switch_bool_t default_type, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, const char *name, switch_bool_t default_type,
+														   switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok, const char *token);
 #define switch_network_list_add_cidr(_list, _cidr_str, _ok) switch_network_list_add_cidr_token(_list, _cidr_str, _ok, NULL)
 

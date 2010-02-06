@@ -13,7 +13,7 @@
 /* Needed for exprNode */
 #include "exprpriv.h"
 
-void* exprAllocMem(size_t size);
+void *exprAllocMem(size_t size);
 void exprFreeMem(void *data);
 exprNode *exprAllocNodes(size_t count);
 

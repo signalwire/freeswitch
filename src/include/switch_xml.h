@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -103,7 +103,7 @@ struct switch_xml {
  * \param s The string to parse
  * \param dup true if you want the string to be strdup()'d automatically
  * \return the switch_xml_t or NULL if an error occured
- */ 
+ */
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(_In_z_ char *s, _In_ switch_bool_t dup);
 
 /*! 
@@ -156,7 +156,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_child(_In_ switch_xml_t xml, _In_z_ cons
 ///\param attrname the attribute name
 ///\param value the value
 ///\return an xml node or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(_In_ switch_xml_t node, _In_z_ const char *childname, _In_opt_z_ const char *attrname, _In_opt_z_ const char *value);
+SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(_In_ switch_xml_t node, _In_z_ const char *childname, _In_opt_z_ const char *attrname,
+												   _In_opt_z_ const char *value);
 SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(_In_ switch_xml_t node, _In_z_ const char *childname, ...);
 
 ///\brief returns the next tag of the same name in the same section and depth or NULL
@@ -202,7 +203,7 @@ SWITCH_DECLARE(const char *) switch_xml_attr_soft(_In_ switch_xml_t xml, _In_z_ 
 ///\ Returns NULL if not found.
 ///\param xml the xml node
 ///\return an xml node or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_get(_In_ switch_xml_t xml, ...);
+SWITCH_DECLARE(switch_xml_t) switch_xml_get(_In_ switch_xml_t xml,...);
 
 ///\brief Converts an switch_xml structure back to xml. Returns a string of xml data that
 ///\ must be freed.
@@ -218,7 +219,8 @@ SWITCH_DECLARE(char *) switch_xml_toxml(_In_ switch_xml_t xml, _In_ switch_bool_
 ///\param offset offset to start at
 ///\param prn_header add <?xml version..> header too
 ///\return the xml text string
-SWITCH_DECLARE(char *) switch_xml_toxml_buf(_In_ switch_xml_t xml, _In_z_ char *buf, _In_ switch_size_t buflen, _In_ switch_size_t offset, _In_ switch_bool_t prn_header);
+SWITCH_DECLARE(char *) switch_xml_toxml_buf(_In_ switch_xml_t xml, _In_z_ char *buf, _In_ switch_size_t buflen, _In_ switch_size_t offset,
+											_In_ switch_bool_t prn_header);
 
 ///\brief returns a NULL terminated array of processing instructions for the given
 ///\ target
@@ -346,30 +348,28 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void);
 ///\return SWITCH_STATUS_SUCCESS if successful root and node will be assigned
 SWITCH_DECLARE(switch_status_t) switch_xml_locate(_In_z_ const char *section,
 												  _In_opt_z_ const char *tag_name,
-												  _In_opt_z_ const char *key_name, 
-												  _In_opt_z_ const char *key_value, 
-												  _Out_ switch_xml_t *root, 
-												  _Out_ switch_xml_t *node,
-												  _In_opt_ switch_event_t *params,
-												  _In_ switch_bool_t clone);
+												  _In_opt_z_ const char *key_name,
+												  _In_opt_z_ const char *key_value,
+												  _Out_ switch_xml_t *root,
+												  _Out_ switch_xml_t *node, _In_opt_ switch_event_t *params, _In_ switch_bool_t clone);
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(_In_z_ const char *domain_name, _In_opt_ switch_event_t *params, _Out_ switch_xml_t *root, _Out_ switch_xml_t *domain);
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(_In_z_ const char *domain_name, _In_opt_ switch_event_t *params, _Out_ switch_xml_t *root,
+														 _Out_ switch_xml_t *domain);
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_group(_In_z_ const char *group_name,
-														_In_z_ const char *domain_name, 
+														_In_z_ const char *domain_name,
 														_Out_ switch_xml_t *root,
-														_Out_ switch_xml_t *domain,
-														_Out_ switch_xml_t *group,
-														_In_opt_ switch_event_t *params);
+														_Out_ switch_xml_t *domain, _Out_ switch_xml_t *group, _In_opt_ switch_event_t *params);
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(_In_z_ const char *key,
 													   _In_z_ const char *user_name,
 													   _In_z_ const char *domain_name,
 													   _In_opt_z_ const char *ip,
-													   _Out_ switch_xml_t *root, _Out_ switch_xml_t *domain, _Out_ switch_xml_t *user, _Out_opt_ switch_xml_t *ingroup, 
-													   _In_opt_ switch_event_t *params);
+													   _Out_ switch_xml_t *root, _Out_ switch_xml_t *domain, _Out_ switch_xml_t *user,
+													   _Out_opt_ switch_xml_t *ingroup, _In_opt_ switch_event_t *params);
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(_In_z_ const char *user_name, _In_ switch_xml_t domain, _Out_ switch_xml_t *user, _Out_opt_ switch_xml_t *ingroup);
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(_In_z_ const char *user_name, _In_ switch_xml_t domain, _Out_ switch_xml_t *user,
+																 _Out_opt_ switch_xml_t *ingroup);
 
 ///\brief open a config in the core registry
 ///\param file_path the name of the config section e.g. modules.conf
@@ -390,7 +390,8 @@ SWITCH_DECLARE(void) switch_xml_set_binding_user_data(_In_ switch_xml_binding_t 
 SWITCH_DECLARE(switch_xml_section_t) switch_xml_get_binding_sections(_In_ switch_xml_binding_t *binding);
 SWITCH_DECLARE(void *) switch_xml_get_binding_user_data(_In_ switch_xml_binding_t *binding);
 
-SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_ret(_In_ switch_xml_search_function_t function, _In_ switch_xml_section_t sections, _In_opt_ void *user_data, switch_xml_binding_t **ret_binding);
+SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_ret(_In_ switch_xml_search_function_t function, _In_ switch_xml_section_t sections,
+																	_In_opt_ void *user_data, switch_xml_binding_t **ret_binding);
 #define switch_xml_bind_search_function(_f, _s, _u) switch_xml_bind_search_function_ret(_f, _s, _u, NULL)
 
 

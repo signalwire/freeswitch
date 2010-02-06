@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -308,7 +308,7 @@ SWITCH_DECLARE(void) switch_scheduler_task_thread_stop(void)
 		switch_status_t st;
 
 		globals.task_thread_running = -1;
-		
+
 		switch_thread_join(&st, task_thread_p);
 
 		while (globals.task_thread_running) {

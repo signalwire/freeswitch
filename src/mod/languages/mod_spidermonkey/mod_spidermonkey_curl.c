@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -128,7 +128,7 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 		curl_easy_setopt(co->curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(co->curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
-	
+
 
 	if (argc > 2) {
 		data = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
@@ -240,7 +240,7 @@ const sm_module_interface_t curl_module_interface = {
 	/*.next */ NULL
 };
 
-SWITCH_MOD_DECLARE_NONSTD(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
+SWITCH_MOD_DECLARE_NONSTD(switch_status_t) spidermonkey_init(const sm_module_interface_t ** module_interface)
 {
 	curl_global_init(CURL_GLOBAL_ALL);
 	*module_interface = &curl_module_interface;

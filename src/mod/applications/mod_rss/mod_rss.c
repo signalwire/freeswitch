@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -184,9 +184,9 @@ SWITCH_STANDARD_APP(rss_function)
 	switch_input_args_t args = { 0 };
 	const char *vcf = NULL;
 	char *chanvars = switch_channel_build_param_string(channel, NULL, NULL);
-	switch_codec_implementation_t read_impl = {0};
+	switch_codec_implementation_t read_impl = { 0 };
 	uint32_t rate, interval;
-    switch_core_session_get_read_impl(session, &read_impl);
+	switch_core_session_get_read_impl(session, &read_impl);
 	interval = read_impl.microseconds_per_packet / 1000;
 
 	if ((vcf = switch_channel_get_variable(channel, "rss_alt_config"))) {

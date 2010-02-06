@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -72,14 +72,20 @@ static HANDLE hStdout;
 static WORD wOldColorAttrs;
 static CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
 
-static WORD 
+static WORD
 #else
-static const char*
+static const char *
 #endif
-COLORS[] = { SWITCH_SEQ_DEFAULT_COLOR, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN, SWITCH_SEQ_FGREEN, SWITCH_SEQ_FYELLOW };
+ 
+	
+	
+	
+	COLORS[] =
+	{ SWITCH_SEQ_DEFAULT_COLOR, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN, SWITCH_SEQ_FGREEN,
+SWITCH_SEQ_FYELLOW };
 
 
-static switch_log_node_t* switch_log_node_alloc()
+static switch_log_node_t *switch_log_node_alloc()
 {
 	switch_log_node_t *node = NULL;
 #ifdef SWITCH_LOG_RECYCLE
@@ -97,37 +103,37 @@ static switch_log_node_t* switch_log_node_alloc()
 	return node;
 }
 
-SWITCH_DECLARE(switch_log_node_t*) switch_log_node_dup(const switch_log_node_t *node)
+SWITCH_DECLARE(switch_log_node_t *) switch_log_node_dup(const switch_log_node_t *node)
 {
 	switch_log_node_t *newnode = switch_log_node_alloc();
-	
+
 	*newnode = *node;
-	
+
 	if (!zstr(node->data)) {
-		newnode->data = strdup(node->data);	
+		newnode->data = strdup(node->data);
 		switch_assert(node->data);
 	}
-	
+
 	if (!zstr(node->userdata)) {
 		newnode->userdata = strdup(node->userdata);
 		switch_assert(node->userdata);
 	}
-	
+
 	return newnode;
 }
 
 SWITCH_DECLARE(void) switch_log_node_free(switch_log_node_t **pnode)
 {
 	switch_log_node_t *node;
-	
+
 	if (!pnode) {
 		return;
 	}
 
 	node = *pnode;
 
-	if (node) {		
-		switch_safe_free(node->userdata);		
+	if (node) {
+		switch_safe_free(node->userdata);
 		switch_safe_free(node->data);
 #ifdef SWITCH_LOG_RECYCLE
 		if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
@@ -137,7 +143,7 @@ SWITCH_DECLARE(void) switch_log_node_free(switch_log_node_t **pnode)
 		free(node);
 #endif
 	}
-	*pnode = NULL;	
+	*pnode = NULL;
 }
 
 SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level_t level)
@@ -186,7 +192,7 @@ SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 		x = atoi(str);
 
 		if (x > SWITCH_LOG_INVALID) {
-			return SWITCH_LOG_INVALID -1;
+			return SWITCH_LOG_INVALID - 1;
 		} else if (x < 0) {
 			return 0;
 		} else {
@@ -315,15 +321,15 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 									   const char *userdata, switch_log_level_t level, const char *fmt, ...)
 {
 	va_list ap;
-	
+
 	va_start(ap, fmt);
 	switch_log_vprintf(channel, file, func, line, userdata, level, fmt, ap);
-	va_end(ap);	
+	va_end(ap);
 }
 
 #define do_mods (LOG_QUEUE && THREAD_RUNNING)
 SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const char *file, const char *func, int line,
-									   const char *userdata, switch_log_level_t level, const char *fmt, va_list ap)
+										const char *userdata, switch_log_level_t level, const char *fmt, va_list ap)
 {
 	char *data = NULL;
 	char *new_fmt = NULL;
@@ -342,14 +348,14 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 	switch_log_level_t limit_level = runtime.hard_log_level;
 
 	if (channel == SWITCH_CHANNEL_ID_SESSION && userdata) {
-		switch_core_session_t *session = (switch_core_session_t*)userdata;
+		switch_core_session_t *session = (switch_core_session_t *) userdata;
 		if (limit_level < session->loglevel) {
 			limit_level = session->loglevel;
 		}
 	}
 
 	if (level > 100) {
-		if ((uint32_t)(level - 100) > runtime.debug_level) {
+		if ((uint32_t) (level - 100) > runtime.debug_level) {
 			return;
 		}
 
@@ -370,8 +376,8 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 		switch_time_exp_t tm;
 
 		switch_time_exp_lt(&tm, now);
-		switch_snprintf(date, sizeof(date), "%0.4d-%0.2d-%0.2d %0.2d:%0.2d:%0.2d.%0.6d", 
-						tm.tm_year + 1900, tm.tm_mon+1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec);
+		switch_snprintf(date, sizeof(date), "%0.4d-%0.2d-%0.2d %0.2d:%0.2d:%0.2d.%0.6d",
+						tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec);
 
 		//switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 
@@ -423,7 +429,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 
 		goto end;
 	}
-	
+
 	if (console_mods_loaded == 0 || !do_mods) {
 		if (handle) {
 			int aok = 1;
@@ -460,11 +466,11 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 				}
 			}
 		}
-	} 
+	}
 
 	if (do_mods && level <= MAX_LEVEL) {
 		switch_log_node_t *node = switch_log_node_alloc();
-		
+
 		node->data = data;
 		data = NULL;
 		switch_set_string(node->file, filep);
@@ -475,7 +481,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 		node->timestamp = now;
 		node->channel = channel;
 		if (channel == SWITCH_CHANNEL_ID_SESSION) {
-			node->userdata = userdata ? strdup(switch_core_session_get_uuid((switch_core_session_t*)userdata)) : NULL;
+			node->userdata = userdata ? strdup(switch_core_session_get_uuid((switch_core_session_t *) userdata)) : NULL;
 		} else {
 			node->userdata = !zstr(userdata) ? strdup(userdata) : NULL;
 		}
@@ -495,7 +501,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool, switch_bool_t colorize)
 {
 	switch_threadattr_t *thd_attr;;
-	
+
 	switch_assert(pool != NULL);
 
 	LOG_POOL = pool;
@@ -518,13 +524,13 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool, swit
 
 	if (colorize) {
 #ifdef WIN32
-				hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-				if (switch_core_get_console() == stdout && hStdout != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hStdout, &csbiInfo)) {
-					wOldColorAttrs = csbiInfo.wAttributes;
-					COLORIZE = SWITCH_TRUE;
-				}
+		hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+		if (switch_core_get_console() == stdout && hStdout != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hStdout, &csbiInfo)) {
+			wOldColorAttrs = csbiInfo.wAttributes;
+			COLORIZE = SWITCH_TRUE;
+		}
 #else
-				COLORIZE = SWITCH_TRUE;
+		COLORIZE = SWITCH_TRUE;
 #endif
 	}
 

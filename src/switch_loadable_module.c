@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -76,7 +76,8 @@ struct switch_loadable_module_container {
 };
 
 static struct switch_loadable_module_container loadable_modules;
-static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload, switch_bool_t fail_if_busy, const char **err);
+static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload, switch_bool_t fail_if_busy,
+								   const char **err);
 static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fname, switch_bool_t runtime, switch_bool_t global, const char **err);
 
 static void *SWITCH_THREAD_FUNC switch_loadable_module_exec(switch_thread_t *thread, void *obj)
@@ -444,7 +445,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 	switch_event_t *event;
 
 	switch_mutex_lock(loadable_modules.mutex);
-	
+
 	if (old_module->module_interface->endpoint_interface) {
 		const switch_endpoint_interface_t *ptr;
 
@@ -452,12 +453,13 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 
 				switch_core_session_hupall_endpoint(ptr, SWITCH_CAUSE_MANAGER_REQUEST);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n",
+								  ptr->interface_name);
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
-                    switch_thread_rwlock_unlock(ptr->rwlock);
-                } else {
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
-                }
+					switch_thread_rwlock_unlock(ptr->rwlock);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
+				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Endpoint '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
@@ -542,13 +544,14 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Application '%s'\n", ptr->interface_name);
 				switch_core_session_hupall_matching_var(SWITCH_CURRENT_APPLICATION_VARIABLE, ptr->interface_name, SWITCH_CAUSE_MANAGER_REQUEST);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n",
+								  ptr->interface_name);
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
 				}
-				
+
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "application");
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
@@ -568,8 +571,9 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting API Function '%s'\n", ptr->interface_name);
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
-				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n",
+								  ptr->interface_name);
+
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
@@ -596,8 +600,9 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 				int i;
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
-				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n",
+								  ptr->interface_name);
+
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
@@ -624,8 +629,9 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 			if (ptr->interface_name) {
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
-				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n",
+								  ptr->interface_name);
+
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
@@ -649,8 +655,9 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 		for (ptr = old_module->module_interface->asr_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
-				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n",
+								  ptr->interface_name);
+
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
@@ -674,8 +681,9 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 		for (ptr = old_module->module_interface->directory_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
-				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n",
+								  ptr->interface_name);
+
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
@@ -699,8 +707,9 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 		for (ptr = old_module->module_interface->chat_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
-				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n",
+								  ptr->interface_name);
+
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
@@ -723,8 +732,9 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 		for (ptr = old_module->module_interface->say_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
-				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n",
+								  ptr->interface_name);
+
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
@@ -801,7 +811,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 
 	switch_safe_free(derr)
 
-	if (!interface_struct_handle) {
+		if (!interface_struct_handle) {
 		dso = switch_dso_open(path, load_global, &derr);
 	}
 
@@ -822,7 +832,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 
 		if (interface_struct_handle && interface_struct_handle->switch_api_version != SWITCH_API_VERSION) {
 			err = "Trying to load an out of date module, please rebuild the module.";
-			break;	
+			break;
 		}
 
 		if (!load_global && interface_struct_handle && switch_test_flag(interface_struct_handle, SMODF_GLOBAL_SYMBOLS)) {
@@ -959,7 +969,7 @@ static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fn
 
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_exists(const char *mod)
 {
-	switch_status_t status;  
+	switch_status_t status;
 
 	if (zstr(mod)) {
 		return SWITCH_STATUS_FALSE;
@@ -1002,7 +1012,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 		*err = "No such module!";
 		status = SWITCH_STATUS_FALSE;
 	}
- end:
+  end:
 	switch_mutex_unlock(loadable_modules.mutex);
 
 	if (force) {
@@ -1245,11 +1255,12 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload, switch_bool_t fail_if_busy, const char **err)
+static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload, switch_bool_t fail_if_busy,
+								   const char **err)
 {
 	int32_t flags = switch_core_flags();
 	switch_assert(module != NULL);
-	
+
 	if (fail_if_busy && module->module_interface->rwlock && switch_thread_rwlock_trywrlock(module->module_interface->rwlock) != SWITCH_STATUS_SUCCESS) {
 		if (err) {
 			*err = "Module in use.";
@@ -1274,7 +1285,7 @@ static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool
 		switch_thread_rwlock_unlock(module->module_interface->rwlock);
 	}
 
-	if (unload && module->status != SWITCH_STATUS_NOUNLOAD 	&& !(flags & SCF_VG)) {
+	if (unload && module->status != SWITCH_STATUS_NOUNLOAD && !(flags & SCF_VG)) {
 		switch_memory_pool_t *pool;
 		switch_status_t st;
 
@@ -1290,7 +1301,7 @@ static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool
 			switch_core_destroy_memory_pool(&pool);
 		}
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -1300,7 +1311,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	switch_hash_index_t *hi;
 	void *val;
 	switch_loadable_module_t *module;
-	
+
 	if (!loadable_modules.module_hash) {
 		return;
 	}
@@ -1389,22 +1400,22 @@ SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_inte
 			PROTECT_INTERFACE(i);										\
 		}																\
 		return i;														\
-	}																	
-	
+	}
+
 HASH_FUNC(dialplan)
-HASH_FUNC(timer)
-HASH_FUNC(application)
-HASH_FUNC(api)
-HASH_FUNC(file)
-HASH_FUNC(speech)
-HASH_FUNC(asr)
-HASH_FUNC(directory)
-HASH_FUNC(chat)
+	HASH_FUNC(timer)
+	HASH_FUNC(application)
+	HASH_FUNC(api)
+	HASH_FUNC(file)
+	HASH_FUNC(speech)
+	HASH_FUNC(asr)
+	HASH_FUNC(directory)
+	HASH_FUNC(chat)
 
 
-SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(const char *name)
+	SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(const char *name)
 {
-    return switch_core_hash_find_locked(loadable_modules.say_hash, name, loadable_modules.mutex);
+	return switch_core_hash_find_locked(loadable_modules.say_hash, name, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_management_interface(const char *relative_oid)
@@ -1440,7 +1451,8 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 
 	  found:
 
-		if (!lock && i > 0) lock = array[i-1]->microseconds_per_packet;
+		if (!lock && i > 0)
+			lock = array[i - 1]->microseconds_per_packet;
 
 		if (i > arraylen) {
 			break;
@@ -1491,13 +1503,13 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 		if ((codec_interface = switch_loadable_module_get_codec_interface(name)) != 0) {
 			/* If no specific codec interval is requested opt for 20ms above all else because lots of stuff assumes it */
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
-				
+
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 					if (lock && imp->microseconds_per_packet != lock) {
 						continue;
 					}
 
-					if ((!interval && (uint32_t) (imp->microseconds_per_packet / 1000) != 20) || 
+					if ((!interval && (uint32_t) (imp->microseconds_per_packet / 1000) != 20) ||
 						(interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval)) {
 						continue;
 					}
@@ -1524,7 +1536,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 					if (interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval) {
 						continue;
 					}
-					
+
 					if (rate && (uint32_t) imp->samples_per_second != rate) {
 						continue;
 					}
@@ -1538,7 +1550,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 		  found:
 
 			if (!lock && i > 0) {
-				lock = array[i-1]->microseconds_per_packet;
+				lock = array[i - 1]->microseconds_per_packet;
 			}
 
 			UNPROTECT_INTERFACE(codec_interface);

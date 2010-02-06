@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -43,7 +43,7 @@ struct shell_stream_context {
 	int pid;
 	char *command;
 	switch_buffer_t *audio_buffer;
-	switch_mutex_t *mutex;	
+	switch_mutex_t *mutex;
 	switch_thread_rwlock_t *rwlock;
 	int running;
 };
@@ -63,15 +63,15 @@ static void *SWITCH_THREAD_FUNC buffer_thread_run(switch_thread_t *thread, void 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
 		goto end;
 	}
-	
-	while(context->running) {
-		
+
+	while (context->running) {
+
 		rlen = read(context->fds[0], data, MY_BUF_LEN);
 
 		if (rlen <= 3) {
 			break;
 		}
-		
+
 		switch_mutex_lock(context->mutex);
 		switch_buffer_write(context->audio_buffer, data, rlen);
 		switch_mutex_unlock(context->mutex);
@@ -79,7 +79,7 @@ static void *SWITCH_THREAD_FUNC buffer_thread_run(switch_thread_t *thread, void 
 
 	switch_thread_rwlock_unlock(context->rwlock);
 
- end:
+  end:
 
 	context->running = 0;
 
@@ -92,26 +92,26 @@ static switch_status_t shell_stream_file_open(switch_file_handle_t *handle, cons
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
-	
+
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This format does not support writing!\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
-	
+
 	context->fds[0] = -1;
 	context->fds[1] = -1;
 	context->command = switch_core_sprintf(handle->memory_pool, "%s -r %d -c %d", path, handle->samplerate, handle->channels);
 
 	if (pipe(context->fds)) {
 		goto error;
-	} else { /* good to go*/
+	} else {					/* good to go */
 		context->pid = fork();
-		
-		if (context->pid < 0) { /* ok maybe not */
+
+		if (context->pid < 0) {	/* ok maybe not */
 			goto error;
-		} else if (context->pid) { /* parent */
+		} else if (context->pid) {	/* parent */
 			handle->private_info = context;
 			status = SWITCH_STATUS_SUCCESS;
 			close(context->fds[1]);
@@ -124,19 +124,19 @@ static switch_status_t shell_stream_file_open(switch_file_handle_t *handle, cons
 
 			switch_thread_rwlock_create(&context->rwlock, handle->memory_pool);
 			switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
-			
+
 			switch_threadattr_create(&thd_attr, handle->memory_pool);
 			switch_threadattr_detach_set(thd_attr, 1);
 			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 			switch_thread_create(&thread, thd_attr, buffer_thread_run, context, handle->memory_pool);
 			context->running = 2;
 
-			while(context->running == 2) {
+			while (context->running == 2) {
 				switch_cond_next();
 			}
 
 			goto end;
-		} else { /*  child */
+		} else {				/*  child */
 			close(context->fds[0]);
 			dup2(context->fds[1], STDOUT_FILENO);
 			switch_system(context->command, SWITCH_TRUE);
@@ -146,22 +146,22 @@ static switch_status_t shell_stream_file_open(switch_file_handle_t *handle, cons
 		}
 	}
 
- error:
+  error:
 
 	close(context->fds[0]);
 	close(context->fds[1]);
 	status = SWITCH_STATUS_FALSE;
-		
 
- end:
-		
+
+  end:
+
 	return status;
 }
 
 static switch_status_t shell_stream_file_close(switch_file_handle_t *handle)
 {
 	shell_stream_context_t *context = handle->private_info;
-	
+
 	context->running = 0;
 
 	if (context->fds[0] > -1) {
@@ -184,10 +184,10 @@ static switch_status_t shell_stream_file_read(switch_file_handle_t *handle, void
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_size_t rlen = *len * 2;
 
-	while(context->running && switch_buffer_inuse(context->audio_buffer) < rlen) {
+	while (context->running && switch_buffer_inuse(context->audio_buffer) < rlen) {
 		switch_cond_next();
 	}
-	
+
 	switch_mutex_lock(context->mutex);
 	*len = switch_buffer_read(context->audio_buffer, data, rlen) / 2;
 	switch_mutex_unlock(context->mutex);

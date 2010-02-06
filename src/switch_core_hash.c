@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -57,7 +57,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(switch_hash_t **hash,
 
 	sqlite3HashInit(&newhash->table, case_sensitive ? SQLITE_HASH_BINARY : SQLITE_HASH_STRING, 1);
 	*hash = newhash;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

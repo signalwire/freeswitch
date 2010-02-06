@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -50,7 +50,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 	switch_caller_profile_t *profile = NULL;
 
 	profile = switch_core_alloc(pool, sizeof(*profile));
-	switch_assert(profile != NULL);	
+	switch_assert(profile != NULL);
 	memset(profile, 0, sizeof(*profile));
 
 	if (!context) {
@@ -218,27 +218,27 @@ SWITCH_DECLARE(const char *) switch_caller_get_field_by_name(switch_caller_profi
 		return switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "true" : "false";
 	}
 	if (!strcasecmp(name, "profile_created_time")) {
-		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);		
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);
 	}
 	if (!strcasecmp(name, "created_time")) {
-		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->created);		
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
 	}
 	if (!strcasecmp(name, "answered_time")) {
-		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);		
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
 	}
 	if (!strcasecmp(name, "progress_time")) {
-		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);		
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);
 	}
 	if (!strcasecmp(name, "progress_media_time")) {
-		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);		
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
 	}
 	if (!strcasecmp(name, "hungup_time")) {
-		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);		
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
 	}
 	if (!strcasecmp(name, "transferred_time")) {
-		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->transferred);		
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->transferred);
 	}
-	
+
 
 	return NULL;
 }
@@ -311,7 +311,7 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Answered-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Progress-Time", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);		
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Progress-Media-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Hangup-Time", prefix);
@@ -330,7 +330,7 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "true" : "false");
 }
 
-SWITCH_DECLARE(switch_status_t) switch_caller_extension_clone(switch_caller_extension_t **new_ext, switch_caller_extension_t *orig, 
+SWITCH_DECLARE(switch_status_t) switch_caller_extension_clone(switch_caller_extension_t **new_ext, switch_caller_extension_t *orig,
 															  switch_memory_pool_t *pool)
 {
 	switch_caller_extension_t *caller_extension = NULL;
@@ -341,10 +341,10 @@ SWITCH_DECLARE(switch_status_t) switch_caller_extension_clone(switch_caller_exte
 	if ((caller_extension = switch_core_alloc(pool, sizeof(switch_caller_extension_t))) != 0) {
 		int match = 0;
 
-        caller_extension->extension_name = switch_core_strdup(pool, orig->extension_name);
-        caller_extension->extension_number = switch_core_strdup(pool, orig->extension_number);
+		caller_extension->extension_name = switch_core_strdup(pool, orig->extension_name);
+		caller_extension->extension_number = switch_core_strdup(pool, orig->extension_number);
 
-		for(ap = orig->applications; ap; ap = ap->next) {
+		for (ap = orig->applications; ap; ap = ap->next) {
 
 			if (!match) {
 				if (ap == orig->current_application) {
@@ -354,7 +354,7 @@ SWITCH_DECLARE(switch_status_t) switch_caller_extension_clone(switch_caller_exte
 				}
 			}
 			caller_application = switch_core_alloc(pool, sizeof(switch_caller_application_t));
-			
+
 			caller_application->application_name = switch_core_strdup(pool, ap->application_name);
 			caller_application->application_data = switch_core_strdup(pool, ap->application_data);
 
@@ -363,7 +363,7 @@ SWITCH_DECLARE(switch_status_t) switch_caller_extension_clone(switch_caller_exte
 			} else if (caller_extension->last_application) {
 				caller_extension->last_application->next = caller_application;
 			}
-			
+
 			caller_extension->last_application = caller_application;
 
 			if (ap == orig->current_application) {
@@ -374,8 +374,8 @@ SWITCH_DECLARE(switch_status_t) switch_caller_extension_clone(switch_caller_exte
 		*new_ext = caller_extension;
 
 		return SWITCH_STATUS_SUCCESS;
-    }
-	
+	}
+
 
 	return SWITCH_STATUS_MEMERR;
 }
@@ -396,18 +396,18 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_c
 
 
 SWITCH_DECLARE(void) switch_caller_extension_add_application_printf(switch_core_session_t *session,
-															 switch_caller_extension_t *caller_extension, const char *application_name,
-															 const char *fmt, ...)
+																	switch_caller_extension_t *caller_extension, const char *application_name,
+																	const char *fmt, ...)
 {
 	va_list ap;
 	char *data = NULL;
-	
+
 	va_start(ap, fmt);
 	switch_vasprintf(&data, fmt, ap);
 	va_end(ap);
-	
+
 	if (data) {
-		switch_caller_extension_add_application(session, caller_extension, application_name, data);	
+		switch_caller_extension_add_application(session, caller_extension, application_name, data);
 		free(data);
 	}
 }

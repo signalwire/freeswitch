@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -118,23 +118,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 	int odd = switch_test_flag(alloc, SPF_ODD);
 
 	switch_mutex_lock(alloc->mutex);
-	srand((unsigned)((unsigned)(intptr_t)port_ptr + (unsigned)(intptr_t)switch_thread_self() + switch_micro_time_now()));
+	srand((unsigned) ((unsigned) (intptr_t) port_ptr + (unsigned) (intptr_t) switch_thread_self() + switch_micro_time_now()));
 
 	while (alloc->track_used < alloc->track_len) {
 		uint32_t index;
 		uint32_t tries = 0;
-		
+
 		/* randomly pick a port */
 		index = rand() % alloc->track_len;
 
 		/* if it is used walk up the list to find a free one */
-		while (alloc->track[index] && tries < alloc->track_len)
-		{
+		while (alloc->track[index] && tries < alloc->track_len) {
 			tries++;
 			if (alloc->track[index] < 0) {
 				alloc->track[index]++;
 			}
-			if (++index >= alloc->track_len) { 
+			if (++index >= alloc->track_len) {
 				index = 0;
 			}
 		}

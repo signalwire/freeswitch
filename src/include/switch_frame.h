@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -46,7 +46,7 @@ SWITCH_BEGIN_EXTERN_C
 	/*! the originating source of the frame */
 	const char *source;
 	/*! the raw packet */
-	void *packet;	
+	void *packet;
 	/*! the size of the raw packet when applicable */
 	uint32_t packetlen;
 	/*! the extra frame data */

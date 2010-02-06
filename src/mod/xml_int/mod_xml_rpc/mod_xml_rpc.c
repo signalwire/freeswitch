@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -161,9 +161,8 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, const c
 	return ret ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
-static abyss_bool user_attributes (const char *user, const char *domain_name,
-                                   const char **ppasswd, const char **pvm_passwd,
-                                   const char **palias, const char **pallowed_commands)
+static abyss_bool user_attributes(const char *user, const char *domain_name,
+								  const char **ppasswd, const char **pvm_passwd, const char **palias, const char **pallowed_commands)
 {
 	const char *passwd;
 	const char *vm_passwd;
@@ -183,7 +182,7 @@ static abyss_bool user_attributes (const char *user, const char *domain_name,
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "number_alias", "check");
-				
+
 	if (switch_xml_locate_user("id", user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, NULL, params) != SWITCH_STATUS_SUCCESS) {
 		switch_event_destroy(&params);
 		if (x_domain_root) {
@@ -196,11 +195,11 @@ static abyss_bool user_attributes (const char *user, const char *domain_name,
 	alias = switch_xml_attr(x_user, "number-alias");
 
 	if ((x_params = switch_xml_child(x_domain, "params"))) {
-	
+
 		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 			const char *var = switch_xml_attr_soft(x_param, "name");
 			const char *val = switch_xml_attr_soft(x_param, "value");
-			
+
 			if (!strcasecmp(var, "password")) {
 				passwd = val;
 			} else if (!strcasecmp(var, "vm-password")) {
@@ -216,7 +215,7 @@ static abyss_bool user_attributes (const char *user, const char *domain_name,
 		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 			const char *var = switch_xml_attr_soft(x_param, "name");
 			const char *val = switch_xml_attr_soft(x_param, "value");
-		
+
 			if (!strcasecmp(var, "password")) {
 				passwd = val;
 			} else if (!strcasecmp(var, "vm-password")) {
@@ -235,7 +234,7 @@ static abyss_bool user_attributes (const char *user, const char *domain_name,
 		*palias = strdup(alias);
 	if (pallowed_commands)
 		*pallowed_commands = strdup(allowed_commands);
-	
+
 
 	if (x_domain_root) {
 		switch_xml_free(x_domain_root);
@@ -244,7 +243,7 @@ static abyss_bool user_attributes (const char *user, const char *domain_name,
 	return TRUE;
 }
 
-static abyss_bool is_authorized (const TSession *r, const char *command)
+static abyss_bool is_authorized(const TSession * r, const char *command)
 {
 	char *user = NULL, *domain_name = NULL;
 	char *allowed_commands;
@@ -263,7 +262,7 @@ static abyss_bool is_authorized (const TSession *r, const char *command)
 	}
 
 	if (!r->requestInfo.user) {
-		return FALSE;	
+		return FALSE;
 	}
 
 	user = strdup(r->requestInfo.user);
@@ -277,14 +276,14 @@ static abyss_bool is_authorized (const TSession *r, const char *command)
 		switch_safe_free(user);
 		return TRUE;
 	}
-	
+
 	if (zstr(user) || zstr(domain_name)) {
 		switch_safe_free(user);
 		return FALSE;
 	}
-	
 
-	if (!user_attributes (user, domain_name, NULL, NULL, NULL, &allowed_commands)) {
+
+	if (!user_attributes(user, domain_name, NULL, NULL, NULL, &allowed_commands)) {
 		switch_safe_free(user);
 		return FALSE;
 	}
@@ -295,21 +294,21 @@ static abyss_bool is_authorized (const TSession *r, const char *command)
 		return FALSE;
 
 	dup = allowed_commands;
-	argc = switch_separate_string (dup, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+	argc = switch_separate_string(dup, ',', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	for (i = 0; i < argc; i++) {
 		if (!strcasecmp(argv[i], command)
-                    || !strcasecmp(argv[i], "any")) {
+			|| !strcasecmp(argv[i], "any")) {
 			break;
 		}
 	}
 
-	switch_safe_free (dup);
+	switch_safe_free(dup);
 
 	return i < argc ? TRUE : FALSE;
 }
 
-static abyss_bool http_directory_auth(TSession *r, char *domain_name)
+static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 {
 	char *p;
 	char *x;
@@ -321,7 +320,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 	int at = 0;
 	char *dp;
 	abyss_bool rval = FALSE;
-	
+
 	p = RequestHeaderValue(r, "authorization");
 
 	if (p) {
@@ -334,13 +333,13 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				if ((pass = strchr(user, ':'))) {
 					*pass++ = '\0';
 				}
-				
+
 				if ((dp = strchr(user, '@'))) {
 					*dp++ = '\0';
 					domain_name = dp;
 					at++;
 				}
-				
+
 				if (!domain_name) {
 					if (globals.virtual_host) {
 						if ((domain_name = (char *) r->requestInfo.host)) {
@@ -375,7 +374,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 					}
 				}
 
-				if (!user_attributes (user, domain_name, &mypass1, &mypass2, &box, NULL)) {
+				if (!user_attributes(user, domain_name, &mypass1, &mypass2, &box, NULL)) {
 					goto fail;
 				}
 
@@ -441,7 +440,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				goto fail;
 
 			  authed:
-				
+
 				switch_snprintf(z, sizeof(z), "%s@%s", (box ? box : user), domain_name);
 				r->requestInfo.user = strdup(z);
 
@@ -453,18 +452,18 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 		}
 	}
 
- fail:
+  fail:
 
 	switch_snprintf(z, sizeof(z), "Basic realm=\"%s\"", domain_name ? domain_name : globals.realm);
 	ResponseAddField(r, "WWW-Authenticate", z);
 	ResponseStatus(r, 401);
 
- done:
+  done:
 
 	switch_safe_free(mypass1);
 	switch_safe_free(mypass2);
 	switch_safe_free(box);
-	
+
 	return rval;
 }
 
@@ -614,7 +613,6 @@ abyss_bool handler_hook(TSession * r)
 	if (is_authorized(r, command)) {
 		goto auth;
 	}
-
 	//unauth:
 	ResponseStatus(r, 403);
 	ResponseError(r);
@@ -626,7 +624,7 @@ abyss_bool handler_hook(TSession * r)
 
 	if (switch_event_create(&stream.param_event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
 		const char *const content_length = RequestHeaderValue(r, "content-length");
-		
+
 		if (html)
 			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "Content-type", "text/html");
 		else if (text)
@@ -639,7 +637,7 @@ abyss_bool handler_hook(TSession * r)
 			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Domain", fs_domain);
 		if (path_info)
 			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-Path-Info", path_info);
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-URI", r->requestInfo.uri);
+		switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-URI", r->requestInfo.uri);
 		if (r->requestInfo.query)
 			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", r->requestInfo.query);
 		if (r->requestInfo.host)
@@ -827,7 +825,7 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 		return NULL;
 	}
 
-	if (!is_authorized((const TSession *)callInfo, command)) {
+	if (!is_authorized((const TSession *) callInfo, command)) {
 		val = xmlrpc_build_value(envP, "s", "UNAUTHORIZED!");
 		goto end;
 	}
@@ -838,7 +836,7 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 		freed = 1;
 		command = "bgapi";
 		arg = "unload mod_xml_rpc";
-	} else 	if (switch_stristr("reload", command) && switch_stristr("mod_xml_rpc", arg)) {
+	} else if (switch_stristr("reload", command) && switch_stristr("mod_xml_rpc", arg)) {
 		switch_safe_free(command);
 		switch_safe_free(arg);
 		freed = 1;
@@ -855,7 +853,7 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 		val = xmlrpc_build_value(envP, "s", "ERROR!");
 	}
 
-end:
+  end:
 
 	/* xmlrpc-c requires us to free memory it malloced from xmlrpc_decompose_value */
 	if (!freed) {
@@ -977,7 +975,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 	//globals.abyssServer.running = 0;
 	//shutdown(globals.abyssServer.listensock, 2);
 	ServerTerminate(&globals.abyssServer);
-	
+
 	do {
 		switch_yield(100000);
 	} while (globals.running);

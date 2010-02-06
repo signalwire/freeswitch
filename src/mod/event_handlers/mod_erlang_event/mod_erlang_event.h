@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -33,8 +33,8 @@
  */
 
 typedef enum {
-	LFLAG_WAITING_FOR_PID = (1 << 0), /* waiting for a node to return a pid */
-	LFLAG_OUTBOUND_INIT = (1 << 1), /* Erlang peer has been notified of this session */
+	LFLAG_WAITING_FOR_PID = (1 << 0),	/* waiting for a node to return a pid */
+	LFLAG_OUTBOUND_INIT = (1 << 1),	/* Erlang peer has been notified of this session */
 	LFLAG_SESSION_ALIVE = (1 << 2),
 	LFLAG_SESSION_COMPLETE = (1 << 3),
 } session_flag_t;
@@ -114,7 +114,7 @@ struct listener {
 	uint32_t timeout;
 	uint32_t id;
 	char remote_ip[50];
-	/*switch_port_t remote_port;*/
+	/*switch_port_t remote_port; */
 	struct listener *next;
 };
 
@@ -143,8 +143,8 @@ struct globals_struct {
 	unsigned int reference0;
 	unsigned int reference1;
 	unsigned int reference2;
-	char TIMEOUT; /* marker for a timed out request */
-	char WAITING; /* marker for a request waiting for a response */
+	char TIMEOUT;				/* marker for a timed out request */
+	char WAITING;				/* marker for a request waiting for a response */
 	switch_mutex_t *ref_mutex;
 };
 typedef struct globals_struct globals_t;
@@ -200,20 +200,20 @@ extern prefs_t prefs;
 
 /* function prototypes */
 /* handle_msg.c */
-int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf);
+int handle_msg(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buff * rbuf);
 
 /* ei_helpers.c */
-void ei_link(listener_t *listener, erlang_pid *from, erlang_pid *to);
-void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event);
-void ei_encode_switch_event_tag(ei_x_buff *ebuf, switch_event_t *event, char *tag);
-int ei_pid_from_rpc(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, char *function);
-int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, char *function, int argc, char **argv);
-void ei_init_ref(struct ei_cnode_s *ec, erlang_ref *ref);
-void ei_x_print_reg_msg(ei_x_buff *buf, char *dest, int send);
-void ei_x_print_msg(ei_x_buff *buf, erlang_pid *pid, int send);
-int ei_sendto(ei_cnode *ec, int fd, struct erlang_process *process, ei_x_buff *buf);
-void ei_hash_ref(erlang_ref *ref, char *output);
-int ei_compare_pids(erlang_pid *pid1, erlang_pid *pid2);
+void ei_link(listener_t *listener, erlang_pid * from, erlang_pid * to);
+void ei_encode_switch_event_headers(ei_x_buff * ebuf, switch_event_t *event);
+void ei_encode_switch_event_tag(ei_x_buff * ebuf, switch_event_t *event, char *tag);
+int ei_pid_from_rpc(struct ei_cnode_s *ec, int sockfd, erlang_ref * ref, char *module, char *function);
+int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref * ref, char *module, char *function, int argc, char **argv);
+void ei_init_ref(struct ei_cnode_s *ec, erlang_ref * ref);
+void ei_x_print_reg_msg(ei_x_buff * buf, char *dest, int send);
+void ei_x_print_msg(ei_x_buff * buf, erlang_pid * pid, int send);
+int ei_sendto(ei_cnode * ec, int fd, struct erlang_process *process, ei_x_buff * buf);
+void ei_hash_ref(erlang_ref * ref, char *output);
+int ei_compare_pids(erlang_pid * pid1, erlang_pid * pid2);
 int ei_decode_string_or_binary(char *buf, int *index, int maxlen, char *dst);
 switch_status_t initialise_ei(struct ei_cnode_s *ec);
 #define ei_encode_switch_event(_b, _e) ei_encode_switch_event_tag(_b, _e, "event")
@@ -228,14 +228,14 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec);
 		break; \
 }
 
-#ifdef WIN32 /* MSDN suggested hack to fake errno for network operations */
+#ifdef WIN32					/* MSDN suggested hack to fake errno for network operations */
 /*#define errno WSAGetLastError()*/
 #endif
 
 /* mod_erlang_event.c */
-session_elem_t* attach_call_to_registered_process(listener_t* listener, char* reg_name, switch_core_session_t *session);
-session_elem_t* attach_call_to_pid(listener_t* listener, erlang_pid* pid, switch_core_session_t *session);
-session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *module, char *function, switch_core_session_t *session);
+session_elem_t *attach_call_to_registered_process(listener_t *listener, char *reg_name, switch_core_session_t *session);
+session_elem_t *attach_call_to_pid(listener_t *listener, erlang_pid * pid, switch_core_session_t *session);
+session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *module, char *function, switch_core_session_t *session);
 
 /* For Emacs:
  * Local Variables:

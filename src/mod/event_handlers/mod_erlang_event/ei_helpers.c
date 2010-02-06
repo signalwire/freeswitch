@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -54,23 +54,24 @@
 } while (0)
 
 
-void ei_link(listener_t *listener, erlang_pid *from, erlang_pid *to) {
+void ei_link(listener_t *listener, erlang_pid * from, erlang_pid * to)
+{
 	char msgbuf[2048];
 	char *s;
 	int index = 0;
 	int ret;
 
-	index = 5;                                     /* max sizes: */
-	ei_encode_version(msgbuf,&index);                     /*   1 */
-	ei_encode_tuple_header(msgbuf,&index,3);
-	ei_encode_long(msgbuf,&index,ERL_LINK);
-	ei_encode_pid(msgbuf,&index,from);                    /* 268 */
-	ei_encode_pid(msgbuf,&index,to);                      /* 268 */
+	index = 5;					/* max sizes: */
+	ei_encode_version(msgbuf, &index);	/*   1 */
+	ei_encode_tuple_header(msgbuf, &index, 3);
+	ei_encode_long(msgbuf, &index, ERL_LINK);
+	ei_encode_pid(msgbuf, &index, from);	/* 268 */
+	ei_encode_pid(msgbuf, &index, to);	/* 268 */
 
 	/* 5 byte header missing */
 	s = msgbuf;
-	put32be(s, index - 4);                                /*   4 */
-	put8(s, ERL_PASS_THROUGH);                            /*   1 */
+	put32be(s, index - 4);		/*   4 */
+	put8(s, ERL_PASS_THROUGH);	/*   1 */
 	/* sum:  542 */
 
 	switch_mutex_lock(listener->sock_mutex);
@@ -82,7 +83,7 @@ void ei_link(listener_t *listener, erlang_pid *from, erlang_pid *to) {
 	switch_mutex_unlock(listener->sock_mutex);
 }
 
-void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event)
+void ei_encode_switch_event_headers(ei_x_buff * ebuf, switch_event_t *event)
 {
 	int i;
 	char *uuid = switch_event_get_header(event, "unique-id");
@@ -94,7 +95,7 @@ void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event)
 	if (event->body)
 		i++;
 
-	ei_x_encode_list_header(ebuf, i+1);
+	ei_x_encode_list_header(ebuf, i + 1);
 
 	if (uuid) {
 		_ei_x_encode_string(ebuf, switch_event_get_header(event, "unique-id"));
@@ -118,7 +119,7 @@ void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event)
 }
 
 
-void ei_encode_switch_event_tag(ei_x_buff *ebuf, switch_event_t *event, char *tag)
+void ei_encode_switch_event_tag(ei_x_buff * ebuf, switch_event_t *event, char *tag)
 {
 
 	ei_x_encode_tuple_header(ebuf, 2);
@@ -130,7 +131,7 @@ void ei_encode_switch_event_tag(ei_x_buff *ebuf, switch_event_t *event, char *ta
    calls module:function(Ref). The response comes back as
    {rex, {Ref, Pid}}
  */
-int ei_pid_from_rpc(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, char *function)
+int ei_pid_from_rpc(struct ei_cnode_s *ec, int sockfd, erlang_ref * ref, char *module, char *function)
 {
 	ei_x_buff buf;
 	ei_x_new(&buf);
@@ -145,7 +146,7 @@ int ei_pid_from_rpc(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *mo
 }
 
 /* function to spawn a process on a remote node */
-int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, char *function, int argc, char **argv)
+int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref * ref, char *module, char *function, int argc, char **argv)
 {
 	int i;
 	ei_x_buff buf;
@@ -154,7 +155,7 @@ int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, c
 	ei_x_encode_tuple_header(&buf, 3);
 	ei_x_encode_atom(&buf, "$gen_call");
 	ei_x_encode_tuple_header(&buf, 2);
-	ei_x_encode_pid(&buf, ei_self(ec)); 
+	ei_x_encode_pid(&buf, ei_self(ec));
 	ei_init_ref(ec, ref);
 	ei_x_encode_ref(&buf, ref);
 	ei_x_encode_tuple_header(&buf, 5);
@@ -165,18 +166,18 @@ int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, c
 	/* argument list */
 	if (argc < 0) {
 		ei_x_encode_list_header(&buf, argc);
-		for(i = 0; i < argc && argv[i]; i++) {
+		for (i = 0; i < argc && argv[i]; i++) {
 			ei_x_encode_atom(&buf, argv[i]);
 		}
 	}
 
 	ei_x_encode_empty_list(&buf);
 
-	/*if (i != argc - 1) {*/
-		/* horked argument list */
-	/*}*/
+	/*if (i != argc - 1) { */
+	/* horked argument list */
+	/*} */
 
-	ei_x_encode_pid(&buf, ei_self(ec)); /* should really be a valid group leader */
+	ei_x_encode_pid(&buf, ei_self(ec));	/* should really be a valid group leader */
 
 #ifdef EI_DEBUG
 	ei_x_print_reg_msg(&buf, "net_kernel", 1);
@@ -191,11 +192,11 @@ int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, c
 #define MAX_REFERENCE    (1 << _REF_NUM_SIZE)
 
 /* function to fill in an erlang reference struct */
-void ei_init_ref(ei_cnode *ec, erlang_ref *ref)
+void ei_init_ref(ei_cnode * ec, erlang_ref * ref)
 {
-	memset(ref, 0, sizeof(*ref)); /* zero out the struct */
+	memset(ref, 0, sizeof(*ref));	/* zero out the struct */
 	snprintf(ref->node, MAXATOMLEN, "%s", ec->thisnodename);
-	
+
 	switch_mutex_lock(globals.ref_mutex);
 	globals.reference0++;
 	if (globals.reference0 >= MAX_REFERENCE) {
@@ -212,12 +213,12 @@ void ei_init_ref(ei_cnode *ec, erlang_ref *ref)
 
 	switch_mutex_unlock(globals.ref_mutex);
 
-	ref->creation = 1; /* why is this 1 */
-	ref->len = 3; /* why is this 3 */
+	ref->creation = 1;			/* why is this 1 */
+	ref->len = 3;				/* why is this 3 */
 }
 
 
-void ei_x_print_reg_msg(ei_x_buff *buf, char *dest, int send)
+void ei_x_print_reg_msg(ei_x_buff * buf, char *dest, int send)
 {
 	char *mbuf = NULL;
 	int i = 1;
@@ -233,7 +234,7 @@ void ei_x_print_reg_msg(ei_x_buff *buf, char *dest, int send)
 }
 
 
-void ei_x_print_msg(ei_x_buff *buf, erlang_pid *pid, int send)
+void ei_x_print_msg(ei_x_buff * buf, erlang_pid * pid, int send)
 {
 	char *pbuf = NULL;
 	int i = 0;
@@ -241,7 +242,7 @@ void ei_x_print_msg(ei_x_buff *buf, erlang_pid *pid, int send)
 
 	ei_x_new(&pidbuf);
 	ei_x_encode_pid(&pidbuf, pid);
-	
+
 	ei_s_print_term(&pbuf, pidbuf.buff, &i);
 
 	ei_x_print_reg_msg(buf, pbuf, send);
@@ -249,7 +250,7 @@ void ei_x_print_msg(ei_x_buff *buf, erlang_pid *pid, int send)
 }
 
 
-int ei_sendto(ei_cnode *ec, int fd, struct erlang_process *process, ei_x_buff *buf)
+int ei_sendto(ei_cnode * ec, int fd, struct erlang_process *process, ei_x_buff * buf)
 {
 	int ret;
 	if (process->type == ERLANG_PID) {
@@ -273,19 +274,16 @@ int ei_sendto(ei_cnode *ec, int fd, struct erlang_process *process, ei_x_buff *b
 
 
 /* convert an erlang reference to some kind of hashed string so we can store it as a hash key */
-void ei_hash_ref(erlang_ref *ref, char *output)
+void ei_hash_ref(erlang_ref * ref, char *output)
 {
 	/* very lazy */
 	sprintf(output, "%d.%d.%d@%s", ref->n[0], ref->n[1], ref->n[2], ref->node);
 }
 
 
-int ei_compare_pids(erlang_pid *pid1, erlang_pid *pid2)
+int ei_compare_pids(erlang_pid * pid1, erlang_pid * pid2)
 {
-	if ((!strcmp(pid1->node, pid2->node)) &&
-			pid1->creation == pid2->creation &&
-			pid1->num == pid2->num &&
-			pid1->serial == pid2->serial) {
+	if ((!strcmp(pid1->node, pid2->node)) && pid1->creation == pid2->creation && pid1->num == pid2->num && pid1->serial == pid2->serial) {
 		return 0;
 	} else {
 		return 1;
@@ -293,20 +291,22 @@ int ei_compare_pids(erlang_pid *pid1, erlang_pid *pid2)
 }
 
 
-int ei_decode_string_or_binary(char *buf, int *index, int maxlen, char *dst) {
+int ei_decode_string_or_binary(char *buf, int *index, int maxlen, char *dst)
+{
 	int type, size, res;
 	long len;
 
 	ei_get_type(buf, index, &type, &size);
 
 	if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT) {
-		return -1; 
+		return -1;
 	} else if (size > maxlen) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Requested decoding of %s with size %d into a buffer of size %d\n", type == ERL_BINARY_EXT ? "binary" : "string", size, maxlen);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Requested decoding of %s with size %d into a buffer of size %d\n",
+						  type == ERL_BINARY_EXT ? "binary" : "string", size, maxlen);
 		return -1;
 	} else if (type == ERL_BINARY_EXT) {
 		res = ei_decode_binary(buf, index, dst, &len);
-		dst[len] = '\0'; /* binaries aren't null terminated */
+		dst[len] = '\0';		/* binaries aren't null terminated */
 	} else {
 		res = ei_decode_string(buf, index, dst);
 	}
@@ -320,12 +320,12 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
 	switch_status_t rv;
 	struct sockaddr_in server_addr;
 	struct hostent *nodehost;
-	char thishostname[EI_MAXHOSTNAMELEN+1] = "";
-	char thisnodename[MAXNODELEN+1];
+	char thishostname[EI_MAXHOSTNAMELEN + 1] = "";
+	char thisnodename[MAXNODELEN + 1];
 
 	/* zero out the struct before we use it */
 	memset(&server_addr, 0, sizeof(server_addr));
-	
+
 	/* convert the configured IP to network byte order, handing errors */
 	rv = switch_inet_pton(AF_INET, prefs.ip, &server_addr.sin_addr.s_addr);
 	if (rv == 0) {
@@ -335,18 +335,18 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error when parsing ip address %s : %s\n", prefs.ip, strerror(errno));
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	/* set the address family and port */
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(prefs.port);
-	
+
 #ifdef WIN32
-	 if ((nodehost = gethostbyaddr((const char*)&server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
+	if ((nodehost = gethostbyaddr((const char *) &server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
 #else
-	if ((nodehost = gethostbyaddr((const char*)&server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
+	if ((nodehost = gethostbyaddr((const char *) &server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
 #endif
 		memcpy(thishostname, nodehost->h_name, EI_MAXHOSTNAMELEN);
-	
+
 	if (zstr_buf(thishostname)) {
 		gethostname(thishostname, EI_MAXHOSTNAMELEN);
 	}
@@ -357,11 +357,11 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
 			*off = '\0';
 		}
 	}
-	
-	snprintf(thisnodename, MAXNODELEN+1, "%s@%s", prefs.nodename, thishostname);
-	
+
+	snprintf(thisnodename, MAXNODELEN + 1, "%s@%s", prefs.nodename, thishostname);
+
 	/* init the ei stuff */
-	if (ei_connect_xinit(ec, thishostname, prefs.nodename, thisnodename, (Erl_IpAddr)(&server_addr.sin_addr.s_addr), prefs.cookie, 0) < 0) {
+	if (ei_connect_xinit(ec, thishostname, prefs.nodename, thisnodename, (Erl_IpAddr) (&server_addr.sin_addr.s_addr), prefs.cookie, 0) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to init ei connection\n");
 		return SWITCH_STATUS_FALSE;
 	}

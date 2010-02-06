@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -55,42 +55,46 @@ static struct {
 	int integer;
 } globals;
 
-static switch_status_t config_callback_siptrace(switch_xml_config_item_t *data, switch_config_callback_type_t callback_type, switch_bool_t changed) 
+static switch_status_t config_callback_siptrace(switch_xml_config_item_t *data, switch_config_callback_type_t callback_type, switch_bool_t changed)
 {
-	switch_bool_t value = *(switch_bool_t*)data->ptr;
+	switch_bool_t value = *(switch_bool_t *) data->ptr;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "In siptrace callback: value %s changed %s\n",
-		value ? "true" : "false", changed ? "true" : "false");
-	
-	
+					  value ? "true" : "false", changed ? "true" : "false");
+
+
 	/*
-	if ((callback_type == CONFIG_LOG || callback_type == CONFIG_RELOAD) && changed) {
-		nua_set_params(((sofia_profile_t*)data->functiondata)->nua, TPTAG_LOG(value), TAG_END());
-	} 
-	*/
-	
+	   if ((callback_type == CONFIG_LOG || callback_type == CONFIG_RELOAD) && changed) {
+	   nua_set_params(((sofia_profile_t*)data->functiondata)->nua, TPTAG_LOG(value), TAG_END());
+	   } 
+	 */
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_xml_config_string_options_t config_opt_codec_negotiation = { NULL, 0, "greedy|generous|evil" };
+
 /* enforce_min, min, enforce_max, max */
 static switch_xml_config_int_options_t config_opt_integer = { SWITCH_TRUE, 0, SWITCH_TRUE, 10 };
-static switch_xml_config_enum_item_t config_opt_codec_negotiation_enum[] = { 
-	{ "greedy", CODEC_NEGOTIATION_GREEDY },
-	{ "generous", CODEC_NEGOTIATION_GENEROUS },
-	{ "evil", CODEC_NEGOTIATION_EVIL },
-	{ NULL, 0 } 
+static switch_xml_config_enum_item_t config_opt_codec_negotiation_enum[] = {
+	{"greedy", CODEC_NEGOTIATION_GREEDY},
+	{"generous", CODEC_NEGOTIATION_GENEROUS},
+	{"evil", CODEC_NEGOTIATION_EVIL},
+	{NULL, 0}
 };
 
 static switch_xml_config_item_t instructions[] = {
 	/* parameter name        type                 reloadable   pointer                         default value     options structure */
-	SWITCH_CONFIG_ITEM("codec-negotiation-str", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &globals.codec_negotiation_str, "greedy", &config_opt_codec_negotiation, \
-		"greedy|generous|evil", "Specifies the codec negotiation scheme to be used."),
-	SWITCH_CONFIG_ITEM("codec-negotiation", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, &globals.codec_negotiation,  (void*)CODEC_NEGOTIATION_GREEDY, &config_opt_codec_negotiation_enum,
-		"greedy|generous|evil", "Specifies the codec negotiation scheme to be used."),
-	SWITCH_CONFIG_ITEM_CALLBACK("sip-trace", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.sip_trace,  (void*)SWITCH_FALSE,  (switch_xml_config_callback_t)config_callback_siptrace, NULL,
-		"yes|no", "If enabled, print out sip messages on the console."),
-	SWITCH_CONFIG_ITEM("integer", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &globals.integer, (void*)100, &config_opt_integer,
-		NULL, NULL),
+	SWITCH_CONFIG_ITEM("codec-negotiation-str", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &globals.codec_negotiation_str, "greedy",
+					   &config_opt_codec_negotiation,
+					   "greedy|generous|evil", "Specifies the codec negotiation scheme to be used."),
+	SWITCH_CONFIG_ITEM("codec-negotiation", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, &globals.codec_negotiation, (void *) CODEC_NEGOTIATION_GREEDY,
+					   &config_opt_codec_negotiation_enum,
+					   "greedy|generous|evil", "Specifies the codec negotiation scheme to be used."),
+	SWITCH_CONFIG_ITEM_CALLBACK("sip-trace", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.sip_trace, (void *) SWITCH_FALSE,
+								(switch_xml_config_callback_t) config_callback_siptrace, NULL,
+								"yes|no", "If enabled, print out sip messages on the console."),
+	SWITCH_CONFIG_ITEM("integer", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &globals.integer, (void *) 100, &config_opt_integer,
+					   NULL, NULL),
 	SWITCH_CONFIG_ITEM_END()
 };
 
@@ -102,14 +106,14 @@ static switch_status_t do_config(switch_bool_t reload)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not open snipe_hunt.conf\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_STANDARD_API(snipe_hunt_function)
 {
 	do_config(SWITCH_TRUE);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -121,9 +125,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_snipe_hunt_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hello World!\n");
-	
+
 	do_config(SWITCH_FALSE);
-	
+
 	SWITCH_ADD_API(api_interface, "snipe_hunt", "Snipe_Hunt API", snipe_hunt_function, "syntax");
 
 	/* indicate that the module should continue to be loaded */

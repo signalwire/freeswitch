@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -81,12 +81,12 @@ SWITCH_DECLARE(switch_status_t) switch_console_init(switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_console_shutdown(void);
 SWITCH_DECLARE(switch_status_t) switch_console_add_complete_func(const char *name, switch_console_complete_callback_t cb);
 SWITCH_DECLARE(switch_status_t) switch_console_del_complete_func(const char *name);
-SWITCH_DECLARE(switch_status_t) switch_console_run_complete_func(const char *func, const char *line, 
+SWITCH_DECLARE(switch_status_t) switch_console_run_complete_func(const char *func, const char *line,
 																 const char *last_word, switch_console_callback_match_t **matches);
 SWITCH_DECLARE(void) switch_console_push_match(switch_console_callback_match_t **matches, const char *new_val);
 SWITCH_DECLARE(void) switch_console_free_matches(switch_console_callback_match_t **matches);
-SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const char *last_word, 
-													  FILE *console_out, switch_stream_handle_t *stream, switch_xml_t xml);
+SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const char *last_word,
+													  FILE * console_out, switch_stream_handle_t *stream, switch_xml_t xml);
 SWITCH_DECLARE(void) switch_console_sort_matches(switch_console_callback_match_t *matches);
 SWITCH_DECLARE(void) switch_console_save_history(void);
 SWITCH_DECLARE(char *) switch_console_expand_alias(char *cmd, char *arg);

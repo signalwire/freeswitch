@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -250,7 +250,8 @@ static switch_status_t switch_amr_encode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
-										 uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
+										 uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
+										 unsigned int *flag)
 {
 #ifdef AMR_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -272,7 +273,8 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
-										 uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
+										 uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
+										 unsigned int *flag)
 {
 #ifdef AMR_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -319,24 +321,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR");
-	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 96,						/* the IANA code number */
-										 "AMR",						/* the IANA code name */
-										 "octet-align=0",			/* default fmtp to send (can be overridden by the init function) */
-										 8000,						/* samples transferred per second */
-										 8000,						/* actual samples transferred per second */
-										 12200,						/* bits transferred per second */
-										 20000,						/* number of microseconds per frame */
-										 160,						/* number of samples per frame */
-										 320,						/* number of bytes per frame decompressed */
-										 0,							/* number of bytes per frame compressed */
-										 1,							/* number of channels represented */
-										 1, 						/* number of frames per network packet */
-										 switch_amr_init,			/* function to initialize a codec handle using this implementation */
-										 switch_amr_encode,			/* function to encode raw data into encoded data */
-										 switch_amr_decode,			/* function to decode encoded data into raw data */
-										 switch_amr_destroy);		/* deinitalize a codec handle using this implementation */
+	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 96,	/* the IANA code number */
+										 "AMR",	/* the IANA code name */
+										 "octet-align=0",	/* default fmtp to send (can be overridden by the init function) */
+										 8000,	/* samples transferred per second */
+										 8000,	/* actual samples transferred per second */
+										 12200,	/* bits transferred per second */
+										 20000,	/* number of microseconds per frame */
+										 160,	/* number of samples per frame */
+										 320,	/* number of bytes per frame decompressed */
+										 0,	/* number of bytes per frame compressed */
+										 1,	/* number of channels represented */
+										 1,	/* number of frames per network packet */
+										 switch_amr_init,	/* function to initialize a codec handle using this implementation */
+										 switch_amr_encode,	/* function to encode raw data into encoded data */
+										 switch_amr_decode,	/* function to decode encoded data into raw data */
+										 switch_amr_destroy);	/* deinitalize a codec handle using this implementation */
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

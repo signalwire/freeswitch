@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -181,7 +181,6 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_BITS_PER_BYTE 8
 #define SWITCH_DEFAULT_FILE_BUFFER_LEN 65536
 #define SWITCH_DTMF_LOG_LEN 1000
-
 typedef uint8_t switch_byte_t;
 
 typedef struct {
@@ -394,7 +393,7 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 #define SWITCH_INTERVAL_PAD 10	/* A little extra buffer space to be safe */
 #define SWITCH_MAX_SAMPLE_LEN 48
 #define SWITCH_BYTES_PER_SAMPLE 2	/* slin is 2 bytes per sample */
-#define SWITCH_RECOMMENDED_BUFFER_SIZE 4096 /* worst case of 32khz @60ms we only do 48khz @10ms which is 960 */
+#define SWITCH_RECOMMENDED_BUFFER_SIZE 4096	/* worst case of 32khz @60ms we only do 48khz @10ms which is 960 */
 #define SWITCH_MAX_CODECS 50
 #define SWITCH_MAX_STATE_HANDLERS 30
 #define SWITCH_CORE_QUEUE_LEN 100000
@@ -425,7 +424,7 @@ typedef enum {
 	SWITCH_XML_SECTION_DIRECTORY = (1 << 1),
 	SWITCH_XML_SECTION_DIALPLAN = (1 << 2),
 	SWITCH_XML_SECTION_PHRASES = (1 << 3),
-	
+
 	/* Nothing after this line */
 	SWITCH_XML_SECTION_MAX = (1 << 4)
 } switch_xml_section_enum_t;
@@ -530,36 +529,35 @@ typedef enum {
 typedef uint32_t switch_rtp_flag_t;
 
 typedef enum {
-	RTP_BUG_NONE = 0, /* won't be using this one much ;) */
+	RTP_BUG_NONE = 0,			/* won't be using this one much ;) */
 
 	RTP_BUG_CISCO_SKIP_MARK_BIT_2833 = (1 << 0),
 	/* Some Cisco devices get mad when you send the mark bit on new 2833 because it makes
 	   them flush their jitterbuffer and the dtmf along with it.
 
 	   This flag will disable the sending of the mark bit on the first DTMF packet.
-	*/
+	 */
 
 
 	RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833 = (1 << 1)
-	/*
-	  Sonus wrongly expects that, when sending a multi-packet 2833 DTMF event, The sender
-	  should increment the RTP timestamp in each packet when, in reality, the sender should
-	  send the same exact timestamp and increment the duration field in the 2833 payload.
-	  This allows a reconstruction of the duration if any of the packets are lost.
+		/*
+		   Sonus wrongly expects that, when sending a multi-packet 2833 DTMF event, The sender
+		   should increment the RTP timestamp in each packet when, in reality, the sender should
+		   send the same exact timestamp and increment the duration field in the 2833 payload.
+		   This allows a reconstruction of the duration if any of the packets are lost.
 
-	  final_duration - initial_timestamp = total_samples
+		   final_duration - initial_timestamp = total_samples
 
-	  However, if the duration value exceeds the space allocated (16 bits), The sender should increment
-	  the timestamp one unit and reset the duration to 0. 
-	  
-	  Always sending a duration of 0 with a new timestamp should be tolerated but is rarely intentional
-	  and is mistakenly done by many devices.  
-	  The issue is that the Sonus expects everyone to do it this way instead of tolerating either way.
-	  Sonus will actually ignore every packet with the same timestamp before concluding if it's DTMF.
-	  
-	  This flag will cause each packet to have a new timestamp.
-	*/
+		   However, if the duration value exceeds the space allocated (16 bits), The sender should increment
+		   the timestamp one unit and reset the duration to 0. 
 
+		   Always sending a duration of 0 with a new timestamp should be tolerated but is rarely intentional
+		   and is mistakenly done by many devices.  
+		   The issue is that the Sonus expects everyone to do it this way instead of tolerating either way.
+		   Sonus will actually ignore every packet with the same timestamp before concluding if it's DTMF.
+
+		   This flag will cause each packet to have a new timestamp.
+		 */
 } switch_rtp_bug_flag_t;
 
 #ifdef _MSC_VER
@@ -680,6 +678,8 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_SIMPLIFY,
 	SWITCH_MESSAGE_INDICATE_DEBUG_AUDIO,
 	SWITCH_MESSAGE_INDICATE_PROXY_MEDIA,
+	SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC,
+	SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC_COMPLETE,
 	SWITCH_MESSAGE_INVALID
 } switch_core_session_message_types_t;
 
@@ -1545,7 +1545,7 @@ typedef void (*switch_application_function_t) (switch_core_session_t *, const ch
 
 typedef void (*switch_event_callback_t) (switch_event_t *);
 typedef switch_caller_extension_t *(*switch_dialplan_hunt_function_t) (switch_core_session_t *, void *, switch_caller_profile_t *);
-#define SWITCH_STANDARD_DIALPLAN(name) static switch_caller_extension_t * name (switch_core_session_t *session, void *arg, switch_caller_profile_t *caller_profile)
+#define SWITCH_STANDARD_DIALPLAN(name) static switch_caller_extension_t *name (switch_core_session_t *session, void *arg, switch_caller_profile_t *caller_profile)
 
 
 typedef struct switch_scheduler_task switch_scheduler_task_t;
@@ -1579,9 +1579,9 @@ typedef switch_status_t (*switch_say_callback_t) (switch_core_session_t *session
 												  char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args);
 typedef struct switch_xml *switch_xml_t;
 typedef struct switch_core_time_duration switch_core_time_duration_t;
-typedef switch_xml_t (*switch_xml_search_function_t) (const char *section,
-													  const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
-													  void *user_data);
+typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
+													 const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
+													 void *user_data);
 
 typedef struct switch_hash switch_hash_t;
 struct HashElem;

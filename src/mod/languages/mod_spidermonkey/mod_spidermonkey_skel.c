@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -93,7 +93,7 @@ const sm_module_interface_t skel_module_interface = {
 	/*.next */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
+SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t ** module_interface)
 {
 	*module_interface = &skel_module_interface;
 	return SWITCH_STATUS_SUCCESS;

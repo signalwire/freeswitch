@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -63,10 +63,10 @@ static int next_file(switch_file_handle_t *handle)
 	char *file;
 	const char *prefix = handle->prefix;
 
- top:
+  top:
 
 	context->index++;
-	
+
 	if (switch_test_flag((&context->fh), SWITCH_FILE_OPEN)) {
 		switch_core_file_close(&context->fh);
 	}
@@ -89,13 +89,10 @@ static int next_file(switch_file_handle_t *handle)
 	}
 
 	if (switch_core_file_open(&context->fh,
-							  file,
-							  handle->channels,
-							  handle->samplerate,
-							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+							  file, handle->channels, handle->samplerate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 		goto top;
 	}
-	
+
 	handle->samples = context->fh.samples;
 	handle->samplerate = context->fh.samplerate;
 	handle->channels = context->fh.channels;
@@ -122,15 +119,15 @@ static switch_status_t file_string_file_open(switch_file_handle_t *handle, const
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This format does not support writing!\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
-	
+
 	file_dup = switch_core_strdup(handle->memory_pool, path);
 	context->argc = switch_separate_string(file_dup, '!', context->argv, (sizeof(context->argv) / sizeof(context->argv[0])));
 	context->index = -1;
-	
+
 	handle->private_info = context;
-	
+
 	return next_file(handle) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
@@ -150,17 +147,17 @@ static switch_status_t file_string_file_read(switch_file_handle_t *handle, void 
 	size_t llen = *len;
 
 	if (context->samples > 0) {
-		if (*len > (size_t)context->samples) {
+		if (*len > (size_t) context->samples) {
 			*len = context->samples;
 		}
-		
+
 		context->samples -= *len;
 		switch_generate_sln_silence((int16_t *) data, *len, 400);
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
 		status = switch_core_file_read(&context->fh, data, len);
 	}
-	
+
 	if (status != SWITCH_STATUS_SUCCESS) {
 		if (!next_file(handle)) {
 			return SWITCH_STATUS_FALSE;

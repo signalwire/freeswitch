@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -53,18 +53,16 @@
 #define resample_buffer(a, b, c) a > b ? ((a / 1000) / 2) * c : ((b / 1000) / 2) * c
 
 SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resampler_t **new_resampler,
-															   uint32_t from_rate, uint32_t to_rate, 
+															   uint32_t from_rate, uint32_t to_rate,
 															   uint32_t to_size,
-															   int quality,
-															   uint32_t channels,
-															   const char *file, const char *func, int line)
+															   int quality, uint32_t channels, const char *file, const char *func, int line)
 {
 	int err = 0;
 	switch_audio_resampler_t *resampler;
 	double lto_rate, lfrom_rate;
 
 	switch_zmalloc(resampler, sizeof(*resampler));
-	
+
 	resampler->resampler = speex_resampler_init(channels ? channels : 1, from_rate, to_rate, quality, &err);
 
 	if (!resampler->resampler) {
@@ -74,11 +72,11 @@ SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resa
 
 	*new_resampler = resampler;
 	lto_rate = (double) resampler->to_rate;
-    lfrom_rate = (double) resampler->from_rate;
+	lfrom_rate = (double) resampler->from_rate;
 	resampler->from_rate = from_rate;
-    resampler->to_rate = to_rate;
-    resampler->factor = (lto_rate / lfrom_rate);
-    resampler->rfactor = (lfrom_rate / lto_rate);
+	resampler->to_rate = to_rate;
+	resampler->factor = (lto_rate / lfrom_rate);
+	resampler->rfactor = (lfrom_rate / lto_rate);
 	resampler->to_size = resample_buffer(to_rate, from_rate, (uint32_t) to_size);
 	resampler->to = malloc(resampler->to_size * sizeof(int16_t));
 
@@ -195,7 +193,7 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 	for (i = 0; i < samples; i++, sum_rnd = 0) {
 		for (x = 0; x < 6; x++) {
 			rnd2 = rnd2 * 31821U + 13849U;
-			sum_rnd += rnd2 ;
+			sum_rnd += rnd2;
 		}
 		//switch_normalize_to_16bit(sum_rnd);
 		*data = (int16_t) ((int16_t) sum_rnd / (int) divisor);
@@ -217,7 +215,7 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 
 	for (i = 0; i < samples; i++, sum_rnd = 0) {
 		for (x = 0; x < 10; x++) {
-			rnd = rnd + (int16_t)((x + i) * rnd2);
+			rnd = rnd + (int16_t) ((x + i) * rnd2);
 			sum_rnd += rnd;
 		}
 		switch_normalize_to_16bit(sum_rnd);
@@ -257,8 +255,8 @@ SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, u
 	uint32_t j = 0, k = 0;
 
 	switch_zmalloc(buf, len);
-	
-	for(i = 0; i < samples; i++) {
+
+	for (i = 0; i < samples; i++) {
 		for (j = 0; j < channels; j++) {
 			int32_t z = buf[i] + data[k++];
 			switch_normalize_to_16bit(z);

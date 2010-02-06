@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -237,7 +237,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_t
   \param node bind handle to later remove the binding.
   \return SWITCH_STATUS_SUCCESS if the event was binded
 */
-SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, switch_event_types_t event, const char *subclass_name, 
+SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, switch_event_types_t event, const char *subclass_name,
 															switch_event_callback_t callback, void *user_data, switch_event_node_t **node);
 /*!
   \brief Unbind a bound event consumer
@@ -342,15 +342,16 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(_In_z_ char
 */
 #define switch_event_create(event, id) switch_event_create_subclass(event, id, SWITCH_EVENT_SUBCLASS_ANY)
 
-static inline switch_status_t switch_event_create_plain(switch_event_t **event, switch_event_types_t event_id)
+	 static inline switch_status_t switch_event_create_plain(switch_event_t **event, switch_event_types_t event_id)
 {
 	switch_status_t status = switch_event_create(event, SWITCH_EVENT_CLONE);
 	if (status == SWITCH_STATUS_SUCCESS) {
 		(*event)->event_id = event_id;
 	}
-	
+
 	return status;
 }
+
 /*!
   \brief Deliver an event to all of the registered event listeners
   \param event the event to send (will be nulled)

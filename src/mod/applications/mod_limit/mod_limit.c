@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -51,12 +51,12 @@ static struct {
 	char *odbc_pass;
 	switch_mutex_t *mutex;
 	switch_mutex_t *limit_hash_mutex;
-	switch_hash_t *limit_hash;	
+	switch_hash_t *limit_hash;
 	switch_mutex_t *db_hash_mutex;
-	switch_hash_t *db_hash;	
+	switch_hash_t *db_hash;
 } globals;
 
-typedef struct  {
+typedef struct {
 	uint32_t total_usage;
 	uint32_t rate_usage;
 	time_t last_check;
@@ -68,43 +68,33 @@ typedef struct {
 
 static char limit_sql[] =
 	"CREATE TABLE limit_data (\n"
-	"   hostname   VARCHAR(255),\n"
-	"   realm      VARCHAR(255),\n"
-	"   id         VARCHAR(255),\n"
-	"   uuid       VARCHAR(255)\n"
-	");\n";
+	"   hostname   VARCHAR(255),\n" "   realm      VARCHAR(255),\n" "   id         VARCHAR(255),\n" "   uuid       VARCHAR(255)\n" ");\n";
 
 static char db_sql[] =
 	"CREATE TABLE db_data (\n"
-	"   hostname   VARCHAR(255),\n"
-	"   realm      VARCHAR(255),\n"
-	"   data_key   VARCHAR(255),\n"
-	"   data       VARCHAR(255)\n"
-	");\n";
+	"   hostname   VARCHAR(255),\n" "   realm      VARCHAR(255),\n" "   data_key   VARCHAR(255),\n" "   data       VARCHAR(255)\n" ");\n";
 
 static char group_sql[] =
-	"CREATE TABLE group_data (\n"
-	"   hostname   VARCHAR(255),\n"
-	"   groupname  VARCHAR(255),\n"
-	"   url        VARCHAR(255)\n"
-	");\n";
+	"CREATE TABLE group_data (\n" "   hostname   VARCHAR(255),\n" "   groupname  VARCHAR(255),\n" "   url        VARCHAR(255)\n" ");\n";
 
 
 switch_cache_db_handle_t *limit_get_db_handle(void)
 {
 	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
-	
+
 	if (!zstr(globals.odbc_dsn)) {
 		options.odbc_options.dsn = globals.odbc_dsn;
 		options.odbc_options.user = globals.odbc_user;
 		options.odbc_options.pass = globals.odbc_pass;
 
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS) dbh = NULL;
+		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
+			dbh = NULL;
 		return dbh;
 	} else {
 		options.core_db_options.db_path = globals.dbname;
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS) dbh = NULL;
+		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS)
+			dbh = NULL;
 		return dbh;
 	}
 }
@@ -127,7 +117,7 @@ static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 	status = switch_cache_db_execute_sql(dbh, sql, NULL);
 
   end:
-	
+
 	switch_cache_db_release_db_handle(&dbh);
 
 	if (mutex) {
@@ -142,16 +132,16 @@ static switch_bool_t limit_execute_sql_callback(switch_mutex_t *mutex, char *sql
 	switch_bool_t ret = SWITCH_FALSE;
 	char *errmsg = NULL;
 	switch_cache_db_handle_t *dbh = NULL;
-	
+
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
 	if (!(dbh = limit_get_db_handle())) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
-        goto end;
-    }
-	
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		goto end;
+	}
+
 	switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, &errmsg);
 
 	if (errmsg) {
@@ -174,8 +164,8 @@ static switch_bool_t limit_execute_sql_callback(switch_mutex_t *mutex, char *sql
 static switch_xml_config_string_options_t limit_config_dsn = { NULL, 0, "[^:]+:[^:]+:.+" };
 
 static switch_xml_config_item_t config_settings[] = {
-	SWITCH_CONFIG_ITEM("odbc-dsn", SWITCH_CONFIG_STRING, 0, &globals.odbc_dsn, NULL, &limit_config_dsn,  
-		"dsn:username:password", "If set, the ODBC DSN used by the limit and db applications"),
+	SWITCH_CONFIG_ITEM("odbc-dsn", SWITCH_CONFIG_STRING, 0, &globals.odbc_dsn, NULL, &limit_config_dsn,
+					   "dsn:username:password", "If set, the ODBC DSN used by the limit and db applications"),
 	SWITCH_CONFIG_ITEM_END()
 };
 
@@ -184,13 +174,13 @@ static switch_status_t do_config()
 	switch_cache_db_handle_t *dbh = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *sql = NULL;
-	
+
 	limit_config_dsn.pool = globals.pool;
 
 	if (switch_xml_config_parse_module_settings("limit.conf", SWITCH_FALSE, config_settings) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	if (globals.odbc_dsn) {
 		if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
 			*globals.odbc_user++ = '\0';
@@ -203,7 +193,7 @@ static switch_status_t do_config()
 			globals.odbc_dsn = globals.odbc_user = globals.odbc_pass;
 		}
 	}
-	
+
 
 	if (zstr(globals.odbc_dsn)) {
 		globals.dbname = "call_limit";
@@ -225,16 +215,16 @@ static switch_status_t do_config()
 			NULL
 		};
 
-		
+
 
 		switch_cache_db_test_reactive(dbh, "select * from limit_data", NULL, limit_sql);
 		switch_cache_db_test_reactive(dbh, "select * from db_data", NULL, db_sql);
 		switch_cache_db_test_reactive(dbh, "select * from group_data", NULL, group_sql);
-		
+
 		for (x = 0; indexes[x]; x++) {
 			switch_cache_db_execute_sql(dbh, indexes[x], NULL);
 		}
-	
+
 		switch_cache_db_release_db_handle(&dbh);
 
 		sql = switch_mprintf("delete from limit_data where hostname='%q';", globals.hostname);
@@ -248,7 +238,7 @@ static switch_status_t do_config()
 static void limit_fire_event(const char *realm, const char *key, uint32_t usage, uint32_t rate, uint32_t max, uint32_t ratemax)
 {
 	switch_event_t *event;
-	
+
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, LIMIT_EVENT_USAGE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "realm", realm);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", key);
@@ -268,8 +258,7 @@ static switch_status_t db_state_handler(switch_core_session_t *session)
 	const char *vval = switch_channel_get_variable(channel, LIMIT_IGNORE_TRANSFER_VARIABLE);
 
 	if (state >= CS_HANGUP || (state == CS_ROUTING && !switch_true(vval))) {
-		sql = switch_mprintf("delete from limit_data where uuid='%q';",
-							 switch_core_session_get_uuid(session));
+		sql = switch_mprintf("delete from limit_data where uuid='%q';", switch_core_session_get_uuid(session));
 		limit_execute_sql(sql, globals.mutex);
 		switch_safe_free(sql);
 		switch_core_event_hook_remove_state_change(session, db_state_handler);
@@ -279,47 +268,46 @@ static switch_status_t db_state_handler(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t hash_state_handler(switch_core_session_t *session) 
+static switch_status_t hash_state_handler(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_state_t state = switch_channel_get_state(channel);
 	limit_hash_private_t *pvt = switch_channel_get_private(channel, "limit_hash");
 	const char *vval = switch_channel_get_variable(channel, LIMIT_IGNORE_TRANSFER_VARIABLE);
-	
+
 	/* The call is either hung up, or is going back into the dialplan, decrement appropriate couters */
-	if (state >= CS_HANGUP || (state == CS_ROUTING && !switch_true(vval))) {	
+	if (state >= CS_HANGUP || (state == CS_ROUTING && !switch_true(vval))) {
 		switch_hash_index_t *hi;
 		switch_mutex_lock(globals.limit_hash_mutex);
 
 		/* Loop through the channel's hashtable which contains mapping to all the limit_hash_item_t referenced by that channel */
-		while((hi = switch_hash_first(NULL, pvt->hash)))
-		{
+		while ((hi = switch_hash_first(NULL, pvt->hash))) {
 			void *val = NULL;
 			const void *key;
 			switch_ssize_t keylen;
 			limit_hash_item_t *item = NULL;
-			
+
 			switch_hash_this(hi, &key, &keylen, &val);
-			
-			item = (limit_hash_item_t*)val;
-			item->total_usage--;	
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)key, item->total_usage);
-			
-			if (item->total_usage == 0)  {
+
+			item = (limit_hash_item_t *) val;
+			item->total_usage--;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char *) key, item->total_usage);
+
+			if (item->total_usage == 0) {
 				/* Noone is using this item anymore */
-				switch_core_hash_delete(globals.limit_hash, (const char*)key);
+				switch_core_hash_delete(globals.limit_hash, (const char *) key);
 				free(item);
 			}
-			
-			switch_core_hash_delete(pvt->hash, (const char*)key);
+
+			switch_core_hash_delete(pvt->hash, (const char *) key);
 		}
-		
+
 		/* Remove handler */
 		switch_core_event_hook_remove_state_change(session, hash_state_handler);
-		
+
 		switch_mutex_unlock(globals.limit_hash_mutex);
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -474,21 +462,21 @@ SWITCH_STANDARD_APP(hash_function)
 	char *mydata = NULL;
 	char *hash_key = NULL;
 	char *value = NULL;
-	
+
 	switch_mutex_lock(globals.db_hash_mutex);
-	
+
 	if (!zstr(data)) {
 		mydata = strdup(data);
 		switch_assert(mydata);
 		argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
-	
+
 	if (argc < 3 || !argv[0]) {
 		goto usage;
 	}
-	
+
 	hash_key = switch_mprintf("%s_%s", argv[1], argv[2]);
-	
+
 	if (!strcasecmp(argv[0], "insert")) {
 		if (argc < 4) {
 			goto usage;
@@ -508,13 +496,13 @@ SWITCH_STANDARD_APP(hash_function)
 	} else {
 		goto usage;
 	}
-	
+
 	goto done;
 
-usage:
+  usage:
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: hash %s\n", HASH_USAGE);
 
-done:
+  done:
 	switch_mutex_unlock(globals.db_hash_mutex);
 	switch_safe_free(mydata);
 	switch_safe_free(hash_key);
@@ -536,13 +524,13 @@ SWITCH_STANDARD_API(hash_api_function)
 		switch_assert(mydata);
 		argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
-	
+
 	if (argc < 3 || !argv[0]) {
 		goto usage;
 	}
-	
+
 	hash_key = switch_mprintf("%s_%s", argv[1], argv[2]);
-	
+
 	if (!strcasecmp(argv[0], "insert")) {
 		if (argc < 4) {
 			goto usage;
@@ -570,17 +558,17 @@ SWITCH_STANDARD_API(hash_api_function)
 	} else {
 		goto usage;
 	}
-	
+
 	goto done;
-	
-usage:
+
+  usage:
 	stream->write_function(stream, "-ERR Usage: hash %s\n", HASH_API_USAGE);
-	
-done:
+
+  done:
 	switch_mutex_unlock(globals.db_hash_mutex);
 	switch_safe_free(mydata);
 	switch_safe_free(hash_key);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -649,7 +637,7 @@ SWITCH_STANDARD_API(group_api_function)
 
 		limit_execute_sql_callback(NULL, sql, group_callback, &cbt);
 		switch_safe_free(sql);
-		
+
 		*(buf + (strlen(buf) - 1)) = '\0';
 		stream->write_function(stream, "%s", buf);
 
@@ -729,9 +717,9 @@ static switch_bool_t do_limit(switch_core_session_t *session, const char *realm,
 	got = atoi(buf);
 
 	if (max < 0) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s_%s is now %d\n", realm, id, got+1);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s_%s is now %d\n", realm, id, got + 1);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s_%s is now %d/%d\n", realm, id, got+1, max);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s_%s is now %d/%d\n", realm, id, got + 1, max);
 	}
 
 	if (max >= 0 && got + 1 > max) {
@@ -746,7 +734,7 @@ static switch_bool_t do_limit(switch_core_session_t *session, const char *realm,
 					   switch_core_session_get_uuid(session));
 	limit_execute_sql(sql, NULL);
 	switch_safe_free(sql);
-	
+
 	{
 		const char *susage = switch_core_session_sprintf(session, "%d", ++got);
 
@@ -787,8 +775,8 @@ SWITCH_STANDARD_APP(limit_function)
 
 	realm = argv[0];
 	id = argv[1];
-	
-	/* Accept '-' as unlimited (act as counter)*/
+
+	/* Accept '-' as unlimited (act as counter) */
 	if (argv[2][0] == '-') {
 		max = -1;
 	} else {
@@ -796,7 +784,7 @@ SWITCH_STANDARD_APP(limit_function)
 
 		if (max < 0) {
 			max = 0;
-		}	
+		}
 	}
 
 	if (argc >= 4) {
@@ -808,12 +796,12 @@ SWITCH_STANDARD_APP(limit_function)
 	if (!do_limit(session, realm, id, max)) {
 		/* Limit exceeded */
 		if (*xfer_exten == '!') {
-			switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten+1));
+			switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten + 1));
 		} else {
 			switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
 		}
 	}
-	
+
 }
 
 /* !\brief Releases usage of a limit_-controlled ressource  */
@@ -821,8 +809,7 @@ static void limit_release(switch_core_session_t *session, const char *realm, con
 {
 	char *sql = NULL;
 
-	sql = switch_mprintf("delete from limit_data where uuid='%q' and realm='%q' and id like '%q'", 
-						switch_core_session_get_uuid(session), realm, id);
+	sql = switch_mprintf("delete from limit_data where uuid='%q' and realm='%q' and id like '%q'", switch_core_session_get_uuid(session), realm, id);
 	limit_execute_sql(sql, globals.mutex);
 	switch_safe_free(sql);
 }
@@ -845,16 +832,16 @@ SWITCH_STANDARD_APP(limit_execute_function)
 		mydata = switch_core_session_strdup(session, data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
-	
+
 	if (argc < 2) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit_execute %s\n", LIMITEXECUTE_USAGE);
 		return;
 	}
-	
+
 	realm = argv[0];
 	id = argv[1];
-	
-	/* Accept '-' as unlimited (act as counter)*/
+
+	/* Accept '-' as unlimited (act as counter) */
 	if (argv[2][0] == '-') {
 		max = -1;
 	} else {
@@ -862,7 +849,7 @@ SWITCH_STANDARD_APP(limit_execute_function)
 
 		if (max < 0) {
 			max = 0;
-		}	
+		}
 	}
 
 	app = argv[3];
@@ -915,7 +902,7 @@ SWITCH_STANDARD_API(limit_usage_function)
 
 	stream->write_function(stream, "%s", buf);
 
-end:
+  end:
 	switch_safe_free(mydata);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -937,22 +924,21 @@ static switch_bool_t do_limit_hash(switch_core_session_t *session, const char *r
 	time_t now = switch_epoch_time_now(NULL);
 	limit_hash_private_t *pvt = NULL;
 	uint8_t increment = 1;
-	
+
 	hashkey = switch_core_session_sprintf(session, "%s_%s", realm, id);
 
 	switch_mutex_lock(globals.limit_hash_mutex);
 	/* Check if that realm+id has ever been checked */
-	if (!(item = (limit_hash_item_t*)switch_core_hash_find(globals.limit_hash, hashkey))) {
+	if (!(item = (limit_hash_item_t *) switch_core_hash_find(globals.limit_hash, hashkey))) {
 		/* No, create an empty structure and add it, then continue like as if it existed */
-		item = (limit_hash_item_t*)malloc(sizeof(limit_hash_item_t));
+		item = (limit_hash_item_t *) malloc(sizeof(limit_hash_item_t));
 		switch_assert(item);
 		memset(item, 0, sizeof(limit_hash_item_t));
 		switch_core_hash_insert(globals.limit_hash, hashkey, item);
 	}
 
 	/* Did we already run on this channel before? */
-	if ((pvt = switch_channel_get_private(channel, "limit_hash")))
-	{
+	if ((pvt = switch_channel_get_private(channel, "limit_hash"))) {
 		/* Yes, but check if we did that realm+id
 		   If we didnt, allow incrementing the counter.
 		   If we did, dont touch it but do the validation anyways
@@ -960,7 +946,7 @@ static switch_bool_t do_limit_hash(switch_core_session_t *session, const char *r
 		increment = !switch_core_hash_find(pvt->hash, hashkey);
 	} else {
 		/* This is the first limit check on this channel, create a hashtable, set our prviate data and add a state handler */
-		pvt = (limit_hash_private_t*)switch_core_session_alloc(session, sizeof(limit_hash_private_t));
+		pvt = (limit_hash_private_t *) switch_core_session_alloc(session, sizeof(limit_hash_private_t));
 		memset(pvt, 0, sizeof(limit_hash_private_t));
 		switch_core_hash_init(&pvt->hash, switch_core_session_get_pool(session));
 		switch_channel_set_private(channel, "limit_hash", pvt);
@@ -974,13 +960,14 @@ static switch_bool_t do_limit_hash(switch_core_session_t *session, const char *r
 			/* Always increment rate when its checked as it doesnt depend on the channel */
 			item->rate_usage++;
 
-			if ((max >= 0) && (item->rate_usage > (uint32_t)max)) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s exceeds maximum rate of %d/%ds, now at %d\n", hashkey, max, interval, item->rate_usage);
+			if ((max >= 0) && (item->rate_usage > (uint32_t) max)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s exceeds maximum rate of %d/%ds, now at %d\n",
+								  hashkey, max, interval, item->rate_usage);
 				status = SWITCH_FALSE;
 				goto end;
 			}
 		}
-	} else if ((max >= 0) && (item->total_usage + increment > (uint32_t)max)) {
+	} else if ((max >= 0) && (item->total_usage + increment > (uint32_t) max)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is already at max value (%d)\n", hashkey, item->total_usage);
 		status = SWITCH_FALSE;
 		goto end;
@@ -994,12 +981,13 @@ static switch_bool_t do_limit_hash(switch_core_session_t *session, const char *r
 		if (max == -1) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", hashkey, item->total_usage);
 		} else if (interval == 0) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d/%d\n", hashkey, item->total_usage, max);	
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d/%d\n", hashkey, item->total_usage, max);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d/%d for the last %d seconds\n", hashkey, item->rate_usage, max, interval);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d/%d for the last %d seconds\n", hashkey,
+							  item->rate_usage, max, interval);
 		}
 
-		limit_fire_event(realm, id, item->total_usage, item->rate_usage, max, max >=0 ? (uint32_t)max : 0);
+		limit_fire_event(realm, id, item->total_usage, item->rate_usage, max, max >= 0 ? (uint32_t) max : 0);
 	}
 
 	/* Save current usage & rate into channel variables so it can be used later in the dialplan, or added to CDR records */
@@ -1016,7 +1004,7 @@ static switch_bool_t do_limit_hash(switch_core_session_t *session, const char *r
 
 	switch_core_event_hook_add_state_change(session, hash_state_handler);
 
-end:	
+  end:
 	switch_mutex_unlock(globals.limit_hash_mutex);
 	return status;
 }
@@ -1028,28 +1016,28 @@ static void limit_hash_release(switch_core_session_t *session, const char *realm
 	limit_hash_private_t *pvt = switch_channel_get_private(channel, "limit_hash");
 	limit_hash_item_t *item = NULL;
 	char *hashkey = NULL;
-	
+
 	if (!pvt || !pvt->hash) {
 		return;
 	}
-	
+
 	hashkey = switch_core_session_sprintf(session, "%s_%s", realm, id);
-	
+
 	switch_mutex_lock(globals.limit_hash_mutex);
-	
-	if ((item = (limit_hash_item_t*)switch_core_hash_find(pvt->hash, hashkey))) {
-		item->total_usage--;	
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)hashkey, item->total_usage);
-	
+
+	if ((item = (limit_hash_item_t *) switch_core_hash_find(pvt->hash, hashkey))) {
+		item->total_usage--;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char *) hashkey, item->total_usage);
+
 		switch_core_hash_delete(pvt->hash, hashkey);
-	
-		if (item->total_usage == 0)  {
+
+		if (item->total_usage == 0) {
 			/* Noone is using this item anymore */
-			switch_core_hash_delete(globals.limit_hash, (const char*)hashkey);
+			switch_core_hash_delete(globals.limit_hash, (const char *) hashkey);
 			free(item);
 		}
 	}
-	
+
 	switch_mutex_unlock(globals.limit_hash_mutex);
 }
 
@@ -1072,29 +1060,28 @@ SWITCH_STANDARD_APP(limit_hash_function)
 		mydata = switch_core_session_strdup(session, data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
-	
+
 	if (argc < 2) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit_hash %s\n", LIMITHASH_USAGE);
 		return;
 	}
-	
+
 	realm = argv[0];
 	id = argv[1];
-	
+
 	/* If max is omitted or negative, only act as a counter and skip maximum checks */
 	if (argc > 2) {
 		if (argv[2][0] == '-') {
 			max = -1;
 		} else {
 			char *szinterval = NULL;
-			if ((szinterval = strchr(argv[2], '/')))
-			{
+			if ((szinterval = strchr(argv[2], '/'))) {
 				*szinterval++ = '\0';
 				interval = atoi(szinterval);
 			}
-			
+
 			max = atoi(argv[2]);
-			
+
 			if (max < 0) {
 				max = 0;
 			}
@@ -1106,11 +1093,11 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	} else {
 		xfer_exten = limit_def_xfer_exten;
 	}
-	
+
 	if (!do_limit_hash(session, realm, id, max, interval)) {
 		/* Limit exceeded */
 		if (*xfer_exten == '!') {
-			switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten+1));
+			switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten + 1));
 		} else {
 			switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
 		}
@@ -1137,23 +1124,22 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 		mydata = switch_core_session_strdup(session, data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
-	
+
 	if (argc < 5) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit_hash_execute %s\n", LIMITHASHEXECUTE_USAGE);
 		return;
 	}
-	
+
 	realm = argv[0];
 	id = argv[1];
-	
-	/* Accept '-' as unlimited (act as counter)*/
+
+	/* Accept '-' as unlimited (act as counter) */
 	if (argv[2][0] == '-') {
 		max = -1;
 	} else {
 		char *szinterval = NULL;
 
-		if ((szinterval = strchr(argv[2], '/')))
-		{
+		if ((szinterval = strchr(argv[2], '/'))) {
 			*szinterval++ = '\0';
 			interval = atoi(szinterval);
 		}
@@ -1162,9 +1148,9 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 
 		if (max < 0) {
 			max = 0;
-		}	
+		}
 	}
-	
+
 	app = argv[3];
 	app_arg = argv[4];
 
@@ -1191,31 +1177,31 @@ SWITCH_STANDARD_API(limit_hash_usage_function)
 	uint32_t count = 0;
 
 	switch_mutex_lock(globals.limit_hash_mutex);
-	
+
 	if (!zstr(cmd)) {
 		mydata = strdup(cmd);
 		switch_assert(mydata);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
-	
+
 	if (argc < 2) {
 		stream->write_function(stream, "USAGE: limit_hash_usage %s\n", LIMIT_HASH_USAGE_USAGE);
 		goto end;
 	}
-	
+
 	hash_key = switch_mprintf("%s_%s", argv[0], argv[1]);
-	
+
 	if ((item = switch_core_hash_find(globals.limit_hash, hash_key))) {
 		count = item->total_usage;
-	} 
-	
+	}
+
 	stream->write_function(stream, "%d", count);
-	
-end:
+
+  end:
 	switch_safe_free(mydata);
 	switch_safe_free(hash_key);
 	switch_mutex_unlock(globals.limit_hash_mutex);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1231,11 +1217,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 
 
 	if (switch_event_reserve_subclass(LIMIT_EVENT_USAGE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldnt register event subclass \"%s\"", 
-			LIMIT_EVENT_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldnt register event subclass \"%s\"", LIMIT_EVENT_USAGE);
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	if ((status = do_config() != SWITCH_STATUS_SUCCESS)) {
 		return status;
 	}
@@ -1248,18 +1233,20 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-		
+
 
 
 	SWITCH_ADD_APP(app_interface, "limit", "Limit", LIMIT_DESC, limit_function, LIMIT_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "limit_execute", "Limit", LIMITEXECUTE_USAGE, limit_execute_function, LIMITEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "limit_hash", "Limit (hash)", LIMITHASH_DESC, limit_hash_function, LIMITHASH_USAGE, SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "limit_hash_execute", "Limit (hash)", LIMITHASHEXECUTE_USAGE, limit_hash_execute_function, LIMITHASHEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "limit_hash_execute", "Limit (hash)", LIMITHASHEXECUTE_USAGE, limit_hash_execute_function, LIMITHASHEXECUTE_USAGE,
+				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "db", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "hash", "Insert into the hashtable", HASH_DESC, hash_function, HASH_USAGE, SAF_SUPPORT_NOMEDIA)
-	SWITCH_ADD_APP(app_interface, "group", "Manage a group", GROUP_DESC, group_function, GROUP_USAGE, SAF_SUPPORT_NOMEDIA);
+		SWITCH_ADD_APP(app_interface, "group", "Manage a group", GROUP_DESC, group_function, GROUP_USAGE, SAF_SUPPORT_NOMEDIA);
 
-	SWITCH_ADD_API(commands_api_interface, "limit_hash_usage", "Gets the usage count of a limited resource", limit_hash_usage_function,  LIMIT_HASH_USAGE_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "limit_hash_usage", "Gets the usage count of a limited resource", limit_hash_usage_function,
+				   LIMIT_HASH_USAGE_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "limit_usage", "Gets the usage count of a limited resource", limit_usage_function, "<realm> <id>");
 	SWITCH_ADD_API(commands_api_interface, "db", "db get/set", db_api_function, "[insert|delete|select]/<realm>/<key>/<value>");
 	switch_console_set_complete("add db insert");
@@ -1279,13 +1266,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 }
 
 
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_limit_shutdown) 
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_limit_shutdown)
 {
-	
+
 	switch_event_free_subclass(LIMIT_EVENT_USAGE);
-	
+
 	switch_xml_config_cleanup(config_settings);
-	
+
 	switch_mutex_destroy(globals.mutex);
 	switch_mutex_destroy(globals.limit_hash_mutex);
 	switch_mutex_destroy(globals.db_hash_mutex);

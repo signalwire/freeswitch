@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -45,8 +45,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_RTP_KEY_LEN 30
 #define SWITCH_RTP_CRYPTO_KEY_32 "AES_CM_128_HMAC_SHA1_32"
 #define SWITCH_RTP_CRYPTO_KEY_80 "AES_CM_128_HMAC_SHA1_80"
-
-typedef enum {
+	typedef enum {
 	SWITCH_RTP_CRYPTO_SEND,
 	SWITCH_RTP_CRYPTO_RECV,
 	SWITCH_RTP_CRYPTO_MAX
@@ -54,7 +53,7 @@ typedef enum {
 
 typedef enum {
 	NO_CRYPTO,
-	AES_CM_128_HMAC_SHA1_80, 
+	AES_CM_128_HMAC_SHA1_80,
 	AES_CM_128_HMAC_SHA1_32,
 	AES_CM_128_NULL_AUTH
 } switch_rtp_crypto_key_type_t;
@@ -96,6 +95,8 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void);
   \return the current RTP start port
 */
 SWITCH_DECLARE(switch_port_t) switch_rtp_set_start_port(switch_port_t port);
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_ssrc(switch_rtp_t *rtp_session, uint32_t ssrc);
 
 /*!
   \brief Set/Get RTP end port
@@ -166,7 +167,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
   \param port the remote port
   \param err pointer for error messages
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, 
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port,
 															  switch_bool_t change_adv_addr, const char **err);
 
 SWITCH_DECLARE(char *) switch_rtp_get_remote_host(switch_rtp_t *rtp_session);
@@ -183,8 +184,7 @@ SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session
   \param err pointer for error messages
   \note this call also binds the RTP session's socket to the new address
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, const char *host, 
-															 switch_port_t port, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err);
 
 /*! 
   \brief Kill the socket on an existing RTP session

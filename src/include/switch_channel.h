@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -48,6 +48,7 @@ SWITCH_BEGIN_EXTERN_C struct switch_channel_timetable {
 	switch_time_t progress_media;
 	switch_time_t hungup;
 	switch_time_t transferred;
+	switch_time_t resurrected;
 	struct switch_channel_timetable *next;
 };
 
@@ -74,21 +75,20 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_c
   \param channel channel to test
   \return true if the channel is ready
 */
-SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_bool_t media);
+SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_bool_t check_ready, switch_bool_t check_media);
 
-#define switch_channel_ready(_channel) switch_channel_test_ready(_channel, SWITCH_FALSE)
-#define switch_channel_media_ready(_channel) switch_channel_test_ready(_channel, SWITCH_TRUE)
+#define switch_channel_ready(_channel) switch_channel_test_ready(_channel, SWITCH_TRUE, SWITCH_FALSE)
+#define switch_channel_media_ready(_channel) switch_channel_test_ready(_channel, SWITCH_TRUE, SWITCH_TRUE)
+
 #define switch_channel_up(_channel) (switch_channel_get_state(_channel) < CS_HANGUP)
 #define switch_channel_down(_channel) (switch_channel_get_state(_channel) >= CS_HANGUP)
 #define switch_channel_media_ack(_channel) (!switch_channel_test_cap(_channel, CC_MEDIA_ACK) || switch_channel_test_flag(_channel, CF_MEDIA_ACK))
 
 SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state);
 SWITCH_DECLARE(void) switch_channel_wait_for_state_timeout(switch_channel_t *other_channel, switch_channel_state_t want_state, uint32_t timeout);
-SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *channel, 
-															 switch_channel_flag_t want_flag, 
-															 switch_bool_t pres, 
-															 uint32_t to,
-															 switch_channel_t *super_channel);
+SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *channel,
+															 switch_channel_flag_t want_flag,
+															 switch_bool_t pres, uint32_t to, switch_channel_t *super_channel);
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,
 																		const char *file, const char *func, int line, switch_channel_state_t state);
@@ -142,7 +142,8 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(_In_ s
   \param pool memory_pool to use for allocation
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_alloc(_In_ switch_channel_t **channel, _In_ switch_call_direction_t direction, _In_ switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_channel_alloc(_In_ switch_channel_t **channel, _In_ switch_call_direction_t direction,
+													 _In_ switch_memory_pool_t *pool);
 
 /*!
   \brief Connect a newly allocated channel to a session object and setup it's initial state
@@ -231,12 +232,12 @@ SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel_t *channel);
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_profile_var(switch_channel_t *channel, const char *name, const char *val);
 
-SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel, 
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channel_t *channel, const char *varname, const char *fmt, ...);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_name_printf(switch_channel_t *channel, const char *val, const char *fmt, ...);
 
-SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner_var_check(switch_channel_t *channel, 
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner_var_check(switch_channel_t *channel,
 																			  const char *varname, const char *value, switch_bool_t var_check);
 SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_t *channel, const char *varname);
 
@@ -250,7 +251,9 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_
   \param varname the name of the variable
   \return the value of the requested variable
 */
-SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *channel, const char *varname);
+SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup);
+#define switch_channel_get_variable(_c, _v) switch_channel_get_variable_dup(_c, _v, SWITCH_TRUE)
+
 SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *channel, switch_event_t **event);
 
 SWITCH_DECLARE(switch_status_t) switch_channel_pass_callee_id(switch_channel_t *channel, switch_channel_t *other_channel);
@@ -300,10 +303,14 @@ SWITCH_DECLARE(uint32_t) switch_channel_test_flag(switch_channel_t *channel, swi
   \param channel channel on which to set flag
   \param flag or'd list of flags to set
 */
-SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flag);
+SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, switch_channel_flag_t flag, uint32_t value);
+#define switch_channel_set_flag(_c, _f) switch_channel_set_flag_value(_c, _f, 1)
+
 SWITCH_DECLARE(void) switch_channel_set_flag_recursive(switch_channel_t *channel, switch_channel_flag_t flag);
 
-SWITCH_DECLARE(void) switch_channel_set_cap(switch_channel_t *channel, switch_channel_cap_t cap);
+SWITCH_DECLARE(void) switch_channel_set_cap_value(switch_channel_t *channel, switch_channel_cap_t cap, uint32_t value);
+#define switch_channel_set_cap(_c, _cc) switch_channel_set_cap_value(_c, _cc, 1)
+
 SWITCH_DECLARE(void) switch_channel_clear_cap(switch_channel_t *channel, switch_channel_cap_t cap);
 SWITCH_DECLARE(uint32_t) switch_channel_test_cap(switch_channel_t *channel, switch_channel_cap_t cap);
 
@@ -338,6 +345,7 @@ SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, sw
   \param flag flag to clear
 */
 SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flag);
+
 SWITCH_DECLARE(void) switch_channel_clear_flag_recursive(switch_channel_t *channel, switch_channel_flag_t flag);
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *channel, const char *file, const char *func, int line);
@@ -539,7 +547,9 @@ SWITCH_DECLARE(void) switch_channel_clear_app_flag(switch_channel_t *channel, ui
 SWITCH_DECLARE(int) switch_channel_test_app_flag(switch_channel_t *channel, uint32_t flags);
 SWITCH_DECLARE(void) switch_channel_set_hangup_time(switch_channel_t *channel);
 SWITCH_DECLARE(switch_call_direction_t) switch_channel_direction(switch_channel_t *channel);
-SWITCH_DECLARE(switch_core_session_t*) switch_channel_get_session(switch_channel_t *channel);
+SWITCH_DECLARE(switch_core_session_t *) switch_channel_get_session(switch_channel_t *channel);
+SWITCH_DECLARE(char *) switch_channel_get_flag_string(switch_channel_t *channel);
+SWITCH_DECLARE(char *) switch_channel_get_cap_string(switch_channel_t *channel);
 
 /** @} */
 

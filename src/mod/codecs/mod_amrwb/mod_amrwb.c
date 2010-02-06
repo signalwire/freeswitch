@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthmct@yahoo.com>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthmct@yahoo.com>
  *
  * Version: MPL 1.1
  *
@@ -166,7 +166,8 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 			context->enc_mode = globals.default_bitrate;
 		}
 
-		switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d", switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, context->enc_mode);
+		switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d", switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0,
+						context->enc_mode);
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
 
 		context->enc_mode = AMRWB_DEFAULT_BITRATE;
@@ -205,11 +206,11 @@ static switch_status_t switch_amrwb_destroy(switch_codec_t *codec)
 }
 
 static switch_status_t switch_amrwb_encode(switch_codec_t *codec,
-										 switch_codec_t *other_codec,
-										 void *decoded_data,
-										 uint32_t decoded_data_len,
-										 uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
-										 unsigned int *flag)
+										   switch_codec_t *other_codec,
+										   void *decoded_data,
+										   uint32_t decoded_data_len,
+										   uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
+										   unsigned int *flag)
 {
 #ifdef AMRWB_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -228,11 +229,11 @@ static switch_status_t switch_amrwb_encode(switch_codec_t *codec,
 }
 
 static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
-										 switch_codec_t *other_codec,
-										 void *encoded_data,
-										 uint32_t encoded_data_len,
-										 uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
-										 unsigned int *flag)
+										   switch_codec_t *other_codec,
+										   void *encoded_data,
+										   uint32_t encoded_data_len,
+										   uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
+										   unsigned int *flag)
 {
 #ifdef AMRWB_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -279,10 +280,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR-WB");
-    switch_core_codec_add_implementation(pool, codec_interface,
-                                         SWITCH_CODEC_TYPE_AUDIO, 100, "AMR-WB", "octet-align=0", 16000, 16000, 23850,
-                                         20000, 320, 640, 0, 1, 1,
-                                         switch_amrwb_init, switch_amrwb_encode, switch_amrwb_decode, switch_amrwb_destroy);
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO, 100, "AMR-WB", "octet-align=0", 16000, 16000, 23850,
+										 20000, 320, 640, 0, 1, 1, switch_amrwb_init, switch_amrwb_encode, switch_amrwb_decode, switch_amrwb_destroy);
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

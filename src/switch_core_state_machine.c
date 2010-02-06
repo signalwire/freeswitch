@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -57,8 +57,7 @@ static void switch_core_standard_on_reporting(switch_core_session_t *session)
 static void switch_core_standard_on_destroy(switch_core_session_t *session)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard DESTROY\n",
-					  switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard DESTROY\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_reset(switch_core_session_t *session)
@@ -77,11 +76,9 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard ROUTING\n", switch_channel_get_name(session->channel));
 
-	if (
-		(switch_channel_test_flag(session->channel, CF_ANSWERED) || 
+	if ((switch_channel_test_flag(session->channel, CF_ANSWERED) ||
 		 switch_channel_test_flag(session->channel, CF_EARLY_MEDIA) ||
-		 switch_channel_test_flag(session->channel, CF_SIGNAL_BRIDGE_TTL)) && 
-		switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
+		 switch_channel_test_flag(session->channel, CF_SIGNAL_BRIDGE_TTL)) && switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
 		switch_ivr_media(session->uuid_str, SMF_NONE);
 	}
 
@@ -100,7 +97,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 				for (x = 0; x < argc; x++) {
 					char *dpname = dp[x];
 					char *dparg = NULL;
-					
+
 					if (dpname) {
 						if ((dparg = strchr(dpname, ':'))) {
 							*dparg++ = '\0';
@@ -111,12 +108,12 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 					if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dpname))) {
 						continue;
 					}
-					
+
 					count++;
-					
+
 					extension = dialplan_interface->hunt_function(session, dparg, NULL);
 					UNPROTECT_INTERFACE(dialplan_interface);
-					
+
 					if (extension) {
 						switch_channel_set_caller_extension(session->channel, extension);
 						switch_channel_set_state(session->channel, CS_EXECUTE);
@@ -129,7 +126,8 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 		if (!count) {
 			if (switch_channel_test_flag(session->channel, CF_OUTBOUND)) {
 				if (switch_channel_test_flag(session->channel, CF_ANSWERED)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No Dialplan on answered channel, changing state to HANGUP\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									  "No Dialplan on answered channel, changing state to HANGUP\n");
 					switch_channel_hangup(session->channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No Dialplan, changing state to CONSUME_MEDIA\n");
@@ -180,11 +178,11 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 		if (switch_channel_test_flag(session->channel, CF_RESET)) {
 			goto top;
 		}
-		
+
 	}
 
 	if (switch_channel_ready(session->channel) && switch_channel_get_state(session->channel) == CS_EXECUTE) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s has executed the last dialplan instruction, hanging up.\n", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s has executed the last dialplan instruction, hanging up.\n",
 						  switch_channel_get_name(session->channel));
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	}
@@ -305,25 +303,25 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	while ((state = switch_channel_get_state(session->channel)) != CS_DESTROY) {
 
 		switch_channel_wait_for_flag(session->channel, CF_BLOCK_STATE, SWITCH_FALSE, 0, NULL);
-		
+
 		midstate = state;
 		if (state != switch_channel_get_running_state(session->channel) || state >= CS_HANGUP) {
 			int index = 0;
 			int proceed = 1;
 			int global_proceed = 1;
 			int do_extra_handlers = 1;
-			
+
 			switch_channel_set_running_state(session->channel, state);
 			switch_channel_clear_flag(session->channel, CF_TRANSFER);
 			switch_channel_clear_flag(session->channel, CF_REDIRECT);
 
 			switch (state) {
-			case CS_NEW: /* Just created, Waiting for first instructions */
+			case CS_NEW:		/* Just created, Waiting for first instructions */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) State NEW\n", switch_channel_get_name(session->channel));
 				break;
 			case CS_DESTROY:
 				goto done;
-			case CS_REPORTING: /* Call Detail */
+			case CS_REPORTING:	/* Call Detail */
 				{
 					switch_core_session_reporting_state(session);
 					switch_channel_set_state(session->channel, CS_DESTROY);
@@ -331,7 +329,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				goto done;
 			case CS_HANGUP:	/* Deactivate and end the thread */
 				{
-					switch_core_session_hangup_state(session, SWITCH_TRUE);				
+					switch_core_session_hangup_state(session, SWITCH_TRUE);
 					switch_channel_set_state(session->channel, CS_REPORTING);
 				}
 
@@ -381,21 +379,26 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			if (endstate == CS_NEW) {
 				switch_cond_next();
 				if (!--new_loops) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s Timeout waiting for next instruction in CS_NEW!\n", session->uuid_str);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s Timeout waiting for next instruction in CS_NEW!\n",
+									  session->uuid_str);
 					switch_channel_hangup(session->channel, SWITCH_CAUSE_INVALID_CALL_REFERENCE);
 				}
 			} else {
 				switch_core_session_message_t *message;
-					
+
 				while (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
 					switch_core_session_receive_message(session, message);
 					message = NULL;
 				}
 
-				switch_channel_set_flag(session->channel, CF_THREAD_SLEEPING);
-				switch_thread_cond_wait(session->cond, session->mutex);
-				switch_channel_clear_flag(session->channel, CF_THREAD_SLEEPING);
-				
+				if (switch_channel_get_state(session->channel) == switch_channel_get_running_state(session->channel)) {
+					switch_channel_set_flag(session->channel, CF_THREAD_SLEEPING);
+					if (switch_channel_get_state(session->channel) == switch_channel_get_running_state(session->channel)) {
+						switch_thread_cond_wait(session->cond, session->mutex);
+					}
+					switch_channel_clear_flag(session->channel, CF_THREAD_SLEEPING);
+				}
+
 				while (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
 					switch_core_session_receive_message(session, message);
 					message = NULL;
@@ -432,7 +435,7 @@ SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *se
 
 	driver_state_handler = endpoint_interface->state_handler;
 	switch_assert(driver_state_handler != NULL);
-	
+
 	STATE_MACRO(destroy, "DESTROY");
 
 	return;
@@ -456,14 +459,14 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
 
-	
+
 	if (!force) {
 		if (!switch_channel_test_flag(session->channel, CF_EARLY_HANGUP) && !switch_test_flag((&runtime), SCF_EARLY_HANGUP)) {
 			return;
 		}
 
 		if (switch_thread_self() != session->thread_id) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "%s thread mismatch skipping state handler.\n", 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "%s thread mismatch skipping state handler.\n",
 							  switch_channel_get_name(session->channel));
 			return;
 		}
@@ -484,15 +487,15 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 	switch_channel_set_hangup_time(session->channel);
 
 	switch_core_media_bug_remove_all(session);
-				
+
 	switch_channel_stop_broadcast(session->channel);
-					
+
 	switch_channel_set_variable(session->channel, "hangup_cause", switch_channel_cause2str(cause));
 	switch_channel_set_variable_printf(session->channel, "hangup_cause_q850", "%d", cause_q850);
 	switch_channel_presence(session->channel, "unknown", switch_channel_cause2str(cause), NULL);
-					
+
 	switch_channel_set_timestamps(session->channel);
-					
+
 	STATE_MACRO(hangup, "HANGUP");
 
 	hook_var = switch_channel_get_variable(session->channel, SWITCH_API_HANGUP_HOOK_VARIABLE);
@@ -505,8 +508,8 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 		char *cmd = switch_core_session_strdup(session, hook_var);
 		char *arg = NULL;
 		char *expanded = NULL;
-						
-		if ((arg = strchr(cmd, ':')) && *(arg+1) == ':') {
+
+		if ((arg = strchr(cmd, ':')) && *(arg + 1) == ':') {
 			*arg++ = '\0';
 			*arg++ = '\0';
 		} else {
@@ -516,13 +519,13 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 		}
 
 		SWITCH_STANDARD_STREAM(stream);
-						
+
 		switch_channel_get_variables(session->channel, &stream.param_event);
 		switch_channel_event_set_data(session->channel, stream.param_event);
 		expanded = switch_channel_expand_variables(session->channel, arg);
 
 		switch_api_execute(cmd, expanded, use_session, &stream);
-						
+
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Hangup Command %s(%s):\n%s\n", cmd, switch_str_nil(expanded),
 						  switch_str_nil((char *) stream.data));
 
@@ -539,7 +542,7 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 	}
 
 	switch_set_flag(session, SSF_HANGUP);
-	
+
 }
 
 SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *session)
@@ -560,7 +563,7 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 	}
 
 	switch_channel_set_flag(session->channel, CF_REPORTING);
-	
+
 	switch_assert(session != NULL);
 
 	session->thread_running = 1;
@@ -569,7 +572,7 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 
 	driver_state_handler = endpoint_interface->state_handler;
 	switch_assert(driver_state_handler != NULL);
-	
+
 	if (!zstr(var)) {
 		if (!strcasecmp(var, "a_only")) {
 			if (switch_channel_get_originator_caller_profile(session->channel)) {
@@ -585,7 +588,7 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 	}
 
 	STATE_MACRO(reporting, "REPORTING");
-					
+
 	return;
 }
 

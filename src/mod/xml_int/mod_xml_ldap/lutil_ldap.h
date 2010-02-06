@@ -23,36 +23,23 @@
  * Include file for lutil LDAP routines
  */
 
-LDAP_BEGIN_DECL
+LDAP_BEGIN_DECL LDAP_LUTIL_F(void)
+	 lutil_sasl_freedefs LDAP_P((void *defaults));
 
-LDAP_LUTIL_F( void )
-lutil_sasl_freedefs LDAP_P((
-	void *defaults ));
+LDAP_LUTIL_F(void *)
+	 lutil_sasl_defaults LDAP_P((LDAP * ld, char *mech, char *realm, char *authcid, char *passwd, char *authzid));
 
-LDAP_LUTIL_F( void * )
-lutil_sasl_defaults LDAP_P((
-	LDAP *ld,
-	char *mech,
-	char *realm,
-	char *authcid,
-	char *passwd,
-	char *authzid ));
-
-LDAP_LUTIL_F( int )
-lutil_sasl_interact LDAP_P((
-	LDAP *ld, unsigned flags, void *defaults, void *p ));
+LDAP_LUTIL_F(int)
+	 lutil_sasl_interact LDAP_P((LDAP * ld, unsigned flags, void *defaults, void *p));
 
 LDAP_END_DECL
-
 #endif /* _LUTIL_LDAP_H */
-
-typedef struct lutil_sasl_defaults_s {
-    char *mech;
-    char *realm;
-    char *authcid;
-    char *passwd;
-    char *authzid;
-    char **resps;
-    int nresps;
-} lutilSASLdefaults;
-
+	 typedef struct lutil_sasl_defaults_s {
+		 char *mech;
+		 char *realm;
+		 char *authcid;
+		 char *passwd;
+		 char *authzid;
+		 char **resps;
+		 int nresps;
+	 } lutilSASLdefaults;
