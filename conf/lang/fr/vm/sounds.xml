@@ -49,14 +49,19 @@
   </macro>
 
   <macro name="voicemail_message_count">
-    <input pattern="^([^:]+):urgent-new:{0,1}(.*)">
+    <input pattern="^([^:]+):urgent-new">
       <match>
-	<action function="speak-text" data="Vous avez $1 nouveau message $2 urgent dans le répertoir ${voicemail_current_folder}."/>
+	<action function="speak-text" data="Vous avez $1 nouveaux messages urgents dans le répertoire ${voicemail_current_folder}."/>
       </match>
     </input>
-    <input pattern="^([^:]+):new:{0,1}(.*)">
+    <input pattern="^([^:]+):new">
       <match>
-	<action function="speak-text" data="Vous avez $1 nouveau message$2 dans le répertoir ${voicemail_current_folder}."/>
+	<action function="speak-text" data="Vous avez $1 nouveaux messages dans le répertoire ${voicemail_current_folder}."/>
+      </match>
+    </input>
+    <input pattern="^([^:]+):saved">
+      <match>
+	<action function="speak-text" data="Vous avez $1 messages sauvegardés dans le répertoire ${voicemail_current_folder}."/>
       </match>
     </input>
   </macro>
@@ -65,7 +70,7 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="Pour écouter les nouveaux message, tappez $1, Pour écouter les messages enregistrés, tappez $2, Pour les options avancées, tappez $3, pour sortir, tappez $4."/>
+		data="Pour écouter les nouveaux messages, tapez $1, Pour écouter les messages enregistrés, tapez $2, Pour les options avancées, tapez $3, pour sortir, tapez $4."/>
       </match>
     </input>
   </macro>
@@ -75,7 +80,7 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="pour enregistrer un message d'accueil, tappez $1, Pour choisir votre message d'accueil, tappez $2, Pour enregistrer votre nom, tappez $3, Pour changer votre mot de passe, tappez $4, Pour retourner au menu principal, tappez $5."/>
+		data="pour enregistrer un message d'accueil, tapez $1, Pour choisir votre message d'accueil, tapez $2, Pour enregistrer votre nom, tapez $3, Pour changer votre mot de passe, tapez $4, Pour retourner au menu principal, tapez $5."/>
       </match>
     </input>
   </macro>
@@ -84,7 +89,7 @@
   <macro name="voicemail_record_name">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="enregistrez votre nom après le bip, puis tappez une touche ou arrêtez de parler pour arrêter l'enregistrement."/>
+	<action function="speak-text" data="enregistrez votre nom après le bip, puis tapez une touche ou arrêtez de parler pour arrêter l'enregistrement."/>
 
       </match>
     </input>
@@ -94,7 +99,7 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="Pour écouter l'enregistrement, tappez $1, pour sauvegarder l'enregistrement, tappez $2, Pour réenregistrer, tappez $3."/>
+		data="Pour écouter l'enregistrement, tapez $1, pour sauvegarder l'enregistrement, tapez $2, Pour réenregistrer, tapez $3."/>
       </match>
     </input>
   </macro>
@@ -103,16 +108,16 @@
     <input pattern="^([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="Pour indiquer ce message comme étant urgent, tappez $1, Pour continuer, tappez $2."/>
+		data="Pour indiquer ce message comme étant urgent, tapez $1, Pour continuer, tapez $2."/>
       </match>
     </input>
   </macro>
 
   <macro name="voicemail_listen_file_check">
-    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])(:(.*))?$">
       <match>
 	<action function="speak-text" 
-		data="Pour réécouter l'enregistrement à nouveau, tappez $1, Pour sauvegarder l'enregistrement, tappez $2,  Pour supprimer l'enregistrement, tappez $3, pour transférer l'enregistrement à votre courriel, tappez $4, Pour appeler l'appelant, tappez $5, Pour transférer ce message à un  autre numéro, tappez $6."/>
+		data="Pour réécouter l'enregistrement à nouveau, tapez $1, Pour sauvegarder l'enregistrement, tapez $2,  Pour supprimer l'enregistrement, tapez $3, pour transférer l'enregistrement à votre courriel $8, tapez $4, Pour appeler l'appelant, tapez $5, Pour transférer ce message à un  autre numéro, tapez $6."/>
       </match>
     </input>
   </macro>
@@ -136,7 +141,7 @@
   <macro name="voicemail_record_greeting">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="enregistrez votre message d'accueil après le bip, puis tappez une touche ou arrêtez de parler pour arrêter l'enregistrement."/>
+	<action function="speak-text" data="enregistrez votre message d'accueil après le bip, puis tapez une touche ou arrêtez de parler pour arrêter l'enregistrement."/>
       </match>
     </input>
   </macro>
@@ -144,7 +149,7 @@
   <macro name="voicemail_record_message">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="enregistrez votre message après le bip, puis tappez une touche ou arrêtez de parler pour arrêter l'enregistrement."/>
+	<action function="speak-text" data="enregistrez votre message après le bip, puis tapez une touche ou arrêtez de parler pour arrêter l'enregistrement."/>
       </match>
     </input>
   </macro>
@@ -174,7 +179,7 @@
   </macro>
 
   <macro name="voicemail_say_message_number">
-    <input pattern="new:(.*)$">
+    <input pattern="^new:(.*)$">
       <match>
 	<action function="speak-text" data="nouveau message numéro $1."/>
       </match>
