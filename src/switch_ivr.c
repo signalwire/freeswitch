@@ -1275,7 +1275,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 				switch_channel_set_flag(other_channel, CF_RESET);
 				switch_channel_set_flag(other_channel, CF_REDIRECT);
 				switch_channel_set_state(other_channel, CS_PARK);
-				switch_channel_wait_for_state(other_channel, channel, CS_PARK);
+				if (switch_core_session_in_thread(session)) {
+					switch_yield(100000);
+				} else {
+					switch_channel_wait_for_state(other_channel, channel, CS_PARK);
+				}
 				switch_core_session_receive_message(other_session, &msg);
 				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
 				switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
@@ -1299,7 +1303,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 					switch_ivr_signal_bridge(session, other_session);
 				}
 
-				switch_channel_wait_for_state(other_channel, channel, CS_HIBERNATE);
+				if (switch_core_session_in_thread(session)) {
+                    switch_yield(100000);
+                } else {
+					switch_channel_wait_for_state(other_channel, channel, CS_HIBERNATE);
+				}
 
 				if (!switch_core_session_in_thread(session)) {
 					switch_channel_wait_for_state(channel, other_channel, CS_HIBERNATE);

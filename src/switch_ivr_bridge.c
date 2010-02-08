@@ -347,6 +347,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
 			bypass_media_after_bridge = 0;
 			switch_channel_clear_flag(chan_a, CF_BYPASS_MEDIA_AFTER_BRIDGE);
+			goto end_of_bridge_loop;
 		}
 
 		/* if 1 channel has DTMF pass it to the other */
