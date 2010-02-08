@@ -1161,7 +1161,10 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 
 	if (do_limit_hash(session, realm, id, max, interval)) {
 		switch_core_session_execute_application(session, app, app_arg);
-		limit_hash_release(session, realm, id);
+		/* Only release the resource if we are still in CS_EXECUTE */
+		if (switch_channel_get_state(switch_core_session_get_channel(session)) == CS_EXECUTE) {
+			limit_hash_release(session, realm, id);			
+		}
 	}
 }
 
