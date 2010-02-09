@@ -202,7 +202,7 @@ case "$1" in
 	## argument to this init script which is required for a reload.
 	## Note: probe is not (yet) part of LSB (as of 1.9)
 
-	test /opt/freeswitch/conf/freeswitch.xml -nt /opt/freeswitch/log/freeswitch.pid && echo reload
+	test /opt/freeswitch/conf/freeswitch.xml -nt /opt/freeswitch/run/freeswitch.pid && echo reload
 	;;
     *)
 	echo "Usage: $0 {start|stop|status|try-restart|restart|force-reload|reload|probe}"
