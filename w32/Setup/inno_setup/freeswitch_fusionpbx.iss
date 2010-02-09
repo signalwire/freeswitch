@@ -7,7 +7,7 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 ;AppId={{088C2C50-0D5F-4276-8771-FF54CAA14E70}
 AppName=FreeSWITCH
-AppVerName=FreeSWITCH svn 16235
+AppVerName=FreeSWITCH svn 16287
 AppPublisher=FreeSWITCH
 AppPublisherURL=http://www.freeswitch.org
 AppSupportURL=http://www.freeswitch.org

@@ -7,7 +7,7 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 ;AppId={{ED55656F-D567-4B3D-A0B9-617CAB13D519}
 AppName=FsGui
-AppVerName=FsGui svn 15668
+AppVerName=FsGui svn 16045
 AppPublisherURL=http://wiki.freeswitch.org/wiki/Fsgui
 AppSupportURL=http://wiki.freeswitch.org/wiki/Fsgui
 AppUpdatesURL=http://wiki.freeswitch.org/wiki/Fsgui

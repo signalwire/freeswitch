@@ -7,7 +7,7 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 ;AppId={{ED55656F-D567-4B3D-A0B9-617CAB13D519}
 AppName=FSComm
-AppVerName=FSComm svn 16235
+AppVerName=FSComm svn 16568
 AppPublisherURL=http://wiki.freeswitch.org/wiki/FSComm
 AppSupportURL=http://wiki.freeswitch.org/wiki/FSComm
 AppUpdatesURL=http://wiki.freeswitch.org/wiki/FSComm
@@ -29,7 +29,7 @@ ArchitecturesInstallIn64BitMode=x64
 #define FreeSWITCH_32bit "..\..\..\release"
 #define FreeSWITCH_64bit "..\..\..\x64\release"
 
-#define FSComm_32bit "..\..\..\fscomm\release"
+#define FSComm_32bit "..\..\..\fscomm\win32\release"
 #define FSComm_64bit "..\..\..\fscomm\x64\release"
 
 [Languages]
@@ -47,7 +47,7 @@ Source: vcredist_x64.exe; Flags: 64bit; DestDir: {tmp}; Check: Is64BitInstallMod
 Source: freeswitch.ico; DestDir: {app}
 Source: {#FSComm_32bit}\fscomm.exe; DestDir: {app}; Flags: 32bit ignoreversion; Check: not Is64BitInstallMode
 Source: {#FreeSWITCH_32bit}\fs_cli.exe; DestDir: {app}; Flags: 32bit ignoreversion; Check: not Is64BitInstallMode
-Source: {#FSComm_32bit}\..\conf\*; DestDir: {app}\conf; Flags: 32bit ignoreversion  onlyifdoesntexist recursesubdirs; Check: not Is64BitInstallMode
+Source: ..\..\..\fscomm\conf\*; DestDir: {app}\conf; Flags: 32bit ignoreversion  onlyifdoesntexist recursesubdirs; Check: not Is64BitInstallMode
 
 ; 32 bit QT libraries
 Source: {#QT32Bit_Build}\QtCore4.dll; DestDir: {app}; Flags: 32bit ignoreversion  onlyifdoesntexist; Check: not Is64BitInstallMode
@@ -73,6 +73,7 @@ Source: {#FreeSWITCH_32bit}\mod\mod_sofia.dll; DestDir: {app}\mod; Flags: 32bit 
 Source: {#FreeSWITCH_32bit}\mod\mod_speex.dll; DestDir: {app}\mod; Flags: 32bit ignoreversion  onlyifdoesntexist; Check: not Is64BitInstallMode
 Source: {#FreeSWITCH_32bit}\mod\mod_tone_stream.dll; DestDir: {app}\mod; Flags: 32bit ignoreversion  onlyifdoesntexist; Check: not Is64BitInstallMode
 Source: {#FreeSWITCH_32bit}\mod\mod_voipcodecs.dll; DestDir: {app}\mod; Flags: 32bit ignoreversion  onlyifdoesntexist; Check: not Is64BitInstallMode
+Source: {#FreeSWITCH_32bit}\mod\mod_celt.dll; DestDir: {app}\mod; Flags: 32bit ignoreversion  onlyifdoesntexist; Check: not Is64BitInstallMode
 
 ; required FreeSWICTCH dlls for 32bit build
 Source: {#FreeSWITCH_32bit}\pthreadVC2.dll; DestDir: {app}; Flags: 32bit ignoreversion  onlyifdoesntexist; Check: not Is64BitInstallMode
@@ -87,7 +88,7 @@ Source: {#FreeSWITCH_32bit}\FreeSwitch.dll; DestDir: {app}; Flags: 32bit ignorev
 Source: freeswitch.ico; DestDir: {app}
 Source: {#FSComm_64bit}\fscomm.exe; DestDir: {app}; Flags: 64bit ignoreversion; Check: Is64BitInstallMode
 Source: {#FreeSWITCH_64bit}\fs_cli.exe; DestDir: {app}; Flags: 64bit ignoreversion; Check: Is64BitInstallMode
-Source: {#FSComm_32bit}\..\conf\*; DestDir: {app}\conf; Flags: 64bit ignoreversion onlyifdoesntexist recursesubdirs; Check: Is64BitInstallMode
+Source: ..\..\..\fscomm\conf\*; DestDir: {app}\conf; Flags: 64bit ignoreversion onlyifdoesntexist recursesubdirs; Check: Is64BitInstallMode
 
 ; 64 bit QT libraries
 Source: {#QT64Bit_Build}\QtCore4.dll; DestDir: {app}; Flags: 64bit ignoreversion  onlyifdoesntexist; Check: Is64BitInstallMode
@@ -113,6 +114,7 @@ Source: {#FreeSWITCH_64bit}\mod\mod_sofia.dll; DestDir: {app}\mod; Flags: 64bit 
 Source: {#FreeSWITCH_64bit}\mod\mod_speex.dll; DestDir: {app}\mod; Flags: 64bit ignoreversion  onlyifdoesntexist; Check: Is64BitInstallMode
 Source: {#FreeSWITCH_64bit}\mod\mod_tone_stream.dll; DestDir: {app}\mod; Flags: 64bit ignoreversion  onlyifdoesntexist; Check: Is64BitInstallMode
 Source: {#FreeSWITCH_64bit}\mod\mod_voipcodecs.dll; DestDir: {app}\mod; Flags: 64bit ignoreversion  onlyifdoesntexist; Check: Is64BitInstallMode
+Source: {#FreeSWITCH_64bit}\mod\mod_celt.dll; DestDir: {app}\mod; Flags: 64bit ignoreversion  onlyifdoesntexist; Check: Is64BitInstallMode
 
 ; required FreeSWICTCH dlls for 64bit build
 Source: {#FreeSWITCH_64bit}\pthreadVC2.dll; DestDir: {app}; Flags: 64bit ignoreversion  onlyifdoesntexist; Check: Is64BitInstallMode

@@ -7,7 +7,7 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 ;AppId={{088C2C50-0D5F-4276-8771-FF54CAA14E70}
 AppName=FreeSWITCH
-AppVerName=FreeSWITCH svn 16235
+AppVerName=FreeSWITCH svn 16456
 AppPublisher=FreeSWITCH
 AppPublisherURL=http://www.freeswitch.org
 AppSupportURL=http://www.freeswitch.org
@@ -157,7 +157,7 @@ Source: http://files.freeswitch.org/freeswitch-sounds-music-16000-1.0.8.tar.gz; 
 Source: http://files.freeswitch.org/freeswitch-sounds-music-32000-1.0.8.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-music-32000-1.0.8.tar.gz; Components: sound_files_32khz
 Source: http://files.freeswitch.org/freeswitch-sounds-music-48000-1.0.8.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-music-48000-1.0.8.tar.gz; Components: sound_files_48khz
 
-Source: http://files.freeswitch.org/downloads/win32/7za.exe; DestDir: {tmp}; DestName: 7za.exe; Components: sound_files_8khz
+Source: http://files.freeswitch.org/downloads/win32/7za.exe; DestDir: {tmp}; DestName: 7za.exe; Components: sound_files_8khz sound_files_16khz sound_files_32khz sound_files_48khz
 [Components]
 Name: FreeSWITCH; Description: FreeSWITCH core components; Flags: fixed; Types: custom compact full; Languages: 
 Name: FreePBX_WAMP; Description: FreePBX interface along with Apache, Mysql and PHP; Types: custom full
