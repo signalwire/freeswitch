@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="ESL"
 	ProjectGUID="{FEA2D0AE-6713-4E41-A473-A143849BC7FF}"
 	RootNamespace="ESL"
@@ -115,9 +115,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\src\include"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				RuntimeLibrary="2"
-				UsePrecompiledHeader="2"
+				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 			/>
@@ -132,8 +133,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(NoInherit)"
+				AdditionalDependencies="esl.lib Ws2_32.lib"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;..\..\..\$(ConfigurationName)\&quot;"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
