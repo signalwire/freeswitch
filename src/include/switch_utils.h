@@ -72,11 +72,15 @@ SWITCH_DECLARE(int) switch_isxdigit(int c);
   \param s the string to test
   \return true value if the string is NULL or zero length
 */
-	 static inline int zstr(const char *s)
+_Check_return_ static inline switch_bool_t _zstr(_In_opt_z_ const char *s)
 {
 	return !s || *s == '\0';
 }
-
+#ifdef _PREFAST_
+#define zstr(x) (_zstr(x) ? 1 : __analysis_assume(x),0)
+#else
+#define zstr(x) _zstr(x)
+#endif
 #define switch_strlen_zero(x) zstr(x)
 #define switch_strlen_zero_buf(x) zstr_buf(x)
 #define zstr_buf(s) (*(s) == '\0')
@@ -113,7 +117,7 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size_t olen);
 SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len);
 
-	 static inline switch_bool_t switch_is_digit_string(const char *s)
+static inline switch_bool_t switch_is_digit_string(const char *s)
 {
 
 	while (s && *s) {
@@ -536,8 +540,8 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in);
   \param arraylen the max number of elements in the array
   \return the number of elements added to the array
 */
-SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, unsigned int arraylen);
-SWITCH_DECLARE(unsigned int) switch_separate_string_string(char *buf, char *delim, char **array, unsigned int arraylen);
+SWITCH_DECLARE(unsigned int) switch_separate_string(_In_ char *buf, char delim, _Post_count_(return) char **array, unsigned int arraylen);
+SWITCH_DECLARE(unsigned int) switch_separate_string_string(char *buf, char *delim, _Post_count_(return) char **array, unsigned int arraylen);
 
 SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str);
 SWITCH_DECLARE(char *) switch_strip_spaces(const char *str);
