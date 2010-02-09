@@ -72,7 +72,7 @@ SWITCH_DECLARE(int) switch_isxdigit(int c);
   \param s the string to test
   \return true value if the string is NULL or zero length
 */
-_Check_return_ static inline switch_bool_t _zstr(_In_opt_z_ const char *s)
+_Check_return_ static inline int _zstr(_In_opt_z_ const char *s)
 {
 	return !s || *s == '\0';
 }
