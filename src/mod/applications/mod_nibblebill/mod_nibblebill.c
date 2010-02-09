@@ -217,7 +217,7 @@ static switch_status_t load_config(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", globals.db_dsn);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-						  "ODBC does not appear to be installed in the core. You need to run ./configure --enable-core-odbc-support\n");
+						  "ODBC does not appear to be installed in the core or your dsn is empty. You need to run ./configure --enable-core-odbc-support\n");
 	}
 
   done:
