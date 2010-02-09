@@ -186,15 +186,6 @@ static switch_status_t load_config(void)
 
 /* Set defaults for any variables still not set */
   setdefaults:
-	if (zstr(globals.db_username)) {
-		set_global_db_username("bandwidth.com");
-	}
-	if (zstr(globals.db_password)) {
-		set_global_db_password("dev");
-	}
-	if (zstr(globals.db_dsn)) {
-		set_global_db_dsn("bandwidth.com");
-	}
 	if (zstr(globals.percall_action)) {
 		set_global_percall_action("hangup");
 	}
