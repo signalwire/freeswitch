@@ -145,7 +145,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 	span->start = ftdm_analog_em_start;
 	analog_data->digit_timeout = digit_timeout;
 	analog_data->max_dialstr = max_dialstr;
-	analog_data->sig_cb = sig_cb;
+	span->signal_cb = sig_cb;
 	span->signal_type = FTDM_SIGTYPE_ANALOG;
 	span->signal_data = analog_data;
 	span->outgoing_call = analog_em_outgoing_call;
@@ -349,7 +349,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 
 					sig.event_id = FTDM_SIGEVENT_UP;
 
-					analog_data->sig_cb(&sig);
+					ftdm_span_send_signal(ftdmchan->span, &sig);
 					continue;
 				}
 				break;
@@ -370,14 +370,14 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 
 					sig.event_id = FTDM_SIGEVENT_START;
 
-					analog_data->sig_cb(&sig);
+					ftdm_span_send_signal(ftdmchan->span, &sig);
 					continue;
 				}
 				break;
 			case FTDM_CHANNEL_STATE_DOWN:
 				{
 					sig.event_id = FTDM_SIGEVENT_STOP;
-					analog_data->sig_cb(&sig);
+					ftdm_span_send_signal(ftdmchan->span, &sig);
 					goto done;
 				}
 				break;
@@ -440,7 +440,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 				last_digit = elapsed;
 				sig.event_id = FTDM_SIGEVENT_COLLECTED_DIGIT;
 				sig.raw_data = dtmf;
-				if (analog_data->sig_cb(&sig) == FTDM_BREAK) {
+				if (ftdm_span_send_signal(ftdmchan->span, &sig) == FTDM_BREAK) {
 					collecting = 0;
 				}
 			}
@@ -480,9 +480,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 				if (ftdmchan->detected_tones[i]) {
 					ftdm_log(FTDM_LOG_DEBUG, "Detected tone %s on %d:%d\n", ftdm_tonemap2str(i), ftdmchan->span_id, ftdmchan->chan_id);
 					sig.raw_data = &i;
-					if (analog_data->sig_cb) {
-						analog_data->sig_cb(&sig);
-					}
+					ftdm_span_send_signal(ftdmchan->span, &sig);
 				}
 			}
 			

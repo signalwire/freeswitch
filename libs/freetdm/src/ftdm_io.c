@@ -3356,6 +3356,25 @@ FT_DECLARE(ftdm_status_t) ftdm_group_create(ftdm_group_t **group, const char *na
 	return status;
 }
 
+FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
+{
+	ftdm_status_t status = FTDM_FAIL;
+
+	if (span->signal_cb) {
+		if (sigmsg->channel) {
+			ftdm_mutex_lock(sigmsg->channel->mutex);
+		}
+
+		status = span->signal_cb(sigmsg);
+
+		if (sigmsg->channel) {
+			ftdm_mutex_unlock(sigmsg->channel->mutex);
+		}
+	}
+
+	return status;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_global_init(void)
 {
 	memset(&globals, 0, sizeof(globals));

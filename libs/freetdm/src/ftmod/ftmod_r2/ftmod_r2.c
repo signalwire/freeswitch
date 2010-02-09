@@ -90,8 +90,6 @@ typedef struct ft_r2_conf_s {
 
 /* r2 configuration stored in span->signal_data */
 typedef struct ftdm_r2_data_s {
-	/* signaling callback */
-	fio_signal_cb_t sig_cb;
 	/* span flags */
 	ftdm_r2_flag_t flags;
 	/* openr2 handle for the R2 variant context */
@@ -253,7 +251,7 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 	sigev.channel = ftdmchan;
 	sigev.event_id = FTDM_SIGEVENT_START;
 
-	if (r2data->sig_cb(&sigev) != FTDM_SUCCESS) {
+	if (ftdm_span_send_signal(ftdmchan->span, &sigev) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_NOTICE, "Failed to handle call offered on chan %d\n", openr2_chan_get_number(r2chan));
 		openr2_chan_disconnect_call(r2chan, OR2_CAUSE_OUT_OF_ORDER);
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
@@ -323,7 +321,7 @@ static void ftdm_r2_on_call_disconnect(openr2_chan_t *r2chan, openr2_call_discon
 	sigev.event_id = FTDM_SIGEVENT_STOP;
 	r2data = ftdmchan->span->signal_data;
 
-	r2data->sig_cb(&sigev);
+	ftdm_span_send_signal(ftdmchan->span, &sigev);
 }
 
 static void ftdm_r2_on_call_end(openr2_chan_t *r2chan)
@@ -377,7 +375,7 @@ static void ftdm_r2_on_protocol_error(openr2_chan_t *r2chan, openr2_protocol_err
 	sigev.event_id = FTDM_SIGEVENT_STOP;
 	r2data = ftdmchan->span->signal_data;
 
-	r2data->sig_cb(&sigev);
+	ftdm_span_send_signal(ftdmchan->span, &sigev);
 }
 
 static void ftdm_r2_on_line_blocked(openr2_chan_t *r2chan)
@@ -460,7 +458,7 @@ static int ftdm_r2_on_dnis_digit_received(openr2_chan_t *r2chan, char digit)
 	sigev.channel = ftdmchan;
 	sigev.event_id = FTDM_SIGEVENT_COLLECTED_DIGIT;
 	r2data = ftdmchan->span->signal_data;
-	if (r2data->sig_cb(&sigev) == FTDM_BREAK) {
+	if (ftdm_span_send_signal(ftdmchan->span, &sigev) == FTDM_BREAK) {
 		ftdm_log(FTDM_LOG_NOTICE, "Requested to stop getting DNIS. Current DNIS = %s on chan %d\n", ftdmchan->caller_data.dnis.digits, openr2_chan_get_number(r2chan));
 		return OR2_STOP_DNIS_REQUEST; 
 	}
@@ -884,7 +882,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 
 	span->start = ftdm_r2_start;
 	r2data->flags = 0;
-	r2data->sig_cb = sig_cb;
+	span->signal_cb = sig_cb;
 	span->signal_type = FTDM_SIGTYPE_R2;
 	span->signal_data = r2data;
 	span->outgoing_call = r2_outgoing_call;
@@ -1004,7 +1002,7 @@ static void *ftdm_r2_channel_run(ftdm_thread_t *me, void *obj)
 						} else {
 							ftdm_log(FTDM_LOG_DEBUG, "PROGRESS: Notifying progress in channel %d\n", ftdmchan->physical_chan_id);
 							sigev.event_id = FTDM_SIGEVENT_PROGRESS;
-							if (r2data->sig_cb(&sigev) != FTDM_SUCCESS) {
+							if (ftdm_span_send_signal(ftdmchan->span, &sigev) != FTDM_SUCCESS) {
 								ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 							}
 						}
@@ -1027,7 +1025,7 @@ static void *ftdm_r2_channel_run(ftdm_thread_t *me, void *obj)
 						} else {
 							ftdm_log(FTDM_LOG_DEBUG, "UP: Notifying of call answered in channel %d\n", ftdmchan->physical_chan_id);
 							sigev.event_id = FTDM_SIGEVENT_UP;
-							if (r2data->sig_cb(&sigev) != FTDM_SUCCESS) {
+							if (ftdm_span_send_signal(ftdmchan->span, &sigev) != FTDM_SUCCESS) {
 								ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 							}
 						}

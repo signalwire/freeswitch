@@ -48,7 +48,6 @@ struct ftdm_analog_data {
 	uint32_t max_dialstr;
 	uint32_t digit_timeout;
 	char hotline[FTDM_MAX_HOTLINE_STR];
-	fio_signal_cb_t sig_cb;
 };
 
 

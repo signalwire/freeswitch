@@ -176,7 +176,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 	analog_data->flags = flags;
 	analog_data->digit_timeout = digit_timeout;
 	analog_data->max_dialstr = max_dialstr;
-	analog_data->sig_cb = sig_cb;
+	span->signal_cb = sig_cb;
 	strncpy(analog_data->hotline, hotline, sizeof(analog_data->hotline));
 	span->signal_type = FTDM_SIGTYPE_ANALOG;
 	span->signal_data = analog_data;
@@ -481,7 +481,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 						sig.event_id = FTDM_SIGEVENT_UP;
 					}
 
-					analog_data->sig_cb(&sig);
+					ftdm_span_send_signal(ftdmchan->span, &sig);
 					continue;
 				}
 				break;
@@ -501,14 +501,14 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 						ftdm_set_string(ftdmchan->caller_data.dnis.digits, dtmf);
 					}
 
-					analog_data->sig_cb(&sig);
+					ftdm_span_send_signal(ftdmchan->span, &sig);
 					continue;
 				}
 				break;
 			case FTDM_CHANNEL_STATE_DOWN:
 				{
 					sig.event_id = FTDM_SIGEVENT_STOP;
-					analog_data->sig_cb(&sig);
+					ftdm_span_send_signal(ftdmchan->span, &sig);
 					goto done;
 				}
 				break;
@@ -549,7 +549,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 					sig.span_id = ftdmchan->span_id;
 					sig.channel = ftdmchan;
 					sig.event_id = FTDM_SIGEVENT_PROGRESS;
-					analog_data->sig_cb(&sig);
+					ftdm_span_send_signal(ftdmchan->span, &sig);
 					
 				}
 				break;
@@ -608,7 +608,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 				last_digit = elapsed;
 				sig.event_id = FTDM_SIGEVENT_COLLECTED_DIGIT;
 				sig.raw_data = dtmf;
-				if (analog_data->sig_cb(&sig) == FTDM_BREAK) {
+				if (ftdm_span_send_signal(ftdmchan->span, &sig) == FTDM_BREAK) {
 					collecting = 0;
 				}
 			}
@@ -654,9 +654,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 				if (ftdmchan->detected_tones[i]) {
 					ftdm_log(FTDM_LOG_DEBUG, "Detected tone %s on %d:%d\n", ftdm_tonemap2str(i), ftdmchan->span_id, ftdmchan->chan_id);
 					sig.raw_data = &i;
-					if (analog_data->sig_cb) {
-						analog_data->sig_cb(&sig);
-					}
+					ftdm_span_send_signal(ftdmchan->span, &sig);
 				}
 			}
 			
@@ -843,7 +841,7 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 				ftdm_set_state_locked(event->channel,  FTDM_CHANNEL_STATE_UP);
 			} else {
 				sig.event_id = FTDM_SIGEVENT_FLASH;
-				analog_data->sig_cb(&sig);
+				ftdm_span_send_signal(span, &sig);
 			}
 		}
 		break;

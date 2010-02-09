@@ -55,7 +55,6 @@ struct ftdm_libpri_data {
 	ftdm_channel_t *dchan;
 	ftdm_channel_t *dchans[2];
 	struct ftdm_sigmsg sigmsg;
-	fio_signal_cb_t sig_cb;
 	uint32_t flags;
 	int32_t mode;
 	ftdm_isdn_opts_t opts;

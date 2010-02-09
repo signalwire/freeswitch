@@ -329,12 +329,12 @@ typedef enum {
 } ftdm_state_change_result_t;
 
 #define ftdm_set_state_r(obj, s, l, r) if ( obj->state == s ) {	\
-		ftdm_log(FTDM_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(obj->state), ftdm_channel_state2str(s)); r = FTDM_STATE_CHANGE_SAME;	\
+		if (s != FTDM_CHANNEL_STATE_HANGUP) ftdm_log(FTDM_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(obj->state), ftdm_channel_state2str(s)); r = FTDM_STATE_CHANGE_SAME; \
 	} else if (ftdm_test_flag(obj, FTDM_CHANNEL_READY)) {					\
 		int st = obj->state;											\
 		r = (ftdm_channel_set_state(obj, s, l) == FTDM_SUCCESS) ? FTDM_STATE_CHANGE_SUCCESS : FTDM_STATE_CHANGE_FAIL; \
 		if (obj->state == s) {ftdm_log(FTDM_LOG_DEBUG, "Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s));} \
-		else {ftdm_log(FTDM_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s)); } \
+		else { if (!((obj->state == FTDM_CHANNEL_STATE_HANGUP && s == FTDM_CHANNEL_STATE_TERMINATING) || (obj->state == FTDM_CHANNEL_STATE_HANGUP_COMPLETE && s == FTDM_CHANNEL_STATE_HANGUP) || (obj->state == FTDM_CHANNEL_STATE_TERMINATING && s == FTDM_CHANNEL_STATE_HANGUP))) ftdm_log(FTDM_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s)); } \
 	}
 
 
@@ -584,6 +584,7 @@ struct ftdm_span {
 	ftdm_analog_start_type_t start_type;
 	ftdm_signal_type_t signal_type;
 	void *signal_data;
+	fio_signal_cb_t signal_cb;
 	ftdm_event_t event_header;
 	char last_error[256];
 	char tone_map[FTDM_TONEMAP_INVALID+1][FTDM_TONEMAP_LEN];
@@ -792,6 +793,7 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span(const char *type, ftdm_span_t *spa
 FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(const char *type, ftdm_span_t *span, fio_signal_cb_t sig_cb, ftdm_conf_parameter_t *parameters);
 FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span);
 FT_DECLARE(ftdm_status_t) ftdm_span_stop(ftdm_span_t *span);
+FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t *sigmsg);
 FT_DECLARE(char *) ftdm_build_dso_path(const char *name, char *path, ftdm_size_t len);
 FT_DECLARE(ftdm_status_t) ftdm_global_add_io_interface(ftdm_io_interface_t *io_interface);
 FT_DECLARE(int) ftdm_load_module(const char *name);

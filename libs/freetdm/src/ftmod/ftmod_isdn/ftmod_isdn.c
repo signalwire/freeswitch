@@ -699,7 +699,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 						sig.channel->caller_data.hangup_cause = (cause) ? cause->Value : FTDM_CAUSE_NORMAL_UNSPECIFIED;
 
 						sig.event_id = FTDM_SIGEVENT_STOP;
-						status = isdn_data->sig_cb(&sig);
+						status = ftdm_span_send_signal(ftdmchan->span, &sig);
 
 						ftdm_log(FTDM_LOG_DEBUG, "Received %s in state %s, requested hangup for channel %d:%d\n", what, ftdm_channel_state2str(ftdmchan->state), ftdmchan->span_id, chan_id);
 					}
@@ -1186,7 +1186,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 		{
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_PROGRESS;
-				if ((status = isdn_data->sig_cb(&sig) != FTDM_SUCCESS)) {
+				if ((status = ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS)) {
 					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else {
@@ -1230,7 +1230,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 		{
 			if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_START;
-				if ((status = isdn_data->sig_cb(&sig) != FTDM_SUCCESS)) {
+				if ((status = ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS)) {
 					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			}
@@ -1240,7 +1240,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 		{
 			ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_UNSPECIFIED;
 			sig.event_id = FTDM_SIGEVENT_RESTART;
-			status = isdn_data->sig_cb(&sig);
+			status = ftdm_span_send_signal(ftdmchan->span, &sig);
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 		}
 		break;
@@ -1248,7 +1248,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 		{
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_PROGRESS_MEDIA;
-				if ((status = isdn_data->sig_cb(&sig) != FTDM_SUCCESS)) {
+				if ((status = ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS)) {
 					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else {
@@ -1268,7 +1268,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 		{
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_UP;
-				if ((status = isdn_data->sig_cb(&sig) != FTDM_SUCCESS)) {
+				if ((status = ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS)) {
 					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else {
@@ -1473,7 +1473,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			ftdm_log(FTDM_LOG_DEBUG, "Terminating: Direction %s\n", ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) ? "Outbound" : "Inbound");
 
 			sig.event_id = FTDM_SIGEVENT_STOP;
-			status = isdn_data->sig_cb(&sig);
+			status = ftdm_span_send_signal(ftdmchan->span, &sig);
 			gen->MesType = Q931mes_RELEASE;
 			gen->CRVFlag = ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) ? 0 : 1;
 			Q931Rx43(&isdn_data->q931, (void *)gen, gen->Size);
@@ -1513,7 +1513,6 @@ static __inline__ void check_state(ftdm_span_t *span)
 static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *event)
 {
 	ftdm_sigmsg_t sig;
-	ftdm_isdn_data_t *isdn_data = span->signal_data;
 
 	memset(&sig, 0, sizeof(sig));
 	sig.chan_id = event->channel->chan_id;
@@ -1539,7 +1538,7 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 
 			
 			ftdm_channel_get_alarms(event->channel);
-			isdn_data->sig_cb(&sig);
+			ftdm_span_send_signal(span, &sig);
 			ftdm_log(FTDM_LOG_WARNING, "channel %d:%d (%d:%d) has alarms! [%s]\n", 
 					event->channel->span_id, event->channel->chan_id, 
 					event->channel->physical_span_id, event->channel->physical_chan_id, 
@@ -1556,7 +1555,7 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 			sig.raw_data = (void *)FTDM_HW_LINK_CONNECTED;
 			ftdm_clear_flag(event->channel, FTDM_CHANNEL_SUSPENDED);
 			ftdm_channel_get_alarms(event->channel);
-			isdn_data->sig_cb(&sig);
+			ftdm_span_send_signal(span, &sig);
 		}
 		break;
 	}
@@ -2357,7 +2356,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_isdn_configure_span)
 					
 	span->start = ftdm_isdn_start;
 	span->stop = ftdm_isdn_stop;
-	isdn_data->sig_cb = sig_cb;
+	span->signal_cb = sig_cb;
 	isdn_data->dchans[0] = dchans[0];
 	isdn_data->dchans[1] = dchans[1];
 	isdn_data->dchan = isdn_data->dchans[0];

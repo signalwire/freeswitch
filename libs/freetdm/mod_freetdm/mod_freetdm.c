@@ -385,6 +385,10 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+		return SWITCH_STATUS_SUCCESS;
+	} 
 	
 	/* Move channel's state machine to ROUTING */
 	switch_channel_set_state(channel, CS_ROUTING);
@@ -462,6 +466,9 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if (!tech_pvt->ftdmchan) {
+		goto end;
+	} 
 
 	ftdm_channel_clear_token(tech_pvt->ftdmchan, switch_core_session_get_uuid(session));
 	
@@ -504,6 +511,8 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		}
 		break;
 	}
+
+ end:
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	
@@ -564,6 +573,11 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+		switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
+		return SWITCH_STATUS_FALSE;
+	} 
+
 	tmp[0] = dtmf->digit;
 	ftdm_channel_command(tech_pvt->ftdmchan, FTDM_COMMAND_SEND_DTMF, tmp);
 		
@@ -585,21 +599,19 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 	
-
+	
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	assert(tech_pvt->ftdmchan != NULL);
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+		return SWITCH_STATUS_FALSE;
+	} 
 
 	/* Digium Cards sometimes timeout several times in a row here. 
 	   Yes, we support digium cards, ain't we nice.......
 	   6 double length intervals should compensate */
 	chunk = tech_pvt->ftdmchan->effective_interval * 2;
 	total_to = chunk * 6;
-
-	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
-		return SWITCH_STATUS_FALSE;
-	}
 
  top:
 
@@ -698,7 +710,9 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	assert(tech_pvt->ftdmchan != NULL);
+	if (!tech_pvt->ftdmchan) {
+		return SWITCH_STATUS_FALSE;
+	} 
 
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
 		return SWITCH_STATUS_FALSE;
@@ -757,6 +771,11 @@ static switch_status_t channel_receive_message_cas(switch_core_session_t *sessio
 			
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
+	
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+        return SWITCH_STATUS_FALSE;
+    }
 	
 	ftdm_log(FTDM_LOG_DEBUG, "Got Freeswitch message in R2 channel %d [%d]\n", tech_pvt->ftdmchan->physical_chan_id, 
             msg->message_id);
@@ -817,9 +836,12 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 			
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-	assert(tech_pvt->ftdmchan != NULL);
 
-	ftdm_mutex_lock(tech_pvt->ftdmchan->mutex);	
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+        return SWITCH_STATUS_FALSE;
+    }
+
 	if (tech_pvt->ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
 		ftdm_mutex_unlock(tech_pvt->ftdmchan->mutex);	
 		return SWITCH_STATUS_SUCCESS;
@@ -875,7 +897,6 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 		break;
 	}
 
-	ftdm_mutex_unlock(tech_pvt->ftdmchan->mutex);	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -890,6 +911,11 @@ static switch_status_t channel_receive_message_fxo(switch_core_session_t *sessio
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+        return SWITCH_STATUS_FALSE;
+    }
+	
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
@@ -919,6 +945,11 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+        return SWITCH_STATUS_FALSE;
+    }
+	
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
@@ -955,11 +986,30 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	switch_status_t status;
 	switch_channel_t *channel;
 	const char *var;
+	ftdm_channel_t *ftdmchan = NULL;
 
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
 	channel = switch_core_session_get_channel(session);
+
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+        return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(ftdmchan = tech_pvt->ftdmchan)) {
+        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+        return SWITCH_STATUS_FALSE;
+    }
+
+	ftdm_mutex_lock(ftdmchan->mutex);	
+
+	if (!tech_pvt->ftdmchan) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+		status = SWITCH_STATUS_FALSE;
+		goto end;
+	}
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
@@ -1000,6 +1050,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		status = SWITCH_STATUS_FALSE;
 		break;
 	}
+
+ end:
+
+	ftdm_mutex_unlock(ftdmchan->mutex);	
 
 	return status;
 
@@ -1067,6 +1121,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 
 	data = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
+
+	outbound_profile->destination_number = switch_sanitize_number(outbound_profile->destination_number);
 
 	if ((argc = switch_separate_string(data, '/', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
@@ -1168,8 +1224,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 	
 	if (status != FTDM_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channels available\n");
-		return SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION;
+		if (caller_data.hangup_cause == SWITCH_CAUSE_NONE) {
+			caller_data.hangup_cause = SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION;
+		}
+		return caller_data.hangup_cause;
 	}
 
 	if ((var = switch_event_get_header(var_event, "freetdm_pre_buffer_size"))) {
@@ -1363,7 +1421,10 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 		break;
     case FTDM_SIGEVENT_STOP:
 		{
+			private_t *tech_pvt = NULL;
 			while((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+				tech_pvt = switch_core_session_get_private(session);
+				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				ftdm_channel_clear_token(sigmsg->channel, 0);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
@@ -1440,6 +1501,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 		break;
     case FTDM_SIGEVENT_STOP:
 		{
+			private_t *tech_pvt = NULL;
 			switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 			if (sigmsg->channel->token_count) {
 				switch_core_session_t *session_a, *session_b, *session_t = NULL;
@@ -1495,6 +1557,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			}
 
 			while((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+				tech_pvt = switch_core_session_get_private(session);
+				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, cause);
 				ftdm_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
@@ -1621,7 +1685,10 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		/* on_call_disconnect from the R2 side */
 		case FTDM_SIGEVENT_STOP: 
 		{	
+			private_t *tech_pvt = NULL;
 			while((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+				tech_pvt = switch_core_session_get_private(session);
+				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
 				ftdm_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
@@ -1731,7 +1798,10 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
     case FTDM_SIGEVENT_STOP:
     case FTDM_SIGEVENT_RESTART:
 		{
+			private_t *tech_pvt = NULL;
 			while((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+				tech_pvt = switch_core_session_get_private(session);
+				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
 				ftdm_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
@@ -2959,6 +3029,12 @@ SWITCH_STANDARD_APP(disable_ec_function)
 	}
 	
 	tech_pvt = switch_core_session_get_private(session);
+
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+        switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
+        return;
+    }
+	
 	ftdm_channel_command(tech_pvt->ftdmchan, FTDM_COMMAND_DISABLE_ECHOCANCEL, &x);
 	ftdm_channel_command(tech_pvt->ftdmchan, FTDM_COMMAND_DISABLE_ECHOTRAIN, &x);
 	ftdm_log(FTDM_LOG_INFO, "Echo Canceller Disabled\n");
