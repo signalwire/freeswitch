@@ -2018,7 +2018,11 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 	span->get_span_sig_status = sangoma_boost_get_span_sig_status;
 	span->set_span_sig_status = sangoma_boost_set_span_sig_status;
 	span->state_map = &boost_state_map;
-	span->suggest_chan_id = 1;
+	if (sigmod_iface) {
+		span->suggest_chan_id = 1;
+	} else {
+		span->suggest_chan_id = 0;
+	}
 	ftdm_set_flag_locked(span, FTDM_SPAN_SUSPENDED);
 	return FTDM_SUCCESS;
 }
