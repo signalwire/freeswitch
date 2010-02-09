@@ -36,6 +36,10 @@
 
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_USE_CLOCK_FUNCS
+
+#if defined(WIN32) && defined(_MSC_VER)
+#define atoll _atoi64
+#endif
 #ifdef __ICC
 #pragma warning (disable:810 869 981 279 1469 188)
 #endif
