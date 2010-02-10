@@ -143,7 +143,7 @@ static char *strip_quotes(const char *in)
 	char *t = (char *) in;
 	char *r = (char *) in;
 
-	if (*t == '"') {
+	if (t && *t == '"') {
 		t++;
 
 		if (end_of(t) == '"') {
