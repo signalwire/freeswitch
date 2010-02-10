@@ -114,6 +114,8 @@ SWITCH_STANDARD_APP(detect_speech_function)
 			switch_ivr_resume_detect_speech(session);
 		} else if (!strcasecmp(argv[0], "stop")) {
 			switch_ivr_stop_detect_speech(session);
+		} else if (!strcasecmp(argv[0], "param")) {
+			switch_ivr_set_param_detect_speech(session, argv[1], argv[2]);
 		} else if (argc >= 3) {
 			switch_ivr_detect_speech(session, argv[0], argv[1], argv[2], argv[3], NULL);
 		}
