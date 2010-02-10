@@ -4,8 +4,6 @@
 #include <QObject>
 #include "ui_prefdialog.h"
 
-class QSettings;
-
 class PrefSofia : public QObject
 {
 Q_OBJECT
@@ -15,7 +13,6 @@ public:
     void readConfig();
 
 private:
-    QSettings *_settings;
     Ui::PrefDialog *_ui;
 
 };
