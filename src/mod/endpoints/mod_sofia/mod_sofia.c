@@ -2977,6 +2977,7 @@ SWITCH_STANDARD_API(sofia_function)
 		"sofia status|xmlstatus profile <name> [ reg <contact str> ] | [ pres <pres str> ] | [ user <user@domain> ]\n"
 		"sofia status|xmlstatus gateway <name>\n"
 		"sofia loglevel <all|default|tport|iptsec|nea|nta|nth_client|nth_server|nua|soa|sresolv|stun> [0-9]\n"
+		"sofia tracelevel <console|alert|crit|err|warning|notice|info|debug>\n"
 		"--------------------------------------------------------------------------------\n";
 
 	if (session) {
@@ -4042,6 +4043,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia status");
 	switch_console_set_complete("add sofia xmlstatus");
 	switch_console_set_complete("add sofia loglevel");
+	switch_console_set_complete("add sofia tracelevel");
 	switch_console_set_complete("add sofia profile");
 	switch_console_set_complete("add sofia profile restart all");
 
