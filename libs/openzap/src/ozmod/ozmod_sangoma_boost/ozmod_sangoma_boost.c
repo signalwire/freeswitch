@@ -86,7 +86,6 @@ static uint16_t SETUP_GRID[ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN+1][ZAP_MAX_CH
 static sangoma_boost_request_t OUTBOUND_REQUESTS[MAX_REQ_ID+1] = {{ 0 }};
 
 static zap_mutex_t *request_mutex = NULL;
-static zap_mutex_t *signal_mutex = NULL;
 
 static uint8_t req_map[MAX_REQ_ID+1] = { 0 };
 static uint8_t nack_map[MAX_REQ_ID+1] = { 0 };
@@ -186,7 +185,6 @@ static zap_channel_t *find_zchan(zap_span_t *span, sangomabc_short_event_t *even
 	int i;
 	zap_channel_t *zchan = NULL;
 
-	zap_mutex_lock(signal_mutex);
 	for(i = 1; i <= span->chan_count; i++) {
 		if (span->channels[i]->physical_span_id == event->span+1 && span->channels[i]->physical_chan_id == event->chan+1) {
 			zchan = span->channels[i];
@@ -204,7 +202,6 @@ static zap_channel_t *find_zchan(zap_span_t *span, sangomabc_short_event_t *even
 			}
 		}
 	}
-	zap_mutex_unlock(signal_mutex);
 
 	return zchan;
 }
@@ -715,15 +712,8 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 	zap_channel_t *zchan;
 
 	if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 0))) {
-		if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 1))) {
-			zap_log(ZAP_LOG_CRIT, "START CANT FIND CHAN %d:%d AT ALL\n", event->span+1,event->chan+1);
-			goto error;
-		}
-		advance_chan_states(zchan);
-		if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 0))) {
-			zap_log(ZAP_LOG_CRIT, "START CANT FIND CHAN %d:%d EVEN AFTER STATE ADVANCE\n", event->span+1,event->chan+1);
-			goto error;
-		}
+		zap_log(ZAP_LOG_CRIT, "START CANT FIND CHAN %d:%d\n", event->span+1,event->chan+1);
+		goto error;
 	}
 
 	if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
@@ -862,6 +852,52 @@ static void handle_incoming_digit(sangomabc_connection_t *mcon, zap_span_t *span
 	return;
 }
 
+
+/**
+ * \brief Checks if span has state changes pending and processes 
+ * \param span Span where event was fired
+ * \param event Event to handle
+ */
+static zap_channel_t* event_process_states(zap_span_t *span, sangomabc_short_event_t *event) 
+{
+    zap_channel_t *zchan = NULL;
+    
+    switch (event->event_id) {
+        case SIGBOOST_EVENT_CALL_START_NACK:
+        case SIGBOOST_EVENT_CALL_START_NACK_ACK:
+            if (event->call_setup_id) {
+                return NULL;
+            } 
+            //if event->span and event->chan is valid, fall-through
+        case SIGBOOST_EVENT_CALL_START:
+        case SIGBOOST_EVENT_CALL_START_ACK:
+        case SIGBOOST_EVENT_CALL_STOPPED:
+        case SIGBOOST_EVENT_CALL_PROGRESS:
+        case SIGBOOST_EVENT_CALL_ANSWERED:
+        case SIGBOOST_EVENT_CALL_STOPPED_ACK:
+        case SIGBOOST_EVENT_DIGIT_IN:
+        case SIGBOOST_EVENT_INSERT_CHECK_LOOP:
+        case SIGBOOST_EVENT_REMOVE_CHECK_LOOP:
+            if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 1))) {
+                zap_log(ZAP_LOG_DEBUG, "PROCESS STATES  CANT FIND CHAN %d:%d\n", event->span+1,event->chan+1);
+                return NULL;
+            }
+            break;
+        case SIGBOOST_EVENT_HEARTBEAT:
+        case SIGBOOST_EVENT_SYSTEM_RESTART_ACK:
+        case SIGBOOST_EVENT_SYSTEM_RESTART:
+        case SIGBOOST_EVENT_AUTO_CALL_GAP_ABATE:
+            return NULL;
+        default:
+            zap_log(ZAP_LOG_CRIT, "Unhandled event id:%d\n", event->event_id);
+            return NULL;
+    }
+
+    zap_mutex_lock(zchan->mutex);
+    advance_chan_states(zchan);
+    return zchan;
+}
+
 /**
  * \brief Handler for sangoma boost event
  * \param span Span where event was fired
@@ -870,7 +906,7 @@ static void handle_incoming_digit(sangomabc_connection_t *mcon, zap_span_t *span
  */
 static int parse_sangoma_event(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
-	zap_mutex_lock(signal_mutex);
+    zap_channel_t* zchan = NULL;
 	
 	if (!zap_running()) {
 		zap_log(ZAP_LOG_WARNING, "System is shutting down.\n");
@@ -878,6 +914,11 @@ static int parse_sangoma_event(zap_span_t *span, sangomabc_connection_t *mcon, s
 	}
 
 	assert(event->call_setup_id <= MAX_REQ_ID);
+
+    /* process all pending state changes for that channel before
+        processing the new boost event */
+    zchan = event_process_states(span, event);
+
     switch(event->event_id) {
     case SIGBOOST_EVENT_CALL_START:
 		handle_call_start(span, mcon, (sangomabc_event_t*)event);
@@ -931,8 +972,10 @@ static int parse_sangoma_event(zap_span_t *span, sangomabc_connection_t *mcon, s
     }
 
  end:
-
-	zap_mutex_unlock(signal_mutex);
+    if(zchan != NULL) {
+        advance_chan_states(zchan);
+        zap_mutex_unlock(zchan->mutex);
+    }
 
 	return 0;
 }
@@ -1135,13 +1178,11 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 
 static __inline__ void advance_chan_states(zap_channel_t *zchan)
 {
-	zap_mutex_lock(zchan->mutex);
 	while (zap_test_flag(zchan, ZAP_CHANNEL_STATE_CHANGE)) {
 		zap_clear_flag(zchan, ZAP_CHANNEL_STATE_CHANGE);
 		state_advance(zchan);
 		zap_channel_complete_state(zchan);
 	}
-	zap_mutex_unlock(zchan->mutex);
 }
 
 /**
@@ -1400,7 +1441,6 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 static ZIO_SIG_LOAD_FUNCTION(zap_sangoma_boost_init)
 {
 	zap_mutex_create(&request_mutex);
-	zap_mutex_create(&signal_mutex);
 	
 	return ZAP_SUCCESS;
 }
