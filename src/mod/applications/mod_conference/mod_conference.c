@@ -5234,6 +5234,8 @@ SWITCH_STANDARD_APP(conference_function)
 
 		/* if the conference exists, get the pointer to it */
 		if (!conference) {
+			const char *max_members_str;
+
 			/* couldn't find the conference, create one */
 			conference = conference_new(conf_name, xml_cfg, NULL);
 
@@ -5259,6 +5261,19 @@ SWITCH_STANDARD_APP(conference_function)
 
 			/* Set the minimum number of members (once you go above it you cannot go below it) */
 			conference->min = 1;
+
+			/* check for variable used to specify override for max_members */
+			if (!zstr(max_members_str = switch_channel_get_variable(channel, "conference_max_members"))) {
+				uint32_t max_members_val;
+				errno = 0;		/* sanity first */
+				max_members_val = strtol(max_members_str, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
+				if (errno == ERANGE || errno == EINVAL || max_members_val < 0 || max_members_val == 1) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "conference_max_members variable %s is invalid, not setting a limit\n", max_members_str);
+				} else {
+					conference->max_members = max_members_val;
+				}
+			}
 
 			/* Indicate the conference is dynamic */
 			switch_set_flag_locked(conference, CFLAG_DYNAMIC);
