@@ -41,7 +41,12 @@ miniwget2(const char * url, const char * host,
 		  int * size, char * addr_str, int addr_str_len)
 {
 	char buf[2048];
-    int s, fd_flags;
+#ifdef WIN32
+	SOCKET s;
+#else
+	int s;
+#endif
+	int fd_flags;
 	struct sockaddr_in dest;
 	struct hostent *hp;
 
