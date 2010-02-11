@@ -1747,6 +1747,73 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(const char *use
 	return status;
 }
 
+
+SWITCH_DECLARE(switch_xml_t) switch_xml_dup(switch_xml_t xml)
+{
+	char *x = switch_xml_toxml(xml, SWITCH_FALSE);
+	return switch_xml_parse_str_dynamic(x, SWITCH_FALSE); 
+}
+
+
+static void do_merge(switch_xml_t in, switch_xml_t src, const char *container, const char *tag_name) 
+{
+	switch_xml_t itag, tag, param, iparam, iitag;
+
+	if (!(itag = switch_xml_child(in, container))) {
+		itag = switch_xml_add_child_d(in, container, 0);
+	}
+
+	if ((tag = switch_xml_child(src, container))) {
+		for (param = switch_xml_child(tag, tag_name); param; param = param->next) {
+			const char *var = switch_xml_attr(param, "name");
+			const char *val = switch_xml_attr(param, "value");
+			
+			int go = 1;
+
+			for (iparam = switch_xml_child(itag, tag_name); iparam; iparam = iparam->next) {
+				const char *ivar = switch_xml_attr(iparam, "name");
+				
+				if (var && ivar && !strcasecmp(var, ivar)) {
+					go = 0;
+					break;
+				}
+			}
+			
+			if (go) {
+				iitag = switch_xml_add_child_d(itag, tag_name, 0);
+				switch_xml_set_attr_d(iitag, var, val);
+			}
+		}
+	}
+	
+}
+
+
+SWITCH_DECLARE(void) switch_xml_merge_user(switch_xml_t user, switch_xml_t domain, switch_xml_t group)
+{
+
+	do_merge(user, group, "params", "param");
+	do_merge(user, group, "variables", "variable");
+	do_merge(user, domain, "params", "param");
+	do_merge(user, domain, "variables", "variable");
+}
+
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_merged(const char *key, const char *user_name, const char *domain_name,
+															  const char *ip, switch_xml_t *user, switch_event_t *params)
+{
+	switch_xml_t xml, domain, group, x_user, x_user_dup;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if ((status = switch_xml_locate_user(key, user_name, domain_name, ip, &xml, &domain, &x_user, &group, params)) == SWITCH_STATUS_SUCCESS) {
+		x_user_dup = switch_xml_dup(x_user);
+		switch_xml_merge_user(x_user_dup, domain, group);
+		*user = x_user_dup;
+	}
+
+	return status;
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   const char *user_name,
 													   const char *domain_name,

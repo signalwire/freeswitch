@@ -373,6 +373,14 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(_In_z_ const char *key,
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(_In_z_ const char *user_name, _In_ switch_xml_t domain, _Out_ switch_xml_t *user,
 																 _Out_opt_ switch_xml_t *ingroup);
 
+
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_merged(const char *key, const char *user_name, const char *domain_name,
+															  const char *ip, switch_xml_t *user, switch_event_t *params);
+
+SWITCH_DECLARE(void) switch_xml_merge_user(switch_xml_t user, switch_xml_t domain, switch_xml_t group);
+
+SWITCH_DECLARE(switch_xml_t) switch_xml_dup(switch_xml_t xml);
+
 ///\brief open a config in the core registry
 ///\param file_path the name of the config section e.g. modules.conf
 ///\param node a pointer to point to the node if it is found
