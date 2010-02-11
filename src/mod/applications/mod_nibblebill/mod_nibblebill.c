@@ -360,6 +360,8 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	switch_time_exp_t tm;
 	const char *billrate;
 	const char *billaccount;
+	float nobal_amt = globals.nobal_amt;
+	float lowbal_amt = globals.lowbal_amt;
 	float balance;
 
 	if (!session) {
@@ -377,6 +379,13 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	/* Variables kept in FS but relevant only to this module */
 	billrate = switch_channel_get_variable(channel, "nibble_rate");
 	billaccount = switch_channel_get_variable(channel, "nibble_account");
+	
+	if (!zstr(switch_channel_get_variable(channel, "nobal_amt"))) {
+		nobal_amt = atof(switch_channel_get_variable(channel, "nobal_amt"));
+	}
+	if (!zstr(switch_channel_get_variable(channel, "lowbal_amt"))) {
+		lowbal_amt = atof(switch_channel_get_variable(channel, "lowbal_amt"));
+	}
 
 	/* Return if there's no billing information on this session */
 	if (!billrate || !billaccount) {
@@ -399,11 +408,11 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 		/* See if this person has enough money left to continue the call */
 		balance = get_balance(billaccount);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Comparing %f to hangup balance of %f\n", balance, globals.nobal_amt);
-		if (balance <= globals.nobal_amt) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Comparing %f to hangup balance of %f\n", balance, nobal_amt);
+		if (balance <= nobal_amt) {
 			/* Not enough money - reroute call to nobal location */
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Balance of %f fell below allowed amount of %f! (Account %s)\n",
-							  balance, globals.nobal_amt, billaccount);
+							  balance, nobal_amt, billaccount);
 
 			transfer_call(session, globals.nobal_action);
 		}
@@ -480,10 +489,10 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 		/* See if this person has enough money left to continue the call */
 		balance = get_balance(billaccount);
-		if (balance <= globals.nobal_amt) {
+		if (balance <= nobal_amt) {
 			/* Not enough money - reroute call to nobal location */
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Balance of %f fell below allowed amount of %f! (Account %s)\n",
-							  balance, globals.nobal_amt, billaccount);
+							  balance, nobal_amt, billaccount);
 
 			/* IMPORTANT: Billing must be paused before the transfer occurs! This prevents infinite loops, since the transfer will result */
 			/* in nibblebill checking the call again in the routing process for an allowed balance! */
