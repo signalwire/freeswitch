@@ -4469,7 +4469,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 
 		free(test_sql);
-		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and expires <> -9999", mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_dialogs", NULL, NULL);
@@ -4549,7 +4549,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
 		free(test_sql);
 
-		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and expires <> -9999", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_dialogs", dialog_sql);
 		free(test_sql);
 
