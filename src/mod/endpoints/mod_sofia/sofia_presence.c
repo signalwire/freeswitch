@@ -1901,7 +1901,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		if (status < 200) {
 			char *sticky = NULL;
-			char *contactstr = profile->url;
+			char *contactstr = profile->url, *cs = NULL;
 			char *p = NULL, *new_contactstr = NULL;
 
 			if (is_nat) {
@@ -1922,29 +1922,38 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 			if (switch_stristr("port=tcp", contact->m_url->url_params)) {
 				if (is_auto_nat) {
-					contactstr = profile->tcp_public_contact;
+					cs = profile->tcp_public_contact;
 				} else {
-					contactstr = profile->tcp_contact;
+					cs = profile->tcp_contact;
 				}
 			} else if (switch_stristr("port=tls", contact->m_url->url_params)) {
 				if (is_auto_nat) {
-					contactstr = profile->tls_contact;
+					cs = profile->tls_public_contact;
 				} else {
-					contactstr = profile->tls_public_contact;
+					cs = profile->tls_contact;
 				}
 			}
 
+			if (cs) {
+				contactstr = cs;
+			}
+
+			
 			if (nh && nh->nh_ds && nh->nh_ds->ds_usage) {
 				/* nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta + SUB_OVERLAP, exp_delta + SUB_OVERLAP); */
 				nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta * 2, exp_delta * 2);
 			}
 
-			if ((p = strchr(contactstr, '@'))) {
-				new_contactstr = switch_mprintf("sip:%s%s", to_user, p);
+			if (contactstr && (p = strchr(contactstr, '@'))) {
+				if (strrchr(p, '>')) {
+					new_contactstr = switch_mprintf("<sip:%s%s", to_user, p);
+				} else {
+					new_contactstr = switch_mprintf("<sip:%s%s>", to_user, p);
+				}
 			}
 
 			nua_respond(nh, SIP_202_ACCEPTED,
-						SIPTAG_CONTACT_STR(new_contactstr),
+						TAG_IF(new_contactstr, SIPTAG_CONTACT_STR(new_contactstr)),
 						NUTAG_WITH_THIS(nua),
 						SIPTAG_SUBSCRIPTION_STATE_STR(sstr), SIPTAG_EXPIRES_STR(exp_delta_str), TAG_IF(sticky, NUTAG_PROXY(sticky)), TAG_END());
 
