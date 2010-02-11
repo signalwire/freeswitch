@@ -24,6 +24,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 #define closesocket close
 #endif
 #if defined(__sun) || defined(sun)
@@ -40,9 +41,12 @@ miniwget2(const char * url, const char * host,
 		  int * size, char * addr_str, int addr_str_len)
 {
 	char buf[2048];
-    int s;
+    int s, fd_flags;
 	struct sockaddr_in dest;
 	struct hostent *hp;
+
+	fd_flags = 0;
+
 	*size = 0;
 	hp = gethostbyname(host);
 	if(hp==NULL)
@@ -61,12 +65,60 @@ miniwget2(const char * url, const char * host,
 	}
 	dest.sin_family = AF_INET;
 	dest.sin_port = htons(port);
-	if(connect(s, (struct sockaddr *)&dest, sizeof(struct sockaddr_in))<0)
+
+
+
 	{
-		perror("connect");
-		closesocket(s);
-		return NULL;
+#ifdef WIN32
+		u_long arg = 1;
+		if (ioctlsocket((SOCKET) s, FIONBIO, &arg) == SOCKET_ERROR) {
+			return NULL;
+		}
+
+#else
+		fd_flags = fcntl(s, F_GETFL, 0);
+
+		if (fcntl(s, F_SETFL, fd_flags | O_NONBLOCK)) {
+			return NULL;
+		}
+
+#endif
+
 	}
+
+	connect(s, (struct sockaddr *)&dest, sizeof(struct sockaddr_in));
+
+	{
+		fd_set wfds;
+		struct timeval tv = { 2, 0 };
+		int r;
+
+		FD_ZERO(&wfds);
+        FD_SET(s, &wfds);
+
+        r = select(s + 1, NULL, &wfds, NULL, &tv);
+		
+		if (r <= 0) {
+			return NULL;
+		}
+
+		if (!FD_ISSET(s, &wfds)) {
+			return NULL;
+		}
+
+	}
+
+#ifdef WIN32
+	{
+		u_long arg = 0;
+		if (ioctlsocket((SOCKET) s, FIONBIO, &arg) == SOCKET_ERROR) {
+			return NULL;
+		}
+	}
+#else
+	fcntl(s, F_SETFL, fd_flags);
+#endif
+
 
 	/* get address for caller ! */
 	if(addr_str)
@@ -201,8 +253,9 @@ void * miniwget(const char * url, int * size)
 	/* protocol://host:port/chemin */
 	char hostname[MAXHOSTNAMELEN+1];
 	*size = 0;
-	if(!parseURL(url, hostname, &port, &path))
+	if(!parseURL(url, hostname, &port, &path)) {
 		return NULL;
+	}
 	return miniwget2(url, hostname, port, path, size, 0, 0);
 }
 
