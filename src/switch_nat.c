@@ -83,7 +83,8 @@ static switch_status_t get_upnp_pubaddr(char *pub_addr)
 static int init_upnp(void)
 {
 	struct UPNPDev *devlist;
-	struct UPNPDev *dev;
+	struct UPNPDev *dev = NULL;
+	struct UPNPDev *trydev = NULL;
 	char *descXML;
 	int descXMLsize = 0;
 	const char *multicastif = 0;
@@ -99,13 +100,23 @@ static int init_upnp(void)
 			if (strstr(dev->st, "InternetGatewayDevice")) {
 				break;
 			}
+			if (!trydev && !switch_stristr("printer", dev->descURL)) {
+				trydev = dev;
+			}
+
 			dev = dev->pNext;
 		}
-		if (!dev) {
-			dev = devlist;		/* defaulting to first device */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No InternetGatewayDevice, using first entry as default (%s).\n", dev->descURL);
-		}
 
+	}
+
+	if (!dev && trydev) {
+		dev = trydev; /* defaulting to first device */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No InternetGatewayDevice, using first entry as default (%s).\n", dev->descURL);
+	} else if (devlist && !dev && !trydev) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No InternetGatewayDevice found and I am NOT going to try your printer because printers should not route to the internet, that would be DAFT\n");
+	}
+	
+	if (dev) {
 		descXML = miniwget(dev->descURL, &descXMLsize);
 
 		nat_globals.descURL = strdup(dev->descURL);
