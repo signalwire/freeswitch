@@ -221,13 +221,14 @@ int sangomabc_connection_open(sangomabc_connection_t *mcon, char *local_ip, int 
 }
 
 
-int sangomabc_exec_command(sangomabc_connection_t *mcon, int span, int chan, int id, int cmd, int cause)
+int sangomabc_exec_command(sangomabc_connection_t *mcon, int span, int chan, int id, int cmd, int cause, int flags)
 {
     sangomabc_short_event_t oevent;
     int retry = 5;
 
     sangomabc_event_init(&oevent, cmd, chan, span);
     oevent.release_cause = (uint8_t)cause;
+    oevent.flags = flags;
 
 	if (cmd == SIGBOOST_EVENT_SYSTEM_RESTART || cmd == SIGBOOST_EVENT_SYSTEM_RESTART_ACK) {
 		mcon->rxseq_reset = 1;

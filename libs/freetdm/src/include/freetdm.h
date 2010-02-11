@@ -334,7 +334,7 @@ typedef enum {
 		int st = obj->state;											\
 		r = (ftdm_channel_set_state(obj, s, l) == FTDM_SUCCESS) ? FTDM_STATE_CHANGE_SUCCESS : FTDM_STATE_CHANGE_FAIL; \
 		if (obj->state == s) {ftdm_log(FTDM_LOG_DEBUG, "Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s));} \
-		else { if (!((obj->state == FTDM_CHANNEL_STATE_HANGUP && s == FTDM_CHANNEL_STATE_TERMINATING) || (obj->state == FTDM_CHANNEL_STATE_HANGUP_COMPLETE && s == FTDM_CHANNEL_STATE_HANGUP) || (obj->state == FTDM_CHANNEL_STATE_TERMINATING && s == FTDM_CHANNEL_STATE_HANGUP))) ftdm_log(FTDM_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s)); } \
+		else ftdm_log(FTDM_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s)); \
 	}
 
 

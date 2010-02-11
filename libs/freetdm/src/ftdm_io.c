@@ -977,7 +977,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(ftdm_channel_t *ftdmchan, ftdm_
 	}
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-		ftdm_log(FTDM_LOG_WARNING, "Ignored state change request from %s to %s, the previous state change has not been processed yet\n",
+		ftdm_log(FTDM_LOG_CRIT, "Ignored state change request from %s to %s, the previous state change has not been processed yet\n",
 				ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 		return FTDM_FAIL;
 	}

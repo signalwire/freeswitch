@@ -49,7 +49,6 @@ typedef struct ftdm_sangoma_boost_data {
 	fd_set rfds;
 	fd_set efds;
 	int iteration;
-	fio_signal_cb_t signal_cb;
 	uint32_t flags;
 	boost_sigmod_interface_t *sigmod;
 	ftdm_queue_t *boost_queue;	
