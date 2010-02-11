@@ -2582,13 +2582,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_cor
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(void) switch_ivr_set_param_detect_speech(switch_core_session_t *session, const char *name, const char *val) 
+SWITCH_DECLARE(switch_status_t) switch_ivr_set_param_detect_speech(switch_core_session_t *session, const char *name, const char *val) 
 {
 	struct speech_thread_handle *sth = switch_channel_get_private(switch_core_session_get_channel(session), SWITCH_SPEECH_KEY);
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (sth->ah && name && val) {
+	if (sth && sth->ah && name && val) {
 		switch_core_asr_text_param(sth->ah, (char *) name, val);
+		status = SWITCH_STATUS_SUCCESS;
 	}
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_core_session_t *session, const char *name)
