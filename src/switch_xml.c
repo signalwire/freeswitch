@@ -397,6 +397,12 @@ SWITCH_DECLARE(const char *) switch_xml_attr(switch_xml_t xml, const char *attr)
 
 	while (root->xml.parent)
 		root = (switch_xml_root_t) root->xml.parent;	/* root tag */
+
+	/* Make sure root is really a switch_xml_root_t (Issues with switch_xml_toxml) */
+	if (!root->xml.is_switch_xml_root_t) {
+		return NULL;
+	}
+
 	for (i = 0; root->attr[i] && xml->name && strcmp(xml->name, root->attr[i][0]); i++);
 	if (!root->attr[i])
 		return NULL;			/* no matching default attributes */
@@ -2343,6 +2349,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 	strcpy(root->err, root->xml.txt = (char *) "");
 	root->ent = (char **) memcpy(malloc(sizeof(ent)), ent, sizeof(ent));
 	root->attr = root->pi = (char ***) (root->xml.attr = SWITCH_XML_NIL);
+	root->xml.is_switch_xml_root_t = SWITCH_TRUE;
 	return &root->xml;
 }
 

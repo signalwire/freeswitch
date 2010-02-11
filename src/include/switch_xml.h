@@ -96,6 +96,8 @@ struct switch_xml {
 	switch_xml_t parent;
 	/*! flags */
 	uint32_t flags;
+	/*! is_switch_xml_root bool */
+	switch_bool_t is_switch_xml_root_t;
 };
 
 /*! 
