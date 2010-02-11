@@ -27,6 +27,7 @@
  *
  * Contributor(s):
  * Darren Schreiber <d@d-man.org>
+ * Rupa Schomaker <rupa@rupa.com>
  *
  * mod_nibblebill.c - Nibble Billing
  * Purpose is to allow real-time debiting of credit or cash from a database while calls are in progress. I had the following goals: 
@@ -800,6 +801,24 @@ SWITCH_STANDARD_API(nibblebill_api_function)
 
 static switch_status_t sched_billing(switch_core_session_t *session)
 {
+	switch_channel_t *channel = NULL;
+	
+	const char *billrate = NULL;
+	const char *billaccount = NULL;
+	
+	if (!(channel = switch_core_session_get_channel(session))) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* Variables kept in FS but relevant only to this module */
+	billrate = switch_channel_get_variable(channel, "nibble_rate");
+	billaccount = switch_channel_get_variable(channel, "nibble_account");
+	
+	/* Return if there's no billing information on this session */
+	if (!billrate || !billaccount) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (globals.global_heartbeat > 0) {
 		switch_core_session_enable_heartbeat(session, globals.global_heartbeat);
 	}
@@ -811,28 +830,44 @@ static switch_status_t sched_billing(switch_core_session_t *session)
 
 static switch_status_t process_hangup(switch_core_session_t *session)
 {
+	const char* billaccount;
+	switch_channel_t *channel = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	
 	/* Resume any paused billings, just in case */
-	//  nibblebill_resume(session);
+	/*  nibblebill_resume(session); */
 
 	/* Now go handle like normal billing */
 	do_billing(session);
 
+	billaccount = switch_channel_get_variable(channel, "nibble_account");
+	if (billaccount) {
+		switch_channel_set_variable_printf(channel, "nibble_current_balance", "%f", get_balance(billaccount));
+	}			
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t process_and_sched(switch_core_session_t *session) {
+	process_hangup(session);
+	sched_billing(session);
 	return SWITCH_STATUS_SUCCESS;
 }
 
 switch_state_handler_table_t nibble_state_handler = {
 	/* on_init */ NULL,
-										/* on_routing */ process_hangup,
-										/* Need to add a check here for anything in their account before routing */
-									/* on_execute */ sched_billing,
-									/* Turn on heartbeat for this session and do an initial account check */
-									/* on_hangup */ process_hangup,
-									/* On hangup - most important place to go bill */
-	/* on_exch_media */ sched_billing,
+	/* on_routing */ process_hangup, 	/* Need to add a check here for anything in their account before routing */
+	/* on_execute */ sched_billing, 	/* Turn on heartbeat for this session and do an initial account check */
+	/* on_hangup */ process_hangup, 	/* On hangup - most important place to go bill */
+	/* on_exch_media */ process_and_sched,
 	/* on_soft_exec */ NULL,
-	/* on_consume_med */ NULL,
+	/* on_consume_med */ process_and_sched,
 	/* on_hibernate */ NULL,
-	/* on_reset */ NULL
+	/* on_reset */ NULL,
+	/* on_park */ NULL,
+	/* on_reporting */ process_hangup, /* force billing event on b-leg if we can */
+	/* on_destroy */ NULL
 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_nibblebill_load)
