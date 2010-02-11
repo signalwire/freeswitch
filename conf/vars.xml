@@ -15,6 +15,8 @@
   <X-PRE-PROCESS cmd="set" data="default_password=1234"/>
   <!-- Did you change it yet? -->
 
+  <X-PRE-PROCESS cmd="set" data="sound_prefix=$${sounds_dir}/en/us/callie"/>
+
   <!--
       This setting is what sets the default domain FreeSWITCH will use if all else fails.
       
