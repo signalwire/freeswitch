@@ -64,3 +64,4 @@ typedef unsigned long in_addr_t;
 #define _Out_z_cap_(x)
 #define _Out_ptrdiff_cap_(x)
 #define _Out_opt_ptrdiff_cap_(x)
+#define _Post_count_(x)
