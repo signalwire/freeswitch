@@ -2367,8 +2367,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static int zstr(string s) {
-    int ret = freeswitchPINVOKE.zstr(s);
+  public static int _zstr(string s) {
+    int ret = freeswitchPINVOKE._zstr(s);
     return ret;
   }
 
@@ -3550,6 +3550,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_ivr_set_param_detect_speech(SWIGTYPE_p_switch_core_session session, string name, string val) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_set_param_detect_speech(SWIGTYPE_p_switch_core_session.getCPtr(session), name, val);
+    return ret;
+  }
+
   public static switch_status_t switch_ivr_record_session(SWIGTYPE_p_switch_core_session session, string file, uint limit, switch_file_handle fh) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_record_session(SWIGTYPE_p_switch_core_session.getCPtr(session), file, limit, switch_file_handle.getCPtr(fh));
     return ret;
@@ -4405,6 +4410,21 @@ public class freeswitch {
 
   public static switch_status_t switch_xml_locate_user_in_domain(string user_name, switch_xml domain, SWIGTYPE_p_p_switch_xml user, SWIGTYPE_p_p_switch_xml ingroup) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_locate_user_in_domain(user_name, switch_xml.getCPtr(domain), SWIGTYPE_p_p_switch_xml.getCPtr(user), SWIGTYPE_p_p_switch_xml.getCPtr(ingroup));
+    return ret;
+  }
+
+  public static switch_status_t switch_xml_locate_user_merged(string key, string user_name, string domain_name, string ip, SWIGTYPE_p_p_switch_xml user, switch_event arg5) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_locate_user_merged(key, user_name, domain_name, ip, SWIGTYPE_p_p_switch_xml.getCPtr(user), switch_event.getCPtr(arg5));
+    return ret;
+  }
+
+  public static void switch_xml_merge_user(switch_xml user, switch_xml domain, switch_xml group) {
+    freeswitchPINVOKE.switch_xml_merge_user(switch_xml.getCPtr(user), switch_xml.getCPtr(domain), switch_xml.getCPtr(group));
+  }
+
+  public static switch_xml switch_xml_dup(switch_xml xml) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_xml_dup(switch_xml.getCPtr(xml));
+    switch_xml ret = (cPtr == IntPtr.Zero) ? null : new switch_xml(cPtr, false);
     return ret;
   }
 
@@ -7427,8 +7447,8 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_SMIN_get")]
   public static extern int SWITCH_SMIN_get();
 
-  [DllImport("mod_managed", EntryPoint="CSharp_zstr")]
-  public static extern int zstr(string jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp__zstr")]
+  public static extern int _zstr(string jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_is_moh")]
   public static extern int switch_is_moh(string jarg1);
@@ -10769,6 +10789,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_detect_speech_unload_grammar")]
   public static extern int switch_ivr_detect_speech_unload_grammar(HandleRef jarg1, string jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_set_param_detect_speech")]
+  public static extern int switch_ivr_set_param_detect_speech(HandleRef jarg1, string jarg2, string jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_record_session")]
   public static extern int switch_ivr_record_session(HandleRef jarg1, string jarg2, uint jarg3, HandleRef jarg4);
 
@@ -11360,6 +11383,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_flags_get")]
   public static extern uint switch_xml_flags_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_is_switch_xml_root_t_set")]
+  public static extern void switch_xml_is_switch_xml_root_t_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_is_switch_xml_root_t_get")]
+  public static extern int switch_xml_is_switch_xml_root_t_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_xml")]
   public static extern IntPtr new_switch_xml();
 
@@ -11464,6 +11493,15 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_locate_user_in_domain")]
   public static extern int switch_xml_locate_user_in_domain(string jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_locate_user_merged")]
+  public static extern int switch_xml_locate_user_merged(string jarg1, string jarg2, string jarg3, string jarg4, HandleRef jarg5, HandleRef jarg6);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_merge_user")]
+  public static extern void switch_xml_merge_user(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_dup")]
+  public static extern IntPtr switch_xml_dup(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_open_cfg")]
   public static extern IntPtr switch_xml_open_cfg(string jarg1, HandleRef jarg2, HandleRef jarg3);
@@ -28320,6 +28358,16 @@ public class switch_xml : IDisposable {
     } 
     get {
       uint ret = freeswitchPINVOKE.switch_xml_flags_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_bool_t is_switch_xml_root_t {
+    set {
+      freeswitchPINVOKE.switch_xml_is_switch_xml_root_t_set(swigCPtr, (int)value);
+    } 
+    get {
+      switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_xml_is_switch_xml_root_t_get(swigCPtr);
       return ret;
     } 
   }
