@@ -231,6 +231,9 @@ static void place_call(const ftdm_span_t *span, const char *number)
 
 	g_outgoing_channel = ftdmchan;
 
+	/* set the caller data for the outgoing channel */
+	memcpy(&ftdmchan->caller_data, &caller_data, sizeof(caller_data));
+
 	status = ftdm_channel_outgoing_call(ftdmchan);
 	if (status != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to originate call\n");
