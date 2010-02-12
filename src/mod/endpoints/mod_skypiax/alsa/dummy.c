@@ -147,9 +147,9 @@ static int emu10k1_playback_constraints(struct snd_pcm_runtime *runtime)
 
 static int index[SNDRV_CARDS] = SNDRV_DEFAULT_IDX;	/* Index 0-MAX */
 static char *id[SNDRV_CARDS] = SNDRV_DEFAULT_STR;	/* ID for this card */
-static int enable[SNDRV_CARDS] = { 1,[1...(SNDRV_CARDS - 1)] = 0 };
-static int pcm_devs[SNDRV_CARDS] = {[0...(SNDRV_CARDS - 1)] = 1 };
-static int pcm_substreams[SNDRV_CARDS] = {[0...(SNDRV_CARDS - 1)] = 128 };
+static int enable[SNDRV_CARDS] = { 1,[1 ... (SNDRV_CARDS - 1)] = 0 };
+static int pcm_devs[SNDRV_CARDS] = {[0 ... (SNDRV_CARDS - 1)] = 1 };
+static int pcm_substreams[SNDRV_CARDS] = {[0 ... (SNDRV_CARDS - 1)] = 128 };
 
 //static int midi_devs[SNDRV_CARDS] = {[0 ... (SNDRV_CARDS - 1)] = 2};
 
