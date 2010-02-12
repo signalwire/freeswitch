@@ -279,6 +279,13 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	char *gr = NULL;
 	uint32_t count = 0;
 	int tg=0;
+	
+	if (sangoma_boost_data->sigmod) {
+		ftdm_log(FTDM_LOG_CRIT, "This function should not be called when sigmod was configured in boost\n");
+		*ftdmchan = NULL;
+		return FTDM_FAIL;
+	}
+
 	if (ftdm_test_flag(span, FTDM_SPAN_SUSPENDED)) {
 		ftdm_log(FTDM_LOG_CRIT, "SPAN is not online.\n");
 		*ftdmchan = NULL;
@@ -295,61 +302,49 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	}
 	sangomabc_call_init(&event, caller_data->cid_num.digits, dnis, r);
 
-	if (sangoma_boost_data->sigmod) {
-		*ftdmchan = span->channels[chan_id];
+	if ((gr = strchr(dnis, '@'))) {
+		*gr++ = '\0';
+	}
 
-		event.span = (uint8_t) (*ftdmchan)->physical_span_id;
-		event.chan = (uint8_t) (*ftdmchan)->physical_chan_id;
-
-		ftdm_set_flag((*ftdmchan), FTDM_CHANNEL_OUTBOUND);
-		ftdm_set_flag_locked((*ftdmchan), FTDM_CHANNEL_INUSE);
-
-		OUTBOUND_REQUESTS[r].ftdmchan = *ftdmchan;
-	} else {
-		if ((gr = strchr(dnis, '@'))) {
-			*gr++ = '\0';
+	if (gr && *(gr+1)) {
+		tg = atoi(gr+1);
+		if (tg > 0) {
+			tg--;
 		}
+	}
+	event.trunk_group = tg;
 
-		if (gr && *(gr+1)) {
-			tg = atoi(gr+1);
-			if (tg > 0) {
-				tg--;
-			}
-		}
-		event.trunk_group = tg;
+	if (check_congestion(tg)) {
+		ftdm_log(FTDM_LOG_CRIT, "All circuits are busy. Trunk Group=%i (BOOST REQUESTED BACK OFF)\n",tg+1);
+		*ftdmchan = NULL;
+		return FTDM_FAIL;
+	}
 
-		if (check_congestion(tg)) {
-			ftdm_log(FTDM_LOG_CRIT, "All circuits are busy. Trunk Group=%i (BOOST REQUESTED BACK OFF)\n",tg+1);
-			*ftdmchan = NULL;
-			return FTDM_FAIL;
-		}
+	ftdm_span_channel_use_count(span, &count);
 
-		ftdm_span_channel_use_count(span, &count);
+	if (count >= span->chan_count) {
+		ftdm_log(FTDM_LOG_CRIT, "All circuits are busy.\n");
+		*ftdmchan = NULL;
+		return FTDM_FAIL;
+	}	
 
-		if (count >= span->chan_count) {
-			ftdm_log(FTDM_LOG_CRIT, "All circuits are busy.\n");
-			*ftdmchan = NULL;
-			return FTDM_FAIL;
-		}	
-	
-		if (gr && *(gr+1)) {
-			switch(*gr) {
-					case 'g':
-							event.hunt_group = SIGBOOST_HUNTGRP_SEQ_ASC;
-							break;
-					case 'G':
-							event.hunt_group = SIGBOOST_HUNTGRP_SEQ_DESC;
-							break;
-					case 'r':
-							event.hunt_group = SIGBOOST_HUNTGRP_RR_ASC;
-							break;
-					case 'R':
-							event.hunt_group = SIGBOOST_HUNTGRP_RR_DESC;
-							break;
-					default:
-				ftdm_log(FTDM_LOG_WARNING, "Failed to determine huntgroup (%s)\n", gr);
-							event.hunt_group = SIGBOOST_HUNTGRP_SEQ_ASC;
-			}
+	if (gr && *(gr+1)) {
+		switch(*gr) {
+				case 'g':
+						event.hunt_group = SIGBOOST_HUNTGRP_SEQ_ASC;
+						break;
+				case 'G':
+						event.hunt_group = SIGBOOST_HUNTGRP_SEQ_DESC;
+						break;
+				case 'r':
+						event.hunt_group = SIGBOOST_HUNTGRP_RR_ASC;
+						break;
+				case 'R':
+						event.hunt_group = SIGBOOST_HUNTGRP_RR_DESC;
+						break;
+				default:
+						ftdm_log(FTDM_LOG_WARNING, "Failed to determine huntgroup (%s)\n", gr);
+									event.hunt_group = SIGBOOST_HUNTGRP_SEQ_ASC;
 		}
 	}
 
@@ -441,9 +436,49 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
  */
 static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(sangoma_boost_outgoing_call)
 {
-	ftdm_status_t status = FTDM_SUCCESS;
+	char dnis[128] = "";
+	sangoma_boost_request_id_t r;
+	sangomabc_event_t event = {0};
+	ftdm_sangoma_boost_data_t *sangoma_boost_data = ftdmchan->span->signal_data;
+	if (!sangoma_boost_data->sigmod) {
+		return FTDM_SUCCESS;
+	}
+	ftdm_set_string(dnis, ftdmchan->caller_data.dnis.digits);
 
-	return status;
+	r = next_request_id();
+	if (r == 0) {
+		ftdm_log(FTDM_LOG_CRIT, "All boost request ids are busy.\n");
+		return FTDM_FAIL;
+	}
+	
+	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
+
+	sangomabc_call_init(&event, ftdmchan->caller_data.cid_num.digits, dnis, r);
+
+	event.span = (uint8_t)ftdmchan->physical_span_id;
+	event.chan = (uint8_t)ftdmchan->physical_chan_id;
+	ftdm_set_string(event.calling_name, ftdmchan->caller_data.cid_name);
+	ftdm_set_string(event.isup_in_rdnis, ftdmchan->caller_data.rdnis.digits);
+	if (strlen(ftdmchan->caller_data.rdnis.digits)) {
+			event.isup_in_rdnis_size = (uint16_t)strlen(ftdmchan->caller_data.rdnis.digits)+1;
+	}
+    
+	event.calling_number_screening_ind = ftdmchan->caller_data.screen;
+	event.calling_number_presentation = ftdmchan->caller_data.pres;
+
+	OUTBOUND_REQUESTS[r].status = BST_WAITING;
+	OUTBOUND_REQUESTS[r].span = ftdmchan->span;
+	OUTBOUND_REQUESTS[r].ftdmchan = ftdmchan;
+
+	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
+
+	ftdm_log(FTDM_LOG_DEBUG, "Dialing number %s over boost channel with request id %d\n", event.called_number_digits, r);
+	if (sangomabc_connection_write(&sangoma_boost_data->mcon, &event) <= 0) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to tx boost event [%s]\n", strerror(errno));
+		return FTDM_FAIL;
+	}
+			
+	return FTDM_SUCCESS;
 }
 
 /**
@@ -457,8 +492,9 @@ static void handle_call_progress(ftdm_span_t *span, sangomabc_connection_t *mcon
 
 
 	if ((ftdmchan = find_ftdmchan(span, event, 1))) {
+		ftdm_sangoma_boost_data_t *sangoma_boost_data = ftdmchan->span->signal_data;
 		ftdm_mutex_lock(ftdmchan->mutex);
-		if (ftdmchan->state == FTDM_CHANNEL_STATE_HOLD) {
+		if (!sangoma_boost_data->sigmod && ftdmchan->state == FTDM_CHANNEL_STATE_HOLD) {
 			if ((event->flags & SIGBOOST_PROGRESS_MEDIA)) {
 				ftdmchan->init_state = FTDM_CHANNEL_STATE_PROGRESS_MEDIA;
 				ftdm_log(FTDM_LOG_DEBUG, "Channel init state updated to PROGRESS_MEDIA [Csid:%d]\n", event->call_setup_id);
@@ -490,7 +526,7 @@ static void handle_call_progress(ftdm_span_t *span, sangomabc_connection_t *mcon
 static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
 	
-	ftdm_channel_t *ftdmchan;
+	ftdm_channel_t *ftdmchan = NULL;
 	uint32_t event_span = event->span+1;
 	uint32_t event_chan = event->chan+1;
 
@@ -514,35 +550,57 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 
 
 	if (ftdmchan) {
+		ftdm_sangoma_boost_data_t *sangoma_boost_data = ftdmchan->span->signal_data;
 		if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
-			ftdm_log(FTDM_LOG_ERROR, "OPEN ERROR [%s]\n", ftdmchan->last_error);
+			ftdm_log(FTDM_LOG_ERROR, "Failed to open FTDM channel [%s]\n", ftdmchan->last_error);
 		} else {
 			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
 			ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_INUSE);
 			ftdmchan->sflags = SFLAG_RECVD_ACK;
 
 			if ((event->flags & SIGBOOST_PROGRESS_MEDIA)) {
-				ftdmchan->init_state = FTDM_CHANNEL_STATE_PROGRESS_MEDIA;
-				ftdm_log(FTDM_LOG_DEBUG, "Channel init state changed to PROGRESS_MEDIA [Csid:%d]\n", event->call_setup_id);
+				if (sangoma_boost_data->sigmod) {
+					ftdm_log(FTDM_LOG_DEBUG, "Channel state changing to PROGRESS_MEDIA [Csid:%d]\n", event->call_setup_id);
+					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+				} else {
+					ftdmchan->init_state = FTDM_CHANNEL_STATE_PROGRESS_MEDIA;
+					ftdm_log(FTDM_LOG_DEBUG, "Channel init state changed to PROGRESS_MEDIA [Csid:%d]\n", event->call_setup_id);
+				}
 			} else if ((event->flags & SIGBOOST_PROGRESS_RING)) {
-				ftdmchan->init_state = FTDM_CHANNEL_STATE_PROGRESS;
-				ftdm_log(FTDM_LOG_DEBUG, "Channel init state changed to PROGRESS [Csid:%d]\n", event->call_setup_id);
+				if (sangoma_boost_data->sigmod) {
+					ftdm_log(FTDM_LOG_DEBUG, "Channel state changing to PROGRESS [Csid:%d]\n", event->call_setup_id);
+					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
+				} else {
+					ftdmchan->init_state = FTDM_CHANNEL_STATE_PROGRESS;
+					ftdm_log(FTDM_LOG_DEBUG, "Channel init state changed to PROGRESS [Csid:%d]\n", event->call_setup_id);
+				}
 			} else {
-				ftdmchan->init_state = FTDM_CHANNEL_STATE_IDLE;
-				ftdm_log(FTDM_LOG_DEBUG, "Channel init state changed to IDLE [Csid:%d]\n", event->call_setup_id);
+				if (sangoma_boost_data->sigmod) {
+					/* should we set a state here? */
+				} else {
+					ftdmchan->init_state = FTDM_CHANNEL_STATE_IDLE;
+					ftdm_log(FTDM_LOG_DEBUG, "Channel init state changed to IDLE [Csid:%d]\n", event->call_setup_id);
+				}
 			}
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HOLD);
+			if (!sangoma_boost_data->sigmod) {
+				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HOLD);
+				ftdm_log(FTDM_LOG_DEBUG, "Assigned chan %d:%d (%d:%d) to CSid=%d\n", 
+						ftdmchan->span_id, ftdmchan->chan_id, event_span, event_chan, event->call_setup_id);
+				OUTBOUND_REQUESTS[event->call_setup_id].ftdmchan = ftdmchan;
+			}
 			OUTBOUND_REQUESTS[event->call_setup_id].flags = event->flags;
-			OUTBOUND_REQUESTS[event->call_setup_id].ftdmchan = ftdmchan;
 			OUTBOUND_REQUESTS[event->call_setup_id].status = BST_READY;
-			ftdm_log(FTDM_LOG_DEBUG, "Assigned chan %d:%d (%d:%d) to CSid=%d\n", 
-					ftdmchan->span_id, ftdmchan->chan_id, event_span, event_chan, event->call_setup_id);
 			return;
 		}
 	} 
-	
+
+	if (!ftdmchan) {
+		ftdm_log(FTDM_LOG_CRIT, "START ACK CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
+	} else {
+		/* only reason to be here is failed to open channel when we we're in sigmod  */
+		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+	}
 	ftdm_set_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG);
-	ftdm_log(FTDM_LOG_CRIT, "START ACK CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
 	sangomabc_exec_command(mcon,
 					   event->span,
 					   event->chan,
@@ -643,22 +701,22 @@ static void handle_call_start_nack(ftdm_span_t *span, sangomabc_connection_t *mc
 	}
 
 	if (event->call_setup_id) {
-		int span = 0;
-		int chan = 0;
 		if (sangoma_boost_data->sigmod) {
-			span = BOOST_SPAN(OUTBOUND_REQUESTS[event->call_setup_id].ftdmchan);
-			chan = BOOST_CHAN(OUTBOUND_REQUESTS[event->call_setup_id].ftdmchan);
+			ftdmchan = OUTBOUND_REQUESTS[event->call_setup_id].ftdmchan;
+			ftdmchan->call_data = (void*)(intptr_t)event->event_id;
+			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+		} else {
+			sangomabc_exec_command(mcon,
+						   0,
+						   0,
+						   event->call_setup_id,
+						   SIGBOOST_EVENT_CALL_START_NACK_ACK,
+						   0, 0);
+			OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
+			OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
+			OUTBOUND_REQUESTS[event->call_setup_id].hangup_cause = event->release_cause;
+			ftdm_log(FTDM_LOG_DEBUG, "setting outbound request status %d to BST_FAIL\n", event->call_setup_id);
 		}
-		sangomabc_exec_command(mcon,
-					   span,
-					   chan,
-					   event->call_setup_id,
-					   SIGBOOST_EVENT_CALL_START_NACK_ACK,
-					   0, 0);
-		OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
-		OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
-		OUTBOUND_REQUESTS[event->call_setup_id].hangup_cause = event->release_cause;
-		ftdm_log(FTDM_LOG_DEBUG, "setting outbound request status %d to BST_FAIL\n", event->call_setup_id);
 		return;
 	} else {
 		if ((ftdmchan = find_ftdmchan(span, event, 1))) {
@@ -668,7 +726,6 @@ static void handle_call_start_nack(ftdm_span_t *span, sangomabc_connection_t *mc
 			ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND), "Yay, outbound flag should not be set here!\n");
 
 			ftdmchan->call_data = (void*)(intptr_t)event->event_id;
-
 			ftdm_mutex_lock(ftdmchan->mutex);
 			ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
 			if (r == FTDM_STATE_CHANGE_SUCCESS) {
@@ -1701,7 +1758,7 @@ static ftdm_state_map_t boost_state_map = {
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
 			{FTDM_CHANNEL_STATE_DOWN, FTDM_END},
-			{FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_IDLE, FTDM_CHANNEL_STATE_HOLD, FTDM_END}
+			{FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_DIALING, FTDM_CHANNEL_STATE_IDLE, FTDM_CHANNEL_STATE_HOLD, FTDM_END}
 		},
 		{
 			ZSD_OUTBOUND,
@@ -1713,13 +1770,13 @@ static ftdm_state_map_t boost_state_map = {
 		{
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
-			{FTDM_CHANNEL_STATE_IDLE, FTDM_END},
+			{FTDM_CHANNEL_STATE_IDLE, FTDM_CHANNEL_STATE_DIALING, FTDM_END},
 			{FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_PROGRESS, FTDM_END}
 		},
 		{
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
-			{FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_IDLE, FTDM_END},
+			{FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_IDLE, FTDM_CHANNEL_STATE_DIALING, FTDM_END},
 			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_UP, FTDM_END}
 		},
 		{
@@ -2014,11 +2071,11 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 	span->get_span_sig_status = sangoma_boost_get_span_sig_status;
 	span->set_span_sig_status = sangoma_boost_set_span_sig_status;
 	span->state_map = &boost_state_map;
+	span->suggest_chan_id = 0;
 	if (sigmod_iface) {
-		span->suggest_chan_id = 1;
-	} else {
-		span->suggest_chan_id = 0;
-	}
+		/* the core will do the hunting */
+		span->channel_request = NULL;
+	} 
 	ftdm_set_flag_locked(span, FTDM_SPAN_SUSPENDED);
 	return FTDM_SUCCESS;
 }
