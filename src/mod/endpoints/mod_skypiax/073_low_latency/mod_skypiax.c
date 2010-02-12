@@ -36,12 +36,7 @@
 
 #include "skypiax.h"
 #define MDL_CHAT_PROTO "skype"
-#undef TIMERS_ON
-#ifdef TIMERS_ON
 #define TIMER_WRITE
-#else
-#undef TIMER_WRITE
-#endif
 
 #ifdef WIN32
 /***************/
@@ -263,7 +258,6 @@ switch_status_t skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *s
 		return SWITCH_STATUS_FALSE;
 	}
 
-#ifdef TIMERS_ON
 	if (switch_core_timer_init(&tech_pvt->timer_read, "soft", 20, tech_pvt->read_codec.implementation->samples_per_packet, skypiax_module_pool) !=
 		SWITCH_STATUS_SUCCESS) {
 		ERRORA("setup timer failed\n", SKYPIAX_P_LOG);
@@ -271,7 +265,6 @@ switch_status_t skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *s
 	}
 
 	switch_core_timer_sync(&tech_pvt->timer_read);
-#endif// TIMERS_ON
 
 #ifdef TIMER_WRITE
 	if (switch_core_timer_init(&tech_pvt->timer_write, "soft", 20, tech_pvt->write_codec.implementation->samples_per_packet, skypiax_module_pool) !=
@@ -489,9 +482,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
 
-#ifdef TIMERS_ON
 		switch_core_timer_destroy(&tech_pvt->timer_read);
-#endif// TIMERS_ON
 #ifdef TIMER_WRITE
 
 		switch_core_timer_destroy(&tech_pvt->timer_write);
@@ -736,9 +727,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				DEBUGA_SKYPE("CHANNEL READ CONTINUE\n", SKYPIAX_P_LOG);
 				continue;
 			}
-#ifdef TIMERS_ON
 			switch_core_timer_check(&tech_pvt->timer_read, SWITCH_TRUE);
-#endif// TIMERS_ON
 			*frame = &tech_pvt->read_frame;
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 			if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
@@ -874,9 +863,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		{
 			DEBUGA_SKYPE("MSG_ID=%d, TO BE ANSWERED!\n", SKYPIAX_P_LOG, msg->message_id);
 
-#ifdef TIMERS_ON
 			switch_core_timer_sync(&tech_pvt->timer_read);
-#endif// TIMERS_ON
 #ifdef TIMER_WRITE
 			switch_core_timer_sync(&tech_pvt->timer_write);
 #endif // TIMER_WRITE
@@ -887,9 +874,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 		DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_AUDIO_SYNC\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
 
-#ifdef TIMERS_ON
 		switch_core_timer_sync(&tech_pvt->timer_read);
-#endif// TIMERS_ON
 #ifdef TIMER_WRITE
 		switch_core_timer_sync(&tech_pvt->timer_write);
 #endif // TIMER_WRITE
@@ -897,9 +882,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	default:
 		{
 
-#ifdef TIMERS_ON
 			switch_core_timer_sync(&tech_pvt->timer_read);
-#endif// TIMERS_ON
 #ifdef TIMER_WRITE
 
 			switch_core_timer_sync(&tech_pvt->timer_write);

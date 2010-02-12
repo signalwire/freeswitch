@@ -56,7 +56,7 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 
 	my_addr.sin_port = htons(start_port);
 /* NONBLOCKING ? */
-	//fcntl(s, F_SETFL, O_NONBLOCK);
+	fcntl(s, F_SETFL, O_NONBLOCK);
 
 	*which_port = start_port;
 	while (bind(s, (struct sockaddr *) &my_addr, sizeof(struct sockaddr)) < 0) {
@@ -100,7 +100,7 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 	sockbufsize = SAMPLES_PER_FRAME * 8;
 #endif //WIN32
 	size = sizeof(int);
-	setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &sockbufsize, size);
+	//setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &sockbufsize, size);
 
 	sockbufsize = 0;
 	size = sizeof(int);
@@ -117,7 +117,7 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 	sockbufsize = SAMPLES_PER_FRAME * 8;
 #endif //WIN32
 	size = sizeof(int);
-	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &sockbufsize, size);
+	//setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &sockbufsize, size);
 
 
 	sockbufsize = 0;

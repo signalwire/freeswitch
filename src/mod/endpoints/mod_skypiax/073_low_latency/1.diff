@@ -1,0 +1,55 @@
+Index: skypiax_protocol.c
+===================================================================
+--- skypiax_protocol.c	(revision 16583)
++++ skypiax_protocol.c	(working copy)
+@@ -1040,22 +1040,35 @@
+ 					fdselect = fd;
+ 					FD_SET(fdselect, &fs);
+ 
++#if 1
+ 					//FIXME rt = select(fdselect + 1, NULL, &fs, NULL, &to);
+ 					while (tech_pvt->flag_audio_cli == 0) {
+ #ifdef WIN32
+ 						skypiax_sleep(100);	//0.1 millisec
+ #else
+-						skypiax_sleep(1000);	//1 millisec
++						skypiax_sleep(10000);	//10 millisec
+ #endif //WIN32
+ 						//WARNINGA("write now is 0\n", SKYPIAX_P_LOG);
+ 					}
+ 					//ERRORA("write is now 1\n", SKYPIAX_P_LOG);
+ 
+ 					rt = 1;
++#endif //0
++					//rt = select(fdselect + 1, NULL, &fs, NULL, NULL);
+ 
+ 					if (rt > 0) {
+ 						int counter;
+-
++#if 0
++					while (tech_pvt->flag_audio_cli == 0) {
++#ifdef WIN32
++						skypiax_sleep(100);	//0.1 millisec
++#else
++						skypiax_sleep(10000);	//10 millisec
++#endif //WIN32
++						WARNINGA("write now is 0\n", SKYPIAX_P_LOG);
++					}
++#endif //0
++	
+ 						/* until we drained the pipe to empty */
+ 						//for (counter = 0; counter < 10; counter++) {
+ 						for (counter = 0; counter < 1; counter++) {
+@@ -1155,10 +1168,10 @@
+ #ifdef WIN32
+ 		skypiax_sleep(100);		//0.1 millisec
+ #else
+-		skypiax_sleep(1000);	//1 millisec
++		skypiax_sleep(10000);	//10 millisec
+ #endif //WIN32
+ 
+-		//WARNINGA("read now is 0\n", SKYPIAX_P_LOG);
++		WARNINGA("read now is 0\n", SKYPIAX_P_LOG);
+ 	}
+ 	//ERRORA("read is now 1\n", SKYPIAX_P_LOG);
+ 	//samples = skypiax_pipe_read(tech_pvt->audiopipe_srv[0], tech_pvt->read_frame.data, SAMPLES_PER_FRAME * sizeof(short));
