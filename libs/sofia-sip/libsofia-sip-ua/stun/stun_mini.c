@@ -372,6 +372,7 @@ int send_stun_error(stun_msg_t *response,
   attr = malloc(sizeof *attr); if (!attr) return -1;
   response->stun_attr = attr;
   attr->attr_type = ERROR_CODE;
+  attr->next = NULL;
 
   errorcode = malloc(sizeof(*errorcode));
   if (!errorcode)
