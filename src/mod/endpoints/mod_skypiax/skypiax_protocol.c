@@ -55,9 +55,8 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 		start_port = *which_port;
 
 	my_addr.sin_port = htons(start_port);
-/* NONBLOCKING ? */
 	//fcntl(s, F_SETFL, O_NONBLOCK);
-
+	//tech_pvt->tcp_cli_port = start_port;
 	*which_port = start_port;
 	while (bind(s, (struct sockaddr *) &my_addr, sizeof(struct sockaddr)) < 0) {
 		DEBUGA_SKYPE("*which_port=%d, tech_pvt->tcp_cli_port=%d, tech_pvt->tcp_srv_port=%d\n", SKYPIAX_P_LOG, *which_port, tech_pvt->tcp_cli_port,
@@ -118,7 +117,6 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 #endif //WIN32
 	size = sizeof(int);
 	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &sockbufsize, size);
-
 
 	sockbufsize = 0;
 	size = sizeof(int);
@@ -724,22 +722,22 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 	private_t *tech_pvt = obj;
 	int s;
 	unsigned int len;
-	//unsigned int i;
-	//unsigned int a;
+	unsigned int i;
+	unsigned int a;
 #if defined(WIN32) && !defined(__CYGWIN__)
 	int sin_size;
 #else /* WIN32 */
 	unsigned int sin_size;
 #endif /* WIN32 */
 	unsigned int fd;
-	//short srv_in[SAMPLES_PER_FRAME];
-	//short srv_out[SAMPLES_PER_FRAME / 2];
+	short srv_in[SAMPLES_PER_FRAME];
+	short srv_out[SAMPLES_PER_FRAME / 2];
 	//struct sockaddr_in my_addr;
 	struct sockaddr_in remote_addr;
 	//int exit = 0;
 	unsigned int kill_cli_size;
 	short kill_cli_buff[SAMPLES_PER_FRAME];
-	//short totalbuf[SAMPLES_PER_FRAME];
+	short totalbuf[SAMPLES_PER_FRAME];
 	int sockbufsize = 0;
 	unsigned int size = sizeof(int);
 
@@ -798,13 +796,6 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 					   && (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD || tech_pvt->skype_callflow == SKYPIAX_STATE_UP)) {
-
-					tech_pvt->readfd = fd;
-						//WARNINGA("read HERE\n", SKYPIAX_P_LOG);
-						skypiax_sleep(100000);
-
-
-#ifdef NOLOOP
 
 					unsigned int fdselect;
 					int rt;
@@ -875,16 +866,13 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 
 
 								howmany = SAMPLES_PER_FRAME * sizeof(short);
-								//while (tech_pvt->flag_audio_srv == 1) {
-									//switch_sleep(1000);	//10 millisec
-						//WARNINGA("read now is 1\n", SKYPIAX_P_LOG);
-								//}
-								//if (tech_pvt->flag_audio_srv == 0) {
-	//switch_mutex_lock(tech_pvt->flag_audio_srv_mutex);
+								if (tech_pvt->flag_audio_srv == 1) {
+									switch_sleep(1000);	//1 millisec
+								}
+								if (tech_pvt->flag_audio_srv == 0) {
 									memcpy(tech_pvt->audiobuf_srv, totalbuf, SAMPLES_PER_FRAME * sizeof(short));
 									tech_pvt->flag_audio_srv = 1;
-	//switch_mutex_unlock(tech_pvt->flag_audio_srv_mutex);
-								//}
+								}
 								//NOTICA("read \n", SKYPIAX_P_LOG);
 								if (howmany != SAMPLES_PER_FRAME * sizeof(short)) {
 									ERRORA("howmany is %d, but was expected to be %d\n", SKYPIAX_P_LOG,
@@ -906,7 +894,6 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 						skypiax_sleep(10000);
 					}
 
-#endif// NOLOOP
 				}
 
 				/* let's send some frame in the pipes, so both tcp_cli and tcp_srv will have an occasion to die */
@@ -931,7 +918,6 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 				skypiax_sleep(2000);
 				DEBUGA_SKYPE("Skype incoming audio GONE\n", SKYPIAX_P_LOG);
 				skypiax_close_socket(fd);
-				break;
 			}
 		}
 	}
@@ -948,15 +934,13 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 	int s;
 	//struct sockaddr_in my_addr;
 	struct sockaddr_in remote_addr;
-#ifdef NOVARS
 	unsigned int got;
 	unsigned int len;
 	unsigned int i;
 	unsigned int a;
+	unsigned int fd;
 	short cli_out[SAMPLES_PER_FRAME * 2];
 	short cli_in[SAMPLES_PER_FRAME];
-#endif// NOVARS
-	unsigned int fd;
 #ifdef WIN32
 	int sin_size;
 #else
@@ -1025,19 +1009,10 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 
 				if (!(running && tech_pvt->running))
 					break;
-
-
-
-
 				while (tech_pvt->interface_state != SKYPIAX_STATE_DOWN
 					   && (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD || tech_pvt->skype_callflow == SKYPIAX_STATE_UP)) {
-					tech_pvt->writefd = fd;
-						//NOTICA("write HERE\n", SKYPIAX_P_LOG);
-						skypiax_sleep(100000);
-#if 0
-#ifdef NOVARS
 					unsigned int fdselect;
 					int rt;
 					fd_set fs;
@@ -1064,46 +1039,32 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 					fdselect = fd;
 					FD_SET(fdselect, &fs);
 
-#endif// NOVARS
-#if 0
-					rt = select(fdselect + 1, NULL, &fs, NULL, NULL);
+					//FIXME rt = select(fdselect + 1, NULL, &fs, NULL, &to);
 					while (tech_pvt->flag_audio_cli == 0) {
 #ifdef WIN32
 						skypiax_sleep(100);	//0.1 millisec
 #else
-						skypiax_sleep(1000);	//10 millisec
+						skypiax_sleep(1000);	//1 millisec
 #endif //WIN32
-						NOTICA("write now is 0\n", SKYPIAX_P_LOG);
+						//WARNINGA("write now is 0\n", SKYPIAX_P_LOG);
 					}
 					//ERRORA("write is now 1\n", SKYPIAX_P_LOG);
 
 					rt = 1;
-#endif //0
-					//rt = select(fdselect + 1, NULL, &fs, NULL, NULL);
 
-#ifdef NOLOOP
 					if (rt > 0) {
 						int counter;
-#if 0
-					while (tech_pvt->flag_audio_cli == 0) {
-#ifdef WIN32
-						skypiax_sleep(100);	//0.1 millisec
-#else
-						skypiax_sleep(10000);	//10 millisec
-#endif //WIN32
-						WARNINGA("write now is 0\n", SKYPIAX_P_LOG);
-					}
-#endif //0
-	
+
 						/* until we drained the pipe to empty */
+						//for (counter = 0; counter < 10; counter++) {
 						for (counter = 0; counter < 1; counter++) {
 							/* read from the pipe the audio frame we are supposed to send out */
 							//got = skypiax_pipe_read(tech_pvt->audiopipe_cli[0], cli_in, SAMPLES_PER_FRAME * sizeof(short));
 
 
 							got = SAMPLES_PER_FRAME * sizeof(short);
-	switch_mutex_lock(tech_pvt->flag_audio_cli_mutex);
 							memcpy(cli_in, tech_pvt->audiobuf_cli, SAMPLES_PER_FRAME * sizeof(short));
+							tech_pvt->flag_audio_cli = 0;
 
 
 
@@ -1139,7 +1100,6 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 								/* send the 16khz frame to the Skype client waiting for incoming audio to be sent to the remote party */
 								if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
 									len = send(fd, (char *) cli_out, got, 0);
-							tech_pvt->flag_audio_cli = 0;
 									//skypiax_sleep(5000);  //5 msec
 
 									if (len == -1) {
@@ -1151,7 +1111,6 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 									}
 								}
 
-	switch_mutex_unlock(tech_pvt->flag_audio_cli_mutex);
 							} else {
 
 								WARNINGA("got is %d, but was expected to be %d\n", SKYPIAX_P_LOG, got, (int) (SAMPLES_PER_FRAME * sizeof(short)));
@@ -1174,12 +1133,9 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 						skypiax_sleep(1000);
 					}
 
-#endif// NOLOOP
-#endif// 0
 				}
 				DEBUGA_SKYPE("Skype outbound audio GONE\n", SKYPIAX_P_LOG);
 				skypiax_close_socket(fd);
-				break;
 			}
 		}
 	}
@@ -1194,24 +1150,20 @@ int skypiax_audio_read(private_t * tech_pvt)
 {
 	unsigned int samples;
 
-#if 0
 	while (tech_pvt->flag_audio_srv == 0) {
 #ifdef WIN32
 		skypiax_sleep(100);		//0.1 millisec
 #else
-		skypiax_sleep(1000);	//10 millisec
+		skypiax_sleep(1000);	//1 millisec
 #endif //WIN32
 
-		WARNINGA("read now is 0\n", SKYPIAX_P_LOG);
+		//WARNINGA("read now is 0\n", SKYPIAX_P_LOG);
 	}
-#endif //0
 	//ERRORA("read is now 1\n", SKYPIAX_P_LOG);
 	//samples = skypiax_pipe_read(tech_pvt->audiopipe_srv[0], tech_pvt->read_frame.data, SAMPLES_PER_FRAME * sizeof(short));
 	samples = SAMPLES_PER_FRAME * sizeof(short);
-	//switch_mutex_lock(tech_pvt->flag_audio_srv_mutex);
 	memcpy(tech_pvt->read_frame.data, tech_pvt->audiobuf_srv, SAMPLES_PER_FRAME * sizeof(short));
 	tech_pvt->flag_audio_srv = 0;
-	//switch_mutex_unlock(tech_pvt->flag_audio_srv_mutex);
 
 	if (samples != SAMPLES_PER_FRAME * sizeof(short)) {
 		if (samples)

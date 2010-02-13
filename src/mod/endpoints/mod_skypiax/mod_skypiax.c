@@ -36,12 +36,7 @@
 
 #include "skypiax.h"
 #define MDL_CHAT_PROTO "skype"
-#define TIMERS_ON
-#ifdef TIMERS_ON
 #define TIMER_WRITE
-#else
-#undef TIMER_WRITE
-#endif
 
 #ifdef WIN32
 /***************/
@@ -263,7 +258,6 @@ switch_status_t skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *s
 		return SWITCH_STATUS_FALSE;
 	}
 
-#ifdef TIMERS_ON
 	if (switch_core_timer_init(&tech_pvt->timer_read, "soft", 20, tech_pvt->read_codec.implementation->samples_per_packet, skypiax_module_pool) !=
 		SWITCH_STATUS_SUCCESS) {
 		ERRORA("setup timer failed\n", SKYPIAX_P_LOG);
@@ -271,7 +265,6 @@ switch_status_t skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *s
 	}
 
 	switch_core_timer_sync(&tech_pvt->timer_read);
-#endif// TIMERS_ON
 
 #ifdef TIMER_WRITE
 	if (switch_core_timer_init(&tech_pvt->timer_write, "soft", 20, tech_pvt->write_codec.implementation->samples_per_packet, skypiax_module_pool) !=
@@ -489,9 +482,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
 
-#ifdef TIMERS_ON
 		switch_core_timer_destroy(&tech_pvt->timer_read);
-#endif// TIMERS_ON
 #ifdef TIMER_WRITE
 
 		switch_core_timer_destroy(&tech_pvt->timer_write);
@@ -684,7 +675,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	switch_byte_t *data;
-//unsigned int len;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -703,14 +693,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	//switch_core_timer_next(&tech_pvt->timer_read);
 
-						if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
-							tech_pvt->read_frame.datalen = recv(tech_pvt->readfd, (char *) tech_pvt->read_frame.data, 320, 0);	//seems that Skype only sends 320 bytes at time
-						} else {
-							tech_pvt->read_frame.datalen = 0;
-						}
-
-	//if (!skypiax_audio_read(tech_pvt)) {
-	if (!tech_pvt->read_frame.datalen) {
+	if (!skypiax_audio_read(tech_pvt)) {
 
 		ERRORA("skypiax_audio_read ERROR\n", SKYPIAX_P_LOG);
 
@@ -736,9 +719,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				DEBUGA_SKYPE("CHANNEL READ CONTINUE\n", SKYPIAX_P_LOG);
 				continue;
 			}
-#ifdef TIMERS_ON
 			switch_core_timer_check(&tech_pvt->timer_read, SWITCH_TRUE);
-#endif// TIMERS_ON
 			*frame = &tech_pvt->read_frame;
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 			if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
@@ -771,7 +752,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
-	unsigned int sent=0;
+	unsigned int sent;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -790,50 +771,25 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 #endif
 
-#if 0
 	sent = frame->datalen;
 #ifdef WIN32
 	//switch_file_write(tech_pvt->audiopipe_cli[1], frame->data, &sent);
 #else /* WIN32 */
 	//sent = write(tech_pvt->audiopipe_cli[1], frame->data, sent);
 #endif /* WIN32 */
-	//if (tech_pvt->flag_audio_cli == 0) {
+	if (tech_pvt->flag_audio_cli == 1) {
+		switch_sleep(1000);		//1 millisec
+	}
+	if (tech_pvt->flag_audio_cli == 0) {
 #ifdef TIMER_WRITE
 		switch_core_timer_next(&tech_pvt->timer_write);
 #endif // TIMER_WRITE
 
-	//while (tech_pvt->flag_audio_cli == 1) {
-		//switch_sleep(1000);		//10 millisec
-						//WARNINGA("write now is 1\n", SKYPIAX_P_LOG);
-	//}
-	switch_mutex_lock(tech_pvt->flag_audio_cli_mutex);
 		memcpy(tech_pvt->audiobuf_cli, frame->data, frame->datalen);
 		tech_pvt->flag_audio_cli = 1;
-	switch_mutex_unlock(tech_pvt->flag_audio_cli_mutex);
-	//}
+	}
 	//NOTICA("write \n", SKYPIAX_P_LOG);
-#endif //0
 
-#ifdef TIMER_WRITE
-/* NONBLOCKING ? */
-		switch_core_timer_next(&tech_pvt->timer_write);
-		//switch_core_timer_check(&tech_pvt->timer_write, SWITCH_TRUE);
-#endif // TIMER_WRITE
-	/* send the 16khz frame to the Skype client waiting for incoming audio to be sent to the remote party */
-								if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
-									sent = send(tech_pvt->writefd, (char *) frame->data, frame->datalen, 0);
-									if (sent == -1) {
-										ERRORA("EXIT? sent=%d\n", SKYPIAX_P_LOG, sent);
-									} else if (sent != frame->datalen) {
-										ERRORA("sent=%d\n", SKYPIAX_P_LOG, sent);
-									}
-								}
-
-
-#ifdef TIMER_WRITE
-/* BLOCKING ? */
-		//switch_core_timer_check(&tech_pvt->timer_write, SWITCH_TRUE);
-#endif // TIMER_WRITE
 	if (sent != frame->datalen && sent != -1) {
 		DEBUGA_SKYPE("CLI PIPE write %d\n", SKYPIAX_P_LOG, sent);
 	}
@@ -874,9 +830,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		{
 			DEBUGA_SKYPE("MSG_ID=%d, TO BE ANSWERED!\n", SKYPIAX_P_LOG, msg->message_id);
 
-#ifdef TIMERS_ON
 			switch_core_timer_sync(&tech_pvt->timer_read);
-#endif// TIMERS_ON
 #ifdef TIMER_WRITE
 			switch_core_timer_sync(&tech_pvt->timer_write);
 #endif // TIMER_WRITE
@@ -887,9 +841,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 		DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_AUDIO_SYNC\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
 
-#ifdef TIMERS_ON
 		switch_core_timer_sync(&tech_pvt->timer_read);
-#endif// TIMERS_ON
 #ifdef TIMER_WRITE
 		switch_core_timer_sync(&tech_pvt->timer_write);
 #endif // TIMER_WRITE
@@ -897,9 +849,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	default:
 		{
 
-#ifdef TIMERS_ON
 			switch_core_timer_sync(&tech_pvt->timer_read);
-#endif// TIMERS_ON
 #ifdef TIMER_WRITE
 
 			switch_core_timer_sync(&tech_pvt->timer_write);
@@ -1444,8 +1394,6 @@ static switch_status_t load_config(int reload_type)
 
 				skypiax_audio_init(&globals.SKYPIAX_INTERFACES[interface_id]);
 
-	switch_mutex_init(&globals.SKYPIAX_INTERFACES[interface_id].flag_audio_srv_mutex, SWITCH_MUTEX_NESTED, skypiax_module_pool);
-	switch_mutex_init(&globals.SKYPIAX_INTERFACES[interface_id].flag_audio_cli_mutex, SWITCH_MUTEX_NESTED, skypiax_module_pool);
 				NOTICA
 					("WAITING roughly 10 seconds to find a running Skype client and connect to its SKYPE API for interface_id=%d\n",
 					 SKYPIAX_P_LOG, interface_id);

@@ -29,7 +29,6 @@
  * Further Contributors:
  *
  *
- *
  * mod_skypiax.c -- Skype compatible Endpoint Module
  *
  */
@@ -192,8 +191,6 @@ struct private_object {
 	switch_caller_profile_t *caller_profile;
 	switch_mutex_t *mutex;
 	switch_mutex_t *flag_mutex;
-	switch_mutex_t *flag_audio_cli_mutex;
-	switch_mutex_t *flag_audio_srv_mutex;
 
 	char interface_id[80];
 	char name[80];
@@ -281,8 +278,6 @@ struct private_object {
 	uint32_t report_incoming_chatmessages;
 	switch_timer_t timer_read;
 	switch_timer_t timer_write;
-unsigned int writefd;
-unsigned int readfd;
 };
 
 typedef struct private_object private_t;
