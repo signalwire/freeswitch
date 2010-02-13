@@ -40,7 +40,7 @@ struct mod_opal_globals mod_opal_globals = { 0 };
 
 static switch_call_cause_t create_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
                                                    switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
-                                                   switch_memory_pool_t **pool, switch_originate_flag_t flags);
+                                                   switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
 
 
 static FSProcess *opal_process = NULL;
@@ -138,7 +138,7 @@ SWITCH_END_EXTERN_C
 static switch_call_cause_t create_outgoing_channel(switch_core_session_t *session,
                                                    switch_event_t *var_event,
                                                    switch_caller_profile_t *outbound_profile,
-                                                   switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
+                                                   switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
 {
     if (opal_process == NULL) {
         return SWITCH_CAUSE_CRASH;
@@ -250,7 +250,7 @@ class FSTrace : public ostream {
                         line = atoi(bufPtr);
                         while (bufEndPtr && isspace(*(++bufEndPtr)));
                         bufPtr = bufEndPtr;
-                        if (bufPtr && (e = strchr(bufPtr, ' ')) || (e = strchr(bufPtr, '\t'))) {
+                        if (bufPtr && ((e = strchr(bufPtr, ' ')) || (e = strchr(bufPtr, '\t')))) {
                             func = bufPtr;
                             bufPtr = e;
                             *bufPtr++ = '\0';
