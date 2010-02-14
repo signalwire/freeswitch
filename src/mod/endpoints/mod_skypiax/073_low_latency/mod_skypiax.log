@@ -1,5 +1,0 @@
-gcc -shared  .libs/mod_skypiax_la-mod_skypiax.o .libs/mod_skypiax_la-skypiax_protocol.o  -Wl,--rpath -Wl,/usr/src/freeswitch/.libs -Wl,--rpath -Wl,/usr/local/freeswitch/lib -lm -lX11 /usr/src/freeswitch/.libs/libfreeswitch.so -L/usr/src/freeswitch/libs/apr-util/xml/expat/lib -L/usr/src/freeswitch/libs/apr-util/xml/expat/lib/.libs -L/usr/src/freeswitch/libs/apr/.libs -L/usr/src/freeswitch/libs/srtp -lncurses  -Wl,-soname -Wl,mod_skypiax.so -o .libs/mod_skypiax.so
-ar cru .libs/mod_skypiax.a  mod_skypiax_la-mod_skypiax.o mod_skypiax_la-skypiax_protocol.o
-ranlib .libs/mod_skypiax.a
-creating mod_skypiax.la
-(cd .libs && rm -f mod_skypiax.la && ln -s ../mod_skypiax.la mod_skypiax.la)
