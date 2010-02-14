@@ -240,7 +240,6 @@ static void zap_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, const
 {
 	zap_sigmsg_t sigev;
 	zap_channel_t *zchan = openr2_chan_get_client_data(r2chan);
-	zap_r2_data_t *r2data = zchan->span->signal_data;
 
 	zap_log(ZAP_LOG_NOTICE, "Call offered on chan %d, ANI = %s, DNIS = %s, Category = %s\n", openr2_chan_get_number(r2chan), 
 			ani, dnis, openr2_proto_get_category_string(category));
@@ -911,7 +910,6 @@ static void *zap_r2_channel_run(zap_thread_t *me, void *obj)
 	zap_sigmsg_t sigev;
 	zap_channel_t *zchan = (zap_channel_t *)obj;
 	openr2_chan_t *r2chan = R2CALL(zchan)->r2chan;
-	zap_r2_data_t *r2data = zchan->span->signal_data;
 
 	zap_set_flag_locked(zchan, ZAP_CHANNEL_INTHREAD);
 
