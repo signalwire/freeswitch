@@ -336,8 +336,8 @@ static void snd_card_dummy_pcm_timer_function(unsigned long data)
 			printk("giova: timer_func %d %d NULL: continue\n", __LINE__, i);
 			continue;
 		}
-		if (in_irq())
-			printk("giova: timer_func %d %d we are in HARDWARE IRQ\n", __LINE__, i);
+		//if (in_irq())
+			//printk("giova: timer_func %d %d we are in HARDWARE IRQ\n", __LINE__, i);
 		//if(in_softirq())
 		//printk("giova: timer_func %d %d we are in SOFT IRQ\n", __LINE__, i);
 //printk("giova: timer_func %d %d\n", __LINE__, i);
@@ -364,8 +364,8 @@ static snd_pcm_uframes_t snd_card_dummy_pcm_pointer(struct snd_pcm_substream *su
 	struct snd_dummy_pcm *dpcm = runtime->private_data;
 
 //printk("giova: pointer %d %p\n", __LINE__, dpcm);
-	//return bytes_to_frames(runtime, dpcm->pcm_buf_pos / dpcm->pcm_hz);
-	return (dpcm->pcm_buf_pos / dpcm->pcm_hz) / 2;
+	return bytes_to_frames(runtime, dpcm->pcm_buf_pos / dpcm->pcm_hz);
+	//return (dpcm->pcm_buf_pos / dpcm->pcm_hz) / 2;
 }
 
 static struct snd_pcm_hardware snd_card_dummy_playback = {

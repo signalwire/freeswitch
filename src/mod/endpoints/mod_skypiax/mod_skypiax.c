@@ -719,7 +719,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				DEBUGA_SKYPE("CHANNEL READ CONTINUE\n", SKYPIAX_P_LOG);
 				continue;
 			}
-			switch_core_timer_check(&tech_pvt->timer_read, SWITCH_TRUE);
 			*frame = &tech_pvt->read_frame;
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 			if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
@@ -1393,6 +1392,7 @@ static switch_status_t load_config(int reload_type)
 				switch_sleep(100000);
 
 				skypiax_audio_init(&globals.SKYPIAX_INTERFACES[interface_id]);
+				switch_mutex_init(&globals.SKYPIAX_INTERFACES[interface_id].mutex_audio_srv, SWITCH_MUTEX_NESTED, skypiax_module_pool);
 
 				NOTICA
 					("WAITING roughly 10 seconds to find a running Skype client and connect to its SKYPE API for interface_id=%d\n",
@@ -1740,7 +1740,7 @@ int dtmf_received(private_t * tech_pvt, char *value)
 
 	if (channel) {
 
-		if (!switch_channel_test_flag(channel, CF_BRIDGED)) {
+		//if (!switch_channel_test_flag(channel, CF_BRIDGED)) {
 
 			switch_dtmf_t dtmf = { (char) value[0], switch_core_default_dtmf_duration(0) };
 			DEBUGA_SKYPE("received DTMF %c on channel %s\n", SKYPIAX_P_LOG, dtmf.digit, switch_channel_get_name(channel));
@@ -1749,10 +1749,10 @@ int dtmf_received(private_t * tech_pvt, char *value)
 			switch_channel_queue_dtmf(channel, &dtmf);
 			switch_set_flag(tech_pvt, TFLAG_DTMF);
 			switch_mutex_unlock(tech_pvt->flag_mutex);
-		} else {
-			NOTICA
-				("received a DTMF on channel %s, but we're BRIDGED, so let's NOT relay it out of band\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
-		}
+		//} else {
+			//NOTICA
+				//("received a DTMF on channel %s, but we're BRIDGED, so let's NOT relay it out of band\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
+		//}
 	} else {
 		WARNINGA("received %c DTMF, but no channel?\n", SKYPIAX_P_LOG, value[0]);
 	}
