@@ -738,7 +738,8 @@ static void profile_rwunlock(vm_profile_t *profile)
 {
 	switch_thread_rwlock_unlock(profile->rwlock);
 	if (switch_test_flag(profile, PFLAG_DESTROY)) {
-		if (switch_thread_rwlock_tryrdlock(profile->rwlock) == SWITCH_STATUS_SUCCESS) {
+		if (switch_thread_rwlock_trywrlock(profile->rwlock) == SWITCH_STATUS_SUCCESS) {
+			switch_thread_rwlock_unlock(profile->rwlock);
 			free_profile(profile);
 		}
 	}
