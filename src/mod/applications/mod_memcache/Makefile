@@ -13,12 +13,16 @@ LOCAL_LIBADD=$(MEMCACHEDLA)
 
 include $(BASE)/build/modmake.rules
 
+MY_DEFAULT_ARGS:= --build=$(build) --host=$(host) --target=$(target) \
+  --disable-shared --with-pic
+
 $(MEMCACHED_DIR):
 	$(GETLIB) $(MEMCACHED).tar.gz
 
 $(MEMCACHED_BUILDDIR)/Makefile: $(MEMCACHED_DIR)
 	mkdir -p $(MEMCACHED_BUILDDIR)
-	cd $(MEMCACHED_BUILDDIR) && $(DEFAULT_VARS) $(MEMCACHED_DIR)/configure $(DEFAULT_ARGS) --with-memcached=no --srcdir=$(MEMCACHED_DIR)  CPPFLAGS= LDFLAGS=
+	echo $(MY_DEFAULT_ARGS)
+	cd $(MEMCACHED_BUILDDIR) && $(DEFAULT_VARS) $(MEMCACHED_DIR)/configure $(MY_DEFAULT_ARGS) --with-memcached=no --srcdir=$(MEMCACHED_DIR)  CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
 $(MEMCACHEDLA): $(MEMCACHED_BUILDDIR)/Makefile
