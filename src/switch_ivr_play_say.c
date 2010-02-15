@@ -1009,8 +1009,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					if ((status = switch_ivr_speak_text(session, engine, voice, text, args)) != SWITCH_STATUS_SUCCESS) {
 						return status;
 					}
-					continue;
-				} else if (!zstr(engine) && !(voice && text)) {
+				} else {
 					text = engine;
 					engine = (char *) switch_channel_get_variable(channel, "tts_engine");
 					voice = (char *) switch_channel_get_variable(channel, "tts_voice");
@@ -1018,12 +1017,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 						if ((status = switch_ivr_speak_text(session, engine, voice, text, args)) != SWITCH_STATUS_SUCCESS) {
 							return status;
 						}
-						continue;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");
 					}
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");
-					continue;
 				}
+				continue;
 			}
 
 		}
