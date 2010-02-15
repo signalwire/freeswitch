@@ -1,5 +1,5 @@
 LOCAL_CFLAGS=
-LOCAL_LDFLAGS=-llua
+LOCAL_LDFLAGS=-llua -lpthread
 WRAP_GCC_WARNING_SILENCE=-Wno-unused-function
 
 all: ESL.so
