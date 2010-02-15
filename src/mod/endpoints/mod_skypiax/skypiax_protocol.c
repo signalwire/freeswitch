@@ -1091,7 +1091,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 #endif //0
 					}
 					if(waitin > 21){
-						NOTICA("waitin is now %d\n", SKYPIAX_P_LOG, waitin);
+						//NOTICA("waitin is now %d\n", SKYPIAX_P_LOG, waitin);
 					}
 					rt = 1;
 
