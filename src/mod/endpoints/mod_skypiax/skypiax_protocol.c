@@ -1036,8 +1036,8 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 					fd_set fs;
 					struct timeval to;
 					int waitin;
-					int big_waitin=40;
-					int lil_waitin=20;
+					//int big_waitin=40;
+					//int lil_waitin=20;
 					int big_waited;
 
 					if (!(running && tech_pvt->running))
