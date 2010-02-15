@@ -1781,7 +1781,8 @@ static void do_merge(switch_xml_t in, switch_xml_t src, const char *container, c
 			
 			if (go) {
 				iitag = switch_xml_add_child_d(itag, tag_name, 0);
-				switch_xml_set_attr_d(iitag, var, val);
+				switch_xml_set_attr_d(iitag, "name", var);
+				switch_xml_set_attr_d(iitag, "value", val);
 			}
 		}
 	}
@@ -1808,6 +1809,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_merged(const char *key, c
 		x_user_dup = switch_xml_dup(x_user);
 		switch_xml_merge_user(x_user_dup, domain, group);
 		*user = x_user_dup;
+		switch_xml_free(xml);
 	}
 
 	return status;
