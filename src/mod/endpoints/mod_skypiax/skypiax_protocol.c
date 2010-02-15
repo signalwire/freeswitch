@@ -1061,20 +1061,21 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 					fdselect = fd;
 					FD_SET(fdselect, &fs);
 
-					//FIXME rt = select(fdselect + 1, NULL, &fs, NULL, &to);
+					//rt = select(fdselect + 1, NULL, &fs, NULL, &to);
 					waitin=0;
 					big_waited=0;
 					while (tech_pvt->flag_audio_cli == 0) {
 #ifdef WIN32
-						skypiax_sleep(100);	//0.1 millisec
+						skypiax_sleep(1000);	//0.1 millisec
 #else
 						skypiax_sleep(1000);	//1 millisec
 #endif //WIN32
 						waitin++;
+#if 0
 						if(big_waited == 1 && waitin==lil_waitin && tech_pvt->flag_audio_cli == 0){
 							memset(cli_out, 255, SAMPLES_PER_FRAME * sizeof(short));
 							send(fd, (char *) cli_out, SAMPLES_PER_FRAME * sizeof(short), 0);
-							//WARNINGA("write buffer filled at %d\n", SKYPIAX_P_LOG, waitin);
+							WARNINGA("write buffer filled at %d\n", SKYPIAX_P_LOG, waitin);
 							waitin=0;
 							continue;
 						}
@@ -1082,17 +1083,16 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 							memset(cli_out, 255, SAMPLES_PER_FRAME * sizeof(short));
 							send(fd, (char *) cli_out, SAMPLES_PER_FRAME * sizeof(short), 0);
 							send(fd, (char *) cli_out, SAMPLES_PER_FRAME * sizeof(short), 0);
-							//DEBUGA_SKYPE("write buffer filled at %d\n", SKYPIAX_P_LOG, waitin);
+							NOTICA("write buffer filled at %d\n", SKYPIAX_P_LOG, waitin);
 							waitin=0;
 							big_waited=1;
 							continue;
 						}
-
+#endif //0
 					}
 					if(waitin > 21){
-						//DEBUGA_SKYPE("waitin is now %d\n", SKYPIAX_P_LOG, waitin);
+						NOTICA("waitin is now %d\n", SKYPIAX_P_LOG, waitin);
 					}
-
 					rt = 1;
 
 					if (rt > 0) {
@@ -1196,7 +1196,7 @@ int skypiax_audio_read(private_t * tech_pvt)
 	waitin=0;
 	while (tech_pvt->flag_audio_srv == 0) {
 #ifdef WIN32
-		skypiax_sleep(100);		//0.1 millisec
+		skypiax_sleep(1000);		//0.1 millisec
 #else
 		skypiax_sleep(1000);	//1 millisec
 #endif //WIN32

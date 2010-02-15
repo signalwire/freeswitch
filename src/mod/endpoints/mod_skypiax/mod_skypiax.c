@@ -987,6 +987,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			switch_mutex_unlock(globals.mutex);
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
+		switch_channel_set_variable(channel, "send_silence_when_idle", "true");
 		if (skypiax_tech_init(tech_pvt, *new_session) != SWITCH_STATUS_SUCCESS) {
 			ERRORA("Doh! no tech_init?\n", SKYPIAX_P_LOG);
 			switch_core_session_destroy(new_session);
@@ -1808,6 +1809,7 @@ int new_inbound_channel(private_t * tech_pvt)
 			switch_core_session_destroy(&session);
 			return 0;
 		}
+		switch_channel_set_variable(channel, "send_silence_when_idle", "true");
 		if (skypiax_tech_init(tech_pvt, session) != SWITCH_STATUS_SUCCESS) {
 			ERRORA("Doh! no tech_init?\n", SKYPIAX_P_LOG);
 			switch_core_session_destroy(&session);
