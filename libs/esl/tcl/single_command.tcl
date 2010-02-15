@@ -1,3 +1,4 @@
+#!/usr/bin/tclsh
 lappend auto_path .
 package require esl
 
