@@ -11,7 +11,6 @@ opt/freeswitch/mod/mod_cidlookup*
 opt/freeswitch/mod/mod_curl*
 opt/freeswitch/mod/mod_easyroute*
 opt/freeswitch/mod/mod_lcr*
-opt/freeswitch/mod/mod_memcache*
 opt/freeswitch/mod/mod_nibblebill*
 opt/freeswitch/mod/mod_skypiax*
 opt/freeswitch/mod/mod_snom*
