@@ -61,6 +61,7 @@ static struct {
 	char *ssl_cacert_file;
 	uint32_t enable_ssl_verifyhost;
 	int encode;
+	int log_http_and_disk;
 	int log_b;
 	int prefix_a;
 	int disable100continue;
@@ -222,7 +223,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		logdir = globals.log_dir;
 	}
 
-	if (!zstr(logdir) && !globals.url_count) {
+	if (!zstr(logdir) && (globals.log_http_and_disk || !globals.url_count)) {
 		path = switch_mprintf("%s%s%s%s.cdr.xml", logdir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session));
 		switch_thread_rwlock_unlock(globals.log_path_lock);
 		if (path) {
@@ -465,6 +466,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	}
 
 	memset(&globals, 0, sizeof(globals));
+	globals.log_http_and_disk = 0;
 	globals.log_b = 1;
 	globals.disable100continue = 0;
 	globals.pool = pool;
@@ -491,6 +493,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				} else {
 					globals.urls[globals.url_count++] = switch_core_strdup(globals.pool, val);
 				}
+			} else if (!strcasecmp(var, "log-http-and-disk")) {
+				globals.log_http_and_disk = switch_true(val);
 			} else if (!strcasecmp(var, "delay") && !zstr(val)) {
 				globals.delay = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-b-leg")) {
