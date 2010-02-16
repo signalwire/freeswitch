@@ -578,10 +578,10 @@ abyss_bool handler_hook(TSession * r)
 	stream.write_function = http_stream_write;
 	stream.raw_write_function = http_stream_raw_write;
 
-	if (!r || !r->requestInfo.uri || !r->requestInfo.user) {
+	if (!r || !r->requestInfo.uri) {
 		return FALSE;
 	}
-
+	
 	if ((command = strstr(r->requestInfo.uri, "/api/"))) {
 		command += 5;
 	} else if ((command = strstr(r->requestInfo.uri, "/webapi/"))) {
