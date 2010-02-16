@@ -1196,8 +1196,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 				uint32_t itterations = 0;
 				switch_size_t len = 0;
 
-				//switch_mutex_lock(profile->ireg_mutex);
-
+				switch_mutex_lock(profile->ireg_mutex);
+				
 				//sofia_glue_actually_execute_sql(profile, "begin;\n", NULL);
 
 				while (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
@@ -1223,9 +1223,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 				}
 
 				//printf("TRANS:\n%s\n", sqlbuf);
-				sofia_glue_actually_execute_sql_trans(profile, sqlbuf, profile->ireg_mutex);
+				sofia_glue_actually_execute_sql_trans(profile, sqlbuf, NULL);
 				//sofia_glue_actually_execute_sql(profile, "commit;\n", NULL);
-				//switch_mutex_unlock(profile->ireg_mutex);
+				switch_mutex_unlock(profile->ireg_mutex);
 				loop_count = 0;
 			}
 		} else {
