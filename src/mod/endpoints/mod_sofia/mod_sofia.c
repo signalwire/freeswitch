@@ -380,14 +380,11 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	switch_call_cause_t cause = switch_channel_get_cause(channel);
 	int sip_cause = hangup_cause_to_sip(cause);
 	const char *ps_cause = NULL, *use_my_cause;
-	
-	if (sofia_test_pflag(tech_pvt->profile, PFLAG_DESTROY)) {
-		return SWITCH_STATUS_SUCCESS;
-	}
 
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 
 	sofia_clear_flag(tech_pvt, TFLAG_RECOVERING);
+
 	sofia_glue_tech_untrack(tech_pvt->profile, session, SWITCH_TRUE);
 
 	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
@@ -414,7 +411,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel %s hanging up, cause: %s\n",
 					  switch_channel_get_name(channel), switch_channel_cause2str(cause));
 
-	if (tech_pvt->hash_key) {
+	if (tech_pvt->hash_key && !sofia_test_pflag(tech_pvt->profile, PFLAG_DESTROY)) {
 		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
 	}
 
@@ -430,7 +427,9 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_core_session_rwunlock(a_session);
 	}
 
-	if (tech_pvt->nh && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_DESTROY)) {
+		sofia_set_flag(tech_pvt, TFLAG_BYE);		
+	} else if (tech_pvt->nh && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		char reason[128] = "";
 		char *bye_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_BYE_HEADER_PREFIX);
 		const char *val = NULL;
@@ -482,7 +481,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				}
 			}
 		}
-
 		sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
 		switch_safe_free(bye_headers);
 	}

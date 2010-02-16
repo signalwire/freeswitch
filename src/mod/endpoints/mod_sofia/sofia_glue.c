@@ -4701,8 +4701,7 @@ void sofia_glue_execute_sql_now(sofia_profile_t *profile, char **sqlp, switch_bo
 
 switch_cache_db_handle_t *sofia_glue_get_db_handle(sofia_profile_t *profile)
 {
-	switch_cache_db_connection_options_t options = { {0}
-	};
+	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
 
 	if (!zstr(profile->odbc_dsn)) {
