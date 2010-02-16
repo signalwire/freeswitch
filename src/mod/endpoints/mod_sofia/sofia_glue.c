@@ -4542,7 +4542,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
 								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q' "
 								  "and network_ip like '%%' and network_port like '%%' and sip_username "
-								  "like '%%' and mwi_user like '%%' and mwi_host like '%%'"
+								  "like '%%' and mwi_user like '%%' and mwi_host like '%%' "
 								  "and orig_server_host like '%%' and orig_hostname like '%%'", 
 								  mod_sofia_globals.hostname);
 		
