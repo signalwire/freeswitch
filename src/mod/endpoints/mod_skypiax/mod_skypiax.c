@@ -752,7 +752,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	unsigned int sent;
-
+//cicopet
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
@@ -770,23 +770,27 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 #endif
 
+tech_pvt->begin_to_write=1;
 	sent = frame->datalen;
 #ifdef WIN32
 	//switch_file_write(tech_pvt->audiopipe_cli[1], frame->data, &sent);
 #else /* WIN32 */
 	//sent = write(tech_pvt->audiopipe_cli[1], frame->data, sent);
 #endif /* WIN32 */
-	if (tech_pvt->flag_audio_cli == 1) {
-		switch_sleep(1000);		//1 millisec
-	}
-	if (tech_pvt->flag_audio_cli == 0) {
+	//if (tech_pvt->flag_audio_cli == 1) {
+		//switch_sleep(1000);		//1 millisec
+	//}
+	//if (tech_pvt->flag_audio_cli == 0) {
 #ifdef TIMER_WRITE
-		switch_core_timer_next(&tech_pvt->timer_write);
+		//switch_core_timer_next(&tech_pvt->timer_write);
 #endif // TIMER_WRITE
 
+memset(tech_pvt->audiobuf_cli, 255, sizeof(tech_pvt->audiobuf_cli));
+							switch_mutex_lock(tech_pvt->mutex_audio_cli);
 		memcpy(tech_pvt->audiobuf_cli, frame->data, frame->datalen);
 		tech_pvt->flag_audio_cli = 1;
-	}
+							switch_mutex_unlock(tech_pvt->mutex_audio_cli);
+	//}
 	//NOTICA("write \n", SKYPIAX_P_LOG);
 
 	if (sent != frame->datalen && sent != -1) {
@@ -991,7 +995,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			switch_mutex_unlock(globals.mutex);
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
-		switch_channel_set_variable(channel, "send_silence_when_idle", "1500");
+		//switch_channel_set_variable(channel, "send_silence_when_idle", "1500");
 		switch_channel_set_variable(channel, "waste", "false");
 		if (skypiax_tech_init(tech_pvt, *new_session) != SWITCH_STATUS_SUCCESS) {
 			ERRORA("Doh! no tech_init?\n", SKYPIAX_P_LOG);
@@ -1399,6 +1403,7 @@ static switch_status_t load_config(int reload_type)
 
 				skypiax_audio_init(&globals.SKYPIAX_INTERFACES[interface_id]);
 				switch_mutex_init(&globals.SKYPIAX_INTERFACES[interface_id].mutex_audio_srv, SWITCH_MUTEX_NESTED, skypiax_module_pool);
+				switch_mutex_init(&globals.SKYPIAX_INTERFACES[interface_id].mutex_audio_cli, SWITCH_MUTEX_NESTED, skypiax_module_pool);
 
 				NOTICA
 					("WAITING roughly 10 seconds to find a running Skype client and connect to its SKYPE API for interface_id=%d\n",
@@ -1771,6 +1776,8 @@ int start_audio_threads(private_t * tech_pvt)
 {
 	switch_threadattr_t *thd_attr = NULL;
 
+tech_pvt->begin_to_write=0;
+
 	switch_threadattr_create(&thd_attr, skypiax_module_pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
@@ -1814,7 +1821,7 @@ int new_inbound_channel(private_t * tech_pvt)
 			switch_core_session_destroy(&session);
 			return 0;
 		}
-		switch_channel_set_variable(channel, "send_silence_when_idle", "1500");
+		//switch_channel_set_variable(channel, "send_silence_when_idle", "1500");
 		switch_channel_set_variable(channel, "waste", "false");
 		if (skypiax_tech_init(tech_pvt, session) != SWITCH_STATUS_SUCCESS) {
 			ERRORA("Doh! no tech_init?\n", SKYPIAX_P_LOG);

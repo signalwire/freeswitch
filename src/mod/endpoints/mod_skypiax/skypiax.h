@@ -278,6 +278,7 @@ struct private_object {
 	uint32_t report_incoming_chatmessages;
 	switch_timer_t timer_read;
 	switch_timer_t timer_write;
+int begin_to_write;
 };
 
 typedef struct private_object private_t;

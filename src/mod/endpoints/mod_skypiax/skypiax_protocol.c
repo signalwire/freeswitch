@@ -1045,12 +1045,12 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 					int rt;
 					fd_set fs;
 					struct timeval to;
+#if 0
 					int waitin;
-#if 1
 					int big_waitin=40;
 					int lil_waitin=20;
-#endif//0
 					int big_waited;
+#endif//0
 
 					if (!(running && tech_pvt->running))
 						break;
@@ -1073,6 +1073,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 					fdselect = fd;
 					FD_SET(fdselect, &fs);
 
+#if 0
 					//rt = select(fdselect + 1, NULL, &fs, NULL, &to);
 					waitin=0;
 					big_waited=0;
@@ -1083,7 +1084,6 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 						skypiax_sleep(1000);	//1 millisec
 #endif //WIN32
 						waitin++;
-#if 1
 						if(big_waited == 1 && waitin==lil_waitin && tech_pvt->flag_audio_cli == 0){
 							memset(cli_out, 255, SAMPLES_PER_FRAME * sizeof(short));
 							send(fd, (char *) cli_out, SAMPLES_PER_FRAME * sizeof(short), 0);
@@ -1100,11 +1100,20 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 							big_waited=1;
 							continue;
 						}
-#endif //0
 					}
 					if(waitin > 21){
 						NOTICA("waitin is now %d\n", SKYPIAX_P_LOG, waitin);
 					}
+#endif //0
+
+
+if(tech_pvt->begin_to_write==0){
+skypiax_sleep(1000);
+continue;
+}
+					 if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next) {
+		switch_core_timer_next(&tech_pvt->timer_write);
+}
 					rt = 1;
 
 					if (rt > 0) {
@@ -1115,8 +1124,13 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 
 
 						got = SAMPLES_PER_FRAME * sizeof(short);
+							switch_mutex_lock(tech_pvt->mutex_audio_cli);
+//if(tech_pvt->flag_audio_cli == 0){
+//memset(tech_pvt->audiobuf_cli, 255, sizeof(tech_pvt->audiobuf_cli));
+//} 
 						memcpy(cli_in, tech_pvt->audiobuf_cli, SAMPLES_PER_FRAME * sizeof(short));
 						tech_pvt->flag_audio_cli = 0;
+							switch_mutex_unlock(tech_pvt->mutex_audio_cli);
 
 
 
