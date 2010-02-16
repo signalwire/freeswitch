@@ -206,6 +206,7 @@ typedef enum {
 	PFLAG_PASS_CALLEE_ID,
 	PFLAG_LOG_AUTH_FAIL,
 	PFLAG_TRACK_CALLS,
+	PFLAG_DESTROY,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -837,6 +838,9 @@ void sofia_glue_release_profile__(const char *file, const char *func, int line, 
 sofia_profile_t *sofia_glue_find_profile__(const char *file, const char *func, int line, const char *key);
 #define sofia_glue_find_profile(x) sofia_glue_find_profile__(__FILE__, __SWITCH_FUNC__, __LINE__,  x)
 
+#define sofia_glue_profile_rdlock(x) sofia_glue_profile_rdlock__(__FILE__, __SWITCH_FUNC__, __LINE__, x)
+switch_status_t sofia_glue_profile_rdlock__(const char *file, const char *func, int line, sofia_profile_t *profile);
+
 switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway);
 sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, int line, const char *key);
 #define sofia_reg_find_gateway(x) sofia_reg_find_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__,  x)
@@ -845,6 +849,9 @@ sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char 
 #define sofia_reg_find_gateway_by_realm(x) sofia_reg_find_gateway_by_realm__(__FILE__, __SWITCH_FUNC__, __LINE__,  x)
 
 sofia_gateway_subscription_t *sofia_find_gateway_subscription(sofia_gateway_t *gateway_ptr, const char *event);
+
+#define sofia_reg_gateway_rdlock(x) sofia_reg_gateway_rdlock__(__FILE__, __SWITCH_FUNC__, __LINE__,  x)
+switch_status_t sofia_reg_gateway_rdlock__(const char *file, const char *func, int line, sofia_gateway_t *gateway);
 
 void sofia_reg_release_gateway__(const char *file, const char *func, int line, sofia_gateway_t *gateway);
 #define sofia_reg_release_gateway(x) sofia_reg_release_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__, x);
@@ -964,3 +971,4 @@ int sofia_sla_supported(sip_t const *sip);
 void sofia_glue_tech_untrack(sofia_profile_t *profile, switch_core_session_t *session, switch_bool_t force);
 void sofia_glue_tech_track(sofia_profile_t *profile, switch_core_session_t *session);
 int sofia_glue_recover(switch_bool_t flush);
+void sofia_profile_destroy(sofia_profile_t *profile);

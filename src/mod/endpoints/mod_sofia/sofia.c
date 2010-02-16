@@ -682,6 +682,8 @@ void sofia_event_callback(nua_event_t event,
 	int locked = 0;
 	int check_destroy = 1;
 
+	/* sofia_private will be == &mod_sofia_globals.keep_private whenever a request is done with a new handle that has to be 
+	  freed whenever the request is done */
 	if (nh && sofia_private == &mod_sofia_globals.keep_private) {
 		if (status >= 300) {
 			nua_handle_bind(nh, NULL);
@@ -689,11 +691,12 @@ void sofia_event_callback(nua_event_t event,
 			return;
 		}
 	}
+	
 
 	if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
 		if ((gateway = sofia_private->gateway)) {
-			if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile %s is locked\n", gateway->profile->name);
+			/* Released in sofia_reg_release_gateway() */
+			if (sofia_reg_gateway_rdlock(gateway) != SWITCH_STATUS_SUCCESS) {
 				return;
 			}
 		} else if (!zstr(sofia_private->uuid)) {
@@ -733,7 +736,8 @@ void sofia_event_callback(nua_event_t event,
 			}
 		}
 	}
-
+	
+	
 	if (sofia_test_pflag(profile, PFLAG_AUTH_ALL) && tech_pvt && tech_pvt->key && sip) {
 		sip_authorization_t const *authorization = NULL;
 
@@ -1527,8 +1531,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	if (sofia_test_pflag(profile, PFLAG_RESPAWN)) {
 		config_sofia(1, profile->name);
 	}
-
-	switch_core_destroy_memory_pool(&pool);
+	
+	sofia_profile_destroy(profile);
 
   end:
 	switch_mutex_lock(mod_sofia_globals.mutex);
@@ -1536,6 +1540,16 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_mutex_unlock(mod_sofia_globals.mutex);
 
 	return NULL;
+}
+
+void sofia_profile_destroy(sofia_profile_t *profile) 
+{
+	if (!profile->inuse) {
+		switch_memory_pool_t *pool = profile->pool;
+		switch_core_destroy_memory_pool(&pool);
+	} else {
+		sofia_set_pflag(profile, PFLAG_DESTROY);
+	}
 }
 
 void launch_sofia_profile_thread(sofia_profile_t *profile)

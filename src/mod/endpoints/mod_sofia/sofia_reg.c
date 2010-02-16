@@ -320,8 +320,9 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 			gateway_ptr->retry = 0;
 
-			if (!gateway_ptr->nh)
+			if (!gateway_ptr->nh) {
 				sofia_reg_new_handle(gateway_ptr, now ? 1 : 0);
+			}
 
 			if (sofia_glue_check_nat(gateway_ptr->profile, gateway_ptr->register_proxy)) {
 				user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
@@ -2340,15 +2341,9 @@ sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, in
 			gateway = NULL;
 			goto done;
 		}
-		if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "Profile %s is locked\n", gateway->profile->name);
+		if (sofia_reg_gateway_rdlock__(file, func, line, gateway) != SWITCH_STATUS_SUCCESS) {
 			gateway = NULL;
 		}
-	}
-	if (gateway) {
-#ifdef SOFIA_DEBUG_RWLOCKS
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX GW LOCK %s\n", gateway->profile->name);
-#endif
 	}
 
   done:
@@ -2395,6 +2390,19 @@ sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char 
   done:
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 	return gateway;
+}
+
+switch_status_t sofia_reg_gateway_rdlock__(const char *file, const char *func, int line, sofia_gateway_t *gateway)
+{
+	switch_status_t status = sofia_glue_profile_rdlock__(file, func, line, gateway->profile);
+
+#ifdef SOFIA_DEBUG_RWLOCKS
+	if (status != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX GW LOCK %s\n", gateway->profile->name);		
+	}
+#endif
+
+	return status;
 }
 
 

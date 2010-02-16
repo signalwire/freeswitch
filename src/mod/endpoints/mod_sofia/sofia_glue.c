@@ -3776,6 +3776,19 @@ char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup)
 	return url;
 }
 
+switch_status_t sofia_glue_profile_rdlock__(const char *file, const char *func, int line, sofia_profile_t *profile)
+{
+	switch_status_t status = switch_thread_rwlock_tryrdlock(profile->rwlock);
+	if (status != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "Profile %s is locked\n", profile->name);
+		return status;
+	}
+#ifdef SOFIA_DEBUG_RWLOCKS
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX LOCK %s\n", profile->name);
+#endif
+	return status;
+}
+
 sofia_profile_t *sofia_glue_find_profile__(const char *file, const char *func, int line, const char *key)
 {
 	sofia_profile_t *profile;
@@ -3789,10 +3802,7 @@ sofia_profile_t *sofia_glue_find_profile__(const char *file, const char *func, i
 			profile = NULL;
 			goto done;
 		}
-		if (switch_thread_rwlock_tryrdlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
-#ifdef SOFIA_DEBUG_RWLOCKS
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "Profile %s is locked\n", profile->name);
-#endif
+		if (sofia_glue_profile_rdlock__(file, func, line, profile) != SWITCH_STATUS_SUCCESS) {
 			profile = NULL;
 		}
 	} else {
@@ -3800,13 +3810,8 @@ sofia_profile_t *sofia_glue_find_profile__(const char *file, const char *func, i
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "Profile %s is not in the hash\n", key);
 #endif
 	}
-#ifdef SOFIA_DEBUG_RWLOCKS
-	if (profile) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX LOCK %s\n", profile->name);
-	}
-#endif
 
-  done:
+done:
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
 	return profile;

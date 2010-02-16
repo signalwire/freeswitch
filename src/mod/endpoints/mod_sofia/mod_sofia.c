@@ -362,6 +362,10 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 		switch_mutex_unlock(tech_pvt->profile->flag_mutex);
 
 		sofia_glue_deactivate_rtp(tech_pvt);
+		
+		if (sofia_test_pflag(tech_pvt->profile, PFLAG_DESTROY) && !tech_pvt->profile->inuse) {
+			sofia_profile_destroy(tech_pvt->profile);
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -376,6 +380,10 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	switch_call_cause_t cause = switch_channel_get_cause(channel);
 	int sip_cause = hangup_cause_to_sip(cause);
 	const char *ps_cause = NULL, *use_my_cause;
+	
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_DESTROY)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 
