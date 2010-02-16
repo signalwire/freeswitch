@@ -2397,7 +2397,7 @@ switch_status_t sofia_reg_gateway_rdlock__(const char *file, const char *func, i
 	switch_status_t status = sofia_glue_profile_rdlock__(file, func, line, gateway->profile);
 
 #ifdef SOFIA_DEBUG_RWLOCKS
-	if (status != SWITCH_STATUS_SUCCESS) {
+	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX GW LOCK %s\n", gateway->profile->name);		
 	}
 #endif
