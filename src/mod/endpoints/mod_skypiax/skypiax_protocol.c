@@ -828,7 +828,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 						if (len == 320) {
 							unsigned int howmany;
 
-								//DEBUGA_SKYPE("320!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", SKYPIAX_P_LOG);
+								NOTICA("320!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", SKYPIAX_P_LOG);
 							if (samplerate_skypiax == 8000) {
 								/* we're downsampling from 16khz to 8khz, srv_out will contain each other sample from srv_in */
 								a = 0;
@@ -889,14 +889,24 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 							}
 
 						} else if (len == 640) {
+							int waitin;
+							int max_waitin=20;
 
-								if (tech_pvt->flag_audio_srv == 1) {
-									switch_sleep(1000);	//1 millisec
+							waitin=0;
+							while (tech_pvt->flag_audio_srv == 1) {
+								switch_sleep(1000);	//1 millisec
+								waitin++;
+								if(waitin == max_waitin){
+									break;
 								}
-			switch_mutex_lock(tech_pvt->mutex_audio_srv);
-									memcpy(tech_pvt->audiobuf_srv, srv_in, SAMPLES_PER_FRAME * sizeof(short));
-									tech_pvt->flag_audio_srv = 1;
-			switch_mutex_unlock(tech_pvt->mutex_audio_srv);
+							}
+
+							if(waitin > 1)
+								ERRORA("waitin is %d\n", SKYPIAX_P_LOG, waitin);
+							switch_mutex_lock(tech_pvt->mutex_audio_srv);
+							memcpy(tech_pvt->audiobuf_srv, srv_in, SAMPLES_PER_FRAME * sizeof(short));
+							tech_pvt->flag_audio_srv = 1;
+							switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 						} else if (len == 0) {
 							skypiax_sleep(1000);
 						} else {
@@ -1036,8 +1046,10 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 					fd_set fs;
 					struct timeval to;
 					int waitin;
-					//int big_waitin=40;
-					//int lil_waitin=20;
+#if 1
+					int big_waitin=40;
+					int lil_waitin=20;
+#endif//0
 					int big_waited;
 
 					if (!(running && tech_pvt->running))
@@ -1071,7 +1083,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 						skypiax_sleep(1000);	//1 millisec
 #endif //WIN32
 						waitin++;
-#if 0
+#if 1
 						if(big_waited == 1 && waitin==lil_waitin && tech_pvt->flag_audio_cli == 0){
 							memset(cli_out, 255, SAMPLES_PER_FRAME * sizeof(short));
 							send(fd, (char *) cli_out, SAMPLES_PER_FRAME * sizeof(short), 0);
@@ -1091,7 +1103,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 #endif //0
 					}
 					if(waitin > 21){
-						//NOTICA("waitin is now %d\n", SKYPIAX_P_LOG, waitin);
+						NOTICA("waitin is now %d\n", SKYPIAX_P_LOG, waitin);
 					}
 					rt = 1;
 
@@ -1205,7 +1217,7 @@ int skypiax_audio_read(private_t * tech_pvt)
 		//WARNINGA("read now is 0\n", SKYPIAX_P_LOG);
 	}
 	if(waitin > 21){
-		//DEBUGA_SKYPE("read is now %d\n", SKYPIAX_P_LOG, waitin);
+		ERRORA("read is now %d\n", SKYPIAX_P_LOG, waitin);
 	}
 	//samples = skypiax_pipe_read(tech_pvt->audiopipe_srv[0], tech_pvt->read_frame.data, SAMPLES_PER_FRAME * sizeof(short));
 			switch_mutex_lock(tech_pvt->mutex_audio_srv);

@@ -845,14 +845,18 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		switch_core_timer_sync(&tech_pvt->timer_write);
 #endif // TIMER_WRITE
 		break;
+	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+
+		DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_BRIDGE\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
+
+		switch_core_timer_sync(&tech_pvt->timer_read);
+#ifdef TIMER_WRITE
+		switch_core_timer_sync(&tech_pvt->timer_write);
+#endif // TIMER_WRITE
+		break;
+
 	default:
 		{
-
-			switch_core_timer_sync(&tech_pvt->timer_read);
-#ifdef TIMER_WRITE
-
-			switch_core_timer_sync(&tech_pvt->timer_write);
-#endif // TIMER_WRITE
 
 			DEBUGA_SKYPE("MSG_ID=%d\n", SKYPIAX_P_LOG, msg->message_id);
 		}
@@ -987,7 +991,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			switch_mutex_unlock(globals.mutex);
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
-		switch_channel_set_variable(channel, "send_silence_when_idle", "true");
+		switch_channel_set_variable(channel, "send_silence_when_idle", "1500");
+		switch_channel_set_variable(channel, "waste", "false");
 		if (skypiax_tech_init(tech_pvt, *new_session) != SWITCH_STATUS_SUCCESS) {
 			ERRORA("Doh! no tech_init?\n", SKYPIAX_P_LOG);
 			switch_core_session_destroy(new_session);
@@ -1809,7 +1814,8 @@ int new_inbound_channel(private_t * tech_pvt)
 			switch_core_session_destroy(&session);
 			return 0;
 		}
-		switch_channel_set_variable(channel, "send_silence_when_idle", "true");
+		switch_channel_set_variable(channel, "send_silence_when_idle", "1500");
+		switch_channel_set_variable(channel, "waste", "false");
 		if (skypiax_tech_init(tech_pvt, session) != SWITCH_STATUS_SUCCESS) {
 			ERRORA("Doh! no tech_init?\n", SKYPIAX_P_LOG);
 			switch_core_session_destroy(&session);
