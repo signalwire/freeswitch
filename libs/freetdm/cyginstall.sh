@@ -5,5 +5,7 @@ fsdir=../..
 set -x
 cp Debug/*.dll $fsdir/Debug/
 cp Debug/mod/*.dll $fsdir/Debug/mod/
+cp Debug/*.pdb $fsdir/Debug/
+echo "FRIENDLY REMINDER: RECOMPILE ftmod_wanpipe WHENEVER YOU INSTALL NEW DRIVERS"
 set +x 
 
