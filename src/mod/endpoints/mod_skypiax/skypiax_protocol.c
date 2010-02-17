@@ -94,7 +94,7 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
  * sockbufsize=SAMPLES_PER_FRAME * 8;
  */
 #ifdef WIN32
-	sockbufsize = SAMPLES_PER_FRAME * 8 * 3;
+	sockbufsize = SAMPLES_PER_FRAME * 8;
 #else
 	sockbufsize = SAMPLES_PER_FRAME * 8;
 #endif //WIN32
@@ -111,7 +111,7 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
  * sockbufsize=SAMPLES_PER_FRAME * 8;
  */
 #ifdef WIN32
-	sockbufsize = SAMPLES_PER_FRAME * 8 * 3;
+	sockbufsize = SAMPLES_PER_FRAME * 8;
 #else
 	sockbufsize = SAMPLES_PER_FRAME * 8;
 #endif //WIN32
