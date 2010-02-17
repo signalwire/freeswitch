@@ -1752,7 +1752,15 @@ int dtmf_received(private_t * tech_pvt, char *value)
 
 	if (channel) {
 
-		//if (!switch_channel_test_flag(channel, CF_BRIDGED)) {
+		if (switch_channel_test_flag(channel, CF_BRIDGED) && !switch_true(switch_channel_get_variable(channel, "skype_add_outband_dtmf_also_when_bridged"))) {
+
+
+			NOTICA
+				("received DTMF '%c' on channel %s, but we're BRIDGED, so we DO NOT relay it out of band. If you DO want to relay it out of band when bridged too, on top of audio DTMF, set the channel variable 'skype_add_outband_dtmf_also_when_bridged=true' \n", SKYPIAX_P_LOG, value[0], switch_channel_get_name(channel));
+
+		} else {
+
+
 
 			switch_dtmf_t dtmf = { (char) value[0], switch_core_default_dtmf_duration(0) };
 			DEBUGA_SKYPE("received DTMF %c on channel %s\n", SKYPIAX_P_LOG, dtmf.digit, switch_channel_get_name(channel));
@@ -1761,10 +1769,7 @@ int dtmf_received(private_t * tech_pvt, char *value)
 			switch_channel_queue_dtmf(channel, &dtmf);
 			switch_set_flag(tech_pvt, TFLAG_DTMF);
 			switch_mutex_unlock(tech_pvt->flag_mutex);
-		//} else {
-			//NOTICA
-				//("received a DTMF on channel %s, but we're BRIDGED, so let's NOT relay it out of band\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
-		//}
+		}
 	} else {
 		WARNINGA("received %c DTMF, but no channel?\n", SKYPIAX_P_LOG, value[0]);
 	}
