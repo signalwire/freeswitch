@@ -3907,6 +3907,156 @@ SWITCH_STANDARD_API(voicemail_inject_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static int api_del_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+
+	unlink(argv[2]);
+	
+    return 0;
+}
+
+
+#define VM_DELETE_USAGE "<id>@<domain>[/profile] [<uuid>]"
+SWITCH_STANDARD_API(voicemail_delete_api_function)
+{
+	char *sql;
+	char *id = NULL, *domain = NULL, *uuid = NULL, *profile_name = "default";
+	char *p, *e = NULL;
+	vm_profile_t *profile;
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "Usage: %s\n", VM_DELETE_USAGE);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	id = strdup(cmd);
+	
+	if ((p = strchr(id, '@'))) {
+		*p++ = '\0';
+		domain = e = p;
+	}
+
+	if ((p = strchr(domain, '/'))) {
+		*p++ = '\0';
+		profile_name = e = p;
+	}
+
+	if (e && (p = strchr(e, ' '))) {
+		*p++ = '\0';
+		uuid = p;
+	}
+
+
+	if (id && domain && profile_name && (profile = get_profile(profile_name))) {
+		
+		if (uuid) {
+			sql = switch_mprintf("select username, domain, in_folder, file_path from voicemail_msgs where uuid='%q'", uuid);
+		} else {
+			sql = switch_mprintf("select username, domain, in_folder, file_path from voicemail_msgs where username='%q' and domain='%q'", id, domain);
+		}
+		
+		vm_execute_sql_callback(profile, profile->mutex, sql, api_del_callback, profile);
+		switch_safe_free(sql);
+		
+		if (uuid) {
+			sql = switch_mprintf("delete from voicemail_msgs where uuid='%q'", uuid);
+		} else {
+			sql = switch_mprintf("delete from voicemail_msgs where username='%q' and domain='%q'", id, domain);
+		}
+
+		vm_execute_sql(profile, sql, profile->mutex);
+		switch_safe_free(sql);
+		
+		update_mwi(profile, id, domain, "inbox");
+	
+		stream->write_function(stream, "%s", "+OK\n");
+	} else {
+		stream->write_function(stream, "%s", "-ERR can't find user or profile.\n");
+	}
+
+	switch_safe_free(id);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
+static int api_list_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	switch_stream_handle_t *stream = (switch_stream_handle_t *) pArg;
+
+	if (!strcasecmp(argv[5], "xml")) {
+		stream->write_function(stream, " <message>\n");
+		stream->write_function(stream, "  <username>%s</username>\n", argv[0]);
+		stream->write_function(stream, "  <domain>%s</domain>\n", argv[1]);
+		stream->write_function(stream, "  <folder>%s</folder>\n", argv[2]);
+		stream->write_function(stream, "  <path>%s</path>\n", argv[3]);
+		stream->write_function(stream, "  <uuid>%s</uuid>\n", argv[4]);
+		stream->write_function(stream, " </message>\n");
+	} else {
+		stream->write_function(stream, "%s:%s:%s:%s:%s\n", argv[0], argv[1], argv[2], argv[3], argv[4]);
+	}
+	
+    return 0;
+}
+
+
+#define VM_LIST_USAGE "<id>@<domain>[/profile] [xml]"
+SWITCH_STANDARD_API(voicemail_list_api_function)
+{
+	char *sql;
+	char *id = NULL, *domain = NULL, *format = "text", *profile_name = "default";
+	char *p, *e = NULL;
+	vm_profile_t *profile;
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "Usage: %s\n", VM_DELETE_USAGE);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	id = strdup(cmd);
+	
+	if ((p = strchr(id, '@'))) {
+		*p++ = '\0';
+		domain = e = p;
+	}
+
+	if ((p = strchr(domain, '/'))) {
+		*p++ = '\0';
+		profile_name = e = p;
+	}
+
+	if (e && (p = strchr(e, ' '))) {
+		*p++ = '\0';
+		format = p;
+	}
+
+	if (id && domain && profile_name && (profile = get_profile(profile_name))) {
+		sql = switch_mprintf("select username, domain, in_folder, file_path, uuid, '%q' from voicemail_msgs where username='%q' and domain='%q'", 
+							 format, id, domain);
+
+		if (!strcasecmp(format, "xml")) {
+			stream->write_function(stream, "<voicemail>\n");
+		}
+
+		vm_execute_sql_callback(profile, profile->mutex, sql, api_list_callback, stream);
+		switch_safe_free(sql);
+		update_mwi(profile, id, domain, "inbox");
+	
+		if (!strcasecmp(format, "xml")) {
+			stream->write_function(stream, "</voicemail>\n");
+		}
+
+	} else {
+		stream->write_function(stream, "%s", "-ERR can't find user or profile.\n");
+	}
+
+	switch_safe_free(id);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define VOICEMAIL_SYNTAX "rss [<host> <port> <uri> <user> <domain>] | [load|unload|reload] <profile> [reloadxml]"
 SWITCH_STANDARD_API(voicemail_api_function)
 {
@@ -4095,8 +4245,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 	SWITCH_ADD_APP(app_interface, "voicemail", "Voicemail", VM_DESC, voicemail_function, VM_USAGE, SAF_NONE);
 	SWITCH_ADD_API(commands_api_interface, "voicemail", "voicemail", voicemail_api_function, VOICEMAIL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "voicemail_inject", "voicemail_inject", voicemail_inject_api_function, VM_INJECT_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "vm_inject", "vm_inject", voicemail_inject_api_function, VM_INJECT_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_boxcount", "vm_boxcount", boxcount_api_function, BOXCOUNT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "vm_prefs", "vm_prefs", prefs_api_function, PREFS_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "vm_delete", "vm_delete", voicemail_delete_api_function, VM_DELETE_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "vm_list", "vm_list", voicemail_list_api_function, VM_LIST_USAGE);
 
 	return SWITCH_STATUS_SUCCESS;
 }
