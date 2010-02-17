@@ -190,8 +190,19 @@ int skypiax_signaling_read(private_t * tech_pvt)
 				} else if (!strncasecmp(message, "ERROR 592 ALTER CALL", 19)) {
 					ERRORA("Skype got ERROR about TRANSFERRING, no problem: |||%s|||\n", SKYPIAX_P_LOG, message);
 				} else if (!strncasecmp(message, "ERROR 559 CALL", 13)) {
-					DEBUGA_SKYPE("Skype got ERROR about a failed action (probably TRYING to HANGUP A CALL), no problem: |||%s|||\n", SKYPIAX_P_LOG,
-								 message);
+					if(tech_pvt->interface_state == SKYPIAX_STATE_PREANSWER){
+						DEBUGA_SKYPE("Skype got ERROR about a failed action (probably TRYING to ANSWER A CALL), let's go down: |||%s|||\n", SKYPIAX_P_LOG,
+								message);
+						tech_pvt->skype_callflow = CALLFLOW_STATUS_FINISHED;
+						ERRORA("skype_call now is DOWN\n", SKYPIAX_P_LOG);
+						tech_pvt->skype_call_id[0] = '\0';
+						tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
+						return CALLFLOW_INCOMING_HANGUP;
+
+					} else {
+						DEBUGA_SKYPE("Skype got ERROR about a failed action (probably TRYING to HANGUP A CALL), no problem: |||%s|||\n", SKYPIAX_P_LOG,
+								message);
+					}
 				} else {
 					ERRORA("Skype got ERROR: |||%s|||\n", SKYPIAX_P_LOG, message);
 					tech_pvt->skype_callflow = CALLFLOW_STATUS_FINISHED;
