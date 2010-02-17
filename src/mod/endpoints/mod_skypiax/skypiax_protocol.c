@@ -1180,7 +1180,7 @@ continue;
 								if (len == -1) {
 									break;
 								} else if (len != got) {
-									ERRORA("len=%d\n", SKYPIAX_P_LOG, len);
+									DEBUGA_SKYPE("len=%d\n", SKYPIAX_P_LOG, len);
 									skypiax_sleep(1000);
 									break;
 								}
