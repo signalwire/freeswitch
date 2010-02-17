@@ -688,6 +688,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		return SWITCH_STATUS_FALSE;
 	}
 
+tech_pvt->begin_to_read=1;
 	tech_pvt->read_frame.flags = SFF_NONE;
 	*frame = NULL;
 
@@ -1777,6 +1778,7 @@ int start_audio_threads(private_t * tech_pvt)
 	switch_threadattr_t *thd_attr = NULL;
 
 tech_pvt->begin_to_write=0;
+tech_pvt->begin_to_read=0;
 
 	switch_threadattr_create(&thd_attr, skypiax_module_pool);
 	switch_threadattr_detach_set(thd_attr, 1);

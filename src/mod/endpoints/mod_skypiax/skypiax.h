@@ -279,6 +279,7 @@ struct private_object {
 	switch_timer_t timer_read;
 	switch_timer_t timer_write;
 int begin_to_write;
+int begin_to_read;
 };
 
 typedef struct private_object private_t;

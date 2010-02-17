@@ -813,10 +813,15 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 					to.tv_usec = 60000;	//60 msec
 					to.tv_sec = 0;
 
+if(tech_pvt->begin_to_read==0){
+skypiax_sleep(1000);
+continue;
+}
 					 if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next) {
 	switch_core_timer_next(&tech_pvt->timer_read);
 					 }
-					rt = select(fdselect + 1, &fs, NULL, NULL, &to);
+					//rt = select(fdselect + 1, &fs, NULL, NULL, &to);
+rt=1;
 					if (rt > 0) {
 
 						if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
@@ -889,6 +894,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 							}
 
 						} else if (len == 640) {
+#if 0
 							int waitin;
 							int max_waitin=20;
 
@@ -897,12 +903,15 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 								switch_sleep(1000);	//1 millisec
 								waitin++;
 								if(waitin == max_waitin){
+								ERRORA("waitin is %d\n", SKYPIAX_P_LOG, waitin);
 									break;
 								}
 							}
 
-							if(waitin > 1)
+							if(waitin > 10){
 								ERRORA("waitin is %d\n", SKYPIAX_P_LOG, waitin);
+							}
+#endif//0
 							switch_mutex_lock(tech_pvt->mutex_audio_srv);
 							memcpy(tech_pvt->audiobuf_srv, srv_in, SAMPLES_PER_FRAME * sizeof(short));
 							tech_pvt->flag_audio_srv = 1;
@@ -1218,6 +1227,7 @@ int skypiax_audio_read(private_t * tech_pvt)
 {
 	unsigned int samples;
 	int waitin;
+	int max_waitin=20;
 
 	waitin=0;
 	while (tech_pvt->flag_audio_srv == 0) {
@@ -1228,10 +1238,14 @@ int skypiax_audio_read(private_t * tech_pvt)
 #endif //WIN32
 		waitin++;
 
+		if(waitin == max_waitin){
+		ERRORA("read is now %d\n", SKYPIAX_P_LOG, waitin);
+			break;
+		}
 		//WARNINGA("read now is 0\n", SKYPIAX_P_LOG);
 	}
-	if(waitin > 21){
-		ERRORA("read is now %d\n", SKYPIAX_P_LOG, waitin);
+	if(waitin > 10){
+		//ERRORA("read is now %d\n", SKYPIAX_P_LOG, waitin);
 	}
 	//samples = skypiax_pipe_read(tech_pvt->audiopipe_srv[0], tech_pvt->read_frame.data, SAMPLES_PER_FRAME * sizeof(short));
 			switch_mutex_lock(tech_pvt->mutex_audio_srv);
