@@ -1386,7 +1386,7 @@ static switch_status_t load_config(int reload_type)
 				WARNINGA("STARTING interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
 
 				switch_threadattr_create(&skypiax_api_thread_attr, skypiax_module_pool);
-				switch_threadattr_detach_set(skypiax_api_thread_attr, 1);
+				switch_threadattr_detach_set(skypiax_api_thread_attr, 0);
 				switch_threadattr_stacksize_set(skypiax_api_thread_attr, SWITCH_THREAD_STACKSIZE);
 				switch_thread_create(&globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread,
 									 skypiax_api_thread_attr, skypiax_do_skypeapi_thread, &globals.SKYPIAX_INTERFACES[interface_id], skypiax_module_pool);
@@ -1781,7 +1781,7 @@ tech_pvt->begin_to_write=0;
 tech_pvt->begin_to_read=0;
 
 	switch_threadattr_create(&thd_attr, skypiax_module_pool);
-	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_detach_set(thd_attr, 0);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	if (switch_thread_create(&tech_pvt->tcp_srv_thread, thd_attr, skypiax_do_tcp_srv_thread, tech_pvt, skypiax_module_pool) == SWITCH_STATUS_SUCCESS) {
 		DEBUGA_SKYPE("started tcp_srv_thread thread.\n", SKYPIAX_P_LOG);
@@ -1791,7 +1791,7 @@ tech_pvt->begin_to_read=0;
 	}
 
 	switch_threadattr_create(&thd_attr, skypiax_module_pool);
-	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_detach_set(thd_attr, 0);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	if (switch_thread_create(&tech_pvt->tcp_cli_thread, thd_attr, skypiax_do_tcp_cli_thread, tech_pvt, skypiax_module_pool) == SWITCH_STATUS_SUCCESS) {
 		DEBUGA_SKYPE("started tcp_cli_thread thread.\n", SKYPIAX_P_LOG);
