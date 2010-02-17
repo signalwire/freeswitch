@@ -217,6 +217,7 @@ struct switch_runtime {
 	uint32_t debug_level;
 	uint32_t runlevel;
 	uint32_t tipping_point;
+	uint32_t timer_affinity;
 };
 
 extern struct switch_runtime runtime;

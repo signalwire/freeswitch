@@ -363,7 +363,7 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 
 SWITCH_DECLARE(void) switch_cond_next(void)
 {
-	if (session_manager.session_count > 1000) {
+	if (session_manager.session_count > runtime.tipping_point) {
 		os_yield();
 		return;
 	}
@@ -594,10 +594,12 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	int fwd_errs = 0, rev_errs = 0;
 
 #ifdef HAVE_CPU_SET_MACROS
-	cpu_set_t set;
-	CPU_ZERO(&set);
-	CPU_SET(0, &set);
-	sched_setaffinity(0, sizeof(set), &set);
+	if (runtime.timer_affinity > -1) {
+		cpu_set_t set;
+		CPU_ZERO(&set);
+		CPU_SET(0, &set);
+		sched_setaffinity(runtime.timer_affinity, sizeof(set), &set);
+	}
 #endif
 
 	switch_time_sync();

@@ -1301,8 +1301,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	runtime.running = 1;
 	runtime.tipping_point = 1000000;
+	runtime.timer_affinity = -1;
 	runtime.initiated = switch_time_now();
-
+	
 	switch_scheduler_add_task(switch_epoch_time_now(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
 
 	switch_uuid_get(&uuid);
@@ -1443,6 +1444,12 @@ static void switch_load_core_config(const char *file)
 					switch_core_session_limit(atoi(val));
 				} else if (!strcasecmp(var, "tipping-point") && !zstr(val)) {
 					runtime.tipping_point = atoi(val);
+				} else if (!strcasecmp(var, "timer-affinity") && !zstr(val)) {
+					if (!strcasecmp(val, "disabled")) {
+						runtime.timer_affinity = -1;
+					} else {
+						runtime.timer_affinity = atoi(val);
+					}
 				} else if (!strcasecmp(var, "rtp-start-port") && !zstr(val)) {
 					switch_rtp_set_start_port((switch_port_t) atoi(val));
 				} else if (!strcasecmp(var, "rtp-end-port") && !zstr(val)) {
