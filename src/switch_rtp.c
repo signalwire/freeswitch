@@ -837,7 +837,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 	}
 
-	switch_socket_create_pollfd(&rtp_session->read_pollfd, rtp_session->sock_input, SWITCH_POLLIN | SWITCH_POLLERR, rtp_session->pool);
+	switch_socket_create_pollset(&rtp_session->read_pollfd, rtp_session->sock_input, SWITCH_POLLIN | SWITCH_POLLERR, rtp_session->pool);
 
 	status = SWITCH_STATUS_SUCCESS;
 	*err = "Success";

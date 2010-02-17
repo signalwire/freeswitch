@@ -821,11 +821,56 @@ SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t ** pollse
 
 SWITCH_DECLARE(switch_status_t) switch_pollset_add(switch_pollset_t *pollset, const switch_pollfd_t *descriptor)
 {
-	if (!pollset) {
+	if (!pollset || !descriptor) {
 		return SWITCH_STATUS_FALSE;
 	}
 
 	return apr_pollset_add((apr_pollset_t *) pollset, (const apr_pollfd_t *) descriptor);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_pollset_remove(switch_pollset_t *pollset, const switch_pollfd_t *descriptor)
+{
+	if (!pollset || !descriptor) {
+		return SWITCH_STATUS_FALSE;
+	}	
+	
+	return apr_pollset_remove((apr_pollset_t *) pollset, (const apr_pollfd_t *) descriptor);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t **pollfd, switch_socket_t *sock, int16_t flags, void *client_data, switch_memory_pool_t *pool)
+{
+	if (!pollfd || !sock) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if ((*pollfd = (switch_pollfd_t*)apr_palloc(pool, sizeof(switch_pollfd_t))) == 0) {
+		return SWITCH_STATUS_MEMERR;
+	}
+	
+	memset(*pollfd, 0, sizeof(switch_pollfd_t));
+
+	(*pollfd)->desc_type = APR_POLL_SOCKET;
+	(*pollfd)->reqevents = flags;
+	(*pollfd)->desc.s = sock;
+	(*pollfd)->client_data = client_data;
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_pollset_poll(switch_pollset_t *pollset, switch_interval_time_t timeout, int32_t *num, const switch_pollfd_t **descriptors)
+{
+	apr_status_t st = SWITCH_STATUS_FALSE;
+	
+	if (pollset) {
+		st = apr_pollset_poll((apr_pollset_t *) pollset, timeout, num, (const apr_pollfd_t **) descriptors);
+		
+		if (st == APR_TIMEUP) {
+			st = SWITCH_STATUS_TIMEOUT;
+		}
+	}
+	
+	return st;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_poll(switch_pollfd_t *aprset, int32_t numsock, int32_t *nsds, switch_interval_time_t timeout)
@@ -843,27 +888,17 @@ SWITCH_DECLARE(switch_status_t) switch_poll(switch_pollfd_t *aprset, int32_t num
 	return st;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t ** poll, switch_socket_t *sock, int16_t flags, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_socket_create_pollset(switch_pollfd_t ** poll, switch_socket_t *sock, int16_t flags, switch_memory_pool_t *pool)
 {
 	switch_pollset_t *pollset;
-
-	void *ptr = NULL;
-
-	if ((ptr = apr_palloc(pool, sizeof(switch_pollfd_t))) == 0) {
-		return SWITCH_STATUS_MEMERR;
-	}
 
 	if (switch_pollset_create(&pollset, 1, pool, 0) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
 
-	memset(ptr, 0, sizeof(switch_pollfd_t));
-	*poll = ptr;
-
-	(*poll)->desc_type = APR_POLL_SOCKET;
-	(*poll)->reqevents = flags;
-	(*poll)->desc.s = sock;
-	(*poll)->client_data = sock;
+	if (switch_socket_create_pollfd(poll, sock, flags, sock, pool) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
+	}
 
 	if (switch_pollset_add(pollset, *poll) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
