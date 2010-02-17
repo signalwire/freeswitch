@@ -1189,6 +1189,7 @@ continue;
 								//skypiax_sleep(5000);  //5 msec
 
 								if (len == -1) {
+									DEBUGA_SKYPE("len=%d\n", SKYPIAX_P_LOG, len);
 									break;
 								} else if (len != got) {
 									DEBUGA_SKYPE("len=%d\n", SKYPIAX_P_LOG, len);
