@@ -833,7 +833,7 @@ rt=1;
 						if (len == 320) {
 							unsigned int howmany;
 
-								NOTICA("320!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", SKYPIAX_P_LOG);
+								DEBUGA_SKYPE("320!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", SKYPIAX_P_LOG);
 							if (samplerate_skypiax == 8000) {
 								/* we're downsampling from 16khz to 8khz, srv_out will contain each other sample from srv_in */
 								a = 0;
@@ -919,7 +919,7 @@ rt=1;
 						} else if (len == 0) {
 							skypiax_sleep(1000);
 						} else {
-							ERRORA("len=%d, expected 640\n", SKYPIAX_P_LOG, len);
+							DEBUGA_SKYPE("len=%d, expected 640\n", SKYPIAX_P_LOG, len);
 						}
 
 					} else {
@@ -1227,7 +1227,7 @@ int skypiax_audio_read(private_t * tech_pvt)
 {
 	unsigned int samples;
 	int waitin;
-	int max_waitin=20;
+	int max_waitin=30;
 
 	waitin=0;
 	while (tech_pvt->flag_audio_srv == 0) {
@@ -1239,13 +1239,13 @@ int skypiax_audio_read(private_t * tech_pvt)
 		waitin++;
 
 		if(waitin == max_waitin){
-		ERRORA("read is now %d\n", SKYPIAX_P_LOG, waitin);
+			DEBUGA_SKYPE("read is now at max_waitin: %d\n", SKYPIAX_P_LOG, waitin);
 			break;
 		}
 		//WARNINGA("read now is 0\n", SKYPIAX_P_LOG);
 	}
-	if(waitin > 10){
-		//ERRORA("read is now %d\n", SKYPIAX_P_LOG, waitin);
+	if(waitin > 22){
+		DEBUGA_SKYPE("read is now %d\n", SKYPIAX_P_LOG, waitin);
 	}
 	//samples = skypiax_pipe_read(tech_pvt->audiopipe_srv[0], tech_pvt->read_frame.data, SAMPLES_PER_FRAME * sizeof(short));
 			switch_mutex_lock(tech_pvt->mutex_audio_srv);
