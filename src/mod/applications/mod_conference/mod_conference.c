@@ -1046,7 +1046,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		}
 
 		/* Start recording if there's more than one participant. */
-		if (ready > 1 && conference->auto_record && !conference->is_recording) {
+		if (conference->auto_record && !conference->is_recording && conference->count > 1) {
 			conference->is_recording = 1;
 			imember = conference->members;
 			if (imember) {

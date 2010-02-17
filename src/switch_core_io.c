@@ -105,10 +105,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_io_event_hook_read_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0;
-	unsigned int flag = 0;
+	unsigned int flag = 0, sanity = 5000;
 	switch_codec_implementation_t codec_impl;
-
+	
 	switch_assert(session != NULL);
+
+	while(!switch_channel_media_ack(session->channel) || !switch_channel_test_flag(session->channel, CF_MEDIA_SET)) {
+		if (!--sanity) break;
+		switch_cond_next();
+	}
 
 	if (!(session->read_codec && session->read_codec->implementation && switch_core_codec_ready(session->read_codec))) {
 		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_get_state(session->channel) == CS_HIBERNATE) {
@@ -567,6 +572,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_frame_t *enc_frame = NULL, *write_frame = frame;
 	unsigned int flag = 0, need_codec = 0, perfect = 0, do_bugs = 0, do_write = 0, do_resample = 0, ptime_mismatch = 0, pass_cng = 0, resample = 0;
+	unsigned int sanity = 5000;
 	int did_write_resample = 0;
 
 	switch_assert(session != NULL);
@@ -581,6 +587,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			pass_cng = 1;
 		}
 		return SWITCH_STATUS_SUCCESS;
+	}
+
+
+	while(!switch_channel_media_ack(session->channel) || !switch_channel_test_flag(session->channel, CF_MEDIA_SET)) {
+		if (!--sanity) break;
+		switch_cond_next();
 	}
 
 	if (!(session->write_codec && switch_core_codec_ready(session->write_codec)) && !pass_cng) {
