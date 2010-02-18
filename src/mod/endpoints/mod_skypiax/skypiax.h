@@ -43,6 +43,11 @@
 #include <X11/Xatom.h>
 #endif //WIN32
 
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+#include <spandsp.h>
+#include <spandsp/version.h>
+
+
 #ifdef _MSC_VER
 //Windows macro  for FD_SET includes a warning C4127: conditional expression is constant
 #pragma warning(push)
@@ -281,6 +286,9 @@ struct private_object {
 	switch_timer_t timer_write;
 int begin_to_write;
 int begin_to_read;
+                 dtmf_rx_state_t dtmf_state;
+        switch_time_t old_dtmf_timestamp;
+
 };
 
 typedef struct private_object private_t;

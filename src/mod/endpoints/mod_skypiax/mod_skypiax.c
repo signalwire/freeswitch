@@ -276,6 +276,10 @@ switch_status_t skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *s
 	switch_core_timer_sync(&tech_pvt->timer_write);
 #endif // TIMER_WRITE
 
+    dtmf_rx_init(&tech_pvt->dtmf_state, NULL, NULL);
+    dtmf_rx_parms(&tech_pvt->dtmf_state, 0, 10, 10, -99);
+
+
 	DEBUGA_SKYPE("skypiax_tech_init SUCCESS\n", SKYPIAX_P_LOG);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -676,6 +680,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	switch_byte_t *data;
+        char digit_str[256];
+	short *frame_16_khz;
+	short frame_8_khz[160];	
+	int i;
+	int a;
+
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -722,6 +732,50 @@ tech_pvt->begin_to_read=1;
 				continue;
 			}
 			*frame = &tech_pvt->read_frame;
+
+
+			if (switch_true(switch_channel_get_variable(channel, "skype_get_inband_dtmf"))) {
+
+				frame_16_khz = tech_pvt->read_frame.data;
+
+				a = 0;
+				for (i = 0; i < tech_pvt->read_frame.datalen / sizeof(short); i++) {
+					frame_8_khz[a] = frame_16_khz[i];
+					i++;
+					a++;
+				}
+				//DEBUGA_SKYPE("a=%d i=%d\n", SKYPIAX_P_LOG, a, i);
+
+				memset(digit_str, 0, sizeof(digit_str));
+				//dtmf_rx(&tech_pvt->dtmf_state, (int16_t *) tech_pvt->read_frame.data,tech_pvt->read_frame.datalen/sizeof(short) );
+				dtmf_rx(&tech_pvt->dtmf_state, (int16_t *) frame_8_khz, 160);
+				dtmf_rx_get(&tech_pvt->dtmf_state, digit_str, sizeof(digit_str));
+
+
+				if (digit_str[0]) {
+					switch_time_t new_dtmf_timestamp = switch_time_now();
+					if ((new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp) > 350000) {     //FIXME: make it configurable
+						char *p = digit_str;
+						switch_channel_t *channel = switch_core_session_get_channel(session);
+
+						while (p && *p) {
+							switch_dtmf_t dtmf;
+							dtmf.digit = *p;
+							dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
+							switch_channel_queue_dtmf(channel, &dtmf);
+							p++;
+						}
+						NOTICA("DTMF DETECTED: [%s] new_dtmf_timestamp: %u, delta_t: %u\n", SKYPIAX_P_LOG, digit_str, (unsigned int) new_dtmf_timestamp,
+								(unsigned int) (new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp));
+						tech_pvt->old_dtmf_timestamp = new_dtmf_timestamp;
+					}
+				}
+			}
+
+
+
+
+
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 			if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
 				switch_swap_linear((*frame)->data, (int) (*frame)->datalen / 2);
