@@ -447,6 +447,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+	switch_channel_set_variable(channel, "skype_user", tech_pvt->skype_user);
 	//ERRORA("%s CHANNEL INIT\n", SKYPIAX_P_LOG, tech_pvt->name);
 	switch_set_flag(tech_pvt, TFLAG_IO);
 
@@ -1099,6 +1100,7 @@ static void *SWITCH_THREAD_FUNC skypiax_signaling_thread_func(switch_thread_t * 
 				tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
 				*tech_pvt->session_uuid_str = '\0';
 				*tech_pvt->skype_call_id = '\0';
+				*tech_pvt->initial_skype_user = '\0';
 				switch_mutex_unlock(globals.mutex);
 
 				//ERRORA("LET'S WAIT\n", SKYPIAX_P_LOG);
@@ -1855,6 +1857,8 @@ int new_inbound_channel(private_t * tech_pvt)
 	}
 	if (channel) {
 		switch_channel_mark_answered(channel);
+		switch_channel_set_variable(channel, "skype_user", tech_pvt->skype_user);
+		switch_channel_set_variable(channel, "initial_skype_user", tech_pvt->initial_skype_user);
 	}
 
 	DEBUGA_SKYPE("new_inbound_channel\n", SKYPIAX_P_LOG);
@@ -2336,7 +2340,8 @@ int skypiax_transfer(private_t * tech_pvt, char *id, char *value)
 		if (available_skypiax_interface) {
 			/* there is a skypiax interface idle, let's transfer the call to it */
 
-			//FIXME write a timestamp here
+			switch_copy_string(available_skypiax_interface->initial_skype_user, tech_pvt->skype_user, sizeof(tech_pvt->skype_user) - 1);
+
 			gettimeofday(&tech_pvt->transfer_time, NULL);
 			switch_copy_string(tech_pvt->skype_transfer_call_id, id, sizeof(tech_pvt->skype_transfer_call_id) - 1);
 

@@ -260,6 +260,7 @@ struct private_object {
 	FILE *phonebook_writing_fp;
 	int skypiax_dir_entry_extension_prefix;
 	char skype_user[256];
+	char initial_skype_user[256];
 	char skype_password[256];
 	char destination[256];
 	struct timeval answer_time;
