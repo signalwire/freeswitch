@@ -237,7 +237,13 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	zap_status_t status = ZAP_FAIL;
 	sangoma_boost_request_id_t r;
 	sangomabc_event_t event = {0};
-	int sanity = 5000;
+
+		/* sanity has to be more than 8 seconds.
+	 * In PRI specs, timeout is 4 seconds for remote switch to respond to a SETUP,
+	 * and PRI stack will retransmit a second SETUP after the first timeout, so
+	 * we should allow for at least 8 seconds */
+
+	int sanity = 10000;
 	sangoma_boost_request_status_t st;
 	char ani[128] = "";
 	char *gr = NULL;
