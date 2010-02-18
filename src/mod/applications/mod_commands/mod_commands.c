@@ -1712,7 +1712,6 @@ SWITCH_STANDARD_API(reload_function)
 		stream->write_function(stream, "+OK module unloaded\n");
 	} else {
 		stream->write_function(stream, "-ERR unloading module [%s]\n", err);
-		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {

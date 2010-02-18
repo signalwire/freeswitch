@@ -223,6 +223,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 {
 	sofia_gateway_t *gateway_ptr, *last = NULL;
 	switch_event_t *event;
+	char *pkey;
 
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 		if (gateway_ptr->deleted && gateway_ptr->state == REG_STATE_NOREG) {
@@ -231,10 +232,15 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			} else {
 				profile->gateways = gateway_ptr->next;
 			}
+			
+			pkey = switch_mprintf("%s::%s", profile->name, gateway_ptr->name);
 
+			switch_snprintf(pkey, sizeof(pkey), "%s::%s", profile->name, gateway_ptr->name);
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->name);
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->register_from);
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->register_contact);
+
+			free(pkey);
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleted gateway %s\n", gateway_ptr->name);
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_DEL) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile-name", gateway_ptr->profile->name);
@@ -2414,15 +2420,21 @@ void sofia_reg_release_gateway__(const char *file, const char *func, int line, s
 #endif
 }
 
-switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway)
+switch_status_t sofia_reg_add_gateway(const char *profile_name, const char *key, sofia_gateway_t *gateway)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *pkey = switch_mprintf("%s::%s", profile_name, key);
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (!switch_core_hash_find(mod_sofia_globals.gateway_hash, key)) {
 		status = switch_core_hash_insert(mod_sofia_globals.gateway_hash, key, gateway);
 	}
+	if (!switch_core_hash_find(mod_sofia_globals.gateway_hash, pkey)) {
+		status = switch_core_hash_insert(mod_sofia_globals.gateway_hash, pkey, gateway);
+	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	free(pkey);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_event_t *s_event;

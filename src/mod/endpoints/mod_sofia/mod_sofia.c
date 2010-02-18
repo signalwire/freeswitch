@@ -2282,7 +2282,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", "Name", "   Type", "Data", "State");
+	stream->write_function(stream, "%25s\t%s\t  %40s\t%s\n", "Name", "   Type", "Data", "State");
 	stream->write_function(stream, "%s\n", line);
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
@@ -2292,21 +2292,27 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 			if (strcmp(vvar, profile->name)) {
 				ac++;
-				stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", vvar, "  alias", profile->name, "ALIASED");
+				stream->write_function(stream, "%25s\t%s\t  %40s\t%s\n", vvar, "  alias", profile->name, "ALIASED");
 			} else {
-				stream->write_function(stream, "%25s\t%s\t  %32s\t%s (%u)\n", profile->name, "profile", profile->url,
+				stream->write_function(stream, "%25s\t%s\t  %40s\t%s (%u)\n", profile->name, "profile", profile->url,
 									   sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN", profile->inuse);
 
 				if (sofia_test_pflag(profile, PFLAG_TLS)) {
-					stream->write_function(stream, "%25s\t%s\t  %32s\t%s (%u) (TLS)\n", profile->name, "profile", profile->tls_url,
+					stream->write_function(stream, "%25s\t%s\t  %40s\t%s (%u) (TLS)\n", profile->name, "profile", profile->tls_url,
 										   sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN", profile->inuse);
 				}
 
 				c++;
 
 				for (gp = profile->gateways; gp; gp = gp->next) {
+					char *pkey = switch_mprintf("%s::%s", profile->name, gp->name);
+
 					switch_assert(gp->state < REG_STATE_LAST);
-					stream->write_function(stream, "%25s\t%s\t  %32s\t%s", gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
+					
+					stream->write_function(stream, "%25s\t%s\t  %40s\t%s",
+										   pkey, "gateway", gp->register_to, sofia_state_names[gp->state]);
+					free(pkey);
+
 					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
 						time_t now = switch_epoch_time_now(NULL);
 						if (gp->retry > now) {
