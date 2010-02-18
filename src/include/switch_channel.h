@@ -536,7 +536,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(_In_ switch_channe
 
 #define switch_channel_stop_broadcast(_channel)	for(;;) {if (switch_channel_test_flag(_channel, CF_BROADCAST)) {switch_channel_set_flag(_channel, CF_STOP_BROADCAST); switch_channel_set_flag(_channel, CF_BREAK); } break;}
 
-SWITCH_DECLARE(void) switch_channel_audio_sync(switch_channel_t *channel);
+SWITCH_DECLARE(void) switch_channel_perform_audio_sync(switch_channel_t *channel, const char *file, const char *func, int line);
+#define switch_channel_audio_sync(_c)  switch_channel_perform_audio_sync(_c, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 SWITCH_DECLARE(void) switch_channel_set_private_flag(switch_channel_t *channel, uint32_t flags);
 SWITCH_DECLARE(void) switch_channel_clear_private_flag(switch_channel_t *channel, uint32_t flags);

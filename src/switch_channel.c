@@ -173,12 +173,15 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel_t *c
 }
 
 
-SWITCH_DECLARE(void) switch_channel_audio_sync(switch_channel_t *channel)
+SWITCH_DECLARE(void) switch_channel_perform_audio_sync(switch_channel_t *channel, const char *file, const char *func, int line)
 {
 	if (switch_channel_media_ready(channel)) {
 		switch_core_session_message_t msg = { 0 };
 		msg.message_id = SWITCH_MESSAGE_INDICATE_AUDIO_SYNC;
 		msg.from = channel->name;
+		msg._file = file;
+		msg._func = func;
+		msg._line = line;
 		switch_core_session_receive_message(channel->session, &msg);
 	}
 }
