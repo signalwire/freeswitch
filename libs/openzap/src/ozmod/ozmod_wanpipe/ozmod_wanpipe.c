@@ -486,8 +486,10 @@ static ZIO_OPEN_FUNCTION(wanpipe_open)
 	wanpipe_tdm_api_t tdm_api;
 
 	memset(&tdm_api,0,sizeof(tdm_api));
-	sangoma_flush_bufs(zchan->sockfd, &tdm_api);
+	sangoma_tdm_flush_bufs(zchan->sockfd, &tdm_api);
+#ifdef LIBSANGOMA_VERSION
 	sangoma_flush_event_bufs(zchan->sockfd, &tdm_api);
+#endif
 
 	if (zchan->type == ZAP_CHAN_TYPE_DQ921 || zchan->type == ZAP_CHAN_TYPE_DQ931) {
 		zchan->native_codec = zchan->effective_codec = ZAP_CODEC_NONE;
