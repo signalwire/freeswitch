@@ -486,6 +486,8 @@ static ZIO_OPEN_FUNCTION(wanpipe_open)
 	wanpipe_tdm_api_t tdm_api;
 
 	memset(&tdm_api,0,sizeof(tdm_api));
+	sangoma_flush_bufs(zchan->sockfd, &tdm_api);
+	sangoma_flush_event_bufs(zchan->sockfd, &tdm_api);
 
 	if (zchan->type == ZAP_CHAN_TYPE_DQ921 || zchan->type == ZAP_CHAN_TYPE_DQ931) {
 		zchan->native_codec = zchan->effective_codec = ZAP_CODEC_NONE;
@@ -1018,14 +1020,17 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
                     char tmp_dtmf[2] = { tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_digit, 0 };
 					event_id = ZAP_OOB_NOOP;
 
-					//zap_log(ZAP_LOG_DEBUG, "%d:%d queue hardware dtmf %s\n", zchan->span_id, zchan->chan_id, tmp_dtmf);
+					//zap_log(ZAP_LOG_WARNING, "%d:%d queue hardware dtmf %s %s\n", zchan->span_id, zchan->chan_id, tmp_dtmf, 
+							//tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT ? "on" : "off");
                     if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT) {
 						zap_set_flag_locked(zchan, ZAP_CHANNEL_MUTE);
 					}
 
                     if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_STOP) {
 						zap_clear_flag_locked(zchan, ZAP_CHANNEL_MUTE);
-                        zap_channel_queue_dtmf(zchan, tmp_dtmf);
+						if (zap_test_flag(zchan, ZAP_CHANNEL_INUSE)) {
+							zap_channel_queue_dtmf(zchan, tmp_dtmf);
+						}
                     } 
                 }
                 break;

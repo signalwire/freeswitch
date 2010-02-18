@@ -675,7 +675,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		tech_pvt->read_frame.samples /= 2;
 	}
 
-	if (zap_channel_dequeue_dtmf(tech_pvt->zchan, dtmf, sizeof(dtmf))) {
+	while (zap_channel_dequeue_dtmf(tech_pvt->zchan, dtmf, sizeof(dtmf))) {
 		switch_dtmf_t _dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
 		char *p;
 		for (p = dtmf; p && *p; p++) {
@@ -737,10 +737,11 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 
 	wflags = ZAP_WRITE;	
-	status = zap_channel_wait(tech_pvt->zchan, &wflags, tech_pvt->zchan->effective_interval * 4);
+	status = zap_channel_wait(tech_pvt->zchan, &wflags, tech_pvt->zchan->effective_interval * 10);
 	
 	if (!(wflags & ZAP_WRITE)) {
-		goto fail;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Dropping frame! (write not ready)\n");
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	len = frame->datalen;
