@@ -207,6 +207,7 @@ typedef enum {
 	PFLAG_LOG_AUTH_FAIL,
 	PFLAG_TRACK_CALLS,
 	PFLAG_DESTROY,
+	PFLAG_EXTENDED_INFO_PARSING,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;

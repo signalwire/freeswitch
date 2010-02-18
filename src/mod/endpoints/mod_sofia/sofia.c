@@ -2418,6 +2418,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_AUTH_CALLS);
 						}
+					} else if (!strcasecmp(var, "extended-info-parsing")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_EXTENDED_INFO_PARSING);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_EXTENDED_INFO_PARSING);
+						}
 					} else if (!strcasecmp(var, "context")) {
 						profile->context = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "local-network-acl")) {
@@ -3112,6 +3118,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "auth-calls")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_AUTH_CALLS);
+						}
+					} else if (!strcasecmp(var, "extended-info-parsing")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_EXTENDED_INFO_PARSING);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_EXTENDED_INFO_PARSING);
 						}
 					} else if (!strcasecmp(var, "nonce-ttl")) {
 						profile->nonce_ttl = atoi(val);
@@ -5352,6 +5364,71 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	}
 }
 
+
+static switch_status_t create_info_event(sip_t const *sip, nua_handle_t *nh, switch_event_t **revent) 
+{
+	sip_alert_info_t *alert_info = sip_alert_info(sip);
+	switch_event_t *event;
+
+	if (!(sip && switch_event_create(&event, SWITCH_EVENT_RECV_INFO) == SWITCH_STATUS_SUCCESS)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (sip && sip->sip_content_type) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Content-Type", sip->sip_content_type->c_type);
+	}
+	
+	if (sip->sip_from && sip->sip_from->a_url) {
+		if (sip->sip_from->a_url->url_user) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-From-User", sip->sip_from->a_url->url_user);
+		}
+
+		if (sip->sip_from->a_url->url_host) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-From-Host", sip->sip_from->a_url->url_host);
+		}
+	}
+
+	if (sip->sip_to && sip->sip_to->a_url) {
+		if (sip->sip_to->a_url->url_user) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-To-User", sip->sip_to->a_url->url_user);
+		}
+
+		if (sip->sip_to->a_url->url_host) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-To-Host", sip->sip_to->a_url->url_host);
+		}
+	}
+
+
+	if (sip->sip_contact && sip->sip_contact->m_url) {
+		if (sip->sip_contact->m_url->url_user) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Contact-User", sip->sip_contact->m_url->url_user);
+		}
+
+		if (sip->sip_contact->m_url->url_host) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Contact-Host", sip->sip_contact->m_url->url_host);
+		}
+	}
+
+
+	if (sip->sip_call_info) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-Info",
+									   sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info));
+	}
+
+	if (alert_info) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Alert-Info", sip_header_as_string(nua_handle_home(nh), (void *) alert_info));
+	}
+
+
+	if (sip->sip_payload && sip->sip_payload->pl_data) {
+		switch_event_add_body(event, "%s", sip->sip_payload->pl_data);
+	}
+
+	*revent = event;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
 {
 	/* placeholder for string searching */
@@ -5360,6 +5437,67 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	const char *clientcode_header;
 	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0) };
 	switch_event_t *event;
+
+	if (sofia_test_pflag(profile, PFLAG_EXTENDED_INFO_PARSING)) {
+		if (sip && sip->sip_content_type && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype &&
+            sip->sip_payload && sip->sip_payload->pl_data) {
+			
+			if (!strncasecmp(sip->sip_content_type->c_type, "freeswitch", 10)) {
+
+				if (!strcasecmp(sip->sip_content_type->c_subtype, "session-event")) {
+					if (session) {
+						if (create_info_event(sip, nh, &event) == SWITCH_STATUS_SUCCESS) {		
+							if (switch_core_session_queue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "queued freeswitch event for INFO\n");
+								nua_respond(nh, SIP_200_OK, SIPTAG_CONTENT_TYPE_STR("freeswitch/session-event-response"),
+											SIPTAG_PAYLOAD_STR("+OK MESSAGE QUEUED"), NUTAG_WITH_THIS(nua), TAG_END());	
+							} else {
+								switch_event_destroy(&event);
+								nua_respond(nh, SIP_200_OK, SIPTAG_CONTENT_TYPE_STR("freeswitch/session-event-response"),
+											SIPTAG_PAYLOAD_STR("-ERR MESSAGE NOT QUEUED"), NUTAG_WITH_THIS(nua), TAG_END());	
+							}
+						}
+						
+					} else {
+						nua_respond(nh, SIP_200_OK, SIPTAG_CONTENT_TYPE_STR("freeswitch/session-event-response"),
+									SIPTAG_PAYLOAD_STR("-ERR INVALID SESSION"), NUTAG_WITH_THIS(nua), TAG_END());	
+						
+					}
+
+					return;
+
+				} else if (!strcasecmp(sip->sip_content_type->c_subtype, "api-request")) {
+					char *cmd = strdup(sip->sip_payload->pl_data);
+					char *arg;
+					switch_stream_handle_t stream = { 0 };
+					switch_status_t status;
+					
+					SWITCH_STANDARD_STREAM(stream);
+					switch_assert(stream.data);
+					
+					if ((arg = strchr(cmd, ':'))) {
+						*arg++ = '\0';
+					}
+
+					if ((status = switch_api_execute(cmd, arg, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
+						nua_respond(nh, SIP_200_OK, SIPTAG_CONTENT_TYPE_STR("freeswitch/api-response"), 
+									SIPTAG_PAYLOAD_STR(stream.data), NUTAG_WITH_THIS(nua), TAG_END());	
+					} else {
+						nua_respond(nh, SIP_200_OK, SIPTAG_CONTENT_TYPE_STR("freeswitch/api-response"),
+									SIPTAG_PAYLOAD_STR("-ERR INVALID COMMAND"), NUTAG_WITH_THIS(nua), TAG_END());	
+					}
+					
+					switch_safe_free(stream.data);
+					switch_safe_free(cmd);
+					return;
+				}
+
+				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());	
+
+				return;
+			}
+		}
+	}
 
 	if (session) {
 		/* Get the channel */
@@ -5493,60 +5631,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
   end:
 
-
-	if (sip && switch_event_create(&event, SWITCH_EVENT_RECV_INFO) == SWITCH_STATUS_SUCCESS) {
-		sip_alert_info_t *alert_info = sip_alert_info(sip);
-
-		if (sip && sip->sip_content_type) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Content-Type", sip->sip_content_type->c_type);
-		}
-
-		if (sip->sip_from && sip->sip_from->a_url) {
-			if (sip->sip_from->a_url->url_user) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-From-User", sip->sip_from->a_url->url_user);
-			}
-
-			if (sip->sip_from->a_url->url_host) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-From-Host", sip->sip_from->a_url->url_host);
-			}
-		}
-
-		if (sip->sip_to && sip->sip_to->a_url) {
-			if (sip->sip_to->a_url->url_user) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-To-User", sip->sip_to->a_url->url_user);
-			}
-
-			if (sip->sip_to->a_url->url_host) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-To-Host", sip->sip_to->a_url->url_host);
-			}
-		}
-
-
-		if (sip->sip_contact && sip->sip_contact->m_url) {
-			if (sip->sip_contact->m_url->url_user) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Contact-User", sip->sip_contact->m_url->url_user);
-			}
-
-			if (sip->sip_contact->m_url->url_host) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Contact-Host", sip->sip_contact->m_url->url_host);
-			}
-		}
-
-
-		if (sip->sip_call_info) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-Info",
-										   sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info));
-		}
-
-		if (alert_info) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Alert-Info", sip_header_as_string(nua_handle_home(nh), (void *) alert_info));
-		}
-
-
-		if (sip->sip_payload && sip->sip_payload->pl_data) {
-			switch_event_add_body(event, "%s", sip->sip_payload->pl_data);
-		}
-
+	if (create_info_event(sip, nh, &event) == SWITCH_STATUS_SUCCESS) {		
 		switch_event_fire(&event);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "dispatched freeswitch event for INFO\n");
 	}
