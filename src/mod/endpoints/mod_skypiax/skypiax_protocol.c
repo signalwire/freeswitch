@@ -1145,9 +1145,9 @@ continue;
 
 						got = SAMPLES_PER_FRAME * sizeof(short);
 							switch_mutex_lock(tech_pvt->mutex_audio_cli);
-//if(tech_pvt->flag_audio_cli == 0){
-//memset(tech_pvt->audiobuf_cli, 255, sizeof(tech_pvt->audiobuf_cli));
-//} 
+if(tech_pvt->flag_audio_cli == 0){
+memset(tech_pvt->audiobuf_cli, 255, sizeof(tech_pvt->audiobuf_cli));
+} 
 						memcpy(cli_in, tech_pvt->audiobuf_cli, SAMPLES_PER_FRAME * sizeof(short));
 						tech_pvt->flag_audio_cli = 0;
 							switch_mutex_unlock(tech_pvt->mutex_audio_cli);
