@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="9,00"
 	Name="mod_skypiax"
 	ProjectGUID="{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}"
 	RootNamespace="mod_skypiax"
@@ -39,6 +39,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\spandsp\src\msvc&quot;;&quot;$(InputDir)..\..\..\..\libs\spandsp\src&quot;;&quot;$(InputDir)..\..\..\..\libs\tiff-3.8.2\libtiff&quot;"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				WarnAsError="false"
@@ -54,7 +55,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="rpcrt4.lib "
+				AdditionalOptions="rpcrt4.lib  &quot;..\..\..\..\debug\libtiff.lib&quot; &quot;..\..\..\..\libs\spandsp\src\debug\spandsp.lib&quot;"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>
