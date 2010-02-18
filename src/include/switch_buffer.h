@@ -101,6 +101,14 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_inuse(_In_ switch_buffer_t *buffer);
  */
 SWITCH_DECLARE(switch_size_t) switch_buffer_read(_In_ switch_buffer_t *buffer, _In_ void *data, _In_ switch_size_t datalen);
 
+/*! \brief Read data from a switch_buffer_t up to the ammount of datalen if it is available, without removing read data from buffer. 
+ * \param buffer any buffer of type switch_buffer_t
+ * \param data pointer to the read data to be returned
+ * \param datalen amount of data to be returned
+ * \return int ammount of data actually read
+ */
+SWITCH_DECLARE(switch_size_t) switch_buffer_peek(_In_ switch_buffer_t *buffer, _In_ void *data, _In_ switch_size_t datalen);
+
 /*! \brief Read data endlessly from a switch_buffer_t 
  * \param buffer any buffer of type switch_buffer_t
  * \param data pointer to the read data to be returned

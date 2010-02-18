@@ -206,6 +206,24 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *
 	return reading;
 }
 
+SWITCH_DECLARE(switch_size_t) switch_buffer_peek(switch_buffer_t *buffer, void *data, switch_size_t datalen)
+{
+	switch_size_t reading = 0;
+
+	if (buffer->used < 1) {
+		buffer->used = 0;
+		return 0;
+	} else if (buffer->used >= datalen) {
+		reading = datalen;
+	} else {
+		reading = buffer->used;
+	}
+
+	memcpy(data, buffer->head, reading);
+
+	return reading;
+}
+
 SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, const void *data, switch_size_t datalen)
 {
 	switch_size_t freespace, actual_freespace;
