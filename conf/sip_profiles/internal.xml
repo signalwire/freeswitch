@@ -58,6 +58,10 @@
     <param name="sip-ip" value="$${local_ip_v4}"/>
     <param name="hold-music" value="$${hold_music}"/>
     <param name="apply-nat-acl" value="nat.auto"/>
+
+    <!-- extended info parsing -->
+    <!-- <param name="extended-info-parsing" value="true"/> -->
+
     <!--<param name="aggressive-nat-detection" value="true"/>-->
     <!--
 	There are known issues (asserts and segfaults) when 100rel is enabled.
