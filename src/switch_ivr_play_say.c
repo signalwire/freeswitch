@@ -365,7 +365,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	}
 
 	if (!matches) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Macro [%s] did not match any patterns\n", macro_name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Macro [%s]: '%s' did not match any patterns\n", macro_name, data);
 	}
 
 	if (old_sound_prefix) {
