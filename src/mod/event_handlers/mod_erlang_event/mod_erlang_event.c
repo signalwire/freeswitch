@@ -41,6 +41,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_erlang_event_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime);
 SWITCH_MODULE_DEFINITION(mod_erlang_event, mod_erlang_event_load, mod_erlang_event_shutdown, mod_erlang_event_runtime);
 
+static switch_memory_pool_t *module_pool = NULL;
+
 static void remove_listener(listener_t *listener);
 static switch_status_t state_handler(switch_core_session_t *session);
 
@@ -377,7 +379,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	int type, size;
 	int i = 0;
-	void *p = NULL;
+	fetch_reply_t *p = NULL;
 	char *xmlstr;
 	struct erlang_binding *ptr;
 	switch_uuid_t uuid;
@@ -391,74 +393,89 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	section = switch_xml_parse_section_string((char *) sectionstr);
 
-	for (ptr = bindings.head; ptr && ptr->section != section; ptr = ptr->next);	/* just get the first match */
-
-	if (!ptr) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no binding for %s\n", sectionstr);
-		return NULL;
-	}
-
-	if (!ptr->listener) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NULL pointer binding!\n");
-		return NULL;			/* our pointer is trash */
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "binding for %s in section %s with key %s and value %s requested from node %s\n", tag_name,
-					  sectionstr, key_name, key_value, ptr->process.pid.node);
-
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
 
-	/*switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Request-ID", uuid_str); */
+	for (ptr = bindings.head; ptr; ptr = ptr->next) {
+		if (ptr->section != section)
+			continue;
 
-	ei_x_encode_tuple_header(&buf, 7);
-	ei_x_encode_atom(&buf, "fetch");
-	ei_x_encode_atom(&buf, sectionstr);
-	_ei_x_encode_string(&buf, tag_name ? tag_name : "undefined");
-	_ei_x_encode_string(&buf, key_name ? key_name : "undefined");
-	_ei_x_encode_string(&buf, key_value ? key_value : "undefined");
-	_ei_x_encode_string(&buf, uuid_str);
-	if (params) {
-		ei_encode_switch_event_headers(&buf, params);
-	} else {
-		ei_x_encode_empty_list(&buf);
-	}
-
-	switch_core_hash_insert(ptr->listener->fetch_reply_hash, uuid_str, &globals.WAITING);
-
-	switch_mutex_lock(ptr->listener->sock_mutex);
-	ei_sendto(ptr->listener->ec, ptr->listener->sockfd, &ptr->process, &buf);
-	switch_mutex_unlock(ptr->listener->sock_mutex);
-
-	while (!(p = switch_core_hash_find(ptr->listener->fetch_reply_hash, uuid_str)) || p == &globals.WAITING) {
-		if (i > 50) {			/* half a second timeout */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out when waiting for XML fetch response\n");
-			switch_core_hash_insert(ptr->listener->fetch_reply_hash, uuid_str, &globals.TIMEOUT);	/* TODO lock this? */
-			return NULL;
+		if (!ptr->listener) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NULL pointer binding!\n");
+			goto cleanup; /* our pointer is trash */
 		}
-		i++;
-		switch_yield(10000);	/* 10ms */
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "binding for %s in section %s with key %s and value %s requested from node %s\n", tag_name, sectionstr, key_name, key_value, ptr->process.pid.node);
+
+		ei_x_encode_tuple_header(&buf, 7);
+		ei_x_encode_atom(&buf, "fetch");
+		ei_x_encode_atom(&buf, sectionstr);
+		_ei_x_encode_string(&buf, tag_name ? tag_name : "undefined");
+		_ei_x_encode_string(&buf, key_name ? key_name : "undefined");
+		_ei_x_encode_string(&buf, key_value ? key_value : "undefined");
+		_ei_x_encode_string(&buf, uuid_str);
+		if (params) {
+			ei_encode_switch_event_headers(&buf, params);
+		} else {
+			ei_x_encode_empty_list(&buf);
+		}
+
+		if (!p) {
+			/* Create a new fetch object. */
+			p = malloc(sizeof(*p));
+			switch_thread_cond_create(&p->ready_or_found, module_pool);
+			p->usecount = 1;
+			p->state = reply_not_ready;
+			p->reply = NULL;
+			switch_core_hash_insert_locked(globals.fetch_reply_hash, uuid_str, p, globals.fetch_reply_mutex);
+		}
+		/* We don't need to lock here because everybody is waiting
+		   on our condition before the action starts. */
+		p->usecount ++;
+
+		switch_mutex_lock(ptr->listener->sock_mutex);
+		ei_sendto(ptr->listener->ec, ptr->listener->sockfd, &ptr->process, &buf);
+		switch_mutex_unlock(ptr->listener->sock_mutex);
 	}
 
-	rep = (ei_x_buff *) p;
+	if (!p) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no binding for %s\n", sectionstr);
+		goto cleanup;
+	}
+
+	/* Tell the threads to be ready, and wait five seconds for a reply. */
+	switch_mutex_lock(globals.fetch_reply_mutex);
+	p->state = reply_waiting;
+	switch_thread_cond_broadcast(p->ready_or_found);
+	switch_thread_cond_timedwait(p->ready_or_found,
+			globals.fetch_reply_mutex, 5000000);
+	if (!p->reply) {
+		p->state = reply_timeout;
+		switch_mutex_unlock(globals.fetch_reply_mutex);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out when waiting for XML fetch response\n");
+		goto cleanup;
+	}
+
+	rep = p->reply;
+	switch_mutex_unlock(globals.fetch_reply_mutex);
 
 	ei_get_type(rep->buff, &rep->index, &type, &size);
 
 	if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT) {	/* XXX no unicode or character codes > 255 */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "XML fetch response contained non ASCII characters? (was type %d of size %d)\n", type,
 						  size);
-		return NULL;
+		goto cleanup;
 	}
 
 
 	if (!(xmlstr = malloc(size + 1))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error\n");
-		return NULL;
+		goto cleanup;
 	}
 
 	ei_decode_string_or_binary(rep->buff, &rep->index, size, xmlstr);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got data %s after %d milliseconds!\n", xmlstr, i * 10);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got data %s after %d milliseconds from %s!\n", xmlstr, i * 10, p->winner);
 
 	if (zstr(xmlstr)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
@@ -469,11 +486,28 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	}
 
 	/* cleanup */
-	switch_core_hash_delete(ptr->listener->fetch_reply_hash, uuid_str);
-	switch_safe_free(rep->buff);
-	switch_safe_free(rep);
+ cleanup:
+	if (p) {
+		switch_mutex_lock(globals.fetch_reply_mutex);
+		put_reply_unlock(p, uuid_str);
+	}
 
 	return xml;
+}
+
+
+void put_reply_unlock(fetch_reply_t *p, char *uuid_str)
+{
+	if (-- p->usecount == 0) {
+		switch_core_hash_delete(globals.fetch_reply_hash, uuid_str);
+		switch_thread_cond_destroy(p->ready_or_found);
+		if (p->reply) {
+			switch_safe_free(p->reply->buff);
+			switch_safe_free(p->reply);
+		}
+		switch_safe_free(p);
+	}
+	switch_mutex_unlock(globals.fetch_reply_mutex);
 }
 
 
@@ -920,8 +954,6 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_mutex_lock(globals.listener_mutex);
 	prefs.threads++;
 	switch_mutex_unlock(globals.listener_mutex);
-
-	switch_core_hash_init(&listener->fetch_reply_hash, listener->pool);
 
 	switch_assert(listener != NULL);
 
@@ -1548,9 +1580,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_erlang_event_load)
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
 
+	module_pool = pool;
+
 	memset(&prefs, 0, sizeof(prefs));
 
 	switch_mutex_init(&globals.listener_mutex, SWITCH_MUTEX_NESTED, pool);
+	switch_mutex_init(&globals.fetch_reply_mutex, SWITCH_MUTEX_DEFAULT, pool);
+	switch_core_hash_init(&globals.fetch_reply_hash, pool);
 
 	/* intialize the unique reference stuff */
 	switch_mutex_init(&globals.ref_mutex, SWITCH_MUTEX_NESTED, pool);

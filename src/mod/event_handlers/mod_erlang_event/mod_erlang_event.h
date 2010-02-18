@@ -103,7 +103,6 @@ struct listener {
 	switch_log_level_t level;
 	uint8_t event_list[SWITCH_EVENT_ALL + 1];
 	switch_hash_t *event_hash;
-	switch_hash_t *fetch_reply_hash;
 	switch_hash_t *spawn_pid_hash;
 	switch_thread_rwlock_t *rwlock;
 	switch_mutex_t *session_mutex;
@@ -140,14 +139,26 @@ struct api_command_struct {
 struct globals_struct {
 	switch_mutex_t *listener_mutex;
 	switch_event_node_t *node;
+	switch_mutex_t *ref_mutex;
+	switch_mutex_t *fetch_reply_mutex;
+	switch_hash_t *fetch_reply_hash;
 	unsigned int reference0;
 	unsigned int reference1;
 	unsigned int reference2;
 	char TIMEOUT;				/* marker for a timed out request */
 	char WAITING;				/* marker for a request waiting for a response */
-	switch_mutex_t *ref_mutex;
 };
 typedef struct globals_struct globals_t;
+
+struct fetch_reply_struct
+{
+	switch_thread_cond_t *ready_or_found;
+	int usecount;
+	enum { reply_not_ready, reply_waiting, reply_found, reply_timeout } state;
+	ei_x_buff *reply;
+	char winner[MAXNODELEN + 1];
+};
+typedef struct fetch_reply_struct fetch_reply_t;
 
 struct listen_list_struct {
 #ifdef WIN32
@@ -236,6 +247,7 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec);
 session_elem_t *attach_call_to_registered_process(listener_t *listener, char *reg_name, switch_core_session_t *session);
 session_elem_t *attach_call_to_pid(listener_t *listener, erlang_pid * pid, switch_core_session_t *session);
 session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *module, char *function, switch_core_session_t *session);
+void put_reply_unlock(fetch_reply_t *p, char *uuid_str);
 
 /* For Emacs:
  * Local Variables:

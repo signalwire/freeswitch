@@ -166,7 +166,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 static switch_status_t handle_msg_fetch_reply(listener_t *listener, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-	void *p;
+	fetch_reply_t *p;
 
 	if (ei_decode_string_or_binary(buf->buff, &buf->index, SWITCH_UUID_FORMATTED_LENGTH, uuid_str)) {
 		ei_x_encode_tuple_header(rbuf, 2);
@@ -179,20 +179,40 @@ static switch_status_t handle_msg_fetch_reply(listener_t *listener, ei_x_buff * 
 		nbuf->index = buf->index;
 		nbuf->buffsz = buf->buffsz;
 
-		if ((p = switch_core_hash_find(listener->fetch_reply_hash, uuid_str))) {
-			if (p == &globals.TIMEOUT) {
+		switch_mutex_lock(globals.fetch_reply_mutex);
+		if ((p = switch_core_hash_find(globals.fetch_reply_hash, uuid_str))) {
+			/* Get the status and release the lock ASAP. */
+			enum { is_timeout, is_waiting, is_filled } status;
+			if (p->state == reply_not_ready) {
+				switch_thread_cond_wait(p->ready_or_found, globals.fetch_reply_mutex);
+			}
+
+			if (p->state == reply_waiting) {
+				/* update the key with a reply */
+				status = is_waiting;
+				p->reply = nbuf;
+				p->state = reply_found;
+				strncpy(p->winner, listener->peer_nodename, MAXNODELEN);
+				switch_thread_cond_broadcast(p->ready_or_found);
+			} else if (p->state == reply_timeout) {
+				status = is_timeout;
+			} else {
+				status = is_filled;
+			}
+
+			put_reply_unlock(p, uuid_str);
+
+			/* Relay the status back to the fetch responder. */
+			if (status == is_waiting) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found waiting slot for %s\n", uuid_str);
+				ei_x_encode_atom(rbuf, "ok");
+				/* Return here to avoid freeing the reply. */
+				return SWITCH_STATUS_SUCCESS;
+			} else if (status == is_timeout) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handler for %s timed out\n", uuid_str);
-				switch_core_hash_delete(listener->fetch_reply_hash, uuid_str);
 				ei_x_encode_tuple_header(rbuf, 2);
 				ei_x_encode_atom(rbuf, "error");
 				ei_x_encode_atom(rbuf, "timeout");
-			} else if (p == &globals.WAITING) {
-				/* update the key to point at a pid */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found waiting slot for %s\n", uuid_str);
-				switch_core_hash_delete(listener->fetch_reply_hash, uuid_str);
-				switch_core_hash_insert(listener->fetch_reply_hash, uuid_str, nbuf);
-				ei_x_encode_atom(rbuf, "ok");
-				return SWITCH_STATUS_SUCCESS;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found filled slot for %s\n", uuid_str);
 				ei_x_encode_tuple_header(rbuf, 2);
@@ -200,14 +220,14 @@ static switch_status_t handle_msg_fetch_reply(listener_t *listener, ei_x_buff * 
 				ei_x_encode_atom(rbuf, "duplicate_response");
 			}
 		} else {
-			/* nothin in the hash */
+			/* nothing in the hash */
+			switch_mutex_unlock(globals.fetch_reply_mutex);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Empty slot for %s\n", uuid_str);
 			ei_x_encode_tuple_header(rbuf, 2);
 			ei_x_encode_atom(rbuf, "error");
 			ei_x_encode_atom(rbuf, "invalid_uuid");
 		}
 
-		/*switch_core_hash_insert(listener->fetch_reply_hash, uuid_str, nbuf); */
 		switch_safe_free(nbuf->buff);
 		switch_safe_free(nbuf);
 	}
