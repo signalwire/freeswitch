@@ -793,7 +793,6 @@ static void handle_call_loop_start(zap_span_t *span, sangomabc_connection_t *mco
 	if (res != ZAP_SUCCESS) {
 		zap_log(ZAP_LOG_CRIT, "yay, could not set the state of the channel to IN_LOOP, loop will fail\n");
 		zap_channel_done(zchan);
-		/* FIXME: do we need to send an error? */
 		return;
 	}
 	zap_channel_command(zchan, ZAP_COMMAND_ENABLE_LOOP, NULL);
@@ -809,10 +808,11 @@ static void handle_call_loop_stop(zap_span_t *span, sangomabc_connection_t *mcon
 	}
 	if (zchan->state != ZAP_CHANNEL_STATE_IN_LOOP) {
 		zap_log(ZAP_LOG_ERROR, "Got stop loop request in a channel that is not in loop, ignoring ...\n");
-		/* FIXME: do we need to send an error? */
 		return;
 	}
 	zap_channel_command(zchan, ZAP_COMMAND_DISABLE_LOOP, NULL);
+	/* even when we did not sent a msg we set this flag to avoid sending call stop in the DOWN state handler */
+	zap_set_flag(zchan, SFLAG_SENT_FINAL_MSG);
 	zap_set_state_r(zchan, ZAP_CHANNEL_STATE_DOWN, 0, res);
 }
 
