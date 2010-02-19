@@ -584,12 +584,14 @@ static void launch_write_stream_thread(shout_context_t *context)
 }
 
 #define TC_BUFFER_SIZE 1024 * 32
+#define MPGERROR() {err = "MPG123 Error at __FILE__:__LINE__."; mpg123err = mpg123_strerror(context->mh); goto error; }
 static switch_status_t shout_file_open(switch_file_handle_t *handle, const char *path)
 {
 	shout_context_t *context;
 	char *host, *file;
 	char *username, *password, *port;
 	char *err = NULL;
+	const char *mpg123err = NULL;
 	int portno = 0;
 
 	if ((context = switch_core_alloc(handle->memory_pool, sizeof(*context))) == 0) {
@@ -617,14 +619,20 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		}
 
 		context->mh = our_mpg123_new(NULL, NULL);
-		mpg123_format_all(context->mh);
-		mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);
+		if (mpg123_format_all(context->mh) != MPG123_OK) {
+			MPGERROR();
+		}
+		if (mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0) != MPG123_OK) {
+			MPGERROR();
+		}
 
 		if (handle->handler) {
-			mpg123_param(context->mh, MPG123_FLAGS, MPG123_SEEKBUFFER | MPG123_MONO_MIX, 0);
+			if (mpg123_param(context->mh, MPG123_FLAGS, MPG123_SEEKBUFFER | MPG123_MONO_MIX, 0) != MPG123_OK) {
+				MPGERROR();
+			}
 			if (mpg123_open_feed(context->mh) != MPG123_OK) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening mpg feed\n");
-				err = (char*) mpg123_strerror(context->mh);
+				mpg123err = mpg123_strerror(context->mh);
 				goto error;
 			}
 			context->stream_url = switch_core_sprintf(context->memory_pool, "http://%s", path);
@@ -632,10 +640,12 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			launch_read_stream_thread(context);
 		} else {
 			handle->seekable = 1;
-			mpg123_param(context->mh, MPG123_FLAGS, MPG123_MONO_MIX, 0);
+			if (mpg123_param(context->mh, MPG123_FLAGS, MPG123_MONO_MIX, 0) != MPG123_OK) {
+				MPGERROR();
+			}
 			if (mpg123_open(context->mh, path) != MPG123_OK) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
-				err = (char*) mpg123_strerror(context->mh);
+				mpg123err = mpg123_strerror(context->mh);
 				goto error;
 			}
 
@@ -788,6 +798,9 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 	switch_thread_rwlock_unlock(context->rwlock);
 	if (err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: %s\n", err);
+	}
+	if (mpg123err) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error from mpg123: %s\n", mpg123err);
 	}
 	free_context(context);
 	return SWITCH_STATUS_GENERR;
