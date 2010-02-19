@@ -378,8 +378,8 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	int type, size;
-	int i = 0;
 	fetch_reply_t *p = NULL;
+	switch_time_t now = 0;
 	char *xmlstr;
 	struct erlang_binding *ptr;
 	switch_uuid_t uuid;
@@ -428,6 +428,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 			p->state = reply_not_ready;
 			p->reply = NULL;
 			switch_core_hash_insert_locked(globals.fetch_reply_hash, uuid_str, p, globals.fetch_reply_mutex);
+			now = switch_micro_time_now();
 		}
 		/* We don't need to lock here because everybody is waiting
 		   on our condition before the action starts. */
@@ -452,7 +453,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	if (!p->reply) {
 		p->state = reply_timeout;
 		switch_mutex_unlock(globals.fetch_reply_mutex);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out when waiting for XML fetch response\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out after %d milliseconds when waiting for XML fetch response\n", (int) (switch_micro_time_now() - now) / 1000);
 		goto cleanup;
 	}
 
@@ -475,7 +476,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	ei_decode_string_or_binary(rep->buff, &rep->index, size, xmlstr);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got data %s after %d milliseconds from %s!\n", xmlstr, i * 10, p->winner);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got data %s after %d milliseconds from %s!\n", xmlstr, (int) (switch_micro_time_now() - now) / 1000, p->winner);
 
 	if (zstr(xmlstr)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
