@@ -60,12 +60,17 @@ mpg123_handle *our_mpg123_new(const char *decoder, int *error)
 	mpg123_handle *mh;
 	const char *arch = "auto";
 	int x64 = 0;
+	int rc = 0;
+	const char *err = NULL;
 
 	if (*globals.decoder || globals.outscale || globals.vol) {
 		if (*globals.decoder) {
 			arch = globals.decoder;
 		}
-		if ((mh = mpg123_new(arch, NULL))) {
+		if ((mh = mpg123_new(arch, &rc))) {
+			if (rc) {
+				err = mpg123_plain_strerror(rc);
+			}
 			if (globals.outscale) {
 				mpg123_param(mh, MPG123_OUTSCALE, globals.outscale, 0);
 			}
@@ -85,13 +90,19 @@ mpg123_handle *our_mpg123_new(const char *decoder, int *error)
 		}
 #endif
 
-		if ((mh = mpg123_new(arch, NULL))) {
+		if ((mh = mpg123_new(arch, &rc))) {
+			if (rc) {
+				err = mpg123_plain_strerror(rc);
+			}
 			if (x64) {
 				mpg123_param(mh, MPG123_OUTSCALE, 8192, 0);
 			}
 		}
 	}
 
+	if (err) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error allocating mpg123 handle! %s\n", err);
+	}
 	return mh;
 }
 
