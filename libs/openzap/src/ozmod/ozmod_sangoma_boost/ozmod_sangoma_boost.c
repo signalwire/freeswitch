@@ -774,6 +774,48 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 		
 }
 
+static void handle_call_loop_start(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
+{
+	zap_status_t res = ZAP_FAIL;
+	zap_channel_t *zchan;
+
+	if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 0))) {
+		zap_log(ZAP_LOG_CRIT, "CANNOT START LOOP, CHAN NOT AVAILABLE %d:%d\n", event->span+1,event->chan+1);
+		return;
+	}
+
+	if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_CRIT, "CANNOT START LOOP, CANT OPEN CHAN %d:%d\n", event->span+1,event->chan+1);
+		return;
+	}
+
+	zap_set_state_r(zchan, ZAP_CHANNEL_STATE_IN_LOOP, 0, res);
+	if (res != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_CRIT, "yay, could not set the state of the channel to IN_LOOP, loop will fail\n");
+		zap_channel_done(zchan);
+		/* FIXME: do we need to send an error? */
+		return;
+	}
+	zap_channel_command(zchan, ZAP_COMMAND_ENABLE_LOOP, NULL);
+}
+
+static void handle_call_loop_stop(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
+{
+	zap_channel_t *zchan;
+	zap_status_t res = ZAP_FAIL;
+	if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 1))) {
+		zap_log(ZAP_LOG_CRIT, "CANNOT STOP LOOP, INVALID CHAN REQUESTED %d:%d\n", event->span+1,event->chan+1);
+		return;
+	}
+	if (zchan->state != ZAP_CHANNEL_STATE_IN_LOOP) {
+		zap_log(ZAP_LOG_ERROR, "Got stop loop request in a channel that is not in loop, ignoring ...\n");
+		/* FIXME: do we need to send an error? */
+		return;
+	}
+	zap_channel_command(zchan, ZAP_COMMAND_DISABLE_LOOP, NULL);
+	zap_set_state_r(zchan, ZAP_CHANNEL_STATE_DOWN, 0, res);
+}
+
 /**
  * \brief Handler for heartbeat event
  * \param mcon sangoma boost connection
@@ -955,10 +997,10 @@ static int parse_sangoma_event(zap_span_t *span, sangomabc_connection_t *mcon, s
 		nack_map[event->call_setup_id] = 0;
 		break;
     case SIGBOOST_EVENT_INSERT_CHECK_LOOP:
-		//handle_call_loop_start(event);
+		handle_call_loop_start(span, mcon, event);
 		break;
     case SIGBOOST_EVENT_REMOVE_CHECK_LOOP:
-		//handle_call_stop(event);
+		handle_call_loop_stop(span, mcon, event);
 		break;
     case SIGBOOST_EVENT_SYSTEM_RESTART_ACK:
 		handle_restart_ack(mcon, span, event);
@@ -1175,6 +1217,11 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			zap_set_sflag_locked(zchan, SFLAG_TERMINATING);
 			sig.event_id = ZAP_SIGEVENT_STOP;
 			status = zap_span_send_signal(zchan->span, &sig);
+		}
+		break;
+	case ZAP_CHANNEL_STATE_IN_LOOP:
+		{
+			/* nothing to do, we sent the ZAP_COMMAND_ENABLE_LOOP command in handle_call_loop_start() right away */
 		}
 		break;
 	default:
@@ -1539,6 +1586,18 @@ static zap_state_map_t boost_state_map = {
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
 			{ZAP_CHANNEL_STATE_RESTART, ZAP_END},
+			{ZAP_CHANNEL_STATE_DOWN, ZAP_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_DOWN},
+			{ZAP_CHANNEL_STATE_IN_LOOP, ZAP_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_IN_LOOP},
 			{ZAP_CHANNEL_STATE_DOWN, ZAP_END}
 		},
 		{

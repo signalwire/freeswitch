@@ -593,6 +593,14 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 			//code me
 		}
 		break;
+	case ZAP_COMMAND_ENABLE_LOOP:
+		{
+			// code me
+		}
+	case ZAP_COMMAND_DISABLE_LOOP:
+		{
+			// code me
+		}
 	case ZAP_COMMAND_SET_INTERVAL: 
 		{
 			err=sangoma_tdm_set_usr_period(zchan->sockfd, &tdm_api, ZAP_COMMAND_OBJ_INT);
