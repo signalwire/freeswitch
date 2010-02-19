@@ -613,6 +613,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			mpg123_param(context->mh, MPG123_FLAGS, MPG123_SEEKBUFFER | MPG123_MONO_MIX, 0);
 			if (mpg123_open_feed(context->mh) != MPG123_OK) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening mpg feed\n");
+				err = (char*) mpg123_strerror(context->mh);
 				goto error;
 			}
 			context->stream_url = switch_core_sprintf(context->memory_pool, "http://%s", path);
@@ -623,6 +624,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			mpg123_param(context->mh, MPG123_FLAGS, MPG123_MONO_MIX, 0);
 			if (mpg123_open(context->mh, path) != MPG123_OK) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
+				err = (char*) mpg123_strerror(context->mh);
 				goto error;
 			}
 
