@@ -731,7 +731,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 			if (lookup_rtpip == use_ip) {
 				/* sofia_glue_ext_address_lookup didn't return any error, but the return IP is the same as the original one, 
 				   which means no lookup was necessary. Check if NAT is detected  */
-				if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+				if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 					/* Yes, map the port through switch_nat */
 					switch_nat_add_mapping(tech_pvt->local_sdp_audio_port, SWITCH_NAT_UDP, &sdp_port, SWITCH_FALSE);
 				} else {
@@ -957,6 +957,8 @@ char *sofia_glue_strip_uri(const char *str)
 
 int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip)
 {
+	switch_assert(network_ip);
+
 	return (profile->extsipip && !switch_check_network_list_ip(network_ip, profile->local_network));
 }
 
