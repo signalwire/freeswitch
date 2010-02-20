@@ -258,6 +258,7 @@ switch_status_t skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *s
 		return SWITCH_STATUS_FALSE;
 	}
 
+#if 0
 	if (switch_core_timer_init(&tech_pvt->timer_read, "soft", 20, tech_pvt->read_codec.implementation->samples_per_packet, skypiax_module_pool) !=
 		SWITCH_STATUS_SUCCESS) {
 		ERRORA("setup timer failed\n", SKYPIAX_P_LOG);
@@ -267,7 +268,7 @@ switch_status_t skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *s
 	switch_core_timer_sync(&tech_pvt->timer_read);
 
 #ifdef TIMER_WRITE
-	if (switch_core_timer_init(&tech_pvt->timer_write, "soft", 20, tech_pvt->write_codec.implementation->samples_per_packet, skypiax_module_pool) !=
+	if (switch_core_timer_init(&tech_pvt->timer_write, "soft", 10, tech_pvt->write_codec.implementation->samples_per_packet, skypiax_module_pool) !=
 		SWITCH_STATUS_SUCCESS) {
 		ERRORA("setup timer failed\n", SKYPIAX_P_LOG);
 		return SWITCH_STATUS_FALSE;
@@ -275,6 +276,7 @@ switch_status_t skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *s
 
 	switch_core_timer_sync(&tech_pvt->timer_write);
 #endif // TIMER_WRITE
+#endif
 
     dtmf_rx_init(&tech_pvt->dtmf_state, NULL, NULL);
     dtmf_rx_parms(&tech_pvt->dtmf_state, 0, 10, 10, -99);
@@ -512,6 +514,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	char msg_to_skype[256];
+	switch_status_t status;
 
 
 	channel = switch_core_session_get_channel(session);
@@ -532,6 +535,8 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_clear_flag(tech_pvt, TFLAG_VOICE);
 	//switch_set_flag(tech_pvt, TFLAG_HANGUP);
 
+	tech_pvt->interface_state = SKYPIAX_STATE_HANGUP_REQUESTED;
+
 	if (strlen(tech_pvt->skype_call_id)) {
 		//switch_thread_cond_signal(tech_pvt->cond);
 		DEBUGA_SKYPE("hanging up skype call: %s\n", SKYPIAX_P_LOG, tech_pvt->skype_call_id);
@@ -540,6 +545,17 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 	//memset(tech_pvt->session_uuid_str, '\0', sizeof(tech_pvt->session_uuid_str));
 	//*tech_pvt->session_uuid_str = '\0';
+
+			if (tech_pvt->tcp_cli_thread) {
+				switch_thread_join(&status, tech_pvt->tcp_cli_thread);
+			}
+			if(status!=SWITCH_STATUS_SUCCESS)
+	ERRORA("%s cli_join HANGUP\n", SKYPIAX_P_LOG, tech_pvt->name);
+			if (tech_pvt->tcp_srv_thread) {
+				switch_thread_join(&status, tech_pvt->tcp_srv_thread);
+			}
+			if(status!=SWITCH_STATUS_SUCCESS)
+	ERRORA("%s srv_join HANGUP\n", SKYPIAX_P_LOG, tech_pvt->name);
 	DEBUGA_SKYPE("%s CHANNEL HANGUP\n", SKYPIAX_P_LOG, tech_pvt->name);
 	switch_mutex_lock(globals.mutex);
 	globals.calls--;
@@ -675,6 +691,8 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#ifdef OLDTCP
+#if 0
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
 	switch_channel_t *channel = NULL;
@@ -855,7 +873,205 @@ memset(tech_pvt->audiobuf_cli, 255, sizeof(tech_pvt->audiobuf_cli));
 
 	return SWITCH_STATUS_SUCCESS;
 }
+#endif //0
+#else
+static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
+{
+	switch_channel_t *channel = NULL;
+	private_t *tech_pvt = NULL;
+	switch_byte_t *data;
+	char digit_str[256];
+	short *frame_16_khz;
+	short frame_8_khz[160];	
+	int i;
+	int a;
+size_t bytes_read;
 
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+
+	if (!switch_channel_ready(channel) || !switch_test_flag(tech_pvt, TFLAG_IO)) {
+		ERRORA("channel not ready \n", SKYPIAX_P_LOG);
+		//TODO: kill the bastard
+		return SWITCH_STATUS_FALSE;
+	}
+
+
+
+	if (!tech_pvt->read_buffer) {
+		int32_t len = 640 * 8;
+
+		switch_buffer_create(skypiax_module_pool, &tech_pvt->read_buffer, len);
+		switch_assert(tech_pvt->read_buffer);
+	}
+
+
+	tech_pvt->begin_to_read=1;
+
+
+
+	tech_pvt->read_frame.flags = SFF_NONE;
+	*frame = NULL;
+
+	switch_core_timer_next(&tech_pvt->timer_read);
+
+
+	switch_mutex_lock(tech_pvt->mutex_audio_srv);
+	if ((bytes_read = switch_buffer_read(tech_pvt->read_buffer, tech_pvt->read_frame.data, SAMPLES_PER_FRAME * sizeof(short)))) {
+		tech_pvt->read_frame.datalen = bytes_read;
+	}
+	switch_mutex_unlock(tech_pvt->mutex_audio_srv);
+
+
+	if (!bytes_read) {
+		ERRORA("skypiax_audio_read Silence\n", SKYPIAX_P_LOG);
+		memset(tech_pvt->read_frame.data, 255, SAMPLES_PER_FRAME * sizeof(short));
+		tech_pvt->read_frame.datalen = SAMPLES_PER_FRAME * sizeof(short);
+
+	}
+
+	switch_set_flag(tech_pvt, TFLAG_VOICE);
+	while (switch_test_flag(tech_pvt, TFLAG_IO)) {
+		if (switch_test_flag(tech_pvt, TFLAG_BREAK)) {
+			switch_clear_flag(tech_pvt, TFLAG_BREAK);
+			DEBUGA_SKYPE("CHANNEL READ FRAME goto CNG\n", SKYPIAX_P_LOG);
+			goto cng;
+		}
+
+		if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
+			DEBUGA_SKYPE("CHANNEL READ FRAME not IO\n", SKYPIAX_P_LOG);
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (switch_test_flag(tech_pvt, TFLAG_IO) && switch_test_flag(tech_pvt, TFLAG_VOICE)) {
+			switch_clear_flag(tech_pvt, TFLAG_VOICE);
+			if (!tech_pvt->read_frame.datalen) {
+				DEBUGA_SKYPE("CHANNEL READ CONTINUE\n", SKYPIAX_P_LOG);
+				continue;
+			}
+			*frame = &tech_pvt->read_frame;
+
+
+			if (switch_true(switch_channel_get_variable(channel, "skype_get_inband_dtmf"))) {
+
+				frame_16_khz = tech_pvt->read_frame.data;
+
+				a = 0;
+				for (i = 0; i < tech_pvt->read_frame.datalen / sizeof(short); i++) {
+					frame_8_khz[a] = frame_16_khz[i];
+					i++;
+					a++;
+				}
+				//DEBUGA_SKYPE("a=%d i=%d\n", SKYPIAX_P_LOG, a, i);
+
+				memset(digit_str, 0, sizeof(digit_str));
+				//dtmf_rx(&tech_pvt->dtmf_state, (int16_t *) tech_pvt->read_frame.data,tech_pvt->read_frame.datalen/sizeof(short) );
+				dtmf_rx(&tech_pvt->dtmf_state, (int16_t *) frame_8_khz, 160);
+				dtmf_rx_get(&tech_pvt->dtmf_state, digit_str, sizeof(digit_str));
+
+
+				if (digit_str[0]) {
+					switch_time_t new_dtmf_timestamp = switch_time_now();
+					if ((new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp) > 350000) {     //FIXME: make it configurable
+						char *p = digit_str;
+						switch_channel_t *channel = switch_core_session_get_channel(session);
+
+						while (p && *p) {
+							switch_dtmf_t dtmf;
+							dtmf.digit = *p;
+							dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
+							switch_channel_queue_dtmf(channel, &dtmf);
+							p++;
+						}
+						NOTICA("DTMF DETECTED: [%s] new_dtmf_timestamp: %u, delta_t: %u\n", SKYPIAX_P_LOG, digit_str, (unsigned int) new_dtmf_timestamp,
+								(unsigned int) (new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp));
+						tech_pvt->old_dtmf_timestamp = new_dtmf_timestamp;
+					}
+				}
+			}
+
+
+
+
+
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+			if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
+				switch_swap_linear((*frame)->data, (int) (*frame)->datalen / 2);
+			}
+#endif
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		DEBUGA_SKYPE("CHANNEL READ no TFLAG_IO\n", SKYPIAX_P_LOG);
+		return SWITCH_STATUS_FALSE;
+
+	}
+
+	DEBUGA_SKYPE("CHANNEL READ FALSE\n", SKYPIAX_P_LOG);
+	return SWITCH_STATUS_FALSE;
+
+cng:
+	data = (switch_byte_t *) tech_pvt->read_frame.data;
+	data[0] = 65;
+	data[1] = 0;
+	tech_pvt->read_frame.datalen = 2;
+	tech_pvt->read_frame.flags = SFF_CNG;
+	*frame = &tech_pvt->read_frame;
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
+{
+	switch_channel_t *channel = NULL;
+	private_t *tech_pvt = NULL;
+	unsigned int sent;
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+
+	if (!switch_channel_ready(channel) || !switch_test_flag(tech_pvt, TFLAG_IO)) {
+		ERRORA("channel not ready \n", SKYPIAX_P_LOG);
+		//TODO: kill the bastard
+		return SWITCH_STATUS_FALSE;
+	}
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+	if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
+		switch_swap_linear(frame->data, (int) frame->datalen / 2);
+	}
+#endif
+
+	if (!tech_pvt->write_buffer) {
+		int32_t len = 320 * 8;
+
+		switch_buffer_create(skypiax_module_pool, &tech_pvt->write_buffer, len);
+		switch_assert(tech_pvt->write_buffer);
+	}
+
+
+
+	sent = frame->datalen;
+
+	switch_mutex_lock(tech_pvt->mutex_audio_cli);
+	switch_buffer_write(tech_pvt->write_buffer, frame->data, frame->datalen);
+	switch_mutex_unlock(tech_pvt->mutex_audio_cli);
+
+	tech_pvt->begin_to_write=1;
+	if (sent != frame->datalen && sent != -1) {
+		DEBUGA_SKYPE("CLI PIPE write %d\n", SKYPIAX_P_LOG, sent);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#endif //OLDTCP
 static switch_status_t channel_answer_channel(switch_core_session_t *session)
 {
 	private_t *tech_pvt;
@@ -1127,7 +1343,7 @@ static void *SWITCH_THREAD_FUNC skypiax_signaling_thread_func(switch_thread_t * 
 		if (!(running && tech_pvt->running))
 			break;
 		res = skypiax_signaling_read(tech_pvt);
-		if (res == CALLFLOW_INCOMING_HANGUP) {
+		if (res == CALLFLOW_INCOMING_HANGUP || tech_pvt->skype_callflow == CALLFLOW_INCOMING_HANGUP) {
 			switch_core_session_t *session = NULL;
 			switch_channel_t *channel = NULL;
 			//private_t *tech_pvt = NULL;
@@ -1840,7 +2056,26 @@ int start_audio_threads(private_t * tech_pvt)
 
 tech_pvt->begin_to_write=0;
 tech_pvt->begin_to_read=0;
+#if 1
+	if (switch_core_timer_init(&tech_pvt->timer_read, "soft", 20, 320, skypiax_module_pool) !=
+		SWITCH_STATUS_SUCCESS) {
+		ERRORA("setup timer failed\n", SKYPIAX_P_LOG);
+		return SWITCH_STATUS_FALSE;
+	}
 
+	switch_core_timer_sync(&tech_pvt->timer_read);
+
+#ifdef TIMER_WRITE
+	if (switch_core_timer_init(&tech_pvt->timer_write, "soft", 10, 320, skypiax_module_pool) !=
+		SWITCH_STATUS_SUCCESS) {
+		ERRORA("setup timer failed\n", SKYPIAX_P_LOG);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_core_timer_sync(&tech_pvt->timer_write);
+#endif // TIMER_WRITE
+
+#endif
 	switch_threadattr_create(&thd_attr, skypiax_module_pool);
 	switch_threadattr_detach_set(thd_attr, 0);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
