@@ -1,0 +1,255 @@
+/*
+ * libZRTP SDK library, implements the ZRTP secure VoIP protocol.
+ * Copyright (c) 2006-2009 Philip R. Zimmermann.  All rights reserved.
+ * Contact: http://philzimmermann.com
+ * For licensing and other legal details, see the file zrtp_legal.c.
+ * 
+ * Viktor Krykun <v.krikun at zfoneproject.com> 
+ */
+
+Basic Installation
+================================================================================
+
+    To start playing with Zfone and libzrtp you should install few developers
+packages on your machine: gcc and g++ compilers, automake and autoconf tools.
+
+	To install library as a Zfone component for Linux the following flags
+should be used: BUILD_DEBUG_LOG,  BUILD_WITH_CFUNC,  BUILD_DEFAULT_CACHE,
+BUILD_DEFAULT_TIMER and WITH_ZFONE.
+	The following instructions are for experienced users and developers only.
+If you just want to install Zfone use the command as follows:
+./configure CFLAGS="-O0 -g3 -W -Wall -DBUILD_DEBUG_LOG -DBUILD_WITH_CFUNC 
+-DBUILD_DEFAULT_CACHE -DBUILD_DEFAULT_TIMER -DWITH_ZFONE"
+
+Library distribution contains installation and configuration files, project files
+for several Operation Systems. To install Library on Unix-like systems the
+autotools tool set is used. To install on Windows - Microsoft Visual Studio.
+Except standard for your system compile flags the following are available for
+your system:
+-# -DBUILD_DEBUG_LOG - enables debug and logging information  
+    This flag is recommended to be used at design stages for testing. Logs make
+    debug process much easier and are to be included into bugreport.
+-# -DBUILD_WITH_CFUNC - assign to the library to gather standard for this
+    platform system interface functions realizations. This option simplifies the
+    library use and make code more compact. You can have a look at realizations
+    in src/zrtp-iface.c. file. And if they suit you use this flag.
+-# -DBUILD_EMPTY_CACHE this flag assigns to the library to use empty stubs
+    instead of operations with cache. This checkbox may be used in  test
+    applications or in systems where cache secrets storing is impossible. Be
+    careful with this flag! Use it if it is really necessary.
+-# -DBUILD_EMPTY_TIMER this flag assigns to the library to use empty stubs
+    instead of delayed tasks processing. This checkbox may be used in test
+    applications or in systems with the reliable communication channel (the
+    package loss is impossible). Be careful with this flag! Use it if it is
+    really necessary.
+
+Except library itself, the set of utilities for the all components workability
+check on the basis of a certain platform is provided. libzrtp test creates
+several parallel ZRTP sessions, initiates transfer to the protected mode,
+displays statistics, after which the application is stopped. If application test
+was completed successfully the library is configured correctly, all components
+work correctly. Note! Installation of test application is carried out with
+-DBUILD_EMPTY_CACHE  -DBUILD_EMPTY_TIMER flags. After fulfilling tests reinstall
+library without use of these flags. 
+
+Further instructions must be followed in order to build and set up the library in
+any Unix-like operation system (Linux, FreeBSD, MacOS):
+    -# Download source codes from zfoneproject.com
+    -# Decompress the archive libzrtp-0.3.X.tzr.gz : tar -zxf ./libzrtp-0.3.X.tzr.gz
+       and open cd libzrtp-0.3.X directory
+    -# Configure the library: ./configure  (use necessary compollation flags)
+    -# Build the library: make
+    -# If you get the errors during, please send a full log of configuration
+       and building process to  zfone-bugs@philzimmermann.com. Please specify
+       the operation system, hardware platform, compiler version and other
+       environmental parameters. Any proposals will be taken into account when
+       developing new versions.
+    -# After te library successful building, run setup (installation): ./make install
+    -# to build test unites run ./configure  with CFLAGS="-DBUILD_DEBUG_LOG
+       -DBUILD_WITH_CFUNC -DBUILD_EMPTY_CACHE -DBUILD_EMPTY_TIMER and parameter
+       --enable-test. After successful configuration start test: "make check".
+       This command will build and run all test (bnlib test, srtp tests and
+       libzrtp tests) Don't forget to rebuild library without -DBUILD_EMPTY_CACHE
+       -DBUILD_EMPTY_TIMER. 
+              
+For library configuration and installation on Windows platform the followinf
+files should be used:
+    -# For installation with the Microsoft Visual Studio v6 use:
+	- libzrtp.dsw
+	- libzrtp.dsp
+        - test\libzrtp_test.dsp
+    -# For installation with the Microsoft Visual Studio v7 use:
+	- libzrtp.sln
+        - libzrtp.vcproj
+        - test\libzrtp_test.vcproj
+    -# If you want to build libzrtp in Windows kernel mode you mast use MAKEFILE.WIN32
+
+For 32-bit machines bnlib contains assemble file lbn80386.asm. The assembler is
+needed to install it. The compiler ml is in the stracture of VS7, if you use VS6
+you can use Microsoft Macro Assembler (http://www.masm32.com/masmdl.htm). To
+compile this file you have define in properties: <c>Commands: <dir>\ml /c /Cx
+/coff /Fo $(TargetDir)\$(InputName).obj $(InputPath) Outputs: $(TargetDir)\$(InputName).obj
+</c> where <dir> is a complete path to the compiler. 
+
+Possible problems and methods of the solution:
+    -# Some environment problems with automatic definition of architecture
+     and byte-order are possible at library building. We recommend before  building
+     of libZRTP on a new program or hardware platform uncomment the test-unite at
+     the end of the file \c zrtp_syste.h.  If there is a mistakes in definition of
+     architecture or byte-order use zrtp_system.h manual configuration following
+     the comments.
+
+Please take into account the fact that libzrtp developers are not responsible for
+external modules of the library. In other words, the functionality of the library
+was tested under majority of widespread Linux and Windows systems, but warnings
+can still occur during these modules compilation.
+
+If you have faced with some problems during configuration or installing of the
+library - send a report to the Support Service. If you installed library on the
+platform not described here, please contact the Support Service. We are
+interested very much to get know the results of testing on new platforms. We
+will carefully examine all proposals and will do our best to realize them in new
+library versions.
+
+
+Compilers and Options
+=================
+
+   Some systems require unusual options for compilation or linking that
+the `configure' script does not know about.  You can give `configure'
+initial values for variables by setting them in the environment.  Using
+a Bourne-compatible shell, you can do that on the command line like
+this:
+     CC=c89 CFLAGS=-O2 LIBS=-lposix ./configure
+
+Or on systems that have the `env' program, you can do it like this:
+     env CPPFLAGS=-I/usr/local/include LDFLAGS=-s ./configure
+
+Compiling For Multiple Architectures
+=================
+
+   You can compile the package for more than one kind of computer at the
+same time, by placing the object files for each architecture in their
+own directory.  To do this, you must use a version of `make' that
+supports the `VPATH' variable, such as GNU `make'.  `cd' to the
+directory where you want the object files and executables to go and run
+the `configure' script.  `configure' automatically checks for the
+source code in the directory that `configure' is in and in `..'.
+
+   If you have to use a `make' that does not supports the `VPATH'
+variable, you have to compile the package for one architecture at a time
+in the source code directory.  After you have installed the package for
+one architecture, use `make distclean' before reconfiguring for another
+architecture.
+
+Installation Names
+==================
+
+   By default, `make install' will install the package's files in
+`/usr/local/include', `/usr/local/lib', etc.  You can specify an
+installation prefix other than `/usr/local' by giving `configure' the
+option `--prefix=PATH'.
+
+   You can specify separate installation prefixes for
+architecture-specific files and architecture-independent files.  If you
+give `configure' the option `--exec-prefix=PATH', the package will use
+PATH as the prefix for installing programs and libraries.
+Documentation and other data files will still use the regular prefix.
+
+   If the package supports it, you can cause programs to be installed
+with an extra prefix or suffix on their names by giving `configure' the
+option `--program-prefix=PREFIX' or `--program-suffix=SUFFIX'.
+
+Optional Features
+=================
+
+   Some packages pay attention to `--enable-FEATURE' options to
+`configure', where FEATURE indicates an optional part of the package.
+They may also pay attention to `--with-PACKAGE' options, where PACKAGE
+is something like `gnu-as' or `x' (for the X Window System).  The
+`README' should mention any `--enable-' and `--with-' options that the
+package recognizes.
+
+   For packages that use the X Window System, `configure' can usually
+find the X include and library files automatically, but if it doesn't,
+you can use the `configure' options `--x-includes=DIR' and
+`--x-libraries=DIR' to specify their locations.
+
+Specifying the System Type
+==========================
+
+   There may be some features `configure' can not figure out
+automatically, but needs to determine by the type of host the package
+will run on.  Usually `configure' can figure that out, but if it prints
+a message saying it can not guess the host type, give it the
+`--host=TYPE' option.  TYPE can either be a short name for the system
+type, such as `sun4', or a canonical name with three fields:
+     CPU-COMPANY-SYSTEM
+
+See the file `config.sub' for the possible values of each field.  If
+`config.sub' isn't included in this package, then this package doesn't
+need to know the host type.
+
+   If you are building compiler tools for cross-compiling, you can also
+use the `--target=TYPE' option to select the type of system they will
+produce code for and the `--build=TYPE' option to select the type of
+system on which you are compiling the package.
+
+Sharing Defaults
+================
+
+   If you want to set default values for `configure' scripts to share,
+you can create a site shell script called `config.site' that gives
+default values for variables like `CC', `cache_file', and `prefix'.
+`configure' looks for `PREFIX/share/config.site' if it exists, then
+`PREFIX/etc/config.site' if it exists.  Or, you can set the
+`CONFIG_SITE' environment variable to the location of the site script.
+A warning: not all `configure' scripts look for a site script.
+
+Defining Variables
+==================
+
+   Variables not defined in a site shell script can be set in the
+environment passed to `configure'.  However, some packages may run
+configure again during the build, and the customized values of these
+variables may be lost.  In order to avoid this problem, you should set
+them in the `configure' command line, using `VAR=value'.  For example:
+
+     ./configure CC=/usr/local2/bin/gcc
+
+will cause the specified gcc to be used as the C compiler (unless it is
+overridden in the site shell script).
+
+Operation Controls
+==================
+
+   `configure' recognizes the following options to control how it
+operates.
+
+`--version'
+`-V'
+     Print the version of Autoconf used to generate the `configure'
+     script, and exit.
+
+`--cache-file=FILE'
+     Use and save the results of the tests in FILE instead of
+     `./config.cache'.  Set FILE to `/dev/null' to disable caching, for
+     debugging `configure'.
+
+`--help'
+     Print a summary of the options to `configure', and exit.
+
+`--quiet'
+`--silent'
+`-q'
+     Do not print messages saying which checks are being made.
+
+`--srcdir=DIR'
+     Look for the package's source code in directory DIR.  Usually
+     `configure' can determine that directory automatically.
+
+`--version'
+     Print the version of Autoconf used to generate the `configure'
+     script, and exit.
+
+`configure' also accepts some other, not widely useful, options.

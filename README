@@ -1,0 +1,10 @@
+# 
+# libZRTP SDK library, implements the ZRTP secure VoIP protocol.
+# Copyright (c) 2006-2009 Philip R. Zimmermann. All rights reserved.
+# Contact: http://philzimmermann.com
+# For licensing and other legal details, see the file zrtp_legal.c.
+# 
+
+- Check HTML Documentation ./doc
+- Visit the Zfone Project Home Page http://zfoneproject.com/
+- Report bugs via the Zfone Bugs Page http://zfoneproject.com/bugs.html

@@ -1,0 +1,38 @@
+# 
+# Copyright (c) 2006-2009 Philip R. Zimmermann. All rights reserved.
+# Contact: http://philzimmermann.com
+# For licensing and other legal details, see the file zrtp_legal.c.
+# 
+# Viktor Krykun <v.krikun at zfoneproject.com> 
+
+/**
+\mainpage ZRTP VoIP security
+
+****************************************************************************************************
+\section intro Intro
+****************************************************************************************************
+	
+	ZRTP Protocol finally goes RFC and we going to stabilize SDK as well. Libzrtp series 0.9X builds
+	will contain bug-fixes, performance and stability improvements only.
+	
+	So, please, be a patient with new API changes. We hope you will find them useful.
+
+****************************************************************************************************
+\section aboutdoc About this Documentation
+****************************************************************************************************
+	
+	Libzrtp, since v0.80 includes new, documentation. We have updated "How to Get Up and Running Quickly with libZRTP" and Public API documentation.
+	
+	We working on new "Libzrtp Developers Guide" which will give more detail information about ZRTP protocol and libzrtp architecture. This document will be available in next versions of libzrtp. But even now, libzrtp contains enough documentation to start using it comfortable.
+	
+	\note
+	libzrtp private API may have outdated information from previous version (links like this: \ref XXX). We working hard on that part of the documentation and it will be published in next versions of libzrtp.
+	
+****************************************************************************************************
+\section zrtp Libzrtp Documents
+****************************************************************************************************
+-# \ref changelog
+-# \ref howto
+-# \ref rng
+
+*/

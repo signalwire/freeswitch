@@ -1,0 +1,74 @@
+# 
+# Copyright (c) 2006-2009 Philip R. Zimmermann. All rights reserved.
+# Contact: http://philzimmermann.com
+# For licensing and other legal details, see the file zrtp_legal.c.
+# 
+# Viktor Krykun <v.krikun at zfoneproject.com> 
+
+
+/**
+ * \file  rng.dox
+ * \brief Random Number Generation in libzrtp
+ */
+
+/**
+\page rng Random Number Generation in libzrtp
+
+\section rng Random number generation
+
+	The generation of cryptographic key material is a highly sensitive process.  To do this, you need high entropy random numbers that an attacker cannot predict. This section discusses the random number generator used by libzrtp, and how suitable entropy can be collected on different hardware platforms.
+
+	Failure to use true entropy from the physical environment as a basis for generating random cryptographic key material would lead to a disastrous loss of security.
+
+****************************************************************************************************
+\subsection rng_algorithm Deterministic Random Bit Generator
+****************************************************************************************************
+<HR>
+	Libzrtp uses a cryptographically strong Deterministic Random Bit Generator (DRBG), based on running the AES-256 block cipher in counter mode.  The output of this DRBG is used for key material by libzrtp for the Diffie-Hellman private keys, and other random protocol components such as nonces.  The 256-bit AES key and 128-bit initialization vector for the DRBG are drawn from an entropy pool
+	created by a SHA-512 hash of raw entropy sources. These raw entropy sources are highly platform dependent and thus are not included in libzrtp.  The library provides only a set of interfaces for adding the entropy to the entropy pool. We will discuss the entropy collection in the next section.
+	
+	When a random number is required by the ZRTP protocol, the library kernel calls the Deterministic Random Bit Generator interface function zrtp_randstr(). That function requires the existance of an entropy pool that has already been seeded with sufficient entropy. This entropy pool must be seeded by calling zrtp_entropy_add().
+		
+	The zrtp_entropy_add() function takes a buffer of raw unprocessed entropy provided by the caller and adds it to the entropy pool via the SHA-512 hash function.
+
+****************************************************************************************************
+\subsection  rng_accumulation Entropy accumulation
+****************************************************************************************************
+<HR>
+	Random numbers for cryptographic key material must be derived from a physical entropy source, such as RF noise, acoustic noise, thermal noise, high resolution timings of environmental events, or other unpredictable physical sources of entropy.  For a detailed explanation of cryptographic grade random numbers and guidance for collecting suitable entropy, see <A
+	HREF="http://tools.ietf.org/html/rfc4086">RFC 4086</A> and Chapter 10 of "Practical Cryptography" by Ferguson and Schneier.  The raw entropy must be distilled and processed through a Deterministic Random Bit Generator (DRBG).  We supply a suitable DRBG in libzrtp, which is accessed through the zrtp_randstr() function.
+		
+	To add entropy to the entropy pool maintained by the libzrtp random number generator, the application calls the zrtp_entropy_add() function. This entropy accumulation function may be called whenever new entropy becomes available.
+	
+	\warning
+	The entropy pool builds up more precious entropy each time you call zrtp_entropy_add(). Once in a while, it is a good idea to save the entropy in nonvolatile storage, by calling zrtp_randstr() and writing the output to a file, or to flash memory, or to some nonvolatile system storage area.  This can be done whenever the VoIP application shuts down, or perhaps at the end of each secure VoIP call.  A minimum of 512 bits (64 bytes) of output from zrtp_randstr() should be stored this way, but there is no need to store more than 256 bytes.  When the VoIP application starts back up again, the contents of this nonvolatile entropy file should be added back into the active entropy pool by passing it to the zrtp_entropy_add() function.
+
+****************************************************************************************************
+\subsection  rng_default Libzrtp built-in entropy sources
+****************************************************************************************************
+<HR>    
+	The SDK library provides a default implementation of entropy accumulation for <b>Windows Kernel</b> and <b>Unix based</b> platforms.
+	
+	For the Windows kernel mode it gathers current system state information as an entropy source. Among them are the performance counter, the current value of the system interrupt-time count, the count of the interval timer interrupts, and the values of some CPU registers.
+	
+	For Unix platforms, libzrtp calls \c /dev/urandom.
+	
+	If you are running libzrtp on a Windows Kernel or a full-blown desktop *nix-like system - you need not do anything more to implement the RNG. If you are using some other platform - carefully read the next section.
+	
+****************************************************************************************************
+\subsection  rng_guidelines Entropy sources for your platform.
+****************************************************************************************************
+<HR>
+	On a desktop or laptop PC running Linux, FreeBSD, NetBSD, or OpenBSD, a good source of entropy may be found by reading from \c /dev/random or \c /dev/urandom.  This is because \c /dev/random is seeded by entropy from keyboard timings, mouse movements, disk latency measurements, or other physical noise sources, some of them involving unpredictable human interaction.
+	
+	However, some low cost embedded Linux systems have no keyboard, no mouse or trackpad, no disk drive, and are starving for high quality entropy.  There are some low cost Asterisk PBX boxes that are built this way.  Or hardware Analog Telephone Adapters.  Or low cost consumer routers.  Many of them have no \c /dev/random implemented, or worse, have only a stub for /dev/random that does not actually collect any environmental entropy.  This creates a dangerous illusion that entropy is available, because \c /dev/urandom appears to work, but is not backed by true entropy.  This is bad, and not only for ZRTP.  Platforms like these might not be able to generate strong cryptographic key material for SSH or SSL.  
+		
+	If you are an OEM that builds hardware like this, and you wish to implement the ZRTP protocol with our libzrtp SDK, you really should provide a properly implemented \c /dev/random and \c /dev/urandom, properly supplied with true environmental entropy.  If you are building a telephone, you can easily collect entropy from raw audio samples from the microphone.  If the phone includes a video camera, you can collect entropy by sampling a few raw uncompressed video frames.  If it's a mobile phone or a cordless phone, you can collect entropy from the RF noise in your wireless circuitry.  If it's an embedded box like a router or low cost PBX, you can do high resolution timings of packet arrivals and use the timer readings as entropy sources.  A PBX might include an analog interface to PSTN phone lines, and those interfaces usually include registers that measure analog voltage levels, which can serve as a source of entropy.  The entropy sources do not need to produce much entropy, just a few bits at a time, but it can build up slowly until you have accumulated a few hundred bits of entropy.  That's enough to generate cryptographically useful keys.  Even if it takes some seconds or even minutes to accumulate this much entropy the first time your product is activated, it can be stored in nonvolatile storage so that it will be ready to reseed the entropy pool instantly the next time your product is powered up.
+		
+	In the ideal case, if you are designing the embedded hardware yourself, you could provide a good source of entropy by including a simple <A HREF="http://en.wikipedia.org/wiki/Ring_oscillator">ring oscillator</A> in the hardware.  A ring oscillator is a circular chain (a ring) of NOT gates, and has nothing whatsoever to do with a telephone ring generator.  The oscillation frequency drifts from thermal noise, and sampling the output at some low sampling rate is a good way to get some entropy.  However, most designers have to work with existing hardware designs, and don't have the luxury of adding special hardware to generate entropy, which means you have to improvise with whatever you can collect from the environment, using any of the methods described above.
+		
+	If the library is used on another platform, the potential entropy sources should be thoroughly analyzed and a custom implementation must be developed for that platform. You can get your entropy collection ideas by looking at the default implementation of \c zrtp_add_system_state() provided in \c zrtp_rng.c.  Again, microphone noise can be a good entropy source for VoIP clients.  Raw, uncompressed, unfiltered audio samples should be used.
+		
+	If you have entropy gathering schemes for platforms not already supported in libzrtp, or if you doubt the correctness of your entropy collection approach, contact us to discuss how it may be done.  We will do our best to provide you with technical assistance.
+
+*/

@@ -1,0 +1,12 @@
+Rsatest is a test driver for RSA operations.
+
+Rsatest takes a list of vecimal key sizes (in bits) on the command
+line, and generates keys of those sizes.  It generates keys randomly,
+using keyboard timings for a random number source, then tests the
+resultant keys, doing an encryption, a decryption, a signing and a
+verification.
+
+Example invocation lines:
+
+rsatest 512 768 1024
+rsatest 2048
