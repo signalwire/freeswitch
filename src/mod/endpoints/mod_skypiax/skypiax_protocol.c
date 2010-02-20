@@ -35,11 +35,12 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 	struct sockaddr_in my_addr;
 #ifndef WIN32
 	int start_port = 6001;
+	unsigned int size = sizeof(int);
 #else
 	unsigned short start_port = 6001;
+	int size = sizeof(int);
 #endif //WIN32
 	int sockbufsize = 0;
-	int size = sizeof(int);
 
 
 	memset(&my_addr, 0, sizeof(my_addr));
@@ -1292,8 +1293,10 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 	//unsigned int a;
 #if defined(WIN32) && !defined(__CYGWIN__)
 	int sin_size;
+	int size = sizeof(int);
 #else /* WIN32 */
 	unsigned int sin_size;
+	unsigned int size = sizeof(int);
 #endif /* WIN32 */
 	unsigned int fd;
 	short srv_in[SAMPLES_PER_FRAME];
@@ -1305,7 +1308,6 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 	//short kill_cli_buff[SAMPLES_PER_FRAME];
 	//short totalbuf[SAMPLES_PER_FRAME];
 	int sockbufsize = 0;
-	int size = sizeof(int);
 
 	s = skypiax_socket_create_and_bind(tech_pvt, &tech_pvt->tcp_srv_port);
 	if (s < 0) {
@@ -1445,11 +1447,12 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 	//short cli_in[SAMPLES_PER_FRAME];
 #ifdef WIN32
 	int sin_size;
+	int size = sizeof(int);
 #else
 	unsigned int sin_size;
+	unsigned int size = sizeof(int);
 #endif /* WIN32 */
 	int sockbufsize = 0;
-	int size = sizeof(int);
 
 	s = skypiax_socket_create_and_bind(tech_pvt, &tech_pvt->tcp_cli_port);
 	if (s < 0) {
