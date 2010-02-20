@@ -39,7 +39,7 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 	unsigned short start_port = 6001;
 #endif //WIN32
 	int sockbufsize = 0;
-	unsigned int size = sizeof(int);
+	int size = sizeof(int);
 
 
 	memset(&my_addr, 0, sizeof(my_addr));
@@ -1305,7 +1305,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 	//short kill_cli_buff[SAMPLES_PER_FRAME];
 	//short totalbuf[SAMPLES_PER_FRAME];
 	int sockbufsize = 0;
-	unsigned int size = sizeof(int);
+	int size = sizeof(int);
 
 	s = skypiax_socket_create_and_bind(tech_pvt, &tech_pvt->tcp_srv_port);
 	if (s < 0) {
@@ -1390,7 +1390,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 						}
 
 						if (len == -1) {
-							ERRORA("len=%d, error: %s\n", SKYPIAX_P_LOG, len,  strerror(errno));
+							DEBUGA_SKYPE("len=%d, error: %s\n", SKYPIAX_P_LOG, len,  strerror(errno));
 							break;
 						}
 						if (len > 0) {
@@ -1398,16 +1398,16 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 							switch_buffer_write(tech_pvt->read_buffer, srv_in, len);
 							switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 						} else if (len == 0) {
-							ERRORA("CLOSING, len=%d, expected 640\n", SKYPIAX_P_LOG, len);
+							DEBUGA_SKYPE("CLOSING, len=%d, expected 640\n", SKYPIAX_P_LOG, len);
 							break;
 						} else {
-							WARNINGA("len=%d, expected 640\n", SKYPIAX_P_LOG, len);
+							DEBUGA_SKYPE("len=%d, expected 640\n", SKYPIAX_P_LOG, len);
 						}
 
 					} else if(rt==0){
 						continue;
 					} else {
-						ERRORA("SRV rt=%d\n", SKYPIAX_P_LOG, rt);
+						DEBUGA_SKYPE("SRV rt=%d\n", SKYPIAX_P_LOG, rt);
 						break;
 					}
 
@@ -1415,7 +1415,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 
 				DEBUGA_SKYPE("Skype incoming audio GONE\n", SKYPIAX_P_LOG);
 				tech_pvt->skype_callflow = CALLFLOW_INCOMING_HANGUP;
-				skypiax_sleep(20000);
+				//skypiax_sleep(20000);
 				skypiax_close_socket(fd);
 				break;
 			}
@@ -1449,7 +1449,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 	unsigned int sin_size;
 #endif /* WIN32 */
 	int sockbufsize = 0;
-	unsigned int size = sizeof(int);
+	int size = sizeof(int);
 
 	s = skypiax_socket_create_and_bind(tech_pvt, &tech_pvt->tcp_cli_port);
 	if (s < 0) {
@@ -1555,7 +1555,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 						if(!switch_buffer_inuse(tech_pvt->write_buffer)){
 							memset(cli_out, 255, sizeof(cli_out));
 							bytes_to_write = 320;
-							DEBUGA_SKYPE("Silence!\n", SKYPIAX_P_LOG);
+							//DEBUGA_SKYPE("Silence!\n", SKYPIAX_P_LOG);
 						}else {
 							switch_mutex_lock(tech_pvt->mutex_audio_cli);
 							bytes_to_write = switch_buffer_read(tech_pvt->write_buffer, cli_out, 320);
@@ -1564,26 +1564,26 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 
 						/* send the 16khz frame to the Skype client waiting for incoming audio to be sent to the remote party */
 						if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
-							len = send(fd, cli_out, bytes_to_write, 0);
+							len = send(fd, (char *)cli_out, bytes_to_write, 0);
 							if (len == -1) {
-								ERRORA("len=%d, error: %s\n", SKYPIAX_P_LOG, len,  strerror(errno));
+								DEBUGA_SKYPE("len=%d, error: %s\n", SKYPIAX_P_LOG, len,  strerror(errno));
 								break;
 							}
 							if (len != bytes_to_write) {
-								WARNINGA("len=%d\n", SKYPIAX_P_LOG, len);
+								DEBUGA_SKYPE("len=%d\n", SKYPIAX_P_LOG, len);
 							}
 						}
 					} else if(rt==0){
 						continue;
 					} else {
-						ERRORA("CLI rt=%d\n", SKYPIAX_P_LOG, rt);
+						DEBUGA_SKYPE("CLI rt=%d\n", SKYPIAX_P_LOG, rt);
 						break;
 					}
 
 				}
 				DEBUGA_SKYPE("Skype outbound audio GONE\n", SKYPIAX_P_LOG);
 				tech_pvt->skype_callflow = CALLFLOW_INCOMING_HANGUP;
-				skypiax_sleep(20000);
+				//skypiax_sleep(20000);
 				skypiax_close_socket(fd);
 				break;
 			}

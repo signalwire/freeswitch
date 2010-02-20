@@ -538,7 +538,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	tech_pvt->interface_state = SKYPIAX_STATE_HANGUP_REQUESTED;
 
 	if (strlen(tech_pvt->skype_call_id)) {
-		//switch_thread_cond_signal(tech_pvt->cond);
 		DEBUGA_SKYPE("hanging up skype call: %s\n", SKYPIAX_P_LOG, tech_pvt->skype_call_id);
 		sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->skype_call_id);
 		skypiax_signaling_write(tech_pvt, msg_to_skype);
@@ -549,13 +548,13 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 			if (tech_pvt->tcp_cli_thread) {
 				switch_thread_join(&status, tech_pvt->tcp_cli_thread);
 			}
-			if(status!=SWITCH_STATUS_SUCCESS)
-	ERRORA("%s cli_join HANGUP\n", SKYPIAX_P_LOG, tech_pvt->name);
+			//if(status!=SWITCH_STATUS_SUCCESS)
+	//ERRORA("%s cli_join HANGUP\n", SKYPIAX_P_LOG, tech_pvt->name);
 			if (tech_pvt->tcp_srv_thread) {
 				switch_thread_join(&status, tech_pvt->tcp_srv_thread);
 			}
-			if(status!=SWITCH_STATUS_SUCCESS)
-	ERRORA("%s srv_join HANGUP\n", SKYPIAX_P_LOG, tech_pvt->name);
+			//if(status!=SWITCH_STATUS_SUCCESS)
+	//ERRORA("%s srv_join HANGUP\n", SKYPIAX_P_LOG, tech_pvt->name);
 	DEBUGA_SKYPE("%s CHANNEL HANGUP\n", SKYPIAX_P_LOG, tech_pvt->name);
 	switch_mutex_lock(globals.mutex);
 	globals.calls--;
@@ -883,8 +882,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	char digit_str[256];
 	short *frame_16_khz;
 	short frame_8_khz[160];	
-	int i;
-	int a;
+	unsigned int i;
+	unsigned int a;
 size_t bytes_read;
 
 
@@ -928,7 +927,7 @@ size_t bytes_read;
 
 
 	if (!bytes_read) {
-		ERRORA("skypiax_audio_read Silence\n", SKYPIAX_P_LOG);
+		DEBUGA_SKYPE("skypiax_audio_read Silence\n", SKYPIAX_P_LOG);
 		memset(tech_pvt->read_frame.data, 255, SAMPLES_PER_FRAME * sizeof(short));
 		tech_pvt->read_frame.datalen = SAMPLES_PER_FRAME * sizeof(short);
 
