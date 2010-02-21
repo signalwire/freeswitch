@@ -902,7 +902,7 @@ size_t bytes_read;
 
 
 	if (!tech_pvt->read_buffer) {
-		int32_t len = 640 * 8;
+		int32_t len = 640 * 2;
 
 		switch_buffer_create(skypiax_module_pool, &tech_pvt->read_buffer, len);
 		switch_assert(tech_pvt->read_buffer);
@@ -1048,7 +1048,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 #endif
 
 	if (!tech_pvt->write_buffer) {
-		int32_t len = 320 * 8;
+		int32_t len = 320 * 4;
 
 		switch_buffer_create(skypiax_module_pool, &tech_pvt->write_buffer, len);
 		switch_assert(tech_pvt->write_buffer);
