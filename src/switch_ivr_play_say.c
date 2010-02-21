@@ -248,7 +248,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 					char *func = (char *) switch_xml_attr_soft(action, "function");
 
 					if (strchr(pattern, '(') && strchr(adata, '$')) {
-						len = (uint32_t) (strlen(data) + strlen(adata) + 10) * proceed;
+						len = (uint32_t) (strlen(data) + strlen(adata) + 10) * (proceed ? proceed : 1);
 						if (!(substituted = malloc(len))) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
 							switch_regex_safe_free(re);
