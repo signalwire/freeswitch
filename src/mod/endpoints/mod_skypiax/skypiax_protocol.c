@@ -77,7 +77,7 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 		}
 	}
 
-	DEBUGA_SKYPE("SUCCESS! *which_port=%d, tech_pvt->tcp_cli_port=%d, tech_pvt->tcp_srv_port=%d\n", SKYPIAX_P_LOG, *which_port, tech_pvt->tcp_cli_port,
+	DEBUGA_SKYPE("Binded! *which_port=%d, tech_pvt->tcp_cli_port=%d, tech_pvt->tcp_srv_port=%d\n", SKYPIAX_P_LOG, *which_port, tech_pvt->tcp_cli_port,
 				 tech_pvt->tcp_srv_port);
 
 	sockbufsize = 0;

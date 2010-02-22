@@ -147,23 +147,23 @@ char *skype_callflow[] = {		/* should match CALLFLOW_XXX in skypiax.h */
 
 static struct {
 	int debug;
-	char *ip;
-	int port;
+	//char *ip;
+	//int port;
 	char *dialplan;
 	char *destination;
 	char *context;
-	char *codec_string;
-	char *codec_order[SWITCH_MAX_CODECS];
-	int codec_order_last;
-	char *codec_rates_string;
-	char *codec_rates[SWITCH_MAX_CODECS];
-	int codec_rates_last;
-	unsigned int flags;
-	int fd;
+	//char *codec_string;
+	//char *codec_order[SWITCH_MAX_CODECS];
+	//int codec_order_last;
+	//char *codec_rates_string;
+	//char *codec_rates[SWITCH_MAX_CODECS];
+	//int codec_rates_last;
+	//unsigned int flags;
+	//int fd;
 	int calls;
 	int real_interfaces;
 	int next_interface;
-	char hold_music[256];
+	//char hold_music[256];
 	private_t SKYPIAX_INTERFACES[SKYPIAX_MAX_INTERFACES];
 	switch_mutex_t *mutex;
 	private_t *sk_console;
@@ -177,8 +177,8 @@ int running = 0;
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_context, globals.context);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_destination, globals.destination);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string);
+//SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string);
+//SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string);
 
 /* BEGIN: Changes here */
 static switch_status_t interface_exists(char *the_interface);
@@ -1416,6 +1416,7 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_SKYPE("globals.debug=%d\n", SKYPIAX_P_LOG, globals.debug);
 				globals.debug = atoi(val);
 				DEBUGA_SKYPE("globals.debug=%d\n", SKYPIAX_P_LOG, globals.debug);
+#if 0
 			} else if (!strcasecmp(var, "hold-music")) {
 				switch_set_string(globals.hold_music, val);
 				DEBUGA_SKYPE("globals.hold_music=%s\n", SKYPIAX_P_LOG, globals.hold_music);
@@ -1427,6 +1428,7 @@ static switch_status_t load_config(int reload_type)
 					switch_set_flag(&globals, GFLAG_MY_CODEC_PREFS);
 				}
 				DEBUGA_SKYPE("codec-master globals.debug=%d\n", SKYPIAX_P_LOG, globals.debug);
+#endif //0
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
 				DEBUGA_SKYPE("globals.dialplan=%s\n", SKYPIAX_P_LOG, globals.dialplan);
@@ -1436,6 +1438,7 @@ static switch_status_t load_config(int reload_type)
 			} else if (!strcmp(var, "context")) {
 				set_global_context(val);
 				DEBUGA_SKYPE("globals.context=%s\n", SKYPIAX_P_LOG, globals.context);
+#if 0
 			} else if (!strcmp(var, "codec-prefs")) {
 				set_global_codec_string(val);
 				DEBUGA_SKYPE("globals.codec_string=%s\n", SKYPIAX_P_LOG, globals.codec_string);
@@ -1444,6 +1447,7 @@ static switch_status_t load_config(int reload_type)
 				set_global_codec_rates_string(val);
 				DEBUGA_SKYPE("globals.codec_rates_string=%s\n", SKYPIAX_P_LOG, globals.codec_rates_string);
 				globals.codec_rates_last = switch_separate_string(globals.codec_rates_string, ',', globals.codec_rates, SWITCH_MAX_CODECS);
+#endif //0
 			}
 
 		}
@@ -1468,8 +1472,8 @@ static switch_status_t load_config(int reload_type)
 			char *fail_dial_regex = NULL;
 			char *enable_callerid = "true";
 			char *X11_display = NULL;
-			char *tcp_cli_port = NULL;
-			char *tcp_srv_port = NULL;
+			//char *tcp_cli_port = "45000";
+			//char *tcp_srv_port = "45001";
 			char *skype_user = NULL;
 			char *report_incoming_chatmessages = "true";
 
@@ -1503,10 +1507,12 @@ static switch_status_t load_config(int reload_type)
 					skype_user = val;
 				} else if (!strcasecmp(var, "report_incoming_chatmessages")) {
 					report_incoming_chatmessages = val;
+#if 0
 				} else if (!strcasecmp(var, "tcp_cli_port")) {
 					tcp_cli_port = val;
 				} else if (!strcasecmp(var, "tcp_srv_port")) {
 					tcp_srv_port = val;
+#endif//0
 				} else if (!strcasecmp(var, "X11-display") || !strcasecmp(var, "X11_display")) {
 					X11_display = val;
 				} else if (!strcasecmp(var, "max_digits") || !strcasecmp(var, "max-digits")) {
@@ -1532,10 +1538,13 @@ static switch_status_t load_config(int reload_type)
 			}
 			/* END: Changes here */
 
+#ifndef WIN32
 			if (!X11_display) {
 				ERRORA("interface missing REQUIRED param 'X11_display'\n", SKYPIAX_P_LOG);
 				continue;
 			}
+#endif
+#if 0
 			if (!tcp_cli_port) {
 				ERRORA("interface missing REQUIRED param 'tcp_cli_port'\n", SKYPIAX_P_LOG);
 				continue;
@@ -1545,6 +1554,7 @@ static switch_status_t load_config(int reload_type)
 				ERRORA("interface missing REQUIRED param 'tcp_srv_port'\n", SKYPIAX_P_LOG);
 				continue;
 			}
+#endif//0
 			if (!id) {
 				ERRORA("interface missing REQUIRED param 'id'\n", SKYPIAX_P_LOG);
 				continue;
@@ -1604,6 +1614,7 @@ static switch_status_t load_config(int reload_type)
 					switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].name, "N/A");
 				}
 				DEBUGA_SKYPE("CONFIGURING interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
+#if 0
 #ifdef WIN32
 				globals.SKYPIAX_INTERFACES[interface_id].tcp_cli_port = (unsigned short) atoi(tcp_cli_port);
 				globals.SKYPIAX_INTERFACES[interface_id].tcp_srv_port = (unsigned short) atoi(tcp_srv_port);
@@ -1611,6 +1622,7 @@ static switch_status_t load_config(int reload_type)
 				globals.SKYPIAX_INTERFACES[interface_id].tcp_cli_port = atoi(tcp_cli_port);
 				globals.SKYPIAX_INTERFACES[interface_id].tcp_srv_port = atoi(tcp_srv_port);
 #endif /* WIN32 */
+#endif//0
 				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].X11_display, X11_display);
 				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].skype_user, skype_user);
 				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].context, context);
@@ -1631,12 +1643,14 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_SKYPE
 					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].skype_user=%s\n",
 					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user);
+#if 0
 				DEBUGA_SKYPE
 					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].tcp_cli_port=%d\n",
 					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].tcp_cli_port);
 				DEBUGA_SKYPE
 					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].tcp_srv_port=%d\n",
 					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].tcp_srv_port);
+#endif//0
 				DEBUGA_SKYPE("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].name=%s\n",
 							 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].name);
 				DEBUGA_SKYPE
@@ -1751,7 +1765,6 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].context=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].context);
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].dialplan=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].dialplan);
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].destination=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].destination);
-				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].context=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].context);
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].report_incoming_chatmessages=%d\n", SKYPIAX_P_LOG, i, i,
 							 globals.SKYPIAX_INTERFACES[i].report_incoming_chatmessages);
 			}
@@ -1999,8 +2012,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 	switch_safe_free(globals.dialplan);
 	switch_safe_free(globals.context);
 	switch_safe_free(globals.destination);
-	switch_safe_free(globals.codec_string);
-	switch_safe_free(globals.codec_rates_string);
+	//switch_safe_free(globals.codec_string);
+	//switch_safe_free(globals.codec_rates_string);
 
 	return SWITCH_STATUS_SUCCESS;
 }
