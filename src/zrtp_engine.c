@@ -1226,6 +1226,7 @@ zrtp_status_t _zrtp_machine_process_hello(zrtp_stream_t* stream, zrtp_rtp_info_t
 	
 	/* Copy packet for future hashing */
 	zrtp_memcpy(&stream->messages.peer_hello, peer_hello, zrtp_ntoh16(peer_hello->hdr.length)*4);
+	stream->is_hello_received = 1;
 
 	/*
 	 * Choose PK exchange scheme and PK mode.
@@ -1250,7 +1251,7 @@ zrtp_status_t _zrtp_machine_process_hello(zrtp_stream_t* stream, zrtp_rtp_info_t
 /*---------------------------------------------------------------------------*/
 static void _send_and_resend_hello(zrtp_stream_t* stream, zrtp_retry_task_t* task)
 {	
-	if (task->_retrys == ZRTP_NO_ZRTP_FAST_COUNT) {
+	if ((task->_retrys == ZRTP_NO_ZRTP_FAST_COUNT) && !stream->is_hello_received) {
 		ZRTP_LOG(2,(_ZTU_,"WARNING! HELLO have been resent %d times without a response."
 					" Raising ZRTP_EVENT_NO_ZRTP_QUICK event. ID=%u\n", task->_retrys, stream->id));
 

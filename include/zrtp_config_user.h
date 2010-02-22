@@ -129,7 +129,7 @@
  * over CSD channels. This option affect enterprise version of the library only.
  */
 #ifndef ZRTP_BUILD_FOR_CSD
-#define	ZRTP_BUILD_FOR_CSD			1
+#define	ZRTP_BUILD_FOR_CSD			0
 #endif
 
 /**

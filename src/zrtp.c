@@ -428,6 +428,7 @@ zrtp_status_t zrtp_stream_attach(zrtp_session_t *session, zrtp_stream_t** stream
 	new_stream->session = session;
 	new_stream->zrtp	= session->zrtp;
 	new_stream->mitm_mode = ZRTP_MITM_MODE_UNKN;
+	new_stream->is_hello_received = 0;
 	
 	ZSTR_SET_EMPTY(new_stream->cc.hmackey);
 	ZSTR_SET_EMPTY(new_stream->cc.peer_hmackey);

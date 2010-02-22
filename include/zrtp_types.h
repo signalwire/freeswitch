@@ -698,6 +698,9 @@ struct zrtp_stream_t
 	 */
 	zrtp_state_t			prev_state;
 	
+	/** 1 means that peer Hello have been raceived within current ZRTP session */
+	uint8_t					is_hello_received;
+	
 	/*!< Reflects current state of ZRTP protocol */
 	zrtp_state_t			state;
 	
