@@ -386,12 +386,16 @@ static int sock_setup(esl_handle_t *handle)
     }
 
 #ifdef WIN32
-	BOOL bOptVal = TRUE;
-	int bOptLen = sizeof(BOOL);
-	setsockopt(handle->sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&bOptVal, bOptLen);
+	{
+		BOOL bOptVal = TRUE;
+		int bOptLen = sizeof(BOOL);
+		setsockopt(handle->sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&bOptVal, bOptLen);
+	}
 #else
-	int x = 1;
-	setsockopt(handle->sock, IPPROTO_TCP, TCP_NODELAY, &x, sizeof(x));
+	{
+		int x = 1;
+		setsockopt(handle->sock, IPPROTO_TCP, TCP_NODELAY, &x, sizeof(x));	
+	}
 #endif
 
 	return ESL_SUCCESS;
