@@ -167,6 +167,7 @@ static struct {
 	private_t SKYPIAX_INTERFACES[SKYPIAX_MAX_INTERFACES];
 	switch_mutex_t *mutex;
 	private_t *sk_console;
+	int start_port;
 } globals;
 
 switch_endpoint_interface_t *skypiax_endpoint_interface;
@@ -1448,6 +1449,7 @@ static switch_status_t load_config(int reload_type)
 		}
 	}
 
+	globals.start_port=32769;
 	if ((interfaces = switch_xml_child(cfg, "per_interface_settings"))) {
 		int i = 0;
 
@@ -1715,6 +1717,8 @@ static switch_status_t load_config(int reload_type)
 					skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET AUTOAWAY OFF");
 					switch_sleep(10000);
 					skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET WINDOWSTATE HIDDEN");
+					switch_sleep(10000);
+					skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET USERSTATUS ONLINE");
 					switch_sleep(10000);
 				} else {
 					ERRORA
@@ -2831,6 +2835,14 @@ SWITCH_STANDARD_API(skypiax_chat_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+int next_port(void){
+	switch_mutex_lock(globals.mutex);
+	globals.start_port++;
+	if(globals.start_port == 65000)
+		globals.start_port=32769;
+	switch_mutex_unlock(globals.mutex);
+	return (globals.start_port - 1);
+}
 
 
 /* For Emacs:

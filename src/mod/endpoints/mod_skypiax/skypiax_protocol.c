@@ -55,6 +55,7 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 	if (*which_port != 0)
 		start_port = *which_port;
 
+	start_port=next_port();
 	my_addr.sin_port = htons(start_port);
 	//fcntl(s, F_SETFL, O_NONBLOCK);
 	//tech_pvt->tcp_cli_port = start_port;
@@ -501,8 +502,11 @@ int skypiax_signaling_read(private_t * tech_pvt)
 					DEBUGA_SKYPE("Skype FAILED on skype_call %s. Let's wait for the FAILED message.\n", SKYPIAX_P_LOG, id);
 				}
 				if (!strcasecmp(prop, "DURATION")) { /* each second, we sync ithe timers */
+					if(!((atoi(value) % 5))){
 					switch_core_timer_sync(&tech_pvt->timer_read);
 					switch_core_timer_sync(&tech_pvt->timer_write);
+					DEBUGA_SKYPE("Synching on skype_call: %s.\n", SKYPIAX_P_LOG, id);
+					}
 				}
 				if (!strcasecmp(prop, "DURATION") && (!strcasecmp(value, "1"))) {
 					if (strcasecmp(id, tech_pvt->skype_call_id)) {
@@ -1134,10 +1138,12 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 #endif //0
 
 
+#if 0
 if(tech_pvt->begin_to_write==0){
 skypiax_sleep(1000);
 continue;
 }
+#endif//0
 					 if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next) {
 		switch_core_timer_next(&tech_pvt->timer_write);
 }
@@ -1364,6 +1370,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 
 				if (!(running && tech_pvt->running))
 					break;
+				skypiax_sleep(2000);
 				while (tech_pvt->interface_state != SKYPIAX_STATE_DOWN
 						&& (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
 							|| tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
@@ -1382,10 +1389,6 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 					to.tv_usec = 60000;	//60 msec
 					to.tv_sec = 0;
 
-					if(tech_pvt->begin_to_read==0){
-						skypiax_sleep(1000);
-						continue;
-					}
 					rt = select(fdselect + 1, &fs, NULL, NULL, &to);
 					if (rt > 0) {
 
@@ -1394,6 +1397,12 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 						} else {
 							continue;
 						}
+#if 1
+					if(tech_pvt->begin_to_read==0){
+							DEBUGA_SKYPE("len=%d, expected 640\n", SKYPIAX_P_LOG, len);
+						continue;
+					}
+#endif //0
 
 						if (len == -1) {
 							DEBUGA_SKYPE("len=%d, error: %s\n", SKYPIAX_P_LOG, len,  strerror(errno));
@@ -1404,13 +1413,14 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 							switch_buffer_write(tech_pvt->read_buffer, srv_in, len);
 							switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 						} else if (len == 0) {
-							DEBUGA_SKYPE("CLOSING, len=%d, expected 640\n", SKYPIAX_P_LOG, len);
+							DEBUGA_SKYPE("CLOSED, len=%d, expected 640\n", SKYPIAX_P_LOG, len);
 							break;
 						} else {
 							DEBUGA_SKYPE("len=%d, expected 640\n", SKYPIAX_P_LOG, len);
 						}
 
 					} else if(rt==0){
+						DEBUGA_SKYPE("SRV rt=%d\n", SKYPIAX_P_LOG, rt);
 						continue;
 					} else {
 						DEBUGA_SKYPE("SRV rt=%d\n", SKYPIAX_P_LOG, rt);
@@ -1534,11 +1544,22 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 					fdselect = fd;
 					FD_SET(fdselect, &fs);
 
+						if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next && tech_pvt->interface_state != SKYPIAX_STATE_HANGUP_REQUESTED) {
+							switch_core_timer_next(&tech_pvt->timer_write);
+						}
+#if 1
 
 					if(tech_pvt->begin_to_write==0){
-						skypiax_sleep(1000);
-						continue;
+							memset(cli_out, 255, sizeof(cli_out));
+							bytes_to_write = 320;
+							len = send(fd, (char *)cli_out, bytes_to_write, 0);
+							if (len == -1) {
+								DEBUGA_SKYPE("len=%d, error: %s\n", SKYPIAX_P_LOG, len,  strerror(errno));
+								break;
+							}
+							continue;
 					}
+#endif//0
 
 					//rt = select(fdselect + 1, NULL, &fs, NULL, &to);
 					//if(rt==-1)
@@ -1548,9 +1569,9 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 					if (rt > 0) {
 
 							//DEBUGA_SKYPE("before!\n", SKYPIAX_P_LOG);
-						if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next && tech_pvt->interface_state != SKYPIAX_STATE_HANGUP_REQUESTED) {
-							switch_core_timer_next(&tech_pvt->timer_write);
-						}
+						//if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next && tech_pvt->interface_state != SKYPIAX_STATE_HANGUP_REQUESTED) {
+							//switch_core_timer_next(&tech_pvt->timer_write);
+						//}
 							//DEBUGA_SKYPE("after!\n", SKYPIAX_P_LOG);
 						bytes_to_write=0;
 						waitin=0;
@@ -1581,6 +1602,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 							}
 						}
 					} else if(rt==0){
+						DEBUGA_SKYPE("CLI rt=%d\n", SKYPIAX_P_LOG, rt);
 						continue;
 					} else {
 						DEBUGA_SKYPE("CLI rt=%d\n", SKYPIAX_P_LOG, rt);

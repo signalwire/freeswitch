@@ -339,3 +339,4 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, int *which_port);
 int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_port);
 #endif //WIN32
 int incoming_chatmessage(private_t * tech_pvt, int which);
+int next_port(void);
