@@ -10,8 +10,4 @@
 		AdditionalIncludeDirectories="&quot;$(ProjectRootDir)libs\uni-rtsp\include&quot;"
 		PreprocessorDefinitions="RTSP_STATIC_LIB"
 	/>
-	<Tool
-		Name="VCLinkerTool"
-		AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
-	/>
 </VisualStudioPropertySheet>

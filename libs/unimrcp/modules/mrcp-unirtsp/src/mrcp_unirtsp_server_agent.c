@@ -99,7 +99,7 @@ MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_unirtsp_server_agent_create(rtsp_server_con
 	apt_task_name_set(task,UNIRTSP_TASK_NAME);
 	agent->sig_agent->task = task;
 
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create "UNIRTSP_TASK_NAME" %s:%hu [%d]",
+	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create "UNIRTSP_TASK_NAME" %s:%hu [%"APR_SIZE_T_FMT"]",
 		config->local_ip,
 		config->local_port,
 		config->max_connection_count);
@@ -202,12 +202,12 @@ static apt_bool_t mrcp_unirtsp_session_announce(mrcp_unirtsp_agent_t *agent, mrc
 		apt_str_t resource_name_str;
 
 		text_stream.text = message->body;
-		text_stream.pos = text_stream.text.buf;
+		apt_text_stream_reset(&text_stream);
 		apt_string_set(&resource_name_str,resource_name);
 
 		parser = mrcp_parser_create(agent->sig_agent->resource_factory,session->mrcp_session->pool);
 		mrcp_parser_resource_name_set(parser,&resource_name_str);
-		if(mrcp_parser_run(parser,&text_stream) == MRCP_STREAM_MESSAGE_COMPLETE) {
+		if(mrcp_parser_run(parser,&text_stream) == MRCP_STREAM_STATUS_COMPLETE) {
 			mrcp_message_t *mrcp_message = mrcp_parser_message_get(parser);
 			mrcp_message->channel_id.session_id = message->header.session_id;
 			status = mrcp_session_control_request(session->mrcp_session,mrcp_message);

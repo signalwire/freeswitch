@@ -39,6 +39,7 @@ static apt_bool_t mrcp_app_session_terminate_raise(mrcp_client_session_t *sessio
 static apt_bool_t mrcp_app_sig_response_raise(mrcp_client_session_t *session, apt_bool_t process_pending_requests);
 static apt_bool_t mrcp_app_sig_event_raise(mrcp_client_session_t *session, mrcp_channel_t *channel);
 static apt_bool_t mrcp_app_control_message_raise(mrcp_client_session_t *session, mrcp_channel_t *channel, mrcp_message_t *mrcp_message);
+static apt_bool_t mrcp_app_failure_message_raise(mrcp_client_session_t *session);
 static apt_bool_t mrcp_app_request_dispatch(mrcp_client_session_t *session, const mrcp_app_message_t *app_message);
 
 static apt_bool_t mrcp_client_resource_answer_process(mrcp_client_session_t *session, mrcp_session_descriptor_t *descriptor);
@@ -226,7 +227,7 @@ apt_bool_t mrcp_client_session_terminate_event_process(mrcp_client_session_t *se
 	if(session->active_request) {
 		/* raise app response */
 		session->status = MRCP_SIG_STATUS_CODE_TERMINATE;
-		mrcp_app_sig_response_raise(session,FALSE);
+		mrcp_app_failure_message_raise(session);
 
 		/* cancel remaing requests, but do process session termination request (if any) */
 		do {
@@ -242,7 +243,7 @@ apt_bool_t mrcp_client_session_terminate_event_process(mrcp_client_session_t *se
 
 				/* cancel pending request */
 				session->status = MRCP_SIG_STATUS_CODE_CANCEL;
-				mrcp_app_sig_response_raise(session,FALSE);
+				mrcp_app_failure_message_raise(session);
 			}
 		}
 		while(session->active_request);
@@ -518,6 +519,32 @@ static apt_bool_t mrcp_app_control_message_raise(mrcp_client_session_t *session,
 		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Raise App MRCP Event "APT_PTRSID_FMT, MRCP_SESSION_PTRSID(&session->base));
 		session->application->handler(app_message);
 	}
+	return TRUE;
+}
+
+static apt_bool_t mrcp_app_failure_message_raise(mrcp_client_session_t *session)
+{
+	mrcp_app_message_t *response;
+	const mrcp_app_message_t *request = session->active_request;
+	if(!request) {
+		return FALSE;
+	}
+	session->active_request = NULL;
+	response = mrcp_client_app_response_create(request,session->status,session->base.pool);
+	if(response->message_type == MRCP_APP_MESSAGE_TYPE_SIGNALING) {
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Raise App Response "APT_PTRSID_FMT" [%d] %s [%d]",
+			MRCP_SESSION_PTRSID(&session->base),
+			response->sig_message.command_id,
+			session->status == MRCP_SIG_STATUS_CODE_SUCCESS ? "SUCCESS" : "FAILURE",
+			session->status);
+	}
+	else if(response->control_message){
+		mrcp_message_t *mrcp_response = mrcp_response_create(response->control_message,response->control_message->pool);
+		mrcp_response->start_line.status_code = MRCP_STATUS_CODE_METHOD_FAILED;
+		response->control_message = mrcp_response;
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Raise App MRCP Response "APT_PTRSID_FMT, MRCP_SESSION_PTRSID(&session->base));
+	}
+	session->application->handler(response);
 	return TRUE;
 }
 
@@ -1264,13 +1291,6 @@ MRCP_DECLARE(apt_bool_t) mrcp_application_message_dispatch(const mrcp_app_messag
 			}
 			else if(app_message->sig_message.message_type == MRCP_SIG_MESSAGE_TYPE_EVENT) {
 				switch(app_message->sig_message.event_id) {
-					case MRCP_SIG_EVENT_READY:
-						if(dispatcher->on_ready) {
-							status = dispatcher->on_ready(
-										app_message->application,
-										app_message->sig_message.status);
-						}
-						break;
 					case MRCP_SIG_EVENT_TERMINATE:
 						if(dispatcher->on_terminate_event) {
 							status = dispatcher->on_terminate_event(

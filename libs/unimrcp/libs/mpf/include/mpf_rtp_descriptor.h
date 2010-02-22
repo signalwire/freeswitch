@@ -97,10 +97,11 @@ struct mpf_jb_config_t {
 	apr_byte_t adaptive;
 };
 
+/** RTCP BYE transmission policy */
 typedef enum {
 	RTCP_BYE_DISABLE,       /**< disable RTCP BYE transmission */
 	RTCP_BYE_PER_SESSION,   /**< transmit RTCP BYE at the end of session */
-	RTCP_BYE_PER_TALKSPURT, /**< transmit RTCP BYE at the end of each talkspurt (input) */
+	RTCP_BYE_PER_TALKSPURT  /**< transmit RTCP BYE at the end of each talkspurt (input) */
 } rtcp_bye_policy_e;
 
 /** RTP config */

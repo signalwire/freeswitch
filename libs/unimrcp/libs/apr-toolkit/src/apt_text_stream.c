@@ -29,34 +29,40 @@
 APT_DECLARE(apt_bool_t) apt_text_line_read(apt_text_stream_t *stream, apt_str_t *line)
 {
 	char *pos = stream->pos;
-	const char *end = stream->text.buf + stream->text.length;
-	apt_bool_t eol = FALSE;
+	apt_bool_t status = FALSE;
 	line->length = 0;
 	line->buf = pos;
 	/* while not end of stream */
-	while(pos < end) {
+	while(pos < stream->end) {
 		if(*pos == APT_TOKEN_CR) {
 			/* end of line detected */
 			line->length = pos - line->buf;
 			pos++;
-			if(pos < end && *pos == APT_TOKEN_LF) {
+			if(pos < stream->end && *pos == APT_TOKEN_LF) {
 				pos++;
 			}
-			eol = TRUE;
+			status = TRUE;
 			break;
 		}
 		else if(*pos == APT_TOKEN_LF) {
 			/* end of line detected */
 			line->length = pos - line->buf;
 			pos++;
-			eol = TRUE;
+			status = TRUE;
 			break;
 		}
 		pos++;
 	}
 
-	stream->pos = pos;
-	return eol;
+	if(status == TRUE) {
+		/* advance stream pos */
+		stream->pos = pos;
+	}
+	else {
+		/* end of stream is reached, do not advance stream pos, but set is_eos flag */
+		stream->is_eos = TRUE;
+	}
+	return status;
 }
 
 /** Navigate through the headers (name:value pairs) of the text stream (message) 
@@ -74,12 +80,11 @@ APT_DECLARE(apt_bool_t) apt_text_line_read(apt_text_stream_t *stream, apt_str_t 
 APT_DECLARE(apt_bool_t) apt_text_header_read(apt_text_stream_t *stream, apt_pair_t *pair)
 {
 	char *pos = stream->pos;
-	const char *end = stream->text.buf + stream->text.length;
-	apt_bool_t eol = FALSE;
+	apt_bool_t status = FALSE;
 	apt_string_reset(&pair->name);
 	apt_string_reset(&pair->value);
 	/* while not end of stream */
-	while(pos < end) {
+	while(pos < stream->end) {
 		if(*pos == APT_TOKEN_CR) {
 			/* end of line detected */
 			if(pair->value.buf) {
@@ -87,10 +92,10 @@ APT_DECLARE(apt_bool_t) apt_text_header_read(apt_text_stream_t *stream, apt_pair
 				pair->value.length = pos - pair->value.buf;
 			}
 			pos++;
-			if(pos < end && *pos == APT_TOKEN_LF) {
+			if(pos < stream->end && *pos == APT_TOKEN_LF) {
 				pos++;
 			}
-			eol = TRUE;
+			status = TRUE;
 			break;
 		}
 		else if(*pos == APT_TOKEN_LF) {
@@ -100,7 +105,7 @@ APT_DECLARE(apt_bool_t) apt_text_header_read(apt_text_stream_t *stream, apt_pair
 				pair->value.length = pos - pair->value.buf;
 			}
 			pos++;
-			eol = TRUE;
+			status = TRUE;
 			break;
 		}
 		else if(!pair->name.length) {
@@ -122,9 +127,21 @@ APT_DECLARE(apt_bool_t) apt_text_header_read(apt_text_stream_t *stream, apt_pair
 		pos++;
 	}
 
-	stream->pos = pos;
-	/* if length == 0 && buf -> header is malformed */
-	return (eol && (pair->name.length || !pair->name.buf));
+	if(status == TRUE) {
+		/* advance stream pos regardless it's a valid header or not */
+		stream->pos = pos;
+		
+		/* if length == 0 && buf => header is malformed */
+		if(!pair->name.length && pair->name.buf) {
+			status = FALSE;
+		}
+	}
+	else {
+		/* end of stream is reached, do not advance stream pos, but set is_eos flag */
+		stream->is_eos = TRUE;
+	}
+
+	return status;
 }
 
 
@@ -132,17 +149,16 @@ APT_DECLARE(apt_bool_t) apt_text_header_read(apt_text_stream_t *stream, apt_pair
 APT_DECLARE(apt_bool_t) apt_text_field_read(apt_text_stream_t *stream, char separator, apt_bool_t skip_spaces, apt_str_t *field)
 {
 	char *pos = stream->pos;
-	const char *end = stream->text.buf + stream->text.length;
 	if(skip_spaces == TRUE) {
-		while(pos < end && *pos == APT_TOKEN_SP) pos++;
+		while(pos < stream->end && *pos == APT_TOKEN_SP) pos++;
 	}
 
 	field->buf = pos;
 	field->length = 0;
-	while(pos < end && *pos != separator) pos++;
+	while(pos < stream->end && *pos != separator) pos++;
 
 	field->length = pos - field->buf;
-	if(pos < end) {
+	if(pos < stream->end) {
 		/* skip the separator */
 		pos++;
 	}
@@ -216,16 +232,19 @@ APT_DECLARE(apt_bool_t) apt_text_header_name_generate(const apt_str_t *name, apt
 static apt_bool_t apt_pair_parse(apt_pair_t *pair, const apt_str_t *field, apr_pool_t *pool)
 {
 	apt_text_stream_t stream;
+	apt_str_t item;
 	stream.text = *field;
-	stream.pos = stream.text.buf;
+	apt_text_stream_reset(&stream);
 
 	/* read name */
-	if(apt_text_field_read(&stream,'=',TRUE,&pair->name) == FALSE) {
+	if(apt_text_field_read(&stream,'=',TRUE,&item) == FALSE) {
 		return FALSE;
 	}
+	apt_string_copy(&pair->name,&item,pool);
 
 	/* read value */
-	apt_text_field_read(&stream,';',TRUE,&pair->value);
+	apt_text_field_read(&stream,';',TRUE,&item);
+	apt_string_copy(&pair->value,&item,pool);
 	return TRUE;
 }
 
@@ -240,7 +259,7 @@ APT_DECLARE(apt_bool_t) apt_pair_array_parse(apt_pair_arr_t *arr, const apt_str_
 	}
 
 	stream.text = *value;
-	stream.pos = stream.text.buf;
+	apt_text_stream_reset(&stream);
 	/* read name-value pairs */
 	while(apt_text_field_read(&stream,';',TRUE,&field) == TRUE) {
 		pair = apr_array_push(arr);
@@ -342,7 +361,7 @@ APT_DECLARE(apt_bool_t) apt_float_value_generate(float value, apt_text_stream_t 
 	}
 
 	/* remove trailing 0s (if any) */
-	end = stream->pos + length -1;
+	end = stream->pos + length - 1;
 	while(*end == 0x30 && end != stream->pos) end--;
 
 	stream->pos = end + 1;

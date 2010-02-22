@@ -60,8 +60,8 @@ typedef struct mpf_dtmf_generator_t mpf_dtmf_generator_t;
 MPF_DECLARE(struct mpf_dtmf_generator_t *) mpf_dtmf_generator_create_ex(
 								const struct mpf_audio_stream_t *stream,
 								enum mpf_dtmf_generator_band_e band,
-								apr_size_t tone_ms,
-								apr_size_t silence_ms,
+								apr_uint32_t tone_ms,
+								apr_uint32_t silence_ms,
 								struct apr_pool_t *pool);
 
 /**

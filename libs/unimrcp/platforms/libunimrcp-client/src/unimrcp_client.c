@@ -447,15 +447,15 @@ static apt_bool_t unimrcp_client_media_engines_load(mrcp_client_t *client, const
 	for(elem = root->first_child; elem; elem = elem->next) {
 		if(strcasecmp(elem->name,"engine") == 0) {
 			mpf_engine_t *media_engine;
-			unsigned long rate = 1;
+			unsigned long realtime_rate = 1;
 			const char *name = NULL;
 			const apr_xml_attr *attr;
 			for(attr = elem->attr; attr; attr = attr->next) {
 				if(strcasecmp(attr->name,"name") == 0) {
 					name = apr_pstrdup(pool,attr->value);
 				}
-				else if(strcasecmp(attr->name,"rate") == 0) {
-					rate = atol(attr->value);
+				else if(strcasecmp(attr->name,"realtime-rate") == 0) {
+					realtime_rate = atol(attr->value);
 				}
 				else {
 					apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Attribute <%s>",attr->name);
@@ -464,7 +464,7 @@ static apt_bool_t unimrcp_client_media_engines_load(mrcp_client_t *client, const
 			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Media Engine");
 			media_engine = mpf_engine_create(pool);
 			if(media_engine) {
-				mpf_engine_scheduler_rate_set(media_engine,rate);
+				mpf_engine_scheduler_rate_set(media_engine,realtime_rate);
 				mrcp_client_media_engine_register(client,media_engine,name);
 			}
 		}

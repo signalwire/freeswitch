@@ -1,0 +1,4 @@
+#include "setup.txt"
+#define release_dir "x64\Release"
+OutputBaseFilename=unimrcp-x64-sdk-{#= uni_version}
+ArchitecturesInstallIn64BitMode=x64

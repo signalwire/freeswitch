@@ -183,7 +183,7 @@ static apr_size_t sdp_rtp_media_generate(char *buffer, apr_size_t size, const mr
 			offset += snprintf(buffer+offset,size-offset,"a=ptime:%hu\r\n",audio_media->ptime);
 		}
 	}
-	offset += snprintf(buffer+offset,size-offset,"a=mid:%d\r\n",audio_media->mid);
+	offset += snprintf(buffer+offset,size-offset,"a=mid:%"APR_SIZE_T_FMT"\r\n",audio_media->mid);
 	return offset;
 }
 
@@ -248,7 +248,7 @@ static apr_size_t sdp_control_media_generate(char *buffer, apr_size_t size, cons
 
 	for(i=0; i<control_media->cmid_arr->nelts; i++) {
 		offset += snprintf(buffer+offset,size-offset,
-			"a=cmid:%d\r\n",
+			"a=cmid:%"APR_SIZE_T_FMT"\r\n",
 			APR_ARRAY_IDX(control_media->cmid_arr,i,apr_size_t));
 
 	}

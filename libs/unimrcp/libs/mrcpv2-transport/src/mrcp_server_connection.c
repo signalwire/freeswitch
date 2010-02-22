@@ -88,7 +88,8 @@ MRCP_DECLARE(mrcp_connection_agent_t*) mrcp_server_connection_agent_create(
 		return NULL;
 	}
 	
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create "MRCPV2_CONNECTION_TASK_NAME" %s:%hu [%d]",listen_ip,listen_port,max_connection_count);
+	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create "MRCPV2_CONNECTION_TASK_NAME" %s:%hu [%"APR_SIZE_T_FMT"]",
+		listen_ip,listen_port,max_connection_count);
 	agent = apr_palloc(pool,sizeof(mrcp_connection_agent_t));
 	agent->pool = pool;
 	agent->sockaddr = NULL;
@@ -557,7 +558,7 @@ static apt_bool_t mrcp_server_agent_messsage_send(mrcp_connection_agent_t *agent
 {
 	apt_bool_t status = FALSE;
 	apt_text_stream_t *stream;
-	mrcp_stream_result_e result;
+	mrcp_stream_status_e result;
 	if(!connection || !connection->sock) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"No MRCPv2 Connection");
 		return FALSE;
@@ -568,7 +569,7 @@ static apt_bool_t mrcp_server_agent_messsage_send(mrcp_connection_agent_t *agent
 	do {
 		apt_text_stream_init(&connection->tx_stream,connection->tx_buffer,sizeof(connection->tx_buffer)-1);
 		result = mrcp_generator_run(connection->generator,stream);
-		if(result == MRCP_STREAM_MESSAGE_COMPLETE || result == MRCP_STREAM_MESSAGE_TRUNCATED) {
+		if(result != MRCP_STREAM_STATUS_INVALID) {
 			stream->text.length = stream->pos - stream->text.buf;
 			*stream->pos = '\0';
 
@@ -587,16 +588,16 @@ static apt_bool_t mrcp_server_agent_messsage_send(mrcp_connection_agent_t *agent
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Generate MRCPv2 Stream");
 		}
 	}
-	while(result == MRCP_STREAM_MESSAGE_TRUNCATED);
+	while(result == MRCP_STREAM_STATUS_INCOMPLETE);
 
 	return status;
 }
 
-static apt_bool_t mrcp_server_message_handler(void *obj, mrcp_message_t *message, mrcp_stream_result_e result)
+static apt_bool_t mrcp_server_message_handler(void *obj, mrcp_message_t *message, mrcp_stream_status_e status)
 {
 	mrcp_connection_t *connection = obj;
 	mrcp_connection_agent_t *agent = connection->agent;
-	if(result == MRCP_STREAM_MESSAGE_COMPLETE) {
+	if(status == MRCP_STREAM_STATUS_COMPLETE) {
 		/* message is completely parsed */
 		mrcp_control_channel_t *channel = mrcp_connection_channel_associate(agent,connection,message);
 		if(channel) {
@@ -609,7 +610,7 @@ static apt_bool_t mrcp_server_message_handler(void *obj, mrcp_message_t *message
 				connection->id);
 		}
 	}
-	else if(result == MRCP_STREAM_MESSAGE_INVALID) {
+	else if(status == MRCP_STREAM_STATUS_INVALID) {
 		/* error case */
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse MRCPv2 Stream");
 		if(message->resource) {
@@ -655,8 +656,8 @@ static apt_bool_t mrcp_server_agent_messsage_receive(mrcp_connection_agent_t *ag
 		stream->pos);
 
 	/* reset pos */
-	stream->pos = stream->text.buf;
-	/* walk through the stream parsing RTSP messages */
+	apt_text_stream_reset(stream);
+	/* walk through the stream parsing MRCP messages */
 	return mrcp_stream_walk(connection->parser,stream,mrcp_server_message_handler,connection);
 }
 

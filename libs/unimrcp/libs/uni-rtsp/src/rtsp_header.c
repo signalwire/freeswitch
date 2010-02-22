@@ -117,7 +117,7 @@ static apt_bool_t rtsp_transport_attrib_parse(rtsp_transport_t *transport, const
 	apt_text_stream_t stream;
 
 	stream.text = *field;
-	stream.pos = stream.text.buf;
+	apt_text_stream_reset(&stream);
 
 	/* read attrib name */
 	if(apt_text_field_read(&stream,'=',TRUE,&name) == FALSE) {
@@ -160,7 +160,7 @@ static apt_bool_t rtsp_transport_protocol_parse(rtsp_transport_t *transport, con
 	apt_text_stream_t stream;
 
 	stream.text = *value;
-	stream.pos = stream.text.buf;
+	apt_text_stream_reset(&stream);
 
 	/* set the defaults */
 	transport->protocol = RTSP_TRANSPORT_RTP;
@@ -203,7 +203,7 @@ static apt_bool_t rtsp_transport_parse(rtsp_transport_t *transport, const apt_st
 	apt_text_stream_t stream;
 
 	stream.text = *line;
-	stream.pos = stream.text.buf;
+	apt_text_stream_reset(&stream);
 	/* read transport protocol (RTP/AVP[/UDP]) */
 	if(apt_text_field_read(&stream,';',TRUE,&field) == FALSE) {
 		return FALSE;

@@ -102,7 +102,7 @@ bool UmcConsole::ProcessCmdLine(char* pCmdLine)
 		char* pScenarioName = apr_strtok(NULL, " ", &last);
 		if(pScenarioName) 
 		{
-			char* pProfileName = apr_strtok(NULL, " ", &last);
+			const char* pProfileName = apr_strtok(NULL, " ", &last);
 			if(!pProfileName) 
 			{
 				pProfileName = "MRCPv2-Default";

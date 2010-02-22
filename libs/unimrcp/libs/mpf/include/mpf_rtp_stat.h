@@ -64,9 +64,9 @@ struct rtcp_sr_stat_t {
 	apr_uint32_t ntp_frac;
 	/** RTP timestamp */
 	apr_uint32_t rtp_ts;
-	/* packets sent */
+	/** packets sent */
 	apr_uint32_t sent_packets;
-	/* octets (bytes) sent */
+	/** octets (bytes) sent */
 	apr_uint32_t sent_octets;
 };
 

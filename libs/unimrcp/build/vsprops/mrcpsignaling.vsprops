@@ -9,8 +9,4 @@
 		Name="VCCLCompilerTool"
 		AdditionalIncludeDirectories="&quot;$(ProjectRootDir)libs\mrcp-signaling\include&quot;"
 	/>
-	<Tool
-		Name="VCLinkerTool"
-		AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
-	/>
 </VisualStudioPropertySheet>

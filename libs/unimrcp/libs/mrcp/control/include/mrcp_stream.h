@@ -27,12 +27,12 @@
 
 APT_BEGIN_EXTERN_C
 
-/** Result of MRCP stream processing (parse/generate) */
+/** Status of MRCP stream processing (parse/generate) */
 typedef enum {
-	MRCP_STREAM_MESSAGE_COMPLETE,
-	MRCP_STREAM_MESSAGE_TRUNCATED,
-	MRCP_STREAM_MESSAGE_INVALID
-} mrcp_stream_result_e;
+	MRCP_STREAM_STATUS_COMPLETE,
+	MRCP_STREAM_STATUS_INCOMPLETE,
+	MRCP_STREAM_STATUS_INVALID
+} mrcp_stream_status_e;
 
 /** Opaque MRCP parser declaration */
 typedef struct mrcp_parser_t mrcp_parser_t;
@@ -40,7 +40,7 @@ typedef struct mrcp_parser_t mrcp_parser_t;
 typedef struct mrcp_generator_t mrcp_generator_t;
 
 /** MRCP message handler */
-typedef apt_bool_t (*mrcp_message_handler_f)(void *obj, mrcp_message_t *message, mrcp_stream_result_e result);
+typedef apt_bool_t (*mrcp_message_handler_f)(void *obj, mrcp_message_t *message, mrcp_stream_status_e status);
 
 /** Parse MRCP message (excluding message body) */
 MRCP_DECLARE(apt_bool_t) mrcp_message_parse(mrcp_resource_factory_t *resource_factory, mrcp_message_t *message, apt_text_stream_t *stream);
@@ -56,7 +56,7 @@ MRCP_DECLARE(mrcp_parser_t*) mrcp_parser_create(mrcp_resource_factory_t *resourc
 MRCP_DECLARE(void) mrcp_parser_resource_name_set(mrcp_parser_t *parser, const apt_str_t *resource_name);
 
 /** Parse MRCP stream */
-MRCP_DECLARE(mrcp_stream_result_e) mrcp_parser_run(mrcp_parser_t *parser, apt_text_stream_t *stream);
+MRCP_DECLARE(mrcp_stream_status_e) mrcp_parser_run(mrcp_parser_t *parser, apt_text_stream_t *stream);
 
 /** Get parsed MRCP message */
 MRCP_DECLARE(mrcp_message_t*) mrcp_parser_message_get(const mrcp_parser_t *parser);
@@ -69,7 +69,7 @@ MRCP_DECLARE(mrcp_generator_t*) mrcp_generator_create(mrcp_resource_factory_t *r
 MRCP_DECLARE(apt_bool_t) mrcp_generator_message_set(mrcp_generator_t *generator, mrcp_message_t *message);
 
 /** Generate MRCP stream */
-MRCP_DECLARE(mrcp_stream_result_e) mrcp_generator_run(mrcp_generator_t *generator, apt_text_stream_t *stream);
+MRCP_DECLARE(mrcp_stream_status_e) mrcp_generator_run(mrcp_generator_t *generator, apt_text_stream_t *stream);
 
 /** Walk through MRCP stream and call message handler for each parsed message */
 MRCP_DECLARE(apt_bool_t) mrcp_stream_walk(mrcp_parser_t *parser, apt_text_stream_t *stream, mrcp_message_handler_f handler, void *obj);

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
 #include "mrcp_header_accessor.h"
 
 typedef enum {
@@ -189,5 +190,24 @@ MRCP_DECLARE(apt_bool_t) mrcp_header_inherit(mrcp_header_accessor_t *accessor, c
 		}
 	}
 
+	return TRUE;
+}
+
+/** Generate completion-cause */
+MRCP_DECLARE(apt_bool_t) mrcp_completion_cause_generate(const apt_str_table_item_t table[], apr_size_t size, apr_size_t cause, apt_text_stream_t *stream)
+{
+	int length;
+	const apt_str_t *name = apt_string_table_str_get(table,size,cause);
+	if(!name) {
+		return FALSE;
+	}
+	length = sprintf(stream->pos,"%03"APR_SIZE_T_FMT" ",cause);
+	if(length <= 0) {
+		return FALSE;
+	}
+	stream->pos += length;
+
+	memcpy(stream->pos,name->buf,name->length);
+	stream->pos += name->length;
 	return TRUE;
 }

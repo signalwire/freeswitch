@@ -156,26 +156,6 @@ bool SynthSession::OnChannelAdd(mrcp_channel_t* pMrcpChannel, mrcp_sig_status_co
 	return true;
 }
 
-bool SynthSession::OnChannelRemove(mrcp_channel_t* pMrcpChannel, mrcp_sig_status_code_e status)
-{
-	if(!UmcSession::OnChannelRemove(pMrcpChannel,status))
-		return false;
-
-	SynthChannel* pSynthChannel = (SynthChannel*) mrcp_application_channel_object_get(pMrcpChannel);
-	if(pSynthChannel) 
-	{
-		FILE* pAudioOut = pSynthChannel->m_pAudioOut;
-		if(pAudioOut) 
-		{
-			pSynthChannel->m_pAudioOut = NULL;
-			fclose(pAudioOut);
-		}
-	}
-
-	/* terminate the demo */
-	return Terminate();
-}
-
 bool SynthSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t* pMrcpMessage)
 {
 	if(!UmcSession::OnMessageReceive(pMrcpChannel,pMrcpMessage))
@@ -193,8 +173,8 @@ bool SynthSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t
 			}
 			else 
 			{
-				/* received unexpected response, remove channel */
-				RemoveMrcpChannel(pMrcpChannel);
+				/* received unexpected response, terminate the session */
+				Terminate();
 			}
 		}
 		else 
@@ -207,8 +187,8 @@ bool SynthSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t
 		/* received MRCP event */
 		if(pMrcpMessage->start_line.method_id == SYNTHESIZER_SPEAK_COMPLETE) 
 		{
-			/* received SPEAK-COMPLETE event, remove channel */
-			RemoveMrcpChannel(pMrcpChannel);
+			/* received SPEAK-COMPLETE event, terminate the session */
+			Terminate();
 		}
 	}
 	return true;

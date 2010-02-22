@@ -332,12 +332,18 @@ static mrcp_message_t* recognize_message_create(asr_session_t *asr_session)
 			}
 			recog_header->no_input_timeout = 5000;
 			mrcp_resource_header_property_add(mrcp_message,RECOGNIZER_HEADER_NO_INPUT_TIMEOUT);
-			recog_header->recognition_timeout = 10000;
+			recog_header->recognition_timeout = 20000;
 			mrcp_resource_header_property_add(mrcp_message,RECOGNIZER_HEADER_RECOGNITION_TIMEOUT);
+			recog_header->speech_complete_timeout = 400;
+			mrcp_resource_header_property_add(mrcp_message,RECOGNIZER_HEADER_SPEECH_COMPLETE_TIMEOUT);
+			recog_header->dtmf_term_timeout = 3000;
+			mrcp_resource_header_property_add(mrcp_message,RECOGNIZER_HEADER_DTMF_TERM_TIMEOUT);
+			recog_header->dtmf_interdigit_timeout = 3000;
+			mrcp_resource_header_property_add(mrcp_message,RECOGNIZER_HEADER_DTMF_INTERDIGIT_TIMEOUT);
+			recog_header->confidence_threshold = 0.5f;
+			mrcp_resource_header_property_add(mrcp_message,RECOGNIZER_HEADER_CONFIDENCE_THRESHOLD);
 			recog_header->start_input_timers = TRUE;
 			mrcp_resource_header_property_add(mrcp_message,RECOGNIZER_HEADER_START_INPUT_TIMERS);
-			recog_header->confidence_threshold = 0.87f;
-			mrcp_resource_header_property_add(mrcp_message,RECOGNIZER_HEADER_CONFIDENCE_THRESHOLD);
 		}
 	}
 	return mrcp_message;

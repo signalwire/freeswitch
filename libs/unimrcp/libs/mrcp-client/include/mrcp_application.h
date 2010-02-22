@@ -67,7 +67,6 @@ typedef enum {
 
 /** Enumeration of MRCP signaling events */
 typedef enum {
-	MRCP_SIG_EVENT_READY,
 	MRCP_SIG_EVENT_TERMINATE
 } mrcp_sig_event_e;
 
@@ -125,9 +124,6 @@ struct mrcp_app_message_dispatcher_t {
 
 	/** Response (event) to mrcp_application_message_send() request */
 	apt_bool_t (*on_message_receive)(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel, mrcp_message_t *message);
-
-	/** Event indicating client stack is started and ready to process requests from the application */
-	apt_bool_t (*on_ready)(mrcp_application_t *application, mrcp_sig_status_code_e status);
 
 	/** Event indicating unexpected session/channel termination */
 	apt_bool_t (*on_terminate_event)(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel);

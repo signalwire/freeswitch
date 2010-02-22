@@ -164,26 +164,6 @@ bool RecorderSession::OnChannelAdd(mrcp_channel_t* pMrcpChannel, mrcp_sig_status
 	return StartRecorder(pMrcpChannel);
 }
 
-bool RecorderSession::OnChannelRemove(mrcp_channel_t* pMrcpChannel, mrcp_sig_status_code_e status)
-{
-	if(!UmcSession::OnChannelRemove(pMrcpChannel,status))
-		return false;
-
-	RecorderChannel* pRecorderChannel = (RecorderChannel*) mrcp_application_channel_object_get(pMrcpChannel);
-	if(pRecorderChannel)
-	{
-		FILE* pAudioIn = pRecorderChannel->m_pAudioIn;
-		if(pAudioIn)
-		{
-			pRecorderChannel->m_pAudioIn = NULL;
-			fclose(pAudioIn);
-		}
-	}
-	
-	/* terminate the demo */
-	return Terminate();
-}
-
 bool RecorderSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t* pMrcpMessage)
 {
 	if(!UmcSession::OnMessageReceive(pMrcpChannel,pMrcpMessage))
@@ -206,8 +186,8 @@ bool RecorderSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_messag
 			}
 			else 
 			{
-				/* received unexpected response, remove channel */
-				RemoveMrcpChannel(pMrcpChannel);
+				/* received unexpected response, terminate the session */
+				Terminate();
 			}
 		}
 		else 
@@ -223,7 +203,7 @@ bool RecorderSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_messag
 			{
 				pRecorderChannel->m_Streaming = false;
 			}
-			RemoveMrcpChannel(pMrcpChannel);
+			Terminate();
 		}
 		else if(pMrcpMessage->start_line.method_id == RECORDER_START_OF_INPUT) 
 		{

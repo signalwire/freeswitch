@@ -40,7 +40,7 @@ typedef enum {
 	MPF_MARKER_NONE,           /**< none */
 	MPF_MARKER_START_OF_EVENT, /**< start of event */
 	MPF_MARKER_END_OF_EVENT,   /**< end of event */
-	MPF_MARKER_NEW_SEGMENT,    /**< start of new segment (long-lasting events) */
+	MPF_MARKER_NEW_SEGMENT     /**< start of new segment (long-lasting events) */
 } mpf_frame_marker_e;
 
 /** Media frame declaration */

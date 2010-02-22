@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <apr_thread_cond.h>
 #include <apr_hash.h>
 #include "mrcp_client.h"
 #include "mrcp_resource_factory.h"
@@ -59,6 +60,14 @@ struct mrcp_client_t {
 
 	/** Connection task message pool */
 	apt_task_msg_pool_t     *cnt_msg_pool;
+	
+	/** Event handler used in case of async start  */
+	mrcp_client_handler_f    on_start_complete;
+	/** Wait object used in case of synch start  */
+	apr_thread_cond_t       *sync_start_object;
+	/** Mutex to protect sync start routine */
+	apr_thread_mutex_t      *sync_start_mutex;
+	
 	/** Dir layout structure */
 	apt_dir_layout_t        *dir_layout;
 	/** Memory pool */
@@ -197,22 +206,58 @@ MRCP_DECLARE(mrcp_client_t*) mrcp_client_create(apt_dir_layout_t *dir_layout)
 	client->app_table = apr_hash_make(client->pool);
 	
 	client->session_table = apr_hash_make(client->pool);
+
+	client->on_start_complete = NULL;
+	client->sync_start_object = NULL;
+	client->sync_start_mutex = NULL;
 	return client;
+}
+
+/** Set asynchronous start mode */
+MRCP_DECLARE(void) mrcp_client_async_start_set(mrcp_client_t *client, mrcp_client_handler_f handler)
+{
+	if(client) {
+		client->on_start_complete = handler;
+	}
 }
 
 /** Start message processing loop */
 MRCP_DECLARE(apt_bool_t) mrcp_client_start(mrcp_client_t *client)
 {
+	apt_bool_t sync_start = TRUE;
 	apt_task_t *task;
 	if(!client || !client->task) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Invalid Client");
 		return FALSE;
 	}
 	task = apt_consumer_task_base_get(client->task);
+
+	if(client->on_start_complete) {
+		sync_start = FALSE;
+	}
+
+	if(sync_start == TRUE) {
+		/* get prepared to start stack synchronously */
+		apr_thread_mutex_create(&client->sync_start_mutex,APR_THREAD_MUTEX_DEFAULT,client->pool);
+		apr_thread_cond_create(&client->sync_start_object,client->pool);
+		
+		apr_thread_mutex_lock(client->sync_start_mutex);
+	}
+
 	if(apt_task_start(task) == FALSE) {
+		if(sync_start == TRUE) {
+			apr_thread_mutex_unlock(client->sync_start_mutex);
+		}
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Start Client Task");
 		return FALSE;
 	}
+	
+	if(sync_start == TRUE) {
+		/* wait for start complete */
+		apr_thread_cond_wait(client->sync_start_object,client->sync_start_mutex);
+		apr_thread_mutex_unlock(client->sync_start_mutex);
+	}
+
 	return TRUE;
 }
 
@@ -230,6 +275,16 @@ MRCP_DECLARE(apt_bool_t) mrcp_client_shutdown(mrcp_client_t *client)
 		return FALSE;
 	}
 	client->session_table = NULL;
+
+	if(client->sync_start_object) {
+		apr_thread_cond_destroy(client->sync_start_object);
+		client->sync_start_object = NULL;
+	}
+	if(client->sync_start_mutex) {
+		apr_thread_mutex_destroy(client->sync_start_mutex);
+		client->sync_start_mutex = NULL;
+	}
+
 	return TRUE;
 }
 
@@ -860,22 +915,17 @@ static void mrcp_client_on_start_complete(apt_task_t *task)
 {
 	apt_consumer_task_t *consumer_task = apt_task_object_get(task);
 	mrcp_client_t *client = apt_consumer_task_object_get(consumer_task);
-	void *val;
-	mrcp_application_t *application;
-	mrcp_app_message_t *app_message;
-	apr_hash_index_t *it;
+	
 	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,CLIENT_TASK_NAME" Started");
-	it = apr_hash_first(client->pool,client->app_table);
-	for(; it; it = apr_hash_next(it)) {
-		apr_hash_this(it,NULL,NULL,&val);
-		application = val;
-		if(!application) continue;
-
-		/* raise one-time application-ready event */
-		app_message = mrcp_client_app_signaling_event_create(MRCP_SIG_EVENT_READY,client->pool);
-		app_message->sig_message.status = MRCP_SIG_STATUS_CODE_SUCCESS;
-		app_message->application = application;
-		application->handler(app_message);
+	if(client->on_start_complete) {
+		/* async start */
+		client->on_start_complete(TRUE);
+	}
+	else {
+		/* sync start */
+		apr_thread_mutex_lock(client->sync_start_mutex);
+		apr_thread_cond_signal(client->sync_start_object);
+		apr_thread_mutex_unlock(client->sync_start_mutex);
 	}
 }
 

@@ -115,9 +115,7 @@ static void mpf_mixer_trace(mpf_object_t *object)
 		source = mixer->source_arr[i];
 		if(source) {
 			mpf_audio_stream_trace(source,STREAM_DIRECTION_RECEIVE,&output);
-			if(apt_text_is_eos(&output) == FALSE) {
-				*output.pos++ = ';';
-			}
+			apt_text_char_insert(&output,';');
 		}
 	}
 

@@ -177,6 +177,7 @@ static apt_bool_t mpf_rtp_stream_local_media_create(mpf_rtp_stream_t *rtp_stream
 			}
 		} while((is_port_ok == FALSE) && (first_port_in_search != rtp_stream->config->rtp_port_cur));
 		if(is_port_ok == FALSE) {
+			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Find Free RTP Port");
 			local_media->state = MPF_MEDIA_DISABLED;
 			status = FALSE;
 		}
@@ -455,7 +456,7 @@ static apt_bool_t mpf_rtp_rx_stream_open(mpf_audio_stream_t *stream, mpf_codec_t
 						codec,
 						rtp_stream->pool);
 
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Open RTP Receiver %s:%hu <- %s:%hu playout [%d ms]",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Open RTP Receiver %s:%hu <- %s:%hu playout [%"APR_SIZE_T_FMT" ms]",
 			rtp_stream->rtp_l_sockaddr->hostname,
 			rtp_stream->rtp_l_sockaddr->port,
 			rtp_stream->rtp_r_sockaddr->hostname,
@@ -909,7 +910,7 @@ static APR_INLINE apt_bool_t mpf_rtp_data_send(mpf_rtp_stream_t *rtp_stream, rtp
 					transmitter->packet_data,
 					&transmitter->packet_size) == APR_SUCCESS) {
 			transmitter->sr_stat.sent_packets++;
-			transmitter->sr_stat.sent_octets += transmitter->packet_size - sizeof(rtp_header_t);
+			transmitter->sr_stat.sent_octets += (apr_uint32_t)transmitter->packet_size - sizeof(rtp_header_t);
 		}
 		else {
 			status = FALSE;
@@ -1033,11 +1034,11 @@ static apr_socket_t* mpf_socket_create(apr_sockaddr_t **l_sockaddr, const char *
 		0,
 		pool);
 	if(!*l_sockaddr) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Sockaddr %s:%hu",ip,port);
+		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Failed to Get Sockaddr %s:%hu",ip,port);
 		return NULL;
 	}
 	if(apr_socket_create(&socket,(*l_sockaddr)->family,SOCK_DGRAM,0,pool) != APR_SUCCESS) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create Socket %s:%hu", ip,port);
+		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Failed to Create Socket %s:%hu", ip,port);
 		return NULL;
 	}
 	
@@ -1046,7 +1047,7 @@ static apr_socket_t* mpf_socket_create(apr_sockaddr_t **l_sockaddr, const char *
 	apr_socket_opt_set(socket,APR_SO_REUSEADDR,1);
 
 	if(apr_socket_bind(socket,*l_sockaddr) != APR_SUCCESS) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Bind Socket to %s:%hu", ip,port);
+		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Failed to Bind Socket to %s:%hu", ip,port);
 		apr_socket_close(socket);
 		return NULL;
 	}
@@ -1057,13 +1058,13 @@ static apt_bool_t mpf_rtp_socket_pair_create(mpf_rtp_stream_t *stream, mpf_rtp_m
 {
 	stream->rtp_socket = mpf_socket_create(&stream->rtp_l_sockaddr,local_media->ip.buf,local_media->port,stream->pool);
 	if(!stream->rtp_socket) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create RTP Socket");
+		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Failed to Create RTP Socket");
 		return FALSE;
 	}
 
 	stream->rtcp_socket = mpf_socket_create(&stream->rtcp_l_sockaddr,local_media->ip.buf,local_media->port+1,stream->pool);
 	if(!stream->rtcp_socket) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create RTCP Socket");
+		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Failed to Create RTCP Socket");
 	}
 	return TRUE;
 }
@@ -1226,7 +1227,7 @@ static apt_bool_t mpf_rtcp_report_send(mpf_rtp_stream_t *rtp_stream)
 	rtcp_packet = (rtcp_packet_t*) (buffer + length);
 	length += rtcp_sdes_generate(rtp_stream,rtcp_packet,sizeof(buffer)-length);
 	
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Send Compound RTCP Packet [%d bytes] %s:%hu -> %s:%hu",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Send Compound RTCP Packet [%"APR_SIZE_T_FMT" bytes] %s:%hu -> %s:%hu",
 		length,
 		rtp_stream->rtcp_l_sockaddr->hostname,
 		rtp_stream->rtcp_l_sockaddr->port,
@@ -1238,7 +1239,7 @@ static apt_bool_t mpf_rtcp_report_send(mpf_rtp_stream_t *rtp_stream)
 				0,
 				buffer,
 				&length) != APR_SUCCESS) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Send Compound RTCP Packet [%d bytes] %s:%hu -> %s:%hu",
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Send Compound RTCP Packet [%"APR_SIZE_T_FMT" bytes] %s:%hu -> %s:%hu",
 			length,
 			rtp_stream->rtcp_l_sockaddr->hostname,
 			rtp_stream->rtcp_l_sockaddr->port,
@@ -1275,7 +1276,7 @@ static apt_bool_t mpf_rtcp_bye_send(mpf_rtp_stream_t *rtp_stream, apt_str_t *rea
 	rtcp_packet = (rtcp_packet_t*) (buffer + length);
 	length += rtcp_bye_generate(rtp_stream,rtcp_packet,sizeof(buffer)-length,reason);
 
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Send Compound RTCP Packet [BYE] [%d bytes] %s:%hu -> %s:%hu",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Send Compound RTCP Packet [BYE] [%"APR_SIZE_T_FMT" bytes] %s:%hu -> %s:%hu",
 		length,
 		rtp_stream->rtcp_l_sockaddr->hostname,
 		rtp_stream->rtcp_l_sockaddr->port,
@@ -1287,7 +1288,7 @@ static apt_bool_t mpf_rtcp_bye_send(mpf_rtp_stream_t *rtp_stream, apt_str_t *rea
 				0,
 				buffer,
 				&length) != APR_SUCCESS) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Send Compound RTCP Packet [BYE] [%d bytes] %s:%hu -> %s:%hu",
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Send Compound RTCP Packet [BYE] [%"APR_SIZE_T_FMT" bytes] %s:%hu -> %s:%hu",
 			length,
 			rtp_stream->rtcp_l_sockaddr->hostname,
 			rtp_stream->rtcp_l_sockaddr->port,
@@ -1384,7 +1385,7 @@ static void mpf_rtcp_rx_timer_proc(mpf_timer_t *timer, void *obj)
 		apr_size_t length = sizeof(buffer);
 		
 		if(apr_socket_recv(rtp_stream->rtcp_socket,buffer,&length) == APR_SUCCESS) {
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Receive Compound RTCP Packet [%d bytes] %s:%hu <- %s:%hu",
+			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Receive Compound RTCP Packet [%"APR_SIZE_T_FMT" bytes] %s:%hu <- %s:%hu",
 					length,
 					rtp_stream->rtcp_l_sockaddr->hostname,
 					rtp_stream->rtcp_l_sockaddr->port,

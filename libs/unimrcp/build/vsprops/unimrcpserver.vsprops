@@ -9,10 +9,6 @@
 		Name="VCCLCompilerTool"
 		AdditionalIncludeDirectories="&quot;$(ProjectRootDir)platforms\libunimrcp-server\include&quot;;&quot;$(ProjectRootDir)build&quot;"
 	/>
-	<Tool
-		Name="VCLinkerTool"
-		AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
-	/>
 	<UserMacro
 		Name="UniMRCPServerLibs"
 		Value="libunimrcpserver.lib mrcpserver.lib mrcpsignaling.lib mrcpengine.lib mrcp.lib aprtoolkit.lib libaprutil-1.lib libapr-1.lib libsofia_sip_ua.lib ws2_32.lib winmm.lib"

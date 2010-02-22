@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="unilib-x64"
+	OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)\lib"
+	IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+	>
+	<Tool
+		Name="VCLinkerTool"
+		TargetMachine="17"
+	/>
+</VisualStudioPropertySheet>

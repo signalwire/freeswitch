@@ -328,8 +328,8 @@ MRCP_DECLARE(apt_bool_t) mrcp_start_line_parse(mrcp_start_line_t *start_line, ap
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot parse MRCP start-line");
 		return FALSE;
 	}
-	line.pos = line.text.buf;
-
+	
+	apt_text_stream_reset(&line);
 	if(apt_text_field_read(&line,APT_TOKEN_SP,TRUE,&field) == FALSE) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot read the first field in start-line");
 		return FALSE;

@@ -226,6 +226,7 @@ static void* APR_THREAD_FUNC timer_thread_proc(apr_thread_t *thread, void *data)
 #endif
 	}
 	
+	apr_thread_exit(thread,APR_SUCCESS);
 	return NULL;
 }
 

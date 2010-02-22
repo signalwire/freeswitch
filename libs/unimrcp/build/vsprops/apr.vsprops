@@ -9,10 +9,6 @@
 		Name="VCCLCompilerTool"
 		AdditionalIncludeDirectories="&quot;$(AprDir)\include&quot;;&quot;$(AprUtilDir)\include&quot;"
 	/>
-	<Tool
-		Name="VCLinkerTool"
-		AdditionalLibraryDirectories="&quot;$(AprDir)\$(ConfigurationName)&quot;;&quot;$(AprUtilDir)\$(ConfigurationName)&quot;"
-	/>
 	<UserMacro
 		Name="AprDir"
 		Value="$(LibRootDir)libs\apr"

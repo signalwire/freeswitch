@@ -114,21 +114,21 @@ struct mpf_dtmf_generator_t {
 	/** Higher frequency generator */
 	struct sine_state_t              sine2;
 	/** Sampling rate of audio in Hz; used in tone generator */
-	apr_size_t                       sample_rate_audio;
+	apr_uint32_t                     sample_rate_audio;
 	/** Sampling rate of telephone-events in Hz; used for timing */
-	apr_size_t                       sample_rate_events;
+	apr_uint32_t                     sample_rate_events;
 	/** How often to issue event packet */
-	apr_size_t                       events_ptime;
+	apr_uint32_t                     events_ptime;
 	/** Milliseconds elapsed since last event packet */
-	apr_size_t                       since_last_event;
+	apr_uint32_t                     since_last_event;
 };
 
 
 MPF_DECLARE(struct mpf_dtmf_generator_t *) mpf_dtmf_generator_create_ex(
 								const struct mpf_audio_stream_t *stream,
 								enum mpf_dtmf_generator_band_e band,
-								apr_size_t tone_ms,
-								apr_size_t silence_ms,
+								apr_uint32_t tone_ms,
+								apr_uint32_t silence_ms,
 								struct apr_pool_t *pool)
 {
 	struct mpf_dtmf_generator_t *gen;
@@ -170,8 +170,8 @@ MPF_DECLARE(apt_bool_t) mpf_dtmf_generator_enqueue(
 	qlen = strlen(generator->queue);
 	if (qlen + dlen > MPF_DTMFGEN_QUEUE_LEN) {
 		ret = FALSE;
-		apt_log(APT_LOG_MARK, APT_PRIO_WARNING, "DTMF queue too short (%d), "
-			"cannot add %d digit%s, already has %d", MPF_DTMFGEN_QUEUE_LEN,
+		apt_log(APT_LOG_MARK, APT_PRIO_WARNING, "DTMF queue too short (%"APR_SIZE_T_FMT"), "
+			"cannot add %d digit%s, already has %"APR_SIZE_T_FMT, MPF_DTMFGEN_QUEUE_LEN,
 			dlen, dlen > 1 ? "s" : "", qlen);
 	} else {
 		strcpy(generator->queue + qlen, digits);

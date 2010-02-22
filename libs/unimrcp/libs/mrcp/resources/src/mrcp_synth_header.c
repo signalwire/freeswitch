@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
 #include "mrcp_synth_header.h"
 
 /** String table of MRCP synthesizer headers (mrcp_synthesizer_header_id) */
@@ -214,7 +213,7 @@ static apt_bool_t mrcp_speech_length_value_parse(mrcp_speech_length_value_t *spe
 		apt_str_t str;
 		apt_text_stream_t stream;
 		stream.text = *value;
-		stream.pos = stream.text.buf;
+		apt_text_stream_reset(&stream);
 		stream.pos++;
 		if(apt_text_field_read(&stream,APT_TOKEN_SP,TRUE,&str) == FALSE) {
 			return FALSE;
@@ -250,25 +249,6 @@ static apt_bool_t mrcp_speech_length_generate(mrcp_speech_length_value_t *speech
 		*stream->pos++ = ' ';
 		apt_string_table_value_generate(speech_unit_string_table,SPEECH_UNIT_COUNT,speech_length->value.numeric.unit,stream);
 	}
-	return TRUE;
-}
-
-/** Generate MRCP synthesizer completion-cause */
-static apt_bool_t mrcp_completion_cause_generate(mrcp_synth_completion_cause_e completion_cause, apt_text_stream_t *stream)
-{
-	int length;
-	const apt_str_t *name = apt_string_table_str_get(completion_cause_string_table,SYNTHESIZER_COMPLETION_CAUSE_COUNT,completion_cause);
-	if(!name) {
-		return FALSE;
-	}
-	length = sprintf(stream->pos,"%03"APR_SIZE_T_FMT" ",completion_cause);
-	if(length <= 0) {
-		return FALSE;
-	}
-	stream->pos += length;
-
-	memcpy(stream->pos,name->buf,name->length);
-	stream->pos += name->length;
 	return TRUE;
 }
 
@@ -398,7 +378,11 @@ static apt_bool_t mrcp_synth_header_generate(mrcp_header_accessor_t *accessor, s
 			apt_string_value_generate(&synth_header->speaker_profile,value);
 			break;
 		case SYNTHESIZER_HEADER_COMPLETION_CAUSE:
-			mrcp_completion_cause_generate(synth_header->completion_cause,value);
+			mrcp_completion_cause_generate(
+				completion_cause_string_table,
+				SYNTHESIZER_COMPLETION_CAUSE_COUNT,
+				synth_header->completion_cause,
+				value);
 			break;
 		case SYNTHESIZER_HEADER_COMPLETION_REASON:
 			apt_string_value_generate(&synth_header->completion_reason,value);

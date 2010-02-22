@@ -43,7 +43,7 @@ static apt_bool_t mrcp_request_id_list_parse(mrcp_request_id_list_t *request_id_
 	apt_str_t field;
 	apt_text_stream_t stream;
 	stream.text = *value;
-	stream.pos = stream.text.buf;
+	apt_text_stream_reset(&stream);
 	request_id_list->count = 0;
 	while(request_id_list->count < MAX_ACTIVE_REQUEST_ID_COUNT) {
 		if(apt_text_field_read(&stream,',',TRUE,&field) == FALSE) {

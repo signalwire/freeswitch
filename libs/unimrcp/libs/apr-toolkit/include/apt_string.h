@@ -26,6 +26,9 @@
 
 APT_BEGIN_EXTERN_C
 
+/** Empty string */
+#define APT_EMPTY_STRING ""
+
 /** String declaration */
 typedef struct apt_str_t apt_str_t;
 
@@ -42,6 +45,27 @@ static APR_INLINE void apt_string_reset(apt_str_t *str)
 {
 	str->buf = NULL;
 	str->length = 0;
+}
+
+/** Get string buffer. */
+static APR_INLINE const char* apt_string_buffer_get(const apt_str_t *str)
+{
+	if(str->buf) {
+		return str->buf;
+	}
+	return APT_EMPTY_STRING;
+}
+
+/** Get string length. */
+static APR_INLINE apr_size_t apt_string_length_get(const apt_str_t *str)
+{
+	return str->length;
+}
+
+/** Check whether string is empty. */
+static APR_INLINE apr_size_t apt_string_is_empty(const apt_str_t *str)
+{
+	return str->length ? TRUE : FALSE;
 }
 
 /**

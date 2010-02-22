@@ -42,16 +42,21 @@ typedef struct apt_text_stream_t apt_text_stream_t;
 /** Text stream is used for message parsing and generation */
 struct apt_text_stream_t {
 	/** Text stream */
-	apt_str_t text;
-	/** Current position in the buffer */
-	char     *pos;
+	apt_str_t   text;
+
+	/** Current position in the stream */
+	char       *pos;
+	/** End of stream pointer */
+	const char *end;
+	/** Is end of stream reached */
+	apt_bool_t  is_eos;
 };
 
 /**
  * Navigate through the lines of the text stream (message).
  * @param stream the text stream to navigate
  * @param line the read line to return
- * @return TRUE if the length of the line > 0, otherwise FALSE
+ * @return TRUE if the line is successfully read, otherwise FALSE
  */
 APT_DECLARE(apt_bool_t) apt_text_line_read(apt_text_stream_t *stream, apt_str_t *line);
 
@@ -59,7 +64,7 @@ APT_DECLARE(apt_bool_t) apt_text_line_read(apt_text_stream_t *stream, apt_str_t 
  * Navigate through the headers (name:value pairs) of the text stream (message).
  * @param stream the text stream to navigate
  * @param pair the read pair to return
- * @return TRUE if the length of the read name > 0, otherwise FALSE
+ * @return TRUE if the header is successfully read, otherwise FALSE
  */
 APT_DECLARE(apt_bool_t) apt_text_header_read(apt_text_stream_t *stream, apt_pair_t *pair);
 
@@ -115,12 +120,20 @@ static APR_INLINE apt_bool_t apt_string_value_generate(const apt_str_t *str, apt
 	return TRUE;
 }
 
+/** Reset navigation related data of the text stream */
+static APR_INLINE void apt_text_stream_reset(apt_text_stream_t *stream)
+{
+	stream->pos = stream->text.buf;
+	stream->end = stream->text.buf + stream->text.length;
+	stream->is_eos = FALSE;
+}
+
 /** Initialize text stream */
 static APR_INLINE void apt_text_stream_init(apt_text_stream_t *stream, char *buffer, apr_size_t size)
 {
 	stream->text.buf = buffer;
 	stream->text.length = size;
-	stream->pos = stream->text.buf;
+	apt_text_stream_reset(stream);
 }
 
 /** Insert end of the line symbol(s) */
@@ -159,8 +172,7 @@ static APR_INLINE void apt_text_char_skip(apt_text_stream_t *stream, char ch)
 /** Check whether end of stream is reached */
 static APR_INLINE apt_bool_t apt_text_is_eos(const apt_text_stream_t *stream)
 {
-	const char *end = stream->text.buf + stream->text.length;
-	return (stream->pos >= end) ? TRUE : FALSE;
+	return (stream->pos >= stream->end || stream->is_eos == TRUE) ? TRUE : FALSE;
 }
 
 /** Scroll text stream */

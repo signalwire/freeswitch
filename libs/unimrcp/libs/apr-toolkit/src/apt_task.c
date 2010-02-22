@@ -363,9 +363,17 @@ APT_DECLARE(apt_bool_t) apt_task_child_terminate(apt_task_t *task)
 	while(elem) {
 		child_task = apt_list_elem_object_get(elem);
 		if(child_task) {
+#ifdef ENABLE_SIMULT_TASK_TERMINATION
+			if(child_task->thread_handle) {
+				apr_thread_detach(child_task->thread_handle);
+				child_task->thread_handle = NULL;
+			}
 			if(apt_task_terminate(child_task,FALSE) == TRUE) {
 				task->pending_term++;
 			}
+#else
+			apt_task_terminate(child_task,TRUE);
+#endif
 		}
 		elem = apt_list_next_elem_get(task->child_tasks,elem);
 	}
@@ -375,6 +383,7 @@ APT_DECLARE(apt_bool_t) apt_task_child_terminate(apt_task_t *task)
 		if(task->vtable.on_terminate_complete) {
 			task->vtable.on_terminate_complete(task);
 		}
+#ifdef ENABLE_SIMULT_TASK_TERMINATION
 		if(task->parent_task) {
 			if(task->msg_pool) {
 				apt_task_msg_t *msg = apt_task_msg_acquire(task->msg_pool);
@@ -384,6 +393,7 @@ APT_DECLARE(apt_bool_t) apt_task_child_terminate(apt_task_t *task)
 				apt_task_msg_signal(task->parent_task,msg);
 			}
 		}
+#endif
 	}
 	return TRUE;
 }
@@ -434,5 +444,7 @@ static void* APR_THREAD_FUNC apt_task_run(apr_thread_t *thread_handle, void *dat
 	if(task->vtable.on_post_run) {
 		task->vtable.on_post_run(task);
 	}
+
+	apr_thread_exit(thread_handle,APR_SUCCESS);
 	return NULL;
 }

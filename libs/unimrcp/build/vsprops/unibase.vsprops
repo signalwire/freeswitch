@@ -3,8 +3,6 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="unibase"
-	OutputDirectory="$(SolutionDir)$(ConfigurationName)\bin"
-	IntermediateDirectory="$(ConfigurationName)"
 	>
 	<Tool
 		Name="VCCLCompilerTool"
@@ -12,10 +10,6 @@
 		WarningLevel="4"
 		WarnAsError="true"
 		DisableSpecificWarnings="4100"
-	/>
-	<Tool
-		Name="VCLinkerTool"
-		AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
 	/>
 	<UserMacro
 		Name="ProjectRootDir"

@@ -27,25 +27,25 @@ static apt_bool_t test_stream_generate(mrcp_generator_t *generator, mrcp_message
 {
 	char buffer[500];
 	apt_text_stream_t stream;
-	mrcp_stream_result_e result;
+	mrcp_stream_status_e status;
 	apt_bool_t continuation;
 
 	mrcp_generator_message_set(generator,message);
 	do {
 		apt_text_stream_init(&stream,buffer,sizeof(buffer)-1);
 		continuation = FALSE;
-		result = mrcp_generator_run(generator,&stream);
-		if(result == MRCP_STREAM_MESSAGE_COMPLETE) {
+		status = mrcp_generator_run(generator,&stream);
+		if(status == MRCP_STREAM_STATUS_COMPLETE) {
 			stream.text.length = stream.pos - stream.text.buf;
 			*stream.pos = '\0';
 			apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Generated MRCP Stream [%lu bytes]\n%s",stream.text.length,stream.text.buf);
 		}
-		else if(result == MRCP_STREAM_MESSAGE_TRUNCATED) {
+		else if(status == MRCP_STREAM_STATUS_INCOMPLETE) {
 			*stream.pos = '\0';
-			apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Generated MRCP Stream [%lu bytes] continuation awaiting\n%s",stream.text.length,stream.text.buf);
+			apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Generated MRCP Stream [%lu bytes] continuation awaited\n%s",stream.text.length,stream.text.buf);
 			continuation = TRUE;
 		}
-		else {
+		else if(status == MRCP_STREAM_STATUS_INVALID) {
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Generate MRCP Stream");
 		}
 	}
@@ -53,9 +53,9 @@ static apt_bool_t test_stream_generate(mrcp_generator_t *generator, mrcp_message
 	return TRUE;
 }
 
-static apt_bool_t mrcp_message_handler(void *obj, mrcp_message_t *message, mrcp_stream_result_e result)
+static apt_bool_t mrcp_message_handler(void *obj, mrcp_message_t *message, mrcp_stream_status_e status)
 {
-	if(result == MRCP_STREAM_MESSAGE_COMPLETE) {
+	if(status == MRCP_STREAM_STATUS_COMPLETE) {
 		/* message is completely parsed */
 		mrcp_generator_t *generator = obj;
 		test_stream_generate(generator,message);
@@ -130,7 +130,7 @@ static apt_bool_t test_file_process(apt_test_suite_t *suite, mrcp_resource_facto
 		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Parse MRCP Stream [%lu bytes]\n%s",length,stream.pos);
 		
 		/* reset pos */
-		stream.pos = stream.text.buf;
+		apt_text_stream_reset(&stream);
 		mrcp_stream_walk(parser,&stream,mrcp_message_handler,generator);
 	}
 	while(apr_file_eof(file) != APR_EOF);

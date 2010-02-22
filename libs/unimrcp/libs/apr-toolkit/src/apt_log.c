@@ -227,33 +227,34 @@ APT_DECLARE(apt_bool_t) apt_log(const char *file, int line, apt_log_priority_e p
 static apt_bool_t apt_do_log(const char *file, int line, apt_log_priority_e priority, const char *format, va_list arg_ptr)
 {
 	char log_entry[MAX_LOG_ENTRY_SIZE];
+	apr_size_t max_size = MAX_LOG_ENTRY_SIZE - 2;
 	apr_size_t offset = 0;
 	apr_time_exp_t result;
 	apr_time_t now = apr_time_now();
 	apr_time_exp_lt(&result,now);
 
 	if(apt_logger->header & APT_LOG_HEADER_DATE) {
-		offset += apr_snprintf(log_entry+offset,MAX_LOG_ENTRY_SIZE-offset,"%4d-%02d-%02d ",
+		offset += apr_snprintf(log_entry+offset,max_size-offset,"%4d-%02d-%02d ",
 							result.tm_year+1900,
 							result.tm_mon+1,
 							result.tm_mday);
 	}
 	if(apt_logger->header & APT_LOG_HEADER_TIME) {
-		offset += apr_snprintf(log_entry+offset,MAX_LOG_ENTRY_SIZE-offset,"%02d:%02d:%02d:%06d ",
+		offset += apr_snprintf(log_entry+offset,max_size-offset,"%02d:%02d:%02d:%06d ",
 							result.tm_hour,
 							result.tm_min,
 							result.tm_sec,
 							result.tm_usec);
 	}
 	if(apt_logger->header & APT_LOG_HEADER_MARK) {
-		offset += apr_snprintf(log_entry+offset,MAX_LOG_ENTRY_SIZE-offset,"%s:%03d ",file,line);
+		offset += apr_snprintf(log_entry+offset,max_size-offset,"%s:%03d ",file,line);
 	}
 	if(apt_logger->header & APT_LOG_HEADER_PRIORITY) {
 		memcpy(log_entry+offset,priority_snames[priority],MAX_PRIORITY_NAME_LENGTH);
 		offset += MAX_PRIORITY_NAME_LENGTH;
 	}
 
-	offset += apr_vsnprintf(log_entry+offset,MAX_LOG_ENTRY_SIZE-offset,format,arg_ptr);
+	offset += apr_vsnprintf(log_entry+offset,max_size-offset,format,arg_ptr);
 	log_entry[offset++] = '\n';
 	log_entry[offset] = '\0';
 	if((apt_logger->mode & APT_LOG_OUTPUT_CONSOLE) == APT_LOG_OUTPUT_CONSOLE) {
@@ -269,7 +270,7 @@ static apt_bool_t apt_do_log(const char *file, int line, apt_log_priority_e prio
 static const char* apt_log_file_path_make(apt_log_file_data_t *file_data)
 {
 	char *log_file_path = NULL;
-	const char *log_file_name = apr_psprintf(file_data->pool,"%s-%d.log",file_data->log_file_name,file_data->cur_file_index);
+	const char *log_file_name = apr_psprintf(file_data->pool,"%s-%"APR_SIZE_T_FMT".log",file_data->log_file_name,file_data->cur_file_index);
 	apr_filepath_merge(&log_file_path,file_data->log_dir_path,log_file_name,0,file_data->pool);
 	return log_file_path;
 }

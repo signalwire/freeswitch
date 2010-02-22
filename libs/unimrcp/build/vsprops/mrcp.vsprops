@@ -10,8 +10,4 @@
 		AdditionalIncludeDirectories="&quot;$(ProjectRootDir)libs\mrcp\include&quot;;&quot;$(ProjectRootDir)libs\mrcp\message\include&quot;;&quot;$(ProjectRootDir)libs\mrcp\control\include&quot;;&quot;$(ProjectRootDir)libs\mrcp\resources\include&quot;"
 		PreprocessorDefinitions="MRCP_STATIC_LIB"
 	/>
-	<Tool
-		Name="VCLinkerTool"
-		AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
-	/>
 </VisualStudioPropertySheet>

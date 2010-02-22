@@ -9,8 +9,4 @@
 		Name="VCCLCompilerTool"
 		AdditionalIncludeDirectories="&quot;$(ProjectRootDir)libs\mrcp-engine\include&quot;"
 	/>
-	<Tool
-		Name="VCLinkerTool"
-		AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
-	/>
 </VisualStudioPropertySheet>

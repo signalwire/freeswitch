@@ -191,26 +191,6 @@ bool RecogSession::OnChannelAdd(mrcp_channel_t* pMrcpChannel, mrcp_sig_status_co
 	return StartRecognition(pMrcpChannel);
 }
 
-bool RecogSession::OnChannelRemove(mrcp_channel_t* pMrcpChannel, mrcp_sig_status_code_e status)
-{
-	if(!UmcSession::OnChannelRemove(pMrcpChannel,status))
-		return false;
-
-	RecogChannel* pRecogChannel = (RecogChannel*) mrcp_application_channel_object_get(pMrcpChannel);
-	if(pRecogChannel)
-	{
-		FILE* pAudioIn = pRecogChannel->m_pAudioIn;
-		if(pAudioIn)
-		{
-			pRecogChannel->m_pAudioIn = NULL;
-			fclose(pAudioIn);
-		}
-	}
-	
-	/* terminate the demo */
-	return Terminate();
-}
-
 bool RecogSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t* pMrcpMessage)
 {
 	if(!UmcSession::OnMessageReceive(pMrcpChannel,pMrcpMessage))
@@ -229,8 +209,8 @@ bool RecogSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t
 			}
 			else 
 			{
-				/* received unexpected response, remove channel */
-				RemoveMrcpChannel(pMrcpChannel);
+				/* received unexpected response, terminate the session */
+				Terminate();
 			}
 		}
 		else if(pMrcpMessage->start_line.method_id == RECOGNIZER_RECOGNIZE)
@@ -246,8 +226,8 @@ bool RecogSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t
 			}
 			else 
 			{
-				/* received unexpected response, remove channel */
-				RemoveMrcpChannel(pMrcpChannel);
+				/* received unexpected response, terminate the session */
+				Terminate();
 			}
 		}
 		else 
@@ -264,7 +244,7 @@ bool RecogSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t
 			{
 				pRecogChannel->m_Streaming = false;
 			}
-			RemoveMrcpChannel(pMrcpChannel);
+			Terminate();
 		}
 		else if(pMrcpMessage->start_line.method_id == RECOGNIZER_START_OF_INPUT) 
 		{

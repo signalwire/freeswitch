@@ -329,11 +329,13 @@ static apt_bool_t demo_synth_channel_set_params(mrcp_engine_channel_t *channel, 
 	if(req_synth_header) {
 		/* check voice age header */
 		if(mrcp_resource_header_property_check(request,SYNTHESIZER_HEADER_VOICE_AGE) == TRUE) {
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Set Voice Age [%d]",req_synth_header->voice_param.age);
+			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Set Voice Age [%"APR_SIZE_T_FMT"]",
+				req_synth_header->voice_param.age);
 		}
 		/* check voice name header */
 		if(mrcp_resource_header_property_check(request,SYNTHESIZER_HEADER_VOICE_NAME) == TRUE) {
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Set Voice Name [%s]",req_synth_header->voice_param.name);
+			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Set Voice Name [%s]",
+				req_synth_header->voice_param.name);
 		}
 	}
 	

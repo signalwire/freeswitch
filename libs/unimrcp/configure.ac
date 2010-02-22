@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.57)
 
-AC_INIT([unimrcp],[0.8.0])
+AC_INIT([unimrcp],[0.9.0])
 
 AC_CONFIG_AUX_DIR([build])
 AC_CONFIG_MACRO_DIR([build/acmacros])
@@ -216,6 +216,8 @@ AC_CONFIG_FILES([
   build/pkgconfig/unimrcpclient.pc
   build/pkgconfig/unimrcpserver.pc
   build/pkgconfig/unimrcpplugin.pc
+  conf/Makefile
+  data/Makefile
 ])
 
 AC_OUTPUT

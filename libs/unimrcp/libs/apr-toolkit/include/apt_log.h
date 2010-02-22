@@ -77,7 +77,7 @@ typedef enum {
 typedef enum {
 	APT_LOG_OUTPUT_NONE     = 0x00, /**< disable logging */
 	APT_LOG_OUTPUT_CONSOLE  = 0x01, /**< enable console output */
-	APT_LOG_OUTPUT_FILE     = 0x02, /**< enable log file output */
+	APT_LOG_OUTPUT_FILE     = 0x02  /**< enable log file output */
 } apt_log_output_e;
 
 /** Opaque logger declaration */

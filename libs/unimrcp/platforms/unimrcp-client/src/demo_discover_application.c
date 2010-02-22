@@ -41,7 +41,6 @@ static const mrcp_app_message_dispatcher_t discover_application_dispatcher = {
 	NULL,
 	NULL,
 	NULL,
-	NULL,
 	discover_application_on_resource_discover
 };
 

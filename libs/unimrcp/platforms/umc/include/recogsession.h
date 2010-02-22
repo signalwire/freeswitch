@@ -51,7 +51,6 @@ protected:
 /* ============================ HANDLERS =================================== */
 	virtual bool OnSessionTerminate(mrcp_sig_status_code_e status);
 	virtual bool OnChannelAdd(mrcp_channel_t* channel, mrcp_sig_status_code_e status);
-	virtual bool OnChannelRemove(mrcp_channel_t* channel, mrcp_sig_status_code_e status);
 	virtual bool OnMessageReceive(mrcp_channel_t* channel, mrcp_message_t* message);
 
 /* ============================ ACCESSORS ================================== */

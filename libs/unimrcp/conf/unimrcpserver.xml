@@ -44,7 +44,7 @@
 
     <!-- Media engines -->
     <media>
-      <engine name="Media-Engine-1"/>
+      <engine name="Media-Engine-1" realtime-rate="1"/>
       <rtp name="RTP-Factory-1">
         <param name="rtp-ip" value="auto"/>
         <!-- <param name="rtp-ext-ip" value="auto"/> -->

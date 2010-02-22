@@ -80,7 +80,7 @@ APT_DECLARE(int) apt_pair_array_size_get(const apt_pair_arr_t *arr)
 APT_DECLARE(const apt_pair_t*) apt_pair_array_get(const apt_pair_arr_t *arr, int id)
 {
 	if(id < arr->nelts) {
-		return (apt_pair_t*)arr->elts + id;
+		return &APR_ARRAY_IDX(arr,id,apt_pair_t);
 	}
 	return NULL;
 }

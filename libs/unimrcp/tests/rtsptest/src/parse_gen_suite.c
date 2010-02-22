@@ -24,22 +24,22 @@ static apt_bool_t test_stream_generate(rtsp_generator_t *generator, rtsp_message
 {
 	char buffer[500];
 	apt_text_stream_t stream;
-	rtsp_stream_result_e result;
+	rtsp_stream_status_e status;
 	apt_bool_t continuation;
 
 	rtsp_generator_message_set(generator,message);
 	do {
 		apt_text_stream_init(&stream,buffer,sizeof(buffer)-1);
 		continuation = FALSE;
-		result = rtsp_generator_run(generator,&stream);
-		if(result == RTSP_STREAM_MESSAGE_COMPLETE) {
+		status = rtsp_generator_run(generator,&stream);
+		if(status == RTSP_STREAM_STATUS_COMPLETE) {
 			stream.text.length = stream.pos - stream.text.buf;
 			*stream.pos = '\0';
 			apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Generated RTSP Stream [%lu bytes]\n%s",stream.text.length,stream.text.buf);
 		}
-		else if(result == RTSP_STREAM_MESSAGE_TRUNCATED) {
+		else if(status == RTSP_STREAM_STATUS_INCOMPLETE) {
 			*stream.pos = '\0';
-			apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Generated RTSP Stream [%lu bytes] continuation awaiting\n%s",stream.text.length,stream.text.buf);
+			apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Generated RTSP Stream [%lu bytes] continuation awaited\n%s",stream.text.length,stream.text.buf);
 			continuation = TRUE;
 		}
 		else {
@@ -50,9 +50,9 @@ static apt_bool_t test_stream_generate(rtsp_generator_t *generator, rtsp_message
 	return TRUE;
 }
 
-static apt_bool_t rtsp_message_handler(void *obj, rtsp_message_t *message, rtsp_stream_result_e result)
+static apt_bool_t rtsp_message_handler(void *obj, rtsp_message_t *message, rtsp_stream_status_e status)
 {
-	if(result == RTSP_STREAM_MESSAGE_COMPLETE) {
+	if(status == RTSP_STREAM_STATUS_COMPLETE) {
 		/* message is completely parsed */
 		rtsp_generator_t *generator = obj;
 		test_stream_generate(generator,message);
@@ -98,7 +98,7 @@ static apt_bool_t test_file_process(apt_test_suite_t *suite, const char *file_pa
 		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Parse RTSP Stream [%lu bytes]\n%s",length,stream.pos);
 		
 		/* reset pos */
-		stream.pos = stream.text.buf;
+		apt_text_stream_reset(&stream);
 		rtsp_stream_walk(parser,&stream,rtsp_message_handler,generator);
 	}
 	while(apr_file_eof(file) != APR_EOF);

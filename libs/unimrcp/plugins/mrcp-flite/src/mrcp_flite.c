@@ -61,8 +61,6 @@ static apt_bool_t flite_synth_channel_speak(mrcp_engine_channel_t *channel, mrcp
 static apt_bool_t flite_synth_channel_stop(mrcp_engine_channel_t *channel, mrcp_message_t *request, mrcp_message_t *response);
 static apt_bool_t flite_synth_channel_pause(mrcp_engine_channel_t *channel, mrcp_message_t *request, mrcp_message_t *response);
 static apt_bool_t flite_synth_channel_resume(mrcp_engine_channel_t *channel, mrcp_message_t *request, mrcp_message_t *response);
-// static apt_bool_t flite_synth_channel_setparams(mrcp_engine_channel_t *channel, mrcp_message_t *request, mrcp_message_t *response);
-// static apt_bool_t flite_synth_channel_getparams(mrcp_engine_channel_t *channel, mrcp_message_t *request, mrcp_message_t *response);
 
 static const struct mrcp_engine_channel_method_vtable_t channel_vtable = {
 	flite_synth_channel_destroy,
@@ -609,9 +607,12 @@ static apt_bool_t flite_synth_stream_read(mpf_audio_stream_t *stream, mpf_frame_
 	if(synth_channel->speak_request && synth_channel->paused == FALSE) {
 		/* normal processing */
 		mpf_buffer_frame_read(synth_channel->audio_buffer,frame);
-//		apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "flite_synth_stream_read - channel %d - size %d", synth_channel->iId, mpf_buffer_get_size(synth_channel->audio_buffer));
+#if 0
+		apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "flite_synth_stream_read - channel %d - size %d", synth_channel->iId, mpf_buffer_get_size(synth_channel->audio_buffer));
+#endif
 
 		if((frame->type & MEDIA_FRAME_TYPE_EVENT) == MEDIA_FRAME_TYPE_EVENT) {
+			frame->type &= ~MEDIA_FRAME_TYPE_EVENT;
 			flite_synth_speak_complete_raise(synth_channel);
 		}
 	}

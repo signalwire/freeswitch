@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="unibin"
+	OutputDirectory="$(SolutionDir)$(ConfigurationName)\bin"
+	IntermediateDirectory="$(ConfigurationName)"
+	InheritedPropertySheets="apr.vsprops;sofiasip.vsprops"
+	>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalLibraryDirectories="$(AprDir)\$(ConfigurationName);$(AprUtilDir)\$(ConfigurationName);$(SofiaDir)\win32\libsofia-sip-ua\$(ConfigurationName);$(SolutionDir)$(ConfigurationName)\lib;$(SolutionDir)$(ConfigurationName)\bin"
+		TargetMachine="1"
+	/>
+</VisualStudioPropertySheet>

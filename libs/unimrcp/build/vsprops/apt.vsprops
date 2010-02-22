@@ -10,8 +10,4 @@
 		AdditionalIncludeDirectories="&quot;$(ProjectRootDir)libs\apr-toolkit\include&quot;"
 		PreprocessorDefinitions="APT_STATIC_LIB"
 	/>
-	<Tool
-		Name="VCLinkerTool"
-		AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
-	/>
 </VisualStudioPropertySheet>

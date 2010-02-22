@@ -11,6 +11,9 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -54,6 +57,54 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="10"
+			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\pocketsphinx.vsprops"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="xcopy &quot;$(PocketSphinxDir)\bin\$(PlatformName)\$(ConfigurationName)\pocketsphinx.dll&quot; &quot;$(SolutionDir)$(PlatformName)\$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;xcopy &quot;$(SphinxBaseDir)\lib\$(PlatformName)\$(ConfigurationName)\sphinxbase.dll&quot; &quot;$(SolutionDir)$(PlatformName)\$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;&#x0D;&#x0A;xcopy &quot;$(PocketSphinxDir)\model\hmm\wsj1\*&quot; &quot;$(SolutionDir)$(PlatformName)\$(ConfigurationName)\data\wsj1\&quot; /Y&#x0D;&#x0A;copy &quot;$(PocketSphinxDir)\model\lm\cmudict.0.6d&quot; &quot;$(SolutionDir)$(PlatformName)\$(ConfigurationName)\data\default.dic&quot;&#x0D;&#x0A;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(PlatformName)\$(ConfigurationName)\conf\pocketsphinx.xml&quot; xcopy &quot;$(SolutionDir)plugins\mrcp-pocketsphinx\conf\pocketsphinx.xml&quot; &quot;$(SolutionDir)$(PlatformName)\$(ConfigurationName)\conf\&quot; /Y&#x0D;&#x0A;"
+				ExcludedFromBuild="false"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="10"
+			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\pocketsphinx.vsprops"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="xcopy &quot;$(PocketSphinxDir)\bin\$(PlatformName)\$(ConfigurationName)\pocketsphinx.dll&quot; &quot;$(SolutionDir)$(PlatformName)\$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;xcopy &quot;$(SphinxBaseDir)\lib\$(PlatformName)\$(ConfigurationName)\sphinxbase.dll&quot; &quot;$(SolutionDir)$(PlatformName)\$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;&#x0D;&#x0A;xcopy &quot;$(PocketSphinxDir)\model\hmm\wsj1\*&quot; &quot;$(SolutionDir)$(PlatformName)\$(ConfigurationName)\data\wsj1\&quot; /Y&#x0D;&#x0A;copy &quot;$(PocketSphinxDir)\model\lm\cmudict.0.6d&quot; &quot;$(SolutionDir)$(PlatformName)\$(ConfigurationName)\data\default.dic&quot;&#x0D;&#x0A;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(PlatformName)\$(ConfigurationName)\conf\pocketsphinx.xml&quot; xcopy &quot;$(SolutionDir)plugins\mrcp-pocketsphinx\conf\pocketsphinx.xml&quot; &quot;$(SolutionDir)$(PlatformName)\$(ConfigurationName)\conf\&quot; /Y&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"

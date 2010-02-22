@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
 #include "mrcp_recorder_header.h"
 
 /** String table of recorder headers (mrcp_recorder_header_id) */
@@ -44,25 +43,6 @@ static const apt_str_table_item_t completion_cause_string_table[] = {
 	{{"uri-failure",      11},0},
 	{{"error",             5},0}
 };
-
-/** Generate MRCP recorder completion-cause */
-static apt_bool_t mrcp_completion_cause_generate(
-						mrcp_recorder_completion_cause_e completion_cause, 
-						const apt_str_t *name, 
-						apt_text_stream_t *stream)
-{
-	int length = sprintf(stream->pos,"%03"APR_SIZE_T_FMT" ",completion_cause);
-	if(length <= 0) {
-		return FALSE;
-	}
-	stream->pos += length;
-
-	if(name) {
-		memcpy(stream->pos,name->buf,name->length);
-		stream->pos += name->length;
-	}
-	return TRUE;
-}
 
 
 /** Initialize recorder header */
@@ -164,11 +144,11 @@ static apt_bool_t mrcp_recorder_header_generate(mrcp_header_accessor_t *accessor
 			break;
 		case RECORDER_HEADER_COMPLETION_CAUSE:
 		{
-			const apt_str_t *name = apt_string_table_str_get(
+			mrcp_completion_cause_generate(
 				completion_cause_string_table,
 				RECORDER_COMPLETION_CAUSE_COUNT,
-				recorder_header->completion_cause);
-			mrcp_completion_cause_generate(recorder_header->completion_cause,name,value);
+				recorder_header->completion_cause,
+				value);
 			break;
 		}
 		case RECORDER_HEADER_COMPLETION_REASON:

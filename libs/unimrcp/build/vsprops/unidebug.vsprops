@@ -13,12 +13,11 @@
 		BasicRuntimeChecks="3"
 		RuntimeLibrary="3"
 		UsePrecompiledHeader="0"
-		DebugInformationFormat="4"
+		DebugInformationFormat="3"
 	/>
 	<Tool
 		Name="VCLinkerTool"
 		LinkIncremental="2"
 		GenerateDebugInformation="true"
-		TargetMachine="1"
 	/>
 </VisualStudioPropertySheet>

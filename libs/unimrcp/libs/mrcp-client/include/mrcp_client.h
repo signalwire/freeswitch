@@ -27,11 +27,22 @@
 
 APT_BEGIN_EXTERN_C
 
+/** Event handler used in case of asynchronous start */
+typedef void (*mrcp_client_handler_f)(apt_bool_t status);
+
 /**
  * Create MRCP client instance.
  * @return the created client instance
  */
 MRCP_DECLARE(mrcp_client_t*) mrcp_client_create(apt_dir_layout_t *dir_layout);
+
+/**
+ * Set asynchronous start mode.
+ * @param client the MRCP client to set mode for
+ * @param handler the event handler to signal start completion
+ */
+MRCP_DECLARE(void) mrcp_client_async_start_set(mrcp_client_t *client, mrcp_client_handler_f handler);
+
 
 /**
  * Start message processing loop.

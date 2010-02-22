@@ -104,7 +104,7 @@ static apt_bool_t speak_request_test(mrcp_resource_factory_t *factory, mrcp_mess
 		if(mrcp_resource_header_property_check(message,SYNTHESIZER_HEADER_VOICE_AGE) == TRUE) {
 			if(synth_header->voice_param.age == SAMPLE_VOICE_AGE) {
 				/* OK */
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Get Voice-Age: %d",synth_header->voice_param.age);
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Get Voice-Age: %"APR_SIZE_T_FMT,synth_header->voice_param.age);
 				res = TRUE;
 			}
 		}
@@ -250,7 +250,7 @@ static mrcp_message_t* get_params_response_create(mrcp_resource_factory_t *facto
 			/* test voice age header */
 			if(mrcp_resource_header_property_check(request,SYNTHESIZER_HEADER_VOICE_AGE) == TRUE) {
 				res_synth_header->voice_param.age = SAMPLE_VOICE_AGE;
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Set Voice-Age: %d",res_synth_header->voice_param.age);
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Set Voice-Age: %"APR_SIZE_T_FMT,res_synth_header->voice_param.age);
 				mrcp_resource_header_property_add(response,SYNTHESIZER_HEADER_VOICE_AGE);
 				res = TRUE;
 			}

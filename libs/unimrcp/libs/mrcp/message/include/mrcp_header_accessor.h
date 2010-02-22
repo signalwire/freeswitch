@@ -149,6 +149,10 @@ MRCP_DECLARE(apt_bool_t) mrcp_header_property_check(mrcp_header_accessor_t *acce
 /** Add name only property */
 MRCP_DECLARE(void) mrcp_header_name_property_add(mrcp_header_accessor_t *accessor, apr_size_t id);
 
+
+/** Generate completion-cause */
+MRCP_DECLARE(apt_bool_t) mrcp_completion_cause_generate(const apt_str_table_item_t table[], apr_size_t size, apr_size_t cause, apt_text_stream_t *stream);
+
 APT_END_EXTERN_C
 
 #endif /*__MRCP_HEADER_ACCESSOR_H__*/

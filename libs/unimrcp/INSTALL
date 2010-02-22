@@ -63,14 +63,23 @@ use the "--with-sofia-sip=" option.
 For example
 $ ./configure --with-sofia-sip=/usr/local/sofia-sip
 
+To cross-compile for 64-bit platform use
+CFLAGS=-m64 CXXFLAGS=-m64 LDFLAGS=-m64 ./configure
+
+To cross-compile for 32-bit platform use
+CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32 ./configure
+
 To install the default configuration use
+$ cd conf
 $ make def-conf
 
-To generate doxygen documentation from the sources use
+To install the default data use
+$ cd data
+$ make def-data
+
+To generate doxygen documentation from the source use
 $ make dox
 
-To build distribution tarball use
-$ make dist
 
 
 WINDOWS BUILD
@@ -100,7 +109,10 @@ sofiasip.vsprops
 	/>
 
 Build procedure
-Open unimrcp.sln solution file and build the solution (Build -> Build Solution).
+- open unimrcp.sln solution file
+- choose an appropriate solution platform (Build -> Configuration Manager) either win32 or x64
+- choose an appropriate solution configuration (Build -> Configuration Manager) either Debug or Release
+- build the solution (Build -> Build Solution)
 
 One-time pre-run output directory preparation
 Build prepare.vcproj utility project (right click on tools -> prebuild in 
@@ -112,5 +124,6 @@ Output directory layout
 bin      - binaries (unimrcpserver, unimrcpclient) and all the required dlls
 conf     - configuration files
 data     - data files
+lib      - libraries
 log      - log files
 plugin   - run-time loadable modules

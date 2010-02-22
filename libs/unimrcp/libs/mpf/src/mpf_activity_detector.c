@@ -122,7 +122,7 @@ MPF_DECLARE(mpf_detector_event_e) mpf_activity_detector_process(mpf_activity_det
 		/* first, calculate current activity level of processed frame */
 		level = mpf_activity_detector_level_calculate(frame);
 #if 0
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Activity Detector [%d]",level);
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Activity Detector [%"APR_SIZE_T_FMT"]",level);
 #endif
 	}
 

@@ -77,7 +77,7 @@ MRCP_DECLARE(mrcp_connection_agent_t*) mrcp_client_connection_agent_create(
 	apt_task_vtable_t *vtable;
 	mrcp_connection_agent_t *agent;
 	
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create "MRCPV2_CONNECTION_TASK_NAME" [%d]",max_connection_count);
+	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create "MRCPV2_CONNECTION_TASK_NAME" [%"APR_SIZE_T_FMT"]",max_connection_count);
 	agent = apr_palloc(pool,sizeof(mrcp_connection_agent_t));
 	agent->pool = pool;
 	agent->pollset = NULL;
@@ -424,7 +424,7 @@ static apt_bool_t mrcp_client_agent_messsage_send(mrcp_connection_agent_t *agent
 	apt_bool_t status = FALSE;
 	mrcp_connection_t *connection = channel->connection;
 	apt_text_stream_t *stream;
-	mrcp_stream_result_e result;
+	mrcp_stream_status_e result;
 
 	if(!connection || !connection->sock) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"No MRCPv2 Connection");
@@ -436,7 +436,7 @@ static apt_bool_t mrcp_client_agent_messsage_send(mrcp_connection_agent_t *agent
 	do {
 		apt_text_stream_init(&connection->tx_stream,connection->tx_buffer,sizeof(connection->tx_buffer)-1);
 		result = mrcp_generator_run(connection->generator,stream);
-		if(result == MRCP_STREAM_MESSAGE_COMPLETE || result == MRCP_STREAM_MESSAGE_TRUNCATED) {
+		if(result != MRCP_STREAM_STATUS_INVALID) {
 			stream->text.length = stream->pos - stream->text.buf;
 			*stream->pos = '\0';
 
@@ -455,7 +455,7 @@ static apt_bool_t mrcp_client_agent_messsage_send(mrcp_connection_agent_t *agent
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Generate MRCPv2 Stream");
 		}
 	}
-	while(result == MRCP_STREAM_MESSAGE_TRUNCATED);
+	while(result == MRCP_STREAM_STATUS_INCOMPLETE);
 
 	if(status == FALSE) {
 		mrcp_message_t *response = mrcp_response_create(message,message->pool);
@@ -467,9 +467,9 @@ static apt_bool_t mrcp_client_agent_messsage_send(mrcp_connection_agent_t *agent
 	return TRUE;
 }
 
-static apt_bool_t mrcp_client_message_handler(void *obj, mrcp_message_t *message, mrcp_stream_result_e result)
+static apt_bool_t mrcp_client_message_handler(void *obj, mrcp_message_t *message, mrcp_stream_status_e status)
 {
-	if(result == MRCP_STREAM_MESSAGE_COMPLETE) {
+	if(status == MRCP_STREAM_STATUS_COMPLETE) {
 		/* message is completely parsed */
 		mrcp_connection_t *connection = obj;
 		mrcp_control_channel_t *channel;
@@ -528,8 +528,8 @@ static apt_bool_t mrcp_client_agent_messsage_receive(mrcp_connection_agent_t *ag
 		stream->pos);
 
 	/* reset pos */
-	stream->pos = stream->text.buf;
-	/* walk through the stream parsing RTSP messages */
+	apt_text_stream_reset(stream);
+	/* walk through the stream parsing MRCP messages */
 	return mrcp_stream_walk(connection->parser,stream,mrcp_client_message_handler,connection);
 }
 

@@ -6,6 +6,7 @@ Currently available scenarios are
 2. class="Recognizer"
 3. class="Recorder"
 4. class="DtmfRecofnizer"
+5. class="Params"
 
 More than one scenario of the same type (class) can be defined.
 The name (not class) of the scenario is used to run it from console.
@@ -87,6 +88,8 @@ For instance,
     </rtp-termination>
     -->
   </scenario>
+
+  <scenario name="params" class="Params" profile="MRCPv2-Default"/>
 
   <!-- It'd be great to have scriptable custom scenarios as well.
   <scenario name="custom" class="UmcXml">

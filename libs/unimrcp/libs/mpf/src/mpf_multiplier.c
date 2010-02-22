@@ -100,9 +100,7 @@ static void mpf_multiplier_trace(mpf_object_t *object)
 		sink = multiplier->sink_arr[i];
 		if(sink) {
 			mpf_audio_stream_trace(sink,STREAM_DIRECTION_SEND,&output);
-			if(apt_text_is_eos(&output) == FALSE) {
-				*output.pos++ = ';';
-			}
+			apt_text_char_insert(&output,';');
 		}
 	}
 

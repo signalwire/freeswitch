@@ -239,10 +239,12 @@ static apt_bool_t recorder_channel_uri_set(recorder_channel_t *recorder_channel,
 		return FALSE;
 	}
 	
-	record_uri = apr_psprintf(message->pool,"<file://mediaserver/data/%s>;size=%d;duration=%d",
-				recorder_channel->file_name,
-				recorder_channel->cur_size,
-				recorder_channel->cur_time);
+	record_uri = apr_psprintf(
+		message->pool,
+		"<file://mediaserver/data/%s>;size=%"APR_SIZE_T_FMT";duration=%"APR_SIZE_T_FMT,
+		recorder_channel->file_name,
+		recorder_channel->cur_size,
+		recorder_channel->cur_time);
 
 	apt_string_set(&recorder_header->record_uri,record_uri);
 	mrcp_resource_header_property_add(message,RECORDER_HEADER_RECORD_URI);

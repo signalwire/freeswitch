@@ -1,0 +1,5 @@
+#include "setup.txt"
+#define uni_outdir "..\..\x64\Release"
+OutputBaseFilename=unimrcp-x64-{#= uni_version}
+ArchitecturesInstallIn64BitMode=x64
+ArchitecturesAllowed=x64

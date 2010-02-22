@@ -1,0 +1,3 @@
+#include "setup.txt"
+#define release_dir "Release"
+OutputBaseFilename=unimrcp-sdk-{#= uni_version}

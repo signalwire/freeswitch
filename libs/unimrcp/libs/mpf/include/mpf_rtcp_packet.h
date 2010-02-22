@@ -87,9 +87,9 @@ struct rtcp_header_t {
 struct rtcp_sdes_item_t {
 	/** type of item (rtcp_sdes_type_t) */
 	apr_byte_t type;
-	/* length of item (in octets) */
+	/** length of item (in octets) */
 	apr_byte_t length;
-	/* text, not null-terminated */
+	/** text, not null-terminated */
 	char       data[1];
 };
 
@@ -97,6 +97,7 @@ struct rtcp_sdes_item_t {
 struct rtcp_packet_t {
 	/** common header */
 	rtcp_header_t header;
+	/** union of RTCP reports */
 	union {
 		/** sender report (SR) */
 		struct {

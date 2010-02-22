@@ -131,7 +131,8 @@ RTSP_DECLARE(rtsp_server_t*) rtsp_server_create(
 		return NULL;
 	}
 	
-	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Create RTSP Server %s:%hu [%d]",listen_ip,listen_port,max_connection_count);
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Create RTSP Server %s:%hu [%"APR_SIZE_T_FMT"]",
+		listen_ip,listen_port,max_connection_count);
 	server = apr_palloc(pool,sizeof(rtsp_server_t));
 	server->pool = pool;
 	server->obj = obj;
@@ -513,7 +514,7 @@ static apt_bool_t rtsp_server_message_send(rtsp_server_t *server, apt_net_server
 	apt_bool_t status = FALSE;
 	rtsp_server_connection_t *rtsp_connection;
 	apt_text_stream_t *stream;
-	rtsp_stream_result_e result;
+	rtsp_stream_status_e result;
 
 	if(!connection || !connection->sock) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"No RTSP Connection");
@@ -525,9 +526,9 @@ static apt_bool_t rtsp_server_message_send(rtsp_server_t *server, apt_net_server
 	rtsp_generator_message_set(rtsp_connection->generator,message);
 	do {
 		stream->text.length = sizeof(rtsp_connection->tx_buffer)-1;
-		stream->pos = stream->text.buf;
+		apt_text_stream_reset(stream);
 		result = rtsp_generator_run(rtsp_connection->generator,stream);
-		if(result == RTSP_STREAM_MESSAGE_COMPLETE || result == RTSP_STREAM_MESSAGE_TRUNCATED) {
+		if(result != RTSP_STREAM_STATUS_INVALID) {
 			stream->text.length = stream->pos - stream->text.buf;
 			*stream->pos = '\0';
 
@@ -546,15 +547,15 @@ static apt_bool_t rtsp_server_message_send(rtsp_server_t *server, apt_net_server
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Generate RTSP Stream");
 		}
 	}
-	while(result == RTSP_STREAM_MESSAGE_TRUNCATED);
+	while(result == RTSP_STREAM_STATUS_INCOMPLETE);
 
 	return status;
 }
 
-static apt_bool_t rtsp_server_message_handler(void *obj, rtsp_message_t *message, rtsp_stream_result_e result)
+static apt_bool_t rtsp_server_message_handler(void *obj, rtsp_message_t *message, rtsp_stream_status_e status)
 {
 	rtsp_server_connection_t *rtsp_connection = obj;
-	if(result == RTSP_STREAM_MESSAGE_COMPLETE) {
+	if(status == RTSP_STREAM_STATUS_COMPLETE) {
 		/* message is completely parsed */
 		apt_str_t *destination;
 		rtsp_message_t *message = rtsp_parser_message_get(rtsp_connection->parser);
@@ -564,7 +565,7 @@ static apt_bool_t rtsp_server_message_handler(void *obj, rtsp_message_t *message
 		}
 		rtsp_server_session_request_process(rtsp_connection->server,rtsp_connection,message);
 	}
-	else if(result == RTSP_STREAM_MESSAGE_INVALID) {
+	else if(status == RTSP_STREAM_STATUS_INVALID) {
 		/* error case */
 		rtsp_message_t *response;
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse RTSP Stream");
@@ -614,7 +615,7 @@ static apt_bool_t rtsp_server_message_receive(apt_net_server_task_t *task, apt_n
 		stream->pos);
 
 	/* reset pos */
-	stream->pos = stream->text.buf;
+	apt_text_stream_reset(stream);
 	/* walk through the stream parsing RTSP messages */
 	return rtsp_stream_walk(rtsp_connection->parser,stream,rtsp_server_message_handler,rtsp_connection);
 }
@@ -657,7 +658,8 @@ static apt_bool_t rtsp_server_on_disconnect(apt_net_server_task_t *task, apt_net
 		rtsp_server_session_t *session;
 		void *val;
 		apr_hash_index_t *it;
-		apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Terminate Remaining RTSP Sessions [%d]",remaining_sessions);
+		apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Terminate Remaining RTSP Sessions [%"APR_SIZE_T_FMT"]",
+			remaining_sessions);
 		it = apr_hash_first(connection->pool,rtsp_connection->session_table);
 		for(; it; it = apr_hash_next(it)) {
 			apr_hash_this(it,NULL,NULL,&val);

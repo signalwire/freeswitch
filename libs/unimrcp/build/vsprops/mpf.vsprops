@@ -10,8 +10,4 @@
 		AdditionalIncludeDirectories="&quot;$(ProjectRootDir)libs\mpf\include&quot;"
 		PreprocessorDefinitions="MPF_STATIC_LIB"
 	/>
-	<Tool
-		Name="VCLinkerTool"
-		AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
-	/>
 </VisualStudioPropertySheet>
