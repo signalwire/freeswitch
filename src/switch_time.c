@@ -181,12 +181,20 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 {
 	int x;
 	switch_interval_time_t avg, val = 1000, want = 1000;
-	int over = 0, under = 0, good = 0, step = 50, diff = 0, retry = 0, lastgood = 0;
+	int over = 0, under = 0, good = 0, step = 50, diff = 0, retry = 0, lastgood = 0, one_k = 0;
 
 #ifdef HAVE_CLOCK_GETRES
 	struct timespec ts;
+	long res = 0;
 	clock_getres(CLOCK_MONOTONIC, &ts);
-	if (ts.tv_nsec / 1000 > 1500) {
+	res = ts.tv_nsec / 1000;
+
+
+	if (res > 900 && res < 1100) {
+		one_k = 1;
+	}
+	
+	if (res > 1500) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 						  "Timer resolution of %ld microseconds detected!\n"
 						  "Do you have your kernel timer set to higher than 1 kHz? You may experience audio problems.\n", ts.tv_nsec / 1000);
@@ -259,6 +267,10 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 	} else if (lastgood) {
 		OFFSET = (int) (want - lastgood);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer offset of %d calculated (fallback)\n", OFFSET);
+		switch_time_set_cond_yield(SWITCH_TRUE);
+	} else if (one_k) {
+		OFFSET = 900;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer offset CANNOT BE DETECTED, forcing OFFSET to 900\n");
 		switch_time_set_cond_yield(SWITCH_TRUE);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer offset NOT calculated\n");
