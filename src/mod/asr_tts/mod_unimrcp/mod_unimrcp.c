@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2009, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2009-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -45,11 +45,7 @@
 #include "mrcp_recog_header.h"
 #include "mrcp_recog_resource.h"
 #include "uni_version.h"
-#if UNI_VERSION_AT_LEAST(0,8,0)
 #include "mrcp_resource_loader.h"
-#else
-#include "mrcp_default_factory.h"
-#endif
 #include "mpf_engine.h"
 #include "mpf_codec_manager.h"
 #include "mpf_rtp_termination_factory.h"
@@ -860,7 +856,6 @@ static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
  * @param schannel the speech channel
  * @return the termination or NULL
  */
-#if UNI_VERSION_AT_LEAST(0,8,0)
 static mpf_termination_t *speech_channel_create_mpf_termination(speech_channel_t *schannel)
 {
 	mpf_termination_t *termination = NULL;
@@ -890,29 +885,6 @@ static mpf_termination_t *speech_channel_create_mpf_termination(speech_channel_t
 
 	return termination;
 }
-#else
-static mpf_termination_t *speech_channel_create_mpf_termination(speech_channel_t *schannel)
-{
-	mpf_termination_t *termination = NULL;
-	mpf_codec_descriptor_t *codec = NULL;
-	codec = (mpf_codec_descriptor_t *) apr_palloc(schannel->unimrcp_session->pool, sizeof(mpf_codec_descriptor_t));
-	mpf_codec_descriptor_init(codec);
-	codec->channel_count = 1;
-	codec->payload_type = 96;
-	codec->sampling_rate = schannel->rate;
-	apt_string_set(&codec->name, "LPCM");	/* "LPCM" is UniMRCP's name for L16 host byte ordered */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) requesting codec LPCM/%d/%d\n", schannel->name, codec->payload_type,
-					  codec->sampling_rate);
-
-	if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
-		termination = mrcp_application_sink_termination_create(schannel->unimrcp_session, &schannel->application->audio_stream_vtable, codec, schannel);
-	} else {
-		termination = mrcp_application_source_termination_create(schannel->unimrcp_session, &schannel->application->audio_stream_vtable, codec, schannel);
-	}
-
-	return termination;
-}
-#endif
 
 /**
  * Open the speech channel
@@ -1750,7 +1722,6 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
 
 	/* check status */
 	if (session && schannel && status == MRCP_SIG_STATUS_CODE_SUCCESS) {
-#if UNI_VERSION_AT_LEAST(0,8,0)
 		char codec_name[60] = { 0 };
 		const mpf_codec_descriptor_t *descriptor;
 		/* what sample rate did we negotiate? */
@@ -1765,10 +1736,6 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s channel is ready, codec = %s, sample rate = %d\n", schannel->name,
 						  speech_channel_type_to_string(schannel->type), codec_name, schannel->rate);
-#else
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) %s channel is ready\n", schannel->name,
-						  speech_channel_type_to_string(schannel->type));
-#endif
 		speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
 		/* notify of channel open */
 		if (globals.enable_profile_events && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_OPEN) == SWITCH_STATUS_SUCCESS) {
@@ -3431,7 +3398,6 @@ static int process_rtp_config(mrcp_client_t *client, mpf_rtp_config_t *rtp_confi
 		}
 	} else if (strcasecmp(param, "ptime") == 0) {
 		rtp_config->ptime = (apr_uint16_t) atol(val);
-#if UNI_VERSION_AT_LEAST(0,8,0)
 	} else if (strcasecmp(param, "rtcp") == 0) {
 		rtp_config->rtcp = atoi(val);
 	} else if (strcasecmp(param, "rtcp-bye") == 0) {
@@ -3440,7 +3406,6 @@ static int process_rtp_config(mrcp_client_t *client, mpf_rtp_config_t *rtp_confi
 		rtp_config->rtcp_tx_interval = (apr_uint16_t) atoi(val);
 	} else if (strcasecmp(param, "rtcp-rx-resolution") == 0) {
 		rtp_config->rtcp_rx_resolution = (apr_uint16_t) atol(val);
-#endif
 	} else {
 		mine = 0;
 	}
@@ -3530,9 +3495,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 	switch_xml_t cfg = NULL, xml = NULL, profiles = NULL, profile = NULL;
 	mrcp_client_t *client = NULL;
 	apr_pool_t *pool = NULL;
-#if UNI_VERSION_AT_LEAST(0,8,0)
 	mrcp_resource_loader_t *resource_loader = NULL;
-#endif
 	mrcp_resource_factory_t *resource_factory = NULL;
 	mpf_codec_manager_t *codec_manager = NULL;
 	apr_size_t max_connection_count = 0;
@@ -3555,7 +3518,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 		client = NULL;
 		goto done;
 	}
-#if UNI_VERSION_AT_LEAST(0,8,0)
+
 	/* load the synthesizer and recognizer resources */
 	resource_loader = mrcp_resource_loader_create(FALSE, pool);
 	if (resource_loader) {
@@ -3571,16 +3534,6 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 		client = NULL;
 		goto done;
 	}
-#else
-	/* load resources */
-	resource_factory = mrcp_default_factory_create(pool);
-	if (resource_factory) {
-		mrcp_client_resource_factory_register(client, resource_factory);
-	} else {
-		client = NULL;
-		goto done;
-	}
-#endif
 
 	codec_manager = mpf_engine_codec_manager_create(pool);
 	if (codec_manager) {
