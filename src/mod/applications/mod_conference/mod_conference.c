@@ -1008,12 +1008,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_size_t file_data_len = samples * 2;
 		int has_file_data = 0, members_with_video = 0;
 
-		if (conference->perpetual_sound && !conference->async_fnode) {
-			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
-		} else if (conference->moh_sound && (conference->count == 1 || switch_test_flag(conference, CFLAG_WAIT_MOD)) && !conference->async_fnode) {
-			conference_play_file(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
-		}
-
 		/* Sync the conference to a single timing source */
 		if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
 			switch_set_flag(conference, CFLAG_DESTRUCT);
@@ -1022,6 +1016,12 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 		switch_mutex_lock(conference->mutex);
 		has_file_data = ready = total = 0;
+
+		if (conference->perpetual_sound && !conference->async_fnode) {
+			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
+		} else if (conference->moh_sound && (conference->count == 1 || switch_test_flag(conference, CFLAG_WAIT_MOD)) && !conference->async_fnode) {
+			conference_play_file(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
+		}
 
 		/* Read one frame of audio from each member channel and save it for redistribution */
 		for (imember = conference->members; imember; imember = imember->next) {
