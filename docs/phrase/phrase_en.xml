@@ -349,9 +349,9 @@
       <prompt phrase="When you are finished, press the pound or hash key." filename="ivr-finished_pound_hash_key.wav" attr="Needs_to_be_recorded!"/>
       <prompt phrase="Do not disturb now activated." filename="ivr-dnd_activated.wav" attr="Needs_to_be_recorded!"/>
       <prompt phrase="Do not disturb has been cancelled." filename="ivr-dnd_cancelled.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="" filename="ivr-.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Press any other digit..." filename="ivr-any_other_digit.wav" attr="Needs_to_be_recorded!"/>
       <prompt phrase="Welcome to your new voicemail. To listen to a tutorial and setup your voice mail box, press 1. To skip, press 2." filename="vm-tutorial_yes_no.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="Please enter the queue number, followed by the pound or hash sign." filename="ivr-enter_queue_number.wav" attr="Needs_to_be_recorded!"/>
       <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
       <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
       <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
