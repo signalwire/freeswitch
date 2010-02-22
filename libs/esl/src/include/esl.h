@@ -290,6 +290,7 @@ typedef struct {
 	esl_mutex_t *mutex;
 	int async_execute;
 	int event_lock;
+	int destroyed;
 } esl_handle_t;
 
 /*! \brief Used internally for truth test */

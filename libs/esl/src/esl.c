@@ -378,8 +378,13 @@ ESL_DECLARE(char *)esl_url_decode(char *s)
 	return s;
 }
 
-static void sock_setup(esl_handle_t *handle)
+static int sock_setup(esl_handle_t *handle)
 {
+
+	if (handle->sock == ESL_SOCK_INVALID) {
+        return ESL_FAIL;
+    }
+
 #ifdef WIN32
 	BOOL bOptVal = TRUE;
 	int bOptLen = sizeof(BOOL);
@@ -388,27 +393,32 @@ static void sock_setup(esl_handle_t *handle)
 	int x = 1;
 	setsockopt(handle->sock, IPPROTO_TCP, TCP_NODELAY, &x, sizeof(x));
 #endif
+
+	return ESL_SUCCESS;
 }
 
 ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in *addr)
 {
+
+    if (!handle || socket == ESL_SOCK_INVALID) {
+        return ESL_FAIL;
+    }
+
 	handle->sock = socket;
+
 	if (addr) {
 		handle->addr = *addr;
 	}
 
-	if (handle->sock == ESL_SOCK_INVALID) {
+	if (sock_setup(handle) != ESL_SUCCESS) {
 		return ESL_FAIL;
 	}
-	
-	
+
 	if (!handle->mutex) {
 		esl_mutex_create(&handle->mutex);
 	}
 
 	handle->connected = 1;
-
-	sock_setup(handle);
 
 	esl_send_recv(handle, "connect\n\n");
 	
@@ -439,13 +449,23 @@ ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event
 		
 	snprintf(event_buf, sizeof(event_buf), "sendevent %s\n", esl_event_name(event->event_id));
 	
-	send(handle->sock, event_buf, strlen(event_buf), 0);
-	send(handle->sock, txt, strlen(txt), 0);
-	send(handle->sock, "\n\n", 2, 0);
-
+	if (send(handle->sock, event_buf, strlen(event_buf), 0)) goto fail;
+	if (send(handle->sock, txt, strlen(txt), 0)) goto fail;
+	if (send(handle->sock, "\n\n", 2, 0)) goto fail;
+	
 	free(txt);
 
 	return ESL_SUCCESS;
+
+
+ fail:
+
+	handle->connected = 0;
+
+	free(txt);
+
+	return ESL_FAIL;
+
 }
 
 ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, const char *arg, const char *uuid)
@@ -457,9 +477,9 @@ ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, con
 	const char *bl_buf = "async: true\n";
 	char send_buf[1292] = "";
 	
-	if (!handle->connected) {
-		return ESL_FAIL;
-	}
+    if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
+        return ESL_FAIL;
+    }
 
 	if (uuid) {
 		snprintf(cmd_buf, sizeof(cmd_buf), "sendmsg %s", uuid);
@@ -484,9 +504,9 @@ ESL_DECLARE(esl_status_t) esl_filter(esl_handle_t *handle, const char *header, c
 {
 	char send_buf[1024] = "";
 	
-	if (!handle->connected) {
-		return ESL_FAIL;
-	}
+    if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
+        return ESL_FAIL;
+    }
 
 	snprintf(send_buf, sizeof(send_buf), "filter %s %s\n\n", header, value);
 
@@ -499,9 +519,9 @@ ESL_DECLARE(esl_status_t) esl_events(esl_handle_t *handle, esl_event_type_t etyp
 	char send_buf[1024] = "";
 	const char *type = "plain";
 
-	if (!handle->connected) {
-		return ESL_FAIL;
-	}
+    if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
+        return ESL_FAIL;
+    }
 
 	if (etype == ESL_EVENT_TYPE_XML) {
 		type = "xml";
@@ -677,7 +697,7 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 
  fail:
 	
-	esl_disconnect(handle);
+	handle->connected = 0;
 
 	return ESL_FAIL;
 }
@@ -687,9 +707,16 @@ ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 	esl_mutex_t *mutex = handle->mutex;
 	esl_status_t status = ESL_FAIL;
 	
+	if (handle->destroyed) {
+		return ESL_FAIL;
+	}
+
 	if (mutex) {
 		esl_mutex_lock(mutex);
 	}
+
+	handle->destroyed = 1;
+	handle->connected = 0;
 
 	esl_event_safe_destroy(&handle->race_event);
 	esl_event_safe_destroy(&handle->last_event);
@@ -703,13 +730,12 @@ ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 		status = ESL_SUCCESS;
 	}
 	
-	handle->connected = 0;
-
 	if (mutex) {
+		esl_mutex_unlock(mutex);
+		esl_mutex_lock(mutex);
 		esl_mutex_unlock(mutex);
 		esl_mutex_destroy(&mutex);
 	}
-
 
 	return status;
 }
@@ -721,6 +747,10 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 	int max, activity;
 	esl_status_t status = ESL_SUCCESS;
 
+	if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
+		return ESL_FAIL;
+	}
+
 	if (check_q) {
 		esl_mutex_lock(handle->mutex);
 		if (handle->race_event) {
@@ -728,10 +758,6 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 			return esl_recv_event(handle, check_q, save_event);
 		}
 		esl_mutex_unlock(handle->mutex);
-	}
-
-	if (!handle || !handle->connected || handle->sock == -1) {
-		return ESL_FAIL;
 	}
 
 	tv.tv_usec = ms * 1000;
@@ -754,6 +780,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 	max = handle->sock + 1;
 	
 	if ((activity = select(max, &rfds, NULL, &efds, &tv)) < 0) {
+		handle->connected = 0;
 		return ESL_FAIL;
 	}
 
@@ -761,7 +788,28 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 		return ESL_BREAK;
 	}
 
-	if (activity && FD_ISSET(handle->sock, &rfds)) {
+	tv.tv_usec = 0;
+
+	FD_ZERO(&rfds);
+	FD_ZERO(&efds);
+
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+	FD_SET(handle->sock, &rfds);
+	FD_SET(handle->sock, &efds);
+#pragma warning( pop ) 
+#else
+	FD_SET(handle->sock, &rfds);
+	FD_SET(handle->sock, &efds);
+#endif
+
+	activity = select(max, &rfds, NULL, &efds, &tv);
+
+	if (activity < 0) { 
+		handle->connected = 0;
+		status = ESL_FAIL;
+	} else if (activity > 0 && FD_ISSET(handle->sock, &rfds)) {
 		if (esl_recv_event(handle, check_q, save_event)) {
 			status = ESL_FAIL;
 		}
@@ -789,11 +837,19 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 	esl_ssize_t len;
 	int zc = 0;
 
-	if (!handle->connected) {
+
+	if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
 		return ESL_FAIL;
 	}
-	
+
 	esl_mutex_lock(handle->mutex);
+
+	if (!handle->connected || handle->sock == ESL_SOCK_INVALID) {
+		handle->connected = 0;
+		esl_mutex_unlock(handle->mutex);
+		return ESL_FAIL;
+	}
+
 	esl_event_safe_destroy(&handle->last_event);
 	esl_event_safe_destroy(&handle->last_ievent);
 	
@@ -822,7 +878,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 		rrval = recv(handle->sock, c, 1, 0);
 		if (rrval == 0) {
 			if (++zc >= 100) {
-				esl_disconnect(handle);
+				handle->connected = 0;
 				esl_mutex_unlock(handle->mutex);
 				return ESL_DISCONNECTED;
 			}
@@ -987,7 +1043,8 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 
  fail:
 
-	esl_disconnect(handle);
+	handle->connected = 0;
+
 	return ESL_FAIL;
 
 }
@@ -996,19 +1053,22 @@ ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd)
 {
 	const char *e = cmd + strlen(cmd) -1;
 	
-	if (!handle->connected) {
+
+	if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
 		return ESL_FAIL;
 	}
 
 	esl_log(ESL_LOG_DEBUG, "SEND\n%s\n", cmd);
 	
 	if (send(handle->sock, cmd, strlen(cmd), 0) != (int)strlen(cmd)) {
+		handle->connected = 0;
 		strerror_r(handle->errnum, handle->err, sizeof(handle->err));
 		return ESL_FAIL;
 	}
 	
 	if (!(*e == '\n' && *(e-1) == '\n')) {
 		if (send(handle->sock, "\n\n", 2, 0) != 2) {
+			handle->connected = 0;
 			strerror_r(handle->errnum, handle->err, sizeof(handle->err));
 			return ESL_FAIL;
 		}
@@ -1024,12 +1084,18 @@ ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd)
 	const char *hval;
 	esl_status_t status;
 	
-	if (!handle->connected) {
-		return ESL_FAIL;
-	}
-
+    if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
+        return ESL_FAIL;
+    }
 
 	esl_mutex_lock(handle->mutex);
+
+
+	if (!handle->connected || handle->sock == ESL_SOCK_INVALID) {
+		handle->connected = 0;
+		esl_mutex_unlock(handle->mutex);
+		return ESL_FAIL;
+	}
 
 	esl_event_safe_destroy(&handle->last_event);
 	esl_event_safe_destroy(&handle->last_sr_event);
@@ -1063,6 +1129,13 @@ ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd)
 			
 			esl_mutex_unlock(handle->mutex);
 			esl_mutex_lock(handle->mutex);
+
+			if (!handle->connected || handle->sock == ESL_SOCK_INVALID) {
+				handle->connected = 0;
+				esl_mutex_unlock(handle->mutex);
+				return ESL_FAIL;
+			}
+
 			goto recv;
 		}
 
