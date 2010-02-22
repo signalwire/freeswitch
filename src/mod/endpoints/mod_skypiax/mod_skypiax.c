@@ -1714,12 +1714,8 @@ static switch_status_t load_config(int reload_type)
 					switch_sleep(10000);
 					skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET AUTOAWAY OFF");
 					switch_sleep(10000);
-					skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET WINDOWSTATE MINIMIZED");
+					skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET WINDOWSTATE HIDDEN");
 					switch_sleep(10000);
-#ifdef WIN32
-					skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET WINDOWSTATE MINIMIZED");
-					switch_sleep(10000);
-#endif
 				} else {
 					ERRORA
 						("The Skype client to which we are connected FAILED to gave us CURRENTUSERHANDLE=%s, interface_id=%d FAILED to start. No Skype client logged in as '%s' has been found. Please (re)launch a Skype client logged in as '%s'. Skypiax exiting now\n",
