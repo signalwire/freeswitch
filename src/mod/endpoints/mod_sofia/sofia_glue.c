@@ -4303,7 +4303,10 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	char recovery_sql[] =
 		"CREATE TABLE sip_recovery (\n"
 		"   runtime_uuid    VARCHAR(255),\n"
-		"   profile_name    VARCHAR(255),\n" "   hostname        VARCHAR(255),\n" "   uuid            VARCHAR(255),\n" "   metadata        text\n" ");\n";
+		"   profile_name    VARCHAR(255),\n"
+		"   hostname        VARCHAR(255),\n"
+		"   uuid            VARCHAR(255),\n"
+		"   metadata        text\n" ");\n";
 
 	char pres_sql[] =
 		"CREATE TABLE sip_presence (\n"
@@ -4314,7 +4317,10 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   expires         INTEGER,\n"
 		"   user_agent      VARCHAR(255),\n"
 		"   profile_name    VARCHAR(255),\n"
-		"   hostname        VARCHAR(255),\n" "   network_ip      VARCHAR(255),\n" "   network_port    VARCHAR(6)\n" ");\n";
+		"   hostname        VARCHAR(255),\n"
+		"   network_ip      VARCHAR(255),\n"
+		"   network_port    VARCHAR(6)\n"
+		");\n";
 
 	char dialog_sql[] =
 		"CREATE TABLE sip_dialogs (\n"
@@ -4334,7 +4340,10 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   contact         VARCHAR(255),\n"
 		"   presence_id     VARCHAR(255),\n"
 		"   presence_data   VARCHAR(255),\n"
-		"   call_info       VARCHAR(255),\n" "   call_info_state VARCHAR(255),\n" "   expires         INTEGER default 0\n" ");\n";
+		"   call_info       VARCHAR(255),\n"
+		"   call_info_state VARCHAR(255),\n"
+		"   expires         INTEGER default 0\n"
+		");\n";
 
 	char sub_sql[] =
 		"CREATE TABLE sip_subscriptions (\n"
@@ -4353,12 +4362,19 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   user_agent      VARCHAR(255),\n"
 		"   accept          VARCHAR(255),\n"
 		"   profile_name    VARCHAR(255),\n"
-		"   hostname        VARCHAR(255),\n" "   network_port    VARCHAR(6),\n" "   network_ip      VARCHAR(255)\n" ");\n";
+		"   hostname        VARCHAR(255),\n"
+		"   network_port    VARCHAR(6),\n"
+		"   network_ip      VARCHAR(255)\n"
+		");\n";
 
 	char auth_sql[] =
 		"CREATE TABLE sip_authentication (\n"
 		"   nonce           VARCHAR(255),\n"
-		"   expires         INTEGER," "   profile_name    VARCHAR(255),\n" "   hostname        VARCHAR(255),\n" "   last_nc         INTEGER\n" ");\n";
+		"   expires         INTEGER,"
+		"   profile_name    VARCHAR(255),\n"
+		"   hostname        VARCHAR(255),\n"
+		"   last_nc         INTEGER\n"
+		");\n";
 
 	/* should we move this glue to sofia_sla or keep it here where all db init happens? XXX MTK */
 	char shared_appearance_sql[] =
@@ -4367,14 +4383,20 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   call_id           VARCHAR(255),\n"
 		"   aor               VARCHAR(255),\n"
 		"   profile_name      VARCHAR(255),\n"
-		"   hostname          VARCHAR(255),\n" "   contact_str       VARCHAR(255),\n" "   network_ip        VARCHAR(255)\n" ");\n";
+		"   hostname          VARCHAR(255),\n"
+		"   contact_str       VARCHAR(255),\n"
+		"   network_ip        VARCHAR(255)\n"
+		");\n";
 
 	char shared_appearance_dialogs_sql[] =
 		"CREATE TABLE sip_shared_appearance_dialogs (\n"
 		"   profile_name      VARCHAR(255),\n"
 		"   hostname          VARCHAR(255),\n"
 		"   contact_str       VARCHAR(255),\n"
-		"   call_id           VARCHAR(255),\n" "   network_ip        VARCHAR(255),\n" "   expires           INTEGER\n" ");\n";
+		"   call_id           VARCHAR(255),\n"
+		"   network_ip        VARCHAR(255),\n"
+		"   expires           INTEGER\n"
+		");\n";
 
 	if (switch_odbc_available() && profile->odbc_dsn) {
 		int x;
