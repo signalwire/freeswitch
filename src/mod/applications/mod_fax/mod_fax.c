@@ -755,6 +755,116 @@ static void event_handler(switch_event_t *event)
 	load_configuration(1);
 }
 
+
+
+
+
+
+typedef struct {
+	switch_core_session_t *session;
+    dtmf_rx_state_t *dtmf_detect;
+} switch_inband_dtmf_t;
+
+static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	switch_inband_dtmf_t *pvt = (switch_inband_dtmf_t *) user_data;
+	switch_frame_t *frame = NULL;
+	char digit_str[80];
+	switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
+
+	switch (type) {
+	case SWITCH_ABC_TYPE_INIT:
+        pvt->dtmf_detect = dtmf_rx_init(NULL, NULL, NULL);
+		break;
+	case SWITCH_ABC_TYPE_CLOSE:
+        if (pvt->dtmf_detect) {
+            dtmf_rx_free(pvt->dtmf_detect);
+        }
+		break;
+	case SWITCH_ABC_TYPE_READ_REPLACE:
+		if ((frame = switch_core_media_bug_get_read_replace_frame(bug))) {
+			dtmf_rx(pvt->dtmf_detect, frame->data, frame->samples);
+			dtmf_rx_get(pvt->dtmf_detect, digit_str, sizeof(digit_str));
+			if (digit_str[0]) {
+				char *p = digit_str;
+				while (p && *p) {
+					switch_dtmf_t dtmf;
+					dtmf.digit = *p;
+					dtmf.duration = switch_core_default_dtmf_duration(0);
+					switch_channel_queue_dtmf(channel, &dtmf);
+					p++;
+				}
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n",
+								  digit_str);
+			}
+			switch_core_media_bug_set_read_replace_frame(bug, frame);
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE:
+	default:
+		break;
+	}
+
+	return SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_status_t) spandsp_stop_inband_dtmf_session(switch_core_session_t *session)
+{
+	switch_media_bug_t *bug;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if ((bug = switch_channel_get_private(channel, "dtmf"))) {
+		switch_channel_set_private(channel, "dtmf", NULL);
+		switch_core_media_bug_remove(session, &bug);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) spandsp_inband_dtmf_session(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_media_bug_t *bug;
+	switch_status_t status;
+	switch_inband_dtmf_t *pvt;
+	switch_codec_implementation_t read_impl = { 0 };
+
+	switch_core_session_get_read_impl(session, &read_impl);
+
+	if (!(pvt = switch_core_session_alloc(session, sizeof(*pvt)))) {
+		return SWITCH_STATUS_MEMERR;
+	}
+
+
+   	pvt->session = session;
+
+
+	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if ((status = switch_core_media_bug_add(session, inband_dtmf_callback, pvt, 0, SMBF_READ_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+
+	switch_channel_set_private(channel, "dtmf", bug);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* **************************************************************************
    FREESWITCH MODULE DEFINITIONS
    ************************************************************************* */
@@ -778,6 +888,17 @@ SWITCH_STANDARD_APP(spanfax_rx_function)
 	process_fax(session, data, FUNCTION_RX);
 }
 
+
+SWITCH_STANDARD_APP(dtmf_session_function)
+{
+	spandsp_inband_dtmf_session(session);
+}
+
+SWITCH_STANDARD_APP(stop_dtmf_session_function)
+{
+	spandsp_stop_inband_dtmf_session(session);
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_fax_init)
 {
 	switch_application_interface_t *app_interface;
@@ -788,6 +909,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fax_init)
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "txfax", "FAX Transmit Application", "FAX Transmit Application", spanfax_tx_function, SPANFAX_TX_USAGE,
 				   SAF_SUPPORT_NOMEDIA);
+
+	SWITCH_ADD_APP(app_interface, "spandsp_stop_dtmf", "stop inband dtmf", "Stop detecting inband dtmf.", stop_dtmf_session_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "spandsp_start_dtmf", "Detect dtmf", "Detect inband dtmf on the session", dtmf_session_function, "", SAF_MEDIA_TAP);
 
 	memset(&globals, 0, sizeof(globals));
 	switch_core_new_memory_pool(&globals.pool);
