@@ -136,6 +136,10 @@ struct profile {
 	const char *srgs_xml_mime_type;
 	/** MIME type to use for SRGS ABNF grammars */
 	const char *srgs_mime_type;
+	/** Default params to use for RECOGNIZE requests */
+	switch_hash_t *default_recog_params;
+	/** Default params to use for SPEAK requests */
+	switch_hash_t *default_synth_params;
 };
 typedef struct profile profile_t;
 static switch_status_t profile_create(profile_t ** profile, const char *name, switch_memory_pool_t *pool);
@@ -501,6 +505,8 @@ static switch_status_t profile_create(profile_t ** profile, const char *name, sw
 		lprofile->srgs_xml_mime_type = "application/srgs+xml";
 		lprofile->gsl_mime_type = "application/x-nuance-gsl";
 		lprofile->jsgf_mime_type = "application/x-jsgf";
+		switch_core_hash_init(&lprofile->default_synth_params, pool);
+		switch_core_hash_init(&lprofile->default_recog_params, pool);
 		*profile = lprofile;
 
 		if (globals.enable_profile_events && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_CREATE) == SWITCH_STATUS_SUCCESS) {
@@ -1498,6 +1504,7 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	profile_t *profile = NULL;
 	int speech_channel_number = get_next_speech_channel_number();
 	char name[200] = { 0 };
+	switch_hash_index_t *hi = NULL;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 					  "speech_handle: name = %s, rate = %d, speed = %d, samples = %d, voice = %s, engine = %s, param = %s\n", sh->name, sh->rate,
@@ -1532,6 +1539,17 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	/* Set session TTS params */
 	if (!zstr(voice_name)) {
 		speech_channel_set_param(schannel, "Voice-Name", voice_name);
+	}
+
+	/* Set default TTS params */
+	for (hi = switch_hash_first(NULL, profile->default_synth_params); hi; hi = switch_hash_next(hi)) {
+		char *param_name = NULL, *param_val = NULL;
+		const void *key;
+		void *val;
+		switch_hash_this(hi, &key, NULL, &val);
+		param_name = (char *) key;
+		param_val = (char *) val;
+		speech_channel_set_param(schannel, param_name, param_val);
 	}
 
   done:
@@ -2679,6 +2697,7 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	const char *profile_name = NULL;
 	profile_t *profile = NULL;
 	recognizer_data_t *r = NULL;
+	switch_hash_index_t *hi = NULL;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "asr_handle: name = %s, codec = %s, rate = %d, grammar = %s, param = %s\n",
 					  ah->name, ah->codec, ah->rate, ah->grammar, ah->param);
@@ -2714,7 +2733,21 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	status = speech_channel_open(schannel, profile);
+	
+	if ((status = speech_channel_open(schannel, profile)) != SWITCH_STATUS_SUCCESS) {
+		goto done;
+	}
+
+	/* Set default ASR params */
+	for (hi = switch_hash_first(NULL, profile->default_recog_params); hi; hi = switch_hash_next(hi)) {
+		char *param_name = NULL, *param_val = NULL;
+		const void *key;
+		void *val;
+		switch_hash_this(hi, &key, NULL, &val);
+		param_name = (char *) key;
+		param_val = (char *) val;
+		speech_channel_set_param(schannel, param_name, param_val);
+	}
 
   done:
 
@@ -3589,6 +3622,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 			mrcp_profile_t *mprofile = NULL;
 			mpf_rtp_config_t *rtp_config = NULL;
 			profile_t *mod_profile = NULL;
+			switch_xml_t default_params = NULL; 
 
 			/* get profile attributes */
 			const char *name = apr_pstrdup(pool, switch_xml_attr(profile, "name"));
@@ -3602,6 +3636,42 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 			/* prepare mod_unimrcp's profile for configuration */
 			profile_create(&mod_profile, name, mod_pool);
 			switch_core_hash_insert(globals.profiles, mod_profile->name, mod_profile);
+
+			/* pull in any default SPEAK params */
+			default_params = switch_xml_child(profile, "synthparams");
+			if (default_params) {
+				switch_xml_t param = NULL;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading SPEAK params\n");
+				for (param = switch_xml_child(default_params, "param"); param; param = switch_xml_next(param)) {
+					const char *param_name = switch_xml_attr(param, "name");
+					const char *param_value = switch_xml_attr(param, "value");
+					if (zstr(param_name)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing SPEAK param name\n");
+						client = NULL;
+						goto done;
+					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading SPEAK Param %s:%s\n", param_name, param_value);
+					switch_core_hash_insert(mod_profile->default_synth_params, param_name, param_value);
+				}
+			}
+
+			/* pull in any default RECOGNIZE params */
+			default_params = switch_xml_child(profile, "recogparams");
+			if (default_params) {
+				switch_xml_t param = NULL;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading RECOGNIZE params\n");
+				for (param = switch_xml_child(default_params, "param"); param; param = switch_xml_next(param)) {
+					const char *param_name = switch_xml_attr(param, "name");
+					const char *param_value = switch_xml_attr(param, "value");
+					if (zstr(param_name)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing RECOGNIZE param name\n");
+						client = NULL;
+						goto done;
+					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading RECOGNIZE Param %s:%s\n", param_name, param_value);
+					switch_core_hash_insert(mod_profile->default_recog_params, param_name, param_value);
+				}
+			}
 
 			/* create RTP config, common to MRCPv1 and MRCPv2 */
 			rtp_config = mpf_rtp_config_create(pool);

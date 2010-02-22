@@ -19,5 +19,14 @@
     <!--param name="ptime" value="20"/-->
     <param name="codecs" value="PCMU PCMA L16/96/8000"/>
     <param name="jsgf-mime-type" value="application/jsgf"/>
+
+    <!-- Add any default MRCP params for SPEAK requests here -->
+    <synthparams>
+    </synthparams>
+
+    <!-- Add any default MRCP params for RECOGNIZE requests here -->
+    <recogparams>
+      <!--param name="start-input-timers" value="false"/-->
+    </recogparams>
   </profile>
 </include>
