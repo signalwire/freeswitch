@@ -124,6 +124,7 @@ static mod_unimrcp_globals_t globals;
 struct profile {
 	/** name of the profile */
 	char *name;
+
 	/** MIME type to use for JSGF grammars */
 	const char *jsgf_mime_type;
 	/** MIME type to use for GSL grammars */
@@ -132,6 +133,10 @@ struct profile {
 	const char *srgs_xml_mime_type;
 	/** MIME type to use for SRGS ABNF grammars */
 	const char *srgs_mime_type;
+
+	/** MIME type to use for SSML (TTS) */
+	const char *ssml_mime_type;
+
 	/** Default params to use for RECOGNIZE requests */
 	switch_hash_t *default_recog_params;
 	/** Default params to use for SPEAK requests */
@@ -354,7 +359,6 @@ static const char *speech_channel_type_to_string(speech_channel_type_t type);
  */
 
 /* synthesis languages */
-#define MIME_TYPE_SSML_XML "application/ssml+xml"
 #define MIME_TYPE_PLAIN_TEXT "text/plain"
 
 static switch_status_t synth_load(switch_loadable_module_interface_t *module_interface, switch_memory_pool_t *pool);
@@ -501,6 +505,7 @@ static switch_status_t profile_create(profile_t ** profile, const char *name, sw
 		lprofile->srgs_xml_mime_type = "application/srgs+xml";
 		lprofile->gsl_mime_type = "application/x-nuance-gsl";
 		lprofile->jsgf_mime_type = "application/x-jsgf";
+		lprofile->ssml_mime_type = "application/ssml+xml";
 		switch_core_hash_init(&lprofile->default_synth_params, pool);
 		switch_core_hash_init(&lprofile->default_recog_params, pool);
 		*profile = lprofile;
@@ -1013,7 +1018,7 @@ static switch_status_t synth_channel_speak(speech_channel_t *schannel, const cha
 
 	/* good enough way of determining SSML or plain text body */
 	if (text_starts_with(text, XML_ID) || text_starts_with(text, SSML_ID)) {
-		apt_string_assign(&generic_header->content_type, MIME_TYPE_SSML_XML, mrcp_message->pool);
+		apt_string_assign(&generic_header->content_type, schannel->profile->ssml_mime_type, mrcp_message->pool);
 	} else {
 		apt_string_assign(&generic_header->content_type, MIME_TYPE_PLAIN_TEXT, mrcp_message->pool);
 	}
@@ -3358,6 +3363,8 @@ static int process_profile_config(profile_t *profile, const char *param, const c
 		profile->srgs_xml_mime_type = switch_core_strdup(pool, val);
 	} else if (strcasecmp(param, "srgs-mime-type") == 0) {
 		profile->srgs_mime_type = switch_core_strdup(pool, val);
+	} else if (strcasecmp(param, "ssml-mime-type") == 0) {
+		profile->ssml_mime_type = switch_core_strdup(pool, val);
 	} else {
 		mine = 0;
 	}
