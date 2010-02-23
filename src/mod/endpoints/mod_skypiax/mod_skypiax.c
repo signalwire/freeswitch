@@ -1476,6 +1476,7 @@ static switch_status_t load_config(int reload_type)
 			//char *tcp_srv_port = "45001";
 			char *skype_user = NULL;
 			char *report_incoming_chatmessages = "true";
+			char *silent_mode = "false";
 
 			uint32_t interface_id = 0, to = 0, max = 0;
 
@@ -1507,6 +1508,8 @@ static switch_status_t load_config(int reload_type)
 					skype_user = val;
 				} else if (!strcasecmp(var, "report_incoming_chatmessages")) {
 					report_incoming_chatmessages = val;
+				} else if (!strcasecmp(var, "silent_mode")) {
+					silent_mode = val;
 #if 0
 				} else if (!strcasecmp(var, "tcp_cli_port")) {
 					tcp_cli_port = val;
@@ -1637,6 +1640,13 @@ static switch_status_t load_config(int reload_type)
 
 				}
 
+				if (!strcmp(silent_mode, "true") || !strcmp(silent_mode, "1")) {
+					globals.SKYPIAX_INTERFACES[interface_id].silent_mode = 1;
+				} else {
+					globals.SKYPIAX_INTERFACES[interface_id].silent_mode = 0;	//redundant, just in case
+
+				}
+
 				DEBUGA_SKYPE
 					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].X11_display=%s\n",
 					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].X11_display);
@@ -1669,6 +1679,10 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_SKYPE
 					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].report_incoming_chatmessages=%d\n",
 					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].report_incoming_chatmessages);
+
+				DEBUGA_SKYPE
+					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].silent_mode=%d\n",
+					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].silent_mode);
 
 				WARNINGA("STARTING interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
 
@@ -1734,6 +1748,10 @@ static switch_status_t load_config(int reload_type)
 					switch_sleep(10000);
 					skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET USERSTATUS ONLINE");
 					switch_sleep(10000);
+					if(globals.SKYPIAX_INTERFACES[interface_id].silent_mode){
+						skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET SILENT_MODE ON");
+						switch_sleep(10000);
+						}
 				} else {
 					ERRORA
 						("The Skype client to which we are connected FAILED to gave us CURRENTUSERHANDLE=%s, interface_id=%d FAILED to start. No Skype client logged in as '%s' has been found. Please (re)launch a Skype client logged in as '%s'. Skypiax exiting now\n",
@@ -1767,6 +1785,8 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].destination=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].destination);
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].report_incoming_chatmessages=%d\n", SKYPIAX_P_LOG, i, i,
 							 globals.SKYPIAX_INTERFACES[i].report_incoming_chatmessages);
+				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].silent_mode=%d\n", SKYPIAX_P_LOG, i, i,
+							 globals.SKYPIAX_INTERFACES[i].silent_mode);
 			}
 		}
 	}

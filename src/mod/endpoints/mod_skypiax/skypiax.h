@@ -290,7 +290,7 @@ int begin_to_read;
         switch_time_t old_dtmf_timestamp;
 	        switch_buffer_t *write_buffer;
 	        switch_buffer_t *read_buffer;
-
+int silent_mode;
 
 };
 

@@ -160,7 +160,13 @@ int skypiax_signaling_read(private_t * tech_pvt)
 			//if (!strstr(message, "DURATION")) {
 			DEBUGA_SKYPE("READING: |||%s||| \n", SKYPIAX_P_LOG, message);
 			//}
-
+			if (!strcasecmp(message, "SILENT_MODE OFF")) {
+				if(tech_pvt->silent_mode){
+					DEBUGA_SKYPE("Resetting SILENT_MODE on skype_call: %s.\n", SKYPIAX_P_LOG, id);
+					skypiax_signaling_write(tech_pvt, "SET SILENT_MODE ON");
+					switch_sleep(1000);
+				}
+			}
 			if (!strcasecmp(message, "ERROR 68")) {
 				DEBUGA_SKYPE
 					("If I don't connect immediately, please give the Skype client authorization to be connected by Skypiax (and to not ask you again)\n",
@@ -504,7 +510,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 				if (!strcasecmp(prop, "FAILUREREASON")) {
 					DEBUGA_SKYPE("Skype FAILED on skype_call %s. Let's wait for the FAILED message.\n", SKYPIAX_P_LOG, id);
 				}
-				if (!strcasecmp(prop, "DURATION")) { /* each second, we sync ithe timers */
+				if (!strcasecmp(prop, "DURATION")) { /* each 20 seconds, we sync ithe timers */
 					if(!((atoi(value) % 20))){
 					switch_core_timer_sync(&tech_pvt->timer_read);
 					switch_core_timer_sync(&tech_pvt->timer_write);
@@ -1848,7 +1854,7 @@ int skypiax_signaling_write(private_t * tech_pvt, char *msg_to_skype)
 	DEBUGA_SKYPE("SENDING: |||%s||||\n", SKYPIAX_P_LOG, msg_to_skype);
 
 	sprintf(acInputRow, "%s", msg_to_skype);
-	DEBUGA_SKYPE("acInputRow: |||%s||||\n", SKYPIAX_P_LOG, acInputRow);
+	//DEBUGA_SKYPE("acInputRow: |||%s||||\n", SKYPIAX_P_LOG, acInputRow);
 	/*  send command to skype */
 	oCopyData.dwData = 0;
 	oCopyData.lpData = acInputRow;
