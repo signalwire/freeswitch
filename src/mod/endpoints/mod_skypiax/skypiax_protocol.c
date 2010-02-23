@@ -54,8 +54,11 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 
 	if (*which_port != 0)
 		start_port = *which_port;
-
-	start_port=next_port();
+#ifdef WIN32
+	start_port=(unsigned short)next_port();
+#else
+	start_port=(unsigned short)next_port();
+#endif
 	my_addr.sin_port = htons(start_port);
 	//fcntl(s, F_SETFL, O_NONBLOCK);
 	//tech_pvt->tcp_cli_port = start_port;
