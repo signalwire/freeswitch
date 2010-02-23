@@ -505,7 +505,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
 					DEBUGA_SKYPE("Skype FAILED on skype_call %s. Let's wait for the FAILED message.\n", SKYPIAX_P_LOG, id);
 				}
 				if (!strcasecmp(prop, "DURATION")) { /* each second, we sync ithe timers */
-					if(!((atoi(value) % 5))){
+					if(!((atoi(value) % 20))){
 					switch_core_timer_sync(&tech_pvt->timer_read);
 					switch_core_timer_sync(&tech_pvt->timer_write);
 					DEBUGA_SKYPE("Synching on skype_call: %s.\n", SKYPIAX_P_LOG, id);
