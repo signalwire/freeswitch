@@ -235,7 +235,7 @@ DIRECTORIES_MODULES=""
 ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_portaudio endpoints/mod_sofia ../../libs/openzap/mod_openzap endpoints/mod_loopback"
 ASR_TTS_MODULES="asr_tts/mod_pocketsphinx asr_tts/mod_flite asr_tts/mod_unimrcp"
 EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv"
-FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream formats/mod_shout"
+FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream formats/mod_shout formats/mod_file_string"
 LANGUAGES_MODULES="languages/mod_spidermonkey languages/mod_perl languages/mod_lua languages/mod_python"
 LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
 SAY_MODULES="say/mod_say_en say/mod_say_de say/mod_say_fr"
@@ -477,6 +477,7 @@ fi
 %{prefix}/mod/mod_cdr_csv.so*
 %{prefix}/mod/mod_event_multicast.so* 
 %{prefix}/mod/mod_event_socket.so* 
+%{prefix}/mod/mod_file_string.so*
 %{prefix}/mod/mod_native_file.so* 
 %{prefix}/mod/mod_sndfile.so* 
 %{prefix}/mod/mod_local_stream.so* 
