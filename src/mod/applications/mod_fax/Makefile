@@ -10,7 +10,6 @@ SPANDSP_LA=$(SPANDSP_BUILDDIR)/src/libspandsp.la
 
 LOCAL_CFLAGS=-I$(SPANDSP_DIR)/src -I$(TIFF_DIR)/libtiff -I$(SPANDSP_BUILDDIR)/src -I$(TIFF_BUILDDIR)/libtiff
 LOCAL_LIBADD=$(SPANDSP_LA) $(TIFF_LA)
-LOCAL_LDFLAGS=-ljpeg
 
 include $(BASE)/build/modmake.rules
 $(MODNAME).lo: $(SPANDSP_LA) $(TIFF_LA)
