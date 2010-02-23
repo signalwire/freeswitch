@@ -390,25 +390,28 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_channel_hangup(chan_a, SWITCH_CAUSE_ALLOTTED_TIMEOUT);
 		}
 
-		if (!ans_a && originator) {
-
-			if (!ans_b && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
-				switch_channel_pass_callee_id(chan_b, chan_a);
-				if (switch_channel_answer(chan_a) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
-					goto end_of_bridge_loop;
+		if (!ans_a) {
+			if (originator) {
+				if (!ans_b && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
+					switch_channel_pass_callee_id(chan_b, chan_a);
+					if (switch_channel_answer(chan_a) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
+						goto end_of_bridge_loop;
+					}
+					ans_a = 1;
+				} else if (!pre_b && switch_channel_test_flag(chan_b, CF_EARLY_MEDIA)) {
+					if (switch_channel_pre_answer(chan_a) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
+						goto end_of_bridge_loop;
+					}
+					pre_b = 1;
 				}
-				ans_a = 1;
-			} else if (!pre_b && switch_channel_test_flag(chan_b, CF_EARLY_MEDIA)) {
-				if (switch_channel_pre_answer(chan_a) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
-					goto end_of_bridge_loop;
+				if (!pre_b) {
+					switch_yield(10000);
+					continue;
 				}
-				pre_b = 1;
-			}
-			if (!pre_b) {
-				switch_yield(10000);
-				continue;
+			} else {
+				ans_a = switch_channel_test_flag(chan_b, CF_ANSWERED);
 			}
 		}
 
