@@ -52,7 +52,7 @@ BuildRequires: db4-devel
 BuildRequires: python-devel
 BuildRequires: libogg-devel
 BuildRequires: libvorbis-devel
-BuildRequires: libtiff-devel
+BuildRequires: libjpeg-devel
 #BuildRequires: mono-devel
 BuildRequires: alsa-lib-devel
 BuildRequires: which
