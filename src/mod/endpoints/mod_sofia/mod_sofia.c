@@ -2870,7 +2870,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			struct cb_helper cb;
 			switch_stream_handle_t mystream = { 0 };
 
-			if (!domain || !strchr(domain, '.')) {
+			if (!domain || (!strchr(domain, '.') && strcmp(profile_name, domain))) {
 				domain = profile->name;
 			}
 
