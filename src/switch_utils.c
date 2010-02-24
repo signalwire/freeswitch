@@ -980,6 +980,8 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *base;
+	const char *force_local_ip_v4 = switch_core_get_variable("force_local_ip_v4");
+	const char *force_local_ip_v6 = switch_core_get_variable("force_local_ip_v6");
 
 #ifdef WIN32
 	SOCKET tmp_socket;
@@ -995,6 +997,22 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 	int tmp_socket = -1, on = 1;
 	char abuf[25] = "";
 #endif
+
+	switch (family) {
+	case AF_INET:
+		if (force_local_ip_v4) {
+			switch_copy_string(buf, force_local_ip_v4, len);
+		}
+		return SWITCH_STATUS_SUCCESS;
+	case AF_INET6:
+		if (force_local_ip_v6) {
+			switch_copy_string(buf, force_local_ip_v6, len);
+		}
+		return SWITCH_STATUS_SUCCESS;
+	default:
+		break;
+	}
+
 
 	if (len < 16) {
 		return status;
