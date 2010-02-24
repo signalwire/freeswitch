@@ -1,0 +1,14 @@
+<profile name="internal">
+  <settings>
+    <param name="domain" value="$${domain}}"/>
+    <param name="ip" value="$${local_ip_v4}"/>
+    <param name="port" value="2000"/>
+    <param name="dialplan" value="XML"/>
+    <param name="context" value="public"/>
+    <param name="keep-alive" value="60"/>
+    <param name="date-format" value="D/M/Y"/>
+    <param name="odbc-dsn" value=""/>
+    <param name="debug" value="4"/>
+  </settings>
+</profile>
+

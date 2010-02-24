@@ -60,60 +60,59 @@ struct soft_key_template_definition soft_key_template_default[] = {
 
 /* Translation tables */
 struct skinny_table SKINNY_MESSAGE_TYPES[] = {
-	{"KEEP_ALIVE_MESSAGE", KEEP_ALIVE_MESSAGE},
-	{"REGISTER_MESSAGE", REGISTER_MESSAGE},
-	{"PORT_MESSAGE", PORT_MESSAGE},
-	{"KEYPAD_BUTTON_MESSAGE", KEYPAD_BUTTON_MESSAGE},
-	{"STIMULUS_MESSAGE", STIMULUS_MESSAGE},
-	{"OFF_HOOK_MESSAGE", OFF_HOOK_MESSAGE},
-	{"ON_HOOK_MESSAGE", ON_HOOK_MESSAGE},
-	{"SPEED_DIAL_STAT_REQ_MESSAGE", SPEED_DIAL_STAT_REQ_MESSAGE},
-	{"LINE_STAT_REQ_MESSAGE", LINE_STAT_REQ_MESSAGE},
-	{"CONFIG_STAT_REQ_MESSAGE", CONFIG_STAT_REQ_MESSAGE},
-	{"TIME_DATE_REQ_MESSAGE", TIME_DATE_REQ_MESSAGE},
-	{"BUTTON_TEMPLATE_REQ_MESSAGE", BUTTON_TEMPLATE_REQ_MESSAGE},
-	{"CAPABILITIES_RES_MESSAGE", CAPABILITIES_RES_MESSAGE},
-	{"ALARM_MESSAGE", ALARM_MESSAGE},
-	{"OPEN_RECEIVE_CHANNEL_ACK_MESSAGE", OPEN_RECEIVE_CHANNEL_ACK_MESSAGE},
-	{"SOFT_KEY_SET_REQ_MESSAGE", SOFT_KEY_SET_REQ_MESSAGE},
-	{"SOFT_KEY_EVENT_MESSAGE", SOFT_KEY_EVENT_MESSAGE},
-	{"UNREGISTER_MESSAGE", UNREGISTER_MESSAGE},
-	{"SOFT_KEY_TEMPLATE_REQ_MESSAGE", SOFT_KEY_TEMPLATE_REQ_MESSAGE},
-	{"HEADSET_STATUS_MESSAGE", HEADSET_STATUS_MESSAGE},
-	{"REGISTER_AVAILABLE_LINES_MESSAGE", REGISTER_AVAILABLE_LINES_MESSAGE},
-	{"REGISTER_ACK_MESSAGE", REGISTER_ACK_MESSAGE},
-	{"START_TONE_MESSAGE", START_TONE_MESSAGE},
-	{"STOP_TONE_MESSAGE", STOP_TONE_MESSAGE},
-	{"SET_RINGER_MESSAGE", SET_RINGER_MESSAGE},
-	{"SET_LAMP_MESSAGE", SET_LAMP_MESSAGE},
-	{"SET_SPEAKER_MODE_MESSAGE", SET_SPEAKER_MODE_MESSAGE},
-	{"START_MEDIA_TRANSMISSION_MESSAGE", START_MEDIA_TRANSMISSION_MESSAGE},
-	{"STOP_MEDIA_TRANSMISSION_MESSAGE", STOP_MEDIA_TRANSMISSION_MESSAGE},
-	{"CALL_INFO_MESSAGE", CALL_INFO_MESSAGE},
-	{"SPEED_DIAL_STAT_RES_MESSAGE", SPEED_DIAL_STAT_RES_MESSAGE},
-	{"LINE_STAT_RES_MESSAGE", LINE_STAT_RES_MESSAGE},
-	{"CONFIG_STAT_RES_MESSAGE", CONFIG_STAT_RES_MESSAGE},
-	{"DEFINE_TIME_DATE_MESSAGE", DEFINE_TIME_DATE_MESSAGE},
-	{"BUTTON_TEMPLATE_RES_MESSAGE", BUTTON_TEMPLATE_RES_MESSAGE},
-	{"CAPABILITIES_REQ_MESSAGE", CAPABILITIES_REQ_MESSAGE},
-	{"REGISTER_REJ_MESSAGE", REGISTER_REJ_MESSAGE},
-	{"KEEP_ALIVE_ACK_MESSAGE", KEEP_ALIVE_ACK_MESSAGE},
-	{"OPEN_RECEIVE_CHANNEL_MESSAGE", OPEN_RECEIVE_CHANNEL_MESSAGE},
-	{"CLOSE_RECEIVE_CHANNEL_MESSAGE", CLOSE_RECEIVE_CHANNEL_MESSAGE},
-	{"SOFT_KEY_TEMPLATE_RES_MESSAGE", SOFT_KEY_TEMPLATE_RES_MESSAGE},
-	{"SOFT_KEY_SET_RES_MESSAGE", SOFT_KEY_SET_RES_MESSAGE},
-	{"SELECT_SOFT_KEYS_MESSAGE", SELECT_SOFT_KEYS_MESSAGE},
-	{"CALL_STATE_MESSAGE", CALL_STATE_MESSAGE},
-	{"DISPLAY_PROMPT_STATUS_MESSAGE", DISPLAY_PROMPT_STATUS_MESSAGE},
-	{"CLEAR_PROMPT_STATUS_MESSAGE", CLEAR_PROMPT_STATUS_MESSAGE},
-	{"ACTIVATE_CALL_PLANE_MESSAGE", ACTIVATE_CALL_PLANE_MESSAGE},
-	{"DIALED_NUMBER_MESSAGE", DIALED_NUMBER_MESSAGE},
-	{"SKINNY_MESSAGE_FIELD_SIZE", SKINNY_MESSAGE_FIELD_SIZE},
-	{"SKINNY_MESSAGE_HEADERSIZE", SKINNY_MESSAGE_HEADERSIZE},
-	{"SKINNY_MESSAGE_MAXSIZE", SKINNY_MESSAGE_MAXSIZE},
+	{"KeepAliveMessage", KEEP_ALIVE_MESSAGE},
+	{"RegisterMessage", REGISTER_MESSAGE},
+	{"PortMessage", PORT_MESSAGE},
+	{"KeypadButtonMessage", KEYPAD_BUTTON_MESSAGE},
+	{"StimulusMessage", STIMULUS_MESSAGE},
+	{"OffHookMessage", OFF_HOOK_MESSAGE},
+	{"OnHookMessage", ON_HOOK_MESSAGE},
+	{"SpeedDialStatReqMessage", SPEED_DIAL_STAT_REQ_MESSAGE},
+	{"LineStatReqMessage", LINE_STAT_REQ_MESSAGE},
+	{"ConfigStatReqMessage", CONFIG_STAT_REQ_MESSAGE},
+	{"TimeDateReqMessage", TIME_DATE_REQ_MESSAGE},
+	{"ButtonTemplateReqMessage", BUTTON_TEMPLATE_REQ_MESSAGE},
+	{"CapabilitiesReqMessage", CAPABILITIES_RES_MESSAGE},
+	{"AlarmMessage", ALARM_MESSAGE},
+	{"OpenReceiveChannelAckMessage", OPEN_RECEIVE_CHANNEL_ACK_MESSAGE},
+	{"SoftKeySetReqMessage", SOFT_KEY_SET_REQ_MESSAGE},
+	{"SOftKeyEventMessage", SOFT_KEY_EVENT_MESSAGE},
+	{"UnregisterMessage", UNREGISTER_MESSAGE},
+	{"SoftKeyTemplateReqMessage", SOFT_KEY_TEMPLATE_REQ_MESSAGE},
+	{"FeatureStatReqMessage", FEATURE_STAT_REQ_MESSAGE},
+	{"HeadsetStatusMessage", HEADSET_STATUS_MESSAGE},
+	{"RegisterAvailableLinesMessage", REGISTER_AVAILABLE_LINES_MESSAGE},
+	{"RegisterAckMessage", REGISTER_ACK_MESSAGE},
+	{"StartToneMessage", START_TONE_MESSAGE},
+	{"StopToneMessage", STOP_TONE_MESSAGE},
+	{"SetRingerMessage", SET_RINGER_MESSAGE},
+	{"SetLampMessage", SET_LAMP_MESSAGE},
+	{"SetSpeakerModeMessage", SET_SPEAKER_MODE_MESSAGE},
+	{"StartMediaTransmissionMessage", START_MEDIA_TRANSMISSION_MESSAGE},
+	{"StopMediaTransmissionMessage", STOP_MEDIA_TRANSMISSION_MESSAGE},
+	{"CallInfoMessage", CALL_INFO_MESSAGE},
+	{"SpeedDialStatResMessage", SPEED_DIAL_STAT_RES_MESSAGE},
+	{"LineStatResMessage", LINE_STAT_RES_MESSAGE},
+	{"ConfigStatResMessage", CONFIG_STAT_RES_MESSAGE},
+	{"DefineTimeDateMessage", DEFINE_TIME_DATE_MESSAGE},
+	{"ButtonTemplateResMessage", BUTTON_TEMPLATE_RES_MESSAGE},
+	{"CapabilitiesReqMessage", CAPABILITIES_REQ_MESSAGE},
+	{"RegisterRejMessage", REGISTER_REJ_MESSAGE},
+	{"KeepAliveAckMessageMessage", KEEP_ALIVE_ACK_MESSAGE},
+	{"OpenReceiveChannelMessage", OPEN_RECEIVE_CHANNEL_MESSAGE},
+	{"OCloseReceiveChannelMessage", CLOSE_RECEIVE_CHANNEL_MESSAGE},
+	{"SoftKeyTemplateResMessage", SOFT_KEY_TEMPLATE_RES_MESSAGE},
+	{"SoftKeySetResMessage", SOFT_KEY_SET_RES_MESSAGE},
+	{"SelectSoftKeysMessage", SELECT_SOFT_KEYS_MESSAGE},
+	{"CallStateMessage", CALL_STATE_MESSAGE},
+	{"DisplayPromptStatusMessage", DISPLAY_PROMPT_STATUS_MESSAGE},
+	{"ClearPromptStatusMessage", CLEAR_PROMPT_STATUS_MESSAGE},
+	{"ActivateCallPlaneMessage", ACTIVATE_CALL_PLANE_MESSAGE},
+	{"DialedNumberMessage", DIALED_NUMBER_MESSAGE},
+	{"FeatureResMessage", FEATURE_STAT_RES_MESSAGE},
 	{NULL, 0}
 };
-SKINNY_DECLARE_ID2STR(skinny_message_type2str, SKINNY_MESSAGE_TYPES, "UNKNOWN_MESSAGE")
+SKINNY_DECLARE_ID2STR(skinny_message_type2str, SKINNY_MESSAGE_TYPES, "UnknownMessage")
 SKINNY_DECLARE_STR2ID(skinny_str2message_type, SKINNY_MESSAGE_TYPES, -1)
 
 struct skinny_table SKINNY_RING_TYPES[] = {
@@ -656,7 +655,8 @@ void skinny_line_get(listener_t *listener, uint32_t instance, struct line_stat_r
 	
 	if ((sql = switch_mprintf(
 			"SELECT '%d' AS wanted_position, position, label, value, settings "
-				"FROM skinny_buttons WHERE device_name='%s' AND type=%d "
+				"FROM skinny_buttons "
+				"WHERE device_name='%s' AND type=%d "
 				"ORDER BY position",
 			instance,
 			listener->device_name,
@@ -699,13 +699,59 @@ void skinny_speed_dial_get(listener_t *listener, uint32_t instance, struct speed
 	
 	if ((sql = switch_mprintf(
 			"SELECT '%d' AS wanted_position, position, label, value, settings "
-				"FROM skinny_buttons WHERE device_name='%s' AND type=%d "
+				"FROM skinny_buttons "
+				"WHERE device_name='%s' AND type=%d "
 				"ORDER BY position",
 			instance,
 			listener->device_name,
 			SKINNY_BUTTON_SPEED_DIAL
 			))) {
 		skinny_execute_sql_callback(listener->profile, listener->profile->listener_mutex, sql, skinny_speed_dial_get_callback, &helper);
+		switch_safe_free(sql);
+	}
+	*button = helper.button;
+}
+
+struct feature_get_helper {
+	uint32_t pos;
+	struct feature_stat_res_message *button;
+};
+
+int skinny_feature_get_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct feature_get_helper *helper = pArg;
+
+	helper->pos++;
+	if (helper->pos == atoi(argv[0])) { /* wanted_position */
+		helper->button->index = helper->pos;
+		helper->button->id = helper->pos;
+		strncpy(helper->button->text_label,  argv[2], 40); /* label */
+		helper->button->status = atoi(argv[3]); /* value */
+	}
+	return 0;
+}
+
+void skinny_feature_get(listener_t *listener, uint32_t instance, struct feature_stat_res_message **button)
+{
+	struct feature_get_helper helper = {0};
+	char *sql;
+
+	switch_assert(listener);
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	helper.button = switch_core_alloc(listener->pool, sizeof(struct feature_stat_res_message));
+	
+	if ((sql = switch_mprintf(
+			"SELECT '%d' AS wanted_position, position, label, value, settings "
+				"FROM skinny_buttons "
+				"WHERE device_name='%s' AND NOT (type=%d OR type=%d) "
+				"ORDER BY position",
+			instance,
+			listener->device_name,
+			SKINNY_BUTTON_LINE, SKINNY_BUTTON_SPEED_DIAL
+			))) {
+		skinny_execute_sql_callback(listener->profile, listener->profile->listener_mutex, sql, skinny_feature_get_callback, &helper);
 		switch_safe_free(sql);
 	}
 	*button = helper.button;
@@ -1469,7 +1515,7 @@ switch_status_t skinny_handle_line_stat_request(listener_t *listener, skinny_mes
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t skinny_handle_speed_dial_request(listener_t *listener, skinny_message_t *request)
+switch_status_t skinny_handle_speed_dial_stat_request(listener_t *listener, skinny_message_t *request)
 {
 	skinny_message_t *message;
 	struct speed_dial_stat_res_message *button = NULL;
@@ -1483,6 +1529,26 @@ switch_status_t skinny_handle_speed_dial_request(listener_t *listener, skinny_me
 	skinny_speed_dial_get(listener, request->data.speed_dial_req.number, &button);
 
 	memcpy(&message->data.speed_dial_res, button, sizeof(struct speed_dial_stat_res_message));
+
+	skinny_send_reply(listener, message);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t skinny_handle_feature_stat_request(listener_t *listener, skinny_message_t *request)
+{
+	skinny_message_t *message;
+	struct feature_stat_res_message *button = NULL;
+
+	skinny_check_data_length(request, sizeof(request->data.feature_req));
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.feature_res));
+	message->type = FEATURE_STAT_RES_MESSAGE;
+	message->length = 4 + sizeof(message->data.feature_res);
+	
+	skinny_feature_get(listener, request->data.feature_req.feature_index, &button);
+
+	memcpy(&message->data.feature_res, button, sizeof(struct feature_stat_res_message));
 
 	skinny_send_reply(listener, message);
 
@@ -1947,7 +2013,9 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 		case LINE_STAT_REQ_MESSAGE:
 			return skinny_handle_line_stat_request(listener, request);
 		case SPEED_DIAL_STAT_REQ_MESSAGE:
-			return skinny_handle_speed_dial_request(listener, request);
+			return skinny_handle_speed_dial_stat_request(listener, request);
+		case FEATURE_STAT_REQ_MESSAGE:
+			return skinny_handle_feature_stat_request(listener, request);
 		case REGISTER_AVAILABLE_LINES_MESSAGE:
 			return skinny_handle_register_available_lines_message(listener, request);
 		case TIME_DATE_REQ_MESSAGE:

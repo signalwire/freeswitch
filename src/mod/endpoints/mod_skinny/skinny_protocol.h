@@ -159,6 +159,12 @@ struct soft_key_event_message {
 /* SoftKeyTemplateReqMessage */
 #define SOFT_KEY_TEMPLATE_REQ_MESSAGE 0x0028
 
+/* FeatureStatReqMessage */
+#define FEATURE_STAT_REQ_MESSAGE 0x0034
+struct feature_stat_req_message {
+	uint32_t feature_index;
+};
+
 /* HeadsetStatusMessage */
 #define HEADSET_STATUS_MESSAGE 0x002B
 struct headset_status_message {
@@ -437,6 +443,16 @@ struct dialed_number_message {
 	uint32_t call_id;
 };
 
+/* FeatureStatMessage */
+#define FEATURE_STAT_RES_MESSAGE 0x011F
+struct feature_stat_res_message {
+	uint32_t index;
+	uint32_t id;
+	char text_label[40];
+	uint32_t status;
+};
+
+
 /*****************************************************************************/
 /* SKINNY MESSAGE */
 /*****************************************************************************/
@@ -456,6 +472,7 @@ union skinny_data {
 	struct alarm_message alarm;
 	struct open_receive_channel_ack_message open_receive_channel_ack;
 	struct soft_key_event_message soft_key_event;
+	struct feature_stat_req_message feature_req;
 	struct headset_status_message headset_status;
 	struct register_available_lines_message reg_lines;
 	struct register_ack_message reg_ack;
@@ -483,6 +500,7 @@ union skinny_data {
 	struct clear_prompt_status_message clear_prompt_status;
 	struct activate_call_plane_message activate_call_plane;
 	struct dialed_number_message dialed_number;
+	struct feature_stat_res_message feature_res;
 	
 	uint16_t as_uint16;
 	char as_char;
@@ -594,7 +612,7 @@ uint32_t func(const char *str)\
 		status = SWITCH_STATUS_SUCCESS;\
 	}
 	
-struct skinny_table SKINNY_MESSAGE_TYPES[52];
+struct skinny_table SKINNY_MESSAGE_TYPES[51];
 const char *skinny_message_type2str(uint32_t id);
 uint32_t skinny_str2message_type(const char *str);
 #define SKINNY_PUSH_MESSAGE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_MESSAGE_TYPES)
