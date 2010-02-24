@@ -238,7 +238,29 @@ switch_bool_t skinny_execute_sql_callback(skinny_profile_t *profile,
 /*****************************************************************************/
 /* CHANNEL FUNCTIONS */
 /*****************************************************************************/
+uint32_t skinny_line_perform_set_state(listener_t *listener, const char *file, const char *func, int line, uint32_t instance, uint32_t state, uint32_t call_id)
+{
+	switch_assert(listener);
+	
+	if(listener->session[instance]) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session[instance]), SWITCH_LOG_DEBUG, "Device %s, line %d State Change %d -> %d\n",
+			listener->device_name, instance, listener->line_state[instance], state);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Device %s, line %d State Change %d -> %d (no session)\n",
+			listener->device_name, instance, listener->line_state[instance], state);
+	}
+	send_select_soft_keys(listener, instance, call_id, state, 0xffff);
+	listener->line_state[instance] = state;
+	
+	return listener->line_state[instance];
+}
 
+uint32_t skinny_line_get_state(listener_t *listener, uint32_t instance)
+{
+	switch_assert(listener);
+
+	return listener->line_state[instance];
+}
 switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 {
 	int ms;

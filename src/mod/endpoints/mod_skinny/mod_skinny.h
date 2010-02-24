@@ -112,6 +112,7 @@ struct listener {
 	skinny_profile_t *profile;
 	char device_name[16];
 	switch_core_session_t *session[SKINNY_MAX_LINES];
+	uint32_t line_state[SKINNY_MAX_LINES]; /* See enum skinny_key_set */
 
 	switch_socket_t *sock;
 	switch_memory_pool_t *pool;
@@ -145,9 +146,7 @@ typedef enum {
 	TFLAG_BREAK = (1 << 8),
 	
 	TFLAG_READING = (1 << 9),
-	TFLAG_WRITING = (1 << 10),
-	
-	TFLAG_WAITING_DEST = (1 << 11)
+	TFLAG_WRITING = (1 << 10)
 } TFLAGS;
 
 typedef enum {
@@ -204,6 +203,11 @@ switch_status_t keepalive_listener(listener_t *listener, void *pvt);
 /*****************************************************************************/
 /* CHANNEL FUNCTIONS */
 /*****************************************************************************/
+uint32_t skinny_line_perform_set_state(listener_t *listener, const char *file, const char *func, int line, uint32_t instance, uint32_t state, uint32_t call_id);
+#define  skinny_line_set_state(listener, instance, state, call_id)  skinny_line_perform_set_state(listener, __FILE__, __SWITCH_FUNC__, __LINE__, instance, state, call_id)
+
+uint32_t skinny_line_get_state(listener_t *listener, uint32_t instance);
+
 switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force);
 void tech_init(private_t *tech_pvt, switch_core_session_t *session);
 switch_status_t channel_on_init(switch_core_session_t *session);

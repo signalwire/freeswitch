@@ -308,8 +308,6 @@ switch_status_t skinny_pick_up(listener_t *listener, uint32_t line)
 
 	tech_init(tech_pvt, session);
 
-	switch_set_flag_locked(tech_pvt, TFLAG_WAITING_DEST);
-
 	set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0);
 	set_speaker_mode(listener, SKINNY_SPEAKER_ON);
 	set_lamp(listener, SKINNY_BUTTON_LINE, tech_pvt->line, SKINNY_LAMP_ON);
@@ -317,8 +315,7 @@ switch_status_t skinny_pick_up(listener_t *listener, uint32_t line)
 		SKINNY_OFF_HOOK,
 		tech_pvt->line,
 		tech_pvt->call_id);
-	send_select_soft_keys(listener, tech_pvt->line, tech_pvt->call_id,
-		SKINNY_KEY_SET_OFF_HOOK, 0xffff);
+	skinny_line_set_state(listener, tech_pvt->line, SKINNY_KEY_SET_OFF_HOOK, tech_pvt->call_id);
 	display_prompt_status(listener,
 		0,
 		"\200\000",
@@ -368,11 +365,7 @@ switch_status_t skinny_answer(switch_core_session_t *session)
 		SKINNY_CONNECTED,
 		tech_pvt->line,
 		tech_pvt->call_id);
-	send_select_soft_keys(listener,
-		tech_pvt->line,
-		tech_pvt->call_id,
-		SKINNY_KEY_SET_CONNECTED,
-		0xffff);
+	skinny_line_set_state(listener, tech_pvt->line, SKINNY_KEY_SET_CONNECTED, tech_pvt->call_id);
 	display_prompt_status(listener,
 		0,
 		"\200\030",
@@ -1474,21 +1467,20 @@ switch_status_t skinny_handle_keypad_button_message(listener_t *listener, skinny
 
 		/* TODO check call_id and line */
 
-		if(switch_test_flag(tech_pvt, TFLAG_WAITING_DEST)) {
+		if((skinny_line_get_state(listener, tech_pvt->line) == SKINNY_KEY_SET_OFF_HOOK)
+				|| (skinny_line_get_state(listener, tech_pvt->line) == SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT)) {
 			char name[128];
 			switch_channel_t *channel;
 			char *cid_name = "TODO-soft_key_event"; /* TODO */
 			char *cid_num = "00000"; /* TODO */
 			if(strlen(tech_pvt->dest) == 0) {/* first digit */
 				stop_tone(listener, tech_pvt->line, tech_pvt->call_id);
-				send_select_soft_keys(listener, tech_pvt->line, tech_pvt->call_id,
-					SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT, 0xffff);
+				skinny_line_set_state(listener, tech_pvt->line, SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT, tech_pvt->call_id);
 			}
 			
 			tech_pvt->dest[strlen(tech_pvt->dest)] = digit;
 			
 			if(strlen(tech_pvt->dest) >= 4) { /* TODO Number is complete */
-				switch_clear_flag_locked(tech_pvt, TFLAG_WAITING_DEST);
 				if (!(tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(listener->session[line]),
 																		  NULL, listener->profile->dialplan, cid_name, cid_num, listener->remote_ip, NULL, NULL, NULL, "skinny" /* modname */, listener->profile->context, tech_pvt->dest)) != 0) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session[line]), SWITCH_LOG_CRIT, "Error Creating Session caller profile\n");
@@ -1510,11 +1502,7 @@ switch_status_t skinny_handle_keypad_button_message(listener_t *listener, skinny
 					goto error;
 				}
 
-				send_select_soft_keys(listener,
-					tech_pvt->line,
-					tech_pvt->call_id,
-					SKINNY_KEY_SET_CONNECTED,
-					0xffff);
+				skinny_line_set_state(listener, tech_pvt->line, SKINNY_KEY_SET_CONNECTED, tech_pvt->call_id);
 				send_dialed_number(listener, tech_pvt->dest, tech_pvt->line, tech_pvt->call_id);
 				skinny_answer(listener->session[line]);
 
