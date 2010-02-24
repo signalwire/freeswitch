@@ -786,8 +786,98 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 		return SWITCH_STATUS_FALSE;\
 	}
 
+static switch_status_t start_tone(listener_t *listener,
+	uint32_t tone,
+	uint32_t reserved,
+	uint32_t line_instance,
+	uint32_t call_id);
+static switch_status_t stop_tone(listener_t *listener,
+	uint32_t line_instance,
+	uint32_t call_id);
+static switch_status_t set_ringer(listener_t *listener,
+	uint32_t ring_type,
+	uint32_t ring_mode,
+	uint32_t unknown);
+static switch_status_t set_lamp(listener_t *listener,
+	uint32_t stimulus,
+	uint32_t stimulus_instance,
+	uint32_t mode);
+static switch_status_t set_speaker_mode(listener_t *listener,
+	uint32_t mode);
+static switch_status_t start_media_transmission(listener_t *listener,
+	uint32_t conference_id,
+	uint32_t pass_thru_party_id,
+	uint32_t remote_ip,
+	uint32_t remote_port,
+	uint32_t ms_per_packet,
+	uint32_t payload_capacity,
+	uint32_t precedence,
+	uint32_t silence_suppression,
+	uint16_t max_frames_per_packet,
+	uint32_t g723_bitrate);
+static switch_status_t stop_media_transmission(listener_t *listener,
+	uint32_t conference_id,
+	uint32_t pass_thru_party_id,
+	uint32_t conference_id2);
+static switch_status_t send_call_info(listener_t *listener,
+	char calling_party_name[40],
+	char calling_party[24],
+	char called_party_name[40],
+	char called_party[24],
+	uint32_t line_instance,
+	uint32_t call_id,
+	uint32_t call_type,
+	char original_called_party_name[40],
+	char original_called_party[24],
+	char last_redirecting_party_name[40],
+	char last_redirecting_party[24],
+	uint32_t original_called_party_redirect_reason,
+	uint32_t last_redirecting_reason,
+	char calling_party_voice_mailbox[24],
+	char called_party_voice_mailbox[24],
+	char original_called_party_voice_mailbox[24],
+	char last_redirecting_voice_mailbox[24],
+	uint32_t call_instance,
+	uint32_t call_security_status,
+	uint32_t party_pi_restriction_bits);
+static switch_status_t open_receive_channel(listener_t *listener,
+	uint32_t conference_id,
+	uint32_t pass_thru_party_id,
+	uint32_t packets,
+	uint32_t payload_capacity,
+	uint32_t echo_cancel_type,
+	uint32_t g723_bitrate,
+	uint32_t conference_id2,
+	uint32_t reserved[10]);
+static switch_status_t close_receive_channel(listener_t *listener,
+	uint32_t conference_id,
+	uint32_t pass_thru_party_id,
+	uint32_t conference_id2);
+static switch_status_t send_select_soft_keys(listener_t *listener,
+	uint32_t line_instance,
+	uint32_t call_id,
+	uint32_t soft_key_set,
+	uint32_t valid_key_mask);
+static switch_status_t send_call_state(listener_t *listener,
+	uint32_t call_state,
+	uint32_t line_instance,
+	uint32_t call_id);
+static switch_status_t display_prompt_status(listener_t *listener,
+	uint32_t timeout,
+	char display[32],
+	uint32_t line_instance,
+	uint32_t call_id);
+static switch_status_t clear_prompt_status(listener_t *listener,
+	uint32_t line_instance,
+	uint32_t call_id);
+static switch_status_t activate_call_plane(listener_t *listener,
+	uint32_t line_instance);
+static switch_status_t send_dialed_number(listener_t *listener,
+	char called_party[24],
+	uint32_t line_instance,
+	uint32_t call_id);
+
 static switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t *reply);
-static switch_call_cause_t skinny_session_create(switch_core_session_t *session);
 
 /* LISTENER FUNCTIONS */
 static switch_status_t keepalive_listener(listener_t *listener, void *pvt);
@@ -1277,7 +1367,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 	switch_channel_set_state(channel, CS_INIT);
 
-	cause = skinny_session_create(nsession);
+	cause = SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
 	
 	if (!(cause == SWITCH_CAUSE_SUCCESS)) {
 		goto error;
@@ -1535,6 +1625,328 @@ static switch_status_t skinny_device_event(listener_t *listener, switch_event_t 
 	}
 
 	*ev = event;
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/* Message helpers */
+static switch_status_t start_tone(listener_t *listener,
+	uint32_t tone,
+	uint32_t reserved,
+	uint32_t line_instance,
+	uint32_t call_id)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.start_tone));
+	message->type = START_TONE_MESSAGE;
+	message->length = 4 + sizeof(message->data.start_tone);
+	message->data.start_tone.tone = tone;
+	message->data.start_tone.reserved = reserved;
+	message->data.start_tone.line_instance = line_instance;
+	message->data.start_tone.call_id = call_id;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t stop_tone(listener_t *listener,
+	uint32_t line_instance,
+	uint32_t call_id)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.stop_tone));
+	message->type = STOP_TONE_MESSAGE;
+	message->length = 4 + sizeof(message->data.stop_tone);
+	message->data.stop_tone.line_instance = line_instance;
+	message->data.stop_tone.call_id = call_id;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t set_ringer(listener_t *listener,
+	uint32_t ring_type,
+	uint32_t ring_mode,
+	uint32_t unknown)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.ringer));
+	message->type = SET_RINGER_MESSAGE;
+	message->length = 4 + sizeof(message->data.ringer);
+	message->data.ringer.ring_type = ring_type;
+	message->data.ringer.ring_mode = ring_mode;
+	message->data.ringer.unknown = unknown;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t set_lamp(listener_t *listener,
+	uint32_t stimulus,
+	uint32_t stimulus_instance,
+	uint32_t mode)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.lamp));
+	message->type = SET_LAMP_MESSAGE;
+	message->length = 4 + sizeof(message->data.lamp);
+	message->data.lamp.stimulus = stimulus;
+	message->data.lamp.stimulus_instance = stimulus_instance;
+	message->data.lamp.mode = mode;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t set_speaker_mode(listener_t *listener,
+	uint32_t mode)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.speaker_mode));
+	message->type = SET_SPEAKER_MODE_MESSAGE;
+	message->length = 4 + sizeof(message->data.speaker_mode);
+	message->data.speaker_mode.mode = mode;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t start_media_transmission(listener_t *listener,
+	uint32_t conference_id,
+	uint32_t pass_thru_party_id,
+	uint32_t remote_ip,
+	uint32_t remote_port,
+	uint32_t ms_per_packet,
+	uint32_t payload_capacity,
+	uint32_t precedence,
+	uint32_t silence_suppression,
+	uint16_t max_frames_per_packet,
+	uint32_t g723_bitrate)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.start_media));
+	message->type = START_MEDIA_TRANSMISSION_MESSAGE;
+	message->length = 4 + sizeof(message->data.start_media);
+	message->data.start_media.conference_id = conference_id;
+	message->data.start_media.pass_thru_party_id = pass_thru_party_id;
+	message->data.start_media.remote_ip = remote_ip;
+	message->data.start_media.remote_port = remote_port;
+	message->data.start_media.ms_per_packet = ms_per_packet;
+	message->data.start_media.payload_capacity = payload_capacity;
+	message->data.start_media.precedence = precedence;
+	message->data.start_media.silence_suppression = silence_suppression;
+	message->data.start_media.max_frames_per_packet = max_frames_per_packet;
+	message->data.start_media.g723_bitrate = g723_bitrate;
+	/* ... */
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t stop_media_transmission(listener_t *listener,
+	uint32_t conference_id,
+	uint32_t pass_thru_party_id,
+	uint32_t conference_id2)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.stop_media));
+	message->type = STOP_MEDIA_TRANSMISSION_MESSAGE;
+	message->length = 4 + sizeof(message->data.stop_media);
+	message->data.stop_media.conference_id = conference_id;
+	message->data.stop_media.pass_thru_party_id = pass_thru_party_id;
+	message->data.stop_media.conference_id2 = conference_id2;
+	/* ... */
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t send_call_info(listener_t *listener,
+	char calling_party_name[40],
+	char calling_party[24],
+	char called_party_name[40],
+	char called_party[24],
+	uint32_t line_instance,
+	uint32_t call_id,
+	uint32_t call_type,
+	char original_called_party_name[40],
+	char original_called_party[24],
+	char last_redirecting_party_name[40],
+	char last_redirecting_party[24],
+	uint32_t original_called_party_redirect_reason,
+	uint32_t last_redirecting_reason,
+	char calling_party_voice_mailbox[24],
+	char called_party_voice_mailbox[24],
+	char original_called_party_voice_mailbox[24],
+	char last_redirecting_voice_mailbox[24],
+	uint32_t call_instance,
+	uint32_t call_security_status,
+	uint32_t party_pi_restriction_bits)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.call_info));
+	message->type = CALL_INFO_MESSAGE;
+	message->length = 4 + sizeof(message->data.call_info);
+	strcpy(message->data.call_info.calling_party_name, calling_party_name);
+	strcpy(message->data.call_info.calling_party, calling_party);
+	strcpy(message->data.call_info.called_party_name, called_party_name);
+	strcpy(message->data.call_info.called_party, called_party);
+	message->data.call_info.line_instance = line_instance;
+	message->data.call_info.call_id = call_id;
+	message->data.call_info.call_type = call_type;
+	strcpy(message->data.call_info.original_called_party_name, original_called_party_name);
+	strcpy(message->data.call_info.original_called_party, original_called_party);
+	strcpy(message->data.call_info.last_redirecting_party_name, last_redirecting_party_name);
+	strcpy(message->data.call_info.last_redirecting_party, last_redirecting_party);
+	message->data.call_info.original_called_party_redirect_reason = original_called_party_redirect_reason;
+	message->data.call_info.last_redirecting_reason = last_redirecting_reason;
+	strcpy(message->data.call_info.calling_party_voice_mailbox, calling_party_voice_mailbox);
+	strcpy(message->data.call_info.called_party_voice_mailbox, called_party_voice_mailbox);
+	strcpy(message->data.call_info.original_called_party_voice_mailbox, original_called_party_voice_mailbox);
+	strcpy(message->data.call_info.last_redirecting_voice_mailbox, last_redirecting_voice_mailbox);
+	message->data.call_info.call_instance = call_instance;
+	message->data.call_info.call_security_status = call_security_status;
+	message->data.call_info.party_pi_restriction_bits = party_pi_restriction_bits;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t open_receive_channel(listener_t *listener,
+	uint32_t conference_id,
+	uint32_t pass_thru_party_id,
+	uint32_t packets,
+	uint32_t payload_capacity,
+	uint32_t echo_cancel_type,
+	uint32_t g723_bitrate,
+	uint32_t conference_id2,
+	uint32_t reserved[10])
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.open_receive_channel));
+	message->type = OPEN_RECEIVE_CHANNEL_MESSAGE;
+	message->length = 4 + sizeof(message->data.open_receive_channel);
+	message->data.open_receive_channel.conference_id = conference_id;
+	message->data.open_receive_channel.pass_thru_party_id = pass_thru_party_id;
+	message->data.open_receive_channel.packets = packets;
+	message->data.open_receive_channel.payload_capacity = payload_capacity;
+	message->data.open_receive_channel.echo_cancel_type = echo_cancel_type;
+	message->data.open_receive_channel.g723_bitrate = g723_bitrate;
+	message->data.open_receive_channel.conference_id2 = conference_id2;
+	/*
+	message->data.open_receive_channel.reserved[0] = reserved[0];
+	message->data.open_receive_channel.reserved[1] = reserved[1];
+	message->data.open_receive_channel.reserved[2] = reserved[2];
+	message->data.open_receive_channel.reserved[3] = reserved[3];
+	message->data.open_receive_channel.reserved[4] = reserved[4];
+	message->data.open_receive_channel.reserved[5] = reserved[5];
+	message->data.open_receive_channel.reserved[6] = reserved[6];
+	message->data.open_receive_channel.reserved[7] = reserved[7];
+	message->data.open_receive_channel.reserved[8] = reserved[8];
+	message->data.open_receive_channel.reserved[9] = reserved[9];
+	*/
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t close_receive_channel(listener_t *listener,
+	uint32_t conference_id,
+	uint32_t pass_thru_party_id,
+	uint32_t conference_id2)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.close_receive_channel));
+	message->type = CLOSE_RECEIVE_CHANNEL_MESSAGE;
+	message->length = 4 + sizeof(message->data.close_receive_channel);
+	message->data.close_receive_channel.conference_id = conference_id;
+	message->data.close_receive_channel.pass_thru_party_id = pass_thru_party_id;
+	message->data.close_receive_channel.conference_id2 = conference_id2;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t send_select_soft_keys(listener_t *listener,
+	uint32_t line_instance,
+	uint32_t call_id,
+	uint32_t soft_key_set,
+	uint32_t valid_key_mask)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.select_soft_keys));
+	message->type = SELECT_SOFT_KEYS_MESSAGE;
+	message->length = 4 + sizeof(message->data.select_soft_keys);
+	message->data.select_soft_keys.line_instance = line_instance;
+	message->data.select_soft_keys.call_id = call_id;
+	message->data.select_soft_keys.soft_key_set = soft_key_set;
+	message->data.select_soft_keys.valid_key_mask = valid_key_mask;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t send_call_state(listener_t *listener,
+	uint32_t call_state,
+	uint32_t line_instance,
+	uint32_t call_id)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.call_state));
+	message->type = CALL_STATE_MESSAGE;
+	message->length = 4 + sizeof(message->data.call_state);
+	message->data.call_state.call_state = call_state;
+	message->data.call_state.line_instance = line_instance;
+	message->data.call_state.call_id = call_id;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t display_prompt_status(listener_t *listener,
+	uint32_t timeout,
+	char display[32],
+	uint32_t line_instance,
+	uint32_t call_id)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.display_prompt_status));
+	message->type = DISPLAY_PROMPT_STATUS_MESSAGE;
+	message->length = 4 + sizeof(message->data.display_prompt_status);
+	message->data.display_prompt_status.timeout = timeout;
+	strcpy(message->data.display_prompt_status.display, display);
+	message->data.display_prompt_status.line_instance = line_instance;
+	message->data.display_prompt_status.call_id = call_id;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t clear_prompt_status(listener_t *listener,
+	uint32_t line_instance,
+	uint32_t call_id)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.clear_prompt_status));
+	message->type = CLEAR_PROMPT_STATUS_MESSAGE;
+	message->length = 4 + sizeof(message->data.clear_prompt_status);
+	message->data.clear_prompt_status.line_instance = line_instance;
+	message->data.clear_prompt_status.call_id = call_id;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t activate_call_plane(listener_t *listener,
+	uint32_t line_instance)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.activate_call_plane));
+	message->type = ACTIVATE_CALL_PLANE_MESSAGE;
+	message->length = 4 + sizeof(message->data.activate_call_plane);
+	message->data.activate_call_plane.line_instance = line_instance;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t send_dialed_number(listener_t *listener,
+	char called_party[24],
+	uint32_t line_instance,
+	uint32_t call_id)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.dialed_number));
+	message->type = DIALED_NUMBER_MESSAGE;
+	message->length = 4 + sizeof(message->data.dialed_number);
+	strcpy(message->data.dialed_number.called_party, called_party);
+	message->data.dialed_number.line_instance = line_instance;
+	message->data.dialed_number.call_id = call_id;
+	skinny_send_reply(listener, message);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2084,6 +2496,80 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 		/* end phase */
 		case UNREGISTER_MESSAGE:
 			return skinny_handle_unregister(listener, request);
+		case 0xABCDEF: /* the following commands are to avoid compile warnings (which are errors) */
+activate_call_plane(listener, 1 /* line */);
+send_select_soft_keys(listener, 1 /* line */, 0 /* call_id */, SKINNY_KEY_SET_RING_OUT, 0xffff);
+send_dialed_number(listener, 0 /* called_party */, 1 /* line */, 0 /* call_id */);
+send_call_state(listener, SKINNY_PROCEED, 1 /* line */, 0 /* call_id */);
+open_receive_channel(listener,
+	0, /* uint32_t conference_id, */
+	0, /* uint32_t pass_thru_party_id, */
+	20, /* uint32_t packets, */
+	SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
+	0, /* uint32_t echo_cancel_type, */
+	0, /* uint32_t g723_bitrate, */
+	0, /* uint32_t conference_id2, */
+	0 /* uint32_t reserved[10] */
+);
+start_media_transmission(listener,
+	0, /* uint32_t conference_id, */
+	0, /* uint32_t pass_thru_party_id, */
+	0, /* uint32_t remote_ip, */
+	0, /* uint32_t remote_port, */
+	20, /* uint32_t ms_per_packet, */
+	SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
+	184, /* uint32_t precedence, */
+	0, /* uint32_t silence_suppression, */
+	0, /* uint16_t max_frames_per_packet, */
+	0 /* uint32_t g723_bitrate */
+);
+close_receive_channel(listener,
+	0, /* uint32_t conference_id, */
+	0, /* uint32_t pass_thru_party_id, */
+	0 /* uint32_t conference_id2, */
+);
+stop_media_transmission(listener,
+	0, /* uint32_t conference_id, */
+	0, /* uint32_t pass_thru_party_id, */
+	0 /* uint32_t conference_id2, */
+);
+start_tone(listener, SKINNY_TONE_DIALTONE, 0, 0, 0);
+stop_tone(listener, 0, 0);
+clear_prompt_status(listener, 0, 0);
+set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
+
+send_call_state(listener, SKINNY_RING_IN, 0, 0);
+send_select_soft_keys(listener, 0, 0,
+	SKINNY_KEY_SET_RING_IN, 0xffff);
+display_prompt_status(listener, 0, "\200\027tel", 0, 0);
+/* displayprinotifiymessage */
+send_call_info(listener,
+	"TODO", /* char calling_party_name[40], */
+	"TODO", /* char calling_party[24], */
+	"TODO", /* char called_party_name[40], */
+	"TODO", /* char called_party[24], */
+	0, /* uint32_t line_instance, */
+	0, /* uint32_t call_id, */
+	SKINNY_OUTBOUND_CALL, /* uint32_t call_type, */
+	"TODO", /* char original_called_party_name[40], */
+	"TODO", /* char original_called_party[24], */
+	"TODO", /* char last_redirecting_party_name[40], */
+	"TODO", /* char last_redirecting_party[24], */
+	0, /* uint32_t original_called_party_redirect_reason, */
+	0, /* uint32_t last_redirecting_reason, */
+	"TODO", /* char calling_party_voice_mailbox[24], */
+	"TODO", /* char called_party_voice_mailbox[24], */
+	"TODO", /* char original_called_party_voice_mailbox[24], */
+	"TODO", /* char last_redirecting_voice_mailbox[24], */
+	1, /* uint32_t call_instance, */
+	1, /* uint32_t call_security_status, */
+	0 /* uint32_t party_pi_restriction_bits */
+);
+set_lamp(listener, SKINNY_BUTTON_LINE, 0, SKINNY_LAMP_BLINK);
+set_ringer(listener, SKINNY_RING_OUTSIDE, SKINNY_RING_FOREVER, 0);
+
+
+
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 				"Unknown request type: %x (length=%d).\n", request->type, request->length);
@@ -2102,12 +2588,6 @@ static switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t 
 		reply->type, reply->length);
 	switch_socket_send(listener->sock, ptr, &len);
 	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_call_cause_t skinny_session_create(switch_core_session_t *session)
-{
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel not implemented\n");
-	return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
 }
 
 /*****************************************************************************/
