@@ -182,6 +182,29 @@ struct register_message {
 /* PortMessage */
 #define PORT_MESSAGE 0x0002
 
+/* KeypadButtonMessage */
+#define KEYPAD_BUTTON_MESSAGE 0x0003
+struct keypad_button_message {
+	uint32_t button;
+	uint32_t line_instance;
+	uint32_t call_id;
+};
+
+/* StimulusMessage */
+#define STIMULUS_MESSAGE 0x0005
+struct stimulus_message {
+	uint32_t type;
+	uint32_t instance;
+	uint32_t call_reference;
+};
+
+/* OnHookMessage */
+#define ON_HOOK_MESSAGE 0x0007
+struct on_hook_message {
+	uint32_t line_instance;
+	uint32_t call_id;
+};
+
 /* SpeedDialStatReqMessage */
 #define SPEED_DIAL_STAT_REQ_MESSAGE 0x000A
 struct speed_dial_stat_req_message {
@@ -220,8 +243,25 @@ struct alarm_message {
 	uint32_t alarm_param2;
 };
 
+/* OpenReceiveChannelAck */
+#define OPEN_RECEIVE_CHANNEL_ACK_MESSAGE 0x0022
+struct open_receive_channel_ack_message {
+	uint32_t status;
+	uint32_t ip;
+	uint32_t port;
+	uint32_t pass_thru_party_id;
+};
+
 /* SoftKeySetReqMessage */
 #define SOFT_KEY_SET_REQ_MESSAGE 0x0025
+
+/* SoftKeyEventMessage */
+#define SOFT_KEY_EVENT_MESSAGE 0x0026
+struct soft_key_event_message {
+	uint32_t soft_key_event;
+	uint32_t line_instance;
+	uint32_t callreference;
+};
 
 /* UnregisterMessage */
 #define UNREGISTER_MESSAGE 0x0027
@@ -250,6 +290,126 @@ struct register_ack_message {
 	char reserved[2];
 	uint32_t secondaryKeepAlive;
 	char reserved2[4];
+};
+
+/* StartToneMessage */
+#define START_TONE_MESSAGE 0x0082
+struct start_tone_message {
+	uint32_t tone; /* see enum skinny_tone */
+	uint32_t reserved;
+	uint32_t line_instance;
+	uint32_t call_id;
+};
+
+enum skinny_tone {
+	SKINNY_TONE_SILENCE = 0x00,
+	SKINNY_TONE_DIALTONE = 0x21,
+	SKINNY_TONE_BUSYTONE = 0x23,
+	SKINNY_TONE_ALERT = 0x24,
+	SKINNY_TONE_REORDER = 0x25,
+	SKINNY_TONE_CALLWAITTONE = 0x2D,
+	SKINNY_TONE_NOTONE = 0x7F,
+};
+
+/* StopToneMessage */
+#define STOP_TONE_MESSAGE 0x0083
+struct stop_tone_message {
+	uint32_t line_instance;
+	uint32_t call_id;
+};
+
+/* SetRingerMessage */
+#define SET_RINGER_MESSAGE 0x0085
+struct set_ringer_message {
+	uint32_t ring_type; /* See enum skinny_ring_type */
+	uint32_t ring_status; /* See enum skinny_ring_status */
+	uint32_t unknown2;
+};
+
+enum skinny_ring_type {
+	SKINNY_RING_FOREVER = 1,
+	SKINNY_RING_ONCE = 2,
+};
+
+enum skinny_ring_status {
+	SKINNY_RING_OFF = 0,
+	SKINNY_RING_ON = 1,
+};
+
+/* SetLampMessage */
+#define SET_LAMP_MESSAGE 0x0086
+struct set_lamp_message {
+	uint32_t stimulus;
+	uint32_t stimulus_instance;
+	uint32_t mode; /* See enum skinny_lamp_mode */
+};
+
+enum skinny_lamp_mode {
+	SKINNY_LAMP_OFF = 1,
+	SKINNY_LAMP_ON = 2,
+	SKINNY_LAMP_WINK = 3,
+	SKINNY_LAMP_FLASH = 4,
+	SKINNY_LAMP_BLINK = 5,
+};
+
+/* SetSpeakerModeMessage */
+#define SET_SPEAKER_MODE_MESSAGE 0x0088
+struct set_speaker_mode_message {
+	uint32_t mode; /* See enum skinny_speaker_mode */
+};
+
+enum skinny_speaker_mode {
+	SKINNY_SPEAKER_ON = 1,
+	SKINNY_SPEAKER_OFF = 2,
+};
+
+/* StartMediaTransmissionMessage */
+#define START_MEDIA_TRANSMISSION_MESSAGE 0x008A
+struct start_media_transmission_message {
+	uint32_t conference_id;
+	uint32_t pass_thru_party_id;
+	uint32_t remote_ip;
+	uint32_t remote_port;
+	uint32_t ms_per_packet;
+	uint32_t payload_capacity;
+	uint32_t precedence;
+	uint32_t silence_suppression;
+	uint16_t max_frames_per_packet;
+	uint32_t g723_bitrate;
+	/* ... */
+};
+
+/* StopMediaTransmissionMessage */
+#define STOP_MEDIA_TRANSMISSION_MESSAGE 0x008B
+struct stop_media_transmission_message {
+	uint32_t conference_id;
+	uint32_t pass_thru_party_id;
+	/* ... */
+};
+
+/* CallInfoMessage */
+#define CALL_INFO_MESSAGE 0x008F
+struct call_info_message {
+	char calling_party_name[40];
+	char calling_party[24];
+	char called_party_name[40];
+	char called_party[24];
+	uint32_t line_instance;
+	uint32_t call_id;
+	uint32_t call_type; /* See enum skinny_call_type */
+	char original_called_party_name[40];
+	char original_called_party[24];
+	char last_redirecting_party_name[40];
+	char last_redirecting_party[24];
+	uint32_t original_called_party_redirect_reason;
+	uint32_t last_redirecting_reason;
+	char calling_party_voice_mailbox[24];
+	char called_party_voice_mailbox[24];
+	char original_called_party_voice_mailbox[24];
+	char last_redirecting_voice_mailbox[24];
+	uint32_t call_instance;
+	uint32_t call_security_status;
+	uint32_t party_pi_restriction_bits;
 };
 
 /* SpeedDialStatMessage */
@@ -295,6 +455,17 @@ struct register_rej_message {
 /* KeepAliveAckMessage */
 #define KEEP_ALIVE_ACK_MESSAGE 0x0100
 
+/* OpenReceiveChannelMessage */
+#define OPEN_RECEIVE_CHANNEL_MESSAGE 0x0105
+struct open_receive_channel_message {
+	uint32_t conference_id;
+	uint32_t pass_thru_party_id;
+	uint32_t packets;
+	uint32_t payload_capacity;
+	uint32_t echo_cancel_type;
+	uint32_t g723_bitrate;
+};
+
 /* SoftKeyTemplateResMessage */
 #define SOFT_KEY_TEMPLATE_RES_MESSAGE 0x0108
 
@@ -325,6 +496,66 @@ struct soft_key_set_res_message {
 	uint32_t res;
 };
 
+/* SelectSoftKeysMessage */
+#define SELECT_SOFT_KEYS_MESSAGE 0x0110
+struct select_soft_keys_message {
+	uint32_t line_instance;
+	uint32_t call_id;
+	uint32_t soft_key_set; /* See enum skinny_key_set */
+	uint32_t validKeyMask;
+};
+
+enum skinny_key_set {
+	SKINNY_KEY_SET_ON_HOOK = 0,
+	SKINNY_KEY_SET_CONNECTED = 1,
+	SKINNY_KEY_SET_ON_HOLD = 2,
+	SKINNY_KEY_SET_RING_IN = 3,
+	SKINNY_KEY_SET_OFF_HOOK = 4,
+	SKINNY_KEY_SET_CONNECTED_WITH_TRANSFER = 5,
+	SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT = 6,
+	SKINNY_KEY_SET_CONNECTED_WITH_CONFERENCE = 7,
+	SKINNY_KEY_SET_RING_OUT = 8,
+	SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES = 9,
+};
+
+/* CallStateMessage */
+#define CALL_STATE_MESSAGE 0x0111
+struct call_state_message {
+	uint32_t call_state;
+	uint32_t line_instance;
+	uint32_t call_id;
+};
+
+/* DisplayPromptStatusMessage */
+#define DISPLAY_PROMPT_STATUS_MESSAGE 0x0112
+struct display_prompt_status_message {
+	uint32_t timeout;
+	char display[32];
+	uint32_t line_instance;
+	uint32_t call_id;
+};
+
+/* ClearPromptMessage */
+#define CLEAR_PROMPT_MESSAGE  0x0113
+struct clear_prompt_message {
+	uint32_t line_instance;
+	uint32_t call_id;
+};
+
+/* ActivateCallPlaneMessage */
+#define ACTIVATE_CALL_PLANE_MESSAGE 0x0116
+struct activate_call_plane_message {
+	uint32_t line_instance;
+};
+
+/* DialedNumberMessage */
+#define DIALED_NUMBER_MESSAGE 0x011D
+struct dialed_number_message {
+	char called_party[24];
+	uint32_t line_instance;
+	uint32_t call_id;
+};
+
 /* Message */
 #define SKINNY_MESSAGE_FIELD_SIZE 4 /* 4-bytes field */
 #define SKINNY_MESSAGE_HEADERSIZE 12 /* three 4-bytes fields */
@@ -332,19 +563,39 @@ struct soft_key_set_res_message {
 
 union skinny_data {
 	struct register_message reg;
-	struct headset_status_message headset_status;
-	struct register_available_lines_message reg_lines;
-	struct register_ack_message reg_ack;
+	struct keypad_button_message keypad_button;
+	struct stimulus_message stimulus;
+	struct on_hook_message on_hook;
 	struct speed_dial_stat_req_message speed_dial_req;
 	struct line_stat_req_message line_req;
 	struct capabilities_res_message cap_res;
 	struct alarm_message alarm;
+	struct open_receive_channel_ack_message open_receive_channel_ack;
+	struct soft_key_event_message soft_key_event;
+	struct headset_status_message headset_status;
+	struct register_available_lines_message reg_lines;
+	struct register_ack_message reg_ack;
+	struct start_tone_message start_tone;
+	struct stop_tone_message stop_tone;
+	struct set_ringer_message ringer;
+	struct set_lamp_message lamp;
+	struct set_speaker_mode_message speaker_mode;
+	struct start_media_transmission_message start_media;
+	struct stop_media_transmission_message stop_media;
+	struct call_info_message call_info;
 	struct speed_dial_stat_res_message speed_dial_res;
 	struct line_stat_res_message line_res;
 	struct button_template_message button_template;
 	struct register_rej_message reg_rej;
+	struct open_receive_channel_message open_receive_channel;
 	struct soft_key_template_res_message soft_key_template;
 	struct soft_key_set_res_message soft_key_set;
+	struct select_soft_keys_message select_soft_keys;
+	struct call_state_message call_state;
+	struct display_prompt_status_message display_prompt_status;
+	struct clear_prompt_message clear_prompt;
+	struct activate_call_plane_message activate_call_plane;
+	struct dialed_number_message dialed_number;
 	
 	uint16_t as_uint16;
 	char as_char;
@@ -1687,7 +1938,6 @@ static switch_status_t skinny_handle_keep_alive_message(listener_t *listener, sk
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static switch_status_t skinny_handle_unregister(listener_t *listener, skinny_message_t *request)
 {
 	switch_event_t *event = NULL;
@@ -1709,6 +1959,7 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 	switch(request->type) {
 		case ALARM_MESSAGE:
 			return skinny_handle_alarm(listener, request);
+		/* registering phase */
 		case REGISTER_MESSAGE:
 			return skinny_handle_register(listener, request);
 		case HEADSET_STATUS_MESSAGE:
@@ -1729,8 +1980,10 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 			return skinny_handle_speed_dial_request(listener, request);
 		case REGISTER_AVAILABLE_LINES_MESSAGE:
 			return skinny_handle_register_available_lines_message(listener, request);
+		/* live phase */
 		case KEEP_ALIVE_MESSAGE:
 			return skinny_handle_keep_alive_message(listener, request);
+		/* end phase */
 		case UNREGISTER_MESSAGE:
 			return skinny_handle_unregister(listener, request);
 		default:
