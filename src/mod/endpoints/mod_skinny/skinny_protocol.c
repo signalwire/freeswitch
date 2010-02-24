@@ -35,6 +35,66 @@
 
 skinny_globals_t globals;
 
+struct skinny_message_type_table {
+	const char *name;
+	uint32_t type;
+};
+
+static struct skinny_message_type_table SKINNY_MESSAGE_TYPES[] = {
+	{"KEEP_ALIVE_MESSAGE", KEEP_ALIVE_MESSAGE},
+	{"REGISTER_MESSAGE", REGISTER_MESSAGE},
+	{"PORT_MESSAGE", PORT_MESSAGE},
+	{"KEYPAD_BUTTON_MESSAGE", KEYPAD_BUTTON_MESSAGE},
+	{"STIMULUS_MESSAGE", STIMULUS_MESSAGE},
+	{"OFF_HOOK_MESSAGE", OFF_HOOK_MESSAGE},
+	{"ON_HOOK_MESSAGE", ON_HOOK_MESSAGE},
+	{"SPEED_DIAL_STAT_REQ_MESSAGE", SPEED_DIAL_STAT_REQ_MESSAGE},
+	{"LINE_STAT_REQ_MESSAGE", LINE_STAT_REQ_MESSAGE},
+	{"CONFIG_STAT_REQ_MESSAGE", CONFIG_STAT_REQ_MESSAGE},
+	{"TIME_DATE_REQ_MESSAGE", TIME_DATE_REQ_MESSAGE},
+	{"BUTTON_TEMPLATE_REQ_MESSAGE", BUTTON_TEMPLATE_REQ_MESSAGE},
+	{"CAPABILITIES_RES_MESSAGE", CAPABILITIES_RES_MESSAGE},
+	{"ALARM_MESSAGE", ALARM_MESSAGE},
+	{"OPEN_RECEIVE_CHANNEL_ACK_MESSAGE", OPEN_RECEIVE_CHANNEL_ACK_MESSAGE},
+	{"SOFT_KEY_SET_REQ_MESSAGE", SOFT_KEY_SET_REQ_MESSAGE},
+	{"SOFT_KEY_EVENT_MESSAGE", SOFT_KEY_EVENT_MESSAGE},
+	{"UNREGISTER_MESSAGE", UNREGISTER_MESSAGE},
+	{"SOFT_KEY_TEMPLATE_REQ_MESSAGE", SOFT_KEY_TEMPLATE_REQ_MESSAGE},
+	{"HEADSET_STATUS_MESSAGE", HEADSET_STATUS_MESSAGE},
+	{"REGISTER_AVAILABLE_LINES_MESSAGE", REGISTER_AVAILABLE_LINES_MESSAGE},
+	{"REGISTER_ACK_MESSAGE", REGISTER_ACK_MESSAGE},
+	{"START_TONE_MESSAGE", START_TONE_MESSAGE},
+	{"STOP_TONE_MESSAGE", STOP_TONE_MESSAGE},
+	{"SET_RINGER_MESSAGE", SET_RINGER_MESSAGE},
+	{"SET_LAMP_MESSAGE", SET_LAMP_MESSAGE},
+	{"SET_SPEAKER_MODE_MESSAGE", SET_SPEAKER_MODE_MESSAGE},
+	{"START_MEDIA_TRANSMISSION_MESSAGE", START_MEDIA_TRANSMISSION_MESSAGE},
+	{"STOP_MEDIA_TRANSMISSION_MESSAGE", STOP_MEDIA_TRANSMISSION_MESSAGE},
+	{"CALL_INFO_MESSAGE", CALL_INFO_MESSAGE},
+	{"SPEED_DIAL_STAT_RES_MESSAGE", SPEED_DIAL_STAT_RES_MESSAGE},
+	{"LINE_STAT_RES_MESSAGE", LINE_STAT_RES_MESSAGE},
+	{"CONFIG_STAT_RES_MESSAGE", CONFIG_STAT_RES_MESSAGE},
+	{"DEFINE_TIME_DATE_MESSAGE", DEFINE_TIME_DATE_MESSAGE},
+	{"BUTTON_TEMPLATE_RES_MESSAGE", BUTTON_TEMPLATE_RES_MESSAGE},
+	{"CAPABILITIES_REQ_MESSAGE", CAPABILITIES_REQ_MESSAGE},
+	{"REGISTER_REJ_MESSAGE", REGISTER_REJ_MESSAGE},
+	{"KEEP_ALIVE_ACK_MESSAGE", KEEP_ALIVE_ACK_MESSAGE},
+	{"OPEN_RECEIVE_CHANNEL_MESSAGE", OPEN_RECEIVE_CHANNEL_MESSAGE},
+	{"CLOSE_RECEIVE_CHANNEL_MESSAGE", CLOSE_RECEIVE_CHANNEL_MESSAGE},
+	{"SOFT_KEY_TEMPLATE_RES_MESSAGE", SOFT_KEY_TEMPLATE_RES_MESSAGE},
+	{"SOFT_KEY_SET_RES_MESSAGE", SOFT_KEY_SET_RES_MESSAGE},
+	{"SELECT_SOFT_KEYS_MESSAGE", SELECT_SOFT_KEYS_MESSAGE},
+	{"CALL_STATE_MESSAGE", CALL_STATE_MESSAGE},
+	{"DISPLAY_PROMPT_STATUS_MESSAGE", DISPLAY_PROMPT_STATUS_MESSAGE},
+	{"CLEAR_PROMPT_STATUS_MESSAGE", CLEAR_PROMPT_STATUS_MESSAGE},
+	{"ACTIVATE_CALL_PLANE_MESSAGE", ACTIVATE_CALL_PLANE_MESSAGE},
+	{"DIALED_NUMBER_MESSAGE", DIALED_NUMBER_MESSAGE},
+	{"SKINNY_MESSAGE_FIELD_SIZE", SKINNY_MESSAGE_FIELD_SIZE},
+	{"SKINNY_MESSAGE_HEADERSIZE", SKINNY_MESSAGE_HEADERSIZE},
+	{"SKINNY_MESSAGE_MAXSIZE", SKINNY_MESSAGE_MAXSIZE},
+	{NULL, 0}
+};
+
 struct soft_key_template_definition soft_key_template_default[] = {
 	{ "\200\001", SOFTKEY_REDIAL },
 	{ "\200\002", SOFTKEY_NEWCALL },
@@ -58,10 +118,96 @@ struct soft_key_template_definition soft_key_template_default[] = {
 	{ "\200\120", SOFTKEY_IDIVERT },
 };
 
+struct skinny_key_set_table {
+	const char *name;
+	uint32_t id;
+};
+
+static struct skinny_key_set_table SKINNY_KEY_SETS[] = {
+	{"SKINNY_KEY_SET_ON_HOOK", 0},
+	{"SKINNY_KEY_SET_CONNECTED", 1},
+	{"SKINNY_KEY_SET_ON_HOLD", 2},
+	{"SKINNY_KEY_SET_RING_IN", 3},
+	{"SKINNY_KEY_SET_OFF_HOOK", 4},
+	{"SKINNY_KEY_SET_CONNECTED_WITH_TRANSFER", 5},
+	{"SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT", 6},
+	{"SKINNY_KEY_SET_CONNECTED_WITH_CONFERENCE", 7},
+	{"SKINNY_KEY_SET_RING_OUT", 8},
+	{"SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES", 9},
+	{NULL, 0}
+};
+
 /*****************************************************************************/
 /* SKINNY FUNCTIONS */
 /*****************************************************************************/
+const char *skinny_message_type2str(uint32_t type)
+{
+	uint8_t x;
+	const char *str = "UNKNOWN_MESSAGE";
 
+	for (x = 0; x < (sizeof(SKINNY_MESSAGE_TYPES) / sizeof(struct skinny_message_type_table)) - 1; x++) {
+		if (SKINNY_MESSAGE_TYPES[x].type == type) {
+			str = SKINNY_MESSAGE_TYPES[x].name;
+			break;
+		}
+	}
+
+	return str;
+}
+
+uint32_t skinny_str2message_type(const char *str)
+{
+	uint8_t x;
+	uint32_t type = -1;
+
+	if (*str > 47 && *str < 58) {
+		type = atoi(str);
+	} else {
+		for (x = 0; x < (sizeof(SKINNY_MESSAGE_TYPES) / sizeof(struct skinny_message_type_table)) - 1 && SKINNY_MESSAGE_TYPES[x].name; x++) {
+			if (!strcasecmp(SKINNY_MESSAGE_TYPES[x].name, str)) {
+				type = SKINNY_MESSAGE_TYPES[x].type;
+				break;
+			}
+		}
+	}
+	return type;
+}
+
+/*****************************************************************************/
+const char *skinny_soft_key_set2str(uint32_t id)
+{
+	uint8_t x;
+	const char *str = "UNKNOWN_SOFT_KEY_SET";
+
+	for (x = 0; x < (sizeof(SKINNY_KEY_SETS) / sizeof(struct skinny_key_set_table)) - 1; x++) {
+		if (SKINNY_KEY_SETS[x].id == id) {
+			str = SKINNY_KEY_SETS[x].name;
+			break;
+		}
+	}
+
+	return str;
+}
+
+uint32_t skinny_str2soft_key_set(const char *str)
+{
+	uint8_t x;
+	uint32_t id = -1;
+
+	if (*str > 47 && *str < 58) {
+		id = atoi(str);
+	} else {
+		for (x = 0; x < (sizeof(SKINNY_KEY_SETS) / sizeof(struct skinny_key_set_table)) - 1 && SKINNY_KEY_SETS[x].name; x++) {
+			if (!strcasecmp(SKINNY_KEY_SETS[x].name, str)) {
+				id = SKINNY_KEY_SETS[x].id;
+				break;
+			}
+		}
+	}
+	return id;
+}
+
+/*****************************************************************************/
 char* skinny_codec2string(enum skinny_codecs skinnycodec)
 {
 	switch (skinnycodec) {
@@ -171,9 +317,11 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 				do_sleep = 0;
 				ptr += mlen;
 				memcpy(request, mbuf, bytes);
+#ifdef SKINNY_MEGA_DEBUG
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 					"Got request: length=%d,reserved=%x,type=%x\n",
 					request->length,request->reserved,request->type);
+#endif
 				if(request->length < SKINNY_MESSAGE_FIELD_SIZE) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 						"Skinny client sent invalid data. Length should be greater than 4 but got %d.\n",
@@ -188,9 +336,11 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 				}
 				if(bytes >= request->length + 2*SKINNY_MESSAGE_FIELD_SIZE) {
 					/* Message body */
+#ifdef SKINNY_MEGA_DEBUG
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 						"Got complete request: length=%d,reserved=%x,type=%x,data=%d\n",
 						request->length,request->reserved,request->type,request->data.as_char);
+#endif
 					*req = request;
 					return  SWITCH_STATUS_SUCCESS;
 				}
@@ -1567,7 +1717,7 @@ switch_status_t skinny_handle_unregister(listener_t *listener, skinny_message_t 
 switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *request)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-		"Received message (type=%x,length=%d).\n", request->type, request->length);
+		"Received %s (type=%x,length=%d).\n", skinny_message_type2str(request->type), request->type, request->length);
 	if(zstr(listener->device_name) && request->type != REGISTER_MESSAGE && request->type != ALARM_MESSAGE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 			"Device should send a register message first.\n");
@@ -1624,16 +1774,19 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 	}
 }
 
-switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t *reply)
+switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply)
 {
 	char *ptr;
 	switch_size_t len;
 	switch_assert(reply != NULL);
 	len = reply->length+8;
 	ptr = (char *) reply;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Sending reply (type=%x,length=%d).\n",
-		reply->type, reply->length);
+
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG,
+		"Sending %s (type=%x,length=%d).\n",
+		skinny_message_type2str(reply->type), reply->type, reply->length);
 	switch_socket_send(listener->sock, ptr, &len);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

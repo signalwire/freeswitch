@@ -594,9 +594,9 @@ union skinny_data {
  * body is type+data
  */
 struct skinny_message {
-	int length;
-	int reserved;
-	int type;
+	uint32_t length;
+	uint32_t reserved;
+	uint32_t type;
 	union skinny_data data;
 };
 typedef struct skinny_message skinny_message_t;
@@ -652,13 +652,21 @@ typedef switch_status_t (*skinny_command_t) (char **argv, int argc, switch_strea
 		return SWITCH_STATUS_FALSE;\
 	}
 
+
+const char *skinny_message_type2str(uint32_t type);
+uint32_t skinny_str2message_type(const char *str);
+
+const char *skinny_soft_key_set2str(uint32_t id);
+uint32_t skinny_str2soft_key_set(const char *str);
+
 switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req);
 
 switch_status_t skinny_device_event(listener_t *listener, switch_event_t **ev, switch_event_types_t event_id, const char *subclass_name);
 
 switch_status_t skinny_send_call_info(switch_core_session_t *session);
 
-switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t *reply);
+switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply);
+#define  skinny_send_reply(listener, reply)  skinny_perform_send_reply(listener, __FILE__, __SWITCH_FUNC__, __LINE__, reply)
 
 switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *request);
 

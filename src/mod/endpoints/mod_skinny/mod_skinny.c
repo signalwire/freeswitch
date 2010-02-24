@@ -242,13 +242,12 @@ uint32_t skinny_line_perform_set_state(listener_t *listener, const char *file, c
 {
 	switch_assert(listener);
 	
-	if(listener->session[instance]) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session[instance]), SWITCH_LOG_DEBUG, "Device %s, line %d State Change %d -> %d\n",
-			listener->device_name, instance, listener->line_state[instance], state);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Device %s, line %d State Change %d -> %d (no session)\n",
-			listener->device_name, instance, listener->line_state[instance], state);
-	}
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG,
+		"Device %s, line %d State Change %s (%d) -> %s (%d) (no session)\n",
+		listener->device_name, instance,
+		skinny_soft_key_set2str(listener->line_state[instance]), listener->line_state[instance],
+		skinny_soft_key_set2str(state), state);
+
 	send_select_soft_keys(listener, instance, call_id, state, 0xffff);
 	listener->line_state[instance] = state;
 	
@@ -523,8 +522,7 @@ switch_status_t channel_on_hangup(switch_core_session_t *session)
 		SKINNY_ON_HOOK,
 		tech_pvt->line,
 		tech_pvt->call_id);
-	send_select_soft_keys(listener, tech_pvt->line, tech_pvt->call_id,
-		SKINNY_KEY_SET_ON_HOOK, 0xffff);
+	skinny_line_set_state(listener, tech_pvt->line, SKINNY_KEY_SET_ON_HOOK, tech_pvt->call_id);
 	/* TODO: DefineTimeDate */
 	set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
 	set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0);
@@ -828,8 +826,7 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 	}
 	tech_pvt->listener->session[tech_pvt->line] = nsession;
 	send_call_state(tech_pvt->listener, SKINNY_RING_IN, tech_pvt->line, tech_pvt->call_id);
-	send_select_soft_keys(tech_pvt->listener, tech_pvt->line, tech_pvt->call_id,
-		SKINNY_KEY_SET_RING_IN, 0xffff);
+	skinny_line_set_state(tech_pvt->listener, tech_pvt->line, SKINNY_KEY_SET_RING_IN, tech_pvt->call_id);
 	display_prompt_status(tech_pvt->listener, 0, "\200\027tel", tech_pvt->line, tech_pvt->call_id);
 	/* displayprinotifiymessage */
 	skinny_send_call_info(nsession);
