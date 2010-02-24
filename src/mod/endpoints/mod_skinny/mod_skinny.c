@@ -150,6 +150,12 @@ struct capabilities_res_message {
 /* UnregisterMessage */
 #define UNREGISTER_MESSAGE 0x0027
 
+/* RegisterAvailableLinesMessage */
+#define REGISTER_AVAILABLE_LINES_MESSAGE 0x002D
+struct register_available_lines_message {
+	uint32_t count;
+};
+
 /* RegisterAckMessage */
 #define REGISTER_ACK_MESSAGE 0x0081
 struct register_ack_message {
@@ -188,6 +194,7 @@ struct register_rej_message {
 
 union skinny_data {
 	struct register_message reg;
+	struct register_available_lines_message reg_lines;
 	struct register_ack_message reg_ack;
 	struct line_stat_req_message line_req;
 	struct capabilities_res_message cap_res;
@@ -1075,6 +1082,12 @@ static switch_status_t skinny_handle_line_stat_request(listener_t *listener, ski
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t skinny_handle_register_available_lines_message(listener_t *listener, skinny_message_t *request)
+{
+	/* Do nothing */
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t skinny_handle_keep_alive_message(listener_t *listener, skinny_message_t *request)
 {
 	skinny_message_t *message;
@@ -1115,6 +1128,8 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 			return skinny_handle_port_message(listener, request);
 		case LINE_STAT_REQ_MESSAGE:
 			return skinny_handle_line_stat_request(listener, request);
+		case REGISTER_AVAILABLE_LINES_MESSAGE:
+			return skinny_handle_register_available_lines_message(listener, request);
 		case KEEP_ALIVE_MESSAGE:
 			return skinny_handle_keep_alive_message(listener, request);
 		case UNREGISTER_MESSAGE:
