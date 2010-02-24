@@ -139,6 +139,7 @@ union skinny_data {
 	struct register_message reg;
 	struct register_ack_message reg_ack;
 	
+	uint16_t as_uint16;
 	char as_char;
 	void *raw;
 };
@@ -740,7 +741,7 @@ static switch_status_t skinny_parse_request(listener_t *listener, skinny_message
 			keepalive_listener(listener, NULL);
 			break;
 		case PORT_MESSAGE:
-			/* Nothing to do */
+			device->port = request->data.as_uint16;
 			break;
 		case KEEP_ALIVE_MESSAGE:
 			reply = switch_core_alloc(listener->pool, 12);
