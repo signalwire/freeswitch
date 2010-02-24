@@ -207,6 +207,15 @@ struct capabilities_res_message {
 	struct station_capabilities caps[SWITCH_MAX_CODECS];
 };
 
+/* AlarmMessage */
+#define ALARM_MESSAGE 0x0020
+struct alarm_message {
+	uint32_t alarm_severity;
+	char display_message[80];
+	uint32_t alarm_param1;
+	uint32_t alarm_param2;
+};
+
 /* UnregisterMessage */
 #define UNREGISTER_MESSAGE 0x0027
 
@@ -258,6 +267,7 @@ union skinny_data {
 	struct register_ack_message reg_ack;
 	struct line_stat_req_message line_req;
 	struct capabilities_res_message cap_res;
+	struct alarm_message alarm;
 	struct line_stat_res_message line_res;
 	struct register_rej_message reg_rej;
 	
@@ -1052,7 +1062,7 @@ static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t
 				do_sleep = 0;
 				ptr += mlen;
 				memcpy(request, mbuf, bytes);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 					"Got request: length=%d,reserved=%x,type=%x\n",
 					request->length,request->reserved,request->type);
 				if(request->length < SKINNY_MESSAGE_FIELD_SIZE) {
@@ -1069,7 +1079,7 @@ static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t
 				}
 				if(bytes >= request->length + 2*SKINNY_MESSAGE_FIELD_SIZE) {
 					/* Message body */
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 						"Got complete request: length=%d,reserved=%x,type=%x,data=%d\n",
 						request->length,request->reserved,request->type,request->data.as_char);
 					*req = request;
@@ -1131,6 +1141,17 @@ static switch_status_t skinny_device_event(listener_t *listener, switch_event_t 
 }
 
 /* Message handling */
+static switch_status_t skinny_handle_alarm(listener_t *listener, skinny_message_t *request)
+{
+	skinny_check_data_length(request, sizeof(request->data.alarm));
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+		"Received alarm: Severity=%d, DisplayMessage=%s, Param1=%d, Param2=%d.\n",
+		request->data.alarm.alarm_severity, request->data.alarm.display_message,
+		request->data.alarm.alarm_param1, request->data.alarm.alarm_param2);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *request)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -1428,12 +1449,14 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 		"Received message (type=%x,length=%d).\n", request->type, request->length);
-	if(zstr(listener->device_name) && request->type != REGISTER_MESSAGE) {
+	if(zstr(listener->device_name) && request->type != REGISTER_MESSAGE && request->type != ALARM_MESSAGE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 			"Device should send a register message first.\n");
 		return SWITCH_STATUS_FALSE;
 	}
 	switch(request->type) {
+		case ALARM_MESSAGE:
+			return skinny_handle_alarm(listener, request);
 		case REGISTER_MESSAGE:
 			return skinny_handle_register(listener, request);
 		case CAPABILITIES_RES_MESSAGE:
