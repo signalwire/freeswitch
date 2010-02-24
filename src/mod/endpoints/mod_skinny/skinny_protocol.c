@@ -99,21 +99,21 @@ struct soft_key_template_definition soft_key_template_default[] = {
 	{ "\200\001", SOFTKEY_REDIAL },
 	{ "\200\002", SOFTKEY_NEWCALL },
 	{ "\200\003", SOFTKEY_HOLD },
-	{ "\200\004", SOFTKEY_TRNSFER },
+	{ "\200\004", SOFTKEY_TRANSFER },
 	{ "\200\005", SOFTKEY_CFWDALL },
 	{ "\200\006", SOFTKEY_CFWDBUSY },
 	{ "\200\007", SOFTKEY_CFWDNOANSWER },
-	{ "\200\010", SOFTKEY_BKSPC },
+	{ "\200\010", SOFTKEY_BACKSPACE },
 	{ "\200\011", SOFTKEY_ENDCALL },
 	{ "\200\012", SOFTKEY_RESUME },
 	{ "\200\013", SOFTKEY_ANSWER },
 	{ "\200\014", SOFTKEY_INFO },
-	{ "\200\015", SOFTKEY_CONFRN },
+	{ "\200\015", SOFTKEY_CONFRM },
 	{ "\200\016", SOFTKEY_PARK },
 	{ "\200\017", SOFTKEY_JOIN },
-	{ "\200\020", SOFTKEY_MEETME },
-	{ "\200\021", SOFTKEY_PICKUP },
-	{ "\200\022", SOFTKEY_GPICKUP },
+	{ "\200\020", SOFTKEY_MEETMECONFRM },
+	{ "\200\021", SOFTKEY_CALLPICKUP },
+	{ "\200\022", SOFTKEY_GRPCALLPICKUP },
 	{ "\200\077", SOFTKEY_DND },
 	{ "\200\120", SOFTKEY_IDIVERT },
 };
@@ -1421,6 +1421,10 @@ switch_status_t skinny_handle_soft_key_set_request(listener_t *listener, skinny_
 	message->data.soft_key_set.total_soft_key_set_count = 11;
 	
 	/* TODO fill the set */
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOOK].soft_key_template_index[0] = SOFTKEY_REDIAL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOOK].soft_key_template_index[1] = SOFTKEY_NEWCALL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[0] = SOFTKEY_ENDCALL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[0] = SOFTKEY_ENDCALL;
 
 	skinny_send_reply(listener, message);
 
@@ -1521,6 +1525,8 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 	skinny_profile_t *profile;
 	switch_channel_t *channel = NULL;
 	uint32_t line;
+	private_t *tech_pvt = NULL;
+
 
 	switch_assert(listener->profile);
 	switch_assert(listener->device_name);
@@ -1537,11 +1543,20 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 
 	if(!listener->session[line]) { /*the line is not busy */
 		switch(request->data.soft_key_event.event) {
+			case SOFTKEY_REDIAL:
+				skinny_create_session(listener, line, SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT);
+	
+				tech_pvt = switch_core_session_get_private(listener->session[line]);
+				assert(tech_pvt != NULL);
+		
+				strcpy(tech_pvt->dest, "redial");
+				skinny_process_dest(listener, line);
+				break;
 			case SOFTKEY_NEWCALL:
 				skinny_create_session(listener, line, SKINNY_KEY_SET_OFF_HOOK);
 				break;
 			default:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 					"Unknown SoftKeyEvent type while not busy: %d.\n", request->data.soft_key_event.event);
 		}
 	} else { /* the line is busy */
@@ -1554,7 +1569,7 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 
 				break;
 			default:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 					"Unknown SoftKeyEvent type while busy: %d.\n", request->data.soft_key_event.event);
 		}
 	}
@@ -1601,6 +1616,15 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 	skinny_check_data_length(request, sizeof(request->data.stimulus));
 
 	switch(request->data.stimulus.instance_type) {
+		case SKINNY_BUTTON_LAST_NUMBER_REDIAL:
+			skinny_create_session(listener, line, SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT);
+
+			tech_pvt = switch_core_session_get_private(listener->session[line]);
+			assert(tech_pvt != NULL);
+	
+			strcpy(tech_pvt->dest, "redial");
+			skinny_process_dest(listener, line);
+			break;
 		case SKINNY_BUTTON_VOICEMAIL:
 			skinny_create_session(listener, line, SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT);
 	

@@ -230,7 +230,7 @@ enum skinny_ring_mode {
 /* SetLampMessage */
 #define SET_LAMP_MESSAGE 0x0086
 struct set_lamp_message {
-	uint32_t stimulus;
+	uint32_t stimulus; /* See enum skinny_button_definition */
 	uint32_t stimulus_instance;
 	uint32_t mode; /* See enum skinny_lamp_mode */
 };
@@ -361,6 +361,7 @@ struct button_definition {
 };
 
 enum skinny_button_definition {
+	SKINNY_BUTTON_LAST_NUMBER_REDIAL = 0x01,
 	SKINNY_BUTTON_SPEED_DIAL = 0x02,
 	SKINNY_BUTTON_LINE = 0x09,
 	SKINNY_BUTTON_VOICEMAIL = 0x0F,
@@ -423,32 +424,33 @@ struct soft_key_template_res_message {
 	struct soft_key_template_definition soft_key[32];
 };
 
-#define SOFTKEY_NONE 0x00
-#define SOFTKEY_REDIAL 0x01
-#define SOFTKEY_NEWCALL 0x02
-#define SOFTKEY_HOLD 0x03
-#define SOFTKEY_TRNSFER 0x04
-#define SOFTKEY_CFWDALL 0x05
-#define SOFTKEY_CFWDBUSY 0x06
-#define SOFTKEY_CFWDNOANSWER 0x07
-#define SOFTKEY_BKSPC 0x08
-#define SOFTKEY_ENDCALL 0x09
-#define SOFTKEY_RESUME 0x0A
-#define SOFTKEY_ANSWER 0x0B
-#define SOFTKEY_INFO 0x0C
-#define SOFTKEY_CONFRN 0x0D
-#define SOFTKEY_PARK 0x0E
-#define SOFTKEY_JOIN 0x0F
-#define SOFTKEY_MEETME 0x10
-#define SOFTKEY_PICKUP 0x11
-#define SOFTKEY_GPICKUP 0x12
-#define SOFTKEY_DND 0x13
-#define SOFTKEY_IDIVERT 0x14
+enum skinny_soft_key_event {
+	SOFTKEY_REDIAL = 0x01,
+	SOFTKEY_NEWCALL = 0x02,
+	SOFTKEY_HOLD = 0x03,
+	SOFTKEY_TRANSFER = 0x04,
+	SOFTKEY_CFWDALL = 0x05,
+	SOFTKEY_CFWDBUSY = 0x06,
+	SOFTKEY_CFWDNOANSWER = 0x07,
+	SOFTKEY_BACKSPACE = 0x08,
+	SOFTKEY_ENDCALL = 0x09,
+	SOFTKEY_RESUME = 0x0A,
+	SOFTKEY_ANSWER = 0x0B,
+	SOFTKEY_INFO = 0x0C,
+	SOFTKEY_CONFRM = 0x0D,
+	SOFTKEY_PARK = 0x0E,
+	SOFTKEY_JOIN = 0x0F,
+	SOFTKEY_MEETMECONFRM = 0x10,
+	SOFTKEY_CALLPICKUP = 0x11,
+	SOFTKEY_GRPCALLPICKUP = 0x12,
+	SOFTKEY_DND = 0x13,
+	SOFTKEY_IDIVERT = 0x14,
+};
 
 /* SoftKeySetResMessage */
 #define SOFT_KEY_SET_RES_MESSAGE 0x0109
 struct soft_key_set_definition {
-	uint8_t soft_key_template_index[16];
+	uint8_t soft_key_template_index[16]; /* See enum skinny_soft_key_event */
 	uint16_t soft_key_info_index[16];
 };
 
