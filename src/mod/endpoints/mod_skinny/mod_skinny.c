@@ -59,6 +59,11 @@ struct skinny_profile {
 	char *odbc_user;
 	char *odbc_pass;
 	switch_odbc_handle_t *master_odbc;
+	/* stats */
+	uint32_t ib_calls;
+	uint32_t ob_calls;
+	uint32_t ib_failed_calls;
+	uint32_t ob_failed_calls;	
 	/* listener */
 	int listener_threads;
 	switch_mutex_t *listener_mutex;	
@@ -156,6 +161,8 @@ struct private_object {
 	switch_mutex_t *mutex;
 	switch_mutex_t *flag_mutex;
 	//switch_thread_cond_t *cond;
+	char *dest_profile;
+	char *dest;
 };
 
 typedef struct private_object private_t;
@@ -361,6 +368,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 
 /* SKINNY FUNCTIONS */
 static switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t *reply);
+static switch_call_cause_t skinny_session_create(switch_core_session_t *session);
 
 /* LISTENER FUNCTIONS */
 static switch_status_t keepalive_listener(listener_t *listener, void *pvt);
@@ -373,6 +381,7 @@ static switch_status_t dump_profile(const skinny_profile_t *profile, switch_stre
 	const char *line = "=================================================================================================";
 	switch_assert(profile);
 	stream->write_function(stream, "%s\n", line);
+	/* prefs */
 	stream->write_function(stream, "Name             \t%s\n", profile->name);
 	stream->write_function(stream, "Domain Name      \t%s\n", profile->domain);
 	stream->write_function(stream, "IP               \t%s\n", profile->ip);
@@ -380,7 +389,14 @@ static switch_status_t dump_profile(const skinny_profile_t *profile, switch_stre
 	stream->write_function(stream, "Dialplan         \t%s\n", profile->dialplan);
 	stream->write_function(stream, "Keep-Alive       \t%d\n", profile->keep_alive);
 	stream->write_function(stream, "Date-Format      \t%s\n", profile->date_format);
+	/* db */
 	stream->write_function(stream, "DBName           \t%s\n", profile->dbname ? profile->dbname : switch_str_nil(profile->odbc_dsn));
+	/* stats */
+	stream->write_function(stream, "CALLS-IN         \t%d\n", profile->ib_calls);
+	stream->write_function(stream, "FAILED-CALLS-IN  \t%d\n", profile->ib_failed_calls);
+	stream->write_function(stream, "CALLS-OUT        \t%d\n", profile->ob_calls);
+	stream->write_function(stream, "FAILED-CALLS-OUT \t%d\n", profile->ob_failed_calls);
+	/* listener */
 	stream->write_function(stream, "Listener-Threads \t%d\n", profile->listener_threads);
 	stream->write_function(stream, "%s\n", line);
 
@@ -388,7 +404,7 @@ static switch_status_t dump_profile(const skinny_profile_t *profile, switch_stre
 }
 
 
-static skinny_profile_t *get_profile(const char *profile_name)
+static skinny_profile_t *skinny_find_profile(const char *profile_name)
 {
 	return (skinny_profile_t *) switch_core_hash_find(globals.profile_hash, profile_name);
 }
@@ -781,46 +797,95 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
 {
-	if ((*new_session = switch_core_session_request(skinny_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool)) != 0) {
-		private_t *tech_pvt;
-		switch_channel_t *channel;
-		switch_caller_profile_t *caller_profile;
+	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	switch_core_session_t *nsession = NULL;
+	private_t *tech_pvt;
+	
+	char *profile_name, *dest;
+	skinny_profile_t *profile = NULL;
+	char name[128];
+	switch_channel_t *channel;
+	switch_caller_profile_t *caller_profile;
 
-		switch_core_session_add_stream(*new_session, NULL);
-		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
-			channel = switch_core_session_get_channel(*new_session);
-			tech_init(tech_pvt, *new_session);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
-			switch_core_session_destroy(new_session);
-			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-		}
-
-		if (outbound_profile) {
-			char name[128];
-
-			snprintf(name, sizeof(name), "SKINNY/%s", outbound_profile->destination_number);
-			switch_channel_set_name(channel, name);
-
-			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
-			switch_channel_set_caller_profile(channel, caller_profile);
-			tech_pvt->caller_profile = caller_profile;
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_ERROR, "Doh! no caller profile\n");
-			switch_core_session_destroy(new_session);
-			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-		}
-
-
-
-		switch_channel_set_flag(channel, CF_OUTBOUND);
-		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
-		switch_channel_set_state(channel, CS_INIT);
-		return SWITCH_CAUSE_SUCCESS;
+	if (!outbound_profile || zstr(outbound_profile->destination_number)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid Destination\n");
+		goto error;
 	}
 
-	return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	if (!(nsession = switch_core_session_request(skinny_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
+		goto error;
+	}
 
+	if (!(tech_pvt = (struct private_object *) switch_core_session_alloc(nsession, sizeof(*tech_pvt)))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error Creating Session private object\n");
+		goto error;
+	}
+
+	tech_init(tech_pvt, nsession);
+
+	if(!(profile_name = switch_core_session_strdup(nsession, outbound_profile->destination_number))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error Creating Session Info\n");
+		goto error;
+	}
+
+	if (!(dest = strchr(profile_name, '/'))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Skinny URL. Should be skinny/<profile>/<number>.\n");
+		cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+		goto error;
+	}
+	*dest++ = '\0';
+
+	profile = skinny_find_profile(profile_name);
+	if (!(profile = skinny_find_profile(profile_name))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Profile %s\n", profile_name);
+		cause = SWITCH_CAUSE_UNALLOCATED_NUMBER;
+		goto error;
+	}
+	
+	tech_pvt->dest = switch_core_session_strdup(nsession, dest);
+	tech_pvt->dest_profile = switch_core_session_strdup(nsession, profile_name);
+	snprintf(name, sizeof(name), "SKINNY/%s/%s", profile->name, dest);
+
+	channel = switch_core_session_get_channel(nsession);
+	switch_channel_set_name(channel, name);
+	
+
+	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
+	switch_channel_set_caller_profile(channel, caller_profile);
+	tech_pvt->caller_profile = caller_profile;
+
+	switch_channel_set_flag(channel, CF_OUTBOUND);
+	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
+	switch_channel_set_state(channel, CS_INIT);
+
+	cause = skinny_session_create(nsession);
+	
+	if (!(cause == SWITCH_CAUSE_SUCCESS)) {
+		goto error;
+	}
+	
+	*new_session = nsession;
+	cause = SWITCH_CAUSE_SUCCESS;
+	goto done;
+
+  error:
+	if (nsession) {
+		switch_core_session_destroy(&nsession);
+	}
+	*pool = NULL;
+
+
+  done:
+
+	if (profile) {
+		if (cause == SWITCH_CAUSE_SUCCESS) {
+			profile->ob_calls++;
+		} else {
+			profile->ob_failed_calls++;
+		}
+	}
+	return cause;
 }
 
 static switch_status_t channel_receive_event(switch_core_session_t *session, switch_event_t *event)
@@ -1381,6 +1446,12 @@ static switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_call_cause_t skinny_session_create(switch_core_session_t *session)
+{
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel not implemented\n");
+	return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
+}
+
 /*****************************************************************************/
 /* LISTENER FUNCTIONS */
 /*****************************************************************************/
@@ -1910,7 +1981,7 @@ static switch_status_t load_skinny_config(void)
 static switch_status_t cmd_status_profile(const char *profile_name, switch_stream_handle_t *stream)
 {
 	skinny_profile_t *profile;
-	if ((profile = get_profile(profile_name))) {
+	if ((profile = skinny_find_profile(profile_name))) {
 		dump_profile(profile, stream);
 	} else {
 		stream->write_function(stream, "Profile not found!\n");
@@ -1922,7 +1993,7 @@ static switch_status_t cmd_status_profile(const char *profile_name, switch_strea
 static switch_status_t cmd_status_profile_device(const char *profile_name, const char *device_name, switch_stream_handle_t *stream)
 {
 	skinny_profile_t *profile;
-	if ((profile = get_profile(profile_name))) {
+	if ((profile = skinny_find_profile(profile_name))) {
 		dump_device(profile, device_name, stream);
 	} else {
 		stream->write_function(stream, "Profile not found!\n");
@@ -2041,7 +2112,7 @@ static switch_status_t skinny_list_devices(const char *line, const char *cursor,
 		return status;
 	}
 
-	if((profile = get_profile(argv[3]))) {
+	if((profile = skinny_find_profile(argv[3]))) {
 		if ((sql = switch_mprintf("SELECT device_name FROM skinny_devices"))) {
 			skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_list_devices_callback, &h);
 			switch_safe_free(sql);
@@ -2139,9 +2210,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 
 	globals.running = 0;
 
+	/* kill listeners */
 	walk_listeners(kill_listener, NULL);
 
-	/* launch listeners */
+	/* close sockets */
 	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
@@ -2157,14 +2229,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 		}
 	}
 
-	/* Free dynamically allocated strings */
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
-		profile = (skinny_profile_t *) val;
-		switch_safe_free(profile->domain);
-		switch_safe_free(profile->ip);
-		switch_safe_free(profile->dialplan);
-	}
 	switch_safe_free(globals.codec_string);
 	switch_safe_free(globals.codec_rates_string);
 	
