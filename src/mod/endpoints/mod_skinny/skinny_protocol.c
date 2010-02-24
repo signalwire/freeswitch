@@ -35,12 +35,31 @@
 
 skinny_globals_t globals;
 
-struct skinny_message_type_table {
-	const char *name;
-	uint32_t type;
+struct soft_key_template_definition soft_key_template_default[] = {
+	{ "\200\001", SOFTKEY_REDIAL },
+	{ "\200\002", SOFTKEY_NEWCALL },
+	{ "\200\003", SOFTKEY_HOLD },
+	{ "\200\004", SOFTKEY_TRANSFER },
+	{ "\200\005", SOFTKEY_CFWDALL },
+	{ "\200\006", SOFTKEY_CFWDBUSY },
+	{ "\200\007", SOFTKEY_CFWDNOANSWER },
+	{ "\200\010", SOFTKEY_BACKSPACE },
+	{ "\200\011", SOFTKEY_ENDCALL },
+	{ "\200\012", SOFTKEY_RESUME },
+	{ "\200\013", SOFTKEY_ANSWER },
+	{ "\200\014", SOFTKEY_INFO },
+	{ "\200\015", SOFTKEY_CONFRM },
+	{ "\200\016", SOFTKEY_PARK },
+	{ "\200\017", SOFTKEY_JOIN },
+	{ "\200\020", SOFTKEY_MEETMECONFRM },
+	{ "\200\021", SOFTKEY_CALLPICKUP },
+	{ "\200\022", SOFTKEY_GRPCALLPICKUP },
+	{ "\200\077", SOFTKEY_DND },
+	{ "\200\120", SOFTKEY_IDIVERT },
 };
 
-static struct skinny_message_type_table SKINNY_MESSAGE_TYPES[] = {
+/* Translation tables */
+struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{"KEEP_ALIVE_MESSAGE", KEEP_ALIVE_MESSAGE},
 	{"REGISTER_MESSAGE", REGISTER_MESSAGE},
 	{"PORT_MESSAGE", PORT_MESSAGE},
@@ -94,119 +113,94 @@ static struct skinny_message_type_table SKINNY_MESSAGE_TYPES[] = {
 	{"SKINNY_MESSAGE_MAXSIZE", SKINNY_MESSAGE_MAXSIZE},
 	{NULL, 0}
 };
+SKINNY_DECLARE_ID2STR(skinny_message_type2str, SKINNY_MESSAGE_TYPES, "UNKNOWN_MESSAGE")
+SKINNY_DECLARE_STR2ID(skinny_str2message_type, SKINNY_MESSAGE_TYPES, -1)
 
-struct soft_key_template_definition soft_key_template_default[] = {
-	{ "\200\001", SOFTKEY_REDIAL },
-	{ "\200\002", SOFTKEY_NEWCALL },
-	{ "\200\003", SOFTKEY_HOLD },
-	{ "\200\004", SOFTKEY_TRANSFER },
-	{ "\200\005", SOFTKEY_CFWDALL },
-	{ "\200\006", SOFTKEY_CFWDBUSY },
-	{ "\200\007", SOFTKEY_CFWDNOANSWER },
-	{ "\200\010", SOFTKEY_BACKSPACE },
-	{ "\200\011", SOFTKEY_ENDCALL },
-	{ "\200\012", SOFTKEY_RESUME },
-	{ "\200\013", SOFTKEY_ANSWER },
-	{ "\200\014", SOFTKEY_INFO },
-	{ "\200\015", SOFTKEY_CONFRM },
-	{ "\200\016", SOFTKEY_PARK },
-	{ "\200\017", SOFTKEY_JOIN },
-	{ "\200\020", SOFTKEY_MEETMECONFRM },
-	{ "\200\021", SOFTKEY_CALLPICKUP },
-	{ "\200\022", SOFTKEY_GRPCALLPICKUP },
-	{ "\200\077", SOFTKEY_DND },
-	{ "\200\120", SOFTKEY_IDIVERT },
-};
-
-struct skinny_key_set_table {
-	const char *name;
-	uint32_t id;
-};
-
-static struct skinny_key_set_table SKINNY_KEY_SETS[] = {
-	{"SKINNY_KEY_SET_ON_HOOK", 0},
-	{"SKINNY_KEY_SET_CONNECTED", 1},
-	{"SKINNY_KEY_SET_ON_HOLD", 2},
-	{"SKINNY_KEY_SET_RING_IN", 3},
-	{"SKINNY_KEY_SET_OFF_HOOK", 4},
-	{"SKINNY_KEY_SET_CONNECTED_WITH_TRANSFER", 5},
-	{"SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT", 6},
-	{"SKINNY_KEY_SET_CONNECTED_WITH_CONFERENCE", 7},
-	{"SKINNY_KEY_SET_RING_OUT", 8},
-	{"SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES", 9},
+struct skinny_table SKINNY_RING_TYPES[] = {
+	{"RingOff", SKINNY_RING_OFF},
+	{"RingInside", SKINNY_RING_INSIDE},
+	{"RingOutside", SKINNY_RING_OUTSIDE},
+	{"RingFeature", SKINNY_RING_FEATURE},
 	{NULL, 0}
 };
+SKINNY_DECLARE_ID2STR(skinny_ring_type2str, SKINNY_RING_TYPES, "RingTypeUnknown")
+SKINNY_DECLARE_STR2ID(skinny_str2ring_type, SKINNY_RING_TYPES, -1)
 
+struct skinny_table SKINNY_RING_MODES[] = {
+	{"RingForever", SKINNY_RING_FOREVER},
+	{"RingOnce", SKINNY_RING_ONCE},
+	{NULL, 0}
+};
+SKINNY_DECLARE_ID2STR(skinny_ring_mode2str, SKINNY_RING_MODES, "RingModeUnknown")
+SKINNY_DECLARE_STR2ID(skinny_str2ring_mode, SKINNY_RING_MODES, -1)
+
+struct skinny_table SKINNY_STIMULI[] = {
+	{"LastNumberRedial", SKINNY_BUTTON_LAST_NUMBER_REDIAL},
+	{"SpeedDial", SKINNY_BUTTON_SPEED_DIAL},
+	{"Line", SKINNY_BUTTON_LINE},
+	{"Voicemail", SKINNY_BUTTON_VOICEMAIL},
+	{"Undefined", SKINNY_BUTTON_UNDEFINED},
+	{NULL, 0}
+};
+SKINNY_DECLARE_ID2STR(skinny_stimulus2str, SKINNY_STIMULI, "Unknown")
+SKINNY_DECLARE_STR2ID(skinny_str2stimulus, SKINNY_STIMULI, -1)
+
+struct skinny_table SKINNY_LAMP_MODES[] = {
+	{"Off", SKINNY_LAMP_OFF},
+	{"On", SKINNY_LAMP_ON},
+	{"Wink", SKINNY_LAMP_WINK},
+	{"Flash", SKINNY_LAMP_FLASH},
+	{"Blink", SKINNY_LAMP_BLINK},
+	{NULL, 0}
+};
+SKINNY_DECLARE_ID2STR(skinny_lamp_mode2str, SKINNY_LAMP_MODES, "Unknown")
+SKINNY_DECLARE_STR2ID(skinny_str2lamp_mode, SKINNY_LAMP_MODES, -1)
+
+struct skinny_table SKINNY_SPEAKER_MODES[] = {
+	{"SpeakerOn", SKINNY_SPEAKER_ON},
+	{"SpeakerOff", SKINNY_SPEAKER_OFF},
+	{NULL, 0}
+};
+SKINNY_DECLARE_ID2STR(skinny_speaker_mode2str, SKINNY_SPEAKER_MODES, "Unknown")
+SKINNY_DECLARE_STR2ID(skinny_str2speaker_mode, SKINNY_SPEAKER_MODES, -1)
+
+struct skinny_table SKINNY_KEY_SETS[] = {
+	{"KeySetOnHook", SKINNY_KEY_SET_ON_HOOK},
+	{"KeySetConnected", SKINNY_KEY_SET_CONNECTED},
+	{"KeySetOnHold", SKINNY_KEY_SET_ON_HOLD},
+	{"KeySetRingIn", SKINNY_KEY_SET_RING_IN},
+	{"KeySetOffHook", SKINNY_KEY_SET_OFF_HOOK},
+	{"KeySetConnectedWithTransfer", SKINNY_KEY_SET_CONNECTED_WITH_TRANSFER},
+	{"KeySetDigitsAfterDialingFirstDigit", SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT},
+	{"KeySetConnectedWithConference", SKINNY_KEY_SET_CONNECTED_WITH_CONFERENCE},
+	{"KeySetRingOut", SKINNY_KEY_SET_RING_OUT},
+	{"KeySetOffHookWithFeatures", SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES},
+	{NULL, 0}
+};
+SKINNY_DECLARE_ID2STR(skinny_soft_key_set2str, SKINNY_KEY_SETS, "UNKNOWN_SOFT_KEY_SET")
+SKINNY_DECLARE_STR2ID(skinny_str2soft_key_set, SKINNY_KEY_SETS, -1)
+
+struct skinny_table SKINNY_CALL_STATES[] = {
+	{"OffHook", SKINNY_OFF_HOOK},
+	{"OnHook", SKINNY_ON_HOOK},
+	{"RingOut", SKINNY_RING_OUT},
+	{"RingIn", SKINNY_RING_IN},
+	{"Connected", SKINNY_CONNECTED},
+	{"Busy", SKINNY_BUSY},
+	{"Congestion", SKINNY_CONGESTION},
+	{"Hold", SKINNY_HOLD},
+	{"CallWaiting", SKINNY_CALL_WAITING},
+	{"CallTransfer", SKINNY_CALL_TRANSFER},
+	{"CallPark", SKINNY_CALL_PARK},
+	{"Proceed", SKINNY_PROCEED},
+	{"CallRemoteMultiline", SKINNY_CALL_REMOTE_MULTILINE},
+	{"InvalidNumber", SKINNY_INVALID_NUMBER},
+	{NULL, 0}
+};
+SKINNY_DECLARE_ID2STR(skinny_call_state2str, SKINNY_CALL_STATES, "CallStateUnknown")
+SKINNY_DECLARE_STR2ID(skinny_str2call_state, SKINNY_CALL_STATES, -1)
 /*****************************************************************************/
 /* SKINNY FUNCTIONS */
-/*****************************************************************************/
-const char *skinny_message_type2str(uint32_t type)
-{
-	uint8_t x;
-	const char *str = "UNKNOWN_MESSAGE";
-
-	for (x = 0; x < (sizeof(SKINNY_MESSAGE_TYPES) / sizeof(struct skinny_message_type_table)) - 1; x++) {
-		if (SKINNY_MESSAGE_TYPES[x].type == type) {
-			str = SKINNY_MESSAGE_TYPES[x].name;
-			break;
-		}
-	}
-
-	return str;
-}
-
-uint32_t skinny_str2message_type(const char *str)
-{
-	uint8_t x;
-	uint32_t type = -1;
-
-	if (*str > 47 && *str < 58) {
-		type = atoi(str);
-	} else {
-		for (x = 0; x < (sizeof(SKINNY_MESSAGE_TYPES) / sizeof(struct skinny_message_type_table)) - 1 && SKINNY_MESSAGE_TYPES[x].name; x++) {
-			if (!strcasecmp(SKINNY_MESSAGE_TYPES[x].name, str)) {
-				type = SKINNY_MESSAGE_TYPES[x].type;
-				break;
-			}
-		}
-	}
-	return type;
-}
-
-/*****************************************************************************/
-const char *skinny_soft_key_set2str(uint32_t id)
-{
-	uint8_t x;
-	const char *str = "UNKNOWN_SOFT_KEY_SET";
-
-	for (x = 0; x < (sizeof(SKINNY_KEY_SETS) / sizeof(struct skinny_key_set_table)) - 1; x++) {
-		if (SKINNY_KEY_SETS[x].id == id) {
-			str = SKINNY_KEY_SETS[x].name;
-			break;
-		}
-	}
-
-	return str;
-}
-
-uint32_t skinny_str2soft_key_set(const char *str)
-{
-	uint8_t x;
-	uint32_t id = -1;
-
-	if (*str > 47 && *str < 58) {
-		id = atoi(str);
-	} else {
-		for (x = 0; x < (sizeof(SKINNY_KEY_SETS) / sizeof(struct skinny_key_set_table)) - 1 && SKINNY_KEY_SETS[x].name; x++) {
-			if (!strcasecmp(SKINNY_KEY_SETS[x].name, str)) {
-				id = SKINNY_KEY_SETS[x].id;
-				break;
-			}
-		}
-	}
-	return id;
-}
-
 /*****************************************************************************/
 char* skinny_codec2string(enum skinny_codecs skinnycodec)
 {
@@ -644,7 +638,7 @@ int skinny_line_get_callback(void *pArg, int argc, char **argv, char **columnNam
 		helper->button->number = helper->pos;
 		strncpy(helper->button->name,  argv[2], 24); /* label */
 		strncpy(helper->button->shortname,  argv[3], 40); /* value */
-		strncpy(helper->button->displayname,  argv[2], 44); /* settings */
+		strncpy(helper->button->displayname,  argv[4], 44); /* settings */
 	}
 	return 0;
 }
@@ -1567,6 +1561,9 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 	}
 	/* Close/Hold busy lines */
 	for(int i = 0 ; i < SKINNY_MAX_BUTTON_COUNT ; i++) {
+		if(i == line) {
+			continue;
+		}
 		if(listener->session[i]) {
 			channel = switch_core_session_get_channel(listener->session[i]);
 			assert(channel != NULL);
@@ -1610,6 +1607,9 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 			skinny_unhold_line(listener, line);			
 		}
 		switch(request->data.soft_key_event.event) {
+			case SOFTKEY_ANSWER:
+				skinny_answer(listener->session[line]);
+				break;
 			case SOFTKEY_ENDCALL:
 				channel = switch_core_session_get_channel(listener->session[line]);
 				assert(channel != NULL);

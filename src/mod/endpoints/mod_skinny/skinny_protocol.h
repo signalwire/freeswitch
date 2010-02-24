@@ -190,16 +190,6 @@ struct start_tone_message {
 	uint32_t call_id;
 };
 
-enum skinny_tone {
-	SKINNY_TONE_SILENCE = 0x00,
-	SKINNY_TONE_DIALTONE = 0x21,
-	SKINNY_TONE_BUSYTONE = 0x23,
-	SKINNY_TONE_ALERT = 0x24,
-	SKINNY_TONE_REORDER = 0x25,
-	SKINNY_TONE_CALLWAITTONE = 0x2D,
-	SKINNY_TONE_NOTONE = 0x7F,
-};
-
 /* StopToneMessage */
 #define STOP_TONE_MESSAGE 0x0083
 struct stop_tone_message {
@@ -215,18 +205,6 @@ struct set_ringer_message {
 	uint32_t unknown; /* ?? */
 };
 
-enum skinny_ring_type {
-	SKINNY_RING_OFF = 1,
-	SKINNY_RING_INSIDE = 2,
-	SKINNY_RING_OUTSIDE = 3,
-	SKINNY_RING_FEATURE = 4
-};
-
-enum skinny_ring_mode {
-	SKINNY_RING_FOREVER = 1,
-	SKINNY_RING_ONCE = 2,
-};
-
 /* SetLampMessage */
 #define SET_LAMP_MESSAGE 0x0086
 struct set_lamp_message {
@@ -235,23 +213,10 @@ struct set_lamp_message {
 	uint32_t mode; /* See enum skinny_lamp_mode */
 };
 
-enum skinny_lamp_mode {
-	SKINNY_LAMP_OFF = 1,
-	SKINNY_LAMP_ON = 2,
-	SKINNY_LAMP_WINK = 3,
-	SKINNY_LAMP_FLASH = 4,
-	SKINNY_LAMP_BLINK = 5,
-};
-
 /* SetSpeakerModeMessage */
 #define SET_SPEAKER_MODE_MESSAGE 0x0088
 struct set_speaker_mode_message {
 	uint32_t mode; /* See enum skinny_speaker_mode */
-};
-
-enum skinny_speaker_mode {
-	SKINNY_SPEAKER_ON = 1,
-	SKINNY_SPEAKER_OFF = 2,
 };
 
 /* StartMediaTransmissionMessage */
@@ -304,12 +269,6 @@ struct call_info_message {
 	uint32_t party_pi_restriction_bits;
 };
 
-enum skinny_call_type {
-	SKINNY_INBOUND_CALL = 1,
-	SKINNY_OUTBOUND_CALL = 2,
-	SKINNY_FORWARD_CALL = 3,
-};
-
 /* SpeedDialStatMessage */
 #define SPEED_DIAL_STAT_RES_MESSAGE 0x0091
 struct speed_dial_stat_res_message {
@@ -358,14 +317,6 @@ struct define_time_date_message {
 struct button_definition {
 	uint8_t instance_number;
 	uint8_t button_definition; /* See enum skinny_button_definition */
-};
-
-enum skinny_button_definition {
-	SKINNY_BUTTON_LAST_NUMBER_REDIAL = 0x01,
-	SKINNY_BUTTON_SPEED_DIAL = 0x02,
-	SKINNY_BUTTON_LINE = 0x09,
-	SKINNY_BUTTON_VOICEMAIL = 0x0F,
-	SKINNY_BUTTON_UNDEFINED = 0xFF,
 };
 
 #define SKINNY_MAX_BUTTON_COUNT 42
@@ -424,29 +375,6 @@ struct soft_key_template_res_message {
 	struct soft_key_template_definition soft_key[32];
 };
 
-enum skinny_soft_key_event {
-	SOFTKEY_REDIAL = 0x01,
-	SOFTKEY_NEWCALL = 0x02,
-	SOFTKEY_HOLD = 0x03,
-	SOFTKEY_TRANSFER = 0x04,
-	SOFTKEY_CFWDALL = 0x05,
-	SOFTKEY_CFWDBUSY = 0x06,
-	SOFTKEY_CFWDNOANSWER = 0x07,
-	SOFTKEY_BACKSPACE = 0x08,
-	SOFTKEY_ENDCALL = 0x09,
-	SOFTKEY_RESUME = 0x0A,
-	SOFTKEY_ANSWER = 0x0B,
-	SOFTKEY_INFO = 0x0C,
-	SOFTKEY_CONFRM = 0x0D,
-	SOFTKEY_PARK = 0x0E,
-	SOFTKEY_JOIN = 0x0F,
-	SOFTKEY_MEETMECONFRM = 0x10,
-	SOFTKEY_CALLPICKUP = 0x11,
-	SOFTKEY_GRPCALLPICKUP = 0x12,
-	SOFTKEY_DND = 0x13,
-	SOFTKEY_IDIVERT = 0x14,
-};
-
 /* SoftKeySetResMessage */
 #define SOFT_KEY_SET_RES_MESSAGE 0x0109
 struct soft_key_set_definition {
@@ -471,42 +399,12 @@ struct select_soft_keys_message {
 	uint32_t valid_key_mask;
 };
 
-enum skinny_key_set {
-	SKINNY_KEY_SET_ON_HOOK = 0,
-	SKINNY_KEY_SET_CONNECTED = 1,
-	SKINNY_KEY_SET_ON_HOLD = 2,
-	SKINNY_KEY_SET_RING_IN = 3,
-	SKINNY_KEY_SET_OFF_HOOK = 4,
-	SKINNY_KEY_SET_CONNECTED_WITH_TRANSFER = 5,
-	SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT = 6,
-	SKINNY_KEY_SET_CONNECTED_WITH_CONFERENCE = 7,
-	SKINNY_KEY_SET_RING_OUT = 8,
-	SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES = 9,
-};
-
 /* CallStateMessage */
 #define CALL_STATE_MESSAGE 0x0111
 struct call_state_message {
 	uint32_t call_state; /* See enum skinny_call_state */
 	uint32_t line_instance;
 	uint32_t call_id;
-};
-
-enum skinny_call_state {
-	SKINNY_OFF_HOOK = 1,
-	SKINNY_ON_HOOK = 2,
-	SKINNY_RING_OUT = 3,
-	SKINNY_RING_IN = 4,
-	SKINNY_CONNECTED = 5,
-	SKINNY_BUSY = 6,
-	SKINNY_CONGESTION = 7,
-	SKINNY_HOLD = 8,
-	SKINNY_CALL_WAITING = 9,
-	SKINNY_CALL_TRANSFER = 10,
-	SKINNY_CALL_PARK = 11,
-	SKINNY_PROCEED = 12,
-	SKINNY_CALL_REMOTE_MULTILINE = 13,
-	SKINNY_INVALID_NUMBER = 14
 };
 
 /* DisplayPromptStatusMessage */
@@ -646,6 +544,194 @@ enum skinny_codecs {
 typedef switch_status_t (*skinny_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
 
 /*****************************************************************************/
+/* SKINNY TABLES */
+/*****************************************************************************/
+struct skinny_table {
+	const char *name;
+	uint32_t id;
+};
+
+#define SKINNY_DECLARE_ID2STR(func, TABLE, DEFAULT_STR) \
+const char *func(uint32_t id) \
+{ \
+	const char *str = DEFAULT_STR; \
+	\
+	for (uint8_t x = 0; x < (sizeof(TABLE) / sizeof(struct skinny_table)) - 1; x++) {\
+		if (TABLE[x].id == id) {\
+			str = TABLE[x].name;\
+			break;\
+		}\
+	}\
+	\
+	return str;\
+}
+
+#define SKINNY_DECLARE_STR2ID(func, TABLE, DEFAULT_ID) \
+uint32_t func(const char *str)\
+{\
+	uint32_t id = DEFAULT_ID;\
+	\
+	if (*str > 47 && *str < 58) {\
+		id = atoi(str);\
+	} else {\
+		for (uint8_t x = 0; x < (sizeof(TABLE) / sizeof(struct skinny_table)) - 1 && TABLE[x].name; x++) {\
+			if (!strcasecmp(TABLE[x].name, str)) {\
+				id = TABLE[x].id;\
+				break;\
+			}\
+		}\
+	}\
+	return id;\
+}
+
+#define SKINNY_DECLARE_PUSH_MATCH(TABLE) \
+	switch_console_callback_match_t *my_matches = NULL;\
+	for (uint8_t x = 0; x < (sizeof(TABLE) / sizeof(struct skinny_table)) - 1; x++) {\
+		switch_console_push_match(&my_matches, TABLE[x].name);\
+	}\
+	if (my_matches) {\
+		*matches = my_matches;\
+		status = SWITCH_STATUS_SUCCESS;\
+	}
+	
+struct skinny_table SKINNY_MESSAGE_TYPES[52];
+const char *skinny_message_type2str(uint32_t id);
+uint32_t skinny_str2message_type(const char *str);
+#define SKINNY_PUSH_MESSAGE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_MESSAGE_TYPES)
+
+enum skinny_tone {
+	SKINNY_TONE_SILENCE = 0x00,
+	SKINNY_TONE_DIALTONE = 0x21,
+	SKINNY_TONE_BUSYTONE = 0x23,
+	SKINNY_TONE_ALERT = 0x24,
+	SKINNY_TONE_REORDER = 0x25,
+	SKINNY_TONE_CALLWAITTONE = 0x2D,
+	SKINNY_TONE_NOTONE = 0x7F,
+};
+
+enum skinny_ring_type {
+	SKINNY_RING_OFF = 1,
+	SKINNY_RING_INSIDE = 2,
+	SKINNY_RING_OUTSIDE = 3,
+	SKINNY_RING_FEATURE = 4
+};
+struct skinny_table SKINNY_RING_TYPES[5];
+const char *skinny_ring_type2str(uint32_t id);
+uint32_t skinny_str2ring_type(const char *str);
+#define SKINNY_PUSH_RING_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_RING_TYPES)
+
+enum skinny_ring_mode {
+	SKINNY_RING_FOREVER = 1,
+	SKINNY_RING_ONCE = 2,
+};
+struct skinny_table SKINNY_RING_MODES[3];
+const char *skinny_ring_mode2str(uint32_t id);
+uint32_t skinny_str2ring_mode(const char *str);
+#define SKINNY_PUSH_RING_MODES SKINNY_DECLARE_PUSH_MATCH(SKINNY_RING_MODES)
+
+
+enum skinny_lamp_mode {
+	SKINNY_LAMP_OFF = 1,
+	SKINNY_LAMP_ON = 2,
+	SKINNY_LAMP_WINK = 3,
+	SKINNY_LAMP_FLASH = 4,
+	SKINNY_LAMP_BLINK = 5,
+};
+struct skinny_table SKINNY_LAMP_MODES[6];
+const char *skinny_lamp_mode2str(uint32_t id);
+uint32_t skinny_str2lamp_mode(const char *str);
+#define SKINNY_PUSH_LAMP_MODES SKINNY_DECLARE_PUSH_MATCH(SKINNY_LAMP_MODES)
+
+enum skinny_speaker_mode {
+	SKINNY_SPEAKER_ON = 1,
+	SKINNY_SPEAKER_OFF = 2,
+};
+struct skinny_table SKINNY_SPEAKER_MODES[3];
+const char *skinny_speaker_mode2str(uint32_t id);
+uint32_t skinny_str2speaker_mode(const char *str);
+#define SKINNY_PUSH_SPEAKER_MODES SKINNY_DECLARE_PUSH_MATCH(SKINNY_SPEAKER_MODES)
+
+enum skinny_call_type {
+	SKINNY_INBOUND_CALL = 1,
+	SKINNY_OUTBOUND_CALL = 2,
+	SKINNY_FORWARD_CALL = 3,
+};
+
+enum skinny_button_definition {
+	SKINNY_BUTTON_LAST_NUMBER_REDIAL = 0x01,
+	SKINNY_BUTTON_SPEED_DIAL = 0x02,
+	SKINNY_BUTTON_LINE = 0x09,
+	SKINNY_BUTTON_VOICEMAIL = 0x0F,
+	SKINNY_BUTTON_UNDEFINED = 0xFF,
+};
+struct skinny_table SKINNY_STIMULI[6];
+const char *skinny_stimulus2str(uint32_t id);
+uint32_t skinny_str2stimulus(const char *str);
+#define SKINNY_PUSH_STIMULI SKINNY_DECLARE_PUSH_MATCH(SKINNY_STIMULI)
+
+enum skinny_soft_key_event {
+	SOFTKEY_REDIAL = 0x01,
+	SOFTKEY_NEWCALL = 0x02,
+	SOFTKEY_HOLD = 0x03,
+	SOFTKEY_TRANSFER = 0x04,
+	SOFTKEY_CFWDALL = 0x05,
+	SOFTKEY_CFWDBUSY = 0x06,
+	SOFTKEY_CFWDNOANSWER = 0x07,
+	SOFTKEY_BACKSPACE = 0x08,
+	SOFTKEY_ENDCALL = 0x09,
+	SOFTKEY_RESUME = 0x0A,
+	SOFTKEY_ANSWER = 0x0B,
+	SOFTKEY_INFO = 0x0C,
+	SOFTKEY_CONFRM = 0x0D,
+	SOFTKEY_PARK = 0x0E,
+	SOFTKEY_JOIN = 0x0F,
+	SOFTKEY_MEETMECONFRM = 0x10,
+	SOFTKEY_CALLPICKUP = 0x11,
+	SOFTKEY_GRPCALLPICKUP = 0x12,
+	SOFTKEY_DND = 0x13,
+	SOFTKEY_IDIVERT = 0x14,
+};
+
+enum skinny_key_set {
+	SKINNY_KEY_SET_ON_HOOK = 0,
+	SKINNY_KEY_SET_CONNECTED = 1,
+	SKINNY_KEY_SET_ON_HOLD = 2,
+	SKINNY_KEY_SET_RING_IN = 3,
+	SKINNY_KEY_SET_OFF_HOOK = 4,
+	SKINNY_KEY_SET_CONNECTED_WITH_TRANSFER = 5,
+	SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT = 6,
+	SKINNY_KEY_SET_CONNECTED_WITH_CONFERENCE = 7,
+	SKINNY_KEY_SET_RING_OUT = 8,
+	SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES = 9,
+};
+struct skinny_table SKINNY_KEY_SETS[11];
+const char *skinny_soft_key_set2str(uint32_t id);
+uint32_t skinny_str2soft_key_set(const char *str);
+#define SKINNY_PUSH_SOFT_KEY_SETS SKINNY_DECLARE_PUSH_MATCH(SKINNY_KEY_SETS)
+
+
+enum skinny_call_state {
+	SKINNY_OFF_HOOK = 1,
+	SKINNY_ON_HOOK = 2,
+	SKINNY_RING_OUT = 3,
+	SKINNY_RING_IN = 4,
+	SKINNY_CONNECTED = 5,
+	SKINNY_BUSY = 6,
+	SKINNY_CONGESTION = 7,
+	SKINNY_HOLD = 8,
+	SKINNY_CALL_WAITING = 9,
+	SKINNY_CALL_TRANSFER = 10,
+	SKINNY_CALL_PARK = 11,
+	SKINNY_PROCEED = 12,
+	SKINNY_CALL_REMOTE_MULTILINE = 13,
+	SKINNY_INVALID_NUMBER = 14
+};
+struct skinny_table SKINNY_CALL_STATES[15];
+const char *skinny_call_state2str(uint32_t id);
+uint32_t skinny_str2call_state(const char *str);
+#define SKINNY_PUSH_CALL_STATES SKINNY_DECLARE_PUSH_MATCH(SKINNY_CALL_STATES)
+
+/*****************************************************************************/
 /* SKINNY FUNCTIONS */
 /*****************************************************************************/
 #define skinny_check_data_length(message, len) \
@@ -653,13 +739,6 @@ typedef switch_status_t (*skinny_command_t) (char **argv, int argc, switch_strea
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received Too Short Skinny Message (Expected %d, got %d).\n", len+4, message->length);\
 		return SWITCH_STATUS_FALSE;\
 	}
-
-
-const char *skinny_message_type2str(uint32_t type);
-uint32_t skinny_str2message_type(const char *str);
-
-const char *skinny_soft_key_set2str(uint32_t id);
-uint32_t skinny_str2soft_key_set(const char *str);
 
 switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req);
 
