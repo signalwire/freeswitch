@@ -3935,6 +3935,7 @@ static switch_status_t list_profile_gateway(const char *line, const char *cursor
 	return status;
 }
 
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 {
 	switch_chat_interface_t *chat_interface;
@@ -4084,6 +4085,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 
 	SWITCH_ADD_API(api_interface, "sofia_contact", "Sofia Contacts", sofia_contact_function, "[profile/]<user>@<domain>");
+	SWITCH_ADD_API(api_interface, "sofia_dig", "SIP DIG", sip_dig_function, "<url>");
 	SWITCH_ADD_CHAT(chat_interface, SOFIA_CHAT_PROTO, sofia_presence_chat_send);
 
 	/* indicate that the module should continue to be loaded */
