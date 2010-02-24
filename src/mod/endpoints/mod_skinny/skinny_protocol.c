@@ -602,6 +602,31 @@ switch_status_t skinny_answer(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t skinny_hold_line(listener_t *listener, uint32_t line)
+{
+	switch_channel_t *channel = NULL;
+	private_t *tech_pvt = NULL;
+
+	channel = switch_core_session_get_channel(listener->session[line]);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(listener->session[line]);
+	assert(tech_pvt != NULL);
+
+	/* TODO */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Hold is not implemented yet. Hanging up the line.\n");
+
+	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t skinny_unhold_line(listener_t *listener, uint32_t line)
+{
+	/* TODO */
+	return SWITCH_STATUS_SUCCESS;
+}
+
 /*****************************************************************************/
 /* SKINNY BUTTONS */
 /*****************************************************************************/
@@ -1540,7 +1565,28 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 	} else {
 		line = 1;
 	}
+	/* Close/Hold busy lines */
+	for(int i = 0 ; i < SKINNY_MAX_BUTTON_COUNT ; i++) {
+		if(listener->session[i]) {
+			channel = switch_core_session_get_channel(listener->session[i]);
+			assert(channel != NULL);
+			if((skinny_line_get_state(listener, i) == SKINNY_KEY_SET_ON_HOOK)
+					|| (skinny_line_get_state(listener, i) == SKINNY_KEY_SET_OFF_HOOK)
+					|| (skinny_line_get_state(listener, i) == SKINNY_KEY_SET_RING_OUT)
+					|| (skinny_line_get_state(listener, i) == SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT)
+					|| (skinny_line_get_state(listener, i) == SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES)) {
 
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				channel = NULL;
+			} else if((skinny_line_get_state(listener, i) == SKINNY_KEY_SET_RING_IN)
+					|| (skinny_line_get_state(listener, i) == SKINNY_KEY_SET_CONNECTED)
+					|| (skinny_line_get_state(listener, i) == SKINNY_KEY_SET_CONNECTED_WITH_TRANSFER)
+					|| (skinny_line_get_state(listener, i) == SKINNY_KEY_SET_CONNECTED_WITH_CONFERENCE)) {
+				skinny_hold_line(listener, i);			
+			} /* remaining: SKINNY_KEY_SET_ON_HOLD */
+		}
+	}
+	
 	if(!listener->session[line]) { /*the line is not busy */
 		switch(request->data.soft_key_event.event) {
 			case SOFTKEY_REDIAL:
@@ -1560,6 +1606,9 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 					"Unknown SoftKeyEvent type while not busy: %d.\n", request->data.soft_key_event.event);
 		}
 	} else { /* the line is busy */
+		if(skinny_line_get_state(listener, line) == SKINNY_KEY_SET_ON_HOLD) {
+			skinny_unhold_line(listener, line);			
+		}
 		switch(request->data.soft_key_event.event) {
 			case SOFTKEY_ENDCALL:
 				channel = switch_core_session_get_channel(listener->session[line]);
@@ -1605,7 +1654,7 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 {
 	skinny_profile_t *profile;
 	struct speed_dial_stat_res_message *button = NULL;
-	uint32_t line = 1;
+	uint32_t line = 0;
 	private_t *tech_pvt = NULL;
 
 	switch_assert(listener->profile);
@@ -1615,6 +1664,20 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 
 	skinny_check_data_length(request, sizeof(request->data.stimulus));
 
+	if(request->data.stimulus.instance_type == SKINNY_BUTTON_LINE) {/* Choose the specified line */
+		line = request->data.stimulus.instance;
+	}
+	if(line == 0) {/* If none, find the first busy line */
+		for(int i = 0 ; i < SKINNY_MAX_BUTTON_COUNT ; i++) {
+			if(listener->session[i]) {
+				line = i;
+				break;
+			}
+		}
+	}
+	if(line == 0) {/* If none, choose the first line */
+		line = 1;
+	}
 	switch(request->data.stimulus.instance_type) {
 		case SKINNY_BUTTON_LAST_NUMBER_REDIAL:
 			skinny_create_session(listener, line, SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT);
@@ -1751,16 +1814,18 @@ switch_status_t skinny_handle_keypad_button_message(listener_t *listener, skinny
 
 	skinny_check_data_length(request, sizeof(request->data.keypad_button));
 
-	if(request->data.keypad_button.line_instance != 0) {
-		line = request->data.keypad_button.line_instance;
-	} else {
-		/* Find first active line */
+	/* Choose the specified line */
+	line = request->data.keypad_button.line_instance;
+	if(line == 0) {/* If none, find the first busy line */
 		for(int i = 0 ; i < SKINNY_MAX_BUTTON_COUNT ; i++) {
 			if(listener->session[i]) {
 				line = i;
 				break;
 			}
 		}
+	}
+	if(line == 0) {/* If none, choose the first line */
+		line = 1;
 	}
 	if(listener->session[line]) {
 		switch_channel_t *channel = NULL;
