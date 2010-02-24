@@ -37,6 +37,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_skinny_runtime);
 
 SWITCH_MODULE_DEFINITION(mod_skinny, mod_skinny_load, mod_skinny_shutdown, mod_skinny_runtime);
 #define SKINNY_EVENT_REGISTER "skinny::register"
+#define SKINNY_EVENT_UNREGISTER "skinny::unregister"
+#define SKINNY_EVENT_EXPIRE "skinny::expire"
 
 
 switch_endpoint_interface_t *skinny_endpoint_interface;
@@ -144,6 +146,9 @@ struct capabilities_res_message {
 	uint32_t count;
 	struct station_capabilities caps[SWITCH_MAX_CODECS];
 };
+
+/* UnregisterMessage */
+#define UNREGISTER_MESSAGE 0x0027
 
 /* RegisterAckMessage */
 #define REGISTER_ACK_MESSAGE 0x0081
@@ -1061,6 +1066,7 @@ static switch_status_t skinny_handle_line_stat_request(listener_t *listener, ski
 		strcpy(message->data.line_res.shortname, device->line[i-1].shortname);
 		strcpy(message->data.line_res.displayname, device->line[i-1].displayname);
 	} else {
+		message->data.line_res.number = i;
 		strcpy(message->data.line_res.name, "");
 		strcpy(message->data.line_res.shortname, "");
 		strcpy(message->data.line_res.displayname, "");
@@ -1078,6 +1084,16 @@ static switch_status_t skinny_handle_keep_alive_message(listener_t *listener, sk
 	message->length = 4;
 	keepalive_listener(listener, NULL);
 	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t skinny_handle_unregister(listener_t *listener, skinny_message_t *request)
+{
+	switch_event_t *event = NULL;
+	/* skinny::unregister event */
+	skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_UNREGISTER);
+	switch_event_fire(&event);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1101,6 +1117,8 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 			return skinny_handle_line_stat_request(listener, request);
 		case KEEP_ALIVE_MESSAGE:
 			return skinny_handle_keep_alive_message(listener, request);
+		case UNREGISTER_MESSAGE:
+			return skinny_handle_unregister(listener, request);
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 				"Unknown request type: %x (length=%d).\n", request->type, request->length);
@@ -1242,7 +1260,12 @@ static switch_status_t kill_listener(listener_t *listener, void *pvt)
 
 static switch_status_t kill_expired_listener(listener_t *listener, void *pvt)
 {
+	switch_event_t *event = NULL;
+
 	if(listener->expire_time < switch_epoch_time_now(NULL)) {
+		/* skinny::expire event */
+		skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_EXPIRE);
+		switch_event_fire(&event);
 		return kill_listener(listener, pvt);
 	}
 	return SWITCH_STATUS_SUCCESS;
