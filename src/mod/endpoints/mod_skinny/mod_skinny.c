@@ -1404,6 +1404,8 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "DTMF ON CALL %d [%c]\n", tech_pvt->call_id, dtmf->digit);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2925,6 +2927,42 @@ end:
 	return status;
 }
 
+static switch_status_t skinny_handle_keypad_button_message(listener_t *listener, skinny_message_t *request)
+{
+	skinny_check_data_length(request, sizeof(request->data.keypad_button));
+
+	if(listener->outgoing_session) {
+		switch_channel_t *channel = NULL;
+		private_t *tech_pvt = NULL;
+		switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0)};
+
+		channel = switch_core_session_get_channel(listener->outgoing_session);
+		assert(channel != NULL);
+
+		tech_pvt = switch_core_session_get_private(listener->outgoing_session);
+		assert(tech_pvt != NULL);
+		
+		/* TODO check call_id and line */
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->outgoing_session), SWITCH_LOG_DEBUG, "SEND DTMF ON CALL %d [%d]\n", tech_pvt->call_id, request->data.keypad_button.button);
+
+		if (request->data.keypad_button.button == 14) {
+			dtmf.digit = '*';
+			switch_channel_queue_dtmf(channel, &dtmf);
+		} else if (request->data.keypad_button.button == 15) {
+			dtmf.digit = '#';
+			switch_channel_queue_dtmf(channel, &dtmf);
+		} else if (request->data.keypad_button.button >= 0 && request->data.keypad_button.button <= 9) {
+			dtmf.digit = '0' + request->data.keypad_button.button;
+			switch_channel_queue_dtmf(channel, &dtmf);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->outgoing_session), SWITCH_LOG_WARN, "UNKNOW DTMF RECEIVED ON CALL %d [%d]\n", tech_pvt->call_id, request->data.keypad_button.button);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t skinny_handle_on_hook_message(listener_t *listener, skinny_message_t *request)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -3007,6 +3045,8 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 			return skinny_handle_off_hook_message(listener, request);
 		case OPEN_RECEIVE_CHANNEL_ACK_MESSAGE:
 			return skinny_handle_open_receive_channel_ack_message(listener, request);
+		case KEYPAD_BUTTON_MESSAGE:
+			return skinny_handle_keypad_button_message(listener, request);
 		case ON_HOOK_MESSAGE:
 			return skinny_handle_on_hook_message(listener, request);
 		/* end phase */
