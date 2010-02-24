@@ -664,10 +664,10 @@ enum skinny_button_definition {
 	SKINNY_BUTTON_VOICEMAIL = 0x0F,
 	SKINNY_BUTTON_UNDEFINED = 0xFF,
 };
-struct skinny_table SKINNY_STIMULI[6];
-const char *skinny_stimulus2str(uint32_t id);
-uint32_t skinny_str2stimulus(const char *str);
-#define SKINNY_PUSH_STIMULI SKINNY_DECLARE_PUSH_MATCH(SKINNY_STIMULI)
+struct skinny_table SKINNY_BUTTONS[6];
+const char *skinny_button2str(uint32_t id);
+uint32_t skinny_str2button(const char *str);
+#define SKINNY_PUSH_STIMULI SKINNY_DECLARE_PUSH_MATCH(SKINNY_BUTTONS)
 
 enum skinny_soft_key_event {
 	SOFTKEY_REDIAL = 0x01,

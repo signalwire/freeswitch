@@ -44,9 +44,6 @@ static switch_memory_pool_t *module_pool = NULL;
 
 skinny_globals_t globals;
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string);
-
 /*****************************************************************************/
 /* SQL TABLES */
 /*****************************************************************************/
@@ -66,7 +63,7 @@ static char buttons_sql[] =
 	"CREATE TABLE skinny_buttons (\n"
 	"   device_name      VARCHAR(16),\n"
 	"   position         INTEGER,\n"
-	"   type             VARCHAR(10),\n"
+	"   type         INTEGER,\n"
 	"   label            VARCHAR(40),\n"
 	"   value            VARCHAR(24),\n"
 	"   settings         VARCHAR(44)\n"
@@ -89,8 +86,8 @@ static switch_status_t dump_profile(const skinny_profile_t *profile, switch_stre
 	stream->write_function(stream, "Context          \t%s\n", profile->context);
 	stream->write_function(stream, "Keep-Alive       \t%d\n", profile->keep_alive);
 	stream->write_function(stream, "Date-Format      \t%s\n", profile->date_format);
-	/* db */
 	stream->write_function(stream, "DBName           \t%s\n", profile->dbname ? profile->dbname : switch_str_nil(profile->odbc_dsn));
+	stream->write_function(stream, "Debug            \t%d\n", profile->debug);
 	/* stats */
 	stream->write_function(stream, "CALLS-IN         \t%d\n", profile->ib_calls);
 	stream->write_function(stream, "FAILED-CALLS-IN  \t%d\n", profile->ib_failed_calls);
@@ -1102,7 +1099,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_socket_opt_set(listener->sock, SWITCH_SO_TCP_NODELAY, TRUE);
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
 
-	if (globals.debug > 0) {
+	if (listener->profile->debug > 0) {
 		if (zstr(listener->remote_ip)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open\n");
 		} else {
@@ -1138,7 +1135,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	remove_listener(listener);
 
-	if (globals.debug > 0) {
+	if (listener->profile->debug > 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session complete, waiting for children\n");
 	}
 
@@ -1151,7 +1148,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	switch_thread_rwlock_unlock(listener->rwlock);
 
-	if (globals.debug > 0) {
+	if (listener->profile->debug > 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Closed\n");
 	}
 
@@ -1315,6 +1312,8 @@ static void skinny_profile_set(skinny_profile_t *profile, char *var, char *val)
 		profile->dialplan = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "context")) {
 		profile->context = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "date-format")) {
+		strncpy(profile->date_format, val, 6);
 	} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 		if (switch_odbc_available()) {
 			profile->odbc_dsn = switch_core_strdup(module_pool, val);
@@ -1333,7 +1332,7 @@ static void skinny_profile_set(skinny_profile_t *profile, char *var, char *val)
 static switch_status_t load_skinny_config(void)
 {
 	char *cf = "skinny.conf";
-	switch_xml_t xcfg, xml, xsettings, xprofiles, xprofile, xparam;
+	switch_xml_t xcfg, xml, xprofiles, xprofile;
 
 	memset(&globals, 0, sizeof(globals));
 	globals.running = 1;
@@ -1346,27 +1345,6 @@ static switch_status_t load_skinny_config(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
-
-	if ((xsettings = switch_xml_child(xcfg, "settings"))) {
-		for (xparam = switch_xml_child(xsettings, "param"); xparam; xparam = xparam->next) {
-			char *var = (char *) switch_xml_attr_soft(xparam, "name");
-			char *val = (char *) switch_xml_attr_soft(xparam, "value");
-
-			if (!strcmp(var, "debug")) {
-				globals.debug = atoi(val);
-			} else if (!strcmp(var, "codec-prefs")) {
-				set_global_codec_string(val);
-				globals.codec_order_last = switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
-			} else if (!strcmp(var, "codec-master")) {
-				if (!strcasecmp(val, "us")) {
-					switch_set_flag(&globals, GFLAG_MY_CODEC_PREFS);
-				}
-			} else if (!strcmp(var, "codec-rates")) {
-				set_global_codec_rates_string(val);
-				globals.codec_rates_last = switch_separate_string(globals.codec_rates_string, ',', globals.codec_rates, SWITCH_MAX_CODECS);
-			}
-		} /* param */
-	} /* settings */
 
 	if ((xprofiles = switch_xml_child(xcfg, "profiles"))) {
 		for (xprofile = switch_xml_child(xprofiles, "profile"); xprofile; xprofile = xprofile->next) {
@@ -1403,7 +1381,11 @@ static switch_status_t load_skinny_config(void)
 					} else if (!strcmp(var, "keep-alive")) {
 						profile->keep_alive = atoi(val);
 					} else if (!strcmp(var, "date-format")) {
-						memcpy(profile->date_format, val, 6);
+						skinny_profile_set(profile, "date-format", val);
+					} else if (!strcmp(var, "odbc-dsn")) {
+						skinny_profile_set(profile, "odbc-dsn", val);
+					} else if (!strcmp(var, "debug")) {
+						profile->debug = atoi(val);
 					}
 				} /* param */
 				
@@ -1415,7 +1397,7 @@ static switch_status_t load_skinny_config(void)
 					skinny_profile_set(profile, "context","public");
 				}
 
-				if (!profile->port) {
+				if (profile->port == 0) {
 					profile->port = 2000;
 				}
 
@@ -1514,7 +1496,7 @@ static switch_status_t cmd_profile_device_send_lamp_message(const char *profile_
 		listener_t *listener = NULL;
 		skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
 		if(listener) {
-			set_lamp(listener, skinny_str2stimulus(stimulus), atoi(instance), skinny_str2lamp_mode(lamp_mode));
+			set_lamp(listener, skinny_str2button(stimulus), atoi(instance), skinny_str2lamp_mode(lamp_mode));
 		} else {
 			stream->write_function(stream, "Listener not found!\n");
 		}
@@ -1920,9 +1902,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 		}
 	}
 
-	switch_safe_free(globals.codec_string);
-	switch_safe_free(globals.codec_rates_string);
-	
 	return SWITCH_STATUS_SUCCESS;
 }
 

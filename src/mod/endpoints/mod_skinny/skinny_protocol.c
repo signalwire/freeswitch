@@ -134,7 +134,7 @@ struct skinny_table SKINNY_RING_MODES[] = {
 SKINNY_DECLARE_ID2STR(skinny_ring_mode2str, SKINNY_RING_MODES, "RingModeUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2ring_mode, SKINNY_RING_MODES, -1)
 
-struct skinny_table SKINNY_STIMULI[] = {
+struct skinny_table SKINNY_BUTTONS[] = {
 	{"LastNumberRedial", SKINNY_BUTTON_LAST_NUMBER_REDIAL},
 	{"SpeedDial", SKINNY_BUTTON_SPEED_DIAL},
 	{"Line", SKINNY_BUTTON_LINE},
@@ -142,8 +142,8 @@ struct skinny_table SKINNY_STIMULI[] = {
 	{"Undefined", SKINNY_BUTTON_UNDEFINED},
 	{NULL, 0}
 };
-SKINNY_DECLARE_ID2STR(skinny_stimulus2str, SKINNY_STIMULI, "Unknown")
-SKINNY_DECLARE_STR2ID(skinny_str2stimulus, SKINNY_STIMULI, -1)
+SKINNY_DECLARE_ID2STR(skinny_button2str, SKINNY_BUTTONS, "Unknown")
+SKINNY_DECLARE_STR2ID(skinny_str2button, SKINNY_BUTTONS, -1)
 
 struct skinny_table SKINNY_LAMP_MODES[] = {
 	{"Off", SKINNY_LAMP_OFF},
@@ -656,10 +656,11 @@ void skinny_line_get(listener_t *listener, uint32_t instance, struct line_stat_r
 	
 	if ((sql = switch_mprintf(
 			"SELECT '%d' AS wanted_position, position, label, value, settings "
-				"FROM skinny_buttons WHERE device_name='%s' AND type='line' "
+				"FROM skinny_buttons WHERE device_name='%s' AND type=%d "
 				"ORDER BY position",
 			instance,
-			listener->device_name
+			listener->device_name,
+			SKINNY_BUTTON_LINE
 			))) {
 		skinny_execute_sql_callback(listener->profile, listener->profile->listener_mutex, sql, skinny_line_get_callback, &helper);
 		switch_safe_free(sql);
@@ -698,10 +699,11 @@ void skinny_speed_dial_get(listener_t *listener, uint32_t instance, struct speed
 	
 	if ((sql = switch_mprintf(
 			"SELECT '%d' AS wanted_position, position, label, value, settings "
-				"FROM skinny_buttons WHERE device_name='%s' AND type='speed-dial' "
+				"FROM skinny_buttons WHERE device_name='%s' AND type=%d "
 				"ORDER BY position",
 			instance,
-			listener->device_name
+			listener->device_name,
+			SKINNY_BUTTON_SPEED_DIAL
 			))) {
 		skinny_execute_sql_callback(listener->profile, listener->profile->listener_mutex, sql, skinny_speed_dial_get_callback, &helper);
 		switch_safe_free(sql);
@@ -1121,15 +1123,15 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 		xbuttons = switch_xml_child(xskinny, "buttons");
 		if (xbuttons) {
 			for (xbutton = switch_xml_child(xbuttons, "button"); xbutton; xbutton = xbutton->next) {
-				const char *position = switch_xml_attr_soft(xbutton, "position");
-				const char *type = switch_xml_attr_soft(xbutton, "type");
+				uint32_t position = atoi(switch_xml_attr_soft(xbutton, "position"));
+				uint32_t type = skinny_str2button(switch_xml_attr_soft(xbutton, "type"));
 				const char *label = switch_xml_attr_soft(xbutton, "label");
 				const char *value = switch_xml_attr_soft(xbutton, "value");
 				const char *settings = switch_xml_attr_soft(xbutton, "settings");
 				if ((sql = switch_mprintf(
 						"INSERT INTO skinny_buttons "
 							"(device_name, position, type, label, value, settings) "
-							"VALUES('%s', '%s', '%s', '%s', '%s', '%s')",
+							"VALUES('%s', %d, %d, '%s', '%s', '%s')",
 						request->data.reg.device_name,
 						position,
 						type,
@@ -1221,11 +1223,13 @@ switch_status_t skinny_handle_config_stat_request(listener_t *listener, skinny_m
 
 	if ((sql = switch_mprintf(
 			"SELECT name, user_id, instance, '' AS user_name, '' AS server_name, "
-				"(SELECT COUNT(*) FROM skinny_buttons WHERE device_name='%s' AND type='line') AS number_lines, "
-				"(SELECT COUNT(*) FROM skinny_buttons WHERE device_name='%s' AND type='speed-dial') AS number_speed_dials "
+				"(SELECT COUNT(*) FROM skinny_buttons WHERE device_name='%s' AND type='%s') AS number_lines, "
+				"(SELECT COUNT(*) FROM skinny_buttons WHERE device_name='%s' AND type='%s') AS number_speed_dials "
 				"FROM skinny_devices WHERE name='%s' ",
 			listener->device_name,
+			skinny_button2str(SKINNY_BUTTON_LINE),
 			listener->device_name,
+			skinny_button2str(SKINNY_BUTTON_SPEED_DIAL),
 			listener->device_name
 			))) {
 		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_config_stat_res_callback, message);
@@ -1321,16 +1325,16 @@ switch_status_t skinny_handle_port_message(listener_t *listener, skinny_message_
 
 struct button_template_helper {
 	skinny_message_t *message;
-	int count[0xff+1];
+	int count[0xffff+1];
 };
 
 int skinny_handle_button_template_request_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct button_template_helper *helper = pArg;
 	skinny_message_t *message = helper->message;
-	char *device_name = argv[0];
+	/* char *device_name = argv[0]; */
 	int position = atoi(argv[1]);
-	char *type = argv[2];
+	uint32_t type = atoi(argv[2]);
 	int i;
 	
 	/* fill buttons between previous one and current one */
@@ -1341,17 +1345,9 @@ int skinny_handle_button_template_request_callback(void *pArg, int argc, char **
 		message->data.button_template.total_button_count++;
 	}
 
+	message->data.button_template.btn[i].instance_number = ++helper->count[type];
+	message->data.button_template.btn[position-1].button_definition = type;
 
-	if (!strcasecmp(type, "line")) {
-		message->data.button_template.btn[i].instance_number = ++helper->count[SKINNY_BUTTON_LINE];
-		message->data.button_template.btn[position-1].button_definition = SKINNY_BUTTON_LINE;
-	} else if (!strcasecmp(type, "speed-dial")) {
-		message->data.button_template.btn[i].instance_number = ++helper->count[SKINNY_BUTTON_SPEED_DIAL];
-		message->data.button_template.btn[position-1].button_definition = SKINNY_BUTTON_SPEED_DIAL;
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-			"Unknown button type %s for device %s.\n", type, device_name);
-	}
 	message->data.button_template.button_count++;
 	message->data.button_template.total_button_count++;
 

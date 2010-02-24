@@ -44,15 +44,6 @@
 #define SKINNY_EVENT_ALARM "skinny::alarm"
 
 struct skinny_globals {
-	/* prefs */
-	int debug;
-	char *codec_string;
-	char *codec_order[SWITCH_MAX_CODECS];
-	int codec_order_last;
-	char *codec_rates_string;
-	char *codec_rates[SWITCH_MAX_CODECS];
-	int codec_rates_last;
-	unsigned int flags;
 	/* data */
 	int calls;
 	switch_mutex_t *calls_mutex;
@@ -74,6 +65,7 @@ struct skinny_profile {
 	char *context;
 	uint32_t keep_alive;
 	char date_format[6];
+	int debug;
 	/* db */
 	char *dbname;
 	char *odbc_dsn;
