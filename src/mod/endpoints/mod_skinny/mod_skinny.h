@@ -164,6 +164,9 @@ struct private_object {
 	uint32_t line;
 	uint32_t call_id;
 	uint32_t party_id;
+	char *line_name;
+	char *line_shortname;
+	char *line_displayname;
 	char dest[10];
 	/* codec */
 	char *iananame;	

@@ -669,6 +669,9 @@ switch_status_t skinny_create_session(listener_t *listener, uint32_t line, uint3
 switch_status_t skinny_process_dest(listener_t *listener, uint32_t line);
 switch_status_t skinny_answer(switch_core_session_t *session);
 
+void skinny_line_get(listener_t *listener, uint32_t instance, struct line_stat_res_message **button);
+void skinny_speed_dial_get(listener_t *listener, uint32_t instance, struct speed_dial_stat_res_message **button);
+
 switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply);
 #define  skinny_send_reply(listener, reply)  skinny_perform_send_reply(listener, __FILE__, __SWITCH_FUNC__, __LINE__, reply)
 

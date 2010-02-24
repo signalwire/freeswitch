@@ -183,7 +183,7 @@ void skinny_execute_sql(skinny_profile_t *profile, char *sql, switch_mutex_t *mu
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
 			goto end;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SQL: %s\n", sql);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL: %s\n", sql);
 		switch_core_db_persistant_execute(db, sql, 1);
 		switch_core_db_close(db);
 	}
@@ -213,7 +213,7 @@ switch_bool_t skinny_execute_sql_callback(skinny_profile_t *profile,
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
 			goto end;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SQL: %s\n", sql);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL: %s\n", sql);
 		switch_core_db_exec(db, sql, callback, pdata, &errmsg);
 
 		if (errmsg) {
@@ -334,9 +334,11 @@ switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 									   tech_pvt->read_impl.microseconds_per_packet,
 									   tech_pvt->read_impl.samples_per_packet
 									   ) != SWITCH_STATUS_SUCCESS) {
-			/* TODO
-			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			*/
+			switch_channel_t *channel = NULL;
+			channel = switch_core_session_get_channel(tech_pvt->session);
+			assert(channel != NULL);
+
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			switch_goto_status(SWITCH_STATUS_FALSE, end);				
 		}
 	}
@@ -383,6 +385,8 @@ switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 
 void tech_init(private_t *tech_pvt, switch_core_session_t *session, listener_t *listener, uint32_t line)
 {
+	struct line_stat_res_message *button = NULL;
+
 	switch_assert(tech_pvt);
 	switch_assert(session);
 	switch_assert(listener);
@@ -396,6 +400,11 @@ void tech_init(private_t *tech_pvt, switch_core_session_t *session, listener_t *
 	tech_pvt->line = line;
 	switch_core_session_set_private(session, tech_pvt);
 	tech_pvt->session = session;
+
+	skinny_line_get(listener, line, &button);
+	tech_pvt->line_name = switch_core_strdup(listener->pool, button->name);
+	tech_pvt->line_shortname = switch_core_strdup(listener->pool, button->shortname);
+	tech_pvt->line_displayname = switch_core_strdup(listener->pool, button->displayname);
 }
 
 /* 
