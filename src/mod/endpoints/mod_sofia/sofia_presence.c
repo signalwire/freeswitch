@@ -2204,7 +2204,6 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 		if (payload) {
 			switch_xml_t xml, note, person, tuple, status, basic, act;
 			switch_event_t *event;
-			uint8_t in = 0;
 			char *sql;
 			char *full_agent = NULL;
 
@@ -2236,7 +2235,6 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 					if (zstr(note_txt)) {
 						note_txt = "Available";
 					}
-					in = 1;
 				} else if (!strcasecmp(status_txt, "closed")) {
 					if (zstr(note_txt)) {
 						note_txt = "Unavailable";
@@ -2260,29 +2258,16 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 				}
 
 				event_type = sip_header_as_string(profile->home, (void *) sip->sip_event);
-
-				if (in) {
-					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "user-agent", full_agent);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", note_txt);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", event_type);
-						switch_event_fire(&event);
-					}
-				} else {
-					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "user-agent", full_agent);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
-
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", event_type);
-						switch_event_fire(&event);
-					}
+				
+				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "user-agent", full_agent);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", note_txt);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", event_type);
+					switch_event_fire(&event);
 				}
 
 				if (event_type) {
