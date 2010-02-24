@@ -621,9 +621,15 @@ static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t
 					request->length,request->reserved,request->type);
 				if(request->length < SKINNY_MESSAGE_FIELD_SIZE) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-						"Skinny client sent invalid data. Length should be greated than 4 but got %d.\n",
+						"Skinny client sent invalid data. Length should be greater than 4 but got %d.\n",
 						request->length);
-					return  SWITCH_STATUS_FALSE;
+					return SWITCH_STATUS_FALSE;
+				}
+				if(request->length + 2*SKINNY_MESSAGE_FIELD_SIZE > SKINNY_MESSAGE_MAXSIZE) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+						"Skinny client sent too huge data. Got %d which is above threshold %d.\n",
+						request->length, SKINNY_MESSAGE_MAXSIZE - 2*SKINNY_MESSAGE_FIELD_SIZE);
+					return SWITCH_STATUS_FALSE;
 				}
 				if(bytes >= request->length + 2*SKINNY_MESSAGE_FIELD_SIZE) {
 					/* Message body */
