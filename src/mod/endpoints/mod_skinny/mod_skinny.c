@@ -406,7 +406,7 @@ static void skinny_execute_sql(skinny_profile_t *profile, char *sql, switch_mute
 
 	if (switch_odbc_available() && profile->odbc_dsn) {
 		switch_odbc_statement_handle_t stmt;
-		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
+		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt, NULL) != SWITCH_ODBC_SUCCESS) {
 			char *err_str;
 			err_str = switch_odbc_handle_get_error(profile->master_odbc, stmt);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
@@ -1046,7 +1046,7 @@ static switch_status_t skinny_device_event(listener_t *listener, switch_event_t 
 
 	switch_event_create_subclass(&event, event_id, subclass_name);
 	switch_assert(event);
-	if ((sql = switch_mprintf("select * from skinny_devices where device_name='%s'", listener->device_name))) {
+	if ((sql = switch_mprintf("SELECT * FROM skinny_devices WHERE device_name='%s'", listener->device_name))) {
 		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_device_event_callback, event);
 		switch_safe_free(sql);
 	}
@@ -1192,12 +1192,20 @@ end:
 
 static switch_status_t skinny_handle_capabilities_response(listener_t *listener, skinny_message_t *request)
 {
+	char *sql;
+	skinny_profile_t *profile;
+
 	uint32_t i = 0;
 	uint32_t n = 0;
 	char *codec_order[SWITCH_MAX_CODECS];
 	char *codec_string;
 	
 	size_t string_len, string_pos, pos;
+
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	profile = listener->profile;
 
 	n = request->data.cap_res.count;
 	if (n > SWITCH_MAX_CODECS) {
@@ -1224,7 +1232,14 @@ static switch_status_t skinny_handle_capabilities_response(listener_t *listener,
 		}
 	}
 	codec_string[string_len] = '\0';
-	/* TODO SQL update */
+	if ((sql = switch_mprintf(
+			"UPDATE skinny_devices SET codec_string='%s' WHERE device_name='%s'",
+			codec_string,
+			listener->device_name
+			))) {
+		skinny_execute_sql(profile, sql, profile->listener_mutex);
+		switch_safe_free(sql);
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 		"Codecs %s supported.\n", codec_string);
 	return SWITCH_STATUS_SUCCESS;
@@ -1241,7 +1256,7 @@ static switch_status_t skinny_handle_port_message(listener_t *listener, skinny_m
 	profile = listener->profile;
 
 	if ((sql = switch_mprintf(
-			"update skinny_devices set port='%d' where device_name='%s'",
+			"UPDATE skinny_devices SET port='%d' WHERE device_name='%s'",
 			request->data.as_uint16,
 			listener->device_name
 			))) {
@@ -1282,7 +1297,7 @@ static switch_status_t skinny_handle_line_stat_request(listener_t *listener, ski
 	message->data.line_res.number = request->data.line_req.number;
 
 	if ((sql = switch_mprintf(
-			"select * from skinny_lines where device_name='%s' and line_position='%d'",
+			"SELECT * FROM skinny_lines WHERE device_name='%s' AND line_position='%d'",
 			listener->device_name,
 			request->data.line_req.number
 			))) {
@@ -1472,7 +1487,7 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 static switch_status_t dump_device(skinny_profile_t *profile, const char *device_name, switch_stream_handle_t *stream)
 {
 	char *sql;
-	if ((sql = switch_mprintf("select * from skinny_devices where device_name LIKE '%s'",
+	if ((sql = switch_mprintf("SELECT * FROM skinny_devices WHERE device_name LIKE '%s'",
 			device_name))) {
 		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, dump_device_callback, stream);
 		switch_safe_free(sql);
@@ -1878,14 +1893,14 @@ static switch_status_t load_skinny_config(void)
 					}
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
-					switch_odbc_handle_exec(profile->master_odbc, devices_sql, NULL);
-					switch_odbc_handle_exec(profile->master_odbc, lines_sql, NULL);
-					switch_odbc_handle_exec(profile->master_odbc, speeddials_sql, NULL);
+					switch_odbc_handle_exec(profile->master_odbc, devices_sql, NULL, NULL);
+					switch_odbc_handle_exec(profile->master_odbc, lines_sql, NULL, NULL);
+					switch_odbc_handle_exec(profile->master_odbc, speeddials_sql, NULL, NULL);
 				} else {
 					if ((db = switch_core_db_open_file(profile->dbname))) {
-						switch_core_db_test_reactive(db, "select * from skinny_devices", NULL, devices_sql);
-						switch_core_db_test_reactive(db, "select * from skinny_lines", NULL, lines_sql);
-						switch_core_db_test_reactive(db, "select * from skinny_speeddials", NULL, speeddials_sql);
+						switch_core_db_test_reactive(db, "SELECT * FROM skinny_devices", NULL, devices_sql);
+						switch_core_db_test_reactive(db, "SELECT * FROM skinny_lines", NULL, lines_sql);
+						switch_core_db_test_reactive(db, "SELECT * FROM skinny_speeddials", NULL, speeddials_sql);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 						continue;
@@ -2013,6 +2028,8 @@ static int skinny_list_devices_callback(void *pArg, int argc, char **argv, char 
 	switch_console_callback_match_t *my_matches = (switch_console_callback_match_t *) pArg;
 
 	char *device_name = argv[0];
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+		"Adding %s to matches.\n", device_name);
 	switch_console_push_match(&my_matches, device_name);
 	pArg = my_matches;
 	return 0;
@@ -2038,7 +2055,7 @@ static switch_status_t skinny_list_devices(const char *line, const char *cursor,
 	}
 
 	if((profile = get_profile(argv[3]))) {
-		if ((sql = switch_mprintf("select device_name from skinny_devices"))) {
+		if ((sql = switch_mprintf("SELECT device_name FROM skinny_devices"))) {
 			skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_list_devices_callback, my_matches);
 			switch_safe_free(sql);
 		}
