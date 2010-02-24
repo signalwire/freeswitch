@@ -1559,26 +1559,22 @@ static switch_status_t dump_device(skinny_profile_t *profile, const char *device
 }
 
 
-static void close_socket(switch_socket_t **sock)
+static void close_socket(switch_socket_t **sock, skinny_profile_t *profile)
 {
-	/* TODO
 	switch_mutex_lock(profile->sock_mutex);
-	*/
 	if (*sock) {
 		switch_socket_shutdown(*sock, SWITCH_SHUTDOWN_READWRITE);
 		switch_socket_close(*sock);
 		*sock = NULL;
 	}
-	/* TODO
 	switch_mutex_unlock(profile->sock_mutex);
-	*/
 }
 
 static switch_status_t kill_listener(listener_t *listener, void *pvt)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Killing listener.\n");
 	switch_clear_flag(listener, LFLAG_RUNNING);
-	close_socket(&listener->sock);
+	close_socket(&listener->sock, listener->profile);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1684,7 +1680,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	}
 	
 	if (listener->sock) {
-		close_socket(&listener->sock);
+		close_socket(&listener->sock, profile);
 	}
 
 	switch_thread_rwlock_unlock(listener->rwlock);
@@ -1808,7 +1804,7 @@ int skinny_socket_create_and_bind(skinny_profile_t *profile)
 
  end:
 
-	close_socket(&profile->sock);
+	close_socket(&profile->sock, profile);
 	
 	if (pool) {
 		switch_core_destroy_memory_pool(&pool);
@@ -2218,7 +2214,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
 
-		close_socket(&profile->sock);
+		close_socket(&profile->sock, profile);
 
 		while (profile->listener_threads) {
 			switch_yield(100000);
