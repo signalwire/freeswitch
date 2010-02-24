@@ -175,12 +175,12 @@ typedef struct private_object private_t;
 /* RegisterMessage */
 #define REGISTER_MESSAGE 0x0001
 struct register_message {
-	char deviceName[16];
-	uint32_t userId;
+	char device_name[16];
+	uint32_t user_id;
 	uint32_t instance;
 	struct in_addr ip;
-	uint32_t deviceType;
-	uint32_t maxStreams;
+	uint32_t device_type;
+	uint32_t max_streams;
 };
 
 /* PortMessage */
@@ -228,12 +228,8 @@ struct line_stat_req_message {
 	uint32_t number;
 };
 
-/* CapabilitiesResMessage */
-struct station_capabilities {
-	uint32_t codec;
-	uint16_t frames;
-	char reserved[10];
-};
+/* ConfigStatReqMessage */
+#define CONFIG_STAT_REQ_MESSAGE 0x000C
 
 /* TimeDateReqMessage */
 #define TIME_DATE_REQ_MESSAGE 0x000D
@@ -243,6 +239,12 @@ struct station_capabilities {
 
 /* CapabilitiesResMessage */
 #define CAPABILITIES_RES_MESSAGE 0x0010
+struct station_capabilities {
+	uint32_t codec;
+	uint16_t frames;
+	char reserved[10];
+};
+
 struct capabilities_res_message {
 	uint32_t count;
 	struct station_capabilities caps[SWITCH_MAX_CODECS];
@@ -451,6 +453,18 @@ struct line_stat_res_message {
 	char displayname[44];
 };
 
+/* ConfigStatMessage */
+#define CONFIG_STAT_RES_MESSAGE 0x0093
+struct config_stat_res_message {
+	char device_name[16];
+	uint32_t user_id;
+	uint32_t instance;
+	char user_name[40];
+	char server_name[40];
+	uint32_t number_lines;
+	uint32_t number_speed_dials;
+};
+
 /* DefineTimeDate */
 #define DEFINE_TIME_DATE_MESSAGE 0x0094
 struct define_time_date_message {
@@ -656,6 +670,7 @@ union skinny_data {
 	struct call_info_message call_info;
 	struct speed_dial_stat_res_message speed_dial_res;
 	struct line_stat_res_message line_res;
+	struct config_stat_res_message config_res;
 	struct define_time_date_message define_time_date;
 	struct button_template_message button_template;
 	struct register_rej_message reg_rej;
@@ -1352,6 +1367,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		goto error;
 	}
 	
+	tech_pvt->profile = profile;
 	tech_pvt->dest = switch_core_session_strdup(nsession, dest);
 	snprintf(name, sizeof(name), "SKINNY/%s/%s", profile->name, dest);
 
@@ -2001,10 +2017,10 @@ static switch_status_t skinny_handle_register(listener_t *listener, skinny_messa
 	skinny_device_event(listener, &params, SWITCH_EVENT_REQUEST_PARAMS, SWITCH_EVENT_SUBCLASS_ANY);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "skinny-auth");
 
-	if (switch_xml_locate_user("id", request->data.reg.deviceName, profile->domain, "", &xroot, &xdomain, &xuser, &xgroup, params) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user("id", request->data.reg.device_name, profile->domain, "", &xroot, &xdomain, &xuser, &xgroup, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find device [%s@%s]\n"
 					  "You must define a domain called '%s' in your directory and add a user with id=\"%s\".\n"
-					  , request->data.reg.deviceName, profile->domain, profile->domain, request->data.reg.deviceName);
+					  , request->data.reg.device_name, profile->domain, profile->domain, request->data.reg.device_name);
 		message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reg_rej));
 		message->type = REGISTER_REJ_MESSAGE;
 		message->length = 4 + sizeof(message->data.reg_rej);
@@ -2018,12 +2034,12 @@ static switch_status_t skinny_handle_register(listener_t *listener, skinny_messa
 			"INSERT INTO skinny_devices "
 				"(name, user_id, instance, ip, type, max_streams, codec_string) "
 				"VALUES ('%s','%d','%d', '%s', '%d', '%d', '%s')",
-			request->data.reg.deviceName,
-			request->data.reg.userId,
+			request->data.reg.device_name,
+			request->data.reg.user_id,
 			request->data.reg.instance,
 			inet_ntoa(request->data.reg.ip),
-			request->data.reg.deviceType,
-			request->data.reg.maxStreams,
+			request->data.reg.device_type,
+			request->data.reg.max_streams,
 			"" /* codec_string */
 			))) {
 		skinny_execute_sql(profile, sql, profile->listener_mutex);
@@ -2031,7 +2047,7 @@ static switch_status_t skinny_handle_register(listener_t *listener, skinny_messa
 	}
 
 
-	strcpy(listener->device_name, request->data.reg.deviceName);
+	strcpy(listener->device_name, request->data.reg.device_name);
 
 	xskinny = switch_xml_child(xuser, "skinny");
 	if (xskinny) {
@@ -2047,7 +2063,7 @@ static switch_status_t skinny_handle_register(listener_t *listener, skinny_messa
 						"INSERT INTO skinny_buttons "
 							"(device_name, position, type, label, value, settings) "
 							"VALUES('%s', '%s', '%s', '%s', '%s', '%s')",
-						request->data.reg.deviceName,
+						request->data.reg.device_name,
 						position,
 						type,
 						label,
@@ -2096,6 +2112,60 @@ static switch_status_t skinny_headset_status_message(listener_t *listener, skinn
 	skinny_check_data_length(request, sizeof(request->data.headset_status));
 	
 	/* Nothing to do */
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static int skinny_config_stat_res_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	skinny_message_t *message = pArg;
+	char *device_name = argv[0];
+	int user_id = atoi(argv[1]);
+	int instance = atoi(argv[2]);
+	char *user_name = argv[3];
+	char *server_name = argv[4];
+	int number_lines = atoi(argv[5]);
+	int number_speed_dials = atoi(argv[6]);
+	
+	strcpy(message->data.config_res.device_name, device_name);
+	message->data.config_res.user_id = user_id;
+	message->data.config_res.instance = instance;
+	strcpy(message->data.config_res.user_name, user_name);
+	strcpy(message->data.config_res.server_name, server_name);
+	message->data.config_res.number_lines = number_lines;
+	message->data.config_res.number_speed_dials = number_speed_dials;
+
+	return 0;
+}
+
+static switch_status_t skinny_handle_config_stat_request(listener_t *listener, skinny_message_t *request)
+{
+	char *sql;
+	skinny_message_t *message;
+	skinny_profile_t *profile;
+
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	profile = listener->profile;
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.config_res));
+	message->type = CONFIG_STAT_RES_MESSAGE;
+	message->length = 4 + sizeof(message->data.config_res);
+
+	if ((sql = switch_mprintf(
+			"SELECT name, user_id, instance, '' AS user_name, '' AS server_name, "
+				"(SELECT COUNT(*) FROM skinny_buttons WHERE device_name='%s' AND type='line') AS number_lines, "
+				"(SELECT COUNT(*) FROM skinny_buttons WHERE device_name='%s' AND type='speed-dial') AS number_speed_dials "
+				"FROM skinny_devices WHERE name='%s' ",
+			listener->device_name,
+			listener->device_name,
+			listener->device_name
+			))) {
+		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_config_stat_res_callback, message);
+		switch_safe_free(sql);
+	}
+	skinny_send_reply(listener, message);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2472,6 +2542,8 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 			return skinny_handle_register(listener, request);
 		case HEADSET_STATUS_MESSAGE:
 			return skinny_headset_status_message(listener, request);
+		case CONFIG_STAT_REQ_MESSAGE:
+			return skinny_handle_config_stat_request(listener, request);
 		case CAPABILITIES_RES_MESSAGE:
 			return skinny_handle_capabilities_response(listener, request);
 		case PORT_MESSAGE:
