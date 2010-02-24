@@ -906,6 +906,7 @@ static switch_status_t skinny_device_event(listener_t *listener, switch_event_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/* Message handling */
 static switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *request)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -957,7 +958,7 @@ static switch_status_t skinny_handle_register(listener_t *listener, skinny_messa
 	if(users) {
 		for (user = switch_xml_child(users, "user"); user; user = user->next) {
 			const char *id = switch_xml_attr_soft(user, "id");
-			const char *type = switch_xml_attr_soft(user, "type");
+			//const char *type = switch_xml_attr_soft(user, "type");
 			//TODO device->line[device->line_last].device = *device;
 			strcpy(device->line[device->line_last].name, id);
 			strcpy(device->line[device->line_last].shortname, id);
@@ -998,14 +999,90 @@ end:
 	return status;
 }
 
-static switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *request)
+static switch_status_t skinny_handle_capabilities_response(listener_t *listener, skinny_message_t *request)
 {
-	skinny_message_t *message;
-	skinny_device_t *device;
+	skinny_device_t *device = listener->device;
 	uint32_t i = 0;
 	uint32_t n = 0;
 	size_t string_len, string_pos, pos;
 
+	n = request->data.cap_res.count;
+	if (n > SWITCH_MAX_CODECS) {
+		n = SWITCH_MAX_CODECS;
+	}
+	string_len = -1;
+	for (i = 0; i < n; i++) {
+		char *codec = skinny_codec2string(request->data.cap_res.caps[i].codec);
+		device->codec_order[i] = codec;
+		string_len += strlen(codec)+1;
+	}
+	i = 0;
+	pos = 0;
+	device->codec_string = realloc(device->codec_string, string_len+1);
+	for (string_pos = 0; string_pos < string_len; string_pos++) {
+		char *codec = device->codec_order[i];
+		switch_assert(i < n);
+		if(pos == strlen(codec)) {
+			device->codec_string[string_pos] = ',';
+			i++;
+			pos = 0;
+		} else {
+			device->codec_string[string_pos] = codec[pos++];
+		}
+	}
+	device->codec_string[string_len] = '\0';
+	device->codec_order_last = n;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+		"Codecs %s supported.\n", device->codec_string);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t skinny_handle_port_message(listener_t *listener, skinny_message_t *request)
+{
+	skinny_device_t *device = listener->device;
+
+	device->port = request->data.as_uint16;
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t skinny_handle_line_stat_request(listener_t *listener, skinny_message_t *request)
+{
+	skinny_device_t *device = listener->device;
+	skinny_message_t *message;
+	uint32_t i = 0;
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.line_res));
+	message->type = LINE_STAT_RES_MESSAGE;
+	message->length = 4 + sizeof(message->data.line_res);
+	i = request->data.line_req.number;
+	if(i > 0 && i <= device->line_last) {
+		message->data.line_res.number = i;
+		strcpy(message->data.line_res.name, device->line[i-1].name);
+		strcpy(message->data.line_res.shortname, device->line[i-1].shortname);
+		strcpy(message->data.line_res.displayname, device->line[i-1].displayname);
+	} else {
+		strcpy(message->data.line_res.name, "");
+		strcpy(message->data.line_res.shortname, "");
+		strcpy(message->data.line_res.displayname, "");
+	}
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t skinny_handle_keep_alive_message(listener_t *listener, skinny_message_t *request)
+{
+	skinny_message_t *message;
+
+	message = switch_core_alloc(listener->pool, 12);
+	message->type = KEEP_ALIVE_ACK_MESSAGE;
+	message->length = 4;
+	keepalive_listener(listener, NULL);
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *request)
+{
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 		"Received message (type=%x,length=%d).\n", request->type, request->length);
 	if(!listener->device && request->type != REGISTER_MESSAGE) {
@@ -1013,72 +1090,22 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 			"Device should send a register message first.\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	device = listener->device;
 	switch(request->type) {
 		case REGISTER_MESSAGE:
 			return skinny_handle_register(listener, request);
 		case CAPABILITIES_RES_MESSAGE:
-			n = request->data.cap_res.count;
-			if (n > SWITCH_MAX_CODECS) {
-				n = SWITCH_MAX_CODECS;
-			}
-			string_len = -1;
-			for (i = 0; i < n; i++) {
-				char *codec = skinny_codec2string(request->data.cap_res.caps[i].codec);
-				device->codec_order[i] = codec;
-				string_len += strlen(codec)+1;
-			}
-			i = 0;
-			pos = 0;
-			device->codec_string = realloc(device->codec_string, string_len+1);
-			for (string_pos = 0; string_pos < string_len; string_pos++) {
-				char *codec = device->codec_order[i];
-				switch_assert(i < n);
-				if(pos == strlen(codec)) {
-					device->codec_string[string_pos] = ',';
-					i++;
-					pos = 0;
-				} else {
-					device->codec_string[string_pos] = codec[pos++];
-				}
-			}
-			device->codec_string[string_len] = '\0';
-			device->codec_order_last = n;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-				"Codecs %s supported.\n", device->codec_string);
+			return skinny_handle_capabilities_response(listener, request);
 		case PORT_MESSAGE:
-			device->port = request->data.as_uint16;
-			break;
+			return skinny_handle_port_message(listener, request);
 		case LINE_STAT_REQ_MESSAGE:
-			message = switch_core_alloc(listener->pool, 12+sizeof(message->data.line_res));
-			message->type = LINE_STAT_RES_MESSAGE;
-			message->length = 4 + sizeof(message->data.line_res);
-			i = request->data.line_req.number;
-			if(i > 0 && i <= device->line_last) {
-				message->data.line_res.number = i;
-				strcpy(message->data.line_res.name, device->line[i-1].name);
-				strcpy(message->data.line_res.shortname, device->line[i-1].shortname);
-				strcpy(message->data.line_res.displayname, device->line[i-1].displayname);
-			} else {
-				strcpy(message->data.line_res.name, "");
-				strcpy(message->data.line_res.shortname, "");
-				strcpy(message->data.line_res.displayname, "");
-			}
-			skinny_send_reply(listener, message);
-			break;
+			return skinny_handle_line_stat_request(listener, request);
 		case KEEP_ALIVE_MESSAGE:
-			message = switch_core_alloc(listener->pool, 12);
-			message->type = KEEP_ALIVE_ACK_MESSAGE;
-			message->length = 4;
-			keepalive_listener(listener, NULL);
-			skinny_send_reply(listener, message);
-			break;
-		/* TODO */
+			return skinny_handle_keep_alive_message(listener, request);
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-				"Unknown request type: %d.\n", request->type);
+				"Unknown request type: %x (length=%d).\n", request->type, request->length);
+			return SWITCH_STATUS_SUCCESS;
 	}
-	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t *reply)
