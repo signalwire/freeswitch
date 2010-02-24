@@ -140,7 +140,10 @@ typedef enum {
 	TFLAG_HANGUP = (1 << 5),
 	TFLAG_LINEAR = (1 << 6),
 	TFLAG_CODEC = (1 << 7),
-	TFLAG_BREAK = (1 << 8)
+	TFLAG_BREAK = (1 << 8),
+	
+	TFLAG_READING = (1 << 9),
+	TFLAG_WRITING = (1 << 10)
 } TFLAGS;
 
 typedef enum {
@@ -149,18 +152,34 @@ typedef enum {
 
 struct private_object {
 	unsigned int flags;
-	switch_codec_t read_codec;
-	switch_codec_t write_codec;
 	switch_frame_t read_frame;
 	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_core_session_t *session;
 	switch_caller_profile_t *caller_profile;
 	switch_mutex_t *mutex;
 	switch_mutex_t *flag_mutex;
-	char *dest;
 	/* identification */
-	skinny_profile_t *profile;
+	struct listener *listener;
+	uint32_t line;
 	uint32_t call_id;
+	uint32_t party_id;
+	/* codec */
+	char *iananame;	
+	switch_codec_t read_codec;
+	switch_codec_t write_codec;
+	switch_codec_implementation_t read_impl;
+	switch_codec_implementation_t write_impl;
+	unsigned long rm_rate;
+	uint32_t codec_ms;
+	char *rm_encoding;
+	char *rm_fmtp;
+	switch_payload_t agreed_pt;
+	/* RTP */
+	switch_rtp_t *rtp_session;
+	char *local_sdp_audio_ip;
+	switch_port_t local_sdp_audio_port;
+	char *remote_sdp_audio_ip;
+	switch_port_t remote_sdp_audio_port;
 };
 
 typedef struct private_object private_t;
@@ -801,6 +820,7 @@ typedef enum {
 struct listener {
 	skinny_profile_t *profile;
 	char device_name[16];
+	switch_core_session_t *outgoing_session;
 
 	switch_socket_t *sock;
 	switch_memory_pool_t *pool;
@@ -1060,12 +1080,134 @@ static switch_bool_t skinny_execute_sql_callback(skinny_profile_t *profile,
 /* CHANNEL FUNCTIONS */
 /*****************************************************************************/
 
+static switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
+{
+	int ms;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int resetting = 0;
+
+	if (!tech_pvt->iananame) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "No audio codec available\n");
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
+
+	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
+		if (!force) {
+			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
+		}
+		if (strcasecmp(tech_pvt->read_impl.iananame, tech_pvt->iananame) ||
+			tech_pvt->read_impl.samples_per_second != tech_pvt->rm_rate ||
+			tech_pvt->codec_ms != (uint32_t)tech_pvt->read_impl.microseconds_per_packet / 1000) {
+			
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Changing Codec from %s@%dms to %s@%dms\n",
+							  tech_pvt->read_impl.iananame, tech_pvt->read_impl.microseconds_per_packet / 1000, 
+							  tech_pvt->rm_encoding, tech_pvt->codec_ms);
+			
+			switch_core_session_lock_codec_write(tech_pvt->session);
+			switch_core_session_lock_codec_read(tech_pvt->session);
+			resetting = 1;
+			switch_core_codec_destroy(&tech_pvt->read_codec);
+			switch_core_codec_destroy(&tech_pvt->write_codec);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Already using %s\n", tech_pvt->read_impl.iananame);
+			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
+		}
+	}
+	
+	if (switch_core_codec_init(&tech_pvt->read_codec,
+							   tech_pvt->iananame,
+							   tech_pvt->rm_fmtp,
+							   tech_pvt->rm_rate,
+							   tech_pvt->codec_ms,
+							   1,
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | 0 /* TODO tech_pvt->profile->codec_flags */,
+							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
+
+	if (switch_core_codec_init(&tech_pvt->write_codec,
+							   tech_pvt->iananame,
+							   tech_pvt->rm_fmtp,
+							   tech_pvt->rm_rate,
+							   tech_pvt->codec_ms,
+							   1,
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | 0 /* TODO tech_pvt->profile->codec_flags */,
+							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
+
+	switch_assert(tech_pvt->read_codec.implementation);
+	switch_assert(tech_pvt->write_codec.implementation);
+
+	tech_pvt->read_impl = *tech_pvt->read_codec.implementation;
+	tech_pvt->write_impl = *tech_pvt->write_codec.implementation;
+
+	switch_core_session_set_read_impl(tech_pvt->session, tech_pvt->read_codec.implementation);
+	switch_core_session_set_write_impl(tech_pvt->session, tech_pvt->write_codec.implementation);
+
+	if (switch_rtp_ready(tech_pvt->rtp_session)) {
+		switch_assert(tech_pvt->read_codec.implementation);
+
+		if (switch_rtp_change_interval(tech_pvt->rtp_session, 
+									   tech_pvt->read_impl.microseconds_per_packet,
+									   tech_pvt->read_impl.samples_per_packet
+									   ) != SWITCH_STATUS_SUCCESS) {
+			/* TODO
+			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			*/
+			switch_goto_status(SWITCH_STATUS_FALSE, end);				
+		}
+	}
+
+	tech_pvt->read_frame.rate = tech_pvt->rm_rate;
+	ms = tech_pvt->write_codec.implementation->microseconds_per_packet / 1000;
+
+	if (!switch_core_codec_ready(&tech_pvt->read_codec)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms %d samples\n",
+					  "" /* TODO switch_channel_get_name(tech_pvt->channel)*/, tech_pvt->iananame, tech_pvt->rm_rate, tech_pvt->codec_ms,
+					  tech_pvt->read_impl.samples_per_packet);
+	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
+
+	tech_pvt->write_codec.agreed_pt = tech_pvt->agreed_pt;
+	tech_pvt->read_codec.agreed_pt = tech_pvt->agreed_pt;
+
+	if (force != 2) {
+		switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
+		switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
+	}
+
+	/* TODO
+	tech_pvt->fmtp_out = switch_core_session_strdup(tech_pvt->session, tech_pvt->write_codec.fmtp_out);
+	*/
+
+	/* TODO
+	if (switch_rtp_ready(tech_pvt->rtp_session)) {
+		switch_rtp_set_default_payload(tech_pvt->rtp_session, tech_pvt->pt);
+	}
+	*/
+
+ end:
+	if (resetting) {
+		switch_core_session_unlock_codec_write(tech_pvt->session);
+		switch_core_session_unlock_codec_read(tech_pvt->session);
+	}
+
+	return status;
+}
+
 static void tech_init(private_t *tech_pvt, switch_core_session_t *session)
 {
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+	tech_pvt->call_id = 12345; /* TODO */
 	switch_core_session_set_private(session, tech_pvt);
 	tech_pvt->session = session;
 }
@@ -1165,6 +1307,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
+	listener_t *listener = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -1172,12 +1315,38 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	listener = tech_pvt->listener;
+	assert(listener != NULL);
+	
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
-	//switch_thread_cond_signal(tech_pvt->cond);
-
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
+
+	stop_tone(listener, tech_pvt->line, tech_pvt->call_id);
+	set_lamp(listener, SKINNY_BUTTON_LINE, tech_pvt->line, SKINNY_LAMP_OFF);
+	clear_prompt_status(listener, tech_pvt->line, tech_pvt->call_id);
+	close_receive_channel(listener,
+		tech_pvt->call_id, /* uint32_t conference_id, */
+		tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
+		tech_pvt->call_id /* uint32_t conference_id2, */
+	);
+	stop_media_transmission(listener,
+		tech_pvt->call_id, /* uint32_t conference_id, */
+		tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
+		tech_pvt->call_id /* uint32_t conference_id2, */
+	);
+	send_call_state(listener,
+		SKINNY_ON_HOOK,
+		tech_pvt->line,
+		tech_pvt->call_id);
+	send_select_soft_keys(listener, tech_pvt->line, tech_pvt->call_id,
+		SKINNY_KEY_SET_ON_HOOK, 0xffff);
+	/* TODO: DefineTimeDate */
+	set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
+	set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0);
+	
+
 	switch_mutex_lock(globals.calls_mutex);
 	globals.calls--;
 	if (globals.calls < 0) {
@@ -1212,6 +1381,8 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	default:
 		break;
 	}
+	
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL KILL %d\n", switch_channel_get_name(channel), sig);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1240,58 +1411,74 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
-	//switch_time_t started = switch_time_now();
-	//unsigned int elapsed;
-	switch_byte_t *data;
+	int payload = 0;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-	tech_pvt->read_frame.flags = SFF_NONE;
-	*frame = NULL;
 
-	while (switch_test_flag(tech_pvt, TFLAG_IO)) {
-
-		if (switch_test_flag(tech_pvt, TFLAG_BREAK)) {
-			switch_clear_flag(tech_pvt, TFLAG_BREAK);
-			goto cng;
+	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session))) {
+		if (switch_channel_ready(channel)) {
+			switch_yield(10000);
+		} else {
+			return SWITCH_STATUS_GENERR;
 		}
-
-		if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
-			return SWITCH_STATUS_FALSE;
-		}
-
-		if (switch_test_flag(tech_pvt, TFLAG_IO) && switch_test_flag(tech_pvt, TFLAG_VOICE)) {
-			switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
-			if (!tech_pvt->read_frame.datalen) {
-				continue;
-			}
-			*frame = &tech_pvt->read_frame;
-#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
-			if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
-				switch_swap_linear((*frame)->data, (int) (*frame)->datalen / 2);
-			}
-#endif
-			return SWITCH_STATUS_SUCCESS;
-		}
-
-		switch_cond_next();
 	}
 
+	tech_pvt->read_frame.datalen = 0;
+	switch_set_flag_locked(tech_pvt, TFLAG_READING);
 
-	return SWITCH_STATUS_FALSE;
+	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
+		switch_status_t status;
 
-  cng:
-	data = (switch_byte_t *) tech_pvt->read_frame.data;
-	data[0] = 65;
-	data[1] = 0;
-	tech_pvt->read_frame.datalen = 2;
-	tech_pvt->read_frame.flags = SFF_CNG;
+		switch_assert(tech_pvt->rtp_session != NULL);
+		tech_pvt->read_frame.datalen = 0;
+
+
+		while (switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
+			tech_pvt->read_frame.flags = SFF_NONE;
+
+			status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame, flags);
+			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+				return SWITCH_STATUS_FALSE;
+			}
+
+			payload = tech_pvt->read_frame.payload;
+
+			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
+				switch_dtmf_t dtmf = { 0 };
+				switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, &dtmf);
+				switch_channel_queue_dtmf(channel, &dtmf);
+			}
+
+
+			if (tech_pvt->read_frame.datalen > 0) {
+				size_t bytes = 0;
+				int frames = 1;
+
+				if (!switch_test_flag((&tech_pvt->read_frame), SFF_CNG)) {
+					if ((bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet)) {
+						frames = (tech_pvt->read_frame.datalen / bytes);
+					}
+					tech_pvt->read_frame.samples = (int) (frames * tech_pvt->read_codec.implementation->samples_per_packet);
+				}
+				break;
+			}
+		}
+	}
+
+	switch_clear_flag_locked(tech_pvt, TFLAG_READING);
+
+	if (tech_pvt->read_frame.datalen == 0) {
+		*frame = NULL;
+		return SWITCH_STATUS_GENERR;
+	}
+
 	*frame = &tech_pvt->read_frame;
-	return SWITCH_STATUS_SUCCESS;
 
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
@@ -1299,7 +1486,8 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	//switch_frame_t *pframe;
-
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -1315,8 +1503,13 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 #endif
 
+	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
-	return SWITCH_STATUS_SUCCESS;
+	switch_rtp_write_frame(tech_pvt->rtp_session, frame);
+
+	switch_clear_flag_locked(tech_pvt, TFLAG_WRITING);
+
+	return status;
 
 }
 
@@ -1413,8 +1606,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		goto error;
 	}
 	
-	tech_pvt->profile = profile;
-	tech_pvt->dest = switch_core_session_strdup(nsession, dest);
 	snprintf(name, sizeof(name), "SKINNY/%s/%s", profile->name, dest);
 
 	channel = switch_core_session_get_channel(nsession);
@@ -1427,15 +1618,58 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	switch_channel_set_flag(channel, CF_OUTBOUND);
 	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
-	switch_channel_set_state(channel, CS_INIT);
 
-	cause = SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
-	
-	if (!(cause == SWITCH_CAUSE_SUCCESS)) {
+	/* TODO: find listener(s) based on profile and dest */
+	tech_pvt->listener = profile->listeners;
+
+	if (!tech_pvt->listener) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid destination %s in profile %s\n", dest, profile_name);
+		cause = SWITCH_CAUSE_UNALLOCATED_NUMBER;
 		goto error;
 	}
+
+	/* TODO find line */
+	tech_pvt->line = 1;
 	
+	tech_pvt->listener->outgoing_session = nsession;
+	send_call_state(tech_pvt->listener, SKINNY_RING_IN, tech_pvt->line, tech_pvt->call_id);
+	send_select_soft_keys(tech_pvt->listener, tech_pvt->line, tech_pvt->call_id,
+		SKINNY_KEY_SET_RING_IN, 0xffff);
+	display_prompt_status(tech_pvt->listener, 0, "\200\027tel", tech_pvt->line, tech_pvt->call_id);
+	/* displayprinotifiymessage */
+	send_call_info(tech_pvt->listener,
+		"TODO", /* char calling_party_name[40], */
+		"TODO", /* char calling_party[24], */
+		"TODO", /* char called_party_name[40], */
+		"TODO", /* char called_party[24], */
+		tech_pvt->line, /* uint32_t line_instance, */
+		tech_pvt->call_id, /* uint32_t call_id, */
+		SKINNY_OUTBOUND_CALL, /* uint32_t call_type, */
+		"TODO", /* char original_called_party_name[40], */
+		"TODO", /* char original_called_party[24], */
+		"TODO", /* char last_redirecting_party_name[40], */
+		"TODO", /* char last_redirecting_party[24], */
+		0, /* uint32_t original_called_party_redirect_reason, */
+		0, /* uint32_t last_redirecting_reason, */
+		"TODO", /* char calling_party_voice_mailbox[24], */
+		"TODO", /* char called_party_voice_mailbox[24], */
+		"TODO", /* char original_called_party_voice_mailbox[24], */
+		"TODO", /* char last_redirecting_voice_mailbox[24], */
+		1, /* uint32_t call_instance, */
+		1, /* uint32_t call_security_status, */
+		0 /* uint32_t party_pi_restriction_bits */
+	);
+	set_lamp(tech_pvt->listener, SKINNY_BUTTON_LINE, tech_pvt->line, SKINNY_LAMP_BLINK);
+	set_ringer(tech_pvt->listener, SKINNY_RING_OUTSIDE, SKINNY_RING_FOREVER, 0);
+
 	*new_session = nsession;
+
+	/* ?? switch_channel_mark_ring_ready(channel); */
+
+	if (switch_channel_get_state(channel) == CS_NEW) {
+		switch_channel_set_state(channel, CS_INIT);
+	}
+
 	cause = SWITCH_CAUSE_SUCCESS;
 	goto done;
 
@@ -2561,6 +2795,165 @@ static switch_status_t skinny_handle_keep_alive_message(listener_t *listener, sk
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_message_t *request)
+{
+	skinny_profile_t *profile;
+
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	profile = listener->profile;
+
+	skinny_check_data_length(request, sizeof(request->data.off_hook));
+
+	if(listener->outgoing_session) { /*answering a call */
+		private_t *tech_pvt = NULL;
+		tech_pvt = switch_core_session_get_private(listener->outgoing_session);
+		if(request->data.off_hook.line_instance) {
+			tech_pvt->line = request->data.off_hook.line_instance;
+		} else {
+			tech_pvt->line = 1;
+		}
+		set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0); /* TODO : here ? */
+		stop_tone(listener, tech_pvt->line, tech_pvt->call_id);
+		open_receive_channel(listener,
+			tech_pvt->call_id, /* uint32_t conference_id, */
+			0, /* uint32_t pass_thru_party_id, */
+			20, /* uint32_t packets, */
+			SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
+			0, /* uint32_t echo_cancel_type, */
+			0, /* uint32_t g723_bitrate, */
+			0, /* uint32_t conference_id2, */
+			0 /* uint32_t reserved[10] */
+		);
+		send_call_state(listener,
+			SKINNY_CONNECTED,
+			tech_pvt->line,
+			tech_pvt->call_id);
+		send_select_soft_keys(listener,
+			tech_pvt->line,
+			tech_pvt->call_id,
+			SKINNY_KEY_SET_CONNECTED,
+			0xffff);
+		display_prompt_status(listener,
+			0,
+			"\200\030",
+			1,
+			tech_pvt->call_id);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *listener, skinny_message_t *request)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	skinny_profile_t *profile;
+
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	profile = listener->profile;
+
+	skinny_check_data_length(request, sizeof(request->data.open_receive_channel_ack));
+
+	if(listener->outgoing_session) {
+		const char *err = NULL;
+		private_t *tech_pvt = NULL;
+		switch_channel_t *channel = NULL;
+		struct in_addr addr;
+
+		tech_pvt = switch_core_session_get_private(listener->outgoing_session);
+		channel = switch_core_session_get_channel(listener->outgoing_session);
+
+		/* Codec */
+		tech_pvt->iananame = "PCMU"; /* TODO */
+		tech_pvt->codec_ms = 10; /* TODO */
+		tech_pvt->rm_rate = 8000; /* TODO */
+		tech_pvt->rm_fmtp = NULL; /* TODO */
+		tech_pvt->agreed_pt = (switch_payload_t) 0; /* TODO */
+		tech_pvt->rm_encoding = switch_core_strdup(switch_core_session_get_pool(listener->outgoing_session), "");
+		skinny_tech_set_codec(tech_pvt, 0);
+		if ((status = skinny_tech_set_codec(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
+			goto end;
+		}
+		
+		/* Request a local port from the core's allocator */
+		if (!(tech_pvt->local_sdp_audio_port = switch_rtp_request_port(listener->profile->ip))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_CRIT, "No RTP ports available!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+		tech_pvt->local_sdp_audio_ip = switch_core_strdup(switch_core_session_get_pool(listener->outgoing_session), listener->profile->ip);
+
+		tech_pvt->remote_sdp_audio_ip = inet_ntoa(request->data.open_receive_channel_ack.ip);
+		tech_pvt->remote_sdp_audio_port = request->data.open_receive_channel_ack.port;
+
+		tech_pvt->rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
+											   tech_pvt->local_sdp_audio_port,
+											   tech_pvt->remote_sdp_audio_ip,
+											   tech_pvt->remote_sdp_audio_port,
+											   tech_pvt->agreed_pt,
+											   tech_pvt->read_impl.samples_per_packet,
+											   tech_pvt->codec_ms * 1000,
+											   (switch_rtp_flag_t) 0, "soft", &err,
+											   switch_core_session_get_pool(listener->outgoing_session));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG,
+						  "AUDIO RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",
+						  switch_channel_get_name(channel),
+						  tech_pvt->local_sdp_audio_ip,
+						  tech_pvt->local_sdp_audio_port,
+						  tech_pvt->remote_sdp_audio_ip,
+						  tech_pvt->remote_sdp_audio_port,
+						  tech_pvt->agreed_pt,
+						  tech_pvt->read_impl.microseconds_per_packet / 1000,
+						  switch_rtp_ready(tech_pvt->rtp_session) ? "SUCCESS" : err);
+		inet_aton(tech_pvt->local_sdp_audio_ip, &addr);
+		start_media_transmission(listener,
+			tech_pvt->call_id, /* uint32_t conference_id, */
+			tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
+			addr.s_addr, /* uint32_t remote_ip, */
+			tech_pvt->local_sdp_audio_port, /* uint32_t remote_port, */
+			20, /* uint32_t ms_per_packet, */
+			SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
+			184, /* uint32_t precedence, */
+			0, /* uint32_t silence_suppression, */
+			0, /* uint16_t max_frames_per_packet, */
+			0 /* uint32_t g723_bitrate */
+		);
+		switch_channel_mark_answered(channel);
+	}
+end:
+	return status;
+}
+
+static switch_status_t skinny_handle_on_hook_message(listener_t *listener, skinny_message_t *request)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	skinny_profile_t *profile;
+
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	profile = listener->profile;
+
+	skinny_check_data_length(request, sizeof(request->data.on_hook));
+
+	if(listener->outgoing_session) {
+		switch_channel_t *channel = NULL;
+		private_t *tech_pvt = NULL;
+
+		channel = switch_core_session_get_channel(listener->outgoing_session);
+		assert(channel != NULL);
+
+		tech_pvt = switch_core_session_get_private(listener->outgoing_session);
+		assert(tech_pvt != NULL);
+
+		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+		switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	}
+	return status;
+}
+
 static switch_status_t skinny_handle_unregister(listener_t *listener, skinny_message_t *request)
 {
 	switch_event_t *event = NULL;
@@ -2610,82 +3003,19 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 		/* live phase */
 		case KEEP_ALIVE_MESSAGE:
 			return skinny_handle_keep_alive_message(listener, request);
+		case OFF_HOOK_MESSAGE:
+			return skinny_handle_off_hook_message(listener, request);
+		case OPEN_RECEIVE_CHANNEL_ACK_MESSAGE:
+			return skinny_handle_open_receive_channel_ack_message(listener, request);
+		case ON_HOOK_MESSAGE:
+			return skinny_handle_on_hook_message(listener, request);
 		/* end phase */
 		case UNREGISTER_MESSAGE:
 			return skinny_handle_unregister(listener, request);
 		case 0xABCDEF: /* the following commands are to avoid compile warnings (which are errors) */
 activate_call_plane(listener, 1 /* line */);
-send_select_soft_keys(listener, 1 /* line */, 0 /* call_id */, SKINNY_KEY_SET_RING_OUT, 0xffff);
 send_dialed_number(listener, 0 /* called_party */, 1 /* line */, 0 /* call_id */);
-send_call_state(listener, SKINNY_PROCEED, 1 /* line */, 0 /* call_id */);
-open_receive_channel(listener,
-	0, /* uint32_t conference_id, */
-	0, /* uint32_t pass_thru_party_id, */
-	20, /* uint32_t packets, */
-	SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
-	0, /* uint32_t echo_cancel_type, */
-	0, /* uint32_t g723_bitrate, */
-	0, /* uint32_t conference_id2, */
-	0 /* uint32_t reserved[10] */
-);
-start_media_transmission(listener,
-	0, /* uint32_t conference_id, */
-	0, /* uint32_t pass_thru_party_id, */
-	0, /* uint32_t remote_ip, */
-	0, /* uint32_t remote_port, */
-	20, /* uint32_t ms_per_packet, */
-	SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
-	184, /* uint32_t precedence, */
-	0, /* uint32_t silence_suppression, */
-	0, /* uint16_t max_frames_per_packet, */
-	0 /* uint32_t g723_bitrate */
-);
-close_receive_channel(listener,
-	0, /* uint32_t conference_id, */
-	0, /* uint32_t pass_thru_party_id, */
-	0 /* uint32_t conference_id2, */
-);
-stop_media_transmission(listener,
-	0, /* uint32_t conference_id, */
-	0, /* uint32_t pass_thru_party_id, */
-	0 /* uint32_t conference_id2, */
-);
 start_tone(listener, SKINNY_TONE_DIALTONE, 0, 0, 0);
-stop_tone(listener, 0, 0);
-clear_prompt_status(listener, 0, 0);
-set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
-
-send_call_state(listener, SKINNY_RING_IN, 0, 0);
-send_select_soft_keys(listener, 0, 0,
-	SKINNY_KEY_SET_RING_IN, 0xffff);
-display_prompt_status(listener, 0, "\200\027tel", 0, 0);
-/* displayprinotifiymessage */
-send_call_info(listener,
-	"TODO", /* char calling_party_name[40], */
-	"TODO", /* char calling_party[24], */
-	"TODO", /* char called_party_name[40], */
-	"TODO", /* char called_party[24], */
-	0, /* uint32_t line_instance, */
-	0, /* uint32_t call_id, */
-	SKINNY_OUTBOUND_CALL, /* uint32_t call_type, */
-	"TODO", /* char original_called_party_name[40], */
-	"TODO", /* char original_called_party[24], */
-	"TODO", /* char last_redirecting_party_name[40], */
-	"TODO", /* char last_redirecting_party[24], */
-	0, /* uint32_t original_called_party_redirect_reason, */
-	0, /* uint32_t last_redirecting_reason, */
-	"TODO", /* char calling_party_voice_mailbox[24], */
-	"TODO", /* char called_party_voice_mailbox[24], */
-	"TODO", /* char original_called_party_voice_mailbox[24], */
-	"TODO", /* char last_redirecting_voice_mailbox[24], */
-	1, /* uint32_t call_instance, */
-	1, /* uint32_t call_security_status, */
-	0 /* uint32_t party_pi_restriction_bits */
-);
-set_lamp(listener, SKINNY_BUTTON_LINE, 0, SKINNY_LAMP_BLINK);
-set_ringer(listener, SKINNY_RING_OUTSIDE, SKINNY_RING_FOREVER, 0);
-
-
 
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
