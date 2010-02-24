@@ -113,7 +113,7 @@ struct register_message {
 	char deviceName[16];
 	uint32_t userId;
 	uint32_t instance;
-	uint32_t ip;
+	struct in_addr ip;
 	uint32_t deviceType;
 	uint32_t maxStreams;
 };
@@ -156,12 +156,14 @@ struct skinny_device {
 	char deviceName[16];
 	uint32_t userId;
 	uint32_t instance;
-	uint32_t ip;
+	struct in_addr ip;
 	uint32_t deviceType;
 	uint32_t maxStreams;
 	uint16_t port;
 };
 typedef struct skinny_device skinny_device_t;
+
+typedef switch_status_t (*skinny_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
 
 /*****************************************************************************/
 /* LISTENERS TYPES */
@@ -189,7 +191,7 @@ struct listener {
 
 typedef struct listener listener_t;
 
-typedef switch_status_t (*skinny_listener_callback_func_t) (listener_t *listener);
+typedef switch_status_t (*skinny_listener_callback_func_t) (listener_t *listener, void *pvt);
 
 static struct {
 	switch_socket_t *sock;
@@ -218,7 +220,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 
 
 /* LISTENER FUNCTIONS */
-static switch_status_t keepalive_listener(listener_t *listener);
+static switch_status_t keepalive_listener(listener_t *listener, void *pvt);
 
 /*****************************************************************************/
 /* CHANNEL FUNCTIONS */
@@ -735,7 +737,7 @@ static switch_status_t skinny_parse_request(listener_t *listener, skinny_message
 			reply->data.reg_ack.secondaryKeepAlive = globals.keep_alive;
 			/* TODO send CapabilitiesReqMessage (and parse the CapabilitiesResMessage) */
 			/* TODO event */
-			keepalive_listener(listener);
+			keepalive_listener(listener, NULL);
 			break;
 		case PORT_MESSAGE:
 			/* Nothing to do */
@@ -744,7 +746,7 @@ static switch_status_t skinny_parse_request(listener_t *listener, skinny_message
 			reply = switch_core_alloc(listener->pool, 12);
 			reply->type = KEEP_ALIVE_ACK_MESSAGE;
 			reply->length = 4;
-			keepalive_listener(listener);
+			keepalive_listener(listener, NULL);
 			break;
 		/* TODO */
 		default:
@@ -807,13 +809,13 @@ static void remove_listener(listener_t *listener)
 }
 
 
-static void walk_listeners(skinny_listener_callback_func_t callback)
+static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 {
 	listener_t *l;
 
 	switch_mutex_lock(globals.listener_mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
-		callback(l);
+		callback(l, pvt);
 	}
 	switch_mutex_unlock(globals.listener_mutex);
 
@@ -823,6 +825,47 @@ static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch
 {
 
 	/* TODO */
+}
+
+static listener_t *find_listener(char *device_name)
+{
+	listener_t *l, *r = NULL;
+	skinny_device_t *device;
+
+	switch_mutex_lock(globals.listener_mutex);
+	for (l = listen_list.listeners; l; l = l->next) {
+		if (l->device) {
+			device = l->device;
+			if(!strcasecmp(device->deviceName,device_name)) {
+				if (switch_thread_rwlock_tryrdlock(l->rwlock) == SWITCH_STATUS_SUCCESS) {
+					r = l;
+				}
+				break;
+			}
+		}
+	}
+	switch_mutex_unlock(globals.listener_mutex);
+	return r;
+}
+
+static switch_status_t dump_listener(listener_t *listener, void *pvt)
+{
+	switch_stream_handle_t *stream = (switch_stream_handle_t *) pvt;
+	const char *line = "=================================================================================================";
+	skinny_device_t *device;
+	if(listener->device) {
+		device = listener->device;
+		stream->write_function(stream, "%s\n", line);
+		stream->write_function(stream, "DeviceName    \t%s\n", switch_str_nil(device->deviceName));
+		stream->write_function(stream, "UserId        \t%d\n", device->userId);
+		stream->write_function(stream, "Instance      \t%d\n", device->instance);
+		stream->write_function(stream, "IP            \t%s\n", inet_ntoa(device->ip));
+		stream->write_function(stream, "DeviceType    \t%d\n", device->deviceType);
+		stream->write_function(stream, "MaxStreams    \t%d\n", device->maxStreams);
+		stream->write_function(stream, "Port          \t%d\n", device->port);
+		stream->write_function(stream, "%s\n", line);
+	}
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static void close_socket(switch_socket_t **sock)
@@ -836,7 +879,7 @@ static void close_socket(switch_socket_t **sock)
 	switch_mutex_unlock(listen_list.sock_mutex);
 }
 
-static switch_status_t kill_listener(listener_t *listener)
+static switch_status_t kill_listener(listener_t *listener, void *pvt)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Killing listener.\n");
 	switch_clear_flag(listener, LFLAG_RUNNING);
@@ -844,15 +887,15 @@ static switch_status_t kill_listener(listener_t *listener)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t kill_expired_listener(listener_t *listener)
+static switch_status_t kill_expired_listener(listener_t *listener, void *pvt)
 {
 	if(listener->expire_time < switch_epoch_time_now(NULL)) {
-		return kill_listener(listener);
+		return kill_listener(listener, pvt);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t keepalive_listener(listener_t *listener)
+static switch_status_t keepalive_listener(listener_t *listener, void *pvt)
 {
 	switch_assert(listener);
 	
@@ -895,7 +938,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
 	switch_set_flag_locked(listener, LFLAG_RUNNING);
-	keepalive_listener(listener);
+	keepalive_listener(listener, NULL);
 	add_listener(listener);
 
 
@@ -1140,15 +1183,110 @@ static switch_status_t load_skinny_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t cmd_device(char **argv, int argc, switch_stream_handle_t *stream)
+{
+	listener_t *listener;
+	if (argc != 1) {
+		stream->write_function(stream, "Invalid Args!\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	if (argv[0] && !strcasecmp(argv[0], "*")) {
+		walk_listeners(dump_listener, stream);
+	} else {
+		listener=find_listener(argv[0]);
+		if(listener) {
+			dump_listener(listener, stream);
+		}
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(skinny_function)
+{
+	char *argv[1024] = { 0 };
+	int argc = 0;
+	char *mycmd = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	skinny_command_t func = NULL;
+	const char *usage_string = "USAGE:\n"
+		"--------------------------------------------------------------------------------\n"
+		"skinny help\n"
+		"skinny device *\n"
+		"skinny device <device_name>\n"
+		"--------------------------------------------------------------------------------\n";
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "%s", usage_string);
+		goto done;
+	}
+
+	if (!(mycmd = strdup(cmd))) {
+		status = SWITCH_STATUS_MEMERR;
+		goto done;
+	}
+
+	if (!(argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) || !argv[0]) {
+		stream->write_function(stream, "%s", usage_string);
+		goto done;
+	}
+
+	if (!strcasecmp(argv[0], "device")) {
+		func = cmd_device;
+	} else if (!strcasecmp(argv[0], "help")) {
+		stream->write_function(stream, "%s", usage_string);
+		goto done;
+	}
+	
+	if (func) {
+		status = func(&argv[1], argc - 1, stream);
+	} else {
+		stream->write_function(stream, "Unknown Command [%s]\n", argv[0]);
+	}
+
+  done:
+	switch_safe_free(mycmd);
+	return status;
+}
+
 static void event_handler(switch_event_t *event)
 {
 	if (event->event_id == SWITCH_EVENT_HEARTBEAT) {
-		walk_listeners(kill_expired_listener);
+		walk_listeners(kill_expired_listener, NULL);
 	}
+}
+
+static switch_status_t skinny_list_devices(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	switch_console_callback_match_t *my_matches = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	listener_t *l;
+	skinny_device_t *device;
+
+	switch_mutex_lock(globals.listener_mutex);
+	for (l = listen_list.listeners; l; l = l->next) {
+		if(l->device) {
+			device = l->device;
+			switch_console_push_match(&my_matches, device->deviceName);
+		}
+	}
+	switch_mutex_unlock(globals.listener_mutex);
+
+	if (my_matches) {
+		*matches = my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	
+	return status;
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 {
+	switch_api_interface_t *api_interface;
 
 	module_pool = pool;
 
@@ -1174,6 +1312,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	skinny_endpoint_interface->state_handler = &skinny_state_handlers;
 
 
+	SWITCH_ADD_API(api_interface, "skinny", "Skinny Controls", skinny_function, "<cmd> <args>");
+	switch_console_set_complete("add skinny help");
+	switch_console_set_complete("add skinny device *");
+	switch_console_set_complete("add skinny device ::skinny::list_devices");
+
+	switch_console_add_complete_func("::skinny::list_devices", skinny_list_devices);
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1191,13 +1335,13 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 
 	running = 0;
 
-	walk_listeners(kill_listener);
+	walk_listeners(kill_listener, NULL);
 
 	close_socket(&listen_list.sock);
 
 	while (globals.listener_threads) {
 		switch_yield(100000);
-		walk_listeners(kill_listener);
+		walk_listeners(kill_listener, NULL);
 		if (++sanity >= 200) {
 			break;
 		}
