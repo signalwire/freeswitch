@@ -36,6 +36,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_skinny_runtime);
 
 SWITCH_MODULE_DEFINITION(mod_skinny, mod_skinny_load, mod_skinny_shutdown, mod_skinny_runtime);
+#define SKINNY_EVENT_REGISTER "skinny::register"
 
 
 switch_endpoint_interface_t *skinny_endpoint_interface;
@@ -767,6 +768,26 @@ static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t skinny_device_event(listener_t *listener, switch_event_t **ev, switch_event_types_t event_id, const char *subclass_name)
+{
+	switch_event_t *event = NULL;
+	skinny_device_t *device;
+	switch_event_create_subclass(&event, event_id, subclass_name);
+	if(listener->device) {
+		device = listener->device;
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Skinny-Device-Name", switch_str_nil(device->deviceName));
+		switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-User-Id", "%d", device->userId);
+		switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-Instance", "%d", device->instance);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Skinny-IP", inet_ntoa(device->ip));
+		switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-Device-Type", "%d", device->deviceType);
+		switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-Max-Streams", "%d", device->maxStreams);
+		switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-Port", "%d", device->port);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Skinny-Codecs", device->codec_string);
+	}
+	*ev = event;
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *request)
 {
     skinny_message_t *message;
@@ -774,6 +795,8 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 	uint32_t i = 0;
 	uint32_t n = 0;
 	size_t string_len, string_pos, pos;
+	switch_event_t *event = NULL;
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 		"Received message of type %d.\n", request->type);
 	if(!listener->device && request->type != REGISTER_MESSAGE) {
@@ -784,10 +807,9 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 	device = listener->device;
 	switch(request->type) {
 		case REGISTER_MESSAGE:
-			/* TODO : check directory */
 			if(listener->device) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-					"Device already registred.\n");
+					"A device is already registred on this listener.\n");
 				return SWITCH_STATUS_FALSE;
 			}
 			/* Initialize device */
@@ -800,6 +822,9 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 			device->maxStreams = request->data.reg.maxStreams;
 			device->codec_string = realloc(device->codec_string, 1);
 			device->codec_string[0] = '\0';
+
+			/* TODO : check directory */
+
 			listener->device = device;
 
 			/* Reply with RegisterAckMessage */
@@ -817,7 +842,10 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 			message->length = 4;
 			skinny_send_reply(listener, message);
 
-			/* TODO event */
+			/* skinny::register event */
+			skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_REGISTER);
+			switch_event_fire(&event);
+			
 			keepalive_listener(listener, NULL);
 			break;
 		case CAPABILITIES_RES_MESSAGE:
@@ -1410,6 +1438,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 		/* Not such severe to prevent loading */
 	}
 
+	if (switch_event_reserve_subclass(SKINNY_EVENT_REGISTER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SKINNY_EVENT_REGISTER);
+		return SWITCH_STATUS_TERM;
+	}
+
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	skinny_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
@@ -1437,6 +1471,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 {
 	int sanity = 0;
 
+	switch_event_free_subclass(SKINNY_EVENT_REGISTER);
 	switch_event_unbind(&globals.heartbeat_node);
 
 	running = 0;
