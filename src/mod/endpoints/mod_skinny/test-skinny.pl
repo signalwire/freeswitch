@@ -11,7 +11,7 @@ my $socket;
 sub skinny_connect
 {
 	$socket = IO::Socket::INET->new(
-		PeerAddr => '127.0.0.1',
+		PeerAddr => '192.168.0.6',
 		PeerPort => 2000,
 		);
 }
@@ -96,9 +96,9 @@ skinny_send(0x002D, # registeravlines
 	pack("V", 2
 	));
 
-
-skinny_sleep(3);
-skinny_send(0x0000, # keepalive
-	"");
-skinny_recv(); # keepaliveack
-
+while(1) {
+	skinny_sleep(20);
+	skinny_send(0x0000, # keepalive
+		"");
+	skinny_recv(); # keepaliveack
+}

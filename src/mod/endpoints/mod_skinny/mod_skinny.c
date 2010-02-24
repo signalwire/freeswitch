@@ -111,14 +111,16 @@ static char devices_sql[] =
 static char lines_sql[] =
 	"CREATE TABLE skinny_lines (\n"
 	"   device_name      VARCHAR(16),\n"
+	"   line_position    INTEGER,\n"
 	"   line_name        VARCHAR(24),\n"
 	"   line_shortname   VARCHAR(40),\n"
 	"   line_displayname VARCHAR(44)\n"
 	");\n";
 
-static char speed_sql[] =
+static char speeddials_sql[] =
 	"CREATE TABLE skinny_speeddials (\n"
 	"   device_name       VARCHAR(16),\n"
+	"   speed_position    INTEGER,\n"
 	"   speed_number      VARCHAR(24),\n"
 	"   speed_displayname VARCHAR(40)\n"
 	");\n";
@@ -268,45 +270,6 @@ typedef struct skinny_message skinny_message_t;
 /*****************************************************************************/
 /* SKINNY TYPES */
 /*****************************************************************************/
-
-#define SKINNY_MAX_LINES 10
-struct skinny_line {
-	struct skinny_device_t *device;
-	char name[24];
-	char shortname[40];
-	char displayname[44];
-};
-typedef struct skinny_line skinny_line_t;
-
-#define SKINNY_MAX_SPEEDDIALS 20
-struct skinny_speeddial {
-	struct skinny_device_t *device;
-	char line[24];
-	char label[40];
-};
-typedef struct skinny_speeddial skinny_speeddial_t;
-
-struct skinny_device {
-	char deviceName[16];
-	uint32_t userId;
-	uint32_t instance;
-	struct in_addr ip;
-	uint32_t deviceType;
-	uint32_t maxStreams;
-
-	uint16_t port;
-
-	char *codec_string;
-	char *codec_order[SWITCH_MAX_CODECS];
-	int codec_order_last;
-
-	skinny_line_t line[SKINNY_MAX_LINES];
-	int line_last;
-	skinny_speeddial_t speeddial[SKINNY_MAX_SPEEDDIALS];
-	int speeddial_last;
-};
-typedef struct skinny_device skinny_device_t;
-
 typedef switch_status_t (*skinny_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
 
 enum skinny_codecs {
@@ -356,7 +319,7 @@ typedef enum {
 
 struct listener {
 	skinny_profile_t *profile;
-	skinny_device_t *device; /* TODO -> SQL */
+	char device_name[16];
 
 	switch_socket_t *sock;
 	switch_memory_pool_t *pool;
@@ -403,6 +366,34 @@ static switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t 
 static switch_status_t keepalive_listener(listener_t *listener, void *pvt);
 
 /*****************************************************************************/
+/* PROFILES FUNCTIONS */
+/*****************************************************************************/
+static switch_status_t dump_profile(const skinny_profile_t *profile, switch_stream_handle_t *stream)
+{
+	const char *line = "=================================================================================================";
+	switch_assert(profile);
+	stream->write_function(stream, "%s\n", line);
+	stream->write_function(stream, "Name             \t%s\n", profile->name);
+	stream->write_function(stream, "Domain Name      \t%s\n", profile->domain);
+	stream->write_function(stream, "IP               \t%s\n", profile->ip);
+	stream->write_function(stream, "Port             \t%d\n", profile->port);
+	stream->write_function(stream, "Dialplan         \t%s\n", profile->dialplan);
+	stream->write_function(stream, "Keep-Alive       \t%d\n", profile->keep_alive);
+	stream->write_function(stream, "Date-Format      \t%s\n", profile->date_format);
+	stream->write_function(stream, "DBName           \t%s\n", profile->dbname ? profile->dbname : switch_str_nil(profile->odbc_dsn));
+	stream->write_function(stream, "Listener-Threads \t%d\n", profile->listener_threads);
+	stream->write_function(stream, "%s\n", line);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static skinny_profile_t *get_profile(const char *profile_name)
+{
+	return (skinny_profile_t *) switch_core_hash_find(globals.profile_hash, profile_name);
+}
+
+/*****************************************************************************/
 /* SQL FUNCTIONS */
 /*****************************************************************************/
 static void skinny_execute_sql(skinny_profile_t *profile, char *sql, switch_mutex_t *mutex)
@@ -427,6 +418,7 @@ static void skinny_execute_sql(skinny_profile_t *profile, char *sql, switch_mute
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
 			goto end;
 		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SQL: %s\n", sql);
 		switch_core_db_persistant_execute(db, sql, 1);
 		switch_core_db_close(db);
 	}
@@ -456,6 +448,7 @@ static switch_bool_t skinny_execute_sql_callback(skinny_profile_t *profile,
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
 			goto end;
 		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SQL: %s\n", sql);
 		switch_core_db_exec(db, sql, callback, pdata, &errmsg);
 
 		if (errmsg) {
@@ -1018,23 +1011,46 @@ static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static int skinny_device_event_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	switch_event_t *event = (switch_event_t *) pArg;
+
+	char *device_name = argv[0];
+	char *user_id = argv[1];
+	char *instance = argv[2];
+	char *ip = argv[3];
+	char *device_type = argv[4];
+	char *max_streams = argv[5];
+	char *port = argv[6];
+	char *codec_string = argv[7];
+
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Skinny-Device-Name", device_name);
+	switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-User-Id", "%s", user_id);
+	switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-Instance", "%s", instance);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Skinny-IP", ip);
+	switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-Device-Type", "%s", device_type);
+	switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-Max-Streams", "%s", max_streams);
+	switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-Port", "%s", port);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Skinny-Codecs", codec_string);
+
+	return 0;
+}
+
 static switch_status_t skinny_device_event(listener_t *listener, switch_event_t **ev, switch_event_types_t event_id, const char *subclass_name)
 {
 	switch_event_t *event = NULL;
-	skinny_device_t *device;
+	char *sql;
+	skinny_profile_t *profile;
+	assert(listener->profile);
+	profile = listener->profile;
+
 	switch_event_create_subclass(&event, event_id, subclass_name);
 	switch_assert(event);
-	if(listener->device) {
-		device = listener->device;
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Skinny-Device-Name", switch_str_nil(device->deviceName));
-		switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-User-Id", "%d", device->userId);
-		switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-Instance", "%d", device->instance);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Skinny-IP", inet_ntoa(device->ip));
-		switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-Device-Type", "%d", device->deviceType);
-		switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-Max-Streams", "%d", device->maxStreams);
-		switch_event_add_header(       event, SWITCH_STACK_BOTTOM, "Skinny-Port", "%d", device->port);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Skinny-Codecs", device->codec_string);
+	if ((sql = switch_mprintf("select * from skinny_devices where device_name='%s'", listener->device_name))) {
+		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_device_event_callback, event);
+		switch_safe_free(sql);
 	}
+
 	*ev = event;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1044,20 +1060,15 @@ static switch_status_t skinny_handle_register(listener_t *listener, skinny_messa
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	skinny_message_t *message;
-	skinny_device_t *device;
 	skinny_profile_t *profile;
 	switch_event_t *event = NULL;
 	switch_event_t *params = NULL;
 	switch_xml_t xroot, xdomain, xgroup, xuser, xskinny, xlines, xline, xspeeddials, xspeeddial;
+	char *sql;
 	assert(listener->profile);
 	profile = listener->profile;
 
-	skinny_execute_sql(profile, "select * from skinny_devices", profile->listener_mutex);
-	skinny_execute_sql_callback(profile, profile->listener_mutex,
-		"select * from skinny_devices", NULL, profile);
-
-
-	if(listener->device) {
+	if(!zstr(listener->device_name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 			"A device is already registred on this listener.\n");
 		message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reg_rej));
@@ -1067,65 +1078,87 @@ static switch_status_t skinny_handle_register(listener_t *listener, skinny_messa
 		skinny_send_reply(listener, message);
 		return SWITCH_STATUS_FALSE;
 	}
-	/* Initialize device */
-	device = switch_core_alloc(listener->pool, sizeof(skinny_device_t));
-	memcpy(device->deviceName, request->data.reg.deviceName, 16);
-	device->userId = request->data.reg.userId;
-	device->instance = request->data.reg.instance;
-	device->ip = request->data.reg.ip;
-	device->deviceType = request->data.reg.deviceType;
-	device->maxStreams = request->data.reg.maxStreams;
-	device->codec_string = realloc(device->codec_string, 1);
-	device->codec_string[0] = '\0';
-	device->line_last = 0;
 
 	/* Check directory */
 	skinny_device_event(listener, &params, SWITCH_EVENT_REQUEST_PARAMS, SWITCH_EVENT_SUBCLASS_ANY);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "skinny-auth");
 
-	if (switch_xml_locate_user("id", device->deviceName, profile->domain, "", &xroot, &xdomain, &xuser, &xgroup, params) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user("id", request->data.reg.deviceName, profile->domain, "", &xroot, &xdomain, &xuser, &xgroup, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find device [%s@%s]\n"
 					  "You must define a domain called '%s' in your directory and add a user with id=\"%s\".\n"
-					  , device->deviceName, profile->domain, profile->domain, device->deviceName);
+					  , request->data.reg.deviceName, profile->domain, profile->domain, request->data.reg.deviceName);
 		message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reg_rej));
 		message->type = REGISTER_REJ_MESSAGE;
 		message->length = 4 + sizeof(message->data.reg_rej);
 		strcpy(message->data.reg_rej.error, "Device not found");
 		skinny_send_reply(listener, message);
-		return SWITCH_STATUS_FALSE;
+		status =  SWITCH_STATUS_FALSE;
 		goto end;
 	}
+
+	if ((sql = switch_mprintf(
+			"INSERT INTO skinny_devices "
+				"(device_name, user_id, instance, ip, device_type, max_streams, codec_string) "
+				"VALUES ('%s','%d','%d', '%s', '%d', '%d', '%s')",
+			request->data.reg.deviceName,
+			request->data.reg.userId,
+			request->data.reg.instance,
+			inet_ntoa(request->data.reg.ip),
+			request->data.reg.deviceType,
+			request->data.reg.maxStreams,
+			"" /* codec_string */
+			))) {
+		skinny_execute_sql(profile, sql, profile->listener_mutex);
+		switch_safe_free(sql);
+	}
+
+
+	strcpy(listener->device_name, request->data.reg.deviceName);
+
 	xskinny = switch_xml_child(xuser, "skinny");
 	if (xskinny) {
 		xlines = switch_xml_child(xskinny, "lines");
 		if (xlines) {
 			for (xline = switch_xml_child(xlines, "line"); xline; xline = xline->next) {
-				//TODO const char *position = switch_xml_attr_soft(xline, "position");
+				const char *position = switch_xml_attr_soft(xline, "position");
 				const char *name = switch_xml_attr_soft(xline, "name");
 				const char *shortname = switch_xml_attr_soft(xline, "shortname");
 				const char *displayname = switch_xml_attr_soft(xline, "displayname");
-				//TODO device->line[device->line_last].device = *device;
-				strcpy(device->line[device->line_last].name, name);
-				strcpy(device->line[device->line_last].shortname, shortname);
-				strcpy(device->line[device->line_last].displayname, displayname);
-				device->line_last++;
+				if ((sql = switch_mprintf(
+						"INSERT INTO skinny_lines "
+							"(device_name, line_position, line_name, line_shortname, line_displayname) "
+							"VALUES('%s', '%s', '%s', '%s', '%s')",
+						request->data.reg.deviceName,
+						position,
+						name,
+						shortname,
+						displayname))) {
+					skinny_execute_sql(profile, sql, profile->listener_mutex);
+					switch_safe_free(sql);
+				}
 			}
 		}
 		xspeeddials = switch_xml_child(xskinny, "speed-dials");
 		if (xspeeddials) {
 			for (xspeeddial = switch_xml_child(xspeeddials, "speed-dial"); xspeeddial; xspeeddial = xspeeddial->next) {
-				//TODO const char *position = switch_xml_attr_soft(xspeeddial, "position");
+				const char *position = switch_xml_attr_soft(xspeeddial, "position");
 				const char *line = switch_xml_attr_soft(xspeeddial, "line");
 				const char *label = switch_xml_attr_soft(xspeeddial, "label");
-				//TODO device->speeddial[device->speeddial_last].device = *device;
-				strcpy(device->speeddial[device->speeddial_last].line, line);
-				strcpy(device->speeddial[device->speeddial_last].label, label);
-				device->speeddial_last++;
+				if ((sql = switch_mprintf(
+						"INSERT INTO skinny_speeddials "
+							"(device_name, speed_position, speed_line, speed_label) "
+							"VALUES('%s', '%s', '%s', '%s')",
+						request->data.reg.deviceName,
+						position,
+						line,
+						label))) {
+					skinny_execute_sql(profile, sql, profile->listener_mutex);
+					switch_safe_free(sql);
+				}
 			}
 		}
 	}
 
-	listener->device = device;
 	status = SWITCH_STATUS_SUCCESS;
 
 	/* Reply with RegisterAckMessage */
@@ -1159,9 +1192,11 @@ end:
 
 static switch_status_t skinny_handle_capabilities_response(listener_t *listener, skinny_message_t *request)
 {
-	skinny_device_t *device = listener->device;
 	uint32_t i = 0;
 	uint32_t n = 0;
+	char *codec_order[SWITCH_MAX_CODECS];
+	char *codec_string;
+	
 	size_t string_len, string_pos, pos;
 
 	n = request->data.cap_res.count;
@@ -1171,60 +1206,91 @@ static switch_status_t skinny_handle_capabilities_response(listener_t *listener,
 	string_len = -1;
 	for (i = 0; i < n; i++) {
 		char *codec = skinny_codec2string(request->data.cap_res.caps[i].codec);
-		device->codec_order[i] = codec;
+		codec_order[i] = codec;
 		string_len += strlen(codec)+1;
 	}
 	i = 0;
 	pos = 0;
-	device->codec_string = realloc(device->codec_string, string_len+1);
+	codec_string = switch_core_alloc(listener->pool, string_len+1);
 	for (string_pos = 0; string_pos < string_len; string_pos++) {
-		char *codec = device->codec_order[i];
+		char *codec = codec_order[i];
 		switch_assert(i < n);
 		if(pos == strlen(codec)) {
-			device->codec_string[string_pos] = ',';
+			codec_string[string_pos] = ',';
 			i++;
 			pos = 0;
 		} else {
-			device->codec_string[string_pos] = codec[pos++];
+			codec_string[string_pos] = codec[pos++];
 		}
 	}
-	device->codec_string[string_len] = '\0';
-	device->codec_order_last = n;
+	codec_string[string_len] = '\0';
+	/* TODO SQL update */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-		"Codecs %s supported.\n", device->codec_string);
+		"Codecs %s supported.\n", codec_string);
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t skinny_handle_port_message(listener_t *listener, skinny_message_t *request)
 {
-	skinny_device_t *device = listener->device;
+	char *sql;
+	skinny_profile_t *profile;
 
-	device->port = request->data.as_uint16;
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	profile = listener->profile;
+
+	if ((sql = switch_mprintf(
+			"update skinny_devices set port='%d' where device_name='%s'",
+			request->data.as_uint16,
+			listener->device_name
+			))) {
+		skinny_execute_sql(profile, sql, profile->listener_mutex);
+		switch_safe_free(sql);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static int skinny_line_stat_request_callback(void *pArg, int argc, char **argv, char **columnNames)
+
+{
+	skinny_message_t *message = pArg;
+
+	strcpy(message->data.line_res.name, argv[2]);
+	strcpy(message->data.line_res.shortname,  argv[3]);
+	strcpy(message->data.line_res.displayname,  argv[4]);
+
+	return 0;
+}
+
+
 static switch_status_t skinny_handle_line_stat_request(listener_t *listener, skinny_message_t *request)
 {
-	skinny_device_t *device = listener->device;
 	skinny_message_t *message;
-	uint32_t i = 0;
+	skinny_profile_t *profile;
+	char *sql;
+
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	profile = listener->profile;
+
 
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.line_res));
 	message->type = LINE_STAT_RES_MESSAGE;
 	message->length = 4 + sizeof(message->data.line_res);
-	i = request->data.line_req.number;
-	if(i > 0 && i <= device->line_last) {
-		message->data.line_res.number = i;
-		strcpy(message->data.line_res.name, device->line[i-1].name);
-		strcpy(message->data.line_res.shortname, device->line[i-1].shortname);
-		strcpy(message->data.line_res.displayname, device->line[i-1].displayname);
-	} else {
-		message->data.line_res.number = i;
-		strcpy(message->data.line_res.name, "");
-		strcpy(message->data.line_res.shortname, "");
-		strcpy(message->data.line_res.displayname, "");
+	message->data.line_res.number = request->data.line_req.number;
+
+	if ((sql = switch_mprintf(
+			"select * from skinny_lines where device_name='%s' and line_position='%d'",
+			listener->device_name,
+			request->data.line_req.number
+			))) {
+		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_line_stat_request_callback, message);
+		switch_safe_free(sql);
 	}
 	skinny_send_reply(listener, message);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1260,7 +1326,7 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 		"Received message (type=%x,length=%d).\n", request->type, request->length);
-	if(!listener->device && request->type != REGISTER_MESSAGE) {
+	if(zstr(listener->device_name) && request->type != REGISTER_MESSAGE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 			"Device should send a register message first.\n");
 		return SWITCH_STATUS_FALSE;
@@ -1375,59 +1441,46 @@ static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch
 	/* TODO */
 }
 
-static listener_t *find_listener(char *device_name)
+static int dump_device_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
-	switch_hash_index_t *hi;
-	void *val;
-	skinny_profile_t *profile;
-	listener_t *l, *r = NULL;
-	skinny_device_t *device;
-	
-	/* walk listeners */
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
-		profile = (skinny_profile_t *) val;
+	switch_stream_handle_t *stream = (switch_stream_handle_t *) pArg;
 
-		switch_mutex_lock(profile->listener_mutex);
-		for (l = profile->listeners; l; l = l->next) {
-			if (l->device) {
-				device = l->device;
-				if(!strcasecmp(device->deviceName,device_name)) {
-					if (switch_thread_rwlock_tryrdlock(l->rwlock) == SWITCH_STATUS_SUCCESS) {
-						r = l;
-					}
-					break;
-				}
-			}
-		}
-		switch_mutex_unlock(profile->listener_mutex);
-		if(r) {
-			break;
-		}
-	}
-	return r;
+	char *device_name = argv[0];
+	char *user_id = argv[1];
+	char *instance = argv[2];
+	char *ip = argv[3];
+	char *device_type = argv[4];
+	char *max_streams = argv[5];
+	char *port = argv[6];
+	char *codec_string = argv[7];
+
+	const char *line = "=================================================================================================";
+	stream->write_function(stream, "%s\n", line);
+	stream->write_function(stream, "DeviceName    \t%s\n", switch_str_nil(device_name));
+	stream->write_function(stream, "UserId        \t%s\n", user_id);
+	stream->write_function(stream, "Instance      \t%s\n", instance);
+	stream->write_function(stream, "IP            \t%s\n", ip);
+	stream->write_function(stream, "DeviceType    \t%s\n", device_type);
+	stream->write_function(stream, "MaxStreams    \t%s\n", max_streams);
+	stream->write_function(stream, "Port          \t%s\n", port);
+	stream->write_function(stream, "Codecs        \t%s\n", codec_string);
+	stream->write_function(stream, "%s\n", line);
+
+	return 0;
 }
 
-static switch_status_t dump_listener(listener_t *listener, void *pvt)
+static switch_status_t dump_device(skinny_profile_t *profile, const char *device_name, switch_stream_handle_t *stream)
 {
-	switch_stream_handle_t *stream = (switch_stream_handle_t *) pvt;
-	const char *line = "=================================================================================================";
-	skinny_device_t *device;
-	if(listener->device) {
-		device = listener->device;
-		stream->write_function(stream, "%s\n", line);
-		stream->write_function(stream, "DeviceName    \t%s\n", switch_str_nil(device->deviceName));
-		stream->write_function(stream, "UserId        \t%d\n", device->userId);
-		stream->write_function(stream, "Instance      \t%d\n", device->instance);
-		stream->write_function(stream, "IP            \t%s\n", inet_ntoa(device->ip));
-		stream->write_function(stream, "DeviceType    \t%d\n", device->deviceType);
-		stream->write_function(stream, "MaxStreams    \t%d\n", device->maxStreams);
-		stream->write_function(stream, "Port          \t%d\n", device->port);
-		stream->write_function(stream, "Codecs        \t%s\n", device->codec_string);
-		stream->write_function(stream, "%s\n", line);
+	char *sql;
+	if ((sql = switch_mprintf("select * from skinny_devices where device_name LIKE '%s'",
+			device_name))) {
+		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, dump_device_callback, stream);
+		switch_safe_free(sql);
 	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
+
 
 static void close_socket(switch_socket_t **sock)
 {
@@ -1626,7 +1679,7 @@ int skinny_socket_create_and_bind(skinny_profile_t *profile)
 		rv = switch_socket_listen(profile->sock, 5);
 		if (rv)
 			goto sock_fail;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Socket up listening on %s:%u\n", profile->ip, profile->port);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Socket up listening on %s:%u\n", profile->ip, profile->port);
 
 		break;
 	  sock_fail:
@@ -1669,7 +1722,7 @@ int skinny_socket_create_and_bind(skinny_profile_t *profile)
 		listener->sock = inbound_socket;
 		listener->pool = listener_pool;
 		listener_pool = NULL;
-		listener->device = NULL;
+		strcpy(listener->device_name, "");
 		listener->profile = profile;
 
 		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
@@ -1827,12 +1880,12 @@ static switch_status_t load_skinny_config(void)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
 					switch_odbc_handle_exec(profile->master_odbc, devices_sql, NULL);
 					switch_odbc_handle_exec(profile->master_odbc, lines_sql, NULL);
-					switch_odbc_handle_exec(profile->master_odbc, speed_sql, NULL);
+					switch_odbc_handle_exec(profile->master_odbc, speeddials_sql, NULL);
 				} else {
 					if ((db = switch_core_db_open_file(profile->dbname))) {
 						switch_core_db_test_reactive(db, "select * from skinny_devices", NULL, devices_sql);
 						switch_core_db_test_reactive(db, "select * from skinny_lines", NULL, lines_sql);
-						switch_core_db_test_reactive(db, "select * from skinny_speeddials", NULL, speed_sql);
+						switch_core_db_test_reactive(db, "select * from skinny_speeddials", NULL, speeddials_sql);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 						continue;
@@ -1853,23 +1906,27 @@ static switch_status_t load_skinny_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t cmd_device(char **argv, int argc, switch_stream_handle_t *stream)
+static switch_status_t cmd_status_profile(const char *profile_name, switch_stream_handle_t *stream)
 {
-	listener_t *listener;
-	if (argc != 1) {
-		stream->write_function(stream, "Invalid Args!\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
-	
-	if (argv[0] && !strcasecmp(argv[0], "*")) {
-		walk_listeners(dump_listener, stream);
+	skinny_profile_t *profile;
+	if ((profile = get_profile(profile_name))) {
+		dump_profile(profile, stream);
 	} else {
-		listener=find_listener(argv[0]);
-		if(listener) {
-			dump_listener(listener, stream);
-		}
+		stream->write_function(stream, "Profile not found!\n");
 	}
-	
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t cmd_status_profile_device(const char *profile_name, const char *device_name, switch_stream_handle_t *stream)
+{
+	skinny_profile_t *profile;
+	if ((profile = get_profile(profile_name))) {
+		dump_device(profile, device_name, stream);
+	} else {
+		stream->write_function(stream, "Profile not found!\n");
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1879,12 +1936,11 @@ SWITCH_STANDARD_API(skinny_function)
 	int argc = 0;
 	char *mycmd = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	skinny_command_t func = NULL;
 	const char *usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"skinny help\n"
-		"skinny device *\n"
-		"skinny device <device_name>\n"
+		"skinny status profile <profile_name>\n"
+		"skinny status profile <profile_name> device <device_name>\n"
 		"--------------------------------------------------------------------------------\n";
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -1905,20 +1961,18 @@ SWITCH_STANDARD_API(skinny_function)
 		goto done;
 	}
 
-	if (!strcasecmp(argv[0], "device")) {
-		func = cmd_device;
+	if (argc == 3 && !strcasecmp(argv[0], "status") && !strcasecmp(argv[1], "profile")) {
+		status = cmd_status_profile(argv[2], stream);
+	} else if (argc == 5 && !strcasecmp(argv[0], "status") && !strcasecmp(argv[1], "profile") && !strcasecmp(argv[3], "device")) {
+		status = cmd_status_profile_device(argv[2], argv[4], stream);
 	} else if (!strcasecmp(argv[0], "help")) {
 		stream->write_function(stream, "%s", usage_string);
 		goto done;
-	}
-	
-	if (func) {
-		status = func(&argv[1], argc - 1, stream);
 	} else {
 		stream->write_function(stream, "Unknown Command [%s]\n", argv[0]);
 	}
 
-  done:
+done:
 	switch_safe_free(mycmd);
 	return status;
 }
@@ -1930,7 +1984,7 @@ static void event_handler(switch_event_t *event)
 	}
 }
 
-static switch_status_t skinny_list_devices(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+static switch_status_t skinny_list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches)
 {
 	switch_console_callback_match_t *my_matches = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -1938,22 +1992,56 @@ static switch_status_t skinny_list_devices(const char *line, const char *cursor,
 	void *val;
 	skinny_profile_t *profile;
 	
-	listener_t *l;
-	skinny_device_t *device;
-
-	/* walk listeners */
+	/* walk profiles */
 	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
 
-		switch_mutex_lock(profile->listener_mutex);
-		for (l = profile->listeners; l; l = l->next) {
-			if(l->device) {
-				device = l->device;
-				switch_console_push_match(&my_matches, device->deviceName);
-			}
+		switch_console_push_match(&my_matches, profile->name);
+	}
+	
+	if (my_matches) {
+		*matches = my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	
+	return status;
+}
+
+static int skinny_list_devices_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	switch_console_callback_match_t *my_matches = (switch_console_callback_match_t *) pArg;
+
+	char *device_name = argv[0];
+	switch_console_push_match(&my_matches, device_name);
+	pArg = my_matches;
+	return 0;
+}
+
+static switch_status_t skinny_list_devices(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	switch_console_callback_match_t *my_matches = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	skinny_profile_t *profile;
+	char *sql;
+
+	char *myline;
+	char *argv[1024] = { 0 };
+	int argc = 0;
+
+	if (!(myline = strdup(line))) {
+		status = SWITCH_STATUS_MEMERR;
+		return status;
+	}
+	if (!(argc = switch_separate_string(myline, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) || argc != 5) {
+		return status;
+	}
+
+	if((profile = get_profile(argv[3]))) {
+		if ((sql = switch_mprintf("select device_name from skinny_devices"))) {
+			skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_list_devices_callback, my_matches);
+			switch_safe_free(sql);
 		}
-		switch_mutex_unlock(profile->listener_mutex);
 	}
 	
 	if (my_matches) {
@@ -2006,9 +2094,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 
 	SWITCH_ADD_API(api_interface, "skinny", "Skinny Controls", skinny_function, "<cmd> <args>");
 	switch_console_set_complete("add skinny help");
-	switch_console_set_complete("add skinny device *");
-	switch_console_set_complete("add skinny device ::skinny::list_devices");
+	switch_console_set_complete("add skinny status profile ::skinny::list_profiles");
+	switch_console_set_complete("add skinny status profile ::skinny::list_profiles device ::skinny::list_devices");
 
+	switch_console_add_complete_func("::skinny::list_profiles", skinny_list_profiles);
 	switch_console_add_complete_func("::skinny::list_devices", skinny_list_devices);
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
