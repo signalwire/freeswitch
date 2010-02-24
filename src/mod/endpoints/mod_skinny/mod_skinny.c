@@ -266,6 +266,10 @@ union skinny_data {
 	void *raw;
 };
 
+/*
+ * header is length+reserved
+ * body is type+data
+ */
 struct skinny_message {
 	int length;
 	int reserved;
@@ -367,6 +371,12 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 
 
 /* SKINNY FUNCTIONS */
+#define skinny_check_data_length(message, len) \
+	if (message->length < len+4) {\
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received Too Short Skinny Message (Expected %d, got %d).\n", len+4, message->length);\
+		return SWITCH_STATUS_FALSE;\
+	}
+
 static switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t *reply);
 static switch_call_cause_t skinny_session_create(switch_core_session_t *session);
 
@@ -1133,6 +1143,8 @@ static switch_status_t skinny_handle_register(listener_t *listener, skinny_messa
 	assert(listener->profile);
 	profile = listener->profile;
 
+	skinny_check_data_length(request, sizeof(request->data.reg));
+
 	if(!zstr(listener->device_name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 			"A device is already registred on this listener.\n");
@@ -1272,11 +1284,16 @@ static switch_status_t skinny_handle_capabilities_response(listener_t *listener,
 
 	profile = listener->profile;
 
+	skinny_check_data_length(request, sizeof(request->data.cap_res.count));
+
 	n = request->data.cap_res.count;
 	if (n > SWITCH_MAX_CODECS) {
 		n = SWITCH_MAX_CODECS;
 	}
 	string_len = -1;
+
+	skinny_check_data_length(request, sizeof(request->data.cap_res.count) + n * sizeof(request->data.cap_res.caps[0]));
+
 	for (i = 0; i < n; i++) {
 		char *codec = skinny_codec2string(request->data.cap_res.caps[i].codec);
 		codec_order[i] = codec;
@@ -1320,6 +1337,8 @@ static switch_status_t skinny_handle_port_message(listener_t *listener, skinny_m
 
 	profile = listener->profile;
 
+	skinny_check_data_length(request, sizeof(request->data.as_uint16));
+
 	if ((sql = switch_mprintf(
 			"UPDATE skinny_devices SET port='%d' WHERE device_name='%s'",
 			request->data.as_uint16,
@@ -1355,6 +1374,7 @@ static switch_status_t skinny_handle_line_stat_request(listener_t *listener, ski
 
 	profile = listener->profile;
 
+	skinny_check_data_length(request, sizeof(request->data.line_req));
 
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.line_res));
 	message->type = LINE_STAT_RES_MESSAGE;
@@ -1376,6 +1396,8 @@ static switch_status_t skinny_handle_line_stat_request(listener_t *listener, ski
 
 static switch_status_t skinny_handle_register_available_lines_message(listener_t *listener, skinny_message_t *request)
 {
+	skinny_check_data_length(request, sizeof(request->data.reg_lines));
+
 	/* Do nothing */
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1961,6 +1983,10 @@ static switch_status_t load_skinny_config(void)
 					switch_core_db_close(db);
 				}
 				
+				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_devices", NULL, NULL);
+				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_lines", NULL, NULL);
+				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_speeddials", NULL, NULL);
+
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
 				profile = NULL;
 			} else {
