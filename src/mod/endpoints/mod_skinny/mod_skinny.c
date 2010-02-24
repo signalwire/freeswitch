@@ -71,7 +71,7 @@ static struct {
 	char *codec_rates[SWITCH_MAX_CODECS];
 	int codec_rates_last;
 	int keep_alive;
-	char *date_format;
+	char date_format[6];
 	/* data */
 	switch_event_node_t *heartbeat_node;
 	unsigned int flags;
@@ -101,16 +101,43 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ip, globals.ip);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_date_format, globals.date_format);
 
 /*****************************************************************************/
 /* SKINNY TYPES */
 /*****************************************************************************/
+
+#define KEEP_ALIVE_MESSAGE 0x0000
+
+#define REGISTER_MESSAGE 0x0001
+struct register_message {
+	char deviceName[16];
+	uint32_t userId;
+	uint32_t instance;
+	uint32_t ip;
+	uint32_t deviceType;
+	uint32_t maxStreams;
+};
+
+#define PORT_MESSAGE 0x0002
+
+#define REGISTER_ACK_MESSAGE 0x0081
+struct register_ack_message {
+	uint32_t keepAlive;
+	char dateFormat[6];
+	char reserved[2];
+	uint32_t secondaryKeepAlive;
+	char reserved2[4];
+};
+
 #define SKINNY_MESSAGE_FIELD_SIZE 4 /* 4-bytes field */
 #define SKINNY_MESSAGE_HEADERSIZE 12 /* three 4-bytes fields */
 #define SKINNY_MESSAGE_MAXSIZE 1000
 
 union skinny_data {
+	struct register_message reg;
+	struct register_ack_message reg_ack;
+	
+	char as_char;
 	void *raw;
 };
 
@@ -122,6 +149,18 @@ struct skinny_message {
 };
 typedef struct skinny_message skinny_message_t;
 
+
+struct skinny_device {
+	char deviceName[16];
+	uint32_t userId;
+	uint32_t instance;
+	uint32_t ip;
+	uint32_t deviceType;
+	uint32_t maxStreams;
+	uint16_t port;
+};
+typedef struct skinny_device skinny_device_t;
+
 /*****************************************************************************/
 /* LISTENERS TYPES */
 /*****************************************************************************/
@@ -131,6 +170,7 @@ typedef enum {
 } event_flag_t;
 
 struct listener {
+	skinny_device_t *device;
 	switch_socket_t *sock;
 	switch_memory_pool_t *pool;
 	switch_core_session_t *session;
@@ -578,7 +618,7 @@ static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t
 	char *ptr;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	request = switch_core_alloc(module_pool, SKINNY_MESSAGE_MAXSIZE);
+	request = switch_core_alloc(listener->pool, SKINNY_MESSAGE_MAXSIZE);
 
 	if (!request) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate memory.\n");
@@ -656,9 +696,48 @@ static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t
 static switch_status_t skinny_parse_request(listener_t *listener, skinny_message_t *request, skinny_message_t **rep)
 {
     skinny_message_t *reply;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Parsing request.\n");
+    skinny_device_t *device;
 	reply = NULL;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+		"Received message of type %d.\n", request->type);
+	if(!listener->device && request->type != REGISTER_MESSAGE) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+			"Device should send a register message first.\n");
+		return SWITCH_STATUS_FALSE;
+	}
+	device = listener->device;
 	switch(request->type) {
+		case REGISTER_MESSAGE:
+			/* TODO : check directory */
+			if(listener->device) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+					"Device already registred.\n");
+				return SWITCH_STATUS_FALSE;
+			}
+			device = switch_core_alloc(listener->pool, sizeof(skinny_device_t));
+			memcpy(device->deviceName, request->data.reg.deviceName, 16);
+			device->userId = request->data.reg.userId;
+			device->instance = request->data.reg.instance;
+			device->ip = request->data.reg.ip;
+			device->deviceType = request->data.reg.deviceType;
+			device->maxStreams = request->data.reg.maxStreams;
+			listener->device = device;
+
+			reply = switch_core_alloc(listener->pool, 12+sizeof(reply->data.reg_ack));
+			reply->type = REGISTER_ACK_MESSAGE;
+			reply->length = 4 + sizeof(reply->data.reg_ack);
+			reply->data.reg_ack.keepAlive = globals.keep_alive;
+			memcpy(reply->data.reg_ack.dateFormat, globals.date_format, 6);
+			reply->data.reg_ack.secondaryKeepAlive = globals.keep_alive;
+			/* TODO send CapabilitiesReqMessage (and parse the CapabilitiesResMessage) */
+			/* TODO event */
+			break;
+		case PORT_MESSAGE:
+			/* Nothing to do */
+			break;
+		case KEEP_ALIVE_MESSAGE:
+			/* TODO */
+			break;
 		/* TODO */
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
@@ -670,8 +749,13 @@ static switch_status_t skinny_parse_request(listener_t *listener, skinny_message
 
 static switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t *reply)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Sending reply.\n");
-	//TODO switch_socket_send(listener->sock, buf, &len);
+	char *ptr;
+	switch_size_t len;
+	switch_assert(reply != NULL);
+	len = reply->length+4;
+	ptr = (char *) reply;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Sending reply (length=%d).\n", len);
+	switch_socket_send(listener->sock, ptr, &len);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -963,6 +1047,7 @@ int skinny_socket_create_and_bind()
 		listener->sock = inbound_socket;
 		listener->pool = listener_pool;
 		listener_pool = NULL;
+		listener->device = NULL;
 
 		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
@@ -1031,7 +1116,7 @@ static switch_status_t load_skinny_config(void)
 			} else if (!strcmp(var, "keep-alive")) {
 				globals.keep_alive = atoi(val);
 			} else if (!strcmp(var, "date-format")) {
-				set_global_date_format(val);
+				memcpy(globals.date_format, val, 6);
 			}
 		}
 	}
@@ -1064,10 +1149,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 
 	load_skinny_config();
 
-	switch_mutex_init(&globals.listener_mutex, SWITCH_MUTEX_NESTED, pool);
+	switch_mutex_init(&globals.listener_mutex, SWITCH_MUTEX_NESTED, module_pool);
 
 	memset(&listen_list, 0, sizeof(listen_list));
-	switch_mutex_init(&listen_list.sock_mutex, SWITCH_MUTEX_NESTED, pool);
+	switch_mutex_init(&listen_list.sock_mutex, SWITCH_MUTEX_NESTED, module_pool);
 
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_HEARTBEAT, NULL, event_handler, NULL, &globals.heartbeat_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our heartbeat handler!\n");
@@ -1116,7 +1201,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 	switch_safe_free(globals.dialplan);
 	switch_safe_free(globals.codec_string);
 	switch_safe_free(globals.codec_rates_string);
-	switch_safe_free(globals.date_format);
 	
 	return SWITCH_STATUS_SUCCESS;
 }
