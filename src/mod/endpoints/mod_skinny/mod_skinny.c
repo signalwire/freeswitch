@@ -72,6 +72,9 @@ struct skinny_profile {
 	switch_mutex_t *sock_mutex;
 	struct listener *listeners;
 	uint8_t listener_ready;
+	/* sessions */
+	switch_hash_t *session_hash;
+	switch_mutex_t *sessions_mutex;
 };
 typedef struct skinny_profile skinny_profile_t;
 
@@ -154,9 +157,10 @@ struct private_object {
 	switch_caller_profile_t *caller_profile;
 	switch_mutex_t *mutex;
 	switch_mutex_t *flag_mutex;
-	//switch_thread_cond_t *cond;
-	char *dest_profile;
 	char *dest;
+	/* identification */
+	skinny_profile_t *profile;
+	uint32_t call_id;
 };
 
 typedef struct private_object private_t;
@@ -193,9 +197,16 @@ struct keypad_button_message {
 /* StimulusMessage */
 #define STIMULUS_MESSAGE 0x0005
 struct stimulus_message {
-	uint32_t type;
+	uint32_t instance_type; /* See enum skinny_button_definition */
 	uint32_t instance;
 	uint32_t call_reference;
+};
+
+/* OffHookMessage */
+#define OFF_HOOK_MESSAGE 0x0006
+struct off_hook_message {
+	uint32_t line_instance;
+	uint32_t call_id;
 };
 
 /* OnHookMessage */
@@ -250,7 +261,7 @@ struct alarm_message {
 #define OPEN_RECEIVE_CHANNEL_ACK_MESSAGE 0x0022
 struct open_receive_channel_ack_message {
 	uint32_t status;
-	uint32_t ip;
+	struct in_addr ip;
 	uint32_t port;
 	uint32_t pass_thru_party_id;
 };
@@ -277,7 +288,6 @@ struct soft_key_event_message {
 struct headset_status_message {
 	uint32_t mode;
 };
-
 
 /* RegisterAvailableLinesMessage */
 #define REGISTER_AVAILABLE_LINES_MESSAGE 0x002D
@@ -325,18 +335,20 @@ struct stop_tone_message {
 #define SET_RINGER_MESSAGE 0x0085
 struct set_ringer_message {
 	uint32_t ring_type; /* See enum skinny_ring_type */
-	uint32_t ring_status; /* See enum skinny_ring_status */
-	uint32_t unknown2;
+	uint32_t ring_mode; /* See enum skinny_ring_mode */
+	uint32_t unknown; /* ?? */
 };
 
 enum skinny_ring_type {
-	SKINNY_RING_FOREVER = 1,
-	SKINNY_RING_ONCE = 2,
+	SKINNY_RING_OFF = 1,
+	SKINNY_RING_INSIDE = 2,
+	SKINNY_RING_OUTSIDE = 3,
+	SKINNY_RING_FEATURE = 4
 };
 
-enum skinny_ring_status {
-	SKINNY_RING_OFF = 0,
-	SKINNY_RING_ON = 1,
+enum skinny_ring_mode {
+	SKINNY_RING_FOREVER = 1,
+	SKINNY_RING_ONCE = 2,
 };
 
 /* SetLampMessage */
@@ -387,6 +399,7 @@ struct start_media_transmission_message {
 struct stop_media_transmission_message {
 	uint32_t conference_id;
 	uint32_t pass_thru_party_id;
+	uint32_t conference_id2;
 	/* ... */
 };
 
@@ -413,6 +426,12 @@ struct call_info_message {
 	uint32_t call_instance;
 	uint32_t call_security_status;
 	uint32_t party_pi_restriction_bits;
+};
+
+enum skinny_call_type {
+	SKINNY_INBOUND_CALL = 1,
+	SKINNY_OUTBOUND_CALL = 2,
+	SKINNY_FORWARD_CALL = 3,
 };
 
 /* SpeedDialStatMessage */
@@ -450,7 +469,14 @@ struct define_time_date_message {
 #define BUTTON_TEMPLATE_RES_MESSAGE 0x0097
 struct button_definition {
 	uint8_t instance_number;
-	uint8_t button_definition;
+	uint8_t button_definition; /* See enum skinny_button_definition */
+};
+
+enum skinny_button_definition {
+	SKINNY_BUTTON_SPEED_DIAL = 0x02,
+	SKINNY_BUTTON_LINE = 0x09,
+	SKINNY_BUTTON_VOICEMAIL = 0x0F,
+	SKINNY_BUTTON_UNDEFINED = 0xFF,
 };
 
 struct button_template_message {
@@ -481,6 +507,16 @@ struct open_receive_channel_message {
 	uint32_t payload_capacity;
 	uint32_t echo_cancel_type;
 	uint32_t g723_bitrate;
+	uint32_t conference_id2;
+	uint32_t reserved[10];
+};
+
+/* CloseReceiveChannelMessage */
+#define CLOSE_RECEIVE_CHANNEL_MESSAGE 0x0106
+struct close_receive_channel_message {
+	uint32_t conference_id;
+	uint32_t pass_thru_party_id;
+	uint32_t conference_id2;
 };
 
 /* SoftKeyTemplateResMessage */
@@ -519,7 +555,7 @@ struct select_soft_keys_message {
 	uint32_t line_instance;
 	uint32_t call_id;
 	uint32_t soft_key_set; /* See enum skinny_key_set */
-	uint32_t validKeyMask;
+	uint32_t valid_key_mask;
 };
 
 enum skinny_key_set {
@@ -538,9 +574,26 @@ enum skinny_key_set {
 /* CallStateMessage */
 #define CALL_STATE_MESSAGE 0x0111
 struct call_state_message {
-	uint32_t call_state;
+	uint32_t call_state; /* See enum skinny_call_state */
 	uint32_t line_instance;
 	uint32_t call_id;
+};
+
+enum skinny_call_state {
+	SKINNY_OFF_HOOK = 1,
+	SKINNY_ON_HOOK = 2,
+	SKINNY_RING_OUT = 3,
+	SKINNY_RING_IN = 4,
+	SKINNY_CONNECTED = 5,
+	SKINNY_BUSY = 6,
+	SKINNY_CONGESTION = 7,
+	SKINNY_HOLD = 8,
+	SKINNY_CALL_WAITING = 9,
+	SKINNY_CALL_TRANSFER = 10,
+	SKINNY_CALL_PARK = 11,
+	SKINNY_PROCEED = 12,
+	SKINNY_CALL_REMOTE_MULTILINE = 13,
+	SKINNY_INVALID_NUMBER = 14
 };
 
 /* DisplayPromptStatusMessage */
@@ -552,9 +605,9 @@ struct display_prompt_status_message {
 	uint32_t call_id;
 };
 
-/* ClearPromptMessage */
-#define CLEAR_PROMPT_MESSAGE  0x0113
-struct clear_prompt_message {
+/* ClearPromptStatusMessage */
+#define CLEAR_PROMPT_STATUS_MESSAGE  0x0113
+struct clear_prompt_status_message {
 	uint32_t line_instance;
 	uint32_t call_id;
 };
@@ -582,6 +635,7 @@ union skinny_data {
 	struct register_message reg;
 	struct keypad_button_message keypad_button;
 	struct stimulus_message stimulus;
+	struct off_hook_message off_hook;
 	struct on_hook_message on_hook;
 	struct speed_dial_stat_req_message speed_dial_req;
 	struct line_stat_req_message line_req;
@@ -606,12 +660,13 @@ union skinny_data {
 	struct button_template_message button_template;
 	struct register_rej_message reg_rej;
 	struct open_receive_channel_message open_receive_channel;
+	struct close_receive_channel_message close_receive_channel;
 	struct soft_key_template_res_message soft_key_template;
 	struct soft_key_set_res_message soft_key_set;
 	struct select_soft_keys_message select_soft_keys;
 	struct call_state_message call_state;
 	struct display_prompt_status_message display_prompt_status;
-	struct clear_prompt_message clear_prompt;
+	struct clear_prompt_status_message clear_prompt_status;
 	struct activate_call_plane_message activate_call_plane;
 	struct dialed_number_message dialed_number;
 	
@@ -1208,7 +1263,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 	
 	tech_pvt->dest = switch_core_session_strdup(nsession, dest);
-	tech_pvt->dest_profile = switch_core_session_strdup(nsession, profile_name);
 	snprintf(name, sizeof(name), "SKINNY/%s/%s", profile->name, dest);
 
 	channel = switch_core_session_get_channel(nsession);
@@ -2566,6 +2620,8 @@ static switch_status_t load_skinny_config(void)
 				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_devices", NULL, NULL);
 				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_buttons", NULL, NULL);
 
+				switch_core_hash_init(&profile->session_hash, module_pool);
+				
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
 				profile = NULL;
 			} else {
