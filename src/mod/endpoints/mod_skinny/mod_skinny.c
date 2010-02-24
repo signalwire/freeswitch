@@ -70,7 +70,7 @@ static struct {
 	char *codec_rates_string;
 	char *codec_rates[SWITCH_MAX_CODECS];
 	int codec_rates_last;
-	int keep_alive;
+	uint32_t keep_alive;
 	char date_format[6];
 	/* data */
 	switch_event_node_t *heartbeat_node;
@@ -128,6 +128,8 @@ struct register_ack_message {
 	uint32_t secondaryKeepAlive;
 	char reserved2[4];
 };
+
+#define KEEP_ALIVE_ACK_MESSAGE 0x0100
 
 #define SKINNY_MESSAGE_FIELD_SIZE 4 /* 4-bytes field */
 #define SKINNY_MESSAGE_HEADERSIZE 12 /* three 4-bytes fields */
@@ -197,9 +199,10 @@ static struct {
 } listen_list;
 
 /*****************************************************************************/
-/* CHANNEL FUNCTIONS */
+/* FUNCTIONS */
 /*****************************************************************************/
 
+/* CHANNEL FUNCTIONS */
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
 static switch_status_t channel_on_destroy(switch_core_session_t *session);
@@ -213,6 +216,13 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 
+
+/* LISTENER FUNCTIONS */
+static switch_status_t keepalive_listener(listener_t *listener);
+
+/*****************************************************************************/
+/* CHANNEL FUNCTIONS */
+/*****************************************************************************/
 
 static void tech_init(private_t *tech_pvt, switch_core_session_t *session)
 {
@@ -608,11 +618,9 @@ switch_io_routines_t skinny_io_routines = {
 /* SKINNY FUNCTIONS */
 /*****************************************************************************/
 
-static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req, uint32_t timeout)
+static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 {
 	skinny_message_t *request;
-    uint32_t elapsed = 0;
-	time_t start = 0;
 	switch_size_t mlen, bytes = 0;
 	char mbuf[SKINNY_MESSAGE_MAXSIZE] = "";
 	char *ptr;
@@ -629,7 +637,6 @@ static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t
 		return SWITCH_STATUS_FALSE;
 	}
 
-	start = switch_epoch_time_now(NULL);
 	ptr = mbuf;
 
 	while (listener->sock && running) {
@@ -681,13 +688,10 @@ static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t
 				}
 			}
 		}
-		if (timeout) {
-			elapsed = (uint32_t) (switch_epoch_time_now(NULL) - start);
-			if (elapsed >= timeout) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Socket timed out.\n");
-				switch_clear_flag_locked(listener, LFLAG_RUNNING);
-				return SWITCH_STATUS_FALSE;
-			}
+		if (listener->expire_time && listener->expire_time < switch_epoch_time_now(NULL)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Listener timed out.\n");
+			switch_clear_flag_locked(listener, LFLAG_RUNNING);
+			return SWITCH_STATUS_FALSE;
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -731,12 +735,16 @@ static switch_status_t skinny_parse_request(listener_t *listener, skinny_message
 			reply->data.reg_ack.secondaryKeepAlive = globals.keep_alive;
 			/* TODO send CapabilitiesReqMessage (and parse the CapabilitiesResMessage) */
 			/* TODO event */
+			keepalive_listener(listener);
 			break;
 		case PORT_MESSAGE:
 			/* Nothing to do */
 			break;
 		case KEEP_ALIVE_MESSAGE:
-			/* TODO */
+			reply = switch_core_alloc(listener->pool, 12);
+			reply->type = KEEP_ALIVE_ACK_MESSAGE;
+			reply->length = 4;
+			keepalive_listener(listener);
 			break;
 		/* TODO */
 		default:
@@ -817,26 +825,6 @@ static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch
 	/* TODO */
 }
 
-static switch_status_t expire_listener(listener_t *listener)
-{
-	if (!listener->expire_time) {
-		listener->expire_time = switch_epoch_time_now(NULL);
-	}
-
-	if (switch_thread_rwlock_trywrlock(listener->rwlock) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session), SWITCH_LOG_CRIT, "Stateful Listener %u has expired\n", listener->id);
-
-	flush_listener(listener, SWITCH_TRUE, SWITCH_TRUE);
-
-	switch_thread_rwlock_unlock(listener->rwlock);
-	switch_core_destroy_memory_pool(&listener->pool);
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 static void close_socket(switch_socket_t **sock)
 {
 	switch_mutex_lock(listen_list.sock_mutex);
@@ -850,8 +838,26 @@ static void close_socket(switch_socket_t **sock)
 
 static switch_status_t kill_listener(listener_t *listener)
 {
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Killing listener.\n");
 	switch_clear_flag(listener, LFLAG_RUNNING);
 	close_socket(&listener->sock);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t kill_expired_listener(listener_t *listener)
+{
+	if(listener->expire_time < switch_epoch_time_now(NULL)) {
+		return kill_listener(listener);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t keepalive_listener(listener_t *listener)
+{
+	switch_assert(listener);
+	
+	listener->expire_time = switch_epoch_time_now(NULL)+globals.keep_alive*110/100;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -889,11 +895,12 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
 	switch_set_flag_locked(listener, LFLAG_RUNNING);
+	keepalive_listener(listener);
 	add_listener(listener);
 
 
 	while (running && switch_test_flag(listener, LFLAG_RUNNING) && listen_list.ready) {
-		status = skinny_read_packet(listener, &request, 30);
+		status = skinny_read_packet(listener, &request);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Socket Error!\n");
@@ -1136,7 +1143,7 @@ static switch_status_t load_skinny_config(void)
 static void event_handler(switch_event_t *event)
 {
 	if (event->event_id == SWITCH_EVENT_HEARTBEAT) {
-		walk_listeners(expire_listener);
+		walk_listeners(kill_expired_listener);
 	}
 }
 
