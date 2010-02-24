@@ -767,14 +767,13 @@ static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t skinny_parse_request(listener_t *listener, skinny_message_t *request, skinny_message_t **rep)
+static switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *request)
 {
-    skinny_message_t *reply, *message;
+    skinny_message_t *message;
     skinny_device_t *device;
 	uint32_t i = 0;
 	uint32_t n = 0;
 	size_t string_len, string_pos, pos;
-	reply = NULL;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 		"Received message of type %d.\n", request->type);
 	if(!listener->device && request->type != REGISTER_MESSAGE) {
@@ -804,12 +803,13 @@ static switch_status_t skinny_parse_request(listener_t *listener, skinny_message
 			listener->device = device;
 
 			/* Reply with RegisterAckMessage */
-			reply = switch_core_alloc(listener->pool, 12+sizeof(reply->data.reg_ack));
-			reply->type = REGISTER_ACK_MESSAGE;
-			reply->length = 4 + sizeof(reply->data.reg_ack);
-			reply->data.reg_ack.keepAlive = globals.keep_alive;
-			memcpy(reply->data.reg_ack.dateFormat, globals.date_format, 6);
-			reply->data.reg_ack.secondaryKeepAlive = globals.keep_alive;
+			message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reg_ack));
+			message->type = REGISTER_ACK_MESSAGE;
+			message->length = 4 + sizeof(message->data.reg_ack);
+			message->data.reg_ack.keepAlive = globals.keep_alive;
+			memcpy(message->data.reg_ack.dateFormat, globals.date_format, 6);
+			message->data.reg_ack.secondaryKeepAlive = globals.keep_alive;
+			skinny_send_reply(listener, message);
 
 			/* Send CapabilitiesReqMessage */
 			message = switch_core_alloc(listener->pool, 12);
@@ -853,17 +853,17 @@ static switch_status_t skinny_parse_request(listener_t *listener, skinny_message
 			device->port = request->data.as_uint16;
 			break;
 		case KEEP_ALIVE_MESSAGE:
-			reply = switch_core_alloc(listener->pool, 12);
-			reply->type = KEEP_ALIVE_ACK_MESSAGE;
-			reply->length = 4;
+			message = switch_core_alloc(listener->pool, 12);
+			message->type = KEEP_ALIVE_ACK_MESSAGE;
+			message->length = 4;
 			keepalive_listener(listener, NULL);
+			skinny_send_reply(listener, message);
 			break;
 		/* TODO */
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 				"Unknown request type: %d.\n", request->type);
 	}
-	*rep = reply;
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1066,17 +1066,12 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 			continue;
 		}
 
-		if (skinny_parse_request(listener, request, &reply) != SWITCH_STATUS_SUCCESS) {
+		if (skinny_handle_request(listener, request) != SWITCH_STATUS_SUCCESS) {
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			break;
 		}
 
 		skinny_free_message(request);
-
-		if (reply != NULL) {
-			skinny_send_reply(listener, reply);
-		}
-		skinny_free_message(reply);
 	}
 
   done:
