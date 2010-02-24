@@ -181,6 +181,11 @@ struct register_message {
 /* IpPortMessage */
 #define PORT_MESSAGE 0x0002
 
+#define SPEED_DIAL_STAT_REQ_MESSAGE 0x000A
+struct speed_dial_stat_req_message {
+	uint32_t number;
+};
+
 /* LineStatReqMessage */
 #define LINE_STAT_REQ_MESSAGE 0x000B
 struct line_stat_req_message {
@@ -235,6 +240,14 @@ struct register_ack_message {
 	char reserved[2];
 	uint32_t secondaryKeepAlive;
 	char reserved2[4];
+};
+
+/* SpeedDialStatMessage */
+#define SPEED_DIAL_STAT_RES_MESSAGE 0x0091
+struct speed_dial_stat_res_message {
+	uint32_t number;
+	char line[24];
+	char label[40];
 };
 
 /* LineStatMessage */
@@ -311,9 +324,11 @@ union skinny_data {
 	struct register_message reg;
 	struct register_available_lines_message reg_lines;
 	struct register_ack_message reg_ack;
+	struct speed_dial_stat_req_message speed_dial_req;
 	struct line_stat_req_message line_req;
 	struct capabilities_res_message cap_res;
 	struct alarm_message alarm;
+	struct speed_dial_stat_res_message speed_dial_res;
 	struct line_stat_res_message line_res;
 	struct button_template_message button_template;
 	struct register_rej_message reg_rej;
@@ -1577,6 +1592,52 @@ static switch_status_t skinny_handle_line_stat_request(listener_t *listener, ski
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static int skinny_handle_speed_dial_request_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	skinny_message_t *message = pArg;
+
+	message->data.speed_dial_res.number++;
+	if (message->data.speed_dial_res.number == atoi(argv[0])) { /* wanted_position */
+		message->data.speed_dial_res.number = atoi(argv[3]); /* value */
+		strcpy(message->data.speed_dial_res.label,  argv[2]); /* label */
+	}
+	return 0;
+}
+
+static switch_status_t skinny_handle_speed_dial_request(listener_t *listener, skinny_message_t *request)
+{
+	skinny_message_t *message;
+	skinny_profile_t *profile;
+	char *sql;
+
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	profile = listener->profile;
+
+	skinny_check_data_length(request, sizeof(request->data.speed_dial_req));
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.speed_dial_res));
+	message->type = SPEED_DIAL_STAT_RES_MESSAGE;
+	message->length = 4 + sizeof(message->data.speed_dial_res);
+	message->data.speed_dial_res.number = 0;
+	if ((sql = switch_mprintf(
+			"SELECT '%d' AS wanted_position, position, label, value, settings "
+				"FROM skinny_buttons WHERE device_name='%s' AND type='speed-dial' "
+				"ORDER BY position",
+			request->data.speed_dial_req.number,
+			listener->device_name
+			))) {
+		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_handle_speed_dial_request_callback, message);
+		switch_safe_free(sql);
+	}
+	message->data.speed_dial_res.number = request->data.speed_dial_req.number;
+	skinny_send_reply(listener, message);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t skinny_handle_register_available_lines_message(listener_t *listener, skinny_message_t *request)
 {
 	skinny_check_data_length(request, sizeof(request->data.reg_lines));
@@ -1633,6 +1694,8 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 			return skinny_handle_soft_key_set_request(listener, request);
 		case LINE_STAT_REQ_MESSAGE:
 			return skinny_handle_line_stat_request(listener, request);
+		case SPEED_DIAL_STAT_REQ_MESSAGE:
+			return skinny_handle_speed_dial_request(listener, request);
 		case REGISTER_AVAILABLE_LINES_MESSAGE:
 			return skinny_handle_register_available_lines_message(listener, request);
 		case KEEP_ALIVE_MESSAGE:
@@ -1735,7 +1798,7 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 {
 	switch_stream_handle_t *stream = (switch_stream_handle_t *) pArg;
 
-	char *name = argv[0];
+	char *device_name = argv[0];
 	char *user_id = argv[1];
 	char *instance = argv[2];
 	char *ip = argv[3];
@@ -1746,7 +1809,7 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 
 	const char *line = "=================================================================================================";
 	stream->write_function(stream, "%s\n", line);
-	stream->write_function(stream, "DeviceName    \t%s\n", switch_str_nil(name));
+	stream->write_function(stream, "DeviceName    \t%s\n", switch_str_nil(device_name));
 	stream->write_function(stream, "UserId        \t%s\n", user_id);
 	stream->write_function(stream, "Instance      \t%s\n", instance);
 	stream->write_function(stream, "IP            \t%s\n", ip);
