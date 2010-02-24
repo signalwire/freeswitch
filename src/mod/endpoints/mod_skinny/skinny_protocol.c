@@ -1223,13 +1223,13 @@ switch_status_t skinny_handle_config_stat_request(listener_t *listener, skinny_m
 
 	if ((sql = switch_mprintf(
 			"SELECT name, user_id, instance, '' AS user_name, '' AS server_name, "
-				"(SELECT COUNT(*) FROM skinny_buttons WHERE device_name='%s' AND type='%s') AS number_lines, "
-				"(SELECT COUNT(*) FROM skinny_buttons WHERE device_name='%s' AND type='%s') AS number_speed_dials "
+				"(SELECT COUNT(*) FROM skinny_buttons WHERE device_name='%s' AND type=%d) AS number_lines, "
+				"(SELECT COUNT(*) FROM skinny_buttons WHERE device_name='%s' AND type=%d) AS number_speed_dials "
 				"FROM skinny_devices WHERE name='%s' ",
 			listener->device_name,
-			skinny_button2str(SKINNY_BUTTON_LINE),
+			SKINNY_BUTTON_LINE,
 			listener->device_name,
-			skinny_button2str(SKINNY_BUTTON_SPEED_DIAL),
+			SKINNY_BUTTON_SPEED_DIAL,
 			listener->device_name
 			))) {
 		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_config_stat_res_callback, message);

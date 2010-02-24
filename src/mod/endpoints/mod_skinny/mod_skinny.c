@@ -63,7 +63,7 @@ static char buttons_sql[] =
 	"CREATE TABLE skinny_buttons (\n"
 	"   device_name      VARCHAR(16),\n"
 	"   position         INTEGER,\n"
-	"   type         INTEGER,\n"
+	"   type             INTEGER,\n"
 	"   label            VARCHAR(40),\n"
 	"   value            VARCHAR(24),\n"
 	"   settings         VARCHAR(44)\n"
