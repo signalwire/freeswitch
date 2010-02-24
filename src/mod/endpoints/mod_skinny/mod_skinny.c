@@ -39,6 +39,7 @@ SWITCH_MODULE_DEFINITION(mod_skinny, mod_skinny_load, mod_skinny_shutdown, mod_s
 #define SKINNY_EVENT_REGISTER "skinny::register"
 #define SKINNY_EVENT_UNREGISTER "skinny::unregister"
 #define SKINNY_EVENT_EXPIRE "skinny::expire"
+#define SKINNY_EVENT_ALARM "skinny::alarm"
 
 
 switch_endpoint_interface_t *skinny_endpoint_interface;
@@ -1207,12 +1208,22 @@ static switch_status_t skinny_device_event(listener_t *listener, switch_event_t 
 /* Message handling */
 static switch_status_t skinny_handle_alarm(listener_t *listener, skinny_message_t *request)
 {
+	switch_event_t *event = NULL;
+
 	skinny_check_data_length(request, sizeof(request->data.alarm));
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 		"Received alarm: Severity=%d, DisplayMessage=%s, Param1=%d, Param2=%d.\n",
 		request->data.alarm.alarm_severity, request->data.alarm.display_message,
 		request->data.alarm.alarm_param1, request->data.alarm.alarm_param2);
+	/* skinny::alarm event */
+	skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_ALARM);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-Alarm-Severity", "%d", request->data.alarm.alarm_severity);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-Alarm-DisplayMessage", "%s", request->data.alarm.display_message);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-Alarm-Param1", "%d", request->data.alarm.alarm_param1);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-Alarm-Param2", "%d", request->data.alarm.alarm_param2);
+	switch_event_fire(&event);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
