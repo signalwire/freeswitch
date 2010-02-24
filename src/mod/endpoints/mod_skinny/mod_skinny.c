@@ -62,6 +62,7 @@ typedef enum {
 static struct {
 	/* prefs */
 	int debug;
+	char *domain;
 	char *ip;
 	unsigned int port;
 	char *dialplan;
@@ -98,6 +99,7 @@ struct private_object {
 typedef struct private_object private_t;
 
 
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_domain, globals.domain);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ip, globals.ip);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string);
@@ -124,6 +126,12 @@ struct register_message {
 /* IpPortMessage */
 #define PORT_MESSAGE 0x0002
 
+/* LineStatReqMessage */
+#define LINE_STAT_REQ_MESSAGE 0x000B
+struct line_stat_req_message {
+	uint32_t number;
+};
+
 /* CapabilitiesResMessage */
 struct station_capabilities {
 	uint32_t codec;
@@ -147,16 +155,28 @@ struct register_ack_message {
 	char reserved2[4];
 };
 
+/* LineStatMessage */
+#define LINE_STAT_RES_MESSAGE 0x0092
+struct line_stat_res_message {
+	uint32_t number;
+	char name[24];
+	char shortname[40];
+	char displayname[44];
+};
+
 /* CapabilitiesReqMessage */
 #define CAPABILITIES_REQ_MESSAGE 0x009B
+
+/* RegisterRejectMessage */
+#define REGISTER_REJ_MESSAGE 0x009D
+struct register_rej_message {
+	char error[33];
+};
 
 /* KeepAliveAckMessage */
 #define KEEP_ALIVE_ACK_MESSAGE 0x0100
 
-/*****************************************************************************/
-/* SKINNY TYPES */
-/*****************************************************************************/
-
+/* Message */
 #define SKINNY_MESSAGE_FIELD_SIZE 4 /* 4-bytes field */
 #define SKINNY_MESSAGE_HEADERSIZE 12 /* three 4-bytes fields */
 #define SKINNY_MESSAGE_MAXSIZE 1000
@@ -164,7 +184,10 @@ struct register_ack_message {
 union skinny_data {
 	struct register_message reg;
 	struct register_ack_message reg_ack;
+	struct line_stat_req_message line_req;
 	struct capabilities_res_message cap_res;
+	struct line_stat_res_message line_res;
+	struct register_rej_message reg_rej;
 	
 	uint16_t as_uint16;
 	char as_char;
@@ -179,6 +202,26 @@ struct skinny_message {
 };
 typedef struct skinny_message skinny_message_t;
 
+/*****************************************************************************/
+/* SKINNY TYPES */
+/*****************************************************************************/
+
+#define SKINNY_MAX_LINES 10
+struct skinny_line {
+	struct skinny_device_t *device;
+	char name[24];
+	char shortname[40];
+	char displayname[44];
+};
+typedef struct skinny_line skinny_line_t;
+
+#define SKINNY_MAX_SPEEDDIALS 20
+struct skinny_speeddial {
+	struct skinny_device_t *device;
+	char number[24];
+	char displayname[40];
+};
+typedef struct skinny_speeddial skinny_speeddial_t;
 
 struct skinny_device {
 	char deviceName[16];
@@ -193,19 +236,51 @@ struct skinny_device {
 	char *codec_string;
 	char *codec_order[SWITCH_MAX_CODECS];
 	int codec_order_last;
+
+	skinny_line_t line[SKINNY_MAX_LINES];
+	int line_last;
+	skinny_speeddial_t speeddial[SKINNY_MAX_SPEEDDIALS];
+	int speeddial_last;
 };
 typedef struct skinny_device skinny_device_t;
 
 typedef switch_status_t (*skinny_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
 
 enum skinny_codecs {
-	SKINNY_CODEC_ALAW = 2,
-	SKINNY_CODEC_ULAW = 4,
+	SKINNY_CODEC_ALAW_64K = 2,
+	SKINNY_CODEC_ALAW_56K = 3,
+	SKINNY_CODEC_ULAW_64K = 4,
+	SKINNY_CODEC_ULAW_56K = 5,
+	SKINNY_CODEC_G722_64K = 6,
+	SKINNY_CODEC_G722_56K = 7,
+	SKINNY_CODEC_G722_48K = 8,
 	SKINNY_CODEC_G723_1 = 9,
+	SKINNY_CODEC_G728 = 10,
+	SKINNY_CODEC_G729 = 11,
 	SKINNY_CODEC_G729A = 12,
-	SKINNY_CODEC_G726_32 = 82,
+	SKINNY_CODEC_IS11172 = 13,
+	SKINNY_CODEC_IS13818 = 14,
+	SKINNY_CODEC_G729B = 15,
+	SKINNY_CODEC_G729AB = 16,
+	SKINNY_CODEC_GSM_FULL = 18,
+	SKINNY_CODEC_GSM_HALF = 19,
+	SKINNY_CODEC_GSM_EFULL = 20,
+	SKINNY_CODEC_WIDEBAND_256K = 25,
+	SKINNY_CODEC_DATA_64K = 32,
+	SKINNY_CODEC_DATA_56K = 33,
+	SKINNY_CODEC_GSM = 80,
+	SKINNY_CODEC_ACTIVEVOICE = 81,
+	SKINNY_CODEC_G726_32K = 82,
+	SKINNY_CODEC_G726_24K = 83,
+	SKINNY_CODEC_G726_16K = 84,
+	SKINNY_CODEC_G729B_BIS = 85,
+	SKINNY_CODEC_G729B_LOW = 86,
 	SKINNY_CODEC_H261 = 100,
-	SKINNY_CODEC_H263 = 101
+	SKINNY_CODEC_H263 = 101,
+	SKINNY_CODEC_VIDEO = 102,
+	SKINNY_CODEC_T120 = 105,
+	SKINNY_CODEC_H224 = 106,
+	SKINNY_CODEC_RFC2833_DYNPAYLOAD = 257
 };
 
 /*****************************************************************************/
@@ -670,22 +745,64 @@ switch_io_routines_t skinny_io_routines = {
 static char* skinny_codec2string(enum skinny_codecs skinnycodec)
 {
 	switch (skinnycodec) {
-	case SKINNY_CODEC_ALAW:
-		return "ALAW";
-	case SKINNY_CODEC_ULAW:
-		return "ULAW";
-	case SKINNY_CODEC_G723_1:
-		return "G723_1";
-	case SKINNY_CODEC_G729A:
-		return "G729A";
-	case SKINNY_CODEC_G726_32:
-		return "G726_AAL2";
-	case SKINNY_CODEC_H261:
-		return "H261";
-	case SKINNY_CODEC_H263:
-		return "H263";
-	default:
-		return "";
+		case SKINNY_CODEC_ALAW_64K:
+		case SKINNY_CODEC_ALAW_56K:
+			return "ALAW";
+		case SKINNY_CODEC_ULAW_64K:
+		case SKINNY_CODEC_ULAW_56K:
+			return "ULAW";
+		case SKINNY_CODEC_G722_64K:
+		case SKINNY_CODEC_G722_56K:
+		case SKINNY_CODEC_G722_48K:
+			return "G722";
+		case SKINNY_CODEC_G723_1:
+			return "G723";
+		case SKINNY_CODEC_G728:
+			return "G728";
+		case SKINNY_CODEC_G729:
+		case SKINNY_CODEC_G729A:
+			return "G729";
+		case SKINNY_CODEC_IS11172:
+			return "IS11172";
+		case SKINNY_CODEC_IS13818:
+			return "IS13818";
+		case SKINNY_CODEC_G729B:
+		case SKINNY_CODEC_G729AB:
+			return "G729";
+		case SKINNY_CODEC_GSM_FULL:
+		case SKINNY_CODEC_GSM_HALF:
+		case SKINNY_CODEC_GSM_EFULL:
+			return "GSM";
+		case SKINNY_CODEC_WIDEBAND_256K:
+			return "WIDEBAND";
+		case SKINNY_CODEC_DATA_64K:
+		case SKINNY_CODEC_DATA_56K:
+			return "DATA";
+		case SKINNY_CODEC_GSM:
+			return "GSM";
+		case SKINNY_CODEC_ACTIVEVOICE:
+			return "ACTIVEVOICE";
+		case SKINNY_CODEC_G726_32K:
+		case SKINNY_CODEC_G726_24K:
+		case SKINNY_CODEC_G726_16K:
+			return "G726";
+		case SKINNY_CODEC_G729B_BIS:
+		case SKINNY_CODEC_G729B_LOW:
+			return "G729";
+		case SKINNY_CODEC_H261:
+			return "H261";
+		case SKINNY_CODEC_H263:
+			return "H263";
+		case SKINNY_CODEC_VIDEO:
+			return "VIDEO";
+		case SKINNY_CODEC_T120:
+			return "T120";
+		case SKINNY_CODEC_H224:
+			return "H224";
+		case SKINNY_CODEC_RFC2833_DYNPAYLOAD:
+			return "RFC2833_DYNPAYLOAD";
+		default:
+			return "";
 	}
 }
 
@@ -735,7 +852,7 @@ static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t
 				ptr += mlen;
 				memcpy(request, mbuf, bytes);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-					"Got request: length=%d,reserved=%d,type=%d\n",
+					"Got request: length=%d,reserved=%x,type=%x\n",
 					request->length,request->reserved,request->type);
 				if(request->length < SKINNY_MESSAGE_FIELD_SIZE) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
@@ -752,7 +869,7 @@ static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t
 				if(bytes >= request->length + 2*SKINNY_MESSAGE_FIELD_SIZE) {
 					/* Message body */
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-						"Got complete request: length=%d,reserved=%d,type=%d,data=%d\n",
+						"Got complete request: length=%d,reserved=%x,type=%x,data=%d\n",
 						request->length,request->reserved,request->type,request->data.as_char);
 					*req = request;
 					return  SWITCH_STATUS_SUCCESS;
@@ -773,6 +890,7 @@ static switch_status_t skinny_device_event(listener_t *listener, switch_event_t 
 	switch_event_t *event = NULL;
 	skinny_device_t *device;
 	switch_event_create_subclass(&event, event_id, subclass_name);
+	switch_assert(event);
 	if(listener->device) {
 		device = listener->device;
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Skinny-Device-Name", switch_str_nil(device->deviceName));
@@ -788,17 +906,108 @@ static switch_status_t skinny_device_event(listener_t *listener, switch_event_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *request)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	skinny_message_t *message;
+	skinny_device_t *device;
+	switch_event_t *event = NULL;
+	switch_event_t *params = NULL;
+	switch_xml_t xml = NULL, domain, group, users, user;
+
+	if(listener->device) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+			"A device is already registred on this listener.\n");
+		message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reg_rej));
+		message->type = REGISTER_REJ_MESSAGE;
+		message->length = 4 + sizeof(message->data.reg_rej);
+		strcpy(message->data.reg_rej.error, "A device is already registred on this listener");
+		skinny_send_reply(listener, message);
+		return SWITCH_STATUS_FALSE;
+	}
+	/* Initialize device */
+	device = switch_core_alloc(listener->pool, sizeof(skinny_device_t));
+	memcpy(device->deviceName, request->data.reg.deviceName, 16);
+	device->userId = request->data.reg.userId;
+	device->instance = request->data.reg.instance;
+	device->ip = request->data.reg.ip;
+	device->deviceType = request->data.reg.deviceType;
+	device->maxStreams = request->data.reg.maxStreams;
+	device->codec_string = realloc(device->codec_string, 1);
+	device->codec_string[0] = '\0';
+
+	/* Check directory */
+	skinny_device_event(listener, &params, SWITCH_EVENT_REQUEST_PARAMS, SWITCH_EVENT_SUBCLASS_ANY);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "skinny-auth");
+
+	if (switch_xml_locate_group(device->deviceName, globals.domain, &xml, &domain, &group, params) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find device [%s@%s]\n"
+					  "You must define a domain called '%s' in your directory and add a group with the name=\"%s\" attribute.\n"
+					  , device->deviceName, globals.domain, globals.domain, device->deviceName);
+		message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reg_rej));
+		message->type = REGISTER_REJ_MESSAGE;
+		message->length = 4 + sizeof(message->data.reg_rej);
+		strcpy(message->data.reg_rej.error, "Device not found");
+		skinny_send_reply(listener, message);
+		return SWITCH_STATUS_FALSE;
+		goto end;
+	}
+	users = switch_xml_child(group, "users");
+	device->line_last = 0;
+	if(users) {
+		for (user = switch_xml_child(users, "user"); user; user = user->next) {
+			const char *id = switch_xml_attr_soft(user, "id");
+			const char *type = switch_xml_attr_soft(user, "type");
+			//TODO device->line[device->line_last].device = *device;
+			strcpy(device->line[device->line_last].name, id);
+			strcpy(device->line[device->line_last].shortname, id);
+			strcpy(device->line[device->line_last].displayname, id);
+			device->line_last++;
+		}
+	}
+
+	listener->device = device;
+	status = SWITCH_STATUS_SUCCESS;
+
+	/* Reply with RegisterAckMessage */
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reg_ack));
+	message->type = REGISTER_ACK_MESSAGE;
+	message->length = 4 + sizeof(message->data.reg_ack);
+	message->data.reg_ack.keepAlive = globals.keep_alive;
+	memcpy(message->data.reg_ack.dateFormat, globals.date_format, 6);
+	message->data.reg_ack.secondaryKeepAlive = globals.keep_alive;
+	skinny_send_reply(listener, message);
+
+	/* Send CapabilitiesReqMessage */
+	message = switch_core_alloc(listener->pool, 12);
+	message->type = CAPABILITIES_REQ_MESSAGE;
+	message->length = 4;
+	skinny_send_reply(listener, message);
+
+	/* skinny::register event */
+	skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_REGISTER);
+	switch_event_fire(&event);
+	
+	keepalive_listener(listener, NULL);
+
+end:
+	if(params) {
+		switch_event_destroy(&params);
+	}
+	
+	return status;
+}
+
 static switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *request)
 {
-    skinny_message_t *message;
-    skinny_device_t *device;
+	skinny_message_t *message;
+	skinny_device_t *device;
 	uint32_t i = 0;
 	uint32_t n = 0;
 	size_t string_len, string_pos, pos;
-	switch_event_t *event = NULL;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-		"Received message of type %d.\n", request->type);
+		"Received message (type=%x,length=%d).\n", request->type, request->length);
 	if(!listener->device && request->type != REGISTER_MESSAGE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 			"Device should send a register message first.\n");
@@ -807,47 +1016,7 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 	device = listener->device;
 	switch(request->type) {
 		case REGISTER_MESSAGE:
-			if(listener->device) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-					"A device is already registred on this listener.\n");
-				return SWITCH_STATUS_FALSE;
-			}
-			/* Initialize device */
-			device = switch_core_alloc(listener->pool, sizeof(skinny_device_t));
-			memcpy(device->deviceName, request->data.reg.deviceName, 16);
-			device->userId = request->data.reg.userId;
-			device->instance = request->data.reg.instance;
-			device->ip = request->data.reg.ip;
-			device->deviceType = request->data.reg.deviceType;
-			device->maxStreams = request->data.reg.maxStreams;
-			device->codec_string = realloc(device->codec_string, 1);
-			device->codec_string[0] = '\0';
-
-			/* TODO : check directory */
-
-			listener->device = device;
-
-			/* Reply with RegisterAckMessage */
-			message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reg_ack));
-			message->type = REGISTER_ACK_MESSAGE;
-			message->length = 4 + sizeof(message->data.reg_ack);
-			message->data.reg_ack.keepAlive = globals.keep_alive;
-			memcpy(message->data.reg_ack.dateFormat, globals.date_format, 6);
-			message->data.reg_ack.secondaryKeepAlive = globals.keep_alive;
-			skinny_send_reply(listener, message);
-
-			/* Send CapabilitiesReqMessage */
-			message = switch_core_alloc(listener->pool, 12);
-			message->type = CAPABILITIES_REQ_MESSAGE;
-			message->length = 4;
-			skinny_send_reply(listener, message);
-
-			/* skinny::register event */
-			skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_REGISTER);
-			switch_event_fire(&event);
-			
-			keepalive_listener(listener, NULL);
-			break;
+			return skinny_handle_register(listener, request);
 		case CAPABILITIES_RES_MESSAGE:
 			n = request->data.cap_res.count;
 			if (n > SWITCH_MAX_CODECS) {
@@ -880,6 +1049,23 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 		case PORT_MESSAGE:
 			device->port = request->data.as_uint16;
 			break;
+		case LINE_STAT_REQ_MESSAGE:
+			message = switch_core_alloc(listener->pool, 12+sizeof(message->data.line_res));
+			message->type = LINE_STAT_RES_MESSAGE;
+			message->length = 4 + sizeof(message->data.line_res);
+			i = request->data.line_req.number;
+			if(i > 0 && i <= device->line_last) {
+				message->data.line_res.number = i;
+				strcpy(message->data.line_res.name, device->line[i-1].name);
+				strcpy(message->data.line_res.shortname, device->line[i-1].shortname);
+				strcpy(message->data.line_res.displayname, device->line[i-1].displayname);
+			} else {
+				strcpy(message->data.line_res.name, "");
+				strcpy(message->data.line_res.shortname, "");
+				strcpy(message->data.line_res.displayname, "");
+			}
+			skinny_send_reply(listener, message);
+			break;
 		case KEEP_ALIVE_MESSAGE:
 			message = switch_core_alloc(listener->pool, 12);
 			message->type = KEEP_ALIVE_ACK_MESSAGE;
@@ -902,7 +1088,8 @@ static switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t 
 	switch_assert(reply != NULL);
 	len = reply->length+8;
 	ptr = (char *) reply;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Sending reply (length=%d).\n", len);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Sending reply (type=%x,length=%d).\n",
+		reply->type, reply->length);
 	switch_socket_send(listener->sock, ptr, &len);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1281,6 +1468,8 @@ static switch_status_t load_skinny_config(void)
 
 			if (!strcmp(var, "debug")) {
 				globals.debug = atoi(val);
+			} else if (!strcmp(var, "domain")) {
+				set_global_domain(val);
 			} else if (!strcmp(var, "ip")) {
 				set_global_ip(val);
 			} else if (!strcmp(var, "port")) {
@@ -1489,6 +1678,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 	}
 
 	/* Free dynamically allocated strings */
+	switch_safe_free(globals.domain);
 	switch_safe_free(globals.ip);
 	switch_safe_free(globals.dialplan);
 	switch_safe_free(globals.codec_string);
