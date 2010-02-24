@@ -285,6 +285,62 @@ switch_status_t skinny_send_call_info(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t skinny_pick_up(listener_t *listener, uint32_t line)
+{
+	switch_core_session_t *session;
+	switch_channel_t *channel;
+	private_t *tech_pvt;
+
+	if (!(session = switch_core_session_request(skinny_get_endpoint_interface(), SWITCH_CALL_DIRECTION_INBOUND, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
+		goto error;
+	}
+
+	if (!(tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(*tech_pvt)))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error Creating Session private object\n");
+		goto error;
+	}
+
+	switch_core_session_add_stream(session, NULL);
+
+	tech_pvt->listener = listener;
+	tech_pvt->line = line;
+
+	tech_init(tech_pvt, session);
+
+	switch_set_flag_locked(tech_pvt, TFLAG_WAITING_DEST);
+
+	set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0);
+	set_speaker_mode(listener, SKINNY_SPEAKER_ON);
+	set_lamp(listener, SKINNY_BUTTON_LINE, tech_pvt->line, SKINNY_LAMP_ON);
+	send_call_state(listener,
+		SKINNY_OFF_HOOK,
+		tech_pvt->line,
+		tech_pvt->call_id);
+	send_select_soft_keys(listener, tech_pvt->line, tech_pvt->call_id,
+		SKINNY_KEY_SET_OFF_HOOK, 0xffff);
+	display_prompt_status(listener,
+		0,
+		"\200\000",
+		tech_pvt->line,
+		tech_pvt->call_id);
+	activate_call_plane(listener, tech_pvt->line);
+	start_tone(listener, SKINNY_TONE_DIALTONE, 0, tech_pvt->line, tech_pvt->call_id);
+
+	channel = switch_core_session_get_channel(session);
+	goto done;
+error:
+	if (session) {
+		switch_core_session_destroy(&session);
+	}
+
+	return SWITCH_STATUS_FALSE;
+
+done:
+	listener->session[line] = session;
+	return SWITCH_STATUS_SUCCESS;
+}
+
 switch_status_t skinny_answer(switch_core_session_t *session)
 {
 	private_t *tech_pvt;
@@ -1201,10 +1257,6 @@ switch_status_t skinny_handle_keep_alive_message(listener_t *listener, skinny_me
 
 switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinny_message_t *request)
 {
-	switch_core_session_t *session;
-	switch_channel_t *channel;
-	private_t *tech_pvt;
-
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	skinny_profile_t *profile;
@@ -1226,60 +1278,13 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 	if(!listener->session[line]) { /*the line is not busy */
 		switch(request->data.soft_key_event.event) {
 			case SOFTKEY_NEWCALL:
-
-				if (!(session = switch_core_session_request(skinny_get_endpoint_interface(), SWITCH_CALL_DIRECTION_INBOUND, NULL))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
-					goto error;
-				}
-
-				if (!(tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(*tech_pvt)))) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error Creating Session private object\n");
-					goto error;
-				}
-
-				switch_core_session_add_stream(session, NULL);
-
-				tech_pvt->listener = listener;
-				tech_pvt->line = line;
-
-				tech_init(tech_pvt, session);
-
-				switch_set_flag_locked(tech_pvt, TFLAG_WAITING_DEST);
-
-				set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0);
-				set_speaker_mode(listener, SKINNY_SPEAKER_ON);
-				set_lamp(listener, SKINNY_BUTTON_LINE, tech_pvt->line, SKINNY_LAMP_ON);
-				send_call_state(listener,
-					SKINNY_OFF_HOOK,
-					tech_pvt->line,
-					tech_pvt->call_id);
-				send_select_soft_keys(listener, tech_pvt->line, tech_pvt->call_id,
-					SKINNY_KEY_SET_OFF_HOOK, 0xffff);
-				display_prompt_status(listener,
-					0,
-					"\200\000",
-					tech_pvt->line,
-					tech_pvt->call_id);
-				activate_call_plane(listener, tech_pvt->line);
-				start_tone(listener, SKINNY_TONE_DIALTONE, 0, tech_pvt->line, tech_pvt->call_id);
-
-				channel = switch_core_session_get_channel(session);
-
-				listener->session[line] = session;
-
+				skinny_pick_up(listener, line);
 				break;
 			default:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 					"Unknown SoftKeyEvent type: %d.\n", request->data.soft_key_event.event);
 		}
 	}
-	goto done;
-error:
-	if (session) {
-		switch_core_session_destroy(&session);
-	}
-
-done:
 	return status;
 }
 
@@ -1302,6 +1307,8 @@ switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_mess
 	}
 	if(listener->session[line]) { /*answering a call */
 		skinny_answer(listener->session[line]);
+	} else { /* start a new call */
+		skinny_pick_up(listener, line);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
