@@ -241,6 +241,11 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 
 	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv_) / sizeof(argv_[0])) - 1);
 	argv = argv_;
+
+
+	if (!argv[1]) {
+		{usage(1);}
+	}
 	
 	if (!strcasecmp(argv[1], "xml")) {
 		switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "xml", "true");
