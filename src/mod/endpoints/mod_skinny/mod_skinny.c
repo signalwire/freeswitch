@@ -381,13 +381,19 @@ switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 	return status;
 }
 
-void tech_init(private_t *tech_pvt, switch_core_session_t *session)
+void tech_init(private_t *tech_pvt, switch_core_session_t *session, listener_t *listener, uint32_t line)
 {
+	switch_assert(tech_pvt);
+	switch_assert(session);
+	switch_assert(listener);
+	
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-	tech_pvt->call_id = 12345; /* TODO */
+	tech_pvt->call_id = listener->profile->next_call_id++;
+	tech_pvt->listener = listener;
+	tech_pvt->line = line;
 	switch_core_session_set_private(session, tech_pvt);
 	tech_pvt->session = session;
 }
@@ -508,16 +514,25 @@ switch_status_t channel_on_hangup(switch_core_session_t *session)
 	stop_tone(listener, tech_pvt->line, tech_pvt->call_id);
 	set_lamp(listener, SKINNY_BUTTON_LINE, tech_pvt->line, SKINNY_LAMP_OFF);
 	clear_prompt_status(listener, tech_pvt->line, tech_pvt->call_id);
-	close_receive_channel(listener,
-		tech_pvt->call_id, /* uint32_t conference_id, */
-		tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
-		tech_pvt->call_id /* uint32_t conference_id2, */
-	);
-	stop_media_transmission(listener,
-		tech_pvt->call_id, /* uint32_t conference_id, */
-		tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
-		tech_pvt->call_id /* uint32_t conference_id2, */
-	);
+
+	if( skinny_line_get_state(tech_pvt->listener, tech_pvt->line) == SKINNY_KEY_SET_CONNECTED ) {
+		close_receive_channel(listener,
+			tech_pvt->call_id, /* uint32_t conference_id, */
+			tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
+			tech_pvt->call_id /* uint32_t conference_id2, */
+		);
+		stop_media_transmission(listener,
+			tech_pvt->call_id, /* uint32_t conference_id, */
+			tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
+			tech_pvt->call_id /* uint32_t conference_id2, */
+		);
+		switch_mutex_lock(globals.calls_mutex);
+		globals.calls--;
+		if (globals.calls < 0) {
+			globals.calls = 0;
+		}
+		switch_mutex_unlock(globals.calls_mutex);
+	}
 	send_call_state(listener,
 		SKINNY_ON_HOOK,
 		tech_pvt->line,
@@ -526,14 +541,6 @@ switch_status_t channel_on_hangup(switch_core_session_t *session)
 	/* TODO: DefineTimeDate */
 	set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
 	set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0);
-	
-
-	switch_mutex_lock(globals.calls_mutex);
-	globals.calls--;
-	if (globals.calls < 0) {
-		globals.calls = 0;
-	}
-	switch_mutex_unlock(globals.calls_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -551,12 +558,12 @@ switch_status_t channel_kill_channel(switch_core_session_t *session, int sig)
 
 	switch (sig) {
 	case SWITCH_SIG_KILL:
-		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-		switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		break;
 	case SWITCH_SIG_BREAK:
-		switch_set_flag_locked(tech_pvt, TFLAG_BREAK);
+		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			switch_rtp_break(tech_pvt->rtp_session);
+		}
 		break;
 	default:
 		break;
@@ -748,6 +755,8 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 	
 	char *profile_name, *dest;
 	skinny_profile_t *profile = NULL;
+	listener_t *listener = NULL;
+	uint32_t line = 0;
 	char name[128];
 	switch_channel_t *channel;
 	switch_caller_profile_t *caller_profile;
@@ -766,8 +775,6 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error Creating Session private object\n");
 		goto error;
 	}
-
-	tech_init(tech_pvt, nsession);
 
 	if(!(profile_name = switch_core_session_strdup(nsession, outbound_profile->destination_number))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error Creating Session Info\n");
@@ -794,6 +801,26 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 	switch_channel_set_name(channel, name);
 	
 
+	if ((skinny_profile_find_listener(profile, dest, &listener, &line) != SWITCH_STATUS_SUCCESS)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Problem while retrieving listener and line for destination %s in profile %s\n", dest, profile_name);
+		cause = SWITCH_CAUSE_UNALLOCATED_NUMBER;
+		goto error;
+	}
+	
+	if (!listener) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid destination or phone not registred %s in profile %s\n", dest, profile_name);
+		cause = SWITCH_CAUSE_UNALLOCATED_NUMBER;
+		goto error;
+	}
+
+	if (line == 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid destination or phone not registred %s in profile %s\n", dest, profile_name);
+		cause = SWITCH_CAUSE_UNALLOCATED_NUMBER;
+		goto error;
+	}
+	
+	tech_init(tech_pvt, nsession, listener, line);
+
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
 	switch_channel_set_caller_profile(channel, caller_profile);
 	tech_pvt->caller_profile = caller_profile;
@@ -801,24 +828,6 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 	switch_channel_set_flag(channel, CF_OUTBOUND);
 	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 
-	if ((skinny_profile_find_listener(profile, dest, &tech_pvt->listener, &tech_pvt->line) != SWITCH_STATUS_SUCCESS)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Problem while retrieving listener and line for destination %s in profile %s\n", dest, profile_name);
-		cause = SWITCH_CAUSE_UNALLOCATED_NUMBER;
-		goto error;
-	}
-	
-	if (!tech_pvt->listener) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid destination or phone not registred %s in profile %s\n", dest, profile_name);
-		cause = SWITCH_CAUSE_UNALLOCATED_NUMBER;
-		goto error;
-	}
-
-	if (tech_pvt->line == 0) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid destination or phone not registred %s in profile %s\n", dest, profile_name);
-		cause = SWITCH_CAUSE_UNALLOCATED_NUMBER;
-		goto error;
-	}
-	
 	if(tech_pvt->listener->session[tech_pvt->line]) { /* Line is busy */
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Device line is busy %s in profile %s\n", dest, profile_name);
 		cause = SWITCH_CAUSE_USER_BUSY;
@@ -1424,8 +1433,6 @@ static switch_status_t load_skinny_config(void)
 				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_devices", NULL, NULL);
 				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_buttons", NULL, NULL);
 
-				switch_core_hash_init(&profile->session_hash, module_pool);
-				
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
 				profile = NULL;
 			} else {

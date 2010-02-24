@@ -92,9 +92,8 @@ struct skinny_profile {
 	switch_mutex_t *sock_mutex;
 	struct listener *listeners;
 	uint8_t listener_ready;
-	/* sessions */
-	switch_hash_t *session_hash;
-	switch_mutex_t *sessions_mutex;
+	/* call id */
+	uint32_t next_call_id;
 };
 typedef struct skinny_profile skinny_profile_t;
 
@@ -143,7 +142,6 @@ typedef enum {
 	TFLAG_HANGUP = (1 << 5),
 	TFLAG_LINEAR = (1 << 6),
 	TFLAG_CODEC = (1 << 7),
-	TFLAG_BREAK = (1 << 8),
 	
 	TFLAG_READING = (1 << 9),
 	TFLAG_WRITING = (1 << 10)
@@ -209,7 +207,7 @@ uint32_t skinny_line_perform_set_state(listener_t *listener, const char *file, c
 uint32_t skinny_line_get_state(listener_t *listener, uint32_t instance);
 
 switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force);
-void tech_init(private_t *tech_pvt, switch_core_session_t *session);
+void tech_init(private_t *tech_pvt, switch_core_session_t *session, listener_t *listener, uint32_t line);
 switch_status_t channel_on_init(switch_core_session_t *session);
 switch_status_t channel_on_hangup(switch_core_session_t *session);
 switch_status_t channel_on_destroy(switch_core_session_t *session);
