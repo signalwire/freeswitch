@@ -179,9 +179,10 @@ struct register_message {
 	uint32_t maxStreams;
 };
 
-/* IpPortMessage */
+/* PortMessage */
 #define PORT_MESSAGE 0x0002
 
+/* SpeedDialStatReqMessage */
 #define SPEED_DIAL_STAT_REQ_MESSAGE 0x000A
 struct speed_dial_stat_req_message {
 	uint32_t number;
@@ -203,6 +204,7 @@ struct station_capabilities {
 /* ButtonTemplateReqMessage */
 #define BUTTON_TEMPLATE_REQ_MESSAGE 0x000E
 
+/* CapabilitiesResMessage */
 #define CAPABILITIES_RES_MESSAGE 0x0010
 struct capabilities_res_message {
 	uint32_t count;
@@ -226,6 +228,13 @@ struct alarm_message {
 
 /* SoftKeyTemplateReqMessage */
 #define SOFT_KEY_TEMPLATE_REQ_MESSAGE 0x0028
+
+/* HeadsetStatusMessage */
+#define HEADSET_STATUS_MESSAGE 0x002B
+struct headset_status_message {
+	uint32_t mode;
+};
+
 
 /* RegisterAvailableLinesMessage */
 #define REGISTER_AVAILABLE_LINES_MESSAGE 0x002D
@@ -323,6 +332,7 @@ struct soft_key_set_res_message {
 
 union skinny_data {
 	struct register_message reg;
+	struct headset_status_message headset_status;
 	struct register_available_lines_message reg_lines;
 	struct register_ack_message reg_ack;
 	struct speed_dial_stat_req_message speed_dial_req;
@@ -1346,6 +1356,14 @@ end:
 	return status;
 }
 
+static switch_status_t skinny_headset_status_message(listener_t *listener, skinny_message_t *request)
+{
+	skinny_check_data_length(request, sizeof(request->data.headset_status));
+	
+	/* Nothing to do */
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t skinny_handle_capabilities_response(listener_t *listener, skinny_message_t *request)
 {
 	char *sql;
@@ -1693,6 +1711,8 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 			return skinny_handle_alarm(listener, request);
 		case REGISTER_MESSAGE:
 			return skinny_handle_register(listener, request);
+		case HEADSET_STATUS_MESSAGE:
+			return skinny_headset_status_message(listener, request);
 		case CAPABILITIES_RES_MESSAGE:
 			return skinny_handle_capabilities_response(listener, request);
 		case PORT_MESSAGE:
