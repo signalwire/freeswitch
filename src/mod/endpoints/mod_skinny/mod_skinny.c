@@ -548,6 +548,52 @@ struct soft_key_template_res_message {
 	struct soft_key_template_definition soft_key[32];
 };
 
+#define SOFTKEY_NONE 0x00
+#define SOFTKEY_REDIAL 0x01
+#define SOFTKEY_NEWCALL 0x02
+#define SOFTKEY_HOLD 0x03
+#define SOFTKEY_TRNSFER 0x04
+#define SOFTKEY_CFWDALL 0x05
+#define SOFTKEY_CFWDBUSY 0x06
+#define SOFTKEY_CFWDNOANSWER 0x07
+#define SOFTKEY_BKSPC 0x08
+#define SOFTKEY_ENDCALL 0x09
+#define SOFTKEY_RESUME 0x0A
+#define SOFTKEY_ANSWER 0x0B
+#define SOFTKEY_INFO 0x0C
+#define SOFTKEY_CONFRN 0x0D
+#define SOFTKEY_PARK 0x0E
+#define SOFTKEY_JOIN 0x0F
+#define SOFTKEY_MEETME 0x10
+#define SOFTKEY_PICKUP 0x11
+#define SOFTKEY_GPICKUP 0x12
+#define SOFTKEY_DND 0x13
+#define SOFTKEY_IDIVERT 0x14
+
+static struct soft_key_template_definition soft_key_template_default[] = {
+	{ "\200\001", SOFTKEY_REDIAL },
+	{ "\200\002", SOFTKEY_NEWCALL },
+	{ "\200\003", SOFTKEY_HOLD },
+	{ "\200\004", SOFTKEY_TRNSFER },
+	{ "\200\005", SOFTKEY_CFWDALL },
+	{ "\200\006", SOFTKEY_CFWDBUSY },
+	{ "\200\007", SOFTKEY_CFWDNOANSWER },
+	{ "\200\010", SOFTKEY_BKSPC },
+	{ "\200\011", SOFTKEY_ENDCALL },
+	{ "\200\012", SOFTKEY_RESUME },
+	{ "\200\013", SOFTKEY_ANSWER },
+	{ "\200\014", SOFTKEY_INFO },
+	{ "\200\015", SOFTKEY_CONFRN },
+	{ "\200\016", SOFTKEY_PARK },
+	{ "\200\017", SOFTKEY_JOIN },
+	{ "\200\020", SOFTKEY_MEETME },
+	{ "\200\021", SOFTKEY_PICKUP },
+	{ "\200\022", SOFTKEY_GPICKUP },
+	{ "\200\077", SOFTKEY_DND },
+	{ "\200\120", SOFTKEY_IDIVERT },
+};
+
+
 /* SoftKeySetResMessage */
 #define SOFT_KEY_SET_RES_MESSAGE 0x0109
 struct soft_key_set_definition {
@@ -2345,9 +2391,9 @@ static switch_status_t skinny_handle_soft_key_template_request(listener_t *liste
 	message->data.soft_key_template.soft_key_count = 21;
 	message->data.soft_key_template.total_soft_key_count = 21;
 	
-	/* TODO fill the template */
-	strcpy(message->data.soft_key_template.soft_key[0].soft_key_label, "\200\001");
-	message->data.soft_key_template.soft_key[0].soft_key_event = 1; /* Redial */
+	memcpy(message->data.soft_key_template.soft_key,
+		soft_key_template_default,
+		sizeof(soft_key_template_default));
 	
 	skinny_send_reply(listener, message);
 
@@ -2373,7 +2419,6 @@ static switch_status_t skinny_handle_soft_key_set_request(listener_t *listener, 
 	message->data.soft_key_set.total_soft_key_set_count = 11;
 	
 	/* TODO fill the set */
-	
 	skinny_send_reply(listener, message);
 
 	return SWITCH_STATUS_SUCCESS;
