@@ -45,22 +45,6 @@ switch_endpoint_interface_t *skinny_endpoint_interface;
 static switch_memory_pool_t *module_pool = NULL;
 static int running = 1;
 
-typedef enum {
-	TFLAG_IO = (1 << 0),
-	TFLAG_INBOUND = (1 << 1),
-	TFLAG_OUTBOUND = (1 << 2),
-	TFLAG_DTMF = (1 << 3),
-	TFLAG_VOICE = (1 << 4),
-	TFLAG_HANGUP = (1 << 5),
-	TFLAG_LINEAR = (1 << 6),
-	TFLAG_CODEC = (1 << 7),
-	TFLAG_BREAK = (1 << 8)
-} TFLAGS;
-
-typedef enum {
-	GFLAG_MY_CODEC_PREFS = (1 << 0)
-} GFLAGS;
-
 static struct {
 	/* prefs */
 	int debug;
@@ -108,7 +92,27 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string);
 
 /*****************************************************************************/
-/* SKINNY MESSAGES */
+/* CHANNEL TYPES */
+/*****************************************************************************/
+
+typedef enum {
+	TFLAG_IO = (1 << 0),
+	TFLAG_INBOUND = (1 << 1),
+	TFLAG_OUTBOUND = (1 << 2),
+	TFLAG_DTMF = (1 << 3),
+	TFLAG_VOICE = (1 << 4),
+	TFLAG_HANGUP = (1 << 5),
+	TFLAG_LINEAR = (1 << 6),
+	TFLAG_CODEC = (1 << 7),
+	TFLAG_BREAK = (1 << 8)
+} TFLAGS;
+
+typedef enum {
+	GFLAG_MY_CODEC_PREFS = (1 << 0)
+} GFLAGS;
+
+/*****************************************************************************/
+/* SKINNY MESSAGE TYPES */
 /*****************************************************************************/
 
 /* KeepAliveMessage */
