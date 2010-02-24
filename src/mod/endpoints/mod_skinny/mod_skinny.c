@@ -224,6 +224,9 @@ struct station_capabilities {
 	char reserved[10];
 };
 
+/* TimeDateReqMessage */
+#define TIME_DATE_REQ_MESSAGE 0x000D
+
 /* ButtonTemplateReqMessage */
 #define BUTTON_TEMPLATE_REQ_MESSAGE 0x000E
 
@@ -429,6 +432,20 @@ struct line_stat_res_message {
 	char displayname[44];
 };
 
+/* DefineTimeDate */
+#define DEFINE_TIME_DATE_MESSAGE 0x0094
+struct define_time_date_message {
+	uint32_t year;
+	uint32_t month;
+	uint32_t day_of_week; /* monday = 1 */
+	uint32_t day;
+	uint32_t hour;
+	uint32_t minute;
+	uint32_t seconds;
+	uint32_t milliseconds;
+	uint32_t timestamp;
+};
+
 /* ButtonTemplateMessage */
 #define BUTTON_TEMPLATE_RES_MESSAGE 0x0097
 struct button_definition {
@@ -585,6 +602,7 @@ union skinny_data {
 	struct call_info_message call_info;
 	struct speed_dial_stat_res_message speed_dial_res;
 	struct line_stat_res_message line_res;
+	struct define_time_date_message define_time_date;
 	struct button_template_message button_template;
 	struct register_rej_message reg_rej;
 	struct open_receive_channel_message open_receive_channel;
@@ -1926,6 +1944,30 @@ static switch_status_t skinny_handle_register_available_lines_message(listener_t
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t skinny_handle_time_date_request(listener_t *listener, skinny_message_t *request)
+{
+	skinny_message_t *message;
+	switch_time_t ts;
+	switch_time_exp_t tm;
+	
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.define_time_date));
+	message->type = DEFINE_TIME_DATE_MESSAGE;
+	message->length = 4+sizeof(message->data.define_time_date);
+	ts = switch_micro_time_now();
+	switch_time_exp_lt(&tm, ts);
+	message->data.define_time_date.year = tm.tm_year + 1900;
+	message->data.define_time_date.month = tm.tm_mon + 1;
+	message->data.define_time_date.day_of_week = tm.tm_wday;
+	message->data.define_time_date.day = tm.tm_yday + 1;
+	message->data.define_time_date.hour = tm.tm_hour;
+	message->data.define_time_date.minute = tm.tm_min;
+	message->data.define_time_date.seconds = tm.tm_sec + 1;
+	message->data.define_time_date.milliseconds = tm.tm_usec / 1000;
+	message->data.define_time_date.timestamp = ts / 1000000;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t skinny_handle_keep_alive_message(listener_t *listener, skinny_message_t *request)
 {
 	skinny_message_t *message;
@@ -1980,6 +2022,8 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 			return skinny_handle_speed_dial_request(listener, request);
 		case REGISTER_AVAILABLE_LINES_MESSAGE:
 			return skinny_handle_register_available_lines_message(listener, request);
+		case TIME_DATE_REQ_MESSAGE:
+			return skinny_handle_time_date_request(listener, request);
 		/* live phase */
 		case KEEP_ALIVE_MESSAGE:
 			return skinny_handle_keep_alive_message(listener, request);
