@@ -382,6 +382,23 @@ switch_status_t skinny_answer(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t skinny_hangup(listener_t *listener, uint32_t line)
+{
+	switch_channel_t *channel = NULL;
+	private_t *tech_pvt = NULL;
+
+	channel = switch_core_session_get_channel(listener->session[line]);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(listener->session[line]);
+	assert(tech_pvt != NULL);
+
+	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
+	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 /*****************************************************************************/
 /* SKINNY MESSAGE HELPER */
 /*****************************************************************************/
@@ -1124,9 +1141,9 @@ int skinny_line_stat_request_callback(void *pArg, int argc, char **argv, char **
 
 	message->data.line_res.number++;
 	if (message->data.line_res.number == atoi(argv[0])) { /* wanted_position */
-		strcpy(message->data.line_res.name, argv[3]); /* value */
-		strcpy(message->data.line_res.shortname,  argv[2]); /* label */
-		strcpy(message->data.line_res.displayname,  argv[4]); /* settings */
+		strncpy(message->data.line_res.name, argv[2], 24); /* label */
+		strncpy(message->data.line_res.shortname,  argv[3], 40); /* value */
+		strncpy(message->data.line_res.displayname,  argv[4], 44); /* settings */
 	}
 	return 0;
 }
@@ -1172,8 +1189,8 @@ int skinny_handle_speed_dial_request_callback(void *pArg, int argc, char **argv,
 
 	message->data.speed_dial_res.number++;
 	if (message->data.speed_dial_res.number == atoi(argv[0])) { /* wanted_position */
-		message->data.speed_dial_res.number = atoi(argv[3]); /* value */
-		strcpy(message->data.speed_dial_res.label,  argv[2]); /* label */
+		strncpy(message->data.speed_dial_res.line, argv[3], 24); /* value */
+		strncpy(message->data.speed_dial_res.label,  argv[2], 40); /* label */
 	}
 	return 0;
 }
@@ -1282,7 +1299,16 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 				break;
 			default:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-					"Unknown SoftKeyEvent type: %d.\n", request->data.soft_key_event.event);
+					"Unknown SoftKeyEvent type while not busy: %d.\n", request->data.soft_key_event.event);
+		}
+	} else { /* the line is busy */
+		switch(request->data.soft_key_event.event) {
+			case SOFTKEY_ENDCALL:
+				skinny_hangup(listener, line);
+				break;
+			default:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+					"Unknown SoftKeyEvent type while busy: %d.\n", request->data.soft_key_event.event);
 		}
 	}
 	return status;
@@ -1536,18 +1562,7 @@ switch_status_t skinny_handle_on_hook_message(listener_t *listener, skinny_messa
 	}
 
 	if(listener->session[line]) {
-		switch_channel_t *channel = NULL;
-		private_t *tech_pvt = NULL;
-
-		channel = switch_core_session_get_channel(listener->session[line]);
-		assert(channel != NULL);
-
-		tech_pvt = switch_core_session_get_private(listener->session[line]);
-		assert(tech_pvt != NULL);
-
-		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-		switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
-		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		skinny_hangup(listener, line);
 	}
 	return status;
 }
