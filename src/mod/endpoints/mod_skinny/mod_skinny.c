@@ -103,31 +103,24 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_r
 /*****************************************************************************/
 static char devices_sql[] =
 	"CREATE TABLE skinny_devices (\n"
-	"   device_name      VARCHAR(16),\n"
+	"   name           VARCHAR(16),\n"
 	"   user_id          INTEGER,\n"
 	"   instance         INTEGER,\n"
 	"   ip               VARCHAR(255),\n"
-	"   device_type      INTEGER,\n"
+	"   type             INTEGER,\n"
 	"   max_streams      INTEGER,\n"
 	"   port             INTEGER,\n"
 	"   codec_string     VARCHAR(255)\n"
 	");\n";
 
-static char lines_sql[] =
-	"CREATE TABLE skinny_lines (\n"
+static char buttons_sql[] =
+	"CREATE TABLE skinny_buttons (\n"
 	"   device_name      VARCHAR(16),\n"
-	"   line_position    INTEGER,\n"
-	"   line_name        VARCHAR(24),\n"
-	"   line_shortname   VARCHAR(40),\n"
-	"   line_displayname VARCHAR(44)\n"
-	");\n";
-
-static char speeddials_sql[] =
-	"CREATE TABLE skinny_speeddials (\n"
-	"   device_name       VARCHAR(16),\n"
-	"   speed_position    INTEGER,\n"
-	"   speed_number      VARCHAR(24),\n"
-	"   speed_displayname VARCHAR(40)\n"
+	"   position         INTEGER,\n"
+	"   type             VARCHAR(10),\n"
+	"   label            VARCHAR(40),\n"
+	"   value            VARCHAR(24),\n"
+	"   settings         VARCHAR(44)\n"
 	");\n";
 
 /*****************************************************************************/
@@ -201,6 +194,9 @@ struct station_capabilities {
 	char reserved[10];
 };
 
+/* ButtonTemplateReqMessage */
+#define BUTTON_TEMPLATE_REQ_MESSAGE 0x000E
+
 #define CAPABILITIES_RES_MESSAGE 0x0010
 struct capabilities_res_message {
 	uint32_t count;
@@ -216,8 +212,14 @@ struct alarm_message {
 	uint32_t alarm_param2;
 };
 
+/* SoftKeySetReqMessage */
+#define SOFT_KEY_SET_REQ_MESSAGE 0x0025
+
 /* UnregisterMessage */
 #define UNREGISTER_MESSAGE 0x0027
+
+/* SoftKeyTemplateReqMessage */
+#define SOFT_KEY_TEMPLATE_REQ_MESSAGE 0x0028
 
 /* RegisterAvailableLinesMessage */
 #define REGISTER_AVAILABLE_LINES_MESSAGE 0x002D
@@ -244,6 +246,20 @@ struct line_stat_res_message {
 	char displayname[44];
 };
 
+/* ButtonTemplateMessage */
+#define BUTTON_TEMPLATE_RES_MESSAGE 0x0097
+struct button_definition {
+	uint8_t instance_number;
+	uint8_t button_definition;
+};
+
+struct button_template_message {
+	uint32_t button_offset;
+	uint32_t button_count;
+	uint32_t total_button_count;
+	struct button_definition btn[42];
+};
+
 /* CapabilitiesReqMessage */
 #define CAPABILITIES_REQ_MESSAGE 0x009B
 
@@ -255,6 +271,36 @@ struct register_rej_message {
 
 /* KeepAliveAckMessage */
 #define KEEP_ALIVE_ACK_MESSAGE 0x0100
+
+/* SoftKeyTemplateResMessage */
+#define SOFT_KEY_TEMPLATE_RES_MESSAGE 0x0108
+
+struct soft_key_template_definition {
+	char soft_key_label[16];
+	uint32_t soft_key_event;
+};
+
+struct soft_key_template_res_message {
+	uint32_t soft_key_offset;
+	uint32_t soft_key_count;
+	uint32_t total_soft_key_count;
+	struct soft_key_template_definition soft_key[32];
+};
+
+/* SoftKeySetResMessage */
+#define SOFT_KEY_SET_RES_MESSAGE 0x0109
+struct soft_key_set_definition {
+	uint8_t soft_key_template_index[16];
+	uint16_t soft_key_info_index[16];
+};
+
+struct soft_key_set_res_message {
+	uint32_t soft_key_set_offset;
+	uint32_t soft_key_set_count;
+	uint32_t total_soft_key_set_count;
+	struct soft_key_set_definition soft_key_set[16];
+	uint32_t res;
+};
 
 /* Message */
 #define SKINNY_MESSAGE_FIELD_SIZE 4 /* 4-bytes field */
@@ -269,7 +315,10 @@ union skinny_data {
 	struct capabilities_res_message cap_res;
 	struct alarm_message alarm;
 	struct line_stat_res_message line_res;
+	struct button_template_message button_template;
 	struct register_rej_message reg_rej;
+	struct soft_key_template_res_message soft_key_template;
+	struct soft_key_set_res_message soft_key_set;
 	
 	uint16_t as_uint16;
 	char as_char;
@@ -1131,7 +1180,7 @@ static switch_status_t skinny_device_event(listener_t *listener, switch_event_t 
 
 	switch_event_create_subclass(&event, event_id, subclass_name);
 	switch_assert(event);
-	if ((sql = switch_mprintf("SELECT * FROM skinny_devices WHERE device_name='%s'", listener->device_name))) {
+	if ((sql = switch_mprintf("SELECT * FROM skinny_devices WHERE name='%s'", listener->device_name))) {
 		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_device_event_callback, event);
 		switch_safe_free(sql);
 	}
@@ -1159,7 +1208,7 @@ static switch_status_t skinny_handle_register(listener_t *listener, skinny_messa
 	skinny_profile_t *profile;
 	switch_event_t *event = NULL;
 	switch_event_t *params = NULL;
-	switch_xml_t xroot, xdomain, xgroup, xuser, xskinny, xlines, xline, xspeeddials, xspeeddial;
+	switch_xml_t xroot, xdomain, xgroup, xuser, xskinny, xbuttons, xbutton;
 	char *sql;
 	assert(listener->profile);
 	profile = listener->profile;
@@ -1196,7 +1245,7 @@ static switch_status_t skinny_handle_register(listener_t *listener, skinny_messa
 
 	if ((sql = switch_mprintf(
 			"INSERT INTO skinny_devices "
-				"(device_name, user_id, instance, ip, device_type, max_streams, codec_string) "
+				"(name, user_id, instance, ip, type, max_streams, codec_string) "
 				"VALUES ('%s','%d','%d', '%s', '%d', '%d', '%s')",
 			request->data.reg.deviceName,
 			request->data.reg.userId,
@@ -1215,41 +1264,24 @@ static switch_status_t skinny_handle_register(listener_t *listener, skinny_messa
 
 	xskinny = switch_xml_child(xuser, "skinny");
 	if (xskinny) {
-		xlines = switch_xml_child(xskinny, "lines");
-		if (xlines) {
-			for (xline = switch_xml_child(xlines, "line"); xline; xline = xline->next) {
-				const char *position = switch_xml_attr_soft(xline, "position");
-				const char *name = switch_xml_attr_soft(xline, "name");
-				const char *shortname = switch_xml_attr_soft(xline, "shortname");
-				const char *displayname = switch_xml_attr_soft(xline, "displayname");
+		xbuttons = switch_xml_child(xskinny, "buttons");
+		if (xbuttons) {
+			for (xbutton = switch_xml_child(xbuttons, "button"); xbutton; xbutton = xbutton->next) {
+				const char *position = switch_xml_attr_soft(xbutton, "position");
+				const char *type = switch_xml_attr_soft(xbutton, "type");
+				const char *label = switch_xml_attr_soft(xbutton, "label");
+				const char *value = switch_xml_attr_soft(xbutton, "value");
+				const char *settings = switch_xml_attr_soft(xbutton, "settings");
 				if ((sql = switch_mprintf(
-						"INSERT INTO skinny_lines "
-							"(device_name, line_position, line_name, line_shortname, line_displayname) "
-							"VALUES('%s', '%s', '%s', '%s', '%s')",
+						"INSERT INTO skinny_buttons "
+							"(device_name, position, type, label, value, settings) "
+							"VALUES('%s', '%s', '%s', '%s', '%s', '%s')",
 						request->data.reg.deviceName,
 						position,
-						name,
-						shortname,
-						displayname))) {
-					skinny_execute_sql(profile, sql, profile->listener_mutex);
-					switch_safe_free(sql);
-				}
-			}
-		}
-		xspeeddials = switch_xml_child(xskinny, "speed-dials");
-		if (xspeeddials) {
-			for (xspeeddial = switch_xml_child(xspeeddials, "speed-dial"); xspeeddial; xspeeddial = xspeeddial->next) {
-				const char *position = switch_xml_attr_soft(xspeeddial, "position");
-				const char *line = switch_xml_attr_soft(xspeeddial, "line");
-				const char *label = switch_xml_attr_soft(xspeeddial, "label");
-				if ((sql = switch_mprintf(
-						"INSERT INTO skinny_speeddials "
-							"(device_name, speed_position, speed_line, speed_label) "
-							"VALUES('%s', '%s', '%s', '%s')",
-						request->data.reg.deviceName,
-						position,
-						line,
-						label))) {
+						type,
+						label,
+						value,
+						settings))) {
 					skinny_execute_sql(profile, sql, profile->listener_mutex);
 					switch_safe_free(sql);
 				}
@@ -1336,7 +1368,7 @@ static switch_status_t skinny_handle_capabilities_response(listener_t *listener,
 	}
 	codec_string[string_len] = '\0';
 	if ((sql = switch_mprintf(
-			"UPDATE skinny_devices SET codec_string='%s' WHERE device_name='%s'",
+			"UPDATE skinny_devices SET codec_string='%s' WHERE name='%s'",
 			codec_string,
 			listener->device_name
 			))) {
@@ -1361,7 +1393,7 @@ static switch_status_t skinny_handle_port_message(listener_t *listener, skinny_m
 	skinny_check_data_length(request, sizeof(request->data.as_uint16));
 
 	if ((sql = switch_mprintf(
-			"UPDATE skinny_devices SET port='%d' WHERE device_name='%s'",
+			"UPDATE skinny_devices SET port='%d' WHERE name='%s'",
 			request->data.as_uint16,
 			listener->device_name
 			))) {
@@ -1371,18 +1403,145 @@ static switch_status_t skinny_handle_port_message(listener_t *listener, skinny_m
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static int skinny_line_stat_request_callback(void *pArg, int argc, char **argv, char **columnNames)
+struct button_template_helper {
+	skinny_message_t *message;
+	int count[0xff+1];
+};
 
+static int skinny_handle_button_template_request_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
-	skinny_message_t *message = pArg;
+	struct button_template_helper *helper = pArg;
+	skinny_message_t *message = helper->message;
+	char *device_name = argv[0];
+	int position = atoi(argv[1]);
+	char *type = argv[2];
+	int i;
+	
+	/* fill buttons between previous one and current one */
+	for(i = message->data.button_template.button_count; i+1 < position; i++) {
+		message->data.button_template.btn[i].instance_number = ++helper->count[0xff];
+		message->data.button_template.btn[i].button_definition = 0xff; /* None */
+		message->data.button_template.button_count++;
+		message->data.button_template.total_button_count++;
+	}
 
-	strcpy(message->data.line_res.name, argv[2]);
-	strcpy(message->data.line_res.shortname,  argv[3]);
-	strcpy(message->data.line_res.displayname,  argv[4]);
+
+	if (!strcasecmp(type, "line")) {
+		message->data.button_template.btn[i].instance_number = ++helper->count[0x09];
+		message->data.button_template.btn[position-1].button_definition = 0x09; /* Line */
+	} else if (!strcasecmp(type, "speed-dial")) {
+		message->data.button_template.btn[i].instance_number = ++helper->count[0x02];
+		message->data.button_template.btn[position-1].button_definition = 0x02; /* speeddial */
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+			"Unknown button type %s for device %s.\n", type, device_name);
+	}
+	message->data.button_template.button_count++;
+	message->data.button_template.total_button_count++;
 
 	return 0;
 }
 
+static switch_status_t skinny_handle_button_template_request(listener_t *listener, skinny_message_t *request)
+{
+	skinny_message_t *message;
+	struct button_template_helper helper = {0};
+	skinny_profile_t *profile;
+	char *sql;
+
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	profile = listener->profile;
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.button_template));
+	message->type = BUTTON_TEMPLATE_RES_MESSAGE;
+	message->length = 4 + sizeof(message->data.button_template);
+
+	message->data.button_template.button_offset = 0;
+	message->data.button_template.button_count = 0;
+	message->data.button_template.total_button_count = 0;
+	
+	helper.message = message;
+	/* Add buttons */
+	if ((sql = switch_mprintf(
+			"SELECT device_name, position, type "
+				"FROM skinny_buttons WHERE device_name='%s' ORDER BY position",
+			listener->device_name
+			))) {
+		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_handle_button_template_request_callback, &helper);
+		switch_safe_free(sql);
+	}
+	
+	skinny_send_reply(listener, message);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t skinny_handle_soft_key_template_request(listener_t *listener, skinny_message_t *request)
+{
+	skinny_message_t *message;
+	skinny_profile_t *profile;
+
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	profile = listener->profile;
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.soft_key_template));
+	message->type = SOFT_KEY_TEMPLATE_RES_MESSAGE;
+	message->length = 4 + sizeof(message->data.soft_key_template);
+
+	message->data.soft_key_template.soft_key_offset = 0;
+	message->data.soft_key_template.soft_key_count = 21;
+	message->data.soft_key_template.total_soft_key_count = 21;
+	
+	/* TODO fill the template */
+	strcpy(message->data.soft_key_template.soft_key[0].soft_key_label, "\200\001");
+	message->data.soft_key_template.soft_key[0].soft_key_event = 1; /* Redial */
+	
+	skinny_send_reply(listener, message);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t skinny_handle_soft_key_set_request(listener_t *listener, skinny_message_t *request)
+{
+	skinny_message_t *message;
+	skinny_profile_t *profile;
+
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	profile = listener->profile;
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.soft_key_set));
+	message->type = SOFT_KEY_SET_RES_MESSAGE;
+	message->length = 4 + sizeof(message->data.soft_key_set);
+
+	message->data.soft_key_set.soft_key_set_offset = 0;
+	message->data.soft_key_set.soft_key_set_count = 11;
+	message->data.soft_key_set.total_soft_key_set_count = 11;
+	
+	/* TODO fill the set */
+	
+	skinny_send_reply(listener, message);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static int skinny_line_stat_request_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	skinny_message_t *message = pArg;
+
+	message->data.line_res.number++;
+	if (message->data.line_res.number == atoi(argv[0])) { /* wanted_position */
+		strcpy(message->data.line_res.name, argv[3]); /* value */
+		strcpy(message->data.line_res.shortname,  argv[2]); /* label */
+		strcpy(message->data.line_res.displayname,  argv[4]); /* settings */
+	}
+	return 0;
+}
 
 static switch_status_t skinny_handle_line_stat_request(listener_t *listener, skinny_message_t *request)
 {
@@ -1400,16 +1559,19 @@ static switch_status_t skinny_handle_line_stat_request(listener_t *listener, ski
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.line_res));
 	message->type = LINE_STAT_RES_MESSAGE;
 	message->length = 4 + sizeof(message->data.line_res);
-	message->data.line_res.number = request->data.line_req.number;
+	message->data.line_res.number = 0;
 
 	if ((sql = switch_mprintf(
-			"SELECT * FROM skinny_lines WHERE device_name='%s' AND line_position='%d'",
-			listener->device_name,
-			request->data.line_req.number
+			"SELECT '%d' AS wanted_position, position, label, value, settings "
+				"FROM skinny_buttons WHERE device_name='%s' AND type='line' "
+				"ORDER BY position",
+			request->data.line_req.number,
+			listener->device_name
 			))) {
 		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_line_stat_request_callback, message);
 		switch_safe_free(sql);
 	}
+	message->data.line_res.number = request->data.line_req.number;
 	skinny_send_reply(listener, message);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1463,6 +1625,12 @@ static switch_status_t skinny_handle_request(listener_t *listener, skinny_messag
 			return skinny_handle_capabilities_response(listener, request);
 		case PORT_MESSAGE:
 			return skinny_handle_port_message(listener, request);
+		case BUTTON_TEMPLATE_REQ_MESSAGE:
+			return skinny_handle_button_template_request(listener, request);
+		case SOFT_KEY_TEMPLATE_REQ_MESSAGE:
+			return skinny_handle_soft_key_template_request(listener, request);
+		case SOFT_KEY_SET_REQ_MESSAGE:
+			return skinny_handle_soft_key_set_request(listener, request);
 		case LINE_STAT_REQ_MESSAGE:
 			return skinny_handle_line_stat_request(listener, request);
 		case REGISTER_AVAILABLE_LINES_MESSAGE:
@@ -1567,22 +1735,22 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 {
 	switch_stream_handle_t *stream = (switch_stream_handle_t *) pArg;
 
-	char *device_name = argv[0];
+	char *name = argv[0];
 	char *user_id = argv[1];
 	char *instance = argv[2];
 	char *ip = argv[3];
-	char *device_type = argv[4];
+	char *type = argv[4];
 	char *max_streams = argv[5];
 	char *port = argv[6];
 	char *codec_string = argv[7];
 
 	const char *line = "=================================================================================================";
 	stream->write_function(stream, "%s\n", line);
-	stream->write_function(stream, "DeviceName    \t%s\n", switch_str_nil(device_name));
+	stream->write_function(stream, "DeviceName    \t%s\n", switch_str_nil(name));
 	stream->write_function(stream, "UserId        \t%s\n", user_id);
 	stream->write_function(stream, "Instance      \t%s\n", instance);
 	stream->write_function(stream, "IP            \t%s\n", ip);
-	stream->write_function(stream, "DeviceType    \t%s\n", device_type);
+	stream->write_function(stream, "DeviceType    \t%s\n", type);
 	stream->write_function(stream, "MaxStreams    \t%s\n", max_streams);
 	stream->write_function(stream, "Port          \t%s\n", port);
 	stream->write_function(stream, "Codecs        \t%s\n", codec_string);
@@ -1594,7 +1762,7 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 static switch_status_t dump_device(skinny_profile_t *profile, const char *device_name, switch_stream_handle_t *stream)
 {
 	char *sql;
-	if ((sql = switch_mprintf("SELECT * FROM skinny_devices WHERE device_name LIKE '%s'",
+	if ((sql = switch_mprintf("SELECT * FROM skinny_devices WHERE name LIKE '%s'",
 			device_name))) {
 		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, dump_device_callback, stream);
 		switch_safe_free(sql);
@@ -1992,13 +2160,11 @@ static switch_status_t load_skinny_config(void)
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
 					switch_odbc_handle_exec(profile->master_odbc, devices_sql, NULL, NULL);
-					switch_odbc_handle_exec(profile->master_odbc, lines_sql, NULL, NULL);
-					switch_odbc_handle_exec(profile->master_odbc, speeddials_sql, NULL, NULL);
+					switch_odbc_handle_exec(profile->master_odbc, buttons_sql, NULL, NULL);
 				} else {
 					if ((db = switch_core_db_open_file(profile->dbname))) {
 						switch_core_db_test_reactive(db, "SELECT * FROM skinny_devices", NULL, devices_sql);
-						switch_core_db_test_reactive(db, "SELECT * FROM skinny_lines", NULL, lines_sql);
-						switch_core_db_test_reactive(db, "SELECT * FROM skinny_speeddials", NULL, speeddials_sql);
+						switch_core_db_test_reactive(db, "SELECT * FROM skinny_buttons", NULL, buttons_sql);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 						continue;
@@ -2007,8 +2173,7 @@ static switch_status_t load_skinny_config(void)
 				}
 				
 				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_devices", NULL, NULL);
-				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_lines", NULL, NULL);
-				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_speeddials", NULL, NULL);
+				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_buttons", NULL, NULL);
 
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
 				profile = NULL;
@@ -2158,7 +2323,7 @@ static switch_status_t skinny_list_devices(const char *line, const char *cursor,
 	}
 
 	if((profile = skinny_find_profile(argv[3]))) {
-		if ((sql = switch_mprintf("SELECT device_name FROM skinny_devices"))) {
+		if ((sql = switch_mprintf("SELECT name FROM skinny_devices"))) {
 			skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_list_devices_callback, &h);
 			switch_safe_free(sql);
 		}

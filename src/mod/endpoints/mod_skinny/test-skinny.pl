@@ -11,7 +11,7 @@ my $socket;
 sub skinny_connect
 {
 	$socket = IO::Socket::INET->new(
-		PeerAddr => '192.168.0.6',
+		PeerAddr => '127.0.0.1',
 		PeerPort => 2000,
 		);
 }
@@ -62,10 +62,13 @@ sub skinny_sleep
 	printf ".\n";
 }
 
+# =============================================================================
+# 
+# =============================================================================
 skinny_connect();
 
-#
-skinny_send(0x0001, # register
+# =============================================================================
+skinny_send(0x0001, # Register
 	pack("a16VVVVV",
 		"SEP001120AABBCC",
 		0, # userId;
@@ -74,25 +77,42 @@ skinny_send(0x0001, # register
 		7, # deviceType;
 		0, # maxStreams;
 	));
-skinny_recv(); # registerack
+skinny_recv(); # RegisterAck
 
-skinny_send(0x0002, # port
+skinny_send(0x0002, # Port
 	pack("n", 2000
 	));
 
-skinny_recv(); # capreq
-skinny_send(0x0010, # capres
+skinny_send(0x002b, # HeadSetStatus
+	pack("V",
+		2, # Off
+	));
+
+skinny_recv(); # CapabilitiesReq
+skinny_send(0x0010, # CapabilitiesRes
 	pack("V"."Vva10"."Vva10",
 		2, # count
 		2, 8, "", # codec, frames, res
 		4, 16, "", # codec, frames, res
 	));
 
-skinny_send(0x000B, # linestatreq
-	pack("V", 1));
-skinny_recv(); # linestatres
+skinny_send(0x000e, # ButtonTemplateReqMessage
+	"");
+skinny_recv(); # ButtonTemplateMessage
 
-skinny_send(0x002D, # registeravlines
+skinny_send(0x0028, # SoftKeyTemplateReq
+	"");
+skinny_recv(); # SoftKeyTemplateRes
+
+skinny_send(0x0025, # SoftKeySetReq
+	"");
+skinny_recv(); # SoftKeySetRes
+
+skinny_send(0x000B, # LineStatReq
+	pack("V", 1));
+skinny_recv(); # LineStat
+
+skinny_send(0x002D, # RegisterAvailableLines
 	pack("V", 2
 	));
 
