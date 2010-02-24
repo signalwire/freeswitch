@@ -808,7 +808,7 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 	return SWITCH_TRUE;
 }
 
-SWITCH_DECLARE(switch_status_t) spandsp_stop_inband_dtmf_session(switch_core_session_t *session)
+switch_status_t spandsp_stop_inband_dtmf_session(switch_core_session_t *session)
 {
 	switch_media_bug_t *bug;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -821,7 +821,7 @@ SWITCH_DECLARE(switch_status_t) spandsp_stop_inband_dtmf_session(switch_core_ses
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) spandsp_inband_dtmf_session(switch_core_session_t *session)
+switch_status_t spandsp_inband_dtmf_session(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_media_bug_t *bug;
