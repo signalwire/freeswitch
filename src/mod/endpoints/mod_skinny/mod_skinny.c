@@ -1381,15 +1381,6 @@ static switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t skinny_free_message(skinny_message_t *message)
-{
-	if(message) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Freeing message\n");
-		/* TODO */
-	}
-	return SWITCH_STATUS_SUCCESS;
-}
-
 /*****************************************************************************/
 /* LISTENER FUNCTIONS */
 /*****************************************************************************/
@@ -1552,7 +1543,6 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	skinny_message_t *request = NULL;
-	skinny_message_t *reply = NULL;
 	skinny_profile_t *profile;
 	switch_assert(listener);
 	assert(listener->profile);
@@ -1605,13 +1595,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 			break;
 		}
 
-		skinny_free_message(request);
 	}
 
   done:
-	
-	skinny_free_message(request);
-	skinny_free_message(reply);
 	
 	remove_listener(listener);
 
@@ -2023,21 +2009,22 @@ static switch_status_t skinny_list_profiles(const char *line, const char *cursor
 	return status;
 }
 
+struct match_helper {
+	switch_console_callback_match_t *my_matches;
+};
+
 static int skinny_list_devices_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
-	switch_console_callback_match_t *my_matches = (switch_console_callback_match_t *) pArg;
-
+	struct match_helper *h = (struct match_helper *) pArg;
 	char *device_name = argv[0];
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-		"Adding %s to matches.\n", device_name);
-	switch_console_push_match(&my_matches, device_name);
-	pArg = my_matches;
+
+	switch_console_push_match(&h->my_matches, device_name);
 	return 0;
 }
 
 static switch_status_t skinny_list_devices(const char *line, const char *cursor, switch_console_callback_match_t **matches)
 {
-	switch_console_callback_match_t *my_matches = NULL;
+	struct match_helper h = { 0 };
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	skinny_profile_t *profile;
 	char *sql;
@@ -2056,13 +2043,13 @@ static switch_status_t skinny_list_devices(const char *line, const char *cursor,
 
 	if((profile = get_profile(argv[3]))) {
 		if ((sql = switch_mprintf("SELECT device_name FROM skinny_devices"))) {
-			skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_list_devices_callback, my_matches);
+			skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_list_devices_callback, &h);
 			switch_safe_free(sql);
 		}
 	}
 	
-	if (my_matches) {
-		*matches = my_matches;
+	if (h.my_matches) {
+		*matches = h.my_matches;
 		status = SWITCH_STATUS_SUCCESS;
 	}
 	
