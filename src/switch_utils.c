@@ -1003,12 +1003,10 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 		if (force_local_ip_v4) {
 			switch_copy_string(buf, force_local_ip_v4, len);
 		}
-		return SWITCH_STATUS_SUCCESS;
 	case AF_INET6:
 		if (force_local_ip_v6) {
 			switch_copy_string(buf, force_local_ip_v6, len);
 		}
-		return SWITCH_STATUS_SUCCESS;
 	default:
 		break;
 	}
