@@ -103,11 +103,13 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string);
 
 /*****************************************************************************/
-/* SKINNY TYPES */
+/* SKINNY MESSAGES */
 /*****************************************************************************/
 
+/* KeepAliveMessage */
 #define KEEP_ALIVE_MESSAGE 0x0000
 
+/* RegisterMessage */
 #define REGISTER_MESSAGE 0x0001
 struct register_message {
 	char deviceName[16];
@@ -118,8 +120,23 @@ struct register_message {
 	uint32_t maxStreams;
 };
 
+/* IpPortMessage */
 #define PORT_MESSAGE 0x0002
 
+/* CapabilitiesResMessage */
+struct station_capabilities {
+	uint32_t codec;
+	uint16_t frames;
+	char reserved[10];
+};
+
+#define CAPABILITIES_RES_MESSAGE 0x0010
+struct capabilities_res_message {
+	uint32_t count;
+	struct station_capabilities caps[SWITCH_MAX_CODECS];
+};
+
+/* RegisterAckMessage */
 #define REGISTER_ACK_MESSAGE 0x0081
 struct register_ack_message {
 	uint32_t keepAlive;
@@ -129,7 +146,15 @@ struct register_ack_message {
 	char reserved2[4];
 };
 
+/* CapabilitiesReqMessage */
+#define CAPABILITIES_REQ_MESSAGE 0x009B
+
+/* KeepAliveAckMessage */
 #define KEEP_ALIVE_ACK_MESSAGE 0x0100
+
+/*****************************************************************************/
+/* SKINNY TYPES */
+/*****************************************************************************/
 
 #define SKINNY_MESSAGE_FIELD_SIZE 4 /* 4-bytes field */
 #define SKINNY_MESSAGE_HEADERSIZE 12 /* three 4-bytes fields */
@@ -138,6 +163,7 @@ struct register_ack_message {
 union skinny_data {
 	struct register_message reg;
 	struct register_ack_message reg_ack;
+	struct capabilities_res_message cap_res;
 	
 	uint16_t as_uint16;
 	char as_char;
@@ -160,11 +186,26 @@ struct skinny_device {
 	struct in_addr ip;
 	uint32_t deviceType;
 	uint32_t maxStreams;
+
 	uint16_t port;
+
+	char *codec_string;
+	char *codec_order[SWITCH_MAX_CODECS];
+	int codec_order_last;
 };
 typedef struct skinny_device skinny_device_t;
 
 typedef switch_status_t (*skinny_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
+
+enum skinny_codecs {
+	SKINNY_CODEC_ALAW = 2,
+	SKINNY_CODEC_ULAW = 4,
+	SKINNY_CODEC_G723_1 = 9,
+	SKINNY_CODEC_G729A = 12,
+	SKINNY_CODEC_G726_32 = 82,
+	SKINNY_CODEC_H261 = 100,
+	SKINNY_CODEC_H263 = 101
+};
 
 /*****************************************************************************/
 /* LISTENERS TYPES */
@@ -219,6 +260,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 
+
+
+/* SKINNY FUNCTIONS */
+static switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t *reply);
 
 /* LISTENER FUNCTIONS */
 static switch_status_t keepalive_listener(listener_t *listener, void *pvt);
@@ -621,6 +666,28 @@ switch_io_routines_t skinny_io_routines = {
 /* SKINNY FUNCTIONS */
 /*****************************************************************************/
 
+static char* skinny_codec2string(enum skinny_codecs skinnycodec)
+{
+	switch (skinnycodec) {
+	case SKINNY_CODEC_ALAW:
+		return "ALAW";
+	case SKINNY_CODEC_ULAW:
+		return "ULAW";
+	case SKINNY_CODEC_G723_1:
+		return "G723_1";
+	case SKINNY_CODEC_G729A:
+		return "G729A";
+	case SKINNY_CODEC_G726_32:
+		return "G726_AAL2";
+	case SKINNY_CODEC_H261:
+		return "H261";
+	case SKINNY_CODEC_H263:
+		return "H263";
+	default:
+		return "";
+	}
+}
+
 static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 {
 	skinny_message_t *request;
@@ -702,8 +769,11 @@ static switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t
 
 static switch_status_t skinny_parse_request(listener_t *listener, skinny_message_t *request, skinny_message_t **rep)
 {
-    skinny_message_t *reply;
+    skinny_message_t *reply, *message;
     skinny_device_t *device;
+	uint32_t i = 0;
+	uint32_t n = 0;
+	size_t string_len, string_pos, pos;
 	reply = NULL;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 		"Received message of type %d.\n", request->type);
@@ -721,6 +791,7 @@ static switch_status_t skinny_parse_request(listener_t *listener, skinny_message
 					"Device already registred.\n");
 				return SWITCH_STATUS_FALSE;
 			}
+			/* Initialize device */
 			device = switch_core_alloc(listener->pool, sizeof(skinny_device_t));
 			memcpy(device->deviceName, request->data.reg.deviceName, 16);
 			device->userId = request->data.reg.userId;
@@ -728,18 +799,56 @@ static switch_status_t skinny_parse_request(listener_t *listener, skinny_message
 			device->ip = request->data.reg.ip;
 			device->deviceType = request->data.reg.deviceType;
 			device->maxStreams = request->data.reg.maxStreams;
+			device->codec_string = realloc(device->codec_string, 1);
+			device->codec_string[0] = '\0';
 			listener->device = device;
 
+			/* Reply with RegisterAckMessage */
 			reply = switch_core_alloc(listener->pool, 12+sizeof(reply->data.reg_ack));
 			reply->type = REGISTER_ACK_MESSAGE;
 			reply->length = 4 + sizeof(reply->data.reg_ack);
 			reply->data.reg_ack.keepAlive = globals.keep_alive;
 			memcpy(reply->data.reg_ack.dateFormat, globals.date_format, 6);
 			reply->data.reg_ack.secondaryKeepAlive = globals.keep_alive;
-			/* TODO send CapabilitiesReqMessage (and parse the CapabilitiesResMessage) */
+
+			/* Send CapabilitiesReqMessage */
+			message = switch_core_alloc(listener->pool, 12);
+			message->type = CAPABILITIES_REQ_MESSAGE;
+			message->length = 4;
+			skinny_send_reply(listener, message);
+
 			/* TODO event */
 			keepalive_listener(listener, NULL);
 			break;
+		case CAPABILITIES_RES_MESSAGE:
+			n = request->data.cap_res.count;
+			if (n > SWITCH_MAX_CODECS) {
+				n = SWITCH_MAX_CODECS;
+			}
+			string_len = -1;
+			for (i = 0; i < n; i++) {
+				char *codec = skinny_codec2string(request->data.cap_res.caps[i].codec);
+				device->codec_order[i] = codec;
+				string_len += strlen(codec)+1;
+			}
+			i = 0;
+			pos = 0;
+			device->codec_string = realloc(device->codec_string, string_len+1);
+			for (string_pos = 0; string_pos < string_len; string_pos++) {
+				char *codec = device->codec_order[i];
+				switch_assert(i < n);
+				if(pos == strlen(codec)) {
+					device->codec_string[string_pos] = ',';
+					i++;
+					pos = 0;
+				} else {
+					device->codec_string[string_pos] = codec[pos++];
+				}
+			}
+			device->codec_string[string_len] = '\0';
+			device->codec_order_last = n;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+				"Codecs %s supported.\n", device->codec_string);
 		case PORT_MESSAGE:
 			device->port = request->data.as_uint16;
 			break;
@@ -763,7 +872,7 @@ static switch_status_t skinny_send_reply(listener_t *listener, skinny_message_t 
 	char *ptr;
 	switch_size_t len;
 	switch_assert(reply != NULL);
-	len = reply->length+4;
+	len = reply->length+8;
 	ptr = (char *) reply;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Sending reply (length=%d).\n", len);
 	switch_socket_send(listener->sock, ptr, &len);
@@ -864,6 +973,7 @@ static switch_status_t dump_listener(listener_t *listener, void *pvt)
 		stream->write_function(stream, "DeviceType    \t%d\n", device->deviceType);
 		stream->write_function(stream, "MaxStreams    \t%d\n", device->maxStreams);
 		stream->write_function(stream, "Port          \t%d\n", device->port);
+		stream->write_function(stream, "Codecs        \t%s\n", device->codec_string);
 		stream->write_function(stream, "%s\n", line);
 	}
 	return SWITCH_STATUS_SUCCESS;
