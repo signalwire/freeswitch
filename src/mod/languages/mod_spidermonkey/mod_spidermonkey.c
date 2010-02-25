@@ -3525,10 +3525,14 @@ static JSBool js_bridge(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 static JSBool js_system(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	char *cmd;
+	int saveDepth, result;
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 
 	if (argc > 0 && (cmd = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
-		*rval = INT_TO_JSVAL(switch_system(cmd, SWITCH_TRUE));
+		saveDepth = JS_SuspendRequest(cx);
+		result = switch_system(cmd, SWITCH_TRUE);
+		JS_ResumeRequest(cx, saveDepth);
+		*rval = INT_TO_JSVAL(result);
 		return JS_TRUE;
 	}
 
