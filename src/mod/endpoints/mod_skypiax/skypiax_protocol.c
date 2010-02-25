@@ -869,7 +869,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 							switch_buffer_write(tech_pvt->read_buffer, srv_in, len);
 							switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 							if(nospace){
-								WARNINGA("NO SPACE READ: there was no space for: %d\n", SKYPIAX_P_LOG, len);
+								//WARNINGA("NO SPACE READ: there was no space for: %d\n", SKYPIAX_P_LOG, len);
 							}
 						} else if (len == 0) {
 							DEBUGA_SKYPE("CLOSED\n", SKYPIAX_P_LOG);
