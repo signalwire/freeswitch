@@ -877,7 +877,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	switch_mutex_lock(tech_pvt->mutex_audio_cli);
 	if(switch_buffer_freespace(tech_pvt->write_buffer) < frame->datalen){
-		//WARNINGA("NO SPACE WRITE: %d\n", SKYPIAX_P_LOG, frame->datalen);
+		WARNINGA("NO SPACE WRITE: %d\n", SKYPIAX_P_LOG, frame->datalen);
 		switch_buffer_toss(tech_pvt->write_buffer, frame->datalen);
 	}
 	switch_buffer_write(tech_pvt->write_buffer, frame->data, frame->datalen);
