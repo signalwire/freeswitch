@@ -1,6 +1,6 @@
 <profile name="internal">
   <settings>
-    <param name="domain" value="$${domain}}"/>
+    <param name="domain" value="$${domain}"/>
     <param name="ip" value="$${local_ip_v4}"/>
     <param name="port" value="2000"/>
     <param name="dialplan" value="XML"/>
