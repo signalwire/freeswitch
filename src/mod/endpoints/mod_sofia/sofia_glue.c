@@ -1246,6 +1246,49 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 			has_ip++;
 
+		} else if (!strncmp("o=", p, 2)) {
+			char *oe = strchr(p, '\n');
+			switch_size_t len;
+			
+			if (oe) {
+				const char *family = "IP4";
+				char o_line[1024] = "";
+
+				if (oe >= pe) {
+					bad = 5;
+					goto end;
+				}
+
+				len = (oe - p) + 1;
+				p += len;
+				
+				
+				family = strchr(tech_pvt->profile->sipip, ':') ? "IP6" : "IP4";
+
+				if (!tech_pvt->owner_id) {
+					tech_pvt->owner_id = (uint32_t) switch_epoch_time_now(NULL) * 31821U + 13849U;
+				}
+				
+				if (!tech_pvt->session_id) {
+					tech_pvt->session_id = tech_pvt->owner_id;
+				}
+				
+				tech_pvt->session_id++;
+				
+				
+				snprintf(o_line, sizeof(o_line), "o=%s %010u %010u IN %s %s\n", 
+						 tech_pvt->profile->username,
+						 tech_pvt->owner_id,
+						 tech_pvt->session_id,
+						 family,
+						 tech_pvt->profile->sipip);
+						
+				strncpy(q, o_line, strlen(o_line));
+				q += strlen(o_line);
+				
+			}
+			
+
 		} else if (!strncmp("m=audio ", p, 8) || (!strncmp("m=image ", p, 8))) {
 			strncpy(q, p, 8);
 			p += 8;
