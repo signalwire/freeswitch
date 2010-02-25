@@ -1790,7 +1790,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 		if (strlen(globals.SKYPIAX_INTERFACES[interface_id].name)) {
 			if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
 #ifdef WIN32
+				skypiax_signaling_write(tech_pvt, "DIE");
+				switch_sleep(10000);
 				switch_file_write(tech_pvt->SkypiaxHandles.fdesc[1], "sciutati", &howmany);	// let's the controldev_thread die
+				
 #else /* WIN32 */
 				howmany = write(tech_pvt->SkypiaxHandles.fdesc[1], "sciutati", howmany);
 #endif /* WIN32 */
@@ -1800,8 +1803,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 #ifdef WIN32
 				if (SendMessage(tech_pvt->SkypiaxHandles.win32_hInit_MainWindowHandle, WM_DESTROY, 0, 0) == FALSE) {	// let's the skypiax_api_thread_func die
 					DEBUGA_SKYPE("got FALSE here, thread probably was already dead. GetLastError returned: %d\n", SKYPIAX_P_LOG, GetLastError());
-					globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread = NULL;
+					//globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread = NULL;
 				}
+				
+//cicopet
 #else
 				if (tech_pvt->SkypiaxHandles.disp) {
 					XEvent e;

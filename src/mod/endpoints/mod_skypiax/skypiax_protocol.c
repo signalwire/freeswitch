@@ -1315,8 +1315,15 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam, L
 	lReturnCode = 0;
 	fIssueDefProc = 0;
 	tech_pvt = (private_t *) GetWindowLong(hWindow, GWL_USERDATA);
-	if (!running)
+	//if (!running)
+	//	return lReturnCode;
+
+	if(!running){
+		DEBUGA_SKYPE("let's DIE!\n", SKYPIAX_P_LOG);
+		tech_pvt->SkypiaxHandles.win32_hInit_MainWindowHandle = NULL;
+		PostQuitMessage(0);
 		return lReturnCode;
+				}
 	switch (uiMessage) {
 	case WM_CREATE:
 		tech_pvt = (private_t *) ((LPCREATESTRUCT) ulParam)->lpCreateParams;
