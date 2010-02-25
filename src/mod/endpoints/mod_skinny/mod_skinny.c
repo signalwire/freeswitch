@@ -1545,6 +1545,25 @@ static switch_status_t cmd_profile_device_send_call_state_message(const char *pr
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t cmd_profile_device_send_reset_message(const char *profile_name, const char *device_name, const char *reset_type, switch_stream_handle_t *stream)
+{
+	skinny_profile_t *profile;
+
+	if ((profile = skinny_find_profile(profile_name))) {
+		listener_t *listener = NULL;
+		skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
+		if(listener) {
+			send_reset(listener, skinny_str2device_reset_type(reset_type));
+		} else {
+			stream->write_function(stream, "Listener not found!\n");
+		}
+	} else {
+		stream->write_function(stream, "Profile not found!\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(skinny_function)
 {
 	char *argv[1024] = { 0 };
@@ -1556,10 +1575,11 @@ SWITCH_STANDARD_API(skinny_function)
 		"skinny help\n"
 		"skinny status profile <profile_name>\n"
 		"skinny status profile <profile_name> device <device_name>\n"
+		"skinny profile <profile_name> device <device_name> send ResetMessage [DeviceReset|DeviceRestart]\n"
 		"skinny profile <profile_name> device <device_name> send SetRingerMessage <ring_type> <ring_mode>\n"
 		"skinny profile <profile_name> device <device_name> send SetLampMessage <stimulus> <instance> <lamp_mode>\n"
 		"skinny profile <profile_name> device <device_name> send SetSpeakerModeMessage <speaker_mode>\n"
-		"skinny profile <profile_name> device <device_name> send CallState <call_state> <line_instance> <call_id>\n"
+		"skinny profile <profile_name> device <device_name> send CallStateMessage <call_state> <line_instance> <call_id>\n"
 		"--------------------------------------------------------------------------------\n";
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -1589,18 +1609,42 @@ SWITCH_STANDARD_API(skinny_function)
 	} else if (argc == 5 && !strcasecmp(argv[0], "status") && !strcasecmp(argv[1], "profile") && !strcasecmp(argv[3], "device")) {
 		/* skinny status profile <profile_name> device <device_name> */
 		status = cmd_status_profile_device(argv[2], argv[4], stream);
-	} else if (argc == 8 && !strcasecmp(argv[0], "profile") && !strcasecmp(argv[2], "device") && !strcasecmp(argv[4], "send") && !strcasecmp(argv[5], "SetRingerMessage")) {
-		/* skinny profile <profile_name> device <device_name> send SetRingerMessage <stimulus> <instance> <lamp_mode> */
-		status = cmd_profile_device_send_ringer_message(argv[1], argv[3], argv[6], argv[7], stream);
-	} else if (argc == 9 && !strcasecmp(argv[0], "profile") && !strcasecmp(argv[2], "device") && !strcasecmp(argv[4], "send") && !strcasecmp(argv[5], "SetLampMessage")) {
-		/* skinny profile <profile_name> device <device_name> send SetLampMessage <stimulus> <instance> <lamp_mode> */
-		status = cmd_profile_device_send_lamp_message(argv[1], argv[3], argv[6], argv[7], argv[8], stream);
-	} else if (argc == 7 && !strcasecmp(argv[0], "profile") && !strcasecmp(argv[2], "device") && !strcasecmp(argv[4], "send") && !strcasecmp(argv[5], "SetSpeakerModeMessage")) {
-		/* skinny profile <profile_name> device <device_name> send SetSpeakerModeMessage <speaker_mode> */
-		status = cmd_profile_device_send_speaker_mode_message(argv[1], argv[3], argv[6], stream);
-	} else if (argc == 9 && !strcasecmp(argv[0], "profile") && !strcasecmp(argv[2], "device") && !strcasecmp(argv[4], "send") && !strcasecmp(argv[5], "CallState")) {
-		/* skinny profile <profile_name> device <device_name> send CallState <call_state> <line_instance> <call_id> */
-		status = cmd_profile_device_send_call_state_message(argv[1], argv[3], argv[6], argv[7], argv[8], stream);
+	} else if (argc >= 6 && !strcasecmp(argv[0], "profile") && !strcasecmp(argv[2], "device") && !strcasecmp(argv[4], "send")) {
+		/* skinny profile <profile_name> device <device_name> send ... */
+		switch(skinny_str2message_type(argv[5])) {
+			case SET_RINGER_MESSAGE:
+				if(argc == 8) {
+					/* SetRingerMessage <ring_type> <ring_mode> */
+					status = cmd_profile_device_send_ringer_message(argv[1], argv[3], argv[6], argv[7], stream);
+				}
+				break;
+			case SET_LAMP_MESSAGE:
+				if (argc == 9) {
+					/* SetLampMessage <stimulus> <instance> <lamp_mode> */
+					status = cmd_profile_device_send_lamp_message(argv[1], argv[3], argv[6], argv[7], argv[8], stream);
+				}
+				break;
+			case SET_SPEAKER_MODE_MESSAGE:
+				if (argc == 7) {
+					/* SetSpeakerModeMessage <speaker_mode> */
+					status = cmd_profile_device_send_speaker_mode_message(argv[1], argv[3], argv[6], stream);
+				}
+				break;
+			case CALL_STATE_MESSAGE:
+				if (argc == 9) {
+					/* CallStateMessage <call_state> <line_instance> <call_id> */
+					status = cmd_profile_device_send_call_state_message(argv[1], argv[3], argv[6], argv[7], argv[8], stream);
+				}
+				break;
+			case RESET_MESSAGE:
+				if (argc == 7) {
+					/* ResetMessage <reset_type> */
+					status = cmd_profile_device_send_reset_message(argv[1], argv[3], argv[6], stream);
+				}
+				break;
+			default:
+				stream->write_function(stream, "Unhandled message %s\n", argv[5]);
+		}
 	} else {
 		stream->write_function(stream, "Unknown Command [%s]\n", argv[0]);
 	}
@@ -1694,6 +1738,13 @@ static switch_status_t skinny_list_devices(const char *line, const char *cursor,
 	return status;
 }
 
+static switch_status_t skinny_list_reset_types(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	SKINNY_PUSH_DEVICE_RESET_TYPES
+	return status;
+}
+
 static switch_status_t skinny_list_stimuli(const char *line, const char *cursor, switch_console_callback_match_t **matches)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -1701,14 +1752,14 @@ static switch_status_t skinny_list_stimuli(const char *line, const char *cursor,
 	return status;
 }
 
-static switch_status_t skinny_list_ring_type(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+static switch_status_t skinny_list_ring_types(const char *line, const char *cursor, switch_console_callback_match_t **matches)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	SKINNY_PUSH_RING_TYPES
 	return status;
 }
 
-static switch_status_t skinny_list_ring_mode(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+static switch_status_t skinny_list_ring_modes(const char *line, const char *cursor, switch_console_callback_match_t **matches)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	SKINNY_PUSH_RING_MODES
@@ -1737,7 +1788,7 @@ static switch_status_t skinny_list_stimulus_modes(const char *line, const char *
 	return status;
 }
 
-static switch_status_t skinny_list_speaker_mode(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+static switch_status_t skinny_list_speaker_modes(const char *line, const char *cursor, switch_console_callback_match_t **matches)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	SKINNY_PUSH_SPEAKER_MODES
@@ -1830,19 +1881,21 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	switch_console_set_complete("add skinny status profile ::skinny::list_profiles");
 	switch_console_set_complete("add skinny status profile ::skinny::list_profiles device ::skinny::list_devices");
 
-	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send SetRingerMessage ::skinny::list_ring_type ::skinny::list_ring_mode");
+	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send ResetMessage ::skinny::list_reset_types");
+	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send SetRingerMessage ::skinny::list_ring_types ::skinny::list_ring_modes");
 	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send SetLampMessage ::skinny::list_stimuli ::skinny::list_stimulus_instances ::skinny::list_stimulus_modes");
-	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send SetSpeakerModeMessage ::skinny::list_speaker_mode");
-	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send CallState ::skinny::list_call_states ::skinny::list_line_instances ::skinny::list_call_ids");
+	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send SetSpeakerModeMessage ::skinny::list_speaker_modes");
+	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send CallStateMessage ::skinny::list_call_states ::skinny::list_line_instances ::skinny::list_call_ids");
 
 	switch_console_add_complete_func("::skinny::list_profiles", skinny_list_profiles);
 	switch_console_add_complete_func("::skinny::list_devices", skinny_list_devices);
-	switch_console_add_complete_func("::skinny::list_ring_type", skinny_list_ring_type);
-	switch_console_add_complete_func("::skinny::list_ring_mode", skinny_list_ring_mode);
+	switch_console_add_complete_func("::skinny::list_reset_types", skinny_list_reset_types);
+	switch_console_add_complete_func("::skinny::list_ring_types", skinny_list_ring_types);
+	switch_console_add_complete_func("::skinny::list_ring_modes", skinny_list_ring_modes);
 	switch_console_add_complete_func("::skinny::list_stimuli", skinny_list_stimuli);
 	switch_console_add_complete_func("::skinny::list_stimulus_instances", skinny_list_stimulus_instances);
 	switch_console_add_complete_func("::skinny::list_stimulus_modes", skinny_list_stimulus_modes);
-	switch_console_add_complete_func("::skinny::list_speaker_mode", skinny_list_speaker_mode);
+	switch_console_add_complete_func("::skinny::list_speaker_modes", skinny_list_speaker_modes);
 	switch_console_add_complete_func("::skinny::list_call_states", skinny_list_call_states);
 	switch_console_add_complete_func("::skinny::list_line_instances", skinny_list_line_instances);
 	switch_console_add_complete_func("::skinny::list_call_ids", skinny_list_call_ids);

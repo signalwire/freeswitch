@@ -342,6 +342,12 @@ struct register_rej_message {
 	char error[33];
 };
 
+/* ResetMessage */
+#define RESET_MESSAGE 0x009F
+struct reset_message {
+	uint32_t reset_type; /* See enum skinny_device_reset_types */
+};
+
 /* KeepAliveAckMessage */
 #define KEEP_ALIVE_ACK_MESSAGE 0x0100
 
@@ -490,6 +496,7 @@ union skinny_data {
 	struct define_time_date_message define_time_date;
 	struct button_template_message button_template;
 	struct register_rej_message reg_rej;
+	struct reset_message reset;
 	struct open_receive_channel_message open_receive_channel;
 	struct close_receive_channel_message close_receive_channel;
 	struct soft_key_template_res_message soft_key_template;
@@ -612,7 +619,7 @@ uint32_t func(const char *str)\
 		status = SWITCH_STATUS_SUCCESS;\
 	}
 	
-struct skinny_table SKINNY_MESSAGE_TYPES[51];
+struct skinny_table SKINNY_MESSAGE_TYPES[52];
 const char *skinny_message_type2str(uint32_t id);
 uint32_t skinny_str2message_type(const char *str);
 #define SKINNY_PUSH_MESSAGE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_MESSAGE_TYPES)
@@ -749,6 +756,15 @@ const char *skinny_call_state2str(uint32_t id);
 uint32_t skinny_str2call_state(const char *str);
 #define SKINNY_PUSH_CALL_STATES SKINNY_DECLARE_PUSH_MATCH(SKINNY_CALL_STATES)
 
+enum skinny_device_reset_types {
+  SKINNY_DEVICE_RESET = 1,
+  SKINNY_DEVICE_RESTART = 2
+};
+struct skinny_table SKINNY_DEVICE_RESET_TYPES[3];
+const char *skinny_device_reset_type2str(uint32_t id);
+uint32_t skinny_str2device_reset_type(const char *str);
+#define SKINNY_PUSH_DEVICE_RESET_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_DEVICE_RESET_TYPES)
+
 /*****************************************************************************/
 /* SKINNY FUNCTIONS */
 /*****************************************************************************/
@@ -869,6 +885,8 @@ switch_status_t send_dialed_number(listener_t *listener,
 	char called_party[24],
 	uint32_t line_instance,
 	uint32_t call_id);
+switch_status_t send_reset(listener_t *listener,
+	uint32_t reset_type);
 
 #endif /* _SKINNY_PROTOCOL_H */
 

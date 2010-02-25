@@ -76,7 +76,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{"AlarmMessage", ALARM_MESSAGE},
 	{"OpenReceiveChannelAckMessage", OPEN_RECEIVE_CHANNEL_ACK_MESSAGE},
 	{"SoftKeySetReqMessage", SOFT_KEY_SET_REQ_MESSAGE},
-	{"SOftKeyEventMessage", SOFT_KEY_EVENT_MESSAGE},
+	{"SoftKeyEventMessage", SOFT_KEY_EVENT_MESSAGE},
 	{"UnregisterMessage", UNREGISTER_MESSAGE},
 	{"SoftKeyTemplateReqMessage", SOFT_KEY_TEMPLATE_REQ_MESSAGE},
 	{"FeatureStatReqMessage", FEATURE_STAT_REQ_MESSAGE},
@@ -98,7 +98,8 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{"ButtonTemplateResMessage", BUTTON_TEMPLATE_RES_MESSAGE},
 	{"CapabilitiesReqMessage", CAPABILITIES_REQ_MESSAGE},
 	{"RegisterRejMessage", REGISTER_REJ_MESSAGE},
-	{"KeepAliveAckMessageMessage", KEEP_ALIVE_ACK_MESSAGE},
+	{"ResetMessage", RESET_MESSAGE},
+	{"KeepAliveAckMessage", KEEP_ALIVE_ACK_MESSAGE},
 	{"OpenReceiveChannelMessage", OPEN_RECEIVE_CHANNEL_MESSAGE},
 	{"OCloseReceiveChannelMessage", CLOSE_RECEIVE_CHANNEL_MESSAGE},
 	{"SoftKeyTemplateResMessage", SOFT_KEY_TEMPLATE_RES_MESSAGE},
@@ -198,6 +199,15 @@ struct skinny_table SKINNY_CALL_STATES[] = {
 };
 SKINNY_DECLARE_ID2STR(skinny_call_state2str, SKINNY_CALL_STATES, "CallStateUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2call_state, SKINNY_CALL_STATES, -1)
+
+struct skinny_table SKINNY_DEVICE_RESET_TYPES[] = {
+	{"DeviceReset", SKINNY_DEVICE_RESET},
+	{"DeviceRestart", SKINNY_DEVICE_RESTART},
+	{NULL, 0}
+};
+SKINNY_DECLARE_ID2STR(skinny_device_reset_type2str, SKINNY_DEVICE_RESET_TYPES, "DeviceResetTypeUnknown")
+SKINNY_DECLARE_STR2ID(skinny_str2device_reset_type, SKINNY_DEVICE_RESET_TYPES, -1)
+
 /*****************************************************************************/
 /* SKINNY FUNCTIONS */
 /*****************************************************************************/
@@ -1077,6 +1087,18 @@ switch_status_t send_dialed_number(listener_t *listener,
 	strcpy(message->data.dialed_number.called_party, called_party);
 	message->data.dialed_number.line_instance = line_instance;
 	message->data.dialed_number.call_id = call_id;
+	skinny_send_reply(listener, message);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t send_reset(listener_t *listener,
+	uint32_t reset_type)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reset));
+	message->type = RESET_MESSAGE;
+	message->length = 4 + sizeof(message->data.reset);
+	message->data.reset.reset_type = reset_type;
 	skinny_send_reply(listener, message);
 	return SWITCH_STATUS_SUCCESS;
 }
