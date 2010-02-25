@@ -1410,7 +1410,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 static switch_bool_t auth_api_command(listener_t *listener, const char *api_cmd, const char *arg)
 {
 	const char *check_cmd = api_cmd;
-	char *sneaky_commands[] = { "bgapi", "sched_api", "eval", "expand", NULL };
+	char *sneaky_commands[] = { "bgapi", "sched_api", "eval", "expand", "xml_wrap", NULL };
 	int x = 0;
 	char *dup_arg = NULL;
 	char *next = NULL;
