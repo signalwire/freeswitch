@@ -1506,7 +1506,7 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
 			win32_DeInitialize_DestroyWindowClass(tech_pvt);
 		}
 	}
-
+	DEBUGA_SKYPE("EXITING\n", SKYPIAX_P_LOG);
 	return NULL;
 }
 

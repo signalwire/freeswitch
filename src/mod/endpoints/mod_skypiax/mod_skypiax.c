@@ -1203,6 +1203,7 @@ static void *SWITCH_THREAD_FUNC skypiax_signaling_thread_func(switch_thread_t * 
 			}
 		}
 	}
+	DEBUGA_SKYPE("EXITING\n", SKYPIAX_P_LOG);
 	return NULL;
 }
 
@@ -1511,7 +1512,7 @@ static switch_status_t load_config(int reload_type)
 				switch_sleep(100000);
 
 				switch_threadattr_create(&skypiax_signaling_thread_attr, skypiax_module_pool);
-				switch_threadattr_detach_set(skypiax_signaling_thread_attr, 1);
+				switch_threadattr_detach_set(skypiax_signaling_thread_attr, 0);
 				switch_threadattr_stacksize_set(skypiax_signaling_thread_attr, SWITCH_THREAD_STACKSIZE);
 				switch_thread_create(&globals.SKYPIAX_INTERFACES[interface_id].
 									 skypiax_signaling_thread, skypiax_signaling_thread_attr,
@@ -1565,6 +1566,10 @@ static switch_status_t load_config(int reload_type)
 					skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET USERSTATUS ONLINE");
 					switch_sleep(10000);
 					if(globals.SKYPIAX_INTERFACES[interface_id].silent_mode){
+						skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET SILENT_MODE ON");
+						switch_sleep(10000);
+						skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET SILENT_MODE OFF");
+						switch_sleep(10000);
 						skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET SILENT_MODE ON");
 						switch_sleep(10000);
 						}
@@ -1773,7 +1778,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 {
 	int x;
 	private_t *tech_pvt = NULL;
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	unsigned int howmany = 8;
 	int interface_id;
 
@@ -1822,9 +1827,13 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 			if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
 				switch_thread_join(&status, globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread);
 			}
+			if(status != SWITCH_STATUS_SUCCESS)
+				DEBUGA_SKYPE("got FALSE here, thread was not joined\n", SKYPIAX_P_LOG);
 			if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread) {
 				switch_thread_join(&status, globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread);
 			}
+			if(status != SWITCH_STATUS_SUCCESS)
+				DEBUGA_SKYPE("got FALSE here, thread was not joined\n", SKYPIAX_P_LOG);
 #ifndef WIN32
 			WARNINGA("SHUTDOWN interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
 			shutdown(tech_pvt->audiopipe_cli[0], 2);
