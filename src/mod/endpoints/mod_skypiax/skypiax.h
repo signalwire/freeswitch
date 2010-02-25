@@ -284,13 +284,13 @@ struct private_object {
 	uint32_t report_incoming_chatmessages;
 	switch_timer_t timer_read;
 	switch_timer_t timer_write;
-int begin_to_write;
-int begin_to_read;
-                 dtmf_rx_state_t dtmf_state;
-        switch_time_t old_dtmf_timestamp;
-	        switch_buffer_t *write_buffer;
-	        switch_buffer_t *read_buffer;
-int silent_mode;
+	int begin_to_write;
+	int begin_to_read;
+	dtmf_rx_state_t dtmf_state;
+	switch_time_t old_dtmf_timestamp;
+	switch_buffer_t *write_buffer;
+	switch_buffer_t *read_buffer;
+	int silent_mode;
 
 };
 

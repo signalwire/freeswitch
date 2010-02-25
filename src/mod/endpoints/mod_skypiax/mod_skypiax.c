@@ -258,7 +258,6 @@ switch_status_t skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *s
 		ERRORA("skypiax_codec FAILED\n", SKYPIAX_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
-
 #if 0
 	if (switch_core_timer_init(&tech_pvt->timer_read, "soft", 20, tech_pvt->read_codec.implementation->samples_per_packet, skypiax_module_pool) !=
 		SWITCH_STATUS_SUCCESS) {
@@ -279,8 +278,8 @@ switch_status_t skypiax_tech_init(private_t * tech_pvt, switch_core_session_t *s
 #endif // TIMER_WRITE
 #endif
 
-    dtmf_rx_init(&tech_pvt->dtmf_state, NULL, NULL);
-    dtmf_rx_parms(&tech_pvt->dtmf_state, 0, 10, 10, -99);
+	dtmf_rx_init(&tech_pvt->dtmf_state, NULL, NULL);
+	dtmf_rx_parms(&tech_pvt->dtmf_state, 0, 10, 10, -99);
 
 
 	DEBUGA_SKYPE("skypiax_tech_init SUCCESS\n", SKYPIAX_P_LOG);
@@ -548,15 +547,15 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	//memset(tech_pvt->session_uuid_str, '\0', sizeof(tech_pvt->session_uuid_str));
 	//*tech_pvt->session_uuid_str = '\0';
 
-			if (tech_pvt->tcp_cli_thread) {
-				switch_thread_join(&status, tech_pvt->tcp_cli_thread);
-			}
-			//if(status!=SWITCH_STATUS_SUCCESS)
+	if (tech_pvt->tcp_cli_thread) {
+		switch_thread_join(&status, tech_pvt->tcp_cli_thread);
+	}
+	//if(status!=SWITCH_STATUS_SUCCESS)
 	//ERRORA("%s cli_join HANGUP\n", SKYPIAX_P_LOG, tech_pvt->name);
-			if (tech_pvt->tcp_srv_thread) {
-				switch_thread_join(&status, tech_pvt->tcp_srv_thread);
-			}
-			//if(status!=SWITCH_STATUS_SUCCESS)
+	if (tech_pvt->tcp_srv_thread) {
+		switch_thread_join(&status, tech_pvt->tcp_srv_thread);
+	}
+	//if(status!=SWITCH_STATUS_SUCCESS)
 	//ERRORA("%s srv_join HANGUP\n", SKYPIAX_P_LOG, tech_pvt->name);
 	DEBUGA_SKYPE("%s CHANNEL HANGUP\n", SKYPIAX_P_LOG, tech_pvt->name);
 	switch_mutex_lock(globals.mutex);
@@ -700,10 +699,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_byte_t *data;
 	char digit_str[256];
 	short *frame_16_khz;
-	short frame_8_khz[160];	
+	short frame_8_khz[160];
 	unsigned int i;
 	unsigned int a;
-size_t bytes_read=0;
+	size_t bytes_read = 0;
 
 
 	channel = switch_core_session_get_channel(session);
@@ -726,7 +725,7 @@ size_t bytes_read=0;
 		switch_buffer_create(skypiax_module_pool, &tech_pvt->read_buffer, max_len);
 		switch_assert(tech_pvt->read_buffer);
 		switch_buffer_zero(tech_pvt->read_buffer);
-		tech_pvt->begin_to_read=1;
+		tech_pvt->begin_to_read = 1;
 		//switch_sleep(40000);
 	}
 
@@ -741,7 +740,7 @@ size_t bytes_read=0;
 
 
 	switch_mutex_lock(tech_pvt->mutex_audio_srv);
-	if(switch_buffer_inuse(tech_pvt->read_buffer)){
+	if (switch_buffer_inuse(tech_pvt->read_buffer)) {
 		bytes_read = switch_buffer_read(tech_pvt->read_buffer, tech_pvt->read_frame.data, 640);
 		tech_pvt->read_frame.datalen = bytes_read;
 	}
@@ -797,7 +796,7 @@ size_t bytes_read=0;
 
 				if (digit_str[0]) {
 					switch_time_t new_dtmf_timestamp = switch_time_now();
-					if ((new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp) > 350000) {     //FIXME: make it configurable
+					if ((new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp) > 350000) {	//FIXME: make it configurable
 						char *p = digit_str;
 						switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -809,16 +808,11 @@ size_t bytes_read=0;
 							p++;
 						}
 						NOTICA("DTMF DETECTED: [%s] new_dtmf_timestamp: %u, delta_t: %u\n", SKYPIAX_P_LOG, digit_str, (unsigned int) new_dtmf_timestamp,
-								(unsigned int) (new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp));
+							   (unsigned int) (new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp));
 						tech_pvt->old_dtmf_timestamp = new_dtmf_timestamp;
 					}
 				}
 			}
-
-
-
-
-
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 			if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
 				switch_swap_linear((*frame)->data, (int) (*frame)->datalen / 2);
@@ -835,7 +829,7 @@ size_t bytes_read=0;
 	DEBUGA_SKYPE("CHANNEL READ FALSE\n", SKYPIAX_P_LOG);
 	return SWITCH_STATUS_FALSE;
 
-cng:
+  cng:
 	data = (switch_byte_t *) tech_pvt->read_frame.data;
 	data[0] = 65;
 	data[1] = 0;
@@ -876,14 +870,14 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 
 	switch_mutex_lock(tech_pvt->mutex_audio_cli);
-	if(switch_buffer_freespace(tech_pvt->write_buffer) < frame->datalen){
+	if (switch_buffer_freespace(tech_pvt->write_buffer) < frame->datalen) {
 		//WARNINGA("NO SPACE WRITE: %d\n", SKYPIAX_P_LOG, frame->datalen);
 		switch_buffer_toss(tech_pvt->write_buffer, frame->datalen);
 	}
 	switch_buffer_write(tech_pvt->write_buffer, frame->data, frame->datalen);
 	switch_mutex_unlock(tech_pvt->mutex_audio_cli);
 
-	tech_pvt->begin_to_write=1;
+	tech_pvt->begin_to_write = 1;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1270,7 +1264,7 @@ static switch_status_t load_config(int reload_type)
 		}
 	}
 
-	globals.start_port=32769;
+	globals.start_port = 32769;
 	if ((interfaces = switch_xml_child(cfg, "per_interface_settings"))) {
 		int i = 0;
 
@@ -1332,7 +1326,7 @@ static switch_status_t load_config(int reload_type)
 					tcp_cli_port = val;
 				} else if (!strcasecmp(var, "tcp_srv_port")) {
 					tcp_srv_port = val;
-#endif//0
+#endif //0
 				} else if (!strcasecmp(var, "X11-display") || !strcasecmp(var, "X11_display")) {
 					X11_display = val;
 				} else if (!strcasecmp(var, "max_digits") || !strcasecmp(var, "max-digits")) {
@@ -1374,7 +1368,7 @@ static switch_status_t load_config(int reload_type)
 				ERRORA("interface missing REQUIRED param 'tcp_srv_port'\n", SKYPIAX_P_LOG);
 				continue;
 			}
-#endif//0
+#endif //0
 			if (!id) {
 				ERRORA("interface missing REQUIRED param 'id'\n", SKYPIAX_P_LOG);
 				continue;
@@ -1442,7 +1436,7 @@ static switch_status_t load_config(int reload_type)
 				globals.SKYPIAX_INTERFACES[interface_id].tcp_cli_port = atoi(tcp_cli_port);
 				globals.SKYPIAX_INTERFACES[interface_id].tcp_srv_port = atoi(tcp_srv_port);
 #endif /* WIN32 */
-#endif//0
+#endif //0
 				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].X11_display, X11_display);
 				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].skype_user, skype_user);
 				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].context, context);
@@ -1477,7 +1471,7 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_SKYPE
 					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].tcp_srv_port=%d\n",
 					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].tcp_srv_port);
-#endif//0
+#endif //0
 				DEBUGA_SKYPE("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].name=%s\n",
 							 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].name);
 				DEBUGA_SKYPE
@@ -1565,14 +1559,14 @@ static switch_status_t load_config(int reload_type)
 					switch_sleep(10000);
 					skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET USERSTATUS ONLINE");
 					switch_sleep(10000);
-					if(globals.SKYPIAX_INTERFACES[interface_id].silent_mode){
+					if (globals.SKYPIAX_INTERFACES[interface_id].silent_mode) {
 						skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET SILENT_MODE ON");
 						switch_sleep(10000);
 						skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET SILENT_MODE OFF");
 						switch_sleep(10000);
 						skypiax_signaling_write(&globals.SKYPIAX_INTERFACES[interface_id], "SET SILENT_MODE ON");
 						switch_sleep(10000);
-						}
+					}
 				} else {
 					ERRORA
 						("The Skype client to which we are connected FAILED to gave us CURRENTUSERHANDLE=%s, interface_id=%d FAILED to start. No Skype client logged in as '%s' has been found. Please (re)launch a Skype client logged in as '%s'. Skypiax exiting now\n",
@@ -1606,8 +1600,7 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].destination=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].destination);
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].report_incoming_chatmessages=%d\n", SKYPIAX_P_LOG, i, i,
 							 globals.SKYPIAX_INTERFACES[i].report_incoming_chatmessages);
-				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].silent_mode=%d\n", SKYPIAX_P_LOG, i, i,
-							 globals.SKYPIAX_INTERFACES[i].silent_mode);
+				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].silent_mode=%d\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].silent_mode);
 			}
 		}
 	}
@@ -1793,7 +1786,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 				skypiax_signaling_write(tech_pvt, "DIE");
 				switch_sleep(10000);
 				switch_file_write(tech_pvt->SkypiaxHandles.fdesc[1], "sciutati", &howmany);	// let's the controldev_thread die
-				
+
 #else /* WIN32 */
 				howmany = write(tech_pvt->SkypiaxHandles.fdesc[1], "sciutati", howmany);
 #endif /* WIN32 */
@@ -1805,7 +1798,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 					DEBUGA_SKYPE("got FALSE here, thread probably was already dead. GetLastError returned: %d\n", SKYPIAX_P_LOG, GetLastError());
 					//globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread = NULL;
 				}
-				
 //cicopet
 #else
 				if (tech_pvt->SkypiaxHandles.disp) {
@@ -1832,12 +1824,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 			if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
 				switch_thread_join(&status, globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread);
 			}
-			if(status != SWITCH_STATUS_SUCCESS)
+			if (status != SWITCH_STATUS_SUCCESS)
 				DEBUGA_SKYPE("got FALSE here, thread was not joined\n", SKYPIAX_P_LOG);
 			if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread) {
 				switch_thread_join(&status, globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread);
 			}
-			if(status != SWITCH_STATUS_SUCCESS)
+			if (status != SWITCH_STATUS_SUCCESS)
 				DEBUGA_SKYPE("got FALSE here, thread was not joined\n", SKYPIAX_P_LOG);
 #ifndef WIN32
 			WARNINGA("SHUTDOWN interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
@@ -1893,11 +1885,13 @@ int dtmf_received(private_t * tech_pvt, char *value)
 
 	if (channel) {
 
-		if (switch_channel_test_flag(channel, CF_BRIDGED) && !switch_true(switch_channel_get_variable(channel, "skype_add_outband_dtmf_also_when_bridged"))) {
+		if (switch_channel_test_flag(channel, CF_BRIDGED)
+			&& !switch_true(switch_channel_get_variable(channel, "skype_add_outband_dtmf_also_when_bridged"))) {
 
 
 			NOTICA
-				("received DTMF '%c' on channel %s, but we're BRIDGED, so we DO NOT relay it out of band. If you DO want to relay it out of band when bridged too, on top of audio DTMF, set the channel variable 'skype_add_outband_dtmf_also_when_bridged=true' \n", SKYPIAX_P_LOG, value[0], switch_channel_get_name(channel));
+				("received DTMF '%c' on channel %s, but we're BRIDGED, so we DO NOT relay it out of band. If you DO want to relay it out of band when bridged too, on top of audio DTMF, set the channel variable 'skype_add_outband_dtmf_also_when_bridged=true' \n",
+				 SKYPIAX_P_LOG, value[0], switch_channel_get_name(channel));
 
 		} else {
 
@@ -1923,11 +1917,10 @@ int start_audio_threads(private_t * tech_pvt)
 {
 	switch_threadattr_t *thd_attr = NULL;
 
-tech_pvt->begin_to_write=0;
-tech_pvt->begin_to_read=0;
+	tech_pvt->begin_to_write = 0;
+	tech_pvt->begin_to_read = 0;
 #if 1
-	if (switch_core_timer_init(&tech_pvt->timer_read, "soft", 20, 320, skypiax_module_pool) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_core_timer_init(&tech_pvt->timer_read, "soft", 20, 320, skypiax_module_pool) != SWITCH_STATUS_SUCCESS) {
 		ERRORA("setup timer failed\n", SKYPIAX_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1936,8 +1929,7 @@ tech_pvt->begin_to_read=0;
 
 #ifdef TIMER_WRITE
 	//if (switch_core_timer_init(&tech_pvt->timer_write, "soft", 10, 320, skypiax_module_pool) !=
-	if (switch_core_timer_init(&tech_pvt->timer_write, "soft", 20, 320, skypiax_module_pool) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_core_timer_init(&tech_pvt->timer_write, "soft", 20, 320, skypiax_module_pool) != SWITCH_STATUS_SUCCESS) {
 		ERRORA("setup timer failed\n", SKYPIAX_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -2699,11 +2691,12 @@ SWITCH_STANDARD_API(skypiax_chat_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-int next_port(void){
+int next_port(void)
+{
 	switch_mutex_lock(globals.mutex);
 	globals.start_port++;
-	if(globals.start_port == 65000)
-		globals.start_port=32769;
+	if (globals.start_port == 65000)
+		globals.start_port = 32769;
 	switch_mutex_unlock(globals.mutex);
 	return (globals.start_port - 1);
 }
