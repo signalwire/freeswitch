@@ -79,6 +79,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{"SoftKeyEventMessage", SOFT_KEY_EVENT_MESSAGE},
 	{"UnregisterMessage", UNREGISTER_MESSAGE},
 	{"SoftKeyTemplateReqMessage", SOFT_KEY_TEMPLATE_REQ_MESSAGE},
+	{"ServiceUrlStatReqMessage", SERVICE_URL_STAT_REQ_MESSAGE},
 	{"FeatureStatReqMessage", FEATURE_STAT_REQ_MESSAGE},
 	{"HeadsetStatusMessage", HEADSET_STATUS_MESSAGE},
 	{"RegisterAvailableLinesMessage", REGISTER_AVAILABLE_LINES_MESSAGE},
@@ -112,6 +113,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{"UnregisterAckMessage", UNREGISTER_ACK_MESSAGE},
 	{"DialedNumberMessage", DIALED_NUMBER_MESSAGE},
 	{"FeatureResMessage", FEATURE_STAT_RES_MESSAGE},
+	{"ServiceUrlStatMessage", SERVICE_URL_STAT_RES_MESSAGE},
 	{NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_message_type2str, SKINNY_MESSAGE_TYPES, "UnknownMessage")
@@ -140,6 +142,8 @@ struct skinny_table SKINNY_BUTTONS[] = {
 	{"SpeedDial", SKINNY_BUTTON_SPEED_DIAL},
 	{"Line", SKINNY_BUTTON_LINE},
 	{"Voicemail", SKINNY_BUTTON_VOICEMAIL},
+	{"Privacy", SKINNY_BUTTON_PRIVACY},
+	{"ServiceUrl", SKINNY_BUTTON_SERVICE_URL},
 	{"Undefined", SKINNY_BUTTON_UNDEFINED},
 	{NULL, 0}
 };
@@ -723,6 +727,50 @@ void skinny_speed_dial_get(listener_t *listener, uint32_t instance, struct speed
 	*button = helper.button;
 }
 
+struct service_url_get_helper {
+	uint32_t pos;
+	struct service_url_stat_res_message *button;
+};
+
+int skinny_service_url_get_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct service_url_get_helper *helper = pArg;
+
+	helper->pos++;
+	if (helper->pos == atoi(argv[0])) { /* wanted_position */
+		helper->button->index = helper->pos;
+		strncpy(helper->button->url, argv[3], 256); /* value */
+		strncpy(helper->button->display_name,  argv[2], 40); /* label */
+	}
+	return 0;
+}
+
+void skinny_service_url_get(listener_t *listener, uint32_t instance, struct service_url_stat_res_message **button)
+{
+	struct service_url_get_helper helper = {0};
+	char *sql;
+
+	switch_assert(listener);
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	helper.button = switch_core_alloc(listener->pool, sizeof(struct service_url_stat_res_message));
+	
+	if ((sql = switch_mprintf(
+			"SELECT '%d' AS wanted_position, position, label, value, settings "
+				"FROM skinny_buttons "
+				"WHERE device_name='%s' AND type=%d "
+				"ORDER BY position",
+			instance,
+			listener->device_name,
+			SKINNY_BUTTON_SERVICE_URL
+			))) {
+		skinny_execute_sql_callback(listener->profile, listener->profile->listener_mutex, sql, skinny_service_url_get_callback, &helper);
+		switch_safe_free(sql);
+	}
+	*button = helper.button;
+}
+
 struct feature_get_helper {
 	uint32_t pos;
 	struct feature_stat_res_message *button;
@@ -756,11 +804,11 @@ void skinny_feature_get(listener_t *listener, uint32_t instance, struct feature_
 	if ((sql = switch_mprintf(
 			"SELECT '%d' AS wanted_position, position, label, value, settings "
 				"FROM skinny_buttons "
-				"WHERE device_name='%s' AND NOT (type=%d OR type=%d) "
+				"WHERE device_name='%s' AND NOT (type=%d OR type=%d OR type=%d) "
 				"ORDER BY position",
 			instance,
 			listener->device_name,
-			SKINNY_BUTTON_LINE, SKINNY_BUTTON_SPEED_DIAL
+			SKINNY_BUTTON_LINE, SKINNY_BUTTON_SPEED_DIAL, SKINNY_BUTTON_SERVICE_URL
 			))) {
 		skinny_execute_sql_callback(listener->profile, listener->profile->listener_mutex, sql, skinny_feature_get_callback, &helper);
 		switch_safe_free(sql);
@@ -1558,6 +1606,26 @@ switch_status_t skinny_handle_speed_dial_stat_request(listener_t *listener, skin
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t skinny_handle_service_url_stat_request(listener_t *listener, skinny_message_t *request)
+{
+	skinny_message_t *message;
+	struct service_url_stat_res_message *button = NULL;
+
+	skinny_check_data_length(request, sizeof(request->data.service_url_req));
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.service_url_res));
+	message->type = SERVICE_URL_STAT_RES_MESSAGE;
+	message->length = 4 + sizeof(message->data.service_url_res);
+	
+	skinny_service_url_get(listener, request->data.service_url_req.service_url_index, &button);
+
+	memcpy(&message->data.service_url_res, button, sizeof(struct service_url_stat_res_message));
+
+	skinny_send_reply(listener, message);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 switch_status_t skinny_handle_feature_stat_request(listener_t *listener, skinny_message_t *request)
 {
 	skinny_message_t *message;
@@ -2049,6 +2117,8 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 			return skinny_handle_line_stat_request(listener, request);
 		case SPEED_DIAL_STAT_REQ_MESSAGE:
 			return skinny_handle_speed_dial_stat_request(listener, request);
+		case SERVICE_URL_STAT_REQ_MESSAGE:
+			return skinny_handle_service_url_stat_request(listener, request);
 		case FEATURE_STAT_REQ_MESSAGE:
 			return skinny_handle_feature_stat_request(listener, request);
 		case REGISTER_AVAILABLE_LINES_MESSAGE:

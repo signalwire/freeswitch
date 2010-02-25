@@ -159,6 +159,12 @@ struct soft_key_event_message {
 /* SoftKeyTemplateReqMessage */
 #define SOFT_KEY_TEMPLATE_REQ_MESSAGE 0x0028
 
+/* ServiceUrlStatReqMessage */
+#define SERVICE_URL_STAT_REQ_MESSAGE 0x0033
+struct service_url_stat_req_message {
+	uint32_t service_url_index;
+};
+
 /* FeatureStatReqMessage */
 #define FEATURE_STAT_REQ_MESSAGE 0x0034
 struct feature_stat_req_message {
@@ -464,6 +470,13 @@ struct feature_stat_res_message {
 	uint32_t status;
 };
 
+/* ServiceUrlStatMessage */
+#define SERVICE_URL_STAT_RES_MESSAGE 0x012F
+struct service_url_stat_res_message {
+	uint32_t index;
+	char url[256];
+	char display_name[40];
+};
 
 /*****************************************************************************/
 /* SKINNY MESSAGE */
@@ -484,6 +497,7 @@ union skinny_data {
 	struct alarm_message alarm;
 	struct open_receive_channel_ack_message open_receive_channel_ack;
 	struct soft_key_event_message soft_key_event;
+	struct service_url_stat_req_message service_url_req;
 	struct feature_stat_req_message feature_req;
 	struct headset_status_message headset_status;
 	struct register_available_lines_message reg_lines;
@@ -515,6 +529,7 @@ union skinny_data {
 	struct unregister_ack_message unregister_ack;
 	struct dialed_number_message dialed_number;
 	struct feature_stat_res_message feature_res;
+	struct service_url_stat_res_message service_url_res;
 	
 	uint16_t as_uint16;
 	char as_char;
@@ -626,7 +641,7 @@ uint32_t func(const char *str)\
 		status = SWITCH_STATUS_SUCCESS;\
 	}
 	
-struct skinny_table SKINNY_MESSAGE_TYPES[53];
+struct skinny_table SKINNY_MESSAGE_TYPES[55];
 const char *skinny_message_type2str(uint32_t id);
 uint32_t skinny_str2message_type(const char *str);
 #define SKINNY_PUSH_MESSAGE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_MESSAGE_TYPES)
@@ -694,9 +709,11 @@ enum skinny_button_definition {
 	SKINNY_BUTTON_SPEED_DIAL = 0x02,
 	SKINNY_BUTTON_LINE = 0x09,
 	SKINNY_BUTTON_VOICEMAIL = 0x0F,
+	SKINNY_BUTTON_PRIVACY = 0x13,
+	SKINNY_BUTTON_SERVICE_URL = 0x14,
 	SKINNY_BUTTON_UNDEFINED = 0xFF,
 };
-struct skinny_table SKINNY_BUTTONS[6];
+struct skinny_table SKINNY_BUTTONS[8];
 const char *skinny_button2str(uint32_t id);
 uint32_t skinny_str2button(const char *str);
 #define SKINNY_PUSH_STIMULI SKINNY_DECLARE_PUSH_MATCH(SKINNY_BUTTONS)
