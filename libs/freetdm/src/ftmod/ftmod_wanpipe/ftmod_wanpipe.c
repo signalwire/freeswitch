@@ -497,6 +497,10 @@ static FIO_OPEN_FUNCTION(wanpipe_open)
 	wanpipe_tdm_api_t tdm_api;
 
 	memset(&tdm_api,0,sizeof(tdm_api));
+	sangoma_tdm_flush_bufs(ftdmchan->sockfd, &tdm_api);
+#ifdef LIBSANGOMA_VERSION
+	sangoma_flush_event_bufs(ftdmchan->sockfd, &tdm_api);
+#endif
 
 	if (ftdmchan->type == FTDM_CHAN_TYPE_DQ921 || ftdmchan->type == FTDM_CHAN_TYPE_DQ931) {
 		ftdmchan->native_codec = ftdmchan->effective_codec = FTDM_CODEC_NONE;
@@ -605,6 +609,14 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 			//code me
 		}
 		break;
+	case FTDM_COMMAND_ENABLE_LOOP:
+		{
+			// code me
+		}
+	case FTDM_COMMAND_DISABLE_LOOP:
+		{
+			// code me
+		}
 	case FTDM_COMMAND_SET_INTERVAL: 
 		{
 			err=sangoma_tdm_set_usr_period(ftdmchan->sockfd, &tdm_api, FTDM_COMMAND_OBJ_INT);
@@ -1051,7 +1063,9 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 
 					if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_STOP) {
 						ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_MUTE);
-						ftdm_channel_queue_dtmf(ftdmchan, tmp_dtmf);
+						if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
+							ftdm_channel_queue_dtmf(ftdmchan, tmp_dtmf);
+						}
 					} 
 				}
 				break;

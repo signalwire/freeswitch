@@ -1322,9 +1322,7 @@ static ftdm_status_t ftdm_channel_reset(ftdm_channel_t *ftdmchan)
 	memset(ftdmchan->tokens, 0, sizeof(ftdmchan->tokens));
 	ftdmchan->token_count = 0;
 
-	if (ftdmchan->dtmf_buffer) {
-		ftdm_buffer_zero(ftdmchan->dtmf_buffer);
-	}
+	ftdm_channel_flush_dtmf(ftdmchan);
 
 	if (ftdmchan->gen_dtmf_buffer) {
 		ftdm_buffer_zero(ftdmchan->gen_dtmf_buffer);

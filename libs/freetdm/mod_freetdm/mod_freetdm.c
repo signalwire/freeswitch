@@ -675,7 +675,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		tech_pvt->read_frame.samples /= 2;
 	}
 
-	if (ftdm_channel_dequeue_dtmf(tech_pvt->ftdmchan, dtmf, sizeof(dtmf))) {
+	while (ftdm_channel_dequeue_dtmf(tech_pvt->ftdmchan, dtmf, sizeof(dtmf))) {
 		switch_dtmf_t _dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
 		char *p;
 		for (p = dtmf; p && *p; p++) {
@@ -737,10 +737,11 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 
 	wflags = FTDM_WRITE;	
-	status = ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, tech_pvt->ftdmchan->effective_interval * 4);
+	status = ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, tech_pvt->ftdmchan->effective_interval * 10);
 	
 	if (!(wflags & FTDM_WRITE)) {
-		goto fail;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Dropping frame! (write not ready)\n");
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	len = frame->datalen;

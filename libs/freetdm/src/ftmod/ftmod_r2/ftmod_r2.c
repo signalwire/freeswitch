@@ -239,7 +239,6 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 {
 	ftdm_sigmsg_t sigev;
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
-	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
 
 	ftdm_log(FTDM_LOG_NOTICE, "Call offered on chan %d, ANI = %s, DNIS = %s, Category = %s\n", openr2_chan_get_number(r2chan), 
 			ani, dnis, openr2_proto_get_category_string(category));
@@ -910,7 +909,6 @@ static void *ftdm_r2_channel_run(ftdm_thread_t *me, void *obj)
 	ftdm_sigmsg_t sigev;
 	ftdm_channel_t *ftdmchan = (ftdm_channel_t *)obj;
 	openr2_chan_t *r2chan = R2CALL(ftdmchan)->r2chan;
-	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
 
 	ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_INTHREAD);
 
