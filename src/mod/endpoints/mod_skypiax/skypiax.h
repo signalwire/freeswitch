@@ -215,10 +215,10 @@ struct private_object {
 #endif
 	struct SkypiaxHandles SkypiaxHandles;
 
-	int interface_state;		/*!< \brief 'state' of the interface (channel) */
-	char language[80];			/*!< \brief default Asterisk dialplan language for this interface */
-	char exten[80];				/*!< \brief default Asterisk dialplan extension for this interface */
-	int skypiax_sound_rate;		/*!< \brief rate of the sound device, in Hz, eg: 8000 */
+	int interface_state;
+	char language[80];
+	char exten[80];
+	int skypiax_sound_rate;
 	char callid_name[50];
 	char callid_number[50];
 	double playback_boost;
@@ -229,17 +229,17 @@ struct private_object {
 	char skype_friends[4096];
 	char skype_fullname[512];
 	char skype_displayname[512];
-	int skype_callflow;			/*!< \brief 'callflow' of the skype interface (as opposed to phone interface) */
-	int skype;					/*!< \brief config flag, bool, Skype support on this interface (0 if false, -1 if true) */
+	int skype_callflow;
+	int skype;
 	int control_to_send;
 #ifdef WIN32
 	switch_file_t *audiopipe_srv[2];
 	switch_file_t *audiopipe_cli[2];
-	switch_file_t *skypiax_sound_capt_fd;	/*!< \brief file descriptor for sound capture dev */
+	switch_file_t *skypiax_sound_capt_fd;
 #else							/* WIN32 */
 	int audiopipe_srv[2];
 	int audiopipe_cli[2];
-	int skypiax_sound_capt_fd;	/*!< \brief file descriptor for sound capture dev */
+	int skypiax_sound_capt_fd;
 #endif							/* WIN32 */
 	switch_thread_t *tcp_srv_thread;
 	switch_thread_t *tcp_cli_thread;
@@ -254,14 +254,6 @@ struct private_object {
 	switch_mutex_t *mutex_audio_srv;
 	int flag_audio_srv;
 
-	//int phonebook_listing;
-	//int phonebook_querying;
-	//int phonebook_listing_received_calls;
-
-	//int phonebook_first_entry;
-	//int phonebook_last_entry;
-	//int phonebook_number_lenght;
-	//int phonebook_text_lenght;
 	FILE *phonebook_writing_fp;
 	int skypiax_dir_entry_extension_prefix;
 	char skype_user[256];
