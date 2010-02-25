@@ -87,3 +87,4 @@
 /opt/freeswitch/conf/autoload_configs/tts_commandline.conf.xml
 /opt/freeswitch/conf/jingle_profiles/server.xml
 /opt/freeswitch/conf/jingle_profiles/client.xml
+/opt/freeswitch/conf/ivr_menus/demo_ivr.xml
