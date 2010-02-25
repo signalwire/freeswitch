@@ -109,6 +109,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{"DisplayPromptStatusMessage", DISPLAY_PROMPT_STATUS_MESSAGE},
 	{"ClearPromptStatusMessage", CLEAR_PROMPT_STATUS_MESSAGE},
 	{"ActivateCallPlaneMessage", ACTIVATE_CALL_PLANE_MESSAGE},
+	{"UnregisterAckMessage", UNREGISTER_ACK_MESSAGE},
 	{"DialedNumberMessage", DIALED_NUMBER_MESSAGE},
 	{"FeatureResMessage", FEATURE_STAT_RES_MESSAGE},
 	{NULL, 0}
@@ -1997,9 +1998,21 @@ switch_status_t skinny_handle_on_hook_message(listener_t *listener, skinny_messa
 switch_status_t skinny_handle_unregister(listener_t *listener, skinny_message_t *request)
 {
 	switch_event_t *event = NULL;
+	skinny_message_t *message;
+
 	/* skinny::unregister event */
 	skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_UNREGISTER);
 	switch_event_fire(&event);
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.unregister_ack));
+	message->type = UNREGISTER_ACK_MESSAGE;
+	message->length = 4 + sizeof(message->data.unregister_ack);
+	message->data.unregister_ack.unregister_status = 0; /* OK */
+	skinny_send_reply(listener, message);
+
+	/* Close socket */
+	switch_clear_flag_locked(listener, LFLAG_RUNNING);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2061,8 +2074,8 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 		case UNREGISTER_MESSAGE:
 			return skinny_handle_unregister(listener, request);
 		default:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-				"Unknown request type: %x (length=%d).\n", request->type, request->length);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+				"Unhandled request %s (type=%x,length=%d).\n", skinny_message_type2str(request->type), request->type, request->length);
 			return SWITCH_STATUS_SUCCESS;
 	}
 }

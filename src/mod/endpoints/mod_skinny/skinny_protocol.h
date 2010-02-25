@@ -441,6 +441,12 @@ struct activate_call_plane_message {
 	uint32_t line_instance;
 };
 
+/* UnregisterAckMessage */
+#define UNREGISTER_ACK_MESSAGE 0x0118
+struct unregister_ack_message {
+	uint32_t unregister_status;
+};
+
 /* DialedNumberMessage */
 #define DIALED_NUMBER_MESSAGE 0x011D
 struct dialed_number_message {
@@ -506,6 +512,7 @@ union skinny_data {
 	struct display_prompt_status_message display_prompt_status;
 	struct clear_prompt_status_message clear_prompt_status;
 	struct activate_call_plane_message activate_call_plane;
+	struct unregister_ack_message unregister_ack;
 	struct dialed_number_message dialed_number;
 	struct feature_stat_res_message feature_res;
 	
@@ -619,7 +626,7 @@ uint32_t func(const char *str)\
 		status = SWITCH_STATUS_SUCCESS;\
 	}
 	
-struct skinny_table SKINNY_MESSAGE_TYPES[52];
+struct skinny_table SKINNY_MESSAGE_TYPES[53];
 const char *skinny_message_type2str(uint32_t id);
 uint32_t skinny_str2message_type(const char *str);
 #define SKINNY_PUSH_MESSAGE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_MESSAGE_TYPES)

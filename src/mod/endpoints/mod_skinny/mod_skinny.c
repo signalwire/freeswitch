@@ -990,7 +990,28 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch_bool_t flush_events)
 {
 
-	/* TODO */
+	if(!zstr(listener->device_name)) {
+		skinny_profile_t *profile = listener->profile;
+		char *sql;
+	
+		if ((sql = switch_mprintf(
+				"DELETE FROM skinny_devices "
+					"WHERE name='%s'",
+				listener->device_name))) {
+			skinny_execute_sql(profile, sql, profile->listener_mutex);
+			switch_safe_free(sql);
+		}
+
+		if ((sql = switch_mprintf(
+				"DELETE FROM skinny_buttons "
+					"WHERE device_name='%s'",
+				listener->device_name))) {
+			skinny_execute_sql(profile, sql, profile->listener_mutex);
+			switch_safe_free(sql);
+		}
+
+		strcpy(listener->device_name, "");
+	}
 }
 
 static int dump_device_callback(void *pArg, int argc, char **argv, char **columnNames)
