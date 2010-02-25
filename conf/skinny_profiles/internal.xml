@@ -4,7 +4,7 @@
     <param name="ip" value="$${local_ip_v4}"/>
     <param name="port" value="2000"/>
     <param name="dialplan" value="XML"/>
-    <param name="context" value="public"/>
+    <param name="context" value="default"/>
     <param name="keep-alive" value="60"/>
     <param name="date-format" value="D/M/Y"/>
     <param name="odbc-dsn" value=""/>
