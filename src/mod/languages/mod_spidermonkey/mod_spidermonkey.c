@@ -3380,7 +3380,10 @@ static JSBool js_api_sleep(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 	}
 
 	if (msec) {
+		int saveDepth;
+		saveDepth = JS_SuspendRequest(cx);
 		switch_yield(msec * 1000);
+		JS_ResumeRequest(cx, saveDepth);
 	} else {
 		eval_some_js("~throw new Error(\"No Time specified\");", cx, obj, rval);
 	}
