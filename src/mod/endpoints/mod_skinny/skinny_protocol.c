@@ -360,6 +360,9 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			return SWITCH_STATUS_FALSE;
 		}
+		if (do_sleep) {
+			switch_cond_next();
+		}
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
