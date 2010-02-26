@@ -311,7 +311,7 @@ static switch_bool_t directory_execute_sql_callback(switch_mutex_t *mutex, char 
 }
 
 #define DIR_DESC "directory"
-#define DIR_USAGE "<profile_name> <domain_name>"
+#define DIR_USAGE "<profile_name> <domain_name> [<context_name>]"
 
 static void free_profile(dir_profile_t *profile)
 {
@@ -833,6 +833,7 @@ SWITCH_STANDARD_APP(directory_function)
 	char *mydata = NULL;
 	const char *profile_name = NULL;
 	const char *domain_name = NULL;
+	const char *context_name = NULL;
 	dir_profile_t *profile = NULL;
 	int x = 0;
 	char *sql = NULL;
@@ -846,7 +847,10 @@ SWITCH_STANDARD_APP(directory_function)
 	}
 
 	mydata = switch_core_session_strdup(session, data);
-	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not enough args [%s]\n", data);
+		return;
+	}
 
 	if (argv[x]) {
 		profile_name = argv[x++];
@@ -856,9 +860,17 @@ SWITCH_STANDARD_APP(directory_function)
 		domain_name = argv[x++];
 	}
 
+	if (argv[x]) {
+		context_name = argv[x++];
+	}
+
 	if (!(profile = get_profile(profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
 		return;
+	}
+
+	if (!context_name) {
+		context_name = domain_name;
 	}
 
 	populate_database(session, profile, domain_name);
@@ -895,7 +907,7 @@ SWITCH_STANDARD_APP(directory_function)
 
 	if (!zstr(s_param.transfer_to)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Directory transfering call to : %s\n", s_param.transfer_to);
-		switch_ivr_session_transfer(session, s_param.transfer_to, "XML", domain_name);
+		switch_ivr_session_transfer(session, s_param.transfer_to, "XML", context_name);
 	}
 
 	/* Delete all sql entry for this call */
