@@ -291,6 +291,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		return ZAP_FAIL;
 	}
 
+	/* sangomabc_call_init (event, calling, called, setup_id) */
 	sangomabc_call_init(&event, caller_data->cid_num.digits, ani, r);
 	//sangoma_bc_call_init will clear the trunk_group val so we need to set it again	
 	event.trunk_group=tg;
@@ -317,13 +318,22 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	}
 
 	zap_set_string(event.calling_name, caller_data->cid_name);
-	zap_set_string(event.isup_in_rdnis, caller_data->rdnis.digits);
+	zap_set_string(event.rdnis.digits, caller_data->rdnis.digits);
+
 	if (strlen(caller_data->rdnis.digits)) {
-			event.isup_in_rdnis_size = strlen(caller_data->rdnis.digits)+1;
+			event.rdnis.digits_count = strlen(caller_data->rdnis.digits)+1;
+			event.rdnis.ton = caller_data->rdnis.type;
+			event.rdnis.npi = caller_data->rdnis.plan;
 	}
 
-	event.calling_number_screening_ind = caller_data->screen;
-	event.calling_number_presentation = caller_data->pres;
+	event.calling.screening_ind = caller_data->screen;
+	event.calling.presentation_ind = caller_data->pres;
+
+	event.calling.ton = caller_data->cid_num.type;
+	event.calling.npi = caller_data->cid_num.plan;
+
+	event.called.ton = caller_data->ani.type;
+	event.called.npi = caller_data->ani.plan;
 
 	OUTBOUND_REQUESTS[r].status = BST_WAITING;
 	OUTBOUND_REQUESTS[r].span = span;
@@ -728,35 +738,42 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 	}
 	
 	zchan->sflags = 0;
-	zap_set_string(zchan->caller_data.cid_num.digits, (char *)event->calling_number_digits);
-	zap_set_string(zchan->caller_data.cid_name, (char *)event->calling_number_digits);
+	zap_set_string(zchan->caller_data.cid_num.digits, (char *)event->calling.digits);
+	zap_set_string(zchan->caller_data.cid_name, (char *)event->calling.digits);
+	zap_set_string(zchan->caller_data.ani.digits, (char *)event->calling.digits);
+	zap_set_string(zchan->caller_data.dnis.digits, (char *)event->called.digits);
+	zap_set_string(zchan->caller_data.rdnis.digits, (char *)event->rdnis.digits);
+
 	if (strlen(event->calling_name)) {
 		zap_set_string(zchan->caller_data.cid_name, (char *)event->calling_name);
 	}
-	zap_set_string(zchan->caller_data.ani.digits, (char *)event->calling_number_digits);
-	zap_set_string(zchan->caller_data.dnis.digits, (char *)event->called_number_digits);
-	if (event->isup_in_rdnis_size) {
-		char* p;
 
-		//Set value of rdnis.digis in case prot daemon is still using older style RDNIS
-		if (atoi((char *)event->isup_in_rdnis) > 0) {
-			zap_set_string(zchan->caller_data.rdnis.digits, (char *)event->isup_in_rdnis);
-		}
+	zchan->caller_data.cid_num.plan = event->calling.npi;
+	zchan->caller_data.cid_num.type = event->calling.ton;
 
-		p = strstr((char*)event->isup_in_rdnis,"PRI001-ANI2-");
+	zchan->caller_data.ani.plan = event->calling.npi;
+	zchan->caller_data.ani.type = event->calling.ton;
+
+	zchan->caller_data.dnis.plan = event->called.npi;
+	zchan->caller_data.dnis.type = event->called.ton;
+
+	zchan->caller_data.rdnis.plan = event->rdnis.npi;
+	zchan->caller_data.rdnis.type = event->rdnis.ton;
+
+	zchan->caller_data.screen = event->calling.screening_ind;
+	zchan->caller_data.pres = event->calling.presentation_ind;
+
+	if (event->custom_data_size) {
+		char* p = NULL;
+
+		p = strstr((char*)event->custom_data,"PRI001-ANI2-");
 		if (p!=NULL) {
 			int ani2 = 0;
 			sscanf(p, "PRI001-ANI2-%d", &ani2);
 			snprintf(zchan->caller_data.aniII, 5, "%.2d", ani2);
 		}	
-		p = strstr((char*)event->isup_in_rdnis,"RDNIS-");
-		if (p!=NULL) {
-			sscanf(p, "RDNIS-%s", &zchan->caller_data.rdnis.digits[0]);
-		}
-		
 	}
-	zchan->caller_data.screen = event->calling_number_screening_ind;
-	zchan->caller_data.pres = event->calling_number_presentation;
+
 	zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
 	return;
 

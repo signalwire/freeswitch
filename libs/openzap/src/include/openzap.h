@@ -438,8 +438,23 @@ typedef enum {
 	ZAP_TON_NETWORK_SPECIFIC,
 	ZAP_TON_SUBSCRIBER_NUMBER,
 	ZAP_TON_ABBREVIATED_NUMBER,
-	ZAP_TON_RESERVED
+	ZAP_TON_RESERVED,
+	ZAP_TON_INVALID = 255
 } zap_ton_t;
+
+/**
+ * Numbering Plan Identification (NPI)
+ */
+typedef enum {
+	ZAP_NPI_UNKNOWN = 0,
+	ZAP_NPI_ISDN = 1,
+	ZAP_NPI_DATA = 3,
+	ZAP_NPI_TELEX = 4,
+	ZAP_NPI_NATIONAL = 8,
+	ZAP_NPI_PRIVATE = 9,
+	ZAP_NPI_RESERVED = 10,
+	ZAP_NPI_INVALID = 255
+} zap_npi_t;
 
 typedef struct {
 	char digits[25];
@@ -584,6 +599,7 @@ struct zap_span {
 	size_t dtmf_hangup_len;
 	int suggest_chan_id;
 	zap_state_map_t *state_map;
+	zap_caller_data_t default_caller_data;
 	struct zap_span *next;
 };
 
@@ -699,6 +715,8 @@ OZ_DECLARE(int) zap_load_module_assume(const char *name);
 OZ_DECLARE(zap_status_t) zap_span_find_by_name(const char *name, zap_span_t **span);
 OZ_DECLARE(char *) zap_api_execute(const char *type, const char *cmd);
 OZ_DECLARE(int) zap_vasprintf(char **ret, const char *fmt, va_list ap);
+
+OZ_DECLARE(void) zap_set_caller_data(uint32_t span_id, zap_caller_data_t *caller_data);
 
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);

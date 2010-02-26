@@ -687,6 +687,9 @@ static ZIO_WRITE_FUNCTION(wanpipe_write)
 
 	/* Do we even need the headerframe here? on windows, we don't even pass it to the driver */
 	memset(&hdrframe, 0, sizeof(hdrframe));
+	if (*datalen == 0) {
+		return ZAP_SUCCESS;
+	}
 	bsent = sangoma_writemsg_tdm(zchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (unsigned short)(*datalen),0);
 
 	/* should we be checking if bsent == *datalen here? */

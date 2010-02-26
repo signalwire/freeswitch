@@ -176,6 +176,45 @@ static void default_logger(const char *file, const char *func, int line, int lev
 
 }
 
+OZ_DECLARE(void) zap_set_caller_data(uint32_t span_id, zap_caller_data_t *caller_data)
+{
+	zap_span_t *span = NULL;
+	if (!span_id) {
+		zap_log(ZAP_LOG_CRIT, "Error: trying to set caller data, but no span id?\n");
+		return;
+	}
+
+	zap_span_find(span_id, &span);
+	if (!span) {
+	zap_log(ZAP_LOG_CRIT, "Error: trying to set caller data, but could not find span\n");
+		return;
+	}
+
+	if (caller_data->cid_num.plan == ZAP_NPI_INVALID) {
+		caller_data->cid_num.plan = span->default_caller_data.cid_num.plan;
+	}
+
+	if (caller_data->cid_num.type == ZAP_TON_INVALID) {
+		caller_data->cid_num.type = span->default_caller_data.cid_num.type;
+	}
+
+	if (caller_data->ani.plan == ZAP_NPI_INVALID) {
+		caller_data->ani.plan = span->default_caller_data.ani.plan;
+	}
+
+	if (caller_data->ani.type == ZAP_TON_INVALID) {
+		caller_data->ani.type = span->default_caller_data.ani.type;
+	}
+
+	if (caller_data->rdnis.plan == ZAP_NPI_INVALID) {
+		caller_data->rdnis.plan = span->default_caller_data.rdnis.plan;
+	}
+
+	if (caller_data->rdnis.type == ZAP_NPI_INVALID) {
+		caller_data->rdnis.type = span->default_caller_data.rdnis.type;
+	}
+}
+
 OZ_DECLARE_DATA zap_logger_t zap_log = null_logger;
 
 OZ_DECLARE(void) zap_global_set_logger(zap_logger_t logger)
@@ -967,7 +1006,9 @@ OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t 
 			*zchan = NULL;
 			return ZAP_FAIL;
 		}
-		
+
+		zap_set_caller_data(span_id, caller_data);
+
 		if (span->channel_request && !span->suggest_chan_id) {
 			return span->channel_request(span, 0, direction, caller_data, zchan);
 		}

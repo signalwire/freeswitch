@@ -61,7 +61,7 @@ struct span_config {
 	char dial_regex[256];
 	char fail_dial_regex[256];
 	char hold_music[256];
-	char type[256];
+	char type[256];	
 	analog_option_t analog_options;
 };
 
@@ -133,6 +133,43 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 void dump_chan(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream);
 void dump_chan_xml(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream);
 
+static void zap_set_npi(const char *npi_string, uint8_t *target)
+{
+	if (!strcasecmp(npi_string, "isdn") || !strcasecmp(npi_string, "e164")) {
+		*target = ZAP_NPI_ISDN;
+	} else if (!strcasecmp(npi_string, "data")) {
+		*target = ZAP_NPI_DATA;
+	} else if (!strcasecmp(npi_string, "telex")) {
+		*target = ZAP_NPI_TELEX;
+	} else if (!strcasecmp(npi_string, "national")) {
+		*target = ZAP_NPI_NATIONAL;
+	} else if (!strcasecmp(npi_string, "private")) {
+		*target = ZAP_NPI_PRIVATE;
+	} else if (!strcasecmp(npi_string, "reserved")) {
+		*target = ZAP_NPI_RESERVED;
+	} else if (!strcasecmp(npi_string, "unknown")) {
+		*target = ZAP_NPI_UNKNOWN;
+	} else {
+		zap_log(ZAP_LOG_WARNING, "Invalid NPI value (%s)\n", npi_string);
+		*target = ZAP_NPI_UNKNOWN;
+	}
+}
+
+static void zap_set_ton(const char *ton_string, uint8_t *target)
+{
+	if (!strcasecmp(ton_string, "national")) {
+		*target = ZAP_TON_NATIONAL;
+	} else if (!strcasecmp(ton_string, "international")) {
+		*target = ZAP_TON_INTERNATIONAL;
+	} else if (!strcasecmp(ton_string, "local")) {
+		*target = ZAP_TON_SUBSCRIBER_NUMBER;
+	} else if (!strcasecmp(ton_string, "unknown")) {
+		*target = ZAP_TON_UNKNOWN;
+	} else {
+		zap_log(ZAP_LOG_WARNING, "Invalid TON value (%s)\n", ton_string);
+		*target = ZAP_TON_UNKNOWN;
+	}
+}
 
 static switch_core_session_t *zap_channel_get_session(zap_channel_t *channel, int32_t id)
 {
@@ -1109,7 +1146,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	int argc = 0;
 	const char *var;
 
-
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -1196,10 +1232,17 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	} else {
 		caller_data.ani.type = outbound_profile->destination_number_ton;
 	}
-	
+
 	caller_data.ani.plan = outbound_profile->destination_number_numplan;
 
+	/* blindly copy data from outbound_profile. They will be overwritten 
+	 * by calling zap_caller_data if needed after */
+	caller_data.cid_num.type = outbound_profile->caller_ton;
+	caller_data.cid_num.plan = outbound_profile->caller_numplan;
 
+	caller_data.rdnis.type = outbound_profile->rdnis_ton;
+	caller_data.rdnis.plan = outbound_profile->rdnis_numplan;
+	
 #if 0
 	if (!zstr(outbound_profile->rdnis)) {
 		zap_set_string(caller_data.rdnis.digits, outbound_profile->rdnis);
@@ -1211,6 +1254,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	
 	if (chan_id) {
 		status = zap_channel_open(span_id, chan_id, &zchan);
+		zap_set_caller_data(span_id, &caller_data);
 	} else {
 		status = zap_channel_open_any(span_id, direction, &caller_data, &zchan);
 	}
@@ -2198,6 +2242,7 @@ static switch_status_t load_config(void)
 			uint32_t to = 0;
 			int q921loglevel = -1;
 			int q931loglevel = -1;
+			
 			// quick debug
 			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ID: '%s', Name:'%s'\n",id,name);
 
@@ -2389,6 +2434,12 @@ static switch_status_t load_config(void)
 			zap_status_t zstatus = ZAP_FAIL;
 			const char *context = "default";
 			const char *dialplan = "XML";
+			const char *outbound_called_ton = "unknown";
+			const char *outbound_called_npi = "unknown";
+			const char *outbound_calling_ton = "unknown";
+			const char *outbound_calling_npi = "unknown";
+			const char *outbound_rdnis_ton = "unknown";
+			const char *outbound_rdnis_npi = "unknown";
 			uint32_t span_id = 0;
 			zap_span_t *span = NULL;
 			const char *tonegroup = NULL;
@@ -2413,8 +2464,18 @@ static switch_status_t load_config(void)
 					remote_port = atoi(val);
 				} else if (!strcasecmp(var, "context")) {
 					context = val;
-				} else if (!strcasecmp(var, "dialplan")) {
-					dialplan = val;
+				} else if (!strcasecmp(var, "outbound-called-ton")) {
+					outbound_called_ton = val;
+				} else if (!strcasecmp(var, "outbound-called-npi")) {
+					outbound_called_npi = val;
+				} else if (!strcasecmp(var, "outbound-calling-ton")) {
+					outbound_calling_ton = val;
+				} else if (!strcasecmp(var, "outbound-calling-npi")) {
+					outbound_calling_npi = val;
+				} else if (!strcasecmp(var, "outbound-rdnis-ton")) {
+					outbound_rdnis_ton = val;
+				} else if (!strcasecmp(var, "outbound-rdnis-npi")) {
+					outbound_rdnis_npi = val;
 				} 
 			}
 				
@@ -2448,6 +2509,14 @@ static switch_status_t load_config(void)
 			if (!span_id) {
 				span_id = span->span_id;
 			}
+
+			zap_set_npi(outbound_called_npi, &span->default_caller_data.ani.plan);
+			zap_set_npi(outbound_calling_npi, &span->default_caller_data.cid_num.plan);
+			zap_set_npi(outbound_rdnis_npi, &span->default_caller_data.rdnis.plan);
+
+			zap_set_ton(outbound_called_ton, &span->default_caller_data.ani.type);
+			zap_set_ton(outbound_calling_ton, &span->default_caller_data.cid_num.type);
+			zap_set_ton(outbound_rdnis_ton, &span->default_caller_data.rdnis.type);
 
 			if (zap_configure_span("sangoma_boost", span, on_clear_channel_signal, 
 								   "local_ip", local_ip,
