@@ -630,9 +630,14 @@ static int __devinit snd_dummy_probe(struct platform_device *devptr)
 	int idx, err;
 	int dev = devptr->id;
 
-	card = snd_card_new(index[dev], id[dev], THIS_MODULE, sizeof(struct snd_dummy));
-	if (card == NULL)
-		return -ENOMEM;
+	card = snd_card_new(index[dev], id[dev], THIS_MODULE, sizeof(struct snd_dummy)); //giova if this gives you problems, comment it out and remove comment from the 4 lines commented below
+	if (card == NULL) //giova if this gives you problems, comment it out and remove comment from the 4 lines commented below
+		return -ENOMEM; //giova if this gives you problems, comment it out and remove comment from the 4 lines commented below
+
+	//giova err = snd_card_create(index[dev], id[dev], THIS_MODULE,
+	//giova sizeof(struct snd_dummy), &card);
+	//giova if (err < 0)
+	//giova return err;
 
 	dummy = card->private_data;
 	dummy->card = card;
