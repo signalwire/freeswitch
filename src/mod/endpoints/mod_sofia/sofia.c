@@ -1702,7 +1702,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 	for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
 		char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
 		sofia_gateway_t *gateway;
-		char *pkey = switch_mprintf("%s-%s", profile->name, name);
+		char *pkey = switch_mprintf("%s::%s", profile->name, name);
 
 		if (zstr(name)) {
 			name = "anonymous";
