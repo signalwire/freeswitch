@@ -176,18 +176,11 @@ static void default_logger(const char *file, const char *func, int line, int lev
 
 }
 
-OZ_DECLARE(void) zap_set_caller_data(uint32_t span_id, zap_caller_data_t *caller_data)
+static zap_status_t zap_set_caller_data(zap_span_t *span, zap_caller_data_t *caller_data)
 {
-	zap_span_t *span = NULL;
-	if (!span_id) {
-		zap_log(ZAP_LOG_CRIT, "Error: trying to set caller data, but no span id?\n");
-		return;
-	}
-
-	zap_span_find(span_id, &span);
-	if (!span) {
-	zap_log(ZAP_LOG_CRIT, "Error: trying to set caller data, but could not find span\n");
-		return;
+	if (!caller_data) {
+		zap_log(ZAP_LOG_CRIT, "Error: trying to set caller data, but no caller_data!\n");
+		return ZAP_FAIL;
 	}
 
 	if (caller_data->cid_num.plan == ZAP_NPI_INVALID) {
@@ -213,6 +206,21 @@ OZ_DECLARE(void) zap_set_caller_data(uint32_t span_id, zap_caller_data_t *caller
 	if (caller_data->rdnis.type == ZAP_NPI_INVALID) {
 		caller_data->rdnis.type = span->default_caller_data.rdnis.type;
 	}
+	return ZAP_SUCCESS;
+}
+
+OZ_DECLARE(zap_status_t) zap_channel_set_caller_data(zap_channel_t *zchan, zap_caller_data_t *caller_data)
+{
+	zap_status_t err = ZAP_SUCCESS;
+	if (!zchan) {
+		zap_log(ZAP_LOG_CRIT, "Error: trying to set caller data, but no zchan!\n");
+		return ZAP_FAIL;
+	}
+	if ((err = zap_set_caller_data(zchan->span, caller_data)) != ZAP_SUCCESS) {
+		return err; 
+	}
+	zchan->caller_data = *caller_data;
+	return ZAP_SUCCESS;
 }
 
 OZ_DECLARE_DATA zap_logger_t zap_log = null_logger;
@@ -1007,9 +1015,8 @@ OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t 
 			return ZAP_FAIL;
 		}
 
-		zap_set_caller_data(span_id, caller_data);
-
 		if (span->channel_request && !span->suggest_chan_id) {
+			zap_set_caller_data(span, caller_data);
 			return span->channel_request(span, 0, direction, caller_data, zchan);
 		}
 		
@@ -1056,6 +1063,7 @@ OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t 
 			) {
 
 			if (span && span->channel_request) {
+				zap_set_caller_data(span, caller_data);
 				status = span->channel_request(span, i, direction, caller_data, zchan);
 				break;
 			}

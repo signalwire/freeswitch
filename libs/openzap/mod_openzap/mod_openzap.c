@@ -1254,7 +1254,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	
 	if (chan_id) {
 		status = zap_channel_open(span_id, chan_id, &zchan);
-		zap_set_caller_data(span_id, &caller_data);
 	} else {
 		status = zap_channel_open_any(span_id, direction, &caller_data, &zchan);
 	}
@@ -1304,7 +1303,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_channel_set_variable(channel, "openzap_span_name", zchan->span->name);
 		switch_channel_set_variable_printf(channel, "openzap_span_number", "%d", zchan->span_id);	
 		switch_channel_set_variable_printf(channel, "openzap_chan_number", "%d", zchan->chan_id);
-		zchan->caller_data = caller_data;
+		zap_channel_set_caller_data(zchan, &caller_data);
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 		switch_channel_set_caller_profile(channel, caller_profile);
 		tech_pvt->caller_profile = caller_profile;
@@ -2434,12 +2433,12 @@ static switch_status_t load_config(void)
 			zap_status_t zstatus = ZAP_FAIL;
 			const char *context = "default";
 			const char *dialplan = "XML";
-			const char *outbound_called_ton = "unknown";
-			const char *outbound_called_npi = "unknown";
-			const char *outbound_calling_ton = "unknown";
-			const char *outbound_calling_npi = "unknown";
-			const char *outbound_rdnis_ton = "unknown";
-			const char *outbound_rdnis_npi = "unknown";
+			const char *outbound_called_ton = "national";
+			const char *outbound_called_npi = "isdn";
+			const char *outbound_calling_ton = "national";
+			const char *outbound_calling_npi = "isdn";
+			const char *outbound_rdnis_ton = "national";
+			const char *outbound_rdnis_npi = "isdn";
 			uint32_t span_id = 0;
 			zap_span_t *span = NULL;
 			const char *tonegroup = NULL;
