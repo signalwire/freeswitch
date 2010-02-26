@@ -235,7 +235,6 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			
 			pkey = switch_mprintf("%s::%s", profile->name, gateway_ptr->name);
 
-			switch_snprintf(pkey, sizeof(pkey), "%s::%s", profile->name, gateway_ptr->name);
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->name);
 
