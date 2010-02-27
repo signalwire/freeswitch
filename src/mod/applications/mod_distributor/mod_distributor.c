@@ -157,7 +157,7 @@ static int load_config(int reloading)
 				continue;
 			}
 
-			if (tmp >= lp->target_weight) {
+			if (tmp >= lp->target_weight && (lp->target_weight == 1 && tmp != 1)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Weight %d value incorrect, must be less than %d\n", tmp, lp->target_weight);
 				continue;
 			}
@@ -196,7 +196,7 @@ static int load_config(int reloading)
 		if (accum < lp->target_weight) {
 			struct dist_node *np1;
 			int remain = lp->target_weight - accum;
-			int ea = remain / lp->node_count ? lp->node_count : 1;
+			int ea = remain / (lp->node_count ? lp->node_count : 1);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Total weight does not add up to total weight %d\n", lp->target_weight);
 
