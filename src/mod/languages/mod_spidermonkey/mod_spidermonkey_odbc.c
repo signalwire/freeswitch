@@ -464,6 +464,11 @@ static JSBool odbc_disconnect(JSContext * cx, JSObject * obj, uintN argc, jsval 
 		goto done;
 	}
 
+	if (odbc_obj->stmt) {
+		SQLFreeHandle(SQL_HANDLE_STMT, odbc_obj->stmt);
+		odbc_obj->stmt = NULL;
+	}
+
 	switch_odbc_handle_disconnect(odbc_obj->handle);
 
   done:
