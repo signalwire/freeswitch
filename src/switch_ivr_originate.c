@@ -1919,6 +1919,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "progress_timeout")) {
 					ok = 1;
+				} else if (!strcasecmp((char *) hi->name, "language")) {
+					ok = 1;
 				}
 
 				if (ok && !switch_event_get_header(var_event, hi->name)) {
