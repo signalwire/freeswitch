@@ -41,6 +41,7 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 	int size = sizeof(int);
 #endif //WIN32
 	int sockbufsize = 0;
+	int flag = 0;
 
 
 	memset(&my_addr, 0, sizeof(my_addr));
@@ -125,6 +126,16 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 	size = sizeof(int);
 	getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &sockbufsize, &size);
 	DEBUGA_SKYPE("2 SO_SNDBUF is %d, size is %d\n", SKYPIAX_P_LOG, sockbufsize, size);
+
+        flag = 0;
+        getsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, &size);
+        DEBUGA_SKYPE("TCP_NODELAY is %d\n", SKYPIAX_P_LOG, flag);
+        flag = 1;
+        setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, size);
+        flag = 0;
+        getsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, &size);
+        DEBUGA_SKYPE("TCP_NODELAY is %d\n", SKYPIAX_P_LOG, flag);
+
 
 
 
@@ -804,11 +815,14 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 
 						if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
 							len = recv(fd, (char *) srv_in, 640, 0);
+							skypiax_sleep(5000);
 						} else {
+							skypiax_sleep(10000);
 							continue;
 						}
 						if (tech_pvt->begin_to_read == 0) {
 							DEBUGA_SKYPE("len=%d\n", SKYPIAX_P_LOG, len);
+							skypiax_sleep(10000);
 							continue;
 						}
 
@@ -963,6 +977,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 							DEBUGA_SKYPE("len=%d, error: %s\n", SKYPIAX_P_LOG, len, strerror(errno));
 							break;
 						}
+						skypiax_sleep(10000);
 						continue;
 					}
 #endif //0

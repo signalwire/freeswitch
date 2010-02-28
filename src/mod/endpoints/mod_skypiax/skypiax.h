@@ -47,6 +47,7 @@
 #include <spandsp.h>
 #include <spandsp/version.h>
 
+#include <netinet/tcp.h>
 
 #ifdef _MSC_VER
 //Windows macro  for FD_SET includes a warning C4127: conditional expression is constant
