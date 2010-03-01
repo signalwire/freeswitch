@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
 		"\t-hp                    -- enable high priority settings\n"
 		"\t-vg                    -- run under valgrind\n"
 		"\t-nosql                 -- disable internal sql scoreboard\n"
-		"\t-vm                    -- use possibly more vm-friendly timing code.\n"
+		"\t-heavy-timer           -- Heavy Timer, possibly more accurate but at a cost\n"
 		"\t-nonat                 -- disable auto nat detection\n"
 		"\t-nocal                 -- disable clock calibration\n"
 		"\t-nort                  -- disable clock clock_realtime\n"
@@ -485,8 +485,8 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-vm")) {
-			flags |= SCF_USE_COND_TIMING;
+		if (local_argv[x] && !strcmp(local_argv[x], "-heavy-timer")) {
+			flags |= SCF_USE_HEAVY_TIMING;
 			known_opt++;
 		}
 

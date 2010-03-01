@@ -246,7 +246,7 @@ typedef enum {
 	SCF_USE_AUTO_NAT = (1 << 6),
 	SCF_EARLY_HANGUP = (1 << 7),
 	SCF_CALIBRATE_CLOCK = (1 << 8),
-	SCF_USE_COND_TIMING = (1 << 9),
+	SCF_USE_HEAVY_TIMING = (1 << 9),
 	SCF_USE_CLOCK_RT = (1 << 10)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;

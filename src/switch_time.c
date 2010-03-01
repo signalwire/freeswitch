@@ -63,15 +63,22 @@ static int NANO = 0;
 
 static int OFFSET = 0;
 
-static int COND = 0;
+static int COND = 1;
 
 static int MATRIX = 1;
 
+#define ONEMS
+#ifdef ONEMS
+static int STEP_MS = 1;
+static int STEP_MIC = 1000;
+static uint32_t TICK_PER_SEC = 10000;
+static int MS_PER_TICK = 1;
+#else
 static int STEP_MS = 10;
 static int STEP_MIC = 10000;
 static uint32_t TICK_PER_SEC = 1000;
-
 static int MS_PER_TICK = 10;
+#endif
 
 static switch_memory_pool_t *module_pool = NULL;
 
@@ -80,6 +87,7 @@ static struct {
 	int32_t STARTED;
 	int32_t use_cond_yield;
 	switch_mutex_t *mutex;
+	uint32_t timer_count;
 } globals;
 
 #ifdef WIN32
@@ -375,7 +383,7 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 
 SWITCH_DECLARE(void) switch_cond_next(void)
 {
-	if (session_manager.session_count > runtime.tipping_point) {
+	if (globals.timer_count >= runtime.tipping_point) {
 		os_yield();
 		return;
 	}
@@ -450,6 +458,13 @@ static switch_status_t timer_init(switch_timer_t *timer)
 			TICK_PER_SEC = 10000;
 			switch_time_sync();
 		}
+
+		switch_mutex_lock(globals.mutex);
+		globals.timer_count++;
+		if (globals.timer_count == (runtime.tipping_point + 1)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Crossed tipping point of %u, shifting into high-gear.\n", runtime.tipping_point);
+		}
+		switch_mutex_unlock(globals.mutex);
 
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -532,8 +547,9 @@ static switch_status_t timer_next(switch_timer_t *timer)
 	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
 
-		if (session_manager.session_count > runtime.tipping_point) {
+		if (globals.timer_count >= runtime.tipping_point) {
 			os_yield();
+			globals.use_cond_yield = 0;
 		} else {
 			if (globals.use_cond_yield == 1) {
 				switch_mutex_lock(TIMER_MATRIX[cond_index].mutex);
@@ -594,6 +610,16 @@ static switch_status_t timer_destroy(switch_timer_t *timer)
 	if (private_info) {
 		private_info->ready = 0;
 	}
+
+	switch_mutex_lock(globals.mutex);
+	if (globals.timer_count) {
+		globals.timer_count--;
+		if (globals.timer_count == (runtime.tipping_point - 1)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Fell Below tipping point of %u, shifting into low-gear.\n", runtime.tipping_point);
+		}
+	}
+	switch_mutex_unlock(globals.mutex);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -676,7 +702,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				rev_errs = 0;
 			}
 
-			if (session_manager.session_count > runtime.tipping_point) {
+			if (globals.timer_count >= runtime.tipping_point) {
 				os_yield();
 			} else {
 				do_sleep(1000);
@@ -987,8 +1013,8 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 		switch_time_set_nanosleep(SWITCH_FALSE);
 	}
 
-	if (switch_test_flag((&runtime), SCF_USE_COND_TIMING)) {
-		switch_time_set_cond_yield(SWITCH_TRUE);
+	if (switch_test_flag((&runtime), SCF_USE_HEAVY_TIMING)) {
+		switch_time_set_cond_yield(SWITCH_FALSE);
 	}
 
 	if (switch_test_flag((&runtime), SCF_CALIBRATE_CLOCK)) {
