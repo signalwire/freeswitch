@@ -815,7 +815,6 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 
 						if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
 							len = recv(fd, (char *) srv_in, 640, 0);
-							skypiax_sleep(5000);
 						} else {
 							skypiax_sleep(10000);
 							continue;
