@@ -1076,6 +1076,7 @@ static ftdm_channel_t* event_process_states(ftdm_span_t *span, sangomabc_short_e
         case SIGBOOST_EVENT_DIGIT_IN:
         case SIGBOOST_EVENT_INSERT_CHECK_LOOP:
         case SIGBOOST_EVENT_REMOVE_CHECK_LOOP:
+        case SIGBOOST_EVENT_CALL_RELEASED:
             if (!(ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 1))) {
                 ftdm_log(FTDM_LOG_DEBUG, "PROCESS STATES  CANT FIND CHAN %d:%d\n", event->span+1,event->chan+1);
                 return NULL;
