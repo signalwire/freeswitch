@@ -362,6 +362,11 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
+  public bool bridged() {
+    bool ret = freeswitchPINVOKE.CoreSession_bridged(swigCPtr);
+    return ret;
+  }
+
   public bool answered() {
     bool ret = freeswitchPINVOKE.CoreSession_answered(swigCPtr);
     return ret;
@@ -3113,8 +3118,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static void switch_channel_audio_sync(SWIGTYPE_p_switch_channel channel) {
-    freeswitchPINVOKE.switch_channel_audio_sync(SWIGTYPE_p_switch_channel.getCPtr(channel));
+  public static void switch_channel_perform_audio_sync(SWIGTYPE_p_switch_channel channel, string file, string func, int line) {
+    freeswitchPINVOKE.switch_channel_perform_audio_sync(SWIGTYPE_p_switch_channel.getCPtr(channel), file, func, line);
   }
 
   public static void switch_channel_set_private_flag(SWIGTYPE_p_switch_channel channel, uint flags) {
@@ -3214,6 +3219,12 @@ public class freeswitch {
 
   public static SWIGTYPE_p_switch_size_t switch_buffer_read(SWIGTYPE_p_switch_buffer buffer, SWIGTYPE_p_void data, SWIGTYPE_p_switch_size_t datalen) {
     SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_buffer_read(SWIGTYPE_p_switch_buffer.getCPtr(buffer), SWIGTYPE_p_void.getCPtr(data), SWIGTYPE_p_switch_size_t.getCPtr(datalen)), true);
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
+  public static SWIGTYPE_p_switch_size_t switch_buffer_peek(SWIGTYPE_p_switch_buffer buffer, SWIGTYPE_p_void data, SWIGTYPE_p_switch_size_t datalen) {
+    SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_buffer_peek(SWIGTYPE_p_switch_buffer.getCPtr(buffer), SWIGTYPE_p_void.getCPtr(data), SWIGTYPE_p_switch_size_t.getCPtr(datalen)), true);
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
@@ -4673,6 +4684,8 @@ public class freeswitch {
   public static readonly int __BSD_VISIBLE = freeswitchPINVOKE.__BSD_VISIBLE_get();
   public static readonly string SWITCH_ENT_ORIGINATE_DELIM = freeswitchPINVOKE.SWITCH_ENT_ORIGINATE_DELIM_get();
   public static readonly string SWITCH_BLANK_STRING = freeswitchPINVOKE.SWITCH_BLANK_STRING_get();
+  public static readonly int SWITCH_TON_UNDEF = freeswitchPINVOKE.SWITCH_TON_UNDEF_get();
+  public static readonly int SWITCH_NUMPLAN_UNDEF = freeswitchPINVOKE.SWITCH_NUMPLAN_UNDEF_get();
   public static readonly string SWITCH_SEQ_ESC = freeswitchPINVOKE.SWITCH_SEQ_ESC_get();
   public static readonly char SWITCH_SEQ_HOME_CHAR = freeswitchPINVOKE.SWITCH_SEQ_HOME_CHAR_get();
   public static readonly string SWITCH_SEQ_HOME_CHAR_STR = freeswitchPINVOKE.SWITCH_SEQ_HOME_CHAR_STR_get();
@@ -5061,6 +5074,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_BLANK_STRING_get")]
   public static extern string SWITCH_BLANK_STRING_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_TON_UNDEF_get")]
+  public static extern int SWITCH_TON_UNDEF_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_NUMPLAN_UNDEF_get")]
+  public static extern int SWITCH_NUMPLAN_UNDEF_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_SEQ_ESC_get")]
   public static extern string SWITCH_SEQ_ESC_get();
@@ -10255,8 +10274,8 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_timestamps")]
   public static extern int switch_channel_set_timestamps(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_audio_sync")]
-  public static extern void switch_channel_audio_sync(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_perform_audio_sync")]
+  public static extern void switch_channel_perform_audio_sync(HandleRef jarg1, string jarg2, string jarg3, int jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_private_flag")]
   public static extern void switch_channel_set_private_flag(HandleRef jarg1, uint jarg2);
@@ -10320,6 +10339,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_buffer_read")]
   public static extern IntPtr switch_buffer_read(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_buffer_peek")]
+  public static extern IntPtr switch_buffer_peek(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_buffer_read_loop")]
   public static extern IntPtr switch_buffer_read_loop(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
@@ -12369,6 +12391,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_Ready")]
   public static extern bool CoreSession_Ready(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_bridged")]
+  public static extern bool CoreSession_bridged(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_answered")]
   public static extern bool CoreSession_answered(HandleRef jarg1);
@@ -21004,7 +21029,7 @@ namespace FreeSWITCH.Native {
   SCF_USE_AUTO_NAT = (1 << 6),
   SCF_EARLY_HANGUP = (1 << 7),
   SCF_CALIBRATE_CLOCK = (1 << 8),
-  SCF_USE_COND_TIMING = (1 << 9),
+  SCF_USE_HEAVY_TIMING = (1 << 9),
   SCF_USE_CLOCK_RT = (1 << 10)
 }
 

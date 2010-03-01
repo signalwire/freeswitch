@@ -896,6 +896,19 @@ SWITCH_DECLARE(bool) CoreSession::ready() {
 	return switch_channel_ready(channel) != 0;
 }
 
+
+SWITCH_DECLARE(bool) CoreSession::bridged() {
+
+	this_check(false);
+
+	if (!session) {
+		return false;
+	}
+	sanity_check(false);
+
+	return (switch_channel_up(channel) && switch_channel_test_flag(channel, CF_BRIDGED));
+}
+
 SWITCH_DECLARE(bool) CoreSession::mediaReady() {
 
 	this_check(false);

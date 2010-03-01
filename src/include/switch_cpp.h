@@ -331,6 +331,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 SWITCH_DECLARE(void) setHangupHook(void *hangup_func);
 
 		 SWITCH_DECLARE(bool) ready();
+		 SWITCH_DECLARE(bool) bridged();
 		 SWITCH_DECLARE(bool) answered();
 		 SWITCH_DECLARE(bool) mediaReady();
 

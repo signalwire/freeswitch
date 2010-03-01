@@ -2993,6 +2993,21 @@ SWIGEXPORT jboolean JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1
 }
 
 
+SWIGEXPORT jboolean JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1bridged(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jboolean jresult = 0 ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  bool result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  result = (bool)(arg1)->bridged();
+  jresult = (jboolean)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT jboolean JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1answered(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jboolean jresult = 0 ;
   CoreSession *arg1 = (CoreSession *) 0 ;

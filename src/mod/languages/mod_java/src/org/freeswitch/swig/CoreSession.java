@@ -301,6 +301,10 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_ready(swigCPtr, this);
   }
 
+  public boolean bridged() {
+    return freeswitchJNI.CoreSession_bridged(swigCPtr, this);
+  }
+
   public boolean answered() {
     return freeswitchJNI.CoreSession_answered(swigCPtr, this);
   }

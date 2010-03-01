@@ -290,6 +290,7 @@ class CoreSession(_object):
     def setAutoHangup(*args): return _freeswitch.CoreSession_setAutoHangup(*args)
     def setHangupHook(*args): return _freeswitch.CoreSession_setHangupHook(*args)
     def ready(*args): return _freeswitch.CoreSession_ready(*args)
+    def bridged(*args): return _freeswitch.CoreSession_bridged(*args)
     def answered(*args): return _freeswitch.CoreSession_answered(*args)
     def mediaReady(*args): return _freeswitch.CoreSession_mediaReady(*args)
     def waitForAnswer(*args): return _freeswitch.CoreSession_waitForAnswer(*args)
