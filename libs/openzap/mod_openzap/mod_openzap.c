@@ -1145,6 +1145,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	char *argv[3];
 	int argc = 0;
 	const char *var;
+	const char *dest_num = NULL, *callerid_num = NULL;
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
@@ -1159,8 +1160,18 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	data = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
 
-	outbound_profile->destination_number = switch_sanitize_number(outbound_profile->destination_number);
+	if (!zstr(outbound_profile->destination_number)) {
+		dest_num = switch_sanitize_number(switch_core_session_strdup(session, outbound_profile->destination_number));
+	}
 
+	if (!zstr(outbound_profile->caller_id_number)) {
+		callerid_num = switch_sanitize_number(switch_core_session_strdup(session, outbound_profile->caller_id_number));
+	}
+
+	if (!zstr(callerid_num) && !strcmp(callerid_num, "0000000000")) {
+		callerid_num = NULL;
+	}
+	
 	if ((argc = switch_separate_string(data, '/', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
         return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -1250,7 +1261,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 #endif
 
 	zap_set_string(caller_data.cid_name, outbound_profile->caller_id_name);
-	zap_set_string(caller_data.cid_num.digits, outbound_profile->caller_id_number);
+	zap_set_string(caller_data.cid_num.digits, switch_str_nil(callerid_num));
 	
 	if (chan_id) {
 		status = zap_channel_open(span_id, chan_id, &zchan);
@@ -1305,6 +1316,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_channel_set_variable_printf(channel, "openzap_chan_number", "%d", zchan->chan_id);
 		zap_channel_set_caller_data(zchan, &caller_data);
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
+		caller_profile->destination_number = switch_core_strdup(caller_profile->pool, switch_str_nil(dest_num));
+		caller_profile->caller_id_number = switch_core_strdup(caller_profile->pool, switch_str_nil(callerid_num));
 		switch_channel_set_caller_profile(channel, caller_profile);
 		tech_pvt->caller_profile = caller_profile;
 		
