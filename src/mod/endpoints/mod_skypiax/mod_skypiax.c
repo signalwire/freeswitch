@@ -847,22 +847,63 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		{
-			DEBUGA_SKYPE("MSG_ID=%d, TO BE ANSWERED!\n", SKYPIAX_P_LOG, msg->message_id);
-			switch_core_timer_sync(&tech_pvt->timer_read);
-			switch_core_timer_sync(&tech_pvt->timer_write);
+		DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_ANSWER\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
+
 			channel_answer_channel(session);
+
+			if(tech_pvt->read_buffer){
+				switch_mutex_lock(tech_pvt->mutex_audio_srv);
+				switch_buffer_zero(tech_pvt->read_buffer);
+				switch_core_timer_sync(&tech_pvt->timer_read);
+				switch_mutex_unlock(tech_pvt->mutex_audio_srv);
+			}
+
+			if(tech_pvt->write_buffer){
+				switch_mutex_lock(tech_pvt->mutex_audio_cli);
+				switch_buffer_zero(tech_pvt->write_buffer);
+				switch_core_timer_sync(&tech_pvt->timer_write);
+				switch_mutex_unlock(tech_pvt->mutex_audio_cli);
+			}
+			DEBUGA_SKYPE("Synching audio\n", SKYPIAX_P_LOG);
+
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
 
 		DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_AUDIO_SYNC\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
-		switch_core_timer_sync(&tech_pvt->timer_read);
-		switch_core_timer_sync(&tech_pvt->timer_write);
+
+			if(tech_pvt->read_buffer){
+				switch_mutex_lock(tech_pvt->mutex_audio_srv);
+				switch_buffer_zero(tech_pvt->read_buffer);
+				switch_core_timer_sync(&tech_pvt->timer_read);
+				switch_mutex_unlock(tech_pvt->mutex_audio_srv);
+			}
+
+			if(tech_pvt->write_buffer){
+				switch_mutex_lock(tech_pvt->mutex_audio_cli);
+				switch_buffer_zero(tech_pvt->write_buffer);
+				switch_core_timer_sync(&tech_pvt->timer_write);
+				switch_mutex_unlock(tech_pvt->mutex_audio_cli);
+			}
+			DEBUGA_SKYPE("Synching audio\n", SKYPIAX_P_LOG);
 		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_BRIDGE\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
-		switch_core_timer_sync(&tech_pvt->timer_read);
-		switch_core_timer_sync(&tech_pvt->timer_write);
+
+			if(tech_pvt->read_buffer){
+				switch_mutex_lock(tech_pvt->mutex_audio_srv);
+				switch_buffer_zero(tech_pvt->read_buffer);
+				switch_core_timer_sync(&tech_pvt->timer_read);
+				switch_mutex_unlock(tech_pvt->mutex_audio_srv);
+			}
+
+			if(tech_pvt->write_buffer){
+				switch_mutex_lock(tech_pvt->mutex_audio_cli);
+				switch_buffer_zero(tech_pvt->write_buffer);
+				switch_core_timer_sync(&tech_pvt->timer_write);
+				switch_mutex_unlock(tech_pvt->mutex_audio_cli);
+			}
+			DEBUGA_SKYPE("Synching audio\n", SKYPIAX_P_LOG);
 		break;
 
 	default:

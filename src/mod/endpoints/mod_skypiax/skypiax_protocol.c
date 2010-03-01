@@ -501,11 +501,22 @@ int skypiax_signaling_read(private_t * tech_pvt)
 				if (!strcasecmp(prop, "FAILUREREASON")) {
 					DEBUGA_SKYPE("Skype FAILED on skype_call %s. Let's wait for the FAILED message.\n", SKYPIAX_P_LOG, id);
 				}
-				if (!strcasecmp(prop, "DURATION")) {	/* each 20 seconds, we sync ithe timers */
+				if (!strcasecmp(prop, "DURATION")) {	/* each 20 seconds, we zero the buffers and sync the timers */
 					if (!((atoi(value) % 20))) {
-						switch_core_timer_sync(&tech_pvt->timer_read);
-						switch_core_timer_sync(&tech_pvt->timer_write);
-						DEBUGA_SKYPE("Synching on skype_call: %s.\n", SKYPIAX_P_LOG, id);
+						if(tech_pvt->read_buffer){
+							switch_mutex_lock(tech_pvt->mutex_audio_srv);
+							switch_buffer_zero(tech_pvt->read_buffer);
+							switch_core_timer_sync(&tech_pvt->timer_read);
+							switch_mutex_unlock(tech_pvt->mutex_audio_srv);
+						}
+
+						if(tech_pvt->write_buffer){
+							switch_mutex_lock(tech_pvt->mutex_audio_cli);
+							switch_buffer_zero(tech_pvt->write_buffer);
+							switch_core_timer_sync(&tech_pvt->timer_write);
+							switch_mutex_unlock(tech_pvt->mutex_audio_cli);
+						}
+						DEBUGA_SKYPE("Synching audio on skype_call: %s.\n", SKYPIAX_P_LOG, id);
 					}
 				}
 				if (!strcasecmp(prop, "DURATION") && (!strcasecmp(value, "1"))) {
