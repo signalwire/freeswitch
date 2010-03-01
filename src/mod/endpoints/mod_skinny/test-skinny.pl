@@ -4,6 +4,11 @@ use strict;
 use warnings;
 use IO::Socket;
 
+#Config
+my $skinny_server = '127.0.0.1';
+my $device_name = "SEP001120AABBCC";
+my $device_ip = 10+256*(11+256*(12+256*13)); # 10.11.12.13
+#======
 $| = 1;
 
 my $socket;
@@ -11,7 +16,7 @@ my $socket;
 sub skinny_connect
 {
 	$socket = IO::Socket::INET->new(
-		PeerAddr => '127.0.0.1',
+		PeerAddr => $skinny_server,
 		PeerPort => 2000,
 		);
 }
@@ -70,10 +75,10 @@ skinny_connect();
 # =============================================================================
 skinny_send(0x0001, # Register
 	pack("a16VVVVV",
-		"SEP001120AABBCC",
+		$device_name,
 		0, # userId;
 		1, # instance;
-		12,# ip;
+		$device_ip,# ip;
 		7, # deviceType;
 		0, # maxStreams;
 	));
