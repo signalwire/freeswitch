@@ -103,7 +103,7 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 	sockbufsize = SAMPLES_PER_FRAME * 8;
 #endif //WIN32
 	size = sizeof(int);
-	//setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &sockbufsize, size);
+	setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &sockbufsize, size);
 
 	sockbufsize = 0;
 	size = sizeof(int);
@@ -120,7 +120,7 @@ int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_p
 	sockbufsize = SAMPLES_PER_FRAME * 8;
 #endif //WIN32
 	size = sizeof(int);
-	//setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &sockbufsize, size);
+	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &sockbufsize, size);
 
 	sockbufsize = 0;
 	size = sizeof(int);
@@ -844,14 +844,14 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
 						if (len > 0) {
 							switch_mutex_lock(tech_pvt->mutex_audio_srv);
 							if (switch_buffer_freespace(tech_pvt->read_buffer) < len) {
-								//switch_buffer_zero(tech_pvt->read_buffer);
+								switch_buffer_zero(tech_pvt->read_buffer);
 								nospace = 1;
-								switch_buffer_toss(tech_pvt->read_buffer, len);
+								//switch_buffer_toss(tech_pvt->read_buffer, len);
 							}
 							switch_buffer_write(tech_pvt->read_buffer, srv_in, len);
 							switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 							if (nospace) {
-								//WARNINGA("NO SPACE READ: there was no space for: %d\n", SKYPIAX_P_LOG, len);
+								WARNINGA("NO SPACE READ: there was no space for: %d\n", SKYPIAX_P_LOG, len);
 							}
 						} else if (len == 0) {
 							DEBUGA_SKYPE("CLOSED\n", SKYPIAX_P_LOG);
@@ -992,6 +992,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 						switch_mutex_unlock(tech_pvt->mutex_audio_cli);
 
 						if (!bytes_to_write) {
+							continue;
 							memset(cli_out, 255, sizeof(cli_out));
 							bytes_to_write = 640;
 							//NOTICA("WRITE Silence!\n", SKYPIAX_P_LOG);

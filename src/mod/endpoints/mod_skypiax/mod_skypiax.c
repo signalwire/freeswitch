@@ -652,6 +652,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	unsigned int i;
 	unsigned int a;
 	size_t bytes_read = 0;
+	int try=0;
 
 
 	channel = switch_core_session_get_channel(session);
@@ -680,18 +681,34 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	switch_core_timer_next(&tech_pvt->timer_read);
 
-	switch_mutex_lock(tech_pvt->mutex_audio_srv);
-	if (switch_buffer_inuse(tech_pvt->read_buffer)) {
-		bytes_read = switch_buffer_read(tech_pvt->read_buffer, tech_pvt->read_frame.data, 640);
-		tech_pvt->read_frame.datalen = bytes_read;
-	}
-	switch_mutex_unlock(tech_pvt->mutex_audio_srv);
+read:
 
-	if (!bytes_read) {
-		//NOTICA("skypiax_audio_read Silence\n", SKYPIAX_P_LOG);
+
+	if (tech_pvt && tech_pvt->interface_state != SKYPIAX_STATE_DOWN
+			&& (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
+				|| tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
+				|| tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD || tech_pvt->skype_callflow == SKYPIAX_STATE_UP)) {
+		switch_mutex_lock(tech_pvt->mutex_audio_srv);
+		if (switch_buffer_inuse(tech_pvt->read_buffer)) {
+			bytes_read = switch_buffer_read(tech_pvt->read_buffer, tech_pvt->read_frame.data, 640);
+			tech_pvt->read_frame.datalen = bytes_read;
+		}
+		switch_mutex_unlock(tech_pvt->mutex_audio_srv);
+
+		try=0;
+		if (!bytes_read) {
+			switch_sleep(1000);
+			try++;
+			if(try < 5)
+				goto read;
+			NOTICA("skypiax_audio_read Silence\n", SKYPIAX_P_LOG);
+			memset(tech_pvt->read_frame.data, 255, SAMPLES_PER_FRAME * sizeof(short));
+			tech_pvt->read_frame.datalen = 640;
+
+		}
+	} else {
 		memset(tech_pvt->read_frame.data, 255, SAMPLES_PER_FRAME * sizeof(short));
-		tech_pvt->read_frame.datalen = SAMPLES_PER_FRAME * sizeof(short);
-
+		tech_pvt->read_frame.datalen = 640;
 	}
 
 	switch_set_flag(tech_pvt, TFLAG_VOICE);
@@ -805,8 +822,9 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	switch_mutex_lock(tech_pvt->mutex_audio_cli);
 	if (switch_buffer_freespace(tech_pvt->write_buffer) < frame->datalen) {
-		//WARNINGA("NO SPACE WRITE: %d\n", SKYPIAX_P_LOG, frame->datalen);
-		switch_buffer_toss(tech_pvt->write_buffer, frame->datalen);
+		WARNINGA("NO SPACE WRITE: %d\n", SKYPIAX_P_LOG, frame->datalen);
+		//switch_buffer_toss(tech_pvt->write_buffer, frame->datalen);
+		switch_buffer_zero(tech_pvt->write_buffer);
 	}
 	switch_buffer_write(tech_pvt->write_buffer, frame->data, frame->datalen);
 	switch_mutex_unlock(tech_pvt->mutex_audio_cli);
@@ -1667,6 +1685,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 #ifdef WIN32
 				if (SendMessage(tech_pvt->SkypiaxHandles.win32_hInit_MainWindowHandle, WM_DESTROY, 0, 0) == FALSE) {	// let's the skypiax_api_thread_func die
 					DEBUGA_SKYPE("got FALSE here, thread probably was already dead. GetLastError returned: %d\n", SKYPIAX_P_LOG, GetLastError());
+					tech_pvt->skypiax_api_thread=NULL;
 				}
 #else
 				if (tech_pvt->SkypiaxHandles.disp) {
