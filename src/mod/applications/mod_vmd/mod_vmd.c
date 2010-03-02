@@ -581,7 +581,7 @@ SWITCH_STANDARD_APP(vmd_start_function)
 		vmd_info->points[i].ampl = 0.0;
 	}
 
-	status = switch_core_media_bug_add(session, vmd_callback, vmd_info, 0, SMBF_READ_REPLACE, &bug);
+	status = switch_core_media_bug_add(session, "vmd", NULL, vmd_callback, vmd_info, 0, SMBF_READ_REPLACE, &bug);
 
 	if (status != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure hooking to stream\n");
@@ -711,7 +711,7 @@ SWITCH_STANDARD_API(vmd_api_main)
 
 	/* Add a media bug that allows me to intercept the 
 	 * reading leg of the audio stream */
-	status = switch_core_media_bug_add(vmd_session, vmd_callback, vmd_info, 0, SMBF_READ_REPLACE, &bug);
+	status = switch_core_media_bug_add(vmd_session, "vmd", NULL, vmd_callback, vmd_info, 0, SMBF_READ_REPLACE, &bug);
 
 	/* If adding a media bug fails exit */
 	if (status != SWITCH_STATUS_SUCCESS) {
