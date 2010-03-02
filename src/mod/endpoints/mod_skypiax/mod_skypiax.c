@@ -701,7 +701,7 @@ read:
 			try++;
 			if(try < 5)
 				goto read;
-			NOTICA("skypiax_audio_read Silence\n", SKYPIAX_P_LOG);
+			DEBUGA_SKYPE("skypiax_audio_read Silence\n", SKYPIAX_P_LOG);
 			memset(tech_pvt->read_frame.data, 255, SAMPLES_PER_FRAME * sizeof(short));
 			tech_pvt->read_frame.datalen = 640;
 
@@ -822,7 +822,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	switch_mutex_lock(tech_pvt->mutex_audio_cli);
 	if (switch_buffer_freespace(tech_pvt->write_buffer) < frame->datalen) {
-		WARNINGA("NO SPACE WRITE: %d\n", SKYPIAX_P_LOG, frame->datalen);
+		DEBUGA_SKYPE("NO SPACE WRITE: %d\n", SKYPIAX_P_LOG, frame->datalen);
 		//switch_buffer_toss(tech_pvt->write_buffer, frame->datalen);
 		switch_buffer_zero(tech_pvt->write_buffer);
 	}
