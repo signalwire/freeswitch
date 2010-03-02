@@ -461,16 +461,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
 		if (bp) {
-			switch_event_t *event;
+			switch_event_t *event = NULL;
+
+			if (switch_event_create(&event, SWITCH_EVENT_MEDIA_BUG_STOP) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(session->channel, event);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Function", "%s", bp->function);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Target", "%s", bp->target);
+			}
 
 			if ((status = switch_core_media_bug_close(&bp)) == SWITCH_STATUS_SUCCESS) {
-				if (switch_event_create(&event, SWITCH_EVENT_MEDIA_BUG_STOP) == SWITCH_STATUS_SUCCESS) {
-					switch_channel_event_set_data(session->channel, event);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Function", "%s", bp->function);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Target", "%s", bp->target);
-					switch_event_fire(&event);
-				}
-
+				switch_event_fire(&event);
+			} else {
+				switch_event_destroy(&event);
 			}
 		}
 	}
