@@ -5136,7 +5136,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							sofia_clear_flag_locked(b_tech_pvt, TFLAG_SIP_HOLD);
 							switch_channel_clear_flag(channel_b, CF_LEG_HOLDING);
 							sofia_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
-							switch_channel_set_variable(channel_b, "park_timeout", "2");
+							switch_channel_set_variable(channel_b, "park_timeout", "2:attended_transfer");
 							switch_channel_set_state(channel_b, CS_PARK);
 
 						} else {

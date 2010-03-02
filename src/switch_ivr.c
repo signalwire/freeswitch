@@ -689,6 +689,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	int timeout = 0;
 	time_t expires = 0;
 	switch_codec_implementation_t read_impl = { 0 };
+	switch_call_cause_t timeout_cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
 
 	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
@@ -701,6 +702,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	}
 
 	if ((to = switch_channel_get_variable(channel, "park_timeout"))) {
+		char *cause_str;
+
+		if ((cause_str = strstr(to, ':'))) {
+			timeout_cause = switch_channel_str2cause(cause_str + 1);
+		}
+		
 		if ((timeout = atoi(to)) < 0) {
 			timeout = 0;
 		} else {
@@ -737,7 +744,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			break;
 		} else {
 			if (expires && switch_epoch_time_now(NULL) >= expires) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				switch_channel_hangup(channel, timeout_cause);
 				break;
 			}
 
