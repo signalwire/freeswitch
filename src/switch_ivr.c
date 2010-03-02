@@ -704,7 +704,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	if ((to = switch_channel_get_variable(channel, "park_timeout"))) {
 		char *cause_str;
 
-		if ((cause_str = strstr(to, ':'))) {
+		if ((cause_str = strchr(to, ':'))) {
 			timeout_cause = switch_channel_str2cause(cause_str + 1);
 		}
 		
