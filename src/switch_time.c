@@ -72,7 +72,7 @@ static int MATRIX = 1;
 static int STEP_MS = 1;
 static int STEP_MIC = 1000;
 static uint32_t TICK_PER_SEC = 10000;
-static int MS_PER_TICK = 1;
+static int MS_PER_TICK = 10;
 #else
 static int STEP_MS = 10;
 static int STEP_MIC = 10000;
