@@ -2234,7 +2234,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						const char *callee_id_number = new_profile->callee_id_number;
 
 						if (zstr(callee_id_number)) {
-							callee_id_number = new_profile->destination_number;
+							callee_id_number = caller_caller_profile->destination_number;
 						}
 
 						if (zstr(callee_id_name)) {
