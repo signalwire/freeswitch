@@ -1652,7 +1652,11 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		event->event_id == SWITCH_EVENT_SESSION_HEARTBEAT ||
 		event->event_id == SWITCH_EVENT_API ||
 		event->event_id == SWITCH_EVENT_RECORD_START ||
-		event->event_id == SWITCH_EVENT_RECORD_STOP || event->event_id == SWITCH_EVENT_CALL_UPDATE || event->event_id == SWITCH_EVENT_CUSTOM) {
+		event->event_id == SWITCH_EVENT_RECORD_STOP || 
+		event->event_id == SWITCH_EVENT_CALL_UPDATE || 
+		event->event_id == SWITCH_EVENT_MEDIA_BUG_START || 
+		event->event_id == SWITCH_EVENT_MEDIA_BUG_STOP || 
+		event->event_id == SWITCH_EVENT_CUSTOM) {
 
 		x = 0;
 		/* Index Variables */

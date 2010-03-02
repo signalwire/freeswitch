@@ -177,6 +177,8 @@ struct switch_media_bug {
 	int16_t tmp[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	time_t stop_time;
 	switch_thread_id_t thread_id;
+	char *function;
+	char *target;
 	struct switch_media_bug *next;
 };
 

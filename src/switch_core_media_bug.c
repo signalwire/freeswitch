@@ -240,13 +240,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 #define MAX_BUG_BUFFER 1024 * 512
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t *session,
+														  const char *function,
+														  const char *target,
 														  switch_media_bug_callback_t callback,
-														  void *user_data, time_t stop_time, switch_media_bug_flag_t flags, switch_media_bug_t **new_bug)
+														  void *user_data, time_t stop_time, 
+														  switch_media_bug_flag_t flags, 
+														  switch_media_bug_t **new_bug)
 {
 	switch_media_bug_t *bug;	//, *bp;
 	switch_size_t bytes;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_codec_implementation_t write_impl = { 0 };
+	switch_event_t *event;
+
 	const char *p;
 
 	if (!switch_channel_media_ready(session->channel)) {
@@ -298,7 +304,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	bug->user_data = user_data;
 	bug->session = session;
 	bug->flags = flags;
+	bug->function = "N/A";
+	bug->target = "N/A";
 
+	if (function) {
+		bug->function = switch_core_session_strdup(session, function);
+	}
+
+	if (target) {
+		bug->target = switch_core_session_strdup(session, target);
+	}
+	
 	bug->stop_time = stop_time;
 	bytes = read_impl.decoded_bytes_per_packet;
 
@@ -339,6 +355,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	session->bugs = bug;
 	switch_thread_rwlock_unlock(session->bug_rwlock);
 	*new_bug = bug;
+
+	if (switch_event_create(&event, SWITCH_EVENT_MEDIA_BUG_START) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(session->channel, event);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Function", "%s", bug->function);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Target", "%s", bug->target);
+		switch_event_fire(&event);
+	}
+
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -437,7 +461,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
 		if (bp) {
-			status = switch_core_media_bug_close(&bp);
+			switch_event_t *event;
+
+			if ((status = switch_core_media_bug_close(&bp)) == SWITCH_STATUS_SUCCESS) {
+				if (switch_event_create(&event, SWITCH_EVENT_MEDIA_BUG_STOP) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(session->channel, event);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Function", "%s", bp->function);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Target", "%s", bp->target);
+					switch_event_fire(&event);
+				}
+
+			}
 		}
 	}
 

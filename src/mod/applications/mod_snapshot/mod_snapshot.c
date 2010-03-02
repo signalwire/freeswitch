@@ -125,7 +125,7 @@ static switch_status_t start_capture(switch_core_session_t *session, unsigned in
 	switch_buffer_create_dynamic(&cb->buffer, bytes, bytes, bytes);
 	switch_mutex_init(&cb->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
-	if ((status = switch_core_media_bug_add(session, capture_callback, cb, 0, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_core_media_bug_add(session, "snapshot", NULL, capture_callback, cb, 0, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 

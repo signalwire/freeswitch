@@ -1187,7 +1187,8 @@ void do_telecast(switch_stream_handle_t *stream)
 		switch_buffer_create_dynamic(&buffer, 1024, 2048, 0);
 		switch_buffer_add_mutex(buffer, mutex);
 
-		if (switch_core_media_bug_add(tsession, telecast_callback, buffer, 0,
+		if (switch_core_media_bug_add(tsession, "telecast", NULL,
+									  telecast_callback, buffer, 0,
 									  SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_PING, &bug) != SWITCH_STATUS_SUCCESS) {
 			goto end;
 		}

@@ -147,6 +147,8 @@ SWITCH_DECLARE(void) switch_core_session_disable_heartbeat(switch_core_session_t
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(_In_ switch_core_session_t *session,
+														  _In_ const char *function,
+														  _In_ const char *target,
 														  _In_ switch_media_bug_callback_t callback,
 														  _In_opt_ void *user_data,
 														  _In_ time_t stop_time, _In_ switch_media_bug_flag_t flags, _Out_ switch_media_bug_t **new_bug);
