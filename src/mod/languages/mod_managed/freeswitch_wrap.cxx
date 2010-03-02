@@ -5717,29 +5717,33 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_disable_heartbeat(void * 
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_media_bug_add(void * jarg1, void * jarg2, void * jarg3, void * jarg4, unsigned long jarg5, void * jarg6) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_media_bug_add(void * jarg1, char * jarg2, char * jarg3, void * jarg4, void * jarg5, void * jarg6, unsigned long jarg7, void * jarg8) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
-  switch_media_bug_callback_t arg2 = (switch_media_bug_callback_t) 0 ;
-  void *arg3 = (void *) 0 ;
-  time_t arg4 ;
-  switch_media_bug_flag_t arg5 ;
-  switch_media_bug_t **arg6 = (switch_media_bug_t **) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  switch_media_bug_callback_t arg4 = (switch_media_bug_callback_t) 0 ;
+  void *arg5 = (void *) 0 ;
+  time_t arg6 ;
+  switch_media_bug_flag_t arg7 ;
+  switch_media_bug_t **arg8 = (switch_media_bug_t **) 0 ;
   switch_status_t result;
-  time_t *argp4 ;
+  time_t *argp6 ;
   
   arg1 = (switch_core_session_t *)jarg1; 
-  arg2 = (switch_media_bug_callback_t)jarg2; 
-  arg3 = (void *)jarg3; 
-  argp4 = (time_t *)jarg4; 
-  if (!argp4) {
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (switch_media_bug_callback_t)jarg4; 
+  arg5 = (void *)jarg5; 
+  argp6 = (time_t *)jarg6; 
+  if (!argp6) {
     SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null time_t", 0);
     return 0;
   }
-  arg4 = *argp4; 
-  arg5 = (switch_media_bug_flag_t)jarg5; 
-  arg6 = (switch_media_bug_t **)jarg6; 
-  result = (switch_status_t)switch_core_media_bug_add(arg1,arg2,arg3,arg4,arg5,arg6);
+  arg6 = *argp6; 
+  arg7 = (switch_media_bug_flag_t)jarg7; 
+  arg8 = (switch_media_bug_t **)jarg8; 
+  result = (switch_status_t)switch_core_media_bug_add(arg1,(char const *)arg2,(char const *)arg3,arg4,arg5,arg6,arg7,arg8);
   jresult = result; 
   return jresult;
 }

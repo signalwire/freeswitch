@@ -908,8 +908,8 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_session_disable_heartbeat(SWIGTYPE_p_switch_core_session.getCPtr(session));
   }
 
-  public static switch_status_t switch_core_media_bug_add(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_media_bug_p_void_enum_switch_abc_type_t__switch_bool_t callback, SWIGTYPE_p_void user_data, SWIGTYPE_p_time_t stop_time, uint flags, SWIGTYPE_p_p_switch_media_bug new_bug) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_media_bug_add(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_media_bug_p_void_enum_switch_abc_type_t__switch_bool_t.getCPtr(callback), SWIGTYPE_p_void.getCPtr(user_data), SWIGTYPE_p_time_t.getCPtr(stop_time), flags, SWIGTYPE_p_p_switch_media_bug.getCPtr(new_bug));
+  public static switch_status_t switch_core_media_bug_add(SWIGTYPE_p_switch_core_session session, string function, string target, SWIGTYPE_p_f_p_switch_media_bug_p_void_enum_switch_abc_type_t__switch_bool_t callback, SWIGTYPE_p_void user_data, SWIGTYPE_p_time_t stop_time, uint flags, SWIGTYPE_p_p_switch_media_bug new_bug) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_media_bug_add(SWIGTYPE_p_switch_core_session.getCPtr(session), function, target, SWIGTYPE_p_f_p_switch_media_bug_p_void_enum_switch_abc_type_t__switch_bool_t.getCPtr(callback), SWIGTYPE_p_void.getCPtr(user_data), SWIGTYPE_p_time_t.getCPtr(stop_time), flags, SWIGTYPE_p_p_switch_media_bug.getCPtr(new_bug));
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
@@ -6417,7 +6417,7 @@ class freeswitchPINVOKE {
   public static extern void switch_core_session_disable_heartbeat(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_add")]
-  public static extern int switch_core_media_bug_add(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, uint jarg5, HandleRef jarg6);
+  public static extern int switch_core_media_bug_add(HandleRef jarg1, string jarg2, string jarg3, HandleRef jarg4, HandleRef jarg5, HandleRef jarg6, uint jarg7, HandleRef jarg8);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_pause")]
   public static extern void switch_core_media_bug_pause(HandleRef jarg1);
@@ -22725,6 +22725,8 @@ public enum switch_event_types_t {
   SWITCH_EVENT_CALL_UPDATE,
   SWITCH_EVENT_FAILURE,
   SWITCH_EVENT_SOCKET_DATA,
+  SWITCH_EVENT_MEDIA_BUG_START,
+  SWITCH_EVENT_MEDIA_BUG_STOP,
   SWITCH_EVENT_ALL
 }
 
