@@ -6900,6 +6900,31 @@ fail:
 }
 
 
+static int _wrap_CoreSession_bridged(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("bridged",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("bridged",1,"CoreSession *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_bridged",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  result = (bool)(arg1)->bridged();
+  SWIG_arg=0;
+  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_CoreSession_answered(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -7384,6 +7409,7 @@ static swig_lua_method swig_CoreSession_methods[] = {
     {"setAutoHangup", _wrap_CoreSession_setAutoHangup}, 
     {"setHangupHook", _wrap_CoreSession_setHangupHook}, 
     {"ready", _wrap_CoreSession_ready}, 
+    {"bridged", _wrap_CoreSession_bridged}, 
     {"answered", _wrap_CoreSession_answered}, 
     {"mediaReady", _wrap_CoreSession_mediaReady}, 
     {"waitForAnswer", _wrap_CoreSession_waitForAnswer}, 
