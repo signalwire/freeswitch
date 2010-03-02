@@ -901,6 +901,14 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 				zap_safe_free(event->data);
 			}
 		}
+	case ZAP_OOB_ALARM_TRAP:
+		{
+			zap_set_flag_locked(event->channel, ZAP_CHANNEL_SUSPENDED);
+		}
+	case ZAP_OOB_ALARM_CLEAR:
+		{
+			zap_clear_flag_locked(event->channel, ZAP_CHANNEL_SUSPENDED);
+		}
 	}
 
  end:
