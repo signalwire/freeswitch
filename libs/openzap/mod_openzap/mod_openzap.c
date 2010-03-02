@@ -1161,11 +1161,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	data = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
 
 	if (!zstr(outbound_profile->destination_number)) {
-		dest_num = switch_sanitize_number(switch_core_session_strdup(session, outbound_profile->destination_number));
+		dest_num = switch_sanitize_number(switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number));
 	}
 
 	if (!zstr(outbound_profile->caller_id_number)) {
-		callerid_num = switch_sanitize_number(switch_core_session_strdup(session, outbound_profile->caller_id_number));
+		callerid_num = switch_sanitize_number(switch_core_strdup(outbound_profile->pool, outbound_profile->caller_id_number));
 	}
 
 	if (!zstr(callerid_num) && !strcmp(callerid_num, "0000000000")) {
