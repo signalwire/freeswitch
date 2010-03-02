@@ -799,7 +799,7 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, in
 			if (lookup_rtpip == use_ip) {
 				/* sofia_glue_ext_address_lookup didn't return any error, but the return IP is the same as the original one, 
 				   which means no lookup was necessary. Check if NAT is detected  */
-				if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+				if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 					/* Yes, map the port through switch_nat */
 					switch_nat_add_mapping(tech_pvt->local_sdp_video_port, SWITCH_NAT_UDP, &sdp_port, SWITCH_FALSE);
 				} else {
@@ -1584,7 +1584,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 			sipip = tech_pvt->profile->sipip;
 
-			if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+			if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 				sipip = tech_pvt->profile->extsipip;
 			}
 
@@ -1628,7 +1628,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 
 		if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTO_NAT)) {
-			if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+			if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 				rpid_domain = tech_pvt->profile->extsipip;
 			} else {
 				rpid_domain = tech_pvt->profile->sipip;
@@ -1654,7 +1654,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			}
 		}
 
-		if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+		if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 			tech_pvt->user_via = sofia_glue_create_external_via(session, tech_pvt->profile, tech_pvt->transport);
 		}
 
@@ -1669,7 +1669,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				char *ip_addr;
 				char *ipv6;
 
-				if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+				if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 					ip_addr = (switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network))
 						? tech_pvt->profile->sipip : tech_pvt->profile->extsipip;
 				} else {
@@ -1689,7 +1689,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				if (sofia_glue_transport_has_tls(tech_pvt->transport)) {
 					tech_pvt->invite_contact = tech_pvt->profile->tls_url;
 				} else {
-					if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+					if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 						tech_pvt->invite_contact = tech_pvt->profile->public_url;
 					} else {
 						tech_pvt->invite_contact = tech_pvt->profile->url;
@@ -2018,7 +2018,7 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 	caller_profile = switch_channel_get_caller_profile(channel);
 
-	if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+	if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 		sipip = tech_pvt->profile->extsipip;
 		contact_url = tech_pvt->profile->public_url;
 	} else {
@@ -2150,7 +2150,7 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 	}
 
 
-	if (tech_pvt->local_sdp_video_port > 0 && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+	if (tech_pvt->local_sdp_video_port > 0 && !zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 		switch_nat_del_mapping((switch_port_t) tech_pvt->local_sdp_video_port, SWITCH_NAT_UDP);
 	}
 
@@ -2161,7 +2161,7 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_audio_port);
 	}
 
-	if (tech_pvt->local_sdp_audio_port > 0 && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+	if (tech_pvt->local_sdp_audio_port > 0 && !zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 		switch_nat_del_mapping((switch_port_t) tech_pvt->local_sdp_audio_port, SWITCH_NAT_UDP);
 	}
 
@@ -5064,7 +5064,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 	char *route_uri = NULL;
 
 	contact = sofia_glue_get_url_from_contact((char *) o_contact, 1);
-	if (sofia_glue_check_nat(profile, network_ip)) {
+	if (!zstr(network_ip) && sofia_glue_check_nat(profile, network_ip)) {
 		char *ptr = NULL;
 		const char *transport_str = NULL;
 
