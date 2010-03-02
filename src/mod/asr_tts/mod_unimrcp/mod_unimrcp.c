@@ -844,9 +844,11 @@ static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
 				break;
 			}
 		}
-		audio_queue_destroy(schannel->audio_queue);
 		if (schannel->state != SPEECH_CHANNEL_CLOSED) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Failed to destroy channel.  Continuing\n", schannel->name);
+		} else {
+			audio_queue_destroy(schannel->audio_queue);
+			schannel->audio_queue = NULL;
 		}
 	}
 	if (schannel->params) {
@@ -1370,12 +1372,16 @@ static switch_status_t speech_channel_set_param(speech_channel_t *schannel, cons
  */
 static switch_status_t speech_channel_write(speech_channel_t *schannel, void *data, switch_size_t *len)
 {
-	audio_queue_t *queue = schannel->audio_queue;
+	if (!schannel || !schannel->mutex || !schannel->audio_queue) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_mutex_lock(schannel->mutex);
 	if (schannel->state == SPEECH_CHANNEL_PROCESSING) {
-		audio_queue_write(queue, data, len);
+		audio_queue_write(schannel->audio_queue, data, len);
 	}
 	switch_mutex_unlock(schannel->mutex);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1391,14 +1397,19 @@ static switch_status_t speech_channel_write(speech_channel_t *schannel, void *da
 static switch_status_t speech_channel_read(speech_channel_t *schannel, void *data, switch_size_t *len, int block)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	audio_queue_t *queue = schannel->audio_queue;
+
+	if (!schannel || !schannel->mutex || !schannel->audio_queue) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_mutex_lock(schannel->mutex);
 	if (schannel->state == SPEECH_CHANNEL_PROCESSING) {
-		audio_queue_read(queue, data, len, block);
+		audio_queue_read(schannel->audio_queue, data, len, block);
 	} else {
 		status = SWITCH_STATUS_BREAK;
 	}
 	switch_mutex_unlock(schannel->mutex);
+
 	return status;
 }
 
@@ -1704,7 +1715,6 @@ static apt_bool_t speech_on_session_terminate(mrcp_application_t *application, m
 			switch_event_fire(&event);
 		}
 	}
-
 	speech_channel_set_state(schannel, SPEECH_CHANNEL_CLOSED);
 
 	return TRUE;
