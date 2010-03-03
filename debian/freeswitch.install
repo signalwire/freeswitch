@@ -116,6 +116,7 @@ opt/freeswitch/conf/freeswitch.xml
 opt/freeswitch/conf/extensions.conf
 opt/freeswitch/conf/jingle_profiles/server.xml
 opt/freeswitch/conf/jingle_profiles/client.xml
+opt/freeswitch/conf/autoload_configs/skinny.conf.xml
 opt/freeswitch/conf/autoload_configs/openzap.conf.xml
 opt/freeswitch/conf/autoload_configs/ivr.conf.xml
 opt/freeswitch/conf/autoload_configs/shout.conf.xml
