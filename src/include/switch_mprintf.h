@@ -57,6 +57,7 @@ SWITCH_BEGIN_EXTERN_C
  */
 SWITCH_DECLARE(char *) switch_mprintf(const char *zFormat, ...);
 SWITCH_DECLARE(char *) switch_vmprintf(const char *zFormat, va_list ap);
+SWITCH_DECLARE(char *) switch_snprintfv(char *zBuf, int n, const char *zFormat, ...);
 
 SWITCH_END_EXTERN_C
 #endif /* SWITCH_MPRINTF_H */

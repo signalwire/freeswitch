@@ -104,7 +104,7 @@ static inline int switch_string_has_escaped_data(const char *in)
 
 	while (i && *i == '\\') {
 		i++;
-		if (*i == '\\' || *i == 'n' || *i == 's' || *i == 't') {
+		if (*i == '\\' || *i == 'n' || *i == 's' || *i == 't' || *i == '\'') {
 			return 1;
 		}
 		i = strchr(i, '\\');

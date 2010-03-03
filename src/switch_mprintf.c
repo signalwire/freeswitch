@@ -872,30 +872,6 @@ static void *printf_realloc(void *old, int size)
 }
 
 /*
-** Print into memory. Use the internal %-conversion extensions.
-*/
-SWITCH_DECLARE(char *) switch_vmprintf(const char *zFormat, va_list ap)
-{
-	char zBase[SWITCH_PRINT_BUF_SIZE];
-	return base_vprintf(printf_realloc, 1, zBase, sizeof(zBase), zFormat, ap);
-}
-
-/*
-** Print into memory. Use the internal %-conversion extensions.
-*/
-SWITCH_DECLARE(char *) switch_mprintf(const char *zFormat, ...)
-{
-	va_list ap;
-	char *z;
-	char zBase[SWITCH_PRINT_BUF_SIZE];
-	va_start(ap, zFormat);
-	z = base_vprintf(printf_realloc, 1, zBase, sizeof(zBase), zFormat, ap);
-	va_end(ap);
-	return z;
-}
-
-#ifdef __UNUSED__
-/*
 ** Print into memory. Omit the internal %-conversion extensions.
 */
 SWITCH_DECLARE(char *) switch_vmprintf(const char *zFormat, va_list ap)
@@ -924,7 +900,7 @@ SWITCH_DECLARE(char *) switch_mprintf(const char *zFormat, ...)
 ** are not able to use a "," as the decimal point in place of "." as
 ** specified by some locales.
 */
-SWITCH_DECLARE(char *) switch_snprintf(int n, char *zBuf, const char *zFormat, ...)
+SWITCH_DECLARE(char *) switch_snprintfv(char *zBuf, int n, const char *zFormat, ...)
 {
 	char *z;
 	va_list ap;
@@ -934,4 +910,4 @@ SWITCH_DECLARE(char *) switch_snprintf(int n, char *zBuf, const char *zFormat, .
 	va_end(ap);
 	return z;
 }
-#endif
+

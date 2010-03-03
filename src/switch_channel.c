@@ -2438,6 +2438,9 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 				if (*(p + 1) == '$') {
 					nv = 1;
 					p++;
+				} else if (*(p + 1) == '\'') {
+					p++;
+					continue;
 				} else if (*(p + 1) == '\\') {
 					*c++ = *p++;
 					len++;

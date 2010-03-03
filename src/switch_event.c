@@ -1395,6 +1395,9 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 				if (*(p + 1) == '$') {
 					nv = 1;
 					p++;
+				} else if (*(p + 1) == '\'') {
+					p++;
+					continue;
 				} else if (*(p + 1) == '\\') {
 					*c++ = *p++;
 					len++;
