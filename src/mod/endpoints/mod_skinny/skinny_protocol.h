@@ -80,7 +80,7 @@ struct stimulus_message {
 #define OFF_HOOK_MESSAGE 0x0006
 struct off_hook_message {
 	uint32_t line_instance;
-	uint32_t call_id;
+	/* uint32_t call_id; */
 };
 
 /* OnHookMessage */
