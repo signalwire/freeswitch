@@ -228,7 +228,7 @@ SWITCH_STANDARD_APP(stress_start_function)
 
 	sth->session = session;
     
-	if ((status = switch_core_media_bug_add(session, stress_callback, sth, 0,
+	if ((status = switch_core_media_bug_add(session, "stress", NULL, stress_callback, sth, 0,
 											sth->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
 		return;
