@@ -790,8 +790,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_add_custom(switch_ivr_
  */
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_xml_ctx_t ** xml_menu_ctx, switch_memory_pool_t *pool);
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, const char *macro_name, const char *data, const char *lang,
+SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_session_t *session, const char *macro_name, const char *data, switch_event_t *event, const char *lang,
 														switch_input_args_t *args);
+#define switch_ivr_phrase_macro(session, macro_name, data, lang, args) switch_ivr_phrase_macro_event(session, macro_name, data, NULL, lang, args)
 SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint32_t delay_ms);
 SWITCH_DECLARE(switch_status_t) switch_ivr_find_bridged_uuid(const char *uuid, char *b_uuid, switch_size_t blen);
 SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session, const char *uuid, switch_bool_t bleg);

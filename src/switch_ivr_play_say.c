@@ -90,7 +90,7 @@ SWITCH_DECLARE(switch_say_type_t) switch_ivr_get_say_type_by_name(const char *na
 	return (switch_say_type_t) x;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, const char *macro_name, const char *data, const char *lang,
+SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_session_t *session, const char *macro_name, const char *data, switch_event_t *event, const char *lang,
 														switch_input_args_t *args)
 {
 	switch_event_t *hint_data;
@@ -129,6 +129,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "lang", chan_lang);
 	if (data) {
 		switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "data", data);
+		if (event) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "data", data);
+		}
 	} else {
 		data = "";
 	}
@@ -221,8 +224,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	}
 
 	while (input && !done) {
+		char *field = (char *) switch_xml_attr(input, "field");
 		char *pattern = (char *) switch_xml_attr(input, "pattern");
 		const char *do_break = switch_xml_attr_soft(input, "break_on_match");
+		char *field_expanded = NULL;
+		char *field_expanded_alloc = NULL;
+
+		if (!field) {
+			field = (char *) data;
+		}
+		if (event) {
+			field_expanded_alloc = switch_event_expand_headers(event, field);
+		} else {
+			field_expanded_alloc = switch_channel_expand_variables(channel, field);
+		}
+
+		if (field_expanded_alloc == field) {
+			field_expanded_alloc = NULL;
+			field_expanded = field;
+		} else {
+			field_expanded = field_expanded_alloc;
+		}
 
 		if (pattern) {
 			switch_regex_t *re = NULL;
@@ -235,7 +257,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 
 			status = SWITCH_STATUS_SUCCESS;
 
-			if ((proceed = switch_regex_perform(data, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			if ((proceed = switch_regex_perform(field_expanded, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 				match = switch_xml_child(input, "match");
 			} else {
 				match = switch_xml_child(input, "nomatch");
@@ -256,13 +278,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 							goto done;
 						}
 						memset(substituted, 0, len);
-						switch_perform_substitution(re, proceed, adata, data, substituted, len, ovector);
+						switch_perform_substitution(re, proceed, adata, field_expanded, substituted, len, ovector);
 						odata = substituted;
 					} else {
 						odata = adata;
 					}
 
-					expanded = switch_channel_expand_variables(channel, odata);
+					if (event) {
+						expanded = switch_event_expand_headers(event, odata);
+					} else {
+						expanded = switch_channel_expand_variables(channel, odata);
+					}
 
 					if (expanded == odata) {
 						expanded = NULL;
@@ -343,6 +369,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 			}
 
 		}
+
+		switch_safe_free(field_expanded_alloc);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
 			done = 1;
