@@ -2319,14 +2319,17 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		 (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && (var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE))))
 		&& !zstr(var)) {
 		char *arg = NULL;
+		char *colon = NULL;
 
 		app = switch_core_session_strdup(channel->session, var);
 
-		if ((arg = strchr(app, ':')) && *(arg + 1) == ':') {
+		arg = strchr(app, ' ');
+		colon = strchr(app, ':');
+		if (colon && (!arg || arg > colon) && *(colon + 1) == ':') {
 			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s execute on answer: %s (BROADCAST)\n", channel->name, app);
 			switch_ivr_broadcast(switch_core_session_get_uuid(channel->session), app, SMF_NONE);
 		} else {
-			if ((arg = strchr(app, ' '))) {
+			if (arg) {
 				*arg++ = '\0';
 			}
 			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s execute on answer: %s(%s)\n", channel->name, app,
