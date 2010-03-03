@@ -506,14 +506,18 @@ int skypiax_signaling_read(private_t * tech_pvt)
 						if(tech_pvt->read_buffer){
 							switch_mutex_lock(tech_pvt->mutex_audio_srv);
 							switch_buffer_zero(tech_pvt->read_buffer);
-							switch_core_timer_sync(&tech_pvt->timer_read);
+							if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next){
+								switch_core_timer_sync(&tech_pvt->timer_read);
+							}
 							switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 						}
 
 						if(tech_pvt->write_buffer){
 							switch_mutex_lock(tech_pvt->mutex_audio_cli);
 							switch_buffer_zero(tech_pvt->write_buffer);
-							switch_core_timer_sync(&tech_pvt->timer_write);
+							if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next){
+								switch_core_timer_sync(&tech_pvt->timer_write);
+							}
 							switch_mutex_unlock(tech_pvt->mutex_audio_cli);
 						}
 						DEBUGA_SKYPE("Synching audio on skype_call: %s.\n", SKYPIAX_P_LOG, id);
