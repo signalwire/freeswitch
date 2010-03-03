@@ -1445,7 +1445,7 @@ switch_status_t skinny_handle_port_message(listener_t *listener, skinny_message_
 
 struct button_template_helper {
 	skinny_message_t *message;
-	int count[0xffff+1];
+	int count[SKINNY_BUTTON_UNDEFINED+1];
 };
 
 int skinny_handle_button_template_request_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -1457,6 +1457,9 @@ int skinny_handle_button_template_request_callback(void *pArg, int argc, char **
 	uint32_t type = atoi(argv[2]);
 	int i;
 	
+	if(type > SKINNY_BUTTON_UNDEFINED) {
+		type = SKINNY_BUTTON_UNDEFINED;
+	}
 	/* fill buttons between previous one and current one */
 	for(i = message->data.button_template.button_count; i+1 < position; i++) {
 		message->data.button_template.btn[i].instance_number = ++helper->count[SKINNY_BUTTON_UNDEFINED];
