@@ -181,7 +181,7 @@ static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data)
 	while (header) {
 		struct json_object *obj = NULL;
 		/* remove trailing \r */
-		if ((data = rindex(header->data, '\r'))) {
+		if ((data =  strrchr(header->data, '\r'))) {
 			*data = '\0';
 		}
 
@@ -190,7 +190,7 @@ static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data)
 			continue;
 		}
 
-		if ((data = index(header->data, ':'))) {
+		if ((data = strchr(header->data, ':'))) {
 			*data = '\0';
 			data++;
 			while (*data == ' ' && *data != '\0') {
