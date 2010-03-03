@@ -443,7 +443,7 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
 
 
 
-		if ((p = strstr(caller_application->application_data, "\\'"))) {
+		if (caller_application->application_data && (p = strstr(caller_application->application_data, "\\'"))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "App not added, Invalid character sequence in data string [%s]\n", 
 							  caller_application->application_data);
 			return;
