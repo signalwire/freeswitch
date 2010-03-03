@@ -13,7 +13,7 @@
     <!-- port to bind to for sip traffic -->
     <param name="sip-port" value="$${internal_sip_port}"/>
     <param name="dialplan" value="XML"/>
-    <param name="dtmf-duration" value="100"/>
+    <param name="dtmf-duration" value="2000"/>
     <param name="inbound-codec-prefs" value="$${global_codec_prefs}"/>
     <param name="outbound-codec-prefs" value="$${global_codec_prefs}"/>
     <param name="use-rtp-timer" value="true"/>

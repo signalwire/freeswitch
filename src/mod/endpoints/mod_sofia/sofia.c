@@ -2477,7 +2477,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						profile->challenge_realm = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "dtmf-duration")) {
 						uint32_t dur = atoi(val);
-						if (dur > switch_core_min_dtmf_duration(0) && dur < switch_core_max_dtmf_duration(0)) {
+						if (dur >= switch_core_min_dtmf_duration(0) && dur <= switch_core_max_dtmf_duration(0)) {
 							profile->dtmf_duration = dur;
 						} else {
 							profile->dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
@@ -3259,7 +3259,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->challenge_realm = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "dtmf-duration")) {
 						uint32_t dur = atoi(val);
-						if (dur > switch_core_min_dtmf_duration(0) && dur < switch_core_max_dtmf_duration(0)) {
+						if (dur >= switch_core_min_dtmf_duration(0) && dur <= switch_core_max_dtmf_duration(0)) {
 							profile->dtmf_duration = dur;
 						} else {
 							profile->dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
