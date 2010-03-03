@@ -298,7 +298,7 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 
 	sth->session = session;
 
-	if ((status = switch_core_media_bug_add(session, soundtouch_callback, sth, 0,
+	if ((status = switch_core_media_bug_add(session, "soundtouch", NULL, soundtouch_callback, sth, 0,
 											sth->send_not_recv ? SMBF_WRITE_REPLACE : SMBF_READ_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
 		return;
