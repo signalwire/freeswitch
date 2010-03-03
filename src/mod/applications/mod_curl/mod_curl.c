@@ -137,8 +137,8 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	} else {
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
 	}
-	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 0);
-	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 0);
+	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 15);
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
