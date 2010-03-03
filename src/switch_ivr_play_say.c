@@ -247,8 +247,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 					char *adata = (char *) switch_xml_attr_soft(action, "data");
 					char *func = (char *) switch_xml_attr_soft(action, "function");
 
-					if (strchr(pattern, '(') && strchr(adata, '$')) {
-						len = (uint32_t) (strlen(data) + strlen(adata) + 10) * (proceed ? proceed : 1);
+					if (strchr(pattern, '(') && strchr(adata, '$') && proceed > 0) {
+						len = (uint32_t) (strlen(data) + strlen(adata) + 10) * proceed;
 						if (!(substituted = malloc(len))) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
 							switch_regex_safe_free(re);
@@ -287,12 +287,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 						status = SWITCH_STATUS_FALSE;
 
 						cmd = switch_core_session_strdup(session, odata);
-
-						if (!cmd) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Allocation error calling execute\n");
-							break;
-						}
-
 						cmd_args = switch_separate_paren_args(cmd);
 
 						if (!cmd_args) {
@@ -336,14 +330,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 					}
 
 					switch_ivr_sleep(session, pause, SWITCH_FALSE, NULL);
+					switch_safe_free(expanded);
+					switch_safe_free(substituted);
+					
 				}
 			}
 
 			switch_regex_safe_free(re);
-			switch_safe_free(expanded);
-			switch_safe_free(substituted);
-
-
+			
 			if ((match && do_break && switch_true(do_break)) || status == SWITCH_STATUS_BREAK) {
 				break;
 			}
