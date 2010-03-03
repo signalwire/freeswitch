@@ -272,18 +272,17 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		if (anti_action) {
 			for (xaction = switch_xml_child(xcond, "anti-action"); xaction; xaction = xaction->next) {
 				const char *application = switch_xml_attr_soft(xaction, "application");
+				const char *loop = switch_xml_attr(xaction, "loop");
 				const char *data;
 				const char *inline_ = switch_xml_attr_soft(xaction, "inline");
 				int xinline = switch_true(inline_);
+				int loop_count = 1;
 
 				if (!zstr(xaction->txt)) {
 					data = xaction->txt;
 				} else {
 					data = (char *) switch_xml_attr_soft(xaction, "data");
 				}
-
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-								  "Dialplan: %s ANTI-Action %s(%s) %s\n", switch_channel_get_name(channel), application, data, xinline ? "INLINE" : "");
 
 				if (!*extension) {
 					if ((*extension = switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
@@ -293,22 +292,33 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					}
 				}
 
-				if (xinline) {
-					exec_app(session, application, data);
-				} else {
-					switch_caller_extension_add_application(session, *extension, application, data);
+				if (loop) {
+					loop_count = atoi(loop);
+				}
+
+				for (;loop_count > 0; loop_count--) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+							"Dialplan: %s ANTI-Action %s(%s) %s\n", switch_channel_get_name(channel), application, data, xinline ? "INLINE" : "");
+
+					if (xinline) {
+						exec_app(session, application, data);
+					} else {
+						switch_caller_extension_add_application(session, *extension, application, data);
+					}
 				}
 				proceed = 1;
 			}
 		} else {
 			for (xaction = switch_xml_child(xcond, "action"); xaction; xaction = xaction->next) {
 				char *application = (char *) switch_xml_attr_soft(xaction, "application");
+				const char *loop = switch_xml_attr(xaction, "loop");
 				char *data = NULL;
 				char *substituted = NULL;
 				uint32_t len = 0;
 				char *app_data = NULL;
 				const char *inline_ = switch_xml_attr_soft(xaction, "inline");
 				int xinline = switch_true(inline_);
+				int loop_count = 1;
 
 				if (!zstr(xaction->txt)) {
 					data = xaction->txt;
@@ -338,16 +348,19 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					}
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-								  "Dialplan: %s Action %s(%s) %s\n", switch_channel_get_name(channel), application, app_data, xinline ? "INLINE" : "");
-
-
-				if (xinline) {
-					exec_app(session, application, app_data);
-				} else {
-					switch_caller_extension_add_application(session, *extension, application, app_data);
+				if (loop) {
+					loop_count = atoi(loop);
 				}
+				for (;loop_count > 0; loop_count--) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+							"Dialplan: %s Action %s(%s) %s\n", switch_channel_get_name(channel), application, app_data, xinline ? "INLINE" : "");
 
+					if (xinline) {
+						exec_app(session, application, app_data);
+					} else {
+						switch_caller_extension_add_application(session, *extension, application, app_data);
+					}
+				}
 				switch_safe_free(substituted);
 			}
 		}
