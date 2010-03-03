@@ -1635,6 +1635,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 	switch_mutex_lock(channel->profile_mutex);
 
 	if (switch_channel_test_flag(channel, CF_VERBOSE_EVENTS) ||
+		event->event_id == SWITCH_EVENT_CHANNEL_CREATE ||
 		event->event_id == SWITCH_EVENT_CHANNEL_ORIGINATE ||
 		event->event_id == SWITCH_EVENT_CHANNEL_UUID ||
 		event->event_id == SWITCH_EVENT_CHANNEL_ANSWER ||
