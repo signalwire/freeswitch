@@ -2389,13 +2389,18 @@ static void conference_loop_output(conference_member_t *member)
 			use_buffer = member->mux_buffer;
 			low_count = 0;
 			if ((write_frame.datalen = (uint32_t) switch_buffer_read(use_buffer, write_frame.data, bytes))) {
-				if (write_frame.datalen && switch_test_flag(member, MFLAG_CAN_HEAR)) {
-					write_frame.samples = write_frame.datalen / 2;
-
-					/* Check for output volume adjustments */
-					if (member->volume_out_level) {
-						switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
-					}
+				if (write_frame.datalen) {
+               write_frame.samples = write_frame.datalen / 2;
+				   
+				   if( !switch_test_flag(member, MFLAG_CAN_HEAR)) {
+				      memset(write_frame.data, 255, write_frame.datalen);
+				   }
+				   else {
+   					/* Check for output volume adjustments */
+   					if (member->volume_out_level) {
+   						switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
+   					}
+				   }
 					write_frame.timestamp = timer.samplecount;
 					if (member->fnode) {
 						member_add_file_data(member, write_frame.data, write_frame.datalen);
