@@ -25364,21 +25364,23 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_menu_stack_xml_init(void * jarg1, v
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_phrase_macro(void * jarg1, char * jarg2, char * jarg3, char * jarg4, void * jarg5) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_phrase_macro_event(void * jarg1, char * jarg2, char * jarg3, void * jarg4, char * jarg5, void * jarg6) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  char *arg4 = (char *) 0 ;
-  switch_input_args_t *arg5 = (switch_input_args_t *) 0 ;
+  switch_event_t *arg4 = (switch_event_t *) 0 ;
+  char *arg5 = (char *) 0 ;
+  switch_input_args_t *arg6 = (switch_input_args_t *) 0 ;
   switch_status_t result;
   
   arg1 = (switch_core_session_t *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  arg4 = (char *)jarg4; 
-  arg5 = (switch_input_args_t *)jarg5; 
-  result = (switch_status_t)switch_ivr_phrase_macro(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,arg5);
+  arg4 = (switch_event_t *)jarg4; 
+  arg5 = (char *)jarg5; 
+  arg6 = (switch_input_args_t *)jarg6; 
+  result = (switch_status_t)switch_ivr_phrase_macro_event(arg1,(char const *)arg2,(char const *)arg3,arg4,(char const *)arg5,arg6);
   jresult = result; 
   return jresult;
 }

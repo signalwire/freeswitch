@@ -3858,8 +3858,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_phrase_macro(SWIGTYPE_p_switch_core_session session, string macro_name, string data, string lang, switch_input_args_t args) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_phrase_macro(SWIGTYPE_p_switch_core_session.getCPtr(session), macro_name, data, lang, switch_input_args_t.getCPtr(args));
+  public static switch_status_t switch_ivr_phrase_macro_event(SWIGTYPE_p_switch_core_session session, string macro_name, string data, switch_event arg3, string lang, switch_input_args_t args) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_phrase_macro_event(SWIGTYPE_p_switch_core_session.getCPtr(session), macro_name, data, switch_event.getCPtr(arg3), lang, switch_input_args_t.getCPtr(args));
     return ret;
   }
 
@@ -10988,8 +10988,8 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_menu_stack_xml_init")]
   public static extern int switch_ivr_menu_stack_xml_init(HandleRef jarg1, HandleRef jarg2);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_phrase_macro")]
-  public static extern int switch_ivr_phrase_macro(HandleRef jarg1, string jarg2, string jarg3, string jarg4, HandleRef jarg5);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_phrase_macro_event")]
+  public static extern int switch_ivr_phrase_macro_event(HandleRef jarg1, string jarg2, string jarg3, HandleRef jarg4, string jarg5, HandleRef jarg6);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_delay_echo")]
   public static extern void switch_ivr_delay_echo(HandleRef jarg1, uint jarg2);
