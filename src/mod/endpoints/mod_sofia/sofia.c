@@ -1976,7 +1976,18 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>",
 														 from_user, !zstr(from_domain) ? from_domain : proxy, register_transport);
 
-			sipip = contact_host ? contact_host : profile->extsipip ? profile->extsipip : profile->sipip;
+
+			if (contact_host) {
+				if (!strcmp(contact_host, "sip-ip")) {
+					sipip = profile->sipip;
+				} else {
+					sipip = contact_host;
+				}
+			} else if (profile->extsipip) {
+				sipip = profile->extsipip;
+			} else {
+				sipip = profile->sipip;
+			}
 
 			if (extension_in_contact) {
 				format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
