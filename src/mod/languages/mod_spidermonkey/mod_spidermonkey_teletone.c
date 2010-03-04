@@ -169,11 +169,16 @@ static JSBool teletone_add_tone(JSContext * cx, JSObject * obj, uintN argc, jsva
 	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
 	if (argc > 2) {
 		int x;
+        int nMax = argc;
 		char *fval;
 		char *map_str;
 		map_str = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 
-		for (x = 1; x < TELETONE_MAX_TONES; x++) {
+		if ( TELETONE_MAX_TONES < nMax ) {
+			nMax = TELETONE_MAX_TONES;
+		}
+
+		for (x = 1; x < nMax; x++) {
 			fval = JS_GetStringBytes(JS_ValueToString(cx, argv[x]));
 			tto->ts.TONES[(int) *map_str].freqs[x - 1] = strtod(fval, NULL);
 		}
