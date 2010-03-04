@@ -3525,8 +3525,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 				}
 
 				if (!strcasecmp((char *) rm_encoding, "ilbc")) {
-					char *mode = NULL;
-					if ((mode = strstr(map->rm_fmtp, "mode=")) && mode) {
+					char *mode = strstr(map->rm_fmtp, "mode=");
+					if (mode && (mode + 5)) {
 						codec_ms = atoi(mode + 5);
 					}
 					if (!codec_ms) {
