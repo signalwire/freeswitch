@@ -166,7 +166,6 @@ struct listen_list_struct {
 #else
 	int sockfd;
 #endif
-	switch_mutex_t *sock_mutex;
 	listener_t *listeners;
 	uint8_t ready;
 };

@@ -245,7 +245,6 @@ static void close_socket(SOCKET * sock)
 static void close_socket(int *sock)
 #endif
 {
-	switch_mutex_lock(listen_list.sock_mutex);
 	if (*sock) {
 #ifdef WIN32
 		shutdown(*sock, SD_BOTH);
@@ -256,7 +255,6 @@ static void close_socket(int *sock)
 #endif
 		sock = NULL;
 	}
-	switch_mutex_unlock(listen_list.sock_mutex);
 }
 
 
@@ -453,7 +451,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	if (!p->reply) {
 		p->state = reply_timeout;
 		switch_mutex_unlock(globals.fetch_reply_mutex);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out after %d milliseconds when waiting for XML fetch response\n", (int) (switch_micro_time_now() - now) / 1000);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out after %d milliseconds when waiting for XML fetch response for %s\n", (int) (switch_micro_time_now() - now) / 1000, uuid_str);
 		goto cleanup;
 	}
 
@@ -476,7 +474,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	ei_decode_string_or_binary(rep->buff, &rep->index, size, xmlstr);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got data %s after %d milliseconds from %s!\n", xmlstr, (int) (switch_micro_time_now() - now) / 1000, p->winner);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got data %s after %d milliseconds from %s for %s!\n", xmlstr, (int) (switch_micro_time_now() - now) / 1000, p->winner, uuid_str);
 
 	if (zstr(xmlstr)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
@@ -546,11 +544,11 @@ static switch_status_t notify_new_session(listener_t *listener, session_elem_t *
 	ei_x_encode_tuple_header(&lbuf, 2);
 	ei_x_encode_atom(&lbuf, "call");
 	ei_encode_switch_event(&lbuf, call_event);
-	switch_mutex_lock(listener->sock_mutex);
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_element->uuid_str), SWITCH_LOG_DEBUG, "Sending initial call event for %s\n",
 					  session_element->uuid_str);
-	result = ei_sendto(listener->ec, listener->sockfd, &session_element->process, &lbuf);
 
+	switch_mutex_lock(listener->sock_mutex);
+	result = ei_sendto(listener->ec, listener->sockfd, &session_element->process, &lbuf);
 	switch_mutex_unlock(listener->sock_mutex);
 
 	if (result) {
@@ -1665,8 +1663,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
-
-	switch_mutex_init(&listen_list.sock_mutex, SWITCH_MUTEX_NESTED, pool);
 
 	/* zero out the struct before we use it */
 	memset(&server_addr, 0, sizeof(server_addr));
