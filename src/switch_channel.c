@@ -2813,14 +2813,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_mutex_lock(channel->profile_mutex);
 
 	if (switch_channel_test_flag(channel, CF_TIMESTAMP_SET)) {
+		switch_mutex_unlock(channel->profile_mutex);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(caller_profile = channel->caller_profile) || !channel->variables) {
+		switch_mutex_unlock(channel->profile_mutex);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	switch_channel_set_flag(channel, CF_TIMESTAMP_SET);
-
-	if (!(caller_profile = channel->caller_profile) || !channel->variables) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if ((app_log = switch_core_session_get_app_log(channel->session))) {
 		for (ap = app_log; ap && ap->next; ap = ap->next);
