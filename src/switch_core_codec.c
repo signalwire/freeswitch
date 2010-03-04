@@ -490,7 +490,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, co
 {
 	switch_codec_interface_t *codec_interface;
 	const switch_codec_implementation_t *iptr, *implementation = NULL;
-	const char *mode = fmtp;
 
 	switch_assert(codec != NULL);
 	switch_assert(codec_name != NULL);
