@@ -1286,7 +1286,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_log_init(runtime.memory_pool, runtime.colorize_console);
 
-	runtime.tipping_point = 1500;
+	runtime.tipping_point = 5000;
 	runtime.timer_affinity = -1;
 	switch_load_core_config("switch.conf");
 
