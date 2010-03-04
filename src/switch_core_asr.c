@@ -181,6 +181,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, s
 	switch_assert(ah != NULL);
 
 	status = ah->asr_interface->asr_close(ah, flags);
+	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
+
 	UNPROTECT_INTERFACE(ah->asr_interface);
 
 	if (switch_test_flag(ah, SWITCH_ASR_FLAG_FREE_POOL)) {
