@@ -286,6 +286,7 @@ struct private_object {
 	switch_buffer_t *write_buffer;
 	switch_buffer_t *read_buffer;
 	int silent_mode;
+	int write_silence_when_idle;
 
 };
 

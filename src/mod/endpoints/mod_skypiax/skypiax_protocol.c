@@ -996,11 +996,13 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 						switch_mutex_unlock(tech_pvt->mutex_audio_cli);
 
 						if (!bytes_to_write) {
-							continue;
-							memset(cli_out, 255, sizeof(cli_out));
-							bytes_to_write = 640;
-							//NOTICA("WRITE Silence!\n", SKYPIAX_P_LOG);
-
+							if(tech_pvt->write_silence_when_idle){
+								memset(cli_out, 255, sizeof(cli_out));
+								bytes_to_write = 640;
+								DEBUGA_SKYPE("WRITE Silence!\n", SKYPIAX_P_LOG);
+							}else{
+								continue;
+							}
 						}
 						/* send the 16khz frame to the Skype client waiting for incoming audio to be sent to the remote party */
 						if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {

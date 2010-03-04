@@ -144,9 +144,13 @@ char *skype_callflow[] = {		/* should match CALLFLOW_XXX in skypiax.h */
 
 static struct {
 	int debug;
+	char *context;
 	char *dialplan;
 	char *destination;
-	char *context;
+	char *skype_user;
+	char *report_incoming_chatmessages;
+	char *silent_mode;
+	char *write_silence_when_idle;
 	int calls;
 	int real_interfaces;
 	int next_interface;
@@ -160,9 +164,13 @@ switch_endpoint_interface_t *skypiax_endpoint_interface;
 switch_memory_pool_t *skypiax_module_pool = NULL;
 int running = 0;
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_context, globals.context);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_destination, globals.destination);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_skype_user, globals.skype_user);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_report_incoming_chatmessages, globals.report_incoming_chatmessages);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_silent_mode, globals.silent_mode);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_write_silence_when_idle, globals.write_silence_when_idle);
 
 static switch_status_t interface_exists(char *the_interface);
 static switch_status_t remove_interface(char *the_interface);
@@ -1208,18 +1216,30 @@ static switch_status_t load_config(int reload_type)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
 			if (!strcasecmp(var, "debug")) {
-				DEBUGA_SKYPE("globals.debug=%d\n", SKYPIAX_P_LOG, globals.debug);
 				globals.debug = atoi(val);
 				DEBUGA_SKYPE("globals.debug=%d\n", SKYPIAX_P_LOG, globals.debug);
+
+			} else if (!strcmp(var, "context")) {
+				set_global_context(val);
+				DEBUGA_SKYPE("globals.context=%s\n", SKYPIAX_P_LOG, globals.context);
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
 				DEBUGA_SKYPE("globals.dialplan=%s\n", SKYPIAX_P_LOG, globals.dialplan);
 			} else if (!strcmp(var, "destination")) {
 				set_global_destination(val);
 				DEBUGA_SKYPE("globals.destination=%s\n", SKYPIAX_P_LOG, globals.destination);
-			} else if (!strcmp(var, "context")) {
-				set_global_context(val);
-				DEBUGA_SKYPE("globals.context=%s\n", SKYPIAX_P_LOG, globals.context);
+			} else if (!strcmp(var, "skype_user")) {
+				set_global_skype_user(val);
+				DEBUGA_SKYPE("globals.skype_user=%s\n", SKYPIAX_P_LOG, globals.skype_user);
+			} else if (!strcmp(var, "report_incoming_chatmessages")) {
+				set_global_report_incoming_chatmessages(val);
+				DEBUGA_SKYPE("globals.report_incoming_chatmessages=%s\n", SKYPIAX_P_LOG, globals.report_incoming_chatmessages);
+			} else if (!strcmp(var, "silent_mode")) {
+				set_global_silent_mode(val);
+				DEBUGA_SKYPE("globals.silent_mode=%s\n", SKYPIAX_P_LOG, globals.silent_mode);
+			} else if (!strcmp(var, "write_silence_when_idle")) {
+				set_global_write_silence_when_idle(val);
+				DEBUGA_SKYPE("globals.write_silence_when_idle=%s\n", SKYPIAX_P_LOG, globals.write_silence_when_idle);
 			}
 
 		}
@@ -1235,20 +1255,27 @@ static switch_status_t load_config(int reload_type)
 			char *context = "default";
 			char *dialplan = "XML";
 			char *destination = "5000";
-			char *tonegroup = NULL;
-			char *digit_timeout = NULL;
-			char *max_digits = NULL;
-			char *hotline = NULL;
-			char *dial_regex = NULL;
-			char *hold_music = NULL;
-			char *fail_dial_regex = NULL;
-			char *enable_callerid = "true";
 			char *X11_display = NULL;
 			char *skype_user = NULL;
 			char *report_incoming_chatmessages = "true";
 			char *silent_mode = "false";
+			char *write_silence_when_idle = "true";
+			uint32_t interface_id = 0;
 
-			uint32_t interface_id = 0, to = 0, max = 0;
+			if(globals.context)
+				context=globals.context;
+			if(globals.dialplan)
+				dialplan=globals.dialplan;
+			if(globals.destination)
+				destination=globals.destination;
+			if(globals.skype_user)
+				skype_user=globals.skype_user;
+			if(globals.report_incoming_chatmessages)
+				report_incoming_chatmessages=globals.report_incoming_chatmessages;
+			if(globals.silent_mode)
+				silent_mode=globals.silent_mode;
+			if(globals.write_silence_when_idle)
+				write_silence_when_idle=globals.write_silence_when_idle;
 
 			tech_pvt = NULL;
 
@@ -1256,36 +1283,22 @@ static switch_status_t load_config(int reload_type)
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
-				if (!strcasecmp(var, "tonegroup")) {
-					tonegroup = val;
-				} else if (!strcasecmp(var, "digit_timeout") || !strcasecmp(var, "digit-timeout")) {
-					digit_timeout = val;
-				} else if (!strcasecmp(var, "context")) {
+				if (!strcasecmp(var, "context")) {
 					context = val;
 				} else if (!strcasecmp(var, "dialplan")) {
 					dialplan = val;
 				} else if (!strcasecmp(var, "destination")) {
 					destination = val;
-				} else if (!strcasecmp(var, "dial-regex")) {
-					dial_regex = val;
-				} else if (!strcasecmp(var, "enable-callerid")) {
-					enable_callerid = val;
-				} else if (!strcasecmp(var, "fail-dial-regex")) {
-					fail_dial_regex = val;
-				} else if (!strcasecmp(var, "hold-music")) {
-					hold_music = val;
 				} else if (!strcasecmp(var, "skype_user")) {
 					skype_user = val;
 				} else if (!strcasecmp(var, "report_incoming_chatmessages")) {
 					report_incoming_chatmessages = val;
 				} else if (!strcasecmp(var, "silent_mode")) {
 					silent_mode = val;
+				} else if (!strcasecmp(var, "write_silence_when_idle")) {
+					write_silence_when_idle = val;
 				} else if (!strcasecmp(var, "X11-display") || !strcasecmp(var, "X11_display")) {
 					X11_display = val;
-				} else if (!strcasecmp(var, "max_digits") || !strcasecmp(var, "max-digits")) {
-					max_digits = val;
-				} else if (!strcasecmp(var, "hotline")) {
-					hotline = val;
 				}
 
 			}
@@ -1324,18 +1337,6 @@ static switch_status_t load_config(int reload_type)
 				WARNINGA("interface missing param 'name', not nice, but works\n", SKYPIAX_P_LOG);
 			}
 
-			if (!tonegroup) {
-				tonegroup = "us";
-			}
-
-			if (digit_timeout) {
-				to = atoi(digit_timeout);
-			}
-
-			if (max_digits) {
-				max = atoi(max_digits);
-			}
-
 			if (name) {
 				DEBUGA_SKYPE("name=%s\n", SKYPIAX_P_LOG, name);
 			}
@@ -1368,12 +1369,11 @@ static switch_status_t load_config(int reload_type)
 				}
 				DEBUGA_SKYPE("CONFIGURING interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
 
-				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].X11_display, X11_display);
-				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].skype_user, skype_user);
 				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].context, context);
 				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].dialplan, dialplan);
 				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].destination, destination);
-				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].context, context);
+				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].X11_display, X11_display);
+				switch_set_string(globals.SKYPIAX_INTERFACES[interface_id].skype_user, skype_user);
 
 				if (!strcmp(report_incoming_chatmessages, "true") || !strcmp(report_incoming_chatmessages, "1")) {
 					globals.SKYPIAX_INTERFACES[interface_id].report_incoming_chatmessages = 1;
@@ -1389,12 +1389,13 @@ static switch_status_t load_config(int reload_type)
 
 				}
 
-				DEBUGA_SKYPE
-					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].X11_display=%s\n",
-					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].X11_display);
-				DEBUGA_SKYPE
-					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].skype_user=%s\n",
-					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user);
+				if (!strcmp(write_silence_when_idle, "true") || !strcmp(write_silence_when_idle, "1")) {
+					globals.SKYPIAX_INTERFACES[interface_id].write_silence_when_idle = 1;
+				} else {
+					globals.SKYPIAX_INTERFACES[interface_id].write_silence_when_idle = 0;	//redundant, just in case
+
+				}
+
 				DEBUGA_SKYPE("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].name=%s\n",
 							 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].name);
 				DEBUGA_SKYPE
@@ -1407,16 +1408,20 @@ static switch_status_t load_config(int reload_type)
 					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].destination=%s\n",
 					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].destination);
 				DEBUGA_SKYPE
-					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].context=%s\n",
-					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].context);
-
+					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].X11_display=%s\n",
+					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].X11_display);
+				DEBUGA_SKYPE
+					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].skype_user=%s\n",
+					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user);
 				DEBUGA_SKYPE
 					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].report_incoming_chatmessages=%d\n",
 					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].report_incoming_chatmessages);
-
 				DEBUGA_SKYPE
 					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].silent_mode=%d\n",
 					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].silent_mode);
+				DEBUGA_SKYPE
+					("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].write_silence_when_idle=%d\n",
+					 SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].write_silence_when_idle);
 
 				WARNINGA("STARTING interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
 
@@ -1516,14 +1521,16 @@ static switch_status_t load_config(int reload_type)
 				tech_pvt = &globals.SKYPIAX_INTERFACES[i];
 
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].interface_id=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].interface_id);
-				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].X11_display=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].X11_display);
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].name=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].name);
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].context=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].context);
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].dialplan=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].dialplan);
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].destination=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].destination);
+				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].X11_display=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].X11_display);
+				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].skype_user=%s\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].skype_user);
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].report_incoming_chatmessages=%d\n", SKYPIAX_P_LOG, i, i,
 							 globals.SKYPIAX_INTERFACES[i].report_incoming_chatmessages);
 				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].silent_mode=%d\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].silent_mode);
+				DEBUGA_SKYPE("i=%d globals.SKYPIAX_INTERFACES[%d].write_silence_when_idle=%d\n", SKYPIAX_P_LOG, i, i, globals.SKYPIAX_INTERFACES[i].write_silence_when_idle);
 			}
 		}
 	}
@@ -1758,9 +1765,13 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
 	}
 	switch_event_free_subclass(MY_EVENT_INCOMING_CHATMESSAGE);
 
-	switch_safe_free(globals.dialplan);
 	switch_safe_free(globals.context);
+	switch_safe_free(globals.dialplan);
 	switch_safe_free(globals.destination);
+	switch_safe_free(globals.skype_user);
+	switch_safe_free(globals.report_incoming_chatmessages);
+	switch_safe_free(globals.silent_mode);
+	switch_safe_free(globals.write_silence_when_idle);
 
 	return SWITCH_STATUS_SUCCESS;
 }
