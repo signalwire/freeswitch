@@ -930,22 +930,6 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 			}
 		}
 		
-		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR) &&
-			switch_channel_down(other_channel) && switch_true(switch_channel_get_variable(other_channel, SWITCH_COPY_XML_CDR_VARIABLE))) {
-			switch_xml_t cdr;
-			char *xml_text;
-			
-			switch_channel_wait_for_state(other_channel, channel, CS_DESTROY);
-			
-			if (switch_ivr_generate_xml_cdr(other_session, &cdr) == SWITCH_STATUS_SUCCESS) {
-				if ((xml_text = switch_xml_toxml(cdr, SWITCH_FALSE))) {
-					switch_channel_set_variable(channel, "b_leg_cdr", xml_text);
-					switch_safe_free(xml_text);
-				}
-				switch_xml_free(cdr);
-			}
-		}
-
 		switch_core_session_rwunlock(other_session);
 	}
 
