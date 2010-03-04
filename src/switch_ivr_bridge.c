@@ -929,6 +929,22 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 				}
 			}
 		}
+		
+		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR) &&
+			switch_channel_down(other_channel) && switch_true(switch_channel_get_variable(other_channel, SWITCH_COPY_XML_CDR_VARIABLE))) {
+			switch_xml_t cdr;
+			char *xml_text;
+			
+			switch_channel_wait_for_state(other_channel, channel, CS_DESTROY);
+			
+			if (switch_ivr_generate_xml_cdr(other_session, &cdr) == SWITCH_STATUS_SUCCESS) {
+				if ((xml_text = switch_xml_toxml(cdr, SWITCH_FALSE))) {
+					switch_channel_set_variable(channel, "b_leg_cdr", xml_text);
+					switch_safe_free(xml_text);
+				}
+				switch_xml_free(cdr);
+			}
+		}
 
 		switch_core_session_rwunlock(other_session);
 	}
@@ -1204,7 +1220,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			if ((cause = switch_channel_get_cause(peer_channel))) {
 				switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_HANGUP_CAUSE_VARIABLE, switch_channel_cause2str(cause));
 			}
-
+			
 			if (switch_channel_down(peer_channel) && switch_true(switch_channel_get_variable(peer_channel, SWITCH_COPY_XML_CDR_VARIABLE))) {
 				switch_xml_t cdr;
 				char *xml_text;
