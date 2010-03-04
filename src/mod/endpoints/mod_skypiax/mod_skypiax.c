@@ -1048,7 +1048,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 						DEBUGA_SKYPE("1 SESSION_DESTROY %s\n", SKYPIAX_P_LOG, switch_core_session_get_uuid(*new_session));
 						switch_core_session_destroy(new_session);
 						switch_mutex_unlock(globals.mutex);
-						return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+						return SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION;
 					}
 
 					DEBUGA_SKYPE("globals.SKYPIAX_INTERFACES[%d].name=|||%s|||?\n", SKYPIAX_P_LOG, i, globals.SKYPIAX_INTERFACES[i].name);
