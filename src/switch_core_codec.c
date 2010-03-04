@@ -507,19 +507,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, co
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (!strcasecmp(codec_name, "ilbc") && mode && !strncasecmp(mode, "mode=", 5)) {
-		int mms;
-		mode += 5;
-		if (mode) {
-			mms = atoi(mode);
-			if (mms == 20 || mms == 30) {
-				ms = mms;
-			}
-		}
-	} else if (!strcasecmp(codec_name, "ilbc")) {
-		ms = 30;
-	}
-
 	/* If no specific codec interval is requested opt for 20ms above all else because lots of stuff assumes it */
 	if (!ms) {
 		for (iptr = codec_interface->implementations; iptr; iptr = iptr->next) {

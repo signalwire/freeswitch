@@ -3222,6 +3222,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	sdp_attribute_t *attr;
 	int first = 0, last = 0;
 	int ptime = 0, dptime = 0, maxptime = 0, dmaxptime = 0;
+	int codec_ms = 0;
 	int sendonly = 0;
 	int greedy = 0, x = 0, skip = 0, mine = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -3523,6 +3524,21 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					ptime = 20;
 				}
 
+				if (!strcasecmp((char *) rm_encoding, "ilbc")) {
+					char *mode = NULL;
+					if ((mode = strstr(map->rm_fmtp, "mode=")) && mode) {
+						codec_ms = atoi(mode + 5);
+					}
+					if (!codec_ms) {
+						/* default to 30 when no mode is defined for ilbc ONLY */
+						codec_ms = 30;
+					}
+				} else {
+					codec_ms = ptime;
+				}
+				
+
+
 				for (i = first; i < last && i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 					uint32_t codec_rate = imp->samples_per_second;
@@ -3531,7 +3547,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					}
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u:%d]/[%s:%d:%u:%d]\n",
-									  rm_encoding, map->rm_pt, (int) map->rm_rate, ptime,
+									  rm_encoding, map->rm_pt, (int) map->rm_rate, codec_ms,
 									  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000);
 					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
@@ -3545,7 +3561,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 											  "Bah HUMBUG! Sticking with %s@%uh@%ui\n",
 											  imp->iananame, imp->samples_per_second, imp->microseconds_per_packet / 1000);
 						} else {
-							if ((ptime && ptime * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate) {
+							if ((codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate) {
 								near_rate = map->rm_rate;
 								near_match = imp;
 								match = 0;
@@ -3565,7 +3581,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					char tmp[80];
 					int num;
 
-					switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui", near_match->iananame, near_rate ? near_rate : near_match->samples_per_second, ptime);
+					switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui", near_match->iananame, near_rate ? near_rate : near_match->samples_per_second, codec_ms);
 
 					prefs[0] = tmp;
 					num = switch_loadable_module_get_codecs_sorted(search, 1, prefs, 1);
@@ -3598,12 +3614,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					tech_pvt->iananame = switch_core_session_strdup(session, (char *) mimp->iananame);
 					tech_pvt->pt = (switch_payload_t) map->rm_pt;
 					tech_pvt->rm_rate = map->rm_rate;
-					if (!strcasecmp((char *) mimp->iananame, "ilbc") && zstr((char *) map->rm_fmtp)) {
-						/* default to 30 when no mode is defined for ilbc ONLY */
-						tech_pvt->codec_ms = 30;
-					} else {
-						tech_pvt->codec_ms = mimp->microseconds_per_packet / 1000;
-					}
+					tech_pvt->codec_ms = mimp->microseconds_per_packet / 1000;
 					tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *) connection->c_address);
 					tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
 					tech_pvt->remote_sdp_audio_port = (switch_port_t) m->m_port;
