@@ -897,11 +897,38 @@ static ZIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 	}
 	alarms = tdm_api.wp_tdm_cmd.fe_alarms;
 #endif
+	zchan->alarm_flags = ZAP_ALARM_NONE;
 
-	
-    zchan->alarm_flags = alarms ? ZAP_ALARM_RED : ZAP_ALARM_NONE;
+	if (alarms & WAN_TE_BIT_ALARM_RED) {
+		zchan->alarm_flags |= ZAP_ALARM_RED;
+		alarms &= ~WAN_TE_BIT_ALARM_RED;
+	}
 
-    return ZAP_SUCCESS;
+	if (alarms & WAN_TE_BIT_ALARM_AIS) {
+		zchan->alarm_flags |= ZAP_ALARM_AIS;
+		zchan->alarm_flags |= ZAP_ALARM_BLUE;
+		alarms &= ~WAN_TE_BIT_ALARM_AIS;
+	}
+
+	if (alarms & WAN_TE_BIT_ALARM_RAI) {
+		zchan->alarm_flags |= ZAP_ALARM_RAI;
+		zchan->alarm_flags |= ZAP_ALARM_YELLOW;
+		alarms &= ~WAN_TE_BIT_ALARM_RAI;
+	}
+
+	/* still missing to map:
+	 * ZAP_ALARM_RECOVER
+	 * ZAP_ALARM_LOOPBACK
+	 * ZAP_ALARM_NOTOPEN
+	 * */
+
+	/* if we still have alarms that we did not map, set the general alarm */
+	if (alarms) {
+		zap_log(ZAP_LOG_DEBUG, "Unmapped wanpipe alarms: %d\n", alarms);
+		zchan->alarm_flags |= ZAP_ALARM_GENERAL;
+	}
+
+	return ZAP_SUCCESS;
 }
 
 /**
@@ -1055,7 +1082,15 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
                 }
                 break;
 			case WP_TDMAPI_EVENT_ALARM:
-				event_id = ZAP_OOB_NOOP;
+				zap_log(ZAP_LOG_DEBUG, "Got wanpipe alarms %d\n", tdm_api.wp_tdm_cmd.event.wp_api_event_alarm);
+				zap_sigmsg_t sigmsg;
+				memset(&sigmsg, 0, sizeof(sigmsg));
+				event_id = ZAP_OOB_ALARM_TRAP;
+				sigmsg.chan_id = zchan->chan_id;
+				sigmsg.span_id = zchan->span_id;
+				sigmsg.channel = zchan;
+				sigmsg.event_id = (event_id == ZAP_OOB_ALARM_CLEAR) ? ZAP_SIGEVENT_ALARM_CLEAR : ZAP_SIGEVENT_ALARM_TRAP;
+				zap_span_send_signal(zchan->span, &sigmsg);
 				break;
 			default:
 				{
