@@ -1375,7 +1375,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		}
 	}
 
-	if (ovars) {
+	if (ovars && ovars != var_event) {
 		for (hi = ovars->headers; hi; hi = hi->next) {
 			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, hi->name, hi->value);
 		}
