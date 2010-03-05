@@ -453,14 +453,12 @@ ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event
 		
 	snprintf(event_buf, sizeof(event_buf), "sendevent %s\n", esl_event_name(event->event_id));
 	
-	if (send(handle->sock, event_buf, strlen(event_buf), 0)) goto fail;
-	if (send(handle->sock, txt, strlen(txt), 0)) goto fail;
-	if (send(handle->sock, "\n\n", 2, 0)) goto fail;
+	if (send(handle->sock, event_buf, strlen(event_buf), 0) <= 0) goto fail;
+	if (send(handle->sock, txt, strlen(txt), 0) <= 0) goto fail;
 	
 	free(txt);
 
-	return ESL_SUCCESS;
-
+	return esl_recv(handle);
 
  fail:
 

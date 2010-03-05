@@ -77,8 +77,9 @@ public class ESLconnection {
     return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 
-  public int sendEvent(ESLevent send_me) {
-    return eslJNI.ESLconnection_sendEvent(swigCPtr, this, ESLevent.getCPtr(send_me), send_me);
+  public ESLevent sendEvent(ESLevent send_me) {
+    long cPtr = eslJNI.ESLconnection_sendEvent(swigCPtr, this, ESLevent.getCPtr(send_me), send_me);
+    return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 
   public ESLevent recvEvent() {

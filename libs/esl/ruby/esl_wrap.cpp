@@ -1902,7 +1902,7 @@ SWIG_ruby_failed(void)
 } 
 
 
-/*@SWIG:/usr/share/swig/1.3.35/ruby/rubyprimtypes.swg,23,%ruby_aux_method@*/
+/*@SWIG:/usr/local/share/swig/1.3.35/ruby/rubyprimtypes.swg,23,%ruby_aux_method@*/
 SWIGINTERN VALUE SWIG_AUX_NUM2LONG(VALUE *args)
 {
   VALUE obj = args[0];
@@ -3102,7 +3102,7 @@ SWIGINTERN VALUE
 _wrap_ESLconnection_sendEvent(int argc, VALUE *argv, VALUE self) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   ESLevent *arg2 = (ESLevent *) 0 ;
-  int result;
+  ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -3122,8 +3122,8 @@ _wrap_ESLconnection_sendEvent(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "ESLevent *","sendEvent", 2, argv[0] )); 
   }
   arg2 = reinterpret_cast< ESLevent * >(argp2);
-  result = (int)(arg1)->sendEvent(arg2);
-  vresult = SWIG_From_int(static_cast< int >(result));
+  result = (ESLevent *)(arg1)->sendEvent(arg2);
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   return vresult;
 fail:
   return Qnil;

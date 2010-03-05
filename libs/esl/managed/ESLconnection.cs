@@ -86,8 +86,9 @@ public class ESLconnection : IDisposable {
     return ret;
   }
 
-  public int SendEvent(ESLevent send_me) {
-    int ret = ESLPINVOKE.ESLconnection_SendEvent(swigCPtr, ESLevent.getCPtr(send_me));
+  public ESLevent SendEvent(ESLevent send_me) {
+    IntPtr cPtr = ESLPINVOKE.ESLconnection_SendEvent(swigCPtr, ESLevent.getCPtr(send_me));
+    ESLevent ret = (cPtr == IntPtr.Zero) ? null : new ESLevent(cPtr, true);
     return ret;
   }
 

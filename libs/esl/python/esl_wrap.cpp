@@ -4205,7 +4205,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_sendEvent(PyObject *SWIGUNUSEDPARM(self
   PyObject *resultobj = 0;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   ESLevent *arg2 = (ESLevent *) 0 ;
-  int result;
+  ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -4227,10 +4227,10 @@ SWIGINTERN PyObject *_wrap_ESLconnection_sendEvent(PyObject *SWIGUNUSEDPARM(self
   arg2 = reinterpret_cast< ESLevent * >(argp2);
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = (int)(arg1)->sendEvent(arg2);
+    result = (ESLevent *)(arg1)->sendEvent(arg2);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
-  resultobj = SWIG_From_int(static_cast< int >(result));
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   SWIG_PYTHON_THREAD_END_BLOCK;
   return resultobj;
 fail:

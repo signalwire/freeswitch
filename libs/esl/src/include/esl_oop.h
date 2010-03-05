@@ -83,7 +83,7 @@ class ESLconnection {
 	ESLevent *sendRecv(const char *cmd);
 	ESLevent *api(const char *cmd, const char *arg = NULL);
 	ESLevent *bgapi(const char *cmd, const char *arg = NULL);
-	int sendEvent(ESLevent *send_me);
+	ESLevent *sendEvent(ESLevent *send_me);
 	ESLevent *recvEvent();
 	ESLevent *recvEventTimed(int ms);
 	ESLevent *filter(const char *header, const char *value);

@@ -198,6 +198,7 @@ typedef enum {
 #define esl_safe_free(_x) if (_x) free(_x); _x = NULL
 #define esl_strlen_zero(s) (!s || *(s) == '\0')
 #define esl_strlen_zero_buf(s) (*(s) == '\0')
+#define end_of(_s) *(*_s == '\0' ? _s : _s + strlen(_s) - 1)
 
 #ifdef WIN32
 #include <winsock2.h>

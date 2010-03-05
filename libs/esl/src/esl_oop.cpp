@@ -186,9 +186,18 @@ ESLevent *ESLconnection::executeAsync(const char *app, const char *arg, const ch
 	return NULL;
 }
 
-int ESLconnection::sendEvent(ESLevent *send_me)
+ESLevent *ESLconnection::sendEvent(ESLevent *send_me)
 {
-	return esl_sendevent(&handle, send_me->event);
+	if (esl_sendevent(&handle, send_me->event) == ESL_SUCCESS) {
+		esl_event_t *e = handle.last_ievent ? handle.last_ievent : handle.last_event;
+		if (e) {
+			esl_event_t *event;
+			esl_event_dup(&event, e);
+			return new ESLevent(event, 1);
+		}
+	}
+
+	return new ESLevent("server_disconnected");
 }
 
 ESLevent *ESLconnection::recvEvent()

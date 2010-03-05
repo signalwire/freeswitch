@@ -161,7 +161,8 @@ class ESLconnection {
 	}
 
 	function sendEvent($send_me) {
-		return ESLconnection_sendEvent($this->_cPtr,$send_me);
+		$r=ESLconnection_sendEvent($this->_cPtr,$send_me);
+		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
 	function recvEvent() {

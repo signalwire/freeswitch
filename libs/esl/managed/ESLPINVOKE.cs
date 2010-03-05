@@ -278,7 +278,7 @@ class ESLPINVOKE {
   public static extern IntPtr ESLconnection_Bgapi(HandleRef jarg1, string jarg2, string jarg3);
 
   [DllImport("ESL", EntryPoint="CSharp_ESLconnection_SendEvent")]
-  public static extern int ESLconnection_SendEvent(HandleRef jarg1, HandleRef jarg2);
+  public static extern IntPtr ESLconnection_SendEvent(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("ESL", EntryPoint="CSharp_ESLconnection_RecvEvent")]
   public static extern IntPtr ESLconnection_RecvEvent(HandleRef jarg1);

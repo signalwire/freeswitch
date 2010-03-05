@@ -819,11 +819,11 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1bgapi(JNI
 }
 
 
-SWIGEXPORT jint JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1sendEvent(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
-  jint jresult = 0 ;
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1sendEvent(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+  jlong jresult = 0 ;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   ESLevent *arg2 = (ESLevent *) 0 ;
-  int result;
+  ESLevent *result = 0 ;
   
   (void)jenv;
   (void)jcls;
@@ -831,8 +831,8 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1sendEvent(
   (void)jarg2_;
   arg1 = *(ESLconnection **)&jarg1; 
   arg2 = *(ESLevent **)&jarg2; 
-  result = (int)(arg1)->sendEvent(arg2);
-  jresult = (jint)result; 
+  result = (ESLevent *)(arg1)->sendEvent(arg2);
+  *(ESLevent **)&jresult = result; 
   return jresult;
 }
 

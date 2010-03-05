@@ -3123,7 +3123,7 @@ XS(_wrap_ESLconnection_sendEvent) {
   {
     ESLconnection *arg1 = (ESLconnection *) 0 ;
     ESLevent *arg2 = (ESLevent *) 0 ;
-    int result;
+    ESLevent *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     void *argp2 = 0 ;
@@ -3144,8 +3144,8 @@ XS(_wrap_ESLconnection_sendEvent) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_sendEvent" "', argument " "2"" of type '" "ESLevent *""'"); 
     }
     arg2 = reinterpret_cast< ESLevent * >(argp2);
-    result = (int)(arg1)->sendEvent(arg2);
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    result = (ESLevent *)(arg1)->sendEvent(arg2);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     
     XSRETURN(argvi);
