@@ -17,11 +17,16 @@ sub heartbeat {
   print Dumper $event;
 }
 
+sub channel_hangup {
+  my $self = shift;
+  my $event = $self->{event_hash}; 
+  print "DO SQL GOODIES HERE!\n";
+}
 
+$0 = "ESL::Dispatch rocks!";
 
 $daemon->set_worker(\&worker, 2000);
 $daemon->set_callback("heartbeat", \&heartbeat);
-$daemon->set_callback("channel_hangup", \&heartbeat);
-
+$daemon->set_callback("channel_hangup", \&channel_hangup);
 
 $daemon->run;
