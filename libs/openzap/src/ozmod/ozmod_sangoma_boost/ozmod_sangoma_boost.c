@@ -728,6 +728,21 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 	zap_channel_t *zchan;
 
 	if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 0))) {
+		if ((zchan = find_zchan(span, (sangomabc_short_event_t*)event, 1))) {
+			int r;
+			if (zchan->state == ZAP_CHANNEL_STATE_UP) {
+				zap_log(ZAP_LOG_CRIT, "ZCHAN STATE UP -> Changed to TERMINATING %d:%d\n", event->span+1,event->chan+1);
+				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_TERMINATING, 0, r);
+			} else if (zap_test_sflag(zchan, SFLAG_HANGUP)) { 
+				zap_log(ZAP_LOG_CRIT, "ZCHAN STATE HANGUP -> Changed to HANGUP COMPLETE %d:%d\n", event->span+1,event->chan+1);
+				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
+			} else {
+				zap_log(ZAP_LOG_CRIT, "ZCHAN STATE INVALID %s on IN CALL %d:%d\n", zap_channel_state2str(zchan->state),event->span+1,event->chan+1);
+
+			}
+			zap_set_sflag(zchan, SFLAG_SENT_FINAL_MSG);
+			zchan=NULL;
+		}
 		zap_log(ZAP_LOG_CRIT, "START CANT FIND CHAN %d:%d\n", event->span+1,event->chan+1);
 		goto error;
 	}

@@ -585,21 +585,41 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 		break;
 	case ZAP_COMMAND_ENABLE_ECHOCANCEL:
 		{
-			//code me
+			err=sangoma_tdm_enable_hwec(zchan->sockfd, &tdm_api);
+			if (err) {
+             	snprintf(zchan->last_error, sizeof(zchan->last_error), "HWEC Enable Failed");
+				return ZAP_FAIL;
+			}
 		}
 		break;
 	case ZAP_COMMAND_DISABLE_ECHOCANCEL:
 		{
-			//code me
+			err=sangoma_tdm_disable_hwec(zchan->sockfd, &tdm_api);
+			if (err) {
+             	snprintf(zchan->last_error, sizeof(zchan->last_error), "HWEC Disable Failed");
+				return ZAP_FAIL;
+			}
 		}
 		break;
 	case ZAP_COMMAND_ENABLE_LOOP:
 		{
-			// code me
+#ifdef WP_API_FEATURE_LOOP
+         	err=sangoma_tdm_enable_loop(zchan->sockfd, &tdm_api);
+			if (err) {
+				snprintf(zchan->last_error, sizeof(zchan->last_error), "Loop Enable Failed");
+				return ZAP_FAIL;
+			}
+#endif		
 		}
 	case ZAP_COMMAND_DISABLE_LOOP:
 		{
-			// code me
+#ifdef WP_API_FEATURE_LOOP
+         	err=sangoma_tdm_disable_loop(zchan->sockfd, &tdm_api);
+			if (err) {
+				snprintf(zchan->last_error, sizeof(zchan->last_error), "Loop Disable Failed");
+				return ZAP_FAIL;
+			}
+#endif	 
 		}
 	case ZAP_COMMAND_SET_INTERVAL: 
 		{
