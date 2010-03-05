@@ -962,6 +962,8 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 
 			case WP_TDMAPI_EVENT_LINK_STATUS:
 				{
+					zap_sigmsg_t sigmsg;
+					memset(&sigmsg, 0, sizeof(sigmsg));
 					switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
 					case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
 						event_id = ZAP_OOB_ALARM_CLEAR;
@@ -970,6 +972,11 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 						event_id = ZAP_OOB_ALARM_TRAP;
 						break;
 					};
+					sigmsg.chan_id = zchan->chan_id;
+					sigmsg.span_id = zchan->span_id;
+					sigmsg.channel = zchan;
+					sigmsg.event_id = (event_id == ZAP_OOB_ALARM_CLEAR) ? ZAP_SIGEVENT_ALARM_CLEAR : ZAP_SIGEVENT_ALARM_TRAP;
+					zap_span_send_signal(zchan->span, &sigmsg);
 				}
 				break;
 

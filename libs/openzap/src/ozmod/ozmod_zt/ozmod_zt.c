@@ -1027,12 +1027,28 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 				break;
 			case ZT_EVENT_ALARM:
 				{
+					zap_sigmsg_t sigmsg;
+					zap_channel_t *zchan = span->channels[i];
 					event_id = ZAP_OOB_ALARM_TRAP;
+					memset(&sigmsg, 0, sizeof(sigmsg));
+					sigmsg.chan_id = zchan->chan_id;
+					sigmsg.span_id = zchan->span_id;
+					sigmsg.channel = zchan;
+					sigmsg.event_id = ZAP_SIGEVENT_ALARM_TRAP;
+					zap_span_send_signal(zchan->span, &sigmsg);
 				}
 				break;
 			case ZT_EVENT_NOALARM:
 				{
+					zap_sigmsg_t sigmsg;
+					zap_channel_t *zchan = span->channels[i];
 					event_id = ZAP_OOB_ALARM_CLEAR;
+					memset(&sigmsg, 0, sizeof(sigmsg));
+					sigmsg.chan_id = zchan->chan_id;
+					sigmsg.span_id = zchan->span_id;
+					sigmsg.channel = zchan;
+					sigmsg.event_id = ZAP_SIGEVENT_ALARM_CLEAR;
+					zap_span_send_signal(zchan->span, &sigmsg);
 				}
 				break;
 			case ZT_EVENT_BITSCHANGED:

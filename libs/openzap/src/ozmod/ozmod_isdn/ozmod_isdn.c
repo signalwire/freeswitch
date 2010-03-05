@@ -1512,20 +1512,12 @@ static __inline__ void check_state(zap_span_t *span)
  */
 static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 {
-	zap_sigmsg_t sig;
-
-	memset(&sig, 0, sizeof(sig));
-	sig.chan_id = event->channel->chan_id;
-	sig.span_id = event->channel->span_id;
-	sig.channel = event->channel;
-
 	zap_log(ZAP_LOG_DEBUG, "EVENT [%s][%d:%d] STATE [%s]\n", 
 			zap_oob_event2str(event->enum_id), event->channel->span_id, event->channel->chan_id, zap_channel_state2str(event->channel->state));
 
 	switch(event->enum_id) {
 	case ZAP_OOB_ALARM_TRAP:
 		{
-			sig.event_id = ZAP_OOB_ALARM_TRAP;
 			if (event->channel->state != ZAP_CHANNEL_STATE_DOWN) {
 				if (event->channel->type == ZAP_CHAN_TYPE_B) {
 					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_RESTART);
@@ -1537,7 +1529,6 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 
 			
 			zap_channel_get_alarms(event->channel);
-			zap_span_send_signal(span, &sig);
 			zap_log(ZAP_LOG_WARNING, "channel %d:%d (%d:%d) has alarms! [%s]\n", 
 					event->channel->span_id, event->channel->chan_id, 
 					event->channel->physical_span_id, event->channel->physical_chan_id, 
@@ -1550,10 +1541,8 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 			zap_log(ZAP_LOG_WARNING, "channel %d:%d (%d:%d) alarms Cleared!\n", event->channel->span_id, event->channel->chan_id,
 					event->channel->physical_span_id, event->channel->physical_chan_id);
 
-			sig.event_id = ZAP_OOB_ALARM_CLEAR;
 			zap_clear_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
 			zap_channel_get_alarms(event->channel);
-			zap_span_send_signal(span, &sig);
 		}
 		break;
 	}
