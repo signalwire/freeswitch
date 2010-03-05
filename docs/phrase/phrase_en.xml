@@ -218,6 +218,9 @@
       <prompt phrase="to return the call now" filename="vm-return_call.wav"/>
       <prompt phrase="urgent" filename="vm-urgent.wav"/>
       <prompt phrase="That mailbox is full. Please try your call again later." filename="vm-mailbox_full.wav"/>
+      <prompt phrase="Welcome to your new voicemail. To listen to a tutorial and setup your voice mail box, press 1. To skip, press 2." filename="vm-tutorial_yes_no.wav"/>
+      <prompt phrase="I need to record your first and last name. This recording is used throughout the system, including in the company directory." filename="vm-tutorial_record_name.wav"/>
+      <prompt phrase="Your personal identification number, or 'pin', is used to prevent others from accessing your voicemail messages. Would you like to change it now?" filename="vm-tutorial_change_pin.wav"/>
     </voicemail>
     <directory>
 	  <prompt phrase="Please enter the first few letters of the persons" filename="dir-enter_person.wav"/>
@@ -317,54 +320,52 @@
       <prompt phrase="You are about to provision this phone permanently to your extension." filename="ivr-provision_phone_permanently_to_extension.wav"/>
       <prompt phrase="Please enter the extension number to which you would like to provision this phone, followed by the pound sign." filename="ivr-extension_to_provision_this_phone.wav"/>
       <prompt phrase="Thank you, this phone will now reboot." filename="ivr-this_phone_will_now_reboot.wav"/>
+      <prompt phrase="Thank you. Your recording has been saved." filename="ivr-recording_saved.wav"/>
+      <prompt phrase="Press 1 to save your recording. Press 2 to review your recording. Press 3 to re-record." filename="ivr-save_review_record.wav"/>
+      <prompt phrase="The system is unable to save your sound file at this time. Please try again later." filename="ivr-unable_save.wav"/>
+      <prompt phrase="You are number..." filename="ivr-you_are_number.wav"/>
+      <prompt phrase="...in line" filename="ivr-in_line.wav"/>
+      <prompt phrase="Thank you for holding." filename="ivr-thank_you_for_holding.wav"/>
+      <prompt phrase="Your estimated hold time is..." filename="ivr-estimated_hold_time.wav"/>
+      <prompt phrase="More than..." filename="ivr-more_than.wav"/>
+      <prompt phrase="Less than..." filename="ivr-less_than.wav"/>
+      <prompt phrase="Begin recording." filename="ivr-begin_recording.wav "/>
+      <prompt phrase="Call forwarding has been cancelled." filename="ivr-call_forwarding_has_been_cancelled.wav"/>
+      <prompt phrase="Call forwarding has been set." filename="ivr-call_forwarding_has_been_set.wav"/>
+      <prompt phrase="Please enter the phone number." filename="ivr-please_enter_the_phone_number.wav"/>
+      <prompt phrase="Please state your name and the reason for your call." filename="ivr-please_state_your_name_and_reason_for_calling.wav"/>
+      <prompt phrase="To accept, press 1. To reject, press 2. To send to voicemail, press 3." filename="ivr-accept_reject_voicemail.wav"/>
+      <prompt phrase="Incoming call." filename="ivr-incoming_call.wav"/>
+      <prompt phrase="Thank you for calling." filename="ivr-thank_you_for_calling.wav"/>
+      <prompt phrase="Please stay on the line. Your call will be answered momentarily." filename="ivr-stay_on_line_call_answered_momentarily.wav"/>
+      <prompt phrase="Your call is being transferred." filename="ivr-call_being_transferred.wav"/>
+      <prompt phrase="Please enjoy the music while your call is being transferred." filename="ivr-enjoy_music_while_transfer.wav"/>
+      <prompt phrase="You have a call from..." filename="ivr-call_from.wav"/>
+      <prompt phrase="This menu has no items. Please contact the administrator." filename="ivr-no_menu_items.wav"/>
+      <prompt phrase="For a directory, press..." filename="ivr-for_directory_press.wav"/>
+      <prompt phrase="Using your telephone keypad..." filename="ivr-using_telephone_keypad.wav"/>
+      <prompt phrase="Enter the first few letters of the person's last name." filename="ivr-enter_letters_last_name.wav"/>
+      <prompt phrase="Enter the first few letters of the person's first name." filename="ivr-enter_letters_first_name.wav"/>
+      <prompt phrase="Enter the first few letters of the person's first or last name." filename="ivr-enter_letters_first_or_last_name.wav"/>
+      <prompt phrase="If this is correct, press..." filename="ivr-if_correct_press.wav"/>
+      <prompt phrase="If not, press..." filename="ivr-if_not_press.wav"/>
+      <prompt phrase="When you are finished, press the pound or hash key." filename="ivr-finished_pound_hash_key.wav"/>
+      <prompt phrase="Do not disturb is now activated." filename="ivr-dnd_activated.wav"/>
+      <prompt phrase="Do not disturb has been cancelled." filename="ivr-dnd_cancelled.wav"/>
+      <prompt phrase="Press any other digit..." filename="ivr-any_other_digit.wav"/>
+      <prompt phrase="Press one for yes. Press two for no." filename="ivr-one_yes_two_no.wav"/>
+      <prompt phrase="Please enter the queue number, followed by the pound or hash sign." filename="ivr-enter_queue_number.wav"/>
+      <prompt phrase="Please enter the..." filename="ivr-please_enter_the.wav"/>
+      <prompt phrase="Number." filename="ivr-number.wav"/>
+      <prompt phrase="...followed by the pound or hash key." filename="ivr-followed_by_pound.wav"/>
+      <prompt phrase="The account balance is..." filename="ivr-account_balance_is.wav"/>
+      <prompt phrase="Thank you for calling. If you know your party's extension, please enter it now. For a directory, press..." filename="ivr-generic_greeting.wav"/>
+      <prompt phrase="...file..." filename="ivr-file.wav"/>
+      <prompt phrase="...files..." filename="ivr-files-.wav"/>
+
       <!-- The following phrases still need to be recorded -->
-      <prompt phrase="Thank you. Your recording has been saved." filename="ivr-recording_saved.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Press 1 to save your recording. Press 2 to review your recording. Press 3 to re-record." filename="ivr-save_review_record.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="The system is unable to save your sound file at this time. Please try again later." filename="ivr-unable_save.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="You are number..." filename="ivr-you_are_number.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="...in line" filename="ivr-in_line.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Thank you for holding." filename="ivr-thank_you_for_holding.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Your estimated hold time is..." filename="ivr-estimated_hold_time.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="More than..." filename="ivr-more_than.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Less than..." filename="ivr-less_than.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Begin recording." filename="ivr-begin_recording.wav " attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Call forwarding has been cancelled." filename="ivr-call_forwarding_has_been_cancelled.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Call forwarding has been set." filename="ivr-call_forwarding_has_been_set.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Please enter the phone number." filename="ivr-please_enter_the_phone_number.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Please state your name and the reason for your call." filename="ivr-please_state_your_name_and_reason_for_calling.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="To accept, press 1. To reject, press 2. To send to voicemail, press 3." filename="ivr-accept_reject_voicemail.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Incoming call." filename="ivr-incoming_call.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Thank you for calling." filename="ivr-thank_you_for_calling.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Please stay on the line. Your call will be answered momentarily." filename="ivr-stay_on_line_call_answered_momentarily.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Your call is being transferred." filename="ivr-call_being_transferred.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Please enjoy the music while your call is being transferred." filename="ivr-enjoy_music_while_transfer.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="You have a call from..." filename="ivr-call_from.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="This menu has no items. Please contact the administrator." filename="ivr-no_menu_items.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="For a directory, press..." filename="ivr-for_directory_press.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Using your telephone keypad..." filename="ivr-using_telephone_keypad.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Enter the first few letters of the person's last name." filename="ivr-enter_letters_last_name.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Enter the first few letters of the person's first name." filename="ivr-enter_letters_first_name.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Enter the first few letters of the person's first or last name." filename="ivr-enter_letters_first_or_last_name.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="If this is correct, press..." filename="ivr-if_correct_press.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="If not, press..." filename="ivr-if_not_press.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="When you are finished, press the pound or hash key." filename="ivr-finished_pound_hash_key.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Do not disturb is now activated." filename="ivr-dnd_activated.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Do not disturb has been cancelled." filename="ivr-dnd_cancelled.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Press any other digit..." filename="ivr-any_other_digit.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Welcome to your new voicemail. To listen to a tutorial and setup your voice mail box, press 1. To skip, press 2." filename="vm-tutorial_yes_no.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="I need to record your first and last name. This recording is used throughout the system, including in the company directory." filename="vm-tutorial_record_name.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Your personal identification number, or 'pin', is used to prevent others from accessing your voicemail messages. Would you like to change it now?" filename="vm-tutorial_change_pin.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Press one for yes. Press two for no." filename="ivr-one_yes_two_no.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Please enter the queue number, followed by the pound or hash sign." filename="ivr-enter_queue_number.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Please enter the..." filename="ivr-please_enter_the.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Number." filename="ivr-number.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="...followed by the pound or hash key." filename="ivr-followed_by_pound.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="The account balance is..." filename="ivr-account_balance_is.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="Thank you for calling. If you know your party's extension, please enter it now. For a directory, press..." filename="ivr-generic_greeting.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="...file..." filename="ivr-file.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="...files..." filename="ivr-files-.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
-      <prompt phrase="" filename="vm-.wav" attr="Needs_to_be_recorded!"/>
+      <prompt phrase="" filename="vm-.wav"/>
+      <prompt phrase="" filename="vm-.wav"/>
 
     </ivr>
     <misc>
