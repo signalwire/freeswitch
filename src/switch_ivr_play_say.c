@@ -2126,13 +2126,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 
 	if (need_create) {
 		memset(sh, 0, sizeof(*sh));
-		if ((status = switch_core_speech_open(sh, tts_name, voice_name, (uint32_t) rate, interval,
-											  &flags, switch_core_session_get_pool(session))) != SWITCH_STATUS_SUCCESS) {
+		if ((status = switch_core_speech_open(sh, tts_name, voice_name, (uint32_t) rate, interval, &flags, NULL)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid TTS module!\n");
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
-			if (cache_obj) {
-				switch_channel_set_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME, NULL);
-			}
+			switch_ivr_clear_speech_cache(session);
 			return status;
 		}
 	} else if (cache_obj && strcasecmp(cache_obj->voice_name, voice_name)) {
@@ -2141,6 +2138,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	}
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
+		flags = 0;
+		switch_core_speech_close(sh, &flags);
 		return SWITCH_STATUS_FALSE;
 	}
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "OPEN TTS %s\n", tts_name);
@@ -2159,9 +2158,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 			flags = 0;
 			switch_core_speech_close(sh, &flags);
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
-			if (cache_obj) {
-				switch_channel_set_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME, NULL);
-			}
+			switch_ivr_clear_speech_cache(session);
 			return SWITCH_STATUS_GENERR;
 		}
 	}
@@ -2176,9 +2173,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 				flags = 0;
 				switch_core_speech_close(sh, &flags);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
-				if (cache_obj) {
-					switch_channel_set_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME, NULL);
-				}
+				switch_ivr_clear_speech_cache(session);
 				return SWITCH_STATUS_GENERR;
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setup timer success %u bytes per %d ms!\n", sh->samples * 2,
