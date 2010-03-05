@@ -1824,12 +1824,59 @@ static ZIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 	return status;
 }
 
+static ZIO_SIGNAL_CB_FUNCTION(on_common_signal)
+{
+	switch_event_t *event = NULL;
+
+	switch (sigmsg->event_id) {
+
+	case ZAP_SIGEVENT_ALARM_CLEAR:
+	case ZAP_SIGEVENT_ALARM_TRAP:
+		{
+			if (zap_channel_get_alarms(sigmsg->channel) != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "failed to retrieve alarms\n");
+				return ZAP_FAIL;
+			}
+			if (switch_event_create(&event, SWITCH_EVENT_TRAP) != SWITCH_STATUS_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "failed to create alarms events\n");
+				return ZAP_FAIL;
+			}
+			if (sigmsg->event_id == ZAP_SIGEVENT_ALARM_CLEAR) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "zap-alarm-clear");
+			} else {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "zap-alarm-trap");
+			}
+		}
+		break;
+	default:
+		return ZAP_SUCCESS;
+		break;
+	}
+
+	if (zap_test_alarm_flag(sigmsg->channel, ZAP_ALARM_RED)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "red");
+	}
+	if (zap_test_alarm_flag(sigmsg->channel, ZAP_ALARM_YELLOW)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "yellow");
+	}
+	if (zap_test_alarm_flag(sigmsg->channel, ZAP_ALARM_BLUE)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "blue");
+	}
+	switch_event_fire(&event);
+
+	return ZAP_BREAK;
+}
+
 static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 
 	zap_log(ZAP_LOG_DEBUG, "got clear channel sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
+
+	if (on_common_signal(sigmsg) == ZAP_BREAK) {
+		return ZAP_SUCCESS;
+	}
 
     switch(sigmsg->event_id) {
     case ZAP_SIGEVENT_START:
