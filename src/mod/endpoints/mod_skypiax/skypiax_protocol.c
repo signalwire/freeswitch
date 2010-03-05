@@ -999,7 +999,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
 							if(tech_pvt->write_silence_when_idle){
 								memset(cli_out, 255, sizeof(cli_out));
 								bytes_to_write = 640;
-								DEBUGA_SKYPE("WRITE Silence!\n", SKYPIAX_P_LOG);
+								//DEBUGA_SKYPE("WRITE Silence!\n", SKYPIAX_P_LOG);
 							}else{
 								continue;
 							}
