@@ -1259,7 +1259,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 					goto end;
 				}
 
-				len = (oe - p) + 1;
+				len = (oe - p);
 				p += len;
 				
 				
@@ -1284,10 +1284,31 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 						 tech_pvt->profile->sipip);
 						
 				strncpy(q, o_line, strlen(o_line));
-				q += strlen(o_line);
+				q += strlen(o_line) - 1;
 				
 			}
 			
+		} else if (!strncmp("s=", p, 2)) {
+			char *se = strchr(p, '\n');
+			switch_size_t len;
+
+			if (se) {
+				char s_line[1024] = "";
+
+				if (se >= pe) {
+					bad = 5;
+					goto end;
+				}
+
+				len = (se - p);
+				p += len;
+
+				snprintf(s_line, sizeof(s_line), "s=%s\n", tech_pvt->profile->username);
+
+				strncpy(q, s_line, strlen(s_line));
+				q += strlen(s_line) - 1;
+
+			}
 
 		} else if (!strncmp("m=audio ", p, 8) || (!strncmp("m=image ", p, 8))) {
 			strncpy(q, p, 8);
