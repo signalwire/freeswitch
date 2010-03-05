@@ -1476,6 +1476,10 @@ static ZIO_SIGNAL_CB_FUNCTION(on_common_signal)
 		break;
 	}
 
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s", sigmsg->channel->span->name);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-number", "%d", sigmsg->channel->span_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", sigmsg->channel->chan_id);
+
 	if (zap_test_alarm_flag(sigmsg->channel, ZAP_ALARM_RECOVER)) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "recover");
 	}
