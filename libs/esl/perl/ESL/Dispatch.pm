@@ -88,6 +88,7 @@ sub run($;) {
 	$event = $self->{_esl}->recvEvent();
       }
       $self->render_event($event,1);
+      delete $self->{event_hash};
     }
     sleep 1;
     $self->{_esl} = new ESL::ESLconnection("$self->{host}", "$self->{port}", "$self->{pass}");
