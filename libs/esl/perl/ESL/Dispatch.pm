@@ -40,7 +40,7 @@ sub set_callback($;$$) {
   $self->{_callback}->{$event} = shift;
 }
 
-sub render_event($;$$) {
+sub render_event($;$) {
   my $self = shift;
   my $event = shift;
   my $h = $event->firstHeader();
