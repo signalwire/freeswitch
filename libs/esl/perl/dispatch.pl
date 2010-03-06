@@ -13,13 +13,14 @@ sub worker {
 
 sub heartbeat {
   my $self = shift;
-  my $event = $self->{event_hash};
+  my $event = shift;
   print Dumper $event;
 }
 
 sub channel_hangup {
   my $self = shift;
-  my $event = $self->{event_hash}; 
+  my $event = shift;
+  print Dumper $event;
   print "DO SQL GOODIES HERE!\n";
 }
 

@@ -63,7 +63,7 @@ sub render_event($;$$) {
       $callback = lc($self->{event_hash}->{'event-name'});
       print "DEBUG: executing $callback callback\n";
     }
-    &{$self->{_callback}->{lc($self->{event_hash}->{'event-name'})}}($self);
+    &{$self->{_callback}->{lc($self->{event_hash}->{'event-name'})}}($self, $self->{event_hash});
   };
 }
 
