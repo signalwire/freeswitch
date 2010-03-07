@@ -66,9 +66,34 @@ static char *SAY_TYPE_NAMES[] = {
 	NULL
 };
 
+static char *SAY_GENDER_NAMES[] = {
+	"MASCULINE",
+	"FEMININE",
+	"NEUTER",
+	NULL
+};
+
+SWITCH_DECLARE(switch_say_gender_t) switch_ivr_get_say_gender_by_name(const char *name)
+{
+	int x = 0;
+
+	if (!name) return (switch_say_gender_t)0;
+
+	for (x = 0; SAY_GENDER_NAMES[x]; x++) {
+		if (!strcasecmp(SAY_GENDER_NAMES[x], name)) {
+			break;
+		}
+	}
+
+	return (switch_say_gender_t) x;
+}
+
 SWITCH_DECLARE(switch_say_method_t) switch_ivr_get_say_method_by_name(const char *name)
 {
 	int x = 0;
+
+	if (!name) return (switch_say_method_t)0;
+
 	for (x = 0; SAY_METHOD_NAMES[x]; x++) {
 		if (!strcasecmp(SAY_METHOD_NAMES[x], name)) {
 			break;
@@ -81,6 +106,9 @@ SWITCH_DECLARE(switch_say_method_t) switch_ivr_get_say_method_by_name(const char
 SWITCH_DECLARE(switch_say_type_t) switch_ivr_get_say_type_by_name(const char *name)
 {
 	int x = 0;
+
+	if (!name) return (switch_say_type_t)0;
+
 	for (x = 0; SAY_TYPE_NAMES[x]; x++) {
 		if (!strcasecmp(SAY_TYPE_NAMES[x], name)) {
 			break;
@@ -330,10 +358,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 						if ((si = switch_loadable_module_get_say_interface(module_name))) {
 							char *say_type = (char *) switch_xml_attr_soft(action, "type");
 							char *say_method = (char *) switch_xml_attr_soft(action, "method");
+							char *say_gender = (char *) switch_xml_attr_soft(action, "gender");
+							switch_say_args_t say_args = {0};
 
-							status =
-								si->say_function(session, odata, switch_ivr_get_say_type_by_name(say_type), switch_ivr_get_say_method_by_name(say_method),
-												 args);
+							say_args.type = switch_ivr_get_say_type_by_name(say_type);
+							say_args.method = switch_ivr_get_say_method_by_name(say_method);
+							say_args.gender = switch_ivr_get_say_gender_by_name(say_gender);
+
+							status = si->say_function(session, odata, &say_args, args);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", module_name);
 						}

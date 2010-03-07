@@ -1807,23 +1807,23 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 							   prompt_audio_file, bad_input_audio_file, var_name, digit_buffer, sizeof(digit_buffer), digits_regex);
 }
 
-#define SAY_SYNTAX "<module_name> <say_type> <say_method> <text>"
+#define SAY_SYNTAX "<module_name> <say_type> <say_method> [<say_gender>] <text>"
 SWITCH_STANDARD_APP(say_function)
 {
-	char *argv[4] = { 0 };
+	char *argv[5] = { 0 };
 	int argc;
 	char *lbuf = NULL;
 	switch_input_args_t args = { 0 };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
-		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) && (argc == 4 || argc == 5)) {
 
 		args.input_callback = on_dtmf;
 
 		switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
 
-		switch_ivr_say(session, argv[3], argv[0], argv[1], argv[2], &args);
+		switch_ivr_say(session, (argc == 4) ? argv[3] : argv[4], argv[0], argv[1], argv[2], (argc == 5) ? argv[3] : NULL ,&args);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", SAY_SYNTAX);
 	}

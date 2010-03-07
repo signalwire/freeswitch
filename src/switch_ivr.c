@@ -2137,8 +2137,13 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	stfu_n_destroy(&jb);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, const char *tosay, const char *module_name, const char *say_type,
-											   const char *say_method, switch_input_args_t *args)
+SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,
+											   const char *tosay,
+											   const char *module_name,
+											   const char *say_type,
+											   const char *say_method,
+											   const char *say_gender,
+											   switch_input_args_t *args)
 {
 	switch_say_interface_t *si;
 	switch_channel_t *channel;
@@ -2215,7 +2220,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 
 	if ((si = switch_loadable_module_get_say_interface(module_name))) {
 		/* should go back and proto all the say mods to const.... */
-		status = si->say_function(session, (char *) tosay, switch_ivr_get_say_type_by_name(say_type), switch_ivr_get_say_method_by_name(say_method), args);
+		switch_say_args_t say_args = {0};
+		
+		say_args.type = switch_ivr_get_say_type_by_name(say_type);
+		say_args.method = switch_ivr_get_say_method_by_name(say_method);
+		say_args.gender = switch_ivr_get_say_gender_by_name(say_gender);
+		
+		status = si->say_function(session, (char *) tosay, &say_args, args);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", module_name);
 		status = SWITCH_STATUS_FALSE;

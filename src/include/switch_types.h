@@ -310,6 +310,12 @@ typedef enum {
 } switch_say_type_t;
 
 typedef enum {
+	SSG_MASCULINE,
+	SSG_FEMININE,
+	SSG_NEUTER
+} switch_say_gender_t;
+
+typedef enum {
 	SMA_NONE,
 	SMA_GET,
 	SMA_SET
@@ -1579,8 +1585,18 @@ typedef struct {
 	switch_read_frame_callback_function_t read_frame_callback;
 	void *user_data;
 } switch_input_args_t;
+
+typedef struct {
+	switch_say_type_t type;
+	switch_say_method_t method;
+	switch_say_gender_t gender;
+} switch_say_args_t;
+
 typedef switch_status_t (*switch_say_callback_t) (switch_core_session_t *session,
-												  char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args);
+												  char *tosay,
+												  switch_say_args_t *say_args,
+												  switch_input_args_t *args);
+
 typedef struct switch_xml *switch_xml_t;
 typedef struct switch_core_time_duration switch_core_time_duration_t;
 typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,

@@ -809,7 +809,7 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 	return dtmf_buf;
 }
 
-SWITCH_DECLARE(void) CoreSession::say(const char *tosay, const char *module_name, const char *say_type, const char *say_method) 
+SWITCH_DECLARE(void) CoreSession::say(const char *tosay, const char *module_name, const char *say_type, const char *say_method, const char *say_gender) 
 {
 	this_check_void();
 	sanity_check_noreturn;
@@ -818,7 +818,7 @@ SWITCH_DECLARE(void) CoreSession::say(const char *tosay, const char *module_name
 		return;
 	}
 	begin_allow_threads();
-	switch_ivr_say(session, tosay, module_name, say_type, say_method, ap);
+	switch_ivr_say(session, tosay, module_name, say_type, say_method, say_gender, ap);
     end_allow_threads();
 }
 

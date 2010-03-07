@@ -810,10 +810,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 																  switch_bind_flag_t bind_flags, const char *app);
 SWITCH_DECLARE(switch_status_t) switch_ivr_unbind_dtmf_meta_session(switch_core_session_t *session, uint32_t key);
 SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *session, const char *unhold_key, const char *moh_a, const char *moh_b);
-SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, const char *tosay, const char *module_name, const char *say_type,
-											   const char *say_method, switch_input_args_t *args);
+SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,
+											   const char *tosay,
+											   const char *module_name,
+											   const char *say_type,
+											   const char *say_method,
+											   const char *say_gender,
+											   switch_input_args_t *args);
 
 SWITCH_DECLARE(switch_say_method_t) switch_ivr_get_say_method_by_name(const char *name);
+SWITCH_DECLARE(switch_say_gender_t) switch_ivr_get_say_gender_by_name(const char *name);
 SWITCH_DECLARE(switch_say_type_t) switch_ivr_get_say_type_by_name(const char *name);
 SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data);
 SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *session);

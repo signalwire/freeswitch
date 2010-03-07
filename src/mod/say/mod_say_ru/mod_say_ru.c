@@ -111,7 +111,7 @@ static char *strip_nonnumerics(char *in, char *out, switch_size_t len)
 	return ret;
 }
 
-static switch_status_t ru_spell(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t ru_spell(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	char *p;
 
@@ -120,9 +120,9 @@ static switch_status_t ru_spell(switch_core_session_t *session, char *tosay, swi
 		if (a >= 48 && a <= 57) {
 			say_file("digits/%d.wav", a - 48);
 		} else {
-			if (type == SST_NAME_SPELLED) {
+			if (say_args->type == SST_NAME_SPELLED) {
 				say_file("ascii/%d.wav", a);
-			} else if (type == SST_NAME_PHONETIC) {
+			} else if (say_args->type == SST_NAME_PHONETIC) {
 				say_file("phonetic-ascii/%d.wav", a);
 			}
 		}
@@ -286,14 +286,13 @@ static switch_status_t ru_say_count(switch_core_session_t *session, char *tosay,
 }
 
 //дописать
-static switch_status_t ru_say_general_count(switch_core_session_t *session,
-											char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t ru_say_general_count(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	switch_status_t status;
 	casus_t casus;				//падеж
 	say_type_t say_type;		//тип произношения
 
-	switch (type) {
+	switch (say_args->type) {
 	case SST_MESSAGES:
 		say_type = it_c;
 		casus = nominativus;
@@ -308,8 +307,7 @@ static switch_status_t ru_say_general_count(switch_core_session_t *session,
 	return status;
 }
 
-static switch_status_t ru_say_money(switch_core_session_t *session, char *tosay, switch_say_type_t type,
-									switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t ru_say_money(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	char sbuf[16] = "";
 	char *rubles = NULL;
@@ -380,8 +378,7 @@ static switch_status_t ru_say_money(switch_core_session_t *session, char *tosay,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method,
-								   switch_input_args_t *args)
+static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	int32_t t;
 	char buf[80];
@@ -391,9 +388,9 @@ static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, 
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *tz = switch_channel_get_variable(channel, "timezone");
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " ru_say_time %s  type=%d method=%d\n", tosay, type, method);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " ru_say_time %s  type=%d method=%d\n", tosay, say_args->type, say_args->method);
 
-	if (type == SST_TIME_MEASUREMENT) {
+	if (say_args->type == SST_TIME_MEASUREMENT) {
 		int64_t hours = 0;
 		int64_t minutes = 0;
 		int64_t seconds = 0;
@@ -492,7 +489,7 @@ static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, 
 		switch_time_exp_lt(&tm_now, target_now);
 	}
 
-	switch (type) {
+	switch (say_args->type) {
 	case SST_CURRENT_DATE_TIME:
 		say_date = say_time = 1;
 		break;
@@ -562,12 +559,13 @@ static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, 
 	}
 	if (say_time) {
 		switch_snprintf(buf, sizeof(buf), "%d:%d:%d", tm.tm_hour + 1, tm.tm_min, tm.tm_sec);
-		ru_say_time(session, buf, SST_TIME_MEASUREMENT, method, args);
+		say_args->type = SST_TIME_MEASUREMENT;
+		ru_say_time(session, buf, say_args, args);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t ru_ip(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t ru_ip(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	char *a, *b, *c, *d;
 	if (!(a = switch_core_session_strdup(session, tosay))) {
@@ -605,11 +603,11 @@ static switch_status_t ru_ip(switch_core_session_t *session, char *tosay, switch
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t ru_say(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t ru_say(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	switch_say_callback_t say_cb = NULL;
 
-	switch (type) {
+	switch (say_args->type) {
 	case SST_NUMBER:
 	case SST_ITEMS:
 	case SST_PERSONS:
@@ -642,12 +640,12 @@ static switch_status_t ru_say(switch_core_session_t *session, char *tosay, switc
 		say_cb = ru_say_money;
 		break;
 	default:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", type);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", say_args->type);
 		break;
 	}
 
 	if (say_cb) {
-		return say_cb(session, tosay, type, method, args);
+		return say_cb(session, tosay, say_args, args);
 	}
 
 	return SWITCH_STATUS_FALSE;

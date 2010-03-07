@@ -222,7 +222,8 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 SWITCH_DECLARE(void *) getPrivate(char *var);
 		 SWITCH_DECLARE(const char *) getVariable(char *var);
 		 SWITCH_DECLARE(switch_status_t) process_callback_result(char *result);
-		 SWITCH_DECLARE(void) say(const char *tosay, const char *module_name, const char *say_type, const char *say_method);
+		 SWITCH_DECLARE(void) say(const char *tosay, const char *module_name, const char *say_type, const char *say_method,
+								  const char *say_gender = NULL);
 		 SWITCH_DECLARE(void) sayPhrase(const char *phrase_name, const char *phrase_data = "", const char *phrase_lang = NULL);
 		 SWITCH_DECLARE(const char *) hangupCause();
 		 SWITCH_DECLARE(const char *) getState();
