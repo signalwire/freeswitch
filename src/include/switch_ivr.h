@@ -821,6 +821,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,
 SWITCH_DECLARE(switch_say_method_t) switch_ivr_get_say_method_by_name(const char *name);
 SWITCH_DECLARE(switch_say_gender_t) switch_ivr_get_say_gender_by_name(const char *name);
 SWITCH_DECLARE(switch_say_type_t) switch_ivr_get_say_type_by_name(const char *name);
+SWITCH_DECLARE(switch_status_t) switch_ivr_say_spell(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args);
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data);
 SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_process_import(switch_core_session_t *session, switch_channel_t *peer_channel, const char *varname);

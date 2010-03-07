@@ -739,6 +739,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_ivr_say.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_loadable_module.c"
 				>
 			</File>

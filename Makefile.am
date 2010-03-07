@@ -215,6 +215,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_ivr_originate.c \
 	src/switch_ivr_async.c \
 	src/switch_ivr_play_say.c \
+	src/switch_ivr_say.c \
 	src/switch_ivr_menu.c \
 	src/switch_ivr.c \
 	src/switch_stun.c \
