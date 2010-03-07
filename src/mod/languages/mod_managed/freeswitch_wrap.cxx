@@ -3857,6 +3857,94 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_input_args_t(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_say_args_t_type_set(void * jarg1, int jarg2) {
+  switch_say_args_t *arg1 = (switch_say_args_t *) 0 ;
+  switch_say_type_t arg2 ;
+  
+  arg1 = (switch_say_args_t *)jarg1; 
+  arg2 = (switch_say_type_t)jarg2; 
+  if (arg1) (arg1)->type = arg2;
+  
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_say_args_t_type_get(void * jarg1) {
+  int jresult ;
+  switch_say_args_t *arg1 = (switch_say_args_t *) 0 ;
+  switch_say_type_t result;
+  
+  arg1 = (switch_say_args_t *)jarg1; 
+  result = (switch_say_type_t) ((arg1)->type);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_say_args_t_method_set(void * jarg1, int jarg2) {
+  switch_say_args_t *arg1 = (switch_say_args_t *) 0 ;
+  switch_say_method_t arg2 ;
+  
+  arg1 = (switch_say_args_t *)jarg1; 
+  arg2 = (switch_say_method_t)jarg2; 
+  if (arg1) (arg1)->method = arg2;
+  
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_say_args_t_method_get(void * jarg1) {
+  int jresult ;
+  switch_say_args_t *arg1 = (switch_say_args_t *) 0 ;
+  switch_say_method_t result;
+  
+  arg1 = (switch_say_args_t *)jarg1; 
+  result = (switch_say_method_t) ((arg1)->method);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_say_args_t_gender_set(void * jarg1, int jarg2) {
+  switch_say_args_t *arg1 = (switch_say_args_t *) 0 ;
+  switch_say_gender_t arg2 ;
+  
+  arg1 = (switch_say_args_t *)jarg1; 
+  arg2 = (switch_say_gender_t)jarg2; 
+  if (arg1) (arg1)->gender = arg2;
+  
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_say_args_t_gender_get(void * jarg1) {
+  int jresult ;
+  switch_say_args_t *arg1 = (switch_say_args_t *) 0 ;
+  switch_say_gender_t result;
+  
+  arg1 = (switch_say_args_t *)jarg1; 
+  result = (switch_say_gender_t) ((arg1)->gender);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_say_args_t() {
+  void * jresult ;
+  switch_say_args_t *result = 0 ;
+  
+  result = (switch_say_args_t *)new switch_say_args_t();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_say_args_t(void * jarg1) {
+  switch_say_args_t *arg1 = (switch_say_args_t *) 0 ;
+  
+  arg1 = (switch_say_args_t *)jarg1; 
+  delete arg1;
+  
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_API_VERSION_get() {
   int jresult ;
   int result;
@@ -25536,14 +25624,15 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_soft_hold(void * jarg1, char * jarg
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_say(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, void * jarg6) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_say(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, void * jarg7) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   char *arg5 = (char *) 0 ;
-  switch_input_args_t *arg6 = (switch_input_args_t *) 0 ;
+  char *arg6 = (char *) 0 ;
+  switch_input_args_t *arg7 = (switch_input_args_t *) 0 ;
   switch_status_t result;
   
   arg1 = (switch_core_session_t *)jarg1; 
@@ -25551,8 +25640,9 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_say(void * jarg1, char * jarg2, cha
   arg3 = (char *)jarg3; 
   arg4 = (char *)jarg4; 
   arg5 = (char *)jarg5; 
-  arg6 = (switch_input_args_t *)jarg6; 
-  result = (switch_status_t)switch_ivr_say(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,arg6);
+  arg6 = (char *)jarg6; 
+  arg7 = (switch_input_args_t *)jarg7; 
+  result = (switch_status_t)switch_ivr_say(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,arg7);
   jresult = result; 
   return jresult;
 }
@@ -25565,6 +25655,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_get_say_method_by_name(char * jarg1
   
   arg1 = (char *)jarg1; 
   result = (switch_say_method_t)switch_ivr_get_say_method_by_name((char const *)arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_get_say_gender_by_name(char * jarg1) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_say_gender_t result;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_say_gender_t)switch_ivr_get_say_gender_by_name((char const *)arg1);
   jresult = result; 
   return jresult;
 }
@@ -31025,19 +31127,21 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_GetVariable(void * jarg1, char 
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_Say(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5) {
+SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_Say(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6) {
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   char *arg5 = (char *) 0 ;
+  char *arg6 = (char *) NULL ;
   
   arg1 = (CoreSession *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   arg4 = (char *)jarg4; 
   arg5 = (char *)jarg5; 
-  (arg1)->say((char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5);
+  arg6 = (char *)jarg6; 
+  (arg1)->say((char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6);
 }
 
 

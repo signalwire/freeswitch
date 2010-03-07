@@ -256,8 +256,8 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
-  public void Say(string tosay, string module_name, string say_type, string say_method) {
-    freeswitchPINVOKE.CoreSession_Say(swigCPtr, tosay, module_name, say_type, say_method);
+  public void Say(string tosay, string module_name, string say_type, string say_method, string say_gender) {
+    freeswitchPINVOKE.CoreSession_Say(swigCPtr, tosay, module_name, say_type, say_method, say_gender);
   }
 
   public void SayPhrase(string phrase_name, string phrase_data, string phrase_lang) {
@@ -3907,13 +3907,18 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_say(SWIGTYPE_p_switch_core_session session, string tosay, string module_name, string say_type, string say_method, switch_input_args_t args) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_say(SWIGTYPE_p_switch_core_session.getCPtr(session), tosay, module_name, say_type, say_method, switch_input_args_t.getCPtr(args));
+  public static switch_status_t switch_ivr_say(SWIGTYPE_p_switch_core_session session, string tosay, string module_name, string say_type, string say_method, string say_gender, switch_input_args_t args) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_say(SWIGTYPE_p_switch_core_session.getCPtr(session), tosay, module_name, say_type, say_method, say_gender, switch_input_args_t.getCPtr(args));
     return ret;
   }
 
   public static switch_say_method_t switch_ivr_get_say_method_by_name(string name) {
     switch_say_method_t ret = (switch_say_method_t)freeswitchPINVOKE.switch_ivr_get_say_method_by_name(name);
+    return ret;
+  }
+
+  public static switch_say_gender_t switch_ivr_get_say_gender_by_name(string name) {
+    switch_say_gender_t ret = (switch_say_gender_t)freeswitchPINVOKE.switch_ivr_get_say_gender_by_name(name);
     return ret;
   }
 
@@ -5965,6 +5970,30 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_input_args_t")]
   public static extern void delete_switch_input_args_t(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_say_args_t_type_set")]
+  public static extern void switch_say_args_t_type_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_say_args_t_type_get")]
+  public static extern int switch_say_args_t_type_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_say_args_t_method_set")]
+  public static extern void switch_say_args_t_method_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_say_args_t_method_get")]
+  public static extern int switch_say_args_t_method_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_say_args_t_gender_set")]
+  public static extern void switch_say_args_t_gender_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_say_args_t_gender_get")]
+  public static extern int switch_say_args_t_gender_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_say_args_t")]
+  public static extern IntPtr new_switch_say_args_t();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_say_args_t")]
+  public static extern void delete_switch_say_args_t(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_API_VERSION_get")]
   public static extern int SWITCH_API_VERSION_get();
@@ -11019,10 +11048,13 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_soft_hold(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_say")]
-  public static extern int switch_ivr_say(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, HandleRef jarg6);
+  public static extern int switch_ivr_say(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, HandleRef jarg7);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_get_say_method_by_name")]
   public static extern int switch_ivr_get_say_method_by_name(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_get_say_gender_by_name")]
+  public static extern int switch_ivr_get_say_gender_by_name(string jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_get_say_type_by_name")]
   public static extern int switch_ivr_get_say_type_by_name(string jarg1);
@@ -12327,7 +12359,7 @@ class freeswitchPINVOKE {
   public static extern string CoreSession_GetVariable(HandleRef jarg1, string jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_Say")]
-  public static extern void CoreSession_Say(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5);
+  public static extern void CoreSession_Say(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_SayPhrase")]
   public static extern void CoreSession_SayPhrase(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
@@ -13502,18 +13534,18 @@ namespace FreeSWITCH.Native {
 using System;
 using System.Runtime.InteropServices;
 
-public class SWIGTYPE_p_f_p_switch_core_session_p_char_enum_switch_say_type_t_enum_switch_say_method_t_p_switch_input_args_t__switch_status_t {
+public class SWIGTYPE_p_f_p_switch_core_session_p_char_p_switch_say_args_t_p_switch_input_args_t__switch_status_t {
   private HandleRef swigCPtr;
 
-  internal SWIGTYPE_p_f_p_switch_core_session_p_char_enum_switch_say_type_t_enum_switch_say_method_t_p_switch_input_args_t__switch_status_t(IntPtr cPtr, bool futureUse) {
+  internal SWIGTYPE_p_f_p_switch_core_session_p_char_p_switch_say_args_t_p_switch_input_args_t__switch_status_t(IntPtr cPtr, bool futureUse) {
     swigCPtr = new HandleRef(this, cPtr);
   }
 
-  protected SWIGTYPE_p_f_p_switch_core_session_p_char_enum_switch_say_type_t_enum_switch_say_method_t_p_switch_input_args_t__switch_status_t() {
+  protected SWIGTYPE_p_f_p_switch_core_session_p_char_p_switch_say_args_t_p_switch_input_args_t__switch_status_t() {
     swigCPtr = new HandleRef(null, IntPtr.Zero);
   }
 
-  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_switch_core_session_p_char_enum_switch_say_type_t_enum_switch_say_method_t_p_switch_input_args_t__switch_status_t obj) {
+  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_switch_core_session_p_char_p_switch_say_args_t_p_switch_input_args_t__switch_status_t obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -26205,6 +26237,100 @@ namespace FreeSWITCH.Native {
 using System;
 using System.Runtime.InteropServices;
 
+public class switch_say_args_t : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_say_args_t(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_say_args_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_say_args_t() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if(swigCPtr.Handle != IntPtr.Zero && swigCMemOwn) {
+        swigCMemOwn = false;
+        freeswitchPINVOKE.delete_switch_say_args_t(swigCPtr);
+      }
+      swigCPtr = new HandleRef(null, IntPtr.Zero);
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public switch_say_type_t type {
+    set {
+      freeswitchPINVOKE.switch_say_args_t_type_set(swigCPtr, (int)value);
+    } 
+    get {
+      switch_say_type_t ret = (switch_say_type_t)freeswitchPINVOKE.switch_say_args_t_type_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_say_method_t method {
+    set {
+      freeswitchPINVOKE.switch_say_args_t_method_set(swigCPtr, (int)value);
+    } 
+    get {
+      switch_say_method_t ret = (switch_say_method_t)freeswitchPINVOKE.switch_say_args_t_method_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_say_gender_t gender {
+    set {
+      freeswitchPINVOKE.switch_say_args_t_gender_set(swigCPtr, (int)value);
+    } 
+    get {
+      switch_say_gender_t ret = (switch_say_gender_t)freeswitchPINVOKE.switch_say_args_t_gender_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_say_args_t() : this(freeswitchPINVOKE.new_switch_say_args_t(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+public enum switch_say_gender_t {
+  SSG_MASCULINE,
+  SSG_FEMININE,
+  SSG_NEUTER
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
 public class switch_say_interface : IDisposable {
   private HandleRef swigCPtr;
   protected bool swigCMemOwn;
@@ -26243,13 +26369,13 @@ public class switch_say_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_core_session_p_char_enum_switch_say_type_t_enum_switch_say_method_t_p_switch_input_args_t__switch_status_t say_function {
+  public SWIGTYPE_p_f_p_switch_core_session_p_char_p_switch_say_args_t_p_switch_input_args_t__switch_status_t say_function {
     set {
-      freeswitchPINVOKE.switch_say_interface_say_function_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_char_enum_switch_say_type_t_enum_switch_say_method_t_p_switch_input_args_t__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_say_interface_say_function_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_char_p_switch_say_args_t_p_switch_input_args_t__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_say_interface_say_function_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_core_session_p_char_enum_switch_say_type_t_enum_switch_say_method_t_p_switch_input_args_t__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_char_enum_switch_say_type_t_enum_switch_say_method_t_p_switch_input_args_t__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_core_session_p_char_p_switch_say_args_t_p_switch_input_args_t__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_char_p_switch_say_args_t_p_switch_input_args_t__switch_status_t(cPtr, false);
       return ret;
     } 
   }
