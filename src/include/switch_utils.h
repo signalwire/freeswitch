@@ -545,6 +545,8 @@ SWITCH_DECLARE(unsigned int) switch_separate_string_string(char *buf, char *deli
 
 SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str);
 SWITCH_DECLARE(char *) switch_strip_spaces(const char *str);
+SWITCH_DECLARE(char *) switch_strip_commas(char *in, char *out, switch_size_t len);
+SWITCH_DECLARE(char *) switch_strip_nonnumerics(char *in, char *out, switch_size_t len);
 SWITCH_DECLARE(char *) switch_separate_paren_args(char *str);
 SWITCH_DECLARE(const char *) switch_stristr(const char *instr, const char *str);
 SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip);

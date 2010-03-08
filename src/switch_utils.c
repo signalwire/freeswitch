@@ -742,6 +742,49 @@ SWITCH_DECLARE(char *) switch_strip_spaces(const char *str)
 	return s;
 }
 
+SWITCH_DECLARE(char *) switch_strip_commas(char *in, char *out, switch_size_t len)
+{
+	char *p = in, *q = out;
+	char *ret = out;
+	switch_size_t x = 0;
+
+	for (; p && *p; p++) {
+		if ((*p > 47 && *p < 58)) {
+			*q++ = *p;
+		} else if (*p != ',') {
+			ret = NULL;
+			break;
+		}
+
+		if (++x > len) {
+			ret = NULL;
+			break;
+		}
+	}
+
+	return ret;
+}
+
+SWITCH_DECLARE(char *) switch_strip_nonnumerics(char *in, char *out, switch_size_t len)
+{
+	char *p = in, *q = out;
+	char *ret = out;
+	switch_size_t x = 0;
+	/* valid are 0 - 9, period (.), minus (-), and plus (+) - remove all others */
+	for (; p && *p; p++) {
+		if ((*p > 47 && *p < 58) || *p == '.' || *p == '-' || *p == '+') {
+			*q++ = *p;
+		}
+
+		if (++x > len) {
+			ret = NULL;
+			break;
+		}
+	}
+
+	return ret;
+}
+
 SWITCH_DECLARE(char *) switch_separate_paren_args(char *str)
 {
 	char *e, *args;

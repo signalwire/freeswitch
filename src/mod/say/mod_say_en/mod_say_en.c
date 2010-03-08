@@ -117,49 +117,6 @@ static switch_status_t play_group(switch_say_method_t method, int a, int b, int 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static char *strip_commas(char *in, char *out, switch_size_t len)
-{
-	char *p = in, *q = out;
-	char *ret = out;
-	switch_size_t x = 0;
-
-	for (; p && *p; p++) {
-		if ((*p > 47 && *p < 58)) {
-			*q++ = *p;
-		} else if (*p != ',') {
-			ret = NULL;
-			break;
-		}
-
-		if (++x > len) {
-			ret = NULL;
-			break;
-		}
-	}
-
-	return ret;
-}
-
-static char *strip_nonnumerics(char *in, char *out, switch_size_t len)
-{
-	char *p = in, *q = out;
-	char *ret = out;
-	switch_size_t x = 0;
-	// valid are 0 - 9, period (.), minus (-), and plus (+) - remove all others
-	for (; p && *p; p++) {
-		if ((*p > 47 && *p < 58) || *p == '.' || *p == '-' || *p == '+') {
-			*q++ = *p;
-		}
-
-		if (++x > len) {
-			ret = NULL;
-			break;
-		}
-	}
-
-	return ret;
-}
-
 static switch_status_t en_say_general_count(switch_core_session_t *session,	char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	int in;
@@ -169,7 +126,7 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,	char
 	switch_status_t status;
 
 	if (say_args->method == SSM_ITERATED) {
-		if ((tosay = strip_commas(tosay, sbuf, sizeof(sbuf)))) {
+		if ((tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf)))) {
 			char *p;
 			for (p = tosay; p && *p; p++) {
 				say_file("digits/%c.wav", *p);
@@ -181,7 +138,7 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,	char
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!(tosay = strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
+	if (!(tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -475,7 +432,7 @@ static switch_status_t en_say_money(switch_core_session_t *session, char *tosay,
 	char *dollars = NULL;
 	char *cents = NULL;
 
-	if (strlen(tosay) > 15 || !(tosay = strip_nonnumerics(tosay, sbuf, sizeof(sbuf)))) {
+	if (strlen(tosay) > 15 || !(tosay = switch_strip_nonnumerics(tosay, sbuf, sizeof(sbuf)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}

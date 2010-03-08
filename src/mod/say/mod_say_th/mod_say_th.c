@@ -87,52 +87,6 @@ SWITCH_MODULE_DEFINITION(mod_say_th, mod_say_th_load, NULL, NULL);
 			return SWITCH_STATUS_FALSE;									\
 		}}																\
 
-static char *strip_commas(char *in, char *out, switch_size_t len)
-{
-	char *p = in;
-	char *q = out;
-	char *ret = out;
-	switch_size_t x = 0;
-
-	for (; p && *p; p++) {
-		if ((*p >= '0' && *p <= '9')) {
-			*q++ = *p;
-		} else if (*p != ',') {
-			ret = NULL;
-			break;
-		}
-
-		if (++x > len) {
-			ret = NULL;
-			break;
-		}
-	}
-
-	return ret;
-}
-
-static char *strip_nonnumerics(char *in, char *out, switch_size_t len)
-{
-	char *p = in;
-	char *q = out;
-	char *ret = out;
-	switch_size_t x = 0;
-
-	/* valid are 0 - 9, period (.), minus (-), and plus (+) - remove all others */
-	for (; p && *p; p++) {
-		if ((*p >= '0' && *p <= '9') || *p == '.' || *p == '-' || *p == '+') {
-			*q++ = *p;
-		}
-
-		if (++x > len) {
-			ret = NULL;
-			break;
-		}
-	}
-
-	return ret;
-}
-
 static switch_status_t th_say_general_count(switch_core_session_t *session,	char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	int in;
@@ -140,7 +94,7 @@ static switch_status_t th_say_general_count(switch_core_session_t *session,	char
 	char digits[11];
 	int i;
 
-	if (!(tosay = strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
+	if (!(tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -505,7 +459,7 @@ static switch_status_t th_say_money(switch_core_session_t *session, char *tosay,
 	char *dollars = NULL;
 	char *cents = NULL;
 
-	if (strlen(tosay) > 15 || !(tosay = strip_nonnumerics(tosay, sbuf, sizeof(sbuf)))) {
+	if (strlen(tosay) > 15 || !(tosay = switch_strip_nonnumerics(tosay, sbuf, sizeof(sbuf)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
