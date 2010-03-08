@@ -169,49 +169,34 @@ static abyss_bool user_attributes(const char *user, const char *domain_name,
 	const char *alias;
 	const char *allowed_commands;
 	switch_event_t *params;
-	switch_xml_t x_domain, x_domain_root, x_user, x_params, x_param;
+	switch_xml_t x_user, x_params, x_param;
 
 	passwd = NULL;
 	vm_passwd = NULL;
 	alias = NULL;
 	allowed_commands = NULL;
 
+	if (ppasswd) *ppasswd = NULL;
+	if (pvm_passwd) *pvm_passwd = NULL;
+	if (palias) *palias = NULL;
+	if (pallowed_commands) *pallowed_commands = NULL;
+
 	params = NULL;
-	x_domain_root = NULL;
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "number_alias", "check");
 
-	if (switch_xml_locate_user("id", user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, NULL, params) != SWITCH_STATUS_SUCCESS) {
+
+	if (switch_xml_locate_user_merged("id", user, domain_name, NULL, &x_user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_event_destroy(&params);
-		if (x_domain_root) {
-			switch_xml_free(x_domain_root);
-		}
 		return FALSE;
 	}
-
+	
 	switch_event_destroy(&params);
 	alias = switch_xml_attr(x_user, "number-alias");
 
-	if ((x_params = switch_xml_child(x_domain, "params"))) {
-
-		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
-			const char *var = switch_xml_attr_soft(x_param, "name");
-			const char *val = switch_xml_attr_soft(x_param, "value");
-
-			if (!strcasecmp(var, "password")) {
-				passwd = val;
-			} else if (!strcasecmp(var, "vm-password")) {
-				vm_passwd = val;
-			} else if (!strcasecmp(var, "http-allowed-api")) {
-				allowed_commands = val;
-			}
-		}
-	}
-
 	if ((x_params = switch_xml_child(x_user, "params"))) {
-
 		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 			const char *var = switch_xml_attr_soft(x_param, "name");
 			const char *val = switch_xml_attr_soft(x_param, "value");
@@ -226,18 +211,24 @@ static abyss_bool user_attributes(const char *user, const char *domain_name,
 		}
 	}
 
-	if (ppasswd)
+	if (ppasswd && passwd) {
 		*ppasswd = strdup(passwd);
-	if (pvm_passwd)
+	}
+
+	if (pvm_passwd && vm_passwd) {
 		*pvm_passwd = strdup(vm_passwd);
-	if (palias)
+	}
+
+	if (palias && alias) {
 		*palias = strdup(alias);
-	if (pallowed_commands)
+	}
+
+	if (pallowed_commands && allowed_commands) {
 		*pallowed_commands = strdup(allowed_commands);
+	}
 
-
-	if (x_domain_root) {
-		switch_xml_free(x_domain_root);
+	if (x_user) {
+		switch_xml_free(x_user);
 	}
 
 	return TRUE;
@@ -246,12 +237,13 @@ static abyss_bool user_attributes(const char *user, const char *domain_name,
 static abyss_bool is_authorized(const TSession * r, const char *command)
 {
 	char *user = NULL, *domain_name = NULL;
-	char *allowed_commands;
+	char *allowed_commands = NULL;
 	char *dp;
-	char *dup;
+	char *dup = NULL;
 	char *argv[256] = { 0 };
-	int argc;
-	int i;
+	char *status = NULL;
+	int argc = 0, i = 0, ok = 0;
+	int err = 403;
 
 	if (!r) {
 		return FALSE;
@@ -273,39 +265,54 @@ static abyss_bool is_authorized(const TSession * r, const char *command)
 	}
 
 	if (!zstr(globals.realm) && !zstr(globals.user) && !strcmp(user, globals.user)) {
-		switch_safe_free(user);
-		return TRUE;
+		goto end;
 	}
 
 	if (zstr(user) || zstr(domain_name)) {
-		switch_safe_free(user);
-		return FALSE;
+		goto end;
 	}
 
+	
+	err = 686;
+	status = "EXECUTION OF SPECIFIED API COMMAND NOT PERMITTED IN USER ACCOUNT";
 
 	if (!user_attributes(user, domain_name, NULL, NULL, NULL, &allowed_commands)) {
-		switch_safe_free(user);
-		return FALSE;
+		goto end;
 	}
 
 	switch_safe_free(user);
 
-	if (!allowed_commands)
-		return FALSE;
+	if (!allowed_commands) {
+		goto end;
+	}
 
-	dup = allowed_commands;
-	argc = switch_separate_string(dup, ',', argv, (sizeof(argv) / sizeof(argv[0])));
-
-	for (i = 0; i < argc; i++) {
-		if (!strcasecmp(argv[i], command)
-			|| !strcasecmp(argv[i], "any")) {
-			break;
+	if ((dup = allowed_commands)) {
+		argc = switch_separate_string(dup, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+		
+		for (i = 0; i < argc; i++) {
+			if (!strcasecmp(argv[i], command) || !strcasecmp(argv[i], "any")) {
+				ok = 1;
+				break;
+			}
 		}
 	}
 
+ end:
+
+	switch_safe_free(user);
 	switch_safe_free(dup);
 
-	return i < argc ? TRUE : FALSE;
+	if (!ok) {
+		ResponseStatus(r, err);
+		if (status) {
+			ResponseError2(r, status);
+		} else {
+			ResponseError(r);
+		}
+	}
+
+
+	return ok ? TRUE : FALSE;
 }
 
 static abyss_bool http_directory_auth(TSession * r, char *domain_name)
@@ -373,14 +380,14 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 						goto authed;
 					}
 				}
-
+				
 				if (!user_attributes(user, domain_name, &mypass1, &mypass2, &box, NULL)) {
 					goto fail;
 				}
 
 
 				if (!zstr(mypass2) && !strcasecmp(mypass2, "user-choose")) {
-					mypass2 = NULL;
+					switch_safe_free(mypass2);
 				}
 
 				if (!mypass1) {
@@ -613,9 +620,6 @@ abyss_bool handler_hook(TSession * r)
 	if (is_authorized(r, command)) {
 		goto auth;
 	}
-	//unauth:
-	ResponseStatus(r, 403);
-	ResponseError(r);
 
 	ret = TRUE;
 	goto end;

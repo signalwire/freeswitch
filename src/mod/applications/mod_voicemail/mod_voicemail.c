@@ -725,7 +725,7 @@ static vm_profile_t *get_profile(const char *profile_name)
 		profile = load_profile(profile_name);
 	}
 	if (profile) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] rwlock\n", profile->name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "[%s] rwlock\n", profile->name);
 
 		switch_thread_rwlock_rdlock(profile->rwlock);
 	}
