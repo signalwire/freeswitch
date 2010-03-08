@@ -10938,6 +10938,50 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_strip_spaces(char * jarg1) {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_strip_commas(char * jarg1, char * jarg2, void * jarg3) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_size_t arg3 ;
+  char *result = 0 ;
+  switch_size_t *argp3 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  argp3 = (switch_size_t *)jarg3; 
+  if (!argp3) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return 0;
+  }
+  arg3 = *argp3; 
+  result = (char *)switch_strip_commas(arg1,arg2,arg3);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_strip_nonnumerics(char * jarg1, char * jarg2, void * jarg3) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_size_t arg3 ;
+  char *result = 0 ;
+  switch_size_t *argp3 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  argp3 = (switch_size_t *)jarg3; 
+  if (!argp3) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return 0;
+  }
+  arg3 = *argp3; 
+  result = (char *)switch_strip_nonnumerics(arg1,arg2,arg3);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_switch_separate_paren_args(char * jarg1) {
   char * jresult ;
   char *arg1 = (char *) 0 ;
@@ -25679,6 +25723,44 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_get_say_type_by_name(char * jarg1) 
   
   arg1 = (char *)jarg1; 
   result = (switch_say_type_t)switch_ivr_get_say_type_by_name((char const *)arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_say_spell(void * jarg1, char * jarg2, void * jarg3, void * jarg4) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_say_args_t *arg3 = (switch_say_args_t *) 0 ;
+  switch_input_args_t *arg4 = (switch_input_args_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_say_args_t *)jarg3; 
+  arg4 = (switch_input_args_t *)jarg4; 
+  result = (switch_status_t)switch_ivr_say_spell(arg1,arg2,arg3,arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_say_ip(void * jarg1, char * jarg2, void * jarg3, void * jarg4, void * jarg5) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_say_callback_t arg3 = (switch_say_callback_t) 0 ;
+  switch_say_args_t *arg4 = (switch_say_args_t *) 0 ;
+  switch_input_args_t *arg5 = (switch_input_args_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_say_callback_t)jarg3; 
+  arg4 = (switch_say_args_t *)jarg4; 
+  arg5 = (switch_input_args_t *)jarg5; 
+  result = (switch_status_t)switch_ivr_say_ip(arg1,arg2,arg3,arg4,arg5);
   jresult = result; 
   return jresult;
 }

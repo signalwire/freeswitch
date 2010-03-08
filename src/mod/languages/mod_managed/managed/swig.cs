@@ -2554,6 +2554,18 @@ public class freeswitch {
     return ret;
   }
 
+  public static string switch_strip_commas(string arg0, string arg1, SWIGTYPE_p_switch_size_t len) {
+    string ret = freeswitchPINVOKE.switch_strip_commas(arg0, arg1, SWIGTYPE_p_switch_size_t.getCPtr(len));
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
+  public static string switch_strip_nonnumerics(string arg0, string arg1, SWIGTYPE_p_switch_size_t len) {
+    string ret = freeswitchPINVOKE.switch_strip_nonnumerics(arg0, arg1, SWIGTYPE_p_switch_size_t.getCPtr(len));
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
   public static string switch_separate_paren_args(string str) {
     string ret = freeswitchPINVOKE.switch_separate_paren_args(str);
     return ret;
@@ -3924,6 +3936,16 @@ public class freeswitch {
 
   public static switch_say_type_t switch_ivr_get_say_type_by_name(string name) {
     switch_say_type_t ret = (switch_say_type_t)freeswitchPINVOKE.switch_ivr_get_say_type_by_name(name);
+    return ret;
+  }
+
+  public static switch_status_t switch_ivr_say_spell(SWIGTYPE_p_switch_core_session session, string tosay, switch_say_args_t say_args, switch_input_args_t args) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_say_spell(SWIGTYPE_p_switch_core_session.getCPtr(session), tosay, switch_say_args_t.getCPtr(say_args), switch_input_args_t.getCPtr(args));
+    return ret;
+  }
+
+  public static switch_status_t switch_ivr_say_ip(SWIGTYPE_p_switch_core_session session, string tosay, SWIGTYPE_p_f_p_switch_core_session_p_char_p_switch_say_args_t_p_switch_input_args_t__switch_status_t number_func, switch_say_args_t say_args, switch_input_args_t args) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_say_ip(SWIGTYPE_p_switch_core_session.getCPtr(session), tosay, SWIGTYPE_p_f_p_switch_core_session_p_char_p_switch_say_args_t_p_switch_input_args_t__switch_status_t.getCPtr(number_func), switch_say_args_t.getCPtr(say_args), switch_input_args_t.getCPtr(args));
     return ret;
   }
 
@@ -7600,6 +7622,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_strip_spaces")]
   public static extern string switch_strip_spaces(string jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_strip_commas")]
+  public static extern string switch_strip_commas(string jarg1, string jarg2, HandleRef jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_strip_nonnumerics")]
+  public static extern string switch_strip_nonnumerics(string jarg1, string jarg2, HandleRef jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_separate_paren_args")]
   public static extern string switch_separate_paren_args(string jarg1);
 
@@ -11058,6 +11086,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_get_say_type_by_name")]
   public static extern int switch_ivr_get_say_type_by_name(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_say_spell")]
+  public static extern int switch_ivr_say_spell(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_say_ip")]
+  public static extern int switch_ivr_say_ip(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_set_user")]
   public static extern int switch_ivr_set_user(HandleRef jarg1, string jarg2);
