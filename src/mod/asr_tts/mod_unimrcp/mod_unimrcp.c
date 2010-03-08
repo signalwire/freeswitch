@@ -264,7 +264,7 @@ static switch_status_t audio_queue_destroy(audio_queue_t *queue);
  */
 
 /* how long to wait for UniMRCP to process requests */
-#define SPEECH_CHANNEL_TIMEOUT_USEC (10 * 1000000)
+#define SPEECH_CHANNEL_TIMEOUT_USEC (30 * 1000000)
 
 /**
  * Type of MRCP channel
@@ -749,17 +749,6 @@ static switch_status_t audio_queue_destroy(audio_queue_t *queue)
 		if (zstr(name)) {
 			name = "";
 		}
-		if (queue->buffer) {
-			switch_buffer_destroy(&queue->buffer);
-		}
-		if (queue->mutex) {
-			switch_mutex_destroy(queue->mutex);
-			queue->mutex = NULL;
-		}
-		if (queue->cond) {
-			switch_thread_cond_destroy(queue->cond);
-			queue->cond = NULL;
-		}
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
 		if (queue->file_read) {
 			switch_file_close(queue->file_read);
@@ -834,27 +823,40 @@ static switch_status_t speech_channel_create(speech_channel_t ** schannel, const
  * @return SWITCH_STATUS_SUCCESS
  */
 static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
-{
-	/* destroy the channel and session if not already done */
-	switch_mutex_lock(schannel->mutex);
-	if (schannel->state != SPEECH_CHANNEL_CLOSED) {
-		mrcp_application_session_terminate(schannel->unimrcp_session);
-		while (schannel->state != SPEECH_CHANNEL_CLOSED) {
-			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
-				break;
+{	
+	if (schannel) {
+		/* Terminate the MRCP session if not already done */
+		if (schannel->mutex) {
+			switch_mutex_lock(schannel->mutex);
+			if (schannel->state != SPEECH_CHANNEL_CLOSED) {
+				int warned = 0;
+				mrcp_application_session_terminate(schannel->unimrcp_session);
+				/* wait forever for session to terminate.  Log WARNING if this starts taking too long */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Waiting for MRCP session to terminate\n", schannel->name);
+				while (schannel->state != SPEECH_CHANNEL_CLOSED) {
+					if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
+						warned = 1;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) MRCP session has not terminated after %d  ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
+					}
+				}
 			}
+			switch_mutex_unlock(schannel->mutex);
 		}
-		if (schannel->state != SPEECH_CHANNEL_CLOSED) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Failed to destroy channel.  Continuing\n", schannel->name);
-		} else {
-			audio_queue_destroy(schannel->audio_queue);
-			schannel->audio_queue = NULL;
+
+		/* It is now safe to clean up the speech channel */
+		if (schannel->mutex) {
+			switch_mutex_lock(schannel->mutex);
+		}
+		audio_queue_destroy(schannel->audio_queue);
+		schannel->audio_queue = NULL;
+		if (schannel->params) {
+			switch_core_hash_destroy(&schannel->params);
+		}
+		if (schannel->mutex) {
+			switch_mutex_unlock(schannel->mutex);
 		}
 	}
-	if (schannel->params) {
-		switch_core_hash_destroy(&schannel->params);
-	}
-	switch_mutex_unlock(schannel->mutex);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -3801,7 +3803,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_unimrcp_shutdown)
 	mrcp_client_destroy(globals.mrcp_client);
 	globals.mrcp_client = 0;
 
-	switch_mutex_destroy(globals.mutex);
 	switch_core_hash_destroy(&globals.profiles);
 
 	return SWITCH_STATUS_SUCCESS;
