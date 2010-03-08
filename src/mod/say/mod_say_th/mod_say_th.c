@@ -87,26 +87,6 @@ SWITCH_MODULE_DEFINITION(mod_say_th, mod_say_th_load, NULL, NULL);
 			return SWITCH_STATUS_FALSE;									\
 		}}																\
 
-static switch_status_t th_spell(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
-{
-	char *p;
-
-	for (p = tosay; p && *p; p++) {
-		int a = tolower((int) *p);
-		if (a >= '0' && a <= '9') {
-			say_file("digits/%d.wav", a - '0');
-		} else {
-			if (say_args->type == SST_NAME_SPELLED) {
-				say_file("ascii/%d.wav", a);
-			} else if (say_args->type == SST_NAME_PHONETIC) {
-				say_file("phonetic-ascii/%d.wav", a);
-			}
-		}
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 static char *strip_commas(char *in, char *out, switch_size_t len)
 {
 	char *p = in;
@@ -587,7 +567,7 @@ static switch_status_t th_say(switch_core_session_t *session, char *tosay, switc
 		break;
 	case SST_NAME_SPELLED:
 	case SST_NAME_PHONETIC:
-		say_cb = th_spell;
+		return switch_ivr_say_spell(session, tosay, say_args, args);
 		break;
 	case SST_CURRENCY:
 		say_cb = th_say_money;

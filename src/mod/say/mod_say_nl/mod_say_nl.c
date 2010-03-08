@@ -81,26 +81,6 @@ SWITCH_MODULE_DEFINITION(mod_say_nl, mod_say_nl_load, NULL, NULL);
 		}}																\
 
 
-static switch_status_t nl_spell(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
-{
-	char *p;
-
-	for (p = tosay; p && *p; p++) {
-		int a = tolower((int) *p);
-		if (a >= 48 && a <= 57) {
-			say_file("digits/%d.wav", a - 48);
-		} else {
-			if (say_args->type == SST_NAME_SPELLED) {
-				say_file("ascii/%d.wav", a);
-			} else if (say_args->type == SST_NAME_PHONETIC) {
-				say_file("phonetic-ascii/%d.wav", a);
-			}
-		}
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 static switch_status_t play_group(switch_say_method_t method, int a, int b, int c, char *what, switch_core_session_t *session, switch_input_args_t *args)
 {
 
@@ -497,7 +477,7 @@ static switch_status_t nl_say(switch_core_session_t *session, char *tosay, switc
 		break;
 	case SST_NAME_SPELLED:
 	case SST_NAME_PHONETIC:
-		say_cb = nl_spell;
+		return switch_ivr_say_spell(session, tosay, say_args, args);
 		break;
 	case SST_CURRENCY:
 		say_cb = nl_say_money;
