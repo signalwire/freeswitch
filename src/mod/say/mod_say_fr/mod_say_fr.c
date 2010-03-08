@@ -101,7 +101,7 @@ static switch_status_t fr_spell(switch_core_session_t *session, char *tosay, swi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t play_group(switch_say_args_t *say_args, int a, int b, int c, char *what, switch_core_session_t *session, switch_input_args_t *args)
+static switch_status_t play_group(switch_say_method_t method, switch_say_gender_t gender, int a, int b, int c, char *what, switch_core_session_t *session, switch_input_args_t *args)
 {
 	int ftdNumber = 0;
 	int itd = (b * 10) + c;
@@ -126,7 +126,7 @@ static switch_status_t play_group(switch_say_args_t *say_args, int a, int b, int
 	if (b && ftdNumber == 0) {
 		/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "a=%d  b=[%d]  c=%d\n",a, b,c);*/
 		if (c == 0) {
-			if (say_args->method == SSM_COUNTED) {
+			if (method == SSM_COUNTED) {
 				say_file("digits/h-%d%d.wav", b, c);
 			} else {
 				say_file("digits/%d%d.wav", b, c);
@@ -142,10 +142,10 @@ static switch_status_t play_group(switch_say_args_t *say_args, int a, int b, int
 		if (ftdNumber == 1)
 			fVal = itd;
 			
-		if (say_args->method == SSM_COUNTED) {
+		if (method == SSM_COUNTED) {
 			say_file("digits/h-%d.wav", fVal);
 		} else {
-			if (b != 1 && c == 1 && say_args->gender == SSG_FEMININE) {
+			if (b != 1 && c == 1 && gender == SSG_FEMININE) {
 				say_file("digits/%d_f.wav", fVal);
 			} else {
 				say_file("digits/%d.wav", fVal);
@@ -229,13 +229,13 @@ static switch_status_t fr_say_general_count(switch_core_session_t *session, char
 		switch (say_args->method) {
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
-			if ((status = play_group(say_args, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(SSM_PRONOUNCED, say_args->gender, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
-			if ((status = play_group(say_args, places[5], places[4], places[3], "digits/thousand.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(SSM_PRONOUNCED, say_args->gender, places[5], places[4], places[3], "digits/thousand.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
-			if ((status = play_group(say_args, places[2], places[1], places[0], NULL, session, args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(say_args->method, say_args->gender, places[2], places[1], places[0], NULL, session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
 			break;
