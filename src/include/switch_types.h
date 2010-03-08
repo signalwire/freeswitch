@@ -280,6 +280,7 @@ typedef enum {
 	SWITCH_TRUE = 1
 } switch_bool_t;
 
+/* WARNING, Do not forget to update *SAY_METHOD_NAMES[] in src/switch_ivr_play_say.c */
 typedef enum {
 	SSM_NA,
 	SSM_PRONOUNCED,
@@ -287,6 +288,7 @@ typedef enum {
 	SSM_COUNTED
 } switch_say_method_t;
 
+/* WARNING, Do not forget to update *SAY_TYPE_NAMES[] in src/switch_ivr_play_say.c */
 typedef enum {
 	SST_NUMBER,
 	SST_ITEMS,
