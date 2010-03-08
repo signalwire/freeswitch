@@ -176,44 +176,6 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,	char
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-static switch_status_t en_ip(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
-{
-	char *a, *b, *c, *d;
-	if (!(a = switch_core_session_strdup(session, tosay))) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (!(b = strchr(a, '.'))) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	*b++ = '\0';
-
-	if (!(c = strchr(b, '.'))) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	*c++ = '\0';
-
-	if (!(d = strchr(c, '.'))) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	*d++ = '\0';
-
-	say_num(atoi(a), say_args->method);
-	say_file("digits/dot.wav");
-	say_num(atoi(b), say_args->method);
-	say_file("digits/dot.wav");
-	say_num(atoi(c), say_args->method);
-	say_file("digits/dot.wav");
-	say_num(atoi(d), say_args->method);
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-
 static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	int32_t t;
@@ -506,7 +468,7 @@ static switch_status_t en_say(switch_core_session_t *session, char *tosay, switc
 		say_cb = en_say_time;
 		break;
 	case SST_IP_ADDRESS:
-		say_cb = en_ip;
+		return switch_ivr_say_ip(session, tosay, en_say_general_count, say_args, args);
 		break;
 	case SST_NAME_SPELLED:
 	case SST_NAME_PHONETIC:

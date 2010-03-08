@@ -128,6 +128,7 @@ SWITCH_DECLARE(switch_say_type_t) switch_ivr_get_say_type_by_name(const char *na
 			return SWITCH_STATUS_FALSE;									\
 		}}																\
 
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_say_spell(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	char *p;
@@ -148,6 +149,60 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say_spell(switch_core_session_t *sess
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define say_num(num, meth) {											\
+		char tmp[80];													\
+		switch_status_t tstatus;										\
+		switch_say_method_t smeth = say_args->method;					\
+		switch_say_type_t stype = say_args->type;						\
+		say_args->type = SST_ITEMS; say_args->method = meth;			\
+		switch_snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);			\
+		if ((tstatus =													\
+			 number_func(session, tmp, say_args, args))					\
+			!= SWITCH_STATUS_SUCCESS) {									\
+			return tstatus;												\
+		}																\
+		say_args->method = smeth; say_args->type = stype;				\
+	}																	\
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_say_ip(switch_core_session_t *session,
+												  char *tosay,
+												  switch_say_callback_t number_func,
+												  switch_say_args_t *say_args,
+												  switch_input_args_t *args)
+{
+	char *a, *b, *c, *d;
+	if (!(a = switch_core_session_strdup(session, tosay))) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(b = strchr(a, '.'))) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	*b++ = '\0';
+
+	if (!(c = strchr(b, '.'))) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	*c++ = '\0';
+
+	if (!(d = strchr(c, '.'))) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	*d++ = '\0';
+
+	say_num(atoi(a), say_args->method);
+	say_file("digits/dot.wav");
+	say_num(atoi(b), say_args->method);
+	say_file("digits/dot.wav");
+	say_num(atoi(c), say_args->method);
+	say_file("digits/dot.wav");
+	say_num(atoi(d), say_args->method);
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 
 /* For Emacs:
