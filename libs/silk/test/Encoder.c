@@ -301,52 +301,6 @@ int main( int argc, char* argv[] )
 
 
 
-Authors' Addresses
-
-   Koen Vos
-   Skype Technologies S.A.
-   Stadsgaarden 6
-   Stockholm  11645
-   SE
-
-   Phone: +46 855 921 989
-   Email: koen.vos@skype.net
-
-
-   Soeren Skak Jensen
-   Skype Technologies S.A.
-   Stadsgaarden 6
-   Stockholm  11645
-   SE
-
-   Phone: +46 855 921 989
-   Email: soren.skak.jensen@skype.net
-
-
-   Karsten Vandborg Soerensen
-   Skype Technologies S.A.
-   Stadsgaarden 6
-   Stockholm  11645
-   SE
-
-   Phone: +46 855 921 989
-   Email: karsten.vandborg.sorensen@skype.net
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
