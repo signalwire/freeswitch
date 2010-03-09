@@ -459,7 +459,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 
 	switch_assert(err);
 
-	if (!strcmp(*err, "funny")) {
+	if (*err && !strcmp(*err, "funny")) {
 		funny = 1;
 	}
 
