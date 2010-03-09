@@ -265,6 +265,7 @@ static abyss_bool is_authorized(const TSession * r, const char *command)
 	}
 
 	if (!zstr(globals.realm) && !zstr(globals.user) && !strcmp(user, globals.user)) {
+		ok = 1;
 		goto end;
 	}
 
