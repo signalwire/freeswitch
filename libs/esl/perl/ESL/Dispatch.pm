@@ -24,7 +24,7 @@ sub init($;$) {
   $self->{pass} = $args->{pass} ||= "ClueCon";
   $self->{_esl} = new ESL::ESLconnection("$self->{host}", "$self->{port}", "$self->{pass}");
   $self->{_callback} = undef;
-
+  $self->{_custom_subclass} = undef;
   return bless($self, $class);
 }
 
@@ -38,6 +38,10 @@ sub set_callback($;$$) {
   my $self = shift;
   my $event = shift;
   $self->{_callback}->{$event} = shift;
+  my $subclass = shift;
+  if($subclass) {
+    $self->{_custom_subclass} = split(/,/, $subclass);
+  }
 }
 
 sub render_event($;$) {
@@ -75,6 +79,12 @@ sub run($;) {
   for(;;) {
     # Only register for events we have callbacks for.
     for my $key ( keys %{$self->{_callback}} ) {
+      if ($key eq "CUSTOM") {
+	foreach $subclass (@{$self->{_custom_subclass}}) {
+	  $self->{_esl}->events("plain", "$key $subclass");
+	}
+	next;
+      }
       $self->{_esl}->events("plain", "$key");
     }
 
