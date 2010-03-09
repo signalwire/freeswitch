@@ -86,8 +86,7 @@ LDLIBDIRS = ./
 # Rules
 default: all
 
-all: $(TARGET)
-#all: $(TARGET) encoder decoder signalcompare
+all: $(TARGET) encoder decoder signalcompare
 
 lib: $(TARGET)
 
