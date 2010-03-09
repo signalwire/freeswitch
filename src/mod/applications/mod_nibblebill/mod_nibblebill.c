@@ -484,22 +484,25 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	/* Update the last time we billed */
 	nibble_data->lastts = ts;
 
-	/* Save this location, but only if the channel/session are not hungup (otherwise, we're done) */
-	if (channel && switch_channel_get_state(channel) != CS_HANGUP) {
+	/* Save this location */
+	if (channel) {
 		switch_channel_set_private(channel, "_nibble_data_", nibble_data);
 
-		/* See if this person has enough money left to continue the call */
-		balance = get_balance(billaccount);
-		if (balance <= nobal_amt) {
-			/* Not enough money - reroute call to nobal location */
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Balance of %f fell below allowed amount of %f! (Account %s)\n",
-							  balance, nobal_amt, billaccount);
+		/* don't verify ballance and transfer to nobal if we're done with call */
+		if (switch_channel_get_state(channel) != CS_REPORTING && switch_channel_get_state(channel) != CS_HANGUP) {
+			/* See if this person has enough money left to continue the call */
+			balance = get_balance(billaccount);
+			if (balance <= nobal_amt) {
+				/* Not enough money - reroute call to nobal location */
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Balance of %f fell below allowed amount of %f! (Account %s)\n",
+								  balance, nobal_amt, billaccount);
 
-			/* IMPORTANT: Billing must be paused before the transfer occurs! This prevents infinite loops, since the transfer will result */
-			/* in nibblebill checking the call again in the routing process for an allowed balance! */
-			/* If you intend to give the user the option to re-up their balance, you must clear & resume billing once the balance is updated! */
-			nibblebill_pause(session);
-			transfer_call(session, globals.nobal_action);
+				/* IMPORTANT: Billing must be paused before the transfer occurs! This prevents infinite loops, since the transfer will result */
+				/* in nibblebill checking the call again in the routing process for an allowed balance! */
+				/* If you intend to give the user the option to re-up their balance, you must clear & resume billing once the balance is updated! */
+				nibblebill_pause(session);
+				transfer_call(session, globals.nobal_action);
+			}
 		}
 	}
 
