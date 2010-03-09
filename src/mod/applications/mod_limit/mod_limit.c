@@ -637,8 +637,11 @@ SWITCH_STANDARD_API(group_api_function)
 
 		limit_execute_sql_callback(NULL, sql, group_callback, &cbt);
 		switch_safe_free(sql);
-
-		*(buf + (strlen(buf) - 1)) = '\0';
+	
+		if (!zstr(buf)) {
+			*(buf + (strlen(buf) - 1)) = '\0';
+		}
+		
 		stream->write_function(stream, "%s", buf);
 
 		goto done;
@@ -1163,7 +1166,7 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 		switch_core_session_execute_application(session, app, app_arg);
 		/* Only release the resource if we are still in CS_EXECUTE */
 		if (switch_channel_get_state(switch_core_session_get_channel(session)) == CS_EXECUTE) {
-			limit_hash_release(session, realm, id);			
+			limit_hash_release(session, realm, id);	
 		}
 	}
 }
