@@ -26,8 +26,6 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Brian K. West <brian@freeswitch.org>
  *
- * The silk codec itself is not distributed with this module.
- *
  * mod_silk.c -- Skype(tm) SILK Codec Module
  *
  */
