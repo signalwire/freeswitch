@@ -456,7 +456,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%d seconds passed since last bill time of %s\n",
 					  (int) ((ts - nibble_data->lastts) / 1000000), date);
 
-	if ((ts - nibble_data->lastts) >= 0) {
+	if ((ts - nibble_data->lastts) >= 0) {nn
 		/* Convert billrate into microseconds and multiply by # of microseconds that have passed since last *successful* bill */
 		billamount = ((float) atof(billrate) / 1000000 / 60) * ((ts - nibble_data->lastts)) - nibble_data->bill_adjustments;
 
@@ -488,7 +488,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	if (channel) {
 		switch_channel_set_private(channel, "_nibble_data_", nibble_data);
 
-		/* don't verify ballance and transfer to nobal if we're done with call */
+		/* don't verify balance and transfer to nobal if we're done with call */
 		if (switch_channel_get_state(channel) != CS_REPORTING && switch_channel_get_state(channel) != CS_HANGUP) {
 			/* See if this person has enough money left to continue the call */
 			balance = get_balance(billaccount);
