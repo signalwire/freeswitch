@@ -214,7 +214,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 	switch_channel_set_variable(channel, "fax_local_station_id", local_ident);
 	switch_channel_set_variable(channel, "fax_remote_station_id", far_ident);
 
-	tmp = switch_mprintf("%i", pvt->app_mode == FUNCTION_TX ? t.pages_rx : t.pages_rx);
+	tmp = switch_mprintf("%i", pvt->app_mode == FUNCTION_TX ? t.pages_tx : t.pages_rx);
 	if (tmp) {
 		switch_channel_set_variable(channel, "fax_document_transferred_pages", tmp);
 		switch_safe_free(tmp);
