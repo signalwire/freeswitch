@@ -27,7 +27,7 @@ cppflags-from-includes  = $(addprefix -I,$(1))
 ldflags-from-ldlibdirs  = $(addprefix -L,$(1))
 ldlibs-from-libs                = $(addprefix -l,$(1))
 
-CFLAGS  += -Wall -enable-threads -O3
+CFLAGS  += -Wall -enable-threads -O3 -fPIC
 
 CFLAGS  += $(call cppflags-from-defines,$(CDEFINES))
 CFLAGS  += $(call cppflags-from-includes,$(CINCLUDES))
