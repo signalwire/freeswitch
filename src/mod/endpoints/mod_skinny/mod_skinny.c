@@ -49,23 +49,41 @@ skinny_globals_t globals;
 /*****************************************************************************/
 static char devices_sql[] =
 	"CREATE TABLE skinny_devices (\n"
-	"   name           VARCHAR(16),\n"
+	"   name             VARCHAR(16),\n"
 	"   user_id          INTEGER,\n"
 	"   instance         INTEGER,\n"
-	"   ip               VARCHAR(255),\n"
+	"   ip               VARCHAR(15),\n"
 	"   type             INTEGER,\n"
 	"   max_streams      INTEGER,\n"
 	"   port             INTEGER,\n"
 	"   codec_string     VARCHAR(255)\n"
 	");\n";
 
+static char lines_sql[] =
+	"CREATE TABLE skinny_lines (\n"
+	"   device_name          VARCHAR(16),\n"
+	"   device_instance      INTEGER,\n"
+	"   position             INTEGER,\n"
+	"   label                VARCHAR(40),\n"
+	"   value                VARCHAR(24),\n"
+	"   caller_name          VARCHAR(44),\n"
+	"   ring_on_idle         INTEGER,\n"
+	"   ring_on_active       INTEGER,\n"
+	"   busy_trigger         INTEGER,\n"
+	"   forward_all          VARCHAR(255),\n"
+	"   forward_busy         VARCHAR(255),\n"
+	"   forward_noanswer     VARCHAR(255),\n"
+	"   noanswer_duration    INTEGER\n"
+	");\n";
+
 static char buttons_sql[] =
 	"CREATE TABLE skinny_buttons (\n"
 	"   device_name      VARCHAR(16),\n"
+	"   device_instance  INTEGER,\n"
 	"   position         INTEGER,\n"
 	"   type             INTEGER,\n"
 	"   label            VARCHAR(40),\n"
-	"   value            VARCHAR(24),\n"
+	"   value            VARCHAR(255),\n"
 	"   settings         VARCHAR(44)\n"
 	");\n";
 
@@ -148,9 +166,9 @@ static switch_status_t skinny_profile_find_listener_by_dest(skinny_profile_t *pr
 	helper.profile = profile;
 	
 	if ((sql = switch_mprintf("SELECT device_name, position, "
-								"(SELECT count(*) from skinny_buttons sb2 "
-									"WHERE sb2.device_name= sb1.device_name AND sb2.type='line' AND sb2.position <= sb1.position) AS relative_position "
-								"FROM skinny_buttons sb1 WHERE type='line' and value='%s'",
+								"(SELECT count(*) from skinny_lines sl2 "
+									"WHERE sl2.device_name= sl1.device_name AND sl2.device_instance= sl1.device_instance AND sl2.position <= sl1.position) AS relative_position "
+								"FROM skinny_lines sl1 WHERE value='%s'",
 								dest))) {
 		skinny_execute_sql_callback(profile, profile->listener_mutex, sql, skinny_profile_find_listener_callback, &helper);
 		switch_safe_free(sql);
@@ -996,16 +1014,24 @@ static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch
 	
 		if ((sql = switch_mprintf(
 				"DELETE FROM skinny_devices "
-					"WHERE name='%s'",
-				listener->device_name))) {
+					"WHERE name='%s' and instance=%d",
+				listener->device_name, listener->device_instance))) {
+			skinny_execute_sql(profile, sql, profile->listener_mutex);
+			switch_safe_free(sql);
+		}
+
+		if ((sql = switch_mprintf(
+				"DELETE FROM skinny_lines "
+					"WHERE device_name='%s' and device_instance=%d",
+				listener->device_name, listener->device_instance))) {
 			skinny_execute_sql(profile, sql, profile->listener_mutex);
 			switch_safe_free(sql);
 		}
 
 		if ((sql = switch_mprintf(
 				"DELETE FROM skinny_buttons "
-					"WHERE device_name='%s'",
-				listener->device_name))) {
+					"WHERE device_name='%s' and device_instance=%d",
+				listener->device_name, listener->device_instance))) {
 			skinny_execute_sql(profile, sql, profile->listener_mutex);
 			switch_safe_free(sql);
 		}
@@ -1438,10 +1464,12 @@ static switch_status_t load_skinny_config(void)
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
 					switch_odbc_handle_exec(profile->master_odbc, devices_sql, NULL, NULL);
+					switch_odbc_handle_exec(profile->master_odbc, lines_sql, NULL, NULL);
 					switch_odbc_handle_exec(profile->master_odbc, buttons_sql, NULL, NULL);
 				} else {
 					if ((db = switch_core_db_open_file(profile->dbname))) {
 						switch_core_db_test_reactive(db, "SELECT * FROM skinny_devices", NULL, devices_sql);
+						switch_core_db_test_reactive(db, "SELECT * FROM skinny_lines", NULL, lines_sql);
 						switch_core_db_test_reactive(db, "SELECT * FROM skinny_buttons", NULL, buttons_sql);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
@@ -1451,6 +1479,7 @@ static switch_status_t load_skinny_config(void)
 				}
 				
 				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_devices", NULL, NULL);
+				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_lines", NULL, NULL);
 				skinny_execute_sql_callback(profile, profile->listener_mutex, "DELETE FROM skinny_buttons", NULL, NULL);
 
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);

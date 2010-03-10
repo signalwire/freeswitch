@@ -102,6 +102,7 @@ typedef enum {
 struct listener {
 	skinny_profile_t *profile;
 	char device_name[16];
+	uint32_t device_instance;
 	switch_core_session_t *session[SKINNY_MAX_LINES];
 	uint32_t line_state[SKINNY_MAX_LINES]; /* See enum skinny_key_set */
 
