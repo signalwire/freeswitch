@@ -630,6 +630,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	uint32_t x, tick = 0;
 	switch_time_t ts = 0, last = 0;
 	int fwd_errs = 0, rev_errs = 0;
+	int profile_tick = 0;
+
+	runtime.profile_timer = switch_new_profile_timer();
+	switch_get_system_idle_time(runtime.profile_timer, &runtime.profile_time);
 
 #ifdef HAVE_CPU_SET_MACROS
 	if (runtime.timer_affinity > -1) {
@@ -741,6 +745,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		tick += STEP_MS;
 
 		if (tick >= TICK_PER_SEC) {
+			if (++profile_tick == 1) {
+				switch_get_system_idle_time(runtime.profile_timer, &runtime.profile_time);
+				profile_tick = 0;
+			}
+			
 			if (runtime.sps <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Rate of %d!\n", runtime.sps_total);
 			}
@@ -802,6 +811,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	switch_mutex_lock(globals.mutex);
 	globals.RUNNING = 0;
 	switch_mutex_unlock(globals.mutex);
+
+	switch_delete_profile_timer(&runtime.profile_timer);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Soft timer thread exiting.\n");
 

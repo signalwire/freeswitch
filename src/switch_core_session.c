@@ -1485,6 +1485,10 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 		return NULL;
 	}
 
+	if (runtime.min_idle_time > 0 && runtime.profile_time < runtime.min_idle_time) {
+		return NULL;
+	}
+
 	PROTECT_INTERFACE(endpoint_interface);
 
 	switch_mutex_lock(runtime.throttle_mutex);
@@ -1638,6 +1642,21 @@ SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new_limit)
 	}
 
 	return session_manager.session_limit;
+}
+
+SWITCH_DECLARE(double) switch_core_min_idle_cpu(double new_limit)
+{
+	if (new_limit >= 0) {
+		runtime.min_idle_time = new_limit;
+	}
+
+	return runtime.min_idle_time;
+}
+
+
+SWITCH_DECLARE(double) switch_core_idle_cpu(void)
+{
+	return runtime.profile_time;
 }
 
 SWITCH_DECLARE(uint32_t) switch_core_sessions_per_second(uint32_t new_limit)

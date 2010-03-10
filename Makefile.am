@@ -228,6 +228,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_odbc.c \
 	src/g711.c \
 	src/switch_pcm.c \
+	src/switch_profile.c\
 	libs/stfu/stfu.c \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \

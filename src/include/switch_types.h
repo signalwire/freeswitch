@@ -1458,7 +1458,8 @@ typedef enum {
 	SCSC_SHUTDOWN_NOW,
 	SCSC_CALIBRATE_CLOCK,
 	SCSC_SAVE_HISTORY,
-	SCSC_CRASH
+	SCSC_CRASH,
+	SCSC_MIN_IDLE_CPU
 } switch_session_ctl_t;
 
 typedef enum {

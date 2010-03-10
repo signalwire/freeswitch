@@ -82,6 +82,7 @@ static void send_heartbeat(void)
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Count", "%u", switch_core_session_count());
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Per-Sec", "%u", runtime.sps);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Since-Startup", "%" SWITCH_SIZE_T_FMT, switch_core_session_id() - 1);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Idle-CPU", "%f", switch_core_idle_cpu());
 		switch_event_fire(&event);
 	}
 }
@@ -1442,6 +1443,8 @@ static void switch_load_core_config(const char *file)
 					switch_time_set_matrix(switch_true(var));
 				} else if (!strcasecmp(var, "max-sessions") && !zstr(val)) {
 					switch_core_session_limit(atoi(val));
+				} else if (!strcasecmp(var, "min-idle-cpu") && !zstr(val)) {
+					switch_core_min_idle_cpu(atof(val));
 				} else if (!strcasecmp(var, "tipping-point") && !zstr(val)) {
 					runtime.tipping_point = atoi(val);
 				} else if (!strcasecmp(var, "timer-affinity") && !zstr(val)) {
@@ -1628,8 +1631,10 @@ SWITCH_DECLARE(uint32_t) switch_core_debug_level(void)
 }
 
 
-SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_t *val)
+SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *val)
 {
+	int *intval = (int *) val;
+
 	if (switch_test_flag((&runtime), SCF_SHUTTING_DOWN)) {
 		return -1;
 	}
@@ -1646,10 +1651,10 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 		break;
 	case SCSC_SYNC_CLOCK:
 		switch_time_sync();
-		*val = 0;
+		*intval = 0;
 		break;
 	case SCSC_PAUSE_INBOUND:
-		if (*val) {
+		if (*intval) {
 			switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 		} else {
 			switch_clear_flag((&runtime), SCF_NO_NEW_SESSIONS);
@@ -1700,7 +1705,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 				win_shutdown();
 #endif
 
-				if (*val) {
+				if (*intval) {
 					switch_set_flag((&runtime), SCF_RESTART);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Restarting\n");
 				} else {
@@ -1722,7 +1727,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 		win_shutdown();
 #endif
 
-		if (*val) {
+		if (*intval) {
 			switch_set_flag((&runtime), SCF_RESTART);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Restarting\n");
 		} else {
@@ -1734,53 +1739,59 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 		runtime.running = 0;
 		break;
 	case SCSC_CHECK_RUNNING:
-		*val = runtime.running;
+		*intval = runtime.running;
 		break;
 	case SCSC_LOGLEVEL:
-		if (*val > -1) {
-			runtime.hard_log_level = *val;
+		if (*intval > -1) {
+			runtime.hard_log_level = *intval;
 		}
 
 		if (runtime.hard_log_level > SWITCH_LOG_DEBUG) {
 			runtime.hard_log_level = SWITCH_LOG_DEBUG;
 		}
-		*val = runtime.hard_log_level;
+		*intval = runtime.hard_log_level;
 		break;
 	case SCSC_DEBUG_LEVEL:
-		if (*val > -1) {
-			if (*val > 10)
-				*val = 10;
-			runtime.debug_level = *val;
+		if (*intval > -1) {
+			if (*intval > 10)
+				*intval = 10;
+			runtime.debug_level = *intval;
 		}
-		*val = runtime.debug_level;
+		*intval = runtime.debug_level;
+		break;
+	case SCSC_MIN_IDLE_CPU:
+		{
+			double *dval = (double *) val;
+			*dval = switch_core_min_idle_cpu(*dval);
+		}
 		break;
 	case SCSC_MAX_SESSIONS:
-		*val = switch_core_session_limit(*val);
+		*intval = switch_core_session_limit(*intval);
 		break;
 	case SCSC_LAST_SPS:
-		*val = runtime.sps_last;
+		*intval = runtime.sps_last;
 		break;
 	case SCSC_MAX_DTMF_DURATION:
-		*val = switch_core_max_dtmf_duration(*val);
+		*intval = switch_core_max_dtmf_duration(*intval);
 		break;
 	case SCSC_MIN_DTMF_DURATION:
-		*val = switch_core_min_dtmf_duration(*val);
+		*intval = switch_core_min_dtmf_duration(*intval);
 		break;
 	case SCSC_DEFAULT_DTMF_DURATION:
-		*val = switch_core_default_dtmf_duration(*val);
+		*intval = switch_core_default_dtmf_duration(*intval);
 		break;
 	case SCSC_SPS:
 		switch_mutex_lock(runtime.throttle_mutex);
-		if (*val > 0) {
-			runtime.sps_total = *val;
+		if (*intval > 0) {
+			runtime.sps_total = *intval;
 		}
-		*val = runtime.sps_total;
+		*intval = runtime.sps_total;
 		switch_mutex_unlock(runtime.throttle_mutex);
 		break;
 
 	case SCSC_RECLAIM:
 		switch_core_memory_reclaim_all();
-		*val = 0;
+		*intval = 0;
 		break;
 	}
 

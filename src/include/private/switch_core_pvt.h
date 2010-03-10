@@ -31,6 +31,9 @@
  * this file does not exist!!!!
  *
  */
+
+#include "switch_profile.h"
+
 #ifndef WIN32
 #include <switch_private.h>
 #endif
@@ -220,6 +223,9 @@ struct switch_runtime {
 	uint32_t runlevel;
 	uint32_t tipping_point;
 	int32_t timer_affinity;
+	switch_profile_timer_t *profile_timer;
+	double profile_time;
+	double min_idle_time;
 };
 
 extern struct switch_runtime runtime;

@@ -1901,7 +1901,7 @@ SWITCH_DECLARE(switch_time_t) switch_core_uptime(void);
   \param val the command arguement (if needed)
   \return 0 on success nonzero on error
 */
-SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_t *val);
+SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *val);
 
 /*!
   \brief Get the output console
@@ -1970,6 +1970,8 @@ SWITCH_DECLARE(void) switch_time_set_matrix(switch_bool_t enable);
 SWITCH_DECLARE(void) switch_time_set_cond_yield(switch_bool_t enable);
 SWITCH_DECLARE(uint32_t) switch_core_min_dtmf_duration(uint32_t duration);
 SWITCH_DECLARE(uint32_t) switch_core_max_dtmf_duration(uint32_t duration);
+SWITCH_DECLARE(double) switch_core_min_idle_cpu(double new_limit);
+SWITCH_DECLARE(double) switch_core_idle_cpu(void);
 SWITCH_DECLARE(uint32_t) switch_core_default_dtmf_duration(uint32_t duration);
 SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string);
 SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string);

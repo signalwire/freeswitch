@@ -1439,6 +1439,7 @@ SWITCH_STANDARD_API(status_function)
 	switch_core_session_ctl(SCSC_SPS, &sps);
 	stream->write_function(stream, "%d session(s) %d/%d\n", switch_core_session_count(), last_sps, sps);
 	stream->write_function(stream, "%d session(s) max\n", switch_core_session_limit(0));
+	stream->write_function(stream, "min idle cpu %0.2f/%0.2f\n", switch_core_min_idle_cpu(-1.0), switch_core_idle_cpu());
 
 	if (html) {
 		stream->write_function(stream, "</b>\n");
@@ -1535,7 +1536,23 @@ SWITCH_STANDARD_API(ctl_function)
 				arg = atoi(argv[1]);
 			}
 			switch_core_session_ctl(SCSC_MAX_SESSIONS, &arg);
-			stream->write_function(stream, "+OK max sessions: %d\n", arg);
+			stream->write_function(stream, "+OK max sessions: %f\n", arg);
+		} else if (!strcasecmp(argv[0], "min_idle_cpu")) {
+			double d = -1;
+			
+			if (argc > 1) {
+				d = atof(argv[1]);
+			}
+
+			switch_core_session_ctl(SCSC_MIN_IDLE_CPU, &d);
+
+			if (d) {
+				stream->write_function(stream, "+OK min idle cpu: %0.2f%\n", d);
+			} else {
+				stream->write_function(stream, "+OK min idle cpu: DISABLED\n", d);
+			}
+
+			
 		} else if (!strcasecmp(argv[0], "max_dtmf_duration")) {
 			if (argc > 1) {
 				arg = atoi(argv[1]);
