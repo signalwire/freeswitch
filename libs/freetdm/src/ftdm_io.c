@@ -823,15 +823,46 @@ FT_DECLARE(ftdm_status_t) ftdm_span_poll_event(ftdm_span_t *span, uint32_t ms)
 
 FT_DECLARE(ftdm_status_t) ftdm_span_next_event(ftdm_span_t *span, ftdm_event_t **event)
 {
-	assert(span->fio != NULL);
+	ftdm_status_t status = FTDM_FAIL;
+	ftdm_sigmsg_t sigmsg;
+	ftdm_assert_return(span->fio != NULL, FTDM_FAIL, "No I/O module attached to this span!\n");
 
-	if (span->fio->next_event) {
-		return span->fio->next_event(span, event);
-	} else {
+	if (!span->fio->next_event) {
 		ftdm_log(FTDM_LOG_ERROR, "next_event method not implemented in module %s!", span->fio->name);
+		return FTDM_NOTIMPL;
 	}
-	
-	return FTDM_NOTIMPL;
+
+	status = span->fio->next_event(span, event);
+	if (status != FTDM_SUCCESS) {
+		return status;
+	}
+
+	/* before returning the event to the user we do some core operations with certain OOB events */
+	memset(&sigmsg, 0, sizeof(sigmsg));
+	sigmsg.span_id = span->span_id;
+	sigmsg.chan_id = (*event)->channel->chan_id;
+	sigmsg.channel = (*event)->channel;
+	switch ((*event)->enum_id) {
+	case FTDM_OOB_ALARM_CLEAR:
+		{
+			sigmsg.event_id = FTDM_SIGEVENT_ALARM_CLEAR;
+			ftdm_clear_flag_locked((*event)->channel, FTDM_CHANNEL_IN_ALARM);
+			ftdm_span_send_signal(span, &sigmsg);
+		}
+		break;
+	case FTDM_OOB_ALARM_TRAP:
+		{
+			sigmsg.event_id = FTDM_SIGEVENT_ALARM_TRAP;
+			ftdm_set_flag_locked((*event)->channel, FTDM_CHANNEL_IN_ALARM);
+			ftdm_span_send_signal(span, &sigmsg);
+		}
+		break;
+	default:
+		/* NOOP */
+		break;
+	}
+
+	return status;
 }
 
 static ftdm_status_t ftdmchan_fsk_write_sample(int16_t *buf, ftdm_size_t buflen, void *user_data)
@@ -1209,6 +1240,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 		if (ftdm_test_flag(check, FTDM_CHANNEL_READY) && 
 			!ftdm_test_flag(check, FTDM_CHANNEL_INUSE) && 
 			!ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) && 
+			!ftdm_test_flag(check, FTDM_CHANNEL_IN_ALARM) &&
 			check->state == FTDM_CHANNEL_STATE_DOWN && 
 			FTDM_IS_VOICE_CHANNEL(check)
 			) {
@@ -1327,6 +1359,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 		if (ftdm_test_flag(check, FTDM_CHANNEL_READY) && 
 			!ftdm_test_flag(check, FTDM_CHANNEL_INUSE) && 
 			!ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) && 
+			!ftdm_test_flag(check, FTDM_CHANNEL_IN_ALARM) && 
 			check->state == FTDM_CHANNEL_STATE_DOWN && 
 			FTDM_IS_VOICE_CHANNEL(check)
 			) {
@@ -1417,7 +1450,12 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan)
 	assert(ftdmchan != NULL);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED)) {
-		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", "Channel is suspended");
+		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", "Channel is suspended\n");
+		return FTDM_FAIL;
+	}
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
+		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", "Channel is alarmed\n");
 		return FTDM_FAIL;
 	}
 	
@@ -1468,7 +1506,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 		goto done;
 	}
 
-	if (ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) || 
+	if (ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) || ftdm_test_flag(check, FTDM_CHANNEL_IN_ALARM) ||
 		!ftdm_test_flag(check, FTDM_CHANNEL_READY) || (status = ftdm_mutex_trylock(check->mutex)) != FTDM_SUCCESS) {
 		*ftdmchan = NULL;
 		goto done;
@@ -2371,8 +2409,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 	ftdm_size_t max = *datalen;
 	unsigned i = 0;
 
-	assert(ftdmchan != NULL);
-	assert(ftdmchan->fio != NULL);
+	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "ftdmchan is null\n");
+	ftdm_assert_return(ftdmchan->fio != NULL, FTDM_FAIL, "No I/O module attached to ftdmchan\n");
 	
     if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "channel not open");

@@ -1501,10 +1501,7 @@ static __inline__ void check_state(ftdm_span_t *span)
 static __inline__ ftdm_status_t check_events(ftdm_span_t *span, int ms_timeout)
 {
 	ftdm_status_t status;
-	ftdm_sigmsg_t sigmsg;
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
-
-	memset(&sigmsg, 0, sizeof(sigmsg));	
 
 	status = ftdm_span_poll_event(span, ms_timeout);
 
@@ -1513,25 +1510,16 @@ static __inline__ ftdm_status_t check_events(ftdm_span_t *span, int ms_timeout)
 		{
 			ftdm_event_t *event;
 			while (ftdm_span_next_event(span, &event) == FTDM_SUCCESS) {
-				sigmsg.span_id = event->channel->span_id;
-				sigmsg.chan_id = event->channel->chan_id;
-				sigmsg.channel = event->channel;
 				switch (event->enum_id) {
 				case FTDM_OOB_ALARM_TRAP:
-					sigmsg.event_id = FTDM_SIGEVENT_HWSTATUS_CHANGED;
-					sigmsg.raw_data = (void *)FTDM_HW_LINK_DISCONNECTED;
 					if (sangoma_boost_data->sigmod) {
 						sangoma_boost_data->sigmod->on_hw_link_status_change(event->channel, FTDM_HW_LINK_DISCONNECTED);
 					}
-					ftdm_span_send_signal(span, &sigmsg);
 					break;
 				case FTDM_OOB_ALARM_CLEAR:
-					sigmsg.event_id = FTDM_SIGEVENT_HWSTATUS_CHANGED;
-					sigmsg.raw_data = (void *)FTDM_HW_LINK_CONNECTED;
 					if (sangoma_boost_data->sigmod) {
 						sangoma_boost_data->sigmod->on_hw_link_status_change(event->channel, FTDM_HW_LINK_CONNECTED);
 					}
-					ftdm_span_send_signal(span, &sigmsg);
 					break;
 				}
 			}

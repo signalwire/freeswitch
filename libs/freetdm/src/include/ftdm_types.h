@@ -220,10 +220,8 @@ typedef enum {
 	FTDM_SIGEVENT_COLLECTED_DIGIT,
 	FTDM_SIGEVENT_ADD_CALL,
 	FTDM_SIGEVENT_RESTART,
-	/* Signaling link status changed (D-chan up, down, R2 blocked etc) */
+	/* Signaling status changed (D-chan up, down, R2 blocked etc) */
 	FTDM_SIGEVENT_SIGSTATUS_CHANGED,
-	/* Hardware link status changed (Line connected, disconnected) */
-	FTDM_SIGEVENT_HWSTATUS_CHANGED,
 	FTDM_SIGEVENT_INVALID
 } ftdm_signal_event_t;
 #define SIGNAL_STRINGS "START", "STOP", "TRANSFER", "ANSWER", "UP", "FLASH", "PROGRESS", \
@@ -412,6 +410,7 @@ typedef enum {
 	FTDM_CHANNEL_MUTE = (1 << 24),
 	FTDM_CHANNEL_USE_RX_GAIN = (1 << 25),
 	FTDM_CHANNEL_USE_TX_GAIN = (1 << 26),
+	FTDM_CHANNEL_IN_ALARM = (1 << 27),
 } ftdm_channel_flag_t;
 #if defined(__cplusplus) && defined(WIN32) 
     // fix C2676 
