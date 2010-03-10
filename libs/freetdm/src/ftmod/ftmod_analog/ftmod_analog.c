@@ -872,6 +872,14 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 				ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_DOWN);
 			}
 		}
+	case FTDM_OOB_ALARM_TRAP:
+		{
+			ftdm_set_flag_locked(event->channel, FTDM_CHANNEL_SUSPENDED);
+		}
+	case FTDM_OOB_ALARM_CLEAR:
+		{
+			ftdm_clear_flag_locked(event->channel, FTDM_CHANNEL_SUSPENDED);
+		}
 	}
 
  end:

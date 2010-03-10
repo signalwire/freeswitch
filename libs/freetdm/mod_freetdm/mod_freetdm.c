@@ -61,7 +61,7 @@ struct span_config {
 	char dial_regex[256];
 	char fail_dial_regex[256];
 	char hold_music[256];
-	char type[256];
+	char type[256];	
 	analog_option_t analog_options;
 };
 
@@ -132,7 +132,6 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session_t **sp);
 void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream);
 void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream);
-
 
 static switch_core_session_t *ftdm_channel_get_session(ftdm_channel_t *channel, int32_t id)
 {
@@ -1108,7 +1107,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	char *argv[3];
 	int argc = 0;
 	const char *var;
-
+	const char *dest_num = NULL, *callerid_num = NULL;
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
@@ -1123,8 +1122,18 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	data = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
 
-	outbound_profile->destination_number = switch_sanitize_number(outbound_profile->destination_number);
+	if (!zstr(outbound_profile->destination_number)) {
+		dest_num = switch_sanitize_number(switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number));
+	}
 
+	if (!zstr(outbound_profile->caller_id_number)) {
+		callerid_num = switch_sanitize_number(switch_core_strdup(outbound_profile->pool, outbound_profile->caller_id_number));
+	}
+
+	if (!zstr(callerid_num) && !strcmp(callerid_num, "0000000000")) {
+		callerid_num = NULL;
+	}
+	
 	if ((argc = switch_separate_string(data, '/', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
         return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -1206,15 +1215,15 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	
 	caller_data.dnis.plan = outbound_profile->destination_number_numplan;
 
-
-#if 0
-	if (!zstr(outbound_profile->rdnis)) {
-		ftdm_set_string(caller_data.rdnis.digits, outbound_profile->rdnis);
-	}
-#endif
+	/* blindly copy data from outbound_profile. They will be overwritten
+	 * by calling ftdm_caller_data if needed after */
+	caller_data.cid_num.type = outbound_profile->caller_ton;
+	caller_data.cid_num.plan = outbound_profile->caller_numplan;
+	caller_data.rdnis.type = outbound_profile->rdnis_ton;
+	caller_data.rdnis.plan = outbound_profile->rdnis_numplan;
 
 	ftdm_set_string(caller_data.cid_name, outbound_profile->caller_id_name);
-	ftdm_set_string(caller_data.cid_num.digits, outbound_profile->caller_id_number);
+	ftdm_set_string(caller_data.cid_num.digits, switch_str_nil(outbound_profile->caller_id_number));
 
 	if (group_id >= 0) {
 		status = ftdm_channel_open_by_group(group_id, direction, &caller_data, &ftdmchan);
@@ -1269,8 +1278,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_channel_set_variable(channel, "freetdm_span_name", ftdmchan->span->name);
 		switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", ftdmchan->span_id);	
 		switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", ftdmchan->chan_id);
-		ftdmchan->caller_data = caller_data;
+		ftdm_channel_set_caller_data(ftdmchan, &caller_data);
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
+		caller_profile->destination_number = switch_core_strdup(caller_profile->pool, switch_str_nil(dest_num));
+		caller_profile->caller_id_number = switch_core_strdup(caller_profile->pool, switch_str_nil(callerid_num));
 		switch_channel_set_caller_profile(channel, caller_profile);
 		tech_pvt->caller_profile = caller_profile;
 		
@@ -1400,6 +1411,70 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
     return FTDM_SUCCESS;
 }
 
+static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
+{
+	switch_event_t *event = NULL;
+
+	switch (sigmsg->event_id) {
+
+	case FTDM_SIGEVENT_ALARM_CLEAR:
+	case FTDM_SIGEVENT_ALARM_TRAP:
+		{
+			if (ftdm_channel_get_alarms(sigmsg->channel) != FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "failed to retrieve alarms\n");
+				return FTDM_FAIL;
+			}
+			if (switch_event_create(&event, SWITCH_EVENT_TRAP) != SWITCH_STATUS_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "failed to create alarms events\n");
+				return FTDM_FAIL;
+			}
+			if (sigmsg->event_id == FTDM_SIGEVENT_ALARM_CLEAR) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-clear");
+			} else {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-trap");
+			}
+		}
+		break;
+	default:
+		return FTDM_SUCCESS;
+		break;
+	}
+
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s", sigmsg->channel->span->name);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-number", "%d", sigmsg->channel->span_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", sigmsg->channel->chan_id);
+
+	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_RECOVER)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "recover");
+	}
+	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_LOOPBACK)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "loopback");
+	}
+	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_YELLOW)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "yellow");
+	}
+	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_RED)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "red");
+	}
+	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_BLUE)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "blue");
+	}
+	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_NOTOPEN)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "notopen");
+	}
+	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_AIS)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "ais");
+	}
+	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_RAI)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "rai");
+	}
+	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_GENERAL)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "general");
+	}
+	switch_event_fire(&event);
+
+	return FTDM_BREAK;
+}
 
 static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 {
@@ -1682,6 +1757,10 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 
 	ftdm_log(FTDM_LOG_DEBUG, "Got R2 channel sig [%s] in channel %d\n", ftdm_signal_event2str(sigmsg->event_id), sigmsg->channel->physical_chan_id);
 
+	if (on_common_signal(sigmsg) == FTDM_BREAK) {
+		return FTDM_SUCCESS;
+	}
+
 	switch(sigmsg->event_id) {
 		/* on_call_disconnect from the R2 side */
 		case FTDM_SIGEVENT_STOP: 
@@ -1784,6 +1863,10 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 
 	ftdm_log(FTDM_LOG_DEBUG, "got clear channel sig [%s]\n", ftdm_signal_event2str(sigmsg->event_id));
 
+	if (on_common_signal(sigmsg) == FTDM_BREAK) {
+		return FTDM_SUCCESS;
+	}
+
     switch(sigmsg->event_id) {
     case FTDM_SIGEVENT_START:
 		{
@@ -1869,6 +1952,10 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 static FIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (on_common_signal(sigmsg) == FTDM_BREAK) {
+		return FTDM_SUCCESS;
+	}
 
 	switch (sigmsg->channel->type) {
 	case FTDM_CHAN_TYPE_FXO:
@@ -2210,6 +2297,7 @@ static switch_status_t load_config(void)
 			uint32_t to = 0;
 			int q921loglevel = -1;
 			int q931loglevel = -1;
+			
 			// quick debug
 			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ID: '%s', Name:'%s'\n",id,name);
 

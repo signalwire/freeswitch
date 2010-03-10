@@ -351,13 +351,21 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	}
 
 	ftdm_set_string(event.calling_name, caller_data->cid_name);
-	ftdm_set_string(event.isup_in_rdnis, caller_data->rdnis.digits);
+	ftdm_set_string(event.rdnis.digits, caller_data->rdnis.digits);
 	if (strlen(caller_data->rdnis.digits)) {
-			event.isup_in_rdnis_size = (uint16_t)strlen(caller_data->rdnis.digits)+1;
+			event.rdnis.digits_count = strlen(caller_data->rdnis.digits)+1;
+			event.rdnis.ton = caller_data->rdnis.type;
+			event.rdnis.npi = caller_data->rdnis.plan;
 	}
     
-	event.calling_number_screening_ind = caller_data->screen;
-	event.calling_number_presentation = caller_data->pres;
+	event.calling.screening_ind = caller_data->screen;
+	event.calling.presentation_ind = caller_data->pres;
+
+	event.calling.ton = caller_data->cid_num.type;
+	event.calling.npi = caller_data->cid_num.plan;
+
+	event.called.ton = caller_data->dnis.type;
+	event.called.npi = caller_data->dnis.plan;
 
 	OUTBOUND_REQUESTS[r].status = BST_WAITING;
 	OUTBOUND_REQUESTS[r].span = span;
@@ -459,14 +467,23 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(sangoma_boost_outgoing_call)
 
 	event.span = (uint8_t)ftdmchan->physical_span_id;
 	event.chan = (uint8_t)ftdmchan->physical_chan_id;
+
 	ftdm_set_string(event.calling_name, ftdmchan->caller_data.cid_name);
-	ftdm_set_string(event.isup_in_rdnis, ftdmchan->caller_data.rdnis.digits);
+	ftdm_set_string(event.rdnis.digits, ftdmchan->caller_data.rdnis.digits);
 	if (strlen(ftdmchan->caller_data.rdnis.digits)) {
-			event.isup_in_rdnis_size = (uint16_t)strlen(ftdmchan->caller_data.rdnis.digits)+1;
+			event.rdnis.digits_count = strlen(ftdmchan->caller_data.rdnis.digits)+1;
+			event.rdnis.ton = ftdmchan->caller_data.rdnis.type;
+			event.rdnis.npi = ftdmchan->caller_data.rdnis.plan;
 	}
     
-	event.calling_number_screening_ind = ftdmchan->caller_data.screen;
-	event.calling_number_presentation = ftdmchan->caller_data.pres;
+	event.calling.screening_ind = ftdmchan->caller_data.screen;
+	event.calling.presentation_ind = ftdmchan->caller_data.pres;
+
+	event.calling.ton = ftdmchan->caller_data.cid_num.type;
+	event.calling.npi = ftdmchan->caller_data.cid_num.plan;
+
+	event.called.ton = ftdmchan->caller_data.dnis.type;
+	event.called.npi = ftdmchan->caller_data.dnis.plan;
 
 	OUTBOUND_REQUESTS[r].status = BST_WAITING;
 	OUTBOUND_REQUESTS[r].span = ftdmchan->span;
@@ -866,6 +883,21 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 	ftdm_channel_t *ftdmchan;
 
 	if (!(ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 0))) {
+		if ((ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 1))) {
+			int r;
+			if (ftdmchan->state == FTDM_CHANNEL_STATE_UP) {
+				ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE UP -> Changed to TERMINATING %d:%d\n", event->span+1,event->chan+1);
+				ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
+			} else if (ftdm_test_sflag(ftdmchan, SFLAG_HANGUP)) { 
+				ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE HANGUP -> Changed to HANGUP COMPLETE %d:%d\n", event->span+1,event->chan+1);
+				ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
+			} else {
+				ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE INVALID %s on IN CALL %d:%d\n", ftdm_channel_state2str(ftdmchan->state),event->span+1,event->chan+1);
+
+			}
+			ftdm_set_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG);
+			ftdmchan=NULL;
+		}
 		ftdm_log(FTDM_LOG_CRIT, "START CANT FIND CHAN %d:%d\n", event->span+1,event->chan+1);
 		goto error;
 	}
@@ -881,35 +913,42 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 			ftdmchan->physical_span_id, ftdmchan->physical_chan_id);
 
 	ftdmchan->sflags = 0;
-	ftdm_set_string(ftdmchan->caller_data.cid_num.digits, (char *)event->calling_number_digits);
-	ftdm_set_string(ftdmchan->caller_data.cid_name, (char *)event->calling_number_digits);
+	ftdm_set_string(ftdmchan->caller_data.cid_num.digits, (char *)event->calling.digits);
+	ftdm_set_string(ftdmchan->caller_data.cid_name, (char *)event->calling.digits);
+	ftdm_set_string(ftdmchan->caller_data.ani.digits, (char *)event->calling.digits);
+	ftdm_set_string(ftdmchan->caller_data.dnis.digits, (char *)event->called.digits);
+	ftdm_set_string(ftdmchan->caller_data.rdnis.digits, (char *)event->rdnis.digits);
+
 	if (strlen(event->calling_name)) {
 		ftdm_set_string(ftdmchan->caller_data.cid_name, (char *)event->calling_name);
 	}
-	ftdm_set_string(ftdmchan->caller_data.ani.digits, (char *)event->calling_number_digits);
-	ftdm_set_string(ftdmchan->caller_data.dnis.digits, (char *)event->called_number_digits);
-	if (event->isup_in_rdnis_size) {
-		char* p;
 
-		//Set value of rdnis.digis in case prot daemon is still using older style RDNIS
-		if (atoi((char *)event->isup_in_rdnis) > 0) {
-			ftdm_set_string(ftdmchan->caller_data.rdnis.digits, (char *)event->isup_in_rdnis);
-		}
+	ftdmchan->caller_data.cid_num.plan = event->calling.npi;
+	ftdmchan->caller_data.cid_num.type = event->calling.ton;
 
-		p = strstr((char*)event->isup_in_rdnis,"PRI001-ANI2-");
+	ftdmchan->caller_data.ani.plan = event->calling.npi;
+	ftdmchan->caller_data.ani.type = event->calling.ton;
+
+	ftdmchan->caller_data.dnis.plan = event->called.npi;
+	ftdmchan->caller_data.dnis.type = event->called.ton;
+
+	ftdmchan->caller_data.rdnis.plan = event->rdnis.npi;
+	ftdmchan->caller_data.rdnis.type = event->rdnis.ton;
+
+	ftdmchan->caller_data.screen = event->calling.screening_ind;
+	ftdmchan->caller_data.pres = event->calling.presentation_ind;
+
+	if (event->custom_data_size) {
+		char* p = NULL;
+
+		p = strstr((char*)event->custom_data,"PRI001-ANI2-");
 		if (p!=NULL) {
 			int ani2 = 0;
 			sscanf(p, "PRI001-ANI2-%d", &ani2);
 			snprintf(ftdmchan->caller_data.aniII, 5, "%.2d", ani2);
 		}	
-		p = strstr((char*)event->isup_in_rdnis,"RDNIS-");
-		if (p!=NULL) {
-			sscanf(p, "RDNIS-%s", &ftdmchan->caller_data.rdnis.digits[0]);
-		}
-		
 	}
-	ftdmchan->caller_data.screen = event->calling_number_screening_ind;
-	ftdmchan->caller_data.pres = event->calling_number_presentation;
+
 	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RING);
 	return;
 
@@ -2050,6 +2089,46 @@ static FIO_SPAN_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_span_sig_status)
 	return sangoma_boost_data->sigmod->get_span_sig_status(span, status);
 }
 
+/* TODO: move these ones to a common private header so other ISDN mods can use them */
+static void ftdm_span_set_npi(const char *npi_string, uint8_t *target)
+{
+	if (!strcasecmp(npi_string, "isdn") || !strcasecmp(npi_string, "e164")) {
+		*target = FTDM_NPI_ISDN;
+	} else if (!strcasecmp(npi_string, "data")) {
+		*target = FTDM_NPI_DATA;
+	} else if (!strcasecmp(npi_string, "telex")) {
+		*target = FTDM_NPI_TELEX;
+	} else if (!strcasecmp(npi_string, "national")) {
+		*target = FTDM_NPI_NATIONAL;
+	} else if (!strcasecmp(npi_string, "private")) {
+		*target = FTDM_NPI_PRIVATE;
+	} else if (!strcasecmp(npi_string, "reserved")) {
+		*target = FTDM_NPI_RESERVED;
+	} else if (!strcasecmp(npi_string, "unknown")) {
+		*target = FTDM_NPI_UNKNOWN;
+	} else {
+		ftdm_log(FTDM_LOG_WARNING, "Invalid NPI value (%s)\n", npi_string);
+		*target = FTDM_NPI_UNKNOWN;
+	}
+}
+
+static void ftdm_span_set_ton(const char *ton_string, uint8_t *target)
+{
+	if (!strcasecmp(ton_string, "national")) {
+		*target = FTDM_TON_NATIONAL;
+	} else if (!strcasecmp(ton_string, "international")) {
+		*target = FTDM_TON_INTERNATIONAL;
+	} else if (!strcasecmp(ton_string, "local")) {
+		*target = FTDM_TON_SUBSCRIBER_NUMBER;
+	} else if (!strcasecmp(ton_string, "unknown")) {
+		*target = FTDM_TON_UNKNOWN;
+	} else {
+		ftdm_log(FTDM_LOG_WARNING, "Invalid TON value (%s)\n", ton_string);
+		*target = FTDM_TON_UNKNOWN;
+	}
+}
+
+
 /**
  * \brief Initialises an sangoma boost span from configuration variables
  * \param span Span to configure
@@ -2096,6 +2175,18 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 			local_port = atoi(val);
 		} else if (!strcasecmp(var, "remote_port")) {
 			remote_port = atoi(val);
+		} else if (!strcasecmp(var, "outbound-called-ton")) {
+			ftdm_span_set_ton(val, &span->default_caller_data.dnis.type);
+		} else if (!strcasecmp(var, "outbound-called-npi")) {
+			ftdm_span_set_npi(val, &span->default_caller_data.dnis.plan);
+		} else if (!strcasecmp(var, "outbound-calling-ton")) {
+			ftdm_span_set_ton(val, &span->default_caller_data.cid_num.type);
+		} else if (!strcasecmp(var, "outbound-calling-npi")) {
+			ftdm_span_set_npi(val, &span->default_caller_data.cid_num.plan);
+		} else if (!strcasecmp(var, "outbound-rdnis-ton")) {
+			ftdm_span_set_ton(val, &span->default_caller_data.rdnis.type);
+		} else if (!strcasecmp(var, "outbound-rdnis-npi")) {
+			ftdm_span_set_npi(val, &span->default_caller_data.rdnis.plan);
 		} else if (!sigmod) {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
 			FAIL_CONFIG_RETURN(FTDM_FAIL);

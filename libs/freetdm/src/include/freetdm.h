@@ -450,8 +450,23 @@ typedef enum {
 	FTDM_TON_NETWORK_SPECIFIC,
 	FTDM_TON_SUBSCRIBER_NUMBER,
 	FTDM_TON_ABBREVIATED_NUMBER,
-	FTDM_TON_RESERVED
+	FTDM_TON_RESERVED,
+	FTDM_TON_INVALID = 255
 } ftdm_ton_t;
+
+/**
+ * Numbering Plan Identification (NPI)
+ */
+typedef enum {
+	FTDM_NPI_UNKNOWN = 0,
+	FTDM_NPI_ISDN = 1,
+	FTDM_NPI_DATA = 3,
+	FTDM_NPI_TELEX = 4,
+	FTDM_NPI_NATIONAL = 8,
+	FTDM_NPI_PRIVATE = 9,
+	FTDM_NPI_RESERVED = 10,
+	FTDM_NPI_INVALID = 255
+} ftdm_npi_t;
 
 typedef struct {
 	char digits[25];
@@ -605,6 +620,7 @@ struct ftdm_span {
 	size_t dtmf_hangup_len;
 	int suggest_chan_id;
 	ftdm_state_map_t *state_map;
+	ftdm_caller_data_t default_caller_data;
 	struct ftdm_span *next;
 };
 
@@ -801,6 +817,7 @@ FT_DECLARE(int) ftdm_load_module_assume(const char *name);
 FT_DECLARE(ftdm_status_t) ftdm_span_find_by_name(const char *name, ftdm_span_t **span);
 FT_DECLARE(char *) ftdm_api_execute(const char *type, const char *cmd);
 FT_DECLARE(int) ftdm_vasprintf(char **ret, const char *fmt, va_list ap);
+FT_DECLARE(ftdm_status_t) ftdm_channel_set_caller_data(ftdm_channel_t *ftdmchan, ftdm_caller_data_t *caller_data);
 
 FIO_CODEC_FUNCTION(fio_slin2ulaw);
 FIO_CODEC_FUNCTION(fio_ulaw2slin);

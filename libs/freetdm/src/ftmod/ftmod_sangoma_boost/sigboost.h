@@ -14,7 +14,7 @@
 #ifndef _SIGBOOST_H_
 #define _SIGBOOST_H_
 
-#define SIGBOOST_VERSION 102
+#define SIGBOOST_VERSION 103
 
 // handy to define integer types that actually work on both Lin and Win
 #include <freetdm.h>
@@ -104,7 +104,12 @@ enum e_sigboost_progress_flags
 #define CORE_MAX_CHAN_PER_SPAN 	32
 #define MAX_PENDING_CALLS 	CORE_MAX_SPANS * CORE_MAX_CHAN_PER_SPAN
 /* 0..(MAX_PENDING_CALLS-1) is range of call_setup_id below */
-#define SIZE_RDNIS	900
+
+/* Should only be used by server */
+#define MAX_CALL_SETUP_ID   0xFFFF
+
+#define SIZE_CUSTOM	900
+#define SIZE_RDNIS  SIZE_CUSTOM
 
 
 #pragma pack(1)
@@ -113,7 +118,17 @@ typedef struct
 {
 	uint8_t			capability;
 	uint8_t			uil1p;
-}t_sigboost_bearer;
+} t_sigboost_bearer;
+
+typedef struct
+{
+	uint8_t			digits_count;
+	char			digits [MAX_DIALED_DIGITS + 1]; /* it's a null terminated string */
+	uint8_t 		npi;
+	uint8_t 		ton;
+	uint8_t			screening_ind;
+	uint8_t			presentation_ind;
+}t_sigboost_digits;
 
 typedef struct
 {
@@ -128,21 +143,30 @@ typedef struct
 	uint8_t			chan;
 	uint32_t		flags;
 	/* struct timeval  	tv; */ 
-	uint8_t			called_number_digits_count;
-	char			called_number_digits [MAX_DIALED_DIGITS + 1]; /* it's a null terminated string */
-	uint8_t			calling_number_digits_count; /* it's an array */
-	char			calling_number_digits [MAX_DIALED_DIGITS + 1]; /* it's a null terminated string */
+	t_sigboost_digits called;
+	t_sigboost_digits calling;
+	t_sigboost_digits rdnis;
 	/* ref. Q.931 Table 4-11 and Q.951 Section 3 */
-	uint8_t			calling_number_screening_ind;
-	uint8_t			calling_number_presentation;
 	char			calling_name[MAX_DIALED_DIGITS + 1];
 	t_sigboost_bearer 	bearer;
 	uint8_t			hunt_group;
-	uint16_t		isup_in_rdnis_size;
-	char			isup_in_rdnis [SIZE_RDNIS]; /* it's a null terminated string */
+	uint16_t		custom_data_size;
+	char			custom_data[SIZE_CUSTOM]; /* it's a null terminated string */
+
 } t_sigboost_callstart;
 
-#define MIN_SIZE_CALLSTART_MSG  sizeof(t_sigboost_callstart) - SIZE_RDNIS
+#define called_number_digits_count		called.digits_count
+#define called_number_digits			called.digits
+#define calling_number_digits_count		calling.digits_count
+#define calling_number_digits			calling.digits
+#define calling_number_screening_ind	calling.screening_ind
+#define calling_number_presentation		calling.presentation_ind
+
+#define isup_in_rdnis_size				custom_data_size
+#define isup_in_rdnis					custom_data
+
+
+#define MIN_SIZE_CALLSTART_MSG  sizeof(t_sigboost_callstart) - SIZE_CUSTOM
 
 typedef struct
 {
@@ -167,10 +191,10 @@ static __inline__ int boost_full_event(int event_id)
         switch (event_id) {
         case SIGBOOST_EVENT_CALL_START:
         case SIGBOOST_EVENT_DIGIT_IN:
-		case SIGBOOST_EVENT_CALL_PROGRESS:
-                return 1;
+	case SIGBOOST_EVENT_CALL_PROGRESS:
+		return 1;
         default:
-                break;
+		break;
         }
 
         return 0;

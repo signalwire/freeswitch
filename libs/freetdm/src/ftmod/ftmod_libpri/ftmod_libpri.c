@@ -806,21 +806,12 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
  */
 static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *event)
 {
-	ftdm_sigmsg_t sig;
-
-	memset(&sig, 0, sizeof(sig));
-	sig.chan_id = event->channel->chan_id;
-	sig.span_id = event->channel->span_id;
-	sig.channel = event->channel;
-
 	ftdm_log(FTDM_LOG_DEBUG, "EVENT [%s][%d][%d:%d] STATE [%s]\n", 
 			ftdm_oob_event2str(event->enum_id), event->enum_id, event->channel->span_id, event->channel->chan_id, ftdm_channel_state2str(event->channel->state));
 
 	switch(event->enum_id) {
 	case FTDM_OOB_ALARM_TRAP:
 		{
-			sig.event_id = FTDM_SIGEVENT_HWSTATUS_CHANGED;
-			sig.raw_data = (void *)FTDM_HW_LINK_CONNECTED;
 			if (event->channel->state != FTDM_CHANNEL_STATE_DOWN) {
 				if (event->channel->type == FTDM_CHAN_TYPE_B) {
 					ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_RESTART);
@@ -832,7 +823,6 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 
 			
 			ftdm_channel_get_alarms(event->channel);
-			ftdm_span_send_signal(span, &sig);
 			ftdm_log(FTDM_LOG_WARNING, "channel %d:%d (%d:%d) has alarms! [%s]\n", 
 					event->channel->span_id, event->channel->chan_id, 
 					event->channel->physical_span_id, event->channel->physical_chan_id, 
@@ -845,11 +835,8 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 			ftdm_log(FTDM_LOG_WARNING, "channel %d:%d (%d:%d) alarms Cleared!\n", event->channel->span_id, event->channel->chan_id,
 					event->channel->physical_span_id, event->channel->physical_chan_id);
 
-			sig.event_id = FTDM_SIGEVENT_HWSTATUS_CHANGED;
-			sig.raw_data = (void *)FTDM_HW_LINK_CONNECTED;
 			ftdm_clear_flag(event->channel, FTDM_CHANNEL_SUSPENDED);
 			ftdm_channel_get_alarms(event->channel);
-			ftdm_span_send_signal(span, &sig);
 		}
 		break;
 	}

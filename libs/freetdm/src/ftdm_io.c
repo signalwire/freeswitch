@@ -219,6 +219,53 @@ FT_DECLARE_DATA ftdm_memory_handler_t g_ftdm_mem_handler =
 
 FT_DECLARE_DATA ftdm_crash_policy_t g_ftdm_crash_policy = FTDM_CRASH_NEVER;
 
+static ftdm_status_t ftdm_set_caller_data(ftdm_span_t *span, ftdm_caller_data_t *caller_data)
+{
+	if (!caller_data) {
+		ftdm_log(FTDM_LOG_CRIT, "Error: trying to set caller data, but no caller_data!\n");
+		return FTDM_FAIL;
+	}
+
+	if (caller_data->cid_num.plan == FTDM_NPI_INVALID) {
+		caller_data->cid_num.plan = span->default_caller_data.cid_num.plan;
+	}
+
+	if (caller_data->cid_num.type == FTDM_TON_INVALID) {
+		caller_data->cid_num.type = span->default_caller_data.cid_num.type;
+	}
+
+	if (caller_data->ani.plan == FTDM_NPI_INVALID) {
+		caller_data->ani.plan = span->default_caller_data.ani.plan;
+	}
+
+	if (caller_data->ani.type == FTDM_TON_INVALID) {
+		caller_data->ani.type = span->default_caller_data.ani.type;
+	}
+
+	if (caller_data->rdnis.plan == FTDM_NPI_INVALID) {
+		caller_data->rdnis.plan = span->default_caller_data.rdnis.plan;
+	}
+
+	if (caller_data->rdnis.type == FTDM_NPI_INVALID) {
+		caller_data->rdnis.type = span->default_caller_data.rdnis.type;
+	}
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_channel_set_caller_data(ftdm_channel_t *ftdmchan, ftdm_caller_data_t *caller_data)
+{
+	ftdm_status_t err = FTDM_SUCCESS;
+	if (!ftdmchan) {
+		ftdm_log(FTDM_LOG_CRIT, "Error: trying to set caller data, but no ftdmchan!\n");
+		return FTDM_FAIL;
+	}
+	if ((err = ftdm_set_caller_data(ftdmchan->span, caller_data)) != FTDM_SUCCESS) {
+		return err; 
+	}
+	ftdmchan->caller_data = *caller_data;
+	return FTDM_SUCCESS;
+}
+
 FT_DECLARE_DATA ftdm_logger_t ftdm_log = null_logger;
 
 FT_DECLARE(void) ftdm_global_set_crash_policy(ftdm_crash_policy_t policy)
@@ -1238,8 +1285,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 			*ftdmchan = NULL;
 			return FTDM_FAIL;
 		}
-		
+
 		if (span->channel_request && !span->suggest_chan_id) {
+			ftdm_set_caller_data(span, caller_data);
 			return span->channel_request(span, 0, direction, caller_data, ftdmchan);
 		}
 		
@@ -1284,6 +1332,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 			) {
 
 			if (span && span->channel_request) {
+				ftdm_set_caller_data(span, caller_data);
 				status = span->channel_request(span, i, direction, caller_data, ftdmchan);
 				break;
 			}

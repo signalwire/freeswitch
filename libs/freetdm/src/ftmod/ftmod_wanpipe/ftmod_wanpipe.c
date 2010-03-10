@@ -601,21 +601,41 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 		break;
 	case FTDM_COMMAND_ENABLE_ECHOCANCEL:
 		{
-			//code me
+			err=sangoma_tdm_enable_hwec(ftdmchan->sockfd, &tdm_api);
+			if (err) {
+             	snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "HWEC Enable Failed");
+				return FTDM_FAIL;
+			}
 		}
 		break;
 	case FTDM_COMMAND_DISABLE_ECHOCANCEL:
 		{
-			//code me
+			err=sangoma_tdm_disable_hwec(ftdmchan->sockfd, &tdm_api);
+			if (err) {
+             	snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "HWEC Disable Failed");
+				return FTDM_FAIL;
+			}
 		}
 		break;
 	case FTDM_COMMAND_ENABLE_LOOP:
 		{
-			// code me
+#ifdef WP_API_FEATURE_LOOP
+         	err=sangoma_tdm_enable_loop(ftdmchan->sockfd, &tdm_api);
+			if (err) {
+				snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "Loop Enable Failed");
+				return FTDM_FAIL;
+			}
+#endif		
 		}
 	case FTDM_COMMAND_DISABLE_LOOP:
 		{
-			// code me
+#ifdef WP_API_FEATURE_LOOP
+         	err=sangoma_tdm_disable_loop(ftdmchan->sockfd, &tdm_api);
+			if (err) {
+				snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "Loop Disable Failed");
+				return FTDM_FAIL;
+			}
+#endif	 
 		}
 	case FTDM_COMMAND_SET_INTERVAL: 
 		{
@@ -719,6 +739,9 @@ static FIO_WRITE_FUNCTION(wanpipe_write)
 
 	/* Do we even need the headerframe here? on windows, we don't even pass it to the driver */
 	memset(&hdrframe, 0, sizeof(hdrframe));
+	if (*datalen == 0) {
+		return FTDM_SUCCESS;
+	}
 	bsent = sangoma_writemsg_tdm(ftdmchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (unsigned short)(*datalen),0);
 
 	/* should we be checking if bsent == *datalen here? */
@@ -921,11 +944,38 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 	}
 	alarms = tdm_api.wp_tdm_cmd.fe_alarms;
 #endif
+	ftdmchan->alarm_flags = FTDM_ALARM_NONE;
 
-	
-    ftdmchan->alarm_flags = alarms ? FTDM_ALARM_RED : FTDM_ALARM_NONE;
+	if (alarms & WAN_TE_BIT_ALARM_RED) {
+		ftdmchan->alarm_flags |= FTDM_ALARM_RED;
+		alarms &= ~WAN_TE_BIT_ALARM_RED;
+	}
 
-    return FTDM_SUCCESS;
+	if (alarms & WAN_TE_BIT_ALARM_AIS) {
+		ftdmchan->alarm_flags |= FTDM_ALARM_AIS;
+		ftdmchan->alarm_flags |= FTDM_ALARM_BLUE;
+		alarms &= ~WAN_TE_BIT_ALARM_AIS;
+	}
+
+	if (alarms & WAN_TE_BIT_ALARM_RAI) {
+		ftdmchan->alarm_flags |= FTDM_ALARM_RAI;
+		ftdmchan->alarm_flags |= FTDM_ALARM_YELLOW;
+		alarms &= ~WAN_TE_BIT_ALARM_RAI;
+	}
+
+	/* still missing to map:
+	 * FTDM_ALARM_RECOVER
+	 * FTDM_ALARM_LOOPBACK
+	 * FTDM_ALARM_NOTOPEN
+	 * */
+
+	/* if we still have alarms that we did not map, set the general alarm */
+	if (alarms) {
+		ftdm_log(FTDM_LOG_DEBUG, "Unmapped wanpipe alarms: %d\n", alarms);
+		ftdmchan->alarm_flags |= FTDM_ALARM_GENERAL;
+	}
+
+	return FTDM_SUCCESS;
 }
 
 /**
@@ -986,6 +1036,8 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 
 			case WP_TDMAPI_EVENT_LINK_STATUS:
 				{
+					ftdm_sigmsg_t sigmsg;
+					memset(&sigmsg, 0, sizeof(sigmsg));
 					switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
 					case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
 						event_id = FTDM_OOB_ALARM_CLEAR;
@@ -994,6 +1046,11 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 						event_id = FTDM_OOB_ALARM_TRAP;
 						break;
 					};
+					sigmsg.chan_id = ftdmchan->chan_id;
+					sigmsg.span_id = ftdmchan->span_id;
+					sigmsg.channel = ftdmchan;
+					sigmsg.event_id = (event_id == FTDM_OOB_ALARM_CLEAR) ? FTDM_SIGEVENT_ALARM_CLEAR : FTDM_SIGEVENT_ALARM_TRAP;
+					ftdm_span_send_signal(ftdmchan->span, &sigmsg);
 				}
 				break;
 
@@ -1071,7 +1128,16 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 				break;
 			case WP_TDMAPI_EVENT_ALARM:
 				{
-					event_id = FTDM_OOB_NOOP;
+					ftdm_log(FTDM_LOG_DEBUG, "Got wanpipe alarms %d\n", tdm_api.wp_tdm_cmd.event.wp_api_event_alarm);
+					ftdm_sigmsg_t sigmsg;
+					memset(&sigmsg, 0, sizeof(sigmsg));
+					/* FIXME: is this always alarm trap? what about clearing? */
+					event_id = FTDM_OOB_ALARM_TRAP;
+					sigmsg.chan_id = ftdmchan->chan_id;
+					sigmsg.span_id = ftdmchan->span_id;
+					sigmsg.channel = ftdmchan;
+					sigmsg.event_id = (event_id == FTDM_OOB_ALARM_CLEAR) ? FTDM_SIGEVENT_ALARM_CLEAR : FTDM_SIGEVENT_ALARM_TRAP;
+					ftdm_span_send_signal(ftdmchan->span, &sigmsg);
 				}
 				break;
 			default:

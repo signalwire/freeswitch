@@ -1027,12 +1027,28 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 				break;
 			case ZT_EVENT_ALARM:
 				{
+					ftdm_sigmsg_t sigmsg;
+					ftdm_channel_t *ftdmchan = span->channels[i];
 					event_id = FTDM_OOB_ALARM_TRAP;
+					memset(&sigmsg, 0, sizeof(sigmsg));
+					sigmsg.chan_id = ftdmchan->chan_id;
+					sigmsg.span_id = ftdmchan->span_id;
+					sigmsg.channel = ftdmchan;
+					sigmsg.event_id = FTDM_SIGEVENT_ALARM_TRAP;
+					ftdm_span_send_signal(ftdmchan->span, &sigmsg);
 				}
 				break;
 			case ZT_EVENT_NOALARM:
 				{
+					ftdm_sigmsg_t sigmsg;
+					ftdm_channel_t *ftdmchan = span->channels[i];
 					event_id = FTDM_OOB_ALARM_CLEAR;
+					memset(&sigmsg, 0, sizeof(sigmsg));
+					sigmsg.chan_id = ftdmchan->chan_id;
+					sigmsg.span_id = ftdmchan->span_id;
+					sigmsg.channel = ftdmchan;
+					sigmsg.event_id = FTDM_SIGEVENT_ALARM_CLEAR;
+					ftdm_span_send_signal(ftdmchan->span, &sigmsg);
 				}
 				break;
 			case ZT_EVENT_BITSCHANGED:
