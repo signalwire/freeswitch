@@ -418,7 +418,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	
 	if ((vval = switch_channel_get_variable(channel, "record_fill_cng"))) {
 
-		if (switch_true(vval)) {
+		if (!strcasecmp(vval, "true")) {
 			fill_cng = 1400;
 		} else {
 			if ((fill_cng = atoi(vval)) < 0) {
@@ -430,7 +430,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 	if ((vval = switch_channel_get_variable(channel, "record_waste_resources"))) {
 
-		if (switch_true(vval)) {
+		if (!strcasecmp(vval, "true")) {
 			waste_resources = 1400;
 		} else {
 			if ((waste_resources = atoi(vval)) < 0) {
