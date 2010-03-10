@@ -364,7 +364,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	time_t start = 0;
 	uint32_t org_silence_hits = 0;
 	int asis = 0;
-	int waste_resources = 0;
+	int waste_resources = 0, fill_cng = 0;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_frame_t write_frame = { 0 };
 	unsigned char write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
@@ -415,6 +415,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		}
 	}
 
+	
+	if ((vval = switch_channel_get_variable(channel, "record_fill_cng"))) {
+
+		if (switch_true(vval)) {
+			fill_cng = 1400;
+		} else {
+			if ((fill_cng = atoi(vval)) < 0) {
+				fill_cng = 0;
+			}
+		}
+	}
+	
 
 	if ((vval = switch_channel_get_variable(channel, "record_waste_resources"))) {
 
@@ -425,7 +437,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 				waste_resources = 0;
 			}
 		}
+	}
 
+
+	if (fill_cng || waste_resources) {
 		if (switch_core_codec_init(&write_codec,
 								   "L16",
 								   NULL,
@@ -665,6 +680,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			}
 		}
 
+		if (fill_cng || waste_resources) {
+			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, waste_resources);
+		}
+
+
 		if (!switch_test_flag(fh, SWITCH_FILE_PAUSE) && !switch_test_flag(read_frame, SFF_CNG)) {
 			int16_t *data = read_frame->data;
 			len = (switch_size_t) asis ? read_frame->datalen : read_frame->datalen / 2;
@@ -672,10 +692,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			if (switch_core_file_write(fh, data, &len) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
+		} else if (switch_test_flag(read_frame, SFF_CNG)) {
+			len = write_frame.datalen;
+			if (switch_core_file_write(fh, write_frame.data, &len) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}			
 		}
 
 		if (waste_resources) {
-			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, waste_resources);
 			if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
