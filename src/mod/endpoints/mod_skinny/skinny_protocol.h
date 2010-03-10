@@ -795,7 +795,7 @@ uint32_t skinny_str2device_reset_type(const char *str);
 /*****************************************************************************/
 #define skinny_check_data_length(message, len) \
 	if (message->length < len+4) {\
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received Too Short Skinny Message (Expected %zu, got %d).\n", len+4, message->length);\
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received Too Short Skinny Message (Expected %" SWITCH_SIZE_T_FMT ", got %d).\n", len+4, message->length);\
 		return SWITCH_STATUS_FALSE;\
 	}
 
