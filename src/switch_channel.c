@@ -2370,6 +2370,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 
 	switch_assert(channel != NULL);
 
+	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (channel->hangup_cause || channel->state >= CS_HANGUP) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -2377,12 +2381,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 	if (switch_channel_test_flag(channel, CF_ANSWERED)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
+	
+	msg.message_id = SWITCH_MESSAGE_INDICATE_ANSWER;
+	msg.from = channel->name;
+	status = switch_core_session_perform_receive_message(channel->session, &msg, file, func, line);
 
-	if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
-		msg.message_id = SWITCH_MESSAGE_INDICATE_ANSWER;
-		msg.from = channel->name;
-		status = switch_core_session_perform_receive_message(channel->session, &msg, file, func, line);
-	}
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_channel_perform_mark_answered(channel, file, func, line);
