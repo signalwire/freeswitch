@@ -43,6 +43,8 @@
 #include "libsangoma.h"
 
 #if defined(__WINDOWS__)
+/* remove this when http://jira.freeswitch.org/browse/FSBUILD-259 wanpipe issue is fixed */
+#define WINDOWS_BUILD_BROKEN 1
 /*! Backward compatible defines - current code is all using the old names*/ 
 #define sangoma_open_tdmapi_span_chan sangoma_open_api_span_chan
 #define sangoma_open_tdmapi_span sangoma_open_api_span
@@ -585,24 +587,29 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 		break;
 	case ZAP_COMMAND_ENABLE_ECHOCANCEL:
 		{
+#ifndef WINDOWS_BUILD_BROKEN
 			err=sangoma_tdm_enable_hwec(zchan->sockfd, &tdm_api);
 			if (err) {
              	snprintf(zchan->last_error, sizeof(zchan->last_error), "HWEC Enable Failed");
 				return ZAP_FAIL;
 			}
+#endif /* WINDOWS_BUILD_BROKEN */
 		}
 		break;
 	case ZAP_COMMAND_DISABLE_ECHOCANCEL:
 		{
+#ifndef WINDOWS_BUILD_BROKEN
 			err=sangoma_tdm_disable_hwec(zchan->sockfd, &tdm_api);
 			if (err) {
              	snprintf(zchan->last_error, sizeof(zchan->last_error), "HWEC Disable Failed");
 				return ZAP_FAIL;
 			}
+#endif /* WINDOWS_BUILD_BROKEN */
 		}
 		break;
 	case ZAP_COMMAND_ENABLE_LOOP:
 		{
+#ifndef WINDOWS_BUILD_BROKEN
 #ifdef WP_API_FEATURE_LOOP
          	err=sangoma_tdm_enable_loop(zchan->sockfd, &tdm_api);
 			if (err) {
@@ -610,9 +617,11 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 				return ZAP_FAIL;
 			}
 #endif		
+#endif /* WINDOWS_BUILD_BROKEN */
 		}
 	case ZAP_COMMAND_DISABLE_LOOP:
 		{
+#ifndef WINDOWS_BUILD_BROKEN
 #ifdef WP_API_FEATURE_LOOP
          	err=sangoma_tdm_disable_loop(zchan->sockfd, &tdm_api);
 			if (err) {
@@ -620,6 +629,7 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 				return ZAP_FAIL;
 			}
 #endif	 
+#endif /* WINDOWS_BUILD_BROKEN */
 		}
 	case ZAP_COMMAND_SET_INTERVAL: 
 		{
@@ -1102,15 +1112,17 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
                 }
                 break;
 			case WP_TDMAPI_EVENT_ALARM:
-				zap_log(ZAP_LOG_DEBUG, "Got wanpipe alarms %d\n", tdm_api.wp_tdm_cmd.event.wp_api_event_alarm);
-				zap_sigmsg_t sigmsg;
-				memset(&sigmsg, 0, sizeof(sigmsg));
-				event_id = ZAP_OOB_ALARM_TRAP;
-				sigmsg.chan_id = zchan->chan_id;
-				sigmsg.span_id = zchan->span_id;
-				sigmsg.channel = zchan;
-				sigmsg.event_id = (event_id == ZAP_OOB_ALARM_CLEAR) ? ZAP_SIGEVENT_ALARM_CLEAR : ZAP_SIGEVENT_ALARM_TRAP;
-				zap_span_send_signal(zchan->span, &sigmsg);
+				{
+					zap_sigmsg_t sigmsg;
+					zap_log(ZAP_LOG_DEBUG, "Got wanpipe alarms %d\n", tdm_api.wp_tdm_cmd.event.wp_api_event_alarm);
+					memset(&sigmsg, 0, sizeof(sigmsg));
+					event_id = ZAP_OOB_ALARM_TRAP;
+					sigmsg.chan_id = zchan->chan_id;
+					sigmsg.span_id = zchan->span_id;
+					sigmsg.channel = zchan;
+					sigmsg.event_id = (event_id == ZAP_OOB_ALARM_CLEAR) ? ZAP_SIGEVENT_ALARM_CLEAR : ZAP_SIGEVENT_ALARM_TRAP;
+					zap_span_send_signal(zchan->span, &sigmsg);
+				}
 				break;
 			default:
 				{
