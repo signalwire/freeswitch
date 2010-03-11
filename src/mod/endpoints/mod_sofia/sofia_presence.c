@@ -840,6 +840,7 @@ static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, ch
 	char *host = argv[2];
 	switch_event_t *event;
 	char *event_name = argv[5];
+	char *expires = argv[10];
 
 	if (!strcasecmp(event_name, "message-summary")) {
 		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
@@ -858,6 +859,7 @@ static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, ch
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_subtype", "probe");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto-specific-event-name", event_name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "expires", expires);
 		switch_event_fire(&event);
 	}
 
@@ -1779,6 +1781,17 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			from_host = "n/a";
 		}
 
+		exp_delta = profile->force_subscription_expires ? profile->force_subscription_expires : (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
+
+		if (exp_delta) {
+			exp_abs = (long) switch_epoch_time_now(NULL) + exp_delta;
+		} else {
+			exp_abs = 0;
+			sub_state = nua_substate_terminated;
+		}
+
+		switch_snprintf(exp_delta_str, sizeof(exp_delta_str), "%ld", exp_delta);
+
 		if (to_user && (strstr(to_user, "ext+") || strstr(to_user, "user+"))) {
 			char protocol[80];
 			char *p;
@@ -1804,6 +1817,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
 				switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, to_host);
 				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "proto-specific-event-name", event);
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "expires", exp_delta_str);
 				switch_event_fire(&sevent);
 			}
 		}
@@ -1834,17 +1848,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		if (sip->sip_expires->ex_delta > 31536000) {
 			sip->sip_expires->ex_delta = 31536000;
 		}
-
-		exp_delta = profile->force_subscription_expires ? profile->force_subscription_expires : (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
-
-		if (exp_delta) {
-			exp_abs = (long) switch_epoch_time_now(NULL) + exp_delta;
-		} else {
-			exp_abs = 0;
-			sub_state = nua_substate_terminated;
-		}
-
-		switch_snprintf(exp_delta_str, sizeof(exp_delta_str), "%ld", exp_delta);
 
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
 			sql = switch_mprintf("delete from sip_subscriptions where call_id='%q' "
@@ -2007,6 +2010,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "event_type", "presence");
 					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "event_subtype", "probe");
 					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "proto-specific-event-name", event);
+					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "expires", exp_delta_str);
 					switch_event_fire(&pevent);
 				}
 			} else if (!strcasecmp(event, "line-seize")) {
