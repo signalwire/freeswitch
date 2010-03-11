@@ -43,7 +43,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #else
-#define _WIN32_WINNT 0x0501 // To make GetSystemTimes visible in windows.h
+/*already defined 
+#define _WIN32_WINNT 0x0501 // To make GetSystemTimes visible in windows.h*/
 #include <windows.h>
 #endif
 
@@ -201,16 +202,17 @@ SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, doubl
 	FILETIME idleTime;
 	FILETIME kernelTime;
 	FILETIME userTime;
+	__int64 i64UserTime, i64KernelTime, i64IdleTime;
   
-	if (!::GetSystemTimes(&idleTime, &kernelTime, &userTime)) {
-		return false;
+	if (!GetSystemTimes(&idleTime, &kernelTime, &userTime)) {
+		return SWITCH_FALSE;
 	}
   
-	__int64 i64UserTime = (__int64)userTime.dwLowDateTime | ((__int64)userTime.dwHighDateTime << 32);
+	i64UserTime = (__int64)userTime.dwLowDateTime | ((__int64)userTime.dwHighDateTime << 32);
 
-	__int64 i64KernelTime = (__int64)kernelTime.dwLowDateTime | ((__int64)kernelTime.dwHighDateTime << 32);
+	i64KernelTime = (__int64)kernelTime.dwLowDateTime | ((__int64)kernelTime.dwHighDateTime << 32);
 
-	__int64 i64IdleTime = (__int64)idleTime.dwLowDateTime | ((__int64)idleTime.dwHighDateTime << 32);
+	i64IdleTime = (__int64)idleTime.dwLowDateTime | ((__int64)idleTime.dwHighDateTime << 32);
 
 	if (p->valid_last_times) {
 		__int64 i64User = i64UserTime - p->i64LastUserTime;
