@@ -3019,9 +3019,11 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 		send_msg = frame->packet;
 
+		/*
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 			send_msg->header.pt = rtp_session->payload;
 		}
+		*/
 
 		if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, frame->packet, &bytes) != SWITCH_STATUS_SUCCESS) {
 			return -1;
@@ -3117,9 +3119,11 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		ts = switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) ? (uint32_t) frame->timestamp : 0;
 	}
 
+	/*
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 		send_msg->header.pt = rtp_session->payload;
 	}
+	*/
 
 	return rtp_common_write(rtp_session, send_msg, data, len, payload, ts, &frame->flags);
 }
