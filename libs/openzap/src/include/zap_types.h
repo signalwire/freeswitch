@@ -317,6 +317,8 @@ typedef enum {
 #define CHAN_TYPE_STRINGS "B", "DQ921", "DQ931", "FXS", "FXO", "EM", "CAS", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_chan_type, zap_chan_type2str, zap_chan_type_t)
 
+#define ZAP_IS_VOICE_CHANNEL(zap_chan) ((zap_chan)->type != ZAP_CHAN_TYPE_DQ921 && (zap_chan)->type != ZAP_CHAN_TYPE_DQ931)
+
 typedef enum {
 	ZAP_CHANNEL_FEATURE_DTMF_DETECT = (1 << 0),
 	ZAP_CHANNEL_FEATURE_DTMF_GENERATE = (1 << 1),

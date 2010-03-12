@@ -2523,6 +2523,22 @@ OZ_DECLARE(char *) zap_api_execute(const char *type, const char *cmd)
 	return rval;
 }
 
+static void zap_set_channels_gains(zap_span_t *span, int currindex, float rxgain, float txgain)
+{
+	unsigned chan_index = 0;
+
+	if (!span->chan_count) {
+		return;
+	}
+
+	for (chan_index = currindex+1; chan_index <= span->chan_count; chan_index++) {
+		if (!ZAP_IS_VOICE_CHANNEL(span->channels[chan_index])) {
+			continue;
+		}
+		zap_channel_command(span->channels[chan_index], ZAP_COMMAND_SET_RX_GAIN, &rxgain);
+		zap_channel_command(span->channels[chan_index], ZAP_COMMAND_SET_TX_GAIN, &txgain);
+	}
+}
 
 static zap_status_t load_config(void)
 {
@@ -2536,6 +2552,9 @@ static zap_status_t load_config(void)
 	char number[25] = "";
 	zap_io_interface_t *zio = NULL;
 	zap_analog_start_type_t tmp;
+	float rxgain = 0.0;
+	float txgain = 0.0;
+	int chanindex = 0;
 
 	if (!zap_config_open_file(&cfg, cfg_name)) {
 		return ZAP_FAIL;
@@ -2640,7 +2659,9 @@ static zap_status_t load_config(void)
 							zap_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == ZAP_TRUNK_FXO) {
+					chanindex = span->chan_count;
 					configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_FXO, name, number);
+					zap_set_channels_gains(span, chanindex, rxgain, txgain);
 				} else {
 					zap_log(ZAP_LOG_WARNING, "Cannot add FXO channels to an FXS trunk!\n");
 				}
@@ -2651,7 +2672,9 @@ static zap_status_t load_config(void)
 							zap_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == ZAP_TRUNK_FXS) {
+					chanindex = span->chan_count;
 					configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_FXS, name, number);
+					zap_set_channels_gains(span, chanindex, rxgain, txgain);
 				} else {
 					zap_log(ZAP_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
 				}
@@ -2662,12 +2685,16 @@ static zap_status_t load_config(void)
 							zap_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == ZAP_TRUNK_EM) {
+					chanindex = span->chan_count;
 					configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_EM, name, number);
+					zap_set_channels_gains(span, chanindex, rxgain, txgain);
 				} else {
 					zap_log(ZAP_LOG_WARNING, "Cannot add EM channels to a non-EM trunk!\n");
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
+				chanindex = span->chan_count;
 				configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_B, name, number);
+				zap_set_channels_gains(span, chanindex, rxgain, txgain);
 			} else if (!strcasecmp(var, "d-channel")) {
 				if (d) {
 					zap_log(ZAP_LOG_WARNING, "ignoring extra d-channel\n");
@@ -2683,10 +2710,20 @@ static zap_status_t load_config(void)
 					d++;
 				}
 			} else if (!strcasecmp(var, "cas-channel")) {
+				chanindex = span->chan_count;
 				configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_CAS, name, number);	
+				zap_set_channels_gains(span, chanindex, rxgain, txgain);
 			} else if (!strcasecmp(var, "dtmf_hangup")) {
 				span->dtmf_hangup = strdup(val);
 				span->dtmf_hangup_len = strlen(val);
+			} else if (!strcasecmp(var, "txgain")) {
+				if (sscanf(val, "%f", &txgain) != 1) {
+					zap_log(ZAP_LOG_ERROR, "invalid txgain: '%s'\n", val);
+				}
+			} else if (!strcasecmp(var, "rxgain")) {
+				if (sscanf(val, "%f", &rxgain) != 1) {
+					zap_log(ZAP_LOG_ERROR, "invalid rxgain: '%s'\n", val);
+				}
 			} else {
 				zap_log(ZAP_LOG_ERROR, "unknown span variable '%s'\n", var);
 			}
