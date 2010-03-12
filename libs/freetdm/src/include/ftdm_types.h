@@ -40,6 +40,7 @@
 #define FTDM_TYPES_H
 #include "fsk.h"
 
+#define FTDM_INVALID_SOCKET -1
 #ifdef WIN32
 #include <windows.h>
 typedef HANDLE ftdm_socket_t;

@@ -5,3 +5,5 @@
   then ftdm_event_t would be renamed to ftdm_oob_event_t and the enum_id renamed to type, then ftdm_span_next_event()
   will only return OOB events
 
+- query span hw status (connected/disconnected) on startup 
+

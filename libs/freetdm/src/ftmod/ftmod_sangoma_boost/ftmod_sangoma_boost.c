@@ -39,7 +39,7 @@
  */
 
 /* NOTE:
-On WIN32 platform this code works with sigmod ONLY, don't try to make sense of any socket code for win32
+On __WINDOWS__ platform this code works with sigmod ONLY, don't try to make sense of any socket code for win
 I basically ifdef out everything that the compiler complained about
 */
 
@@ -1016,11 +1016,8 @@ static void handle_heartbeat(sangomabc_connection_t *mcon, sangomabc_short_event
 	err = sangomabc_connection_writep(mcon, (sangomabc_event_t*)event);
 	
 	if (err <= 0) {
-		ftdm_log(FTDM_LOG_CRIT, "Failed to tx on ISUP socket [%s]: %s\n", strerror(errno));
+		ftdm_log(FTDM_LOG_CRIT, "Failed to tx on boost connection [%s]: %s\n", strerror(errno));
 	}
-	
-	mcon->hb_elapsed = 0;
-
     return;
 }
 
@@ -1050,7 +1047,6 @@ static void handle_restart(sangomabc_connection_t *mcon, ftdm_span_t *span, sang
 	ftdm_set_flag_locked(span, FTDM_SPAN_SUSPENDED);
 	ftdm_set_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_RESTARTING);
 	
-	mcon->hb_elapsed = 0;
 }
 
 /**
@@ -1452,6 +1448,7 @@ static __inline__ void init_outgoing_array(void)
  */
 static __inline__ void check_state(ftdm_span_t *span)
 {
+	ftdm_channel_t *ftdmchan = NULL;
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	int susp = ftdm_test_flag(span, FTDM_SPAN_SUSPENDED);
 	
@@ -1462,16 +1459,22 @@ static __inline__ void check_state(ftdm_span_t *span)
 	if (ftdm_test_flag(span, FTDM_SPAN_STATE_CHANGE) || susp) {
 		uint32_t j;
 		ftdm_clear_flag_locked(span, FTDM_SPAN_STATE_CHANGE);
-		for(j = 1; j <= span->chan_count; j++) {
-			if (ftdm_test_flag((span->channels[j]), FTDM_CHANNEL_STATE_CHANGE) || susp) {
+		if (susp) {
+			for (j = 0; j <= span->chan_count; j++) {
 				ftdm_mutex_lock(span->channels[j]->mutex);
 				ftdm_clear_flag((span->channels[j]), FTDM_CHANNEL_STATE_CHANGE);
-				if (susp && span->channels[j]->state != FTDM_CHANNEL_STATE_DOWN) {
-					ftdm_channel_set_state(span->channels[j], FTDM_CHANNEL_STATE_RESTART, 0);
-				}
+				ftdm_channel_set_state(span->channels[j], FTDM_CHANNEL_STATE_RESTART, 0);
 				state_advance(span->channels[j]);
 				ftdm_channel_complete_state(span->channels[j]);
 				ftdm_mutex_unlock(span->channels[j]->mutex);
+			}
+		} else {
+			while ((ftdmchan = ftdm_queue_dequeue(span->pendingchans))) {
+				ftdm_mutex_lock(ftdmchan->mutex);
+				ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
+				state_advance(ftdmchan);
+				ftdm_channel_complete_state(ftdmchan);
+				ftdm_mutex_unlock(ftdmchan->mutex);
 			}
 		}
 	}
@@ -1487,7 +1490,6 @@ static __inline__ void check_state(ftdm_span_t *span)
 			ftdm_clear_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_RESTARTING);
 			ftdm_clear_flag_locked(span, FTDM_SPAN_SUSPENDED);
 			ftdm_clear_flag((&sangoma_boost_data->mcon), MSU_FLAG_DOWN);
-			sangoma_boost_data->mcon.hb_elapsed = 0;
 			init_outgoing_array();
 		}
 	}
@@ -1596,6 +1598,18 @@ static ftdm_status_t ftdm_boost_connection_open(ftdm_span_t *span)
 		ftdm_log(FTDM_LOG_ERROR, "Error: Opening PCON Socket [%d] %s\n", sangoma_boost_data->pcon.socket, strerror(errno));
 		return FTDM_FAIL;
     }
+
+	/* try to create the boost sockets interrupt objects */
+	if (ftdm_interrupt_create(&sangoma_boost_data->pcon.sock_interrupt, sangoma_boost_data->pcon.socket) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "Span %s could not create its boost msock interrupt!\n", span->name);
+		return FTDM_FAIL;
+	}
+
+	if (ftdm_interrupt_create(&sangoma_boost_data->mcon.sock_interrupt, sangoma_boost_data->mcon.socket) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "Span %s could not create its boost psock interrupt!\n", span->name);
+		return FTDM_FAIL;
+	}
+
 	return FTDM_SUCCESS;
 }
 
@@ -1603,49 +1617,34 @@ static ftdm_status_t ftdm_boost_connection_open(ftdm_span_t *span)
   \brief wait for a boost event 
   \return -1 on error, 0 on timeout, 1 when there are events
  */
-static int ftdm_boost_wait_event(ftdm_span_t *span, int ms)
+static int ftdm_boost_wait_event(ftdm_span_t *span)
 {
-#ifndef WIN32
-		struct timeval tv = { 0, ms * 1000 };
-		sangomabc_connection_t *mcon, *pcon;
-		int max, activity;
-#endif
+		ftdm_status_t res;
+		ftdm_interrupt_t *ints[3];
+		int numints;
 		ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 
+		ftdm_queue_get_interrupt(span->pendingchans, &ints[0]);
+		numints = 1;
+		/* if in queue mode wait for both the pendingchans queue and the boost msg queue */
 		if (sangoma_boost_data->sigmod) {
-			ftdm_status_t res;
-			res =  ftdm_queue_wait(sangoma_boost_data->boost_queue, ms);
-			if (FTDM_TIMEOUT == res) {
-				return 0;
-			}
-			if (FTDM_SUCCESS != res) {
-				return -1;
-			}
-			return 1;
+			ftdm_queue_get_interrupt(sangoma_boost_data->boost_queue, &ints[1]);
+			numints = 2;
+		} 
+#ifndef __WINDOWS__
+		else {
+			/* socket mode ... */
+			ints[1] = sangoma_boost_data->mcon.sock_interrupt;
+			ints[2] = sangoma_boost_data->pcon.sock_interrupt;
+			numints = 3;
+			sangoma_boost_data->iteration = 0;
 		}
-#ifndef WIN32
-		mcon = &sangoma_boost_data->mcon;
-		pcon = &sangoma_boost_data->pcon;
-
-		FD_ZERO(&sangoma_boost_data->rfds);
-		FD_ZERO(&sangoma_boost_data->efds);
-		FD_SET(mcon->socket, &sangoma_boost_data->rfds);
-		FD_SET(mcon->socket, &sangoma_boost_data->efds);
-		FD_SET(pcon->socket, &sangoma_boost_data->rfds);
-		FD_SET(pcon->socket, &sangoma_boost_data->efds);
-		sangoma_boost_data->iteration = 0;
-
-		max = ((pcon->socket > mcon->socket) ? pcon->socket : mcon->socket) + 1;
-		if ((activity = select(max, &sangoma_boost_data->rfds, NULL, &sangoma_boost_data->efds, &tv)) < 0) {
-			return -1;
-		}
-
-		if (FD_ISSET(pcon->socket, &sangoma_boost_data->efds) || FD_ISSET(mcon->socket, &sangoma_boost_data->efds)) {
-			return -1;
-		}
-
-		return 1;
 #endif
+		res = ftdm_interrupt_multiple_wait(ints, numints, -1);
+		if (FTDM_SUCCESS != res) {
+			ftdm_log(FTDM_LOG_CRIT, "Unexpected return value from interrupt waiting: %d\n", res);
+			return -1;
+		}
 		return 0;
 }
 
@@ -1659,19 +1658,13 @@ static sangomabc_event_t *ftdm_boost_read_event(ftdm_span_t *span)
 	mcon = &sangoma_boost_data->mcon;
 	pcon = &sangoma_boost_data->pcon;
 
-	if (sangoma_boost_data->sigmod 
-#ifndef WIN32
-		|| FD_ISSET(pcon->socket, &sangoma_boost_data->rfds)
-#endif
-		) {
-		event = sangomabc_connection_readp(pcon, sangoma_boost_data->iteration);
-	}
-#ifndef WIN32
+	event = sangomabc_connection_readp(pcon, sangoma_boost_data->iteration);
+
 	/* if there is no event and this is not a sigmod-driven span it's time to try the other connection for events */
-	if (!event && !sangoma_boost_data->sigmod && FD_ISSET(mcon->socket, &sangoma_boost_data->rfds)) {
-		event = sangomabc_connection_readp(mcon, sangoma_boost_data->iteration);
+	if (!event && !sangoma_boost_data->sigmod) {
+		event = sangomabc_connection_read(mcon, sangoma_boost_data->iteration);
 	}
-#endif
+
 	return event;
 }
 
@@ -1684,7 +1677,6 @@ static void *ftdm_sangoma_boost_run(ftdm_thread_t *me, void *obj)
 {
 	ftdm_span_t *span = (ftdm_span_t *) obj;
 	sangomabc_connection_t *mcon, *pcon;
-	uint32_t ms = 10;
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 
 	mcon = &sangoma_boost_data->mcon;
@@ -1719,7 +1711,6 @@ static void *ftdm_sangoma_boost_run(ftdm_thread_t *me, void *obj)
 
 	while (ftdm_test_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_RUNNING)) {
 		sangomabc_event_t *event = NULL;
-		int activity = 0;
 		
 		if (!ftdm_running()) {
 			if (!sangoma_boost_data->sigmod) {
@@ -1735,27 +1726,17 @@ static void *ftdm_sangoma_boost_run(ftdm_thread_t *me, void *obj)
 			break;
 		}
 
-		if ((activity = ftdm_boost_wait_event(span, ms)) < 0) {
+		if (ftdm_boost_wait_event(span) < 0) {
 			ftdm_log(FTDM_LOG_ERROR, "ftdm_boost_wait_event failed\n");
 			goto error;
 		}
 		
-		if (activity) {
-			while ((event = ftdm_boost_read_event(span))) {
-				parse_sangoma_event(span, pcon, (sangomabc_short_event_t*)event);
-				sangoma_boost_data->iteration++;
-			}
+		while ((event = ftdm_boost_read_event(span))) {
+			parse_sangoma_event(span, pcon, (sangomabc_short_event_t*)event);
+			sangoma_boost_data->iteration++;
 		}
 		
-		pcon->hb_elapsed += ms;
-
-		if (ftdm_test_flag(span, FTDM_SPAN_SUSPENDED) || ftdm_test_flag(mcon, MSU_FLAG_DOWN)) {
-			pcon->hb_elapsed = 0;
-		}
-
-		if (ftdm_running()) {
-			check_state(span);
-		}
+		check_state(span);
 	}
 
 	goto end;
@@ -2235,6 +2216,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 		sangoma_boost_data->sigmod = sigmod_iface;
 		sigmod_iface->configure_span(span, ftdm_parameters);
 	} else {
+		ftdm_log(FTDM_LOG_NOTICE, "Span %s will use boost socket mode\n", span->name);
 		ftdm_set_string(sangoma_boost_data->mcon.cfg.local_ip, local_ip);
 		sangoma_boost_data->mcon.cfg.local_port = local_port;
 		ftdm_set_string(sangoma_boost_data->mcon.cfg.remote_ip, remote_ip);

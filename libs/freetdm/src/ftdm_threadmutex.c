@@ -40,6 +40,7 @@ struct ftdm_mutex {
 
 #else
 #include <pthread.h>
+#include <poll.h>
 
 #define FTDM_THREAD_CALLING_CONVENTION
 
@@ -49,15 +50,17 @@ struct ftdm_mutex {
 
 #endif
 
-struct ftdm_condition {
+struct ftdm_interrupt {
+	ftdm_socket_t device;
 #ifdef WIN32
-	HANDLE condition;
+	/* for generic interruption */
+	HANDLE event;
 #else
-	pthread_cond_t condition;
+	/* for generic interruption */
+	int readfd;
+	int writefd;
 #endif
-	ftdm_mutex_t *mutex;
 };
-
 
 struct ftdm_thread {
 #ifdef WIN32
@@ -238,123 +241,207 @@ FT_DECLARE(ftdm_status_t) _ftdm_mutex_unlock(ftdm_mutex_t *mutex)
 }
 
 
-FT_DECLARE(ftdm_status_t) ftdm_condition_create(ftdm_condition_t **incondition, ftdm_mutex_t *mutex)
+FT_DECLARE(ftdm_status_t) ftdm_interrupt_create(ftdm_interrupt_t **ininterrupt, ftdm_socket_t device)
 {
-	ftdm_condition_t *condition = NULL;
+	ftdm_interrupt_t *interrupt = NULL;
+#ifndef WIN32
+	int fds[2];
+#endif
 
-	ftdm_assert_return(incondition != NULL, FTDM_FAIL, "Condition double pointer is null!\n");
-	ftdm_assert_return(mutex != NULL, FTDM_FAIL, "Mutex for condition must not be null!\n");
+	ftdm_assert_return(ininterrupt != NULL, FTDM_FAIL, "interrupt double pointer is null!\n");
 
-	condition = ftdm_calloc(1, sizeof(*condition));
-	if (!condition) {
+	interrupt = ftdm_calloc(1, sizeof(*interrupt));
+	if (!interrupt) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to allocate interrupt memory\n");
 		return FTDM_FAIL;
 	}
 
-	condition->mutex = mutex;
+	interrupt->device = device;
 #ifdef WIN32
-	condition->condition = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if (!condition->condition) {
+	interrupt->interrupt = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (!interrupt->interrupt) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to allocate interrupt event\n");
 		goto failed;
 	}
 #else
-	if (pthread_cond_init(&condition->condition, NULL)) {
+	if (pipe(fds)) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to allocate interrupt pipe: %s\n", strerror(errno));
 		goto failed;
 	}
+	interrupt->readfd = fds[0];
+	interrupt->writefd = fds[1];
 #endif
 
-	*incondition = condition;
+	*ininterrupt = interrupt;
 	return FTDM_SUCCESS;
 
 failed:
-	if (condition) {
-		ftdm_safe_free(condition);
+	if (interrupt) {
+#ifndef WIN32
+		if (interrupt->readfd) {
+			close(interrupt->readfd);
+			close(interrupt->writefd);
+			interrupt->readfd = -1;
+			interrupt->writefd = -1;
+		}
+#endif
+		ftdm_safe_free(interrupt);
 	}
 	return FTDM_FAIL;
 }
 
 #define ONE_BILLION 1000000000
 
-FT_DECLARE(ftdm_status_t) ftdm_condition_wait(ftdm_condition_t *condition, int ms)
+FT_DECLARE(ftdm_status_t) ftdm_interrupt_wait(ftdm_interrupt_t *interrupt, int ms)
 {
+	int num = 1;
 #ifdef WIN32
 	DWORD res = 0;
+	HANDLE ints[2];
+#else
+	int res = 0;
+	struct pollfd ints[2];
+	char pipebuf[255];
 #endif
-	ftdm_assert_return(condition != NULL, FTDM_FAIL, "Condition is null!\n");
+
+	ftdm_assert_return(interrupt != NULL, FTDM_FAIL, "Condition is null!\n");
+
+
+	/* start implementation */
 #ifdef WIN32
-	ftdm_mutex_unlock(condition->mutex);
-	res = WaitForSingleObject(condition->condition, ms > 0 ? ms : INFINITE);
-	ftdm_mutex_lock(condition->mutex);
+	ints[0] = interrupt->event;
+	if (interrupt->device != FTDM_INVALID_SOCKET) {
+		num++;
+		ints[1] = interrupt->device;
+	}
+	res = WaitForMultipleObjects(num, &ints, FALSE, ms >= 0 ? ms : INFINITE);
 	switch (res) {
-	case WAIT_ABANDONED:
 	case WAIT_TIMEOUT:
 		return FTDM_TIMEOUT;
 	case WAIT_FAILED:
+	case WAIT_ABANDONED: /* is it right to fail with abandoned? */
 		return FTDM_FAIL;
-	case WAIT_OBJECT_0:
-		return FTDM_SUCCESS;
 	default:
-		ftdm_log(FTDM_LOG_ERROR, "Error waiting for freetdm condition event (WaitForSingleObject returned %d)\n", res);
-		return FTDM_FAIL;
+		if (res >= (sizeof(ints)/sizeof(ints[0]))) {
+			ftdm_log(FTDM_LOG_ERROR, "Error waiting for freetdm interrupt event (WaitForSingleObject returned %d)\n", res);
+			return FTDM_FAIL;
+		}
+		return FTDM_SUCCESS;
 	}
 #else
-	int res = 0;
-	if (ms > 0) {
-		struct timeval t;
-		struct timespec waitms;
-		gettimeofday(&t, NULL);
-		waitms.tv_sec = t.tv_sec + ( ms / 1000 );
-		waitms.tv_nsec = 1000*(t.tv_usec + (1000 * ( ms % 1000 )));
-		if (waitms.tv_nsec >= ONE_BILLION) {
-				waitms.tv_sec++;
-				waitms.tv_nsec -= ONE_BILLION;
-		}
-		res = pthread_cond_timedwait(&condition->condition, &condition->mutex->mutex, &waitms);
-	} else {
-		res = pthread_cond_wait(&condition->condition, &condition->mutex->mutex);
-	}
-	if (res != 0) {
-		if (res == ETIMEDOUT) {
-			return FTDM_TIMEOUT;
-		}
+	ints[0].fd = interrupt->readfd;
+	ints[0].events = POLLIN;
+	ints[0].revents = 0;
 
-		ftdm_log(FTDM_LOG_CRIT,"pthread_cond_timedwait failed (%d)\n", res);
+	if (interrupt->device != FTDM_INVALID_SOCKET) {
+		num++;
+		ints[1].fd = interrupt->device;
+		ints[1].events = POLLIN;
+		ints[1].revents = 0;
+	}
+
+	res = poll(ints, num, ms);
+
+	if (res == -1) {
+		ftdm_log(FTDM_LOG_CRIT, "interrupt poll failed (%s)\n", strerror(errno));
 		return FTDM_FAIL;
 	}
+
+	if (res == 0) {
+		return FTDM_TIMEOUT;
+	}
+
+	if (ints[0].revents & POLLIN) {
+		res = read(ints[0].fd, pipebuf, sizeof(pipebuf));
+		if (res == -1) {
+			ftdm_log(FTDM_LOG_CRIT, "reading interrupt descriptor failed (%s)\n", strerror(errno));
+		}
+	}
+
 	return FTDM_SUCCESS;
 #endif
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_condition_signal(ftdm_condition_t *condition)
+FT_DECLARE(ftdm_status_t) ftdm_interrupt_signal(ftdm_interrupt_t *interrupt)
 {
-	ftdm_assert_return(condition != NULL, FTDM_FAIL, "Condition is null!\n");
+	ftdm_assert_return(interrupt != NULL, FTDM_FAIL, "Interrupt is null!\n");
 #ifdef WIN32
-	if (!SetEvent(condition->condition)) {
+	if (!SetEvent(interrupt->interrupt)) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to signal interrupt\n");
 		return FTDM_FAIL;
 	}
 #else
 	int err;
-	if ((err = pthread_cond_signal(&condition->condition))) {
-		ftdm_log(FTDM_LOG_ERROR, "Failed to signal condition %d:%s\n", err, strerror(err));
+	if ((err = write(interrupt->writefd, "w", 1)) != 1) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to signal interrupt: %s\n", errno, strerror(errno));
 		return FTDM_FAIL;
 	}
 #endif
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_condition_destroy(ftdm_condition_t **incondition)
+FT_DECLARE(ftdm_status_t) ftdm_interrupt_destroy(ftdm_interrupt_t **ininterrupt)
 {
-	ftdm_condition_t *condition = NULL;
-	ftdm_assert_return(incondition != NULL, FTDM_FAIL, "Condition null when destroying!\n");
-	condition = *incondition;
+	ftdm_interrupt_t *interrupt = NULL;
+	ftdm_assert_return(ininterrupt != NULL, FTDM_FAIL, "Interrupt null when destroying!\n");
+	interrupt = *ininterrupt;
 #ifdef WIN32
-	CloseHandle(condition->condition);
+	CloseHandle(interrupt->interrupt);
 #else
-	if (pthread_cond_destroy(&condition->condition)) {
+	close(interrupt->readfd);
+	close(interrupt->writefd);
+	interrupt->readfd = -1;
+	interrupt->writefd = -1;
+#endif
+	ftdm_safe_free(interrupt);
+	*ininterrupt = NULL;
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interrupts[], ftdm_size_t size, int ms)
+{
+#ifndef WIN32
+	int i;
+	int res = 0;
+	int numdevices = 0;
+	char pipebuf[255];
+	struct pollfd ints[size*2];
+
+	memset(&ints, 0, sizeof(ints));
+
+	for (i = 0; i < size; i++) {
+		ints[i].events = POLLIN;
+		ints[i].revents = 0;
+		ints[i].fd = interrupts[i]->readfd;
+		if (interrupts[i]->device != FTDM_INVALID_SOCKET) {
+			ints[i+numdevices].events = POLLIN;
+			ints[i+numdevices].revents = 0;
+			ints[i+numdevices].fd = interrupts[i]->device;
+			numdevices++;
+		}
+	}
+
+	res = poll(ints, size + numdevices, ms);
+
+	if (res == -1) {
+		ftdm_log(FTDM_LOG_CRIT, "interrupt poll failed (%s)\n", strerror(errno));
 		return FTDM_FAIL;
 	}
+
+	if (res == 0) {
+		return FTDM_TIMEOUT;
+	}
+
+	for (i = size; i < ftdm_array_len(ints); i++) {
+		if (ints[i].revents & POLLIN) {
+			res = read(ints[0].fd, pipebuf, sizeof(pipebuf));
+			if (res == -1) {
+				ftdm_log(FTDM_LOG_CRIT, "reading interrupt descriptor failed (%s)\n", strerror(errno));
+			}
+		}
+	}
+
 #endif
-	ftdm_safe_free(condition);
-	*incondition = NULL;
 	return FTDM_SUCCESS;
 }
 

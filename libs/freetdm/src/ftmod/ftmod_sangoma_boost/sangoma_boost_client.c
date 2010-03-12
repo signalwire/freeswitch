@@ -311,11 +311,7 @@ sangomabc_event_t *__sangomabc_connection_read(sangomabc_connection_t *mcon, int
 		ftdm_log(FTDM_LOG_CRIT, "Invalid Boost Version %i  Expecting %i\n",mcon->event.version, SIGBOOST_VERSION);
 	}   
 
-	/* Must check for < 0 cannot rely on bytes > MIN_SIZE_... compiler issue */
-	if (bytes < 0) {
-		msg_ok=0;
-
-	} else if ((bytes >= MIN_SIZE_CALLSTART_MSG) && boost_full_event(mcon->event.event_id)) {
+	if ((bytes >= MIN_SIZE_CALLSTART_MSG) && boost_full_event(mcon->event.event_id)) {
 		msg_ok=1;
 		
 	} else if (bytes == sizeof(sangomabc_short_event_t)) {

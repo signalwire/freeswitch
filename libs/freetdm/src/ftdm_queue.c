@@ -38,11 +38,12 @@ static ftdm_status_t ftdm_std_queue_create(ftdm_queue_t **outqueue, ftdm_size_t 
 static ftdm_status_t ftdm_std_queue_enqueue(ftdm_queue_t *queue, void *obj);
 static void *ftdm_std_queue_dequeue(ftdm_queue_t *queue);
 static ftdm_status_t ftdm_std_queue_wait(ftdm_queue_t *queue, int ms);
+static ftdm_status_t ftdm_std_queue_get_interrupt(ftdm_queue_t *queue, ftdm_interrupt_t **interrupt);
 static ftdm_status_t ftdm_std_queue_destroy(ftdm_queue_t **inqueue);
 
 struct ftdm_queue {
 	ftdm_mutex_t *mutex;
-	ftdm_condition_t *condition;
+	ftdm_interrupt_t *interrupt;
 	ftdm_size_t capacity;
 	ftdm_size_t size;
 	unsigned rindex;
@@ -56,6 +57,7 @@ FT_DECLARE_DATA ftdm_queue_handler_t g_ftdm_queue_handler =
 	/*.enqueue = */ ftdm_std_queue_enqueue,
 	/*.dequeue = */ ftdm_std_queue_dequeue,
 	/*.wait = */ ftdm_std_queue_wait,
+	/*.get_interrupt = */ ftdm_std_queue_get_interrupt,
 	/*.destroy = */ ftdm_std_queue_destroy
 };
 
@@ -66,6 +68,7 @@ FT_DECLARE(ftdm_status_t) ftdm_global_set_queue_handler(ftdm_queue_handler_t *ha
 		!handler->enqueue || 
 		!handler->dequeue || 
 		!handler->wait || 
+		!handler->get_interrupt || 
 		!handler->destroy) {
 		return FTDM_FAIL;
 	}
@@ -95,7 +98,7 @@ static ftdm_status_t ftdm_std_queue_create(ftdm_queue_t **outqueue, ftdm_size_t 
 		goto failed;
 	}
 
-	if (ftdm_condition_create(&queue->condition, queue->mutex) != FTDM_SUCCESS) {
+	if (ftdm_interrupt_create(&queue->interrupt, FTDM_INVALID_SOCKET) != FTDM_SUCCESS) {
 		goto failed;
 	}
 
@@ -104,8 +107,8 @@ static ftdm_status_t ftdm_std_queue_create(ftdm_queue_t **outqueue, ftdm_size_t 
 
 failed:
 	if (queue) {
-		if (queue->condition) {
-			ftdm_condition_destroy(&queue->condition);
+		if (queue->interrupt) {
+			ftdm_interrupt_destroy(&queue->interrupt);
 		}
 		if (queue->mutex) {
 			ftdm_mutex_destroy(&queue->mutex);
@@ -139,7 +142,7 @@ static ftdm_status_t ftdm_std_queue_enqueue(ftdm_queue_t *queue, void *obj)
 	status = FTDM_SUCCESS;
 
 	/* wake up queue reader */
-	ftdm_condition_signal(queue->condition);
+	ftdm_interrupt_signal(queue->interrupt);
 
 done:
 
@@ -188,7 +191,7 @@ static ftdm_status_t ftdm_std_queue_wait(ftdm_queue_t *queue, int ms)
 	}
 
 	/* no elements on the queue, wait for someone to write an element */
-	ret = ftdm_condition_wait(queue->condition, ms);
+	ret = ftdm_interrupt_wait(queue->interrupt, ms);
 
 	/* got an element or timeout, bail out */
 	ftdm_mutex_unlock(queue->mutex);
@@ -196,14 +199,22 @@ static ftdm_status_t ftdm_std_queue_wait(ftdm_queue_t *queue, int ms)
 	return ret;
 }
 
+static ftdm_status_t ftdm_std_queue_get_interrupt(ftdm_queue_t *queue, ftdm_interrupt_t **interrupt)
+{
+	ftdm_assert_return(queue != NULL, FTDM_FAIL, "Queue is null!\n");
+	ftdm_assert_return(interrupt != NULL, FTDM_FAIL, "Queue is null!\n");
+	*interrupt = queue->interrupt;
+	return FTDM_SUCCESS;
+}
+
 static ftdm_status_t ftdm_std_queue_destroy(ftdm_queue_t **inqueue)
 {
 	ftdm_queue_t *queue = NULL;
-	ftdm_assert_return(inqueue != NULL, FTDM_FAIL, "Queue is null!");
-	ftdm_assert_return(*inqueue != NULL, FTDM_FAIL, "Queue is null!");
+	ftdm_assert_return(inqueue != NULL, FTDM_FAIL, "Queue is null!\n");
+	ftdm_assert_return(*inqueue != NULL, FTDM_FAIL, "Queue is null!\n");
 
 	queue = *inqueue;
-	ftdm_condition_destroy(&queue->condition);
+	ftdm_interrupt_destroy(&queue->interrupt);
 	ftdm_mutex_destroy(&queue->mutex);
 	ftdm_safe_free(queue->elements);
 	ftdm_safe_free(queue);

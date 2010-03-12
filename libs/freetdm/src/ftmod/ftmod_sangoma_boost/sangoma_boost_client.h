@@ -105,10 +105,10 @@ struct sangomabc_connection {
 	unsigned int txwindow;
 	unsigned int rxseq_reset;
 	sangomabc_ip_cfg_t cfg;
-	uint32_t hb_elapsed;
 	/* boost signaling mod interface pointer (if not working in TCP mode) */
 	boost_sigmod_interface_t *sigmod;
 	ftdm_queue_t *boost_queue;	
+	ftdm_interrupt_t *sock_interrupt;
 	ftdm_span_t *span;
 };
 

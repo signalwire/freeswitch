@@ -49,6 +49,8 @@
 #include "ftdm_pika.h"
 #endif
 
+#define SPAN_PENDING_CHANS_QUEUE_SIZE 1000
+
 static int time_is_init = 0;
 
 static void time_init(void)
@@ -410,6 +412,7 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 	}
 
 	/* destroy final basic resources of the span data structure */
+	ftdm_queue_destroy(&span->pendingchans);
 	ftdm_mutex_unlock(span->mutex);
 	ftdm_mutex_destroy(&span->mutex);
 	ftdm_safe_free(span->signal_data);
@@ -504,16 +507,19 @@ FT_DECLARE(ftdm_status_t) ftdm_span_create(ftdm_io_interface_t *fio, ftdm_span_t
 	ftdm_span_t *new_span = NULL;
 	ftdm_status_t status = FTDM_FAIL;
 
-	assert(fio != NULL);
+	ftdm_assert(fio != NULL, "No IO provided\n");
 
 	ftdm_mutex_lock(globals.mutex);
 
 	if (globals.span_index < FTDM_MAX_SPANS_INTERFACE) {
-		new_span = ftdm_malloc(sizeof(*new_span));
-		assert(new_span);
-		memset(new_span, 0, sizeof(*new_span));
+		new_span = ftdm_calloc(sizeof(*new_span), 1);
+		ftdm_assert(new_span, "allocating span failed\n");
+
 		status = ftdm_mutex_create(&new_span->mutex);
-		assert(status == FTDM_SUCCESS);
+		ftdm_assert(status == FTDM_SUCCESS, "mutex creation failed\n");
+
+		status = ftdm_queue_create(&new_span->pendingchans, SPAN_PENDING_CHANS_QUEUE_SIZE);
+		ftdm_assert(status == FTDM_SUCCESS, "span chans queue creation failed\n");
 		
 		ftdm_set_flag(new_span, FTDM_SPAN_CONFIGURED);
 		new_span->span_id = ++globals.span_index;
@@ -1154,7 +1160,12 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(ftdm_channel_t *ftdmchan, ftdm_
 
 	if (ok) {
 		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);	
-		ftdm_set_flag_locked(ftdmchan->span, FTDM_SPAN_STATE_CHANGE);	
+
+		ftdm_mutex_lock(ftdmchan->span->mutex);
+		ftdm_set_flag(ftdmchan->span, FTDM_SPAN_STATE_CHANGE);
+		ftdm_queue_enqueue(ftdmchan->span->pendingchans, ftdmchan);
+		ftdm_mutex_unlock(ftdmchan->span->mutex);
+
 		ftdmchan->last_state = ftdmchan->state; 
 		ftdmchan->state = state;
 	}
@@ -3155,44 +3166,85 @@ FT_DECLARE(int) ftdm_load_modules(void)
 
 FT_DECLARE(ftdm_status_t) ftdm_unload_modules(void)
 {
-	ftdm_hash_iterator_t *i;
-	ftdm_dso_lib_t lib;
+	ftdm_hash_iterator_t *i = NULL;
+	ftdm_dso_lib_t lib = NULL;
+	char modpath[255] = { 0 };
 
+	/* stop signaling interfaces first as signaling depends on I/O and not the other way around */
 	for (i = hashtable_first(globals.module_hash); i; i = hashtable_next(i)) {
-		const void *key;
-		void *val;
+		const void *key = NULL;
+		void *val = NULL;
+		ftdm_module_t *mod = NULL;
 
 		hashtable_this(i, &key, NULL, &val);
 		
-		if (key && val) {
-			ftdm_module_t *mod = (ftdm_module_t *) val;
-
-			if (!mod) {
-				continue;
-			}
-
-			if (mod->io_unload) {
-				if (mod->io_unload() == FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_INFO, "Unloading IO %s\n", mod->name);
-				} else {
-					ftdm_log(FTDM_LOG_ERROR, "Error unloading IO %s\n", mod->name);
-				}
-			} 
-
-			if (mod->sig_unload) {
-				if (mod->sig_unload() == FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_INFO, "Unloading SIG %s\n", mod->name);
-				} else {
-					ftdm_log(FTDM_LOG_ERROR, "Error unloading SIG %s\n", mod->name);
-				}
-			} 
-			
-
-			ftdm_log(FTDM_LOG_INFO, "Unloading %s\n", mod->path);
-			lib = mod->lib;
-			ftdm_dso_destroy(&lib);
-			
+		if (!key || !val) {
+			continue;
 		}
+		
+		mod = (ftdm_module_t *) val;
+
+		if (!mod->sig_unload) {
+			continue;
+		}
+
+		ftdm_log(FTDM_LOG_INFO, "Unloading signaling interface %s\n", mod->name);
+		
+		if (mod->sig_unload() != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_ERROR, "Error unloading signaling interface %s\n", mod->name);
+			continue;
+		}
+
+		ftdm_log(FTDM_LOG_INFO, "Unloaded signaling interface %s\n", mod->name);
+	}
+
+	/* Now go ahead with I/O interfaces */
+	for (i = hashtable_first(globals.module_hash); i; i = hashtable_next(i)) {
+		const void *key = NULL;
+		void *val = NULL;
+		ftdm_module_t *mod = NULL;
+
+		hashtable_this(i, &key, NULL, &val);
+		
+		if (!key || !val) {
+			continue;
+		}
+		
+		mod = (ftdm_module_t *) val;
+
+		if (!mod->io_unload) {
+			continue;
+		}
+
+		ftdm_log(FTDM_LOG_INFO, "Unloading I/O interface %s\n", mod->name);
+		
+		if (mod->io_unload() != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_ERROR, "Error unloading I/O interface %s\n", mod->name);
+			continue;
+		}
+
+		ftdm_log(FTDM_LOG_INFO, "Unloaded I/O interface %s\n", mod->name);
+	}
+
+	/* Now unload the actual shared object/dll */
+	for (i = hashtable_first(globals.module_hash); i; i = hashtable_next(i)) {
+		ftdm_module_t *mod = NULL;
+		const void *key = NULL;
+		void *val = NULL;
+
+		hashtable_this(i, &key, NULL, &val);
+
+		if (!key || !val) {
+			continue;
+		}
+
+		mod = (ftdm_module_t *) val;
+
+		lib = mod->lib;
+		snprintf(modpath, sizeof(modpath), "%s", mod->path);
+		ftdm_log(FTDM_LOG_INFO, "Unloading module %s\n", modpath);
+		ftdm_dso_destroy(&lib);
+		ftdm_log(FTDM_LOG_INFO, "Unloaded module %s\n", modpath);
 	}
 
 	return FTDM_SUCCESS;
@@ -3506,8 +3558,12 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 	time_end();
 
 	globals.running = 0;	
+
+	globals.span_index = 0;
+
 	ftdm_span_close_all();
-	ftdm_sleep(1000);
+	
+	ftdm_unload_modules();
 
 	ftdm_mutex_lock(globals.span_mutex);
 	for (sp = globals.spans; sp;) {
@@ -3528,10 +3584,6 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 	}
 	globals.spans = NULL;
 	ftdm_mutex_unlock(globals.span_mutex);
-
-	globals.span_index = 0;
-	
-	ftdm_unload_modules();
 
 	ftdm_mutex_lock(globals.mutex);
 	hashtable_destroy(globals.interface_hash);

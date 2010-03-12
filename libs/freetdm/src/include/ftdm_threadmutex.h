@@ -32,7 +32,7 @@ extern "C" {
 #endif
 typedef struct ftdm_mutex ftdm_mutex_t;
 typedef struct ftdm_thread ftdm_thread_t;
-typedef struct ftdm_condition ftdm_condition_t;
+typedef struct ftdm_interrupt ftdm_interrupt_t;
 typedef void *(*ftdm_thread_function_t) (ftdm_thread_t *, void *);
 
 FT_DECLARE(ftdm_status_t) ftdm_thread_create_detached(ftdm_thread_function_t func, void *data);
@@ -43,10 +43,11 @@ FT_DECLARE(ftdm_status_t) ftdm_mutex_destroy(ftdm_mutex_t **mutex);
 FT_DECLARE(ftdm_status_t) _ftdm_mutex_lock(ftdm_mutex_t *mutex);
 FT_DECLARE(ftdm_status_t) _ftdm_mutex_trylock(ftdm_mutex_t *mutex);
 FT_DECLARE(ftdm_status_t) _ftdm_mutex_unlock(ftdm_mutex_t *mutex);
-FT_DECLARE(ftdm_status_t) ftdm_condition_create(ftdm_condition_t **cond, ftdm_mutex_t *mutex);
-FT_DECLARE(ftdm_status_t) ftdm_condition_destroy(ftdm_condition_t **cond);
-FT_DECLARE(ftdm_status_t) ftdm_condition_signal(ftdm_condition_t *cond);
-FT_DECLARE(ftdm_status_t) ftdm_condition_wait(ftdm_condition_t *cond, int ms);
+FT_DECLARE(ftdm_status_t) ftdm_interrupt_create(ftdm_interrupt_t **cond, ftdm_socket_t device);
+FT_DECLARE(ftdm_status_t) ftdm_interrupt_destroy(ftdm_interrupt_t **cond);
+FT_DECLARE(ftdm_status_t) ftdm_interrupt_signal(ftdm_interrupt_t *cond);
+FT_DECLARE(ftdm_status_t) ftdm_interrupt_wait(ftdm_interrupt_t *cond, int ms);
+FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interrupts[], ftdm_size_t size, int ms);
 
 #ifdef __cplusplus
 }

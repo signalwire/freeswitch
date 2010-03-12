@@ -381,6 +381,42 @@ struct ftdm_event {
 	void *data;
 };
 
+typedef struct ftdm_queue ftdm_queue_t;
+typedef ftdm_status_t (*ftdm_queue_create_func_t)(ftdm_queue_t **queue, ftdm_size_t capacity);
+typedef ftdm_status_t (*ftdm_queue_enqueue_func_t)(ftdm_queue_t *queue, void *obj);
+typedef void *(*ftdm_queue_dequeue_func_t)(ftdm_queue_t *queue);
+typedef ftdm_status_t (*ftdm_queue_wait_func_t)(ftdm_queue_t *queue, int ms);
+typedef ftdm_status_t (*ftdm_queue_get_interrupt_func_t)(ftdm_queue_t *queue, ftdm_interrupt_t **interrupt);
+typedef ftdm_status_t (*ftdm_queue_destroy_func_t)(ftdm_queue_t **queue);
+typedef struct ftdm_queue_handler {
+	ftdm_queue_create_func_t create;
+	ftdm_queue_enqueue_func_t enqueue;
+	ftdm_queue_dequeue_func_t dequeue;
+	ftdm_queue_wait_func_t wait;
+	ftdm_queue_get_interrupt_func_t get_interrupt;
+	ftdm_queue_destroy_func_t destroy;
+} ftdm_queue_handler_t;
+FT_DECLARE_DATA extern ftdm_queue_handler_t g_ftdm_queue_handler;
+
+/*! brief create a new queue */
+#define ftdm_queue_create(queue, capacity) g_ftdm_queue_handler.create(queue, capacity)
+
+/*! Enqueue an object */
+#define ftdm_queue_enqueue(queue, obj) g_ftdm_queue_handler.enqueue(queue, obj)
+
+/*! dequeue an object from the queue */
+#define ftdm_queue_dequeue(queue) g_ftdm_queue_handler.dequeue(queue)
+
+/*! wait ms milliseconds for a queue to have available objects, -1 to wait forever */
+#define ftdm_queue_wait(queue, ms) g_ftdm_queue_handler.wait(queue, ms)
+
+/*! get the internal interrupt object (to wait for elements to be added from the outside bypassing ftdm_queue_wait) */
+#define ftdm_queue_get_interrupt(queue, ms) g_ftdm_queue_handler.get_interrupt(queue, ms)
+
+/*! destroy the queue */ 
+#define ftdm_queue_destroy(queue) g_ftdm_queue_handler.destroy(queue)
+
+
 #define FTDM_TOKEN_STRLEN 128
 #define FTDM_MAX_TOKENS 10
 
@@ -621,6 +657,7 @@ struct ftdm_span {
 	int suggest_chan_id;
 	ftdm_state_map_t *state_map;
 	ftdm_caller_data_t default_caller_data;
+	ftdm_queue_t *pendingchans;
 	struct ftdm_span *next;
 };
 
@@ -672,36 +709,6 @@ struct ftdm_io_interface {
 	fio_span_next_event_t next_event;
 	fio_api_t api;
 };
-
-typedef struct ftdm_queue ftdm_queue_t;
-typedef ftdm_status_t (*ftdm_queue_create_func_t)(ftdm_queue_t **queue, ftdm_size_t capacity);
-typedef ftdm_status_t (*ftdm_queue_enqueue_func_t)(ftdm_queue_t *queue, void *obj);
-typedef void *(*ftdm_queue_dequeue_func_t)(ftdm_queue_t *queue);
-typedef ftdm_status_t (*ftdm_queue_wait_func_t)(ftdm_queue_t *queue, int ms);
-typedef ftdm_status_t (*ftdm_queue_destroy_func_t)(ftdm_queue_t **queue);
-typedef struct ftdm_queue_handler {
-	ftdm_queue_create_func_t create;
-	ftdm_queue_enqueue_func_t enqueue;
-	ftdm_queue_dequeue_func_t dequeue;
-	ftdm_queue_wait_func_t wait;
-	ftdm_queue_destroy_func_t destroy;
-} ftdm_queue_handler_t;
-FT_DECLARE_DATA extern ftdm_queue_handler_t g_ftdm_queue_handler;
-
-/*! brief create a new queue */
-#define ftdm_queue_create(queue, capacity) g_ftdm_queue_handler.create(queue, capacity)
-
-/*! Enqueue an object */
-#define ftdm_queue_enqueue(queue, obj) g_ftdm_queue_handler.enqueue(queue, obj)
-
-/*! dequeue an object from the queue */
-#define ftdm_queue_dequeue(queue) g_ftdm_queue_handler.dequeue(queue)
-
-/*! wait ms milliseconds for a queue to have available objects, -1 to wait forever */
-#define ftdm_queue_wait(queue, ms) g_ftdm_queue_handler.wait(queue, ms)
-
-/*! destroy the queue */ 
-#define ftdm_queue_destroy(queue) g_ftdm_queue_handler.destroy(queue)
 
 /*! \brief Override the default queue handler */
 FT_DECLARE(ftdm_status_t) ftdm_global_set_queue_handler(ftdm_queue_handler_t *handler);
@@ -889,6 +896,8 @@ FIO_CODEC_FUNCTION(fio_alaw2ulaw);
   \command it the socket
 */
 #define ftdm_socket_close(it) if (it > -1) { close(it); it = -1;}
+
+#define ftdm_array_len(array) sizeof(array)/sizeof(array[0])
 
 static __inline__ void ftdm_abort(void)
 {
