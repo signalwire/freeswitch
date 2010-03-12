@@ -99,6 +99,8 @@ typedef struct {
 	int32_t idx;
 	uint32_t hups;
 	char file[512];
+	char error_file[512];
+	int confirm_timeout;
 	char key[80];
 	uint8_t early_ok;
 	uint8_t ring_ready;
@@ -133,6 +135,8 @@ typedef enum {
 struct key_collect {
 	char *key;
 	char *file;
+	char *error_file;
+	int confirm_timeout;
 	switch_core_session_t *session;
 };
 
@@ -141,7 +145,6 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 	struct key_collect *collect = (struct key_collect *) obj;
 	switch_channel_t *channel = switch_core_session_get_channel(collect->session);
 	char buf[10] = SWITCH_BLANK_STRING;
-	char *p, term;
 	switch_application_interface_t *application_interface = NULL;
 
 	if (collect->session) {
@@ -157,7 +160,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 	if (!strcasecmp(collect->key, "exec")) {
 		char *data;
 		char *app_name, *app_data;
-
+		
 		if (!(data = collect->file)) {
 			goto wbreak;
 		}
@@ -194,28 +197,33 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 	}
 
 	while (switch_channel_ready(channel)) {
+		switch_size_t len = strlen(collect->key);
+		const char *file = collect->file;
+		switch_status_t status;
+
 		memset(buf, 0, sizeof(buf));
 
-		if (collect->file) {
-			switch_status_t status;
-			switch_input_args_t args = { 0 };
-			args.buf = buf;
-			args.buflen = sizeof(buf);
-			status = switch_ivr_play_file(collect->session, NULL, collect->file, &args);
-			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(collect->session), SWITCH_LOG_ERROR, "%s Error Playing File!",
-								  switch_channel_get_name(channel));
-				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			}
-		} else {
-			switch_ivr_collect_digits_count(collect->session, buf, sizeof(buf), 1, SWITCH_BLANK_STRING, &term, 0, 0, 0);
+		if (zstr(file)) {
+			file = "silence";
 		}
-
-		for (p = buf; *p; p++) {
-			if (*collect->key == *p) {
-				switch_channel_set_flag(channel, CF_WINNER);
-				goto wbreak;
-			}
+		
+		status = switch_ivr_read(collect->session,
+								 len,
+								 len,
+								 collect->file, NULL, buf, sizeof(buf), collect->confirm_timeout, "#");
+		
+		
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_TOO_SMALL) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(collect->session), SWITCH_LOG_ERROR, "%s Error Playing File!",
+							  switch_channel_get_name(channel));
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		}
+		
+		if (!strcmp(collect->key, buf)) {
+			switch_channel_set_flag(channel, CF_WINNER);
+			goto wbreak;
+		} else if (collect->error_file) {
+			switch_ivr_play_file(collect->session, NULL, collect->error_file, NULL);
 		}
 	}
   wbreak:
@@ -625,6 +633,16 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 					if (!zstr(oglobals->file)) {
 						collect->file = switch_core_session_strdup(originate_status[i].peer_session, oglobals->file);
 					}
+					if (!zstr(oglobals->error_file)) {
+						collect->error_file = switch_core_session_strdup(originate_status[i].peer_session, oglobals->error_file);
+					}
+
+					if (oglobals->confirm_timeout) {
+						collect->confirm_timeout = oglobals->confirm_timeout;
+					} else {
+						collect->confirm_timeout = 5000;
+					}
+
 					switch_channel_audio_sync(originate_status[i].peer_channel);
 					collect->session = originate_status[i].peer_session;
 					launch_collect_thread(collect);
@@ -1987,6 +2005,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		if ((var = switch_event_get_header(var_event, "group_confirm_file"))) {
 			switch_copy_string(oglobals.file, var, sizeof(oglobals.file));
 		}
+		if ((var = switch_event_get_header(var_event, "group_confirm_error_file"))) {
+			switch_copy_string(oglobals.error_file, var, sizeof(oglobals.error_file));
+		}
+		if ((var = switch_event_get_header(var_event, "group_confirm_read_timeout"))) {
+			int tmp = atoi(var);
+
+			if (tmp >= 0) {
+				oglobals.confirm_timeout = tmp;
+			}
+
+		}
 	}
 	/* When using the AND operator, the fail_on_single_reject flag may be set in order to indicate that a single
 	   rejections should terminate the attempt rather than a timeout, answer, or rejection by all. 
@@ -2000,6 +2029,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if ((*oglobals.file != '\0') && (!strcmp(oglobals.file, "undef"))) {
 		*oglobals.file = '\0';
+	}
+
+	if ((*oglobals.error_file != '\0') && (!strcmp(oglobals.error_file, "undef"))) {
+		*oglobals.error_file = '\0';
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "bridge_early_media"))) {
