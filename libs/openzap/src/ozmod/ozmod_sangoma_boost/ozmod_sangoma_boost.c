@@ -726,6 +726,7 @@ static __inline__ void advance_chan_states(zap_channel_t *zchan);
 static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_event_t *event)
 {
 	zap_channel_t *zchan;
+	int hangup_cause = ZAP_CAUSE_CALL_REJECTED;
 
 	if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 0))) {
 		if ((zchan = find_zchan(span, (sangomabc_short_event_t*)event, 1))) {
@@ -793,16 +794,18 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 	return;
 
  error:
-	if (!zchan) {
+	if (zchan) {
+		hangup_cause = zchan->caller_data.hangup_cause;
+	} else {
 		zap_log(ZAP_LOG_CRIT, "START CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
+		hangup_cause = ZAP_CAUSE_REQUESTED_CHAN_UNAVAIL;
 	}
-
 	sangomabc_exec_command(mcon,
 						   event->span,
 						   event->chan,
 						   0,
 						   SIGBOOST_EVENT_CALL_START_NACK,
-						   0, 0);
+						   hangup_cause, 0);
 		
 }
 

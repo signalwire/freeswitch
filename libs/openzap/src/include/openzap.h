@@ -716,6 +716,7 @@ OZ_DECLARE(zap_status_t) zap_span_find_by_name(const char *name, zap_span_t **sp
 OZ_DECLARE(char *) zap_api_execute(const char *type, const char *cmd);
 OZ_DECLARE(int) zap_vasprintf(char **ret, const char *fmt, va_list ap);
 OZ_DECLARE(zap_status_t) zap_channel_set_caller_data(zap_channel_t *zchan, zap_caller_data_t *caller_data);
+OZ_DECLARE(void) zap_cpu_monitor_disable(void);
 
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);

@@ -3,7 +3,7 @@
  * Copyright(C) 2007 Michael Jerris
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
- * copies of the Software, and permit persons to whom the Software is
+ * copies of the Soozware, and permit persons to whom the Soozware is
  * furnished to do so.
  *
  * This work is provided under this license on an "as is" basis, without warranty of any kind,
@@ -14,6 +14,10 @@
  * assume the cost of any necessary servicing, repair or correction. This disclaimer of warranty
  * constitutes an essential part of this license. No use of any covered code is authorized hereunder
  * except under this disclaimer. 
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
  *
  */
 
@@ -35,8 +39,8 @@ struct zap_mutex {
 };
 
 #else
-
 #include <pthread.h>
+#include <poll.h>
 
 #define ZAP_THREAD_CALLING_CONVENTION
 
@@ -45,6 +49,18 @@ struct zap_mutex {
 };
 
 #endif
+
+struct zap_interrupt {
+	zap_socket_t device;
+#ifdef WIN32
+	/* for generic interruption */
+	HANDLE event;
+#else
+	/* for generic interruption */
+	int readfd;
+	int writefd;
+#endif
+};
 
 struct zap_thread {
 #ifdef WIN32
@@ -75,7 +91,7 @@ static void * ZAP_THREAD_CALLING_CONVENTION thread_launch(void *args)
 #ifndef WIN32
 	pthread_attr_destroy(&thread->attribute);
 #endif
-	free(thread);
+	zap_safe_free(thread);
 
 	return exit_val;
 }
@@ -125,7 +141,7 @@ OZ_DECLARE(zap_status_t) zap_thread_create_detached_ex(zap_thread_function_t fun
 
  fail:
 	if (thread) {
-		free(thread);
+		zap_safe_free(thread);
 	}
  done:
 	return status;
@@ -183,7 +199,7 @@ OZ_DECLARE(zap_status_t) zap_mutex_destroy(zap_mutex_t **mutex)
 	if (pthread_mutex_destroy(&mp->mutex))
 		return ZAP_FAIL;
 #endif
-	free(mp);
+	zap_safe_free(mp);
 	return ZAP_SUCCESS;
 }
 
@@ -192,8 +208,11 @@ OZ_DECLARE(zap_status_t) _zap_mutex_lock(zap_mutex_t *mutex)
 #ifdef WIN32
 	EnterCriticalSection(&mutex->mutex);
 #else
-	if (pthread_mutex_lock(&mutex->mutex))
+	int err;
+	if ((err = pthread_mutex_lock(&mutex->mutex))) {
+		zap_log(ZAP_LOG_ERROR, "Failed to lock mutex %d:%s\n", err, strerror(err));
 		return ZAP_FAIL;
+	}
 #endif
 	return ZAP_SUCCESS;
 }
@@ -222,8 +241,202 @@ OZ_DECLARE(zap_status_t) _zap_mutex_unlock(zap_mutex_t *mutex)
 }
 
 
+OZ_DECLARE(zap_status_t) zap_interrupt_create(zap_interrupt_t **ininterrupt, zap_socket_t device)
+{
+	zap_interrupt_t *interrupt = NULL;
+#ifndef WIN32
+	int fds[2];
+#endif
 
+	interrupt = calloc(1, sizeof(*interrupt));
+	if (!interrupt) {
+		zap_log(ZAP_LOG_ERROR, "Failed to allocate interrupt memory\n");
+		return ZAP_FAIL;
+	}
 
+	interrupt->device = device;
+#ifdef WIN32
+	interrupt->interrupt = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (!interrupt->interrupt) {
+		zap_log(ZAP_LOG_ERROR, "Failed to allocate interrupt event\n");
+		goto failed;
+	}
+#else
+	if (pipe(fds)) {
+		zap_log(ZAP_LOG_ERROR, "Failed to allocate interrupt pipe: %s\n", strerror(errno));
+		goto failed;
+	}
+	
+	interrupt->readfd = fds[0];
+	interrupt->writefd = fds[1];
+#endif
+
+	*ininterrupt = interrupt;
+	return ZAP_SUCCESS;
+
+failed:
+	if (interrupt) {
+#ifndef WIN32
+		if (interrupt->readfd) {
+			close(interrupt->readfd);
+			close(interrupt->writefd);
+			interrupt->readfd = -1;
+			interrupt->writefd = -1;
+		}
+#endif
+		zap_safe_free(interrupt);
+	}
+	return ZAP_FAIL;
+}
+
+#define ONE_BILLION 1000000000
+
+OZ_DECLARE(zap_status_t) zap_interrupt_wait(zap_interrupt_t *interrupt, int ms)
+{
+	int num = 1;
+#ifdef WIN32
+	DWORD res = 0;
+	HANDLE ints[2];
+#else
+	int res = 0;
+	struct pollfd ints[2];
+	char pipebuf[255];
+#endif
+
+	/* start implementation */
+#ifdef WIN32
+	ints[0] = interrupt->event;
+	if (interrupt->device != ZAP_INVALID_SOCKET) {
+		num++;
+		ints[1] = interrupt->device;
+	}
+	res = WaitForMultipleObjects(num, &ints, FALSE, ms >= 0 ? ms : INFINITE);
+	switch (res) {
+	case WAIT_TIMEOUT:
+		return ZAP_TIMEOUT;
+	case WAIT_FAILED:
+	case WAIT_ABANDONED: /* is it right to fail with abandoned? */
+		return ZAP_FAIL;
+	default:
+		if (res >= (sizeof(ints)/sizeof(ints[0]))) {
+			zap_log(ZAP_LOG_ERROR, "Error waiting for openzap interrupt event (WaitForSingleObject returned %d)\n", res);
+			return ZAP_FAIL;
+		}
+		return ZAP_SUCCESS;
+	}
+#else
+	ints[0].fd = interrupt->readfd;
+	ints[0].events = POLLIN;
+	ints[0].revents = 0;
+
+	if (interrupt->device != ZAP_INVALID_SOCKET) {
+		num++;
+		ints[1].fd = interrupt->device;
+		ints[1].events = POLLIN;
+		ints[1].revents = 0;
+	}
+
+	res = poll(ints, num, ms);
+	if (res == -1) {
+		zap_log(ZAP_LOG_CRIT, "interrupt poll failed (%s)\n", strerror(errno));
+		return ZAP_FAIL;
+	}
+
+	if (res == 0) {
+		return ZAP_TIMEOUT;
+	}
+
+	if (ints[0].revents & POLLIN) {
+		res = read(ints[0].fd, pipebuf, sizeof(pipebuf));
+		if (res == -1) {
+			zap_log(ZAP_LOG_CRIT, "reading interrupt descriptor failed (%s)\n", strerror(errno));
+		}
+	}
+
+	return ZAP_SUCCESS;
+#endif
+}
+
+OZ_DECLARE(zap_status_t) zap_interrupt_signal(zap_interrupt_t *interrupt)
+{
+#ifdef WIN32
+	if (!SetEvent(interrupt->interrupt)) {
+		zap_log(ZAP_LOG_ERROR, "Failed to signal interrupt\n");
+		return ZAP_FAIL;
+	}
+#else
+	int err;
+	if ((err = write(interrupt->writefd, "w", 1)) != 1) {
+		zap_log(ZAP_LOG_ERROR, "Failed to signal interrupt: %s\n", errno, strerror(errno));
+		return ZAP_FAIL;
+	}
+#endif
+	return ZAP_SUCCESS;
+}
+
+OZ_DECLARE(zap_status_t) zap_interrupt_destroy(zap_interrupt_t **ininterrupt)
+{
+	zap_interrupt_t *interrupt = NULL;
+	interrupt = *ininterrupt;
+#ifdef WIN32
+	CloseHandle(interrupt->interrupt);
+#else
+	close(interrupt->readfd);
+	close(interrupt->writefd);
+	interrupt->readfd = -1;
+	interrupt->writefd = -1;
+#endif
+	zap_safe_free(interrupt);
+	*ininterrupt = NULL;
+	return ZAP_SUCCESS;
+}
+
+OZ_DECLARE(zap_status_t) zap_interrupt_multiple_wait(zap_interrupt_t *interrupts[], zap_size_t size, int ms)
+{
+#ifndef WIN32
+	int i;
+	int res = 0;
+	int numdevices = 0;
+	char pipebuf[255];
+	struct pollfd ints[size*2];
+
+	memset(&ints, 0, sizeof(ints));
+
+	for (i = 0; i < size; i++) {
+		ints[i].events = POLLIN;
+		ints[i].revents = 0;
+		ints[i].fd = interrupts[i]->readfd;
+		if (interrupts[i]->device != ZAP_INVALID_SOCKET) {
+			ints[i+numdevices].events = POLLIN;
+			ints[i+numdevices].revents = 0;
+			ints[i+numdevices].fd = interrupts[i]->device;
+			numdevices++;
+		}
+	}
+
+	res = poll(ints, size + numdevices, ms);
+
+	if (res == -1) {
+		zap_log(ZAP_LOG_CRIT, "interrupt poll failed (%s)\n", strerror(errno));
+		return ZAP_FAIL;
+	}
+
+	if (res == 0) {
+		return ZAP_TIMEOUT;
+	}
+
+	for (i = size; i < zap_array_len(ints); i++) {
+		if (ints[i].revents & POLLIN) {
+			res = read(ints[0].fd, pipebuf, sizeof(pipebuf));
+			if (res == -1) {
+				zap_log(ZAP_LOG_CRIT, "reading interrupt descriptor failed (%s)\n", strerror(errno));
+			}
+		}
+	}
+
+#endif
+	return ZAP_SUCCESS;
+}
 
 /* For Emacs:
  * Local Variables:

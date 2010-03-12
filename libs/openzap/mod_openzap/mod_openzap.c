@@ -3119,7 +3119,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 	module_pool = pool;
 
 	zap_global_set_logger(zap_logger);
-	
+	zap_cpu_monitor_disable();
+
 	if (zap_global_init() != ZAP_SUCCESS) {
 		zap_log(ZAP_LOG_ERROR, "Error loading OpenZAP\n");
 		return SWITCH_STATUS_TERM;

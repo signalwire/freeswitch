@@ -36,6 +36,11 @@ OZ_DECLARE(zap_status_t) _zap_mutex_lock(zap_mutex_t *mutex);
 OZ_DECLARE(zap_status_t) _zap_mutex_trylock(zap_mutex_t *mutex);
 OZ_DECLARE(zap_status_t) _zap_mutex_unlock(zap_mutex_t *mutex);
 
+OZ_DECLARE(zap_status_t) zap_interrupt_create(zap_interrupt_t **ininterrupt, zap_socket_t device);
+OZ_DECLARE(zap_status_t) zap_interrupt_wait(zap_interrupt_t *interrupt, int ms);
+OZ_DECLARE(zap_status_t) zap_interrupt_signal(zap_interrupt_t *interrupt);
+OZ_DECLARE(zap_status_t) zap_interrupt_destroy(zap_interrupt_t **ininterrupt);
+OZ_DECLARE(zap_status_t) zap_interrupt_multiple_wait(zap_interrupt_t *interrupts[], zap_size_t size, int ms);
 #endif
 
 /* For Emacs:

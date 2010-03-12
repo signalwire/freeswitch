@@ -35,6 +35,9 @@
 #define ZAP_TYPES_H
 #include "fsk.h"
 
+#define ZAP_INVALID_SOCKET -1
+#define zap_array_len(obj) sizeof(obj)/sizeof(obj[0])
+
 #ifdef WIN32
 #include <windows.h>
 typedef HANDLE zap_socket_t;
@@ -62,6 +65,7 @@ typedef int zap_filehandle_t;
 
 typedef size_t zap_size_t;
 struct zap_io_interface;
+typedef struct zap_interrupt zap_interrupt_t;
 
 #define ZAP_COMMAND_OBJ_INT *((int *)obj)
 #define ZAP_COMMAND_OBJ_CHAR_P (char *)obj

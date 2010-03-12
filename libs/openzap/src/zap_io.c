@@ -44,6 +44,7 @@
 #ifdef ZAP_PIKA_SUPPORT
 #include "zap_pika.h"
 #endif
+#include "zap_cpu_monitor.h"
 
 static int time_is_init = 0;
 
@@ -63,6 +64,7 @@ static void time_end(void)
 	time_is_init = 0;
 }
 
+
 OZ_DECLARE(zap_time_t) zap_current_time_in_ms(void)
 {
 #ifdef WIN32
@@ -74,6 +76,16 @@ OZ_DECLARE(zap_time_t) zap_current_time_in_ms(void)
 #endif
 }
 
+typedef struct {
+	uint8_t		running;
+	uint8_t 	alarm;
+	uint32_t	interval;
+	uint8_t		alarm_action_flags;
+	uint8_t		set_alarm_threshold;
+	uint8_t		reset_alarm_threshold;
+	zap_interrupt_t *interrupt;
+} cpu_monitor_t;
+
 static struct {
 	zap_hash_t *interface_hash;
 	zap_hash_t *module_hash;
@@ -83,8 +95,16 @@ static struct {
 	uint32_t span_index;
 	uint32_t running;
 	zap_span_t *spans;
+	cpu_monitor_t cpu_monitor;
 } globals;
 
+static uint8_t zap_cpu_monitor_disabled = 0;
+
+enum zap_enum_cpu_alarm_action_flags
+{
+	ZAP_CPU_ALARM_ACTION_WARN = (1 << 0),
+	ZAP_CPU_ALARM_ACTION_REJECT = (1 << 1)
+};
 
 /* enum lookup funcs */
 ZAP_ENUM_NAMES(TONEMAP_NAMES, TONEMAP_STRINGS)
@@ -111,6 +131,8 @@ ZAP_STR2ENUM(zap_str2zap_mdmf_type, zap_mdmf_type2str, zap_mdmf_type_t, MDMF_TYP
 ZAP_ENUM_NAMES(CHAN_TYPE_NAMES, CHAN_TYPE_STRINGS)
 ZAP_STR2ENUM(zap_str2zap_chan_type, zap_chan_type2str, zap_chan_type_t, CHAN_TYPE_NAMES, ZAP_CHAN_TYPE_COUNT)
 
+static zap_status_t zap_cpu_monitor_start(cpu_monitor_t* monitor_params);
+static void zap_cpu_monitor_stop(cpu_monitor_t* monitor_params);
 
 static const char *cut_path(const char *in)
 {
@@ -148,7 +170,11 @@ static const char *LEVEL_NAMES[] = {
 	NULL
 };
 
+
 static int zap_log_level = 7;
+
+/* Cpu monitor thread */
+static void *zap_cpu_monitor_run(zap_thread_t *me, void *obj);
 
 static void default_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
@@ -1152,6 +1178,14 @@ OZ_DECLARE(zap_status_t) zap_channel_open_chan(zap_channel_t *zchan)
 
 	if (zap_test_flag(zchan, ZAP_CHANNEL_SUSPENDED)) {
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", "Channel is suspended");
+		return ZAP_FAIL;
+	}
+	if (globals.cpu_monitor.alarm &&
+			globals.cpu_monitor.alarm_action_flags & ZAP_CPU_ALARM_ACTION_REJECT) {
+
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", "CPU usage alarm is on - refusing to open channel\n");
+		zap_log(ZAP_LOG_WARNING, "CPU usage alarm is on - refusing to open channel\n");
+		zchan->caller_data.hangup_cause = ZAP_CAUSE_SWITCH_CONGESTION;
 		return ZAP_FAIL;
 	}
 	
@@ -2540,6 +2574,43 @@ static zap_status_t load_config(void)
 			} else {
 				zap_log(ZAP_LOG_ERROR, "unknown span variable '%s'\n", var);
 			}
+		} else if (!strncasecmp(cfg.category, "general", 7)) {
+			if (!strncasecmp(var, "cpu_monitoring_interval", 24)) {
+				if (atoi(val) > 0) {
+					globals.cpu_monitor.interval = atoi(val);
+				} else {
+					zap_log(ZAP_LOG_ERROR, "Invalid cpu monitoring interval %s\n", val);
+				}
+			} else	if (!strncasecmp(var, "cpu_set_alarm_threshold", 22)) {
+				if (atoi(val) > 0 && atoi(val) < 100) {
+					globals.cpu_monitor.set_alarm_threshold = atoi(val);
+				} else {
+					zap_log(ZAP_LOG_ERROR, "Invalid cpu alarm set threshold %s\n", val);
+				}
+			} else if (!strncasecmp(var, "cpu_reset_alarm_threshold", 22)) {
+				if (atoi(val) > 0 && atoi(val) < 100) {
+					globals.cpu_monitor.reset_alarm_threshold = atoi(val);
+					if (globals.cpu_monitor.reset_alarm_threshold > globals.cpu_monitor.set_alarm_threshold) {
+						globals.cpu_monitor.reset_alarm_threshold = globals.cpu_monitor.set_alarm_threshold-10;
+						zap_log(ZAP_LOG_ERROR, "Cpu alarm reset threshold must be lower than set threshold, set threshold to %d\n", globals.cpu_monitor.reset_alarm_threshold);
+					}
+				} else {
+					zap_log(ZAP_LOG_ERROR, "Invalid cpu alarm reset threshold %s\n", val);
+				}
+			} else if (!strncasecmp(var, "cpu_alarm_action", 16)) {
+				char* p = val;
+				do {
+					if (!strncasecmp(p, "reject", 6)) {
+						globals.cpu_monitor.alarm_action_flags |= ZAP_CPU_ALARM_ACTION_REJECT;
+					} else if (!strncasecmp(p, "warn", 4)) {
+						globals.cpu_monitor.alarm_action_flags |= ZAP_CPU_ALARM_ACTION_WARN;
+					}
+					p = strchr(p, ',');
+					if (p) {
+						while(++p) if (*p != 0x20) break;
+					}
+				} while (p);
+			}
 		} else {
 			zap_log(ZAP_LOG_ERROR, "unknown param [%s] '%s' / '%s'\n", cfg.category, var, val);
 		}
@@ -2547,7 +2618,6 @@ static zap_status_t load_config(void)
 	zap_config_close_file(&cfg);
 
 	zap_log(ZAP_LOG_INFO, "Configured %u channel(s)\n", configured);
-	
 	return configured ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
@@ -2806,7 +2876,7 @@ OZ_DECLARE(zap_status_t) zap_span_send_signal(zap_span_t *span, zap_sigmsg_t *si
 OZ_DECLARE(zap_status_t) zap_global_init(void)
 {
 	int modcount;
-
+	
 	memset(&globals, 0, sizeof(globals));
 
 	time_init();
@@ -2824,13 +2894,23 @@ OZ_DECLARE(zap_status_t) zap_global_init(void)
 	modcount = zap_load_modules();
 	zap_log(ZAP_LOG_NOTICE, "Modules configured: %d \n", modcount);
 
-	if (load_config() == ZAP_SUCCESS) {
-		globals.running = 1;
-		return ZAP_SUCCESS;
+	globals.cpu_monitor.interval = 1000;
+	globals.cpu_monitor.alarm_action_flags = ZAP_CPU_ALARM_ACTION_WARN | ZAP_CPU_ALARM_ACTION_REJECT;
+	globals.cpu_monitor.set_alarm_threshold = 80;
+	globals.cpu_monitor.reset_alarm_threshold = 70;
+
+	if (load_config() != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_ERROR, "No modules configured!\n");
+		return ZAP_FAIL;
 	}
 
-	zap_log(ZAP_LOG_ERROR, "No modules configured!\n");
-	return ZAP_FAIL;
+	globals.running = 1;
+	if (!zap_cpu_monitor_disabled) {
+		if (zap_cpu_monitor_start(&globals.cpu_monitor) != ZAP_SUCCESS) {
+			return ZAP_FAIL;
+		}
+	}
+	return ZAP_SUCCESS;
 }
 
 OZ_DECLARE(uint32_t) zap_running(void)
@@ -2846,10 +2926,11 @@ OZ_DECLARE(zap_status_t) zap_global_destroy(void)
 
 	time_end();
 
-	globals.running = 0;	
+	globals.running = 0;
+	zap_cpu_monitor_stop(&globals.cpu_monitor);
 	zap_span_close_all();
 	zap_sleep(1000);
-
+	
 	zap_mutex_lock(globals.span_mutex);
 	for (sp = globals.spans; sp;) {
 		zap_span_t *cur_span = sp;
@@ -2900,7 +2981,7 @@ OZ_DECLARE(zap_status_t) zap_global_destroy(void)
 	zap_mutex_unlock(globals.mutex);
 	zap_mutex_destroy(&globals.mutex);
 	zap_mutex_destroy(&globals.span_mutex);
-
+	zap_interrupt_destroy(&globals.cpu_monitor.interrupt);
 	memset(&globals, 0, sizeof(globals));
 	return ZAP_SUCCESS;
 }
@@ -3192,6 +3273,69 @@ OZ_DECLARE_NONSTD(zap_status_t) zap_console_stream_write(zap_stream_handle_t *ha
 	return ret ? ZAP_FAIL : ZAP_SUCCESS;
 }
 
+static void *zap_cpu_monitor_run(zap_thread_t *me, void *obj)
+{
+	cpu_monitor_t *monitor = (cpu_monitor_t *)obj;
+	struct zap_cpu_monitor_stats *cpu_stats = zap_new_cpu_monitor();
+	if (!cpu_stats) {
+		return NULL;
+	}
+	monitor->running = 1;
+
+	while(zap_running()) {
+		double time;
+		if (zap_cpu_get_system_idle_time(cpu_stats, &time)) {
+			break;
+		}
+
+		if (monitor->alarm) {
+			if ((int)time >= (100-monitor->set_alarm_threshold)) {
+				zap_log(ZAP_LOG_DEBUG, "CPU alarm OFF (idle:%d)\n", (int) time);
+				monitor->alarm = 0;
+			}
+			if (monitor->alarm_action_flags & ZAP_CPU_ALARM_ACTION_WARN) {
+				zap_log(ZAP_LOG_WARNING, "CPU alarm is ON (cpu usage:%d)\n", (int) (100-time));
+			}
+		} else {
+			if ((int)time <= (100-monitor->reset_alarm_threshold)) {
+				zap_log(ZAP_LOG_DEBUG, "CPU alarm ON (idle:%d)\n", (int) time);
+				monitor->alarm = 1;
+			}
+		}
+		zap_interrupt_wait(monitor->interrupt, monitor->interval);
+	}
+	zap_delete_cpu_monitor(cpu_stats);
+	monitor->running = 0;
+	return NULL;
+}
+
+
+static zap_status_t zap_cpu_monitor_start(cpu_monitor_t* monitor)
+{
+	if (zap_interrupt_create(&monitor->interrupt, ZAP_INVALID_SOCKET) != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_CRIT, "Failed to create CPU monitor interrupt\n");
+		return ZAP_FAIL;
+	}
+	
+	if (zap_thread_create_detached(zap_cpu_monitor_run, monitor) != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_CRIT, "Failed to create cpu monitor thread!!\n");
+		return ZAP_FAIL;
+	}
+	return ZAP_SUCCESS;
+}
+
+static void zap_cpu_monitor_stop(cpu_monitor_t* monitor)
+{
+	zap_interrupt_signal(monitor->interrupt);
+	while(monitor->running) {
+		zap_sleep(10);
+	}
+}
+
+OZ_DECLARE(void) zap_cpu_monitor_disable(void)
+{
+	zap_cpu_monitor_disabled = 1;
+}
 
 
 /* For Emacs:

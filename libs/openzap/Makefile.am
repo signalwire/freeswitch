@@ -71,7 +71,8 @@ $(SRC)/libteletone_detect.c \
 $(SRC)/libteletone_generate.c \
 $(SRC)/zap_buffer.c \
 $(SRC)/zap_threadmutex.c \
-$(SRC)/zap_dso.c
+$(SRC)/zap_dso.c \
+$(SRC)/zap_cpu_monitor.c
 
 library_include_HEADERS = \
 $(SRC)/include/fsk.h \
@@ -89,7 +90,8 @@ $(SRC)/include/zap_buffer.h \
 $(SRC)/include/zap_config.h \
 $(SRC)/include/zap_threadmutex.h \
 $(SRC)/include/zap_dso.h \
-$(SRC)/include/zap_types.h 
+$(SRC)/include/zap_types.h \
+$(SRC)/include/zap_cpu_monitor.h
 
 lib_LTLIBRARIES	       = libopenzap.la
 libopenzap_la_CFLAGS   = $(AM_CFLAGS) $(MY_CFLAGS)
