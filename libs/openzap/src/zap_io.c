@@ -129,8 +129,8 @@ ZAP_STR2ENUM(zap_str2zap_mdmf_type, zap_mdmf_type2str, zap_mdmf_type_t, MDMF_TYP
 ZAP_ENUM_NAMES(CHAN_TYPE_NAMES, CHAN_TYPE_STRINGS)
 ZAP_STR2ENUM(zap_str2zap_chan_type, zap_chan_type2str, zap_chan_type_t, CHAN_TYPE_NAMES, ZAP_CHAN_TYPE_COUNT)
 
-static zap_status_t zap_cpu_monitor_start(cpu_monitor_t* monitor_params);
-static void zap_cpu_monitor_stop(cpu_monitor_t* monitor_params);
+static zap_status_t zap_cpu_monitor_start(void);
+static void zap_cpu_monitor_stop(void);
 
 static const char *cut_path(const char *in)
 {
@@ -3059,7 +3059,7 @@ OZ_DECLARE(zap_status_t) zap_global_init(void)
 
 	globals.running = 1;
 	if (!zap_cpu_monitor_disabled) {
-		if (zap_cpu_monitor_start(&globals.cpu_monitor) != ZAP_SUCCESS) {
+		if (zap_cpu_monitor_start() != ZAP_SUCCESS) {
 			return ZAP_FAIL;
 		}
 	}
@@ -3080,7 +3080,7 @@ OZ_DECLARE(zap_status_t) zap_global_destroy(void)
 	time_end();
 
 	globals.running = 0;
-	zap_cpu_monitor_stop(&globals.cpu_monitor);
+	zap_cpu_monitor_stop();
 	zap_span_close_all();
 	zap_sleep(1000);
 	
@@ -3134,7 +3134,6 @@ OZ_DECLARE(zap_status_t) zap_global_destroy(void)
 	zap_mutex_unlock(globals.mutex);
 	zap_mutex_destroy(&globals.mutex);
 	zap_mutex_destroy(&globals.span_mutex);
-	zap_interrupt_destroy(&globals.cpu_monitor.interrupt);
 	memset(&globals, 0, sizeof(globals));
 	return ZAP_SUCCESS;
 }
@@ -3463,26 +3462,40 @@ static void *zap_cpu_monitor_run(zap_thread_t *me, void *obj)
 }
 
 
-static zap_status_t zap_cpu_monitor_start(cpu_monitor_t* monitor)
+static zap_status_t zap_cpu_monitor_start(void)
 {
-	if (zap_interrupt_create(&monitor->interrupt, ZAP_INVALID_SOCKET) != ZAP_SUCCESS) {
+	if (zap_interrupt_create(&globals.cpu_monitor.interrupt, ZAP_INVALID_SOCKET) != ZAP_SUCCESS) {
 		zap_log(ZAP_LOG_CRIT, "Failed to create CPU monitor interrupt\n");
 		return ZAP_FAIL;
 	}
 	
-	if (zap_thread_create_detached(zap_cpu_monitor_run, monitor) != ZAP_SUCCESS) {
+	if (zap_thread_create_detached(zap_cpu_monitor_run, &globals.cpu_monitor) != ZAP_SUCCESS) {
 		zap_log(ZAP_LOG_CRIT, "Failed to create cpu monitor thread!!\n");
 		return ZAP_FAIL;
 	}
 	return ZAP_SUCCESS;
 }
 
-static void zap_cpu_monitor_stop(cpu_monitor_t* monitor)
+static void zap_cpu_monitor_stop(void)
 {
-	zap_interrupt_signal(monitor->interrupt);
-	while(monitor->running) {
+	if (!globals.cpu_monitor.interrupt) {
+		return;
+	}
+
+	if (!globals.cpu_monitor.running) {
+		return;
+	}
+
+	if (zap_interrupt_signal(globals.cpu_monitor.interrupt) != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_CRIT, "Failed to stop CPU monitor\n");
+		return;
+	}
+
+	while(globals.cpu_monitor.running) {
 		zap_sleep(10);
 	}
+	
+	zap_interrupt_destroy(&globals.cpu_monitor.interrupt);
 }
 
 OZ_DECLARE(void) zap_cpu_monitor_disable(void)
