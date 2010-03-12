@@ -42,12 +42,6 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <errno.h>
-#elif defined (MACOSX) || defined (DARWIN)
-  /* Unsupported */
-#else
-/*already defined 
-#define _WIN32_WINNT 0x0501 // To make GetSystemTimes visible in windows.h*/
-#include <windows.h>
 #endif
 
 struct profile_timer 
@@ -73,12 +67,12 @@ struct profile_timer
 	/* /proc/stat file descriptor used to retrieve the counters */
 	int procfd;
 	int initd;
-#elif defined (MACOSX) || defined (DARWIN)
-  /* Unsupported */
-#else
+#elif defined (WIN32)  || defined (WIN64)
 	__int64 i64LastUserTime;
 	__int64 i64LastKernelTime;
 	__int64 i64LastIdleTime;
+#else
+  /* Unsupported */
 #endif
 };
 
@@ -136,9 +130,7 @@ static int read_cpu_stats(switch_profile_timer_t *p,
 	}
 	return 0;
 }
-#endif
 
-#ifdef __linux__
 SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, double *idle_percentage)
 {
 	unsigned long long user, nice, system, idle, iowait, irq, softirq, steal;
@@ -199,14 +191,7 @@ SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, doubl
 	return 0;
 }
 
-#elif defined (MACOSX) || defined (DARWIN)
-
-SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, double *idle_percentage)
-{
-	return SWITCH_FALSE;
-}
-
-#else
+#elif defined (WIN32) || defined (WIN64)
 
 SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, double *idle_percentage)
 {
@@ -243,6 +228,14 @@ SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, doubl
 
 	/* Success */
 	return 0;
+}
+
+#else
+
+  /* Unsupported */
+SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, double *idle_percentage)
+{
+	return SWITCH_FALSE;
 }
 
 #endif
