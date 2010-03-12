@@ -42,6 +42,8 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <errno.h>
+#elif defined (MACOSX) || defined (DARWIN)
+  /* Unsupported */
 #else
 /*already defined 
 #define _WIN32_WINNT 0x0501 // To make GetSystemTimes visible in windows.h*/
@@ -71,6 +73,8 @@ struct profile_timer
 	/* /proc/stat file descriptor used to retrieve the counters */
 	int procfd;
 	int initd;
+#elif defined (MACOSX) || defined (DARWIN)
+  /* Unsupported */
 #else
 	__int64 i64LastUserTime;
 	__int64 i64LastKernelTime;
@@ -193,6 +197,13 @@ SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, doubl
 	p->last_idle_time = idle;
 
 	return 0;
+}
+
+#elif defined (MACOSX) || defined (DARWIN)
+
+SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, double *idle_percentage)
+{
+	return SWITCH_FALSE;
 }
 
 #else
