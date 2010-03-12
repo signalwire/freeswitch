@@ -1229,7 +1229,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 	ftdm_sigmsg_t sig;
 	ftdm_status_t status;
 
-	ftdm_log(FTDM_LOG_DEBUG, "%d:%d STATE [%s]\n", ftdmchan->span_id, ftdmchan->chan_id, ftdm_channel_state2str(ftdmchan->state));
+	ftdm_log(FTDM_LOG_DEBUG, "%d:%d PROCESSING STATE [%s]\n", ftdmchan->span_id, ftdmchan->chan_id, ftdm_channel_state2str(ftdmchan->state));
 	
 	memset(&sig, 0, sizeof(sig));
 	sig.chan_id = ftdmchan->chan_id;
@@ -1470,10 +1470,15 @@ static __inline__ void check_state(ftdm_span_t *span)
 			}
 		} else {
 			while ((ftdmchan = ftdm_queue_dequeue(span->pendingchans))) {
+				/* it can happen that someone else processed the chan states
+				 * but without taking the chan out of the queue, so check th
+				 * flag before advancing the state */
 				ftdm_mutex_lock(ftdmchan->mutex);
-				ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
-				state_advance(ftdmchan);
-				ftdm_channel_complete_state(ftdmchan);
+				if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+					ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
+					state_advance(ftdmchan);
+					ftdm_channel_complete_state(ftdmchan);
+				}
 				ftdm_mutex_unlock(ftdmchan->mutex);
 			}
 		}

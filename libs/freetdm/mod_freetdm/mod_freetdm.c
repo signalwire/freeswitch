@@ -746,6 +746,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	len = frame->datalen;
 	if (ftdm_channel_write(tech_pvt->ftdmchan, frame->data, frame->buflen, &len) != FTDM_SUCCESS) {
 		if (++tech_pvt->wr_error > 10) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "too many I/O write errors!\n");
 			goto fail;
 		}
 	} else {
