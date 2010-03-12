@@ -441,6 +441,7 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 	size_t llen = 0, dlen = 0, blocksize = 512, encode_len = 1536, new_len = 0;
 	char *buf;
 	char *encode_buf = NULL;	/* used for url encoding of variables to make sure unsafe things stay out of the serialized copy */
+	int clen = 0;
 
 	*str = NULL;
 
@@ -466,7 +467,11 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 		 * destroying loop.
 		 */
 
-		
+		if (!strcasecmp(hp->name, "content-length")) {
+			clen++;
+		}
+
+
 		new_len = (strlen(hp->value) * 3) + 1;
 
 		if (encode_len < new_len) {
@@ -537,7 +542,7 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 			}
 		}
 		
-		if (blen) {
+		if (blen && !clen) {
 			snprintf(buf + len, dlen - len, "Content-Length: %d\n\n%s", (int)strlen(event->body), event->body);
 		} else {
 			snprintf(buf + len, dlen - len, "\n");
