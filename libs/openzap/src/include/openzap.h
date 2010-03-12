@@ -494,7 +494,8 @@ typedef enum {
 	ZAP_TYPE_CHANNEL
 } zap_data_type_t;
 
-
+/* 2^8 table size, one for each byte value */
+#define ZAP_GAINS_TABLE_SIZE 256
 struct zap_channel {
 	zap_data_type_t data_type;
 	uint32_t span_id;
@@ -556,6 +557,10 @@ struct zap_channel {
 	zap_hash_t *variable_hash;
 	unsigned char rx_cas_bits;
 	uint32_t pre_buffer_size;
+	unsigned char rxgain_table[ZAP_GAINS_TABLE_SIZE];
+	unsigned char txgain_table[ZAP_GAINS_TABLE_SIZE];
+	float rxgain;
+	float txgain;
 };
 
 

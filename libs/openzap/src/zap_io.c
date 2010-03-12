@@ -35,8 +35,6 @@
 #ifndef WIN32
 #endif
 #include "openzap.h"
-//#include "zap_isdn.h"
-//#include "zap_ss7_boost.h"
 #include <stdarg.h>
 #ifdef WIN32
 #include <io.h>
@@ -569,8 +567,67 @@ OZ_DECLARE(zap_status_t) zap_span_load_tones(zap_span_t *span, const char *mapna
 	
 }
 
+#define ZAP_SLINEAR_MAX_VALUE 32767
+#define ZAP_SLINEAR_MIN_VALUE -32767
+static void reset_gain_table(unsigned char *gain_table, float new_gain, zap_codec_t codec_gain)
+{
+	/* sample value */
+	unsigned sv = 0;
+	/* linear gain factor */
+	float lingain = 0;
+	/* linear value for each table sample */
+	float linvalue = 0;
+	/* amplified (or attenuated in case of negative amplification) sample value */
+	int ampvalue = 0;
+
+	/* gain tables are only for alaw and ulaw */
+	if (codec_gain != ZAP_CODEC_ALAW && codec_gain != ZAP_CODEC_ULAW) {
+		zap_log(ZAP_LOG_WARNING, "Not resetting gain table because codec is not ALAW or ULAW but %d\n", codec_gain);
+		return;
+	}
+
+	if (!new_gain) {
+		/* for a 0.0db gain table, each alaw/ulaw sample value is left untouched (0 ==0, 1 == 1, 2 == 2 etc)*/
+		sv = 0;
+		while (1) {
+			gain_table[sv] = sv;
+			if (sv == (ZAP_GAINS_TABLE_SIZE - 1)) {
+				break;
+			}
+			sv++;
+		}
+		return;
+	}
+
+	/* use the 20log rule to increase the gain: http://en.wikipedia.org/wiki/Gain, http:/en.wikipedia.org/wiki/20_log_rule#Definitions */
+	lingain = pow(10.0, new_gain/ 20.0);
+	sv = 0;
+	while (1) {
+		/* get the linear value for this alaw/ulaw sample value */
+		linvalue = codec_gain == ZAP_CODEC_ALAW ? alaw_to_linear(sv) : ulaw_to_linear(sv);
+
+		/* multiply the linear value and the previously calculated linear gain */
+		ampvalue = (int)(linvalue * lingain);
+
+		/* chop it if goes beyond the limits */
+		if (ampvalue > ZAP_SLINEAR_MAX_VALUE) {
+			ampvalue = ZAP_SLINEAR_MAX_VALUE;
+		}
+
+		if (ampvalue < ZAP_SLINEAR_MIN_VALUE) {
+			ampvalue = ZAP_SLINEAR_MIN_VALUE;
+		}
+		gain_table[sv] = codec_gain == ZAP_CODEC_ALAW ? linear_to_alaw(ampvalue) : linear_to_ulaw(ampvalue);
+		if (sv == (ZAP_GAINS_TABLE_SIZE-1)) {
+			break;
+		}
+		sv++;
+	}
+}
+
 OZ_DECLARE(zap_status_t) zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan)
 {
+	unsigned i = 0;
 	if (span->chan_count < ZAP_MAX_CHANNELS_SPAN) {
 		zap_channel_t *new_chan = span->channels[++span->chan_count];
 
@@ -607,6 +664,17 @@ OZ_DECLARE(zap_status_t) zap_span_add_channel(zap_span_t *span, zap_socket_t soc
 		new_chan->variable_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 
 		new_chan->dtmf_hangup_buf = calloc (span->dtmf_hangup_len + 1, sizeof (char));
+
+		/* set 0.0db gain table */
+		i = 0;
+		while (1) {
+			new_chan->txgain_table[i] = i;
+			new_chan->rxgain_table[i] = i;
+			if (i == (sizeof(new_chan->txgain_table)-1)) {
+				break;
+			}
+			i++;
+		}
 
 		zap_set_flag(new_chan, ZAP_CHANNEL_CONFIGURED | ZAP_CHANNEL_READY);
 		*chan = new_chan;
@@ -1663,6 +1731,39 @@ OZ_DECLARE(zap_status_t) zap_channel_command(zap_channel_t *zchan, zap_command_t
 			zap_mutex_unlock(zchan->pre_buffer_mutex);
 		}
 		break;
+
+	case ZAP_COMMAND_SET_RX_GAIN:
+		{
+			zchan->rxgain = ZAP_COMMAND_OBJ_FLOAT;
+			reset_gain_table(zchan->rxgain_table, zchan->rxgain, zchan->native_codec);
+			if (zchan->rxgain == 0.0) {
+				zap_clear_flag(zchan, ZAP_CHANNEL_USE_RX_GAIN);
+			} else {
+				zap_set_flag(zchan, ZAP_CHANNEL_USE_RX_GAIN);
+			}
+		}
+		break;
+	case ZAP_COMMAND_GET_RX_GAIN:
+		{
+			ZAP_COMMAND_OBJ_FLOAT = zchan->rxgain;
+		}
+		break;
+	case ZAP_COMMAND_SET_TX_GAIN:
+		{
+			zchan->txgain = ZAP_COMMAND_OBJ_FLOAT;
+			reset_gain_table(zchan->txgain_table, zchan->txgain, zchan->native_codec);
+			if (zchan->txgain == 0.0) {
+				zap_clear_flag(zchan, ZAP_CHANNEL_USE_TX_GAIN);
+			} else {
+				zap_set_flag(zchan, ZAP_CHANNEL_USE_TX_GAIN);
+			}
+		}
+		break;
+	case ZAP_COMMAND_GET_TX_GAIN:
+		{
+			ZAP_COMMAND_OBJ_FLOAT = zchan->txgain;
+		}
+		break;
 	default:
 		break;
 	}
@@ -2042,9 +2143,9 @@ OZ_DECLARE(zap_status_t) zap_channel_read(zap_channel_t *zchan, void *data, zap_
 	zap_status_t status = ZAP_FAIL;
 	zio_codec_t codec_func = NULL;
 	zap_size_t max = *datalen;
+	unsigned i = 0;
 
 	assert(zchan != NULL);
-	assert(zchan->zio != NULL);
 	assert(zchan->zio != NULL);
 	
     if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
@@ -2067,6 +2168,13 @@ OZ_DECLARE(zap_status_t) zap_channel_read(zap_channel_t *zchan, void *data, zap_
 	}
 
 	if (status == ZAP_SUCCESS) {
+		if (zap_test_flag(zchan, ZAP_CHANNEL_USE_RX_GAIN) 
+			&& (zchan->native_codec == ZAP_CODEC_ALAW || zchan->native_codec == ZAP_CODEC_ULAW)) {
+			unsigned char *rdata = data;
+			for (i = 0; i < *datalen; i++) {
+				rdata[i] = zchan->rxgain_table[rdata[i]];
+			}
+		}
 		handle_dtmf(zchan, *datalen);
 	}
 
@@ -2265,6 +2373,7 @@ OZ_DECLARE(zap_status_t) zap_channel_write(zap_channel_t *zchan, void *data, zap
 	zap_status_t status = ZAP_FAIL;
 	zio_codec_t codec_func = NULL;
 	zap_size_t max = datasize;
+	unsigned i = 0;
 
 	assert(zchan != NULL);
 	assert(zchan->zio != NULL);
@@ -2314,6 +2423,13 @@ OZ_DECLARE(zap_status_t) zap_channel_write(zap_channel_t *zchan, void *data, zap
 		}
 	}
 
+	if (zap_test_flag(zchan, ZAP_CHANNEL_USE_TX_GAIN) 
+		&& (zchan->native_codec == ZAP_CODEC_ALAW || zchan->native_codec == ZAP_CODEC_ULAW)) {
+		unsigned char *wdata = data;
+		for (i = 0; i < *datalen; i++) {
+			wdata[i] = zchan->txgain_table[wdata[i]];
+		}
+	}
     status = zchan->zio->write(zchan, data, datalen);
 
 	return status;

@@ -2878,7 +2878,7 @@ void dump_chan_xml(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *s
 						   );
 }
 
-#define OZ_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix]" 
+#define OZ_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix] || gains <span> <txgain> <rxgain>" 
 SWITCH_STANDARD_API(oz_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
@@ -3067,6 +3067,44 @@ SWITCH_STANDARD_API(oz_function)
                         goto end;
 		}
 
+	} else if (!strcasecmp(argv[0], "gains")) {
+		int i = 0;
+		float txgain = 0.0;
+		float rxgain = 0.0;
+		uint32_t chan_id = 0;
+		zap_span_t *span = NULL;
+		if (argc < 4) {
+			stream->write_function(stream, "-ERR Usage: oz gains <txgain> <rxgain> <span_id> [<chan_id>]\n");
+			goto end;
+		} 
+		zap_span_find_by_name(argv[3], &span);
+		if (!span) {
+			stream->write_function(stream, "-ERR invalid span\n");
+			goto end;
+		}
+		if (argc > 4) {
+			chan_id = atoi(argv[4]);
+			if (chan_id > span->chan_count) {
+				stream->write_function(stream, "-ERR invalid chan\n");
+				goto end;
+			}
+		}
+		i = sscanf(argv[1], "%f", &rxgain);
+		i += sscanf(argv[2], "%f", &txgain);
+		if (i != 2) {
+			stream->write_function(stream, "-ERR invalid gains\n");
+			goto end;
+		}
+		if (chan_id) {
+			zap_channel_command(span->channels[chan_id], ZAP_COMMAND_SET_RX_GAIN, &rxgain);
+			zap_channel_command(span->channels[chan_id], ZAP_COMMAND_SET_TX_GAIN, &txgain);
+		} else {
+			for (i = 1; i < span->chan_count; i++) {
+				zap_channel_command(span->channels[i], ZAP_COMMAND_SET_RX_GAIN, &rxgain);
+				zap_channel_command(span->channels[i], ZAP_COMMAND_SET_TX_GAIN, &txgain);
+			}
+		}
+		stream->write_function(stream, "+OK gains set to Rx %f and Tx %f\n", rxgain, txgain);
 	} else {
 		char *rply = zap_api_execute(cmd, NULL);
 		
