@@ -680,10 +680,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			}
 		}
 
-		if (fill_cng || waste_resources) {
+		if (fill_cng) {
+			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, fill_cng);
+		} else if (waste_resources) {
 			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, waste_resources);
 		}
-
 
 		if (!switch_test_flag(fh, SWITCH_FILE_PAUSE) && !switch_test_flag(read_frame, SFF_CNG)) {
 			int16_t *data = read_frame->data;
@@ -692,7 +693,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			if (switch_core_file_write(fh, data, &len) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
-		} else if (switch_test_flag(read_frame, SFF_CNG)) {
+		} else if (switch_test_flag(read_frame, SFF_CNG) && fill_cng) {
 			len = write_frame.datalen;
 			if (switch_core_file_write(fh, write_frame.data, &len) != SWITCH_STATUS_SUCCESS) {
 				break;
@@ -713,7 +714,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		switch_event_fire(&event);
 	}
 
-	if (waste_resources) {
+	if (fill_cng || waste_resources) {
 		switch_core_codec_destroy(&write_codec);
 	}
 
