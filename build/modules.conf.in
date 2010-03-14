@@ -53,7 +53,7 @@ endpoints/mod_loopback
 #endpoints/mod_alsa
 #endpoints/mod_opal
 #endpoints/mod_skinny
-#endpoints/mod_skypiax
+#endpoints/mod_skypopen
 #endpoints/mod_h323
 #../../libs/openzap/mod_openzap
 #asr_tts/mod_unimrcp
