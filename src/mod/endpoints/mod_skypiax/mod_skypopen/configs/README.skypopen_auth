@@ -1,0 +1,57 @@
+#######################################
+HOW TO USE SKYPOPEN_AUTH 
+#######################################
+
+You will use skypopen_auth only at the setup moment, to force the Skype client to ask you to authorize "skypopen" to connect to it.
+
+Then you copy the .Skype configuration directory of the user that has launched Skype (eg: /home/maruzz/.Skype if you are maruzz) on the home directory of the user that will start Skype on the server (eg: root).
+
+Compile skypopen_auth:
+$ gcc -Wall -ggdb skypopen_auth.c -o skypopen_auth -lX11
+
+Then:
+
+1) on a Linux desktop machine, rmmod all the snd* modules
+2) on the desktop machine, modprobe snd-dummy
+3) on the desktop machine, logout from your autologin username if any, launch the Skype client and login as the username you'll use on server
+4) on the desktop machine, set the desktop client to use the "hw:dummy" audio device, to not update, to not make "events", etc etc... Make and receive a couple of test calls. Please note that you (and the remote party) will hear nothing (you're using the snd-dummy "fake" audio driver), that's ok.
+3) on the desktop machine, when satisfied of the Skype client setup, use skypopen_auth (that simulates FS-skypopen connecting to the Skype client). The Skype client will ask you to be authorized to let "skypopen" connect.
+4) Give the authorization and check the "not ask me again" option.
+5) Close (Quit) the Skype client from the tray icon, so it saves its config.
+6) Then, relaunch the Skype client and use skypopen_auth again, just to be sure it now succeed.
+7) Close (Quit) the Skype client from the tray icon, so it saves its config.
+
+*** Do the steps 1-7 for all Skype usernames you will want to use on the server (eg: one Skype username per channel)
+
+When finished with all the Skype usernames:
+Copy or targzip the .Skype directory and all its content on the home directory of the server user that will launch the Skype client(s).
+
+############################
+first time you use skypopen_auth
+############################
+$ ./skypopen_auth 
+Skype instance found with id #27263062
+RECEIVED==> ERROR 68
+RECEIVED==> OK
+
+############################
+Give the auth to the Skype client, and tell him not to ask again
+Then Ctrl-C to exit from skypopen_auth
+############################
+
+
+Close (Quit) the Skype client from the tray icon, so it saves its config.
+Then, relaunch the Skype client
+
+############################
+you use skypopen_auth again
+############################
+$ ./skypopen_auth 
+Skype instance found with id #27263062
+RECEIVED==> OK
+RECEIVED==> PROTOCOL 6
+RECEIVED==> CONNSTATUS ONLINE
+RECEIVED==> CURRENTUSERHANDLE gmaruzz3
+RECEIVED==> USERSTATUS INVISIBLE
+
+
