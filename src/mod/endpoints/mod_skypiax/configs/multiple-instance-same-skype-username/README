@@ -1,6 +1,0 @@
-# execute both of the files, they give you 10 interfaces each (look for the "exit 0" line)
-# then use the skypiax.conf here to manage the 20 interfaces
-
-sh ./multi.sh
-sh ./multi2.sh
-

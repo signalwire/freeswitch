@@ -21,7 +21,7 @@
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
- * This module (mod_skypiax) has been contributed by:
+ * This module (mod_skypopen) has been contributed by:
  *
  * Giovanni Maruzzelli (gmaruzz@gmail.com)
  *
@@ -29,7 +29,7 @@
  * Further Contributors:
  *
  *
- * mod_skypiax.c -- Skype compatible Endpoint Module
+ * mod_skypopen.c -- Skype compatible Endpoint Module
  *
  */
 
@@ -57,14 +57,14 @@
 #pragma warning(disable:4127)
 #endif
 
-#define MY_EVENT_INCOMING_CHATMESSAGE "skypiax::incoming_chatmessage"
+#define MY_EVENT_INCOMING_CHATMESSAGE "skypopen::incoming_chatmessage"
 
-#define SAMPLERATE_SKYPIAX 16000
-#define SAMPLES_PER_FRAME SAMPLERATE_SKYPIAX/50
+#define SAMPLERATE_SKYPOPEN 16000
+#define SAMPLES_PER_FRAME SAMPLERATE_SKYPOPEN/50
 
-#ifndef SKYPIAX_SVN_VERSION
-#define SKYPIAX_SVN_VERSION SWITCH_VERSION_REVISION
-#endif /* SKYPIAX_SVN_VERSION */
+#ifndef SKYPOPEN_SVN_VERSION
+#define SKYPOPEN_SVN_VERSION SWITCH_VERSION_REVISION
+#endif /* SKYPOPEN_SVN_VERSION */
 
 typedef enum {
 	TFLAG_IO = (1 << 0),
@@ -82,36 +82,36 @@ typedef enum {
 	GFLAG_MY_CODEC_PREFS = (1 << 0)
 } GFLAGS;
 
-#define DEBUGA_SKYPE(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"rev "SKYPIAX_SVN_VERSION "[%p|%-7lx][DEBUG_SKYPE  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
-#define DEBUGA_CALL(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"rev "SKYPIAX_SVN_VERSION "[%p|%-7lx][DEBUG_CALL  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
-#define DEBUGA_PBX(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"rev "SKYPIAX_SVN_VERSION "[%p|%-7lx][DEBUG_PBX  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
-#define ERRORA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 		"rev "SKYPIAX_SVN_VERSION "[%p|%-7lx][ERRORA  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
-#define WARNINGA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 		"rev "SKYPIAX_SVN_VERSION "[%p|%-7lx][WARNINGA  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
-#define NOTICA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 		"rev "SKYPIAX_SVN_VERSION "[%p|%-7lx][NOTICA  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
+#define DEBUGA_SKYPE(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"rev "SKYPOPEN_SVN_VERSION "[%p|%-7lx][DEBUG_SKYPE  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
+#define DEBUGA_CALL(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"rev "SKYPOPEN_SVN_VERSION "[%p|%-7lx][DEBUG_CALL  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
+#define DEBUGA_PBX(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"rev "SKYPOPEN_SVN_VERSION "[%p|%-7lx][DEBUG_PBX  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
+#define ERRORA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 		"rev "SKYPOPEN_SVN_VERSION "[%p|%-7lx][ERRORA  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
+#define WARNINGA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 		"rev "SKYPOPEN_SVN_VERSION "[%p|%-7lx][WARNINGA  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
+#define NOTICA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 		"rev "SKYPOPEN_SVN_VERSION "[%p|%-7lx][NOTICA  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
 
-#define SKYPIAX_P_LOG NULL, (unsigned long)55, __LINE__, tech_pvt ? tech_pvt->name ? tech_pvt->name : "none" : "none", -1, tech_pvt ? tech_pvt->interface_state : -1, tech_pvt ? tech_pvt->skype_callflow : -1
-
-/*********************************/
-#define SKYPIAX_CAUSE_NORMAL		1
-/*********************************/
-#define SKYPIAX_FRAME_DTMF			1
-/*********************************/
-#define SKYPIAX_CONTROL_RINGING		1
-#define SKYPIAX_CONTROL_ANSWER		2
+#define SKYPOPEN_P_LOG NULL, (unsigned long)55, __LINE__, tech_pvt ? tech_pvt->name ? tech_pvt->name : "none" : "none", -1, tech_pvt ? tech_pvt->interface_state : -1, tech_pvt ? tech_pvt->skype_callflow : -1
 
 /*********************************/
-#define		SKYPIAX_STATE_IDLE					0
-#define		SKYPIAX_STATE_DOWN					1
-#define		SKYPIAX_STATE_RING					2
-#define		SKYPIAX_STATE_DIALING				3
-#define		SKYPIAX_STATE_BUSY					4
-#define		SKYPIAX_STATE_UP					5
-#define		SKYPIAX_STATE_RINGING				6
-#define		SKYPIAX_STATE_PRERING				7
-#define		SKYPIAX_STATE_ERROR_DOUBLE_CALL		8
-#define		SKYPIAX_STATE_SELECTED				9
-#define 	SKYPIAX_STATE_HANGUP_REQUESTED		10
-#define		SKYPIAX_STATE_PREANSWER				11
+#define SKYPOPEN_CAUSE_NORMAL		1
+/*********************************/
+#define SKYPOPEN_FRAME_DTMF			1
+/*********************************/
+#define SKYPOPEN_CONTROL_RINGING		1
+#define SKYPOPEN_CONTROL_ANSWER		2
+
+/*********************************/
+#define		SKYPOPEN_STATE_IDLE					0
+#define		SKYPOPEN_STATE_DOWN					1
+#define		SKYPOPEN_STATE_RING					2
+#define		SKYPOPEN_STATE_DIALING				3
+#define		SKYPOPEN_STATE_BUSY					4
+#define		SKYPOPEN_STATE_UP					5
+#define		SKYPOPEN_STATE_RINGING				6
+#define		SKYPOPEN_STATE_PRERING				7
+#define		SKYPOPEN_STATE_ERROR_DOUBLE_CALL		8
+#define		SKYPOPEN_STATE_SELECTED				9
+#define 	SKYPOPEN_STATE_HANGUP_REQUESTED		10
+#define		SKYPOPEN_STATE_PREANSWER				11
 /*********************************/
 /* call flow from the device */
 #define 	CALLFLOW_CALL_IDLE					0
@@ -144,10 +144,10 @@ typedef enum {
 
 /*********************************/
 
-#define SKYPIAX_MAX_INTERFACES 64
+#define SKYPOPEN_MAX_INTERFACES 64
 
 #ifndef WIN32
-struct SkypiaxHandles {
+struct SkypopenHandles {
 	Window skype_win;
 	Display *disp;
 	Window win;
@@ -157,7 +157,7 @@ struct SkypiaxHandles {
 };
 #else //WIN32
 
-struct SkypiaxHandles {
+struct SkypopenHandles {
 	HWND win32_hInit_MainWindowHandle;
 	HWND win32_hGlobal_SkypeAPIWindowHandle;
 	HINSTANCE win32_hInit_ProcessHandle;
@@ -216,12 +216,12 @@ struct private_object {
 	int tcp_cli_port;
 	int tcp_srv_port;
 #endif
-	struct SkypiaxHandles SkypiaxHandles;
+	struct SkypopenHandles SkypopenHandles;
 
 	int interface_state;
 	char language[80];
 	char exten[80];
-	int skypiax_sound_rate;
+	int skypopen_sound_rate;
 	char callid_name[50];
 	char callid_number[50];
 	double playback_boost;
@@ -238,16 +238,16 @@ struct private_object {
 #ifdef WIN32
 	switch_file_t *audiopipe_srv[2];
 	switch_file_t *audiopipe_cli[2];
-	switch_file_t *skypiax_sound_capt_fd;
+	switch_file_t *skypopen_sound_capt_fd;
 #else							/* WIN32 */
 	int audiopipe_srv[2];
 	int audiopipe_cli[2];
-	int skypiax_sound_capt_fd;
+	int skypopen_sound_capt_fd;
 #endif							/* WIN32 */
 	switch_thread_t *tcp_srv_thread;
 	switch_thread_t *tcp_cli_thread;
-	switch_thread_t *skypiax_signaling_thread;
-	switch_thread_t *skypiax_api_thread;
+	switch_thread_t *skypopen_signaling_thread;
+	switch_thread_t *skypopen_api_thread;
 	short audiobuf[SAMPLES_PER_FRAME];
 	int audiobuf_is_loaded;
 	short audiobuf_cli[SAMPLES_PER_FRAME];
@@ -258,7 +258,7 @@ struct private_object {
 	int flag_audio_srv;
 
 	FILE *phonebook_writing_fp;
-	int skypiax_dir_entry_extension_prefix;
+	int skypopen_dir_entry_extension_prefix;
 	char skype_user[256];
 	char initial_skype_user[256];
 	char skype_password[256];
@@ -292,47 +292,47 @@ struct private_object {
 
 typedef struct private_object private_t;
 
-void *SWITCH_THREAD_FUNC skypiax_api_thread_func(switch_thread_t * thread, void *obj);
-int skypiax_audio_read(private_t * tech_pvt);
-int skypiax_audio_init(private_t * tech_pvt);
-int skypiax_signaling_write(private_t * tech_pvt, char *msg_to_skype);
-int skypiax_signaling_read(private_t * tech_pvt);
+void *SWITCH_THREAD_FUNC skypopen_api_thread_func(switch_thread_t * thread, void *obj);
+int skypopen_audio_read(private_t * tech_pvt);
+int skypopen_audio_init(private_t * tech_pvt);
+int skypopen_signaling_write(private_t * tech_pvt, char *msg_to_skype);
+int skypopen_signaling_read(private_t * tech_pvt);
 
-int skypiax_call(private_t * tech_pvt, char *idest, int timeout);
-int skypiax_senddigit(private_t * tech_pvt, char digit);
+int skypopen_call(private_t * tech_pvt, char *idest, int timeout);
+int skypopen_senddigit(private_t * tech_pvt, char digit);
 
-void *skypiax_do_tcp_srv_thread_func(void *obj);
-void *SWITCH_THREAD_FUNC skypiax_do_tcp_srv_thread(switch_thread_t * thread, void *obj);
+void *skypopen_do_tcp_srv_thread_func(void *obj);
+void *SWITCH_THREAD_FUNC skypopen_do_tcp_srv_thread(switch_thread_t * thread, void *obj);
 
-void *skypiax_do_tcp_cli_thread_func(void *obj);
-void *SWITCH_THREAD_FUNC skypiax_do_tcp_cli_thread(switch_thread_t * thread, void *obj);
+void *skypopen_do_tcp_cli_thread_func(void *obj);
+void *SWITCH_THREAD_FUNC skypopen_do_tcp_cli_thread(switch_thread_t * thread, void *obj);
 
-void *skypiax_do_skypeapi_thread_func(void *obj);
-void *SWITCH_THREAD_FUNC skypiax_do_skypeapi_thread(switch_thread_t * thread, void *obj);
+void *skypopen_do_skypeapi_thread_func(void *obj);
+void *SWITCH_THREAD_FUNC skypopen_do_skypeapi_thread(switch_thread_t * thread, void *obj);
 int dtmf_received(private_t * tech_pvt, char *value);
 int start_audio_threads(private_t * tech_pvt);
 int new_inbound_channel(private_t * tech_pvt);
 int outbound_channel_answered(private_t * tech_pvt);
-int skypiax_signaling_write(private_t * tech_pvt, char *msg_to_skype);
+int skypopen_signaling_write(private_t * tech_pvt, char *msg_to_skype);
 #if defined(WIN32) && !defined(__CYGWIN__)
-int skypiax_pipe_read(switch_file_t * pipe, short *buf, int howmany);
-int skypiax_pipe_write(switch_file_t * pipe, short *buf, int howmany);
+int skypopen_pipe_read(switch_file_t * pipe, short *buf, int howmany);
+int skypopen_pipe_write(switch_file_t * pipe, short *buf, int howmany);
 /* Visual C do not have strsep ? */
 char *strsep(char **stringp, const char *delim);
 #else
-int skypiax_pipe_read(int pipe, short *buf, int howmany);
-int skypiax_pipe_write(int pipe, short *buf, int howmany);
+int skypopen_pipe_read(int pipe, short *buf, int howmany);
+int skypopen_pipe_write(int pipe, short *buf, int howmany);
 #endif /* WIN32 */
-int skypiax_close_socket(unsigned int fd);
-private_t *find_available_skypiax_interface_rr(private_t * tech_pvt_calling);
+int skypopen_close_socket(unsigned int fd);
+private_t *find_available_skypopen_interface_rr(private_t * tech_pvt_calling);
 int remote_party_is_ringing(private_t * tech_pvt);
 int remote_party_is_early_media(private_t * tech_pvt);
-int skypiax_answer(private_t * tech_pvt, char *id, char *value);
-int skypiax_transfer(private_t * tech_pvt, char *id, char *value);
+int skypopen_answer(private_t * tech_pvt, char *id, char *value);
+int skypopen_transfer(private_t * tech_pvt, char *id, char *value);
 #ifndef WIN32
-int skypiax_socket_create_and_bind(private_t * tech_pvt, int *which_port);
+int skypopen_socket_create_and_bind(private_t * tech_pvt, int *which_port);
 #else
-int skypiax_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_port);
+int skypopen_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_port);
 #endif //WIN32
 int incoming_chatmessage(private_t * tech_pvt, int which);
 int next_port(void);

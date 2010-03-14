@@ -155,7 +155,7 @@ static inline void snd_card_dummy_pcm_timer_start(struct snd_dummy_pcm *dpcm)
 		}
 	}
 	if (!found) {
-		printk("skypiax: start, NOT found?\n");
+		printk("skypopen: start, NOT found?\n");
 	}
 }
 
@@ -384,7 +384,7 @@ static struct snd_dummy_pcm *new_pcm_stream(struct snd_pcm_substream *substream)
 
 	spin_unlock_bh(&giovalock);
 	if (!found) {
-		printk("skypiax giovaindex=%d NOT found????\n", giovaindex);
+		printk("skypopen giovaindex=%d NOT found????\n", giovaindex);
 	}
 	return dpcm;
 }
@@ -747,7 +747,7 @@ static int __init alsa_card_dummy_init(void)
 		giovatimer.function = snd_card_dummy_pcm_timer_function;
 		giovatimer.expires = 1 + jiffies;
 		add_timer(&giovatimer);
-		printk("snd-dummy skypiax driver version: 3, %s:%d working on a machine with %dHZ kernel\n", __FILE__, __LINE__, HZ);
+		printk("snd-dummy skypopen driver version: 3, %s:%d working on a machine with %dHZ kernel\n", __FILE__, __LINE__, HZ);
 		spin_unlock_bh(&giovalock);
 	}
 

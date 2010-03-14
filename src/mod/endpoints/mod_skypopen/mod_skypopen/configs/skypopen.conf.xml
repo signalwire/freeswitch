@@ -1,0 +1,34 @@
+<configuration name="skypopen.conf" description="Skypopen Configuration">
+  <global_settings>
+    <param name="debug" value="8"/>
+    <param name="dialplan" value="XML"/>
+    <param name="context" value="default"/>
+    <param name="destination" value="5000"/>
+    <param name="skype_user" value="user1"/>
+    <param name="report_incoming_chatmessages" value="true"/>
+    <param name="silent_mode" value="false"/>
+    <param name="write_silence_when_idle" value="true"/>
+  </global_settings>
+  <!-- one entry here per each skypopen interface -->
+  <per_interface_settings>
+    <interface id="1" name="interface1">
+        <param name="X11-display" value=":101"/>
+        <param name="skype_user" value="user1"/>
+    </interface>
+    <interface id="2" name="interface2">
+        <param name="X11-display" value=":102"/>
+        <param name="skype_user" value="user2"/>
+    </interface>
+<!-- following interfaces are commented out
+    <interface id="3" name="interface3">
+        <param name="X11-display" value=":103"/>
+        <param name="skype_user" value="user3"/>
+    </interface>
+    <interface id="4" name="interface4">
+        <param name="X11-display" value=":104"/>
+        <param name="skype_user" value="user4"/>
+    </interface>
+-->
+  </per_interface_settings>
+</configuration>
+

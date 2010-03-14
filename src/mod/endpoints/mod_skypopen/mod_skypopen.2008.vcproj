@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="mod_skypiax"
+	Name="mod_skypopen"
 	ProjectGUID="{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}"
-	RootNamespace="mod_skypiax"
+	RootNamespace="mod_skypopen"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -149,15 +149,15 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\mod_skypiax\mod_skypiax.c"
+			RelativePath=".\mod_skypopen.c"
 			>
 		</File>
 		<File
-			RelativePath=".\skypiax.h"
+			RelativePath=".\skypopen.h"
 			>
 		</File>
 		<File
-			RelativePath=".\skypiax_protocol.c"
+			RelativePath=".\skypopen_protocol.c"
 			>
 		</File>
 	</Files>
