@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9,00"
 	Name="mod_skypopen"
-	ProjectGUID="{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}"
+	ProjectGUID="{39AFC76C-4F51-4245-964E-6C23DC127670}"
 	RootNamespace="mod_skypopen"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
