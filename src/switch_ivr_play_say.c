@@ -694,7 +694,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 				break;
 			}
 		} else if (switch_test_flag(read_frame, SFF_CNG) && fill_cng) {
-			len = write_frame.datalen;
+			len = write_frame.datalen / 2;
 			if (switch_core_file_write(fh, write_frame.data, &len) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}			
