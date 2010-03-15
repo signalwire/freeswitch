@@ -1400,7 +1400,7 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 							  sangoma_boost_data->mcon.cfg.local_port,
 							  sangoma_boost_data->mcon.cfg.remote_ip,
 							  sangoma_boost_data->mcon.cfg.remote_port) < 0) {
-		zap_log(ZAP_LOG_DEBUG, "Error: Opening MCON Socket [%d] %s\n", sangoma_boost_data->mcon.socket, strerror(errno));
+		zap_log(ZAP_LOG_ERROR, "Error: Opening MCON Socket [%d] %s\n", sangoma_boost_data->mcon.socket, strerror(errno));
 		goto end;
     }
  
@@ -1409,7 +1409,7 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 							  ++sangoma_boost_data->pcon.cfg.local_port,
 							  sangoma_boost_data->pcon.cfg.remote_ip,
 							  ++sangoma_boost_data->pcon.cfg.remote_port) < 0) {
-		zap_log(ZAP_LOG_DEBUG, "Error: Opening PCON Socket [%d] %s\n", sangoma_boost_data->pcon.socket, strerror(errno));
+		zap_log(ZAP_LOG_ERROR, "Error: Opening PCON Socket [%d] %s\n", sangoma_boost_data->pcon.socket, strerror(errno));
 		goto end;
     }
 	
