@@ -3563,8 +3563,6 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 
 	ftdm_span_close_all();
 	
-	ftdm_unload_modules();
-
 	ftdm_mutex_lock(globals.span_mutex);
 	for (sp = globals.spans; sp;) {
 		ftdm_span_t *cur_span = sp;
@@ -3584,6 +3582,8 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 	}
 	globals.spans = NULL;
 	ftdm_mutex_unlock(globals.span_mutex);
+
+	ftdm_unload_modules();
 
 	ftdm_mutex_lock(globals.mutex);
 	hashtable_destroy(globals.interface_hash);
