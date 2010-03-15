@@ -46,9 +46,10 @@ SWITCH_DECLARE(switch_profile_timer_t *) switch_new_profile_timer(void);
  * \brief provides the percentage of idle system time
  * \param p profile timer structure previously created with new_profile_timer
  * \param pointer to store the percentage of idle time
- * \return -1 on error 0 for success
+ * \return false on error true for success
+ * \note on error idle_percentage will be set to 100
  */
-SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, double *idle_percentage);
+SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t *p, double *idle_percentage);
 
 
 /*! 

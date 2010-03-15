@@ -53,6 +53,8 @@ struct profile_timer
 	double last_percentage_of_idle_time;
 
 #ifdef __linux__
+	/* the cpu feature gets disabled on errors */
+	int disabled;
 	/* all of these are the Linux jiffies last retrieved count */
 	unsigned long long last_user_time;
 	unsigned long long last_system_time;
@@ -89,15 +91,22 @@ static int read_cpu_stats(switch_profile_timer_t *p,
 {
 // the output of proc should not change that often from one kernel to other
 // see fs/proc/proc_misc.c or fs/proc/stat.c in the Linux kernel for more details
-// also man 5 proc is useful
-#define CPU_ELEMENTS 8 // change this if you change the format string
-#define CPU_INFO_FORMAT "cpu  %llu %llu %llu %llu %llu %llu %llu %llu"
+// also man 5 proc is useful.
+#define CPU_ELEMENTS_1 7 // change this if you change the format string
+#define CPU_INFO_FORMAT_1 "cpu  %llu %llu %llu %llu %llu %llu %llu"
+
+#define CPU_ELEMENTS_2 8 // change this if you change the format string
+#define CPU_INFO_FORMAT_2 "cpu  %llu %llu %llu %llu %llu %llu %llu %llu"
+
+#define CPU_ELEMENTS_3 9 // change this if you change the format string
+#define CPU_INFO_FORMAT_3 "cpu  %llu %llu %llu %llu %llu %llu %llu %llu %llu"
 	static const char procfile[] = "/proc/stat";
 	int rc = 0;
 	int myerrno = 0;
 	int elements = 0;
 	const char *cpustr = NULL;
 	char statbuff[1024];
+	unsigned long long guest = 0;
 
 	if (!p->initd) {
 		p->procfd = open(procfile, O_RDONLY, 0);
@@ -123,22 +132,42 @@ static int read_cpu_stats(switch_profile_timer_t *p,
 		return -1;
 	}
 
-	elements = sscanf(cpustr, CPU_INFO_FORMAT, user, nice, system, idle, iowait, irq, softirq, steal);
-	if (elements != CPU_ELEMENTS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "wrong format for Linux proc cpu statistics: expected %d elements, but just found %d\n", CPU_ELEMENTS, elements);
-		return -1;
+	/* test each of the known formats starting from the bigger one */
+	elements = sscanf(cpustr, CPU_INFO_FORMAT_3, user, nice, system, idle, iowait, irq, softirq, steal, &guest);
+	if (elements == CPU_ELEMENTS_3) {
+		user += guest; /* guest operating system's run in user space */
+		return 0;
 	}
-	return 0;
+
+	elements = sscanf(cpustr, CPU_INFO_FORMAT_2, user, nice, system, idle, iowait, irq, softirq, steal);
+	if (elements == CPU_ELEMENTS_2) {
+		return 0;
+	}
+
+	elements = sscanf(cpustr, CPU_INFO_FORMAT_1, user, nice, system, idle, iowait, irq, softirq);
+	if (elements == CPU_ELEMENTS_1) {
+		*steal = 0;
+		return 0;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unexpected format for Linux proc cpu statistics: %s\n", cpustr);
+	return -1;
 }
 
-SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, double *idle_percentage)
+SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t *p, double *idle_percentage)
 {
 	unsigned long long user, nice, system, idle, iowait, irq, softirq, steal;
 	unsigned long long usertime, kerneltime, idletime, totaltime, halftime;
 
+	*idle_percentage = 100.0;
+	if (p->disabled) {
+		return SWITCH_FALSE;
+	}
+
 	if (read_cpu_stats(p, &user, &nice, &system, &idle, &iowait, &irq, &softirq, &steal)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to retrieve Linux CPU statistics\n");
-		return -1;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to retrieve Linux CPU statistics, disabling profile timer ...\n");
+		p->disabled = 1;
+		return SWITCH_FALSE;
 	}
 
 	if (!p->valid_last_times) {
@@ -154,7 +183,7 @@ SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, doubl
 		p->last_idle_time = idle;
 		p->last_percentage_of_idle_time = 100.0;
 		*idle_percentage = p->last_percentage_of_idle_time;
-		return 0;
+		return SWITCH_TRUE;
 	}
 
 	usertime = (user - p->last_user_time) + (nice - p->last_nice_time);
@@ -171,7 +200,7 @@ SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, doubl
 		// typical configs set HZ to 100 (that means, 100 jiffies updates per second, that is one each 10ms)
 		// avoid an arithmetic exception and return the same values
 		*idle_percentage = p->last_percentage_of_idle_time;
-		return 0;
+		return SWITCH_TRUE;
 	}
 
 	halftime = totaltime / 2UL;
@@ -188,12 +217,12 @@ SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, doubl
 	p->last_steal_time = steal;
 	p->last_idle_time = idle;
 
-	return 0;
+	return SWITCH_TRUE;
 }
 
 #elif defined (WIN32) || defined (WIN64)
 
-SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, double *idle_percentage)
+SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t *p, double *idle_percentage)
 {
 	FILETIME idleTime;
 	FILETIME kernelTime;
@@ -227,14 +256,15 @@ SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, doubl
 	p->i64LastIdleTime = i64IdleTime;
 
 	/* Success */
-	return 0;
+	return SWITCH_TRUE;
 }
 
 #else
 
   /* Unsupported */
-SWITCH_DECLARE(int) switch_get_system_idle_time(switch_profile_timer_t *p, double *idle_percentage)
+SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t *p, double *idle_percentage)
 {
+	*idle_percentage = 100.0;
 	return SWITCH_FALSE;
 }
 
