@@ -342,14 +342,14 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 	xml_binding_t **second_order = NULL;
 	switch_xml_t result = NULL;
 
-	// Count how many elements we have
+	/* Count how many elements we have */
 	for( ; binding != NULL; binding = binding->next) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found [%s]\n", binding->url);
 		count++;
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "XML_CURL Fetch on %d bindings\n", count);
 
-	// Make a local copy of the bindings
+	/* Make a local copy of the bindings */
 	bindings_copy = malloc(count*sizeof(xml_binding_t));
 	tmp = bindings_copy;
 	binding = root;
@@ -360,16 +360,16 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 		pos++;
 	}
 	
-	// And two ordering arrays
+	/* And two ordering arrays */
 	first_order = malloc(count*sizeof(xml_binding_t*));
 	memset(first_order, 0, count*sizeof(xml_binding_t*));
 	second_order = malloc(count*sizeof(xml_binding_t*));
 	memset(second_order, 0, count*sizeof(xml_binding_t*));
 
-	// Update root to point to local copy of binding data
+	/* Update root to point to local copy of binding data */
 	root = bindings_copy;
 
-	// Put all weight=0 at beginning of first ordering array
+	/* Put all weight=0 at beginning of first ordering array */
 	binding = root; pos = 0;
 	for(int i = 0; i < count; i++) {
 		binding = &bindings_copy[i];
@@ -380,7 +380,7 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 		}
 	}
 
-	// Then dump everything else into the first ordering array
+	/* Then dump everything else into the first ordering array */
 	binding = root;
 	for(int i = 0; i < count; i++) {
 		binding = &bindings_copy[i];
@@ -393,10 +393,10 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 
 	srand((unsigned)((unsigned)(intptr_t)switch_thread_self() + switch_micro_time_now()));
 
-	// We need to pick every element in the array, so loop once for every one of them
+	/* We need to pick every element in the array, so loop once for every one of them */
 	pos = 0;
 	for(int i = 0; i < count; i++) {
-		// Calculate the total remaining unchosen weight
+		/* Calculate the total remaining unchosen weight */
 		total_weight = 0; running_weight = 0;
 		for(int b = 0; b < count; b++) {
 			binding = &bindings_copy[b];
@@ -404,18 +404,18 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remaining total weight [%d]\n", total_weight);
 
-		// Pick a random number between [0, total_weight]
-		// Note: Don't use rand() % M as it is not as random as this more complex 
-		// method which achieves the same intent with more random results
+		/* Pick a random number between [0, total_weight]
+		 * Note: Don't use rand() % M as it is not as random as this more complex 
+		 * method which achieves the same intent with more random results */
 		rand_weight = (int)( ((double)rand()) / (((double)(RAND_MAX) + (double)(1)) / ((double)total_weight + (double)(1))) );
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Random weight [%d]\n", rand_weight);
 
-		// Then grab the first unchosen element whose running_weight >= rand_weight 
-		// and move it into our 'picked' list
+		/* Then grab the first unchosen element whose running_weight >= rand_weight 
+		   and move it into our 'picked' list */
 		binding = root;
 		for(int b = 0; b < count; b++) {
 			binding = &bindings_copy[b];
-			if(binding->chosen) continue; // skip already picked elements
+			if(binding->chosen) continue; /* skip already picked elements */
 
 			running_weight += binding->weight;
 			if(running_weight >= rand_weight) {
@@ -466,8 +466,8 @@ static switch_status_t do_config(void)
 		goto done;
 	}
 
-	// Only 32768 bindings allowed or weight sum could exceed signed int max 
-	// value breaking load balancing algorithm
+	/* Only 32768 bindings allowed or weight sum could exceed signed int max 
+	 * value breaking load balancing algorithm */
 	for (binding_tag = switch_xml_child(bindings_tag, "binding"); binding_tag && x < 32768; binding_tag = binding_tag->next) {
 		char *bname = (char *) switch_xml_attr_soft(binding_tag, "name");
 		char *url = NULL;
