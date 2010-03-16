@@ -3107,7 +3107,7 @@ SWITCH_STANDARD_API(oz_function)
 			zap_channel_command(span->channels[chan_id], ZAP_COMMAND_SET_RX_GAIN, &rxgain);
 			zap_channel_command(span->channels[chan_id], ZAP_COMMAND_SET_TX_GAIN, &txgain);
 		} else {
-			for (i = 1; i < span->chan_count; i++) {
+			for (i = 1; i < (int)span->chan_count; i++) {
 				zap_channel_command(span->channels[i], ZAP_COMMAND_SET_RX_GAIN, &rxgain);
 				zap_channel_command(span->channels[i], ZAP_COMMAND_SET_TX_GAIN, &txgain);
 			}

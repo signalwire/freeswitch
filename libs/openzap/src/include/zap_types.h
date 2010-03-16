@@ -35,7 +35,11 @@
 #define ZAP_TYPES_H
 #include "fsk.h"
 
+#ifdef WIN32
+#define ZAP_INVALID_SOCKET INVALID_HANDLE_VALUE
+#else
 #define ZAP_INVALID_SOCKET -1
+#endif
 #define zap_array_len(obj) sizeof(obj)/sizeof(obj[0])
 
 #ifdef WIN32

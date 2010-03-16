@@ -256,8 +256,8 @@ OZ_DECLARE(zap_status_t) zap_interrupt_create(zap_interrupt_t **ininterrupt, zap
 
 	interrupt->device = device;
 #ifdef WIN32
-	interrupt->interrupt = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if (!interrupt->interrupt) {
+	interrupt->event = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (!interrupt->event) {
 		zap_log(ZAP_LOG_ERROR, "Failed to allocate interrupt event\n");
 		goto failed;
 	}
@@ -310,7 +310,7 @@ OZ_DECLARE(zap_status_t) zap_interrupt_wait(zap_interrupt_t *interrupt, int ms)
 		num++;
 		ints[1] = interrupt->device;
 	}
-	res = WaitForMultipleObjects(num, &ints, FALSE, ms >= 0 ? ms : INFINITE);
+	res = WaitForMultipleObjects(num, ints, FALSE, ms >= 0 ? ms : INFINITE);
 	switch (res) {
 	case WAIT_TIMEOUT:
 		return ZAP_TIMEOUT;
@@ -360,7 +360,7 @@ OZ_DECLARE(zap_status_t) zap_interrupt_wait(zap_interrupt_t *interrupt, int ms)
 OZ_DECLARE(zap_status_t) zap_interrupt_signal(zap_interrupt_t *interrupt)
 {
 #ifdef WIN32
-	if (!SetEvent(interrupt->interrupt)) {
+	if (!SetEvent(interrupt->event)) {
 		zap_log(ZAP_LOG_ERROR, "Failed to signal interrupt\n");
 		return ZAP_FAIL;
 	}
@@ -379,7 +379,7 @@ OZ_DECLARE(zap_status_t) zap_interrupt_destroy(zap_interrupt_t **ininterrupt)
 	zap_interrupt_t *interrupt = NULL;
 	interrupt = *ininterrupt;
 #ifdef WIN32
-	CloseHandle(interrupt->interrupt);
+	CloseHandle(interrupt->event);
 #else
 	close(interrupt->readfd);
 	close(interrupt->writefd);
@@ -434,6 +434,10 @@ OZ_DECLARE(zap_status_t) zap_interrupt_multiple_wait(zap_interrupt_t *interrupts
 		}
 	}
 
+#elif defined(__WINDOWS__)
+	UNREFERENCED_PARAMETER(interrupts);
+	UNREFERENCED_PARAMETER(size);
+	UNREFERENCED_PARAMETER(ms);
 #endif
 	return ZAP_SUCCESS;
 }

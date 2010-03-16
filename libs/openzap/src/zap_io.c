@@ -572,7 +572,7 @@ OZ_DECLARE(zap_status_t) zap_span_load_tones(zap_span_t *span, const char *mapna
 static void reset_gain_table(unsigned char *gain_table, float new_gain, zap_codec_t codec_gain)
 {
 	/* sample value */
-	unsigned sv = 0;
+	uint8_t sv = 0;
 	/* linear gain factor */
 	float lingain = 0;
 	/* linear value for each table sample */
@@ -590,7 +590,7 @@ static void reset_gain_table(unsigned char *gain_table, float new_gain, zap_code
 		/* for a 0.0db gain table, each alaw/ulaw sample value is left untouched (0 ==0, 1 == 1, 2 == 2 etc)*/
 		sv = 0;
 		while (1) {
-			gain_table[sv] = sv;
+			gain_table[sv] = (unsigned char)sv;
 			if (sv == (ZAP_GAINS_TABLE_SIZE - 1)) {
 				break;
 			}
@@ -600,11 +600,11 @@ static void reset_gain_table(unsigned char *gain_table, float new_gain, zap_code
 	}
 
 	/* use the 20log rule to increase the gain: http://en.wikipedia.org/wiki/Gain, http:/en.wikipedia.org/wiki/20_log_rule#Definitions */
-	lingain = pow(10.0, new_gain/ 20.0);
+	lingain = (float)pow(10.0f, new_gain/20.0f);
 	sv = 0;
 	while (1) {
 		/* get the linear value for this alaw/ulaw sample value */
-		linvalue = codec_gain == ZAP_CODEC_ALAW ? alaw_to_linear(sv) : ulaw_to_linear(sv);
+		linvalue = codec_gain == ZAP_CODEC_ALAW ? (float)alaw_to_linear(sv) : (float)ulaw_to_linear(sv);
 
 		/* multiply the linear value and the previously calculated linear gain */
 		ampvalue = (int)(linvalue * lingain);
@@ -668,8 +668,8 @@ OZ_DECLARE(zap_status_t) zap_span_add_channel(zap_span_t *span, zap_socket_t soc
 		/* set 0.0db gain table */
 		i = 0;
 		while (1) {
-			new_chan->txgain_table[i] = i;
-			new_chan->rxgain_table[i] = i;
+			new_chan->txgain_table[i] = (unsigned char)i;
+			new_chan->rxgain_table[i] = (unsigned char)i;
 			if (i == (sizeof(new_chan->txgain_table)-1)) {
 				break;
 			}
@@ -2736,13 +2736,13 @@ static zap_status_t load_config(void)
 				}
 			} else	if (!strncasecmp(var, "cpu_set_alarm_threshold", 22)) {
 				if (atoi(val) > 0 && atoi(val) < 100) {
-					globals.cpu_monitor.set_alarm_threshold = atoi(val);
+					globals.cpu_monitor.set_alarm_threshold = (uint8_t)atoi(val);
 				} else {
 					zap_log(ZAP_LOG_ERROR, "Invalid cpu alarm set threshold %s\n", val);
 				}
 			} else if (!strncasecmp(var, "cpu_reset_alarm_threshold", 22)) {
 				if (atoi(val) > 0 && atoi(val) < 100) {
-					globals.cpu_monitor.reset_alarm_threshold = atoi(val);
+					globals.cpu_monitor.reset_alarm_threshold = (uint8_t)atoi(val);
 					if (globals.cpu_monitor.reset_alarm_threshold > globals.cpu_monitor.set_alarm_threshold) {
 						globals.cpu_monitor.reset_alarm_threshold = globals.cpu_monitor.set_alarm_threshold-10;
 						zap_log(ZAP_LOG_ERROR, "Cpu alarm reset threshold must be lower than set threshold, set threshold to %d\n", globals.cpu_monitor.reset_alarm_threshold);
@@ -3427,6 +3427,7 @@ OZ_DECLARE_NONSTD(zap_status_t) zap_console_stream_write(zap_stream_handle_t *ha
 
 static void *zap_cpu_monitor_run(zap_thread_t *me, void *obj)
 {
+#ifndef WIN32
 	cpu_monitor_t *monitor = (cpu_monitor_t *)obj;
 	struct zap_cpu_monitor_stats *cpu_stats = zap_new_cpu_monitor();
 	if (!cpu_stats) {
@@ -3458,6 +3459,11 @@ static void *zap_cpu_monitor_run(zap_thread_t *me, void *obj)
 	}
 	zap_delete_cpu_monitor(cpu_stats);
 	monitor->running = 0;
+#else
+	UNREFERENCED_PARAMETER(me);
+	UNREFERENCED_PARAMETER(obj);
+#endif
+
 	return NULL;
 }
 
