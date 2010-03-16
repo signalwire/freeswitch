@@ -242,8 +242,12 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		}
 
 		if (binding->timeout_ms) {
+#ifdef CURLOPT_TIMEOUT_MS
 			curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, binding->timeout_ms);
-                        curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+#else
+			curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, binding->timeout_ms);
+#endif
+			curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		}
 
 		if (binding->disable100continue) {
