@@ -3938,7 +3938,7 @@ SWITCH_STANDARD_API(voicemail_delete_api_function)
 		domain = e = p;
 	}
 
-	if ((p = strchr(domain, '/'))) {
+	if (domain && (p = strchr(domain, '/'))) {
 		*p++ = '\0';
 		profile_name = e = p;
 	}
@@ -4004,7 +4004,7 @@ SWITCH_STANDARD_API(voicemail_read_api_function)
 		domain = e = p;
 	}
 
-	if ((p = strchr(domain, '/'))) {
+	if (domain && (p = strchr(domain, '/'))) {
 		*p++ = '\0';
 		profile_name = e = p;
 	}
@@ -4044,18 +4044,20 @@ static int api_list_callback(void *pArg, int argc, char **argv, char **columnNam
 {
 	switch_stream_handle_t *stream = (switch_stream_handle_t *) pArg;
 
-	if (!strcasecmp(argv[7], "xml")) {
+	if (!strcasecmp(argv[9], "xml")) {
 		stream->write_function(stream, " <message>\n");
-		stream->write_function(stream, "  <username>%s</username>\n", argv[0]);
-		stream->write_function(stream, "  <domain>%s</domain>\n", argv[1]);
-		stream->write_function(stream, "  <folder>%s</folder>\n", argv[2]);
-		stream->write_function(stream, "  <path>%s</path>\n", argv[3]);
-		stream->write_function(stream, "  <uuid>%s</uuid>\n", argv[4]);
-		stream->write_function(stream, "  <cid-name>%s</cid-name>\n", argv[5]);
-		stream->write_function(stream, "  <cid-number>%s</cid-number>\n", argv[5]);
+		stream->write_function(stream, "  <created_epoch>%s</created_epoch>\n", argv[0]);
+		stream->write_function(stream, "  <read_epoch>%s</read_epoch>\n", argv[1]);
+		stream->write_function(stream, "  <username>%s</username>\n", argv[2]);
+		stream->write_function(stream, "  <domain>%s</domain>\n", argv[3]);
+		stream->write_function(stream, "  <folder>%s</folder>\n", argv[4]);
+		stream->write_function(stream, "  <path>%s</path>\n", argv[5]);
+		stream->write_function(stream, "  <uuid>%s</uuid>\n", argv[6]);
+		stream->write_function(stream, "  <cid-name>%s</cid-name>\n", argv[7]);
+		stream->write_function(stream, "  <cid-number>%s</cid-number>\n", argv[8]);
 		stream->write_function(stream, " </message>\n");
 	} else {
-		stream->write_function(stream, "%s:%s:%s:%s:%s:%s:%s\n", argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6]);
+		stream->write_function(stream, "%s:%s:%s:%s:%s:%s:%s:%s:%s\n", argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8]);
 	}
 	
     return 0;
@@ -4082,7 +4084,7 @@ SWITCH_STANDARD_API(voicemail_list_api_function)
 		domain = e = p;
 	}
 
-	if ((p = strchr(domain, '/'))) {
+	if (domain && (p = strchr(domain, '/'))) {
 		*p++ = '\0';
 		profile_name = e = p;
 	}
@@ -4093,7 +4095,7 @@ SWITCH_STANDARD_API(voicemail_list_api_function)
 	}
 
 	if (id && domain && profile_name && (profile = get_profile(profile_name))) {
-		sql = switch_mprintf("select username, domain, in_folder, file_path, uuid, cid_name, cid_number, "
+		sql = switch_mprintf("select created_epoch, read_epoch, username, domain, in_folder, file_path, uuid, cid_name, cid_number, "
 							 "'%q' from voicemail_msgs where username='%q' and domain='%q'", 
 							 format, id, domain);
 
