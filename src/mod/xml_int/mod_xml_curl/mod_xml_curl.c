@@ -345,6 +345,7 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 	xml_binding_t **first_order = NULL;
 	xml_binding_t **second_order = NULL;
 	switch_xml_t result = NULL;
+	int i, b;
 
 	/* Count how many elements we have */
 	for( ; binding != NULL; binding = binding->next) {
@@ -375,7 +376,7 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 
 	/* Put all weight=0 at beginning of first ordering array */
 	binding = root; pos = 0;
-	for(int i = 0; i < count; i++) {
+	for(i = 0; i < count; i++) {
 		binding = &bindings_copy[i];
 		if(binding->weight == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Copying [%s] to first_order[%d]\n", binding->url, pos);
@@ -386,7 +387,7 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 
 	/* Then dump everything else into the first ordering array */
 	binding = root;
-	for(int i = 0; i < count; i++) {
+	for(i = 0; i < count; i++) {
 		binding = &bindings_copy[i];
 		if(binding->weight != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Copying [%s] to first_order[%d]\n", binding->url, pos);
@@ -399,10 +400,10 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 
 	/* We need to pick every element in the array, so loop once for every one of them */
 	pos = 0;
-	for(int i = 0; i < count; i++) {
+	for(i = 0; i < count; i++) {
 		/* Calculate the total remaining unchosen weight */
 		total_weight = 0; running_weight = 0;
-		for(int b = 0; b < count; b++) {
+		for(b = 0; b < count; b++) {
 			binding = &bindings_copy[b];
 			if(!binding->chosen) total_weight += binding->weight;
 		}
@@ -417,7 +418,7 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 		/* Then grab the first unchosen element whose running_weight >= rand_weight 
 		   and move it into our 'picked' list */
 		binding = root;
-		for(int b = 0; b < count; b++) {
+		for(b = 0; b < count; b++) {
 			binding = &bindings_copy[b];
 			if(binding->chosen) continue; /* skip already picked elements */
 
