@@ -193,6 +193,7 @@ struct switch_rtp {
 	struct switch_rtp_vad_data vad_data;
 	struct switch_rtp_rfc2833_data dtmf_data;
 	switch_payload_t te;
+	switch_payload_t recv_te;
 	switch_payload_t cng_pt;
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *read_mutex;
@@ -1122,7 +1123,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 	rtp_session->pool = pool;
 	rtp_session->te = 101;
-
+	rtp_session->recv_te = 101;
 
 	switch_mutex_init(&rtp_session->flag_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&rtp_session->read_mutex, SWITCH_MUTEX_NESTED, pool);
@@ -1333,6 +1334,14 @@ SWITCH_DECLARE(void) switch_rtp_set_telephony_event(switch_rtp_t *rtp_session, s
 {
 	if (te > 95) {
 		rtp_session->te = te;
+	}
+}
+
+
+SWITCH_DECLARE(void) switch_rtp_set_telephony_recv_event(switch_rtp_t *rtp_session, switch_payload_t te)
+{
+	if (te > 95) {
+		rtp_session->recv_te = te;
 	}
 }
 
@@ -1784,7 +1793,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	if (*bytes) {
 		rtp_session->stats.inbound.raw_bytes += *bytes;
-		if (rtp_session->te && rtp_session->recv_msg.header.pt == rtp_session->te) {
+		if (rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 			rtp_session->stats.inbound.dtmf_packet_count++;
 		} else if (rtp_session->cng_pt && (rtp_session->recv_msg.header.pt == rtp_session->cng_pt || rtp_session->recv_msg.header.pt == 13)) {
 			rtp_session->stats.inbound.cng_packet_count++;
@@ -1796,13 +1805,13 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		rtp_session->stats.inbound.packet_count++;
 	}
 
-	if (rtp_session->te && rtp_session->recv_msg.header.pt == rtp_session->te) {
+	if (rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 
 	if (rtp_session->jb && rtp_session->recv_msg.header.version == 2 && *bytes) {
-		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->te) {
+		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te) {
 			stfu_n_reset(rtp_session->jb);
 		}
 
@@ -1974,7 +1983,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto recvfrom;
 		}
 
-		if (bytes && rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->te) {
+		if (bytes && rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te) {
 			rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
 		}
 
@@ -2166,7 +2175,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 			stat = srtp_unprotect(rtp_session->recv_ctx, &rtp_session->recv_msg.header, &sbytes);
 
-			if (stat && rtp_session->recv_msg.header.pt != rtp_session->te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
+			if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
 				if (++rtp_session->srtp_errs >= MAX_SRTP_ERRS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 									  "Error: SRTP unprotect failed with code %d%s\n", stat,
@@ -2201,7 +2210,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		   doing it right. Nice guys finish last!
 		 */
 		if (bytes && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) &&
-			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_msg.header.pt == rtp_session->te) {
+			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 			switch_size_t len = bytes - rtp_header_len;
 			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
 			int end;
@@ -2517,7 +2526,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 	frame->packetlen = bytes;
 	frame->source = __FILE__;
 	switch_set_flag(frame, SFF_RAW_RTP);
-	if (frame->payload == rtp_session->te) {
+	if (frame->payload == rtp_session->recv_te) {
 		switch_set_flag(frame, SFF_RFC2833);
 	}
 	frame->timestamp = ntohl(rtp_session->recv_msg.header.ts);

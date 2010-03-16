@@ -3507,10 +3507,17 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 				}
 
 				if (!te && !strcasecmp(rm_encoding, "telephone-event")) {
-					te = tech_pvt->te = (switch_payload_t) map->rm_pt;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf payload to %u\n", te);
-					if (tech_pvt->rtp_session) {
-						switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
+					if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf recv payload to %u\n", te);
+						if (tech_pvt->rtp_session) {
+							switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, (switch_payload_t) map->rm_pt);
+						}
+					} else {
+						te = tech_pvt->te = (switch_payload_t) map->rm_pt;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", te);
+						if (tech_pvt->rtp_session) {
+							switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
+						}
 					}
 				}
 

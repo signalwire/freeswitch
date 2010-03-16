@@ -5784,7 +5784,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 		for (x = 0; x < profile->acl_count; x++) {
 			last_acl = profile->acl[x];
-			if (!(ok = switch_check_network_list_ip_token(network_ip, last_acl, &token))) {
+			if ((ok = switch_check_network_list_ip_token(network_ip, last_acl, &token))) {
 				break;
 			}
 		}
