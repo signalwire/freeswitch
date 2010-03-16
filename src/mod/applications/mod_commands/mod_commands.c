@@ -4220,6 +4220,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl sps");
 	switch_console_set_complete("add fsctl sync_clock");
 	switch_console_set_complete("add fsctl flush_db_handles");
+	switch_console_set_complete("add fsctl min_idle_cpu");
+	switch_console_set_complete("add fsctl send_sighup");
 	switch_console_set_complete("add nat_map reinit");
 	switch_console_set_complete("add nat_map republish");
 	switch_console_set_complete("add nat_map status");
