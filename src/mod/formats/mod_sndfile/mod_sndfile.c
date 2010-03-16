@@ -145,6 +145,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		context->sfinfo.samplerate = 8000;
 	} else if (!strcmp(ext, "adpcm")) {
 		context->sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_IMA_ADPCM;
+		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 8000;
 	}
 
