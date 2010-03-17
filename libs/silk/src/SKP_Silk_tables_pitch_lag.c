@@ -1,37 +1,28 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
-
-
-
-
-
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 #include "SKP_Silk_tables.h"
@@ -59,11 +50,6 @@ const SKP_uint16 SKP_Silk_pitch_lag_NB_CDF[ 8 * ( PITCH_EST_MAX_LAG_MS - PITCH_E
 const SKP_int SKP_Silk_pitch_lag_NB_CDF_offset = 43;
 
 const SKP_uint16 SKP_Silk_pitch_contour_NB_CDF[ 12 ] = {
-
-
-
-
-
          0,  14445,  18587,  25628,  30013,  34859,  40597,  48426,
      54460,  59033,  62990,  65535
 };
@@ -112,11 +98,6 @@ const SKP_uint16 SKP_Silk_pitch_lag_WB_CDF[ 16 * ( PITCH_EST_MAX_LAG_MS - PITCH_
      32248,  32808,  33343,  33855,  34345,  34815,  35268,  35704,
      36127,  36537,  36938,  37330,  37715,  38095,  38471,  38844,
      39216,  39588,  39959,  40332,  40707,  41084,  41463,  41844,
-
-
-
-
-
      42229,  42615,  43005,  43397,  43791,  44186,  44583,  44982,
      45381,  45780,  46179,  46578,  46975,  47371,  47765,  48156,
      48545,  48930,  49312,  49690,  50064,  50433,  50798,  51158,
@@ -165,11 +146,6 @@ const SKP_uint16 SKP_Silk_pitch_lag_SWB_CDF[ 24 * ( PITCH_EST_MAX_LAG_MS - PITCH
      43880,  44097,  44312,  44525,  44736,  44945,  45153,  45359,
      45565,  45769,  45972,  46175,  46377,  46578,  46780,  46981,
      47182,  47383,  47585,  47787,  47989,  48192,  48395,  48599,
-
-
-
-
-
      48804,  49009,  49215,  49422,  49630,  49839,  50049,  50259,
      50470,  50682,  50894,  51107,  51320,  51533,  51747,  51961,
      52175,  52388,  52601,  52813,  53025,  53236,  53446,  53655,
@@ -218,13 +194,6 @@ const SKP_uint16 SKP_Silk_pitch_delta_CDF[23] = {
          0,    343,    740,   1249,   1889,   2733,   3861,   5396,
       7552,  10890,  16053,  24152,  30220,  34680,  37973,  40405,
      42243,  43708,  44823,  45773,  46462,  47055,  65535
-
-
-
-
-
 };
 
 const SKP_int SKP_Silk_pitch_delta_CDF_offset = 11;
-
-

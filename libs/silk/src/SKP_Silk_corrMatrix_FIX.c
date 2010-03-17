@@ -1,41 +1,32 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-
-
-
-
-
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 /**********************************************************************
- * Correlation Matrix Computations for LS estimate.
+ * Correlation Matrix Computations for LS estimate. 
  **********************************************************************/
 
 #include "SKP_Silk_main_FIX.h"
@@ -70,11 +61,6 @@ void SKP_Silk_corrVector_FIX(
     } else {
         SKP_assert( rshifts == 0 );
         for( lag = 0; lag < order; lag++ ) {
-
-
-
-
-
             Xt[ lag ] = SKP_Silk_inner_prod_aligned( ptr1, ptr2, L ); /* X[:,lag]'*t */
             ptr1--; /* Go to next column of X */
         }
@@ -99,7 +85,7 @@ void SKP_Silk_corrMatrix_FIX(
     /* Add shifts to get the wanted head room */
 
     head_room_rshifts = SKP_max( LTP_CORRS_HEAD_ROOM - SKP_Silk_CLZ32( energy ), 0 );
-
+    
     energy = SKP_RSHIFT32( energy, head_room_rshifts );
     rshifts_local += head_room_rshifts;
 
@@ -123,10 +109,6 @@ void SKP_Silk_corrMatrix_FIX(
         energy = SKP_ADD32( energy, SKP_RSHIFT32( SKP_SMULBB( ptr1[ -j ], ptr1[ -j ] ), rshifts_local ) );
         matrix_ptr( XX, j, j, order ) = energy;
     }
-
-
-
-
 
     ptr2 = &x[ order - 2 ]; /* First sample of column 1 of X */
     /* Calculate the remaining elements of the correlation matrix */
@@ -167,6 +149,4 @@ void SKP_Silk_corrMatrix_FIX(
     }
     *rshifts = rshifts_local;
 }
-
-
 

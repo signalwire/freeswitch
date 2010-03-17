@@ -1,35 +1,28 @@
-
-
-
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 #include "SKP_Silk_main_FIX.h"
@@ -52,10 +45,6 @@ void SKP_Silk_HP_variable_cutoff_FIX(
     SKP_int32 Fc_Q19, r_Q28, r_Q22;
     SKP_int32 pitch_freq_Hz_Q16, pitch_freq_log_Q7, delta_freq_Q7;
 
-
-
-
-
     /*********************************************/
     /* Estimate Low End of Pitch Frequency Range */
     /*********************************************/
@@ -66,7 +55,7 @@ void SKP_Silk_HP_variable_cutoff_FIX(
 
         /* adjustment based on quality */
         quality_Q15 = psEncCtrl->input_quality_bands_Q15[ 0 ];
-        pitch_freq_log_Q7 = SKP_SUB32( pitch_freq_log_Q7, SKP_SMULWB( SKP_SMULWB( SKP_LSHIFT( quality_Q15, 2 ), quality_Q15 ),
+        pitch_freq_log_Q7 = SKP_SUB32( pitch_freq_log_Q7, SKP_SMULWB( SKP_SMULWB( SKP_LSHIFT( quality_Q15, 2 ), quality_Q15 ), 
             pitch_freq_log_Q7 - SKP_LOG2_VARIABLE_HP_MIN_FREQ_Q7 ) );
         pitch_freq_log_Q7 = SKP_ADD32( pitch_freq_log_Q7, SKP_RSHIFT( 19661 - quality_Q15, 9 ) ); // 19661_Q15 = 0.6_Q0
 
@@ -81,11 +70,11 @@ void SKP_Silk_HP_variable_cutoff_FIX(
         delta_freq_Q7 = SKP_LIMIT( delta_freq_Q7, -VARIABLE_HP_MAX_DELTA_FREQ_Q7, VARIABLE_HP_MAX_DELTA_FREQ_Q7 );
 
         /* update smoother */
-        psEnc->variable_HP_smth1_Q15 = SKP_SMLAWB( psEnc->variable_HP_smth1_Q15,
+        psEnc->variable_HP_smth1_Q15 = SKP_SMLAWB( psEnc->variable_HP_smth1_Q15, 
             SKP_MUL( SKP_LSHIFT( psEnc->speech_activity_Q8, 1 ), delta_freq_Q7 ), VARIABLE_HP_SMTH_COEF1_Q16 );
     }
     /* second smoother */
-    psEnc->variable_HP_smth2_Q15 = SKP_SMLAWB( psEnc->variable_HP_smth2_Q15,
+    psEnc->variable_HP_smth2_Q15 = SKP_SMLAWB( psEnc->variable_HP_smth2_Q15, 
         psEnc->variable_HP_smth1_Q15 - psEnc->variable_HP_smth2_Q15, VARIABLE_HP_SMTH_COEF2_Q16 );
 
     /* convert from log scale to Hertz */
@@ -105,10 +94,6 @@ void SKP_Silk_HP_variable_cutoff_FIX(
     SKP_assert( Fc_Q19 >=  3704 );
     SKP_assert( Fc_Q19 <= 27787 );
 
-
-
-
-
     r_Q28 = ( 1 << 28 ) - SKP_MUL( 471, Fc_Q19 ); // 471_Q9 = 0.92_Q0, range: 255347779 to 266690872, 27-28 bits
     SKP_assert( r_Q28 >= 255347779 );
     SKP_assert( r_Q28 <= 266690872 );
@@ -118,7 +103,7 @@ void SKP_Silk_HP_variable_cutoff_FIX(
     B_Q28[ 0 ] = r_Q28;
     B_Q28[ 1 ] = SKP_LSHIFT( -r_Q28, 1 );
     B_Q28[ 2 ] = r_Q28;
-
+    
     // -r * ( 2 - Fc * Fc );
     r_Q22  = SKP_RSHIFT( r_Q28, 6 );
     A_Q28[ 0 ] = SKP_SMULWW( r_Q22, SKP_SMULWW( Fc_Q19, Fc_Q19 ) - ( 2 << 22 ) );
@@ -131,5 +116,3 @@ void SKP_Silk_HP_variable_cutoff_FIX(
 }
 
 #endif // HIGH_PASS_INPUT
-
-

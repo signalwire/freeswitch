@@ -1,37 +1,28 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-
-
-
-
-
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 #ifndef SKP_SILK_MAIN_H
@@ -75,11 +66,6 @@ void SKP_Silk_decode_signs(
 /* Encode quantization indices of excitation */
 void SKP_Silk_encode_pulses(
     SKP_Silk_range_coder_state  *psRC,              /* I/O  Range coder state                           */
-
-
-
-
-
     const SKP_int               sigtype,            /* I    Sigtype                                     */
     const SKP_int               QuantOffsetType,    /* I    QuantOffsetType                             */
     const SKP_int               q[],                /* I    quantization indices                        */
@@ -108,7 +94,7 @@ void SKP_Silk_range_encoder(
     const SKP_int               data,               /* I    uncompressed data                           */
     const SKP_uint16            prob[]              /* I    cumulative density functions                */
 );
-
+    
 /* Range encoder for multiple symbols */
 void SKP_Silk_range_encoder_multi(
     SKP_Silk_range_coder_state  *psRC,              /* I/O  compressor data structure                   */
@@ -128,11 +114,6 @@ void SKP_Silk_range_decoder(
 /* Range decoder for multiple symbols */
 void SKP_Silk_range_decoder_multi(
     SKP_int                     data[],             /* O    uncompressed data                [nSymbols] */
-
-
-
-
-
     SKP_Silk_range_coder_state  *psRC,              /* I/O  compressor data structure                   */
     const SKP_uint16 * const    prob[],             /* I    cumulative density functions                */
     const SKP_int               probStartIx[],      /* I    initial (middle) entries of cdfs [nSymbols] */
@@ -181,16 +162,11 @@ void SKP_Silk_gains_dequant(
     const SKP_int               ind[ NB_SUBFR ],        /* I    gain indices                            */
     SKP_int                     *prev_ind,              /* I/O  last index in previous frame            */
     const SKP_int               conditional             /* I    first gain is delta coded if 1          */
-
-
-
-
-
 );
 
 /* Convert NLSF parameters to stable AR prediction filter coefficients */
 void SKP_Silk_NLSF2A_stable(
-    SKP_int16                   pAR_Q12[ MAX_LPC_ORDER ],   /* O    Stabilized AR coefs [LPC_order]     */
+    SKP_int16                   pAR_Q12[ MAX_LPC_ORDER ],   /* O    Stabilized AR coefs [LPC_order]     */ 
     const SKP_int               pNLSF[ MAX_LPC_ORDER ],     /* I    NLSF vector         [LPC_order]     */
     const SKP_int               LPC_order                   /* I    LPC/LSF order                       */
 );
@@ -234,11 +210,6 @@ void SKP_Silk_NSQ_del_dec(
     SKP_int                         q[],                                        /* O    Quantized pulse signal              */
     const SKP_int                   LSFInterpFactor_Q2,                         /* I    LSF interpolation factor in Q2      */
     const SKP_int16                 PredCoef_Q12[ 2 * MAX_LPC_ORDER ],          /* I    Prediction coefs                    */
-
-
-
-
-
     const SKP_int16                 LTPCoef_Q14[ LTP_ORDER * NB_SUBFR ],        /* I    LT prediction coefs                 */
     const SKP_int16                 AR2_Q13[ NB_SUBFR * SHAPE_LPC_ORDER_MAX ],  /* I                                        */
     const SKP_int                   HarmShapeGain_Q14[ NB_SUBFR ],              /* I                                        */
@@ -253,14 +224,14 @@ void SKP_Silk_NSQ_del_dec(
 /* Silk VAD */
 /************/
 /* Initialize the Silk VAD */
-SKP_int SKP_Silk_VAD_Init(                          /* O    Return value, 0 if success                  */
-    SKP_Silk_VAD_state          *psSilk_VAD         /* I/O  Pointer to Silk VAD state                   */
-);
+SKP_int SKP_Silk_VAD_Init(                          /* O    Return value, 0 if success                  */ 
+    SKP_Silk_VAD_state          *psSilk_VAD         /* I/O  Pointer to Silk VAD state                   */ 
+); 
 
 /* Silk VAD noise level estimation */
 void SKP_Silk_VAD_GetNoiseLevels(
     const SKP_int32             pX[ VAD_N_BANDS ],  /* I    subband energies                            */
-    SKP_Silk_VAD_state          *psSilk_VAD         /* I/O  Pointer to Silk VAD state                   */
+    SKP_Silk_VAD_state          *psSilk_VAD         /* I/O  Pointer to Silk VAD state                   */ 
 );
 
 /* Get speech activity level in Q8 */
@@ -287,11 +258,6 @@ void SKP_Silk_detect_SWB_input(
 /* Start by setting transition_frame_no = 1;                */
 void SKP_Silk_LP_variable_cutoff(
     SKP_Silk_LP_state           *psLP,              /* I/O  LP filter state                             */
-
-
-
-
-
     SKP_int16                   *out,               /* O    Low-pass filtered output signal             */
     const SKP_int16             *in,                /* I    Input signal                                */
     const SKP_int               frame_length        /* I    Frame length                                */
@@ -340,11 +306,6 @@ void SKP_Silk_decode_parameters(
     const SKP_int               fullDecoding        /* I    Flag to tell if only arithmetic decoding    */
 );
 
-
-
-
-
-
 /* Decode indices from payload v4 Bitstream */
 void SKP_Silk_decode_indices_v4(
     SKP_Silk_decoder_state      *psDec              /* I/O  State                                       */
@@ -360,7 +321,7 @@ void SKP_Silk_decode_parameters_v4(
 
 /* Core decoder. Performs inverse NSQ operation LTP + LPC */
 void SKP_Silk_decode_core(
-    SKP_Silk_decoder_state      *psDec,                             /* I/O Decoder state                */
+    SKP_Silk_decoder_state      *psDec,                             /* I/O  Decoder state               */
     SKP_Silk_decoder_control    *psDecCtrl,                         /* I    Decoder control             */
     SKP_int16                   xq[],                               /* O    Decoded speech              */
     const SKP_int               q[ MAX_FRAME_LENGTH ]               /* I    Pulse signal                */
@@ -393,11 +354,6 @@ void SKP_Silk_decode_pulses(
 /* Reset CNG */
 void SKP_Silk_CNG_Reset(
     SKP_Silk_decoder_state      *psDec              /* I/O  Decoder state                               */
-
-
-
-
-
 );
 
 /* Updates CNG estimate, and applies the CNG when packet was lost   */
@@ -432,12 +388,12 @@ void SKP_Silk_get_low_layer_internal(
 );
 
 /* Resets LBRR buffer, used if packet size changes */
-void SKP_Silk_LBRR_reset(
+void SKP_Silk_LBRR_reset( 
     SKP_Silk_encoder_state      *psEncC             /* I/O  Pointer to Silk encoder state               */
 );
 
 /* Predict number of bytes used to encode q */
-SKP_int SKP_Silk_pulses_to_bytes( /* O  Return value, predicted number of bytes used to encode q */
+SKP_int SKP_Silk_pulses_to_bytes( /* O  Return value, predicted number of bytes used to encode q */ 
     SKP_Silk_encoder_state      *psEncC,            /* I/O  Encoder State*/
     SKP_int                     q[]                 /* I     Pulse signal */
 );
@@ -446,11 +402,4 @@ SKP_int SKP_Silk_pulses_to_bytes( /* O  Return value, predicted number of bytes 
 }
 #endif
 
-
-
-
-
-
 #endif
-
-

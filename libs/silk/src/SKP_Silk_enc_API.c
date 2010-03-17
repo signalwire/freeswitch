@@ -1,37 +1,28 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-
-
-
-
 ***********************************************************************/
 
 
@@ -50,9 +41,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 SKP_int SKP_Silk_SDK_Get_Encoder_Size( SKP_int *encSizeBytes )
 {
     SKP_int ret = 0;
-
+    
     *encSizeBytes = sizeof( SKP_Silk_encoder_state_FIX );
-
+    
     return ret;
 }
 
@@ -66,11 +57,11 @@ SKP_int SKP_Silk_SDK_QueryEncoder(
 )
 {
     SKP_Silk_encoder_state_FIX *psEnc;
-    SKP_int ret = 0;
+    SKP_int ret = 0;    
 
     psEnc = ( SKP_Silk_encoder_state_FIX* )encState;
 
-    encStatus->sampleRate = ( unsigned short )SKP_SMULBB( psEnc->sCmn.fs_kHz, 1000 );                       /* convert kHz -> Hz */
+    encStatus->sampleRate = ( unsigned short )SKP_SMULBB( psEnc->sCmn.fs_kHz, 1000 );                       /* convert kHz -> Hz */ 
     encStatus->packetSize = ( unsigned short )SKP_SMULBB( psEnc->sCmn.fs_kHz, psEnc->sCmn.PacketSize_ms );  /* convert samples -> ms */
     encStatus->bitRate    = ( unsigned short )psEnc->sCmn.TargetRate_bps;
     encStatus->packetLossPercentage = psEnc->sCmn.PacketLoss_perc;
@@ -80,11 +71,6 @@ SKP_int SKP_Silk_SDK_QueryEncoder(
 }
 
 /*************************/
-
-
-
-
-
 /* Init or Reset encoder */
 /*************************/
 SKP_int SKP_Silk_SDK_InitEncoder(
@@ -95,7 +81,7 @@ SKP_int SKP_Silk_SDK_InitEncoder(
     SKP_Silk_encoder_state_FIX *psEnc;
     SKP_int ret = 0;
 
-
+        
     psEnc = ( SKP_Silk_encoder_state_FIX* )encState;
 
     /* Reset Encoder */
@@ -115,7 +101,7 @@ SKP_int SKP_Silk_SDK_InitEncoder(
 /**************************/
 /* Encode frame with Silk */
 /**************************/
-SKP_int SKP_Silk_SDK_Encode(
+SKP_int SKP_Silk_SDK_Encode( 
     void                                *encState,      /* I/O: State                                           */
     const SKP_Silk_EncodeControlStruct  *encControl,    /* I:   Control structure                               */
     const SKP_int16                     *samplesIn,     /* I:   Speech sample input vector                      */
@@ -133,13 +119,8 @@ SKP_int SKP_Silk_SDK_Encode(
 
     SKP_assert( encControl != NULL );
 
-
-
-
-
-
     /* Check sampling frequency first, to avoid divide by zero later */
-    if( ( encControl->sampleRate !=  8000 ) && ( encControl->sampleRate != 12000 ) &&
+    if( ( encControl->sampleRate !=  8000 ) && ( encControl->sampleRate != 12000 ) && 
         ( encControl->sampleRate != 16000 ) && ( encControl->sampleRate != 24000 ) ) {
         ret = SKP_SILK_ENC_FS_NOT_SUPPORTED;
         SKP_assert( 0 );
@@ -151,9 +132,9 @@ SKP_int SKP_Silk_SDK_Encode(
     PacketSize_ms   = SKP_DIV32_16( ( SKP_int )encControl->packetSize, API_fs_kHz );    /* convert samples -> ms */
     TargetRate_bps  =             ( SKP_int32 )encControl->bitRate;
     PacketLoss_perc =               ( SKP_int )encControl->packetLossPercentage;
-    UseInBandFec    =               ( SKP_int )encControl->useInBandFec;
+    UseInBandFec    =               ( SKP_int )encControl->useInBandFEC;
     Complexity      =               ( SKP_int )encControl->complexity;
-    UseDTX          =               ( SKP_int )encControl->useDtx;
+    UseDTX          =               ( SKP_int )encControl->useDTX;
 
     /* Only accept input lengths that are multiplum of 10 ms */
     input_ms = SKP_DIV32_16( nSamplesIn, API_fs_kHz );
@@ -170,7 +151,7 @@ SKP_int SKP_Silk_SDK_Encode(
         return( ret );
     }
 
-    if( ( ret = SKP_Silk_control_encoder_FIX( psEnc, API_fs_kHz, PacketSize_ms, TargetRate_bps,
+    if( ( ret = SKP_Silk_control_encoder_FIX( psEnc, API_fs_kHz, PacketSize_ms, TargetRate_bps, 
                     PacketLoss_perc, UseInBandFec, UseDTX, input_ms, Complexity ) ) != 0 ) {
         SKP_assert( 0 );
         return( ret );
@@ -186,12 +167,7 @@ SKP_int SKP_Silk_SDK_Encode(
     while( 1 ) {
         /* Resample/buffer */
         nSamplesToBuffer = psEnc->sCmn.frame_length - psEnc->sCmn.inputBufIx;
-
-
-
-
-
-        if( encControl->sampleRate == SKP_SMULBB( psEnc->sCmn.fs_kHz, 1000 ) ) {
+        if( encControl->sampleRate == SKP_SMULBB( psEnc->sCmn.fs_kHz, 1000 ) ) { 
             /* Same sample frequency - copy the data */
             nSamplesToBuffer  = SKP_min_int( nSamplesToBuffer, nSamplesIn );
             nSamplesFromInput = nSamplesToBuffer;
@@ -204,11 +180,11 @@ SKP_int SKP_Silk_SDK_Encode(
             {
                 SKP_int16 scratch[ MAX_FRAME_LENGTH + SigProc_Resample_2_3_coarse_NUM_FIR_COEFS - 1 ];
                 SKP_assert( nSamplesFromInput <= MAX_FRAME_LENGTH );
-                SKP_Silk_resample_2_3_coarse( &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], psEnc->sCmn.resample24To16state,
+                SKP_Silk_resample_2_3_coarse( &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], psEnc->sCmn.resample24To16state, 
                     samplesIn, nSamplesFromInput, scratch );
             }
 #else
-            SKP_Silk_resample_2_3( &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], psEnc->sCmn.resample24To16state,
+            SKP_Silk_resample_2_3( &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], psEnc->sCmn.resample24To16state, 
                 samplesIn, nSamplesFromInput );
 #endif
         } else if( encControl->sampleRate == 24000 && psEnc->sCmn.fs_kHz == 12 ) {
@@ -216,45 +192,40 @@ SKP_int SKP_Silk_SDK_Encode(
             /* Resample the data from 24 kHz to 12 kHz */
             nSamplesToBuffer  = SKP_min_int( nSamplesToBuffer, SKP_RSHIFT( nSamplesIn, 1 ) );
             nSamplesFromInput = SKP_LSHIFT16( nSamplesToBuffer, 1 );
-            SKP_Silk_resample_1_2_coarse( samplesIn, psEnc->sCmn.resample24To12state,
+            SKP_Silk_resample_1_2_coarse( samplesIn, psEnc->sCmn.resample24To12state, 
                 &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], scratch, nSamplesToBuffer );
         } else if( encControl->sampleRate == 24000 && psEnc->sCmn.fs_kHz == 8 ) {
             /* Resample the data from 24 kHz to 8 kHz */
             nSamplesToBuffer  = SKP_min_int( nSamplesToBuffer, SKP_DIV32_16( nSamplesIn, 3 ) );
             nSamplesFromInput = SKP_SMULBB( nSamplesToBuffer, 3 );
-            SKP_Silk_resample_1_3( &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], psEnc->sCmn.resample24To8state,
+            SKP_Silk_resample_1_3( &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], psEnc->sCmn.resample24To8state, 
                 samplesIn, nSamplesFromInput);
         } else if( encControl->sampleRate == 16000 && psEnc->sCmn.fs_kHz == 12 ) {
             /* Resample the data from 16 kHz to 12 kHz */
             nSamplesToBuffer  = SKP_min_int( nSamplesToBuffer, SKP_RSHIFT( SKP_SMULBB( nSamplesIn, 3 ), 2 ) );
             nSamplesFromInput = SKP_SMULWB( SKP_LSHIFT16( nSamplesToBuffer, 2 ), 21846 ); // 21846 = ceil((1/3)*2^16)
-            SKP_Silk_resample_3_4( &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], psEnc->sCmn.resample16To12state,
+            SKP_Silk_resample_3_4( &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], psEnc->sCmn.resample16To12state, 
                 samplesIn, nSamplesFromInput );
         } else if( encControl->sampleRate == 16000 && psEnc->sCmn.fs_kHz == 8 ) {
             SKP_int32 scratch[ 3 * MAX_FRAME_LENGTH ];
             /* Resample the data from 16 kHz to 8 kHz */
             nSamplesToBuffer  = SKP_min_int( nSamplesToBuffer, SKP_RSHIFT( nSamplesIn, 1 ) );
             nSamplesFromInput = SKP_LSHIFT16( nSamplesToBuffer, 1 );
-            SKP_Silk_resample_1_2_coarse( samplesIn, psEnc->sCmn.resample16To8state,
+            SKP_Silk_resample_1_2_coarse( samplesIn, psEnc->sCmn.resample16To8state, 
                 &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], scratch, nSamplesToBuffer );
         } else if( encControl->sampleRate == 12000 && psEnc->sCmn.fs_kHz == 8 ) {
             /* Resample the data from 12 kHz to 8 kHz */
-
-
-
-
-
             nSamplesToBuffer  = SKP_min_int( nSamplesToBuffer, SKP_SMULWB( SKP_LSHIFT( nSamplesIn, 1 ), 21846 ) );
             nSamplesFromInput = SKP_RSHIFT( SKP_SMULBB( nSamplesToBuffer, 3 ), 1 );
 #if LOW_COMPLEXITY_ONLY
             {
                 SKP_int16 scratch[ MAX_FRAME_LENGTH + SigProc_Resample_2_3_coarse_NUM_FIR_COEFS - 1 ];
                 SKP_assert( nSamplesFromInput <= MAX_FRAME_LENGTH );
-                SKP_Silk_resample_2_3_coarse( &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], psEnc->sCmn.resample12To8state,
+                SKP_Silk_resample_2_3_coarse( &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], psEnc->sCmn.resample12To8state, 
                     samplesIn, nSamplesFromInput, scratch );
             }
 #else
-            SKP_Silk_resample_2_3( &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], psEnc->sCmn.resample12To8state,
+            SKP_Silk_resample_2_3( &psEnc->sCmn.inputBuf[ psEnc->sCmn.inputBufIx ], psEnc->sCmn.resample12To8state, 
                 samplesIn, nSamplesFromInput );
 #endif
         }
@@ -292,12 +263,6 @@ SKP_int SKP_Silk_SDK_Encode(
     }
 
 
-
-
-
-
-
     return ret;
 }
-
 

@@ -1,32 +1,28 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 #ifndef SKP_SILK_MAIN_FIX_H
@@ -35,17 +31,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include "SKP_Silk_SigProc_FIX.h"
 #include "SKP_Silk_structs_FIX.h"
-#include "SKP_Silk_tables_FIX.h"
 #include "SKP_Silk_main.h"
 #include "SKP_Silk_define_FIX.h"
 #include "SKP_Silk_PLC.h"
 #define TIC(TAG_NAME)
 #define TOC(TAG_NAME)
-
-
-
-
-
 
 #ifndef FORCE_CPP_BUILD
 #ifdef __cplusplus
@@ -64,7 +54,7 @@ SKP_int SKP_Silk_init_encoder_FIX(
 );
 
 /* Control the Silk encoder */
-SKP_int SKP_Silk_control_encoder_FIX(
+SKP_int SKP_Silk_control_encoder_FIX( 
     SKP_Silk_encoder_state_FIX  *psEnc,             /* I/O  Pointer to Silk FIX encoder state               */
     const SKP_int               API_fs_kHz,         /* I    External (API) sampling rate (kHz)              */
     const SKP_int               PacketSize_ms,      /* I    Packet length (ms)                              */
@@ -77,7 +67,7 @@ SKP_int SKP_Silk_control_encoder_FIX(
 );
 
 /* Encoder main function */
-SKP_int SKP_Silk_encode_frame_FIX(
+SKP_int SKP_Silk_encode_frame_FIX( 
     SKP_Silk_encoder_state_FIX      *psEnc,             /* I/O  Pointer to Silk FIX encoder state           */
     SKP_uint8                       *pCode,             /* O    Pointer to payload                          */
     SKP_int16                       *pnBytesOut,        /* I/O  Pointer to number of payload bytes;         */
@@ -95,11 +85,6 @@ void SKP_Silk_LBRR_encode_FIX(
 );
 
 /* High-pass filter with cutoff frequency adaptation based on pitch lag statistics */
-
-
-
-
-
 void SKP_Silk_HP_variable_cutoff_FIX(
     SKP_Silk_encoder_state_FIX      *psEnc,         /* I/O  Encoder state                               */
     SKP_Silk_encoder_control_FIX    *psEncCtrl,     /* I/O  Encoder control                             */
@@ -148,11 +133,6 @@ void SKP_Silk_LTP_scale_ctrl_FIX(
 
 /**********************************************/
 /* Prediction Analysis                        */
-
-
-
-
-
 /**********************************************/
 
 /* Find pitch lags */
@@ -201,11 +181,6 @@ void SKP_Silk_find_LTP_FIX(
     const SKP_int32     Wght_Q15[ NB_SUBFR ],                       /* I    weights                                                     */
     const SKP_int       subfr_length,                               /* I    subframe length                                             */
     const SKP_int       mem_offset,                                 /* I    number of samples in LTP memory                             */
-
-
-
-
-
     SKP_int             corr_rshifts[ NB_SUBFR ]                    /* O    right shifts applied to correlations                        */
 );
 
@@ -223,7 +198,7 @@ void SKP_Silk_quant_LTP_gains_FIX(
 /* NLSF Quantizer */
 /******************/
 
-/* Limit, stabilize, convert and quantize NLSFs.    */
+/* Limit, stabilize, convert and quantize NLSFs.    */ 
 void SKP_Silk_process_NLSFs_FIX(
     SKP_Silk_encoder_state_FIX      *psEnc,     /* I/O  encoder state                               */
     SKP_Silk_encoder_control_FIX    *psEncCtrl, /* I/O  encoder control                             */
@@ -232,33 +207,28 @@ void SKP_Silk_process_NLSFs_FIX(
 
 /* LSF vector encoder */
 void SKP_Silk_NLSF_MSVQ_encode_FIX(
-    SKP_int                             *NLSFIndices,           /* O    Pointer to codebook path vector             [CB_STAGES x1] */
-    SKP_int                             *pNLSF_Q15,             /* I/O  Pointer to quantized NLSF vector            [LPC_order x1] */
-    const SKP_Silk_NLSF_CB_struct       *psNLSF_CB,             /* I    Pointer to codebook object                                 */
-    const SKP_int                       *pNLSF_q_Q15_prev,      /* I    Pointer to previously quantized NLSF vector [LPC_order x1] */
-    const SKP_int                       *pW_Qx,                 /* I    Pointer to NLSF weight vector               [LPC_order x1] */
-    const SKP_int                       NLSF_mu_Q15,            /* I    Rate weight for the RD optimization                        */
-    const SKP_int                       NLSF_mu_fluc_red_Q16,   /* I    Fluctuation error weight for fluctuation reduction         */
-    const SKP_int                       NLSF_MSVQ_Max_Survivors,/* I    Maximum number of survivors from each stage                */
-    const SKP_int                       LPC_order,              /* I    LPC order                                                  */
-    const SKP_int                       deactivate_fluc_red     /* I    Deactivate fluctuation reduction, e.g. right after a reset */
+          SKP_int                   *NLSFIndices,           /* O    Codebook path vector [ CB_STAGES ]      */
+          SKP_int                   *pNLSF_Q15,             /* I/O  Quantized NLSF vector [ LPC_ORDER ]     */
+    const SKP_Silk_NLSF_CB_struct   *psNLSF_CB,             /* I    Codebook object                         */
+    const SKP_int                   *pNLSF_q_Q15_prev,      /* I    Prev. quantized NLSF vector [LPC_ORDER] */
+    const SKP_int                   *pW_Q6,                 /* I    NLSF weight vector [ LPC_ORDER ]        */
+    const SKP_int                   NLSF_mu_Q15,            /* I    Rate weight for the RD optimization     */
+    const SKP_int                   NLSF_mu_fluc_red_Q16,   /* I    Fluctuation reduction error weight      */
+    const SKP_int                   NLSF_MSVQ_Survivors,    /* I    Max survivors from each stage           */
+    const SKP_int                   LPC_order,              /* I    LPC order                               */
+    const SKP_int                   deactivate_fluc_red     /* I    Deactivate fluctuation reduction        */
 );
 
-/* Weighted VQ with entropy constraints, for multiple input data vectors */
-void SKP_Silk_NLSF_VQ_nearest_neighbor_FIX(
-    SKP_int32                               *pRD_Q20,       /* O    rate-distortion of psNLSF_CB_stage->nVectors best codebook vectors, for each input vector*/
-    const SKP_Silk_NLSF_CB_Stage_struct     *psNLSF_CB_stage,/* I   pointer to NLSF codebook stage struct                                                    */
-    const SKP_int                           *in_Q15,        /* I    input vectors to be quantized                                                            */
-    const SKP_int                           *w_Q6,          /* I    weighting vector                                                                         */
-    const SKP_int32                         *rate_acc_Q5,   /* I    Accumulated rate from first to previous stage for each input vector                      */
-    const SKP_int                           mu_Q15,         /* I    tradeoffs between weighted error and rate                                                */
-    const SKP_int                           N,              /* I    number of input vectors to be quantized                                                  */
-    const SKP_int                           LPC_order       /* I    LPC order                                                                                */
-
-
-
-
-
+/* Rate-Distortion calculations for multiple input data vectors */
+void SKP_Silk_NLSF_VQ_rate_distortion_FIX(
+    SKP_int32                       *pRD_Q20,           /* O    Rate-distortion values [psNLSF_CBS->nVectors*N] */
+    const SKP_Silk_NLSF_CBS         *psNLSF_CBS,        /* I    NLSF codebook stage struct                      */
+    const SKP_int                   *in_Q15,            /* I    Input vectors to be quantized                   */
+    const SKP_int                   *w_Q6,              /* I    Weight vector                                   */
+    const SKP_int32                 *rate_acc_Q5,       /* I    Accumulated rates from previous stage           */
+    const SKP_int                   mu_Q15,             /* I    Weight between weighted error and rate          */
+    const SKP_int                   N,                  /* I    Number of input vectors to be quantized         */
+    const SKP_int                   LPC_order           /* I    LPC order                                       */
 );
 
 /* Compute weighted quantization errors for an LPC_order element input vector, over one codebook stage */
@@ -307,11 +277,6 @@ void SKP_Silk_corrVector_FIX(
     const SKP_int                   rshifts     /* I    Right shifts of correlations                        */
 );
 
-
-
-
-
-
 /* Add noise to matrix diagonal */
 void SKP_Silk_regularize_correlations_FIX(
     SKP_int32                       *XX,                /* I/O  Correlation matrices                        */
@@ -357,5 +322,3 @@ void SKP_Silk_residual_energy_FIX(
 #endif /* __cplusplus */
 #endif /* FORCE_CPP_BUILD */
 #endif /* SKP_SILK_MAIN_FIX_H */
-
-

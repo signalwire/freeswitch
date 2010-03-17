@@ -1,32 +1,28 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 #include "SKP_Silk_main.h"
@@ -45,11 +41,6 @@ void SKP_Silk_range_encoder(
     SKP_uint32 base_Q32  = psRC->base_Q32;
     SKP_uint32 range_Q16 = psRC->range_Q16;
     SKP_int32  bufferIx  = psRC->bufferIx;
-
-
-
-
-
     SKP_uint8  *buffer   = psRC->buffer;
 
     if( psRC->error ) {
@@ -98,11 +89,6 @@ void SKP_Silk_range_encoder(
         /* Write one byte to buffer */
         buffer[ bufferIx++ ] = (SKP_uint8)( SKP_RSHIFT_uint( base_Q32, 24 ) );
         base_Q32 = SKP_LSHIFT_ovflw( base_Q32, 8 );
-
-
-
-
-
     }
 
     /* Copy structure data back */
@@ -151,11 +137,6 @@ void SKP_Silk_range_decoder(
     high_Q16 = prob[ probIx ];
     base_tmp = SKP_MUL_uint( range_Q16, high_Q16 );
     if( base_tmp > base_Q32 ) {
-
-
-
-
-
         while( 1 ) {
             low_Q16 = prob[ --probIx ];
             base_tmp = SKP_MUL_uint( range_Q16, low_Q16 );
@@ -204,11 +185,6 @@ void SKP_Silk_range_decoder(
             /* Check for errors */
             if( SKP_RSHIFT_uint( base_Q32, 24 ) ) {
                 psRC->error = RANGE_CODER_NORMALIZATION_FAILED;
-
-
-
-
-
                 /* Set output to zero */
                 *data = 0;
                 return;
@@ -257,11 +233,6 @@ void SKP_Silk_range_decoder(
 /* Range decoder for multiple symbols */
 void SKP_Silk_range_decoder_multi(
     SKP_int                         data[],             /* O    uncompressed data                [nSymbols] */
-
-
-
-
-
     SKP_Silk_range_coder_state      *psRC,              /* I/O  compressor data structure                   */
     const SKP_uint16 * const        prob[],             /* I    cumulative density functions                */
     const SKP_int                   probStartIx[],      /* I    initial (middle) entries of cdfs [nSymbols] */
@@ -301,20 +272,15 @@ void SKP_Silk_range_dec_init(
     }
     /* Initialize structure */
     /* Copy to internal buffer */
-    SKP_memcpy( psRC->buffer, buffer, bufferLength * sizeof( SKP_uint8 ) );
+    SKP_memcpy( psRC->buffer, buffer, bufferLength * sizeof( SKP_uint8 ) ); 
     psRC->bufferLength = bufferLength;
     psRC->bufferIx = 0;
-    psRC->base_Q32 =
-        SKP_LSHIFT_uint( (SKP_uint32)buffer[ 0 ], 24 ) |
-        SKP_LSHIFT_uint( (SKP_uint32)buffer[ 1 ], 16 ) |
-        SKP_LSHIFT_uint( (SKP_uint32)buffer[ 2 ],  8 ) |
+    psRC->base_Q32 = 
+        SKP_LSHIFT_uint( (SKP_uint32)buffer[ 0 ], 24 ) | 
+        SKP_LSHIFT_uint( (SKP_uint32)buffer[ 1 ], 16 ) | 
+        SKP_LSHIFT_uint( (SKP_uint32)buffer[ 2 ],  8 ) | 
                          (SKP_uint32)buffer[ 3 ];
     psRC->range_Q16 = 0x0000FFFF;
-
-
-
-
-
     psRC->error     = 0;
 }
 
@@ -363,11 +329,6 @@ void SKP_Silk_range_enc_wrap_up(
 
     /* Store to stream, making sure not to write beyond buffer */
     if( psRC->bufferIx < psRC->bufferLength ) {
-
-
-
-
-
         psRC->buffer[ psRC->bufferIx++ ] = (SKP_uint8)SKP_RSHIFT_uint( base_Q24, 16 );
         if( bits_to_store > 8 ) {
             if( psRC->bufferIx < psRC->bufferLength ) {
@@ -409,15 +370,3 @@ void SKP_Silk_range_coder_check_after_decoding(
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-

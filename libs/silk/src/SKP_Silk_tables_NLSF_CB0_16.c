@@ -1,37 +1,28 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-
-
-
-
-
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 /**********************************************/
@@ -78,11 +69,6 @@ const SKP_uint16 SKP_Silk_NLSF_MSVQ_CB0_16_CDF[ NLSF_MSVQ_CB0_16_VECTORS + NLSF_
         26256,
         26865,
         27475,
-
-
-
-
-
         28071,
         28667,
         29263,
@@ -131,11 +117,6 @@ const SKP_uint16 SKP_Silk_NLSF_MSVQ_CB0_16_CDF[ NLSF_MSVQ_CB0_16_VECTORS + NLSF_
         50515,
         50946,
         51377,
-
-
-
-
-
         51798,
         52211,
         52614,
@@ -184,11 +165,6 @@ const SKP_uint16 SKP_Silk_NLSF_MSVQ_CB0_16_CDF[ NLSF_MSVQ_CB0_16_VECTORS + NLSF_
         65279,
         65407,
         65535,
-
-
-
-
-
             0,
          5099,
          9982,
@@ -237,11 +213,6 @@ const SKP_uint16 SKP_Silk_NLSF_MSVQ_CB0_16_CDF[ NLSF_MSVQ_CB0_16_VECTORS + NLSF_
          8750,
         17499,
         26249,
-
-
-
-
-
         34448,
         42471,
         50494,
@@ -290,11 +261,6 @@ const SKP_uint16 SKP_Silk_NLSF_MSVQ_CB0_16_CDF[ NLSF_MSVQ_CB0_16_VECTORS + NLSF_
         54027,
         57947,
         61782,
-
-
-
-
-
         65535
 };
 
@@ -343,11 +309,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_rates_Q5[ NLSF_MSVQ_CB0_16_VECTORS ] =
               210,              211,
               211,              211,
               212,              214,
-
-
-
-
-
               216,              216,
               217,              217,
               217,              217,
@@ -396,11 +357,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_rates_Q5[ NLSF_MSVQ_CB0_16_VECTORS ] =
               271,              274,
               276,              279,
               288,              288,
-
-
-
-
-
               288,              288,
               118,              120,
               121,              121,
@@ -449,11 +405,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_rates_Q5[ NLSF_MSVQ_CB0_16_VECTORS ] =
 };
 
 const SKP_int SKP_Silk_NLSF_MSVQ_CB0_16_ndelta_min_Q15[ 16 + 1 ] =
-
-
-
-
-
 {
               266,
                 3,
@@ -502,11 +453,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
             24539,            26436,            28318,            30318,
              1122,             2503,             5216,             7148,
              9310,            11078,            13175,            14800,
-
-
-
-
-
             16864,            18700,            20436,            22488,
             24572,            26602,            28555,            30426,
               600,             1317,             2970,             5609,
@@ -555,11 +501,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
             23732,            25637,            27818,            29917,
               492,             1185,             2940,             5488,
              7095,             8751,            11596,            13579,
-
-
-
-
-
             16045,            18015,            20178,            22127,
             24265,            26406,            28484,            30357,
              1547,             2282,             3693,             6341,
@@ -608,11 +549,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
             24563,            26561,            28604,            30509,
              2043,             2612,             3985,             6851,
              8038,             9514,            10979,            12789,
-
-
-
-
-
             15426,            16728,            18899,            20277,
             22902,            26209,            28711,            30618,
              2224,             2798,             4465,             5320,
@@ -661,11 +597,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
             23949,            26043,            28245,            30175,
              2250,             2791,             4230,             5283,
              6762,            10607,            11879,            13821,
-
-
-
-
-
             15797,            17264,            20029,            22266,
             24588,            26437,            28244,            30419,
              1696,             2216,             4308,             8385,
@@ -714,11 +645,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
             24401,            27180,            29046,            30647,
              2454,             3502,             4624,             6019,
              7632,             8849,            10792,            13964,
-
-
-
-
-
             15523,            17085,            19611,            21238,
             22856,            25108,            28106,            29890,
              1573,             2274,             3308,             5999,
@@ -767,11 +693,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
             23371,            25234,            27553,            29998,
               575,             1331,             5304,             6910,
              8425,            10086,            11577,            13498,
-
-
-
-
-
             16444,            18527,            20565,            22847,
             24914,            26692,            28759,            30157,
              1435,             2024,             3283,             4156,
@@ -820,11 +741,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
             22592,            24720,            28733,            31082,
              1700,             2327,             4828,             5939,
              7567,             9154,            11087,            12771,
-
-
-
-
-
             14209,            16121,            20222,            22671,
             24648,            26656,            28696,            30745,
              3169,             3873,             5046,             6868,
@@ -873,11 +789,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
             24633,            26514,            28535,            30525,
              2210,             2749,             4266,             7487,
              9878,            11018,            12823,            14431,
-
-
-
-
-
             16247,            18626,            20450,            22054,
             23739,            25291,            27074,            29169,
              1275,             1926,             4330,             6573,
@@ -926,11 +837,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
             25478,            27085,            28851,            30520,
              1915,             2507,             4033,             5749,
              7059,             8871,            10659,            12198,
-
-
-
-
-
             13937,            15383,            16869,            18707,
             23175,            25818,            28514,            30501,
              2404,             2918,             5190,             6252,
@@ -979,11 +885,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
             25070,            26936,            28946,            30542,
              1726,             2252,             4597,             6950,
              8379,             9823,            11363,            12794,
-
-
-
-
-
             14306,            15476,            16798,            18018,
             21671,            25550,            28148,            30367,
              3385,             3870,             5307,             6388,
@@ -1032,11 +933,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
             24961,            26718,            28971,            30640,
              3429,             3833,             4472,             4912,
              7723,            10386,            12981,            15322,
-
-
-
-
-
             16699,            18807,            20778,            22551,
             24627,            26494,            28334,            30482,
              4740,             5169,             5796,             6485,
@@ -1085,11 +981,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
               174,              144,              115,              167,
                57,               44,               14,              147,
                96,              -54,             -142,             -129,
-
-
-
-
-
              -254,             -331,              304,              310,
               -52,             -419,             -846,            -1060,
               -88,             -123,             -202,             -343,
@@ -1138,11 +1029,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
               -73,              -94,              -15,               47,
                28,              112,              -58,              -33,
                65,               19,               84,               86,
-
-
-
-
-
               276,              114,              472,              786,
               799,              625,              415,              178,
               -35,              -26,                5,                9,
@@ -1191,11 +1077,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
              -334,             -106,             -156,              -40,
                -3,              -68,              124,             -257,
                78,              124,              170,              412,
-
-
-
-
-
               227,              105,             -104,               12,
               154,              250,              274,              258,
                 4,              -27,              235,              152,
@@ -1244,11 +1125,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
                19,               -6,              -21,              -24,
              -180,              -53,              -85,               20,
               118,              147,              113,              -75,
-
-
-
-
-
              -289,              226,             -122,              227,
               270,              125,              109,              197,
               125,              138,               44,               60,
@@ -1297,11 +1173,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
               -55,             -133,             -109,               24,
              -105,               78,              -64,             -245,
               202,              -65,             -127,              162,
-
-
-
-
-
                40,              -94,               89,              -85,
              -119,             -103,               97,                9,
               -70,              -28,              194,               86,
@@ -1350,11 +1221,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
               248,              116,               20,               84,
                31,              -34,              190,               38,
                13,             -106,              225,               27,
-
-
-
-
-
              -168,               24,             -157,             -122,
               165,               11,             -161,             -213,
               -12,              -51,             -101,               42,
@@ -1403,11 +1269,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
              -219,               56,              142,               24,
              -376,               77,              -80,               75,
                 6,               42,             -101,               16,
-
-
-
-
-
                56,               14,              -57,                3,
               -17,               80,               57,              -36,
                88,              -59,              -97,              -19,
@@ -1432,7 +1293,7 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * NLSF_MSVQ_CB0_16_VECTORS ] =
              -186,             -261,              131,             -197
 };
 
-const SKP_Silk_NLSF_CB_Stage_struct SKP_Silk_NLSF_CB0_16_Stage_info[ NLSF_MSVQ_CB0_16_STAGES ] =
+const SKP_Silk_NLSF_CBS SKP_Silk_NLSF_CB0_16_Stage_info[ NLSF_MSVQ_CB0_16_STAGES ] =
 {
         { 128, &SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 *   0 ], &SKP_Silk_NLSF_MSVQ_CB0_16_rates_Q5[   0 ] },
         {  16, &SKP_Silk_NLSF_MSVQ_CB0_16_Q15[ 16 * 128 ], &SKP_Silk_NLSF_MSVQ_CB0_16_rates_Q5[ 128 ] },
@@ -1455,9 +1316,4 @@ const SKP_Silk_NLSF_CB_struct SKP_Silk_NLSF_CB0_16 =
         SKP_Silk_NLSF_MSVQ_CB0_16_CDF_start_ptr,
         SKP_Silk_NLSF_MSVQ_CB0_16_CDF_middle_idx
 };
-
-
-
-
-
 

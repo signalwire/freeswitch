@@ -1,32 +1,28 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 #include "SKP_Silk_main.h"
@@ -45,11 +41,6 @@ void SKP_Silk_PLC_Reset(
 }
 
 void SKP_Silk_PLC(
-
-
-
-
-
     SKP_Silk_decoder_state      *psDec,             /* I Decoder state          */
     SKP_Silk_decoder_control    *psDecCtrl,         /* I Decoder control        */
     SKP_int16                   signal[],           /* O Concealed signal       */
@@ -98,11 +89,6 @@ void SKP_Silk_PLC_update(
     if( psDecCtrl->sigtype == SIG_TYPE_VOICED ) {
         /* Find the parameters for the last subframe which contains a pitch pulse */
         for( j = 0; j * psDec->subfr_length  < psDecCtrl->pitchL[ NB_SUBFR - 1 ]; j++ ) {
-
-
-
-
-
             temp_LTP_Gain_Q14 = 0;
             for( i = 0; i < LTP_ORDER; i++ ) {
                 temp_LTP_Gain_Q14 += psDecCtrl->LTPCoef_Q14[ ( NB_SUBFR - 1 - j ) * LTP_ORDER  + i ];
@@ -151,11 +137,6 @@ void SKP_Silk_PLC_update(
     SKP_memcpy( psPLC->prevLPC_Q12, psDecCtrl->PredCoef_Q12[ 1 ], psDec->LPC_order * sizeof( SKP_int16 ) );
     psPLC->prevLTP_scale_Q14 = psDecCtrl->LTP_scale_Q14;
 
-
-
-
-
-
     /* Save Gains */
     SKP_memcpy( psPLC->prevGain_Q16, psDecCtrl->Gains_Q16, NB_SUBFR * sizeof( SKP_int32 ) );
 }
@@ -189,29 +170,24 @@ void SKP_Silk_PLC_conceal(
     exc_buf_ptr = exc_buf;
     for( k = ( NB_SUBFR >> 1 ); k < NB_SUBFR; k++ ) {
         for( i = 0; i < psDec->subfr_length; i++ ) {
-            exc_buf_ptr[ i ] = (SKP_int16)SKP_RSHIFT(
+            exc_buf_ptr[ i ] = ( SKP_int16 )SKP_RSHIFT( 
                 SKP_SMULWW( psDec->exc_Q10[ i + k * psDec->subfr_length ], psPLC->prevGain_Q16[ k ] ), 10 );
         }
         exc_buf_ptr += psDec->subfr_length;
     }
-    /* Find the subframe with lowest energy of the last two and use that as random noise generator */
+    /* Find the subframe with lowest energy of the last two and use that as random noise generator */ 
     SKP_Silk_sum_sqr_shift( &energy1, &shift1, exc_buf,                         psDec->subfr_length );
     SKP_Silk_sum_sqr_shift( &energy2, &shift2, &exc_buf[ psDec->subfr_length ], psDec->subfr_length );
-
+        
     if( SKP_RSHIFT( energy1, shift2 ) < SKP_RSHIFT( energy1, shift2 ) ) {
         /* First sub-frame has lowest energy */
         rand_ptr = &psDec->exc_Q10[ SKP_max_int( 0, 3 * psDec->subfr_length - RAND_BUF_SIZE ) ];
     } else {
         /* Second sub-frame has lowest energy */
         rand_ptr = &psDec->exc_Q10[ SKP_max_int( 0, psDec->frame_length - RAND_BUF_SIZE ) ];
-
-
-
-
-
     }
 
-    /* Setup Gain to random noise component */
+    /* Setup Gain to random noise component */ 
     B_Q14          = psPLC->LTPCoef_Q14;
     rand_scale_Q14 = psPLC->randScale_Q14;
 
@@ -226,26 +202,26 @@ void SKP_Silk_PLC_conceal(
     /* First Lost frame */
     if( psDec->lossCnt == 0 ) {
         rand_scale_Q14 = (1 << 14 );
-
+    
         /* Reduce random noise Gain for voiced frames */
         if( psDec->prev_sigtype == SIG_TYPE_VOICED ) {
             for( i = 0; i < LTP_ORDER; i++ ) {
                 rand_scale_Q14 -= B_Q14[ i ];
             }
             rand_scale_Q14 = SKP_max_16( 3277, rand_scale_Q14 ); /* 0.2 */
-            rand_scale_Q14 = (SKP_int16)SKP_RSHIFT( SKP_SMULBB( rand_scale_Q14, psPLC->prevLTP_scale_Q14 ), 14 );
+            rand_scale_Q14 = ( SKP_int16 )SKP_RSHIFT( SKP_SMULBB( rand_scale_Q14, psPLC->prevLTP_scale_Q14 ), 14 );
         }
 
         /* Reduce random noise for unvoiced frames with high LPC gain */
         if( psDec->prev_sigtype == SIG_TYPE_UNVOICED ) {
             SKP_int32 invGain_Q30, down_scale_Q30;
-
+            
             SKP_Silk_LPC_inverse_pred_gain( &invGain_Q30, psPLC->prevLPC_Q12, psDec->LPC_order );
-
+            
             down_scale_Q30 = SKP_min_32( SKP_RSHIFT( ( 1 << 30 ), LOG2_INV_LPC_GAIN_HIGH_THRES ), invGain_Q30 );
             down_scale_Q30 = SKP_max_32( SKP_RSHIFT( ( 1 << 30 ), LOG2_INV_LPC_GAIN_LOW_THRES ), down_scale_Q30 );
             down_scale_Q30 = SKP_LSHIFT( down_scale_Q30, LOG2_INV_LPC_GAIN_HIGH_THRES );
-
+            
             rand_Gain_Q15 = SKP_RSHIFT( SKP_SMULWB( down_scale_Q30, rand_Gain_Q15 ), 14 );
         }
     }
@@ -257,11 +233,6 @@ void SKP_Silk_PLC_conceal(
     /***************************/
     /* LTP synthesis filtering */
     /***************************/
-
-
-
-
-
     sig_Q10_ptr = sig_Q10;
     for( k = 0; k < NB_SUBFR; k++ ) {
         /* Setup pointer */
@@ -277,15 +248,15 @@ void SKP_Silk_PLC_conceal(
             LTP_pred_Q14 = SKP_SMLAWB( LTP_pred_Q14, pred_lag_ptr[ -3 ], B_Q14[ 3 ] );
             LTP_pred_Q14 = SKP_SMLAWB( LTP_pred_Q14, pred_lag_ptr[ -4 ], B_Q14[ 4 ] );
             pred_lag_ptr++;
-
+            
             /* Generate LPC residual */
             LPC_exc_Q10 = SKP_LSHIFT( SKP_SMULWB( rand_ptr[ idx ], rand_scale_Q14 ), 2 ); /* Random noise part */
             LPC_exc_Q10 = SKP_ADD32( LPC_exc_Q10, SKP_RSHIFT_ROUND( LTP_pred_Q14, 4 ) );  /* Harmonic part */
-
+            
             /* Update states */
             psDec->sLTP_Q16[ psDec->sLTP_buf_idx ] = SKP_LSHIFT( LPC_exc_Q10, 6 );
             psDec->sLTP_buf_idx++;
-
+                
             /* Save LPC residual */
             sig_Q10_ptr[ i ] = LPC_exc_Q10;
         }
@@ -308,40 +279,35 @@ void SKP_Silk_PLC_conceal(
     /***************************/
     sig_Q10_ptr = sig_Q10;
     /* Preload LPC coeficients to array on stack. Gives small performance gain */
-    SKP_memcpy( A_Q12_tmp, psPLC->prevLPC_Q12, psDec->LPC_order * sizeof(SKP_int16) );
+    SKP_memcpy( A_Q12_tmp, psPLC->prevLPC_Q12, psDec->LPC_order * sizeof( SKP_int16 ) );
     SKP_assert( psDec->LPC_order >= 10 ); /* check that unrolling works */
-
-
-
-
-
     for( k = 0; k < NB_SUBFR; k++ ) {
         for( i = 0; i < psDec->subfr_length; i++ ){
             /* unrolled */
-            Atmp = *( (SKP_int32*)&A_Q12_tmp[ 0 ] );    /* read two coefficients at once */
+            Atmp = *( ( SKP_int32* )&A_Q12_tmp[ 0 ] );    /* read two coefficients at once */
             LPC_pred_Q10 = SKP_SMULWB(               psDec->sLPC_Q14[ MAX_LPC_ORDER + i -  1 ], Atmp );
             LPC_pred_Q10 = SKP_SMLAWT( LPC_pred_Q10, psDec->sLPC_Q14[ MAX_LPC_ORDER + i -  2 ], Atmp );
-            Atmp = *( (SKP_int32*)&A_Q12_tmp[ 2 ] );
+            Atmp = *( ( SKP_int32* )&A_Q12_tmp[ 2 ] );
             LPC_pred_Q10 = SKP_SMLAWB( LPC_pred_Q10, psDec->sLPC_Q14[ MAX_LPC_ORDER + i -  3 ], Atmp );
             LPC_pred_Q10 = SKP_SMLAWT( LPC_pred_Q10, psDec->sLPC_Q14[ MAX_LPC_ORDER + i -  4 ], Atmp );
-            Atmp = *( (SKP_int32*)&A_Q12_tmp[ 4 ] );
+            Atmp = *( ( SKP_int32* )&A_Q12_tmp[ 4 ] );
             LPC_pred_Q10 = SKP_SMLAWB( LPC_pred_Q10, psDec->sLPC_Q14[ MAX_LPC_ORDER + i -  5 ], Atmp );
             LPC_pred_Q10 = SKP_SMLAWT( LPC_pred_Q10, psDec->sLPC_Q14[ MAX_LPC_ORDER + i -  6 ], Atmp );
-            Atmp = *( (SKP_int32*)&A_Q12_tmp[ 6 ] );
+            Atmp = *( ( SKP_int32* )&A_Q12_tmp[ 6 ] );
             LPC_pred_Q10 = SKP_SMLAWB( LPC_pred_Q10, psDec->sLPC_Q14[ MAX_LPC_ORDER + i -  7 ], Atmp );
             LPC_pred_Q10 = SKP_SMLAWT( LPC_pred_Q10, psDec->sLPC_Q14[ MAX_LPC_ORDER + i -  8 ], Atmp );
-            Atmp = *( (SKP_int32*)&A_Q12_tmp[ 8 ] );
+            Atmp = *( ( SKP_int32* )&A_Q12_tmp[ 8 ] );
             LPC_pred_Q10 = SKP_SMLAWB( LPC_pred_Q10, psDec->sLPC_Q14[ MAX_LPC_ORDER + i -  9 ], Atmp );
             LPC_pred_Q10 = SKP_SMLAWT( LPC_pred_Q10, psDec->sLPC_Q14[ MAX_LPC_ORDER + i - 10 ], Atmp );
             for( j = 10 ; j < psDec->LPC_order ; j+=2 ) {
-                Atmp = *( (SKP_int32*)&A_Q12_tmp[ j ] );
+                Atmp = *( ( SKP_int32* )&A_Q12_tmp[ j ] );
                 LPC_pred_Q10 = SKP_SMLAWB( LPC_pred_Q10, psDec->sLPC_Q14[ MAX_LPC_ORDER + i -  1 - j ], Atmp );
                 LPC_pred_Q10 = SKP_SMLAWT( LPC_pred_Q10, psDec->sLPC_Q14[ MAX_LPC_ORDER + i -  2 - j ], Atmp );
             }
 
             /* Add prediction to LPC residual */
             sig_Q10_ptr[ i ] = SKP_ADD32( sig_Q10_ptr[ i ], LPC_pred_Q10 );
-
+                
             /* Update states */
             psDec->sLPC_Q14[ MAX_LPC_ORDER + i ] = SKP_LSHIFT( sig_Q10_ptr[ i ], 4 );
         }
@@ -352,7 +318,7 @@ void SKP_Silk_PLC_conceal(
 
     /* Scale with Gain */
     for( i = 0; i < psDec->frame_length; i++ ) {
-        signal[ i ] = (SKP_int16)SKP_SAT16( SKP_RSHIFT_ROUND( SKP_SMULWW( sig_Q10[ i ], psPLC->prevGain_Q16[ NB_SUBFR - 1 ] ), 10 ) );
+        signal[ i ] = ( SKP_int16 )SKP_SAT16( SKP_RSHIFT_ROUND( SKP_SMULWW( sig_Q10[ i ], psPLC->prevGain_Q16[ NB_SUBFR - 1 ] ), 10 ) );
     }
 
     /**************************************/
@@ -363,11 +329,6 @@ void SKP_Silk_PLC_conceal(
     for( i = 0; i < NB_SUBFR; i++ ) {
         psDecCtrl->pitchL[ i ] = lag;
     }
-
-
-
-
-
 }
 
 /* Glues concealed frames with new good recieved frames             */
@@ -386,7 +347,7 @@ void SKP_Silk_PLC_glue_frames(
     if( psDec->lossCnt ) {
         /* Calculate energy in concealed residual */
         SKP_Silk_sum_sqr_shift( &psPLC->conc_energy, &psPLC->conc_energy_shift, signal, length );
-
+        
         psPLC->last_frame_lost = 1;
     } else {
         if( psDec->sPLC.last_frame_lost ) {
@@ -409,18 +370,13 @@ void SKP_Silk_PLC_glue_frames(
                 LZ = LZ - 1;
                 psPLC->conc_energy = SKP_LSHIFT( psPLC->conc_energy, LZ );
                 energy = SKP_RSHIFT( energy, SKP_max_32( 24 - LZ, 0 ) );
-
+                
                 frac_Q24 = SKP_DIV32( psPLC->conc_energy, SKP_max( energy, 1 ) );
-
+                
                 gain_Q12 = SKP_Silk_SQRT_APPROX( frac_Q24 );
                 slope_Q12 = SKP_DIV32_16( ( 1 << 12 ) - gain_Q12, length );
 
                 for( i = 0; i < length; i++ ) {
-
-
-
-
-
                     signal[ i ] = SKP_RSHIFT( SKP_MUL( gain_Q12, signal[ i ] ), 12 );
                     gain_Q12 += slope_Q12;
                     gain_Q12 = SKP_min( gain_Q12, ( 1 << 12 ) );
@@ -431,5 +387,3 @@ void SKP_Silk_PLC_glue_frames(
 
     }
 }
-
-

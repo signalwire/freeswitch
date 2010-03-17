@@ -1,32 +1,28 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 #include "SKP_Silk_main_FIX.h"
@@ -37,11 +33,6 @@ void SKP_Silk_VQ_WMat_EC_FIX(
     SKP_int32                       *rate_dist_Q14,     /* O    best weighted quantization error + mu * rate*/
     const SKP_int16                 *in_Q14,            /* I    input vector to be quantized                */
     const SKP_int32                 *W_Q18,             /* I    weighting matrix                            */
-
-
-
-
-
     const SKP_int16                 *cb_Q14,            /* I    codebook                                    */
     const SKP_int16                 *cl_Q6,             /* I    code length for each codebook vector        */
     const SKP_int                   mu_Q8,              /* I    tradeoff between weighted error and rate    */
@@ -57,8 +48,8 @@ void SKP_Silk_VQ_WMat_EC_FIX(
     cb_row_Q14 = cb_Q14;
     for( k = 0; k < L; k++ ) {
         /* Pack pairs of int16 values per int32 */
-        diff_Q14_01 = (SKP_uint16)( in_Q14[ 0 ] - cb_row_Q14[ 0 ] ) | SKP_LSHIFT( (SKP_int32)in_Q14[ 1 ] - cb_row_Q14[ 1 ], 16 );
-        diff_Q14_23 = (SKP_uint16)( in_Q14[ 2 ] - cb_row_Q14[ 2 ] ) | SKP_LSHIFT( (SKP_int32)in_Q14[ 3 ] - cb_row_Q14[ 3 ], 16 );
+        diff_Q14_01 = (SKP_uint16)( in_Q14[ 0 ] - cb_row_Q14[ 0 ] ) | SKP_LSHIFT( ( SKP_int32 )in_Q14[ 1 ] - cb_row_Q14[ 1 ], 16 );
+        diff_Q14_23 = (SKP_uint16)( in_Q14[ 2 ] - cb_row_Q14[ 2 ] ) | SKP_LSHIFT( ( SKP_int32 )in_Q14[ 3 ] - cb_row_Q14[ 3 ], 16 );
         diff_Q14_4  = in_Q14[ 4 ] - cb_row_Q14[ 4 ];
 
         /* Weighted rate */
@@ -90,11 +81,6 @@ void SKP_Silk_VQ_WMat_EC_FIX(
 
         /* third row of W_Q18 */
         sum2_Q16 = SKP_SMULWT(           W_Q18[ 13 ], diff_Q14_23 );
-
-
-
-
-
         sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[ 14 ], diff_Q14_4  );
         sum2_Q16 = SKP_LSHIFT( sum2_Q16, 1 );
         sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[ 12 ], diff_Q14_23 );
@@ -122,5 +108,3 @@ void SKP_Silk_VQ_WMat_EC_FIX(
         cb_row_Q14 += LTP_ORDER;
     }
 }
-
-

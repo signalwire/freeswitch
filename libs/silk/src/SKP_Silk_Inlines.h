@@ -1,35 +1,28 @@
-
-
-
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 /*! \file SKP_Silk_Inlines.h
@@ -51,11 +44,6 @@ SKP_INLINE SKP_int32 SKP_Silk_CLZ64(SKP_int64 in)
 
     in_upper = (SKP_int32)SKP_RSHIFT64(in, 32);
     if (in_upper == 0) {
-
-
-
-
-
         /* Search in the lower 32 bits */
         return 32 + SKP_Silk_CLZ32( (SKP_int32) in );
     } else {
@@ -73,7 +61,7 @@ SKP_INLINE void SKP_Silk_CLZ_FRAC(SKP_int32 in,            /* I: input */
 
     leadingZeros = SKP_Silk_CLZ32(in);
     *lz = leadingZeros;
-    if( leadingZeros < 24 ) {
+    if( leadingZeros < 24 ) { 
         *frac_Q7 = SKP_RSHIFT(in, 24 - leadingZeros) & 0x7F;
     } else {
         *frac_Q7 = SKP_LSHIFT(in, leadingZeros - 24) & 0x7F;
@@ -105,10 +93,6 @@ SKP_INLINE SKP_int32 SKP_Silk_SQRT_APPROX(SKP_int32 x)
     /* increment using fractional part of input */
     y = SKP_SMLAWB(y, y, SKP_SMULBB(213, frac_Q7));
 
-
-
-
-
     return y;
 }
 
@@ -129,7 +113,7 @@ SKP_INLINE SKP_int32 SKP_Silk_norm16(SKP_int16 a) {
 
 /* returns the number of left shifts before overflow for a 32 bit number (ITU definition with norm(0)=0) */
 SKP_INLINE SKP_int32 SKP_Silk_norm32(SKP_int32 a) {
-
+  
   /* if ((a == 0) || (a == SKP_int32_MIN)) return(0); */
   if ((a << 1) == 0) return(0);
 
@@ -157,10 +141,6 @@ SKP_INLINE SKP_int32 SKP_DIV32_varQ(    /* O    returns a good approximation of 
     a32_nrm = SKP_LSHIFT(a32, a_headrm);                                    /* Q: a_headrm                    */
     b_headrm = SKP_Silk_CLZ32( SKP_abs(b32) ) - 1;
     b32_nrm = SKP_LSHIFT(b32, b_headrm);                                    /* Q: b_headrm                    */
-
-
-
-
 
     /* Inverse of b32, with 14 bits of precision */
     b32_inv = SKP_DIV32_16( SKP_int32_MAX >> 2, SKP_RSHIFT(b32_nrm, 16) );  /* Q: 29 + 16 - b_headrm        */
@@ -210,11 +190,6 @@ SKP_INLINE SKP_int32 SKP_INVERSE32_varQ(    /* O    returns a good approximation
     /* First approximation */
     result = SKP_LSHIFT(b32_inv, 16);                                       /* Q: 61 - b_headrm            */
 
-
-
-
-
-
     /* Compute residual by subtracting product of denominator and first approximation from one */
     err_Q32 = SKP_LSHIFT_ovflw( -SKP_SMULWB(b32_nrm, b32_inv), 3 );         /* Q32                        */
 
@@ -263,11 +238,6 @@ SKP_INLINE SKP_int32 SKP_Silk_SIN_APPROX_Q24(        /* O    returns approximate
         }
         if( x < 1100 ) {
             /* Special case: high accuracy */
-
-
-
-
-
             return SKP_SMLAWB( 1 << 24, SKP_MUL( x, x ), -5053 );
         }
         x = SKP_SMULWB( SKP_LSHIFT( x, 8 ), x );        /* contains x^2 in Q20 */
@@ -308,5 +278,3 @@ SKP_INLINE SKP_int32 SKP_Silk_COS_APPROX_Q24(        /* O    returns approximate
 #endif
 
 #endif //_SKP_SILK_FIX_INLINES_H_
-
-

@@ -1,42 +1,33 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
-
-
-
-
-
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
-/******************************************************/
-/* Silk decoder test program                          */
-/******************************************************/
+/*****************************/
+/* Silk decoder test program */
+/*****************************/
 
 #ifdef _WIN32
 #define _CRT_SECURE_NO_DEPRECATE    1
@@ -69,11 +60,6 @@ int main( int argc, char* argv[] )
     size_t    counter;
     SKP_int   args, totPackets, i, k;
     SKP_int16 ret, len, tot_len;
-
-
-
-
-
     SKP_int16 nBytes;
     SKP_uint8 payload[    MAX_BYTES_PER_FRAME * MAX_INPUT_FRAMES * ( MAX_LBRR_DELAY + 1 ) ];
     SKP_uint8 FECpayload[ MAX_BYTES_PER_FRAME * MAX_INPUT_FRAMES ], *payloadPtr;
@@ -93,7 +79,7 @@ int main( int argc, char* argv[] )
     if( argc < 3 ) {
         print_usage( argv );
         exit( 0 );
-    }
+    } 
 
     /* default settings */
     quiet     = 0;
@@ -122,11 +108,6 @@ int main( int argc, char* argv[] )
         }
     }
 
-
-
-
-
-
     if( !quiet ) {
         printf("******************* Silk Decoder v %s ****************\n", SKP_Silk_SDK_get_version());
         printf("******************* Compiled for %d bit cpu ********* \n", (int)sizeof(void*) * 8 );
@@ -139,14 +120,14 @@ int main( int argc, char* argv[] )
     if( bitInFile == NULL ) {
         printf( "Error: could not open input file %s\n", bitInFileName );
         exit( 0 );
-    }
+    } 
     speechOutFile = fopen( speechOutFileName, "wb" );
     if( speechOutFile == NULL ) {
         printf( "Error: could not open output file %s\n", speechOutFileName );
         exit( 0 );
     }
 
-    /* Set the samplingrate that is expected for the output */
+	/* Set the samplingrate that is requested for the output */
     if( Fs_kHz == 0 ) {
         DecControl.sampleRate = 24000;
     } else {
@@ -176,10 +157,6 @@ int main( int argc, char* argv[] )
         /* Read payload */
         counter = fread( payloadEnd, sizeof( SKP_uint8 ), nBytes, bitInFile );
 
-
-
-
-
         if( (SKP_int16)counter < nBytes ) {
             break;
         }
@@ -193,7 +170,7 @@ int main( int argc, char* argv[] )
         if( nBytes < 0 || counter < 1 ) {
             break;
         }
-
+        
         /* Read payload */
         counter = fread( payloadEnd, sizeof( SKP_uint8 ), nBytes, bitInFile );
         if( (SKP_int16)counter < nBytes ) {
@@ -228,11 +205,6 @@ int main( int argc, char* argv[] )
             }
         } else {
             lost = 0;
-
-
-
-
-
             nBytes = nBytesPerPacket[ 0 ];
             payloadToDec = payload;
         }
@@ -261,8 +233,8 @@ int main( int argc, char* argv[] )
                     frames  = 0;
                 }
                 /* Until last 20 ms frame of packet has been decoded */
-            } while( DecControl.internalDecoderFrames );
-        } else {
+            } while( DecControl.moreInternalDecoderFrames ); 
+        } else {    
             /* Loss: Decode enough frames to cover one packet duration */
             for( i = 0; i < DecControl.framesPerPacket; i++ ) {
                 /* Generate 20 ms */
@@ -281,11 +253,6 @@ int main( int argc, char* argv[] )
 
         /* Update buffer */
         totBytes = 0;
-
-
-
-
-
         for( i = 0; i < MAX_LBRR_DELAY; i++ ) {
             totBytes += nBytesPerPacket[ i + 1 ];
         }
@@ -334,11 +301,6 @@ int main( int argc, char* argv[] )
             do {
                 /* Decode 20 ms */
                 ret = SKP_Silk_SDK_Decode( psDec, &DecControl, 0, payloadToDec, nBytes, outPtr, &len );
-
-
-
-
-
                 if( ret ) {
                     printf( "\nSKP_Silk_SDK_Decode returned %d", ret );
                 }
@@ -353,8 +315,8 @@ int main( int argc, char* argv[] )
                     frames  = 0;
                 }
             /* Until last 20 ms frame of packet has been decoded */
-            } while( DecControl.internalDecoderFrames );
-        } else {
+            } while( DecControl.moreInternalDecoderFrames );
+        } else {    
             /* Loss: Decode enough frames to cover one packet duration */
 
             /* Generate 20 ms */
@@ -387,11 +349,6 @@ int main( int argc, char* argv[] )
     }
 
     if( !quiet ) {
-
-
-
-
-
         printf( "\nDecoding Finished \n" );
     }
 
@@ -404,5 +361,3 @@ int main( int argc, char* argv[] )
 
     return 0;
 }
-
-

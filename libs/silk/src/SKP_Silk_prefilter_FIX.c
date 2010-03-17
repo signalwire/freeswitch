@@ -1,32 +1,28 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 #include "SKP_Silk_main_FIX.h"
@@ -45,11 +41,6 @@ SKP_INLINE void SKP_Silk_prefilt_FIX(
 );
 
 void SKP_Silk_prefilter_FIX(
-
-
-
-
-
     SKP_Silk_encoder_state_FIX          *psEnc,         /* I/O  Encoder state FIX                           */
     const SKP_Silk_encoder_control_FIX  *psEncCtrl,     /* I    Encoder control FIX                         */
     SKP_int16                           xw[],           /* O    Weighted signal                             */
@@ -81,14 +72,14 @@ void SKP_Silk_prefilter_FIX(
         HarmShapeGain_Q12 = SKP_SMULWB( psEncCtrl->HarmShapeGain_Q14[ k ], 16384 - psEncCtrl->HarmBoost_Q14[ k ] );
         SKP_assert( HarmShapeGain_Q12 >= 0 );
         HarmShapeFIRPacked_Q12  =                        SKP_RSHIFT( HarmShapeGain_Q12, 2 );
-        HarmShapeFIRPacked_Q12 |= SKP_LSHIFT( (SKP_int32)SKP_RSHIFT( HarmShapeGain_Q12, 1 ), 16 );
+        HarmShapeFIRPacked_Q12 |= SKP_LSHIFT( ( SKP_int32 )SKP_RSHIFT( HarmShapeGain_Q12, 1 ), 16 );
         Tilt_Q14    = psEncCtrl->Tilt_Q14[   k ];
         LF_shp_Q14  = psEncCtrl->LF_shp_Q14[ k ];
         AR1_shp_Q13 = &psEncCtrl->AR1_Q13[   k * SHAPE_LPC_ORDER_MAX ];
 
         /* Short term FIR filtering*/
         SKP_memset( filterState, 0, psEnc->sCmn.shapingLPCOrder * sizeof( SKP_int32 ) );
-        SKP_Silk_MA_Prediction_Q13( px - psEnc->sCmn.shapingLPCOrder, AR1_shp_Q13, filterState,
+        SKP_Silk_MA_Prediction_Q13( px - psEnc->sCmn.shapingLPCOrder, AR1_shp_Q13, filterState, 
             st_res, psEnc->sCmn.subfr_length + psEnc->sCmn.shapingLPCOrder, psEnc->sCmn.shapingLPCOrder );
 
         pst_res = st_res + psEnc->sCmn.shapingLPCOrder; /* Point to first sample */
@@ -98,11 +89,6 @@ void SKP_Silk_prefilter_FIX(
         tmp_32 = SKP_SMLABB( INPUT_TILT_Q26, psEncCtrl->HarmBoost_Q14[ k ], HarmShapeGain_Q12 ); /* Q26 */
         tmp_32 = SKP_SMLABB( tmp_32, psEncCtrl->coding_quality_Q14, HIGH_RATE_INPUT_TILT_Q12 );  /* Q26 */
         tmp_32 = SKP_SMULWB( tmp_32, -psEncCtrl->GainsPre_Q14[ k ] );                            /* Q24 */
-
-
-
-
-
         tmp_32 = SKP_RSHIFT_ROUND( tmp_32, 12 );                                                 /* Q12 */
         B_Q12 |= SKP_LSHIFT( SKP_SAT16( tmp_32 ), 16 );
 
@@ -116,7 +102,7 @@ void SKP_Silk_prefilter_FIX(
         }
         P->sHarmHP = pst_res[ psEnc->sCmn.subfr_length - 1 ];
 
-        SKP_Silk_prefilt_FIX( P, x_filt_Q12, pxw, HarmShapeFIRPacked_Q12, Tilt_Q14,
+        SKP_Silk_prefilt_FIX( P, x_filt_Q12, pxw, HarmShapeFIRPacked_Q12, Tilt_Q14, 
             LF_shp_Q14, lag, psEnc->sCmn.subfr_length );
 
         px  += psEnc->sCmn.subfr_length;
@@ -151,11 +137,6 @@ SKP_INLINE void SKP_Silk_prefilt_FIX(
 
     for( i = 0; i < length; i++ ) {
         if( lag > 0 ) {
-
-
-
-
-
             /* unrolled loop */
             SKP_assert( HARM_SHAPE_FIR_TAPS == 3 );
             idx = lag + LTP_shp_buf_idx;
@@ -173,9 +154,9 @@ SKP_INLINE void SKP_Silk_prefilt_FIX(
         sLF_MA_shp_Q12 = SKP_SUB32( sLF_AR_shp_Q12,  SKP_LSHIFT( n_LF_Q10,   2 ) );
 
         LTP_shp_buf_idx                = ( LTP_shp_buf_idx - 1 ) & LTP_MASK;
-        LTP_shp_buf[ LTP_shp_buf_idx ] = (SKP_int16)SKP_SAT16( SKP_RSHIFT_ROUND( sLF_MA_shp_Q12, 12 ) );
+        LTP_shp_buf[ LTP_shp_buf_idx ] = ( SKP_int16 )SKP_SAT16( SKP_RSHIFT_ROUND( sLF_MA_shp_Q12, 12 ) );
 
-        xw[i] = (SKP_int16)SKP_SAT16( SKP_RSHIFT_ROUND( SKP_SUB32( sLF_MA_shp_Q12, n_LTP_Q12 ), 12 ) );
+        xw[i] = ( SKP_int16 )SKP_SAT16( SKP_RSHIFT_ROUND( SKP_SUB32( sLF_MA_shp_Q12, n_LTP_Q12 ), 12 ) );
     }
 
     /* Copy temp variable back to state */
@@ -183,5 +164,3 @@ SKP_INLINE void SKP_Silk_prefilt_FIX(
     P->sLF_MA_shp1_Q12   = sLF_MA_shp_Q12;
     P->sLTP_shp_buf_idx1 = LTP_shp_buf_idx;
 }
-
-

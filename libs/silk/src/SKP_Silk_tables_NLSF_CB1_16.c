@@ -1,37 +1,28 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-
-
-
-
-
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 /**********************************************/
@@ -72,11 +63,6 @@ const SKP_uint16 SKP_Silk_NLSF_MSVQ_CB1_16_CDF[ NLSF_MSVQ_CB1_16_VECTORS + NLSF_
         61690,
         62171,
         62651,
-
-
-
-
-
         63132,
         63613,
         64093,
@@ -125,11 +111,6 @@ const SKP_uint16 SKP_Silk_NLSF_MSVQ_CB1_16_CDF[ NLSF_MSVQ_CB1_16_VECTORS + NLSF_
         45432,
         50311,
         54326,
-
-
-
-
-
         58171,
         61853,
         65535,
@@ -178,11 +159,6 @@ const SKP_uint16 * const SKP_Silk_NLSF_MSVQ_CB1_16_CDF_start_ptr[ NLSF_MSVQ_CB1_
      &SKP_Silk_NLSF_MSVQ_CB1_16_CDF[  42 ],
      &SKP_Silk_NLSF_MSVQ_CB1_16_CDF[  51 ],
      &SKP_Silk_NLSF_MSVQ_CB1_16_CDF[  60 ],
-
-
-
-
-
      &SKP_Silk_NLSF_MSVQ_CB1_16_CDF[  69 ],
      &SKP_Silk_NLSF_MSVQ_CB1_16_CDF[  78 ],
      &SKP_Silk_NLSF_MSVQ_CB1_16_CDF[  87 ],
@@ -231,11 +207,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB1_16_rates_Q5[ NLSF_MSVQ_CB1_16_VECTORS ] =
               129,              134,
               134,              143,
                31,              109,
-
-
-
-
-
               114,              120,
               128,              130,
               131,              132,
@@ -284,11 +255,6 @@ const SKP_int SKP_Silk_NLSF_MSVQ_CB1_16_ndelta_min_Q15[ 16 + 1 ] =
               126,
               183,
               792
-
-
-
-
-
 };
 
 const SKP_int16 SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 * NLSF_MSVQ_CB1_16_VECTORS ] =
@@ -337,11 +303,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 * NLSF_MSVQ_CB1_16_VECTORS ] =
             11596,            13934,            15973,            17682,
             19158,            20517,            21991,            23420,
             25178,            26936,            28794,            30527,
-
-
-
-
-
              1323,             2414,             4184,             6039,
              7534,             9398,            11099,            13097,
             14799,            16451,            18434,            20887,
@@ -390,11 +351,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 * NLSF_MSVQ_CB1_16_VECTORS ] =
              8670,            10105,            11470,            12834,
             13991,            15042,            16642,            17903,
             20759,            25283,            27770,            30240,
-
-
-
-
-
              2037,             3987,             6237,             8117,
              9954,            12245,            14217,            15892,
             17775,            20114,            22314,            25942,
@@ -443,11 +399,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 * NLSF_MSVQ_CB1_16_VECTORS ] =
               605,              620,              532,              482,
               442,              454,              385,              347,
               322,              299,              266,              200,
-
-
-
-
-
              1168,              951,              672,              246,
                60,             -161,             -259,             -234,
              -253,             -282,             -203,             -187,
@@ -496,11 +447,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 * NLSF_MSVQ_CB1_16_VECTORS ] =
               157,              122,             -168,              147,
               309,              300,              336,              315,
               396,              408,              376,              106,
-
-
-
-
-
              -162,             -170,             -315,               98,
               821,              908,              570,              -33,
              -312,             -568,             -572,             -378,
@@ -549,11 +495,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 * NLSF_MSVQ_CB1_16_VECTORS ] =
               199,             -108,             -227,              -66,
              -447,              -67,             -264,             -394,
                 5,               55,             -133,             -176,
-
-
-
-
-
              -116,             -241,              272,              109,
               282,              262,              192,              -64,
              -392,             -514,              156,              203,
@@ -602,11 +543,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 * NLSF_MSVQ_CB1_16_VECTORS ] =
              -147,               72,               59,             -150,
              -594,              273,              316,              132,
               199,              106,              198,              212,
-
-
-
-
-
               220,               82,               45,              -13,
               223,              137,              270,               38,
               252,              135,             -177,             -207,
@@ -655,11 +591,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 * NLSF_MSVQ_CB1_16_VECTORS ] =
                -3,             -171,                5,                2,
              -108,             -125,               62,              -58,
                58,             -121,               73,             -466,
-
-
-
-
-
                92,               63,              -94,              -78,
               -76,              212,               36,             -225,
               -71,             -354,              152,              143,
@@ -708,11 +639,6 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 * NLSF_MSVQ_CB1_16_VECTORS ] =
               -59,             -157,                8,             -134,
                21,              -40,               58,              -21,
               194,             -276,               97,              279,
-
-
-
-
-
               -56,             -140,              125,               57,
              -184,             -204,              -70,               -2,
               128,             -202,              -78,              230,
@@ -751,7 +677,7 @@ const SKP_int16 SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 * NLSF_MSVQ_CB1_16_VECTORS ] =
                16,               39,               14,               50
 };
 
-const SKP_Silk_NLSF_CB_Stage_struct SKP_Silk_NLSF_CB1_16_Stage_info[ NLSF_MSVQ_CB1_16_STAGES ] =
+const SKP_Silk_NLSF_CBS SKP_Silk_NLSF_CB1_16_Stage_info[ NLSF_MSVQ_CB1_16_STAGES ] =
 {
         {  32, &SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 *   0 ], &SKP_Silk_NLSF_MSVQ_CB1_16_rates_Q5[   0 ] },
         {   8, &SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 *  32 ], &SKP_Silk_NLSF_MSVQ_CB1_16_rates_Q5[  32 ] },
@@ -761,11 +687,6 @@ const SKP_Silk_NLSF_CB_Stage_struct SKP_Silk_NLSF_CB1_16_Stage_info[ NLSF_MSVQ_C
         {   8, &SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 *  64 ], &SKP_Silk_NLSF_MSVQ_CB1_16_rates_Q5[  64 ] },
         {   8, &SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 *  72 ], &SKP_Silk_NLSF_MSVQ_CB1_16_rates_Q5[  72 ] },
         {   8, &SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 *  80 ], &SKP_Silk_NLSF_MSVQ_CB1_16_rates_Q5[  80 ] },
-
-
-
-
-
         {   8, &SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 *  88 ], &SKP_Silk_NLSF_MSVQ_CB1_16_rates_Q5[  88 ] },
         {   8, &SKP_Silk_NLSF_MSVQ_CB1_16_Q15[ 16 *  96 ], &SKP_Silk_NLSF_MSVQ_CB1_16_rates_Q5[  96 ] }
 };
@@ -779,6 +700,4 @@ const SKP_Silk_NLSF_CB_struct SKP_Silk_NLSF_CB1_16 =
         SKP_Silk_NLSF_MSVQ_CB1_16_CDF_start_ptr,
         SKP_Silk_NLSF_MSVQ_CB1_16_CDF_middle_idx
 };
-
-
 

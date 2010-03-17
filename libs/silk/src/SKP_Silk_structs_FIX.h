@@ -1,37 +1,28 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-
-
-
-
-
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 #ifndef SKP_SILK_STRUCTS_FIX_H
@@ -60,11 +51,6 @@ typedef struct {
     SKP_int32   HarmShapeGain_smth_Q16;
     SKP_int32   Tilt_smth_Q16;
 } SKP_Silk_shape_state_FIX;
-
-
-
-
-
 
 /********************************/
 /* Prefilter state              */
@@ -104,24 +90,19 @@ typedef struct {
     const SKP_int32     nVectors;
     const SKP_float     *CB;
     const SKP_float     *Rates;
-} SKP_Silk_NLSF_CB_Stage_struct_FLP_TMP;
+} SKP_Silk_NLSF_CBS_FLP_TMP;
 
 typedef struct {
-    const SKP_int32                     nStages;
+    const SKP_int32                 nStages;
 
     /* fields for (de)quantizing */
-    const SKP_Silk_NLSF_CB_Stage_struct_FLP_TMP *CBStages;
-    const SKP_float                     *NDeltaMin;
+    const SKP_Silk_NLSF_CBS_FLP_TMP *CBStages;
+    const SKP_float                 *NDeltaMin;
 
     /* fields for arithmetic (de)coding */
-
-
-
-
-
-    const SKP_uint16                    *CDF;
-    const SKP_uint16 * const            *StartPtr;
-    const SKP_int                       *MiddleIx;
+    const SKP_uint16                *CDF;
+    const SKP_uint16 * const        *StartPtr;
+    const SKP_int                   *MiddleIx;
 } SKP_Silk_NLSF_CB_struct_FLP_TMP;
 #endif
 
@@ -140,15 +121,15 @@ typedef struct {
     SKP_Silk_predict_state_FIX      sPred;                          /* Prediction state                                                     */
     SKP_Silk_nsq_state              sNSQ;                           /* Noise Shape Quantizer State                                          */
     SKP_Silk_nsq_state              sNSQ_LBRR;                      /* Noise Shape Quantizer State ( for low bitrate redundancy )           */
-
+    
     /* Function pointer to noise shaping quantizer (will be set to SKP_Silk_NSQ or SKP_Silk_NSQ_del_dec) */
-    void    (* NoiseShapingQuantizer)( SKP_Silk_encoder_state *, SKP_Silk_encoder_control *, SKP_Silk_nsq_state *, const SKP_int16 *,
-                                        SKP_int *, const SKP_int, const SKP_int16 *, const SKP_int16 *, const SKP_int16 *, const SKP_int *,
+    void    (* NoiseShapingQuantizer)( SKP_Silk_encoder_state *, SKP_Silk_encoder_control *, SKP_Silk_nsq_state *, const SKP_int16 *, 
+                                        SKP_int *, const SKP_int, const SKP_int16 *, const SKP_int16 *, const SKP_int16 *, const SKP_int *, 
                                         const SKP_int *, const SKP_int32 *, const SKP_int32 *, SKP_int, const SKP_int
     );
 
     /* Buffer for find pitch and noise shape analysis */
-    SKP_array_of_int16_4_byte_aligned( x_buf, 2 * MAX_FRAME_LENGTH + LA_SHAPE_MAX );
+    SKP_array_of_int16_4_byte_aligned( x_buf, 2 * MAX_FRAME_LENGTH + LA_SHAPE_MAX );    
     SKP_int                         LTPCorr_Q15;                    /* Normalized correlation from pitch lag estimator                      */
     SKP_int                         mu_LTP_Q8;                      /* Rate-distortion tradeoff in LTP quantization                         */
     SKP_int32                       SNR_dB_Q7;                      /* Quality setting                                                      */
@@ -157,7 +138,7 @@ typedef struct {
     SKP_int                         BufferedInChannel_ms;           /* Simulated number of ms buffer because of exceeded TargetRate_bps     */
     SKP_int                         speech_activity_Q8;             /* Speech activity in Q8                                                */
     SKP_int32                       pitchEstimationThreshold_Q16;   /* Threshold for pitch estimator                                        */
-
+    
     /* Parameters For LTP scaling Control */
     SKP_int                         prevLTPredCodGain_Q7;
     SKP_int                         HPLTPredCodGain_Q7;
@@ -165,13 +146,8 @@ typedef struct {
     SKP_int32                       inBandFEC_SNR_comp_Q8;          /* Compensation to SNR_dB when using inband FEC Voiced      */
 
 #ifdef USE_FLT2FIX_WRAPPER
-    const SKP_Silk_NLSF_CB_struct_FLP_TMP *psNLSF_CB_FLP[ 2 ];      /* Pointers to voiced/unvoiced NLSF codebooks */
+    const SKP_Silk_NLSF_CB_struct_FLP_TMP *psNLSF_CB_FLP[ 2 ];      /* Pointers to voiced/unvoiced NLSF codebooks */    
 #endif
-
-
-
-
-
 } SKP_Silk_encoder_state_FIX;
 
 /************************/
@@ -208,7 +184,7 @@ typedef struct {
     SKP_int     input_tilt_Q15;
     SKP_int32   ResNrg[ NB_SUBFR ];             /* Residual energy per subframe                             */
     SKP_int     ResNrgQ[ NB_SUBFR ];            /* Q domain for the residual energy > 0                     */
-
+    
 } SKP_Silk_encoder_control_FIX;
 
 
@@ -217,5 +193,3 @@ typedef struct {
 #endif
 
 #endif
-
-

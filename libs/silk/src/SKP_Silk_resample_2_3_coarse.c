@@ -1,37 +1,28 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-
-
-
-
-
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 /*                                                                      *
@@ -49,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "SKP_Silk_resample_rom.h"
 
 /* Resamples input data with a factor 2/3 */
-void SKP_Silk_resample_2_3_coarse(
+void SKP_Silk_resample_2_3_coarse( 
     SKP_int16           *out,           /* O:   Output signal                                                                   */
     SKP_int16           *S,             /* I/O: Resampler state [ SigProc_Resample_2_3_coarse_NUM_FIR_COEFS - 1 ]               */
     const SKP_int16     *in,            /* I:   Input signal                                                                    */
@@ -64,19 +55,15 @@ void SKP_Silk_resample_2_3_coarse(
 
     /* Copy buffered samples to start of scratch */
     SKP_memcpy( scratch, S, ( SigProc_Resample_2_3_coarse_NUM_FIR_COEFS - 1 ) * sizeof( SKP_int16 ) );
-
+    
     /* Then append by the input signal */
-    SKP_memcpy( &scratch[ SigProc_Resample_2_3_coarse_NUM_FIR_COEFS - 1 ], in, frameLenIn * sizeof( SKP_int16 ) );
+    SKP_memcpy( &scratch[ SigProc_Resample_2_3_coarse_NUM_FIR_COEFS - 1 ], in, frameLenIn * sizeof( SKP_int16 ) ); 
 
     frameLenOut = SKP_DIV32_16( SKP_MUL( 2, frameLenIn ), 3 );
     index_Q16 = 0;
 
-
-
-
-
     SKP_assert( frameLenIn == ( ( frameLenOut * 3 ) / 2 ) );
-
+    
     /* Interpolate */
     for( n = frameLenOut; n > 0; n-- ) {
 
@@ -87,7 +74,7 @@ void SKP_Silk_resample_2_3_coarse(
         in_ptr = scratch + ind;
 
         /* Fractional part */
-        interpol_ind = ( SKP_SMULWB( index_Q16, SigProc_Resample_2_3_coarse_NUM_INTERPOLATORS ) &
+        interpol_ind = ( SKP_SMULWB( index_Q16, SigProc_Resample_2_3_coarse_NUM_INTERPOLATORS ) & 
                        ( SigProc_Resample_2_3_coarse_NUM_INTERPOLATORS - 1 ) );
 
         /* Pointer to FIR taps */
@@ -123,8 +110,3 @@ void SKP_Silk_resample_2_3_coarse(
     SKP_memcpy( S, &in[ frameLenIn - ( SigProc_Resample_2_3_coarse_NUM_FIR_COEFS - 1 ) ],
                 ( SigProc_Resample_2_3_coarse_NUM_FIR_COEFS - 1 ) * sizeof( SKP_int16 ) );
 }
-
-
-
-
-

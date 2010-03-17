@@ -1,37 +1,28 @@
-
-
 /***********************************************************************
-
-Copyright (c) 2006-2010, Skype Limited. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, (subject to the limitations in the disclaimer below)
+Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Redistribution and use in source and binary forms, with or without 
+modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
+- Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
 documentation and/or other materials provided with the distribution.
-
-
-
-
-
-- Neither the name of Skype Limited, nor the names of specific
-contributors, may be used to endorse or promote products derived from
+- Neither the name of Skype Limited, nor the names of specific 
+contributors, may be used to endorse or promote products derived from 
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
-BY THIS LICENSE.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 ***********************************************************************/
 
 #ifndef SKP_SILK_STRUCTS_H
@@ -64,13 +55,8 @@ typedef struct {
 } SKP_Silk_nsq_state; /* FIX*/
 
 /* Struct for Low BitRate Redundant (LBRR) information */
-
-
-
-
-
 typedef struct {
-    SKP_uint8   payload[ MAX_ARITHM_BYTES ];
+    SKP_uint8   payload[ MAX_ARITHM_BYTES ];    
     SKP_int     nBytes;                         /* Number of bytes in payload                               */
     SKP_int     usage;                          /* Tells how the payload should be used as FEC              */
 } SKP_SILK_LBRR_struct;
@@ -105,7 +91,7 @@ typedef struct {
 
 /* Input frequency range detection struct */
 typedef struct {
-    SKP_int32                   S_HP_8_kHz[NB_SOS][ 2 ];        /* HP filter State */
+    SKP_int32                   S_HP_8_kHz[ NB_SOS ][ 2 ];  /* HP filter State */
     SKP_int32                   ConsecSmplsAboveThres;
     SKP_int32                   ActiveSpeech_ms;            /* Accumulated time with active speech */
     SKP_int                     SWB_detected;               /* Flag to indicate SWB input */
@@ -115,36 +101,31 @@ typedef struct {
 #if SWITCH_TRANSITION_FILTERING
 /* Variable cut-off low-pass filter state */
 typedef struct {
-    SKP_int32                   In_LP_State[ 2 ];               /* Low pass filter state */
+    SKP_int32                   In_LP_State[ 2 ];           /* Low pass filter state */
     SKP_int32                   transition_frame_no;        /* Counter which is mapped to a cut-off frequency */
-
-
-
-
-
     SKP_int                     mode;                       /* Operating mode, 0: switch down, 1: switch up */
 } SKP_Silk_LP_state;
 #endif
 
-/* structure for one stage of MSVQ */
+/* Structure for one stage of MSVQ */
 typedef struct {
-    const SKP_int32                         nVectors;
-    const SKP_int16                         *CB_NLSF_Q15;
-    const SKP_int16                         *Rates_Q5;
-} SKP_Silk_NLSF_CB_Stage_struct;
+    const SKP_int32             nVectors;
+    const SKP_int16             *CB_NLSF_Q15;
+    const SKP_int16             *Rates_Q5;
+} SKP_Silk_NLSF_CBS;
 
 /* Structure containing NLSF MSVQ codebook */
 typedef struct {
-    const SKP_int32                         nStages;
+    const SKP_int32             nStages;
 
     /* Fields for (de)quantizing */
-    const SKP_Silk_NLSF_CB_Stage_struct     *CBStages;
-    const SKP_int                           *NDeltaMin_Q15;
+    const SKP_Silk_NLSF_CBS     *CBStages;
+    const SKP_int               *NDeltaMin_Q15;
 
     /* Fields for arithmetic (de)coding */
-    const SKP_uint16                        *CDF;
-    const SKP_uint16 * const                *StartPtr;
-    const SKP_int                           *MiddleIx;
+    const SKP_uint16            *CDF;
+    const SKP_uint16 * const    *StartPtr;
+    const SKP_int               *MiddleIx;
 } SKP_Silk_NLSF_CB_struct;
 
 /********************************/
@@ -170,11 +151,6 @@ typedef struct {
     SKP_int                         fs_kHz_changed;                 /* Did we switch yet?                                                   */
     SKP_int                         frame_length;                   /* Frame length (samples)                                               */
     SKP_int                         subfr_length;                   /* Subframe length (samples)                                            */
-
-
-
-
-
     SKP_int                         la_pitch;                       /* Look-ahead for pitch analysis (samples)                              */
     SKP_int                         la_shape;                       /* Look-ahead for noise shape analysis (samples)                        */
     SKP_int32                       TargetRate_bps;                 /* Target bitrate (bps)                                                 */
@@ -203,7 +179,7 @@ typedef struct {
 
     const SKP_Silk_NLSF_CB_struct   *psNLSF_CB[ 2 ];                /* Pointers to voiced/unvoiced NLSF codebooks */
 
-    /* Struct for Inband LBRR */
+    /* Struct for Inband LBRR */ 
     SKP_SILK_LBRR_struct            LBRR_buffer[ MAX_LBRR_DELAY ];
     SKP_int                         oldest_LBRR_idx;
     SKP_int                         LBRR_enabled;
@@ -223,13 +199,8 @@ typedef struct {
     SKP_int32                       resample16To12state[ 15 ];      /* state for downsampling from 16 to 12 kHz                             */
     SKP_int32                       resample16To8state[ 6 ];        /* state for downsampling from 16 to  8 kHz                             */
 #if LOW_COMPLEXITY_ONLY
-
-
-
-
-
     /* state for downsampling from 12 to 8 kHz in low complexity mode */
-    SKP_int16                       resample12To8state[ SigProc_Resample_2_3_coarse_NUM_FIR_COEFS - 1 ];
+    SKP_int16                       resample12To8state[ SigProc_Resample_2_3_coarse_NUM_FIR_COEFS - 1 ];    
 #else
     SKP_int32                       resample12To8state[ 11 ];       /* state for downsampling from 12 to  8 kHz                             */
 #endif
@@ -276,10 +247,6 @@ typedef struct {
 
     /* Prediction and coding parameters */
     SKP_int     pitchL[ NB_SUBFR ];
-
-
-
-
 
     SKP_int     LBRR_usage;                     /* Low bitrate redundancy usage                             */
 } SKP_Silk_encoder_control;
@@ -329,11 +296,6 @@ typedef struct {
     const SKP_int16 *HP_A;                                      /* HP filter AR coefficients                                            */
     const SKP_int16 *HP_B;                                      /* HP filter MA coefficients                                            */
     SKP_int         fs_kHz;                                     /* Sampling frequency in kHz                                            */
-
-
-
-
-
     SKP_int         frame_length;                               /* Frame length (samples)                                               */
     SKP_int         subfr_length;                               /* Subframe length (samples)                                            */
     SKP_int         LPC_order;                                  /* LPC order                                                            */
@@ -344,7 +306,7 @@ typedef struct {
     SKP_int         nBytesLeft;
     SKP_int         nFramesDecoded;
     SKP_int         nFramesInPacket;
-    SKP_int         InternalDecoderFrames;
+    SKP_int         moreInternalDecoderFrames;
     SKP_int         FrameTermination;
 
     SKP_int32       resampleState[ 15 ];
@@ -364,11 +326,11 @@ typedef struct {
     SKP_int         LTP_scaleIndex[        MAX_FRAMES_PER_PACKET ];
     SKP_int         Seed[                  MAX_FRAMES_PER_PACKET ];
     SKP_int         vadFlagBuf[            MAX_FRAMES_PER_PACKET ];
-
+    
     /* Parameters used to investigate if inband FEC is used */
     SKP_int         vadFlag;
-    SKP_int         no_fec_counter;                             /* Counts number of frames wo inband FEC                                */
-    SKP_int         inband_fec_offset;                          /* 0: no FEC, 1: FEC with 1 packet offset, 2: FEC w 2 packets offset    */
+    SKP_int         no_FEC_counter;                             /* Counts number of frames wo inband FEC                                */
+    SKP_int         inband_FEC_offset;                          /* 0: no FEC, 1: FEC with 1 packet offset, 2: FEC w 2 packets offset    */ 
 
     /* CNG state */
     SKP_Silk_CNG_struct sCNG;
@@ -382,11 +344,6 @@ typedef struct {
     SKP_int         prevPitchL[ NB_SUBFR ];                     /* Previous Lags used                                                   */
     SKP_int16       prevLTPCoef_Q14[ NB_SUBFR * LTP_ORDER ];    /* Previous LTCoefs used                                                */
     SKP_int16       prevAR_Q12[ MAX_LPC_ORDER ];
-
-
-
-
-
     SKP_int         interpolDistance;                           /* Number of frames between old and new recieved packet                 */
 #endif
 
@@ -422,5 +379,3 @@ typedef struct {
 #endif
 
 #endif
-
-
