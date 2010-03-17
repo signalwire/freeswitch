@@ -1,4 +1,4 @@
-json-c=json-c-0.8
+json-c=json-c-0.9
 BASE=../../../..
 WANT_CURL=yes
 
