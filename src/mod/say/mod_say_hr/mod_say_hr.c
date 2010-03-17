@@ -54,10 +54,15 @@ SWITCH_MODULE_DEFINITION(mod_say_hr, mod_say_hr_load, NULL, NULL);
 #define say_num(num, t, gen) {\
 		char tmp[80];\
 		switch_status_t tstatus;\
+		switch_say_method_t smeth = say_args->method;					\
+		switch_say_type_t stype = say_args->type;						\
+		say_args->type = SST_ITEMS; say_args->method = t;	\
 		switch_snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);				\
-	if ((tstatus = hr_say_count(session, gen, tmp, SST_ITEMS, t, args)) != SWITCH_STATUS_SUCCESS) {\
+	if ((tstatus = hr_say_count(session, gen, tmp, say_args, args)) != SWITCH_STATUS_SUCCESS) {\
 		return tstatus;\
-	}}\
+	} \
+	say_args->method = smeth; say_args->type = stype;				\
+}\
 
 #define say_file(...) {\
 		char tmp[80];\
@@ -73,7 +78,7 @@ SWITCH_MODULE_DEFINITION(mod_say_hr, mod_say_hr_load, NULL, NULL);
 
 #define nop
 
-static switch_status_t hr_spell(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t hr_spell(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	char *p;
 
@@ -82,9 +87,9 @@ static switch_status_t hr_spell(switch_core_session_t *session, char *tosay, swi
 		if (a >= 48 && a <= 57) {
 			say_file("digits/%d.wav", a - 48);
 		} else {
-			if (type == SST_NAME_SPELLED) {
+			if (say_args->type == SST_NAME_SPELLED) {
 				say_file("ascii/%d.wav", a);
-			} else if (type == SST_NAME_PHONETIC) {
+			} else if (say_args->type == SST_NAME_PHONETIC) {
 				say_file("phonetic-ascii/%d.wav", a);
 			}
 		}
@@ -209,7 +214,7 @@ static char *strip_nonnumerics(char *in, char *out, switch_size_t len)
 }
 
 static switch_status_t hr_say_count(switch_core_session_t *session, char* gen,
-											char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+											char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	int in;
 	int x = 0;
@@ -242,7 +247,7 @@ static switch_status_t hr_say_count(switch_core_session_t *session, char* gen,
 			}
 		}
 
-		switch (method) {
+		switch (say_args->method) {
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
 			{
@@ -321,7 +326,7 @@ static switch_status_t hr_say_count(switch_core_session_t *session, char* gen,
 					 play_group(SSM_PRONOUNCED, tgen, places[5], places[4], places[3], tisucu, number, session, args)) != SWITCH_STATUS_SUCCESS) {
 					return status;
 				}
-				if ((status = play_group(method, gen, places[2], places[1], places[0], NULL, number, session, args)) != SWITCH_STATUS_SUCCESS) {
+				if ((status = play_group(say_args->method, gen, places[2], places[1], places[0], NULL, number, session, args)) != SWITCH_STATUS_SUCCESS) {
 					return status;
 				}
 		}
@@ -345,8 +350,7 @@ static switch_status_t hr_say_count(switch_core_session_t *session, char* gen,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t hr_say_general_count(switch_core_session_t *session,
-											char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t hr_say_general_count(switch_core_session_t *session,	char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	int in;
 	int x = 0;
@@ -371,7 +375,7 @@ static switch_status_t hr_say_general_count(switch_core_session_t *session,
 			}
 		}
 
-		switch (method) {
+		switch (say_args->method) {
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
 			if ((status =
@@ -382,7 +386,7 @@ static switch_status_t hr_say_general_count(switch_core_session_t *session,
 				 play_group(SSM_PRONOUNCED, "", places[5], places[4], places[3], "digits/thousand.wav", number, session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
-			if ((status = play_group(method, "", places[2], places[1], places[0], NULL, number, session, args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(say_args->method, "", places[2], places[1], places[0], NULL, number, session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
 			break;
@@ -406,8 +410,7 @@ static switch_status_t hr_say_general_count(switch_core_session_t *session,
 
 
 
-
-static switch_status_t hr_ip(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t hr_ip(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	char *a, *b, *c, *d;
 	if (!(a = switch_core_session_strdup(session, tosay))) {
@@ -432,20 +435,20 @@ static switch_status_t hr_ip(switch_core_session_t *session, char *tosay, switch
 
 	*d++ = '\0';
 
-	say_num(atoi(a), method, "");
+	say_num(atoi(a), say_args->method, "");
 	say_file("digits/dot.wav");
-	say_num(atoi(b), method, "");
+	say_num(atoi(b), say_args->method, "");
 	say_file("digits/dot.wav");
-	say_num(atoi(c), method, "");
+	say_num(atoi(c), say_args->method, "");
 	say_file("digits/dot.wav");
-	say_num(atoi(d), method, "");
+	say_num(atoi(d), say_args->method, "");
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method,
-								   switch_input_args_t *args)
+
+static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	int32_t t;
 	switch_time_t target = 0, target_now = 0;
@@ -461,7 +464,7 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 	int sekunda_desetinka = 0;
 	int sekunda_jedinica = 0;
 
-	if (type == SST_TIME_MEASUREMENT) {
+	if (say_args->type == SST_TIME_MEASUREMENT) {
 		int64_t hours = 0;
 		int64_t minutes = 0;
 		int64_t seconds = 0;
@@ -693,7 +696,7 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 		switch_time_exp_lt(&tm_now, target_now);
 	}
 
-	switch (type) {
+	switch (say_args->type) {
 	case SST_CURRENT_DATE_TIME:
 		say_date = say_time = 1;
 		break;
@@ -1001,8 +1004,7 @@ static switch_status_t hr_say_time(switch_core_session_t *session, char *tosay, 
 }
 
 
-static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method,
-									switch_input_args_t *args)
+static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	char sbuf[16] = "";
 	char *kuna = NULL;
@@ -1050,7 +1052,7 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 		
 	if (predzadnja_kuna == 1)
 	{
-		hr_say_count(session, "", kuna, type, method, args);
+		hr_say_count(session, "", kuna, say_args, args);
 		say_file("currency/kuna.wav");
 	}
 	else
@@ -1058,7 +1060,7 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 		switch(zadnja_kuna)
 		{
 			case 1:
-				hr_say_count(session, "a", kuna, type, method, args);
+				hr_say_count(session, "a", kuna, say_args, args);
 				say_file("currency/kuna.wav");
 				break;
 
@@ -1068,18 +1070,18 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 			case 7:
 			case 8:
 			case 9:
-				hr_say_count(session, "", kuna, type, method, args);
+				hr_say_count(session, "", kuna, say_args, args);
 				say_file("currency/kuna.wav");
 				break;
 				
 			case 2:
-				hr_say_count(session, "je", kuna, type, method, args);
+				hr_say_count(session, "je", kuna, say_args, args);
 				say_file("currency/kune.wav");
 				break;
 				
 			case 3:
 			case 4:
-				hr_say_count(session, "", kuna, type, method, args);
+				hr_say_count(session, "", kuna, say_args, args);
 				say_file("currency/kune.wav");
 				break;
 		}
@@ -1106,7 +1108,7 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 			
 		if (predzadnja_lipa == 1)
 		{
-			hr_say_count(session, "", lipa, type, method, args);
+			hr_say_count(session, "", lipa, say_args, args);
 			say_file("currency/lipa.wav");
 		}
 		else
@@ -1114,7 +1116,7 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 			switch(zadnja_lipa)
 			{
 				case 1:
-					hr_say_count(session, "a", lipa, type, method, args);
+					hr_say_count(session, "a", lipa, say_args, args);
 					say_file("currency/lipa.wav");
 					break;
 
@@ -1124,18 +1126,18 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 				case 7:
 				case 8:
 				case 9:
-					hr_say_count(session, "", lipa, type, method, args);
+					hr_say_count(session, "", lipa, say_args, args);
 					say_file("currency/lipa.wav");
 					break;
 					
 				case 2:
-					hr_say_count(session, "je", lipa, type, method, args);
+					hr_say_count(session, "je", lipa, say_args, args);
 					say_file("currency/lipa.wav");
 					break;
 					
 				case 3:
 				case 4:
-					hr_say_count(session, "", lipa, type, method, args);
+					hr_say_count(session, "", lipa, say_args, args);
 					say_file("currency/lipe.wav");
 					break;
 			}
@@ -1147,12 +1149,12 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 
 
 
-static switch_status_t hr_say(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t hr_say(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 
 	switch_say_callback_t say_cb = NULL;
 
-	switch (type) {
+	switch (say_args->type) {
 	case SST_NUMBER:
 	case SST_ITEMS:
 	case SST_PERSONS:
@@ -1177,12 +1179,12 @@ static switch_status_t hr_say(switch_core_session_t *session, char *tosay, switc
 		say_cb = hr_say_money;
 		break;
 	default:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", type);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", say_args->type);
 		break;
 	}
 
 	if (say_cb) {
-		return say_cb(session, tosay, type, method, args);
+		return say_cb(session, tosay, say_args, args);
 	}
 
 	return SWITCH_STATUS_FALSE;
