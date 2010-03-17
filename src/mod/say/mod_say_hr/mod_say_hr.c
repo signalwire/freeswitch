@@ -39,6 +39,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael B. Murdock <mike@mmurdock.org>
+ * Tihomir Culjaga <tculjaga@gmail.com> 
  *
  * mod_say_hr.c -- Say for Croatian
  *
