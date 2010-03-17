@@ -148,10 +148,10 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 		
 		context->encoder_object.sampleRate = codec->implementation->actual_samples_per_second;
 		context->encoder_object.packetSize = codec->implementation->samples_per_packet;
-		context->encoder_object.useInBandFec = useinbandfec;
+		context->encoder_object.useInBandFEC = useinbandfec;
 		context->encoder_object.complexity = 2;
 		context->encoder_object.bitRate = maxaveragebitrate ? maxaveragebitrate : codec->implementation->bits_per_second;
-		context->encoder_object.useDtx = usedtx;
+		context->encoder_object.useDTX = usedtx;
 		context->encoder_object.packetLossPercentage = plpct;;
 	}
 
@@ -288,7 +288,7 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 
 		target += len;
 		*decoded_data_len += (len * 2);
-	} while (context->decoder_object.internalDecoderFrames);
+	} while (context->decoder_object.moreInternalDecoderFrames);
 
 	return SWITCH_STATUS_SUCCESS;
 }
