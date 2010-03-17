@@ -32,6 +32,7 @@
 #include <switch.h>
 #include "mod_skinny.h"
 #include "skinny_protocol.h"
+#include "skinny_tables.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown);
