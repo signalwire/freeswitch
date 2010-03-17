@@ -25,9 +25,9 @@
 *
 * Anthony Minessale II <anthmct@yahoo.com>
 * Neal Horman <neal at wanlink dot com>
+* Tihomir Culjaga <tculjaga@gmail.com>
 *
-*
-* mod_skel.c -- Framework Demo Module
+* mod_rad_auth.c -- module for radius autorizatio/atuhentification
 *
 */
 #include <switch.h>
