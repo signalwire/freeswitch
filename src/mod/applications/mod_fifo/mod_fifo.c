@@ -881,7 +881,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		node_list[node_count++] = node;
 	}
 
-	if (switch_true(switch_channel_get_variable(channel, "fifo_destroy_after_use"))) {
+	if (switch_true(switch_channel_get_variable(channel, "fifo_destroy_after_use")) && node->ready == 1) {
 		node->ready = FIFO_DELAY_DESTROY;
 	}
 
@@ -1588,12 +1588,17 @@ SWITCH_STANDARD_APP(fifo_function)
 
 	switch_mutex_lock(globals.mutex);
 	if (node && node->ready == FIFO_DELAY_DESTROY && node->consumer_count == 0 && node->caller_count == 0) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s removed. (delayed)\n", node->name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s removed.\n", node->name);
 		switch_core_hash_delete(globals.fifo_hash, node->name);
+		switch_thread_rwlock_wrlock(node->rwlock);
+		node->ready = 0;
+		switch_mutex_lock(node->mutex);
 		switch_core_hash_destroy(&node->caller_hash);
 		switch_core_hash_destroy(&node->consumer_hash);
+		switch_mutex_unlock(node->mutex);
 		switch_thread_rwlock_unlock(node->rwlock);
 		switch_core_destroy_memory_pool(&node->pool);
+
 	}
 	switch_mutex_unlock(globals.mutex);
 
