@@ -35,7 +35,7 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
-static uint32_t CODEC_ID = 0;
+static uint32_t CODEC_ID = 1;
 
 SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void)
 {
@@ -214,7 +214,7 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_read_codec(switch_core_
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_read_impl(switch_core_session_t *session, switch_codec_implementation_t *impp)
 {
-	if (session->read_impl.decoded_bytes_per_packet) {
+	if (session->read_impl.codec_id) {
 		*impp = session->read_impl;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -224,7 +224,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_read_impl(switch_core_se
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_write_impl(switch_core_session_t *session, switch_codec_implementation_t *impp)
 {
-	if (session->write_impl.decoded_bytes_per_packet) {
+	if (session->write_impl.codec_id) {
 		*impp = session->write_impl;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -234,7 +234,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_write_impl(switch_core_s
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_read_impl(switch_core_session_t *session, switch_codec_implementation_t *impp)
 {
-	if (session->video_read_impl.decoded_bytes_per_packet) {
+	if (session->video_read_impl.codec_id) {
 		*impp = session->video_read_impl;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -244,7 +244,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_read_impl(switch_c
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_write_impl(switch_core_session_t *session, switch_codec_implementation_t *impp)
 {
-	if (session->video_write_impl.decoded_bytes_per_packet) {
+	if (session->video_write_impl.codec_id) {
 		*impp = session->video_write_impl;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -318,7 +318,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 		session->write_impl = *codec->implementation;
 	}
 
-	if (session->write_codec && codec && session->write_impl.decoded_bytes_per_packet) {
+	if (session->write_codec && codec && session->write_impl.codec_id) {
 		if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", session->write_impl.iananame);
