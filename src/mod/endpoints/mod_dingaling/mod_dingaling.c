@@ -1185,6 +1185,9 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	switch_set_flag(tech_pvt, TFLAG_READY);
 
 	if (negotiate_media(session) == SWITCH_STATUS_SUCCESS) {
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_channel_mark_answered(channel);
+		}
 		/* Move channel's state machine to ROUTING */
 		switch_channel_set_state(channel, CS_ROUTING);
 	}
