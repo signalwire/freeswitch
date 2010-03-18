@@ -349,10 +349,10 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 
 	/* Count how many elements we have */
 	for( ; binding != NULL; binding = binding->next) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found [%s]\n", binding->url);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Found [%s]\n", binding->url);
 		count++;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "XML_CURL Fetch on %d bindings\n", count);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "XML_CURL Fetch on %d bindings\n", count);
 
 	/* Make a local copy of the bindings */
 	bindings_copy = malloc(count*sizeof(xml_binding_t));
@@ -360,7 +360,7 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 	binding = root;
 	pos = 0;
 	for( ; binding != NULL; binding = binding->next) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Copying [%s] to 0x%0X\n", root->url, (unsigned)(intptr_t)&bindings_copy[pos]);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Copying [%s] to 0x%0X\n", root->url, (unsigned)(intptr_t)&bindings_copy[pos]);
 		memcpy(&bindings_copy[pos], binding, sizeof(xml_binding_t));
 		pos++;
 	}
@@ -407,13 +407,13 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 			binding = &bindings_copy[b];
 			if(!binding->chosen) total_weight += binding->weight;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remaining total weight [%d]\n", total_weight);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Remaining total weight [%d]\n", total_weight);
 
 		/* Pick a random number between [0, total_weight]
 		 * Note: Don't use rand() % M as it is not as random as this more complex 
 		 * method which achieves the same intent with more random results */
 		rand_weight = (int)( ((double)rand()) / (((double)(RAND_MAX) + (double)(1)) / ((double)total_weight + (double)(1))) );
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Random weight [%d]\n", rand_weight);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Random weight [%d]\n", rand_weight);
 
 		/* Then grab the first unchosen element whose running_weight >= rand_weight 
 		   and move it into our 'picked' list */
