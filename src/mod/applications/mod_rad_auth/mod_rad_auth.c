@@ -27,7 +27,7 @@
 * Neal Horman <neal at wanlink dot com>
 * Tihomir Culjaga <tculjaga@gmail.com>
 *
-* mod_rad_auth.c -- module for radius autorizatio/atuhentification
+* mod_rad_auth.c -- module for radius authorization/authentication
 *
 */
 #include <switch.h>
