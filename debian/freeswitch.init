@@ -20,7 +20,7 @@ DESC="FreeSwitch Voice Switching System"
 NAME=freeswitch
 DAEMON=/opt/freeswitch/bin/$NAME
 USER=freeswitch
-PIDFILE=/opt/freeswitch/log/$NAME.pid
+PIDFILE=/opt/freeswitch/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 WORKDIR=/opt/$NAME
 
