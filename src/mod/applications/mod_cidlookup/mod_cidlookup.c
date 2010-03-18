@@ -213,7 +213,7 @@ static int cidlookup_callback(void *pArg, int argc, char **argv, char **columnNa
 		return SWITCH_STATUS_GENERR;
 	}
 	cbt->name = switch_core_strdup(pool, switch_str_nil(argv[0]));
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Name: %s\n", cbt->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Name: %s\n", cbt->name);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -291,7 +291,7 @@ static cid_data_t *check_cache(switch_memory_pool_t *pool, const char *number)
 		cid->src = src;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "memcache: k:'%s', vn:'%s', va:'%s', vs:'%s'\n",
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "memcache: k:'%s', vn:'%s', va:'%s', vs:'%s'\n",
 					  cmd, (name) ? name : "(null)", (area) ? area : "(null)", (src) ? src : "(null)");
 	switch_safe_free(stream.data);
 	return cid;
@@ -306,7 +306,7 @@ switch_bool_t set_cache(switch_memory_pool_t *pool, char *number, cid_data_t *ci
 	SWITCH_STANDARD_STREAM(stream);
 
 	cmd = switch_core_sprintf(pool, "set fs:cidlookup:name:%s '%s' %d", number, cid->name, globals.cache_expire);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "memcache: %s\n", cmd);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "memcache: %s\n", cmd);
 	if (switch_api_execute("memcache", cmd, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 		if (strncmp("-ERR", stream.data, 4)) {
 			success = SWITCH_TRUE;
@@ -378,7 +378,7 @@ static long do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, cha
 
 	gethostname(hostname, sizeof(hostname));
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "url: %s\n", query);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "url: %s\n", query);
 	curl_handle = curl_easy_init();
 
 	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0);
@@ -512,8 +512,8 @@ static cid_data_t *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event
 	if (xml) {
 		switch_xml_free(xml);
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "whitepages XML: %s\n", xml_s);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "whitepages name: %s, area: %s\n", name ? name : "(null)", area ? area : "(null)");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "whitepages XML: %s\n", xml_s);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "whitepages name: %s, area: %s\n", name ? name : "(null)", area ? area : "(null)");
 
 	cid = switch_core_alloc(pool, sizeof(cid_data_t));
 	switch_assert(cid);
@@ -534,7 +534,7 @@ static char *do_db_lookup(switch_memory_pool_t *pool, switch_event_t *event, con
 
 	if (globals.odbc_dsn) {
 		newsql = switch_event_expand_headers(event, sql);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL: %s\n", newsql);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "SQL: %s\n", newsql);
 		if (cidlookup_execute_sql_callback(newsql, cidlookup_callback, &cbt, &err)) {
 			name = cbt.name;
 		} else {
@@ -636,7 +636,7 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 	}
 
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cidlookup source: %s\n", cid->src);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "cidlookup source: %s\n", cid->src);
 	return cid;
 }
 
