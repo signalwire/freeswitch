@@ -83,6 +83,13 @@
     <param name="local-network-acl" value="localnet.auto"/>
     <!--<param name="apply-register-acl" value="domains"/>-->
     <!--<param name="dtmf-type" value="info"/>-->
+
+
+    <!-- 'true' means every time 'first-only' means on the first register -->
+    <!--<param name="send-message-query-on-register" value="true"/>-->
+    
+      
+
     <param name="record-path" value="$${recordings_dir}"/>
     <param name="record-template" value="${caller_id_number}.${target_domain}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
     <!--enable to use presence -->
