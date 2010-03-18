@@ -2895,7 +2895,7 @@ void dump_chan_xml(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *s
 						   );
 }
 
-#define OZ_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix] || gains <span> <txgain> <rxgain>" 
+#define OZ_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix] || gains <txgain> <rxgain> <span_id> [<chan_id>]" 
 SWITCH_STANDARD_API(oz_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
