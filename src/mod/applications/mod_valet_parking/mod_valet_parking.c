@@ -106,7 +106,7 @@ static int next_id(valet_lot_t *lot, int min, int max, int in)
 }
 
 
-#define VALET_APP_SYNTAX "<lotname> <extension>|[ask [<min>] [<max>] [<to>] [<prompt>]]"
+#define VALET_APP_SYNTAX "<lotname> <extension>|[ask [<min>] [<max>] [<to>] [<prompt>]|auto in [min] [max]]"
 SWITCH_STANDARD_APP(valet_parking_function)
 {
 	char *argv[6], *lbuf;
