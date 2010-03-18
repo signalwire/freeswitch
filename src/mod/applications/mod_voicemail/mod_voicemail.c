@@ -4014,19 +4014,20 @@ SWITCH_STANDARD_API(voicemail_read_api_function)
 	if (e && (p = strchr(e, ' '))) {
 		*p++ = '\0';
 		ru = e = p;
+	}
+
+	if (e && (p = strchr(e, ' '))) {
+		*p++ = '\0';
+		uuid = p;
+	}
+
+	if (ru) {
 		if (!strcasecmp(ru, "read")) {
 			mread = 1;
 		} else if (!strcasecmp(ru, "unread")) {
 			mread = 0;
 		} else {
 			mread = -1;
-		}
-	}
-
-	if (mread > -1) {
-		if (e && (p = strchr(e, ' '))) {
-			*p++ = '\0';
-			uuid = p;
 		}
 	}
 
@@ -4094,7 +4095,7 @@ static int api_list_callback(void *pArg, int argc, char **argv, char **columnNam
 SWITCH_STANDARD_API(voicemail_list_api_function)
 {
 	char *sql;
-	char *id = NULL, *domain = NULL, *format = "text", *profile_name = "default";
+	char *id = NULL, *uuid = NULL, *domain = NULL, *format = "text", *profile_name = "default";
 	char *p, *e = NULL;
 	vm_profile_t *profile;
 
@@ -4117,13 +4118,24 @@ SWITCH_STANDARD_API(voicemail_list_api_function)
 
 	if (e && (p = strchr(e, ' '))) {
 		*p++ = '\0';
-		format = p;
+		format = e = p;
+	}
+
+	if (e && (p = strchr(e, ' '))) {
+		*p++ = '\0';
+		uuid = p;
 	}
 
 	if (id && domain && profile_name && (profile = get_profile(profile_name))) {
-		sql = switch_mprintf("select created_epoch, read_epoch, username, domain, in_folder, file_path, uuid, cid_name, cid_number, "
-							 "'%q' from voicemail_msgs where username='%q' and domain='%q'", 
-							 format, id, domain);
+		if (uuid) {
+			sql = switch_mprintf("select created_epoch, read_epoch, username, domain, in_folder, file_path, uuid, cid_name, cid_number, "
+								 "'%q' from voicemail_msgs where username='%q' and domain='%q' and uuid='%q'", 
+								 format, id, domain, uuid);
+		} else {
+			sql = switch_mprintf("select created_epoch, read_epoch, username, domain, in_folder, file_path, uuid, cid_name, cid_number, "
+								 "'%q' from voicemail_msgs where username='%q' and domain='%q'", 
+								 format, id, domain);
+		}
 
 		if (!strcasecmp(format, "xml")) {
 			stream->write_function(stream, "<voicemail>\n");
