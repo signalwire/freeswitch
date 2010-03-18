@@ -8807,11 +8807,11 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_uptime() {
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_ctl(int jarg1, void * jarg2) {
   int jresult ;
   switch_session_ctl_t arg1 ;
-  int32_t *arg2 = (int32_t *) 0 ;
+  void *arg2 = (void *) 0 ;
   int32_t result;
   
   arg1 = (switch_session_ctl_t)jarg1; 
-  arg2 = (int32_t *)jarg2; 
+  arg2 = (void *)jarg2; 
   result = (int32_t)switch_core_session_ctl(arg1,arg2);
   jresult = result; 
   return jresult;
@@ -9101,6 +9101,28 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_core_max_dtmf_duration(unsign
   arg1 = (uint32_t)jarg1; 
   result = (uint32_t)switch_core_max_dtmf_duration(arg1);
   jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT double SWIGSTDCALL CSharp_switch_core_min_idle_cpu(double jarg1) {
+  double jresult ;
+  double arg1 ;
+  double result;
+  
+  arg1 = (double)jarg1; 
+  result = (double)switch_core_min_idle_cpu(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT double SWIGSTDCALL CSharp_switch_core_idle_cpu() {
+  double jresult ;
+  double result;
+  
+  result = (double)switch_core_idle_cpu();
+  jresult = result; 
   return jresult;
 }
 
@@ -26672,6 +26694,16 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_set_telephony_event(void * jarg1, 
   arg1 = (switch_rtp_t *)jarg1; 
   arg2 = (switch_payload_t)jarg2; 
   switch_rtp_set_telephony_event(arg1,arg2);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_set_telephony_recv_event(void * jarg1, unsigned char jarg2) {
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  switch_payload_t arg2 ;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  arg2 = (switch_payload_t)jarg2; 
+  switch_rtp_set_telephony_recv_event(arg1,arg2);
 }
 
 

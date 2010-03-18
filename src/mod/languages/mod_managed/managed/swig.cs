@@ -1983,8 +1983,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static int switch_core_session_ctl(switch_session_ctl_t cmd, SWIGTYPE_p_int val) {
-    int ret = freeswitchPINVOKE.switch_core_session_ctl((int)cmd, SWIGTYPE_p_int.getCPtr(val));
+  public static int switch_core_session_ctl(switch_session_ctl_t cmd, SWIGTYPE_p_void val) {
+    int ret = freeswitchPINVOKE.switch_core_session_ctl((int)cmd, SWIGTYPE_p_void.getCPtr(val));
     return ret;
   }
 
@@ -2114,6 +2114,16 @@ public class freeswitch {
 
   public static uint switch_core_max_dtmf_duration(uint duration) {
     uint ret = freeswitchPINVOKE.switch_core_max_dtmf_duration(duration);
+    return ret;
+  }
+
+  public static double switch_core_min_idle_cpu(double new_limit) {
+    double ret = freeswitchPINVOKE.switch_core_min_idle_cpu(new_limit);
+    return ret;
+  }
+
+  public static double switch_core_idle_cpu() {
+    double ret = freeswitchPINVOKE.switch_core_idle_cpu();
     return ret;
   }
 
@@ -4193,6 +4203,10 @@ public class freeswitch {
 
   public static void switch_rtp_set_telephony_event(SWIGTYPE_p_switch_rtp rtp_session, byte te) {
     freeswitchPINVOKE.switch_rtp_set_telephony_event(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), te);
+  }
+
+  public static void switch_rtp_set_telephony_recv_event(SWIGTYPE_p_switch_rtp rtp_session, byte te) {
+    freeswitchPINVOKE.switch_rtp_set_telephony_recv_event(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), te);
   }
 
   public static void switch_rtp_set_cng_pt(SWIGTYPE_p_switch_rtp rtp_session, byte pt) {
@@ -7201,6 +7215,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_max_dtmf_duration")]
   public static extern uint switch_core_max_dtmf_duration(uint jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_min_idle_cpu")]
+  public static extern double switch_core_min_idle_cpu(double jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_idle_cpu")]
+  public static extern double switch_core_idle_cpu();
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_default_dtmf_duration")]
   public static extern uint switch_core_default_dtmf_duration(uint jarg1);
@@ -11299,6 +11319,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_telephony_event")]
   public static extern void switch_rtp_set_telephony_event(HandleRef jarg1, byte jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_telephony_recv_event")]
+  public static extern void switch_rtp_set_telephony_recv_event(HandleRef jarg1, byte jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_cng_pt")]
   public static extern void switch_rtp_set_cng_pt(HandleRef jarg1, byte jarg2);
@@ -26684,7 +26707,8 @@ public enum switch_session_ctl_t {
   SCSC_SHUTDOWN_NOW,
   SCSC_CALIBRATE_CLOCK,
   SCSC_SAVE_HISTORY,
-  SCSC_CRASH
+  SCSC_CRASH,
+  SCSC_MIN_IDLE_CPU
 }
 
 }
