@@ -1741,11 +1741,13 @@ OZ_DECLARE(zap_status_t) zap_channel_command(zap_channel_t *zchan, zap_command_t
 			} else {
 				zap_set_flag(zchan, ZAP_CHANNEL_USE_RX_GAIN);
 			}
+			GOTO_STATUS(done, ZAP_SUCCESS);
 		}
 		break;
 	case ZAP_COMMAND_GET_RX_GAIN:
 		{
 			ZAP_COMMAND_OBJ_FLOAT = zchan->rxgain;
+			GOTO_STATUS(done, ZAP_SUCCESS);
 		}
 		break;
 	case ZAP_COMMAND_SET_TX_GAIN:
@@ -1757,11 +1759,13 @@ OZ_DECLARE(zap_status_t) zap_channel_command(zap_channel_t *zchan, zap_command_t
 			} else {
 				zap_set_flag(zchan, ZAP_CHANNEL_USE_TX_GAIN);
 			}
+			GOTO_STATUS(done, ZAP_SUCCESS);
 		}
 		break;
 	case ZAP_COMMAND_GET_TX_GAIN:
 		{
 			ZAP_COMMAND_OBJ_FLOAT = zchan->txgain;
+			GOTO_STATUS(done, ZAP_SUCCESS);
 		}
 		break;
 	default:
