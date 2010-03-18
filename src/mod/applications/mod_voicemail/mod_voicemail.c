@@ -3972,6 +3972,7 @@ SWITCH_STANDARD_API(voicemail_delete_api_function)
 		update_mwi(profile, id, domain, "inbox");
 	
 		stream->write_function(stream, "%s", "+OK\n");
+		profile_rwunlock(profile);
 	} else {
 		stream->write_function(stream, "%s", "-ERR can't find user or profile.\n");
 	}
@@ -4052,6 +4053,8 @@ SWITCH_STANDARD_API(voicemail_read_api_function)
 		update_mwi(profile, id, domain, "inbox");
 	
 		stream->write_function(stream, "%s", "+OK\n");
+
+		profile_rwunlock(profile);
 	} else {
 		stream->write_function(stream, "%s", "-ERR can't find user or profile.\n");
 	}
@@ -4134,6 +4137,7 @@ SWITCH_STANDARD_API(voicemail_list_api_function)
 			stream->write_function(stream, "</voicemail>\n");
 		}
 
+		profile_rwunlock(profile);
 	} else {
 		stream->write_function(stream, "%s", "-ERR can't find user or profile.\n");
 	}
