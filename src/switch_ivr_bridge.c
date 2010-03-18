@@ -750,7 +750,11 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 
 		if (switch_ivr_wait_for_answer(session, other_session) != SWITCH_STATUS_SUCCESS) {
 			switch_core_session_rwunlock(other_session);
-			switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+			if (switch_true(switch_channel_get_variable(channel, "uuid_bridge_continue_on_cancel"))) {
+				switch_channel_set_state(channel, CS_EXECUTE);
+			} else {
+				switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+			}
 			return SWITCH_STATUS_FALSE;
 		}
 
