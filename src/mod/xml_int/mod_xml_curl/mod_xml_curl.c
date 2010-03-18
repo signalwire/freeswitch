@@ -379,7 +379,7 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 	for(i = 0; i < count; i++) {
 		binding = &bindings_copy[i];
 		if(binding->weight == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Copying [%s] to first_order[%d]\n", binding->url, pos);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Copying [%s] to first_order[%d]\n", binding->url, pos);
 			first_order[pos] = binding;
 			pos++;
 		}
@@ -390,7 +390,7 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 	for(i = 0; i < count; i++) {
 		binding = &bindings_copy[i];
 		if(binding->weight != 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Copying [%s] to first_order[%d]\n", binding->url, pos);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Copying [%s] to first_order[%d]\n", binding->url, pos);
 			first_order[pos] = binding;
 			pos++;
 		}
@@ -438,7 +438,7 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 	pos = 0;
 	for( ; pos < count && result == NULL; pos++) {
 		binding = second_order[pos];
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Querying binding [%s]\n", binding->url);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Querying binding [%s]\n", binding->url);
 		result = xml_url_fetch(section, tag_name, key_name, key_value, params, (void*)binding);
 	}
 
