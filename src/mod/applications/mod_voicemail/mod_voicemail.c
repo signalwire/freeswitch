@@ -2614,8 +2614,8 @@ static switch_status_t voicemail_inject(const char *data)
 	char *box, *path, *cid_num, *cid_name;
 	switch_memory_pool_t *pool = NULL;
 	char *forwarded_by = NULL;
-	char *read_flags = "B";
-
+	char *read_flags = NORMAL_FLAG_STRING;
+	
 	if (zstr(data)) {
 		status = SWITCH_STATUS_FALSE;
 		goto end;
@@ -3984,13 +3984,14 @@ SWITCH_STANDARD_API(voicemail_delete_api_function)
 
 
 
-#define VM_READ_USAGE "<id>@<domain>[/profile] [<uuid>]"
+#define VM_READ_USAGE "<id>@<domain>[/profile] <read|unread> [<uuid>]"
 SWITCH_STANDARD_API(voicemail_read_api_function)
 {
 	char *sql;
 	char *id = NULL, *domain = NULL, *uuid = NULL, *profile_name = "default";
-	char *p, *e = NULL;
+	char *ru = NULL, *p, *e = NULL;
 	vm_profile_t *profile;
+	int mread = -1;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "Usage: %s\n", VM_READ_USAGE);
@@ -4011,16 +4012,38 @@ SWITCH_STANDARD_API(voicemail_read_api_function)
 
 	if (e && (p = strchr(e, ' '))) {
 		*p++ = '\0';
-		uuid = p;
+		ru = e = p;
+		if (!strcasecmp(ru, "read")) {
+			mread = 1;
+		} else if (!strcasecmp(ru, "unread")) {
+			mread = 0;
+		} else {
+			mread = -1;
+		}
+	}
+
+	if (mread > -1) {
+		if (e && (p = strchr(e, ' '))) {
+			*p++ = '\0';
+			uuid = p;
+		}
 	}
 
 
-	if (id && domain && profile_name && (profile = get_profile(profile_name))) {
+	if (mread > -1 && id && domain && profile_name && (profile = get_profile(profile_name))) {
 		
-		if (uuid) {
-			sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld where uuid='%q'", (long) switch_epoch_time_now(NULL), uuid);
-		} else {
-			sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld where domain='%q'", (long) switch_epoch_time_now(NULL), domain);
+		if (mread) {
+			if (uuid) {
+				sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld,flags='save' where uuid='%q'", (long) switch_epoch_time_now(NULL), uuid);
+			} else {
+				sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld,flags='save' where domain='%q'", (long) switch_epoch_time_now(NULL), domain);
+			}
+		} else{
+			if (uuid) {
+				sql = switch_mprintf("update voicemail_msgs set read_epoch=0,flags='' where uuid='%q'", uuid);
+			} else {
+				sql = switch_mprintf("update voicemail_msgs set read_epoch=0,flags='' where domain='%q'", domain);
+			}
 		}
 
 		vm_execute_sql(profile, sql, profile->mutex);
