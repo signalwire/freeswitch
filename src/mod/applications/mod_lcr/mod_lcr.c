@@ -1174,15 +1174,11 @@ SWITCH_STANDARD_APP(lcr_app_function)
 	char *argv[4] = { 0 };
 	char *mydata = NULL;
 	char *dest = NULL;
-	char rbuf[1024] = "";
 	char vbuf[1024] = "";
-	char *rbp = rbuf;
-	switch_size_t l = 0, rbl = sizeof(rbuf);
 	uint32_t cnt = 1;
 	char *lcr_profile = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *caller_profile = NULL;
-	char *last_delim = "|";
 	callback_t routes = { 0 };
 	lcr_route cur_route = { 0 };
 	switch_memory_pool_t *pool;
@@ -1240,6 +1236,10 @@ SWITCH_STANDARD_APP(lcr_app_function)
 			goto end;
 		}
 		if (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
+			switch_stream_handle_t dig_stream = { 0 };
+			
+			SWITCH_STANDARD_STREAM(dig_stream);
+
 			for (cur_route = routes.head; cur_route; cur_route = cur_route->next) {
 				switch_snprintf(vbuf, sizeof(vbuf), "lcr_route_%d", cnt);
 				switch_channel_set_variable(channel, vbuf, cur_route->dialstring);
@@ -1250,17 +1250,18 @@ SWITCH_STANDARD_APP(lcr_app_function)
 				switch_snprintf(vbuf, sizeof(vbuf), "lcr_codec_%d", cnt);
 				switch_channel_set_variable(channel, vbuf, cur_route->codec);
 				cnt++;
-				switch_snprintf(rbp, rbl, "%s|", cur_route->dialstring);
-				last_delim = end_of_p(rbp);
-				l = strlen(cur_route->dialstring) + 1;
-				rbp += l;
-				rbl -= l;
+				if (cur_route->next) {
+					dig_stream.write_function(&dig_stream, "%s|", cur_route->dialstring);
+				} else {
+					dig_stream.write_function(&dig_stream, "%s", cur_route->dialstring);
+				}
 			}
+			
 			switch_snprintf(vbuf, sizeof(vbuf), "%d", cnt - 1);
 			switch_channel_set_variable(channel, "lcr_route_count", vbuf);
-			*(rbuf + strlen(rbuf) - 1) = '\0';
-			switch_channel_set_variable(channel, "lcr_auto_route", rbuf);
+			switch_channel_set_variable(channel, "lcr_auto_route", (char *)dig_stream.data);
 			switch_channel_set_variable(channel, "import", "lcr_carrier,lcr_rate");
+			free(dig_stream.data);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", dest);
 		}
