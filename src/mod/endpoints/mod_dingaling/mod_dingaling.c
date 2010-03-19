@@ -947,7 +947,7 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 	if (force || !switch_test_flag(tech_pvt, TFLAG_RTP_READY)) {
 		ldl_candidate_t cand[1];
 		char *advip = tech_pvt->profile->extip ? tech_pvt->profile->extip : tech_pvt->profile->ip;
-		char *err;
+		char *err = NULL;
 
 		memset(cand, 0, sizeof(cand));
 		switch_stun_random_string(tech_pvt->local_user, 16, NULL);
