@@ -1753,7 +1753,13 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				char msg_count[80] = "";
 				switch_input_args_t folder_args = { 0 };
 				switch_event_t *params;
+				const char *vm_auto_play = switch_channel_get_variable(channel, "vm_auto_play");
+				int auto_play = 1;
 
+				if (vm_auto_play && !switch_true(vm_auto_play)) {
+					auto_play = 0;
+				}
+				
 				folder_args.input_callback = cancel_on_dtmf;
 				folder_args.buf = &global_buf;
 				folder_args.buflen = sizeof(global_buf);
@@ -1778,22 +1784,23 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					switch_snprintf(msg_count, sizeof(msg_count), "%d:urgent-new", total_new_urgent_messages);
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &folder_args));
 					informed++;
-					if (!zstr_buf(global_buf)) {
-						vm_check_state = VM_CHECK_MENU;
-						continue;
-					}
-				}
-				if (total_new_messages > 0 && total_new_messages != total_new_urgent_messages) {
-					switch_snprintf(msg_count, sizeof(msg_count), "%d:new", total_new_messages);
-					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &folder_args));
-					informed++;
-					if (!zstr_buf(global_buf)) {
+					if (auto_play && !zstr_buf(global_buf)) {
 						vm_check_state = VM_CHECK_MENU;
 						continue;
 					}
 				}
 
-				if (!heard_auto_new && total_new_messages + total_new_urgent_messages > 0) {
+				if (total_new_messages > 0 && total_new_messages != total_new_urgent_messages) {
+					switch_snprintf(msg_count, sizeof(msg_count), "%d:new", total_new_messages);
+					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &folder_args));
+					informed++;
+					if (auto_play && !zstr_buf(global_buf)) {
+						vm_check_state = VM_CHECK_MENU;
+						continue;
+					}
+				}
+				
+				if (auto_play && !heard_auto_new && total_new_messages + total_new_urgent_messages > 0) {
 					heard_auto_new = 1;
 					play_msg_type = MSG_NEW;
 					vm_check_state = VM_CHECK_PLAY_MESSAGES;
