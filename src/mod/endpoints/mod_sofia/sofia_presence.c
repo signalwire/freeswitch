@@ -1515,11 +1515,14 @@ static int broadsoft_sla_gather_state_callback(void *pArg, int argc, char **argv
 {
 	struct state_helper *sh = (struct state_helper *) pArg;
 	char key[256] = "";
+	switch_core_session_t *session;
+	const char *callee_name = NULL, *callee_number = NULL;
 	char *data = NULL, *tmp;
 	char *user = argv[0];
 	char *host = argv[1];
 	char *info = argv[2];
 	char *state = argv[3];
+	char *uuid = argv[4];
 	int i;
 
 	if (mod_sofia_globals.debug_sla > 1) {
@@ -1540,10 +1543,53 @@ static int broadsoft_sla_gather_state_callback(void *pArg, int argc, char **argv
 
 	data = switch_core_hash_find(sh->hash, key);
 
-	if (data) {
-		tmp = switch_core_sprintf(sh->pool, "%s,<sip:%s>;%s;appearance-state=%s", data, host, info, state);
+	if (uuid && (session = switch_core_session_locate(uuid))) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+
+		if (zstr((callee_name = switch_channel_get_variable(channel, "effective_callee_id_name"))) &&
+			zstr((callee_name = switch_channel_get_variable(channel, "sip_callee_id_name")))) {
+			callee_name = switch_channel_get_variable(channel, "callee_id_name");
+		}
+		
+		if (zstr((callee_number = switch_channel_get_variable(channel, "effective_callee_id_number"))) &&
+			zstr((callee_number = switch_channel_get_variable(channel, "sip_callee_id_number")))) {
+			callee_number = switch_channel_get_variable(channel, "destination_number");
+		}
+		
+		if (zstr(callee_name) && !zstr(callee_number)) {
+			callee_name = callee_number;
+		}
+
+		if (!zstr(callee_number)) {
+			callee_number = switch_sanitize_number(switch_core_session_strdup(session, callee_number));
+		}
+
+		if (!zstr(callee_name)) {
+			callee_name = switch_sanitize_number(switch_core_session_strdup(session, callee_name));
+		}
+		switch_core_session_rwunlock(session);
+	}
+
+	if (!zstr(callee_number)) {
+		if (zstr(callee_name)) {
+			callee_name = "unknown";
+		}
+		
+		if (data) {
+			tmp = switch_core_sprintf(sh->pool,
+									  "%s,<sip:%s>;%s;appearance-state=%s;appearance-uri=\"\\\"%s\\\" <sip:%s@%s>\"",
+									  data, host, info, state, callee_name, callee_number, host);
+		} else {
+			tmp = switch_core_sprintf(sh->pool,
+									  "<sip:%s>;%s;appearance-state=%s;appearance-uri=\"\\\"%s\\\" <sip:%s@%s>\"",
+									  host, info, state, callee_name, callee_number, host);
+		}
 	} else {
-		tmp = switch_core_sprintf(sh->pool, "<sip:%s>;%s;appearance-state=%s", host, info, state);
+		if (data) {
+			tmp = switch_core_sprintf(sh->pool, "%s,<sip:%s>;%s;appearance-state=%s", data, host, info, state);
+		} else {
+			tmp = switch_core_sprintf(sh->pool, "<sip:%s>;%s;appearance-state=%s", host, info, state);
+		}
 	}
 
 	switch_core_hash_insert(sh->hash, key, tmp);
@@ -1562,7 +1608,7 @@ static void sync_sla(sofia_profile_t *profile, const char *to_user, const char *
 	sh->pool = pool;
 	switch_core_hash_init(&sh->hash, sh->pool);
 
-	sql = switch_mprintf("select sip_from_user,sip_from_host,call_info,call_info_state from sip_dialogs "
+	sql = switch_mprintf("select sip_from_user,sip_from_host,call_info,call_info_state,uuid from sip_dialogs "
 						 "where hostname='%q' " "and sip_from_user='%q' and sip_from_host='%q' ", mod_sofia_globals.hostname, to_user, to_host);
 
 
