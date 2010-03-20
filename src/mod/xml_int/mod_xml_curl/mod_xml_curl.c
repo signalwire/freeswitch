@@ -424,7 +424,7 @@ static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, co
 
 			running_weight += binding->weight;
 			if(running_weight >= rand_weight) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Chose binding %d as [%s] with weight [%d] based on running weight [%d]\n", pos, binding->url, binding->weight, running_weight);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Chose binding %d as [%s] with weight [%d] based on running weight [%d]\n", pos, binding->url, binding->weight, running_weight);
 				second_order[pos] = binding;
 				pos++;
 				binding->chosen = 1;
