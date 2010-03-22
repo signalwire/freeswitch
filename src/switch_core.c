@@ -308,7 +308,7 @@ SWITCH_DECLARE(char *) switch_core_get_uuid(void)
 }
 
 
-static void *switch_core_service_thread(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC switch_core_service_thread(switch_thread_t *thread, void *obj)
 {
 	switch_core_session_t *session = obj;
 	switch_channel_t *channel;
@@ -320,6 +320,8 @@ static void *switch_core_service_thread(switch_thread_t *thread, void *obj)
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
 	}
+
+	switch_mutex_lock(session->frame_read_mutex);
 
 	channel = switch_core_session_get_channel(session);
 
@@ -336,7 +338,10 @@ static void *switch_core_service_thread(switch_thread_t *thread, void *obj)
 		}
 	}
 
+	switch_mutex_unlock(session->frame_read_mutex);
+
 	switch_core_session_rwunlock(session);
+
 	return NULL;
 }
 
@@ -360,7 +365,7 @@ SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session)
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel);
 
-	switch_core_session_launch_thread(session, switch_core_service_thread, session);
+	switch_core_session_launch_thread(session, (void *(*)(switch_thread_t *,void *))switch_core_service_thread, session);
 }
 
 /* This function abstracts the thread creation for modules by allowing you to pass a function ptr and

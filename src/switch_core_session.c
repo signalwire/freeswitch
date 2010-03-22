@@ -1558,6 +1558,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	switch_mutex_init(&session->resample_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->codec_read_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->codec_write_mutex, SWITCH_MUTEX_NESTED, session->pool);
+	switch_mutex_init(&session->frame_read_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_thread_rwlock_create(&session->bug_rwlock, session->pool);
 	switch_thread_cond_create(&session->cond, session->pool);
 	switch_thread_rwlock_create(&session->rwlock, session->pool);
