@@ -281,31 +281,31 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\json-c-0.8\arraylist.c"
+				RelativePath="..\..\json-c-0.9\arraylist.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\json-c-0.8\debug.c"
+				RelativePath="..\..\json-c-0.9\debug.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\json-c-0.8\json_object.c"
+				RelativePath="..\..\json-c-0.9\json_object.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\json-c-0.8\json_tokener.c"
+				RelativePath="..\..\json-c-0.9\json_tokener.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\json-c-0.8\json_util.c"
+				RelativePath="..\..\json-c-0.9\json_util.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\json-c-0.8\linkhash.c"
+				RelativePath="..\..\json-c-0.9\linkhash.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\json-c-0.8\printbuf.c"
+				RelativePath="..\..\json-c-0.9\printbuf.c"
 				>
 			</File>
 		</Filter>

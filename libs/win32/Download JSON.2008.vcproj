@@ -68,16 +68,16 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\CELT\cleancount"
+			RelativePath=".\JSON\cleancount"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					Description="Downloading CELT."
-					CommandLine="if not exist &quot;$(ProjectDir)..\json-c-0.8&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/json-c-0.8.tar.gz &quot;$(ProjectDir)..&quot;"
-					Outputs="$(ProjectDir)..\CELT"
+					Description="Downloading JSON."
+					CommandLine="if not exist &quot;$(ProjectDir)..\json-c-0.9&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz &quot;$(ProjectDir)..&quot;"
+					Outputs="$(ProjectDir)..\JSON"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -85,9 +85,9 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					Description="Downloading CELT."
-					CommandLine="if not exist &quot;$(ProjectDir)..\json-c-0.8&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/json-c-0.8.tar.gz &quot;$(ProjectDir)..&quot;"
-					Outputs="$(ProjectDir)..\CELT"
+					Description="Downloading JSON."
+					CommandLine="if not exist &quot;$(ProjectDir)..\json-c-0.9&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz &quot;$(ProjectDir)..&quot;"
+					Outputs="$(ProjectDir)..\JSON"
 				/>
 			</FileConfiguration>
 		</File>
