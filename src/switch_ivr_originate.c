@@ -1020,7 +1020,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		status = SWITCH_STATUS_FALSE;
 	}
 
-	if (caller_channel && !switch_channel_ready(caller_channel)) {
+	if (caller_channel && !switch_channel_up(caller_channel)) {
 		status = SWITCH_STATUS_FALSE;
 	}
 
