@@ -6335,23 +6335,22 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		char cid[512] = "";
 		char *str;
 		char *p = NULL;
-		const char *user = NULL, *host = NULL;
+		const char *user = NULL, *host = NULL, *from_user = NULL, *from_host = NULL;
 
 		if (sip->sip_to && sip->sip_to->a_url) {
 			user = sip->sip_to->a_url->url_user;
 			host = sip->sip_to->a_url->url_host;
 		}
 
-		if (!user || !host) {
-			if (sip->sip_from && sip->sip_from->a_url) {
-				if (!user)
-					user = sip->sip_from->a_url->url_user;
-				if (!host)
-					host = sip->sip_from->a_url->url_host;
-			}
+		if (sip->sip_from && sip->sip_from->a_url) {
+			from_user = sip->sip_from->a_url->url_user;
+			from_host = sip->sip_from->a_url->url_host;
 		}
 
-		if (user && host) {
+		if (!user) user = from_user;
+		if (!host) user = from_host;
+
+		if (user && host && from_user && !strcmp(user, from_user)) {
 			if ((p = strchr(call_info_str, ';'))) {
 				p++;
 			}
