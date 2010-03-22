@@ -66,7 +66,7 @@ static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struc
 	handle.sock = -1;
 	esl_disconnect(&handle);
 	
-	execl(path_buffer, path_buffer, NULL);
+	execl(path_buffer, path_buffer, (char *)NULL);
 	//system(path_buffer);
 	close(client_sock);
 	exit(0);
