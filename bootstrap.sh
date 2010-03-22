@@ -25,6 +25,12 @@ echo "           You need autoconf version 2.59 or newer installed"
 echo "           to build FreeSWITCH from SVN."
 exit 1
 fi
+
+if test `uname -s` = "OpenBSD" && test "$ac_version" = "2.62"; then
+echo "Autoconf 2.62 is broken on OpenBSD, please try another version"
+exit 1
+fi
+
 IFS=_; set $ac_version; IFS=' '
 ac_version=$1
 IFS=.; set $ac_version; IFS=' '
@@ -36,6 +42,7 @@ exit 1
 else
 echo "bootstrap: autoconf version $ac_version (ok)"
 fi
+
 
 # automake 1.7 or newer
 

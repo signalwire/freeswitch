@@ -589,7 +589,7 @@ elif test "$ac_cv_sizeof_long" = "8"; then
     int64_value="long"
     long_value=long
     case "$host" in
-        *-solaris2*|*apple-darwin*)
+        *-solaris2*|*apple-darwin*|*-openbsd*)
 	    if test "$ac_cv_sizeof_long_long" = "8"; then
 	        int64_t_fmt='#define SWITCH_INT64_T_FMT "lld"'
 		uint64_t_fmt='#define SWITCH_UINT64_T_FMT "llu"'
@@ -696,7 +696,16 @@ AC_SUBST(uint64_t_fmt)
 AC_SUBST(ssize_t_fmt) 
 AC_SUBST(size_t_fmt)
 
-AC_PATH_PROGS(ZCAT, gunzip gzcat gzip zcat)
+case $host in
+   *-openbsd*)
+       # OpenBSD's gunzip and friends don't like -d because its redundant, only gzip does
+       AC_PATH_PROGS(ZCAT, gzip)
+       ;;
+    *)
+       AC_PATH_PROGS(ZCAT, gunzip gzcat gzip zcat)
+       ;;
+esac
+
 AC_PATH_PROGS(TAR, gtar tar)
 AC_PATH_PROGS(WGET, wget)
 AC_PATH_PROGS(CURL, curl)
@@ -950,6 +959,14 @@ AC_CONFIG_SUBDIRS([libs/tiff-3.8.2])
 AC_CONFIG_SUBDIRS([libs/spandsp])
 AC_CONFIG_SUBDIRS([libs/broadvoice])
 AC_CONFIG_SUBDIRS([libs/libg722_1])
+
+case $host in
+   *-openbsd*)
+       # libtool won't link static libs against shared ones on OpenBSD unless we tell it not to be stupid
+       AC_CONFIG_COMMANDS([hacklibtool], [cp libtool libtool.orig  && sed -e "s/deplibs_check_method=.*/deplibs_check_method=pass_all/g" libtool.orig > libtool])
+       ;;
+esac
+
 
 AC_OUTPUT
 
