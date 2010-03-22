@@ -261,11 +261,14 @@ char *generate_pai_str(switch_core_session_t *session)
 
 	if (!zstr(callee_name) && !zstr(callee_number)) {
 		if (switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote)) {
-			pai = switch_core_session_sprintf(tech_pvt->session, "%s: \"%s\" <%s>\n"
+			pai = switch_core_session_sprintf(tech_pvt->session, "%s: \"%s\" <%s>%s\n"
 											  "X-FS-Display-Name: %s\nX-FS-Display-Number: %s\n",
-											  header, callee_name, callee_number, callee_name, callee_number);
+											  header, callee_name, callee_number,
+											  tech_pvt->cid_type == CID_TYPE_RPID ? ";party=calling;privacy=off;screen=no" : "",
+											  callee_name, callee_number);
 		} else {
-			pai = switch_core_session_sprintf(tech_pvt->session, "%s: \"%s\" <%s>\n", header, callee_name, callee_number);
+			pai = switch_core_session_sprintf(tech_pvt->session, "%s: \"%s\" <%s>%s\n", header, callee_name, callee_number,
+											  tech_pvt->cid_type == CID_TYPE_RPID ? ";party=calling;privacy=off;screen=no" : "");
 		}
 
 	}
