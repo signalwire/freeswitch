@@ -100,6 +100,14 @@ if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
     fi
 fi
 
+# openbsd seems to not define NULL as a void pointer, I blame standards by committee for this.
+# This is a dirty hack, but shuts up all the warnings
+case "$host" in
+     *-openbsd*) SOFIA_CFLAGS="$SOFIA_CFLAGS -DNULL='(void *) 0L'";;
+     *) ;;
+esac
+
+
 ### checks for header files
 ### -----------------------
 AC_HEADER_STDC
