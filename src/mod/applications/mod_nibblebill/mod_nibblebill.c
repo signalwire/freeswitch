@@ -51,7 +51,7 @@
 #include <switch.h>
 
 /* Defaults */
-static char SQL_LOOKUP[] = "SELECT %s FROM %s WHERE %s='%s'";
+static char SQL_LOOKUP[] = "SELECT %s AS nibble_balance FROM %s WHERE %s='%s'";
 static char SQL_SAVE[] = "UPDATE %s SET %s=%s-%f WHERE %s='%s'";
 
 typedef struct {
@@ -101,6 +101,8 @@ static struct {
 	char *db_table;
 	char *db_column_cash;
 	char *db_column_account;
+	char *custom_sql_save;
+	char *custom_sql_lookup;
 	switch_odbc_handle_t *master_odbc;
 } globals;
 
@@ -125,16 +127,23 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_db_dsn, globals.db_dsn);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_db_table, globals.db_table);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_db_column_cash, globals.db_column_cash);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_db_column_account, globals.db_column_account);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_custom_sql_save, globals.custom_sql_save);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_custom_sql_lookup, globals.custom_sql_lookup);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_percall_action, globals.percall_action);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_lowbal_action, globals.lowbal_action);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_nobal_action, globals.nobal_action);
 
 static int nibblebill_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
+	int i = 0;
 	nibblebill_results_t *cbt = (nibblebill_results_t *) pArg;
 
-	cbt->balance = (float) atof(argv[0]);
-
+	for (i = 0; i < argc; i++) {
+		if (!strcasecmp(columnNames[i], "nibble_balance")) {
+			cbt->balance = (float) atof(argv[0]);
+		}
+	}
+	
 	return 0;
 }
 
@@ -167,6 +176,10 @@ static switch_status_t load_config(void)
 				set_global_db_column_cash(val);
 			} else if (!strcasecmp(var, "db_column_account")) {
 				set_global_db_column_account(val);
+			} else if (!strcasecmp(var, "custom_sql_save")) {
+				set_global_custom_sql_save(val);
+			} else if (!strcasecmp(var, "custom_sql_lookup")) {
+				set_global_custom_sql_lookup(val);
 			} else if (!strcasecmp(var, "percall_action")) {
 				set_global_percall_action(val);
 			} else if (!strcasecmp(var, "percall_max_amt")) {
@@ -285,17 +298,29 @@ static void transfer_call(switch_core_session_t *session, char *destination)
 
 
 /* At this time, billing never succeeds if you don't have a database. */
-static switch_status_t bill_event(float billamount, const char *billaccount)
+static switch_status_t bill_event(float billamount, const char *billaccount, switch_channel_t *channel)
 {
-	char sql[1024] = "";
-	switch_odbc_statement_handle_t stmt;
+	switch_stream_handle_t sql_stream = { 0 };
+	char *sql = NULL;
+	switch_odbc_statement_handle_t stmt = NULL;
+	SWITCH_STANDARD_STREAM(sql_stream);
 
 	if (!switch_odbc_available()) {
-		return SWITCH_STATUS_SUCCESS;
+		goto end;
 	}
 
-	switch_snprintf(sql, 1024, SQL_SAVE, globals.db_table, globals.db_column_cash, globals.db_column_cash, billamount, globals.db_column_account,
-					billaccount);
+	if (globals.custom_sql_save) {
+		if (switch_string_var_check_const(globals.custom_sql_save) || switch_string_has_escaped_data(globals.custom_sql_save)) {
+			switch_channel_set_variable_printf(channel, "nibble_increment", "%f", billamount, SWITCH_FALSE);
+			sql = switch_channel_expand_variables(channel, globals.custom_sql_save);
+		} else {
+			sql = globals.custom_sql_save;
+		}
+	} else {
+		sql_stream.write_function(&sql_stream, SQL_SAVE, globals.db_table, globals.db_column_cash, globals.db_column_cash, billamount, globals.db_column_account,
+						billaccount);
+		sql = sql_stream.data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doing update query\n[%s]\n", sql);
 
 	if (switch_odbc_handle_exec(globals.master_odbc, sql, &stmt, NULL) != SWITCH_ODBC_SUCCESS) {
@@ -306,40 +331,63 @@ static switch_status_t bill_event(float billamount, const char *billaccount)
 	} else {
 		/* TODO: Failover to a flat/text file if DB is unavailable */
 
-		return SWITCH_STATUS_SUCCESS;
+		goto end;
 	}
 
 	switch_odbc_statement_handle_free(&stmt);
 
+end:
+	if (sql != globals.custom_sql_save) {
+		switch_safe_free(sql);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-static float get_balance(const char *billaccount)
+static float get_balance(const char *billaccount, switch_channel_t *channel)
 {
-	char sql[1024] = "";
+	switch_stream_handle_t sql_stream = { 0 };
+	char *sql = NULL;
 	nibblebill_results_t pdata;
 	float balance = 0.00f;
+	SWITCH_STANDARD_STREAM(sql_stream);
 
 	if (!switch_odbc_available()) {
-		return -1.00f;
+		balance = -1.00f;
+		goto end;
 	}
 
 	memset(&pdata, 0, sizeof(pdata));
-	snprintf(sql, 1024, SQL_LOOKUP, globals.db_column_cash, globals.db_table, globals.db_column_account, billaccount);
 
+	if (globals.custom_sql_lookup) {
+		if (switch_string_var_check_const(globals.custom_sql_lookup) || switch_string_has_escaped_data(globals.custom_sql_lookup)) {
+			sql = switch_channel_expand_variables(channel, globals.custom_sql_lookup);
+		} else {
+			sql = globals.custom_sql_lookup;
+		}
+	} else {
+		sql_stream.write_function(&sql_stream, SQL_LOOKUP, globals.db_column_cash, globals.db_table, globals.db_column_account, billaccount);
+		sql = sql_stream.data;
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doing lookup query\n[%s]\n", sql);
+	
 	if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, nibblebill_callback, &pdata, NULL) != SWITCH_ODBC_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error running this query: [%s]\n", sql);
 		/* Return -1 for safety */
 
-		return -1.00f;
+		balance = -1.00f;
+		goto end;
 	} else {
 		/* Successfully retrieved! */
 		balance = pdata.balance;
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Retrieved current balance for account %s (balance = %f)\n", billaccount, balance);
 	}
-
+	
+end:
+	if (sql != globals.custom_sql_lookup) {
+		switch_safe_free(sql);
+	}
 	return balance;
 }
 
@@ -408,7 +456,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Not billing %s - call is not in answered state\n", billaccount);
 
 		/* See if this person has enough money left to continue the call */
-		balance = get_balance(billaccount);
+		balance = get_balance(billaccount, channel);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Comparing %f to hangup balance of %f\n", balance, nobal_amt);
 		if (balance <= nobal_amt) {
 			/* Not enough money - reroute call to nobal location */
@@ -464,7 +512,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 						  uuid, nibble_data->total);
 
 		/* DO ODBC BILLING HERE and reset counters if it's successful! */
-		if (bill_event(billamount, billaccount) == SWITCH_STATUS_SUCCESS) {
+		if (bill_event(billamount, billaccount, channel) == SWITCH_STATUS_SUCCESS) {
 			/* Increment total cost */
 			nibble_data->total += billamount;
 
@@ -491,7 +539,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 		/* don't verify balance and transfer to nobal if we're done with call */
 		if (switch_channel_get_state(channel) != CS_REPORTING && switch_channel_get_state(channel) != CS_HANGUP) {
 			/* See if this person has enough money left to continue the call */
-			balance = get_balance(billaccount);
+			balance = get_balance(billaccount, channel);
 			if (balance <= nobal_amt) {
 				/* Not enough money - reroute call to nobal location */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Balance of %f fell below allowed amount of %f! (Account %s)\n",
@@ -719,7 +767,7 @@ static void nibblebill_adjust(switch_core_session_t *session, float amount)
 	}
 
 	/* Add or remove amount from adjusted billing here. Note, we bill the OPPOSITE */
-	if (bill_event(-amount, billaccount) == SWITCH_STATUS_SUCCESS) {
+	if (bill_event(-amount, billaccount, channel) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Recorded adjustment to %s for $%f\n", billaccount, amount);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to record adjustment to %s for $%f\n", billaccount, amount);
@@ -846,7 +894,7 @@ static switch_status_t process_hangup(switch_core_session_t *session)
 
 	billaccount = switch_channel_get_variable(channel, "nibble_account");
 	if (billaccount) {
-		switch_channel_set_variable_printf(channel, "nibble_current_balance", "%f", get_balance(billaccount));
+		switch_channel_set_variable_printf(channel, "nibble_current_balance", "%f", get_balance(billaccount, channel));
 	}			
 	
 	return SWITCH_STATUS_SUCCESS;
