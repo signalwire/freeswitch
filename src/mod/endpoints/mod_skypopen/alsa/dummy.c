@@ -18,7 +18,7 @@
  *
  */
 
-#include <sound/driver.h>		//giova
+//#include <sound/driver.h>		//giova
 #include <linux/init.h>
 #include <linux/err.h>
 #include <linux/platform_device.h>
@@ -106,6 +106,7 @@ struct giovadpcm {
 	struct snd_pcm_substream *substream;
 	struct snd_dummy_pcm *dpcm;
 	int started;
+	int elapsed;
 };
 static struct giovadpcm giovadpcms[MAX_PCM_SUBSTREAMS];
 
@@ -127,8 +128,8 @@ struct snd_dummy {
 
 struct snd_dummy_pcm {
 	struct snd_dummy *dummy;
-	spinlock_t lock;
-	struct timer_list timer;
+	//spinlock_t lock;
+	//struct timer_list timer;
 	unsigned int pcm_buffer_size;
 	unsigned int pcm_period_size;
 	unsigned int pcm_bps;		/* bytes per second */
@@ -171,6 +172,7 @@ static inline void snd_card_dummy_pcm_timer_stop(struct snd_dummy_pcm *dpcm)
 		}
 		if (giovadpcms[i].dpcm == dpcm) {
 			giovadpcms[i].started = 0;
+			giovadpcms[i].elapsed = 0;
 			found = 1;
 		}
 	}
@@ -234,6 +236,7 @@ static void snd_card_dummy_pcm_timer_function(unsigned long data)
 	giovatimer.expires = 1 + jiffies;
 	add_timer(&giovatimer);
 
+	spin_lock_bh(&giovalock);
 	for (i = 0; i < giovaindex + 1; i++) {
 
 		if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
@@ -246,18 +249,38 @@ static void snd_card_dummy_pcm_timer_function(unsigned long data)
 			printk("giova: timer_func %d %d NULL: continue\n", __LINE__, i);
 			continue;
 		}
-		spin_lock_bh(&dpcm->lock);
-		dpcm->pcm_irq_pos += dpcm->pcm_bps;
-		dpcm->pcm_buf_pos += dpcm->pcm_bps;
+		//spin_lock_bh(&dpcm->lock);
+		dpcm->pcm_irq_pos += dpcm->pcm_bps * 1;
+		dpcm->pcm_buf_pos += dpcm->pcm_bps * 1;
 		dpcm->pcm_buf_pos %= dpcm->pcm_buffer_size * dpcm->pcm_hz;
 		if (dpcm->pcm_irq_pos >= dpcm->pcm_period_size * dpcm->pcm_hz) {
 			dpcm->pcm_irq_pos %= dpcm->pcm_period_size * dpcm->pcm_hz;
-			spin_unlock_bh(&dpcm->lock);
-			snd_pcm_period_elapsed(dpcm->substream);
+			//spin_unlock_bh(&dpcm->lock);
+			//snd_pcm_period_elapsed(dpcm->substream);
+			giovadpcms[i].elapsed = 1;
 		} else {
-			spin_unlock_bh(&dpcm->lock);
+			//spin_unlock_bh(&dpcm->lock);
 		}
 	}
+	spin_unlock_bh(&giovalock);
+	for (i = 0; i < giovaindex + 1; i++) {
+
+		if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
+			printk("giova, %s:%d, i=%d, giovaindex=%d dpcm=%p\n", __FILE__, __LINE__, i, giovaindex, dpcm);
+		}
+		if (giovadpcms[i].started != 1)
+			continue;
+		dpcm = giovadpcms[i].dpcm;
+		if (dpcm == NULL) {
+			printk("giova: timer_func %d %d NULL: continue\n", __LINE__, i);
+			continue;
+		}
+		if (giovadpcms[i].elapsed){
+			snd_pcm_period_elapsed(dpcm->substream);
+			giovadpcms[i].elapsed = 0;
+		}
+	}
+
 }
 
 static snd_pcm_uframes_t snd_card_dummy_pcm_pointer(struct snd_pcm_substream *substream)
@@ -265,7 +288,8 @@ static snd_pcm_uframes_t snd_card_dummy_pcm_pointer(struct snd_pcm_substream *su
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct snd_dummy_pcm *dpcm = runtime->private_data;
 
-	return bytes_to_frames(runtime, dpcm->pcm_buf_pos / dpcm->pcm_hz);
+	//return bytes_to_frames(runtime, dpcm->pcm_buf_pos / dpcm->pcm_hz);
+	return (dpcm->pcm_buf_pos / dpcm->pcm_hz) / 2;
 }
 
 static struct snd_pcm_hardware snd_card_dummy_playback = {
@@ -277,7 +301,7 @@ static struct snd_pcm_hardware snd_card_dummy_playback = {
 	.channels_min = USE_CHANNELS_MIN,
 	.channels_max = USE_CHANNELS_MAX,
 	.buffer_bytes_max = MAX_BUFFER_SIZE,
-	.period_bytes_min = 64,
+	.period_bytes_min = 256,
 	.period_bytes_max = MAX_PERIOD_SIZE,
 	.periods_min = USE_PERIODS_MIN,
 	.periods_max = USE_PERIODS_MAX,
@@ -293,7 +317,7 @@ static struct snd_pcm_hardware snd_card_dummy_capture = {
 	.channels_min = USE_CHANNELS_MIN,
 	.channels_max = USE_CHANNELS_MAX,
 	.buffer_bytes_max = MAX_BUFFER_SIZE,
-	.period_bytes_min = 64,
+	.period_bytes_min = 256,
 	.period_bytes_max = MAX_PERIOD_SIZE,
 	.periods_min = USE_PERIODS_MIN,
 	.periods_max = USE_PERIODS_MAX,
@@ -313,6 +337,7 @@ static void snd_card_dummy_runtime_free(struct snd_pcm_runtime *runtime)
 		}
 		if ((giovadpcms[i].dpcm == runtime->private_data)) {
 			giovadpcms[i].started = 0;
+			giovadpcms[i].elapsed = 0;
 		} else {
 		}
 	}
@@ -342,8 +367,8 @@ static struct snd_dummy_pcm *new_pcm_stream(struct snd_pcm_substream *substream)
 		printk("giova, %s:%d, giovaindex=%d NO MEMORY!!!!\n", __FILE__, __LINE__, giovaindex);
 		return dpcm;
 	}
-	init_timer(&dpcm->timer);
-	spin_lock_init(&dpcm->lock);
+	//init_timer(&dpcm->timer);
+	//spin_lock_init(&dpcm->lock);
 	dpcm->substream = substream;
 
 	spin_lock_bh(&giovalock);
@@ -376,6 +401,7 @@ static struct snd_dummy_pcm *new_pcm_stream(struct snd_pcm_substream *substream)
 		if (giovadpcms[i].substream == substream) {
 			giovadpcms[i].dpcm = dpcm;
 			giovadpcms[i].started = 0;
+			giovadpcms[i].elapsed = 0;
 			found = 1;
 			break;
 		}
@@ -630,14 +656,14 @@ static int __devinit snd_dummy_probe(struct platform_device *devptr)
 	int idx, err;
 	int dev = devptr->id;
 
-	card = snd_card_new(index[dev], id[dev], THIS_MODULE, sizeof(struct snd_dummy)); //giova if this gives you problems, comment it out and remove comment from the 4 lines commented below
-	if (card == NULL) //giova if this gives you problems, comment it out and remove comment from the 4 lines commented below
-		return -ENOMEM; //giova if this gives you problems, comment it out and remove comment from the 4 lines commented below
+	//card = snd_card_new(index[dev], id[dev], THIS_MODULE, sizeof(struct snd_dummy)); //giova if this gives you problems, comment it out and remove comment from the 4 lines commented below
+	//if (card == NULL) //giova if this gives you problems, comment it out and remove comment from the 4 lines commented below
+		//return -ENOMEM; //giova if this gives you problems, comment it out and remove comment from the 4 lines commented below
 
-	//giova err = snd_card_create(index[dev], id[dev], THIS_MODULE,
-	//giova sizeof(struct snd_dummy), &card);
-	//giova if (err < 0)
-	//giova return err;
+	err = snd_card_create(index[dev], id[dev], THIS_MODULE,
+	sizeof(struct snd_dummy), &card);
+	if (err < 0)
+	return err;
 
 	dummy = card->private_data;
 	dummy->card = card;
@@ -741,13 +767,14 @@ static int __init alsa_card_dummy_init(void)
 			giovadpcms[i].substream = NULL;
 			giovadpcms[i].dpcm = NULL;
 			giovadpcms[i].started = 0;
+			giovadpcms[i].elapsed = 0;
 		}
 		init_timer(&giovatimer);
 		giovatimer.data = (unsigned long) &giovadpcms;
 		giovatimer.function = snd_card_dummy_pcm_timer_function;
 		giovatimer.expires = 1 + jiffies;
 		add_timer(&giovatimer);
-		printk("snd-dummy skypopen driver version: 3, %s:%d working on a machine with %dHZ kernel\n", __FILE__, __LINE__, HZ);
+		printk("snd-dummy skypopen driver version: 5, %s:%d working on a machine with %dHZ kernel\n", __FILE__, __LINE__, HZ);
 		spin_unlock_bh(&giovalock);
 	}
 
