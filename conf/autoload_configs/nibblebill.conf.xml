@@ -16,6 +16,20 @@
     <!-- The column name for the unique ID identifying the account -->
     <param name="db_column_account" value="id"/>
 
+    <!-- Custom SQL for loading current balance - overides column names
+         channel vars are interpreted.
+         field nibble_balance is used for balance info
+
+    <param name="custom_sql_lookup" value="SELECT cash AS nibble_balance FROM accounts WHERE account_code='${nibble_account}'"/>
+    -->
+
+    <!-- Custom SQL for loading current balance - overides column names
+         channel vars are interpreted.
+         nibble_increment is the amount to update
+
+    <param name="custom_sql_save" value="UPDATE accounts SET cash=cash-${nibble_increment} WHERE account_code='${nibble_account}'"/>
+    -->
+
 
     <!-- Default heartbeat interval. Set to 'off' for no heartbeat (i.e. bill only at end of call) -->
     <param name="global_heartbeat" value="60"/>
