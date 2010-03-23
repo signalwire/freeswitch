@@ -959,6 +959,7 @@ AC_CONFIG_SUBDIRS([libs/tiff-3.8.2])
 AC_CONFIG_SUBDIRS([libs/spandsp])
 AC_CONFIG_SUBDIRS([libs/broadvoice])
 AC_CONFIG_SUBDIRS([libs/libg722_1])
+AC_CONFIG_SUBDIRS([libs/silk])
 
 case $host in
    *-openbsd*)
