@@ -16,14 +16,14 @@
     <!-- The column name for the unique ID identifying the account -->
     <param name="db_column_account" value="id"/>
 
-    <!-- Custom SQL for loading current balance - overides column names
+    <!-- Custom SQL for loading current balance - overrides column names
          channel vars are interpreted.
          field nibble_balance is used for balance info
 
     <param name="custom_sql_lookup" value="SELECT cash AS nibble_balance FROM accounts WHERE account_code='${nibble_account}'"/>
     -->
 
-    <!-- Custom SQL for loading current balance - overides column names
+    <!-- Custom SQL for loading current balance - overrides column names
          channel vars are interpreted.
          nibble_increment is the amount to update
 
