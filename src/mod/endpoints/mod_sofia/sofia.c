@@ -3644,6 +3644,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 		sofia_glue_get_addr(nua_current_request(nua), network_ip, sizeof(network_ip), &network_port);
 
+		switch_channel_set_variable_printf(channel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
 		switch_channel_set_variable(channel, "sip_reply_host", network_ip);
 		switch_channel_set_variable_printf(channel, "sip_reply_port", "%d", network_port);
 
@@ -5909,6 +5910,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	channel = tech_pvt->channel = switch_core_session_get_channel(session);
 
+	switch_channel_set_variable_printf(channel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
 	switch_channel_set_variable_printf(channel, "sip_network_ip", "%s", network_ip);
 	switch_channel_set_variable_printf(channel, "sip_network_port", "%d", network_port);
 
