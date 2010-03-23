@@ -626,20 +626,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		switch_channel_clear_flag_recursive(channel, CF_EVENT_LOCK_PRI);
 	}
 
-	return status;
+	return switch_channel_test_flag(channel, CF_BREAK) ? SWITCH_STATUS_BREAK : status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_next_event(switch_core_session_t *session)
 {
 	switch_event_t *event;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
-		switch_ivr_parse_event(session, event);
+		status = switch_ivr_parse_event(session, event);
 		switch_event_fire(&event);
-		return SWITCH_STATUS_SUCCESS;
 	}
 
-	return SWITCH_STATUS_FALSE;
+	return status;
 
 }
 
