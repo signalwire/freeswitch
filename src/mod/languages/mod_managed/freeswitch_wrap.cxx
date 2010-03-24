@@ -7601,6 +7601,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_hash_delete_locked(void * jarg1, c
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_hash_delete_multi(void * jarg1, void * jarg2, void * jarg3) {
+  int jresult ;
+  switch_hash_t *arg1 = (switch_hash_t *) 0 ;
+  switch_hash_delete_callback_t arg2 = (switch_hash_delete_callback_t) 0 ;
+  void *arg3 = (void *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_hash_t *)jarg1; 
+  arg2 = (switch_hash_delete_callback_t)jarg2; 
+  arg3 = (void *)jarg3; 
+  result = (switch_status_t)switch_core_hash_delete_multi(arg1,arg2,arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_hash_find(void * jarg1, char * jarg2) {
   void * jresult ;
   switch_hash_t *arg1 = (switch_hash_t *) 0 ;
@@ -11202,18 +11218,18 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_util_quote_shell_arg(char * jarg1) {
 }
 
 
-SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_url_encode(char * jarg1, char * jarg2, unsigned long jarg3) {
-  unsigned long jresult ;
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_url_encode(char * jarg1, char * jarg2, unsigned long jarg3) {
+  char * jresult ;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   size_t arg3 ;
-  size_t result;
+  char *result = 0 ;
   
   arg1 = (char *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (size_t)jarg3; 
-  result = switch_url_encode((char const *)arg1,arg2,arg3);
-  jresult = (unsigned long)result; 
+  result = (char *)switch_url_encode((char const *)arg1,arg2,arg3);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
 
