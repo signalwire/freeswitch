@@ -2075,25 +2075,20 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 		switch_strftime_nocheck(exp_buf, &retsize, sizeof(exp_buf), "%Y-%m-%d %T", &tm);
 	}
 
-	cb->stream->write_function(cb->stream,
-							   "    <registration>\n"
-							   "        <call-id>%s</call-id>\n"
-							   "        <user>%s@%s</user>\n"
-							   "        <contact>%s</contact>\n"
-							   "        <agent>%s</agent>\n"
-							   "        <status>%s(%s) exp(%s)</status>\n"
-							   "        <host>%s</host>\n"
-							   "        <network-ip>%s</network-ip>\n"
-							   "        <network-port>%s</network-port>\n"
-							   "        <sip-auth-user>%s</sip-auth-user>\n"
-							   "        <sip-auth-realm>%s</sip-auth-realm>\n"
-							   "        <mwi-account>%s@%s</mwi-account>\n"
-							   "    </registration>\n",
-							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]),
-							   switch_amp_encode(switch_str_nil(argv[3]), xmlbuf, buflen),
-							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, switch_str_nil(argv[11]),
-							   switch_str_nil(argv[12]), switch_str_nil(argv[13]), switch_str_nil(argv[14]), switch_str_nil(argv[15]),
-							   switch_str_nil(argv[16]), switch_str_nil(argv[17]));
+	cb->stream->write_function(cb->stream,"    <registration>\n");
+	cb->stream->write_function(cb->stream,"        <call-id>%s</call-id>\n", switch_str_nil(argv[0]));
+	cb->stream->write_function(cb->stream,"        <user>%s@%s</user>\n", switch_str_nil(argv[1]), switch_str_nil(argv[2]));
+	cb->stream->write_function(cb->stream,"        <contact>%s</contact>\n", switch_amp_encode(switch_str_nil(argv[3]), xmlbuf, buflen));
+	cb->stream->write_function(cb->stream,"        <agent>%s</agent>\n", switch_str_nil(argv[7]));
+	cb->stream->write_function(cb->stream,"        <status>%s(%s) exp(%s)</status>\n", switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf);
+	cb->stream->write_function(cb->stream,"        <host>%s</host>\n", switch_str_nil(argv[11]));
+	cb->stream->write_function(cb->stream,"        <network-ip>%s</network-ip>\n", switch_str_nil(argv[12]));
+	cb->stream->write_function(cb->stream,"        <network-port>%s</network-port>\n", switch_str_nil(argv[13]));
+	cb->stream->write_function(cb->stream,"        <sip-auth-user>%s</sip-auth-user>\n", switch_url_encode(switch_str_nil(argv[14]), xmlbuf, sizeof(xmlbuf)));
+	cb->stream->write_function(cb->stream,"        <sip-auth-realm>%s</sip-auth-realm>\n", switch_str_nil(argv[15]));
+	cb->stream->write_function(cb->stream,"        <mwi-account>%s@%s</mwi-account>\n", switch_str_nil(argv[16]), switch_str_nil(argv[17]));
+	cb->stream->write_function(cb->stream,"    </registration>\n");
+
 	return 0;
 }
 

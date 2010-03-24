@@ -1991,7 +1991,7 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 	return nsds;
 }
 
-SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len)
+SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len)
 {
 	const char *p;
 	size_t x = 0;
@@ -2025,7 +2025,7 @@ SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len)
 	}
 	buf[x] = '\0';
 
-	return x;
+	return buf;
 }
 
 SWITCH_DECLARE(char *) switch_url_decode(char *s)
