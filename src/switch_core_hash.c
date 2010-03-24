@@ -117,6 +117,42 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t *ha
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *hash, switch_hash_delete_callback_t callback, void *pData) {
+
+	switch_hash_index_t *hi = NULL;
+	switch_event_t *event = NULL;
+	switch_event_header_t *header = NULL;
+	switch_status_t status = SWITCH_STATUS_GENERR;
+	
+	switch_event_create_subclass(&event, SWITCH_EVENT_CLONE, NULL);
+	switch_assert(event);
+	
+	/* iterate through the hash, call callback, if callback returns true, put the key on the list (event)
+	   When done, iterate through the list deleting hash entries
+	 */
+	
+	for (hi = switch_hash_first(NULL, hash); hi; hi = switch_hash_next(hi)) {
+		const void *key;
+		void *val;
+		switch_hash_this(hi, &key, NULL, &val);
+		if (callback(key, val, pData)) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
+		}
+	}
+	
+	/* now delete them */
+	for (header = event->headers; header; header = header->next) {
+		if (switch_core_hash_delete(hash, header->value) == SWITCH_STATUS_SUCCESS) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	switch_event_destroy(&event);
+	
+	return status;
+}
+
+
 SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t *hash, const char *key)
 {
 	return sqlite3HashFind(&hash->table, key, (int) strlen(key) + 1);

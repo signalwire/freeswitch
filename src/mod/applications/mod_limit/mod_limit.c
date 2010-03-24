@@ -37,6 +37,7 @@
 
 #define LIMIT_EVENT_USAGE "limit::usage"
 #define LIMIT_IGNORE_TRANSFER_VARIABLE "limit_ignore_transfer"
+#define LIMIT_HASH_CLEANUP_INTERVAL 900
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_limit_shutdown);
@@ -60,6 +61,7 @@ typedef struct {
 	uint32_t total_usage;
 	uint32_t rate_usage;
 	time_t last_check;
+	uint32_t interval;
 } limit_hash_item_t;
 
 typedef struct {
@@ -280,7 +282,9 @@ static switch_status_t hash_state_handler(switch_core_session_t *session)
 		switch_hash_index_t *hi;
 		switch_mutex_lock(globals.limit_hash_mutex);
 
-		/* Loop through the channel's hashtable which contains mapping to all the limit_hash_item_t referenced by that channel */
+		/* Loop through the channel's hashtable which contains mapping to all the limit_hash_item_t referenced by that channel
+		   while() idiom used -- 'cause pvt->hash is being completely removed
+		 */
 		while ((hi = switch_hash_first(NULL, pvt->hash))) {
 			void *val = NULL;
 			const void *key;
@@ -293,7 +297,7 @@ static switch_status_t hash_state_handler(switch_core_session_t *session)
 			item->total_usage--;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char *) key, item->total_usage);
 
-			if (item->total_usage == 0) {
+			if (item->total_usage == 0 && item->rate_usage == 0) {
 				/* Noone is using this item anymore */
 				switch_core_hash_delete(globals.limit_hash, (const char *) key);
 				free(item);
@@ -956,6 +960,8 @@ static switch_bool_t do_limit_hash(switch_core_session_t *session, const char *r
 	}
 
 	if (interval > 0) {
+		/* interval is always the last used interval setting? */
+		item->interval = interval;
 		if (item->last_check <= (now - interval)) {
 			item->rate_usage = 1;
 			item->last_check = now;
@@ -1012,6 +1018,36 @@ static switch_bool_t do_limit_hash(switch_core_session_t *session, const char *r
 	return status;
 }
 
+SWITCH_HASH_DELETE_FUNC(limit_hash_cleanup_delete_callback) {
+	limit_hash_item_t *item = (limit_hash_item_t *) val;
+	time_t now = switch_epoch_time_now(NULL);
+
+	/* reset to 0 if window has passed so we can clean it up */
+	if (item->rate_usage > 0 && (item->last_check <= (now - item->interval))) {
+		item->rate_usage = 0;
+	}
+
+	if (item->total_usage == 0 && item->rate_usage == 0) {
+		/* Noone is using this item anymore */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Freeing limit item: %s\n", (const char *) key);
+		
+		free(item);
+		return SWITCH_TRUE;
+	}
+	
+	return SWITCH_FALSE;
+}
+
+/* !\brief Periodically checks for unused limit entries and frees them */
+SWITCH_STANDARD_SCHED_FUNC(limit_hash_cleanup_callback)
+{
+	switch_mutex_lock(globals.limit_hash_mutex);
+	switch_core_hash_delete_multi(globals.limit_hash, limit_hash_cleanup_delete_callback, NULL);
+	switch_mutex_unlock(globals.limit_hash_mutex);
+	
+	task->runtime = switch_epoch_time_now(NULL) + LIMIT_HASH_CLEANUP_INTERVAL;
+}
+
 /* !\brief Releases usage of a limit_hash-controlled ressource  */
 static void limit_hash_release(switch_core_session_t *session, const char *realm, const char *id)
 {
@@ -1034,7 +1070,7 @@ static void limit_hash_release(switch_core_session_t *session, const char *realm
 
 		switch_core_hash_delete(pvt->hash, hashkey);
 
-		if (item->total_usage == 0) {
+		if (item->total_usage == 0 && item->rate_usage == 0) {
 			/* Noone is using this item anymore */
 			switch_core_hash_delete(globals.limit_hash, (const char *) hashkey);
 			free(item);
@@ -1172,15 +1208,16 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 }
 
 
-#define LIMIT_HASH_USAGE_USAGE "<realm> <id>"
+#define LIMIT_HASH_USAGE_USAGE "<realm> <id> [rate]"
 SWITCH_STANDARD_API(limit_hash_usage_function)
 {
 	int argc = 0;
-	char *argv[3] = { 0 };
+	char *argv[4] = { 0 };
 	char *mydata = NULL;
 	char *hash_key = NULL;
 	limit_hash_item_t *item = NULL;
-	uint32_t count = 0;
+	uint32_t count = 0, rcount = 0;
+	switch_bool_t dorate = SWITCH_FALSE;
 
 	switch_mutex_lock(globals.limit_hash_mutex);
 
@@ -1195,13 +1232,24 @@ SWITCH_STANDARD_API(limit_hash_usage_function)
 		goto end;
 	}
 
+	if (argc > 2) {
+		if (!strcasecmp(argv[2], "rate")) {
+			dorate = SWITCH_TRUE;
+		}
+	}
+
 	hash_key = switch_mprintf("%s_%s", argv[0], argv[1]);
 
 	if ((item = switch_core_hash_find(globals.limit_hash, hash_key))) {
 		count = item->total_usage;
+		rcount = item->rate_usage;
 	}
 
-	stream->write_function(stream, "%d", count);
+	if (dorate == SWITCH_TRUE) {
+		stream->write_function(stream, "%d/%d", count, rcount);
+	} else {
+		stream->write_function(stream, "%d", count);
+	}
 
   end:
 	switch_safe_free(mydata);
@@ -1240,7 +1288,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-
+	switch_scheduler_add_task(switch_epoch_time_now(NULL) + LIMIT_HASH_CLEANUP_INTERVAL, limit_hash_cleanup_callback, "limit_hash_cleanup", "mod_limit", 0, NULL,
+							  SSHF_NONE);
 
 	SWITCH_ADD_APP(app_interface, "limit", "Limit", LIMIT_DESC, limit_function, LIMIT_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "limit_execute", "Limit", LIMITEXECUTE_USAGE, limit_execute_function, LIMITEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
@@ -1274,7 +1323,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_limit_shutdown)
 {
-
+	switch_scheduler_del_task_group("mod_limit");
 	switch_event_free_subclass(LIMIT_EVENT_USAGE);
 
 	switch_xml_config_cleanup(config_settings);

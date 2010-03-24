@@ -1202,6 +1202,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(_In_ switch_hash_t *hash
 SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_ switch_mutex_t *mutex);
 
 /*! 
+  \brief Delete data from a hash based on callback function
+  \param hash the hash to delete from
+  \param callback the function to call which returns SWITCH_TRUE to delete, SWITCH_FALSE to preserve
+  \return SWITCH_STATUS_SUCCESS if any data is deleted
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(_In_ switch_hash_t *hash, _In_ switch_hash_delete_callback_t callback, _In_opt_ void *pData);
+
+/*! 
   \brief Retrieve data from a given hash
   \param hash the hash to retrieve from
   \param key the key to retrieve

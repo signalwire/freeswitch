@@ -1560,6 +1560,8 @@ typedef void (*switch_event_callback_t) (switch_event_t *);
 typedef switch_caller_extension_t *(*switch_dialplan_hunt_function_t) (switch_core_session_t *, void *, switch_caller_profile_t *);
 #define SWITCH_STANDARD_DIALPLAN(name) static switch_caller_extension_t *name (switch_core_session_t *session, void *arg, switch_caller_profile_t *caller_profile)
 
+typedef switch_bool_t (*switch_hash_delete_callback_t) (_In_ const void *key, _In_ const void *val, _In_opt_ void *pData);
+#define SWITCH_HASH_DELETE_FUNC(name) static switch_bool_t name (const void *key, const void *val, void *pData)
 
 typedef struct switch_scheduler_task switch_scheduler_task_t;
 
