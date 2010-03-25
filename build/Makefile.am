@@ -59,6 +59,10 @@ install:
 	@echo " +                                                 +"
 	@echo " +       irc.freenode.net / #freeswitch            +"
 	@echo " +                                                 +"
+	@echo " +       Register For ClueCon:                     +"
+	@echo " +       ----------------------------------        +"
+	@echo " +       http://www.cluecon.com                    +"
+	@echo " +                                                 +"
 	@echo " +-------------------------------------------------+"
 
 
