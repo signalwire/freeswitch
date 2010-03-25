@@ -549,9 +549,9 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_mutex_unlock(tech_pvt->flag_mutex);
 
 	if (tech_pvt->bte) {
-		tech_pvt->te = tech_pvt->bte;
+		tech_pvt->recv_te = tech_pvt->te = tech_pvt->bte;
 	} else if (!tech_pvt->te) {
-		tech_pvt->te = profile->te;
+		tech_pvt->recv_te = tech_pvt->te = profile->te;
 	}
 
 	tech_pvt->dtmf_type = profile->dtmf_type;
@@ -2771,8 +2771,13 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		}
 
 		if (tech_pvt->te) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", tech_pvt->te);
 			switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
-			switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, tech_pvt->te);
+		}
+
+		if (tech_pvt->recv_te) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set 2833 dtmf receive payload to %u\n", tech_pvt->recv_te);
+			switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, tech_pvt->recv_te);
 		}
 
 		if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) ||
@@ -3509,16 +3514,17 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 				if (!te && !strcasecmp(rm_encoding, "telephone-event")) {
 					if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf recv payload to %u\n", te);
+						te = tech_pvt->te = (switch_payload_t) map->rm_pt;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", map->rm_pt);
 						if (tech_pvt->rtp_session) {
-							switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, (switch_payload_t) map->rm_pt);
+							switch_rtp_set_telephony_event(tech_pvt->rtp_session, (switch_payload_t) map->rm_pt);
 						}
 					} else {
-						te = tech_pvt->te = (switch_payload_t) map->rm_pt;
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", te);
+						te = tech_pvt->recv_te = tech_pvt->te = (switch_payload_t) map->rm_pt;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send/recv payload to %u\n", te);
 						if (tech_pvt->rtp_session) {
-							switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
-							switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, tech_pvt->te);
+							switch_rtp_set_telephony_event(tech_pvt->rtp_session, te);
+							switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, te);
 						}
 					}
 				}

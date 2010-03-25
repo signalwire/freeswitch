@@ -622,6 +622,7 @@ struct private_object {
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *sofia_mutex;
 	switch_payload_t te;
+	switch_payload_t recv_te;
 	switch_payload_t bte;
 	switch_payload_t cng_pt;
 	switch_payload_t bcng_pt;
