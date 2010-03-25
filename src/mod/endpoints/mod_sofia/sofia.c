@@ -2023,9 +2023,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				gateway->freq = 3600;
 			}
 
-
-			sofia_reg_add_gateway(profile, gateway->name, gateway);
-			
+			gateway->next = profile->gateways;
+			profile->gateways = gateway;
+			sofia_reg_add_gateway(profile->name, gateway->name, gateway);
 		}
 
 	  skip:
