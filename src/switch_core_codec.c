@@ -621,6 +621,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
+	if (codec->implementation->encoded_bytes_per_packet) {
+		uint32_t frames = encoded_data_len / codec->implementation->encoded_bytes_per_packet;
+
+		if (frames && codec->implementation->decoded_bytes_per_packet * frames > *decoded_data_len) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Buffer size sanity check failed!\n");
+			return SWITCH_STATUS_GENERR;
+		}
+	}
+	
 	if (codec->mutex)
 		switch_mutex_lock(codec->mutex);
 	status = codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate,
