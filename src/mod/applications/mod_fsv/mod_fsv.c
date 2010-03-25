@@ -108,7 +108,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	switch_mutex_t *mutex = NULL;
 	switch_codec_t codec, *vid_codec;
 	switch_codec_implementation_t read_impl = { 0 };
-	int count = 0;
+	int count = 0, sanity = 30;
 
 	switch_core_session_get_read_impl(session, &read_impl);
 	switch_channel_answer(channel);
@@ -122,6 +122,11 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		if (count == 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s waiting for video.\n", switch_channel_get_name(channel));
 			count = 100;
+			if (!--sanity) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s timeout waiting for video.\n", 
+								  switch_channel_get_name(channel));
+				return;
+			}
 		}
 	}
 	
