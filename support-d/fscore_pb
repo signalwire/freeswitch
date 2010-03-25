@@ -78,7 +78,7 @@ fi
 
 echo "Gathering Data Please Wait........."
 
-echo -n "paste=Send&remember=0&poster=$user&format=none&code2=" > $post_file
+echo -n "paste=Send&remember=0&poster=$user&format=none&code2=&expiry=f" > $post_file
 
 echo "LSB RELEASE:" >> $post_file
 echo $line >> $post_file
