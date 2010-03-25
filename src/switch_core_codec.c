@@ -468,12 +468,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, sw
 		if ((status = switch_core_new_memory_pool(&new_codec->memory_pool)) != SWITCH_STATUS_SUCCESS) {
 			return status;
 		}
-		switch_set_flag(new_codec, SWITCH_CODEC_FLAG_FREE_POOL);
 	}
 
 	new_codec->codec_interface = codec->codec_interface;
 	new_codec->implementation = codec->implementation;
 	new_codec->flags = codec->flags;
+
+	if (!pool) {
+		switch_set_flag(new_codec, SWITCH_CODEC_FLAG_FREE_POOL);
+	}
 
 	if (codec->fmtp_in) {
 		new_codec->fmtp_in = switch_core_strdup(new_codec->memory_pool, codec->fmtp_in);
