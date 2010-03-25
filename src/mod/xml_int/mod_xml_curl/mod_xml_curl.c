@@ -57,10 +57,6 @@ struct xml_binding {
 	int use_dynamic_url;
 	int auth_scheme;
 	int timeout;
-	int timeout_ms;
-	int weight;
-	struct xml_binding* next;
-	int chosen;
 };
 
 static int keep_files_around = 0;
@@ -135,6 +131,9 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	}
 	return x;
 }
+
+
+
 
 static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
 								  void *user_data)
@@ -241,15 +240,6 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 			curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		}
 
-		if (binding->timeout_ms) {
-#ifdef CURLOPT_TIMEOUT_MS
-			curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, binding->timeout_ms);
-#else
-			curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, (binding->timeout_ms / 1000) ? (binding->timeout_ms / 1000) : 1);
-#endif
-			curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
-		}
-
 		if (binding->disable100continue) {
 			slist = curl_slist_append(slist, "Expect:");
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
@@ -334,129 +324,12 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	return xml;
 }
 
-static switch_xml_t xml_curl_fetch(const char *section, const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
-								  void *user_data)
-{
-	xml_binding_t *root = (xml_binding_t*) user_data;
-	xml_binding_t *binding = root;
-	int running_weight = 0, total_weight = 0, rand_weight = 0, count = 0, pos = 0;
-	xml_binding_t *bindings_copy = NULL;
-	xml_binding_t *tmp = NULL;
-	xml_binding_t **first_order = NULL;
-	xml_binding_t **second_order = NULL;
-	switch_xml_t result = NULL;
-	int i, b;
-
-	/* Count how many elements we have */
-	for( ; binding != NULL; binding = binding->next) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Found [%s]\n", binding->url);
-		count++;
-	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "XML_CURL Fetch on %d bindings\n", count);
-
-	/* Make a local copy of the bindings */
-	bindings_copy = malloc(count*sizeof(xml_binding_t));
-	tmp = bindings_copy;
-	binding = root;
-	pos = 0;
-	for( ; binding != NULL; binding = binding->next) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Copying [%s] to 0x%0X\n", root->url, (unsigned)(intptr_t)&bindings_copy[pos]);
-		memcpy(&bindings_copy[pos], binding, sizeof(xml_binding_t));
-		pos++;
-	}
-	
-	/* And two ordering arrays */
-	first_order = malloc(count*sizeof(xml_binding_t*));
-	memset(first_order, 0, count*sizeof(xml_binding_t*));
-	second_order = malloc(count*sizeof(xml_binding_t*));
-	memset(second_order, 0, count*sizeof(xml_binding_t*));
-
-	/* Update root to point to local copy of binding data */
-	root = bindings_copy;
-
-	/* Put all weight=0 at beginning of first ordering array */
-	binding = root; pos = 0;
-	for(i = 0; i < count; i++) {
-		binding = &bindings_copy[i];
-		if(binding->weight == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Copying [%s] to first_order[%d]\n", binding->url, pos);
-			first_order[pos] = binding;
-			pos++;
-		}
-	}
-
-	/* Then dump everything else into the first ordering array */
-	binding = root;
-	for(i = 0; i < count; i++) {
-		binding = &bindings_copy[i];
-		if(binding->weight != 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Copying [%s] to first_order[%d]\n", binding->url, pos);
-			first_order[pos] = binding;
-			pos++;
-		}
-	}
-
-	srand((unsigned)((unsigned)(intptr_t)switch_thread_self() + switch_micro_time_now()));
-
-	/* We need to pick every element in the array, so loop once for every one of them */
-	pos = 0;
-	for(i = 0; i < count; i++) {
-		/* Calculate the total remaining unchosen weight */
-		total_weight = 0; running_weight = 0;
-		for(b = 0; b < count; b++) {
-			binding = &bindings_copy[b];
-			if(!binding->chosen) total_weight += binding->weight;
-		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Remaining total weight [%d]\n", total_weight);
-
-		/* Pick a random number between [0, total_weight]
-		 * Note: Don't use rand() % M as it is not as random as this more complex 
-		 * method which achieves the same intent with more random results */
-		rand_weight = (int)( ((double)rand()) / (((double)(RAND_MAX) + (double)(1)) / ((double)total_weight + (double)(1))) );
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Random weight [%d]\n", rand_weight);
-
-		/* Then grab the first unchosen element whose running_weight >= rand_weight 
-		   and move it into our 'picked' list */
-		binding = root;
-		for(b = 0; b < count; b++) {
-			binding = &bindings_copy[b];
-			if(binding->chosen) continue; /* skip already picked elements */
-
-			running_weight += binding->weight;
-			if(running_weight >= rand_weight) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Chose binding %d as [%s] with weight [%d] based on running weight [%d]\n", pos, binding->url, binding->weight, running_weight);
-				second_order[pos] = binding;
-				pos++;
-				binding->chosen = 1;
-				break;
-			}
-		}
-	}
-
-	/* Then call our XML url fetch function for each binding based on our 
-	 * chosen order until we get a valid result or run out of bindings */
-	pos = 0;
-	for( ; pos < count && result == NULL; pos++) {
-		binding = second_order[pos];
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Querying binding [%s]\n", binding->url);
-		result = xml_url_fetch(section, tag_name, key_name, key_value, params, (void*)binding);
-	}
-
-	free(first_order);
-	free(second_order);
-	free(bindings_copy);
-	return result;
-}
-
-
 #define ENABLE_PARAM_VALUE "enabled"
 static switch_status_t do_config(void)
 {
 	char *cf = "xml_curl.conf";
 	switch_xml_t cfg, xml, bindings_tag, binding_tag, param;
 	xml_binding_t *binding = NULL;
-	xml_binding_t *prev_binding = NULL;
-	xml_binding_t *root = NULL;
 	int x = 0;
 	int need_vars_map = 0;
 	switch_hash_t *vars_map = NULL;
@@ -471,16 +344,14 @@ static switch_status_t do_config(void)
 		goto done;
 	}
 
-	/* Only 32768 bindings allowed or weight sum could exceed signed int max 
-	 * value breaking load balancing algorithm */
-	for (binding_tag = switch_xml_child(bindings_tag, "binding"); binding_tag && x < 32768; binding_tag = binding_tag->next) {
+	for (binding_tag = switch_xml_child(bindings_tag, "binding"); binding_tag; binding_tag = binding_tag->next) {
 		char *bname = (char *) switch_xml_attr_soft(binding_tag, "name");
 		char *url = NULL;
 		char *bind_cred = NULL;
 		char *bind_mask = NULL;
 		char *method = NULL;
 		int disable100continue = 0;
-		int use_dynamic_url = 0, timeout = 0, timeout_ms = 0, weight = 0;
+		int use_dynamic_url = 0, timeout = 0;
 		uint32_t enable_cacert_check = 0;
 		char *ssl_cert_file = NULL;
 		char *ssl_key_file = NULL;
@@ -527,28 +398,10 @@ static switch_status_t do_config(void)
 				disable100continue = 1;
 			} else if (!strcasecmp(var, "method")) {
 				method = val;
-			} else if (!strcasecmp(var, "weight")) {
-				int tmp = atoi(val);
-				if (tmp >= 0) {
-					if(tmp > 65535) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't set weight > 65535!\n");
-					} else {
-						weight = tmp;
-					}
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't set a negative weight!\n");
-				}
 			} else if (!strcasecmp(var, "timeout")) {
 				int tmp = atoi(val);
 				if (tmp >= 0) {
 					timeout = tmp;
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't set a negative timeout!\n");
-				}
-			} else if (!strcasecmp(var, "timeout-ms")) {
-				int tmp = atoi(val);
-				if (tmp >= 0) {
-					timeout_ms = tmp;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't set a negative timeout!\n");
 				}
@@ -602,9 +455,7 @@ static switch_status_t do_config(void)
 		memset(binding, 0, sizeof(*binding));
 
 		binding->auth_scheme = auth_scheme;
-		binding->weight = weight;
 		binding->timeout = timeout;
-		binding->timeout_ms = timeout_ms;
 		binding->url = strdup(url);
 		switch_assert(binding->url);
 
@@ -671,23 +522,11 @@ static switch_status_t do_config(void)
 
 		}
 
-		if(root == NULL) {
-			root = binding;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Root binding [%s] [%s] [%s]\n",
-						  zstr(bname) ? "N/A" : bname, binding->url, binding->bindings ? binding->bindings : "all");
-		}
-		if(prev_binding != NULL) {
-			prev_binding->next = binding;
-		}
-		prev_binding = binding;
-
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n",
 						  zstr(bname) ? "N/A" : bname, binding->url, binding->bindings ? binding->bindings : "all");
+		switch_xml_bind_search_function(xml_url_fetch, switch_xml_parse_section_string(binding->bindings), binding);
 		x++;
 		binding = NULL;
-	}
-	if(root != NULL) {
-		switch_xml_bind_search_function(xml_curl_fetch, switch_xml_parse_section_string(root->bindings), root);
 	}
 
   done:
