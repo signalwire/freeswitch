@@ -108,16 +108,32 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	switch_mutex_t *mutex = NULL;
 	switch_codec_t codec, *vid_codec;
 	switch_codec_implementation_t read_impl = { 0 };
-	switch_core_session_get_read_impl(session, &read_impl);
+	int count = 0;
 
+	switch_core_session_get_read_impl(session, &read_impl);
 	switch_channel_answer(channel);
+
+
+	while (switch_channel_up(channel) && !switch_channel_test_flag(channel, CF_VIDEO)) {
+		switch_yield(10000);
+
+		if (count) count--;
+
+		if (count == 0) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s waiting for video.\n", switch_channel_get_name(channel));
+			count = 100;
+		}
+	}
+	
+	if (!switch_channel_ready(channel)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s not ready.\n", switch_channel_get_name(channel));
+		return;
+	}
 
 	if ((fd = open((char *) data, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error opening file %s\n", (char *) data);
 		return;
 	}
-
-	switch_channel_answer(channel);
 
 	if (switch_core_codec_init(&codec,
 							   "L16",
