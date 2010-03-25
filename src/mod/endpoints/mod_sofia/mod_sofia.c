@@ -3315,6 +3315,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				goto error;
 			}
 		} else {
+			host++;
 			tech_pvt->dest = switch_core_session_alloc(nsession, strlen(dest) + 5);
 			switch_snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);
 		}
@@ -3332,7 +3333,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			tech_pvt->dest_to = switch_core_session_sprintf(nsession, "sip:%s@%s", dest_to, host ? host : profile->sipip);
 		}
 	}
-
 
 	if (!tech_pvt->dest_to) {
 		tech_pvt->dest_to = tech_pvt->dest;
