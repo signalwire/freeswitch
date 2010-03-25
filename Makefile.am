@@ -563,7 +563,14 @@ sofia-reconf:
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/sofia-sip && ./configure --prefix=$(prefix) --with-pic --with-glib=no --disable-shared
 
-current: is-svn update-clean
+cluecon:
+	@clear
+	@echo Thank you for updating. This is going to take a while so relax.
+	@echo Now would be a good time to register for ClueCon!
+	@echo
+	@echo http://www.cluecon.com
+	@sleep 5
+current: cluecon is-svn update-clean
 	svn update
 	$(MAKE) all
 	$(MAKE) install
