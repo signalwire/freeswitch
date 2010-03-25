@@ -4529,10 +4529,6 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			"create index ssd_contact_str on sip_shared_appearance_dialogs (contact_str)",
 			"create index ssd_call_id on sip_shared_appearance_dialogs (call_id)",
 			"create index ssd_expires on sip_shared_appearance_dialogs (expires)",
-			"create index sr_1 on sip_recovery (runtime_uuid)",
-			"create index sr_2 on sip_recovery (profile_name)",
-			"create index sr_3 on sip_recovery (hostname)",
-			"create index sr_4 on sip_recovery (uuid)",
 			NULL
 		};
 
@@ -4751,12 +4747,6 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 		switch_core_db_exec(db, "create index if not exists sa_nonce on sip_authentication (nonce)", NULL, NULL, NULL);
 		switch_core_db_exec(db, "create index if not exists sa_hostname on sip_authentication (hostname)", NULL, NULL, NULL);
-
-		switch_core_db_exec(db, "create index sr_1 on sip_recovery (runtime_uuid)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index sr_2 on sip_recovery (profile_name)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index sr_3 on sip_recovery (hostname)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index sr_4 on sip_recovery (uuid)", NULL, NULL, NULL);
-		
 	}
 
 	if (odbc_dbh) {
