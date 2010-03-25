@@ -9,8 +9,6 @@
       <!-- set this to provide authentication credentials to the server -->
       <!--<param name="gateway-credentials" value="muser:mypass"/>-->
       <!--<param name="auth-scheme" value="basic"/>-->
-      <!-- set to true to disable Expect: 100-continue lighttpd requires this setting -->
-      <!--<param name="disable-100-continue" value="true"/>-->
 
       <!-- optional: this will enable the CA root certificate check by libcurl to
            verify that the certificate was issued by a major Certificate Authority.

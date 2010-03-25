@@ -350,7 +350,7 @@ static switch_status_t do_config(void)
 		char *bind_cred = NULL;
 		char *bind_mask = NULL;
 		char *method = NULL;
-		int disable100continue = 0;
+		int disable100continue = 1;
 		int use_dynamic_url = 0, timeout = 0;
 		uint32_t enable_cacert_check = 0;
 		char *ssl_cert_file = NULL;
@@ -394,8 +394,8 @@ static switch_status_t do_config(void)
 				} else if (!strcasecmp(val, "any")) {
 					auth_scheme = CURLAUTH_ANY;
 				}
-			} else if (!strcasecmp(var, "disable-100-continue") && switch_true(val)) {
-				disable100continue = 1;
+			} else if (!strcasecmp(var, "disable-100-continue") && !switch_true(val)) {
+				disable100continue = 0;
 			} else if (!strcasecmp(var, "method")) {
 				method = val;
 			} else if (!strcasecmp(var, "timeout")) {
