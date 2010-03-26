@@ -72,6 +72,9 @@ unsigned long long g_next_session_id = 0;
 /* hash of sessions (I think a linked list suits better here, but FS does not have the data type) */
 switch_hash_t *g_sessions_hash = NULL;
 
+/* global memory pool provided by FS */
+switch_memory_pool_t *g_pool = NULL;
+
 typedef struct vocallo_codec_s {
 	int codec_id; /* vocallo codec ID */
 	int iana; /* IANA code to register in FS */
@@ -196,13 +199,14 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 					  local_ip, rtp_port, codec_ip, codec_reply_leg->codec_udp_port, iana, 
 					  codec_reg_leg->sample_rate, codec_reg_leg->ms*1000, sess->sessid);
 
-	/* create the RTP socket */
+	/* create the RTP socket, dont use the session pool since the session may go away while the RTP socket should linger around 
+	 * until sangoma_transcode decides to kill it */
 	rtp_session = switch_rtp_new(local_ip, rtp_port, 
 			codec_ip, codec_reply_leg->codec_udp_port, 
 			iana,
 			codec_reg_leg->ms*8, /* samples per interval, FIXME: do based on sampling rate */
 			codec_reg_leg->ms*1000, /* ms per packet */
-			flags, NULL, &err, sess->pool);
+			flags, NULL, &err, g_pool);
 
 	if (!rtp_session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to create switch rtp session: %s\n", err);
@@ -899,6 +903,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 	if (sangoma_parse_config()) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	g_pool = pool;
 
 	g_init_cfg.log = sangoma_logger;
 	g_init_cfg.create_rtp = sangoma_create_rtp;
