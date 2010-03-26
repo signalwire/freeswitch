@@ -990,7 +990,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 							switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d%s;fs_nat=yes>", display, contact->m_url->url_user, url_ip,
 											network_port, received_data);
 						}
-						if (strstr(v_contact_str, "tls")) {
+						if (switch_stristr(v_contact_str, "transport=tls")) {
 							reg_desc = "Registered(TLSHACK)";
 						} else {
 							reg_desc = "Registered(AUTO-NAT)";
