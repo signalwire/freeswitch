@@ -565,9 +565,11 @@ int auc_has_authorization(auth_client_t **auc_list)
        * Check if we have another challenge with same realm but different
        * scheme
        */
-      for (other = *auc_list; other; other = ca->ca_next) {
-	if (ca == other)
-	  continue;
+      for (other = *auc_list; other; other = other->ca_next) {
+		  if (ca == other) {
+			  continue;
+		  }
+
 	if (ca->ca_credential_class == other->ca_credential_class &&
 	    su_strcmp(ca->ca_realm, other->ca_realm) == 0 &&
 	    ca_has_authorization(other))
