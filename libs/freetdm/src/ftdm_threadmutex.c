@@ -432,9 +432,9 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interru
 		return FTDM_TIMEOUT;
 	}
 
-	for (i = size; i < ftdm_array_len(ints); i++) {
+	for (i = 0; i < size; i++) {
 		if (ints[i].revents & POLLIN) {
-			res = read(ints[0].fd, pipebuf, sizeof(pipebuf));
+			res = read(ints[i].fd, pipebuf, sizeof(pipebuf));
 			if (res == -1) {
 				ftdm_log(FTDM_LOG_CRIT, "reading interrupt descriptor failed (%s)\n", strerror(errno));
 			}
