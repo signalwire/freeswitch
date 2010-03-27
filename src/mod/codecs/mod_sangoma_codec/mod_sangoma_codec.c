@@ -62,6 +62,7 @@ SWITCH_MODULE_DEFINITION(mod_sangoma_codec, mod_sangoma_codec_load, mod_sangoma_
 
 /* \brief vocallos configuration */
 static sngtc_init_cfg_t g_init_cfg;
+static char g_vocallo_names[SNGTC_MAX_HOST_VOCALLO_NIC][255];
 
 /* \brief protect vocallo session creation and destroy */
 static switch_mutex_t *g_sessions_lock = NULL;
@@ -579,24 +580,28 @@ SWITCH_STANDARD_API(sangoma_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-#if 0
-FIXME: settings per vocallo
 	if (!strcasecmp(argv[0], "settings")) {
-		char ip_buff[50];
-		stream->write_function(stream, "UDP port range: %d\n", g_sangoma_baseudp);
+		char addrbuff[50];
+		int addr;
+		int i;
+		for (i = 0; i < g_init_cfg.host_nic_vocallo_sz; i++) {
+			stream->write_function(stream, "Vocallo %s:\n", g_vocallo_names[i]);
 
-		stream->write_function(stream, "localaddr: %s\n", 
-				switch_inet_ntop(AF_INET, &g_sangoma_local_ip, ip_buff, sizeof(ip_buff)));
+			addr = htonl(g_init_cfg.host_nic_vocallo_cfg[i].host_ip);
+			stream->write_function(stream, "\tIP Address: %s\n", 
+					switch_inet_ntop(AF_INET, &addr, addrbuff, sizeof(addrbuff)));
 
-		stream->write_function(stream, "vocallohost: %s\n", 
-				switch_inet_ntop(AF_INET, &g_sangoma_vocallo_ip, ip_buff, sizeof(ip_buff)));
+			addr = htonl(g_init_cfg.host_nic_vocallo_cfg[i].host_ip_netmask);
+			stream->write_function(stream, "\tNetmask: %s\n", 
+					switch_inet_ntop(AF_INET, &addr, addrbuff, sizeof(addrbuff)));
 
-		stream->write_function(stream, "netmask: %s\n", 
-				switch_inet_ntop(AF_INET, &g_sangoma_local_netmask, ip_buff, sizeof(ip_buff)));
+			addr = htonl(g_init_cfg.host_nic_vocallo_cfg[i].vocallo_ip);
+			stream->write_function(stream, "\tVocallo Base IP: %s\n", 
+					switch_inet_ntop(AF_INET, &addr, addrbuff, sizeof(addrbuff)));
 
+			stream->write_function(stream, "\tVocallo Base UDP: %d\n\n", g_init_cfg.host_nic_vocallo_cfg[i].vocallo_base_udp_port);
+		}
 	} else if (!strcasecmp(argv[0], "sessions")) {
-#endif
-	if (!strcasecmp(argv[0], "sessions")) {
 		/* iterate over sessions hash */
 		switch_hash_index_t *hi;
 		const void *var;
@@ -797,6 +802,8 @@ static int sangoma_parse_config(void)
 	struct in_addr vocallo_base_ip;
 	char ipbuff[50];
 	char netbuff[50];
+	int host_ipaddr = 0;
+	int host_netmaskaddr = 0;
 	int vidx = 0;
 	int baseudp = 0;
 
@@ -861,12 +868,15 @@ static int sangoma_parse_config(void)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring vocallo %s, no valid address was configured\n", name);
 				continue;
 			}
-
+			host_ipaddr = htonl(g_init_cfg.host_nic_vocallo_cfg[vidx].host_ip);
+			host_netmaskaddr = htonl(g_init_cfg.host_nic_vocallo_cfg[vidx].host_ip_netmask);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 
-					"Sangoma transcoding interface %s using IP address %s, netmask %s\n", 
+					"Configured Sangoma transcoding interface %s, IP address %s, netmask %s\n", 
 					name, 
-					switch_inet_ntop(AF_INET, &g_init_cfg.host_nic_vocallo_cfg[vidx].host_ip, ipbuff, sizeof(ipbuff)),
-					switch_inet_ntop(AF_INET, &g_init_cfg.host_nic_vocallo_cfg[vidx].host_ip_netmask, netbuff, sizeof(netbuff)));
+					switch_inet_ntop(AF_INET, &host_ipaddr, ipbuff, sizeof(ipbuff)),
+					switch_inet_ntop(AF_INET, &host_netmaskaddr, netbuff, sizeof(netbuff)));
+			strncpy(g_vocallo_names[vidx], name, sizeof(g_vocallo_names[vidx])-1);
+			g_vocallo_names[vidx][sizeof(g_vocallo_names[vidx])-1] = 0;
 			vidx++;
 		}
 	} else {
