@@ -1,8 +1,11 @@
 freeswitch (1.0.4-1ubuntu2) karmic; urgency=low
 
-    * upgrade: Add more verbosity when building to make it easier to find build errors.
-    * upgrade: Remove the requirement for EXACTLY automake1.9 and change it to need atleast automake 1.9
-    * upgrade: Add the modules (directory, cluechoo, and valet_parking) to the build files. These are in the standard build, so they should be here too.
+    * upgrade: Add more verbosity when building to make it easier to find build
+      errors.
+    * upgrade: Remove the requirement for EXACTLY automake1.9 and change it to
+      need atleast automake 1.9
+    * upgrade: Add the modules (directory, cluechoo, and valet_parking) to the
+      build files. These are in the standard build, so they should be here too.
 
  -- William King <quentusrex@gmail.com>  Fri, 18 Dec 2009 14:27:42 -0800
 

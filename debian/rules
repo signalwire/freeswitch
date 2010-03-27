@@ -5,7 +5,6 @@
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
 export DH_OPTIONS
-export DH_COMPAT=4
 export DEB_DH_INSTALL_SOURCEDIR=debian/tmp
 export PASSTHRU_CODEC_MODULES=codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr
 # Modules listed by those built by default, then those that are added in this package
