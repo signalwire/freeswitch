@@ -11,7 +11,7 @@
 <macro name="timeleft">
   <input pattern="(\d+):(\d+)">
     <match>
-      <action function="speak-text" data="il y a $1 minutes et de $2 secondes de restant"/>
+      <action function="speak-text" data="il reste $1 minutes et $2 secondes"/>
     </match>
   </input>
 </macro>
