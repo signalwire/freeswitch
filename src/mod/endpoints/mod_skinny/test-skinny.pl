@@ -1,8 +1,19 @@
 #!/usr/bin/perl
 
+# Copyright (c) 2010 Mathieu Parent <math.parent@gmail.com>.
+# All rights reserved.  This program is free software; you can redistribute it
+# and/or modify it under the same terms as Perl itself.
+
+BEGIN {
+    push @INC, 'src/mod/endpoints/mod_skinny';
+}
+
 use strict;
 use warnings;
-use IO::Socket;
+
+use Data::Dumper;
+use Net::Skinny;
+use Net::Skinny::Protocol qw/:all/;
 
 #Config
 my $skinny_server = '127.0.0.1';
@@ -11,69 +22,17 @@ my $device_ip = 10+256*(11+256*(12+256*13)); # 10.11.12.13
 #======
 $| = 1;
 
-my $socket;
-
-sub skinny_connect
-{
-	$socket = IO::Socket::INET->new(
+my $socket = Net::Skinny->new(
 		PeerAddr => $skinny_server,
 		PeerPort => 2000,
 		);
-}
 
-sub skinny_send
-{
-	my $type = shift;
-	my $data = shift;
-	my $len = length($data)+4;
-	printf "Sending message (length=%d, type=%X)", $len, $type;
-	$socket->send(
-		pack("VVV", $len, 0, $type).
-		$data);
-	printf ".\n";
+if(!$socket) {
+    print "Unable to connect to server\n";
+    exit 1;
 }
-
-sub skinny_recv
-{
-	my $buf;
-	$socket->recv($buf, 4);
-	my $len = unpack("V", $buf);
-	printf "Receiving message (length=%d,", $len;
-	if($len < 4) {
-		printf "type=?).\n";
-		printf "Problem! Length is < 4.\n";
-		exit 1;
-	}
-	$socket->recv($buf, 4); #reserved
-	$socket->recv($buf, 4); #type
-	my $type = unpack("V", $buf);
-	printf "type=%X)", $type;
-	if($len > 4) {
-		$socket->recv($buf, $len-4);
-	}
-	printf ".\n";
-}
-
-sub skinny_sleep
-{
-	my $t = shift;
-	
-	printf "Sleeping %d seconds", $t;
-	while(--$t){
-		sleep(1);
-		printf "." if $t % 10;
-		printf "_" unless $t % 10;
-	}
-	printf ".\n";
-}
-
 # =============================================================================
-# 
-# =============================================================================
-skinny_connect();
-
-# =============================================================================
-skinny_send(0x0001, # Register
+$socket->send_message(REGISTER_MESSAGE, # Register
 	pack("a16VVVVV",
 		$device_name,
 		0, # userId;
@@ -82,48 +41,41 @@ skinny_send(0x0001, # Register
 		7, # deviceType;
 		0, # maxStreams;
 	));
-skinny_recv(); # RegisterAck
+$socket->receive_message(); # RegisterAck
 
-skinny_send(0x0002, # Port
+$socket->send_message(0x0002, # Port
 	pack("n", 2000
 	));
 
-skinny_send(0x002b, # HeadSetStatus
+$socket->send_message(HEADSET_STATUS_MESSAGE,
 	pack("V",
 		2, # Off
 	));
 
-skinny_recv(); # CapabilitiesReq
-skinny_send(0x0010, # CapabilitiesRes
+$socket->receive_message(); # CapabilitiesReq
+$socket->send_message(CAPABILITIES_RES_MESSAGE,
 	pack("V"."Vva10"."Vva10",
 		2, # count
 		2, 8, "", # codec, frames, res
 		4, 16, "", # codec, frames, res
 	));
 
-skinny_send(0x000e, # ButtonTemplateReqMessage
-	"");
-skinny_recv(); # ButtonTemplateMessage
+$socket->send_message(BUTTON_TEMPLATE_REQ_MESSAGE, "");
+$socket->receive_message(); # ButtonTemplateMessage
 
-skinny_send(0x0028, # SoftKeyTemplateReq
-	"");
-skinny_recv(); # SoftKeyTemplateRes
+$socket->send_message(SOFT_KEY_TEMPLATE_REQ_MESSAGE, "");
+$socket->receive_message(); # SoftKeyTemplateRes
 
-skinny_send(0x0025, # SoftKeySetReq
-	"");
-skinny_recv(); # SoftKeySetRes
+$socket->send_message(SOFT_KEY_SET_REQ_MESSAGE,	"");
+$socket->receive_message(); # SoftKeySetRes
 
-skinny_send(0x000B, # LineStatReq
-	pack("V", 1));
-skinny_recv(); # LineStat
+$socket->send_message(LINE_STAT_REQ_MESSAGE, pack("V", 1));
+$socket->receive_message(); # LineStat
 
-skinny_send(0x002D, # RegisterAvailableLines
-	pack("V", 2
-	));
+$socket->send_message(REGISTER_AVAILABLE_LINES_MESSAGE, pack("V", 2));
 
 while(1) {
-	skinny_sleep(20);
-	skinny_send(0x0000, # keepalive
-		"");
-	skinny_recv(); # keepaliveack
+	$socket->sleep(20);
+	$socket->send_message(KEEP_ALIVE_MESSAGE, "");
+	$socket->receive_message(); # keepaliveack
 }
