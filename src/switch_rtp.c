@@ -1811,7 +1811,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 
 	if (rtp_session->jb && rtp_session->recv_msg.header.version == 2 && *bytes) {
-		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te) {
+		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
+			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 			stfu_n_reset(rtp_session->jb);
 		}
 
@@ -1983,7 +1984,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto recvfrom;
 		}
 
-		if (bytes && rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te) {
+		if (bytes && rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
+			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 			rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
 		}
 
