@@ -1,5 +1,5 @@
+opt/freeswitch/include/*
 opt/freeswitch/lib/*.a
 opt/freeswitch/lib/*.la
 opt/freeswitch/mod/*.a
 opt/freeswitch/mod/*.la
-opt/freeswitch/include/*

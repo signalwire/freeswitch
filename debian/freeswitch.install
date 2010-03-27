@@ -144,7 +144,6 @@ opt/freeswitch/mod/mod_sndfile.so*
 opt/freeswitch/mod/mod_snom.so*
 opt/freeswitch/mod/mod_sofia.so*
 opt/freeswitch/mod/mod_speex.so*
-opt/freeswitch/mod/mod_speex.so*
 opt/freeswitch/mod/mod_spy.so*
 opt/freeswitch/mod/mod_syslog.so*
 opt/freeswitch/mod/mod_tone_stream.so*
@@ -161,4 +160,3 @@ opt/freeswitch/mod/ozmod_skel.so*
 opt/freeswitch/mod/ozmod_ss7_boost.so*
 opt/freeswitch/mod/ozmod_wanpipe.so*
 opt/freeswitch/mod/ozmod_zt.so*
-
