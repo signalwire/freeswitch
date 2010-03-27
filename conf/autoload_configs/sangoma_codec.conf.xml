@@ -1,0 +1,20 @@
+<configuration name="sangoma_codec.conf" description="Sangoma Codec Configuration">
+
+	<settings>
+		<!-- nothing to put here yet -->
+	</settings>
+
+	<vocallos> 
+
+		<vocallo name="eth5">
+			<!-- Starting UDP port for the vocallo -->
+			<param name="baseudp" value="5000"/>
+			<!-- Starting IP address to use for the vocallo modules -->
+			<param name="vocalloaddr" value="10.1.1.100"/>
+		</vocallo>
+
+	</vocallos>
+
+
+</configuration>
+
