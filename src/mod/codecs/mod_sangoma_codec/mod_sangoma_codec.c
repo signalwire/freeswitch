@@ -716,6 +716,7 @@ static int sangoma_logger(int level, char *fmt, ...)
 	if (ret == -1) {
 		return -1;
 	}
+	va_end(ap);
 
 	switch (level) {
 	case SNGTC_LOGLEVEL_DEBUG:
