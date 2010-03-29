@@ -1,6 +1,6 @@
 <configuration name="nibblebill.conf" description="Nibble Billing">
   <settings>
-    <!-- See http://wiki.freeswitch.org/index.php?title=Mod_nibblebill for help with these options -->
+    <!-- See http://wiki.freeswitch.org/wiki/Mod_nibblebill for help with these options -->
 
     <!-- Information for connecting to your database -->
     <param name="db_username" value="bandwidth.com"/>
