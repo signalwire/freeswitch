@@ -201,7 +201,7 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 					  codec_reg_leg->sample_rate, codec_reg_leg->ms*1000, sess->sessid);
 
 	/* create the RTP socket, dont use the session pool since the session may go away while the RTP socket should linger around 
-	 * until sangoma_transcode decides to kill it */
+	 * until sangoma_transcode decides to kill it (possibly because the same RTP session is used for a different call) */
 	rtp_session = switch_rtp_new(local_ip, rtp_port, 
 			codec_ip, codec_reply_leg->codec_udp_port, 
 			iana,
@@ -938,7 +938,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
+
 	for (c = 0; g_codec_map[c].codec_id != -1; c++) {
+
+		/* let know the library which iana to use */
+		sngtc_set_iana_code_based_on_codec_id(g_codec_map[c].codec_id, g_codec_map[c].iana);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Mapped codec %d to IANA %d\n", g_codec_map[c].codec_id, g_codec_map[c].iana);
+
 		/* SWITCH_ADD_CODEC allocates a codec interface structure from the pool the core gave us and adds it to the internal interface 
 		 * list the core keeps, gets a codec id and set the given codec name to it.
 		 * At this point there is an empty shell codec interface registered, but not yet implementations */
