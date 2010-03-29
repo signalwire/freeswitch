@@ -11,9 +11,9 @@ BEGIN {
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Net::Skinny;
 use Net::Skinny::Protocol qw/:all/;
+use Net::Skinny::Message;
 
 #Config
 my $skinny_server = '127.0.0.1';
@@ -32,50 +32,58 @@ if(!$socket) {
     exit 1;
 }
 # =============================================================================
-$socket->send_message(REGISTER_MESSAGE, # Register
-	pack("a16VVVVV",
-		$device_name,
-		0, # userId;
-		1, # instance;
-		$device_ip,# ip;
-		7, # deviceType;
-		0, # maxStreams;
-	));
+$socket->send_message(
+    REGISTER_MESSAGE,
+    device_name => $device_name,
+    user_id => 0,
+    instance => 1,
+    ip => $device_ip,
+    device_type => 7,
+    max_streams => 0,
+    );
 $socket->receive_message(); # RegisterAck
 
-$socket->send_message(0x0002, # Port
-	pack("n", 2000
-	));
+$socket->send_message(
+    PORT_MESSAGE,
+	port => 2000,
+	);
 
-$socket->send_message(HEADSET_STATUS_MESSAGE,
-	pack("V",
-		2, # Off
-	));
-
+$socket->send_message(
+    HEADSET_STATUS_MESSAGE,
+	mode => 2, #Off
+	);
 $socket->receive_message(); # CapabilitiesReq
-$socket->send_message(CAPABILITIES_RES_MESSAGE,
-	pack("V"."Vva10"."Vva10",
-		2, # count
-		2, 8, "", # codec, frames, res
-		4, 16, "", # codec, frames, res
-	));
+$socket->send_message(
+    CAPABILITIES_RES_MESSAGE,
+    count => 2,
+    caps => pack("Vva10"."Vva10",
+		    2, 8, "", # codec, frames, res
+		    4, 16, "", # codec, frames, res
+	    )
+	);
 
-$socket->send_message(BUTTON_TEMPLATE_REQ_MESSAGE, "");
+$socket->send_message(BUTTON_TEMPLATE_REQ_MESSAGE);
 $socket->receive_message(); # ButtonTemplateMessage
 
-$socket->send_message(SOFT_KEY_TEMPLATE_REQ_MESSAGE, "");
+$socket->send_message(SOFT_KEY_TEMPLATE_REQ_MESSAGE);
 $socket->receive_message(); # SoftKeyTemplateRes
 
-$socket->send_message(SOFT_KEY_SET_REQ_MESSAGE,	"");
+$socket->send_message(SOFT_KEY_SET_REQ_MESSAGE);
 $socket->receive_message(); # SoftKeySetRes
 
-$socket->send_message(LINE_STAT_REQ_MESSAGE, pack("V", 1));
+$socket->send_message(
+    LINE_STAT_REQ_MESSAGE,
+    number => 1,
+    );
 $socket->receive_message(); # LineStat
 
-$socket->send_message(REGISTER_AVAILABLE_LINES_MESSAGE, pack("V", 2));
+$socket->send_message(
+    REGISTER_AVAILABLE_LINES_MESSAGE, 
+    count => 2
+    );
 
 while(1) {
 	$socket->sleep(20);
-	$socket->send_message(KEEP_ALIVE_MESSAGE, "");
+	$socket->send_message(KEEP_ALIVE_MESSAGE);
 	$socket->receive_message(); # keepaliveack
 }

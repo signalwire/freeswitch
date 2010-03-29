@@ -16,7 +16,7 @@ sub new {
     shift->SUPER::new(PeerPort => 2000, @_);
 }
 
-sub send_message
+sub send_data
 {
     my $self = shift;
 	my $type = shift;
@@ -27,6 +27,17 @@ sub send_message
 		pack("VVV", $len, 0, $type).
 		$data);
 	printf ".\n";
+}
+
+sub send_message
+{
+    my $self = shift;
+    my $type = shift;
+    return Net::Skinny::Message->new(
+        $self,
+        $type,
+        @_
+    )->send();
 }
 
 sub receive_message
