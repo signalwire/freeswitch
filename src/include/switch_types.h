@@ -288,7 +288,7 @@ typedef enum {
 	SSM_COUNTED
 } switch_say_method_t;
 
-/* WARNING, Do not forget to update *SAY_TYPE_NAMES[] in src/switch_ivr_play_say.c */
+/* WARNING, Do not forget to update *SAY_TYPE_NAMES[] in src/switch_ivr_say.c */
 typedef enum {
 	SST_NUMBER,
 	SST_ITEMS,
