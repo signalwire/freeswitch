@@ -63,5 +63,6 @@ rm -rf .git
 cd ..
 tar -czvf $dst_name.tar.gz $dst_dir
 tar -cjvf $dst_name.tar.bz2 $dst_dir
+tar -cJvf $dst_name.tar.xz $dst_dir
 rm -rf $dst_dir
 
