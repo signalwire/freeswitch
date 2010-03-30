@@ -1,0 +1,8 @@
+For Linux distros without gsmlib (eg: CentOS):
+
+Here are the original (ancient) sources for gsmlib, and the patch made by Ubuntu for modern compilers.
+
+In the directory gsmlib-1.10-patched-12ubuntu1 are the patched sources, ready for (no need to patch them again):
+	./configure
+	make
+	make install

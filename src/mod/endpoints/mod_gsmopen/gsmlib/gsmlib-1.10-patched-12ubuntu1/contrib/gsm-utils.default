@@ -1,0 +1,13 @@
+PHONEDEV=/dev/mobilephone  # or /dev/ttyS0 or /dev/ircomm0
+BAUDRATE=9600
+PIN=""  # or 1234
+
+SPOOLDIR=/var/spool/sms
+PRIORITIES=3
+
+SMSADMIN=root
+SUBJECT="SMS delivery report:"
+
+SMSPROCESSOR=""  # or /usr/bin/gsmsmsprocessor
+
+function do_accounting { true; }  # it's your turn

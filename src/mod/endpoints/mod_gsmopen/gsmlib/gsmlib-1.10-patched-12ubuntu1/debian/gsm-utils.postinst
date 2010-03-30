@@ -1,0 +1,31 @@
+#!/bin/sh -e
+
+# create gsmsms group if necessary.
+if ! grep -q ^gsmsms: /etc/group; then
+#      echo Adding system group: gsmsms.
+       addgroup --system gsmsms
+fi
+
+# create gsmsms user if necessary.
+if ! grep -q ^gsmsms: /etc/passwd; then
+#        echo Adding system user: gsmsms.
+        adduser --system --ingroup gsmsms \
+                --no-create-home --home /var/spool/sms gsmsms
+fi
+
+# allow gsmsms to use serial lines
+if ! groups gsmsms | grep -q dialout ; then
+        adduser gsmsms dialout
+fi
+
+# echo Updating spool directory structure: /var/spool/sms
+if [ ! -d /var/run/gsm-utils ]; then
+  mkdir /var/run/gsm-utils
+fi
+chown -R gsmsms:gsmsms /var/spool/sms /var/run/gsm-utils
+chmod 700 /var/spool/sms/*
+chmod 750 /var/spool/sms
+chmod 730 /var/spool/sms/queue* /var/spool/sms/tmp
+
+# Add the rest automatically..
+#DEBHELPER#

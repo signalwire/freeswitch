@@ -1,0 +1,29 @@
+.\" -*- eval: (nroff-mode) -*-
+.de TQ
+.br
+.ns
+.TP \\$1
+..
+.\" Like TP, but if specified indent is more than half
+.\" the current line-length - indent, use the default indent.
+.de Tp
+.ie \\n(.$=0:((0\\$1)*2u>(\\n(.lu-\\n(.iu)) .TP
+.el .TP "\\$1"
+..
+.TH GSMSIEXFER 1 "" "gsmsiexfer"
+.SH NAME
+gsmsiexfer \-  Siemens ME file transfer program for Siemens phones S25, S35, S45, ME45, SL45
+.SH SYNOPSIS
+.B gsmsiexfer --help
+.PP
+.SH DESCRIPTION
+\fIgsmsiexer\fP comes with no man page.  Try gsmsiexfer --help, or
+read the source.
+.PP
+.SH "SEE ALSO"
+.BR gsminfo(7),
+.BR gsmctl(1),
+.BR gsmsendsms(1),
+.BR gsmsmsd(8),
+.BR gsmsmsstore(1).
+

@@ -1,0 +1,157 @@
+Entries in sms.sms<0>:
+Inserting some entries
+Entries in sms.sms<1>:
+Entry#2:
+---------------------------------------------------------------------------
+Message type: SMS-SUBMIT
+SC address: ''
+Reject duplicates: 1
+Validity period format: relative
+Reply path: 0
+User data header indicator: 0
+Status report request: 0
+Message reference: 0
+Destination address: '0177123456'
+Protocol identifier: 0x0
+Data coding scheme: default alphabet
+Validity period: 2 days
+User data length: 9
+User data header: 0x
+User data: 'submit me'
+---------------------------------------------------------------------------
+
+
+Entry#3:
+---------------------------------------------------------------------------
+Message type: SMS-SUBMIT
+SC address: ''
+Reject duplicates: 1
+Validity period format: relative
+Reply path: 0
+User data header indicator: 0
+Status report request: 0
+Message reference: 0
+Destination address: ''
+Protocol identifier: 0x0
+Data coding scheme: default alphabet
+Validity period: 2 days
+User data length: 35
+User data header: 0x
+User data: 'This is a submit message, isn't it?'
+---------------------------------------------------------------------------
+
+
+Entry#1:
+---------------------------------------------------------------------------
+Message type: SMS-DELIVER
+SC address: '491710762100'
+More messages to send: 1
+Reply path: 0
+User data header indicator: 0
+Status report indication: 0
+Originating address: '01805000102'
+Protocol identifier: 0x39
+Data coding scheme: default alphabet
+SC timestamp: 12/17/1998 02:10:55 PM (+0100)
+User data length: 159
+User data header: 0x
+User data: 'Nicht vergessen! Die XtraWeihnachtsverlosung läuft noch bis zum 24.12. Nutzen Sie jetzt Ihre Gewinnchance und faxen Sie Ihren Teiln.-Gutschein an 0180/5000 056'
+---------------------------------------------------------------------------
+
+
+Entry#0:
+---------------------------------------------------------------------------
+Message type: SMS-DELIVER
+SC address: '491710762100'
+More messages to send: 1
+Reply path: 0
+User data header indicator: 0
+Status report indication: 0
+Originating address: '171'
+Protocol identifier: 0x39
+Data coding scheme: default alphabet
+SC timestamp: 04/16/1999 08:09:44 AM (+0200)
+User data length: 160
+User data header: 0x
+User data: 'T-D1 News bis 31.05.99 kostenlos testen! Über 90 Programme aus Politik, Wirtschaft, Börse, Sport direkt per SMS aufs Handy. Mehr darüber unter der Kurzwahl 2323'
+---------------------------------------------------------------------------
+
+
+Entries in sms.sms<2>:
+Entry#3:
+---------------------------------------------------------------------------
+Message type: SMS-SUBMIT
+SC address: ''
+Reject duplicates: 1
+Validity period format: relative
+Reply path: 0
+User data header indicator: 0
+Status report request: 0
+Message reference: 0
+Destination address: ''
+Protocol identifier: 0x0
+Data coding scheme: default alphabet
+Validity period: 2 days
+User data length: 35
+User data header: 0x
+User data: 'This is a submit message, isn't it?'
+---------------------------------------------------------------------------
+
+
+Entry#2:
+---------------------------------------------------------------------------
+Message type: SMS-SUBMIT
+SC address: ''
+Reject duplicates: 1
+Validity period format: relative
+Reply path: 0
+User data header indicator: 0
+Status report request: 0
+Message reference: 0
+Destination address: '0177123456'
+Protocol identifier: 0x0
+Data coding scheme: default alphabet
+Validity period: 2 days
+User data length: 9
+User data header: 0x
+User data: 'submit me'
+---------------------------------------------------------------------------
+
+
+Entry#1:
+---------------------------------------------------------------------------
+Message type: SMS-DELIVER
+SC address: '491710762100'
+More messages to send: 1
+Reply path: 0
+User data header indicator: 0
+Status report indication: 0
+Originating address: '01805000102'
+Protocol identifier: 0x39
+Data coding scheme: default alphabet
+SC timestamp: 12/17/1998 02:10:55 PM (+0100)
+User data length: 159
+User data header: 0x
+User data: 'Nicht vergessen! Die XtraWeihnachtsverlosung läuft noch bis zum 24.12. Nutzen Sie jetzt Ihre Gewinnchance und faxen Sie Ihren Teiln.-Gutschein an 0180/5000 056'
+---------------------------------------------------------------------------
+
+
+Entry#0:
+---------------------------------------------------------------------------
+Message type: SMS-DELIVER
+SC address: '491710762100'
+More messages to send: 1
+Reply path: 0
+User data header indicator: 0
+Status report indication: 0
+Originating address: '171'
+Protocol identifier: 0x39
+Data coding scheme: default alphabet
+SC timestamp: 04/16/1999 08:09:44 AM (+0200)
+User data length: 160
+User data header: 0x
+User data: 'T-D1 News bis 31.05.99 kostenlos testen! Über 90 Programme aus Politik, Wirtschaft, Börse, Sport direkt per SMS aufs Handy. Mehr darüber unter der Kurzwahl 2323'
+---------------------------------------------------------------------------
+
+
+Writing back to file

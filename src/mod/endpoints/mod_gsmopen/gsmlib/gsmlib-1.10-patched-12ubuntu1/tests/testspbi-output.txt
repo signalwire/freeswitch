@@ -1,0 +1,8 @@
+updating 'same name' tel# 23456 to new tel# 12345(index 5)
+deleting 'Nummer 3' tel# 3333333 (index #2)
+deleting 'Nummer 4' tel# 4444444 (index #4)
+inserting 'Nummer 4' tel# 4444444 (index #1)
+inserting 'Nummer 3' tel# 3333333 (index #3)
+1|Nummer 4|4444444
+3|Nummer 3|3333333
+5|same name|12345

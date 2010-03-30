@@ -1,0 +1,185 @@
+.\" -*- eval: (nroff-mode) -*-
+.de TQ
+.br
+.ns
+.TP \\$1
+..
+.\" Like TP, but if specified indent is more than half
+.\" the current line-length - indent, use the default indent.
+.de Tp
+.ie \\n(.$=0:((0\\$1)*2u>(\\n(.lu-\\n(.iu)) .TP
+.el .TP "\\$1"
+..
+.TH GSMSMSSTORE 8 "##DATE##" "gsmsmsstore v##VERSION##"
+.SH NAME
+gsmsmsstore \- SMS store manipulation program
+.SH SYNOPSIS
+.B gsmsmsstore
+[ \fB-a\fP ]
+[ \fB--add\fP ]
+[ \fB-b\fP \fIbaudrate\fP ]
+[ \fB--baudrate\fP \fIbaudrate\fP ]
+[ \fB-c\fP ]
+[ \fB--copy\fP ]
+[ \fB-C\fP \fIservice centre address\fP ]
+[ \fB--sca\fP \fIservice centre address\fP ]
+[ \fB-d\fP \fIdestination device or file\fP ]
+[ \fB--destination\fP \fIdestination device or file\fP ]
+[ \fB-h\fP ]
+[ \fB--help\fP ]
+[ \fB-I\fP \fIinit string\fP ]
+[ \fB--init\fP \fIinit string\fP ]
+[ \fB-k\fP ]
+[ \fB--backup\fP ]
+[ \fB-l\fP ]
+[ \fB--list\fP ]
+[ \fB-s\fP \fIsource device or file\fP ]
+[ \fB--source\fP \fIsource device or file\fP ]
+[ \fB-t\fP \fISMS store name\fP ]
+[ \fB--store\fP \fISMS store name\fP ]
+[ \fB-v\fP ]
+[ \fB--version\fP ]
+[ \fB-V\fP ]
+[ \fB--verbose\fP ]
+[ \fB-x\fP ]
+[ \fB--delete\fP ]
+[ \fB-X\fP ]
+[ \fB--xonxoff\fP ]
+{ \fIindices\fP }
+[ \fIphonenumber\fP \fItext\fP ]
+.PP
+.SH DESCRIPTION
+\fIgsmsmsstore\fP can store or retrieve SMS messages entries residing
+in a GSM mobile phone's SMS store to or from a file, add SMS messages
+to a store, or list the store's contents. Additionally, it is possible
+to add SMS submit messages to a store.
+.PP
+\fIgsmsmsstore\fP reads entries from the source which can be a mobile
+phone (if a serial device file is given) or a file (if a file name is
+given). The source is never modified. \fIgsmsmsstore\fP writes SMS
+messages to a destination file or device in the case of \fB--copy\fP,
+\fB--backup\fP, and \fB--add\fP.
+.PP
+The \fB--list\fP option does not change any file but just lists the
+contents to standard output.
+.PP
+The \fB--backup\fP and \fB--copy\fP options require both source and
+destination files or devices. The \fB--list\fP option requires a
+source. The \fB--add\fP and \fB--delete\fP options require a
+destination file or device.
+.PP
+If "-" is given as the parameter for the \fB--source\fP or
+\fB--destination\fP options, the SMS store is read from standard input 
+and/or written to standard output, respectively.
+.PP
+SMS message files are not human-readable.
+.PP
+Error messages are printed to the standard error output. If the program
+terminates on error the error code 1 is returned.
+.PP
+.SH OPTIONS
+.TP
+\fB-a\fP, \fB--add\fP
+Adds an SMS submit message with recipient address \fIphonenumber\fP and 
+text \fItext\fP to the destination.
+.TP
+\fB-b\fP \fIbaudrate\fP, \fB--baudrate\fP \fIbaudrate\fP
+The baud rate to use. The default baudrate is 38400.
+.TP
+\fB-c\fP, \fB--copy\fP
+This causes the contents of the source to be copied to the
+destination. After this operation the destination has exactly the same
+contents as the source.  If \fIindices\fP are given on the command
+line only those SMS messages denoted by the indices are copied to the
+destination.
+.TP
+\fB-C\fP \fIservice centre address\fP, \fB--sca\fP \fIservice centre address\fP
+Sets the service centre address to use for all SUBMIT SMSs (may not
+work with some phones).
+.TP
+\fB-d\fP \fIdestination\fP, \fB--destination\fP \fIdestination\fP
+The destination device or file.
+.TP
+\fB-h\fP, \fB--help\fP
+Prints an option summary.
+.TP
+\fB-I\fP \fIinit string\fP, \fB--init\fP \fIinit string\fP
+Initialization string to send to the TA (default: "E0"). Note that the
+sequence "ATZ" is sent first.
+.TP
+\fB-k\fP, \fB--backup\fP
+This causes those entries to be added from the source to the
+destination that are not already present in the destination.  If
+\fIindices\fP are given on the command line only those SMS messages
+denoted by the indices are backed up (ie. added) to the destination.
+.TP
+\fB-l\fP, \fB--list\fP
+Prints out the entire contents of the source in human-readable form.
+.TP
+\fB-s\fP \fIsource\fP, \fB--source\fP \fIsource\fP
+The source device or file.
+.TP
+\fB-t\fP \fISMS store name\fP, \fB--store\fP \fISMS store name\fP
+The name of the SMS store to read from or write to. This information is
+only used for device sources and destinations. A commonly available message
+store is "SM" (SIM card).
+.TP
+\fB-v\fP, \fB--version\fP
+Prints the program version.
+.TP
+\fB-V\fP, \fB--verbose\fP
+Prints out a detailed progress report.
+.TP
+\fB-x\fP, \fB--delete\fP
+Delete the SMS messages as denoted by the \fIindices\fP from the destination.
+.TP
+\fB-X\fP, \fB--xonxoff\fP
+Uses software handshaking (XON/XOFF) for accessing the device.
+.PP
+.SH EXAMPLES
+The following command lists all entries in the mobile phone connected
+to \fI/dev/mobilephone\fP to the standard output:
+.PP
+.nf
+gsmsmsstore -b 19200 -s /dev/mobilephone -t SM -l
+.fi
+.PP
+The following adds entries 4, 7, and 10 from the device
+\fI/dev/mobilephone\fP to the file \fIsmsstore\fP:
+.PP
+.nf
+gsmsmsstore -s /dev/mobilephone -d /home/fred/smsstore
+    -t SM -b 4 7 10
+.fi
+.PP
+.SH AUTHOR
+Peter Hofmann <software@pxh.de>
+.PP
+.SH BUGS
+Report bugs to software@pxh.de.  Include a complete, self-contained
+example that will allow the bug to be reproduced, and say which
+version of \fIgsmsmsstore\fP you are using.
+.PP
+.SH COPYRIGHT
+Copyright \(co 1999 Peter Hofmann
+.LP
+\fIgsmsmsstore\fP is free software; you can redistribute it and/or
+modify it under the terms of the GNU Library General Public License as
+published by the Free Software Foundation; either version 2, or (at
+your option) any later version.
+.LP
+\fIgsmsmsstore\fP is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
+.LP
+You should have received a copy of the GNU Library General Public License
+along with \fIgsmsmsstore\fP; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+.PP
+.SH "SEE ALSO"
+.BR gsminfo(7),
+.BR gsmctl(1),
+.BR gsmpb(1),
+.BR gsmsendsms(1),
+.BR gsmsmsd(8).

@@ -1,0 +1,23 @@
+<configuration name="gsmopen.conf" description="GSMopen Configuration">
+  <global_settings>
+    <param name="debug" value="8"/>
+    <param name="dialplan" value="XML"/>
+    <param name="context" value="default"/>
+    <param name="hold-music" value="$${moh_uri}"/>
+    <param name="destination" value="9999"/>
+  </global_settings>
+  <!-- one entry here per gsmopen interface -->
+  <per_interface_settings>
+    <interface id="1" name="interface1">
+	<param name="hold-music" value="$${moh_uri}"/>
+	<param name="dialplan" value="XML"/>
+	<param name="context" value="default"/>
+    	<param name="destination" value="5000"/>
+    	<param name="alsacname" value="plughw:1"/>
+    	<param name="alsapname" value="plughw:1"/>
+    	<param name="controldevice_name" value="/dev/ttyACM0"/>
+    </interface>
+    <!-- following interfaces are commented out!
+    -->
+  </per_interface_settings>
+</configuration>

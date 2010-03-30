@@ -1,0 +1,244 @@
+gsmlib (1.10-12ubuntu1) hardy; urgency=low
+
+  * Merge from Debian unstable. Remaining Ubuntu changes:
+    - [debian/gsm-utils.postinst, debian/gsm-utils.init]
+      Create /var/run/gsm-utils if it does not exist
+    - Actually fix the init script (debian #377448)
+    - Set Ubuntu maintainer adress.
+
+ -- Albin Tonnerre <lutin@ubuntu.com>  Wed, 12 Dec 2007 00:45:00 +0100
+
+gsmlib (1.10-12) unstable; urgency=low
+
+  * addgroup --system gsmsms works better.  Thanks Jon
+  * only delete gsmsms on purge
+     - gsm-utils: deletes and recreates the gsmsms user on each upgrade
+     (Closes: #346238)
+     - gsm-utils fails installation / addgroup: The user gsmsms; does
+     not exist (Closes: #445404)
+  * lintian cleanup: debian-rules-ignores-make-clean-error substvar-
+    source-version-is-deprecated
+  * Scripts are installed +x
+    - gsm-utils: uselessly installs non-executable scripts into /usr/bin
+    (Closes: #346230)
+  * Remove bogus symlink
+    - gsm-utils: wrong symlink for manpage gsmsiectl.1 (Closes: #322382)
+    - gsm-utils: gsmsiectl.1 dangling symlink (Closes: #399582)
+  * debian/gsm-utils.init reload/restart was not calling --stop. Thanks
+    Barry
+    - init script calls --start twice (Closes: #377448)
+
+ -- Mark Purcell <msp@debian.org>  Mon, 08 Oct 2007 21:44:00 +0100
+
+gsmlib (1.10-11) unstable; urgency=low
+
+  * Create system group gsmsms - Thanks Emmanuel
+     - gsm-utils: creates group in non-system gid range (Closes: #353967)
+     - gsm-utils: postinst should create system grp gsmsms (Closes:
+    #390266)
+  * Upgrade to compat 4
+  * Apply gcc-4.3 patch from Martin
+    - FTBFS with GCC 4.3: missing #includes (Closes: #417222)
+
+ -- Mark Purcell <msp@debian.org>  Sat, 29 Sep 2007 18:22:56 +0100
+
+gsmlib (1.10-10ubuntu3) feisty; urgency=low
+
+  * Rebuild for ldbl128 change (powerpc, sparc).
+  * Set Ubuntu maintainer address.
+
+ -- Matthias Klose <doko@ubuntu.com>  Thu,  1 Mar 2007 22:37:57 +0000
+
+gsmlib (1.10-10ubuntu2) edgy; urgency=low
+
+  * [debian/gsm-utils.postinst, debian/gsm-utils.init]
+    Create /var/run/gsm-utils if it does not exist
+
+ -- Matt Zimmerman <mdz@ubuntu.com>  Tue, 11 Jul 2006 13:59:12 -0700
+
+gsmlib (1.10-10ubuntu1) edgy; urgency=low
+
+  * Re-sync with Debian
+  * debian/gsm-utils.init reload/restart was not calling --stop
+
+ -- Barry deFreese <bddebian@comcast.net>  Sat,  8 Jul 2006 22:52:23 -0400
+
+gsmlib (1.10-10) unstable; urgency=low
+
+  * FTBFS with G++ 4.1: extra qualifications (Closes: #356109)
+
+ -- Mark Purcell <msp@debian.org>  Sat, 20 May 2006 21:54:42 +0100
+
+gsmlib (1.10-9) unstable; urgency=low
+
+  * library package needs to be renamed (libstdc++ allocator change)
+    (Closes: #339179)
+
+ -- Mark Purcell <msp@debian.org>  Mon, 21 Nov 2005 21:19:51 +0000
+
+gsmlib (1.10-8) unstable; urgency=low
+
+  * removal of automake1.6 (Closes: #335123)
+  * fails with dash [bashisms in scripts] (Closes: #309834)
+  * Update libtool Fixes: gsmlib(GNU/k*BSD): FTBFS: out of date libtool scripts (Closes:
+    #319688)
+  * [INTL:de] German PO file corrections (Closes: #314060)
+  * Fix: old-fsf-address-in-copyright-file
+
+ -- Mark Purcell <msp@debian.org>  Thu,  3 Nov 2005 22:40:19 +0000
+
+gsmlib (1.10-7) unstable; urgency=low
+
+  * C++ 4.0 transition
+  * Closes: #315864: Missing manpages
+  * gsm-utils: maintainer-script-needs-depends-on-adduser postinst
+
+ -- Mark Purcell <msp@debian.org>  Sat, 23 Jul 2005 00:46:31 +1000
+
+gsmlib (1.10-6) unstable; urgency=low
+
+  * Rebuild for invalid dependancies
+  * Closes: #258056: libgsmme 99% cpu usage
+    - Patch from Emard
+  * Closes: #274382: FTBFS with gcc-3.4: template-id `operator&lt;
+    &lt;&gt;' for `bool gsmlib::operator&lt;(const
+    gsmlib::MapKey&lt;gsmlib::SortedPhonebookBase&gt;&amp;, const
+    gsmlib::MapKey&lt;gsmlib::SortedPhonebookBase&gt;&amp;)' does not
+    match any template declaration
+    - Patch from Andreas Jochens
+  * Closes: #294251: FTBFS (amd64/gcc-4.0): explicit qualification in
+    declaration of `bool gsmlib::operator&lt;(const
+    gsmlib::MapKey&lt;SortedStore&gt;&amp;, const
+    gsmlib::MapKey&lt;SortedStore&gt;&amp;)'
+    - Patch from Andreas Jochens
+  * Closes: #200189: Patch and contribution 
+    +  Added multi-queue-priority-system and syslog patch (Matthias Goebl)
+    +  Included init, spool and requeue scripts for gsmsmsd (Matthias Goebl)
+    +  gsmsmsd runs with own user and group (gsmsms:gsmsms) (Matthias Goebl)
+
+ -- Mark Purcell <msp@debian.org>  Tue, 17 May 2005 11:34:45 +0100
+
+gsmlib (1.10-5) unstable; urgency=low
+
+  * Change Section: libdevel
+  * gsm_unix_serial.cc patch from Daniel Schepler to fix g++-3.3
+    compliation. Thanks. (Closes: Bug#195151)
+
+ -- Mark Purcell <msp@debian.org>  Sat, 19 Jul 2003 15:57:28 +1000
+
+gsmlib (1.10-4) unstable; urgency=low
+
+  * Include file descriptor leak patch from Edd Dumbill (Closes:
+    Bug#168475)
+  * lintian cleanup: description-synopsis-might-not-be-phrased-properly
+  * lintian cleanup: configure-generated-file-in-source
+
+ -- Mark Purcell <msp@debian.org>  Sun,  9 Feb 2003 14:04:54 +1100
+
+gsmlib (1.10-3) unstable; urgency=low
+
+  * New Maintainer (Closes: Bug#180061). Thanks Mikael for your work.
+
+ -- Mark Purcell <msp@debian.org>  Sat,  8 Feb 2003 16:55:26 +1100
+
+gsmlib (1.10-2) unstable; urgency=low
+
+  * Rebuild to use the new c++ ABI (GCC 3.2)
+
+ -- Mikael Hedin <micce@debian.org>  Thu, 23 Jan 2003 20:57:50 +0100
+
+gsmlib (1.10-1) unstable; urgency=low
+
+  * New upstrem release.
+
+ -- Mikael Hedin <micce@debian.org>  Wed,  6 Nov 2002 17:44:17 +0100
+
+gsmlib (1.9-2) unstable; urgency=low
+
+  * Made new rules for the config.guess/sub update thing (closes: #146865,
+    #146867).
+
+ -- Mikael Hedin <micce@debian.org>  Tue, 14 May 2002 09:28:03 +0200
+
+gsmlib (1.9-1) unstable; urgency=low
+
+  * New upstream version.
+  * Use chrpath to get rid of rpaths.
+  * Add mini-manpage for gsmsiexfer.
+  * Remove b-d on auto-stuff, we don't use them.
+
+ -- Mikael Hedin <micce@debian.org>  Mon, 13 May 2002 22:10:28 +0200
+
+gsmlib (1.8-2) unstable; urgency=low
+
+  * Removed b-d on gcc 3.0, as they are no longer nessecary.
+
+ -- Mikael Hedin <micce@debian.org>  Thu, 24 Jan 2002 12:59:07 +0100
+
+gsmlib (1.8-1) unstable; urgency=low
+
+  * New upstream version.
+  * Revert the arch hack, now it should compile with either g++.
+  * Include the new lib in libgsmme1.  Run dh_makeshlibs -V because of this.
+  * Added info for gsmsiectl in gsmctl(1).
+
+ -- Mikael Hedin <micce@debian.org>  Wed,  9 Jan 2002 22:38:45 +0100
+
+gsmlib (1.7-2) unstable; urgency=low
+
+  * gsm-utils: Added shlibs:Depends (closes: #126127). 
+  * Spelling correction (closes: #124705, #124972)
+  * Rm libgsmme1.postins, and let dh_makeshlibs take care of ldconfig.
+  * Made explicit arch list without sparc and arm, they cannot use g++-3.0
+    right now.
+
+ -- Mikael Hedin <micce@debian.org>  Sat, 22 Dec 2001 20:27:54 +0100
+
+gsmlib (1.7-1) unstable; urgency=low
+
+  * New upstream
+  * Use gcc-3.0 and g++-3.0, 2.95 doesn't compile.
+
+ -- Mikael Hedin <micce@debian.org>  Thu,  1 Nov 2001 10:24:33 +0100
+
+gsmlib (1.6-5) unstable; urgency=low
+
+  * Updated manpage (closes: #110973)
+  * Corrected problem with OP status (closes: #110970)
+
+ -- Mikael Hedin <micce@debian.org>  Sat,  8 Sep 2001 18:12:17 +0200
+
+gsmlib (1.6-4) unstable; urgency=low
+
+  * Support DEB_BUILD_OPTIONS
+  * Changed libgsmme-dev to section devel.
+  * Reran libtoolize.
+  * Lots of small patches to compile with g++-3.0. (Closes: #104411) 
+  * Removed dh_testversion.
+
+ -- Mikael Hedin <micce@debian.org>  Thu, 12 Jul 2001 16:06:23 +0200
+
+gsmlib (1.6-3) unstable; urgency=low
+
+  * Various minor corrections.
+
+ -- Mikael Hedin <mikael.hedin@irf.se>  Thu,  8 Mar 2001 16:24:07 +0100
+
+gsmlib (1.6-2) unstable; urgency=low
+
+  * Dont install INSTALL.  Correct indentation for libgsmme1 description.
+
+ -- Mikael Hedin <mikael.hedin@irf.se>  Tue,  6 Mar 2001 14:55:05 +0100
+
+gsmlib (1.6-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Mikael Hedin <mikael.hedin@irf.se>  Mon, 29 Jan 2001 17:57:21 +0100
+
+gsmlib (1.5-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Mikael Hedin <mikael.hedin@irf.se>  Thu, 14 Dec 2000 01:06:40 +0100
+

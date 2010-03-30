@@ -1,0 +1,47 @@
+Entries in pbs-copy.pb:
+  Text: Dieter Meier  Telephone: 017793045
+  Text: Edgar Hofmann  Telephone: +4942345
+  Text: Goethe  Telephone: 847159
+  Text: Hans Hofmann  Telephone: 0171
+  Text: Hans-Dieter Schmidt  Telephone: 82345
+  Text: Hans-Dieter Schmidt  Telephone: 13333345
+  Text: Heiner Müller  Telephone: 7890
+  Text: line with |  Telephone: 0815
+  Text: line with\  Telephone: 0815
+  Text: One lineback to start  Telephone: 0815
+  Text: two
+line  Telephone: 0815
+Removing entries with telephone == 0815
+Entries in pbs-copy.pb<2>:
+  Text: Edgar Hofmann  Telephone: +4942345
+  Text: Hans Hofmann  Telephone: 0171
+  Text: Dieter Meier  Telephone: 017793045
+  Text: Hans-Dieter Schmidt  Telephone: 13333345
+  Text: Heiner Müller  Telephone: 7890
+  Text: Hans-Dieter Schmidt  Telephone: 82345
+  Text: Goethe  Telephone: 847159
+Inserting some entries
+Entries in pbs-copy.pb<3>:
+  Text: Dieter Meier  Telephone: 017793045
+  Text: Edgar Hofmann  Telephone: +4942345
+  Text: Goethe  Telephone: 847159
+  Text: Hans Hofmann  Telephone: 0171
+  Text: Hans-Dieter Schmidt  Telephone: 13333345
+  Text: Hans-Dieter Schmidt  Telephone: 41598254
+  Text: Hans-Dieter Schmidt  Telephone: 82345
+  Text: Hans-Dieter|Hofmann  Telephone: 34058
+  Text: Heiner Müller  Telephone: 7890
+  Text: new line with  continued  Telephone: 08152
+Erasing all Hans-Dieter Schmidt entries
+About to erase:
+  Text: Hans-Dieter Schmidt  Telephone: 13333345
+  Text: Hans-Dieter Schmidt  Telephone: 41598254
+  Text: Hans-Dieter Schmidt  Telephone: 82345
+Writing back to file
+|Dieter Meier|017793045
+|Edgar Hofmann|+4942345
+|Goethe|847159
+|Hans Hofmann|0171
+|Hans-Dieter\|Hofmann|34058
+|Heiner Müller|7890
+|new line with \r continued|08152

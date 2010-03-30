@@ -1,0 +1,35 @@
+GSMopen, GSM Endpoint and Trunk
+
+This is just a prototype.
+
+put this directory in freeswitch.trunk/src/mod/endpoints/
+
+make clean; make; make install
+
+Is not getting its configuration from the configuration file, it's all hardcoded but it needs the configuration file.
+
+Copy gsmopen.conf.xml in /usr/local/freeswitch/conf/autoload_configs/
+
+You must have the device on serial port /dev/ttyACM0 and the audio as second soundcard plughw:1 (if you do not have a first soundcard, just modprobe snd-dummy before to connect the usb thingy).
+
+Put the volumes (with alsamixer -c1 -Vall) as: speaker 80, autogain on, mic off, mic capt 0. 
+
+Then, with alsamixer -c1 -Vcapture, be sure capture is active (eg, press the spacebar until the red CAPTURE appear). When it all working, adjust to your taste.
+
+It answer calls, make calls, receive sms, and send sms (with the CLI command "sendsms").
+
+Copy ciapalo in /usr/local/bin/ (is the program automatically spawned when an SMS is received).
+
+Copy asound.conf in /etc/asound.conf, it will spare you cpu cycles when rate conversion is required (always).
+
+All documentation on compiling, using, configuring, 
+tricks and tweaks, possible problems at: 
+
+http://wiki.freeswitch.org/wiki/GSMopen_GSM_Endpoint_and_Trunk
+
+Enjoy
+
+-giovanni
+
+< gmaruzz at gmail dot com >
+

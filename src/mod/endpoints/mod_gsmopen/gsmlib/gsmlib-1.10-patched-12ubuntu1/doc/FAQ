@@ -1,0 +1,101 @@
+*** 1. I get the error
+       /usr/local/bin/gsmsmsd [ERROR]: cannot route status report message to TE
+
+Some phones/modems cannot route all kinds of SMS to the TE
+(computer). Please try
+
+  gsmsmsd no_stat
+
+This is documented in the gsmsmsd manual page.
+
+
+*** 2. Siemens M20T expects an initial PIN.
+
+For the Siemens M20T an initial PIN must be send once (probably when
+it is switched on or the computer is powered on). This PIN is used for
+all subsequent invocations of gsmlib-based programs. The trick is to
+issue the following program (eg. in the rc-scripts of the operating system):
+
+  gsmctl -I "+cpin=<MY PIN>"
+
+
+*** 3. Sending SMS with or retrieving SMS from my Ericsson SH888 does
+not work.
+
+Set the environment variable GSMLIB_SH888_FIX:
+
+export GSMLIB_SH888_FIX=1     (bash)
+setenv GSMLIB_SH888_FIX 1     (tcsh)
+
+If it works now, I need your model number. You could just enter
+"AT+CGMM" in a terminal program and send me the results. Alternatively 
+set the environment variable GSMLIB_DEBUG=2 and me the dump.
+
+*** 4. I get the error "ME/TA error 'Unidentified subscriber' (code
+28)" when trying to send SMS using gsmsendsms or gsmsmsd.
+
+The SMS service centre address (SCA, the phone number of the centre that is
+accepting SMS for delivery) is not set correctly in your phone. There
+are three ways to correct this:
+
+1. set the default SCA (example is for Germany T-D1):
+
+  gsmctl -o setsca "+491710760000"
+
+2. Use the menus of your phone to set the SMS SCA.
+
+3. Use the option "--sca 1234567" for the gsmsmsd, gsmsmsstore, and
+gsmsendsms programs. This tries to set the SCA in the SMS itself (does
+not change default SCA) and might not work with all phones.
+
+*** 5. gsmlib works unreliably with my phone.
+
+Try another baudrate, even higher baudrates sometimes work better then
+lower ones.
+
+*** 6. On Win32 accessing the COM device fails.
+
+Use COMx: (x is the number of the COM device) instead of the UNIX
+device name. If this doesn't work use "\\.\COMx:".
+
+*** 7. Windows 2000 Does Not Support Mapping Virtual COM Ports to
+       Infrared Ports.
+
+Windows 2000 users should follow the instructions in
+support.microsoft.com article Q252795 in order to connect with their
+mobile.
+
+*** 8. gcc-compiled shared C++ libraries do not work properly on some
+       commercial UNIX systems and with older version of gcc.
+
+The symptoms may be that the program dumps core on exceptions (AIX) or that
+global constructors are not called (Solaris).
+
+Try to compile gsmlib with
+
+  ./configure --disable-shared --enable-static
+
+if you encounter strange problems.
+
+*** 9. How to support unicode? 
+
+You need 6 steps:
+
+1. set datacodingschema to DCS_SIXTEEN_BIT_ALPHABET
+
+2. set your locale correctly, for example, my locale, china. 
+    setlocale(LC_ALL, "chs");
+
+3. translate MBCS(multiple byte character set) string to unicode string.
+    wchar_t wstr[ 1000 ];
+    memset(wstr, 0, 2000);
+    mbstowcs(wstr, data.c_str(), data.length());
+
+4. get unicode string length.
+    int wcs_len = wcslen(wstr);
+
+5. change unicode string to net order.
+    for (int i = 0; i < wcs_len; i++)
+        wstr[ i ] = htons(wstr[ i ]);
+
+6. put unicode string into pdu.

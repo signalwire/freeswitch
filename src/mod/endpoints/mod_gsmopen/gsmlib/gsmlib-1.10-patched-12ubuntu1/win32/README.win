@@ -1,0 +1,41 @@
+INTRODUCTION
+
+     This is a Win32 port of gsmlib contributed by Frediano Ziglio
+     (Frediano.Ziglio@omnitel.it) and adapted by me. You can use the
+     library for inclusion in your own programs or the command line tools
+     which have been ported (with the exception of gsmsmsd).
+
+COMPILATION
+
+     You need Microsoft VC++ 6.0 to compile the library and command
+     line tools. Because I prefer to use the ending .cc for C++ files you
+     need to make some changes to your development environment. These are
+     documented by Microsoft under this URL (one line):
+
+       http://support.microsoft.com/support/kb/articles/Q181/5/
+       06.ASP?LN=EN-US&SD=gn&FR=0&qry=.cc&rnk=1&src=DHCS_MSPSS_gn_SRCH&SPR=VCC
+
+     The title of the document is "HOWTO: Make VC++ Recognize File
+     Extensions as C/C++ Files".
+
+     Then open the workspace gsmlib.dsw with Developer
+     Studio. Compilation should be straightforward after that, just make a
+     batch build of everything.
+
+     If you encounter problems you can use the debug versions and set
+     the environment variable GSMLIB_DEBUG to 1 or 2 to get debugging
+     output.
+
+HINTS
+     - Use COMx: (x is the number of the COM device) instead of the UNIX
+       device name. If this doesn't work use "\\.\COMx:".
+
+     - The files under Release are without debugging code. If you see
+       errors please use the Debug versions and execute
+
+         set GSMLIB_DEBUG=2
+
+       for executing the programs. Please send me the debugging
+       output:
+
+         gsmsmsstore ..... 2> \temp\debug.log

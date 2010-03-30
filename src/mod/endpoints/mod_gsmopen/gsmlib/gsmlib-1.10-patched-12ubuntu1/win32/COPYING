@@ -1,0 +1,5 @@
+WARNING
+
+     The files getopt.c and getopt.h in this subdirectory (win32) are
+     not covered by the GNU LIBRARY GENERAL PUBLIC LICENSE as
+     reproduced in ../COPYING. They carry their own license instead.

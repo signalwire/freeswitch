@@ -1,0 +1,110 @@
+<configuration name="gsmopen.conf" description="GSMopen Configuration">
+  <global_settings>
+    <param name="debug" value="8"/>
+    <param name="dialplan" value="XML"/>
+    <param name="context" value="default"/>
+    <param name="hold-music" value="$${moh_uri}"/>
+    <param name="destination" value="9999"/>
+  </global_settings>
+  <!-- one entry here per gsmopen interface -->
+  <per_interface_settings>
+
+    <!-- following interfaces are commented out!
+    -->
+    <interface id="1" name="interface2001">
+	<param name="hold-music" value="$${moh_uri}"/>
+	<param name="dialplan" value="XML"/>
+	<param name="context" value="default"/>
+    	<param name="destination" value="2000"/>
+    	<param name="alsacname" value="plughw:2"/>
+    	<param name="alsapname" value="plughw:2"/>
+    	<param name="controldevice_name" value="/dev/ttyACM2"/>
+    	<param name="no_sound" value="0"/>
+    </interface>
+    <interface id="2" name="interface4001">
+	<param name="hold-music" value="$${moh_uri}"/>
+	<param name="dialplan" value="XML"/>
+	<param name="context" value="default"/>
+    	<param name="destination" value="2000"/>
+    	<param name="alsacname" value="plughw:1"/>
+    	<param name="alsapname" value="plughw:1"/>
+    	<param name="controldevice_name" value="/dev/ttyACM1"/>
+    	<param name="no_sound" value="0"/>
+    </interface>
+ 
+    <interface id="3" name="interface3">
+	<param name="hold-music" value="$${moh_uri}"/>
+	<param name="dialplan" value="XML"/>
+	<param name="context" value="default"/>
+    	<param name="destination" value="2000"/>
+    	<param name="alsacname" value="plughw:3"/>
+    	<param name="alsapname" value="plughw:3"/>
+    	<param name="controldevice_name" value="/dev/ttyACM0"/>
+    	<param name="no_sound" value="0"/>
+
+<param name="playback_boost" value="0" />
+<param name="capture_boost" value="0" />
+
+<param name="at_dial_pre_number" value="AT+CKPD=&quot;EEE" />
+<param name="at_dial_post_number" value="S&quot;" />
+<param name="at_dial_expect" value="OK" />
+
+<param name="at_hangup" value="AT+CKPD=&quot;EEE&quot;" />
+<param name="at_hangup_expect" value="OK" />
+
+<param name="at_answer" value="ATA" />
+<param name="at_answer_expect" value="OK" />
+
+<param name="at_initial_pause" value="1000000" />
+<param name="at_preinit_1" value="atciapa" />
+<param name="at_preinit_1_expect" value="OK" />
+<param name="at_preinit_2" value="" />
+<param name="at_preinit_2_expect" value="" />
+<param name="at_preinit_3" value="" />
+<param name="at_preinit_3_expect" value="" />
+<param name="at_preinit_4" value="" />
+<param name="at_preinit_4_expect" value="" />
+<param name="at_preinit_5" value="" />
+<param name="at_preinit_5_expect" value="" />
+<param name="at_after_preinit_pause" value="1000000" />
+<param name="at_postinit_1" value="atcucu" />
+<param name="at_postinit_1_expect" value="OK" />
+<param name="at_postinit_2" value="AT+CKPD=&quot;EEE&quot;" />
+<param name="at_postinit_2_expect" value="OK" />
+<param name="at_postinit_3" value="" />
+<param name="at_postinit_3_expect" value="" />
+<param name="at_postinit_4" value="" />
+<param name="at_postinit_4_expect" value="" />
+<param name="at_postinit_5" value="" />
+<param name="at_postinit_5_expect" value="" />
+
+<param name="at_query_battchg" value="AT+CBC" />
+<param name="at_query_battchg_expect" value="OK" />
+<param name="at_query_signal" value="AT+CSQ" />
+<param name="at_query_signal_expect" value="OK" />
+
+<param name="at_indicator_noservice_string" value="+CIEV: 2,0" />
+<param name="at_indicator_nosignal_string" value="+CIEV: 5,0" />
+<param name="at_indicator_lowsignal_string" value="+CIEV: 5,1" />
+<param name="at_indicator_lowbattchg_string" value="+CIEV: 0,1" />
+<param name="at_indicator_nobattchg_string" value="+CIEV: 0,0" />
+<param name="at_indicator_callactive_string" value="+CIEV: 3,1" />
+<param name="at_indicator_nocallactive_string" value="+CIEV: 3,0" />
+<param name="at_indicator_nocallsetup_string" value="+CIEV: 6,0" />
+<param name="at_indicator_callsetupincoming_string" value="+CIEV: 6,1" />
+<param name="at_indicator_callsetupoutgoing_string" value="+CIEV: 6,2" />
+<param name="at_indicator_callsetupremoteringing_string" value="+CIEV: 6,3" />
+
+<param name="at_call_idle" value="+MCST: 1" />
+<param name="at_call_incoming" value="+MCST: 2" />
+<param name="at_call_active" value="+MCST: 3" />
+<param name="at_call_failed" value="+MCST: 65" />
+<param name="at_call_calling" value="+MCST: 64" />
+
+
+
+
+
+    </interface>
+  </per_interface_settings>
+</configuration>

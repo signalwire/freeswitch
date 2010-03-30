@@ -1,0 +1,8 @@
+#!/usr/bin/perl
+open(FILEOUT, ">> /tmp/smses_received");
+while(<>){
+       print FILEOUT  $_ ;
+       printf FILEOUT  "\n" ;
+}
+close(FILEOUT);
+

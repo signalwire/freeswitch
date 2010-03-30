@@ -1,0 +1,72 @@
+#! /bin/sh
+#
+# /etc/init.d/gsm-utils: Controls the GSM SMS send daemon
+#
+# written by Matthias Goebl <matthias@goebl.net>
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/bin/gsmsmsd
+NAME=gsmsmsd
+DESC="GSM SMS send daemon"
+
+test -x $DAEMON || exit 0
+
+PHONEDEV=/dev/mobilephone  # or /dev/ttyS0 or /dev/ircomm0
+BAUDRATE=9600
+PIN=""  # or 1234
+SMSPROCESSOR=""  # or /usr/bin/gsmsmsprocessor
+SPOOLDIR=/var/spool/sms
+PRIORITIES=3
+STARTOPTS=""
+SMSUSER="gsmsms:gsmsms"
+test -r /etc/default/gsm-utils && . /etc/default/gsm-utils  # for overwriting some parameters
+
+OPTIONS="-d $PHONEDEV -b $BAUDRATE -L -P $PRIORITIES"
+OPTIONS="$OPTIONS -s $SPOOLDIR/queue -S $SPOOLDIR/sent -F $SPOOLDIR/failed"
+test -n "$SMSPROCESSOR" && OPTIONS="$OPTIONS -a $SMSPROCESSOR"
+test -n "$SMSUSER" && STARTOPTS="$STARTOPTS --chuid $SMSUSER"
+test -r /etc/default/gsm-utils && . /etc/default/gsm-utils  # for overwriting OPTIONS
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: "
+	if [ -n "$PIN" ];then
+		echo -n "entering PIN.. "
+		(
+		# This is ugly.. But if the PIN is already entered, the ME returns
+		# "ERROR" and makes gsmctl retrying..
+		/usr/bin/gsmctl -d $PHONEDEV -b $BAUDRATE -I "+cpin=$PIN" &
+		PID=$!
+		sleep 3
+		kill $PID 2>/dev/null
+		) >/dev/null 2>&1
+	fi
+	echo -n "$NAME"
+	start-stop-daemon --start --quiet --pidfile /var/run/gsm-utils/$NAME.pid \
+		--make-pidfile --background $STARTOPTS --exec $DAEMON -- $OPTIONS
+	echo "."
+	;;
+  stop)
+	echo -n "Stopping $DESC: $NAME "
+	start-stop-daemon --stop --quiet --pidfile /var/run/gsm-utils/$NAME.pid \
+		--exec $DAEMON
+	sleep 5
+	echo "."
+	;;
+  restart|force-reload)
+	echo -n "Restarting $DESC: $NAME"
+	start-stop-daemon --start --quiet --pidfile /var/run/gsm-utils/$NAME.pid \
+		--make-pidfile --background $STARTOPTS --exec $DAEMON -- $OPTIONS
+	sleep 5
+	start-stop-daemon --start --quiet --pidfile /var/run/gsm-utils/$NAME.pid \
+		--make-pidfile --background --exec $DAEMON -- $OPTIONS
+	echo "."
+	;;
+  *)
+	N=/etc/init.d/gsm-utils
+	echo "Usage: $N {start|stop|restart|force-reload}" >&2
+	exit 1
+	;;
+esac
+
+exit 0

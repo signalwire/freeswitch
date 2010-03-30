@@ -1,0 +1,154 @@
+.\" -*- eval: (nroff-mode) -*-
+.de TQ
+.br
+.ns
+.TP \\$1
+..
+.\" Like TP, but if specified indent is more than half
+.\" the current line-length - indent, use the default indent.
+.de Tp
+.ie \\n(.$=0:((0\\$1)*2u>(\\n(.lu-\\n(.iu)) .TP
+.el .TP "\\$1"
+..
+.TH GSMSENDSMS 8 "##DATE##" "gsmsendsms v##VERSION##"
+.PP
+.SH NAME
+gsmsendsms \- SMS message sender utility
+.PP
+.SH SYNOPSIS
+.B gsmsendsms
+[ \fB-b\fP \fIbaudrate\fP ]
+[ \fB--baudrate\fP \fIbaudrate\fP ]
+[ \fB-c\fP \fIconcatenatedID\fP ]
+[ \fB--concatenate\fP \fIconcatenatedID\fP ]
+[ \fB-C\fP \fIservice centre address\fP ]
+[ \fB--sca\fP \fIservice centre address\fP ]
+[ \fB-d\fP \fIdevice\fP ]
+[ \fB--device\fP \fIdevice\fP ]
+[ \fB-h\fP ]
+[ \fB--help\fP ]
+[ \fB-I\fP \fIinit string\fP ]
+[ \fB--init\fP \fIinit string\fP ]
+[ \fB-r\fP ]
+[ \fB--requeststat\fP ]
+[ \fB-t\fP ]
+[ \fB--test\fP ]
+[ \fB-v\fP ]
+[ \fB--version\fP ]
+[ \fB-X\fP ]
+[ \fB--xonxoff\fP ]
+\fIphonenumber\fP
+[ \fItext\fP ]
+.PP
+.SH DESCRIPTION
+\fIgsmsendsms\fP sends SMS short messages using an GSM mobile phone.
+.PP
+\fIgsmsendsms\fP attaches itself to the \fIdevice\fP given on the command
+line (usually an GSM modem) using the specified \fIbaudrate\fP.  If no
+\fIdevice\fP is given, the device \fI/dev/mobilephone\fP is used. If
+no \fIbaudrate\fP is given, a default baud rate of 38400 is used.
+.PP
+\fIgsmsendsms\fP accepts a phone number (recipient address) and the
+short message text as parameters. The text may have a maximum length
+of 160 characters which is the maximum SMS message length. The GSM
+default alphabet is used for encoding. ASCII and Latin-1 characters
+that can not be encoded using the GSM default alphabet are converted
+to the GSM delta character (GSM code 16).
+.PP
+Error messages are printed to the standard error output.  If the program
+terminates on error the error code 1 is returned.
+.PP
+.SH OPTIONS
+.TP
+\fB-b\fP \fIbaudrate\fP, \fB--baudrate\fP \fIbaudrate\fP
+The baud rate to use.
+.TP
+\fB-c\fP \fIconcatenatedID\fP, \fB--concatenate\fP \fIconcatenatedID\fP
+If an ID is given, large SMSs are split into several, concatenated
+SMSs. All SMSs have the same ID and are numbered consecutively so that 
+the receiving phone can assemble them in the correct order. IDs must
+be in the range 0..255. Not all receiving phones will support
+concatenated SMSs (and display them as separate SMSs),
+since all the numbering and ID information is
+carried in the user data header element at the beginning of the SMS
+user data. This information may show up as garbage in such phones.
+.TP
+\fB-C\fP \fIservice centre address\fP, \fB--sca\fP \fIservice centre address\fP
+Sets the service centre address to use for all SUBMIT SMSs (may not
+work with some phones).
+.TP
+\fB-d\fP \fIdevice\fP, \fB--device\fP \fIdevice\fP
+The device to which the GSM modem is connected. The default is
+\fI/dev/mobilephone\fP.
+.TP
+\fB-h\fP, \fB--help\fP
+Prints an option summary.
+.TP
+\fB-I\fP \fIinit string\fP, \fB--init\fP \fIinit string\fP
+Initialization string to send to the TA (default: "E0"). Note that the
+sequence "ATZ" is sent first.
+.TP
+\fB-r\fP, \fB--requeststat\fP
+Request status reports for sent SMS.
+.TP
+\fB-t\fP, \fB--test\fP
+If this option is given the text is converted
+to the GSM default alphabet and back to Latin-1. This option can be
+used to find out how ASCII or Latin-1 texts are converted to the GSM
+default alphabet. Characters that can not be converted to the GSM default
+alphabet are reported as ASCII code 172 (Latin-1 boolean "not")
+after this double conversion. No SMS messages are sent, a connection
+to a mobile phone is not established.
+.TP
+\fB-v\fP, \fB--version\fP
+Prints the program version.
+.TP
+\fB-X\fP, \fB--xonxoff\fP
+Uses software handshaking (XON/XOFF) for accessing the device.
+.PP
+.SH EXAMPLES
+The following two invocations of \fIgsmsendsms\fP each send the same
+SMS message to the number "1234":
+.PP
+.nf
+gsmsendsms -d /dev/ttyS2 -b 19200  1234 "This is a test."
+echo "This is a test." | gsmsendsms -d /dev/ttyS2 -b 19200  1234
+.fi
+.PP
+.SH FILES
+.TP 1.4i
+.B /dev/mobilephone
+Default mobile phone device.
+.PP
+.SH AUTHOR
+Peter Hofmann <software@pxh.de>
+.PP
+.SH BUGS
+Report bugs to software@pxh.de.  Include a complete, self-contained
+example that will allow the bug to be reproduced, and say which
+version of \fIgsmsendsms\fP you are using.
+.PP
+.SH COPYRIGHT
+Copyright \(co 1999 Peter Hofmann
+.LP
+\fIgsmsendsms\fP is free software; you can redistribute it and/or modify it under
+the terms of the GNU Library General Public License as published by the Free
+Software Foundation; either version 2, or (at your option) any later
+version.
+.LP
+\fIgsmsendsms\fP is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
+.LP
+You should have received a copy of the GNU Library General Public License along
+with \fIgsmsendsms\fP; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+.PP
+.SH "SEE ALSO"
+.BR gsminfo(7),
+.BR gsmpb(1),
+.BR gsmctl(1),
+.BR gsmsmsd(8),
+.BR gsmsmsstore(1).
+

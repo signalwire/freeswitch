@@ -1,0 +1,245 @@
+.\" -*- eval: (nroff-mode) -*-
+.de TQ
+.br
+.ns
+.TP \\$1
+..
+.\" Like TP, but if specified indent is more than half
+.\" the current line-length - indent, use the default indent.
+.de Tp
+.ie \\n(.$=0:((0\\$1)*2u>(\\n(.lu-\\n(.iu)) .TP
+.el .TP "\\$1"
+..
+.TH GSMPB 8 "##DATE##" "gsmpb v##VERSION##"
+.SH NAME
+gsmpb \- GSM mobile phone phonebook manipulation program
+.SH SYNOPSIS
+.B gsmpb
+[ \fB-b\fP \fIbaudrate\fP ]
+[ \fB--baudrate\fP \fIbaudrate\fP ]
+[ \fB-c\fP ]
+[ \fB--copy\fP ]
+[ \fB-d\fP \fIdestination device or file\fP ]
+[ \fB--destination\fP \fIdestination device or file\fP ]
+[ \fB-h\fP ]
+[ \fB--help\fP ]
+[ \fB-i\fP ]
+[ \fB--index\fP ]
+[ \fB-I\fP \fIinit string\fP ]
+[ \fB--init\fP \fIinit string\fP ]
+[ \fB-p\fP \fIphonebook name\fP ]
+[ \fB--phonebook\fP \fIphonebook name\fP ]
+[ \fB-s\fP \fIsource device or file\fP ]
+[ \fB--source\fP \fIsource device or file\fP ]
+[ \fB-t\fP \fIcharacter set\fP ]
+[ \fB--charset\fP \fIcharacter set\fP ]
+[ \fB-v\fP ]
+[ \fB--version\fP ]
+[ \fB-V\fP ]
+[ \fB--verbose\fP ]
+[ \fB-X\fP ]
+[ \fB--xonxoff\fP ]
+[ \fB-y\fP ]
+[ \fB--synchronize\fP ]
+.PP
+.SH DESCRIPTION
+\fIgsmpb\fP can store or retrieve phonebook entries residing in a GSM
+mobile phone's phonebook to or from a file. A synchronization mode is
+also available.
+.PP
+\fIgsmpb\fP reads entries from the source which can be a mobile phone
+(if a serial device file is given) or a file (if a file name is
+given). The source is never modified. \fIgsmpb\fP writes phonebook
+entries to a destination file or device.  Depending on the mode the
+source is copied to the destination file, thus overwriting the
+destination, or the destination is synchronized with regard to the
+source which is the default (details see below).
+.PP
+If "-" is given as the parameter for the \fB--source\fP or
+\fB--destination\fP options, the phonebook is read from standard input 
+and/or written to standard output, respectively.
+.PP
+Phonebook entries names are encoded using the GSM default alphabet in
+the mobile phone, whereas they are stored using the Latin-1 encoding
+in phonebook files. When reading phonebook entries from a mobile phone 
+entry names are converted from the GSM default to Latin-1. Characters
+that can not be converted to Latin-1 are encoded as character code
+172 (Latin-1 boolean "not"). When writing file-based phonebook entries 
+to a mobile phone a conversion to the GSM default alphabet takes
+place. Characters that can not be converted are encoded as GSM delta
+(code 16). If the default character set has been changed using the
+\fB--charset\fP option no conversion takes place.
+.PP
+Error messages are printed to the standard error output. If the program
+terminates on error the error code 1 is returned.
+.PP
+.SH OPTIONS
+.TP .7i
+\fB-b\fP \fIbaudrate\fP, \fB--baudrate\fP \fIbaudrate\fP
+The baud rate to use. The default baudrate is 38400.
+.TP .7i
+\fB-c\fP, \fB--copy\fP
+This causes the contents of the source to be copied to the
+destination. After this operation the destination has exactly the same 
+contents as the source.
+.TP .7i
+\fB-d\fP \fIdestination\fP, \fB--destination\fP \fIdestination\fP
+The destination device or file.
+.TP .7i
+\fB-h\fP, \fB--help\fP
+Prints an option summary.
+.TP .7i
+\fB-I\fP \fIinit string\fP, \fB--init\fP \fIinit string\fP
+Initialization string to send to the TA (default: "E0"). Note that the
+sequence "ATZ" is sent first.
+.TP .7i
+\fB-i\fP, \fB--index\fP
+If the index position is given, \fIgsmpb\fP preserves the assignment
+of entries to memory slots in the mobile phone's phonebook. This can
+be used to backup phonebook entries with their position into a
+phonebook file or to change the position of entries by editing a
+phonebook file and writing them back to the mobile phone.
+If this option is given the phonebook file used as the source
+must contain indices for every entry. Additionally, these indices must 
+be unique, ie. it is not allowed to assign one entry twice to a
+specific position in the mobile phone's phonebook.
+.TP .7i
+\fB-p\fP \fIphonebook\fP, \fB--phonebook\fP \fIphonebook\fP
+The name of the phonebook to read from or write to. This is only used
+for device sources and destinations. Commonly available phonebooks
+are:
+.TP .3i
+.po +0.7i
+.ll 5.8i
+\fIFD\fP
+SIM fixdialling-phonebook
+.TP .3i
+\fILD\fP
+SIM last-dialling-phonebook
+.TP .3i
+\fIME\fP
+ME phonebook
+.TP .3i
+\fIMT\fP
+combined ME and SIM phonebook
+.TP .3i
+\fISM\fP
+SIM phonebook
+.TP .3i
+\fITA\fP
+TA phonebook
+.TP .7i
+.po -0.7i
+.ll 6.5i
+\fB-s\fP \fIsource\fP, \fB--source\fP \fIsource\fP
+The source device or file.
+.TP
+\fB-t\fP \fIcharacter set\fP, \fB--charset\fP \fIcharacter set\fP
+Set the character set to use for phonebook operations (default is the
+GSM default alphabet).
+.TP
+\fB-v\fP, \fB--version\fP
+Prints the program version.
+.TP .7i
+\fB-V\fP, \fB--verbose\fP
+Prints out a detailed progress report.
+.TP .7i
+\fB-X\fP, \fB--xonxoff\fP
+Uses software handshaking (XON/XOFF) for accessing the device.
+.TP .7i
+\fB-y\fP, \fB--synchronize\fP
+This causes the contents of the source to be synchronized with the
+destination (default). Synchronization in this context means:
+.TP .2i
+.po +0.7i
+.ll 5.8i
+\-
+If the source contains an entry with a name that does not exist in the 
+destination this entry is added to the destination.
+.TP .2i
+\-
+If the source contains an entry with a name that can also be found in
+the destination, the entry in the destination is overwritten (ie. the
+telephone number is updated). Exception: More then one entry with the
+name exists in the destination. In this case the new entry ist just added.
+.TP .2i
+\-
+Entries in the destination that do not exist in the source are
+deleted.
+.PP
+Note that synchronization has the following properties that differ
+from copying: This algorithm does not change the location of unchanged
+entries in the destination phonebook. The synchronization function
+is not case-sensitive when comparing names.
+.PP
+.po -0.7i
+.ll 6.5i
+.SH PHONEBOOK FILE FORMAT 
+Phonebook entries are stored in phonebook files that are meant to be
+human-readable and -editable. There is one phonebook entry per line,
+and each line has the format:
+.PP
+.nf
+index|text|phone number
+.fi
+.PP
+The fields have the following meanings:
+.TP .7i
+\fIindex\fP
+The index of the entry which must be a positive number. The index may
+also be empty. Indices can be used in conjunction with the
+\fB--index\fP option to store the entry into a specific position in
+the mobile phone.
+.TP .7i
+\fItext\fP
+Descriptive text for the entry. The text may contain the special
+characters '\\', '|', carriage return (ASCII code 13), or line feed
+(ASCII code 10). These must be written "\\\\", "\\|", "\\r", "\\n",
+respectively. The text should only contain characters that can be
+encoded using the GSM default alphabet (see comments above).
+.TP .7i
+\fIphone number\fP
+Phone numbers can only contains the digits 0-9 and the '+' sign. A '+' 
+sign denotes an international number.
+.PP
+.SH EXAMPLES
+The following invocation of \fIgsmpb\fP synchronizes the mobile phone's
+SIM phonebook with the file $HOME/.phonebook:
+.PP
+.nf
+gsmpb --synchronize -b 19200 -d /dev/mobilephone \\
+      -s $HOME/.phonebook -p "SM"
+.fi
+.PP
+.SH AUTHOR
+Peter Hofmann <software@pxh.de>
+.PP
+.SH BUGS
+Report bugs to software@pxh.de.  Include a complete, self-contained
+example that will allow the bug to be reproduced, and say which
+version of \fIgsmpb\fP you are using.
+.PP
+.SH COPYRIGHT
+Copyright \(co 1999 Peter Hofmann
+.LP
+\fIgsmpb\fP is free software; you can redistribute it and/or modify it under
+the terms of the GNU Library General Public License as published by the Free
+Software Foundation; either version 2, or (at your option) any later
+version.
+.LP
+\fIgsmpb\fP is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License
+for more details.
+.LP
+You should have received a copy of the GNU Library General Public License along
+with \fIgsmpb\fP; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+.PP
+.SH "SEE ALSO"
+.BR gsminfo(7),
+.BR gsmctl(1),
+.BR gsmsendsms(1),
+.BR gsmsmsd(8),
+.BR gsmsmsstore(1).
+

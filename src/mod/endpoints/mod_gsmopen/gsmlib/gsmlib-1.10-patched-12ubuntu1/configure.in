@@ -1,0 +1,131 @@
+dnl *************************************************************************
+dnl * GSM TA/ME library
+dnl *
+dnl * File:    configure.in
+dnl *
+dnl * Purpose: autoconf configure script template
+dnl *
+dnl * Author:  Peter Hofmann (software@pxh.de)
+dnl *
+dnl * Created: 11.11.1999
+dnl *************************************************************************
+
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(gsmlib/gsm_error.h)
+
+dnl Other
+AC_CONFIG_AUX_DIR(scripts)
+AC_PROG_INSTALL
+
+dnl check for libintl
+AC_CHECK_LIB(intl, textdomain)
+
+dnl use config header
+AM_CONFIG_HEADER(gsm_config.h)
+
+dnl use automake
+AM_INIT_AUTOMAKE(gsmlib, 1.10)
+
+dnl change to no if you want no shared libraries for debugging purposes
+AM_ENABLE_SHARED(yes)
+
+dnl use -O2 optimization by default
+if test "$CXXFLAGS" = ""; then
+   CXXFLAGS="-O2"
+fi
+
+dnl comment out this line to get extensive debugging output and asserts
+dnl CXXFLAGS="-DNDEBUG $CXXFLAGS"
+
+dnl uncomment to get translations without installing gsmlib
+dnl CXXFLAGS="-DLOCAL_TRANSLATIONS $CXXFLAGS"
+
+dnl check _REENTRANT in header files
+if test x"`egrep _REENTRANT /usr/include/features.h`" != x; then
+  CXXFLAGS="-D_REENTRANT $CXXFLAGS"
+  CFLAGS="-D_REENTRANT $CFLAGS"
+fi
+
+dnl output all warnings
+CXXFLAGS="-Wall $CXXFLAGS"
+
+dnl use libtool
+AM_PROG_LIBTOOL
+
+dnl Checks for programs.
+AC_PROG_CPP
+AC_PROG_CXX
+
+dnl check for gcc 2.95.x
+AC_TRY_RUN([
+#include <unistd.h>
+main()
+{
+#if defined(__GNUC__) && \
+    ! (__GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95))
+    return 1;
+#endif
+  return 0;
+}
+],,
+[echo "need at least gcc 2.95 to compile correctly"
+exit 1])
+
+dnl check for alloca
+AC_FUNC_ALLOCA
+
+dnl check for getopt_long in the C library
+AC_CHECK_LIB(c, getopt_long, AC_DEFINE(HAVE_GETOPT_LONG))
+
+dnl check for alarm in the C library
+AC_CHECK_LIB(c, alarm, AC_DEFINE(HAVE_ALARM))
+
+dnl check for netinet/in.h header
+AC_CHECK_HEADERS(netinet/in.h)
+
+dnl check for string.h header
+AC_CHECK_HEADERS(string.h)
+
+dnl check for libintl.h header
+AC_CHECK_HEADERS(libintl.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+
+dnl check for vsnprintf()
+dnl AC_FUNC_VPRINTF
+AC_EGREP_HEADER(vsnprintf, stdio.h, AC_DEFINE(HAVE_VSNPRINTF))
+
+dnl checks for builtin data type sizes
+AC_CHECK_SIZEOF(unsigned short int, 2)
+AC_CHECK_SIZEOF(unsigned long int, 4)
+AC_CHECK_SIZEOF(unsigned int, 4)
+
+dnl Project-specific settings
+GSM_VERSION="1:4:0"
+AC_SUBST(GSM_VERSION)
+
+dnl national language support (NLS)
+LINGUAS="de"
+ALL_LINGUAS=$LINGUAS
+AM_GNU_GETTEXT
+
+dnl set locale dir (FIXME there must be a better way)
+_localedir=`eval "echo $datadir/locale"`
+if test "$_localedir" = "NONE/share/locale"; then
+   AC_DEFINE_UNQUOTED(LOCALEDIR, "/usr/local/share/locale")
+else
+   _localedir=`echo \"$_localedir\"`
+   AC_DEFINE_UNQUOTED(LOCALEDIR, $_localedir)
+fi
+
+dnl whether to compile the intl directory
+AM_CONDITIONAL(COMPILE_INTL, test x$USE_INCLUDED_LIBINTL = xyes)
+
+AC_OUTPUT(Makefile gsmlib/Makefile tests/Makefile apps/Makefile win32/Makefile
+          doc/Makefile scripts/Makefile intl/Makefile po/Makefile.in
+          ext/Makefile,
+          echo timestamp > stamp-h)
+
+dnl repair Makefile in po subdir
+dnl sed -e "/POTFILES =/r po/POTFILES" po/Makefile.in > po/Makefile
