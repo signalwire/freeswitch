@@ -201,7 +201,7 @@
        <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>0</number>
+          <number>2</number>
          </property>
          <widget class="QWidget" name="tab">
           <attribute name="title">
@@ -524,6 +524,16 @@
               </property>
              </item>
             </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_42">
+             <property name="text">
+              <string>Codecs</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QListWidget" name="listAvailableCodecs"/>
            </item>
           </layout>
          </widget>

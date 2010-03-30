@@ -297,6 +297,7 @@ void MainWindow::fshostReady()
                              tr("Portaudio could not be loaded. Please check if mod_portaudio is properly compiled."),
                              QMessageBox::Ok);
     }
+
 }
 
 void MainWindow::paAnswer()
