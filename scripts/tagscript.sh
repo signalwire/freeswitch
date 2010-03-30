@@ -66,3 +66,11 @@ tar -cjvf $dst_name.tar.bz2 $dst_dir
 tar -cJvf $dst_name.tar.xz $dst_dir
 rm -rf $dst_dir
 
+cat 1>&2 <<EOF
+----------------------------------------------------------------------
+The v$ver tag has been committed locally, but it will not be
+globally visible until you 'git push' this repository up to the server
+(I didn't do that for you).
+----------------------------------------------------------------------
+EOF
+
