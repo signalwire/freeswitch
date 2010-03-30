@@ -35,7 +35,7 @@
 #include "switch.h"
 #include "g711.h"
 
-#include <sangoma_transcode.h>
+#include <sng_tc/sng_tc.h>
 
 #ifdef __linux__
 /* for ethernet device query */
@@ -101,12 +101,20 @@ vocallo_codec_t g_codec_map[] =
 	{ SNGTC_CODEC_G729AB,  18,  "G729",    "Sangoma G729",      40, 8000,   10000, 80,  160, 10,  1 },
 	{ SNGTC_CODEC_G726_32, 122, "G726-32", "Sangoma G.726 32k", 40, 32000,  10000, 80,  160, 40,  1 },
 	{ SNGTC_CODEC_GSM_FR,  3,   "GSM",     "Sangoma GSM",       20, 13200,  20000, 160, 320, 33,  0 },
+#if 0
 	/* FIXME: grandstream crashes with iLBC implementation */
 	{ SNGTC_CODEC_ILBC,    97,  "iLBC",    "Sangoma ILBC",      -1, -1,     -1,    -1,  -1,  -1,  0 },
 	/* FIXME: sampling rate seems wrong with this, audioooo soooundssssss sloooooow ... */
 	{ SNGTC_CODEC_G722,    9,   "G722",    "Sangoma G722",      20, 64000,  20000, 160, 640, 160, 0 },
+#endif
 	{ -1,                  -1,  NULL,      NULL,                -1, -1,     -1,    -1,  -1,      -1 },
 };
+
+/* default codec list to load, users may override, special codec 'all' loads everything available unless listed in noload */
+static char g_codec_load_list[1024] = "all";
+
+/* default codec list to NOT load, users may override */
+static char g_codec_noload_list[1024] = "";
 
 struct codec_data {
 	/* sngtc request and reply */
@@ -206,8 +214,8 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 	rtp_session = switch_rtp_new(local_ip, rtp_port, 
 			codec_ip, codec_reply_leg->codec_udp_port, 
 			iana,
-			codec_reg_leg->ms*8, /* samples per interval, FIXME: do based on sampling rate */
-			codec_reg_leg->ms*1000, /* ms per packet */
+			sess->impl->samples_per_packet,
+			codec_reg_leg->ms*1000, /* microseconds per packet */
 			flags, NULL, &err, g_pool);
 
 	if (!rtp_session) {
@@ -845,6 +853,21 @@ static int sangoma_parse_config(void)
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		/* nothing here yet */
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+				char *var = (char *)switch_xml_attr_soft(param, "name");
+				char *val = (char *)switch_xml_attr_soft(param, "value");
+
+				/* this parameter overrides the default list of codecs to load */
+				if (!strcasecmp(var, "load")) {
+					strncpy(g_codec_load_list, val, sizeof(g_codec_load_list)-1);
+					g_codec_load_list[sizeof(g_codec_load_list)-1] = 0;
+				} else if (!strcasecmp(var, "noload")) {
+					strncpy(g_codec_noload_list, val, sizeof(g_codec_noload_list)-1);
+					g_codec_noload_list[sizeof(g_codec_noload_list)-1] = 0;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignored unknown Sangoma codec setting %s\n", var);
+				}
+		}
 	}
 
 	if ((vocallos = switch_xml_child(cfg, "vocallos"))) {
@@ -888,7 +911,7 @@ static int sangoma_parse_config(void)
 					}
 					g_init_cfg.host_nic_vocallo_cfg[vidx].vocallo_ip = ntohl(vocallo_base_ip.s_addr);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignored unknown Sangoma codec setting %s\n", val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignored unknown Sangoma vocallo setting %s\n", var);
 				}
 			}
 
@@ -966,11 +989,28 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading codecs, load='%s', noload='%s'\n", g_codec_load_list, g_codec_noload_list);
 	for (c = 0; g_codec_map[c].codec_id != -1; c++) {
+
+		/* check if the codec is in the load list, otherwise skip it */
+		if (strcasecmp(g_codec_load_list, "all") && !strcasestr(g_codec_load_list, g_codec_map[c].iana_name)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Not loading codec %s because was not found in the load list\n", 
+					g_codec_map[c].iana_name);
+			continue;
+		}
+
+		/* load it unless is named in the noload list */
+		if (strcasestr(g_codec_noload_list, g_codec_map[c].iana_name)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Not loading codec %s because was not found in the noload list\n", 
+					g_codec_map[c].iana_name);
+			continue;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Registering implementations for codec %s\n", g_codec_map[c].iana_name);
 
 		/* let know the library which iana to use */
 		sngtc_set_iana_code_based_on_codec_id(g_codec_map[c].codec_id, g_codec_map[c].iana);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Mapped codec %d to IANA %d\n", g_codec_map[c].codec_id, g_codec_map[c].iana);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Mapped codec %d to IANA %d\n", g_codec_map[c].codec_id, g_codec_map[c].iana);
 
 		/* SWITCH_ADD_CODEC allocates a codec interface structure from the pool the core gave us and adds it to the internal interface 
 		 * list the core keeps, gets a codec id and set the given codec name to it.
