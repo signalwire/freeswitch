@@ -358,7 +358,9 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 			char terminator;
 			switch_status_t status;
 
-			switch_core_db_handle(&db);
+			if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Database Error!\n");
+			}
 
 			while (switch_channel_ready(channel)) {
 				for (x = 0; x < MAX_SPY; x++) {

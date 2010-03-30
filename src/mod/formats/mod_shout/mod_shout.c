@@ -1356,7 +1356,9 @@ void do_index(switch_stream_handle_t *stream)
 	struct holder holder;
 	char *errmsg;
 
-	switch_core_db_handle(&db);
+	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+		return;
+	}
 
 	holder.host = switch_event_get_header(stream->param_event, "http-host");
 	holder.port = switch_event_get_header(stream->param_event, "http-port");

@@ -3232,7 +3232,10 @@ SWITCH_STANDARD_API(show_function)
 	switch_core_flag_t cflags = switch_core_flags();
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	switch_core_db_handle(&db);
+	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "%s", "-ERR Databse Error!\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	holder.justcount = 0;
 

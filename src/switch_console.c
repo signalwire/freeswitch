@@ -240,8 +240,11 @@ SWITCH_DECLARE(char *) switch_console_expand_alias(char *cmd, char *arg)
 	switch_cache_db_handle_t *db = NULL;
 	int full = 0;
 
-
-	switch_core_db_handle(&db);
+	
+	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
+		return NULL;
+	}
 
 
 	if (db->type == SCDB_TYPE_CORE_DB) {
@@ -563,7 +566,11 @@ SWITCH_DECLARE(switch_status_t) switch_console_list_uuid(const char *line, const
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg;
 
-	switch_core_db_handle(&db);
+
+	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
+		return SWITCH_STATUS_GENERR;
+	}
 
 	if (!zstr(cursor)) {
 		sql = switch_mprintf("select distinct uuid from channels where uuid like '%q%%' and hostname='%q' order by uuid",
@@ -609,7 +616,10 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 #endif
 #endif
 
-	switch_core_db_handle(&db);
+	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
+		return CC_ERROR;
+	}
 
 	if (!zstr(cursor) && !zstr(line)) {
 		pos = (cursor - line);
@@ -1688,7 +1698,14 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 			switch_stream_handle_t mystream = { 0 };
 			SWITCH_STANDARD_STREAM(mystream);
 
-			switch_core_db_handle(&db);
+
+			if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
+				free(mystream.data);
+				free(mydata);
+				return SWITCH_STATUS_FALSE;
+			}
+
 
 			if (!strcasecmp(argv[0], "stickyadd")) {
 				mystream.write_function(&mystream, "insert into complete values (1,");
@@ -1765,8 +1782,12 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 			switch_cache_db_handle_t *db = NULL;
 			char *sql = NULL;
 
-			switch_core_db_handle(&db);
-
+			if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
+				free(mydata);
+				return SWITCH_STATUS_FALSE;
+			}
+			
 			if (!strcasecmp(argv[0], "stickyadd") && argc == 3) {
 				sql = switch_mprintf("delete from aliases where alias='%q' and hostname='%q'", argv[1], switch_core_get_variable("hostname"));
 				switch_cache_db_persistant_execute(db, sql, 5);
