@@ -41,7 +41,9 @@ int main(int argc, char *argv[])
     QPixmap image(":/images/splash.png");
     QSplashScreen *splash = new QSplashScreen(image);
     splash->show();
-    splash->showMessage("Loading, please wait...", Qt::AlignRight|Qt::AlignBottom, Qt::blue);
+    splash->showMessage("Loading core, please wait...", Qt::AlignRight|Qt::AlignBottom, Qt::blue);
+
+    QObject::connect(&g_FSHost, SIGNAL(loadingModules(QString,int,QColor)), splash, SLOT(showMessage(QString,int,QColor)));
 
     QObject::connect(&g_FSHost, SIGNAL(ready()), splash, SLOT(close()));
     MainWindow w;    

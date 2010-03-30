@@ -90,7 +90,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&g_FSHost, SIGNAL(accountStateChange(QSharedPointer<Account>)), this, SLOT(accountStateChanged(QSharedPointer<Account>)));
     connect(&g_FSHost, SIGNAL(newAccount(QSharedPointer<Account>)), this, SLOT(accountAdd(QSharedPointer<Account>)));
     connect(&g_FSHost, SIGNAL(delAccount(QSharedPointer<Account>)), this, SLOT(accountDel(QSharedPointer<Account>)));
-    /*connect(&g_FSHost, SIGNAL(coreLoadingError(QString)), this, SLOT(coreLoadingError(QString)));*/
+    connect(&g_FSHost, SIGNAL(coreLoadingError(QString)), this, SLOT(coreLoadingError(QString)));
 
     /* Connect call commands */
     connect(ui->newCallBtn, SIGNAL(clicked()), this, SLOT(makeCall()));
@@ -163,8 +163,9 @@ void MainWindow::prefTriggered()
 
 void MainWindow::coreLoadingError(QString err)
 {
-    QMessageBox::warning(this, "Error Loading Core...", err, QMessageBox::Ok);
-    QApplication::exit(255);
+    QMessageBox::critical(this, tr("Core error!"),
+                          tr("The core failed to load. Please, ask for help as the softphone will not be useable. Error code: %1").arg(err),
+                          QMessageBox::Ok);
 }
 
 void MainWindow::accountAdd(QSharedPointer<Account> acc)
@@ -283,6 +284,19 @@ void MainWindow::fshostReady()
     ui->textEdit->setText("Ready to dial and receive calls!");
     sysTray->show();
     sysTray->showMessage(tr("Status"), tr("FSComm has initialized!"), QSystemTrayIcon::Information, 5000);
+
+    if (!g_FSHost.isModuleLoaded("mod_sofia"))
+    {
+        QMessageBox::warning(this, tr("SIP not available"),
+                             tr("Sofia could not be loaded, therefore, SIP will not be available."),
+                             QMessageBox::Ok);
+    }
+    if (!g_FSHost.isModuleLoaded("mod_portaudio"))
+    {
+        QMessageBox::warning(this, tr("Audio not available"),
+                             tr("Portaudio could not be loaded. Please check if mod_portaudio is properly compiled."),
+                             QMessageBox::Ok);
+    }
 }
 
 void MainWindow::paAnswer()

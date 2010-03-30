@@ -30,6 +30,7 @@
 #define FSHOST_H
 
 #include <QThread>
+#include <QColor>
 #include <QHash>
 #include <QSharedPointer>
 #include <switch.h>
@@ -50,12 +51,15 @@ public:
     QSharedPointer<Account> getCurrentDefaultAccount();
     QSharedPointer<Account> getAccountByName(QString accStr);
     void accountReloadCmd(QSharedPointer<Account> acc);
+    QBool isModuleLoaded(QString);
 
 protected:
     void run(void);
 
 signals:
     void coreLoadingError(QString);
+    void loadingModules(QString, int, QColor);
+    void loadedModule(QString, QString, QString);
     void ready(void);
     void ringing(QSharedPointer<Call>);
     void answered(QSharedPointer<Call>);
@@ -69,6 +73,7 @@ signals:
 private slots:
     /* We need to wait for the gateway deletion before reloading it */
     void accountReloadSlot(QSharedPointer<Account>);
+    void minimalModuleLoaded(QString, QString, QString);
 
 private:
     switch_status_t processBlegEvent(switch_event_t *, QString);
@@ -79,6 +84,7 @@ private:
     QHash<QString, QSharedPointer<Account> > _accounts;
     QHash<QString, QString> _bleg_uuids;
     QList<QString> _reloading_Accounts;
+    QList<QString> _loadedModules;
 };
 
 extern FSHost g_FSHost;

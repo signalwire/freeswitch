@@ -45,6 +45,13 @@ FSHost::FSHost(QObject *parent) :
     qRegisterMetaType<QSharedPointer<Call> >("QSharedPointer<Call>");
     qRegisterMetaType<QSharedPointer<Account> >("QSharedPointer<Account>");
 
+    connect(this, SIGNAL(loadedModule(QString,QString,QString)), this, SLOT(minimalModuleLoaded(QString,QString,QString)));
+
+}
+
+QBool FSHost::isModuleLoaded(QString modName)
+{
+    return _loadedModules.contains(modName);
 }
 
 void FSHost::createFolders()
@@ -117,14 +124,14 @@ void FSHost::run(void)
     createFolders();
 
     /* If you need to override configuration directories, you need to change them in the SWITCH_GLOBAL_dirs global structure */
-    qDebug() << "Initializing core..." << endl;
+    qDebug() << "Initializing core...";
     /* Initialize the core and load modules, that will startup FS completely */
     if (switch_core_init(flags, console, &err) != SWITCH_STATUS_SUCCESS) {
         fprintf(stderr, "Failed to initialize FreeSWITCH's core: %s\n", err);
         emit coreLoadingError(err);
     }
 
-    qDebug() << "Everything OK, Entering runtime loop ..." << endl;
+    qDebug() << "Everything OK, Entering runtime loop ...";
 
     if (switch_event_bind("FSHost", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, eventHandlerCallback, NULL) != SWITCH_STATUS_SUCCESS) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
@@ -136,12 +143,14 @@ void FSHost::run(void)
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't load mod_qsettings\n");
     }
 
+    emit loadingModules("Loading modules...", Qt::AlignRight|Qt::AlignBottom, Qt::blue);
     if (switch_core_init_and_modload(flags, console, &err) != SWITCH_STATUS_SUCCESS) {
         fprintf(stderr, "Failed to initialize FreeSWITCH's core: %s\n", err);
         emit coreLoadingError(err);
     }
 
     emit ready();
+
     /* Go into the runtime loop. If the argument is true, this basically sets runtime.running = 1 and loops while that is set
      * If its false, it initializes the libedit for the console, then does the same thing
      */
@@ -154,7 +163,7 @@ void FSHost::run(void)
     destroy_status = switch_core_destroy();
     if (destroy_status == SWITCH_STATUS_SUCCESS)
     {
-        qDebug() << "We have properly shutdown the core." << endl;
+        qDebug() << "We have properly shutdown the core.";
     }
 }
 
@@ -407,8 +416,24 @@ void FSHost::generalEventHandler(switch_event_t *event)
             }
             break;
         }
+    case SWITCH_EVENT_MODULE_LOAD:
+        {
+            QString modType = switch_event_get_header_nil(event, "type");
+            QString modName = switch_event_get_header_nil(event, "name");
+            QString modKey = switch_event_get_header_nil(event, "key");
+            emit loadedModule(modType, modName, modKey);
+            break;
+        }
     default:
         break;
+    }
+}
+
+void FSHost::minimalModuleLoaded(QString modType, QString modName, QString modKey)
+{
+    if (modType == "endpoint")
+    {
+        _loadedModules.append(modKey);
     }
 }
 
