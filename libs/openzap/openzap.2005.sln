@@ -1,0 +1,82 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "openzap", "msvc\openzap.2005.vcproj", "{93B8812C-3EC4-4F78-8970-FFBFC99E167D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testanalog", "msvc\testanalog\testanalog.2005.vcproj", "{BB833648-BAFF-4BE2-94DB-F8BB043C588C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testisdn", "msvc\testisdn\testisdn.2005.vcproj", "{6DA6FD42-641D-4147-92F5-3BC4AAA6589B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_openzap", "mod_openzap\mod_openzap.2005.vcproj", "{FE3540C5-3303-46E0-A69E-D92F775687F1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozmod_analog", "src\ozmod\ozmod_analog\ozmod_analog.2005.vcproj", "{37C94798-6E33-4B4F-8EE0-C72A7DC91157}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozmod_analog_em", "src\ozmod\ozmod_analog_em\ozmod_analog_em.2005.vcproj", "{C539D7C8-26A8-4A94-B938-77672165C130}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozmod_isdn", "src\ozmod\ozmod_isdn\ozmod_isdn.2005.vcproj", "{729344A5-D5E9-434D-8EE8-AF8C6C795D15}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozmod_wanpipe", "src\ozmod\ozmod_wanpipe\ozmod_wanpipe.2005.vcproj", "{1A145EE9-BBD8-45E5-98CD-EB4BE99E1DCD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozmod_pika", "src\ozmod\ozmod_pika\ozmod_pika.2005.vcproj", "{E886B4D5-AB4F-4092-B8F4-3B06E1E462EF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D}.Debug|Win32.Build.0 = Debug|Win32
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D}.Release|Win32.ActiveCfg = Release|Win32
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D}.Release|Win32.Build.0 = Release|Win32
+		{BB833648-BAFF-4BE2-94DB-F8BB043C588C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BB833648-BAFF-4BE2-94DB-F8BB043C588C}.Debug|Win32.Build.0 = Debug|Win32
+		{BB833648-BAFF-4BE2-94DB-F8BB043C588C}.Release|Win32.ActiveCfg = Release|Win32
+		{BB833648-BAFF-4BE2-94DB-F8BB043C588C}.Release|Win32.Build.0 = Release|Win32
+		{6DA6FD42-641D-4147-92F5-3BC4AAA6589B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6DA6FD42-641D-4147-92F5-3BC4AAA6589B}.Debug|Win32.Build.0 = Debug|Win32
+		{6DA6FD42-641D-4147-92F5-3BC4AAA6589B}.Release|Win32.ActiveCfg = Release|Win32
+		{6DA6FD42-641D-4147-92F5-3BC4AAA6589B}.Release|Win32.Build.0 = Release|Win32
+		{FE3540C5-3303-46E0-A69E-D92F775687F1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FE3540C5-3303-46E0-A69E-D92F775687F1}.Debug|Win32.Build.0 = Debug|Win32
+		{FE3540C5-3303-46E0-A69E-D92F775687F1}.Release|Win32.ActiveCfg = Release|Win32
+		{FE3540C5-3303-46E0-A69E-D92F775687F1}.Release|Win32.Build.0 = Release|Win32
+		{37C94798-6E33-4B4F-8EE0-C72A7DC91157}.Debug|Win32.ActiveCfg = Debug|Win32
+		{37C94798-6E33-4B4F-8EE0-C72A7DC91157}.Debug|Win32.Build.0 = Debug|Win32
+		{37C94798-6E33-4B4F-8EE0-C72A7DC91157}.Release|Win32.ActiveCfg = Release|Win32
+		{37C94798-6E33-4B4F-8EE0-C72A7DC91157}.Release|Win32.Build.0 = Release|Win32
+		{C539D7C8-26A8-4A94-B938-77672165C130}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C539D7C8-26A8-4A94-B938-77672165C130}.Debug|Win32.Build.0 = Debug|Win32
+		{C539D7C8-26A8-4A94-B938-77672165C130}.Release|Win32.ActiveCfg = Release|Win32
+		{C539D7C8-26A8-4A94-B938-77672165C130}.Release|Win32.Build.0 = Release|Win32
+		{729344A5-D5E9-434D-8EE8-AF8C6C795D15}.Debug|Win32.ActiveCfg = Debug|Win32
+		{729344A5-D5E9-434D-8EE8-AF8C6C795D15}.Debug|Win32.Build.0 = Debug|Win32
+		{729344A5-D5E9-434D-8EE8-AF8C6C795D15}.Release|Win32.ActiveCfg = Release|Win32
+		{729344A5-D5E9-434D-8EE8-AF8C6C795D15}.Release|Win32.Build.0 = Release|Win32
+		{1A145EE9-BBD8-45E5-98CD-EB4BE99E1DCD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1A145EE9-BBD8-45E5-98CD-EB4BE99E1DCD}.Release|Win32.ActiveCfg = Release|Win32
+		{E886B4D5-AB4F-4092-B8F4-3B06E1E462EF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E886B4D5-AB4F-4092-B8F4-3B06E1E462EF}.Release|Win32.ActiveCfg = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

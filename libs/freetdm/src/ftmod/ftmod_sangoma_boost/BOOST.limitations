@@ -1,0 +1,20 @@
+== Boost sigmod current limitations ==
+- we don't support having openzap spans with physical channels
+  belonging to other physical spans. this is due to netborder sangoma abstraction, therefore
+  any openzap span using sigboost must have only channels belonging to the corresponding
+  physical span.
+
+  This is the reason we added group functionality in openzap core, furthermore, previous groups in openzap
+  were only possible through adding of b-channels to a single span, but this forces the user to create groups
+  of channels only whithin the same type of trunk among other things.
+
+- all spans must be configured and then started, cannot configure, start, configure start etc
+  this is due to netborder telesoft abstraction. that requires configuring everything and
+  then starting everything at once.
+
+- sangoma_prid and sangoma_brid on Windows had to be compiled hacking make/Makefile.platform to comment all VC runtime checks, 
+  otherwise when running in debug mode exceptions are thrown due to loss of data ie short to char conversions.
+
+== TODO ==
+- proper upper layer management of HW alarms (this must be done in mod_openzap.c)
+

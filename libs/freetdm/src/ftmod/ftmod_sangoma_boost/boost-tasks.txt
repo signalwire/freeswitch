@@ -1,0 +1,146 @@
+== General Design ==
+
+NBE will do its current loading of spans and configuration process through Sangoma Board Manager (SBM).
+After doing SangomaBoardManager::getInstance().configure -> start. It will proceed to initalize
+the openzap stack (just as the TelesoftStack is loaded after starting SMB. The procedure will be:
+
+- create a static or malloced zap_io_interface_t
+- call zap_global_set_logger with the logging hooks.
+- call zap_global_set_memhandler() with the memory hooks.
+- call zap_global_init() to initialize the stack
+- call zap_add_io_iface() to add the I/O iface.
+- iterate over all SBM spans configured for BRI or any boost-managed signaling and:
+    * call zap_span_create(NBE I/O mod, in_ptrSpan, SMB span name)
+    * Fill in some members like: 
+      span->trunk_type = E1/T1/J1/FXO/FXS etc ...
+    * iterate over all channels in SMB span and:
+      * zap_span_add_channel(zap_span, sock, type:CAS|BCHAN|DCHAN|ETC)
+    * call zap_configure_span("sangoma_boost", span, sigmsg_callback, "param1", value1, "param2", value1 ...)
+    * zap_span_start(span);
+
+
+At this point, NBE would receive signaling msgs via sigmsg_callback registered when configuring
+and NBE would request hangup or making calls throug openzap API, like zap_set_state_* and zap_channel_outgoing_call() to place calls.
+
+When NBE wants to check for link status. 
+
+      zap_get_siglink_state() which would return 
+      ZAP_SIG_STATE_UP (D-chan UP, R2 bits in IDLE, ss7?)
+      ZAP_SIG_STATE_SUSPENDED (D-chan in power saving mode?)
+      ZAP_SIG_STATE_DOWN (D-chan down, R2 bits in blocked, ss7?)
+
+      Whenever a state in sig link changes, the sigmsg_callback will be used to notify NBE or any other user.
+
+NOTE: right now hardware alarms notification in openzap is seriously broken,
+see ozmod_libpri.c process_event ... reads an event from hardware (zap_event_t *),
+then checks the event type, if its ZAP_OOB_ALARM_TRAP prepares a zap_sigmsg_t
+(signaling event) setting its event_id to ZAP_OOB_ALARM_TRAP, which is *WRONG*
+because event_id is of type zap_signal_event_t and not zap_oob_event_t!
+this means on alarm the user will get ZAP_SIGEVENT_PROGRESS_MEDIA!! which is
+value 7 that is in conflict with ZAP_OOB_ALARM_TRAP, I think a separate
+callback should be used if the outside user wants to be notified about
+hardware events like HW DTMF or so. Currently there is alreadya  generic DTMF
+listener.
+
+== Tasks Stage 1 / OpenZAP and Boost changes (To be tested with FreeSWITCH) ==
+
+- Change malloc and other mem functions in openzap
+  to use internal hooks provided via zap_global_set_memhandler()
+  which would be called before zap_global_init(), this is
+  already done for the logger via zap_global_set_logger()
+  
+  question: should the mem routines allow for memory pool ptr?
+            this could be useful to provide a memory pool to
+            the whole module.
+
+  question: should we allow hooks for threads and locking?
+            I think we can skip this one unless needed. They already
+            use their own threading abstraction which is working for
+            Linux and Windows. If we ever need to profile threading
+            we can add profiling hooks.
+
+  question: I had to add openzap calls to the hash table and libteletone implementations, is that acceptable?
+
+- Modify zap_global_init() API
+  
+  This API must just initialize vars, mutexes etc.
+  and NOT DO ANY CONFIGURATION LOADING, PARSING, SPAN CREATION and I/O
+  configuration, which is what is currently doing. 
+  We don't want zap_global_init() to create the spans based on that configuration
+  since NBE will have its own configuration and will take care of creating
+  the needed data structures on its own.
+
+- Add new zap_std_io_config() API 
+
+  This API will parse the standard openzap.conf module and create the spans.  
+  This will be used by FS but not by NBE, which will create the openzap spans by itself.
+  The NBE flow to initialize openzap will be:
+
+- Add new API zap_global_add_io_iface(), 
+
+  This API will add a new I/O interface structure to the internal openzap hash of I/O structs. 
+  This is needed because NBE I/O structure will NOT be loaded from an openzap module (.so/.dll)
+  but rather just registered on runtime (probably from a static structure in NBE code).
+  This openzap hash is used by zap_api_execute() for example, to find the module that can 
+  handle a given API, ie (oz libpri status). This is an example of how an openzap I/O interface 
+  can decide to implement just the ->api() member to handle commands and NOTHING else,
+  so I/O interfaces not necessary are hardware-related.
+
+- Add new zap_channel_get_siglink_state(zap_channel, zap_siglink_status_t &status)
+
+- Modify mod_openzap.c to read proto= setting in boost spans, this will determine wich boost sig
+  module will handle the configuration and those channels.
+
+    <boost_spans> <span sigmod="bri|ss7|blah"> <param="proto-specific-setting" value="setting"> </span> </boost_spans>
+
+    Then as first config arg to zap_config_span() the boost proto module name would be included as "sigmod" which will be used
+    by ozmod_sangoma_boost to decide which sig module must handle that span configuration
+
+- Create minimal boost mod interface.
+ 
+   ozmod_boost_ss7 should load sig boost mods and get interface via dlsym(boost_get_interface) boost_get_interface(boost_iface);
+  The boost interface will have
+    * const char *name                  // boost sigmod name (brid,ss7d)
+    * set_write_boost_msg_cb(callback)  // tell the stack how to send us boost messages
+    * set_sig_status_cb(callback);      // tell the stack how to notify us about link status changes
+    * write_boost_msg(struct boost_msg) // send a boost msg to the stack
+    * configure_span(zap_span_t span, "configuration", value, "configuration", value) // configure a given span
+    * get_sig_status(openzap_sigstatus_t status)
+    * start(span) // to start a given openzap span
+    * stop(span) // to stop the stack on a given openzap span
+
+- Migrate current sangoma_brid sig module to openzap
+  * Make sangoma_brid a library
+  * Move from using malloc, threading, locking, logging and I/O to openzap functions. Export the boost sigmod interface and its supporting code.
+
+== State 2 Tasks == 
+
+- Create the I/O NBE interface and supporting functions. It must be possible to poll over the span
+  given that ozmod_sangoma_boost BRI module and others may need to *wait* for data. The poll()
+  function in I/O NBE interface would wait on a pthread condition or Windows event, which would
+  be triggered by some external NBE component registered with Sangoma Board Manager (SMB) for d-chan
+  data, whenever d-chan data arrives, saves the data in a buffer and triggers the condition to wakeup
+  any waiter, then the waiter (sangoma_brid or any other boost client) calls zap_channel_read which calls
+  our own I/O NBE interface read method and retrieves the data from the buffer.
+
+    Dropped alternative design:
+    Another option is to add a new API zap_span_push_incoming_data(span/chan, data); However this changes
+    the model openzap has followed and I don't think fits that well, since now we have 2 different models
+    to support in openzap. 
+
+== TODO ==
+
+- how about logging specific modules, like, just ozmod_boost, or just the BRI stack?
+  more work to be done so the BRI module uses zap_log instead of current syslog
+  then work to be done to be able to filter logs from specific openzap code? is it worth it?
+
+- remove FORCE_SEGFAULT from sprid
+
+
+=== Shortcomings ==
+
+- we had to drop smg support in the branch where we work on sangoma prid.
+  After all, most people using sangoma_prid is using freeswitch/openzap and not Sangoma Media Gateway
+  The problem is in freeswitch/openzap mode, sangoma_boost ozmod takes care of span events (POLLPRI)
+  where in SMG and Netborder POLLPRI is done typically by sangoma board manager.
+

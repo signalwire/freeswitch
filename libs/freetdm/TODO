@@ -1,0 +1,9 @@
+== Interface inconsistency ==
+- enum_id member of ftdm_event_t is inconsistent. Most of the time is just for OOB events, the only other
+  type of event as of now is FTDM_EVENT_DTMF and is not using the enum_id member. I think we can get rid
+  of the FTDM_EVENT_DTMF and create ftdm_dtmf_event_t type instead of reusing ftdm_event_t
+  then ftdm_event_t would be renamed to ftdm_oob_event_t and the enum_id renamed to type, then ftdm_span_next_event()
+  will only return OOB events
+
+- query span hw status (connected/disconnected) on startup 
+

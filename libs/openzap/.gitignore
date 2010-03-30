@@ -1,0 +1,13 @@
+*.o
+*.lo
+*.so
+*.a
+*.orig
+*.rej
+*.log
+
+Makefile
+config.*
+configure
+libtool
+aclocal.m4
