@@ -40,3 +40,4 @@ modules.conf
 quiet_libtool
 scripts/fsxs
 scripts/gentls_cert
+a.out.dSYM
