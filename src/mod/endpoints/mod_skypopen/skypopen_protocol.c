@@ -584,6 +584,7 @@ int skypopen_signaling_read(private_t * tech_pvt)
 						skypopen_sleep(1000);
 						sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id, tech_pvt->tcp_cli_port);
 						skypopen_signaling_write(tech_pvt, msg_to_skype);
+						skypopen_sleep(1000);
 						sprintf(msg_to_skype, "#output ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id, tech_pvt->tcp_srv_port);
 						skypopen_signaling_write(tech_pvt, msg_to_skype);
 
@@ -1408,6 +1409,7 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 			win32_DeInitialize_DestroyWindowClass(tech_pvt);
 		}
 	}
+	tech_pvt->skypopen_api_thread=NULL;
 	DEBUGA_SKYPE("EXITING\n", SKYPOPEN_P_LOG);
 	return NULL;
 }
@@ -1707,8 +1709,9 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 	} else {
 		ERRORA("Skype is not running, maybe crashed. Please run/restart Skype and relaunch Skypopen\n", SKYPOPEN_P_LOG);
 		running = 0;
-		return NULL;
 	}
+	tech_pvt->skypopen_api_thread=NULL;
+	NOTICA("EXITING\n", SKYPOPEN_P_LOG);
 	return NULL;
 
 }

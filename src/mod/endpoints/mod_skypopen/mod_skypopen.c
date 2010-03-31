@@ -1191,6 +1191,7 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 			}
 		}
 	}
+	tech_pvt->skypopen_signaling_thread=NULL;
 	DEBUGA_SKYPE("EXITING\n", SKYPOPEN_P_LOG);
 	return NULL;
 }
@@ -1703,6 +1704,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 				switch_file_write(tech_pvt->SkypopenHandles.fdesc[1], "sciutati", &howmany);	// let's the controldev_thread die
 
 #else /* WIN32 */
+				skypopen_signaling_write(tech_pvt, "DIE");
+				switch_sleep(10000);
 				howmany = write(tech_pvt->SkypopenHandles.fdesc[1], "sciutati", howmany);
 #endif /* WIN32 */
 			}
