@@ -205,9 +205,9 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 	sngtc_codec_ipv4_hex_to_str(codec_reply_leg->codec_ip, codec_ip);
 
 	iana = codec_id_to_iana(codec_reg_leg->codec_id);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Creating RTP session for host (%s/%d)  vocallo(%s/%d) Iana=%d sample=%d ms=%d idx=%lu\n",
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Creating RTP session for host (%s/%d)  vocallo(%s/%d) Iana=%d ms=%d idx=%lu\n",
 					  local_ip, rtp_port, codec_ip, codec_reply_leg->codec_udp_port, iana, 
-					  codec_reg_leg->sample_rate, codec_reg_leg->ms*1000, sess->sessid);
+					  codec_reg_leg->ms*1000, sess->sessid);
 
 	/* create the RTP socket, dont use the session pool since the session may go away while the RTP socket should linger around 
 	 * until sangoma_transcode decides to kill it (possibly because the same RTP session is used for a different call) */
@@ -269,22 +269,18 @@ static switch_status_t switch_sangoma_init(switch_codec_t *codec, switch_codec_f
 		sess->encoder.request.usr_priv = sess;
 		sess->encoder.request.a.codec_id = SNGTC_CODEC_PCMU;
 		sess->encoder.request.a.ms = codec->implementation->microseconds_per_packet/1000;
-		sess->encoder.request.a.sample_rate = codec->implementation->actual_samples_per_second;
 
 		sess->encoder.request.b.codec_id = vcodec->codec_id;
 		sess->encoder.request.b.ms = codec->implementation->microseconds_per_packet/1000;
-		sess->encoder.request.b.sample_rate = codec->implementation->actual_samples_per_second;
 	}
 
 	if (decoding) {
 		sess->decoder.request.usr_priv = sess;
 		sess->decoder.request.a.codec_id = vcodec->codec_id;
 		sess->decoder.request.a.ms = codec->implementation->microseconds_per_packet/1000;
-		sess->decoder.request.a.sample_rate = codec->implementation->actual_samples_per_second;
 
 		sess->decoder.request.b.codec_id = SNGTC_CODEC_PCMU;
 		sess->decoder.request.b.ms = codec->implementation->microseconds_per_packet/1000;
-		sess->decoder.request.b.sample_rate = codec->implementation->actual_samples_per_second;
 
 	}
 
