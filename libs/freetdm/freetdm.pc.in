@@ -1,17 +1,17 @@
 #
-# OpenZAP pkg-config file
+# FreeTDM pkg-config file
 #
 prefix=@prefix@
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
 
-Name: OpenZAP
+Name: FreeTDM
 Description:
 Version: @PACKAGE_VERSION@
 URL: http://www.openzap.org/
 Requires:
 Conflicts:
-Libs: -L${libdir} -lopenzap
+Libs: -L${libdir} -lfreetdm
 Libs.private: -lm
 Cflags: -I${includedir}
