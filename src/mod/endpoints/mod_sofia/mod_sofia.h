@@ -915,6 +915,7 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 const char *sofia_glue_strip_proto(const char *uri);
 switch_status_t reconfig_sofia(sofia_profile_t *profile);
 void sofia_glue_del_gateway(sofia_gateway_t *gp);
+void sofia_glue_del_every_gateway(sofia_profile_t *profile);
 void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent,
 						   const char *network_ip);
 void sofia_glue_restart_all_profiles(void);

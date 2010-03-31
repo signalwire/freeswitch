@@ -3932,6 +3932,19 @@ switch_status_t sofia_glue_add_profile(char *key, sofia_profile_t *profile)
 	return status;
 }
 
+
+void sofia_glue_del_every_gateway(sofia_profile_t *profile)
+{
+	sofia_gateway_t *gp = NULL;
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	for (gp = profile->gateways; gp; gp = gp->next) {
+		sofia_glue_del_gateway(gp);
+	}
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+}
+
+
 void sofia_glue_del_gateway(sofia_gateway_t *gp)
 {
 	if (!gp->deleted) {
