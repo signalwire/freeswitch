@@ -84,7 +84,7 @@ uint32_t func(const char *str)\
 	}
 	
 
-struct skinny_table SKINNY_MESSAGE_TYPES[55];
+struct skinny_table SKINNY_MESSAGE_TYPES[56];
 const char *skinny_message_type2str(uint32_t id);
 uint32_t skinny_str2message_type(const char *str);
 #define SKINNY_PUSH_MESSAGE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_MESSAGE_TYPES)
@@ -210,13 +210,13 @@ enum skinny_call_state {
 	SKINNY_RING_IN = 4,
 	SKINNY_CONNECTED = 5,
 	SKINNY_BUSY = 6,
-	SKINNY_CONGESTION = 7,
+	SKINNY_LINE_IN_USE = 7,
 	SKINNY_HOLD = 8,
 	SKINNY_CALL_WAITING = 9,
 	SKINNY_CALL_TRANSFER = 10,
 	SKINNY_CALL_PARK = 11,
 	SKINNY_PROCEED = 12,
-	SKINNY_CALL_REMOTE_MULTILINE = 13,
+	SKINNY_IN_USE_REMOTELY = 13,
 	SKINNY_INVALID_NUMBER = 14
 };
 struct skinny_table SKINNY_CALL_STATES[15];

@@ -59,6 +59,9 @@ struct register_message {
 
 /* PortMessage */
 #define PORT_MESSAGE 0x0002
+struct port_message {
+	uint16_t port;
+};
 
 /* KeypadButtonMessage */
 #define KEYPAD_BUTTON_MESSAGE 0x0003
@@ -73,14 +76,14 @@ struct keypad_button_message {
 struct stimulus_message {
 	uint32_t instance_type; /* See enum skinny_button_definition */
 	uint32_t instance;
-	/* uint32_t call_reference; */
+	uint32_t call_id;
 };
 
 /* OffHookMessage */
 #define OFF_HOOK_MESSAGE 0x0006
 struct off_hook_message {
 	uint32_t line_instance;
-	/* uint32_t call_id; */
+	uint32_t call_id;
 };
 
 /* OnHookMessage */
@@ -150,7 +153,7 @@ struct open_receive_channel_ack_message {
 struct soft_key_event_message {
 	uint32_t event;
 	uint32_t line_instance;
-	uint32_t callreference;
+	uint32_t call_id;
 };
 
 /* UnregisterMessage */
@@ -186,10 +189,10 @@ struct register_available_lines_message {
 /* RegisterAckMessage */
 #define REGISTER_ACK_MESSAGE 0x0081
 struct register_ack_message {
-	uint32_t keepAlive;
-	char dateFormat[6];
+	uint32_t keep_alive;
+	char date_format[6];
 	char reserved[2];
-	uint32_t secondaryKeepAlive;
+	uint32_t secondary_keep_alive;
 	char reserved2[4];
 };
 
@@ -214,7 +217,8 @@ struct stop_tone_message {
 struct set_ringer_message {
 	uint32_t ring_type; /* See enum skinny_ring_type */
 	uint32_t ring_mode; /* See enum skinny_ring_mode */
-	uint32_t unknown; /* ?? */
+	uint32_t line_instance;
+	uint32_t call_id;
 };
 
 /* SetLampMessage */
@@ -470,6 +474,14 @@ struct feature_stat_res_message {
 	uint32_t status;
 };
 
+/* DisplayPriNotifyMessage */
+#define DISPLAY_PRI_NOTIFY_MESSAGE 0x0120
+struct display_pri_notify_message {
+	uint32_t message_timeout;
+	uint32_t priority;
+	char notify[32];
+};
+
 /* ServiceUrlStatMessage */
 #define SERVICE_URL_STAT_RES_MESSAGE 0x012F
 struct service_url_stat_res_message {
@@ -487,6 +499,7 @@ struct service_url_stat_res_message {
 
 union skinny_data {
 	struct register_message reg;
+	struct port_message port;
 	struct keypad_button_message keypad_button;
 	struct stimulus_message stimulus;
 	struct off_hook_message off_hook;
@@ -529,6 +542,7 @@ union skinny_data {
 	struct unregister_ack_message unregister_ack;
 	struct dialed_number_message dialed_number;
 	struct feature_stat_res_message feature_res;
+	struct display_pri_notify_message display_pri_notify;
 	struct service_url_stat_res_message service_url_res;
 	
 	uint16_t as_uint16;
@@ -598,16 +612,24 @@ typedef switch_status_t (*skinny_command_t) (char **argv, int argc, switch_strea
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received Too Short Skinny Message (Expected %" SWITCH_SIZE_T_FMT ", got %d).\n", len+4, message->length);\
 		return SWITCH_STATUS_FALSE;\
 	}
+#define skinny_check_data_length_soft(message, len) \
+    (message->length >= len+4)
 
 switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req);
 
 switch_status_t skinny_device_event(listener_t *listener, switch_event_t **ev, switch_event_types_t event_id, const char *subclass_name);
 
-switch_status_t skinny_send_call_info(switch_core_session_t *session);
+switch_status_t skinny_send_call_info(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
+switch_status_t skinny_session_walk_lines(skinny_profile_t *profile, char *channel_uuid, switch_core_db_callback_func_t callback, void *data);
+switch_call_cause_t skinny_ring_lines(private_t *tech_pvt);
 
-switch_status_t skinny_create_session(listener_t *listener, uint32_t line, uint32_t to_state);
-switch_status_t skinny_process_dest(listener_t *listener, uint32_t line);
-switch_status_t skinny_answer(switch_core_session_t *session);
+switch_status_t skinny_create_ingoing_session(listener_t *listener, uint32_t *line_instance, switch_core_session_t **session);
+switch_status_t skinny_session_process_dest(switch_core_session_t *session, listener_t *listener, uint32_t line_instance, char *dest, char append_dest, uint32_t backspace);
+switch_status_t skinny_session_ring_out(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
+switch_status_t skinny_session_answer(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
+switch_status_t skinny_session_start_media(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
+switch_status_t skinny_session_hold_line(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
+switch_status_t skinny_session_unhold_line(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
 
 void skinny_line_get(listener_t *listener, uint32_t instance, struct line_stat_res_message **button);
 void skinny_speed_dial_get(listener_t *listener, uint32_t instance, struct speed_dial_stat_res_message **button);
@@ -631,7 +653,8 @@ switch_status_t stop_tone(listener_t *listener,
 switch_status_t set_ringer(listener_t *listener,
 	uint32_t ring_type,
 	uint32_t ring_mode,
-	uint32_t unknown);
+	uint32_t line_instance,
+	uint32_t call_id);
 switch_status_t set_lamp(listener_t *listener,
 	uint32_t stimulus,
 	uint32_t stimulus_instance,
@@ -710,6 +733,10 @@ switch_status_t send_dialed_number(listener_t *listener,
 	char called_party[24],
 	uint32_t line_instance,
 	uint32_t call_id);
+switch_status_t send_display_pri_notify(listener_t *listener,
+	uint32_t message_timeout,
+	uint32_t priority,
+	char *notify);
 switch_status_t send_reset(listener_t *listener,
 	uint32_t reset_type);
 

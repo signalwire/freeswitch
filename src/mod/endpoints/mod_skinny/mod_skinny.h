@@ -42,6 +42,7 @@
 #define SKINNY_EVENT_UNREGISTER "skinny::unregister"
 #define SKINNY_EVENT_EXPIRE "skinny::expire"
 #define SKINNY_EVENT_ALARM "skinny::alarm"
+#define SKINNY_EVENT_CALL_STATE "skinny::call_state"
 
 struct skinny_globals {
 	/* data */
@@ -49,6 +50,7 @@ struct skinny_globals {
 	switch_mutex_t *calls_mutex;
 	switch_hash_t *profile_hash;
 	switch_event_node_t *heartbeat_node;
+	switch_event_node_t *call_state_node;
 	int running;
 };
 typedef struct skinny_globals skinny_globals_t;
@@ -72,6 +74,7 @@ struct skinny_profile {
 	char *odbc_user;
 	char *odbc_pass;
 	switch_odbc_handle_t *master_odbc;
+	switch_mutex_t *sql_mutex;	
 	/* stats */
 	uint32_t ib_calls;
 	uint32_t ob_calls;
@@ -103,8 +106,6 @@ struct listener {
 	skinny_profile_t *profile;
 	char device_name[16];
 	uint32_t device_instance;
-	switch_core_session_t *session[SKINNY_MAX_LINES];
-	uint32_t line_state[SKINNY_MAX_LINES]; /* See enum skinny_key_set */
 
 	switch_socket_t *sock;
 	switch_memory_pool_t *pool;
@@ -153,14 +154,11 @@ struct private_object {
 	switch_mutex_t *mutex;
 	switch_mutex_t *flag_mutex;
 	/* identification */
-	struct listener *listener;
-	uint32_t line;
 	uint32_t call_id;
 	uint32_t party_id;
-	char *line_name;
-	char *line_shortname;
-	char *line_displayname;
-	char dest[10];
+
+	skinny_profile_t *profile;
+
 	/* codec */
 	char *iananame;	
 	switch_codec_t read_codec;
@@ -183,6 +181,13 @@ struct private_object {
 typedef struct private_object private_t;
 
 /*****************************************************************************/
+/* PROFILES FUNCTIONS */
+/*****************************************************************************/
+switch_status_t skinny_profile_find_listener_by_device_name_and_instance(skinny_profile_t *profile, const char *device_name, uint32_t device_instance, listener_t **listener);
+char * skinny_profile_find_session_uuid(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id);
+switch_core_session_t * skinny_profile_find_session(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id);
+
+/*****************************************************************************/
 /* SQL FUNCTIONS */
 /*****************************************************************************/
 void skinny_execute_sql(skinny_profile_t *profile, char *sql, switch_mutex_t *mutex);
@@ -197,13 +202,13 @@ switch_status_t keepalive_listener(listener_t *listener, void *pvt);
 /*****************************************************************************/
 /* CHANNEL FUNCTIONS */
 /*****************************************************************************/
-uint32_t skinny_line_perform_set_state(listener_t *listener, const char *file, const char *func, int line, uint32_t instance, uint32_t state, uint32_t call_id);
-#define  skinny_line_set_state(listener, instance, state, call_id)  skinny_line_perform_set_state(listener, __FILE__, __SWITCH_FUNC__, __LINE__, instance, state, call_id)
+void skinny_line_perform_set_state(const char *file, const char *func, int line, listener_t *listener, uint32_t line_instance, uint32_t call_id, uint32_t call_state);
+#define  skinny_line_set_state(listener, line_instance, call_id, call_state)  skinny_line_perform_set_state(__FILE__, __SWITCH_FUNC__, __LINE__, listener, line_instance, call_id, call_state)
 
-uint32_t skinny_line_get_state(listener_t *listener, uint32_t instance);
+uint32_t skinny_line_get_state(listener_t *listener, uint32_t line_instance, uint32_t call_id);
 
 switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force);
-void tech_init(private_t *tech_pvt, switch_core_session_t *session, listener_t *listener, uint32_t line);
+void tech_init(private_t *tech_pvt, skinny_profile_t *profile, switch_core_session_t *session);
 switch_status_t channel_on_init(switch_core_session_t *session);
 switch_status_t channel_on_hangup(switch_core_session_t *session);
 switch_status_t channel_on_destroy(switch_core_session_t *session);

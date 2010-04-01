@@ -77,7 +77,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{"ResetMessage", RESET_MESSAGE},
 	{"KeepAliveAckMessage", KEEP_ALIVE_ACK_MESSAGE},
 	{"OpenReceiveChannelMessage", OPEN_RECEIVE_CHANNEL_MESSAGE},
-	{"OCloseReceiveChannelMessage", CLOSE_RECEIVE_CHANNEL_MESSAGE},
+	{"CloseReceiveChannelMessage", CLOSE_RECEIVE_CHANNEL_MESSAGE},
 	{"SoftKeyTemplateResMessage", SOFT_KEY_TEMPLATE_RES_MESSAGE},
 	{"SoftKeySetResMessage", SOFT_KEY_SET_RES_MESSAGE},
 	{"SelectSoftKeysMessage", SELECT_SOFT_KEYS_MESSAGE},
@@ -88,6 +88,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{"UnregisterAckMessage", UNREGISTER_ACK_MESSAGE},
 	{"DialedNumberMessage", DIALED_NUMBER_MESSAGE},
 	{"FeatureResMessage", FEATURE_STAT_RES_MESSAGE},
+	{"DisplayPriNotifyMessage", DISPLAY_PRI_NOTIFY_MESSAGE},
 	{"ServiceUrlStatMessage", SERVICE_URL_STAT_RES_MESSAGE},
 	{NULL, 0}
 };
@@ -168,13 +169,13 @@ struct skinny_table SKINNY_CALL_STATES[] = {
 	{"RingIn", SKINNY_RING_IN},
 	{"Connected", SKINNY_CONNECTED},
 	{"Busy", SKINNY_BUSY},
-	{"Congestion", SKINNY_CONGESTION},
+	{"LineInUse", SKINNY_LINE_IN_USE},
 	{"Hold", SKINNY_HOLD},
 	{"CallWaiting", SKINNY_CALL_WAITING},
 	{"CallTransfer", SKINNY_CALL_TRANSFER},
 	{"CallPark", SKINNY_CALL_PARK},
 	{"Proceed", SKINNY_PROCEED},
-	{"CallRemoteMultiline", SKINNY_CALL_REMOTE_MULTILINE},
+	{"InUseRemotely", SKINNY_IN_USE_REMOTELY},
 	{"InvalidNumber", SKINNY_INVALID_NUMBER},
 	{NULL, 0}
 };
