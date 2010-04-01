@@ -35,11 +35,11 @@ fi
 sed -e "s|\(AC_SUBST(SWITCH_VERSION_MAJOR, \[\).*\(\])\)|\1$major\2|" \
     -e "s|\(AC_SUBST(SWITCH_VERSION_MINOR, \[\).*\(\])\)|\1$minor\2|" \
     -e "s|\(AC_SUBST(SWITCH_VERSION_MICRO, \[\).*\(\])\)|\1$micro\2|" \
-    -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
     -i configure.in
 
 if [ -n "$rev" ]; then
-    sed -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
+    sed -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
+        -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
         -i configure.in
 fi
 
