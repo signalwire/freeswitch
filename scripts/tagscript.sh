@@ -69,8 +69,8 @@ rm -rf $dst_dir
 cat 1>&2 <<EOF
 ----------------------------------------------------------------------
 The v$ver tag has been committed locally, but it will not be
-globally visible until you 'git push' this repository up to the server
-(I didn't do that for you).
+globally visible until you 'git push --tags' this repository up to the
+server (I didn't do that for you, as you might want to review first).
 ----------------------------------------------------------------------
 EOF
 
