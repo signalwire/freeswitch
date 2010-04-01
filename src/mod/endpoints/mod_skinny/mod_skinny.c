@@ -132,7 +132,7 @@ switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stre
 
 skinny_profile_t *skinny_find_profile(const char *profile_name)
 {
-    skinny_profile_t *profile;
+	skinny_profile_t *profile;
 	switch_mutex_lock(globals.mutex);
 	profile = (skinny_profile_t *) switch_core_hash_find(globals.profile_hash, profile_name);
 	switch_mutex_unlock(globals.mutex);
@@ -166,7 +166,7 @@ switch_status_t skinny_profile_find_listener_by_device_name_and_instance(skinny_
 }
 
 struct skinny_profile_find_session_uuid_helper {
-    skinny_profile_t *profile;
+	skinny_profile_t *profile;
 	char *channel_uuid;
 	uint32_t line_instance;
 };
@@ -178,12 +178,12 @@ int skinny_profile_find_session_uuid_callback(void *pArg, int argc, char **argv,
 	char *channel_uuid = argv[0];
 	uint32_t line_instance = atoi(argv[1]);
 
-    if(helper->channel_uuid == NULL) {
-        helper->channel_uuid = switch_mprintf("%s", channel_uuid);
-        helper->line_instance = line_instance;
-    }
+	if(helper->channel_uuid == NULL) {
+		helper->channel_uuid = switch_mprintf("%s", channel_uuid);
+		helper->line_instance = line_instance;
+	}
 
-    return 0;
+	return 0;
 }
 
 char * skinny_profile_find_session_uuid(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id)
@@ -193,28 +193,28 @@ char * skinny_profile_find_session_uuid(skinny_profile_t *profile, listener_t *l
 	char *device_condition = NULL;
 	char *line_instance_condition = NULL;
 	char *call_id_condition = NULL;
-	
+
 	switch_assert(profile);
 	helper.profile = profile;
 	helper.channel_uuid = NULL;
-	
+
 	if(listener) {
-	    device_condition = switch_mprintf("device_name='%s' AND device_instance=%d",
-	        listener->device_name, listener->device_instance);
+		device_condition = switch_mprintf("device_name='%s' AND device_instance=%d",
+			listener->device_name, listener->device_instance);
 	} else {
-	    device_condition = switch_mprintf("1=1");
+		device_condition = switch_mprintf("1=1");
 	}
 	switch_assert(device_condition);
 	if(*line_instance_p > 0) {
-	    line_instance_condition = switch_mprintf("line_instance=%d", *line_instance_p);
+		line_instance_condition = switch_mprintf("line_instance=%d", *line_instance_p);
 	} else {
-	    line_instance_condition = switch_mprintf("1=1");
+		line_instance_condition = switch_mprintf("1=1");
 	}
 	switch_assert(line_instance_condition);
 	if(call_id > 0) {
-	    call_id_condition = switch_mprintf("call_id=%d", call_id);
+		call_id_condition = switch_mprintf("call_id=%d", call_id);
 	} else {
-	    call_id_condition = switch_mprintf("1=1");
+		call_id_condition = switch_mprintf("1=1");
 	}
 	switch_assert(call_id_condition);
 	if((sql = switch_mprintf(
@@ -225,7 +225,7 @@ char * skinny_profile_find_session_uuid(skinny_profile_t *profile, listener_t *l
 			device_condition, line_instance_condition, call_id_condition
 			))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql,
-		    skinny_profile_find_session_uuid_callback, &helper);
+			skinny_profile_find_session_uuid_callback, &helper);
 		switch_safe_free(sql);
 	}
 	switch_safe_free(device_condition);
@@ -237,21 +237,21 @@ char * skinny_profile_find_session_uuid(skinny_profile_t *profile, listener_t *l
 
 switch_core_session_t * skinny_profile_find_session(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id)
 {
-    char *uuid;
-    switch_core_session_t *result = NULL;
-    uuid = skinny_profile_find_session_uuid(profile, listener, line_instance_p, call_id);
+	char *uuid;
+	switch_core_session_t *result = NULL;
+	uuid = skinny_profile_find_session_uuid(profile, listener, line_instance_p, call_id);
 
-    if(!zstr(uuid)) {
-        /* TODO Why should we force? */
-        result = switch_core_session_force_locate(uuid);
+	if(!zstr(uuid)) {
+		/* TODO Why should we force? */
+		result = switch_core_session_force_locate(uuid);
 		if(!result) {
-		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-		        "Unable to find session %s on %s:%d, line %d\n",
-		        uuid, listener->device_name, listener->device_instance, *line_instance_p);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+				"Unable to find session %s on %s:%d, line %d\n",
+				uuid, listener->device_name, listener->device_instance, *line_instance_p);
 		}
 		switch_safe_free(uuid);
-    }
-    return result;
+	}
+	return result;
 }
 
 /*****************************************************************************/
@@ -337,7 +337,7 @@ switch_bool_t skinny_execute_sql_callback(skinny_profile_t *profile,
 void skinny_line_perform_set_state(const char *file, const char *func, int line, listener_t *listener, uint32_t line_instance, uint32_t call_id, uint32_t call_state)
 {
 	switch_event_t *event = NULL;
-    switch_assert(listener);
+	switch_assert(listener);
 
 	skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_CALL_STATE);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-Line-Instance", "%d", line_instance);
@@ -359,30 +359,30 @@ int skinny_line_get_state_callback(void *pArg, int argc, char **argv, char **col
 {
 	struct skinny_line_get_state_helper *helper = pArg;
 	helper->call_state = atoi(argv[0]);
-    return 0;
+	return 0;
 }
 
 uint32_t skinny_line_get_state(listener_t *listener, uint32_t line_instance, uint32_t call_id)
 {
-    char *line_instance_condition;
-    char *call_id_condition;
-    char *sql;
+	char *line_instance_condition;
+	char *call_id_condition;
+	char *sql;
 	struct skinny_line_get_state_helper helper = {0};
 
-    switch_assert(listener);
-    
-    if(line_instance > 0) {
-        line_instance_condition = switch_mprintf("line_instance=%d", line_instance);
-    } else {
-        line_instance_condition = switch_mprintf("1=1");
-    }
-    switch_assert(line_instance_condition);
-    if(call_id > 0) {
-        call_id_condition = switch_mprintf("call_id=%d", call_id);
-    } else {
-        call_id_condition = switch_mprintf("1=1");
-    }
-    switch_assert(call_id_condition);
+	switch_assert(listener);
+
+	if(line_instance > 0) {
+		line_instance_condition = switch_mprintf("line_instance=%d", line_instance);
+	} else {
+		line_instance_condition = switch_mprintf("1=1");
+	}
+	switch_assert(line_instance_condition);
+	if(call_id > 0) {
+		call_id_condition = switch_mprintf("call_id=%d", call_id);
+	} else {
+		call_id_condition = switch_mprintf("1=1");
+	}
+	switch_assert(call_id_condition);
 
 	if ((sql = switch_mprintf(
 			"SELECT call_state FROM skinny_active_lines "
@@ -396,7 +396,7 @@ uint32_t skinny_line_get_state(listener_t *listener, uint32_t line_instance, uin
 	}
 	switch_safe_free(line_instance_condition);
 	switch_safe_free(call_id_condition);
-	
+
 	return helper.call_state;
 }
 
@@ -419,11 +419,11 @@ switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 		if (strcasecmp(tech_pvt->read_impl.iananame, tech_pvt->iananame) ||
 			tech_pvt->read_impl.samples_per_second != tech_pvt->rm_rate ||
 			tech_pvt->codec_ms != (uint32_t)tech_pvt->read_impl.microseconds_per_packet / 1000) {
-			
+	
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Changing Codec from %s@%dms to %s@%dms\n",
 							  tech_pvt->read_impl.iananame, tech_pvt->read_impl.microseconds_per_packet / 1000, 
 							  tech_pvt->rm_encoding, tech_pvt->codec_ms);
-			
+	
 			switch_core_session_lock_codec_write(tech_pvt->session);
 			switch_core_session_lock_codec_read(tech_pvt->session);
 			resetting = 1;
@@ -434,7 +434,7 @@ switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 		}
 	}
-	
+
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   tech_pvt->iananame,
 							   tech_pvt->rm_fmtp,
@@ -526,7 +526,7 @@ void tech_init(private_t *tech_pvt, skinny_profile_t *profile, switch_core_sessi
 {
 	switch_assert(tech_pvt);
 	switch_assert(session);
-	
+
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
@@ -562,7 +562,7 @@ switch_status_t channel_on_init(switch_core_session_t *session)
 
 switch_status_t channel_on_routing(switch_core_session_t *session)
 {
-    switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL ROUTING\n", switch_channel_get_name(channel));
 
@@ -571,7 +571,7 @@ switch_status_t channel_on_routing(switch_core_session_t *session)
 
 switch_status_t channel_on_execute(switch_core_session_t *session)
 {
-    switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
 
@@ -588,7 +588,7 @@ switch_status_t channel_on_destroy(switch_core_session_t *session)
 		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
 			switch_core_codec_destroy(&tech_pvt->read_codec);
 		}
-		
+
 		if (switch_core_codec_ready(&tech_pvt->write_codec)) {
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
@@ -627,33 +627,33 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 	uint32_t call_state = atoi(argv[16]);
 
 	skinny_profile_find_listener_by_device_name_and_instance(helper->tech_pvt->profile, device_name, device_instance, &listener);
-    if(listener) {
-        if(call_state == SKINNY_CONNECTED) {
-	        stop_tone(listener, line_instance, call_id);
-	    }
-        set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_OFF);
-        clear_prompt_status(listener, line_instance, call_id);
-        if(call_state == SKINNY_CONNECTED) { /* calling parties */
-		    close_receive_channel(listener,
-			    call_id, /* uint32_t conference_id, */
-			    helper->tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
-			    call_id /* uint32_t conference_id2, */
-		    );
-		    stop_media_transmission(listener,
-			    call_id, /* uint32_t conference_id, */
-			    helper->tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
-			    call_id /* uint32_t conference_id2, */
-		    );
-	    }
+	if(listener) {
+		if(call_state == SKINNY_CONNECTED) {
+			stop_tone(listener, line_instance, call_id);
+		}
+		set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_OFF);
+		clear_prompt_status(listener, line_instance, call_id);
+		if(call_state == SKINNY_CONNECTED) { /* calling parties */
+			close_receive_channel(listener,
+				call_id, /* uint32_t conference_id, */
+				helper->tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
+				call_id /* uint32_t conference_id2, */
+			);
+			stop_media_transmission(listener,
+				call_id, /* uint32_t conference_id, */
+				helper->tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
+				call_id /* uint32_t conference_id2, */
+			);
+		}
 
-    	skinny_line_set_state(listener, line_instance, call_id, SKINNY_ON_HOOK);
-	    send_select_soft_keys(listener, line_instance, call_id, SKINNY_KEY_SET_ON_HOOK, 0xffff);
-        /* TODO: DefineTimeDate */
-        set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
-        set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, call_id);
-    
-    }
-    return 0;
+		skinny_line_set_state(listener, line_instance, call_id, SKINNY_ON_HOOK);
+		send_select_soft_keys(listener, line_instance, call_id, SKINNY_KEY_SET_ON_HOOK, 0xffff);
+		/* TODO: DefineTimeDate */
+		set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
+		set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, call_id);
+
+	}
+	return 0;
 }
 
 switch_status_t channel_on_hangup(switch_core_session_t *session)
@@ -668,9 +668,9 @@ switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 
-    helper.tech_pvt= tech_pvt;
+	helper.tech_pvt= tech_pvt;
 
-    skinny_session_walk_lines(tech_pvt->profile, switch_core_session_get_uuid(session), channel_on_hangup_callback, &helper);
+	skinny_session_walk_lines(tech_pvt->profile, switch_core_session_get_uuid(session), channel_on_hangup_callback, &helper);
 	if ((sql = switch_mprintf(
 			"DELETE FROM skinny_active_lines WHERE channel_uuid='%s'",
 			switch_core_session_get_uuid(session)
@@ -698,7 +698,7 @@ switch_status_t channel_kill_channel(switch_core_session_t *session, int sig)
 	default:
 		break;
 	}
-	
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL KILL %d\n", switch_channel_get_name(channel), sig);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -728,7 +728,7 @@ switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_d
 
 switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
-    switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	int payload = 0;
 
@@ -799,7 +799,7 @@ switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	//switch_frame_t *pframe;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
+
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -850,7 +850,7 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	switch_core_session_t *nsession = NULL;
 	private_t *tech_pvt;
-	
+
 	char *profile_name, *dest;
 	skinny_profile_t *profile = NULL;
 	char *sql;
@@ -891,12 +891,12 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 		cause = SWITCH_CAUSE_UNALLOCATED_NUMBER;
 		goto error;
 	}
-	
+
 	snprintf(name, sizeof(name), "SKINNY/%s/%s", profile->name, dest);
 
 	channel = switch_core_session_get_channel(nsession);
 	switch_channel_set_name(channel, name);
-	
+
 	tech_init(tech_pvt, profile, nsession);
 
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
@@ -917,9 +917,9 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 		skinny_execute_sql(profile, sql, profile->sql_mutex);
 		switch_safe_free(sql);
 	}
-	
+
 	cause = skinny_ring_lines(tech_pvt);
-	
+
 	if(cause != SWITCH_CAUSE_SUCCESS) {
 		goto error;
 	}
@@ -1001,10 +1001,11 @@ switch_io_routines_t skinny_io_routines = {
 
 uint8_t listener_is_ready(listener_t *listener)
 {
-    return globals.running
-        && listener
-        && switch_test_flag(listener, LFLAG_RUNNING)
-        && listener->profile->listener_ready;
+	return globals.running
+		&& listener
+		&& listener->sock
+		&& switch_test_flag(listener, LFLAG_RUNNING)
+		&& listener->profile->listener_ready;
 }
 
 static void add_listener(listener_t *listener)
@@ -1049,7 +1050,7 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 	void *val;
 	skinny_profile_t *profile;
 	listener_t *l;
-	
+
 	/* walk listeners */
 	switch_mutex_lock(globals.mutex);
 	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
@@ -1071,7 +1072,7 @@ static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch
 	if(!zstr(listener->device_name)) {
 		skinny_profile_t *profile = listener->profile;
 		char *sql;
-	
+
 		if ((sql = switch_mprintf(
 				"DELETE FROM skinny_devices "
 					"WHERE name='%s' and instance=%d",
@@ -1180,7 +1181,7 @@ switch_status_t keepalive_listener(listener_t *listener, void *pvt)
 	switch_assert(listener);
 	assert(listener->profile);
 	profile = listener->profile;
-	
+
 	listener->expire_time = switch_epoch_time_now(NULL)+profile->keep_alive*110/100;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1201,9 +1202,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_mutex_lock(profile->listener_mutex);
 	profile->listener_threads++;
 	switch_mutex_unlock(profile->listener_mutex);
-	
+
 	switch_assert(listener != NULL);
-	
+
 	switch_socket_opt_set(listener->sock, SWITCH_SO_TCP_NODELAY, TRUE);
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
 
@@ -1260,7 +1261,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Closed\n");
 	}
 
-    /* TODO
+	/* TODO
 	for(int line = 0 ; line < SKINNY_MAX_BUTTON_COUNT ; line++) {
 		if(listener->session[line]) {
 			switch_channel_clear_flag(switch_core_session_get_channel(listener->session[line]), CF_CONTROLLED);
@@ -1362,7 +1363,7 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 			errs = 0;
 		}
 
-		
+
 		if (!(listener = switch_core_alloc(listener_pool, sizeof(*listener)))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error\n");
 			break;
@@ -1388,7 +1389,7 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
  end:
 
 	close_socket(&profile->sock, profile);
-	
+
 	if (tmp_pool) {
 		switch_core_destroy_memory_pool(&tmp_pool);
 	}
@@ -1461,23 +1462,23 @@ static switch_status_t load_skinny_config(void)
 				continue;
 			}
 			if (xsettings) {
-			    switch_memory_pool_t *profile_pool = NULL;
+				switch_memory_pool_t *profile_pool = NULL;
 				char dbname[256];
 				switch_core_db_t *db;
 				skinny_profile_t *profile = NULL;
 				switch_xml_t param;
-				
-	            if (switch_core_new_memory_pool(&profile_pool) != SWITCH_STATUS_SUCCESS) {
-		            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
-		            return SWITCH_STATUS_TERM;
-	            }
+		
+			    if (switch_core_new_memory_pool(&profile_pool) != SWITCH_STATUS_SUCCESS) {
+				    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
+				    return SWITCH_STATUS_TERM;
+			    }
 				profile = switch_core_alloc(profile_pool, sizeof(skinny_profile_t));
 				profile->pool = profile_pool;
 				profile->name = profile_name;
-		        switch_mutex_init(&profile->listener_mutex, SWITCH_MUTEX_NESTED, profile->pool);
-		        switch_mutex_init(&profile->sql_mutex, SWITCH_MUTEX_NESTED, profile->pool);
-		        switch_mutex_init(&profile->sock_mutex, SWITCH_MUTEX_NESTED, profile->pool);
-				
+				switch_mutex_init(&profile->listener_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+				switch_mutex_init(&profile->sql_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+				switch_mutex_init(&profile->sock_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+		
 				for (param = switch_xml_child(xsettings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -1502,7 +1503,7 @@ static switch_status_t load_skinny_config(void)
 						profile->debug = atoi(val);
 					}
 				} /* param */
-				
+		
 				if (!profile->dialplan) {
 					skinny_profile_set(profile, "dialplan","default");
 				}
@@ -1546,15 +1547,15 @@ static switch_status_t load_skinny_config(void)
 					}
 					switch_core_db_close(db);
 				}
-				
+		
 				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_devices", NULL, NULL);
 				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_lines", NULL, NULL);
 				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_buttons", NULL, NULL);
 				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_active_lines", NULL, NULL);
 
-	            switch_mutex_lock(globals.mutex);
-	            switch_core_hash_insert(globals.profile_hash, profile->name, profile);
-	            switch_mutex_unlock(globals.mutex);
+			    switch_mutex_lock(globals.mutex);
+			    switch_core_hash_insert(globals.profile_hash, profile->name, profile);
+			    switch_mutex_unlock(globals.mutex);
 				profile = NULL;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
@@ -1575,50 +1576,50 @@ static void event_handler(switch_event_t *event)
 	if (event->event_id == SWITCH_EVENT_HEARTBEAT) {
 		walk_listeners(kill_expired_listener, NULL);
 	} else if ((subclass = switch_event_get_header_nil(event, "Event-Subclass")) && !strcasecmp(subclass, SKINNY_EVENT_CALL_STATE)) {
-    	char *profile_name = switch_event_get_header_nil(event, "Skinny-Profile-Name");
-    	char *device_name = switch_event_get_header_nil(event, "Skinny-Device-Name");
-    	uint32_t device_instance = atoi(switch_event_get_header_nil(event, "Skinny-Device-Instance"));
+		char *profile_name = switch_event_get_header_nil(event, "Skinny-Profile-Name");
+		char *device_name = switch_event_get_header_nil(event, "Skinny-Device-Name");
+		uint32_t device_instance = atoi(switch_event_get_header_nil(event, "Skinny-Device-Instance"));
 		uint32_t line_instance = atoi(switch_event_get_header_nil(event, "Skinny-Line-Instance"));
 		uint32_t call_id = atoi(switch_event_get_header_nil(event, "Skinny-Call-Id"));
 		uint32_t call_state = atoi(switch_event_get_header_nil(event, "Skinny-Call-State"));
-	    skinny_profile_t *profile;
-    	listener_t *listener = NULL;
-        char *line_instance_condition, *call_id_condition;
-        char *sql;
+		skinny_profile_t *profile;
+		listener_t *listener = NULL;
+		char *line_instance_condition, *call_id_condition;
+		char *sql;
 
-	    if ((profile = skinny_find_profile(profile_name))) {
-        	skinny_profile_find_listener_by_device_name_and_instance(profile, device_name, device_instance, &listener);
-            if(listener) {
-                if(line_instance > 0) {
-                    line_instance_condition = switch_mprintf("line_instance=%d", line_instance);
-                } else {
-                    line_instance_condition = switch_mprintf("1=1");
-                }
-                switch_assert(line_instance_condition);
-                if(call_id > 0) {
-                    call_id_condition = switch_mprintf("call_id=%d", call_id);
-                } else {
-                    call_id_condition = switch_mprintf("1=1");
-                }
-                switch_assert(call_id_condition);
+		if ((profile = skinny_find_profile(profile_name))) {
+			skinny_profile_find_listener_by_device_name_and_instance(profile, device_name, device_instance, &listener);
+		    if(listener) {
+		        if(line_instance > 0) {
+		            line_instance_condition = switch_mprintf("line_instance=%d", line_instance);
+		        } else {
+		            line_instance_condition = switch_mprintf("1=1");
+		        }
+		        switch_assert(line_instance_condition);
+		        if(call_id > 0) {
+		            call_id_condition = switch_mprintf("call_id=%d", call_id);
+		        } else {
+		            call_id_condition = switch_mprintf("1=1");
+		        }
+		        switch_assert(call_id_condition);
 
-	            if ((sql = switch_mprintf(
-			            "UPDATE skinny_active_lines "
-			            "SET call_state=%d "
-			            "WHERE device_name='%s' AND device_instance=%d "
-			            "AND %s AND %s",
-			            call_state,
-			            listener->device_name, listener->device_instance,
-			            line_instance_condition, call_id_condition
-			            ))) {
-		            skinny_execute_sql(listener->profile, sql, listener->profile->sql_mutex);
-		            switch_safe_free(sql);
-		            send_call_state(listener, call_state, line_instance, call_id);
-	            }
-	            switch_safe_free(line_instance_condition);
-	            switch_safe_free(call_id_condition);
-	        }
-	    }
+			    if ((sql = switch_mprintf(
+					    "UPDATE skinny_active_lines "
+					    "SET call_state=%d "
+					    "WHERE device_name='%s' AND device_instance=%d "
+					    "AND %s AND %s",
+					    call_state,
+					    listener->device_name, listener->device_instance,
+					    line_instance_condition, call_id_condition
+					    ))) {
+				    skinny_execute_sql(listener->profile, sql, listener->profile->sql_mutex);
+				    switch_safe_free(sql);
+				    send_call_state(listener, call_state, line_instance, call_id);
+			    }
+			    switch_safe_free(line_instance_condition);
+			    switch_safe_free(call_id_condition);
+			}
+		}
 	}
 }
 
@@ -1627,20 +1628,20 @@ static void event_handler(switch_event_t *event)
 SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 {
 	switch_hash_index_t *hi;
-    /* globals init */
+	/* globals init */
 	memset(&globals, 0, sizeof(globals));
 
-    if (switch_core_new_memory_pool(&globals.pool) != SWITCH_STATUS_SUCCESS) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
-        return SWITCH_STATUS_TERM;
-    }
+	if (switch_core_new_memory_pool(&globals.pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
+		return SWITCH_STATUS_TERM;
+	}
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	switch_core_hash_init(&globals.profile_hash, globals.pool);
 	globals.running = 1;
-	
+
 	load_skinny_config();
 
-    /* bind to events */
+	/* bind to events */
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_HEARTBEAT, NULL, event_handler, NULL, &globals.heartbeat_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our heartbeat handler!\n");
 		/* Not such severe to prevent loading */
@@ -1650,7 +1651,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 		return SWITCH_STATUS_TERM;
 	}
 
-    /* reserve events */
+	/* reserve events */
 	if (switch_event_reserve_subclass(SKINNY_EVENT_REGISTER) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SKINNY_EVENT_REGISTER);
 		return SWITCH_STATUS_TERM;
@@ -1679,23 +1680,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	skinny_endpoint_interface->io_routines = &skinny_io_routines;
 	skinny_endpoint_interface->state_handler = &skinny_state_handlers;
 
-    skinny_api_register(module_interface);
+	skinny_api_register(module_interface);
 
 	/* launch listeners */
 	switch_mutex_lock(globals.mutex);
 	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-    	void *val;
-    	skinny_profile_t *profile;
-	    switch_thread_t *thread;
-	    switch_threadattr_t *thd_attr = NULL;
+		void *val;
+		skinny_profile_t *profile;
+		switch_thread_t *thread;
+		switch_threadattr_t *thd_attr = NULL;
 
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
-	
-	    switch_threadattr_create(&thd_attr, profile->pool);
-	    switch_threadattr_detach_set(thd_attr, 1);
-	    switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	    switch_thread_create(&thread, thd_attr, skinny_profile_run, profile, profile->pool);
+
+		switch_threadattr_create(&thd_attr, profile->pool);
+		switch_threadattr_detach_set(thd_attr, 1);
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_thread_create(&thread, thd_attr, skinny_profile_run, profile, profile->pool);
 	}
 	switch_mutex_unlock(globals.mutex);
 
@@ -1711,7 +1712,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 	switch_mutex_t *mutex = globals.mutex;
 	int sanity = 0;
 
-    /* release events */
+	/* release events */
 	switch_event_unbind(&globals.heartbeat_node);
 	switch_event_unbind(&globals.call_state_node);
 	switch_event_free_subclass(SKINNY_EVENT_REGISTER);
@@ -1730,7 +1731,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 	/* close sockets */
 	switch_mutex_lock(globals.mutex);
 	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-	    skinny_profile_t *profile;
+		skinny_profile_t *profile;
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
 
@@ -1743,7 +1744,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 				break;
 			}
 		}
-    	switch_core_destroy_memory_pool(&profile->pool);
+		switch_core_destroy_memory_pool(&profile->pool);
 	}
 	switch_mutex_unlock(globals.mutex);
 
