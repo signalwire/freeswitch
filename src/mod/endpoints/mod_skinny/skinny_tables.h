@@ -235,3 +235,14 @@ uint32_t skinny_str2device_reset_type(const char *str);
 
 #endif /* _SKINNY_TABLES_H */
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */
+

@@ -45,13 +45,12 @@
 #define SKINNY_EVENT_CALL_STATE "skinny::call_state"
 
 struct skinny_globals {
-	/* data */
-	int calls;
-	switch_mutex_t *calls_mutex;
+	int running;
+	switch_memory_pool_t *pool;
+	switch_mutex_t *mutex;
 	switch_hash_t *profile_hash;
 	switch_event_node_t *heartbeat_node;
 	switch_event_node_t *call_state_node;
-	int running;
 };
 typedef struct skinny_globals skinny_globals_t;
 
@@ -89,6 +88,8 @@ struct skinny_profile {
 	uint8_t listener_ready;
 	/* call id */
 	uint32_t next_call_id;
+	/* others */
+	switch_memory_pool_t *pool;
 };
 typedef struct skinny_profile skinny_profile_t;
 
@@ -183,9 +184,13 @@ typedef struct private_object private_t;
 /*****************************************************************************/
 /* PROFILES FUNCTIONS */
 /*****************************************************************************/
+skinny_profile_t *skinny_find_profile(const char *profile_name);
+switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stream_handle_t *stream);
+switch_status_t skinny_profile_find_listener_by_device_name(skinny_profile_t *profile, const char *device_name, listener_t **listener);
 switch_status_t skinny_profile_find_listener_by_device_name_and_instance(skinny_profile_t *profile, const char *device_name, uint32_t device_instance, listener_t **listener);
 char * skinny_profile_find_session_uuid(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id);
 switch_core_session_t * skinny_profile_find_session(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id);
+switch_status_t dump_device(skinny_profile_t *profile, const char *device_name, switch_stream_handle_t *stream);
 
 /*****************************************************************************/
 /* SQL FUNCTIONS */
@@ -197,6 +202,7 @@ switch_bool_t skinny_execute_sql_callback(skinny_profile_t *profile,
 /*****************************************************************************/
 /* LISTENER FUNCTIONS */
 /*****************************************************************************/
+uint8_t listener_is_ready(listener_t *listener);
 switch_status_t keepalive_listener(listener_t *listener, void *pvt);
 
 /*****************************************************************************/
@@ -228,4 +234,15 @@ switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 switch_endpoint_interface_t *skinny_get_endpoint_interface();
 
 #endif /* _MOD_SKINNY_H */
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */
 

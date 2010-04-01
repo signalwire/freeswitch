@@ -142,13 +142,13 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 		return SWITCH_STATUS_MEMERR;
 	}
 	
-	if (!globals.running) {
+	if (!listener_is_ready(listener)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
 	ptr = mbuf;
 
-	while (listener->sock && globals.running) {
+	while (listener->sock && listener_is_ready(listener)) {
 		uint8_t do_sleep = 1;
 		if(bytes < SKINNY_MESSAGE_FIELD_SIZE) {
 			/* We have nothing yet, get length header field */
@@ -160,7 +160,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
 		
-		if (!globals.running || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
+		if (!listener_is_ready(listener) || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Socket break.\n");
 			return SWITCH_STATUS_FALSE;
 		}
@@ -536,7 +536,6 @@ error:
 	return SWITCH_STATUS_FALSE;
 
 done:
-    switch_core_session_rwunlock(nsession);
 	*session = nsession;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2272,4 +2271,15 @@ switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */
 

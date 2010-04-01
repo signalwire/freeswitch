@@ -33,15 +33,14 @@
 #include "mod_skinny.h"
 #include "skinny_protocol.h"
 #include "skinny_tables.h"
+#include "skinny_api.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown);
-SWITCH_MODULE_RUNTIME_FUNCTION(mod_skinny_runtime);
 
-SWITCH_MODULE_DEFINITION(mod_skinny, mod_skinny_load, mod_skinny_shutdown, mod_skinny_runtime);
+SWITCH_MODULE_DEFINITION(mod_skinny, mod_skinny_load, mod_skinny_shutdown, NULL);
 
 switch_endpoint_interface_t *skinny_endpoint_interface;
-static switch_memory_pool_t *module_pool = NULL;
 
 skinny_globals_t globals;
 
@@ -102,7 +101,7 @@ static char active_lines_sql[] =
 /*****************************************************************************/
 /* PROFILES FUNCTIONS */
 /*****************************************************************************/
-static switch_status_t dump_profile(const skinny_profile_t *profile, switch_stream_handle_t *stream)
+switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stream_handle_t *stream)
 {
 	const char *line = "=================================================================================================";
 	switch_assert(profile);
@@ -131,12 +130,16 @@ static switch_status_t dump_profile(const skinny_profile_t *profile, switch_stre
 }
 
 
-static skinny_profile_t *skinny_find_profile(const char *profile_name)
+skinny_profile_t *skinny_find_profile(const char *profile_name)
 {
-	return (skinny_profile_t *) switch_core_hash_find(globals.profile_hash, profile_name);
+    skinny_profile_t *profile;
+	switch_mutex_lock(globals.mutex);
+	profile = (skinny_profile_t *) switch_core_hash_find(globals.profile_hash, profile_name);
+	switch_mutex_unlock(globals.mutex);
+	return profile;
 }
 
-static switch_status_t skinny_profile_find_listener_by_device_name(skinny_profile_t *profile, const char *device_name, listener_t **listener)
+switch_status_t skinny_profile_find_listener_by_device_name(skinny_profile_t *profile, const char *device_name, listener_t **listener)
 {
 	switch_mutex_lock(profile->listener_mutex);
 	for (listener_t *l = profile->listeners; l; l = l->next) {
@@ -551,9 +554,6 @@ switch_status_t channel_on_init(switch_core_session_t *session)
 	   where a destination has been identified. If the channel is simply
 	   left in the initial state, nothing will happen. */
 	switch_channel_set_state(channel, CS_ROUTING);
-	switch_mutex_lock(globals.calls_mutex);
-	globals.calls++;
-	switch_mutex_unlock(globals.calls_mutex);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL INIT\n", switch_channel_get_name(channel));
 
@@ -644,13 +644,6 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 			    helper->tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
 			    call_id /* uint32_t conference_id2, */
 		    );
-		    switch_mutex_lock(globals.calls_mutex);
-		    globals.calls--;
-		    if (globals.calls < 0) {
-			    globals.calls = 0;
-		    }
-		    switch_mutex_unlock(globals.calls_mutex);
-        
 	    }
 
     	skinny_line_set_state(listener, line_instance, call_id, SKINNY_ON_HOOK);
@@ -1006,6 +999,14 @@ switch_io_routines_t skinny_io_routines = {
 /* LISTENER FUNCTIONS */
 /*****************************************************************************/
 
+uint8_t listener_is_ready(listener_t *listener)
+{
+    return globals.running
+        && listener
+        && switch_test_flag(listener, LFLAG_RUNNING)
+        && listener->profile->listener_ready;
+}
+
 static void add_listener(listener_t *listener)
 {
 	skinny_profile_t *profile;
@@ -1050,6 +1051,7 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 	listener_t *l;
 	
 	/* walk listeners */
+	switch_mutex_lock(globals.mutex);
 	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
@@ -1060,6 +1062,7 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 		}
 		switch_mutex_unlock(profile->listener_mutex);
 	}
+	switch_mutex_unlock(globals.mutex);
 }
 
 static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch_bool_t flush_events)
@@ -1125,7 +1128,7 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 	return 0;
 }
 
-static switch_status_t dump_device(skinny_profile_t *profile, const char *device_name, switch_stream_handle_t *stream)
+switch_status_t dump_device(skinny_profile_t *profile, const char *device_name, switch_stream_handle_t *stream)
 {
 	char *sql;
 	if ((sql = switch_mprintf("SELECT name, user_id, instance, ip, type, max_streams, port, codec_string "
@@ -1218,7 +1221,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	add_listener(listener);
 
 
-	while (globals.running && switch_test_flag(listener, LFLAG_RUNNING) && profile->listener_ready) {
+	while (listener_is_ready(listener)) {
 		status = skinny_read_packet(listener, &request);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
@@ -1296,25 +1299,26 @@ static void launch_listener_thread(listener_t *listener)
 	switch_thread_create(&thread, thd_attr, listener_run, listener, listener->pool);
 }
 
-int skinny_socket_create_and_bind(skinny_profile_t *profile)
+static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void *obj)
 {
+	skinny_profile_t *profile = (skinny_profile_t *) obj;
 	switch_status_t rv;
 	switch_sockaddr_t *sa;
 	switch_socket_t *inbound_socket = NULL;
 	listener_t *listener;
-	switch_memory_pool_t *pool = NULL, *listener_pool = NULL;
+	switch_memory_pool_t *tmp_pool = NULL, *listener_pool = NULL;
 	uint32_t errs = 0;
 
-	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_new_memory_pool(&tmp_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
-		return SWITCH_STATUS_TERM;
+		return NULL;
 	}
 
 	while(globals.running) {
-		rv = switch_sockaddr_info_get(&sa, profile->ip, SWITCH_INET, profile->port, 0, pool);
+		rv = switch_sockaddr_info_get(&sa, profile->ip, SWITCH_INET, profile->port, 0, tmp_pool);
 		if (rv)
 			goto fail;
-		rv = switch_socket_create(&profile->sock, switch_sockaddr_get_family(sa), SOCK_STREAM, SWITCH_PROTO_TCP, pool);
+		rv = switch_socket_create(&profile->sock, switch_sockaddr_get_family(sa), SOCK_STREAM, SWITCH_PROTO_TCP, tmp_pool);
 		if (rv)
 			goto sock_fail;
 		rv = switch_socket_opt_set(profile->sock, SWITCH_SO_REUSEADDR, 1);
@@ -1385,8 +1389,8 @@ int skinny_socket_create_and_bind(skinny_profile_t *profile)
 
 	close_socket(&profile->sock, profile);
 	
-	if (pool) {
-		switch_core_destroy_memory_pool(&pool);
+	if (tmp_pool) {
+		switch_core_destroy_memory_pool(&tmp_pool);
 	}
 
 	if (listener_pool) {
@@ -1395,7 +1399,7 @@ int skinny_socket_create_and_bind(skinny_profile_t *profile)
 
 
   fail:
-	return SWITCH_STATUS_TERM;
+	return NULL;
 }
 
 /*****************************************************************************/
@@ -1412,18 +1416,18 @@ static void skinny_profile_set(skinny_profile_t *profile, char *var, char *val)
 		return;
 
 	if (!strcasecmp(var, "domain")) {
-		profile->domain = switch_core_strdup(module_pool, val);
+		profile->domain = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "ip")) {
-		profile->ip = switch_core_strdup(module_pool, val);
+		profile->ip = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "dialplan")) {
-		profile->dialplan = switch_core_strdup(module_pool, val);
+		profile->dialplan = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "context")) {
-		profile->context = switch_core_strdup(module_pool, val);
+		profile->context = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "date-format")) {
 		strncpy(profile->date_format, val, 6);
 	} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 		if (switch_odbc_available()) {
-			profile->odbc_dsn = switch_core_strdup(module_pool, val);
+			profile->odbc_dsn = switch_core_strdup(profile->pool, val);
 			if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
 				*profile->odbc_user++ = '\0';
 				if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
@@ -1441,18 +1445,12 @@ static switch_status_t load_skinny_config(void)
 	char *cf = "skinny.conf";
 	switch_xml_t xcfg, xml, xprofiles, xprofile;
 
-	memset(&globals, 0, sizeof(globals));
-	globals.running = 1;
-
-	switch_core_hash_init(&globals.profile_hash, module_pool);
-
-	switch_mutex_init(&globals.calls_mutex, SWITCH_MUTEX_NESTED, module_pool);
-	
 	if (!(xml = switch_xml_open_cfg(cf, &xcfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
+	switch_mutex_lock(globals.mutex);
 	if ((xprofiles = switch_xml_child(xcfg, "profiles"))) {
 		for (xprofile = switch_xml_child(xprofiles, "profile"); xprofile; xprofile = xprofile->next) {
 			char *profile_name = (char *) switch_xml_attr_soft(xprofile, "name");
@@ -1463,13 +1461,22 @@ static switch_status_t load_skinny_config(void)
 				continue;
 			}
 			if (xsettings) {
+			    switch_memory_pool_t *profile_pool = NULL;
 				char dbname[256];
 				switch_core_db_t *db;
 				skinny_profile_t *profile = NULL;
 				switch_xml_t param;
 				
-				profile = switch_core_alloc(module_pool, sizeof(skinny_profile_t));
+	            if (switch_core_new_memory_pool(&profile_pool) != SWITCH_STATUS_SUCCESS) {
+		            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
+		            return SWITCH_STATUS_TERM;
+	            }
+				profile = switch_core_alloc(profile_pool, sizeof(skinny_profile_t));
+				profile->pool = profile_pool;
 				profile->name = profile_name;
+		        switch_mutex_init(&profile->listener_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+		        switch_mutex_init(&profile->sql_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+		        switch_mutex_init(&profile->sock_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				
 				for (param = switch_xml_child(xsettings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1509,7 +1516,7 @@ static switch_status_t load_skinny_config(void)
 				}
 
 				switch_snprintf(dbname, sizeof(dbname), "skinny_%s", profile->name);
-				profile->dbname = switch_core_strdup(module_pool, dbname);
+				profile->dbname = switch_core_strdup(profile->pool, dbname);
 
 				if (switch_odbc_available() && profile->odbc_dsn) {
 					if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
@@ -1545,7 +1552,9 @@ static switch_status_t load_skinny_config(void)
 				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_buttons", NULL, NULL);
 				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_active_lines", NULL, NULL);
 
-				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
+	            switch_mutex_lock(globals.mutex);
+	            switch_core_hash_insert(globals.profile_hash, profile->name, profile);
+	            switch_mutex_unlock(globals.mutex);
 				profile = NULL;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
@@ -1554,217 +1563,9 @@ static switch_status_t load_skinny_config(void)
 		} /* profile */
 	}
 	switch_xml_free(xml);
+	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t cmd_status_profile(const char *profile_name, switch_stream_handle_t *stream)
-{
-	skinny_profile_t *profile;
-	if ((profile = skinny_find_profile(profile_name))) {
-		dump_profile(profile, stream);
-	} else {
-		stream->write_function(stream, "Profile not found!\n");
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t cmd_status_profile_device(const char *profile_name, const char *device_name, switch_stream_handle_t *stream)
-{
-	skinny_profile_t *profile;
-	if ((profile = skinny_find_profile(profile_name))) {
-		dump_device(profile, device_name, stream);
-	} else {
-		stream->write_function(stream, "Profile not found!\n");
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t cmd_profile_device_send_ringer_message(const char *profile_name, const char *device_name, const char *ring_type, const char *ring_mode, switch_stream_handle_t *stream)
-{
-	skinny_profile_t *profile;
-
-	if ((profile = skinny_find_profile(profile_name))) {
-		listener_t *listener = NULL;
-		skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
-		if(listener) {
-			set_ringer(listener, skinny_str2ring_type(ring_type), skinny_str2ring_mode(ring_mode), 0, 0);
-		} else {
-			stream->write_function(stream, "Listener not found!\n");
-		}
-	} else {
-		stream->write_function(stream, "Profile not found!\n");
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t cmd_profile_device_send_lamp_message(const char *profile_name, const char *device_name, const char *stimulus, const char *instance, const char *lamp_mode, switch_stream_handle_t *stream)
-{
-	skinny_profile_t *profile;
-
-	if ((profile = skinny_find_profile(profile_name))) {
-		listener_t *listener = NULL;
-		skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
-		if(listener) {
-			set_lamp(listener, skinny_str2button(stimulus), atoi(instance), skinny_str2lamp_mode(lamp_mode));
-		} else {
-			stream->write_function(stream, "Listener not found!\n");
-		}
-	} else {
-		stream->write_function(stream, "Profile not found!\n");
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t cmd_profile_device_send_speaker_mode_message(const char *profile_name, const char *device_name, const char *speaker_mode, switch_stream_handle_t *stream)
-{
-	skinny_profile_t *profile;
-
-	if ((profile = skinny_find_profile(profile_name))) {
-		listener_t *listener = NULL;
-		skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
-		if(listener) {
-			set_speaker_mode(listener, skinny_str2speaker_mode(speaker_mode));
-		} else {
-			stream->write_function(stream, "Listener not found!\n");
-		}
-	} else {
-		stream->write_function(stream, "Profile not found!\n");
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t cmd_profile_device_send_call_state_message(const char *profile_name, const char *device_name, const char *call_state, const char *line_instance, const char *call_id, switch_stream_handle_t *stream)
-{
-	skinny_profile_t *profile;
-
-	if ((profile = skinny_find_profile(profile_name))) {
-		listener_t *listener = NULL;
-		skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
-		if(listener) {
-			send_call_state(listener, skinny_str2call_state(call_state), atoi(line_instance), atoi(call_id));
-		} else {
-			stream->write_function(stream, "Listener not found!\n");
-		}
-	} else {
-		stream->write_function(stream, "Profile not found!\n");
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t cmd_profile_device_send_reset_message(const char *profile_name, const char *device_name, const char *reset_type, switch_stream_handle_t *stream)
-{
-	skinny_profile_t *profile;
-
-	if ((profile = skinny_find_profile(profile_name))) {
-		listener_t *listener = NULL;
-		skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
-		if(listener) {
-			send_reset(listener, skinny_str2device_reset_type(reset_type));
-		} else {
-			stream->write_function(stream, "Listener not found!\n");
-		}
-	} else {
-		stream->write_function(stream, "Profile not found!\n");
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-SWITCH_STANDARD_API(skinny_function)
-{
-	char *argv[1024] = { 0 };
-	int argc = 0;
-	char *mycmd = NULL;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	const char *usage_string = "USAGE:\n"
-		"--------------------------------------------------------------------------------\n"
-		"skinny help\n"
-		"skinny status profile <profile_name>\n"
-		"skinny status profile <profile_name> device <device_name>\n"
-		"skinny profile <profile_name> device <device_name> send ResetMessage [DeviceReset|DeviceRestart]\n"
-		"skinny profile <profile_name> device <device_name> send SetRingerMessage <ring_type> <ring_mode>\n"
-		"skinny profile <profile_name> device <device_name> send SetLampMessage <stimulus> <instance> <lamp_mode>\n"
-		"skinny profile <profile_name> device <device_name> send SetSpeakerModeMessage <speaker_mode>\n"
-		"skinny profile <profile_name> device <device_name> send CallStateMessage <call_state> <line_instance> <call_id>\n"
-		"--------------------------------------------------------------------------------\n";
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (zstr(cmd)) {
-		stream->write_function(stream, "%s", usage_string);
-		goto done;
-	}
-
-	if (!(mycmd = strdup(cmd))) {
-		status = SWITCH_STATUS_MEMERR;
-		goto done;
-	}
-
-	if (!(argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) || !argv[0]) {
-		stream->write_function(stream, "%s", usage_string);
-		goto done;
-	}
-
-	if (!strcasecmp(argv[0], "help")) {/* skinny help */
-		stream->write_function(stream, "%s", usage_string);
-		goto done;
-	} else if (argc == 3 && !strcasecmp(argv[0], "status") && !strcasecmp(argv[1], "profile")) {
-		/* skinny status profile <profile_name> */
-		status = cmd_status_profile(argv[2], stream);
-	} else if (argc == 5 && !strcasecmp(argv[0], "status") && !strcasecmp(argv[1], "profile") && !strcasecmp(argv[3], "device")) {
-		/* skinny status profile <profile_name> device <device_name> */
-		status = cmd_status_profile_device(argv[2], argv[4], stream);
-	} else if (argc >= 6 && !strcasecmp(argv[0], "profile") && !strcasecmp(argv[2], "device") && !strcasecmp(argv[4], "send")) {
-		/* skinny profile <profile_name> device <device_name> send ... */
-		switch(skinny_str2message_type(argv[5])) {
-			case SET_RINGER_MESSAGE:
-				if(argc == 8) {
-					/* SetRingerMessage <ring_type> <ring_mode> */
-					status = cmd_profile_device_send_ringer_message(argv[1], argv[3], argv[6], argv[7], stream);
-				}
-				break;
-			case SET_LAMP_MESSAGE:
-				if (argc == 9) {
-					/* SetLampMessage <stimulus> <instance> <lamp_mode> */
-					status = cmd_profile_device_send_lamp_message(argv[1], argv[3], argv[6], argv[7], argv[8], stream);
-				}
-				break;
-			case SET_SPEAKER_MODE_MESSAGE:
-				if (argc == 7) {
-					/* SetSpeakerModeMessage <speaker_mode> */
-					status = cmd_profile_device_send_speaker_mode_message(argv[1], argv[3], argv[6], stream);
-				}
-				break;
-			case CALL_STATE_MESSAGE:
-				if (argc == 9) {
-					/* CallStateMessage <call_state> <line_instance> <call_id> */
-					status = cmd_profile_device_send_call_state_message(argv[1], argv[3], argv[6], argv[7], argv[8], stream);
-				}
-				break;
-			case RESET_MESSAGE:
-				if (argc == 7) {
-					/* ResetMessage <reset_type> */
-					status = cmd_profile_device_send_reset_message(argv[1], argv[3], argv[6], stream);
-				}
-				break;
-			default:
-				stream->write_function(stream, "Unhandled message %s\n", argv[5]);
-		}
-	} else {
-		stream->write_function(stream, "Unknown Command [%s]\n", argv[0]);
-	}
-
-done:
-	switch_safe_free(mycmd);
-	return status;
 }
 
 static void event_handler(switch_event_t *event)
@@ -1821,285 +1622,105 @@ static void event_handler(switch_event_t *event)
 	}
 }
 
-static switch_status_t skinny_list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	switch_console_callback_match_t *my_matches = NULL;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_hash_index_t *hi;
-	void *val;
-	skinny_profile_t *profile;
-	
-	/* walk profiles */
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
-		profile = (skinny_profile_t *) val;
-
-		switch_console_push_match(&my_matches, profile->name);
-	}
-	
-	if (my_matches) {
-		*matches = my_matches;
-		status = SWITCH_STATUS_SUCCESS;
-	}
-	
-	return status;
-}
-
-struct match_helper {
-	switch_console_callback_match_t *my_matches;
-};
-
-static int skinny_list_devices_callback(void *pArg, int argc, char **argv, char **columnNames)
-{
-	struct match_helper *h = (struct match_helper *) pArg;
-	char *device_name = argv[0];
-
-	switch_console_push_match(&h->my_matches, device_name);
-	return 0;
-}
-
-static switch_status_t skinny_list_devices(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	struct match_helper h = { 0 };
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	skinny_profile_t *profile = NULL;
-	char *sql;
-
-	char *myline;
-	char *argv[1024] = { 0 };
-	int argc = 0;
-
-	if (!(myline = strdup(line))) {
-		status = SWITCH_STATUS_MEMERR;
-		return status;
-	}
-	if (!(argc = switch_separate_string(myline, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) || argc != 5) {
-		return status;
-	}
-
-	if(!strcasecmp(argv[1], "profile")) {/* skinny profile <profile_name> ... */
-		profile = skinny_find_profile(argv[2]);
-	} else if(!strcasecmp(argv[2], "profile")) {/* skinny status profile <profile_name> ... */
-		profile = skinny_find_profile(argv[3]);
-	}
-
-	if(profile) {
-		if ((sql = switch_mprintf("SELECT name FROM skinny_devices"))) {
-			skinny_execute_sql_callback(profile, profile->sql_mutex, sql, skinny_list_devices_callback, &h);
-			switch_safe_free(sql);
-		}
-	}
-	
-	if (h.my_matches) {
-		*matches = h.my_matches;
-		status = SWITCH_STATUS_SUCCESS;
-	}
-	
-	return status;
-}
-
-static switch_status_t skinny_list_reset_types(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	SKINNY_PUSH_DEVICE_RESET_TYPES
-	return status;
-}
-
-static switch_status_t skinny_list_stimuli(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	SKINNY_PUSH_STIMULI
-	return status;
-}
-
-static switch_status_t skinny_list_ring_types(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	SKINNY_PUSH_RING_TYPES
-	return status;
-}
-
-static switch_status_t skinny_list_ring_modes(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	SKINNY_PUSH_RING_MODES
-	return status;
-}
-
-static switch_status_t skinny_list_stimulus_instances(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_console_callback_match_t *my_matches = NULL;
-	
-	switch_console_push_match(&my_matches, "<stimulus_instance>");
-	switch_console_push_match(&my_matches, "0");
-	
-	if (my_matches) {
-		*matches = my_matches;
-		status = SWITCH_STATUS_SUCCESS;
-	}
-	return status;
-}
-
-static switch_status_t skinny_list_stimulus_modes(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	SKINNY_PUSH_LAMP_MODES
-	return status;
-}
-
-static switch_status_t skinny_list_speaker_modes(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	SKINNY_PUSH_SPEAKER_MODES
-	return status;
-}
-
-static switch_status_t skinny_list_call_states(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	SKINNY_PUSH_CALL_STATES
-	return status;
-}
-
-static switch_status_t skinny_list_line_instances(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_console_callback_match_t *my_matches = NULL;
-	
-	/* TODO */
-	switch_console_push_match(&my_matches, "1");
-	switch_console_push_match(&my_matches, "<line_instance>");
-	
-	if (my_matches) {
-		*matches = my_matches;
-		status = SWITCH_STATUS_SUCCESS;
-	}
-	return status;
-}
-
-static switch_status_t skinny_list_call_ids(const char *line, const char *cursor, switch_console_callback_match_t **matches)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_console_callback_match_t *my_matches = NULL;
-	
-	/* TODO */
-	switch_console_push_match(&my_matches, "1345");
-	switch_console_push_match(&my_matches, "<call_id>");
-	
-	if (my_matches) {
-		*matches = my_matches;
-		status = SWITCH_STATUS_SUCCESS;
-	}
-	return status;
-}
 
 /*****************************************************************************/
 SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 {
 	switch_hash_index_t *hi;
-	void *val;
-	skinny_profile_t *profile;
+    /* globals init */
+	memset(&globals, 0, sizeof(globals));
 
-	switch_api_interface_t *api_interface;
-
-	module_pool = pool;
-
+    if (switch_core_new_memory_pool(&globals.pool) != SWITCH_STATUS_SUCCESS) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
+        return SWITCH_STATUS_TERM;
+    }
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
+	switch_core_hash_init(&globals.profile_hash, globals.pool);
+	globals.running = 1;
+	
 	load_skinny_config();
 
-	/* init listeners */
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
-		profile = (skinny_profile_t *) val;
-	
-		switch_mutex_init(&profile->listener_mutex, SWITCH_MUTEX_NESTED, module_pool);
-		switch_mutex_init(&profile->sql_mutex, SWITCH_MUTEX_NESTED, module_pool);
-		switch_mutex_init(&profile->sock_mutex, SWITCH_MUTEX_NESTED, module_pool);
-
-	}
-
+    /* bind to events */
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_HEARTBEAT, NULL, event_handler, NULL, &globals.heartbeat_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our heartbeat handler!\n");
 		/* Not such severe to prevent loading */
 	}
-
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_CALL_STATE, event_handler, NULL, &globals.call_state_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our call_state handler!\n");
 		return SWITCH_STATUS_TERM;
 	}
 
+    /* reserve events */
 	if (switch_event_reserve_subclass(SKINNY_EVENT_REGISTER) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SKINNY_EVENT_REGISTER);
 		return SWITCH_STATUS_TERM;
 	}
+	if (switch_event_reserve_subclass(SKINNY_EVENT_UNREGISTER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SKINNY_EVENT_UNREGISTER);
+		return SWITCH_STATUS_TERM;
+	}
+	if (switch_event_reserve_subclass(SKINNY_EVENT_EXPIRE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SKINNY_EVENT_EXPIRE);
+		return SWITCH_STATUS_TERM;
+	}
+	if (switch_event_reserve_subclass(SKINNY_EVENT_ALARM) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SKINNY_EVENT_ALARM);
+		return SWITCH_STATUS_TERM;
+	}
+	if (switch_event_reserve_subclass(SKINNY_EVENT_CALL_STATE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SKINNY_EVENT_CALL_STATE);
+		return SWITCH_STATUS_TERM;
+	}
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	*module_interface = switch_loadable_module_create_module_interface(globals.pool, modname);
 	skinny_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	skinny_endpoint_interface->interface_name = "skinny";
 	skinny_endpoint_interface->io_routines = &skinny_io_routines;
 	skinny_endpoint_interface->state_handler = &skinny_state_handlers;
 
+    skinny_api_register(module_interface);
 
-	SWITCH_ADD_API(api_interface, "skinny", "Skinny Controls", skinny_function, "<cmd> <args>");
-	switch_console_set_complete("add skinny help");
-
-	switch_console_set_complete("add skinny status profile ::skinny::list_profiles");
-	switch_console_set_complete("add skinny status profile ::skinny::list_profiles device ::skinny::list_devices");
-
-	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send ResetMessage ::skinny::list_reset_types");
-	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send SetRingerMessage ::skinny::list_ring_types ::skinny::list_ring_modes");
-	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send SetLampMessage ::skinny::list_stimuli ::skinny::list_stimulus_instances ::skinny::list_stimulus_modes");
-	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send SetSpeakerModeMessage ::skinny::list_speaker_modes");
-	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send CallStateMessage ::skinny::list_call_states ::skinny::list_line_instances ::skinny::list_call_ids");
-
-	switch_console_add_complete_func("::skinny::list_profiles", skinny_list_profiles);
-	switch_console_add_complete_func("::skinny::list_devices", skinny_list_devices);
-	switch_console_add_complete_func("::skinny::list_reset_types", skinny_list_reset_types);
-	switch_console_add_complete_func("::skinny::list_ring_types", skinny_list_ring_types);
-	switch_console_add_complete_func("::skinny::list_ring_modes", skinny_list_ring_modes);
-	switch_console_add_complete_func("::skinny::list_stimuli", skinny_list_stimuli);
-	switch_console_add_complete_func("::skinny::list_stimulus_instances", skinny_list_stimulus_instances);
-	switch_console_add_complete_func("::skinny::list_stimulus_modes", skinny_list_stimulus_modes);
-	switch_console_add_complete_func("::skinny::list_speaker_modes", skinny_list_speaker_modes);
-	switch_console_add_complete_func("::skinny::list_call_states", skinny_list_call_states);
-	switch_console_add_complete_func("::skinny::list_line_instances", skinny_list_line_instances);
-	switch_console_add_complete_func("::skinny::list_call_ids", skinny_list_call_ids);
-
-	/* indicate that the module should continue to be loaded */
-	return SWITCH_STATUS_SUCCESS;
-}
-
-SWITCH_MODULE_RUNTIME_FUNCTION(mod_skinny_runtime)
-{
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_hash_index_t *hi;
-	void *val;
-	skinny_profile_t *profile;
-	
 	/* launch listeners */
+	switch_mutex_lock(globals.mutex);
 	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+    	void *val;
+    	skinny_profile_t *profile;
+	    switch_thread_t *thread;
+	    switch_threadattr_t *thd_attr = NULL;
+
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
 	
-		status = skinny_socket_create_and_bind(profile);
-		if(status != SWITCH_STATUS_SUCCESS) {
-			return status;
-		}
+	    switch_threadattr_create(&thd_attr, profile->pool);
+	    switch_threadattr_detach_set(thd_attr, 1);
+	    switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	    switch_thread_create(&thread, thd_attr, skinny_profile_run, profile, profile->pool);
 	}
-	return status;
+	switch_mutex_unlock(globals.mutex);
+
+	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 {
 	switch_hash_index_t *hi;
 	void *val;
-	skinny_profile_t *profile;
+	switch_memory_pool_t *pool = globals.pool;
+	switch_mutex_t *mutex = globals.mutex;
 	int sanity = 0;
 
-	switch_event_free_subclass(SKINNY_EVENT_REGISTER);
+    /* release events */
 	switch_event_unbind(&globals.heartbeat_node);
 	switch_event_unbind(&globals.call_state_node);
+	switch_event_free_subclass(SKINNY_EVENT_REGISTER);
+	switch_event_free_subclass(SKINNY_EVENT_UNREGISTER);
+	switch_event_free_subclass(SKINNY_EVENT_EXPIRE);
+	switch_event_free_subclass(SKINNY_EVENT_ALARM);
+	switch_event_free_subclass(SKINNY_EVENT_CALL_STATE);
+
+	switch_mutex_lock(mutex);
 
 	globals.running = 0;
 
@@ -2107,7 +1728,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 	walk_listeners(kill_listener, NULL);
 
 	/* close sockets */
+	switch_mutex_lock(globals.mutex);
 	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+	    skinny_profile_t *profile;
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
 
@@ -2120,8 +1743,14 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 				break;
 			}
 		}
+    	switch_core_destroy_memory_pool(&profile->pool);
 	}
+	switch_mutex_unlock(globals.mutex);
 
+	switch_core_hash_destroy(&globals.profile_hash);
+	memset(&globals, 0, sizeof(globals));
+	switch_mutex_unlock(mutex);
+	switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_SUCCESS;
 }
 

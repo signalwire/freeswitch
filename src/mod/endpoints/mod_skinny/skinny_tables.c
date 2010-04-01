@@ -190,3 +190,14 @@ struct skinny_table SKINNY_DEVICE_RESET_TYPES[] = {
 SKINNY_DECLARE_ID2STR(skinny_device_reset_type2str, SKINNY_DEVICE_RESET_TYPES, "DeviceResetTypeUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2device_reset_type, SKINNY_DEVICE_RESET_TYPES, -1)
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */
+
