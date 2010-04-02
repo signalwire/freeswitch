@@ -628,17 +628,17 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 	skinny_profile_find_listener_by_device_name_and_instance(helper->tech_pvt->profile, device_name, device_instance, &listener);
 	if(listener) {
 		if(call_state == SKINNY_CONNECTED) {
-			stop_tone(listener, line_instance, call_id);
+			send_stop_tone(listener, line_instance, call_id);
 		}
-		set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_OFF);
-		clear_prompt_status(listener, line_instance, call_id);
+		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_OFF);
+		send_clear_prompt_status(listener, line_instance, call_id);
 		if(call_state == SKINNY_CONNECTED) { /* calling parties */
-			close_receive_channel(listener,
+			send_close_receive_channel(listener,
 				call_id, /* uint32_t conference_id, */
 				helper->tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
 				call_id /* uint32_t conference_id2, */
 			);
-			stop_media_transmission(listener,
+			send_stop_media_transmission(listener,
 				call_id, /* uint32_t conference_id, */
 				helper->tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
 				call_id /* uint32_t conference_id2, */
@@ -648,8 +648,8 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 		skinny_line_set_state(listener, line_instance, call_id, SKINNY_ON_HOOK);
 		send_select_soft_keys(listener, line_instance, call_id, SKINNY_KEY_SET_ON_HOOK, 0xffff);
 		/* TODO: DefineTimeDate */
-		set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
-		set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, call_id);
+		send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
+		send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, call_id);
 
 	}
 	return 0;
