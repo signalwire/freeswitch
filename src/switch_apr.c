@@ -768,6 +768,10 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_hops(switch_socket_t *sock, uint8_t
 	return apr_mcast_hops(sock, ttl);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_mcast_loopback(switch_socket_t *sock, uint8_t opt)
+{
+	return apr_mcast_loopback(sock, opt);
+}
 
 /* socket functions */
 
