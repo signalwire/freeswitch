@@ -50,3 +50,10 @@ loggers/mod_logfile/Makefile
 loggers/mod_syslog/Makefile
 say/mod_say_en/Makefile
 say/mod_say_ru/Makefile
+applications/mod_stress/mod_stress.log
+asr_tts/mod_unimrcp/mod_unimrcp.log
+endpoints/mod_portaudio/mod_portaudio.log
+endpoints/mod_skypopen/mod_skypopen.log
+formats/mod_portaudio_stream/mod_portaudio_stream.log
+languages/mod_java/freeswitch.jar
+languages/mod_managed/freeswitch_wrap.cpp

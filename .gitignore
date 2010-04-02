@@ -17,6 +17,7 @@ Makefile.in
 NEWS
 README
 aclocal.m4
+autom4te.cache
 build/Makefile
 build/Makefile.in
 build/config/compile
@@ -33,6 +34,7 @@ config.cache
 config.log
 config.status
 configure
+configure.lineno
 freeswitch
 fs_cli
 fs_ivrd
