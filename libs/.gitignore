@@ -1059,3 +1059,8 @@ sofia-sip/libsofia-sip-ua/su/su_tag_dll.c
 sofia-sip/libsofia-sip-ua/tport/tport_tag_dll.c
 sofia-sip/libsofia-sip-ua/url/url_tag_dll.c
 win32/pcre/pcre_chartables.c
+apr-util/include/apu_config.h
+apr-util/include/apu_select_dbm.h
+include/
+js/nsprpub/pr/include/prcpucfg.h
+apr-util/xml/expat/lib/config.h
