@@ -3358,7 +3358,7 @@ SWITCH_STANDARD_API(alias_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count|like <match string>]|distinct_channels|aliases|complete|chat|management|modules|nat_map|say|interfaces|interface_types|tasks"
+#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count|like <match string>]|distinct_channels|aliases|complete|chat|management|modules|nat_map|say|interfaces|interface_types|tasks|limits"
 SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
@@ -3421,6 +3421,7 @@ SWITCH_STANDARD_API(show_function)
 			   !strncasecmp(command, "file", 4) ||
 			   !strncasecmp(command, "timer", 5) ||
 			   !strncasecmp(command, "chat", 4) ||
+			   !strncasecmp(command, "limit", 5) ||
 			   !strncasecmp(command, "say", 3) || !strncasecmp(command, "management", 10) || !strncasecmp(command, "endpoint", 8)) {
 		if (end_of(command) == 's') {
 			end_of(command) = '\0';
@@ -4222,6 +4223,107 @@ SWITCH_STANDARD_API(sql_escape)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/* LIMIT Stuff */
+#define LIMIT_USAGE_USAGE "<backend> <realm> <id> [rate]"
+SWITCH_STANDARD_API(limit_usage_function)
+{
+	int argc = 0;
+	char *argv[5] = { 0 };
+	char *mydata = NULL;
+	uint32_t count = 0;
+	uint32_t rcount = 0;
+	switch_bool_t dorate = SWITCH_FALSE;
+
+	if (!zstr(cmd)) {
+		mydata = strdup(cmd);
+		switch_assert(mydata);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 3) {
+		stream->write_function(stream, "USAGE: limit_usage %s\n", LIMIT_USAGE_USAGE);
+		goto end;
+	}
+
+	if (argc > 3) {
+		if (!strcasecmp("rate", argv[3])) {
+			dorate = SWITCH_TRUE;
+		}
+	}
+	
+	count = switch_limit_usage(argv[0], argv[1], argv[2], &rcount);
+	
+	if (dorate == SWITCH_TRUE) {
+		stream->write_function(stream, "%d/%d", count, rcount);
+	} else {
+		stream->write_function(stream, "%d", count);
+	}
+
+end:
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define LIMIT_STATUS_USAGE "<backend>"
+SWITCH_STANDARD_API(limit_status_function)
+{
+	int argc = 0;
+	char *argv[2] = { 0 };
+	char *mydata = NULL;
+	char *ret = NULL;
+
+	if (!zstr(cmd)) {
+		mydata = strdup(cmd);
+		switch_assert(mydata);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 1) {
+		stream->write_function(stream, "USAGE: limit_status %s\n", LIMIT_STATUS_USAGE);
+		goto end;
+	}
+	
+	ret = switch_limit_status(argv[0]);
+
+	stream->write_function(stream, "%s", ret);
+
+end:
+	switch_safe_free(mydata);
+	switch_safe_free(ret);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define LIMIT_RESET_USAGE "<backend>"
+SWITCH_STANDARD_API(limit_reset_function)
+{
+	int argc = 0;
+	char *argv[2] = { 0 };
+	char *mydata = NULL;
+	switch_status_t ret = SWITCH_STATUS_SUCCESS;
+
+	if (!zstr(cmd)) {
+		mydata = strdup(cmd);
+		switch_assert(mydata);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 1) {
+		stream->write_function(stream, "USAGE: limit_reset %s\n", LIMIT_RESET_USAGE);
+		goto end;
+	}
+	
+	ret = switch_limit_reset(argv[0]);
+
+	stream->write_function(stream, "%s", (ret == SWITCH_STATUS_SUCCESS) ? "+OK" : "-ERR");
+
+end:
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown)
 {
 	int x;
@@ -4310,6 +4412,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "hupall", "hupall", hupall_api_function, "<cause> [<var> <value>]");
 	SWITCH_ADD_API(commands_api_interface, "in_group", "determine if a user is in a group", in_group_function, "<user>[@<domain>] <group_name>");
 	SWITCH_ADD_API(commands_api_interface, "is_lan_addr", "see if an ip is a lan addr", lan_addr_function, "<ip>");
+	SWITCH_ADD_API(commands_api_interface, "limit_usage", "Gets the usage count of a limited resource", limit_usage_function, "<backend> <realm> <id>");
+	SWITCH_ADD_API(commands_api_interface, "limit_status", "Gets the status of a limit backend", limit_status_function, "<backend>");
+	SWITCH_ADD_API(commands_api_interface, "limit_reset", "Reset the counters of a limit backend", limit_reset_function, "<backend>");
 	SWITCH_ADD_API(commands_api_interface, "load", "Load Module", load_function, LOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "log", "Log", log_function, LOG_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "md5", "md5", md5_function, "<data>");

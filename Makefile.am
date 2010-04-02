@@ -173,6 +173,7 @@ library_include_HEADERS = \
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
 	libs/libteletone/src/libteletone.h \
+	src/include/switch_limit.h \
 	src/include/switch_odbc.h
 
 nodist_libfreeswitch_la_SOURCES = \
@@ -228,6 +229,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_config.c \
 	src/switch_time.c \
 	src/switch_odbc.c \
+	src/switch_limit.c \
 	src/g711.c \
 	src/switch_pcm.c \
 	src/switch_profile.c\

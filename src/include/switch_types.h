@@ -267,7 +267,8 @@ typedef enum {
 	SWITCH_CHAT_INTERFACE,
 	SWITCH_SAY_INTERFACE,
 	SWITCH_ASR_INTERFACE,
-	SWITCH_MANAGEMENT_INTERFACE
+	SWITCH_MANAGEMENT_INTERFACE,
+	SWITCH_LIMIT_INTERFACE
 } switch_module_interface_name_t;
 
 typedef enum {
@@ -1593,6 +1594,7 @@ typedef struct switch_chat_interface switch_chat_interface_t;
 typedef struct switch_management_interface switch_management_interface_t;
 typedef struct switch_core_port_allocator switch_core_port_allocator_t;
 typedef struct switch_media_bug switch_media_bug_t;
+typedef struct switch_limit_interface switch_limit_interface_t;
 
 struct switch_console_callback_match_node {
 	char *val;

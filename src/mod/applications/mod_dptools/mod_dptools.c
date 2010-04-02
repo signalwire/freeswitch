@@ -3007,6 +3007,140 @@ SWITCH_STANDARD_APP(session_loglevel_function)
 	}
 }
 
+/* LIMIT STUFF */
+#define LIMIT_USAGE "<backend> <realm> <id> [<max>[/interval]] [number [dialplan [context]]]"
+#define LIMIT_DESC "limit access to a resource and transfer to an extension if the limit is exceeded"
+SWITCH_STANDARD_APP(limit_function)
+{
+	int argc = 0;
+	char *argv[7] = { 0 };
+	char *mydata = NULL;
+	char *backend = NULL;
+	char *realm = NULL;
+	char *id = NULL;
+	char *xfer_exten = NULL;
+	int max = -1;
+	int interval = 0;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	/* Parse application data  */
+	if (!zstr(data)) {
+		mydata = switch_core_session_strdup(session, data);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 3) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit %s\n", LIMIT_USAGE);
+		return;
+	}
+
+	backend = argv[0];
+	realm = argv[1];
+	id = argv[2];
+
+	/* If max is omitted or negative, only act as a counter and skip maximum checks */
+	if (argc > 3) {
+		if (argv[3][0] == '-') {
+			max = -1;
+		} else {
+			char *szinterval = NULL;
+			if ((szinterval = strchr(argv[3], '/'))) {
+				*szinterval++ = '\0';
+				interval = atoi(szinterval);
+			}
+
+			max = atoi(argv[3]);
+
+			if (max < 0) {
+				max = 0;
+			}
+		}
+	}
+
+	if (argc > 4) {
+		xfer_exten = argv[4];
+	} else {
+		xfer_exten = LIMIT_DEF_XFER_EXTEN;
+	}
+
+	if (switch_limit_incr(backend, session, realm, id, max, interval) != SWITCH_STATUS_SUCCESS) {
+		/* Limit exceeded */
+		if (*xfer_exten == '!') {
+			switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten + 1));
+		} else {
+			switch_ivr_session_transfer(session, xfer_exten, argv[5], argv[6]);
+		}
+	}
+}
+
+
+#define LIMITEXECUTE_USAGE "<backend> <realm> <id> [<max>[/interval]] [application] [application arguments]"
+#define LIMITEXECUTE_DESC "limit access to a resource. the specified application will only be executed if the resource is available"
+SWITCH_STANDARD_APP(limit_execute_function)
+{
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mydata = NULL;
+	char *backend = NULL;
+	char *realm = NULL;
+	char *id = NULL;
+	char *app = NULL;
+	char *app_arg = NULL;
+	int max = -1;
+	int interval = 0;
+
+	/* Parse application data  */
+	if (!zstr(data)) {
+		mydata = switch_core_session_strdup(session, data);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 6) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit_execute %s\n", LIMITEXECUTE_USAGE);
+		return;
+	}
+
+	backend = argv[0];
+	realm = argv[1];
+	id = argv[2];
+
+	/* Accept '-' as unlimited (act as counter) */
+	if (argv[3][0] == '-') {
+		max = -1;
+	} else {
+		char *szinterval = NULL;
+
+		if ((szinterval = strchr(argv[3], '/'))) {
+			*szinterval++ = '\0';
+			interval = atoi(szinterval);
+		}
+
+		max = atoi(argv[3]);
+
+		if (max < 0) {
+			max = 0;
+		}
+	}
+
+	app = argv[4];
+	app_arg = argv[5];
+
+	if (zstr(app)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing application\n");
+		return;
+	}
+
+	if (switch_limit_incr(backend, session, realm, id, max, interval) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Executing\n");
+		switch_core_session_execute_application(session, app, app_arg);
+		/* Only release the resource if we are still in CS_EXECUTE */
+		if (switch_channel_get_state(switch_core_session_get_channel(session)) == CS_EXECUTE) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "immediately releasing\n");
+			switch_limit_release(backend, session, realm, id);			
+		}
+	}
+}
+
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
 #define SESS_REC_DESC "Starts a background recording of the entire session"
@@ -3176,6 +3310,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "session_loglevel", "session_loglevel", "session_loglevel", session_loglevel_function, SESSION_LOGLEVEL_SYNTAX,
 				   SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "limit", "Limit", LIMIT_DESC, limit_function, LIMIT_USAGE, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "limit_execute", "Limit", LIMITEXECUTE_USAGE, limit_execute_function, LIMITEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_DIALPLAN(dp_interface, "inline", inline_dialplan_hunt);
 

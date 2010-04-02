@@ -9,10 +9,11 @@ applications/mod_enum
 #applications/mod_osp
 applications/mod_fifo
 #applications/mod_curl
+applications/mod_db
+applications/mod_hash
 applications/mod_voicemail
 #applications/mod_directory
 #applications/mod_lcr
-applications/mod_limit
 applications/mod_expr
 applications/mod_esf
 #applications/mod_easyroute

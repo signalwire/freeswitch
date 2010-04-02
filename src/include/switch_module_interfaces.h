@@ -512,6 +512,28 @@ struct switch_management_interface {
 	struct switch_management_interface *next;
 };
 
+/*! \brief Abstract interface to a limit module */
+struct switch_limit_interface {
+	/*! name of the interface */
+	const char *interface_name;
+	/*! increment */
+	switch_status_t (*incr) (switch_core_session_t *session, const char *realm, const char *resource, const int max, const int interval);
+	/*! release */
+	switch_status_t (*release) (switch_core_session_t *session, const char *realm, const char *resource);
+	/*! usage for resource */
+	int (*usage) (const char *realm, const char *resource, uint32_t *rcount);
+	/*! reset counters */
+	switch_status_t (*reset) (void);
+	/*! freform status */
+	char * (*status) (void);
+	/* internal */
+	switch_thread_rwlock_t *rwlock;
+	int refs;
+	switch_mutex_t *reflock;
+	switch_loadable_module_interface_t *parent;
+	struct switch_limit_interface *next;
+};
+
 /*! \brief Abstract interface to a directory module */
 struct switch_directory_interface {
 	/*! the name of the interface */

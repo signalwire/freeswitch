@@ -1392,6 +1392,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		}
 	}
 
+	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "ent_originate_aleg_uuid", switch_core_session_get_uuid(session));
+	
 	/* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
 	if (channel && (export_vars = switch_channel_get_variable(channel, SWITCH_EXPORT_VARS_VARIABLE))) {
 		char *cptmp = switch_core_session_strdup(session, export_vars);

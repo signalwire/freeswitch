@@ -81,6 +81,8 @@ SWITCH_BEGIN_EXTERN_C
 	switch_asr_interface_t *asr_interface;
 	/*! the table of management interfaces the module has implmented */
 	switch_management_interface_t *management_interface;
+	/*! the table of limit interfaces the module has implmented */
+	switch_limit_interface_t *limit_interface;
 	switch_thread_rwlock_t *rwlock;
 	int refs;
 	switch_memory_pool_t *pool;
@@ -205,6 +207,13 @@ SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interfac
 SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_management_interface(const char *relative_oid);
 
 /*!
+  \brief Retrieve the limit interface by it's registered name
+  \param name the name of the limit interface
+  \return the desired limit interface
+ */
+SWITCH_DECLARE(switch_limit_interface_t *) switch_loadable_module_get_limit_interface(const char *name);
+
+/*!
   \brief Retrieve the list of loaded codecs into an array
   \param array the array to populate
   \param arraylen the max size in elements of the array
@@ -312,6 +321,18 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 	dp_int = (switch_dialplan_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_DIALPLAN_INTERFACE); \
 	dp_int->hunt_function = funcptr; \
 	dp_int->interface_name = int_name; \
+	break; \
+	}
+
+#define SWITCH_ADD_LIMIT(limit_int, int_name, incrptr, releaseptr, usageptr, resetptr, statusptr) \
+	for (;;) { \
+	limit_int = (switch_limit_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_LIMIT_INTERFACE); \
+	limit_int->incr = incrptr; \
+	limit_int->release = releaseptr; \
+	limit_int->usage = usageptr; \
+	limit_int->reset = resetptr; \
+	limit_int->status = statusptr; \
+	limit_int->interface_name = int_name; \
 	break; \
 	}
 

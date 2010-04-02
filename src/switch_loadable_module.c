@@ -71,6 +71,7 @@ struct switch_loadable_module_container {
 	switch_hash_t *chat_hash;
 	switch_hash_t *say_hash;
 	switch_hash_t *management_hash;
+	switch_hash_t *limit_hash;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 };
@@ -433,6 +434,32 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			}
 		}
 	}
+	if (new_module->module_interface->limit_interface) {
+		const switch_limit_interface_t *ptr;
+
+		for (ptr = new_module->module_interface->limit_interface; ptr; ptr = ptr->next) {
+			if (!ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load limit interface from %s due to no interface name.\n", key);
+			} else {
+				if (switch_core_hash_find(loadable_modules.limit_hash, ptr->interface_name)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+									  "Failed to load limit interface %s. Name %s already exists\n", key, ptr->interface_name);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+									  "Adding Limit interface '%s'\n", ptr->interface_name);
+					switch_core_hash_insert(loadable_modules.limit_hash, ptr->interface_name, (const void *) ptr);
+					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "limit");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+						switch_event_fire(&event);
+					}
+				}
+
+			}
+		}
+	}
 
 	switch_mutex_unlock(loadable_modules.mutex);
 	return SWITCH_STATUS_SUCCESS;
@@ -762,6 +789,23 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "management");
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->relative_oid);
+					switch_event_fire(&event);
+				}
+			}
+		}
+	}
+
+	if (old_module->module_interface->limit_interface) {
+		const switch_limit_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->limit_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+								  "Deleting Limit interface '%s'\n", ptr->interface_name);
+				switch_core_hash_delete(loadable_modules.limit_hash, ptr->interface_name);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "limit");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_fire(&event);
 				}
 			}
@@ -1164,6 +1208,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	switch_core_hash_init_nocase(&loadable_modules.chat_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.say_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.management_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.limit_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.dialplan_hash, loadable_modules.pool);
 	switch_mutex_init(&loadable_modules.mutex, SWITCH_MUTEX_NESTED, loadable_modules.pool);
 
@@ -1354,6 +1399,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	switch_core_hash_destroy(&loadable_modules.chat_hash);
 	switch_core_hash_destroy(&loadable_modules.say_hash);
 	switch_core_hash_destroy(&loadable_modules.management_hash);
+	switch_core_hash_destroy(&loadable_modules.limit_hash);
 	switch_core_hash_destroy(&loadable_modules.dialplan_hash);
 
 	switch_core_destroy_memory_pool(&loadable_modules.pool);
@@ -1411,17 +1457,18 @@ SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_inte
 	}
 
 HASH_FUNC(dialplan)
-	HASH_FUNC(timer)
-	HASH_FUNC(application)
-	HASH_FUNC(api)
-	HASH_FUNC(file)
-	HASH_FUNC(speech)
-	HASH_FUNC(asr)
-	HASH_FUNC(directory)
-	HASH_FUNC(chat)
+HASH_FUNC(timer)
+HASH_FUNC(application)
+HASH_FUNC(api)
+HASH_FUNC(file)
+HASH_FUNC(speech)
+HASH_FUNC(asr)
+HASH_FUNC(directory)
+HASH_FUNC(chat)
+HASH_FUNC(limit)
 
 
-	SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(const char *name)
+SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(const char *name)
 {
 	return switch_core_hash_find_locked(loadable_modules.say_hash, name, loadable_modules.mutex);
 }
@@ -1690,6 +1737,9 @@ SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_m
 
 	case SWITCH_MANAGEMENT_INTERFACE:
 		ALLOC_INTERFACE(management)
+
+	case SWITCH_LIMIT_INTERFACE:
+		ALLOC_INTERFACE(limit)
 
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Module Type!\n");
