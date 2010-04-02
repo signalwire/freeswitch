@@ -349,7 +349,21 @@ src/include/switch_version.h: src/include/switch_version.h.in .version $(libfree
 	  cat src/include/switch_version.h.in > src/include/switch_version.h ; \
 	  touch .version ; \
 	else \
-	  version=`svnversion . -n || echo hacked` ; \
+	  if [ -d .git ] ; then \
+	    version=`git log --format="%h %ci" -1 HEAD | head -1 || echo hacked` ; \
+	    if [ "x$$version" == "xhacked" ] ; then \
+	      version="hacked-`date -u +%Y%m%dT%H%M%SZ`" ; \
+	    else \
+	      version="git-$$version" ; \
+	    fi ;\
+	  else \
+	    version=`svnversion . -n || echo hacked` ; \
+	    if [ "x$$version" == "xhacked" ] ; then \
+	      version="hacked-`date -u +%Y%m%dT%H%M%SZ`" ; \
+	    else \
+	      version="svn-$$version" ; \
+	    fi ;\
+	  fi ; \
 	  oldversion=`cat .version 2>/dev/null || echo "0"` ; \
 	  if test "$$oldversion" != "$$version" || test $$force = 1 ; then \
 	    cat src/include/switch_version.h.in | sed "s/@SWITCH_VERSION_REVISION@/$$version/g" > src/include/switch_version.h ; \
@@ -437,23 +451,29 @@ install-data-local:
 	test -d $(DESTDIR)$(sysconfdir) || $(MAKE) samples-conf
 	test -d $(DESTDIR)$(htdocsdir) || $(MAKE) samples-htdocs
 
-is-svn:
-	@if [ ! -d .svn ] ; then \
+is-scm:
+	@if [ ! -d .svn -a ! -d .git ] ; then \
 		echo ; echo ; \
-		echo "**************************************************************************************************" ; \
-		echo "You can not update a release tarball or without a svn working copy, please checkout fresh from svn" ; \
-		echo "**************************************************************************************************" ; \
+		echo "*****************************************************************************************************" ; \
+		echo "You can not update a release tarball or without a git or svn working copy please clone our git tree: " ; \
+		echo "git clone git://git.freeswitch.org/freeswitch.git                                                    " ; \
+		echo "or check out our read only svn mirror:                                                               " ; \
+		echo "svn checkout http://svn.freeswitch.org/svn/freeswitch/trunk                                          " ; \
+		echo "*****************************************************************************************************" ; \
 		echo ; echo ; \
 		exit 1; \
 	fi 
 
-update: is-svn
+update: is-scm
 	@if test -d .svn ; then \
 	  test ! -f .version || rm -f .version ; \
 	  echo Updating... ; \
 	  svn update ; \
+	elif test -d .git ; then \
+	  echo "Pulling updates..." ; \
+	  git pull ; \
 	else \
-	  echo "This source directory is not an svn working copy" ; \
+	  echo "This source directory is not a git tree or svn working copy" ; \
 	fi
 
 .nodepends:
@@ -483,18 +503,18 @@ core_install: install_core
 
 everything: install
 
-up: is-svn clean
-	svn update
+up: is-scm clean
+	$(MAKE) update
 	$(MAKE) -j core
 	$(MAKE) -j modules
 	$(MAKE) install
 
-sync: is-svn
-	svn update
+sync: is-scm
+	$(MAKE) update
 	$(MAKE) install
 
-speedy-sync: is-svn
-	svn update
+speedy-sync: is-scm
+	$(MAKE) update
 	$(MAKE) -j install
 
 libs/openzap/Makefile:
@@ -570,15 +590,15 @@ cluecon:
 	@echo
 	@echo http://www.cluecon.com
 	@sleep 5
-current: cluecon is-svn update-clean
-	svn update
+current: cluecon update-clean is-scm
+	$(MAKE) update
 	$(MAKE) all
 	$(MAKE) install
 
 installall: current
 
-speedy-current: is-svn update-clean
-	svn update
+speedy-current: update-clean is-scm
+	$(MAKE) update
 	$(MAKE) speedy-sure
 	$(MAKE) install
 
