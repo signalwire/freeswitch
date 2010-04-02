@@ -6,8 +6,7 @@ PALA=$(switch_builddir)/libs/portaudio/lib/libportaudio.la
 
 mod_LTLIBRARIES = mod_portaudio.la
 mod_portaudio_la_SOURCES = mod_portaudio.c pablio.c pa_ringbuffer.c
-mod_portaudio_la_CFLAGS  = $(AM_CFLAGS)
-mod_portaudio_la_CFLAGS += -I. -I$(PA_DIR)/include -D__EXTENSION__=1 
+mod_portaudio_la_CFLAGS = -I. -I$(PA_DIR)/include -D__EXTENSION__=1 $(AM_CFLAGS)
 mod_portaudio_la_LIBADD = $(switch_builddir)/libfreeswitch.la $(PALA)
 mod_portaudio_la_LDFLAGS = -avoid-version -module -no-undefined -shared $(PA_LIBS)
 

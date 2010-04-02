@@ -35,11 +35,12 @@ fi
 sed -e "s|\(AC_SUBST(SWITCH_VERSION_MAJOR, \[\).*\(\])\)|\1$major\2|" \
     -e "s|\(AC_SUBST(SWITCH_VERSION_MINOR, \[\).*\(\])\)|\1$minor\2|" \
     -e "s|\(AC_SUBST(SWITCH_VERSION_MICRO, \[\).*\(\])\)|\1$micro\2|" \
-    -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
+    -e "s|\(AC_INIT(\[freeswitch\], \[\).*\(\], BUG-REPORT-ADDRESS)\)|\1$major.$minor.$micro\2|" \
     -i configure.in
 
 if [ -n "$rev" ]; then
-    sed -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
+    sed -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
+        -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
         -i configure.in
 fi
 
@@ -63,14 +64,14 @@ rm -rf .git
 cd ..
 tar -czvf $dst_name.tar.gz $dst_dir
 tar -cjvf $dst_name.tar.bz2 $dst_dir
-tar -cJvf $dst_name.tar.xz $dst_dir
+tar -cJvf $dst_name.tar.xz $dst_dir || echo tar does not support -J
 rm -rf $dst_dir
 
 cat 1>&2 <<EOF
 ----------------------------------------------------------------------
 The v$ver tag has been committed locally, but it will not be
-globally visible until you 'git push' this repository up to the server
-(I didn't do that for you).
+globally visible until you 'git push --tags' this repository up to the
+server (I didn't do that for you, as you might want to review first).
 ----------------------------------------------------------------------
 EOF
 
