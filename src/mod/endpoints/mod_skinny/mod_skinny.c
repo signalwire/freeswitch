@@ -242,8 +242,7 @@ switch_core_session_t * skinny_profile_find_session(skinny_profile_t *profile, l
 	uuid = skinny_profile_find_session_uuid(profile, listener, line_instance_p, call_id);
 
 	if(!zstr(uuid)) {
-		/* TODO Why should we force? */
-		result = switch_core_session_force_locate(uuid);
+		result = switch_core_session_locate(uuid);
 		if(!result) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
 				"Unable to find session %s on %s:%d, line %d\n",
@@ -1578,7 +1577,7 @@ static void event_handler(switch_event_t *event)
 	} else if ((subclass = switch_event_get_header_nil(event, "Event-Subclass")) && !strcasecmp(subclass, SKINNY_EVENT_CALL_STATE)) {
 		char *profile_name = switch_event_get_header_nil(event, "Skinny-Profile-Name");
 		char *device_name = switch_event_get_header_nil(event, "Skinny-Device-Name");
-		uint32_t device_instance = atoi(switch_event_get_header_nil(event, "Skinny-Device-Instance"));
+		uint32_t device_instance = atoi(switch_event_get_header_nil(event, "Skinny-Station-Instance"));
 		uint32_t line_instance = atoi(switch_event_get_header_nil(event, "Skinny-Line-Instance"));
 		uint32_t call_id = atoi(switch_event_get_header_nil(event, "Skinny-Call-Id"));
 		uint32_t call_state = atoi(switch_event_get_header_nil(event, "Skinny-Call-State"));
@@ -1618,7 +1617,13 @@ static void event_handler(switch_event_t *event)
 			    }
 			    switch_safe_free(line_instance_condition);
 			    switch_safe_free(call_id_condition);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+					"Device %s:%d in profile '%s' not found.\n", device_name, device_instance, profile_name);
 			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+				"Profile '%s' not found.\n", profile_name);
 		}
 	}
 }
