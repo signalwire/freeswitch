@@ -1,7 +1,7 @@
 # common Makefile targets for libsofia-sip-ua modules
 # ---------------------------------------------------
 
-AM_CFLAGS = $(CWFLAG) $(SOFIA_CFLAGS) $(SOFIA_COVERAGE)
+AM_CFLAGS = $(CWFLAG) $(SOFIA_CFLAGS) $(SOFIA_COVERAGE) $(SOFIA_PLAT_CFLAGS)
 
 # Use with --enable-ndebug
 if NDEBUG

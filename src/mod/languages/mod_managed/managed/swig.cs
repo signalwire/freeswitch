@@ -2904,6 +2904,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_channel_export_variable_var_check(SWIGTYPE_p_switch_channel channel, string varname, string value, switch_bool_t var_check, switch_bool_t nolocal) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_export_variable_var_check(SWIGTYPE_p_switch_channel.getCPtr(channel), varname, value, (int)var_check, (int)nolocal);
+    return ret;
+  }
+
   public static string switch_channel_get_variable_dup(SWIGTYPE_p_switch_channel channel, string varname, switch_bool_t dup) {
     string ret = freeswitchPINVOKE.switch_channel_get_variable_dup(SWIGTYPE_p_switch_channel.getCPtr(channel), varname, (int)dup);
     return ret;
@@ -10208,6 +10213,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_variable_partner")]
   public static extern string switch_channel_get_variable_partner(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_export_variable_var_check")]
+  public static extern int switch_channel_export_variable_var_check(HandleRef jarg1, string jarg2, string jarg3, int jarg4, int jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_variable_dup")]
   public static extern string switch_channel_get_variable_dup(HandleRef jarg1, string jarg2, int jarg3);
