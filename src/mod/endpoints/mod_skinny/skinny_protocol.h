@@ -347,8 +347,8 @@ struct button_template_message {
 #define CAPABILITIES_REQ_MESSAGE 0x009B
 
 /* RegisterRejectMessage */
-#define REGISTER_REJ_MESSAGE 0x009D
-struct register_rej_message {
+#define REGISTER_REJECT_MESSAGE 0x009D
+struct register_reject_message {
     char error[33];
 };
 
@@ -528,7 +528,7 @@ union skinny_data {
     struct config_stat_res_message config_res;
     struct define_time_date_message define_time_date;
     struct button_template_message button_template;
-    struct register_rej_message reg_rej;
+    struct register_reject_message reg_rej;
     struct reset_message reset;
     struct open_receive_channel_message open_receive_channel;
     struct close_receive_channel_message close_receive_channel;
@@ -642,26 +642,32 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 /*****************************************************************************/
 /* SKINNY MESSAGE HELPER */
 /*****************************************************************************/
-switch_status_t start_tone(listener_t *listener,
+switch_status_t send_register_ack(listener_t *listener,
+    uint32_t keep_alive,
+    char *date_format,
+    char *reserved,
+    uint32_t secondary_keep_alive,
+    char *reserved2);
+switch_status_t send_start_tone(listener_t *listener,
     uint32_t tone,
     uint32_t reserved,
     uint32_t line_instance,
     uint32_t call_id);
-switch_status_t stop_tone(listener_t *listener,
+switch_status_t send_stop_tone(listener_t *listener,
     uint32_t line_instance,
     uint32_t call_id);
-switch_status_t set_ringer(listener_t *listener,
+switch_status_t send_set_ringer(listener_t *listener,
     uint32_t ring_type,
     uint32_t ring_mode,
     uint32_t line_instance,
     uint32_t call_id);
-switch_status_t set_lamp(listener_t *listener,
+switch_status_t send_set_lamp(listener_t *listener,
     uint32_t stimulus,
     uint32_t stimulus_instance,
     uint32_t mode);
-switch_status_t set_speaker_mode(listener_t *listener,
+switch_status_t send_set_speaker_mode(listener_t *listener,
     uint32_t mode);
-switch_status_t start_media_transmission(listener_t *listener,
+switch_status_t send_start_media_transmission(listener_t *listener,
     uint32_t conference_id,
     uint32_t pass_thru_party_id,
     uint32_t remote_ip,
@@ -672,7 +678,7 @@ switch_status_t start_media_transmission(listener_t *listener,
     uint32_t silence_suppression,
     uint16_t max_frames_per_packet,
     uint32_t g723_bitrate);
-switch_status_t stop_media_transmission(listener_t *listener,
+switch_status_t send_stop_media_transmission(listener_t *listener,
     uint32_t conference_id,
     uint32_t pass_thru_party_id,
     uint32_t conference_id2);
@@ -697,7 +703,18 @@ switch_status_t send_call_info(listener_t *listener,
     uint32_t call_instance,
     uint32_t call_security_status,
     uint32_t party_pi_restriction_bits);
-switch_status_t open_receive_channel(listener_t *listener,
+switch_status_t send_define_time_date(listener_t *listener,
+	uint32_t year,
+	uint32_t month,
+	uint32_t day_of_week, /* monday = 1 */
+	uint32_t day,
+	uint32_t hour,
+	uint32_t minute,
+	uint32_t seconds,
+	uint32_t milliseconds,
+	uint32_t timestamp);
+switch_status_t send_define_current_time_date(listener_t *listener);
+switch_status_t send_open_receive_channel(listener_t *listener,
     uint32_t conference_id,
     uint32_t pass_thru_party_id,
     uint32_t packets,
@@ -706,7 +723,7 @@ switch_status_t open_receive_channel(listener_t *listener,
     uint32_t g723_bitrate,
     uint32_t conference_id2,
     uint32_t reserved[10]);
-switch_status_t close_receive_channel(listener_t *listener,
+switch_status_t send_close_receive_channel(listener_t *listener,
     uint32_t conference_id,
     uint32_t pass_thru_party_id,
     uint32_t conference_id2);
@@ -719,15 +736,15 @@ switch_status_t send_call_state(listener_t *listener,
     uint32_t call_state,
     uint32_t line_instance,
     uint32_t call_id);
-switch_status_t display_prompt_status(listener_t *listener,
+switch_status_t send_display_prompt_status(listener_t *listener,
     uint32_t timeout,
     char display[32],
     uint32_t line_instance,
     uint32_t call_id);
-switch_status_t clear_prompt_status(listener_t *listener,
+switch_status_t send_clear_prompt_status(listener_t *listener,
     uint32_t line_instance,
     uint32_t call_id);
-switch_status_t activate_call_plane(listener_t *listener,
+switch_status_t send_activate_call_plane(listener_t *listener,
     uint32_t line_instance);
 switch_status_t send_dialed_number(listener_t *listener,
     char called_party[24],

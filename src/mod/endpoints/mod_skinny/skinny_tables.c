@@ -73,7 +73,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
     {"DefineTimeDateMessage", DEFINE_TIME_DATE_MESSAGE},
     {"ButtonTemplateResMessage", BUTTON_TEMPLATE_RES_MESSAGE},
     {"CapabilitiesReqMessage", CAPABILITIES_REQ_MESSAGE},
-    {"RegisterRejMessage", REGISTER_REJ_MESSAGE},
+    {"RegisterRejectMessage", REGISTER_REJECT_MESSAGE},
     {"ResetMessage", RESET_MESSAGE},
     {"KeepAliveAckMessage", KEEP_ALIVE_ACK_MESSAGE},
     {"OpenReceiveChannelMessage", OPEN_RECEIVE_CHANNEL_MESSAGE},

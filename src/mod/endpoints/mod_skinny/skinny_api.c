@@ -249,7 +249,7 @@ static switch_status_t skinny_api_cmd_profile_device_send_ringer_message(const c
 	    listener_t *listener = NULL;
 	    skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
 	    if(listener) {
-		    set_ringer(listener, skinny_str2ring_type(ring_type), skinny_str2ring_mode(ring_mode), 0, 0);
+		    send_set_ringer(listener, skinny_str2ring_type(ring_type), skinny_str2ring_mode(ring_mode), 0, 0);
 	    } else {
 		    stream->write_function(stream, "Listener not found!\n");
 	    }
@@ -268,7 +268,7 @@ static switch_status_t skinny_api_cmd_profile_device_send_lamp_message(const cha
 	    listener_t *listener = NULL;
 	    skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
 	    if(listener) {
-		    set_lamp(listener, skinny_str2button(stimulus), atoi(instance), skinny_str2lamp_mode(lamp_mode));
+		    send_set_lamp(listener, skinny_str2button(stimulus), atoi(instance), skinny_str2lamp_mode(lamp_mode));
 	    } else {
 		    stream->write_function(stream, "Listener not found!\n");
 	    }
@@ -287,7 +287,7 @@ static switch_status_t skinny_api_cmd_profile_device_send_speaker_mode_message(c
 	    listener_t *listener = NULL;
 	    skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
 	    if(listener) {
-		    set_speaker_mode(listener, skinny_str2speaker_mode(speaker_mode));
+		    send_set_speaker_mode(listener, skinny_str2speaker_mode(speaker_mode));
 	    } else {
 		    stream->write_function(stream, "Listener not found!\n");
 	    }
