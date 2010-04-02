@@ -49,7 +49,9 @@ sub send {
         $parsed_count++;
     }
     if($parsed_count != scalar(keys %{$self->{'data'}})) {
-        printf "Incomplete message: %d out of %d\n", $parsed_count, scalar(keys %{$self->{'data'}});
+    	printf "Incomplete message (type=%s (%X)) %d out of %d\n", Net::Skinny::Protocol::skinny_message_type2str($self->{'type'}), $self->{'type'},
+            $parsed_count, scalar(keys %{$self->{'data'}});
+        print Dumper(@$struct);
         return;
     }
     $self->{'socket'}->send_data($self->{'type'}, $raw);
