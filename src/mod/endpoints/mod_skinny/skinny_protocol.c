@@ -1374,7 +1374,6 @@ switch_status_t skinny_handle_alarm(listener_t *listener, skinny_message_t *requ
 switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *request)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	skinny_message_t *message;
 	skinny_profile_t *profile;
 	switch_event_t *event = NULL;
 	switch_event_t *params = NULL;
