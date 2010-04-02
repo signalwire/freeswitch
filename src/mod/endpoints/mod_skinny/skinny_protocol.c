@@ -436,6 +436,7 @@ switch_call_cause_t skinny_ring_lines(private_t *tech_pvt)
 /*****************************************************************************/
 switch_status_t skinny_create_ingoing_session(listener_t *listener, uint32_t *line_instance_p, switch_core_session_t **session)
 {
+	uint32_t line_instance;
 	switch_core_session_t *nsession;
 	switch_channel_t *channel;
 	private_t *tech_pvt;
@@ -443,6 +444,7 @@ switch_status_t skinny_create_ingoing_session(listener_t *listener, uint32_t *li
 	char *sql;
 	struct line_stat_res_message *button = NULL;
 
+	line_instance = *line_instance_p;
 	if((nsession = skinny_profile_find_session(listener->profile, listener, line_instance_p, 0))) {
 	    switch_core_session_rwunlock(nsession);
 	    if(skinny_line_get_state(listener, *line_instance_p, 0) == SKINNY_OFF_HOOK) {
@@ -452,6 +454,7 @@ switch_status_t skinny_create_ingoing_session(listener_t *listener, uint32_t *li
 	    }
 	    skinny_session_hold_line(nsession, listener, *line_instance_p);
 	}
+	*line_instance_p = line_instance;
 	if(*line_instance_p == 0) {
 	    *line_instance_p = 1;
 	}
