@@ -25,7 +25,7 @@
  * 
  * Rupa Schomaker <rupa@rupa.com>
  *
- * mod_cidlookup.c -- API for querying cid->name services
+ * mod_cidlookup.c -- API for querying cid->name services and local data
  *
  */
 
