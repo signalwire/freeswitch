@@ -64,7 +64,7 @@ rm -rf .git
 cd ..
 tar -czvf $dst_name.tar.gz $dst_dir
 tar -cjvf $dst_name.tar.bz2 $dst_dir
-tar -cJvf $dst_name.tar.xz $dst_dir
+tar -cJvf $dst_name.tar.xz $dst_dir || echo tar does not support -J
 rm -rf $dst_dir
 
 cat 1>&2 <<EOF
