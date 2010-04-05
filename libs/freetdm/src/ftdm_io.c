@@ -3650,26 +3650,40 @@ static void *ftdm_cpu_monitor_run(ftdm_thread_t *me, void *obj)
 	return NULL;
 }
 
-static ftdm_status_t ftdm_cpu_monitor_start(cpu_monitor_t* monitor)
+static ftdm_status_t ftdm_cpu_monitor_start(void)
 {
-	if (ftdm_interrupt_create(&monitor->interrupt, FTDM_INVALID_SOCKET) != FTDM_SUCCESS) {
+	if (ftdm_interrupt_create(&globals.cpu_monitor.interrupt, FTDM_INVALID_SOCKET) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to create CPU monitor interrupt\n");
 		return FTDM_FAIL;
 	}
 
-	if (ftdm_thread_create_detached(ftdm_cpu_monitor_run, monitor) != FTDM_SUCCESS) {
+	if (ftdm_thread_create_detached(ftdm_cpu_monitor_run, &globals.cpu_monitor) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to create cpu monitor thread!!\n");
 		return FTDM_FAIL;
 	}
 	return FTDM_SUCCESS;
 }
 
-static void ftdm_cpu_monitor_stop(cpu_monitor_t* monitor)
+static void ftdm_cpu_monitor_stop(void)
 {
-	ftdm_interrupt_signal(monitor->interrupt);
-	while(monitor->running) {
+	if (!globals.cpu_monitor.interrupt) {
+		return;
+	}
+
+	if (!globals.cpu_monitor.running) {
+		return;
+	}
+
+	if (ftdm_interrupt_signal(globals.cpu_monitor.interrupt) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to interrupt the CPU monitor\n");
+		return;
+	}
+
+	while (globals.cpu_monitor.running) {
 		ftdm_sleep(10);
 	}
+
+	ftdm_interrupt_destroy(&globals.cpu_monitor.interrupt);
 }
 
 FT_DECLARE(void) ftdm_cpu_monitor_disable(void)
@@ -3722,7 +3736,7 @@ FT_DECLARE(ftdm_status_t) ftdm_global_configuration(void)
 	}
 
 	if (!ftdm_cpu_monitor_disabled) {
-		if (ftdm_cpu_monitor_start(&globals.cpu_monitor) != FTDM_SUCCESS) {
+		if (ftdm_cpu_monitor_start() != FTDM_SUCCESS) {
 			return FTDM_FAIL;
 		}
 	}
@@ -3745,7 +3759,7 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 
 	globals.running = 0;	
 
-	ftdm_cpu_monitor_stop(&globals.cpu_monitor);
+	ftdm_cpu_monitor_stop();
 
 	globals.span_index = 0;
 
@@ -3780,7 +3794,6 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 	ftdm_mutex_unlock(globals.mutex);
 	ftdm_mutex_destroy(&globals.mutex);
 	ftdm_mutex_destroy(&globals.span_mutex);
-	ftdm_interrupt_destroy(&globals.cpu_monitor.interrupt);
 
 	memset(&globals, 0, sizeof(globals));
 	return FTDM_SUCCESS;
