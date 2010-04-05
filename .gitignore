@@ -66,3 +66,4 @@ quiet_libtool
 scripts/fsxs
 scripts/gentls_cert
 a.out.dSYM
+/freeswitch-sounds-*
