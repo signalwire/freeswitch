@@ -2767,6 +2767,8 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   "type: %s\n"
 						   "state: %s\n"
 						   "last_state: %s\n"
+						   "txgain: %3.2f\n"
+						   "rxgain: %3.2f\n"
 						   "cid_date: %s\n"
 						   "cid_name: %s\n"
 						   "cid_num: %s\n"
@@ -2782,6 +2784,8 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   ftdm_chan_type2str(span->channels[chan_id]->type),
 						   ftdm_channel_state2str(span->channels[chan_id]->state),
 						   ftdm_channel_state2str(span->channels[chan_id]->last_state),
+						   span->channels[chan_id]->txgain,
+						   span->channels[chan_id]->rxgain,
 						   span->channels[chan_id]->caller_data.cid_date,
 						   span->channels[chan_id]->caller_data.cid_name,
 						   span->channels[chan_id]->caller_data.cid_num.digits,
@@ -2808,6 +2812,8 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   "  <type>%s</type>\n"
 						   "  <state>%s</state>\n"
 						   "  <last-state>%s</last-state>\n"
+						   "  <txgain>%3.2f</txgain>\n"
+						   "  <rxgain>%3.2f</rxgain>\n"
 						   "  <cid-date>%s</cid-date>\n"
 						   "  <cid-name>%s</cid-name>\n"
 						   "  <cid-num>%s</cid-num>\n"
@@ -2824,6 +2830,8 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   ftdm_chan_type2str(span->channels[chan_id]->type),
 						   ftdm_channel_state2str(span->channels[chan_id]->state),
 						   ftdm_channel_state2str(span->channels[chan_id]->last_state),
+						   span->channels[chan_id]->txgain,
+						   span->channels[chan_id]->rxgain,
 						   span->channels[chan_id]->caller_data.cid_date,
 						   span->channels[chan_id]->caller_data.cid_name,
 						   span->channels[chan_id]->caller_data.cid_num.digits,
