@@ -437,6 +437,8 @@ portaudio/libtool
 portaudio/ltmain.sh
 portaudio/missing
 portaudio/portaudio-2.0.pc
+!/portaudio/bindings/cpp/build/gnu/aclocal.m4
+!/portaudio/bindings/cpp/build/gnu/configure
 silk/Makefile
 silk/Makefile.in
 silk/aclocal.m4
@@ -1027,6 +1029,8 @@ unimrcp/platforms/asr-client/asrclient
 unimrcp/platforms/umc/umc
 unimrcp/platforms/unimrcp-client/unimrcpclient
 unimrcp/platforms/unimrcp-server/unimrcpserver
+!/unimrcp/configure.gnu
+!/unimrcp/build/tools/unimrcpservice.exe.manifest
 yaml/config.h
 yaml/stamp-h1
 yaml/tests/example-deconstructor
@@ -1038,6 +1042,8 @@ yaml/tests/run-emitter
 yaml/tests/run-loader
 yaml/tests/run-parser
 yaml/tests/run-scanner
+!/yaml/aclocal.m4
+!/yaml/configure
 Communicator_semi_40.cd_semi_6000/
 libogg-1.1.3/
 pthreads-w32-2-7-0-release/

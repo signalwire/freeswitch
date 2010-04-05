@@ -1,5 +1,5 @@
-Makefile
-Makefile.in
+/Makefile
+/Makefile.in
 applications/mod_commands/Makefile
 applications/mod_conference/Makefile
 applications/mod_dptools/Makefile
