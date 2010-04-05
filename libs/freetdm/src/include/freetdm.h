@@ -654,7 +654,6 @@ struct ftdm_span {
 	char *type;
 	char *dtmf_hangup;
 	size_t dtmf_hangup_len;
-	int suggest_chan_id;
 	ftdm_state_map_t *state_map;
 	ftdm_caller_data_t default_caller_data;
 	ftdm_queue_t *pendingchans;

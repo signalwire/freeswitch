@@ -2239,7 +2239,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 	span->get_span_sig_status = sangoma_boost_get_span_sig_status;
 	span->set_span_sig_status = sangoma_boost_set_span_sig_status;
 	span->state_map = &boost_state_map;
-	span->suggest_chan_id = 0;
+	ftdm_clear_flag(span, FTDM_SPAN_SUGGEST_CHAN_ID);
+	ftdm_set_flag(span, FTDM_SPAN_USE_CHAN_QUEUE);
 	if (sigmod_iface) {
 		/* the core will do the hunting */
 		span->channel_request = NULL;

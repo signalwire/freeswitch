@@ -412,7 +412,9 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 	}
 
 	/* destroy final basic resources of the span data structure */
-	ftdm_queue_destroy(&span->pendingchans);
+	if (span->pendingchans) {
+		ftdm_queue_destroy(&span->pendingchans);
+	}
 	ftdm_mutex_unlock(span->mutex);
 	ftdm_mutex_destroy(&span->mutex);
 	ftdm_safe_free(span->signal_data);
@@ -518,9 +520,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_create(ftdm_io_interface_t *fio, ftdm_span_t
 		status = ftdm_mutex_create(&new_span->mutex);
 		ftdm_assert(status == FTDM_SUCCESS, "mutex creation failed\n");
 
-		status = ftdm_queue_create(&new_span->pendingchans, SPAN_PENDING_CHANS_QUEUE_SIZE);
-		ftdm_assert(status == FTDM_SUCCESS, "span chans queue creation failed\n");
-		
 		ftdm_set_flag(new_span, FTDM_SPAN_CONFIGURED);
 		new_span->span_id = ++globals.span_index;
 		new_span->fio = fio;
@@ -1163,7 +1162,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(ftdm_channel_t *ftdmchan, ftdm_
 
 		ftdm_mutex_lock(ftdmchan->span->mutex);
 		ftdm_set_flag(ftdmchan->span, FTDM_SPAN_STATE_CHANGE);
-		ftdm_queue_enqueue(ftdmchan->span->pendingchans, ftdmchan);
+		if (ftdmchan->span->pendingchans) {
+			ftdm_queue_enqueue(ftdmchan->span->pendingchans, ftdmchan);
+		}
 		ftdm_mutex_unlock(ftdmchan->span->mutex);
 
 		ftdmchan->last_state = ftdmchan->state; 
@@ -1329,7 +1330,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 			return FTDM_FAIL;
 		}
 
-		if (span->channel_request && !span->suggest_chan_id) {
+		if (span->channel_request && !ftdm_test_flag(span, FTDM_SPAN_SUGGEST_CHAN_ID)) {
 			ftdm_set_caller_data(span, caller_data);
 			return span->channel_request(span, 0, direction, caller_data, ftdmchan);
 		}
@@ -3266,6 +3267,9 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span(const char *type, ftdm_span_t *spa
 		va_list ap;
 		va_start(ap, sig_cb);
 		status = mod->sig_configure(span, sig_cb, ap);
+		if (status == FTDM_SUCCESS && ftdm_test_flag(span, FTDM_SPAN_USE_CHAN_QUEUE)) {
+			status = ftdm_queue_create(&span->pendingchans, SPAN_PENDING_CHANS_QUEUE_SIZE);
+		}
 		va_end(ap);
 	} else {
 		ftdm_log(FTDM_LOG_ERROR, "can't find '%s'\n", type);
