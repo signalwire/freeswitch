@@ -3142,6 +3142,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	module_pool = pool;
 
 	ftdm_global_set_logger(ftdm_logger);
+
+	ftdm_cpu_monitor_disable();
 	
 	if (ftdm_global_init() != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "Error loading FreeTDM\n");

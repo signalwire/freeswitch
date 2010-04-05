@@ -880,8 +880,8 @@ static __inline__ void advance_chan_states(ftdm_channel_t *ftdmchan);
  */
 static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, sangomabc_event_t *event)
 {
-	ftdm_channel_t *ftdmchan;
-
+	ftdm_channel_t *ftdmchan = NULL;
+	int hangup_cause = FTDM_CAUSE_CALL_REJECTED;
 	if (!(ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 0))) {
 		if ((ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 1))) {
 			int r;
@@ -896,7 +896,7 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 
 			}
 			ftdm_set_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG);
-			ftdmchan=NULL;
+			ftdmchan = NULL;
 		}
 		ftdm_log(FTDM_LOG_CRIT, "START CANT FIND CHAN %d:%d\n", event->span+1,event->chan+1);
 		goto error;
@@ -953,12 +953,13 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 	return;
 
  error:
+	hangup_cause = ftdmchan ? ftdmchan->caller_data.hangup_cause : FTDM_CAUSE_REQUESTED_CHAN_UNAVAIL;
 	sangomabc_exec_command(mcon,
 						   event->span,
 						   event->chan,
 						   0,
 						   SIGBOOST_EVENT_CALL_START_NACK,
-						   0, 0);
+						   hangup_cause, 0);
 		
 }
 
