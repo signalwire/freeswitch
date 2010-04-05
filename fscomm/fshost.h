@@ -82,11 +82,12 @@ private slots:
     void minimalModuleLoaded(QString, QString);
 
 private:
+    /* Helper methods */
     void createFolders();
     void printEventHeaders(switch_event_t *event);
 
     /*FSM State handlers*/
-    /**Channel Related*/
+    /** Channel Related*/
     void eventChannelCreate(switch_event_t *event, QString uuid);
     void eventChannelAnswer(switch_event_t *event, QString uuid);
     void eventChannelState(switch_event_t *event, QString uuid);
@@ -101,12 +102,12 @@ private:
     void eventChannelHangupComplete(switch_event_t *event, QString uuid);
     void eventChannelDestroy(switch_event_t *event, QString uuid);
 
-    /**Others*/
+    /** Others*/
     void eventCodec(switch_event_t *event, QString uuid);
     void eventCallUpdate(switch_event_t *event, QString uuid);
     void eventRecvInfo(switch_event_t *event, QString uuid);
-    /*END*/
 
+    /* Structures to keep track of things */
     QHash<QString, QSharedPointer<Call> > _active_calls;
     QHash<QString, QSharedPointer<Account> > _accounts;
     QHash<QString, QSharedPointer<Channel> > _channels;

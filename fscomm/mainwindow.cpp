@@ -131,7 +131,6 @@ void MainWindow::updateCallTimers()
     {
         QTableWidgetItem* item = ui->tableCalls->item(row, 2);
         QSharedPointer<Call> call = g_FSHost.getCallByUUID(item->data(Qt::UserRole).toString());
-        /*if (call.data() == NULL) continue;*/
         QTime time = call.data()->getCurrentStateTime();
         item->setText(time.toString("hh:mm:ss"));
         item->setTextAlignment(Qt::AlignRight);
