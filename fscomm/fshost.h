@@ -35,6 +35,7 @@
 #include <QSharedPointer>
 #include <switch.h>
 #include "call.h"
+#include "channel.h"
 #include "account.h"
 
 class FSHost : public QThread
@@ -57,15 +58,20 @@ protected:
     void run(void);
 
 signals:
+    /* Status signals */
     void coreLoadingError(QString);
     void loadingModules(QString, int, QColor);
-    void loadedModule(QString, QString, QString);
+    void loadedModule(QString, QString);
     void ready(void);
+
+    /* Call signals */
     void ringing(QSharedPointer<Call>);
     void answered(QSharedPointer<Call>);
     void newOutgoingCall(QSharedPointer<Call>);
     void callFailed(QSharedPointer<Call>);
     void hungup(QSharedPointer<Call>);
+
+    /* Account signals */
     void accountStateChange(QSharedPointer<Account>);
     void newAccount(QSharedPointer<Account>);
     void delAccount(QSharedPointer<Account>);
@@ -73,16 +79,37 @@ signals:
 private slots:
     /* We need to wait for the gateway deletion before reloading it */
     void accountReloadSlot(QSharedPointer<Account>);
-    void minimalModuleLoaded(QString, QString, QString);
+    void minimalModuleLoaded(QString, QString);
 
 private:
-    switch_status_t processBlegEvent(switch_event_t *, QString);
-    switch_status_t processAlegEvent(switch_event_t *, QString);
     void createFolders();
     void printEventHeaders(switch_event_t *event);
+
+    /*FSM State handlers*/
+    /**Channel Related*/
+    void eventChannelCreate(switch_event_t *event, QString uuid);
+    void eventChannelAnswer(switch_event_t *event, QString uuid);
+    void eventChannelState(switch_event_t *event, QString uuid);
+    void eventChannelExecute(switch_event_t *event, QString uuid);
+    void eventChannelExecuteComplete(switch_event_t *event, QString uuid);
+    void eventChannelOutgoing(switch_event_t *event, QString uuid);
+    void eventChannelOriginate(switch_event_t *event, QString uuid);
+    void eventChannelProgressMedia(switch_event_t *event, QString uuid);
+    void eventChannelBridge(switch_event_t *event, QString uuid);
+    void eventChannelHangup(switch_event_t *event, QString uuid);
+    void eventChannelUnbridge(switch_event_t *event, QString uuid);
+    void eventChannelHangupComplete(switch_event_t *event, QString uuid);
+    void eventChannelDestroy(switch_event_t *event, QString uuid);
+
+    /**Others*/
+    void eventCodec(switch_event_t *event, QString uuid);
+    void eventCallUpdate(switch_event_t *event, QString uuid);
+    void eventRecvInfo(switch_event_t *event, QString uuid);
+    /*END*/
+
     QHash<QString, QSharedPointer<Call> > _active_calls;
     QHash<QString, QSharedPointer<Account> > _accounts;
-    QHash<QString, QString> _bleg_uuids;
+    QHash<QString, QSharedPointer<Channel> > _channels;
     QList<QString> _reloading_Accounts;
     QList<QString> _loadedModules;
 };

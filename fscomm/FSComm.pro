@@ -32,7 +32,8 @@ SOURCES += main.cpp \
     preferences/accountdialog.cpp \
     preferences/prefaccounts.cpp \
     account.cpp \
-    widgets/codecwidget.cpp
+    widgets/codecwidget.cpp \
+    channel.cpp
 HEADERS += mainwindow.h \
     fshost.h \
     call.h \
@@ -43,7 +44,8 @@ HEADERS += mainwindow.h \
     preferences/accountdialog.h \
     preferences/prefaccounts.h \
     account.h \
-    widgets/codecwidget.h
+    widgets/codecwidget.h \
+    channel.h
 FORMS += mainwindow.ui \
     preferences/prefdialog.ui \
     preferences/accountdialog.ui \
