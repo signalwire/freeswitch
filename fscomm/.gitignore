@@ -27,3 +27,6 @@
 *.dep
 *.dll
 Makefile
+fscomm
+fscomm.exe
+fscomm.app
