@@ -103,7 +103,9 @@ int skypopen_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_
 	sockbufsize = SAMPLES_PER_FRAME * 8;
 #endif //WIN32
 	size = sizeof(int);
-	setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &sockbufsize, size);
+	if(tech_pvt->setsockopt){
+		setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &sockbufsize, size);
+	}
 
 	sockbufsize = 0;
 	size = sizeof(int);
@@ -120,7 +122,9 @@ int skypopen_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_
 	sockbufsize = SAMPLES_PER_FRAME * 8;
 #endif //WIN32
 	size = sizeof(int);
-	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &sockbufsize, size);
+	if(tech_pvt->setsockopt){
+		setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &sockbufsize, size);
+	}
 
 	sockbufsize = 0;
 	size = sizeof(int);
@@ -131,7 +135,9 @@ int skypopen_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_
         getsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, &size);
         DEBUGA_SKYPE("TCP_NODELAY is %d\n", SKYPOPEN_P_LOG, flag);
         flag = 1;
-        setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, size);
+	if(tech_pvt->setsockopt){
+        	setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, size);
+	}
         flag = 0;
         getsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, &size);
         DEBUGA_SKYPE("TCP_NODELAY is %d\n", SKYPOPEN_P_LOG, flag);
@@ -1563,6 +1569,7 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 	Window root = -1;
 	Window win = -1;
 	int xfd;
+	fd_set xfds;
 
 	if (!strlen(tech_pvt->X11_display))
 		strcpy(tech_pvt->X11_display, getenv("DISPLAY"));
@@ -1623,6 +1630,7 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 			int i;
 			int continue_is_broken = 0;
 			int there_were_continues = 0;
+			struct timeval tv;
 			Atom atom_begin = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
 			Atom atom_continue = XInternAtom(disp, "SKYPECONTROLAPI_MESSAGE", False);
 
@@ -1631,6 +1639,22 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 			b = buffer;
 
 			while (running && tech_pvt->running) {
+
+
+        FD_ZERO(&xfds);
+        FD_SET(xfd, &xfds);
+
+        tv.tv_usec = 100000;
+        tv.tv_sec = 0;
+
+
+
+if (select(xfd+1, &xfds, 0, 0, &tv)){
+
+while(XPending(disp)){
+
+
+
 				XNextEvent(disp, &an_event);
 				if (!(running && tech_pvt->running))
 					break;
@@ -1664,7 +1688,7 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 					}
 					if (an_event.xclient.message_type == atom_continue) {
 						if (!strlen(buffer)) {
-							DEBUGA_SKYPE
+							WARNINGA
 								("Got a 'continue' XAtom without a previous 'begin'. It's value (between vertical bars) is=|||%s|||, let's store it and hope next 'begin' will be the good one\n",
 								 SKYPOPEN_P_LOG, buf);
 							strcat(continuebuffer, buf);
@@ -1703,8 +1727,16 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 				default:
 					skypopen_sleep(1000);	//0.1 msec
 					break;
-				}
-			}
+				} //switch event.type
+			} //while XPending
+
+} // if select
+} //while running
+
+
+
+
+
 		}
 	} else {
 		ERRORA("Skype is not running, maybe crashed. Please run/restart Skype and relaunch Skypopen\n", SKYPOPEN_P_LOG);
