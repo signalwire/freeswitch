@@ -128,17 +128,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_partner(switch_core_sess
 }
 
 
+struct str_node {
+	char *str;
+	struct str_node *next;
+};
+
 SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_name, const char *var_val, switch_call_cause_t cause)
 {
 	switch_hash_index_t *hi;
 	void *val;
 	switch_core_session_t *session;
 	switch_memory_pool_t *pool;
-	switch_queue_t *queue;
-	void *pop;
+	struct str_node *head = NULL, *np;
 
 	switch_core_new_memory_pool(&pool);
-	switch_queue_create(&queue, 250000, pool);
 
 	if (!var_val)
 		return;
@@ -152,7 +155,10 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
 				if (switch_channel_up(session->channel) &&
 					(this_val = switch_channel_get_variable(session->channel, var_name)) && (!strcmp(this_val, var_val))) {
-					switch_queue_push(queue, switch_core_strdup(pool, session->uuid_str));
+					np = switch_core_alloc(pool, sizeof(*np));
+					np->str = switch_core_strdup(pool, session->uuid_str);
+					np->next = head;
+					head = np;
 				}
 				switch_core_session_rwunlock(session);
 			}
@@ -160,10 +166,8 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 	}
 	switch_mutex_unlock(runtime.session_hash_mutex);
 
-	while (switch_queue_trypop(queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-		char *uuid = (char *) pop;
-
-		if ((session = switch_core_session_locate(uuid))) {
+	for(np = head; np; np = np->next) {
+		if ((session = switch_core_session_locate(np->str))) {
 			switch_channel_hangup(session->channel, cause);
 			switch_core_session_rwunlock(session);
 		}
@@ -179,12 +183,10 @@ SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_i
 	void *val;
 	switch_core_session_t *session;
 	switch_memory_pool_t *pool;
-	switch_queue_t *queue;
-	void *pop;
-
+    struct str_node *head = NULL, *np;
+	
 	switch_core_new_memory_pool(&pool);
-	switch_queue_create(&queue, 250000, pool);
-
+	
 	switch_mutex_lock(runtime.session_hash_mutex);
 	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
@@ -192,7 +194,10 @@ SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_i
 			session = (switch_core_session_t *) val;
 			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
 				if (session->endpoint_interface == endpoint_interface) {
-					switch_queue_push(queue, switch_core_strdup(pool, session->uuid_str));
+					np = switch_core_alloc(pool, sizeof(*np));
+                    np->str = switch_core_strdup(pool, session->uuid_str);
+                    np->next = head;
+					head = np;
 				}
 				switch_core_session_rwunlock(session);
 			}
@@ -200,10 +205,8 @@ SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_i
 	}
 	switch_mutex_unlock(runtime.session_hash_mutex);
 
-	while (switch_queue_trypop(queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-		char *uuid = (char *) pop;
-
-		if ((session = switch_core_session_locate(uuid))) {
+	for(np = head; np; np = np->next) {
+		if ((session = switch_core_session_locate(np->str))) {
 			switch_channel_hangup(session->channel, cause);
 			switch_core_session_rwunlock(session);
 		}
@@ -219,11 +222,10 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 	void *val;
 	switch_core_session_t *session;
 	switch_memory_pool_t *pool;
-	switch_queue_t *queue;
-	void *pop;
+	struct str_node *head = NULL, *np;
 
 	switch_core_new_memory_pool(&pool);
-	switch_queue_create(&queue, 250000, pool);
+
 
 	switch_mutex_lock(runtime.session_hash_mutex);
 	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
@@ -231,17 +233,18 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 		if (val) {
 			session = (switch_core_session_t *) val;
 			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-				switch_queue_push(queue, switch_core_strdup(pool, session->uuid_str));
+				np = switch_core_alloc(pool, sizeof(*np));
+				np->str = switch_core_strdup(pool, session->uuid_str);
+				np->next = head;
+				head = np;
 				switch_core_session_rwunlock(session);
 			}
 		}
 	}
 	switch_mutex_unlock(runtime.session_hash_mutex);
 
-	while (switch_queue_trypop(queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-		char *uuid = (char *) pop;
-
-		if ((session = switch_core_session_locate(uuid))) {
+	for(np = head; np; np = np->next) { 
+		if ((session = switch_core_session_locate(np->str))) {
 			switch_channel_hangup(session->channel, cause);
 			switch_core_session_rwunlock(session);
 		}

@@ -737,6 +737,37 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_profile_var(switch_channel_t 
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_var_check(switch_channel_t *channel, const char *varname, const char *value, switch_bool_t var_check, switch_bool_t nolocal)
+{
+	const char *exports, *exports_varname = varname;
+	switch_status_t status;
+
+	exports = switch_channel_get_variable(channel, SWITCH_EXPORT_VARS_VARIABLE);
+
+	if (nolocal) {
+		exports_varname = switch_mprintf("nolocal:%s", varname);
+	}
+	
+	if ((status = switch_channel_set_variable_var_check(channel, exports_varname, value, var_check)) != SWITCH_STATUS_SUCCESS) {
+		goto done;
+	}
+
+	if (varname && value) {
+		if (exports) {
+			switch_channel_set_variable_printf(channel, SWITCH_EXPORT_VARS_VARIABLE, "%s,%s", exports, exports_varname);
+		} else {
+			switch_channel_set_variable(channel, SWITCH_EXPORT_VARS_VARIABLE, exports_varname);
+		}
+	}
+
+done:
+	if (exports_varname != varname) {
+		free((char*)exports_varname);	
+	}
+	
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check)
 {

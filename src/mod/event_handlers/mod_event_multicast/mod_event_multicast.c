@@ -52,7 +52,6 @@ static struct {
 	char *bindings;
 	uint32_t key_count;
 	char hostname[80];
-	uint64_t host_hash;
 	switch_port_t port;
 	switch_sockaddr_t *addr;
 	switch_socket_t *udp_socket;
@@ -295,36 +294,35 @@ static void event_handler(switch_event_t *event)
 
 				switch_uuid_get(&uuid);
 				switch_uuid_format(uuid_str, &uuid);
-				len = strlen(packet) + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + EVP_MAX_IV_LENGTH + strlen((char *) MAGIC);
+				len = strlen(packet) + SWITCH_UUID_FORMATTED_LENGTH + EVP_MAX_IV_LENGTH + strlen((char *) MAGIC);
 #else
-				len = strlen(packet) + sizeof(globals.host_hash) + strlen((char *) MAGIC);
+				len = strlen(packet) + strlen((char *) MAGIC);
 #endif
 				buf = malloc(len + 1);
 				memset(buf, 0, len + 1);
 				switch_assert(buf);
-				memcpy(buf, &globals.host_hash, sizeof(globals.host_hash));
 
 #ifdef HAVE_OPENSSL
 				if (globals.psk) {
-					switch_copy_string(buf + sizeof(globals.host_hash), uuid_str, SWITCH_UUID_FORMATTED_LENGTH);
+					switch_copy_string(buf, uuid_str, SWITCH_UUID_FORMATTED_LENGTH);
 
 					EVP_CIPHER_CTX_init(&ctx);
 					EVP_EncryptInit(&ctx, EVP_bf_cbc(), NULL, NULL);
 					EVP_CIPHER_CTX_set_key_length(&ctx, strlen(globals.psk));
 					EVP_EncryptInit(&ctx, NULL, (unsigned char *) globals.psk, (unsigned char *) uuid_str);
-					EVP_EncryptUpdate(&ctx, (unsigned char *) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH,
+					EVP_EncryptUpdate(&ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH,
 									  &outlen, (unsigned char *) packet, (int) strlen(packet));
-					EVP_EncryptUpdate(&ctx, (unsigned char *) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + outlen,
+					EVP_EncryptUpdate(&ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH + outlen,
 									  &tmplen, (unsigned char *) MAGIC, (int) strlen((char *) MAGIC));
 					outlen += tmplen;
-					EVP_EncryptFinal(&ctx, (unsigned char *) buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + outlen, &tmplen);
+					EVP_EncryptFinal(&ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH + outlen, &tmplen);
 					outlen += tmplen;
-					len = (size_t) outlen + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH;
-					*(buf + sizeof(globals.host_hash) + SWITCH_UUID_FORMATTED_LENGTH + outlen) = '\0';
+					len = (size_t) outlen + SWITCH_UUID_FORMATTED_LENGTH;
+					*(buf + SWITCH_UUID_FORMATTED_LENGTH + outlen) = '\0';
 				} else {
 #endif
-					switch_copy_string(buf + sizeof(globals.host_hash), packet, len - sizeof(globals.host_hash));
-					switch_copy_string(buf + sizeof(globals.host_hash) + strlen(packet), (char *) MAGIC, strlen((char *) MAGIC) + 1);
+					switch_copy_string(buf, packet, len);
+					switch_copy_string(buf + strlen(packet), (char *) MAGIC, strlen((char *) MAGIC) + 1);
 #ifdef HAVE_OPENSSL
 				}
 #endif
@@ -369,7 +367,6 @@ SWITCH_STANDARD_API(multicast_peers)
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 {
 	switch_api_interface_t *api_interface;
-	switch_ssize_t hlen = -1;
 	switch_status_t status = SWITCH_STATUS_GENERR;
 
 	memset(&globals, 0, sizeof(globals));
@@ -381,7 +378,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 	switch_core_hash_init(&globals.peer_hash, module_pool);
 
 	gethostname(globals.hostname, sizeof(globals.hostname));
-	globals.host_hash = switch_hashfunc_default(globals.hostname, &hlen);
 	globals.key_count = 0;
 
 	if (load_config() != SWITCH_STATUS_SUCCESS) {
@@ -411,6 +407,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 
 	if (switch_mcast_hops(globals.udp_socket, globals.ttl) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set ttl to '%d'\n", globals.ttl);
+		switch_goto_status(SWITCH_STATUS_TERM, fail);
+	}
+
+	if (switch_mcast_loopback(globals.udp_socket, 0) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to disable loopback\n");
 		switch_goto_status(SWITCH_STATUS_TERM, fail);
 	}
 
@@ -501,7 +502,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 		char *myaddr;
 		size_t len = MULTICAST_BUFFSIZE;
 		char *packet;
-		uint64_t host_hash = 0;
 		switch_status_t status;
 		memset(buf, 0, len);
 
@@ -520,12 +520,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 		}
 #endif
 
-		memcpy(&host_hash, buf, sizeof(host_hash));
-		packet = buf + sizeof(host_hash);
+		packet = buf;
 
-		if (host_hash == globals.host_hash) {
-			continue;
-		}
 #ifdef HAVE_OPENSSL
 		if (globals.psk) {
 			char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
@@ -533,7 +529,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 			int outl, tmplen;
 			EVP_CIPHER_CTX ctx;
 
-			len -= sizeof(host_hash) + SWITCH_UUID_FORMATTED_LENGTH;
+			len -= SWITCH_UUID_FORMATTED_LENGTH;
 
 			tmp = malloc(len);
 

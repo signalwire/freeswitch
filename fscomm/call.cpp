@@ -33,16 +33,7 @@
 
 Call::Call()
 {
-}
-
-Call::Call(int call_id, QString cid_name, QString cid_number, fscomm_call_direction_t direction, QString uuid) :
-        _call_id(call_id),
-        _cid_name(cid_name),
-        _cid_number(cid_number),
-        _direction(direction),
-        _uuid (uuid)
-{
-    _isActive = false;
+    _answeredEpoch = 0;
 }
 
 switch_status_t Call::toggleRecord(bool startRecord)
@@ -56,14 +47,14 @@ switch_status_t Call::toggleRecord(bool startRecord)
         _recording_filename = QString("%1/.fscomm/recordings/%2_%3.wav").arg(
                                          conf_dir.absolutePath(),
                                          QDateTime::currentDateTime().toString("yyyyMMddhhmmss"),
-                                         _cid_number);
-        status = g_FSHost.sendCmd("uuid_record", QString("%1 start %2").arg(_uuid, _recording_filename).toAscii().data(),&result);
+                                         getCidNumber());
+        status = g_FSHost.sendCmd("uuid_record", QString("%1 start %2").arg(getUuid(), _recording_filename).toAscii().data(),&result);
     }
     else
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stopping call recording on call [%s]\n",
-                          _uuid.toAscii().data());
-        status = g_FSHost.sendCmd("uuid_record", QString("%1 stop %2").arg(_uuid, _recording_filename).toAscii().data(),&result);
+                          getUuid().toAscii().data());
+        status = g_FSHost.sendCmd("uuid_record", QString("%1 stop %2").arg(getUuid(), _recording_filename).toAscii().data(),&result);
     }
 
     return status;
@@ -74,13 +65,30 @@ void Call::sendDTMF(QString digit)
     QString result;
     QString dtmf_string = QString("dtmf %1").arg(digit);
     if (g_FSHost.sendCmd("pa", dtmf_string.toAscii(), &result) == SWITCH_STATUS_FALSE) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not send DTMF digit %s on call[%s]", digit.toAscii().data(), _uuid.toAscii().data());
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not send DTMF digit %s on call[%s]", digit.toAscii().data(), getUuid().toAscii().data());
         QMessageBox::critical(0, QWidget::tr("DTMF Error"), QWidget::tr("There was an error sending DTMF, please report this bug."), QMessageBox::Ok);
     }
 }
 
 QTime Call::getCurrentStateTime()
 {
-    int now = QDateTime::fromTime_t(_answered_epoch).secsTo(QDateTime::currentDateTime());
+    qulonglong time = 0;
+
+    if (_state == FSCOMM_CALL_STATE_ANSWERED)
+    {
+        time = _answeredEpoch;
+    }
+    else if(_state == FSCOMM_CALL_STATE_RINGING)
+    {
+        if (_direction == FSCOMM_CALL_DIRECTION_INBOUND)
+        {
+            /* TODO: DOESNT WORK - How do I get what time it started to ring? */
+            _channel.data()->getProgressEpoch() == 0 ? time = _channel.data()->getProgressMediaEpoch() : time = _channel.data()->getProgressEpoch();
+        }
+        else
+            _otherLegChannel.data()->getProgressEpoch() == 0 ? time = _otherLegChannel.data()->getProgressMediaEpoch() : time = _otherLegChannel.data()->getProgressEpoch();
+    }
+
+    int now = QDateTime::fromTime_t(time).secsTo(QDateTime::currentDateTime());
     return QTime::fromString(QString::number(now), "s");
 }

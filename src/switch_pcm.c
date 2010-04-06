@@ -633,6 +633,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 	mod_g711_load(module_interface, pool);
 
 	return SWITCH_STATUS_SUCCESS;
+	//return SWITCH_STATUS_NOUNLOAD;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(core_pcm_shutdown)

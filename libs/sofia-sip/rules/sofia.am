@@ -4,7 +4,7 @@
 sofiasrcdir = ${top_srcdir}/libsofia-sip-ua
 sofiabuilddir = ${top_builddir}/libsofia-sip-ua
 
-AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(SOFIA_CFLAGS) $(openssl_CFLAGS)
+AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(SOFIA_CFLAGS) $(openssl_CFLAGS) $(SOFIA_PLAT_CFLAGS)
 
 SOFIA_COVERAGE = $(COVERAGE_FLAGS)
 
