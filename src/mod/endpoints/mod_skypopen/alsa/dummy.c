@@ -236,7 +236,7 @@ static void snd_card_dummy_pcm_timer_function(unsigned long data)
 	giovatimer.expires = 1 + jiffies;
 	add_timer(&giovatimer);
 
-	spin_lock_bh(&giovalock);
+	//spin_lock_bh(&giovalock);
 	for (i = 0; i < giovaindex + 1; i++) {
 
 		if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
@@ -262,7 +262,7 @@ static void snd_card_dummy_pcm_timer_function(unsigned long data)
 			//spin_unlock_bh(&dpcm->lock);
 		}
 	}
-	spin_unlock_bh(&giovalock);
+	//spin_unlock_bh(&giovalock);
 	for (i = 0; i < giovaindex + 1; i++) {
 
 		if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
