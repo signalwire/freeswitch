@@ -258,8 +258,8 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_create(ftdm_interrupt_t **ininterrupt, 
 
 	interrupt->device = device;
 #ifdef WIN32
-	interrupt->interrupt = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if (!interrupt->interrupt) {
+	interrupt->event = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (!interrupt->event) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to allocate interrupt event\n");
 		goto failed;
 	}
@@ -386,7 +386,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_destroy(ftdm_interrupt_t **ininterrupt)
 	ftdm_assert_return(ininterrupt != NULL, FTDM_FAIL, "Interrupt null when destroying!\n");
 	interrupt = *ininterrupt;
 #ifdef WIN32
-	CloseHandle(interrupt->interrupt);
+	CloseHandle(interrupt->event);
 #else
 	close(interrupt->readfd);
 	close(interrupt->writefd);

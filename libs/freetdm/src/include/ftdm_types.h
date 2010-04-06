@@ -40,8 +40,8 @@
 #define FTDM_TYPES_H
 #include "fsk.h"
 
-#define FTDM_INVALID_SOCKET -1
 #ifdef WIN32
+#define FTDM_INVALID_SOCKET INVALID_HANDLE_VALUE
 #include <windows.h>
 typedef HANDLE ftdm_socket_t;
 typedef unsigned __int64 uint64_t;
@@ -55,6 +55,7 @@ typedef __int8 int8_t;
 typedef intptr_t ftdm_ssize_t;
 typedef int ftdm_filehandle_t;
 #else
+#define FTDM_INVALID_SOCKET -1
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>

@@ -660,10 +660,10 @@ FT_DECLARE(ftdm_status_t) ftdm_span_load_tones(ftdm_span_t *span, const char *ma
 
 #define FTDM_SLINEAR_MAX_VALUE 32767
 #define FTDM_SLINEAR_MIN_VALUE -32767
-static void reset_gain_table(unsigned char *gain_table, float new_gain, ftdm_codec_t codec_gain)
+static void reset_gain_table(uint8_t *gain_table, float new_gain, ftdm_codec_t codec_gain)
 {
 	/* sample value */
-	unsigned char sv = 0;
+	uint8_t sv = 0;
 	/* linear gain factor */
 	float lingain = 0;
 	/* linear value for each table sample */

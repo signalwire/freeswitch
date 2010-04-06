@@ -605,8 +605,8 @@ struct ftdm_channel {
 	ftdm_hash_t *variable_hash;
 	unsigned char rx_cas_bits;
 	uint32_t pre_buffer_size;
-	unsigned char rxgain_table[FTDM_GAINS_TABLE_SIZE];
-	unsigned char txgain_table[FTDM_GAINS_TABLE_SIZE];
+	uint8_t rxgain_table[FTDM_GAINS_TABLE_SIZE];
+	uint8_t txgain_table[FTDM_GAINS_TABLE_SIZE];
 	float rxgain;
 	float txgain;
 };
