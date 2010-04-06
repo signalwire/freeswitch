@@ -133,7 +133,7 @@ void MainWindow::updateCallTimers()
         QSharedPointer<Call> call = g_FSHost.getCallByUUID(item->data(Qt::UserRole).toString());
         QTime time = call.data()->getCurrentStateTime();
         item->setText(time.toString("hh:mm:ss"));
-        item->setTextAlignment(Qt::AlignRight);
+        item->setTextAlignment(Qt::AlignRight|Qt::AlignVCenter);
     }
 }
 
@@ -267,7 +267,6 @@ void MainWindow::makeCall()
         switch_core_set_variable("fscomm_caller_id_name", cidName.toAscii().data());
         switch_core_set_variable("fscomm_caller_id_num", cidNum.toAscii().data());
 
-        qDebug() << "Name:" << cidName << "Num:" << cidNum;
     }
 
     if (ok && !dialstring.isEmpty())
@@ -396,12 +395,18 @@ void MainWindow::ringing(QSharedPointer<Call> call)
         if (item->data(Qt::UserRole).toString() == call.data()->getUuid())
         {
             item->setText(tr("Ringing"));
-            ui->textEdit->setText(QString("Call from %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+            if (call.data()->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
+                ui->textEdit->setText(QString("Call from %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+            else
+                ui->textEdit->setText(QString("Call to %1 is ringing.").arg(call.data()->getDestinationNumber()));
             return;
         }
     }
 
-    ui->textEdit->setText(QString("Call from %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+    if (call.data()->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
+        ui->textEdit->setText(QString("Call from %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+    else
+        ui->textEdit->setText(QString("Call to %1 is ringing.").arg(call.data()->getDestinationNumber()));
 
     ui->tableCalls->setRowCount(ui->tableCalls->rowCount()+1);
     QTableWidgetItem *item0 = new QTableWidgetItem(QString("%1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
@@ -521,7 +526,7 @@ void MainWindow::hungup(QSharedPointer<Call> call)
     }
     else
     {
-        ui->textEdit->setText(tr("Call with %1 hungup.").arg(call.data()->getCidNumber()));
+        ui->textEdit->setText(tr("Call with %1 hungup.").arg(call.data()->getDestinationNumber()));
     }
     /* TODO: Will cause problems if 2 calls are received at the same time */
     ui->recoredCallBtn->setEnabled(false);

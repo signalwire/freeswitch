@@ -72,7 +72,7 @@ public:
     bool isActive() { return _isActive == true; }
     switch_status_t toggleRecord(bool);
     void sendDTMF(QString digit);
-    void setAnsweredEpoch(qulonglong time) { _answered_epoch = time/1000000; }
+    void setAnsweredEpoch(qulonglong time) { _answeredEpoch = time/1000000; }
     QTime getCurrentStateTime();
 
 private:
@@ -85,7 +85,7 @@ private:
     bool _isActive;
     QString _recording_filename;
     fscomm_call_state_t _state;
-    qulonglong _answered_epoch;
+    qulonglong _answeredEpoch;
 };
 
 Q_DECLARE_METATYPE(Call)

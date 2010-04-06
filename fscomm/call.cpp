@@ -32,7 +32,9 @@
 #include <fshost.h>
 
 Call::Call()
-{}
+{
+    _answeredEpoch = 0;
+}
 
 switch_status_t Call::toggleRecord(bool startRecord)
 {
@@ -70,6 +72,23 @@ void Call::sendDTMF(QString digit)
 
 QTime Call::getCurrentStateTime()
 {
-    int now = QDateTime::fromTime_t(_answered_epoch).secsTo(QDateTime::currentDateTime());
+    qulonglong time = 0;
+
+    if (_state == FSCOMM_CALL_STATE_ANSWERED)
+    {
+        time = _answeredEpoch;
+    }
+    else if(_state == FSCOMM_CALL_STATE_RINGING)
+    {
+        if (_direction == FSCOMM_CALL_DIRECTION_INBOUND)
+        {
+            /* TODO: DOESNT WORK - How do I get what time it started to ring? */
+            _channel.data()->getProgressEpoch() == 0 ? time = _channel.data()->getProgressMediaEpoch() : time = _channel.data()->getProgressEpoch();
+        }
+        else
+            _otherLegChannel.data()->getProgressEpoch() == 0 ? time = _otherLegChannel.data()->getProgressMediaEpoch() : time = _otherLegChannel.data()->getProgressEpoch();
+    }
+
+    int now = QDateTime::fromTime_t(time).secsTo(QDateTime::currentDateTime());
     return QTime::fromString(QString::number(now), "s");
 }
