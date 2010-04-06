@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.0.head], BUG-REPORT-ADDRESS)
+AC_INIT([freeswitch], [1.0.6], BUG-REPORT-ADDRESS)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [0])
-AC_SUBST(SWITCH_VERSION_MICRO, [head])
+AC_SUBST(SWITCH_VERSION_MICRO, [6])
 #AC_SUBST(SWITCH_VERSION_REVISION, [])
 
 AC_CONFIG_FILES([src/include/switch_version.h.in:src/include/switch_version.h.template])
