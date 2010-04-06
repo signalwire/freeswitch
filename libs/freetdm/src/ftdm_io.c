@@ -2043,11 +2043,13 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 			} else {
 				ftdm_set_flag(ftdmchan, FTDM_CHANNEL_USE_RX_GAIN);
 			}
+			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
 		break;
 	case FTDM_COMMAND_GET_RX_GAIN:
 		{
 			FTDM_COMMAND_OBJ_FLOAT = ftdmchan->rxgain;
+			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
 		break;
 	case FTDM_COMMAND_SET_TX_GAIN:
@@ -2059,11 +2061,13 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 			} else {
 				ftdm_set_flag(ftdmchan, FTDM_CHANNEL_USE_TX_GAIN);
 			}
+			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
 		break;
 	case FTDM_COMMAND_GET_TX_GAIN:
 		{
 			FTDM_COMMAND_OBJ_FLOAT = ftdmchan->txgain;
+			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
 		break;
 	default:
@@ -2076,7 +2080,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		GOTO_STATUS(done, FTDM_FAIL);
 	}
 
-    status = ftdmchan->fio->command(ftdmchan, command, obj);
+    	status = ftdmchan->fio->command(ftdmchan, command, obj);
 
 	if (status == FTDM_NOTIMPL) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "I/O command %d not implemented in backend", command);

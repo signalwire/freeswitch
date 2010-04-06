@@ -542,29 +542,39 @@ static FIO_CONFIGURE_FUNCTION(zt_configure)
 		} else if (!strcasecmp(var, "echo_cancel_level")) {
 			num = atoi(val);
 			if (num < 0 || num > 256) {
-                ftdm_log(FTDM_LOG_WARNING, "invalid echo can val at line %d\n", lineno);
-            } else {
-                zt_globals.eclevel = num;
-            }
-			
+				ftdm_log(FTDM_LOG_WARNING, "invalid echo can val at line %d\n", lineno);
+			} else {
+				zt_globals.eclevel = num;
+			}
+		} else if (!strcasecmp(var, "echo_train_level")) {
+			if (zt_globals.eclevel <  1) {
+				ftdm_log(FTDM_LOG_WARNING, "can't set echo train level without setting echo cancel level first at line %d\n", lineno);
+			} else {
+				num = atoi(val);
+				if (num < 0 || num > 256) {
+					ftdm_log(FTDM_LOG_WARNING, "invalid echo train val at line %d\n", lineno);
+				} else {
+					zt_globals.etlevel = num;
+				}
+			}
 		} else if (!strcasecmp(var, "rxgain")) {
 			fnum = (float)atof(val);
 			if (fnum < -100.0 || fnum > 100.0) {
-                ftdm_log(FTDM_LOG_WARNING, "invalid rxgain val at line %d\n", lineno);
-            } else {
-                zt_globals.rxgain = fnum;
-                ftdm_log(FTDM_LOG_INFO, "Setting rxgain val to %f\n", fnum);
-            }
-			
+				ftdm_log(FTDM_LOG_WARNING, "invalid rxgain val at line %d\n", lineno);
+			} else {
+				zt_globals.rxgain = fnum;
+				ftdm_log(FTDM_LOG_INFO, "Setting rxgain val to %f\n", fnum);
+			}
 		} else if (!strcasecmp(var, "txgain")) {
 			fnum = (float)atof(val);
 			if (fnum < -100.0 || fnum > 100.0) {
-                ftdm_log(FTDM_LOG_WARNING, "invalid txgain val at line %d\n", lineno);
-            } else {
-                zt_globals.txgain = fnum;
-                ftdm_log(FTDM_LOG_INFO, "Setting txgain val to %f\n", fnum);
-            }
-			
+				ftdm_log(FTDM_LOG_WARNING, "invalid txgain val at line %d\n", lineno);
+			} else {
+				zt_globals.txgain = fnum;
+				ftdm_log(FTDM_LOG_INFO, "Setting txgain val to %f\n", fnum);
+			}
+		} else {
+				ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown setting '%s'\n", var);
 		}
 	}
 
@@ -601,51 +611,41 @@ static FIO_OPEN_FUNCTION(zt_open)
 				ftdm_log(FTDM_LOG_ERROR, "%s\n", ftdmchan->last_error);
 				return FTDM_FAIL;
 			}
-		} else if (ftdmchan->type == FTDM_CHAN_TYPE_FXS || ftdmchan->type == FTDM_CHAN_TYPE_FXO || ftdmchan->type == FTDM_CHAN_TYPE_EM) {
-			int len = zt_globals.eclevel;
-			if (ioctl(ftdmchan->sockfd, codes.ECHOCANCEL, &len)) {
-				ftdm_log(FTDM_LOG_WARNING, "Echo cancel not available for %d:%d\n", ftdmchan->span_id, ftdmchan->chan_id);
-				//snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
-				//ftdm_log(FTDM_LOG_ERROR, "%s\n", ftdmchan->last_error);
-				//return FTDM_FAIL;
-			} else {
-				len = zt_globals.etlevel;
-				if (ioctl(ftdmchan->sockfd, codes.ECHOTRAIN, &len)) {
-					ftdm_log(FTDM_LOG_WARNING, "Echo training not available for %d:%d\n", ftdmchan->span_id, ftdmchan->chan_id);
-					//snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
-					//ftdm_log(FTDM_LOG_ERROR, "%s\n", ftdmchan->last_error);
-					//return FTDM_FAIL;
-				}
-			}
 		}
-        if(zt_globals.rxgain || zt_globals.txgain) {
-            struct zt_gains gains;
-            memset(&gains, 0, sizeof(gains));
+		if (zt_globals.rxgain || zt_globals.txgain) {
+			struct zt_gains gains;
+			memset(&gains, 0, sizeof(gains));
 
-            gains.chan_no = ftdmchan->physical_chan_id;
-            zt_build_gains(&gains, zt_globals.rxgain, zt_globals.txgain, ftdmchan->native_codec);
+			gains.chan_no = ftdmchan->physical_chan_id;
+			zt_build_gains(&gains, zt_globals.rxgain, zt_globals.txgain, ftdmchan->native_codec);
 
-            if(zt_globals.rxgain)
-                ftdm_log(FTDM_LOG_INFO, "Setting rxgain to %f on channel %d\n", zt_globals.rxgain, gains.chan_no);
+			if (zt_globals.rxgain)
+				ftdm_log(FTDM_LOG_INFO, "Setting rxgain to %f on channel %d\n", zt_globals.rxgain, gains.chan_no);
 
-            if(zt_globals.txgain)
-                ftdm_log(FTDM_LOG_INFO, "Setting txgain to %f on channel %d\n", zt_globals.txgain, gains.chan_no);
+			if (zt_globals.txgain)
+				ftdm_log(FTDM_LOG_INFO, "Setting txgain to %f on channel %d\n", zt_globals.txgain, gains.chan_no);
 
 			if (ioctl(ftdmchan->sockfd, codes.SETGAINS, &gains) < 0) {
 				ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as FreeTDM device %d:%d fd:%d\n", chanpath, ftdmchan->span_id, ftdmchan->chan_id, ftdmchan->sockfd);
-   			}
-        }
+			}
+		}
 
-        int len = zt_globals.eclevel;
-       	ftdm_log(FTDM_LOG_INFO, "Setting echo cancel to %d taps for %d:%d\n", len, ftdmchan->span_id, ftdmchan->chan_id);
-        if (ioctl(ftdmchan->sockfd, codes.ECHOCANCEL, &len)) {
-                ftdm_log(FTDM_LOG_WARNING, "Echo cancel not available for %d:%d\n", ftdmchan->span_id, ftdmchan->chan_id);
-        } else {
-                len = zt_globals.etlevel;
-               	if (ioctl(ftdmchan->sockfd, codes.ECHOTRAIN, &len)) {
-                        ftdm_log(FTDM_LOG_WARNING, "Echo training not available for %d:%d\n", ftdmchan->span_id, ftdmchan->chan_id);
-                }
-       	}
+		if (zt_globals.eclevel >= 0) {
+			int len = zt_globals.eclevel;
+			if (len) {
+				ftdm_log(FTDM_LOG_INFO, "Setting echo cancel to %d taps for %d:%d\n", len, ftdmchan->span_id, ftdmchan->chan_id);
+			} else {
+				ftdm_log(FTDM_LOG_INFO, "Disable echo cancel for %d:%d\n", ftdmchan->span_id, ftdmchan->chan_id);
+			}
+			if (ioctl(ftdmchan->sockfd, codes.ECHOCANCEL, &len)) {
+				ftdm_log(FTDM_LOG_WARNING, "Echo cancel not available for %d:%d\n", ftdmchan->span_id, ftdmchan->chan_id);
+			} else if (zt_globals.etlevel >= 0) {
+				len = zt_globals.etlevel;
+				if (ioctl(ftdmchan->sockfd, codes.ECHOTRAIN, &len)) {
+					ftdm_log(FTDM_LOG_WARNING, "Echo training not available for %d:%d\n", ftdmchan->span_id, ftdmchan->chan_id);
+				}
+			}
+		}
 
 	}
 	return FTDM_SUCCESS;
@@ -1179,7 +1179,7 @@ static FIO_IO_LOAD_FUNCTION(zt_init)
 	zt_globals.codec_ms = 20;
 	zt_globals.wink_ms = 150;
 	zt_globals.flash_ms = 750;
-	zt_globals.eclevel = 64;
+	zt_globals.eclevel = 0;
 	zt_globals.etlevel = 0;
 	
 	zt_interface.name = "zt";

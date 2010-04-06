@@ -2852,7 +2852,7 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   );
 }
 
-#define FT_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix] || gains <span> <txgain> <rxgain>" 
+#define FT_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix] || gains <txgain> <rxgain> <span_id> [<chan_id>]" 
 SWITCH_STANDARD_API(ft_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
