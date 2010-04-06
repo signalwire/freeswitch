@@ -654,7 +654,6 @@ struct ftdm_span {
 	char *type;
 	char *dtmf_hangup;
 	size_t dtmf_hangup_len;
-	int suggest_chan_id;
 	ftdm_state_map_t *state_map;
 	ftdm_caller_data_t default_caller_data;
 	ftdm_queue_t *pendingchans;
@@ -825,6 +824,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_find_by_name(const char *name, ftdm_span_t *
 FT_DECLARE(char *) ftdm_api_execute(const char *type, const char *cmd);
 FT_DECLARE(int) ftdm_vasprintf(char **ret, const char *fmt, va_list ap);
 FT_DECLARE(ftdm_status_t) ftdm_channel_set_caller_data(ftdm_channel_t *ftdmchan, ftdm_caller_data_t *caller_data);
+FT_DECLARE(void) ftdm_cpu_monitor_disable(void);
 
 FIO_CODEC_FUNCTION(fio_slin2ulaw);
 FIO_CODEC_FUNCTION(fio_ulaw2slin);

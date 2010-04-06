@@ -1331,7 +1331,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_libpri_configure_span)
 
 	if ((isdn_data->opts & FTMOD_LIBPRI_OPT_SUGGEST_CHANNEL)) {
 		span->channel_request = isdn_channel_request;
-		span->suggest_chan_id = 1;
+		ftdm_set_flag(span, FTDM_SPAN_SUGGEST_CHAN_ID);
 	}
 
 	span->state_map = &isdn_state_map;
