@@ -1382,6 +1382,15 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_SCREEN);
 	}
 
+	tech_pvt->caller_profile->caller_ton = sigmsg->channel->caller_data.cid_num.type;
+	tech_pvt->caller_profile->caller_numplan = sigmsg->channel->caller_data.cid_num.plan;
+	tech_pvt->caller_profile->ani_ton = sigmsg->channel->caller_data.ani.type;
+	tech_pvt->caller_profile->ani_numplan = sigmsg->channel->caller_data.ani.plan;
+	tech_pvt->caller_profile->destination_number_ton = sigmsg->channel->caller_data.dnis.type;
+	tech_pvt->caller_profile->destination_number_numplan = sigmsg->channel->caller_data.dnis.plan;
+	tech_pvt->caller_profile->rdnis_ton = sigmsg->channel->caller_data.rdnis.type;
+	tech_pvt->caller_profile->rdnis_numplan = sigmsg->channel->caller_data.rdnis.plan;
+
 	if (sigmsg->channel->caller_data.pres) {
 		switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 	}
