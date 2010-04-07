@@ -540,7 +540,7 @@ SWITCH_STANDARD_API(group_api_function)
 		switch_safe_free(sql);
 
 		if (!zstr(buf)) {
-    	*(buf + (strlen(buf) - 1)) = '\0';
+			*(buf + (strlen(buf) - 1)) = '\0';
     }
 
 		stream->write_function(stream, "%s", buf);
