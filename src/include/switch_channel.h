@@ -246,10 +246,10 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_
 #define switch_channel_set_variable_partner(_channel, _var, _val) switch_channel_set_variable_partner_var_check(_channel, _var, _val, SWITCH_TRUE)
 
 
-SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_var_check(switch_channel_t *channel, const char *varname, const char *value, switch_bool_t var_check, switch_bool_t nolocal);
+SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_var_check(switch_channel_t *channel, const char *varname, const char *value, switch_bool_t var_check);
 
-#define switch_channel_export_variable(_channel, _varname, _value, _nolocal) switch_channel_export_variable_var_check(_channel, _varname, _value, SWITCH_TRUE, _nolocal)
-SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_channel_t *channel, const char *varname, switch_bool_t nolocal, const char *fmt, ...);
+#define switch_channel_export_variable(_channel, _varname, _value) switch_channel_export_variable_var_check(_channel, _varname, _value, SWITCH_TRUE)
+SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_channel_t *channel, const char *varname, const char *fmt, ...);
 
 
 /*!
