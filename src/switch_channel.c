@@ -768,6 +768,30 @@ done:
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_channel_t *channel, const char *varname, switch_bool_t nolocal, const char *fmt, ...)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *data = NULL;
+	va_list ap;
+	int ret;
+	
+	switch_assert(channel != NULL);
+	
+	va_start(ap, fmt);
+	ret = switch_vasprintf(&data, fmt, ap);
+	va_end(ap);
+	
+	if (ret == -1) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	status = switch_channel_export_variable(channel, varname, data, nolocal);
+	
+	free(data);
+	
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check)
 {
