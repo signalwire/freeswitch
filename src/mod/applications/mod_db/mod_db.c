@@ -539,7 +539,10 @@ SWITCH_STANDARD_API(group_api_function)
 		limit_execute_sql_callback(sql, group_callback, &cbt);
 		switch_safe_free(sql);
 
-		*(buf + (strlen(buf) - 1)) = '\0';
+		if (!zstr(buf)) {
+    	*(buf + (strlen(buf) - 1)) = '\0';
+    }
+
 		stream->write_function(stream, "%s", buf);
 
 		goto done;
