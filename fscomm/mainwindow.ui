@@ -375,7 +375,21 @@
     </property>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>&amp;Tools</string>
+    </property>
+    <widget class="QMenu" name="menuDebug">
+     <property name="title">
+      <string>&amp;Debug</string>
+     </property>
+     <addaction name="actionConsole"/>
+     <addaction name="actionEvents"/>
+    </widget>
+    <addaction name="menuDebug"/>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
@@ -408,6 +422,16 @@
    </property>
    <property name="toolTip">
     <string>Set the default account for dialing out.</string>
+   </property>
+  </action>
+  <action name="actionConsole">
+   <property name="text">
+    <string>Console</string>
+   </property>
+  </action>
+  <action name="actionEvents">
+   <property name="text">
+    <string>Events</string>
    </property>
   </action>
  </widget>

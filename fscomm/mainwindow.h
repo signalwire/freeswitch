@@ -40,6 +40,8 @@
 #include <call.h>
 #include <account.h>
 #include "preferences/prefdialog.h"
+#include "debugtools/consolewindow.h"
+#include "debugtools/statedebugdialog.h"
 
 namespace Ui {
     class MainWindow;
@@ -80,11 +82,15 @@ private slots:
     void accountStateChanged(QSharedPointer<Account>);
     void sysTrayActivated(QSystemTrayIcon::ActivationReason reason);
     void updateCallTimers();
+    void debugConsoleTriggered();
+    void debugEventsTriggered();
 
 private:
     Ui::MainWindow *ui;
     QSignalMapper *dialpadMapper;
     PrefDialog *preferences;
+    ConsoleWindow *_consoleWindow;
+    StateDebugDialog * _stateDebugDialog;
     QSystemTrayIcon *sysTray;
     QTimer *callTimer;
 };

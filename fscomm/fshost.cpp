@@ -43,7 +43,10 @@ FSHost::FSHost(QObject *parent) :
     switch_core_set_globals();
 
     qRegisterMetaType<QSharedPointer<Call> >("QSharedPointer<Call>");
-    qRegisterMetaType<QSharedPointer<Call> >("QSharedPointer<Channel>");
+    qRegisterMetaType<QSharedPointer<switch_event_t> >("QSharedPointer<switch_event_t>");
+    qRegisterMetaType<QSharedPointer<switch_log_node_t> >("QSharedPointer<switch_log_node_t>");
+    qRegisterMetaType<switch_log_level_t>("switch_log_level_t");
+    qRegisterMetaType<QSharedPointer<Channel> >("QSharedPointer<Channel>");
     qRegisterMetaType<QSharedPointer<Account> >("QSharedPointer<Account>");
 
     connect(this, SIGNAL(loadedModule(QString,QString)), this, SLOT(minimalModuleLoaded(QString,QString)));
@@ -115,6 +118,11 @@ void FSHost::createFolders()
     }
 }
 
+void FSHost::generalLoggerHandler(QSharedPointer<switch_log_node_t>node, switch_log_level_t level)
+{
+    emit eventLog(node, level);
+}
+
 void FSHost::run(void)
 {
     switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT;
@@ -150,6 +158,7 @@ void FSHost::run(void)
         emit coreLoadingError(err);
     }
 
+    switch_log_bind_logger(loggerHandler, SWITCH_LOG_DEBUG, SWITCH_FALSE);
     emit ready();
 
     /* Go into the runtime loop. If the argument is true, this basically sets runtime.running = 1 and loops while that is set
@@ -171,6 +180,8 @@ void FSHost::run(void)
 void FSHost::generalEventHandler(QSharedPointer<switch_event_t>event)
 {
     QString uuid = switch_event_get_header_nil(event.data(), "Unique-ID");
+
+    emit newEvent(event);
 
     switch(event.data()->event_id) {
     case SWITCH_EVENT_CHANNEL_CREATE: /*1A - 17B*/

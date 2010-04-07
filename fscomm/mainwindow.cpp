@@ -36,7 +36,10 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    preferences(NULL)
+    preferences(NULL),
+    _consoleWindow(NULL),
+    _stateDebugDialog(NULL)
+
 {
     ui->setupUi(this);
 
@@ -100,6 +103,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->tableCalls, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), this, SLOT(callTableDoubleClick(QTableWidgetItem*)));
     connect(ui->action_Preferences, SIGNAL(triggered()), this, SLOT(prefTriggered()));
     connect(ui->action_Exit, SIGNAL(triggered()), this, SLOT(close()));
+    connect(ui->actionConsole, SIGNAL(triggered()), this, SLOT(debugConsoleTriggered()));
+    connect(ui->actionEvents, SIGNAL(triggered()), this, SLOT(debugEventsTriggered()));
     connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
     connect(ui->actionSetDefaultAccount, SIGNAL(triggered(bool)), this, SLOT(setDefaultAccount()));
     connect(sysTray, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(sysTrayActivated(QSystemTrayIcon::ActivationReason)));
@@ -149,6 +154,28 @@ void MainWindow::setDefaultAccount()
     switch_core_set_variable("default_gateway", accName.toAscii().data());
     settings.setValue("default_gateway", accName);
     settings.endGroup();
+}
+
+void MainWindow::debugEventsTriggered()
+{
+    if (!_stateDebugDialog)
+        _stateDebugDialog = new StateDebugDialog();
+
+    _stateDebugDialog->raise();
+    _stateDebugDialog->show();
+    _stateDebugDialog->activateWindow();
+}
+
+void MainWindow::debugConsoleTriggered()
+{
+
+    if (!_consoleWindow)
+        _consoleWindow = new ConsoleWindow();
+
+    _consoleWindow->raise();
+    _consoleWindow->show();
+    _consoleWindow->activateWindow();
+
 }
 
 void MainWindow::prefTriggered()
