@@ -1478,6 +1478,9 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 			}
 		}
 	}
+	if (xroot) {
+		switch_xml_free(xroot);
+	}
 
 	status = SWITCH_STATUS_SUCCESS;
 
