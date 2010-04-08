@@ -49,7 +49,7 @@ cat 1>&2 <<EOF
 
     If you really want to merge rather than rebasing, run:
 
-      git merge [refspec]
+      git merge <commit>
 
     See 'man git-config' for more information.
 EOF
