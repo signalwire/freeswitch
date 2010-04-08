@@ -50,8 +50,8 @@ class Call {
 public:
     Call();
     /* Needs rework */
-    QString getCidName(void) { return _channel.data()->getCidName(); }
-    QString getCidNumber(void) { return _channel.data()->getCidNumber(); }
+    QString getCidName(void) { return (_direction == FSCOMM_CALL_DIRECTION_INBOUND) ? _otherLegChannel.data()->getCidName() : _channel.data()->getCidName(); }
+    QString getCidNumber(void) { return (_direction == FSCOMM_CALL_DIRECTION_INBOUND) ? _otherLegChannel.data()->getCidNumber() : _channel.data()->getCidNumber(); }
     QString getDestinationNumber(void) { return _otherLegChannel.data()->getDestinationNumber(); }
 
     void setChannel(QSharedPointer<Channel> channel) { _channel = channel; }
@@ -66,11 +66,12 @@ public:
     fscomm_call_direction_t getDirection() { return _direction; }
     fscomm_call_state_t getState() { return _state; }
     void setState(fscomm_call_state_t state) { _state = state; }
-    void setCause(QString cause) { _cause = cause; }
-    QString getCause() { return _cause; }
+    void setCause(QString cause) { _cause = cause; qDebug()<<cause; }
+    QString getCause() { return _cause; qDebug() << _cause; }
     void setActive(bool isActive) { _isActive = isActive; }
     bool isActive() { return _isActive == true; }
     switch_status_t toggleRecord(bool);
+    switch_status_t toggleHold(bool);
     void sendDTMF(QString digit);
     void setAnsweredEpoch(qulonglong time) { _answeredEpoch = time/1000000; }
     QTime getCurrentStateTime();

@@ -100,6 +100,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->answerBtn, SIGNAL(clicked()), this, SLOT(paAnswer()));
     connect(ui->hangupBtn, SIGNAL(clicked()), this, SLOT(paHangup()));
     connect(ui->recoredCallBtn, SIGNAL(toggled(bool)), SLOT(recordCall(bool)));
+    connect(ui->btnHold, SIGNAL(toggled(bool)), this, SLOT(holdCall(bool)));
     connect(ui->tableCalls, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), this, SLOT(callTableDoubleClick(QTableWidgetItem*)));
     connect(ui->action_Preferences, SIGNAL(triggered()), this, SLOT(prefTriggered()));
     connect(ui->action_Exit, SIGNAL(triggered()), this, SLOT(close()));
@@ -363,16 +364,35 @@ void MainWindow::paHangup()
     ui->hangupBtn->setEnabled(false);
 }
 
+void MainWindow::holdCall(bool pressed)
+{
+
+    QSharedPointer<Call> call = g_FSHost.getCurrentActiveCall();
+
+    if (call.isNull())
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not hold call because there is not current active call!.\n");
+        return;
+    }
+
+    if (call.data()->toggleHold(pressed) != SWITCH_STATUS_SUCCESS)
+    {
+        QMessageBox::warning(this,tr("Hold call"),
+                             tr("<p>Could not get active call to hold/unhold."
+                                "<p>Please report this bug."),
+                             QMessageBox::Ok);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not hold/unhold call [%s].\n", call.data()->getUuid().toAscii().data());
+        return;
+    }
+
+}
+
 void MainWindow::recordCall(bool pressed)
 {
     QSharedPointer<Call> call = g_FSHost.getCurrentActiveCall();
 
     if (call.isNull())
     {
-        QMessageBox::warning(this,tr("Record call"),
-                             tr("<p>FSComm reports that there are no active calls to be recorded."
-                                "<p>Please report this bug."),
-                             QMessageBox::Ok);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not record call because there is not current active call!.\n");
         return;
     }
@@ -472,6 +492,9 @@ void MainWindow::answered(QSharedPointer<Call> call)
     }
     ui->recoredCallBtn->setEnabled(true);
     ui->recoredCallBtn->setChecked(false);
+    ui->btnHold->setEnabled(true);
+    ui->btnHold->setChecked(false);
+    ui->btnTransfer->setEnabled(true);
     ui->dtmf0Btn->setEnabled(true);
     ui->dtmf1Btn->setEnabled(true);
     ui->dtmf2Btn->setEnabled(true);
@@ -504,13 +527,26 @@ void MainWindow::callFailed(QSharedPointer<Call> call)
             break;
         }
     }
-    ui->textEdit->setText(tr("Call with %1 (%2) failed with reason %3.").arg(call.data()->getCidName(),
-                                                                             call.data()->getCidNumber(),
-                                                                             call.data()->getCause()));
+    if (call.data()->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
+    {
+        ui->textEdit->setText(tr("Call from %1 (%2) failed with reason %3.").arg(call.data()->getCidName(),
+                                                                                 call.data()->getCidNumber(),
+                                                                                 call.data()->getCause()));
+    }
+    else
+    {
+        ui->textEdit->setText(tr("Call to %1 failed with reason %3.").arg(call.data()->getCidName(),
+                                                                          call.data()->getCidNumber(),
+                                                                          call.data()->getCause()));
+    }
+
     call.data()->setActive(false);
     /* TODO: Will cause problems if 2 calls are received at the same time */
     ui->recoredCallBtn->setEnabled(false);
     ui->recoredCallBtn->setChecked(false);
+    ui->btnHold->setEnabled(false);
+    ui->btnHold->setChecked(false);
+    ui->btnTransfer->setEnabled(false);
     ui->answerBtn->setEnabled(false);
     ui->hangupBtn->setEnabled(false);
     ui->dtmf0Btn->setEnabled(false);
@@ -558,6 +594,9 @@ void MainWindow::hungup(QSharedPointer<Call> call)
     /* TODO: Will cause problems if 2 calls are received at the same time */
     ui->recoredCallBtn->setEnabled(false);
     ui->recoredCallBtn->setChecked(false);
+    ui->btnHold->setEnabled(false);
+    ui->btnHold->setChecked(false);
+    ui->btnTransfer->setEnabled(false);
     ui->answerBtn->setEnabled(false);
     ui->hangupBtn->setEnabled(false);
     ui->dtmf0Btn->setEnabled(false);
