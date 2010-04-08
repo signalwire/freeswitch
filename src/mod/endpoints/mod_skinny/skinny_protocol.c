@@ -2186,7 +2186,6 @@ switch_status_t skinny_handle_keypad_button_message(listener_t *listener, skinny
 				switch_channel_queue_dtmf(channel, &dtmf);
 			}
 		}
-		switch_core_session_rwunlock(session);
 	}
 
 	if(session) {
