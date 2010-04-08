@@ -1483,7 +1483,7 @@ static switch_status_t load_skinny_config(void)
 			    }
 				profile = switch_core_alloc(profile_pool, sizeof(skinny_profile_t));
 				profile->pool = profile_pool;
-				profile->name = profile_name;
+				profile->name = switch_core_strdup(profile->pool, profile_name);
 				switch_mutex_init(&profile->listener_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				switch_mutex_init(&profile->sql_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				switch_mutex_init(&profile->sock_mutex, SWITCH_MUTEX_NESTED, profile->pool);
