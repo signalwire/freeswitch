@@ -327,7 +327,31 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\src\include\freetdm.h"
+				>
+			</File>
+			<File
 				RelativePath="..\src\include\fsk.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\include\ftdm_buffer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\include\ftdm_config.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\include\ftdm_dso.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\include\ftdm_threadmutex.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\include\ftdm_types.h"
 				>
 			</File>
 			<File
@@ -359,31 +383,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\include\freetdm.h"
-				>
-			</File>
-			<File
 				RelativePath="..\src\include\uart.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\ftdm_buffer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\ftdm_config.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\ftdm_dso.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\ftdm_threadmutex.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\ftdm_types.h"
 				>
 			</File>
 		</Filter>
@@ -394,6 +394,38 @@
 			>
 			<File
 				RelativePath="..\src\fsk.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\ftdm_buffer.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\ftdm_callerid.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\ftdm_config.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\ftdm_cpu_monitor.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\ftdm_dso.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\ftdm_io.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\ftdm_queue.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\ftdm_threadmutex.c"
 				>
 			</File>
 			<File
@@ -418,34 +450,6 @@
 			</File>
 			<File
 				RelativePath="..\src\uart.c"
-				>
-			</File>
-			<File
-				RelativePath="..\src\ftdm_buffer.c"
-				>
-			</File>
-			<File
-				RelativePath="..\src\ftdm_callerid.c"
-				>
-			</File>
-			<File
-				RelativePath="..\src\ftdm_config.c"
-				>
-			</File>
-			<File
-				RelativePath="..\src\ftdm_dso.c"
-				>
-			</File>
-			<File
-				RelativePath="..\src\ftdm_io.c"
-				>
-			</File>
-			<File
-				RelativePath="..\src\ftdm_queue.c"
-				>
-			</File>
-			<File
-				RelativePath="..\src\ftdm_threadmutex.c"
 				>
 			</File>
 		</Filter>

@@ -101,8 +101,6 @@ static struct {
 FIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event);
 FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event);
 
-#define WP_INVALID_SOCKET -1 
-
 /**
  * \brief Poll for event on a wanpipe socket
  * \param fd Wanpipe socket descriptor
@@ -224,7 +222,7 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 	}	
 	for(x = start; x < end; x++) {
 		ftdm_channel_t *chan;
-		ftdm_socket_t sockfd = WP_INVALID_SOCKET;
+		ftdm_socket_t sockfd = FTDM_INVALID_SOCKET;
 		const char *dtmf = "none";
 		if (!strncasecmp(span->name, "smg_prid_nfas", 8) && span->trunk_type == FTDM_TRUNK_T1 && x == 24) {
 #ifdef LIBSANGOMA_VERSION
@@ -236,7 +234,7 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 			sockfd = tdmv_api_open_span_chan(spanno, x);
 		}
 
-		if (sockfd == WP_INVALID_SOCKET) {
+		if (sockfd == FTDM_INVALID_SOCKET) {
 			ftdm_log(FTDM_LOG_ERROR, "Failed to open wanpipe device span %d channel %d\n", spanno, x);
 			continue;
 		}
@@ -1166,9 +1164,8 @@ static FIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 	}
 #endif
 
-	if (ftdmchan->sockfd > -1) {
-		close(ftdmchan->sockfd);
-		ftdmchan->sockfd = WP_INVALID_SOCKET;
+	if (ftdmchan->sockfd != FTDM_INVALID_SOCKET) {
+		sangoma_close(&ftdmchan->sockfd);
 	}
 
 	return FTDM_SUCCESS;

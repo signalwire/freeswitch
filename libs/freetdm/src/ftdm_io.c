@@ -2855,6 +2855,7 @@ static ftdm_status_t load_config(void)
 	ftdm_config_t cfg;
 	char *var, *val;
 	int catno = -1;
+	int intparam = 0;
 	int currindex = 0;
 	ftdm_span_t *span = NULL;
 	unsigned configured = 0, d = 0;
@@ -3059,14 +3060,16 @@ static ftdm_status_t load_config(void)
 					ftdm_log(FTDM_LOG_ERROR, "Invalid cpu monitoring interval %s\n", val);
 				}
 			} else if (!strncasecmp(var, "cpu_set_alarm_threshold", sizeof("cpu_set_alarm_threshold")-1)) {
-				if (atoi(val) > 0 && atoi(val) < 100) {
-					globals.cpu_monitor.set_alarm_threshold = atoi(val);
+				intparam = atoi(val);
+				if (intparam > 0 && intparam < 100) {
+					globals.cpu_monitor.set_alarm_threshold = (uint8_t)intparam;
 				} else {
 					ftdm_log(FTDM_LOG_ERROR, "Invalid cpu alarm set threshold %s\n", val);
 				}
 			} else if (!strncasecmp(var, "cpu_reset_alarm_threshold", sizeof("cpu_reset_alarm_threshold")-1)) {
-				if (atoi(val) > 0 && atoi(val) < 100) {
-					globals.cpu_monitor.reset_alarm_threshold = atoi(val);
+				intparam = atoi(val);
+				if (intparam > 0 && intparam < 100) {
+					globals.cpu_monitor.reset_alarm_threshold = (uint8_t)intparam;
 					if (globals.cpu_monitor.reset_alarm_threshold > globals.cpu_monitor.set_alarm_threshold) {
 						globals.cpu_monitor.reset_alarm_threshold = globals.cpu_monitor.set_alarm_threshold - 10;
 						ftdm_log(FTDM_LOG_ERROR, "Cpu alarm reset threshold must be lower than set threshold"
@@ -3652,6 +3655,9 @@ static void *ftdm_cpu_monitor_run(ftdm_thread_t *me, void *obj)
 	ftdm_delete_cpu_monitor(cpu_stats);
 	monitor->running = 0;
 	return NULL;
+#ifdef __WINDOWS__
+	UNREFERENCED_PARAMETER(me);
+#endif
 }
 
 static ftdm_status_t ftdm_cpu_monitor_start(void)
