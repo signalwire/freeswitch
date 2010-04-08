@@ -1236,6 +1236,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			break;
 		}
+		if (!listener_is_ready(listener)) {
+			break;
+		}
 
 		if (!request) {
 			continue;
