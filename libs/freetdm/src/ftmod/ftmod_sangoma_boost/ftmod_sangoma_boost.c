@@ -60,6 +60,9 @@ static time_t congestion_timeouts[MAX_TRUNK_GROUPS];
 
 static ftdm_sangoma_boost_trunkgroup_t *g_trunkgroups[MAX_TRUNK_GROUPS];
 
+static ftdm_io_interface_t ftdm_sangoma_boost_interface;
+static ftdm_status_t ftdm_sangoma_boost_list_sigmods(ftdm_stream_handle_t *stream);
+
 #define BOOST_QUEUE_SIZE 500
 
 /* get freetdm span and chan depending on the span mode */
@@ -880,8 +883,8 @@ static __inline__ void advance_chan_states(ftdm_channel_t *ftdmchan);
  */
 static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, sangomabc_event_t *event)
 {
-	ftdm_channel_t *ftdmchan;
-
+	ftdm_channel_t *ftdmchan = NULL;
+	int hangup_cause = FTDM_CAUSE_CALL_REJECTED;
 	if (!(ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 0))) {
 		if ((ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 1))) {
 			int r;
@@ -896,7 +899,7 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 
 			}
 			ftdm_set_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG);
-			ftdmchan=NULL;
+			ftdmchan = NULL;
 		}
 		ftdm_log(FTDM_LOG_CRIT, "START CANT FIND CHAN %d:%d\n", event->span+1,event->chan+1);
 		goto error;
@@ -953,12 +956,13 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 	return;
 
  error:
+	hangup_cause = ftdmchan ? ftdmchan->caller_data.hangup_cause : FTDM_CAUSE_REQUESTED_CHAN_UNAVAIL;
 	sangomabc_exec_command(mcon,
 						   event->span,
 						   event->chan,
 						   0,
 						   SIGBOOST_EVENT_CALL_START_NACK,
-						   0, 0);
+						   hangup_cause, 0);
 		
 }
 
@@ -1761,6 +1765,81 @@ end:
 	return NULL;
 }
 
+
+#define FTDM_BOOST_SYNTAX "list sigmods | <sigmod_name> <command>"
+/**
+ * \brief API function to kill or debug a sangoma_boost span
+ * \param stream API stream handler
+ * \param data String containing argurments
+ * \return Flags
+ */
+static FIO_API_FUNCTION(ftdm_sangoma_boost_api)
+{
+	char *mycmd = NULL, *argv[10] = { 0 };
+	int argc = 0;
+
+	if (data) {
+		mycmd = ftdm_strdup(data);
+		argc = ftdm_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc > 1) {
+		if (!strcasecmp(argv[0], "list")) {
+			if (!strcasecmp(argv[1], "sigmods")) {
+				if (ftdm_sangoma_boost_list_sigmods(stream) != FTDM_SUCCESS) {
+					stream->write_function(stream, "%s: -ERR failed to execute cmd\n", __FILE__);
+					goto done;
+				}
+				goto done;
+			}
+		} else {
+			boost_sigmod_interface_t *sigmod_iface = NULL;
+			sigmod_iface = hashtable_search(g_boost_modules_hash, argv[0]);
+			if (sigmod_iface) {
+				char *p = strchr(data, ' ');
+				if (++p) {
+					char* mydup = strdup(p);
+					if(sigmod_iface->exec_api == NULL) {
+						stream->write_function(stream, "%s does not support api functions\n", sigmod_iface->name);
+						goto done;
+					}
+					//stream->write_function(stream, "sigmod:%s command:%s\n", sigmod_iface->name, mydup);
+					if (sigmod_iface->exec_api(stream, mydup) != FTDM_SUCCESS) {
+						stream->write_function(stream, "-ERR:failed to execute command:%s\n", mydup);
+					}
+					free(mydup);
+				}
+				
+				goto done;
+			} else {
+				stream->write_function(stream, "-ERR: Could not find sigmod %s\n", argv[0]);
+			}
+		}
+	}
+	stream->write_function(stream, "-ERR: Usage: %s\n", FTDM_BOOST_SYNTAX);
+done:
+	ftdm_safe_free(mycmd);
+	return FTDM_SUCCESS;
+}
+
+/**
+ * \brief Loads sangoma_boost IO module
+ * \param fio FreeTDM IO interface
+ * \return Success
+ */
+static FIO_IO_LOAD_FUNCTION(ftdm_sangoma_boost_io_init)
+{
+	assert(fio != NULL);
+	memset(&ftdm_sangoma_boost_interface, 0, sizeof(ftdm_sangoma_boost_interface));
+
+	ftdm_sangoma_boost_interface.name = "boost";
+	ftdm_sangoma_boost_interface.api = ftdm_sangoma_boost_api;
+
+	*fio = &ftdm_sangoma_boost_interface;
+
+	return FTDM_SUCCESS;
+}
+
 /**
  * \brief Loads sangoma boost signaling module
  * \param fio FreeTDM IO interface
@@ -2239,7 +2318,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 	span->get_span_sig_status = sangoma_boost_get_span_sig_status;
 	span->set_span_sig_status = sangoma_boost_set_span_sig_status;
 	span->state_map = &boost_state_map;
-	span->suggest_chan_id = 0;
+	ftdm_clear_flag(span, FTDM_SPAN_SUGGEST_CHAN_ID);
+	ftdm_set_flag(span, FTDM_SPAN_USE_CHAN_QUEUE);
 	if (sigmod_iface) {
 		/* the core will do the hunting */
 		span->channel_request = NULL;
@@ -2248,12 +2328,31 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 	return FTDM_SUCCESS;
 }
 
+static ftdm_status_t ftdm_sangoma_boost_list_sigmods(ftdm_stream_handle_t *stream)
+{
+	ftdm_hash_iterator_t *i = NULL;
+	boost_sigmod_interface_t *sigmod_iface = NULL;
+	const void *key = NULL;
+	void *val = NULL;
+
+	stream->write_function(stream, "List of loaded sigmod modules:\n");
+	for (i = hashtable_first(g_boost_modules_hash); i; i = hashtable_next(i)) {
+		hashtable_this(i, &key, NULL, &val);
+		if (key && val) {
+			sigmod_iface = val;
+			stream->write_function(stream, "  %s\n", sigmod_iface->name);
+		}
+	}
+	stream->write_function(stream, "\n");
+	return FTDM_SUCCESS;
+}
+
 /**
  * \brief FreeTDM sangoma boost signaling module definition
  */
 EX_DECLARE_DATA ftdm_module_t ftdm_module = { 
 	/*.name =*/ "sangoma_boost",
-	/*.io_load =*/ NULL,
+	/*.io_load =*/ ftdm_sangoma_boost_io_init,
 	/*.io_unload =*/ NULL,
 	/*.sig_load = */ ftdm_sangoma_boost_init,
 	/*.sig_configure =*/ NULL,

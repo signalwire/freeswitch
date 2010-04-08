@@ -31,7 +31,12 @@ SOURCES += main.cpp \
     preferences/prefsofia.cpp \
     preferences/accountdialog.cpp \
     preferences/prefaccounts.cpp \
-    account.cpp
+    account.cpp \
+    widgets/codecwidget.cpp \
+    channel.cpp \
+    debugtools/consolewindow.cpp \
+    debugtools/sortfilterproxymodel.cpp \
+    debugtools/statedebugdialog.cpp
 HEADERS += mainwindow.h \
     fshost.h \
     call.h \
@@ -41,9 +46,17 @@ HEADERS += mainwindow.h \
     preferences/prefsofia.h \
     preferences/accountdialog.h \
     preferences/prefaccounts.h \
-    account.h
+    account.h \
+    widgets/codecwidget.h \
+    channel.h \
+    debugtools/consolewindow.h \
+    debugtools/sortfilterproxymodel.h \
+    debugtools/statedebugdialog.h
 FORMS += mainwindow.ui \
     preferences/prefdialog.ui \
-    preferences/accountdialog.ui
+    preferences/accountdialog.ui \
+    widgets/codecwidget.ui \
+    debugtools/consolewindow.ui \
+    debugtools/statedebugdialog.ui
 RESOURCES += resources.qrc
 OTHER_FILES += conf/freeswitch.xml

@@ -62,10 +62,11 @@ rm -f docs/COPYING
 rm -f docs/ChangeLog
 rm -rf .git
 cd ..
-tar -czvf $dst_name.tar.gz $dst_dir
-tar -cjvf $dst_name.tar.bz2 $dst_dir
-tar -cJvf $dst_name.tar.xz $dst_dir || echo tar does not support -J
-rm -rf $dst_dir
+tar -cvf $dst_name.tar $dst_dir
+gzip -9 -c $dst_name.tar > $dst_name.tar.gz || echo "gzip not available"
+bzip2 -z -k $dst_name.tar || echo "bzip2 not available"
+xz -z -9 -k $dst_name.tar || echo "xz / xz-utils not available"
+rm -rf $dst_name.tar $dst_dir
 
 cat 1>&2 <<EOF
 ----------------------------------------------------------------------

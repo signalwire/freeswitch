@@ -72,7 +72,8 @@ $(SRC)/libteletone_detect.c \
 $(SRC)/libteletone_generate.c \
 $(SRC)/ftdm_buffer.c \
 $(SRC)/ftdm_threadmutex.c \
-$(SRC)/ftdm_dso.c
+$(SRC)/ftdm_dso.c \
+$(SRC)/ftdm_cpu_monitor.c
 
 library_include_HEADERS = \
 $(SRC)/include/fsk.h \
@@ -90,7 +91,8 @@ $(SRC)/include/ftdm_buffer.h \
 $(SRC)/include/ftdm_config.h \
 $(SRC)/include/ftdm_threadmutex.h \
 $(SRC)/include/ftdm_dso.h \
-$(SRC)/include/ftdm_types.h 
+$(SRC)/include/ftdm_types.h \
+$(SRC)/include/ftdm_cpu_monitor.h 
 
 lib_LTLIBRARIES	       = libfreetdm.la
 libfreetdm_la_CFLAGS   = $(AM_CFLAGS) $(MY_CFLAGS)

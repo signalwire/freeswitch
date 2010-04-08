@@ -36,7 +36,10 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    preferences(NULL)
+    preferences(NULL),
+    _consoleWindow(NULL),
+    _stateDebugDialog(NULL)
+
 {
     ui->setupUi(this);
 
@@ -97,9 +100,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->answerBtn, SIGNAL(clicked()), this, SLOT(paAnswer()));
     connect(ui->hangupBtn, SIGNAL(clicked()), this, SLOT(paHangup()));
     connect(ui->recoredCallBtn, SIGNAL(toggled(bool)), SLOT(recordCall(bool)));
+    connect(ui->btnHold, SIGNAL(toggled(bool)), this, SLOT(holdCall(bool)));
     connect(ui->tableCalls, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), this, SLOT(callTableDoubleClick(QTableWidgetItem*)));
     connect(ui->action_Preferences, SIGNAL(triggered()), this, SLOT(prefTriggered()));
     connect(ui->action_Exit, SIGNAL(triggered()), this, SLOT(close()));
+    connect(ui->actionConsole, SIGNAL(triggered()), this, SLOT(debugConsoleTriggered()));
+    connect(ui->actionEvents, SIGNAL(triggered()), this, SLOT(debugEventsTriggered()));
     connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
     connect(ui->actionSetDefaultAccount, SIGNAL(triggered(bool)), this, SLOT(setDefaultAccount()));
     connect(sysTray, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(sysTrayActivated(QSystemTrayIcon::ActivationReason)));
@@ -133,7 +139,7 @@ void MainWindow::updateCallTimers()
         QSharedPointer<Call> call = g_FSHost.getCallByUUID(item->data(Qt::UserRole).toString());
         QTime time = call.data()->getCurrentStateTime();
         item->setText(time.toString("hh:mm:ss"));
-        item->setTextAlignment(Qt::AlignRight);
+        item->setTextAlignment(Qt::AlignRight|Qt::AlignVCenter);
     }
 }
 
@@ -149,6 +155,28 @@ void MainWindow::setDefaultAccount()
     switch_core_set_variable("default_gateway", accName.toAscii().data());
     settings.setValue("default_gateway", accName);
     settings.endGroup();
+}
+
+void MainWindow::debugEventsTriggered()
+{
+    if (!_stateDebugDialog)
+        _stateDebugDialog = new StateDebugDialog();
+
+    _stateDebugDialog->raise();
+    _stateDebugDialog->show();
+    _stateDebugDialog->activateWindow();
+}
+
+void MainWindow::debugConsoleTriggered()
+{
+
+    if (!_consoleWindow)
+        _consoleWindow = new ConsoleWindow();
+
+    _consoleWindow->raise();
+    _consoleWindow->show();
+    _consoleWindow->activateWindow();
+
 }
 
 void MainWindow::prefTriggered()
@@ -267,7 +295,6 @@ void MainWindow::makeCall()
         switch_core_set_variable("fscomm_caller_id_name", cidName.toAscii().data());
         switch_core_set_variable("fscomm_caller_id_num", cidNum.toAscii().data());
 
-        qDebug() << "Name:" << cidName << "Num:" << cidNum;
     }
 
     if (ok && !dialstring.isEmpty())
@@ -337,16 +364,35 @@ void MainWindow::paHangup()
     ui->hangupBtn->setEnabled(false);
 }
 
+void MainWindow::holdCall(bool pressed)
+{
+
+    QSharedPointer<Call> call = g_FSHost.getCurrentActiveCall();
+
+    if (call.isNull())
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not hold call because there is not current active call!.\n");
+        return;
+    }
+
+    if (call.data()->toggleHold(pressed) != SWITCH_STATUS_SUCCESS)
+    {
+        QMessageBox::warning(this,tr("Hold call"),
+                             tr("<p>Could not get active call to hold/unhold."
+                                "<p>Please report this bug."),
+                             QMessageBox::Ok);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not hold/unhold call [%s].\n", call.data()->getUuid().toAscii().data());
+        return;
+    }
+
+}
+
 void MainWindow::recordCall(bool pressed)
 {
     QSharedPointer<Call> call = g_FSHost.getCurrentActiveCall();
 
     if (call.isNull())
     {
-        QMessageBox::warning(this,tr("Record call"),
-                             tr("<p>FSComm reports that there are no active calls to be recorded."
-                                "<p>Please report this bug."),
-                             QMessageBox::Ok);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not record call because there is not current active call!.\n");
         return;
     }
@@ -357,26 +403,26 @@ void MainWindow::recordCall(bool pressed)
                              tr("<p>Could not get active call to start/stop recording."
                                 "<p>Please report this bug."),
                              QMessageBox::Ok);
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not record call [%s].\n", call.data()->getUUID().toAscii().data());
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not record call [%s].\n", call.data()->getUuid().toAscii().data());
         return;
     }
 }
 
 void MainWindow::newOutgoingCall(QSharedPointer<Call> call)
 {
-    ui->textEdit->setText(QString("Calling %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+    ui->textEdit->setText(QString("Calling %1").arg(call.data()->getDestinationNumber()));
 
     ui->tableCalls->setRowCount(ui->tableCalls->rowCount()+1);
-    QTableWidgetItem *item0 = new QTableWidgetItem(QString("%1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
-    item0->setData(Qt::UserRole, call.data()->getUUID());
+    QTableWidgetItem *item0 = new QTableWidgetItem(QString("%1").arg(call.data()->getDestinationNumber()));
+    item0->setData(Qt::UserRole, call.data()->getUuid());
     ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,0,item0);
 
     QTableWidgetItem *item1 = new QTableWidgetItem(tr("Dialing..."));
-    item1->setData(Qt::UserRole, call.data()->getUUID());
+    item1->setData(Qt::UserRole, call.data()->getUuid());
     ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,1,item1);
 
     QTableWidgetItem *item2 = new QTableWidgetItem("00:00:00");
-    item2->setData(Qt::UserRole, call.data()->getUUID());
+    item2->setData(Qt::UserRole, call.data()->getUuid());
     ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,2,item2);
 
     ui->tableCalls->resizeColumnsToContents();
@@ -393,27 +439,33 @@ void MainWindow::ringing(QSharedPointer<Call> call)
     for (int i=0; i<ui->tableCalls->rowCount(); i++)
     {
         QTableWidgetItem *item = ui->tableCalls->item(i, 1);
-        if (item->data(Qt::UserRole).toString() == call.data()->getUUID())
+        if (item->data(Qt::UserRole).toString() == call.data()->getUuid())
         {
             item->setText(tr("Ringing"));
-            ui->textEdit->setText(QString("Call from %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+            if (call.data()->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
+                ui->textEdit->setText(QString("Call from %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+            else
+                ui->textEdit->setText(QString("Call to %1 is ringing.").arg(call.data()->getDestinationNumber()));
             return;
         }
     }
 
-    ui->textEdit->setText(QString("Call from %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+    if (call.data()->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
+        ui->textEdit->setText(QString("Call from %1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+    else
+        ui->textEdit->setText(QString("Call to %1 is ringing.").arg(call.data()->getDestinationNumber()));
 
     ui->tableCalls->setRowCount(ui->tableCalls->rowCount()+1);
     QTableWidgetItem *item0 = new QTableWidgetItem(QString("%1 (%2)").arg(call.data()->getCidName(), call.data()->getCidNumber()));
-    item0->setData(Qt::UserRole, call.data()->getUUID());
+    item0->setData(Qt::UserRole, call.data()->getUuid());
     ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,0,item0);
 
     QTableWidgetItem *item1 = new QTableWidgetItem(tr("Ringing"));
-    item1->setData(Qt::UserRole, call.data()->getUUID());
+    item1->setData(Qt::UserRole, call.data()->getUuid());
     ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,1,item1);
 
     QTableWidgetItem *item2 = new QTableWidgetItem("00:00:00");
-    item2->setData(Qt::UserRole, call.data()->getUUID());
+    item2->setData(Qt::UserRole, call.data()->getUuid());
     ui->tableCalls->setItem(ui->tableCalls->rowCount()-1,2,item2);
 
     ui->tableCalls->resizeColumnsToContents();
@@ -429,7 +481,7 @@ void MainWindow::answered(QSharedPointer<Call> call)
     for (int i=0; i<ui->tableCalls->rowCount(); i++)
     {
         QTableWidgetItem *item = ui->tableCalls->item(i, 1);
-        if (item->data(Qt::UserRole).toString() == call.data()->getUUID())
+        if (item->data(Qt::UserRole).toString() == call.data()->getUuid())
         {
             item->setText(tr("Answered"));
             ui->tableCalls->resizeColumnsToContents();
@@ -440,6 +492,9 @@ void MainWindow::answered(QSharedPointer<Call> call)
     }
     ui->recoredCallBtn->setEnabled(true);
     ui->recoredCallBtn->setChecked(false);
+    ui->btnHold->setEnabled(true);
+    ui->btnHold->setChecked(false);
+    ui->btnTransfer->setEnabled(true);
     ui->dtmf0Btn->setEnabled(true);
     ui->dtmf1Btn->setEnabled(true);
     ui->dtmf2Btn->setEnabled(true);
@@ -463,7 +518,7 @@ void MainWindow::callFailed(QSharedPointer<Call> call)
     for (int i=0; i<ui->tableCalls->rowCount(); i++)
     {
         QTableWidgetItem *item = ui->tableCalls->item(i, 1);
-        if (item->data(Qt::UserRole).toString() == call.data()->getUUID())
+        if (item->data(Qt::UserRole).toString() == call.data()->getUuid())
         {
             ui->tableCalls->removeRow(i);
             ui->tableCalls->resizeColumnsToContents();
@@ -472,13 +527,26 @@ void MainWindow::callFailed(QSharedPointer<Call> call)
             break;
         }
     }
-    ui->textEdit->setText(tr("Call with %1 (%2) failed with reason %3.").arg(call.data()->getCidName(),
-                                                                             call.data()->getCidNumber(),
-                                                                             call.data()->getCause()));
+    if (call.data()->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
+    {
+        ui->textEdit->setText(tr("Call from %1 (%2) failed with reason %3.").arg(call.data()->getCidName(),
+                                                                                 call.data()->getCidNumber(),
+                                                                                 call.data()->getCause()));
+    }
+    else
+    {
+        ui->textEdit->setText(tr("Call to %1 failed with reason %3.").arg(call.data()->getCidName(),
+                                                                          call.data()->getCidNumber(),
+                                                                          call.data()->getCause()));
+    }
+
     call.data()->setActive(false);
     /* TODO: Will cause problems if 2 calls are received at the same time */
     ui->recoredCallBtn->setEnabled(false);
     ui->recoredCallBtn->setChecked(false);
+    ui->btnHold->setEnabled(false);
+    ui->btnHold->setChecked(false);
+    ui->btnTransfer->setEnabled(false);
     ui->answerBtn->setEnabled(false);
     ui->hangupBtn->setEnabled(false);
     ui->dtmf0Btn->setEnabled(false);
@@ -505,7 +573,7 @@ void MainWindow::hungup(QSharedPointer<Call> call)
     for (int i=0; i<ui->tableCalls->rowCount(); i++)
     {
         QTableWidgetItem *item = ui->tableCalls->item(i, 1);
-        if (item->data(Qt::UserRole).toString() == call.data()->getUUID())
+        if (item->data(Qt::UserRole).toString() == call.data()->getUuid())
         {
             ui->tableCalls->removeRow(i);
             ui->tableCalls->resizeColumnsToContents();
@@ -515,10 +583,20 @@ void MainWindow::hungup(QSharedPointer<Call> call)
         }
     }
     call.data()->setActive(false);
-    ui->textEdit->setText(tr("Call with %1 (%2) hungup.").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+    if (call.data()->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
+    {
+        ui->textEdit->setText(tr("Call with %1 (%2) hungup.").arg(call.data()->getCidName(), call.data()->getCidNumber()));
+    }
+    else
+    {
+        ui->textEdit->setText(tr("Call with %1 hungup.").arg(call.data()->getDestinationNumber()));
+    }
     /* TODO: Will cause problems if 2 calls are received at the same time */
     ui->recoredCallBtn->setEnabled(false);
     ui->recoredCallBtn->setChecked(false);
+    ui->btnHold->setEnabled(false);
+    ui->btnHold->setChecked(false);
+    ui->btnTransfer->setEnabled(false);
     ui->answerBtn->setEnabled(false);
     ui->hangupBtn->setEnabled(false);
     ui->dtmf0Btn->setEnabled(false);

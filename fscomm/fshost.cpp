@@ -43,9 +43,13 @@ FSHost::FSHost(QObject *parent) :
     switch_core_set_globals();
 
     qRegisterMetaType<QSharedPointer<Call> >("QSharedPointer<Call>");
+    qRegisterMetaType<QSharedPointer<switch_event_t> >("QSharedPointer<switch_event_t>");
+    qRegisterMetaType<QSharedPointer<switch_log_node_t> >("QSharedPointer<switch_log_node_t>");
+    qRegisterMetaType<switch_log_level_t>("switch_log_level_t");
+    qRegisterMetaType<QSharedPointer<Channel> >("QSharedPointer<Channel>");
     qRegisterMetaType<QSharedPointer<Account> >("QSharedPointer<Account>");
 
-    connect(this, SIGNAL(loadedModule(QString,QString,QString)), this, SLOT(minimalModuleLoaded(QString,QString,QString)));
+    connect(this, SIGNAL(loadedModule(QString,QString)), this, SLOT(minimalModuleLoaded(QString,QString)));
 
 }
 
@@ -114,6 +118,11 @@ void FSHost::createFolders()
     }
 }
 
+void FSHost::generalLoggerHandler(QSharedPointer<switch_log_node_t>node, switch_log_level_t level)
+{
+    emit eventLog(node, level);
+}
+
 void FSHost::run(void)
 {
     switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT;
@@ -149,6 +158,7 @@ void FSHost::run(void)
         emit coreLoadingError(err);
     }
 
+    switch_log_bind_logger(loggerHandler, SWITCH_LOG_DEBUG, SWITCH_FALSE);
     emit ready();
 
     /* Go into the runtime loop. If the argument is true, this basically sets runtime.running = 1 and loops while that is set
@@ -167,261 +177,172 @@ void FSHost::run(void)
     }
 }
 
-switch_status_t FSHost::processAlegEvent(switch_event_t * event, QString uuid)
+void FSHost::generalEventHandler(QSharedPointer<switch_event_t>event)
 {
-    switch_status_t status = SWITCH_STATUS_SUCCESS;
-    QSharedPointer<Call> call = _active_calls.value(uuid);
+    QString uuid = switch_event_get_header_nil(event.data(), "Unique-ID");
 
-    if (call.isNull())
-    {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "We don't have a call object for A leg on event %s.\n", switch_event_name(event->event_id));
-        qDebug() << _active_calls.keys();
-        printEventHeaders(event);
-        return SWITCH_STATUS_FALSE;
-    }
+    emit newEvent(event);
 
-    /* Inbound call */
-    if (call.data()->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
-    {
-        switch(event->event_id) {
-        case SWITCH_EVENT_CHANNEL_ANSWER:
-            {
-                QString answeredEpoch = switch_event_get_header_nil(event, "Caller-Channel-Answered-Time");
-                call.data()->setAnsweredEpoch(answeredEpoch.toLong());
-                call.data()->setbUUID(switch_event_get_header_nil(event, "Other-Leg-Unique-ID"));
-                _bleg_uuids.insert(switch_event_get_header_nil(event, "Other-Leg-Unique-ID"), uuid);
-                call.data()->setState(FSCOMM_CALL_STATE_ANSWERED);
-                emit answered(call);
-                break;
-            }
-        case SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE:
-            {
-                emit hungup(_active_calls.take(uuid));
-                break;
-            }
-        case SWITCH_EVENT_CHANNEL_STATE:
-            {
-                qDebug() << QString("CHANNEL_STATE Answer-State: %1 | Channel-State: %2 | %3 | %4\n").arg(switch_event_get_header_nil(event, "Answer-State"),switch_event_get_header_nil(event, "Channel-State"), uuid.toAscii().constData(), switch_event_get_header_nil(event, "Other-Leg-Unique-ID"));
-                break;
-            }
-        default:
-            {
-                break;
-            }
-        }
-    }
-    /* Outbound call */
-    else
-    {
-        switch(event->event_id)
+    switch(event.data()->event_id) {
+    case SWITCH_EVENT_CHANNEL_CREATE: /*1A - 17B*/
         {
-        case SWITCH_EVENT_CHANNEL_BRIDGE:
-            {
-                _active_calls.value(uuid).data()->setbUUID(switch_event_get_header_nil(event, "Other-Leg-Unique-ID"));
-                _bleg_uuids.insert(switch_event_get_header_nil(event, "Other-Leg-Unique-ID"), uuid);
-                break;
-            }
-        case SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE:
-            {
-                if (call.data()->getState() == FSCOMM_CALL_STATE_TRYING)
-                {
-                    QString cause = switch_event_get_header_nil(event, "Hangup-Cause");
-                    call.data()->setState(FSCOMM_CALL_STATE_FAILED);
-                    call.data()->setCause(cause);
-                    emit callFailed(call);
-                    _active_calls.take(uuid);
-                }
-                break;
-            }
-        default:
-            qDebug() << QString("A leg: %1(%2)\n").arg(switch_event_name(event->event_id), switch_event_get_header_nil(event, "Event-Subclass"));
+            eventChannelCreate(event, uuid);
             break;
         }
-    }
-    return status;
-}
-
-switch_status_t FSHost::processBlegEvent(switch_event_t * event, QString buuid)
-{
-    QString uuid = _bleg_uuids.value(buuid);
-    switch_status_t status = SWITCH_STATUS_SUCCESS;
-    QSharedPointer<Call> call = _active_calls.value(uuid);
-
-    if (call.isNull())
-    {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "We don't have a call object for B leg on event %s.\n", switch_event_name(event->event_id));
-        qDebug() << _active_calls.keys();
-        printEventHeaders(event);
-        return SWITCH_STATUS_FALSE;
-    }
-
-    /* Inbound call */
-    if (call.data()->getDirection() == FSCOMM_CALL_DIRECTION_INBOUND)
-    {
-        qDebug() << " Inbound call";
-    }
-    /* Outbound call */
-    else
-    {
-        switch(event->event_id)
+    case SWITCH_EVENT_CHANNEL_ANSWER: /*2A - 31B*/
         {
-        case SWITCH_EVENT_CHANNEL_ANSWER:
-            {
-                /* When do we get here? */
-                QString answeredEpoch = switch_event_get_header_nil(event, "Caller-Channel-Answered-Time");
-                call.data()->setAnsweredEpoch(answeredEpoch.toULongLong());
-                emit answered(call);
-                break;
-            }
-        case SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE:
-            {
-                _active_calls.take(uuid);
-                emit hungup(call);
-                _bleg_uuids.take(buuid);
-                break;
-            }
-        case SWITCH_EVENT_CHANNEL_STATE:
-            {
-                if (QString(switch_event_get_header_nil(event, "Answer-State")) == "early")
-                {
-                    call.data()->setState(FSCOMM_CALL_STATE_RINGING);
-                    emit ringing(call);
-                }
-                else if (QString(switch_event_get_header_nil(event, "Answer-State")) == "answered")
-                {
-                    call.data()->setState(FSCOMM_CALL_STATE_ANSWERED);
-                    emit answered(call);
-                }
-                break;
-            }
-
-        default:
-            qDebug() << QString("B leg: %1(%2)\n").arg(switch_event_name(event->event_id), switch_event_get_header_nil(event, "Event-Subclass"));
+            eventChannelAnswer(event, uuid);
             break;
         }
-    }
-    return status;
-}
-
-void FSHost::generalEventHandler(switch_event_t *event)
-{
-    /*printEventHeaders(event);*/
-    QString uuid = switch_event_get_header_nil(event, "Unique-ID");
-
-    if (_bleg_uuids.contains(uuid))
-    {
-        if (processBlegEvent(event, uuid) == SWITCH_STATUS_SUCCESS)
+    case SWITCH_EVENT_CODEC:/*3/4A - 24/25B*/
         {
-            return;
+            eventCodec(event, uuid);
+            break;
         }
-    }
-    if (_active_calls.contains(uuid))
-    {
-        if (processAlegEvent(event, uuid) == SWITCH_STATUS_SUCCESS)
+    case SWITCH_EVENT_CHANNEL_STATE:/*6/7/8/37/44/46A - 20/21/22/28/38/40/42B*/
         {
-            return;
+            eventChannelState(event, uuid);
+            break;
         }
-    }
-
-    /* This is how we identify new calls, inbound and outbound */
-    switch(event->event_id) {
-    case SWITCH_EVENT_CUSTOM:
+    case SWITCH_EVENT_CHANNEL_EXECUTE:/*9/11/13/15A*/
         {
-            if (strcmp(event->subclass_name, "portaudio::ringing") == 0 && !_active_calls.contains(uuid))
+            eventChannelExecute(event, uuid);
+            break;
+        }
+    case SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE:/*10/12/14/16/35A*/
+        {
+            eventChannelExecuteComplete(event, uuid);
+            break;
+        }
+    case SWITCH_EVENT_CHANNEL_OUTGOING:/*18B*/
+        {
+            eventChannelOutgoing(event, uuid);
+            break;
+        }
+    case SWITCH_EVENT_CHANNEL_ORIGINATE:/*19B*/
+        {
+            eventChannelOriginate(event, uuid);
+            break;
+        }
+    case SWITCH_EVENT_CALL_UPDATE:/*23/29/30B*/
+        {
+            eventCallUpdate(event, uuid);
+            break;
+        }
+    case SWITCH_EVENT_CHANNEL_PROGRESS:
+        {
+            eventChannelProgress(event, uuid);
+            break;
+        }
+    case SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA:/*26B*/
+        {
+            eventChannelProgressMedia(event, uuid);
+            break;
+        }
+    case SWITCH_EVENT_CHANNEL_BRIDGE:/*27A*/
+        {
+            eventChannelBridge(event, uuid);
+            break;
+        }
+    /*32?*/
+    /*case SWITCH_EVENT_RECV_INFO:
+        {
+            eventRecvInfo(event, uuid);
+            break;
+        }*/
+    case SWITCH_EVENT_CHANNEL_HANGUP:/*36A-33B*/
+        {
+            eventChannelHangup(event, uuid);
+            break;
+        }
+    case SWITCH_EVENT_CHANNEL_UNBRIDGE:/*34A*/
+        {
+            eventChannelUnbridge(event, uuid);
+            break;
+        }
+    case SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE:/*39/43B*/
+        {
+            eventChannelHangupComplete(event, uuid);
+            break;
+        }
+    case SWITCH_EVENT_CHANNEL_DESTROY:/*45A-41B*/
+        {
+            eventChannelDestroy(event, uuid);
+            break;
+        }
+    case SWITCH_EVENT_CUSTOM:/*5A*/
+        {
+            if (strcmp(event.data()->subclass_name, "sofia::gateway_state") == 0)
             {
-                Call *callPtr = new Call(atoi(switch_event_get_header_nil(event, "call_id")),
-                                      switch_event_get_header_nil(event, "Caller-Caller-ID-Name"),
-                                      switch_event_get_header_nil(event, "Caller-Caller-ID-Number"),
-                                      FSCOMM_CALL_DIRECTION_INBOUND,
-                                      uuid);
-                QSharedPointer<Call> call(callPtr);
-                _active_calls.insert(uuid, call);
-                call.data()->setState(FSCOMM_CALL_STATE_RINGING);
-                emit ringing(call);
-            }
-            else if (strcmp(event->subclass_name, "portaudio::makecall") == 0)
-            {
-                Call *callPtr = new Call(atoi(switch_event_get_header_nil(event, "call_id")),NULL,
-                                      switch_event_get_header_nil(event, "Caller-Destination-Number"),
-                                      FSCOMM_CALL_DIRECTION_OUTBOUND,
-                                      uuid);
-                QSharedPointer<Call> call(callPtr);
-                _active_calls.insert(uuid, call);
-                call.data()->setState(FSCOMM_CALL_STATE_TRYING);
-                emit newOutgoingCall(call);
-            }
-            else if (strcmp(event->subclass_name, "sofia::gateway_state") == 0)
-            {
-                QString state = switch_event_get_header_nil(event, "State");
-                QString gw = switch_event_get_header_nil(event, "Gateway");
+                QString state = switch_event_get_header_nil(event.data(), "State");
+                QString gw = switch_event_get_header_nil(event.data(), "Gateway");
                 QSharedPointer<Account> acc = _accounts.value(gw);
                 if (acc.isNull())
                     return;
 
                 if (state == "TRYING") {
-                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event.data(), "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_TRYING);
                     emit accountStateChange(acc);
                 } else if (state == "REGISTER") {
-                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event.data(), "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_REGISTER);
                     emit accountStateChange(acc);
                 } else if (state == "REGED") {
-                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event.data(), "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_REGED);
                     emit accountStateChange(acc);
                 } else if (state == "UNREGED") {
-                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event.data(), "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_UNREGED);
                     emit accountStateChange(acc);
                 } else if (state == "UNREGISTER") {
-                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event.data(), "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_UNREGISTER);
                     emit accountStateChange(acc);
                 } else if (state =="FAILED") {
-                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event.data(), "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_FAILED);
                     emit accountStateChange(acc);
                 } else if (state == "FAIL_WAIT") {
                     acc.data()->setState(FSCOMM_GW_STATE_FAIL_WAIT);
                     emit accountStateChange(acc);
                 } else if (state == "EXPIRED") {
-                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event.data(), "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_EXPIRED);
                     emit accountStateChange(acc);
                 } else if (state == "NOREG") {
-                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event, "Phrase"));
+                    acc.data()->setStatusPhrase(switch_event_get_header_nil(event.data(), "Phrase"));
                     acc.data()->setState(FSCOMM_GW_STATE_NOREG);
                     emit accountStateChange(acc);
                 }
             }
-            else if (strcmp(event->subclass_name, "sofia::gateway_add") == 0)
+            else if (strcmp(event.data()->subclass_name, "sofia::gateway_add") == 0)
             {
-                QString gw = switch_event_get_header_nil(event, "Gateway");
+                QString gw = switch_event_get_header_nil(event.data(), "Gateway");
                 Account * accPtr = new Account(gw);
                 QSharedPointer<Account> acc = QSharedPointer<Account>(accPtr);
                 acc.data()->setState(FSCOMM_GW_STATE_NOAVAIL);
                 _accounts.insert(gw, acc);
                 emit newAccount(acc);
             }
-            else if (strcmp(event->subclass_name, "sofia::gateway_delete") == 0)
+            else if (strcmp(event.data()->subclass_name, "sofia::gateway_delete") == 0)
             {
-                QSharedPointer<Account> acc = _accounts.take(switch_event_get_header_nil(event, "Gateway"));
+                QSharedPointer<Account> acc = _accounts.take(switch_event_get_header_nil(event.data(), "Gateway"));
                 if (!acc.isNull())
                     emit delAccount(acc);
             }
             else
             {
-                printEventHeaders(event);
+                //printEventHeaders(event);
             }
             break;
         }
     case SWITCH_EVENT_MODULE_LOAD:
         {
-            QString modType = switch_event_get_header_nil(event, "type");
-            QString modName = switch_event_get_header_nil(event, "name");
-            QString modKey = switch_event_get_header_nil(event, "key");
-            emit loadedModule(modType, modName, modKey);
+            QString modType = switch_event_get_header_nil(event.data(), "type");
+            QString modKey = switch_event_get_header_nil(event.data(), "key");
+            emit loadedModule(modType, modKey);
             break;
         }
     default:
@@ -429,7 +350,114 @@ void FSHost::generalEventHandler(switch_event_t *event)
     }
 }
 
-void FSHost::minimalModuleLoaded(QString modType, QString modName, QString modKey)
+void FSHost::eventChannelCreate(QSharedPointer<switch_event_t>event, QString uuid)
+{
+    Channel *channelPtr = new Channel(uuid);
+    QSharedPointer<Channel>channel(channelPtr);
+    _channels.insert(uuid, channel);
+}
+void FSHost::eventChannelAnswer(QSharedPointer<switch_event_t>event, QString uuid)
+{
+    _channels.value(uuid).data()->setDestinatinonNumber(switch_event_get_header_nil(event.data(), "Caller-Destination-Number"));
+    if (_active_calls.contains(uuid))
+    {
+        _active_calls.value(uuid).data()->setAnsweredEpoch(QString(switch_event_get_header_nil(event.data(), "Caller-Channel-Answered-Time")).toULongLong());
+        _active_calls.value(uuid).data()->setState(FSCOMM_CALL_STATE_ANSWERED);
+        emit answered(_active_calls.value(uuid));
+    }
+}
+void FSHost::eventChannelState(QSharedPointer<switch_event_t>event, QString uuid)
+{}
+void FSHost::eventChannelExecute(QSharedPointer<switch_event_t>event, QString uuid)
+{}
+void FSHost::eventChannelExecuteComplete(QSharedPointer<switch_event_t>event, QString uuid)
+{
+    _channels.value(uuid).data()->setPaCallId(atoi(switch_event_get_header_nil(event.data(), "variable_pa_call_id")));
+}
+void FSHost::eventChannelOutgoing(QSharedPointer<switch_event_t>event, QString uuid)
+{
+    /* Checks if this is an inbound or outbound call */
+    /** Outbound call */
+    if ( strcmp(switch_event_get_header_nil(event.data(), "Caller-Source"), "mod_portaudio") == 0 )
+    {
+        Call *callPtr = new Call();
+
+        callPtr->setCallDirection(FSCOMM_CALL_DIRECTION_OUTBOUND);
+        callPtr->setChannel(_channels.value(uuid));
+        callPtr->setOtherLegChannel(_channels.value(switch_event_get_header_nil(event.data(), "Other-Leg-Unique-ID")));
+        QSharedPointer<Call> call(callPtr);
+        _active_calls.insert(uuid, call);
+        call.data()->setState(FSCOMM_CALL_STATE_TRYING);
+        emit newOutgoingCall(call);
+    }
+    /** Inbound call */
+    else
+    {
+        Call *callPtr = new Call();
+        callPtr->setCallDirection(FSCOMM_CALL_DIRECTION_INBOUND);
+        callPtr->setChannel(_channels.value(uuid));
+        callPtr->setOtherLegChannel(_channels.value(switch_event_get_header_nil(event.data(), "Other-Leg-Unique-ID")));
+        QSharedPointer<Call> call(callPtr);
+        _active_calls.insert(uuid, call);
+        call.data()->setState(FSCOMM_CALL_STATE_RINGING);
+        _channels.value(uuid).data()->setCreatedEpoch(QString(switch_event_get_header_nil(event.data(), "Caller-Channel-Created-Time")).toULongLong());
+        emit ringing(call);
+    }
+}
+void FSHost::eventChannelOriginate(QSharedPointer<switch_event_t>event, QString uuid)
+{}
+void FSHost::eventChannelProgress(QSharedPointer<switch_event_t>event, QString uuid)
+{}
+void FSHost::eventChannelProgressMedia(QSharedPointer<switch_event_t>event, QString uuid)
+{
+    _channels.value(uuid).data()->setProgressEpoch(QString(switch_event_get_header_nil(event.data(), "Caller-Channel-Progress-Time")).toULongLong());
+    if (_active_calls.contains(uuid))
+    {
+        _active_calls.value(uuid).data()->setState(FSCOMM_CALL_STATE_RINGING);
+        emit ringing(_active_calls.value(uuid));
+    }
+}
+void FSHost::eventChannelBridge(QSharedPointer<switch_event_t>event, QString uuid)
+{
+    QString time;
+    time = switch_event_get_header_nil(event.data(), "Caller-Channel-Progress-Time");
+    if (time.toULongLong() > 0) _channels.value(uuid).data()->setProgressEpoch(time.toULongLong());
+    time = switch_event_get_header_nil(event.data(), "Caller-Channel-Progress-Media-Time");
+    if (time.toULongLong() > 0) _channels.value(uuid).data()->setProgressMediaEpoch(time.toULongLong());
+}
+void FSHost::eventChannelHangup(QSharedPointer<switch_event_t>event, QString uuid)
+{}
+void FSHost::eventChannelUnbridge(QSharedPointer<switch_event_t>event, QString uuid)
+{}
+void FSHost::eventChannelHangupComplete(QSharedPointer<switch_event_t>event, QString uuid)
+{
+    if (_active_calls.contains(uuid))
+    {
+        if (_active_calls.value(uuid).data()->getState() != FSCOMM_CALL_STATE_ANSWERED)
+        {
+            _active_calls.value(uuid).data()->setState(FSCOMM_CALL_STATE_FAILED);
+            _active_calls.value(uuid).data()->setCause(switch_event_get_header_nil(event.data(), "variable_originate_disposition"));
+            emit callFailed(_active_calls.value(uuid));
+            return;
+        }
+        emit hungup(_active_calls.take(uuid));
+    }
+}
+void FSHost::eventChannelDestroy(QSharedPointer<switch_event_t>event, QString uuid)
+{
+    _channels.take(uuid);
+}
+void FSHost::eventCodec(QSharedPointer<switch_event_t>event, QString uuid)
+{
+    _channels.value(uuid).data()->setCidName(switch_event_get_header_nil(event.data(), "Caller-Caller-ID-Name"));
+    _channels.value(uuid).data()->setCidNumber(switch_event_get_header_nil(event.data(), "Caller-Caller-ID-Number"));
+}
+void FSHost::eventCallUpdate(QSharedPointer<switch_event_t>event, QString uuid)
+{}
+void FSHost::eventRecvInfo(QSharedPointer<switch_event_t>event, QString uuid)
+{}
+
+void FSHost::minimalModuleLoaded(QString modType, QString modKey)
 {
     if (modType == "endpoint")
     {
@@ -501,11 +529,11 @@ QSharedPointer<Call> FSHost::getCurrentActiveCall()
     return QSharedPointer<Call>();
 }
 
-void FSHost::printEventHeaders(switch_event_t *event)
+void FSHost::printEventHeaders(QSharedPointer<switch_event_t>event)
 {
     switch_event_header_t *hp;
-    qDebug() << QString("Received event: %1(%2)\n").arg(switch_event_name(event->event_id), switch_event_get_header_nil(event, "Event-Subclass"));
-    for (hp = event->headers; hp; hp = hp->next) {
+    qDebug() << QString("Received event: %1(%2)").arg(switch_event_name(event.data()->event_id), switch_event_get_header_nil(event.data(), "Event-Subclass"));
+    for (hp = event.data()->headers; hp; hp = hp->next) {
         qDebug() << hp->name << "=" << hp->value;
     }
     qDebug() << "\n\n";

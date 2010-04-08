@@ -43,8 +43,6 @@
 #include "libsangoma.h"
 
 #if defined(__WINDOWS__)
-/* remove this when http://jira.freeswitch.org/browse/FSBUILD-259 wanpipe issue is fixed */
-#define WINDOWS_BUILD_BROKEN 1
 /*! Backward compatible defines - current code is all using the old names*/ 
 #define sangoma_open_tdmapi_span_chan sangoma_open_api_span_chan
 #define sangoma_open_tdmapi_span sangoma_open_api_span
@@ -95,8 +93,6 @@ static struct {
 
 ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event);
 ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event);
-
-#define WP_INVALID_SOCKET -1 
 
 /**
  * \brief Poll for event on a wanpipe socket
@@ -219,7 +215,7 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 	}	
 	for(x = start; x < end; x++) {
 		zap_channel_t *chan;
-		zap_socket_t sockfd = WP_INVALID_SOCKET;
+		zap_socket_t sockfd = ZAP_INVALID_SOCKET;
 		const char *dtmf = "none";
 		if (!strncasecmp(span->name, "smg_prid_nfas", 8) && span->trunk_type == ZAP_TRUNK_T1 && x == 24) {
 #ifdef LIBSANGOMA_VERSION
@@ -231,7 +227,7 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 			sockfd = tdmv_api_open_span_chan(spanno, x);
 		}
 
-		if (sockfd == WP_INVALID_SOCKET) {
+		if (sockfd == ZAP_INVALID_SOCKET) {
 			zap_log(ZAP_LOG_ERROR, "Failed to open wanpipe device span %d channel %d\n", spanno, x);
 			continue;
 		}
@@ -587,29 +583,24 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 		break;
 	case ZAP_COMMAND_ENABLE_ECHOCANCEL:
 		{
-#ifndef WINDOWS_BUILD_BROKEN
 			err=sangoma_tdm_enable_hwec(zchan->sockfd, &tdm_api);
 			if (err) {
              	snprintf(zchan->last_error, sizeof(zchan->last_error), "HWEC Enable Failed");
 				return ZAP_FAIL;
 			}
-#endif /* WINDOWS_BUILD_BROKEN */
 		}
 		break;
 	case ZAP_COMMAND_DISABLE_ECHOCANCEL:
 		{
-#ifndef WINDOWS_BUILD_BROKEN
 			err=sangoma_tdm_disable_hwec(zchan->sockfd, &tdm_api);
 			if (err) {
              	snprintf(zchan->last_error, sizeof(zchan->last_error), "HWEC Disable Failed");
 				return ZAP_FAIL;
 			}
-#endif /* WINDOWS_BUILD_BROKEN */
 		}
 		break;
 	case ZAP_COMMAND_ENABLE_LOOP:
 		{
-#ifndef WINDOWS_BUILD_BROKEN
 #ifdef WP_API_FEATURE_LOOP
          	err=sangoma_tdm_enable_loop(zchan->sockfd, &tdm_api);
 			if (err) {
@@ -617,11 +608,9 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 				return ZAP_FAIL;
 			}
 #endif		
-#endif /* WINDOWS_BUILD_BROKEN */
 		}
 	case ZAP_COMMAND_DISABLE_LOOP:
 		{
-#ifndef WINDOWS_BUILD_BROKEN
 #ifdef WP_API_FEATURE_LOOP
          	err=sangoma_tdm_disable_loop(zchan->sockfd, &tdm_api);
 			if (err) {
@@ -629,7 +618,6 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 				return ZAP_FAIL;
 			}
 #endif	 
-#endif /* WINDOWS_BUILD_BROKEN */
 		}
 	case ZAP_COMMAND_SET_INTERVAL: 
 		{
@@ -1163,9 +1151,8 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 	}
 #endif
 
-	if (zchan->sockfd > -1) {
-		close(zchan->sockfd);
-		zchan->sockfd = WP_INVALID_SOCKET;
+	if (zchan->sockfd != ZAP_INVALID_SOCKET) {
+		sangoma_close(&zchan->sockfd);
 	}
 
 	return ZAP_SUCCESS;

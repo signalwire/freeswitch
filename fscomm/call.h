@@ -32,6 +32,7 @@
 #include <QtCore>
 #include <QString>
 #include <switch.h>
+#include "channel.h"
 
 typedef enum {
     FSCOMM_CALL_STATE_RINGING = 0,
@@ -48,36 +49,44 @@ typedef enum {
 class Call {
 public:
     Call();
-    Call(int call_id, QString cid_name, QString cid_number, fscomm_call_direction_t direction, QString uuid);
-    QString getCidName(void) { return _cid_name; }
-    QString getCidNumber(void) { return _cid_number; }
-    int getCallID(void) { return _call_id; }
-    QString getUUID(void) { return _uuid; }
-    void setbUUID(QString uuid) { _buuid = uuid; }
+    /* Needs rework */
+    QString getCidName(void) { return (_direction == FSCOMM_CALL_DIRECTION_INBOUND) ? _otherLegChannel.data()->getCidName() : _channel.data()->getCidName(); }
+    QString getCidNumber(void) { return (_direction == FSCOMM_CALL_DIRECTION_INBOUND) ? _otherLegChannel.data()->getCidNumber() : _channel.data()->getCidNumber(); }
+    QString getDestinationNumber(void) { return _otherLegChannel.data()->getDestinationNumber(); }
+
+    void setChannel(QSharedPointer<Channel> channel) { _channel = channel; }
+    QSharedPointer<Channel> getChannel() { return _channel; }
+    void setOtherLegChannel(QSharedPointer<Channel> channel) { _otherLegChannel = channel; }
+    QSharedPointer<Channel> getOtherLegChannel() { return _otherLegChannel; }
+
+    QString getUuid(void) { return _channel.data()->getUuid(); }
+    QString getOtherLegUuid(void) { return _otherLegChannel.data()->getUuid(); }
+    void setCallDirection(fscomm_call_direction_t dir) { _direction = dir; }
+    int getCallID(void) { return _channel.data()->getPaCallId(); }
     fscomm_call_direction_t getDirection() { return _direction; }
     fscomm_call_state_t getState() { return _state; }
     void setState(fscomm_call_state_t state) { _state = state; }
-    void setCause(QString cause) { _cause = cause; }
-    QString getCause() { return _cause; }
+    void setCause(QString cause) { _cause = cause; qDebug()<<cause; }
+    QString getCause() { return _cause; qDebug() << _cause; }
     void setActive(bool isActive) { _isActive = isActive; }
     bool isActive() { return _isActive == true; }
     switch_status_t toggleRecord(bool);
+    switch_status_t toggleHold(bool);
     void sendDTMF(QString digit);
-    void setAnsweredEpoch(qulonglong time) { _answered_epoch = time/1000000; }
+    void setAnsweredEpoch(qulonglong time) { _answeredEpoch = time/1000000; }
     QTime getCurrentStateTime();
 
 private:
-    int _call_id;
-    QString _cid_name;
-    QString _cid_number;
+    QSharedPointer<Channel> _channel; /* This should be our portaudio channel */
+    QSharedPointer<Channel> _otherLegChannel;
+
     QString _cause;
     fscomm_call_direction_t _direction;
-    QString _uuid;
-    QString _buuid;
+
     bool _isActive;
     QString _recording_filename;
     fscomm_call_state_t _state;
-    qulonglong _answered_epoch;
+    qulonglong _answeredEpoch;
 };
 
 Q_DECLARE_METATYPE(Call)

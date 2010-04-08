@@ -236,7 +236,7 @@ static void snd_card_dummy_pcm_timer_function(unsigned long data)
 	giovatimer.expires = 1 + jiffies;
 	add_timer(&giovatimer);
 
-	spin_lock_bh(&giovalock);
+	//spin_lock_bh(&giovalock);
 	for (i = 0; i < giovaindex + 1; i++) {
 
 		if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
@@ -262,7 +262,7 @@ static void snd_card_dummy_pcm_timer_function(unsigned long data)
 			//spin_unlock_bh(&dpcm->lock);
 		}
 	}
-	spin_unlock_bh(&giovalock);
+	//spin_unlock_bh(&giovalock);
 	for (i = 0; i < giovaindex + 1; i++) {
 
 		if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
@@ -774,7 +774,7 @@ static int __init alsa_card_dummy_init(void)
 		giovatimer.function = snd_card_dummy_pcm_timer_function;
 		giovatimer.expires = 1 + jiffies;
 		add_timer(&giovatimer);
-		printk("snd-dummy skypopen driver version: 5, %s:%d working on a machine with %dHZ kernel\n", __FILE__, __LINE__, HZ);
+		printk("snd-dummy skypopen driver version: 6, %s:%d working on a machine with %dHZ kernel\n", __FILE__, __LINE__, HZ);
 		spin_unlock_bh(&giovalock);
 	}
 

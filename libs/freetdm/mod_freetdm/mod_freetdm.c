@@ -1382,6 +1382,15 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_SCREEN);
 	}
 
+	tech_pvt->caller_profile->caller_ton = sigmsg->channel->caller_data.cid_num.type;
+	tech_pvt->caller_profile->caller_numplan = sigmsg->channel->caller_data.cid_num.plan;
+	tech_pvt->caller_profile->ani_ton = sigmsg->channel->caller_data.ani.type;
+	tech_pvt->caller_profile->ani_numplan = sigmsg->channel->caller_data.ani.plan;
+	tech_pvt->caller_profile->destination_number_ton = sigmsg->channel->caller_data.dnis.type;
+	tech_pvt->caller_profile->destination_number_numplan = sigmsg->channel->caller_data.dnis.plan;
+	tech_pvt->caller_profile->rdnis_ton = sigmsg->channel->caller_data.rdnis.type;
+	tech_pvt->caller_profile->rdnis_numplan = sigmsg->channel->caller_data.rdnis.plan;
+
 	if (sigmsg->channel->caller_data.pres) {
 		switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 	}
@@ -2767,6 +2776,8 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   "type: %s\n"
 						   "state: %s\n"
 						   "last_state: %s\n"
+						   "txgain: %3.2f\n"
+						   "rxgain: %3.2f\n"
 						   "cid_date: %s\n"
 						   "cid_name: %s\n"
 						   "cid_num: %s\n"
@@ -2782,6 +2793,8 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   ftdm_chan_type2str(span->channels[chan_id]->type),
 						   ftdm_channel_state2str(span->channels[chan_id]->state),
 						   ftdm_channel_state2str(span->channels[chan_id]->last_state),
+						   span->channels[chan_id]->txgain,
+						   span->channels[chan_id]->rxgain,
 						   span->channels[chan_id]->caller_data.cid_date,
 						   span->channels[chan_id]->caller_data.cid_name,
 						   span->channels[chan_id]->caller_data.cid_num.digits,
@@ -2808,6 +2821,8 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   "  <type>%s</type>\n"
 						   "  <state>%s</state>\n"
 						   "  <last-state>%s</last-state>\n"
+						   "  <txgain>%3.2f</txgain>\n"
+						   "  <rxgain>%3.2f</rxgain>\n"
 						   "  <cid-date>%s</cid-date>\n"
 						   "  <cid-name>%s</cid-name>\n"
 						   "  <cid-num>%s</cid-num>\n"
@@ -2824,6 +2839,8 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   ftdm_chan_type2str(span->channels[chan_id]->type),
 						   ftdm_channel_state2str(span->channels[chan_id]->state),
 						   ftdm_channel_state2str(span->channels[chan_id]->last_state),
+						   span->channels[chan_id]->txgain,
+						   span->channels[chan_id]->rxgain,
 						   span->channels[chan_id]->caller_data.cid_date,
 						   span->channels[chan_id]->caller_data.cid_name,
 						   span->channels[chan_id]->caller_data.cid_num.digits,
@@ -2835,7 +2852,7 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   );
 }
 
-#define FT_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix] || gains <span> <txgain> <rxgain>" 
+#define FT_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix] || gains <txgain> <rxgain> <span_id> [<chan_id>]" 
 SWITCH_STANDARD_API(ft_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
@@ -3142,6 +3159,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	module_pool = pool;
 
 	ftdm_global_set_logger(ftdm_logger);
+
+	ftdm_cpu_monitor_disable();
 	
 	if (ftdm_global_init() != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "Error loading FreeTDM\n");

@@ -151,6 +151,7 @@ static struct {
 	char *report_incoming_chatmessages;
 	char *silent_mode;
 	char *write_silence_when_idle;
+	char *setsockopt;
 	int calls;
 	int real_interfaces;
 	int next_interface;
@@ -171,6 +172,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_skype_user, globals.skype_user);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_report_incoming_chatmessages, globals.report_incoming_chatmessages);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_silent_mode, globals.silent_mode);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_write_silence_when_idle, globals.write_silence_when_idle);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_setsockopt, globals.setsockopt);
 
 static switch_status_t interface_exists(char *the_interface);
 static switch_status_t remove_interface(char *the_interface);
@@ -1241,6 +1243,9 @@ static switch_status_t load_config(int reload_type)
 			} else if (!strcmp(var, "write_silence_when_idle")) {
 				set_global_write_silence_when_idle(val);
 				DEBUGA_SKYPE("globals.write_silence_when_idle=%s\n", SKYPOPEN_P_LOG, globals.write_silence_when_idle);
+			} else if (!strcmp(var, "setsockopt")) {
+				set_global_setsockopt(val);
+				DEBUGA_SKYPE("globals.setsockopt=%s\n", SKYPOPEN_P_LOG, globals.setsockopt);
 			}
 
 		}
@@ -1261,6 +1266,7 @@ static switch_status_t load_config(int reload_type)
 			char *report_incoming_chatmessages = "true";
 			char *silent_mode = "false";
 			char *write_silence_when_idle = "true";
+			char *setsockopt = "false";
 			uint32_t interface_id = 0;
 
 			if(globals.context)
@@ -1277,6 +1283,8 @@ static switch_status_t load_config(int reload_type)
 				silent_mode=globals.silent_mode;
 			if(globals.write_silence_when_idle)
 				write_silence_when_idle=globals.write_silence_when_idle;
+			if(globals.setsockopt)
+				setsockopt=globals.setsockopt;
 
 			tech_pvt = NULL;
 
@@ -1298,6 +1306,8 @@ static switch_status_t load_config(int reload_type)
 					silent_mode = val;
 				} else if (!strcasecmp(var, "write_silence_when_idle")) {
 					write_silence_when_idle = val;
+				} else if (!strcasecmp(var, "setsockopt")) {
+					setsockopt = val;
 				} else if (!strcasecmp(var, "X11-display") || !strcasecmp(var, "X11_display")) {
 					X11_display = val;
 				}
@@ -1397,6 +1407,13 @@ static switch_status_t load_config(int reload_type)
 
 				}
 
+				if (!strcmp(setsockopt, "true") || !strcmp(setsockopt, "1")) {
+					globals.SKYPOPEN_INTERFACES[interface_id].setsockopt = 1;
+				} else {
+					globals.SKYPOPEN_INTERFACES[interface_id].setsockopt = 0;	//redundant, just in case
+
+				}
+
 				DEBUGA_SKYPE("interface_id=%d globals.SKYPOPEN_INTERFACES[interface_id].name=%s\n",
 							 SKYPOPEN_P_LOG, interface_id, globals.SKYPOPEN_INTERFACES[interface_id].name);
 				DEBUGA_SKYPE
@@ -1423,6 +1440,9 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_SKYPE
 					("interface_id=%d globals.SKYPOPEN_INTERFACES[interface_id].write_silence_when_idle=%d\n",
 					 SKYPOPEN_P_LOG, interface_id, globals.SKYPOPEN_INTERFACES[interface_id].write_silence_when_idle);
+				DEBUGA_SKYPE
+					("interface_id=%d globals.SKYPOPEN_INTERFACES[interface_id].setsockopt=%d\n",
+					 SKYPOPEN_P_LOG, interface_id, globals.SKYPOPEN_INTERFACES[interface_id].setsockopt);
 
 				WARNINGA("STARTING interface_id=%d\n", SKYPOPEN_P_LOG, interface_id);
 
@@ -1532,6 +1552,7 @@ static switch_status_t load_config(int reload_type)
 							 globals.SKYPOPEN_INTERFACES[i].report_incoming_chatmessages);
 				DEBUGA_SKYPE("i=%d globals.SKYPOPEN_INTERFACES[%d].silent_mode=%d\n", SKYPOPEN_P_LOG, i, i, globals.SKYPOPEN_INTERFACES[i].silent_mode);
 				DEBUGA_SKYPE("i=%d globals.SKYPOPEN_INTERFACES[%d].write_silence_when_idle=%d\n", SKYPOPEN_P_LOG, i, i, globals.SKYPOPEN_INTERFACES[i].write_silence_when_idle);
+				DEBUGA_SKYPE("i=%d globals.SKYPOPEN_INTERFACES[%d].setsockopt=%d\n", SKYPOPEN_P_LOG, i, i, globals.SKYPOPEN_INTERFACES[i].setsockopt);
 			}
 		}
 	}
@@ -1775,6 +1796,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 	switch_safe_free(globals.report_incoming_chatmessages);
 	switch_safe_free(globals.silent_mode);
 	switch_safe_free(globals.write_silence_when_idle);
+	switch_safe_free(globals.setsockopt);
 
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -37,7 +37,6 @@
 
 #include "freetdm.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -180,6 +179,15 @@ typedef ftdm_status_t (*boost_on_load_func_t) BOOST_ON_LOAD_ARGS;
 typedef ftdm_status_t (*boost_on_unload_func_t) BOOST_ON_UNLOAD_ARGS;
 #define BOOST_ON_UNLOAD_FUNCTION(name) ftdm_status_t name BOOST_ON_UNLOAD_ARGS 
 
+/*!
+	\brief Called when user wants to execute sigmod api function
+	\return FTDM_SUCCESS or FTDM_FAIL
+ */
+#define BOOST_API_ARGS (ftdm_stream_handle_t *stream, char *cmd)
+typedef ftdm_status_t (*boost_api_func_t) BOOST_API_ARGS;
+#define BOOST_API_FUNCTION(name) ftdm_status_t name BOOST_API_ARGS
+
+
 /*! 
   \brief The boost signaling module interface 
  */
@@ -212,6 +220,8 @@ typedef struct boost_sigmod_interface_s {
 	boost_on_load_func_t on_load;
 	/*! \brief the module is about to be unloaded */
 	boost_on_unload_func_t on_unload;
+	/*! \brief module api function */
+	boost_api_func_t  exec_api;
 	/*! \brief private pointer for the interface user */
 	void *pvt;
 } boost_sigmod_interface_t;

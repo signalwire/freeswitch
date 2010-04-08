@@ -304,6 +304,7 @@ static int switch_console_process(char *xcmd)
 	switch_stream_handle_t stream = { 0 };
 	switch_status_t status;
 	FILE *handle = switch_core_get_console();
+	int r = 1;
 
 	SWITCH_STANDARD_STREAM(stream);
 	switch_assert(stream.data);
@@ -316,6 +317,9 @@ static int switch_console_process(char *xcmd)
 			fflush(handle);
 		}
 	} else {
+		if (!strcasecmp(xcmd, "...") || !strcasecmp(xcmd, "shutdown")) {
+			r = 0;
+		}
 		if (handle) {
 			fprintf(handle, "Unknown Command: %s\n", xcmd);
 			fflush(handle);
@@ -324,7 +328,7 @@ static int switch_console_process(char *xcmd)
 
 	switch_safe_free(stream.data);
 
-	return 1;
+	return r;
 
 }
 

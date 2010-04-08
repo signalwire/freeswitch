@@ -42,7 +42,7 @@ void PrefSofia::readConfig()
     _ui->sofiaSipPortSpin->setValue(settings.value("sip-port").toInt());
     _ui->sofiaDialplanEdit->setText(settings.value("dialplan").toString());
     _ui->sofiaDtmfDurationSpin->setValue(settings.value("dtmf-duration").toInt());
-    _ui->sofiaCodecPrefsEdit->setText(settings.value("codec-prefs").toString());
+    _ui->sofiaProfileCodecWidget->setCodecString(settings.value("codec-prefs").toString());
     _ui->sofiaUseRtpTimerCombo->setCurrentIndex(_ui->sofiaUseRtpTimerCombo->findText(settings.value("use-rtp-timer").toString()));
     _ui->sofiaRtpTimerNameEdit->setText(settings.value("rtp-timer-name").toString());
     _ui->sofiaRtpIpEdit->setText(settings.value("rtp-ip").toString());
@@ -67,15 +67,6 @@ void PrefSofia::readConfig()
     settings.endGroup();
     settings.endGroup();
     settings.endGroup();
-
-    /* This is here to show the proper codec config! */
-    const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
-    uint32_t num_codecs = switch_loadable_module_get_codecs(codecs, sizeof(codecs) / sizeof(codecs[0]));
-    uint32_t x;
-
-    for (x = 0; x < num_codecs; x++) {
-        _ui->listAvailableCodecs->addItem(codecs[x]->iananame);
-    }
 
 }
 
@@ -110,7 +101,7 @@ void PrefSofia::writeConfig()
     settings.setValue("sip-port", _ui->sofiaSipPortSpin->value());
     settings.setValue("dialplan", _ui->sofiaDialplanEdit->text());
     settings.setValue("dtmf-duration", _ui->sofiaDtmfDurationSpin->value());
-    settings.setValue("codec-prefs", _ui->sofiaCodecPrefsEdit->text());
+    settings.setValue("codec-prefs", _ui->sofiaProfileCodecWidget->getCodecString());
     settings.setValue("use-rtp-timer", _ui->sofiaUseRtpTimerCombo->currentText());
     settings.setValue("rtp-timer-name", _ui->sofiaRtpTimerNameEdit->text());
     settings.setValue("rtp-ip", _ui->sofiaRtpIpEdit->text());

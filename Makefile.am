@@ -470,6 +470,7 @@ update: is-scm
 	  echo Updating... ; \
 	  svn update ; \
 	elif test -d .git ; then \
+	  test ! -f .version || rm -f .version ; \
 	  echo "Pulling updates..." ; \
 	  git pull ; \
 	else \
