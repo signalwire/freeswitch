@@ -235,14 +235,22 @@ char * skinny_profile_find_session_uuid(skinny_profile_t *profile, listener_t *l
 	return helper.channel_uuid;
 }
 
+#ifdef SWITCH_DEBUG_RWLOCKS
+switch_core_session_t * skinny_profile_perform_find_session(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id, const char *file, const char *func, int line)
+#else
 switch_core_session_t * skinny_profile_find_session(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id)
+#endif
 {
 	char *uuid;
 	switch_core_session_t *result = NULL;
 	uuid = skinny_profile_find_session_uuid(profile, listener, line_instance_p, call_id);
 
 	if(!zstr(uuid)) {
+#ifdef SWITCH_DEBUG_RWLOCKS
+		result = switch_core_session_perform_locate(uuid, file, func, line);
+#else
 		result = switch_core_session_locate(uuid);
+#endif
 		if(!result) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
 				"Unable to find session %s on %s:%d, line %d\n",
@@ -650,7 +658,6 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 		/* TODO: DefineTimeDate */
 		send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
 		send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, call_id);
-
 	}
 	return 0;
 }

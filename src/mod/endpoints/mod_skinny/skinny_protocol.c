@@ -446,13 +446,13 @@ switch_status_t skinny_create_ingoing_session(listener_t *listener, uint32_t *li
 
 	line_instance = *line_instance_p;
 	if((nsession = skinny_profile_find_session(listener->profile, listener, line_instance_p, 0))) {
-	    switch_core_session_rwunlock(nsession);
 	    if(skinny_line_get_state(listener, *line_instance_p, 0) == SKINNY_OFF_HOOK) {
 	        /* Reuse existing session */
 	        *session = nsession;
 	        return SWITCH_STATUS_SUCCESS;
 	    }
 	    skinny_session_hold_line(nsession, listener, *line_instance_p);
+	    switch_core_session_rwunlock(nsession);
 	}
 	*line_instance_p = line_instance;
 	if(*line_instance_p == 0) {
@@ -494,7 +494,11 @@ switch_status_t skinny_create_ingoing_session(listener_t *listener, uint32_t *li
 		    "Error Creating Session thread\n");
 		goto error;
 	}
-
+	if (switch_core_session_read_lock(nsession) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(nsession), SWITCH_LOG_CRIT, 
+		    "Error Locking Session\n");
+		goto error;
+	}
 	if (!(tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(nsession),
 													          NULL, listener->profile->dialplan, 
 													          button->shortname, button->name, 
@@ -579,8 +583,6 @@ switch_status_t skinny_session_process_dest(switch_core_session_t *session, list
 	    skinny_session_start_media(session, listener, line_instance);
 	}
 
-	switch_core_session_rwunlock(session);
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -602,8 +604,6 @@ switch_status_t skinny_session_ring_out(switch_core_session_t *session, listener
 	send_display_prompt_status(listener, 0, "\200\026",
 		line_instance, tech_pvt->call_id);
 	skinny_send_call_info(session, listener, line_instance);
-
-	switch_core_session_rwunlock(session);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -643,16 +643,14 @@ int skinny_session_answer_callback(void *pArg, int argc, char **argv, char **col
 	    if(!strcmp(device_name, helper->listener->device_name) 
 	            && (device_instance == helper->listener->device_instance)
 	            && (line_instance == helper->line_instance)) {/* the answering line */
-	       	
-	       	
-	        send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
-	        send_set_speaker_mode(listener, SKINNY_SPEAKER_ON);
+	       	/* nothing */
+	    } else {
+	    	send_define_current_time_date(listener);
 	        send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
-	        skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_OFF_HOOK);
-	        /* send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, SKINNY_KEY_SET_OFF_HOOK, 0xffff); */
-	        /* display_prompt_status(listener, 0, "\200\000",
-		        line_instance, tech_pvt->call_id); */
-	        send_activate_call_plane(listener, line_instance);
+	        skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_IN_USE_REMOTELY);
+	        send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, 10, 0x0002);
+	        send_display_prompt_status(listener, 0, "\200\037", line_instance, helper->tech_pvt->call_id);
+	        send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
 	    }
 	}
 	return 0;
@@ -671,6 +669,12 @@ switch_status_t skinny_session_answer(switch_core_session_t *session, listener_t
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
+    send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, tech_pvt->call_id);
+    send_set_speaker_mode(listener, SKINNY_SPEAKER_ON);
+    send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
+    skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_OFF_HOOK);
+    send_activate_call_plane(listener, line_instance);
+
 	helper.tech_pvt = tech_pvt;
 	helper.listener = listener;
 	helper.line_instance = line_instance;
@@ -678,8 +682,6 @@ switch_status_t skinny_session_answer(switch_core_session_t *session, listener_t
 	skinny_session_walk_lines(tech_pvt->profile, switch_core_session_get_uuid(session), skinny_session_answer_callback, &helper);
 
 	skinny_session_start_media(session, listener, line_instance);
-
-	switch_core_session_rwunlock(session);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -717,8 +719,6 @@ switch_status_t skinny_session_start_media(switch_core_session_t *session, liste
 	    tech_pvt->call_id);
 	skinny_send_call_info(session, listener, line_instance);
 
-	switch_core_session_rwunlock(session);
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -738,8 +738,6 @@ switch_status_t skinny_session_hold_line(switch_core_session_t *session, listene
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Hold is not implemented yet. Hanging up the line.\n");
 
 	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-
-	switch_core_session_rwunlock(session);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2002,6 +2000,11 @@ switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_mess
 
 	    skinny_session_process_dest(session, listener, line_instance, NULL, '\0', 0);
 	}
+
+	if(session) {
+		switch_core_session_rwunlock(session);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2037,6 +2040,11 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown Stimulus Type Received [%d]\n", request->data.stimulus.instance_type);
 	}
+
+	if(session) {
+		switch_core_session_rwunlock(session);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2118,9 +2126,13 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 	    }
 		switch_channel_mark_answered(channel);
 
-		switch_core_session_rwunlock(session);
 	}
 end:
+
+	if(session) {
+		switch_core_session_rwunlock(session);
+	}
+
 	return status;
 }
 
@@ -2174,6 +2186,10 @@ switch_status_t skinny_handle_keypad_button_message(listener_t *listener, skinny
 		switch_core_session_rwunlock(session);
 	}
 
+	if(session) {
+		switch_core_session_rwunlock(session);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2195,9 +2211,12 @@ switch_status_t skinny_handle_on_hook_message(listener_t *listener, skinny_messa
 		channel = switch_core_session_get_channel(session);
 
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	}
 
+	if(session) {
 		switch_core_session_rwunlock(session);
 	}
+
 	return status;
 }
 
