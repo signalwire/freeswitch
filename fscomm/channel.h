@@ -23,6 +23,8 @@ public:
     qulonglong getProgressEpoch() { return _progressEpoch; }
     void setProgressMediaEpoch(qulonglong time) { _progressMediaEpoch = time/1000000; }
     qulonglong getProgressMediaEpoch() { return _progressMediaEpoch; }
+    void setCreatedEpoch(qulonglong time) { _createdEpoch = time/1000000; }
+    qulonglong getCreatedEpoch() { return _createdEpoch; }
 
 private:
     QString _uuid;
@@ -32,6 +34,7 @@ private:
     int _paCallId;
     qulonglong _progressEpoch;
     qulonglong _progressMediaEpoch;
+    qulonglong _createdEpoch;
 };
 
 Q_DECLARE_METATYPE(Channel)

@@ -425,7 +425,7 @@ OZ_DECLARE(zap_status_t) zap_interrupt_multiple_wait(zap_interrupt_t *interrupts
 		return ZAP_TIMEOUT;
 	}
 
-	for (i = size; i < zap_array_len(ints); i++) {
+	for (i = 0; i < size; i++) {
 		if (ints[i].revents & POLLIN) {
 			res = read(ints[0].fd, pipebuf, sizeof(pipebuf));
 			if (res == -1) {
