@@ -66,6 +66,7 @@ void StateDebugDialog::currentEventsChanged()
 {
     ui->listDetails->clear();
     int r = ui->listEvents->currentRow();
+    if (r == -1) return;
     QString uuid = ui->listUUID->currentItem()->text();
     QList<QSharedPointer<switch_event_t> > tmpListEvents = _events.value(uuid);
     QSharedPointer<switch_event_t> e = tmpListEvents.at(r);

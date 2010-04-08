@@ -36,6 +36,27 @@ Call::Call()
     _answeredEpoch = 0;
 }
 
+switch_status_t Call::toggleHold(bool holdPressed)
+{
+    if (_state != FSCOMM_CALL_STATE_ANSWERED) return SWITCH_STATUS_FALSE;
+    switch_stream_handle_t stream = { 0 };
+    SWITCH_STANDARD_STREAM(stream);
+    QString holdStr;
+    if (holdPressed)
+    {
+        holdStr = _channel.data()->getUuid();
+    }
+    else
+    {
+        holdStr = "off " + _channel.data()->getUuid();
+    }
+
+    switch_status_t st = switch_api_execute("uuid_hold", holdStr.toAscii().data(), NULL, &stream);
+    switch_safe_free(stream.data);
+    return st;
+
+}
+
 switch_status_t Call::toggleRecord(bool startRecord)
 {
     QDir conf_dir = QDir::home();
@@ -82,8 +103,7 @@ QTime Call::getCurrentStateTime()
     {
         if (_direction == FSCOMM_CALL_DIRECTION_INBOUND)
         {
-            /* TODO: DOESNT WORK - How do I get what time it started to ring? */
-            _channel.data()->getProgressEpoch() == 0 ? time = _channel.data()->getProgressMediaEpoch() : time = _channel.data()->getProgressEpoch();
+            time = _channel.data()->getCreatedEpoch();
         }
         else
             _otherLegChannel.data()->getProgressEpoch() == 0 ? time = _otherLegChannel.data()->getProgressMediaEpoch() : time = _otherLegChannel.data()->getProgressEpoch();
