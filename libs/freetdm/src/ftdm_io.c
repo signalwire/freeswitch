@@ -3407,6 +3407,9 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(const char *type, ftdm_s
 
 	if (mod->configure_span_signaling) {
 		status = mod->configure_span_signaling(span, sig_cb, parameters);
+		if (status == FTDM_SUCCESS && ftdm_test_flag(span, FTDM_SPAN_USE_CHAN_QUEUE)) {
+			status = ftdm_queue_create(&span->pendingchans, SPAN_PENDING_CHANS_QUEUE_SIZE);
+		}
 	} else {
 		ftdm_log(FTDM_LOG_ERROR, "Module %s did not implement the signaling configuration method\n", type);
 	}
