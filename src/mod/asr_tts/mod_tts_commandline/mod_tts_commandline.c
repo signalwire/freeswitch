@@ -186,10 +186,14 @@ static void tts_commandline_speech_flush_tts(switch_speech_handle_t *sh)
 {
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	assert(info != NULL);
-
-	switch_core_file_close(info->fh);
-	if (unlink(info->file) != 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Sound file [%s] delete failed\n", info->file);
+	
+	if (info->fh != NULL && info->fh->file_interface != NULL) {
+		switch_core_file_close(info->fh);
+	}
+	if (switch_file_exists(info->file, NULL) == SWITCH_STATUS_SUCCESS) {
+		if (unlink(info->file) != 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Sound file [%s] delete failed\n", info->file);
+		}
 	}
 }
 

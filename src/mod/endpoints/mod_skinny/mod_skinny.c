@@ -221,7 +221,7 @@ char * skinny_profile_find_session_uuid(skinny_profile_t *profile, listener_t *l
 			"SELECT channel_uuid, line_instance "
 				"FROM skinny_active_lines "
 				"WHERE %s AND %s AND %s "
-				"ORDER BY channel_uuid DESC",
+				"ORDER BY call_state, channel_uuid", /* off hook first */
 			device_condition, line_instance_condition, call_id_condition
 			))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql,
@@ -235,14 +235,22 @@ char * skinny_profile_find_session_uuid(skinny_profile_t *profile, listener_t *l
 	return helper.channel_uuid;
 }
 
+#ifdef SWITCH_DEBUG_RWLOCKS
+switch_core_session_t * skinny_profile_perform_find_session(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id, const char *file, const char *func, int line)
+#else
 switch_core_session_t * skinny_profile_find_session(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id)
+#endif
 {
 	char *uuid;
 	switch_core_session_t *result = NULL;
 	uuid = skinny_profile_find_session_uuid(profile, listener, line_instance_p, call_id);
 
 	if(!zstr(uuid)) {
+#ifdef SWITCH_DEBUG_RWLOCKS
+		result = switch_core_session_perform_locate(uuid, file, func, line);
+#else
 		result = switch_core_session_locate(uuid);
+#endif
 		if(!result) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
 				"Unable to find session %s on %s:%d, line %d\n",
@@ -357,7 +365,9 @@ struct skinny_line_get_state_helper {
 int skinny_line_get_state_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct skinny_line_get_state_helper *helper = pArg;
-	helper->call_state = atoi(argv[0]);
+	if (helper->call_state == -1) {
+		helper->call_state = atoi(argv[0]);
+	}
 	return 0;
 }
 
@@ -383,10 +393,12 @@ uint32_t skinny_line_get_state(listener_t *listener, uint32_t line_instance, uin
 	}
 	switch_assert(call_id_condition);
 
+	helper.call_state = -1;
 	if ((sql = switch_mprintf(
 			"SELECT call_state FROM skinny_active_lines "
 			"WHERE device_name='%s' AND device_instance=%d "
-			"AND %s AND %s",
+			"AND %s AND %s "
+			"ORDER BY call_state, channel_uuid", /* off hook first */
 			listener->device_name, listener->device_instance,
 			line_instance_condition, call_id_condition
 			))) {
@@ -531,6 +543,7 @@ void tech_init(private_t *tech_pvt, skinny_profile_t *profile, switch_core_sessi
 	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	tech_pvt->call_id = ++profile->next_call_id;
+	tech_pvt->party_id = tech_pvt->call_id;
 	tech_pvt->profile = profile;
 	switch_core_session_set_private(session, tech_pvt);
 	tech_pvt->session = session;
@@ -633,16 +646,7 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_OFF);
 		send_clear_prompt_status(listener, line_instance, call_id);
 		if(call_state == SKINNY_CONNECTED) { /* calling parties */
-			send_close_receive_channel(listener,
-				call_id, /* uint32_t conference_id, */
-				helper->tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
-				call_id /* uint32_t conference_id2, */
-			);
-			send_stop_media_transmission(listener,
-				call_id, /* uint32_t conference_id, */
-				helper->tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
-				call_id /* uint32_t conference_id2, */
-			);
+			skinny_session_stop_media(helper->tech_pvt->session, listener, line_instance);
 		}
 
 		skinny_line_set_state(listener, line_instance, call_id, SKINNY_ON_HOOK);
@@ -650,7 +654,6 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 		/* TODO: DefineTimeDate */
 		send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
 		send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, call_id);
-
 	}
 	return 0;
 }
@@ -1229,6 +1232,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			break;
 		}
+		if (!listener_is_ready(listener)) {
+			break;
+		}
 
 		if (!request) {
 			continue;
@@ -1473,7 +1479,7 @@ static switch_status_t load_skinny_config(void)
 			    }
 				profile = switch_core_alloc(profile_pool, sizeof(skinny_profile_t));
 				profile->pool = profile_pool;
-				profile->name = profile_name;
+				profile->name = switch_core_strdup(profile->pool, profile_name);
 				switch_mutex_init(&profile->listener_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				switch_mutex_init(&profile->sql_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				switch_mutex_init(&profile->sock_mutex, SWITCH_MUTEX_NESTED, profile->pool);

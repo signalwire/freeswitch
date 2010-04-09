@@ -85,6 +85,7 @@ private slots:
     void updateCallTimers();
     void debugConsoleTriggered();
     void debugEventsTriggered();
+    void applyPreprocessors(QStringList);
 
 private:
     Ui::MainWindow *ui;

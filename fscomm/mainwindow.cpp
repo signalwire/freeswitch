@@ -179,10 +179,26 @@ void MainWindow::debugConsoleTriggered()
 
 }
 
+void MainWindow::applyPreprocessors(QStringList cmds)
+{
+    if (g_FSHost.getCurrentActiveCall().isNull()) return;
+    QString uuid = g_FSHost.getCurrentActiveCall().data()->getUuid();
+    foreach(QString cmd, cmds)
+    {
+        switch_stream_handle_t stream = { 0 };
+        SWITCH_STANDARD_STREAM(stream);
+        switch_api_execute("uuid_preprocess", QString("%1 %2").arg(uuid, cmd).toAscii().data(), NULL, &stream);
+        switch_safe_free(stream.data);
+    }
+}
+
 void MainWindow::prefTriggered()
 {
     if (!preferences)
+    {
         preferences = new PrefDialog();
+        connect(preferences, SIGNAL(preprocessorsApplied(QStringList)), this, SLOT(applyPreprocessors(QStringList)));
+    }
 
     preferences->raise();
     preferences->show();

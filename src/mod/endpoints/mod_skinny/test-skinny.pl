@@ -15,6 +15,7 @@ use Sys::Hostname;
 use Net::Skinny;
 use Net::Skinny::Protocol qw/:all/;
 use Net::Skinny::Message;
+use Net::Skinny::Client;
 
 #Config
 my $skinny_server = hostname;
@@ -23,13 +24,13 @@ my $device_ip = 10+256*(11+256*(12+256*13)); # 10.11.12.13
 #======
 $| = 1;
 
-my $socket = Net::Skinny->new(
+my $socket = Net::Skinny::Client->new(
 		PeerAddr => $skinny_server,
 		PeerPort => 2000,
 		);
 
 if(!$socket) {
-    print "Unable to connect to server\n";
+    printf "Unable to connect to server %s\n", $skinny_server;
     exit 1;
 }
 # =============================================================================
@@ -84,11 +85,8 @@ $socket->send_message(
     count => 2
     );
 
-for(my $i = 0; $i < 1; $i++) {
-	$socket->sleep(5);
-	$socket->send_message(KEEP_ALIVE_MESSAGE);
-	$socket->receive_message(); # keepaliveack
-}
+$socket->launch_keep_alive_thread();
+
 $socket->sleep(5);
 
 #NewCall
