@@ -451,7 +451,6 @@ switch_status_t skinny_create_ingoing_session(listener_t *listener, uint32_t *li
 	        *session = nsession;
 	        return SWITCH_STATUS_SUCCESS;
 	    }
-	    skinny_session_hold_line(nsession, listener, *line_instance_p);
 	    switch_core_session_rwunlock(nsession);
 	}
 	*line_instance_p = line_instance;
@@ -459,6 +458,8 @@ switch_status_t skinny_create_ingoing_session(listener_t *listener, uint32_t *li
 	    *line_instance_p = 1;
 	}
 
+    skinny_hold_active_calls(listener);
+    
 	skinny_line_get(listener, *line_instance_p, &button);
 
 	if (!button || !button->shortname) {
@@ -819,6 +820,7 @@ switch_status_t skinny_session_unhold_line(switch_core_session_t *session, liste
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
+    skinny_hold_active_calls(listener);
 	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, tech_pvt->call_id);
 	send_set_speaker_mode(listener, SKINNY_SPEAKER_ON);
 	send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_RING_OUT, 0xffff);
@@ -854,6 +856,65 @@ switch_status_t skinny_session_stop_media(switch_core_session_t *session, listen
 	return SWITCH_STATUS_SUCCESS;
 }
 
+struct skinny_hold_active_calls_helper {
+	listener_t *listener;
+};
+
+int skinny_hold_active_calls_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct skinny_hold_active_calls_helper *helper = pArg;
+	switch_core_session_t *session;
+
+	/* char *device_name = argv[0]; */
+	/* uint32_t device_instance = atoi(argv[1]); */
+	/* uint32_t position = atoi(argv[2]); */
+	uint32_t line_instance = atoi(argv[3]);
+	/* char *label = argv[4]; */
+	/* char *value = argv[5]; */
+	/* char *caller_name = argv[6]; */
+	/* uint32_t ring_on_idle = atoi(argv[7]); */
+	/* uint32_t ring_on_active = atoi(argv[8]); */
+	/* uint32_t busy_trigger = atoi(argv[9]); */
+	/* char *forward_all = argv[10]; */
+	/* char *forward_busy = argv[11]; */
+	/* char *forward_noanswer = argv[12]; */
+	/* uint32_t noanswer_duration = atoi(argv[13]); */
+	/* char *channel_uuid = argv[14]; */
+	uint32_t call_id = atoi(argv[15]);
+	/* uint32_t call_state = atoi(argv[16]); */
+	
+    session = skinny_profile_find_session(helper->listener->profile, helper->listener, &line_instance, call_id);
+
+    if(session) {
+        skinny_session_hold_line(session, helper->listener, line_instance);
+		switch_core_session_rwunlock(session);
+    }
+
+	return 0;
+}
+
+switch_status_t skinny_hold_active_calls(listener_t *listener)
+{
+	struct skinny_hold_active_calls_helper helper = {0};
+	char *sql;
+	
+	helper.listener = listener;
+	
+	if ((sql = switch_mprintf(
+			"SELECT skinny_lines.*, channel_uuid, call_id, call_state "
+			"FROM skinny_active_lines "
+			"INNER JOIN skinny_lines "
+				"ON skinny_active_lines.device_name = skinny_lines.device_name "
+				"AND skinny_active_lines.device_instance = skinny_lines.device_instance "
+				"AND skinny_active_lines.line_instance = skinny_lines.line_instance "
+			"WHERE skinny_lines.device_name='%s' AND skinny_lines.device_instance=%d AND call_state=%d",
+			listener->device_name, listener->device_instance, SKINNY_CONNECTED))) {
+		skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_hold_active_calls_callback, &helper);
+		switch_safe_free(sql);
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
 /*****************************************************************************/
 /* SKINNY BUTTONS */
 /*****************************************************************************/
@@ -1900,14 +1961,18 @@ switch_status_t skinny_handle_soft_key_set_request(listener_t *listener, skinny_
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOOK].soft_key_template_index[1] = SOFTKEY_REDIAL;
 	
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_OFF_HOOK].soft_key_template_index[1] = SOFTKEY_REDIAL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_OFF_HOOK].soft_key_template_index[2] = SOFTKEY_ENDCALL;
 
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT].soft_key_template_index[0] = SOFTKEY_BACKSPACE;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT].soft_key_template_index[2] = SOFTKEY_ENDCALL;
 
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[0] = SOFTKEY_ENDCALL;
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[1] = SOFTKEY_HOLD;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[2] = SOFTKEY_NEWCALL;
 	
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[0] = SOFTKEY_ANSWER;
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[1] = SOFTKEY_ENDCALL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[2] = SOFTKEY_NEWCALL;
 
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[0] = SOFTKEY_NEWCALL;
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[1] = SOFTKEY_RESUME;

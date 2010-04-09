@@ -221,7 +221,7 @@ char * skinny_profile_find_session_uuid(skinny_profile_t *profile, listener_t *l
 			"SELECT channel_uuid, line_instance "
 				"FROM skinny_active_lines "
 				"WHERE %s AND %s AND %s "
-				"ORDER BY channel_uuid DESC",
+				"ORDER BY call_state, channel_uuid", /* off hook first */
 			device_condition, line_instance_condition, call_id_condition
 			))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql,
@@ -365,7 +365,9 @@ struct skinny_line_get_state_helper {
 int skinny_line_get_state_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct skinny_line_get_state_helper *helper = pArg;
-	helper->call_state = atoi(argv[0]);
+	if (helper->call_state == -1) {
+		helper->call_state = atoi(argv[0]);
+	}
 	return 0;
 }
 
@@ -391,10 +393,12 @@ uint32_t skinny_line_get_state(listener_t *listener, uint32_t line_instance, uin
 	}
 	switch_assert(call_id_condition);
 
+	helper.call_state = -1;
 	if ((sql = switch_mprintf(
 			"SELECT call_state FROM skinny_active_lines "
 			"WHERE device_name='%s' AND device_instance=%d "
-			"AND %s AND %s",
+			"AND %s AND %s "
+			"ORDER BY call_state, channel_uuid", /* off hook first */
 			listener->device_name, listener->device_instance,
 			line_instance_condition, call_id_condition
 			))) {
