@@ -26,6 +26,9 @@ protected:
 private slots:
     void writeConfig();
 
+signals:
+    void preprocessorsApplied(QStringList);
+
 private:
     void readConfig();
     QSettings *_settings;

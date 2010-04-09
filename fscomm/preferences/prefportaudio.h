@@ -24,6 +24,11 @@ private slots:
     void ringdevTest();
     void loopTest();
     void refreshDevList();
+    void applyPreprocessors(bool);
+
+signals:
+    void preprocessorsApplied(QStringList);
+
 private:
     void getPaDevlist(void);
     QSettings *_settings;
