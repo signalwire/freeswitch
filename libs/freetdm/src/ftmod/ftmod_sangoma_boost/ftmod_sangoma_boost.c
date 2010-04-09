@@ -356,7 +356,7 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	ftdm_set_string(event.calling_name, caller_data->cid_name);
 	ftdm_set_string(event.rdnis.digits, caller_data->rdnis.digits);
 	if (strlen(caller_data->rdnis.digits)) {
-			event.rdnis.digits_count = strlen(caller_data->rdnis.digits)+1;
+			event.rdnis.digits_count = (uint8_t)strlen(caller_data->rdnis.digits)+1;
 			event.rdnis.ton = caller_data->rdnis.type;
 			event.rdnis.npi = caller_data->rdnis.plan;
 	}
@@ -474,7 +474,7 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(sangoma_boost_outgoing_call)
 	ftdm_set_string(event.calling_name, ftdmchan->caller_data.cid_name);
 	ftdm_set_string(event.rdnis.digits, ftdmchan->caller_data.rdnis.digits);
 	if (strlen(ftdmchan->caller_data.rdnis.digits)) {
-			event.rdnis.digits_count = strlen(ftdmchan->caller_data.rdnis.digits)+1;
+			event.rdnis.digits_count = (uint8_t)strlen(ftdmchan->caller_data.rdnis.digits)+1;
 			event.rdnis.ton = ftdmchan->caller_data.rdnis.type;
 			event.rdnis.npi = ftdmchan->caller_data.rdnis.plan;
 	}
