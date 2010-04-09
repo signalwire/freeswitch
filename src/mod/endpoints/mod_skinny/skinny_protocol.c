@@ -602,24 +602,31 @@ switch_status_t skinny_session_process_dest(switch_core_session_t *session, list
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
-	if(!dest) {
-	    if(append_dest == '\0') {/* no digit yet */
-		    send_start_tone(listener, SKINNY_TONE_DIALTONE, 0, line_instance, tech_pvt->call_id);
-	    } else {
-	        if(strlen(tech_pvt->caller_profile->destination_number) == 0) {/* first digit */
-		        send_stop_tone(listener, line_instance, tech_pvt->call_id);
-	            send_select_soft_keys(listener, line_instance, tech_pvt->call_id,
-	                SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT, 0xffff);
-	        }
+	if (!dest) {
+		if (backspace) { /* backspace */
+			*tech_pvt->caller_profile->destination_number++ = '\0';
+		}
+	    if (append_dest != '\0' && !backspace) {/* append digit */
 	        tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool,
 	            "%s%c", tech_pvt->caller_profile->destination_number, append_dest);
 	    }
+        if (strlen(tech_pvt->caller_profile->destination_number) == 0) {/* no digit yet */
+		    send_start_tone(listener, SKINNY_TONE_DIALTONE, 0, line_instance, tech_pvt->call_id);
+		    if(backspace) {
+				send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_OFF_HOOK, 0xffff);
+				/* TODO: How to clear the screen? */
+		    }
+		} else if (strlen(tech_pvt->caller_profile->destination_number) == 1) {/* first digit */
+	        send_stop_tone(listener, line_instance, tech_pvt->call_id);
+            send_select_soft_keys(listener, line_instance, tech_pvt->call_id,
+                SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT, 0xffff);
+        }
 	} else {
 	    tech_pvt->caller_profile->destination_number = switch_core_strdup(tech_pvt->caller_profile->pool,
 	        dest);
 	}
 	/* TODO Number is complete -> check against dialplan */
-	if((strlen(tech_pvt->caller_profile->destination_number) >= 4) || dest) {
+	if ((strlen(tech_pvt->caller_profile->destination_number) >= 4) || dest) {
 		struct skinny_session_process_dest_helper helper = {0};
 		send_dialed_number(listener, tech_pvt->caller_profile->destination_number, line_instance, tech_pvt->call_id);
 	    skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_PROCEED);
@@ -1892,17 +1899,18 @@ switch_status_t skinny_handle_soft_key_set_request(listener_t *listener, skinny_
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOOK].soft_key_template_index[0] = SOFTKEY_NEWCALL;
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOOK].soft_key_template_index[1] = SOFTKEY_REDIAL;
 	
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_OFF_HOOK].soft_key_template_index[0] = SOFTKEY_BACKSPACE;
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_OFF_HOOK].soft_key_template_index[1] = SOFTKEY_REDIAL;
+
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT].soft_key_template_index[0] = SOFTKEY_BACKSPACE;
 
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[0] = SOFTKEY_ENDCALL;
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[1] = SOFTKEY_HOLD;
 	
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[0] = SOFTKEY_ENDCALL;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[1] = SOFTKEY_ANSWER;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[0] = SOFTKEY_ANSWER;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[1] = SOFTKEY_ENDCALL;
 
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[0] = SOFTKEY_RESUME;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[1] = SOFTKEY_NEWCALL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[0] = SOFTKEY_NEWCALL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[1] = SOFTKEY_RESUME;
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[2] = SOFTKEY_ENDCALL;
 
 	skinny_send_reply(listener, message);
@@ -2042,7 +2050,6 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 		case SOFTKEY_NEWCALL:
 	        status = skinny_create_ingoing_session(listener, &line_instance, &session);
 		    tech_pvt = switch_core_session_get_private(session);
-		    assert(tech_pvt != NULL);
 
 		    skinny_session_process_dest(session, listener, line_instance, NULL, '\0', 0);
 			break;
@@ -2051,6 +2058,13 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 
 		    if(session) {
 	            status = skinny_session_hold_line(session, listener, line_instance);
+	        }
+			break;
+		case SOFTKEY_BACKSPACE:
+	        session = skinny_profile_find_session(listener->profile, listener, &line_instance, request->data.soft_key_event.call_id);
+
+		    if(session) {
+		    	skinny_session_process_dest(session, listener, line_instance, NULL, '\0', 1);
 	        }
 			break;
 		case SOFTKEY_ENDCALL:
@@ -2078,7 +2092,7 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 			break;
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-				"Unknown SoftKeyEvent type while busy: %d.\n", request->data.soft_key_event.event);
+				"Unknown SoftKeyEvent type: %d.\n", request->data.soft_key_event.event);
 	}
 
 	if(session) {
