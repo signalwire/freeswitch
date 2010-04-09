@@ -642,16 +642,7 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_OFF);
 		send_clear_prompt_status(listener, line_instance, call_id);
 		if(call_state == SKINNY_CONNECTED) { /* calling parties */
-			send_close_receive_channel(listener,
-				call_id, /* uint32_t conference_id, */
-				helper->tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
-				call_id /* uint32_t conference_id2, */
-			);
-			send_stop_media_transmission(listener,
-				call_id, /* uint32_t conference_id, */
-				helper->tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
-				call_id /* uint32_t conference_id2, */
-			);
+			skinny_session_stop_media(helper->tech_pvt->session, listener, line_instance);
 		}
 
 		skinny_line_set_state(listener, line_instance, call_id, SKINNY_ON_HOOK);

@@ -784,17 +784,66 @@ switch_status_t skinny_session_hold_line(switch_core_session_t *session, listene
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
-	/* TODO */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Hold is not implemented yet. Hanging up the line.\n");
+	skinny_session_stop_media(session, listener, line_instance);
+	switch_ivr_hold(session, NULL, 1);
 
-	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	send_define_current_time_date(listener);
+	send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_WINK);
+	skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_HOLD);
+	send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_ON_HOLD, 0xffff);
+	send_display_prompt_status(listener, 0, "\200\003",
+		line_instance, tech_pvt->call_id);
+	skinny_send_call_info(tech_pvt->session, listener, line_instance);
+	send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
+	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, tech_pvt->call_id);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t skinny_session_unhold_line(switch_core_session_t *session, listener_t *listener, uint32_t line_instance)
 {
-	/* TODO */
+	switch_channel_t *channel = NULL;
+	private_t *tech_pvt = NULL;
+
+	switch_assert(session);
+	switch_assert(listener);
+	switch_assert(listener->profile);
+	
+	channel = switch_core_session_get_channel(session);
+	tech_pvt = switch_core_session_get_private(session);
+
+	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, tech_pvt->call_id);
+	send_set_speaker_mode(listener, SKINNY_SPEAKER_ON);
+	send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_RING_OUT, 0xffff);
+	skinny_session_start_media(session, listener, line_instance);
+	switch_ivr_unhold(session);
+	send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t skinny_session_stop_media(switch_core_session_t *session, listener_t *listener, uint32_t line_instance)
+{
+	switch_channel_t *channel = NULL;
+	private_t *tech_pvt = NULL;
+
+	switch_assert(session);
+	switch_assert(listener);
+	switch_assert(listener->profile);
+	
+	channel = switch_core_session_get_channel(session);
+	tech_pvt = switch_core_session_get_private(session);
+
+	send_close_receive_channel(listener,
+		tech_pvt->call_id, /* uint32_t conference_id, */
+		tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
+		tech_pvt->call_id /* uint32_t conference_id2, */
+	);
+	send_stop_media_transmission(listener,
+		tech_pvt->call_id, /* uint32_t conference_id, */
+		tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
+		tech_pvt->call_id /* uint32_t conference_id2, */
+	);
+	 
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1840,10 +1889,21 @@ switch_status_t skinny_handle_soft_key_set_request(listener_t *listener, skinny_
 	message->data.soft_key_set.total_soft_key_set_count = 11;
 
 	/* TODO fill the set */
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOOK].soft_key_template_index[0] = SOFTKEY_REDIAL;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOOK].soft_key_template_index[1] = SOFTKEY_NEWCALL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOOK].soft_key_template_index[0] = SOFTKEY_NEWCALL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOOK].soft_key_template_index[1] = SOFTKEY_REDIAL;
+	
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_OFF_HOOK].soft_key_template_index[0] = SOFTKEY_BACKSPACE;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_OFF_HOOK].soft_key_template_index[1] = SOFTKEY_REDIAL;
+
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[0] = SOFTKEY_ENDCALL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[1] = SOFTKEY_HOLD;
+	
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[0] = SOFTKEY_ENDCALL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[1] = SOFTKEY_ANSWER;
+
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[0] = SOFTKEY_RESUME;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[1] = SOFTKEY_NEWCALL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[2] = SOFTKEY_ENDCALL;
 
 	skinny_send_reply(listener, message);
 

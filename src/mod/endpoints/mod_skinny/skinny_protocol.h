@@ -630,6 +630,7 @@ switch_status_t skinny_session_answer(switch_core_session_t *session, listener_t
 switch_status_t skinny_session_start_media(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
 switch_status_t skinny_session_hold_line(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
 switch_status_t skinny_session_unhold_line(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
+switch_status_t skinny_session_stop_media(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
 
 void skinny_line_get(listener_t *listener, uint32_t instance, struct line_stat_res_message **button);
 void skinny_speed_dial_get(listener_t *listener, uint32_t instance, struct speed_dial_stat_res_message **button);
