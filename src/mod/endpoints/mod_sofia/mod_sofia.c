@@ -242,7 +242,9 @@ char *generate_pai_str(switch_core_session_t *session)
 	}
 
 	if (zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_number"))) &&
-		zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number")))) {
+		zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number"))) &&
+		zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number")))) {
+		
 		callee_number = tech_pvt->caller_profile->destination_number;
 	}
 
