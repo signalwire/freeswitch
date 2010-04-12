@@ -298,6 +298,10 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 		switch_core_sprintf(pool, "[lcr_carrier=%s,lcr_rate=%s%s%s%s%s]%s%s%s%s%s", cur_route->carrier_name, cur_route->rate_str, user_rate, codec, cid,
 							header, cur_route->gw_prefix, cur_route->prefix, destination_number, cur_route->suffix, cur_route->gw_suffix);
 
+	if (session && (switch_string_var_check_const(data) || switch_string_has_escaped_data(data))) {
+		data = switch_channel_expand_variables(switch_core_session_get_channel(session), data);
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Returning Dialstring %s\n", data);
 	return data;
 }

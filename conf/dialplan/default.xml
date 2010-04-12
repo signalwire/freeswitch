@@ -117,7 +117,7 @@
     </extension>
 
     <extension name="redial">
-      <condition field="destination_number" expression="^870$">
+      <condition field="destination_number" expression="^(redial|870)$">
 	<action application="transfer" data="${hash(select/${domain_name}-last_dial/${caller_id_number})}"/>
       </condition>
     </extension>

@@ -3350,7 +3350,7 @@ SWITCH_STANDARD_API(show_function)
 		}
 	} else if (!strcasecmp(command, "distinct_channels")) {
 		sprintf(sql, "select * from channels left join calls on "
-				"channels.uuid=calls.caller_uuid where channels.hostname='%s' channels.uuid not in (select callee_uuid from calls where hostname='%s') order by created_epoch", hostname, hostname);
+				"channels.uuid=calls.caller_uuid where channels.hostname='%s' and channels.uuid not in (select callee_uuid from calls where hostname='%s') order by created_epoch", hostname, hostname);
 		if (argv[2] && !strcasecmp(argv[1], "as")) {
 			as = argv[2];
 		}

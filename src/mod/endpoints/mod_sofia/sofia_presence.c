@@ -77,6 +77,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	const char *ct = "text/html";
 	sofia_destination_t *dst = NULL;
+	char *to_uri = NULL;
 
 	if (!to) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To: header.\n");
@@ -98,9 +99,17 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 		user = prof;
 		prof = NULL;
 	}
+	
+	if (!strncasecmp(user, "sip:", 4)) {
+		to_uri = user;
+	}
 
 	if ((host = strchr(user, '@'))) {
-		*host++ = '\0';
+		if (!to_uri) {
+			*host++ = '\0';	
+		} else {
+			host++;
+		}
 		if (!prof)
 			prof = host;
 	}
@@ -118,7 +127,8 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 			host = prof;
 		}
 	}
-	if (!sofia_reg_find_reg_url(profile, user, host, buf, sizeof(buf))) {
+	
+	if (!to_uri && !sofia_reg_find_reg_url(profile, user, host, buf, sizeof(buf))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find user. [%s][%s]\n", user, host);
 		goto end;
 	}
@@ -152,7 +162,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 		switch_safe_free(fp);
 	}
 
-	if (!(dst = sofia_glue_get_destination(buf))) {
+	if (!(dst = sofia_glue_get_destination(to_uri ? to_uri : buf))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 		goto end;
 	}
@@ -162,7 +172,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	status = SWITCH_STATUS_SUCCESS;
 	/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
 	msg_nh = nua_handle(profile->nua, NULL, TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
-						SIPTAG_FROM_STR(from), NUTAG_URL(contact), SIPTAG_TO_STR(dst->to), SIPTAG_CONTACT_STR(profile->url), TAG_END());
+						SIPTAG_FROM_STR(from), TAG_IF(contact, NUTAG_URL(contact)), SIPTAG_TO_STR(dst->to), SIPTAG_CONTACT_STR(profile->url), TAG_END());
 	nua_handle_bind(msg_nh, &mod_sofia_globals.destroy_private);
 	nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(body), TAG_END());
 
