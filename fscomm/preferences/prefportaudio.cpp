@@ -15,6 +15,28 @@ PrefPortaudio::PrefPortaudio(Ui::PrefDialog *ui, QObject *parent) :
     connect(_ui->PaRingdevTestBtn, SIGNAL(clicked()), this, SLOT(ringdevTest()));
     connect(_ui->PaLoopTestBtn, SIGNAL(clicked()), this, SLOT(loopTest()));
     connect(_ui->PaRefreshDevListBtn, SIGNAL(clicked()), this, SLOT(refreshDevList()));
+    connect(_ui->btnApplyPreprocessor, SIGNAL(toggled(bool)), this, SLOT(applyPreprocessors(bool)));
+}
+
+void PrefPortaudio::applyPreprocessors(bool state)
+{
+    QStringList cmds;
+    if (!state)
+    {
+        cmds.append("stop");
+    }
+    else
+    {
+        if (_ui->checkAECRead->isChecked()) cmds.append(QString("recho_cancel=%1").arg(_ui->spinAECTail->value()));
+        if (_ui->checkAECWrite->isChecked()) cmds.append(QString("wecho_cancel=%1").arg(_ui->spinAECTail->value()));
+        if (_ui->checkESRead->isChecked()) cmds.append(QString("recho_suppress=%1").arg(_ui->spinESDb->value()));
+        if (_ui->checkESWrite->isChecked()) cmds.append(QString("wecho_suppress=%1").arg(_ui->spinESDb->value()));
+        if (_ui->checkNSRead->isChecked()) cmds.append(QString("rnoise_suppress=%1").arg(_ui->spinNSDb->value()));
+        if (_ui->checkNSWrite->isChecked()) cmds.append(QString("wnoise_suppress=%1").arg(_ui->spinNSDb->value()));
+        if (_ui->checkAGCRead->isChecked()) cmds.append(QString("ragc=%1").arg(_ui->spinAGC->value()));
+        if (_ui->checkAGCWrite->isChecked()) cmds.append(QString("wagc=%1").arg(_ui->spinAGC->value()));
+    }
+    emit preprocessorsApplied(cmds);
 }
 
 void PrefPortaudio::ringdevTest()

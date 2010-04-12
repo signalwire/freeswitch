@@ -314,7 +314,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_wait(ftdm_interrupt_t *interrupt, int m
 		num++;
 		ints[1] = interrupt->device;
 	}
-	res = WaitForMultipleObjects(num, &ints, FALSE, ms >= 0 ? ms : INFINITE);
+	res = WaitForMultipleObjects(num, ints, FALSE, ms >= 0 ? ms : INFINITE);
 	switch (res) {
 	case WAIT_TIMEOUT:
 		return FTDM_TIMEOUT;
@@ -366,7 +366,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_signal(ftdm_interrupt_t *interrupt)
 {
 	ftdm_assert_return(interrupt != NULL, FTDM_FAIL, "Interrupt is null!\n");
 #ifdef WIN32
-	if (!SetEvent(interrupt->interrupt)) {
+	if (!SetEvent(interrupt->event)) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to signal interrupt\n");
 		return FTDM_FAIL;
 	}
@@ -400,10 +400,42 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_destroy(ftdm_interrupt_t **ininterrupt)
 
 FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interrupts[], ftdm_size_t size, int ms)
 {
-#ifndef WIN32
-	int i;
-	int res = 0;
 	int numdevices = 0;
+	unsigned i;
+#if defined(__WINDOWS__)
+	DWORD res = 0;
+	HANDLE ints[20];
+	if (size > (ftdm_array_len(ints)/2)) {
+		/* improve if needed: dynamically allocate the list of interrupts *only* when exceeding the default size */
+		ftdm_log(FTDM_LOG_CRIT, "Unsupported size of interrupts: %d, implement me!\n", size);
+		return FTDM_FAIL;
+	}
+
+	for (i = 0; i < size; i++) {
+		ints[i] = interrupts[i]->event;
+		if (interrupts[i]->device != FTDM_INVALID_SOCKET) {
+			ints[i+numdevices] = interrupts[i]->device;
+			numdevices++;
+		}
+	}
+
+	res = WaitForMultipleObjects(size+numdevices, ints, FALSE, ms >= 0 ? ms : INFINITE);
+
+	switch (res) {
+	case WAIT_TIMEOUT:
+		return FTDM_TIMEOUT;
+	case WAIT_FAILED:
+	case WAIT_ABANDONED: /* is it right to fail with abandoned? */
+		return FTDM_FAIL;
+	default:
+		if (res >= (size+numdevices)) {
+			ftdm_log(FTDM_LOG_ERROR, "Error waiting for freetdm interrupt event (WaitForSingleObject returned %d)\n", res);
+			return FTDM_FAIL;
+		}
+		/* fall-through to FTDM_SUCCESS at the end of the function */
+	}
+#elif defined(__linux__)
+	int res = 0;
 	char pipebuf[255];
 	struct pollfd ints[size*2];
 
@@ -432,6 +464,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interru
 		return FTDM_TIMEOUT;
 	}
 
+	/* check for events in the pipes, NOT in the devices */
 	for (i = 0; i < size; i++) {
 		if (ints[i].revents & POLLIN) {
 			res = read(ints[i].fd, pipebuf, sizeof(pipebuf));
@@ -440,7 +473,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interru
 			}
 		}
 	}
-
+#else
 #endif
 	return FTDM_SUCCESS;
 }

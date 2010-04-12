@@ -61,6 +61,9 @@ struct ftdm_cpu_monitor_stats
 	double last_percentage_of_idle_time;
 
 #ifdef __linux__
+	/* the cpu feature gets disabled on errors */
+	int disabled;
+
 	/* all of these are the Linux jiffies last retrieved count */
 	unsigned long long last_user_time;
 	unsigned long long last_system_time;
@@ -97,15 +100,23 @@ static ftdm_status_t ftdm_cpu_read_stats(struct ftdm_cpu_monitor_stats *p,
 {
 // the output of proc should not change that often from one kernel to other
 // see fs/proc/proc_misc.c or fs/proc/stat.c in the Linux kernel for more details
-// also man 5 proc is useful
-#define CPU_ELEMENTS 8 // change this if you change the format string
-#define CPU_INFO_FORMAT "cpu  %Lu %Lu %Lu %Lu %Lu %Lu %Lu %Lu"
+// also man 5 proc is useful.
+#define CPU_ELEMENTS_1 7 // change this if you change the format string
+#define CPU_INFO_FORMAT_1 "cpu  %llu %llu %llu %llu %llu %llu %llu"
+
+#define CPU_ELEMENTS_2 8 // change this if you change the format string
+#define CPU_INFO_FORMAT_2 "cpu  %llu %llu %llu %llu %llu %llu %llu %llu"
+
+#define CPU_ELEMENTS_3 9 // change this if you change the format string
+#define CPU_INFO_FORMAT_3 "cpu  %llu %llu %llu %llu %llu %llu %llu %llu %llu"
+
 	static const char procfile[] = "/proc/stat";
 	int rc = 0;
 	int myerrno = 0;
 	int elements = 0;
 	const char *cpustr = NULL;
 	char statbuff[1024];
+	unsigned long long guest = 0;
 
 	if (!p->initd) {
 		p->procfd = open(procfile, O_RDONLY, 0);
@@ -131,12 +142,26 @@ static ftdm_status_t ftdm_cpu_read_stats(struct ftdm_cpu_monitor_stats *p,
 		return FTDM_FAIL;
 	}
 
-	elements = sscanf(cpustr, CPU_INFO_FORMAT, user, nice, system, idle, iowait, irq, softirq, steal);
-	if (elements != CPU_ELEMENTS) {
-		ftdm_log(FTDM_LOG_ERROR, "wrong format for Linux proc cpu statistics: expected %d elements, but just found %d\n", CPU_ELEMENTS, elements);
-		return FTDM_FAIL;
+	/* test each of the known formats starting from the bigger one */
+	elements = sscanf(cpustr, CPU_INFO_FORMAT_3, user, nice, system, idle, iowait, irq, softirq, steal, &guest);
+	if (elements == CPU_ELEMENTS_3) {
+		user += guest; /* guest operating system's run in user space */
+		return FTDM_SUCCESS;
 	}
-	return FTDM_SUCCESS;
+
+	elements = sscanf(cpustr, CPU_INFO_FORMAT_2, user, nice, system, idle, iowait, irq, softirq, steal);
+	if (elements == CPU_ELEMENTS_2) {
+		return FTDM_SUCCESS;
+	}
+
+	elements = sscanf(cpustr, CPU_INFO_FORMAT_1, user, nice, system, idle, iowait, irq, softirq);
+	if (elements == CPU_ELEMENTS_1) {
+		*steal = 0;
+		return FTDM_SUCCESS;
+	}
+
+	ftdm_log(FTDM_LOG_ERROR, "Unexpected format for Linux proc cpu statistics:%s\n", cpustr);
+	return FTDM_FAIL;
 }
 #endif
 
@@ -146,8 +171,13 @@ FT_DECLARE(ftdm_status_t) ftdm_cpu_get_system_idle_time (struct ftdm_cpu_monitor
 	unsigned long long user, nice, system, idle, iowait, irq, softirq, steal;
 	unsigned long long usertime, kerneltime, idletime, totaltime, halftime;
 
+	*idle_percentage = 100.0;
+	if (p->disabled) {
+		return FTDM_FAIL;
+	}
 	if (ftdm_cpu_read_stats(p, &user, &nice, &system, &idle, &iowait, &irq, &softirq, &steal)) {
-		ftdm_log(FTDM_LOG_ERROR, "Failed to retrieve Linux CPU statistics\n");
+		ftdm_log(FTDM_LOG_ERROR, "Failed to retrieve Linux CPU statistics - disabling cpu monitor\n");
+		p->disabled = 1;
 		return FTDM_FAIL;
 	}
 
@@ -201,28 +231,31 @@ FT_DECLARE(ftdm_status_t) ftdm_cpu_get_system_idle_time (struct ftdm_cpu_monitor
 	return FTDM_SUCCESS;
 }
 
-#elif defined (WIN32) || defined (WIN64)
+#elif defined (__WINDOWS__)
 FT_DECLARE(ftdm_status_t) ftdm_cpu_get_system_idle_time(struct ftdm_cpu_monitor_stats *p, double *idle_percentage)
 {
 	FILETIME idleTime;
 	FILETIME kernelTime;
 	FILETIME userTime;
+	int64_t i64UserTime;
+	int64_t i64KernelTime;
+	int64_t i64IdleTime;
   
-	if (!::GetSystemTimes(&idleTime, &kernelTime, &userTime)) {
-		return false;
+	if (!GetSystemTimes(&idleTime, &kernelTime, &userTime)) {
+		return FTDM_FAIL;
 	}
   
-	__int64 i64UserTime = (__int64)userTime.dwLowDateTime | ((__int64)userTime.dwHighDateTime << 32);
+	i64UserTime = (int64_t)userTime.dwLowDateTime | ((int64_t)userTime.dwHighDateTime << 32);
 
-	__int64 i64KernelTime = (__int64)kernelTime.dwLowDateTime | ((__int64)kernelTime.dwHighDateTime << 32);
+	i64KernelTime = (int64_t)kernelTime.dwLowDateTime | ((int64_t)kernelTime.dwHighDateTime << 32);
 
-	__int64 i64IdleTime = (__int64)idleTime.dwLowDateTime | ((__int64)idleTime.dwHighDateTime << 32);
+	i64IdleTime = (int64_t)idleTime.dwLowDateTime | ((int64_t)idleTime.dwHighDateTime << 32);
 
 	if (p->valid_last_times) {
-		__int64 i64User = i64UserTime - p->i64LastUserTime;
-		__int64 i64Kernel = i64KernelTime - p->i64LastKernelTime;
-		__int64 i64Idle = i64IdleTime - p->i64LastIdleTime;
-		__int64 i64System = i64User + i64Kernel;
+		int64_t i64User = i64UserTime - p->i64LastUserTime;
+		int64_t i64Kernel = i64KernelTime - p->i64LastKernelTime;
+		int64_t i64Idle = i64IdleTime - p->i64LastIdleTime;
+		int64_t i64System = i64User + i64Kernel;
 		*idle_percentage = 100.0 * i64Idle / i64System;
 	} else {
 		*idle_percentage = 100.0;
@@ -240,7 +273,8 @@ FT_DECLARE(ftdm_status_t) ftdm_cpu_get_system_idle_time(struct ftdm_cpu_monitor_
 #else
 /* Unsupported */
 FT_DECLARE(ftdm_status_t) ftdm_cpu_get_system_idle_time(struct ftdm_cpu_monitor_stats *p, double *idle_percentage)
-{
+{'
+	*idle_percentate = 100.0;
 	return FTDM_FAIL;
 }
 #endif

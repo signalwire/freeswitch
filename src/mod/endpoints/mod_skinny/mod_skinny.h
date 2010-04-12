@@ -189,7 +189,12 @@ switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stre
 switch_status_t skinny_profile_find_listener_by_device_name(skinny_profile_t *profile, const char *device_name, listener_t **listener);
 switch_status_t skinny_profile_find_listener_by_device_name_and_instance(skinny_profile_t *profile, const char *device_name, uint32_t device_instance, listener_t **listener);
 char * skinny_profile_find_session_uuid(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id);
+#ifdef SWITCH_DEBUG_RWLOCKS
+switch_core_session_t * skinny_profile_perform_find_session(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id, const char *file, const char *func, int line);
+#define skinny_profile_find_session(profile, listener, line_instance_p, call_id) skinny_profile_perform_find_session(profile, listener, line_instance_p, call_id, __FILE__, __SWITCH_FUNC__, __LINE__)
+#else
 switch_core_session_t * skinny_profile_find_session(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id);
+#endif
 switch_status_t dump_device(skinny_profile_t *profile, const char *device_name, switch_stream_handle_t *stream);
 
 /*****************************************************************************/

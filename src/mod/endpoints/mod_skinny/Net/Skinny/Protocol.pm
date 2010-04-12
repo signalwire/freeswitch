@@ -8,7 +8,6 @@ use strict;
 no strict "refs";
 use warnings;
 use Carp;
-use Data::Dumper;
 
 require Exporter;
 our @ISA = qw(Exporter);
@@ -69,7 +68,6 @@ sub _find {
                     printf "Unparsed line '%s' in %s\n", $_, $struct_name;
                 }
             }
-            #print "$name: ".Dumper($struct{$name});
         }
     }
     @sub{@_};
@@ -77,6 +75,7 @@ sub _find {
 
 sub skinny_message_type2str {
     my $message_type = shift;
+    return "UndefinedTypeMessage" if !defined($message_type);
     
     keys %const;
     while (my ($key, $value) = each %const) {

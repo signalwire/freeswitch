@@ -15,6 +15,7 @@ PrefDialog::PrefDialog(QWidget *parent) :
 
     _pref_accounts = new PrefAccounts(ui);
     _mod_portaudio = new PrefPortaudio(ui, this);
+    connect(_mod_portaudio, SIGNAL(preprocessorsApplied(QStringList)), this, SIGNAL(preprocessorsApplied(QStringList)));
     _mod_sofia = new PrefSofia(ui, this);
     readConfig();
 }
