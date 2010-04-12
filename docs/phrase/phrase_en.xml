@@ -55,7 +55,7 @@
       <prompt phrase="Romeo" filename="114.wav"/>
       <prompt phrase="Sierra" filename="115.wav"/>
       <prompt phrase="Tango" filename="116.wav"/>
-      <prompt phrase="Unifor" filename="117.wav"/>
+      <prompt phrase="Uniform" filename="117.wav"/>
       <prompt phrase="Victor" filename="118.wav"/>
       <prompt phrase="Whiskey" filename="119.wav"/>
       <prompt phrase="Xray" filename="120.wav"/>
@@ -285,7 +285,7 @@
       <prompt phrase="To do a fwd echo test" filename="ivr-to_do_a_fwd_echo_test.wav"/>
       <prompt phrase="To hear a sample IVR submenu" filename="ivr-to_hear_sample_submenu.wav"/>
       <prompt phrase="To hear screaming monkeys" filename="ivr-to_hear_screaming_monkeys.wav"/>
-      <prompt phrase="To list to music on hold" filename="ivr-to_listen_to_moh.wav"/>
+      <prompt phrase="To listen to music on hold" filename="ivr-to_listen_to_moh.wav"/>
       <prompt phrase="To repeat these options" filename="ivr-to_repeat_these_options.wav"/>
       <prompt phrase="To return to the previous menu" filename="ivr-to_return_to_previous_menu.wav"/>
       <prompt phrase="To speak with an operator" filename="ivr-to_speak_with_an_operator.wav"/>
