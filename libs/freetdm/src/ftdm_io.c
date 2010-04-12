@@ -3360,6 +3360,11 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span(const char *type, ftdm_span_t *spa
 	ftdm_module_t *mod = (ftdm_module_t *) hashtable_search(globals.module_hash, (void *)type);
 	ftdm_status_t status = FTDM_FAIL;
 
+	if (!span->chan_count) {
+		ftdm_log(FTDM_LOG_WARNING, "Cannot configure signaling on span with no channels\n");
+		return FTDM_FAIL;
+	}
+
 	if (!mod) {
 		ftdm_load_module_assume(type);
 		if ((mod = (ftdm_module_t *) hashtable_search(globals.module_hash, (void *)type))) {
@@ -3371,10 +3376,10 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span(const char *type, ftdm_span_t *spa
 		va_list ap;
 		va_start(ap, sig_cb);
 		status = mod->sig_configure(span, sig_cb, ap);
+		va_end(ap);
 		if (status == FTDM_SUCCESS && ftdm_test_flag(span, FTDM_SPAN_USE_CHAN_QUEUE)) {
 			status = ftdm_queue_create(&span->pendingchans, SPAN_PENDING_CHANS_QUEUE_SIZE);
 		}
-		va_end(ap);
 	} else {
 		ftdm_log(FTDM_LOG_ERROR, "can't find '%s'\n", type);
 		status = FTDM_FAIL;
@@ -3393,6 +3398,11 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(const char *type, ftdm_s
 	ftdm_assert_return(sig_cb != NULL, FTDM_FAIL, "No signaling callback");
 	ftdm_assert_return(parameters != NULL, FTDM_FAIL, "No parameters");
 
+	if (!span->chan_count) {
+		ftdm_log(FTDM_LOG_WARNING, "Cannot configure signaling on span with no channels\n");
+		return FTDM_FAIL;
+	}
+
 	if (!mod) {
 		ftdm_load_module_assume(type);
 		if ((mod = (ftdm_module_t *) hashtable_search(globals.module_hash, (void *)type))) {
@@ -3407,6 +3417,9 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(const char *type, ftdm_s
 
 	if (mod->configure_span_signaling) {
 		status = mod->configure_span_signaling(span, sig_cb, parameters);
+		if (status == FTDM_SUCCESS && ftdm_test_flag(span, FTDM_SPAN_USE_CHAN_QUEUE)) {
+			status = ftdm_queue_create(&span->pendingchans, SPAN_PENDING_CHANS_QUEUE_SIZE);
+		}
 	} else {
 		ftdm_log(FTDM_LOG_ERROR, "Module %s did not implement the signaling configuration method\n", type);
 	}
