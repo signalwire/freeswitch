@@ -407,9 +407,9 @@ OZ_DECLARE(zap_status_t) zap_interrupt_multiple_wait(zap_interrupt_t *interrupts
 		ints[i].revents = 0;
 		ints[i].fd = interrupts[i]->readfd;
 		if (interrupts[i]->device != ZAP_INVALID_SOCKET) {
-			ints[i+numdevices].events = POLLIN;
-			ints[i+numdevices].revents = 0;
-			ints[i+numdevices].fd = interrupts[i]->device;
+			ints[size+numdevices].events = POLLIN;
+			ints[size+numdevices].revents = 0;
+			ints[size+numdevices].fd = interrupts[i]->device;
 			numdevices++;
 		}
 	}
@@ -427,7 +427,7 @@ OZ_DECLARE(zap_status_t) zap_interrupt_multiple_wait(zap_interrupt_t *interrupts
 
 	for (i = 0; i < size; i++) {
 		if (ints[i].revents & POLLIN) {
-			res = read(ints[0].fd, pipebuf, sizeof(pipebuf));
+			res = read(ints[i].fd, pipebuf, sizeof(pipebuf));
 			if (res == -1) {
 				zap_log(ZAP_LOG_CRIT, "reading interrupt descriptor failed (%s)\n", strerror(errno));
 			}
