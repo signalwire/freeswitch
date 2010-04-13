@@ -831,7 +831,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 	char *c;
 	esl_ssize_t rrval;
 	int crc = 0;
-	esl_event_t *revent = NULL, *qevent = NULL;
+	esl_event_t *revent = NULL;
 	char *beg;
 	char *hname, *hval;
 	char *col;
@@ -856,19 +856,11 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 	esl_event_safe_destroy(&handle->last_ievent);
 	
 	if (check_q && handle->race_event) {
-		qevent = handle->race_event;
+		revent = handle->race_event;
 		handle->race_event = handle->race_event->next;
-		qevent->next = NULL;
+		revent->next = NULL;
 
-		if (save_event) {
-			*save_event = qevent;
-			qevent = NULL;
-		} else {
-			handle->last_event = qevent;
-		}
-		
-		esl_mutex_unlock(handle->mutex);
-		return ESL_SUCCESS;
+		goto parse_event;
 	}
 
 	memset(handle->header_buf, 0, sizeof(handle->header_buf));
@@ -929,7 +921,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 			c++;
 		}
 	}
-	
+
 	if (!revent) {
 		goto fail;
 	}
@@ -954,6 +946,8 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 		
 		revent->body = body;
 	}
+
+ parse_event:	
 
 	if (save_event) {
 		*save_event = revent;
