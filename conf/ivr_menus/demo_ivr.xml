@@ -56,7 +56,7 @@
       timeout ="15000"
       max-failures="3">
     <entry action="menu-exit" digits="*"/>
-    <entry action="menu-playback" digits="1" param="say:You pressed 1"/>
+    <entry action="menu-play-sound" digits="1" param="say:You pressed 1"/>
     <entry action="menu-exec-app" digits="2" param="transfert 1000 XML default"/>
     <entry action="menu-exec-app" digits="3" param="transfert 1001 XML default"/>
   </menu>
