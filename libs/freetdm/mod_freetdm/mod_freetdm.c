@@ -1439,10 +1439,10 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 				return FTDM_FAIL;
 			}
 			if (sigmsg->event_id == FTDM_SIGEVENT_ALARM_CLEAR) {
-				ftdm_log(FTDM_LOG_NOTICE, "Alarm cleared on channel %d:%d [%s]\n", sigmsg->channel->span_id, sigmsg->channel->chan_id);
+				ftdm_log(FTDM_LOG_NOTICE, "Alarm cleared on channel %d:%d\n", sigmsg->channel->span_id, sigmsg->channel->chan_id);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-clear");
 			} else {
-				ftdm_log(FTDM_LOG_NOTICE, "Alarm raised on channel %d:%d [%s]\n", sigmsg->channel->span_id, sigmsg->channel->chan_id);
+				ftdm_log(FTDM_LOG_NOTICE, "Alarm raised on channel %d:%d\n", sigmsg->channel->span_id, sigmsg->channel->chan_id);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-trap");
 			}
 		}
