@@ -364,7 +364,7 @@ FT_DECLARE_NONSTD(ftdm_status_t) ftdm_console_stream_raw_write(ftdm_stream_handl
 FT_DECLARE_NONSTD(ftdm_status_t) ftdm_console_stream_write(ftdm_stream_handle_t *handle, const char *fmt, ...);
 
 #define FTDM_CMD_CHUNK_LEN 1024
-#define FTDM_STANDARD_STREAM(s) memset(&s, 0, sizeof(s)); s.data = malloc(FTDM_CMD_CHUNK_LEN); \
+#define FTDM_STANDARD_STREAM(s) memset(&s, 0, sizeof(s)); s.data = ftdm_malloc(FTDM_CMD_CHUNK_LEN); \
 	assert(s.data);														\
 	memset(s.data, 0, FTDM_CMD_CHUNK_LEN);								\
 	s.end = s.data;														\
@@ -681,11 +681,13 @@ FT_DECLARE_DATA extern ftdm_crash_policy_t g_ftdm_crash_policy;
 
 typedef void *(*ftdm_malloc_func_t)(void *pool, ftdm_size_t len);
 typedef void *(*ftdm_calloc_func_t)(void *pool, ftdm_size_t elements, ftdm_size_t len);
+typedef void *(*ftdm_realloc_func_t)(void *pool, void *buff, ftdm_size_t len);
 typedef void (*ftdm_free_func_t)(void *pool, void *ptr);
 typedef struct ftdm_memory_handler {
 	void *pool;
 	ftdm_malloc_func_t malloc;
 	ftdm_calloc_func_t calloc;
+	ftdm_realloc_func_t realloc;
 	ftdm_free_func_t free;
 } ftdm_memory_handler_t;
 
@@ -872,6 +874,13 @@ FIO_CODEC_FUNCTION(fio_alaw2ulaw);
   \command chunksize the chunk size
 */
 #define ftdm_malloc(chunksize) g_ftdm_mem_handler.malloc(g_ftdm_mem_handler.pool, chunksize)
+
+/*!
+  \brief Reallocates memory
+  \command buff the buffer
+  \command chunksize the chunk size
+*/
+#define ftdm_realloc(buff, chunksize) g_ftdm_mem_handler.realloc(g_ftdm_mem_handler.pool, buff, chunksize)
 
 /*!
   \brief Allocate initialized memory

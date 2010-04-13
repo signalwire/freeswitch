@@ -1798,7 +1798,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_boost_api)
 			if (sigmod_iface) {
 				char *p = strchr(data, ' ');
 				if (++p) {
-					char* mydup = strdup(p);
+					char* mydup = ftdm_strdup(p);
 					if(sigmod_iface->exec_api == NULL) {
 						stream->write_function(stream, "%s does not support api functions\n", sigmod_iface->name);
 						goto done;
@@ -1807,7 +1807,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_boost_api)
 					if (sigmod_iface->exec_api(stream, mydup) != FTDM_SUCCESS) {
 						stream->write_function(stream, "-ERR:failed to execute command:%s\n", mydup);
 					}
-					free(mydup);
+					ftdm_safe_free(mydup);
 				}
 				
 				goto done;

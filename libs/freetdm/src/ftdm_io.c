@@ -223,6 +223,14 @@ static __inline__ void *ftdm_std_calloc(void *pool, ftdm_size_t elements, ftdm_s
 	return ptr;
 }
 
+static __inline__ void *ftdm_std_realloc(void *pool, void *buff, ftdm_size_t size)
+{
+	buff = realloc(buff, size);
+	pool = NULL;
+	ftdm_assert_return(buff != NULL, NULL, "Out of memory");
+	return buff;
+}
+
 static __inline__ void ftdm_std_free(void *pool, void *ptr)
 {
 	pool = NULL;
@@ -235,6 +243,7 @@ FT_DECLARE_DATA ftdm_memory_handler_t g_ftdm_mem_handler =
 	/*.pool =*/ NULL,
 	/*.malloc =*/ ftdm_std_malloc,
 	/*.calloc =*/ ftdm_std_calloc,
+	/*.realloc =*/ ftdm_std_realloc,
 	/*.free =*/ ftdm_std_free
 };
 
@@ -4081,7 +4090,7 @@ FT_DECLARE_NONSTD(ftdm_status_t) ftdm_console_stream_write(ftdm_stream_handle_t 
 			void *new_data;
 
 			new_len = handle->data_size + need + handle->alloc_chunk;
-			if ((new_data = realloc(handle->data, new_len))) {
+			if ((new_data = ftdm_realloc(handle->data, new_len))) {
 				handle->data_size = handle->alloc_len = new_len;
 				handle->data = new_data;
 				buf = handle->data;

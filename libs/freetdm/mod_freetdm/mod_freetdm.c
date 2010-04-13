@@ -3108,11 +3108,12 @@ SWITCH_STANDARD_API(ft_function)
 		}
 		stream->write_function(stream, "+OK gains set to Rx %f and Tx %f\n", rxgain, txgain);
 	} else {
+
 		char *rply = ftdm_api_execute(cmd, NULL);
 		
 		if (rply) {
 			stream->write_function(stream, "%s", rply);
-			free(rply);
+			ftdm_safe_free(rply);
 		} else {
 			stream->write_function(stream, "-ERR Usage: %s\n", FT_SYNTAX);
 		}
