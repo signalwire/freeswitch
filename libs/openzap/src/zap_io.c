@@ -1519,6 +1519,18 @@ OZ_DECLARE(zap_status_t) zap_channel_command(zap_channel_t *zchan, zap_command_t
 			GOTO_STATUS(done, ZAP_FAIL);
 		}
 		break;
+	case ZAP_COMMAND_TRACE_END_ALL:
+		{
+			if (zchan->fds[0] > 0) {
+				close(zchan->fds[0]);
+				zchan->fds[0] = -1;
+			}
+			if (zchan->fds[1] > 0) {
+				close(zchan->fds[1]);
+				zchan->fds[1] = -1;
+			}
+			GOTO_STATUS(done, ZAP_SUCCESS);
+		}
 	case ZAP_COMMAND_SET_INTERVAL:
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL)) {

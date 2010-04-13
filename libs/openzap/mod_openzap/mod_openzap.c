@@ -3122,6 +3122,69 @@ SWITCH_STANDARD_API(oz_function)
 			}
 		}
 		stream->write_function(stream, "+OK gains set to Rx %f and Tx %f\n", rxgain, txgain);
+	} else if (!strcasecmp(argv[0], "trace")) {
+		char tracepath[255];
+		int i = 0;
+		uint32_t chan_id = 0;
+		zap_span_t *span = NULL;
+		if (argc < 3) {
+			stream->write_function(stream, "-ERR Usage: oz trace <path> <span_id> [<chan_id>]\n");
+			goto end;
+		} 
+		zap_span_find_by_name(argv[2], &span);
+		if (!span) {
+			stream->write_function(stream, "-ERR invalid span\n");
+			goto end;
+		}
+		if (argc > 3) {
+			chan_id = atoi(argv[3]);
+			if (chan_id > span->chan_count) {
+				stream->write_function(stream, "-ERR invalid chan\n");
+				goto end;
+			}
+		}
+		if (chan_id) {
+			snprintf(tracepath, sizeof(tracepath), "%s-in-c%d", argv[1], chan_id);
+			zap_channel_command(span->channels[chan_id], ZAP_COMMAND_TRACE_INPUT, tracepath);
+			snprintf(tracepath, sizeof(tracepath), "%s-out-c%d", argv[1], chan_id);
+			zap_channel_command(span->channels[chan_id], ZAP_COMMAND_TRACE_OUTPUT, tracepath);
+		} else {
+			for (i = 1; i < (int)span->chan_count; i++) {
+				snprintf(tracepath, sizeof(tracepath), "%s-in-c%d", argv[1], i);
+				zap_channel_command(span->channels[i], ZAP_COMMAND_TRACE_INPUT, tracepath);
+				snprintf(tracepath, sizeof(tracepath), "%s-out-c%d", argv[1], i);
+				zap_channel_command(span->channels[i], ZAP_COMMAND_TRACE_OUTPUT, tracepath);
+			}
+		}
+		stream->write_function(stream, "+OK trace enabled with prefix path %s\n", argv[1]);
+	} else if (!strcasecmp(argv[0], "notrace")) {
+		uint32_t i = 0;
+		uint32_t chan_id = 0;
+		zap_span_t *span = NULL;
+		if (argc < 2) {
+			stream->write_function(stream, "-ERR Usage: oz notrace <span_id> [<chan_id>]\n");
+			goto end;
+		} 
+		zap_span_find_by_name(argv[1], &span);
+		if (!span) {
+			stream->write_function(stream, "-ERR invalid span\n");
+			goto end;
+		}
+		if (argc > 2) {
+			chan_id = atoi(argv[2]);
+			if (chan_id > span->chan_count) {
+				stream->write_function(stream, "-ERR invalid chan\n");
+				goto end;
+			}
+		}
+		if (chan_id) {
+			zap_channel_command(span->channels[chan_id], ZAP_COMMAND_TRACE_END_ALL, NULL);
+		} else {
+			for (i = 1; i < (int)span->chan_count; i++) {
+				zap_channel_command(span->channels[i], ZAP_COMMAND_TRACE_END_ALL, NULL);
+			}
+		}
+		stream->write_function(stream, "+OK trace disabled\n");
 	} else {
 		char *rply = zap_api_execute(cmd, NULL);
 		
