@@ -261,6 +261,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "hold");
+			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
 		}
 
