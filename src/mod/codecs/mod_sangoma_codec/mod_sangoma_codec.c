@@ -71,10 +71,10 @@ static switch_mutex_t *g_sessions_lock = NULL;
 unsigned long long g_next_session_id = 0;
 
 /* hash of sessions (I think a linked list suits better here, but FS does not have the data type) */
-switch_hash_t *g_sessions_hash = NULL;
+static switch_hash_t *g_sessions_hash = NULL;
 
 /* global memory pool provided by FS */
-switch_memory_pool_t *g_pool = NULL;
+static switch_memory_pool_t *g_pool = NULL;
 
 typedef struct vocallo_codec_s {
 	int codec_id; /* vocallo codec ID */
