@@ -1623,8 +1623,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_sig_status(ftdm_channel_t *ftdmchan, 
 	if (ftdmchan->span->get_channel_sig_status) {
 		return ftdmchan->span->get_channel_sig_status(ftdmchan, sigstatus);
 	} else {
-		ftdm_log(FTDM_LOG_ERROR, "get_channel_sig_status method not implemented!\n");
-		return FTDM_FAIL;
+		/* don't log error here, it can be called just to test if its supported */
+		return FTDM_NOTIMPL;
 	}
 }
 

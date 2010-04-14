@@ -2198,11 +2198,15 @@ static switch_status_t load_config(void)
 	if ((spans = switch_xml_child(cfg, "ss7_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
 			ftdm_status_t zstatus = FTDM_FAIL;
+			const char *context = "default";
+			const char *dialplan = "XML";
+			ftdm_conf_parameter_t spanparameters[30];
 			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
 			char *configname = (char *) switch_xml_attr(myspan, "config");
 			ftdm_span_t *span = NULL;
 			uint32_t span_id = 0;
+			unsigned paramindex = 0;
 			if (!name && !id) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ss7 span missing required attribute 'id' or 'name', skipping ...\n");
 				continue;
@@ -2239,14 +2243,38 @@ static switch_status_t load_config(void)
 				continue;
 			}
 
-			if (0) {
-				if (ftdm_configure_span("ss7", span, on_ss7_signal,
-									   "confnode", ss7confnode,
-									   TAG_END) != FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_ERROR, "Error configuring ss7 FreeTDM span %d\n", span_id);
-					continue;
+			memset(spanparameters, 0, sizeof(spanparameters));
+			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+
+				if (sizeof(spanparameters)/sizeof(spanparameters[0]) == paramindex) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too many parameters for ss7 span, ignoring any parameter after %s\n", var);
+					break;
+				}
+
+				if (!strcasecmp(var, "context")) {
+					context = val;
+				} else if (!strcasecmp(var, "dialplan")) {
+					dialplan = val;
+				} else {
+					spanparameters[paramindex].var = var;
+					spanparameters[paramindex].val = val;
+					paramindex++;
 				}
 			}
+
+			if (ftdm_configure_span("ss7", span, on_ss7_signal,
+								   "confnode", ss7confnode,
+								   "parameters", spanparameters,
+								   TAG_END) != FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "Error configuring ss7 FreeTDM span %d\n", span_id);
+				continue;
+			}
+			SPAN_CONFIG[span->span_id].span = span;
+			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
+			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
+			switch_copy_string(SPAN_CONFIG[span->span_id].type, "Sangoma (SS7)", sizeof(SPAN_CONFIG[span->span_id].type));
 			ftdm_log(FTDM_LOG_DEBUG, "Configured ss7 FreeTDM span %d with config node %s\n", span_id, configname);
 		}
 	}
@@ -2701,7 +2729,6 @@ static switch_status_t load_config(void)
 			const char *dialplan = "XML";
 			uint32_t span_id = 0;
 			ftdm_span_t *span = NULL;
-			const char *tonegroup = NULL;
 			ftdm_conf_parameter_t spanparameters[30];
 			unsigned paramindex = 0;
 			
@@ -2723,9 +2750,8 @@ static switch_status_t load_config(void)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too many parameters for boost span, ignoring any parameter after %s\n", var);
 					break;
 				}
-				if (!strcasecmp(var, "tonegroup")) {
-					tonegroup = val;
-				} else if (!strcasecmp(var, "context")) {
+
+				if (!strcasecmp(var, "context")) {
 					context = val;
 				} else if (!strcasecmp(var, "dialplan")) {
 					dialplan = val;
@@ -2736,10 +2762,6 @@ static switch_status_t load_config(void)
 				}
 			}
 
-			if (!tonegroup) {
-				tonegroup = "us";
-			}
-			
 			if (name) {
 				zstatus = ftdm_span_find_by_name(name, &span);
 			} else {
