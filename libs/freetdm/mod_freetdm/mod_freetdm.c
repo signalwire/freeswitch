@@ -3391,6 +3391,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_freetdm_shutdown)
 {
+	switch_hash_index_t *hi;		
+
+	const void *var;
+	void *val;
+
+	/* destroy ss7 configs */
+	for (hi = switch_hash_first(NULL, globals.ss7_configs); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);	
+		ftdm_conf_node_destroy(val);
+	}
+
 	ftdm_global_destroy();
 
 	// this breaks pika but they are MIA so *shrug*
