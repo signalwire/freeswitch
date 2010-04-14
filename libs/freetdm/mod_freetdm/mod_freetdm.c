@@ -91,6 +91,7 @@ static struct {
 	char hold_music[256];
 	switch_mutex_t *mutex;
 	analog_option_t analog_options;
+	switch_hash_t *ss7_configs;
 } globals;
 
 struct private_object {
@@ -1961,6 +1962,15 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 }
 
 
+static FIO_SIGNAL_CB_FUNCTION(on_ss7_signal)
+{
+	if (on_common_signal(sigmsg) == FTDM_BREAK) {
+		return FTDM_SUCCESS;
+	}
+	ftdm_log(FTDM_LOG_DEBUG, "got ss7 sig %d:%d [%s]\n", sigmsg->channel->span_id, sigmsg->channel->chan_id, ftdm_signal_event2str(sigmsg->event_id));
+	return FTDM_SUCCESS;
+}
+
 static FIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -2022,10 +2032,16 @@ static uint32_t enable_analog_option(const char *str, uint32_t current_options)
 	
 }
 
+static ftdm_conf_node_t *get_ss7_config_node(switch_xml_t cfg, const char *confname)
+{
+	return NULL;
+}
+
 static switch_status_t load_config(void)
 {
 	const char *cf = "freetdm.conf";
 	switch_xml_t cfg, xml, settings, param, spans, myspan;
+	ftdm_conf_node_t *ss7confnode = NULL;
 	ftdm_span_t *boost_spans[FTDM_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN];
 	ftdm_span_t *boost_span = NULL;
 	unsigned boosti = 0;
@@ -2051,6 +2067,53 @@ static switch_status_t load_config(void)
 			} else if (!strcasecmp(var, "enable-analog-option")) {
 				globals.analog_options = enable_analog_option(val, globals.analog_options);
 			}
+		}
+	}
+
+	switch_core_hash_init(&globals.ss7_configs, module_pool);
+	if ((spans = switch_xml_child(cfg, "ss7_spans"))) {
+		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
+			ftdm_status_t zstatus = FTDM_FAIL;
+			char *id = (char *) switch_xml_attr(myspan, "id");
+			char *name = (char *) switch_xml_attr(myspan, "name");
+			char *configname = (char *) switch_xml_attr(myspan, "config");
+			ftdm_span_t *span = NULL;
+			uint32_t span_id = 0;
+			if (!name || !configname || !id) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ss7 span missing required param 'id' or 'name' or 'config', skipping ...\n");
+				continue;
+			}
+			if (name) {
+				zstatus = ftdm_span_find_by_name(name, &span);
+			} else {
+				if (switch_is_number(id)) {
+					span_id = atoi(id);
+					zstatus = ftdm_span_find(span_id, &span);
+				}
+
+				if (zstatus != FTDM_SUCCESS) {
+					zstatus = ftdm_span_find_by_name(id, &span);
+				}
+			}
+
+			if (zstatus != FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				continue;
+			}
+			
+			if (!span_id) {
+				span_id = span->span_id;
+			}
+
+			ss7confnode = get_ss7_config_node(cfg, configname);
+
+			if (ftdm_configure_span("ss7", span, on_ss7_signal, 
+								   "confnode", ss7confnode,
+								   TAG_END) != FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "Error configuring ss7 FreeTDM span %d\n", span_id);
+				continue;
+			}
+			ftdm_log(FTDM_LOG_DEBUG, "Configured ss7 FreeTDM span %d with config node %s\n", span_id, configname);
 		}
 	}
 
