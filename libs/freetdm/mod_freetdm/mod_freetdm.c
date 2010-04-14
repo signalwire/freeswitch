@@ -2032,9 +2032,133 @@ static uint32_t enable_analog_option(const char *str, uint32_t current_options)
 	
 }
 
+/* create ftdm_conf_node_t tree based on a fixed pattern XML configuration list 
+ * last 2 args are for limited aka dumb recursivity
+ * */
+static int add_config_list_nodes(switch_xml_t swnode, ftdm_conf_node_t *rootnode, 
+		const char *list_name, const char *list_element_name, 
+		const char *sub_list_name, const char *sub_list_element_name)
+{
+	char *var, *val;
+	switch_xml_t list;
+	switch_xml_t element;
+	switch_xml_t param;
+
+	ftdm_conf_node_t *n_list;
+	ftdm_conf_node_t *n_element;
+
+	list = switch_xml_child(swnode, list_name);
+	if (!list) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no list %s found\n", list_name);
+		return -1;
+	}
+
+	if ((FTDM_SUCCESS != ftdm_conf_node_create(list_name, &n_list, rootnode))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to create %s node\n", list_name);
+		return -1;
+	}
+
+	for (element = switch_xml_child(list, list_element_name); element; element = element->next) {
+		char *element_name = (char *) switch_xml_attr(element, "name");
+
+		if (!element_name) {
+			continue;
+		}
+
+		if ((FTDM_SUCCESS != ftdm_conf_node_create(list_element_name, &n_element, n_list))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to create %s node for %s\n", list_element_name, element_name);
+			return -1;
+		}
+		ftdm_conf_node_add_param(n_element, "name", element_name);
+
+		for (param = switch_xml_child(element, "param"); param; param = param->next) {
+			var = (char *) switch_xml_attr_soft(param, "name");
+			val = (char *) switch_xml_attr_soft(param, "value");
+			ftdm_conf_node_add_param(n_element, var, val);
+		}
+
+		if (sub_list_name && sub_list_element_name) {
+			if (add_config_list_nodes(element, n_element, sub_list_name, sub_list_element_name, NULL, NULL)) {
+				return -1;
+			}
+		}
+	}
+
+	return 0;
+}
+
 static ftdm_conf_node_t *get_ss7_config_node(switch_xml_t cfg, const char *confname)
 {
-	return NULL;
+	switch_xml_t signode, ss7configs, isup;
+	ftdm_conf_node_t *rootnode;
+
+	/* try to find the conf in the hash first */
+	rootnode = switch_core_hash_find(globals.ss7_configs, confname);
+	if (rootnode) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ss7 config %s was found in the hash already\n", confname);
+		return rootnode;
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "not found %s config in hash, searching in xml ...\n", confname);
+
+	signode = switch_xml_child(cfg, "signaling_configs");
+	if (!signode) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "not found 'signaling_configs' XML config section\n");
+		return NULL;
+	}
+
+	ss7configs = switch_xml_child(signode, "sngss7_configs");
+	if (!ss7configs) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "not found 'sngss7_configs' XML config section\n");
+		return NULL;
+	}
+
+	/* search the isup config */
+	for (isup = switch_xml_child(ss7configs, "sng_isup"); isup; isup = isup->next) {
+		char *name = (char *) switch_xml_attr(isup, "name");
+		if (!name) {
+			continue;
+		}
+		if (!strcasecmp(name, confname)) {
+			break;
+		}
+	}
+
+	if (!isup) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "not found '%s' sng_isup XML config section\n", confname);
+		return NULL;
+	}
+
+	/* found our XML chunk, create the root node */
+	if ((FTDM_SUCCESS != ftdm_conf_node_create("sng_isup", &rootnode, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to create root node for sng_isup config %s\n", confname);
+		return NULL;
+	}
+
+	/* add mtp linksets */
+	if (add_config_list_nodes(isup, rootnode, "mtp_linksets", "mtp_linkset", "mtp_links", "mtp_link")) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp_linksets for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	/* add mtp routes */
+	if (add_config_list_nodes(isup, rootnode, "mtp_routes", "mtp_route", NULL, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp_routes for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	/* add isup interfaces */
+	if (add_config_list_nodes(isup, rootnode, "isup_interfaces", "isup_interface", NULL, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process isup_interfaces for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	switch_core_hash_insert(globals.ss7_configs, confname, rootnode);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Added SS7 node configuration %s\n", confname);
+	return rootnode;
 }
 
 static switch_status_t load_config(void)
@@ -2079,8 +2203,12 @@ static switch_status_t load_config(void)
 			char *configname = (char *) switch_xml_attr(myspan, "config");
 			ftdm_span_t *span = NULL;
 			uint32_t span_id = 0;
-			if (!name || !configname || !id) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ss7 span missing required param 'id' or 'name' or 'config', skipping ...\n");
+			if (!name && !id) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ss7 span missing required attribute 'id' or 'name', skipping ...\n");
+				continue;
+			}
+			if (!configname) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ss7 span missing required attribute, skipping ...\n");
 				continue;
 			}
 			if (name) {
@@ -2106,12 +2234,18 @@ static switch_status_t load_config(void)
 			}
 
 			ss7confnode = get_ss7_config_node(cfg, configname);
-
-			if (ftdm_configure_span("ss7", span, on_ss7_signal, 
-								   "confnode", ss7confnode,
-								   TAG_END) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error configuring ss7 FreeTDM span %d\n", span_id);
+			if (!ss7confnode) {
+				ftdm_log(FTDM_LOG_ERROR, "Error finding ss7config '%s' for FreeTDM span id: %s\n", configname, switch_str_nil(id));
 				continue;
+			}
+
+			if (0) {
+				if (ftdm_configure_span("ss7", span, on_ss7_signal,
+									   "confnode", ss7confnode,
+									   TAG_END) != FTDM_SUCCESS) {
+					ftdm_log(FTDM_LOG_ERROR, "Error configuring ss7 FreeTDM span %d\n", span_id);
+					continue;
+				}
 			}
 			ftdm_log(FTDM_LOG_DEBUG, "Configured ss7 FreeTDM span %d with config node %s\n", span_id, configname);
 		}

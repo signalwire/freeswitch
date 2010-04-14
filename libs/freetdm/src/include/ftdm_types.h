@@ -572,12 +572,28 @@ typedef ftdm_status_t (*fio_api_t) FIO_API_ARGS ;
 
 #include "ftdm_dso.h"
 
+#define FTDM_NODE_NAME_SIZE 50
 typedef struct ftdm_conf_node_s {
-	char name[255];
-	ftdm_conf_parameter_t attr[10];
-	ftdm_conf_parameter_t settings[100];
-	struct ftdm_conf_node_t *childs;
-	struct ftdm_config_node_s *next;
+	/* node name */
+	char name[FTDM_NODE_NAME_SIZE];
+
+	/* total slots for parameters */
+	unsigned int t_parameters;
+
+	/* current number of parameters */
+	unsigned int n_parameters;
+
+	/* array of parameters */
+	ftdm_conf_parameter_t *parameters;
+
+	/* first node child */
+	struct ftdm_conf_node_s *child;
+
+	/* next node sibling */
+	struct ftdm_conf_node_s *next;
+
+	/* my parent if any */
+	struct ftdm_conf_node_s *parent;
 } ftdm_conf_node_t;
 
 typedef struct {
