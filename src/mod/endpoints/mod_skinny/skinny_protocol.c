@@ -608,21 +608,24 @@ switch_status_t skinny_session_process_dest(switch_core_session_t *session, list
 	tech_pvt = switch_core_session_get_private(session);
 
 	if (!dest) {
+        if (strlen(tech_pvt->caller_profile->destination_number) == 0) {/* no digit yet */
+		    send_start_tone(listener, SKINNY_TONE_DIALTONE, 0, line_instance, tech_pvt->call_id);
+		}
 		if (backspace) { /* backspace */
-			*tech_pvt->caller_profile->destination_number++ = '\0';
+			tech_pvt->caller_profile->destination_number[strlen(tech_pvt->caller_profile->destination_number)-1] = '\0';
+			if (strlen(tech_pvt->caller_profile->destination_number) == 0) {
+				send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_OFF_HOOK, 0xffff);
+			}
 			send_back_space_request(listener, line_instance, tech_pvt->call_id);
 		}
-	    if (append_dest != '\0' && !backspace) {/* append digit */
+	    if (append_dest != '\0') {/* append digit */
 	        tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool,
 	            "%s%c", tech_pvt->caller_profile->destination_number, append_dest);
 	    }
-        if (strlen(tech_pvt->caller_profile->destination_number) == 0) {/* no digit yet */
-		    send_start_tone(listener, SKINNY_TONE_DIALTONE, 0, line_instance, tech_pvt->call_id);
-		    if(backspace) {
-				send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_OFF_HOOK, 0xffff);
-		    }
-		} else if (strlen(tech_pvt->caller_profile->destination_number) == 1) {/* first digit */
-	        send_stop_tone(listener, line_instance, tech_pvt->call_id);
+		if (strlen(tech_pvt->caller_profile->destination_number) == 1) {/* first digit */
+			if(!backspace) {
+	        	send_stop_tone(listener, line_instance, tech_pvt->call_id);
+	        }
             send_select_soft_keys(listener, line_instance, tech_pvt->call_id,
                 SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT, 0xffff);
         }
