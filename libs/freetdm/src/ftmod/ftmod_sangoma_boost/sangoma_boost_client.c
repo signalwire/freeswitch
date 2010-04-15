@@ -77,7 +77,7 @@ static void sangomabc_print_event_call(sangomabc_connection_t *mcon, sangomabc_e
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
 
-	ftdm_log(file, func, line, FTDM_LOG_LEVEL_DEBUG, "%s EVENT (%s): %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s] Rdnis=[%s]\n",
+	ftdm_log(file, func, line, FTDM_LOG_LEVEL_WARNING, "%s EVENT (%s): %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s] Rdnis=[%s]\n",
 		    dir ? "TX":"RX",
 			priority ? "P":"N",
 			sangomabc_event_id_name(event->event_id),
@@ -96,7 +96,7 @@ static void sangomabc_print_event_short(sangomabc_connection_t *mcon, sangomabc_
 {
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
-	ftdm_log(file, func, line, FTDM_LOG_LEVEL_DEBUG, "%s EVENT (%s): %s:(%X) [s%dc%d] Rc=%i CSid=%i Seq=%i \n",
+	ftdm_log(file, func, line, FTDM_LOG_LEVEL_WARNING, "%s EVENT (%s): %s:(%X) [s%dc%d] Rc=%i CSid=%i Seq=%i \n",
 			   dir ? "TX":"RX", 
 			   priority ? "P":"N",
                            sangomabc_event_id_name(event->event_id), 
