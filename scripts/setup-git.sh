@@ -47,11 +47,21 @@ cat 1>&2 <<EOF
     This does NOT rewrite history on the remote FS repo, but it does
     change the commit hashes in your local tree.
 
+    By default, 'git pull' is equivalent to running:
+
+      git fetch && git merge origin/master
+
+    What we've done here is change things such that 'git pull' is now
+    equivalent to:
+
+      git fetch && git rebase origin/master
+
     If you really want to merge rather than rebasing, run:
 
       git merge <commit>
 
-    See 'man git-config' for more information.
+    See 'man git-config' for more information.  Also see the man pages
+    for git-pull, git-fetch, git-merge, and git-rebase.
 EOF
 
 [ -n "$name" ] \
