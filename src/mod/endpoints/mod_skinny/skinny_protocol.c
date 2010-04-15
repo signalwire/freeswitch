@@ -606,6 +606,7 @@ switch_status_t skinny_session_process_dest(switch_core_session_t *session, list
 	if (!dest) {
 		if (backspace) { /* backspace */
 			*tech_pvt->caller_profile->destination_number++ = '\0';
+			send_back_space_request(listener, line_instance, tech_pvt->call_id);
 		}
 	    if (append_dest != '\0' && !backspace) {/* append digit */
 	        tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool,
@@ -615,7 +616,6 @@ switch_status_t skinny_session_process_dest(switch_core_session_t *session, list
 		    send_start_tone(listener, SKINNY_TONE_DIALTONE, 0, line_instance, tech_pvt->call_id);
 		    if(backspace) {
 				send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_OFF_HOOK, 0xffff);
-				/* TODO: How to clear the screen? */
 		    }
 		} else if (strlen(tech_pvt->caller_profile->destination_number) == 1) {/* first digit */
 	        send_stop_tone(listener, line_instance, tech_pvt->call_id);
@@ -1474,6 +1474,20 @@ switch_status_t send_activate_call_plane(listener_t *listener,
 	message->length = 4 + sizeof(message->data.activate_call_plane);
 	message->data.activate_call_plane.line_instance = line_instance;
 	return skinny_send_reply(listener, message);
+}
+
+switch_status_t send_back_space_request(listener_t *listener,
+    uint32_t line_instance,
+    uint32_t call_id)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.back_space_req));
+	message->type = BACK_SPACE_REQ_MESSAGE;
+	message->length = 4 + sizeof(message->data.back_space_req);
+	message->data.back_space_req.line_instance = line_instance;
+	message->data.back_space_req.call_id = call_id;
+	return skinny_send_reply(listener, message);
+
 }
 
 switch_status_t send_dialed_number(listener_t *listener,

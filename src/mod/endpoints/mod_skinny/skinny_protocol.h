@@ -457,6 +457,13 @@ struct unregister_ack_message {
     uint32_t unregister_status;
 };
 
+/* BackSpaceReqMessage */
+#define BACK_SPACE_REQ_MESSAGE 0x0119
+struct back_space_req_message {
+    uint32_t line_instance;
+    uint32_t call_id;
+};
+
 /* DialedNumberMessage */
 #define DIALED_NUMBER_MESSAGE 0x011D
 struct dialed_number_message {
@@ -540,6 +547,7 @@ union skinny_data {
     struct clear_prompt_status_message clear_prompt_status;
     struct activate_call_plane_message activate_call_plane;
     struct unregister_ack_message unregister_ack;
+    struct back_space_req_message back_space_req;
     struct dialed_number_message dialed_number;
     struct feature_stat_res_message feature_res;
     struct display_pri_notify_message display_pri_notify;
@@ -748,6 +756,9 @@ switch_status_t send_clear_prompt_status(listener_t *listener,
     uint32_t call_id);
 switch_status_t send_activate_call_plane(listener_t *listener,
     uint32_t line_instance);
+switch_status_t send_back_space_request(listener_t *listener,
+    uint32_t line_instance,
+    uint32_t call_id);
 switch_status_t send_dialed_number(listener_t *listener,
     char called_party[24],
     uint32_t line_instance,

@@ -86,6 +86,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
     {"ClearPromptStatusMessage", CLEAR_PROMPT_STATUS_MESSAGE},
     {"ActivateCallPlaneMessage", ACTIVATE_CALL_PLANE_MESSAGE},
     {"UnregisterAckMessage", UNREGISTER_ACK_MESSAGE},
+    {"BackSpaceReqMessage", BACK_SPACE_REQ_MESSAGE},
     {"DialedNumberMessage", DIALED_NUMBER_MESSAGE},
     {"FeatureResMessage", FEATURE_STAT_RES_MESSAGE},
     {"DisplayPriNotifyMessage", DISPLAY_PRI_NOTIFY_MESSAGE},
