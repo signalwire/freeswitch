@@ -584,8 +584,12 @@ int skinny_session_process_dest_callback(void *pArg, int argc, char **argv, char
 	            && (line_instance == helper->line_instance)) {/* the calling line */
 	       	/* nothing */
 	    } else {
-	    	/* TODO: capture and check what should happen here*/
-	        skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_IN_USE_REMOTELY);
+			send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
+			skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_IN_USE_REMOTELY);
+			send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, 10, 0xffff);
+			send_display_prompt_status(listener, 0, "\200\037",
+				line_instance, tech_pvt->call_id);
+			skinny_send_call_info(session, listener, line_instance);
 	    }
 	}
 	return 0;
