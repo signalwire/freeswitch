@@ -29,6 +29,10 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
  */
 
 #include "freetdm.h"
@@ -237,6 +241,82 @@ FT_DECLARE (int) ftdm_config_get_cas_bits(char *strvalue, unsigned char *outbits
 		bit >>= 1;
 	}
 	return 0;
+}
+
+#define PARAMETERS_CHUNK_SIZE 20
+FT_DECLARE(ftdm_status_t) ftdm_conf_node_create(const char *name, ftdm_conf_node_t **node, ftdm_conf_node_t *parent)
+{
+	ftdm_conf_node_t *newnode;
+	ftdm_conf_node_t *sibling = NULL;
+
+	ftdm_assert_return(name != NULL, FTDM_FAIL, "null node name");
+
+	newnode = ftdm_calloc(1, sizeof(**node));
+	if (!newnode) {
+		return FTDM_MEMERR;
+	}
+
+	strncpy(newnode->name, name, sizeof(newnode->name)-1);	
+	newnode->name[sizeof(newnode->name)-1] = 0;
+
+	newnode->parameters = ftdm_calloc(PARAMETERS_CHUNK_SIZE, sizeof(*newnode->parameters));
+	if (!newnode->parameters) {
+		ftdm_safe_free(newnode);
+		return FTDM_MEMERR;
+	}
+	newnode->t_parameters = PARAMETERS_CHUNK_SIZE;
+
+	if (parent) {
+		/* store who my parent is */
+		newnode->parent = parent;
+		/* save any siblings */
+		sibling = parent->child;
+		/* as a newborn I am first */
+		parent->child = newnode;
+		if (sibling) {
+			/* store a pointer to my next sibling */
+			newnode->next = sibling;
+		}
+	}
+
+	*node = newnode;
+
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_conf_node_add_param(ftdm_conf_node_t *node, const char *param, const char *val)
+{
+	void *newparameters;
+
+	ftdm_assert_return(param != NULL, FTDM_FAIL, "param is null");
+	ftdm_assert_return(val != NULL, FTDM_FAIL, "val is null");
+
+	if (node->n_parameters == node->t_parameters) {
+		newparameters = ftdm_realloc(node->parameters, (node->t_parameters + PARAMETERS_CHUNK_SIZE) * sizeof(*node->parameters));
+		if (!newparameters) {
+			return FTDM_MEMERR;
+		}
+		node->parameters = newparameters;
+		node->t_parameters = node->n_parameters + PARAMETERS_CHUNK_SIZE;
+	}
+	node->parameters[node->n_parameters].var = param;
+	node->parameters[node->n_parameters].val = val;
+	node->n_parameters++;
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_conf_node_destroy(ftdm_conf_node_t *node)
+{
+	ftdm_conf_node_t *curr = NULL;
+	ftdm_conf_node_t *child = node->child;
+	while (child) {
+		curr = child;
+		child = curr->next;
+		ftdm_conf_node_destroy(curr);
+	}
+	ftdm_free(node->parameters);
+	ftdm_free(node);
+	return FTDM_SUCCESS;
 }
 
 /* For Emacs:

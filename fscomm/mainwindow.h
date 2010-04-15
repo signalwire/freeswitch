@@ -77,6 +77,7 @@ private slots:
     void callFailed(QSharedPointer<Call>);
     void recordCall(bool);
     void holdCall(bool);
+    /*void transferCall();*/
     void setDefaultAccount();
     void accountAdd(QSharedPointer<Account>);
     void accountDel(QSharedPointer<Account>);

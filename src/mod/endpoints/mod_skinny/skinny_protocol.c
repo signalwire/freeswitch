@@ -584,8 +584,12 @@ int skinny_session_process_dest_callback(void *pArg, int argc, char **argv, char
 	            && (line_instance == helper->line_instance)) {/* the calling line */
 	       	/* nothing */
 	    } else {
-	    	/* TODO: capture and check what should happen here*/
-	        skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_IN_USE_REMOTELY);
+			send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
+			skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_IN_USE_REMOTELY);
+			send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, 10, 0xffff);
+			send_display_prompt_status(listener, 0, "\200\037",
+				line_instance, helper->tech_pvt->call_id);
+			skinny_send_call_info(helper->tech_pvt->session, listener, line_instance);
 	    }
 	}
 	return 0;
@@ -604,21 +608,24 @@ switch_status_t skinny_session_process_dest(switch_core_session_t *session, list
 	tech_pvt = switch_core_session_get_private(session);
 
 	if (!dest) {
-		if (backspace) { /* backspace */
-			*tech_pvt->caller_profile->destination_number++ = '\0';
+        if (strlen(tech_pvt->caller_profile->destination_number) == 0) {/* no digit yet */
+		    send_start_tone(listener, SKINNY_TONE_DIALTONE, 0, line_instance, tech_pvt->call_id);
 		}
-	    if (append_dest != '\0' && !backspace) {/* append digit */
+		if (backspace) { /* backspace */
+			tech_pvt->caller_profile->destination_number[strlen(tech_pvt->caller_profile->destination_number)-1] = '\0';
+			if (strlen(tech_pvt->caller_profile->destination_number) == 0) {
+				send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_OFF_HOOK, 0xffff);
+			}
+			send_back_space_request(listener, line_instance, tech_pvt->call_id);
+		}
+	    if (append_dest != '\0') {/* append digit */
 	        tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool,
 	            "%s%c", tech_pvt->caller_profile->destination_number, append_dest);
 	    }
-        if (strlen(tech_pvt->caller_profile->destination_number) == 0) {/* no digit yet */
-		    send_start_tone(listener, SKINNY_TONE_DIALTONE, 0, line_instance, tech_pvt->call_id);
-		    if(backspace) {
-				send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_OFF_HOOK, 0xffff);
-				/* TODO: How to clear the screen? */
-		    }
-		} else if (strlen(tech_pvt->caller_profile->destination_number) == 1) {/* first digit */
-	        send_stop_tone(listener, line_instance, tech_pvt->call_id);
+		if (strlen(tech_pvt->caller_profile->destination_number) == 1) {/* first digit */
+			if(!backspace) {
+	        	send_stop_tone(listener, line_instance, tech_pvt->call_id);
+	        }
             send_select_soft_keys(listener, line_instance, tech_pvt->call_id,
                 SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT, 0xffff);
         }
@@ -1476,6 +1483,20 @@ switch_status_t send_activate_call_plane(listener_t *listener,
 	return skinny_send_reply(listener, message);
 }
 
+switch_status_t send_back_space_request(listener_t *listener,
+    uint32_t line_instance,
+    uint32_t call_id)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.back_space_req));
+	message->type = BACK_SPACE_REQ_MESSAGE;
+	message->length = 4 + sizeof(message->data.back_space_req);
+	message->data.back_space_req.line_instance = line_instance;
+	message->data.back_space_req.call_id = call_id;
+	return skinny_send_reply(listener, message);
+
+}
+
 switch_status_t send_dialed_number(listener_t *listener,
 	char called_party[24],
 	uint32_t line_instance,
@@ -2202,6 +2223,7 @@ switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_mess
 
 switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_message_t *request)
 {
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	struct speed_dial_stat_res_message *button = NULL;
 	uint32_t line_instance = 0;
 	uint32_t call_id = 0;
@@ -2218,16 +2240,23 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 		    skinny_create_ingoing_session(listener, &line_instance, &session);
 			skinny_session_process_dest(session, listener, line_instance, "redial", '\0', 0);
 			break;
-		case SKINNY_BUTTON_VOICEMAIL:
-		    skinny_create_ingoing_session(listener, &line_instance, &session);
-			skinny_session_process_dest(session, listener, line_instance, "vmain", '\0', 0);
-			break;
 		case SKINNY_BUTTON_SPEED_DIAL:
 			skinny_speed_dial_get(listener, request->data.stimulus.instance, &button);
 			if(strlen(button->line) > 0) {
 		        skinny_create_ingoing_session(listener, &line_instance, &session);
 			    skinny_session_process_dest(session, listener, line_instance, button->line, '\0', 0);
 			}
+			break;
+		case SKINNY_BUTTON_HOLD:
+			session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
+
+			if(session) {
+				status = skinny_session_hold_line(session, listener, line_instance);
+			}
+			break;
+		case SKINNY_BUTTON_VOICEMAIL:
+		    skinny_create_ingoing_session(listener, &line_instance, &session);
+			skinny_session_process_dest(session, listener, line_instance, "vmain", '\0', 0);
 			break;
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown Stimulus Type Received [%d]\n", request->data.stimulus.instance_type);
@@ -2237,7 +2266,7 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 		switch_core_session_rwunlock(session);
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *listener, skinny_message_t *request)
@@ -2442,55 +2471,52 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 		return SWITCH_STATUS_FALSE;
 	}
 	switch(request->type) {
-		case ALARM_MESSAGE:
-			return skinny_handle_alarm(listener, request);
-		/* registering phase */
+		case KEEP_ALIVE_MESSAGE:
+			return skinny_handle_keep_alive_message(listener, request);
 		case REGISTER_MESSAGE:
 			return skinny_handle_register(listener, request);
-		case HEADSET_STATUS_MESSAGE:
-			return skinny_headset_status_message(listener, request);
-		case CONFIG_STAT_REQ_MESSAGE:
-			return skinny_handle_config_stat_request(listener, request);
-		case CAPABILITIES_RES_MESSAGE:
-			return skinny_handle_capabilities_response(listener, request);
 		case PORT_MESSAGE:
 			return skinny_handle_port_message(listener, request);
-		case BUTTON_TEMPLATE_REQ_MESSAGE:
-			return skinny_handle_button_template_request(listener, request);
-		case SOFT_KEY_TEMPLATE_REQ_MESSAGE:
-			return skinny_handle_soft_key_template_request(listener, request);
-		case SOFT_KEY_SET_REQ_MESSAGE:
-			return skinny_handle_soft_key_set_request(listener, request);
-		case LINE_STAT_REQ_MESSAGE:
-			return skinny_handle_line_stat_request(listener, request);
+		case KEYPAD_BUTTON_MESSAGE:
+			return skinny_handle_keypad_button_message(listener, request);
+		case STIMULUS_MESSAGE:
+			return skinny_handle_stimulus_message(listener, request);
+		case OFF_HOOK_MESSAGE:
+			return skinny_handle_off_hook_message(listener, request);
+		case ON_HOOK_MESSAGE:
+			return skinny_handle_on_hook_message(listener, request);
 		case SPEED_DIAL_STAT_REQ_MESSAGE:
 			return skinny_handle_speed_dial_stat_request(listener, request);
+		case LINE_STAT_REQ_MESSAGE:
+			return skinny_handle_line_stat_request(listener, request);
+		case CONFIG_STAT_REQ_MESSAGE:
+			return skinny_handle_config_stat_request(listener, request);
+		case TIME_DATE_REQ_MESSAGE:
+			return skinny_handle_time_date_request(listener, request);
+		case BUTTON_TEMPLATE_REQ_MESSAGE:
+			return skinny_handle_button_template_request(listener, request);
+		case CAPABILITIES_RES_MESSAGE:
+			return skinny_handle_capabilities_response(listener, request);
+		case ALARM_MESSAGE:
+			return skinny_handle_alarm(listener, request);
+		case OPEN_RECEIVE_CHANNEL_ACK_MESSAGE:
+			return skinny_handle_open_receive_channel_ack_message(listener, request);
+		case SOFT_KEY_SET_REQ_MESSAGE:
+			return skinny_handle_soft_key_set_request(listener, request);
+		case SOFT_KEY_EVENT_MESSAGE:
+			return skinny_handle_soft_key_event_message(listener, request);
+		case UNREGISTER_MESSAGE:
+			return skinny_handle_unregister(listener, request);
+		case SOFT_KEY_TEMPLATE_REQ_MESSAGE:
+			return skinny_handle_soft_key_template_request(listener, request);
 		case SERVICE_URL_STAT_REQ_MESSAGE:
 			return skinny_handle_service_url_stat_request(listener, request);
 		case FEATURE_STAT_REQ_MESSAGE:
 			return skinny_handle_feature_stat_request(listener, request);
+		case HEADSET_STATUS_MESSAGE:
+			return skinny_headset_status_message(listener, request);
 		case REGISTER_AVAILABLE_LINES_MESSAGE:
 			return skinny_handle_register_available_lines_message(listener, request);
-		case TIME_DATE_REQ_MESSAGE:
-			return skinny_handle_time_date_request(listener, request);
-		/* live phase */
-		case KEEP_ALIVE_MESSAGE:
-			return skinny_handle_keep_alive_message(listener, request);
-		case SOFT_KEY_EVENT_MESSAGE:
-			return skinny_handle_soft_key_event_message(listener, request);
-		case OFF_HOOK_MESSAGE:
-			return skinny_handle_off_hook_message(listener, request);
-		case STIMULUS_MESSAGE:
-			return skinny_handle_stimulus_message(listener, request);
-		case OPEN_RECEIVE_CHANNEL_ACK_MESSAGE:
-			return skinny_handle_open_receive_channel_ack_message(listener, request);
-		case KEYPAD_BUTTON_MESSAGE:
-			return skinny_handle_keypad_button_message(listener, request);
-		case ON_HOOK_MESSAGE:
-			return skinny_handle_on_hook_message(listener, request);
-		/* end phase */
-		case UNREGISTER_MESSAGE:
-			return skinny_handle_unregister(listener, request);
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 				"Unhandled request %s (type=%x,length=%d).\n", skinny_message_type2str(request->type), request->type, request->length);

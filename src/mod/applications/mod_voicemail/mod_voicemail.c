@@ -3353,7 +3353,7 @@ SWITCH_STANDARD_API(prefs_api_function)
 			stream->write_function(stream, "-ERR No such profile\n");
 			goto done;
 		}
-		if (!(profile = get_profile("default"))) {
+		if (!profile && !(profile = get_profile("default"))) {
 			stream->write_function(stream, "-ERR profile 'default' doesn't exist\n");
 			goto done;
 		}

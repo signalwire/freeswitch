@@ -827,6 +827,9 @@ FT_DECLARE(char *) ftdm_api_execute(const char *type, const char *cmd);
 FT_DECLARE(int) ftdm_vasprintf(char **ret, const char *fmt, va_list ap);
 FT_DECLARE(ftdm_status_t) ftdm_channel_set_caller_data(ftdm_channel_t *ftdmchan, ftdm_caller_data_t *caller_data);
 FT_DECLARE(void) ftdm_cpu_monitor_disable(void);
+FT_DECLARE(ftdm_status_t) ftdm_conf_node_create(const char *name, ftdm_conf_node_t **node, ftdm_conf_node_t *parent);
+FT_DECLARE(ftdm_status_t) ftdm_conf_node_add_param(ftdm_conf_node_t *node, const char *param, const char *val);
+FT_DECLARE(ftdm_status_t) ftdm_conf_node_destroy(ftdm_conf_node_t *node);
 
 FIO_CODEC_FUNCTION(fio_slin2ulaw);
 FIO_CODEC_FUNCTION(fio_ulaw2slin);

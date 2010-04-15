@@ -414,7 +414,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interru
 	for (i = 0; i < size; i++) {
 		ints[i] = interrupts[i]->event;
 		if (interrupts[i]->device != FTDM_INVALID_SOCKET) {
-			ints[i+numdevices] = interrupts[i]->device;
+			ints[size+numdevices] = interrupts[i]->device;
 			numdevices++;
 		}
 	}
@@ -446,9 +446,9 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interru
 		ints[i].revents = 0;
 		ints[i].fd = interrupts[i]->readfd;
 		if (interrupts[i]->device != FTDM_INVALID_SOCKET) {
-			ints[i+numdevices].events = POLLIN;
-			ints[i+numdevices].revents = 0;
-			ints[i+numdevices].fd = interrupts[i]->device;
+			ints[size+numdevices].events = POLLIN;
+			ints[size+numdevices].revents = 0;
+			ints[size+numdevices].fd = interrupts[i]->device;
 			numdevices++;
 		}
 	}

@@ -572,6 +572,30 @@ typedef ftdm_status_t (*fio_api_t) FIO_API_ARGS ;
 
 #include "ftdm_dso.h"
 
+#define FTDM_NODE_NAME_SIZE 50
+typedef struct ftdm_conf_node_s {
+	/* node name */
+	char name[FTDM_NODE_NAME_SIZE];
+
+	/* total slots for parameters */
+	unsigned int t_parameters;
+
+	/* current number of parameters */
+	unsigned int n_parameters;
+
+	/* array of parameters */
+	ftdm_conf_parameter_t *parameters;
+
+	/* first node child */
+	struct ftdm_conf_node_s *child;
+
+	/* next node sibling */
+	struct ftdm_conf_node_s *next;
+
+	/* my parent if any */
+	struct ftdm_conf_node_s *parent;
+} ftdm_conf_node_t;
+
 typedef struct {
 	char name[256];
 	fio_io_load_t io_load;
@@ -583,9 +607,9 @@ typedef struct {
 	  \brief configure a given span signaling 
 	  \see sig_configure
 	  This is just like sig_configure but receives
-	  an array of paramters instead of va_list
+	  an an ftdm_conf_node_t instead
 	  I'd like to deprecate sig_configure and move
-	  all modules to use sigparam_configure
+	  all modules to use configure_span_signaling
 	 */
 	fio_configure_span_signaling_t configure_span_signaling;
 	ftdm_dso_lib_t lib;

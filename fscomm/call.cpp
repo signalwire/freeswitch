@@ -112,3 +112,9 @@ QTime Call::getCurrentStateTime()
     int now = QDateTime::fromTime_t(time).secsTo(QDateTime::currentDateTime());
     return QTime::fromString(QString::number(now), "s");
 }
+
+/*bool Call::transfer()
+{
+
+    g_FSHost.sendCmd("uuid_bridge", "")
+}*/

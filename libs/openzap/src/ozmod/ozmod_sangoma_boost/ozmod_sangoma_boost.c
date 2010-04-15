@@ -32,10 +32,13 @@
  */
 
 #include "openzap.h"
-#include "sangoma_boost_client.h"
+#include "sangoma_boost_client.h" 
 #include "zap_sangoma_boost.h"
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
+#endif
+#ifndef __WINDOWS__
+#include <poll.h>
 #endif
 
 #define MAX_TRUNK_GROUPS 64
@@ -484,7 +487,31 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 			OUTBOUND_REQUESTS[event->call_setup_id].status = BST_READY;
 			return;
 		}
-	} 
+	} else {
+		if ((zchan = find_zchan(OUTBOUND_REQUESTS[event->call_setup_id].span, (sangomabc_short_event_t*)event, 1))) {
+			int r;
+			
+			/* NC: If we get CALL START ACK and channel is in active state
+			       then we are completely out of sync with the other end.
+			       Treat CALL START ACK as CALL STOP and hangup the current call.
+			*/
+			
+			if (zchan->state == ZAP_CHANNEL_STATE_UP || 
+				zchan->state == ZAP_CHANNEL_STATE_PROGRESS_MEDIA ||
+			    zchan->state == ZAP_CHANNEL_STATE_PROGRESS) {
+				zap_log(ZAP_LOG_CRIT, "ZCHAN STATE UP/PROG/PROG_MEDIA -> Changed to HANGUP %d:%d\n", event->span+1,event->chan+1);
+				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_HANGUP, 0, r);
+
+			} else if (zap_test_sflag(zchan, SFLAG_HANGUP)) { 
+				/* Do nothing because outgoing STOP will generaate a stop ack */
+
+			} else {
+				zap_log(ZAP_LOG_CRIT, "ZCHAN STATE INVALID %s on IN CALL ACK %d:%d\n", zap_channel_state2str(zchan->state),event->span+1,event->chan+1);
+
+			}
+			zchan=NULL;
+		}
+	}
 	
 	//printf("WTF BAD ACK CSid=%d span=%d chan=%d\n", event->call_setup_id, event->span+1,event->chan+1);
 	if ((zchan = find_zchan(OUTBOUND_REQUESTS[event->call_setup_id].span, event, 1))) {
@@ -640,7 +667,14 @@ static void handle_call_stop(zap_span_t *span, sangomabc_connection_t *mcon, san
 
 		zap_mutex_lock(zchan->mutex);
 
-		if (zap_test_sflag(zchan, SFLAG_HANGUP)) {
+		if (zap_test_sflag(zchan, SFLAG_HANGUP) || zchan->state == ZAP_CHANNEL_STATE_DOWN) {
+	
+			/* NC: Checking for state DOWN because ss7box can
+				   send CALL_STOP twice in a row.  If we do not check for
+				   STATE_DOWN we will set the state back to termnating
+				   and block the channel forever
+			*/
+	
 			/* racing condition where both sides initiated a hangup 
 			 * Do not change current state as channel is already clearing
 			 * itself through local initiated hangup */
@@ -697,7 +731,14 @@ static void handle_call_answer(zap_span_t *span, sangomabc_connection_t *mcon, s
 	
 	if ((zchan = find_zchan(span, event, 1))) {
 		zap_mutex_lock(zchan->mutex);
-		if (zchan->state == ZAP_CHANNEL_STATE_HOLD) {
+		if (zap_test_sflag(zchan, SFLAG_HANGUP) || 
+		    zchan->state == ZAP_CHANNEL_STATE_DOWN || 
+			zchan->state == ZAP_CHANNEL_STATE_TERMINATING) {
+			/* NC: Do nothing here because we are in process
+			       of stopping the call. So ignore the ANSWER. */
+			zap_log(ZAP_LOG_CRIT, "ANSWER BUT CALL IS HANGUP %d:%d\n", event->span+1,event->chan+1);
+
+		} else if (zchan->state == ZAP_CHANNEL_STATE_HOLD) {
 			zchan->init_state = ZAP_CHANNEL_STATE_UP;
 		} else {
 			int r = 0;
@@ -731,6 +772,12 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 	if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 0))) {
 		if ((zchan = find_zchan(span, (sangomabc_short_event_t*)event, 1))) {
 			int r;
+			
+			/* NC: If we get CALL START and channel is in active state
+			       then we are completely out of sync with the other end.
+			       Treat CALL START as CALL STOP and hangup the current call.
+			*/
+			
 			if (zchan->state == ZAP_CHANNEL_STATE_UP) {
 				zap_log(ZAP_LOG_CRIT, "ZCHAN STATE UP -> Changed to TERMINATING %d:%d\n", event->span+1,event->chan+1);
 				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_TERMINATING, 0, r);
@@ -1380,6 +1427,65 @@ static void *zap_sangoma_events_run(zap_thread_t *me, void *obj)
 	return NULL;
 }
 
+
+#ifndef __WINDOWS__
+static int waitfor_2sockets(int fda, int fdb, char *a, char *b, int timeout)
+{
+    struct pollfd pfds[2];
+    int res = 0;
+    int errflags = (POLLERR | POLLHUP | POLLNVAL);
+
+    if (fda < 0 || fdb < 0) {
+		return -1;
+    }
+
+
+waitfor_2sockets_tryagain:
+
+    *a=0;
+    *b=0;
+
+
+    memset(pfds, 0, sizeof(pfds));
+
+    pfds[0].fd = fda;
+    pfds[1].fd = fdb;
+    pfds[0].events = POLLIN | errflags;
+    pfds[1].events = POLLIN | errflags;
+
+    res = poll(pfds, 2, timeout); 
+
+    if (res > 0) {
+		res = 1;
+		if ((pfds[0].revents & errflags) || (pfds[1].revents & errflags)) {
+			res = -1;
+		} else { 
+			if ((pfds[0].revents & POLLIN)) {
+				*a=1;
+				res++;
+			}
+			if ((pfds[1].revents & POLLIN)) {
+				*b=1;		
+				res++;
+			}
+		}
+
+		if (res == 1) {
+			/* No event found what to do */
+			res=-1;
+		}
+    } else if (res < 0) {
+	
+		if (errno == EINTR || errno == EAGAIN) {
+			goto waitfor_2sockets_tryagain;
+		}
+
+    }
+	
+    return res;
+}
+#endif
+
 /**
  * \brief Main thread function for sangoma boost span (monitor)
  * \param me Current thread
@@ -1391,7 +1497,13 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
     zap_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	sangomabc_connection_t *mcon, *pcon;
 	uint32_t ms = 10; //, too_long = 20000;
-		
+	int max, activity, i;
+	sangomabc_event_t *event;
+	struct timeval tv;
+	fd_set rfds, efds;
+#ifndef __WINDOWS__
+	char a=0,b=0;
+#endif
 
 	sangoma_boost_data->pcon = sangoma_boost_data->mcon;
 
@@ -1427,10 +1539,13 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 	zap_set_flag(mcon, MSU_FLAG_DOWN);
 
 	while (zap_test_flag(sangoma_boost_data, ZAP_SANGOMA_BOOST_RUNNING)) {
-		fd_set rfds, efds;
-		struct timeval tv = { 0, ms * 1000 };
-		int max, activity, i = 0;
-		sangomabc_event_t *event = NULL;
+		
+		tv.tv_sec = 0;
+		tv.tv_usec = ms* 1000;
+		max=0;
+		activity=0;
+		i=0;
+		event = NULL;
 		
 		if (!zap_running()) {
 			sangomabc_exec_commandp(pcon,
@@ -1451,7 +1566,8 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 		FD_SET(pcon->socket, &efds);
 
 		max = ((pcon->socket > mcon->socket) ? pcon->socket : mcon->socket) + 1;
-		
+
+#ifdef __WINDOWS__
 		if ((activity = select(max, &rfds, NULL, &efds, &tv)) < 0) {
 			goto error;
 		}
@@ -1477,7 +1593,33 @@ static void *zap_sangoma_boost_run(zap_thread_t *me, void *obj)
 			}
 
 		}
+#else
 		
+		a=0;
+		b=0;
+		i=0;
+		tv.tv_sec=0;
+		activity = waitfor_2sockets(pcon->socket,mcon->socket,&a,&b,ms);
+		if (activity) {
+			if (a) {
+				while ((event = sangomabc_connection_readp(pcon, i))) {
+					parse_sangoma_event(span, pcon, (sangomabc_short_event_t*)event);
+					i++;
+				}
+			}
+			i=0;
+
+			if (b) {
+				if ((event = sangomabc_connection_read(mcon, i))) {
+					parse_sangoma_event(span, mcon, (sangomabc_short_event_t*)event);
+					i++;
+				}
+			}
+		} else if (activity < 0) {
+			goto error;
+		}
+
+#endif		
 
 		pcon->hb_elapsed += ms;
 

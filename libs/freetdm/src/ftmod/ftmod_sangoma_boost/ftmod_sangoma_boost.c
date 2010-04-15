@@ -92,7 +92,6 @@ typedef uint16_t sangoma_boost_request_id_t;
 typedef enum {
 	BST_FREE,
 	BST_WAITING,
-	BST_ACK,
 	BST_READY,
 	BST_FAIL
 } sangoma_boost_request_status_t;
@@ -108,6 +107,13 @@ typedef struct {
 	int hangup_cause;
 	int flags;
 } sangoma_boost_request_t;
+
+typedef struct {
+	int call_setup_id;
+	int last_event_id;
+} sangoma_boost_call_t;
+
+#define CALL_DATA(ftdmchan) ((sangoma_boost_call_t*)((ftdmchan)->call_data))
 
 //#define MAX_REQ_ID FTDM_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN * FTDM_MAX_CHANNELS_PHYSICAL_SPAN
 #define MAX_REQ_ID 6000
@@ -179,7 +185,7 @@ static sangoma_boost_request_id_t __next_request_id(const char *func, int line)
 		r = ++last_req;
 
 		if (r >= MAX_REQ_ID) {
-			r = i = last_req = 1;
+			r = last_req = 1;
 		}
 
 		if (req_map[r]) {
@@ -204,6 +210,25 @@ static sangoma_boost_request_id_t __next_request_id(const char *func, int line)
 }
 #define next_request_id() __next_request_id(__FUNCTION__, __LINE__)
 
+
+static void print_request_ids(void)
+{
+	sangoma_boost_request_id_t i = 0;
+	
+	ftdm_mutex_lock(request_mutex);
+
+	for (i=1; i<= MAX_REQ_ID; i++){
+		if (req_map[i]) {
+			ftdm_log(FTDM_LOG_CRIT, "Used Request ID=%i\n",i);
+		}
+	}
+
+	ftdm_mutex_unlock(request_mutex);
+
+	return;
+}
+
+
 /**
  * \brief Finds the channel that triggered an event
  * \param span Span where to search the channel
@@ -215,9 +240,25 @@ static ftdm_channel_t *find_ftdmchan(ftdm_span_t *span, sangomabc_short_event_t 
 {
 	uint32_t i;
 	ftdm_channel_t *ftdmchan = NULL;
+
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	uint32_t targetspan = BOOST_EVENT_SPAN(sangoma_boost_data->sigmod, event);
 	uint32_t targetchan = BOOST_EVENT_CHAN(sangoma_boost_data->sigmod, event);
+
+	/* NC: Sanity check in case the call setup id does not relate
+ 	       to span.  This can happen if RESTART is received on a
+		   full load. Where stray ACK messages can arrive after
+		   a RESTART has taken place.
+     */
+	if (!span) {
+		ftdm_log(FTDM_LOG_CRIT, "No Span for Event=%s s%dc%d cid=%d\n",
+						BOOST_DECODE_EVENT_ID(event->event_id),
+						event->span,
+						event->chan,
+						event->call_setup_id);
+		return NULL;
+	}
+
 
 	for(i = 1; i <= span->chan_count; i++) {
 		if (span->channels[i]->physical_span_id == targetspan && span->channels[i]->physical_chan_id == targetchan) {
@@ -276,12 +317,20 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	 * and PRI stack will retransmit a second SETUP after the first timeout, so
 	 * we should allow for at least 8 seconds.
 	 */
+
 	int boost_request_timeout = 10000;
 	sangoma_boost_request_status_t st;
 	char dnis[128] = "";
 	char *gr = NULL;
 	uint32_t count = 0;
 	int tg=0;
+
+	/* NC: On large number of calls 10 seconds is not enough.
+		Resetting to 30 seconds. Especially on ss7 when
+		links are reset during large call volume */
+	if (!sangoma_boost_data->sigmod) {
+		boost_request_timeout = 30000;
+	}
 	
 	if (sangoma_boost_data->sigmod) {
 		ftdm_log(FTDM_LOG_CRIT, "This function should not be called when sigmod was configured in boost\n");
@@ -290,12 +339,22 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	}
 
 	if (ftdm_test_flag(span, FTDM_SPAN_SUSPENDED)) {
-		ftdm_log(FTDM_LOG_CRIT, "SPAN is not online.\n");
+		ftdm_log(FTDM_LOG_CRIT, "SPAN is Suspended.\n");
 		*ftdmchan = NULL;
 		return FTDM_FAIL;
 	}
-	
-	ftdm_set_string(dnis, caller_data->dnis.digits);
+
+	if (check_congestion(tg)) {
+		ftdm_log(FTDM_LOG_CRIT, "All circuits are busy. Trunk Group=%i (CONGESTION)\n",tg+1);
+		*ftdmchan = NULL;
+		return FTDM_FAIL;
+	}
+
+	if (count >= span->chan_count) {
+		ftdm_log(FTDM_LOG_CRIT, "All circuits are busy.\n");
+		*ftdmchan = NULL;
+		return FTDM_FAIL;
+	}
 
 	r = next_request_id();
 	if (r == 0) {
@@ -303,7 +362,11 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 		*ftdmchan = NULL;
 		return FTDM_FAIL;
 	}
-	sangomabc_call_init(&event, caller_data->cid_num.digits, dnis, r);
+
+	/* After this point we must release request id before we leave the function
+	   in case of an error. */
+
+	ftdm_set_string(dnis, caller_data->dnis.digits);
 
 	if ((gr = strchr(dnis, '@'))) {
 		*gr++ = '\0';
@@ -315,21 +378,13 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 			tg--;
 		}
 	}
+	
+	sangomabc_call_init(&event, caller_data->cid_num.digits, dnis, r);
+
 	event.trunk_group = tg;
 
-	if (check_congestion(tg)) {
-		ftdm_log(FTDM_LOG_CRIT, "All circuits are busy. Trunk Group=%i (BOOST REQUESTED BACK OFF)\n",tg+1);
-		*ftdmchan = NULL;
-		return FTDM_FAIL;
-	}
 
 	ftdm_span_channel_use_count(span, &count);
-
-	if (count >= span->chan_count) {
-		ftdm_log(FTDM_LOG_CRIT, "All circuits are busy.\n");
-		*ftdmchan = NULL;
-		return FTDM_FAIL;
-	}	
 
 	if (gr && *(gr+1)) {
 		switch(*gr) {
@@ -373,7 +428,7 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 
 	if (sangomabc_connection_write(&sangoma_boost_data->mcon, &event) <= 0) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to tx boost event [%s]\n", strerror(errno));
-		status = FTDM_FAIL;
+		status = OUTBOUND_REQUESTS[r].status = FTDM_FAIL;
 		if (!sangoma_boost_data->sigmod) {
 			*ftdmchan = NULL;
 		}
@@ -387,7 +442,7 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 			if (!sangoma_boost_data->sigmod) {
 				*ftdmchan = NULL;
 			}
-			ftdm_log(FTDM_LOG_CRIT, "s%dc%d: Csid:%d Timed out waiting for boost channel request response, current status: BST_WAITING\n", (*ftdmchan)->physical_span_id, (*ftdmchan)->physical_chan_id, r);
+			ftdm_log(FTDM_LOG_CRIT, "Csid:%d Timed out waiting for boost channel request response, current status: BST_WAITING\n", r);
 			goto done;
 		}
 	}
@@ -494,6 +549,7 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(sangoma_boost_outgoing_call)
 
 	ftdm_log(FTDM_LOG_DEBUG, "Dialing number %s over boost channel with request id %d\n", event.called_number_digits, r);
 	if (sangomabc_connection_write(&sangoma_boost_data->mcon, &event) <= 0) {
+		release_request_id(r);
 		ftdm_log(FTDM_LOG_CRIT, "Failed to tx boost event [%s]\n", strerror(errno));
 		return FTDM_FAIL;
 	}
@@ -550,7 +606,12 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 	uint32_t event_span = BOOST_EVENT_SPAN(mcon->sigmod, event);
 	uint32_t event_chan = BOOST_EVENT_CHAN(mcon->sigmod, event);
 
+	
 	if (nack_map[event->call_setup_id]) {
+		/* In this scenario outgoing call was alrady stopped
+ 		   via NACK and now we are expecting an NACK_ACK.
+	       If we receive an ACK its a race condition thus
+		   ignor it */
 		return;
 	}
 
@@ -607,15 +668,43 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 			OUTBOUND_REQUESTS[event->call_setup_id].status = BST_READY;
 			return;
 		}
-	} 
+	} else {
+
+		ftdm_assert(!mcon->sigmod, "CALL STOP ACK: Invalid Sigmod Path");
+ 
+		if ((ftdmchan = find_ftdmchan(OUTBOUND_REQUESTS[event->call_setup_id].span, (sangomabc_short_event_t*)event, 1))) {
+				int r;
+				/* NC: If we get CALL START ACK and channel is in active state
+						then we are completely out of sync with the other end.
+						Treat CALL START ACK as CALL STOP and hangup the current call.
+				*/
+
+				if (ftdmchan->state == FTDM_CHANNEL_STATE_UP ||
+					ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA ||
+					ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS) {
+						ftdm_log(FTDM_LOG_CRIT, "FTDM_CHAN STATE UP/PROG/PROG_MEDIA -> Changed to HANGUP %d:%d\n", event->span+1,event->chan+1);
+						ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP, 0, r);
+
+				} else if (ftdm_test_sflag(ftdmchan, SFLAG_HANGUP)) {
+						/* Do nothing because outgoing STOP will generaate a stop ack */
+
+				} else {
+						ftdm_log(FTDM_LOG_CRIT, "FTDM_CHAN STATE INVALID %s on IN CALL ACK %d:%d\n", ftdm_channel_state2str(ftdmchan->state),event->span+1,event->chan+1);
+
+				}
+				ftdmchan=NULL;
+		}
+	}
+
 
 	if (!ftdmchan) {
 		ftdm_log(FTDM_LOG_CRIT, "START ACK CANT FIND A CHAN %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 	} else {
 		/* only reason to be here is failed to open channel when we we're in sigmod  */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+		ftdm_set_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG);
 	}
-	ftdm_set_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG);
+	
 	sangomabc_exec_command(mcon,
 					   event->span,
 					   event->chan,
@@ -636,7 +725,7 @@ static void handle_call_done(ftdm_span_t *span, sangomabc_connection_t *mcon, sa
 {
 	ftdm_channel_t *ftdmchan;
 	int r = 0;
-	
+
 	if ((ftdmchan = find_ftdmchan(span, event, 1))) {
 		ftdm_sangoma_boost_data_t *sangoma_boost_data = ftdmchan->span->signal_data;
 		ftdm_mutex_lock(ftdmchan->mutex);
@@ -676,6 +765,7 @@ static void handle_call_done(ftdm_span_t *span, sangomabc_connection_t *mcon, sa
 		release_request_id_span_chan(event->span, event->chan);
 	}
 }
+
 
 /**
  * \brief Handler for call start nack event
@@ -718,7 +808,7 @@ static void handle_call_start_nack(ftdm_span_t *span, sangomabc_connection_t *mc
 	if (event->call_setup_id) {
 		if (sangoma_boost_data->sigmod) {
 			ftdmchan = OUTBOUND_REQUESTS[event->call_setup_id].ftdmchan;
-			ftdmchan->call_data = (void*)(intptr_t)event->event_id;
+			CALL_DATA(ftdmchan)->last_event_id = event->event_id;
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 		} else {
 			sangomabc_exec_command(mcon,
@@ -740,7 +830,7 @@ static void handle_call_start_nack(ftdm_span_t *span, sangomabc_connection_t *mc
 			/* if there is no call setup id this should not be an outbound channel for sure */
 			ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND), "Yay, outbound flag should not be set here!\n");
 
-			ftdmchan->call_data = (void*)(intptr_t)event->event_id;
+			CALL_DATA(ftdmchan)->last_event_id = event->event_id;
 			ftdm_mutex_lock(ftdmchan->mutex);
 			ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
 			if (r == FTDM_STATE_CHANGE_SUCCESS) {
@@ -793,7 +883,16 @@ static void handle_call_stop(ftdm_span_t *span, sangomabc_connection_t *mcon, sa
 
 		ftdm_mutex_lock(ftdmchan->mutex);
 		
-		if (ftdm_test_sflag(ftdmchan, SFLAG_HANGUP)) {
+		if (ftdm_test_sflag(ftdmchan, SFLAG_HANGUP) ||
+			ftdmchan->state == FTDM_CHANNEL_STATE_DOWN ||
+			ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
+
+			/* NC: Checking for state DOWN because ss7box can
+				send CALL_STOP twice in a row.  If we do not check for
+				STATE_DOWN we will set the state back to termnating
+				and block the channel forever
+			*/
+
 			/* racing condition where both sides initiated a hangup 
 			 * Do not change current state as channel is already clearing
 			 * itself through local initiated hangup */
@@ -848,8 +947,18 @@ static void handle_call_answer(ftdm_span_t *span, sangomabc_connection_t *mcon, 
 	
 	if ((ftdmchan = find_ftdmchan(span, event, 1))) {
 		ftdm_mutex_lock(ftdmchan->mutex);
-		if (ftdmchan->state == FTDM_CHANNEL_STATE_HOLD) {
+
+		if (ftdm_test_sflag(ftdmchan, SFLAG_HANGUP) ||
+			ftdmchan->state == FTDM_CHANNEL_STATE_DOWN ||
+			ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
+
+			/* NC: Do nothing here because we are in process
+				of stopping the call. So ignore the ANSWER. */
+			ftdm_log(FTDM_LOG_CRIT, "ANSWER BUT CALL IS HANGUP %d:%d\n", event->span+1,event->chan+1);
+
+		} else if (ftdmchan->state == FTDM_CHANNEL_STATE_HOLD) {
 			ftdmchan->init_state = FTDM_CHANNEL_STATE_UP;
+
 		} else {
 			int r = 0;
 			ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_UP, 0, r);
@@ -881,6 +990,12 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 	if (!(ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 0))) {
 		if ((ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 1))) {
 			int r;
+
+			 /* NC: If we get CALL START and channel is in active state
+			        then we are completely out of sync with the other end.
+				    Treat CALL START as CALL STOP and hangup the current call.
+			  */
+
 			if (ftdmchan->state == FTDM_CHANNEL_STATE_UP) {
 				ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE UP -> Changed to TERMINATING %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 				ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
@@ -1179,8 +1294,12 @@ static int parse_sangoma_event(ftdm_span_t *span, sangomabc_connection_t *mcon, 
 		handle_call_done(span, mcon, event);
 		break;
     case SIGBOOST_EVENT_CALL_START_NACK_ACK:
-		handle_call_done(span, mcon, event);
-		nack_map[event->call_setup_id] = 0;
+		/* On NACK ack span chan are always invalid
+		   All there is to do is to clear the id */
+		if (event->call_setup_id) {
+			nack_map[event->call_setup_id] = 0;
+			release_request_id(event->call_setup_id);
+		}
 		break;
     case SIGBOOST_EVENT_INSERT_CHECK_LOOP:
 		handle_call_loop_start(span, mcon, event);
@@ -1246,7 +1365,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			if (!ftdm_test_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG)) {
 				ftdm_set_sflag_locked(ftdmchan, SFLAG_SENT_FINAL_MSG);
 
-				if (ftdmchan->call_data && ((uint32_t)(intptr_t)ftdmchan->call_data == SIGBOOST_EVENT_CALL_START_NACK)) {
+				if (ftdmchan->call_data && CALL_DATA(ftdmchan)->last_event_id == SIGBOOST_EVENT_CALL_START_NACK) {
 					sangomabc_exec_command(mcon,
 									BOOST_SPAN(ftdmchan),
 									BOOST_CHAN(ftdmchan),
@@ -1266,7 +1385,8 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 				}
 			}
 			ftdmchan->sflags = 0;
-			ftdmchan->call_data = NULL;
+			memset(ftdmchan->call_data,0,sizeof(sangoma_boost_call_t));
+
 			if (sangoma_boost_data->sigmod && call_stopped_ack_sent) {
 				/* we dont want to call ftdm_channel_done just yet until call released is received */
 				ftdm_log(FTDM_LOG_DEBUG, "Waiting for call release confirmation before declaring chan %d:%d as available \n", 
@@ -1457,13 +1577,17 @@ static __inline__ void check_state(ftdm_span_t *span)
 		uint32_t j;
 		ftdm_clear_flag_locked(span, FTDM_SPAN_STATE_CHANGE);
 		if (susp) {
-			for (j = 0; j <= span->chan_count; j++) {
-				ftdm_mutex_lock(span->channels[j]->mutex);
-				ftdm_clear_flag((span->channels[j]), FTDM_CHANNEL_STATE_CHANGE);
-				ftdm_channel_set_state(span->channels[j], FTDM_CHANNEL_STATE_RESTART, 0);
-				state_advance(span->channels[j]);
-				ftdm_channel_complete_state(span->channels[j]);
-				ftdm_mutex_unlock(span->channels[j]->mutex);
+			for(j = 1; j <= span->chan_count; j++) {
+				if (ftdm_test_flag((span->channels[j]), FTDM_CHANNEL_STATE_CHANGE) || susp) {
+					ftdm_mutex_lock(span->channels[j]->mutex);
+					ftdm_clear_flag((span->channels[j]), FTDM_CHANNEL_STATE_CHANGE);
+					if (susp && span->channels[j]->state != FTDM_CHANNEL_STATE_DOWN) {
+						ftdm_channel_set_state(span->channels[j], FTDM_CHANNEL_STATE_RESTART, 0);
+					}
+					state_advance(span->channels[j]);
+					ftdm_channel_complete_state(span->channels[j]);
+					ftdm_mutex_unlock(span->channels[j]->mutex);
+				}
 			}
 		} else {
 			while ((ftdmchan = ftdm_queue_dequeue(span->pendingchans))) {
@@ -1642,8 +1766,8 @@ static int ftdm_boost_wait_event(ftdm_span_t *span)
 			sangoma_boost_data->iteration = 0;
 		}
 #endif
-		res = ftdm_interrupt_multiple_wait(ints, numints, -1);
-		if (FTDM_SUCCESS != res) {
+		res = ftdm_interrupt_multiple_wait(ints, numints, 100);
+		if (FTDM_SUCCESS != res && FTDM_TIMEOUT != res) {
 			ftdm_log(FTDM_LOG_CRIT, "Unexpected return value from interrupt waiting: %d\n", res);
 			return -1;
 		}
@@ -1730,7 +1854,6 @@ static void *ftdm_sangoma_boost_run(ftdm_thread_t *me, void *obj)
 
 		if (ftdm_boost_wait_event(span) < 0) {
 			ftdm_log(FTDM_LOG_ERROR, "ftdm_boost_wait_event failed\n");
-			goto error;
 		}
 		
 		while ((event = ftdm_boost_read_event(span))) {
@@ -1743,7 +1866,6 @@ static void *ftdm_sangoma_boost_run(ftdm_thread_t *me, void *obj)
 
 	goto end;
 
-error:
 	ftdm_log(FTDM_LOG_CRIT, "Boost event processing Error!\n");
 
 end:
@@ -1758,6 +1880,37 @@ end:
 	return NULL;
 }
 
+#if 0
+static int sigmod_ss7box_isup_exec_cmd(ftdm_stream_handle_t *stream, char *cmd)
+{
+	FILE *fp;
+	int status=0;
+	char path[1024];
+	
+	fp = popen(cmd, "r");
+	if (fp == NULL) {
+		stream->write_function(stream, "%s: -ERR failed to execute cmd: %s\n",
+				__FILE__,cmd);
+		return -1;
+	}
+	
+	while (fgets(path, sizeof(path)-1, fp) != NULL) {
+		path[sizeof(path)-1]='\0';
+		stream->write_function(stream,"%s", path);
+	}
+	
+	
+	status = pclose(fp);
+	if (status == -1) {
+		/* Error reported by pclose() */
+	} else {
+		/* Use macros described under wait() to inspect `status' in order
+		to determine success/failure of command executed by popen() */
+	}
+
+	return status;
+}
+#endif
 
 #define FTDM_BOOST_SYNTAX "list sigmods | <sigmod_name> <command>"
 /**
@@ -1780,11 +1933,63 @@ static FIO_API_FUNCTION(ftdm_sangoma_boost_api)
 		if (!strcasecmp(argv[0], "list")) {
 			if (!strcasecmp(argv[1], "sigmods")) {
 				if (ftdm_sangoma_boost_list_sigmods(stream) != FTDM_SUCCESS) {
-					stream->write_function(stream, "%s: -ERR failed to execute cmd\n", __FILE__);
+					stream->write_function(stream, "-ERR failed to list sigmods\n");
 					goto done;
 				}
 				goto done;
 			}
+
+			if (!strcasecmp(argv[1], "ids")) {
+				print_request_ids();
+				goto done;
+			}
+			
+#ifndef __WINDOWS__
+#if 0
+/* NC: This code crashes the kernel due to fork on heavy fs load */
+		} else if (!strcasecmp(argv[0], "ss7box_isupd_ckt")) {
+		
+			if (!strcasecmp(argv[1], "used")) {
+				stream->write_function(stream, "ss7box_isupd: in use\n", FTDM_BOOST_SYNTAX);
+				sigmod_ss7box_isup_exec_cmd(stream, (char*) "ckt_report.sh inuse");
+			} else if (!strcasecmp(argv[1], "reset")) {
+				stream->write_function(stream, "ss7box_isupd: in reset\n", FTDM_BOOST_SYNTAX);
+				sigmod_ss7box_isup_exec_cmd(stream, (char*) "ckt_report.sh reset");
+			} else if (!strcasecmp(argv[1], "ready")) {
+				stream->write_function(stream, "ss7box_isupd: ready \n", FTDM_BOOST_SYNTAX);
+				sigmod_ss7box_isup_exec_cmd(stream, (char*) "ckt_report.sh free");
+			} else {
+				stream->write_function(stream, "ss7box_isupd: list\n", FTDM_BOOST_SYNTAX);
+				sigmod_ss7box_isup_exec_cmd(stream, (char*) "ckt_report.sh");
+			}
+
+			goto done;
+#endif
+#endif
+		} else if (!strcasecmp(argv[0], "restart")) {
+			sangomabc_connection_t *pcon;
+			ftdm_sangoma_boost_data_t *sangoma_boost_data;
+			ftdm_span_t *span;
+			int err = ftdm_span_find_by_name(argv[1], &span);
+			if (FTDM_SUCCESS != err) {
+				stream->write_function(stream, "-ERR failed to find span by name %s\n",argv[1]);
+				goto done;
+			}
+	
+			sangoma_boost_data = span->signal_data;
+			pcon = &sangoma_boost_data->pcon;
+
+			/* No need to set any span flags because
+ 			   our RESTART will generate a RESTART from the sig daemon */
+			sangomabc_exec_commandp(pcon,
+						   0,
+						   0,
+						   -1,
+						   SIGBOOST_EVENT_SYSTEM_RESTART,
+						   0);			
+
+			goto done;
+
 		} else {
 			boost_sigmod_interface_t *sigmod_iface = NULL;
 			sigmod_iface = hashtable_search(g_boost_modules_hash, argv[0]);
@@ -1822,7 +2027,7 @@ done:
  */
 static FIO_IO_LOAD_FUNCTION(ftdm_sangoma_boost_io_init)
 {
-	assert(fio != NULL);
+	ftdm_assert(fio != NULL, "fio is NULL");
 	memset(&ftdm_sangoma_boost_interface, 0, sizeof(ftdm_sangoma_boost_interface));
 
 	ftdm_sangoma_boost_interface.name = "boost";
@@ -2205,6 +2410,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 	ftdm_dso_lib_t lib = NULL;
 	char path[255] = "";
 	char *err = NULL;
+	int j = 0;
 	unsigned paramindex = 0;
 	ftdm_status_t rc = FTDM_SUCCESS;
 
@@ -2299,6 +2505,14 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 		ftdm_set_string(sangoma_boost_data->mcon.cfg.remote_ip, remote_ip);
 		sangoma_boost_data->mcon.cfg.remote_port = remote_port;
 	}
+
+	for (j = 1; j <= span->chan_count; j++) {
+		span->channels[j]->call_data = ftdm_calloc(1,sizeof(sangoma_boost_call_t));
+		if (!span->channels[j]->call_data) {
+			FAIL_CONFIG_RETURN(FTDM_FAIL);
+		}
+	}
+
 	span->signal_cb = sig_cb;
 	span->start = ftdm_sangoma_boost_start;
 	span->stop = ftdm_sangoma_boost_stop;

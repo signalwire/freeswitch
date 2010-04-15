@@ -614,12 +614,12 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 #endif
 
 			if (uuid) {
-				sql = switch_mprintf("update sip_dialogs set call_info_state='%q' where hostname='%q' and uuid='%q'",
-									 call_info_state, mod_sofia_globals.hostname, uuid);
+				sql = switch_mprintf("update sip_dialogs set call_info='%q',call_info_state='%q' where hostname='%q' and uuid='%q'",
+									 call_info, call_info_state, mod_sofia_globals.hostname, uuid);
 			} else {
-				sql = switch_mprintf("update sip_dialogs set call_info_state='%q' where hostname='%q' and sip_dialogs.sip_from_user='%q' "
+				sql = switch_mprintf("update sip_dialogs set call_info='%q', call_info_state='%q' where hostname='%q' and sip_dialogs.sip_from_user='%q' "
 									 "and sip_dialogs.sip_from_host='%q' and call_info='%q'",
-									 call_info_state, mod_sofia_globals.hostname, euser, host, call_info);
+									 call_info, call_info_state, mod_sofia_globals.hostname, euser, host, call_info);
 
 			}
 

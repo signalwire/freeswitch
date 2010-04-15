@@ -1087,15 +1087,19 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(ftdm_channel_t *ftdmchan, ftdm_
 		}
 	}
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-		ftdm_log(FTDM_LOG_CRIT, "Ignored state change request from %s to %s, the previous state change has not been processed yet\n",
-				ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
-		return FTDM_FAIL;
-	}
-
 	if (lock) {
 		ftdm_mutex_lock(ftdmchan->mutex);
 	}
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+		ftdm_log(FTDM_LOG_CRIT, "Ignored state change request from %s to %s, the previous state change has not been processed yet\n",
+				ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
+		if (lock) {
+			ftdm_mutex_unlock(ftdmchan->mutex);
+		}
+		return FTDM_FAIL;
+	}
+
 
 	if (ftdmchan->span->state_map) {
 		ok = ftdm_parse_state_map(ftdmchan, state, ftdmchan->span->state_map);
@@ -1353,7 +1357,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 		ftdm_span_channel_use_count(span, &count);
 
 		if (count >= span->chan_count) {
-			ftdm_log(FTDM_LOG_CRIT, "All circuits are busy.\n");
+			ftdm_log(FTDM_LOG_CRIT, "All circuits are busy: active=%i max=%i.\n",
+				count, span->chan_count);
 			*ftdmchan = NULL;
 			return FTDM_FAIL;
 		}
@@ -1623,8 +1628,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_sig_status(ftdm_channel_t *ftdmchan, 
 	if (ftdmchan->span->get_channel_sig_status) {
 		return ftdmchan->span->get_channel_sig_status(ftdmchan, sigstatus);
 	} else {
-		ftdm_log(FTDM_LOG_ERROR, "get_channel_sig_status method not implemented!\n");
-		return FTDM_FAIL;
+		/* don't log error here, it can be called just to test if its supported */
+		return FTDM_NOTIMPL;
 	}
 }
 

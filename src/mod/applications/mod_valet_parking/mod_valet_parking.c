@@ -261,6 +261,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "hold");
+			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
 		}
 
@@ -286,6 +287,14 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		switch_mutex_lock(lot->mutex);
 		switch_core_hash_delete(lot->hash, ext);
 		switch_mutex_unlock(lot->mutex);
+
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VALET_EVENT) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "exit");
+			switch_channel_event_set_data(channel, event);
+			switch_event_fire(&event);
+		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", VALET_APP_SYNTAX);
 	}
