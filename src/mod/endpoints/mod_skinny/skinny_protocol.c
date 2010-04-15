@@ -2471,55 +2471,52 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 		return SWITCH_STATUS_FALSE;
 	}
 	switch(request->type) {
-		case ALARM_MESSAGE:
-			return skinny_handle_alarm(listener, request);
-		/* registering phase */
+		case KEEP_ALIVE_MESSAGE:
+			return skinny_handle_keep_alive_message(listener, request);
 		case REGISTER_MESSAGE:
 			return skinny_handle_register(listener, request);
-		case HEADSET_STATUS_MESSAGE:
-			return skinny_headset_status_message(listener, request);
-		case CONFIG_STAT_REQ_MESSAGE:
-			return skinny_handle_config_stat_request(listener, request);
-		case CAPABILITIES_RES_MESSAGE:
-			return skinny_handle_capabilities_response(listener, request);
 		case PORT_MESSAGE:
 			return skinny_handle_port_message(listener, request);
-		case BUTTON_TEMPLATE_REQ_MESSAGE:
-			return skinny_handle_button_template_request(listener, request);
-		case SOFT_KEY_TEMPLATE_REQ_MESSAGE:
-			return skinny_handle_soft_key_template_request(listener, request);
-		case SOFT_KEY_SET_REQ_MESSAGE:
-			return skinny_handle_soft_key_set_request(listener, request);
-		case LINE_STAT_REQ_MESSAGE:
-			return skinny_handle_line_stat_request(listener, request);
+		case KEYPAD_BUTTON_MESSAGE:
+			return skinny_handle_keypad_button_message(listener, request);
+		case STIMULUS_MESSAGE:
+			return skinny_handle_stimulus_message(listener, request);
+		case OFF_HOOK_MESSAGE:
+			return skinny_handle_off_hook_message(listener, request);
+		case ON_HOOK_MESSAGE:
+			return skinny_handle_on_hook_message(listener, request);
 		case SPEED_DIAL_STAT_REQ_MESSAGE:
 			return skinny_handle_speed_dial_stat_request(listener, request);
+		case LINE_STAT_REQ_MESSAGE:
+			return skinny_handle_line_stat_request(listener, request);
+		case CONFIG_STAT_REQ_MESSAGE:
+			return skinny_handle_config_stat_request(listener, request);
+		case TIME_DATE_REQ_MESSAGE:
+			return skinny_handle_time_date_request(listener, request);
+		case BUTTON_TEMPLATE_REQ_MESSAGE:
+			return skinny_handle_button_template_request(listener, request);
+		case CAPABILITIES_RES_MESSAGE:
+			return skinny_handle_capabilities_response(listener, request);
+		case ALARM_MESSAGE:
+			return skinny_handle_alarm(listener, request);
+		case OPEN_RECEIVE_CHANNEL_ACK_MESSAGE:
+			return skinny_handle_open_receive_channel_ack_message(listener, request);
+		case SOFT_KEY_SET_REQ_MESSAGE:
+			return skinny_handle_soft_key_set_request(listener, request);
+		case SOFT_KEY_EVENT_MESSAGE:
+			return skinny_handle_soft_key_event_message(listener, request);
+		case UNREGISTER_MESSAGE:
+			return skinny_handle_unregister(listener, request);
+		case SOFT_KEY_TEMPLATE_REQ_MESSAGE:
+			return skinny_handle_soft_key_template_request(listener, request);
 		case SERVICE_URL_STAT_REQ_MESSAGE:
 			return skinny_handle_service_url_stat_request(listener, request);
 		case FEATURE_STAT_REQ_MESSAGE:
 			return skinny_handle_feature_stat_request(listener, request);
+		case HEADSET_STATUS_MESSAGE:
+			return skinny_headset_status_message(listener, request);
 		case REGISTER_AVAILABLE_LINES_MESSAGE:
 			return skinny_handle_register_available_lines_message(listener, request);
-		case TIME_DATE_REQ_MESSAGE:
-			return skinny_handle_time_date_request(listener, request);
-		/* live phase */
-		case KEEP_ALIVE_MESSAGE:
-			return skinny_handle_keep_alive_message(listener, request);
-		case SOFT_KEY_EVENT_MESSAGE:
-			return skinny_handle_soft_key_event_message(listener, request);
-		case OFF_HOOK_MESSAGE:
-			return skinny_handle_off_hook_message(listener, request);
-		case STIMULUS_MESSAGE:
-			return skinny_handle_stimulus_message(listener, request);
-		case OPEN_RECEIVE_CHANNEL_ACK_MESSAGE:
-			return skinny_handle_open_receive_channel_ack_message(listener, request);
-		case KEYPAD_BUTTON_MESSAGE:
-			return skinny_handle_keypad_button_message(listener, request);
-		case ON_HOOK_MESSAGE:
-			return skinny_handle_on_hook_message(listener, request);
-		/* end phase */
-		case UNREGISTER_MESSAGE:
-			return skinny_handle_unregister(listener, request);
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 				"Unhandled request %s (type=%x,length=%d).\n", skinny_message_type2str(request->type), request->type, request->length);
