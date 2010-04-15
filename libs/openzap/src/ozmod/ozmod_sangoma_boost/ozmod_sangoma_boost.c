@@ -344,6 +344,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	if (sangomabc_connection_write(&sangoma_boost_data->mcon, &event) <= 0) {
 		zap_log(ZAP_LOG_CRIT, "Failed to tx on ISUP socket [%s]\n", strerror(errno));
 		status = ZAP_FAIL;
+		OUTBOUND_REQUESTS[r].status = ZAP_FAIL;
 		*zchan = NULL;
 		goto done;
 	}
@@ -351,7 +352,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	while(zap_running() && OUTBOUND_REQUESTS[r].status == BST_WAITING) {
 		zap_sleep(1);
 		if (--sanity <= 0) {
-			status = ZAP_FAIL;
+			status = ZAP_FAIL;	
 			*zchan = NULL;
 			goto done;
 		}
@@ -456,13 +457,18 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 		return;
 	}
 
-	OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
-	SETUP_GRID[event->span][event->chan] = event->call_setup_id;
+
 
 	if ((zchan = find_zchan(OUTBOUND_REQUESTS[event->call_setup_id].span, event, 0))) {
 		if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
 			zap_log(ZAP_LOG_ERROR, "OPEN ERROR [%s]\n", zchan->last_error);
 		} else {
+
+			/* Only bind the setup id to GRID when we are sure that channel is ready
+			   otherwise we could overwite the original call */
+			OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
+			SETUP_GRID[event->span][event->chan] = event->call_setup_id;
+
 			zap_set_flag(zchan, ZAP_CHANNEL_OUTBOUND);
 			zap_set_flag_locked(zchan, ZAP_CHANNEL_INUSE);
 			zchan->extra_id = event->call_setup_id;
@@ -499,16 +505,20 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 			if (zchan->state == ZAP_CHANNEL_STATE_UP || 
 				zchan->state == ZAP_CHANNEL_STATE_PROGRESS_MEDIA ||
 			    zchan->state == ZAP_CHANNEL_STATE_PROGRESS) {
-				zap_log(ZAP_LOG_CRIT, "ZCHAN STATE UP/PROG/PROG_MEDIA -> Changed to HANGUP %d:%d\n", event->span+1,event->chan+1);
-				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_HANGUP, 0, r);
+				zap_log(ZAP_LOG_CRIT, "ZCHAN CALL ACK STATE %s -> Changed to HANGUP %d:%d\n",
+						zap_channel_state2str(zchan->state),event->span+1,event->chan+1);
+				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_TERMINATING, 0, r);
 
-			} else if (zap_test_sflag(zchan, SFLAG_HANGUP)) { 
+			} else if (zchan->state == ZAP_CHANNEL_STATE_HANGUP || zap_test_sflag(zchan, SFLAG_HANGUP)) {
+				zap_log(ZAP_LOG_CRIT, "ZCHAN CALL ACK STATE HANGUP -> Changed to HANGUP %d:%d\n", event->span+1,event->chan+1);
+				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
 				/* Do nothing because outgoing STOP will generaate a stop ack */
 
 			} else {
-				zap_log(ZAP_LOG_CRIT, "ZCHAN STATE INVALID %s on IN CALL ACK %d:%d\n", zap_channel_state2str(zchan->state),event->span+1,event->chan+1);
-
+				zap_log(ZAP_LOG_CRIT, "ZCHAN CALL ACK STATE INVALID %s  s%dc%d\n",
+						zap_channel_state2str(zchan->state),event->span+1,event->chan+1);
 			}
+			zap_set_sflag(zchan, SFLAG_SENT_FINAL_MSG);
 			zchan=NULL;
 		}
 	}
@@ -518,7 +528,10 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 		//printf("WTF BAD ACK2 %d:%d (%d:%d) CSid=%d xtra_id=%d out=%d state=%s\n", zchan->span_id, zchan->chan_id, event->span+1,event->chan+1, event->call_setup_id, zchan->extra_id, zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND), zap_channel_state2str(zchan->state));
 	}
 
-	zap_set_sflag(zchan, SFLAG_SENT_FINAL_MSG);
+	if (zchan) {
+		zap_set_sflag(zchan, SFLAG_SENT_FINAL_MSG);
+	}
+
 	zap_log(ZAP_LOG_CRIT, "START ACK CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
 	sangomabc_exec_command(mcon,
 						   event->span,
@@ -777,17 +790,24 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 			       then we are completely out of sync with the other end.
 			       Treat CALL START as CALL STOP and hangup the current call.
 			*/
-			
-			if (zchan->state == ZAP_CHANNEL_STATE_UP) {
-				zap_log(ZAP_LOG_CRIT, "ZCHAN STATE UP -> Changed to TERMINATING %d:%d\n", event->span+1,event->chan+1);
-				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_TERMINATING, 0, r);
-			} else if (zap_test_sflag(zchan, SFLAG_HANGUP)) { 
-				zap_log(ZAP_LOG_CRIT, "ZCHAN STATE HANGUP -> Changed to HANGUP COMPLETE %d:%d\n", event->span+1,event->chan+1);
-				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
-			} else {
-				zap_log(ZAP_LOG_CRIT, "ZCHAN STATE INVALID %s on IN CALL %d:%d\n", zap_channel_state2str(zchan->state),event->span+1,event->chan+1);
 
+			if (zchan->state == ZAP_CHANNEL_STATE_UP ||
+				zchan->state == ZAP_CHANNEL_STATE_PROGRESS_MEDIA ||
+			    zchan->state == ZAP_CHANNEL_STATE_PROGRESS) {
+				zap_log(ZAP_LOG_CRIT, "ZCHAN CALL STATE %s -> Changed to TERMINATING %d:%d\n",
+						zap_channel_state2str(zchan->state),event->span+1,event->chan+1);
+				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_TERMINATING, 0, r);
+
+			} else if (zchan->state == ZAP_CHANNEL_STATE_HANGUP || zap_test_sflag(zchan, SFLAG_HANGUP)) {
+				zap_log(ZAP_LOG_CRIT, "ZCHAN CALL STATE HANGUP -> Changed to HANGUP %d:%d\n", event->span+1,event->chan+1);
+				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
+				/* Do nothing because outgoing STOP will generaate a stop ack */
+
+			} else {
+				zap_log(ZAP_LOG_CRIT, "ZCHAN CALL ACK STATE INVALID %s s%dc%d\n",
+						zap_channel_state2str(zchan->state),event->span+1,event->chan+1);
 			}
+
 			zap_set_sflag(zchan, SFLAG_SENT_FINAL_MSG);
 			zchan=NULL;
 		}
