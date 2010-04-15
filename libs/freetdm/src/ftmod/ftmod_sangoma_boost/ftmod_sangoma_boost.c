@@ -69,6 +69,9 @@ static ftdm_status_t ftdm_sangoma_boost_list_sigmods(ftdm_stream_handle_t *strea
 #define BOOST_SPAN(ftdmchan) ((ftdm_sangoma_boost_data_t*)(ftdmchan)->span->signal_data)->sigmod ? ftdmchan->physical_span_id : ftdmchan->physical_span_id-1
 #define BOOST_CHAN(ftdmchan) ((ftdm_sangoma_boost_data_t*)(ftdmchan)->span->signal_data)->sigmod ? ftdmchan->physical_chan_id : ftdmchan->physical_chan_id-1
 
+#define BOOST_EVENT_SPAN(sigmod, event) ((sigmod)? event->span:event->span+1)
+#define BOOST_EVENT_CHAN(sigmod, event) ((sigmod)? event->chan:event->chan+1)
+
 /**
  * \brief Strange flag
  */
@@ -132,7 +135,7 @@ static void __release_request_id_span_chan(int span, int chan, const char *func,
 
 	ftdm_mutex_lock(request_mutex);
 	if ((id = SETUP_GRID[span][chan])) {
-		assert(id <= MAX_REQ_ID);
+		ftdm_assert(id <= MAX_REQ_ID, "Invalid request id\n");
 		req_map[id] = 0;
 		SETUP_GRID[span][chan] = 0;
 	}
@@ -148,7 +151,7 @@ static void __release_request_id_span_chan(int span, int chan, const char *func,
  */
 static void __release_request_id(sangoma_boost_request_id_t r, const char *func, int line)
 {
-	assert(r <= MAX_REQ_ID);
+	ftdm_assert(r <= MAX_REQ_ID, "Invalid request id\n");
 	ftdm_mutex_lock(request_mutex);
 	req_map[r] = 0;
 	ftdm_mutex_unlock(request_mutex);
@@ -213,13 +216,8 @@ static ftdm_channel_t *find_ftdmchan(ftdm_span_t *span, sangomabc_short_event_t 
 	uint32_t i;
 	ftdm_channel_t *ftdmchan = NULL;
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
-	uint32_t targetspan = event->span+1;
-	uint32_t targetchan = event->chan+1;
-	if (sangoma_boost_data->sigmod) {
-		/* span is not strictly needed here since we're supposed to get only events for our span */
-		targetspan = event->span;
-		targetchan = event->chan;
-	}
+	uint32_t targetspan = BOOST_EVENT_SPAN(sangoma_boost_data->sigmod, event);
+	uint32_t targetchan = BOOST_EVENT_CHAN(sangoma_boost_data->sigmod, event);
 
 	for(i = 1; i <= span->chan_count; i++) {
 		if (span->channels[i]->physical_span_id == targetspan && span->channels[i]->physical_chan_id == targetchan) {
@@ -549,16 +547,11 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 {
 	
 	ftdm_channel_t *ftdmchan = NULL;
-	uint32_t event_span = event->span+1;
-	uint32_t event_chan = event->chan+1;
+	uint32_t event_span = BOOST_EVENT_SPAN(mcon->sigmod, event);
+	uint32_t event_chan = BOOST_EVENT_CHAN(mcon->sigmod, event);
 
 	if (nack_map[event->call_setup_id]) {
 		return;
-	}
-
-	if (mcon->sigmod) {
-		event_span = event->span;
-		event_chan = event->chan;
 	}
 
 	OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
@@ -617,7 +610,7 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 	} 
 
 	if (!ftdmchan) {
-		ftdm_log(FTDM_LOG_CRIT, "START ACK CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
+		ftdm_log(FTDM_LOG_CRIT, "START ACK CANT FIND A CHAN %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 	} else {
 		/* only reason to be here is failed to open channel when we we're in sigmod  */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
@@ -863,7 +856,7 @@ static void handle_call_answer(ftdm_span_t *span, sangomabc_connection_t *mcon, 
 		}
 		ftdm_mutex_unlock(ftdmchan->mutex);
 	} else {
-		ftdm_log(FTDM_LOG_CRIT, "ANSWER CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
+		ftdm_log(FTDM_LOG_CRIT, "ANSWER CANT FIND A CHAN %d:%d\n", BOOST_EVENT_SPAN(mcon, event), BOOST_EVENT_CHAN(mcon, event));
 		sangomabc_exec_command(mcon,
 							   event->span,
 							   event->chan,
@@ -889,24 +882,22 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 		if ((ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 1))) {
 			int r;
 			if (ftdmchan->state == FTDM_CHANNEL_STATE_UP) {
-				ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE UP -> Changed to TERMINATING %d:%d\n", event->span+1,event->chan+1);
+				ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE UP -> Changed to TERMINATING %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 				ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
 			} else if (ftdm_test_sflag(ftdmchan, SFLAG_HANGUP)) { 
-				ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE HANGUP -> Changed to HANGUP COMPLETE %d:%d\n", event->span+1,event->chan+1);
-				ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
+				ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE HANGUP -> Changed to HANGUP COMPLETE %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));	ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
 			} else {
-				ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE INVALID %s on IN CALL %d:%d\n", ftdm_channel_state2str(ftdmchan->state),event->span+1,event->chan+1);
-
+				ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE INVALID %s on IN CALL %d:%d\n", ftdm_channel_state2str(ftdmchan->state),BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 			}
 			ftdm_set_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG);
 			ftdmchan = NULL;
 		}
-		ftdm_log(FTDM_LOG_CRIT, "START CANT FIND CHAN %d:%d\n", event->span+1,event->chan+1);
+		ftdm_log(FTDM_LOG_CRIT, "START CANT FIND CHAN %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 		goto error;
 	}
 
 	if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_CRIT, "START CANT OPEN CHAN %d:%d\n", event->span+1,event->chan+1);
+		ftdm_log(FTDM_LOG_CRIT, "START CANT OPEN CHAN %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 		goto error;
 	}
 	
@@ -972,12 +963,12 @@ static void handle_call_loop_start(ftdm_span_t *span, sangomabc_connection_t *mc
 	ftdm_channel_t *ftdmchan;
 
 	if (!(ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 0))) {
-		ftdm_log(FTDM_LOG_CRIT, "CANNOT START LOOP, CHAN NOT AVAILABLE %d:%d\n", event->span+1,event->chan+1);
+		ftdm_log(FTDM_LOG_CRIT, "CANNOT START LOOP, CHAN NOT AVAILABLE %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 		return;
 	}
 
 	if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_CRIT, "CANNOT START LOOP, CANT OPEN CHAN %d:%d\n", event->span+1,event->chan+1);
+		ftdm_log(FTDM_LOG_CRIT, "CANNOT START LOOP, CANT OPEN CHAN %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 		return;
 	}
 
@@ -995,7 +986,7 @@ static void handle_call_loop_stop(ftdm_span_t *span, sangomabc_connection_t *mco
 	ftdm_channel_t *ftdmchan;
 	ftdm_status_t res = FTDM_FAIL;
 	if (!(ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 1))) {
-		ftdm_log(FTDM_LOG_CRIT, "CANNOT STOP LOOP, INVALID CHAN REQUESTED %d:%d\n", event->span+1,event->chan+1);
+		ftdm_log(FTDM_LOG_CRIT, "CANNOT STOP LOOP, INVALID CHAN REQUESTED %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 		return;
 	}
 	if (ftdmchan->state != FTDM_CHANNEL_STATE_IN_LOOP) {
@@ -1073,14 +1064,14 @@ static void handle_incoming_digit(sangomabc_connection_t *mcon, ftdm_span_t *spa
 		ftdm_log(FTDM_LOG_WARNING, "Error Incoming digit with len %s %d [w%dg%d]\n",
 			   	event->called_number_digits,
 			   	event->called_number_digits_count,
-			   	event->span+1, event->chan+1);
+			   	BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 		return;
 	}
 
 	ftdm_log(FTDM_LOG_WARNING, "Incoming digit with len %s %d [w%dg%d]\n",
-			   	event->called_number_digits,
-			   	event->called_number_digits_count,
-			   	event->span+1, event->chan+1);
+					event->called_number_digits,
+					event->called_number_digits_count,
+					BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 
 	memcpy(digits, event->called_number_digits, event->called_number_digits_count);
 	ftdm_channel_queue_dtmf(ftdmchan, digits);
@@ -1117,7 +1108,9 @@ static ftdm_channel_t* event_process_states(ftdm_span_t *span, sangomabc_short_e
         case SIGBOOST_EVENT_REMOVE_CHECK_LOOP:
         case SIGBOOST_EVENT_CALL_RELEASED:
             if (!(ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 1))) {
-                ftdm_log(FTDM_LOG_DEBUG, "PROCESS STATES  CANT FIND CHAN %d:%d\n", event->span+1,event->chan+1);
+                ftdm_log(FTDM_LOG_DEBUG, "PROCESS STATES  CANT FIND CHAN %d:%d\n",
+																							BOOST_EVENT_SPAN(((ftdm_sangoma_boost_data_t*)(span->signal_data))->sigmod, event),
+																							BOOST_EVENT_CHAN(((ftdm_sangoma_boost_data_t*)(span->signal_data))->sigmod, event));
                 return NULL;
             }
             break;
