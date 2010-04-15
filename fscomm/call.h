@@ -38,7 +38,8 @@ typedef enum {
     FSCOMM_CALL_STATE_RINGING = 0,
     FSCOMM_CALL_STATE_TRYING  = 1,
     FSCOMM_CALL_STATE_ANSWERED = 2,
-    FSCOMM_CALL_STATE_FAILED = 3
+    FSCOMM_CALL_STATE_FAILED = 3,
+    FSCOMM_CALL_STATE_TRANSFER = 4
 } fscomm_call_state_t;
 
 typedef enum {
@@ -75,6 +76,8 @@ public:
     void sendDTMF(QString digit);
     void setAnsweredEpoch(qulonglong time) { _answeredEpoch = time/1000000; }
     QTime getCurrentStateTime();
+
+    /*bool transfer();*/
 
 private:
     QSharedPointer<Channel> _channel; /* This should be our portaudio channel */

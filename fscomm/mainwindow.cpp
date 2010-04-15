@@ -101,6 +101,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->hangupBtn, SIGNAL(clicked()), this, SLOT(paHangup()));
     connect(ui->recoredCallBtn, SIGNAL(toggled(bool)), SLOT(recordCall(bool)));
     connect(ui->btnHold, SIGNAL(toggled(bool)), this, SLOT(holdCall(bool)));
+    /*connect(ui->btnTransfer, SIGNAL(clicked()), this, SLOT(transferCall()));*/
     connect(ui->tableCalls, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), this, SLOT(callTableDoubleClick(QTableWidgetItem*)));
     connect(ui->action_Preferences, SIGNAL(triggered()), this, SLOT(prefTriggered()));
     connect(ui->action_Exit, SIGNAL(triggered()), this, SLOT(close()));
@@ -280,9 +281,9 @@ void MainWindow::callTableDoubleClick(QTableWidgetItem *item)
 
 void MainWindow::makeCall()
 {
-    bool ok;
+    bool ok = true;
     QString dialstring = QInputDialog::getText(this, tr("Make new call"),
-                                         tr("Number to dial:"), QLineEdit::Normal, NULL,&ok);
+                                               tr("Number to dial:"), QLineEdit::Normal, NULL,&ok);
 
     QSharedPointer<Account> acc = g_FSHost.getCurrentDefaultAccount();
     if (!acc.isNull()) {

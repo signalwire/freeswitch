@@ -105,9 +105,23 @@ void ConsoleWindow::cmdSendClicked()
 
     QString res;
     g_FSHost.sendCmd(cmd.toAscii().data(), args.toAscii().data(), &res);
-    QStandardItem *item = new QStandardItem(res);
-    item->setData(SWITCH_LOG_CONSOLE, ConsoleModel::LogLevelRole);
-    addNewConsoleItem(item);
+    if (!res.isEmpty())
+    {
+         /* Remove \r\n */
+        QStringList textList = res.split(QRegExp("(\r+)"), QString::SkipEmptyParts);
+        QString final_str;
+        for (int line = 0; line<textList.size(); line++)
+        {
+            final_str += textList[line];
+        }
+        QStringList lines = final_str.split(QRegExp("(\n+)"), QString::SkipEmptyParts);
+        for (int line = 0; line < lines.size(); ++line)
+        {
+            QStandardItem *item = new QStandardItem(lines[line]);
+            item->setData(SWITCH_LOG_CONSOLE, ConsoleModel::LogLevelRole);
+            addNewConsoleItem(item);
+        }
+    }
     ui->lineCmd->clear();
 }
 
