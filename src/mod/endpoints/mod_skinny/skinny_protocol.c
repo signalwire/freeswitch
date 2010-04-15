@@ -588,8 +588,8 @@ int skinny_session_process_dest_callback(void *pArg, int argc, char **argv, char
 			skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_IN_USE_REMOTELY);
 			send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, 10, 0xffff);
 			send_display_prompt_status(listener, 0, "\200\037",
-				line_instance, tech_pvt->call_id);
-			skinny_send_call_info(session, listener, line_instance);
+				line_instance, helper->tech_pvt->call_id);
+			skinny_send_call_info(helper->tech_pvt->session, listener, line_instance);
 	    }
 	}
 	return 0;
