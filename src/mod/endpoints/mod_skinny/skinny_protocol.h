@@ -162,18 +162,6 @@ struct soft_key_event_message {
 /* SoftKeyTemplateReqMessage */
 #define SOFT_KEY_TEMPLATE_REQ_MESSAGE 0x0028
 
-/* ServiceUrlStatReqMessage */
-#define SERVICE_URL_STAT_REQ_MESSAGE 0x0033
-struct service_url_stat_req_message {
-    uint32_t service_url_index;
-};
-
-/* FeatureStatReqMessage */
-#define FEATURE_STAT_REQ_MESSAGE 0x0034
-struct feature_stat_req_message {
-    uint32_t feature_index;
-};
-
 /* HeadsetStatusMessage */
 #define HEADSET_STATUS_MESSAGE 0x002B
 struct headset_status_message {
@@ -184,6 +172,18 @@ struct headset_status_message {
 #define REGISTER_AVAILABLE_LINES_MESSAGE 0x002D
 struct register_available_lines_message {
     uint32_t count;
+};
+
+/* ServiceUrlStatReqMessage */
+#define SERVICE_URL_STAT_REQ_MESSAGE 0x0033
+struct service_url_stat_req_message {
+    uint32_t service_url_index;
+};
+
+/* FeatureStatReqMessage */
+#define FEATURE_STAT_REQ_MESSAGE 0x0034
+struct feature_stat_req_message {
+    uint32_t feature_index;
 };
 
 /* RegisterAckMessage */

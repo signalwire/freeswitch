@@ -542,9 +542,9 @@ void tech_init(private_t *tech_pvt, skinny_profile_t *profile, switch_core_sessi
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+	tech_pvt->profile = profile;
 	tech_pvt->call_id = ++profile->next_call_id;
 	tech_pvt->party_id = tech_pvt->call_id;
-	tech_pvt->profile = profile;
 	switch_core_session_set_private(session, tech_pvt);
 	tech_pvt->session = session;
 }

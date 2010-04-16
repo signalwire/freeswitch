@@ -147,36 +147,40 @@ typedef enum {
 } GFLAGS;
 
 struct private_object {
-    unsigned int flags;
-    switch_frame_t read_frame;
-    unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
-    switch_core_session_t *session;
-    switch_caller_profile_t *caller_profile;
-    switch_mutex_t *mutex;
-    switch_mutex_t *flag_mutex;
-    /* identification */
-    uint32_t call_id;
-    uint32_t party_id;
+	unsigned int flags;
+	switch_frame_t read_frame;
+	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_core_session_t *session;
+	switch_caller_profile_t *caller_profile;
+	switch_mutex_t *mutex;
+	switch_mutex_t *flag_mutex;
 
-    skinny_profile_t *profile;
+	/* identification */
+	skinny_profile_t *profile;
+	uint32_t call_id;
+	uint32_t party_id;
 
-    /* codec */
-    char *iananame;	
-    switch_codec_t read_codec;
-    switch_codec_t write_codec;
-    switch_codec_implementation_t read_impl;
-    switch_codec_implementation_t write_impl;
-    unsigned long rm_rate;
-    uint32_t codec_ms;
-    char *rm_encoding;
-    char *rm_fmtp;
-    switch_payload_t agreed_pt;
-    /* RTP */
-    switch_rtp_t *rtp_session;
-    char *local_sdp_audio_ip;
-    switch_port_t local_sdp_audio_port;
-    char *remote_sdp_audio_ip;
-    switch_port_t remote_sdp_audio_port;
+	/* related calls */
+	uint32_t transfer_to_call_id;
+	uint32_t transfer_from_call_id;
+
+	/* codec */
+	char *iananame;	
+	switch_codec_t read_codec;
+	switch_codec_t write_codec;
+	switch_codec_implementation_t read_impl;
+	switch_codec_implementation_t write_impl;
+	unsigned long rm_rate;
+	uint32_t codec_ms;
+	char *rm_encoding;
+	char *rm_fmtp;
+	switch_payload_t agreed_pt;
+	/* RTP */
+	switch_rtp_t *rtp_session;
+	char *local_sdp_audio_ip;
+	switch_port_t local_sdp_audio_port;
+	char *remote_sdp_audio_ip;
+	switch_port_t remote_sdp_audio_port;
 };
 
 typedef struct private_object private_t;

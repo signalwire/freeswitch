@@ -837,6 +837,47 @@ switch_status_t skinny_session_unhold_line(switch_core_session_t *session, liste
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t skinny_session_transfer(switch_core_session_t *session, listener_t *listener, uint32_t line_instance)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	private_t *tech_pvt = NULL;
+	switch_channel_t *channel = NULL;
+	const char *uuid = NULL;
+	switch_core_session_t *session2 = NULL;
+	private_t *tech_pvt2 = NULL;
+
+	switch_assert(session);
+	switch_assert(listener);
+	switch_assert(listener->profile);
+	
+	tech_pvt = switch_core_session_get_private(session);
+	channel = switch_core_session_get_channel(session);
+	uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
+
+	if (tech_pvt->transfer_from_call_id) {
+		if((session2 = skinny_profile_find_session(listener->profile, listener, &line_instance, 0))) {
+			switch_channel_t *channel2 = switch_core_session_get_channel(session2);
+			const char *uuid2 = switch_channel_get_variable(channel2, SWITCH_BRIDGE_VARIABLE);
+			switch_ivr_uuid_bridge(uuid, uuid2);
+			switch_core_session_rwunlock(session2);
+			/* TODO: How to inform the user that the bridge is not possible? */
+		}
+	} else {
+		if(uuid) {
+			/* TODO CallSelectStat */
+			status = skinny_create_ingoing_session(listener, &line_instance, &session2);
+			tech_pvt2 = switch_core_session_get_private(session2);
+			tech_pvt2->transfer_from_call_id = tech_pvt->call_id;
+			tech_pvt->transfer_to_call_id = tech_pvt2->call_id;
+			skinny_session_process_dest(session2, listener, line_instance, NULL, '\0', 0);
+			switch_core_session_rwunlock(session2);
+		} else {
+			/* TODO: How to inform the user that the bridge is not possible? */
+		}
+	}
+	return status;
+}
+
 switch_status_t skinny_session_stop_media(switch_core_session_t *session, listener_t *listener, uint32_t line_instance)
 {
 	switch_channel_t *channel = NULL;
@@ -1990,6 +2031,7 @@ switch_status_t skinny_handle_soft_key_set_request(listener_t *listener, skinny_
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[0] = SOFTKEY_ENDCALL;
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[1] = SOFTKEY_HOLD;
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[2] = SOFTKEY_NEWCALL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[3] = SOFTKEY_TRANSFER;
 	
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[0] = SOFTKEY_ANSWER;
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[1] = SOFTKEY_ENDCALL;
@@ -1998,6 +2040,9 @@ switch_status_t skinny_handle_soft_key_set_request(listener_t *listener, skinny_
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[0] = SOFTKEY_NEWCALL;
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[1] = SOFTKEY_RESUME;
 	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[2] = SOFTKEY_ENDCALL;
+	
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES].soft_key_template_index[1] = SOFTKEY_REDIAL;
+	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES].soft_key_template_index[2] = SOFTKEY_ENDCALL;
 
 	skinny_send_reply(listener, message);
 
@@ -2145,6 +2190,13 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 		    if(session) {
 	            status = skinny_session_hold_line(session, listener, line_instance);
 	        }
+			break;
+		case SOFTKEY_TRANSFER:
+			session = skinny_profile_find_session(listener->profile, listener, &line_instance, request->data.soft_key_event.call_id);
+
+			if(session) {
+				status = skinny_session_transfer(session, listener, line_instance);
+			}
 			break;
 		case SOFTKEY_BACKSPACE:
 	        session = skinny_profile_find_session(listener->profile, listener, &line_instance, request->data.soft_key_event.call_id);
@@ -2341,19 +2393,17 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 			0, /* uint32_t silence_suppression, */
 			0, /* uint16_t max_frames_per_packet, */
 			0 /* uint32_t g723_bitrate */
-		);
-	    if (switch_channel_get_state(channel) == CS_NEW) {
-		    switch_channel_set_state(channel, CS_INIT);
-	    }
-		switch_channel_mark_answered(channel);
+			);
 
+		if (switch_channel_get_state(channel) == CS_NEW) {
+			switch_channel_set_state(channel, CS_INIT);
+		}
+		switch_channel_mark_answered(channel);
 	}
 end:
-
 	if(session) {
 		switch_core_session_rwunlock(session);
 	}
-
 	return status;
 }
 
@@ -2509,14 +2559,14 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 			return skinny_handle_unregister(listener, request);
 		case SOFT_KEY_TEMPLATE_REQ_MESSAGE:
 			return skinny_handle_soft_key_template_request(listener, request);
-		case SERVICE_URL_STAT_REQ_MESSAGE:
-			return skinny_handle_service_url_stat_request(listener, request);
-		case FEATURE_STAT_REQ_MESSAGE:
-			return skinny_handle_feature_stat_request(listener, request);
 		case HEADSET_STATUS_MESSAGE:
 			return skinny_headset_status_message(listener, request);
 		case REGISTER_AVAILABLE_LINES_MESSAGE:
 			return skinny_handle_register_available_lines_message(listener, request);
+		case SERVICE_URL_STAT_REQ_MESSAGE:
+			return skinny_handle_service_url_stat_request(listener, request);
+		case FEATURE_STAT_REQ_MESSAGE:
+			return skinny_handle_feature_stat_request(listener, request);
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 				"Unhandled request %s (type=%x,length=%d).\n", skinny_message_type2str(request->type), request->type, request->length);
