@@ -2347,6 +2347,37 @@ SWITCH_STANDARD_API(uuid_simplify_function)
 }
 
 
+#define AUTOANSWER_SYNTAX "<uuid>"
+SWITCH_STANDARD_API(uuid_autoanswer_function)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-USAGE: %s\n", AUTOANSWER_SYNTAX);
+	} else {
+		switch_core_session_message_t msg = { 0 };
+		switch_core_session_t *lsession = NULL;
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_AUTOANSWER;
+		msg.string_arg = cmd;
+		msg.from = __FILE__;
+
+		if ((lsession = switch_core_session_locate(cmd))) {
+			status = switch_core_session_receive_message(lsession, &msg);
+			switch_core_session_rwunlock(lsession);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 #define DEBUG_AUDIO_SYNTAX "<uuid> <read|write|both> <on|off>"
 SWITCH_STANDARD_API(uuid_debug_audio_function)
 {
@@ -4202,6 +4233,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "user_data", "find user data", user_data_function, "<user>@<domain> [var|param|attr] <name>");
 	SWITCH_ADD_API(commands_api_interface, "user_exists", "find a user", user_exists_function, "<key> <user> <domain>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_audio", "uuid_audio", session_audio_function, AUDIO_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_autoanswer", "Force a ringing channel offhook", uuid_autoanswer_function, AUTOANSWER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_break", "Break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_broadcast", "broadcast", uuid_broadcast_function, BROADCAST_SYNTAX);
@@ -4300,6 +4332,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start write mute");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start write level");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid stop");
+	switch_console_set_complete("add uuid_autoanswer ::console::list_uuid");
 	switch_console_set_complete("add uuid_break ::console::list_uuid all");
 	switch_console_set_complete("add uuid_break ::console::list_uuid both");
 	switch_console_set_complete("add uuid_bridge ::console::list_uuid ::console::list_uuid");

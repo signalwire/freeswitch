@@ -1496,6 +1496,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 
+	case SWITCH_MESSAGE_INDICATE_AUTOANSWER:
+		{
+			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR("talk"), TAG_END());
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_SIMPLIFY:
 		{
 			char *ref_to, *ref_by;
