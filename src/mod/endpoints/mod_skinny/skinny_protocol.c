@@ -1394,6 +1394,8 @@ switch_status_t send_version(listener_t *listener,
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.version));
+	message->type = VERSION_MESSAGE;
+	message->length = 4+ sizeof(message->data.version);
 	strncpy(message->data.version.version, version, 16);
 	return skinny_send_reply(listener, message);
 }
@@ -1655,6 +1657,7 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 
 	strncpy(listener->device_name, request->data.reg.device_name, 16);
 	listener->device_instance = request->data.reg.instance;
+	listener->device_type = request->data.reg.device_type;
 
 	xskinny = switch_xml_child(xuser, "skinny");
 	if (xskinny) {
@@ -2126,6 +2129,18 @@ switch_status_t skinny_handle_button_template_request(listener_t *listener, skin
 
 switch_status_t skinny_handle_version_request(listener_t *listener, skinny_message_t *request)
 {
+	if (zstr(listener->firmware_version)) {
+		char *id_str;
+		skinny_device_type_params_t *params;
+		id_str = switch_mprintf("%d", listener->device_type);
+		params = (skinny_device_type_params_t *) switch_core_hash_find(listener->profile->device_type_params_hash, id_str);
+		if (params) {
+			if (!zstr(params->firmware_version)) {
+				strncpy(listener->firmware_version, params->firmware_version, 16);
+			}
+		}
+	}
+	
 	if (!zstr(listener->firmware_version)) {
 		return send_version(listener, listener->firmware_version);
 	} else {

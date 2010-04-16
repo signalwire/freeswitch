@@ -67,6 +67,7 @@ struct skinny_profile {
     uint32_t keep_alive;
     char date_format[6];
     int debug;
+    switch_hash_t *device_type_params_hash;
     /* db */
     char *dbname;
     char *odbc_dsn;
@@ -93,6 +94,10 @@ struct skinny_profile {
 };
 typedef struct skinny_profile skinny_profile_t;
 
+struct skinny_device_type_params {
+	char firmware_version[16];
+};
+typedef struct skinny_device_type_params skinny_device_type_params_t;
 
 /*****************************************************************************/
 /* LISTENERS TYPES */
@@ -107,8 +112,9 @@ struct listener {
     skinny_profile_t *profile;
     char device_name[16];
     uint32_t device_instance;
+    uint32_t device_type;
     
-    char firmware_version[16];
+	char firmware_version[16];
 
     switch_socket_t *sock;
     switch_memory_pool_t *pool;

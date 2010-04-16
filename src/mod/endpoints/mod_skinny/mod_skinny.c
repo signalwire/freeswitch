@@ -1460,13 +1460,14 @@ static switch_status_t load_skinny_config(void)
 	if ((xprofiles = switch_xml_child(xcfg, "profiles"))) {
 		for (xprofile = switch_xml_child(xprofiles, "profile"); xprofile; xprofile = xprofile->next) {
 			char *profile_name = (char *) switch_xml_attr_soft(xprofile, "name");
-			switch_xml_t xsettings = switch_xml_child(xprofile, "settings");
+			switch_xml_t xsettings;
+			switch_xml_t xdevice_types;
 			if (zstr(profile_name)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 					"<profile> is missing name attribute\n");
 				continue;
 			}
-			if (xsettings) {
+			if ((xsettings = switch_xml_child(xprofile, "settings"))) {
 				switch_memory_pool_t *profile_pool = NULL;
 				char dbname[256];
 				switch_core_db_t *db;
@@ -1521,6 +1522,7 @@ static switch_status_t load_skinny_config(void)
 					profile->port = 2000;
 				}
 
+				/* Database */
 				switch_snprintf(dbname, sizeof(dbname), "skinny_%s", profile->name);
 				profile->dbname = switch_core_strdup(profile->pool, dbname);
 
@@ -1558,6 +1560,32 @@ static switch_status_t load_skinny_config(void)
 				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_buttons", NULL, NULL);
 				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_active_lines", NULL, NULL);
 
+				/* Device types */
+				switch_core_hash_init(&profile->device_type_params_hash, profile->pool);
+				if ((xdevice_types = switch_xml_child(xprofile, "device-types"))) {
+					switch_xml_t xdevice_type;
+					for (xdevice_type = switch_xml_child(xdevice_types, "device-type"); xdevice_type; xdevice_type = xdevice_type->next) {
+						uint32_t id = skinny_str2device_type(switch_xml_attr_soft(xdevice_type, "id"));
+						if (id != 0) {
+							char *id_str = switch_mprintf("%d", id);
+							skinny_device_type_params_t *params = switch_core_alloc(profile->pool, sizeof(skinny_device_type_params_t));
+							for (param = switch_xml_child(xdevice_type, "param"); param; param = param->next) {
+								char *var = (char *) switch_xml_attr_soft(param, "name");
+								char *val = (char *) switch_xml_attr_soft(param, "value");
+
+								if (!strcasecmp(var, "firmware-version")) {
+								    strncpy(params->firmware_version, val, 16);
+								}
+							} /* param */
+						    switch_core_hash_insert(profile->device_type_params_hash, id_str, params);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+								"Unknow device type %s in profile %s.\n", switch_xml_attr_soft(xdevice_type, "id"), profile->name);
+						}
+					}
+				}
+
+				/* Register profile */
 			    switch_mutex_lock(globals.mutex);
 			    switch_core_hash_insert(globals.profile_hash, profile->name, profile);
 			    switch_mutex_unlock(globals.mutex);

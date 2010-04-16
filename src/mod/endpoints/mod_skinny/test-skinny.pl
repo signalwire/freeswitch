@@ -64,6 +64,11 @@ $socket->send_message(
 	    )
 	);
 
+if(0) {
+	$socket->send_message(VERSION_REQ_MESSAGE);
+	$socket->receive_message(); # VersionMessage
+}
+
 $socket->send_message(BUTTON_TEMPLATE_REQ_MESSAGE);
 $socket->receive_message(); # ButtonTemplateMessage
 
