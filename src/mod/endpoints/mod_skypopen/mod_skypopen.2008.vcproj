@@ -118,7 +118,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="rpcrt4.lib  &quot;..\..\..\..\debug\libtiff.lib&quot; &quot;..\..\..\..\libs\spandsp\src\debug\spandsp.lib&quot;"
+				AdditionalOptions="rpcrt4.lib  &quot;..\..\..\..\debug\libtiff.lib&quot; &quot;..\..\..\..\libs\spandsp\src\release\spandsp.lib&quot;"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>
