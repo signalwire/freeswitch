@@ -842,7 +842,7 @@ switch_status_t skinny_session_transfer(switch_core_session_t *session, listener
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	private_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
-	const char *uuid = NULL;
+	const char *remote_uuid = NULL;
 	switch_core_session_t *session2 = NULL;
 	private_t *tech_pvt2 = NULL;
 
@@ -852,18 +852,22 @@ switch_status_t skinny_session_transfer(switch_core_session_t *session, listener
 	
 	tech_pvt = switch_core_session_get_private(session);
 	channel = switch_core_session_get_channel(session);
-	uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
+	remote_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
 
 	if (tech_pvt->transfer_from_call_id) {
-		if((session2 = skinny_profile_find_session(listener->profile, listener, &line_instance, 0))) {
+		if((session2 = skinny_profile_find_session(listener->profile, listener, &line_instance, tech_pvt->transfer_from_call_id))) {
 			switch_channel_t *channel2 = switch_core_session_get_channel(session2);
-			const char *uuid2 = switch_channel_get_variable(channel2, SWITCH_BRIDGE_VARIABLE);
-			switch_ivr_uuid_bridge(uuid, uuid2);
+			const char *remote_uuid2 = switch_channel_get_variable(channel2, SWITCH_SIGNAL_BOND_VARIABLE);
+			if (switch_ivr_uuid_bridge(remote_uuid, remote_uuid2) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				switch_channel_hangup(channel2, SWITCH_CAUSE_NORMAL_CLEARING);
+			} else {
+				/* TODO: How to inform the user that the bridge is not possible? */
+			}
 			switch_core_session_rwunlock(session2);
-			/* TODO: How to inform the user that the bridge is not possible? */
 		}
 	} else {
-		if(uuid) {
+		if(remote_uuid) {
 			/* TODO CallSelectStat */
 			status = skinny_create_ingoing_session(listener, &line_instance, &session2);
 			tech_pvt2 = switch_core_session_get_private(session2);
