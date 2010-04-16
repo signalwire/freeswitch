@@ -1152,9 +1152,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	switch (zchan->state) {
 	case ZAP_CHANNEL_STATE_DOWN:
 		{
-			if (zap_test_sflag(zchan, SFLAG_FREE_REQ_ID)) {
-				release_request_id_span_chan(zchan->physical_span_id-1, zchan->physical_chan_id-1);
-			}
+			/* Always try to clear the GRID */
+			release_request_id_span_chan(zchan->physical_span_id-1, zchan->physical_chan_id-1);
 
 			if (!zap_test_sflag(zchan, SFLAG_SENT_FINAL_MSG)) {
 				zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_MSG);
