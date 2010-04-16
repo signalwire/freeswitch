@@ -2059,6 +2059,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel, const cha
 	r->start_of_input = 0;
 
 	/* input timers are started by default unless the start-input-timers=false param is set */
+	/* TODO this is true for Nuance, but might not be true on other MRCP servers */
 	start_input_timers = (char *) switch_core_hash_find(schannel->params, "start-input-timers");
 	r->timers_started = zstr(start_input_timers) || strcasecmp(start_input_timers, "false");
 
