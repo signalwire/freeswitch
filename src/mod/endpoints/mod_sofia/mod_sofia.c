@@ -1496,9 +1496,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 
-	case SWITCH_MESSAGE_INDICATE_AUTOANSWER:
+	case SWITCH_MESSAGE_INDICATE_PHONE_EVENT:
 		{
-			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR("talk"), TAG_END());
+			const char *event = "talk";
+			if (!zstr(msg->string_arg) && strcasecmp(msg->string_arg, event)) {
+				if (!strcasecmp(msg->string_arg, "hold")) {
+					event = "hold";
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid event.\n");
+				}
+			}
+			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR(event), TAG_END());
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_SIMPLIFY:

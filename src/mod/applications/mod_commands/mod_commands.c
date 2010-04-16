@@ -2319,7 +2319,7 @@ SWITCH_STANDARD_API(uuid_display_function)
 #define SIMPLIFY_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(uuid_simplify_function)
 {
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", SIMPLIFY_SYNTAX);
@@ -2347,22 +2347,28 @@ SWITCH_STANDARD_API(uuid_simplify_function)
 }
 
 
-#define AUTOANSWER_SYNTAX "<uuid>"
-SWITCH_STANDARD_API(uuid_autoanswer_function)
+#define PHONE_EVENT_SYNTAX "<uuid>"
+SWITCH_STANDARD_API(uuid_phone_event_function)
 {
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *mycmd = NULL, *argv[2] = { 0 };
+	int argc = 0;
 
-	if (zstr(cmd)) {
-		stream->write_function(stream, "-USAGE: %s\n", AUTOANSWER_SYNTAX);
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 1) {
+		stream->write_function(stream, "-USAGE: %s\n", PHONE_EVENT_SYNTAX);
 	} else {
 		switch_core_session_message_t msg = { 0 };
 		switch_core_session_t *lsession = NULL;
 
-		msg.message_id = SWITCH_MESSAGE_INDICATE_AUTOANSWER;
-		msg.string_arg = cmd;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_PHONE_EVENT;
+		msg.string_arg = argv[1];
 		msg.from = __FILE__;
 
-		if ((lsession = switch_core_session_locate(cmd))) {
+		if ((lsession = switch_core_session_locate(argv[0]))) {
 			status = switch_core_session_receive_message(lsession, &msg);
 			switch_core_session_rwunlock(lsession);
 		}
@@ -2373,6 +2379,8 @@ SWITCH_STANDARD_API(uuid_autoanswer_function)
 	} else {
 		stream->write_function(stream, "-ERR Operation Failed\n");
 	}
+
+	switch_safe_free(mycmd);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -4233,7 +4241,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "user_data", "find user data", user_data_function, "<user>@<domain> [var|param|attr] <name>");
 	SWITCH_ADD_API(commands_api_interface, "user_exists", "find a user", user_exists_function, "<key> <user> <domain>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_audio", "uuid_audio", session_audio_function, AUDIO_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "uuid_autoanswer", "Force a ringing channel offhook", uuid_autoanswer_function, AUTOANSWER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_break", "Break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_broadcast", "broadcast", uuid_broadcast_function, BROADCAST_SYNTAX);
@@ -4251,6 +4258,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_loglevel", "set loglevel on session", uuid_loglevel, UUID_LOGLEVEL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "media", uuid_media_function, MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_park", "Park Channel", park_function, PARK_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_phone_event", "Send and event to the phone", uuid_phone_event_function, PHONE_EVENT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_preprocess", "Pre-process Channel", preprocess_function, PREPROCESS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_record", "session record", session_record_function, SESS_REC_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_recv_dtmf", "receive dtmf digits", uuid_recv_dtmf_function, UUID_RECV_DTMF_SYNTAX);
@@ -4332,7 +4340,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start write mute");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start write level");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid stop");
-	switch_console_set_complete("add uuid_autoanswer ::console::list_uuid");
 	switch_console_set_complete("add uuid_break ::console::list_uuid all");
 	switch_console_set_complete("add uuid_break ::console::list_uuid both");
 	switch_console_set_complete("add uuid_bridge ::console::list_uuid ::console::list_uuid");
@@ -4358,6 +4365,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_loglevel ::console::list_uuid debug");
 	switch_console_set_complete("add uuid_media ::console::list_uuid");
 	switch_console_set_complete("add uuid_park ::console::list_uuid");
+	switch_console_set_complete("add uuid_phone_event ::console::list_uuid talk");
+	switch_console_set_complete("add uuid_phone_event ::console::list_uuid hold");
 	switch_console_set_complete("add uuid_preprocess ::console::list_uuid");
 	switch_console_set_complete("add uuid_record ::console::list_uuid");
 	switch_console_set_complete("add uuid_recv_dtmf ::console::list_uuid");

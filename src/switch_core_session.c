@@ -555,7 +555,7 @@ static const char *message_names[] = {
 	"PROXY_MEDIA",
 	"APPLICATION_EXEC",
 	"APPLICATION_EXEC_COMPLETE",
-	"AUTOANSWER",
+	"PHONE_EVENT",
 	"INVALID"
 };
 
