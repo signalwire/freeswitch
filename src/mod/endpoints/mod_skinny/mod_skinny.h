@@ -107,6 +107,8 @@ struct listener {
     skinny_profile_t *profile;
     char device_name[16];
     uint32_t device_instance;
+    
+    char firmware_version[16];
 
     switch_socket_t *sock;
     switch_memory_pool_t *pool;

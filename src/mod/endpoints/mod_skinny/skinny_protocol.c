@@ -1609,7 +1609,7 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 	skinny_profile_t *profile;
 	switch_event_t *event = NULL;
 	switch_event_t *params = NULL;
-	switch_xml_t xroot, xdomain, xgroup, xuser, xskinny, xbuttons, xbutton;
+	switch_xml_t xroot, xdomain, xgroup, xuser, xskinny, xparams, xparam, xbuttons, xbutton;
 	char *sql;
 	assert(listener->profile);
 	profile = listener->profile;
@@ -1658,8 +1658,16 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 
 	xskinny = switch_xml_child(xuser, "skinny");
 	if (xskinny) {
-		xbuttons = switch_xml_child(xskinny, "buttons");
-		if (xbuttons) {
+		if ((xparams = switch_xml_child(xskinny, "params"))) {
+			for (xparam = switch_xml_child(xparams, "param"); xparam; xparam = xparam->next) {
+				const char *name = switch_xml_attr_soft(xparam, "name");
+				const char *value = switch_xml_attr_soft(xparam, "value");
+				if (!strcasecmp(name, "skinny-firmware-version")) {
+					strncpy(listener->firmware_version, value, 16);
+				}
+			}
+		}
+		if ((xbuttons = switch_xml_child(xskinny, "buttons"))) {
 			uint32_t line_instance = 1;
 			for (xbutton = switch_xml_child(xbuttons, "button"); xbutton; xbutton = xbutton->next) {
 				uint32_t position = atoi(switch_xml_attr_soft(xbutton, "position"));
@@ -2118,11 +2126,14 @@ switch_status_t skinny_handle_button_template_request(listener_t *listener, skin
 
 switch_status_t skinny_handle_version_request(listener_t *listener, skinny_message_t *request)
 {
-	/* TODO */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-		"VersionReqMessage not implemented yet.\n");
-	return SWITCH_STATUS_SUCCESS;
-	/* return send_version(listener, ""); */
+	if (!zstr(listener->firmware_version)) {
+		return send_version(listener, listener->firmware_version);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+			"Device %s:%d is requesting for firmware version, but none is set.\n",
+			listener->device_name, listener->device_instance);
+		return SWITCH_STATUS_SUCCESS;
+	}
 }
 
 switch_status_t skinny_handle_capabilities_response(listener_t *listener, skinny_message_t *request)
