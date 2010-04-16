@@ -114,6 +114,9 @@ struct line_stat_req_message {
 /* ButtonTemplateReqMessage */
 #define BUTTON_TEMPLATE_REQ_MESSAGE 0x000E
 
+/* VersionReqMessage */
+#define VERSION_REQ_MESSAGE 0x000F
+
 /* CapabilitiesResMessage */
 #define CAPABILITIES_RES_MESSAGE 0x0010
 struct station_capabilities {
@@ -343,6 +346,12 @@ struct button_template_message {
     struct button_definition btn[SKINNY_MAX_BUTTON_COUNT];
 };
 
+/* VersionMessage */
+#define VERSION_MESSAGE 0x0098
+struct version_message {
+    char version[16];
+};
+
 /* CapabilitiesReqMessage */
 #define CAPABILITIES_REQ_MESSAGE 0x009B
 
@@ -535,6 +544,7 @@ union skinny_data {
     struct config_stat_res_message config_res;
     struct define_time_date_message define_time_date;
     struct button_template_message button_template;
+    struct version_message version;
     struct register_reject_message reg_rej;
     struct reset_message reset;
     struct open_receive_channel_message open_receive_channel;
@@ -724,6 +734,10 @@ switch_status_t send_define_time_date(listener_t *listener,
 	uint32_t milliseconds,
 	uint32_t timestamp);
 switch_status_t send_define_current_time_date(listener_t *listener);
+switch_status_t send_version(listener_t *listener,
+    char *version);
+switch_status_t send_register_reject(listener_t *listener,
+    char *error);
 switch_status_t send_open_receive_channel(listener_t *listener,
     uint32_t conference_id,
     uint32_t pass_thru_party_id,
