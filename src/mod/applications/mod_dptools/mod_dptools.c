@@ -358,16 +358,18 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 			char terminator;
 			switch_status_t status;
 
-			if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Database Error!\n");
-			}
-
 			while (switch_channel_ready(channel)) {
 				for (x = 0; x < MAX_SPY; x++) {
 					switch_safe_free(e_data.uuid_list[x]);
 				}
 				e_data.total = 0;
+				
+				if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Database Error!\n");
+					break;
+				}
 				switch_cache_db_execute_sql_callback(db, sql, e_callback, &e_data, &errmsg);
+				switch_cache_db_release_db_handle(&db);
 				if (errmsg) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error: %s\n", errmsg);
 					switch_core_db_free(errmsg);
@@ -408,7 +410,6 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 			}
 
 			free(sql);
-			switch_cache_db_release_db_handle(&db);
 
 		} else {
 			switch_ivr_eavesdrop_session(session, data, require_group, ED_DTMF);
