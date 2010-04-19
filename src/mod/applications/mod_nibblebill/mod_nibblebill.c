@@ -964,6 +964,18 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_nibblebill_shutdown)
 	switch_core_remove_state_handler(&nibble_state_handler);
 	switch_odbc_handle_disconnect(globals.master_odbc);
 
+	switch_safe_free(globals.db_username);
+	switch_safe_free(globals.db_password);
+	switch_safe_free(globals.db_dsn);
+	switch_safe_free(globals.db_table);
+	switch_safe_free(globals.db_column_cash);
+	switch_safe_free(globals.db_column_account);
+	switch_safe_free(globals.custom_sql_save);
+	switch_safe_free(globals.custom_sql_lookup);
+	switch_safe_free(globals.percall_action);
+	switch_safe_free(globals.lowbal_action);
+	switch_safe_free(globals.nobal_action);
+
 	return SWITCH_STATUS_UNLOAD;
 }
 
