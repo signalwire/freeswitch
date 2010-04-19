@@ -1826,7 +1826,7 @@ static void *ftdm_sangoma_boost_run(ftdm_thread_t *me, void *obj)
 	}
 
 	if (ftdm_boost_connection_open(span) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "ftdm_boost_connection_open failed\n");
+		ftdm_log(FTDM_LOG_CRIT, "ftdm_boost_connection_open failed\n");
 		goto end;
 	}
 
@@ -1869,10 +1869,6 @@ static void *ftdm_sangoma_boost_run(ftdm_thread_t *me, void *obj)
 		
 		check_state(span);
 	}
-
-	goto end;
-
-	ftdm_log(FTDM_LOG_CRIT, "Boost event processing Error!\n");
 
 end:
 	if (!sangoma_boost_data->sigmod) {
@@ -1920,7 +1916,7 @@ static int sigmod_ss7box_isup_exec_cmd(ftdm_stream_handle_t *stream, char *cmd)
 
 static void ftdm_cli_span_state_cmd(ftdm_span_t *span, char *state)
 {
-	int j;
+	unsigned j;
 	int cnt=0;
 	for(j = 1; j <= span->chan_count; j++) {
 		if (span->channels[j]->state != FTDM_CHANNEL_STATE_DOWN) {
@@ -1989,6 +1985,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_boost_api)
 #endif
 
 		} else if (!strcasecmp(argv[0], "span")) {
+			int err;
 			sangomabc_connection_t *pcon;
 			ftdm_sangoma_boost_data_t *sangoma_boost_data;
 			ftdm_span_t *span;
@@ -1998,7 +1995,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_boost_api)
 				goto done;
 			}
 
-			int err = ftdm_span_find_by_name(argv[1], &span);
+			err = ftdm_span_find_by_name(argv[1], &span);
 			if (FTDM_SUCCESS != err) {
 				stream->write_function(stream, "-ERR failed to find span by name %s\n",argv[1]);
 				goto done;
@@ -2446,7 +2443,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 	ftdm_dso_lib_t lib = NULL;
 	char path[255] = "";
 	char *err = NULL;
-	int j = 0;
+	unsigned int j = 0;
 	unsigned paramindex = 0;
 	ftdm_status_t rc = FTDM_SUCCESS;
 
