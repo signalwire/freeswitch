@@ -35,8 +35,7 @@
  * Moises Silva <moy@sangoma.com>
  */
 
-#include "freetdm.h"
-#include "ftdm_config.h"
+#include "private/ftdm_core.h"
 
 int ftdm_config_open_file(ftdm_config_t *cfg, const char *file_path)
 {

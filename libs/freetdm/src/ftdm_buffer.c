@@ -31,7 +31,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 #include "ftdm_buffer.h"
 
 static unsigned buffer_id = 0;

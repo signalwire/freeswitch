@@ -36,7 +36,7 @@ moddir = @modinstdir@
 libdir = @libdir@
 library_includedir = $(PREFIX)/include
 
-INCS      = -I$(FT_SRCDIR)/$(SRC)/include -I$(FT_SRCDIR)/$(SRC)/isdn/include
+INCS      = -I$(FT_SRCDIR)/$(SRC)/include -I$(FT_SRCDIR)/$(SRC)/isdn/include -I$(FT_SRCDIR)/$(SRC)/include/private
 if HAVE_SCTP
 INCS +=  -I$(FT_SRCDIR)/$(SRC)/ftmod/ftmod_sangoma_boost 
 endif
@@ -76,23 +76,9 @@ $(SRC)/ftdm_dso.c \
 $(SRC)/ftdm_cpu_monitor.c
 
 library_include_HEADERS = \
-$(SRC)/include/fsk.h \
-$(SRC)/include/g711.h \
-$(SRC)/include/hashtable.h \
-$(SRC)/include/hashtable_itr.h \
-$(SRC)/include/hashtable_private.h \
-$(SRC)/include/libteletone_detect.h \
-$(SRC)/include/libteletone_generate.h \
-$(SRC)/include/libteletone.h \
 $(SRC)/include/freetdm.h \
-$(SRC)/include/sangoma_tdm_api.h \
-$(SRC)/include/uart.h \
-$(SRC)/include/ftdm_buffer.h \
-$(SRC)/include/ftdm_config.h \
 $(SRC)/include/ftdm_threadmutex.h \
-$(SRC)/include/ftdm_dso.h \
-$(SRC)/include/ftdm_types.h \
-$(SRC)/include/ftdm_cpu_monitor.h 
+$(SRC)/include/ftdm_os.h 
 
 lib_LTLIBRARIES	       = libfreetdm.la
 libfreetdm_la_CFLAGS   = $(AM_CFLAGS) $(MY_CFLAGS)
@@ -275,4 +261,4 @@ install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(PREFIX)
 	$(mkinstalldirs) $(DESTDIR)@confdir@
 	@[ -f "$(DESTDIR)@confdir@/freetdm.conf" ] || ( cp conf/*.conf $(DESTDIR)@confdir@)
-	@echo OpenFTDM Installed
+	@echo FreeTDM Installed

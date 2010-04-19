@@ -1,4 +1,5 @@
 #include "freetdm.h"
+#include <stdlib.h>
 
 int main(int argc, char *argv[])
 {
@@ -7,6 +8,7 @@ int main(int argc, char *argv[])
 	unsigned ms = 20;
 	ftdm_codec_t codec = FTDM_CODEC_SLIN;
 	unsigned runs = 1;
+	int spanid, chanid;
 
 
 	if (ftdm_global_init() != FTDM_SUCCESS) {
@@ -20,7 +22,9 @@ int main(int argc, char *argv[])
 	//if (ftdm_channel_open_any("wanpipe", 0, FTDM_TOP_DOWN, &chan) == FTDM_SUCCESS) {
 	if (ftdm_channel_open(1, 1, &chan) == FTDM_SUCCESS) {
 		int x = 0;
-		printf("opened channel %d:%d\n", chan->span_id, chan->chan_id);
+		spanid = ftdm_channel_get_span_id(chan);
+		chanid = ftdm_channel_get_id(chan);
+		printf("opened channel %d:%d\n", spanid, chanid);
 
 #if 1
 		if (ftdm_channel_command(chan, FTDM_COMMAND_SET_INTERVAL, &ms) == FTDM_SUCCESS) {
@@ -28,7 +32,7 @@ int main(int argc, char *argv[])
 			ftdm_channel_command(chan, FTDM_COMMAND_GET_INTERVAL, &ms);
 			printf("interval set to %u\n", ms);
 		} else {
-			printf("set interval failed [%s]\n", chan->last_error);
+			printf("set interval failed [%s]\n", ftdm_channel_get_last_error(chan));
 		}
 #endif
 		if (ftdm_channel_command(chan, FTDM_COMMAND_SET_CODEC, &codec) == FTDM_SUCCESS) {
@@ -36,7 +40,7 @@ int main(int argc, char *argv[])
 			ftdm_channel_command(chan, FTDM_COMMAND_GET_CODEC, &codec);
 			printf("codec set to %u\n", codec);
 		} else {
-			printf("set codec failed [%s]\n", chan->last_error);
+			printf("set codec failed [%s]\n", ftdm_channel_get_last_error(chan));
 		}
 
 		for(x = 0; x < 25; x++) {
@@ -45,22 +49,22 @@ int main(int argc, char *argv[])
 			ftdm_wait_flag_t flags = FTDM_READ;
 
 			if (ftdm_channel_wait(chan, &flags, -1) == FTDM_FAIL) {
-				printf("wait FAIL! %u [%s]\n", (unsigned)len, chan->last_error);
+				printf("wait FAIL! %u [%s]\n", (unsigned)len, ftdm_channel_get_last_error(chan));
 			}
 			if (flags & FTDM_READ) {
 				if (ftdm_channel_read(chan, buf, &len) == FTDM_SUCCESS) {
 					printf("READ: %u\n", (unsigned)len); 
 				} else {
-					printf("READ FAIL! %u [%s]\n", (unsigned)len, chan->last_error);
+					printf("READ FAIL! %u [%s]\n", (unsigned)len, ftdm_channel_get_last_error(chan));
 					break;
 				}
 			} else {
-				printf("wait fail [%s]\n", chan->last_error);
+				printf("wait fail [%s]\n", ftdm_channel_get_last_error(chan));
 			}
 		}
 		ftdm_channel_close(&chan);
 	} else {
-		printf("open fail [%s]\n", chan->last_error);
+		printf("open fail [%s]\n", ftdm_channel_get_last_error(chan));
 	}
 
 	if(--runs) {

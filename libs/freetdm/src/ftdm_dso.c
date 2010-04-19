@@ -17,7 +17,7 @@
  *
  */
 
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 #include "ftdm_dso.h"
 #include <stdlib.h>
 #include <string.h>

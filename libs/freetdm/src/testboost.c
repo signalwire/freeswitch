@@ -1,4 +1,5 @@
 #include "freetdm.h"
+#include <stdlib.h>
 
 static FIO_SIGNAL_CB_FUNCTION(on_signal)
 {

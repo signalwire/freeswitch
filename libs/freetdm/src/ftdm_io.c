@@ -40,7 +40,7 @@
 #define _GNU_SOURCE
 #ifndef WIN32
 #endif
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 #include <stdarg.h>
 #ifdef WIN32
 #include <io.h>
@@ -1592,11 +1592,72 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 	return status;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_outgoing_call(ftdm_channel_t *ftdmchan)
+FT_DECLARE(uint32_t) ftdm_channel_get_id(const ftdm_channel_t *ftdmchan)
+{
+	return ftdmchan->chan_id;
+}
+
+FT_DECLARE(uint32_t) ftdm_channel_get_ph_id(const ftdm_channel_t *ftdmchan)
+{
+	return ftdmchan->physical_chan_id;
+}
+
+FT_DECLARE(uint32_t) ftdm_channel_get_span_id(const ftdm_channel_t *ftdmchan)
+{
+	return ftdmchan->span_id;
+}
+
+FT_DECLARE(uint32_t) ftdm_span_get_id(const ftdm_span_t *span)
+{
+	return span->span_id;
+}
+
+FT_DECLARE(const char *) ftdm_span_get_name(const ftdm_span_t *span)
+{
+	return span->name;
+}
+
+FT_DECLARE(ftdm_bool_t) ftdm_channel_call_active(const ftdm_channel_t *ftdmchan)
+{
+	return (ftdmchan->state == FTDM_CHANNEL_STATE_UP) ? FTDM_TRUE : FTDM_FALSE;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_channel_call_answer(ftdm_channel_t *ftdmchan)
+{
+	ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_UP);
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_channel_call_hangup(ftdm_channel_t *ftdmchan)
+{
+	ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(const char *) ftdm_channel_get_last_error(const ftdm_channel_t *ftdmchan)
+{
+	return ftdmchan->last_error;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_channel_call_indicate(ftdm_channel_t *ftdmchan, ftdm_channel_indication_t indication)
+{
+	switch (indication) {
+	case FTDM_CHANNEL_INDICATE_RING:
+		ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_RING);
+	case FTDM_CHANNEL_INDICATE_PROGRESS:
+		ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+	default:
+		ftdm_log(FTDM_LOG_DEBUG, "Do not know how to indicate %d\n", indication);
+		return FTDM_FAIL;
+	}
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_channel_call_place(ftdm_channel_t *ftdmchan)
 {
 	ftdm_status_t status;
 
-	assert(ftdmchan != NULL);
+	ftdm_assert(ftdmchan != NULL, "null channel");
 	
 	if (ftdmchan->span->outgoing_call) {
 		if ((status = ftdmchan->span->outgoing_call(ftdmchan)) == FTDM_SUCCESS) {
@@ -1604,9 +1665,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_outgoing_call(ftdm_channel_t *ftdmchan)
 		}
 		return status;
 	} else {
-		ftdm_log(FTDM_LOG_ERROR, "outgoing_call method not implemented!\n");
+		ftdm_log(FTDM_LOG_ERROR, "outgoing_call method not implemented in this span!\n");
 	}
-	
 	return FTDM_FAIL;
 }
 

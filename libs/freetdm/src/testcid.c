@@ -1,4 +1,5 @@
-#include "freetdm.h"
+#include "private/ftdm_core.h"
+
 ftdm_status_t my_write_sample(int16_t *buf, ftdm_size_t buflen, void *user_data);
 
 struct helper {

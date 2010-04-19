@@ -32,7 +32,7 @@
  */
 
 
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 #include "ftmod_zt.h"
 
 /**

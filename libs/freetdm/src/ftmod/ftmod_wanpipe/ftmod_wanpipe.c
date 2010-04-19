@@ -42,7 +42,7 @@
 #include <unistd.h>
 #include <stropts.h>
 #endif
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 #ifndef __WINDOWS__
 #include <poll.h>
 #include <sys/socket.h>

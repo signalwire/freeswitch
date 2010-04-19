@@ -1,12 +1,14 @@
 #include "freetdm.h"
 #include <signal.h>
+#include <stdlib.h>
 
 static int R = 0;
 static ftdm_mutex_t *mutex = NULL;
 
 static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 {
-    ftdm_log(FTDM_LOG_DEBUG, "Got R2 channel sig [%s] in channel\n", ftdm_signal_event2str(sigmsg->event_id), sigmsg->channel->physical_chan_id);
+	int chanid = ftdm_channel_get_ph_id(sigmsg->channel);
+    ftdm_log(FTDM_LOG_DEBUG, "Got R2 channel sig [%s] in channel\n", ftdm_signal_event2str(sigmsg->event_id), chanid);
     return FTDM_SUCCESS;
 }
 
@@ -49,7 +51,7 @@ int main(int argc, char *argv[])
 						   "max_ani", 10,
 						   "max_dnis", 4,
 						   "logging", "all",
-						   TAG_END) == FTDM_SUCCESS) {
+						   FTDM_TAG_END) == FTDM_SUCCESS) {
 						   
 
 		ftdm_span_start(span);

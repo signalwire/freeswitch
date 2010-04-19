@@ -34,7 +34,7 @@
  */
 
 #include <libteletone.h>
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 
 #define SMAX 32767
 #define SMIN -32768

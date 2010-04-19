@@ -43,7 +43,7 @@ On __WINDOWS__ platform this code works with sigmod ONLY, don't try to make sens
 I basically ifdef out everything that the compiler complained about
 */
 
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 #include "sangoma_boost_client.h"
 #include "ftdm_sangoma_boost.h"
 #ifdef HAVE_SYS_SELECT_H

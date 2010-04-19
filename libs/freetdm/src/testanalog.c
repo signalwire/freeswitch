@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "freetdm.h"
 
 
@@ -12,10 +15,10 @@ static void *test_call(ftdm_thread_t *me, void *obj)
 	
 	ftdm_log(FTDM_LOG_DEBUG, "answer call and start echo test\n");
 
-	ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_UP);
+	ftdm_channel_call_answer(chan);
 	ftdm_channel_command(chan, FTDM_COMMAND_SEND_DTMF, number);
 
-	while (chan->state == FTDM_CHANNEL_STATE_UP) {
+	while (ftdm_channel_call_active(chan)) {
 		ftdm_wait_flag_t flags = FTDM_READ;
 		
 		if (ftdm_channel_wait(chan, &flags, -1) == FTDM_FAIL) {
@@ -32,8 +35,8 @@ static void *test_call(ftdm_thread_t *me, void *obj)
 		}
 	}
 	
-	if (chan->state == FTDM_CHANNEL_STATE_UP) {
-		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_BUSY);
+	if (ftdm_channel_call_active(chan)) {
+		ftdm_channel_call_indicate(chan, FTDM_CHANNEL_INDICATE_BUSY);
 	}
 
 	ftdm_log(FTDM_LOG_DEBUG, "call over\n");
@@ -47,7 +50,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_signal)
 
 	switch(sigmsg->event_id) {
 	case FTDM_SIGEVENT_START:
-		ftdm_set_state_locked(sigmsg->channel, FTDM_CHANNEL_STATE_RING);
+		ftdm_channel_call_indicate(sigmsg->channel, FTDM_CHANNEL_INDICATE_RING);
 		ftdm_log(FTDM_LOG_DEBUG, "launching thread and indicating ring\n");
 		ftdm_thread_create_detached(test_call, sigmsg->channel);
 		break;
@@ -101,7 +104,7 @@ int main(int argc, char *argv[])
 						   "tonemap", "us", 
 						   "digit_timeout", &digit_timeout,
 						   "max_dialstr", &max_dialstr,
-						   TAG_END
+						   FTDM_TAG_END
 						   ) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM span\n");
 		goto done;

@@ -33,7 +33,7 @@
 
 #include <stdio.h>
 #include <openr2.h>
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 
 /* debug thread count for r2 legs */
 static ftdm_mutex_t* g_thread_count_mutex;

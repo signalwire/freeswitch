@@ -1,4 +1,4 @@
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 #include "fsk.h"
 #include "uart.h"
 

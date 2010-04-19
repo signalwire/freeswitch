@@ -50,7 +50,7 @@
 #include <errno.h>
 #endif
 
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 #include "ftdm_cpu_monitor.h"
 struct ftdm_cpu_monitor_stats
 {

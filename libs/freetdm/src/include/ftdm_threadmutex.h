@@ -30,6 +30,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 typedef struct ftdm_mutex ftdm_mutex_t;
 typedef struct ftdm_thread ftdm_thread_t;
 typedef struct ftdm_interrupt ftdm_interrupt_t;
@@ -38,11 +39,20 @@ typedef void *(*ftdm_thread_function_t) (ftdm_thread_t *, void *);
 FT_DECLARE(ftdm_status_t) ftdm_thread_create_detached(ftdm_thread_function_t func, void *data);
 FT_DECLARE(ftdm_status_t) ftdm_thread_create_detached_ex(ftdm_thread_function_t func, void *data, ftdm_size_t stack_size);
 FT_DECLARE(void) ftdm_thread_override_default_stacksize(ftdm_size_t size);
+
+
 FT_DECLARE(ftdm_status_t) ftdm_mutex_create(ftdm_mutex_t **mutex);
 FT_DECLARE(ftdm_status_t) ftdm_mutex_destroy(ftdm_mutex_t **mutex);
+
+#define ftdm_mutex_lock(_x) _ftdm_mutex_lock(_x)
 FT_DECLARE(ftdm_status_t) _ftdm_mutex_lock(ftdm_mutex_t *mutex);
+
+#define ftdm_mutex_trylock(_x) _ftdm_mutex_trylock(_x)
 FT_DECLARE(ftdm_status_t) _ftdm_mutex_trylock(ftdm_mutex_t *mutex);
+
+#define ftdm_mutex_unlock(_x) _ftdm_mutex_unlock(_x)
 FT_DECLARE(ftdm_status_t) _ftdm_mutex_unlock(ftdm_mutex_t *mutex);
+
 FT_DECLARE(ftdm_status_t) ftdm_interrupt_create(ftdm_interrupt_t **cond, ftdm_socket_t device);
 FT_DECLARE(ftdm_status_t) ftdm_interrupt_destroy(ftdm_interrupt_t **cond);
 FT_DECLARE(ftdm_status_t) ftdm_interrupt_signal(ftdm_interrupt_t *cond);

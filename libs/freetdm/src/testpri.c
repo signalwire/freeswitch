@@ -1,5 +1,11 @@
 #include "freetdm.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <signal.h>
+#include <stdlib.h>
 
 static int THREADS[4][31] = { {0} };
 static int R = 0;
@@ -12,18 +18,20 @@ static void *channel_run(ftdm_thread_t *me, void *obj)
 	ftdm_channel_t *ftdmchan = obj;
 	int fd = -1;
 	short buf[160];
+	int spanid = ftdm_channel_get_span_id(ftdmchan);
+	int chanid = ftdm_channel_get_id(ftdmchan);
 
 	ftdm_mutex_lock(mutex);
 	T++;
 	ftdm_mutex_unlock(mutex);
 
-	ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_UP);
+	ftdm_channel_call_answer(ftdmchan);
 
 	if ((fd = open("test.raw", O_RDONLY, 0)) < 0) {
 		goto end;
 	}
 
-	while(R == 1 && THREADS[ftdmchan->span_id][ftdmchan->chan_id] == 1) {
+	while(R == 1 && THREADS[spanid][chanid] == 1) {
 		ssize_t bytes = read(fd, buf, sizeof(buf));
 		size_t bbytes;
 
@@ -44,9 +52,9 @@ static void *channel_run(ftdm_thread_t *me, void *obj)
 
  end:
 
-	ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+	ftdm_channel_call_hangup(ftdmchan);
 
-	THREADS[ftdmchan->span_id][ftdmchan->chan_id] = 0;
+	THREADS[spanid][chanid] = 0;
 
 	ftdm_mutex_lock(mutex);
 	T = 0;
@@ -57,17 +65,19 @@ static void *channel_run(ftdm_thread_t *me, void *obj)
 
 static FIO_SIGNAL_CB_FUNCTION(on_signal)
 {
-	ftdm_log(FTDM_LOG_DEBUG, "got sig %d:%d [%s]\n", sigmsg->channel->span_id, sigmsg->channel->chan_id, ftdm_signal_event2str(sigmsg->event_id));
+	int spanid = ftdm_channel_get_span_id(sigmsg->channel);
+	int chanid = ftdm_channel_get_id(sigmsg->channel);
+	ftdm_log(FTDM_LOG_DEBUG, "got sig %d:%d [%s]\n", spanid, chanid, ftdm_signal_event2str(sigmsg->event_id));
 
     switch(sigmsg->event_id) {
 
 	case FTDM_SIGEVENT_STOP:
-		THREADS[sigmsg->channel->span_id][sigmsg->channel->chan_id] = -1;
+		THREADS[spanid][chanid] = -1;
 		break;
 
 	case FTDM_SIGEVENT_START:
-		if (!THREADS[sigmsg->channel->span_id][sigmsg->channel->chan_id]) {
-			THREADS[sigmsg->channel->span_id][sigmsg->channel->chan_id] = 1;
+		if (!THREADS[spanid][chanid]) {
+			THREADS[spanid][chanid] = 1;
 			ftdm_thread_create_detached(channel_run, sigmsg->channel);
 		}
 		
@@ -125,7 +135,7 @@ int main(int argc, char *argv[])
 						   "l1", "alaw",
 						   "debug", NULL,
 						   "opts", 0,
-						   TAG_END) == FTDM_SUCCESS) {
+						   FTDM_TAG_END) == FTDM_SUCCESS) {
 						   
 
 		ftdm_span_start(span);

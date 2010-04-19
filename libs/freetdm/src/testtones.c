@@ -1,4 +1,4 @@
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 
 struct ttmp {
 	int fd;

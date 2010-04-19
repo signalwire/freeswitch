@@ -35,7 +35,7 @@
 #ifndef SANGOMA_BOOST_INTERFACE_H
 #define SANGOMA_BOOST_INTERFACE_H
 
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 
 #ifdef __cplusplus
 extern "C" {

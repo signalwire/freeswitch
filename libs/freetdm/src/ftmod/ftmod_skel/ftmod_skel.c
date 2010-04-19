@@ -32,7 +32,7 @@
  */
 
 
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 //#include "ftdm_skel.h"
 
 static FIO_CONFIGURE_FUNCTION(skel_configure)

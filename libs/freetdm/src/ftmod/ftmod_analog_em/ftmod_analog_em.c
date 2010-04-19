@@ -36,7 +36,7 @@
  *
  */
 
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 #include "ftdm_analog_em.h"
 
 #ifndef localtime_r

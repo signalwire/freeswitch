@@ -46,6 +46,9 @@
 #include <signal.h>
 
 #include "freetdm.h"
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 
 /* arbitrary limit for max calls in this sample program */
@@ -137,16 +140,20 @@ static void release_timers(ftdm_channel_t *channel)
 /*  hangup the call */ 
 static void send_hangup(ftdm_channel_t *channel)
 {
-	ftdm_log(FTDM_LOG_NOTICE, "-- Requesting hangup in channel %d:%d\n", channel->span_id, channel->chan_id);
-	ftdm_set_state_locked(channel, FTDM_CHANNEL_STATE_HANGUP);
+	int spanid = ftdm_channel_get_span_id(channel);
+	int chanid = ftdm_channel_get_id(channel);
+	ftdm_log(FTDM_LOG_NOTICE, "-- Requesting hangup in channel %d:%d\n", spanid, chanid);
+	ftdm_channel_call_hangup(channel);
 }
 
 /*  send answer for an incoming call */ 
 static void send_answer(ftdm_channel_t *channel)
 {
 	 /* we move the channel signaling state machine to UP (answered) */
-	ftdm_log(FTDM_LOG_NOTICE, "-- Requesting answer in channel %d:%d\n", channel->span_id, channel->chan_id);
-	ftdm_set_state_locked(channel, FTDM_CHANNEL_STATE_UP);
+	int spanid = ftdm_channel_get_span_id(channel);
+	int chanid = ftdm_channel_get_id(channel);
+	ftdm_log(FTDM_LOG_NOTICE, "-- Requesting answer in channel %d:%d\n", spanid, chanid);
+	ftdm_channel_call_answer(channel);
 	schedule_timer(channel, HANGUP_TIMER, send_hangup);
 }
 
@@ -154,8 +161,10 @@ static void send_answer(ftdm_channel_t *channel)
 static void send_progress(ftdm_channel_t *channel)
 {
 	 /* we move the channel signaling state machine to UP (answered) */
-	ftdm_log(FTDM_LOG_NOTICE, "-- Requesting progress\n", channel->span_id, channel->chan_id);
-	ftdm_set_state_locked(channel, FTDM_CHANNEL_STATE_PROGRESS);
+	int spanid = ftdm_channel_get_span_id(channel);
+	int chanid = ftdm_channel_get_id(channel);
+	ftdm_log(FTDM_LOG_NOTICE, "-- Requesting progress\n", spanid, chanid);
+	ftdm_channel_call_indicate(channel, FTDM_CHANNEL_INDICATE_PROGRESS);
 	schedule_timer(channel, ANSWER_TIMER, send_answer);
 }
 
@@ -196,7 +205,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_signaling_event)
 		/* release any timer for this channel */
 		release_timers(sigmsg->channel);
 		/* acknowledge the hangup */
-		ftdm_set_state_locked(sigmsg->channel, FTDM_CHANNEL_STATE_HANGUP);
+		ftdm_channel_call_hangup(sigmsg->channel);
 		break;
 	default:
 		ftdm_log(FTDM_LOG_WARNING, "Unhandled event %s in channel %d:%d\n", ftdm_signal_event2str(sigmsg->event_id), 
@@ -223,7 +232,7 @@ static void place_call(const ftdm_span_t *span, const char *number)
 	 * it is also an option to use ftdm_channel_open_by_group to let freetdm hunt
 	 * an available channel in a given group instead of per span
 	 * */
-	status = ftdm_channel_open_by_span(span->span_id, FTDM_TOP_DOWN, &caller_data, &ftdmchan);
+	status = ftdm_channel_open_by_span(ftdm_span_get_id(span), FTDM_TOP_DOWN, &caller_data, &ftdmchan);
 	if (status != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to originate call\n");
 		return;
@@ -232,9 +241,9 @@ static void place_call(const ftdm_span_t *span, const char *number)
 	g_outgoing_channel = ftdmchan;
 
 	/* set the caller data for the outgoing channel */
-	memcpy(&ftdmchan->caller_data, &caller_data, sizeof(caller_data));
+	ftdm_channel_set_caller_data(ftdmchan, &caller_data);
 
-	status = ftdm_channel_outgoing_call(ftdmchan);
+	status = ftdm_channel_call_place(ftdmchan);
 	if (status != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to originate call\n");
 		return;
@@ -331,7 +340,7 @@ int main(int argc, char *argv[])
 
 	/* send the configuration values down to the stack */
 	if (ftdm_configure_span_signaling("sangoma_boost", span, on_signaling_event, parameters) != FTDM_SUCCESS) {
-		fprintf(stderr, "Error configuring sangoma_boost signaling abstraction in span %s\n", span->name);
+		fprintf(stderr, "Error configuring sangoma_boost signaling abstraction in span %s\n", ftdm_span_get_name(span));
 		goto done;
 	}
 

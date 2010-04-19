@@ -32,7 +32,7 @@
  *
  *	2005 03 20	R. Krten		created
 */
-#include <freetdm.h>
+#include <private/ftdm_core.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -26,7 +26,7 @@
 #define _WIN32_WINNT 0x0400
 #endif
 
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 #include "ftdm_threadmutex.h"
 
 #ifdef WIN32

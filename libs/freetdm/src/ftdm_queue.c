@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 
 static ftdm_status_t ftdm_std_queue_create(ftdm_queue_t **outqueue, ftdm_size_t capacity);
 static ftdm_status_t ftdm_std_queue_enqueue(ftdm_queue_t *queue, void *obj);
