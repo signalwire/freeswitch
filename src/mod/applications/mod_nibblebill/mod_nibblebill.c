@@ -337,9 +337,10 @@ static switch_status_t bill_event(float billamount, const char *billaccount, swi
 	switch_odbc_statement_handle_free(&stmt);
 
 end:
-	if (sql != globals.custom_sql_save) {
+	if (sql != globals.custom_sql_lookup && sql != sql_stream.data) {
 		switch_safe_free(sql);
 	}
+	switch_safe_free(sql_stream.data);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -385,9 +386,10 @@ static float get_balance(const char *billaccount, switch_channel_t *channel)
 	}
 	
 end:
-	if (sql != globals.custom_sql_lookup) {
+	if (sql != globals.custom_sql_lookup && sql != sql_stream.data) {
 		switch_safe_free(sql);
 	}
+	switch_safe_free(sql_stream.data);
 	return balance;
 }
 
