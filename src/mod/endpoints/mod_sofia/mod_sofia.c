@@ -891,13 +891,13 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 					snprintf(buf,  sizeof(buf), "%u", rtcp_frame.octect_count);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Octect-Packet-Count", buf);
 
-					snprintf(buf, sizeof(buf), "%lu", tech_pvt->read_frame.timestamp);
+					snprintf(buf, sizeof(buf), "%" SWITCH_SIZE_T_FMT, tech_pvt->read_frame.timestamp);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Last-RTP-Timestamp", buf);
 
 					snprintf(buf, sizeof(buf), "%u", tech_pvt->read_frame.rate);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-Rate", buf);
 
-					snprintf(buf, sizeof(buf), "%lu", switch_time_now());
+					snprintf(buf, sizeof(buf), "%" SWITCH_SIZE_T_FMT, switch_time_now());
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Capture-Time", buf);
 
 					switch_event_fire(&event);
