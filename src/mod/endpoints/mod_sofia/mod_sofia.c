@@ -657,7 +657,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	}
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-		char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+		char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
 		if (sofia_use_soa(tech_pvt)) {
 			nua_respond(tech_pvt->nh, SIP_200_OK,
 						NUTAG_AUTOANSWER(0),
