@@ -691,7 +691,7 @@ const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name)
 switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int force)
 {
 	char *lookup_rtpip = tech_pvt->profile->rtpip;	/* Pointer to externally looked up address */
-	switch_port_t sdp_port;		/* The external port to be sent in the SDP */
+	switch_port_t sdp_port, rtcp_port;		/* The external port to be sent in the SDP */
 	const char *use_ip = NULL;	/* The external IP to be sent in the SDP */
 
 	/* Don't do anything if we're in proxy mode or if a (remote) port already has been found */
@@ -734,6 +734,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 				if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 					/* Yes, map the port through switch_nat */
 					switch_nat_add_mapping(tech_pvt->local_sdp_audio_port, SWITCH_NAT_UDP, &sdp_port, SWITCH_FALSE);
+					switch_nat_add_mapping(tech_pvt->local_sdp_audio_port + 1, SWITCH_NAT_UDP, &rtcp_port, SWITCH_FALSE);
 				} else {
 					/* No NAT detected */
 					use_ip = tech_pvt->profile->rtpip;
@@ -2726,12 +2727,23 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 										  (tech_pvt->stun_flags & STUN_FLAG_FUNNY) ? 1 : 0);
 		}
 		
-		if ((val = switch_channel_get_variable(tech_pvt->channel, "rtcp_interval_msec")) || (val = tech_pvt->profile->rtcp_interval_msec)) {
-			int interval = atoi(val);
-			if (interval < 100 || interval > 5000) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Invalid rtcp interval spec [%d] must be between 100 and 5000\n", interval);
+		printf("WTF [%s][%s]\n", switch_channel_get_variable(tech_pvt->channel, "rtcp_audio_interval_msec"), tech_pvt->profile->rtcp_audio_interval_msec);
+
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "rtcp_audio_interval_msec")) || (val = tech_pvt->profile->rtcp_audio_interval_msec)) {
+			const char *rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_audio_rtcp_port");
+			switch_port_t remote_port = 0;
+			if (rport) {
+				remote_port = atoi(rport);
+			}
+			if (!strcasecmp(val, "passthru")) {
+				switch_rtp_activate_rtcp(tech_pvt->rtp_session, -1, remote_port);
 			} else {
-				switch_rtp_activate_rtcp(tech_pvt->rtp_session, interval);
+				int interval = atoi(val);
+				if (interval < 100 || interval > 5000) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Invalid rtcp interval spec [%d] must be between 100 and 5000\n", interval);
+				} else {
+					switch_rtp_activate_rtcp(tech_pvt->rtp_session, interval, remote_port);
+				}
 			}
 		}
 
@@ -2949,6 +2961,27 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				switch_channel_set_variable_printf(tech_pvt->channel, "sip_use_video_pt", "%d", tech_pvt->video_agreed_pt);
 				tech_pvt->video_ssrc = switch_rtp_get_ssrc(tech_pvt->rtp_session);
 				switch_channel_set_variable_printf(tech_pvt->channel, "rtp_use_video_ssrc", "%u", tech_pvt->ssrc);
+
+
+				if ((val = switch_channel_get_variable(tech_pvt->channel, "rtcp_audio_interval_msec")) || (val = tech_pvt->profile->rtcp_audio_interval_msec)) {
+					const char *rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_video_rtcp_port");
+					switch_port_t remote_port = 0;
+					if (rport) {
+						remote_port = atoi(rport);
+					}
+					if (!strcasecmp(val, "passthru")) {
+						switch_rtp_activate_rtcp(tech_pvt->rtp_session, -1, remote_port);
+					} else {
+						int interval = atoi(val);
+						if (interval < 100 || interval > 5000) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Invalid rtcp interval spec [%d] must be between 100 and 5000\n", interval);
+						} else {
+							switch_rtp_activate_rtcp(tech_pvt->rtp_session, interval, remote_port);
+						}
+					}
+				}
+
+
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "VIDEO RTP REPORTS ERROR: [%s]\n", switch_str_nil(err));
 				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -3378,6 +3411,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 		} else if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
 			sdp_rtpmap_t *map;
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				
+				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
+					switch_channel_set_variable(tech_pvt->channel, "sip_remote_audio_rtcp_port", attr->a_value);
+				}
+
 				if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
 					ptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
@@ -3707,6 +3745,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 				for (attr = m->m_attributes; attr; attr = attr->a_next) {
 					if (!strcasecmp(attr->a_name, "framerate") && attr->a_value) {
 						framerate = atoi(attr->a_value);
+					}
+					if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
+						switch_channel_set_variable(tech_pvt->channel, "sip_remote_video_rtcp_port", attr->a_value);
 					}
 				}
 				if (!(rm_encoding = map->rm_encoding)) {

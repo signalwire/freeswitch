@@ -208,8 +208,9 @@
     <!--all inbound reg will stored in the db using this domain -->
     <param name="force-register-db-domain" value="$${domain}"/>
 
-    <!-- enable rtcp on every channel also can be done per leg basis with rtcp_interval_msec variable -->
-    <!--<param name="rtcp-interval-msec" value="10000"/>-->
+    <!-- enable rtcp on every channel also can be done per leg basis with rtcp_audio_interval_msec variable set to passthru to pass it across a call-->
+    <!--<param name="rtcp-audio-interval-msec" value="10000"/>-->
+    <!--<param name="rtcp-video-interval-msec" value="10000"/>-->
 
     <!--force suscription expires to a lower value than requested-->
     <!--<param name="force-subscription-expires" value="60"/>-->

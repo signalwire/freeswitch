@@ -195,6 +195,7 @@ struct switch_rtp {
 	uint32_t ms_per_packet;
 	switch_port_t local_port;
 	switch_port_t remote_port;
+	switch_port_t remote_rtcp_port;
 	uint32_t stuncount;
 	uint32_t funny_stun;
 	uint32_t default_stuncount;
@@ -773,10 +774,8 @@ static switch_status_t enable_remote_rtcp_socket(switch_rtp_t *rtp_session, cons
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP)) {
 
-		rtp_session->rtcp_remote_addr = rtp_session->remote_addr;
-		
 		if (switch_sockaddr_info_get(&rtp_session->rtcp_remote_addr, rtp_session->remote_host_str, SWITCH_UNSPEC, 
-									 rtp_session->remote_port + 1, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !rtp_session->rtcp_remote_addr) {
+									 rtp_session->remote_rtcp_port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !rtp_session->rtcp_remote_addr) {
 			*err = "RTCP Remote Address Error!";
 			return SWITCH_STATUS_FALSE;
 		}
@@ -1248,6 +1247,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 {
 	switch_rtp_t *rtp_session = NULL;
 	switch_core_session_t *session = switch_core_memory_pool_get_data(pool, "__session");
+	switch_channel_t *channel = NULL;
+
+	if (session) channel = switch_core_session_get_channel(session);
 
 	*new_rtp_session = NULL;
 
@@ -1303,13 +1305,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 	rtp_session->payload = payload;
 
-	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP)) {	
-		rtp_session->rtcp_send_msg.header.version = 2;
-		rtp_session->rtcp_send_msg.header.p = 0;
-		rtp_session->rtcp_send_msg.header.type = 200;
-		rtp_session->rtcp_send_msg.header.count = 0;
-		rtp_session->rtcp_send_msg.header.length = htons(6); 
-	}
+
+	rtp_session->rtcp_send_msg.header.version = 2;
+	rtp_session->rtcp_send_msg.header.p = 0;
+	rtp_session->rtcp_send_msg.header.type = 200;
+	rtp_session->rtcp_send_msg.header.count = 0;
+	rtp_session->rtcp_send_msg.header.length = htons(6); 
+
 
 	switch_rtp_set_interval(rtp_session, ms_per_packet, samples_per_interval);
 	rtp_session->conf_samples_per_interval = samples_per_interval;
@@ -1341,12 +1343,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 	}
 
+	switch_channel_set_private(channel, "__rtcp_audio_rtp_session", rtp_session);
+
 #ifdef ENABLE_ZRTP
 	if (zrtp_on) {
 		switch_rtp_t *master_rtp_session = NULL;
 
 		int initiator = 0;
-		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *zrtp_enabled = switch_channel_get_variable(channel, "zrtp_secure_media");
 		const char *srtp_enabled = switch_channel_get_variable(channel, "sip_secure_media");
 
@@ -1531,14 +1534,24 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_session, int send_rate)
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_session, int send_rate, switch_port_t remote_port)
 {
 	const char *err = NULL;
 	
 	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTCP send rate is: %d and packet rate is: %d\n", send_rate, rtp_session->ms_per_packet);
-	rtp_session->rtcp_interval = send_rate/(rtp_session->ms_per_packet/1000);
+	if (!(rtp_session->remote_rtcp_port = remote_port)) {
+		rtp_session->remote_rtcp_port = rtp_session->remote_port + 1;
+	}
+	
+	if (send_rate == -1) {
+		switch_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "RTCP passthru enabled. Remote Port: %d\n", rtp_session->remote_rtcp_port);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "RTCP send rate is: %d and packet rate is: %d Remote Port: %d\n", 
+						  send_rate, rtp_session->ms_per_packet, rtp_session->remote_rtcp_port);
+		rtp_session->rtcp_interval = send_rate/(rtp_session->ms_per_packet/1000);
+	}
 
 	return enable_local_rtcp_socket(rtp_session, &err) || enable_remote_rtcp_socket(rtp_session, &err);
 
@@ -2236,6 +2249,68 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						
 			if (rtcp_poll_status == SWITCH_STATUS_SUCCESS) {
 				rtcp_status = read_rtcp_packet(rtp_session, &rtcp_bytes, flags);
+				
+				if (rtcp_status == SWITCH_STATUS_SUCCESS && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU)) {
+					switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
+					switch_channel_t *channel = switch_core_session_get_channel(session);
+
+					const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+					if (uuid) {
+						switch_core_session_t *other_session;
+						switch_rtp_t *other_rtp_session = NULL;
+
+						if ((other_session = switch_core_session_locate(uuid))) {
+							switch_channel_t *other_channel = switch_core_session_get_channel(other_session);					
+							if ((other_rtp_session = switch_channel_get_private(other_channel, "__rtcp_audio_rtp_session")) && 
+								switch_test_flag(other_rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP)) {
+								*other_rtp_session->rtcp_send_msg.body = *rtp_session->rtcp_recv_msg.body;
+
+								if (switch_test_flag(other_rtp_session, SWITCH_RTP_FLAG_SECURE_SEND)) {
+									int sbytes = (int) rtcp_bytes;
+									int stat = srtp_protect_rtcp(other_rtp_session->send_ctx, &other_rtp_session->rtcp_send_msg.header, &sbytes);
+									if (stat) {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
+									}
+									rtcp_bytes = sbytes;
+								}
+
+#ifdef ENABLE_ZRTP
+								/* ZRTP Send */
+								if (1) {
+									unsigned int sbytes = (int) bytes;
+									zrtp_status_t stat = zrtp_status_fail;
+
+									stat = zrtp_process_rtcp(other_rtp_session->zrtp_stream, (void *) &other_rtp_session->rtcp_send_msg, &sbytes);
+
+									switch (stat) {
+									case zrtp_status_ok:
+										break;
+									case zrtp_status_drop:
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
+										ret = (int) bytes;
+										goto end;
+										break;
+									case zrtp_status_fail:
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
+										break;
+									default:
+										break;
+									}
+
+									bytes = sbytes;
+								}
+#endif
+								if (switch_socket_sendto(other_rtp_session->rtcp_sock_output, other_rtp_session->rtcp_remote_addr, 0, 
+														 (const char*)&other_rtp_session->rtcp_send_msg, &rtcp_bytes ) != SWITCH_STATUS_SUCCESS) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"RTCP packet not written\n");
+								}
+								
+								
+							}
+						}
+					}
+					
+				}
 			}
 		}
 
@@ -3244,7 +3319,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		rtp_session->last_write_ts = this_ts;
 		
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP) && 
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU) &&
 			rtp_session->rtcp_interval && (rtp_session->stats.outbound.packet_count % rtp_session->rtcp_interval) == 0) {
 			struct switch_rtcp_senderinfo* sr = (struct switch_rtcp_senderinfo*)rtp_session->rtcp_send_msg.body;
 

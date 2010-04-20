@@ -535,7 +535,9 @@ typedef enum {
 	SWITCH_RTP_FLAG_DEBUG_RTP_READ = (1 << 27),
 	SWITCH_RTP_FLAG_DEBUG_RTP_WRITE = (1 << 28),
 	SWITCH_RTP_FLAG_VIDEO = (1 << 29),
-	SWITCH_RTP_FLAG_ENABLE_RTCP = (1 << 30)
+	SWITCH_RTP_FLAG_ENABLE_RTCP = (1 << 30),
+	SWITCH_RTP_FLAG_RTCP_PASSTHRU = (1 << 31)
+	/* don't add any more 31 is the limit! gotta chnge to an array to add more */
 } switch_rtp_flag_enum_t;
 typedef uint32_t switch_rtp_flag_t;
 
