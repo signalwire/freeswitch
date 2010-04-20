@@ -691,13 +691,13 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 				if (ftdmchan->state == FTDM_CHANNEL_STATE_UP ||
 					ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA ||
 					ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS) {
-					ftdm_log(FTDM_LOG_CRIT, "ZCHAN CALL ACK STATE UP -> Changed to TERMINATING %d:%d\n", event->span+1,event->chan+1);
+					ftdm_log(FTDM_LOG_CRIT, "FTDMCHAN CALL ACK STATE UP -> Changed to TERMINATING %d:%d\n", event->span+1,event->chan+1);
 					ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
 				} else if (ftdmchan->state == FTDM_CHANNEL_STATE_HANGUP ||  ftdm_test_sflag(ftdmchan, SFLAG_HANGUP)) {
-					ftdm_log(FTDM_LOG_CRIT, "ZCHAN CALL ACK STATE HANGUP  -> Changed to HANGUP COMPLETE %d:%d\n", event->span+1,event->chan+1);
+					ftdm_log(FTDM_LOG_CRIT, "FTDMCHAN CALL ACK STATE HANGUP  -> Changed to HANGUP COMPLETE %d:%d\n", event->span+1,event->chan+1);
 					ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
 				} else {
-					ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE INVALID State %s on IN CALL ACK %d:%d\n",
+					ftdm_log(FTDM_LOG_CRIT, "FTDMCHAN STATE INVALID State %s on IN CALL ACK %d:%d\n",
 						 ftdm_channel_state2str(ftdmchan->state),event->span+1,event->chan+1);
 				}
 				ftdm_set_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG);
@@ -817,7 +817,9 @@ static void handle_call_start_nack(ftdm_span_t *span, sangomabc_connection_t *mc
 		if (sangoma_boost_data->sigmod) {
 			ftdmchan = OUTBOUND_REQUESTS[event->call_setup_id].ftdmchan;
 			CALL_DATA(ftdmchan)->last_event_id = event->event_id;
+			CALL_DATA(ftdmchan)->call_setup_id = event->call_setup_id;
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+			ftdm_clear_sflag_locked(ftdmchan, SFLAG_SENT_FINAL_MSG);
 		} else {
 			sangomabc_exec_command(mcon,
 						   0,
@@ -859,7 +861,7 @@ static void handle_call_start_nack(ftdm_span_t *span, sangomabc_connection_t *mc
 	sangomabc_exec_command(mcon,
 					   event->span,
 					   event->chan,
-					   0,
+					   event->call_setup_id,
 					   SIGBOOST_EVENT_CALL_START_NACK_ACK,
 					   0, 0);
 }
@@ -1004,23 +1006,25 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 			if (ftdmchan->state == FTDM_CHANNEL_STATE_UP ||
 				ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA ||
 				ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS) {
-				ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE UP -> Changed to TERMINATING %d:%d\n", event->span+1,event->chan+1);
+				ftdm_log(FTDM_LOG_CRIT, "s%dc%d:FTDMCHAN STATE UP -> Changed to TERMINATING\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 				ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
 			} else if (ftdmchan->state == FTDM_CHANNEL_STATE_HANGUP ||  ftdm_test_sflag(ftdmchan, SFLAG_HANGUP)) {
-				ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE HANGUP -> Changed to HANGUP COMPLETE %d:%d\n", event->span+1,event->chan+1);
+				ftdm_log(FTDM_LOG_CRIT, "s%dc%d:FTDMCHAN STATE HANGUP -> Changed to HANGUP COMPLETE\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 				ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
+      } else if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
+        ftdm_log(FTDM_LOG_WARNING, "s%dc%d:Collision, hanging up incoming call\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 			} else {
-				ftdm_log(FTDM_LOG_CRIT, "ZCHAN STATE INVALID %s on IN CALL %d:%d\n", ftdm_channel_state2str(ftdmchan->state),event->span+1,event->chan+1);
+				ftdm_log(FTDM_LOG_CRIT, "s%dc%d:FTDMCHAN STATE INVALID %s on IN CALL\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event), ftdm_channel_state2str(ftdmchan->state));
 			}
 			ftdm_set_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG);
 			ftdmchan = NULL;
 		}
-		ftdm_log(FTDM_LOG_CRIT, "START CANT FIND CHAN %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
+		ftdm_log(FTDM_LOG_CRIT, "s%dc%d:START CANT FIND CHAN\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 		goto error;
 	}
 
 	if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_CRIT, "START CANT OPEN CHAN %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
+		ftdm_log(FTDM_LOG_CRIT, "s%dc%d:START CANT OPEN CHAN\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 		goto error;
 	}
 	
@@ -1074,7 +1078,7 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 	sangomabc_exec_command(mcon,
 						   event->span,
 						   event->chan,
-						   0,
+						   event->call_setup_id,
 						   SIGBOOST_EVENT_CALL_START_NACK,
 						   hangup_cause, 0);
 		
@@ -1375,7 +1379,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 					sangomabc_exec_command(mcon,
 									BOOST_SPAN(ftdmchan),
 									BOOST_CHAN(ftdmchan),
-									0,
+									CALL_DATA(ftdmchan)->call_setup_id,
 									SIGBOOST_EVENT_CALL_START_NACK_ACK,
 									0, 0);
 					
