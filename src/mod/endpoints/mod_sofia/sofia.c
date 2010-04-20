@@ -3752,6 +3752,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			char *full_contact = NULL;
 			char *invite_contact;
 			const char *br;
+			const char *v;
+			
+			if ((v = switch_channel_get_variable(channel, "outbound_redirect_fatal")) && switch_true(v)) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL);
+				goto end;
+			}
 
 			if (!p_contact) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing contact header in redirect request\n");
