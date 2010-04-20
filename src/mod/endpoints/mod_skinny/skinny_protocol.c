@@ -500,12 +500,13 @@ switch_status_t skinny_create_ingoing_session(listener_t *listener, uint32_t *li
 		    "Error Locking Session\n");
 		goto error;
 	}
+	/* First create the caller profile in the patterns Dialplan */
 	if (!(tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(nsession),
-													          NULL, listener->profile->dialplan, 
+													          NULL, listener->profile->patterns_dialplan, 
 													          button->shortname, button->name, 
 													          listener->remote_ip, NULL, NULL, NULL,
 													          "skinny" /* modname */,
-													          listener->profile->context, 
+													          listener->profile->patterns_context, 
 													          "")) != 0) {
 	    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(nsession), SWITCH_LOG_CRIT, 
 	                        "Error Creating Session caller profile\n");
@@ -547,6 +548,75 @@ done:
 	*session = nsession;
 	return SWITCH_STATUS_SUCCESS;
 }
+
+skinny_action_t skinny_session_dest_match_pattern(switch_core_session_t *session, char **data)
+{
+	skinny_action_t action = SKINNY_ACTION_DROP;
+	switch_channel_t *channel = NULL;
+	private_t *tech_pvt = NULL;
+
+	switch_assert(session);
+	
+	channel = switch_core_session_get_channel(session);
+	tech_pvt = switch_core_session_get_private(session);
+
+	/* this part of the code is similar to switch_core_standard_on_routing() */
+	if (!zstr(tech_pvt->profile->patterns_dialplan)) {
+		switch_dialplan_interface_t *dialplan_interface = NULL;
+		switch_caller_extension_t *extension = NULL;
+		char *expanded = NULL;
+		char *dpstr = NULL;
+		char *dp[25];
+		int argc, x;
+
+		if ((dpstr = switch_core_session_strdup(session, tech_pvt->profile->patterns_dialplan))) {
+			expanded = switch_channel_expand_variables(channel, dpstr);
+			argc = switch_separate_string(expanded, ',', dp, (sizeof(dp) / sizeof(dp[0])));
+			for (x = 0; x < argc; x++) {
+				char *dpname = dp[x];
+				char *dparg = NULL;
+
+				if (dpname) {
+					if ((dparg = strchr(dpname, ':'))) {
+						*dparg++ = '\0';
+					}
+				} else {
+					continue;
+				}
+				if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dpname))) {
+					continue;
+				}
+
+				extension = dialplan_interface->hunt_function(session, dparg, NULL);
+				UNPROTECT_INTERFACE(dialplan_interface);
+
+				if (extension) {
+					goto found;
+				}
+			}
+		}
+found:
+		while (extension && extension->current_application) {
+			switch_caller_application_t *current_application = extension->current_application;
+
+			extension->current_application = extension->current_application->next;
+
+			if (!strcmp(current_application->application_name, "skinny-route")) {
+				action = SKINNY_ACTION_ROUTE;
+			} else if (!strcmp(current_application->application_name, "skinny-drop")) {
+				action = SKINNY_ACTION_DROP;
+			} else if (!strcmp(current_application->application_name, "skinny-wait")) {
+				action = SKINNY_ACTION_WAIT;
+				*data = switch_core_session_strdup(session, current_application->application_data);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+					                "Unknown skinny dialplan application %s\n", current_application->application_name);
+			}
+		}
+	}
+	return action;
+}
+
 
 struct skinny_session_process_dest_helper {
 	private_t *tech_pvt;
@@ -597,8 +667,11 @@ int skinny_session_process_dest_callback(void *pArg, int argc, char **argv, char
 
 switch_status_t skinny_session_process_dest(switch_core_session_t *session, listener_t *listener, uint32_t line_instance, char *dest, char append_dest, uint32_t backspace)
 {
+	skinny_action_t action;
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
+	char *data = NULL;
+	struct skinny_session_process_dest_helper helper = {0};
 
 	switch_assert(session);
 	switch_assert(listener);
@@ -633,19 +706,32 @@ switch_status_t skinny_session_process_dest(switch_core_session_t *session, list
 	    tech_pvt->caller_profile->destination_number = switch_core_strdup(tech_pvt->caller_profile->pool,
 	        dest);
 	}
-	/* TODO Number is complete -> check against dialplan */
-	if ((strlen(tech_pvt->caller_profile->destination_number) >= 4) || dest) {
-		struct skinny_session_process_dest_helper helper = {0};
-		send_dialed_number(listener, tech_pvt->caller_profile->destination_number, line_instance, tech_pvt->call_id);
-	    skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_PROCEED);
-	    skinny_send_call_info(session, listener, line_instance);
+	if(dest) {
+		action = SKINNY_ACTION_ROUTE;
+	} else {
+		action = skinny_session_dest_match_pattern(session, &data);
+	}
+	switch(action) {
+		case SKINNY_ACTION_ROUTE:
+			tech_pvt->caller_profile->dialplan = switch_core_strdup(tech_pvt->caller_profile->pool, listener->profile->dialplan);
+			tech_pvt->caller_profile->context = switch_core_strdup(tech_pvt->caller_profile->pool, listener->profile->context);
+			send_dialed_number(listener, tech_pvt->caller_profile->destination_number, line_instance, tech_pvt->call_id);
+			skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_PROCEED);
+			skinny_send_call_info(session, listener, line_instance);
 
-	    skinny_session_start_media(session, listener, line_instance);
-	    
-		helper.tech_pvt = tech_pvt;
-		helper.listener = listener;
-		helper.line_instance = line_instance;
-		skinny_session_walk_lines(tech_pvt->profile, switch_core_session_get_uuid(session), skinny_session_process_dest_callback, &helper);
+			skinny_session_start_media(session, listener, line_instance);
+			
+			helper.tech_pvt = tech_pvt;
+			helper.listener = listener;
+			helper.line_instance = line_instance;
+			skinny_session_walk_lines(tech_pvt->profile, switch_core_session_get_uuid(session), skinny_session_process_dest_callback, &helper);
+			break;
+		case SKINNY_ACTION_WAIT:
+			/* for now, wait forever */
+			break;
+		case SKINNY_ACTION_DROP:
+		default:
+			switch_channel_hangup(channel, SWITCH_CAUSE_UNALLOCATED_NUMBER);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

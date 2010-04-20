@@ -64,6 +64,8 @@ struct skinny_profile {
     unsigned int port;
     char *dialplan;
     char *context;
+    char *patterns_dialplan;
+    char *patterns_context;
     uint32_t keep_alive;
     char date_format[6];
     int debug;
@@ -98,6 +100,12 @@ struct skinny_device_type_params {
 	char firmware_version[16];
 };
 typedef struct skinny_device_type_params skinny_device_type_params_t;
+
+typedef enum {
+	SKINNY_ACTION_ROUTE,
+	SKINNY_ACTION_DROP,
+	SKINNY_ACTION_WAIT
+} skinny_action_t;
 
 /*****************************************************************************/
 /* LISTENERS TYPES */

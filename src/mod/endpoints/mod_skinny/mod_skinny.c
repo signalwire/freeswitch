@@ -107,21 +107,23 @@ switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stre
 	switch_assert(profile);
 	stream->write_function(stream, "%s\n", line);
 	/* prefs */
-	stream->write_function(stream, "Name             \t%s\n", profile->name);
-	stream->write_function(stream, "Domain Name      \t%s\n", profile->domain);
-	stream->write_function(stream, "IP               \t%s\n", profile->ip);
-	stream->write_function(stream, "Port             \t%d\n", profile->port);
-	stream->write_function(stream, "Dialplan         \t%s\n", profile->dialplan);
-	stream->write_function(stream, "Context          \t%s\n", profile->context);
-	stream->write_function(stream, "Keep-Alive       \t%d\n", profile->keep_alive);
-	stream->write_function(stream, "Date-Format      \t%s\n", profile->date_format);
-	stream->write_function(stream, "DBName           \t%s\n", profile->dbname ? profile->dbname : switch_str_nil(profile->odbc_dsn));
-	stream->write_function(stream, "Debug            \t%d\n", profile->debug);
+	stream->write_function(stream, "Name              \t%s\n", profile->name);
+	stream->write_function(stream, "Domain Name       \t%s\n", profile->domain);
+	stream->write_function(stream, "IP                \t%s\n", profile->ip);
+	stream->write_function(stream, "Port              \t%d\n", profile->port);
+	stream->write_function(stream, "Dialplan          \t%s\n", profile->dialplan);
+	stream->write_function(stream, "Context           \t%s\n", profile->context);
+	stream->write_function(stream, "Patterns-Dialplan \t%s\n", profile->patterns_dialplan);
+	stream->write_function(stream, "Patterns-Context  \t%s\n", profile->patterns_context);
+	stream->write_function(stream, "Keep-Alive        \t%d\n", profile->keep_alive);
+	stream->write_function(stream, "Date-Format       \t%s\n", profile->date_format);
+	stream->write_function(stream, "DBName            \t%s\n", profile->dbname ? profile->dbname : switch_str_nil(profile->odbc_dsn));
+	stream->write_function(stream, "Debug             \t%d\n", profile->debug);
 	/* stats */
-	stream->write_function(stream, "CALLS-IN         \t%d\n", profile->ib_calls);
-	stream->write_function(stream, "FAILED-CALLS-IN  \t%d\n", profile->ib_failed_calls);
-	stream->write_function(stream, "CALLS-OUT        \t%d\n", profile->ob_calls);
-	stream->write_function(stream, "FAILED-CALLS-OUT \t%d\n", profile->ob_failed_calls);
+	stream->write_function(stream, "CALLS-IN          \t%d\n", profile->ib_calls);
+	stream->write_function(stream, "FAILED-CALLS-IN   \t%d\n", profile->ib_failed_calls);
+	stream->write_function(stream, "CALLS-OUT         \t%d\n", profile->ob_calls);
+	stream->write_function(stream, "FAILED-CALLS-OUT  \t%d\n", profile->ob_failed_calls);
 	/* listener */
 	stream->write_function(stream, "Listener-Threads \t%d\n", profile->listener_threads);
 	stream->write_function(stream, "%s\n", line);
@@ -1429,6 +1431,10 @@ static void skinny_profile_set(skinny_profile_t *profile, char *var, char *val)
 		profile->dialplan = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "context")) {
 		profile->context = switch_core_strdup(profile->pool, val);
+	} else if (!strcasecmp(var, "patterns-dialplan")) {
+		profile->patterns_dialplan = switch_core_strdup(profile->pool, val);
+	} else if (!strcasecmp(var, "patterns-context")) {
+		profile->patterns_context = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "date-format")) {
 		strncpy(profile->date_format, val, 6);
 	} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
@@ -1499,6 +1505,10 @@ static switch_status_t load_skinny_config(void)
 						skinny_profile_set(profile, "dialplan", val);
 					} else if (!strcmp(var, "context")) {
 						skinny_profile_set(profile, "context", val);
+					} else if (!strcmp(var, "patterns-dialplan")) {
+						skinny_profile_set(profile, "patterns-dialplan", val);
+					} else if (!strcmp(var, "patterns-context")) {
+						skinny_profile_set(profile, "patterns-context", val);
 					} else if (!strcmp(var, "keep-alive")) {
 						profile->keep_alive = atoi(val);
 					} else if (!strcmp(var, "date-format")) {
@@ -1511,11 +1521,19 @@ static switch_status_t load_skinny_config(void)
 				} /* param */
 		
 				if (!profile->dialplan) {
-					skinny_profile_set(profile, "dialplan","default");
+					skinny_profile_set(profile, "dialplan","XML");
 				}
 
 				if (!profile->context) {
-					skinny_profile_set(profile, "context","public");
+					skinny_profile_set(profile, "context","default");
+				}
+
+				if (!profile->patterns_dialplan) {
+					skinny_profile_set(profile, "patterns-dialplan","XML");
+				}
+
+				if (!profile->patterns_context) {
+					skinny_profile_set(profile, "patterns-context","skinny-patterns");
 				}
 
 				if (profile->port == 0) {
