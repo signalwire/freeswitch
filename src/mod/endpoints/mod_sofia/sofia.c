@@ -2459,6 +2459,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						profile->hold_music = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "outbound-proxy")) {
 						profile->outbound_proxy = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "rtcp-interval-msec")) {
+						profile->rtcp_interval_msec = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "session-timeout")) {
 						int v_session_timeout = atoi(val);
 						if (v_session_timeout >= 0) {
@@ -2996,6 +2998,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->hold_music = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "outbound-proxy")) {
 						profile->outbound_proxy = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "rtcp-interval-msec")) {
+						profile->rtcp_interval_msec = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "session-timeout")) {
 						int v_session_timeout = atoi(val);
 						if (v_session_timeout >= 0) {

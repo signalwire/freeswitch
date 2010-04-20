@@ -2725,6 +2725,15 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			switch_rtp_activate_stun_ping(tech_pvt->rtp_session, tech_pvt->stun_ip, tech_pvt->stun_port, stun_ping,
 										  (tech_pvt->stun_flags & STUN_FLAG_FUNNY) ? 1 : 0);
 		}
+		
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "rtcp_interval_msec")) || (val = tech_pvt->profile->rtcp_interval_msec)) {
+			int interval = atoi(val);
+			if (interval < 100 || interval > 5000) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Invalid rtcp interval spec [%d] must be between 100 and 5000\n", interval);
+			} else {
+				switch_rtp_activate_rtcp(tech_pvt->rtp_session, interval);
+			}
+		}
 
 		if ((val = switch_channel_get_variable(tech_pvt->channel, "jitterbuffer_msec"))) {
 			int len = atoi(val);

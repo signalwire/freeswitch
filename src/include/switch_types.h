@@ -534,7 +534,8 @@ typedef enum {
 	SWITCH_ZRTP_FLAG_SECURE_MITM_RECV = (1 << 26),
 	SWITCH_RTP_FLAG_DEBUG_RTP_READ = (1 << 27),
 	SWITCH_RTP_FLAG_DEBUG_RTP_WRITE = (1 << 28),
-	SWITCH_RTP_FLAG_VIDEO = (1 << 29)
+	SWITCH_RTP_FLAG_VIDEO = (1 << 29),
+	SWITCH_RTP_FLAG_ENABLE_RTCP = (1 << 30)
 } switch_rtp_flag_enum_t;
 typedef uint32_t switch_rtp_flag_t;
 
@@ -600,6 +601,35 @@ typedef struct {
 	unsigned ts:32;				/* timestamp              */
 	unsigned ssrc:32;			/* synchronization source */
 } switch_rtp_hdr_t;
+
+#endif
+
+#ifdef _MSC_VER
+#pragma pack(pop, r1)
+#endif
+
+#ifdef _MSC_VER
+#pragma pack(push, r1, 1)
+#endif
+
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+typedef struct {
+	unsigned version:2;			/* protocol version                  */
+	unsigned p:1;				/* padding flag                      */
+	unsigned count:5;			/* number of reception report blocks */
+	unsigned type:8;			/* packet type                       */
+	unsigned length:16;			/* length in 32-bit words - 1        */
+} switch_rtcp_hdr_t;
+
+#else /*  BIG_ENDIAN */
+
+typedef struct {
+	unsigned count:5;			/* number of reception report blocks */
+	unsigned p:1;				/* padding flag                      */
+	unsigned version:2;			/* protocol version                  */
+	unsigned type:8;			/* packet type                       */
+	unsigned length:16;			/* length in 32-bit words - 1        */
+} switch_rtcp_hdr_t;
 
 #endif
 
@@ -1352,6 +1382,7 @@ typedef enum {
 	SWITCH_EVENT_SERVER_DISCONNECTED,
 	SWITCH_EVENT_SEND_INFO,
 	SWITCH_EVENT_RECV_INFO,
+	SWITCH_EVENT_RECV_RTCP_MESSAGE,
 	SWITCH_EVENT_CALL_SECURE,
 	SWITCH_EVENT_NAT,
 	SWITCH_EVENT_RECORD_START,
@@ -1472,6 +1503,7 @@ typedef uint16_t switch_port_t;
 typedef uint8_t switch_payload_t;
 typedef struct switch_app_log switch_app_log_t;
 typedef struct switch_rtp switch_rtp_t;
+typedef struct switch_rtcp switch_rtcp_t;
 typedef struct switch_core_session_message switch_core_session_message_t;
 typedef struct switch_event_header switch_event_header_t;
 typedef struct switch_event switch_event_t;
@@ -1479,6 +1511,7 @@ typedef struct switch_event_subclass switch_event_subclass_t;
 typedef struct switch_event_node switch_event_node_t;
 typedef struct switch_loadable_module switch_loadable_module_t;
 typedef struct switch_frame switch_frame_t;
+typedef struct switch_rtcp_frame switch_rtcp_frame_t;
 typedef struct switch_channel switch_channel_t;
 typedef struct switch_file_handle switch_file_handle_t;
 typedef struct switch_core_session switch_core_session_t;

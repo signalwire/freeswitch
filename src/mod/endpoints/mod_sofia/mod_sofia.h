@@ -466,6 +466,7 @@ struct sofia_profile {
 	char *record_path;
 	char *presence_hosts;
 	char *challenge_realm;
+	char *rtcp_interval_msec;
 	sofia_cid_type_t cid_type;
 	sofia_dtmf_t dtmf_type;
 	int auto_restart;
