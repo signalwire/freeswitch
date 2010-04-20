@@ -2086,7 +2086,7 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 
 
 	if (*bytes) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10,"Received an RTCP packet of length %lu bytes\n", *bytes);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10,"Received an RTCP packet of length %" SWITCH_SIZE_T_FMT " bytes\n", *bytes);
 		if (rtp_session->rtcp_recv_msg.header.version == 2) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10,"RTCP packet type is %d\n", rtp_session->rtcp_recv_msg.header.type);
 			if (rtp_session->rtcp_recv_msg.header.type == 200) {
