@@ -86,3 +86,4 @@ src/mod/say/mod_say_it/Makefile
 src/mod/say/mod_say_nl/Makefile
 src/mod/say/mod_say_th/Makefile
 src/mod/say/mod_say_zh/Makefile
+libs/curl/lib/ca-bundle.h
