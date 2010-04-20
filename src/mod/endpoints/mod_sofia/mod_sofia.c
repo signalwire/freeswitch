@@ -897,7 +897,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 					snprintf(buf, sizeof(buf), "%u", tech_pvt->read_frame.rate);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-Rate", buf);
 
-					snprintf(buf, sizeof(buf), "%" SWITCH_SIZE_T_FMT, switch_time_now());
+					snprintf(buf, sizeof(buf), "%" SWITCH_TIME_T_FMT, switch_time_now());
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Capture-Time", buf);
 
 					switch_event_fire(&event);
