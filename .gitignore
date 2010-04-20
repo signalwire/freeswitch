@@ -4,6 +4,7 @@
 *.lo
 *.a
 *.la
+*.loT
 .libs
 .deps
 .\#*
