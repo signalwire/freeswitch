@@ -1064,6 +1064,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 		switch_core_destroy_memory_pool(&TIMEZONES_LIST.pool);
 	}
 
+	if (NODE) {
+		switch_event_unbind(&NODE);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
