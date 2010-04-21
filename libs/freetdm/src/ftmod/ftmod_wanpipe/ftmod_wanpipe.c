@@ -950,22 +950,14 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 	}
 
 	if (alarms & WAN_TE_BIT_ALARM_AIS) {
-		ftdmchan->alarm_flags |= FTDM_ALARM_AIS;
 		ftdmchan->alarm_flags |= FTDM_ALARM_BLUE;
 		alarms &= ~WAN_TE_BIT_ALARM_AIS;
 	}
 
 	if (alarms & WAN_TE_BIT_ALARM_RAI) {
-		ftdmchan->alarm_flags |= FTDM_ALARM_RAI;
 		ftdmchan->alarm_flags |= FTDM_ALARM_YELLOW;
 		alarms &= ~WAN_TE_BIT_ALARM_RAI;
 	}
-
-	/* still missing to map:
-	 * FTDM_ALARM_RECOVER
-	 * FTDM_ALARM_LOOPBACK
-	 * FTDM_ALARM_NOTOPEN
-	 * */
 
 	/* if we still have alarms that we did not map, set the general alarm */
 	if (alarms) {

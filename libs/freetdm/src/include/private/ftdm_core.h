@@ -647,7 +647,9 @@ static __inline__ void ftdm_set_state_all(ftdm_span_t *span, ftdm_channel_state_
 	uint32_t j;
 	ftdm_mutex_lock(span->mutex);
 	for(j = 1; j <= span->chan_count; j++) {
-		ftdm_set_state_locked((span->channels[j]), state);
+		if (!FTDM_IS_DCHAN(span->channels[j])) {
+			ftdm_set_state_locked((span->channels[j]), state);
+		}
 	}
 	ftdm_mutex_unlock(span->mutex);
 }

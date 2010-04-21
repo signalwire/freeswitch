@@ -950,7 +950,8 @@ static int on_restart(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 	ftdm_channel_t *ftdmchan;
 
 	ftdm_log(FTDM_LOG_NOTICE, "-- Restarting %d:%d\n", spri->span->span_id, pevent->restart.channel);
-
+	
+	spri->dchan->state = FTDM_CHANNEL_STATE_UP;
 	ftdmchan = span->channels[pevent->restart.channel];
 
 	if (!ftdmchan) {
@@ -1132,6 +1133,7 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 		}
 
 		ftdm_log(FTDM_LOG_CRIT, "PRI down on span %d\n", isdn_data->spri.span->span_id);
+		isdn_data->spri.dchan->state = FTDM_CHANNEL_STATE_DOWN;
 
 		if (!down) {
 			ftdm_set_state_all(span, FTDM_CHANNEL_STATE_RESTART);
