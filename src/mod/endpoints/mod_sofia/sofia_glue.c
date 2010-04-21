@@ -2727,8 +2727,6 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 										  (tech_pvt->stun_flags & STUN_FLAG_FUNNY) ? 1 : 0);
 		}
 		
-		printf("WTF [%s][%s]\n", switch_channel_get_variable(tech_pvt->channel, "rtcp_audio_interval_msec"), tech_pvt->profile->rtcp_audio_interval_msec);
-
 		if ((val = switch_channel_get_variable(tech_pvt->channel, "rtcp_audio_interval_msec")) || (val = tech_pvt->profile->rtcp_audio_interval_msec)) {
 			const char *rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_audio_rtcp_port");
 			switch_port_t remote_port = 0;
