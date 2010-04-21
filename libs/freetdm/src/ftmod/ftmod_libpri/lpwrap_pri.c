@@ -33,7 +33,7 @@
 
 //#define IODEBUG
 
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 #include "lpwrap_pri.h"
 #ifndef HAVE_GETTIMEOFDAY
 

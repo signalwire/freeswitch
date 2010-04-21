@@ -458,7 +458,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_alarms(ftdm_channel_t *ftdmchan, ftdm
 
 	ftdm_assert_return(alarmbits != NULL, FTDM_FAIL, "null argument\n");
 
-	alarmbits = FTDM_ALARM_NONE;
+	*alarmbits = FTDM_ALARM_NONE;
 
 	ftdm_channel_lock(ftdmchan);
 
@@ -1990,7 +1990,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_get_sig_status(ftdm_span_t *span, ftdm_signa
 	if (span->get_span_sig_status) {
 		return span->get_span_sig_status(span, sigstatus);
 	} else {
-		ftdm_log(FTDM_LOG_ERROR, "get_span_sig_status method not implemented!\n");
 		return FTDM_FAIL;
 	}
 }

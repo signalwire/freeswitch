@@ -31,7 +31,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 #include "ftmod_libpri.h"
 
 /**
@@ -843,6 +843,7 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
  */
 static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *event)
 {
+	ftdm_alarm_flag_t alarmbits;
 	ftdm_log(FTDM_LOG_DEBUG, "EVENT [%s][%d][%d:%d] STATE [%s]\n", 
 			ftdm_oob_event2str(event->enum_id), event->enum_id, event->channel->span_id, event->channel->chan_id, ftdm_channel_state2str(event->channel->state));
 
@@ -859,7 +860,7 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 			ftdm_set_flag(event->channel, FTDM_CHANNEL_SUSPENDED);
 
 			
-			ftdm_channel_get_alarms(event->channel);
+			ftdm_channel_get_alarms(event->channel, &alarmbits);
 			ftdm_log(FTDM_LOG_WARNING, "channel %d:%d (%d:%d) has alarms! [%s]\n", 
 					event->channel->span_id, event->channel->chan_id, 
 					event->channel->physical_span_id, event->channel->physical_chan_id, 
@@ -873,7 +874,7 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 					event->channel->physical_span_id, event->channel->physical_chan_id);
 
 			ftdm_clear_flag(event->channel, FTDM_CHANNEL_SUSPENDED);
-			ftdm_channel_get_alarms(event->channel);
+			ftdm_channel_get_alarms(event->channel, &alarmbits);
 		}
 		break;
 	}
@@ -1082,7 +1083,6 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 				if (span->channels[i]->type == FTDM_CHAN_TYPE_DQ921) {
 					if (ftdm_channel_open(span->span_id, i, &isdn_data->dchan) == FTDM_SUCCESS) {
 						ftdm_log(FTDM_LOG_DEBUG, "opening d-channel #%d %d:%d\n", x, isdn_data->dchan->span_id, isdn_data->dchan->chan_id);
-						isdn_data->dchan->state = FTDM_CHANNEL_STATE_UP;
 						got_d = 1;
 						x++;
 						break;
