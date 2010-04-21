@@ -2136,23 +2136,23 @@ static ftdm_status_t ftdm_sangoma_boost_start(ftdm_span_t *span)
 
 static ftdm_status_t ftdm_sangoma_boost_stop(ftdm_span_t *span)
 {
-	int cnt = 10;
 	ftdm_status_t status = FTDM_SUCCESS;
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	if (sangoma_boost_data->sigmod) {
-
-		/* FIXME: we should make sure the span thread is stopped (use pthread_kill or freetdm thread kill function) */
 		/* I think stopping the span before destroying the queue makes sense
 		   otherwise may be boost events would still arrive when the queue is already destroyed! */
 		status = sangoma_boost_data->sigmod->stop_span(span);
 
 		ftdm_queue_enqueue(sangoma_boost_data->boost_queue, NULL);
-		while(ftdm_test_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_RUNNING) && cnt-- > 0) {
-			ftdm_log(FTDM_LOG_DEBUG, "Waiting for boost thread\n");
-			ftdm_sleep(500);
-		}
+	}
+
+	while (ftdm_test_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_RUNNING)) {
+		ftdm_log(FTDM_LOG_DEBUG, "Waiting for boost thread\n");
+		ftdm_sleep(100);
+	}
+
+	if (sangoma_boost_data->sigmod) {
 		ftdm_queue_destroy(&sangoma_boost_data->boost_queue);
-		return status;
 	}
 	return status;
 }
