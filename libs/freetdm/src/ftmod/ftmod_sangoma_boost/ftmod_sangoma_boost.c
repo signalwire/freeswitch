@@ -2344,11 +2344,9 @@ static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_channel_sig_status)
 {
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = ftdmchan->span->signal_data;
 	if (!sangoma_boost_data->sigmod) {
-		ftdm_log(FTDM_LOG_ERROR, "Cannot get signaling status in boost channel with no signaling module configured\n");
 		return FTDM_FAIL;
 	}
 	if (!sangoma_boost_data->sigmod->get_channel_sig_status) {
-		ftdm_log(FTDM_LOG_ERROR, "Cannot get signaling status in boost channel: method not implemented\n");
 		return FTDM_NOTIMPL;
 	}
 	return sangoma_boost_data->sigmod->get_channel_sig_status(ftdmchan, status);
