@@ -18,7 +18,7 @@ static void *test_call(ftdm_thread_t *me, void *obj)
 	ftdm_channel_call_answer(chan);
 	ftdm_channel_command(chan, FTDM_COMMAND_SEND_DTMF, number);
 
-	while (ftdm_channel_call_active(chan)) {
+	while (ftdm_channel_call_check_answered(chan)) {
 		ftdm_wait_flag_t flags = FTDM_READ;
 		
 		if (ftdm_channel_wait(chan, &flags, -1) == FTDM_FAIL) {
@@ -35,7 +35,7 @@ static void *test_call(ftdm_thread_t *me, void *obj)
 		}
 	}
 	
-	if (ftdm_channel_call_active(chan)) {
+	if (ftdm_channel_call_check_answered(chan)) {
 		ftdm_channel_call_indicate(chan, FTDM_CHANNEL_INDICATE_BUSY);
 	}
 

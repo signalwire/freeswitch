@@ -42,6 +42,15 @@
 
 #include "ftdm_declare.h"
 
+#define FTDM_MAX_CHANNELS_PHYSICAL_SPAN 32
+#define FTDM_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN 32
+#define FTDM_MAX_CHANNELS_SPAN FTDM_MAX_CHANNELS_PHYSICAL_SPAN * FTDM_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN
+#define FTDM_MAX_SPANS_INTERFACE 128
+
+#define FTDM_MAX_CHANNELS_GROUP 1024
+#define FTDM_MAX_GROUPS_INTERFACE FTDM_MAX_SPANS_INTERFACE
+
+
 typedef enum {
 	FTDM_SUCCESS,
 	FTDM_FAIL,
@@ -62,6 +71,70 @@ extern "C" {
 
 #define FTDM_MAX_NAME_STR_SZ 80
 #define FTDM_MAX_NUMBER_STR_SZ 20
+
+typedef enum {
+	FTDM_CAUSE_NONE = 0,
+	FTDM_CAUSE_UNALLOCATED = 1,
+	FTDM_CAUSE_NO_ROUTE_TRANSIT_NET = 2,
+	FTDM_CAUSE_NO_ROUTE_DESTINATION = 3,
+	FTDM_CAUSE_CHANNEL_UNACCEPTABLE = 6,
+	FTDM_CAUSE_CALL_AWARDED_DELIVERED = 7,
+	FTDM_CAUSE_NORMAL_CLEARING = 16,
+	FTDM_CAUSE_USER_BUSY = 17,
+	FTDM_CAUSE_NO_USER_RESPONSE = 18,
+	FTDM_CAUSE_NO_ANSWER = 19,
+	FTDM_CAUSE_SUBSCRIBER_ABSENT = 20,
+	FTDM_CAUSE_CALL_REJECTED = 21,
+	FTDM_CAUSE_NUMBER_CHANGED = 22,
+	FTDM_CAUSE_REDIRECTION_TO_NEW_DESTINATION = 23,
+	FTDM_CAUSE_EXCHANGE_ROUTING_ERROR = 25,
+	FTDM_CAUSE_DESTINATION_OUT_OF_ORDER = 27,
+	FTDM_CAUSE_INVALID_NUMBER_FORMAT = 28,
+	FTDM_CAUSE_FACILITY_REJECTED = 29,
+	FTDM_CAUSE_RESPONSE_TO_STATUS_ENQUIRY = 30,
+	FTDM_CAUSE_NORMAL_UNSPECIFIED = 31,
+	FTDM_CAUSE_NORMAL_CIRCUIT_CONGESTION = 34,
+	FTDM_CAUSE_NETWORK_OUT_OF_ORDER = 38,
+	FTDM_CAUSE_NORMAL_TEMPORARY_FAILURE = 41,
+	FTDM_CAUSE_SWITCH_CONGESTION = 42,
+	FTDM_CAUSE_ACCESS_INFO_DISCARDED = 43,
+	FTDM_CAUSE_REQUESTED_CHAN_UNAVAIL = 44,
+	FTDM_CAUSE_PRE_EMPTED = 45,
+	FTDM_CAUSE_FACILITY_NOT_SUBSCRIBED = 50,
+	FTDM_CAUSE_OUTGOING_CALL_BARRED = 52,
+	FTDM_CAUSE_INCOMING_CALL_BARRED = 54,
+	FTDM_CAUSE_BEARERCAPABILITY_NOTAUTH = 57,
+	FTDM_CAUSE_BEARERCAPABILITY_NOTAVAIL = 58,
+	FTDM_CAUSE_SERVICE_UNAVAILABLE = 63,
+	FTDM_CAUSE_BEARERCAPABILITY_NOTIMPL = 65,
+	FTDM_CAUSE_CHAN_NOT_IMPLEMENTED = 66,
+	FTDM_CAUSE_FACILITY_NOT_IMPLEMENTED = 69,
+	FTDM_CAUSE_SERVICE_NOT_IMPLEMENTED = 79,
+	FTDM_CAUSE_INVALID_CALL_REFERENCE = 81,
+	FTDM_CAUSE_INCOMPATIBLE_DESTINATION = 88,
+	FTDM_CAUSE_INVALID_MSG_UNSPECIFIED = 95,
+	FTDM_CAUSE_MANDATORY_IE_MISSING = 96,
+	FTDM_CAUSE_MESSAGE_TYPE_NONEXIST = 97,
+	FTDM_CAUSE_WRONG_MESSAGE = 98,
+	FTDM_CAUSE_IE_NONEXIST = 99,
+	FTDM_CAUSE_INVALID_IE_CONTENTS = 100,
+	FTDM_CAUSE_WRONG_CALL_STATE = 101,
+	FTDM_CAUSE_RECOVERY_ON_TIMER_EXPIRE = 102,
+	FTDM_CAUSE_MANDATORY_IE_LENGTH_ERROR = 103,
+	FTDM_CAUSE_PROTOCOL_ERROR = 111,
+	FTDM_CAUSE_INTERWORKING = 127,
+	FTDM_CAUSE_SUCCESS = 142,
+	FTDM_CAUSE_ORIGINATOR_CANCEL = 487,
+	FTDM_CAUSE_CRASH = 500,
+	FTDM_CAUSE_SYSTEM_SHUTDOWN = 501,
+	FTDM_CAUSE_LOSE_RACE = 502,
+	FTDM_CAUSE_MANAGER_REQUEST = 503,
+	FTDM_CAUSE_BLIND_TRANSFER = 600,
+	FTDM_CAUSE_ATTENDED_TRANSFER = 601,
+	FTDM_CAUSE_ALLOTTED_TIMEOUT = 602,
+	FTDM_CAUSE_USER_CHALLENGE = 603,
+	FTDM_CAUSE_MEDIA_TIMEOUT = 604
+} ftdm_call_cause_t;
 
 typedef enum {
 	FTDM_TOP_DOWN,
@@ -179,6 +252,10 @@ typedef struct ftdm_caller_data {
 	ftdm_caller_state_t call_state;
 	uint32_t chan_id;
 } ftdm_caller_data_t;
+
+typedef enum {
+	FTDM_TONE_DTMF = (1 << 0)
+} ftdm_tone_type_t;
 
 typedef enum {
 	FTDM_SIGEVENT_START,
@@ -427,6 +504,7 @@ typedef enum {
 	FTDM_CHANNEL_INDICATE_RING,
 	FTDM_CHANNEL_INDICATE_PROCEED,
 	FTDM_CHANNEL_INDICATE_PROGRESS,
+	FTDM_CHANNEL_INDICATE_PROGRESS_MEDIA,
 	FTDM_CHANNEL_INDICATE_BUSY,
 } ftdm_channel_indication_t;
 
@@ -435,6 +513,16 @@ typedef enum {
 	FTDM_TRUE
 } ftdm_bool_t;
 
+typedef enum {
+	FTDM_ALARM_NONE    = 0,
+	FTDM_ALARM_RED     = (1 << 1),
+	FTDM_ALARM_YELLOW  = (1 << 2),
+	FTDM_ALARM_RAI     = (1 << 3),
+	FTDM_ALARM_BLUE    = (1 << 4),
+	FTDM_ALARM_AIS     = (1 << 5),
+	FTDM_ALARM_GENERAL = (1 << 30)
+} ftdm_alarm_flag_t;
+
 /*! \brief Override the default queue handler */
 FT_DECLARE(ftdm_status_t) ftdm_global_set_queue_handler(ftdm_queue_handler_t *handler);
 
@@ -442,22 +530,37 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_call_answer(ftdm_channel_t *ftdmchan);
 FT_DECLARE(ftdm_status_t) ftdm_channel_call_place(ftdm_channel_t *ftdmchan);
 FT_DECLARE(ftdm_status_t) ftdm_channel_call_indicate(ftdm_channel_t *ftdmchan, ftdm_channel_indication_t indication);
 FT_DECLARE(ftdm_status_t) ftdm_channel_call_hangup(ftdm_channel_t *ftdmchan);
-FT_DECLARE(ftdm_bool_t) ftdm_channel_call_active(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(ftdm_status_t) ftdm_channel_call_hangup_with_cause(ftdm_channel_t *ftdmchan, ftdm_call_cause_t);
+FT_DECLARE(ftdm_status_t) ftdm_channel_call_hold(ftdm_channel_t *ftdmchan);
+FT_DECLARE(ftdm_status_t) ftdm_channel_call_unhold(ftdm_channel_t *ftdmchan);
+FT_DECLARE(ftdm_bool_t) ftdm_channel_call_check_answered(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(ftdm_bool_t) ftdm_channel_call_check_busy(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(ftdm_bool_t) ftdm_channel_call_check_hangup(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(ftdm_bool_t) ftdm_channel_call_check_done(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(ftdm_bool_t) ftdm_channel_call_check_hold(const ftdm_channel_t *ftdmchan);
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_set_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status_t status);
 FT_DECLARE(ftdm_status_t) ftdm_channel_get_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status_t *status);
 FT_DECLARE(ftdm_status_t) ftdm_span_set_sig_status(ftdm_span_t *span, ftdm_signaling_status_t status);
 FT_DECLARE(ftdm_status_t) ftdm_span_get_sig_status(ftdm_span_t *span, ftdm_signaling_status_t *status);
 
-FT_DECLARE(void) ftdm_channel_rotate_tokens(ftdm_channel_t *ftdmchan);
 FT_DECLARE(void) ftdm_channel_clear_detected_tones(ftdm_channel_t *ftdmchan);
 FT_DECLARE(void) ftdm_channel_clear_needed_tones(ftdm_channel_t *ftdmchan);
 
-FT_DECLARE(const char *) ftdm_channel_get_last_error(const ftdm_channel_t *ftdmchan);
-FT_DECLARE(ftdm_status_t) ftdm_channel_get_alarms(ftdm_channel_t *ftdmchan);
+FT_DECLARE(void) ftdm_channel_rotate_tokens(ftdm_channel_t *ftdmchan);
 FT_DECLARE(ftdm_status_t) ftdm_channel_clear_token(ftdm_channel_t *ftdmchan, const char *token);
 FT_DECLARE(void) ftdm_channel_replace_token(ftdm_channel_t *ftdmchan, const char *old_token, const char *new_token);
 FT_DECLARE(ftdm_status_t) ftdm_channel_add_token(ftdm_channel_t *ftdmchan, char *token, int end);
+FT_DECLARE(const char *) ftdm_channel_get_token(const ftdm_channel_t *ftdmchan, uint32_t tokenid);
+FT_DECLARE(uint32_t) ftdm_channel_get_token_count(const ftdm_channel_t *ftdmchan);
+
+FT_DECLARE(uint32_t) ftdm_channel_get_io_interval(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(uint32_t) ftdm_channel_get_io_packet_len(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(ftdm_codec_t) ftdm_channel_get_codec(const ftdm_channel_t *ftdmchan);
+
+FT_DECLARE(const char *) ftdm_channel_get_last_error(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(ftdm_status_t) ftdm_channel_get_alarms(ftdm_channel_t *ftdmchan, ftdm_alarm_flag_t *alarmbits);
+FT_DECLARE(ftdm_chan_type_t) ftdm_channel_get_type(const ftdm_channel_t *ftdmchan);
 
 FT_DECLARE(ftdm_size_t) ftdm_channel_dequeue_dtmf(ftdm_channel_t *ftdmchan, char *dtmf, ftdm_size_t len);
 FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, const char *dtmf);
@@ -465,6 +568,7 @@ FT_DECLARE(void) ftdm_channel_flush_dtmf(ftdm_channel_t *ftdmchan);
 FT_DECLARE(ftdm_status_t) ftdm_span_poll_event(ftdm_span_t *span, uint32_t ms);
 FT_DECLARE(ftdm_status_t) ftdm_span_next_event(ftdm_span_t *span, ftdm_event_t **event);
 FT_DECLARE(ftdm_status_t) ftdm_span_find(uint32_t id, ftdm_span_t **span);
+FT_DECLARE(const char *) ftdm_span_get_last_error(const ftdm_span_t *ftdmchan);
 FT_DECLARE(ftdm_status_t) ftdm_span_create(ftdm_io_interface_t *fio, ftdm_span_t **span, const char *name);
 FT_DECLARE(ftdm_status_t) ftdm_span_close_all(void);
 FT_DECLARE(ftdm_status_t) ftdm_span_add_channel(ftdm_span_t *span, ftdm_socket_t sockfd, ftdm_chan_type_t type, ftdm_channel_t **chan);
@@ -479,6 +583,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan);
 FT_DECLARE(ftdm_status_t) ftdm_span_channel_use_count(ftdm_span_t *span, uint32_t *count);
 FT_DECLARE(ftdm_status_t) ftdm_group_channel_use_count(ftdm_group_t *group, uint32_t *count);
+FT_DECLARE(uint32_t) ftdm_group_get_id(const ftdm_group_t *group);
 FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan);
 FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan);
 FT_DECLARE(ftdm_status_t) ftdm_channel_close(ftdm_channel_t **ftdmchan);
@@ -489,8 +594,13 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 FT_DECLARE(ftdm_status_t) ftdm_channel_add_var(ftdm_channel_t *ftdmchan, const char *var_name, const char *value);
 FT_DECLARE(const char *) ftdm_channel_get_var(ftdm_channel_t *ftdmchan, const char *var_name);
 FT_DECLARE(ftdm_status_t) ftdm_channel_clear_vars(ftdm_channel_t *ftdmchan);
+FT_DECLARE(ftdm_span_t *) ftdm_channel_get_span(const ftdm_channel_t *ftdmchan);
 FT_DECLARE(uint32_t) ftdm_channel_get_span_id(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(uint32_t) ftdm_channel_get_ph_span_id(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(const char *) ftdm_channel_get_span_name(const ftdm_channel_t *ftdmchan);
 FT_DECLARE(uint32_t) ftdm_channel_get_id(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(const char *) ftdm_channel_get_name(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(const char *) ftdm_channel_get_number(const ftdm_channel_t *ftdmchan);
 FT_DECLARE(uint32_t) ftdm_channel_get_ph_id(const ftdm_channel_t *ftdmchan);
 FT_DECLARE(ftdm_status_t) ftdm_global_init(void);
 FT_DECLARE(ftdm_status_t) ftdm_global_configuration(void);
@@ -500,7 +610,6 @@ FT_DECLARE(void) ftdm_global_set_crash_policy(ftdm_crash_policy_t policy);
 FT_DECLARE(void) ftdm_global_set_logger(ftdm_logger_t logger);
 FT_DECLARE(void) ftdm_global_set_default_logger(int level);
 FT_DECLARE(ftdm_bool_t) ftdm_running(void);
-FT_DECLARE(ftdm_status_t) ftdm_channel_init(ftdm_channel_t *ftdmchan);
 FT_DECLARE(ftdm_status_t) ftdm_configure_span(const char *type, ftdm_span_t *span, fio_signal_cb_t sig_cb, ...);
 FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(const char *type, ftdm_span_t *span, fio_signal_cb_t sig_cb, ftdm_conf_parameter_t *parameters);
 FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span);
@@ -510,12 +619,23 @@ FT_DECLARE(ftdm_status_t) ftdm_span_find_by_name(const char *name, ftdm_span_t *
 FT_DECLARE(uint32_t) ftdm_span_get_id(const ftdm_span_t *span);
 FT_DECLARE(const char *) ftdm_span_get_name(const ftdm_span_t *span);
 FT_DECLARE(char *) ftdm_api_execute(const char *type, const char *cmd);
-FT_DECLARE(ftdm_status_t) ftdm_channel_set_caller_data(ftdm_channel_t *ftdmchan, ftdm_caller_data_t *caller_data);
 FT_DECLARE(void) ftdm_cpu_monitor_disable(void);
 FT_DECLARE(ftdm_status_t) ftdm_conf_node_create(const char *name, ftdm_conf_node_t **node, ftdm_conf_node_t *parent);
 FT_DECLARE(ftdm_status_t) ftdm_conf_node_add_param(ftdm_conf_node_t *node, const char *param, const char *val);
 FT_DECLARE(ftdm_status_t) ftdm_conf_node_destroy(ftdm_conf_node_t *node);
 FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char *str, ftdm_channel_config_t *chan_config, unsigned *configured);
+FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan);
+
+FT_DECLARE(ftdm_channel_t *) ftdm_span_get_channel(const ftdm_span_t *span, uint32_t chanid);
+FT_DECLARE(uint32_t) ftdm_span_get_chan_count(const ftdm_span_t *span);
+
+FT_DECLARE(ftdm_status_t) ftdm_channel_set_caller_data(ftdm_channel_t *ftdmchan, ftdm_caller_data_t *caller_data);
+FT_DECLARE(ftdm_caller_data_t *) ftdm_channel_get_caller_data(ftdm_channel_t *channel);
+FT_DECLARE(const char *) ftdm_channel_get_state_str(const ftdm_channel_t *channel);
+FT_DECLARE(const char *) ftdm_channel_get_last_state_str(const ftdm_channel_t *channel);
+
+/* TODO: try to get rid of this API */
+FT_DECLARE(ftdm_status_t) ftdm_channel_init(ftdm_channel_t *ftdmchan);
 
 #define FIO_CODEC_ARGS (void *data, ftdm_size_t max, ftdm_size_t *datalen)
 #define FIO_CODEC_FUNCTION(name) FT_DECLARE_NONSTD(ftdm_status_t) name FIO_CODEC_ARGS

@@ -120,14 +120,6 @@
 extern "C" {
 #endif
 
-#define FTDM_MAX_CHANNELS_PHYSICAL_SPAN 32
-#define FTDM_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN 32
-#define FTDM_MAX_CHANNELS_SPAN FTDM_MAX_CHANNELS_PHYSICAL_SPAN * FTDM_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN
-#define FTDM_MAX_SPANS_INTERFACE 128
-
-#define FTDM_MAX_CHANNELS_GROUP 1024
-#define FTDM_MAX_GROUPS_INTERFACE FTDM_MAX_SPANS_INTERFACE
-
 #define GOTO_STATUS(label,st) status = st; goto label ;
 
 #define ftdm_copy_string(x,y,z) strncpy(x, y, z - 1) 
@@ -542,7 +534,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(ftdm_channel_t *ftdmchan, ftdm_
 
 FT_DECLARE(ftdm_status_t) ftdm_span_load_tones(ftdm_span_t *span, const char *mapname);
 FT_DECLARE(ftdm_time_t) ftdm_current_time_in_ms(void);
-FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan);
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_use(ftdm_channel_t *ftdmchan);
 
@@ -638,6 +629,9 @@ FIO_CODEC_FUNCTION(fio_alaw2ulaw);
 #define ftdm_socket_close(it) if (it > -1) { close(it); it = -1;}
 
 #define ftdm_array_len(array) sizeof(array)/sizeof(array[0])
+
+#define ftdm_channel_lock(chan) ftdm_mutex_lock(chan->mutex)
+#define ftdm_channel_unlock(chan) ftdm_mutex_unlock(chan->mutex)
 
 static __inline__ void ftdm_abort(void)
 {

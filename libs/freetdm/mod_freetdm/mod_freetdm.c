@@ -4,10 +4,10 @@
  *
  * Version: MPL 1.1
  *
- * The contents of this file are subject to the Mftilla Public License Version
+ * The contents of this file are subject to the Mozilla Public License Version
  * 1.1 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
- * http://www.mftilla.org/MPL/
+ * http://www.mozilla.org/MPL/
  *
  * Software distributed under the License is distributed on an "AS IS" basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
@@ -138,14 +138,11 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 static switch_core_session_t *ftdm_channel_get_session(ftdm_channel_t *channel, int32_t id)
 {
 	switch_core_session_t *session = NULL;
+	const char *token = ftdm_channel_get_token(channel, id);
 
-	if (id > FTDM_MAX_TOKENS) {
-		return NULL;
-	}
-
-	if (!zstr(channel->tokens[id])) {
-		if (!(session = switch_core_session_locate(channel->tokens[id]))) {
-			ftdm_channel_clear_token(channel, channel->tokens[id]);
+	if (!zstr(token)) {
+		if (!(session = switch_core_session_locate(token))) {
+			ftdm_channel_clear_token(channel, token);
 		}
 	}
 
@@ -154,14 +151,7 @@ static switch_core_session_t *ftdm_channel_get_session(ftdm_channel_t *channel, 
 
 static const char *ftdm_channel_get_uuid(ftdm_channel_t *channel, int32_t id)
 {
-	if (id > FTDM_MAX_TOKENS) {
-		return NULL;
-	}
-
-	if (!zstr(channel->tokens[id])) {
-		return channel->tokens[id];
-	}
-	return NULL;
+	return ftdm_channel_get_token(channel, id);
 }
 
 static void stop_hold(switch_core_session_t *session_a, const char *uuid)
@@ -195,19 +185,20 @@ static void start_hold(ftdm_channel_t *ftdmchan, switch_core_session_t *session_
 {
 	switch_core_session_t *session;
 	switch_channel_t *channel, *channel_a;
+	int32_t spanid = 0;
 
 	if (!uuid) {
 		return;
 	}
 	
-	
+	spanid = ftdm_channel_get_span_id(ftdmchan);	
 	if ((session = switch_core_session_locate(uuid))) {
 		channel = switch_core_session_get_channel(session);
 		if (zstr(stream)) {
 			if (!strcasecmp(globals.hold_music, "indicate_hold")) {
 				stream = "indicate_hold";
 			}
-			if (!strcasecmp(SPAN_CONFIG[ftdmchan->span->span_id].hold_music, "indicate_hold")) {
+			if (!strcasecmp(SPAN_CONFIG[spanid].hold_music, "indicate_hold")) {
 				stream = "indicate_hold";
 			}
 		}
@@ -217,7 +208,7 @@ static void start_hold(ftdm_channel_t *ftdmchan, switch_core_session_t *session_
 		}
 
 		if (zstr(stream)) {
-			stream = SPAN_CONFIG[ftdmchan->span->span_id].hold_music;
+			stream = SPAN_CONFIG[spanid].hold_music;
 		}
 
 		if (zstr(stream)) {
@@ -250,9 +241,10 @@ static void cycle_foreground(ftdm_channel_t *ftdmchan, int flash, const char *bc
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	private_t *tech_pvt;
+	int32_t tokencnt = ftdm_channel_get_token_count(ftdmchan);
 	
 
-	for (i = 0; i < ftdmchan->token_count; i++) {
+	for (i = 0; i < tokencnt; i++) {
 		if ((session = ftdm_channel_get_session(ftdmchan, i))) {
 			const char *buuid;
 			tech_pvt = switch_core_session_get_private(session);
@@ -260,7 +252,7 @@ static void cycle_foreground(ftdm_channel_t *ftdmchan, int flash, const char *bc
 			buuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
 
 			
-			if (ftdmchan->token_count == 1 && flash) {
+			if (tokencnt  == 1 && flash) {
 				if (switch_test_flag(tech_pvt, TFLAG_HOLD)) {
 					stop_hold(session, buuid);
 					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
@@ -460,6 +452,8 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
+	ftdm_chan_type_t chantype;
+	uint32_t tokencnt;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -472,28 +466,31 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	} 
 
 	ftdm_channel_clear_token(tech_pvt->ftdmchan, switch_core_session_get_uuid(session));
-	
-	switch (tech_pvt->ftdmchan->type) {
+
+	chantype = ftdm_channel_get_type(tech_pvt->ftdmchan);	
+	switch (chantype) {
 	case FTDM_CHAN_TYPE_FXO:
 	case FTDM_CHAN_TYPE_EM:
 	case FTDM_CHAN_TYPE_CAS:
 		{
-			ftdm_set_state_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+			ftdm_channel_call_hangup(tech_pvt->ftdmchan);
 		}
 		break;
 	case FTDM_CHAN_TYPE_FXS:
 		{
-			if (tech_pvt->ftdmchan->state != FTDM_CHANNEL_STATE_BUSY && tech_pvt->ftdmchan->state != FTDM_CHANNEL_STATE_DOWN) {
-				if (tech_pvt->ftdmchan->token_count) {
+			if (!ftdm_channel_call_check_busy(tech_pvt->ftdmchan) && !ftdm_channel_call_check_done(tech_pvt->ftdmchan)) {
+				tokencnt = ftdm_channel_get_token_count(tech_pvt->ftdmchan);
+				if (tokencnt) {
 					cycle_foreground(tech_pvt->ftdmchan, 0, NULL);
 				} else {
-					ftdm_set_state_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+					ftdm_channel_call_hangup(tech_pvt->ftdmchan);
 				}
 			}
 		}
 		break;
 	case FTDM_CHAN_TYPE_B:
 		{
+#if 0
 			if (tech_pvt->ftdmchan->state != FTDM_CHANNEL_STATE_DOWN) {
 				if (tech_pvt->ftdmchan->state != FTDM_CHANNEL_STATE_TERMINATING) {
 					tech_pvt->ftdmchan->caller_data.hangup_cause = switch_channel_get_cause_q850(channel);
@@ -503,11 +500,18 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 				}
 				ftdm_set_state_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 			}
+#else
+			ftdm_call_cause_t hcause = switch_channel_get_cause_q850(channel);
+			if (hcause  < 1 || hcause > 127) {
+				hcause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
+			}
+			ftdm_channel_call_hangup_with_cause(tech_pvt->ftdmchan, hcause);
+#endif
 		}
 		break;
 	default: 
 		{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unhandled channel type %d for channel %s\n", tech_pvt->ftdmchan->type,
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unhandled channel type %d for channel %s\n", chantype,
                     switch_channel_get_name(channel));
 		}
 		break;
@@ -611,7 +615,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	/* Digium Cards sometimes timeout several times in a row here. 
 	   Yes, we support digium cards, ain't we nice.......
 	   6 double length intervals should compensate */
-	chunk = tech_pvt->ftdmchan->effective_interval * 2;
+	chunk = ftdm_channel_get_io_interval(tech_pvt->ftdmchan) * 2;
 	total_to = chunk * 6;
 
  top:
@@ -626,12 +630,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_HOLD) || do_break) {
-		switch_yield(tech_pvt->ftdmchan->effective_interval * 1000);
-		tech_pvt->cng_frame.datalen = tech_pvt->ftdmchan->packet_len;
+		switch_yield(ftdm_channel_get_io_interval(tech_pvt->ftdmchan) * 1000);
+		tech_pvt->cng_frame.datalen = ftdm_channel_get_io_packet_len(tech_pvt->ftdmchan);
 		tech_pvt->cng_frame.samples = tech_pvt->cng_frame.datalen;
 		tech_pvt->cng_frame.flags = SFF_CNG;
 		*frame = &tech_pvt->cng_frame;
-		if (tech_pvt->ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
+		if (ftdm_channel_get_codec(tech_pvt->ftdmchan) == FTDM_CODEC_SLIN) {
 			tech_pvt->cng_frame.samples /= 2;
 		}
 		return SWITCH_STATUS_SUCCESS;
@@ -672,7 +676,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	tech_pvt->read_frame.datalen = (uint32_t)len;
 	tech_pvt->read_frame.samples = tech_pvt->read_frame.datalen;
 
-	if (tech_pvt->ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
+	if (ftdm_channel_get_codec(tech_pvt->ftdmchan) == FTDM_CODEC_SLIN) {
 		tech_pvt->read_frame.samples /= 2;
 	}
 
@@ -738,7 +742,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 
 	wflags = FTDM_WRITE;	
-	status = ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, tech_pvt->ftdmchan->effective_interval * 10);
+	status = ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, ftdm_channel_get_io_interval(tech_pvt->ftdmchan) * 10);
 	
 	if (!(wflags & FTDM_WRITE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Dropping frame! (write not ready)\n");
@@ -768,6 +772,7 @@ static switch_status_t channel_receive_message_cas(switch_core_session_t *sessio
 {
 	switch_channel_t *channel;
 	private_t *tech_pvt;
+	uint32_t phy_id;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -779,22 +784,31 @@ static switch_status_t channel_receive_message_cas(switch_core_session_t *sessio
         switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
         return SWITCH_STATUS_FALSE;
     }
-	
-	ftdm_log(FTDM_LOG_DEBUG, "Got Freeswitch message in R2 channel %d [%d]\n", tech_pvt->ftdmchan->physical_chan_id, 
-            msg->message_id);
+
+	phy_id = ftdm_channel_get_ph_id(tech_pvt->ftdmchan);	
+	ftdm_log(FTDM_LOG_DEBUG, "Got Freeswitch message in R2 channel %d [%d]\n", phy_id, msg->message_id);
+
+	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		{
+#if 0
 			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 				ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_PROGRESS);
 			} else {
 				ftdm_set_state_locked_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
 			}
+#else
+			ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROGRESS);
+#endif
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
+#if 0
 			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 				ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_PROGRESS);
 				ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_MEDIA);
@@ -802,24 +816,14 @@ static switch_status_t channel_receive_message_cas(switch_core_session_t *sessio
 				ftdm_set_state_locked_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
 				ftdm_set_state_locked_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 			}
+#else
+			ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROGRESS_MEDIA);
+#endif
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		{
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-				ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_ANSWERED);
-			} else {
-				/* lets make the ftmod_r2 module life easier by moving thru each
-                 * state waiting for completion, clumsy, but does the job
-				 */
-				if (tech_pvt->ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
-					ftdm_set_state_locked_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
-				}
-				if (tech_pvt->ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
-					ftdm_set_state_locked_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
-				}
-				ftdm_set_state_locked_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_UP);
-			}
+			ftdm_channel_call_answer(tech_pvt->ftdmchan);
 		}
 		break;
 	default:
@@ -845,23 +849,31 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
         return SWITCH_STATUS_FALSE;
     }
 
-	if (tech_pvt->ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
-		ftdm_mutex_unlock(tech_pvt->ftdmchan->mutex);	
+	if (ftdm_channel_call_check_hangup(tech_pvt->ftdmchan)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		{
+#if 0
 			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 				ftdm_set_flag(tech_pvt->ftdmchan, FTDM_CHANNEL_PROGRESS);
 			} else {
 				ftdm_set_state_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
 			}
+#else
+			ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROGRESS);
+#endif
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
+#if 0
 			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 				ftdm_set_flag(tech_pvt->ftdmchan, FTDM_CHANNEL_PROGRESS);
 				ftdm_set_flag(tech_pvt->ftdmchan, FTDM_CHANNEL_MEDIA);
@@ -875,10 +887,14 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 				}
 				ftdm_set_state_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 			}
+#else
+			ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROGRESS_MEDIA);
+#endif
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		{
+#if 0
 			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 				ftdm_set_flag(tech_pvt->ftdmchan, FTDM_CHANNEL_ANSWERED);
 			} else {
@@ -894,6 +910,9 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 				}
 				ftdm_set_state_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_UP);
 			}
+#else
+			ftdm_channel_call_answer(tech_pvt->ftdmchan);
+#endif
 		}
 		break;
 	default:
@@ -919,9 +938,14 @@ static switch_status_t channel_receive_message_fxo(switch_core_session_t *sessio
         return SWITCH_STATUS_FALSE;
     }
 	
+	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
+#if 0
 		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 			ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_ANSWERED);
 			ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_PROGRESS);
@@ -929,6 +953,9 @@ static switch_status_t channel_receive_message_fxo(switch_core_session_t *sessio
 		} else {
 			ftdm_set_state_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_UP);
 		}
+#else
+		ftdm_channel_call_answer(tech_pvt->ftdmchan);
+#endif
 		break;
 	default:
 		break;
@@ -952,10 +979,15 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
         switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
         return SWITCH_STATUS_FALSE;
     }
+
+	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 	
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
+#if 0
 		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
 			ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_ANSWERED);
 			ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_PROGRESS);
@@ -963,17 +995,22 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 			ftdm_set_state_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_UP);
 			switch_channel_mark_answered(channel);
 		}
+#else
+		ftdm_channel_call_answer(tech_pvt->ftdmchan);
+		switch_channel_mark_answered(channel);
+#endif
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
-			
-			if (!switch_channel_test_flag(channel, CF_ANSWERED) && 
-				!switch_channel_test_flag(channel, CF_EARLY_MEDIA) &&
-				!switch_channel_test_flag(channel, CF_RING_READY)
-				) {
+		if (!switch_channel_test_flag(channel, CF_ANSWERED) && 
+			!switch_channel_test_flag(channel, CF_EARLY_MEDIA) &&
+			!switch_channel_test_flag(channel, CF_RING_READY)
+			) {
+#if 0
 				ftdm_set_state_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_RING);
+#else
+				ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_RING);
+#endif
 				switch_channel_mark_ring_ready(channel);
-			}
 		}
 		break;
 	default:
@@ -1006,12 +1043,9 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
         return SWITCH_STATUS_FALSE;
     }
 
-	ftdm_mutex_lock(ftdmchan->mutex);	
-
 	if (!tech_pvt->ftdmchan) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
-		status = SWITCH_STATUS_FALSE;
-		goto end;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	switch (msg->message_id) {
@@ -1035,7 +1069,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		break;
 	}
 
-	switch (tech_pvt->ftdmchan->type) {
+	switch (ftdm_channel_get_type(tech_pvt->ftdmchan)) {
 	case FTDM_CHAN_TYPE_FXS:
 	case FTDM_CHAN_TYPE_EM:
 		status = channel_receive_message_fxs(session, msg);
@@ -1053,10 +1087,6 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		status = SWITCH_STATUS_FALSE;
 		break;
 	}
-
- end:
-
-	ftdm_mutex_unlock(ftdmchan->mutex);	
 
 	return status;
 
@@ -1098,7 +1128,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	const char *dest = NULL;
 	char *data = NULL;
-	int span_id = -1, group_id = -1,chan_id = 0;
+	int span_id = -1, group_id = -1, chan_id = 0;
 	ftdm_channel_t *ftdmchan = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	char name[128];
@@ -1169,7 +1199,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		ftdm_span_t *span;
 		ftdm_status_t zstatus = ftdm_span_find_by_name(span_name, &span);
 		if (zstatus == FTDM_SUCCESS && span) {
-			span_id = span->span_id;
+			span_id = ftdm_span_get_id(span);
 		}
 	}
 
@@ -1178,7 +1208,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		ftdm_group_t *group;
 		ftdm_status_t zstatus = ftdm_group_find_by_name(span_name, &group);
 		if (zstatus == FTDM_SUCCESS && group) {
-			group_id = group->group_id;
+			group_id = ftdm_group_get_id(group);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing ftdm span or group: %s\n", span_name);
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -1275,12 +1305,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			goto fail;
 		}
 
-		snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", ftdmchan->span_id, ftdmchan->chan_id, dest);
+		snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", ftdm_channel_get_span_id(ftdmchan), ftdm_channel_get_id(ftdmchan), dest);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
 		switch_channel_set_name(channel, name);
-		switch_channel_set_variable(channel, "freetdm_span_name", ftdmchan->span->name);
-		switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", ftdmchan->span_id);	
-		switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", ftdmchan->chan_id);
+		switch_channel_set_variable(channel, "freetdm_span_name", ftdm_channel_get_span_name(ftdmchan));
+		switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", ftdm_channel_get_span_id(ftdmchan));
+		switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", ftdm_channel_get_id(ftdmchan));
 		ftdm_channel_set_caller_data(ftdmchan, &caller_data);
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 		caller_profile->destination_number = switch_core_strdup(caller_profile->pool, switch_str_nil(dest_num));
@@ -1291,14 +1321,14 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
-		if (ftdm_channel_add_token(ftdmchan, switch_core_session_get_uuid(*new_session), ftdmchan->token_count) != FTDM_SUCCESS) {
+		if (ftdm_channel_add_token(ftdmchan, switch_core_session_get_uuid(*new_session), ftdm_channel_get_token_count(ftdmchan)) != FTDM_SUCCESS) {
 			switch_core_session_destroy(new_session);
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
             goto fail;
 		}
 
 
-		if (ftdm_channel_outgoing_call(ftdmchan) != FTDM_SUCCESS) {
+		if (ftdm_channel_call_place(ftdmchan) != FTDM_SUCCESS) {
 			if (tech_pvt->read_codec.implementation) {
 				switch_core_codec_destroy(&tech_pvt->read_codec);
 			}
@@ -1331,9 +1361,14 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	switch_core_session_t *session = NULL;
 	private_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
+	uint32_t spanid, chanid;
 	char name[128];
+	ftdm_caller_data_t *channel_caller_data = sigmsg->raw_data;
 	
 	*sp = NULL;
+
+	spanid = ftdm_channel_get_span_id(sigmsg->channel);
+	chanid = ftdm_channel_get_span_id(sigmsg->channel);
 	
 	if (!(session = switch_core_session_request(freetdm_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Initilization Error!\n");
@@ -1350,61 +1385,61 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_core_session_destroy(&session);
 		return FTDM_FAIL;
 	}
+
+	channel_caller_data->collected[0] = '\0';
 	
-	*sigmsg->channel->caller_data.collected = '\0';
-	
-	if (zstr(sigmsg->channel->caller_data.cid_name)) {
-		switch_set_string(sigmsg->channel->caller_data.cid_name, sigmsg->channel->chan_name);
+	if (zstr(channel_caller_data->cid_name)) {
+		switch_set_string(channel_caller_data->cid_name, ftdm_channel_get_name(sigmsg->channel));
 	}
 
-	if (zstr(sigmsg->channel->caller_data.cid_num.digits)) {
-		if (!zstr(sigmsg->channel->caller_data.ani.digits)) {
-			switch_set_string(sigmsg->channel->caller_data.cid_num.digits, sigmsg->channel->caller_data.ani.digits);
+	if (zstr(channel_caller_data->cid_num.digits)) {
+		if (!zstr(channel_caller_data->ani.digits)) {
+			switch_set_string(channel_caller_data->cid_num.digits, channel_caller_data->ani.digits);
 		} else {
-			switch_set_string(sigmsg->channel->caller_data.cid_num.digits, sigmsg->channel->chan_number);
+			switch_set_string(channel_caller_data->cid_num.digits, ftdm_channel_get_number(sigmsg->channel));
 		}
 	}
 
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 														 "FreeTDM",
-														 SPAN_CONFIG[sigmsg->channel->span_id].dialplan,
-														 sigmsg->channel->caller_data.cid_name,
-														 sigmsg->channel->caller_data.cid_num.digits,
+														 SPAN_CONFIG[spanid].dialplan,
+														 channel_caller_data->cid_name,
+														 channel_caller_data->cid_num.digits,
 														 NULL,
-														 sigmsg->channel->caller_data.ani.digits,
-														 sigmsg->channel->caller_data.aniII,
-														 sigmsg->channel->caller_data.rdnis.digits,
-														 (char *) modname,
-														 SPAN_CONFIG[sigmsg->channel->span_id].context,
-														 sigmsg->channel->caller_data.dnis.digits);
+														 channel_caller_data->ani.digits,
+														 channel_caller_data->aniII,
+														 channel_caller_data->rdnis.digits,
+														 (char *)modname,
+														 SPAN_CONFIG[spanid].context,
+														 channel_caller_data->dnis.digits);
 
 	assert(tech_pvt->caller_profile != NULL);
 
-	if (sigmsg->channel->caller_data.screen == 1 || sigmsg->channel->caller_data.screen == 3) {
+	if (channel_caller_data->screen == 1 || channel_caller_data->screen == 3) {
 		switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_SCREEN);
 	}
 
-	tech_pvt->caller_profile->caller_ton = sigmsg->channel->caller_data.cid_num.type;
-	tech_pvt->caller_profile->caller_numplan = sigmsg->channel->caller_data.cid_num.plan;
-	tech_pvt->caller_profile->ani_ton = sigmsg->channel->caller_data.ani.type;
-	tech_pvt->caller_profile->ani_numplan = sigmsg->channel->caller_data.ani.plan;
-	tech_pvt->caller_profile->destination_number_ton = sigmsg->channel->caller_data.dnis.type;
-	tech_pvt->caller_profile->destination_number_numplan = sigmsg->channel->caller_data.dnis.plan;
-	tech_pvt->caller_profile->rdnis_ton = sigmsg->channel->caller_data.rdnis.type;
-	tech_pvt->caller_profile->rdnis_numplan = sigmsg->channel->caller_data.rdnis.plan;
+	tech_pvt->caller_profile->caller_ton = channel_caller_data->cid_num.type;
+	tech_pvt->caller_profile->caller_numplan = channel_caller_data->cid_num.plan;
+	tech_pvt->caller_profile->ani_ton = channel_caller_data->ani.type;
+	tech_pvt->caller_profile->ani_numplan = channel_caller_data->ani.plan;
+	tech_pvt->caller_profile->destination_number_ton = channel_caller_data->dnis.type;
+	tech_pvt->caller_profile->destination_number_numplan = channel_caller_data->dnis.plan;
+	tech_pvt->caller_profile->rdnis_ton = channel_caller_data->rdnis.type;
+	tech_pvt->caller_profile->rdnis_numplan = channel_caller_data->rdnis.plan;
 
-	if (sigmsg->channel->caller_data.pres) {
+	if (channel_caller_data->pres) {
 		switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 	}
 	
-	snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", sigmsg->channel->span_id, sigmsg->channel->chan_id, tech_pvt->caller_profile->destination_number);
+	snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", spanid, chanid, tech_pvt->caller_profile->destination_number);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect inbound channel %s\n", name);
 	switch_channel_set_name(channel, name);
 	switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 
-	switch_channel_set_variable(channel, "freetdm_span_name", sigmsg->channel->span->name);
-	switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", sigmsg->channel->span_id);	
-	switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", sigmsg->channel->chan_id);
+	switch_channel_set_variable(channel, "freetdm_span_name", ftdm_channel_get_span_name(sigmsg->channel));
+	switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", spanid);	
+	switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", chanid);
 		
 	switch_channel_set_state(channel, CS_INIT);
 	if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
@@ -1426,13 +1461,16 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 {
 	switch_event_t *event = NULL;
-
+	ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
+	uint32_t chanid, spanid;
+	chanid = ftdm_channel_get_id(sigmsg->channel);
+	spanid = ftdm_channel_get_span_id(sigmsg->channel);
 	switch (sigmsg->event_id) {
 
 	case FTDM_SIGEVENT_ALARM_CLEAR:
 	case FTDM_SIGEVENT_ALARM_TRAP:
 		{
-			if (ftdm_channel_get_alarms(sigmsg->channel) != FTDM_SUCCESS) {
+			if (ftdm_channel_get_alarms(sigmsg->channel, &alarmbits) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "failed to retrieve alarms\n");
 				return FTDM_FAIL;
 			}
@@ -1441,10 +1479,10 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 				return FTDM_FAIL;
 			}
 			if (sigmsg->event_id == FTDM_SIGEVENT_ALARM_CLEAR) {
-				ftdm_log(FTDM_LOG_NOTICE, "Alarm cleared on channel %d:%d\n", sigmsg->channel->span_id, sigmsg->channel->chan_id);
+				ftdm_log(FTDM_LOG_NOTICE, "Alarm cleared on channel %d:%d\n", spanid, chanid);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-clear");
 			} else {
-				ftdm_log(FTDM_LOG_NOTICE, "Alarm raised on channel %d:%d\n", sigmsg->channel->span_id, sigmsg->channel->chan_id);
+				ftdm_log(FTDM_LOG_NOTICE, "Alarm raised on channel %d:%d\n", spanid, chanid);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-trap");
 			}
 		}
@@ -1454,35 +1492,26 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 		break;
 	}
 
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s", sigmsg->channel->span->name);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-number", "%d", sigmsg->channel->span_id);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", sigmsg->channel->chan_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s", ftdm_channel_get_span_name(sigmsg->channel));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-number", "%d", ftdm_channel_get_span_id(sigmsg->channel));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", ftdm_channel_get_id(sigmsg->channel));
 
-	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_RECOVER)) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "recover");
-	}
-	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_LOOPBACK)) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "loopback");
-	}
-	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_YELLOW)) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "yellow");
-	}
-	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_RED)) {
+	if (alarmbits & FTDM_ALARM_RED) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "red");
 	}
-	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_BLUE)) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "blue");
+	if (alarmbits & FTDM_ALARM_YELLOW) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "yellow");
 	}
-	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_NOTOPEN)) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "notopen");
-	}
-	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_AIS)) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "ais");
-	}
-	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_RAI)) {
+	if (alarmbits & FTDM_ALARM_RAI) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "rai");
 	}
-	if (ftdm_test_alarm_flag(sigmsg->channel, FTDM_ALARM_GENERAL)) {
+	if (alarmbits & FTDM_ALARM_BLUE) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "blue");
+	}
+	if (alarmbits & FTDM_ALARM_AIS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "ais");
+	}
+	if (alarmbits & FTDM_ALARM_GENERAL) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "general");
 	}
 	switch_event_fire(&event);
@@ -1495,8 +1524,15 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	ftdm_status_t status;
+	uint32_t spanid;
+	uint32_t chanid;
+	ftdm_caller_data_t *callerdata;
 
-	ftdm_log(FTDM_LOG_DEBUG, "got FXO sig %d:%d [%s]\n", sigmsg->channel->span_id, sigmsg->channel->chan_id, ftdm_signal_event2str(sigmsg->event_id));
+	spanid = ftdm_channel_get_span_id(sigmsg->channel);
+	chanid = ftdm_channel_get_id(sigmsg->channel);
+	callerdata = sigmsg->raw_data;
+
+	ftdm_log(FTDM_LOG_DEBUG, "got FXO sig %d:%d [%s]\n", spanid, chanid, ftdm_signal_event2str(sigmsg->event_id));
 
     switch(sigmsg->event_id) {
 
@@ -1517,7 +1553,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				ftdm_channel_clear_token(sigmsg->channel, 0);
 				channel = switch_core_session_get_channel(session);
-				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
+				switch_channel_hangup(channel, callerdata->hangup_cause);
 				ftdm_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
 				switch_core_session_rwunlock(session);
 			}
@@ -1536,7 +1572,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 		{
 			status = ftdm_channel_from_event(sigmsg, &session);
 			if (status != FTDM_SUCCESS) {
-				ftdm_set_state_locked(sigmsg->channel, FTDM_CHANNEL_STATE_DOWN);
+				ftdm_channel_call_hangup(sigmsg->channel);
 			}
 		}
 		break;
@@ -1544,7 +1580,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 	default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type %d for channel %d:%d\n",
-							  sigmsg->event_id, sigmsg->channel->span_id, sigmsg->channel->chan_id);
+							  sigmsg->event_id, spanid, chanid);
 		}
 		break;
 
@@ -1558,6 +1594,11 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	ftdm_status_t status = FTDM_SUCCESS;
+	uint32_t chanid, spanid, tokencount;
+
+	chanid = ftdm_channel_get_id(sigmsg->channel);
+	spanid = ftdm_channel_get_span_id(sigmsg->channel);
+	tokencount = ftdm_channel_get_token_count(sigmsg->channel);
 
     ftdm_log(FTDM_LOG_DEBUG, "got FXS sig [%s]\n", ftdm_signal_event2str(sigmsg->event_id));
 
@@ -1582,10 +1623,9 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 		break;
     case FTDM_SIGEVENT_START:
 		{
-			ftdm_clear_flag_locked(sigmsg->channel, FTDM_CHANNEL_HOLD);
 			status = ftdm_channel_from_event(sigmsg, &session);
 			if (status != FTDM_SUCCESS) {
-				ftdm_set_state_locked(sigmsg->channel, FTDM_CHANNEL_STATE_BUSY);
+				ftdm_channel_call_indicate(sigmsg->channel, FTDM_CHANNEL_INDICATE_BUSY);
 			}
 		}
 		break;
@@ -1593,15 +1633,19 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 		{
 			private_t *tech_pvt = NULL;
 			switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
-			if (sigmsg->channel->token_count) {
+			if (tokencount) {
 				switch_core_session_t *session_a, *session_b, *session_t = NULL;
 				switch_channel_t *channel_a = NULL, *channel_b = NULL;
+#if 0
 				int digits = !zstr(sigmsg->channel->caller_data.collected);
+#else
+				int digits = 0;
+#endif
 				const char *br_a_uuid = NULL, *br_b_uuid = NULL;
 				private_t *tech_pvt = NULL;
 
 
-				if ((session_a = switch_core_session_locate(sigmsg->channel->tokens[0]))) {
+				if ((session_a = switch_core_session_locate(ftdm_channel_get_token(sigmsg->channel, 0)))) {
 					channel_a = switch_core_session_get_channel(session_a);
 					br_a_uuid = switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE);
 
@@ -1610,7 +1654,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 				}
 
-				if ((session_b = switch_core_session_locate(sigmsg->channel->tokens[1]))) {
+				if ((session_b = switch_core_session_locate(ftdm_channel_get_token(sigmsg->channel, 1)))) {
 					channel_b = switch_core_session_get_channel(session_b);
 					br_b_uuid = switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE);
 
@@ -1630,10 +1674,12 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					}
 				}
 				
+#if 0
 				if (session_t) {
 					switch_ivr_session_transfer(session_t, sigmsg->channel->caller_data.collected, NULL, NULL);
 					switch_core_session_rwunlock(session_t);
 				}
+#endif
 
 				if (session_a) {
 					switch_core_session_rwunlock(session_a);
@@ -1666,8 +1712,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 		break;
     case FTDM_SIGEVENT_FLASH:
 		{
-
-			if (ftdm_test_flag(sigmsg->channel, FTDM_CHANNEL_HOLD) && sigmsg->channel->token_count == 1) {
+			if (ftdm_channel_call_check_hold(sigmsg->channel) && tokencount == 1) {
 				switch_core_session_t *session;
 				if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 					const char *buuid;
@@ -1677,12 +1722,13 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					tech_pvt = switch_core_session_get_private(session);
 					channel = switch_core_session_get_channel(session);
 					buuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
-					ftdm_set_state_locked(sigmsg->channel,  FTDM_CHANNEL_STATE_UP);
+					ftdm_channel_call_unhold(sigmsg->channel);
 					stop_hold(session, buuid);
 					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 					switch_core_session_rwunlock(session);
 				}
-			} else if (sigmsg->channel->token_count == 2 && (SPAN_CONFIG[sigmsg->span_id].analog_options & ANALOG_OPTION_3WAY)) {
+#if 0
+			} else if (tokencount == 2 && (SPAN_CONFIG[sigmsg->span_id].analog_options & ANALOG_OPTION_3WAY)) {
 				if (ftdm_test_flag(sigmsg->channel, FTDM_CHANNEL_3WAY)) {
 					ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_3WAY);
 					if ((session = ftdm_channel_get_session(sigmsg->channel, 1))) {
@@ -1703,15 +1749,16 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					   || (SPAN_CONFIG[sigmsg->span_id].analog_options & ANALOG_OPTION_3WAY)
 					   ) { 
 				cycle_foreground(sigmsg->channel, 1, NULL);
-				if (sigmsg->channel->token_count == 1) {
-					ftdm_set_flag_locked(sigmsg->channel, FTDM_CHANNEL_HOLD);
-					ftdm_set_state_locked(sigmsg->channel, FTDM_CHANNEL_STATE_DIALTONE);
+				if (tokencount == 1) {
+					ftdm_channel_call_hold(sigmsg->channel);
 				}
+#endif
 			}
 			
 		}
 		break;
 
+#if 0
     case FTDM_SIGEVENT_COLLECTED_DIGIT:
 		{
 			char *dtmf = sigmsg->raw_data;
@@ -1750,11 +1797,12 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 
 		}
 		break;
+#endif
 
 	default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type %d for channel %d:%d\n",
-							  sigmsg->event_id, sigmsg->channel->span_id, sigmsg->channel->chan_id);
+							  sigmsg->event_id, spanid, chanid);
 		}
 		break;
 
@@ -1765,11 +1813,17 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 
 static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 {
+	uint32_t phyid, chanid, spanid;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	ftdm_status_t status = FTDM_SUCCESS;
+	ftdm_caller_data_t *caller_data = sigmsg->raw_data;
 
-	ftdm_log(FTDM_LOG_DEBUG, "Got R2 channel sig [%s] in channel %d\n", ftdm_signal_event2str(sigmsg->event_id), sigmsg->channel->physical_chan_id);
+	phyid = ftdm_channel_get_ph_id(sigmsg->channel);
+	chanid = ftdm_channel_get_id(sigmsg->channel);
+	spanid = ftdm_channel_get_span_id(sigmsg->channel);
+
+	ftdm_log(FTDM_LOG_DEBUG, "Got R2 channel sig [%s] in channel %d\n", ftdm_signal_event2str(sigmsg->event_id), phyid);
 
 	if (on_common_signal(sigmsg) == FTDM_BREAK) {
 		return FTDM_SUCCESS;
@@ -1784,7 +1838,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 				tech_pvt = switch_core_session_get_private(session);
 				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
-				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
+				switch_channel_hangup(channel, caller_data->hangup_cause);
 				ftdm_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
 				switch_core_session_rwunlock(session);
 			}
@@ -1798,6 +1852,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		}
 		break;
 
+#if 0
+FIXME: collected DNIS
 		/* on DNIS received from the R2 forward side, return status == FTDM_BREAK to stop requesting DNIS */
 		case FTDM_SIGEVENT_COLLECTED_DIGIT: 
 		{
@@ -1834,6 +1890,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 			}
 		}
 		break;
+#endif
 
 		case FTDM_SIGEVENT_PROGRESS:
 		{
@@ -1852,7 +1909,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
 				if (ftdm_channel_command(sigmsg->channel, FTDM_COMMAND_ENABLE_DTMF_DETECT, &tt) != FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_ERROR, "Failed to enable DTMF detection in R2 channel %d:%d\n", sigmsg->channel->span_id, sigmsg->channel->chan_id);
+					ftdm_log(FTDM_LOG_ERROR, "Failed to enable DTMF detection in R2 channel %d:%d\n", spanid, chanid);
 				}
 				switch_core_session_rwunlock(session);
 			}
@@ -1862,7 +1919,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled event %d from R2 for channel %d:%d\n",
-			sigmsg->event_id, sigmsg->channel->span_id, sigmsg->channel->chan_id);
+			sigmsg->event_id, spanid, chanid);
 		}
 		break;
 	}
@@ -1874,8 +1931,14 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
+	ftdm_caller_data_t *caller_data;
+	uint32_t spanid, chanid;
 
 	ftdm_log(FTDM_LOG_DEBUG, "got clear channel sig [%s]\n", ftdm_signal_event2str(sigmsg->event_id));
+
+	caller_data = sigmsg->raw_data;
+	chanid = ftdm_channel_get_id(sigmsg->channel);
+	spanid = ftdm_channel_get_span_id(sigmsg->channel);
 
 	if (on_common_signal(sigmsg) == FTDM_BREAK) {
 		return FTDM_SUCCESS;
@@ -1901,7 +1964,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 				tech_pvt = switch_core_session_get_private(session);
 				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
-				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
+				switch_channel_hangup(channel, caller_data->hangup_cause);
 				ftdm_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
 				switch_core_session_rwunlock(session);
 			}
@@ -1921,7 +1984,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 				const char *uuid = ftdm_channel_get_uuid(sigmsg->channel, 0);
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session for channel %d:%d not found [UUID: %s]\n",
-					sigmsg->channel->span_id, sigmsg->channel->chan_id, (uuid) ? uuid : "N/A");
+					spanid, chanid, (uuid) ? uuid : "N/A");
 			}
 		}
     case FTDM_SIGEVENT_PROGRESS_MEDIA:
@@ -1934,7 +1997,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 				const char *uuid = ftdm_channel_get_uuid(sigmsg->channel, 0);
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session for channel %d:%d not found [UUID: %s]\n",
-					sigmsg->channel->span_id, sigmsg->channel->chan_id, (uuid) ? uuid : "N/A");
+					spanid, chanid, (uuid) ? uuid : "N/A");
 			}
 		}
 		break;
@@ -1948,7 +2011,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 				const char *uuid = ftdm_channel_get_uuid(sigmsg->channel, 0);
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session for channel %d:%d not found [UUID: %s]\n",
-					sigmsg->channel->span_id, sigmsg->channel->chan_id, (uuid) ? uuid : "N/A");
+					spanid, chanid, (uuid) ? uuid : "N/A");
 			}
 		}
 		break;
@@ -1962,7 +2025,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 	default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type %d for channel %d:%d\n",
-							  sigmsg->event_id, sigmsg->channel->span_id, sigmsg->channel->chan_id);
+							  sigmsg->event_id, spanid, chanid);
 		}
 		break;
 	}
@@ -1973,22 +2036,31 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 
 static FIO_SIGNAL_CB_FUNCTION(on_ss7_signal)
 {
+	uint32_t spanid, chanid;
 	if (on_common_signal(sigmsg) == FTDM_BREAK) {
 		return FTDM_SUCCESS;
 	}
-	ftdm_log(FTDM_LOG_DEBUG, "got ss7 sig %d:%d [%s]\n", sigmsg->channel->span_id, sigmsg->channel->chan_id, ftdm_signal_event2str(sigmsg->event_id));
+	spanid = ftdm_channel_get_span_id(sigmsg->channel);
+	chanid = ftdm_channel_get_span_id(sigmsg->channel);
+	ftdm_log(FTDM_LOG_DEBUG, "got ss7 sig %d:%d [%s]\n", spanid, chanid, ftdm_signal_event2str(sigmsg->event_id));
 	return FTDM_SUCCESS;
 }
 
 static FIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 {
+	uint32_t spanid, chanid;
+	ftdm_chan_type_t type;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	spanid = ftdm_channel_get_span_id(sigmsg->channel);
+	chanid = ftdm_channel_get_span_id(sigmsg->channel);
+	type = ftdm_channel_get_type(sigmsg->channel);
 
 	if (on_common_signal(sigmsg) == FTDM_BREAK) {
 		return FTDM_SUCCESS;
 	}
 
-	switch (sigmsg->channel->type) {
+	switch (type) {
 	case FTDM_CHAN_TYPE_FXO:
 	case FTDM_CHAN_TYPE_EM:
 		{
@@ -2003,7 +2075,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 	default: 
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled analog channel type %d for channel %d:%d\n",
-							  sigmsg->channel->type, sigmsg->channel->span_id, sigmsg->channel->chan_id);
+							  type, spanid, chanid);
 		}
 		break;
 	}
@@ -2243,7 +2315,7 @@ static switch_status_t load_config(void)
 			}
 			
 			if (!span_id) {
-				span_id = span->span_id;
+				span_id = ftdm_span_get_id(span);
 			}
 
 			ss7confnode = get_ss7_config_node(cfg, configname);
@@ -2276,14 +2348,14 @@ static switch_status_t load_config(void)
 			if (ftdm_configure_span("ss7", span, on_ss7_signal,
 								   "confnode", ss7confnode,
 								   "parameters", spanparameters,
-								   TAG_END) != FTDM_SUCCESS) {
+								   FTDM_TAG_END) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "Error configuring ss7 FreeTDM span %d\n", span_id);
 				continue;
 			}
-			SPAN_CONFIG[span->span_id].span = span;
-			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
-			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
-			switch_copy_string(SPAN_CONFIG[span->span_id].type, "Sangoma (SS7)", sizeof(SPAN_CONFIG[span->span_id].type));
+			SPAN_CONFIG[span_id].span = span;
+			switch_copy_string(SPAN_CONFIG[span_id].context, context, sizeof(SPAN_CONFIG[span_id].context));
+			switch_copy_string(SPAN_CONFIG[span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span_id].dialplan));
+			switch_copy_string(SPAN_CONFIG[span_id].type, "Sangoma (SS7)", sizeof(SPAN_CONFIG[span_id].type));
 			ftdm_log(FTDM_LOG_DEBUG, "Configured ss7 FreeTDM span %d with config node %s\n", span_id, configname);
 		}
 	}
@@ -2375,7 +2447,7 @@ static switch_status_t load_config(void)
 			}
 			
 			if (!span_id) {
-				span_id = span->span_id;
+				span_id = ftdm_span_get_id(span);
 			}
 
 			if (ftdm_configure_span("analog", span, on_analog_signal, 
@@ -2384,28 +2456,28 @@ static switch_status_t load_config(void)
 								   "max_dialstr", &max,
 								   "hotline", hotline,
 								   "enable_callerid", enable_callerid,
-								   TAG_END) != FTDM_SUCCESS) {
+								   FTDM_TAG_END) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d\n", span_id);
 				continue;
 			}
 
-			SPAN_CONFIG[span->span_id].span = span;
-			switch_set_string(SPAN_CONFIG[span->span_id].context, context);
-			switch_set_string(SPAN_CONFIG[span->span_id].dialplan, dialplan);
-			SPAN_CONFIG[span->span_id].analog_options = analog_options | globals.analog_options;
+			SPAN_CONFIG[span_id].span = span;
+			switch_set_string(SPAN_CONFIG[span_id].context, context);
+			switch_set_string(SPAN_CONFIG[span_id].dialplan, dialplan);
+			SPAN_CONFIG[span_id].analog_options = analog_options | globals.analog_options;
 			
 			if (dial_regex) {
-				switch_set_string(SPAN_CONFIG[span->span_id].dial_regex, dial_regex);
+				switch_set_string(SPAN_CONFIG[span_id].dial_regex, dial_regex);
 			}
 
 			if (fail_dial_regex) {
-				switch_set_string(SPAN_CONFIG[span->span_id].fail_dial_regex, fail_dial_regex);
+				switch_set_string(SPAN_CONFIG[span_id].fail_dial_regex, fail_dial_regex);
 			}
 
 			if (hold_music) {
-				switch_set_string(SPAN_CONFIG[span->span_id].hold_music, hold_music);
+				switch_set_string(SPAN_CONFIG[span_id].hold_music, hold_music);
 			}
-			switch_copy_string(SPAN_CONFIG[span->span_id].type, "analog", sizeof(SPAN_CONFIG[span->span_id].type));
+			switch_copy_string(SPAN_CONFIG[span_id].type, "analog", sizeof(SPAN_CONFIG[span_id].type));
 			ftdm_span_start(span);
 		}
 	}
@@ -2490,7 +2562,7 @@ static switch_status_t load_config(void)
 			}
 			
 			if (!span_id) {
-				span_id = span->span_id;
+				span_id = ftdm_span_get_id(span);
 			}
 
 
@@ -2498,28 +2570,28 @@ static switch_status_t load_config(void)
 								   "tonemap", tonegroup, 
 								   "digit_timeout", &to,
 								   "max_dialstr", &max,
-								   TAG_END) != FTDM_SUCCESS) {
+								   FTDM_TAG_END) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d\n", span_id);
 				continue;
 			}
 
-			SPAN_CONFIG[span->span_id].span = span;
-			switch_set_string(SPAN_CONFIG[span->span_id].context, context);
-			switch_set_string(SPAN_CONFIG[span->span_id].dialplan, dialplan);
-			SPAN_CONFIG[span->span_id].analog_options = analog_options | globals.analog_options;
+			SPAN_CONFIG[span_id].span = span;
+			switch_set_string(SPAN_CONFIG[span_id].context, context);
+			switch_set_string(SPAN_CONFIG[span_id].dialplan, dialplan);
+			SPAN_CONFIG[span_id].analog_options = analog_options | globals.analog_options;
 			
 			if (dial_regex) {
-				switch_set_string(SPAN_CONFIG[span->span_id].dial_regex, dial_regex);
+				switch_set_string(SPAN_CONFIG[span_id].dial_regex, dial_regex);
 			}
 
 			if (fail_dial_regex) {
-				switch_set_string(SPAN_CONFIG[span->span_id].fail_dial_regex, fail_dial_regex);
+				switch_set_string(SPAN_CONFIG[span_id].fail_dial_regex, fail_dial_regex);
 			}
 
 			if (hold_music) {
-				switch_set_string(SPAN_CONFIG[span->span_id].hold_music, hold_music);
+				switch_set_string(SPAN_CONFIG[span_id].hold_music, hold_music);
 			}
-			switch_copy_string(SPAN_CONFIG[span->span_id].type, "analog_em", sizeof(SPAN_CONFIG[span->span_id].type));
+			switch_copy_string(SPAN_CONFIG[span_id].type, "analog_em", sizeof(SPAN_CONFIG[span_id].type));
 			ftdm_span_start(span);
 		}
 	}
@@ -2603,9 +2675,9 @@ static switch_status_t load_config(void)
 				continue;
 			}
 
-                        if (!span_id) {
-                                span_id = span->span_id;
-                        }
+			if (!span_id) {
+				span_id = ftdm_span_get_id(span);
+			}
 
 			if (!tonegroup) {
 				tonegroup = "us";
@@ -2619,15 +2691,16 @@ static switch_status_t load_config(void)
 								   "tonemap", tonegroup,
 								   "q921loglevel", q921loglevel,
 								   "q931loglevel", q931loglevel,
-								   TAG_END) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d mode: %s dialect: %s error: %s\n", span_id, mode, dialect, span->last_error);
+								   FTDM_TAG_END) != FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d mode: %s dialect: %s error: %s\n", span_id, 
+						mode, dialect, ftdm_span_get_last_error(span));
 				continue;
 			}
 
-			SPAN_CONFIG[span->span_id].span = span;
-			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
-			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
-			switch_copy_string(SPAN_CONFIG[span->span_id].type, "isdn", sizeof(SPAN_CONFIG[span->span_id].type));
+			SPAN_CONFIG[span_id].span = span;
+			switch_copy_string(SPAN_CONFIG[span_id].context, context, sizeof(SPAN_CONFIG[span_id].context));
+			switch_copy_string(SPAN_CONFIG[span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span_id].dialplan));
+			switch_copy_string(SPAN_CONFIG[span_id].type, "isdn", sizeof(SPAN_CONFIG[span_id].type));
 
 			ftdm_span_start(span);
 		}
@@ -2701,7 +2774,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (!span_id) {
-				span_id = span->span_id;
+				span_id = ftdm_span_get_id(span);
 			}
 			
 			
@@ -2712,17 +2785,17 @@ static switch_status_t load_config(void)
 								   "l1", o_l1,
 								   "debug", o_debug,
 								   "opts", opts,
-								   TAG_END) != FTDM_SUCCESS) {
+								   FTDM_TAG_END) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d node: %s switch: %s dp: %s l1: %s debug: %s error: %s\n", 
 						span_id, switch_str_nil(o_node), switch_str_nil(o_switch), switch_str_nil(o_dp), switch_str_nil(o_l1), switch_str_nil(o_debug),
-						span->last_error);
+						ftdm_span_get_last_error(span));
 				continue;
 			}
 
-			SPAN_CONFIG[span->span_id].span = span;
-			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
-			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
-			switch_copy_string(SPAN_CONFIG[span->span_id].type, "isdn", sizeof(SPAN_CONFIG[span->span_id].type));
+			SPAN_CONFIG[span_id].span = span;
+			switch_copy_string(SPAN_CONFIG[span_id].context, context, sizeof(SPAN_CONFIG[span_id].context));
+			switch_copy_string(SPAN_CONFIG[span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span_id].dialplan));
+			switch_copy_string(SPAN_CONFIG[span_id].type, "isdn", sizeof(SPAN_CONFIG[span_id].type));
 
 			ftdm_span_start(span);
 		}
@@ -2790,19 +2863,19 @@ static switch_status_t load_config(void)
 			}
 			
 			if (!span_id) {
-				span_id = span->span_id;
+				span_id = ftdm_span_get_id(span);
 			}
 
 			if (ftdm_configure_span_signaling("sangoma_boost", span, on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d error: %s\n", span_id, span->last_error);
+				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d error: %s\n", span_id, ftdm_span_get_last_error(span));
 				continue;
 			}
 
-			SPAN_CONFIG[span->span_id].span = span;
-			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
-			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
+			SPAN_CONFIG[span_id].span = span;
+			switch_copy_string(SPAN_CONFIG[span_id].context, context, sizeof(SPAN_CONFIG[span_id].context));
+			switch_copy_string(SPAN_CONFIG[span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span_id].dialplan));
 
-			switch_copy_string(SPAN_CONFIG[span->span_id].type, "Sangoma (boost)", sizeof(SPAN_CONFIG[span->span_id].type));
+			switch_copy_string(SPAN_CONFIG[span_id].type, "Sangoma (boost)", sizeof(SPAN_CONFIG[span_id].type));
 			boost_spans[boosti++] = span;
 		}
 	}
@@ -2925,7 +2998,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (!span_id) {
-				span_id = span->span_id;
+				span_id = ftdm_span_get_id(span);
 			}
 
 			if (ftdm_configure_span("r2", span, on_r2_signal, 
@@ -2946,27 +3019,27 @@ static switch_status_t load_config(void)
 				"call_files", call_files,
 				"mfback_timeout", mfback_timeout,
 				"metering_pulse_timeout", metering_pulse_timeout, 
-				TAG_END) != FTDM_SUCCESS) {
+				FTDM_TAG_END) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "Error configuring R2 FreeTDM span %d, error: %s\n", 
-				span_id, span->last_error);
+				span_id, ftdm_span_get_last_error(span));
 				continue;
 			}
 
 			if (dial_regex) {
-				switch_set_string(SPAN_CONFIG[span->span_id].dial_regex, dial_regex);
+				switch_set_string(SPAN_CONFIG[span_id].dial_regex, dial_regex);
 			}
 
 			if (fail_dial_regex) {
-				switch_set_string(SPAN_CONFIG[span->span_id].fail_dial_regex, fail_dial_regex);
+				switch_set_string(SPAN_CONFIG[span_id].fail_dial_regex, fail_dial_regex);
 			}
 
-			SPAN_CONFIG[span->span_id].span = span;
-			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
-			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
-			switch_copy_string(SPAN_CONFIG[span->span_id].type, "r2", sizeof(SPAN_CONFIG[span->span_id].type));
+			SPAN_CONFIG[span_id].span = span;
+			switch_copy_string(SPAN_CONFIG[span_id].context, context, sizeof(SPAN_CONFIG[span_id].context));
+			switch_copy_string(SPAN_CONFIG[span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span_id].dialplan));
+			switch_copy_string(SPAN_CONFIG[span_id].type, "r2", sizeof(SPAN_CONFIG[span_id].type));
 
 			if (ftdm_span_start(span) == FTDM_FAIL) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting R2 FreeTDM span %d, error: %s\n", span_id, span->last_error);
+				ftdm_log(FTDM_LOG_ERROR, "Error starting R2 FreeTDM span %d, error: %s\n", span_id, ftdm_span_get_last_error(span));
 				continue;
 			}
 		}
@@ -2976,9 +3049,10 @@ static switch_status_t load_config(void)
 	 * of needing all spans to be configured before starting them */
 	for ( ; i < boosti; i++) {
 		boost_span = boost_spans[i];
-		ftdm_log(FTDM_LOG_DEBUG, "Starting boost span %d\n", boost_span->span_id);
+		ftdm_log(FTDM_LOG_DEBUG, "Starting boost span %d\n", ftdm_span_get_id(boost_span));
 		if (ftdm_span_start(boost_span) == FTDM_FAIL) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting boost FreeTDM span %d, error: %s\n", boost_span->span_id, boost_span->last_error);
+				ftdm_log(FTDM_LOG_ERROR, "Error starting boost FreeTDM span %d, error: %s\n", 
+						ftdm_span_get_id(boost_span), ftdm_span_get_last_error(boost_span));
 				continue;
 		}
 	}
@@ -2989,15 +3063,37 @@ static switch_status_t load_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream)
 {
+	uint32_t span_id;
+	uint32_t phspan_id, phchan_id;
+	const char *chan_type;
+	const char *state;
+	const char *last_state;
+	float txgain, rxgain;
+	ftdm_alarm_flag_t alarmflag;
+	ftdm_caller_data_t *caller_data;
+	ftdm_channel_t *ftdmchan;
 	ftdm_signaling_status_t sigstatus = FTDM_SIG_STATE_DOWN;
-	if (chan_id > span->chan_count) {
+
+	if (chan_id > ftdm_span_get_chan_count(span)) {
 		return;
 	}
-	
-	ftdm_channel_get_sig_status(span->channels[chan_id], &sigstatus);
+
+	ftdmchan = ftdm_span_get_channel(span, chan_id);
+	span_id = ftdm_span_get_id(span);
+
+	phspan_id = ftdm_channel_get_ph_span_id(ftdmchan);
+	phchan_id = ftdm_channel_get_ph_id(ftdmchan);
+	chan_type = ftdm_chan_type2str(ftdm_channel_get_type(ftdmchan));
+	state = ftdm_channel_get_state_str(ftdmchan);
+	last_state = ftdm_channel_get_last_state_str(ftdmchan);
+	ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_RX_GAIN, &rxgain);
+	ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_TX_GAIN, &txgain);
+	caller_data = ftdm_channel_get_caller_data(ftdmchan);
+	ftdm_channel_get_sig_status(ftdmchan, &sigstatus);
+	ftdm_channel_get_alarms(ftdmchan, &alarmflag);
+
 	stream->write_function(stream,
 						   "span_id: %u\n"
 						   "chan_id: %u\n"
@@ -3018,35 +3114,59 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   "dnis: %s\n"
 						   "rdnis: %s\n"
 						   "cause: %s\n\n",
-						   span->channels[chan_id]->span_id,
-						   span->channels[chan_id]->chan_id,
-						   span->channels[chan_id]->physical_span_id,
-						   span->channels[chan_id]->physical_chan_id,
-					  	 (span->channels[chan_id]->alarm_flags) ? "DOWN" : "UP",
-					     ftdm_signaling_status2str(sigstatus),
-						   ftdm_chan_type2str(span->channels[chan_id]->type),
-						   ftdm_channel_state2str(span->channels[chan_id]->state),
-						   ftdm_channel_state2str(span->channels[chan_id]->last_state),
-						   span->channels[chan_id]->txgain,
-						   span->channels[chan_id]->rxgain,
-						   span->channels[chan_id]->caller_data.cid_date,
-						   span->channels[chan_id]->caller_data.cid_name,
-						   span->channels[chan_id]->caller_data.cid_num.digits,
-						   span->channels[chan_id]->caller_data.ani.digits,
-						   span->channels[chan_id]->caller_data.aniII,
-						   span->channels[chan_id]->caller_data.dnis.digits,
-						   span->channels[chan_id]->caller_data.rdnis.digits,
-						   switch_channel_cause2str(span->channels[chan_id]->caller_data.hangup_cause)
-						   );
+						   span_id,
+						   chan_id,
+						   phspan_id,
+						   phchan_id,
+					  	   alarmflag ? "alarmed" : "ok",
+					           ftdm_signaling_status2str(sigstatus),
+						   chan_type,
+						   state,
+						   last_state,
+						   txgain,
+						   rxgain,
+						   caller_data->cid_date,
+						   caller_data->cid_name,
+						   caller_data->cid_num.digits,
+						   caller_data->ani.digits,
+						   caller_data->aniII,
+						   caller_data->dnis.digits,
+						   caller_data->rdnis.digits,
+						   switch_channel_cause2str(caller_data->hangup_cause));
 }
 
 void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream)
 {
+	uint32_t span_id;
+	uint32_t phspan_id, phchan_id;
+	const char *chan_type;
+	const char *state;
+	const char *last_state;
+	float txgain, rxgain;
+	ftdm_caller_data_t *caller_data;
+	ftdm_channel_t *ftdmchan;
+	ftdm_alarm_flag_t alarmflag;
 	ftdm_signaling_status_t sigstatus = FTDM_SIG_STATE_DOWN;
-	if (chan_id > span->chan_count) {
+
+	if (chan_id > ftdm_span_get_chan_count(span)) {
 		return;
 	}
-	ftdm_channel_get_sig_status(span->channels[chan_id], &sigstatus);
+
+	ftdmchan = ftdm_span_get_channel(span, chan_id);
+	span_id = ftdm_span_get_id(span);
+
+	phspan_id = ftdm_channel_get_ph_span_id(ftdmchan);
+	phchan_id = ftdm_channel_get_ph_id(ftdmchan);
+	chan_type = ftdm_chan_type2str(ftdm_channel_get_type(ftdmchan));
+	state = ftdm_channel_get_state_str(ftdmchan);
+	last_state = ftdm_channel_get_last_state_str(ftdmchan);
+	ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_RX_GAIN, &rxgain);
+	ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_TX_GAIN, &txgain);
+	caller_data = ftdm_channel_get_caller_data(ftdmchan);
+	ftdm_channel_get_sig_status(ftdmchan, &sigstatus);
+	ftdm_channel_get_alarms(ftdmchan, &alarmflag);
+
+
 	stream->write_function(stream,
 						   " <channel>\n"
 						   "  <span-id>%u</span-id>\n"
@@ -3069,26 +3189,25 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   "  <rdnis>%s</rdnis>\n"
 						   "  <cause>%s</cause>\n"
 						   " </channel>\n",
-						   span->channels[chan_id]->span_id,
-						   span->channels[chan_id]->chan_id,
-						   span->channels[chan_id]->physical_span_id,
-						   span->channels[chan_id]->physical_chan_id,
-						   (span->channels[chan_id]->alarm_flags) ? "DOWN" : "UP",
-					     ftdm_signaling_status2str(sigstatus),
-						   ftdm_chan_type2str(span->channels[chan_id]->type),
-						   ftdm_channel_state2str(span->channels[chan_id]->state),
-						   ftdm_channel_state2str(span->channels[chan_id]->last_state),
-						   span->channels[chan_id]->txgain,
-						   span->channels[chan_id]->rxgain,
-						   span->channels[chan_id]->caller_data.cid_date,
-						   span->channels[chan_id]->caller_data.cid_name,
-						   span->channels[chan_id]->caller_data.cid_num.digits,
-						   span->channels[chan_id]->caller_data.ani.digits,
-						   span->channels[chan_id]->caller_data.aniII,
-						   span->channels[chan_id]->caller_data.dnis.digits,
-						   span->channels[chan_id]->caller_data.rdnis.digits,
-						   switch_channel_cause2str(span->channels[chan_id]->caller_data.hangup_cause)
-						   );
+						   span_id,
+						   chan_id,
+						   phspan_id,
+						   phchan_id,
+						   alarmflag ? "alarmed" : "ok",
+					     	   ftdm_signaling_status2str(sigstatus),
+						   chan_type,
+						   state,
+						   last_state,
+						   txgain,
+						   rxgain,
+						   caller_data->cid_date,
+						   caller_data->cid_name,
+						   caller_data->cid_num.digits,
+						   caller_data->ani.digits,
+						   caller_data->aniII,
+						   caller_data->dnis.digits,
+						   caller_data->rdnis.digits,
+						   switch_channel_cause2str(caller_data->hangup_cause));
 }
 
 #define FT_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix] || gains <txgain> <rxgain> <span_id> [<chan_id>]" 
@@ -3135,14 +3254,15 @@ SWITCH_STANDARD_API(ft_function)
 					stream->write_function(stream, "<error>invalid span</error>\n");
 				} else {
 					if (chan_id) {
-						if(chan_id > span->chan_count) {
+						if(chan_id > ftdm_span_get_chan_count(span)) {
 							stream->write_function(stream, "<error>invalid channel</error>\n");
 						} else {
 							dump_chan_xml(span, chan_id, stream);
 						}
 					} else {
 						uint32_t j;
-						for (j = 1; j <= span->chan_count; j++) {
+						uint32_t ccount = ftdm_span_get_chan_count(span);
+						for (j = 1; j <= ccount; j++) {
 							dump_chan_xml(span, j, stream);
 						}
 						
@@ -3154,16 +3274,16 @@ SWITCH_STANDARD_API(ft_function)
 					stream->write_function(stream, "-ERR invalid span\n");
 				} else {
 					if (chan_id) {
-						if(chan_id > span->chan_count) {
+						if(chan_id > ftdm_span_get_chan_count(span)) {
 							stream->write_function(stream, "-ERR invalid channel\n");
 						} else {
 							dump_chan(span, chan_id, stream);
 						}
 					} else {
 						uint32_t j;
-						
+						uint32_t ccount = ftdm_span_get_chan_count(span);	
 						stream->write_function(stream, "+OK\n");
-						for (j = 1; j <= span->chan_count; j++) {
+						for (j = 1; j <= ccount; j++) {
 							dump_chan(span, j, stream);
 						}
 						
@@ -3198,10 +3318,10 @@ SWITCH_STANDARD_API(ft_function)
 										   "hold_music: %s\n"
 										   "analog_options %s\n",
 										   j,
-										   SPAN_CONFIG[j].span->name,
+										   ftdm_span_get_name(SPAN_CONFIG[j].span),
 										   SPAN_CONFIG[j].type,
 										   ftdm_signaling_status2str(sigstatus),
-										   SPAN_CONFIG[j].span->chan_count,
+										   ftdm_span_get_chan_count(SPAN_CONFIG[j].span),
 										   SPAN_CONFIG[j].dialplan,
 										   SPAN_CONFIG[j].context,
 										   SPAN_CONFIG[j].dial_regex,
@@ -3222,9 +3342,9 @@ SWITCH_STANDARD_API(ft_function)
 										   "hold_music: %s\n"
 										   "analog_options %s\n",
 										   j,
-										   SPAN_CONFIG[j].span->name,
+										   ftdm_span_get_name(SPAN_CONFIG[j].span),
 										   SPAN_CONFIG[j].type,
-										   SPAN_CONFIG[j].span->chan_count,
+										   ftdm_span_get_chan_count(SPAN_CONFIG[j].span),
 										   SPAN_CONFIG[j].dialplan,
 										   SPAN_CONFIG[j].context,
 										   SPAN_CONFIG[j].dial_regex,
@@ -3290,14 +3410,14 @@ SWITCH_STANDARD_API(ft_function)
 		tmp_path=switch_mprintf("%s%s%s.pcap", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pcapfn);
 		
 		if(!strcasecmp(argv[2], "on")) {
-			if (ftdm_configure_span("isdn", span, on_clear_channel_signal, "q931topcap", 1, "pcapfilename", tmp_path, TAG_END) != FTDM_SUCCESS) {
+			if (ftdm_configure_span("isdn", span, on_clear_channel_signal, "q931topcap", 1, "pcapfilename", tmp_path, FTDM_TAG_END) != FTDM_SUCCESS) {
                                 ftdm_log(FTDM_LOG_WARNING, "Error couldn't (re-)enable Q931-To-Pcap!\n");
 				goto end;
                         } else {
 				stream->write_function(stream, "+OK\n");
 			}
 		} else if(!strcasecmp(argv[2], "off")) {
-			if (ftdm_configure_span("isdn", span, on_clear_channel_signal, "q931topcap", 0, TAG_END) != FTDM_SUCCESS) {
+			if (ftdm_configure_span("isdn", span, on_clear_channel_signal, "q931topcap", 0, FTDM_TAG_END) != FTDM_SUCCESS) {
                                 ftdm_log(FTDM_LOG_ERROR, "Error couldn't enable Q931-To-Pcap!\n");
                                 goto end;
 			} else {
@@ -3313,6 +3433,8 @@ SWITCH_STANDARD_API(ft_function)
 		float txgain = 0.0;
 		float rxgain = 0.0;
 		uint32_t chan_id = 0;
+		uint32_t ccount = 0;
+		ftdm_channel_t *chan;
 		ftdm_span_t *span = NULL;
 		if (argc < 4) {
 			stream->write_function(stream, "-ERR Usage: ft gains <txgain> <rxgain> <span_id> [<chan_id>]\n");
@@ -3325,7 +3447,7 @@ SWITCH_STANDARD_API(ft_function)
 		}
 		if (argc > 4) {
 			chan_id = atoi(argv[4]);
-			if (chan_id > span->chan_count) {
+			if (chan_id > ftdm_span_get_chan_count(span)) {
 				stream->write_function(stream, "-ERR invalid chan\n");
 				goto end;
 			}
@@ -3336,13 +3458,17 @@ SWITCH_STANDARD_API(ft_function)
 			stream->write_function(stream, "-ERR invalid gains\n");
 			goto end;
 		}
+
 		if (chan_id) {
-			ftdm_channel_command(span->channels[chan_id], FTDM_COMMAND_SET_RX_GAIN, &rxgain);
-			ftdm_channel_command(span->channels[chan_id], FTDM_COMMAND_SET_TX_GAIN, &txgain);
+			chan = ftdm_span_get_channel(span, chan_id);
+			ftdm_channel_command(chan, FTDM_COMMAND_SET_RX_GAIN, &rxgain);
+			ftdm_channel_command(chan, FTDM_COMMAND_SET_TX_GAIN, &txgain);
 		} else {
-			for (i = 1; i < span->chan_count; i++) {
-				ftdm_channel_command(span->channels[i], FTDM_COMMAND_SET_RX_GAIN, &rxgain);
-				ftdm_channel_command(span->channels[i], FTDM_COMMAND_SET_TX_GAIN, &txgain);
+			ccount = ftdm_span_get_chan_count(span);
+			for (i = 1; i < ccount; i++) {
+				chan = ftdm_span_get_channel(span, i);
+				ftdm_channel_command(chan, FTDM_COMMAND_SET_RX_GAIN, &rxgain);
+				ftdm_channel_command(chan, FTDM_COMMAND_SET_TX_GAIN, &txgain);
 			}
 		}
 		stream->write_function(stream, "+OK gains set to Rx %f and Tx %f\n", rxgain, txgain);
@@ -3352,7 +3478,7 @@ SWITCH_STANDARD_API(ft_function)
 		
 		if (rply) {
 			stream->write_function(stream, "%s", rply);
-			ftdm_safe_free(rply);
+			free(rply);
 		} else {
 			stream->write_function(stream, "-ERR Usage: %s\n", FT_SYNTAX);
 		}

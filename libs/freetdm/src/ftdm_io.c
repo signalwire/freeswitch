@@ -452,28 +452,38 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 	return status;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_get_alarms(ftdm_channel_t *ftdmchan)
+FT_DECLARE(ftdm_status_t) ftdm_channel_get_alarms(ftdm_channel_t *ftdmchan, ftdm_alarm_flag_t *alarmbits)
 {
 	ftdm_status_t status = FTDM_FAIL;
+
+	ftdm_assert_return(alarmbits != NULL, FTDM_FAIL, "null argument\n");
+
+	alarmbits = FTDM_ALARM_NONE;
+
+	ftdm_channel_lock(ftdmchan);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CONFIGURED)) {
 		if (ftdmchan->span->fio->get_alarms) {
 			if ((status = ftdmchan->span->fio->get_alarms(ftdmchan)) == FTDM_SUCCESS) {
 				*ftdmchan->last_error = '\0';
+				*alarmbits = ftdmchan->alarm_flags;
 				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_RED)) {
 					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "RED/");
 				}
 				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_YELLOW)) {
 					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "YELLOW/");
 				}
+				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_RAI)) {
+					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "RAI/");
+				}
 				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_BLUE)) {
 					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "BLUE/");
 				}
-				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_LOOPBACK)) {
-					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "LOOP/");
+				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_AIS)) {
+					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "AIS/");
 				}
-				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_RECOVER)) {
-					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "RECOVER/");
+				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_GENERAL)) {
+					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "GENERAL");
 				}
 				*(ftdmchan->last_error + strlen(ftdmchan->last_error) - 1) = '\0';
 
@@ -482,7 +492,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_alarms(ftdm_channel_t *ftdmchan)
 			status = FTDM_NOTIMPL;
 		}
 	}
-	
+
+	ftdm_channel_unlock(ftdmchan);	
+
 	return status;
 }
 
@@ -990,6 +1002,58 @@ FT_DECLARE(void) ftdm_channel_replace_token(ftdm_channel_t *ftdmchan, const char
 	}
 }
 
+FT_DECLARE(uint32_t) ftdm_channel_get_token_count(const ftdm_channel_t *ftdmchan)
+{
+	uint32_t count;
+	ftdm_mutex_lock(ftdmchan->mutex);
+	count = ftdmchan->token_count;
+	ftdm_mutex_unlock(ftdmchan->mutex);
+	return count;
+}
+
+FT_DECLARE(uint32_t) ftdm_channel_get_io_interval(const ftdm_channel_t *ftdmchan)
+{
+	uint32_t count;
+	ftdm_mutex_lock(ftdmchan->mutex);
+	count = ftdmchan->effective_interval;
+	ftdm_mutex_unlock(ftdmchan->mutex);
+	return count;
+}
+
+FT_DECLARE(uint32_t) ftdm_channel_get_io_packet_len(const ftdm_channel_t *ftdmchan)
+{
+	uint32_t count;
+	ftdm_mutex_lock(ftdmchan->mutex);
+	count = ftdmchan->packet_len;
+	ftdm_mutex_unlock(ftdmchan->mutex);
+	return count;
+}
+
+FT_DECLARE(uint32_t) ftdm_channel_get_type(const ftdm_channel_t *ftdmchan)
+{
+	return ftdmchan->type;
+}
+
+FT_DECLARE(ftdm_codec_t) ftdm_channel_get_codec(const ftdm_channel_t *ftdmchan)
+{
+	return ftdmchan->effective_codec;
+}
+
+FT_DECLARE(const char *) ftdm_channel_get_token(const ftdm_channel_t *ftdmchan, uint32_t tokenid)
+{
+	const char *token = NULL;
+	ftdm_mutex_lock(ftdmchan->mutex);
+
+	if (ftdmchan->token_count <= tokenid) {
+		ftdm_mutex_unlock(ftdmchan->mutex);
+		return NULL;
+	}
+
+	token = ftdmchan->tokens[tokenid];
+	ftdm_mutex_unlock(ftdmchan->mutex);
+	return token;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_channel_add_token(ftdm_channel_t *ftdmchan, char *token, int end)
 {
 	ftdm_status_t status = FTDM_FAIL;
@@ -1212,6 +1276,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(ftdm_channel_t *ftdmchan, ftdm_
 	return ok ? FTDM_SUCCESS : FTDM_FAIL;
 }
 
+FT_DECLARE(uint32_t) ftdm_group_get_id(const ftdm_group_t *group)
+{
+	return group->group_id;
+}
 
 FT_DECLARE(ftdm_status_t) ftdm_group_channel_use_count(ftdm_group_t *group, uint32_t *count)
 {
@@ -1607,6 +1675,16 @@ FT_DECLARE(uint32_t) ftdm_channel_get_span_id(const ftdm_channel_t *ftdmchan)
 	return ftdmchan->span_id;
 }
 
+FT_DECLARE(ftdm_span_t *) ftdm_channel_get_span(const ftdm_channel_t *ftdmchan)
+{
+	return ftdmchan->span;
+}
+
+FT_DECLARE(const char *) ftdm_channel_get_span_name(const ftdm_channel_t *ftdmchan)
+{
+	return ftdmchan->span->name;
+}
+
 FT_DECLARE(uint32_t) ftdm_span_get_id(const ftdm_span_t *span)
 {
 	return span->span_id;
@@ -1617,14 +1695,123 @@ FT_DECLARE(const char *) ftdm_span_get_name(const ftdm_span_t *span)
 	return span->name;
 }
 
-FT_DECLARE(ftdm_bool_t) ftdm_channel_call_active(const ftdm_channel_t *ftdmchan)
+FT_DECLARE(const char *) ftdm_channel_get_name(const ftdm_channel_t *ftdmchan)
 {
-	return (ftdmchan->state == FTDM_CHANNEL_STATE_UP) ? FTDM_TRUE : FTDM_FALSE;
+	return ftdmchan->chan_name;
+}
+
+FT_DECLARE(const char *) ftdm_channel_get_number(const ftdm_channel_t *ftdmchan)
+{
+	return ftdmchan->chan_number;
+}
+
+FT_DECLARE(ftdm_bool_t) ftdm_channel_call_check_hold(const ftdm_channel_t *ftdmchan)
+{
+	ftdm_bool_t condition;
+	ftdm_channel_lock(ftdmchan);
+	condition = ftdm_test_flag(ftdmchan, FTDM_CHANNEL_HOLD);
+	ftdm_channel_unlock(ftdmchan);
+	return condition;
+}
+
+FT_DECLARE(ftdm_bool_t) ftdm_channel_call_check_answered(const ftdm_channel_t *ftdmchan)
+{
+	ftdm_bool_t condition = FTDM_FALSE;
+
+	ftdm_channel_lock(ftdmchan);
+	condition = (ftdmchan->state == FTDM_CHANNEL_STATE_UP) ? FTDM_TRUE : FTDM_FALSE;
+	ftdm_channel_unlock(ftdmchan);
+
+	return condition;
+}
+
+FT_DECLARE(ftdm_bool_t) ftdm_channel_call_check_busy(const ftdm_channel_t *ftdmchan)
+{
+	ftdm_bool_t condition = FTDM_FALSE;
+
+	ftdm_channel_lock(ftdmchan);
+	condition = (ftdmchan->state == FTDM_CHANNEL_STATE_BUSY) ? FTDM_TRUE : FTDM_FALSE;
+	ftdm_channel_unlock(ftdmchan);
+
+	return condition;
+}
+
+FT_DECLARE(ftdm_bool_t) ftdm_channel_call_check_hangup(const ftdm_channel_t *ftdmchan)
+{
+	ftdm_bool_t condition = FTDM_FALSE;
+
+	ftdm_channel_lock(ftdmchan);
+	condition = (ftdmchan->state == FTDM_CHANNEL_STATE_HANGUP || ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) 
+		? FTDM_TRUE : FTDM_FALSE;
+	ftdm_channel_unlock(ftdmchan);
+
+	return condition;
+}
+
+FT_DECLARE(ftdm_bool_t) ftdm_channel_call_check_done(const ftdm_channel_t *ftdmchan)
+{
+	ftdm_bool_t condition = FTDM_FALSE;
+
+	ftdm_channel_lock(ftdmchan);
+	condition = (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN) ? FTDM_TRUE : FTDM_FALSE;
+	ftdm_channel_unlock(ftdmchan);
+
+	return condition;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_channel_call_hold(ftdm_channel_t *ftdmchan)
+{
+	ftdm_channel_lock(ftdmchan);
+	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_HOLD);
+	ftdm_set_state_wait(ftdmchan, FTDM_CHANNEL_STATE_DIALTONE);
+	ftdm_channel_unlock(ftdmchan);
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_channel_call_unhold(ftdm_channel_t *ftdmchan)
+{
+	ftdm_channel_lock(ftdmchan);
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_HOLD)) {
+		ftdm_set_state_wait(ftdmchan, FTDM_CHANNEL_STATE_UP);
+	}
+	ftdm_channel_unlock(ftdmchan);
+	return FTDM_SUCCESS;
 }
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_call_answer(ftdm_channel_t *ftdmchan)
 {
-	ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_UP);
+	ftdm_channel_lock(ftdmchan);
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_ANSWERED)) {
+		return FTDM_SUCCESS;
+	}
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_ANSWERED);
+		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_PROGRESS);
+		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_MEDIA);
+		ftdm_channel_unlock(ftdmchan);
+		return FTDM_SUCCESS;
+	}
+
+	if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
+		ftdm_set_state_wait(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
+	}
+
+	if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
+		ftdm_set_state_wait(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+	}
+
+	ftdm_set_state_wait(ftdmchan, FTDM_CHANNEL_STATE_UP);
+
+	ftdm_channel_unlock(ftdmchan);
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_channel_call_hangup_with_cause(ftdm_channel_t *ftdmchan, ftdm_call_cause_t cause)
+{
+	ftdmchan->caller_data.hangup_cause = cause;
+	ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 	return FTDM_SUCCESS;
 }
 
@@ -1639,15 +1826,101 @@ FT_DECLARE(const char *) ftdm_channel_get_last_error(const ftdm_channel_t *ftdmc
 	return ftdmchan->last_error;
 }
 
+FT_DECLARE(const char *) ftdm_span_get_last_error(const ftdm_span_t *span)
+{
+	return span->last_error;
+}
+
+FT_DECLARE(ftdm_caller_data_t *) ftdm_channel_get_caller_data(ftdm_channel_t *ftdmchan)
+{
+	return &ftdmchan->caller_data;
+}
+
+FT_DECLARE(const char *) ftdm_channel_get_state_str(const ftdm_channel_t *ftdmchan)
+{
+	const char *state;
+	ftdm_channel_lock(ftdmchan);
+	state = ftdm_channel_state2str(ftdmchan->state);
+	ftdm_channel_unlock(ftdmchan);
+	return state;
+}
+
+FT_DECLARE(const char *) ftdm_channel_get_last_state_str(const ftdm_channel_t *ftdmchan)
+{
+	const char *state;
+	ftdm_channel_lock(ftdmchan);
+	state = ftdm_channel_state2str(ftdmchan->last_state);
+	ftdm_channel_unlock(ftdmchan);
+	return state;
+}
+
+FT_DECLARE(ftdm_channel_t *) ftdm_span_get_channel(const ftdm_span_t *span, uint32_t chanid)
+{
+	ftdm_channel_t *chan;
+	ftdm_mutex_lock(span->mutex);
+	if (chanid == 0 || chanid > span->chan_count) {
+		ftdm_mutex_unlock(span->mutex);
+		return NULL;
+	}
+	chan = span->channels[chanid];
+	ftdm_mutex_unlock(span->mutex);
+	return chan;
+}
+
+FT_DECLARE(uint32_t) ftdm_span_get_chan_count(const ftdm_span_t *span)
+{
+	uint32_t count;
+	ftdm_mutex_lock(span->mutex);
+	count = span->chan_count;
+	ftdm_mutex_unlock(span->mutex);
+	return count;
+}
+
+FT_DECLARE(uint32_t) ftdm_channel_get_ph_span_id(const ftdm_channel_t *ftdmchan)
+{
+	uint32_t id;
+	ftdm_channel_lock(ftdmchan);
+	id = ftdmchan->physical_span_id;
+	ftdm_channel_unlock(ftdmchan);
+	return id;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_channel_call_indicate(ftdm_channel_t *ftdmchan, ftdm_channel_indication_t indication)
 {
 	switch (indication) {
+
+	/* FIXME: ring and busy cannot be used with all signaling stacks 
+	 * (particularly isdn stacks I think, we should emulate or just move to hangup with busy cause) */
 	case FTDM_CHANNEL_INDICATE_RING:
 		ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_RING);
+		break;
+
+	case FTDM_CHANNEL_INDICATE_BUSY:
+		ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
+		break;
+
 	case FTDM_CHANNEL_INDICATE_PROGRESS:
-		ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+			ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_PROGRESS);
+		} else {
+			ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
+		}
+		break;
+
+	case FTDM_CHANNEL_INDICATE_PROGRESS_MEDIA:
+		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+			ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_PROGRESS);
+			ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_MEDIA);
+		} else {
+			if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
+				ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
+			}
+			ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+		}
+		break;
+
 	default:
-		ftdm_log(FTDM_LOG_DEBUG, "Do not know how to indicate %d\n", indication);
+		ftdm_log(FTDM_LOG_WARNING, "Do not know how to indicate %d\n", indication);
 		return FTDM_FAIL;
 	}
 	return FTDM_SUCCESS;
@@ -3762,17 +4035,41 @@ FT_DECLARE(ftdm_status_t) ftdm_group_create(ftdm_group_t **group, const char *na
 FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
 	ftdm_status_t status = FTDM_FAIL;
+
 	if (sigmsg->channel) {
 		ftdm_mutex_lock(sigmsg->channel->mutex);
 	}
 
-	if (sigmsg->event_id == FTDM_SIGEVENT_SIGSTATUS_CHANGED) {
+	/* some core things to do on special events */
+	switch (sigmsg->event_id) {
+
+	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 		if (*((ftdm_signaling_status_t*)(sigmsg->raw_data)) == FTDM_SIG_STATE_UP) {
 			ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
 		} else {
 			ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
 		}
+		break;
+
+	case FTDM_SIGEVENT_START:
+		sigmsg->raw_data = &sigmsg->channel->caller_data;
+		/* when cleaning up the public API I added this because mod_freetdm.c on_fxs_signal was
+		 * doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
+		 * is needed at all?
+		 * */
+		ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_HOLD);
+		break;
+
+	case FTDM_SIGEVENT_STOP:
+		sigmsg->raw_data = &sigmsg->channel->caller_data;
+		break;
+
+	default:
+		break;	
+
 	}
+
+	/* call the user callback only if set */
 	if (span->signal_cb) {
 		status = span->signal_cb(sigmsg);
 	}
@@ -3780,6 +4077,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	if (sigmsg->channel) {
 		ftdm_mutex_unlock(sigmsg->channel->mutex);
 	}
+
 	return status;
 }
 
