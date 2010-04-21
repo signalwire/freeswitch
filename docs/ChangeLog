@@ -1,3 +1,20 @@
+freeswitch (1.0.7)
+
+	config: move limit.conf to db.conf
+	libesl: Fix potential race condition (ESL-36)
+	mod_db: fix stack corruption (MODAPP-407)
+	mod_tts_commandline: fix core dump, temp file problem. flush can be called several times (FSMOD-35)
+	mod_lcr: Expand variables (MODAPP-418)
+	mod_sofia: Send SIP MESSAGE to unregistered users by prefixing sip: to user@domain
+	mod_sofia: fix callee being updated with callee information
+	
+	
+freeswitch (1.0.6)
+
+	all: migrate to git
+	core: add ... and shutdown as a fail-safe when no modules are loaded
+	core: fix high mem usage during shutdown
+	
 freeswitch (1.0.5)
 
 	all: run indent on the whole tree and update copyright dates in prep for 1.0.5 (r:16579)
@@ -50,6 +67,7 @@ freeswitch (1.0.5)
 	build: Remove libuuid from tree (r:16072)
 	build: Avoid building static version of modules (e.g. mod_enum.a) by adding the "-shared" libtool option. (r:16225)
 	build: Fix pidfile path in debian init script (FSBUILD-264/r:17040)
+	build: Numerous debian improvements (r:17119)
 	config: improvements to French language handling (MODASRTTS-20/r:14911)
 	config: Add valet_parking to default config (r:15124)
 	config: Add valet macros (r:15156)
@@ -66,6 +84,7 @@ freeswitch (1.0.5)
 	config: Allow specifying auth-scheme in config (r:16350/MDXMLINT-56)
 	config: Improvements to french lang (FSCONFIG-18/r:16585)
 	config: Add new English sounds, sound prompts (r:16911)
+	config: Improvements to French sound prompts (FSCONFIG-23/r:17118)
 	core: Add per-call logging (r:14509)
 	core: Fix IVR menu timeout when caller presses no digits (DP-4/r:14548)
 	core: re-factor node allocation and make a copy of userdata in case the session gets killed before the logger module gets the node (r:14555)
@@ -253,6 +272,9 @@ freeswitch (1.0.5)
 	core: Break the loop in switch_ivr_parse_all_events() if CF_BREAK flag has been set (FSCORE-577/r:17074)
 	core: Fix memory leak caused by the function switch_core_codec_copy (FSCORE-579/r:17105)
 	core: add sanity check to project size of decoded codec data (r:17108)
+	core: handle some errors on missing db handle conditions (r:17136)
+	core: Fix warning message (FSCORE-578)
+	core: add switch_channel_export_variable
 	docs: Add large Doxygen update (thanks Muhammed Shahzad) (r:14973)
 	docs: update es phrase file (MODAPP-317/r:15575)
 	embedded_languages: Prevent unloading of embedded languages modules (also fixes MODLANG-121/r:14491)
@@ -387,6 +409,7 @@ freeswitch (1.0.5)
 	mod_dptools: Fix bypass_media ignored in dial string (DP-14/r:16588)
 	mod_dptools: add param setting function to asr (r:16600)
 	mod_dptools: add action='user_call' to xml_curl lookups for the user endpoint (r:17115)
+	mod_enum: fix mod_enum build when udns is already on the base system
 	mod_erlang_event: Add support for simply sending an arbitrary message to an arbitrary registered process at a node (r:14875)
 	mod_erlang_event: Deprecate new_pid message in favor of get_pid which has an extra element, the call's UUID (r:14877)
 	mod_erlang_event: optionally allow compatibility with nodes running older OTP releases (R7 through current) (r:15189)
@@ -455,6 +478,7 @@ freeswitch (1.0.5)
 	mod_memcache: update to libmemcached 0.32 (r:14935)
 	mod_memcache: add --with-memcached=no to libmemcached configure (r:14938)
 	mod_nibblebill: Support custom sql with var expansion (MODAPP-409/r:17081)
+	mod_nibblebill: Fix url (FSCORE-580/r:17129)
 	mod_opal: Added setting of outgoing number and display name from extension number so H.323/Q.931 fields are set correctly in ALERTING and CONNECT messages sent for incoming calls.(r:14900)
 	mod_opal: Fixed compile issues with latest Opal (r:15545)
 	mod_portaudio: fix compilation failure in mod_portaudio_stream (MODFORM-35/r:14531)
@@ -624,6 +648,7 @@ freeswitch (1.0.5)
 	mod_sofia: prevent race in killgw followed by an immediate rescan with the same gateway name (r:17096)
 	mod_sofia: fix telephone-event negotiation with devices that don't do what the rfc says they SHOULD do (r:17097)
 	mod_sofia: Double @ in To header (MODENDP-300/r:17098)
+	mod_sofia: add killgw _all_ to delete all gws
 	mod_spidermonkey: allow inline javascript, use a ~ as first script character (r:15598)
 	mod_spidermonkey: fix mod_spidermonkey on OSX 10.6 (lets see if this breaks any other platforms) (r:15650)
 	mod_spidermonkey: fix teletone issues in javascript (MODLANG-159/MODLANG-162/r:16909)
