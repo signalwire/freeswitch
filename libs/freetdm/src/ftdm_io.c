@@ -2050,6 +2050,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 
 	case FTDM_COMMAND_SET_RX_GAIN:
 		{
+			if (!FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
+				ftdm_log(FTDM_LOG_ERROR, "Cannot set rx gain in non-voice channel of type: %s\n", ftdm_chan_type2str(ftdmchan->type));
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
 			ftdmchan->rxgain = FTDM_COMMAND_OBJ_FLOAT;
 			reset_gain_table(ftdmchan->rxgain_table, ftdmchan->rxgain, ftdmchan->native_codec);
 			if (ftdmchan->rxgain == 0.0) {
@@ -2068,6 +2072,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		break;
 	case FTDM_COMMAND_SET_TX_GAIN:
 		{
+			if (!FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
+				ftdm_log(FTDM_LOG_ERROR, "Cannot set tx gain in non-voice channel of type: %s\n", ftdm_chan_type2str(ftdmchan->type));
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
 			ftdmchan->txgain = FTDM_COMMAND_OBJ_FLOAT;
 			reset_gain_table(ftdmchan->txgain_table, ftdmchan->txgain, ftdmchan->native_codec);
 			if (ftdmchan->txgain == 0.0) {
@@ -2468,17 +2476,17 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "ftdmchan is null\n");
 	ftdm_assert_return(ftdmchan->fio != NULL, FTDM_FAIL, "No I/O module attached to ftdmchan\n");
 	
-    if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
+	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "channel not open");
-        return FTDM_FAIL;
-    }
+		return FTDM_FAIL;
+	}
 
 	if (!ftdmchan->fio->read) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "method not implemented");
 		return FTDM_FAIL;
 	}
 
-    status = ftdmchan->fio->read(ftdmchan, data, datalen);
+	status = ftdmchan->fio->read(ftdmchan, data, datalen);
 	if (ftdmchan->fds[0] > -1) {
 		int dlen = (int) *datalen;
 		if (write(ftdmchan->fds[0], data, dlen) != dlen) {
