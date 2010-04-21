@@ -1546,9 +1546,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_sessi
 	
 	if (send_rate == -1) {
 		switch_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "RTCP passthru enabled. Remote Port: %d\n", rtp_session->remote_rtcp_port);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTCP passthru enabled. Remote Port: %d\n", rtp_session->remote_rtcp_port);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "RTCP send rate is: %d and packet rate is: %d Remote Port: %d\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTCP send rate is: %d and packet rate is: %d Remote Port: %d\n", 
 						  send_rate, rtp_session->ms_per_packet, rtp_session->remote_rtcp_port);
 		rtp_session->rtcp_interval = send_rate/(rtp_session->ms_per_packet/1000);
 	}
