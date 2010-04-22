@@ -1127,8 +1127,16 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 			sofia_set_flag_locked(tech_pvt, TFLAG_VIDEO);
 			switch_channel_set_flag(tech_pvt->channel, CF_VIDEO);
 			if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
+				const char *rport = NULL;
+                switch_port_t remote_rtcp_port = 0;
+
+				if ((rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_video_rtcp_port"))) {
+					remote_rtcp_port = atoi(rport);
+				}
+
+
 				if (switch_rtp_set_remote_address(tech_pvt->video_rtp_session, tech_pvt->remote_sdp_video_ip,
-												  tech_pvt->remote_sdp_video_port, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+												  tech_pvt->remote_sdp_video_port, remote_rtcp_port, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "VIDEO RTP REPORTS ERROR: [%s]\n", err);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "VIDEO RTP CHANGING DEST TO: [%s:%d]\n",
@@ -1149,6 +1157,8 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
 		switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
+		const char *rport = NULL;
+		switch_port_t remote_rtcp_port = 0;
 
 		if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_audio_ip) && remote_port == tech_pvt->remote_sdp_audio_port) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Remote address:port [%s:%d] has not changed.\n",
@@ -1156,8 +1166,13 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 			return SWITCH_STATUS_SUCCESS;
 		}
 
+		if ((rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_audio_rtcp_port"))) {
+			remote_rtcp_port = atoi(rport);
+		}
+		
+		
 		if (switch_rtp_set_remote_address(tech_pvt->rtp_session, tech_pvt->remote_sdp_audio_ip,
-										  tech_pvt->remote_sdp_audio_port, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+										  tech_pvt->remote_sdp_audio_port, remote_rtcp_port, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", err);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "AUDIO RTP CHANGING DEST TO: [%s:%d]\n",
@@ -2605,9 +2620,17 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, tmp);
 
 	if (tech_pvt->rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
+		const char *rport = NULL;
+        switch_port_t remote_rtcp_port = 0;
+
 		sofia_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
 
-		if (switch_rtp_set_remote_address(tech_pvt->rtp_session, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port, SWITCH_TRUE, &err) !=
+		if ((rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_audio_rtcp_port"))) {
+			remote_rtcp_port = atoi(rport);
+		}
+
+		if (switch_rtp_set_remote_address(tech_pvt->rtp_session, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port, 
+										  remote_rtcp_port, SWITCH_TRUE, &err) !=
 			SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", err);
 		} else {
@@ -2859,10 +2882,17 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE, tmp);
 
 			if (tech_pvt->video_rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
+				const char *rport = NULL;
+				switch_port_t remote_rtcp_port = 0;
+
 				sofia_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
 
+				if ((rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_video_rtcp_port"))) {
+					remote_rtcp_port = atoi(rport);
+				}
+
 				if (switch_rtp_set_remote_address
-					(tech_pvt->video_rtp_session, tech_pvt->remote_sdp_video_ip, tech_pvt->remote_sdp_video_port, SWITCH_TRUE,
+					(tech_pvt->video_rtp_session, tech_pvt->remote_sdp_video_ip, tech_pvt->remote_sdp_video_port, remote_rtcp_port, SWITCH_TRUE,
 					 &err) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "VIDEO RTP REPORTS ERROR: [%s]\n", err);
 				} else {

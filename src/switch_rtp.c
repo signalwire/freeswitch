@@ -778,19 +778,27 @@ static switch_status_t enable_remote_rtcp_socket(switch_rtp_t *rtp_session, cons
 									 rtp_session->remote_rtcp_port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !rtp_session->rtcp_remote_addr) {
 			*err = "RTCP Remote Address Error!";
 			return SWITCH_STATUS_FALSE;
+		} else {
+			const char *host;
+			char bufa[30];
+			host = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtcp_remote_addr);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting RTCP remote addr to %s:%d\n", host, rtp_session->remote_rtcp_port);
 		}
 
-		if (rtp_session->rtcp_sock_input && switch_sockaddr_get_family(rtp_session->rtcp_remote_addr) == 
-			switch_sockaddr_get_family(rtp_session->rtcp_local_addr)) {
-			rtp_session->rtcp_sock_output = rtp_session->rtcp_sock_input;
-		} else {
-			if (rtp_session->rtcp_sock_output && rtp_session->rtcp_sock_output != rtp_session->rtcp_sock_input) {
-				switch_socket_close(rtp_session->rtcp_sock_output);
-			}
-			if ((status = switch_socket_create(&rtp_session->rtcp_sock_output,
-											   switch_sockaddr_get_family(rtp_session->rtcp_remote_addr),
-											   SOCK_DGRAM, 0, rtp_session->pool)) != SWITCH_STATUS_SUCCESS) {
-				*err = "RTCP Socket Error!";
+		if (!(rtp_session->rtcp_sock_input && rtp_session->rtcp_sock_output)) {
+			if (rtp_session->rtcp_sock_input && switch_sockaddr_get_family(rtp_session->rtcp_remote_addr) == 
+				switch_sockaddr_get_family(rtp_session->rtcp_local_addr)) {
+				rtp_session->rtcp_sock_output = rtp_session->rtcp_sock_input;
+			} else {
+				if (rtp_session->rtcp_sock_output && rtp_session->rtcp_sock_output != rtp_session->rtcp_sock_input) {
+					switch_socket_close(rtp_session->rtcp_sock_output);
+				}
+				if ((status = switch_socket_create(&rtp_session->rtcp_sock_output,
+												   switch_sockaddr_get_family(rtp_session->rtcp_remote_addr),
+												   SOCK_DGRAM, 0, rtp_session->pool)) != SWITCH_STATUS_SUCCESS) {
+					*err = "RTCP Socket Error!";
+				}
 			}
 		}
 	} else {
@@ -1020,7 +1028,7 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_get_remote_port(switch_rtp_t *rtp_sessi
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port,
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, switch_port_t remote_rtcp_port,
 															  switch_bool_t change_adv_addr, const char **err)
 {
 	switch_sockaddr_t *remote_addr;
@@ -1056,6 +1064,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 	}
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP)) {	
+		if (remote_rtcp_port) {
+			rtp_session->remote_rtcp_port = remote_rtcp_port;
+		} else {
+			rtp_session->remote_rtcp_port = rtp_session->remote_port + 1;
+		}
 		status = enable_remote_rtcp_socket(rtp_session, err);
 	}
 
@@ -1462,7 +1475,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		goto end;
 	}
 
-	if (switch_rtp_set_remote_address(rtp_session, tx_host, tx_port, SWITCH_TRUE, err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_rtp_set_remote_address(rtp_session, tx_host, tx_port, 0, SWITCH_TRUE, err) != SWITCH_STATUS_SUCCESS) {
 		switch_mutex_unlock(rtp_session->flag_mutex);
 		rtp_session = NULL;
 		goto end;
@@ -2426,7 +2439,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						switch_channel_set_variable(channel, "rtp_auto_adjust", "true");
 					}
 
-					switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), SWITCH_FALSE, &err);
+					switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), 0, SWITCH_FALSE, &err);
 					switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 				}
 			} else {
