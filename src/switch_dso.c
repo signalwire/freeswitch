@@ -127,7 +127,16 @@ void *switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err)
 {
 	void *addr = dlsym(lib, sym);
 	if (!addr) {
-		*err = strdup(dlerror());
+		char *err_str = NULL;
+		dlerror();
+
+		if (!(addr = dlsym(lib, sym))) {
+			err_str = dlerror();
+		}
+
+		if (err_str) {
+			*err = strdup(err_str);
+		}
 	}
 	return addr;
 }

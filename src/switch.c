@@ -791,6 +791,7 @@ int main(int argc, char *argv[])
 	destroy_status = switch_core_destroy();
 
 	switch_file_close(fd);
+	apr_pool_destroy(pool);
 
 	if (unlink(pid_path) != 0) {
 		fprintf(stderr, "Failed to delete pid file [%s]\n", pid_path);

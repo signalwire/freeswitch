@@ -944,7 +944,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nibblebill_load)
 	/* Add dialplan applications */
 	SWITCH_ADD_APP(app_interface, "nibblebill", "Handle billing for the current channel/call",
 				   "Pause, resume, reset, adjust, flush, heartbeat commands to handle billing.", nibblebill_app_function, APP_SYNTAX,
-				   SAF_NONE | SAF_ROUTING_EXEC);
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 
 	/* register state handlers for billing */
 	switch_core_add_state_handler(&nibble_state_handler);

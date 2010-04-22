@@ -39,7 +39,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;gsmlib\gsmlib-1.10-patched-12ubuntu1&quot;"
+				AdditionalIncludeDirectories="&quot;gsmlib\gsmlib-1.10-patched-12ubuntu1&quot;;&quot;$(InputDir)..\..\..\..\libs\spandsp\src\msvc&quot;;&quot;$(InputDir)..\..\..\..\libs\spandsp\src&quot;;&quot;$(InputDir)..\..\..\..\libs\tiff-3.8.2\libtiff&quot;"
 				PreprocessorDefinitions="NO_ALSA"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
@@ -56,7 +56,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions=" gsmlib.lib &quot;..\..\..\..\w32\library\debug\freeswitchcore.lib&quot; &quot;..\..\..\..\libs\libteletone\Debug\libteletone.lib&quot; ksuser.lib &quot;..\..\..\..\libs\win32\apr\debug\libapr-1.lib&quot;"
+				AdditionalOptions=" gsmlib.lib &quot;..\..\..\..\w32\library\debug\freeswitchcore.lib&quot; &quot;..\..\..\..\libs\libteletone\Debug\libteletone.lib&quot; ksuser.lib &quot;..\..\..\..\libs\win32\apr\debug\libapr-1.lib&quot;&#x0D;&#x0A;rpcrt4.lib  &quot;..\..\..\..\debug\libtiff.lib&quot; &quot;..\..\..\..\libs\spandsp\src\debug\spandsp.lib&quot;"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;gsmlib/gsmlib-1.10-patched-12ubuntu1/win32/Debug/&quot;"
 				RandomizedBaseAddress="1"
