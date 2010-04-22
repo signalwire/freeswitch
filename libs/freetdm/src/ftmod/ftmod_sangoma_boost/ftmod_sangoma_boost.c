@@ -1013,6 +1013,7 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 				ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
       } else if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
         ftdm_log(FTDM_LOG_WARNING, "s%dc%d:Collision, hanging up incoming call\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
+				ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
 			} else {
 				ftdm_log(FTDM_LOG_CRIT, "s%dc%d:FTDMCHAN STATE INVALID %s on IN CALL\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event), ftdm_channel_state2str(ftdmchan->state));
 			}
