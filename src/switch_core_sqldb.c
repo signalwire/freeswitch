@@ -809,6 +809,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 	int lc = 0;
 	uint32_t loops = 0, sec = 0;
 	uint32_t l1 = 1000;
+	uint32_t sanity = 120;
 
 	switch_assert(sqlbuf);
 
@@ -816,9 +817,18 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 		l1 = 10;
 	}
 
-	if (!sql_manager.event_db) {
-		switch_core_db_handle(&sql_manager.event_db);
+	while (!sql_manager.event_db) {
+		if (switch_core_db_handle(&sql_manager.event_db) == SWITCH_STATUS_SUCCESS && sql_manager.event_db) break;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error getting core db, Retrying\n");
+		switch_yield(500000);
+		sanity--;
 	}
+
+	if (!sql_manager.event_db) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error getting core db Disabling core sql functionality\n");
+		return NULL;
+	}
+
 
 	sql_manager.thread_running = 1;
 
