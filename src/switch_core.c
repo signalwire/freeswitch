@@ -1867,12 +1867,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_safe_free(SWITCH_GLOBAL_dirs.script_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.htdocs_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.grammar_dir);
+	switch_safe_free(SWITCH_GLOBAL_dirs.storage_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.recordings_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.sounds_dir);
+	switch_safe_free(SWITCH_GLOBAL_dirs.run_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.temp_dir);
 
 	switch_core_hash_destroy(&runtime.global_vars);
 	switch_core_hash_destroy(&runtime.mime_types);
+
+	if (IP_LIST.hash) {
+		switch_core_hash_destroy(&IP_LIST.hash);
+	}
+
+	if (IP_LIST.pool) {
+		switch_core_destroy_memory_pool(&IP_LIST.pool);
+	}
 
 	if (runtime.memory_pool) {
 		apr_pool_destroy(runtime.memory_pool);
