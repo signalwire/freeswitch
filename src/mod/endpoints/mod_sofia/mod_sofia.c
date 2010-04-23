@@ -160,22 +160,29 @@ static switch_status_t sofia_on_reset(switch_core_session_t *session)
 
 
 	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING_BRIDGE)) {
-		switch_core_session_t *other_session;
+		switch_core_session_t *other_session = NULL;
 		const char *uuid = switch_core_session_get_uuid(session);
 
 		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 			const char *other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+			int x = 0;
 
-			if (other_uuid && (other_session = switch_core_session_locate(other_uuid))) {
+			if (other_uuid) {
+				for(x = 0; other_session == NULL && x < 5; x++) {
+					other_session = switch_core_session_locate(other_uuid);
+					switch_yield(100000);
+				}
+			}
+
+			if (other_session) {
 				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-
 				switch_channel_clear_flag(channel, CF_BRIDGE_ORIGINATOR);
 				switch_channel_wait_for_state_timeout(other_channel, CS_RESET, 5000);
 				switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
 				switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
 				switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
-
+				
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) && switch_channel_test_flag(other_channel, CF_PROXY_MODE)) {
 					switch_ivr_signal_bridge(session, other_session);
 				} else {
