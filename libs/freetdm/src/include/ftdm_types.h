@@ -38,29 +38,18 @@
 
 #ifndef FTDM_TYPES_H
 #define FTDM_TYPES_H
+
+#include "freetdm.h"
+
 #include "fsk.h"
 
 #ifdef WIN32
-#define FTDM_INVALID_SOCKET INVALID_HANDLE_VALUE
-#include <windows.h>
-typedef HANDLE ftdm_socket_t;
-typedef unsigned __int64 uint64_t;
-typedef unsigned __int32 uint32_t;
-typedef unsigned __int16 uint16_t;
-typedef unsigned __int8 uint8_t;
-typedef __int64 int64_t;
-typedef __int32 int32_t;
-typedef __int16 int16_t;
-typedef __int8 int8_t;
 typedef intptr_t ftdm_ssize_t;
 typedef int ftdm_filehandle_t;
 #else
-#define FTDM_INVALID_SOCKET -1
-#include <stdint.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <stdarg.h>
-typedef int ftdm_socket_t;
 typedef ssize_t ftdm_ssize_t;
 typedef int ftdm_filehandle_t;
 #endif
@@ -68,10 +57,6 @@ typedef int ftdm_filehandle_t;
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define TAG_END NULL
-
-typedef size_t ftdm_size_t;
-struct ftdm_io_interface;
 
 #define FTDM_COMMAND_OBJ_INT *((int *)obj)
 #define FTDM_COMMAND_OBJ_CHAR_P (char *)obj
@@ -167,19 +152,6 @@ typedef enum {
 FTDM_STR2ENUM_P(ftdm_str2ftdm_oob_event, ftdm_oob_event2str, ftdm_oob_event_t)
 
 typedef enum {
-	FTDM_ALARM_NONE = 0,
-	FTDM_ALARM_RECOVER = (1 << 0),
-	FTDM_ALARM_LOOPBACK = (1 << 2),
-	FTDM_ALARM_YELLOW = (1 << 3),
-	FTDM_ALARM_RED = (1 << 4),
-	FTDM_ALARM_BLUE = (1 << 5),
-	FTDM_ALARM_NOTOPEN = ( 1 << 6),
-	FTDM_ALARM_AIS = ( 1 << 7),
-	FTDM_ALARM_RAI = ( 1 << 8),
-	FTDM_ALARM_GENERAL = ( 1 << 30)
-} ftdm_alarm_flag_t;
-
-typedef enum {
 	FTDM_SIGTYPE_NONE,
 	FTDM_SIGTYPE_ISDN,
 	FTDM_SIGTYPE_RBS,
@@ -188,137 +160,6 @@ typedef enum {
 	FTDM_SIGTYPE_M3UA,
 	FTDM_SIGTYPE_R2
 } ftdm_signal_type_t;
-
-/*!
-  \brief Signaling status on a given span or specific channel on protocols that support it
- */
-typedef enum {
-	/* The signaling link is down (no d-chans up in the span/group, MFC-R2 bit pattern unidentified) */
-	FTDM_SIG_STATE_DOWN,
-	/* The signaling link is suspended (MFC-R2 bit pattern blocked, ss7 blocked?) */
-	FTDM_SIG_STATE_SUSPENDED,
-	/* The signaling link is ready and calls can be placed */
-	FTDM_SIG_STATE_UP,
-	/* Invalid status */
-	FTDM_SIG_STATE_INVALID
-} ftdm_signaling_status_t;
-#define SIGSTATUS_STRINGS "DOWN", "SUSPENDED", "UP", "INVALID"
-FTDM_STR2ENUM_P(ftdm_str2ftdm_signaling_status, ftdm_signaling_status2str, ftdm_signaling_status_t)
-
-typedef enum {
-	FTDM_SIGEVENT_START,
-	FTDM_SIGEVENT_STOP,
-	FTDM_SIGEVENT_TRANSFER,
-	FTDM_SIGEVENT_ANSWER,
-	FTDM_SIGEVENT_UP,
-	FTDM_SIGEVENT_FLASH,
-	FTDM_SIGEVENT_PROGRESS,
-	FTDM_SIGEVENT_PROGRESS_MEDIA,
-	FTDM_SIGEVENT_NOTIFY,
-	FTDM_SIGEVENT_TONE_DETECTED,
-	FTDM_SIGEVENT_ALARM_TRAP,
-	FTDM_SIGEVENT_ALARM_CLEAR,
-	FTDM_SIGEVENT_MISC,
-	FTDM_SIGEVENT_COLLECTED_DIGIT,
-	FTDM_SIGEVENT_ADD_CALL,
-	FTDM_SIGEVENT_RESTART,
-	/* Signaling status changed (D-chan up, down, R2 blocked etc) */
-	FTDM_SIGEVENT_SIGSTATUS_CHANGED,
-	FTDM_SIGEVENT_INVALID
-} ftdm_signal_event_t;
-#define SIGNAL_STRINGS "START", "STOP", "TRANSFER", "ANSWER", "UP", "FLASH", "PROGRESS", \
-		"PROGRESS_MEDIA", "NOTIFY", "TONE_DETECTED", "ALARM_TRAP", "ALARM_CLEAR", "MISC", \
-		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGLINK_CHANGED", "HWSTATUS_CHANGED", "INVALID"
-FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)
-
-typedef enum {
-	FTDM_EVENT_NONE,
-	FTDM_EVENT_DTMF,
-	FTDM_EVENT_OOB,
-	FTDM_EVENT_COUNT
-} ftdm_event_type_t;
-
-typedef enum {
-	FTDM_TOP_DOWN,
-	FTDM_BOTTOM_UP
-} ftdm_direction_t;
-
-typedef enum {
-	FTDM_SUCCESS,
-	FTDM_FAIL,
-	FTDM_MEMERR,
-	FTDM_TIMEOUT,
-	FTDM_NOTIMPL,
-	FTDM_CHECKSUM_ERROR,
-	FTDM_STATUS_COUNT,
-	FTDM_BREAK
-} ftdm_status_t;
-
-typedef enum {
-	FTDM_NO_FLAGS = 0,
-	FTDM_READ =  (1 << 0),
-	FTDM_WRITE = (1 << 1),
-	FTDM_EVENTS = (1 << 2)
-} ftdm_wait_flag_t;
-
-typedef enum {
-	FTDM_CODEC_ULAW = 0,
-	FTDM_CODEC_ALAW = 8,
-	FTDM_CODEC_SLIN = 10,
-	FTDM_CODEC_NONE = (1 << 30)
-} ftdm_codec_t;
-
-typedef enum {
-	FTDM_TONE_DTMF = (1 << 0)
-} ftdm_tone_type_t;
-
-typedef enum {
-	FTDM_COMMAND_NOOP,
-	FTDM_COMMAND_SET_INTERVAL,
-	FTDM_COMMAND_GET_INTERVAL,
-	FTDM_COMMAND_SET_CODEC,
-	FTDM_COMMAND_GET_CODEC,
-	FTDM_COMMAND_SET_NATIVE_CODEC,
-	FTDM_COMMAND_GET_NATIVE_CODEC,
-	FTDM_COMMAND_ENABLE_DTMF_DETECT,
-	FTDM_COMMAND_DISABLE_DTMF_DETECT,
-	FTDM_COMMAND_SEND_DTMF,
-	FTDM_COMMAND_SET_DTMF_ON_PERIOD,
-	FTDM_COMMAND_GET_DTMF_ON_PERIOD,
-	FTDM_COMMAND_SET_DTMF_OFF_PERIOD,
-	FTDM_COMMAND_GET_DTMF_OFF_PERIOD,
-	FTDM_COMMAND_GENERATE_RING_ON,
-	FTDM_COMMAND_GENERATE_RING_OFF,
-	FTDM_COMMAND_OFFHOOK,
-	FTDM_COMMAND_ONHOOK,
-	FTDM_COMMAND_FLASH,
-	FTDM_COMMAND_WINK,
-	FTDM_COMMAND_ENABLE_PROGRESS_DETECT,
-	FTDM_COMMAND_DISABLE_PROGRESS_DETECT,
-	FTDM_COMMAND_TRACE_INPUT,
-	FTDM_COMMAND_TRACE_OUTPUT,
-	FTDM_COMMAND_ENABLE_CALLERID_DETECT,
-	FTDM_COMMAND_DISABLE_CALLERID_DETECT,
-	FTDM_COMMAND_ENABLE_ECHOCANCEL,
-	FTDM_COMMAND_DISABLE_ECHOCANCEL,
-	FTDM_COMMAND_ENABLE_ECHOTRAIN,
-	FTDM_COMMAND_DISABLE_ECHOTRAIN,
-	FTDM_COMMAND_SET_CAS_BITS,
-	FTDM_COMMAND_GET_CAS_BITS,
-	FTDM_COMMAND_SET_RX_GAIN,
-	FTDM_COMMAND_GET_RX_GAIN,
-	FTDM_COMMAND_SET_TX_GAIN,
-	FTDM_COMMAND_GET_TX_GAIN,
-	FTDM_COMMAND_FLUSH_TX_BUFFERS,
-	FTDM_COMMAND_FLUSH_RX_BUFFERS,
-	FTDM_COMMAND_FLUSH_BUFFERS,
-	FTDM_COMMAND_SET_PRE_BUFFER_SIZE,
-	FTDM_COMMAND_SET_LINK_STATUS,
-	FTDM_COMMAND_GET_LINK_STATUS,
-	FTDM_COMMAND_ENABLE_LOOP,
-	FTDM_COMMAND_DISABLE_LOOP,
-	FTDM_COMMAND_COUNT
-} ftdm_command_t;
 
 typedef enum {
 	FTDM_SPAN_CONFIGURED = (1 << 0),
@@ -330,22 +171,6 @@ typedef enum {
 	FTDM_SPAN_USE_CHAN_QUEUE = (1 << 6),
 	FTDM_SPAN_SUGGEST_CHAN_ID = (1 << 7),
 } ftdm_span_flag_t;
-
-typedef enum {
-	FTDM_CHAN_TYPE_B,
-	FTDM_CHAN_TYPE_DQ921,
-	FTDM_CHAN_TYPE_DQ931,
-	FTDM_CHAN_TYPE_FXS,
-	FTDM_CHAN_TYPE_FXO,
-	FTDM_CHAN_TYPE_EM,
-	FTDM_CHAN_TYPE_CAS,
-	FTDM_CHAN_TYPE_COUNT
-} ftdm_chan_type_t;
-
-#define FTDM_IS_VOICE_CHANNEL(ftdm_chan) ((ftdm_chan)->type != FTDM_CHAN_TYPE_DQ921 && (ftdm_chan)->type != FTDM_CHAN_TYPE_DQ931)
-
-#define CHAN_TYPE_STRINGS "B", "DQ921", "DQ931", "FXS", "FXO", "EM", "CAS", "INVALID"
-FTDM_STR2ENUM_P(ftdm_str2ftdm_chan_type, ftdm_chan_type2str, ftdm_chan_type_t)
 
 typedef enum {
 	FTDM_CHANNEL_FEATURE_DTMF_DETECT = (1 << 0),
@@ -462,121 +287,13 @@ typedef enum ftdm_channel_hw_link_status {
 	FTDM_HW_LINK_CONNECTED
 } ftdm_channel_hw_link_status_t;
 
-typedef struct ftdm_conf_parameter_s {
-	const char *var;
-	const char *val;
-} ftdm_conf_parameter_t;
-
-typedef struct ftdm_channel ftdm_channel_t;
-typedef struct ftdm_channel_config ftdm_channel_config_t;
-typedef struct ftdm_event ftdm_event_t;
-typedef struct ftdm_sigmsg ftdm_sigmsg_t;
-typedef struct ftdm_span ftdm_span_t;
-typedef struct ftdm_group ftdm_group_t;
-typedef struct ftdm_caller_data ftdm_caller_data_t;
-typedef struct ftdm_io_interface ftdm_io_interface_t;
-
-struct ftdm_stream_handle;
-typedef struct ftdm_stream_handle ftdm_stream_handle_t;
-
 typedef ftdm_status_t (*ftdm_stream_handle_raw_write_function_t) (ftdm_stream_handle_t *handle, uint8_t *data, ftdm_size_t datalen);
 typedef ftdm_status_t (*ftdm_stream_handle_write_function_t) (ftdm_stream_handle_t *handle, const char *fmt, ...);
-
-#define FIO_CHANNEL_REQUEST_ARGS (ftdm_span_t *span, uint32_t chan_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
-#define FIO_CHANNEL_OUTGOING_CALL_ARGS (ftdm_channel_t *ftdmchan)
-#define FIO_CHANNEL_SET_SIG_STATUS_ARGS (ftdm_channel_t *ftdmchan, ftdm_signaling_status_t status)
-#define FIO_CHANNEL_GET_SIG_STATUS_ARGS (ftdm_channel_t *ftdmchan, ftdm_signaling_status_t *status)
-#define FIO_SPAN_SET_SIG_STATUS_ARGS (ftdm_span_t *span, ftdm_signaling_status_t status)
-#define FIO_SPAN_GET_SIG_STATUS_ARGS (ftdm_span_t *span, ftdm_signaling_status_t *status)
-#define FIO_SPAN_POLL_EVENT_ARGS (ftdm_span_t *span, uint32_t ms)
-#define FIO_SPAN_NEXT_EVENT_ARGS (ftdm_span_t *span, ftdm_event_t **event)
-#define FIO_SIGNAL_CB_ARGS (ftdm_sigmsg_t *sigmsg)
-#define FIO_EVENT_CB_ARGS (ftdm_channel_t *ftdmchan, ftdm_event_t *event)
-#define FIO_CODEC_ARGS (void *data, ftdm_size_t max, ftdm_size_t *datalen)
-#define FIO_CONFIGURE_SPAN_ARGS (ftdm_span_t *span, const char *str, ftdm_chan_type_t type, char *name, char *number)
-#define FIO_CONFIGURE_ARGS (const char *category, const char *var, const char *val, int lineno)
-#define FIO_OPEN_ARGS (ftdm_channel_t *ftdmchan)
-#define FIO_CLOSE_ARGS (ftdm_channel_t *ftdmchan)
-#define FIO_CHANNEL_DESTROY_ARGS (ftdm_channel_t *ftdmchan)
-#define FIO_SPAN_DESTROY_ARGS (ftdm_span_t *span)
-#define FIO_COMMAND_ARGS (ftdm_channel_t *ftdmchan, ftdm_command_t command, void *obj)
-#define FIO_WAIT_ARGS (ftdm_channel_t *ftdmchan, ftdm_wait_flag_t *flags, int32_t to)
-#define FIO_GET_ALARMS_ARGS (ftdm_channel_t *ftdmchan)
-#define FIO_READ_ARGS (ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
-#define FIO_WRITE_ARGS (ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
-#define FIO_IO_LOAD_ARGS (ftdm_io_interface_t **fio)
-#define FIO_IO_UNLOAD_ARGS (void)
-#define FIO_SIG_LOAD_ARGS (void)
-#define FIO_SIG_CONFIGURE_ARGS (ftdm_span_t *span, fio_signal_cb_t sig_cb, va_list ap)
-#define FIO_CONFIGURE_SPAN_SIGNALING_ARGS (ftdm_span_t *span, fio_signal_cb_t sig_cb, ftdm_conf_parameter_t *ftdm_parameters)
-#define FIO_SIG_UNLOAD_ARGS (void)
-#define FIO_API_ARGS (ftdm_stream_handle_t *stream, const char *data)
-
-typedef ftdm_status_t (*fio_channel_request_t) FIO_CHANNEL_REQUEST_ARGS ;
-typedef ftdm_status_t (*fio_channel_outgoing_call_t) FIO_CHANNEL_OUTGOING_CALL_ARGS ;
-typedef ftdm_status_t (*fio_channel_set_sig_status_t) FIO_CHANNEL_SET_SIG_STATUS_ARGS;
-typedef ftdm_status_t (*fio_channel_get_sig_status_t) FIO_CHANNEL_GET_SIG_STATUS_ARGS;
-typedef ftdm_status_t (*fio_span_set_sig_status_t) FIO_SPAN_SET_SIG_STATUS_ARGS;
-typedef ftdm_status_t (*fio_span_get_sig_status_t) FIO_SPAN_GET_SIG_STATUS_ARGS;
-typedef ftdm_status_t (*fio_span_poll_event_t) FIO_SPAN_POLL_EVENT_ARGS ;
-typedef ftdm_status_t (*fio_span_next_event_t) FIO_SPAN_NEXT_EVENT_ARGS ;
-typedef ftdm_status_t (*fio_signal_cb_t) FIO_SIGNAL_CB_ARGS ;
-typedef ftdm_status_t (*fio_event_cb_t) FIO_EVENT_CB_ARGS ;
-typedef ftdm_status_t (*fio_codec_t) FIO_CODEC_ARGS ;
-typedef ftdm_status_t (*fio_configure_span_t) FIO_CONFIGURE_SPAN_ARGS ;
-typedef ftdm_status_t (*fio_configure_t) FIO_CONFIGURE_ARGS ;
-typedef ftdm_status_t (*fio_open_t) FIO_OPEN_ARGS ;
-typedef ftdm_status_t (*fio_close_t) FIO_CLOSE_ARGS ;
-typedef ftdm_status_t (*fio_channel_destroy_t) FIO_CHANNEL_DESTROY_ARGS ;
-typedef ftdm_status_t (*fio_span_destroy_t) FIO_SPAN_DESTROY_ARGS ;
-typedef ftdm_status_t (*fio_get_alarms_t) FIO_GET_ALARMS_ARGS ;
-typedef ftdm_status_t (*fio_command_t) FIO_COMMAND_ARGS ;
-typedef ftdm_status_t (*fio_wait_t) FIO_WAIT_ARGS ;
-typedef ftdm_status_t (*fio_read_t) FIO_READ_ARGS ;
-typedef ftdm_status_t (*fio_write_t) FIO_WRITE_ARGS ;
-typedef ftdm_status_t (*fio_io_load_t) FIO_IO_LOAD_ARGS ;
-typedef ftdm_status_t (*fio_sig_load_t) FIO_SIG_LOAD_ARGS ;
-typedef ftdm_status_t (*fio_sig_configure_t) FIO_SIG_CONFIGURE_ARGS ;
-typedef ftdm_status_t (*fio_configure_span_signaling_t) FIO_CONFIGURE_SPAN_SIGNALING_ARGS ;
-typedef ftdm_status_t (*fio_io_unload_t) FIO_IO_UNLOAD_ARGS ;
-typedef ftdm_status_t (*fio_sig_unload_t) FIO_SIG_UNLOAD_ARGS ;
-typedef ftdm_status_t (*fio_api_t) FIO_API_ARGS ;
-
-
-#define FIO_CHANNEL_REQUEST_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_REQUEST_ARGS
-#define FIO_CHANNEL_OUTGOING_CALL_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_OUTGOING_CALL_ARGS
-#define FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_SET_SIG_STATUS_ARGS
-#define FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_GET_SIG_STATUS_ARGS
-#define FIO_SPAN_SET_SIG_STATUS_FUNCTION(name) ftdm_status_t name FIO_SPAN_SET_SIG_STATUS_ARGS
-#define FIO_SPAN_GET_SIG_STATUS_FUNCTION(name) ftdm_status_t name FIO_SPAN_GET_SIG_STATUS_ARGS
-#define FIO_SPAN_POLL_EVENT_FUNCTION(name) ftdm_status_t name FIO_SPAN_POLL_EVENT_ARGS
-#define FIO_SPAN_NEXT_EVENT_FUNCTION(name) ftdm_status_t name FIO_SPAN_NEXT_EVENT_ARGS
-#define FIO_SIGNAL_CB_FUNCTION(name) ftdm_status_t name FIO_SIGNAL_CB_ARGS
-#define FIO_EVENT_CB_FUNCTION(name) ftdm_status_t name FIO_EVENT_CB_ARGS
-#define FIO_CODEC_FUNCTION(name) FT_DECLARE_NONSTD(ftdm_status_t) name FIO_CODEC_ARGS
-#define FIO_CONFIGURE_SPAN_FUNCTION(name) ftdm_status_t name FIO_CONFIGURE_SPAN_ARGS
-#define FIO_CONFIGURE_FUNCTION(name) ftdm_status_t name FIO_CONFIGURE_ARGS
-#define FIO_OPEN_FUNCTION(name) ftdm_status_t name FIO_OPEN_ARGS
-#define FIO_CLOSE_FUNCTION(name) ftdm_status_t name FIO_CLOSE_ARGS
-#define FIO_CHANNEL_DESTROY_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_DESTROY_ARGS
-#define FIO_SPAN_DESTROY_FUNCTION(name) ftdm_status_t name FIO_SPAN_DESTROY_ARGS
-#define FIO_GET_ALARMS_FUNCTION(name) ftdm_status_t name FIO_GET_ALARMS_ARGS
-#define FIO_COMMAND_FUNCTION(name) ftdm_status_t name FIO_COMMAND_ARGS
-#define FIO_WAIT_FUNCTION(name) ftdm_status_t name FIO_WAIT_ARGS
-#define FIO_READ_FUNCTION(name) ftdm_status_t name FIO_READ_ARGS
-#define FIO_WRITE_FUNCTION(name) ftdm_status_t name FIO_WRITE_ARGS
-#define FIO_IO_LOAD_FUNCTION(name) ftdm_status_t name FIO_IO_LOAD_ARGS
-#define FIO_SIG_LOAD_FUNCTION(name) ftdm_status_t name FIO_SIG_LOAD_ARGS
-#define FIO_SIG_CONFIGURE_FUNCTION(name) ftdm_status_t name FIO_SIG_CONFIGURE_ARGS
-#define FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(name) ftdm_status_t name FIO_CONFIGURE_SPAN_SIGNALING_ARGS
-#define FIO_IO_UNLOAD_FUNCTION(name) ftdm_status_t name FIO_IO_UNLOAD_ARGS
-#define FIO_SIG_UNLOAD_FUNCTION(name) ftdm_status_t name FIO_SIG_UNLOAD_ARGS
-#define FIO_API_FUNCTION(name) ftdm_status_t name FIO_API_ARGS
 
 #include "ftdm_dso.h"
 
 #define FTDM_NODE_NAME_SIZE 50
-typedef struct ftdm_conf_node_s {
+struct ftdm_conf_node {
 	/* node name */
 	char name[FTDM_NODE_NAME_SIZE];
 
@@ -590,16 +307,16 @@ typedef struct ftdm_conf_node_s {
 	ftdm_conf_parameter_t *parameters;
 
 	/* first node child */
-	struct ftdm_conf_node_s *child;
+	struct ftdm_conf_node *child;
 
 	/* next node sibling */
-	struct ftdm_conf_node_s *next;
+	struct ftdm_conf_node *next;
 
 	/* my parent if any */
-	struct ftdm_conf_node_s *parent;
-} ftdm_conf_node_t;
+	struct ftdm_conf_node *parent;
+};
 
-typedef struct {
+typedef struct ftdm_module {
 	char name[256];
 	fio_io_load_t io_load;
 	fio_io_unload_t io_unload;
@@ -623,29 +340,9 @@ typedef struct {
 #define __FUNCTION__ (const char *)__func__
 #endif
 
-#define FTDM_PRE __FILE__, __FUNCTION__, __LINE__
-#define FTDM_LOG_LEVEL_DEBUG 7
-#define FTDM_LOG_LEVEL_INFO 6
-#define FTDM_LOG_LEVEL_NOTICE 5
-#define FTDM_LOG_LEVEL_WARNING 4
-#define FTDM_LOG_LEVEL_ERROR 3
-#define FTDM_LOG_LEVEL_CRIT 2
-#define FTDM_LOG_LEVEL_ALERT 1
-#define FTDM_LOG_LEVEL_EMERG 0
-
-#define FTDM_LOG_DEBUG FTDM_PRE, FTDM_LOG_LEVEL_DEBUG
-#define FTDM_LOG_INFO FTDM_PRE, FTDM_LOG_LEVEL_INFO
-#define FTDM_LOG_NOTICE FTDM_PRE, FTDM_LOG_LEVEL_NOTICE
-#define FTDM_LOG_WARNING FTDM_PRE, FTDM_LOG_LEVEL_WARNING
-#define FTDM_LOG_ERROR FTDM_PRE, FTDM_LOG_LEVEL_ERROR
-#define FTDM_LOG_CRIT FTDM_PRE, FTDM_LOG_LEVEL_CRIT
-#define FTDM_LOG_ALERT FTDM_PRE, FTDM_LOG_LEVEL_ALERT
-#define FTDM_LOG_EMERG FTDM_PRE, FTDM_LOG_LEVEL_EMERG
-
 typedef struct ftdm_fsk_data_state ftdm_fsk_data_state_t;
 typedef int (*ftdm_fsk_data_decoder_t)(ftdm_fsk_data_state_t *state);
 typedef ftdm_status_t (*ftdm_fsk_write_sample_t)(int16_t *buf, ftdm_size_t buflen, void *user_data);
-typedef void (*ftdm_logger_t)(const char *file, const char *func, int line, int level, const char *fmt, ...);
 typedef struct hashtable ftdm_hash_t;
 typedef struct hashtable_iterator ftdm_hash_iterator_t;
 typedef struct key ftdm_hash_key_t;
@@ -654,70 +351,6 @@ typedef struct ftdm_bitstream ftdm_bitstream_t;
 typedef struct ftdm_fsk_modulator ftdm_fsk_modulator_t;
 typedef ftdm_status_t (*ftdm_span_start_t)(ftdm_span_t *span);
 typedef ftdm_status_t (*ftdm_span_stop_t)(ftdm_span_t *span);
-
-typedef enum {
-	FTDM_CAUSE_NONE = 0,
-	FTDM_CAUSE_UNALLOCATED = 1,
-	FTDM_CAUSE_NO_ROUTE_TRANSIT_NET = 2,
-	FTDM_CAUSE_NO_ROUTE_DESTINATION = 3,
-	FTDM_CAUSE_CHANNEL_UNACCEPTABLE = 6,
-	FTDM_CAUSE_CALL_AWARDED_DELIVERED = 7,
-	FTDM_CAUSE_NORMAL_CLEARING = 16,
-	FTDM_CAUSE_USER_BUSY = 17,
-	FTDM_CAUSE_NO_USER_RESPONSE = 18,
-	FTDM_CAUSE_NO_ANSWER = 19,
-	FTDM_CAUSE_SUBSCRIBER_ABSENT = 20,
-	FTDM_CAUSE_CALL_REJECTED = 21,
-	FTDM_CAUSE_NUMBER_CHANGED = 22,
-	FTDM_CAUSE_REDIRECTION_TO_NEW_DESTINATION = 23,
-	FTDM_CAUSE_EXCHANGE_ROUTING_ERROR = 25,
-	FTDM_CAUSE_DESTINATION_OUT_OF_ORDER = 27,
-	FTDM_CAUSE_INVALID_NUMBER_FORMAT = 28,
-	FTDM_CAUSE_FACILITY_REJECTED = 29,
-	FTDM_CAUSE_RESPONSE_TO_STATUS_ENQUIRY = 30,
-	FTDM_CAUSE_NORMAL_UNSPECIFIED = 31,
-	FTDM_CAUSE_NORMAL_CIRCUIT_CONGESTION = 34,
-	FTDM_CAUSE_NETWORK_OUT_OF_ORDER = 38,
-	FTDM_CAUSE_NORMAL_TEMPORARY_FAILURE = 41,
-	FTDM_CAUSE_SWITCH_CONGESTION = 42,
-	FTDM_CAUSE_ACCESS_INFO_DISCARDED = 43,
-	FTDM_CAUSE_REQUESTED_CHAN_UNAVAIL = 44,
-	FTDM_CAUSE_PRE_EMPTED = 45,
-	FTDM_CAUSE_FACILITY_NOT_SUBSCRIBED = 50,
-	FTDM_CAUSE_OUTGOING_CALL_BARRED = 52,
-	FTDM_CAUSE_INCOMING_CALL_BARRED = 54,
-	FTDM_CAUSE_BEARERCAPABILITY_NOTAUTH = 57,
-	FTDM_CAUSE_BEARERCAPABILITY_NOTAVAIL = 58,
-	FTDM_CAUSE_SERVICE_UNAVAILABLE = 63,
-	FTDM_CAUSE_BEARERCAPABILITY_NOTIMPL = 65,
-	FTDM_CAUSE_CHAN_NOT_IMPLEMENTED = 66,
-	FTDM_CAUSE_FACILITY_NOT_IMPLEMENTED = 69,
-	FTDM_CAUSE_SERVICE_NOT_IMPLEMENTED = 79,
-	FTDM_CAUSE_INVALID_CALL_REFERENCE = 81,
-	FTDM_CAUSE_INCOMPATIBLE_DESTINATION = 88,
-	FTDM_CAUSE_INVALID_MSG_UNSPECIFIED = 95,
-	FTDM_CAUSE_MANDATORY_IE_MISSING = 96,
-	FTDM_CAUSE_MESSAGE_TYPE_NONEXIST = 97,
-	FTDM_CAUSE_WRONG_MESSAGE = 98,
-	FTDM_CAUSE_IE_NONEXIST = 99,
-	FTDM_CAUSE_INVALID_IE_CONTENTS = 100,
-	FTDM_CAUSE_WRONG_CALL_STATE = 101,
-	FTDM_CAUSE_RECOVERY_ON_TIMER_EXPIRE = 102,
-	FTDM_CAUSE_MANDATORY_IE_LENGTH_ERROR = 103,
-	FTDM_CAUSE_PROTOCOL_ERROR = 111,
-	FTDM_CAUSE_INTERWORKING = 127,
-	FTDM_CAUSE_SUCCESS = 142,
-	FTDM_CAUSE_ORIGINATOR_CANCEL = 487,
-	FTDM_CAUSE_CRASH = 500,
-	FTDM_CAUSE_SYSTEM_SHUTDOWN = 501,
-	FTDM_CAUSE_LOSE_RACE = 502,
-	FTDM_CAUSE_MANAGER_REQUEST = 503,
-	FTDM_CAUSE_BLIND_TRANSFER = 600,
-	FTDM_CAUSE_ATTENDED_TRANSFER = 601,
-	FTDM_CAUSE_ALLOTTED_TIMEOUT = 602,
-	FTDM_CAUSE_USER_CHALLENGE = 603,
-	FTDM_CAUSE_MEDIA_TIMEOUT = 604
-} ftdm_call_cause_t;
 
 #ifdef __cplusplus
 }

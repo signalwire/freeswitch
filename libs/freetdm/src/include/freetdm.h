@@ -284,6 +284,15 @@ typedef enum {
 		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGLINK_CHANGED", "INVALID"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)
 
+typedef struct ftdm_channel_config {    
+	char name[FTDM_MAX_NAME_STR_SZ];
+	char number[FTDM_MAX_NUMBER_STR_SZ];
+	char group_name[FTDM_MAX_NAME_STR_SZ];
+	ftdm_chan_type_t type;
+	float rxgain;
+	float txgain;
+} ftdm_channel_config_t;
+
 struct ftdm_sigmsg {
 	ftdm_signal_event_t event_id;
 	uint32_t chan_id;
